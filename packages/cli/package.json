@@ -1,0 +1,24 @@
+{
+  "name": "@midnite/cli",
+  "version": "0.0.0",
+  "private": true,
+  "description": "midnite CLI client",
+  "type": "module",
+  "bin": {
+    "midnite": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "dev": "tsx watch src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@midnite/shared": "workspace:*",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}

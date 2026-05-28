@@ -1,0 +1,105 @@
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
+import type {
+  Status,
+  Task,
+  TaskCounts,
+} from '@midnite/shared';
+import { TaskClassifier, type ClassifierImage } from '../agent/classifier.service';
+import { TasksRepository } from './tasks.repository';
+
+export interface CreateTaskInput {
+  prompt: string;
+  repo?: string;
+  images: Array<ClassifierImage & { size: number; originalName?: string }>;
+}
+
+@Injectable()
+export class TasksService {
+  constructor(
+    @Inject(TasksRepository) private readonly repo: TasksRepository,
+    @Inject(TaskClassifier) private readonly classifier: TaskClassifier,
+  ) {}
+
+  getCounts(): TaskCounts {
+    const raw = this.repo.countsByStatus();
+    return {
+      backlog: raw.backlog + raw.todo,
+      inProgress: raw.wip + raw.waiting,
+      done: raw.done,
+    };
+  }
+
+  listTasks(status?: Status): Task[] {
+    return this.repo.listTasks(status).map((r) => this.repo.hydrate(r));
+  }
+
+  getTask(id: string): Task {
+    const row = this.repo.getTask(id);
+    if (!row) throw new NotFoundException(`task ${id} not found`);
+    return this.repo.hydrate(row);
+  }
+
+  updateStatus(id: string, status: Status): Task {
+    const now = new Date().toISOString();
+    const row = this.repo.updateStatus(id, status, now);
+    if (!row) throw new NotFoundException(`task ${id} not found`);
+    this.repo.insertEvent({
+      id: randomUUID(),
+      taskId: id,
+      at: now,
+      kind: 'status.changed',
+      data: JSON.stringify({ status }),
+    });
+    return this.repo.hydrate(row);
+  }
+
+  async createFromPrompt(input: CreateTaskInput): Promise<Task> {
+    const classified = await this.classifier.classify(
+      input.prompt,
+      input.images.map((i) => ({ path: i.path, mime: i.mime })),
+    );
+
+    const id = randomUUID();
+    const now = new Date().toISOString();
+
+    this.repo.insertTask({
+      id,
+      title: classified.title,
+      kind: classified.kind,
+      status: 'todo',
+      prompt: input.prompt,
+      repo: input.repo ?? null,
+      agentId: null,
+      sessionId: null,
+      prUrl: null,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    for (const image of input.images) {
+      this.repo.insertAttachment({
+        id: randomUUID(),
+        taskId: id,
+        path: image.path,
+        mime: image.mime,
+        size: image.size,
+        originalName: image.originalName ?? null,
+        createdAt: now,
+      });
+    }
+
+    this.repo.insertEvent({
+      id: randomUUID(),
+      taskId: id,
+      at: now,
+      kind: 'task.created',
+      data: JSON.stringify({
+        promptLength: input.prompt.length,
+        attachments: input.images.length,
+      }),
+    });
+
+    return this.getTask(id);
+  }
+}

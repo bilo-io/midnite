@@ -1,0 +1,20 @@
+{
+  "name": "midnite",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Multitask Claude Code — task orchestrator wrapped around a pool of Claude Code agents",
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": "22.11.0"
+  },
+  "scripts": {
+    "build": "moon run :build",
+    "dev": "moon run :dev",
+    "test": "moon run :test",
+    "typecheck": "moon run :typecheck"
+  },
+  "devDependencies": {
+    "@moonrepo/cli": "^1.30.0",
+    "typescript": "^5.6.3"
+  }
+}

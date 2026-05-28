@@ -1,0 +1,26 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+language: 'typescript'
+
+dependsOn:
+  - 'shared'
+
+tasks:
+  build:
+    command: 'tsc -b'
+    inputs:
+      - 'src/**/*'
+      - 'tsconfig.json'
+    outputs:
+      - 'dist'
+
+  dev:
+    command: 'tsx watch src/main.ts'
+
+  start:
+    command: 'node dist/main.js'
+
+  test:
+    command: 'vitest run'
+    inputs:
+      - 'src/**/*'

@@ -1,0 +1,20 @@
+{
+  "$schema": "./midnite.schema.json",
+  "agent": {
+    "pool": 4,
+    "provider": "claude",
+    "plan": "opus4.7",
+    "act": "sonnet4.7"
+  },
+  "terminal": {
+    "mode": "pty",
+    "layout": "split"
+  },
+  "knowledge": {
+    "dir": "./knowledge"
+  },
+  "repos": [],
+  "gateway": {
+    "port": 7777
+  }
+}

@@ -1,0 +1,27 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+language: 'typescript'
+
+dependsOn:
+  - 'shared'
+
+tasks:
+  dev:
+    command: 'next dev -p 3000'
+
+  build:
+    command: 'next build'
+    inputs:
+      - 'app/**/*'
+      - 'next.config.mjs'
+      - 'tsconfig.json'
+    outputs:
+      - '.next'
+
+  start:
+    command: 'next start -p 3000'
+
+  typecheck:
+    command: 'tsc --noEmit'
+    inputs:
+      - 'app/**/*'
+      - 'tsconfig.json'
