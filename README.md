@@ -116,6 +116,24 @@ User config lives in [`midnite.json`](midnite.json) at the repo root, validated 
 
 Every consumer (gateway, CLI) takes a parsed `MidniteConfig` — never `JSON.parse` the file yourself.
 
+### Authentication
+
+The gateway's classifier calls Anthropic. Two credential sources are supported, tried in this order:
+
+1. **`ANTHROPIC_API_KEY` env var** — used for CI/prod. If set, the gateway uses pay-as-you-go API credits as normal.
+2. **Claude CLI login (macOS only, fallback)** — if no env var is set, the gateway reads the OAuth token that the `claude` CLI already manages in the macOS Keychain (`security -s "Claude Code-credentials"`) and uses it as an `authToken`. Run `claude` once to log in; nothing else to configure.
+
+Heads-up when using the fallback:
+
+- Calls consume your **Claude subscription quota**, not pay-as-you-go API credits. Same model, different meter.
+- The first time the gateway reads the Keychain entry, macOS will show a one-time "Allow access" prompt. Accept it.
+- Token refresh is handled by the `claude` CLI itself — if you see a 401 from Anthropic, re-run `claude` to refresh.
+- Linux/Windows are **not** supported by the fallback yet. Set `ANTHROPIC_API_KEY` on those platforms.
+
+If neither source resolves, the classifier degrades to a placeholder (titles from the first line, `kind: "unknown"`) and the gateway logs a warning at startup.
+
+Implementation: [`packages/gateway/src/agent/anthropic-credentials.ts`](packages/gateway/src/agent/anthropic-credentials.ts), wired into [`AnthropicService`](packages/gateway/src/agent/anthropic.service.ts).
+
 ## Common commands
 
 ```sh

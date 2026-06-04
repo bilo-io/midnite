@@ -7,7 +7,7 @@ dependsOn:
 
 tasks:
   build:
-    command: 'tsc -b'
+    command: 'pnpm exec tsc -b'
     inputs:
       - 'src/**/*'
       - 'tsconfig.json'
@@ -15,12 +15,20 @@ tasks:
       - 'dist'
 
   dev:
-    command: 'tsx watch src/main.ts'
+    command: 'pnpm exec tsx watch src/main.ts'
+    preset: 'server'
 
   start:
     command: 'node dist/main.js'
+    preset: 'server'
 
   test:
-    command: 'vitest run'
+    command: 'pnpm exec vitest run'
     inputs:
       - 'src/**/*'
+
+  typecheck:
+    command: 'pnpm exec tsc --noEmit'
+    inputs:
+      - 'src/**/*'
+      - 'tsconfig.json'

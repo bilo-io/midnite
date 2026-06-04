@@ -1,8 +1,12 @@
 import {
   CreateTaskResponseSchema,
+  SessionSummarySchema,
+  SessionTranscriptSchema,
   TaskCountsSchema,
   TaskSchema,
   type CreateTaskResponse,
+  type SessionSummary,
+  type SessionTranscript,
   type Task,
   type TaskCounts,
 } from '@midnite/shared';
@@ -44,4 +48,16 @@ export async function createTask(form: FormData): Promise<CreateTaskResponse> {
     { method: 'POST', body: form, cache: 'no-store' },
     CreateTaskResponseSchema,
   );
+}
+
+export async function getSessions(): Promise<SessionSummary[]> {
+  return fetchJson('/sessions', undefined, z.array(SessionSummarySchema));
+}
+
+export async function getSessionTranscript(
+  projectSlug: string,
+  id: string,
+): Promise<SessionTranscript> {
+  const path = `/sessions/${encodeURIComponent(projectSlug)}/${encodeURIComponent(id)}/transcript`;
+  return fetchJson(path, undefined, SessionTranscriptSchema);
 }

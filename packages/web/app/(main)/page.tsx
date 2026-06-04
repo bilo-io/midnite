@@ -1,4 +1,5 @@
 import { DashboardTiles } from '@/components/dashboard-tiles';
+import { PageHeader } from '@/components/page-header';
 import { PromptComposer } from '@/components/prompt-composer';
 import { getTaskCounts } from '@/lib/api';
 
@@ -13,28 +14,32 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <section>
-        <h1 className="mb-1 text-2xl font-semibold tracking-tight">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">
-          An overview of your task backlog. Drop a prompt below to create a new task.
-        </p>
-      </section>
+    <>
+      <PageHeader
+        title="Dashboard"
+        size="lg"
+        showGrid
+        description="An overview of your task backlog. Drop one or more prompts below — one task per line."
+      />
+      <div className="container space-y-10 pb-48 pt-2">
+        {error && (
+          <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+            Could not reach the gateway: {error}
+          </div>
+        )}
 
-      {error && (
-        <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-          Could not reach the gateway: {error}
+        <DashboardTiles counts={counts} />
+      </div>
+
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30">
+        <div className="bg-background/0 pb-6 pt-2">
+          <div className="container">
+            <div className="pointer-events-auto mx-auto w-full max-w-3xl">
+              <PromptComposer />
+            </div>
+          </div>
         </div>
-      )}
-
-      <DashboardTiles counts={counts} />
-
-      <section className="space-y-2">
-        <h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
-          New task
-        </h2>
-        <PromptComposer />
-      </section>
-    </div>
+      </div>
+    </>
   );
 }

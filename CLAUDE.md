@@ -91,6 +91,28 @@ Prefer `moon run <project>:<task>` over invoking pnpm/tsc/vitest directly — mo
 - Feature branches: `feature/<name>` · fixes: `fix/<name>` · chores: `chore/<name>`
 - Always branch from the latest `main`
 
+### Worktrees (default for any non-trivial task)
+
+midnite is built around running agents in parallel — don't undermine that by sharing one working tree between branches. Before starting any non-trivial task, spin up a fresh git worktree:
+
+```bash
+# from ~/Dev/midnite (the primary checkout, kept on `main`):
+git fetch origin
+git worktree add ../midnite-wt/<branch-name> -b feature/<branch-name> origin/main
+cd ../midnite-wt/<branch-name>
+pnpm install                        # link deps inside the worktree
+```
+
+Conventions:
+
+- **Primary checkout (`~/Dev/midnite`) stays on `main`.** Never `git switch` it — that's what worktrees are for.
+- One worktree per branch, sibling to the main checkout: `../midnite-wt/<branch-name>/`.
+- When the PR merges (or is abandoned), tear the worktree down with `git worktree remove ../midnite-wt/<branch-name>` followed by `git branch -d feature/<branch-name>` (use `-D` if abandoned).
+- Trivial one-line fixes (typos, README tweaks) on a hot branch are fine without a worktree — judgement call.
+- Each worktree has its own `node_modules` (pnpm symlinks under the hood are fine). Don't try to share by copying.
+
+If you find yourself about to run `git switch` in the primary checkout, stop and create a worktree instead.
+
 ### Pre-push Checks
 
 ```bash

@@ -1,25 +1,65 @@
 import type { TaskCounts } from '@midnite/shared';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-const TILES: Array<{ key: keyof TaskCounts; label: string }> = [
-  { key: 'backlog', label: 'Backlog' },
-  { key: 'inProgress', label: 'In progress' },
-  { key: 'done', label: 'Done' },
+const TILES: Array<{
+  key: keyof TaskCounts;
+  label: string;
+  hint: string;
+  hueVar: string;
+}> = [
+  { key: 'backlog', label: 'Backlog', hint: 'Parked or ambiguous', hueVar: '--status-backlog' },
+  { key: 'inProgress', label: 'In progress', hint: 'Running in an agent', hueVar: '--status-wip' },
+  { key: 'done', label: 'Done', hint: 'Completed', hueVar: '--status-done' },
 ];
 
 export function DashboardTiles({ counts }: { counts: TaskCounts }) {
+  const total = (counts.backlog ?? 0) + (counts.inProgress ?? 0) + (counts.done ?? 0);
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-      {TILES.map(({ key, label }) => (
-        <Card key={key}>
-          <CardHeader>
-            <CardTitle>{label}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-4xl font-semibold tabular-nums">{counts[key]}</div>
-          </CardContent>
-        </Card>
-      ))}
+      {TILES.map(({ key, label, hint, hueVar }) => {
+        const value = counts[key] ?? 0;
+        const pct = total > 0 ? Math.round((value / total) * 100) : 0;
+        return (
+          <div
+            key={key}
+            className="group relative overflow-hidden rounded-xl border bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+            style={{ ['--tile-hue' as string]: `var(${hueVar})` }}
+          >
+            <span
+              aria-hidden
+              className="absolute inset-x-0 top-0 h-px"
+              style={{
+                backgroundImage:
+                  'linear-gradient(to right, transparent, hsl(var(--tile-hue) / 0.7), transparent)',
+              }}
+            />
+            <span
+              aria-hidden
+              className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full opacity-0 blur-3xl transition-opacity group-hover:opacity-60"
+              style={{ background: 'hsl(var(--tile-hue) / 0.35)' }}
+            />
+            <div className="flex items-center gap-2">
+              <span
+                aria-hidden
+                className="h-2 w-2 rounded-full"
+                style={{
+                  background: 'hsl(var(--tile-hue))',
+                  boxShadow: '0 0 10px -1px hsl(var(--tile-hue) / 0.7)',
+                }}
+              />
+              <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                {label}
+              </h3>
+            </div>
+            <div className="mt-3 flex items-baseline gap-2">
+              <div className="text-4xl font-semibold tabular-nums tracking-tight">{value}</div>
+              {total > 0 && (
+                <span className="text-xs text-muted-foreground tabular-nums">{pct}%</span>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
+          </div>
+        );
+      })}
     </div>
   );
 }

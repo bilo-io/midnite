@@ -11,6 +11,13 @@ import { useSpeechRecognition } from '@/lib/use-speech-recognition';
 
 type Phase = 'idle' | 'submitting';
 
+function splitTasks(input: string): string[] {
+  return input
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
 export function PromptComposer() {
   const router = useRouter();
   const [text, setText] = React.useState('');
@@ -43,16 +50,25 @@ export function PromptComposer() {
     setFiles((prev) => prev.filter((_, i) => i !== idx));
   };
 
+  const lines = splitTasks(text);
+  const taskCount = lines.length;
+
   const submit = async () => {
-    const trimmed = text.trim();
-    if (!trimmed || phase === 'submitting') return;
+    if (taskCount === 0 || phase === 'submitting') return;
     setPhase('submitting');
     setError(null);
     try {
-      const form = new FormData();
-      form.append('prompt', trimmed);
-      for (const file of files) form.append('images', file, file.name);
-      await createTask(form);
+      // Images are attached to the first task only; subsequent tasks are text-only.
+      await Promise.all(
+        lines.map((prompt, idx) => {
+          const form = new FormData();
+          form.append('prompt', prompt);
+          if (idx === 0) {
+            for (const file of files) form.append('images', file, file.name);
+          }
+          return createTask(form);
+        }),
+      );
       setText('');
       setFiles([]);
       router.refresh();
@@ -70,14 +86,22 @@ export function PromptComposer() {
     }
   };
 
+  const sendLabel =
+    phase === 'submitting'
+      ? 'Sending…'
+      : taskCount > 1
+        ? `Send ${taskCount}`
+        : 'Send';
+
   return (
-    <div className="rounded-lg border bg-card p-4 shadow-sm">
+    <div className="gradient-border rounded-xl shadow-sm transition-shadow focus-within:shadow-lg">
+      <div className="relative rounded-xl bg-card p-4">
       <div className="space-y-3">
         <Textarea
           value={text + (speech.interim ? ` ${speech.interim}` : '')}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={onKeyDown}
-          placeholder="Describe the task… (⌘/Ctrl+Enter to submit)"
+          placeholder="Describe a task — one per line. (⌘/Ctrl+Enter to submit)"
           rows={4}
           className="resize-none border-0 bg-transparent p-0 text-base focus-visible:ring-0"
         />
@@ -139,19 +163,25 @@ export function PromptComposer() {
                 {speech.listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
               </Button>
             )}
+            {taskCount > 1 && (
+              <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
+                {taskCount} tasks
+              </span>
+            )}
           </div>
           <Button
             type="button"
             onClick={() => void submit()}
-            disabled={!text.trim() || phase === 'submitting'}
+            disabled={taskCount === 0 || phase === 'submitting'}
             size="sm"
           >
             <Send className="h-4 w-4" />
-            {phase === 'submitting' ? 'Sending…' : 'Send'}
+            {sendLabel}
           </Button>
         </div>
 
         {error && <p className="text-sm text-destructive">{error}</p>}
+      </div>
       </div>
     </div>
   );

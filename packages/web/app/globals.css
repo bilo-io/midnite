@@ -22,6 +22,20 @@
     --input: 240 5.9% 90%;
     --ring: 240 5.9% 10%;
     --radius: 0.5rem;
+
+    /* status hues (H S%) — paired with L via utility classes */
+    --status-backlog: 240 4% 50%;
+    --status-todo: 217 91% 60%;
+    --status-wip: 38 92% 50%;
+    --status-waiting: 280 65% 60%;
+    --status-done: 142 71% 45%;
+    --status-abandoned: 0 0% 60%;
+
+    --kind-bug: 0 84% 60%;
+    --kind-feature: 262 83% 58%;
+    --kind-question: 217 91% 60%;
+    --kind-chore: 240 4% 46%;
+    --kind-unknown: 240 4% 60%;
   }
 
   .dark {
@@ -42,6 +56,19 @@
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 240 4.9% 83.9%;
+
+    --status-backlog: 240 5% 65%;
+    --status-todo: 217 91% 68%;
+    --status-wip: 38 92% 60%;
+    --status-waiting: 280 65% 70%;
+    --status-done: 142 71% 55%;
+    --status-abandoned: 0 0% 50%;
+
+    --kind-bug: 0 84% 65%;
+    --kind-feature: 262 83% 68%;
+    --kind-question: 217 91% 68%;
+    --kind-chore: 240 5% 60%;
+    --kind-unknown: 240 5% 55%;
   }
 }
 
@@ -54,5 +81,105 @@
   }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background-image:
+      radial-gradient(circle at top, hsl(var(--foreground) / 0.04), transparent 60%),
+      radial-gradient(circle at 20% 110%, hsl(var(--foreground) / 0.03), transparent 50%);
+    background-attachment: fixed;
+  }
+}
+
+@layer utilities {
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, hsl(var(--border) / 0.6) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border) / 0.6) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+}
+
+@property --gradient-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes gradient-border-spin {
+  to {
+    --gradient-angle: 360deg;
+  }
+}
+
+.gradient-border {
+  position: relative;
+  isolation: isolate;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: -1.5px;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--gradient-angle),
+    #f43f5e,
+    #f59e0b,
+    #10b981,
+    #3b82f6,
+    #8b5cf6,
+    #ec4899,
+    #f43f5e
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.25s ease-out;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.gradient-border:focus-within::before {
+  opacity: 1;
+  animation: gradient-border-spin 4s linear infinite;
+}
+
+.gradient-border::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--gradient-angle),
+    #f43f5e,
+    #f59e0b,
+    #10b981,
+    #3b82f6,
+    #8b5cf6,
+    #ec4899,
+    #f43f5e
+  );
+  filter: blur(20px);
+  opacity: 0;
+  transition: opacity 0.4s ease-out;
+  pointer-events: none;
+  z-index: -2;
+}
+
+.gradient-border:focus-within::after {
+  opacity: 0.35;
+  animation: gradient-border-spin 4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gradient-border:focus-within::before,
+  .gradient-border:focus-within::after {
+    animation: none;
   }
 }

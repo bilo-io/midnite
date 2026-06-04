@@ -1,0 +1,66 @@
+'use client';
+
+import type { ReactNode } from 'react';
+import { cn } from '@/lib/utils';
+import { useScrolled } from '@/lib/use-scrolled';
+
+type PageHeaderProps = {
+  title: string;
+  description?: ReactNode;
+  size?: 'default' | 'lg'; // dashboard uses 'lg'
+  showGrid?: boolean; // dashboard's decorative bg-grid
+};
+
+export function PageHeader({ title, description, size = 'default', showGrid = false }: PageHeaderProps) {
+  const scrolled = useScrolled();
+
+  return (
+    <header
+      className={cn(
+        'sticky top-0 z-30 border-b transition-colors duration-200 motion-reduce:transition-none',
+        scrolled
+          ? 'border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60'
+          : 'border-transparent bg-transparent',
+      )}
+    >
+      {/* re-center content to align with the page body's container below */}
+      <div
+        className={cn(
+          'container relative transition-[padding] duration-200 motion-reduce:transition-none',
+          scrolled ? 'py-3' : 'py-6',
+        )}
+      >
+        {showGrid && (
+          <div
+            aria-hidden
+            className={cn(
+              'bg-grid pointer-events-none absolute inset-x-0 -top-8 -z-10 h-40 transition-opacity duration-300 motion-reduce:transition-none',
+              scrolled ? 'opacity-0' : 'opacity-50',
+            )}
+          />
+        )}
+
+        <h1
+          className={cn(
+            'font-semibold tracking-tight transition-all duration-200 motion-reduce:transition-none',
+            size === 'lg' ? (scrolled ? 'text-2xl' : 'text-3xl') : scrolled ? 'text-xl' : 'text-2xl',
+          )}
+        >
+          {title}
+        </h1>
+
+        {description && (
+          <div
+            className={cn(
+              'overflow-hidden text-sm text-muted-foreground transition-all duration-200 motion-reduce:transition-none',
+              size === 'lg' && 'max-w-2xl',
+              scrolled ? 'mt-0 max-h-0 opacity-0' : 'mt-1 max-h-16 opacity-100',
+            )}
+          >
+            {description}
+          </div>
+        )}
+      </div>
+    </header>
+  );
+}

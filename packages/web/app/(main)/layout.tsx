@@ -3,9 +3,9 @@ import { NavBar } from '@/components/nav-bar';
 
 export default function MainLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="min-h-screen">
       <NavBar />
-      <main className="container flex-1 py-8">{children}</main>
+      <main className="pl-14">{children}</main>
     </div>
   );
 }
