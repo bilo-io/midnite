@@ -75,18 +75,19 @@ export function TasksView({
   return (
     <div className="container flex min-h-0 flex-1 flex-col gap-4 pb-4 pt-2">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <ViewToggle />
+        <div className="flex flex-wrap items-center gap-3">
+          <ViewToggle />
+          {projects.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
+                Project
+              </span>
+              <FilterPills options={projectFilters} paramKey="project" />
+            </div>
+          )}
+        </div>
         <FilterPills options={STATUS_FILTERS} paramKey="status" />
       </div>
-
-      {projects.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
-            Project
-          </span>
-          <FilterPills options={projectFilters} paramKey="project" />
-        </div>
-      )}
 
       {error && (
         <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
