@@ -87,31 +87,36 @@ Prefer `moon run <project>:<task>` over invoking pnpm/tsc/vitest directly — mo
 
 ### Branches
 
-- **NEVER commit directly to `main`.**
 - Feature branches: `feature/<name>` · fixes: `fix/<name>` · chores: `chore/<name>`
 - Always branch from the latest `main`
+- Prefer a branch for anything beyond a trivial change — it keeps PRs clean and lets work run in parallel. Committing straight to `main` is fine for small, low-risk touch-ups (typos, doc tweaks, config nudges) when a PR would just be ceremony. Use judgement.
 
-### Worktrees (default for any non-trivial task)
+### Where to work
 
-midnite is built around running agents in parallel — don't undermine that by sharing one working tree between branches. Before starting any non-trivial task, spin up a fresh git worktree:
+Pick whichever fits the task — there's no single mandated flow:
+
+1. **Worktree** (best for parallel agent work, or juggling several branches at once) — an isolated checkout, so nothing steps on the primary tree. See below.
+2. **Feature branch in the primary checkout** — simplest when you're only doing one thing at a time and don't need isolation.
+3. **Directly on `main`** — fine for trivial, low-risk changes where a branch/PR would be overkill.
+
+### Worktrees
+
+midnite is built around running agents in parallel, and worktrees keep those branches from sharing one working tree. To spin one up:
 
 ```bash
-# from ~/Dev/midnite (the primary checkout, kept on `main`):
+# from ~/Dev/midnite (the primary checkout, usually kept on `main`):
 git fetch origin
-git worktree add ../midnite-wt/<branch-name> -b feature/<branch-name> origin/main
-cd ../midnite-wt/<branch-name>
+git worktree add .git/worktrees/<branch-name> -b feature/<branch-name> origin/main
+cd .git/worktrees/<branch-name>
 pnpm install                        # link deps inside the worktree
 ```
 
 Conventions:
 
-- **Primary checkout (`~/Dev/midnite`) stays on `main`.** Never `git switch` it — that's what worktrees are for.
-- One worktree per branch, sibling to the main checkout: `../midnite-wt/<branch-name>/`.
-- When the PR merges (or is abandoned), tear the worktree down with `git worktree remove ../midnite-wt/<branch-name>` followed by `git branch -d feature/<branch-name>` (use `-D` if abandoned).
-- Trivial one-line fixes (typos, README tweaks) on a hot branch are fine without a worktree — judgement call.
+- Keep the primary checkout (`~/Dev/midnite`) on `main` as your home base when you're using worktrees.
+- One worktree per branch, nested under the repo's git dir: `.git/worktrees/<branch-name>/`. (`.git` is already ignored, so worktrees never show up as untracked files or pollute the workspace — consistent with our other projects.)
+- When the PR merges (or is abandoned), tear the worktree down with `git worktree remove .git/worktrees/<branch-name>` followed by `git branch -d feature/<branch-name>` (use `-D` if abandoned).
 - Each worktree has its own `node_modules` (pnpm symlinks under the hood are fine). Don't try to share by copying.
-
-If you find yourself about to run `git switch` in the primary checkout, stop and create a worktree instead.
 
 ### Pre-push Checks
 
