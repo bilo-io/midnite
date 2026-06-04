@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -34,9 +35,13 @@ export function NavBar() {
         aria-label="midnite"
         className="group relative mb-4 flex h-9 w-9 items-center justify-center"
       >
-        <span
-          aria-hidden
-          className="h-2.5 w-2.5 rounded-full bg-gradient-to-br from-violet-500 via-indigo-500 to-sky-400 shadow-[0_0_10px_-1px_rgba(99,102,241,0.6)] transition-transform group-hover:scale-110"
+        <Image
+          src="/logo.PNG"
+          alt="midnite"
+          width={36}
+          height={36}
+          priority
+          className="h-9 w-9 rounded-full object-cover ring-1 ring-border/60 transition-transform group-hover:scale-110"
         />
         <Tooltip>midnite</Tooltip>
       </Link>
