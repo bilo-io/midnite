@@ -1,16 +1,24 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { LayoutGrid, List } from 'lucide-react';
-import type { SessionSummary, SessionTranscript } from '@midnite/shared';
+import { SESSION_STATUSES, type SessionStatus, type SessionSummary, type SessionTranscript } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
-import { SessionCard } from '@/components/session-card';
+import { FilterPills, type FilterOption } from '@/components/filter-pills';
+import { SESSION_STATUS_HUE, SessionCard } from '@/components/session-card';
 import { SessionTranscriptModal } from '@/components/session-transcript-modal';
 import { getSessionTranscript } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 type View = 'list' | 'grid';
 const VIEW_STORAGE_KEY = 'midnite.sessions.view';
+
+const SESSION_FILTERS: FilterOption[] = [
+  { value: 'running', label: 'Running', hue: SESSION_STATUS_HUE.running },
+  { value: 'waiting', label: 'Awaiting input', hue: SESSION_STATUS_HUE.waiting },
+  { value: 'idle', label: 'Idle', hue: SESSION_STATUS_HUE.idle },
+];
 
 export function SessionsView({ initial }: { initial: SessionSummary[] }) {
   const [view, setView] = useState<View>('list');
@@ -54,11 +62,23 @@ export function SessionsView({ initial }: { initial: SessionSummary[] }) {
     setLoadError(null);
   }, []);
 
+  const searchParams = useSearchParams();
+  const activeRaw = searchParams.get('status');
+  const activeStatuses = new Set(
+    (activeRaw ? activeRaw.split(',') : []).filter((s): s is SessionStatus =>
+      (SESSION_STATUSES as readonly string[]).includes(s),
+    ),
+  );
+  const sessions =
+    activeStatuses.size === 0 ? initial : initial.filter((s) => activeStatuses.has(s.status));
+
   return (
     <div className="space-y-4">
+      {initial.length > 0 ? <FilterPills options={SESSION_FILTERS} /> : null}
+
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs text-muted-foreground tabular-nums">
-          {initial.length} session{initial.length === 1 ? '' : 's'}
+          {sessions.length} session{sessions.length === 1 ? '' : 's'}
         </p>
         <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
           <Button
@@ -96,9 +116,13 @@ export function SessionsView({ initial }: { initial: SessionSummary[] }) {
         <div className="rounded-lg border border-dashed border-border/60 p-12 text-center text-sm text-muted-foreground">
           No Claude sessions found under <code className="font-mono">~/.claude/projects</code>.
         </div>
+      ) : sessions.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-border/60 p-12 text-center text-sm text-muted-foreground">
+          No sessions match this filter.
+        </div>
       ) : view === 'list' ? (
         <div className="flex flex-col gap-2">
-          {initial.map((s) => (
+          {sessions.map((s) => (
             <SessionCard
               key={`${s.projectSlug}/${s.id}`}
               session={s}
@@ -109,7 +133,7 @@ export function SessionsView({ initial }: { initial: SessionSummary[] }) {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {initial.map((s) => (
+          {sessions.map((s) => (
             <SessionCard
               key={`${s.projectSlug}/${s.id}`}
               session={s}

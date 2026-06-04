@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { TaskCounts } from '@midnite/shared';
 
 const TILES: Array<{
@@ -5,23 +6,28 @@ const TILES: Array<{
   label: string;
   hint: string;
   hueVar: string;
+  /** Board column this tile drills into. */
+  href: string;
 }> = [
-  { key: 'backlog', label: 'Backlog', hint: 'Parked or ambiguous', hueVar: '--status-backlog' },
-  { key: 'inProgress', label: 'In progress', hint: 'Running in an agent', hueVar: '--status-wip' },
-  { key: 'done', label: 'Done', hint: 'Completed', hueVar: '--status-done' },
+  { key: 'backlog', label: 'Backlog', hint: 'Parked or ambiguous', hueVar: '--status-backlog', href: '/board?status=backlog' },
+  { key: 'todo', label: 'Todo', hint: 'Queued, ready to start', hueVar: '--status-todo', href: '/board?status=todo' },
+  { key: 'inProgress', label: 'In progress', hint: 'Running or waiting on input', hueVar: '--status-wip', href: '/board?status=wip,waiting' },
+  { key: 'done', label: 'Done', hint: 'Completed', hueVar: '--status-done', href: '/board?status=done' },
 ];
 
 export function DashboardTiles({ counts }: { counts: TaskCounts }) {
-  const total = (counts.backlog ?? 0) + (counts.inProgress ?? 0) + (counts.done ?? 0);
+  const total =
+    (counts.backlog ?? 0) + (counts.todo ?? 0) + (counts.inProgress ?? 0) + (counts.done ?? 0);
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-      {TILES.map(({ key, label, hint, hueVar }) => {
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {TILES.map(({ key, label, hint, hueVar, href }) => {
         const value = counts[key] ?? 0;
         const pct = total > 0 ? Math.round((value / total) * 100) : 0;
         return (
-          <div
+          <Link
             key={key}
-            className="group relative overflow-hidden rounded-xl border bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+            href={href}
+            className="group relative block overflow-hidden rounded-xl border bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             style={{ ['--tile-hue' as string]: `var(${hueVar})` }}
           >
             <span
@@ -57,7 +63,7 @@ export function DashboardTiles({ counts }: { counts: TaskCounts }) {
               )}
             </div>
             <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
-          </div>
+          </Link>
         );
       })}
     </div>

@@ -10,7 +10,7 @@ export default async function DashboardPage() {
     counts = await getTaskCounts();
   } catch (err) {
     error = err instanceof Error ? err.message : 'Failed to load task counts';
-    counts = { backlog: 0, inProgress: 0, done: 0 };
+    counts = { backlog: 0, todo: 0, inProgress: 0, done: 0 };
   }
 
   return (

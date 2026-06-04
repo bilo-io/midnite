@@ -61,6 +61,7 @@ export const AgentSlotSchema = z.object({
 
 export const TaskCountsSchema = z.object({
   backlog: z.number().int().nonnegative(),
+  todo: z.number().int().nonnegative(),
   inProgress: z.number().int().nonnegative(),
   done: z.number().int().nonnegative(),
 });

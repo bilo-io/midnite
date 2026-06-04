@@ -5,11 +5,17 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { Task } from '@midnite/shared';
 import { TaskCard } from '@/components/task-card';
 
-export function AbandonedRow({ tasks }: { tasks: Task[] }) {
+export function AbandonedRow({
+  tasks,
+  onSelect,
+}: {
+  tasks: Task[];
+  onSelect?: (task: Task) => void;
+}) {
   const [open, setOpen] = useState(false);
   if (tasks.length === 0) return null;
   return (
-    <section className="rounded-lg border bg-card">
+    <section className="shrink-0 rounded-lg border bg-card">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -20,9 +26,9 @@ export function AbandonedRow({ tasks }: { tasks: Task[] }) {
         <span className="rounded bg-secondary px-1.5 py-0.5 text-xs">{tasks.length}</span>
       </button>
       {open && (
-        <div className="grid grid-cols-1 gap-2 p-3 pt-0 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="grid max-h-[40vh] grid-cols-1 gap-2 overflow-y-auto p-3 pt-0 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {tasks.map((t) => (
-            <TaskCard key={t.id} task={t} />
+            <TaskCard key={t.id} task={t} onSelect={onSelect ? () => onSelect(t) : undefined} />
           ))}
         </div>
       )}

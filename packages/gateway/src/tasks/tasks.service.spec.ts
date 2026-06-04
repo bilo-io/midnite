@@ -17,7 +17,7 @@ class StubClassifier extends TaskClassifier {
 }
 
 class InMemoryRepo extends TasksRepository {
-  override readonly tasks: TaskRow[] = [];
+  readonly tasks: TaskRow[] = [];
   readonly events: TaskEventInsert[] = [];
   readonly attachments: TaskAttachmentInsert[] = [];
 
@@ -132,7 +132,7 @@ function seed(repo: InMemoryRepo, statuses: Status[]) {
 }
 
 describe('TasksService', () => {
-  it('maps 6 raw statuses into 3 dashboard buckets, excluding abandoned', () => {
+  it('maps 6 raw statuses into 4 dashboard buckets, excluding abandoned', () => {
     const repo = new InMemoryRepo();
     seed(repo, [
       'backlog', 'backlog',
@@ -144,7 +144,9 @@ describe('TasksService', () => {
     ]);
     const service = new TasksService(repo, new StubClassifier());
     const counts = service.getCounts();
-    expect(counts).toEqual({ backlog: 5, inProgress: 2, done: 2 });
+    // backlog and todo are now distinct buckets; wip + waiting fold into
+    // inProgress; abandoned is excluded from the dashboard entirely.
+    expect(counts).toEqual({ backlog: 2, todo: 3, inProgress: 2, done: 2 });
   });
 
   it('createFromPrompt persists task, classifies, and emits task.created event', async () => {

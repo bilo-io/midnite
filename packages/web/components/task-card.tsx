@@ -17,15 +17,13 @@ const KIND_HUE_VARS: Record<NonNullable<Task['kind']>, string> = {
   unknown: '--kind-unknown',
 };
 
-export function TaskCard({ task }: { task: Task }) {
+export function TaskCard({ task, onSelect }: { task: Task; onSelect?: () => void }) {
   const kind = task.kind ?? 'unknown';
   const firstImage = task.attachments?.find((a) => a.mime.startsWith('image/'));
   const hue = KIND_HUE_VARS[kind];
-  return (
-    <div
-      className="group rounded-md border bg-background p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow"
-      style={{ ['--kind-hue' as string]: `var(${hue})` }}
-    >
+
+  const body = (
+    <>
       <div className="mb-1.5 flex items-center gap-2">
         <span
           className="inline-flex items-center gap-1.5 rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider"
@@ -50,6 +48,28 @@ export function TaskCard({ task }: { task: Task }) {
           className="mt-2 max-h-24 w-full rounded border object-cover"
         />
       )}
+    </>
+  );
+
+  const className =
+    'group block w-full rounded-md border bg-background p-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow';
+
+  if (onSelect) {
+    return (
+      <button
+        type="button"
+        onClick={onSelect}
+        className={className}
+        style={{ ['--kind-hue' as string]: `var(${hue})` }}
+      >
+        {body}
+      </button>
+    );
+  }
+
+  return (
+    <div className={className} style={{ ['--kind-hue' as string]: `var(${hue})` }}>
+      {body}
     </div>
   );
 }

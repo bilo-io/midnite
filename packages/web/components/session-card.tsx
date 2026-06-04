@@ -1,24 +1,24 @@
 import type { SessionStatus, SessionSummary } from '@midnite/shared';
 import { cn } from '@/lib/utils';
 
-const STATUS_HUE: Record<SessionStatus, string> = {
+export const SESSION_STATUS_HUE: Record<SessionStatus, string> = {
   running: '142 71% 45%',
   waiting: '38 92% 50%',
   idle: '215 14% 52%',
 };
 
-const STATUS_LABEL: Record<SessionStatus, string> = {
+export const SESSION_STATUS_LABEL: Record<SessionStatus, string> = {
   running: 'Running',
   waiting: 'Waiting',
   idle: 'Idle',
 };
 
 export function SessionStatusDot({ status }: { status: SessionStatus }) {
-  const hue = STATUS_HUE[status];
+  const hue = SESSION_STATUS_HUE[status];
   return (
     <span
-      aria-label={STATUS_LABEL[status]}
-      title={STATUS_LABEL[status]}
+      aria-label={SESSION_STATUS_LABEL[status]}
+      title={SESSION_STATUS_LABEL[status]}
       className={cn('h-2 w-2 rounded-full shrink-0', status === 'running' && 'animate-pulse')}
       style={{
         background: `hsl(${hue})`,
@@ -74,7 +74,7 @@ export function SessionCard({ session, layout, onClick }: Props) {
       <div className="flex items-center gap-2">
         <SessionStatusDot status={session.status} />
         <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-          {STATUS_LABEL[session.status]}
+          {SESSION_STATUS_LABEL[session.status]}
         </span>
       </div>
       <p className="text-sm font-medium leading-snug line-clamp-2">{session.title}</p>

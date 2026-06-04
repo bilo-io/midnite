@@ -24,7 +24,8 @@ export class TasksService {
   getCounts(): TaskCounts {
     const raw = this.repo.countsByStatus();
     return {
-      backlog: raw.backlog + raw.todo,
+      backlog: raw.backlog,
+      todo: raw.todo,
       inProgress: raw.wip + raw.waiting,
       done: raw.done,
     };
