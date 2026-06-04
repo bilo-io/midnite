@@ -1,13 +1,22 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, eq, sql } from 'drizzle-orm';
-import type { Status, Task, TaskAttachment, TaskEvent } from '@midnite/shared';
+import {
+  detectSourceKind,
+  type Status,
+  type Task,
+  type TaskAttachment,
+  type TaskEvent,
+  type TaskLink,
+} from '@midnite/shared';
 import { DB_TOKEN, type MidniteDb } from '../db/db.module';
 import {
   taskAttachments,
   taskEvents,
+  taskLinks,
   tasks,
   type TaskAttachmentInsert,
   type TaskEventInsert,
+  type TaskLinkInsert,
   type TaskInsert,
   type TaskRow,
 } from '../db/schema';
@@ -81,6 +90,38 @@ export class TasksRepository {
     }));
   }
 
+  insertLink(row: TaskLinkInsert): void {
+    this.db.insert(taskLinks).values(row).run();
+  }
+
+  listLinks(taskId: string): TaskLink[] {
+    const rows = this.db
+      .select()
+      .from(taskLinks)
+      .where(eq(taskLinks.taskId, taskId))
+      .orderBy(asc(taskLinks.createdAt))
+      .all();
+    return rows.map((r) => ({
+      id: r.id,
+      taskId: r.taskId,
+      url: r.url,
+      kind: r.kind as TaskLink['kind'],
+      label: r.label ?? undefined,
+      createdAt: r.createdAt,
+    }));
+  }
+
+  getLink(taskId: string, linkId: string): TaskLink | undefined {
+    return this.listLinks(taskId).find((l) => l.id === linkId);
+  }
+
+  deleteLink(taskId: string, linkId: string): void {
+    this.db
+      .delete(taskLinks)
+      .where(and(eq(taskLinks.id, linkId), eq(taskLinks.taskId, taskId)))
+      .run();
+  }
+
   countsByStatus(): Record<Status, number> {
     const result: Record<Status, number> = {
       backlog: 0,
@@ -119,6 +160,22 @@ export class TasksRepository {
       updatedAt: row.updatedAt,
       events: this.listEvents(row.id),
       attachments: this.listAttachments(row.id),
+      links: this.resolveLinks(row),
     };
+  }
+
+  // Surface a legacy single prUrl as a link until it's migrated to task_links.
+  private resolveLinks(row: TaskRow): TaskLink[] {
+    const links = this.listLinks(row.id);
+    if (links.length === 0 && row.prUrl) {
+      links.push({
+        id: `legacy-${row.id}`,
+        taskId: row.id,
+        url: row.prUrl,
+        kind: detectSourceKind(row.prUrl),
+        createdAt: row.createdAt,
+      });
+    }
+    return links;
   }
 }

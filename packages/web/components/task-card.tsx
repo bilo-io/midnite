@@ -1,5 +1,6 @@
 import type { Task } from '@midnite/shared';
 import { ProjectTag } from '@/components/project-tag';
+import { SourceIcon } from '@/components/source-icon';
 import { gatewayUrl } from '@/lib/api';
 
 export type ProjectTagInfo = { tag: string; color: string };
@@ -53,6 +54,13 @@ export function TaskCard({
         {project ? <ProjectTag tag={project.tag} color={project.color} /> : null}
       </div>
       <p className="text-sm font-medium leading-snug">{task.title}</p>
+      {task.links && task.links.length > 0 ? (
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-foreground/70">
+          {task.links.slice(0, 6).map((l) => (
+            <SourceIcon key={l.id} kind={l.kind} className="h-3.5 w-3.5" />
+          ))}
+        </div>
+      ) : null}
       {firstImage && (
         <img
           src={`${gatewayUrl()}/uploads/${firstImage.path}`}

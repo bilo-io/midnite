@@ -61,6 +61,22 @@ export async function createTask(form: FormData): Promise<CreateTaskResponse> {
   );
 }
 
+export async function addTaskLink(taskId: string, url: string, label?: string): Promise<Task> {
+  return fetchJson(
+    `/tasks/${encodeURIComponent(taskId)}/links`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ url, label }) },
+    TaskSchema,
+  );
+}
+
+export async function removeTaskLink(taskId: string, linkId: string): Promise<Task> {
+  return fetchJson(
+    `/tasks/${encodeURIComponent(taskId)}/links/${encodeURIComponent(linkId)}`,
+    { method: 'DELETE' },
+    TaskSchema,
+  );
+}
+
 export async function getSessions(): Promise<SessionSummary[]> {
   return fetchJson('/sessions', undefined, z.array(SessionSummarySchema));
 }

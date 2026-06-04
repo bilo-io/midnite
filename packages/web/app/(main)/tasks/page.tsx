@@ -1,5 +1,6 @@
 import type { Project, Task } from '@midnite/shared';
 import { PageHeader } from '@/components/page-header';
+import { SearchBar } from '@/components/search-bar';
 import { TasksView } from '@/components/tasks-view';
 import { getProjects, getTasks } from '@/lib/api';
 
@@ -22,6 +23,7 @@ export default async function TasksPage() {
       <PageHeader
         title="Tasks"
         description="Tasks grouped by status. Switch between board and table, and filter by status or project."
+        actions={<SearchBar placeholder="Search tasks" />}
       />
       <TasksView tasks={tasks} error={error} projects={projects} />
     </div>

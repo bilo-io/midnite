@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -16,6 +17,7 @@ import { randomUUID } from 'node:crypto';
 import { pipeline } from 'node:stream/promises';
 import { Inject } from '@nestjs/common';
 import {
+  AddTaskLinkRequestSchema,
   StatusSchema,
   type CreateTaskResponse,
   type MidniteConfig,
@@ -76,6 +78,20 @@ export class TasksController {
       throw new BadRequestException(`invalid status`);
     }
     return this.service.updateStatus(id, parsed.data);
+  }
+
+  @Post(':id/links')
+  addLink(@Param('id') id: string, @Body() body: unknown): Task {
+    const parsed = AddTaskLinkRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.message);
+    }
+    return this.service.addLink(id, parsed.data.url, parsed.data.label);
+  }
+
+  @Delete(':id/links/:linkId')
+  removeLink(@Param('id') id: string, @Param('linkId') linkId: string): Task {
+    return this.service.removeLink(id, linkId);
   }
 
   @Post()

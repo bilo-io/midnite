@@ -1,10 +1,6 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import type {
-  Status,
-  Task,
-  TaskCounts,
-} from '@midnite/shared';
+import { detectSourceKind, type Status, type Task, type TaskCounts } from '@midnite/shared';
 import { TaskClassifier, type ClassifierImage } from '../agent/classifier.service';
 import { TasksRepository } from './tasks.repository';
 
@@ -134,5 +130,35 @@ export class TasksService {
     });
 
     return this.getTask(id);
+  }
+
+  addLink(taskId: string, url: string, label?: string): Task {
+    this.getTask(taskId); // 404s if the task is missing
+    const now = new Date().toISOString();
+    this.repo.insertLink({
+      id: randomUUID(),
+      taskId,
+      url,
+      kind: detectSourceKind(url),
+      label: label ?? null,
+      createdAt: now,
+    });
+    this.repo.insertEvent({
+      id: randomUUID(),
+      taskId,
+      at: now,
+      kind: 'link.added',
+      data: JSON.stringify({ url }),
+    });
+    return this.getTask(taskId);
+  }
+
+  removeLink(taskId: string, linkId: string): Task {
+    this.getTask(taskId);
+    if (!this.repo.getLink(taskId, linkId)) {
+      throw new NotFoundException(`link ${linkId} not found`);
+    }
+    this.repo.deleteLink(taskId, linkId);
+    return this.getTask(taskId);
   }
 }

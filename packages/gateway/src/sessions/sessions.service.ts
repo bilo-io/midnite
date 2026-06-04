@@ -11,6 +11,7 @@ import { TasksService } from '../tasks/tasks.service';
 import { loadTranscript } from './sessions.reader';
 
 const SUBTITLE_LIMIT = 140;
+const CONTEXT_LIMIT = 200_000;
 
 // A session is the work behind a task, so its status follows the task's.
 const STATUS_MAP: Record<Status, SessionStatus> = {
@@ -58,6 +59,8 @@ export class SessionsService {
       status: STATUS_MAP[task.status],
       lastActivity: toMs(task.updatedAt ?? task.createdAt),
       linkedTaskId: task.id,
+      contextTokens: deriveContextTokens(task),
+      contextLimit: CONTEXT_LIMIT,
     };
   }
 
@@ -91,4 +94,19 @@ function toMs(iso: string | undefined): number {
   if (!iso) return 0;
   const ms = Date.parse(iso);
   return Number.isNaN(ms) ? 0 : ms;
+}
+
+// Placeholder context-window usage until real token tracking exists: a stable
+// per-task value with a plausible spread (seeded by id, nudged by prompt size
+// and how far along the task is).
+function deriveContextTokens(task: Task): number {
+  let hash = 0;
+  for (let i = 0; i < task.id.length; i++) {
+    hash = (hash * 31 + task.id.charCodeAt(i)) >>> 0;
+  }
+  const base = hash % 60; // 0..59
+  const promptBump = Math.min(20, Math.floor((task.prompt?.length ?? 0) / 80));
+  const statusBump = task.status === 'done' ? 16 : task.status === 'wip' ? 10 : 0;
+  const percent = Math.min(96, 6 + base + promptBump + statusBump);
+  return Math.round(CONTEXT_LIMIT * (percent / 100));
 }

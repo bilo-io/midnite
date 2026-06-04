@@ -114,12 +114,18 @@ export function SessionsView({
   const activeProjects = new Set(
     (rawProject ? rawProject.split(',') : []).filter((p) => validProjects.has(p)),
   );
+  const q = (searchParams.get('q') ?? '').trim().toLowerCase();
+  const searched = q
+    ? initial.filter((s) =>
+        [s.title, s.subtitle, s.projectDisplay].some((f) => f.toLowerCase().includes(q)),
+      )
+    : initial;
 
   // Project filter applies across every view; status filter narrows the rest.
   const projectFiltered =
     activeProjects.size === 0
-      ? initial
-      : initial.filter((s) => {
+      ? searched
+      : searched.filter((s) => {
           const pid = projectIdOf(s);
           return pid !== undefined && activeProjects.has(pid);
         });

@@ -9,9 +9,16 @@ type PageHeaderProps = {
   description?: ReactNode;
   size?: 'default' | 'lg'; // dashboard uses 'lg'
   showGrid?: boolean; // dashboard's decorative bg-grid
+  actions?: ReactNode; // right-aligned controls (e.g. a search bar)
 };
 
-export function PageHeader({ title, description, size = 'default', showGrid = false }: PageHeaderProps) {
+export function PageHeader({
+  title,
+  description,
+  size = 'default',
+  showGrid = false,
+  actions,
+}: PageHeaderProps) {
   const scrolled = useScrolled();
 
   return (
@@ -40,26 +47,31 @@ export function PageHeader({ title, description, size = 'default', showGrid = fa
           />
         )}
 
-        <h1
-          className={cn(
-            'font-semibold tracking-tight transition-all duration-200 motion-reduce:transition-none',
-            size === 'lg' ? (scrolled ? 'text-2xl' : 'text-3xl') : scrolled ? 'text-xl' : 'text-2xl',
-          )}
-        >
-          {title}
-        </h1>
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <h1
+              className={cn(
+                'font-semibold tracking-tight transition-all duration-200 motion-reduce:transition-none',
+                size === 'lg' ? (scrolled ? 'text-2xl' : 'text-3xl') : scrolled ? 'text-xl' : 'text-2xl',
+              )}
+            >
+              {title}
+            </h1>
 
-        {description && (
-          <div
-            className={cn(
-              'overflow-hidden text-sm text-muted-foreground transition-all duration-200 motion-reduce:transition-none',
-              size === 'lg' && 'max-w-2xl',
-              scrolled ? 'mt-0 max-h-0 opacity-0' : 'mt-1 max-h-16 opacity-100',
+            {description && (
+              <div
+                className={cn(
+                  'overflow-hidden text-sm text-muted-foreground transition-all duration-200 motion-reduce:transition-none',
+                  size === 'lg' && 'max-w-2xl',
+                  scrolled ? 'mt-0 max-h-0 opacity-0' : 'mt-1 max-h-16 opacity-100',
+                )}
+              >
+                {description}
+              </div>
             )}
-          >
-            {description}
           </div>
-        )}
+          {actions ? <div className="shrink-0 pt-0.5">{actions}</div> : null}
+        </div>
       </div>
     </header>
   );

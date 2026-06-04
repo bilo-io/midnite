@@ -14,6 +14,8 @@ export const SessionSummarySchema = z.object({
   status: SessionStatusSchema,
   lastActivity: z.number(),
   linkedTaskId: z.string().optional(),
+  contextTokens: z.number().int().nonnegative().optional(),
+  contextLimit: z.number().int().positive().optional(),
 });
 export type SessionSummary = z.infer<typeof SessionSummarySchema>;
 

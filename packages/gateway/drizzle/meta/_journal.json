@@ -15,6 +15,13 @@
       "when": 1780589542688,
       "tag": "0001_cheerful_argent",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1780611781875,
+      "tag": "0002_unique_doorman",
+      "breakpoints": true
     }
   ]
 }

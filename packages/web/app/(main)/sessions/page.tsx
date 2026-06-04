@@ -1,5 +1,6 @@
 import type { Project, SessionSummary, Task } from '@midnite/shared';
 import { PageHeader } from '@/components/page-header';
+import { SearchBar } from '@/components/search-bar';
 import { getProjects, getSessions, getTasks } from '@/lib/api';
 import { SessionsView } from './sessions-view';
 
@@ -21,6 +22,7 @@ export default async function SessionsPage() {
       <PageHeader
         title="Sessions"
         description="One session per task — its status follows the task (in progress, awaiting input, completed, or idle)."
+        actions={<SearchBar placeholder="Search sessions" />}
       />
       <div className="container space-y-6 pb-8 pt-2">
         {error && (

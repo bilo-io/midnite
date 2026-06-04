@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { SOURCE_KINDS } from './source.js';
 
 export const STATUSES = [
   'backlog',
@@ -36,6 +37,20 @@ export const TaskAttachmentSchema = z.object({
   createdAt: z.string(),
 });
 
+export const TaskLinkSchema = z.object({
+  id: z.string(),
+  taskId: z.string(),
+  url: z.string().url(),
+  kind: z.enum(SOURCE_KINDS),
+  label: z.string().optional(),
+  createdAt: z.string(),
+});
+
+export const AddTaskLinkRequestSchema = z.object({
+  url: z.string().url(),
+  label: z.string().max(200).optional(),
+});
+
 export const TaskSchema = z.object({
   id: z.string(),
   title: z.string(),
@@ -51,6 +66,7 @@ export const TaskSchema = z.object({
   updatedAt: z.string().optional(),
   events: z.array(TaskEventSchema),
   attachments: z.array(TaskAttachmentSchema).optional(),
+  links: z.array(TaskLinkSchema).optional(),
 });
 
 export const AgentSlotSchema = z.object({
@@ -85,6 +101,8 @@ export type Status = z.infer<typeof StatusSchema>;
 export type TaskKind = z.infer<typeof TaskKindSchema>;
 export type TaskEvent = z.infer<typeof TaskEventSchema>;
 export type TaskAttachment = z.infer<typeof TaskAttachmentSchema>;
+export type TaskLink = z.infer<typeof TaskLinkSchema>;
+export type AddTaskLinkRequest = z.infer<typeof AddTaskLinkRequestSchema>;
 export type Task = z.infer<typeof TaskSchema>;
 export type AgentSlot = z.infer<typeof AgentSlotSchema>;
 export type TaskCounts = z.infer<typeof TaskCountsSchema>;

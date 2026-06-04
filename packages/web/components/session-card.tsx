@@ -1,4 +1,5 @@
 import type { SessionStatus, SessionSummary } from '@midnite/shared';
+import { ContextRing } from '@/components/context-ring';
 import { ProjectTag } from '@/components/project-tag';
 import type { ProjectTagInfo } from '@/components/task-card';
 import { cn } from '@/lib/utils';
@@ -64,6 +65,9 @@ export function SessionRow({
         ) : null}
       </div>
       {project ? <ProjectTag tag={project.tag} color={project.color} className="shrink-0" /> : null}
+      {session.contextTokens != null && session.contextLimit != null ? (
+        <ContextRing tokens={session.contextTokens} limit={session.contextLimit} />
+      ) : null}
       <span className="hidden shrink-0 truncate font-mono text-xs text-muted-foreground sm:inline">
         {session.projectDisplay}
       </span>
@@ -95,6 +99,9 @@ export function SessionCard({ session, layout, onClick }: Props) {
             <p className="truncate text-xs text-muted-foreground">{session.subtitle}</p>
           ) : null}
         </div>
+        {session.contextTokens != null && session.contextLimit != null ? (
+          <ContextRing tokens={session.contextTokens} limit={session.contextLimit} />
+        ) : null}
         <div className="hidden shrink-0 text-right text-xs text-muted-foreground sm:block">
           <p className="truncate font-mono">{session.projectDisplay}</p>
           <p>{relativeTime(session.lastActivity)}</p>
@@ -114,6 +121,13 @@ export function SessionCard({ session, layout, onClick }: Props) {
         <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           {SESSION_STATUS_LABEL[session.status]}
         </span>
+        {session.contextTokens != null && session.contextLimit != null ? (
+          <ContextRing
+            tokens={session.contextTokens}
+            limit={session.contextLimit}
+            className="ml-auto"
+          />
+        ) : null}
       </div>
       <p className="text-sm font-medium leading-snug line-clamp-2">{session.title}</p>
       {session.subtitle ? (

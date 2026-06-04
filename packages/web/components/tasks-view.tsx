@@ -52,10 +52,20 @@ export function TasksView({
   const activeProjects = new Set(
     (rawProject ? rawProject.split(',') : []).filter((p) => validProjects.has(p)),
   );
-  const filteredTasks =
-    activeProjects.size === 0
-      ? tasks
-      : tasks.filter((t) => t.projectId !== undefined && activeProjects.has(t.projectId));
+  const q = (searchParams.get('q') ?? '').trim().toLowerCase();
+  const filteredTasks = tasks
+    .filter(
+      (t) =>
+        activeProjects.size === 0 ||
+        (t.projectId !== undefined && activeProjects.has(t.projectId)),
+    )
+    .filter(
+      (t) =>
+        !q ||
+        t.title.toLowerCase().includes(q) ||
+        (t.repo ?? '').toLowerCase().includes(q) ||
+        (t.kind ?? '').toLowerCase().includes(q),
+    );
 
   const projectFilters: FilterOption[] = projects.map((p) => ({
     value: p.id,

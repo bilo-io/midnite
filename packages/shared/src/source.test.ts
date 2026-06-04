@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { detectSourceKind } from './source.js';
+import { detectSourceKind, parseGithubPr, parseGithubRepo } from './source.js';
 
 describe('detectSourceKind', () => {
+  it('detects GitHub and Figma', () => {
+    expect(detectSourceKind('https://github.com/bilo-io/midnite/pull/42')).toBe('github');
+    expect(detectSourceKind('https://www.figma.com/file/abc/Design')).toBe('figma');
+  });
+
   it('detects Google Docs / Drive', () => {
     expect(detectSourceKind('https://docs.google.com/document/d/abc/edit')).toBe('google-docs');
     expect(detectSourceKind('https://drive.google.com/file/d/abc/view')).toBe('google-docs');
@@ -25,5 +30,24 @@ describe('detectSourceKind', () => {
   it('does not match lookalike hostnames', () => {
     expect(detectSourceKind('https://notion.so.evil.com/x')).toBe('link');
     expect(detectSourceKind('https://fakeyoutube.com/x')).toBe('link');
+  });
+});
+
+describe('parseGithubPr / parseGithubRepo', () => {
+  it('parses a PR url into repo + number', () => {
+    expect(parseGithubPr('https://github.com/bilo-io/midnite/pull/42')).toEqual({
+      repo: 'bilo-io/midnite',
+      prNumber: 42,
+    });
+  });
+
+  it('returns null for non-PR or non-github urls', () => {
+    expect(parseGithubPr('https://github.com/bilo-io/midnite')).toBeNull();
+    expect(parseGithubPr('https://example.com/pull/1')).toBeNull();
+  });
+
+  it('parses owner/repo for any github url', () => {
+    expect(parseGithubRepo('https://github.com/bilo-io/midnite/issues/3')).toBe('bilo-io/midnite');
+    expect(parseGithubRepo('https://example.com/x')).toBeNull();
   });
 });

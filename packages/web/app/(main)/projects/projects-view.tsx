@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { LayoutGrid, List, ListTree, Plus } from 'lucide-react';
 import type { Project, Task } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
@@ -45,11 +45,19 @@ export function ProjectsView({ initial, tasks }: { initial: Project[]; tasks: Ta
 
   const modalOpen = creating || editProject !== null;
 
+  const searchParams = useSearchParams();
+  const q = (searchParams.get('q') ?? '').trim().toLowerCase();
+  const filtered = q
+    ? initial.filter((p) =>
+        [p.name, p.tag, p.description ?? ''].some((f) => f.toLowerCase().includes(q)),
+      )
+    : initial;
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs tabular-nums text-muted-foreground">
-          {initial.length} project{initial.length === 1 ? '' : 's'}
+          {filtered.length} project{filtered.length === 1 ? '' : 's'}
         </p>
         <div className="flex items-center gap-2">
           <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
@@ -104,11 +112,15 @@ export function ProjectsView({ initial, tasks }: { initial: Project[]; tasks: Ta
             New project
           </Button>
         </div>
+      ) : filtered.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-border/60 p-12 text-center text-sm text-muted-foreground">
+          No projects match “{q}”.
+        </div>
       ) : view === 'table' ? (
-        <ProjectsTree projects={initial} tasks={tasks} />
+        <ProjectsTree projects={filtered} tasks={tasks} />
       ) : view === 'list' ? (
         <div className="flex flex-col gap-2">
-          {initial.map((p) => (
+          {filtered.map((p) => (
             <ProjectCard
               key={p.id}
               project={p}
@@ -120,7 +132,7 @@ export function ProjectsView({ initial, tasks }: { initial: Project[]; tasks: Ta
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {initial.map((p) => (
+          {filtered.map((p) => (
             <ProjectCard
               key={p.id}
               project={p}

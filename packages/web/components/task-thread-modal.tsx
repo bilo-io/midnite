@@ -1,10 +1,20 @@
 'use client';
 
-import { useEffect } from 'react';
-import { ExternalLink, X } from 'lucide-react';
-import type { Status, Task, TaskEvent } from '@midnite/shared';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { ExternalLink, Plus, X } from 'lucide-react';
+import {
+  SOURCE_KIND_LABEL,
+  parseGithubPr,
+  parseGithubRepo,
+  type Status,
+  type Task,
+  type TaskEvent,
+  type TaskLink,
+} from '@midnite/shared';
 import { Button } from '@/components/ui/button';
-import { gatewayUrl } from '@/lib/api';
+import { SourceIcon } from '@/components/source-icon';
+import { addTaskLink, gatewayUrl, removeTaskLink } from '@/lib/api';
 
 const STATUS_HUE_VAR: Record<Status, string> = {
   backlog: '--status-backlog',
@@ -58,6 +68,49 @@ export function TaskThreadModal({ task, onClose }: Props) {
   const statusHue = STATUS_HUE_VAR[task.status];
   const images = task.attachments?.filter((a) => a.mime.startsWith('image/')) ?? [];
 
+  const router = useRouter();
+  const [links, setLinks] = useState<TaskLink[]>(task.links ?? []);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [linkError, setLinkError] = useState<string | null>(null);
+
+  const addLink = async () => {
+    const url = linkUrl.trim();
+    if (!url) return;
+    try {
+      new URL(url);
+    } catch {
+      setLinkError('Enter a full URL, including https://');
+      return;
+    }
+    setBusy(true);
+    setLinkError(null);
+    try {
+      const updated = await addTaskLink(task.id, url);
+      setLinks(updated.links ?? []);
+      setLinkUrl('');
+      router.refresh();
+    } catch (e) {
+      setLinkError(e instanceof Error ? e.message : 'Failed to add link');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const removeLink = async (linkId: string) => {
+    setBusy(true);
+    setLinkError(null);
+    try {
+      const updated = await removeTaskLink(task.id, linkId);
+      setLinks(updated.links ?? []);
+      router.refresh();
+    } catch (e) {
+      setLinkError(e instanceof Error ? e.message : 'Failed to remove link');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <>
       <div
@@ -109,17 +162,69 @@ export function TaskThreadModal({ task, onClose }: Props) {
           </header>
 
           <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
-            {task.prUrl ? (
-              <a
-                href={task.prUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground underline-offset-4 hover:underline"
-              >
-                <ExternalLink className="h-3.5 w-3.5" />
-                View pull request
-              </a>
-            ) : null}
+            <section>
+              <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Review &amp; links
+              </h3>
+              {links.length > 0 ? (
+                <ul className="mb-2 space-y-1.5">
+                  {links.map((link) => (
+                    <li
+                      key={link.id}
+                      className="flex items-center gap-2 rounded-md border border-border/60 bg-background/60 px-2.5 py-1.5"
+                    >
+                      <SourceIcon kind={link.kind} className="shrink-0 text-foreground/80" />
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex min-w-0 flex-1 items-center gap-1 text-sm hover:underline"
+                      >
+                        <span className="truncate">{linkLabel(link)}</span>
+                        <ExternalLink className="h-3 w-3 shrink-0 text-muted-foreground" />
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => void removeLink(link.id)}
+                        disabled={busy}
+                        aria-label="Remove link"
+                        className="text-muted-foreground hover:text-destructive"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mb-2 text-sm text-muted-foreground">No links yet.</p>
+              )}
+              <div className="flex items-center gap-2">
+                <input
+                  value={linkUrl}
+                  onChange={(e) => setLinkUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      void addLink();
+                    }
+                  }}
+                  placeholder="Paste a GitHub PR, Figma, Google Docs, or Notion link"
+                  className="flex h-8 w-full rounded-md border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => void addLink()}
+                  disabled={busy || !linkUrl.trim()}
+                  aria-label="Add link"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              {linkError ? <p className="mt-1.5 text-xs text-destructive">{linkError}</p> : null}
+            </section>
 
             {task.prompt ? (
               <section>
@@ -190,6 +295,22 @@ function Timeline({ events }: { events: TaskEvent[] }) {
       ))}
     </ol>
   );
+}
+
+function linkLabel(link: TaskLink): string {
+  if (link.label) return link.label;
+  if (link.kind === 'github') {
+    const pr = parseGithubPr(link.url);
+    if (pr) return `${pr.repo} #${pr.prNumber}`;
+    const repo = parseGithubRepo(link.url);
+    if (repo) return repo;
+  }
+  try {
+    const u = new URL(link.url);
+    return `${SOURCE_KIND_LABEL[link.kind]} · ${u.hostname.replace(/^www\./, '')}`;
+  } catch {
+    return link.url;
+  }
 }
 
 function formatTime(at: string): string {

@@ -60,6 +60,21 @@ export const taskAttachments = sqliteTable(
   }),
 );
 
+export const taskLinks = sqliteTable(
+  'task_links',
+  {
+    id: text('id').primaryKey(),
+    taskId: text('task_id').notNull(),
+    url: text('url').notNull(),
+    kind: text('kind').notNull(),
+    label: text('label'),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    taskIdx: index('task_links_task_idx').on(t.taskId),
+  }),
+);
+
 export const projects = sqliteTable('projects', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
@@ -95,6 +110,8 @@ export type TaskEventRow = typeof taskEvents.$inferSelect;
 export type TaskEventInsert = typeof taskEvents.$inferInsert;
 export type TaskAttachmentRow = typeof taskAttachments.$inferSelect;
 export type TaskAttachmentInsert = typeof taskAttachments.$inferInsert;
+export type TaskLinkRow = typeof taskLinks.$inferSelect;
+export type TaskLinkInsert = typeof taskLinks.$inferInsert;
 export type ProjectRow = typeof projects.$inferSelect;
 export type ProjectInsert = typeof projects.$inferInsert;
 export type ProjectSourceRow = typeof projectSources.$inferSelect;

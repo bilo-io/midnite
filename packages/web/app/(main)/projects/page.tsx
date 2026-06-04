@@ -1,5 +1,6 @@
 import type { Project, Task } from '@midnite/shared';
 import { PageHeader } from '@/components/page-header';
+import { SearchBar } from '@/components/search-bar';
 import { getProjects, getTasks } from '@/lib/api';
 import { ProjectsView } from './projects-view';
 
@@ -20,6 +21,7 @@ export default async function ProjectsPage() {
       <PageHeader
         title="Projects"
         description="Group related work, attach sources, and draft a plan that becomes tasks."
+        actions={<SearchBar placeholder="Search projects" />}
       />
       <div className="container space-y-6 pb-8 pt-2">
         {error && (
