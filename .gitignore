@@ -9,6 +9,9 @@ out/
 
 *.db
 *.db-journal
+*.db-shm
+*.db-wal
+*.db-shm.bak
 *.sqlite
 *.sqlite-journal
 
