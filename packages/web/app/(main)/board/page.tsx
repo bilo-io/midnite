@@ -1,7 +1,7 @@
-import type { Task } from '@midnite/shared';
+import type { Project, Task } from '@midnite/shared';
 import { BoardView } from '@/components/board-view';
 import { PageHeader } from '@/components/page-header';
-import { getTasks } from '@/lib/api';
+import { getProjects, getTasks } from '@/lib/api';
 
 // Filters live in the URL query string and are read client-side via useSearchParams,
 // so the route must render dynamically (like /sessions).
@@ -9,9 +9,10 @@ export const dynamic = 'force-dynamic';
 
 export default async function BoardPage() {
   let tasks: Task[] = [];
+  let projects: Project[] = [];
   let error: string | null = null;
   try {
-    tasks = await getTasks();
+    [tasks, projects] = await Promise.all([getTasks(), getProjects()]);
   } catch (err) {
     error = err instanceof Error ? err.message : 'Failed to load tasks';
   }
@@ -22,7 +23,7 @@ export default async function BoardPage() {
         title="Board"
         description="Tasks grouped by status. Abandoned tasks are tucked away at the bottom."
       />
-      <BoardView tasks={tasks} error={error} />
+      <BoardView tasks={tasks} error={error} projects={projects} />
     </div>
   );
 }

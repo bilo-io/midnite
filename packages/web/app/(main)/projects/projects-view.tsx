@@ -1,0 +1,137 @@
+'use client';
+
+import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { LayoutGrid, List, Plus } from 'lucide-react';
+import type { Project } from '@midnite/shared';
+import { Button } from '@/components/ui/button';
+import { ProjectCard } from '@/components/project-card';
+import { ProjectModal } from '@/components/project-modal';
+import { PlanPanel } from '@/components/plan-panel';
+import { cn } from '@/lib/utils';
+
+type View = 'list' | 'grid';
+const VIEW_STORAGE_KEY = 'midnite.projects.view';
+
+export function ProjectsView({ initial }: { initial: Project[] }) {
+  const router = useRouter();
+  const [view, setView] = useState<View>('grid');
+  const [creating, setCreating] = useState(false);
+  const [editProject, setEditProject] = useState<Project | null>(null);
+  const [planProject, setPlanProject] = useState<Project | null>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem(VIEW_STORAGE_KEY);
+    if (stored === 'list' || stored === 'grid') setView(stored);
+  }, []);
+
+  const onSetView = useCallback((next: View) => {
+    setView(next);
+    try {
+      localStorage.setItem(VIEW_STORAGE_KEY, next);
+    } catch {
+      // ignore storage failures (private mode, etc.)
+    }
+  }, []);
+
+  const refresh = useCallback(() => router.refresh(), [router]);
+
+  const closeModal = useCallback(() => {
+    setCreating(false);
+    setEditProject(null);
+  }, []);
+
+  const modalOpen = creating || editProject !== null;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs tabular-nums text-muted-foreground">
+          {initial.length} project{initial.length === 1 ? '' : 's'}
+        </p>
+        <div className="flex items-center gap-2">
+          <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="List view"
+              aria-pressed={view === 'list'}
+              onClick={() => onSetView('list')}
+              className={cn('h-7 w-7', view === 'list' && 'bg-accent text-accent-foreground')}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="Grid view"
+              aria-pressed={view === 'grid'}
+              onClick={() => onSetView('grid')}
+              className={cn('h-7 w-7', view === 'grid' && 'bg-accent text-accent-foreground')}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+          </div>
+          <Button type="button" size="sm" onClick={() => setCreating(true)}>
+            <Plus className="h-4 w-4" />
+            New project
+          </Button>
+        </div>
+      </div>
+
+      {initial.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border/60 p-12 text-center">
+          <p className="text-sm text-muted-foreground">
+            No projects yet. Create one to group tasks, attach sources, and draft a plan.
+          </p>
+          <Button type="button" size="sm" onClick={() => setCreating(true)}>
+            <Plus className="h-4 w-4" />
+            New project
+          </Button>
+        </div>
+      ) : view === 'list' ? (
+        <div className="flex flex-col gap-2">
+          {initial.map((p) => (
+            <ProjectCard
+              key={p.id}
+              project={p}
+              layout="list"
+              onOpen={() => setEditProject(p)}
+              onPlan={() => setPlanProject(p)}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {initial.map((p) => (
+            <ProjectCard
+              key={p.id}
+              project={p}
+              layout="grid"
+              onOpen={() => setEditProject(p)}
+              onPlan={() => setPlanProject(p)}
+            />
+          ))}
+        </div>
+      )}
+
+      {modalOpen ? (
+        <ProjectModal
+          project={creating ? null : editProject}
+          onClose={closeModal}
+          onSaved={refresh}
+        />
+      ) : null}
+
+      {planProject ? (
+        <PlanPanel
+          project={planProject}
+          onClose={() => setPlanProject(null)}
+          onChanged={refresh}
+        />
+      ) : null}
+    </div>
+  );
+}

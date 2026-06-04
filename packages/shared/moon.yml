@@ -4,9 +4,20 @@ language: 'typescript'
 
 tasks:
   build:
-    command: 'tsc -b'
+    command: 'pnpm exec tsc -b'
     inputs:
       - 'src/**/*'
       - 'tsconfig.json'
     outputs:
       - 'dist'
+
+  test:
+    command: 'pnpm exec vitest run'
+    inputs:
+      - 'src/**/*'
+
+  typecheck:
+    command: 'pnpm exec tsc --noEmit'
+    inputs:
+      - 'src/**/*'
+      - 'tsconfig.json'

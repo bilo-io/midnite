@@ -1,0 +1,295 @@
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
+import type Anthropic from '@anthropic-ai/sdk';
+import {
+  MAX_SOURCES_PER_PROJECT,
+  detectSourceKind,
+  type CreateProjectRequest,
+  type EnhanceDescriptionRequest,
+  type Project,
+  type Task,
+  type UpdateProjectRequest,
+} from '@midnite/shared';
+import { AnthropicService } from '../agent/anthropic.service';
+import { TasksService } from '../tasks/tasks.service';
+import { fetchSourceMetadata } from './lib/opengraph';
+import { ProjectsRepository } from './projects.repository';
+import {
+  PROJECT_DESCRIPTION_SYSTEM_PROMPT,
+  PROJECT_PLAN_SYSTEM_PROMPT,
+} from './projects.prompts';
+
+const RECORD_DESCRIPTION_TOOL = {
+  name: 'record_description',
+  description: 'Record the improved project description.',
+  input_schema: {
+    type: 'object' as const,
+    properties: {
+      description: {
+        type: 'string',
+        description: 'The improved 2-4 sentence project description, plain prose.',
+      },
+    },
+    required: ['description'],
+  },
+};
+
+const RECORD_PLAN_TOOL = {
+  name: 'record_plan',
+  description: 'Record the full markdown implementation plan.',
+  input_schema: {
+    type: 'object' as const,
+    properties: {
+      markdown: {
+        type: 'string',
+        description:
+          'The full GitHub-Flavored Markdown plan with ## section headings and - [ ] checkbox items.',
+      },
+    },
+    required: ['markdown'],
+  },
+};
+
+@Injectable()
+export class ProjectsService {
+  private readonly logger = new Logger(ProjectsService.name);
+
+  constructor(
+    @Inject(ProjectsRepository) private readonly repo: ProjectsRepository,
+    @Inject(AnthropicService) private readonly anthropic: AnthropicService,
+    @Inject(TasksService) private readonly tasks: TasksService,
+  ) {}
+
+  listProjects(): Project[] {
+    return this.repo.listProjects().map((r) => this.repo.hydrate(r));
+  }
+
+  getProject(id: string): Project {
+    const row = this.repo.getProject(id);
+    if (!row) throw new NotFoundException(`project ${id} not found`);
+    return this.repo.hydrate(row);
+  }
+
+  async createProject(req: CreateProjectRequest): Promise<Project> {
+    const id = randomUUID();
+    const now = new Date().toISOString();
+    this.repo.insertProject({
+      id,
+      name: req.name,
+      description: req.description ?? null,
+      tag: req.tag,
+      color: req.color,
+      plan: null,
+      planUpdatedAt: null,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const urls = dedupe(req.sources ?? []).slice(0, MAX_SOURCES_PER_PROJECT);
+    await Promise.all(urls.map((url) => this.addSourceRow(id, url)));
+
+    return this.getProject(id);
+  }
+
+  updateProject(id: string, req: UpdateProjectRequest): Project {
+    this.assertExists(id);
+    const patch: Partial<{
+      name: string;
+      description: string | null;
+      tag: string;
+      color: string;
+      updatedAt: string;
+    }> = { updatedAt: new Date().toISOString() };
+    if (req.name !== undefined) patch.name = req.name;
+    if (req.description !== undefined) patch.description = req.description;
+    if (req.tag !== undefined) patch.tag = req.tag;
+    if (req.color !== undefined) patch.color = req.color;
+    this.repo.updateProject(id, patch);
+    return this.getProject(id);
+  }
+
+  deleteProject(id: string): void {
+    this.assertExists(id);
+    this.repo.deleteProject(id);
+  }
+
+  async addSource(projectId: string, url: string): Promise<Project> {
+    this.assertExists(projectId);
+    if (this.repo.countSources(projectId) >= MAX_SOURCES_PER_PROJECT) {
+      throw new BadRequestException(
+        `a project can have at most ${MAX_SOURCES_PER_PROJECT} sources`,
+      );
+    }
+    await this.addSourceRow(projectId, url);
+    return this.getProject(projectId);
+  }
+
+  removeSource(projectId: string, sourceId: string): Project {
+    this.assertExists(projectId);
+    if (!this.repo.getSource(projectId, sourceId)) {
+      throw new NotFoundException(`source ${sourceId} not found`);
+    }
+    this.repo.deleteSource(projectId, sourceId);
+    return this.getProject(projectId);
+  }
+
+  async enhanceDescription(req: EnhanceDescriptionRequest): Promise<string> {
+    if (!this.anthropic.enabled) return req.description.trim();
+    const client = this.anthropic.getClient();
+    const response = await client.messages.create({
+      model: this.anthropic.getActModel(),
+      max_tokens: 600,
+      system: [
+        {
+          type: 'text',
+          text: PROJECT_DESCRIPTION_SYSTEM_PROMPT,
+          cache_control: { type: 'ephemeral' },
+        },
+      ],
+      tools: [RECORD_DESCRIPTION_TOOL],
+      tool_choice: { type: 'tool', name: 'record_description' },
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: `Project name: ${req.name?.trim() || '(untitled)'}\n\nDescription:\n${req.description}`,
+            },
+          ],
+        },
+      ],
+    });
+    const input = toolInput<{ description?: string }>(response, 'record_description');
+    return input?.description?.trim() || req.description.trim();
+  }
+
+  async draftPlan(projectId: string): Promise<{ plan: string; planUpdatedAt: string }> {
+    const project = this.getProject(projectId);
+    const now = new Date().toISOString();
+    const markdown = this.anthropic.enabled
+      ? await this.generatePlan(project)
+      : this.fallbackPlan(project);
+    this.repo.updateProject(projectId, {
+      plan: markdown,
+      planUpdatedAt: now,
+      updatedAt: now,
+    });
+    return { plan: markdown, planUpdatedAt: now };
+  }
+
+  updatePlan(projectId: string, plan: string): Project {
+    this.assertExists(projectId);
+    const now = new Date().toISOString();
+    this.repo.updateProject(projectId, { plan, planUpdatedAt: now, updatedAt: now });
+    return this.getProject(projectId);
+  }
+
+  createTasksFromPlan(projectId: string, titles: string[]): Task[] {
+    this.assertExists(projectId);
+    return titles.map((title) => this.tasks.createForProject({ projectId, title }));
+  }
+
+  private async generatePlan(project: Project): Promise<string> {
+    const client = this.anthropic.getClient();
+    const sourceLines = project.sources.length
+      ? project.sources
+          .map((s) => `- [${s.kind}] ${s.title ?? '(untitled)'} — ${s.url}`)
+          .join('\n')
+      : '(no sources provided)';
+    const userText = `Project name: ${project.name}\n\nDescription:\n${
+      project.description ?? '(none provided)'
+    }\n\nReference sources:\n${sourceLines}`;
+
+    const response = await client.messages.create({
+      model: this.anthropic.getPlanModel(),
+      max_tokens: 4096,
+      system: [
+        {
+          type: 'text',
+          text: PROJECT_PLAN_SYSTEM_PROMPT,
+          cache_control: { type: 'ephemeral' },
+        },
+      ],
+      tools: [RECORD_PLAN_TOOL],
+      tool_choice: { type: 'tool', name: 'record_plan' },
+      messages: [{ role: 'user', content: [{ type: 'text', text: userText }] }],
+    });
+
+    const input = toolInput<{ markdown?: string }>(response, 'record_plan');
+    const markdown = input?.markdown?.trim();
+    if (!markdown) throw new Error('plan generation did not return markdown');
+    return markdown;
+  }
+
+  private fallbackPlan(project: Project): string {
+    const lines = [
+      `# ${project.name} — plan`,
+      '',
+      '> AI is not configured (set `ANTHROPIC_API_KEY` or run `claude` to log in). This is a starter template — edit it directly, then create tasks from the items you want.',
+      '',
+      '## Scope',
+      '- [ ] Define the goals and success criteria',
+      '- [ ] Break the work into milestones',
+      '',
+      '## Implementation',
+      '- [ ] Outline the first deliverable',
+      '- [ ] Identify the key files and components',
+      '',
+      '## Testing & rollout',
+      '- [ ] Decide how to verify the work',
+      '- [ ] Plan the rollout',
+    ];
+    if (project.sources.length) {
+      lines.push('', '## Sources to review');
+      for (const s of project.sources) lines.push(`- [ ] Review ${s.title ?? s.url}`);
+    }
+    return lines.join('\n');
+  }
+
+  private assertExists(id: string): void {
+    if (!this.repo.getProject(id)) {
+      throw new NotFoundException(`project ${id} not found`);
+    }
+  }
+
+  private async addSourceRow(projectId: string, url: string): Promise<void> {
+    try {
+      const now = new Date().toISOString();
+      const meta = await fetchSourceMetadata(url);
+      this.repo.insertSource({
+        id: randomUUID(),
+        projectId,
+        url,
+        kind: detectSourceKind(url),
+        title: meta.title ?? null,
+        faviconUrl: meta.faviconUrl ?? null,
+        fetchedAt: now,
+        createdAt: now,
+      });
+    } catch (err) {
+      // Best-effort: a bad fetch or insert must not fail project creation.
+      this.logger.warn(`failed to add source ${url}: ${String(err)}`);
+    }
+  }
+}
+
+function dedupe(urls: string[]): string[] {
+  return [...new Set(urls.map((u) => u.trim()).filter(Boolean))];
+}
+
+function toolInput<T>(
+  response: Anthropic.Messages.Message,
+  name: string,
+): T | undefined {
+  const block = response.content.find(
+    (b): b is Anthropic.Messages.ToolUseBlock => b.type === 'tool_use' && b.name === name,
+  );
+  return block?.input as T | undefined;
+}

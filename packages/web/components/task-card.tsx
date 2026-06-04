@@ -1,5 +1,8 @@
 import type { Task } from '@midnite/shared';
+import { ProjectTag } from '@/components/project-tag';
 import { gatewayUrl } from '@/lib/api';
+
+export type ProjectTagInfo = { tag: string; color: string };
 
 const KIND_LABELS: Record<NonNullable<Task['kind']>, string> = {
   bug: 'Bug',
@@ -17,14 +20,22 @@ const KIND_HUE_VARS: Record<NonNullable<Task['kind']>, string> = {
   unknown: '--kind-unknown',
 };
 
-export function TaskCard({ task, onSelect }: { task: Task; onSelect?: () => void }) {
+export function TaskCard({
+  task,
+  project,
+  onSelect,
+}: {
+  task: Task;
+  project?: ProjectTagInfo;
+  onSelect?: () => void;
+}) {
   const kind = task.kind ?? 'unknown';
   const firstImage = task.attachments?.find((a) => a.mime.startsWith('image/'));
   const hue = KIND_HUE_VARS[kind];
 
   const body = (
     <>
-      <div className="mb-1.5 flex items-center gap-2">
+      <div className="mb-1.5 flex flex-wrap items-center gap-2">
         <span
           className="inline-flex items-center gap-1.5 rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider"
           style={{
@@ -39,6 +50,7 @@ export function TaskCard({ task, onSelect }: { task: Task; onSelect?: () => void
           />
           {KIND_LABELS[kind]}
         </span>
+        {project ? <ProjectTag tag={project.tag} color={project.color} /> : null}
       </div>
       <p className="text-sm font-medium leading-snug">{task.title}</p>
       {firstImage && (

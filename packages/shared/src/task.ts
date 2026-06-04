@@ -45,6 +45,7 @@ export const TaskSchema = z.object({
   status: StatusSchema,
   agentId: z.string().optional(),
   sessionId: z.string().optional(),
+  projectId: z.string().optional(),
   prUrl: z.string().optional(),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),

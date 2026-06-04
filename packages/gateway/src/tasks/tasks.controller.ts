@@ -46,7 +46,10 @@ export class TasksController {
   }
 
   @Get()
-  list(@Query('status') statusRaw?: string): Task[] {
+  list(
+    @Query('status') statusRaw?: string,
+    @Query('projectId') projectId?: string,
+  ): Task[] {
     let status: Status | undefined;
     if (statusRaw) {
       const parsed = StatusSchema.safeParse(statusRaw);
@@ -55,7 +58,7 @@ export class TasksController {
       }
       status = parsed.data;
     }
-    return this.service.listTasks(status);
+    return this.service.listTasks(status, projectId?.trim() || undefined);
   }
 
   @Get(':id')

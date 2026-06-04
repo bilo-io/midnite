@@ -1,0 +1,102 @@
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Inject,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
+import {
+  AddSourceRequestSchema,
+  CreatePlanTasksRequestSchema,
+  CreateProjectRequestSchema,
+  EnhanceDescriptionRequestSchema,
+  UpdatePlanRequestSchema,
+  UpdateProjectRequestSchema,
+  type CreatePlanTasksResponse,
+  type DraftPlanResponse,
+  type EnhanceDescriptionResponse,
+  type Project,
+  type ProjectResponse,
+} from '@midnite/shared';
+import { ProjectsService } from './projects.service';
+
+@Controller('projects')
+export class ProjectsController {
+  constructor(@Inject(ProjectsService) private readonly service: ProjectsService) {}
+
+  @Get()
+  list(): Project[] {
+    return this.service.listProjects();
+  }
+
+  @Post()
+  async create(@Body() body: unknown): Promise<ProjectResponse> {
+    const parsed = CreateProjectRequestSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    return { project: await this.service.createProject(parsed.data) };
+  }
+
+  // Stateless — used by the create modal before the project exists.
+  @Post('ai/enhance-description')
+  async enhanceDescription(@Body() body: unknown): Promise<EnhanceDescriptionResponse> {
+    const parsed = EnhanceDescriptionRequestSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    return { description: await this.service.enhanceDescription(parsed.data) };
+  }
+
+  @Get(':id')
+  get(@Param('id') id: string): Project {
+    return this.service.getProject(id);
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() body: unknown): ProjectResponse {
+    const parsed = UpdateProjectRequestSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    return { project: this.service.updateProject(id, parsed.data) };
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string): { ok: true } {
+    this.service.deleteProject(id);
+    return { ok: true };
+  }
+
+  @Post(':id/sources')
+  async addSource(@Param('id') id: string, @Body() body: unknown): Promise<ProjectResponse> {
+    const parsed = AddSourceRequestSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    return { project: await this.service.addSource(id, parsed.data.url) };
+  }
+
+  @Delete(':id/sources/:sourceId')
+  removeSource(
+    @Param('id') id: string,
+    @Param('sourceId') sourceId: string,
+  ): ProjectResponse {
+    return { project: this.service.removeSource(id, sourceId) };
+  }
+
+  @Post(':id/draft-plan')
+  draftPlan(@Param('id') id: string): Promise<DraftPlanResponse> {
+    return this.service.draftPlan(id);
+  }
+
+  @Patch(':id/plan')
+  updatePlan(@Param('id') id: string, @Body() body: unknown): ProjectResponse {
+    const parsed = UpdatePlanRequestSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    return { project: this.service.updatePlan(id, parsed.data.plan) };
+  }
+
+  @Post(':id/plan/create-tasks')
+  createPlanTasks(@Param('id') id: string, @Body() body: unknown): CreatePlanTasksResponse {
+    const parsed = CreatePlanTasksRequestSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    return { tasks: this.service.createTasksFromPlan(id, parsed.data.titles) };
+  }
+}

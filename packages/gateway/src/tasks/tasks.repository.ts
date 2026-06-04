@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { asc, eq, sql } from 'drizzle-orm';
+import { and, asc, eq, sql } from 'drizzle-orm';
 import type { Status, Task, TaskAttachment, TaskEvent } from '@midnite/shared';
 import { DB_TOKEN, type MidniteDb } from '../db/db.module';
 import {
@@ -37,16 +37,12 @@ export class TasksRepository {
       .get();
   }
 
-  listTasks(status?: Status): TaskRow[] {
-    if (status) {
-      return this.db
-        .select()
-        .from(tasks)
-        .where(eq(tasks.status, status))
-        .orderBy(asc(tasks.createdAt))
-        .all();
-    }
-    return this.db.select().from(tasks).orderBy(asc(tasks.createdAt)).all();
+  listTasks(status?: Status, projectId?: string): TaskRow[] {
+    const where = and(
+      status ? eq(tasks.status, status) : undefined,
+      projectId ? eq(tasks.projectId, projectId) : undefined,
+    );
+    return this.db.select().from(tasks).where(where).orderBy(asc(tasks.createdAt)).all();
   }
 
   getTask(id: string): TaskRow | undefined {
@@ -117,6 +113,7 @@ export class TasksRepository {
       repo: row.repo ?? undefined,
       agentId: row.agentId ?? undefined,
       sessionId: row.sessionId ?? undefined,
+      projectId: row.projectId ?? undefined,
       prUrl: row.prUrl ?? undefined,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,

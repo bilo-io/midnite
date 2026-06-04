@@ -55,4 +55,8 @@ export class AnthropicService implements OnModuleInit {
   getActModel(): string {
     return this.resolveModel(this.config.agent.act);
   }
+
+  getPlanModel(): string {
+    return this.resolveModel(this.config.agent.plan);
+  }
 }

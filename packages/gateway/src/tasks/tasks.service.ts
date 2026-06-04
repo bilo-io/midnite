@@ -31,8 +31,8 @@ export class TasksService {
     };
   }
 
-  listTasks(status?: Status): Task[] {
-    return this.repo.listTasks(status).map((r) => this.repo.hydrate(r));
+  listTasks(status?: Status, projectId?: string): Task[] {
+    return this.repo.listTasks(status, projectId).map((r) => this.repo.hydrate(r));
   }
 
   getTask(id: string): Task {
@@ -99,6 +99,38 @@ export class TasksService {
         promptLength: input.prompt.length,
         attachments: input.images.length,
       }),
+    });
+
+    return this.getTask(id);
+  }
+
+  // Create a task directly from a plan checklist item: explicit title, tagged to
+  // the project, no AI classification (deterministic and cheap).
+  createForProject(input: { projectId: string; title: string }): Task {
+    const id = randomUUID();
+    const now = new Date().toISOString();
+
+    this.repo.insertTask({
+      id,
+      title: input.title,
+      kind: 'unknown',
+      status: 'todo',
+      prompt: null,
+      repo: null,
+      agentId: null,
+      sessionId: null,
+      projectId: input.projectId,
+      prUrl: null,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    this.repo.insertEvent({
+      id: randomUUID(),
+      taskId: id,
+      at: now,
+      kind: 'task.created',
+      data: JSON.stringify({ projectId: input.projectId, source: 'plan' }),
     });
 
     return this.getTask(id);

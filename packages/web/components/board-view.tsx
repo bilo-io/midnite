@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import type { Status, Task } from '@midnite/shared';
+import type { Project, Status, Task } from '@midnite/shared';
 import { AbandonedRow } from '@/components/abandoned-row';
 import { FilterPills, type FilterOption } from '@/components/filter-pills';
 import { TaskCard } from '@/components/task-card';
@@ -24,8 +24,19 @@ const BOARD_FILTERS: FilterOption[] = COLUMNS.map((c) => ({
 
 const COLUMN_STATUSES = new Set<string>(COLUMNS.map((c) => c.status));
 
-export function BoardView({ tasks, error }: { tasks: Task[]; error: string | null }) {
+export function BoardView({
+  tasks,
+  error,
+  projects,
+}: {
+  tasks: Task[];
+  error: string | null;
+  projects: Project[];
+}) {
   const [selected, setSelected] = useState<Task | null>(null);
+  const projectsById = new Map(
+    projects.map((p) => [p.id, { tag: p.tag, color: p.color }] as const),
+  );
 
   const searchParams = useSearchParams();
   const raw = searchParams.get('status');
@@ -91,7 +102,12 @@ export function BoardView({ tasks, error }: { tasks: Task[]; error: string | nul
               ) : (
                 <div className="-mr-1 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1">
                   {items.map((t) => (
-                    <TaskCard key={t.id} task={t} onSelect={() => setSelected(t)} />
+                    <TaskCard
+                      key={t.id}
+                      task={t}
+                      project={t.projectId ? projectsById.get(t.projectId) : undefined}
+                      onSelect={() => setSelected(t)}
+                    />
                   ))}
                 </div>
               )}
@@ -100,7 +116,13 @@ export function BoardView({ tasks, error }: { tasks: Task[]; error: string | nul
         })}
       </div>
 
-      {showAll && <AbandonedRow tasks={grouped.get('abandoned') ?? []} onSelect={setSelected} />}
+      {showAll && (
+        <AbandonedRow
+          tasks={grouped.get('abandoned') ?? []}
+          onSelect={setSelected}
+          projectsById={projectsById}
+        />
+      )}
 
       {selected ? (
         <TaskThreadModal task={selected} onClose={() => setSelected(null)} />

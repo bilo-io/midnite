@@ -1,16 +1,27 @@
 import {
+  CreatePlanTasksResponseSchema,
   CreateTaskResponseSchema,
+  DraftPlanResponseSchema,
+  EnhanceDescriptionResponseSchema,
+  ProjectResponseSchema,
+  ProjectSchema,
   SessionSummarySchema,
   SessionTranscriptSchema,
   TaskCountsSchema,
   TaskSchema,
+  type CreateProjectRequest,
   type CreateTaskResponse,
+  type DraftPlanResponse,
+  type Project,
   type SessionSummary,
   type SessionTranscript,
   type Task,
   type TaskCounts,
+  type UpdateProjectRequest,
 } from '@midnite/shared';
 import { z } from 'zod';
+
+const JSON_HEADERS = { 'content-type': 'application/json' } as const;
 
 export function gatewayUrl(): string {
   if (typeof window === 'undefined') {
@@ -60,4 +71,89 @@ export async function getSessionTranscript(
 ): Promise<SessionTranscript> {
   const path = `/sessions/${encodeURIComponent(projectSlug)}/${encodeURIComponent(id)}/transcript`;
   return fetchJson(path, undefined, SessionTranscriptSchema);
+}
+
+export async function getProjects(): Promise<Project[]> {
+  return fetchJson('/projects', undefined, z.array(ProjectSchema));
+}
+
+export async function createProject(body: CreateProjectRequest): Promise<Project> {
+  const { project } = await fetchJson(
+    '/projects',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    ProjectResponseSchema,
+  );
+  return project;
+}
+
+export async function updateProject(
+  id: string,
+  body: UpdateProjectRequest,
+): Promise<Project> {
+  const { project } = await fetchJson(
+    `/projects/${encodeURIComponent(id)}`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    ProjectResponseSchema,
+  );
+  return project;
+}
+
+export async function deleteProject(id: string): Promise<void> {
+  await fetchJson(`/projects/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+export async function addProjectSource(id: string, url: string): Promise<Project> {
+  const { project } = await fetchJson(
+    `/projects/${encodeURIComponent(id)}/sources`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ url }) },
+    ProjectResponseSchema,
+  );
+  return project;
+}
+
+export async function removeProjectSource(id: string, sourceId: string): Promise<Project> {
+  const { project } = await fetchJson(
+    `/projects/${encodeURIComponent(id)}/sources/${encodeURIComponent(sourceId)}`,
+    { method: 'DELETE' },
+    ProjectResponseSchema,
+  );
+  return project;
+}
+
+export async function enhanceProjectDescription(input: {
+  name?: string;
+  description: string;
+}): Promise<string> {
+  const { description } = await fetchJson(
+    '/projects/ai/enhance-description',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(input) },
+    EnhanceDescriptionResponseSchema,
+  );
+  return description;
+}
+
+export async function draftProjectPlan(id: string): Promise<DraftPlanResponse> {
+  return fetchJson(
+    `/projects/${encodeURIComponent(id)}/draft-plan`,
+    { method: 'POST', headers: JSON_HEADERS },
+    DraftPlanResponseSchema,
+  );
+}
+
+export async function updateProjectPlan(id: string, plan: string): Promise<Project> {
+  const { project } = await fetchJson(
+    `/projects/${encodeURIComponent(id)}/plan`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ plan }) },
+    ProjectResponseSchema,
+  );
+  return project;
+}
+
+export async function createTasksFromPlan(id: string, titles: string[]): Promise<Task[]> {
+  const { tasks } = await fetchJson(
+    `/projects/${encodeURIComponent(id)}/plan/create-tasks`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ titles }) },
+    CreatePlanTasksResponseSchema,
+  );
+  return tasks;
 }

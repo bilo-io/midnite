@@ -10,6 +10,6 @@ import { AnthropicClassifier, TaskClassifier } from './classifier.service';
       useClass: AnthropicClassifier,
     },
   ],
-  exports: [TaskClassifier],
+  exports: [TaskClassifier, AnthropicService],
 })
 export class AgentModule {}

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Columns3,
+  Folder,
   LayoutDashboard,
   MessagesSquare,
   type LucideIcon,
@@ -20,6 +21,7 @@ type NavLink = {
 const LINKS: NavLink[] = [
   { href: '/', label: 'Dashboard', Icon: LayoutDashboard },
   { href: '/board', label: 'Board', Icon: Columns3 },
+  { href: '/projects', label: 'Projects', Icon: Folder },
   { href: '/sessions', label: 'Sessions', Icon: MessagesSquare },
 ];
 
