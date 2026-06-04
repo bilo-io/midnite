@@ -20,7 +20,7 @@ export default async function BoardPage() {
   return (
     <div className="flex h-[100dvh] flex-col overflow-hidden">
       <PageHeader
-        title="Board"
+        title="Tasks"
         description="Tasks grouped by status. Abandoned tasks are tucked away at the bottom."
       />
       <BoardView tasks={tasks} error={error} projects={projects} />

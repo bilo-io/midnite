@@ -1,45 +1,29 @@
-import { DashboardTiles } from '@/components/dashboard-tiles';
-import { PageHeader } from '@/components/page-header';
-import { PromptComposer } from '@/components/prompt-composer';
-import { getTaskCounts } from '@/lib/api';
+'use client';
 
-export default async function DashboardPage() {
-  let counts;
-  let error: string | null = null;
-  try {
-    counts = await getTaskCounts();
-  } catch (err) {
-    error = err instanceof Error ? err.message : 'Failed to load task counts';
-    counts = { backlog: 0, todo: 0, inProgress: 0, done: 0 };
-  }
+import { useEffect, useState } from 'react';
+
+// Greeting depends on the viewer's local time, so resolve it on the client after
+// mount to avoid a server/client hydration mismatch.
+function greetingForHour(hour: number): string {
+  if (hour >= 5 && hour < 12) return 'Good morning';
+  if (hour >= 12 && hour < 17) return 'Good afternoon';
+  if (hour >= 17 && hour < 21) return 'Good evening';
+  return 'Howzit nightowl';
+}
+
+export default function HomePage() {
+  const [greeting, setGreeting] = useState<string | null>(null);
+
+  useEffect(() => {
+    setGreeting(greetingForHour(new Date().getHours()));
+  }, []);
 
   return (
-    <>
-      <PageHeader
-        title="Dashboard"
-        size="lg"
-        showGrid
-        description="An overview of your task backlog. Drop one or more prompts below — one task per line."
-      />
-      <div className="container space-y-10 pb-48 pt-2">
-        {error && (
-          <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-            Could not reach the gateway: {error}
-          </div>
-        )}
-
-        <DashboardTiles counts={counts} />
-      </div>
-
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30">
-        <div className="bg-background/0 pb-6 pt-2">
-          <div className="container">
-            <div className="pointer-events-auto mx-auto w-full max-w-3xl">
-              <PromptComposer />
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
+    <div className="bg-grid relative flex min-h-[100dvh] flex-col items-center justify-center px-6 text-center">
+      <h1 className="bg-gradient-to-br from-foreground to-foreground/50 bg-clip-text text-4xl font-semibold tracking-tight text-transparent sm:text-6xl">
+        {greeting ?? ' '}
+      </h1>
+      <p className="mt-4 text-sm text-muted-foreground">Welcome back to midnite.</p>
+    </div>
   );
 }

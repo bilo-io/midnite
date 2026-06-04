@@ -19,9 +19,9 @@ type NavLink = {
 };
 
 const LINKS: NavLink[] = [
-  { href: '/', label: 'Dashboard', Icon: LayoutDashboard },
-  { href: '/board', label: 'Board', Icon: Columns3 },
+  { href: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
   { href: '/projects', label: 'Projects', Icon: Folder },
+  { href: '/board', label: 'Tasks', Icon: Columns3 },
   { href: '/sessions', label: 'Sessions', Icon: MessagesSquare },
 ];
 
