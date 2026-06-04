@@ -1,17 +1,32 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { LayoutGrid, List } from 'lucide-react';
-import { SESSION_STATUSES, type SessionStatus, type SessionSummary, type SessionTranscript } from '@midnite/shared';
+import { LayoutGrid, List, Rows3 } from 'lucide-react';
+import {
+  SESSION_STATUSES,
+  type Project,
+  type SessionStatus,
+  type SessionSummary,
+  type SessionTranscript,
+  type Task,
+} from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { FilterPills, type FilterOption } from '@/components/filter-pills';
-import { SESSION_STATUS_HUE, SessionCard } from '@/components/session-card';
+import {
+  SESSION_STATUS_HUE,
+  SESSION_STATUS_LABEL,
+  SessionCard,
+  SessionRow,
+} from '@/components/session-card';
 import { SessionTranscriptModal } from '@/components/session-transcript-modal';
+import { SortableAccordions, type AccordionSection } from '@/components/sortable-accordions';
+import type { ProjectTagInfo } from '@/components/task-card';
 import { getSessionTranscript } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
-type View = 'list' | 'grid';
+type View = 'list' | 'grid' | 'table';
+const VIEWS: readonly View[] = ['list', 'grid', 'table'];
 const VIEW_STORAGE_KEY = 'midnite.sessions.view';
 
 const SESSION_FILTERS: FilterOption[] = [
@@ -20,7 +35,19 @@ const SESSION_FILTERS: FilterOption[] = [
   { value: 'idle', label: 'Idle', hue: SESSION_STATUS_HUE.idle },
 ];
 
-export function SessionsView({ initial }: { initial: SessionSummary[] }) {
+function plural(n: number, word: string): string {
+  return `${n} ${word}${n === 1 ? '' : 's'}`;
+}
+
+export function SessionsView({
+  initial,
+  tasks,
+  projects,
+}: {
+  initial: SessionSummary[];
+  tasks: Task[];
+  projects: Project[];
+}) {
   const [view, setView] = useState<View>('list');
   const [selected, setSelected] = useState<SessionSummary | null>(null);
   const [transcript, setTranscript] = useState<SessionTranscript | null>(null);
@@ -29,7 +56,7 @@ export function SessionsView({ initial }: { initial: SessionSummary[] }) {
 
   useEffect(() => {
     const stored = localStorage.getItem(VIEW_STORAGE_KEY);
-    if (stored === 'list' || stored === 'grid') setView(stored);
+    if (stored && (VIEWS as readonly string[]).includes(stored)) setView(stored as View);
   }, []);
 
   const onSetView = useCallback((next: View) => {
@@ -62,6 +89,18 @@ export function SessionsView({ initial }: { initial: SessionSummary[] }) {
     setLoadError(null);
   }, []);
 
+  // A session's project is resolved through its linked task.
+  const projectIdByTask = useMemo(() => new Map(tasks.map((t) => [t.id, t.projectId])), [tasks]);
+  const projectsById = useMemo(
+    () => new Map(projects.map((p) => [p.id, { tag: p.tag, color: p.color } as ProjectTagInfo])),
+    [projects],
+  );
+  const projectIdOf = useCallback(
+    (s: SessionSummary): string | undefined =>
+      s.linkedTaskId ? projectIdByTask.get(s.linkedTaskId) : undefined,
+    [projectIdByTask],
+  );
+
   const searchParams = useSearchParams();
   const activeRaw = searchParams.get('status');
   const activeStatuses = new Set(
@@ -69,17 +108,82 @@ export function SessionsView({ initial }: { initial: SessionSummary[] }) {
       (SESSION_STATUSES as readonly string[]).includes(s),
     ),
   );
+  const validProjects = new Set(projects.map((p) => p.id));
+  const rawProject = searchParams.get('project');
+  const activeProjects = new Set(
+    (rawProject ? rawProject.split(',') : []).filter((p) => validProjects.has(p)),
+  );
+
+  // Project filter applies across every view; status filter narrows the rest.
+  const projectFiltered =
+    activeProjects.size === 0
+      ? initial
+      : initial.filter((s) => {
+          const pid = projectIdOf(s);
+          return pid !== undefined && activeProjects.has(pid);
+        });
   const sessions =
-    activeStatuses.size === 0 ? initial : initial.filter((s) => activeStatuses.has(s.status));
+    activeStatuses.size === 0
+      ? projectFiltered
+      : projectFiltered.filter((s) => activeStatuses.has(s.status));
+
+  const projectFilters: FilterOption[] = projects.map((p) => ({
+    value: p.id,
+    label: p.tag,
+    color: p.color,
+  }));
+
+  // Table sections: one accordion per visible status, session rows beneath.
+  const visibleStatuses =
+    activeStatuses.size === 0 ? SESSION_STATUSES : SESSION_STATUSES.filter((s) => activeStatuses.has(s));
+  const sections: AccordionSection[] = visibleStatuses.map((status) => {
+    const items = projectFiltered.filter((s) => s.status === status);
+    const projectCount = new Set(
+      items.map((s) => projectIdOf(s)).filter((id): id is string => Boolean(id)),
+    ).size;
+    return {
+      id: status,
+      label: SESSION_STATUS_LABEL[status],
+      hue: SESSION_STATUS_HUE[status],
+      count: items.length,
+      summary:
+        items.length === 0
+          ? 'Empty'
+          : `${plural(items.length, 'session')} · ${plural(projectCount, 'project')}`,
+      body:
+        items.length === 0 ? (
+          <div className="px-4 py-3 text-xs text-muted-foreground/70">Nothing here</div>
+        ) : (
+          items.map((s) => (
+            <SessionRow
+              key={`${s.projectSlug}/${s.id}`}
+              session={s}
+              project={projectIdOf(s) ? projectsById.get(projectIdOf(s)!) : undefined}
+              onClick={() => onSelect(s)}
+            />
+          ))
+        ),
+    };
+  });
 
   return (
     <div className="space-y-4">
-      {initial.length > 0 ? <FilterPills options={SESSION_FILTERS} /> : null}
+      {initial.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+          <FilterPills options={SESSION_FILTERS} />
+          {projects.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
+                Project
+              </span>
+              <FilterPills options={projectFilters} paramKey="project" />
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs text-muted-foreground tabular-nums">
-          {sessions.length} session{sessions.length === 1 ? '' : 's'}
-        </p>
+        <p className="text-xs text-muted-foreground tabular-nums">{plural(sessions.length, 'session')}</p>
         <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
           <Button
             type="button"
@@ -88,10 +192,7 @@ export function SessionsView({ initial }: { initial: SessionSummary[] }) {
             aria-label="List view"
             aria-pressed={view === 'list'}
             onClick={() => onSetView('list')}
-            className={cn(
-              'h-7 w-7',
-              view === 'list' && 'bg-accent text-accent-foreground',
-            )}
+            className={cn('h-7 w-7', view === 'list' && 'bg-accent text-accent-foreground')}
           >
             <List className="h-4 w-4" />
           </Button>
@@ -102,12 +203,20 @@ export function SessionsView({ initial }: { initial: SessionSummary[] }) {
             aria-label="Grid view"
             aria-pressed={view === 'grid'}
             onClick={() => onSetView('grid')}
-            className={cn(
-              'h-7 w-7',
-              view === 'grid' && 'bg-accent text-accent-foreground',
-            )}
+            className={cn('h-7 w-7', view === 'grid' && 'bg-accent text-accent-foreground')}
           >
             <LayoutGrid className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label="Table view"
+            aria-pressed={view === 'table'}
+            onClick={() => onSetView('table')}
+            className={cn('h-7 w-7', view === 'table' && 'bg-accent text-accent-foreground')}
+          >
+            <Rows3 className="h-4 w-4" />
           </Button>
         </div>
       </div>
@@ -116,6 +225,8 @@ export function SessionsView({ initial }: { initial: SessionSummary[] }) {
         <div className="rounded-lg border border-dashed border-border/60 p-12 text-center text-sm text-muted-foreground">
           No Claude sessions found under <code className="font-mono">~/.claude/projects</code>.
         </div>
+      ) : view === 'table' ? (
+        <SortableAccordions sections={sections} storageKey="midnite.sessions.sections" />
       ) : sessions.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border/60 p-12 text-center text-sm text-muted-foreground">
           No sessions match this filter.

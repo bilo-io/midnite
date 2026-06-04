@@ -1,15 +1,16 @@
-import type { Project } from '@midnite/shared';
+import type { Project, Task } from '@midnite/shared';
 import { PageHeader } from '@/components/page-header';
-import { getProjects } from '@/lib/api';
+import { getProjects, getTasks } from '@/lib/api';
 import { ProjectsView } from './projects-view';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ProjectsPage() {
   let projects: Project[] = [];
+  let tasks: Task[] = [];
   let error: string | null = null;
   try {
-    projects = await getProjects();
+    [projects, tasks] = await Promise.all([getProjects(), getTasks()]);
   } catch (err) {
     error = err instanceof Error ? err.message : 'Failed to load projects';
   }
@@ -27,7 +28,7 @@ export default async function ProjectsPage() {
           </div>
         )}
 
-        <ProjectsView initial={projects} />
+        <ProjectsView initial={projects} tasks={tasks} />
       </div>
     </>
   );

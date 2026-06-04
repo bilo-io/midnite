@@ -50,3 +50,16 @@ export const ABANDONED_COLUMN: ColumnDef = {
 };
 
 export const COLUMN_STATUSES = new Set<string>(COLUMNS.map((c) => c.status));
+
+/** Every status (primary columns + abandoned), for label/hue lookups. */
+export const ALL_COLUMNS: ColumnDef[] = [...COLUMNS, ABANDONED_COLUMN];
+
+const STATUS_META = new Map(ALL_COLUMNS.map((c) => [c.status, c] as const));
+
+export function statusLabel(status: Status): string {
+  return STATUS_META.get(status)?.label ?? status;
+}
+
+export function statusHueVar(status: Status): string {
+  return STATUS_META.get(status)?.hueVar ?? '--status-backlog';
+}

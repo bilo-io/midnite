@@ -1,15 +1,17 @@
-import type { SessionSummary } from '@midnite/shared';
+import type { Project, SessionSummary, Task } from '@midnite/shared';
 import { PageHeader } from '@/components/page-header';
-import { getSessions } from '@/lib/api';
+import { getProjects, getSessions, getTasks } from '@/lib/api';
 import { SessionsView } from './sessions-view';
 
 export const dynamic = 'force-dynamic';
 
 export default async function SessionsPage() {
   let sessions: SessionSummary[] = [];
+  let tasks: Task[] = [];
+  let projects: Project[] = [];
   let error: string | null = null;
   try {
-    sessions = await getSessions();
+    [sessions, tasks, projects] = await Promise.all([getSessions(), getTasks(), getProjects()]);
   } catch (err) {
     error = err instanceof Error ? err.message : 'Failed to load sessions';
   }
@@ -32,7 +34,7 @@ export default async function SessionsPage() {
           </div>
         )}
 
-        <SessionsView initial={sessions} />
+        <SessionsView initial={sessions} tasks={tasks} projects={projects} />
       </div>
     </>
   );

@@ -1,4 +1,6 @@
 import type { SessionStatus, SessionSummary } from '@midnite/shared';
+import { ProjectTag } from '@/components/project-tag';
+import type { ProjectTagInfo } from '@/components/task-card';
 import { cn } from '@/lib/utils';
 
 export const SESSION_STATUS_HUE: Record<SessionStatus, string> = {
@@ -34,6 +36,40 @@ function relativeTime(ms: number): string {
   if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
   if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
   return `${Math.floor(diff / 86_400_000)}d ago`;
+}
+
+/** A session as a flat table row, used inside the Sessions table accordions. */
+export function SessionRow({
+  session,
+  project,
+  onClick,
+}: {
+  session: SessionSummary;
+  project?: ProjectTagInfo;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-center gap-3 border-b border-border/40 px-3 py-2 text-left last:border-b-0 hover:bg-accent/40"
+    >
+      <SessionStatusDot status={session.status} />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium leading-snug">{session.title}</p>
+        {session.subtitle ? (
+          <p className="truncate text-xs text-muted-foreground">{session.subtitle}</p>
+        ) : null}
+      </div>
+      {project ? <ProjectTag tag={project.tag} color={project.color} className="shrink-0" /> : null}
+      <span className="hidden shrink-0 truncate font-mono text-xs text-muted-foreground sm:inline">
+        {session.projectDisplay}
+      </span>
+      <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">
+        {relativeTime(session.lastActivity)}
+      </span>
+    </button>
+  );
 }
 
 type Props = {

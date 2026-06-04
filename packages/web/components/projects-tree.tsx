@@ -1,0 +1,61 @@
+'use client';
+
+import type { Project, Task } from '@midnite/shared';
+import { ProjectTag } from '@/components/project-tag';
+import { SortableAccordions, type AccordionSection } from '@/components/sortable-accordions';
+import { TaskRow } from '@/components/task-row';
+
+function plural(n: number, word: string): string {
+  return `${n} ${word}${n === 1 ? '' : 's'}`;
+}
+
+/**
+ * Tree layout for the Projects page: each project is a collapsible, drag-reorderable
+ * accordion whose children are its tasks. A trailing "Unassigned" section collects
+ * tasks with no project. Collapsed sections summarise task and source counts.
+ */
+export function ProjectsTree({ projects, tasks }: { projects: Project[]; tasks: Task[] }) {
+  const tasksByProject = new Map<string, Task[]>();
+  const unassigned: Task[] = [];
+  for (const t of tasks) {
+    if (t.projectId) {
+      const list = tasksByProject.get(t.projectId) ?? [];
+      list.push(t);
+      tasksByProject.set(t.projectId, list);
+    } else {
+      unassigned.push(t);
+    }
+  }
+
+  const taskBody = (items: Task[]) =>
+    items.length === 0 ? (
+      <div className="px-4 py-3 text-xs text-muted-foreground/70">No tasks yet</div>
+    ) : (
+      items.map((t) => <TaskRow key={t.id} task={t} showStatus />)
+    );
+
+  const sections: AccordionSection[] = projects.map((p) => {
+    const items = tasksByProject.get(p.id) ?? [];
+    return {
+      id: p.id,
+      label: p.name,
+      leading: <ProjectTag tag={p.tag} color={p.color} />,
+      count: items.length,
+      summary: `${plural(items.length, 'task')} · ${plural(p.sources.length, 'source')}`,
+      body: taskBody(items),
+    };
+  });
+
+  if (unassigned.length > 0) {
+    sections.push({
+      id: '__unassigned__',
+      label: 'Unassigned',
+      hue: '215 14% 52%',
+      count: unassigned.length,
+      summary: plural(unassigned.length, 'task'),
+      body: taskBody(unassigned),
+    });
+  }
+
+  return <SortableAccordions sections={sections} storageKey="midnite.projects.tree" />;
+}

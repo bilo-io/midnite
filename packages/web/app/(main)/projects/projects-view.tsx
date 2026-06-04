@@ -2,18 +2,20 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { LayoutGrid, List, Plus } from 'lucide-react';
-import type { Project } from '@midnite/shared';
+import { LayoutGrid, List, ListTree, Plus } from 'lucide-react';
+import type { Project, Task } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { ProjectCard } from '@/components/project-card';
 import { ProjectModal } from '@/components/project-modal';
+import { ProjectsTree } from '@/components/projects-tree';
 import { PlanPanel } from '@/components/plan-panel';
 import { cn } from '@/lib/utils';
 
-type View = 'list' | 'grid';
+type View = 'list' | 'grid' | 'table';
+const VIEWS: readonly View[] = ['list', 'grid', 'table'];
 const VIEW_STORAGE_KEY = 'midnite.projects.view';
 
-export function ProjectsView({ initial }: { initial: Project[] }) {
+export function ProjectsView({ initial, tasks }: { initial: Project[]; tasks: Task[] }) {
   const router = useRouter();
   const [view, setView] = useState<View>('grid');
   const [creating, setCreating] = useState(false);
@@ -22,7 +24,7 @@ export function ProjectsView({ initial }: { initial: Project[] }) {
 
   useEffect(() => {
     const stored = localStorage.getItem(VIEW_STORAGE_KEY);
-    if (stored === 'list' || stored === 'grid') setView(stored);
+    if (stored && (VIEWS as readonly string[]).includes(stored)) setView(stored as View);
   }, []);
 
   const onSetView = useCallback((next: View) => {
@@ -73,6 +75,17 @@ export function ProjectsView({ initial }: { initial: Project[] }) {
             >
               <LayoutGrid className="h-4 w-4" />
             </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="Tree view"
+              aria-pressed={view === 'table'}
+              onClick={() => onSetView('table')}
+              className={cn('h-7 w-7', view === 'table' && 'bg-accent text-accent-foreground')}
+            >
+              <ListTree className="h-4 w-4" />
+            </Button>
           </div>
           <Button type="button" size="sm" onClick={() => setCreating(true)}>
             <Plus className="h-4 w-4" />
@@ -91,6 +104,8 @@ export function ProjectsView({ initial }: { initial: Project[] }) {
             New project
           </Button>
         </div>
+      ) : view === 'table' ? (
+        <ProjectsTree projects={initial} tasks={tasks} />
       ) : view === 'list' ? (
         <div className="flex flex-col gap-2">
           {initial.map((p) => (
