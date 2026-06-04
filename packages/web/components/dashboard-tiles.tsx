@@ -9,10 +9,10 @@ const TILES: Array<{
   /** Board column this tile drills into. */
   href: string;
 }> = [
-  { key: 'backlog', label: 'Backlog', hint: 'Parked or ambiguous', hueVar: '--status-backlog', href: '/board?status=backlog' },
-  { key: 'todo', label: 'Todo', hint: 'Queued, ready to start', hueVar: '--status-todo', href: '/board?status=todo' },
-  { key: 'inProgress', label: 'In progress', hint: 'Running or waiting on input', hueVar: '--status-wip', href: '/board?status=wip,waiting' },
-  { key: 'done', label: 'Done', hint: 'Completed', hueVar: '--status-done', href: '/board?status=done' },
+  { key: 'backlog', label: 'Backlog', hint: 'Parked or ambiguous', hueVar: '--status-backlog', href: '/tasks?status=backlog' },
+  { key: 'todo', label: 'Todo', hint: 'Queued, ready to start', hueVar: '--status-todo', href: '/tasks?status=todo' },
+  { key: 'inProgress', label: 'In progress', hint: 'Running or waiting on input', hueVar: '--status-wip', href: '/tasks?status=wip,waiting' },
+  { key: 'done', label: 'Done', hint: 'Completed', hueVar: '--status-done', href: '/tasks?status=done' },
 ];
 
 export function DashboardTiles({ counts }: { counts: TaskCounts }) {

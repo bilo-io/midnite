@@ -8,7 +8,9 @@ export type FilterOption = {
   value: string;
   label: string;
   /** HSL triple ("142 71% 45%") or a CSS var ref ("var(--status-done)"), used inside hsl(...). */
-  hue: string;
+  hue?: string;
+  /** Raw CSS color (e.g. a project's hex tag). Takes precedence over `hue` when set. */
+  color?: string;
 };
 
 type FilterPillsProps = {
@@ -24,7 +26,7 @@ type FilterPillsProps = {
  * A row of toggleable filter pills backed by the URL query string. Selecting pills
  * narrows the view to those values; the "All" pill clears the filter. Each pill is
  * tinted with the hue of the thing it filters. The query param is the source of truth,
- * so filters are shareable and link-driven (e.g. /board?status=backlog).
+ * so filters are shareable and link-driven (e.g. /tasks?status=backlog).
  */
 export function FilterPills({
   options,
@@ -80,6 +82,11 @@ export function FilterPills({
       </button>
       {options.map((o) => {
         const on = active.has(o.value);
+        // Project pills carry a raw hex `color`; status pills carry an `hue` (HSL
+        // triple/var) used inside hsl(). Mix toward transparent for the tints.
+        const dot = o.color ?? `hsl(${o.hue})`;
+        const tint = (pct: number) =>
+          o.color ? `color-mix(in srgb, ${o.color} ${pct}%, transparent)` : `hsl(${o.hue} / ${pct / 100})`;
         return (
           <button
             key={o.value}
@@ -92,19 +99,12 @@ export function FilterPills({
                 ? 'text-foreground'
                 : 'border-border/60 text-muted-foreground hover:bg-accent/50 hover:text-foreground',
             )}
-            style={
-              on
-                ? { borderColor: `hsl(${o.hue} / 0.5)`, backgroundColor: `hsl(${o.hue} / 0.15)` }
-                : undefined
-            }
+            style={on ? { borderColor: tint(50), backgroundColor: tint(15) } : undefined}
           >
             <span
               aria-hidden
               className="h-1.5 w-1.5 rounded-full"
-              style={{
-                background: `hsl(${o.hue})`,
-                boxShadow: on ? `0 0 8px -1px hsl(${o.hue} / 0.7)` : undefined,
-              }}
+              style={{ background: dot, boxShadow: on ? `0 0 8px -1px ${tint(70)}` : undefined }}
             />
             {o.label}
           </button>

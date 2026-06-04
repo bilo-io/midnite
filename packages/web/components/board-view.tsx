@@ -1,69 +1,21 @@
 'use client';
 
-import { useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import type { Project, Status, Task } from '@midnite/shared';
 import { AbandonedRow } from '@/components/abandoned-row';
-import { FilterPills, type FilterOption } from '@/components/filter-pills';
 import { TaskCard } from '@/components/task-card';
-import { TaskThreadModal } from '@/components/task-thread-modal';
+import { type TaskViewProps, groupByStatus } from '@/components/task-columns';
 
-const COLUMNS: Array<{ status: Status; label: string; hueVar: string }> = [
-  { status: 'backlog', label: 'Backlog', hueVar: '--status-backlog' },
-  { status: 'todo', label: 'Todo', hueVar: '--status-todo' },
-  { status: 'wip', label: 'In progress', hueVar: '--status-wip' },
-  { status: 'waiting', label: 'Waiting', hueVar: '--status-waiting' },
-  { status: 'done', label: 'Done', hueVar: '--status-done' },
-];
-
-const BOARD_FILTERS: FilterOption[] = COLUMNS.map((c) => ({
-  value: c.status,
-  label: c.label,
-  hue: `var(${c.hueVar})`,
-}));
-
-const COLUMN_STATUSES = new Set<string>(COLUMNS.map((c) => c.status));
-
-export function BoardView({
-  tasks,
-  error,
-  projects,
-}: {
-  tasks: Task[];
-  error: string | null;
-  projects: Project[];
-}) {
-  const [selected, setSelected] = useState<Task | null>(null);
-  const projectsById = new Map(
-    projects.map((p) => [p.id, { tag: p.tag, color: p.color }] as const),
-  );
-
-  const searchParams = useSearchParams();
-  const raw = searchParams.get('status');
-  const activeStatuses = (raw ? raw.split(',') : []).filter((s) => COLUMN_STATUSES.has(s));
-  const showAll = activeStatuses.length === 0;
-  const activeSet = new Set(activeStatuses);
-  const visibleColumns = showAll ? COLUMNS : COLUMNS.filter((c) => activeSet.has(c.status));
-
-  const grouped = new Map<Status, Task[]>();
-  for (const t of tasks) {
-    const list = grouped.get(t.status) ?? [];
-    list.push(t);
-    grouped.set(t.status, list);
-  }
+/**
+ * Kanban layout for the Tasks page: one column per visible status, scrolling
+ * horizontally. Presentational — filtering, the project lookup and the detail
+ * modal are owned by TasksView.
+ */
+export function BoardView({ tasks, columns, projectsById, onSelect, showAbandoned }: TaskViewProps) {
+  const grouped = groupByStatus(tasks);
 
   return (
-    <div className="container flex min-h-0 flex-1 flex-col gap-4 pb-4 pt-2">
-      <FilterPills options={BOARD_FILTERS} />
-
-      {error && (
-        <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-          Could not reach the gateway: {error}
-        </div>
-      )}
-
+    <>
       <div className="flex min-h-0 flex-1 gap-3 overflow-x-auto pb-1">
-        {visibleColumns.map((col) => {
+        {columns.map((col) => {
           const items = grouped.get(col.status) ?? [];
           return (
             <section
@@ -106,7 +58,7 @@ export function BoardView({
                       key={t.id}
                       task={t}
                       project={t.projectId ? projectsById.get(t.projectId) : undefined}
-                      onSelect={() => setSelected(t)}
+                      onSelect={() => onSelect(t)}
                     />
                   ))}
                 </div>
@@ -116,17 +68,13 @@ export function BoardView({
         })}
       </div>
 
-      {showAll && (
+      {showAbandoned && (
         <AbandonedRow
           tasks={grouped.get('abandoned') ?? []}
-          onSelect={setSelected}
+          onSelect={onSelect}
           projectsById={projectsById}
         />
       )}
-
-      {selected ? (
-        <TaskThreadModal task={selected} onClose={() => setSelected(null)} />
-      ) : null}
-    </div>
+    </>
   );
 }
