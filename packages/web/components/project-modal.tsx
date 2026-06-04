@@ -48,9 +48,12 @@ type Props = {
   onSaved: () => void;
 };
 
+type Tab = 'details' | 'sources';
+
 export function ProjectModal({ project, onClose, onSaved }: Props) {
   const isEdit = project !== null;
 
+  const [tab, setTab] = useState<Tab>('details');
   const [name, setName] = useState(project?.name ?? '');
   const [description, setDescription] = useState(project?.description ?? '');
   const [tag, setTag] = useState(project?.tag ?? '');
@@ -207,7 +210,35 @@ export function ProjectModal({ project, onClose, onSaved }: Props) {
             </Button>
           </header>
 
+          <div role="tablist" aria-label="Project sections" className="flex items-center gap-1 border-b border-border/60 px-3">
+            {(['details', 'sources'] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                role="tab"
+                aria-selected={tab === t}
+                onClick={() => setTab(t)}
+                className={cn(
+                  'relative px-3 py-2 text-xs font-medium capitalize transition-colors',
+                  tab === t ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {t}
+                {t === 'sources' && sourceCount > 0 ? (
+                  <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] tabular-nums text-muted-foreground">
+                    {sourceCount}
+                  </span>
+                ) : null}
+                {tab === t ? (
+                  <span aria-hidden className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-foreground" />
+                ) : null}
+              </button>
+            ))}
+          </div>
+
           <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
+            {/* Details */}
+            <div role="tabpanel" className={cn('space-y-5', tab === 'details' ? '' : 'hidden')}>
             {/* Name */}
             <div className="space-y-1.5">
               <label htmlFor="project-name" className="text-xs font-medium text-muted-foreground">
@@ -302,9 +333,10 @@ export function ProjectModal({ project, onClose, onSaved }: Props) {
                 Max {MAX_TAG_LENGTH} characters. Tasks in this project carry this tag.
               </p>
             </div>
+            </div>
 
             {/* Sources */}
-            <div className="space-y-2">
+            <div role="tabpanel" className={cn('space-y-2', tab === 'sources' ? '' : 'hidden')}>
               <div className="flex items-center justify-between">
                 <label htmlFor="project-source" className="text-xs font-medium text-muted-foreground">
                   Sources
