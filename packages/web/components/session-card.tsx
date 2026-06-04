@@ -6,12 +6,14 @@ import { cn } from '@/lib/utils';
 export const SESSION_STATUS_HUE: Record<SessionStatus, string> = {
   running: '142 71% 45%',
   waiting: '38 92% 50%',
+  completed: '217 91% 60%',
   idle: '215 14% 52%',
 };
 
 export const SESSION_STATUS_LABEL: Record<SessionStatus, string> = {
   running: 'Running',
   waiting: 'Waiting',
+  completed: 'Completed',
   idle: 'Idle',
 };
 

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { TaskEventSchema } from './task.js';
 
-export const SESSION_STATUSES = ['running', 'waiting', 'idle'] as const;
+export const SESSION_STATUSES = ['running', 'waiting', 'completed', 'idle'] as const;
 export const SessionStatusSchema = z.enum(SESSION_STATUSES);
 export type SessionStatus = z.infer<typeof SessionStatusSchema>;
 

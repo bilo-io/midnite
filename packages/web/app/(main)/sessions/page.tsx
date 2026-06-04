@@ -20,12 +20,7 @@ export default async function SessionsPage() {
     <>
       <PageHeader
         title="Sessions"
-        description={
-          <>
-            Claude Code sessions currently running on this machine, sourced from{' '}
-            <code className="rounded bg-muted/60 px-1 py-0.5 font-mono text-xs">~/.claude/projects</code>.
-          </>
-        }
+        description="One session per task — its status follows the task (in progress, awaiting input, completed, or idle)."
       />
       <div className="container space-y-6 pb-8 pt-2">
         {error && (

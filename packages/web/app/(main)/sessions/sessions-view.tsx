@@ -32,6 +32,7 @@ const VIEW_STORAGE_KEY = 'midnite.sessions.view';
 const SESSION_FILTERS: FilterOption[] = [
   { value: 'running', label: 'Running', hue: SESSION_STATUS_HUE.running },
   { value: 'waiting', label: 'Awaiting input', hue: SESSION_STATUS_HUE.waiting },
+  { value: 'completed', label: 'Completed', hue: SESSION_STATUS_HUE.completed },
   { value: 'idle', label: 'Idle', hue: SESSION_STATUS_HUE.idle },
 ];
 
@@ -223,7 +224,7 @@ export function SessionsView({
 
       {initial.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border/60 p-12 text-center text-sm text-muted-foreground">
-          No Claude sessions found under <code className="font-mono">~/.claude/projects</code>.
+          No tasks yet — create a task and its session shows up here.
         </div>
       ) : view === 'table' ? (
         <SortableAccordions sections={sections} storageKey="midnite.sessions.sections" />
