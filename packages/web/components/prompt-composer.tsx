@@ -26,6 +26,20 @@ export function PromptComposer() {
   const [error, setError] = React.useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
+  // Intro: start centered + compact, then settle to the bottom at full height.
+  const [intro, setIntro] = React.useState(true);
+  React.useEffect(() => {
+    if (
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) {
+      setIntro(false);
+      return;
+    }
+    const id = setTimeout(() => setIntro(false), 450);
+    return () => clearTimeout(id);
+  }, []);
+
   const speech = useSpeechRecognition({
     onFinal: (transcript) => {
       setText((prev) => (prev ? `${prev.trimEnd()} ${transcript.trim()}` : transcript.trim()));
@@ -94,7 +108,10 @@ export function PromptComposer() {
         : 'Send';
 
   return (
-    <div className="gradient-border rounded-xl shadow-sm transition-shadow focus-within:shadow-lg">
+    <div
+      className="gradient-border rounded-xl shadow-sm transition-[transform,box-shadow] duration-700 ease-out focus-within:shadow-lg motion-reduce:transition-none"
+      style={{ transform: intro ? 'translateY(-42dvh)' : 'translateY(0)' }}
+    >
       <div className="relative rounded-xl bg-card p-4">
       <div className="space-y-3">
         <Textarea
@@ -103,7 +120,8 @@ export function PromptComposer() {
           onKeyDown={onKeyDown}
           placeholder="Describe a task — one per line. (⌘/Ctrl+Enter to submit)"
           rows={4}
-          className="resize-none border-0 bg-transparent p-0 text-base focus-visible:ring-0"
+          style={{ height: intro ? 50 : 100 }}
+          className="min-h-0 resize-none border-0 bg-transparent p-0 text-base transition-[height] duration-700 ease-out focus-visible:ring-0 motion-reduce:transition-none"
         />
 
         {speech.interim && (

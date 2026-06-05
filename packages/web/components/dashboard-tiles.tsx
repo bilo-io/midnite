@@ -15,21 +15,30 @@ const TILES: Array<{
   { key: 'done', label: 'Done', hint: 'Completed', hueVar: '--status-done', href: '/tasks?status=done' },
 ];
 
+// The prompt composer plays an intro (450ms hold + 700ms settle ≈ 1150ms) before
+// it reaches its final position and height. Hold the tiles' cascade until then so
+// nothing appears until the composer has landed.
+const COMPOSER_SETTLE_MS = 1150;
+
 export function DashboardTiles({ counts }: { counts: TaskCounts }) {
   const total =
     (counts.backlog ?? 0) + (counts.todo ?? 0) + (counts.inProgress ?? 0) + (counts.done ?? 0);
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {TILES.map(({ key, label, hint, hueVar, href }) => {
+      {TILES.map(({ key, label, hint, hueVar, href }, index) => {
         const value = counts[key] ?? 0;
         const pct = total > 0 ? Math.round((value / total) * 100) : 0;
         return (
-          <Link
+          <div
             key={key}
-            href={href}
-            className="group relative block overflow-hidden rounded-xl border bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            style={{ ['--tile-hue' as string]: `var(${hueVar})` }}
+            className="cascade-item"
+            style={{ animationDelay: `${COMPOSER_SETTLE_MS + index * 70}ms` }}
           >
+            <Link
+              href={href}
+              className="group relative block overflow-hidden rounded-xl border bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              style={{ ['--tile-hue' as string]: `var(${hueVar})` }}
+            >
             <span
               aria-hidden
               className="absolute inset-x-0 top-0 h-px"
@@ -63,7 +72,8 @@ export function DashboardTiles({ counts }: { counts: TaskCounts }) {
               )}
             </div>
             <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
-          </Link>
+            </Link>
+          </div>
         );
       })}
     </div>
