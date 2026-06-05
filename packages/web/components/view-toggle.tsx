@@ -2,14 +2,14 @@
 
 import { useCallback } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Columns3, Rows3, type LucideIcon } from 'lucide-react';
+import { Columns3, ListTree, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export type TaskView = 'board' | 'table';
 
 const VIEWS: Array<{ value: TaskView; label: string; Icon: LucideIcon }> = [
   { value: 'board', label: 'Board', Icon: Columns3 },
-  { value: 'table', label: 'Table', Icon: Rows3 },
+  { value: 'table', label: 'Table', Icon: ListTree },
 ];
 
 /**

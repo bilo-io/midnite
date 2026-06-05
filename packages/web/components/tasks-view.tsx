@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import type { Project, Task } from '@midnite/shared';
 import { BoardView } from '@/components/board-view';
 import { FilterPills, type FilterOption } from '@/components/filter-pills';
+import { ProjectMultiSelect } from '@/components/project-multi-select';
 import { TableView } from '@/components/table-view';
 import { TaskThreadModal } from '@/components/task-thread-modal';
 import { ViewToggle } from '@/components/view-toggle';
@@ -85,18 +86,11 @@ export function TasksView({
   return (
     <div className="container flex min-h-0 flex-1 flex-col gap-4 pb-4 pt-2">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <ViewToggle />
-          {projects.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
-                Project
-              </span>
-              <FilterPills options={projectFilters} paramKey="project" />
-            </div>
-          )}
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+          {projects.length > 0 && <ProjectMultiSelect options={projectFilters} />}
+          <FilterPills options={STATUS_FILTERS} paramKey="status" />
         </div>
-        <FilterPills options={STATUS_FILTERS} paramKey="status" />
+        <ViewToggle />
       </div>
 
       {error && (

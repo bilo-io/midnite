@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { LayoutGrid, List, Rows3 } from 'lucide-react';
+import { LayoutGrid, List, ListTree } from 'lucide-react';
 import {
   SESSION_STATUSES,
   type Project,
@@ -178,8 +178,8 @@ export function SessionsView({
     <div className="space-y-4">
       {initial.length > 0 ? (
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-          <FilterPills options={SESSION_FILTERS} />
           {projects.length > 0 ? <ProjectMultiSelect options={projectFilters} /> : null}
+          <FilterPills options={SESSION_FILTERS} />
         </div>
       ) : null}
 
@@ -217,7 +217,7 @@ export function SessionsView({
             onClick={() => onSetView('table')}
             className={cn('h-7 w-7', view === 'table' && 'bg-accent text-accent-foreground')}
           >
-            <Rows3 className="h-4 w-4" />
+            <ListTree className="h-4 w-4" />
           </Button>
         </div>
       </div>
