@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -8,10 +9,14 @@ import {
   Folder,
   LayoutDashboard,
   MessagesSquare,
+  Power,
+  Settings,
+  UserRound,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { Screensaver } from '@/components/screensaver';
 
 type NavLink = {
   href: string;
@@ -26,52 +31,73 @@ const LINKS: NavLink[] = [
   { href: '/sessions', label: 'Sessions', Icon: MessagesSquare },
 ];
 
+const PROFILE_LINK: NavLink = { href: '/profile', label: 'Profile', Icon: UserRound };
+const SETTINGS_LINK: NavLink = { href: '/settings', label: 'Settings', Icon: Settings };
+
 export function NavBar() {
   const pathname = usePathname();
-  return (
-    <aside className="fixed inset-y-0 left-0 z-40 flex w-14 flex-col items-center border-r border-border/60 bg-background/70 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/50">
+  const [screensaver, setScreensaver] = useState(false);
+
+  const renderLink = ({ href, label, Icon }: NavLink) => {
+    const active = pathname === href || (href !== '/' && pathname.startsWith(href));
+    return (
       <Link
-        href="/"
-        aria-label="midnite"
-        className="group relative mb-4 flex h-9 w-9 items-center justify-center"
+        key={href}
+        href={href}
+        aria-label={label}
+        className={cn(
+          'group relative flex h-9 w-9 items-center justify-center rounded-md transition-colors',
+          active
+            ? 'bg-accent text-accent-foreground'
+            : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+        )}
       >
-        <Image
-          src="/logo.PNG"
-          alt="midnite"
-          width={36}
-          height={36}
-          priority
-          className="h-9 w-9 rounded-full object-cover ring-1 ring-border/60 transition-transform group-hover:scale-110"
-        />
-        <Tooltip>midnite</Tooltip>
+        <Icon className="h-4 w-4" />
+        <Tooltip>{label}</Tooltip>
       </Link>
+    );
+  };
 
-      <nav className="flex flex-col items-center gap-1">
-        {LINKS.map(({ href, label, Icon }) => {
-          const active = pathname === href || (href !== '/' && pathname.startsWith(href));
-          return (
-            <Link
-              key={href}
-              href={href}
-              aria-label={label}
-              className={cn(
-                'group relative flex h-9 w-9 items-center justify-center rounded-md transition-colors',
-                active
-                  ? 'bg-accent text-accent-foreground'
-                  : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
-              )}
-            >
-              <Icon className="h-4 w-4" />
-              <Tooltip>{label}</Tooltip>
-            </Link>
-          );
-        })}
-      </nav>
+  return (
+    <>
+      <aside className="fixed inset-y-0 left-0 z-40 flex w-14 flex-col items-center border-r border-border/60 bg-background/70 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/50">
+        <Link
+          href="/"
+          aria-label="midnite"
+          className="group relative mb-4 flex h-9 w-9 items-center justify-center"
+        >
+          <Image
+            src="/logo.PNG"
+            alt="midnite"
+            width={32}
+            height={32}
+            priority
+            className="h-8 w-8 rounded-full object-cover ring-1 ring-border/60 transition-transform group-hover:scale-110"
+          />
+          <Tooltip>midnite</Tooltip>
+        </Link>
 
-      <div className="mt-auto">
-        <ThemeToggle />
-      </div>
-    </aside>
+        <nav className="flex flex-col items-center gap-1">{LINKS.map(renderLink)}</nav>
+
+        <div className="mt-auto flex flex-col items-center gap-1">
+          {renderLink(PROFILE_LINK)}
+          <ThemeToggle />
+          {renderLink(SETTINGS_LINK)}
+          <div className="my-1 h-px w-6 bg-border/60" />
+          <button
+            type="button"
+            onClick={() => setScreensaver(true)}
+            aria-label="Screensaver"
+            className="group relative flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
+          >
+            <Power className="h-4 w-4" />
+            <Tooltip>Screensaver</Tooltip>
+          </button>
+        </div>
+      </aside>
+
+      {screensaver ? <Screensaver onClose={() => setScreensaver(false)} /> : null}
+    </>
   );
 }
 

@@ -1,0 +1,544 @@
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
+import { getSessions } from '@/lib/api';
+import { useLocalStorage } from '@/lib/use-local-storage';
+import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY, type AppSettings } from '@/lib/app-settings';
+
+// 100 playful gerunds shown one at a time in the big title slot.
+const WORDS = [
+  'loading',
+  'combobulating',
+  'midnighting',
+  'clauding',
+  'vibing',
+  'smashing it',
+  'crushing it',
+  'orchestrating',
+  'spinning up',
+  'thinking',
+  'reticulating',
+  'computing',
+  'conjuring',
+  'brewing',
+  'percolating',
+  'assembling',
+  'compiling',
+  'hydrating',
+  'bundling',
+  'shipping',
+  'deploying',
+  'tinkering',
+  'wrangling',
+  'noodling',
+  'cooking',
+  'simmering',
+  'marinating',
+  'hustling',
+  'grinding',
+  'flowing',
+  'syncing',
+  'aligning',
+  'calibrating',
+  'optimising',
+  'refactoring',
+  'untangling',
+  'debugging',
+  'parsing',
+  'tokenizing',
+  'embedding',
+  'inferring',
+  'reasoning',
+  'pondering',
+  'cogitating',
+  'ruminating',
+  'daydreaming',
+  'scheming',
+  'plotting',
+  'mapping',
+  'charting',
+  'sketching',
+  'drafting',
+  'prototyping',
+  'iterating',
+  'polishing',
+  'buffing',
+  'tidying',
+  'sweeping',
+  'gardening',
+  'pruning',
+  'harvesting',
+  'gathering',
+  'foraging',
+  'mining',
+  'prospecting',
+  'excavating',
+  'spelunking',
+  'navigating',
+  'wayfinding',
+  'cruising',
+  'gliding',
+  'soaring',
+  'rocketing',
+  'warping',
+  'teleporting',
+  'materialising',
+  'summoning',
+  'enchanting',
+  'bewitching',
+  'mesmerising',
+  'humming',
+  'whirring',
+  'buzzing',
+  'crackling',
+  'sparking',
+  'igniting',
+  'kindling',
+  'glowing',
+  'shimmering',
+  'sparkling',
+  'dazzling',
+  'flexing',
+  'leveling up',
+  'powering up',
+  'charging up',
+  'gearing up',
+  'limbering up',
+  'warming up',
+  'locking in',
+  'dialing in',
+  'getting after it',
+];
+
+type Counts = { actioning: number; awaiting: number; complete: number };
+
+const PILLS: Array<{ key: keyof Counts; label: string; hueVar: string }> = [
+  { key: 'actioning', label: 'actioning', hueVar: '--status-wip' },
+  { key: 'awaiting', label: 'awaiting', hueVar: '--status-waiting' },
+  { key: 'complete', label: 'complete', hueVar: '--status-done' },
+];
+
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTHS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
+function pad(n: number): string {
+  return n.toString().padStart(2, '0');
+}
+
+function clamp(n: number, lo: number, hi: number): number {
+  return Math.max(lo, Math.min(hi, n));
+}
+
+// Number of samples held in the CPU/RAM rolling charts.
+const SERIES_LEN = 32;
+
+function seedSeries(base: number): number[] {
+  return Array.from({ length: SERIES_LEN }, () => clamp(base + (Math.random() - 0.5) * 18, 4, 96));
+}
+
+// Smooth random walk: drop the oldest sample, append a nudged new one.
+function walkSeries(prev: number[], spread: number, lo: number, hi: number): number[] {
+  const last = prev[prev.length - 1] ?? 50;
+  return [...prev.slice(1), clamp(last + (Math.random() - 0.5) * spread, lo, hi)];
+}
+
+export function Screensaver({ onClose }: { onClose: () => void }) {
+  const [index, setIndex] = useState(() => Math.floor(Math.random() * WORDS.length));
+  const [typed, setTyped] = useState('');
+  const [counts, setCounts] = useState<Counts | null>(null);
+  const [settings] = useLocalStorage<AppSettings>(SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS);
+
+  // Corner widgets: live clock plus simulated system telemetry.
+  const [now, setNow] = useState(() => new Date());
+  const [cpu, setCpu] = useState<number[]>(() => seedSeries(38));
+  const [ram, setRam] = useState<number[]>(() => seedSeries(56));
+  const [quota, setQuota] = useState(() => clamp(58 + (Math.random() - 0.5) * 20, 35, 90));
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setNow(new Date());
+      setCpu((prev) => walkSeries(prev, 22, 5, 96));
+      setRam((prev) => walkSeries(prev, 9, 22, 92));
+      setQuota((q) => clamp(q + (Math.random() - 0.42) * 1.4, 30, 97));
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Type the current word out, hold it for 2s, then advance to the next one.
+  useEffect(() => {
+    const word = WORDS[index] ?? 'loading';
+    let i = 0;
+    let holdTimer: ReturnType<typeof setTimeout>;
+    setTyped('');
+    const typeTimer = setInterval(() => {
+      i += 1;
+      setTyped(word.slice(0, i));
+      if (i >= word.length) {
+        clearInterval(typeTimer);
+        holdTimer = setTimeout(() => setIndex((n) => (n + 1) % WORDS.length), 2000);
+      }
+    }, 65);
+    return () => {
+      clearInterval(typeTimer);
+      clearTimeout(holdTimer);
+    };
+  }, [index]);
+
+  // Pull live session counts and refresh periodically.
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const sessions = await getSessions();
+        if (cancelled) return;
+        setCounts({
+          actioning: sessions.filter((s) => s.status === 'running').length,
+          awaiting: sessions.filter((s) => s.status === 'waiting').length,
+          complete: sessions.filter((s) => s.status === 'completed').length,
+        });
+      } catch {
+        if (!cancelled) setCounts({ actioning: 0, awaiting: 0, complete: 0 });
+      }
+    };
+    void load();
+    const id = setInterval(load, 4000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, []);
+
+  // Any key or click dismisses.
+  useEffect(() => {
+    const onKey = () => onClose();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  const active = counts ? counts.actioning + counts.awaiting : 0;
+  const poolSize = settings.agentPoolSize;
+  const agentsPct = poolSize > 0 ? clamp((active / poolSize) * 100, 0, 100) : 0;
+
+  const time = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  const cpuNow = Math.round(cpu[cpu.length - 1] ?? 0);
+  const ramNow = Math.round(ram[ram.length - 1] ?? 0);
+
+  return (
+    <div
+      role="dialog"
+      aria-label="Screensaver"
+      onClick={onClose}
+      className="fixed inset-0 z-[100] flex cursor-pointer flex-col items-center justify-center bg-background/90 px-6 text-center backdrop-blur-[120px]"
+    >
+      {/* Decorative grid on its own masked layer so its edge fade doesn't punch
+          holes in the opaque, blurred backdrop above. */}
+      <div aria-hidden className="bg-grid pointer-events-none absolute inset-0" />
+
+      {/* ── Top-left: date ── */}
+      <div className="absolute left-8 top-8 z-10 text-left">
+        <div className="text-2xl font-semibold tracking-tight text-foreground">
+          {DAYS[now.getDay()]}
+        </div>
+        <div className="mt-0.5 text-sm text-muted-foreground tabular-nums">
+          {now.getDate()} {MONTHS[now.getMonth()]} {now.getFullYear()}
+        </div>
+      </div>
+
+      {/* ── Top-right: time ── */}
+      <div className="absolute right-8 top-8 z-10 text-right">
+        <div className="font-mono text-3xl font-semibold tabular-nums tracking-tight text-foreground">
+          {time}
+        </div>
+        <div className="mt-0.5 text-[11px] uppercase tracking-[0.2em] text-muted-foreground/70">
+          local time
+        </div>
+      </div>
+
+      {/* ── Bottom-left: CPU & RAM ── */}
+      <div className="absolute bottom-8 left-8 z-10 text-left">
+        <div className="mb-2 flex items-center gap-4 text-xs">
+          <LegendDot hueVar="--status-wip" label="CPU" value={cpuNow} />
+          <LegendDot hueVar="--status-todo" label="RAM" value={ramNow} />
+        </div>
+        <AreaChart cpu={cpu} ram={ram} />
+      </div>
+
+      {/* ── Bottom-right: usage quotas ── */}
+      <div className="absolute bottom-8 right-8 z-10 flex items-end gap-6">
+        <Ring value={agentsPct} hueVar="--status-waiting" label="Agents" display={`${active}/${poolSize}`} />
+        <Ring value={quota} hueVar="--status-done" label="Quota" display={`${Math.round(quota)}%`} />
+      </div>
+
+      {/* ── Center: spinner, cycling word, status pills ── */}
+      <div className="relative z-10 flex flex-col items-center">
+        <div className="mb-10">
+          <Spinner />
+        </div>
+
+        <h1 className="flex items-baseline bg-gradient-to-br from-foreground to-foreground/50 bg-clip-text pb-3 text-4xl font-semibold leading-[1.15] tracking-tight text-transparent sm:text-6xl">
+          {typed}
+          <span className="text-foreground/40">…</span>
+          <span
+            aria-hidden
+            className="ml-0.5 inline-block w-[0.06em] self-stretch bg-foreground text-transparent animate-[blink_1s_step-end_infinite]"
+          >
+            |
+          </span>
+        </h1>
+
+        <p className="mt-2 text-sm text-muted-foreground">
+          {active > 0
+            ? `${active} agent${active === 1 ? '' : 's'} hard at work`
+            : 'all quiet — the agents are resting'}
+        </p>
+
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-2.5">
+          {PILLS.map(({ key, label, hueVar }) => {
+            const n = counts ? counts[key] : 0;
+            const hue = `hsl(var(${hueVar}))`;
+            return (
+              <span
+                key={key}
+                className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/60 px-3.5 py-1.5 text-xs font-medium text-foreground/80 backdrop-blur"
+              >
+                <span
+                  aria-hidden
+                  className="h-2 w-2 rounded-full"
+                  style={{ background: hue, boxShadow: `0 0 8px ${hue}` }}
+                />
+                <span className="tabular-nums text-foreground">{counts ? n : '–'}</span>
+                {label}
+              </span>
+            );
+          })}
+        </div>
+      </div>
+
+      <p className="absolute bottom-2 z-10 text-[11px] uppercase tracking-[0.2em] text-muted-foreground/40">
+        press any key to wake
+      </p>
+    </div>
+  );
+}
+
+function LegendDot({ hueVar, label, value }: { hueVar: string; label: string; value: number }) {
+  return (
+    <span className="flex items-center gap-1.5 text-muted-foreground">
+      <span
+        aria-hidden
+        className="h-2 w-2 rounded-full"
+        style={{ background: `hsl(var(${hueVar}))` }}
+      />
+      {label}
+      <span className="tabular-nums text-foreground">{value}%</span>
+    </span>
+  );
+}
+
+const CHART_W = 184;
+const CHART_H = 52;
+
+function seriesPaths(data: number[]): { line: string; area: string } {
+  const n = data.length;
+  const pts = data.map((v, i) => {
+    const x = (i / (n - 1)) * CHART_W;
+    const y = CHART_H - (v / 100) * CHART_H;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  const line = `M${pts.join(' L')}`;
+  const area = `${line} L${CHART_W},${CHART_H} L0,${CHART_H} Z`;
+  return { line, area };
+}
+
+function AreaChart({ cpu, ram }: { cpu: number[]; ram: number[] }) {
+  const c = seriesPaths(cpu);
+  const r = seriesPaths(ram);
+  return (
+    <svg
+      width={CHART_W}
+      height={CHART_H}
+      viewBox={`0 0 ${CHART_W} ${CHART_H}`}
+      className="overflow-visible"
+      aria-hidden
+    >
+      <path d={r.area} fill="hsl(var(--status-todo) / 0.14)" />
+      <path d={c.area} fill="hsl(var(--status-wip) / 0.16)" />
+      <path d={r.line} fill="none" stroke="hsl(var(--status-todo))" strokeWidth={1.5} />
+      <path d={c.line} fill="none" stroke="hsl(var(--status-wip))" strokeWidth={1.5} />
+    </svg>
+  );
+}
+
+function Ring({
+  value,
+  hueVar,
+  label,
+  display,
+}: {
+  value: number;
+  hueVar: string;
+  label: string;
+  display: string;
+}) {
+  const size = 64;
+  const stroke = 6;
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference * (1 - clamp(value, 0, 100) / 100);
+  return (
+    <div className="flex flex-col items-center gap-1.5">
+      <div className="relative" style={{ height: size, width: size }}>
+        <svg width={size} height={size} className="-rotate-90" aria-hidden>
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke="hsl(var(--border) / 0.7)"
+            strokeWidth={stroke}
+          />
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke={`hsl(var(${hueVar}))`}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            style={{ transition: 'stroke-dashoffset 0.6s ease-out' }}
+          />
+        </svg>
+        <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold tabular-nums text-foreground">
+          {display}
+        </span>
+      </div>
+      <span className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground/70">{label}</span>
+    </div>
+  );
+}
+
+// Spinner variants. The sequence always returns to the default "orbit" between
+// variants, so the eye keeps re-anchoring on the same shape.
+type SpinnerVariant = 'orbit' | 'ellipsis' | 'ring';
+const SPINNER_SEQUENCE: SpinnerVariant[] = ['orbit', 'ellipsis', 'orbit', 'ring'];
+
+const DWELL_MS = { orbit: 2200, other: 3600 } as const;
+const BLEND_MS = 700; // cross-fade window between variants
+const DOT_SIZE = 9;
+
+type DotState = { x: number; y: number; o: number };
+
+// Where dot `i` should sit at time `tSec` for a given variant. Crucially, orbit
+// and ring share the exact same angular formula, so blending between them only
+// moves the dots radially — no angular jump. All three are continuous functions
+// of time, so there's nothing to "restart" when we switch.
+function dotPosition(variant: SpinnerVariant, i: number, tSec: number): DotState {
+  if (variant === 'ellipsis') {
+    const period = 1.3;
+    const angle = ((tSec - i * 0.16) / period) * Math.PI * 2;
+    const bounce = Math.max(0, Math.sin(angle));
+    return { x: (i - 1) * 15, y: -11 * bounce, o: 0.4 + 0.6 * bounce };
+  }
+  const angle = (tSec / 1.5) * Math.PI * 2 + i * ((Math.PI * 2) / 3);
+  // ring: fixed radius; orbit: synced breathing radius (never reaches centre).
+  const radius = variant === 'ring' ? 20 : 12 + 9 * Math.sin((tSec / 1.5) * Math.PI * 2);
+  return { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius, o: 1 };
+}
+
+function easeInOut(k: number): number {
+  return k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2;
+}
+
+function Spinner() {
+  const dotsRef = useRef<Array<HTMLSpanElement | null>>([null, null, null]);
+
+  useEffect(() => {
+    const dots = dotsRef.current;
+
+    // Reduced motion: lay the dots out statically and don't animate.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      dots.forEach((el, i) => {
+        if (!el) return;
+        const a = i * ((Math.PI * 2) / 3);
+        el.style.transform = `translate(${Math.cos(a) * 18}px, ${Math.sin(a) * 18}px)`;
+        el.style.opacity = '1';
+      });
+      return;
+    }
+
+    const t0 = performance.now();
+    let raf = 0;
+    let stepIdx = 0;
+    let prev: SpinnerVariant = 'orbit';
+    let target: SpinnerVariant = 'orbit';
+    let blendStart = -Infinity; // far in the past → start fully on `target`
+    let nextSwitchAt = t0 + DWELL_MS.orbit;
+
+    const frame = (now: number) => {
+      const tSec = (now - t0) / 1000;
+
+      if (now >= nextSwitchAt) {
+        stepIdx = (stepIdx + 1) % SPINNER_SEQUENCE.length;
+        prev = target;
+        target = SPINNER_SEQUENCE[stepIdx] ?? 'orbit';
+        blendStart = now;
+        nextSwitchAt = now + (target === 'orbit' ? DWELL_MS.orbit : DWELL_MS.other);
+      }
+
+      const k = easeInOut(clamp((now - blendStart) / BLEND_MS, 0, 1));
+      for (let i = 0; i < 3; i += 1) {
+        const el = dots[i];
+        if (!el) continue;
+        const a = dotPosition(prev, i, tSec);
+        const b = dotPosition(target, i, tSec);
+        const x = a.x + (b.x - a.x) * k;
+        const y = a.y + (b.y - a.y) * k;
+        const o = a.o + (b.o - a.o) * k;
+        el.style.transform = `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px)`;
+        el.style.opacity = o.toFixed(3);
+      }
+
+      raf = requestAnimationFrame(frame);
+    };
+    raf = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  return (
+    <div className="relative h-14 w-14" role="status" aria-label="Working">
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          ref={(el) => {
+            dotsRef.current[i] = el;
+          }}
+          className="absolute rounded-full bg-foreground"
+          style={{
+            height: DOT_SIZE,
+            width: DOT_SIZE,
+            left: '50%',
+            top: '50%',
+            marginLeft: -DOT_SIZE / 2,
+            marginTop: -DOT_SIZE / 2,
+            willChange: 'transform, opacity',
+          }}
+        />
+      ))}
+    </div>
+  );
+}
