@@ -35,6 +35,8 @@ export type AccordionSection = {
   count: number;
   /** Extra text shown beside the title only while collapsed (e.g. "3 tasks · 1 project"). */
   summary: string;
+  /** Trailing controls in the header (right-aligned), e.g. an edit button. */
+  actions?: ReactNode;
   body: ReactNode;
 };
 
@@ -211,6 +213,9 @@ function Section({
             <span className="ml-1 truncate text-[11px] text-muted-foreground/70">{section.summary}</span>
           )}
         </button>
+        {section.actions ? (
+          <div className="flex shrink-0 items-center gap-0.5 pr-1">{section.actions}</div>
+        ) : null}
       </div>
       {!collapsed && <div className="border-t border-border/60">{section.body}</div>}
     </section>

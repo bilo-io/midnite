@@ -117,7 +117,12 @@ export function ProjectsView({ initial, tasks }: { initial: Project[]; tasks: Ta
           No projects match “{q}”.
         </div>
       ) : view === 'table' ? (
-        <ProjectsTree projects={filtered} tasks={tasks} />
+        <ProjectsTree
+          projects={filtered}
+          tasks={tasks}
+          onEdit={setEditProject}
+          onPlan={setPlanProject}
+        />
       ) : view === 'list' ? (
         <div className="flex flex-col gap-2">
           {filtered.map((p) => (

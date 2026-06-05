@@ -1,5 +1,6 @@
 'use client';
 
+import { ListChecks, Pencil } from 'lucide-react';
 import type { Project, Task } from '@midnite/shared';
 import { ProjectTag } from '@/components/project-tag';
 import { SortableAccordions, type AccordionSection } from '@/components/sortable-accordions';
@@ -14,7 +15,17 @@ function plural(n: number, word: string): string {
  * accordion whose children are its tasks. A trailing "Unassigned" section collects
  * tasks with no project. Collapsed sections summarise task and source counts.
  */
-export function ProjectsTree({ projects, tasks }: { projects: Project[]; tasks: Task[] }) {
+export function ProjectsTree({
+  projects,
+  tasks,
+  onEdit,
+  onPlan,
+}: {
+  projects: Project[];
+  tasks: Task[];
+  onEdit?: (project: Project) => void;
+  onPlan?: (project: Project) => void;
+}) {
   const tasksByProject = new Map<string, Task[]>();
   const unassigned: Task[] = [];
   for (const t of tasks) {
@@ -42,6 +53,30 @@ export function ProjectsTree({ projects, tasks }: { projects: Project[]; tasks: 
       leading: <ProjectTag tag={p.tag} color={p.color} />,
       count: items.length,
       summary: `${plural(items.length, 'task')} · ${plural(p.sources.length, 'source')}`,
+      actions: (
+        <>
+          {onPlan ? (
+            <button
+              type="button"
+              onClick={() => onPlan(p)}
+              aria-label={`Plan ${p.name}`}
+              className="rounded p-1.5 text-muted-foreground/70 hover:bg-accent/50 hover:text-foreground"
+            >
+              <ListChecks className="h-3.5 w-3.5" />
+            </button>
+          ) : null}
+          {onEdit ? (
+            <button
+              type="button"
+              onClick={() => onEdit(p)}
+              aria-label={`Edit ${p.name}`}
+              className="rounded p-1.5 text-muted-foreground/70 hover:bg-accent/50 hover:text-foreground"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+          ) : null}
+        </>
+      ),
       body: taskBody(items),
     };
   });
