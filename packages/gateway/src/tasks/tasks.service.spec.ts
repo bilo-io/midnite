@@ -167,6 +167,19 @@ describe('TasksService', () => {
     expect(repo.tasks).toHaveLength(1);
   });
 
+  it('createFromPrompt honours an explicit status (e.g. backlog)', async () => {
+    const repo = new InMemoryRepo();
+    const service = new TasksService(repo, new StubClassifier());
+
+    const task = await service.createFromPrompt({
+      prompt: 'park this idea for later',
+      status: 'backlog',
+      images: [],
+    });
+
+    expect(task.status).toBe('backlog');
+  });
+
   it('createFromPrompt records attachments against the new task', async () => {
     const repo = new InMemoryRepo();
     const service = new TasksService(repo, new StubClassifier());

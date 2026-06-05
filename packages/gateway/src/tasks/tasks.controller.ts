@@ -107,6 +107,7 @@ export class TasksController {
 
     let prompt = '';
     let repo: string | undefined;
+    let status: Status | undefined;
     const savedFiles: Array<{
       path: string;
       relPath: string;
@@ -138,6 +139,13 @@ export class TasksController {
         } else {
           if (part.fieldname === 'prompt') prompt = String(part.value ?? '');
           if (part.fieldname === 'repo') repo = String(part.value ?? '');
+          if (part.fieldname === 'status') {
+            const parsed = StatusSchema.safeParse(String(part.value ?? ''));
+            if (!parsed.success) {
+              throw new BadRequestException(`invalid status: ${String(part.value)}`);
+            }
+            status = parsed.data;
+          }
         }
       }
 
@@ -148,6 +156,7 @@ export class TasksController {
       const task = await this.service.createFromPrompt({
         prompt: prompt.trim(),
         repo: repo?.trim() || undefined,
+        status,
         images: savedFiles.map((f) => ({
           path: f.relPath,
           mime: f.mime,

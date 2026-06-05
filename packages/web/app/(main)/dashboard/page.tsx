@@ -19,7 +19,7 @@ export default async function DashboardPage() {
         title="Dashboard"
         size="lg"
         showGrid
-        description="An overview of your task backlog. Drop one or more prompts below — one task per line."
+        description="An overview of your task backlog. Draft a feature list below — one task per line — then craft it into the Backlog or Todo when you're ready."
       />
       <div className="container space-y-10 pb-48 pt-2">
         {error && (
