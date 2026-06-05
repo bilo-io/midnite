@@ -15,6 +15,15 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useIdleTimer } from '@/lib/use-idle-timer';
+import { useLocalStorage } from '@/lib/use-local-storage';
+import {
+  DEFAULT_SETTINGS,
+  INACTIVITY_MAX_S,
+  INACTIVITY_MIN_S,
+  SETTINGS_STORAGE_KEY,
+  type AppSettings,
+} from '@/lib/app-settings';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Screensaver } from '@/components/screensaver';
 
@@ -37,6 +46,15 @@ const SETTINGS_LINK: NavLink = { href: '/settings', label: 'Settings', Icon: Set
 export function NavBar() {
   const pathname = usePathname();
   const [screensaver, setScreensaver] = useState(false);
+  const [settings] = useLocalStorage<AppSettings>(SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS);
+
+  // Kick the screensaver in after the configured inactivity window; pause the
+  // timer while it's already showing (it dismisses itself on the next input).
+  const idleSeconds = Number.isFinite(settings.inactivityTimeoutS)
+    ? settings.inactivityTimeoutS
+    : DEFAULT_SETTINGS.inactivityTimeoutS;
+  const idleTimeoutMs = Math.min(INACTIVITY_MAX_S, Math.max(INACTIVITY_MIN_S, idleSeconds)) * 1000;
+  useIdleTimer(idleTimeoutMs, () => setScreensaver(true), !screensaver);
 
   const renderLink = ({ href, label, Icon }: NavLink) => {
     const active = pathname === href || (href !== '/' && pathname.startsWith(href));

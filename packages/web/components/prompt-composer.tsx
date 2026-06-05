@@ -27,17 +27,27 @@ export function PromptComposer() {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Intro: start centered + compact, then settle to the bottom at full height.
+  // Only once that settle transition (≈700ms) finishes do the bottom-left icon
+  // buttons cascade in — until then the controls row is withheld so the compact
+  // box stays under 6rem high.
   const [intro, setIntro] = React.useState(true);
+  const [controlsIn, setControlsIn] = React.useState(false);
   React.useEffect(() => {
     if (
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches
     ) {
       setIntro(false);
+      setControlsIn(true);
       return;
     }
-    const id = setTimeout(() => setIntro(false), 450);
-    return () => clearTimeout(id);
+    const settleId = setTimeout(() => setIntro(false), 450);
+    // 450ms intro delay + 700ms height/transform transition.
+    const controlsId = setTimeout(() => setControlsIn(true), 1150);
+    return () => {
+      clearTimeout(settleId);
+      clearTimeout(controlsId);
+    };
   }, []);
 
   const speech = useSpeechRecognition({
@@ -150,53 +160,60 @@ export function PromptComposer() {
           </div>
         )}
 
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              hidden
-              onChange={onPickFiles}
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => fileInputRef.current?.click()}
-              aria-label="Attach image"
-            >
-              <Paperclip className="h-4 w-4" />
-            </Button>
-            {speech.supported && (
+        {controlsIn && (
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                hidden
+                onChange={onPickFiles}
+              />
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                onClick={speech.listening ? speech.stop : speech.start}
-                aria-label={speech.listening ? 'Stop dictation' : 'Start dictation'}
-                className={cn(speech.listening && 'text-destructive')}
+                onClick={() => fileInputRef.current?.click()}
+                aria-label="Attach image"
+                className="cascade-item"
+                style={{ animationDelay: '0ms' }}
               >
-                {speech.listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                <Paperclip className="h-4 w-4" />
               </Button>
-            )}
-            {taskCount > 1 && (
-              <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
-                {taskCount} tasks
-              </span>
-            )}
+              {speech.supported && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={speech.listening ? speech.stop : speech.start}
+                  aria-label={speech.listening ? 'Stop dictation' : 'Start dictation'}
+                  className={cn('cascade-item', speech.listening && 'text-destructive')}
+                  style={{ animationDelay: '90ms' }}
+                >
+                  {speech.listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                </Button>
+              )}
+              {taskCount > 1 && (
+                <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
+                  {taskCount} tasks
+                </span>
+              )}
+            </div>
+            <Button
+              type="button"
+              onClick={() => void submit()}
+              disabled={taskCount === 0 || phase === 'submitting'}
+              size="sm"
+              className="cascade-item"
+              style={{ animationDelay: '180ms' }}
+            >
+              <Send className="h-4 w-4" />
+              {sendLabel}
+            </Button>
           </div>
-          <Button
-            type="button"
-            onClick={() => void submit()}
-            disabled={taskCount === 0 || phase === 'submitting'}
-            size="sm"
-          >
-            <Send className="h-4 w-4" />
-            {sendLabel}
-          </Button>
-        </div>
+        )}
 
         {error && <p className="text-sm text-destructive">{error}</p>}
       </div>

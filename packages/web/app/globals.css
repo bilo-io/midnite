@@ -143,6 +143,28 @@
    interpolates three persistent dots between variants), so it needs no CSS
    keyframes — that's what keeps variant transitions seamless. */
 
+/* Looping shimmer sweep for the live screensaver status pills. The band is
+   tinted with the pill's own hue and sits behind the text, so content stays
+   readable while the highlight travels across. */
+@keyframes pill-shimmer {
+  0% {
+    transform: translateX(-160%);
+  }
+  100% {
+    transform: translateX(160%);
+  }
+}
+
+.pill-shimmer {
+  animation: pill-shimmer 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill-shimmer {
+    animation: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .cascade-item {
     animation: none;

@@ -1,16 +1,25 @@
 'use client';
 
-import { Cpu } from 'lucide-react';
+import { Clock, Cpu } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
   AGENT_POOL_MAX,
   AGENT_POOL_MIN,
   DEFAULT_SETTINGS,
+  INACTIVITY_MAX_S,
+  INACTIVITY_MIN_S,
   SETTINGS_STORAGE_KEY,
   type AppSettings,
 } from '@/lib/app-settings';
 import { cn } from '@/lib/utils';
+
+function formatDuration(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  const mins = Math.floor(seconds / 60);
+  const rem = seconds % 60;
+  return rem === 0 ? `${mins}m` : `${mins}m ${rem}s`;
+}
 
 export function SettingsView() {
   const [settings, setSettings, hydrated] = useLocalStorage<AppSettings>(
@@ -23,6 +32,16 @@ export function SettingsView() {
     setSettings((prev) => ({
       ...prev,
       agentPoolSize: Math.min(AGENT_POOL_MAX, Math.max(AGENT_POOL_MIN, n)),
+    }));
+
+  const idleTimeout = Math.min(
+    INACTIVITY_MAX_S,
+    Math.max(INACTIVITY_MIN_S, settings.inactivityTimeoutS),
+  );
+  const setIdleTimeout = (n: number) =>
+    setSettings((prev) => ({
+      ...prev,
+      inactivityTimeoutS: Math.min(INACTIVITY_MAX_S, Math.max(INACTIVITY_MIN_S, n)),
     }));
 
   return (
@@ -72,6 +91,57 @@ export function SettingsView() {
 
           <p className="text-xs text-muted-foreground/70">
             Default {DEFAULT_SETTINGS.agentPoolSize} · maximum {AGENT_POOL_MAX}.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-3.5 w-3.5" />
+            Screensaver
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-start justify-between gap-6">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Inactivity timeout</p>
+              <p className="text-xs text-muted-foreground">
+                How long without any input before the screensaver appears. Any activity wakes it.
+              </p>
+            </div>
+            <div
+              className={cn(
+                'flex h-9 min-w-[3.5rem] items-center justify-center rounded-md border border-border/60 bg-card/60 px-3 text-lg font-semibold tabular-nums transition-opacity',
+                hydrated ? 'opacity-100' : 'opacity-0',
+              )}
+            >
+              {formatDuration(idleTimeout)}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="w-8 text-right text-xs text-muted-foreground tabular-nums">
+              {formatDuration(INACTIVITY_MIN_S)}
+            </span>
+            <input
+              type="range"
+              min={INACTIVITY_MIN_S}
+              max={INACTIVITY_MAX_S}
+              step={5}
+              value={idleTimeout}
+              onChange={(e) => setIdleTimeout(Number(e.target.value))}
+              aria-label="Inactivity timeout"
+              className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-border accent-foreground"
+            />
+            <span className="w-8 text-xs text-muted-foreground tabular-nums">
+              {formatDuration(INACTIVITY_MAX_S)}
+            </span>
+          </div>
+
+          <p className="text-xs text-muted-foreground/70">
+            Default {formatDuration(DEFAULT_SETTINGS.inactivityTimeoutS)} · range{' '}
+            {formatDuration(INACTIVITY_MIN_S)}–{formatDuration(INACTIVITY_MAX_S)}.
           </p>
         </CardContent>
       </Card>

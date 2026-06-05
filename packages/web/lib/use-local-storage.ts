@@ -2,6 +2,19 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v);
+}
+
+// Merge a stored value over the defaults so fields added after a value was first
+// persisted still get their default (rather than coming back `undefined`).
+function reconcile<T>(initial: T, stored: unknown): T {
+  if (isPlainObject(initial) && isPlainObject(stored)) {
+    return { ...initial, ...stored } as T;
+  }
+  return stored as T;
+}
+
 /**
  * A localStorage-backed piece of state. Reads on mount (never during SSR, to
  * avoid hydration mismatches), writes through on every change, and syncs across
@@ -18,7 +31,7 @@ export function useLocalStorage<T>(
   useEffect(() => {
     try {
       const raw = localStorage.getItem(key);
-      if (raw !== null) setValue(JSON.parse(raw) as T);
+      if (raw !== null) setValue(reconcile(initial, JSON.parse(raw)));
     } catch {
       // ignore malformed/unavailable storage
     }
@@ -29,7 +42,7 @@ export function useLocalStorage<T>(
     const onStorage = (e: StorageEvent) => {
       if (e.key !== key || e.newValue === null) return;
       try {
-        setValue(JSON.parse(e.newValue) as T);
+        setValue(reconcile(initial, JSON.parse(e.newValue)));
       } catch {
         // ignore
       }
