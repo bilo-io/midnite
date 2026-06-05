@@ -5,17 +5,19 @@ import { getSessions } from '@/lib/api';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY, type AppSettings } from '@/lib/app-settings';
 
-// 100 playful gerunds shown one at a time in the big title slot.
-const WORDS = [
+// Playful phrases shown one at a time in the big title slot. Which set we draw
+// from tracks what the agents are doing: at least one acting → ACTIVE; none
+// acting but some awaiting input → WAITING; nothing on the board → IDLE.
+const ACTIVE_WORDS = [
   'loading',
   'combobulating',
   'midnighting',
   'clauding',
   'vibing',
-  'smashing it',
+  'smashing',
   'crushing it',
   'orchestrating',
-  'spinning up',
+  'klapping',
   'thinking',
   'reticulating',
   'computing',
@@ -26,7 +28,7 @@ const WORDS = [
   'compiling',
   'hydrating',
   'bundling',
-  'shipping',
+  'fidgeting',
   'deploying',
   'tinkering',
   'wrangling',
@@ -52,7 +54,7 @@ const WORDS = [
   'pondering',
   'cogitating',
   'ruminating',
-  'daydreaming',
+  'rick\'ing',
   'scheming',
   'plotting',
   'mapping',
@@ -99,6 +101,7 @@ const WORDS = [
   'sparkling',
   'dazzling',
   'flexing',
+  '"hey ho"\'ing',
   'leveling up',
   'powering up',
   'charging up',
@@ -109,6 +112,89 @@ const WORDS = [
   'dialing in',
   'getting after it',
 ];
+
+// Nobody's acting, but work is parked awaiting your input — the agents idle.
+const WAITING_WORDS = [
+  'twiddling thumbs',
+  'tumbleweeding',
+  'watching ice melt',
+  'watching grass grow',
+  'watching paint dry',
+  'counting ceiling tiles',
+  'counting sheep',
+  'humming elevator music',
+  'whistling idly',
+  'doodling margins',
+  'staring into space',
+  'cooling heels',
+  'pacing the floor',
+  'checking the clock',
+  'twirling pens',
+  'people-watching',
+  'killing time',
+  'biding time',
+  'loitering',
+  'lingering',
+  'holding the line',
+  'standing by',
+  'awaiting orders',
+  'awaiting your word',
+  'spinning idle',
+];
+
+// Empty board — the agents are rested and itching for something to do.
+const IDLE_WORDS = [
+  'anticipating',
+  'keen to roll',
+  'wanna vibe?',
+  'what\'s up?',
+  'ready when you are',
+  'itching to go',
+  'raring to go',
+  'champing at the bit',
+  'all charged up',
+  'fully rested',
+  'fired up',
+  'locked and loaded',
+  'eager beaver',
+  'queue me up',
+  'feed me work',
+  'point me at it',
+  'give me something',
+  'what’s next?',
+  'tasks please',
+  'hit me up',
+  'let’s build',
+  'let’s gooo',
+  'let’s vibe',
+  'let’s fucking go!',
+  'ready to rumble',
+  'craving chaos',
+  'bored already',
+  'idle hands',
+];
+
+type Mode = 'active' | 'waiting' | 'idle';
+
+const WORD_SETS: Record<Mode, string[]> = {
+  active: ACTIVE_WORDS,
+  waiting: WAITING_WORDS,
+  idle: IDLE_WORDS,
+};
+
+// Pick a random phrase index, avoiding an immediate repeat of the current one.
+function nextRandomIndex(length: number, current: number): number {
+  if (length <= 1) return 0;
+  let next = current;
+  while (next === current) next = Math.floor(Math.random() * length);
+  return next;
+}
+
+function modeFromCounts(counts: Counts | null): Mode {
+  if (!counts || counts.actioning > 0) return 'active';
+  if (counts.awaiting > 0) return 'waiting';
+  return 'idle';
+}
 
 type Counts = { actioning: number; awaiting: number; complete: number };
 
@@ -156,9 +242,10 @@ function walkSeries(prev: number[], spread: number, lo: number, hi: number): num
 }
 
 export function Screensaver({ onClose }: { onClose: () => void }) {
-  const [index, setIndex] = useState(() => Math.floor(Math.random() * WORDS.length));
+  const [index, setIndex] = useState(() => Math.floor(Math.random() * ACTIVE_WORDS.length));
   const [typed, setTyped] = useState('');
   const [counts, setCounts] = useState<Counts | null>(null);
+  const mode = modeFromCounts(counts);
   const [settings] = useLocalStorage<AppSettings>(SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS);
 
   // Corner widgets: live clock plus simulated system telemetry.
@@ -177,9 +264,15 @@ export function Screensaver({ onClose }: { onClose: () => void }) {
     return () => clearInterval(id);
   }, []);
 
+  // When the agents' state changes, jump to a fresh phrase from the new set.
+  useEffect(() => {
+    setIndex(Math.floor(Math.random() * WORD_SETS[mode].length));
+  }, [mode]);
+
   // Type the current word out, hold it for 2s, then advance to the next one.
   useEffect(() => {
-    const word = WORDS[index] ?? 'loading';
+    const set = WORD_SETS[mode];
+    const word = set[index % set.length] ?? 'loading';
     let i = 0;
     let holdTimer: ReturnType<typeof setTimeout>;
     setTyped('');
@@ -188,14 +281,14 @@ export function Screensaver({ onClose }: { onClose: () => void }) {
       setTyped(word.slice(0, i));
       if (i >= word.length) {
         clearInterval(typeTimer);
-        holdTimer = setTimeout(() => setIndex((n) => (n + 1) % WORDS.length), 2000);
+        holdTimer = setTimeout(() => setIndex((n) => nextRandomIndex(set.length, n)), 2000);
       }
     }, 65);
     return () => {
       clearInterval(typeTimer);
       clearTimeout(holdTimer);
     };
-  }, [index]);
+  }, [index, mode]);
 
   // Pull live session counts and refresh periodically.
   useEffect(() => {
@@ -290,7 +383,6 @@ export function Screensaver({ onClose }: { onClose: () => void }) {
 
         <h1 className="flex items-baseline bg-gradient-to-br from-foreground to-foreground/50 bg-clip-text pb-3 text-4xl font-semibold leading-[1.15] tracking-tight text-transparent sm:text-6xl">
           {typed}
-          <span className="text-foreground/40">…</span>
           <span
             aria-hidden
             className="ml-0.5 inline-block w-[0.06em] self-stretch bg-foreground text-transparent animate-[blink_1s_step-end_infinite]"
@@ -300,27 +392,41 @@ export function Screensaver({ onClose }: { onClose: () => void }) {
         </h1>
 
         <p className="mt-2 text-sm text-muted-foreground">
-          {active > 0
-            ? `${active} agent${active === 1 ? '' : 's'} hard at work`
-            : 'all quiet — the agents are resting'}
+          {mode === 'active'
+            ? `${counts?.actioning ?? 0} agent${counts?.actioning === 1 ? '' : 's'} hard at work`
+            : mode === 'waiting'
+              ? `${counts?.awaiting ?? 0} session${counts?.awaiting === 1 ? '' : 's'} awaiting your input`
+              : 'all caught up — ready for more'}
         </p>
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-2.5">
           {PILLS.map(({ key, label, hueVar }) => {
             const n = counts ? counts[key] : 0;
             const hue = `hsl(var(${hueVar}))`;
+            // Shimmer the live states (actioning, awaiting) but not "complete",
+            // and only when that state actually has sessions.
+            const shimmer = key !== 'complete' && n > 0;
             return (
               <span
                 key={key}
-                className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/60 px-3.5 py-1.5 text-xs font-medium text-foreground/80 backdrop-blur"
+                className="relative inline-flex items-center gap-2 overflow-hidden rounded-full border border-border/60 bg-card/60 px-3.5 py-1.5 text-xs font-medium text-foreground/80 backdrop-blur"
               >
+                {shimmer && (
+                  <span
+                    aria-hidden
+                    className="pill-shimmer pointer-events-none absolute inset-0"
+                    style={{
+                      background: `linear-gradient(100deg, transparent 38%, hsl(var(${hueVar}) / 0.42) 50%, transparent 62%)`,
+                    }}
+                  />
+                )}
                 <span
                   aria-hidden
-                  className="h-2 w-2 rounded-full"
+                  className="relative h-2 w-2 rounded-full"
                   style={{ background: hue, boxShadow: `0 0 8px ${hue}` }}
                 />
-                <span className="tabular-nums text-foreground">{counts ? n : '–'}</span>
-                {label}
+                <span className="relative tabular-nums text-foreground">{counts ? n : '–'}</span>
+                <span className="relative">{label}</span>
               </span>
             );
           })}
@@ -434,8 +540,19 @@ function Ring({
 
 // Spinner variants. The sequence always returns to the default "orbit" between
 // variants, so the eye keeps re-anchoring on the same shape.
-type SpinnerVariant = 'orbit' | 'ellipsis' | 'ring';
-const SPINNER_SEQUENCE: SpinnerVariant[] = ['orbit', 'ellipsis', 'orbit', 'ring'];
+type SpinnerVariant = 'orbit' | 'ellipsis' | 'ring' | 'juggle' | 'bounce' | 'conveyor';
+const SPINNER_SEQUENCE: SpinnerVariant[] = [
+  'orbit',
+  'ellipsis',
+  'orbit',
+  'ring',
+  'orbit',
+  'juggle',
+  'orbit',
+  'bounce',
+  'orbit',
+  'conveyor',
+];
 
 const DWELL_MS = { orbit: 2200, other: 3600 } as const;
 const BLEND_MS = 700; // cross-fade window between variants
@@ -453,6 +570,66 @@ function dotPosition(variant: SpinnerVariant, i: number, tSec: number): DotState
     const angle = ((tSec - i * 0.16) / period) * Math.PI * 2;
     const bounce = Math.max(0, Math.sin(angle));
     return { x: (i - 1) * 15, y: -11 * bounce, o: 0.4 + 0.6 * bounce };
+  }
+  if (variant === 'juggle') {
+    // Treadmill of three dots: glide left→right along the bottom, then the one
+    // that reaches the right edge arcs back over the top — a leapfrog loop.
+    const period = 1.4;
+    const bottomShare = 0.68; // fraction of the cycle spent on the bottom run
+    const span = 16; // x reaches ±span; arc rises to `arc`
+    const arc = 17;
+    const p = (((tSec / period + i / 3) % 1) + 1) % 1;
+    if (p < bottomShare) {
+      const f = p / bottomShare;
+      return { x: -span + 2 * span * f, y: 0, o: 1 };
+    }
+    const pp = (p - bottomShare) / (1 - bottomShare);
+    return { x: span * Math.cos(Math.PI * pp), y: -arc * Math.sin(Math.PI * pp), o: 1 };
+  }
+  if (variant === 'bounce') {
+    // A single bounce sweeps left→right across a row of three. Each dot's hop is
+    // staggered by a third of the cycle and lasts exactly a third, so at any
+    // instant one dot is airborne and the other two rest on the baseline — and
+    // each touchdown hands straight off to the next dot, so the bounce travels.
+    const period = 1.4;
+    const spacing = 16;
+    const arc = 20;
+    const x = (i - 1) * spacing;
+    const local = (((tSec / period - i / 3) % 1) + 1) % 1;
+    const hopWindow = 1 / 3;
+    const hop = local < hopWindow ? Math.sin((local / hopWindow) * Math.PI) : 0;
+    return { x, y: -arc * hop, o: 1 };
+  }
+  if (variant === 'conveyor') {
+    // Dots file in from the left, queue into a row at {-S, 0, +S}, then file out
+    // to the right. Each dot tracks a piecewise-linear x path (lifted straight
+    // from the reference keyframes); opacity is derived from how far off-centre
+    // it has drifted, so it fades in/out at the edges and the off-screen wrap
+    // (right edge → left edge) is invisible.
+    const period = 1.3;
+    const S = 18;
+    const OFF = 44;
+    const tracks: ReadonlyArray<ReadonlyArray<readonly [number, number]>> = [
+      [[0, -OFF], [0.3333, -OFF], [0.4, -S], [0.8333, -S], [1, OFF]],
+      [[0, -OFF], [0.1667, -OFF], [0.3333, 0], [0.6667, 0], [0.8333, OFF], [1, OFF]],
+      [[0, -OFF], [0.1667, S], [0.6, S], [0.6667, OFF], [1, OFF]],
+    ];
+    const track = tracks[i] ?? tracks[0]!;
+    const u = (((tSec / period) % 1) + 1) % 1;
+    let x = track[track.length - 1]?.[1] ?? OFF;
+    for (let k = 0; k < track.length - 1; k += 1) {
+      const a = track[k];
+      const b = track[k + 1];
+      if (!a || !b) continue;
+      const [u0, x0] = a;
+      const [u1, x1] = b;
+      if (u >= u0 && u <= u1) {
+        const f = u1 === u0 ? 0 : (u - u0) / (u1 - u0);
+        x = x0 + (x1 - x0) * f;
+        break;
+      }
+    }
+    return { x, y: 0, o: clamp((OFF - Math.abs(x)) / (OFF - S), 0, 1) };
   }
   const angle = (tSec / 1.5) * Math.PI * 2 + i * ((Math.PI * 2) / 3);
   // ring: fixed radius; orbit: synced breathing radius (never reaches centre).
