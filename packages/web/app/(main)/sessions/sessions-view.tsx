@@ -13,6 +13,7 @@ import {
 } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { FilterPills, type FilterOption } from '@/components/filter-pills';
+import { ProjectMultiSelect } from '@/components/project-multi-select';
 import {
   SESSION_STATUS_HUE,
   SESSION_STATUS_LABEL,
@@ -178,14 +179,7 @@ export function SessionsView({
       {initial.length > 0 ? (
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
           <FilterPills options={SESSION_FILTERS} />
-          {projects.length > 0 ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
-                Project
-              </span>
-              <FilterPills options={projectFilters} paramKey="project" />
-            </div>
-          ) : null}
+          {projects.length > 0 ? <ProjectMultiSelect options={projectFilters} /> : null}
         </div>
       ) : null}
 
