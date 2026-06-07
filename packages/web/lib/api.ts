@@ -10,6 +10,7 @@ import {
   SessionTranscriptSchema,
   TaskCountsSchema,
   TaskSchema,
+  TerminalTokenResponseSchema,
   WebhookInfoResponseSchema,
   WorkflowResponseSchema,
   WorkflowRunSchema,
@@ -23,6 +24,7 @@ import {
   type SessionTranscript,
   type Task,
   type TaskCounts,
+  type TerminalTokenResponse,
   type UpdateProjectRequest,
   type UpdateWorkflowRequest,
   type WebhookInfoResponse,
@@ -44,6 +46,11 @@ export function gatewayUrl(): string {
     process.env['NEXT_PUBLIC_GATEWAY_URL'] ??
     'http://localhost:7777'
   );
+}
+
+/** Gateway origin as a WebSocket URL (scheme swapped from {@link gatewayUrl}). */
+export function gatewayWsUrl(): string {
+  return gatewayUrl().replace(/^http/, 'ws');
 }
 
 // The schema is typed structurally by its `parse` return so T is inferred from the
@@ -104,6 +111,14 @@ export async function getSessionTranscript(
 ): Promise<SessionTranscript> {
   const path = `/sessions/${encodeURIComponent(projectSlug)}/${encodeURIComponent(id)}/transcript`;
   return fetchJson(path, undefined, SessionTranscriptSchema);
+}
+
+export async function mintTerminalToken(sessionId: string): Promise<TerminalTokenResponse> {
+  return fetchJson(
+    `/sessions/${encodeURIComponent(sessionId)}/terminal-token`,
+    { method: 'POST' },
+    TerminalTokenResponseSchema,
+  );
 }
 
 export async function getProjects(): Promise<Project[]> {

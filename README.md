@@ -107,13 +107,24 @@ User config lives in [`midnite.json`](midnite.json) at the repo root, validated 
 ```json
 {
   "agent":     { "pool": 4, "provider": "claude", "plan": "opus4.7", "act": "sonnet4.7" },
-  "terminal":  { "mode": "pty", "layout": "split" },
+  "terminal":  { "mode": "pty", "layout": "split", "args": [], "scrollbackBytes": 262144, "idleDisposeMs": 300000 },
   "knowledge": { "dir": "./knowledge" },
   "repos":     [],
   "gateway":   { "port": 7777 },
   "workflows": { "enabled": false, "defaultTimezone": "UTC", "schedulerTickMs": 30000, "webhookBaseUrl": "http://localhost:7777" }
 }
 ```
+
+The session web window streams a live PTY over WebSocket (`/ws/terminal`). The
+PTY is spawned on demand when a window opens for an active session and is shared
+across reconnects. `terminal` fields control it:
+
+- `command` (optional) — what each session PTY runs. Defaults to an interactive
+  login shell (`$SHELL`, else `/bin/bash`) in the session's repo cwd. Set it to
+  `"claude"` to drive a live Claude Code session instead.
+- `args` — argv for `command` (ignored for the default shell, which uses `-i`).
+- `scrollbackBytes` — bytes of recent output retained per PTY, replayed on (re)attach.
+- `idleDisposeMs` — grace period after the last viewer disconnects before the PTY is reaped.
 
 Every consumer (gateway, CLI) takes a parsed `MidniteConfig` — never `JSON.parse` the file yourself.
 

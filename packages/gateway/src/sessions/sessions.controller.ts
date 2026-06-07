@@ -1,5 +1,9 @@
-import { Controller, Get, Inject, Param } from '@nestjs/common';
-import type { SessionSummary, SessionTranscript } from '@midnite/shared';
+import { Controller, Get, Inject, Param, Post } from '@nestjs/common';
+import type {
+  SessionSummary,
+  SessionTranscript,
+  TerminalTokenResponse,
+} from '@midnite/shared';
 import { SessionsService } from './sessions.service';
 
 @Controller('sessions')
@@ -19,5 +23,10 @@ export class SessionsController {
     @Param('id') id: string,
   ): Promise<SessionTranscript> {
     return this.service.transcript(projectSlug, id);
+  }
+
+  @Post(':id/terminal-token')
+  terminalToken(@Param('id') id: string): TerminalTokenResponse {
+    return this.service.mintTerminalToken(id);
   }
 }

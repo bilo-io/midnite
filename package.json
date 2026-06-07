@@ -11,7 +11,8 @@
     "build": "moon run :build",
     "dev": "moon run :dev",
     "test": "moon run :test",
-    "typecheck": "moon run :typecheck"
+    "typecheck": "moon run :typecheck",
+    "postinstall": "node scripts/fix-node-pty.cjs"
   },
   "devDependencies": {
     "@moonrepo/cli": "^1.30.0",

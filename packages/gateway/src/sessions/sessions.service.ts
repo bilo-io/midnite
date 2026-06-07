@@ -1,13 +1,16 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type {
-  SessionStatus,
-  SessionSummary,
-  SessionTranscript,
-  Status,
-  Task,
-  TranscriptMessage,
+import {
+  TERMINAL_WS_PATH,
+  type SessionStatus,
+  type SessionSummary,
+  type SessionTranscript,
+  type Status,
+  type Task,
+  type TerminalTokenResponse,
+  type TranscriptMessage,
 } from '@midnite/shared';
 import { TasksService } from '../tasks/tasks.service';
+import { TerminalService } from '../terminal/terminal.service';
 import { loadTranscript } from './sessions.reader';
 
 const SUBTITLE_LIMIT = 140;
@@ -25,7 +28,18 @@ const STATUS_MAP: Record<Status, SessionStatus> = {
 
 @Injectable()
 export class SessionsService {
-  constructor(@Inject(TasksService) private readonly tasks: TasksService) {}
+  constructor(
+    @Inject(TasksService) private readonly tasks: TasksService,
+    @Inject(TerminalService) private readonly terminal: TerminalService,
+  ) {}
+
+  // Mint a short-lived, single-use token the web client presents on the WS
+  // `attach` — the trust boundary for driving a PTY (arbitrary code in a repo).
+  mintTerminalToken(sessionId: string): TerminalTokenResponse {
+    const task = this.tasks.listTasks().find((t) => t.id === sessionId);
+    if (!task) throw new NotFoundException(`session ${sessionId} not found`);
+    return { token: this.terminal.mintToken(sessionId), wsUrl: TERMINAL_WS_PATH };
+  }
 
   // One session per task (most-recently-touched first), rather than every raw
   // ~/.claude transcript on disk.

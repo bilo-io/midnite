@@ -5,7 +5,7 @@ import { parseConfig, type MidniteConfig } from '@midnite/shared';
 
 const baseConfig: MidniteConfig = parseConfig({
   agent: { pool: 4, provider: 'claude', plan: 'opus4.7', act: 'sonnet4.7' },
-  terminal: { mode: 'pty', layout: 'split' },
+  terminal: { mode: 'pty', layout: 'split', args: [], scrollbackBytes: 262144, idleDisposeMs: 300000 },
   knowledge: { dir: './knowledge' },
   repos: [],
   gateway: { port: 7777, uploadsDir: './.midnite/uploads', dbPath: './.midnite/midnite.db' },

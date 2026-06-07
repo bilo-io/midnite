@@ -16,6 +16,18 @@ New **Workflows** space: an n8n/Make-style visual builder where a workflow is a 
 
 ---
 
+## 2026-06-07 — Live 2-way session terminal stream
+
+The session web window is now a **direct, bidirectional stream** between a gateway-spawned PTY and the browser: the web app renders live output via xterm.js *and* sends keystrokes/resizes back over a WebSocket. PTY is configurable (defaults to an interactive shell in the session's repo, `terminal.command: "claude"` to drive a live agent), spawned on demand when a window opens, reused/replayed across reconnects, idle-reaped, and killed on shutdown. Live terminal serves active (`running`/`waiting`) sessions; completed/idle keep the static REST transcript. Branch: `feature/session-terminal-stream`.
+
+- [x] `shared`: `events/terminal.ts` — zod discriminated unions for the WS protocol (`attach`/`input`/`resize` ↔ `output`/`status`/`error`, bytes base64-framed), `TerminalTokenResponse`; extended `TerminalConfigSchema` (`command`/`args`/`scrollbackBytes`/`idleDisposeMs`)
+- [x] `gateway`: `terminal.service.ts` (node-pty lifecycle, byte-bounded ring buffer, single-use per-session token, idle/shutdown cleanup, fail-soft load), `terminal.gateway.ts` (`@WebSocketGateway` on `/ws/terminal`, raw-message zod validation, token auth), `WsAdapter` wired in `main.ts`, `POST /sessions/:id/terminal-token`. Added `node-pty` + `ws` (+ root `postinstall` restoring node-pty's macOS `spawn-helper` exec bit dropped by pnpm extraction)
+- [x] `web`: `use-terminal-socket` (mint token → attach → stream → input/resize, capped-backoff reconnect), `session-terminal` (xterm.js, client-only `ssr:false` dynamic, FitAddon + ResizeObserver, theme-synced), `session-terminal-modal`, `sessions-view` branches active→terminal / completed→transcript; `gatewayWsUrl()` + `mintTerminalToken()` in `lib/api.ts`
+- [x] Tests: shared union round-trips; gateway `terminal.service` (echo PTY, ring trim, reattach replay, exit, destroy, token single-use) + `terminal.gateway` (attach/echo, unauthorized, bad-message, attach-before-input, detach) — 32 gateway tests passing; `:typecheck`, `:lint`, web `next build` green; live E2E against the running gateway (REST token → WS attach → PTY spawn → input echoed) confirmed
+- [ ] Follow-ups: browser visual pass; wire the Phase-2 scheduler to pre-spawn `claude` PTYs into the same registry; surface terminal liveness on `SessionSummary`
+
+---
+
 ## 2026-06-04 — Projects feature
 
 New **Projects** space: group work under a project with an (AI-assistable) description, up to 10 source links (auto-detected kind + best-effort OpenGraph/oEmbed title), and a project tag (user color, auto-contrast text) that tasks carry. From a project you can draft a markdown plan (one-shot Claude call) and turn checked items into tasks. One project per task via a nullable `tasks.projectId`. Branch: `feature/projects`.

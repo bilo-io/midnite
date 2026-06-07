@@ -21,6 +21,7 @@ import {
   SessionRow,
 } from '@/components/session-card';
 import { SessionTranscriptModal } from '@/components/session-transcript-modal';
+import { SessionTerminalModal } from '@/components/session-terminal-modal';
 import { SortableAccordions, type AccordionSection } from '@/components/sortable-accordions';
 import type { ProjectTagInfo } from '@/components/task-card';
 import { getSessionTranscript } from '@/lib/api';
@@ -39,6 +40,12 @@ const SESSION_FILTERS: FilterOption[] = [
 
 function plural(n: number, word: string): string {
   return `${n} ${word}${n === 1 ? '' : 's'}`;
+}
+
+// Active sessions have a live PTY behind them; completed/idle fall back to the
+// static transcript.
+function isActive(status: SessionStatus): boolean {
+  return status === 'running' || status === 'waiting';
 }
 
 export function SessionsView({
@@ -74,6 +81,8 @@ export function SessionsView({
     setSelected(session);
     setTranscript(null);
     setLoadError(null);
+    // Active sessions get a live terminal (no static transcript to fetch).
+    if (isActive(session.status)) return;
     setLoading(true);
     try {
       const data = await getSessionTranscript(session.projectSlug, session.id);
@@ -257,13 +266,17 @@ export function SessionsView({
       )}
 
       {selected ? (
-        <SessionTranscriptModal
-          session={selected}
-          transcript={transcript}
-          loading={loading}
-          error={loadError}
-          onClose={onClose}
-        />
+        isActive(selected.status) ? (
+          <SessionTerminalModal session={selected} onClose={onClose} />
+        ) : (
+          <SessionTranscriptModal
+            session={selected}
+            transcript={transcript}
+            loading={loading}
+            error={loadError}
+            onClose={onClose}
+          />
+        )
       ) : null}
     </div>
   );

@@ -4,6 +4,7 @@ import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
+import { WsAdapter } from '@nestjs/platform-ws';
 import multipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
 import { mkdirSync, readFileSync } from 'node:fs';
@@ -56,6 +57,8 @@ async function bootstrap() {
   );
 
   app.enableCors({ origin: true });
+  // Live terminal WS rides the same Fastify HTTP server, routed by gateway path.
+  app.useWebSocketAdapter(new WsAdapter(app));
 
   const port = config.gateway.port;
   await app.listen(port, '0.0.0.0');

@@ -15,6 +15,13 @@ export const AgentConfigSchema = z.object({
 export const TerminalConfigSchema = z.object({
   mode: z.enum(['pty', 'tmux', 'warp', 'iterm']).default('pty'),
   layout: z.enum(['split', 'tabs', 'windows']).default('split'),
+  /** Command spawned for an on-demand session PTY. Defaults to an interactive login shell. */
+  command: z.string().optional(),
+  args: z.array(z.string()).default([]),
+  /** Bytes of recent output retained per PTY for scrollback replay on (re)attach. */
+  scrollbackBytes: z.number().int().positive().default(262144),
+  /** Grace period after the last client detaches before the PTY is reaped. */
+  idleDisposeMs: z.number().int().nonnegative().default(300000),
 });
 
 export const KnowledgeConfigSchema = z.object({
