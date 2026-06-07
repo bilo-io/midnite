@@ -3,7 +3,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { getSessions } from '@/lib/api';
 import { useLocalStorage } from '@/lib/use-local-storage';
-import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY, type AppSettings } from '@/lib/app-settings';
+import {
+  DEFAULT_SETTINGS,
+  PASSCODE_STORAGE_KEY,
+  SETTINGS_STORAGE_KEY,
+  type AppSettings,
+} from '@/lib/app-settings';
+import { PasscodeUnlockDialog } from '@/components/passcode-pad';
 
 // Playful phrases shown one at a time in the big title slot. Which set we draw
 // from tracks what the agents are doing: at least one acting → ACTIVE; none
@@ -14,7 +20,6 @@ const ACTIVE_WORDS = [
   'midnighting',
   'clauding',
   'vibing',
-  'smashing',
   'crushing it',
   'orchestrating',
   'klapping',
@@ -25,11 +30,8 @@ const ACTIVE_WORDS = [
   'brewing',
   'percolating',
   'assembling',
-  'compiling',
   'hydrating',
-  'bundling',
   'fidgeting',
-  'deploying',
   'tinkering',
   'wrangling',
   'noodling',
@@ -87,7 +89,6 @@ const ACTIVE_WORDS = [
   'materialising',
   'summoning',
   'enchanting',
-  'bewitching',
   'mesmerising',
   'humming',
   'whirring',
@@ -241,12 +242,37 @@ function walkSeries(prev: number[], spread: number, lo: number, hi: number): num
   return [...prev.slice(1), clamp(last + (Math.random() - 0.5) * spread, lo, hi)];
 }
 
-export function Screensaver({ onClose }: { onClose: () => void }) {
+export function Screensaver({
+  onClose,
+  locked = false,
+}: {
+  onClose: () => void;
+  /** Opened deliberately via the lock button (vs. the idle timer). */
+  locked?: boolean;
+}) {
   const [index, setIndex] = useState(() => Math.floor(Math.random() * ACTIVE_WORDS.length));
   const [typed, setTyped] = useState('');
   const [counts, setCounts] = useState<Counts | null>(null);
   const mode = modeFromCounts(counts);
-  const [settings] = useLocalStorage<AppSettings>(SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS);
+  const [settings, , settingsHydrated] = useLocalStorage<AppSettings>(
+    SETTINGS_STORAGE_KEY,
+    DEFAULT_SETTINGS,
+  );
+  const [passcode, , passcodeHydrated] = useLocalStorage<string | null>(PASSCODE_STORAGE_KEY, null);
+
+  // A passcode applies only once one is actually set; "only when locked" exempts
+  // the idle screensaver. Until storage has hydrated we keep the lock closed so
+  // an early keypress can't slip past a passcode that's about to load.
+  const passcodeApplies =
+    settings.requirePasscode &&
+    !!passcode &&
+    (settings.passcodeOnlyWhenLocked ? locked : true);
+  const hydrated = settingsHydrated && passcodeHydrated;
+  const requireCode = hydrated && passcodeApplies;
+  const dismissible = hydrated && !passcodeApplies;
+  // The unlock prompt is hidden until the user makes a wake gesture, so a locked
+  // screensaver stays clean rather than nagging with an always-visible pad.
+  const [unlocking, setUnlocking] = useState(false);
 
   // Corner widgets: live clock plus simulated system telemetry.
   const [now, setNow] = useState(() => new Date());
@@ -314,12 +340,21 @@ export function Screensaver({ onClose }: { onClose: () => void }) {
     };
   }, []);
 
-  // Any key or click dismisses.
+  // A keypress is the wake gesture: when there's no passcode it dismisses; when
+  // there is, the first key reveals the unlock prompt (which then owns the
+  // keyboard — so we stand down once it's open).
   useEffect(() => {
-    const onKey = () => onClose();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+    if (dismissible) {
+      const onKey = () => onClose();
+      window.addEventListener('keydown', onKey);
+      return () => window.removeEventListener('keydown', onKey);
+    }
+    if (requireCode && !unlocking) {
+      const onKey = () => setUnlocking(true);
+      window.addEventListener('keydown', onKey);
+      return () => window.removeEventListener('keydown', onKey);
+    }
+  }, [dismissible, requireCode, unlocking, onClose]);
 
   const active = counts ? counts.actioning + counts.awaiting : 0;
   const poolSize = settings.agentPoolSize;
@@ -332,9 +367,13 @@ export function Screensaver({ onClose }: { onClose: () => void }) {
   return (
     <div
       role="dialog"
-      aria-label="Screensaver"
-      onClick={onClose}
-      className="fixed inset-0 z-[100] flex cursor-pointer flex-col items-center justify-center bg-background/90 px-6 text-center backdrop-blur-[120px]"
+      aria-label={requireCode ? 'Locked screensaver' : 'Screensaver'}
+      onClick={
+        dismissible ? onClose : requireCode && !unlocking ? () => setUnlocking(true) : undefined
+      }
+      className={`fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/90 px-6 text-center backdrop-blur-[120px] ${
+        dismissible || (requireCode && !unlocking) ? 'cursor-pointer' : ''
+      }`}
     >
       {/* Decorative grid on its own masked layer so its edge fade doesn't punch
           holes in the opaque, blurred backdrop above. */}
@@ -434,8 +473,16 @@ export function Screensaver({ onClose }: { onClose: () => void }) {
       </div>
 
       <p className="absolute bottom-2 z-10 text-[11px] uppercase tracking-[0.2em] text-muted-foreground/40">
-        press any key to wake
+        {requireCode ? 'press any key to unlock' : 'press any key to wake'}
       </p>
+
+      {requireCode && unlocking ? (
+        <PasscodeUnlockDialog
+          expected={passcode ?? ''}
+          onUnlock={onClose}
+          onCancel={() => setUnlocking(false)}
+        />
+      ) : null}
     </div>
   );
 }

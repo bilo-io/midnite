@@ -18,14 +18,33 @@ export type AppSettings = {
   agentPoolSize: number;
   /** Seconds of inactivity before the screensaver opens. */
   inactivityTimeoutS: number;
+  /** Require a passcode to wake the screensaver. */
+  requirePasscode: boolean;
+  /**
+   * Only enforce the passcode when the screensaver was opened deliberately via
+   * the lock button — the idle screensaver wakes without one.
+   */
+  passcodeOnlyWhenLocked: boolean;
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
   agentPoolSize: AGENT_POOL_DEFAULT,
   inactivityTimeoutS: INACTIVITY_DEFAULT_S,
+  requirePasscode: false,
+  passcodeOnlyWhenLocked: false,
 };
 
 export const SETTINGS_STORAGE_KEY = 'midnite.settings';
+
+/** Length of the screensaver passcode, in digits. */
+export const PASSCODE_LENGTH = 4;
+
+/**
+ * Where the screensaver passcode is kept. Stored in plain localStorage so a
+ * forgotten passcode can simply be cleared — this is a convenience lock, not a
+ * security boundary.
+ */
+export const PASSCODE_STORAGE_KEY = 'midnite.passcode';
 
 export type Profile = {
   /** Free-form "about me" the user writes about themselves. */

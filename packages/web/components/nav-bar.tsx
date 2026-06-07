@@ -21,11 +21,13 @@ import {
   DEFAULT_SETTINGS,
   INACTIVITY_MAX_S,
   INACTIVITY_MIN_S,
+  PASSCODE_STORAGE_KEY,
   SETTINGS_STORAGE_KEY,
   type AppSettings,
 } from '@/lib/app-settings';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Screensaver } from '@/components/screensaver';
+import { PasscodeSetupDialog } from '@/components/passcode-pad';
 
 type NavLink = {
   href: string;
@@ -45,16 +47,32 @@ const SETTINGS_LINK: NavLink = { href: '/settings', label: 'Settings', Icon: Set
 
 export function NavBar() {
   const pathname = usePathname();
-  const [screensaver, setScreensaver] = useState(false);
+  // null = hidden; otherwise the reason it opened (the idle timer or a manual
+  // lock), which decides whether the passcode is enforced.
+  const [screensaver, setScreensaver] = useState<'idle' | 'locked' | null>(null);
+  const [settingUp, setSettingUp] = useState(false);
   const [settings] = useLocalStorage<AppSettings>(SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS);
+  const [passcode, setPasscode] = useLocalStorage<string | null>(PASSCODE_STORAGE_KEY, null);
 
   // Kick the screensaver in after the configured inactivity window; pause the
-  // timer while it's already showing (it dismisses itself on the next input).
+  // timer while it's already showing (it dismisses itself on the next input) or
+  // while the passcode setup dialog is open.
   const idleSeconds = Number.isFinite(settings.inactivityTimeoutS)
     ? settings.inactivityTimeoutS
     : DEFAULT_SETTINGS.inactivityTimeoutS;
   const idleTimeoutMs = Math.min(INACTIVITY_MAX_S, Math.max(INACTIVITY_MIN_S, idleSeconds)) * 1000;
-  useIdleTimer(idleTimeoutMs, () => setScreensaver(true), !screensaver);
+  useIdleTimer(
+    idleTimeoutMs,
+    () => setScreensaver((s) => s ?? 'idle'),
+    screensaver === null && !settingUp,
+  );
+
+  // The lock button locks straight away — unless a passcode is required but none
+  // has been set yet, in which case we set one up first, then lock.
+  const lock = () => {
+    if (settings.requirePasscode && !passcode) setSettingUp(true);
+    else setScreensaver('locked');
+  };
 
   const renderLink = ({ href, label, Icon }: NavLink) => {
     const active = pathname === href || (href !== '/' && pathname.startsWith(href));
@@ -104,17 +122,30 @@ export function NavBar() {
           <div className="my-1 h-px w-6 bg-border/60" />
           <button
             type="button"
-            onClick={() => setScreensaver(true)}
-            aria-label="Screensaver"
+            onClick={lock}
+            aria-label="Lock screen"
             className="group relative flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
           >
             <Power className="h-4 w-4" />
-            <Tooltip>Screensaver</Tooltip>
+            <Tooltip>{settings.requirePasscode ? 'Lock' : 'Screensaver'}</Tooltip>
           </button>
         </div>
       </aside>
 
-      {screensaver ? <Screensaver onClose={() => setScreensaver(false)} /> : null}
+      {settingUp ? (
+        <PasscodeSetupDialog
+          onComplete={(code) => {
+            setPasscode(code);
+            setSettingUp(false);
+            setScreensaver('locked');
+          }}
+          onCancel={() => setSettingUp(false)}
+        />
+      ) : null}
+
+      {screensaver ? (
+        <Screensaver locked={screensaver === 'locked'} onClose={() => setScreensaver(null)} />
+      ) : null}
     </>
   );
 }

@@ -2,6 +2,12 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
+// The native `storage` event only fires in *other* tabs, so we broadcast our own
+// event to keep multiple hooks for the same key in sync within a single tab.
+const LOCAL_SYNC_EVENT = 'midnite:local-storage';
+
+type LocalSyncDetail = { key: string; value: unknown };
+
 function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
@@ -39,6 +45,8 @@ export function useLocalStorage<T>(
   }, [key]);
 
   useEffect(() => {
+    // Cross-tab updates (native storage event) and same-tab updates (our own
+    // broadcast) both land here so every hook for this key tracks the latest.
     const onStorage = (e: StorageEvent) => {
       if (e.key !== key || e.newValue === null) return;
       try {
@@ -47,8 +55,17 @@ export function useLocalStorage<T>(
         // ignore
       }
     };
+    const onLocal = (e: Event) => {
+      const detail = (e as CustomEvent<LocalSyncDetail>).detail;
+      if (!detail || detail.key !== key) return;
+      setValue(reconcile(initial, detail.value));
+    };
     window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
+    window.addEventListener(LOCAL_SYNC_EVENT, onLocal);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener(LOCAL_SYNC_EVENT, onLocal);
+    };
   }, [key]);
 
   const set = useCallback(
@@ -57,6 +74,11 @@ export function useLocalStorage<T>(
         const resolved = typeof next === 'function' ? (next as (p: T) => T)(prev) : next;
         try {
           localStorage.setItem(key, JSON.stringify(resolved));
+          window.dispatchEvent(
+            new CustomEvent<LocalSyncDetail>(LOCAL_SYNC_EVENT, {
+              detail: { key, value: resolved },
+            }),
+          );
         } catch {
           // ignore write failures (private mode, quota)
         }

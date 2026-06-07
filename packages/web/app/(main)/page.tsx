@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { StatusPills } from '@/components/status-pills';
 
 // Greeting depends on the viewer's local time, so resolve it on the client after
 // mount to avoid a server/client hydration mismatch.
@@ -155,6 +156,12 @@ export default function HomePage() {
           </span>
         )}
       </p>
+
+      <StatusPills
+        className={`mt-9 transition-opacity duration-500 ${
+          subDone ? 'opacity-100' : 'pointer-events-none opacity-0'
+        }`}
+      />
     </div>
   );
 }

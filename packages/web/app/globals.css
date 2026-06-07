@@ -165,6 +165,33 @@
   }
 }
 
+/* A short horizontal nudge to flag a rejected passcode. Cleared via
+   onAnimationEnd so it can re-trigger on the next wrong attempt. */
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-6px);
+  }
+  40%,
+  80% {
+    transform: translateX(6px);
+  }
+}
+
+.animate-shake {
+  animation: shake 0.4s ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-shake {
+    animation: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .cascade-item {
     animation: none;

@@ -1,7 +1,11 @@
 'use client';
 
-import { Clock, Cpu } from 'lucide-react';
+import { useState } from 'react';
+import { Clock, Cpu, Lock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { PasscodeSetupDialog } from '@/components/passcode-pad';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
   AGENT_POOL_MAX,
@@ -9,6 +13,8 @@ import {
   DEFAULT_SETTINGS,
   INACTIVITY_MAX_S,
   INACTIVITY_MIN_S,
+  PASSCODE_LENGTH,
+  PASSCODE_STORAGE_KEY,
   SETTINGS_STORAGE_KEY,
   type AppSettings,
 } from '@/lib/app-settings';
@@ -43,6 +49,23 @@ export function SettingsView() {
       ...prev,
       inactivityTimeoutS: Math.min(INACTIVITY_MAX_S, Math.max(INACTIVITY_MIN_S, n)),
     }));
+
+  const [passcode, setPasscode] = useLocalStorage<string | null>(PASSCODE_STORAGE_KEY, null);
+  // `enable` defers turning the requirement on until a passcode is confirmed;
+  // `change` just replaces an existing one.
+  const [setup, setSetup] = useState<'enable' | 'change' | null>(null);
+  const hasPasscode = !!passcode;
+
+  const setRequirePasscode = (on: boolean) =>
+    setSettings((prev) => ({ ...prev, requirePasscode: on }));
+
+  const toggleRequirePasscode = (on: boolean) => {
+    if (on && !hasPasscode) setSetup('enable');
+    else setRequirePasscode(on);
+  };
+
+  const setOnlyWhenLocked = (on: boolean) =>
+    setSettings((prev) => ({ ...prev, passcodeOnlyWhenLocked: on }));
 
   return (
     <div className="container max-w-3xl space-y-6 py-2">
@@ -145,6 +168,99 @@ export function SettingsView() {
           </p>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Lock className="h-3.5 w-3.5" />
+            Screen lock
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="flex items-start justify-between gap-6">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Require passcode</p>
+              <p className="text-xs text-muted-foreground">
+                Ask for a {PASSCODE_LENGTH}-digit passcode to wake the screensaver. Stored only on
+                this device — clear it any time if you forget it.
+              </p>
+            </div>
+            <Switch
+              checked={settings.requirePasscode}
+              onCheckedChange={toggleRequirePasscode}
+              aria-label="Require passcode"
+            />
+          </div>
+
+          <div
+            className={cn(
+              'flex items-start justify-between gap-6 transition-opacity',
+              settings.requirePasscode ? 'opacity-100' : 'opacity-50',
+            )}
+          >
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Only when locked</p>
+              <p className="text-xs text-muted-foreground">
+                Skip the passcode for the idle screensaver — only ask when you lock manually with the
+                power button.
+              </p>
+            </div>
+            <Switch
+              checked={settings.passcodeOnlyWhenLocked}
+              onCheckedChange={setOnlyWhenLocked}
+              disabled={!settings.requirePasscode}
+              aria-label="Only require passcode when locked"
+            />
+          </div>
+
+          <div className="flex items-center justify-between gap-4 border-t border-border/60 pt-4">
+            <div className="flex items-center gap-2 text-xs">
+              <span
+                aria-hidden
+                className={cn(
+                  'h-2 w-2 rounded-full',
+                  hasPasscode ? 'bg-[hsl(var(--status-done))]' : 'bg-muted-foreground/40',
+                )}
+              />
+              <span className={hasPasscode ? 'text-foreground' : 'text-muted-foreground'}>
+                {hasPasscode ? 'Passcode set' : 'No passcode set'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setSetup('change')}
+              >
+                {hasPasscode ? 'Change' : 'Set passcode'}
+              </Button>
+              {hasPasscode ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setPasscode(null)}
+                  className="text-destructive hover:text-destructive"
+                >
+                  Clear
+                </Button>
+              ) : null}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {setup ? (
+        <PasscodeSetupDialog
+          onComplete={(code) => {
+            setPasscode(code);
+            if (setup === 'enable') setRequirePasscode(true);
+            setSetup(null);
+          }}
+          onCancel={() => setSetup(null)}
+        />
+      ) : null}
     </div>
   );
 }
