@@ -3,6 +3,7 @@ import { parseConfig, type MidniteConfig, type ServerTerminalMessage } from '@mi
 import type { TasksService } from '../tasks/tasks.service';
 import {
   TerminalService,
+  scrubSecretEnv,
   trimRingByBytes,
   type TerminalSubscriber,
 } from './terminal.service';
@@ -161,10 +162,46 @@ describe('TerminalService', () => {
   it('rejects an unknown or already-consumed token', () => {
     service = makeService({ command: 'cat' });
     expect(service.verifyToken('nope', 'x')).toBe(false);
-    const token = service.mintToken('sx');
+    service.mintToken('sx');
     expect(service.verifyToken('sx', 'wrong')).toBe(false); // wrong value, consumes
     const again = service.mintToken('sx');
     expect(service.verifyToken('sx', again)).toBe(true); // correct
     expect(service.verifyToken('sx', again)).toBe(false); // single-use
+  });
+
+  it('reports the backing command in the ready status', async () => {
+    service = makeService({ command: 'cat' });
+    const c = makeCollector();
+    service.attach('cmd1', c.sub, { cols: 80, rows: 24 });
+    const ready = await c.waitFor((m) => m.type === 'status' && m.phase === 'ready');
+    if (ready.type === 'status') expect(ready.command).toBe('cat');
+  });
+
+  it('rejects new PTYs past the configured maxSessions', async () => {
+    service = makeService({ command: 'cat', maxSessions: 1 });
+    const a = makeCollector();
+    service.attach('cap1', a.sub, { cols: 80, rows: 24 });
+    await a.waitFor((m) => m.type === 'status' && m.phase === 'ready');
+
+    const b = makeCollector();
+    service.attach('cap2', b.sub, { cols: 80, rows: 24 });
+    const err = await b.waitFor((m) => m.type === 'error');
+    expect(err).toMatchObject({ type: 'error', code: 'limit' });
+    expect(service.has('cap2')).toBe(false);
+  });
+});
+
+describe('scrubSecretEnv', () => {
+  it('strips secret-looking keys and keeps the rest', () => {
+    const out = scrubSecretEnv({
+      PATH: '/usr/bin',
+      HOME: '/Users/me',
+      ANTHROPIC_API_KEY: 'sk-secret',
+      GITHUB_TOKEN: 'ghp_x',
+      AWS_SECRET_ACCESS_KEY: 'y',
+      DB_PASSWORD: 'z',
+      MY_PRIVATE_KEY: 'k',
+    });
+    expect(out).toEqual({ PATH: '/usr/bin', HOME: '/Users/me' });
   });
 });

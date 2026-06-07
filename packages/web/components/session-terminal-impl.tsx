@@ -37,6 +37,7 @@ export function SessionTerminalImpl({ session }: { session: SessionSummary }) {
   const fitRef = useRef<FitAddon | null>(null);
   const [ready, setReady] = useState(false);
   const [phase, setPhase] = useState<TerminalStatusPhase | null>(null);
+  const [command, setCommand] = useState<string | null>(null);
 
   const { resolved } = useTheme();
   const resolvedRef = useRef(resolved);
@@ -46,7 +47,10 @@ export function SessionTerminalImpl({ session }: { session: SessionSummary }) {
     sessionId: session.id,
     enabled: ready,
     onOutput: (bytes) => termRef.current?.write(bytes),
-    onStatus: setPhase,
+    onStatus: (p, cmd) => {
+      setPhase(p);
+      if (cmd) setCommand(cmd);
+    },
   });
 
   // Stable across the once-only terminal effect.
@@ -109,7 +113,10 @@ export function SessionTerminalImpl({ session }: { session: SessionSummary }) {
   return (
     <div className="flex h-full flex-col gap-2">
       <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-        <span className="font-mono">{session.projectDisplay}</span>
+        <span className="font-mono">
+          {session.projectDisplay}
+          {command ? ` · ${command.split('/').pop()}` : ''}
+        </span>
         <span className="flex items-center gap-1.5">
           <span
             className="h-1.5 w-1.5 rounded-full"

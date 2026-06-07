@@ -8,6 +8,12 @@
     "jsx": "preserve",
     "noEmit": true,
     "composite": false,
+    // The web app never emits declarations (next build owns the bundle). Leaving
+    // the base config's `declaration` on makes `tsc --noEmit` do declaration-emit
+    // checking, which throws TS2742 when a dep's realpath isn't portably nameable
+    // (pnpm's .pnpm store layout on a fresh install). Turning it off is the fix.
+    "declaration": false,
+    "declarationMap": false,
     "incremental": true,
     "allowJs": true,
     "plugins": [{ "name": "next" }],

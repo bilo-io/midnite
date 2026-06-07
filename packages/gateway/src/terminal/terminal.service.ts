@@ -36,6 +36,18 @@ export interface TerminalGeometry {
   rows: number;
 }
 
+// Keys that look like credentials — stripped from a shell PTY's env so an
+// interactive terminal doesn't inherit the gateway's secrets. Pure/exported for testing.
+const SECRET_ENV_PATTERN = /(SECRET|TOKEN|PASSWORD|PASSWD|CREDENTIAL|API_KEY|ACCESS_KEY|PRIVATE_KEY)/i;
+
+export function scrubSecretEnv(env: Record<string, string>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(env)) {
+    if (!SECRET_ENV_PATTERN.test(key)) out[key] = value;
+  }
+  return out;
+}
+
 interface OutputFrame {
   seq: number;
   data: string; // base64
@@ -44,6 +56,7 @@ interface OutputFrame {
 
 interface PtyHandle {
   proc: IPty;
+  command: string;
   subscribers: Set<TerminalSubscriber>;
   ring: OutputFrame[];
   ringBytes: number;
@@ -100,10 +113,24 @@ export class TerminalService implements OnModuleDestroy {
         existing.disposeTimer = null;
       }
       existing.subscribers.add(subscriber);
-      subscriber.send({ type: 'status', phase: 'reattached', pid: existing.proc.pid });
+      subscriber.send({
+        type: 'status',
+        phase: 'reattached',
+        pid: existing.proc.pid,
+        command: existing.command,
+      });
       for (const frame of existing.ring) {
         subscriber.send({ type: 'output', data: frame.data, seq: frame.seq });
       }
+      return;
+    }
+
+    if (this.handles.size >= this.config.terminal.maxSessions) {
+      subscriber.send({
+        type: 'error',
+        code: 'limit',
+        message: `terminal session limit reached (${this.config.terminal.maxSessions})`,
+      });
       return;
     }
 
@@ -128,7 +155,12 @@ export class TerminalService implements OnModuleDestroy {
       return;
     }
     handle.subscribers.add(subscriber);
-    subscriber.send({ type: 'status', phase: 'ready', pid: handle.proc.pid });
+    subscriber.send({
+      type: 'status',
+      phase: 'ready',
+      pid: handle.proc.pid,
+      command: handle.command,
+    });
   }
 
   /** Detach a subscriber; the PTY is reaped after an idle grace period. */
@@ -187,6 +219,7 @@ export class TerminalService implements OnModuleDestroy {
 
     const handle: PtyHandle = {
       proc,
+      command: spec.command,
       subscribers: new Set(),
       ring: [],
       ringBytes: 0,
@@ -238,10 +271,13 @@ export class TerminalService implements OnModuleDestroy {
     const args =
       terminal.command === undefined && terminal.args.length === 0 ? ['-i'] : terminal.args;
 
-    const env: Record<string, string> = {};
+    let env: Record<string, string> = {};
     for (const [key, value] of Object.entries(process.env)) {
       if (value !== undefined) env[key] = value;
     }
+    // Don't hand the gateway's API keys/tokens to an interactive shell unless
+    // explicitly opted in (e.g. for `command: "claude"`, which needs them).
+    if (!terminal.inheritSecrets) env = scrubSecretEnv(env);
     env['TERM'] = 'xterm-256color';
 
     return { command, args, cwd: this.resolveCwd(sessionId), env };

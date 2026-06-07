@@ -16,7 +16,7 @@ type Args = {
   enabled: boolean;
   /** Raw PTY bytes for the terminal to render. */
   onOutput: (bytes: Uint8Array) => void;
-  onStatus?: (phase: TerminalStatusPhase) => void;
+  onStatus?: (phase: TerminalStatusPhase, command?: string) => void;
   initialGeometry?: { cols: number; rows: number };
 };
 
@@ -130,7 +130,7 @@ export function useTerminalSocket({
         } else if (message.type === 'status') {
           // A freshly-spawned PTY restarts seq at 0; a reattach keeps the old PTY's.
           if (message.phase === 'ready') lastSeqRef.current = -1;
-          onStatusRef.current?.(message.phase);
+          onStatusRef.current?.(message.phase, message.command);
         } else if (message.type === 'error') {
           setConnectionState('error');
         }

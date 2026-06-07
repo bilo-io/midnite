@@ -56,6 +56,7 @@ export const TERMINAL_ERROR_CODES = [
   'bad-message',
   'session-not-found',
   'spawn-failed',
+  'limit',
   'internal',
 ] as const;
 export const TerminalErrorCodeSchema = z.enum(TERMINAL_ERROR_CODES);
@@ -70,6 +71,8 @@ export const TerminalStatusMessageSchema = z.object({
   type: z.literal('status'),
   phase: TerminalStatusPhaseSchema,
   pid: z.number().int().optional(),
+  /** The command backing this PTY (e.g. the shell path or `claude`), for honest UI labelling. */
+  command: z.string().optional(),
   exitCode: z.number().int().nullable().optional(),
   signal: z.number().int().nullable().optional(),
 });

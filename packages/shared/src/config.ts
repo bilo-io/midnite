@@ -22,6 +22,10 @@ export const TerminalConfigSchema = z.object({
   scrollbackBytes: z.number().int().positive().default(262144),
   /** Grace period after the last client detaches before the PTY is reaped. */
   idleDisposeMs: z.number().int().nonnegative().default(300000),
+  /** Max concurrent live PTYs; further spawns are rejected until one frees up. */
+  maxSessions: z.number().int().positive().default(16),
+  /** Pass the gateway's secret-looking env vars (API keys, tokens) into the PTY. Off by default; enable for `command: "claude"`. */
+  inheritSecrets: z.boolean().default(false),
 });
 
 export const KnowledgeConfigSchema = z.object({

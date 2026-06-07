@@ -107,7 +107,7 @@ User config lives in [`midnite.json`](midnite.json) at the repo root, validated 
 ```json
 {
   "agent":     { "pool": 4, "provider": "claude", "plan": "opus4.7", "act": "sonnet4.7" },
-  "terminal":  { "mode": "pty", "layout": "split", "args": [], "scrollbackBytes": 262144, "idleDisposeMs": 300000 },
+  "terminal":  { "mode": "pty", "layout": "split", "args": [], "scrollbackBytes": 262144, "idleDisposeMs": 300000, "maxSessions": 16, "inheritSecrets": false },
   "knowledge": { "dir": "./knowledge" },
   "repos":     [],
   "gateway":   { "port": 7777, "host": "127.0.0.1", "allowedOrigins": [] },
@@ -125,6 +125,15 @@ across reconnects. `terminal` fields control it:
 - `args` — argv for `command` (ignored for the default shell, which uses `-i`).
 - `scrollbackBytes` — bytes of recent output retained per PTY, replayed on (re)attach.
 - `idleDisposeMs` — grace period after the last viewer disconnects before the PTY is reaped.
+- `maxSessions` — max concurrent PTYs; further spawns are rejected until one frees up.
+- `inheritSecrets` — by default the PTY's env is **scrubbed** of secret-looking
+  vars (`*TOKEN*`, `*SECRET*`, `*API_KEY*`, …) so an interactive shell doesn't
+  inherit the gateway's credentials. Set `true` when `command` is `"claude"` (it
+  needs `ANTHROPIC_API_KEY`).
+
+Until the agent pool/scheduler lands, the window is an **on-demand PTY** running
+`command` in the session's repo — an interactive shell (or `claude`), not a replay
+of an agent's run. The status bar shows what's actually running.
 
 Because the terminal can spawn arbitrary processes, the gateway is **locked to
 loopback by default**:
