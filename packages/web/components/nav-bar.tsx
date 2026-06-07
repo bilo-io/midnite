@@ -113,7 +113,11 @@ export function NavBar() {
           <Tooltip>midnite</Tooltip>
         </Link>
 
-        <nav className="flex flex-col items-center gap-1">{LINKS.map(renderLink)}</nav>
+        <nav className="flex flex-col items-center gap-1">
+          {renderLink(LINKS[0])}
+          <div className="my-1 h-px w-6 bg-border/60" />
+          {LINKS.slice(1).map(renderLink)}
+        </nav>
 
         <div className="mt-auto flex flex-col items-center gap-1">
           {renderLink(PROFILE_LINK)}

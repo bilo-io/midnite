@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Loader2, Plus, Sparkles, Trash2, X } from 'lucide-react';
+import { ExternalLink, Loader2, Plus, Sparkles, Trash2, X } from 'lucide-react';
 import {
   MAX_SOURCES_PER_PROJECT,
   MAX_TAG_LENGTH,
@@ -387,6 +387,15 @@ export function ProjectModal({ project, onClose, onSaved }: Props) {
                         <span className="min-w-0 flex-1 truncate text-sm">
                           {s.title ?? s.url}
                         </span>
+                        <a
+                          href={s.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="Open source in new tab"
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
                         <button
                           type="button"
                           onClick={() => void removeExisting(s.id)}
@@ -405,6 +414,15 @@ export function ProjectModal({ project, onClose, onSaved }: Props) {
                       >
                         <SourceIcon kind={detectSourceKind(url)} />
                         <span className="min-w-0 flex-1 truncate text-sm">{url}</span>
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="Open source in new tab"
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
                         <button
                           type="button"
                           onClick={() => setStaged((prev) => prev.filter((u) => u !== url))}
