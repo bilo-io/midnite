@@ -27,16 +27,47 @@ export const GatewayConfigSchema = z.object({
   dbPath: z.string().default('./.midnite/midnite.db'),
 });
 
+// OAuth client config for an integration provider. Secrets are referenced by env-var
+// name (clientSecretEnv), never inlined into committed config.
+export const OAuthClientConfigSchema = z.object({
+  clientId: z.string(),
+  clientSecretEnv: z.string(),
+  scopes: z.array(z.string()).default([]),
+});
+
+export const WorkflowsConfigSchema = z.object({
+  // Feature flag — workflows is greenfield, so it ships off by default.
+  enabled: z.boolean().default(false),
+  // Default timezone applied to schedule (cron) triggers that don't specify one.
+  defaultTimezone: z.string().default('UTC'),
+  // How often the single scheduler tick loop wakes to evaluate cron triggers.
+  schedulerTickMs: z.number().int().positive().default(30000),
+  // Base URL the gateway is reachable at, used to build copyable webhook URLs.
+  webhookBaseUrl: z.string().default('http://localhost:7777'),
+  // Name of the env var holding the symmetric key for the credential vault (future phase).
+  encryptionKeyEnv: z.string().default('MIDNITE_WORKFLOWS_KEY'),
+  oauth: z
+    .object({
+      slack: OAuthClientConfigSchema.optional(),
+      google: OAuthClientConfigSchema.optional(),
+    })
+    .default({}),
+});
+
 export const MidniteConfigSchema = z.object({
   agent: AgentConfigSchema,
   terminal: TerminalConfigSchema,
   knowledge: KnowledgeConfigSchema,
   repos: z.array(RepoConfigSchema).default([]),
   gateway: GatewayConfigSchema,
+  // Optional block (defaulted) so existing midnite.json files keep validating.
+  workflows: WorkflowsConfigSchema.default({}),
 });
 
 export type MidniteConfig = z.infer<typeof MidniteConfigSchema>;
 export type RepoConfig = z.infer<typeof RepoConfigSchema>;
+export type WorkflowsConfig = z.infer<typeof WorkflowsConfigSchema>;
+export type OAuthClientConfig = z.infer<typeof OAuthClientConfigSchema>;
 
 export function parseConfig(raw: unknown): MidniteConfig {
   return MidniteConfigSchema.parse(raw);

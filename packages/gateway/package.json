@@ -22,6 +22,7 @@
     "@nestjs/platform-ws": "^10.4.15",
     "@nestjs/websockets": "^10.4.15",
     "better-sqlite3": "^11.7.0",
+    "croner": "^9.0.0",
     "drizzle-orm": "^0.36.4",
     "fastify": "^4.28.1",
     "reflect-metadata": "^0.2.2",

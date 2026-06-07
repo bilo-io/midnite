@@ -12,6 +12,7 @@ import {
   Power,
   Settings,
   UserRound,
+  Workflow,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -39,6 +40,7 @@ const LINKS: NavLink[] = [
   { href: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
   { href: '/projects', label: 'Projects', Icon: Folder },
   { href: '/tasks', label: 'Tasks', Icon: Columns3 },
+  { href: '/workflows', label: 'Workflows', Icon: Workflow },
   { href: '/sessions', label: 'Sessions', Icon: MessagesSquare },
 ];
 
@@ -114,7 +116,7 @@ export function NavBar() {
         </Link>
 
         <nav className="flex flex-col items-center gap-1">
-          {renderLink(LINKS[0])}
+          {LINKS[0] ? renderLink(LINKS[0]) : null}
           <div className="my-1 h-px w-6 bg-border/60" />
           {LINKS.slice(1).map(renderLink)}
         </nav>

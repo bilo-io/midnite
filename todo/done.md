@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-08 — Workflows MVP (node-based automation builder)
+
+New **Workflows** space: an n8n/Make-style visual builder where a workflow is a directed graph of nodes wired by edges, starting at a trigger (manual Play, cron schedule, or signed webhook) and flowing data through action nodes (HTTP request, AI/Claude). Runs are persisted with per-node status/output and shown in run history (polled in the MVP). A **node-type registry** in `shared` drives both the gateway executor registry and the web palette/config forms, so adding an integration is one definition + one executor. Branch: `feature/workflow-builder`. See [`todo/phase-6-workflows-mvp.md`](phase-6-workflows-mvp.md).
+
+- [x] `shared`: `node.ts`, `node-types.ts` (registry + 5 MVP types), `trigger.ts`, `run.ts`, `workflow.ts`, `events/workflow.ts`; `WorkflowsConfigSchema` defaulted onto `MidniteConfigSchema`; registry/param tests
+- [x] `gateway`: `workflows`/`workflow_runs`/`node_runs` tables (+ migration `0003_workflows`); `WorkflowsModule` (controller/service/repository); `WorkflowEngine` (topological run, cycle rejection, short-circuit, background execution) + `ExecutorRegistry` with `http.request` (SSRF-guarded) and `ai.claude` (reuses `AnthropicService`) executors; single `WorkflowScheduler` tick loop (croner, gated on `workflows.enabled`); signed webhook receiver `POST /hooks/workflows/:id/:token`
+- [x] `web`: `@xyflow/react` + `zustand`; `/workflows` list + `/workflows/[id]` React Flow editor (palette, custom nodes, config panel with cron preview + webhook URL, toolbar with Play/Save, run-output panel); editor-scoped Zustand store; polling run hook; nav entry + design-token theming
+- [x] Verified live: manual + HTTP run succeeds (real fetch); AI/Claude returns text (`haiku4.5`); webhook fires from an external POST with body as trigger output (bad token → 404); invalid params → 400; `:typecheck` + `:test` green (56 tests)
+- [ ] Follow-ups: live WS streaming, logic nodes, credential vault + OAuth, Slack/Google/Email executors, drag-from-palette + autosave, CLI commands
+
+---
+
 ## 2026-06-04 — Projects feature
 
 New **Projects** space: group work under a project with an (AI-assistable) description, up to 10 source links (auto-detected kind + best-effort OpenGraph/oEmbed title), and a project tag (user color, auto-contrast text) that tasks carry. From a project you can draft a markdown plan (one-shot Claude call) and turn checked items into tasks. One project per task via a nullable `tasks.projectId`. Branch: `feature/projects`.

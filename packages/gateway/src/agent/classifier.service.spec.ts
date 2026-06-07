@@ -1,15 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
 import { AnthropicClassifier } from './classifier.service';
 import { AnthropicService } from './anthropic.service';
-import type { MidniteConfig } from '@midnite/shared';
+import { parseConfig, type MidniteConfig } from '@midnite/shared';
 
-const baseConfig: MidniteConfig = {
+const baseConfig: MidniteConfig = parseConfig({
   agent: { pool: 4, provider: 'claude', plan: 'opus4.7', act: 'sonnet4.7' },
   terminal: { mode: 'pty', layout: 'split' },
   knowledge: { dir: './knowledge' },
   repos: [],
   gateway: { port: 7777, uploadsDir: './.midnite/uploads', dbPath: './.midnite/midnite.db' },
-};
+});
 
 function makeClassifier(create: ReturnType<typeof vi.fn>) {
   const anthropic = {

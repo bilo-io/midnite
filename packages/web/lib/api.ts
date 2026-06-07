@@ -5,12 +5,18 @@ import {
   EnhanceDescriptionResponseSchema,
   ProjectResponseSchema,
   ProjectSchema,
+  RunResponseSchema,
   SessionSummarySchema,
   SessionTranscriptSchema,
   TaskCountsSchema,
   TaskSchema,
+  WebhookInfoResponseSchema,
+  WorkflowResponseSchema,
+  WorkflowRunSchema,
+  WorkflowSummarySchema,
   type CreateProjectRequest,
   type CreateTaskResponse,
+  type CreateWorkflowRequest,
   type DraftPlanResponse,
   type Project,
   type SessionSummary,
@@ -18,6 +24,11 @@ import {
   type Task,
   type TaskCounts,
   type UpdateProjectRequest,
+  type UpdateWorkflowRequest,
+  type WebhookInfoResponse,
+  type Workflow,
+  type WorkflowRun,
+  type WorkflowSummary,
 } from '@midnite/shared';
 import { z } from 'zod';
 
@@ -35,7 +46,13 @@ export function gatewayUrl(): string {
   );
 }
 
-async function fetchJson<T>(path: string, init?: RequestInit, schema?: z.ZodSchema<T>): Promise<T> {
+// The schema is typed structurally by its `parse` return so T is inferred from the
+// zod OUTPUT type (where `.default()` fields are required), not the input type.
+async function fetchJson<T>(
+  path: string,
+  init?: RequestInit,
+  schema?: { parse: (value: unknown) => T },
+): Promise<T> {
   const res = await fetch(`${gatewayUrl()}${path}`, { cache: 'no-store', ...init });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
@@ -172,4 +189,75 @@ export async function createTasksFromPlan(id: string, titles: string[]): Promise
     CreatePlanTasksResponseSchema,
   );
   return tasks;
+}
+
+// --- Workflows ---
+
+export async function listWorkflows(): Promise<WorkflowSummary[]> {
+  return fetchJson('/workflows', undefined, z.array(WorkflowSummarySchema));
+}
+
+export async function getWorkflow(id: string): Promise<Workflow> {
+  const { workflow } = await fetchJson(
+    `/workflows/${encodeURIComponent(id)}`,
+    undefined,
+    WorkflowResponseSchema,
+  );
+  return workflow;
+}
+
+export async function createWorkflow(body: CreateWorkflowRequest): Promise<Workflow> {
+  const { workflow } = await fetchJson(
+    '/workflows',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    WorkflowResponseSchema,
+  );
+  return workflow;
+}
+
+export async function updateWorkflow(id: string, body: UpdateWorkflowRequest): Promise<Workflow> {
+  const { workflow } = await fetchJson(
+    `/workflows/${encodeURIComponent(id)}`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    WorkflowResponseSchema,
+  );
+  return workflow;
+}
+
+export async function deleteWorkflow(id: string): Promise<void> {
+  await fetchJson(`/workflows/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+export async function runWorkflow(id: string): Promise<WorkflowRun> {
+  const { run } = await fetchJson(
+    `/workflows/${encodeURIComponent(id)}/run`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({}) },
+    RunResponseSchema,
+  );
+  return run;
+}
+
+export async function listWorkflowRuns(id: string): Promise<WorkflowRun[]> {
+  return fetchJson(
+    `/workflows/${encodeURIComponent(id)}/runs`,
+    undefined,
+    z.array(WorkflowRunSchema),
+  );
+}
+
+export async function getWorkflowRun(id: string, runId: string): Promise<WorkflowRun> {
+  const { run } = await fetchJson(
+    `/workflows/${encodeURIComponent(id)}/runs/${encodeURIComponent(runId)}`,
+    undefined,
+    RunResponseSchema,
+  );
+  return run;
+}
+
+export async function rotateWorkflowWebhook(id: string): Promise<WebhookInfoResponse> {
+  return fetchJson(
+    `/workflows/${encodeURIComponent(id)}/webhook/rotate`,
+    { method: 'POST', headers: JSON_HEADERS },
+    WebhookInfoResponseSchema,
+  );
 }

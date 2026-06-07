@@ -36,6 +36,11 @@
     --kind-question: 217 91% 60%;
     --kind-chore: 240 4% 46%;
     --kind-unknown: 240 4% 60%;
+
+    /* workflow node category accents */
+    --node-trigger: 217 91% 60%;
+    --node-action: 262 83% 58%;
+    --node-logic: 38 92% 50%;
   }
 
   .dark {
@@ -69,7 +74,49 @@
     --kind-question: 217 91% 68%;
     --kind-chore: 240 5% 60%;
     --kind-unknown: 240 5% 55%;
+
+    --node-trigger: 217 91% 68%;
+    --node-action: 262 83% 68%;
+    --node-logic: 38 92% 60%;
   }
+}
+
+/* React Flow (@xyflow) theming — map its chrome onto midnite's design tokens. */
+.react-flow {
+  --xy-edge-stroke-default: hsl(var(--muted-foreground));
+  --xy-edge-stroke-selected-default: hsl(var(--foreground));
+  --xy-connectionline-stroke-default: hsl(var(--foreground));
+  --xy-attribution-background-color-default: transparent;
+}
+
+.react-flow__background {
+  background-color: transparent;
+}
+
+.react-flow__controls-button {
+  background: hsl(var(--card));
+  border-color: hsl(var(--border));
+  color: hsl(var(--foreground));
+}
+
+.react-flow__controls-button:hover {
+  background: hsl(var(--accent));
+}
+
+.react-flow__minimap {
+  background: hsl(var(--card) / 0.8);
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+}
+
+.react-flow__attribution {
+  color: hsl(var(--muted-foreground));
+  font-size: 10px;
+}
+
+.react-flow__edge.selected .react-flow__edge-path,
+.react-flow__edge:focus .react-flow__edge-path {
+  stroke: hsl(var(--foreground));
 }
 
 @layer base {

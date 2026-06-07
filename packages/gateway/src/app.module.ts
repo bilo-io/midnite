@@ -6,6 +6,7 @@ import { TasksModule } from './tasks/tasks.module';
 import { AgentModule } from './agent/agent.module';
 import { ProjectsModule } from './projects/projects.module';
 import { SessionsModule } from './sessions/sessions.module';
+import { WorkflowsModule } from './workflows/workflows.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { SessionsModule } from './sessions/sessions.module';
     TasksModule,
     ProjectsModule,
     SessionsModule,
+    WorkflowsModule,
   ],
   controllers: [HealthController],
   providers: [],

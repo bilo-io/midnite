@@ -104,8 +104,78 @@ export const projectSources = sqliteTable(
   }),
 );
 
+// --- Workflows (node-based automation builder) ---
+
+export const workflows = sqliteTable(
+  'workflows',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    description: text('description'),
+    enabled: integer('enabled').notNull().default(0),
+    triggerType: text('trigger_type').notNull().default('manual'),
+    // JSON: the Trigger discriminated union (cron/timezone, webhook method, etc.)
+    trigger: text('trigger').notNull(),
+    // JSON: { nodes: WorkflowNode[], edges: WorkflowEdge[] }
+    graph: text('graph').notNull(),
+    // SHA-256 hash of the webhook secret token (plaintext is shown to the user once).
+    webhookSecretHash: text('webhook_secret_hash'),
+    // ISO timestamp of the last schedule-triggered fire, for restart-durable cron firing.
+    lastFiredAt: text('last_fired_at'),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => ({
+    enabledIdx: index('workflows_enabled_idx').on(t.enabled),
+    triggerTypeIdx: index('workflows_trigger_type_idx').on(t.triggerType),
+  }),
+);
+
+export const workflowRuns = sqliteTable(
+  'workflow_runs',
+  {
+    id: text('id').primaryKey(),
+    workflowId: text('workflow_id').notNull(),
+    status: text('status').notNull(),
+    triggerSource: text('trigger_source').notNull(),
+    input: text('input'), // JSON
+    error: text('error'),
+    startedAt: text('started_at').notNull(),
+    finishedAt: text('finished_at'),
+  },
+  (t) => ({
+    workflowIdx: index('workflow_runs_workflow_idx').on(t.workflowId, t.startedAt),
+  }),
+);
+
+export const nodeRuns = sqliteTable(
+  'node_runs',
+  {
+    id: text('id').primaryKey(),
+    runId: text('run_id').notNull(),
+    nodeId: text('node_id').notNull(),
+    nodeType: text('node_type').notNull(),
+    status: text('status').notNull(),
+    input: text('input'), // JSON
+    output: text('output'), // JSON
+    error: text('error'),
+    logs: text('logs'), // JSON array
+    startedAt: text('started_at'),
+    finishedAt: text('finished_at'),
+  },
+  (t) => ({
+    runIdx: index('node_runs_run_idx').on(t.runId),
+  }),
+);
+
 export type TaskRow = typeof tasks.$inferSelect;
 export type TaskInsert = typeof tasks.$inferInsert;
+export type WorkflowRow = typeof workflows.$inferSelect;
+export type WorkflowInsert = typeof workflows.$inferInsert;
+export type WorkflowRunRow = typeof workflowRuns.$inferSelect;
+export type WorkflowRunInsert = typeof workflowRuns.$inferInsert;
+export type NodeRunRow = typeof nodeRuns.$inferSelect;
+export type NodeRunInsert = typeof nodeRuns.$inferInsert;
 export type TaskEventRow = typeof taskEvents.$inferSelect;
 export type TaskEventInsert = typeof taskEvents.$inferInsert;
 export type TaskAttachmentRow = typeof taskAttachments.$inferSelect;

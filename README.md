@@ -110,11 +110,14 @@ User config lives in [`midnite.json`](midnite.json) at the repo root, validated 
   "terminal":  { "mode": "pty", "layout": "split" },
   "knowledge": { "dir": "./knowledge" },
   "repos":     [],
-  "gateway":   { "port": 7777 }
+  "gateway":   { "port": 7777 },
+  "workflows": { "enabled": false, "defaultTimezone": "UTC", "schedulerTickMs": 30000, "webhookBaseUrl": "http://localhost:7777" }
 }
 ```
 
 Every consumer (gateway, CLI) takes a parsed `MidniteConfig` — never `JSON.parse` the file yourself.
+
+The optional `workflows` block configures the [workflow builder](todo/phase-6-workflows-mvp.md). It ships **off** (`enabled: false`); set `enabled: true` to start the cron scheduler. `webhookBaseUrl` is the public URL used to build copyable webhook trigger URLs. Secrets are referenced by env-var name (e.g. `encryptionKeyEnv`, OAuth `clientSecretEnv`), never inlined.
 
 ### Authentication
 
