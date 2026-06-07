@@ -30,6 +30,10 @@ export const KnowledgeConfigSchema = z.object({
 
 export const GatewayConfigSchema = z.object({
   port: z.number().int().positive().default(7777),
+  /** Bind address. Loopback by default — the gateway spawns PTYs, so don't expose it to the network unless you mean to. */
+  host: z.string().default('127.0.0.1'),
+  /** Extra browser origins allowed to call the API / open the terminal WS. Loopback origins are always allowed. */
+  allowedOrigins: z.array(z.string()).default([]),
   uploadsDir: z.string().default('./.midnite/uploads'),
   dbPath: z.string().default('./.midnite/midnite.db'),
 });

@@ -53,6 +53,10 @@ export function useTerminalSocket({
 }: Args): Result {
   const wsRef = useRef<WebSocket | null>(null);
   const geomRef = useRef(initialGeometry ?? { cols: 80, rows: 24 });
+  // Highest output seq already written to the terminal. On reconnect the gateway
+  // replays its ring buffer; without this the same xterm would re-render
+  // scrollback it already has. Persists across reconnects, resets per session.
+  const lastSeqRef = useRef(-1);
   const [connectionState, setConnectionState] = useState<TerminalConnectionState>('closed');
 
   // Keep callbacks in refs so the connection lifecycle isn't torn down when a
@@ -68,6 +72,7 @@ export function useTerminalSocket({
       return;
     }
 
+    lastSeqRef.current = -1; // fresh session/PTY — accept all output
     let cancelled = false;
     let attempt = 0;
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -117,9 +122,18 @@ export function useTerminalSocket({
         const result = ServerTerminalMessageSchema.safeParse(parsed);
         if (!result.success) return;
         const message = result.data;
-        if (message.type === 'output') onOutputRef.current(base64ToBytes(message.data));
-        else if (message.type === 'status') onStatusRef.current?.(message.phase);
-        else if (message.type === 'error') setConnectionState('error');
+        if (message.type === 'output') {
+          // Drop frames already rendered (ring replay on reconnect); accept the rest.
+          if (message.seq <= lastSeqRef.current) return;
+          lastSeqRef.current = message.seq;
+          onOutputRef.current(base64ToBytes(message.data));
+        } else if (message.type === 'status') {
+          // A freshly-spawned PTY restarts seq at 0; a reattach keeps the old PTY's.
+          if (message.phase === 'ready') lastSeqRef.current = -1;
+          onStatusRef.current?.(message.phase);
+        } else if (message.type === 'error') {
+          setConnectionState('error');
+        }
       };
 
       ws.onerror = () => {

@@ -1,3 +1,4 @@
+import type { IncomingMessage } from 'node:http';
 import { afterEach, describe, expect, it } from 'vitest';
 import { WebSocket } from 'ws';
 import { parseConfig, type MidniteConfig, type ServerTerminalMessage } from '@midnite/shared';
@@ -46,8 +47,10 @@ class FakeSocket {
     }
   }
 
-  close(): void {
+  closeCode: number | undefined;
+  close(code?: number): void {
     this.closed = true;
+    this.closeCode = code;
     this.readyState = WebSocket.CLOSED;
   }
 
@@ -84,8 +87,9 @@ describe('TerminalGateway', () => {
     service: TerminalService;
     gateway: TerminalGateway;
   } {
-    service = new TerminalService(makeConfig(terminal), noTasks);
-    return { service, gateway: new TerminalGateway(service) };
+    const config = makeConfig(terminal);
+    service = new TerminalService(config, noTasks);
+    return { service, gateway: new TerminalGateway(service, config) };
   }
 
   afterEach(() => {
@@ -160,5 +164,30 @@ describe('TerminalGateway', () => {
 
     gateway.handleDisconnect(sock.asWebSocket());
     expect(svc.has('s6')).toBe(false);
+  });
+
+  it('rejects a disallowed Origin and never wires the socket', () => {
+    const { gateway } = harness();
+    const sock = new FakeSocket();
+    const request = { headers: { origin: 'https://evil.com' } } as unknown as IncomingMessage;
+    gateway.handleConnection(sock.asWebSocket(), request);
+
+    expect(sock.closed).toBe(true);
+    expect(sock.closeCode).toBe(1008);
+    // handler was never attached, so inbound frames can't reach the service
+    sock.client({ type: 'input', data: b64('x') });
+    expect(sock.received).toHaveLength(0);
+  });
+
+  it('allows a loopback Origin', async () => {
+    const { service: svc, gateway } = harness();
+    const sock = new FakeSocket();
+    const request = { headers: { origin: 'http://localhost:3000' } } as unknown as IncomingMessage;
+    gateway.handleConnection(sock.asWebSocket(), request);
+
+    const token = svc.mintToken('s-loop');
+    sock.client({ type: 'attach', sessionId: 's-loop', token, cols: 80, rows: 24 });
+    await sock.waitFor((m) => m.type === 'status' && m.phase === 'ready');
+    expect(sock.closed).toBe(false);
   });
 });

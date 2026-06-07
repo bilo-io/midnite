@@ -1,3 +1,4 @@
+import type { IncomingMessage } from 'node:http';
 import { Inject, Logger } from '@nestjs/common';
 import {
   type OnGatewayConnection,
@@ -8,8 +9,11 @@ import { WebSocket } from 'ws';
 import {
   ClientTerminalMessageSchema,
   TERMINAL_WS_PATH,
+  type MidniteConfig,
   type ServerTerminalMessage,
 } from '@midnite/shared';
+import { MIDNITE_CONFIG } from '../config.token';
+import { isAllowedOrigin } from '../lib/allowed-origin';
 import { TerminalService, type TerminalSubscriber } from './terminal.service';
 
 interface ConnState {
@@ -29,9 +33,26 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
   private readonly logger = new Logger(TerminalGateway.name);
   private readonly conns = new WeakMap<WebSocket, ConnState>();
 
-  constructor(@Inject(TerminalService) private readonly terminal: TerminalService) {}
+  constructor(
+    @Inject(TerminalService) private readonly terminal: TerminalService,
+    @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
+  ) {}
 
-  handleConnection(client: WebSocket): void {
+  handleConnection(client: WebSocket, request?: IncomingMessage): void {
+    // `verifyClient` isn't consulted on the shared-server (noServer) upgrade path,
+    // so gate the Origin here: a malicious page must not drive a PTY even though
+    // it can reach loopback from the user's browser.
+    const origin = request?.headers.origin;
+    if (!isAllowedOrigin(origin, this.config.gateway.allowedOrigins)) {
+      this.logger.warn(`rejected terminal WS from disallowed origin: ${origin ?? '(none)'}`);
+      try {
+        client.close(1008, 'origin not allowed');
+      } catch {
+        // socket may already be closing
+      }
+      return;
+    }
+
     const subscriber: TerminalSubscriber = {
       send: (message: ServerTerminalMessage) => {
         if (client.readyState === WebSocket.OPEN) client.send(JSON.stringify(message));

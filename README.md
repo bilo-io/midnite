@@ -110,7 +110,7 @@ User config lives in [`midnite.json`](midnite.json) at the repo root, validated 
   "terminal":  { "mode": "pty", "layout": "split", "args": [], "scrollbackBytes": 262144, "idleDisposeMs": 300000 },
   "knowledge": { "dir": "./knowledge" },
   "repos":     [],
-  "gateway":   { "port": 7777 },
+  "gateway":   { "port": 7777, "host": "127.0.0.1", "allowedOrigins": [] },
   "workflows": { "enabled": false, "defaultTimezone": "UTC", "schedulerTickMs": 30000, "webhookBaseUrl": "http://localhost:7777" }
 }
 ```
@@ -125,6 +125,16 @@ across reconnects. `terminal` fields control it:
 - `args` — argv for `command` (ignored for the default shell, which uses `-i`).
 - `scrollbackBytes` — bytes of recent output retained per PTY, replayed on (re)attach.
 - `idleDisposeMs` — grace period after the last viewer disconnects before the PTY is reaped.
+
+Because the terminal can spawn arbitrary processes, the gateway is **locked to
+loopback by default**:
+
+- `gateway.host` — bind address, `127.0.0.1` by default. Only change it (e.g.
+  `0.0.0.0`) if you intend to expose the gateway, and pair it with auth.
+- `gateway.allowedOrigins` — browser origins permitted to call the API and open
+  the terminal WS. Loopback origins (any port) are always allowed; add others
+  here. Non-loopback origins are rejected (CORS + a WS `Origin` check) to block
+  drive-by pages from driving a terminal.
 
 Every consumer (gateway, CLI) takes a parsed `MidniteConfig` — never `JSON.parse` the file yourself.
 

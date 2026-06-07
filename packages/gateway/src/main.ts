@@ -11,6 +11,7 @@ import { mkdirSync, readFileSync } from 'node:fs';
 import { isAbsolute, join, resolve } from 'node:path';
 import { parseConfig, type MidniteConfig } from '@midnite/shared';
 import { AppModule } from './app.module';
+import { isAllowedOrigin } from './lib/allowed-origin';
 
 function loadConfigFromDisk(): MidniteConfig {
   const configPath = join(process.cwd(), 'midnite.json');
@@ -56,14 +57,19 @@ async function bootstrap() {
     adapter,
   );
 
-  app.enableCors({ origin: true });
+  // The gateway can spawn PTYs, so don't reflect arbitrary origins — only
+  // loopback (the dev web app) plus any explicitly-configured origins.
+  const { allowedOrigins } = config.gateway;
+  app.enableCors({
+    origin: (origin, cb) => cb(null, isAllowedOrigin(origin, allowedOrigins)),
+  });
   // Live terminal WS rides the same Fastify HTTP server, routed by gateway path.
   app.useWebSocketAdapter(new WsAdapter(app));
 
-  const port = config.gateway.port;
-  await app.listen(port, '0.0.0.0');
+  const { port, host } = config.gateway;
+  await app.listen(port, host);
   // eslint-disable-next-line no-console
-  console.log(`[midnite gateway] listening on http://localhost:${port}`);
+  console.log(`[midnite gateway] listening on http://${host}:${port}`);
 }
 
 bootstrap().catch((err) => {
