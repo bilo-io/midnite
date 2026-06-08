@@ -149,7 +149,13 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
             </div>
 
             <div className="relative min-w-0 flex-1">
-              <WorkflowCanvas />
+              {/* Fill the flex cell via absolute insets, not height:100% — a
+                  percentage height won't resolve against a flex item whose own
+                  height is auto, which collapses React Flow's interaction pane
+                  (nodes still render, but panning/dragging goes dead). */}
+              <div className="absolute inset-0">
+                <WorkflowCanvas />
+              </div>
               <PanelToggle
                 side="left"
                 open={paletteOpen}
