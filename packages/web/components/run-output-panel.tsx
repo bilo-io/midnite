@@ -32,7 +32,12 @@ export function RunOutputPanel({ run }: { run: WorkflowRun | null }) {
         {run ? <span className="capitalize text-foreground">· {run.status}</span> : null}
       </button>
 
-      {open ? (
+      <div
+        className={cn(
+          'overflow-hidden transition-all duration-300 ease-in-out motion-reduce:transition-none',
+          open ? 'max-h-60 opacity-100' : 'max-h-0 opacity-0',
+        )}
+      >
         <div className="max-h-56 space-y-1 overflow-y-auto px-4 pb-3">
           {!run ? (
             <p className="text-xs text-muted-foreground">Press Run to execute this workflow.</p>
@@ -62,7 +67,7 @@ export function RunOutputPanel({ run }: { run: WorkflowRun | null }) {
             ))
           )}
         </div>
-      ) : null}
+      </div>
     </div>
   );
 }

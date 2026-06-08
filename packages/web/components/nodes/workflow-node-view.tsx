@@ -42,7 +42,7 @@ export function WorkflowNodeView({ data, selected }: NodeProps<AppNode>) {
   return (
     <div
       className={cn(
-        'min-w-[190px] max-w-[260px] rounded-lg border bg-card/85 shadow-sm backdrop-blur-sm transition-shadow',
+        'min-w-[190px] max-w-[260px] rounded-lg border bg-card/85 shadow-sm backdrop-blur-sm transition-all duration-200 motion-reduce:transition-none',
         selected ? 'ring-1 ring-ring' : '',
         data.status === 'failed' ? 'border-destructive/60' : 'border-border',
       )}

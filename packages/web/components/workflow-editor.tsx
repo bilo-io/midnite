@@ -4,6 +4,13 @@ import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ReactFlowProvider } from '@xyflow/react';
+import {
+  PanelLeftClose,
+  PanelLeftOpen,
+  PanelRightClose,
+  PanelRightOpen,
+  type LucideIcon,
+} from 'lucide-react';
 import type { NodeRunStatus, Workflow } from '@midnite/shared';
 import { NodeConfigPanel } from '@/components/node-config-panel';
 import { NodePalette } from '@/components/node-palette';
@@ -12,6 +19,7 @@ import { WorkflowToolbar } from '@/components/workflow-toolbar';
 import { updateWorkflow } from '@/lib/api';
 import { useWorkflowRun } from '@/lib/use-workflow-run';
 import { createWorkflowStore, WorkflowStoreContext } from '@/lib/workflow-store';
+import { cn } from '@/lib/utils';
 
 const WorkflowCanvas = dynamic(() => import('@/components/workflow-canvas'), {
   ssr: false,
@@ -22,11 +30,52 @@ const WorkflowCanvas = dynamic(() => import('@/components/workflow-canvas'), {
   ),
 });
 
+// A floating button that pins to the inner edge of the canvas and toggles the
+// adjacent side panel. It glides with the panel because the canvas flexes as the
+// panel's width animates.
+function PanelToggle({
+  side,
+  open,
+  onToggle,
+  label,
+}: {
+  side: 'left' | 'right';
+  open: boolean;
+  onToggle: () => void;
+  label: string;
+}) {
+  const Icon: LucideIcon =
+    side === 'left'
+      ? open
+        ? PanelLeftClose
+        : PanelLeftOpen
+      : open
+        ? PanelRightClose
+        : PanelRightOpen;
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={label}
+      aria-pressed={open}
+      title={label}
+      className={cn(
+        'absolute top-2 z-10 flex h-8 w-8 items-center justify-center rounded-md border border-border/60 bg-card/80 text-muted-foreground shadow-sm backdrop-blur transition-colors duration-200 hover:bg-accent hover:text-foreground motion-reduce:transition-none',
+        side === 'left' ? 'left-2' : 'right-2',
+      )}
+    >
+      <Icon className="h-4 w-4" />
+    </button>
+  );
+}
+
 export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
   const router = useRouter();
   const [store] = useState(() => createWorkflowStore(workflow));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [paletteOpen, setPaletteOpen] = useState(true);
+  const [configOpen, setConfigOpen] = useState(true);
   const runner = useWorkflowRun(workflow.id);
 
   // Reflect live run state onto the canvas nodes.
@@ -35,6 +84,15 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
     for (const nr of runner.run?.nodeRuns ?? []) map[nr.nodeId] = nr.status;
     store.getState().applyRunStatuses(map);
   }, [runner.run, store]);
+
+  // Open the config panel when a node is selected, so a node click is never a no-op
+  // while the panel is collapsed.
+  useEffect(() => {
+    const unsubscribe = store.subscribe((state, prev) => {
+      if (state.selectedId && state.selectedId !== prev.selectedId) setConfigOpen(true);
+    });
+    return unsubscribe;
+  }, [store]);
 
   const save = async () => {
     setSaving(true);
@@ -63,23 +121,59 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
     await runner.start();
   };
 
+  const banner = error ?? runner.error;
+
   return (
     <WorkflowStoreContext.Provider value={store}>
       <ReactFlowProvider>
         <div className="flex h-screen w-full flex-col overflow-hidden">
           <WorkflowToolbar onRun={() => void run()} onSave={() => void save()} running={runner.running} saving={saving} />
-          {error || runner.error ? (
-            <div className="border-b border-destructive/40 bg-destructive/10 px-4 py-2 text-xs text-destructive">
-              {error ?? runner.error}
+
+          <div
+            className={cn(
+              'overflow-hidden bg-destructive/10 text-xs text-destructive transition-all duration-300 ease-in-out motion-reduce:transition-none',
+              banner ? 'max-h-16 border-b border-destructive/40 px-4 py-2 opacity-100' : 'max-h-0 opacity-0',
+            )}
+          >
+            {banner}
+          </div>
+
+          <div className="relative flex min-h-0 flex-1">
+            <div
+              className={cn(
+                'flex h-full shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out motion-reduce:transition-none',
+                paletteOpen ? 'w-52' : 'w-0',
+              )}
+            >
+              <NodePalette />
             </div>
-          ) : null}
-          <div className="flex min-h-0 flex-1">
-            <NodePalette />
+
             <div className="relative min-w-0 flex-1">
               <WorkflowCanvas />
+              <PanelToggle
+                side="left"
+                open={paletteOpen}
+                onToggle={() => setPaletteOpen((o) => !o)}
+                label={paletteOpen ? 'Hide node palette' : 'Show node palette'}
+              />
+              <PanelToggle
+                side="right"
+                open={configOpen}
+                onToggle={() => setConfigOpen((o) => !o)}
+                label={configOpen ? 'Hide config panel' : 'Show config panel'}
+              />
             </div>
-            <NodeConfigPanel workflowId={workflow.id} />
+
+            <div
+              className={cn(
+                'flex h-full shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out motion-reduce:transition-none',
+                configOpen ? 'w-80' : 'w-0',
+              )}
+            >
+              <NodeConfigPanel workflowId={workflow.id} />
+            </div>
           </div>
+
           <RunOutputPanel run={runner.run} />
         </div>
       </ReactFlowProvider>
