@@ -4,7 +4,7 @@
     "pool": 4,
     "provider": "claude",
     "plan": "opus4.7",
-    "act": "sonnet4.7"
+    "act": "haiku4.5"
   },
   "terminal": {
     "mode": "pty",

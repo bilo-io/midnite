@@ -8,8 +8,8 @@ export const RepoConfigSchema = z.object({
 export const AgentConfigSchema = z.object({
   pool: z.number().int().positive().default(4),
   provider: z.enum(['claude']).default('claude'),
-  plan: z.string().default('opus4.7'),
-  act: z.string().default('sonnet4.7'),
+  plan: z.string().default('opus4.8'),
+  act: z.string().default('haiku4.5'),
 });
 
 export const TerminalConfigSchema = z.object({
