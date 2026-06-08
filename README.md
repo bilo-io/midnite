@@ -107,7 +107,7 @@ User config lives in [`midnite.json`](midnite.json) at the repo root, validated 
 ```json
 {
   "agent":     { "pool": 4, "provider": "claude", "plan": "opus4.7", "act": "sonnet4.7" },
-  "terminal":  { "mode": "pty", "layout": "split", "args": [], "scrollbackBytes": 262144, "idleDisposeMs": 300000, "maxSessions": 16, "inheritSecrets": false },
+  "terminal":  { "mode": "pty", "layout": "split", "args": [], "scrollbackBytes": 262144, "idleDisposeMs": 300000, "maxSessions": 16, "inheritSecrets": false, "approvals": { "enabled": false, "timeoutMs": 120000, "onTimeout": "deny", "onNoSubscriber": "ask" } },
   "knowledge": { "dir": "./knowledge" },
   "repos":     [],
   "gateway":   { "port": 7777, "host": "127.0.0.1", "allowedOrigins": [] },
@@ -130,6 +130,20 @@ across reconnects. `terminal` fields control it:
   vars (`*TOKEN*`, `*SECRET*`, `*API_KEY*`, …) so an interactive shell doesn't
   inherit the gateway's credentials. Set `true` when `command` is `"claude"` (it
   needs `ANTHROPIC_API_KEY`).
+- `approvals` — human-in-the-loop tool gating for `command: "claude"` sessions
+  (off by default). When `enabled`, the gateway injects a Claude Code `PreToolUse`
+  hook (via a per-session `--settings` file) that routes each tool-permission
+  request to the web session window, where you answer **Accept / Accept for this
+  session / Deny** — the agent blocks until you (or a fail-safe) decide. `timeoutMs`
+  bounds the wait; `onTimeout` (default `deny`) and `onNoSubscriber` (default `ask`
+  — fall back to Claude's own prompt when no browser is watching) choose the
+  fail-safe. The hook authenticates to the gateway with a per-session secret, so
+  the request body alone is never trusted. (`hookCallbackUrl` optionally overrides
+  the loopback URL the in-PTY hook calls back on.)
+
+The session window also has a **message composer** (type and press Enter to send
+to the PTY) alongside the raw terminal, so a Claude Code session is drivable like
+a remote control.
 
 Until the agent pool/scheduler lands, the window is an **on-demand PTY** running
 `command` in the session's repo — an interactive shell (or `claude`), not a replay

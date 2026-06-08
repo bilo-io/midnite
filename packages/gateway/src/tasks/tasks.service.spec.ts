@@ -37,6 +37,7 @@ class InMemoryRepo extends TasksRepository {
       sessionId: row.sessionId ?? null,
       projectId: row.projectId ?? null,
       prUrl: row.prUrl ?? null,
+      archivedAt: row.archivedAt ?? null,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };
@@ -56,6 +57,14 @@ class InMemoryRepo extends TasksRepository {
     const task = this.tasks.find((t) => t.id === id);
     if (!task) return undefined;
     task.status = status;
+    task.updatedAt = updatedAt;
+    return task;
+  }
+
+  override setArchived(id: string, archivedAt: string | null, updatedAt: string): TaskRow | undefined {
+    const task = this.tasks.find((t) => t.id === id);
+    if (!task) return undefined;
+    task.archivedAt = archivedAt;
     task.updatedAt = updatedAt;
     return task;
   }
@@ -112,6 +121,7 @@ class InMemoryRepo extends TasksRepository {
       sessionId: row.sessionId ?? undefined,
       projectId: row.projectId ?? undefined,
       prUrl: row.prUrl ?? undefined,
+      archivedAt: row.archivedAt ?? undefined,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       events: this.listEvents(row.id),
@@ -190,5 +200,40 @@ describe('TasksService', () => {
     const updated = service.updateStatus('t0', 'wip');
     expect(updated.status).toBe('wip');
     expect(repo.events.some((e) => e.kind === 'status.changed')).toBe(true);
+    expect(updated.archivedAt).toBeUndefined();
+  });
+
+  it('abandoning a task auto-archives it and emits task.archived', () => {
+    const repo = new InMemoryRepo();
+    seed(repo, ['wip']);
+    const service = new TasksService(repo, new StubClassifier());
+    const updated = service.updateStatus('t0', 'abandoned');
+    expect(updated.status).toBe('abandoned');
+    expect(updated.archivedAt).toBeDefined();
+    expect(repo.events.some((e) => e.kind === 'task.archived')).toBe(true);
+  });
+
+  it('archive/unarchive toggles archivedAt and emits events', () => {
+    const repo = new InMemoryRepo();
+    seed(repo, ['done']);
+    const service = new TasksService(repo, new StubClassifier());
+
+    const archived = service.archive('t0');
+    expect(archived.archivedAt).toBeDefined();
+    expect(repo.events.some((e) => e.kind === 'task.archived')).toBe(true);
+
+    const unarchived = service.unarchive('t0');
+    expect(unarchived.archivedAt).toBeUndefined();
+    expect(repo.events.some((e) => e.kind === 'task.unarchived')).toBe(true);
+  });
+
+  it('moving out of abandoned does not auto-unarchive', () => {
+    const repo = new InMemoryRepo();
+    seed(repo, ['wip']);
+    const service = new TasksService(repo, new StubClassifier());
+    service.updateStatus('t0', 'abandoned');
+    const back = service.updateStatus('t0', 'todo');
+    expect(back.status).toBe('todo');
+    expect(back.archivedAt).toBeDefined();
   });
 });

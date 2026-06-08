@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { LayoutGrid, List, ListTree } from 'lucide-react';
 import {
   SESSION_STATUSES,
@@ -24,7 +24,7 @@ import { SessionTranscriptModal } from '@/components/session-transcript-modal';
 import { SessionTerminalModal } from '@/components/session-terminal-modal';
 import { SortableAccordions, type AccordionSection } from '@/components/sortable-accordions';
 import type { ProjectTagInfo } from '@/components/task-card';
-import { getSessionTranscript } from '@/lib/api';
+import { archiveSession, getSessionTranscript, unarchiveSession } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 type View = 'list' | 'grid' | 'table';
@@ -100,6 +100,22 @@ export function SessionsView({
     setLoadError(null);
   }, []);
 
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const onArchiveToggle = useCallback(
+    async (session: SessionSummary) => {
+      try {
+        if (session.archivedAt) await unarchiveSession(session.id);
+        else await archiveSession(session.id);
+      } finally {
+        onClose();
+        router.refresh(); // page is force-dynamic, so this re-fetches /sessions
+      }
+    },
+    [onClose, router],
+  );
+
   // A session's project is resolved through its linked task.
   const projectIdByTask = useMemo(() => new Map(tasks.map((t) => [t.id, t.projectId])), [tasks]);
   const projectsById = useMemo(
@@ -113,6 +129,24 @@ export function SessionsView({
   );
 
   const searchParams = useSearchParams();
+
+  // Deep-link target from the task modal's "Open session": auto-open it once.
+  const openId = searchParams.get('open');
+  const handledOpenRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!openId || handledOpenRef.current === openId) return;
+    const match = initial.find((s) => s.id === openId);
+    if (!match) return;
+    handledOpenRef.current = openId;
+    void onSelect(match);
+    // Strip the param so a manual close + refresh doesn't reopen it.
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('open');
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }, [openId, initial, onSelect, router, pathname, searchParams]);
+
+  const showArchived = searchParams.get('archived') === '1';
   const activeRaw = searchParams.get('status');
   const activeStatuses = new Set(
     (activeRaw ? activeRaw.split(',') : []).filter((s): s is SessionStatus =>
@@ -125,11 +159,13 @@ export function SessionsView({
     (rawProject ? rawProject.split(',') : []).filter((p) => validProjects.has(p)),
   );
   const q = (searchParams.get('q') ?? '').trim().toLowerCase();
+  // Archive is an orthogonal bucket: hide archived by default; the Archived toggle shows only archived.
+  const archiveScoped = initial.filter((s) => (showArchived ? Boolean(s.archivedAt) : !s.archivedAt));
   const searched = q
-    ? initial.filter((s) =>
+    ? archiveScoped.filter((s) =>
         [s.title, s.subtitle, s.projectDisplay].some((f) => f.toLowerCase().includes(q)),
       )
-    : initial;
+    : archiveScoped;
 
   // Project filter applies across every view; status filter narrows the rest.
   const projectFiltered =
@@ -189,6 +225,11 @@ export function SessionsView({
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
           {projects.length > 0 ? <ProjectMultiSelect options={projectFilters} /> : null}
           <FilterPills options={SESSION_FILTERS} />
+          <FilterPills
+            options={[{ value: '1', label: 'Archived', hue: '215 14% 47%' }]}
+            paramKey="archived"
+            allLabel="Active"
+          />
         </div>
       ) : null}
 
@@ -267,7 +308,11 @@ export function SessionsView({
 
       {selected ? (
         isActive(selected.status) ? (
-          <SessionTerminalModal session={selected} onClose={onClose} />
+          <SessionTerminalModal
+            session={selected}
+            onClose={onClose}
+            onArchiveToggle={() => void onArchiveToggle(selected)}
+          />
         ) : (
           <SessionTranscriptModal
             session={selected}
@@ -275,6 +320,7 @@ export function SessionsView({
             loading={loading}
             error={loadError}
             onClose={onClose}
+            onArchiveToggle={() => void onArchiveToggle(selected)}
           />
         )
       ) : null}

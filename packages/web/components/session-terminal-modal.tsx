@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { X } from 'lucide-react';
+import { Archive, ArchiveRestore, X } from 'lucide-react';
 import type { SessionSummary } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { SessionStatusDot } from '@/components/session-card';
@@ -10,9 +10,10 @@ import { SessionTerminal } from '@/components/session-terminal';
 type Props = {
   session: SessionSummary;
   onClose: () => void;
+  onArchiveToggle?: () => void;
 };
 
-export function SessionTerminalModal({ session, onClose }: Props) {
+export function SessionTerminalModal({ session, onClose, onArchiveToggle }: Props) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -46,6 +47,25 @@ export function SessionTerminalModal({ session, onClose }: Props) {
                 <span>live terminal</span>
               </p>
             </div>
+            {onArchiveToggle ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={onArchiveToggle}
+                className="shrink-0 text-muted-foreground"
+              >
+                {session.archivedAt ? (
+                  <>
+                    <ArchiveRestore className="h-3.5 w-3.5" /> Unarchive
+                  </>
+                ) : (
+                  <>
+                    <Archive className="h-3.5 w-3.5" /> Archive
+                  </>
+                )}
+              </Button>
+            ) : null}
             <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
               <X className="h-4 w-4" />
             </Button>

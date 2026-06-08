@@ -14,6 +14,28 @@ import { z } from 'zod';
 
 const dimension = z.number().int().positive().max(1000);
 
+// ---- approvals (human-in-the-loop tool gating) ----
+
+/**
+ * The choice a viewer makes on an approval prompt. `allow-session` means "stop
+ * asking for this tool for the rest of the session". This is the UI/wire
+ * vocabulary — distinct from what the gateway hands back to Claude Code's
+ * PreToolUse hook (allow/deny/ask); that mapping lives in the gateway.
+ */
+export const ApprovalDecisionSchema = z.enum(['allow', 'allow-session', 'deny']);
+export type ApprovalDecision = z.infer<typeof ApprovalDecisionSchema>;
+
+/** How a pending approval ended: a viewer's choice, or an automatic resolution. */
+export const ApprovalResolutionSchema = z.enum([
+  'allow',
+  'allow-session',
+  'deny',
+  'ask',
+  'timeout',
+  'expired',
+]);
+export type ApprovalResolution = z.infer<typeof ApprovalResolutionSchema>;
+
 // ---- client -> gateway ----
 
 export const TerminalAttachMessageSchema = z.object({
@@ -35,10 +57,18 @@ export const TerminalResizeMessageSchema = z.object({
   rows: dimension,
 });
 
+/** A viewer answering a pending approval prompt. Scoped to the socket's PTY. */
+export const TerminalApprovalResponseMessageSchema = z.object({
+  type: z.literal('approval-response'),
+  requestId: z.string().min(1),
+  decision: ApprovalDecisionSchema,
+});
+
 export const ClientTerminalMessageSchema = z.discriminatedUnion('type', [
   TerminalAttachMessageSchema,
   TerminalInputMessageSchema,
   TerminalResizeMessageSchema,
+  TerminalApprovalResponseMessageSchema,
 ]);
 
 // ---- gateway -> client ----
@@ -83,10 +113,30 @@ export const TerminalErrorMessageSchema = z.object({
   message: z.string(),
 });
 
+/** The agent is about to use a tool that needs approval — prompt the viewer(s). */
+export const TerminalApprovalRequestMessageSchema = z.object({
+  type: z.literal('approval-request'),
+  requestId: z.string().min(1),
+  toolName: z.string(),
+  /** Human-readable one-liner, e.g. "Bash: rm -rf build/". */
+  summary: z.string(),
+  cwd: z.string().optional(),
+  options: z.array(ApprovalDecisionSchema).default(['allow', 'allow-session', 'deny']),
+});
+
+/** A pending approval was resolved (by a viewer, the allow-list, or a timeout) — clear any overlay. */
+export const TerminalApprovalResolvedMessageSchema = z.object({
+  type: z.literal('approval-resolved'),
+  requestId: z.string().min(1),
+  decision: ApprovalResolutionSchema,
+});
+
 export const ServerTerminalMessageSchema = z.discriminatedUnion('type', [
   TerminalOutputMessageSchema,
   TerminalStatusMessageSchema,
   TerminalErrorMessageSchema,
+  TerminalApprovalRequestMessageSchema,
+  TerminalApprovalResolvedMessageSchema,
 ]);
 
 // ---- token mint (REST) ----
@@ -96,16 +146,49 @@ export const TerminalTokenResponseSchema = z.object({
   wsUrl: z.string(),
 });
 
+// ---- PreToolUse hook bridge (hook script <-> gateway, REST) ----
+
+/**
+ * Body the hook script POSTs to the gateway — Claude Code's PreToolUse stdin
+ * payload. Kept permissive (`.passthrough()`) because the shape can drift; we
+ * only need `tool_name` plus enough to summarize the call.
+ */
+export const PreToolUseHookRequestSchema = z
+  .object({
+    tool_name: z.string(),
+    tool_input: z.unknown().optional(),
+    cwd: z.string().optional(),
+    session_id: z.string().optional(),
+  })
+  .passthrough();
+export type PreToolUseHookRequest = z.infer<typeof PreToolUseHookRequestSchema>;
+
+/** What the gateway returns to the hook script, which prints it to stdout for Claude. */
+export const PreToolUseHookDecisionSchema = z.object({
+  decision: z.enum(['allow', 'deny', 'ask']),
+  reason: z.string().optional(),
+});
+export type PreToolUseHookDecision = z.infer<typeof PreToolUseHookDecisionSchema>;
+
 // ---- inferred types ----
 
 export type TerminalAttachMessage = z.infer<typeof TerminalAttachMessageSchema>;
 export type TerminalInputMessage = z.infer<typeof TerminalInputMessageSchema>;
 export type TerminalResizeMessage = z.infer<typeof TerminalResizeMessageSchema>;
+export type TerminalApprovalResponseMessage = z.infer<
+  typeof TerminalApprovalResponseMessageSchema
+>;
 export type ClientTerminalMessage = z.infer<typeof ClientTerminalMessageSchema>;
 
 export type TerminalOutputMessage = z.infer<typeof TerminalOutputMessageSchema>;
 export type TerminalStatusMessage = z.infer<typeof TerminalStatusMessageSchema>;
 export type TerminalErrorMessage = z.infer<typeof TerminalErrorMessageSchema>;
+export type TerminalApprovalRequestMessage = z.infer<
+  typeof TerminalApprovalRequestMessageSchema
+>;
+export type TerminalApprovalResolvedMessage = z.infer<
+  typeof TerminalApprovalResolvedMessageSchema
+>;
 export type ServerTerminalMessage = z.infer<typeof ServerTerminalMessageSchema>;
 
 export type TerminalStatusPhase = z.infer<typeof TerminalStatusPhaseSchema>;

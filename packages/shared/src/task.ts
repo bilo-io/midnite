@@ -64,6 +64,8 @@ export const TaskSchema = z.object({
   prUrl: z.string().optional(),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
+  /** ISO timestamp when the task (and thus its session) was archived; absent when active. */
+  archivedAt: z.string().optional(),
   events: z.array(TaskEventSchema),
   attachments: z.array(TaskAttachmentSchema).optional(),
   links: z.array(TaskLinkSchema).optional(),

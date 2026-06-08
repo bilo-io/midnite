@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import {
   type CreateWorkflowRequest,
   type MidniteConfig,
@@ -18,6 +18,7 @@ import {
   type WorkflowSummary,
 } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
+import { hashToken, tokenMatches } from '../lib/token-hash';
 import { WorkflowsRepository } from './workflows.repository';
 import { WorkflowEngine } from './engine/workflow-engine.service';
 
@@ -25,10 +26,6 @@ const DEFAULT_TRIGGER: Trigger = { type: 'manual' };
 
 function triggerNodeType(type: Trigger['type']): string {
   return `trigger.${type}`;
-}
-
-function hashToken(token: string): string {
-  return createHash('sha256').update(token).digest('hex');
 }
 
 @Injectable()
@@ -182,7 +179,7 @@ export class WorkflowsService {
     if (workflow.trigger.type !== 'webhook') {
       throw new BadRequestException('workflow trigger is not a webhook');
     }
-    if (!row.webhookSecretHash || !this.tokenMatches(token, row.webhookSecretHash)) {
+    if (!row.webhookSecretHash || !tokenMatches(token, row.webhookSecretHash)) {
       throw new NotFoundException('invalid webhook token');
     }
     if (!workflow.enabled) {
@@ -196,13 +193,6 @@ export class WorkflowsService {
   private webhookUrl(id: string, token: string): string {
     const base = this.config.workflows.webhookBaseUrl.replace(/\/$/, '');
     return `${base}/hooks/workflows/${id}/${token}`;
-  }
-
-  private tokenMatches(token: string, expectedHash: string): boolean {
-    const actual = Buffer.from(hashToken(token), 'hex');
-    const expected = Buffer.from(expectedHash, 'hex');
-    if (actual.length !== expected.length) return false;
-    return timingSafeEqual(actual, expected);
   }
 
   private syncTriggerNode(graph: WorkflowGraph, trigger: Trigger): WorkflowGraph {

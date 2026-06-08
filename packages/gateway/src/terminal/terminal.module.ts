@@ -1,11 +1,14 @@
 import { Module } from '@nestjs/common';
 import { TasksModule } from '../tasks/tasks.module';
+import { ApprovalController } from './approval.controller';
+import { ApprovalService } from './approval.service';
 import { TerminalGateway } from './terminal.gateway';
 import { TerminalService } from './terminal.service';
 
 @Module({
   imports: [TasksModule],
-  providers: [TerminalService, TerminalGateway],
+  controllers: [ApprovalController],
+  providers: [TerminalService, ApprovalService, TerminalGateway],
   exports: [TerminalService],
 })
 export class TerminalModule {}

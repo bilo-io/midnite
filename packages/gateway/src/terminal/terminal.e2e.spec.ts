@@ -10,6 +10,7 @@ import {
 import type { TasksService } from '../tasks/tasks.service';
 import { TerminalGateway } from './terminal.gateway';
 import { TerminalService } from './terminal.service';
+import type { ApprovalService } from './approval.service';
 
 // Exercises the gateway over a REAL WebSocket connection on real TCP: a
 // `ws.Server` (the same thing @nestjs/platform-ws's WsAdapter builds internally
@@ -25,6 +26,15 @@ const config: MidniteConfig = parseConfig({
 });
 const noTasks = { listTasks: () => [] } as unknown as TasksService;
 
+const noApprovals = {
+  mintSecret: () => 'secret',
+  verifySecret: () => true,
+  requestDecision: async () => ({ decision: 'ask' as const }),
+  resolveByUser: () => {},
+  replayPending: () => {},
+  clearSession: () => {},
+} as unknown as ApprovalService;
+
 describe('TerminalGateway (real WS transport)', () => {
   let service: TerminalService;
   let httpServer: Server;
@@ -32,8 +42,8 @@ describe('TerminalGateway (real WS transport)', () => {
   let url: string;
 
   beforeAll(async () => {
-    service = new TerminalService(config, noTasks);
-    const gateway = new TerminalGateway(service, config);
+    service = new TerminalService(config, noTasks, noApprovals);
+    const gateway = new TerminalGateway(service, noApprovals, config);
     httpServer = createServer();
     wss = new WebSocketServer({ server: httpServer, path: TERMINAL_WS_PATH });
     wss.on('connection', (socket, request) => {

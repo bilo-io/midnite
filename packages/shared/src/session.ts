@@ -16,6 +16,8 @@ export const SessionSummarySchema = z.object({
   linkedTaskId: z.string().optional(),
   contextTokens: z.number().int().nonnegative().optional(),
   contextLimit: z.number().int().positive().optional(),
+  /** ISO timestamp when the session was archived; absent when active. */
+  archivedAt: z.string().optional(),
 });
 export type SessionSummary = z.infer<typeof SessionSummarySchema>;
 

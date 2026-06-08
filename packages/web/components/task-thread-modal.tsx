@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ExternalLink, Plus, X } from 'lucide-react';
+import { ExternalLink, Plus, SquareTerminal, X } from 'lucide-react';
 import {
   SOURCE_KIND_LABEL,
   parseGithubPr,
@@ -14,7 +14,7 @@ import {
 } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { SourceIcon } from '@/components/source-icon';
-import { addTaskLink, gatewayUrl, removeTaskLink } from '@/lib/api';
+import { addTaskLink, gatewayUrl, removeTaskLink, updateTaskStatus } from '@/lib/api';
 
 const STATUS_HUE_VAR: Record<Status, string> = {
   backlog: '--status-backlog',
@@ -73,6 +73,28 @@ export function TaskThreadModal({ task, onClose }: Props) {
   const [linkUrl, setLinkUrl] = useState('');
   const [busy, setBusy] = useState(false);
   const [linkError, setLinkError] = useState<string | null>(null);
+  const [statusBusy, setStatusBusy] = useState(false);
+  const [statusError, setStatusError] = useState<string | null>(null);
+
+  // session.id === task.id; deep-link into the sessions board, which auto-opens it.
+  const goToSession = () => {
+    onClose();
+    router.push(`/sessions?open=${encodeURIComponent(task.id)}`);
+  };
+
+  const abandon = async () => {
+    setStatusBusy(true);
+    setStatusError(null);
+    try {
+      await updateTaskStatus(task.id, 'abandoned'); // gateway auto-archives the session
+      router.refresh();
+      onClose();
+    } catch (e) {
+      setStatusError(e instanceof Error ? e.message : 'Failed to abandon task');
+    } finally {
+      setStatusBusy(false);
+    }
+  };
 
   const addLink = async () => {
     const url = linkUrl.trim();
@@ -156,12 +178,35 @@ export function TaskThreadModal({ task, onClose }: Props) {
                 ) : null}
               </div>
             </div>
-            <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <Button type="button" variant="secondary" size="sm" onClick={goToSession}>
+                <SquareTerminal className="h-3.5 w-3.5" />
+                Open session
+              </Button>
+              {task.status !== 'abandoned' ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => void abandon()}
+                  disabled={statusBusy}
+                  className="text-muted-foreground hover:text-destructive"
+                >
+                  Abandon
+                </Button>
+              ) : null}
+              <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </header>
 
           <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
+            {statusError ? (
+              <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {statusError}
+              </div>
+            ) : null}
             <section>
               <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Review &amp; links

@@ -29,4 +29,15 @@ export class SessionsController {
   terminalToken(@Param('id') id: string): TerminalTokenResponse {
     return this.service.mintTerminalToken(id);
   }
+
+  // Archive is a session-level affordance (delete comes later, archived-only).
+  @Post(':id/archive')
+  archive(@Param('id') id: string): SessionSummary {
+    return this.service.archive(id);
+  }
+
+  @Post(':id/unarchive')
+  unarchive(@Param('id') id: string): SessionSummary {
+    return this.service.unarchive(id);
+  }
 }

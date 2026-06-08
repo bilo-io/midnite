@@ -46,6 +46,15 @@ export class TasksRepository {
       .get();
   }
 
+  setArchived(id: string, archivedAt: string | null, updatedAt: string): TaskRow | undefined {
+    return this.db
+      .update(tasks)
+      .set({ archivedAt, updatedAt })
+      .where(eq(tasks.id, id))
+      .returning()
+      .get();
+  }
+
   listTasks(status?: Status, projectId?: string): TaskRow[] {
     const where = and(
       status ? eq(tasks.status, status) : undefined,
@@ -156,6 +165,7 @@ export class TasksRepository {
       sessionId: row.sessionId ?? undefined,
       projectId: row.projectId ?? undefined,
       prUrl: row.prUrl ?? undefined,
+      archivedAt: row.archivedAt ?? undefined,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       events: this.listEvents(row.id),

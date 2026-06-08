@@ -1,4 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { chmodSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { parseConfig, type MidniteConfig, type ServerTerminalMessage } from '@midnite/shared';
 import type { TasksService } from '../tasks/tasks.service';
 import {
@@ -7,6 +10,7 @@ import {
   trimRingByBytes,
   type TerminalSubscriber,
 } from './terminal.service';
+import type { ApprovalService } from './approval.service';
 
 function makeConfig(terminal: Record<string, unknown>): MidniteConfig {
   return parseConfig({ agent: {}, terminal, knowledge: {}, gateway: {} });
@@ -14,8 +18,18 @@ function makeConfig(terminal: Record<string, unknown>): MidniteConfig {
 
 const noTasks = { listTasks: () => [] } as unknown as TasksService;
 
+// PTY-mechanics tests don't exercise approvals; a no-op stub satisfies the wiring.
+const noApprovals = {
+  mintSecret: () => 'secret',
+  verifySecret: () => true,
+  requestDecision: async () => ({ decision: 'ask' as const }),
+  resolveByUser: () => {},
+  replayPending: () => {},
+  clearSession: () => {},
+} as unknown as ApprovalService;
+
 function makeService(terminal: Record<string, unknown>): TerminalService {
-  return new TerminalService(makeConfig(terminal), noTasks);
+  return new TerminalService(makeConfig(terminal), noTasks, noApprovals);
 }
 
 function decode(data: string): string {
@@ -114,6 +128,46 @@ describe('TerminalService', () => {
     const seqs = c.messages.filter((m) => m.type === 'output').map((m) => m.seq);
     const sorted = [...seqs].sort((a, b) => a - b);
     expect(seqs).toEqual(sorted); // monotonic, non-decreasing
+  });
+
+  it('injects MIDNITE_* hook env for a claude command, surviving the secret scrub', async () => {
+    // A fake `claude` (basename triggers approval wiring) that prints its env and exits.
+    const dir = mkdtempSync(join(tmpdir(), 'midnite-claude-'));
+    const fakeClaude = join(dir, 'claude');
+    writeFileSync(fakeClaude, '#!/bin/sh\nenv\n');
+    chmodSync(fakeClaude, 0o755);
+
+    service = makeService({
+      command: fakeClaude,
+      approvals: { enabled: true },
+      inheritSecrets: false,
+    });
+    const c = makeCollector();
+    service.attach('claude-1', c.sub, { cols: 80, rows: 24 });
+    await c.waitFor((m) => m.type === 'status' && m.phase === 'exited', 8000);
+
+    const printed = c.messages
+      .filter((m): m is Extract<ServerTerminalMessage, { type: 'output' }> => m.type === 'output')
+      .map((m) => decode(m.data))
+      .join('');
+
+    // Injected after scrubSecretEnv, so the *_SECRET key isn't stripped.
+    expect(printed).toContain('MIDNITE_SESSION_ID=claude-1');
+    expect(printed).toMatch(/MIDNITE_HOOK_SECRET=.+/);
+    expect(printed).toContain('MIDNITE_GATEWAY_URL=');
+  });
+
+  it('does not inject MIDNITE_* for a non-claude command even with approvals enabled', async () => {
+    service = makeService({ command: 'sh', args: ['-c', 'env'], approvals: { enabled: true } });
+    const c = makeCollector();
+    service.attach('shell-1', c.sub, { cols: 80, rows: 24 });
+    await c.waitFor((m) => m.type === 'status' && m.phase === 'exited', 8000);
+
+    const printed = c.messages
+      .filter((m): m is Extract<ServerTerminalMessage, { type: 'output' }> => m.type === 'output')
+      .map((m) => decode(m.data))
+      .join('');
+    expect(printed).not.toContain('MIDNITE_SESSION_ID=');
   });
 
   it('reattaches a second subscriber and replays scrollback', async () => {

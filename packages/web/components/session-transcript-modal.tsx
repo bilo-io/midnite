@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { X } from 'lucide-react';
+import { Archive, ArchiveRestore, X } from 'lucide-react';
 import type {
   SessionSummary,
   SessionTranscript,
@@ -17,6 +17,7 @@ type Props = {
   loading: boolean;
   error: string | null;
   onClose: () => void;
+  onArchiveToggle?: () => void;
 };
 
 export function SessionTranscriptModal({
@@ -25,6 +26,7 @@ export function SessionTranscriptModal({
   loading,
   error,
   onClose,
+  onArchiveToggle,
 }: Props) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -65,6 +67,25 @@ export function SessionTranscriptModal({
                 ) : null}
               </p>
             </div>
+            {onArchiveToggle ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={onArchiveToggle}
+                className="shrink-0 text-muted-foreground"
+              >
+                {session.archivedAt ? (
+                  <>
+                    <ArchiveRestore className="h-3.5 w-3.5" /> Unarchive
+                  </>
+                ) : (
+                  <>
+                    <Archive className="h-3.5 w-3.5" /> Archive
+                  </>
+                )}
+              </Button>
+            ) : null}
             <Button
               type="button"
               variant="ghost"

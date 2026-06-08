@@ -5,12 +5,22 @@ import { parseConfig, type MidniteConfig, type ServerTerminalMessage } from '@mi
 import type { TasksService } from '../tasks/tasks.service';
 import { TerminalGateway } from './terminal.gateway';
 import { TerminalService } from './terminal.service';
+import type { ApprovalService } from './approval.service';
 
 // Drives the real gateway + real PTY service through a stand-in socket. The
 // WsAdapter/Fastify upgrade plumbing is covered by the end-to-end run; here we
 // pin the message protocol: zod validation, token auth, and message dispatch.
 
 const noTasks = { listTasks: () => [] } as unknown as TasksService;
+
+const noApprovals = {
+  mintSecret: () => 'secret',
+  verifySecret: () => true,
+  requestDecision: async () => ({ decision: 'ask' as const }),
+  resolveByUser: () => {},
+  replayPending: () => {},
+  clearSession: () => {},
+} as unknown as ApprovalService;
 
 function makeConfig(terminal: Record<string, unknown>): MidniteConfig {
   return parseConfig({ agent: {}, terminal, knowledge: {}, gateway: {} });
@@ -88,8 +98,8 @@ describe('TerminalGateway', () => {
     gateway: TerminalGateway;
   } {
     const config = makeConfig(terminal);
-    service = new TerminalService(config, noTasks);
-    return { service, gateway: new TerminalGateway(service, config) };
+    service = new TerminalService(config, noTasks, noApprovals);
+    return { service, gateway: new TerminalGateway(service, noApprovals, config) };
   }
 
   afterEach(() => {

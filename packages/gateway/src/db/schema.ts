@@ -21,12 +21,14 @@ export const tasks = sqliteTable(
     sessionId: text('session_id'),
     projectId: text('project_id'),
     prUrl: text('pr_url'),
+    archivedAt: text('archived_at'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
   },
   (t) => ({
     statusIdx: index('tasks_status_idx').on(t.status),
     projectIdx: index('tasks_project_idx').on(t.projectId),
+    archivedIdx: index('tasks_archived_idx').on(t.archivedAt),
   }),
 );
 
@@ -168,6 +170,52 @@ export const nodeRuns = sqliteTable(
   }),
 );
 
+// --- Agents (single primary orchestrator + subagents + heartbeat audit) ---
+
+// Singleton: exactly one row, id = 'primary'. Heartbeat scheduling bookkeeping
+// (lastHeartbeatAt) lives here, analogous to workflows.lastFiredAt. Booleans are
+// stored as integer 0/1, matching workflows.enabled.
+export const primaryAgent = sqliteTable('primary_agent', {
+  id: text('id').primaryKey(), // always 'primary'
+  name: text('name').notNull(),
+  description: text('description').notNull().default(''), // markdown system prompt
+  heartbeatEnabled: integer('heartbeat_enabled').notNull().default(0),
+  heartbeatPrompt: text('heartbeat_prompt').notNull().default(''), // markdown
+  heartbeatIntervalH: integer('heartbeat_interval_h').notNull().default(4), // 1..720
+  lastHeartbeatAt: text('last_heartbeat_at'), // ISO; null until first run
+  lastHeartbeatRunId: text('last_heartbeat_run_id'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const subagents = sqliteTable('subagents', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull().default(''),
+  role: text('role').notNull().default(''),
+  description: text('description').notNull().default(''), // markdown
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const heartbeatRuns = sqliteTable(
+  'heartbeat_runs',
+  {
+    id: text('id').primaryKey(),
+    status: text('status').notNull(), // running | succeeded | failed | skipped
+    triggerSource: text('trigger_source').notNull(), // schedule | manual
+    model: text('model'),
+    systemPrompt: text('system_prompt'), // snapshot of primary.description at run time
+    prompt: text('prompt'), // snapshot of heartbeatPrompt at run time
+    output: text('output'), // assistant text; null on failure/skip
+    error: text('error'),
+    startedAt: text('started_at').notNull(),
+    finishedAt: text('finished_at'),
+  },
+  (t) => ({
+    startedIdx: index('heartbeat_runs_started_idx').on(t.startedAt),
+  }),
+);
+
 export type TaskRow = typeof tasks.$inferSelect;
 export type TaskInsert = typeof tasks.$inferInsert;
 export type WorkflowRow = typeof workflows.$inferSelect;
@@ -186,3 +234,9 @@ export type ProjectRow = typeof projects.$inferSelect;
 export type ProjectInsert = typeof projects.$inferInsert;
 export type ProjectSourceRow = typeof projectSources.$inferSelect;
 export type ProjectSourceInsert = typeof projectSources.$inferInsert;
+export type PrimaryAgentRow = typeof primaryAgent.$inferSelect;
+export type PrimaryAgentInsert = typeof primaryAgent.$inferInsert;
+export type SubagentRow = typeof subagents.$inferSelect;
+export type SubagentInsert = typeof subagents.$inferInsert;
+export type HeartbeatRunRow = typeof heartbeatRuns.$inferSelect;
+export type HeartbeatRunInsert = typeof heartbeatRuns.$inferInsert;

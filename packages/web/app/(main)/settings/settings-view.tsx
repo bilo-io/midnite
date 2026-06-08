@@ -1,21 +1,25 @@
 'use client';
 
-import { useState } from 'react';
-import { Clock, Cpu, Lock } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Activity, Clock, Cpu, Lock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { PasscodeSetupDialog } from '@/components/passcode-pad';
+import { getAgentsConfig, updatePrimaryAgent } from '@/lib/api';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
   AGENT_POOL_MAX,
   AGENT_POOL_MIN,
   DEFAULT_SETTINGS,
+  HEARTBEAT_DEFAULT_H,
+  HEARTBEAT_PRESETS,
   INACTIVITY_MAX_S,
   INACTIVITY_MIN_S,
   PASSCODE_LENGTH,
   PASSCODE_STORAGE_KEY,
   SETTINGS_STORAGE_KEY,
+  formatHeartbeatInterval,
   type AppSettings,
 } from '@/lib/app-settings';
 import { cn } from '@/lib/utils';
@@ -48,6 +52,13 @@ export function SettingsView() {
     setSettings((prev) => ({
       ...prev,
       inactivityTimeoutS: Math.min(INACTIVITY_MAX_S, Math.max(INACTIVITY_MIN_S, n)),
+    }));
+
+  const heartbeat = Math.min(HEARTBEAT_MAX_H, Math.max(HEARTBEAT_MIN_H, settings.heartbeatIntervalH));
+  const setHeartbeat = (n: number) =>
+    setSettings((prev) => ({
+      ...prev,
+      heartbeatIntervalH: Math.min(HEARTBEAT_MAX_H, Math.max(HEARTBEAT_MIN_H, n)),
     }));
 
   const [passcode, setPasscode] = useLocalStorage<string | null>(PASSCODE_STORAGE_KEY, null);
@@ -114,6 +125,49 @@ export function SettingsView() {
 
           <p className="text-xs text-muted-foreground/70">
             Default {DEFAULT_SETTINGS.agentPoolSize} · maximum {AGENT_POOL_MAX}.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="h-3.5 w-3.5" />
+            Heartbeat
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-start justify-between gap-6">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Interval</p>
+              <p className="text-xs text-muted-foreground">
+                How often your primary agent&apos;s heartbeat prompt runs. Configure the prompt
+                itself on the Agents page.
+              </p>
+            </div>
+            <select
+              value={heartbeat}
+              onChange={(e) => setHeartbeat(Number(e.target.value))}
+              aria-label="Heartbeat interval"
+              className={cn(
+                'h-9 rounded-md border border-input bg-background px-3 text-sm transition-opacity focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                hydrated ? 'opacity-100' : 'opacity-0',
+              )}
+            >
+              {HEARTBEAT_PRESETS.some((p) => p.hours === heartbeat) ? null : (
+                <option value={heartbeat}>{formatHeartbeatInterval(heartbeat)}</option>
+              )}
+              {HEARTBEAT_PRESETS.map((p) => (
+                <option key={p.hours} value={p.hours}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <p className="text-xs text-muted-foreground/70">
+            Default {formatHeartbeatInterval(HEARTBEAT_DEFAULT_H).toLowerCase()} · from every hour
+            up to once a month.
           </p>
         </CardContent>
       </Card>

@@ -75,7 +75,18 @@ export class SessionsService {
       linkedTaskId: task.id,
       contextTokens: deriveContextTokens(task),
       contextLimit: CONTEXT_LIMIT,
+      archivedAt: task.archivedAt,
     };
+  }
+
+  // A session is a view over its task, so archiving/unarchiving delegates to the
+  // task layer (the dependency graph only flows sessions -> tasks).
+  archive(sessionId: string): SessionSummary {
+    return this.toSummary(this.tasks.archive(sessionId));
+  }
+
+  unarchive(sessionId: string): SessionSummary {
+    return this.toSummary(this.tasks.unarchive(sessionId));
   }
 
   private synthesize(task: Task): SessionTranscript {

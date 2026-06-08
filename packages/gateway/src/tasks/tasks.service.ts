@@ -48,6 +48,45 @@ export class TasksService {
       kind: 'status.changed',
       data: JSON.stringify({ status }),
     });
+    // Abandoning a task archives its session too. Idempotent: don't disturb an
+    // existing archive timestamp, and don't auto-unarchive when moving back out.
+    if (status === 'abandoned' && !row.archivedAt) {
+      this.repo.setArchived(id, now, now);
+      this.repo.insertEvent({
+        id: randomUUID(),
+        taskId: id,
+        at: now,
+        kind: 'task.archived',
+        data: JSON.stringify({ reason: 'abandoned' }),
+      });
+    }
+    return this.getTask(id);
+  }
+
+  archive(id: string): Task {
+    const now = new Date().toISOString();
+    const row = this.repo.setArchived(id, now, now);
+    if (!row) throw new NotFoundException(`task ${id} not found`);
+    this.repo.insertEvent({
+      id: randomUUID(),
+      taskId: id,
+      at: now,
+      kind: 'task.archived',
+      data: JSON.stringify({ reason: 'manual' }),
+    });
+    return this.repo.hydrate(row);
+  }
+
+  unarchive(id: string): Task {
+    const now = new Date().toISOString();
+    const row = this.repo.setArchived(id, null, now);
+    if (!row) throw new NotFoundException(`task ${id} not found`);
+    this.repo.insertEvent({
+      id: randomUUID(),
+      taskId: id,
+      at: now,
+      kind: 'task.unarchived',
+    });
     return this.repo.hydrate(row);
   }
 

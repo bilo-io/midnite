@@ -1,14 +1,19 @@
 import {
   AgentPingResponseSchema,
+  AgentsConfigResponseSchema,
   CreatePlanTasksResponseSchema,
   CreateTaskResponseSchema,
   DraftPlanResponseSchema,
   EnhanceDescriptionResponseSchema,
+  HeartbeatRunResponseSchema,
+  HeartbeatRunsResponseSchema,
+  PrimaryAgentResponseSchema,
   ProjectResponseSchema,
   ProjectSchema,
   RunResponseSchema,
   SessionSummarySchema,
   SessionTranscriptSchema,
+  SubAgentResponseSchema,
   TaskCountsSchema,
   TaskSchema,
   TerminalTokenResponseSchema,
@@ -16,18 +21,26 @@ import {
   WorkflowResponseSchema,
   WorkflowRunSchema,
   WorkflowSummarySchema,
+  type AgentsConfig,
   type CreateProjectRequest,
+  type CreateSubAgentRequest,
   type CreateTaskResponse,
   type CreateWorkflowRequest,
   type DraftPlanResponse,
+  type HeartbeatRun,
+  type PrimaryAgent,
   type Project,
   type SessionSummary,
   type SessionTranscript,
   type AgentPingResponse,
+  type Status,
+  type SubAgent,
   type Task,
   type TaskCounts,
   type TerminalTokenResponse,
+  type UpdatePrimaryAgentRequest,
   type UpdateProjectRequest,
+  type UpdateSubAgentRequest,
   type UpdateWorkflowRequest,
   type WebhookInfoResponse,
   type Workflow,
@@ -91,6 +104,14 @@ export async function createTask(form: FormData): Promise<CreateTaskResponse> {
   );
 }
 
+export async function updateTaskStatus(id: string, status: Status): Promise<Task> {
+  return fetchJson(
+    `/tasks/${encodeURIComponent(id)}/status`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ status }) },
+    TaskSchema,
+  );
+}
+
 export async function addTaskLink(taskId: string, url: string, label?: string): Promise<Task> {
   return fetchJson(
     `/tasks/${encodeURIComponent(taskId)}/links`,
@@ -124,6 +145,22 @@ export async function mintTerminalToken(sessionId: string): Promise<TerminalToke
     `/sessions/${encodeURIComponent(sessionId)}/terminal-token`,
     { method: 'POST' },
     TerminalTokenResponseSchema,
+  );
+}
+
+export async function archiveSession(id: string): Promise<SessionSummary> {
+  return fetchJson(
+    `/sessions/${encodeURIComponent(id)}/archive`,
+    { method: 'POST' },
+    SessionSummarySchema,
+  );
+}
+
+export async function unarchiveSession(id: string): Promise<SessionSummary> {
+  return fetchJson(
+    `/sessions/${encodeURIComponent(id)}/unarchive`,
+    { method: 'POST' },
+    SessionSummarySchema,
   );
 }
 
@@ -281,4 +318,60 @@ export async function rotateWorkflowWebhook(id: string): Promise<WebhookInfoResp
     { method: 'POST', headers: JSON_HEADERS },
     WebhookInfoResponseSchema,
   );
+}
+
+// --- Agents (orchestrator + subagents + heartbeat) ---
+
+export async function getAgentsConfig(): Promise<AgentsConfig> {
+  const { config } = await fetchJson('/agents', undefined, AgentsConfigResponseSchema);
+  return config;
+}
+
+export async function updatePrimaryAgent(body: UpdatePrimaryAgentRequest): Promise<PrimaryAgent> {
+  const { primary } = await fetchJson(
+    '/agents/primary',
+    { method: 'PUT', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    PrimaryAgentResponseSchema,
+  );
+  return primary;
+}
+
+export async function createSubAgent(body: CreateSubAgentRequest): Promise<SubAgent> {
+  const { subAgent } = await fetchJson(
+    '/agents/subagents',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    SubAgentResponseSchema,
+  );
+  return subAgent;
+}
+
+export async function updateSubAgent(id: string, body: UpdateSubAgentRequest): Promise<SubAgent> {
+  const { subAgent } = await fetchJson(
+    `/agents/subagents/${encodeURIComponent(id)}`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    SubAgentResponseSchema,
+  );
+  return subAgent;
+}
+
+export async function deleteSubAgent(id: string): Promise<void> {
+  await fetchJson(`/agents/subagents/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+export async function listHeartbeatRuns(): Promise<HeartbeatRun[]> {
+  const { runs } = await fetchJson(
+    '/agents/heartbeat/runs',
+    undefined,
+    HeartbeatRunsResponseSchema,
+  );
+  return runs;
+}
+
+export async function runHeartbeatNow(): Promise<HeartbeatRun> {
+  const { run } = await fetchJson(
+    '/agents/heartbeat/run',
+    { method: 'POST', headers: JSON_HEADERS },
+    HeartbeatRunResponseSchema,
+  );
+  return run;
 }

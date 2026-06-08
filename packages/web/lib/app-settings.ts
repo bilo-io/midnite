@@ -13,11 +13,39 @@ export const INACTIVITY_MIN_S = 10;
 export const INACTIVITY_DEFAULT_S = 30;
 export const INACTIVITY_MAX_S = 300;
 
+// Primary-agent heartbeat cadence, in hours: the orchestrator's heartbeat
+// prompt runs on this interval. Once an hour at the most frequent, roughly once
+// a month at the least.
+export const HEARTBEAT_MIN_H = 1;
+export const HEARTBEAT_DEFAULT_H = 4;
+export const HEARTBEAT_MAX_H = 720; // ~30 days
+
+/** Selectable cadences shown in the settings dropdown, in ascending order. */
+export const HEARTBEAT_PRESETS: { hours: number; label: string }[] = [
+  { hours: 1, label: 'Every hour' },
+  { hours: 4, label: 'Every 4 hours' },
+  { hours: 8, label: 'Every 8 hours' },
+  { hours: 12, label: 'Every 12 hours' },
+  { hours: 24, label: 'Once a day' },
+  { hours: 168, label: 'Once a week' },
+  { hours: 720, label: 'Once a month' },
+];
+
+/** Human label for a heartbeat cadence, falling back to a terse "Every Nh/Nd". */
+export function formatHeartbeatInterval(hours: number): string {
+  const preset = HEARTBEAT_PRESETS.find((p) => p.hours === hours);
+  if (preset) return preset.label;
+  if (hours < 24) return `Every ${hours}h`;
+  return `Every ${Math.round(hours / 24)}d`;
+}
+
 export type AppSettings = {
   /** Number of Claude Code sessions allowed to run in parallel. */
   agentPoolSize: number;
   /** Seconds of inactivity before the screensaver opens. */
   inactivityTimeoutS: number;
+  /** How often the primary agent's heartbeat prompt runs, in hours. */
+  heartbeatIntervalH: number;
   /** Require a passcode to wake the screensaver. */
   requirePasscode: boolean;
   /**
@@ -30,6 +58,7 @@ export type AppSettings = {
 export const DEFAULT_SETTINGS: AppSettings = {
   agentPoolSize: AGENT_POOL_DEFAULT,
   inactivityTimeoutS: INACTIVITY_DEFAULT_S,
+  heartbeatIntervalH: HEARTBEAT_DEFAULT_H,
   requirePasscode: false,
   passcodeOnlyWhenLocked: false,
 };

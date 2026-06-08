@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   ClientTerminalMessageSchema,
+  PreToolUseHookRequestSchema,
   ServerTerminalMessageSchema,
 } from './terminal.js';
 
@@ -23,6 +24,30 @@ describe('ClientTerminalMessageSchema', () => {
     expect(
       ClientTerminalMessageSchema.parse({ type: 'resize', cols: 120, rows: 40 }),
     ).toEqual({ type: 'resize', cols: 120, rows: 40 });
+  });
+
+  it('round-trips an approval-response and rejects an unknown decision', () => {
+    expect(
+      ClientTerminalMessageSchema.parse({
+        type: 'approval-response',
+        requestId: 'r1',
+        decision: 'allow-session',
+      }),
+    ).toEqual({ type: 'approval-response', requestId: 'r1', decision: 'allow-session' });
+    expect(
+      ClientTerminalMessageSchema.safeParse({
+        type: 'approval-response',
+        requestId: 'r1',
+        decision: 'ask', // not a valid client decision
+      }).success,
+    ).toBe(false);
+    expect(
+      ClientTerminalMessageSchema.safeParse({
+        type: 'approval-response',
+        requestId: '',
+        decision: 'allow',
+      }).success,
+    ).toBe(false);
   });
 
   it('rejects non-positive or oversized dimensions', () => {
@@ -82,5 +107,50 @@ describe('ServerTerminalMessageSchema', () => {
     expect(
       ServerTerminalMessageSchema.safeParse({ type: 'nope' }).success,
     ).toBe(false);
+  });
+
+  it('round-trips an approval-request, defaulting options', () => {
+    expect(
+      ServerTerminalMessageSchema.parse({
+        type: 'approval-request',
+        requestId: 'r1',
+        toolName: 'Bash',
+        summary: 'Bash: ls',
+      }),
+    ).toEqual({
+      type: 'approval-request',
+      requestId: 'r1',
+      toolName: 'Bash',
+      summary: 'Bash: ls',
+      options: ['allow', 'allow-session', 'deny'],
+    });
+  });
+
+  it('round-trips an approval-resolved with an automatic resolution', () => {
+    expect(
+      ServerTerminalMessageSchema.parse({
+        type: 'approval-resolved',
+        requestId: 'r1',
+        decision: 'timeout',
+      }),
+    ).toEqual({ type: 'approval-resolved', requestId: 'r1', decision: 'timeout' });
+  });
+});
+
+describe('PreToolUseHookRequestSchema', () => {
+  it('requires tool_name and passes through extra fields', () => {
+    const parsed = PreToolUseHookRequestSchema.parse({
+      tool_name: 'Bash',
+      tool_input: { command: 'ls' },
+      cwd: '/repo',
+      session_id: 's1',
+      permission_mode: 'default',
+    });
+    expect(parsed.tool_name).toBe('Bash');
+    expect((parsed as { permission_mode?: string }).permission_mode).toBe('default');
+  });
+
+  it('rejects a payload missing tool_name', () => {
+    expect(PreToolUseHookRequestSchema.safeParse({ tool_input: {} }).success).toBe(false);
   });
 });

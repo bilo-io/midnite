@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
+  Bot,
   Columns3,
   Folder,
   LayoutDashboard,
@@ -45,6 +46,7 @@ const LINKS: NavLink[] = [
 ];
 
 const PROFILE_LINK: NavLink = { href: '/profile', label: 'Profile', Icon: UserRound };
+const AGENTS_LINK: NavLink = { href: '/agents', label: 'Agents', Icon: Bot };
 const SETTINGS_LINK: NavLink = { href: '/settings', label: 'Settings', Icon: Settings };
 
 export function NavBar() {
@@ -123,6 +125,7 @@ export function NavBar() {
 
         <div className="mt-auto flex flex-col items-center gap-1">
           {renderLink(PROFILE_LINK)}
+          {renderLink(AGENTS_LINK)}
           <ThemeToggle />
           {renderLink(SETTINGS_LINK)}
           <div className="my-1 h-px w-6 bg-border/60" />

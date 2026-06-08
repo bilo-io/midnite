@@ -14,6 +14,7 @@ import {
 } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
 import { isAllowedOrigin } from '../lib/allowed-origin';
+import { ApprovalService } from './approval.service';
 import { TerminalService, type TerminalSubscriber } from './terminal.service';
 
 interface ConnState {
@@ -35,6 +36,7 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   constructor(
     @Inject(TerminalService) private readonly terminal: TerminalService,
+    @Inject(ApprovalService) private readonly approvals: ApprovalService,
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
   ) {}
 
@@ -125,8 +127,11 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     if (message.type === 'input') {
       this.terminal.write(state.sessionId, message.data);
-    } else {
+    } else if (message.type === 'resize') {
       this.terminal.resize(state.sessionId, message.cols, message.rows);
+    } else {
+      // approval-response — a viewer answered a pending tool-approval prompt.
+      this.approvals.resolveByUser(state.sessionId, message.requestId, message.decision);
     }
   }
 }

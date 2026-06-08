@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ServerTerminalMessageSchema,
   TERMINAL_WS_PATH,
+  type ApprovalDecision,
+  type TerminalApprovalRequestMessage,
   type TerminalStatusPhase,
 } from '@midnite/shared';
 import { gatewayWsUrl, mintTerminalToken } from '@/lib/api';
@@ -17,6 +19,10 @@ type Args = {
   /** Raw PTY bytes for the terminal to render. */
   onOutput: (bytes: Uint8Array) => void;
   onStatus?: (phase: TerminalStatusPhase, command?: string) => void;
+  /** The agent is requesting approval for a tool call. */
+  onApprovalRequest?: (request: TerminalApprovalRequestMessage) => void;
+  /** A pending approval was resolved (answered, auto-allowed, or timed out). */
+  onApprovalResolved?: (requestId: string) => void;
   initialGeometry?: { cols: number; rows: number };
 };
 
@@ -24,6 +30,7 @@ type Result = {
   connectionState: TerminalConnectionState;
   sendInput: (data: string) => void;
   sendResize: (cols: number, rows: number) => void;
+  sendApproval: (requestId: string, decision: ApprovalDecision) => void;
 };
 
 function bytesToBase64(bytes: Uint8Array): string {
@@ -49,6 +56,8 @@ export function useTerminalSocket({
   enabled,
   onOutput,
   onStatus,
+  onApprovalRequest,
+  onApprovalResolved,
   initialGeometry,
 }: Args): Result {
   const wsRef = useRef<WebSocket | null>(null);
@@ -65,6 +74,10 @@ export function useTerminalSocket({
   onOutputRef.current = onOutput;
   const onStatusRef = useRef(onStatus);
   onStatusRef.current = onStatus;
+  const onApprovalRequestRef = useRef(onApprovalRequest);
+  onApprovalRequestRef.current = onApprovalRequest;
+  const onApprovalResolvedRef = useRef(onApprovalResolved);
+  onApprovalResolvedRef.current = onApprovalResolved;
 
   useEffect(() => {
     if (!enabled || !sessionId) {
@@ -131,6 +144,10 @@ export function useTerminalSocket({
           // A freshly-spawned PTY restarts seq at 0; a reattach keeps the old PTY's.
           if (message.phase === 'ready') lastSeqRef.current = -1;
           onStatusRef.current?.(message.phase, message.command);
+        } else if (message.type === 'approval-request') {
+          onApprovalRequestRef.current?.(message);
+        } else if (message.type === 'approval-resolved') {
+          onApprovalResolvedRef.current?.(message.requestId);
         } else if (message.type === 'error') {
           setConnectionState('error');
         }
@@ -181,5 +198,12 @@ export function useTerminalSocket({
     }
   }, []);
 
-  return { connectionState, sendInput, sendResize };
+  const sendApproval = useCallback((requestId: string, decision: ApprovalDecision) => {
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: 'approval-response', requestId, decision }));
+    }
+  }, []);
+
+  return { connectionState, sendInput, sendResize, sendApproval };
 }

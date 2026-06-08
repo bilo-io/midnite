@@ -1,8 +1,11 @@
-import { Inject, Injectable, Logger, type OnModuleDestroy } from '@nestjs/common';
+import { Inject, Injectable, Logger, forwardRef, type OnModuleDestroy } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
+import { existsSync, mkdirSync, unlinkSync, writeFileSync } from 'node:fs';
+import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 import type { MidniteConfig, ServerTerminalMessage } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
 import { TasksService } from '../tasks/tasks.service';
+import { ApprovalService } from './approval.service';
 
 type NodePtyModule = typeof import('node-pty');
 type IPty = import('node-pty').IPty;
@@ -48,6 +51,22 @@ export function scrubSecretEnv(env: Record<string, string>): Record<string, stri
   return out;
 }
 
+/**
+ * Resolve the runtime path to the PreToolUse hook script. `tsc -b` doesn't copy
+ * non-.ts assets into dist, so the script lives in src and we walk candidates the
+ * same way db.module.ts finds migrations (dev: __dirname=src/terminal; prod: dist/terminal).
+ */
+export function resolveHookScriptPath(): string {
+  const rel = 'hooks/pre-tool-use-hook.cjs';
+  const candidates = [
+    resolve(__dirname, rel), // dev: src/terminal/hooks/...
+    resolve(__dirname, '../../src/terminal', rel), // dist/terminal -> package src
+    resolve(process.cwd(), 'packages/gateway/src/terminal', rel), // repo root
+    resolve(process.cwd(), 'src/terminal', rel), // package dir
+  ];
+  return candidates.find((c) => existsSync(c)) ?? candidates[0]!;
+}
+
 interface OutputFrame {
   seq: number;
   data: string; // base64
@@ -63,6 +82,8 @@ interface PtyHandle {
   seq: number;
   disposeTimer: NodeJS.Timeout | null;
   disposables: IDisposable[];
+  /** Ephemeral Claude `--settings` file for approvals; deleted on reap. */
+  settingsFile: string | null;
 }
 
 const TOKEN_TTL_MS = 60_000;
@@ -84,6 +105,8 @@ export class TerminalService implements OnModuleDestroy {
   constructor(
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
     @Inject(TasksService) private readonly tasks: TasksService,
+    // Mutual lifecycle/broadcast dependency within the terminal module.
+    @Inject(forwardRef(() => ApprovalService)) private readonly approvals: ApprovalService,
   ) {}
 
   // ---- token auth (single-use, short-lived) ----
@@ -122,6 +145,9 @@ export class TerminalService implements OnModuleDestroy {
       for (const frame of existing.ring) {
         subscriber.send({ type: 'output', data: frame.data, seq: frame.seq });
       }
+      // Re-surface any approval prompt still pending, so a reconnecting viewer
+      // doesn't lose the overlay.
+      this.approvals.replayPending(sessionId, subscriber);
       return;
     }
 
@@ -226,6 +252,7 @@ export class TerminalService implements OnModuleDestroy {
       seq: 0,
       disposeTimer: null,
       disposables: [],
+      settingsFile: spec.settingsFile ?? null,
     };
     this.handles.set(sessionId, handle);
 
@@ -263,13 +290,14 @@ export class TerminalService implements OnModuleDestroy {
     args: string[];
     cwd: string;
     env: Record<string, string>;
+    settingsFile?: string;
   } {
     const { terminal } = this.config;
     const command = terminal.command ?? process.env['SHELL'] ?? '/bin/bash';
     // A bare default shell needs `-i` to be interactive; a configured command
-    // takes its args verbatim.
+    // takes its args verbatim (copied so we can append `--settings`).
     const args =
-      terminal.command === undefined && terminal.args.length === 0 ? ['-i'] : terminal.args;
+      terminal.command === undefined && terminal.args.length === 0 ? ['-i'] : [...terminal.args];
 
     let env: Record<string, string> = {};
     for (const [key, value] of Object.entries(process.env)) {
@@ -280,7 +308,73 @@ export class TerminalService implements OnModuleDestroy {
     if (!terminal.inheritSecrets) env = scrubSecretEnv(env);
     env['TERM'] = 'xterm-256color';
 
-    return { command, args, cwd: this.resolveCwd(sessionId), env };
+    // Wire human-in-the-loop approvals for Claude Code sessions only: register a
+    // PreToolUse hook (via an ephemeral --settings file) and give it the per-session
+    // secret + callback URL. The MIDNITE_* vars are injected AFTER scrubSecretEnv so
+    // the *_SECRET key isn't stripped.
+    let settingsFile: string | undefined;
+    if (terminal.approvals.enabled && basename(command) === 'claude') {
+      const secret = this.approvals.mintSecret(sessionId);
+      settingsFile = this.writeApprovalSettings(sessionId);
+      args.push('--settings', settingsFile);
+      env['MIDNITE_SESSION_ID'] = sessionId;
+      env['MIDNITE_HOOK_SECRET'] = secret;
+      env['MIDNITE_GATEWAY_URL'] = this.hookCallbackUrl();
+      // Hook's own fetch deadline, a touch past the gateway's so the gateway's
+      // decision (or fail-safe) lands first; the hook aborts to `ask` only if the
+      // gateway is truly unreachable.
+      env['MIDNITE_HOOK_TIMEOUT_MS'] = String(terminal.approvals.timeoutMs + 15000);
+    }
+
+    return { command, args, cwd: this.resolveCwd(sessionId), env, settingsFile };
+  }
+
+  /** Loopback URL the in-PTY hook script calls back on (config override, else gateway port). */
+  private hookCallbackUrl(): string {
+    return (
+      this.config.terminal.hookCallbackUrl ?? `http://127.0.0.1:${this.config.gateway.port}`
+    );
+  }
+
+  /** Write the ephemeral Claude `--settings` file registering the PreToolUse approval hook. */
+  private writeApprovalSettings(sessionId: string): string {
+    const dir = this.approvalsDir();
+    mkdirSync(dir, { recursive: true });
+    const file = join(dir, `${sessionId}.settings.json`);
+    // Give Claude's own hook timeout headroom past the gateway's, so the gateway's
+    // decision (or fail-safe) always wins the race.
+    const timeoutSec = Math.ceil(this.config.terminal.approvals.timeoutMs / 1000) + 30;
+    const settings = {
+      hooks: {
+        PreToolUse: [
+          {
+            matcher: '*',
+            hooks: [
+              { type: 'command', command: `node "${resolveHookScriptPath()}"`, timeout: timeoutSec },
+            ],
+          },
+        ],
+      },
+    };
+    writeFileSync(file, JSON.stringify(settings, null, 2), 'utf8');
+    return file;
+  }
+
+  // Gitignored gateway data dir (alongside the SQLite db), never the repo cwd.
+  private approvalsDir(): string {
+    const dbPath = this.config.gateway.dbPath;
+    const base = isAbsolute(dbPath) ? dirname(dbPath) : resolve(process.cwd(), dirname(dbPath));
+    return join(base, 'approvals');
+  }
+
+  /** Send a server message to every subscriber of a session's PTY (no-op if none). */
+  broadcastToSession(sessionId: string, message: ServerTerminalMessage): void {
+    const handle = this.handles.get(sessionId);
+    if (handle) this.broadcast(handle, message);
+  }
+
+  subscriberCount(sessionId: string): number {
+    return this.handles.get(sessionId)?.subscribers.size ?? 0;
   }
 
   // cwd follows the session's task repo (mapped name→path via config.repos),
@@ -331,6 +425,16 @@ export class TerminalService implements OnModuleDestroy {
   private cleanup(sessionId: string): void {
     const handle = this.handles.get(sessionId);
     if (!handle) return;
+    // Resolve in-flight approvals (broadcast still reaches attached subscribers) and
+    // drop the session's secret/allow-list before tearing the handle down.
+    this.approvals.clearSession(sessionId);
+    if (handle.settingsFile) {
+      try {
+        unlinkSync(handle.settingsFile);
+      } catch {
+        // already gone
+      }
+    }
     if (handle.disposeTimer) {
       clearTimeout(handle.disposeTimer);
       handle.disposeTimer = null;

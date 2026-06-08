@@ -4,6 +4,7 @@ import { DbModule } from './db/db.module';
 import { HealthController } from './health/health.controller';
 import { TasksModule } from './tasks/tasks.module';
 import { AgentModule } from './agent/agent.module';
+import { AgentsModule } from './agents/agents.module';
 import { ProjectsModule } from './projects/projects.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { WorkflowsModule } from './workflows/workflows.module';
@@ -14,6 +15,7 @@ import { TerminalModule } from './terminal/terminal.module';
     ConfigModule,
     DbModule,
     AgentModule,
+    AgentsModule,
     TasksModule,
     ProjectsModule,
     SessionsModule,

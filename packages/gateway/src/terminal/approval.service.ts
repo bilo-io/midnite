@@ -1,0 +1,184 @@
+import { Inject, Injectable, Logger, forwardRef } from '@nestjs/common';
+import { randomBytes, randomUUID } from 'node:crypto';
+import type {
+  ApprovalDecision,
+  ApprovalResolution,
+  MidniteConfig,
+  PreToolUseHookDecision,
+  PreToolUseHookRequest,
+  TerminalApprovalRequestMessage,
+} from '@midnite/shared';
+import { MIDNITE_CONFIG } from '../config.token';
+import { hashToken, tokenMatches } from '../lib/token-hash';
+import { summarizeToolCall } from './lib/summarize-tool-call';
+import { TerminalService, type TerminalSubscriber } from './terminal.service';
+
+interface PendingApproval {
+  sessionId: string;
+  toolName: string;
+  request: TerminalApprovalRequestMessage;
+  /** Resolves the blocked hook HTTP request; also detaches the abort listener. */
+  resolve: (decision: PreToolUseHookDecision) => void;
+  timer: NodeJS.Timeout | null;
+}
+
+/**
+ * Human-in-the-loop tool approvals. Bridges the in-PTY PreToolUse hook (a blocking
+ * HTTP call, authenticated by a per-session secret) to the browser over the existing
+ * terminal WS: broadcasts an `approval-request`, waits for a viewer's `approval-response`,
+ * and resolves the held HTTP request with the decision Claude Code expects.
+ *
+ * The UI/wire vocabulary (allow / allow-session / deny) is mapped here to Claude's
+ * hook vocabulary (allow / deny / ask); fallbacks fail safe.
+ */
+@Injectable()
+export class ApprovalService {
+  private readonly logger = new Logger(ApprovalService.name);
+  private readonly secrets = new Map<string, string>(); // sessionId -> secretHash
+  private readonly pending = new Map<string, PendingApproval>(); // requestId -> pending
+  private readonly allowList = new Map<string, Set<string>>(); // sessionId -> allowed toolNames
+
+  constructor(
+    @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
+    // TerminalService <-> ApprovalService form a lifecycle/broadcast cycle within
+    // the terminal module; forwardRef breaks the DI ordering.
+    @Inject(forwardRef(() => TerminalService)) private readonly terminal: TerminalService,
+  ) {}
+
+  // ---- per-session secret (authenticates the in-PTY hook callback) ----
+
+  /** Mint a long-lived secret for a session's PTY; returns plaintext (stored hashed). */
+  mintSecret(sessionId: string): string {
+    const secret = randomBytes(24).toString('base64url');
+    this.secrets.set(sessionId, hashToken(secret));
+    return secret;
+  }
+
+  verifySecret(sessionId: string, token: string): boolean {
+    const hash = this.secrets.get(sessionId);
+    if (!hash) return false;
+    return tokenMatches(token, hash);
+  }
+
+  // ---- the blocking bridge: hook request -> WS prompt -> decision ----
+
+  async requestDecision(
+    sessionId: string,
+    payload: PreToolUseHookRequest,
+    signal: AbortSignal,
+  ): Promise<PreToolUseHookDecision> {
+    const toolName = payload.tool_name;
+
+    // Already approved for the whole session — don't prompt again.
+    if (this.allowList.get(sessionId)?.has(toolName)) {
+      return { decision: 'allow', reason: 'allowed for this session' };
+    }
+
+    // No one is watching — fall back so an unattended session isn't wedged.
+    if (this.terminal.subscriberCount(sessionId) === 0) {
+      const fallback = this.config.terminal.approvals.onNoSubscriber;
+      return { decision: fallback, reason: 'no viewer connected' };
+    }
+
+    if (signal.aborted) return { decision: 'ask', reason: 'request aborted' };
+
+    const requestId = randomUUID();
+    const request: TerminalApprovalRequestMessage = {
+      type: 'approval-request',
+      requestId,
+      toolName,
+      summary: summarizeToolCall(toolName, payload.tool_input),
+      cwd: payload.cwd,
+      options: ['allow', 'allow-session', 'deny'],
+    };
+
+    return new Promise<PreToolUseHookDecision>((resolve) => {
+      const onAbort = () =>
+        this.settle(requestId, 'expired', { decision: 'ask', reason: 'request aborted' });
+      signal.addEventListener('abort', onAbort, { once: true });
+
+      const timer = setTimeout(
+        () =>
+          this.settle(requestId, 'timeout', {
+            decision: this.config.terminal.approvals.onTimeout,
+            reason: 'approval timed out',
+          }),
+        this.config.terminal.approvals.timeoutMs,
+      );
+      timer.unref?.();
+
+      this.pending.set(requestId, {
+        sessionId,
+        toolName,
+        request,
+        resolve: (decision) => {
+          signal.removeEventListener('abort', onAbort);
+          resolve(decision);
+        },
+        timer,
+      });
+      this.terminal.broadcastToSession(sessionId, request);
+      this.logger.log(`approval requested ${requestId} (${toolName}) on session ${sessionId}`);
+    });
+  }
+
+  /** Resolve from a viewer's WS answer. No-op if the request is stale or foreign. */
+  resolveByUser(sessionId: string, requestId: string, decision: ApprovalDecision): void {
+    const entry = this.pending.get(requestId);
+    if (!entry || entry.sessionId !== sessionId) return;
+    if (decision === 'allow-session') {
+      let set = this.allowList.get(sessionId);
+      if (!set) {
+        set = new Set();
+        this.allowList.set(sessionId, set);
+      }
+      set.add(entry.toolName);
+    }
+    this.settle(requestId, decision, this.toHookDecision(decision));
+  }
+
+  /** Re-send still-pending prompts to a (re)attaching subscriber so the overlay survives a reconnect. */
+  replayPending(sessionId: string, subscriber: TerminalSubscriber): void {
+    for (const entry of this.pending.values()) {
+      if (entry.sessionId === sessionId) subscriber.send(entry.request);
+    }
+  }
+
+  /** PTY reaped — resolve everything safely (deny) and forget the session. */
+  clearSession(sessionId: string): void {
+    for (const [requestId, entry] of [...this.pending]) {
+      if (entry.sessionId !== sessionId) continue;
+      this.settle(requestId, 'expired', { decision: 'deny', reason: 'session ended' });
+    }
+    this.secrets.delete(sessionId);
+    this.allowList.delete(sessionId);
+  }
+
+  // ---- internals ----
+
+  /** Remove the pending entry, clear its timer, broadcast the resolution, resolve the HTTP wait. */
+  private settle(
+    requestId: string,
+    resolution: ApprovalResolution,
+    hookDecision: PreToolUseHookDecision,
+  ): void {
+    const entry = this.pending.get(requestId);
+    if (!entry) return;
+    this.pending.delete(requestId);
+    if (entry.timer) clearTimeout(entry.timer);
+    this.terminal.broadcastToSession(entry.sessionId, {
+      type: 'approval-resolved',
+      requestId,
+      decision: resolution,
+    });
+    entry.resolve(hookDecision);
+  }
+
+  private toHookDecision(decision: ApprovalDecision): PreToolUseHookDecision {
+    if (decision === 'deny') return { decision: 'deny', reason: 'denied by user' };
+    return {
+      decision: 'allow',
+      reason: decision === 'allow-session' ? 'allowed for this session' : 'allowed by user',
+    };
+  }
+}
