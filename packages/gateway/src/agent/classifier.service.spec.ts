@@ -52,7 +52,9 @@ describe('AnthropicClassifier', () => {
     expect(call.tools[0].name).toBe('record_task');
   });
 
-  it('rejects invalid tool output', async () => {
+  // The AI path degrades rather than throwing: a malformed model response must
+  // not break task creation, so it falls back to a prompt-derived placeholder.
+  it('falls back to a placeholder title when tool output fails validation', async () => {
     const create = vi.fn().mockResolvedValue({
       content: [
         {
@@ -65,16 +67,20 @@ describe('AnthropicClassifier', () => {
     });
 
     const classifier = makeClassifier(create);
-    await expect(classifier.classify('hello', [])).rejects.toThrow(/failed validation/);
+    const result = await classifier.classify('hello', []);
+    expect(result).toEqual({ title: 'hello', kind: 'unknown' });
+    expect(create).toHaveBeenCalledOnce();
   });
 
-  it('throws when no tool_use block is returned', async () => {
+  it('falls back to a placeholder title when no tool_use block is returned', async () => {
     const create = vi.fn().mockResolvedValue({
       content: [{ type: 'text', text: 'sorry' }],
       usage: { input_tokens: 10, output_tokens: 5 },
     });
 
     const classifier = makeClassifier(create);
-    await expect(classifier.classify('hello', [])).rejects.toThrow(/did not return/);
+    const result = await classifier.classify('hello', []);
+    expect(result).toEqual({ title: 'hello', kind: 'unknown' });
+    expect(create).toHaveBeenCalledOnce();
   });
 });
