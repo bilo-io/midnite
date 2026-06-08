@@ -54,12 +54,19 @@ export function SettingsView() {
       inactivityTimeoutS: Math.min(INACTIVITY_MAX_S, Math.max(INACTIVITY_MIN_S, n)),
     }));
 
-  const heartbeat = Math.min(HEARTBEAT_MAX_H, Math.max(HEARTBEAT_MIN_H, settings.heartbeatIntervalH));
-  const setHeartbeat = (n: number) =>
-    setSettings((prev) => ({
-      ...prev,
-      heartbeatIntervalH: Math.min(HEARTBEAT_MAX_H, Math.max(HEARTBEAT_MIN_H, n)),
-    }));
+  // The heartbeat cadence lives server-side (on the primary agent); the prompt
+  // itself is configured on the Agents page. Load on mount, save on change.
+  const [heartbeatH, setHeartbeatH] = useState<number | null>(null);
+  useEffect(() => {
+    getAgentsConfig()
+      .then((c) => setHeartbeatH(c.primary.heartbeatIntervalH))
+      .catch(() => setHeartbeatH(HEARTBEAT_DEFAULT_H));
+  }, []);
+  const heartbeat = heartbeatH ?? HEARTBEAT_DEFAULT_H;
+  const setHeartbeat = (n: number) => {
+    setHeartbeatH(n);
+    void updatePrimaryAgent({ heartbeatIntervalH: n }).catch(() => {});
+  };
 
   const [passcode, setPasscode] = useLocalStorage<string | null>(PASSCODE_STORAGE_KEY, null);
   // `enable` defers turning the requirement on until a passcode is confirmed;
@@ -151,7 +158,7 @@ export function SettingsView() {
               aria-label="Heartbeat interval"
               className={cn(
                 'h-9 rounded-md border border-input bg-background px-3 text-sm transition-opacity focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                hydrated ? 'opacity-100' : 'opacity-0',
+                heartbeatH !== null ? 'opacity-100' : 'opacity-0',
               )}
             >
               {HEARTBEAT_PRESETS.some((p) => p.hours === heartbeat) ? null : (

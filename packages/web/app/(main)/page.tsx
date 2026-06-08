@@ -4,12 +4,20 @@ import { useEffect, useState } from 'react';
 import { StatusPills } from '@/components/status-pills';
 
 // Greeting depends on the viewer's local time, so resolve it on the client after
-// mount to avoid a server/client hydration mismatch.
-function greetingForHour(hour: number): string {
-  if (hour >= 5 && hour < 12) return 'good morning';
-  if (hour >= 12 && hour < 17) return 'good afternoon';
-  if (hour >= 17 && hour < 21) return 'good evening';
-  return 'howzit nightowl';
+// mount to avoid a server/client hydration mismatch. Ranges run earliest→latest
+// across the day; the minute is only needed to pin the noon greeting to 12:00.
+function greetingForTime(hour: number, minute: number): string {
+  if (hour >= 1 && hour < 5) return 'early bird? or night owl?'; // predawn (1–5am)
+  if (hour === 5) return 'rising to the occasion?'; // dawn (5–6am)
+  if (hour >= 6 && hour < 8) return 'good morning'; // early morning (6–8am)
+  if (hour >= 8 && hour < 11) return 'vibing yet? its past morning'; // mid-morning (8–11am)
+  if (hour === 11) return 'vibe some sessions before lunch'; // late morning (11–12)
+  if (hour === 12 && minute === 0) return 'middle of the day! hello!'; // noon (exactly 12:00)
+  if (hour >= 12 && hour < 15) return 'good afternoon'; // lunch / early afternoon (12–3pm)
+  if (hour >= 15 && hour < 17) return 'final push for the day... you got this!'; // late afternoon (3–5pm)
+  if (hour >= 17 && hour < 19) return 'good prevening'; // early evening (5–7pm)
+  if (hour >= 19 && hour < 21) return 'good evening'; // evening (7–9pm)
+  return 'howzit nightowl'; // night (9pm–1am)
 }
 
 const SUBGREETINGS = [
@@ -76,7 +84,8 @@ export default function HomePage() {
 
   // Resolve client-only state after mount.
   useEffect(() => {
-    setGreeting(greetingForHour(new Date().getHours()));
+    const nowDate = new Date();
+    setGreeting(greetingForTime(nowDate.getHours(), nowDate.getMinutes()));
     const pick = SUBGREETINGS[Math.floor(Math.random() * SUBGREETINGS.length)];
     setSubgreeting(pick ?? 'ready when you are');
     setNow(new Date());

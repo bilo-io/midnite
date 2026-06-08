@@ -40,7 +40,7 @@ export class HeartbeatScheduler implements OnModuleInit, OnModuleDestroy {
       return;
     }
     const tickMs = this.config.agents.schedulerTickMs;
-    this.timer = setInterval(() => this.tick(), tickMs);
+    this.timer = setInterval(() => void this.tick(), tickMs);
     if (typeof this.timer.unref === 'function') this.timer.unref();
     this.logger.log(`heartbeat scheduler started (tick=${tickMs}ms)`);
   }
@@ -50,7 +50,10 @@ export class HeartbeatScheduler implements OnModuleInit, OnModuleDestroy {
     this.abort?.abort();
   }
 
-  private tick(): void {
+  // Evaluate whether the heartbeat is due and, if so, run it. Public so it can be
+  // driven directly in tests (matches WorkflowScheduler.tick). executeHeartbeat
+  // never throws, so neither does this.
+  async tick(): Promise<void> {
     if (this.running) return;
     const row = this.repo.getPrimary();
     // No primary configured, heartbeat off, or nothing to say → nothing to do.
@@ -61,11 +64,7 @@ export class HeartbeatScheduler implements OnModuleInit, OnModuleDestroy {
     const due = !row.lastHeartbeatAt || Date.now() - last >= intervalMs;
     if (!due) return;
 
-    void this.executeHeartbeat('schedule').catch((err) => {
-      this.logger.warn(
-        `heartbeat tick failed: ${err instanceof Error ? err.message : String(err)}`,
-      );
-    });
+    await this.executeHeartbeat('schedule');
   }
 
   /**

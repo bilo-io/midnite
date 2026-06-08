@@ -67,10 +67,12 @@ export const UpdatePrimaryAgentRequestSchema = z.object({
   heartbeatIntervalH: HeartbeatIntervalSchema.optional(),
 });
 
+// All fields optional so a blank subagent can be created and filled in later;
+// the service coalesces missing fields to empty strings.
 export const CreateSubAgentRequestSchema = z.object({
-  name: z.string().trim().max(120).default(''),
-  role: z.string().trim().max(200).default(''),
-  description: z.string().max(50000).default(''),
+  name: z.string().trim().max(120).optional(),
+  role: z.string().trim().max(200).optional(),
+  description: z.string().max(50000).optional(),
 });
 
 export const UpdateSubAgentRequestSchema = z.object({

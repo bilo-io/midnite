@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import type { SessionStatus } from '@midnite/shared';
 import { getSessions } from '@/lib/api';
+import { SESSION_STATUS_HUE } from '@/components/session-card';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
   DEFAULT_SETTINGS,
@@ -199,10 +201,12 @@ function modeFromCounts(counts: Counts | null): Mode {
 
 type Counts = { actioning: number; awaiting: number; complete: number };
 
-const PILLS: Array<{ key: keyof Counts; label: string; hueVar: string }> = [
-  { key: 'actioning', label: 'actioning', hueVar: '--status-wip' },
-  { key: 'awaiting', label: 'awaiting', hueVar: '--status-waiting' },
-  { key: 'complete', label: 'complete', hueVar: '--status-done' },
+// Each pill maps to a canonical SessionStatus so its hue comes from the single
+// source of truth (SESSION_STATUS_HUE) rather than a locally chosen colour.
+const PILLS: Array<{ key: keyof Counts; status: SessionStatus; label: string }> = [
+  { key: 'actioning', status: 'running', label: 'actioning' },
+  { key: 'awaiting', status: 'waiting', label: 'awaiting' },
+  { key: 'complete', status: 'completed', label: 'complete' },
 ];
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -439,9 +443,10 @@ export function Screensaver({
         </p>
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-2.5">
-          {PILLS.map(({ key, label, hueVar }) => {
+          {PILLS.map(({ key, status, label }) => {
             const n = counts ? counts[key] : 0;
-            const hue = `hsl(var(${hueVar}))`;
+            const triple = SESSION_STATUS_HUE[status];
+            const hue = `hsl(${triple})`;
             // Shimmer the live states (actioning, awaiting) but not "complete",
             // and only when that state actually has sessions.
             const shimmer = key !== 'complete' && n > 0;
@@ -455,7 +460,7 @@ export function Screensaver({
                     aria-hidden
                     className="pill-shimmer pointer-events-none absolute inset-0"
                     style={{
-                      background: `linear-gradient(100deg, transparent 38%, hsl(var(${hueVar}) / 0.42) 50%, transparent 62%)`,
+                      background: `linear-gradient(100deg, transparent 38%, hsl(${triple} / 0.42) 50%, transparent 62%)`,
                     }}
                   />
                 )}

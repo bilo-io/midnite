@@ -70,9 +70,9 @@ export class AgentsService {
     const now = new Date().toISOString();
     const row = this.repo.insertSubAgent({
       id: randomUUID(),
-      name: req.name,
-      role: req.role,
-      description: req.description,
+      name: req.name ?? '',
+      role: req.role ?? '',
+      description: req.description ?? '',
       createdAt: now,
       updatedAt: now,
     });

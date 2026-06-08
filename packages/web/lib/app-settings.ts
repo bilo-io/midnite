@@ -44,8 +44,6 @@ export type AppSettings = {
   agentPoolSize: number;
   /** Seconds of inactivity before the screensaver opens. */
   inactivityTimeoutS: number;
-  /** How often the primary agent's heartbeat prompt runs, in hours. */
-  heartbeatIntervalH: number;
   /** Require a passcode to wake the screensaver. */
   requirePasscode: boolean;
   /**
@@ -58,7 +56,6 @@ export type AppSettings = {
 export const DEFAULT_SETTINGS: AppSettings = {
   agentPoolSize: AGENT_POOL_DEFAULT,
   inactivityTimeoutS: INACTIVITY_DEFAULT_S,
-  heartbeatIntervalH: HEARTBEAT_DEFAULT_H,
   requirePasscode: false,
   passcodeOnlyWhenLocked: false,
 };

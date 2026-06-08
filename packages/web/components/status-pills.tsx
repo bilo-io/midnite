@@ -4,15 +4,16 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { SessionStatus } from '@midnite/shared';
 import { getSessions } from '@/lib/api';
+import { SESSION_STATUS_HUE } from '@/components/session-card';
 import { cn } from '@/lib/utils';
 
 // The same three live states the screensaver surfaces. Each links through to the
 // sessions board pre-filtered to its status (the board reads `?status=` from the
-// URL), and carries the matching status hue.
-const PILLS: Array<{ status: SessionStatus; label: string; hueVar: string }> = [
-  { status: 'running', label: 'actioning', hueVar: '--status-wip' },
-  { status: 'waiting', label: 'awaiting', hueVar: '--status-waiting' },
-  { status: 'completed', label: 'complete', hueVar: '--status-done' },
+// URL); the hue is the canonical per-status colour from SESSION_STATUS_HUE.
+const PILLS: Array<{ status: SessionStatus; label: string }> = [
+  { status: 'running', label: 'actioning' },
+  { status: 'waiting', label: 'awaiting' },
+  { status: 'completed', label: 'complete' },
 ];
 
 // Per-pill offset (negative, so each starts mid-cycle with no startup flash) that
@@ -52,9 +53,10 @@ export function StatusPills({ className }: { className?: string }) {
 
   return (
     <div className={cn('flex flex-wrap items-center justify-center gap-2.5', className)}>
-      {PILLS.map(({ status, label, hueVar }, i) => {
+      {PILLS.map(({ status, label }, i) => {
         const n = counts ? counts[status] : null;
-        const hue = `hsl(var(${hueVar}))`;
+        const triple = SESSION_STATUS_HUE[status];
+        const hue = `hsl(${triple})`;
         return (
           <Link
             key={status}
@@ -66,7 +68,7 @@ export function StatusPills({ className }: { className?: string }) {
               aria-hidden
               className="pill-shimmer pointer-events-none absolute inset-0"
               style={{
-                background: `linear-gradient(100deg, transparent 38%, hsl(var(${hueVar}) / 0.42) 50%, transparent 62%)`,
+                background: `linear-gradient(100deg, transparent 38%, hsl(${triple} / 0.42) 50%, transparent 62%)`,
                 animationDelay: `${-(i * SHIMMER_STAGGER_S)}s`,
               }}
             />
