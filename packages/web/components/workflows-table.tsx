@@ -1,53 +1,82 @@
 'use client';
 
 import Link from 'next/link';
-import type { WorkflowSummary } from '@midnite/shared';
-import { TriggerBadge } from '@/components/trigger-badge';
+import type { TriggerType, WorkflowSummary } from '@midnite/shared';
+import { SortableAccordions, type AccordionSection } from '@/components/sortable-accordions';
 import { LastRunStatus, WorkflowEnabledSwitch } from '@/components/workflow-controls';
+import { cronIntervalSeconds, describeCron, describeFrequency } from '@/lib/cron';
 
-export function WorkflowsTable({ workflows }: { workflows: WorkflowSummary[] }) {
+// One accordion per trigger type. Sections are collapsible + reorderable (persisted),
+// matching the Tasks/Projects tables.
+const SECTIONS: Array<{ type: TriggerType; label: string; hue: string }> = [
+  { type: 'manual', label: 'Manual', hue: 'var(--status-backlog)' },
+  { type: 'schedule', label: 'Schedule', hue: 'var(--status-todo)' },
+  { type: 'webhook', label: 'Webhook', hue: 'var(--kind-feature)' },
+];
+
+function nodeLabel(count: number): string {
+  return `${count} node${count === 1 ? '' : 's'}`;
+}
+
+function WorkflowRow({ w }: { w: WorkflowSummary }) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-border/60">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-border/60 bg-card/40 text-left text-[11px] uppercase tracking-wider text-muted-foreground">
-            <th className="px-3 py-2 font-medium">Name</th>
-            <th className="px-3 py-2 font-medium">Trigger</th>
-            <th className="px-3 py-2 text-right font-medium">Nodes</th>
-            <th className="px-3 py-2 font-medium">Last run</th>
-            <th className="px-3 py-2 text-right font-medium">Enabled</th>
-          </tr>
-        </thead>
-        <tbody>
-          {workflows.map((w) => (
-            <tr
-              key={w.id}
-              className="border-b border-border/40 transition-colors last:border-0 hover:bg-accent/40"
-            >
-              <td className="px-3 py-2">
-                <Link href={`/workflows/${w.id}`} className="block min-w-0">
-                  <span className="truncate font-medium hover:text-foreground">{w.name}</span>
-                  {w.description ? (
-                    <span className="block truncate text-xs text-muted-foreground">{w.description}</span>
-                  ) : null}
-                </Link>
-              </td>
-              <td className="px-3 py-2">
-                <TriggerBadge type={w.triggerType} />
-              </td>
-              <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{w.nodeCount}</td>
-              <td className="px-3 py-2">
-                <LastRunStatus status={w.lastRunStatus} />
-              </td>
-              <td className="px-3 py-2">
-                <div className="flex justify-end">
-                  <WorkflowEnabledSwitch id={w.id} enabled={w.enabled} />
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="flex items-center gap-3 border-b border-border/40 px-3 py-2 transition-colors last:border-0 hover:bg-accent/40">
+      <Link href={`/workflows/${w.id}`} className="min-w-0 flex-1">
+        <span className="truncate text-sm font-medium hover:text-foreground">{w.name}</span>
+        {w.description ? (
+          <span className="block truncate text-xs text-muted-foreground">{w.description}</span>
+        ) : null}
+      </Link>
+      {w.triggerType === 'schedule' && w.cron ? (
+        <span
+          className="hidden shrink-0 cursor-help font-mono text-[11px] text-muted-foreground sm:inline"
+          title={`${describeFrequency(w.cron)} — ${describeCron(w.cron)}`}
+        >
+          {w.cron}
+        </span>
+      ) : null}
+      <span className="hidden shrink-0 text-xs tabular-nums text-muted-foreground md:block">
+        {nodeLabel(w.nodeCount)}
+      </span>
+      <LastRunStatus status={w.lastRunStatus} className="hidden md:inline-flex" />
+      <WorkflowEnabledSwitch id={w.id} enabled={w.enabled} />
     </div>
   );
+}
+
+export function WorkflowsTable({ workflows }: { workflows: WorkflowSummary[] }) {
+  const sections: AccordionSection[] = SECTIONS.map(({ type, label, hue }) => {
+    let items = workflows.filter((w) => w.triggerType === type);
+    let summary = items.length === 0 ? 'Empty' : `${items.length} workflow${items.length === 1 ? '' : 's'}`;
+
+    if (type === 'schedule') {
+      // Most frequent (smallest interval) first.
+      items = [...items].sort(
+        (a, b) => cronIntervalSeconds(a.cron ?? '') - cronIntervalSeconds(b.cron ?? ''),
+      );
+      if (items.length > 0) summary = `${items.length} · most frequent first`;
+    }
+
+    return {
+      id: `trigger-${type}`,
+      label,
+      hue,
+      count: items.length,
+      summary,
+      body:
+        items.length === 0 ? (
+          <div className="px-3 py-3 text-xs text-muted-foreground/70">
+            No {label.toLowerCase()} workflows
+          </div>
+        ) : (
+          <div>
+            {items.map((w) => (
+              <WorkflowRow key={w.id} w={w} />
+            ))}
+          </div>
+        ),
+    };
+  });
+
+  return <SortableAccordions sections={sections} storageKey="midnite.workflows.sections" />;
 }

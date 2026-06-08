@@ -22,6 +22,8 @@ export const WorkflowSummarySchema = z.object({
   description: z.string().optional(),
   enabled: z.boolean(),
   triggerType: TriggerTypeSchema,
+  // Present for schedule triggers — lets list views sort by cadence and show the cron.
+  cron: z.string().optional(),
   nodeCount: z.number().int().nonnegative(),
   lastRunAt: z.string().optional(),
   lastRunStatus: RunStatusSchema.optional(),

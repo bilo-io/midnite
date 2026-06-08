@@ -116,6 +116,17 @@ describe('WorkflowsService', () => {
     expect(wf.nodes[0]!.type).toBe('trigger.manual');
   });
 
+  it('includes the cron in the summary for schedule triggers and omits it otherwise', () => {
+    service.create({ name: 'fast', trigger: { type: 'schedule', cron: '*/5 * * * *', timezone: 'UTC' } });
+    service.create({ name: 'manual one' });
+    const summaries = service.listSummaries();
+    const sched = summaries.find((s) => s.name === 'fast')!;
+    const manual = summaries.find((s) => s.name === 'manual one')!;
+    expect(sched.triggerType).toBe('schedule');
+    expect(sched.cron).toBe('*/5 * * * *');
+    expect(manual.cron).toBeUndefined();
+  });
+
   it('keeps the trigger node type in sync with workflow.trigger on update', () => {
     const wf = service.create({ name: 'demo' });
     const updated = service.update(wf.id, { trigger: { type: 'schedule', cron: '0 9 * * *', timezone: 'UTC' } });
