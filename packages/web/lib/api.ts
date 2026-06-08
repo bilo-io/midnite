@@ -1,4 +1,5 @@
 import {
+  AgentPingResponseSchema,
   CreatePlanTasksResponseSchema,
   CreateTaskResponseSchema,
   DraftPlanResponseSchema,
@@ -22,6 +23,7 @@ import {
   type Project,
   type SessionSummary,
   type SessionTranscript,
+  type AgentPingResponse,
   type Task,
   type TaskCounts,
   type TerminalTokenResponse,
@@ -67,6 +69,10 @@ async function fetchJson<T>(
   }
   const body = (await res.json()) as unknown;
   return schema ? schema.parse(body) : (body as T);
+}
+
+export async function pingAgent(): Promise<AgentPingResponse> {
+  return fetchJson('/agent/ping', { method: 'POST' }, AgentPingResponseSchema);
 }
 
 export async function getTaskCounts(): Promise<TaskCounts> {

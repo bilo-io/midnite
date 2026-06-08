@@ -75,7 +75,22 @@ export class AnthropicClassifier extends TaskClassifier {
     if (!this.anthropic.enabled) {
       return new PlaceholderClassifier().classify(prompt, images);
     }
+    try {
+      return await this.classifyWithAi(prompt, images);
+    } catch (err) {
+      // A model/API failure must not break task creation — degrade to a title
+      // derived from the prompt rather than surfacing a 500.
+      this.logger.warn(
+        `classifier AI call failed (${err instanceof Error ? err.message : 'unknown'}); using placeholder title`,
+      );
+      return new PlaceholderClassifier().classify(prompt, images);
+    }
+  }
 
+  private async classifyWithAi(
+    prompt: string,
+    images: ClassifierImage[],
+  ): Promise<ClassifiedTask> {
     const client = this.anthropic.getClient();
     const uploadsRoot = this.resolveUploadsDir();
 

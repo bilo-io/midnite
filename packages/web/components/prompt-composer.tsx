@@ -2,11 +2,11 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { Mic, MicOff, Paperclip, Send, X } from 'lucide-react';
+import { Activity, Mic, MicOff, Paperclip, Send, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import { createTask } from '@/lib/api';
+import { createTask, pingAgent } from '@/lib/api';
 import { useSpeechRecognition } from '@/lib/use-speech-recognition';
 
 type Phase = 'idle' | 'submitting';
@@ -24,6 +24,8 @@ export function PromptComposer() {
   const [files, setFiles] = React.useState<File[]>([]);
   const [phase, setPhase] = React.useState<Phase>('idle');
   const [error, setError] = React.useState<string | null>(null);
+  const [pinging, setPinging] = React.useState(false);
+  const [pingResult, setPingResult] = React.useState<{ ok: boolean; text: string } | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Intro: start centered + compact, then settle to the bottom at full height.
@@ -100,6 +102,21 @@ export function PromptComposer() {
       setError(err instanceof Error ? err.message : 'Failed to create task');
     } finally {
       setPhase('idle');
+    }
+  };
+
+  const ping = async () => {
+    if (pinging) return;
+    setPinging(true);
+    setPingResult(null);
+    setError(null);
+    try {
+      const res = await pingAgent();
+      setPingResult({ ok: res.ok, text: res.model ? `${res.model} — ${res.reply}` : res.reply });
+    } catch (err) {
+      setPingResult({ ok: false, text: err instanceof Error ? err.message : 'Ping failed' });
+    } finally {
+      setPinging(false);
     }
   };
 
@@ -201,21 +218,42 @@ export function PromptComposer() {
                 </span>
               )}
             </div>
-            <Button
-              type="button"
-              onClick={() => void submit()}
-              disabled={taskCount === 0 || phase === 'submitting'}
-              size="sm"
-              className="cascade-item"
-              style={{ animationDelay: '180ms' }}
-            >
-              <Send className="h-4 w-4" />
-              {sendLabel}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void ping()}
+                disabled={pinging}
+                aria-label="Ping the AI"
+                title="Check the AI is reachable"
+                className="cascade-item"
+                style={{ animationDelay: '160ms' }}
+              >
+                <Activity className={cn('h-4 w-4', pinging && 'animate-pulse')} />
+                {pinging ? 'Pinging…' : 'Ping'}
+              </Button>
+              <Button
+                type="button"
+                onClick={() => void submit()}
+                disabled={taskCount === 0 || phase === 'submitting'}
+                size="sm"
+                className="cascade-item"
+                style={{ animationDelay: '180ms' }}
+              >
+                <Send className="h-4 w-4" />
+                {sendLabel}
+              </Button>
+            </div>
           </div>
         )}
 
         {error && <p className="text-sm text-destructive">{error}</p>}
+        {pingResult && (
+          <p className={cn('text-sm', pingResult.ok ? 'text-muted-foreground' : 'text-destructive')}>
+            {pingResult.text}
+          </p>
+        )}
       </div>
       </div>
     </div>
