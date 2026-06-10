@@ -1,0 +1,1 @@
+ALTER TABLE `primary_agent` ADD `agent_cli` text DEFAULT 'claude' NOT NULL;

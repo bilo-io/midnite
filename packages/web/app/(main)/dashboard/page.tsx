@@ -1,15 +1,17 @@
-import type { Project } from '@midnite/shared';
+import type { Project, Task } from '@midnite/shared';
 import { DashboardTiles } from '@/components/dashboard-tiles';
 import { PageHeader } from '@/components/page-header';
 import { PromptComposer } from '@/components/prompt-composer';
-import { getProjects, getTaskCounts } from '@/lib/api';
+import { RecentProjects } from '@/components/recent-projects';
+import { getProjects, getTaskCounts, getTasks } from '@/lib/api';
 
 export default async function DashboardPage() {
   let counts;
   let projects: Project[] = [];
+  let tasks: Task[] = [];
   let error: string | null = null;
   try {
-    [counts, projects] = await Promise.all([getTaskCounts(), getProjects()]);
+    [counts, projects, tasks] = await Promise.all([getTaskCounts(), getProjects(), getTasks()]);
   } catch (err) {
     error = err instanceof Error ? err.message : 'Failed to load task counts';
     counts = { backlog: 0, todo: 0, inProgress: 0, done: 0 };
@@ -31,6 +33,8 @@ export default async function DashboardPage() {
         )}
 
         <DashboardTiles counts={counts} />
+
+        <RecentProjects projects={projects} tasks={tasks} />
       </div>
 
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30">

@@ -3,8 +3,9 @@ import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, unlinkSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
-import type { MidniteConfig, ServerTerminalMessage } from '@midnite/shared';
+import { AGENT_CLI_COMMAND, type MidniteConfig, type ServerTerminalMessage } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
+import { AgentsService } from '../agents/agents.service';
 import { expandTilde } from '../fs/path-tilde';
 import { ProjectsService } from '../projects/projects.service';
 import { TasksService } from '../tasks/tasks.service';
@@ -61,8 +62,12 @@ function shellQuote(path: string): string {
 
 /**
  * The first line fed to a freshly-spawned session shell: change into the
- * project's working directory and clear the startup noise, so the terminal
- * opens on a clean prompt rooted at the project. Pure/exported for testing.
+ * project's working directory, clear the startup noise, and — on first open —
+ * launch the preferred agent CLI, so the terminal opens on the agent rooted at
+ * the project. Pure/exported for testing.
+ *
+ * `launchCommand` is the agent CLI to run (e.g. `claude`); omit it to land on a
+ * bare prompt. Runs only on spawn, so a reattach to a live PTY never re-launches.
  *
  * Only applies to the default interactive shell — a configured command (e.g.
  * `claude`, or a one-shot script) drives its own stdin and must not be typed at.
@@ -70,9 +75,11 @@ function shellQuote(path: string): string {
 export function buildShellInitCommand(
   configuredCommand: string | undefined,
   cwd: string,
+  launchCommand?: string,
 ): string | undefined {
   if (configuredCommand !== undefined) return undefined;
-  return `cd ${shellQuote(cwd)} && clear\r`;
+  const launch = launchCommand?.trim() ? ` && ${launchCommand.trim()}` : '';
+  return `cd ${shellQuote(cwd)} && clear${launch}\r`;
 }
 
 /**
@@ -130,6 +137,7 @@ export class TerminalService implements OnModuleDestroy {
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
     @Inject(TasksService) private readonly tasks: TasksService,
     @Inject(ProjectsService) private readonly projects: ProjectsService,
+    @Inject(AgentsService) private readonly agents: AgentsService,
     // Mutual lifecycle/broadcast dependency within the terminal module.
     @Inject(forwardRef(() => ApprovalService)) private readonly approvals: ApprovalService,
   ) {}
@@ -357,13 +365,16 @@ export class TerminalService implements OnModuleDestroy {
     }
 
     const cwd = this.resolveCwd(sessionId);
+    // On first open of a session, drop into the project dir and launch the
+    // preferred agent CLI. A reattach reuses the live PTY, so it won't re-run.
+    const launchCommand = AGENT_CLI_COMMAND[this.agents.getAgentCli()];
     return {
       command,
       args,
       cwd,
       env,
       settingsFile,
-      initCommand: buildShellInitCommand(terminal.command, cwd),
+      initCommand: buildShellInitCommand(terminal.command, cwd, launchCommand),
     };
   }
 

@@ -12,8 +12,10 @@ import {
 } from '@nestjs/common';
 import {
   CreateSubAgentRequestSchema,
+  UpdateAgentCliRequestSchema,
   UpdatePrimaryAgentRequestSchema,
   UpdateSubAgentRequestSchema,
+  type AgentCliResponse,
   type AgentsConfigResponse,
   type HeartbeatRunResponse,
   type HeartbeatRunsResponse,
@@ -29,6 +31,13 @@ export class AgentsController {
   @Get()
   getConfig(): AgentsConfigResponse {
     return { config: this.service.getConfig() };
+  }
+
+  @Put('cli')
+  updateAgentCli(@Body() body: unknown): AgentCliResponse {
+    const parsed = UpdateAgentCliRequestSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    return { cli: this.service.updateAgentCli(parsed.data.cli) };
   }
 
   @Put('primary')

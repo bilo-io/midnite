@@ -4,6 +4,7 @@ import { WebSocket } from 'ws';
 import { parseConfig, type MidniteConfig, type ServerTerminalMessage } from '@midnite/shared';
 import type { TasksService } from '../tasks/tasks.service';
 import type { ProjectsService } from '../projects/projects.service';
+import type { AgentsService } from '../agents/agents.service';
 import { TerminalGateway } from './terminal.gateway';
 import { TerminalService } from './terminal.service';
 import type { ApprovalService } from './approval.service';
@@ -14,6 +15,7 @@ import type { ApprovalService } from './approval.service';
 
 const noTasks = { listTasks: () => [] } as unknown as TasksService;
 const noProjects = { workDirFor: () => undefined } as unknown as ProjectsService;
+const noAgents = { getAgentCli: () => 'claude' as const } as unknown as AgentsService;
 
 const noApprovals = {
   mintSecret: () => 'secret',
@@ -100,7 +102,7 @@ describe('TerminalGateway', () => {
     gateway: TerminalGateway;
   } {
     const config = makeConfig(terminal);
-    service = new TerminalService(config, noTasks, noProjects, noApprovals);
+    service = new TerminalService(config, noTasks, noProjects, noAgents, noApprovals);
     return { service, gateway: new TerminalGateway(service, noApprovals, config) };
   }
 

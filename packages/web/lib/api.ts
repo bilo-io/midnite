@@ -1,4 +1,5 @@
 import {
+  AgentCliResponseSchema,
   AgentPingResponseSchema,
   AgentsConfigResponseSchema,
   BrowseDirResponseSchema,
@@ -22,6 +23,7 @@ import {
   WorkflowResponseSchema,
   WorkflowRunSchema,
   WorkflowSummarySchema,
+  type AgentCli,
   type AgentsConfig,
   type BrowseDirResponse,
   type CreateProjectRequest,
@@ -355,6 +357,15 @@ export async function rotateWorkflowWebhook(id: string): Promise<WebhookInfoResp
 export async function getAgentsConfig(): Promise<AgentsConfig> {
   const { config } = await fetchJson('/agents', undefined, AgentsConfigResponseSchema);
   return config;
+}
+
+export async function updateAgentCli(cli: AgentCli): Promise<AgentCli> {
+  const res = await fetchJson(
+    '/agents/cli',
+    { method: 'PUT', headers: JSON_HEADERS, body: JSON.stringify({ cli }) },
+    AgentCliResponseSchema,
+  );
+  return res.cli;
 }
 
 export async function updatePrimaryAgent(body: UpdatePrimaryAgentRequest): Promise<PrimaryAgent> {

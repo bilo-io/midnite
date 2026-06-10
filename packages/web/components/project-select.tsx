@@ -19,6 +19,7 @@ export function ProjectSelect({
   disabled = false,
   placeholder = 'No project',
   align = 'left',
+  direction = 'down',
   className,
 }: {
   projects: ProjectOption[];
@@ -28,6 +29,8 @@ export function ProjectSelect({
   placeholder?: string;
   /** Which edge the dropdown panel aligns to. */
   align?: 'left' | 'right';
+  /** Whether the panel opens below the trigger or above it. */
+  direction?: 'down' | 'up';
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -93,8 +96,9 @@ export function ProjectSelect({
         <div
           role="listbox"
           className={cn(
-            'absolute z-50 mt-1 max-h-72 w-56 overflow-auto rounded-md border border-border bg-card p-1 shadow-lg',
+            'absolute z-50 max-h-72 w-56 overflow-auto rounded-md border border-border bg-card p-1 shadow-lg',
             align === 'right' ? 'right-0' : 'left-0',
+            direction === 'up' ? 'bottom-full mb-1' : 'top-full mt-1',
           )}
         >
           <button

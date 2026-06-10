@@ -90,7 +90,7 @@ export function SessionTranscriptModal({
               </Button>
             ) : null}
             {onDelete && session.archivedAt ? (
-              <DeleteConfirmButton onConfirm={onDelete} />
+              <DeleteConfirmButton noun="session" onConfirm={onDelete} />
             ) : null}
             <Button
               type="button"

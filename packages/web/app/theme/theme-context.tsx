@@ -11,7 +11,7 @@ import {
 } from 'react';
 import { THEME_STORAGE_KEY } from './theme-script';
 
-export type ThemePreference = 'light' | 'dark' | 'system';
+export type ThemePreference = 'light' | 'dark' | 'system' | 'timeOfDay';
 export type ResolvedTheme = 'light' | 'dark';
 
 type ThemeContextValue = {
@@ -27,14 +27,23 @@ function systemTheme(): ResolvedTheme {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
+// Light during the day (08:00–18:00 local), dark the rest of the time.
+function timeOfDayTheme(): ResolvedTheme {
+  if (typeof window === 'undefined') return 'dark';
+  const hour = new Date().getHours();
+  return hour >= 8 && hour < 18 ? 'light' : 'dark';
+}
+
 function resolve(pref: ThemePreference): ResolvedTheme {
-  return pref === 'system' ? systemTheme() : pref;
+  if (pref === 'system') return systemTheme();
+  if (pref === 'timeOfDay') return timeOfDayTheme();
+  return pref;
 }
 
 function readStoredPreference(): ThemePreference {
   if (typeof window === 'undefined') return 'system';
   const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
-  return stored === 'light' || stored === 'dark' ? stored : 'system';
+  return stored === 'light' || stored === 'dark' || stored === 'timeOfDay' ? stored : 'system';
 }
 
 function applyResolved(resolved: ResolvedTheme) {
@@ -59,6 +68,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const onChange = () => setResolved(mql.matches ? 'dark' : 'light');
     mql.addEventListener('change', onChange);
     return () => mql.removeEventListener('change', onChange);
+  }, [preference]);
+
+  // Re-evaluate periodically so the theme flips at the 08:00/18:00 boundary
+  // while the page stays open.
+  useEffect(() => {
+    if (preference !== 'timeOfDay') return;
+    const tick = () => setResolved(timeOfDayTheme());
+    const id = window.setInterval(tick, 60_000);
+    return () => window.clearInterval(id);
   }, [preference]);
 
   useEffect(() => {

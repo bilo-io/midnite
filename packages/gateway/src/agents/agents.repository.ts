@@ -1,11 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { asc, desc, eq } from 'drizzle-orm';
-import type {
-  HeartbeatRun,
-  HeartbeatRunStatus,
-  HeartbeatTriggerSource,
-  PrimaryAgent,
-  SubAgent,
+import {
+  AGENT_CLI_DEFAULT,
+  AgentCliSchema,
+  type AgentCli,
+  type HeartbeatRun,
+  type HeartbeatRunStatus,
+  type HeartbeatTriggerSource,
+  type PrimaryAgent,
+  type SubAgent,
 } from '@midnite/shared';
 import { DB_TOKEN, type MidniteDb } from '../db/db.module';
 import {
@@ -50,6 +53,20 @@ export class AgentsRepository {
     this.db
       .update(primaryAgent)
       .set({ lastHeartbeatAt: at, lastHeartbeatRunId: runId })
+      .where(eq(primaryAgent.id, PRIMARY_ID))
+      .run();
+  }
+
+  /** The global CLI preference off the singleton row; coalesces to the default. */
+  getAgentCli(): AgentCli {
+    const row = this.getPrimary();
+    return AgentCliSchema.catch(AGENT_CLI_DEFAULT).parse(row?.agentCli);
+  }
+
+  setAgentCli(cli: AgentCli, updatedAt: string): void {
+    this.db
+      .update(primaryAgent)
+      .set({ agentCli: cli, updatedAt })
       .where(eq(primaryAgent.id, PRIMARY_ID))
       .run();
   }

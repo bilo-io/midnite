@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { parseConfig, type MidniteConfig, type ServerTerminalMessage } from '@midnite/shared';
 import type { TasksService } from '../tasks/tasks.service';
 import type { ProjectsService } from '../projects/projects.service';
+import type { AgentsService } from '../agents/agents.service';
 import {
   TerminalService,
   buildShellInitCommand,
@@ -20,6 +21,7 @@ function makeConfig(terminal: Record<string, unknown>): MidniteConfig {
 
 const noTasks = { listTasks: () => [] } as unknown as TasksService;
 const noProjects = { workDirFor: () => undefined } as unknown as ProjectsService;
+const noAgents = { getAgentCli: () => 'claude' as const } as unknown as AgentsService;
 
 // PTY-mechanics tests don't exercise approvals; a no-op stub satisfies the wiring.
 const noApprovals = {
@@ -32,7 +34,7 @@ const noApprovals = {
 } as unknown as ApprovalService;
 
 function makeService(terminal: Record<string, unknown>): TerminalService {
-  return new TerminalService(makeConfig(terminal), noTasks, noProjects, noApprovals);
+  return new TerminalService(makeConfig(terminal), noTasks, noProjects, noAgents, noApprovals);
 }
 
 function decode(data: string): string {
@@ -279,6 +281,18 @@ describe('buildShellInitCommand', () => {
   it('returns undefined for a configured command (it owns its own stdin)', () => {
     expect(buildShellInitCommand('claude', '/home/me/proj')).toBeUndefined();
     expect(buildShellInitCommand('cat', '/home/me/proj')).toBeUndefined();
+  });
+
+  it('launches the preferred agent CLI after cd-ing on first open', () => {
+    expect(buildShellInitCommand(undefined, '/home/me/proj', 'claude')).toBe(
+      "cd '/home/me/proj' && clear && claude\r",
+    );
+  });
+
+  it('falls back to a bare prompt when no launch command is given', () => {
+    expect(buildShellInitCommand(undefined, '/home/me/proj', '')).toBe(
+      "cd '/home/me/proj' && clear\r",
+    );
   });
 });
 

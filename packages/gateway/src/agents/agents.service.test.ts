@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { HeartbeatRun } from '@midnite/shared';
+import type { AgentCli, HeartbeatRun } from '@midnite/shared';
 import type {
   PrimaryAgentInsert,
   PrimaryAgentRow,
@@ -33,6 +33,11 @@ class InMemoryAgentsRepo extends AgentsRepository {
     if (!this.primary) return undefined;
     this.primary = { ...this.primary, ...patch } as PrimaryAgentRow;
     return this.primary;
+  }
+
+  override setAgentCli(cli: AgentCli, updatedAt: string): void {
+    if (!this.primary) return;
+    this.primary = { ...this.primary, agentCli: cli, updatedAt };
   }
 
   override listSubAgents(): SubagentRow[] {
@@ -72,6 +77,7 @@ function toPrimaryRow(row: PrimaryAgentInsert): PrimaryAgentRow {
   return {
     id: row.id,
     name: row.name,
+    agentCli: row.agentCli ?? 'claude',
     description: row.description ?? '',
     heartbeatEnabled: row.heartbeatEnabled ?? 0,
     heartbeatPrompt: row.heartbeatPrompt ?? '',

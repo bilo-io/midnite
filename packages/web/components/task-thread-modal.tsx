@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ExternalLink, Plus, SquareTerminal, X } from 'lucide-react';
+import { Ban, ExternalLink, Plus, SquareTerminal, X } from 'lucide-react';
 import {
   SOURCE_KIND_LABEL,
   parseGithubPr,
@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { ProjectSelect } from '@/components/project-select';
 import { SourceIcon } from '@/components/source-icon';
 import { DeleteConfirmButton } from '@/components/delete-confirm-button';
+import { useConfirm } from '@/components/confirm-dialog';
 import {
   addTaskLink,
   deleteTask,
@@ -80,6 +81,7 @@ export function TaskThreadModal({ task, projects, onClose }: Props) {
   const images = task.attachments?.filter((a) => a.mime.startsWith('image/')) ?? [];
 
   const router = useRouter();
+  const confirm = useConfirm();
   const [links, setLinks] = useState<TaskLink[]>(task.links ?? []);
   const [linkUrl, setLinkUrl] = useState('');
   const [busy, setBusy] = useState(false);
@@ -112,6 +114,12 @@ export function TaskThreadModal({ task, projects, onClose }: Props) {
   };
 
   const abandon = async () => {
+    const ok = await confirm({
+      title: 'Abandon this task?',
+      description: 'It will be archived and its session stopped. You can permanently delete it afterwards.',
+      confirmLabel: 'Abandon',
+    });
+    if (!ok) return;
     setStatusBusy(true);
     setStatusError(null);
     try {
@@ -163,6 +171,12 @@ export function TaskThreadModal({ task, projects, onClose }: Props) {
   };
 
   const removeLink = async (linkId: string) => {
+    const ok = await confirm({
+      title: 'Remove this link?',
+      description: 'It will be detached from this task.',
+      confirmLabel: 'Remove',
+    });
+    if (!ok) return;
     setBusy(true);
     setLinkError(null);
     try {
@@ -191,20 +205,20 @@ export function TaskThreadModal({ task, projects, onClose }: Props) {
           className="pointer-events-auto flex max-h-[85vh] w-full max-w-2xl flex-col rounded-xl border border-border bg-card shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
-          <header className="flex items-start gap-3 border-b border-border/60 px-5 py-3.5">
+          <header className="flex items-center gap-3 border-b border-border/60 px-5 py-3.5">
             <span
               aria-hidden
-              className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
+              className="h-2 w-2 shrink-0 rounded-full"
               style={{
                 background: `hsl(var(${statusHue}))`,
                 boxShadow: `0 0 8px -1px hsl(var(${statusHue}) / 0.7)`,
               }}
             />
             <div className="min-w-0 flex-1">
-              <h2 className="text-sm font-semibold leading-snug">{task.title}</h2>
-              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <h2 className="truncate text-sm font-semibold leading-tight">{task.title}</h2>
+              <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                 <span
-                  className="inline-flex items-center gap-1.5 rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider"
+                  className="inline-flex shrink-0 items-center rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider"
                   style={{
                     background: `hsl(var(${KIND_HUE_VAR[kind]}) / 0.12)`,
                     color: `hsl(var(${KIND_HUE_VAR[kind]}))`,
@@ -212,11 +226,11 @@ export function TaskThreadModal({ task, projects, onClose }: Props) {
                 >
                   {KIND_LABEL[kind]}
                 </span>
-                <span>{STATUS_LABEL[task.status]}</span>
+                <span className="shrink-0">{STATUS_LABEL[task.status]}</span>
                 {task.repo ? (
                   <>
                     <span aria-hidden>·</span>
-                    <span className="font-mono">{task.repo}</span>
+                    <span className="truncate font-mono">{task.repo}</span>
                   </>
                 ) : null}
               </div>
@@ -233,21 +247,25 @@ export function TaskThreadModal({ task, projects, onClose }: Props) {
               ) : null}
               <Button type="button" variant="secondary" size="sm" onClick={goToSession}>
                 <SquareTerminal className="h-3.5 w-3.5" />
-                Open session
+                Session
               </Button>
               {task.status !== 'abandoned' ? (
                 <Button
                   type="button"
                   variant="ghost"
-                  size="sm"
+                  size="icon"
                   onClick={() => void abandon()}
                   disabled={statusBusy}
+                  aria-label="Abandon task"
+                  title="Abandon"
                   className="text-muted-foreground hover:text-destructive"
                 >
-                  Abandon
+                  <Ban className="h-4 w-4" />
                 </Button>
               ) : null}
-              {task.archivedAt ? <DeleteConfirmButton onConfirm={() => void remove()} /> : null}
+              {task.archivedAt ? (
+                <DeleteConfirmButton noun="task" onConfirm={() => void remove()} />
+              ) : null}
               <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
                 <X className="h-4 w-4" />
               </Button>

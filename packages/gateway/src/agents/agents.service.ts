@@ -1,7 +1,9 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import {
+  AGENT_CLI_DEFAULT,
   HEARTBEAT_DEFAULT_H,
+  type AgentCli,
   type AgentsConfig,
   type CreateSubAgentRequest,
   type HeartbeatRun,
@@ -26,7 +28,19 @@ export class AgentsService {
   getConfig(): AgentsConfig {
     const primary = this.ensurePrimary();
     const subAgents = this.repo.listSubAgents().map((r) => this.repo.hydrateSubAgent(r));
-    return { primary, subAgents };
+    return { cli: this.repo.getAgentCli(), primary, subAgents };
+  }
+
+  /** The global CLI preference (seeds the singleton first so it's never missing). */
+  getAgentCli(): AgentCli {
+    this.ensurePrimary();
+    return this.repo.getAgentCli();
+  }
+
+  updateAgentCli(cli: AgentCli): AgentCli {
+    this.ensurePrimary();
+    this.repo.setAgentCli(cli, new Date().toISOString());
+    return this.repo.getAgentCli();
   }
 
   // Seed the singleton on first read. Seeds lastHeartbeatAt to createdAt so the
@@ -38,6 +52,7 @@ export class AgentsService {
     this.repo.insertPrimary({
       id: PRIMARY_ID,
       name: 'Orchestrator',
+      agentCli: AGENT_CLI_DEFAULT,
       description: '',
       heartbeatEnabled: 0,
       heartbeatPrompt: '',

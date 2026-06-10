@@ -18,6 +18,8 @@
     --accent-foreground: 240 5.9% 10%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
+    --success: 142 71% 36%;
+    --success-foreground: 0 0% 98%;
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
     --ring: 240 5.9% 10%;
@@ -58,6 +60,8 @@
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
+    --success: 142 65% 48%;
+    --success-foreground: 0 0% 98%;
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 240 4.9% 83.9%;
@@ -380,6 +384,71 @@
   }
 }
 
+/* Composer error panel: rises up from behind the composer on appear, and
+   sinks back down on dismiss. The exit animation drives unmount (the panel
+   calls onDismiss in onAnimationEnd), so it must still fire under reduced
+   motion — hence a near-zero duration there rather than `animation: none`. */
+@keyframes error-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes error-panel-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.animate-error-in {
+  animation: error-panel-in 0.32s ease-out;
+}
+
+.animate-error-out {
+  animation: error-panel-out 0.22s ease-in forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-error-in {
+    animation: none;
+  }
+  .animate-error-out {
+    animation-duration: 0.01ms;
+  }
+}
+
+/* Confirmation dialog: a quick fade + zoom as it appears over its backdrop. */
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-dialog-in {
+  animation: dialog-in 0.16s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-dialog-in {
+    animation: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .cascade-item {
     animation: none;
@@ -463,6 +532,59 @@
 @media (prefers-reduced-motion: reduce) {
   .gradient-border:focus-within::before,
   .gradient-border:focus-within::after {
+    animation: none;
+  }
+}
+
+/* Workflow node run-state borders. The actively-executing node gets a thick,
+   rotating conic-gradient ring (the same treatment as the dashboard prompt
+   input); once it settles, the node keeps the thickness but switches to a solid
+   success/failure colour. Resetting `data.status` (e.g. on a fresh run) drops
+   these classes and restores the default 1px border. */
+.node-running {
+  border-color: transparent;
+}
+
+.node-running::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(
+    from var(--gradient-angle),
+    #f43f5e,
+    #f59e0b,
+    #10b981,
+    #3b82f6,
+    #8b5cf6,
+    #ec4899,
+    #f43f5e
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: gradient-border-spin 4s linear infinite;
+  pointer-events: none;
+}
+
+.node-succeeded {
+  border-width: 2px;
+  border-color: hsl(var(--status-done));
+}
+
+.node-failed {
+  border-width: 2px;
+  border-color: hsl(var(--destructive));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .node-running::before {
     animation: none;
   }
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Check, Laptop, Moon, Sun } from 'lucide-react';
+import { Check, Clock, Laptop, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTheme, type ThemePreference } from '@/app/theme/theme-context';
@@ -10,6 +10,7 @@ const OPTIONS: { value: ThemePreference; label: string; Icon: typeof Sun }[] = [
   { value: 'light', label: 'Light', Icon: Sun },
   { value: 'dark', label: 'Dark', Icon: Moon },
   { value: 'system', label: 'System', Icon: Laptop },
+  { value: 'timeOfDay', label: 'Time of day', Icon: Clock },
 ];
 
 export function ThemeToggle() {

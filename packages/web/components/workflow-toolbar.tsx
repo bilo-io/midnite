@@ -11,11 +11,13 @@ import { useWorkflowStore } from '@/lib/workflow-store';
 export function WorkflowToolbar({
   onRun,
   onSave,
+  onEditTrigger,
   running,
   saving,
 }: {
   onRun: () => void;
   onSave: () => void;
+  onEditTrigger: () => void;
   running: boolean;
   saving: boolean;
 }) {
@@ -48,10 +50,16 @@ export function WorkflowToolbar({
         aria-label="Workflow name"
         className="h-8 w-64 rounded-md border border-transparent bg-transparent px-2 text-sm font-semibold hover:border-border focus-visible:border-border focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
       />
-      <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={onEditTrigger}
+        title="Change trigger"
+        aria-label="Change trigger"
+        className="flex items-center gap-2 rounded-md border border-transparent px-2 py-1 transition-colors hover:border-border hover:bg-accent/40"
+      >
         <TriggerBadge type={trigger.type} />
         <span className="text-xs text-muted-foreground">{triggerLabel}</span>
-      </div>
+      </button>
 
       <div className="ml-auto flex items-center gap-3">
         <label className="flex items-center gap-1.5 text-xs text-muted-foreground">

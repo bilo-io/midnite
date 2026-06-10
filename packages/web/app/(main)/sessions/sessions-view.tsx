@@ -25,6 +25,7 @@ import { SessionTerminalModal } from '@/components/session-terminal-modal';
 import { SortableAccordions, type AccordionSection } from '@/components/sortable-accordions';
 import type { ProjectTagInfo } from '@/components/task-card';
 import { archiveSession, deleteSession, getSessionTranscript, unarchiveSession } from '@/lib/api';
+import { useConfirm } from '@/components/confirm-dialog';
 import { cn } from '@/lib/utils';
 
 type View = 'list' | 'grid' | 'table';
@@ -102,9 +103,19 @@ export function SessionsView({
 
   const router = useRouter();
   const pathname = usePathname();
+  const confirm = useConfirm();
 
   const onArchiveToggle = useCallback(
     async (session: SessionSummary) => {
+      if (!session.archivedAt) {
+        const ok = await confirm({
+          title: 'Archive this session?',
+          description: 'It moves out of the active board. You can unarchive it again later.',
+          confirmLabel: 'Archive',
+          destructive: false,
+        });
+        if (!ok) return;
+      }
       try {
         if (session.archivedAt) await unarchiveSession(session.id);
         else await archiveSession(session.id);
@@ -113,7 +124,7 @@ export function SessionsView({
         router.refresh(); // page is force-dynamic, so this re-fetches /sessions
       }
     },
-    [onClose, router],
+    [confirm, onClose, router],
   );
 
   // Permanent delete — only offered once a session is archived.

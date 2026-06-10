@@ -1,44 +1,36 @@
 'use client';
 
-import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useConfirm } from '@/components/confirm-dialog';
 
 type Props = {
   onConfirm: () => void;
   label?: string;
+  /** What's being deleted, e.g. "session" — used in the dialog copy. */
+  noun?: string;
 };
 
-// A destructive button that flips to an inline "Confirm / Cancel" pair before
-// firing, so a permanent delete always takes a deliberate second click.
-export function DeleteConfirmButton({ onConfirm, label = 'Delete' }: Props) {
-  const [confirming, setConfirming] = useState(false);
+// A destructive button that opens a confirmation dialog before firing, so a
+// permanent delete always takes a deliberate, acknowledged second action.
+export function DeleteConfirmButton({ onConfirm, label = 'Delete', noun = 'item' }: Props) {
+  const confirm = useConfirm();
 
-  if (confirming) {
-    return (
-      <div className="flex shrink-0 items-center gap-2">
-        <span className="text-xs text-muted-foreground">Delete permanently?</span>
-        <Button type="button" variant="destructive" size="sm" onClick={onConfirm}>
-          Confirm
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => setConfirming(false)}
-        >
-          Cancel
-        </Button>
-      </div>
-    );
-  }
+  const run = async () => {
+    const ok = await confirm({
+      title: `Delete this ${noun}?`,
+      description: 'This is permanent and can’t be undone.',
+      confirmLabel: label,
+    });
+    if (ok) onConfirm();
+  };
 
   return (
     <Button
       type="button"
       variant="ghost"
       size="sm"
-      onClick={() => setConfirming(true)}
+      onClick={() => void run()}
       className="shrink-0 gap-1.5 text-destructive hover:text-destructive"
     >
       <Trash2 className="h-3.5 w-3.5" /> {label}

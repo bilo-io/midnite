@@ -121,13 +121,27 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
     await runner.start();
   };
 
+  // Surface the existing trigger editor (in the config panel) from the toolbar: select
+  // the canonical trigger node and force the panel open even if it was collapsed.
+  const editTrigger = () => {
+    const triggerNode = store.getState().nodes.find((n) => n.data.kind.startsWith('trigger.'));
+    if (triggerNode) store.getState().select(triggerNode.id);
+    setConfigOpen(true);
+  };
+
   const banner = error ?? runner.error;
 
   return (
     <WorkflowStoreContext.Provider value={store}>
       <ReactFlowProvider>
         <div className="flex h-screen w-full flex-col overflow-hidden">
-          <WorkflowToolbar onRun={() => void run()} onSave={() => void save()} running={runner.running} saving={saving} />
+          <WorkflowToolbar
+            onRun={() => void run()}
+            onSave={() => void save()}
+            onEditTrigger={editTrigger}
+            running={runner.running}
+            saving={saving}
+          />
 
           <div
             className={cn(

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { createTask } from '@/lib/api';
 import { draftTasks, type FeatureDraft } from '@/lib/feature-drafts';
+import { useConfirm } from '@/components/confirm-dialog';
 import { cn } from '@/lib/utils';
 
 const inputClass =
@@ -46,8 +47,17 @@ export function FeatureListModal({
   const [text, setText] = React.useState(draft.text);
   const [choosing, setChoosing] = React.useState(false);
   const [busy, setBusy] = React.useState<Status | null>(null);
-  const [confirmDelete, setConfirmDelete] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const confirm = useConfirm();
+
+  const discard = async () => {
+    const ok = await confirm({
+      title: 'Discard this feature list?',
+      description: 'The draft and everything typed into it will be removed.',
+      confirmLabel: 'Discard',
+    });
+    if (ok) onDelete();
+  };
 
   const tasks = draftTasks(text);
   const taskCount = tasks.length;
@@ -167,33 +177,16 @@ export function FeatureListModal({
           </div>
 
           <footer className="flex items-center justify-between gap-2 border-t border-border/60 px-5 py-3.5">
-            {confirmDelete ? (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">Discard?</span>
-                <Button type="button" variant="destructive" size="sm" onClick={onDelete}>
-                  Confirm
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setConfirmDelete(false)}
-                >
-                  Cancel
-                </Button>
-              </div>
-            ) : (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setConfirmDelete(true)}
-                className="gap-1.5 text-destructive hover:text-destructive"
-              >
-                <Trash2 className="h-4 w-4" />
-                Discard
-              </Button>
-            )}
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => void discard()}
+              className="gap-1.5 text-destructive hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4" />
+              Discard
+            </Button>
             <Button
               type="button"
               size="sm"

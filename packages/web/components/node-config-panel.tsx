@@ -14,6 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { rotateWorkflowWebhook } from '@/lib/api';
 import { describeCron } from '@/lib/cron';
 import { useWorkflowStore, type AppNode } from '@/lib/workflow-store';
+import { useConfirm } from '@/components/confirm-dialog';
 import { cn } from '@/lib/utils';
 
 const inputClass =
@@ -279,6 +280,17 @@ export function NodeConfigPanel({ workflowId }: { workflowId: string }) {
   const node = useWorkflowStore((s) => s.nodes.find((n) => n.id === selectedId) ?? null);
   const select = useWorkflowStore((s) => s.select);
   const removeNode = useWorkflowStore((s) => s.removeNode);
+  const confirm = useConfirm();
+
+  const deleteNode = async () => {
+    if (!node) return;
+    const ok = await confirm({
+      title: 'Delete this node?',
+      description: `“${node.data.label}” will be removed from the workflow.`,
+      confirmLabel: 'Delete node',
+    });
+    if (ok) removeNode(node.id);
+  };
 
   if (!node) {
     return (
@@ -313,7 +325,7 @@ export function NodeConfigPanel({ workflowId }: { workflowId: string }) {
             type="button"
             variant="ghost"
             size="sm"
-            onClick={() => removeNode(node.id)}
+            onClick={() => void deleteNode()}
             className="gap-1.5 text-destructive hover:text-destructive"
           >
             <Trash2 className="h-4 w-4" />

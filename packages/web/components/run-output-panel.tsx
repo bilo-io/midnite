@@ -27,7 +27,7 @@ export function RunOutputPanel({ run }: { run: WorkflowRun | null }) {
         onClick={() => setOpen((o) => !o)}
         className="flex w-full items-center gap-2 px-4 py-2 text-xs font-medium text-muted-foreground hover:text-foreground"
       >
-        <ChevronUp className={cn('h-3.5 w-3.5 transition-transform', open ? '' : 'rotate-180')} />
+        <ChevronUp className={cn('h-3.5 w-3.5 transition-transform', open ? 'rotate-180' : '')} />
         Run output
         {run ? <span className="capitalize text-foreground">· {run.status}</span> : null}
       </button>

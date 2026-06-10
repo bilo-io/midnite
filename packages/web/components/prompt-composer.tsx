@@ -2,7 +2,18 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { Activity, ListPlus, Mic, MicOff, Paperclip, X } from 'lucide-react';
+import {
+  Activity,
+  AlertTriangle,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  ListPlus,
+  Mic,
+  MicOff,
+  Paperclip,
+  X,
+} from 'lucide-react';
 import type { Project } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -19,7 +30,6 @@ export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
   const [text, setText] = React.useState('');
   const [projectId, setProjectId] = React.useState<string | null>(null);
   const [files, setFiles] = React.useState<File[]>([]);
-  const [error, setError] = React.useState<string | null>(null);
   const [pinging, setPinging] = React.useState(false);
   const [pingResult, setPingResult] = React.useState<{ ok: boolean; text: string } | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -87,7 +97,6 @@ export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
   // does not craft tasks yet. That happens from the draft's modal.
   const submit = () => {
     if (taskCount === 0) return;
-    setError(null);
     // Carry the chosen project onto the draft so the modal hands it to each
     // crafted task. Images ride along in-memory for this session only.
     const draft = drafts.add(text, undefined, projectId);
@@ -100,7 +109,6 @@ export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
     if (pinging) return;
     setPinging(true);
     setPingResult(null);
-    setError(null);
     try {
       const res = await pingAgent();
       setPingResult({ ok: res.ok, text: res.model ? `${res.model} — ${res.reply}` : res.reply });
@@ -138,8 +146,15 @@ export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
     {!intro && (
       <FeatureListPills drafts={drafts.drafts} onOpen={(id) => setOpenId(id)} />
     )}
+    {pingResult && (
+      <ComposerStatusPanel
+        tone={pingResult.ok ? 'success' : 'error'}
+        message={pingResult.text}
+        onDismiss={() => setPingResult(null)}
+      />
+    )}
     <div
-      className="gradient-border rounded-xl shadow-sm transition-[transform,box-shadow] duration-700 ease-out focus-within:shadow-lg motion-reduce:transition-none"
+      className="gradient-border relative z-10 rounded-xl shadow-sm transition-[transform,box-shadow] duration-700 ease-out focus-within:shadow-lg motion-reduce:transition-none"
       style={{ transform: intro ? 'translateY(-42dvh)' : 'translateY(0)' }}
     >
       <div className="relative rounded-xl bg-card p-4">
@@ -181,8 +196,8 @@ export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
         )}
 
         {controlsIn && (
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex min-w-0 flex-1 items-center gap-1">
               <input
                 ref={fileInputRef}
                 type="file"
@@ -221,7 +236,8 @@ export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
                   value={projectId}
                   onChange={setProjectId}
                   placeholder="No project"
-                  className="ml-1 cascade-item"
+                  direction="up"
+                  className="ml-1 min-w-0 cascade-item"
                 />
               )}
               {taskCount > 1 && (
@@ -230,7 +246,7 @@ export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 ml-auto">
               <Button
                 type="button"
                 variant="outline"
@@ -260,12 +276,6 @@ export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
           </div>
         )}
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
-        {pingResult && (
-          <p className={cn('text-sm', pingResult.ok ? 'text-muted-foreground' : 'text-destructive')}>
-            {pingResult.text}
-          </p>
-        )}
       </div>
       </div>
     </div>
@@ -281,5 +291,137 @@ export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
       />
     )}
     </>
+  );
+}
+
+// Errors thrown by the API client read like `500 Internal Server Error: {json}`.
+// Split the human-readable head from any JSON tail so the panel can show a
+// one-line summary collapsed and the pretty-printed body when expanded.
+function parseComposerError(raw: string): { title: string; body: string | null } {
+  const braceIdx = raw.search(/[[{]/);
+  if (braceIdx > -1) {
+    const head = raw.slice(0, braceIdx).replace(/[:\s]+$/, '').trim();
+    try {
+      const parsed = JSON.parse(raw.slice(braceIdx));
+      return { title: head || 'Request failed', body: JSON.stringify(parsed, null, 2) };
+    } catch {
+      // Tail wasn't valid JSON — fall through to the plain split below.
+    }
+  }
+  const sep = raw.indexOf(': ');
+  if (sep > -1) {
+    const body = raw.slice(sep + 2).trim();
+    return { title: raw.slice(0, sep).trim(), body: body || null };
+  }
+  return { title: raw, body: null };
+}
+
+type PanelTone = 'error' | 'success';
+
+// Full literal class strings per tone — Tailwind can't see interpolated names,
+// so the colour tokens must appear verbatim.
+const PANEL_TONES: Record<
+  PanelTone,
+  { border: string; tint: string; fg: string; btn: string; pre: string }
+> = {
+  error: {
+    border: 'border-destructive/40',
+    tint: 'bg-destructive/15',
+    fg: 'text-destructive',
+    btn: 'text-destructive/70 hover:text-destructive',
+    pre: 'bg-destructive/10 text-destructive',
+  },
+  success: {
+    border: 'border-success/40',
+    tint: 'bg-success/15',
+    fg: 'text-success',
+    btn: 'text-success/70 hover:text-success',
+    pre: 'bg-success/10 text-success',
+  },
+};
+
+// A stacked status card that peeks out from behind the composer's top edge
+// (negative bottom margin + lower z-index). Dismissable, and — for errors with
+// a JSON body — expandable to the pretty-printed payload. The composer's
+// textarea never resizes. Errors are red; successful pings are green.
+function ComposerStatusPanel({
+  tone,
+  message,
+  onDismiss,
+}: {
+  tone: PanelTone;
+  message: string;
+  onDismiss: () => void;
+}) {
+  const [expanded, setExpanded] = React.useState(false);
+  // The exit animation drives the actual unmount: clicking dismiss plays
+  // `animate-error-out`, and onAnimationEnd then calls the parent's onDismiss.
+  const [closing, setClosing] = React.useState(false);
+  // Only errors carry a structured body worth pretty-printing; a success ping
+  // is a single status line, shown whole.
+  const { title, body } = React.useMemo(
+    () => (tone === 'error' ? parseComposerError(message) : { title: message, body: null }),
+    [tone, message],
+  );
+  const styles = PANEL_TONES[tone];
+  const Icon = tone === 'success' ? CheckCircle2 : AlertTriangle;
+
+  return (
+    <div
+      className={cn(
+        'relative z-0 -mb-3 overflow-hidden rounded-t-xl border border-b-0 bg-card pb-3 shadow-sm',
+        styles.border,
+        closing ? 'animate-error-out' : 'animate-error-in',
+      )}
+      onAnimationEnd={(e) => {
+        if (closing && e.target === e.currentTarget) onDismiss();
+      }}
+    >
+      <div aria-hidden className={cn('pointer-events-none absolute inset-0', styles.tint)} />
+      <div className="relative flex items-center gap-2 px-3 py-2">
+        <Icon aria-hidden className={cn('h-4 w-4 shrink-0', styles.fg)} />
+        <p className={cn('min-w-0 flex-1 truncate text-sm font-medium', styles.fg)} title={title}>
+          {title}
+        </p>
+        {body ? (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            aria-expanded={expanded}
+            aria-label={expanded ? 'Collapse details' : 'Expand details'}
+            className={cn('rounded p-0.5 transition-colors', styles.btn)}
+          >
+            {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+          </button>
+        ) : null}
+        <button
+          type="button"
+          onClick={() => setClosing(true)}
+          aria-label="Dismiss"
+          className={cn('rounded p-0.5 transition-colors', styles.btn)}
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+      {body ? (
+        <div
+          className={cn(
+            'relative grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none',
+            expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
+          )}
+        >
+          <div className="overflow-hidden">
+            <pre
+              className={cn(
+                'mx-3 mt-1 max-h-52 overflow-auto whitespace-pre-wrap break-words rounded px-2.5 py-2 font-mono text-xs leading-relaxed',
+                styles.pre,
+              )}
+            >
+              {body}
+            </pre>
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }

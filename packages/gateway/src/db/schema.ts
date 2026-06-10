@@ -180,6 +180,9 @@ export const nodeRuns = sqliteTable(
 export const primaryAgent = sqliteTable('primary_agent', {
   id: text('id').primaryKey(), // always 'primary'
   name: text('name').notNull(),
+  // Global CLI preference (claude | gemini | codex) launched in session terminals;
+  // stored on the singleton row though surfaced as a top-level AgentsConfig.cli field.
+  agentCli: text('agent_cli').notNull().default('claude'),
   description: text('description').notNull().default(''), // markdown system prompt
   heartbeatEnabled: integer('heartbeat_enabled').notNull().default(0),
   heartbeatPrompt: text('heartbeat_prompt').notNull().default(''), // markdown

@@ -9,30 +9,44 @@ import {
   ChevronDown,
   FileText,
   Plus,
+  Terminal,
   Trash2,
   Users,
 } from 'lucide-react';
-import type {
-  AgentsConfig,
-  PrimaryAgent,
-  SubAgent,
-  UpdatePrimaryAgentRequest,
+import {
+  AGENT_CLIS,
+  AGENT_CLI_LABEL,
+  type AgentCli,
+  type AgentsConfig,
+  type PrimaryAgent,
+  type SubAgent,
+  type UpdatePrimaryAgentRequest,
 } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, type SelectOption } from '@/components/ui/select';
+import { AgentCliLogo } from '@/components/agent-cli-logo';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import {
   createSubAgent,
   deleteSubAgent,
   getAgentsConfig,
+  updateAgentCli,
   updatePrimaryAgent,
   updateSubAgent,
 } from '@/lib/api';
 import { formatHeartbeatInterval } from '@/lib/app-settings';
+import { useConfirm } from '@/components/confirm-dialog';
 import { cn } from '@/lib/utils';
 
 const SAVE_DEBOUNCE_MS = 600;
+
+const CLI_OPTIONS: SelectOption<AgentCli>[] = AGENT_CLIS.map((cli) => ({
+  value: cli,
+  label: AGENT_CLI_LABEL[cli],
+  icon: <AgentCliLogo cli={cli} className="h-4 w-4" />,
+}));
 
 function errMsg(e: unknown): string {
   return e instanceof Error ? e.message : 'Something went wrong';
@@ -42,6 +56,7 @@ export function AgentsView() {
   const [agents, setAgents] = useState<AgentsConfig | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const confirm = useConfirm();
 
   // A ref mirror of the latest config so debounced saves read fresh values
   // rather than a stale closure.
@@ -111,6 +126,14 @@ export function AgentsView() {
     schedulePrimarySave();
   };
 
+  // A single discrete choice — save it straight away rather than debouncing.
+  const editCli = (cli: AgentCli) => {
+    setAgents((prev) => (prev ? { ...prev, cli } : prev));
+    updateAgentCli(cli)
+      .then(flashSaved)
+      .catch((e) => setError(errMsg(e)));
+  };
+
   const editSubAgent = (id: string, patch: Partial<SubAgent>) => {
     setAgents((prev) =>
       prev
@@ -131,6 +154,13 @@ export function AgentsView() {
   };
 
   const removeSubAgent = async (id: string) => {
+    const sub = latest.current?.subAgents.find((s) => s.id === id);
+    const ok = await confirm({
+      title: 'Remove this subagent?',
+      description: `${sub?.name.trim() || 'This subagent'} will be deleted and the orchestrator can no longer delegate to it.`,
+      confirmLabel: 'Remove',
+    });
+    if (!ok) return;
     const t = subTimers.current.get(id);
     if (t) clearTimeout(t);
     subTimers.current.delete(id);
@@ -154,7 +184,7 @@ export function AgentsView() {
     );
   }
 
-  const { primary, subAgents } = agents;
+  const { cli, primary, subAgents } = agents;
 
   return (
     <div className="container max-w-3xl space-y-4 py-2">
@@ -170,6 +200,27 @@ export function AgentsView() {
       </div>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
+      <Accordion title="Agent CLI" icon={<Terminal className="h-3.5 w-3.5" />} defaultOpen>
+        <div className="space-y-3 p-5">
+          <div className="flex items-start justify-between gap-6">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Preferred CLI</p>
+              <p className="text-xs text-muted-foreground">
+                The coding agent launched in a session terminal — it runs automatically the first
+                time you open a session, after cd-ing into the project&apos;s working directory.
+              </p>
+            </div>
+            <Select
+              options={CLI_OPTIONS}
+              value={cli}
+              onChange={editCli}
+              aria-label="Preferred agent CLI"
+              className="w-40 shrink-0"
+            />
+          </div>
+        </div>
+      </Accordion>
 
       <Accordion title="Primary Agent" icon={<Bot className="h-3.5 w-3.5" />} defaultOpen>
         <div className="space-y-5 p-5">
@@ -294,51 +345,69 @@ function SubAgentCard({
   onChange: (patch: Partial<SubAgent>) => void;
   onRemove: () => void;
 }) {
+  // Start expanded only when the subagent is still blank (e.g. just added),
+  // so existing ones stay collapsed and the list reads as a compact accordion.
+  const [open, setOpen] = useState(
+    () => !subAgent.name.trim() && !subAgent.role.trim() && !subAgent.description.trim(),
+  );
+
   return (
-    <div className="space-y-4 rounded-lg border border-border/60 bg-card p-4">
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          {subAgent.name.trim() || `Subagent ${index + 1}`}
+    <section className="overflow-hidden rounded-lg border border-border/60 bg-card">
+      <div className="flex items-center gap-2 px-3 py-2">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          aria-label={open ? 'Collapse subagent' : 'Expand subagent'}
+          className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ChevronDown
+            className={cn('h-4 w-4 transition-transform', !open && '-rotate-90')}
+          />
+        </button>
+        <span className="shrink-0 text-xs font-medium tabular-nums text-muted-foreground">
+          #{index + 1}
         </span>
+        <input
+          value={subAgent.name}
+          onChange={(e) => onChange({ name: e.target.value })}
+          placeholder={`Subagent ${index + 1}`}
+          aria-label="Subagent name"
+          className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm font-medium placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-0"
+        />
         <Button
           type="button"
           variant="ghost"
-          size="sm"
+          size="icon"
           onClick={onRemove}
           aria-label="Remove subagent"
-          className="text-muted-foreground hover:text-destructive"
+          className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
         >
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Name" htmlFor={`sub-name-${subAgent.id}`}>
-          <Input
-            id={`sub-name-${subAgent.id}`}
-            value={subAgent.name}
-            onChange={(e) => onChange({ name: e.target.value })}
-            placeholder="Summariser"
-          />
-        </Field>
-        <Field label="Role" htmlFor={`sub-role-${subAgent.id}`}>
-          <Input
-            id={`sub-role-${subAgent.id}`}
-            value={subAgent.role}
-            onChange={(e) => onChange({ role: e.target.value })}
-            placeholder="Condenses long threads into a brief"
-          />
-        </Field>
-      </div>
+      {open ? (
+        <div className="space-y-4 border-t border-border/60 p-4">
+          <Field label="Role" htmlFor={`sub-role-${subAgent.id}`}>
+            <Input
+              id={`sub-role-${subAgent.id}`}
+              value={subAgent.role}
+              onChange={(e) => onChange({ role: e.target.value })}
+              placeholder="Condenses long threads into a brief"
+            />
+          </Field>
 
-      <MarkdownField
-        label="Description"
-        hint="The full system prompt for this subagent."
-        value={subAgent.description}
-        onChange={(v) => onChange({ description: v })}
-        placeholder="You are a summariser. Given a transcript, produce a tight, faithful summary…"
-      />
-    </div>
+          <MarkdownField
+            label="Description"
+            hint="The full system prompt for this subagent."
+            value={subAgent.description}
+            onChange={(v) => onChange({ description: v })}
+            placeholder="You are a summariser. Given a transcript, produce a tight, faithful summary…"
+          />
+        </div>
+      ) : null}
+    </section>
   );
 }
 

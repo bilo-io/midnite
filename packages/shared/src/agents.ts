@@ -15,6 +15,27 @@ export const HeartbeatTriggerSourceSchema = z.enum(HEARTBEAT_TRIGGER_SOURCES);
 
 const HeartbeatIntervalSchema = z.number().int().min(HEARTBEAT_MIN_H).max(HEARTBEAT_MAX_H);
 
+// The CLI binary midnite launches inside a session terminal. A global preference
+// (not per-agent): which coding agent the user drives sessions with.
+export const AGENT_CLIS = ['claude', 'gemini', 'codex'] as const;
+export const AgentCliSchema = z.enum(AGENT_CLIS);
+export type AgentCli = z.infer<typeof AgentCliSchema>;
+export const AGENT_CLI_DEFAULT: AgentCli = 'claude';
+
+/** Human label for each CLI, for menus. */
+export const AGENT_CLI_LABEL: Record<AgentCli, string> = {
+  claude: 'Claude',
+  gemini: 'Gemini',
+  codex: 'Codex',
+};
+
+/** The shell command typed into a fresh session shell to launch each CLI. */
+export const AGENT_CLI_COMMAND: Record<AgentCli, string> = {
+  claude: 'claude',
+  gemini: 'gemini',
+  codex: 'codex',
+};
+
 /** The single orchestrator. Its description is the system prompt; the heartbeat
  *  prompt runs on `heartbeatIntervalH` when `heartbeatEnabled`. */
 export const PrimaryAgentSchema = z.object({
@@ -39,6 +60,8 @@ export const SubAgentSchema = z.object({
 });
 
 export const AgentsConfigSchema = z.object({
+  /** Global CLI preference launched in session terminals. */
+  cli: AgentCliSchema.default(AGENT_CLI_DEFAULT),
   primary: PrimaryAgentSchema,
   subAgents: z.array(SubAgentSchema),
 });
@@ -67,6 +90,9 @@ export const UpdatePrimaryAgentRequestSchema = z.object({
   heartbeatIntervalH: HeartbeatIntervalSchema.optional(),
 });
 
+// Set the global CLI preference. PUT /agents/cli.
+export const UpdateAgentCliRequestSchema = z.object({ cli: AgentCliSchema });
+
 // All fields optional so a blank subagent can be created and filled in later;
 // the service coalesces missing fields to empty strings.
 export const CreateSubAgentRequestSchema = z.object({
@@ -84,6 +110,7 @@ export const UpdateSubAgentRequestSchema = z.object({
 // --- Response envelopes (mirror ProjectResponse) ---
 
 export const AgentsConfigResponseSchema = z.object({ config: AgentsConfigSchema });
+export const AgentCliResponseSchema = z.object({ cli: AgentCliSchema });
 export const PrimaryAgentResponseSchema = z.object({ primary: PrimaryAgentSchema });
 export const SubAgentResponseSchema = z.object({ subAgent: SubAgentSchema });
 export const HeartbeatRunsResponseSchema = z.object({ runs: z.array(HeartbeatRunSchema) });
@@ -96,6 +123,8 @@ export type HeartbeatRun = z.infer<typeof HeartbeatRunSchema>;
 export type HeartbeatRunStatus = z.infer<typeof HeartbeatRunStatusSchema>;
 export type HeartbeatTriggerSource = z.infer<typeof HeartbeatTriggerSourceSchema>;
 export type UpdatePrimaryAgentRequest = z.infer<typeof UpdatePrimaryAgentRequestSchema>;
+export type UpdateAgentCliRequest = z.infer<typeof UpdateAgentCliRequestSchema>;
+export type AgentCliResponse = z.infer<typeof AgentCliResponseSchema>;
 export type CreateSubAgentRequest = z.infer<typeof CreateSubAgentRequestSchema>;
 export type UpdateSubAgentRequest = z.infer<typeof UpdateSubAgentRequestSchema>;
 export type AgentsConfigResponse = z.infer<typeof AgentsConfigResponseSchema>;

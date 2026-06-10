@@ -61,48 +61,44 @@ export function SessionTerminalModal({ session, onClose, onArchiveToggle, onDele
             <SessionStatusDot status={session.status} />
             <div className="min-w-0 flex-1">
               <h2 className="truncate text-sm font-semibold leading-tight">{session.title}</h2>
-              <p className="truncate text-xs text-muted-foreground">
-                <span className="font-mono">{session.projectDisplay}</span>
-                {' · '}
-                <span>live terminal</span>
-              </p>
+              <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="inline-flex shrink-0 items-center rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                  Session
+                </span>
+                <span className="truncate font-mono">{session.projectDisplay}</span>
+              </div>
             </div>
-            {session.linkedTaskId ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={goToTask}
-                className="shrink-0 text-muted-foreground"
-              >
-                <ListTodo className="h-3.5 w-3.5" /> Go to task
+            <div className="flex shrink-0 items-center gap-1.5">
+              {session.linkedTaskId ? (
+                <Button type="button" variant="secondary" size="sm" onClick={goToTask}>
+                  <ListTodo className="h-3.5 w-3.5" />
+                  Task
+                </Button>
+              ) : null}
+              {onArchiveToggle ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={onArchiveToggle}
+                  aria-label={session.archivedAt ? 'Unarchive session' : 'Archive session'}
+                  title={session.archivedAt ? 'Unarchive' : 'Archive'}
+                  className="text-muted-foreground"
+                >
+                  {session.archivedAt ? (
+                    <ArchiveRestore className="h-4 w-4" />
+                  ) : (
+                    <Archive className="h-4 w-4" />
+                  )}
+                </Button>
+              ) : null}
+              {onDelete && session.archivedAt ? (
+                <DeleteConfirmButton noun="session" onConfirm={onDelete} />
+              ) : null}
+              <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
+                <X className="h-4 w-4" />
               </Button>
-            ) : null}
-            {onArchiveToggle ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={onArchiveToggle}
-                className="shrink-0 text-muted-foreground"
-              >
-                {session.archivedAt ? (
-                  <>
-                    <ArchiveRestore className="h-3.5 w-3.5" /> Unarchive
-                  </>
-                ) : (
-                  <>
-                    <Archive className="h-3.5 w-3.5" /> Archive
-                  </>
-                )}
-              </Button>
-            ) : null}
-            {onDelete && session.archivedAt ? (
-              <DeleteConfirmButton onConfirm={onDelete} />
-            ) : null}
-            <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
+            </div>
           </header>
 
           <div

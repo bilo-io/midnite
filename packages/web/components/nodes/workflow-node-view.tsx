@@ -62,13 +62,21 @@ export function WorkflowNodeView({ data, selected }: NodeProps<AppNode>) {
   const inputPort = def?.inputs[0];
   const outputPorts = def?.outputs ?? [];
   const multiOutput = outputPorts.length > 1;
+  const runClass =
+    data.status === 'running'
+      ? 'node-running'
+      : data.status === 'succeeded'
+        ? 'node-succeeded'
+        : data.status === 'failed'
+          ? 'node-failed'
+          : 'border-border';
 
   return (
     <div
       className={cn(
-        'min-w-[190px] max-w-[260px] rounded-lg border bg-card/85 shadow-sm backdrop-blur-sm transition-all duration-200 motion-reduce:transition-none',
+        'relative min-w-[190px] max-w-[260px] rounded-lg border bg-card/85 shadow-sm backdrop-blur-sm transition-all duration-200 motion-reduce:transition-none',
         selected ? 'ring-1 ring-ring' : '',
-        data.status === 'failed' ? 'border-destructive/60' : 'border-border',
+        runClass,
       )}
       style={{ ['--node-hue' as string]: `var(${hueVar})` }}
     >

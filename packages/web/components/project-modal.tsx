@@ -21,6 +21,7 @@ import {
   removeProjectSource,
   updateProject,
 } from '@/lib/api';
+import { useConfirm } from '@/components/confirm-dialog';
 import { cn } from '@/lib/utils';
 
 const SWATCHES = [
@@ -69,8 +70,8 @@ export function ProjectModal({ project, onClose, onSaved }: Props) {
   const [aiLoading, setAiLoading] = useState(false);
   const [sourceBusy, setSourceBusy] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const confirm = useConfirm();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -119,6 +120,12 @@ export function ProjectModal({ project, onClose, onSaved }: Props) {
 
   const removeExisting = async (sourceId: string) => {
     if (!current) return;
+    const ok = await confirm({
+      title: 'Remove this source?',
+      description: 'It will be detached from this project.',
+      confirmLabel: 'Remove',
+    });
+    if (!ok) return;
     setSourceBusy(true);
     try {
       setCurrent(await removeProjectSource(current.id, sourceId));
@@ -182,6 +189,12 @@ export function ProjectModal({ project, onClose, onSaved }: Props) {
 
   const remove = async () => {
     if (!current) return;
+    const ok = await confirm({
+      title: 'Delete this project?',
+      description: `“${current.name}” and its sources will be permanently deleted. This can’t be undone.`,
+      confirmLabel: 'Delete project',
+    });
+    if (!ok) return;
     setSaving(true);
     setError(null);
     try {
@@ -489,39 +502,17 @@ export function ProjectModal({ project, onClose, onSaved }: Props) {
           <footer className="flex items-center justify-between gap-2 border-t border-border/60 px-5 py-3.5">
             <div>
               {isEdit ? (
-                confirmDelete ? (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">Delete?</span>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => void remove()}
-                      disabled={saving}
-                    >
-                      Confirm
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setConfirmDelete(false)}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setConfirmDelete(true)}
-                    className="gap-1.5 text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Delete
-                  </Button>
-                )
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => void remove()}
+                  disabled={saving}
+                  className="gap-1.5 text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </Button>
               ) : null}
             </div>
             <div className="flex items-center gap-2">
