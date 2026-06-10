@@ -165,6 +165,8 @@ export function RecentProjects({
       {editProject ? (
         <ProjectModal
           project={editProject}
+          tasks={tasks.filter((t) => t.projectId === editProject.id)}
+          onSelectTask={(task) => router.push(`/tasks?open=${task.id}`)}
           onClose={() => setEditProject(null)}
           onSaved={() => router.refresh()}
         />

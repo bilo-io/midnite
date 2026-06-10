@@ -157,6 +157,11 @@ export function ProjectsView({ initial, tasks }: { initial: Project[]; tasks: Ta
       {modalOpen ? (
         <ProjectModal
           project={creating ? null : editProject}
+          tasks={editProject ? tasks.filter((t) => t.projectId === editProject.id) : []}
+          onSelectTask={(task) => {
+            closeModal();
+            setSelectedTask(task);
+          }}
           onClose={closeModal}
           onSaved={refresh}
         />

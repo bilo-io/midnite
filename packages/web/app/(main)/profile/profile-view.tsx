@@ -64,7 +64,7 @@ export function ProfileView() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Sparkles className="h-3.5 w-3.5" />
-            Claude guidelines
+            Agent guidelines
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">

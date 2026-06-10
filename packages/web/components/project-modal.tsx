@@ -7,12 +7,14 @@ import {
   MAX_TAG_LENGTH,
   detectSourceKind,
   type Project,
+  type Task,
 } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { FolderPicker } from '@/components/folder-picker';
 import { ProjectTag } from '@/components/project-tag';
 import { SourceIcon } from '@/components/source-icon';
+import { TaskRow } from '@/components/task-row';
 import {
   addProjectSource,
   createProject,
@@ -46,13 +48,17 @@ function errMsg(e: unknown): string {
 type Props = {
   /** Edit an existing project, or create a new one when null. */
   project: Project | null;
+  /** Tasks belonging to this project (edit mode only) — shown under the Tasks tab. */
+  tasks?: Task[];
+  /** Optional: open a task from the Tasks tab. Rows are static when omitted. */
+  onSelectTask?: (task: Task) => void;
   onClose: () => void;
   onSaved: () => void;
 };
 
-type Tab = 'details' | 'sources';
+type Tab = 'details' | 'sources' | 'tasks';
 
-export function ProjectModal({ project, onClose, onSaved }: Props) {
+export function ProjectModal({ project, tasks, onSelectTask, onClose, onSaved }: Props) {
   const isEdit = project !== null;
 
   const [tab, setTab] = useState<Tab>('details');
@@ -83,6 +89,10 @@ export function ProjectModal({ project, onClose, onSaved }: Props) {
   }, [onClose, picking]);
 
   const sourceCount = isEdit ? current?.sources.length ?? 0 : staged.length;
+  const taskCount = tasks?.length ?? 0;
+  // The Tasks tab only makes sense for an existing project.
+  const tabs: Tab[] = isEdit ? ['details', 'sources', 'tasks'] : ['details', 'sources'];
+  const tabCounts: Partial<Record<Tab, number>> = { sources: sourceCount, tasks: taskCount };
   const atLimit = sourceCount >= MAX_SOURCES_PER_PROJECT;
   const tagTooLong = tag.trim().length > MAX_TAG_LENGTH;
   const canSave = name.trim().length > 0 && tag.trim().length > 0 && !tagTooLong;
@@ -230,29 +240,32 @@ export function ProjectModal({ project, onClose, onSaved }: Props) {
           </header>
 
           <div role="tablist" aria-label="Project sections" className="flex items-center gap-1 border-b border-border/60 px-3">
-            {(['details', 'sources'] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                role="tab"
-                aria-selected={tab === t}
-                onClick={() => setTab(t)}
-                className={cn(
-                  'relative px-3 py-2 text-xs font-medium capitalize transition-colors',
-                  tab === t ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
-                )}
-              >
-                {t}
-                {t === 'sources' && sourceCount > 0 ? (
-                  <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] tabular-nums text-muted-foreground">
-                    {sourceCount}
-                  </span>
-                ) : null}
-                {tab === t ? (
-                  <span aria-hidden className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-foreground" />
-                ) : null}
-              </button>
-            ))}
+            {tabs.map((t) => {
+              const count = tabCounts[t];
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === t}
+                  onClick={() => setTab(t)}
+                  className={cn(
+                    'relative px-3 py-2 text-xs font-medium capitalize transition-colors',
+                    tab === t ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  {t}
+                  {count ? (
+                    <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] tabular-nums text-muted-foreground">
+                      {count}
+                    </span>
+                  ) : null}
+                  {tab === t ? (
+                    <span aria-hidden className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-foreground" />
+                  ) : null}
+                </button>
+              );
+            })}
           </div>
 
           <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
@@ -495,6 +508,28 @@ export function ProjectModal({ project, onClose, onSaved }: Props) {
                     ))}
               </ul>
             </div>
+
+            {/* Tasks */}
+            {isEdit ? (
+              <div role="tabpanel" className={cn('space-y-2', tab === 'tasks' ? '' : 'hidden')}>
+                {taskCount === 0 ? (
+                  <div className="rounded-lg border border-dashed border-border/60 p-8 text-center text-sm text-muted-foreground">
+                    No tasks in this project yet.
+                  </div>
+                ) : (
+                  <div className="overflow-hidden rounded-lg border bg-card">
+                    {(tasks ?? []).map((t) => (
+                      <TaskRow
+                        key={t.id}
+                        task={t}
+                        onSelect={onSelectTask ? () => onSelectTask(t) : undefined}
+                        showStatus
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : null}
 
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
           </div>
