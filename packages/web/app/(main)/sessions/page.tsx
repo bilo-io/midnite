@@ -24,7 +24,7 @@ export default async function SessionsPage() {
         description="One session per task — its status follows the task (in progress, awaiting input, completed, or idle)."
         actions={<SearchBar placeholder="Search sessions" />}
       />
-      <div className="container space-y-6 pb-8 pt-2">
+      <div className="reveal-staged container space-y-6 pb-8 pt-2">
         {error && (
           <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
             Could not reach the gateway: {error}

@@ -22,7 +22,7 @@ export default async function WorkflowsPage() {
         description="Build automations that run on a schedule, a webhook, or on demand."
         actions={<SearchBar placeholder="Search workflows" />}
       />
-      <div className="container space-y-6 pb-8 pt-2">
+      <div className="reveal-staged container space-y-6 pb-8 pt-2">
         {error && (
           <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
             Could not reach the gateway: {error}

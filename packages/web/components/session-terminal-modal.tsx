@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { Archive, ArchiveRestore, ListTodo, X } from 'lucide-react';
 import type { SessionSummary } from '@midnite/shared';
@@ -42,7 +43,14 @@ export function SessionTerminalModal({ session, onClose, onArchiveToggle, onDele
     return () => clearTimeout(t);
   }, []);
 
-  return (
+  // Portal to <body>: this modal is rendered deep inside `.page-reveal`, whose
+  // card-rise animation leaves a persisted `transform` on an ancestor. That
+  // transform becomes the containing block for `position: fixed` (docking the
+  // modal to the transformed box instead of the viewport) and a stacking context
+  // (letting the page header paint over it). Portaling escapes both.
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <>
       <div
         className="fixed inset-0 z-50 bg-background/40 backdrop-blur-md"
@@ -110,6 +118,7 @@ export function SessionTerminalModal({ session, onClose, onArchiveToggle, onDele
           </div>
         </div>
       </div>
-    </>
+    </>,
+    document.body,
   );
 }

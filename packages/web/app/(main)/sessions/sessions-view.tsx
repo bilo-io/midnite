@@ -246,7 +246,7 @@ export function SessionsView({
   return (
     <div className="space-y-4">
       {initial.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+        <div className="reveal-controls flex flex-wrap items-center gap-x-6 gap-y-2">
           {projects.length > 0 ? <ProjectMultiSelect options={projectFilters} /> : null}
           <FilterPills options={SESSION_FILTERS} />
           <FilterPills
@@ -257,7 +257,7 @@ export function SessionsView({
         </div>
       ) : null}
 
-      <div className="flex items-center justify-between gap-3">
+      <div className="reveal-controls flex items-center justify-between gap-3">
         <p className="text-xs text-muted-foreground tabular-nums">{plural(sessions.length, 'session')}</p>
         <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
           <Button
@@ -296,39 +296,41 @@ export function SessionsView({
         </div>
       </div>
 
-      {initial.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border/60 p-12 text-center text-sm text-muted-foreground">
-          No tasks yet — create a task and its session shows up here.
-        </div>
-      ) : view === 'table' ? (
-        <SortableAccordions sections={sections} storageKey="midnite.sessions.sections" />
-      ) : sessions.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border/60 p-12 text-center text-sm text-muted-foreground">
-          No sessions match this filter.
-        </div>
-      ) : view === 'list' ? (
-        <div className="flex flex-col gap-2">
-          {sessions.map((s) => (
-            <SessionCard
-              key={`${s.projectSlug}/${s.id}`}
-              session={s}
-              layout="list"
-              onClick={() => onSelect(s)}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {sessions.map((s) => (
-            <SessionCard
-              key={`${s.projectSlug}/${s.id}`}
-              session={s}
-              layout="grid"
-              onClick={() => onSelect(s)}
-            />
-          ))}
-        </div>
-      )}
+      <div className="reveal-content">
+        {initial.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border/60 p-12 text-center text-sm text-muted-foreground">
+            No tasks yet — create a task and its session shows up here.
+          </div>
+        ) : view === 'table' ? (
+          <SortableAccordions sections={sections} storageKey="midnite.sessions.sections" />
+        ) : sessions.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border/60 p-12 text-center text-sm text-muted-foreground">
+            No sessions match this filter.
+          </div>
+        ) : view === 'list' ? (
+          <div className="flex flex-col gap-2">
+            {sessions.map((s) => (
+              <SessionCard
+                key={`${s.projectSlug}/${s.id}`}
+                session={s}
+                layout="list"
+                onClick={() => onSelect(s)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {sessions.map((s) => (
+              <SessionCard
+                key={`${s.projectSlug}/${s.id}`}
+                session={s}
+                layout="grid"
+                onClick={() => onSelect(s)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
       {selected ? (
         isActive(selected.status) ? (

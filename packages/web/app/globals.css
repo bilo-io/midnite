@@ -217,6 +217,61 @@
     animation: card-rise 0.5s ease-out forwards;
   }
 
+  /* Page-navigation reveal (see PageReveal). Cascades the content sibling(s) that
+     follow the sticky page header — so the header keeps its own typewriter intro and
+     is never wrapped in a transform. Most pages have a single content block (one clean
+     reveal); pages with several top-level sections stagger in sequence. */
+  .page-reveal header ~ * {
+    opacity: 0;
+    animation: card-rise 0.45s ease-out both;
+  }
+  .page-reveal header ~ *:nth-child(2) {
+    animation-delay: 60ms;
+  }
+  .page-reveal header ~ *:nth-child(3) {
+    animation-delay: 150ms;
+  }
+  .page-reveal header ~ *:nth-child(4) {
+    animation-delay: 240ms;
+  }
+  .page-reveal header ~ *:nth-child(n + 5) {
+    animation-delay: 320ms;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .page-reveal header ~ * {
+      opacity: 1;
+      animation: none;
+    }
+  }
+
+  /* Two-stage page reveal. List pages (tasks, sessions, projects, workflows)
+     stage their own entrance: the controls bar (filters + view toggle) eases in
+     first, then the main content follows once the controls have settled. The
+     content wrapper is marked `.reveal-staged` to opt out of the whole-block
+     fade above — otherwise that fade would mask the inner stages. */
+  .page-reveal .reveal-staged {
+    opacity: 1;
+    animation: none;
+  }
+  .reveal-controls,
+  .reveal-content {
+    opacity: 0;
+    animation: card-rise 0.45s ease-out both;
+  }
+  .reveal-controls {
+    animation-delay: 60ms;
+  }
+  .reveal-content {
+    animation-delay: 300ms;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal-controls,
+    .reveal-content {
+      opacity: 1;
+      animation: none;
+    }
+  }
+
   /* Hide the scrollbar while keeping the element scrollable (used by the
      horizontally-scrolling feature-list-request pills). */
   .no-scrollbar {

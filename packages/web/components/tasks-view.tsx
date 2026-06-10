@@ -134,8 +134,8 @@ export function TasksView({
   };
 
   return (
-    <div className="container flex min-h-0 flex-1 flex-col gap-4 pb-4 pt-2">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="reveal-staged container flex min-h-0 flex-1 flex-col gap-4 pb-4 pt-2">
+      <div className="reveal-controls flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
           {projects.length > 0 && <ProjectMultiSelect options={projectFilters} />}
           <FilterPills options={STATUS_FILTERS} paramKey="status" />
@@ -164,13 +164,15 @@ export function TasksView({
         </div>
       )}
 
-      {view === 'table' ? (
-        <TableView {...viewProps} />
-      ) : view === 'list' ? (
-        <ListView {...viewProps} />
-      ) : (
-        <BoardView {...viewProps} />
-      )}
+      <div className="reveal-content flex min-h-0 flex-1 flex-col">
+        {view === 'table' ? (
+          <TableView {...viewProps} />
+        ) : view === 'list' ? (
+          <ListView {...viewProps} />
+        ) : (
+          <BoardView {...viewProps} />
+        )}
+      </div>
 
       {selected ? (
         <TaskThreadModal

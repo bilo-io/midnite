@@ -40,7 +40,7 @@ export function WorkflowsView({ initial }: { initial: WorkflowSummary[] }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
+      <div className="reveal-controls flex items-center justify-between gap-3">
         <p className="text-xs tabular-nums text-muted-foreground">
           {filtered.length} workflow{filtered.length === 1 ? '' : 's'}
         </p>
@@ -87,35 +87,37 @@ export function WorkflowsView({ initial }: { initial: WorkflowSummary[] }) {
         </div>
       </div>
 
-      {initial.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border/60 p-12 text-center">
-          <p className="text-sm text-muted-foreground">
-            No workflows yet. Build an automation that runs on a schedule, a webhook, or on demand.
-          </p>
-          <Button type="button" size="sm" onClick={() => setCreating(true)}>
-            <Plus className="h-4 w-4" />
-            New workflow
-          </Button>
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border/60 p-12 text-center text-sm text-muted-foreground">
-          No workflows match “{q}”.
-        </div>
-      ) : view === 'table' ? (
-        <WorkflowsTable workflows={filtered} />
-      ) : view === 'list' ? (
-        <div className="flex flex-col gap-2">
-          {filtered.map((w) => (
-            <WorkflowCard key={w.id} workflow={w} layout="list" />
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((w) => (
-            <WorkflowCard key={w.id} workflow={w} layout="grid" />
-          ))}
-        </div>
-      )}
+      <div className="reveal-content">
+        {initial.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border/60 p-12 text-center">
+            <p className="text-sm text-muted-foreground">
+              No workflows yet. Build an automation that runs on a schedule, a webhook, or on demand.
+            </p>
+            <Button type="button" size="sm" onClick={() => setCreating(true)}>
+              <Plus className="h-4 w-4" />
+              New workflow
+            </Button>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border/60 p-12 text-center text-sm text-muted-foreground">
+            No workflows match “{q}”.
+          </div>
+        ) : view === 'table' ? (
+          <WorkflowsTable workflows={filtered} />
+        ) : view === 'list' ? (
+          <div className="flex flex-col gap-2">
+            {filtered.map((w) => (
+              <WorkflowCard key={w.id} workflow={w} layout="list" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {filtered.map((w) => (
+              <WorkflowCard key={w.id} workflow={w} layout="grid" />
+            ))}
+          </div>
+        )}
+      </div>
 
       {creating ? <WorkflowCreateModal onClose={() => setCreating(false)} /> : null}
     </div>

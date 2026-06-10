@@ -57,7 +57,7 @@ export function ProjectsView({ initial, tasks }: { initial: Project[]; tasks: Ta
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
+      <div className="reveal-controls flex items-center justify-between gap-3">
         <p className="text-xs tabular-nums text-muted-foreground">
           {filtered.length} project{filtered.length === 1 ? '' : 's'}
         </p>
@@ -104,53 +104,55 @@ export function ProjectsView({ initial, tasks }: { initial: Project[]; tasks: Ta
         </div>
       </div>
 
-      {initial.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border/60 p-12 text-center">
-          <p className="text-sm text-muted-foreground">
-            No projects yet. Create one to group tasks, attach sources, and draft a plan.
-          </p>
-          <Button type="button" size="sm" onClick={() => setCreating(true)}>
-            <Plus className="h-4 w-4" />
-            New project
-          </Button>
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border/60 p-12 text-center text-sm text-muted-foreground">
-          No projects match “{q}”.
-        </div>
-      ) : view === 'table' ? (
-        <ProjectsTree
-          projects={filtered}
-          tasks={tasks}
-          onEdit={setEditProject}
-          onPlan={setPlanProject}
-          onSelectTask={setSelectedTask}
-        />
-      ) : view === 'list' ? (
-        <div className="flex flex-col gap-2">
-          {filtered.map((p) => (
-            <ProjectCard
-              key={p.id}
-              project={p}
-              layout="list"
-              onOpen={() => setEditProject(p)}
-              onPlan={() => setPlanProject(p)}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((p) => (
-            <ProjectCard
-              key={p.id}
-              project={p}
-              layout="grid"
-              onOpen={() => setEditProject(p)}
-              onPlan={() => setPlanProject(p)}
-            />
-          ))}
-        </div>
-      )}
+      <div className="reveal-content">
+        {initial.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border/60 p-12 text-center">
+            <p className="text-sm text-muted-foreground">
+              No projects yet. Create one to group tasks, attach sources, and draft a plan.
+            </p>
+            <Button type="button" size="sm" onClick={() => setCreating(true)}>
+              <Plus className="h-4 w-4" />
+              New project
+            </Button>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border/60 p-12 text-center text-sm text-muted-foreground">
+            No projects match “{q}”.
+          </div>
+        ) : view === 'table' ? (
+          <ProjectsTree
+            projects={filtered}
+            tasks={tasks}
+            onEdit={setEditProject}
+            onPlan={setPlanProject}
+            onSelectTask={setSelectedTask}
+          />
+        ) : view === 'list' ? (
+          <div className="flex flex-col gap-2">
+            {filtered.map((p) => (
+              <ProjectCard
+                key={p.id}
+                project={p}
+                layout="list"
+                onOpen={() => setEditProject(p)}
+                onPlan={() => setPlanProject(p)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {filtered.map((p) => (
+              <ProjectCard
+                key={p.id}
+                project={p}
+                layout="grid"
+                onOpen={() => setEditProject(p)}
+                onPlan={() => setPlanProject(p)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
       {modalOpen ? (
         <ProjectModal
