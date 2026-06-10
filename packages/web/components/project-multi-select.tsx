@@ -1,10 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Check, ChevronDown } from 'lucide-react';
 import type { FilterOption } from '@/components/filter-pills';
 import { cn } from '@/lib/utils';
+
+type Rect = { top: number; left: number };
 
 /**
  * A themed multi-select dropdown backed by the URL query string (default
@@ -27,28 +30,46 @@ export function ProjectMultiSelect({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [rect, setRect] = useState<Rect | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const valid = new Set(options.map((o) => o.value));
   const raw = searchParams.get(paramKey);
   const active = new Set((raw ? raw.split(',') : []).filter((v) => valid.has(v)));
   const selected = options.filter((o) => active.has(o.value));
 
+  // The menu renders in a portal with fixed positioning so it never gets clipped
+  // or trapped behind sibling content (e.g. the page-reveal staged wrappers).
+  const place = useCallback(() => {
+    const el = triggerRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    setRect({ top: r.bottom + 4, left: r.left });
+  }, []);
+
   useEffect(() => {
     if (!open) return;
+    place();
     const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const t = e.target as Node;
+      if (triggerRef.current?.contains(t) || menuRef.current?.contains(t)) return;
+      setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setOpen(false);
     };
+    window.addEventListener('scroll', place, true);
+    window.addEventListener('resize', place);
     document.addEventListener('mousedown', onDown);
     document.addEventListener('keydown', onKey);
     return () => {
+      window.removeEventListener('scroll', place, true);
+      window.removeEventListener('resize', place);
       document.removeEventListener('mousedown', onDown);
       document.removeEventListener('keydown', onKey);
     };
-  }, [open]);
+  }, [open, place]);
 
   const apply = useCallback(
     (next: Set<string>) => {
@@ -74,8 +95,9 @@ export function ProjectMultiSelect({
   const dotColor = (o: FilterOption) => o.color ?? `hsl(${o.hue})`;
 
   return (
-    <div ref={ref} className={cn('relative', className)}>
+    <div className={cn('relative', className)}>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
@@ -107,52 +129,57 @@ export function ProjectMultiSelect({
         />
       </button>
 
-      {open && (
-        <div
-          role="listbox"
-          aria-multiselectable
-          className="absolute left-0 z-50 mt-1 max-h-72 w-56 overflow-auto rounded-md border border-border bg-card p-1 shadow-lg"
-        >
-          <button
-            type="button"
-            role="option"
-            aria-selected={active.size === 0}
-            onClick={() => apply(new Set())}
-            className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs text-muted-foreground hover:bg-accent/60 hover:text-foreground"
-          >
-            <span className="flex h-3.5 w-3.5 items-center justify-center">
-              {active.size === 0 ? <Check className="h-3.5 w-3.5" /> : null}
-            </span>
-            {placeholder}
-          </button>
-          {options.map((o) => {
-            const on = active.has(o.value);
-            return (
+      {open && rect
+        ? createPortal(
+            <div
+              ref={menuRef}
+              role="listbox"
+              aria-multiselectable
+              style={{ position: 'fixed', top: rect.top, left: rect.left }}
+              className="z-[60] max-h-72 w-56 overflow-auto rounded-md border border-border bg-card p-1 shadow-lg"
+            >
               <button
-                key={o.value}
                 type="button"
                 role="option"
-                aria-selected={on}
-                onClick={() => toggle(o.value)}
-                className={cn(
-                  'flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs hover:bg-accent/60',
-                  on ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
-                )}
+                aria-selected={active.size === 0}
+                onClick={() => apply(new Set())}
+                className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs text-muted-foreground hover:bg-accent/60 hover:text-foreground"
               >
                 <span className="flex h-3.5 w-3.5 items-center justify-center">
-                  {on ? <Check className="h-3.5 w-3.5" /> : null}
+                  {active.size === 0 ? <Check className="h-3.5 w-3.5" /> : null}
                 </span>
-                <span
-                  aria-hidden
-                  className="h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ background: dotColor(o) }}
-                />
-                <span className="truncate">{o.label}</span>
+                {placeholder}
               </button>
-            );
-          })}
-        </div>
-      )}
+              {options.map((o) => {
+                const on = active.has(o.value);
+                return (
+                  <button
+                    key={o.value}
+                    type="button"
+                    role="option"
+                    aria-selected={on}
+                    onClick={() => toggle(o.value)}
+                    className={cn(
+                      'flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs hover:bg-accent/60',
+                      on ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
+                    )}
+                  >
+                    <span className="flex h-3.5 w-3.5 items-center justify-center">
+                      {on ? <Check className="h-3.5 w-3.5" /> : null}
+                    </span>
+                    <span
+                      aria-hidden
+                      className="h-2.5 w-2.5 shrink-0 rounded-full"
+                      style={{ background: dotColor(o) }}
+                    />
+                    <span className="truncate">{o.label}</span>
+                  </button>
+                );
+              })}
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

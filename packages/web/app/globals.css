@@ -206,7 +206,9 @@
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    /* `none` (not translateY(0)) so the settled element forms no stacking
+       context — otherwise overflowing menus get trapped behind later siblings. */
+    transform: none;
   }
 }
 
