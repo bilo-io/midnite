@@ -125,6 +125,7 @@ export class TasksController {
     let prompt = '';
     let repo: string | undefined;
     let projectId: string | undefined;
+    let status: Status | undefined;
     const savedFiles: Array<{
       path: string;
       relPath: string;
@@ -157,6 +158,13 @@ export class TasksController {
           if (part.fieldname === 'prompt') prompt = String(part.value ?? '');
           if (part.fieldname === 'repo') repo = String(part.value ?? '');
           if (part.fieldname === 'projectId') projectId = String(part.value ?? '');
+          if (part.fieldname === 'status') {
+            const parsed = StatusSchema.safeParse(String(part.value ?? ''));
+            if (!parsed.success) {
+              throw new BadRequestException(`invalid status: ${String(part.value)}`);
+            }
+            status = parsed.data;
+          }
         }
       }
 
@@ -168,6 +176,7 @@ export class TasksController {
         prompt: prompt.trim(),
         repo: repo?.trim() || undefined,
         projectId: projectId?.trim() || undefined,
+        status,
         images: savedFiles.map((f) => ({
           path: f.relPath,
           mime: f.mime,

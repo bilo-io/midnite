@@ -212,6 +212,16 @@
     opacity: 0;
     animation: card-rise 0.5s ease-out forwards;
   }
+
+  /* Hide the scrollbar while keeping the element scrollable (used by the
+     horizontally-scrolling feature-list-request pills). */
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* The default "orbit" spinner is driven entirely in JS (a single rAF loop that

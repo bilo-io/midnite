@@ -2,34 +2,36 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { Activity, Mic, MicOff, Paperclip, Send, X } from 'lucide-react';
+import { Activity, ListPlus, Mic, MicOff, Paperclip, X } from 'lucide-react';
 import type { Project } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ProjectSelect } from '@/components/project-select';
 import { cn } from '@/lib/utils';
-import { createTask, pingAgent } from '@/lib/api';
+import { pingAgent } from '@/lib/api';
 import { useSpeechRecognition } from '@/lib/use-speech-recognition';
-
-type Phase = 'idle' | 'submitting';
-
-function splitTasks(input: string): string[] {
-  return input
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean);
-}
+import { useFeatureDrafts, draftTasks } from '@/lib/feature-drafts';
+import { FeatureListPills } from '@/components/feature-list-pills';
+import { FeatureListModal } from '@/components/feature-list-modal';
 
 export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
   const router = useRouter();
   const [text, setText] = React.useState('');
   const [projectId, setProjectId] = React.useState<string | null>(null);
   const [files, setFiles] = React.useState<File[]>([]);
-  const [phase, setPhase] = React.useState<Phase>('idle');
   const [error, setError] = React.useState<string | null>(null);
   const [pinging, setPinging] = React.useState(false);
   const [pingResult, setPingResult] = React.useState<{ ok: boolean; text: string } | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Parked feature-list requests live client-side until the user crafts them
+  // into tasks from the modal. Images picked in the composer are carried per
+  // draft in-memory only (this session) — text/name persist across reloads.
+  const drafts = useFeatureDrafts();
+  const [openId, setOpenId] = React.useState<string | null>(null);
+  const imagesByDraft = React.useRef<Map<string, File[]>>(new Map());
+
+  const openDraft = openId ? drafts.drafts.find((d) => d.id === openId) ?? null : null;
 
   // Intro: start centered + compact, then settle to the bottom at full height.
   // Only once that settle transition (≈700ms) finishes do the bottom-left icon
@@ -79,34 +81,19 @@ export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
     setFiles((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  const lines = splitTasks(text);
-  const taskCount = lines.length;
+  const taskCount = draftTasks(text).length;
 
-  const submit = async () => {
-    if (taskCount === 0 || phase === 'submitting') return;
-    setPhase('submitting');
+  // Pressing submit parks the prompt as a feature-list request (a pill) — it
+  // does not craft tasks yet. That happens from the draft's modal.
+  const submit = () => {
+    if (taskCount === 0) return;
     setError(null);
-    try {
-      // Images are attached to the first task only; subsequent tasks are text-only.
-      await Promise.all(
-        lines.map((prompt, idx) => {
-          const form = new FormData();
-          form.append('prompt', prompt);
-          if (projectId) form.append('projectId', projectId);
-          if (idx === 0) {
-            for (const file of files) form.append('images', file, file.name);
-          }
-          return createTask(form);
-        }),
-      );
-      setText('');
-      setFiles([]);
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create task');
-    } finally {
-      setPhase('idle');
-    }
+    // Carry the chosen project onto the draft so the modal hands it to each
+    // crafted task. Images ride along in-memory for this session only.
+    const draft = drafts.add(text, undefined, projectId);
+    if (files.length > 0) imagesByDraft.current.set(draft.id, files);
+    setText('');
+    setFiles([]);
   };
 
   const ping = async () => {
@@ -127,18 +114,30 @@ export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
       e.preventDefault();
-      void submit();
+      submit();
     }
   };
 
-  const sendLabel =
-    phase === 'submitting'
-      ? 'Sending…'
-      : taskCount > 1
-        ? `Send ${taskCount}`
-        : 'Send';
+  const closeModal = () => setOpenId(null);
+
+  const deleteDraft = (id: string) => {
+    imagesByDraft.current.delete(id);
+    drafts.remove(id);
+    closeModal();
+  };
+
+  const committedDraft = (id: string) => {
+    imagesByDraft.current.delete(id);
+    drafts.remove(id);
+    closeModal();
+    router.refresh();
+  };
 
   return (
+    <>
+    {!intro && (
+      <FeatureListPills drafts={drafts.drafts} onOpen={(id) => setOpenId(id)} />
+    )}
     <div
       className="gradient-border rounded-xl shadow-sm transition-[transform,box-shadow] duration-700 ease-out focus-within:shadow-lg motion-reduce:transition-none"
       style={{ transform: intro ? 'translateY(-42dvh)' : 'translateY(0)' }}
@@ -149,7 +148,7 @@ export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
           value={text + (speech.interim ? ` ${speech.interim}` : '')}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={onKeyDown}
-          placeholder="Describe a task — one per line. (⌘/Ctrl+Enter to submit)"
+          placeholder="Describe a feature list — one task per line. (⌘/Ctrl+Enter to add)"
           rows={4}
           style={{ height: intro ? 50 : 100 }}
           className="min-h-0 resize-none border-0 bg-transparent p-0 text-base transition-[height] duration-700 ease-out focus-visible:ring-0 motion-reduce:transition-none"
@@ -248,14 +247,14 @@ export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
               </Button>
               <Button
                 type="button"
-                onClick={() => void submit()}
-                disabled={taskCount === 0 || phase === 'submitting'}
+                onClick={submit}
+                disabled={taskCount === 0}
                 size="sm"
                 className="cascade-item"
                 style={{ animationDelay: '180ms' }}
               >
-                <Send className="h-4 w-4" />
-                {sendLabel}
+                <ListPlus className="h-4 w-4" />
+                {taskCount > 1 ? `Add ${taskCount}` : 'Add'}
               </Button>
             </div>
           </div>
@@ -270,5 +269,17 @@ export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
       </div>
       </div>
     </div>
+
+    {openDraft && (
+      <FeatureListModal
+        draft={openDraft}
+        images={imagesByDraft.current.get(openDraft.id)}
+        onClose={closeModal}
+        onChange={(patch) => drafts.update(openDraft.id, patch)}
+        onDelete={() => deleteDraft(openDraft.id)}
+        onCommitted={() => committedDraft(openDraft.id)}
+      />
+    )}
+    </>
   );
 }

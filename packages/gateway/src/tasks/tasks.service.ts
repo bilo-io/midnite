@@ -8,6 +8,8 @@ export interface CreateTaskInput {
   prompt: string;
   repo?: string;
   projectId?: string;
+  /** Where the task should land. Defaults to 'todo' (picked up as agents free up). */
+  status?: Status;
   images: Array<ClassifierImage & { size: number; originalName?: string }>;
 }
 
@@ -115,7 +117,7 @@ export class TasksService {
       id,
       title: classified.title,
       kind: classified.kind,
-      status: 'todo',
+      status: input.status ?? 'todo',
       prompt: input.prompt,
       repo: input.repo ?? null,
       projectId: input.projectId ?? null,
