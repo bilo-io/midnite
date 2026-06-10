@@ -7,14 +7,24 @@ import {
   SOURCE_KIND_LABEL,
   parseGithubPr,
   parseGithubRepo,
+  type Project,
   type Status,
   type Task,
   type TaskEvent,
   type TaskLink,
 } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
+import { ProjectSelect } from '@/components/project-select';
 import { SourceIcon } from '@/components/source-icon';
-import { addTaskLink, gatewayUrl, removeTaskLink, updateTaskStatus } from '@/lib/api';
+import { DeleteConfirmButton } from '@/components/delete-confirm-button';
+import {
+  addTaskLink,
+  deleteTask,
+  gatewayUrl,
+  removeTaskLink,
+  updateTaskProject,
+  updateTaskStatus,
+} from '@/lib/api';
 
 const STATUS_HUE_VAR: Record<Status, string> = {
   backlog: '--status-backlog',
@@ -52,10 +62,11 @@ const KIND_HUE_VAR: Record<NonNullable<Task['kind']>, string> = {
 
 type Props = {
   task: Task;
+  projects: Project[];
   onClose: () => void;
 };
 
-export function TaskThreadModal({ task, onClose }: Props) {
+export function TaskThreadModal({ task, projects, onClose }: Props) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -75,6 +86,24 @@ export function TaskThreadModal({ task, onClose }: Props) {
   const [linkError, setLinkError] = useState<string | null>(null);
   const [statusBusy, setStatusBusy] = useState(false);
   const [statusError, setStatusError] = useState<string | null>(null);
+  const [projectId, setProjectId] = useState<string | null>(task.projectId ?? null);
+  const [projectBusy, setProjectBusy] = useState(false);
+
+  const reassign = async (next: string | null) => {
+    const prev = projectId;
+    setProjectId(next); // optimistic
+    setProjectBusy(true);
+    setStatusError(null);
+    try {
+      await updateTaskProject(task.id, next);
+      router.refresh();
+    } catch (e) {
+      setProjectId(prev); // roll back
+      setStatusError(e instanceof Error ? e.message : 'Failed to change project');
+    } finally {
+      setProjectBusy(false);
+    }
+  };
 
   // session.id === task.id; deep-link into the sessions board, which auto-opens it.
   const goToSession = () => {
@@ -92,6 +121,20 @@ export function TaskThreadModal({ task, onClose }: Props) {
     } catch (e) {
       setStatusError(e instanceof Error ? e.message : 'Failed to abandon task');
     } finally {
+      setStatusBusy(false);
+    }
+  };
+
+  // Permanent delete — only offered once the task is archived (e.g. abandoned).
+  const remove = async () => {
+    setStatusBusy(true);
+    setStatusError(null);
+    try {
+      await deleteTask(task.id);
+      router.refresh();
+      onClose();
+    } catch (e) {
+      setStatusError(e instanceof Error ? e.message : 'Failed to delete task');
       setStatusBusy(false);
     }
   };
@@ -179,6 +222,15 @@ export function TaskThreadModal({ task, onClose }: Props) {
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-1.5">
+              {projects.length > 0 ? (
+                <ProjectSelect
+                  projects={projects}
+                  value={projectId}
+                  onChange={(next) => void reassign(next)}
+                  disabled={projectBusy}
+                  align="right"
+                />
+              ) : null}
               <Button type="button" variant="secondary" size="sm" onClick={goToSession}>
                 <SquareTerminal className="h-3.5 w-3.5" />
                 Open session
@@ -195,6 +247,7 @@ export function TaskThreadModal({ task, onClose }: Props) {
                   Abandon
                 </Button>
               ) : null}
+              {task.archivedAt ? <DeleteConfirmButton onConfirm={() => void remove()} /> : null}
               <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
                 <X className="h-4 w-4" />
               </Button>

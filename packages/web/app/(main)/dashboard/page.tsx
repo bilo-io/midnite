@@ -1,13 +1,15 @@
+import type { Project } from '@midnite/shared';
 import { DashboardTiles } from '@/components/dashboard-tiles';
 import { PageHeader } from '@/components/page-header';
 import { PromptComposer } from '@/components/prompt-composer';
-import { getTaskCounts } from '@/lib/api';
+import { getProjects, getTaskCounts } from '@/lib/api';
 
 export default async function DashboardPage() {
   let counts;
+  let projects: Project[] = [];
   let error: string | null = null;
   try {
-    counts = await getTaskCounts();
+    [counts, projects] = await Promise.all([getTaskCounts(), getProjects()]);
   } catch (err) {
     error = err instanceof Error ? err.message : 'Failed to load task counts';
     counts = { backlog: 0, todo: 0, inProgress: 0, done: 0 };
@@ -35,7 +37,7 @@ export default async function DashboardPage() {
         <div className="bg-background/0 pb-6 pt-2">
           <div className="container">
             <div className="pointer-events-auto mx-auto w-full max-w-3xl">
-              <PromptComposer />
+              <PromptComposer projects={projects} />
             </div>
           </div>
         </div>

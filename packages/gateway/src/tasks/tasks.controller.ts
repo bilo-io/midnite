@@ -19,6 +19,7 @@ import { Inject } from '@nestjs/common';
 import {
   AddTaskLinkRequestSchema,
   StatusSchema,
+  UpdateTaskProjectRequestSchema,
   type CreateTaskResponse,
   type MidniteConfig,
   type Status,
@@ -80,6 +81,15 @@ export class TasksController {
     return this.service.updateStatus(id, parsed.data);
   }
 
+  @Patch(':id/project')
+  updateProject(@Param('id') id: string, @Body() body: unknown): Task {
+    const parsed = UpdateTaskProjectRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.message);
+    }
+    return this.service.setProject(id, parsed.data.projectId);
+  }
+
   @Post(':id/links')
   addLink(@Param('id') id: string, @Body() body: unknown): Task {
     const parsed = AddTaskLinkRequestSchema.safeParse(body);
@@ -92,6 +102,13 @@ export class TasksController {
   @Delete(':id/links/:linkId')
   removeLink(@Param('id') id: string, @Param('linkId') linkId: string): Task {
     return this.service.removeLink(id, linkId);
+  }
+
+  // Permanent delete — only valid once the task is archived (the service enforces).
+  @Delete(':id')
+  remove(@Param('id') id: string): { ok: true } {
+    this.service.deleteTask(id);
+    return { ok: true };
   }
 
   @Post()
@@ -107,6 +124,7 @@ export class TasksController {
 
     let prompt = '';
     let repo: string | undefined;
+    let projectId: string | undefined;
     const savedFiles: Array<{
       path: string;
       relPath: string;
@@ -138,6 +156,7 @@ export class TasksController {
         } else {
           if (part.fieldname === 'prompt') prompt = String(part.value ?? '');
           if (part.fieldname === 'repo') repo = String(part.value ?? '');
+          if (part.fieldname === 'projectId') projectId = String(part.value ?? '');
         }
       }
 
@@ -148,6 +167,7 @@ export class TasksController {
       const task = await this.service.createFromPrompt({
         prompt: prompt.trim(),
         repo: repo?.trim() || undefined,
+        projectId: projectId?.trim() || undefined,
         images: savedFiles.map((f) => ({
           path: f.relPath,
           mime: f.mime,

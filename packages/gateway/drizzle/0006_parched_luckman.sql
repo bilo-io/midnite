@@ -1,0 +1,1 @@
+ALTER TABLE `projects` ADD `work_dir` text;

@@ -9,6 +9,7 @@ import { ProjectCard } from '@/components/project-card';
 import { ProjectModal } from '@/components/project-modal';
 import { ProjectsTree } from '@/components/projects-tree';
 import { PlanPanel } from '@/components/plan-panel';
+import { TaskThreadModal } from '@/components/task-thread-modal';
 import { cn } from '@/lib/utils';
 
 type View = 'list' | 'grid' | 'table';
@@ -21,6 +22,7 @@ export function ProjectsView({ initial, tasks }: { initial: Project[]; tasks: Ta
   const [creating, setCreating] = useState(false);
   const [editProject, setEditProject] = useState<Project | null>(null);
   const [planProject, setPlanProject] = useState<Project | null>(null);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem(VIEW_STORAGE_KEY);
@@ -122,6 +124,7 @@ export function ProjectsView({ initial, tasks }: { initial: Project[]; tasks: Ta
           tasks={tasks}
           onEdit={setEditProject}
           onPlan={setPlanProject}
+          onSelectTask={setSelectedTask}
         />
       ) : view === 'list' ? (
         <div className="flex flex-col gap-2">
@@ -162,6 +165,14 @@ export function ProjectsView({ initial, tasks }: { initial: Project[]; tasks: Ta
           project={planProject}
           onClose={() => setPlanProject(null)}
           onChanged={refresh}
+        />
+      ) : null}
+
+      {selectedTask ? (
+        <TaskThreadModal
+          task={selectedTask}
+          projects={initial}
+          onClose={() => setSelectedTask(null)}
         />
       ) : null}
     </div>

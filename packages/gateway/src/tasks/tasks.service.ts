@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { detectSourceKind, type Status, type Task, type TaskCounts } from '@midnite/shared';
 import { TaskClassifier, type ClassifierImage } from '../agent/classifier.service';
@@ -7,6 +7,7 @@ import { TasksRepository } from './tasks.repository';
 export interface CreateTaskInput {
   prompt: string;
   repo?: string;
+  projectId?: string;
   images: Array<ClassifierImage & { size: number; originalName?: string }>;
 }
 
@@ -90,6 +91,17 @@ export class TasksService {
     return this.repo.hydrate(row);
   }
 
+  // Permanent deletion is gated on the task being archived first — the archive is
+  // the recoverable holding state; delete is the irreversible step past it.
+  deleteTask(id: string): void {
+    const row = this.repo.getTask(id);
+    if (!row) throw new NotFoundException(`task ${id} not found`);
+    if (!row.archivedAt) {
+      throw new BadRequestException('task must be archived before it can be deleted');
+    }
+    this.repo.deleteTask(id);
+  }
+
   async createFromPrompt(input: CreateTaskInput): Promise<Task> {
     const classified = await this.classifier.classify(
       input.prompt,
@@ -106,6 +118,7 @@ export class TasksService {
       status: 'todo',
       prompt: input.prompt,
       repo: input.repo ?? null,
+      projectId: input.projectId ?? null,
       agentId: null,
       sessionId: null,
       prUrl: null,
@@ -168,6 +181,23 @@ export class TasksService {
       data: JSON.stringify({ projectId: input.projectId, source: 'plan' }),
     });
 
+    return this.getTask(id);
+  }
+
+  // Reassign a task to a project (or clear it with null). The projectId isn't
+  // validated against projects here — domains don't share FKs, and the UI only
+  // offers existing projects; an unknown id simply renders no tag.
+  setProject(id: string, projectId: string | null): Task {
+    const now = new Date().toISOString();
+    const row = this.repo.setProject(id, projectId, now);
+    if (!row) throw new NotFoundException(`task ${id} not found`);
+    this.repo.insertEvent({
+      id: randomUUID(),
+      taskId: id,
+      at: now,
+      kind: 'task.project.changed',
+      data: JSON.stringify({ projectId }),
+    });
     return this.getTask(id);
   }
 

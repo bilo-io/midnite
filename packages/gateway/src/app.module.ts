@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from './config.module';
 import { DbModule } from './db/db.module';
+import { FsModule } from './fs/fs.module';
 import { HealthController } from './health/health.controller';
 import { TasksModule } from './tasks/tasks.module';
 import { AgentModule } from './agent/agent.module';
@@ -14,6 +15,7 @@ import { TerminalModule } from './terminal/terminal.module';
   imports: [
     ConfigModule,
     DbModule,
+    FsModule,
     AgentModule,
     AgentsModule,
     TasksModule,

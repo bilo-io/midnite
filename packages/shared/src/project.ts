@@ -29,12 +29,17 @@ export const ProjectSourceSchema = z.object({
   createdAt: z.string(),
 });
 
+// The folder Claude Code sessions for this project spawn in. Stored in `~`-form
+// (the gateway collapses the home prefix); empty/omitted means "no fixed dir".
+const WorkDirSchema = z.string().trim().max(1024);
+
 export const ProjectSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().optional(),
   tag: TagSchema,
   color: HexColorSchema,
+  workDir: z.string().optional(),
   plan: z.string().optional(),
   planUpdatedAt: z.string().optional(),
   createdAt: z.string(),
@@ -48,6 +53,7 @@ export const CreateProjectRequestSchema = z.object({
   description: z.string().max(8000).optional(),
   tag: TagSchema,
   color: HexColorSchema,
+  workDir: WorkDirSchema.optional(),
   sources: z.array(z.string().url()).max(MAX_SOURCES_PER_PROJECT).optional(),
 });
 
@@ -56,6 +62,8 @@ export const UpdateProjectRequestSchema = z.object({
   description: z.string().max(8000).optional(),
   tag: TagSchema.optional(),
   color: HexColorSchema.optional(),
+  // Empty string clears the configured directory.
+  workDir: WorkDirSchema.optional(),
 });
 
 export const AddSourceRequestSchema = z.object({

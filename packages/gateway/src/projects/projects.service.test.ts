@@ -27,6 +27,7 @@ class InMemoryProjectsRepo extends ProjectsRepository {
       description: row.description ?? null,
       tag: row.tag,
       color: row.color,
+      workDir: row.workDir ?? null,
       plan: row.plan ?? null,
       planUpdatedAt: row.planUpdatedAt ?? null,
       createdAt: row.createdAt,

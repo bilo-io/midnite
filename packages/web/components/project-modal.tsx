@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ExternalLink, Loader2, Plus, Sparkles, Trash2, X } from 'lucide-react';
+import { ExternalLink, FolderOpen, Loader2, Plus, Sparkles, Trash2, X } from 'lucide-react';
 import {
   MAX_SOURCES_PER_PROJECT,
   MAX_TAG_LENGTH,
@@ -10,6 +10,7 @@ import {
 } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { FolderPicker } from '@/components/folder-picker';
 import { ProjectTag } from '@/components/project-tag';
 import { SourceIcon } from '@/components/source-icon';
 import {
@@ -58,6 +59,8 @@ export function ProjectModal({ project, onClose, onSaved }: Props) {
   const [description, setDescription] = useState(project?.description ?? '');
   const [tag, setTag] = useState(project?.tag ?? '');
   const [color, setColor] = useState(project?.color ?? DEFAULT_COLOR);
+  const [workDir, setWorkDir] = useState(project?.workDir ?? '');
+  const [picking, setPicking] = useState(false);
   // Create mode stages URLs client-side; edit mode mutates the live project.
   const [staged, setStaged] = useState<string[]>([]);
   const [current, setCurrent] = useState<Project | null>(project);
@@ -71,11 +74,12 @@ export function ProjectModal({ project, onClose, onSaved }: Props) {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      // While the folder picker is open it owns Escape (and closes itself).
+      if (e.key === 'Escape' && !picking) onClose();
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [onClose, picking]);
 
   const sourceCount = isEdit ? current?.sources.length ?? 0 : staged.length;
   const atLimit = sourceCount >= MAX_SOURCES_PER_PROJECT;
@@ -156,6 +160,7 @@ export function ProjectModal({ project, onClose, onSaved }: Props) {
           description: description.trim(),
           tag: tag.trim(),
           color,
+          workDir: workDir.trim(),
         });
       } else {
         await createProject({
@@ -163,6 +168,7 @@ export function ProjectModal({ project, onClose, onSaved }: Props) {
           description: description.trim() || undefined,
           tag: tag.trim(),
           color,
+          workDir: workDir.trim() || undefined,
           sources: staged,
         });
       }
@@ -333,6 +339,47 @@ export function ProjectModal({ project, onClose, onSaved }: Props) {
                 Max {MAX_TAG_LENGTH} characters. Tasks in this project carry this tag.
               </p>
             </div>
+
+            {/* Work directory */}
+            <div className="space-y-1.5">
+              <label htmlFor="project-workdir" className="text-xs font-medium text-muted-foreground">
+                Work directory
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  id="project-workdir"
+                  className={cn(inputClass, 'flex-1 font-mono text-xs')}
+                  value={workDir}
+                  onChange={(e) => setWorkDir(e.target.value)}
+                  placeholder="~/Dev/my-project"
+                  spellCheck={false}
+                />
+                {workDir.trim() ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Clear work directory"
+                    onClick={() => setWorkDir('')}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                ) : null}
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="shrink-0 gap-1.5"
+                  onClick={() => setPicking(true)}
+                >
+                  <FolderOpen className="h-4 w-4" />
+                  Browse
+                </Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Where this project&apos;s Claude Code sessions spawn. Leave blank to use the default.
+              </p>
+            </div>
             </div>
 
             {/* Sources */}
@@ -494,6 +541,14 @@ export function ProjectModal({ project, onClose, onSaved }: Props) {
           </footer>
         </div>
       </div>
+
+      {picking ? (
+        <FolderPicker
+          initialPath={workDir.trim() || undefined}
+          onSelect={setWorkDir}
+          onClose={() => setPicking(false)}
+        />
+      ) : null}
     </>
   );
 }

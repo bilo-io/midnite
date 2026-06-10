@@ -100,6 +100,7 @@ export class ProjectsRepository {
       description: row.description ?? undefined,
       tag: row.tag,
       color: row.color,
+      workDir: row.workDir ?? undefined,
       plan: row.plan ?? undefined,
       planUpdatedAt: row.planUpdatedAt ?? undefined,
       createdAt: row.createdAt,

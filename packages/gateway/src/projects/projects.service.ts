@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
+import { resolve } from 'node:path';
 import type Anthropic from '@anthropic-ai/sdk';
 import {
   MAX_SOURCES_PER_PROJECT,
@@ -17,6 +18,7 @@ import {
   type UpdateProjectRequest,
 } from '@midnite/shared';
 import { AnthropicService } from '../agent/anthropic.service';
+import { collapseTilde, expandTilde } from '../fs/path-tilde';
 import { TasksService } from '../tasks/tasks.service';
 import { fetchSourceMetadata } from './lib/opengraph';
 import { ProjectsRepository } from './projects.repository';
@@ -76,6 +78,14 @@ export class ProjectsService {
     return this.repo.hydrate(row);
   }
 
+  /**
+   * The configured work directory for a project, in `~`-form, or undefined if
+   * the project has none (or doesn't exist). Used to resolve a session's cwd.
+   */
+  workDirFor(projectId: string): string | undefined {
+    return this.repo.getProject(projectId)?.workDir ?? undefined;
+  }
+
   async createProject(req: CreateProjectRequest): Promise<Project> {
     const id = randomUUID();
     const now = new Date().toISOString();
@@ -85,6 +95,7 @@ export class ProjectsService {
       description: req.description ?? null,
       tag: req.tag,
       color: req.color,
+      workDir: normalizeWorkDir(req.workDir),
       plan: null,
       planUpdatedAt: null,
       createdAt: now,
@@ -104,12 +115,15 @@ export class ProjectsService {
       description: string | null;
       tag: string;
       color: string;
+      workDir: string | null;
       updatedAt: string;
     }> = { updatedAt: new Date().toISOString() };
     if (req.name !== undefined) patch.name = req.name;
     if (req.description !== undefined) patch.description = req.description;
     if (req.tag !== undefined) patch.tag = req.tag;
     if (req.color !== undefined) patch.color = req.color;
+    // An empty string clears the directory; normalizeWorkDir maps it to null.
+    if (req.workDir !== undefined) patch.workDir = normalizeWorkDir(req.workDir);
     this.repo.updateProject(id, patch);
     return this.getProject(id);
   }
@@ -282,6 +296,15 @@ export class ProjectsService {
 
 function dedupe(urls: string[]): string[] {
   return [...new Set(urls.map((u) => u.trim()).filter(Boolean))];
+}
+
+// Store the work directory in `~`-form: resolve to absolute (expanding any ~ and
+// making relative input absolute), then collapse the home prefix back. Empty
+// input clears it (null). Keeps storage portable and consistent with the picker.
+function normalizeWorkDir(input?: string): string | null {
+  const trimmed = input?.trim();
+  if (!trimmed) return null;
+  return collapseTilde(resolve(expandTilde(trimmed)));
 }
 
 function toolInput<T>(

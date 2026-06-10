@@ -3,8 +3,10 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { Activity, Mic, MicOff, Paperclip, Send, X } from 'lucide-react';
+import type { Project } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { ProjectSelect } from '@/components/project-select';
 import { cn } from '@/lib/utils';
 import { createTask, pingAgent } from '@/lib/api';
 import { useSpeechRecognition } from '@/lib/use-speech-recognition';
@@ -18,9 +20,10 @@ function splitTasks(input: string): string[] {
     .filter(Boolean);
 }
 
-export function PromptComposer() {
+export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
   const router = useRouter();
   const [text, setText] = React.useState('');
+  const [projectId, setProjectId] = React.useState<string | null>(null);
   const [files, setFiles] = React.useState<File[]>([]);
   const [phase, setPhase] = React.useState<Phase>('idle');
   const [error, setError] = React.useState<string | null>(null);
@@ -89,6 +92,7 @@ export function PromptComposer() {
         lines.map((prompt, idx) => {
           const form = new FormData();
           form.append('prompt', prompt);
+          if (projectId) form.append('projectId', projectId);
           if (idx === 0) {
             for (const file of files) form.append('images', file, file.name);
           }
@@ -211,6 +215,15 @@ export function PromptComposer() {
                 >
                   {speech.listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                 </Button>
+              )}
+              {projects.length > 0 && (
+                <ProjectSelect
+                  projects={projects}
+                  value={projectId}
+                  onChange={setProjectId}
+                  placeholder="No project"
+                  className="ml-1 cascade-item"
+                />
               )}
               {taskCount > 1 && (
                 <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">

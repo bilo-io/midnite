@@ -4,8 +4,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { parseConfig, type MidniteConfig, type ServerTerminalMessage } from '@midnite/shared';
 import type { TasksService } from '../tasks/tasks.service';
+import type { ProjectsService } from '../projects/projects.service';
 import {
   TerminalService,
+  buildShellInitCommand,
   scrubSecretEnv,
   trimRingByBytes,
   type TerminalSubscriber,
@@ -17,6 +19,7 @@ function makeConfig(terminal: Record<string, unknown>): MidniteConfig {
 }
 
 const noTasks = { listTasks: () => [] } as unknown as TasksService;
+const noProjects = { workDirFor: () => undefined } as unknown as ProjectsService;
 
 // PTY-mechanics tests don't exercise approvals; a no-op stub satisfies the wiring.
 const noApprovals = {
@@ -29,7 +32,7 @@ const noApprovals = {
 } as unknown as ApprovalService;
 
 function makeService(terminal: Record<string, unknown>): TerminalService {
-  return new TerminalService(makeConfig(terminal), noTasks, noApprovals);
+  return new TerminalService(makeConfig(terminal), noTasks, noProjects, noApprovals);
 }
 
 function decode(data: string): string {
@@ -223,6 +226,21 @@ describe('TerminalService', () => {
     expect(service.verifyToken('sx', again)).toBe(false); // single-use
   });
 
+  it('drops a default shell into the project dir and clears the screen on spawn', async () => {
+    // Default shell (no `command`), cwd falls back to process.cwd(). The init
+    // line is echoed by the interactive shell, so it shows up in the stream.
+    service = makeService({});
+    const c = makeCollector();
+    service.attach('init1', c.sub, { cols: 80, rows: 24 });
+    await c.waitFor((m) => m.type === 'status' && m.phase === 'ready');
+
+    const echoed = await c.waitFor(
+      (m) => m.type === 'output' && decode(m.data).includes('&& clear'),
+      8000,
+    );
+    expect(echoed.type).toBe('output');
+  });
+
   it('reports the backing command in the ready status', async () => {
     service = makeService({ command: 'cat' });
     const c = makeCollector();
@@ -242,6 +260,25 @@ describe('TerminalService', () => {
     const err = await b.waitFor((m) => m.type === 'error');
     expect(err).toMatchObject({ type: 'error', code: 'limit' });
     expect(service.has('cap2')).toBe(false);
+  });
+});
+
+describe('buildShellInitCommand', () => {
+  it('cds into the cwd and clears for the default shell', () => {
+    expect(buildShellInitCommand(undefined, '/home/me/proj')).toBe(
+      "cd '/home/me/proj' && clear\r",
+    );
+  });
+
+  it('single-quotes paths with spaces and embedded quotes', () => {
+    expect(buildShellInitCommand(undefined, "/a b/it's")).toBe(
+      "cd '/a b/it'\\''s' && clear\r",
+    );
+  });
+
+  it('returns undefined for a configured command (it owns its own stdin)', () => {
+    expect(buildShellInitCommand('claude', '/home/me/proj')).toBeUndefined();
+    expect(buildShellInitCommand('cat', '/home/me/proj')).toBeUndefined();
   });
 });
 

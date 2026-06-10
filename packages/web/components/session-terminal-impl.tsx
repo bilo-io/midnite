@@ -4,7 +4,6 @@ import '@xterm/xterm/css/xterm.css';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Terminal, type ITheme } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
-import { Send } from 'lucide-react';
 import type {
   ApprovalDecision,
   SessionSummary,
@@ -46,7 +45,6 @@ export function SessionTerminalImpl({ session }: { session: SessionSummary }) {
   const [phase, setPhase] = useState<TerminalStatusPhase | null>(null);
   const [command, setCommand] = useState<string | null>(null);
   const [pending, setPending] = useState<TerminalApprovalRequestMessage[]>([]);
-  const [draft, setDraft] = useState('');
 
   const { resolved } = useTheme();
   const resolvedRef = useRef(resolved);
@@ -75,12 +73,6 @@ export function SessionTerminalImpl({ session }: { session: SessionSummary }) {
     },
     [sendApproval],
   );
-
-  const send = useCallback(() => {
-    if (connectionState !== 'open') return;
-    sendInput(draft + '\r'); // a CR submits to the shell or to Claude's prompt
-    setDraft('');
-  }, [connectionState, draft, sendInput]);
 
   // Stable across the once-only terminal effect.
   const sendInputRef = useRef(sendInput);
@@ -168,34 +160,10 @@ export function SessionTerminalImpl({ session }: { session: SessionSummary }) {
           role="group"
           aria-label="Session terminal"
           onClick={() => termRef.current?.focus()}
-          className="h-full overflow-hidden rounded-lg border border-border/60 bg-[#0d0d12] p-2 dark:bg-[#0d0d12]"
+          className="h-full overflow-hidden rounded-lg border border-border/60 p-2"
+          style={{ background: TERMINAL_THEMES[resolved].background }}
         />
         {current ? <ApprovalOverlay request={current} onAnswer={answer} /> : null}
-      </div>
-      <div className="flex items-end gap-2">
-        <textarea
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              send();
-            }
-          }}
-          rows={1}
-          placeholder="Message the session — Enter to send, Shift+Enter for newline"
-          className="max-h-32 min-h-[2.25rem] flex-1 resize-y rounded-md border border-input bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-        />
-        <Button
-          type="button"
-          size="icon"
-          className="h-9 w-9 shrink-0"
-          onClick={send}
-          disabled={connectionState !== 'open'}
-          aria-label="Send to session"
-        >
-          <Send className="h-4 w-4" />
-        </Button>
       </div>
     </div>
   );

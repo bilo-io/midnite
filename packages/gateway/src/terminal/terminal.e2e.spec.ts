@@ -8,6 +8,7 @@ import {
   type ServerTerminalMessage,
 } from '@midnite/shared';
 import type { TasksService } from '../tasks/tasks.service';
+import type { ProjectsService } from '../projects/projects.service';
 import { TerminalGateway } from './terminal.gateway';
 import { TerminalService } from './terminal.service';
 import type { ApprovalService } from './approval.service';
@@ -25,6 +26,7 @@ const config: MidniteConfig = parseConfig({
   gateway: {},
 });
 const noTasks = { listTasks: () => [] } as unknown as TasksService;
+const noProjects = { workDirFor: () => undefined } as unknown as ProjectsService;
 
 const noApprovals = {
   mintSecret: () => 'secret',
@@ -42,7 +44,7 @@ describe('TerminalGateway (real WS transport)', () => {
   let url: string;
 
   beforeAll(async () => {
-    service = new TerminalService(config, noTasks, noApprovals);
+    service = new TerminalService(config, noTasks, noProjects, noApprovals);
     const gateway = new TerminalGateway(service, noApprovals, config);
     httpServer = createServer();
     wss = new WebSocketServer({ server: httpServer, path: TERMINAL_WS_PATH });

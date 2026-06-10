@@ -20,11 +20,13 @@ export function ProjectsTree({
   tasks,
   onEdit,
   onPlan,
+  onSelectTask,
 }: {
   projects: Project[];
   tasks: Task[];
   onEdit?: (project: Project) => void;
   onPlan?: (project: Project) => void;
+  onSelectTask?: (task: Task) => void;
 }) {
   const tasksByProject = new Map<string, Task[]>();
   const unassigned: Task[] = [];
@@ -42,7 +44,14 @@ export function ProjectsTree({
     items.length === 0 ? (
       <div className="px-4 py-3 text-xs text-muted-foreground/70">No tasks yet</div>
     ) : (
-      items.map((t) => <TaskRow key={t.id} task={t} showStatus />)
+      items.map((t) => (
+        <TaskRow
+          key={t.id}
+          task={t}
+          showStatus
+          onSelect={onSelectTask ? () => onSelectTask(t) : undefined}
+        />
+      ))
     );
 
   const sections: AccordionSection[] = projects.map((p) => {

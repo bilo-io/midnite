@@ -24,7 +24,7 @@ import { SessionTranscriptModal } from '@/components/session-transcript-modal';
 import { SessionTerminalModal } from '@/components/session-terminal-modal';
 import { SortableAccordions, type AccordionSection } from '@/components/sortable-accordions';
 import type { ProjectTagInfo } from '@/components/task-card';
-import { archiveSession, getSessionTranscript, unarchiveSession } from '@/lib/api';
+import { archiveSession, deleteSession, getSessionTranscript, unarchiveSession } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 type View = 'list' | 'grid' | 'table';
@@ -111,6 +111,19 @@ export function SessionsView({
       } finally {
         onClose();
         router.refresh(); // page is force-dynamic, so this re-fetches /sessions
+      }
+    },
+    [onClose, router],
+  );
+
+  // Permanent delete — only offered once a session is archived.
+  const onDelete = useCallback(
+    async (session: SessionSummary) => {
+      try {
+        await deleteSession(session.id);
+      } finally {
+        onClose();
+        router.refresh();
       }
     },
     [onClose, router],
@@ -312,6 +325,7 @@ export function SessionsView({
             session={selected}
             onClose={onClose}
             onArchiveToggle={() => void onArchiveToggle(selected)}
+            onDelete={() => void onDelete(selected)}
           />
         ) : (
           <SessionTranscriptModal
@@ -321,6 +335,7 @@ export function SessionsView({
             error={loadError}
             onClose={onClose}
             onArchiveToggle={() => void onArchiveToggle(selected)}
+            onDelete={() => void onDelete(selected)}
           />
         )
       ) : null}

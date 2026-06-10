@@ -2,22 +2,54 @@
 
 import { useEffect, useState } from 'react';
 import { StatusPills } from '@/components/status-pills';
+import { Spinner } from '@/components/spinner';
+
+type TimeOfDay =
+  | 'midnight'
+  | 'dawn'
+  | 'morning'
+  | 'midMorning'
+  | 'forenoon'
+  | 'noon'
+  | 'afternoon'
+  | 'dusk'
+  | 'earlyEvening'
+  | 'evening'
+  | 'night';
+
+type GreetingWindow = {
+  startHour: number; // inclusive, in decimal hours (e.g. 12 + 1/60 === 12:01)
+  endHour: number; // exclusive; an entry where endHour < startHour wraps past midnight
+  timeOfDay: TimeOfDay;
+  greeting: string;
+};
+
+// Windows run earliest→latest and are matched in order, so the instant-wide noon
+// window wins over the afternoon range that surrounds it. Decimal hours let us pin
+// minute-level boundaries (the noon window ends at 12:01), and the trailing night
+// window wraps past midnight.
+const GREETING_WINDOWS: readonly GreetingWindow[] = [
+  { startHour: 0, endHour: 4, timeOfDay: 'midnight', greeting: 'early bird? or night owl?' },
+  { startHour: 4, endHour: 6, timeOfDay: 'dawn', greeting: 'rising to the occasion?' },
+  { startHour: 6, endHour: 8, timeOfDay: 'morning', greeting: 'good morning' },
+  { startHour: 8, endHour: 11, timeOfDay: 'midMorning', greeting: 'vibing yet? its past morning' },
+  { startHour: 10, endHour: 12, timeOfDay: 'forenoon', greeting: 'vibe some sessions before lunch' },
+  { startHour: 12, endHour: 13, timeOfDay: 'noon', greeting: 'middle of the day! hello!' },
+  { startHour: 13, endHour: 16, timeOfDay: 'afternoon', greeting: 'good afternoon' },
+  { startHour: 16, endHour: 18, timeOfDay: 'dusk', greeting: 'final push for the day... you got this!' },
+  { startHour: 17, endHour: 19, timeOfDay: 'earlyEvening', greeting: 'good early evening' },
+  { startHour: 19, endHour: 21, timeOfDay: 'evening', greeting: 'good evening' },
+  { startHour: 21, endHour: 1, timeOfDay: 'night', greeting: 'howzit nightowl' },
+];
 
 // Greeting depends on the viewer's local time, so resolve it on the client after
-// mount to avoid a server/client hydration mismatch. Ranges run earliest→latest
-// across the day; the minute is only needed to pin the noon greeting to 12:00.
+// mount to avoid a server/client hydration mismatch.
 function greetingForTime(hour: number, minute: number): string {
-  if (hour >= 1 && hour < 5) return 'early bird? or night owl?'; // predawn (1–5am)
-  if (hour === 5) return 'rising to the occasion?'; // dawn (5–6am)
-  if (hour >= 6 && hour < 8) return 'good morning'; // early morning (6–8am)
-  if (hour >= 8 && hour < 11) return 'vibing yet? its past morning'; // mid-morning (8–11am)
-  if (hour === 11) return 'vibe some sessions before lunch'; // late morning (11–12)
-  if (hour === 12 && minute === 0) return 'middle of the day! hello!'; // noon (exactly 12:00)
-  if (hour >= 12 && hour < 15) return 'good afternoon'; // lunch / early afternoon (12–3pm)
-  if (hour >= 15 && hour < 17) return 'final push for the day... you got this!'; // late afternoon (3–5pm)
-  if (hour >= 17 && hour < 19) return 'good prevening'; // early evening (5–7pm)
-  if (hour >= 19 && hour < 21) return 'good evening'; // evening (7–9pm)
-  return 'howzit nightowl'; // night (9pm–1am)
+  const t = hour + minute / 60;
+  const match = GREETING_WINDOWS.find(({ startHour, endHour }) =>
+    startHour <= endHour ? t >= startHour && t < endHour : t >= startHour || t < endHour,
+  );
+  return (match ?? GREETING_WINDOWS[GREETING_WINDOWS.length - 1]!).greeting;
 }
 
 const SUBGREETINGS = [
@@ -118,9 +150,11 @@ export default function HomePage() {
 
   const titleDone = greeting !== null && typed.length === `${greeting}${TITLE_PUNCT}`.length;
 
-  // Once the title is done, type the subtitle out character by character.
+  // Once the title is done, type the subtitle out character by character. Reruns
+  // whenever the phrase rotates, clearing first so the new one types in clean.
   useEffect(() => {
     if (!titleDone || subgreeting === null) return;
+    setTypedSub('');
     let index = 0;
     const typeTimer = setInterval(() => {
       index += 1;
@@ -130,11 +164,39 @@ export default function HomePage() {
     return () => clearInterval(typeTimer);
   }, [titleDone, subgreeting]);
 
+  // Swap the subtitle for a fresh random phrase every 10s once the title's in,
+  // avoiding an immediate repeat. The typing effect above re-types it.
+  useEffect(() => {
+    if (!titleDone) return;
+    const id = setInterval(() => {
+      setSubgreeting((current) => {
+        if (SUBGREETINGS.length <= 1) return current;
+        let next = current;
+        while (next === current) {
+          next = SUBGREETINGS[Math.floor(Math.random() * SUBGREETINGS.length)] ?? current;
+        }
+        return next;
+      });
+    }, 10000);
+    return () => clearInterval(id);
+  }, [titleDone]);
+
   const subDone = subgreeting !== null && typedSub.length === subgreeting.length;
+
+  // Reveal the pills once the first subtitle lands, then latch them on — later
+  // phrase rotations re-type the subtitle but must not re-trigger the reveal.
+  const [pillsRevealed, setPillsRevealed] = useState(false);
+  useEffect(() => {
+    if (subDone) setPillsRevealed(true);
+  }, [subDone]);
 
   return (
     <div className="bg-grid relative flex min-h-[100dvh] flex-col items-center justify-center px-6 text-center">
       <Clock now={now} />
+
+      <div className="mb-10">
+        <Spinner />
+      </div>
 
       <h1 className="bg-gradient-to-br from-foreground to-foreground/50 bg-clip-text pb-3 text-4xl font-semibold leading-[1.15] tracking-tight text-transparent sm:text-6xl">
         {typed}
@@ -168,7 +230,7 @@ export default function HomePage() {
 
       <StatusPills
         className={`mt-9 transition-opacity duration-500 ${
-          subDone ? 'opacity-100' : 'pointer-events-none opacity-0'
+          pillsRevealed ? 'opacity-100' : 'pointer-events-none opacity-0'
         }`}
       />
     </div>

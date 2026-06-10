@@ -46,6 +46,15 @@ export class TasksRepository {
       .get();
   }
 
+  setProject(id: string, projectId: string | null, updatedAt: string): TaskRow | undefined {
+    return this.db
+      .update(tasks)
+      .set({ projectId, updatedAt })
+      .where(eq(tasks.id, id))
+      .returning()
+      .get();
+  }
+
   setArchived(id: string, archivedAt: string | null, updatedAt: string): TaskRow | undefined {
     return this.db
       .update(tasks)
@@ -53,6 +62,17 @@ export class TasksRepository {
       .where(eq(tasks.id, id))
       .returning()
       .get();
+  }
+
+  // Deleting a task removes its event log, attachments and links too. Wrapped in
+  // a transaction so the four writes are atomic.
+  deleteTask(id: string): void {
+    this.db.transaction((tx) => {
+      tx.delete(taskLinks).where(eq(taskLinks.taskId, id)).run();
+      tx.delete(taskAttachments).where(eq(taskAttachments.taskId, id)).run();
+      tx.delete(taskEvents).where(eq(taskEvents.taskId, id)).run();
+      tx.delete(tasks).where(eq(tasks.id, id)).run();
+    });
   }
 
   listTasks(status?: Status, projectId?: string): TaskRow[] {

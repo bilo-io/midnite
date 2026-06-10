@@ -93,20 +93,48 @@
   background-color: transparent;
 }
 
-.react-flow__controls-button {
+/* React Flow ships a light-themed Controls/MiniMap in its own stylesheet, which is
+   imported after globals.css. Scope these under `.react-flow` so the two-class
+   specificity beats the library's single-class defaults regardless of load order;
+   the theme tokens then handle light vs. dark. */
+.react-flow .react-flow__controls {
+  box-shadow: 0 1px 2px hsl(var(--background) / 0.4);
+}
+
+.react-flow .react-flow__controls-button {
   background: hsl(var(--card));
   border-color: hsl(var(--border));
   color: hsl(var(--foreground));
 }
 
-.react-flow__controls-button:hover {
+.react-flow .react-flow__controls-button:hover {
   background: hsl(var(--accent));
 }
 
-.react-flow__minimap {
+/* Control icons default to a dark fill — invisible on a dark button. Follow text color. */
+.react-flow .react-flow__controls-button svg {
+  fill: currentColor;
+}
+
+.react-flow .react-flow__minimap {
   background: hsl(var(--card) / 0.8);
   border: 1px solid hsl(var(--border));
   border-radius: var(--radius);
+}
+
+/* Inner SVG: the bright box is the minimap's mask + node rects, set via fill
+   attributes by the component. CSS fill overrides SVG presentation attributes. */
+.react-flow .react-flow__minimap-svg {
+  background: transparent;
+}
+
+.react-flow .react-flow__minimap-mask {
+  fill: hsl(var(--background) / 0.6);
+}
+
+.react-flow .react-flow__minimap-node {
+  fill: hsl(var(--muted-foreground) / 0.4);
+  stroke: none;
 }
 
 .react-flow__attribution {
@@ -186,9 +214,112 @@
   }
 }
 
-/* The screensaver spinner is driven entirely in JS (a single rAF loop that
+/* The default "orbit" spinner is driven entirely in JS (a single rAF loop that
    interpolates three persistent dots between variants), so it needs no CSS
-   keyframes — that's what keeps variant transitions seamless. */
+   keyframes — that's what keeps variant transitions seamless. The remaining
+   <Spinner variant="..."> styles below are self-contained CSS loaders; they use
+   the --foreground token (rather than a hard-coded colour) so they track the
+   active theme. */
+
+/* breathe: a three-dot row whose width contracts to a single dot and back. */
+.spinner-breathe {
+  width: 60px;
+  aspect-ratio: 4;
+  --c: hsl(var(--foreground)) 90%, transparent;
+  background:
+    radial-gradient(circle closest-side at left 6px top 50%, var(--c)),
+    radial-gradient(circle closest-side, var(--c)),
+    radial-gradient(circle closest-side at right 6px top 50%, var(--c));
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  animation: spinner-breathe 1s infinite alternate;
+}
+@keyframes spinner-breathe {
+  to {
+    width: 25px;
+    aspect-ratio: 1;
+  }
+}
+
+/* jitter: two fixed flanking dots with a centre dot vibrating between them. */
+.spinner-jitter {
+  width: 50px;
+  height: 12px;
+  --_g: no-repeat radial-gradient(farthest-side, hsl(var(--foreground)) 94%, transparent);
+  background:
+    var(--_g) left,
+    var(--_g) right;
+  background-size: 12px 12px;
+  position: relative;
+}
+.spinner-jitter::before {
+  content: '';
+  position: absolute;
+  height: 12px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: hsl(var(--foreground));
+  inset: 0;
+  margin: auto;
+  animation:
+    spinner-jitter-1 1s,
+    spinner-jitter-2 0.5s;
+  animation-timing-function: cubic-bezier(0.5, -900, 0.5, 900);
+  animation-iteration-count: infinite;
+}
+@keyframes spinner-jitter-1 {
+  100% {
+    transform: translate(0.12px);
+  }
+}
+@keyframes spinner-jitter-2 {
+  100% {
+    inset: -0.15px 0 0;
+  }
+}
+
+/* tumble: two gradient blobs that slide together, then flip end-over-end. */
+.spinner-tumble {
+  height: 15px;
+  aspect-ratio: 6;
+  display: flex;
+}
+.spinner-tumble::before,
+.spinner-tumble::after {
+  content: '';
+  flex: 1;
+  padding-left: calc(100% / 6);
+  background: radial-gradient(closest-side at calc(100% / 3) 50%, hsl(var(--foreground)) 90%, transparent) 0 /
+    75% 100% content-box;
+  animation: spinner-tumble 2s infinite;
+}
+.spinner-tumble::after {
+  --_s: -1;
+}
+@keyframes spinner-tumble {
+  0% {
+    transform: scale(var(--_s, 1)) translate(0) rotate(0);
+  }
+  25% {
+    transform: scale(var(--_s, 1)) translate(-25%) rotate(0);
+  }
+  50% {
+    transform: scale(var(--_s, 1)) translate(-25%) rotate(1turn);
+  }
+  75%,
+  100% {
+    transform: scale(var(--_s, 1)) translate(0) rotate(1turn);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner-breathe,
+  .spinner-jitter::before,
+  .spinner-tumble::before,
+  .spinner-tumble::after {
+    animation: none;
+  }
+}
 
 /* Looping shimmer sweep for the live screensaver status pills. The band is
    tinted with the pill's own hue and sits behind the text, so content stays

@@ -10,6 +10,7 @@ import type {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { SessionStatusDot } from '@/components/session-card';
+import { DeleteConfirmButton } from '@/components/delete-confirm-button';
 
 type Props = {
   session: SessionSummary;
@@ -18,6 +19,7 @@ type Props = {
   error: string | null;
   onClose: () => void;
   onArchiveToggle?: () => void;
+  onDelete?: () => void;
 };
 
 export function SessionTranscriptModal({
@@ -27,6 +29,7 @@ export function SessionTranscriptModal({
   error,
   onClose,
   onArchiveToggle,
+  onDelete,
 }: Props) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -85,6 +88,9 @@ export function SessionTranscriptModal({
                   </>
                 )}
               </Button>
+            ) : null}
+            {onDelete && session.archivedAt ? (
+              <DeleteConfirmButton onConfirm={onDelete} />
             ) : null}
             <Button
               type="button"

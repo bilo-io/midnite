@@ -53,6 +53,7 @@ export function TableView({ tasks, columns, projectsById, onSelect, showAbandone
             tasks={grouped.get('abandoned') ?? []}
             onSelect={onSelect}
             projectsById={projectsById}
+            layout="table"
           />
         </div>
       )}

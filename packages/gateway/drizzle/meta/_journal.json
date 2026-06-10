@@ -43,6 +43,13 @@
       "when": 1780918943876,
       "tag": "0005_nostalgic_hellion",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1781016416713,
+      "tag": "0006_parched_luckman",
+      "breakpoints": true
     }
   ]
 }

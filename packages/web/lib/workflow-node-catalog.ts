@@ -10,6 +10,9 @@ import {
 } from 'lucide-react';
 import type { NodeCategory } from '@midnite/shared';
 
+// dataTransfer MIME used when dragging a node type from the palette onto the canvas.
+export const NODE_DRAG_MIME = 'application/midnite-node';
+
 // Maps a NodeTypeDefinition.icon string (declared in shared) to a lucide component.
 // Keeps the shared registry free of any React/lucide dependency.
 const ICONS: Record<string, LucideIcon> = {

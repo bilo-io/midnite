@@ -6,10 +6,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Bot,
+  BotMessageSquare,
   Columns3,
   Folder,
   LayoutDashboard,
-  MessagesSquare,
   Power,
   Settings,
   UserRound,
@@ -41,8 +41,8 @@ const LINKS: NavLink[] = [
   { href: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
   { href: '/projects', label: 'Projects', Icon: Folder },
   { href: '/tasks', label: 'Tasks', Icon: Columns3 },
+  { href: '/sessions', label: 'Sessions', Icon: BotMessageSquare },
   { href: '/workflows', label: 'Workflows', Icon: Workflow },
-  { href: '/sessions', label: 'Sessions', Icon: MessagesSquare },
 ];
 
 const PROFILE_LINK: NavLink = { href: '/profile', label: 'Profile', Icon: UserRound };

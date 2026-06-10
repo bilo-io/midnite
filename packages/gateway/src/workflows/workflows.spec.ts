@@ -55,6 +55,29 @@ function workflow(actionType: string): Workflow {
   };
 }
 
+// trigger → branch, with a true-path and a false-path action (both echo nodes).
+function branchWorkflow(params: Record<string, unknown>): Workflow {
+  return {
+    id: 'wb',
+    name: 'branch demo',
+    enabled: false,
+    trigger: { type: 'manual' },
+    nodes: [
+      { id: 'trig', type: 'trigger.manual', position: { x: 0, y: 0 }, params: {} },
+      { id: 'br', type: 'logic.branch', position: { x: 200, y: 0 }, params },
+      { id: 'yes', type: 'http.request', position: { x: 400, y: -60 }, params: { url: 'https://example.com' } },
+      { id: 'no', type: 'http.request', position: { x: 400, y: 60 }, params: { url: 'https://example.com' } },
+    ],
+    edges: [
+      { id: 'e1', source: 'trig', sourcePort: 'main', target: 'br', targetPort: 'main' },
+      { id: 'e2', source: 'br', sourcePort: 'true', target: 'yes', targetPort: 'main' },
+      { id: 'e3', source: 'br', sourcePort: 'false', target: 'no', targetPort: 'main' },
+    ],
+    createdAt: NOW,
+    updatedAt: NOW,
+  };
+}
+
 const CONFIG: MidniteConfig = parseConfig({ agent: {}, terminal: {}, knowledge: {}, gateway: {} });
 
 describe('WorkflowEngine', () => {
@@ -96,6 +119,35 @@ describe('WorkflowEngine', () => {
     const wf = workflow('http.request');
     wf.nodes[1]!.params = { url: 'not-a-url' };
     expect(() => engine.validateGraph({ nodes: wf.nodes, edges: wf.edges })).toThrow(/invalid params/);
+  });
+
+  it('takes the true path and skips the false path when the condition holds', async () => {
+    const run = await engine.runToCompletion(branchWorkflow({ left: 'go', operator: 'isTruthy' }), {
+      triggerSource: 'manual',
+      input: { go: true },
+    });
+    expect(run.status).toBe('succeeded');
+    expect(run.nodeRuns.find((n) => n.nodeId === 'br')!.status).toBe('succeeded');
+    const yes = run.nodeRuns.find((n) => n.nodeId === 'yes')!;
+    const no = run.nodeRuns.find((n) => n.nodeId === 'no')!;
+    expect(yes.status).toBe('succeeded');
+    expect(yes.output).toEqual({ ok: true, echoed: { go: true } }); // branch passes input through
+    expect(no.status).toBe('skipped');
+  });
+
+  it('takes the false path and skips the true path when the condition fails', async () => {
+    const run = await engine.runToCompletion(branchWorkflow({ left: 'go', operator: 'isTruthy' }), {
+      triggerSource: 'manual',
+      input: { go: false },
+    });
+    expect(run.status).toBe('succeeded');
+    expect(run.nodeRuns.find((n) => n.nodeId === 'yes')!.status).toBe('skipped');
+    expect(run.nodeRuns.find((n) => n.nodeId === 'no')!.status).toBe('succeeded');
+  });
+
+  it('validateGraph accepts a branch node', () => {
+    const wf = branchWorkflow({ left: 'body.status', operator: 'equals', right: 'ok' });
+    expect(() => engine.validateGraph({ nodes: wf.nodes, edges: wf.edges })).not.toThrow();
   });
 });
 

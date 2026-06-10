@@ -1,6 +1,7 @@
 import {
   AgentPingResponseSchema,
   AgentsConfigResponseSchema,
+  BrowseDirResponseSchema,
   CreatePlanTasksResponseSchema,
   CreateTaskResponseSchema,
   DraftPlanResponseSchema,
@@ -22,6 +23,7 @@ import {
   WorkflowRunSchema,
   WorkflowSummarySchema,
   type AgentsConfig,
+  type BrowseDirResponse,
   type CreateProjectRequest,
   type CreateSubAgentRequest,
   type CreateTaskResponse,
@@ -112,6 +114,17 @@ export async function updateTaskStatus(id: string, status: Status): Promise<Task
   );
 }
 
+export async function updateTaskProject(
+  taskId: string,
+  projectId: string | null,
+): Promise<Task> {
+  return fetchJson(
+    `/tasks/${encodeURIComponent(taskId)}/project`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ projectId }) },
+    TaskSchema,
+  );
+}
+
 export async function addTaskLink(taskId: string, url: string, label?: string): Promise<Task> {
   return fetchJson(
     `/tasks/${encodeURIComponent(taskId)}/links`,
@@ -126,6 +139,11 @@ export async function removeTaskLink(taskId: string, linkId: string): Promise<Ta
     { method: 'DELETE' },
     TaskSchema,
   );
+}
+
+// Permanent delete — the gateway rejects this unless the task is archived.
+export async function deleteTask(id: string): Promise<void> {
+  await fetchJson(`/tasks/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
 
 export async function getSessions(): Promise<SessionSummary[]> {
@@ -164,8 +182,20 @@ export async function unarchiveSession(id: string): Promise<SessionSummary> {
   );
 }
 
+// Permanent delete — the gateway rejects this unless the session is archived.
+export async function deleteSession(id: string): Promise<void> {
+  await fetchJson(`/sessions/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
 export async function getProjects(): Promise<Project[]> {
   return fetchJson('/projects', undefined, z.array(ProjectSchema));
+}
+
+// Lists subdirectories of `path` on the gateway host (home dir when omitted).
+// Backs the folder picker; paths are exchanged in `~`-form.
+export async function browseDirectory(path?: string): Promise<BrowseDirResponse> {
+  const query = path ? `?path=${encodeURIComponent(path)}` : '';
+  return fetchJson(`/fs/dirs${query}`, undefined, BrowseDirResponseSchema);
 }
 
 export async function createProject(body: CreateProjectRequest): Promise<Project> {

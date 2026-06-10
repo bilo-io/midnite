@@ -71,8 +71,78 @@ export const AiClaudeParamsSchema = z.object({
   maxTokens: z.number().int().positive().max(8192).default(1024),
 });
 
+// Comparison operators for the Branch node. `isTruthy`/`isFalsy` ignore `right`.
+export const BRANCH_OPERATORS = [
+  'isTruthy',
+  'isFalsy',
+  'equals',
+  'notEquals',
+  'contains',
+  'gt',
+  'gte',
+  'lt',
+  'lte',
+] as const;
+export type BranchOperator = (typeof BRANCH_OPERATORS)[number];
+
+export const BranchParamsSchema = z.object({
+  // Dot-path into the incoming data (e.g. `body.ok`). Blank means the whole input.
+  left: z.string().default(''),
+  operator: z.enum(BRANCH_OPERATORS).default('isTruthy'),
+  right: z.string().optional(),
+});
+
 export type HttpRequestParams = z.infer<typeof HttpRequestParamsSchema>;
 export type AiClaudeParams = z.infer<typeof AiClaudeParamsSchema>;
+export type BranchParams = z.infer<typeof BranchParamsSchema>;
+
+// The two output ports of a Branch node — also the sourcePort values on its edges.
+export const BRANCH_PORTS = ['true', 'false'] as const;
+export type BranchPort = (typeof BRANCH_PORTS)[number];
+
+function resolvePath(input: unknown, path: string): unknown {
+  const trimmed = path.trim();
+  if (!trimmed) return input;
+  let cur: unknown = input;
+  for (const key of trimmed.split('.')) {
+    if (cur === null || typeof cur !== 'object') return undefined;
+    cur = (cur as Record<string, unknown>)[key];
+  }
+  return cur;
+}
+
+/**
+ * Evaluate a Branch node's condition against its input. Pure and total — never throws
+ * for runtime input (params are re-parsed with defaults). Shared so the gateway engine
+ * and any future client-side preview agree on the exact semantics.
+ */
+export function evaluateBranchCondition(input: unknown, rawParams: Record<string, unknown>): boolean {
+  const { left, operator, right } = BranchParamsSchema.parse(rawParams);
+  const value = resolvePath(input, left);
+  const rhs = right ?? '';
+  switch (operator) {
+    case 'isTruthy':
+      return Boolean(value);
+    case 'isFalsy':
+      return !value;
+    case 'equals':
+      return String(value) === rhs;
+    case 'notEquals':
+      return String(value) !== rhs;
+    case 'contains':
+      return String(value ?? '').includes(rhs);
+    case 'gt':
+      return Number(value) > Number(rhs);
+    case 'gte':
+      return Number(value) >= Number(rhs);
+    case 'lt':
+      return Number(value) < Number(rhs);
+    case 'lte':
+      return Number(value) <= Number(rhs);
+    default:
+      return false;
+  }
+}
 
 // --- The registry ---
 
@@ -150,6 +220,53 @@ export const NODE_TYPE_DEFINITIONS: Record<string, NodeTypeDefinition> = {
       { key: 'system', label: 'System prompt', kind: 'text' },
       { key: 'prompt', label: 'Prompt', kind: 'text', required: true },
       { key: 'maxTokens', label: 'Max tokens', kind: 'number' },
+    ],
+  },
+  'logic.branch': {
+    id: 'logic.branch',
+    category: 'logic',
+    title: 'Branch',
+    description: 'Split the flow into a true and a false path based on a condition.',
+    icon: 'git-branch',
+    inputs: MAIN_IN,
+    // Two output ports — the engine activates exactly one per run.
+    outputs: [
+      { name: 'true', label: 'True' },
+      { name: 'false', label: 'False' },
+    ],
+    paramsSchema: BranchParamsSchema,
+    fields: [
+      {
+        key: 'left',
+        label: 'Value (path)',
+        kind: 'string',
+        placeholder: 'body.ok',
+        help: 'Dot-path into the incoming data. Leave blank to test the whole input.',
+      },
+      {
+        key: 'operator',
+        label: 'Condition',
+        kind: 'select',
+        required: true,
+        options: [
+          { value: 'isTruthy', label: 'is truthy' },
+          { value: 'isFalsy', label: 'is falsy' },
+          { value: 'equals', label: '= equals' },
+          { value: 'notEquals', label: '≠ not equals' },
+          { value: 'contains', label: 'contains' },
+          { value: 'gt', label: '> greater than' },
+          { value: 'gte', label: '≥ greater or equal' },
+          { value: 'lt', label: '< less than' },
+          { value: 'lte', label: '≤ less or equal' },
+        ],
+      },
+      {
+        key: 'right',
+        label: 'Compare to',
+        kind: 'string',
+        placeholder: 'ok',
+        help: 'Compared against the value. Ignored for “is truthy/falsy”.',
+      },
     ],
   },
 };

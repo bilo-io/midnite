@@ -1,5 +1,6 @@
 'use client';
 
+import { Fragment } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { Check, Loader2, X, type LucideIcon } from 'lucide-react';
 import { getNodeTypeDefinition, type NodeRunStatus } from '@midnite/shared';
@@ -30,6 +31,24 @@ function summarize(data: WorkflowNodeData): string {
   if (data.kind === 'ai.claude') {
     return typeof p.prompt === 'string' && p.prompt ? p.prompt : 'No prompt set';
   }
+  if (data.kind === 'logic.branch') {
+    const left = typeof p.left === 'string' && p.left ? p.left : 'input';
+    const op = typeof p.operator === 'string' ? p.operator : 'isTruthy';
+    const right = typeof p.right === 'string' ? p.right : '';
+    const labels: Record<string, string> = {
+      isTruthy: 'is truthy',
+      isFalsy: 'is falsy',
+      equals: '=',
+      notEquals: '≠',
+      contains: 'contains',
+      gt: '>',
+      gte: '≥',
+      lt: '<',
+      lte: '≤',
+    };
+    const phrase = labels[op] ?? op;
+    return op === 'isTruthy' || op === 'isFalsy' ? `${left} ${phrase}` : `${left} ${phrase} ${right}`.trim();
+  }
   return getNodeTypeDefinition(data.kind)?.description ?? '';
 }
 
@@ -38,6 +57,11 @@ export function WorkflowNodeView({ data, selected }: NodeProps<AppNode>) {
   const category = def?.category ?? 'action';
   const Icon: LucideIcon = iconFor(def?.icon);
   const hueVar = hueVarForCategory(category);
+  // The handle id MUST equal the port name persisted on edges (sourcePort/targetPort),
+  // or edges won't bind to a handle and React Flow silently drops them after a reload.
+  const inputPort = def?.inputs[0];
+  const outputPorts = def?.outputs ?? [];
+  const multiOutput = outputPorts.length > 1;
 
   return (
     <div
@@ -48,8 +72,13 @@ export function WorkflowNodeView({ data, selected }: NodeProps<AppNode>) {
       )}
       style={{ ['--node-hue' as string]: `var(${hueVar})` }}
     >
-      {def && def.inputs.length > 0 ? (
-        <Handle type="target" position={Position.Left} className="!h-2 !w-2 !border !border-border !bg-card" />
+      {inputPort ? (
+        <Handle
+          type="target"
+          id={inputPort.name}
+          position={Position.Left}
+          className="!h-2 !w-2 !border !border-border !bg-card"
+        />
       ) : null}
 
       <div
@@ -68,9 +97,30 @@ export function WorkflowNodeView({ data, selected }: NodeProps<AppNode>) {
 
       <div className="truncate px-3 py-2 text-[11px] text-muted-foreground">{summarize(data)}</div>
 
-      {def && def.outputs.length > 0 ? (
-        <Handle type="source" position={Position.Right} className="!h-2 !w-2 !border !border-border !bg-card" />
-      ) : null}
+      {multiOutput ? <div className="h-3" /> : null}
+      {outputPorts.map((port, i) => {
+        // Single output stays vertically centered; multiple ports fan out down the right edge.
+        const top = multiOutput ? 40 + (i * 45) / (outputPorts.length - 1) : 50;
+        return (
+          <Fragment key={port.name}>
+            {multiOutput ? (
+              <span
+                className="pointer-events-none absolute right-4 -translate-y-1/2 text-[9px] font-medium uppercase tracking-wide text-muted-foreground"
+                style={{ top: `${top}%` }}
+              >
+                {port.label ?? port.name}
+              </span>
+            ) : null}
+            <Handle
+              type="source"
+              id={port.name}
+              position={Position.Right}
+              style={multiOutput ? { top: `${top}%` } : undefined}
+              className="!h-2 !w-2 !border !border-border !bg-card"
+            />
+          </Fragment>
+        );
+      })}
     </div>
   );
 }

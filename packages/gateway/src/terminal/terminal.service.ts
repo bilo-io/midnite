@@ -1,9 +1,12 @@
 import { Inject, Injectable, Logger, forwardRef, type OnModuleDestroy } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, unlinkSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 import type { MidniteConfig, ServerTerminalMessage } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
+import { expandTilde } from '../fs/path-tilde';
+import { ProjectsService } from '../projects/projects.service';
 import { TasksService } from '../tasks/tasks.service';
 import { ApprovalService } from './approval.service';
 
@@ -49,6 +52,27 @@ export function scrubSecretEnv(env: Record<string, string>): Record<string, stri
     if (!SECRET_ENV_PATTERN.test(key)) out[key] = value;
   }
   return out;
+}
+
+/** Single-quote a path for safe interpolation into a shell command line. */
+function shellQuote(path: string): string {
+  return `'${path.replace(/'/g, `'\\''`)}'`;
+}
+
+/**
+ * The first line fed to a freshly-spawned session shell: change into the
+ * project's working directory and clear the startup noise, so the terminal
+ * opens on a clean prompt rooted at the project. Pure/exported for testing.
+ *
+ * Only applies to the default interactive shell — a configured command (e.g.
+ * `claude`, or a one-shot script) drives its own stdin and must not be typed at.
+ */
+export function buildShellInitCommand(
+  configuredCommand: string | undefined,
+  cwd: string,
+): string | undefined {
+  if (configuredCommand !== undefined) return undefined;
+  return `cd ${shellQuote(cwd)} && clear\r`;
 }
 
 /**
@@ -105,6 +129,7 @@ export class TerminalService implements OnModuleDestroy {
   constructor(
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
     @Inject(TasksService) private readonly tasks: TasksService,
+    @Inject(ProjectsService) private readonly projects: ProjectsService,
     // Mutual lifecycle/broadcast dependency within the terminal module.
     @Inject(forwardRef(() => ApprovalService)) private readonly approvals: ApprovalService,
   ) {}
@@ -279,6 +304,10 @@ export class TerminalService implements OnModuleDestroy {
       }),
     );
 
+    // Drop the shell into the project directory on a clean screen. Queued after
+    // the data listener so `clear`'s output is captured for scrollback replay.
+    if (spec.initCommand) proc.write(spec.initCommand);
+
     this.logger.log(
       `spawned pty for session ${sessionId}: ${spec.command} (pid ${proc.pid}) in ${spec.cwd}`,
     );
@@ -291,6 +320,7 @@ export class TerminalService implements OnModuleDestroy {
     cwd: string;
     env: Record<string, string>;
     settingsFile?: string;
+    initCommand?: string;
   } {
     const { terminal } = this.config;
     const command = terminal.command ?? process.env['SHELL'] ?? '/bin/bash';
@@ -326,7 +356,15 @@ export class TerminalService implements OnModuleDestroy {
       env['MIDNITE_HOOK_TIMEOUT_MS'] = String(terminal.approvals.timeoutMs + 15000);
     }
 
-    return { command, args, cwd: this.resolveCwd(sessionId), env, settingsFile };
+    const cwd = this.resolveCwd(sessionId);
+    return {
+      command,
+      args,
+      cwd,
+      env,
+      settingsFile,
+      initCommand: buildShellInitCommand(terminal.command, cwd),
+    };
   }
 
   /** Loopback URL the in-PTY hook script calls back on (config override, else gateway port). */
@@ -377,11 +415,17 @@ export class TerminalService implements OnModuleDestroy {
     return this.handles.get(sessionId)?.subscribers.size ?? 0;
   }
 
-  // cwd follows the session's task repo (mapped name→path via config.repos),
-  // falling back to the gateway's working directory.
+  // cwd resolution for a session's PTY, in priority order:
+  //   1. the work directory configured on the session's project (expanded from ~)
+  //   2. the session's task repo (mapped name→path via config.repos)
+  //   3. the gateway's working directory
   private resolveCwd(sessionId?: string): string {
     if (sessionId) {
       const task = this.tasks.listTasks().find((t) => t.id === sessionId);
+      if (task?.projectId) {
+        const workDir = this.projects.workDirFor(task.projectId);
+        if (workDir) return expandTilde(workDir, homedir());
+      }
       const repo = task?.repo
         ? this.config.repos.find((r) => r.name === task.repo)
         : undefined;

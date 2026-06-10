@@ -49,7 +49,7 @@ export interface WorkflowState {
   onNodesChange(changes: NodeChange<AppNode>[]): void;
   onEdgesChange(changes: EdgeChange[]): void;
   onConnect(connection: Connection): void;
-  addNode(kind: string): void;
+  addNode(kind: string, position?: { x: number; y: number }): void;
   updateNodeParams(id: string, params: Record<string, unknown>): void;
   removeNode(id: string): void;
   select(id: string | null): void;
@@ -123,15 +123,17 @@ export function createWorkflowStore(workflow: Workflow): StoreApi<WorkflowState>
 
     onConnect: (connection) => set((s) => ({ edges: addEdge(connection, s.edges), dirty: true })),
 
-    addNode: (kind) => {
+    addNode: (kind, position) => {
       const def = getNodeTypeDefinition(kind);
       if (!def) return;
       const id = crypto.randomUUID();
       const count = get().nodes.length;
+      // Drop position when dragged from the palette; a cascading fallback when clicked.
+      const at = position ?? { x: 440, y: 80 + count * 90 };
       const node: AppNode = {
         id,
         type: def.category,
-        position: { x: 440, y: 80 + count * 90 },
+        position: at,
         data: { kind, label: def.title, params: {} },
       };
       set((s) => ({ nodes: [...s.nodes, node], selectedId: id, dirty: true }));

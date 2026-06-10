@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   NODE_TYPE_DEFINITIONS,
+  evaluateBranchCondition,
   getNodeTypeDefinition,
   listNodeTypes,
 } from './node-types.js';
@@ -48,6 +49,34 @@ describe('node-type registry', () => {
       expect(ok.data.model).toBe('sonnet4.7');
       expect(ok.data.maxTokens).toBe(1024);
     }
+  });
+});
+
+describe('branch node', () => {
+  it('is registered as a logic node with true/false ports', () => {
+    const def = getNodeTypeDefinition('logic.branch')!;
+    expect(def.category).toBe('logic');
+    expect(def.outputs.map((p) => p.name)).toEqual(['true', 'false']);
+  });
+
+  it('resolves a dot-path and applies the operator', () => {
+    const input = { body: { status: 'ok', count: 5 } };
+    expect(evaluateBranchCondition(input, { left: 'body.status', operator: 'equals', right: 'ok' })).toBe(true);
+    expect(evaluateBranchCondition(input, { left: 'body.status', operator: 'equals', right: 'no' })).toBe(false);
+    expect(evaluateBranchCondition(input, { left: 'body.count', operator: 'gt', right: '3' })).toBe(true);
+    expect(evaluateBranchCondition(input, { left: 'body.count', operator: 'lt', right: '3' })).toBe(false);
+    expect(evaluateBranchCondition(input, { left: 'body.status', operator: 'contains', right: 'o' })).toBe(true);
+  });
+
+  it('tests the whole input when no path is given, and defaults to isTruthy', () => {
+    expect(evaluateBranchCondition(true, {})).toBe(true);
+    expect(evaluateBranchCondition(0, {})).toBe(false);
+    expect(evaluateBranchCondition(null, { operator: 'isFalsy' })).toBe(true);
+  });
+
+  it('returns false for a missing path rather than throwing', () => {
+    expect(evaluateBranchCondition({}, { left: 'a.b.c', operator: 'isTruthy' })).toBe(false);
+    expect(evaluateBranchCondition({}, { left: 'a.b.c', operator: 'equals', right: 'x' })).toBe(false);
   });
 });
 

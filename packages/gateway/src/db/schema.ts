@@ -83,6 +83,8 @@ export const projects = sqliteTable('projects', {
   description: text('description'),
   tag: text('tag').notNull(),
   color: text('color').notNull(),
+  // Folder (in `~`-form) that this project's Claude Code sessions spawn in.
+  workDir: text('work_dir'),
   plan: text('plan'),
   planUpdatedAt: text('plan_updated_at'),
   createdAt: text('created_at').notNull(),

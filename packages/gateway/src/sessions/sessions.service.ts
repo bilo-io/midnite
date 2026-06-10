@@ -89,6 +89,12 @@ export class SessionsService {
     return this.toSummary(this.tasks.unarchive(sessionId));
   }
 
+  // Deleting a session permanently removes its underlying task; gated on the task
+  // already being archived (enforced by the task layer).
+  delete(sessionId: string): void {
+    this.tasks.deleteTask(sessionId);
+  }
+
   private synthesize(task: Task): SessionTranscript {
     const messages: TranscriptMessage[] = [];
     if (task.prompt) {

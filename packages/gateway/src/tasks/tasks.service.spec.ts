@@ -69,6 +69,11 @@ class InMemoryRepo extends TasksRepository {
     return task;
   }
 
+  override deleteTask(id: string): void {
+    const idx = this.tasks.findIndex((t) => t.id === id);
+    if (idx >= 0) this.tasks.splice(idx, 1);
+  }
+
   override listTasks(status?: Status): TaskRow[] {
     return status ? this.tasks.filter((t) => t.status === status) : [...this.tasks];
   }
@@ -225,6 +230,29 @@ describe('TasksService', () => {
     const unarchived = service.unarchive('t0');
     expect(unarchived.archivedAt).toBeUndefined();
     expect(repo.events.some((e) => e.kind === 'task.unarchived')).toBe(true);
+  });
+
+  it('deleteTask refuses to delete a task that is not archived', () => {
+    const repo = new InMemoryRepo();
+    seed(repo, ['done']);
+    const service = new TasksService(repo, new StubClassifier());
+    expect(() => service.deleteTask('t0')).toThrow(/archived/);
+    expect(repo.tasks).toHaveLength(1);
+  });
+
+  it('deleteTask removes a task once it has been archived', () => {
+    const repo = new InMemoryRepo();
+    seed(repo, ['done']);
+    const service = new TasksService(repo, new StubClassifier());
+    service.archive('t0');
+    service.deleteTask('t0');
+    expect(repo.tasks).toHaveLength(0);
+  });
+
+  it('deleteTask 404s for an unknown task', () => {
+    const repo = new InMemoryRepo();
+    const service = new TasksService(repo, new StubClassifier());
+    expect(() => service.deleteTask('nope')).toThrow();
   });
 
   it('moving out of abandoned does not auto-unarchive', () => {

@@ -1,4 +1,4 @@
-import { Controller, Get, Inject, Param, Post } from '@nestjs/common';
+import { Controller, Delete, Get, Inject, Param, Post } from '@nestjs/common';
 import type {
   SessionSummary,
   SessionTranscript,
@@ -30,7 +30,7 @@ export class SessionsController {
     return this.service.mintTerminalToken(id);
   }
 
-  // Archive is a session-level affordance (delete comes later, archived-only).
+  // Archive is a session-level affordance; delete (below) is archived-only.
   @Post(':id/archive')
   archive(@Param('id') id: string): SessionSummary {
     return this.service.archive(id);
@@ -39,5 +39,12 @@ export class SessionsController {
   @Post(':id/unarchive')
   unarchive(@Param('id') id: string): SessionSummary {
     return this.service.unarchive(id);
+  }
+
+  // Permanent delete — only valid once the session is archived (enforced downstream).
+  @Delete(':id')
+  remove(@Param('id') id: string): { ok: true } {
+    this.service.delete(id);
+    return { ok: true };
   }
 }

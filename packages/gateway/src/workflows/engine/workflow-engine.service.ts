@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import {
+  evaluateBranchCondition,
   getNodeTypeDefinition,
   type NodeRunLog,
   type RunStatus,
@@ -10,7 +11,9 @@ import {
   type WorkflowRun,
 } from '@midnite/shared';
 import { WorkflowsRepository } from '../workflows.repository';
-import { CyclicWorkflowError, predecessors, reachableFrom, topologicalOrder } from '../lib/graph';
+import { CyclicWorkflowError, predecessors, topologicalOrder } from '../lib/graph';
+
+const BRANCH_TYPE = 'logic.branch';
 import { ExecutorRegistry } from './executor-registry';
 
 export interface RunOptions {
@@ -136,16 +139,29 @@ export class WorkflowEngine {
     signal: AbortSignal,
   ): Promise<void> {
     const { runId, graph, order, triggerId } = prepared;
-    const reachable = reachableFrom(graph, triggerId);
     const outputs = new Map<string, unknown>();
     let runStatus: RunStatus = 'succeeded';
     let runError: string | undefined;
+
+    // Dynamic, port-aware liveness. A node runs once it has at least one incoming edge
+    // from an already-run node via an *open* output port. Branch nodes open only the port
+    // their condition selects; every other node opens all of its ports. Topological order
+    // guarantees a node's predecessors are processed (and have propagated) before it, so
+    // `live` membership is final by the time we reach each node.
+    const live = new Set<string>([triggerId]);
+    const propagate = (sourceId: string, openPorts: Set<string>): void => {
+      for (const e of graph.edges) {
+        if (e.source === sourceId && openPorts.has(e.sourcePort)) live.add(e.target);
+      }
+    };
+    const allPorts = (nodeType: string): Set<string> =>
+      new Set((getNodeTypeDefinition(nodeType)?.outputs ?? []).map((p) => p.name));
 
     for (const nodeId of order) {
       const node = graph.nodes.find((n) => n.id === nodeId)!;
       const def = getNodeTypeDefinition(node.type)!;
 
-      if (!reachable.has(nodeId)) {
+      if (!live.has(nodeId)) {
         this.repo.updateNodeRun(runId, nodeId, {
           status: 'skipped',
           finishedAt: new Date().toISOString(),
@@ -180,6 +196,31 @@ export class WorkflowEngine {
           output: JSON.stringify(input ?? null),
           finishedAt: new Date().toISOString(),
         });
+        propagate(nodeId, allPorts(node.type));
+        continue;
+      }
+
+      // Branch: evaluate the condition, pass the input through unchanged, and open only
+      // the matching port so the other path's downstream nodes are skipped.
+      if (node.type === BRANCH_TYPE) {
+        const taken = evaluateBranchCondition(input, (node.params ?? {}) as Record<string, unknown>)
+          ? 'true'
+          : 'false';
+        const logs: NodeRunLog[] = [
+          {
+            at: new Date().toISOString(),
+            level: 'info',
+            message: `condition ${taken === 'true' ? 'met' : 'not met'} → taking "${taken}" path`,
+          },
+        ];
+        outputs.set(nodeId, input);
+        this.repo.updateNodeRun(runId, nodeId, {
+          status: 'succeeded',
+          output: JSON.stringify(input ?? null),
+          logs: JSON.stringify(logs),
+          finishedAt: new Date().toISOString(),
+        });
+        propagate(nodeId, new Set([taken]));
         continue;
       }
 
@@ -211,6 +252,7 @@ export class WorkflowEngine {
           logs: JSON.stringify(logs),
           finishedAt: new Date().toISOString(),
         });
+        propagate(nodeId, allPorts(node.type));
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         this.repo.updateNodeRun(runId, nodeId, {

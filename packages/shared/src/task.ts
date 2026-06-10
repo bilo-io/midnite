@@ -88,6 +88,12 @@ export const TaskCountsSchema = z.object({
 export const CreateTaskRequestSchema = z.object({
   prompt: z.string().min(1).max(8000),
   repo: z.string().optional(),
+  projectId: z.string().optional(),
+});
+
+// Reassign (or clear, via null) a task's project.
+export const UpdateTaskProjectRequestSchema = z.object({
+  projectId: z.string().nullable(),
 });
 
 export const CreateTaskResponseSchema = z.object({
@@ -109,5 +115,6 @@ export type Task = z.infer<typeof TaskSchema>;
 export type AgentSlot = z.infer<typeof AgentSlotSchema>;
 export type TaskCounts = z.infer<typeof TaskCountsSchema>;
 export type CreateTaskRequest = z.infer<typeof CreateTaskRequestSchema>;
+export type UpdateTaskProjectRequest = z.infer<typeof UpdateTaskProjectRequestSchema>;
 export type CreateTaskResponse = z.infer<typeof CreateTaskResponseSchema>;
 export type ClassifiedTask = z.infer<typeof ClassifiedTaskSchema>;
