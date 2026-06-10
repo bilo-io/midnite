@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Columns3, List, ListTree, type LucideIcon } from 'lucide-react';
 import type { Project, Task } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
@@ -50,6 +50,24 @@ export function TasksView({
 }) {
   const [selected, setSelected] = useState<Task | null>(null);
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Deep-link target from the session modal's "Go to task": auto-open it once.
+  const openId = searchParams.get('open');
+  const handledOpenRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!openId || handledOpenRef.current === openId) return;
+    const match = tasks.find((t) => t.id === openId);
+    if (!match) return;
+    handledOpenRef.current = openId;
+    setSelected(match);
+    // Strip the param so a manual close + refresh doesn't reopen it.
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('open');
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }, [openId, tasks, router, pathname, searchParams]);
 
   // The active view persists locally (like the other pages), not in the URL.
   const [view, setView] = useState<TaskView>('board');

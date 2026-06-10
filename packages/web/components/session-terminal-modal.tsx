@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Archive, ArchiveRestore, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Archive, ArchiveRestore, ListTodo, X } from 'lucide-react';
 import type { SessionSummary } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { SessionStatusDot } from '@/components/session-card';
@@ -16,6 +17,15 @@ type Props = {
 };
 
 export function SessionTerminalModal({ session, onClose, onArchiveToggle, onDelete }: Props) {
+  const router = useRouter();
+
+  // session.id === task.id; deep-link into the tasks board, which auto-opens it.
+  const goToTask = () => {
+    if (!session.linkedTaskId) return;
+    onClose();
+    router.push(`/tasks?open=${encodeURIComponent(session.linkedTaskId)}`);
+  };
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -57,6 +67,17 @@ export function SessionTerminalModal({ session, onClose, onArchiveToggle, onDele
                 <span>live terminal</span>
               </p>
             </div>
+            {session.linkedTaskId ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={goToTask}
+                className="shrink-0 text-muted-foreground"
+              >
+                <ListTodo className="h-3.5 w-3.5" /> Go to task
+              </Button>
+            ) : null}
             {onArchiveToggle ? (
               <Button
                 type="button"
