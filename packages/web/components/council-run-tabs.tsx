@@ -74,10 +74,9 @@ export function CouncilRunTabs({
   return (
     <div className="flex flex-col gap-3">
       {/* Topic + tab strip stay pinned to the top while the output scrolls
-          beneath them. Near-opaque (blur only softens the last few percent) so
-          text sliding under doesn't bleed through; a short fade below the strip
-          eases the hard edge into the content. */}
-      <div className="sticky top-[52px] z-20 -mx-1 flex flex-col gap-2 bg-background px-1 pb-2 pt-3 after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-4 after:bg-gradient-to-b after:from-background after:to-transparent supports-[backdrop-filter]:bg-background/95 supports-[backdrop-filter]:backdrop-blur-md">
+          beneath them — on the exact same surface as the sticky page header
+          (border + bg/backdrop classes kept in lockstep with PageHeader). */}
+      <div className="sticky top-[52px] z-20 -mx-1 flex flex-col gap-2 border-b border-border/60 bg-background/80 px-1 pb-2 pt-3 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <p className="text-xs text-muted-foreground">
           Topic: <span className="text-foreground">{run.topic}</span>
         </p>
