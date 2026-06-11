@@ -65,3 +65,11 @@ A dedicated Memory page (brain icon in the sidenav) for organising knowledge bas
 - [x] Web `/memory` page: search (`?q=`), scope filter pills (`?scope=` — Global + projects holding memories), grid/list toggle (persisted), New button
 - [x] `MemoryCard` (grid/list) with scope chip + excerpt; `MemoryModal` detail view: title, scope select, markdown editor, save/delete with confirm
 - [x] Verified: typecheck + tests green; live CRUD smoke against a throwaway gateway (create global/scoped, 400 on missing title, partial patch, null re-scope, delete, 404)
+
+## 2026-06-11 — Councils (multi-agent debate page)
+
+- [x] `shared/src/council.ts` — Council/Participant/Run zod contracts (provider = `AgentCli`, run-participant snapshots with anonymization `label`), `councils.runTimeoutMs` config
+- [x] Gateway `councils/` module (+`0010_councils` migration, 4 tables): CRUD + run routes; `CouncilRunnerService` spawns per-participant one-shot CLIs in managed PTYs, captures/cleans output, shuffles + labels A/B/C before the Claude verdict call (label map persisted for UI de-anonymization); stale runs failed on restart
+- [x] `TerminalService.spawnManagedRun` — eager pinned PTYs (no idle reap) with capture/exit hooks; `council-` attach guard; `killManagedRun` that preserves the exit hook; terminal-token mint widened to live managed runs
+- [x] Web `/councils` list (grid/list toggle persisted, `?q=`, create modal) and `/councils/[id]`: participants side panel (debounced saves, provider select), free-form topic composer (dictation), per-participant live terminal tabs + Verdict tab (markdown + label legend), run thread; nav link
+- [x] Verified: typecheck + tests (incl. runner orchestration: timeout/partial-failure/shuffle-label/restart) + full builds green; merged to main after memories (`0009` → `0010` migration order)
