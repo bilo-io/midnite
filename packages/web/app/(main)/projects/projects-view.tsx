@@ -10,23 +10,47 @@ import { ProjectModal } from '@/components/project-modal';
 import { ProjectsTree } from '@/components/projects-tree';
 import { PlanPanel } from '@/components/plan-panel';
 import { TaskThreadModal } from '@/components/task-thread-modal';
+import { TemplateCard } from '@/components/template-card';
+import { TemplateModal } from '@/components/template-modal';
+import { TemplatesTable } from '@/components/templates-table';
+import { TEMPLATES, createBlankTemplate, type Template } from './templates';
 import { cn } from '@/lib/utils';
 
 type View = 'list' | 'grid' | 'table';
 const VIEWS: readonly View[] = ['list', 'grid', 'table'];
 const VIEW_STORAGE_KEY = 'midnite.projects.view';
+const TEMPLATES_STORAGE_KEY = 'midnite.templates';
+
+type Tab = 'projects' | 'templates';
+const TABS: readonly { value: Tab; label: string }[] = [
+  { value: 'projects', label: 'Projects' },
+  { value: 'templates', label: 'Templates' },
+];
 
 export function ProjectsView({ initial, tasks }: { initial: Project[]; tasks: Task[] }) {
   const router = useRouter();
   const [view, setView] = useState<View>('grid');
+  const [tab, setTab] = useState<Tab>('projects');
   const [creating, setCreating] = useState(false);
   const [editProject, setEditProject] = useState<Project | null>(null);
   const [planProject, setPlanProject] = useState<Project | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [templates, setTemplates] = useState<Template[]>(TEMPLATES);
+  const [openTemplateId, setOpenTemplateId] = useState<string | null>(null);
+  const [expandTemplateId, setExpandTemplateId] = useState<string | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem(VIEW_STORAGE_KEY);
     if (stored && (VIEWS as readonly string[]).includes(stored)) setView(stored as View);
+    try {
+      const raw = localStorage.getItem(TEMPLATES_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as unknown;
+        if (Array.isArray(parsed)) setTemplates(parsed as Template[]);
+      }
+    } catch {
+      // ignore storage failures; fall back to the built-in templates.
+    }
   }, []);
 
   const onSetView = useCallback((next: View) => {
@@ -37,6 +61,49 @@ export function ProjectsView({ initial, tasks }: { initial: Project[]; tasks: Ta
       // ignore storage failures (private mode, etc.)
     }
   }, []);
+
+  const persistTemplates = useCallback((next: Template[]) => {
+    try {
+      localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      // best-effort
+    }
+  }, []);
+
+  const updateTemplate = useCallback(
+    (id: string, patch: Partial<Template>) => {
+      setTemplates((prev) => {
+        const next = prev.map((t) => (t.id === id ? { ...t, ...patch } : t));
+        persistTemplates(next);
+        return next;
+      });
+    },
+    [persistTemplates],
+  );
+
+  const deleteTemplate = useCallback(
+    (id: string) => {
+      setTemplates((prev) => {
+        const next = prev.filter((t) => t.id !== id);
+        persistTemplates(next);
+        return next;
+      });
+      setOpenTemplateId((cur) => (cur === id ? null : cur));
+    },
+    [persistTemplates],
+  );
+
+  const newTemplate = useCallback(() => {
+    const t = createBlankTemplate();
+    setTemplates((prev) => {
+      const next = [t, ...prev];
+      persistTemplates(next);
+      return next;
+    });
+    // Open it for editing: the modal in card views, an expanded row in the table.
+    if (view === 'table') setExpandTemplateId(t.id);
+    else setOpenTemplateId(t.id);
+  }, [persistTemplates, view]);
 
   const refresh = useCallback(() => router.refresh(), [router]);
 
@@ -54,13 +121,42 @@ export function ProjectsView({ initial, tasks }: { initial: Project[]; tasks: Ta
         [p.name, p.tag, p.description ?? ''].some((f) => f.toLowerCase().includes(q)),
       )
     : initial;
+  const filteredTemplates = q
+    ? templates.filter((t) =>
+        [t.name, t.tag, t.description].some((f) => f.toLowerCase().includes(q)),
+      )
+    : templates;
+
+  const count = tab === 'projects' ? filtered.length : filteredTemplates.length;
+  const openTemplate = templates.find((t) => t.id === openTemplateId) ?? null;
 
   return (
     <div className="space-y-4">
       <div className="reveal-controls flex items-center justify-between gap-3">
-        <p className="text-xs tabular-nums text-muted-foreground">
-          {filtered.length} project{filtered.length === 1 ? '' : 's'}
-        </p>
+        <div className="flex items-center gap-3">
+          <p className="text-xs tabular-nums text-muted-foreground">
+            {count} {tab === 'projects' ? 'project' : 'template'}
+            {count === 1 ? '' : 's'}
+          </p>
+          <div className="flex items-center gap-1.5">
+            {TABS.map((t) => (
+              <button
+                key={t.value}
+                type="button"
+                onClick={() => setTab(t.value)}
+                aria-pressed={tab === t.value}
+                className={cn(
+                  'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                  tab === t.value
+                    ? 'border-foreground/20 bg-accent text-accent-foreground'
+                    : 'border-border/60 text-muted-foreground hover:bg-accent/50 hover:text-foreground',
+                )}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="flex items-center gap-2">
           <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
             <Button
@@ -97,15 +193,67 @@ export function ProjectsView({ initial, tasks }: { initial: Project[]; tasks: Ta
               <ListTree className="h-4 w-4" />
             </Button>
           </div>
-          <Button type="button" size="sm" onClick={() => setCreating(true)}>
-            <Plus className="h-4 w-4" />
-            New project
-          </Button>
+          {tab === 'projects' ? (
+            <Button type="button" size="sm" onClick={() => setCreating(true)}>
+              <Plus className="h-4 w-4" />
+              New project
+            </Button>
+          ) : (
+            <Button type="button" size="sm" onClick={newTemplate}>
+              <Plus className="h-4 w-4" />
+              New template
+            </Button>
+          )}
         </div>
       </div>
 
       <div className="reveal-content">
-        {initial.length === 0 ? (
+        {tab === 'templates' ? (
+          templates.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border/60 p-12 text-center">
+              <p className="text-sm text-muted-foreground">
+                No templates. Create one to draft plans and specs from a reusable document.
+              </p>
+              <Button type="button" size="sm" onClick={newTemplate}>
+                <Plus className="h-4 w-4" />
+                New template
+              </Button>
+            </div>
+          ) : filteredTemplates.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-border/60 p-12 text-center text-sm text-muted-foreground">
+              No templates match “{q}”.
+            </div>
+          ) : view === 'table' ? (
+            <TemplatesTable
+              templates={filteredTemplates}
+              onUpdate={updateTemplate}
+              onDelete={deleteTemplate}
+              expandId={expandTemplateId}
+            />
+          ) : view === 'grid' ? (
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {filteredTemplates.map((t) => (
+                <TemplateCard
+                  key={t.id}
+                  template={t}
+                  layout="grid"
+                  onOpen={() => setOpenTemplateId(t.id)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {filteredTemplates.map((t) => (
+                <TemplateCard
+                  key={t.id}
+                  template={t}
+                  layout="list"
+                  onOpen={() => setOpenTemplateId(t.id)}
+                />
+              ))}
+            </div>
+          )
+        ) : initial.length === 0 ? (
           <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border/60 p-12 text-center">
             <p className="text-sm text-muted-foreground">
               No projects yet. Create one to group tasks, attach sources, and draft a plan.
@@ -158,6 +306,7 @@ export function ProjectsView({ initial, tasks }: { initial: Project[]; tasks: Ta
         <ProjectModal
           project={creating ? null : editProject}
           tasks={editProject ? tasks.filter((t) => t.projectId === editProject.id) : []}
+          templates={templates}
           onSelectTask={(task) => {
             closeModal();
             setSelectedTask(task);
@@ -180,6 +329,15 @@ export function ProjectsView({ initial, tasks }: { initial: Project[]; tasks: Ta
           task={selectedTask}
           projects={initial}
           onClose={() => setSelectedTask(null)}
+        />
+      ) : null}
+
+      {openTemplate ? (
+        <TemplateModal
+          template={openTemplate}
+          onSave={(patch) => updateTemplate(openTemplate.id, patch)}
+          onDelete={() => deleteTemplate(openTemplate.id)}
+          onClose={() => setOpenTemplateId(null)}
         />
       ) : null}
     </div>

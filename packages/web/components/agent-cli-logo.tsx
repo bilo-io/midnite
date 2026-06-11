@@ -41,10 +41,30 @@ export function AgentCliLogo({ cli, className }: { cli: AgentCli; className?: st
     );
   }
 
-  // codex → OpenAI
+  if (cli === 'codex') {
+    return (
+      <svg viewBox="0 0 24 24" className={cls} fill="currentColor" role="img" aria-hidden>
+        <path d={OPENAI_PATH} />
+      </svg>
+    );
+  }
+
+  // Aider / OpenCode ship raster/SVG brand assets (in /public/agent-logos) rather
+  // than a single-path mark, so render them as images. OpenCode is a square icon;
+  // Aider is a wordmark, so lock its height and let the width run natural.
+  const asset = IMG_LOGOS[cli];
   return (
-    <svg viewBox="0 0 24 24" className={cls} fill="currentColor" role="img" aria-hidden>
-      <path d={OPENAI_PATH} />
-    </svg>
+    <img
+      src={asset.src}
+      alt=""
+      aria-hidden
+      className={cn(cls, 'object-contain')}
+      style={asset.shape === 'wordmark' ? { width: 'auto' } : undefined}
+    />
   );
 }
+
+const IMG_LOGOS: Record<'aider' | 'opencode', { src: string; shape: 'icon' | 'wordmark' }> = {
+  aider: { src: '/agent-logos/aider.svg', shape: 'wordmark' },
+  opencode: { src: '/agent-logos/opencode.png', shape: 'icon' },
+};

@@ -11,7 +11,7 @@ import {
 } from 'react';
 import { THEME_STORAGE_KEY } from './theme-script';
 
-export type ThemePreference = 'light' | 'dark' | 'system' | 'timeOfDay';
+export type ThemePreference = 'light' | 'dark' | 'system' | 'time';
 export type ResolvedTheme = 'light' | 'dark';
 
 type ThemeContextValue = {
@@ -36,14 +36,14 @@ function timeOfDayTheme(): ResolvedTheme {
 
 function resolve(pref: ThemePreference): ResolvedTheme {
   if (pref === 'system') return systemTheme();
-  if (pref === 'timeOfDay') return timeOfDayTheme();
+  if (pref === 'time') return timeOfDayTheme();
   return pref;
 }
 
 function readStoredPreference(): ThemePreference {
   if (typeof window === 'undefined') return 'system';
   const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
-  return stored === 'light' || stored === 'dark' || stored === 'timeOfDay' ? stored : 'system';
+  return stored === 'light' || stored === 'dark' || stored === 'time' ? stored : 'system';
 }
 
 function applyResolved(resolved: ResolvedTheme) {
@@ -73,7 +73,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // Re-evaluate periodically so the theme flips at the 08:00/18:00 boundary
   // while the page stays open.
   useEffect(() => {
-    if (preference !== 'timeOfDay') return;
+    if (preference !== 'time') return;
     const tick = () => setResolved(timeOfDayTheme());
     const id = window.setInterval(tick, 60_000);
     return () => window.clearInterval(id);

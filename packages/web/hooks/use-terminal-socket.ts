@@ -13,7 +13,8 @@ import { gatewayWsUrl, mintTerminalToken } from '@/lib/api';
 export type TerminalConnectionState = 'connecting' | 'open' | 'closed' | 'error';
 
 type Args = {
-  sessionId: string;
+  /** The PTY key to mint a token for and attach to — a session id or an ad-hoc id. */
+  attachId: string;
   /** Open the socket only once the terminal is mounted and sized. */
   enabled: boolean;
   /** Raw PTY bytes for the terminal to render. */
@@ -52,7 +53,7 @@ function base64ToBytes(b64: string): Uint8Array {
  * senders. Reconnects with capped backoff while `enabled`.
  */
 export function useTerminalSocket({
-  sessionId,
+  attachId,
   enabled,
   onOutput,
   onStatus,
@@ -80,7 +81,7 @@ export function useTerminalSocket({
   onApprovalResolvedRef.current = onApprovalResolved;
 
   useEffect(() => {
-    if (!enabled || !sessionId) {
+    if (!enabled || !attachId) {
       setConnectionState('closed');
       return;
     }
@@ -101,7 +102,7 @@ export function useTerminalSocket({
       setConnectionState('connecting');
       let token: string;
       try {
-        token = (await mintTerminalToken(sessionId)).token;
+        token = (await mintTerminalToken(attachId)).token;
       } catch {
         if (cancelled) return;
         setConnectionState('error');
@@ -118,7 +119,7 @@ export function useTerminalSocket({
         attempt = 0;
         setConnectionState('open');
         const { cols, rows } = geomRef.current;
-        ws.send(JSON.stringify({ type: 'attach', sessionId, token, cols, rows }));
+        ws.send(JSON.stringify({ type: 'attach', sessionId: attachId, token, cols, rows }));
       };
 
       ws.onmessage = (ev: MessageEvent) => {
@@ -179,7 +180,7 @@ export function useTerminalSocket({
         wsRef.current = null;
       }
     };
-  }, [enabled, sessionId]);
+  }, [enabled, attachId]);
 
   const sendInput = useCallback((data: string) => {
     const ws = wsRef.current;

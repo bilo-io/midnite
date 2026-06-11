@@ -92,16 +92,16 @@ export function Select<T extends string>({
           open && 'ring-1 ring-ring',
         )}
       >
-        <span className="flex min-w-0 items-center gap-2">
+        <span className="min-w-0 truncate">{selected?.label ?? ''}</span>
+        <span className="flex shrink-0 items-center gap-2">
           {selected?.icon ? <span className="flex shrink-0 items-center">{selected.icon}</span> : null}
-          <span className="truncate">{selected?.label ?? ''}</span>
+          <ChevronDown
+            className={cn(
+              'h-4 w-4 shrink-0 text-muted-foreground transition-transform',
+              open && 'rotate-180',
+            )}
+          />
         </span>
-        <ChevronDown
-          className={cn(
-            'h-4 w-4 shrink-0 text-muted-foreground transition-transform',
-            open && 'rotate-180',
-          )}
-        />
       </button>
 
       {open && rect
@@ -122,15 +122,17 @@ export function Select<T extends string>({
                     aria-selected={on}
                     onClick={() => pick(o.value)}
                     className={cn(
-                      'flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-accent/60',
+                      'flex w-full items-center justify-between gap-2 rounded px-2 py-1.5 text-sm hover:bg-accent/60',
                       on ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
                     )}
                   >
-                    <span className="flex h-4 w-4 shrink-0 items-center justify-center">
-                      {on ? <Check className="h-4 w-4" /> : null}
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="flex h-4 w-4 shrink-0 items-center justify-center">
+                        {on ? <Check className="h-4 w-4" /> : null}
+                      </span>
+                      <span className="truncate">{o.label}</span>
                     </span>
                     {o.icon ? <span className="flex shrink-0 items-center">{o.icon}</span> : null}
-                    <span className="truncate">{o.label}</span>
                   </button>
                 );
               })}

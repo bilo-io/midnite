@@ -105,8 +105,6 @@ const SUBGREETINGS = [
   'ready when you are',
 ];
 
-const TITLE_PUNCT = '.';
-
 export default function HomePage() {
   const [greeting, setGreeting] = useState<string | null>(null);
   const [typed, setTyped] = useState('');
@@ -132,7 +130,7 @@ export default function HomePage() {
   // Hold a blinking cursor for 1s, then type the greeting out character by character.
   useEffect(() => {
     if (greeting === null) return;
-    const full = `${greeting}${TITLE_PUNCT}`;
+    const full = `${greeting}`;
     let index = 0;
     let typeTimer: ReturnType<typeof setInterval>;
     const startDelay = setTimeout(() => {
@@ -148,7 +146,7 @@ export default function HomePage() {
     };
   }, [greeting]);
 
-  const titleDone = greeting !== null && typed.length === `${greeting}${TITLE_PUNCT}`.length;
+  const titleDone = greeting !== null && typed.length === `${greeting}`.length;
 
   // Once the title is done, type the subtitle out character by character. Reruns
   // whenever the phrase rotates, clearing first so the new one types in clean.

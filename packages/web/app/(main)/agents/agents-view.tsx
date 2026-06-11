@@ -7,17 +7,27 @@ import {
   Bot,
   Check,
   ChevronDown,
+  Download,
+  ExternalLink,
   FileText,
+  Library,
+  Loader2,
   Plus,
+  RefreshCw,
   Terminal,
   Trash2,
   Users,
+  X,
 } from 'lucide-react';
 import {
   AGENT_CLIS,
   AGENT_CLI_LABEL,
+  MAX_GLOBAL_SOURCES,
   type AgentCli,
+  type AgentCliStatus,
   type AgentsConfig,
+  type CliTerminalAction,
+  type GlobalSource,
   type PrimaryAgent,
   type SubAgent,
   type UpdatePrimaryAgentRequest,
@@ -26,12 +36,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, type SelectOption } from '@/components/ui/select';
 import { AgentCliLogo } from '@/components/agent-cli-logo';
+import { CliActionModal } from '@/components/cli-action-modal';
+import { SourceIcon } from '@/components/source-icon';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import {
+  addKnowledgeSource,
   createSubAgent,
   deleteSubAgent,
   getAgentsConfig,
+  getCliStatus,
+  getKnowledgeSources,
+  removeKnowledgeSource,
   updateAgentCli,
   updatePrimaryAgent,
   updateSubAgent,
@@ -56,6 +72,12 @@ export function AgentsView() {
   const [agents, setAgents] = useState<AgentsConfig | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  // Install status for the currently-selected CLI, plus the open install/uninstall modal.
+  const [cliStatus, setCliStatus] = useState<AgentCliStatus | null>(null);
+  const [statusBusy, setStatusBusy] = useState(false);
+  const [cliAction, setCliAction] = useState<{ cli: AgentCli; action: CliTerminalAction } | null>(
+    null,
+  );
   const confirm = useConfirm();
 
   // A ref mirror of the latest config so debounced saves read fresh values
@@ -80,6 +102,37 @@ export function AgentsView() {
       for (const t of timers.values()) clearTimeout(t);
     };
   }, []);
+
+  // Probe whether the selected CLI is installed (and its version). Re-runs when
+  // the selection changes and after the install modal closes.
+  const selectedCli = agents?.cli ?? null;
+  const refreshCliStatus = () => {
+    if (!selectedCli) return;
+    setStatusBusy(true);
+    getCliStatus(selectedCli)
+      .then(setCliStatus)
+      .catch(() => setCliStatus(null))
+      .finally(() => setStatusBusy(false));
+  };
+  useEffect(() => {
+    if (!selectedCli) return;
+    let cancelled = false;
+    setStatusBusy(true);
+    setCliStatus(null);
+    getCliStatus(selectedCli)
+      .then((s) => {
+        if (!cancelled) setCliStatus(s);
+      })
+      .catch(() => {
+        if (!cancelled) setCliStatus(null);
+      })
+      .finally(() => {
+        if (!cancelled) setStatusBusy(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedCli]);
 
   const flashSaved = () => {
     setSaved(true);
@@ -219,6 +272,13 @@ export function AgentsView() {
               className="w-40 shrink-0"
             />
           </div>
+
+          <CliStatusRow
+            cli={cli}
+            status={cliStatus}
+            busy={statusBusy}
+            onAction={(action) => setCliAction({ cli, action })}
+          />
         </div>
       </Accordion>
 
@@ -286,6 +346,8 @@ export function AgentsView() {
         </div>
       </Accordion>
 
+      <KnowledgeBaseSection />
+
       <Accordion
         title="Sub Agents"
         icon={<Users className="h-3.5 w-3.5" />}
@@ -330,6 +392,241 @@ export function AgentsView() {
           )}
         </div>
       </Accordion>
+
+      {cliAction ? (
+        <CliActionModal
+          cli={cliAction.cli}
+          action={cliAction.action}
+          onClose={() => {
+            setCliAction(null);
+            // The user may have just installed/uninstalled — re-probe so the row updates.
+            refreshCliStatus();
+          }}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * The global knowledge base: link sources shared with every project (on top of
+ * each project's own sources). Mirrors the project sources UI — paste a URL, the
+ * gateway extracts the favicon + title from Open Graph.
+ */
+function KnowledgeBaseSection() {
+  const [sources, setSources] = useState<GlobalSource[]>([]);
+  const [url, setUrl] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  const confirm = useConfirm();
+
+  useEffect(() => {
+    getKnowledgeSources()
+      .then(setSources)
+      .catch((e) => setError(errMsg(e)))
+      .finally(() => setLoaded(true));
+  }, []);
+
+  const atLimit = sources.length >= MAX_GLOBAL_SOURCES;
+
+  const add = async () => {
+    const u = url.trim();
+    if (!u) return;
+    try {
+      new URL(u);
+    } catch {
+      setError('Enter a full URL, including https://');
+      return;
+    }
+    setError(null);
+    setBusy(true);
+    try {
+      setSources(await addKnowledgeSource(u));
+      setUrl('');
+    } catch (e) {
+      setError(errMsg(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async (id: string) => {
+    const ok = await confirm({
+      title: 'Remove this source?',
+      description: 'It will no longer be shared with your projects.',
+      confirmLabel: 'Remove',
+    });
+    if (!ok) return;
+    setBusy(true);
+    try {
+      setSources(await removeKnowledgeSource(id));
+    } catch (e) {
+      setError(errMsg(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Accordion
+      title="Knowledge Base"
+      icon={<Library className="h-3.5 w-3.5" />}
+      count={sources.length}
+      defaultOpen
+    >
+      <div className="space-y-3 p-5">
+        <p className="text-xs text-muted-foreground">
+          Links shared with every project, on top of its own sources. A project&apos;s own source
+          for the same link takes precedence.
+        </p>
+
+        <div className="flex items-center gap-2">
+          <Input
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                void add();
+              }
+            }}
+            placeholder="Paste a GitHub, Notion, Google Docs or any link"
+            disabled={atLimit || busy}
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            size="icon"
+            onClick={() => void add()}
+            disabled={atLimit || busy || !url.trim()}
+            aria-label="Add source"
+          >
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+          </Button>
+        </div>
+
+        {error ? <p className="text-xs text-destructive">{error}</p> : null}
+
+        {loaded && sources.length === 0 ? (
+          <p className="text-xs text-muted-foreground">
+            No global sources yet — add links your agents should always have on hand.
+          </p>
+        ) : (
+          <ul className="space-y-1.5">
+            {sources.map((s) => (
+              <li
+                key={s.id}
+                className="flex items-center gap-2 rounded-md border border-border/60 bg-background/60 px-2.5 py-1.5"
+              >
+                <SourceIcon kind={s.kind} faviconUrl={s.faviconUrl} />
+                <span className="min-w-0 flex-1 truncate text-sm">{s.title ?? s.url}</span>
+                <a
+                  href={s.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Open source in new tab"
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+                <button
+                  type="button"
+                  onClick={() => void remove(s.id)}
+                  disabled={busy}
+                  aria-label="Remove source"
+                  className="text-muted-foreground hover:text-destructive"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </Accordion>
+  );
+}
+
+/** Installed/version badge for the selected CLI, with install / update / uninstall buttons. */
+function CliStatusRow({
+  cli,
+  status,
+  busy,
+  onAction,
+}: {
+  cli: AgentCli;
+  status: AgentCliStatus | null;
+  busy: boolean;
+  onAction: (action: CliTerminalAction) => void;
+}) {
+  const label = AGENT_CLI_LABEL[cli];
+  const installed = status?.installed ?? false;
+
+  return (
+    <div className="flex items-center justify-between gap-4 rounded-lg border border-border/60 bg-muted/20 px-4 py-2.5">
+      <div className="flex min-w-0 items-center gap-2.5">
+        <AgentCliLogo cli={cli} className="h-4 w-4 shrink-0" />
+        {busy ? (
+          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            Checking {label}…
+          </span>
+        ) : installed ? (
+          <span className="flex min-w-0 items-center gap-1.5 text-xs">
+            <span
+              className="h-1.5 w-1.5 shrink-0 rounded-full"
+              style={{ background: 'hsl(142 71% 45%)' }}
+            />
+            <span className="font-medium">{label} installed</span>
+            {status?.version ? (
+              <span className="truncate font-mono text-muted-foreground">{status.version}</span>
+            ) : null}
+          </span>
+        ) : (
+          <span className="flex items-center gap-1.5 text-xs">
+            <span
+              className="h-1.5 w-1.5 shrink-0 rounded-full"
+              style={{ background: 'hsl(0 72% 55%)' }}
+            />
+            <span className="font-medium">{label} not found</span>
+          </span>
+        )}
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        {installed ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => onAction('uninstall')}
+            disabled={busy}
+            className="text-muted-foreground hover:text-destructive"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Uninstall
+          </Button>
+        ) : null}
+        <Button
+          type="button"
+          variant={installed ? 'outline' : 'default'}
+          size="sm"
+          onClick={() => onAction('install')}
+          disabled={busy}
+        >
+          {installed ? (
+            <>
+              <RefreshCw className="h-3.5 w-3.5" />
+              Reinstall / Update
+            </>
+          ) : (
+            <>
+              <Download className="h-3.5 w-3.5" />
+              Install
+            </>
+          )}
+        </Button>
+      </div>
     </div>
   );
 }

@@ -10,7 +10,7 @@ const OPTIONS: { value: ThemePreference; label: string; Icon: typeof Sun }[] = [
   { value: 'light', label: 'Light', Icon: Sun },
   { value: 'dark', label: 'Dark', Icon: Moon },
   { value: 'system', label: 'System', Icon: Laptop },
-  { value: 'timeOfDay', label: 'Time of day', Icon: Clock },
+  { value: 'time', label: 'Time', Icon: Clock },
 ];
 
 export function ThemeToggle() {

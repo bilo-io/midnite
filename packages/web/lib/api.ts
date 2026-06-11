@@ -1,7 +1,10 @@
 import {
   AgentCliResponseSchema,
+  AgentCliStatusResponseSchema,
   AgentPingResponseSchema,
   AgentsConfigResponseSchema,
+  GlobalSourcesResponseSchema,
+  InstallTerminalResponseSchema,
   BrowseDirResponseSchema,
   CreatePlanTasksResponseSchema,
   CreateTaskResponseSchema,
@@ -24,13 +27,16 @@ import {
   WorkflowRunSchema,
   WorkflowSummarySchema,
   type AgentCli,
+  type AgentCliStatus,
   type AgentsConfig,
   type BrowseDirResponse,
+  type CliTerminalAction,
   type CreateProjectRequest,
   type CreateSubAgentRequest,
   type CreateTaskResponse,
   type CreateWorkflowRequest,
   type DraftPlanResponse,
+  type GlobalSource,
   type HeartbeatRun,
   type PrimaryAgent,
   type Project,
@@ -243,6 +249,31 @@ export async function removeProjectSource(id: string, sourceId: string): Promise
   return project;
 }
 
+// --- Knowledge base (global sources, applied to every project) ---
+
+export async function getKnowledgeSources(): Promise<GlobalSource[]> {
+  const { sources } = await fetchJson('/knowledge/sources', undefined, GlobalSourcesResponseSchema);
+  return sources;
+}
+
+export async function addKnowledgeSource(url: string): Promise<GlobalSource[]> {
+  const { sources } = await fetchJson(
+    '/knowledge/sources',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ url }) },
+    GlobalSourcesResponseSchema,
+  );
+  return sources;
+}
+
+export async function removeKnowledgeSource(id: string): Promise<GlobalSource[]> {
+  const { sources } = await fetchJson(
+    `/knowledge/sources/${encodeURIComponent(id)}`,
+    { method: 'DELETE' },
+    GlobalSourcesResponseSchema,
+  );
+  return sources;
+}
+
 export async function enhanceProjectDescription(input: {
   name?: string;
   description: string;
@@ -366,6 +397,28 @@ export async function updateAgentCli(cli: AgentCli): Promise<AgentCli> {
     AgentCliResponseSchema,
   );
   return res.cli;
+}
+
+export async function getCliStatus(cli: AgentCli): Promise<AgentCliStatus> {
+  const { status } = await fetchJson(
+    `/agents/cli/${encodeURIComponent(cli)}/status`,
+    undefined,
+    AgentCliStatusResponseSchema,
+  );
+  return status;
+}
+
+/** Register a standalone install/uninstall terminal for a CLI; returns the id to attach to. */
+export async function createCliTerminal(
+  cli: AgentCli,
+  action: CliTerminalAction,
+): Promise<string> {
+  const { terminalId } = await fetchJson(
+    `/terminal/${action}/${encodeURIComponent(cli)}`,
+    { method: 'POST' },
+    InstallTerminalResponseSchema,
+  );
+  return terminalId;
 }
 
 export async function updatePrimaryAgent(body: UpdatePrimaryAgentRequest): Promise<PrimaryAgent> {

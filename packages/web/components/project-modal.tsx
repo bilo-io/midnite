@@ -1,7 +1,18 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { ExternalLink, FolderOpen, Loader2, Plus, Sparkles, Trash2, X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import {
+  ChevronDown,
+  ExternalLink,
+  FileText,
+  FolderOpen,
+  Loader2,
+  Plus,
+  Sparkles,
+  Trash2,
+  X,
+} from 'lucide-react';
 import {
   MAX_SOURCES_PER_PROJECT,
   MAX_TAG_LENGTH,
@@ -15,6 +26,14 @@ import { FolderPicker } from '@/components/folder-picker';
 import { ProjectTag } from '@/components/project-tag';
 import { SourceIcon } from '@/components/source-icon';
 import { TaskRow } from '@/components/task-row';
+import { PlanDocModal } from '@/components/plan-doc-modal';
+import { TEMPLATES, type Template } from '@/app/(main)/projects/templates';
+import {
+  createDocFromTemplate,
+  loadPlanDocs,
+  savePlanDocs,
+  type PlanDoc,
+} from '@/app/(main)/projects/planning';
 import {
   addProjectSource,
   createProject,
@@ -50,15 +69,24 @@ type Props = {
   project: Project | null;
   /** Tasks belonging to this project (edit mode only) — shown under the Tasks tab. */
   tasks?: Task[];
+  /** The template library, surfaced under the Planning tab. Defaults to the built-ins. */
+  templates?: Template[];
   /** Optional: open a task from the Tasks tab. Rows are static when omitted. */
   onSelectTask?: (task: Task) => void;
   onClose: () => void;
   onSaved: () => void;
 };
 
-type Tab = 'details' | 'sources' | 'tasks';
+type Tab = 'details' | 'sources' | 'planning' | 'tasks';
 
-export function ProjectModal({ project, tasks, onSelectTask, onClose, onSaved }: Props) {
+export function ProjectModal({
+  project,
+  tasks,
+  templates = TEMPLATES,
+  onSelectTask,
+  onClose,
+  onSaved,
+}: Props) {
   const isEdit = project !== null;
 
   const [tab, setTab] = useState<Tab>('details');
@@ -79,20 +107,110 @@ export function ProjectModal({ project, tasks, onSelectTask, onClose, onSaved }:
   const [error, setError] = useState<string | null>(null);
   const confirm = useConfirm();
 
+  // Planning documents are a project-scoped copy of templates, persisted
+  // client-side keyed by project id (edit mode only).
+  const [docs, setDocs] = useState<PlanDoc[]>([]);
+  const [openDocId, setOpenDocId] = useState<string | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addRect, setAddRect] = useState<{ top: number; left: number; width: number } | null>(null);
+  const addRef = useRef<HTMLButtonElement>(null);
+  const addMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (project) setDocs(loadPlanDocs(project.id));
+  }, [project]);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      // While the folder picker is open it owns Escape (and closes itself).
-      if (e.key === 'Escape' && !picking) onClose();
+      // While a nested layer is open it owns Escape (and closes itself).
+      if (e.key === 'Escape' && !picking && !openDocId) onClose();
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [onClose, picking]);
+  }, [onClose, picking, openDocId]);
+
+  const placeAddMenu = useCallback(() => {
+    const el = addRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    setAddRect({ top: r.bottom + 4, left: r.left, width: r.width });
+  }, []);
+
+  useEffect(() => {
+    if (!addOpen) return;
+    placeAddMenu();
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (addRef.current?.contains(t) || addMenuRef.current?.contains(t)) return;
+      setAddOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        setAddOpen(false);
+      }
+    };
+    window.addEventListener('scroll', placeAddMenu, true);
+    window.addEventListener('resize', placeAddMenu);
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey, true);
+    return () => {
+      window.removeEventListener('scroll', placeAddMenu, true);
+      window.removeEventListener('resize', placeAddMenu);
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey, true);
+    };
+  }, [addOpen, placeAddMenu]);
+
+  const persistDocs = useCallback(
+    (next: PlanDoc[]) => {
+      setDocs(next);
+      if (project) savePlanDocs(project.id, next);
+    },
+    [project],
+  );
+
+  const addDoc = useCallback(
+    (template: Template) => {
+      const doc = createDocFromTemplate(template, name.trim() || project?.name || 'this project');
+      persistDocs([...docs, doc]);
+      setAddOpen(false);
+      setOpenDocId(doc.id);
+    },
+    [docs, name, persistDocs, project],
+  );
+
+  const removeDoc = useCallback(
+    async (id: string) => {
+      const ok = await confirm({
+        title: 'Remove this document?',
+        description: 'It will be deleted from this project. The source template is unchanged.',
+        confirmLabel: 'Remove',
+      });
+      if (!ok) return;
+      persistDocs(docs.filter((d) => d.id !== id));
+      setOpenDocId((cur) => (cur === id ? null : cur));
+    },
+    [confirm, docs, persistDocs],
+  );
+
+  // Templates that don't yet have a document in this project.
+  const availableTemplates = templates.filter(
+    (t) => !docs.some((d) => d.templateId === t.id),
+  );
+  const openDoc = docs.find((d) => d.id === openDocId) ?? null;
 
   const sourceCount = isEdit ? current?.sources.length ?? 0 : staged.length;
   const taskCount = tasks?.length ?? 0;
-  // The Tasks tab only makes sense for an existing project.
-  const tabs: Tab[] = isEdit ? ['details', 'sources', 'tasks'] : ['details', 'sources'];
-  const tabCounts: Partial<Record<Tab, number>> = { sources: sourceCount, tasks: taskCount };
+  // Planning and Tasks only make sense for an existing project.
+  const tabs: Tab[] = isEdit
+    ? ['details', 'sources', 'planning', 'tasks']
+    : ['details', 'sources'];
+  const tabCounts: Partial<Record<Tab, number>> = {
+    sources: sourceCount,
+    planning: docs.length,
+    tasks: taskCount,
+  };
   const atLimit = sourceCount >= MAX_SOURCES_PER_PROJECT;
   const tagTooLong = tag.trim().length > MAX_TAG_LENGTH;
   const canSave = name.trim().length > 0 && tag.trim().length > 0 && !tagTooLong;
@@ -509,6 +627,77 @@ export function ProjectModal({ project, tasks, onSelectTask, onClose, onSaved }:
               </ul>
             </div>
 
+            {/* Planning */}
+            {isEdit ? (
+              <div role="tabpanel" className={cn('space-y-3', tab === 'planning' ? '' : 'hidden')}>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium text-muted-foreground">Documents</label>
+                  <span className="text-[11px] tabular-nums text-muted-foreground">
+                    {docs.length} doc{docs.length === 1 ? '' : 's'}
+                  </span>
+                </div>
+
+                {docs.length === 0 ? (
+                  <p className="rounded-lg border border-dashed border-border/60 p-6 text-center text-sm text-muted-foreground">
+                    No planning documents yet. Add one from the template library to draft a spec or
+                    plan for this project.
+                  </p>
+                ) : (
+                  <ul className="space-y-1.5">
+                    {docs.map((d) => (
+                      <li
+                        key={d.id}
+                        className="flex items-center gap-2 rounded-md border border-border/60 bg-background/60 px-2.5 py-1.5"
+                      >
+                        <ProjectTag tag={d.tag} color={d.color} />
+                        <button
+                          type="button"
+                          onClick={() => setOpenDocId(d.id)}
+                          className="flex min-w-0 flex-1 items-center gap-2 text-left text-sm hover:text-foreground"
+                        >
+                          <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                          <span className="min-w-0 flex-1 truncate">{d.name}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void removeDoc(d.id)}
+                          aria-label="Remove document"
+                          className="text-muted-foreground hover:text-destructive"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <div>
+                  <Button
+                    ref={addRef}
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setAddOpen((v) => !v)}
+                    disabled={availableTemplates.length === 0}
+                    aria-haspopup="listbox"
+                    aria-expanded={addOpen}
+                    className="gap-1.5"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add document
+                    <ChevronDown
+                      className={cn('h-3.5 w-3.5 transition-transform', addOpen && 'rotate-180')}
+                    />
+                  </Button>
+                  <p className="mt-1.5 text-[11px] text-muted-foreground">
+                    {availableTemplates.length === 0
+                      ? 'Every template already has a document in this project.'
+                      : 'Documents are copied from the template library and titled for this project.'}
+                  </p>
+                </div>
+              </div>
+            ) : null}
+
             {/* Tasks */}
             {isEdit ? (
               <div role="tabpanel" className={cn('space-y-2', tab === 'tasks' ? '' : 'hidden')}>
@@ -567,6 +756,49 @@ export function ProjectModal({ project, tasks, onSelectTask, onClose, onSaved }:
           </footer>
         </div>
       </div>
+
+      {addOpen && addRect
+        ? createPortal(
+            <div
+              ref={addMenuRef}
+              role="listbox"
+              aria-label="Templates"
+              style={{
+                position: 'fixed',
+                top: addRect.top,
+                left: addRect.left,
+                minWidth: Math.max(addRect.width, 224),
+              }}
+              className="z-[60] max-h-72 w-64 overflow-auto rounded-md border border-border bg-card p-1 shadow-lg"
+            >
+              {availableTemplates.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  role="option"
+                  aria-selected={false}
+                  onClick={() => addDoc(t)}
+                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+                >
+                  <ProjectTag tag={t.tag} color={t.color} />
+                  <span className="min-w-0 flex-1 truncate">{t.name}</span>
+                </button>
+              ))}
+            </div>,
+            document.body,
+          )
+        : null}
+
+      {openDoc ? (
+        <PlanDocModal
+          doc={openDoc}
+          onSave={(patch) =>
+            persistDocs(docs.map((d) => (d.id === openDoc.id ? { ...d, ...patch } : d)))
+          }
+          onDelete={() => void removeDoc(openDoc.id)}
+          onClose={() => setOpenDocId(null)}
+        />
+      ) : null}
 
       {picking ? (
         <FolderPicker
