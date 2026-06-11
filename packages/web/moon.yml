@@ -26,4 +26,27 @@ tasks:
     command: 'pnpm exec tsc --noEmit'
     inputs:
       - 'app/**/*'
+      - 'components/**/*'
+      - 'hooks/**/*'
+      - 'lib/**/*'
+      - 'stories/**/*'
+      - '.storybook/**/*'
       - 'tsconfig.json'
+
+  storybook:
+    command: 'pnpm exec storybook dev -p 6006'
+    preset: 'server'
+
+  build-storybook:
+    command: 'pnpm exec storybook build'
+    inputs:
+      - 'app/**/*'
+      - 'components/**/*'
+      - 'hooks/**/*'
+      - 'lib/**/*'
+      - 'stories/**/*'
+      - '.storybook/**/*'
+      - 'tailwind.config.ts'
+      - 'postcss.config.mjs'
+    outputs:
+      - 'storybook-static'
