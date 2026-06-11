@@ -41,46 +41,49 @@ export function CouncilTopicComposer({ disabled, disabledHint, onSubmit }: Props
   };
 
   return (
-    <div className="rounded-xl border border-border/60 bg-card/40 p-3">
-      <textarea
-        aria-label="Topic for the council"
-        className="min-h-[64px] w-full resize-y bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-        value={speech.listening && speech.interim ? `${text} ${speech.interim}` : text}
-        disabled={disabled || submitting}
-        onChange={(e) => setText(e.target.value)}
-        onKeyDown={(e) => {
-          if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') void submit();
-        }}
-        placeholder={
-          disabled && disabledHint ? disabledHint : 'Put a topic to the council — free-form, not a task.'
-        }
-      />
-      <div className="flex items-center justify-between gap-2">
-        <div>
-          {speech.supported ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              aria-label={speech.listening ? 'Stop dictation' : 'Dictate topic'}
-              aria-pressed={speech.listening}
-              disabled={disabled || submitting}
-              onClick={speech.listening ? speech.stop : speech.start}
-              className={cn('h-8 w-8', speech.listening && 'text-destructive')}
-            >
-              {speech.listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-            </Button>
-          ) : null}
+    <div className="gradient-border relative z-10 rounded-xl shadow-sm transition-shadow duration-700 ease-out focus-within:shadow-lg motion-reduce:transition-none">
+      {/* Opaque surface so the conic gradient reads as border + glow only. */}
+      <div className="relative rounded-xl bg-card p-3">
+        <textarea
+          aria-label="Topic for the council"
+          className="min-h-[64px] w-full resize-y bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+          value={speech.listening && speech.interim ? `${text} ${speech.interim}` : text}
+          disabled={disabled || submitting}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') void submit();
+          }}
+          placeholder={
+            disabled && disabledHint ? disabledHint : 'Put a topic to the council — free-form, not a task.'
+          }
+        />
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            {speech.supported ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={speech.listening ? 'Stop dictation' : 'Dictate topic'}
+                aria-pressed={speech.listening}
+                disabled={disabled || submitting}
+                onClick={speech.listening ? speech.stop : speech.start}
+                className={cn('h-8 w-8', speech.listening && 'text-destructive')}
+              >
+                {speech.listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              </Button>
+            ) : null}
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            disabled={!text.trim() || disabled || submitting}
+            onClick={() => void submit()}
+          >
+            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            Start debate
+          </Button>
         </div>
-        <Button
-          type="button"
-          size="sm"
-          disabled={!text.trim() || disabled || submitting}
-          onClick={() => void submit()}
-        >
-          {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          Start debate
-        </Button>
       </div>
     </div>
   );

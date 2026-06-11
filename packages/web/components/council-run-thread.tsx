@@ -1,7 +1,8 @@
 'use client';
 
-import { Clock } from 'lucide-react';
+import { Clock, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import type { CouncilRun, CouncilRunStatus } from '@midnite/shared';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const STATUS_PILL: Record<CouncilRunStatus, { label: string; className: string }> = {
@@ -25,51 +26,92 @@ type Props = {
   runs: CouncilRun[];
   selectedId: string | null;
   onSelect: (run: CouncilRun) => void;
+  open: boolean;
+  onToggle: () => void;
 };
 
-/** The council's thread: past debates, newest first. Selecting one loads it
- *  into the tabs read-only (persisted outputs + verdict). */
-export function CouncilRunThread({ runs, selectedId, onSelect }: Props) {
-  if (runs.length === 0) return null;
+/**
+ * The council's thread of past debates as a collapsible left sidebar, newest
+ * first. Selecting one loads it into the tabs (persisted outputs + verdict).
+ * Collapsed, it shrinks to a slim rail holding only the expand control.
+ */
+export function CouncilRunThread({ runs, selectedId, onSelect, open, onToggle }: Props) {
+  if (!open) {
+    return (
+      <aside className="hidden shrink-0 lg:block">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label="Expand thread"
+          title={`Thread (${runs.length})`}
+          onClick={onToggle}
+          className="h-9 w-9 text-muted-foreground"
+        >
+          <PanelLeftOpen className="h-4 w-4" />
+        </Button>
+      </aside>
+    );
+  }
 
   return (
-    <div className="space-y-2">
-      <h2 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        <Clock className="h-3.5 w-3.5" />
-        Thread
-      </h2>
-      <div className="flex flex-col gap-1.5">
-        {runs.map((run) => {
-          const pill = STATUS_PILL[run.status];
-          return (
-            <button
-              key={run.id}
-              type="button"
-              onClick={() => onSelect(run)}
-              aria-pressed={selectedId === run.id}
-              className={cn(
-                'flex items-center gap-3 rounded-lg border p-2.5 text-left transition-colors',
-                selectedId === run.id
-                  ? 'border-foreground/20 bg-accent/60'
-                  : 'border-border/60 bg-card/40 hover:border-foreground/20 hover:bg-accent/40',
-              )}
-            >
-              <span className="min-w-0 flex-1 truncate text-sm">{run.topic}</span>
-              <span
+    <aside className="w-full shrink-0 lg:w-[240px]">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <Clock className="h-3.5 w-3.5" />
+          Thread
+        </h2>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label="Collapse thread"
+          onClick={onToggle}
+          className="h-7 w-7 text-muted-foreground"
+        >
+          <PanelLeftClose className="h-4 w-4" />
+        </Button>
+      </div>
+      {runs.length === 0 ? (
+        <p className="mt-2 text-xs text-muted-foreground">
+          No debates yet — submit the first topic below.
+        </p>
+      ) : (
+        <div className="mt-2 flex flex-col gap-1.5">
+          {runs.map((run) => {
+            const pill = STATUS_PILL[run.status];
+            return (
+              <button
+                key={run.id}
+                type="button"
+                onClick={() => onSelect(run)}
+                aria-pressed={selectedId === run.id}
                 className={cn(
-                  'shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium',
-                  pill.className,
+                  'flex flex-col gap-1 rounded-lg border p-2.5 text-left transition-colors',
+                  selectedId === run.id
+                    ? 'border-foreground/20 bg-accent/60'
+                    : 'border-border/60 bg-card/40 hover:border-foreground/20 hover:bg-accent/40',
                 )}
               >
-                {pill.label}
-              </span>
-              <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                {relativeTime(run.startedAt)}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
+                <span className="line-clamp-2 text-sm leading-snug">{run.topic}</span>
+                <span className="flex items-center justify-between gap-2">
+                  <span
+                    className={cn(
+                      'rounded-full border px-2 py-0.5 text-[10px] font-medium',
+                      pill.className,
+                    )}
+                  >
+                    {pill.label}
+                  </span>
+                  <span className="text-[11px] tabular-nums text-muted-foreground">
+                    {relativeTime(run.startedAt)}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </aside>
   );
 }

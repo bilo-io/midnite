@@ -16,6 +16,7 @@ import {
   updateCouncil,
 } from '@/lib/api';
 import { useCouncilRun } from '@/lib/use-council-run';
+import { useLocalStorage } from '@/lib/use-local-storage';
 
 type Props = {
   initial: Council;
@@ -26,6 +27,8 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
   const [participants, setParticipants] = useState<CouncilParticipant[]>(initial.participants);
   const [verdictProvider, setVerdictProvider] = useState<AgentCli>(initial.verdictProvider);
   const [runs, setRuns] = useState<CouncilRun[]>(initialRuns);
+  const [threadOpen, setThreadOpen] = useLocalStorage<boolean>('midnite.councils.thread', true);
+  const [panelOpen, setPanelOpen] = useLocalStorage<boolean>('midnite.councils.panel', true);
 
   const refreshRuns = useCallback(() => {
     listCouncilRuns(initial.id)
@@ -100,75 +103,98 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
   }, [initial.id, run, resume, refreshRuns]);
 
   return (
-    <div className="container space-y-5 pb-8 pt-6">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <Link
-            href="/councils"
-            className="mb-1 flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Councils
-          </Link>
-          <h1 className="truncate text-xl font-semibold">{initial.name}</h1>
-          {initial.description ? (
-            <p className="mt-0.5 text-sm text-muted-foreground">{initial.description}</p>
-          ) : null}
+    <>
+      <div className="container space-y-5 pb-48 pt-6">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <Link
+              href="/councils"
+              className="mb-1 flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Councils
+            </Link>
+            <h1 className="truncate text-xl font-semibold">{initial.name}</h1>
+            {initial.description ? (
+              <p className="mt-0.5 text-sm text-muted-foreground">{initial.description}</p>
+            ) : null}
+          </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="min-w-0 space-y-4">
-          <CouncilTopicComposer
-            disabled={!canStart}
-            disabledHint={
-              live
-                ? 'A debate is in progress — wait for the verdict.'
-                : participants.length < 2
-                  ? 'Add at least 2 participants in the panel to start a debate.'
-                  : undefined
-            }
-            onSubmit={submitTopic}
+        {/* Thread (left) and participants (right) flank the run content; both
+            collapse to slim rails. The fixed composer floats over the bottom,
+            so everything gets generous bottom padding to scroll clear of it. */}
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
+          <CouncilRunThread
+            runs={runs}
+            selectedId={run?.id ?? null}
+            onSelect={select}
+            open={threadOpen}
+            onToggle={() => setThreadOpen(!threadOpen)}
           />
 
-          {error ? (
-            <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-              {error}
-            </div>
-          ) : null}
+          <div className="min-w-0 flex-1 space-y-4">
+            {error ? (
+              <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+                {error}
+              </div>
+            ) : null}
 
-          {run ? (
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">
-                Topic: <span className="text-foreground">{run.topic}</span>
-              </p>
-              <CouncilRunTabs
-                key={run.id}
-                run={run}
-                onSkip={live ? skipParticipant : undefined}
-                onRetryParticipant={!live ? retryParticipant : undefined}
-                onRetryVerdict={!live ? retryVerdict : undefined}
+            {run ? (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  Topic: <span className="text-foreground">{run.topic}</span>
+                </p>
+                <CouncilRunTabs
+                  key={run.id}
+                  run={run}
+                  onSkip={live ? skipParticipant : undefined}
+                  onRetryParticipant={!live ? retryParticipant : undefined}
+                  onRetryVerdict={!live ? retryVerdict : undefined}
+                />
+              </div>
+            ) : (
+              <div className="rounded-lg border border-dashed border-border/60 p-10 text-center text-sm text-muted-foreground">
+                Submit a topic below and each participant will argue it from their perspective in
+                its own terminal. The takes are then anonymized and weighed into a verdict.
+              </div>
+            )}
+          </div>
+
+          <CouncilParticipantsPanel
+            councilId={initial.id}
+            participants={participants}
+            verdictProvider={verdictProvider}
+            disabled={Boolean(live)}
+            onChanged={setParticipants}
+            onVerdictProviderChange={changeVerdictProvider}
+            open={panelOpen}
+            onToggle={() => setPanelOpen(!panelOpen)}
+          />
+        </div>
+      </div>
+
+      {/* Topic input pinned to the bottom, dashboard-style: content scrolls
+          behind it; the page's pb-48 keeps everything reachable above it. */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30">
+        <div className="pb-6 pt-2">
+          <div className="container">
+            <div className="pointer-events-auto mx-auto w-full max-w-3xl">
+              <CouncilTopicComposer
+                disabled={!canStart}
+                disabledHint={
+                  live
+                    ? 'A debate is in progress — wait for the verdict.'
+                    : participants.length < 2
+                      ? 'Add at least 2 participants in the panel to start a debate.'
+                      : undefined
+                }
+                onSubmit={submitTopic}
               />
             </div>
-          ) : (
-            <div className="rounded-lg border border-dashed border-border/60 p-10 text-center text-sm text-muted-foreground">
-              Submit a topic and each participant will argue it from their perspective in its own
-              terminal. The takes are then anonymized and weighed into a verdict.
-            </div>
-          )}
-
-          <CouncilRunThread runs={runs} selectedId={run?.id ?? null} onSelect={select} />
+          </div>
         </div>
-
-        <CouncilParticipantsPanel
-          councilId={initial.id}
-          participants={participants}
-          verdictProvider={verdictProvider}
-          disabled={Boolean(live)}
-          onChanged={setParticipants}
-          onVerdictProviderChange={changeVerdictProvider}
-        />
       </div>
-    </div>
+    </>
   );
 }
