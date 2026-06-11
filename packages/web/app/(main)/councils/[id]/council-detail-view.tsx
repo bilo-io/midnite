@@ -8,7 +8,7 @@ import { CouncilParticipantsPanel } from '@/components/council-participants-pane
 import { CouncilRunTabs } from '@/components/council-run-tabs';
 import { CouncilRunThread } from '@/components/council-run-thread';
 import { CouncilTopicComposer } from '@/components/council-topic-composer';
-import { listCouncilRuns } from '@/lib/api';
+import { listCouncilRuns, skipCouncilRunParticipant } from '@/lib/api';
 import { useCouncilRun } from '@/lib/use-council-run';
 
 type Props = {
@@ -39,6 +39,17 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
       refreshRuns();
     },
     [start, refreshRuns],
+  );
+
+  // Stop waiting on a hung participant; the 1.2s poll picks up the new state.
+  const skipParticipant = useCallback(
+    (runParticipantId: string) => {
+      if (!run) return;
+      skipCouncilRunParticipant(initial.id, run.id, runParticipantId).catch(() => {
+        // racing a natural exit is fine — the poll shows whichever settled first
+      });
+    },
+    [initial.id, run],
   );
 
   return (
@@ -84,7 +95,7 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
               <p className="text-xs text-muted-foreground">
                 Topic: <span className="text-foreground">{run.topic}</span>
               </p>
-              <CouncilRunTabs key={run.id} run={run} />
+              <CouncilRunTabs key={run.id} run={run} onSkip={live ? skipParticipant : undefined} />
             </div>
           ) : (
             <div className="rounded-lg border border-dashed border-border/60 p-10 text-center text-sm text-muted-foreground">

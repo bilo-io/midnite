@@ -17,6 +17,7 @@ export const COUNCIL_PARTICIPANT_RUN_STATUSES = [
   'succeeded',
   'failed',
   'timeout',
+  'skipped',
 ] as const;
 export const CouncilParticipantRunStatusSchema = z.enum(COUNCIL_PARTICIPANT_RUN_STATUSES);
 export type CouncilParticipantRunStatus = z.infer<typeof CouncilParticipantRunStatusSchema>;

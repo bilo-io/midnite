@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Loader2, Scale } from 'lucide-react';
+import { Loader2, Scale, SkipForward } from 'lucide-react';
 import type { CouncilRun, CouncilRunParticipant } from '@midnite/shared';
 import { AgentCliLogo } from '@/components/agent-cli-logo';
+import { Button } from '@/components/ui/button';
 import { MarkdownPreview } from '@/components/markdown-preview';
 import { cn } from '@/lib/utils';
 
@@ -19,7 +20,23 @@ const STATUS_DOT: Record<CouncilRunParticipant['status'], string> = {
   succeeded: 'bg-emerald-500',
   failed: 'bg-destructive',
   timeout: 'bg-amber-500',
+  skipped: 'bg-muted-foreground/60',
 };
+
+/** The looping highlight sweep on a still-running participant's tab (reuses
+ *  the screensaver's pill-shimmer keyframes). */
+function TabShimmer() {
+  return (
+    <span
+      aria-hidden
+      className="pill-shimmer pointer-events-none absolute inset-0"
+      style={{
+        background:
+          'linear-gradient(100deg, transparent 38%, hsl(217 91% 60% / 0.22) 50%, transparent 62%)',
+      }}
+    />
+  );
+}
 
 const VERDICT_TAB = '__verdict__';
 
@@ -29,7 +46,14 @@ const VERDICT_TAB = '__verdict__';
  * mounted-but-hidden across tab switches so their sockets and scrollback
  * survive; the run id keys the whole strip so a new debate starts fresh.
  */
-export function CouncilRunTabs({ run }: { run: CouncilRun }) {
+export function CouncilRunTabs({
+  run,
+  onSkip,
+}: {
+  run: CouncilRun;
+  /** Skip a still-running participant (live runs only — absent for past runs). */
+  onSkip?: (runParticipantId: string) => void;
+}) {
   const [active, setActive] = useState<string>(run.participants[0]?.id ?? VERDICT_TAB);
 
   // Jump to the verdict once synthesis starts — the debate itself is over.
@@ -52,12 +76,13 @@ export function CouncilRunTabs({ run }: { run: CouncilRun }) {
             aria-selected={active === p.id}
             onClick={() => setActive(p.id)}
             className={cn(
-              'flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+              'relative flex items-center gap-2 overflow-hidden rounded-full border px-3 py-1 text-xs font-medium transition-colors',
               active === p.id
                 ? 'border-foreground/20 bg-accent text-accent-foreground'
                 : 'border-border/60 text-muted-foreground hover:bg-accent/50 hover:text-foreground',
             )}
           >
+            {p.status === 'running' ? <TabShimmer /> : null}
             <span className={cn('h-1.5 w-1.5 rounded-full', STATUS_DOT[p.status])} aria-hidden />
             <AgentCliLogo cli={p.provider} className="h-3.5 w-3.5" />
             {p.name.trim() || `Participant ${i + 1}`}
@@ -83,7 +108,21 @@ export function CouncilRunTabs({ run }: { run: CouncilRun }) {
       {/* Live terminals stay mounted (hidden) so a tab switch doesn't drop the WS. */}
       {run.participants.map((p, i) =>
         p.status === 'running' ? (
-          <div key={p.id} className={cn(active !== p.id && 'hidden')}>
+          <div key={p.id} className={cn('space-y-2', active !== p.id && 'hidden')}>
+            {onSkip ? (
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onSkip(p.id)}
+                  title="Stop waiting on this participant — the verdict proceeds without it"
+                >
+                  <SkipForward className="h-3.5 w-3.5" />
+                  Skip participant
+                </Button>
+              </div>
+            ) : null}
             <div className="h-[420px] overflow-hidden rounded-lg border border-border/60">
               <LiveTerminal
                 attachId={p.terminalId}
@@ -99,7 +138,7 @@ export function CouncilRunTabs({ run }: { run: CouncilRun }) {
         <ParticipantOutput participant={activeParticipant} />
       ) : null}
 
-      {active === VERDICT_TAB ? <VerdictPanel run={run} /> : null}
+      {active === VERDICT_TAB ? <VerdictPanel run={run} onSkip={onSkip} /> : null}
     </div>
   );
 }
@@ -110,7 +149,13 @@ function ParticipantOutput({ participant: p }: { participant: CouncilRunParticip
       <div className="flex items-center justify-between gap-2">
         <span className="flex items-center gap-2 text-xs text-muted-foreground">
           <span className={cn('h-1.5 w-1.5 rounded-full', STATUS_DOT[p.status])} aria-hidden />
-          {p.status === 'succeeded' ? 'Finished' : p.status === 'timeout' ? 'Timed out' : 'Failed'}
+          {p.status === 'succeeded'
+            ? 'Finished'
+            : p.status === 'timeout'
+              ? 'Timed out'
+              : p.status === 'skipped'
+                ? 'Skipped'
+                : 'Failed'}
         </span>
         {p.label ? (
           <span className="rounded-full border border-border/60 bg-background px-2.5 py-0.5 text-xs text-muted-foreground">
@@ -132,12 +177,46 @@ function ParticipantOutput({ participant: p }: { participant: CouncilRunParticip
   );
 }
 
-function VerdictPanel({ run }: { run: CouncilRun }) {
+function VerdictPanel({
+  run,
+  onSkip,
+}: {
+  run: CouncilRun;
+  onSkip?: (runParticipantId: string) => void;
+}) {
   if (run.status === 'running') {
+    const waiting = run.participants.filter((p) => p.status === 'running');
     return (
-      <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-card/40 p-6 text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        Waiting for all participants to finish…
+      <div className="space-y-3 rounded-lg border border-border/60 bg-card/40 p-6">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Waiting on {waiting.length} participant{waiting.length === 1 ? '' : 's'}…
+        </div>
+        <ul className="space-y-1.5">
+          {waiting.map((p, i) => (
+            <li key={p.id} className="flex items-center gap-2 text-sm">
+              <span className={cn('h-1.5 w-1.5 rounded-full', STATUS_DOT.running)} aria-hidden />
+              <AgentCliLogo cli={p.provider} className="h-3.5 w-3.5" />
+              <span className="min-w-0 truncate">
+                {p.name.trim() || `Participant ${i + 1}`}
+                <span className="text-muted-foreground"> · {p.provider}</span>
+              </span>
+              {onSkip ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onSkip(p.id)}
+                  className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+                  title="Stop waiting on this participant — the verdict proceeds without it"
+                >
+                  <SkipForward className="h-3 w-3" />
+                  Skip
+                </Button>
+              ) : null}
+            </li>
+          ))}
+        </ul>
       </div>
     );
   }

@@ -22,6 +22,7 @@ import { oneshotCommand } from './lib/oneshot-command';
 
 export class CouncilRunInProgressError extends Error {}
 export class CouncilTooSmallError extends Error {}
+export class CouncilParticipantNotLiveError extends Error {}
 
 const VERDICT_MAX_TOKENS = 4096;
 // Cap the per-participant capture buffer; anything past it is dropped (the tail
@@ -35,6 +36,7 @@ interface LiveParticipant {
   bufferBytes: number;
   truncated: boolean;
   timedOut: boolean;
+  skipped: boolean;
   timeout: NodeJS.Timeout | null;
   settled: boolean;
 }
@@ -50,6 +52,8 @@ export class CouncilRunnerService implements OnModuleInit {
   private readonly logger = new Logger(CouncilRunnerService.name);
   // One live run per council; in-memory like HeartbeatScheduler.running.
   private readonly activeRuns = new Set<string>();
+  // Live per-participant state by run id, so a viewer can skip a hung CLI.
+  private readonly liveRuns = new Map<string, LiveParticipant[]>();
 
   constructor(
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
@@ -130,10 +134,12 @@ export class CouncilRunnerService implements OnModuleInit {
         bufferBytes: 0,
         truncated: false,
         timedOut: false,
+        skipped: false,
         timeout: null,
         settled: false,
       });
     }
+    this.liveRuns.set(runId, live);
 
     const run = this.repo.getRun(runId)!;
     // Spawn after every row exists so a fast-exiting CLI can't trigger the
@@ -193,6 +199,36 @@ export class CouncilRunnerService implements OnModuleInit {
     lp.timeout.unref?.();
   }
 
+  /**
+   * Skip a still-running participant (e.g. a CLI hung on a missing API key):
+   * kill its PTY and settle it as 'skipped' so the run stops waiting on it.
+   * Synthesis proceeds as soon as the remaining participants finish. Returns
+   * the updated run.
+   */
+  skipParticipant(councilId: string, runId: string, runParticipantId: string): CouncilRun {
+    const run = this.repo.getRun(runId);
+    if (!run || run.councilId !== councilId) {
+      throw new CouncilDoesNotExistError(`run ${runId} does not exist on council ${councilId}`);
+    }
+    const live = this.liveRuns.get(runId);
+    const lp = live?.find((p) => p.rowId === runParticipantId);
+    if (!live || !lp || lp.settled) {
+      throw new CouncilParticipantNotLiveError(
+        `participant ${runParticipantId} is not running — nothing to skip`,
+      );
+    }
+    lp.skipped = true;
+    // The kill lands asynchronously and onExit settles the row. If the PTY is
+    // already gone (spawned-then-died race), settle directly so the run can't
+    // wait forever on a corpse.
+    if (this.terminal.has(lp.terminalId)) {
+      this.terminal.killManagedRun(lp.terminalId);
+    } else {
+      this.settleParticipant(councilId, runId, lp, -1, live);
+    }
+    return this.repo.hydrateRun(this.repo.getRun(runId)!);
+  }
+
   private settleParticipant(
     councilId: string,
     runId: string,
@@ -209,19 +245,27 @@ export class CouncilRunnerService implements OnModuleInit {
 
     let output = cleanPtyOutput(lp.buffer);
     if (lp.truncated) output += '\n\n[output truncated]';
-    const status = lp.timedOut ? 'timeout' : exitCode === 0 && output.trim() ? 'succeeded' : 'failed';
+    const status = lp.skipped
+      ? 'skipped'
+      : lp.timedOut
+        ? 'timeout'
+        : exitCode === 0 && output.trim()
+          ? 'succeeded'
+          : 'failed';
     this.repo.updateRunParticipant(lp.rowId, {
       status,
       output: output || null,
       exitCode,
       error:
-        status === 'timeout'
-          ? `timed out after ${this.config.councils.runTimeoutMs}ms`
-          : status === 'failed'
-            ? exitCode === 0
-              ? 'process exited without output'
-              : `process exited with code ${exitCode}`
-            : null,
+        status === 'skipped'
+          ? 'skipped by user'
+          : status === 'timeout'
+            ? `timed out after ${this.config.councils.runTimeoutMs}ms`
+            : status === 'failed'
+              ? exitCode === 0
+                ? 'process exited without output'
+                : `process exited with code ${exitCode}`
+              : null,
       finishedAt: new Date().toISOString(),
     });
 
@@ -311,6 +355,7 @@ export class CouncilRunnerService implements OnModuleInit {
       });
     } finally {
       this.activeRuns.delete(councilId);
+      this.liveRuns.delete(runId);
     }
   }
 }

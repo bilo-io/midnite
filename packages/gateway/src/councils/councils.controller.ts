@@ -24,6 +24,7 @@ import {
   type CouncilRunsResponse,
 } from '@midnite/shared';
 import {
+  CouncilParticipantNotLiveError,
   CouncilRunInProgressError,
   CouncilRunnerService,
   CouncilTooSmallError,
@@ -111,6 +112,15 @@ export class CouncilsController {
     return { run: this.translate(() => this.runner.startRun(id, parsed.data.topic)) };
   }
 
+  @Post(':id/runs/:runId/participants/:runParticipantId/skip')
+  skipRunParticipant(
+    @Param('id') id: string,
+    @Param('runId') runId: string,
+    @Param('runParticipantId') runParticipantId: string,
+  ): CouncilRunResponse {
+    return { run: this.translate(() => this.runner.skipParticipant(id, runId, runParticipantId)) };
+  }
+
   @Get(':id/runs')
   listRuns(@Param('id') id: string): CouncilRunsResponse {
     this.translate(() => this.service.getCouncil(id)); // 404 on unknown council
@@ -139,6 +149,7 @@ export class CouncilsController {
       }
       if (err instanceof CouncilTooSmallError) throw new BadRequestException(err.message);
       if (err instanceof CouncilRunInProgressError) throw new ConflictException(err.message);
+      if (err instanceof CouncilParticipantNotLiveError) throw new ConflictException(err.message);
       throw err;
     }
   }

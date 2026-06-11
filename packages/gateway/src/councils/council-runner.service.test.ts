@@ -3,6 +3,7 @@ import { parseConfig } from '@midnite/shared';
 import type { AnthropicService } from '../agent/anthropic.service';
 import type { TerminalService } from '../terminal/terminal.service';
 import {
+  CouncilParticipantNotLiveError,
   CouncilRunInProgressError,
   CouncilRunnerService,
   CouncilTooSmallError,
@@ -43,6 +44,10 @@ class FakeTerminal {
 
   killManagedRun(attachId: string): void {
     this.spawns.get(attachId)?.onExit(-1, 15);
+  }
+
+  has(attachId: string): boolean {
+    return this.spawns.has(attachId);
   }
 }
 
@@ -290,6 +295,46 @@ describe('CouncilRunnerService', () => {
 
     await waitUntil(() => repo.getRun(run.id)!.status === 'failed');
     expect(repo.getRun(run.id)!.error).toContain('synthesis failed');
+  });
+
+  it('skips a hung participant and synthesizes once the rest finish', async () => {
+    const { runner, repo, terminal } = makeRunner();
+    seedCouncil(repo, [
+      ...TWO_PARTICIPANTS,
+      { id: 'p3', name: 'Hung', provider: 'codex', perspective: 'never answers' },
+    ]);
+    const run = runner.startRun('c1', 'topic');
+    const [a, b, c] = run.participants;
+
+    terminal.spawns.get(a!.terminalId)!.onData('take a\n');
+    terminal.spawns.get(a!.terminalId)!.onExit(0, null);
+    terminal.spawns.get(b!.terminalId)!.onData('take b\n');
+    terminal.spawns.get(b!.terminalId)!.onExit(0, null);
+
+    // p3 printed an error and hangs (e.g. missing API key) — skip it.
+    terminal.spawns.get(c!.terminalId)!.onData('ERROR: Missing OPENAI_API_KEY\n');
+    const updated = runner.skipParticipant('c1', run.id, c!.id);
+    expect(updated.participants.find((p) => p.id === c!.id)!.status).toBe('skipped');
+
+    await waitUntil(() => repo.getRun(run.id)!.status === 'completed');
+    const skipped = repo.listRunParticipants(run.id).find((r) => r.participantId === 'p3')!;
+    expect(skipped.status).toBe('skipped');
+    expect(skipped.error).toBe('skipped by user');
+    // Partial output is kept for the record.
+    expect(skipped.output).toContain('Missing OPENAI_API_KEY');
+  });
+
+  it('rejects skipping a participant that already settled or an unknown run', () => {
+    const { runner, repo, terminal } = makeRunner();
+    seedCouncil(repo, TWO_PARTICIPANTS);
+    const run = runner.startRun('c1', 'topic');
+    const [a] = run.participants;
+    terminal.spawns.get(a!.terminalId)!.onExit(0, null); // settles as failed (no output)
+
+    expect(() => runner.skipParticipant('c1', run.id, a!.id)).toThrow(
+      CouncilParticipantNotLiveError,
+    );
+    expect(() => runner.skipParticipant('c1', 'nope', a!.id)).toThrow(/does not exist/);
   });
 
   it('marks stale live runs failed on module init (gateway restart)', () => {

@@ -614,3 +614,16 @@ export async function getCouncilRun(councilId: string, runId: string): Promise<C
   );
   return run;
 }
+
+export async function skipCouncilRunParticipant(
+  councilId: string,
+  runId: string,
+  runParticipantId: string,
+): Promise<CouncilRun> {
+  const { run } = await fetchJson(
+    `/councils/${encodeURIComponent(councilId)}/runs/${encodeURIComponent(runId)}/participants/${encodeURIComponent(runParticipantId)}/skip`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({}) },
+    CouncilRunResponseSchema,
+  );
+  return run;
+}
