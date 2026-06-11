@@ -235,16 +235,29 @@ def main():
     conn = sqlite3.connect(str(DB))
     cur = conn.cursor()
 
+    # name -> (graph, plain-text step description shown in the list view)
     updates = {
-        "E2E demo": build_e2e(),
-        "AI demo": build_ai_demo(),
-        "Hook demo": build_hook_demo(),
-        "AI haiku": build_ai_haiku(),
+        "E2E demo": (
+            build_e2e(),
+            "Fetch order → summarise + validate stock in parallel → post to fulfilment.",
+        ),
+        "AI demo": (
+            build_ai_demo(),
+            "Draft → critique → revise refinement chain → send result.",
+        ),
+        "Hook demo": (
+            build_hook_demo(),
+            "Inbound webhook → interpret → forward + summarise → notify Slack.",
+        ),
+        "AI haiku": (
+            build_ai_haiku(),
+            "Write haiku → translate to Japanese → rate → save to gist.",
+        ),
     }
-    for name, g in updates.items():
+    for name, (g, description) in updates.items():
         cur.execute(
-            "UPDATE workflows SET graph = ?, updated_at = ? WHERE name = ?",
-            (json.dumps(g), now, name),
+            "UPDATE workflows SET graph = ?, description = ?, updated_at = ? WHERE name = ?",
+            (json.dumps(g), description, now, name),
         )
         print(f"updated {name!r}: {len(g['nodes'])} nodes, {len(g['edges'])} edges")
 
