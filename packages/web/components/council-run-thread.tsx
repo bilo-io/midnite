@@ -38,7 +38,7 @@ type Props = {
 export function CouncilRunThread({ runs, selectedId, onSelect, open, onToggle }: Props) {
   if (!open) {
     return (
-      <aside className="hidden shrink-0 lg:block">
+      <aside className="hidden shrink-0 lg:sticky lg:top-16 lg:block">
         <Button
           type="button"
           variant="ghost"
@@ -55,7 +55,7 @@ export function CouncilRunThread({ runs, selectedId, onSelect, open, onToggle }:
   }
 
   return (
-    <aside className="w-full shrink-0 lg:w-[240px]">
+    <aside className="w-full shrink-0 lg:sticky lg:top-16 lg:max-h-[calc(100dvh-4.5rem)] lg:w-[240px] lg:overflow-y-auto lg:pb-2">
       <div className="flex items-center justify-between gap-2">
         <h2 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           <Clock className="h-3.5 w-3.5" />

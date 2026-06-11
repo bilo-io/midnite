@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Check,
   ChevronDown,
-  ChevronRight,
   PanelRightClose,
   PanelRightOpen,
   Plus,
@@ -20,6 +19,8 @@ import {
 } from '@midnite/shared';
 import { AgentCliLogo } from '@/components/agent-cli-logo';
 import { Button } from '@/components/ui/button';
+import { Collapse } from '@/components/ui/collapse';
+import { Select, type SelectOption } from '@/components/ui/select';
 import {
   createCouncilParticipant,
   deleteCouncilParticipant,
@@ -29,10 +30,15 @@ import { cn } from '@/lib/utils';
 
 const SAVE_DEBOUNCE_MS = 600;
 
-const inputClass =
-  'flex h-8 w-full rounded-md border border-input bg-background px-2.5 py-1 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
 const textareaClass =
   'flex min-h-[72px] w-full rounded-md border border-input bg-background px-2.5 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
+
+/** Provider choices with their brand mark, shared by the verdict + participant dropdowns. */
+const PROVIDER_OPTIONS: SelectOption<AgentCli>[] = AGENT_CLIS.map((cli) => ({
+  value: cli,
+  label: AGENT_CLI_LABEL[cli],
+  icon: <AgentCliLogo cli={cli} className="h-4 w-4" />,
+}));
 
 type Props = {
   councilId: string;
@@ -148,7 +154,7 @@ export function CouncilParticipantsPanel({
 
   if (!open) {
     return (
-      <aside className="hidden shrink-0 lg:block">
+      <aside className="hidden shrink-0 lg:sticky lg:top-16 lg:block">
         <Button
           type="button"
           variant="ghost"
@@ -165,7 +171,7 @@ export function CouncilParticipantsPanel({
   }
 
   return (
-    <aside className="flex w-full shrink-0 flex-col gap-3 rounded-xl border border-border/60 bg-card/40 p-4 lg:w-[320px]">
+    <aside className="flex w-full shrink-0 flex-col gap-3 rounded-xl border border-border/60 bg-card/40 p-4 lg:sticky lg:top-16 lg:max-h-[calc(100dvh-4.5rem)] lg:w-[320px] lg:overflow-y-auto">
       <div className="flex items-center justify-between gap-2">
         <h2 className="flex items-center gap-1.5 text-sm font-semibold">
           <Users className="h-4 w-4 text-muted-foreground" />
@@ -202,31 +208,17 @@ export function CouncilParticipantsPanel({
 
       {/* The judge — visually set apart from the debating participants. */}
       <div className="space-y-2 rounded-lg border border-foreground/15 bg-accent/40 p-3 shadow-sm">
-        <label
-          htmlFor="council-verdict-provider"
-          className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider"
-        >
+        <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider">
           <Scale className="h-3.5 w-3.5" />
           Verdict by
-        </label>
-        <div className="flex items-center gap-2">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border/60 bg-background">
-            <AgentCliLogo cli={verdictProvider} className="h-4 w-4" />
-          </span>
-          <select
-            id="council-verdict-provider"
-            className={inputClass}
-            value={verdictProvider}
-            disabled={disabled}
-            onChange={(e) => onVerdictProviderChange(e.target.value as AgentCli)}
-          >
-            {AGENT_CLIS.map((cli) => (
-              <option key={cli} value={cli}>
-                {AGENT_CLI_LABEL[cli]}
-              </option>
-            ))}
-          </select>
-        </div>
+        </span>
+        <Select
+          aria-label="Verdict provider"
+          options={PROVIDER_OPTIONS}
+          value={verdictProvider}
+          onChange={onVerdictProviderChange}
+          disabled={disabled}
+        />
         <p className="text-[11px] leading-snug text-muted-foreground">
           Weighs the anonymized takes and writes the verdict — it never sees who said what.
         </p>
@@ -248,63 +240,55 @@ export function CouncilParticipantsPanel({
             <div
               key={p.id}
               className={cn(
-                'rounded-lg border border-border/60 bg-background/40 transition-colors',
+                'group rounded-lg border border-border/60 bg-background/40 transition-colors',
                 isOpen && 'bg-background/60',
               )}
             >
-              <button
-                type="button"
-                onClick={() => toggleExpanded(p.id)}
-                aria-expanded={isOpen}
-                aria-label={`${isOpen ? 'Collapse' : 'Expand'} ${name}`}
-                className="flex w-full items-center gap-2 p-2.5 text-left"
-              >
-                {isOpen ? (
-                  <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-                ) : (
-                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                )}
-                <AgentCliLogo cli={p.provider} className="h-4 w-4 shrink-0" />
-                <span className="min-w-0 truncate text-sm font-medium">{name}</span>
-              </button>
+              {/* Title region: chevron+logo toggles, the name edits inline, and
+                  the remove button reveals on hover/focus at the far right. */}
+              <div className="flex items-center gap-2 p-2.5">
+                <button
+                  type="button"
+                  onClick={() => toggleExpanded(p.id)}
+                  aria-expanded={isOpen}
+                  aria-label={`${isOpen ? 'Collapse' : 'Expand'} ${name}`}
+                  className="flex shrink-0 items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <ChevronDown
+                    className={cn('h-4 w-4 transition-transform', !isOpen && '-rotate-90')}
+                  />
+                  <AgentCliLogo cli={p.provider} className="h-4 w-4" />
+                </button>
+                <input
+                  aria-label={`${name} name`}
+                  value={p.name}
+                  disabled={disabled}
+                  onChange={(e) => edit(p.id, { name: e.target.value })}
+                  placeholder={`Participant ${i + 1}`}
+                  className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm font-medium placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Remove ${name}`}
+                  disabled={disabled}
+                  onClick={() => void remove(p.id)}
+                  className="h-7 w-7 shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
 
-              {isOpen ? (
+              <Collapse open={isOpen}>
                 <div className="space-y-2 px-2.5 pb-2.5">
-                  <div className="flex items-center gap-2">
-                    <input
-                      aria-label={`${name} name`}
-                      className={inputClass}
-                      value={p.name}
-                      disabled={disabled}
-                      onChange={(e) => edit(p.id, { name: e.target.value })}
-                      placeholder={`Participant ${i + 1}`}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Remove ${name}`}
-                      disabled={disabled}
-                      onClick={() => void remove(p.id)}
-                      className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  <select
+                  <Select
                     aria-label={`${name} provider`}
-                    className={inputClass}
+                    options={PROVIDER_OPTIONS}
                     value={p.provider}
                     disabled={disabled}
-                    onChange={(e) => edit(p.id, { provider: e.target.value as AgentCli })}
-                  >
-                    {AGENT_CLIS.map((cli) => (
-                      <option key={cli} value={cli}>
-                        {AGENT_CLI_LABEL[cli]}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(provider) => edit(p.id, { provider })}
+                  />
 
                   <textarea
                     aria-label={`${name} perspective`}
@@ -315,7 +299,7 @@ export function CouncilParticipantsPanel({
                     placeholder="Perspective on the matter — e.g. “Argue for the smallest change that ships this quarter.”"
                   />
                 </div>
-              ) : null}
+              </Collapse>
             </div>
           );
         })}

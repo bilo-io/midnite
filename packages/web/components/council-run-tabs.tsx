@@ -73,7 +73,13 @@ export function CouncilRunTabs({
 
   return (
     <div className="flex flex-col gap-3">
-      <div role="tablist" aria-label="Council run" className="flex flex-wrap items-center gap-1.5">
+      {/* Topic + tab strip stay pinned to the top while the output scrolls
+          beneath them. The blurred surface masks content sliding under it. */}
+      <div className="sticky top-[52px] z-20 -mx-1 flex flex-col gap-2 bg-background/70 px-1 pb-2 pt-3 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <p className="text-xs text-muted-foreground">
+          Topic: <span className="text-foreground">{run.topic}</span>
+        </p>
+        <div role="tablist" aria-label="Council run" className="flex flex-wrap items-center gap-1.5">
         {run.participants.map((p, i) => (
           <button
             key={p.id}
@@ -109,6 +115,7 @@ export function CouncilRunTabs({
           <Scale className="h-3.5 w-3.5" />
           Verdict
         </button>
+        </div>
       </div>
 
       {/* Live terminals stay mounted (hidden) so a tab switch doesn't drop the WS. */}

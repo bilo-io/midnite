@@ -8,6 +8,7 @@ import { CouncilParticipantsPanel } from '@/components/council-participants-pane
 import { CouncilRunTabs } from '@/components/council-run-tabs';
 import { CouncilRunThread } from '@/components/council-run-thread';
 import { CouncilTopicComposer } from '@/components/council-topic-composer';
+import { PageHeader } from '@/components/page-header';
 import {
   listCouncilRuns,
   retryCouncilRunParticipant,
@@ -104,23 +105,22 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
 
   return (
     <>
-      <div className="container space-y-5 pb-48 pt-6">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <Link
-              href="/councils"
-              className="mb-1 flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              Councils
-            </Link>
-            <h1 className="truncate text-xl font-semibold">{initial.name}</h1>
-            {initial.description ? (
-              <p className="mt-0.5 text-sm text-muted-foreground">{initial.description}</p>
-            ) : null}
-          </div>
-        </div>
-
+      {/* The shared sticky header: full at the top, compacts on scroll (same as
+          every other page) — the title and back control never leave view. */}
+      <PageHeader
+        title={initial.name}
+        description={initial.description}
+        actions={
+          <Link
+            href="/councils"
+            className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            All councils
+          </Link>
+        }
+      />
+      <div className="container space-y-5 pb-48 pt-2">
         {/* Thread (left) and participants (right) flank the run content; both
             collapse to slim rails. The fixed composer floats over the bottom,
             so everything gets generous bottom padding to scroll clear of it. */}
@@ -141,18 +141,13 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
             ) : null}
 
             {run ? (
-              <div className="space-y-2">
-                <p className="text-xs text-muted-foreground">
-                  Topic: <span className="text-foreground">{run.topic}</span>
-                </p>
-                <CouncilRunTabs
-                  key={run.id}
-                  run={run}
-                  onSkip={live ? skipParticipant : undefined}
-                  onRetryParticipant={!live ? retryParticipant : undefined}
-                  onRetryVerdict={!live ? retryVerdict : undefined}
-                />
-              </div>
+              <CouncilRunTabs
+                key={run.id}
+                run={run}
+                onSkip={live ? skipParticipant : undefined}
+                onRetryParticipant={!live ? retryParticipant : undefined}
+                onRetryVerdict={!live ? retryVerdict : undefined}
+              />
             ) : (
               <div className="rounded-lg border border-dashed border-border/60 p-10 text-center text-sm text-muted-foreground">
                 Submit a topic below and each participant will argue it from their perspective in
@@ -175,21 +170,38 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
       </div>
 
       {/* Topic input pinned to the bottom, dashboard-style: content scrolls
-          behind it; the page's pb-48 keeps everything reachable above it. */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30">
-        <div className="pb-6 pt-2">
+          behind it; the page's pb-48 keeps everything reachable above it. The
+          bar mirrors the content row's nav-rail offset (pl-14), container, and
+          thread/panel spacers so the composer lines up exactly with the run
+          output column above it — in every collapsed/expanded combination. */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 pl-14">
+        {/* Tall theme fade so long output washes out behind the composer
+            instead of reading through it. */}
+        <div className="bg-gradient-to-t from-background from-45% via-background/85 to-transparent pb-6 pt-20">
           <div className="container">
-            <div className="pointer-events-auto mx-auto w-full max-w-3xl">
-              <CouncilTopicComposer
-                disabled={!canStart}
-                disabledHint={
-                  live
-                    ? 'A debate is in progress — wait for the verdict.'
-                    : participants.length < 2
-                      ? 'Add at least 2 participants in the panel to start a debate.'
-                      : undefined
-                }
-                onSubmit={submitTopic}
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
+              <div
+                aria-hidden
+                className="hidden shrink-0 lg:block"
+                style={{ width: threadOpen ? 240 : 36 }}
+              />
+              <div className="pointer-events-auto min-w-0 flex-1">
+                <CouncilTopicComposer
+                  disabled={!canStart}
+                  disabledHint={
+                    live
+                      ? 'A debate is in progress — wait for the verdict.'
+                      : participants.length < 2
+                        ? 'Add at least 2 participants in the panel to start a debate.'
+                        : undefined
+                  }
+                  onSubmit={submitTopic}
+                />
+              </div>
+              <div
+                aria-hidden
+                className="hidden shrink-0 lg:block"
+                style={{ width: panelOpen ? 320 : 36 }}
               />
             </div>
           </div>
