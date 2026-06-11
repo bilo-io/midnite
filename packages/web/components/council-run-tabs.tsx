@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Loader2, Scale, SkipForward } from 'lucide-react';
-import type { CouncilRun, CouncilRunParticipant } from '@midnite/shared';
+import { AGENT_CLI_LABEL, type CouncilRun, type CouncilRunParticipant } from '@midnite/shared';
 import { AgentCliLogo } from '@/components/agent-cli-logo';
 import { Button } from '@/components/ui/button';
 import { MarkdownPreview } from '@/components/markdown-preview';
@@ -221,10 +221,23 @@ function VerdictPanel({
     );
   }
   if (run.status === 'synthesizing') {
+    const judge = run.verdictProvider ? AGENT_CLI_LABEL[run.verdictProvider] : 'The judge';
     return (
-      <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-card/40 p-6 text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        Synthesizing — Claude is weighing the anonymized takes…
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          {run.verdictProvider ? <AgentCliLogo cli={run.verdictProvider} className="h-4 w-4" /> : null}
+          Synthesizing — {judge} is weighing the anonymized takes…
+        </div>
+        {run.verdictTerminalId ? (
+          <div className="h-[420px] overflow-hidden rounded-lg border border-border/60">
+            <LiveTerminal
+              attachId={run.verdictTerminalId}
+              label={`Verdict · ${judge}`}
+              ariaLabel="Verdict terminal"
+            />
+          </div>
+        ) : null}
       </div>
     );
   }

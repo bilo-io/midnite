@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { parseConfig } from '@midnite/shared';
-import type { AnthropicService } from '../agent/anthropic.service';
 import type { TerminalService } from '../terminal/terminal.service';
 import {
   CouncilParticipantNotLiveError,
@@ -51,37 +50,10 @@ class FakeTerminal {
   }
 }
 
-class FakeAnthropic {
-  enabled = true;
-  lastRequest: { system?: string; content: string } | null = null;
-  verdictText = '## Verdict\n\nParticipant A wins.';
-  shouldThrow = false;
-
-  getPlanModel(): string {
-    return 'test-plan-model';
-  }
-
-  getClient(): unknown {
-    return {
-      messages: {
-        create: async (req: {
-          system?: string;
-          messages: Array<{ content: string }>;
-        }): Promise<{ content: Array<{ type: 'text'; text: string }> }> => {
-          if (this.shouldThrow) throw new Error('api down (test)');
-          this.lastRequest = { system: req.system, content: req.messages[0]!.content };
-          return { content: [{ type: 'text', text: this.verdictText }] };
-        },
-      },
-    };
-  }
-}
-
 function makeRunner(opts?: { runTimeoutMs?: number }): {
   runner: CouncilRunnerService;
   repo: InMemoryCouncilsRepo;
   terminal: FakeTerminal;
-  anthropic: FakeAnthropic;
 } {
   const config = parseConfig({
     agent: {},
@@ -92,14 +64,21 @@ function makeRunner(opts?: { runTimeoutMs?: number }): {
   });
   const repo = new InMemoryCouncilsRepo();
   const terminal = new FakeTerminal();
-  const anthropic = new FakeAnthropic();
-  const runner = new CouncilRunnerService(
-    config,
-    repo,
-    terminal as unknown as TerminalService,
-    anthropic as unknown as AnthropicService,
-  );
-  return { runner, repo, terminal, anthropic };
+  const runner = new CouncilRunnerService(config, repo, terminal as unknown as TerminalService);
+  return { runner, repo, terminal };
+}
+
+/** Drive the verdict CLI spawned after all participants settle. */
+async function settleVerdict(
+  terminal: FakeTerminal,
+  runId: string,
+  opts?: { output?: string; exitCode?: number },
+): Promise<void> {
+  const id = `council-${runId}-verdict`;
+  await waitUntil(() => terminal.spawns.has(id));
+  const spawn = terminal.spawns.get(id)!;
+  if (opts?.output !== undefined) spawn.onData(opts.output);
+  spawn.onExit(opts?.exitCode ?? 0, null);
 }
 
 function seedCouncil(
@@ -168,15 +147,28 @@ describe('CouncilRunnerService', () => {
   });
 
   it('completes the full flow: capture → clean → anonymize → verdict', async () => {
-    const { runner, repo, terminal, anthropic } = makeRunner();
+    const { runner, repo, terminal } = makeRunner();
     seedCouncil(repo, TWO_PARTICIPANTS);
     const run = runner.startRun('c1', 'Rust?');
+    expect(run.verdictProvider).toBe('gemini'); // council default judge
 
     const [a, b] = run.participants;
     terminal.spawns.get(a!.terminalId)!.onData('\x1b[1mYes:\x1b[0m do it\r\n');
     terminal.spawns.get(a!.terminalId)!.onExit(0, null);
     terminal.spawns.get(b!.terminalId)!.onData('No: churn risk\r\n');
     terminal.spawns.get(b!.terminalId)!.onExit(0, null);
+
+    // The verdict runs as a one-shot CLI under the deterministic attach id,
+    // with the anonymized prompt as its argv — no names, no providers.
+    const verdictId = `council-${run.id}-verdict`;
+    await waitUntil(() => terminal.spawns.has(verdictId));
+    const verdictSpawn = terminal.spawns.get(verdictId)!;
+    expect(verdictSpawn.command).toBe('gemini');
+    const verdictPrompt = verdictSpawn.args.join(' ');
+    expect(verdictPrompt).not.toMatch(/Optimist|Skeptic/);
+    expect(verdictPrompt).toContain('## Participant A');
+    verdictSpawn.onData('## Verdict\r\n\r\nParticipant A wins.\r\n');
+    verdictSpawn.onExit(0, null);
 
     await waitUntil(() => repo.getRun(run.id)!.status === 'completed');
     const done = repo.getRun(run.id)!;
@@ -187,18 +179,16 @@ describe('CouncilRunnerService', () => {
     // Output cleaned of ANSI noise.
     expect(rows.find((r) => r.participantId === 'p1')!.output).toBe('Yes: do it');
 
-    // Both labeled, mapping persisted, and the verdict prompt anonymized.
+    // Both labeled, mapping persisted.
     const labels = rows.map((r) => r.label).sort();
     expect(labels).toEqual(['A', 'B']);
     const labelMap = JSON.parse(done.labelMap!) as Record<string, string>;
     expect(Object.keys(labelMap).sort()).toEqual(['A', 'B']);
     expect(new Set(Object.values(labelMap))).toEqual(new Set(rows.map((r) => r.id)));
-    expect(anthropic.lastRequest!.content).not.toMatch(/Optimist|Skeptic|claude|gemini/);
-    expect(anthropic.lastRequest!.content).toContain('## Participant A');
   });
 
   it('fails the run when fewer than 2 participants produce output', async () => {
-    const { runner, repo, terminal, anthropic } = makeRunner();
+    const { runner, repo, terminal } = makeRunner();
     seedCouncil(repo, TWO_PARTICIPANTS);
     const run = runner.startRun('c1', 'topic');
 
@@ -209,7 +199,7 @@ describe('CouncilRunnerService', () => {
 
     await waitUntil(() => repo.getRun(run.id)!.status === 'failed');
     expect(repo.getRun(run.id)!.error).toContain('at least 2');
-    expect(anthropic.lastRequest).toBeNull();
+    expect(terminal.spawns.has(`council-${run.id}-verdict`)).toBe(false);
 
     const rows = repo.listRunParticipants(run.id);
     expect(rows.find((r) => r.participantId === 'p2')!.status).toBe('failed');
@@ -234,6 +224,7 @@ describe('CouncilRunnerService', () => {
     // p3 never exits on its own — the 30ms timeout kills it (FakeTerminal
     // delivers onExit(-1) from killManagedRun, like a SIGTERM reap).
 
+    await settleVerdict(terminal, run.id, { output: 'verdict md' });
     await waitUntil(() => repo.getRun(run.id)!.status === 'completed');
     const slow = repo
       .listRunParticipants(run.id)
@@ -261,12 +252,12 @@ describe('CouncilRunnerService', () => {
     terminal.spawns.get(c!.terminalId)!.onData('take c\n');
     terminal.spawns.get(c!.terminalId)!.onExit(0, null);
 
+    await settleVerdict(terminal, run.id, { output: 'verdict md' });
     await waitUntil(() => repo.getRun(run.id)!.status === 'completed');
   });
 
-  it('fails synthesis but keeps outputs and labels when AI is disabled', async () => {
-    const { runner, repo, terminal, anthropic } = makeRunner();
-    anthropic.enabled = false;
+  it('fails the run but keeps outputs and labels when the verdict CLI errors', async () => {
+    const { runner, repo, terminal } = makeRunner();
     seedCouncil(repo, TWO_PARTICIPANTS);
     const run = runner.startRun('c1', 'topic');
 
@@ -274,27 +265,36 @@ describe('CouncilRunnerService', () => {
       terminal.spawns.get(p.terminalId)!.onData('take\n');
       terminal.spawns.get(p.terminalId)!.onExit(0, null);
     }
+    await settleVerdict(terminal, run.id, {
+      output: 'ERROR: Please set GEMINI_API_KEY\n',
+      exitCode: 1,
+    });
 
     await waitUntil(() => repo.getRun(run.id)!.status === 'failed');
     const done = repo.getRun(run.id)!;
-    expect(done.error).toContain('AI is disabled');
-    expect(done.labelMap).toBeTruthy(); // labels persisted before the call
+    // The output tail rides in the error so auth problems are visible at a glance.
+    expect(done.error).toContain('verdict (gemini) exited with code 1');
+    expect(done.error).toContain('GEMINI_API_KEY');
+    expect(done.labelMap).toBeTruthy(); // labels persisted before the verdict ran
     expect(repo.listRunParticipants(run.id).every((r) => r.output === 'take')).toBe(true);
+    // The council frees up for another run after a failed verdict.
+    expect(() => runner.startRun('c1', 'retry')).not.toThrow();
   });
 
-  it('fails the run when the verdict call throws', async () => {
-    const { runner, repo, terminal, anthropic } = makeRunner();
-    anthropic.shouldThrow = true;
+  it('fails the run when the verdict CLI cannot spawn', async () => {
+    const { runner, repo, terminal } = makeRunner();
     seedCouncil(repo, TWO_PARTICIPANTS);
     const run = runner.startRun('c1', 'topic');
 
-    for (const p of run.participants) {
-      terminal.spawns.get(p.terminalId)!.onData('take\n');
-      terminal.spawns.get(p.terminalId)!.onExit(0, null);
-    }
+    const [a, b] = run.participants;
+    terminal.spawns.get(a!.terminalId)!.onData('take\n');
+    terminal.spawns.get(a!.terminalId)!.onExit(0, null);
+    terminal.failNextSpawn = true; // the next spawn is the verdict CLI
+    terminal.spawns.get(b!.terminalId)!.onData('take\n');
+    terminal.spawns.get(b!.terminalId)!.onExit(0, null);
 
     await waitUntil(() => repo.getRun(run.id)!.status === 'failed');
-    expect(repo.getRun(run.id)!.error).toContain('synthesis failed');
+    expect(repo.getRun(run.id)!.error).toContain('verdict (gemini) failed to start');
   });
 
   it('skips a hung participant and synthesizes once the rest finish', async () => {
@@ -316,6 +316,7 @@ describe('CouncilRunnerService', () => {
     const updated = runner.skipParticipant('c1', run.id, c!.id);
     expect(updated.participants.find((p) => p.id === c!.id)!.status).toBe('skipped');
 
+    await settleVerdict(terminal, run.id, { output: 'verdict md' });
     await waitUntil(() => repo.getRun(run.id)!.status === 'completed');
     const skipped = repo.listRunParticipants(run.id).find((r) => r.participantId === 'p3')!;
     expect(skipped.status).toBe('skipped');

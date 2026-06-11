@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import {
   AGENT_CLI_DEFAULT,
+  COUNCIL_VERDICT_PROVIDER_DEFAULT,
   type Council,
   type CouncilParticipant,
   type CreateCouncilParticipantRequest,
@@ -34,6 +35,7 @@ export class CouncilsService {
       id: randomUUID(),
       name: req.name,
       description: req.description ?? null,
+      verdictProvider: req.verdictProvider ?? COUNCIL_VERDICT_PROVIDER_DEFAULT,
       createdAt: now,
       updatedAt: now,
     });
@@ -44,6 +46,7 @@ export class CouncilsService {
     const row = this.repo.updateCouncil(id, {
       ...(req.name !== undefined ? { name: req.name } : {}),
       ...(req.description !== undefined ? { description: req.description } : {}),
+      ...(req.verdictProvider !== undefined ? { verdictProvider: req.verdictProvider } : {}),
       updatedAt: new Date().toISOString(),
     });
     if (!row) throw new CouncilDoesNotExistError(`council ${id} does not exist`);

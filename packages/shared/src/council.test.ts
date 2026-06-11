@@ -13,6 +13,7 @@ describe('CouncilSchema', () => {
       id: 'c1',
       name: 'Tech direction',
       description: 'architecture calls',
+      verdictProvider: 'gemini',
       participants: [
         {
           id: 'p1',
@@ -35,6 +36,7 @@ describe('CouncilSchema', () => {
       CouncilSchema.safeParse({
         id: 'c1',
         name: 'x',
+        verdictProvider: 'gemini',
         participants: [
           {
             id: 'p1',

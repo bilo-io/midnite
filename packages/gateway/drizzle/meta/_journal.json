@@ -78,6 +78,13 @@
       "when": 1781175426643,
       "tag": "0010_councils",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1781178284474,
+      "tag": "0011_verdict-provider",
+      "breakpoints": true
     }
   ]
 }

@@ -5,8 +5,9 @@ import { AgentCliSchema } from './agents.js';
 // A council is a standing panel of AI participants, each arguing a topic from a
 // fixed perspective via its provider CLI. Submitting a topic starts a *run*:
 // every participant produces a one-shot take in its own terminal, then the
-// outputs are anonymized (shuffled, labeled A/B/C…) and synthesized by Claude
-// into a verdict that weighs the options without knowing who said what.
+// outputs are anonymized (shuffled, labeled A/B/C…) and synthesized by the
+// council's verdict provider into a verdict that weighs the options without
+// knowing who said what.
 
 export const COUNCIL_RUN_STATUSES = ['running', 'synthesizing', 'completed', 'failed'] as const;
 export const CouncilRunStatusSchema = z.enum(COUNCIL_RUN_STATUSES);
@@ -34,10 +35,14 @@ export const CouncilParticipantSchema = z.object({
 });
 export type CouncilParticipant = z.infer<typeof CouncilParticipantSchema>;
 
+export const COUNCIL_VERDICT_PROVIDER_DEFAULT = 'gemini' as const;
+
 export const CouncilSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().optional(),
+  /** The CLI that judges the anonymized takes and writes the verdict. */
+  verdictProvider: AgentCliSchema,
   participants: z.array(CouncilParticipantSchema),
   createdAt: z.string(),
   updatedAt: z.string(),
@@ -75,6 +80,10 @@ export const CouncilRunSchema = z.object({
   councilId: z.string(),
   topic: z.string(),
   status: CouncilRunStatusSchema,
+  /** Snapshot of the council's verdict provider when the run started. */
+  verdictProvider: AgentCliSchema.optional(),
+  /** Attach id for the verdict CLI's terminal while status is 'synthesizing'. */
+  verdictTerminalId: z.string().optional(),
   /** Markdown verdict from the anonymized synthesis step. */
   verdict: z.string().optional(),
   error: z.string().optional(),
@@ -89,12 +98,14 @@ export type CouncilRun = z.infer<typeof CouncilRunSchema>;
 export const CreateCouncilRequestSchema = z.object({
   name: z.string().trim().min(1).max(120),
   description: z.string().max(2000).optional(),
+  verdictProvider: AgentCliSchema.optional(),
 });
 export type CreateCouncilRequest = z.infer<typeof CreateCouncilRequestSchema>;
 
 export const UpdateCouncilRequestSchema = z.object({
   name: z.string().trim().min(1).max(120).optional(),
   description: z.string().max(2000).optional(),
+  verdictProvider: AgentCliSchema.optional(),
 });
 export type UpdateCouncilRequest = z.infer<typeof UpdateCouncilRequestSchema>;
 

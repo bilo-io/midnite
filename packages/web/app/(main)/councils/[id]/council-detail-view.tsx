@@ -3,12 +3,12 @@
 import { useCallback, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import type { Council, CouncilParticipant, CouncilRun } from '@midnite/shared';
+import type { AgentCli, Council, CouncilParticipant, CouncilRun } from '@midnite/shared';
 import { CouncilParticipantsPanel } from '@/components/council-participants-panel';
 import { CouncilRunTabs } from '@/components/council-run-tabs';
 import { CouncilRunThread } from '@/components/council-run-thread';
 import { CouncilTopicComposer } from '@/components/council-topic-composer';
-import { listCouncilRuns, skipCouncilRunParticipant } from '@/lib/api';
+import { listCouncilRuns, skipCouncilRunParticipant, updateCouncil } from '@/lib/api';
 import { useCouncilRun } from '@/lib/use-council-run';
 
 type Props = {
@@ -18,6 +18,7 @@ type Props = {
 
 export function CouncilDetailView({ initial, initialRuns }: Props) {
   const [participants, setParticipants] = useState<CouncilParticipant[]>(initial.participants);
+  const [verdictProvider, setVerdictProvider] = useState<AgentCli>(initial.verdictProvider);
   const [runs, setRuns] = useState<CouncilRun[]>(initialRuns);
 
   const refreshRuns = useCallback(() => {
@@ -39,6 +40,17 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
       refreshRuns();
     },
     [start, refreshRuns],
+  );
+
+  // A single discrete choice — save it straight away rather than debouncing.
+  const changeVerdictProvider = useCallback(
+    (cli: AgentCli) => {
+      setVerdictProvider(cli);
+      updateCouncil(initial.id, { verdictProvider: cli }).catch(() => {
+        setVerdictProvider(initial.verdictProvider); // revert on failure
+      });
+    },
+    [initial.id, initial.verdictProvider],
   );
 
   // Stop waiting on a hung participant; the 1.2s poll picks up the new state.
@@ -110,8 +122,10 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
         <CouncilParticipantsPanel
           councilId={initial.id}
           participants={participants}
+          verdictProvider={verdictProvider}
           disabled={Boolean(live)}
           onChanged={setParticipants}
+          onVerdictProviderChange={changeVerdictProvider}
         />
       </div>
     </div>

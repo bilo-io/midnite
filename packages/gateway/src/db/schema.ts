@@ -256,6 +256,8 @@ export const councils = sqliteTable('councils', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   description: text('description'),
+  // AgentCli that judges the anonymized takes (verdict step).
+  verdictProvider: text('verdict_provider').notNull().default('gemini'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 });
@@ -283,6 +285,8 @@ export const councilRuns = sqliteTable(
     councilId: text('council_id').notNull(),
     topic: text('topic').notNull(),
     status: text('status').notNull(), // running | synthesizing | completed | failed
+    // Snapshot of the council's verdict provider at run start (null on old rows).
+    verdictProvider: text('verdict_provider'),
     verdict: text('verdict'), // markdown from the synthesis step
     // JSON: { "A": "<runParticipantId>", ... } — the anonymization mapping,
     // persisted before the synthesis call so the UI can de-anonymize after.

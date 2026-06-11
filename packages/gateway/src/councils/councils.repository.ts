@@ -158,6 +158,7 @@ export class CouncilsRepository {
       id: row.id,
       name: row.name,
       description: row.description ?? undefined,
+      verdictProvider: row.verdictProvider as AgentCli,
       participants: this.listParticipants(row.id).map((p) => this.hydrateParticipant(p)),
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
@@ -182,6 +183,9 @@ export class CouncilsRepository {
       councilId: row.councilId,
       topic: row.topic,
       status: row.status as CouncilRunStatus,
+      verdictProvider: (row.verdictProvider as AgentCli | null) ?? undefined,
+      // Deterministic attach id; the PTY behind it only exists while synthesizing.
+      verdictTerminalId: `council-${row.id}-verdict`,
       verdict: row.verdict ?? undefined,
       error: row.error ?? undefined,
       participants: this.listRunParticipants(row.id).map((p) => this.hydrateRunParticipant(p)),

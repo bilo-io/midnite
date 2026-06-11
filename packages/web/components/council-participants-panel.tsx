@@ -26,9 +26,12 @@ const textareaClass =
 type Props = {
   councilId: string;
   participants: CouncilParticipant[];
+  /** The CLI that judges the anonymized takes. */
+  verdictProvider: AgentCli;
   /** Edits are locked while a run is live — the run snapshots at start. */
   disabled: boolean;
   onChanged: (participants: CouncilParticipant[]) => void;
+  onVerdictProviderChange: (cli: AgentCli) => void;
 };
 
 /**
@@ -36,7 +39,14 @@ type Props = {
  * participant a name, a provider (agent CLI), and a free-text perspective.
  * Saves are debounced per participant (pattern: agents-view subagent editor).
  */
-export function CouncilParticipantsPanel({ councilId, participants, disabled, onChanged }: Props) {
+export function CouncilParticipantsPanel({
+  councilId,
+  participants,
+  verdictProvider,
+  disabled,
+  onChanged,
+  onVerdictProviderChange,
+}: Props) {
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
@@ -123,6 +133,34 @@ export function CouncilParticipantsPanel({ councilId, participants, disabled, on
             Add
           </Button>
         </div>
+      </div>
+
+      <div className="space-y-1.5 rounded-lg border border-border/60 bg-background/40 p-3">
+        <label
+          htmlFor="council-verdict-provider"
+          className="text-xs font-medium text-muted-foreground"
+        >
+          Verdict by
+        </label>
+        <div className="flex items-center gap-2">
+          <AgentCliLogo cli={verdictProvider} className="h-4 w-4 shrink-0" />
+          <select
+            id="council-verdict-provider"
+            className={inputClass}
+            value={verdictProvider}
+            disabled={disabled}
+            onChange={(e) => onVerdictProviderChange(e.target.value as AgentCli)}
+          >
+            {AGENT_CLIS.map((cli) => (
+              <option key={cli} value={cli}>
+                {AGENT_CLI_LABEL[cli]}
+              </option>
+            ))}
+          </select>
+        </div>
+        <p className="text-[11px] leading-snug text-muted-foreground">
+          Weighs the anonymized takes and writes the verdict — it never sees who said what.
+        </p>
       </div>
 
       {participants.length < 2 ? (

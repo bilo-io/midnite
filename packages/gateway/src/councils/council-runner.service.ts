@@ -3,12 +3,12 @@ import { randomUUID } from 'node:crypto';
 import {
   AGENT_CLI_DEFAULT,
   AgentCliSchema,
+  COUNCIL_VERDICT_PROVIDER_DEFAULT,
   type AgentCli,
   type CouncilRun,
   type MidniteConfig,
 } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
-import { AnthropicService } from '../agent/anthropic.service';
 import { TerminalService } from '../terminal/terminal.service';
 import { CouncilDoesNotExistError } from './councils.service';
 import { CouncilsRepository } from './councils.repository';
@@ -24,7 +24,6 @@ export class CouncilRunInProgressError extends Error {}
 export class CouncilTooSmallError extends Error {}
 export class CouncilParticipantNotLiveError extends Error {}
 
-const VERDICT_MAX_TOKENS = 4096;
 // Cap the per-participant capture buffer; anything past it is dropped (the tail
 // of a runaway TUI redraw, not the argument) and the truncation is flagged.
 const CAPTURE_LIMIT_BYTES = 2 * 1024 * 1024;
@@ -45,7 +44,8 @@ interface LiveParticipant {
  * Orchestrates a council run: spawns each participant's one-shot CLI in a
  * managed PTY (watchable over the normal terminal WS), captures and cleans
  * their output, and — once all settle — anonymizes the takes (shuffle + label)
- * and asks Claude for a verdict that weighs them without knowing who said what.
+ * and runs the council's verdict provider CLI over them for a verdict that
+ * weighs the options without knowing who said what.
  */
 @Injectable()
 export class CouncilRunnerService implements OnModuleInit {
@@ -59,7 +59,6 @@ export class CouncilRunnerService implements OnModuleInit {
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
     @Inject(CouncilsRepository) private readonly repo: CouncilsRepository,
     @Inject(TerminalService) private readonly terminal: TerminalService,
-    @Inject(AnthropicService) private readonly anthropic: AnthropicService,
   ) {}
 
   // PTYs die with the process, so any run still marked live after a restart is dead.
@@ -102,6 +101,10 @@ export class CouncilRunnerService implements OnModuleInit {
       councilId,
       topic,
       status: 'running',
+      // Snapshot the judge at start time, like participant rows.
+      verdictProvider: AgentCliSchema.catch(COUNCIL_VERDICT_PROVIDER_DEFAULT).parse(
+        council.verdictProvider,
+      ),
       verdict: null,
       labelMap: null,
       error: null,
@@ -274,11 +277,15 @@ export class CouncilRunnerService implements OnModuleInit {
 
   private maybeSynthesize(councilId: string, runId: string, all: LiveParticipant[]): void {
     if (!all.every((p) => p.settled)) return;
-    void this.synthesize(councilId, runId);
+    this.synthesize(councilId, runId);
   }
 
-  /** Anonymize the settled outputs and ask Claude for the verdict. Never throws. */
-  private async synthesize(councilId: string, runId: string): Promise<void> {
+  /**
+   * Anonymize the settled outputs and hand them to the council's verdict
+   * provider — a one-shot CLI run, watchable live like the participants'.
+   * Never throws.
+   */
+  private synthesize(councilId: string, runId: string): void {
     try {
       this.repo.updateRun(runId, { status: 'synthesizing' });
       const rows = this.repo.listRunParticipants(runId);
@@ -290,13 +297,14 @@ export class CouncilRunnerService implements OnModuleInit {
           error: `only ${succeeded.length} participant(s) produced output — at least 2 are needed to weigh options`,
           finishedAt: new Date().toISOString(),
         });
+        this.finishRun(councilId, runId);
         return;
       }
 
       // Anonymize: shuffle (Fisher–Yates), then label in shuffled order so the
       // labels carry no positional hint of which participant is which. The
-      // mapping is persisted BEFORE the API call — the UI de-anonymizes with it
-      // even if the verdict call dies.
+      // mapping is persisted BEFORE the verdict run — the UI de-anonymizes with
+      // it even if the verdict dies.
       const shuffled = [...succeeded];
       for (let i = shuffled.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -318,33 +326,13 @@ export class CouncilRunnerService implements OnModuleInit {
       }
       this.repo.updateRun(runId, { labelMap: JSON.stringify(labelMap) });
 
-      if (!this.anthropic.enabled) {
-        this.repo.updateRun(runId, {
-          status: 'failed',
-          error:
-            'AI is disabled — set ANTHROPIC_API_KEY or run `claude` to log in. Participant outputs were kept.',
-          finishedAt: new Date().toISOString(),
-        });
-        return;
-      }
-
       const run = this.repo.getRun(runId)!;
-      const message = await this.anthropic.getClient().messages.create({
-        model: this.anthropic.getPlanModel(),
-        max_tokens: VERDICT_MAX_TOKENS,
-        system: VERDICT_SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: buildVerdictPrompt(run.topic, entries) }],
-      });
-      const verdict = message.content
-        .map((b) => (b.type === 'text' ? b.text : ''))
-        .join('')
-        .trim();
-
-      this.repo.updateRun(runId, {
-        status: 'completed',
-        verdict,
-        finishedAt: new Date().toISOString(),
-      });
+      const provider = AgentCliSchema.catch(COUNCIL_VERDICT_PROVIDER_DEFAULT).parse(
+        run.verdictProvider ?? COUNCIL_VERDICT_PROVIDER_DEFAULT,
+      );
+      // CLIs take a single prompt, so the moderator framing rides in front.
+      const prompt = `${VERDICT_SYSTEM_PROMPT}\n\n${buildVerdictPrompt(run.topic, entries)}`;
+      this.runVerdict(councilId, runId, provider, prompt);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       this.logger.warn(`council run ${runId} synthesis failed: ${errorMsg}`);
@@ -353,9 +341,82 @@ export class CouncilRunnerService implements OnModuleInit {
         error: `synthesis failed: ${errorMsg}`,
         finishedAt: new Date().toISOString(),
       });
-    } finally {
-      this.activeRuns.delete(councilId);
-      this.liveRuns.delete(runId);
+      this.finishRun(councilId, runId);
     }
+  }
+
+  /** Run the verdict CLI in a managed PTY under the run's deterministic verdict attach id. */
+  private runVerdict(councilId: string, runId: string, provider: AgentCli, prompt: string): void {
+    const terminalId = `council-${runId}-verdict`;
+    const state = {
+      buffer: '',
+      bufferBytes: 0,
+      truncated: false,
+      timedOut: false,
+      settled: false,
+      timeout: null as NodeJS.Timeout | null,
+    };
+
+    const spawned = this.terminal.spawnManagedRun(
+      terminalId,
+      { ...oneshotCommand(provider, prompt), cwd: process.cwd() },
+      {
+        onData: (chunk) => {
+          if (state.bufferBytes >= CAPTURE_LIMIT_BYTES) {
+            state.truncated = true;
+            return;
+          }
+          state.buffer += chunk;
+          state.bufferBytes += Buffer.byteLength(chunk, 'utf8');
+        },
+        onExit: (exitCode) => {
+          if (state.settled) return;
+          state.settled = true;
+          if (state.timeout) clearTimeout(state.timeout);
+
+          let output = cleanPtyOutput(state.buffer);
+          if (state.truncated) output += '\n\n[output truncated]';
+          if (!state.timedOut && exitCode === 0 && output.trim()) {
+            this.repo.updateRun(runId, {
+              status: 'completed',
+              verdict: output,
+              finishedAt: new Date().toISOString(),
+            });
+          } else {
+            // Surface the output tail so auth/setup errors are visible at a glance.
+            const tail = output.trim() ? `: ${output.slice(-300).trim()}` : '';
+            this.repo.updateRun(runId, {
+              status: 'failed',
+              error: state.timedOut
+                ? `verdict (${provider}) timed out after ${this.config.councils.runTimeoutMs}ms`
+                : `verdict (${provider}) exited with code ${exitCode}${tail}`,
+              finishedAt: new Date().toISOString(),
+            });
+          }
+          this.finishRun(councilId, runId);
+        },
+      },
+    );
+
+    if (!spawned.ok) {
+      this.repo.updateRun(runId, {
+        status: 'failed',
+        error: `verdict (${provider}) failed to start: ${spawned.error}`,
+        finishedAt: new Date().toISOString(),
+      });
+      this.finishRun(councilId, runId);
+      return;
+    }
+
+    state.timeout = setTimeout(() => {
+      state.timedOut = true;
+      this.terminal.killManagedRun(terminalId); // onExit settles the run
+    }, this.config.councils.runTimeoutMs);
+    state.timeout.unref?.();
+  }
+
+  private finishRun(councilId: string, runId: string): void {
+    this.activeRuns.delete(councilId);
+    this.liveRuns.delete(runId);
   }
 }

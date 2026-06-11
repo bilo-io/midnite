@@ -33,7 +33,11 @@ export class InMemoryCouncilsRepo extends CouncilsRepository {
   }
 
   override insertCouncil(row: CouncilInsert): CouncilRow {
-    const full: CouncilRow = { ...row, description: row.description ?? null };
+    const full: CouncilRow = {
+      ...row,
+      description: row.description ?? null,
+      verdictProvider: row.verdictProvider ?? 'gemini',
+    };
     this.councils.push(full);
     return full;
   }
@@ -105,6 +109,7 @@ export class InMemoryCouncilsRepo extends CouncilsRepository {
   override insertRun(row: CouncilRunInsert): CouncilRunRow {
     const full: CouncilRunRow = {
       ...row,
+      verdictProvider: row.verdictProvider ?? null,
       verdict: row.verdict ?? null,
       labelMap: row.labelMap ?? null,
       error: row.error ?? null,
