@@ -17,7 +17,7 @@ const HeartbeatIntervalSchema = z.number().int().min(HEARTBEAT_MIN_H).max(HEARTB
 
 // The CLI binary midnite launches inside a session terminal. A global preference
 // (not per-agent): which coding agent the user drives sessions with.
-export const AGENT_CLIS = ['claude', 'gemini', 'codex'] as const;
+export const AGENT_CLIS = ['claude', 'gemini', 'codex', 'aider', 'opencode'] as const;
 export const AgentCliSchema = z.enum(AGENT_CLIS);
 export type AgentCli = z.infer<typeof AgentCliSchema>;
 export const AGENT_CLI_DEFAULT: AgentCli = 'claude';
@@ -27,6 +27,8 @@ export const AGENT_CLI_LABEL: Record<AgentCli, string> = {
   claude: 'Claude',
   gemini: 'Gemini',
   codex: 'Codex',
+  aider: 'Aider',
+  opencode: 'OpenCode',
 };
 
 /** The shell command typed into a fresh session shell to launch each CLI. */
@@ -34,7 +36,48 @@ export const AGENT_CLI_COMMAND: Record<AgentCli, string> = {
   claude: 'claude',
   gemini: 'gemini',
   codex: 'codex',
+  aider: 'aider',
+  opencode: 'opencode',
 };
+
+/**
+ * The install command pasted into the install terminal — npm global where the CLI
+ * ships on npm, else the vendor's recommended installer (pip for Aider). The user
+ * reviews it and presses Enter to run.
+ */
+export const AGENT_CLI_INSTALL_COMMAND: Record<AgentCli, string> = {
+  claude: 'npm install -g @anthropic-ai/claude-code',
+  gemini: 'npm install -g @google/gemini-cli',
+  codex: 'npm install -g @openai/codex',
+  aider: 'python -m pip install aider-install && aider-install',
+  opencode: 'npm install -g opencode-ai',
+};
+
+/**
+ * The uninstall command, paired with the install method above. The uninstall
+ * terminal first runs `which <cli>` to surface where the binary lives, then this.
+ * The user reviews it and presses Enter.
+ */
+export const AGENT_CLI_UNINSTALL_COMMAND: Record<AgentCli, string> = {
+  claude: 'npm uninstall -g @anthropic-ai/claude-code',
+  gemini: 'npm uninstall -g @google/gemini-cli',
+  codex: 'npm uninstall -g @openai/codex',
+  aider: 'python -m pip uninstall -y aider-chat aider-install',
+  opencode: 'npm uninstall -g opencode-ai',
+};
+
+/** Installed-state of a CLI, as detected by probing for its binary on PATH. */
+export const AgentCliStatusSchema = z.object({
+  cli: AgentCliSchema,
+  installed: z.boolean(),
+  version: z.string().optional(),
+});
+export type AgentCliStatus = z.infer<typeof AgentCliStatusSchema>;
+
+/** Which command a standalone CLI terminal pastes — install or uninstall. */
+export const CLI_TERMINAL_ACTIONS = ['install', 'uninstall'] as const;
+export const CliTerminalActionSchema = z.enum(CLI_TERMINAL_ACTIONS);
+export type CliTerminalAction = z.infer<typeof CliTerminalActionSchema>;
 
 /** The single orchestrator. Its description is the system prompt; the heartbeat
  *  prompt runs on `heartbeatIntervalH` when `heartbeatEnabled`. */
@@ -111,6 +154,10 @@ export const UpdateSubAgentRequestSchema = z.object({
 
 export const AgentsConfigResponseSchema = z.object({ config: AgentsConfigSchema });
 export const AgentCliResponseSchema = z.object({ cli: AgentCliSchema });
+export const AgentCliStatusResponseSchema = z.object({ status: AgentCliStatusSchema });
+// The ad-hoc terminal id minted for an install session; the client attaches to it
+// with the existing terminal token + WS flow.
+export const InstallTerminalResponseSchema = z.object({ terminalId: z.string() });
 export const PrimaryAgentResponseSchema = z.object({ primary: PrimaryAgentSchema });
 export const SubAgentResponseSchema = z.object({ subAgent: SubAgentSchema });
 export const HeartbeatRunsResponseSchema = z.object({ runs: z.array(HeartbeatRunSchema) });
@@ -127,6 +174,8 @@ export type UpdateAgentCliRequest = z.infer<typeof UpdateAgentCliRequestSchema>;
 export type AgentCliResponse = z.infer<typeof AgentCliResponseSchema>;
 export type CreateSubAgentRequest = z.infer<typeof CreateSubAgentRequestSchema>;
 export type UpdateSubAgentRequest = z.infer<typeof UpdateSubAgentRequestSchema>;
+export type AgentCliStatusResponse = z.infer<typeof AgentCliStatusResponseSchema>;
+export type InstallTerminalResponse = z.infer<typeof InstallTerminalResponseSchema>;
 export type AgentsConfigResponse = z.infer<typeof AgentsConfigResponseSchema>;
 export type PrimaryAgentResponse = z.infer<typeof PrimaryAgentResponseSchema>;
 export type SubAgentResponse = z.infer<typeof SubAgentResponseSchema>;

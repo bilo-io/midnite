@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { HttpRequestParamsSchema, type HttpRequestParams } from '@midnite/shared';
+import { Inject, Injectable } from '@nestjs/common';
+import { HttpRequestParamsSchema, type HttpRequestParams, type MidniteConfig } from '@midnite/shared';
+import { MIDNITE_CONFIG } from '../../../config.token';
 import { isSafeHttpUrl } from '../../../projects/lib/opengraph';
 import type { NodeExecutor, NodeRunContext } from '../node-executor';
 
@@ -29,9 +30,11 @@ async function readCapped(res: Response, maxBytes: number): Promise<string> {
 export class HttpRequestExecutor implements NodeExecutor {
   readonly typeId = 'http.request';
 
+  constructor(@Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig) {}
+
   async execute(ctx: NodeRunContext): Promise<unknown> {
     const params = HttpRequestParamsSchema.parse(ctx.params) as HttpRequestParams;
-    if (!isSafeHttpUrl(params.url)) {
+    if (!isSafeHttpUrl(params.url, { allowLoopback: this.config.workflows.allowLoopbackHttp })) {
       throw new Error(`refusing to call unsafe or private URL: ${params.url}`);
     }
 

@@ -19,6 +19,7 @@ import {
 } from '@midnite/shared';
 import { AnthropicService } from '../agent/anthropic.service';
 import { collapseTilde, expandTilde } from '../fs/path-tilde';
+import { KnowledgeService } from '../knowledge/knowledge.service';
 import { TasksService } from '../tasks/tasks.service';
 import { fetchSourceMetadata } from './lib/opengraph';
 import { ProjectsRepository } from './projects.repository';
@@ -66,6 +67,7 @@ export class ProjectsService {
     @Inject(ProjectsRepository) private readonly repo: ProjectsRepository,
     @Inject(AnthropicService) private readonly anthropic: AnthropicService,
     @Inject(TasksService) private readonly tasks: TasksService,
+    @Inject(KnowledgeService) private readonly knowledge: KnowledgeService,
   ) {}
 
   listProjects(): Project[] {
@@ -212,10 +214,14 @@ export class ProjectsService {
 
   private async generatePlan(project: Project): Promise<string> {
     const client = this.anthropic.getClient();
-    const sourceLines = project.sources.length
-      ? project.sources
-          .map((s) => `- [${s.kind}] ${s.title ?? '(untitled)'} — ${s.url}`)
-          .join('\n')
+    // Global knowledge-base sources apply to every project; the project's own
+    // source for the same URL overrides the global one.
+    const byUrl = new Map<string, { kind: string; title?: string; url: string }>();
+    for (const s of this.knowledge.listSources()) byUrl.set(s.url, s);
+    for (const s of project.sources) byUrl.set(s.url, s);
+    const merged = [...byUrl.values()];
+    const sourceLines = merged.length
+      ? merged.map((s) => `- [${s.kind}] ${s.title ?? '(untitled)'} — ${s.url}`).join('\n')
       : '(no sources provided)';
     const userText = `Project name: ${project.name}\n\nDescription:\n${
       project.description ?? '(none provided)'

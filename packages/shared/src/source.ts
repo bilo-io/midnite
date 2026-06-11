@@ -5,8 +5,17 @@ export const SOURCE_KINDS = [
   'github',
   'figma',
   'google-docs',
+  'google-sheets',
+  'google-slides',
+  'google-drive',
   'notion',
   'youtube',
+  'x',
+  'facebook',
+  'linkedin',
+  'reddit',
+  'medium',
+  'substack',
   'link',
 ] as const;
 
@@ -16,8 +25,17 @@ export const SOURCE_KIND_LABEL: Record<SourceKind, string> = {
   github: 'GitHub',
   figma: 'Figma',
   'google-docs': 'Google Docs',
+  'google-sheets': 'Google Sheets',
+  'google-slides': 'Google Slides',
+  'google-drive': 'Google Drive',
   notion: 'Notion',
   youtube: 'YouTube',
+  x: 'X',
+  facebook: 'Facebook',
+  linkedin: 'LinkedIn',
+  reddit: 'Reddit',
+  medium: 'Medium',
+  substack: 'Substack',
   link: 'Link',
 };
 
@@ -27,8 +45,11 @@ export const SOURCE_KIND_LABEL: Record<SourceKind, string> = {
  */
 export function detectSourceKind(url: string): SourceKind {
   let host: string;
+  let path: string;
   try {
-    host = new URL(url).hostname.toLowerCase();
+    const u = new URL(url);
+    host = u.hostname.toLowerCase();
+    path = u.pathname.toLowerCase();
   } catch {
     return 'link';
   }
@@ -37,9 +58,23 @@ export function detectSourceKind(url: string): SourceKind {
 
   if (matches('github.com')) return 'github';
   if (matches('figma.com')) return 'figma';
-  if (matches('docs.google.com') || matches('drive.google.com')) return 'google-docs';
+  // Docs, Sheets and Slides all live under docs.google.com — split by path.
+  if (matches('docs.google.com')) {
+    if (path.startsWith('/spreadsheets')) return 'google-sheets';
+    if (path.startsWith('/presentation')) return 'google-slides';
+    return 'google-docs';
+  }
+  if (matches('sheets.google.com')) return 'google-sheets';
+  if (matches('slides.google.com')) return 'google-slides';
+  if (matches('drive.google.com')) return 'google-drive';
   if (matches('notion.so') || matches('notion.site')) return 'notion';
   if (matches('youtube.com') || matches('youtu.be')) return 'youtube';
+  if (matches('x.com') || matches('twitter.com')) return 'x';
+  if (matches('facebook.com') || matches('fb.com')) return 'facebook';
+  if (matches('linkedin.com')) return 'linkedin';
+  if (matches('reddit.com')) return 'reddit';
+  if (matches('medium.com')) return 'medium';
+  if (matches('substack.com')) return 'substack';
   return 'link';
 }
 

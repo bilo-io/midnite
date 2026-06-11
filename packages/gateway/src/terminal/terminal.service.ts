@@ -83,6 +83,15 @@ export function buildShellInitCommand(
 }
 
 /**
+ * The init line for an ad-hoc install terminal: clear the startup noise, then
+ * type the install chain at the prompt **without** a trailing `\r`, so it sits
+ * there and the user presses Enter to run it. Pure/exported for testing.
+ */
+export function buildInstallInitCommand(chain: string): string {
+  return `clear\r${chain}`;
+}
+
+/**
  * Resolve the runtime path to the PreToolUse hook script. `tsc -b` doesn't copy
  * non-.ts assets into dist, so the script lives in src and we walk candidates the
  * same way db.module.ts finds migrations (dev: __dirname=src/terminal; prod: dist/terminal).
@@ -130,6 +139,9 @@ export class TerminalService implements OnModuleDestroy {
   private readonly logger = new Logger(TerminalService.name);
   private readonly handles = new Map<string, PtyHandle>();
   private readonly tokens = new Map<string, { token: string; expiresAt: number }>();
+  // Standalone (non-session) terminals — e.g. CLI installs. Keyed by a synthetic
+  // id; the value is the init command pasted into the spawned shell.
+  private readonly adHoc = new Map<string, { initCommand: string }>();
   private nodePty: NodePtyModule | null = null;
   private ptyLoadFailed = false;
 
@@ -156,6 +168,23 @@ export class TerminalService implements OnModuleDestroy {
     this.tokens.delete(sessionId); // single-use regardless of outcome
     if (entry.token !== token) return false;
     return Date.now() <= entry.expiresAt;
+  }
+
+  // ---- ad-hoc (non-session) terminals ----
+
+  /**
+   * Register a standalone terminal that, when attached to, spawns a plain shell
+   * and pastes `initCommand`. Returns its synthetic id; the caller mints a token
+   * for it via the normal terminal-token flow and attaches over WS.
+   */
+  createAdHocTerminal(initCommand: string): string {
+    const id = `adhoc-${randomUUID()}`;
+    this.adHoc.set(id, { initCommand });
+    return id;
+  }
+
+  hasAdHoc(id: string): boolean {
+    return this.adHoc.has(id);
   }
 
   // ---- lifecycle ----
@@ -346,6 +375,14 @@ export class TerminalService implements OnModuleDestroy {
     if (!terminal.inheritSecrets) env = scrubSecretEnv(env);
     env['TERM'] = 'xterm-256color';
 
+    // Ad-hoc terminals (CLI installs) are not tied to a session: spawn a plain
+    // shell at the gateway cwd and paste their own init command — no agent launch,
+    // no approval wiring.
+    const adHoc = this.adHoc.get(sessionId);
+    if (adHoc) {
+      return { command, args, cwd: process.cwd(), env, initCommand: adHoc.initCommand };
+    }
+
     // Wire human-in-the-loop approvals for Claude Code sessions only: register a
     // PreToolUse hook (via an ephemeral --settings file) and give it the per-session
     // secret + callback URL. The MIDNITE_* vars are injected AFTER scrubSecretEnv so
@@ -502,6 +539,7 @@ export class TerminalService implements OnModuleDestroy {
       }
     }
     this.handles.delete(sessionId);
+    this.adHoc.delete(sessionId);
   }
 
   // Loaded lazily and fail-soft: a broken node-pty native build disables live

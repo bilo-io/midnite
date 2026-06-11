@@ -11,11 +11,13 @@ import {
   Put,
 } from '@nestjs/common';
 import {
+  AgentCliSchema,
   CreateSubAgentRequestSchema,
   UpdateAgentCliRequestSchema,
   UpdatePrimaryAgentRequestSchema,
   UpdateSubAgentRequestSchema,
   type AgentCliResponse,
+  type AgentCliStatusResponse,
   type AgentsConfigResponse,
   type HeartbeatRunResponse,
   type HeartbeatRunsResponse,
@@ -38,6 +40,13 @@ export class AgentsController {
     const parsed = UpdateAgentCliRequestSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
     return { cli: this.service.updateAgentCli(parsed.data.cli) };
+  }
+
+  @Get('cli/:cli/status')
+  async getCliStatus(@Param('cli') cli: string): Promise<AgentCliStatusResponse> {
+    const parsed = AgentCliSchema.safeParse(cli);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    return { status: await this.service.getCliStatus(parsed.data) };
   }
 
   @Put('primary')

@@ -7,47 +7,11 @@ import {
 import { WsAdapter } from '@nestjs/platform-ws';
 import multipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
-import { existsSync, mkdirSync, readFileSync } from 'node:fs';
-import { dirname, isAbsolute, join, resolve } from 'node:path';
-import { parseConfig, type MidniteConfig } from '@midnite/shared';
+import { mkdirSync } from 'node:fs';
+import { isAbsolute, resolve } from 'node:path';
 import { AppModule } from './app.module';
 import { isAllowedOrigin } from './lib/allowed-origin';
-
-// Walk up from the cwd to find the project's midnite.json. Needed because moon
-// runs the gateway task from packages/gateway, not the repo root where the
-// config lives — a bare join(cwd, 'midnite.json') silently misses it.
-function findConfigPath(): string | null {
-  let dir = process.cwd();
-  for (let i = 0; i < 10; i++) {
-    const candidate = join(dir, 'midnite.json');
-    if (existsSync(candidate)) return candidate;
-    const parent = dirname(dir);
-    if (parent === dir) break;
-    dir = parent;
-  }
-  return null;
-}
-
-function loadConfigFromDisk(): MidniteConfig {
-  const configPath = findConfigPath();
-  if (!configPath) {
-    // eslint-disable-next-line no-console
-    console.warn(
-      `[midnite gateway] no midnite.json found from ${process.cwd()} upward — using defaults`,
-    );
-    return parseConfig({ agent: {}, terminal: {}, knowledge: {}, gateway: {} });
-  }
-  try {
-    const config = parseConfig(JSON.parse(readFileSync(configPath, 'utf-8')));
-    // eslint-disable-next-line no-console
-    console.log(`[midnite gateway] loaded config from ${configPath}`);
-    return config;
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error(`[midnite gateway] failed to parse ${configPath} — using defaults`, err);
-    return parseConfig({ agent: {}, terminal: {}, knowledge: {}, gateway: {} });
-  }
-}
+import { loadConfigFromDisk } from './lib/load-config';
 
 function resolveDir(p: string): string {
   return isAbsolute(p) ? p : resolve(process.cwd(), p);

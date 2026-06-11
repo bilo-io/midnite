@@ -77,6 +77,12 @@ export const WorkflowsConfigSchema = z.object({
   schedulerTickMs: z.number().int().positive().default(30000),
   // Base URL the gateway is reachable at, used to build copyable webhook URLs.
   webhookBaseUrl: z.string().default('http://localhost:7777'),
+  // Allow http.request nodes to call loopback hosts (localhost / 127.0.0.1 / ::1).
+  // Off by default — the SSRF guard blocks loopback to stop the gateway being
+  // pointed at itself or other local services. Turn on for local dev where a
+  // workflow legitimately needs to reach the gateway (e.g. its own /health).
+  // Non-loopback private ranges (RFC1918, link-local, *.local) stay blocked.
+  allowLoopbackHttp: z.boolean().default(false),
   // Name of the env var holding the symmetric key for the credential vault (future phase).
   encryptionKeyEnv: z.string().default('MIDNITE_WORKFLOWS_KEY'),
   oauth: z

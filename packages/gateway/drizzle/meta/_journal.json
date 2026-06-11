@@ -57,6 +57,13 @@
       "when": 1781112071273,
       "tag": "0007_agent_cli",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1781137099900,
+      "tag": "0008_global_sources",
+      "breakpoints": true
     }
   ]
 }

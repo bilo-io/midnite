@@ -16,5 +16,8 @@
   "repos": [],
   "gateway": {
     "port": 7777
+  },
+  "workflows": {
+    "allowLoopbackHttp": true
   }
 }

@@ -19,6 +19,19 @@ describe('isSafeHttpUrl', () => {
     expect(isSafeHttpUrl('http://169.254.1.1')).toBe(false);
     expect(isSafeHttpUrl('not a url')).toBe(false);
   });
+
+  it('opts loopback back in with allowLoopback, but not other private ranges', () => {
+    const allow = { allowLoopback: true };
+    expect(isSafeHttpUrl('http://localhost:7777/health', allow)).toBe(true);
+    expect(isSafeHttpUrl('http://127.0.0.1:7777', allow)).toBe(true);
+    expect(isSafeHttpUrl('http://[::1]:7777', allow)).toBe(true);
+    // Non-loopback private/internal hosts stay blocked even with the flag.
+    expect(isSafeHttpUrl('http://10.0.0.5', allow)).toBe(false);
+    expect(isSafeHttpUrl('http://192.168.1.10', allow)).toBe(false);
+    expect(isSafeHttpUrl('http://172.16.0.1', allow)).toBe(false);
+    expect(isSafeHttpUrl('http://169.254.1.1', allow)).toBe(false);
+    expect(isSafeHttpUrl('http://service.local', allow)).toBe(false);
+  });
 });
 
 describe('parseHtmlMetadata', () => {

@@ -7,9 +7,25 @@ describe('detectSourceKind', () => {
     expect(detectSourceKind('https://www.figma.com/file/abc/Design')).toBe('figma');
   });
 
-  it('detects Google Docs / Drive', () => {
+  it('detects the Google editors by path and Drive', () => {
     expect(detectSourceKind('https://docs.google.com/document/d/abc/edit')).toBe('google-docs');
-    expect(detectSourceKind('https://drive.google.com/file/d/abc/view')).toBe('google-docs');
+    expect(detectSourceKind('https://docs.google.com/spreadsheets/d/abc/edit')).toBe(
+      'google-sheets',
+    );
+    expect(detectSourceKind('https://docs.google.com/presentation/d/abc/edit')).toBe(
+      'google-slides',
+    );
+    expect(detectSourceKind('https://drive.google.com/file/d/abc/view')).toBe('google-drive');
+  });
+
+  it('detects social and publishing providers', () => {
+    expect(detectSourceKind('https://x.com/midnite/status/1')).toBe('x');
+    expect(detectSourceKind('https://twitter.com/midnite')).toBe('x');
+    expect(detectSourceKind('https://www.facebook.com/midnite')).toBe('facebook');
+    expect(detectSourceKind('https://www.linkedin.com/in/bilo')).toBe('linkedin');
+    expect(detectSourceKind('https://www.reddit.com/r/programming')).toBe('reddit');
+    expect(detectSourceKind('https://medium.com/@bilo/post')).toBe('medium');
+    expect(detectSourceKind('https://bilo.substack.com/p/post')).toBe('substack');
   });
 
   it('detects Notion', () => {

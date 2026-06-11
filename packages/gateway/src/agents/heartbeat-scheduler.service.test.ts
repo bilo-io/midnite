@@ -64,6 +64,7 @@ function primaryRow(over: Partial<PrimaryAgentRow> = {}): PrimaryAgentRow {
   return {
     id: 'primary',
     name: 'Orchestrator',
+    agentCli: 'claude',
     description: 'You are the orchestrator.',
     heartbeatEnabled: 1,
     heartbeatPrompt: 'sweep open work',

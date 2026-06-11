@@ -108,6 +108,18 @@ export const projectSources = sqliteTable(
   }),
 );
 
+// The global knowledge base: link sources applied to every project (on top of its
+// own sources). Same shape as project_sources, minus the project scope.
+export const globalSources = sqliteTable('global_sources', {
+  id: text('id').primaryKey(),
+  url: text('url').notNull(),
+  kind: text('kind').notNull(),
+  title: text('title'),
+  faviconUrl: text('favicon_url'),
+  fetchedAt: text('fetched_at'),
+  createdAt: text('created_at').notNull(),
+});
+
 // --- Workflows (node-based automation builder) ---
 
 export const workflows = sqliteTable(
@@ -239,6 +251,8 @@ export type ProjectRow = typeof projects.$inferSelect;
 export type ProjectInsert = typeof projects.$inferInsert;
 export type ProjectSourceRow = typeof projectSources.$inferSelect;
 export type ProjectSourceInsert = typeof projectSources.$inferInsert;
+export type GlobalSourceRow = typeof globalSources.$inferSelect;
+export type GlobalSourceInsert = typeof globalSources.$inferInsert;
 export type PrimaryAgentRow = typeof primaryAgent.$inferSelect;
 export type PrimaryAgentInsert = typeof primaryAgent.$inferInsert;
 export type SubagentRow = typeof subagents.$inferSelect;

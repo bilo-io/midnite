@@ -1,9 +1,11 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import {
+  AGENT_CLI_COMMAND,
   AGENT_CLI_DEFAULT,
   HEARTBEAT_DEFAULT_H,
   type AgentCli,
+  type AgentCliStatus,
   type AgentsConfig,
   type CreateSubAgentRequest,
   type HeartbeatRun,
@@ -13,6 +15,7 @@ import {
   type UpdateSubAgentRequest,
 } from '@midnite/shared';
 import { AgentsRepository, PRIMARY_ID } from './agents.repository';
+import { detectCli } from './cli-detect';
 import { HeartbeatScheduler } from './heartbeat-scheduler.service';
 import type { PrimaryAgentInsert, SubagentInsert } from '../db/schema';
 
@@ -41,6 +44,12 @@ export class AgentsService {
     this.ensurePrimary();
     this.repo.setAgentCli(cli, new Date().toISOString());
     return this.repo.getAgentCli();
+  }
+
+  /** Whether a CLI's binary is on PATH (and its version, best-effort). */
+  async getCliStatus(cli: AgentCli): Promise<AgentCliStatus> {
+    const result = await detectCli(AGENT_CLI_COMMAND[cli]);
+    return { cli, ...result };
   }
 
   // Seed the singleton on first read. Seeds lastHeartbeatAt to createdAt so the

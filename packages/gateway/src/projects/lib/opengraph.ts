@@ -18,8 +18,14 @@ const USER_AGENT =
  * Reject non-http(s) URLs and obvious internal/private hosts. This is a
  * best-effort SSRF guard (it does not resolve DNS), enough to stop the common
  * `http://localhost:7777/...` / link-local / RFC1918 footguns.
+ *
+ * `allowLoopback` opts loopback hosts (localhost / 127.0.0.0/8 / ::1) back in —
+ * for callers that legitimately reach a local service (e.g. a workflow hitting
+ * the gateway's own health endpoint). It does NOT unblock other private ranges
+ * (RFC1918, link-local, *.local), which remain rejected.
  */
-export function isSafeHttpUrl(raw: string): boolean {
+export function isSafeHttpUrl(raw: string, opts: { allowLoopback?: boolean } = {}): boolean {
+  const allowLoopback = opts.allowLoopback ?? false;
   let u: URL;
   try {
     u = new URL(raw);
@@ -29,17 +35,18 @@ export function isSafeHttpUrl(raw: string): boolean {
   if (u.protocol !== 'http:' && u.protocol !== 'https:') return false;
 
   const host = u.hostname.toLowerCase();
-  if (host === 'localhost' || host.endsWith('.localhost') || host.endsWith('.local')) {
-    return false;
-  }
-  if (host === '[::1]' || host === '::1' || host === '::') return false;
+  if (host === 'localhost' || host.endsWith('.localhost')) return allowLoopback;
+  if (host.endsWith('.local')) return false;
+  if (host === '[::1]' || host === '::1') return allowLoopback;
+  if (host === '::') return false;
 
   const v4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(host);
   if (v4) {
     const octets = v4.slice(1).map(Number);
     if (octets.some((n) => n > 255)) return false;
     const [a, b] = octets as [number, number, number, number];
-    if (a === 0 || a === 127) return false; // unspecified / loopback
+    if (a === 127) return allowLoopback; // loopback
+    if (a === 0) return false; // unspecified
     if (a === 10) return false; // private
     if (a === 169 && b === 254) return false; // link-local
     if (a === 192 && b === 168) return false; // private
