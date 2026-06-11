@@ -14,6 +14,7 @@ import {
   Power,
   Settings,
   UserRound,
+  Users,
   Workflow,
   type LucideIcon,
 } from 'lucide-react';
@@ -45,6 +46,7 @@ const LINKS: NavLink[] = [
   { href: '/sessions', label: 'Sessions', Icon: BotMessageSquare },
   { href: '/workflows', label: 'Workflows', Icon: Workflow },
   { href: '/memory', label: 'Memory', Icon: Brain },
+  { href: '/councils', label: 'Councils', Icon: Users },
 ];
 
 const PROFILE_LINK: NavLink = { href: '/profile', label: 'Profile', Icon: UserRound };

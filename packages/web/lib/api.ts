@@ -1,5 +1,10 @@
 import {
   AgentCliResponseSchema,
+  CouncilParticipantResponseSchema,
+  CouncilResponseSchema,
+  CouncilRunResponseSchema,
+  CouncilRunsResponseSchema,
+  CouncilSchema,
   AgentCliStatusResponseSchema,
   AgentPingResponseSchema,
   AgentsConfigResponseSchema,
@@ -33,6 +38,13 @@ import {
   type AgentsConfig,
   type BrowseDirResponse,
   type CliTerminalAction,
+  type Council,
+  type CouncilParticipant,
+  type CouncilRun,
+  type CreateCouncilParticipantRequest,
+  type CreateCouncilRequest,
+  type UpdateCouncilParticipantRequest,
+  type UpdateCouncilRequest,
   type CreateProjectRequest,
   type CreateSubAgentRequest,
   type CreateTaskResponse,
@@ -500,6 +512,105 @@ export async function runHeartbeatNow(): Promise<HeartbeatRun> {
     '/agents/heartbeat/run',
     { method: 'POST', headers: JSON_HEADERS },
     HeartbeatRunResponseSchema,
+  );
+  return run;
+}
+
+// --- Councils (participant panels + anonymized debate runs) ---
+
+export async function getCouncils(): Promise<Council[]> {
+  return fetchJson('/councils', undefined, z.array(CouncilSchema));
+}
+
+export async function getCouncil(id: string): Promise<Council> {
+  const { council } = await fetchJson(
+    `/councils/${encodeURIComponent(id)}`,
+    undefined,
+    CouncilResponseSchema,
+  );
+  return council;
+}
+
+export async function createCouncil(body: CreateCouncilRequest): Promise<Council> {
+  const { council } = await fetchJson(
+    '/councils',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    CouncilResponseSchema,
+  );
+  return council;
+}
+
+export async function updateCouncil(id: string, body: UpdateCouncilRequest): Promise<Council> {
+  const { council } = await fetchJson(
+    `/councils/${encodeURIComponent(id)}`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    CouncilResponseSchema,
+  );
+  return council;
+}
+
+export async function deleteCouncil(id: string): Promise<void> {
+  await fetchJson(`/councils/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+export async function createCouncilParticipant(
+  councilId: string,
+  body: CreateCouncilParticipantRequest,
+): Promise<CouncilParticipant> {
+  const { participant } = await fetchJson(
+    `/councils/${encodeURIComponent(councilId)}/participants`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    CouncilParticipantResponseSchema,
+  );
+  return participant;
+}
+
+export async function updateCouncilParticipant(
+  councilId: string,
+  participantId: string,
+  body: UpdateCouncilParticipantRequest,
+): Promise<CouncilParticipant> {
+  const { participant } = await fetchJson(
+    `/councils/${encodeURIComponent(councilId)}/participants/${encodeURIComponent(participantId)}`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    CouncilParticipantResponseSchema,
+  );
+  return participant;
+}
+
+export async function deleteCouncilParticipant(
+  councilId: string,
+  participantId: string,
+): Promise<void> {
+  await fetchJson(
+    `/councils/${encodeURIComponent(councilId)}/participants/${encodeURIComponent(participantId)}`,
+    { method: 'DELETE' },
+  );
+}
+
+export async function startCouncilRun(councilId: string, topic: string): Promise<CouncilRun> {
+  const { run } = await fetchJson(
+    `/councils/${encodeURIComponent(councilId)}/runs`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ topic }) },
+    CouncilRunResponseSchema,
+  );
+  return run;
+}
+
+export async function listCouncilRuns(councilId: string): Promise<CouncilRun[]> {
+  const { runs } = await fetchJson(
+    `/councils/${encodeURIComponent(councilId)}/runs`,
+    undefined,
+    CouncilRunsResponseSchema,
+  );
+  return runs;
+}
+
+export async function getCouncilRun(councilId: string, runId: string): Promise<CouncilRun> {
+  const { run } = await fetchJson(
+    `/councils/${encodeURIComponent(councilId)}/runs/${encodeURIComponent(runId)}`,
+    undefined,
+    CouncilRunResponseSchema,
   );
   return run;
 }

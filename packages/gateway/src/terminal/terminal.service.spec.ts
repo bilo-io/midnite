@@ -310,3 +310,106 @@ describe('scrubSecretEnv', () => {
     expect(out).toEqual({ PATH: '/usr/bin', HOME: '/Users/me' });
   });
 });
+
+describe('managed runs', () => {
+  let service: TerminalService | null = null;
+
+  afterEach(() => {
+    service?.onModuleDestroy();
+    service = null;
+  });
+
+  function waitUntil(pred: () => boolean, timeoutMs = 4000): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const started = Date.now();
+      const poll = setInterval(() => {
+        if (pred()) {
+          clearInterval(poll);
+          resolve();
+        } else if (Date.now() - started > timeoutMs) {
+          clearInterval(poll);
+          reject(new Error('timeout waiting for condition'));
+        }
+      }, 10);
+    });
+  }
+
+  it('captures output via hooks and fires onExit with the exit code', async () => {
+    service = makeService({});
+    let captured = '';
+    let exit: { code: number; signal: number | null } | null = null;
+
+    const res = service.spawnManagedRun(
+      'council-run-a',
+      { command: 'sh', args: ['-c', 'printf hello-take; exit 3'], cwd: process.cwd() },
+      {
+        onData: (chunk) => (captured += chunk),
+        onExit: (code, signal) => (exit = { code, signal }),
+      },
+    );
+    expect(res.ok).toBe(true);
+
+    await waitUntil(() => exit !== null);
+    expect(captured).toContain('hello-take');
+    // node-pty reports signal 0 (not null) for a plain exit on some platforms.
+    expect(exit!.code).toBe(3);
+    // Exit path cleaned the handle up.
+    expect(service.has('council-run-a')).toBe(false);
+  });
+
+  it('is pinned: a viewer detaching does not reap the PTY even with zero idle grace', async () => {
+    service = makeService({ idleDisposeMs: 0 });
+    const res = service.spawnManagedRun(
+      'council-run-b',
+      { command: 'cat', args: [], cwd: process.cwd() },
+      { onData: () => {}, onExit: () => {} },
+    );
+    expect(res.ok).toBe(true);
+
+    const c = makeCollector();
+    service.attach('council-run-b', c.sub, { cols: 80, rows: 24 });
+    await c.waitFor((m) => m.type === 'status' && m.phase === 'reattached');
+    service.detach('council-run-b', c.sub);
+
+    // idleDisposeMs <= 0 kills an unpinned PTY immediately on last detach.
+    expect(service.has('council-run-b')).toBe(true);
+  });
+
+  it('attach on an unknown council- id reports session-not-found instead of spawning a shell', () => {
+    service = makeService({});
+    const c = makeCollector();
+    service.attach('council-finished-run', c.sub, { cols: 80, rows: 24 });
+    expect(c.messages).toEqual([
+      { type: 'error', code: 'session-not-found', message: expect.any(String) },
+    ]);
+    expect(service.has('council-finished-run')).toBe(false);
+  });
+
+  it('killManagedRun still delivers the onExit hook', async () => {
+    service = makeService({});
+    let exited = false;
+    service.spawnManagedRun(
+      'council-run-c',
+      { command: 'cat', args: [], cwd: process.cwd() },
+      { onData: () => {}, onExit: () => (exited = true) },
+    );
+    service.killManagedRun('council-run-c');
+    await waitUntil(() => exited);
+    expect(service.has('council-run-c')).toBe(false);
+  });
+
+  it('rejects a duplicate attach id', () => {
+    service = makeService({});
+    service.spawnManagedRun(
+      'council-dup',
+      { command: 'cat', args: [], cwd: process.cwd() },
+      { onData: () => {}, onExit: () => {} },
+    );
+    const second = service.spawnManagedRun(
+      'council-dup',
+      { command: 'cat', args: [], cwd: process.cwd() },
+      { onData: () => {}, onExit: () => {} },
+    );
+    expect(second.ok).toBe(false);
+  });
+});

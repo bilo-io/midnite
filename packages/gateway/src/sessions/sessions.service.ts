@@ -37,9 +37,10 @@ export class SessionsService {
   // `attach` — the trust boundary for driving a PTY (arbitrary code in a repo).
   mintTerminalToken(sessionId: string): TerminalTokenResponse {
     const task = this.tasks.listTasks().find((t) => t.id === sessionId);
-    // Mint for a real session/task, or for a registered ad-hoc terminal (CLI
-    // installs) — both attach over the same WS flow.
-    if (!task && !this.terminal.hasAdHoc(sessionId)) {
+    // Mint for a real session/task, a registered ad-hoc terminal (CLI installs),
+    // or a live managed-run PTY (council participants) — all attach over the
+    // same WS flow.
+    if (!task && !this.terminal.hasAdHoc(sessionId) && !this.terminal.has(sessionId)) {
       throw new NotFoundException(`session ${sessionId} not found`);
     }
     return { token: this.terminal.mintToken(sessionId), wsUrl: TERMINAL_WS_PATH };

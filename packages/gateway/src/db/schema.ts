@@ -250,6 +250,77 @@ export const heartbeatRuns = sqliteTable(
   }),
 );
 
+// --- Councils (multi-agent debate: participants → anonymized synthesis) ---
+
+export const councils = sqliteTable('councils', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const councilParticipants = sqliteTable(
+  'council_participants',
+  {
+    id: text('id').primaryKey(),
+    councilId: text('council_id').notNull(),
+    name: text('name').notNull().default(''),
+    provider: text('provider').notNull().default('claude'), // AgentCli
+    perspective: text('perspective').notNull().default(''),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => ({
+    councilIdx: index('council_participants_council_idx').on(t.councilId),
+  }),
+);
+
+export const councilRuns = sqliteTable(
+  'council_runs',
+  {
+    id: text('id').primaryKey(),
+    councilId: text('council_id').notNull(),
+    topic: text('topic').notNull(),
+    status: text('status').notNull(), // running | synthesizing | completed | failed
+    verdict: text('verdict'), // markdown from the synthesis step
+    // JSON: { "A": "<runParticipantId>", ... } — the anonymization mapping,
+    // persisted before the synthesis call so the UI can de-anonymize after.
+    labelMap: text('label_map'),
+    error: text('error'),
+    startedAt: text('started_at').notNull(),
+    finishedAt: text('finished_at'),
+  },
+  (t) => ({
+    councilIdx: index('council_runs_council_idx').on(t.councilId, t.startedAt),
+  }),
+);
+
+// Snapshot of each participant at run start, so later edits to the council
+// never rewrite history. `output` is the cleaned (ANSI-stripped) capture.
+export const councilRunParticipants = sqliteTable(
+  'council_run_participants',
+  {
+    id: text('id').primaryKey(),
+    runId: text('run_id').notNull(),
+    participantId: text('participant_id').notNull(),
+    name: text('name').notNull(),
+    provider: text('provider').notNull(),
+    perspective: text('perspective').notNull(),
+    status: text('status').notNull(), // running | succeeded | failed | timeout
+    terminalId: text('terminal_id').notNull(),
+    output: text('output'),
+    exitCode: integer('exit_code'),
+    error: text('error'),
+    label: text('label'), // 'A', 'B', … assigned at synthesis
+    startedAt: text('started_at').notNull(),
+    finishedAt: text('finished_at'),
+  },
+  (t) => ({
+    runIdx: index('council_run_participants_run_idx').on(t.runId),
+  }),
+);
+
 export type TaskRow = typeof tasks.$inferSelect;
 export type TaskInsert = typeof tasks.$inferInsert;
 export type WorkflowRow = typeof workflows.$inferSelect;
@@ -278,3 +349,11 @@ export type SubagentRow = typeof subagents.$inferSelect;
 export type SubagentInsert = typeof subagents.$inferInsert;
 export type HeartbeatRunRow = typeof heartbeatRuns.$inferSelect;
 export type HeartbeatRunInsert = typeof heartbeatRuns.$inferInsert;
+export type CouncilRow = typeof councils.$inferSelect;
+export type CouncilInsert = typeof councils.$inferInsert;
+export type CouncilParticipantRow = typeof councilParticipants.$inferSelect;
+export type CouncilParticipantInsert = typeof councilParticipants.$inferInsert;
+export type CouncilRunRow = typeof councilRuns.$inferSelect;
+export type CouncilRunInsert = typeof councilRuns.$inferInsert;
+export type CouncilRunParticipantRow = typeof councilRunParticipants.$inferSelect;
+export type CouncilRunParticipantInsert = typeof councilRunParticipants.$inferInsert;

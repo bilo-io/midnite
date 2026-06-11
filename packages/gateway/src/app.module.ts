@@ -6,6 +6,7 @@ import { HealthController } from './health/health.controller';
 import { TasksModule } from './tasks/tasks.module';
 import { AgentModule } from './agent/agent.module';
 import { AgentsModule } from './agents/agents.module';
+import { CouncilsModule } from './councils/councils.module';
 import { KnowledgeModule } from './knowledge/knowledge.module';
 import { MemoriesModule } from './memories/memories.module';
 import { ProjectsModule } from './projects/projects.module';
@@ -20,6 +21,7 @@ import { TerminalModule } from './terminal/terminal.module';
     FsModule,
     AgentModule,
     AgentsModule,
+    CouncilsModule,
     KnowledgeModule,
     MemoriesModule,
     TasksModule,

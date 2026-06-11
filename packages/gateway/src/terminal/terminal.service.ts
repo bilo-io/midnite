@@ -124,6 +124,9 @@ interface PtyHandle {
   disposables: IDisposable[];
   /** Ephemeral Claude `--settings` file for approvals; deleted on reap. */
   settingsFile: string | null;
+  /** Pinned PTYs (managed one-shot runs) survive subscriber detach — they live
+   *  until the process exits or the owner kills them. */
+  pinned: boolean;
 }
 
 const TOKEN_TTL_MS = 60_000;
@@ -187,6 +190,123 @@ export class TerminalService implements OnModuleDestroy {
     return this.adHoc.has(id);
   }
 
+  // ---- managed runs (eager one-shot PTYs, e.g. council participants) ----
+
+  /**
+   * Eagerly spawn a one-shot command in a PTY registered under `attachId`, so
+   * viewers can watch it through the normal token + attach flow while the owner
+   * captures output and observes exit via `hooks`. Unlike session PTYs the
+   * handle is *pinned*: it is never idle-reaped on detach and lives until the
+   * process exits (or {@link killManagedRun}).
+   *
+   * The env is inherited **unscrubbed** — agent CLIs need their own credentials
+   * (same rationale as the `inheritSecrets` opt-in for `command: "claude"`);
+   * the process is non-interactive, so exposure is far lower than a shell.
+   *
+   * `hooks.onExit` fires before the handle is cleaned up; `hooks.onData` sees
+   * every raw chunk (ANSI included) in arrival order.
+   */
+  spawnManagedRun(
+    attachId: string,
+    spec: { command: string; args: string[]; cwd: string },
+    hooks: {
+      onData: (chunk: string) => void;
+      onExit: (exitCode: number, signal: number | null) => void;
+    },
+  ): { ok: true; pid: number } | { ok: false; error: string } {
+    if (this.handles.has(attachId)) {
+      return { ok: false, error: `terminal ${attachId} already exists` };
+    }
+    if (this.handles.size >= this.config.terminal.maxSessions) {
+      return {
+        ok: false,
+        error: `terminal session limit reached (${this.config.terminal.maxSessions})`,
+      };
+    }
+    const pty = this.loadPty();
+    if (!pty) return { ok: false, error: 'terminal backend unavailable' };
+
+    const env: Record<string, string> = {};
+    for (const [key, value] of Object.entries(process.env)) {
+      if (value !== undefined) env[key] = value;
+    }
+    env['TERM'] = 'xterm-256color';
+
+    let proc: IPty;
+    try {
+      proc = pty.spawn(spec.command, spec.args, {
+        name: 'xterm-256color',
+        cols: 120,
+        rows: 32,
+        cwd: spec.cwd,
+        env,
+      });
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : 'spawn failed' };
+    }
+
+    const handle: PtyHandle = {
+      proc,
+      command: spec.command,
+      subscribers: new Set(),
+      ring: [],
+      ringBytes: 0,
+      seq: 0,
+      disposeTimer: null,
+      disposables: [],
+      settingsFile: null,
+      pinned: true,
+    };
+    this.handles.set(attachId, handle);
+
+    handle.disposables.push(
+      proc.onData((chunk) => {
+        const frame: OutputFrame = {
+          seq: handle.seq++,
+          data: Buffer.from(chunk, 'utf8').toString('base64'),
+          bytes: Buffer.byteLength(chunk, 'utf8'),
+        };
+        this.pushRing(handle, frame);
+        this.broadcast(handle, { type: 'output', data: frame.data, seq: frame.seq });
+        hooks.onData(chunk);
+      }),
+    );
+    handle.disposables.push(
+      proc.onExit(({ exitCode, signal }) => {
+        this.broadcast(handle, {
+          type: 'status',
+          phase: 'exited',
+          exitCode,
+          signal: signal ?? null,
+        });
+        // Owner hook fires before teardown so it can read a consistent handle state.
+        hooks.onExit(exitCode, signal ?? null);
+        this.cleanup(attachId);
+      }),
+    );
+
+    this.logger.log(
+      `spawned managed run ${attachId}: ${spec.command} (pid ${proc.pid}) in ${spec.cwd}`,
+    );
+    return { ok: true, pid: proc.pid };
+  }
+
+  /**
+   * Kill a managed run's PTY (timeout/cancel path). Unlike the private `kill()`
+   * this does NOT clean up synchronously — that would dispose the onExit
+   * listener before node-pty delivers the exit event. The signal lands, onExit
+   * fires the owner hook, and the exit path runs cleanup.
+   */
+  killManagedRun(attachId: string): void {
+    const handle = this.handles.get(attachId);
+    if (!handle) return;
+    try {
+      handle.proc.kill();
+    } catch {
+      // already dead — onExit either fired or is in flight
+    }
+  }
+
   // ---- lifecycle ----
 
   /** Attach a subscriber to the session's PTY, spawning one on demand. */
@@ -232,6 +352,18 @@ export class TerminalService implements OnModuleDestroy {
       return;
     }
 
+    // Managed-run ids (council debates) are spawned eagerly by their owner; an
+    // attach that finds no live handle means the run already exited — never
+    // fall through and spawn a stray interactive shell under that id.
+    if (sessionId.startsWith('council-')) {
+      subscriber.send({
+        type: 'error',
+        code: 'session-not-found',
+        message: 'run terminal is no longer live',
+      });
+      return;
+    }
+
     subscriber.send({ type: 'status', phase: 'spawning' });
     let handle: PtyHandle;
     try {
@@ -257,6 +389,9 @@ export class TerminalService implements OnModuleDestroy {
     if (!handle) return;
     handle.subscribers.delete(subscriber);
     if (handle.subscribers.size > 0) return;
+    // A pinned (managed-run) PTY is not idle-reaped: it runs to process exit
+    // whether or not anyone is watching.
+    if (handle.pinned) return;
 
     const idleMs = this.config.terminal.idleDisposeMs;
     if (idleMs <= 0) {
@@ -315,6 +450,7 @@ export class TerminalService implements OnModuleDestroy {
       disposeTimer: null,
       disposables: [],
       settingsFile: spec.settingsFile ?? null,
+      pinned: false,
     };
     this.handles.set(sessionId, handle);
 

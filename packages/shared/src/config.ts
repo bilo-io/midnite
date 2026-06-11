@@ -105,6 +105,13 @@ export const AgentsRuntimeConfigSchema = z.object({
   schedulerTickMs: z.number().int().positive().default(60000),
 });
 
+// Runtime knobs for council debates (multi-agent runs + anonymized synthesis).
+export const CouncilsConfigSchema = z.object({
+  // Hard ceiling per participant one-shot run; the PTY is killed on expiry and
+  // the participant is marked timed-out (partial output retained).
+  runTimeoutMs: z.number().int().positive().default(600000),
+});
+
 export const MidniteConfigSchema = z.object({
   agent: AgentConfigSchema,
   terminal: TerminalConfigSchema,
@@ -114,12 +121,14 @@ export const MidniteConfigSchema = z.object({
   // Optional block (defaulted) so existing midnite.json files keep validating.
   workflows: WorkflowsConfigSchema.default({}),
   agents: AgentsRuntimeConfigSchema.default({}),
+  councils: CouncilsConfigSchema.default({}),
 });
 
 export type MidniteConfig = z.infer<typeof MidniteConfigSchema>;
 export type RepoConfig = z.infer<typeof RepoConfigSchema>;
 export type WorkflowsConfig = z.infer<typeof WorkflowsConfigSchema>;
 export type AgentsRuntimeConfig = z.infer<typeof AgentsRuntimeConfigSchema>;
+export type CouncilsConfig = z.infer<typeof CouncilsConfigSchema>;
 export type OAuthClientConfig = z.infer<typeof OAuthClientConfigSchema>;
 
 export function parseConfig(raw: unknown): MidniteConfig {
