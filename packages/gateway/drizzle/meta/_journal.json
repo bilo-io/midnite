@@ -64,6 +64,13 @@
       "when": 1781137099900,
       "tag": "0008_global_sources",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1781164351522,
+      "tag": "0009_memories",
+      "breakpoints": true
     }
   ]
 }

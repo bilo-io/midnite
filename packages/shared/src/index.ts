@@ -8,6 +8,7 @@ export * from './fs.js';
 export * from './source.js';
 export * from './project.js';
 export * from './knowledge.js';
+export * from './memory.js';
 export * from './plan.js';
 export * from './node.js';
 export * from './node-types.js';

@@ -120,6 +120,23 @@ export const globalSources = sqliteTable('global_sources', {
   createdAt: text('created_at').notNull(),
 });
 
+// Memories: markdown knowledge entries injected into agent prompts. project_id
+// null = global (applies to every project); otherwise scoped to that project.
+export const memories = sqliteTable(
+  'memories',
+  {
+    id: text('id').primaryKey(),
+    title: text('title').notNull(),
+    content: text('content').notNull().default(''),
+    projectId: text('project_id'),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => ({
+    projectIdx: index('memories_project_idx').on(t.projectId),
+  }),
+);
+
 // --- Workflows (node-based automation builder) ---
 
 export const workflows = sqliteTable(
@@ -253,6 +270,8 @@ export type ProjectSourceRow = typeof projectSources.$inferSelect;
 export type ProjectSourceInsert = typeof projectSources.$inferInsert;
 export type GlobalSourceRow = typeof globalSources.$inferSelect;
 export type GlobalSourceInsert = typeof globalSources.$inferInsert;
+export type MemoryRow = typeof memories.$inferSelect;
+export type MemoryInsert = typeof memories.$inferInsert;
 export type PrimaryAgentRow = typeof primaryAgent.$inferSelect;
 export type PrimaryAgentInsert = typeof primaryAgent.$inferInsert;
 export type SubagentRow = typeof subagents.$inferSelect;

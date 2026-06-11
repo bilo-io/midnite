@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import {
   Bot,
   BotMessageSquare,
+  Brain,
   Columns3,
   Folder,
   LayoutDashboard,
@@ -43,6 +44,7 @@ const LINKS: NavLink[] = [
   { href: '/tasks', label: 'Tasks', Icon: Columns3 },
   { href: '/sessions', label: 'Sessions', Icon: BotMessageSquare },
   { href: '/workflows', label: 'Workflows', Icon: Workflow },
+  { href: '/memory', label: 'Memory', Icon: Brain },
 ];
 
 const PROFILE_LINK: NavLink = { href: '/profile', label: 'Profile', Icon: UserRound };

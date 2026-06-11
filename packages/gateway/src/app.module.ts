@@ -7,6 +7,7 @@ import { TasksModule } from './tasks/tasks.module';
 import { AgentModule } from './agent/agent.module';
 import { AgentsModule } from './agents/agents.module';
 import { KnowledgeModule } from './knowledge/knowledge.module';
+import { MemoriesModule } from './memories/memories.module';
 import { ProjectsModule } from './projects/projects.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { WorkflowsModule } from './workflows/workflows.module';
@@ -20,6 +21,7 @@ import { TerminalModule } from './terminal/terminal.module';
     AgentModule,
     AgentsModule,
     KnowledgeModule,
+    MemoriesModule,
     TasksModule,
     ProjectsModule,
     SessionsModule,

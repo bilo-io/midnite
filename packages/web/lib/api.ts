@@ -12,6 +12,8 @@ import {
   EnhanceDescriptionResponseSchema,
   HeartbeatRunResponseSchema,
   HeartbeatRunsResponseSchema,
+  MemoriesResponseSchema,
+  MemoryResponseSchema,
   PrimaryAgentResponseSchema,
   ProjectResponseSchema,
   ProjectSchema,
@@ -37,7 +39,9 @@ import {
   type CreateWorkflowRequest,
   type DraftPlanResponse,
   type GlobalSource,
+  type CreateMemoryRequest,
   type HeartbeatRun,
+  type Memory,
   type PrimaryAgent,
   type Project,
   type SessionSummary,
@@ -49,6 +53,7 @@ import {
   type TaskCounts,
   type TerminalTokenResponse,
   type UpdatePrimaryAgentRequest,
+  type UpdateMemoryRequest,
   type UpdateProjectRequest,
   type UpdateSubAgentRequest,
   type UpdateWorkflowRequest,
@@ -272,6 +277,35 @@ export async function removeKnowledgeSource(id: string): Promise<GlobalSource[]>
     GlobalSourcesResponseSchema,
   );
   return sources;
+}
+
+// --- Memories (markdown knowledge entries, global or project-scoped) ---
+
+export async function getMemories(): Promise<Memory[]> {
+  const { memories } = await fetchJson('/memories', undefined, MemoriesResponseSchema);
+  return memories;
+}
+
+export async function createMemory(body: CreateMemoryRequest): Promise<Memory> {
+  const { memory } = await fetchJson(
+    '/memories',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    MemoryResponseSchema,
+  );
+  return memory;
+}
+
+export async function updateMemory(id: string, body: UpdateMemoryRequest): Promise<Memory> {
+  const { memory } = await fetchJson(
+    `/memories/${encodeURIComponent(id)}`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    MemoryResponseSchema,
+  );
+  return memory;
+}
+
+export async function deleteMemory(id: string): Promise<void> {
+  await fetchJson(`/memories/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
 
 export async function enhanceProjectDescription(input: {

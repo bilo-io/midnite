@@ -55,3 +55,13 @@ Initial empty monorepo skeleton based on [`docs/INITIAL_PLAN.md`](../docs/INITIA
 - [x] `CLAUDE.md` brief
 
 > Verification (`pnpm install`, `moon run gateway:dev`, `moon run web:dev`, `node packages/cli/dist/index.js add hello`) is the next implementer's responsibility — see [phase-0-scaffold.md](phase-0-scaffold.md) for the unchecked verification items.
+
+## 2026-06-11 — Memory page (markdown knowledge entries)
+
+A dedicated Memory page (brain icon in the sidenav) for organising knowledge bases — markdown entries that are either global or scoped to a project. Distinct from sources (links): memories are authored content, edited in place.
+
+- [x] `shared/src/memory.ts` — `MemorySchema` (`projectId: null` = global), create/update request schemas, response schemas
+- [x] Gateway `memories` table (+`0009_memories` migration) and `memories/` module: repository → service → controller (`GET/POST /memories`, `PATCH/DELETE /memories/:id`), service tests
+- [x] Web `/memory` page: search (`?q=`), scope filter pills (`?scope=` — Global + projects holding memories), grid/list toggle (persisted), New button
+- [x] `MemoryCard` (grid/list) with scope chip + excerpt; `MemoryModal` detail view: title, scope select, markdown editor, save/delete with confirm
+- [x] Verified: typecheck + tests green; live CRUD smoke against a throwaway gateway (create global/scoped, 400 on missing title, partial patch, null re-scope, delete, 404)
