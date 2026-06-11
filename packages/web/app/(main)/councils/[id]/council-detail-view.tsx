@@ -8,7 +8,13 @@ import { CouncilParticipantsPanel } from '@/components/council-participants-pane
 import { CouncilRunTabs } from '@/components/council-run-tabs';
 import { CouncilRunThread } from '@/components/council-run-thread';
 import { CouncilTopicComposer } from '@/components/council-topic-composer';
-import { listCouncilRuns, skipCouncilRunParticipant, updateCouncil } from '@/lib/api';
+import {
+  listCouncilRuns,
+  retryCouncilRunParticipant,
+  retryCouncilVerdict,
+  skipCouncilRunParticipant,
+  updateCouncil,
+} from '@/lib/api';
 import { useCouncilRun } from '@/lib/use-council-run';
 
 type Props = {
@@ -29,7 +35,7 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
       });
   }, [initial.id]);
 
-  const { run, running, error, start, select } = useCouncilRun(initial.id, refreshRuns);
+  const { run, running, error, start, select, resume } = useCouncilRun(initial.id, refreshRuns);
 
   const live = running || run?.status === 'running' || run?.status === 'synthesizing';
   const canStart = participants.length >= 2 && !live;
@@ -63,6 +69,35 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
     },
     [initial.id, run],
   );
+
+  // Rerun one settled participant of the shown run; adopt the now-live run.
+  const retryParticipant = useCallback(
+    (runParticipantId: string) => {
+      if (!run) return;
+      retryCouncilRunParticipant(initial.id, run.id, runParticipantId)
+        .then((updated) => {
+          resume(updated);
+          refreshRuns();
+        })
+        .catch(() => {
+          // 409 (another run live) — the poll/thread will reflect reality
+        });
+    },
+    [initial.id, run, resume, refreshRuns],
+  );
+
+  // Re-judge the shown run's saved outputs with the currently-selected provider.
+  const retryVerdict = useCallback(() => {
+    if (!run) return;
+    retryCouncilVerdict(initial.id, run.id)
+      .then((updated) => {
+        resume(updated);
+        refreshRuns();
+      })
+      .catch(() => {
+        // 409 (another run live) — the poll/thread will reflect reality
+      });
+  }, [initial.id, run, resume, refreshRuns]);
 
   return (
     <div className="container space-y-5 pb-8 pt-6">
@@ -107,7 +142,13 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
               <p className="text-xs text-muted-foreground">
                 Topic: <span className="text-foreground">{run.topic}</span>
               </p>
-              <CouncilRunTabs key={run.id} run={run} onSkip={live ? skipParticipant : undefined} />
+              <CouncilRunTabs
+                key={run.id}
+                run={run}
+                onSkip={live ? skipParticipant : undefined}
+                onRetryParticipant={!live ? retryParticipant : undefined}
+                onRetryVerdict={!live ? retryVerdict : undefined}
+              />
             </div>
           ) : (
             <div className="rounded-lg border border-dashed border-border/60 p-10 text-center text-sm text-muted-foreground">

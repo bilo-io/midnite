@@ -627,3 +627,25 @@ export async function skipCouncilRunParticipant(
   );
   return run;
 }
+
+export async function retryCouncilRunParticipant(
+  councilId: string,
+  runId: string,
+  runParticipantId: string,
+): Promise<CouncilRun> {
+  const { run } = await fetchJson(
+    `/councils/${encodeURIComponent(councilId)}/runs/${encodeURIComponent(runId)}/participants/${encodeURIComponent(runParticipantId)}/retry`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({}) },
+    CouncilRunResponseSchema,
+  );
+  return run;
+}
+
+export async function retryCouncilVerdict(councilId: string, runId: string): Promise<CouncilRun> {
+  const { run } = await fetchJson(
+    `/councils/${encodeURIComponent(councilId)}/runs/${encodeURIComponent(runId)}/verdict/retry`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({}) },
+    CouncilRunResponseSchema,
+  );
+  return run;
+}

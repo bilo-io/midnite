@@ -26,6 +26,7 @@ import {
 import {
   CouncilParticipantNotLiveError,
   CouncilRunInProgressError,
+  CouncilRunNotRetryableError,
   CouncilRunnerService,
   CouncilTooSmallError,
 } from './council-runner.service';
@@ -121,6 +122,20 @@ export class CouncilsController {
     return { run: this.translate(() => this.runner.skipParticipant(id, runId, runParticipantId)) };
   }
 
+  @Post(':id/runs/:runId/participants/:runParticipantId/retry')
+  retryRunParticipant(
+    @Param('id') id: string,
+    @Param('runId') runId: string,
+    @Param('runParticipantId') runParticipantId: string,
+  ): CouncilRunResponse {
+    return { run: this.translate(() => this.runner.retryParticipant(id, runId, runParticipantId)) };
+  }
+
+  @Post(':id/runs/:runId/verdict/retry')
+  retryVerdict(@Param('id') id: string, @Param('runId') runId: string): CouncilRunResponse {
+    return { run: this.translate(() => this.runner.retryVerdict(id, runId)) };
+  }
+
   @Get(':id/runs')
   listRuns(@Param('id') id: string): CouncilRunsResponse {
     this.translate(() => this.service.getCouncil(id)); // 404 on unknown council
@@ -150,6 +165,7 @@ export class CouncilsController {
       if (err instanceof CouncilTooSmallError) throw new BadRequestException(err.message);
       if (err instanceof CouncilRunInProgressError) throw new ConflictException(err.message);
       if (err instanceof CouncilParticipantNotLiveError) throw new ConflictException(err.message);
+      if (err instanceof CouncilRunNotRetryableError) throw new ConflictException(err.message);
       throw err;
     }
   }

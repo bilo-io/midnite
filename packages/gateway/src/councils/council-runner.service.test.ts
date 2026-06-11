@@ -4,6 +4,7 @@ import type { TerminalService } from '../terminal/terminal.service';
 import {
   CouncilParticipantNotLiveError,
   CouncilRunInProgressError,
+  CouncilRunNotRetryableError,
   CouncilRunnerService,
   CouncilTooSmallError,
 } from './council-runner.service';
@@ -336,6 +337,86 @@ describe('CouncilRunnerService', () => {
       CouncilParticipantNotLiveError,
     );
     expect(() => runner.skipParticipant('c1', 'nope', a!.id)).toThrow(/does not exist/);
+  });
+
+  it('retries a failed participant and re-synthesizes from the snapshot', async () => {
+    const { runner, repo, terminal } = makeRunner();
+    seedCouncil(repo, TWO_PARTICIPANTS);
+    const run = runner.startRun('c1', 'topic');
+
+    const [a, b] = run.participants;
+    terminal.spawns.get(a!.terminalId)!.onData('take a\n');
+    terminal.spawns.get(a!.terminalId)!.onExit(0, null);
+    terminal.spawns.get(b!.terminalId)!.onExit(1, null); // b fails, no output
+
+    await waitUntil(() => repo.getRun(run.id)!.status === 'failed');
+
+    // Rerun only b: same terminal id, same perspective-framed prompt.
+    terminal.spawns.delete(b!.terminalId);
+    const retried = runner.retryParticipant('c1', run.id, b!.id);
+    expect(retried.status).toBe('running');
+    expect(retried.participants.find((p) => p.id === b!.id)!.status).toBe('running');
+
+    const respawn = terminal.spawns.get(b!.terminalId)!;
+    expect(respawn.command).toBe('gemini');
+    expect(respawn.args.join(' ')).toContain('argue against');
+    respawn.onData('take b, this time it works\n');
+    respawn.onExit(0, null);
+
+    await settleVerdict(terminal, run.id, { output: 'verdict md' });
+    await waitUntil(() => repo.getRun(run.id)!.status === 'completed');
+    const rows = repo.listRunParticipants(run.id);
+    expect(rows.map((r) => r.status)).toEqual(['succeeded', 'succeeded']);
+    expect(rows.map((r) => r.label).sort()).toEqual(['A', 'B']);
+  });
+
+  it('retries the verdict with the council\'s current provider', async () => {
+    const { runner, repo, terminal } = makeRunner();
+    seedCouncil(repo, TWO_PARTICIPANTS);
+    const run = runner.startRun('c1', 'topic');
+
+    for (const p of run.participants) {
+      terminal.spawns.get(p.terminalId)!.onData('take\n');
+      terminal.spawns.get(p.terminalId)!.onExit(0, null);
+    }
+    await settleVerdict(terminal, run.id, { output: 'rate limited!\n', exitCode: 1 });
+    await waitUntil(() => repo.getRun(run.id)!.status === 'failed');
+
+    // Switch the judge, then retry from persisted outputs — no participant reruns.
+    repo.updateCouncil('c1', { verdictProvider: 'opencode' });
+    terminal.spawns.delete(`council-${run.id}-verdict`);
+    const retried = runner.retryVerdict('c1', run.id);
+    expect(retried.status).toBe('synthesizing');
+    expect(retried.verdictProvider).toBe('opencode');
+
+    const verdictSpawn = terminal.spawns.get(`council-${run.id}-verdict`)!;
+    expect(verdictSpawn.command).toBe('opencode');
+    verdictSpawn.onData('## Verdict via opencode\n');
+    verdictSpawn.onExit(0, null);
+
+    await waitUntil(() => repo.getRun(run.id)!.status === 'completed');
+    const done = repo.getRun(run.id)!;
+    expect(done.verdict).toContain('Verdict via opencode');
+    expect(done.error).toBeNull(); // stale failure cleared
+  });
+
+  it('rejects retries while the run is live or for running participants', async () => {
+    const { runner, repo, terminal } = makeRunner();
+    seedCouncil(repo, TWO_PARTICIPANTS);
+    const run = runner.startRun('c1', 'topic');
+    const [a] = run.participants;
+
+    // Live run: nothing is retryable yet.
+    expect(() => runner.retryVerdict('c1', run.id)).toThrow(CouncilRunInProgressError);
+    expect(() => runner.retryParticipant('c1', run.id, a!.id)).toThrow(CouncilRunInProgressError);
+
+    for (const p of run.participants) {
+      terminal.spawns.get(p.terminalId)!.onExit(1, null);
+    }
+    await waitUntil(() => repo.getRun(run.id)!.status === 'failed');
+    expect(() => runner.retryParticipant('c1', run.id, 'nope')).toThrow(
+      CouncilRunNotRetryableError,
+    );
   });
 
   it('marks stale live runs failed on module init (gateway restart)', () => {

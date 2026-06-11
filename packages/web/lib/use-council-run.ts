@@ -14,6 +14,8 @@ export interface UseCouncilRun {
   start: (topic: string) => Promise<void>;
   /** Show a past (already finished) run in the same surface, read-only. */
   select: (run: CouncilRun) => void;
+  /** Adopt a run that became live again (a retry) and poll it to completion. */
+  resume: (run: CouncilRun) => void;
 }
 
 // Kicks off a run and polls the persisted run until it reaches a terminal state
@@ -87,5 +89,20 @@ export function useCouncilRun(councilId: string, onFinished?: () => void): UseCo
     setError(null);
   }, []);
 
-  return { run, running, error, start, select };
+  const resume = useCallback(
+    (live: CouncilRun) => {
+      if (timer.current) clearTimeout(timer.current);
+      setRun(live);
+      setError(null);
+      if (TERMINAL.has(live.status)) {
+        setRunning(false);
+        return;
+      }
+      setRunning(true);
+      poll(live.id);
+    },
+    [poll],
+  );
+
+  return { run, running, error, start, select, resume };
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Loader2, Scale, SkipForward } from 'lucide-react';
+import { Loader2, RotateCcw, Scale, SkipForward } from 'lucide-react';
 import { AGENT_CLI_LABEL, type CouncilRun, type CouncilRunParticipant } from '@midnite/shared';
 import { AgentCliLogo } from '@/components/agent-cli-logo';
 import { Button } from '@/components/ui/button';
@@ -49,10 +49,16 @@ const VERDICT_TAB = '__verdict__';
 export function CouncilRunTabs({
   run,
   onSkip,
+  onRetryParticipant,
+  onRetryVerdict,
 }: {
   run: CouncilRun;
   /** Skip a still-running participant (live runs only — absent for past runs). */
   onSkip?: (runParticipantId: string) => void;
+  /** Rerun a settled participant (finished runs only). */
+  onRetryParticipant?: (runParticipantId: string) => void;
+  /** Rerun only the verdict from the persisted outputs (finished runs only). */
+  onRetryVerdict?: () => void;
 }) {
   const [active, setActive] = useState<string>(run.participants[0]?.id ?? VERDICT_TAB);
 
@@ -135,15 +141,23 @@ export function CouncilRunTabs({
       )}
 
       {activeParticipant && activeParticipant.status !== 'running' ? (
-        <ParticipantOutput participant={activeParticipant} />
+        <ParticipantOutput participant={activeParticipant} onRetry={onRetryParticipant} />
       ) : null}
 
-      {active === VERDICT_TAB ? <VerdictPanel run={run} onSkip={onSkip} /> : null}
+      {active === VERDICT_TAB ? (
+        <VerdictPanel run={run} onSkip={onSkip} onRetryVerdict={onRetryVerdict} />
+      ) : null}
     </div>
   );
 }
 
-function ParticipantOutput({ participant: p }: { participant: CouncilRunParticipant }) {
+function ParticipantOutput({
+  participant: p,
+  onRetry,
+}: {
+  participant: CouncilRunParticipant;
+  onRetry?: (runParticipantId: string) => void;
+}) {
   return (
     <div className="space-y-3 rounded-lg border border-border/60 bg-card/40 p-4">
       <div className="flex items-center justify-between gap-2">
@@ -157,11 +171,25 @@ function ParticipantOutput({ participant: p }: { participant: CouncilRunParticip
                 ? 'Skipped'
                 : 'Failed'}
         </span>
-        {p.label ? (
-          <span className="rounded-full border border-border/60 bg-background px-2.5 py-0.5 text-xs text-muted-foreground">
-            Spoke as Participant {p.label}
-          </span>
-        ) : null}
+        <span className="flex items-center gap-2">
+          {p.label ? (
+            <span className="rounded-full border border-border/60 bg-background px-2.5 py-0.5 text-xs text-muted-foreground">
+              Spoke as Participant {p.label}
+            </span>
+          ) : null}
+          {onRetry && p.status !== 'succeeded' ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => onRetry(p.id)}
+              title="Rerun this participant's take, then re-synthesize the verdict"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              Rerun
+            </Button>
+          ) : null}
+        </span>
       </div>
       {p.error && p.status !== 'succeeded' ? (
         <p className="text-sm text-destructive">{p.error}</p>
@@ -180,9 +208,11 @@ function ParticipantOutput({ participant: p }: { participant: CouncilRunParticip
 function VerdictPanel({
   run,
   onSkip,
+  onRetryVerdict,
 }: {
   run: CouncilRun;
   onSkip?: (runParticipantId: string) => void;
+  onRetryVerdict?: () => void;
 }) {
   if (run.status === 'running') {
     const waiting = run.participants.filter((p) => p.status === 'running');
@@ -243,8 +273,20 @@ function VerdictPanel({
   }
   if (run.status === 'failed') {
     return (
-      <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
-        {run.error ?? 'The run failed.'}
+      <div className="space-y-3 rounded-lg border border-destructive/40 bg-destructive/10 p-4">
+        <p className="break-words text-sm text-destructive">{run.error ?? 'The run failed.'}</p>
+        {onRetryVerdict ? (
+          <div className="flex items-center gap-3">
+            <Button type="button" variant="outline" size="sm" onClick={onRetryVerdict}>
+              <RotateCcw className="h-3.5 w-3.5" />
+              Rerun verdict
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              Re-judges the saved outputs with the provider selected in the panel — participants
+              don't rerun. Rerun individual participants from their tabs.
+            </p>
+          </div>
+        ) : null}
       </div>
     );
   }

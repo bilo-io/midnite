@@ -23,6 +23,7 @@ import { oneshotCommand } from './lib/oneshot-command';
 export class CouncilRunInProgressError extends Error {}
 export class CouncilTooSmallError extends Error {}
 export class CouncilParticipantNotLiveError extends Error {}
+export class CouncilRunNotRetryableError extends Error {}
 
 // Cap the per-participant capture buffer; anything past it is dropped (the tail
 // of a runaway TUI redraw, not the argument) and the truncation is flagged.
@@ -232,6 +233,83 @@ export class CouncilRunnerService implements OnModuleInit {
     return this.repo.hydrateRun(this.repo.getRun(runId)!);
   }
 
+  /**
+   * Re-run one settled participant of a finished run: reset its row, respawn
+   * its one-shot CLI from the snapshot, and re-synthesize when it settles.
+   */
+  retryParticipant(councilId: string, runId: string, runParticipantId: string): CouncilRun {
+    const run = this.repo.getRun(runId);
+    if (!run || run.councilId !== councilId) {
+      throw new CouncilDoesNotExistError(`run ${runId} does not exist on council ${councilId}`);
+    }
+    if (this.activeRuns.has(councilId) || run.status === 'running' || run.status === 'synthesizing') {
+      throw new CouncilRunInProgressError('this council already has a run in progress');
+    }
+    const row = this.repo.listRunParticipants(runId).find((r) => r.id === runParticipantId);
+    if (!row || row.status === 'running') {
+      throw new CouncilRunNotRetryableError(
+        `participant ${runParticipantId} is not in a retryable state`,
+      );
+    }
+
+    this.activeRuns.add(councilId);
+    this.repo.updateRun(runId, { status: 'running', error: null, verdict: null, finishedAt: null });
+    this.repo.updateRunParticipant(row.id, {
+      status: 'running',
+      output: null,
+      exitCode: null,
+      error: null,
+      label: null,
+      startedAt: new Date().toISOString(),
+      finishedAt: null,
+    });
+
+    const lp: LiveParticipant = {
+      rowId: row.id,
+      terminalId: row.terminalId,
+      buffer: '',
+      bufferBytes: 0,
+      truncated: false,
+      timedOut: false,
+      skipped: false,
+      timeout: null,
+      settled: false,
+    };
+    // Only the retried participant is live; the others' persisted rows feed
+    // synthesis unchanged once it settles.
+    const live = [lp];
+    this.liveRuns.set(runId, live);
+    const provider = AgentCliSchema.catch(AGENT_CLI_DEFAULT).parse(row.provider);
+    this.spawnParticipant(councilId, runId, lp, provider, row.perspective, run.topic, live);
+    return this.repo.hydrateRun(this.repo.getRun(runId)!);
+  }
+
+  /**
+   * Re-run only the verdict of a finished run from its persisted outputs —
+   * with the council's *current* verdict provider, so switching the judge and
+   * retrying is the rate-limit escape hatch.
+   */
+  retryVerdict(councilId: string, runId: string): CouncilRun {
+    const run = this.repo.getRun(runId);
+    if (!run || run.councilId !== councilId) {
+      throw new CouncilDoesNotExistError(`run ${runId} does not exist on council ${councilId}`);
+    }
+    if (this.activeRuns.has(councilId) || run.status === 'running' || run.status === 'synthesizing') {
+      throw new CouncilRunInProgressError('this council already has a run in progress');
+    }
+
+    const council = this.repo.getCouncil(councilId);
+    const provider = AgentCliSchema.catch(COUNCIL_VERDICT_PROVIDER_DEFAULT).parse(
+      council?.verdictProvider,
+    );
+    this.repo.updateRun(runId, { verdictProvider: provider });
+
+    this.activeRuns.add(councilId);
+    this.liveRuns.set(runId, []);
+    this.synthesize(councilId, runId);
+    return this.repo.hydrateRun(this.repo.getRun(runId)!);
+  }
+
   private settleParticipant(
     councilId: string,
     runId: string,
@@ -287,8 +365,17 @@ export class CouncilRunnerService implements OnModuleInit {
    */
   private synthesize(councilId: string, runId: string): void {
     try {
-      this.repo.updateRun(runId, { status: 'synthesizing' });
+      this.repo.updateRun(runId, {
+        status: 'synthesizing',
+        error: null,
+        verdict: null,
+        finishedAt: null,
+      });
       const rows = this.repo.listRunParticipants(runId);
+      // A retry re-shuffles: clear any labels from a previous synthesis first.
+      for (const row of rows) {
+        if (row.label) this.repo.updateRunParticipant(row.id, { label: null });
+      }
       const succeeded = rows.filter((r) => r.status === 'succeeded' && r.output);
 
       if (succeeded.length < 2) {
