@@ -13,6 +13,10 @@ export function Hero() {
       <div className="bg-grid pointer-events-none absolute inset-0 -z-0 opacity-60" />
 
       <div className="relative z-10 mx-auto max-w-3xl text-center">
+        {/* Soft radial scrim: darkens the area right behind the copy so the orb
+            stays a vivid centrepiece without sapping text contrast. */}
+        <div className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[140%] w-[160%] -translate-x-1/2 -translate-y-1/2 bg-[radial-gradient(ellipse_at_center,hsl(var(--background)/0.72),hsl(var(--background)/0.35)_45%,transparent_70%)]" />
+
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/40 px-3 py-1 text-xs text-muted-foreground backdrop-blur">
           <span className="h-1.5 w-1.5 rounded-full bg-[#10b981] shadow-[0_0_8px_-1px_#10b981]" />
           A task orchestrator for Claude Code

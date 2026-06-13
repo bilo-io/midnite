@@ -34,6 +34,24 @@ export function useScrollProgress() {
   return progress;
 }
 
+/**
+ * Tracks the pointer position normalized to [-1, 1] on each axis, in a ref. Reads
+ * from `window` (not the canvas) because the WebGL backdrop is pointer-events-none
+ * so it never steals clicks/scroll — R3F's own `state.pointer` would stay frozen.
+ */
+export function usePointer() {
+  const pointer = useRef({ x: 0, y: 0 });
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      pointer.current.x = (e.clientX / window.innerWidth) * 2 - 1;
+      pointer.current.y = -((e.clientY / window.innerHeight) * 2 - 1);
+    };
+    window.addEventListener('pointermove', onMove, { passive: true });
+    return () => window.removeEventListener('pointermove', onMove);
+  }, []);
+  return pointer;
+}
+
 /** True when the user has requested reduced motion. SSR-safe (defaults false). */
 export function prefersReducedMotion(): boolean {
   if (typeof window === 'undefined' || !window.matchMedia) return false;
