@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 // Link kinds for project sources and task review links. Kind detection is pure
 // and URL-pattern based so the web (instant icon) and gateway (storage) agree.
 
@@ -103,3 +105,11 @@ export function parseGithubRepo(url: string): string | null {
   if (!parts || parts.length < 2) return null;
   return `${parts[0]}/${parts[1]}`;
 }
+
+// A new display/run order for a list of sources — every source id, once, in the
+// desired order. Generic across project, memory and global-knowledge sources
+// (mirrors ReorderCouncilParticipantsRequestSchema).
+export const ReorderSourcesRequestSchema = z.object({
+  sourceIds: z.array(z.string().min(1)).min(1),
+});
+export type ReorderSourcesRequest = z.infer<typeof ReorderSourcesRequestSchema>;

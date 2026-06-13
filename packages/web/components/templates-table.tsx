@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { ChevronDown, FileText, Trash2 } from 'lucide-react';
 import { ProjectTag } from '@/components/project-tag';
 import { MarkdownEditor } from '@/components/markdown-editor';
+import { TagColorPicker } from '@/components/tag-color-picker';
 import { cn } from '@/lib/utils';
 import type { Template } from '@/app/(main)/projects/templates';
 
@@ -90,6 +91,17 @@ export function TemplatesTable({ templates, onUpdate, onDelete, expandId }: Prop
                     className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   />
                 </label>
+                <TagColorPicker
+                  tag={t.tag}
+                  color={t.color}
+                  onTagChange={(v) => onUpdate(t.id, { tag: v })}
+                  onColorChange={(v) => onUpdate(t.id, { color: v })}
+                  label={
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Tag &amp; color
+                    </span>
+                  }
+                />
                 <MarkdownEditor
                   value={t.content}
                   onChange={(v) => onUpdate(t.id, { content: v })}

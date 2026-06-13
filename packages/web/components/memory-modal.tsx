@@ -2,13 +2,26 @@
 
 import { useState } from 'react';
 import { Brain, Loader2, Save, Trash2, X } from 'lucide-react';
-import type { Memory, Project } from '@midnite/shared';
+import {
+  MAX_SOURCES_PER_MEMORY,
+  detectSourceKind,
+  type Memory,
+  type Project,
+} from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, type SelectOption } from '@/components/ui/select';
 import { MarkdownEditor } from '@/components/markdown-editor';
+import { SourceListEditor, orderByIds } from '@/components/source-list-editor';
 import { useConfirm } from '@/components/confirm-dialog';
-import { createMemory, deleteMemory, updateMemory } from '@/lib/api';
+import {
+  addMemorySource,
+  createMemory,
+  deleteMemory,
+  removeMemorySource,
+  reorderMemorySources,
+  updateMemory,
+} from '@/lib/api';
 
 // The scope select needs a string value; 'global' stands in for projectId null.
 const GLOBAL = 'global';
@@ -17,18 +30,25 @@ type Props = {
   /** null = create a new memory. */
   memory: Memory | null;
   projects: Project[];
+  /** Preselect a scope when creating (a project id, or null for global). */
+  initialProjectId?: string | null;
   onClose: () => void;
   onSaved: () => void;
 };
 
 /**
- * The memory detail view: edit the title, scope (global or a project) and the
- * markdown content. Saves through the gateway; deleting asks for confirmation.
+ * The memory detail view: edit the title, scope (global or a project), the
+ * markdown content, and reference sources. Title/scope/content save on the
+ * button; sources save live in edit mode and stage client-side when creating.
  */
-export function MemoryModal({ memory, projects, onClose, onSaved }: Props) {
+export function MemoryModal({ memory, projects, initialProjectId, onClose, onSaved }: Props) {
   const [title, setTitle] = useState(memory?.title ?? '');
-  const [scope, setScope] = useState<string>(memory?.projectId ?? GLOBAL);
+  const [scope, setScope] = useState<string>(memory?.projectId ?? initialProjectId ?? GLOBAL);
   const [content, setContent] = useState(memory?.content ?? '');
+  // Edit mode tracks the live memory so source edits reflect immediately;
+  // create mode stages source URLs until the memory exists.
+  const [current, setCurrent] = useState<Memory | null>(memory);
+  const [staged, setStaged] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const confirm = useConfirm();
@@ -68,7 +88,7 @@ export function MemoryModal({ memory, projects, onClose, onSaved }: Props) {
     try {
       const projectId = scope === GLOBAL ? null : scope;
       if (memory) await updateMemory(memory.id, { title, content, projectId });
-      else await createMemory({ title, content, projectId });
+      else await createMemory({ title, content, projectId, sources: staged });
       onSaved();
       onClose();
     } catch (e) {
@@ -96,6 +116,34 @@ export function MemoryModal({ memory, projects, onClose, onSaved }: Props) {
       setBusy(false);
     }
   };
+
+  // --- sources (live in edit mode, staged when creating) ---
+  const addSourceLive = async (url: string) => {
+    if (current) setCurrent(await addMemorySource(current.id, url));
+  };
+  const removeSourceLive = async (id: string) => {
+    if (!current) return;
+    const ok = await confirm({
+      title: 'Remove this source?',
+      description: 'It will be detached from this memory.',
+      confirmLabel: 'Remove',
+    });
+    if (!ok) return;
+    setCurrent(await removeMemorySource(current.id, id));
+  };
+  const reorderSourcesLive = async (ids: string[]) => {
+    if (!current) return;
+    const prev = current;
+    setCurrent({ ...prev, sources: orderByIds(prev.sources, ids) }); // optimistic
+    try {
+      setCurrent(await reorderMemorySources(prev.id, ids));
+    } catch (e) {
+      setCurrent(prev); // roll back
+      throw e;
+    }
+  };
+
+  const sourceCount = memory ? current?.sources.length ?? 0 : staged.length;
 
   return (
     <>
@@ -139,10 +187,41 @@ export function MemoryModal({ memory, projects, onClose, onSaved }: Props) {
             <MarkdownEditor
               value={content}
               onChange={setContent}
-              minHeight={320}
+              minHeight={280}
               defaultMode={memory ? 'preview' : 'edit'}
               label={<span className="text-xs font-medium text-muted-foreground">Content</span>}
             />
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-muted-foreground">Sources</span>
+                <span className="text-[11px] tabular-nums text-muted-foreground">
+                  {sourceCount}/{MAX_SOURCES_PER_MEMORY}
+                </span>
+              </div>
+              {memory ? (
+                <SourceListEditor
+                  sources={current?.sources ?? []}
+                  max={MAX_SOURCES_PER_MEMORY}
+                  placeholder="Paste a doc, repo, or any reference link"
+                  onAdd={addSourceLive}
+                  onRemove={removeSourceLive}
+                  onReorder={reorderSourcesLive}
+                />
+              ) : (
+                <SourceListEditor
+                  sources={staged.map((url) => ({ id: url, url, kind: detectSourceKind(url) }))}
+                  max={MAX_SOURCES_PER_MEMORY}
+                  placeholder="Paste a doc, repo, or any reference link"
+                  onAdd={(url) => {
+                    if (!staged.includes(url)) setStaged((prev) => [...prev, url]);
+                  }}
+                  onRemove={(id) => setStaged((prev) => prev.filter((u) => u !== id))}
+                  onReorder={(ids) => setStaged(ids)}
+                />
+              )}
+            </div>
+
             {error ? <p className="text-xs text-destructive">{error}</p> : null}
           </div>
 

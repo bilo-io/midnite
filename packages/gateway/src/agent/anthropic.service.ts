@@ -64,8 +64,13 @@ export class AnthropicService implements OnModuleInit {
     return this.resolveModel(this.config.agent.plan);
   }
 
-  /** Lightweight health check: asks the model to report itself + status. Never throws. */
-  async ping(): Promise<AgentPingResponse> {
+  /**
+   * Lightweight health check: a real round-trip to the Anthropic API to confirm
+   * credentials + model resolve. The status line is built deterministically — we
+   * don't trust the model to name itself (it tends to mislabel). Never throws.
+   * Returns everything but `cli`, which the caller tags on.
+   */
+  async ping(): Promise<Omit<AgentPingResponse, 'cli'>> {
     if (!this.enabled || !this.client) {
       return {
         ok: false,
@@ -76,20 +81,13 @@ export class AnthropicService implements OnModuleInit {
     }
     const model = this.getActModel();
     try {
-      const res = await this.client.messages.create({
+      await this.client.messages.create({
         model,
-        max_tokens: 120,
-        system:
-          "You are midnite's health check. Reply with ONE short line: your model name, then ' — system status: ok'.",
+        max_tokens: 16,
+        system: "You are midnite's health check.",
         messages: [{ role: 'user', content: 'ping' }],
       });
-      const reply =
-        res.content
-          .filter((b): b is Anthropic.Messages.TextBlock => b.type === 'text')
-          .map((b) => b.text)
-          .join(' ')
-          .trim() || '(no text returned)';
-      return { ok: true, model, reply };
+      return { ok: true, model, reply: 'system status: ok' };
     } catch (err) {
       const status = (err as { status?: number })?.status;
       const message = err instanceof Error ? err.message : String(err);

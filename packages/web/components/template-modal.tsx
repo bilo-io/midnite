@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MarkdownEditor } from '@/components/markdown-editor';
 import { ProjectTag } from '@/components/project-tag';
+import { TagColorPicker } from '@/components/tag-color-picker';
 import type { Template } from '@/app/(main)/projects/templates';
 
 type Props = {
@@ -23,6 +24,8 @@ type Props = {
 export function TemplateModal({ template, onSave, onDelete, onClose }: Props) {
   const [name, setName] = useState(template.name);
   const [description, setDescription] = useState(template.description);
+  const [tag, setTag] = useState(template.tag);
+  const [color, setColor] = useState(template.color);
   const [content, setContent] = useState(template.content);
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -30,10 +33,12 @@ export function TemplateModal({ template, onSave, onDelete, onClose }: Props) {
   const dirty =
     name !== template.name ||
     description !== template.description ||
+    tag !== template.tag ||
+    color !== template.color ||
     content !== template.content;
 
   const save = () => {
-    onSave({ name, description, content });
+    onSave({ name, description, tag, color, content });
     setSaved(true);
     setTimeout(() => setSaved(false), 1500);
   };
@@ -64,7 +69,7 @@ export function TemplateModal({ template, onSave, onDelete, onClose }: Props) {
           onClick={(e) => e.stopPropagation()}
         >
           <header className="flex items-center gap-3 border-b border-border/60 px-5 py-3.5">
-            <ProjectTag tag={template.tag} color={template.color} />
+            <ProjectTag tag={tag.trim() || 'tag'} color={color} />
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -86,6 +91,15 @@ export function TemplateModal({ template, onSave, onDelete, onClose }: Props) {
                 placeholder="What this template is for…"
               />
             </label>
+            <TagColorPicker
+              tag={tag}
+              color={color}
+              onTagChange={setTag}
+              onColorChange={setColor}
+              label={
+                <span className="text-xs font-medium text-muted-foreground">Tag &amp; color</span>
+              }
+            />
             <MarkdownEditor
               value={content}
               onChange={setContent}

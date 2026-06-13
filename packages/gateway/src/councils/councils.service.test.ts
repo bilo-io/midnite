@@ -48,6 +48,44 @@ describe('CouncilsService', () => {
     expect(service.getCouncil(council.id).participants).toHaveLength(0);
   });
 
+  it('reorders participants, and new ones append to the end', () => {
+    const { service } = makeService();
+    const council = service.createCouncil({ name: 'c' });
+    const a = service.createParticipant(council.id, { name: 'A' });
+    const b = service.createParticipant(council.id, { name: 'B' });
+    const c = service.createParticipant(council.id, { name: 'C' });
+    expect(service.getCouncil(council.id).participants.map((p) => p.name)).toEqual(['A', 'B', 'C']);
+
+    const reordered = service.reorderParticipants(council.id, [c.id, a.id, b.id]);
+    expect(reordered.participants.map((p) => p.name)).toEqual(['C', 'A', 'B']);
+
+    // A freshly added participant lands last, regardless of the new order.
+    service.createParticipant(council.id, { name: 'D' });
+    expect(service.getCouncil(council.id).participants.map((p) => p.name)).toEqual([
+      'C',
+      'A',
+      'B',
+      'D',
+    ]);
+  });
+
+  it('rejects a reorder that is not exactly the current participant set', () => {
+    const { service } = makeService();
+    const council = service.createCouncil({ name: 'c' });
+    const a = service.createParticipant(council.id, { name: 'A' });
+    const b = service.createParticipant(council.id, { name: 'B' });
+
+    expect(() => service.reorderParticipants(council.id, [a.id])).toThrow(
+      CouncilParticipantDoesNotExistError,
+    );
+    expect(() => service.reorderParticipants(council.id, [a.id, a.id])).toThrow(
+      CouncilParticipantDoesNotExistError,
+    );
+    expect(() => service.reorderParticipants(council.id, [a.id, b.id, 'ghost'])).toThrow(
+      CouncilParticipantDoesNotExistError,
+    );
+  });
+
   it('throws DoesNotExist errors for unknown ids', () => {
     const { service } = makeService();
     expect(() => service.getCouncil('nope')).toThrow(CouncilDoesNotExistError);

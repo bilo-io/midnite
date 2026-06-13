@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { LayoutGrid, List, ListTree, Plus } from 'lucide-react';
-import type { Project, Task } from '@midnite/shared';
+import type { Memory, Project, Task } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { ProjectCard } from '@/components/project-card';
 import { ProjectModal } from '@/components/project-modal';
@@ -27,7 +27,15 @@ const TABS: readonly { value: Tab; label: string }[] = [
   { value: 'templates', label: 'Templates' },
 ];
 
-export function ProjectsView({ initial, tasks }: { initial: Project[]; tasks: Task[] }) {
+export function ProjectsView({
+  initial,
+  tasks,
+  memories = [],
+}: {
+  initial: Project[];
+  tasks: Task[];
+  memories?: Memory[];
+}) {
   const router = useRouter();
   const [view, setView] = useState<View>('grid');
   const [tab, setTab] = useState<Tab>('projects');
@@ -306,6 +314,7 @@ export function ProjectsView({ initial, tasks }: { initial: Project[]; tasks: Ta
         <ProjectModal
           project={creating ? null : editProject}
           tasks={editProject ? tasks.filter((t) => t.projectId === editProject.id) : []}
+          memories={memories}
           templates={templates}
           onSelectTask={(task) => {
             closeModal();

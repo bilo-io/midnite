@@ -2,8 +2,26 @@
 
 import { useEffect, useRef, useState } from 'react';
 import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
   Check,
   ChevronDown,
+  GripVertical,
   PanelRightClose,
   PanelRightOpen,
   Plus,
@@ -24,6 +42,7 @@ import { Select, type SelectOption } from '@/components/ui/select';
 import {
   createCouncilParticipant,
   deleteCouncilParticipant,
+  reorderCouncilParticipants,
   updateCouncilParticipant,
 } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -152,6 +171,31 @@ export function CouncilParticipantsPanel({
     }
   };
 
+  // Drag a participant to reorder; this order drives the run's tab order. Apply
+  // optimistically, persist, and roll back to the pre-drag order on failure.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const onDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const prev = latest.current;
+    const from = prev.findIndex((p) => p.id === active.id);
+    const to = prev.findIndex((p) => p.id === over.id);
+    if (from === -1 || to === -1) return;
+    const reordered = arrayMove(prev, from, to);
+    setError(null);
+    onChanged(reordered);
+    reorderCouncilParticipants(councilId, reordered.map((p) => p.id))
+      .then(onChanged)
+      .catch((e) => {
+        onChanged(prev);
+        setError(errMsg(e));
+      });
+  };
+
   if (!open) {
     return (
       <aside className="hidden shrink-0 lg:sticky lg:top-16 lg:block">
@@ -232,78 +276,129 @@ export function CouncilParticipantsPanel({
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-      <div className="flex flex-col gap-2">
-        {participants.map((p, i) => {
-          const name = p.name.trim() || `Participant ${i + 1}`;
-          const isOpen = expanded.has(p.id);
-          return (
-            <div
-              key={p.id}
-              className={cn(
-                'group rounded-lg border border-border/60 bg-background/40 transition-colors',
-                isOpen && 'bg-background/60',
-              )}
-            >
-              {/* Title region: chevron+logo toggles, the name edits inline, and
-                  the remove button reveals on hover/focus at the far right. */}
-              <div className="flex items-center gap-2 p-2.5">
-                <button
-                  type="button"
-                  onClick={() => toggleExpanded(p.id)}
-                  aria-expanded={isOpen}
-                  aria-label={`${isOpen ? 'Collapse' : 'Expand'} ${name}`}
-                  className="flex shrink-0 items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  <ChevronDown
-                    className={cn('h-4 w-4 transition-transform', !isOpen && '-rotate-90')}
-                  />
-                  <AgentCliLogo cli={p.provider} className="h-4 w-4" />
-                </button>
-                <input
-                  aria-label={`${name} name`}
-                  value={p.name}
-                  disabled={disabled}
-                  onChange={(e) => edit(p.id, { name: e.target.value })}
-                  placeholder={`Participant ${i + 1}`}
-                  className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm font-medium placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  aria-label={`Remove ${name}`}
-                  disabled={disabled}
-                  onClick={() => void remove(p.id)}
-                  className="h-7 w-7 shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-
-              <Collapse open={isOpen}>
-                <div className="space-y-2 px-2.5 pb-2.5">
-                  <Select
-                    aria-label={`${name} provider`}
-                    options={PROVIDER_OPTIONS}
-                    value={p.provider}
-                    disabled={disabled}
-                    onChange={(provider) => edit(p.id, { provider })}
-                  />
-
-                  <textarea
-                    aria-label={`${name} perspective`}
-                    className={textareaClass}
-                    value={p.perspective}
-                    disabled={disabled}
-                    onChange={(e) => edit(p.id, { perspective: e.target.value })}
-                    placeholder="Perspective on the matter — e.g. “Argue for the smallest change that ships this quarter.”"
-                  />
-                </div>
-              </Collapse>
-            </div>
-          );
-        })}
-      </div>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+        <SortableContext
+          items={participants.map((p) => p.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="flex flex-col gap-2">
+            {participants.map((p, i) => (
+              <SortableParticipant
+                key={p.id}
+                participant={p}
+                index={i}
+                isOpen={expanded.has(p.id)}
+                disabled={disabled}
+                onToggle={() => toggleExpanded(p.id)}
+                onEdit={(patch) => edit(p.id, patch)}
+                onRemove={() => void remove(p.id)}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
     </aside>
+  );
+}
+
+/** One draggable participant: a grip handle reorders, the title region toggles
+ *  the body, the name edits inline, and a hover-revealed button removes it. */
+function SortableParticipant({
+  participant: p,
+  index,
+  isOpen,
+  disabled,
+  onToggle,
+  onEdit,
+  onRemove,
+}: {
+  participant: CouncilParticipant;
+  index: number;
+  isOpen: boolean;
+  disabled: boolean;
+  onToggle: () => void;
+  onEdit: (patch: Partial<CouncilParticipant>) => void;
+  onRemove: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
+    useSortable({ id: p.id, disabled });
+  const name = p.name.trim() || `Participant ${index + 1}`;
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={cn(
+        'group rounded-lg border border-border/60 bg-background/40 transition-colors',
+        isOpen && 'bg-background/60',
+        isDragging && 'relative z-10 shadow-lg',
+      )}
+    >
+      {/* Title region: grip drags, chevron+logo toggles, the name edits inline,
+          and the remove button reveals on hover/focus at the far right. */}
+      <div className="flex items-center gap-1.5 p-2.5">
+        <button
+          type="button"
+          ref={setActivatorNodeRef}
+          {...attributes}
+          {...listeners}
+          disabled={disabled}
+          aria-label={`Reorder ${name}`}
+          className="shrink-0 cursor-grab touch-none rounded text-muted-foreground/50 hover:text-foreground active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={isOpen}
+          aria-label={`${isOpen ? 'Collapse' : 'Expand'} ${name}`}
+          className="flex shrink-0 items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ChevronDown className={cn('h-4 w-4 transition-transform', !isOpen && '-rotate-90')} />
+          <AgentCliLogo cli={p.provider} className="h-4 w-4" />
+        </button>
+        <input
+          aria-label={`${name} name`}
+          value={p.name}
+          disabled={disabled}
+          onChange={(e) => onEdit({ name: e.target.value })}
+          placeholder={`Participant ${index + 1}`}
+          className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm font-medium placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
+        />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label={`Remove ${name}`}
+          disabled={disabled}
+          onClick={onRemove}
+          className="h-7 w-7 shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+
+      <Collapse open={isOpen}>
+        <div className="space-y-2 px-2.5 pb-2.5">
+          <Select
+            aria-label={`${name} provider`}
+            options={PROVIDER_OPTIONS}
+            value={p.provider}
+            disabled={disabled}
+            onChange={(provider) => onEdit({ provider })}
+          />
+
+          <textarea
+            aria-label={`${name} perspective`}
+            className={textareaClass}
+            value={p.perspective}
+            disabled={disabled}
+            onChange={(e) => onEdit({ perspective: e.target.value })}
+            placeholder="Perspective on the matter — e.g. “Argue for the smallest change that ships this quarter.”"
+          />
+        </div>
+      </Collapse>
+    </div>
   );
 }

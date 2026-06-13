@@ -7,14 +7,14 @@ import { usePathname } from 'next/navigation';
 import {
   Bot,
   BotMessageSquare,
-  Brain,
+  BrainCircuit,
+  CirclePile,
   Columns3,
   Folder,
   LayoutDashboard,
   Power,
   Settings,
   UserRound,
-  Users,
   Workflow,
   type LucideIcon,
 } from 'lucide-react';
@@ -45,8 +45,8 @@ const LINKS: NavLink[] = [
   { href: '/tasks', label: 'Tasks', Icon: Columns3 },
   { href: '/sessions', label: 'Sessions', Icon: BotMessageSquare },
   { href: '/workflows', label: 'Workflows', Icon: Workflow },
-  { href: '/memory', label: 'Memory', Icon: Brain },
-  { href: '/councils', label: 'Councils', Icon: Users },
+  { href: '/memory', label: 'Memory', Icon: BrainCircuit },
+  { href: '/councils', label: 'Councils', Icon: CirclePile },
 ];
 
 const PROFILE_LINK: NavLink = { href: '/profile', label: 'Profile', Icon: UserRound };

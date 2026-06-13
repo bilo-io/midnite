@@ -1,10 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
 import {
+  Brain,
   ChevronDown,
-  ExternalLink,
+  ChevronRight,
   FileText,
   FolderOpen,
   Loader2,
@@ -17,6 +19,7 @@ import {
   MAX_SOURCES_PER_PROJECT,
   MAX_TAG_LENGTH,
   detectSourceKind,
+  type Memory,
   type Project,
   type Task,
 } from '@midnite/shared';
@@ -24,7 +27,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { FolderPicker } from '@/components/folder-picker';
 import { ProjectTag } from '@/components/project-tag';
-import { SourceIcon } from '@/components/source-icon';
+import { DEFAULT_COLOR, TagColorPicker } from '@/components/tag-color-picker';
+import { SourceListEditor, orderByIds } from '@/components/source-list-editor';
 import { TaskRow } from '@/components/task-row';
 import { PlanDocModal } from '@/components/plan-doc-modal';
 import { TEMPLATES, type Template } from '@/app/(main)/projects/templates';
@@ -40,22 +44,11 @@ import {
   deleteProject,
   enhanceProjectDescription,
   removeProjectSource,
+  reorderProjectSources,
   updateProject,
 } from '@/lib/api';
 import { useConfirm } from '@/components/confirm-dialog';
 import { cn } from '@/lib/utils';
-
-const SWATCHES = [
-  '#6366f1',
-  '#7c3aed',
-  '#0ea5e9',
-  '#10b981',
-  '#f59e0b',
-  '#ef4444',
-  '#ec4899',
-  '#64748b',
-];
-const DEFAULT_COLOR = '#6366f1';
 
 const inputClass =
   'flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
@@ -69,7 +62,9 @@ type Props = {
   project: Project | null;
   /** Tasks belonging to this project (edit mode only) — shown under the Tasks tab. */
   tasks?: Task[];
-  /** The template library, surfaced under the Planning tab. Defaults to the built-ins. */
+  /** All memories — used to surface a link to this project's scoped memory. */
+  memories?: Memory[];
+  /** The template library, surfaced under the Plan tab. Defaults to the built-ins. */
   templates?: Template[];
   /** Optional: open a task from the Tasks tab. Rows are static when omitted. */
   onSelectTask?: (task: Task) => void;
@@ -77,17 +72,19 @@ type Props = {
   onSaved: () => void;
 };
 
-type Tab = 'details' | 'sources' | 'planning' | 'tasks';
+type Tab = 'details' | 'sources' | 'plan' | 'tasks';
 
 export function ProjectModal({
   project,
   tasks,
+  memories = [],
   templates = TEMPLATES,
   onSelectTask,
   onClose,
   onSaved,
 }: Props) {
   const isEdit = project !== null;
+  const router = useRouter();
 
   const [tab, setTab] = useState<Tab>('details');
   const [name, setName] = useState(project?.name ?? '');
@@ -99,10 +96,8 @@ export function ProjectModal({
   // Create mode stages URLs client-side; edit mode mutates the live project.
   const [staged, setStaged] = useState<string[]>([]);
   const [current, setCurrent] = useState<Project | null>(project);
-  const [sourceUrl, setSourceUrl] = useState('');
 
   const [aiLoading, setAiLoading] = useState(false);
-  const [sourceBusy, setSourceBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const confirm = useConfirm();
@@ -204,49 +199,25 @@ export function ProjectModal({
   const taskCount = tasks?.length ?? 0;
   // Planning and Tasks only make sense for an existing project.
   const tabs: Tab[] = isEdit
-    ? ['details', 'sources', 'planning', 'tasks']
+    ? ['details', 'sources', 'plan', 'tasks']
     : ['details', 'sources'];
   const tabCounts: Partial<Record<Tab, number>> = {
     sources: sourceCount,
-    planning: docs.length,
+    plan: docs.length,
     tasks: taskCount,
   };
-  const atLimit = sourceCount >= MAX_SOURCES_PER_PROJECT;
   const tagTooLong = tag.trim().length > MAX_TAG_LENGTH;
   const canSave = name.trim().length > 0 && tag.trim().length > 0 && !tagTooLong;
 
-  const addSource = async () => {
-    const url = sourceUrl.trim();
-    if (!url) return;
-    try {
-      new URL(url);
-    } catch {
-      setError('Enter a full URL, including https://');
-      return;
-    }
-    if (atLimit) {
-      setError(`Up to ${MAX_SOURCES_PER_PROJECT} sources per project`);
-      return;
-    }
-    setError(null);
+  // The project's own memory (if it has one); otherwise we offer to create one.
+  const projectMemories = isEdit ? memories.filter((m) => m.projectId === project!.id) : [];
 
-    if (isEdit && current) {
-      setSourceBusy(true);
-      try {
-        setCurrent(await addProjectSource(current.id, url));
-        setSourceUrl('');
-      } catch (e) {
-        setError(errMsg(e));
-      } finally {
-        setSourceBusy(false);
-      }
-    } else {
-      if (!staged.includes(url)) setStaged((prev) => [...prev, url]);
-      setSourceUrl('');
-    }
+  // Sources: edit mode mutates the live project; create mode stages URLs. The
+  // SourceListEditor surfaces its own add/reorder errors.
+  const addSourceLive = async (url: string) => {
+    if (current) setCurrent(await addProjectSource(current.id, url));
   };
-
-  const removeExisting = async (sourceId: string) => {
+  const removeSourceLive = async (id: string) => {
     if (!current) return;
     const ok = await confirm({
       title: 'Remove this source?',
@@ -254,13 +225,17 @@ export function ProjectModal({
       confirmLabel: 'Remove',
     });
     if (!ok) return;
-    setSourceBusy(true);
+    setCurrent(await removeProjectSource(current.id, id));
+  };
+  const reorderSourcesLive = async (ids: string[]) => {
+    if (!current) return;
+    const prev = current;
+    setCurrent({ ...prev, sources: orderByIds(prev.sources, ids) }); // optimistic
     try {
-      setCurrent(await removeProjectSource(current.id, sourceId));
+      setCurrent(await reorderProjectSources(prev.id, ids));
     } catch (e) {
-      setError(errMsg(e));
-    } finally {
-      setSourceBusy(false);
+      setCurrent(prev); // roll back
+      throw e;
     }
   };
 
@@ -443,42 +418,21 @@ export function ProjectModal({
 
             {/* Tag + color */}
             <div className="space-y-1.5">
-              <label htmlFor="project-tag" className="text-xs font-medium text-muted-foreground">
-                Tag &amp; color
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  id="project-tag"
-                  className={cn(inputClass, 'flex-1', tagTooLong && 'border-destructive')}
-                  value={tag}
-                  maxLength={MAX_TAG_LENGTH}
-                  onChange={(e) => setTag(e.target.value)}
-                  placeholder="short-tag"
-                />
-                <input
-                  type="color"
-                  aria-label="Project color"
-                  value={color}
-                  onChange={(e) => setColor(e.target.value)}
-                  className="h-9 w-9 shrink-0 cursor-pointer rounded-md border border-input bg-background p-1"
-                />
-                <ProjectTag tag={tag.trim() || 'tag'} color={color} />
-              </div>
-              <div className="flex flex-wrap items-center gap-1.5">
-                {SWATCHES.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    aria-label={`Use color ${s}`}
-                    onClick={() => setColor(s)}
-                    className={cn(
-                      'h-5 w-5 rounded-full border transition-transform hover:scale-110',
-                      color.toLowerCase() === s ? 'ring-2 ring-ring ring-offset-1 ring-offset-card' : '',
-                    )}
-                    style={{ backgroundColor: s }}
-                  />
-                ))}
-              </div>
+              <TagColorPicker
+                tag={tag}
+                color={color}
+                onTagChange={setTag}
+                onColorChange={setColor}
+                tagInputId="project-tag"
+                label={
+                  <label
+                    htmlFor="project-tag"
+                    className="text-xs font-medium text-muted-foreground"
+                  >
+                    Tag &amp; color
+                  </label>
+                }
+              />
               <p className="text-[11px] text-muted-foreground">
                 Max {MAX_TAG_LENGTH} characters. Tasks in this project carry this tag.
               </p>
@@ -524,112 +478,78 @@ export function ProjectModal({
                 Where this project&apos;s Claude Code sessions spawn. Leave blank to use the default.
               </p>
             </div>
+
+            {/* Project memory — jump to (or create) this project's scoped memory. */}
+            {isEdit ? (
+              <div className="space-y-1.5">
+                <span className="text-xs font-medium text-muted-foreground">Project memory</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    router.push(
+                      projectMemories.length
+                        ? `/memory?scope=${encodeURIComponent(project!.id)}`
+                        : `/memory?create=${encodeURIComponent(project!.id)}`,
+                    );
+                    onClose();
+                  }}
+                  className="flex w-full items-center gap-2 rounded-md border border-border/60 bg-background/60 px-2.5 py-2 text-left text-sm transition-colors hover:border-foreground/20 hover:bg-accent/40"
+                >
+                  <Brain className="h-4 w-4 shrink-0 text-[hsl(262_83%_66%)]" />
+                  <span className="min-w-0 flex-1 truncate">
+                    {projectMemories.length
+                      ? `View ${projectMemories.length} memor${
+                          projectMemories.length === 1 ? 'y' : 'ies'
+                        }`
+                      : 'Create a memory for this project'}
+                  </span>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                </button>
+                <p className="text-[11px] text-muted-foreground">
+                  Knowledge entries scoped to this project, injected into agent prompts.
+                </p>
+              </div>
+            ) : null}
             </div>
 
             {/* Sources */}
             <div role="tabpanel" className={cn('space-y-2', tab === 'sources' ? '' : 'hidden')}>
               <div className="flex items-center justify-between">
-                <label htmlFor="project-source" className="text-xs font-medium text-muted-foreground">
-                  Sources
-                </label>
+                <span className="text-xs font-medium text-muted-foreground">Sources</span>
                 <span className="text-[11px] tabular-nums text-muted-foreground">
                   {sourceCount}/{MAX_SOURCES_PER_PROJECT}
                 </span>
               </div>
-              <div className="flex items-center gap-2">
-                <input
-                  id="project-source"
-                  className={inputClass}
-                  value={sourceUrl}
-                  onChange={(e) => setSourceUrl(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      void addSource();
-                    }
-                  }}
+              <p className="text-[11px] text-muted-foreground">
+                Reference links for this project — drag the grip to reorder. Included when drafting a
+                plan.
+              </p>
+              {isEdit ? (
+                <SourceListEditor
+                  sources={current?.sources ?? []}
+                  max={MAX_SOURCES_PER_PROJECT}
                   placeholder="Paste a Google Docs, Notion, or YouTube link"
-                  disabled={atLimit || sourceBusy}
+                  onAdd={addSourceLive}
+                  onRemove={removeSourceLive}
+                  onReorder={reorderSourcesLive}
                 />
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="icon"
-                  onClick={() => void addSource()}
-                  disabled={atLimit || sourceBusy || !sourceUrl.trim()}
-                  aria-label="Add source"
-                >
-                  {sourceBusy ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Plus className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-
-              <ul className="space-y-1.5">
-                {isEdit
-                  ? (current?.sources ?? []).map((s) => (
-                      <li
-                        key={s.id}
-                        className="flex items-center gap-2 rounded-md border border-border/60 bg-background/60 px-2.5 py-1.5"
-                      >
-                        <SourceIcon kind={s.kind} faviconUrl={s.faviconUrl} />
-                        <span className="min-w-0 flex-1 truncate text-sm">
-                          {s.title ?? s.url}
-                        </span>
-                        <a
-                          href={s.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          aria-label="Open source in new tab"
-                          className="text-muted-foreground hover:text-foreground"
-                        >
-                          <ExternalLink className="h-3.5 w-3.5" />
-                        </a>
-                        <button
-                          type="button"
-                          onClick={() => void removeExisting(s.id)}
-                          disabled={sourceBusy}
-                          aria-label="Remove source"
-                          className="text-muted-foreground hover:text-destructive"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </li>
-                    ))
-                  : staged.map((url) => (
-                      <li
-                        key={url}
-                        className="flex items-center gap-2 rounded-md border border-border/60 bg-background/60 px-2.5 py-1.5"
-                      >
-                        <SourceIcon kind={detectSourceKind(url)} />
-                        <span className="min-w-0 flex-1 truncate text-sm">{url}</span>
-                        <a
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          aria-label="Open source in new tab"
-                          className="text-muted-foreground hover:text-foreground"
-                        >
-                          <ExternalLink className="h-3.5 w-3.5" />
-                        </a>
-                        <button
-                          type="button"
-                          onClick={() => setStaged((prev) => prev.filter((u) => u !== url))}
-                          aria-label="Remove source"
-                          className="text-muted-foreground hover:text-destructive"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </li>
-                    ))}
-              </ul>
+              ) : (
+                <SourceListEditor
+                  sources={staged.map((url) => ({ id: url, url, kind: detectSourceKind(url) }))}
+                  max={MAX_SOURCES_PER_PROJECT}
+                  placeholder="Paste a Google Docs, Notion, or YouTube link"
+                  onAdd={(url) => {
+                    if (!staged.includes(url)) setStaged((prev) => [...prev, url]);
+                  }}
+                  onRemove={(id) => setStaged((prev) => prev.filter((u) => u !== id))}
+                  onReorder={(ids) => setStaged(ids)}
+                />
+              )}
             </div>
 
-            {/* Planning */}
+            {/* Plan */}
             {isEdit ? (
-              <div role="tabpanel" className={cn('space-y-3', tab === 'planning' ? '' : 'hidden')}>
+              <div role="tabpanel" className={cn('space-y-3', tab === 'plan' ? '' : 'hidden')}>
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-medium text-muted-foreground">Documents</label>
                   <span className="text-[11px] tabular-nums text-muted-foreground">

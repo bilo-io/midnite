@@ -112,7 +112,7 @@ async function fetchJson<T>(
 }
 
 export async function pingAgent(): Promise<AgentPingResponse> {
-  return fetchJson('/agent/ping', { method: 'POST' }, AgentPingResponseSchema);
+  return fetchJson('/agents/ping', { method: 'POST' }, AgentPingResponseSchema);
 }
 
 export async function getTaskCounts(): Promise<TaskCounts> {
@@ -266,6 +266,15 @@ export async function removeProjectSource(id: string, sourceId: string): Promise
   return project;
 }
 
+export async function reorderProjectSources(id: string, sourceIds: string[]): Promise<Project> {
+  const { project } = await fetchJson(
+    `/projects/${encodeURIComponent(id)}/sources/reorder`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ sourceIds }) },
+    ProjectResponseSchema,
+  );
+  return project;
+}
+
 // --- Knowledge base (global sources, applied to every project) ---
 
 export async function getKnowledgeSources(): Promise<GlobalSource[]> {
@@ -286,6 +295,15 @@ export async function removeKnowledgeSource(id: string): Promise<GlobalSource[]>
   const { sources } = await fetchJson(
     `/knowledge/sources/${encodeURIComponent(id)}`,
     { method: 'DELETE' },
+    GlobalSourcesResponseSchema,
+  );
+  return sources;
+}
+
+export async function reorderKnowledgeSources(sourceIds: string[]): Promise<GlobalSource[]> {
+  const { sources } = await fetchJson(
+    '/knowledge/sources/reorder',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ sourceIds }) },
     GlobalSourcesResponseSchema,
   );
   return sources;
@@ -318,6 +336,33 @@ export async function updateMemory(id: string, body: UpdateMemoryRequest): Promi
 
 export async function deleteMemory(id: string): Promise<void> {
   await fetchJson(`/memories/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+export async function addMemorySource(id: string, url: string): Promise<Memory> {
+  const { memory } = await fetchJson(
+    `/memories/${encodeURIComponent(id)}/sources`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ url }) },
+    MemoryResponseSchema,
+  );
+  return memory;
+}
+
+export async function removeMemorySource(id: string, sourceId: string): Promise<Memory> {
+  const { memory } = await fetchJson(
+    `/memories/${encodeURIComponent(id)}/sources/${encodeURIComponent(sourceId)}`,
+    { method: 'DELETE' },
+    MemoryResponseSchema,
+  );
+  return memory;
+}
+
+export async function reorderMemorySources(id: string, sourceIds: string[]): Promise<Memory> {
+  const { memory } = await fetchJson(
+    `/memories/${encodeURIComponent(id)}/sources/reorder`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ sourceIds }) },
+    MemoryResponseSchema,
+  );
+  return memory;
 }
 
 export async function enhanceProjectDescription(input: {
@@ -586,6 +631,18 @@ export async function deleteCouncilParticipant(
     `/councils/${encodeURIComponent(councilId)}/participants/${encodeURIComponent(participantId)}`,
     { method: 'DELETE' },
   );
+}
+
+export async function reorderCouncilParticipants(
+  councilId: string,
+  participantIds: string[],
+): Promise<CouncilParticipant[]> {
+  const { council } = await fetchJson(
+    `/councils/${encodeURIComponent(councilId)}/participants/reorder`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ participantIds }) },
+    CouncilResponseSchema,
+  );
+  return council.participants;
 }
 
 export async function startCouncilRun(councilId: string, topic: string): Promise<CouncilRun> {

@@ -102,6 +102,8 @@ export const projectSources = sqliteTable(
     faviconUrl: text('favicon_url'),
     fetchedAt: text('fetched_at'),
     createdAt: text('created_at').notNull(),
+    // Ascending display order within the project; drives the list/drag order.
+    position: integer('position').notNull().default(0),
   },
   (t) => ({
     projectIdx: index('project_sources_project_idx').on(t.projectId),
@@ -118,6 +120,8 @@ export const globalSources = sqliteTable('global_sources', {
   faviconUrl: text('favicon_url'),
   fetchedAt: text('fetched_at'),
   createdAt: text('created_at').notNull(),
+  // Ascending display order; drives the list/drag order.
+  position: integer('position').notNull().default(0),
 });
 
 // Memories: markdown knowledge entries injected into agent prompts. project_id
@@ -134,6 +138,27 @@ export const memories = sqliteTable(
   },
   (t) => ({
     projectIdx: index('memories_project_idx').on(t.projectId),
+  }),
+);
+
+// Reference links attached to a memory. Mirrors project_sources, scoped to a
+// memory instead of a project.
+export const memorySources = sqliteTable(
+  'memory_sources',
+  {
+    id: text('id').primaryKey(),
+    memoryId: text('memory_id').notNull(),
+    url: text('url').notNull(),
+    kind: text('kind').notNull(),
+    title: text('title'),
+    faviconUrl: text('favicon_url'),
+    fetchedAt: text('fetched_at'),
+    createdAt: text('created_at').notNull(),
+    // Ascending display order within the memory; drives the list/drag order.
+    position: integer('position').notNull().default(0),
+  },
+  (t) => ({
+    memoryIdx: index('memory_sources_memory_idx').on(t.memoryId),
   }),
 );
 
@@ -270,6 +295,8 @@ export const councilParticipants = sqliteTable(
     name: text('name').notNull().default(''),
     provider: text('provider').notNull().default('claude'), // AgentCli
     perspective: text('perspective').notNull().default(''),
+    // Ascending display/run order within the council; drives the tab order.
+    position: integer('position').notNull().default(0),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
   },
@@ -347,6 +374,8 @@ export type GlobalSourceRow = typeof globalSources.$inferSelect;
 export type GlobalSourceInsert = typeof globalSources.$inferInsert;
 export type MemoryRow = typeof memories.$inferSelect;
 export type MemoryInsert = typeof memories.$inferInsert;
+export type MemorySourceRow = typeof memorySources.$inferSelect;
+export type MemorySourceInsert = typeof memorySources.$inferInsert;
 export type PrimaryAgentRow = typeof primaryAgent.$inferSelect;
 export type PrimaryAgentInsert = typeof primaryAgent.$inferInsert;
 export type SubagentRow = typeof subagents.$inferSelect;

@@ -18,6 +18,7 @@ import {
   UpdateSubAgentRequestSchema,
   type AgentCliResponse,
   type AgentCliStatusResponse,
+  type AgentPingResponse,
   type AgentsConfigResponse,
   type HeartbeatRunResponse,
   type HeartbeatRunsResponse,
@@ -47,6 +48,12 @@ export class AgentsController {
     const parsed = AgentCliSchema.safeParse(cli);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
     return { status: await this.service.getCliStatus(parsed.data) };
+  }
+
+  /** Health-check the selected CLI (Claude → API round-trip; others → version probe). */
+  @Post('ping')
+  ping(): Promise<AgentPingResponse> {
+    return this.service.ping();
   }
 
   @Put('primary')

@@ -13,7 +13,12 @@ export class KnowledgeRepository {
   }
 
   listSources(): GlobalSourceRow[] {
-    return this.db.select().from(globalSources).orderBy(asc(globalSources.createdAt)).all();
+    return this.db
+      .select()
+      .from(globalSources)
+      // Explicit order first; createdAt breaks ties (e.g. legacy rows at 0).
+      .orderBy(asc(globalSources.position), asc(globalSources.createdAt))
+      .all();
   }
 
   getSource(id: string): GlobalSourceRow | undefined {
@@ -22,6 +27,21 @@ export class KnowledgeRepository {
 
   deleteSource(id: string): void {
     this.db.delete(globalSources).where(eq(globalSources.id, id)).run();
+  }
+
+  /** Next append position (max existing + 1, or 0 when empty). */
+  nextPosition(): number {
+    const rows = this.db.select({ position: globalSources.position }).from(globalSources).all();
+    return rows.reduce((max, r) => Math.max(max, r.position), -1) + 1;
+  }
+
+  /** Persist a new order: each id's position becomes its index in the list. */
+  reorderSources(orderedIds: string[]): void {
+    this.db.transaction((tx) => {
+      orderedIds.forEach((id, position) => {
+        tx.update(globalSources).set({ position }).where(eq(globalSources.id, id)).run();
+      });
+    });
   }
 
   count(): number {

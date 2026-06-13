@@ -6,6 +6,7 @@ import type {
   SubagentInsert,
   SubagentRow,
 } from '../db/schema';
+import type { AnthropicService } from '../agent/anthropic.service';
 import { AgentsRepository, PRIMARY_ID } from './agents.repository';
 import { AgentsService } from './agents.service';
 import type { HeartbeatScheduler } from './heartbeat-scheduler.service';
@@ -89,10 +90,14 @@ function toPrimaryRow(row: PrimaryAgentInsert): PrimaryAgentRow {
   };
 }
 
-function makeService(scheduler?: Partial<HeartbeatScheduler>) {
+function makeService(opts?: {
+  scheduler?: Partial<HeartbeatScheduler>;
+  anthropic?: Partial<AnthropicService>;
+}) {
   const repo = new InMemoryAgentsRepo();
-  const sched = (scheduler ?? {}) as HeartbeatScheduler;
-  return { repo, service: new AgentsService(repo, sched) };
+  const sched = (opts?.scheduler ?? {}) as HeartbeatScheduler;
+  const anthropic = (opts?.anthropic ?? {}) as AnthropicService;
+  return { repo, service: new AgentsService(repo, sched, anthropic) };
 }
 
 describe('AgentsService', () => {
@@ -156,9 +161,11 @@ describe('AgentsService', () => {
     };
     const calls: string[] = [];
     const { repo, service } = makeService({
-      executeHeartbeat: async (source) => {
-        calls.push(source);
-        return fakeRun;
+      scheduler: {
+        executeHeartbeat: async (source) => {
+          calls.push(source);
+          return fakeRun;
+        },
       },
     });
 
@@ -166,5 +173,44 @@ describe('AgentsService', () => {
     expect(run).toEqual(fakeRun);
     expect(calls).toEqual(['manual']);
     expect(repo.getPrimary()?.id).toBe(PRIMARY_ID); // seeded as a side effect
+  });
+
+  it('ping: Claude delegates to the Anthropic round-trip and is tagged cli=claude', async () => {
+    const { service } = makeService({
+      anthropic: {
+        ping: async () => ({ ok: true, model: 'claude-haiku-4-5', reply: 'system status: ok' }),
+      },
+    });
+    service.updateAgentCli('claude');
+
+    const res = await service.ping();
+    expect(res).toEqual({
+      ok: true,
+      cli: 'claude',
+      model: 'claude-haiku-4-5',
+      reply: 'system status: ok',
+    });
+  });
+
+  it('ping: a non-Claude CLI reports its label + version when installed', async () => {
+    const { service } = makeService();
+    service.updateAgentCli('gemini');
+    // Avoid spawning a real shell: stub the CLI probe.
+    service.getCliStatus = async () => ({ cli: 'gemini', installed: true, version: '0.32.1' });
+
+    const res = await service.ping();
+    expect(res).toEqual({ ok: true, cli: 'gemini', model: 'Gemini 0.32.1', reply: 'system status: ok' });
+  });
+
+  it('ping: a non-Claude CLI reports "not found" when its binary is absent', async () => {
+    const { service } = makeService();
+    service.updateAgentCli('codex');
+    service.getCliStatus = async () => ({ cli: 'codex', installed: false });
+
+    const res = await service.ping();
+    expect(res.ok).toBe(false);
+    expect(res.cli).toBe('codex');
+    expect(res.model).toBe('Codex');
+    expect(res.reply).toMatch(/not found/);
   });
 });

@@ -8,12 +8,15 @@ import type {
 } from '../db/schema';
 import type { AnthropicService } from '../agent/anthropic.service';
 import type { KnowledgeService } from '../knowledge/knowledge.service';
+import type { MemoriesService } from '../memories/memories.service';
 import type { TasksService } from '../tasks/tasks.service';
 import { ProjectsRepository } from './projects.repository';
 import { ProjectsService } from './projects.service';
 
-// Global knowledge base is empty in these tests; plan generation merges it in.
+// Global knowledge base + scoped memories are empty in these tests; plan
+// generation merges them in.
 const knowledgeStub = { listSources: () => [] } as unknown as KnowledgeService;
+const memoriesStub = { listScoped: () => [] } as unknown as MemoriesService;
 
 class InMemoryProjectsRepo extends ProjectsRepository {
   readonly projects = new Map<string, ProjectRow>();
@@ -72,13 +75,16 @@ class InMemoryProjectsRepo extends ProjectsRepository {
       faviconUrl: row.faviconUrl ?? null,
       fetchedAt: row.fetchedAt ?? null,
       createdAt: row.createdAt,
+      position: row.position ?? 0,
     };
     this.sources.push(full);
     return full;
   }
 
   override listSources(projectId: string): ProjectSourceRow[] {
-    return this.sources.filter((s) => s.projectId === projectId);
+    return this.sources
+      .filter((s) => s.projectId === projectId)
+      .sort((a, b) => a.position - b.position || a.createdAt.localeCompare(b.createdAt));
   }
 
   override getSource(projectId: string, sourceId: string): ProjectSourceRow | undefined {
@@ -93,6 +99,17 @@ class InMemoryProjectsRepo extends ProjectsRepository {
 
   override countSources(projectId: string): number {
     return this.listSources(projectId).length;
+  }
+
+  override nextSourcePosition(projectId: string): number {
+    return this.listSources(projectId).reduce((max, s) => Math.max(max, s.position), -1) + 1;
+  }
+
+  override reorderSources(projectId: string, orderedIds: string[]): void {
+    orderedIds.forEach((id, position) => {
+      const row = this.sources.find((s) => s.projectId === projectId && s.id === id);
+      if (row) row.position = position;
+    });
   }
 
   override countTasks(projectId: string): number {
@@ -123,7 +140,7 @@ describe('ProjectsService', () => {
   it('creates and hydrates a project with no sources', async () => {
     const repo = new InMemoryProjectsRepo();
     const { service: tasks } = makeTasksStub();
-    const service = new ProjectsService(repo, disabledAnthropic, tasks, knowledgeStub);
+    const service = new ProjectsService(repo, disabledAnthropic, tasks, knowledgeStub, memoriesStub);
 
     const project = await service.createProject({
       name: 'Atlas',
@@ -140,7 +157,7 @@ describe('ProjectsService', () => {
   it('enforces the source limit before any fetch', async () => {
     const repo = new InMemoryProjectsRepo();
     const { service: tasks } = makeTasksStub();
-    const service = new ProjectsService(repo, disabledAnthropic, tasks, knowledgeStub);
+    const service = new ProjectsService(repo, disabledAnthropic, tasks, knowledgeStub, memoriesStub);
     const project = await service.createProject({ name: 'P', tag: 'p', color: '#000' });
 
     // Seed the repo at the limit directly so addSource rejects before fetching.
@@ -159,10 +176,33 @@ describe('ProjectsService', () => {
     );
   });
 
+  it('reorders sources and rejects an incomplete id set', async () => {
+    const repo = new InMemoryProjectsRepo();
+    const { service: tasks } = makeTasksStub();
+    const service = new ProjectsService(repo, disabledAnthropic, tasks, knowledgeStub, memoriesStub);
+    const project = await service.createProject({ name: 'P', tag: 'p', color: '#000' });
+
+    for (let i = 0; i < 3; i++) {
+      repo.insertSource({
+        id: `s${i}`,
+        projectId: project.id,
+        url: `https://example.com/${i}`,
+        kind: 'link',
+        createdAt: new Date().toISOString(),
+        position: i,
+      });
+    }
+
+    const reordered = service.reorderSources(project.id, ['s2', 's0', 's1']);
+    expect(reordered.sources.map((s) => s.id)).toEqual(['s2', 's0', 's1']);
+
+    expect(() => service.reorderSources(project.id, ['s0'])).toThrow(/exactly once/);
+  });
+
   it('enhanceDescription returns trimmed input when AI is disabled', async () => {
     const repo = new InMemoryProjectsRepo();
     const { service: tasks } = makeTasksStub();
-    const service = new ProjectsService(repo, disabledAnthropic, tasks, knowledgeStub);
+    const service = new ProjectsService(repo, disabledAnthropic, tasks, knowledgeStub, memoriesStub);
 
     const out = await service.enhanceDescription({ description: '  rough notes  ' });
     expect(out).toBe('rough notes');
@@ -171,7 +211,7 @@ describe('ProjectsService', () => {
   it('draftPlan persists a checklist template when AI is disabled', async () => {
     const repo = new InMemoryProjectsRepo();
     const { service: tasks } = makeTasksStub();
-    const service = new ProjectsService(repo, disabledAnthropic, tasks, knowledgeStub);
+    const service = new ProjectsService(repo, disabledAnthropic, tasks, knowledgeStub, memoriesStub);
     const project = await service.createProject({ name: 'P', tag: 'p', color: '#000' });
 
     const { plan } = await service.draftPlan(project.id);
@@ -182,7 +222,7 @@ describe('ProjectsService', () => {
   it('createTasksFromPlan creates one task per title, tagged to the project', async () => {
     const repo = new InMemoryProjectsRepo();
     const { service: tasks, created } = makeTasksStub();
-    const service = new ProjectsService(repo, disabledAnthropic, tasks, knowledgeStub);
+    const service = new ProjectsService(repo, disabledAnthropic, tasks, knowledgeStub, memoriesStub);
     const project = await service.createProject({ name: 'P', tag: 'p', color: '#000' });
 
     const result = service.createTasksFromPlan(project.id, ['Do A', 'Do B']);

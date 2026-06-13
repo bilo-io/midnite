@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { asc, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import type {
   AgentCli,
   Council,
@@ -67,8 +67,31 @@ export class CouncilsRepository {
       .select()
       .from(councilParticipants)
       .where(eq(councilParticipants.councilId, councilId))
-      .orderBy(asc(councilParticipants.createdAt))
+      // Explicit order first; createdAt breaks ties (e.g. legacy rows at 0).
+      .orderBy(asc(councilParticipants.position), asc(councilParticipants.createdAt))
       .all();
+  }
+
+  /** Next append position for a council (max existing + 1, or 0 when empty). */
+  nextParticipantPosition(councilId: string): number {
+    const rows = this.db
+      .select({ position: councilParticipants.position })
+      .from(councilParticipants)
+      .where(eq(councilParticipants.councilId, councilId))
+      .all();
+    return rows.reduce((max, r) => Math.max(max, r.position), -1) + 1;
+  }
+
+  /** Persist a new order: each id's position becomes its index in the list. */
+  reorderParticipants(councilId: string, orderedIds: string[]): void {
+    this.db.transaction((tx) => {
+      orderedIds.forEach((id, position) => {
+        tx.update(councilParticipants)
+          .set({ position })
+          .where(and(eq(councilParticipants.id, id), eq(councilParticipants.councilId, councilId)))
+          .run();
+      });
+    });
   }
 
   getParticipant(id: string): CouncilParticipantRow | undefined {
@@ -130,8 +153,10 @@ export class CouncilsRepository {
     return this.db
       .select()
       .from(councilRunParticipants)
+      // Insertion order = the participant order snapshotted at run start, which
+      // drives the tab order. Stable across retries (those reset startedAt).
       .where(eq(councilRunParticipants.runId, runId))
-      .orderBy(asc(councilRunParticipants.startedAt))
+      .orderBy(asc(sql`rowid`))
       .all();
   }
 
@@ -172,6 +197,7 @@ export class CouncilsRepository {
       name: row.name,
       provider: row.provider as AgentCli,
       perspective: row.perspective,
+      position: row.position,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };

@@ -14,6 +14,7 @@ import {
 import {
   CreateCouncilParticipantRequestSchema,
   CreateCouncilRequestSchema,
+  ReorderCouncilParticipantsRequestSchema,
   StartCouncilRunRequestSchema,
   UpdateCouncilParticipantRequestSchema,
   UpdateCouncilRequestSchema,
@@ -80,6 +81,18 @@ export class CouncilsController {
     const parsed = CreateCouncilParticipantRequestSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
     return { participant: this.translate(() => this.service.createParticipant(id, parsed.data)) };
+  }
+
+  // Static segment, so it never collides with `:participantId` below.
+  @Post(':id/participants/reorder')
+  reorderParticipants(@Param('id') id: string, @Body() body: unknown): CouncilResponse {
+    const parsed = ReorderCouncilParticipantsRequestSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    return {
+      council: this.translate(() =>
+        this.service.reorderParticipants(id, parsed.data.participantIds),
+      ),
+    };
   }
 
   @Patch(':id/participants/:participantId')

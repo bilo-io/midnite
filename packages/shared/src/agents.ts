@@ -17,7 +17,7 @@ const HeartbeatIntervalSchema = z.number().int().min(HEARTBEAT_MIN_H).max(HEARTB
 
 // The CLI binary midnite launches inside a session terminal. A global preference
 // (not per-agent): which coding agent the user drives sessions with.
-export const AGENT_CLIS = ['claude', 'gemini', 'codex', 'aider', 'opencode'] as const;
+export const AGENT_CLIS = ['claude', 'gemini', 'codex', 'opencode', 'aider'] as const;
 export const AgentCliSchema = z.enum(AGENT_CLIS);
 export type AgentCli = z.infer<typeof AgentCliSchema>;
 export const AGENT_CLI_DEFAULT: AgentCli = 'claude';
@@ -27,8 +27,8 @@ export const AGENT_CLI_LABEL: Record<AgentCli, string> = {
   claude: 'Claude',
   gemini: 'Gemini',
   codex: 'Codex',
-  aider: 'Aider',
   opencode: 'OpenCode',
+  aider: 'Aider',
 };
 
 /** The shell command typed into a fresh session shell to launch each CLI. */
@@ -36,8 +36,8 @@ export const AGENT_CLI_COMMAND: Record<AgentCli, string> = {
   claude: 'claude',
   gemini: 'gemini',
   codex: 'codex',
-  aider: 'aider',
   opencode: 'opencode',
+  aider: 'aider',
 };
 
 /**
@@ -49,8 +49,8 @@ export const AGENT_CLI_INSTALL_COMMAND: Record<AgentCli, string> = {
   claude: 'npm install -g @anthropic-ai/claude-code',
   gemini: 'npm install -g @google/gemini-cli',
   codex: 'npm install -g @openai/codex',
-  aider: 'python -m pip install aider-install && aider-install',
   opencode: 'npm install -g opencode-ai',
+  aider: 'python -m pip install aider-install && aider-install',
 };
 
 /**
@@ -62,8 +62,8 @@ export const AGENT_CLI_UNINSTALL_COMMAND: Record<AgentCli, string> = {
   claude: 'npm uninstall -g @anthropic-ai/claude-code',
   gemini: 'npm uninstall -g @google/gemini-cli',
   codex: 'npm uninstall -g @openai/codex',
-  aider: 'python -m pip uninstall -y aider-chat aider-install',
   opencode: 'npm uninstall -g opencode-ai',
+  aider: 'python -m pip uninstall -y aider-chat aider-install',
 };
 
 /** Installed-state of a CLI, as detected by probing for its binary on PATH. */

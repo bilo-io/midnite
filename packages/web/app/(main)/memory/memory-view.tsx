@@ -21,6 +21,9 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
   const router = useRouter();
   const [view, setView] = useState<View>('grid');
   const [creating, setCreating] = useState(false);
+  // Scope to preselect when creating from a `?create=<id>` deep link (e.g. the
+  // project modal's "create a memory" link). null = global.
+  const [createScope, setCreateScope] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -51,6 +54,19 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
   ];
 
   const searchParams = useSearchParams();
+
+  // A `?create=<id>` deep link opens the create modal pre-scoped, then strips
+  // the param so a refresh/back doesn't reopen it.
+  const createParam = searchParams.get('create');
+  useEffect(() => {
+    if (createParam === null) return;
+    setCreating(true);
+    setCreateScope(createParam === GLOBAL_SCOPE ? null : createParam);
+    const params = new URLSearchParams(Array.from(searchParams.entries()));
+    params.delete('create');
+    router.replace(`/memory${params.toString() ? `?${params.toString()}` : ''}`, { scroll: false });
+  }, [createParam, searchParams, router]);
+
   const q = (searchParams.get('q') ?? '').trim().toLowerCase();
   const scopeRaw = searchParams.get('scope');
   const valid = new Set(scopeOptions.map((o) => o.value));
@@ -68,6 +84,7 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
 
   const closeModal = useCallback(() => {
     setCreating(false);
+    setCreateScope(null);
     setEditId(null);
   }, []);
 
@@ -159,6 +176,7 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
         <MemoryModal
           memory={creating ? null : editMemory}
           projects={projects}
+          initialProjectId={creating ? createScope : undefined}
           onClose={closeModal}
           onSaved={refresh}
         />

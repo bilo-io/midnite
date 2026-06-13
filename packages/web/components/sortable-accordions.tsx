@@ -19,6 +19,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { ChevronDown, GripVertical } from 'lucide-react';
+import { Collapse } from '@/components/ui/collapse';
 import { cn } from '@/lib/utils';
 
 export type AccordionSection = {
@@ -217,7 +218,9 @@ function Section({
           <div className="flex shrink-0 items-center gap-0.5 pr-1">{section.actions}</div>
         ) : null}
       </div>
-      {!collapsed && <div className="border-t border-border/60">{section.body}</div>}
+      <Collapse open={!collapsed}>
+        <div className="border-t border-border/60">{section.body}</div>
+      </Collapse>
     </section>
   );
 }

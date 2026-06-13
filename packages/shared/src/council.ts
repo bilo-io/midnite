@@ -30,6 +30,8 @@ export const CouncilParticipantSchema = z.object({
   name: z.string(),
   provider: AgentCliSchema,
   perspective: z.string(),
+  /** Display/run order within the council (ascending). Drives the tab order. */
+  position: z.number().int(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -127,6 +129,14 @@ export const UpdateCouncilParticipantRequestSchema = z.object({
 });
 export type UpdateCouncilParticipantRequest = z.infer<
   typeof UpdateCouncilParticipantRequestSchema
+>;
+
+/** New ordering for a council's participants — every participant id, once. */
+export const ReorderCouncilParticipantsRequestSchema = z.object({
+  participantIds: z.array(z.string().min(1)).min(1),
+});
+export type ReorderCouncilParticipantsRequest = z.infer<
+  typeof ReorderCouncilParticipantsRequestSchema
 >;
 
 export const StartCouncilRunRequestSchema = z.object({

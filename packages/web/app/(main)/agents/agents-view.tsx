@@ -8,7 +8,6 @@ import {
   Check,
   ChevronDown,
   Download,
-  ExternalLink,
   FileText,
   Library,
   Loader2,
@@ -17,7 +16,6 @@ import {
   Terminal,
   Trash2,
   Users,
-  X,
 } from 'lucide-react';
 import {
   AGENT_CLIS,
@@ -33,11 +31,12 @@ import {
   type UpdatePrimaryAgentRequest,
 } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
+import { Collapse } from '@/components/ui/collapse';
 import { Input } from '@/components/ui/input';
 import { Select, type SelectOption } from '@/components/ui/select';
 import { AgentCliLogo } from '@/components/agent-cli-logo';
 import { CliActionModal } from '@/components/cli-action-modal';
-import { SourceIcon } from '@/components/source-icon';
+import { SourceListEditor, orderByIds } from '@/components/source-list-editor';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -48,6 +47,7 @@ import {
   getCliStatus,
   getKnowledgeSources,
   removeKnowledgeSource,
+  reorderKnowledgeSources,
   updateAgentCli,
   updatePrimaryAgent,
   updateSubAgent,
@@ -346,8 +346,6 @@ export function AgentsView() {
         </div>
       </Accordion>
 
-      <KnowledgeBaseSection />
-
       <Accordion
         title="Sub Agents"
         icon={<Users className="h-3.5 w-3.5" />}
@@ -393,6 +391,8 @@ export function AgentsView() {
         </div>
       </Accordion>
 
+      <KnowledgeBaseSection />
+
       {cliAction ? (
         <CliActionModal
           cli={cliAction.cli}
@@ -415,41 +415,14 @@ export function AgentsView() {
  */
 function KnowledgeBaseSection() {
   const [sources, setSources] = useState<GlobalSource[]>([]);
-  const [url, setUrl] = useState('');
-  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [loaded, setLoaded] = useState(false);
   const confirm = useConfirm();
 
   useEffect(() => {
     getKnowledgeSources()
       .then(setSources)
-      .catch((e) => setError(errMsg(e)))
-      .finally(() => setLoaded(true));
+      .catch((e) => setError(errMsg(e)));
   }, []);
-
-  const atLimit = sources.length >= MAX_GLOBAL_SOURCES;
-
-  const add = async () => {
-    const u = url.trim();
-    if (!u) return;
-    try {
-      new URL(u);
-    } catch {
-      setError('Enter a full URL, including https://');
-      return;
-    }
-    setError(null);
-    setBusy(true);
-    try {
-      setSources(await addKnowledgeSource(u));
-      setUrl('');
-    } catch (e) {
-      setError(errMsg(e));
-    } finally {
-      setBusy(false);
-    }
-  };
 
   const remove = async (id: string) => {
     const ok = await confirm({
@@ -458,13 +431,17 @@ function KnowledgeBaseSection() {
       confirmLabel: 'Remove',
     });
     if (!ok) return;
-    setBusy(true);
+    setSources(await removeKnowledgeSource(id));
+  };
+
+  const reorder = async (ids: string[]) => {
+    const prev = sources;
+    setSources(orderByIds(prev, ids)); // optimistic
     try {
-      setSources(await removeKnowledgeSource(id));
+      setSources(await reorderKnowledgeSources(ids));
     } catch (e) {
-      setError(errMsg(e));
-    } finally {
-      setBusy(false);
+      setSources(prev); // roll back
+      throw e;
     }
   };
 
@@ -477,72 +454,20 @@ function KnowledgeBaseSection() {
     >
       <div className="space-y-3 p-5">
         <p className="text-xs text-muted-foreground">
-          Links shared with every project, on top of its own sources. A project&apos;s own source
-          for the same link takes precedence.
+          Links shared with every project, on top of its own sources — drag the grip to reorder. A
+          project&apos;s own source for the same link takes precedence.
         </p>
-
-        <div className="flex items-center gap-2">
-          <Input
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                void add();
-              }
-            }}
-            placeholder="Paste a GitHub, Notion, Google Docs or any link"
-            disabled={atLimit || busy}
-          />
-          <Button
-            type="button"
-            variant="secondary"
-            size="icon"
-            onClick={() => void add()}
-            disabled={atLimit || busy || !url.trim()}
-            aria-label="Add source"
-          >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-          </Button>
-        </div>
 
         {error ? <p className="text-xs text-destructive">{error}</p> : null}
 
-        {loaded && sources.length === 0 ? (
-          <p className="text-xs text-muted-foreground">
-            No global sources yet — add links your agents should always have on hand.
-          </p>
-        ) : (
-          <ul className="space-y-1.5">
-            {sources.map((s) => (
-              <li
-                key={s.id}
-                className="flex items-center gap-2 rounded-md border border-border/60 bg-background/60 px-2.5 py-1.5"
-              >
-                <SourceIcon kind={s.kind} faviconUrl={s.faviconUrl} />
-                <span className="min-w-0 flex-1 truncate text-sm">{s.title ?? s.url}</span>
-                <a
-                  href={s.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Open source in new tab"
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <ExternalLink className="h-3.5 w-3.5" />
-                </a>
-                <button
-                  type="button"
-                  onClick={() => void remove(s.id)}
-                  disabled={busy}
-                  aria-label="Remove source"
-                  className="text-muted-foreground hover:text-destructive"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
+        <SourceListEditor
+          sources={sources}
+          max={MAX_GLOBAL_SOURCES}
+          placeholder="Paste a GitHub, Notion, Google Docs or any link"
+          onAdd={async (url) => setSources(await addKnowledgeSource(url))}
+          onRemove={remove}
+          onReorder={reorder}
+        />
       </div>
     </Accordion>
   );
@@ -684,7 +609,7 @@ function SubAgentCard({
         </Button>
       </div>
 
-      {open ? (
+      <Collapse open={open}>
         <div className="space-y-4 border-t border-border/60 p-4">
           <Field label="Role" htmlFor={`sub-role-${subAgent.id}`}>
             <Input
@@ -703,7 +628,7 @@ function SubAgentCard({
             placeholder="You are a summariser. Given a transcript, produce a tight, faithful summary…"
           />
         </div>
-      ) : null}
+      </Collapse>
     </section>
   );
 }
@@ -802,7 +727,9 @@ function Accordion({
 
   return (
     <section className="overflow-hidden rounded-lg border bg-card/60">
-      <div className="flex items-center gap-2 px-3 py-2.5">
+      {/* min-height keeps every header the same height whether or not it has an
+          action button (e.g. Sub Agents' Add), so the titles align down the page. */}
+      <div className="flex min-h-[3.25rem] items-center gap-2 px-3 py-2.5">
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
@@ -827,7 +754,9 @@ function Accordion({
         </button>
         {action ? <div className="shrink-0">{action}</div> : null}
       </div>
-      {open ? <div className="border-t border-border/60">{children}</div> : null}
+      <Collapse open={open}>
+        <div className="border-t border-border/60">{children}</div>
+      </Collapse>
     </section>
   );
 }

@@ -14,6 +14,7 @@ import {
   CreatePlanTasksRequestSchema,
   CreateProjectRequestSchema,
   EnhanceDescriptionRequestSchema,
+  ReorderSourcesRequestSchema,
   UpdatePlanRequestSchema,
   UpdateProjectRequestSchema,
   type CreatePlanTasksResponse,
@@ -71,6 +72,14 @@ export class ProjectsController {
     const parsed = AddSourceRequestSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
     return { project: await this.service.addSource(id, parsed.data.url) };
+  }
+
+  // Static segment, so it never collides with `:sourceId` below.
+  @Post(':id/sources/reorder')
+  reorderSources(@Param('id') id: string, @Body() body: unknown): ProjectResponse {
+    const parsed = ReorderSourcesRequestSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    return { project: this.service.reorderSources(id, parsed.data.sourceIds) };
   }
 
   @Delete(':id/sources/:sourceId')

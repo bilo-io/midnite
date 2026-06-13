@@ -56,8 +56,31 @@ export class ProjectsRepository {
       .select()
       .from(projectSources)
       .where(eq(projectSources.projectId, projectId))
-      .orderBy(asc(projectSources.createdAt))
+      // Explicit order first; createdAt breaks ties (e.g. legacy rows at 0).
+      .orderBy(asc(projectSources.position), asc(projectSources.createdAt))
       .all();
+  }
+
+  /** Next append position for a project (max existing + 1, or 0 when empty). */
+  nextSourcePosition(projectId: string): number {
+    const rows = this.db
+      .select({ position: projectSources.position })
+      .from(projectSources)
+      .where(eq(projectSources.projectId, projectId))
+      .all();
+    return rows.reduce((max, r) => Math.max(max, r.position), -1) + 1;
+  }
+
+  /** Persist a new order: each id's position becomes its index in the list. */
+  reorderSources(projectId: string, orderedIds: string[]): void {
+    this.db.transaction((tx) => {
+      orderedIds.forEach((id, position) => {
+        tx.update(projectSources)
+          .set({ position })
+          .where(and(eq(projectSources.id, id), eq(projectSources.projectId, projectId)))
+          .run();
+      });
+    });
   }
 
   getSource(projectId: string, sourceId: string): ProjectSourceRow | undefined {

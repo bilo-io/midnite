@@ -1,8 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { desc, eq } from 'drizzle-orm';
-import type { Memory } from '@midnite/shared';
+import { and, asc, desc, eq, isNull, or, sql } from 'drizzle-orm';
+import type { Memory, MemorySource, SourceKind } from '@midnite/shared';
 import { DB_TOKEN, type MidniteDb } from '../db/db.module';
-import { memories, type MemoryInsert, type MemoryRow } from '../db/schema';
+import {
+  memories,
+  memorySources,
+  type MemoryInsert,
+  type MemoryRow,
+  type MemorySourceInsert,
+  type MemorySourceRow,
+} from '../db/schema';
 
 @Injectable()
 export class MemoriesRepository {
@@ -16,6 +23,16 @@ export class MemoriesRepository {
     return this.db.select().from(memories).orderBy(desc(memories.updatedAt)).all();
   }
 
+  /** Memories that apply to a project: its own plus every global memory. */
+  listScoped(projectId: string): MemoryRow[] {
+    return this.db
+      .select()
+      .from(memories)
+      .where(or(isNull(memories.projectId), eq(memories.projectId, projectId)))
+      .orderBy(desc(memories.updatedAt))
+      .all();
+  }
+
   getMemory(id: string): MemoryRow | undefined {
     return this.db.select().from(memories).where(eq(memories.id, id)).get();
   }
@@ -24,18 +41,98 @@ export class MemoriesRepository {
     return this.db.update(memories).set(patch).where(eq(memories.id, id)).returning().get();
   }
 
+  // Removing a memory also removes its sources, atomically.
   deleteMemory(id: string): void {
-    this.db.delete(memories).where(eq(memories.id, id)).run();
+    this.db.transaction((tx) => {
+      tx.delete(memorySources).where(eq(memorySources.memoryId, id)).run();
+      tx.delete(memories).where(eq(memories.id, id)).run();
+    });
   }
 
-  toMemory(row: MemoryRow): Memory {
+  // ---- sources ----
+
+  insertSource(row: MemorySourceInsert): MemorySourceRow {
+    return this.db.insert(memorySources).values(row).returning().get();
+  }
+
+  listSources(memoryId: string): MemorySourceRow[] {
+    return this.db
+      .select()
+      .from(memorySources)
+      .where(eq(memorySources.memoryId, memoryId))
+      // Explicit order first; createdAt breaks ties (e.g. legacy rows at 0).
+      .orderBy(asc(memorySources.position), asc(memorySources.createdAt))
+      .all();
+  }
+
+  getSource(memoryId: string, sourceId: string): MemorySourceRow | undefined {
+    return this.db
+      .select()
+      .from(memorySources)
+      .where(and(eq(memorySources.id, sourceId), eq(memorySources.memoryId, memoryId)))
+      .get();
+  }
+
+  deleteSource(memoryId: string, sourceId: string): void {
+    this.db
+      .delete(memorySources)
+      .where(and(eq(memorySources.id, sourceId), eq(memorySources.memoryId, memoryId)))
+      .run();
+  }
+
+  countSources(memoryId: string): number {
+    const row = this.db
+      .select({ c: sql<number>`COUNT(*)` })
+      .from(memorySources)
+      .where(eq(memorySources.memoryId, memoryId))
+      .get();
+    return Number(row?.c ?? 0);
+  }
+
+  /** Next append position for a memory (max existing + 1, or 0 when empty). */
+  nextSourcePosition(memoryId: string): number {
+    const rows = this.db
+      .select({ position: memorySources.position })
+      .from(memorySources)
+      .where(eq(memorySources.memoryId, memoryId))
+      .all();
+    return rows.reduce((max, r) => Math.max(max, r.position), -1) + 1;
+  }
+
+  /** Persist a new order: each id's position becomes its index in the list. */
+  reorderSources(memoryId: string, orderedIds: string[]): void {
+    this.db.transaction((tx) => {
+      orderedIds.forEach((id, position) => {
+        tx.update(memorySources)
+          .set({ position })
+          .where(and(eq(memorySources.id, id), eq(memorySources.memoryId, memoryId)))
+          .run();
+      });
+    });
+  }
+
+  hydrate(row: MemoryRow): Memory {
     return {
       id: row.id,
       title: row.title,
       content: row.content,
       projectId: row.projectId,
+      sources: this.listSources(row.id).map((s) => this.toSource(s)),
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
+    };
+  }
+
+  private toSource(row: MemorySourceRow): MemorySource {
+    return {
+      id: row.id,
+      memoryId: row.memoryId,
+      url: row.url,
+      kind: row.kind as SourceKind,
+      title: row.title ?? undefined,
+      faviconUrl: row.faviconUrl ?? undefined,
+      fetchedAt: row.fetchedAt ?? undefined,
+      createdAt: row.createdAt,
     };
   }
 }

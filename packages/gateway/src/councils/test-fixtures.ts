@@ -60,7 +60,7 @@ export class InMemoryCouncilsRepo extends CouncilsRepository {
   override listParticipants(councilId: string): CouncilParticipantRow[] {
     return this.participants
       .filter((p) => p.councilId === councilId)
-      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+      .sort((a, b) => a.position - b.position || a.createdAt.localeCompare(b.createdAt));
   }
 
   override getParticipant(id: string): CouncilParticipantRow | undefined {
@@ -73,9 +73,25 @@ export class InMemoryCouncilsRepo extends CouncilsRepository {
       name: row.name ?? '',
       provider: row.provider ?? 'claude',
       perspective: row.perspective ?? '',
+      position: row.position ?? 0,
     };
     this.participants.push(full);
     return full;
+  }
+
+  override nextParticipantPosition(councilId: string): number {
+    return (
+      this.participants
+        .filter((p) => p.councilId === councilId)
+        .reduce((max, p) => Math.max(max, p.position), -1) + 1
+    );
+  }
+
+  override reorderParticipants(councilId: string, orderedIds: string[]): void {
+    orderedIds.forEach((id, position) => {
+      const p = this.participants.find((x) => x.id === id && x.councilId === councilId);
+      if (p) p.position = position;
+    });
   }
 
   override updateParticipant(
@@ -127,9 +143,8 @@ export class InMemoryCouncilsRepo extends CouncilsRepository {
   }
 
   override listRunParticipants(runId: string): CouncilRunParticipantRow[] {
-    return this.runParticipants
-      .filter((p) => p.runId === runId)
-      .sort((a, b) => a.startedAt.localeCompare(b.startedAt));
+    // Insertion order, mirroring the real repo's `ORDER BY rowid`.
+    return this.runParticipants.filter((p) => p.runId === runId);
   }
 
   override insertRunParticipant(row: CouncilRunParticipantInsert): CouncilRunParticipantRow {

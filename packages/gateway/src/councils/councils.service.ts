@@ -72,11 +72,37 @@ export class CouncilsService {
       name: req.name ?? '',
       provider: req.provider ?? AGENT_CLI_DEFAULT,
       perspective: req.perspective ?? '',
+      position: this.repo.nextParticipantPosition(councilId),
       createdAt: now,
       updatedAt: now,
     });
     this.repo.updateCouncil(councilId, { updatedAt: now });
     return this.repo.hydrateParticipant(row);
+  }
+
+  /**
+   * Reorder the council's participants. `participantIds` must be exactly the
+   * council's current participant ids (every one, no extras); the new order is
+   * their index in the list. This drives the tab order of future runs.
+   */
+  reorderParticipants(councilId: string, participantIds: string[]): Council {
+    const council = this.repo.getCouncil(councilId);
+    if (!council) {
+      throw new CouncilDoesNotExistError(`council ${councilId} does not exist`);
+    }
+    const current = this.repo.listParticipants(councilId).map((p) => p.id);
+    const same =
+      current.length === participantIds.length &&
+      new Set(participantIds).size === participantIds.length &&
+      participantIds.every((id) => current.includes(id));
+    if (!same) {
+      throw new CouncilParticipantDoesNotExistError(
+        'reorder must list every current participant exactly once',
+      );
+    }
+    this.repo.reorderParticipants(councilId, participantIds);
+    this.repo.updateCouncil(councilId, { updatedAt: new Date().toISOString() });
+    return this.repo.hydrateCouncil(this.repo.getCouncil(councilId)!);
   }
 
   updateParticipant(

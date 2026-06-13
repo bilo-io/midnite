@@ -74,9 +74,10 @@ export function CouncilRunTabs({
   return (
     <div className="flex flex-col gap-3">
       {/* Topic + tab strip stay pinned to the top while the output scrolls
-          beneath them — on the exact same surface as the sticky page header
-          (border + bg/backdrop classes kept in lockstep with PageHeader). */}
-      <div className="sticky top-[52px] z-20 -mx-1 flex flex-col gap-2 border-b border-border/60 bg-background/80 px-1 pb-2 pt-3 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          beneath them. Same border as the sticky page header, but near-opaque
+          (vs PageHeader's frosted 60–80%) — prose scrolls directly beneath
+          this strip and must not stay readable through it. */}
+      <div className="sticky top-[52px] z-20 -mx-1 flex flex-col gap-2 border-b border-border/60 bg-background/95 px-1 pb-2 pt-3 backdrop-blur">
         <p className="text-xs text-muted-foreground">
           Topic: <span className="text-foreground">{run.topic}</span>
         </p>

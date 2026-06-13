@@ -10,7 +10,9 @@ import {
   Post,
 } from '@nestjs/common';
 import {
+  AddMemorySourceRequestSchema,
   CreateMemoryRequestSchema,
+  ReorderSourcesRequestSchema,
   UpdateMemoryRequestSchema,
   type MemoriesResponse,
   type MemoryResponse,
@@ -27,10 +29,10 @@ export class MemoriesController {
   }
 
   @Post()
-  createMemory(@Body() body: unknown): MemoryResponse {
+  async createMemory(@Body() body: unknown): Promise<MemoryResponse> {
     const parsed = CreateMemoryRequestSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
-    return { memory: this.service.createMemory(parsed.data) };
+    return { memory: await this.service.createMemory(parsed.data) };
   }
 
   @Patch(':id')
@@ -44,5 +46,25 @@ export class MemoriesController {
   removeMemory(@Param('id') id: string): { ok: true } {
     this.service.removeMemory(id);
     return { ok: true };
+  }
+
+  @Post(':id/sources')
+  async addSource(@Param('id') id: string, @Body() body: unknown): Promise<MemoryResponse> {
+    const parsed = AddMemorySourceRequestSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    return { memory: await this.service.addSource(id, parsed.data.url) };
+  }
+
+  // Static segment, so it never collides with `:sourceId` below.
+  @Post(':id/sources/reorder')
+  reorderSources(@Param('id') id: string, @Body() body: unknown): MemoryResponse {
+    const parsed = ReorderSourcesRequestSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    return { memory: this.service.reorderSources(id, parsed.data.sourceIds) };
+  }
+
+  @Delete(':id/sources/:sourceId')
+  removeSource(@Param('id') id: string, @Param('sourceId') sourceId: string): MemoryResponse {
+    return { memory: this.service.removeSource(id, sourceId) };
   }
 }

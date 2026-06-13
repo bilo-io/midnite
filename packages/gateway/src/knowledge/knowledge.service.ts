@@ -40,6 +40,7 @@ export class KnowledgeService {
       faviconUrl,
       fetchedAt: now,
       createdAt: now,
+      position: this.repo.nextPosition(),
     });
     return this.listSources();
   }
@@ -47,6 +48,19 @@ export class KnowledgeService {
   removeSource(id: string): GlobalSource[] {
     if (!this.repo.getSource(id)) throw new NotFoundException(`source ${id} not found`);
     this.repo.deleteSource(id);
+    return this.listSources();
+  }
+
+  reorderSources(sourceIds: string[]): GlobalSource[] {
+    const current = this.repo.listSources().map((s) => s.id);
+    const same =
+      current.length === sourceIds.length &&
+      new Set(sourceIds).size === sourceIds.length &&
+      sourceIds.every((id) => current.includes(id));
+    if (!same) {
+      throw new BadRequestException('reorder must list every current source exactly once');
+    }
+    this.repo.reorderSources(sourceIds);
     return this.listSources();
   }
 }

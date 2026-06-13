@@ -20,6 +20,7 @@ import {
 import { AnthropicService } from '../agent/anthropic.service';
 import { collapseTilde, expandTilde } from '../fs/path-tilde';
 import { KnowledgeService } from '../knowledge/knowledge.service';
+import { MemoriesService } from '../memories/memories.service';
 import { TasksService } from '../tasks/tasks.service';
 import { fetchSourceMetadata } from './lib/opengraph';
 import { ProjectsRepository } from './projects.repository';
@@ -68,6 +69,7 @@ export class ProjectsService {
     @Inject(AnthropicService) private readonly anthropic: AnthropicService,
     @Inject(TasksService) private readonly tasks: TasksService,
     @Inject(KnowledgeService) private readonly knowledge: KnowledgeService,
+    @Inject(MemoriesService) private readonly memories: MemoriesService,
   ) {}
 
   listProjects(): Project[] {
@@ -104,8 +106,10 @@ export class ProjectsService {
       updatedAt: now,
     });
 
+    // Positions are assigned by staged order up front, so the parallel inserts
+    // below preserve it (computing positions inside each would race to 0).
     const urls = dedupe(req.sources ?? []).slice(0, MAX_SOURCES_PER_PROJECT);
-    await Promise.all(urls.map((url) => this.addSourceRow(id, url)));
+    await Promise.all(urls.map((url, i) => this.addSourceRow(id, url, i)));
 
     return this.getProject(id);
   }
@@ -142,7 +146,7 @@ export class ProjectsService {
         `a project can have at most ${MAX_SOURCES_PER_PROJECT} sources`,
       );
     }
-    await this.addSourceRow(projectId, url);
+    await this.addSourceRow(projectId, url, this.repo.nextSourcePosition(projectId));
     return this.getProject(projectId);
   }
 
@@ -152,6 +156,16 @@ export class ProjectsService {
       throw new NotFoundException(`source ${sourceId} not found`);
     }
     this.repo.deleteSource(projectId, sourceId);
+    return this.getProject(projectId);
+  }
+
+  reorderSources(projectId: string, sourceIds: string[]): Project {
+    this.assertExists(projectId);
+    const current = this.repo.listSources(projectId).map((s) => s.id);
+    if (!sameIdSet(current, sourceIds)) {
+      throw new BadRequestException('reorder must list every current source exactly once');
+    }
+    this.repo.reorderSources(projectId, sourceIds);
     return this.getProject(projectId);
   }
 
@@ -214,18 +228,28 @@ export class ProjectsService {
 
   private async generatePlan(project: Project): Promise<string> {
     const client = this.anthropic.getClient();
-    // Global knowledge-base sources apply to every project; the project's own
-    // source for the same URL overrides the global one.
+    // Sources are merged by URL in increasing precedence: the global knowledge
+    // base, then the project's scoped memories' sources, then the project's own
+    // sources (which win on a URL collision).
     const byUrl = new Map<string, { kind: string; title?: string; url: string }>();
     for (const s of this.knowledge.listSources()) byUrl.set(s.url, s);
+    const scopedMemories = this.memories.listScoped(project.id);
+    for (const m of scopedMemories) for (const s of m.sources) byUrl.set(s.url, s);
     for (const s of project.sources) byUrl.set(s.url, s);
     const merged = [...byUrl.values()];
     const sourceLines = merged.length
       ? merged.map((s) => `- [${s.kind}] ${s.title ?? '(untitled)'} — ${s.url}`).join('\n')
       : '(no sources provided)';
+    // Memories (global + project-scoped) are authored knowledge — inject their
+    // full content so the plan reflects standing conventions and context.
+    const memoryBlock = scopedMemories.length
+      ? `\n\nKnowledge / memories:\n${scopedMemories
+          .map((m) => `### ${m.title}\n${m.content}`)
+          .join('\n\n')}`
+      : '';
     const userText = `Project name: ${project.name}\n\nDescription:\n${
       project.description ?? '(none provided)'
-    }\n\nReference sources:\n${sourceLines}`;
+    }\n\nReference sources:\n${sourceLines}${memoryBlock}`;
 
     const response = await client.messages.create({
       model: this.anthropic.getPlanModel(),
@@ -279,7 +303,7 @@ export class ProjectsService {
     }
   }
 
-  private async addSourceRow(projectId: string, url: string): Promise<void> {
+  private async addSourceRow(projectId: string, url: string, position: number): Promise<void> {
     try {
       const now = new Date().toISOString();
       const meta = await fetchSourceMetadata(url);
@@ -292,6 +316,7 @@ export class ProjectsService {
         faviconUrl: meta.faviconUrl ?? null,
         fetchedAt: now,
         createdAt: now,
+        position,
       });
     } catch (err) {
       // Best-effort: a bad fetch or insert must not fail project creation.
@@ -302,6 +327,15 @@ export class ProjectsService {
 
 function dedupe(urls: string[]): string[] {
   return [...new Set(urls.map((u) => u.trim()).filter(Boolean))];
+}
+
+/** True when both arrays hold the same ids, each exactly once. */
+function sameIdSet(current: string[], next: string[]): boolean {
+  return (
+    current.length === next.length &&
+    new Set(next).size === next.length &&
+    next.every((id) => current.includes(id))
+  );
 }
 
 // Store the work directory in `~`-form: resolve to absolute (expanding any ~ and

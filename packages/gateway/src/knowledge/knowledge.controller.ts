@@ -1,5 +1,9 @@
 import { BadRequestException, Body, Controller, Delete, Get, Inject, Param, Post } from '@nestjs/common';
-import { AddGlobalSourceRequestSchema, type GlobalSourcesResponse } from '@midnite/shared';
+import {
+  AddGlobalSourceRequestSchema,
+  ReorderSourcesRequestSchema,
+  type GlobalSourcesResponse,
+} from '@midnite/shared';
 import { KnowledgeService } from './knowledge.service';
 
 @Controller('knowledge')
@@ -16,6 +20,14 @@ export class KnowledgeController {
     const parsed = AddGlobalSourceRequestSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
     return { sources: await this.service.addSource(parsed.data.url) };
+  }
+
+  // Static segment, so it never collides with `:id` below.
+  @Post('sources/reorder')
+  reorderSources(@Body() body: unknown): GlobalSourcesResponse {
+    const parsed = ReorderSourcesRequestSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    return { sources: this.service.reorderSources(parsed.data.sourceIds) };
   }
 
   @Delete('sources/:id')

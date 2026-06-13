@@ -21,6 +21,7 @@ describe('CouncilSchema', () => {
           name: 'Optimist',
           provider: 'claude',
           perspective: 'argue for shipping fast',
+          position: 0,
           createdAt: '2026-06-11T00:00:00.000Z',
           updatedAt: '2026-06-11T00:00:00.000Z',
         },

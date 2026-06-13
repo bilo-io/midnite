@@ -21,13 +21,16 @@ class InMemoryKnowledgeRepo extends KnowledgeRepository {
       faviconUrl: row.faviconUrl ?? null,
       fetchedAt: row.fetchedAt ?? null,
       createdAt: row.createdAt,
+      position: row.position ?? 0,
     };
     this.rows.push(full);
     return full;
   }
 
   override listSources(): GlobalSourceRow[] {
-    return this.rows;
+    return [...this.rows].sort(
+      (a, b) => a.position - b.position || a.createdAt.localeCompare(b.createdAt),
+    );
   }
 
   override getSource(id: string): GlobalSourceRow | undefined {
@@ -36,6 +39,17 @@ class InMemoryKnowledgeRepo extends KnowledgeRepository {
 
   override deleteSource(id: string): void {
     this.rows = this.rows.filter((r) => r.id !== id);
+  }
+
+  override nextPosition(): number {
+    return this.rows.reduce((max, r) => Math.max(max, r.position), -1) + 1;
+  }
+
+  override reorderSources(orderedIds: string[]): void {
+    orderedIds.forEach((id, position) => {
+      const row = this.rows.find((r) => r.id === id);
+      if (row) row.position = position;
+    });
   }
 
   override count(): number {
@@ -76,5 +90,16 @@ describe('KnowledgeService', () => {
     const repo = new InMemoryKnowledgeRepo();
     const service = new KnowledgeService(repo);
     expect(() => service.removeSource('nope')).toThrow(NotFoundException);
+  });
+
+  it('reorders sources and rejects an incomplete id set', () => {
+    const repo = new InMemoryKnowledgeRepo();
+    seed(repo, 3);
+    const service = new KnowledgeService(repo);
+
+    const reordered = service.reorderSources(['s2', 's0', 's1']);
+    expect(reordered.map((s) => s.id)).toEqual(['s2', 's0', 's1']);
+
+    expect(() => service.reorderSources(['s0'])).toThrow(/exactly once/);
   });
 });
