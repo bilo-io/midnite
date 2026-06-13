@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-13 — Marketing site (`@midnite/site`)
+
+A standalone Next.js App Router landing page on port **3001**, reusing the web app's design language (HSL token system, conic-gradient accents, grid backdrop, system fonts), with a scroll-driven 3D hero. Independent of the gateway — pure marketing surface, no `@midnite/shared` dependency.
+
+- [x] New `packages/site` package (auto-discovered via `packages/*`): `package.json` (`@midnite/site`), `moon.yml` (dev/build/start/typecheck on :3001), `tsconfig.json`, `next.config.mjs`, `tailwind.config.ts`, `postcss.config.mjs`
+- [x] Design tokens copied from `packages/web/app/globals.css` (dark-only `<html class="dark">`), plus `.bg-grid`, `.text-gradient`, `.gradient-border` halo, and a scroll `.reveal` keyframe
+- [x] React Three Fiber hero (`@react-three/fiber` 9 / `@react-three/drei` 10 / `three`): additive-blended particle field + wireframe icosahedron, camera dollies and mesh tilts on scroll; canvas dynamic-imported `ssr:false`, lazy-loaded out of first-load JS; honours `prefers-reduced-motion`
+- [x] Sections: Hero → How it works (5-step lifecycle) → Features grid (6 cards) → CLI showcase (terminal chrome) → closing CTA + footer; `Reveal` wrapper drives scroll-in via IntersectionObserver
+- [x] Verified: `moon run site:typecheck` + `moon run site:build` green; live render confirmed over CDP (16 reveal nodes fire on scroll, WebGL canvas mounts) — hero, how-it-works, features, CLI all screenshotted
+
+---
+
 ## 2026-06-08 — Workflows MVP (node-based automation builder)
 
 New **Workflows** space: an n8n/Make-style visual builder where a workflow is a directed graph of nodes wired by edges, starting at a trigger (manual Play, cron schedule, or signed webhook) and flowing data through action nodes (HTTP request, AI/Claude). Runs are persisted with per-node status/output and shown in run history (polled in the MVP). A **node-type registry** in `shared` drives both the gateway executor registry and the web palette/config forms, so adding an integration is one definition + one executor. Branch: `feature/workflow-builder`. See [`todo/phase-6-workflows-mvp.md`](phase-6-workflows-mvp.md).

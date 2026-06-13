@@ -1,0 +1,32 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+language: 'typescript'
+
+tasks:
+  dev:
+    command: 'pnpm exec next dev -p 3001'
+    preset: 'server'
+
+  build:
+    command: 'pnpm exec next build'
+    inputs:
+      - 'app/**/*'
+      - 'components/**/*'
+      - 'lib/**/*'
+      - 'next.config.mjs'
+      - 'tailwind.config.ts'
+      - 'postcss.config.mjs'
+      - 'tsconfig.json'
+    outputs:
+      - '.next'
+
+  start:
+    command: 'pnpm exec next start -p 3001'
+    preset: 'server'
+
+  typecheck:
+    command: 'pnpm exec tsc --noEmit'
+    inputs:
+      - 'app/**/*'
+      - 'components/**/*'
+      - 'lib/**/*'
+      - 'tsconfig.json'

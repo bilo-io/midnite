@@ -1,0 +1,27 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["dom", "dom.iterable", "ES2022"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "jsx": "preserve",
+    "noEmit": true,
+    "composite": false,
+    // The site never emits declarations (next build owns the bundle). Leaving the
+    // base config's `declaration` on makes `tsc --noEmit` do declaration-emit
+    // checking, which throws TS2742 when a dep's realpath isn't portably nameable
+    // (pnpm's .pnpm store layout). Turning it off is the fix — same as packages/web.
+    "declaration": false,
+    "declarationMap": false,
+    "incremental": true,
+    "allowJs": true,
+    "plugins": [{ "name": "next" }],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules", ".next"]
+}
