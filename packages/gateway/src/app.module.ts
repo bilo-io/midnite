@@ -9,7 +9,9 @@ import { AgentsModule } from './agents/agents.module';
 import { CouncilsModule } from './councils/councils.module';
 import { KnowledgeModule } from './knowledge/knowledge.module';
 import { MemoriesModule } from './memories/memories.module';
+import { NotesModule } from './notes/notes.module';
 import { ProjectsModule } from './projects/projects.module';
+import { RoutinesModule } from './routines/routines.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { WorkflowsModule } from './workflows/workflows.module';
 import { TerminalModule } from './terminal/terminal.module';
@@ -24,6 +26,8 @@ import { TerminalModule } from './terminal/terminal.module';
     CouncilsModule,
     KnowledgeModule,
     MemoriesModule,
+    NotesModule,
+    RoutinesModule,
     TasksModule,
     ProjectsModule,
     SessionsModule,

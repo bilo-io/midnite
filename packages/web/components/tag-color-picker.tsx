@@ -8,14 +8,14 @@ import { ProjectTag } from '@/components/project-tag';
 import { cn } from '@/lib/utils';
 
 export const SWATCHES = [
-  '#6366f1',
-  '#7c3aed',
-  '#0ea5e9',
-  '#10b981',
-  '#f59e0b',
-  '#ef4444',
-  '#ec4899',
-  '#64748b',
+  // purples / violets
+  '#6366f1', '#7c3aed', '#a855f7', '#d946ef',
+  // blues / cyans
+  '#3b82f6', '#0ea5e9', '#06b6d4', '#1d4ed8',
+  // greens / teals / lime
+  '#10b981', '#22c55e', '#14b8a6', '#84cc16',
+  // warm: amber, orange, red, pink
+  '#f59e0b', '#f97316', '#ef4444', '#ec4899',
 ];
 export const DEFAULT_COLOR = '#6366f1';
 

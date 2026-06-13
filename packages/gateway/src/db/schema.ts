@@ -390,3 +390,86 @@ export type CouncilRunRow = typeof councilRuns.$inferSelect;
 export type CouncilRunInsert = typeof councilRuns.$inferInsert;
 export type CouncilRunParticipantRow = typeof councilRunParticipants.$inferSelect;
 export type CouncilRunParticipantInsert = typeof councilRunParticipants.$inferInsert;
+
+// --- Notes (simple checklist panel on the dashboard) ---
+
+export const notes = sqliteTable(
+  'notes',
+  {
+    id: text('id').primaryKey(),
+    content: text('content').notNull(),
+    completed: integer('completed').notNull().default(0), // 0/1 boolean
+    position: integer('position').notNull().default(0),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => ({
+    completedIdx: index('notes_completed_idx').on(t.completed),
+    positionIdx: index('notes_position_idx').on(t.position),
+  }),
+);
+
+// --- Daily Routines (gamified habit tracker) ---
+
+export const routines = sqliteTable('routines', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const routineGroups = sqliteTable(
+  'routine_groups',
+  {
+    id: text('id').primaryKey(),
+    routineId: text('routine_id').notNull(),
+    name: text('name').notNull(),
+    position: integer('position').notNull().default(0),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => ({
+    routineIdx: index('routine_groups_routine_idx').on(t.routineId),
+  }),
+);
+
+export const routineItems = sqliteTable(
+  'routine_items',
+  {
+    id: text('id').primaryKey(),
+    groupId: text('group_id').notNull(),
+    title: text('title').notNull(),
+    position: integer('position').notNull().default(0),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => ({
+    groupIdx: index('routine_items_group_idx').on(t.groupId),
+  }),
+);
+
+export const routineProgress = sqliteTable(
+  'routine_progress',
+  {
+    id: text('id').primaryKey(),
+    routineId: text('routine_id').notNull(),
+    date: text('date').notNull(),
+    snapshot: text('snapshot').notNull(),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => ({
+    routineDateIdx: index('routine_progress_routine_date_idx').on(t.routineId, t.date),
+  }),
+);
+
+export type NoteRow = typeof notes.$inferSelect;
+export type NoteInsert = typeof notes.$inferInsert;
+export type RoutineRow = typeof routines.$inferSelect;
+export type RoutineInsert = typeof routines.$inferInsert;
+export type RoutineGroupRow = typeof routineGroups.$inferSelect;
+export type RoutineGroupInsert = typeof routineGroups.$inferInsert;
+export type RoutineItemRow = typeof routineItems.$inferSelect;
+export type RoutineItemInsert = typeof routineItems.$inferInsert;
+export type RoutineProgressRow = typeof routineProgress.$inferSelect;
+export type RoutineProgressInsert = typeof routineProgress.$inferInsert;

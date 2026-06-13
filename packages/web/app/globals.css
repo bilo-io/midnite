@@ -1,3 +1,5 @@
+@import 'react-grid-layout/css/styles.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -643,5 +645,73 @@
 @media (prefers-reduced-motion: reduce) {
   .node-running::before {
     animation: none;
+  }
+}
+
+/* Routine group completion glow animation */
+@keyframes complete-glow {
+  0% { box-shadow: inset 0 0 0 1px transparent; opacity: 0; }
+  30% { box-shadow: inset 0 0 0 2px hsl(142 71% 45% / 0.5); opacity: 1; }
+  100% { box-shadow: inset 0 0 0 1px transparent; opacity: 0; }
+}
+
+.animate-complete-glow {
+  animation: complete-glow 1.2s ease-out forwards;
+}
+
+/* ── react-grid-layout theme overrides ─────────────────────────────────────── */
+
+/* Drop placeholder: use theme tokens so it works in both light and dark mode.
+   Both properties need !important because RGL ships background:red;opacity:0.2
+   in its own stylesheet and our globals.css import order puts RGL first. */
+.react-grid-item.react-grid-placeholder {
+  background: hsl(var(--primary) / 0.12) !important;
+  border: 2px dashed hsl(var(--primary) / 0.45) !important;
+  border-radius: calc(var(--radius) + 2px);
+  opacity: 1 !important;
+}
+
+/* Panel wrapper: fills the grid item's fixed height */
+.dashboard-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scrollable region for panel content */
+.dashboard-panel__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* Drag handle: hidden pill that appears on hover */
+.drag-handle {
+  flex-shrink: 0;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.react-grid-item:hover .drag-handle {
+  opacity: 1;
+}
+
+.drag-handle::before {
+  content: '';
+  display: block;
+  width: 28px;
+  height: 3px;
+  border-radius: 2px;
+  background: hsl(var(--muted-foreground) / 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drag-handle {
+    transition: none;
   }
 }

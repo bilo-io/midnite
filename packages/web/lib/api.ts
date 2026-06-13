@@ -1,4 +1,24 @@
 import {
+  NotesResponseSchema,
+  NoteResponseSchema,
+  RoutinesResponseSchema,
+  RoutineResponseSchema,
+  RoutineProgressResponseSchema,
+  RoutineProgressListResponseSchema,
+  type Note,
+  type CreateNoteRequest,
+  type UpdateNoteRequest,
+  type Routine,
+  type RoutineProgress,
+  type CreateRoutineRequest,
+  type UpdateRoutineRequest,
+  type CreateGroupRequest,
+  type UpdateGroupRequest,
+  type CreateItemRequest,
+  type UpdateItemRequest,
+  type RecordProgressRequest,
+} from '@midnite/shared';
+import {
   AgentCliResponseSchema,
   CouncilParticipantResponseSchema,
   CouncilResponseSchema,
@@ -705,4 +725,157 @@ export async function retryCouncilVerdict(councilId: string, runId: string): Pro
     CouncilRunResponseSchema,
   );
   return run;
+}
+
+// ---- Notes ----
+
+export async function getNotes(): Promise<Note[]> {
+  const { notes } = await fetchJson('/notes', undefined, NotesResponseSchema);
+  return notes;
+}
+
+export async function createNote(body: CreateNoteRequest): Promise<Note> {
+  const { note } = await fetchJson(
+    '/notes',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    NoteResponseSchema,
+  );
+  return note;
+}
+
+export async function updateNote(id: string, body: UpdateNoteRequest): Promise<Note> {
+  const { note } = await fetchJson(
+    `/notes/${encodeURIComponent(id)}`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    NoteResponseSchema,
+  );
+  return note;
+}
+
+export async function deleteNote(id: string): Promise<void> {
+  await fetchJson(`/notes/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+// ---- Routines ----
+
+export async function getRoutines(): Promise<Routine[]> {
+  const { routines } = await fetchJson('/routines', undefined, RoutinesResponseSchema);
+  return routines;
+}
+
+export async function createRoutine(body: CreateRoutineRequest): Promise<Routine> {
+  const { routine } = await fetchJson(
+    '/routines',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    RoutineResponseSchema,
+  );
+  return routine;
+}
+
+export async function updateRoutine(id: string, body: UpdateRoutineRequest): Promise<Routine> {
+  const { routine } = await fetchJson(
+    `/routines/${encodeURIComponent(id)}`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    RoutineResponseSchema,
+  );
+  return routine;
+}
+
+export async function deleteRoutine(id: string): Promise<void> {
+  await fetchJson(`/routines/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+export async function addRoutineGroup(id: string, body: CreateGroupRequest): Promise<Routine> {
+  const { routine } = await fetchJson(
+    `/routines/${encodeURIComponent(id)}/groups`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    RoutineResponseSchema,
+  );
+  return routine;
+}
+
+export async function updateRoutineGroup(
+  id: string,
+  gid: string,
+  body: UpdateGroupRequest,
+): Promise<Routine> {
+  const { routine } = await fetchJson(
+    `/routines/${encodeURIComponent(id)}/groups/${encodeURIComponent(gid)}`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    RoutineResponseSchema,
+  );
+  return routine;
+}
+
+export async function deleteRoutineGroup(id: string, gid: string): Promise<Routine> {
+  const { routine } = await fetchJson(
+    `/routines/${encodeURIComponent(id)}/groups/${encodeURIComponent(gid)}`,
+    { method: 'DELETE' },
+    RoutineResponseSchema,
+  );
+  return routine;
+}
+
+export async function addRoutineItem(
+  id: string,
+  gid: string,
+  body: CreateItemRequest,
+): Promise<Routine> {
+  const { routine } = await fetchJson(
+    `/routines/${encodeURIComponent(id)}/groups/${encodeURIComponent(gid)}/items`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    RoutineResponseSchema,
+  );
+  return routine;
+}
+
+export async function updateRoutineItem(
+  id: string,
+  iid: string,
+  body: UpdateItemRequest,
+): Promise<Routine> {
+  const { routine } = await fetchJson(
+    `/routines/${encodeURIComponent(id)}/items/${encodeURIComponent(iid)}`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    RoutineResponseSchema,
+  );
+  return routine;
+}
+
+export async function deleteRoutineItem(id: string, iid: string): Promise<Routine> {
+  const { routine } = await fetchJson(
+    `/routines/${encodeURIComponent(id)}/items/${encodeURIComponent(iid)}`,
+    { method: 'DELETE' },
+    RoutineResponseSchema,
+  );
+  return routine;
+}
+
+export async function recordRoutineProgress(
+  id: string,
+  body: RecordProgressRequest,
+): Promise<RoutineProgress> {
+  const { progress } = await fetchJson(
+    `/routines/${encodeURIComponent(id)}/progress`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    RoutineProgressResponseSchema,
+  );
+  return progress;
+}
+
+export async function getRoutineProgress(
+  id: string,
+  from?: string,
+  to?: string,
+): Promise<RoutineProgress[]> {
+  const params = new URLSearchParams();
+  if (from) params.set('from', from);
+  if (to) params.set('to', to);
+  const qs = params.toString() ? `?${params.toString()}` : '';
+  const { progress } = await fetchJson(
+    `/routines/${encodeURIComponent(id)}/progress${qs}`,
+    undefined,
+    RoutineProgressListResponseSchema,
+  );
+  return progress;
 }
