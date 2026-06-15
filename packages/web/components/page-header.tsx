@@ -1,9 +1,38 @@
 'use client';
 
-import type { ComponentType, ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import {
+  Bot,
+  BotMessageSquare,
+  BrainCircuit,
+  CirclePile,
+  Columns3,
+  Folder,
+  LayoutDashboard,
+  Settings,
+  UserRound,
+  Workflow,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useScrolled } from '@/lib/use-scrolled';
 import { useTypewriter } from '@/lib/use-typewriter';
+
+// Icon names that can be passed as a plain string across the server→client
+// boundary. Adding an icon here: import it above and add an entry below.
+const ICONS = {
+  Bot,
+  BotMessageSquare,
+  BrainCircuit,
+  CirclePile,
+  Columns3,
+  Folder,
+  LayoutDashboard,
+  Settings,
+  UserRound,
+  Workflow,
+} as const;
+
+export type PageHeaderIcon = keyof typeof ICONS;
 
 /** Blinking caret shown at the end of a field while it's still typing. */
 function Caret({ className }: { className?: string }) {
@@ -23,7 +52,8 @@ function Caret({ className }: { className?: string }) {
 type PageHeaderProps = {
   title: string;
   description?: ReactNode;
-  icon?: ComponentType<{ className?: string }>;
+  /** Icon name — resolved client-side so it can be passed from a Server Component. */
+  icon?: PageHeaderIcon;
   size?: 'default' | 'lg'; // dashboard uses 'lg'
   showGrid?: boolean; // dashboard's decorative bg-grid
   actions?: ReactNode; // right-aligned controls (e.g. a search bar)
@@ -32,12 +62,13 @@ type PageHeaderProps = {
 export function PageHeader({
   title,
   description,
-  icon: Icon,
+  icon,
   size = 'default',
   showGrid = false,
   actions,
 }: PageHeaderProps) {
   const scrolled = useScrolled();
+  const Icon = icon ? ICONS[icon] : null;
 
   // Type the title and subtitle out together. Both run over the same duration so
   // they finish simultaneously regardless of length. Only string descriptions

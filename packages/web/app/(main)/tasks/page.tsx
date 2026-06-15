@@ -1,4 +1,3 @@
-import { Columns3 } from 'lucide-react';
 import type { Project, Task } from '@midnite/shared';
 import { PageHeader } from '@/components/page-header';
 import { SearchBar } from '@/components/search-bar';
@@ -23,7 +22,7 @@ export default async function TasksPage() {
     <div className="flex h-[100dvh] flex-col overflow-hidden">
       <PageHeader
         title="Tasks"
-        icon={Columns3}
+        icon="Columns3"
         description="Tasks grouped by status. Switch between board and table, and filter by status or project."
         actions={<SearchBar placeholder="Search tasks" />}
       />

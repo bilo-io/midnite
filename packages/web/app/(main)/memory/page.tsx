@@ -1,4 +1,3 @@
-import { BrainCircuit } from 'lucide-react';
 import type { Memory, Project } from '@midnite/shared';
 import { PageHeader } from '@/components/page-header';
 import { SearchBar } from '@/components/search-bar';
@@ -21,7 +20,7 @@ export default async function MemoryPage() {
     <>
       <PageHeader
         title="Memory"
-        icon={BrainCircuit}
+        icon="BrainCircuit"
         description="Knowledge your agents carry into every session — global or scoped to a project."
         actions={<SearchBar placeholder="Search memories" />}
       />

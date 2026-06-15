@@ -1,4 +1,3 @@
-import { BotMessageSquare } from 'lucide-react';
 import type { Project, SessionSummary, Task } from '@midnite/shared';
 import { PageHeader } from '@/components/page-header';
 import { SearchBar } from '@/components/search-bar';
@@ -22,7 +21,7 @@ export default async function SessionsPage() {
     <>
       <PageHeader
         title="Sessions"
-        icon={BotMessageSquare}
+        icon="BotMessageSquare"
         description="One session per task — its status follows the task (in progress, awaiting input, completed, or idle)."
         actions={<SearchBar placeholder="Search sessions" />}
       />
