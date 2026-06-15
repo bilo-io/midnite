@@ -1,3 +1,4 @@
+import { CirclePile } from 'lucide-react';
 import type { Council } from '@midnite/shared';
 import { PageHeader } from '@/components/page-header';
 import { SearchBar } from '@/components/search-bar';
@@ -19,6 +20,7 @@ export default async function CouncilsPage() {
     <>
       <PageHeader
         title="Councils"
+        icon={CirclePile}
         description="Panels of AI participants that debate a topic from fixed perspectives — then an anonymized verdict weighs the options."
         actions={<SearchBar placeholder="Search councils" />}
       />

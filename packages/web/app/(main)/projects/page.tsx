@@ -1,3 +1,4 @@
+import { Folder } from 'lucide-react';
 import type { Memory, Project, Task } from '@midnite/shared';
 import { PageHeader } from '@/components/page-header';
 import { SearchBar } from '@/components/search-bar';
@@ -21,6 +22,7 @@ export default async function ProjectsPage() {
     <>
       <PageHeader
         title="Projects"
+        icon={Folder}
         description="Group related work, attach sources, and draft a plan that becomes tasks."
         actions={<SearchBar placeholder="Search projects" />}
       />

@@ -1,3 +1,4 @@
+import { LayoutDashboard } from 'lucide-react';
 import type { Note, Project, Routine, RoutineProgress, Task, TaskCounts } from '@midnite/shared';
 import { DashboardGrid } from '@/components/dashboard-grid';
 import { PageHeader } from '@/components/page-header';
@@ -38,6 +39,7 @@ export default async function DashboardPage() {
     <>
       <PageHeader
         title="Dashboard"
+        icon={LayoutDashboard}
         size="lg"
         showGrid
         description="An overview of your task backlog. Draft a feature list below — one task per line — then craft it into the Backlog or Todo when you're ready."

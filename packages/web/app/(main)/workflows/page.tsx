@@ -1,3 +1,4 @@
+import { Workflow } from 'lucide-react';
 import type { WorkflowSummary } from '@midnite/shared';
 import { PageHeader } from '@/components/page-header';
 import { SearchBar } from '@/components/search-bar';
@@ -19,6 +20,7 @@ export default async function WorkflowsPage() {
     <>
       <PageHeader
         title="Workflows"
+        icon={Workflow}
         description="Build automations that run on a schedule, a webhook, or on demand."
         actions={<SearchBar placeholder="Search workflows" />}
       />

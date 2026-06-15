@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { useScrolled } from '@/lib/use-scrolled';
 import { useTypewriter } from '@/lib/use-typewriter';
@@ -23,6 +23,7 @@ function Caret({ className }: { className?: string }) {
 type PageHeaderProps = {
   title: string;
   description?: ReactNode;
+  icon?: ComponentType<{ className?: string }>;
   size?: 'default' | 'lg'; // dashboard uses 'lg'
   showGrid?: boolean; // dashboard's decorative bg-grid
   actions?: ReactNode; // right-aligned controls (e.g. a search bar)
@@ -31,6 +32,7 @@ type PageHeaderProps = {
 export function PageHeader({
   title,
   description,
+  icon: Icon,
   size = 'default',
   showGrid = false,
   actions,
@@ -76,12 +78,17 @@ export function PageHeader({
           <div className="min-w-0 flex-1">
             <h1
               className={cn(
-                'font-semibold tracking-tight transition-all duration-200 motion-reduce:transition-none',
+                'flex items-center gap-2.5 font-semibold tracking-tight transition-all duration-200 motion-reduce:transition-none',
                 size === 'lg' ? (scrolled ? 'text-2xl' : 'text-3xl') : scrolled ? 'text-xl' : 'text-2xl',
               )}
             >
-              {typedTitle}
-              {!titleDone && <Caret />}
+              {Icon && (
+                <Icon className="h-[1em] w-[1em] shrink-0 text-muted-foreground/70" />
+              )}
+              <span>
+                {typedTitle}
+                {!titleDone && <Caret />}
+              </span>
             </h1>
 
             {description && (
