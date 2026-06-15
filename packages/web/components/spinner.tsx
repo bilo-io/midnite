@@ -101,8 +101,9 @@ function dotPosition(variant: OrbitPhase, i: number, tSec: number): DotState {
     return { x, y: 0, o: clamp((OFF - Math.abs(x)) / (OFF - S), 0, 1) };
   }
   const angle = (tSec / 1.5) * Math.PI * 2 + i * ((Math.PI * 2) / 3);
-  // ring: fixed radius; orbit: synced breathing radius (never reaches centre).
-  const radius = variant === 'ring' ? 20 : 12 + 9 * Math.sin((tSec / 1.5) * Math.PI * 2);
+  // ring: fixed radius; orbit: synced breathing radius. Min kept above DOT_SIZE/√3
+  // so the dots never visually merge into a single white orb at the tightest point.
+  const radius = variant === 'ring' ? 20 : 15 + 6 * Math.sin((tSec / 1.5) * Math.PI * 2);
   return { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius, o: 1 };
 }
 
@@ -191,6 +192,7 @@ export function Spinner({ variant = 'orbit' }: { variant?: SpinnerVariant } = {}
             top: '50%',
             marginLeft: -DOT_SIZE / 2,
             marginTop: -DOT_SIZE / 2,
+            opacity: 0,
             willChange: 'transform, opacity',
           }}
         />
