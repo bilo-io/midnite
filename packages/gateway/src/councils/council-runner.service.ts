@@ -234,8 +234,13 @@ export class CouncilRunnerService implements OnModuleInit {
   }
 
   /**
-   * Re-run one settled participant of a finished run: reset its row, respawn
-   * its one-shot CLI from the snapshot, and re-synthesize when it settles.
+   * Re-run one settled participant of a finished run: reset its row, respawn its
+   * one-shot CLI, and re-synthesize when it settles. A retry is a recovery action
+   * rather than a replay, so it re-syncs the run snapshot (name/provider/
+   * perspective) from the *current* council participant first — fixing a failed
+   * participant's provider/perspective and retrying then actually re-runs with the
+   * new config, and the run's icon/output update to match. Falls back to the
+   * existing snapshot if the participant has since been removed from the council.
    */
   retryParticipant(councilId: string, runId: string, runParticipantId: string): CouncilRun {
     const run = this.repo.getRun(runId);
@@ -252,9 +257,19 @@ export class CouncilRunnerService implements OnModuleInit {
       );
     }
 
+    // Re-sync the snapshot from the live council participant (edits made since
+    // the run are the whole point of a retry); fall back to the snapshot if it
+    // was removed.
+    const current = this.repo.getParticipant(row.participantId);
+    const snapshot =
+      current && current.councilId === councilId
+        ? { name: current.name, provider: current.provider, perspective: current.perspective }
+        : { name: row.name, provider: row.provider, perspective: row.perspective };
+
     this.activeRuns.add(councilId);
     this.repo.updateRun(runId, { status: 'running', error: null, verdict: null, finishedAt: null });
     this.repo.updateRunParticipant(row.id, {
+      ...snapshot,
       status: 'running',
       output: null,
       exitCode: null,
@@ -279,8 +294,8 @@ export class CouncilRunnerService implements OnModuleInit {
     // synthesis unchanged once it settles.
     const live = [lp];
     this.liveRuns.set(runId, live);
-    const provider = AgentCliSchema.catch(AGENT_CLI_DEFAULT).parse(row.provider);
-    this.spawnParticipant(councilId, runId, lp, provider, row.perspective, run.topic, live);
+    const provider = AgentCliSchema.catch(AGENT_CLI_DEFAULT).parse(snapshot.provider);
+    this.spawnParticipant(councilId, runId, lp, provider, snapshot.perspective, run.topic, live);
     return this.repo.hydrateRun(this.repo.getRun(runId)!);
   }
 

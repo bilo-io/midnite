@@ -370,6 +370,38 @@ describe('CouncilRunnerService', () => {
     expect(rows.map((r) => r.label).sort()).toEqual(['A', 'B']);
   });
 
+  it('retries a failed participant with the edited live config and re-syncs its snapshot', async () => {
+    const { runner, repo, terminal } = makeRunner();
+    seedCouncil(repo, TWO_PARTICIPANTS);
+    const run = runner.startRun('c1', 'topic');
+
+    const [a, b] = run.participants;
+    terminal.spawns.get(a!.terminalId)!.onData('take a\n');
+    terminal.spawns.get(a!.terminalId)!.onExit(0, null);
+    terminal.spawns.get(b!.terminalId)!.onExit(1, null); // b (gemini) fails
+    await waitUntil(() => repo.getRun(run.id)!.status === 'failed');
+
+    // Fix the failing participant on the council, then retry: gemini → claude.
+    repo.updateParticipant('p2', { provider: 'claude', perspective: 'argue carefully' });
+    terminal.spawns.delete(b!.terminalId);
+    runner.retryParticipant('c1', run.id, b!.id);
+
+    // The respawn uses the edited provider/perspective, not the stale snapshot…
+    const respawn = terminal.spawns.get(b!.terminalId)!;
+    expect(respawn.command).toBe('claude');
+    expect(respawn.args.join(' ')).toContain('argue carefully');
+
+    // …and the run-participant snapshot is updated, so the UI icon follows the edit.
+    const bRow = repo.listRunParticipants(run.id).find((r) => r.participantId === 'p2')!;
+    expect(bRow.provider).toBe('claude');
+    expect(bRow.perspective).toBe('argue carefully');
+
+    respawn.onData('better take\n');
+    respawn.onExit(0, null);
+    await settleVerdict(terminal, run.id, { output: 'verdict md' });
+    await waitUntil(() => repo.getRun(run.id)!.status === 'completed');
+  });
+
   it('retries the verdict with the council\'s current provider', async () => {
     const { runner, repo, terminal } = makeRunner();
     seedCouncil(repo, TWO_PARTICIPANTS);
