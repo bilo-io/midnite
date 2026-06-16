@@ -16,6 +16,8 @@ import {
   HEARTBEAT_PRESETS,
   INACTIVITY_MAX_S,
   INACTIVITY_MIN_S,
+  INACTIVITY_PRESETS_S,
+  nearestInactivityPresetIndex,
   PASSCODE_LENGTH,
   PASSCODE_STORAGE_KEY,
   SETTINGS_STORAGE_KEY,
@@ -26,9 +28,14 @@ import { cn } from '@/lib/utils';
 
 function formatDuration(seconds: number): string {
   if (seconds < 60) return `${seconds}s`;
-  const mins = Math.floor(seconds / 60);
-  const rem = seconds % 60;
-  return rem === 0 ? `${mins}m` : `${mins}m ${rem}s`;
+  if (seconds < 3600) {
+    const mins = Math.floor(seconds / 60);
+    const rem = seconds % 60;
+    return rem === 0 ? `${mins}m` : `${mins}m ${rem}s`;
+  }
+  const hours = Math.floor(seconds / 3600);
+  const mins = Math.round((seconds % 3600) / 60);
+  return mins === 0 ? `${hours}h` : `${hours}h ${mins}m`;
 }
 
 export function SettingsView() {
@@ -210,11 +217,11 @@ export function SettingsView() {
             </span>
             <input
               type="range"
-              min={INACTIVITY_MIN_S}
-              max={INACTIVITY_MAX_S}
-              step={5}
-              value={idleTimeout}
-              onChange={(e) => setIdleTimeout(Number(e.target.value))}
+              min={0}
+              max={INACTIVITY_PRESETS_S.length - 1}
+              step={1}
+              value={nearestInactivityPresetIndex(idleTimeout)}
+              onChange={(e) => setIdleTimeout(INACTIVITY_PRESETS_S[Number(e.target.value)]!)}
               aria-label="Inactivity timeout"
               className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-border accent-foreground"
             />

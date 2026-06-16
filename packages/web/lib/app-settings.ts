@@ -11,7 +11,27 @@ export const AGENT_POOL_MAX = 16;
 // Inactivity before the screensaver kicks in, in seconds.
 export const INACTIVITY_MIN_S = 10;
 export const INACTIVITY_DEFAULT_S = 30;
-export const INACTIVITY_MAX_S = 300;
+export const INACTIVITY_MAX_S = 14400; // 4 hours
+
+/**
+ * Snap points for the inactivity slider, ascending — quick locks through to
+ * multi-hour waits. The slider steps across these by index rather than scrubbing
+ * a continuous range, which would be unusable across a 10s–4h span.
+ */
+export const INACTIVITY_PRESETS_S = [
+  10, 15, 20, 30, 45, 60, 120, 180, 300, 600, 900, 1200, 1800, 2700, 3600, 7200, 10800, 14400,
+] as const;
+
+/** Index of the preset nearest to `seconds` (handles legacy non-preset values). */
+export function nearestInactivityPresetIndex(seconds: number): number {
+  let best = 0;
+  for (let i = 1; i < INACTIVITY_PRESETS_S.length; i++) {
+    if (Math.abs(INACTIVITY_PRESETS_S[i]! - seconds) < Math.abs(INACTIVITY_PRESETS_S[best]! - seconds)) {
+      best = i;
+    }
+  }
+  return best;
+}
 
 // Primary-agent heartbeat cadence, in hours: the orchestrator's heartbeat
 // prompt runs on this interval. Once an hour at the most frequent, roughly once
