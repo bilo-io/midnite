@@ -1,4 +1,5 @@
 import type { Note, Project, Routine, RoutineProgress, Task, TaskCounts } from '@midnite/shared';
+import { DashboardAddWidget } from '@/components/dashboard-add-widget';
 import { DashboardGrid } from '@/components/dashboard-grid';
 import { PageHeader } from '@/components/page-header';
 import { PromptComposer } from '@/components/prompt-composer';
@@ -42,6 +43,7 @@ export default async function DashboardPage() {
         size="lg"
         showGrid
         description="An overview of your task backlog. Draft a feature list below — one task per line — then craft it into the Backlog or Todo when you're ready."
+        actions={<DashboardAddWidget />}
       />
 
       <DashboardGrid

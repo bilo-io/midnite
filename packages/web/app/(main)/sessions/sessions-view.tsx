@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { LayoutGrid, List, ListTree } from 'lucide-react';
+import { BotMessageSquare, LayoutGrid, List, ListTree } from 'lucide-react';
 import {
   SESSION_STATUSES,
   type Project,
@@ -25,7 +25,11 @@ import { SessionTerminalModal } from '@/components/session-terminal-modal';
 import { SortableAccordions, type AccordionSection } from '@/components/sortable-accordions';
 import type { ProjectTagInfo } from '@/components/task-card';
 import { archiveSession, deleteSession, getSessionTranscript, unarchiveSession } from '@/lib/api';
+import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-action-bar';
 import { useConfirm } from '@/components/confirm-dialog';
+import { EmptyState } from '@/components/empty-state';
+import { NewSessionButton } from '@/components/new-session-button';
+import { useBulkSelection } from '@/lib/use-bulk-selection';
 import { cn } from '@/lib/utils';
 
 type View = 'list' | 'grid' | 'table';
@@ -140,6 +144,75 @@ export function SessionsView({
     [onClose, router],
   );
 
+  // --- Bulk selection ---
+  const {
+    selectedIds,
+    count: selectedCount,
+    clear: clearSelection,
+    isSelected,
+    toggle: toggleSelect,
+  } = useBulkSelection();
+
+  const selectedSessions = useMemo(
+    () => initial.filter((s) => selectedIds.includes(s.id)),
+    [initial, selectedIds],
+  );
+
+  const runBulk = useCallback(
+    async (ids: string[], op: (id: string) => Promise<unknown>) => {
+      if (ids.length === 0) return;
+      await Promise.all(ids.map((id) => op(id)));
+      clearSelection();
+      router.refresh();
+    },
+    [clearSelection, router],
+  );
+
+  const deleteSelection = useCallback(
+    async (ids: string[]) => {
+      if (ids.length === 0) return;
+      const ok = await confirm({
+        title: `Delete ${ids.length} session${ids.length === 1 ? '' : 's'}?`,
+        description: 'This permanently removes the transcript. This cannot be undone.',
+        confirmLabel: 'Delete',
+      });
+      if (!ok) return;
+      await runBulk(ids, (id) => deleteSession(id));
+    },
+    [confirm, runBulk],
+  );
+
+  // Archive endpoints are session-specific; delete is only valid once archived,
+  // so the Delete chip only appears for already-archived selections.
+  const bulkActions = useMemo<BulkAction[]>(() => {
+    const actions: BulkAction[] = [];
+    const toArchive = selectedSessions.filter((s) => !s.archivedAt).map((s) => s.id);
+    const archived = selectedSessions.filter((s) => s.archivedAt).map((s) => s.id);
+    if (toArchive.length) {
+      actions.push({
+        key: 'archive',
+        label: 'Archive',
+        color: BULK_COLORS.archive,
+        onClick: () => void runBulk(toArchive, (id) => archiveSession(id)),
+      });
+    }
+    if (archived.length) {
+      actions.push({
+        key: 'unarchive',
+        label: 'Unarchive',
+        color: BULK_COLORS.archive,
+        onClick: () => void runBulk(archived, (id) => unarchiveSession(id)),
+      });
+      actions.push({
+        key: 'delete',
+        label: 'Delete',
+        color: BULK_COLORS.delete,
+        onClick: () => void deleteSelection(archived),
+      });
+    }
+    return actions;
+  }, [selectedSessions, runBulk, deleteSelection]);
+
   // A session's project is resolved through its linked task.
   const projectIdByTask = useMemo(() => new Map(tasks.map((t) => [t.id, t.projectId])), [tasks]);
   const projectsById = useMemo(
@@ -237,6 +310,8 @@ export function SessionsView({
               session={s}
               project={projectIdOf(s) ? projectsById.get(projectIdOf(s)!) : undefined}
               onClick={() => onSelect(s)}
+              selected={isSelected(s.id)}
+              onToggleSelect={(sk) => toggleSelect(s.id, sk, sessions.map((x) => x.id))}
             />
           ))
         ),
@@ -245,8 +320,9 @@ export function SessionsView({
 
   return (
     <div className="space-y-4">
-      {initial.length > 0 ? (
-        <div className="reveal-controls flex flex-wrap items-center gap-x-6 gap-y-2">
+      <div className="reveal-controls flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+          <p className="shrink-0 text-xs tabular-nums text-muted-foreground">{plural(sessions.length, 'session')}</p>
           {projects.length > 0 ? <ProjectMultiSelect options={projectFilters} /> : null}
           <FilterPills options={SESSION_FILTERS} />
           <FilterPills
@@ -255,58 +331,59 @@ export function SessionsView({
             allLabel="Active"
           />
         </div>
-      ) : null}
-
-      <div className="reveal-controls flex items-center justify-between gap-3">
-        <p className="text-xs text-muted-foreground tabular-nums">{plural(sessions.length, 'session')}</p>
-        <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label="List view"
-            aria-pressed={view === 'list'}
-            onClick={() => onSetView('list')}
-            className={cn('h-7 w-7', view === 'list' && 'bg-accent text-accent-foreground')}
-          >
-            <List className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label="Grid view"
-            aria-pressed={view === 'grid'}
-            onClick={() => onSetView('grid')}
-            className={cn('h-7 w-7', view === 'grid' && 'bg-accent text-accent-foreground')}
-          >
-            <LayoutGrid className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label="Table view"
-            aria-pressed={view === 'table'}
-            onClick={() => onSetView('table')}
-            className={cn('h-7 w-7', view === 'table' && 'bg-accent text-accent-foreground')}
-          >
-            <ListTree className="h-4 w-4" />
-          </Button>
+        <div className="flex shrink-0 items-center gap-2">
+          <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="List view"
+              aria-pressed={view === 'list'}
+              onClick={() => onSetView('list')}
+              className={cn('h-7 w-7', view === 'list' && 'bg-accent text-accent-foreground')}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="Grid view"
+              aria-pressed={view === 'grid'}
+              onClick={() => onSetView('grid')}
+              className={cn('h-7 w-7', view === 'grid' && 'bg-accent text-accent-foreground')}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="Table view"
+              aria-pressed={view === 'table'}
+              onClick={() => onSetView('table')}
+              className={cn('h-7 w-7', view === 'table' && 'bg-accent text-accent-foreground')}
+            >
+              <ListTree className="h-4 w-4" />
+            </Button>
+          </div>
+          <NewSessionButton />
         </div>
       </div>
 
+      <BulkActionBar count={selectedCount} actions={bulkActions} onClear={clearSelection} />
+
       <div className="reveal-content">
         {initial.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border/60 p-12 text-center text-sm text-muted-foreground">
-            No tasks yet — create a task and its session shows up here.
-          </div>
+          <EmptyState
+            Icon={BotMessageSquare}
+            title="No sessions yet"
+            description="Create a task and its Claude Code session shows up here."
+          />
         ) : view === 'table' ? (
           <SortableAccordions sections={sections} storageKey="midnite.sessions.sections" />
         ) : sessions.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border/60 p-12 text-center text-sm text-muted-foreground">
-            No sessions match this filter.
-          </div>
+          <EmptyState Icon={BotMessageSquare} title="No sessions match this filter" />
         ) : view === 'list' ? (
           <div className="flex flex-col gap-2">
             {sessions.map((s) => (
@@ -315,6 +392,8 @@ export function SessionsView({
                 session={s}
                 layout="list"
                 onClick={() => onSelect(s)}
+                selected={isSelected(s.id)}
+                onToggleSelect={(sk) => toggleSelect(s.id, sk, sessions.map((x) => x.id))}
               />
             ))}
           </div>
@@ -326,6 +405,8 @@ export function SessionsView({
                 session={s}
                 layout="grid"
                 onClick={() => onSelect(s)}
+                selected={isSelected(s.id)}
+                onToggleSelect={(sk) => toggleSelect(s.id, sk, sessions.map((x) => x.id))}
               />
             ))}
           </div>

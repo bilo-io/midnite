@@ -11,6 +11,7 @@ export const WorkflowSchema = z.object({
   trigger: TriggerSchema,
   nodes: z.array(WorkflowNodeSchema).default([]),
   edges: z.array(WorkflowEdgeSchema).default([]),
+  archived: z.boolean().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -27,6 +28,7 @@ export const WorkflowSummarySchema = z.object({
   nodeCount: z.number().int().nonnegative(),
   lastRunAt: z.string().optional(),
   lastRunStatus: RunStatusSchema.optional(),
+  archived: z.boolean().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -44,6 +46,7 @@ export const UpdateWorkflowRequestSchema = z.object({
   trigger: TriggerSchema.optional(),
   nodes: z.array(WorkflowNodeSchema).optional(),
   edges: z.array(WorkflowEdgeSchema).optional(),
+  archived: z.boolean().optional(),
 });
 
 export const WorkflowResponseSchema = z.object({ workflow: WorkflowSchema });

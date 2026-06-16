@@ -37,6 +37,7 @@ export class InMemoryCouncilsRepo extends CouncilsRepository {
       ...row,
       description: row.description ?? null,
       verdictProvider: row.verdictProvider ?? 'gemini',
+      archivedAt: row.archivedAt ?? null,
     };
     this.councils.push(full);
     return full;

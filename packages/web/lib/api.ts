@@ -1,6 +1,16 @@
 import {
   NotesResponseSchema,
   NoteResponseSchema,
+  NewsResponseSchema,
+  WeatherResponseSchema,
+  MediaListResponseSchema,
+  MediaResponseSchema,
+  type HackerNewsStory,
+  type WeatherResponse,
+  type Media,
+  type MediaType,
+  type CreateMediaBody,
+  type UpdateMediaBody,
   RoutinesResponseSchema,
   RoutineResponseSchema,
   RoutineProgressResponseSchema,
@@ -133,6 +143,11 @@ async function fetchJson<T>(
 
 export async function pingAgent(): Promise<AgentPingResponse> {
   return fetchJson('/agents/ping', { method: 'POST' }, AgentPingResponseSchema);
+}
+
+/** Liveness probe for the gateway (`GET /health` → `{ ok: true }`). */
+export async function getHealth(signal?: AbortSignal): Promise<{ ok: boolean }> {
+  return fetchJson('/health', { signal }, z.object({ ok: z.boolean() }));
 }
 
 export async function getTaskCounts(): Promise<TaskCounts> {
@@ -878,4 +893,58 @@ export async function getRoutineProgress(
     RoutineProgressListResponseSchema,
   );
   return progress;
+}
+
+// ---- Dashboard widgets: News & Weather (gateway proxies) ----
+
+export async function getNews(count: number): Promise<HackerNewsStory[]> {
+  const { stories } = await fetchJson(`/news?count=${count}`, undefined, NewsResponseSchema);
+  return stories;
+}
+
+export async function getWeather(lat: number, lon: number): Promise<WeatherResponse> {
+  const params = new URLSearchParams({ lat: String(lat), lon: String(lon) });
+  return fetchJson(`/weather?${params.toString()}`, undefined, WeatherResponseSchema);
+}
+
+// ---- Media ----
+
+export async function listMedia(params?: { projectId?: string; type?: MediaType }): Promise<Media[]> {
+  const qs = new URLSearchParams();
+  if (params?.projectId) qs.set('projectId', params.projectId);
+  if (params?.type) qs.set('type', params.type);
+  const query = qs.toString() ? `?${qs.toString()}` : '';
+  const { items } = await fetchJson(`/media${query}`, undefined, MediaListResponseSchema);
+  return items;
+}
+
+export async function createMedia(body: CreateMediaBody): Promise<Media> {
+  const { media } = await fetchJson(
+    '/media',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    MediaResponseSchema,
+  );
+  return media;
+}
+
+export async function getMedia(id: string): Promise<Media> {
+  const { media } = await fetchJson(`/media/${encodeURIComponent(id)}`, undefined, MediaResponseSchema);
+  return media;
+}
+
+export async function updateMedia(id: string, body: UpdateMediaBody): Promise<Media> {
+  const { media } = await fetchJson(
+    `/media/${encodeURIComponent(id)}`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    MediaResponseSchema,
+  );
+  return media;
+}
+
+export async function deleteMedia(id: string): Promise<void> {
+  await fetchJson(`/media/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+export function mediaFileUrl(id: string): string {
+  return `${gatewayUrl()}/media/${encodeURIComponent(id)}/file`;
 }

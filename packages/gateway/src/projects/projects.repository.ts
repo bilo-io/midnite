@@ -126,6 +126,7 @@ export class ProjectsRepository {
       workDir: row.workDir ?? undefined,
       plan: row.plan ?? undefined,
       planUpdatedAt: row.planUpdatedAt ?? undefined,
+      archived: row.archivedAt != null,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       sources: this.listSources(row.id).map((s) => this.toSource(s)),

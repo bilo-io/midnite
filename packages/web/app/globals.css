@@ -22,6 +22,8 @@
     --destructive-foreground: 0 0% 98%;
     --success: 142 71% 36%;
     --success-foreground: 0 0% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
     --ring: 240 5.9% 10%;
@@ -64,6 +66,8 @@
     --destructive-foreground: 0 0% 98%;
     --success: 142 65% 48%;
     --success-foreground: 0 0% 98%;
+    --popover: 240 10% 7%;
+    --popover-foreground: 0 0% 98%;
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 240 4.9% 83.9%;
@@ -262,11 +266,19 @@
     opacity: 0;
     animation: card-rise 0.45s ease-out both;
   }
+  /* The card-rise animation (transform + fill-mode: both) makes each row its own
+     stacking context. Without explicit order, the later .reveal-content would
+     paint over dropdowns/menus opened from the controls row — so rank the
+     controls above the content. */
   .reveal-controls {
     animation-delay: 60ms;
+    position: relative;
+    z-index: 20;
   }
   .reveal-content {
     animation-delay: 300ms;
+    position: relative;
+    z-index: 10;
   }
   @media (prefers-reduced-motion: reduce) {
     .reveal-controls,

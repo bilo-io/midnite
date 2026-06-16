@@ -185,6 +185,7 @@ export class CouncilsRepository {
       description: row.description ?? undefined,
       verdictProvider: row.verdictProvider as AgentCli,
       participants: this.listParticipants(row.id).map((p) => this.hydrateParticipant(p)),
+      archived: row.archivedAt != null,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };

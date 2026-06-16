@@ -116,20 +116,24 @@ export class ProjectsService {
 
   updateProject(id: string, req: UpdateProjectRequest): Project {
     this.assertExists(id);
+    const now = new Date().toISOString();
     const patch: Partial<{
       name: string;
       description: string | null;
       tag: string;
       color: string;
       workDir: string | null;
+      archivedAt: string | null;
       updatedAt: string;
-    }> = { updatedAt: new Date().toISOString() };
+    }> = { updatedAt: now };
     if (req.name !== undefined) patch.name = req.name;
     if (req.description !== undefined) patch.description = req.description;
     if (req.tag !== undefined) patch.tag = req.tag;
     if (req.color !== undefined) patch.color = req.color;
     // An empty string clears the directory; normalizeWorkDir maps it to null.
     if (req.workDir !== undefined) patch.workDir = normalizeWorkDir(req.workDir);
+    // Archive is a soft flag: store the timestamp when set, clear it when unset.
+    if (req.archived !== undefined) patch.archivedAt = req.archived ? now : null;
     this.repo.updateProject(id, patch);
     return this.getProject(id);
   }

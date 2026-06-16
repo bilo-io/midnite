@@ -14,10 +14,11 @@ export class TerminalController {
   constructor(@Inject(TerminalService) private readonly terminal: TerminalService) {}
 
   /**
-   * Register a standalone terminal that pastes the install or uninstall command for
-   * a CLI and returns its id. The server builds the command — the client never sends
-   * shell strings. Install also verifies and launches the agent; uninstall pastes
-   * just the removal command. Either way it waits at the prompt for the user's Enter.
+   * Register a standalone terminal for a CLI and return its id. The server builds
+   * the command — the client never sends shell strings.
+   * - `install`: paste the install + verify + launch chain (waits for Enter).
+   * - `uninstall`: show the binary path, then the removal command (waits for Enter).
+   * - `launch`: run the agent CLI immediately — a live ad-hoc session.
    */
   @Post(':action/:cli')
   createCliTerminal(
@@ -30,12 +31,19 @@ export class TerminalController {
     if (!parsedCli.success) throw new BadRequestException(parsedCli.error.message);
 
     const cmd = AGENT_CLI_COMMAND[parsedCli.data];
-    const chain =
-      parsedAction.data === 'install'
-        ? `${AGENT_CLI_INSTALL_COMMAND[parsedCli.data]} && ${cmd} --version && ${cmd}`
-        : // Show where the binary lives first, then run the uninstall command.
-          `which ${cmd} && ${AGENT_CLI_UNINSTALL_COMMAND[parsedCli.data]}`;
-    const terminalId = this.terminal.createAdHocTerminal(buildInstallInitCommand(chain));
+    let initCommand: string;
+    if (parsedAction.data === 'launch') {
+      // Auto-run the agent (trailing \r) so the modal opens straight into a session.
+      initCommand = `clear\r${cmd}\r`;
+    } else {
+      const chain =
+        parsedAction.data === 'install'
+          ? `${AGENT_CLI_INSTALL_COMMAND[parsedCli.data]} && ${cmd} --version && ${cmd}`
+          : // Show where the binary lives first, then run the uninstall command.
+            `which ${cmd} && ${AGENT_CLI_UNINSTALL_COMMAND[parsedCli.data]}`;
+      initCommand = buildInstallInitCommand(chain);
+    }
+    const terminalId = this.terminal.createAdHocTerminal(initCommand);
     return { terminalId };
   }
 }

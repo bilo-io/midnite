@@ -52,6 +52,7 @@ export class WorkflowsService {
         nodeCount: workflow.nodes.length,
         lastRunAt: latest?.startedAt,
         lastRunStatus: latest?.status as WorkflowSummary['lastRunStatus'] | undefined,
+        archived: workflow.archived,
         createdAt: workflow.createdAt,
         updatedAt: workflow.updatedAt,
       };
@@ -136,6 +137,7 @@ export class WorkflowsService {
     if (req.name !== undefined) patch.name = req.name;
     if (req.description !== undefined) patch.description = req.description;
     if (req.enabled !== undefined) patch.enabled = req.enabled ? 1 : 0;
+    if (req.archived !== undefined) patch.archivedAt = req.archived ? new Date().toISOString() : null;
 
     const row = this.repo.updateWorkflowRow(id, patch);
     if (!row) throw new NotFoundException(`workflow ${id} not found`);

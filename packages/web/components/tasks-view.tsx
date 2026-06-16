@@ -2,12 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Columns3, List, ListTree, type LucideIcon } from 'lucide-react';
+import { Columns3, List, ListTree, Plus, type LucideIcon } from 'lucide-react';
 import type { Project, Task } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { BoardView } from '@/components/board-view';
 import { FilterPills, type FilterOption } from '@/components/filter-pills';
 import { ListView } from '@/components/list-view';
+import { NewTaskModal } from '@/components/new-task-modal';
 import { ProjectMultiSelect } from '@/components/project-multi-select';
 import { TableView } from '@/components/table-view';
 import { TaskThreadModal } from '@/components/task-thread-modal';
@@ -48,7 +49,9 @@ export function TasksView({
   error: string | null;
   projects: Project[];
 }) {
+  const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
   const [selected, setSelected] = useState<Task | null>(null);
+  const [showNewTask, setShowNewTask] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -105,7 +108,7 @@ export function TasksView({
     (rawProject ? rawProject.split(',') : []).filter((p) => validProjects.has(p)),
   );
   const q = (searchParams.get('q') ?? '').trim().toLowerCase();
-  const filteredTasks = tasks
+  const filteredTasks = localTasks
     .filter((t) => {
       if (activeProjects.size === 0) return true;
       if (t.projectId !== undefined && activeProjects.has(t.projectId)) return true;
@@ -140,21 +143,32 @@ export function TasksView({
           {projects.length > 0 && <ProjectMultiSelect options={projectFilters} />}
           <FilterPills options={STATUS_FILTERS} paramKey="status" />
         </div>
-        <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
-          {VIEW_OPTIONS.map(({ value, label, Icon }) => (
-            <Button
-              key={value}
-              type="button"
-              variant="ghost"
-              size="icon"
-              aria-label={label}
-              aria-pressed={view === value}
-              onClick={() => onSetView(value)}
-              className={cn('h-7 w-7', view === value && 'bg-accent text-accent-foreground')}
-            >
-              <Icon className="h-4 w-4" />
-            </Button>
-          ))}
+        <div className="flex shrink-0 items-center gap-2">
+          <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
+            {VIEW_OPTIONS.map(({ value, label, Icon }) => (
+              <Button
+                key={value}
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={label}
+                aria-pressed={view === value}
+                onClick={() => onSetView(value)}
+                className={cn('h-7 w-7', view === value && 'bg-accent text-accent-foreground')}
+              >
+                <Icon className="h-4 w-4" />
+              </Button>
+            ))}
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => setShowNewTask(true)}
+            className="h-8 gap-1.5"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            New task
+          </Button>
         </div>
       </div>
 
@@ -181,6 +195,14 @@ export function TasksView({
           onClose={() => setSelected(null)}
         />
       ) : null}
+
+      {showNewTask && (
+        <NewTaskModal
+          projects={projects}
+          onCreated={(task) => setLocalTasks((prev) => [task, ...prev])}
+          onClose={() => setShowNewTask(false)}
+        />
+      )}
     </div>
   );
 }

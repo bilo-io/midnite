@@ -118,6 +118,7 @@ export class MemoriesRepository {
       content: row.content,
       projectId: row.projectId,
       sources: this.listSources(row.id).map((s) => this.toSource(s)),
+      archived: row.archivedAt != null,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };

@@ -42,6 +42,7 @@ export const ProjectSchema = z.object({
   workDir: z.string().optional(),
   plan: z.string().optional(),
   planUpdatedAt: z.string().optional(),
+  archived: z.boolean().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
   sources: z.array(ProjectSourceSchema),
@@ -64,6 +65,7 @@ export const UpdateProjectRequestSchema = z.object({
   color: HexColorSchema.optional(),
   // Empty string clears the configured directory.
   workDir: WorkDirSchema.optional(),
+  archived: z.boolean().optional(),
 });
 
 export const AddSourceRequestSchema = z.object({

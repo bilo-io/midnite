@@ -142,6 +142,7 @@ export class WorkflowsRepository {
       trigger,
       nodes: graph.nodes,
       edges: graph.edges,
+      archived: row.archivedAt != null,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };

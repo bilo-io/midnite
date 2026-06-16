@@ -1,8 +1,9 @@
 'use client';
 
-import { ListChecks, Pencil } from 'lucide-react';
+import { Folder, ListChecks, Pencil } from 'lucide-react';
 import type { Project, Task } from '@midnite/shared';
 import { ProjectTag } from '@/components/project-tag';
+import { SelectableIcon } from '@/components/selectable-icon';
 import { SortableAccordions, type AccordionSection } from '@/components/sortable-accordions';
 import { TaskRow } from '@/components/task-row';
 
@@ -21,12 +22,16 @@ export function ProjectsTree({
   onEdit,
   onPlan,
   onSelectTask,
+  isSelected,
+  onToggleSelect,
 }: {
   projects: Project[];
   tasks: Task[];
   onEdit?: (project: Project) => void;
   onPlan?: (project: Project) => void;
   onSelectTask?: (task: Task) => void;
+  isSelected?: (id: string) => boolean;
+  onToggleSelect?: (id: string, shiftKey: boolean) => void;
 }) {
   const tasksByProject = new Map<string, Task[]>();
   const unassigned: Task[] = [];
@@ -59,6 +64,13 @@ export function ProjectsTree({
     return {
       id: p.id,
       label: p.name,
+      prefix: onToggleSelect ? (
+        <SelectableIcon
+          Icon={Folder}
+          selected={isSelected?.(p.id) ?? false}
+          onToggle={(shiftKey) => onToggleSelect(p.id, shiftKey)}
+        />
+      ) : undefined,
       leading: <ProjectTag tag={p.tag} color={p.color} />,
       count: items.length,
       summary: `${plural(items.length, 'task')} · ${plural(p.sources.length, 'source')}`,

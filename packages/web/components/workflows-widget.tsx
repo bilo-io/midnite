@@ -1,0 +1,83 @@
+'use client';
+
+import { RefreshCw, Workflow } from 'lucide-react';
+import type { RunStatus, WorkflowSummary } from '@midnite/shared';
+import { listWorkflows } from '@/lib/api';
+import { usePolling } from '@/lib/use-polling';
+import { cn, relativeTime } from '@/lib/utils';
+import { WidgetCard } from './widget-card';
+
+const REFRESH_MS = 30_000;
+
+const RUN_BADGE: Record<RunStatus, string> = {
+  queued: 'bg-muted text-muted-foreground',
+  running: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
+  succeeded: 'bg-sky-500/15 text-sky-600 dark:text-sky-400',
+  failed: 'bg-destructive/15 text-destructive',
+  canceled: 'bg-muted text-muted-foreground',
+};
+
+export function WorkflowsWidget() {
+  const { data, error, loading, refresh } = usePolling(() => listWorkflows(), REFRESH_MS);
+
+  const workflows = (data ?? [])
+    .filter((w) => !w.archived)
+    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+
+  return (
+    <WidgetCard
+      title="Workflows"
+      icon={Workflow}
+      actions={
+        <button
+          type="button"
+          onClick={refresh}
+          aria-label="Refresh workflows"
+          className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+        >
+          <RefreshCw className={cn('h-3 w-3', loading && 'animate-spin')} />
+        </button>
+      }
+      bodyClassName="overflow-auto"
+    >
+      {error && !data ? (
+        <p className="px-4 py-6 text-center text-sm text-destructive">Couldn’t load workflows.</p>
+      ) : !data && loading ? (
+        <p className="px-4 py-6 text-center text-sm text-muted-foreground">Loading…</p>
+      ) : workflows.length === 0 ? (
+        <p className="px-4 py-6 text-center text-sm text-muted-foreground">No workflows yet.</p>
+      ) : (
+        <ul className="divide-y divide-border/30">
+          {workflows.map((w) => (
+            <WorkflowRow key={w.id} workflow={w} />
+          ))}
+        </ul>
+      )}
+    </WidgetCard>
+  );
+}
+
+function WorkflowRow({ workflow: w }: { workflow: WorkflowSummary }) {
+  return (
+    <li className="flex items-center gap-2 px-4 py-2">
+      <span
+        aria-hidden
+        className={cn('h-2 w-2 shrink-0 rounded-full', w.enabled ? 'bg-emerald-500' : 'bg-muted-foreground/40')}
+        title={w.enabled ? 'Enabled' : 'Disabled'}
+      />
+      <div className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-medium">{w.name}</span>
+        <span className="block truncate text-[11px] text-muted-foreground">
+          {w.cron ? `${w.cron} · ` : ''}
+          {w.nodeCount} {w.nodeCount === 1 ? 'node' : 'nodes'}
+          {w.lastRunAt ? ` · ${relativeTime(w.lastRunAt)}` : ''}
+        </span>
+      </div>
+      {w.lastRunStatus && (
+        <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium capitalize', RUN_BADGE[w.lastRunStatus])}>
+          {w.lastRunStatus}
+        </span>
+      )}
+    </li>
+  );
+}
