@@ -66,11 +66,11 @@ export function NotesPanel({ notes: initial }: { notes: Note[] }) {
 
   return (
     <section
-      className="cascade-item rounded-xl border bg-card shadow-sm"
+      className="cascade-item flex h-full flex-col rounded-xl border bg-card shadow-sm"
       style={{ animationDelay: `${SETTLE_MS + 6 * 70}ms` }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border/40 px-5 py-3">
+      <div className="flex shrink-0 items-center justify-between border-b border-border/40 px-5 py-3">
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold">Notes</span>
           {completedCount > 0 && (
@@ -91,7 +91,7 @@ export function NotesPanel({ notes: initial }: { notes: Note[] }) {
       </div>
 
       {/* List */}
-      <ul className="divide-y divide-border/30">
+      <ul className="min-h-0 flex-1 divide-y divide-border/30 overflow-y-auto">
         {visible.map((note) => (
           <li key={note.id} className="group flex items-center gap-3 px-5 py-2.5">
             {/* Checkbox */}
@@ -157,7 +157,7 @@ export function NotesPanel({ notes: initial }: { notes: Note[] }) {
       </ul>
 
       {/* Add input */}
-      <div className="flex items-center gap-2 border-t border-border/40 px-5 py-3">
+      <div className="flex shrink-0 items-center gap-2 border-t border-border/40 px-5 py-3">
         <input
           ref={inputRef}
           value={speech.listening ? speech.interim || draft : draft}

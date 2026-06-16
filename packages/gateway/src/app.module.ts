@@ -8,11 +8,14 @@ import { AgentModule } from './agent/agent.module';
 import { AgentsModule } from './agents/agents.module';
 import { CouncilsModule } from './councils/councils.module';
 import { KnowledgeModule } from './knowledge/knowledge.module';
+import { MediaModule } from './media/media.module';
 import { MemoriesModule } from './memories/memories.module';
+import { NewsModule } from './news/news.module';
 import { NotesModule } from './notes/notes.module';
 import { ProjectsModule } from './projects/projects.module';
 import { RoutinesModule } from './routines/routines.module';
 import { SessionsModule } from './sessions/sessions.module';
+import { WeatherModule } from './weather/weather.module';
 import { WorkflowsModule } from './workflows/workflows.module';
 import { TerminalModule } from './terminal/terminal.module';
 
@@ -25,12 +28,15 @@ import { TerminalModule } from './terminal/terminal.module';
     AgentsModule,
     CouncilsModule,
     KnowledgeModule,
+    MediaModule,
     MemoriesModule,
+    NewsModule,
     NotesModule,
     RoutinesModule,
     TasksModule,
     ProjectsModule,
     SessionsModule,
+    WeatherModule,
     WorkflowsModule,
     TerminalModule,
   ],

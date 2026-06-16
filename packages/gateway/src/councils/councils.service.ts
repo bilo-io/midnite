@@ -47,6 +47,9 @@ export class CouncilsService {
       ...(req.name !== undefined ? { name: req.name } : {}),
       ...(req.description !== undefined ? { description: req.description } : {}),
       ...(req.verdictProvider !== undefined ? { verdictProvider: req.verdictProvider } : {}),
+      ...(req.archived !== undefined
+        ? { archivedAt: req.archived ? new Date().toISOString() : null }
+        : {}),
       updatedAt: new Date().toISOString(),
     });
     if (!row) throw new CouncilDoesNotExistError(`council ${id} does not exist`);

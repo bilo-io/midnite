@@ -28,6 +28,7 @@ class InMemoryMemoriesRepo extends MemoriesRepository {
       title: row.title,
       content: row.content ?? '',
       projectId: row.projectId ?? null,
+      archivedAt: row.archivedAt ?? null,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };

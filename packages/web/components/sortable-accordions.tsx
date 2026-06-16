@@ -32,6 +32,9 @@ export type AccordionSection = {
   color?: string;
   /** Replaces the colored dot in the header (e.g. a ProjectTag chip). */
   leading?: ReactNode;
+  /** Interactive node rendered before the toggle button (e.g. a select checkbox).
+   * Kept outside the toggle so it can carry its own clicks without nested buttons. */
+  prefix?: ReactNode;
   /** Count shown in the pill badge. */
   count: number;
   /** Extra text shown beside the title only while collapsed (e.g. "3 tasks · 1 project"). */
@@ -185,6 +188,7 @@ function Section({
         >
           <GripVertical className="h-4 w-4" />
         </button>
+        {section.prefix ?? null}
         <button
           type="button"
           onClick={onToggle}

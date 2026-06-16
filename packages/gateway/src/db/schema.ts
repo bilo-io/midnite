@@ -1,6 +1,7 @@
 import {
   index,
   integer,
+  real,
   sqliteTable,
   text,
 } from 'drizzle-orm/sqlite-core';
@@ -87,6 +88,8 @@ export const projects = sqliteTable('projects', {
   workDir: text('work_dir'),
   plan: text('plan'),
   planUpdatedAt: text('plan_updated_at'),
+  // Soft-archive timestamp; null = active. Mirrors tasks.archivedAt.
+  archivedAt: text('archived_at'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 });
@@ -133,6 +136,8 @@ export const memories = sqliteTable(
     title: text('title').notNull(),
     content: text('content').notNull().default(''),
     projectId: text('project_id'),
+    // Soft-archive timestamp; null = active. Mirrors tasks.archivedAt.
+    archivedAt: text('archived_at'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
   },
@@ -180,6 +185,8 @@ export const workflows = sqliteTable(
     webhookSecretHash: text('webhook_secret_hash'),
     // ISO timestamp of the last schedule-triggered fire, for restart-durable cron firing.
     lastFiredAt: text('last_fired_at'),
+    // Soft-archive timestamp; null = active. Mirrors tasks.archivedAt.
+    archivedAt: text('archived_at'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
   },
@@ -283,6 +290,8 @@ export const councils = sqliteTable('councils', {
   description: text('description'),
   // AgentCli that judges the anonymized takes (verdict step).
   verdictProvider: text('verdict_provider').notNull().default('gemini'),
+  // Soft-archive timestamp; null = active. Mirrors tasks.archivedAt.
+  archivedAt: text('archived_at'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 });
@@ -465,6 +474,36 @@ export const routineProgress = sqliteTable(
 
 export type NoteRow = typeof notes.$inferSelect;
 export type NoteInsert = typeof notes.$inferInsert;
+
+// --- Media (images, videos, audio — browsable and AI-generatable per project) ---
+
+export const media = sqliteTable(
+  'media',
+  {
+    id:          text('id').primaryKey(),
+    projectId:   text('project_id'),
+    type:        text('type').notNull(),
+    title:       text('title').notNull(),
+    description: text('description'),
+    filePath:    text('file_path').notNull().default(''),
+    mimeType:    text('mime_type').notNull().default('application/octet-stream'),
+    fileSize:    integer('file_size').notNull().default(0),
+    width:       integer('width'),
+    height:      integer('height'),
+    duration:    real('duration'),
+    prompt:      text('prompt'),
+    tags:        text('tags').notNull().default('[]'),
+    createdAt:   text('created_at').notNull(),
+    updatedAt:   text('updated_at').notNull(),
+  },
+  (t) => ({
+    typeIdx:    index('media_type_idx').on(t.type),
+    projectIdx: index('media_project_idx').on(t.projectId),
+    createdIdx: index('media_created_idx').on(t.createdAt),
+  }),
+);
+export type MediaRow    = typeof media.$inferSelect;
+export type MediaInsert = typeof media.$inferInsert;
 export type RoutineRow = typeof routines.$inferSelect;
 export type RoutineInsert = typeof routines.$inferInsert;
 export type RoutineGroupRow = typeof routineGroups.$inferSelect;

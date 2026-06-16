@@ -31,6 +31,7 @@ export const MemorySchema = z.object({
   // null = global; otherwise the id of the project this memory is scoped to.
   projectId: z.string().nullable(),
   sources: z.array(MemorySourceSchema),
+  archived: z.boolean().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -52,6 +53,7 @@ export const UpdateMemoryRequestSchema = z.object({
   content: z.string().max(MAX_MEMORY_CONTENT).optional(),
   // Omitted = unchanged; explicit null re-scopes the memory to global.
   projectId: z.string().nullable().optional(),
+  archived: z.boolean().optional(),
 });
 
 export const MemoryResponseSchema = z.object({ memory: MemorySchema });

@@ -63,6 +63,9 @@ export class MemoriesService {
       ...(req.title !== undefined ? { title: req.title } : {}),
       ...(req.content !== undefined ? { content: req.content } : {}),
       ...(req.projectId !== undefined ? { projectId: req.projectId } : {}),
+      ...(req.archived !== undefined
+        ? { archivedAt: req.archived ? new Date().toISOString() : null }
+        : {}),
       updatedAt: new Date().toISOString(),
     });
     return this.getMemory(id);

@@ -20,3 +20,5 @@ export * from './events/workflow.js';
 export * from './events/terminal.js';
 export * from './note.js';
 export * from './routine.js';
+export * from './dashboard.js';
+export * from './media.js';

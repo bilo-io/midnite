@@ -32,6 +32,7 @@ import {
 } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { Collapse } from '@/components/ui/collapse';
+import { EmptyState } from '@/components/empty-state';
 import { Input } from '@/components/ui/input';
 import { Select, type SelectOption } from '@/components/ui/select';
 import { AgentCliLogo } from '@/components/agent-cli-logo';
@@ -368,15 +369,13 @@ export function AgentsView() {
       >
         <div className="space-y-4 p-5">
           {subAgents.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border/60 p-8 text-center">
-              <p className="text-sm text-muted-foreground">
-                No subagents yet. Add focused workers the orchestrator can delegate to.
-              </p>
-              <Button type="button" variant="outline" size="sm" onClick={() => void addSubAgent()}>
-                <Plus className="h-4 w-4" />
-                Add subagent
-              </Button>
-            </div>
+            <EmptyState
+              Icon={Bot}
+              title="No subagents yet"
+              description="Add focused workers the orchestrator can delegate to."
+              actionLabel="Add subagent"
+              onAction={() => void addSubAgent()}
+            />
           ) : (
             subAgents.map((sub, i) => (
               <SubAgentCard

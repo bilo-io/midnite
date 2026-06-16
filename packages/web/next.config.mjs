@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ['@midnite/shared'],
+  transpilePackages: ['@midnite/shared', 'yet-another-react-lightbox'],
   reactStrictMode: true,
 };
 

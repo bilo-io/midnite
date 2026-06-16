@@ -67,7 +67,7 @@ export function RoutinePanel({ routines: initial, progress: initialProgress }: {
   if (routines.length === 0) {
     return (
       <section
-        className="cascade-item rounded-xl border bg-card px-5 py-10 text-center shadow-sm"
+        className="cascade-item flex h-full items-center justify-center rounded-xl border bg-card px-5 py-10 text-center shadow-sm"
         style={{ animationDelay: `${SETTLE_MS + 8 * 70}ms` }}
       >
         <p className="text-sm text-muted-foreground">No routines yet.</p>
@@ -94,7 +94,7 @@ export function RoutinePanel({ routines: initial, progress: initialProgress }: {
 
   return (
     <>
-      <div className="cascade-item space-y-3" style={{ animationDelay: `${SETTLE_MS + 8 * 70}ms` }}>
+      <div className="cascade-item h-full space-y-3" style={{ animationDelay: `${SETTLE_MS + 8 * 70}ms` }}>
         {routines.map((routine) => {
           const itemStatus = statusMap[routine.id] ?? {};
           const snapshot = buildSnapshot(routine, itemStatus);

@@ -37,6 +37,7 @@ class InMemoryProjectsRepo extends ProjectsRepository {
       workDir: row.workDir ?? null,
       plan: row.plan ?? null,
       planUpdatedAt: row.planUpdatedAt ?? null,
+      archivedAt: row.archivedAt ?? null,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };

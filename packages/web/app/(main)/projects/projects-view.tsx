@@ -1,10 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { LayoutGrid, List, ListTree, Plus } from 'lucide-react';
+import { FileText, Folder, LayoutGrid, List, ListTree, Plus } from 'lucide-react';
 import type { Memory, Project, Task } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
+import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-action-bar';
+import { EmptyState } from '@/components/empty-state';
+import { useConfirm } from '@/components/confirm-dialog';
 import { ProjectCard } from '@/components/project-card';
 import { ProjectModal } from '@/components/project-modal';
 import { ProjectsTree } from '@/components/projects-tree';
@@ -13,6 +16,8 @@ import { TaskThreadModal } from '@/components/task-thread-modal';
 import { TemplateCard } from '@/components/template-card';
 import { TemplateModal } from '@/components/template-modal';
 import { TemplatesTable } from '@/components/templates-table';
+import { deleteProject, updateProject } from '@/lib/api';
+import { useBulkSelection } from '@/lib/use-bulk-selection';
 import { TEMPLATES, createBlankTemplate, type Template } from './templates';
 import { cn } from '@/lib/utils';
 
@@ -115,6 +120,78 @@ export function ProjectsView({
 
   const refresh = useCallback(() => router.refresh(), [router]);
 
+  // --- Bulk selection (projects tab only) ---
+  const confirm = useConfirm();
+  const {
+    selectedIds,
+    count: selectedCount,
+    clear: clearSelection,
+    isSelected,
+    toggle: toggleSelect,
+  } = useBulkSelection();
+
+  // Selection is meaningful only on the projects tab; drop it when leaving.
+  useEffect(() => {
+    if (tab !== 'projects') clearSelection();
+  }, [tab, clearSelection]);
+
+  const selectedProjects = useMemo(
+    () => initial.filter((p) => selectedIds.includes(p.id)),
+    [initial, selectedIds],
+  );
+
+  const setArchivedFor = useCallback(
+    async (ids: string[], archived: boolean) => {
+      if (ids.length === 0) return;
+      await Promise.all(ids.map((id) => updateProject(id, { archived })));
+      clearSelection();
+      refresh();
+    },
+    [clearSelection, refresh],
+  );
+
+  const deleteSelection = useCallback(async () => {
+    if (selectedIds.length === 0) return;
+    const ok = await confirm({
+      title: `Delete ${selectedIds.length} project${selectedIds.length === 1 ? '' : 's'}?`,
+      description: 'Their tasks are kept but become unassigned. This cannot be undone.',
+      confirmLabel: 'Delete',
+    });
+    if (!ok) return;
+    await Promise.all(selectedIds.map((id) => deleteProject(id)));
+    clearSelection();
+    refresh();
+  }, [selectedIds, confirm, clearSelection, refresh]);
+
+  const bulkActions = useMemo<BulkAction[]>(() => {
+    const actions: BulkAction[] = [];
+    const toArchive = selectedProjects.filter((p) => !p.archived).map((p) => p.id);
+    const toUnarchive = selectedProjects.filter((p) => p.archived).map((p) => p.id);
+    if (toArchive.length) {
+      actions.push({
+        key: 'archive',
+        label: 'Archive',
+        color: BULK_COLORS.archive,
+        onClick: () => void setArchivedFor(toArchive, true),
+      });
+    }
+    if (toUnarchive.length) {
+      actions.push({
+        key: 'unarchive',
+        label: 'Unarchive',
+        color: BULK_COLORS.archive,
+        onClick: () => void setArchivedFor(toUnarchive, false),
+      });
+    }
+    actions.push({
+      key: 'delete',
+      label: 'Delete',
+      color: BULK_COLORS.delete,
+      onClick: () => void deleteSelection(),
+    });
+    return actions;
+  }, [selectedProjects, setArchivedFor, deleteSelection]);
+
   const closeModal = useCallback(() => {
     setCreating(false);
     setEditProject(null);
@@ -215,22 +292,22 @@ export function ProjectsView({
         </div>
       </div>
 
+      {tab === 'projects' ? (
+        <BulkActionBar count={selectedCount} actions={bulkActions} onClear={clearSelection} />
+      ) : null}
+
       <div className="reveal-content">
         {tab === 'templates' ? (
           templates.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border/60 p-12 text-center">
-              <p className="text-sm text-muted-foreground">
-                No templates. Create one to draft plans and specs from a reusable document.
-              </p>
-              <Button type="button" size="sm" onClick={newTemplate}>
-                <Plus className="h-4 w-4" />
-                New template
-              </Button>
-            </div>
+            <EmptyState
+              Icon={FileText}
+              title="No templates yet"
+              description="Create one to draft plans and specs from a reusable document."
+              actionLabel="New template"
+              onAction={newTemplate}
+            />
           ) : filteredTemplates.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-border/60 p-12 text-center text-sm text-muted-foreground">
-              No templates match “{q}”.
-            </div>
+            <EmptyState Icon={FileText} title={`No templates match “${q}”`} />
           ) : view === 'table' ? (
             <TemplatesTable
               templates={filteredTemplates}
@@ -262,19 +339,15 @@ export function ProjectsView({
             </div>
           )
         ) : initial.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border/60 p-12 text-center">
-            <p className="text-sm text-muted-foreground">
-              No projects yet. Create one to group tasks, attach sources, and draft a plan.
-            </p>
-            <Button type="button" size="sm" onClick={() => setCreating(true)}>
-              <Plus className="h-4 w-4" />
-              New project
-            </Button>
-          </div>
+          <EmptyState
+            Icon={Folder}
+            title="No projects yet"
+            description="Create one to group tasks, attach sources, and draft a plan."
+            actionLabel="New project"
+            onAction={() => setCreating(true)}
+          />
         ) : filtered.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border/60 p-12 text-center text-sm text-muted-foreground">
-            No projects match “{q}”.
-          </div>
+          <EmptyState Icon={Folder} title={`No projects match “${q}”`} />
         ) : view === 'table' ? (
           <ProjectsTree
             projects={filtered}
@@ -282,6 +355,8 @@ export function ProjectsView({
             onEdit={setEditProject}
             onPlan={setPlanProject}
             onSelectTask={setSelectedTask}
+            isSelected={isSelected}
+            onToggleSelect={(id, sk) => toggleSelect(id, sk, filtered.map((x) => x.id))}
           />
         ) : view === 'list' ? (
           <div className="flex flex-col gap-2">
@@ -292,6 +367,8 @@ export function ProjectsView({
                 layout="list"
                 onOpen={() => setEditProject(p)}
                 onPlan={() => setPlanProject(p)}
+                selected={isSelected(p.id)}
+                onToggleSelect={() => toggleSelect(p.id)}
               />
             ))}
           </div>
@@ -304,6 +381,8 @@ export function ProjectsView({
                 layout="grid"
                 onOpen={() => setEditProject(p)}
                 onPlan={() => setPlanProject(p)}
+                selected={isSelected(p.id)}
+                onToggleSelect={() => toggleSelect(p.id)}
               />
             ))}
           </div>

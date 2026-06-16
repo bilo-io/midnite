@@ -46,6 +46,7 @@ export const CouncilSchema = z.object({
   /** The CLI that judges the anonymized takes and writes the verdict. */
   verdictProvider: AgentCliSchema,
   participants: z.array(CouncilParticipantSchema),
+  archived: z.boolean().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -108,6 +109,7 @@ export const UpdateCouncilRequestSchema = z.object({
   name: z.string().trim().min(1).max(120).optional(),
   description: z.string().max(2000).optional(),
   verdictProvider: AgentCliSchema.optional(),
+  archived: z.boolean().optional(),
 });
 export type UpdateCouncilRequest = z.infer<typeof UpdateCouncilRequestSchema>;
 

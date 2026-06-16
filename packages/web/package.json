@@ -27,8 +27,11 @@
     "react-dom": "^19.0.0",
     "react-grid-layout": "^2.2.3",
     "react-markdown": "^9",
+    "react-select": "^5.10.2",
     "remark-gfm": "^4",
     "tailwind-merge": "^3.6.0",
+    "wavesurfer.js": "^7.12.8",
+    "yet-another-react-lightbox": "^3.32.0",
     "zod": "^3.23.8",
     "zustand": "^5.0.2"
   },

@@ -74,8 +74,9 @@ export const AgentCliStatusSchema = z.object({
 });
 export type AgentCliStatus = z.infer<typeof AgentCliStatusSchema>;
 
-/** Which command a standalone CLI terminal pastes — install or uninstall. */
-export const CLI_TERMINAL_ACTIONS = ['install', 'uninstall'] as const;
+/** What a standalone CLI terminal does — install/uninstall the CLI, or launch a
+ *  live agent session by running the CLI itself. */
+export const CLI_TERMINAL_ACTIONS = ['install', 'uninstall', 'launch'] as const;
 export const CliTerminalActionSchema = z.enum(CLI_TERMINAL_ACTIONS);
 export type CliTerminalAction = z.infer<typeof CliTerminalActionSchema>;
 

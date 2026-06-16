@@ -1,13 +1,18 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { LayoutGrid, List, ListTree, Plus } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { LayoutGrid, List, ListTree, Plus, Workflow } from 'lucide-react';
 import type { WorkflowSummary } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
+import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-action-bar';
+import { EmptyState } from '@/components/empty-state';
+import { useConfirm } from '@/components/confirm-dialog';
 import { WorkflowCard } from '@/components/workflow-card';
 import { WorkflowsTable } from '@/components/workflows-table';
 import { WorkflowCreateModal } from '@/components/workflow-create-modal';
+import { deleteWorkflow, updateWorkflow } from '@/lib/api';
+import { useBulkSelection } from '@/lib/use-bulk-selection';
 import { cn } from '@/lib/utils';
 
 type View = 'list' | 'grid' | 'table';
@@ -15,6 +20,7 @@ const VIEWS: readonly View[] = ['list', 'grid', 'table'];
 const VIEW_STORAGE_KEY = 'midnite.workflows.view';
 
 export function WorkflowsView({ initial }: { initial: WorkflowSummary[] }) {
+  const router = useRouter();
   const [view, setView] = useState<View>('grid');
   const [creating, setCreating] = useState(false);
 
@@ -31,6 +37,75 @@ export function WorkflowsView({ initial }: { initial: WorkflowSummary[] }) {
       // ignore storage failures (private mode, etc.)
     }
   }, []);
+
+  const refresh = useCallback(() => router.refresh(), [router]);
+
+  // --- Bulk selection ---
+  const confirm = useConfirm();
+  const {
+    selectedIds,
+    count: selectedCount,
+    clear: clearSelection,
+    isSelected,
+    toggle: toggleSelect,
+  } = useBulkSelection();
+
+  const selectedWorkflows = useMemo(
+    () => initial.filter((w) => selectedIds.includes(w.id)),
+    [initial, selectedIds],
+  );
+
+  const setArchivedFor = useCallback(
+    async (ids: string[], archived: boolean) => {
+      if (ids.length === 0) return;
+      await Promise.all(ids.map((id) => updateWorkflow(id, { archived })));
+      clearSelection();
+      refresh();
+    },
+    [clearSelection, refresh],
+  );
+
+  const deleteSelection = useCallback(async () => {
+    if (selectedIds.length === 0) return;
+    const ok = await confirm({
+      title: `Delete ${selectedIds.length} workflow${selectedIds.length === 1 ? '' : 's'}?`,
+      description: 'This cannot be undone.',
+      confirmLabel: 'Delete',
+    });
+    if (!ok) return;
+    await Promise.all(selectedIds.map((id) => deleteWorkflow(id)));
+    clearSelection();
+    refresh();
+  }, [selectedIds, confirm, clearSelection, refresh]);
+
+  const bulkActions = useMemo<BulkAction[]>(() => {
+    const actions: BulkAction[] = [];
+    const toArchive = selectedWorkflows.filter((w) => !w.archived).map((w) => w.id);
+    const toUnarchive = selectedWorkflows.filter((w) => w.archived).map((w) => w.id);
+    if (toArchive.length) {
+      actions.push({
+        key: 'archive',
+        label: 'Archive',
+        color: BULK_COLORS.archive,
+        onClick: () => void setArchivedFor(toArchive, true),
+      });
+    }
+    if (toUnarchive.length) {
+      actions.push({
+        key: 'unarchive',
+        label: 'Unarchive',
+        color: BULK_COLORS.archive,
+        onClick: () => void setArchivedFor(toUnarchive, false),
+      });
+    }
+    actions.push({
+      key: 'delete',
+      label: 'Delete',
+      color: BULK_COLORS.delete,
+      onClick: () => void deleteSelection(),
+    });
+    return actions;
+  }, [selectedWorkflows, setArchivedFor, deleteSelection]);
 
   const searchParams = useSearchParams();
   const q = (searchParams.get('q') ?? '').trim().toLowerCase();
@@ -87,33 +162,47 @@ export function WorkflowsView({ initial }: { initial: WorkflowSummary[] }) {
         </div>
       </div>
 
+      <BulkActionBar count={selectedCount} actions={bulkActions} onClear={clearSelection} />
+
       <div className="reveal-content">
         {initial.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border/60 p-12 text-center">
-            <p className="text-sm text-muted-foreground">
-              No workflows yet. Build an automation that runs on a schedule, a webhook, or on demand.
-            </p>
-            <Button type="button" size="sm" onClick={() => setCreating(true)}>
-              <Plus className="h-4 w-4" />
-              New workflow
-            </Button>
-          </div>
+          <EmptyState
+            Icon={Workflow}
+            title="No workflows yet"
+            description="Build an automation that runs on a schedule, a webhook, or on demand."
+            actionLabel="New workflow"
+            onAction={() => setCreating(true)}
+          />
         ) : filtered.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border/60 p-12 text-center text-sm text-muted-foreground">
-            No workflows match “{q}”.
-          </div>
+          <EmptyState Icon={Workflow} title={`No workflows match “${q}”`} />
         ) : view === 'table' ? (
-          <WorkflowsTable workflows={filtered} />
+          <WorkflowsTable
+            workflows={filtered}
+            isSelected={isSelected}
+            onToggleSelect={(id, sk) => toggleSelect(id, sk, filtered.map((x) => x.id))}
+          />
         ) : view === 'list' ? (
           <div className="flex flex-col gap-2">
             {filtered.map((w) => (
-              <WorkflowCard key={w.id} workflow={w} layout="list" />
+              <WorkflowCard
+                key={w.id}
+                workflow={w}
+                layout="list"
+                selected={isSelected(w.id)}
+                onToggleSelect={() => toggleSelect(w.id)}
+              />
             ))}
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
             {filtered.map((w) => (
-              <WorkflowCard key={w.id} workflow={w} layout="grid" />
+              <WorkflowCard
+                key={w.id}
+                workflow={w}
+                layout="grid"
+                selected={isSelected(w.id)}
+                onToggleSelect={() => toggleSelect(w.id)}
+              />
             ))}
           </div>
         )}
