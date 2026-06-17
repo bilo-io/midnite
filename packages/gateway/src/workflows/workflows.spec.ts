@@ -9,7 +9,9 @@ import { WorkflowsRepository } from './workflows.repository';
 import { ExecutorRegistry } from './engine/executor-registry';
 import { WorkflowEngine } from './engine/workflow-engine.service';
 import { WorkflowsService } from './workflows.service';
+import { WorkflowEventBus } from './workflow-event-bus';
 import type { NodeExecutor } from './engine/node-executor';
+import type { WorkflowEvent } from '@midnite/shared';
 
 function makeDb(): BetterSQLite3Database<typeof schema> {
   const sqlite = new Database(':memory:');
@@ -83,10 +85,14 @@ const CONFIG: MidniteConfig = parseConfig({ agent: {}, terminal: {}, knowledge: 
 describe('WorkflowEngine', () => {
   let repo: WorkflowsRepository;
   let engine: WorkflowEngine;
+  let events: WorkflowEvent[];
 
   beforeEach(() => {
     repo = new WorkflowsRepository(makeDb());
-    engine = new WorkflowEngine(repo, new ExecutorRegistry([echo, boom]));
+    const bus = new WorkflowEventBus();
+    events = [];
+    bus.subscribe((e) => events.push(e));
+    engine = new WorkflowEngine(repo, new ExecutorRegistry([echo, boom]), bus);
   });
 
   it('runs a linear graph, passing the trigger payload downstream', async () => {
@@ -149,6 +155,28 @@ describe('WorkflowEngine', () => {
     const wf = branchWorkflow({ left: 'body.status', operator: 'equals', right: 'ok' });
     expect(() => engine.validateGraph({ nodes: wf.nodes, edges: wf.edges })).not.toThrow();
   });
+
+  it('emits run/node lifecycle events in order on a successful run', async () => {
+    await engine.runToCompletion(workflow('http.request'), {
+      triggerSource: 'manual',
+      input: { hello: 'world' },
+    });
+    const types = events.map((e) => e.type);
+    expect(types[0]).toBe('run.started');
+    expect(types.at(-1)).toBe('run.finished');
+    expect(types).toContain('node.started');
+    expect(types).toContain('node.succeeded');
+    // every emitted event carries the same runId
+    const runIds = new Set(events.map((e) => e.runId));
+    expect(runIds.size).toBe(1);
+  });
+
+  it('emits run.failed when a node throws', async () => {
+    await engine.runToCompletion(workflow('ai.claude'), { triggerSource: 'manual' });
+    const types = events.map((e) => e.type);
+    expect(types).toContain('node.failed');
+    expect(types.at(-1)).toBe('run.failed');
+  });
 });
 
 describe('WorkflowsService', () => {
@@ -157,7 +185,7 @@ describe('WorkflowsService', () => {
 
   beforeEach(() => {
     repo = new WorkflowsRepository(makeDb());
-    const engine = new WorkflowEngine(repo, new ExecutorRegistry([echo, boom]));
+    const engine = new WorkflowEngine(repo, new ExecutorRegistry([echo, boom]), new WorkflowEventBus());
     service = new WorkflowsService(repo, engine, CONFIG);
   });
 

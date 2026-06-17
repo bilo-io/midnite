@@ -52,3 +52,12 @@ export const WorkflowEventSchema = z.discriminatedUnion('type', [
 ]);
 
 export type WorkflowEvent = z.infer<typeof WorkflowEventSchema>;
+
+// Client → gateway message on the workflow WS: subscribe to a run's live events.
+export const WorkflowSubscribeMessageSchema = z.object({
+  type: z.literal('subscribe'),
+  runId: z.string(),
+});
+export type WorkflowSubscribeMessage = z.infer<typeof WorkflowSubscribeMessageSchema>;
+
+export const WORKFLOW_WS_PATH = '/ws/workflows';
