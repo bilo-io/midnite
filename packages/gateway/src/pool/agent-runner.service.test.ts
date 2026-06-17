@@ -1,9 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import { parseConfig, type MidniteConfig, type Task } from '@midnite/shared';
+import type { KnowledgeService } from '../knowledge/knowledge.service';
 import type { TasksService } from '../tasks/tasks.service';
 import type { TerminalService } from '../terminal/terminal.service';
 import { AgentPoolService } from './agent-pool.service';
 import { AgentRunnerService } from './agent-runner.service';
+
+// No knowledge-base links → buildAgentPrompt returns the bare task prompt.
+const knowledge = { listSources: () => [] } as unknown as KnowledgeService;
 
 function config(): MidniteConfig {
   return parseConfig({
@@ -63,7 +67,7 @@ describe('AgentRunnerService', () => {
     const { service, startTask } = fakeTasks([task('t1', '  do the thing  ')]);
     const pool = new AgentPoolService(cfg, service);
     const { terminal, spawnAgentSession } = fakeTerminal();
-    const runner = new AgentRunnerService(cfg, pool, service, terminal);
+    const runner = new AgentRunnerService(cfg, pool, service, terminal, knowledge);
 
     const ok = await runner.start(task('t1', '  do the thing  '));
     expect(ok).toBe(true);
@@ -85,7 +89,7 @@ describe('AgentRunnerService', () => {
       spawnAgentSession: vi.fn(() => ({ ok: false as const, error: 'no pty' })),
       killManagedRun: vi.fn(),
     } as unknown as TerminalService;
-    const runner = new AgentRunnerService(cfg, pool, service, terminal);
+    const runner = new AgentRunnerService(cfg, pool, service, terminal, knowledge);
 
     const ok = await runner.start(task('t1', 'x'));
     expect(ok).toBe(false);
@@ -98,7 +102,7 @@ describe('AgentRunnerService', () => {
     const { service, requeue } = fakeTasks([task('t1', 'x')]);
     const pool = new AgentPoolService(cfg, service);
     const { terminal, fireExit } = fakeTerminal();
-    const runner = new AgentRunnerService(cfg, pool, service, terminal);
+    const runner = new AgentRunnerService(cfg, pool, service, terminal, knowledge);
 
     await runner.start(task('t1', 'x')); // task is now wip
     fireExit(1); // PTY died unexpectedly
@@ -112,7 +116,7 @@ describe('AgentRunnerService', () => {
     const { service, updateStatus } = fakeTasks([task('t1', 'x')]);
     const pool = new AgentPoolService(cfg, service);
     const { terminal, killManagedRun } = fakeTerminal();
-    const runner = new AgentRunnerService(cfg, pool, service, terminal);
+    const runner = new AgentRunnerService(cfg, pool, service, terminal, knowledge);
 
     await runner.start(task('t1', 'x'));
     runner.cancel('t1');

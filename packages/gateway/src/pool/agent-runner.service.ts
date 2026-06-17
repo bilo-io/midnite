@@ -1,9 +1,11 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { MidniteConfig, Status, Task } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
+import { KnowledgeService } from '../knowledge/knowledge.service';
 import { TasksService } from '../tasks/tasks.service';
 import { TerminalService } from '../terminal/terminal.service';
 import { AgentPoolService } from './agent-pool.service';
+import { buildAgentPrompt } from './lib/build-agent-prompt';
 
 /**
  * Drives a single task through an autonomous agent run: claim a slot, move the
@@ -21,6 +23,7 @@ export class AgentRunnerService {
     @Inject(AgentPoolService) private readonly pool: AgentPoolService,
     @Inject(TasksService) private readonly tasks: TasksService,
     @Inject(TerminalService) private readonly terminal: TerminalService,
+    @Inject(KnowledgeService) private readonly knowledge: KnowledgeService,
   ) {}
 
   /** Claim a slot and spawn an agent session for `task`. Returns false (leaving
@@ -127,9 +130,10 @@ export class AgentRunnerService {
     }
   }
 
-  // Phase E enriches this with plan/act expansion + knowledge injection. v1 uses
-  // the freeform prompt, falling back to the title.
+  // The task's own prompt (falling back to its title) plus the knowledge-base
+  // links as reference context.
   private async buildPrompt(task: Task): Promise<string> {
-    return task.prompt?.trim() || task.title;
+    const base = task.prompt?.trim() || task.title;
+    return buildAgentPrompt(base, this.knowledge.listSources());
   }
 }

@@ -2,6 +2,7 @@ import { BadRequestException, Inject, Injectable, NotFoundException } from '@nes
 import { randomUUID } from 'node:crypto';
 import { detectSourceKind, type Status, type Task, type TaskCounts } from '@midnite/shared';
 import { TaskClassifier, type ClassifierImage } from '../agent/classifier.service';
+import { PlannerService } from '../agent/planner.service';
 import { TasksRepository } from './tasks.repository';
 
 export interface CreateTaskInput {
@@ -18,6 +19,7 @@ export class TasksService {
   constructor(
     @Inject(TasksRepository) private readonly repo: TasksRepository,
     @Inject(TaskClassifier) private readonly classifier: TaskClassifier,
+    @Inject(PlannerService) private readonly planner: PlannerService,
   ) {}
 
   getCounts(): TaskCounts {
@@ -159,10 +161,15 @@ export class TasksService {
   }
 
   async createFromPrompt(input: CreateTaskInput): Promise<Task> {
-    const classified = await this.classifier.classify(
-      input.prompt,
-      input.images.map((i) => ({ path: i.path, mime: i.mime })),
-    );
+    // Triage (plan model: ready→todo / not→backlog) and classify (title/kind)
+    // run concurrently — both are fail-soft, so neither breaks task creation.
+    const [classified, triage] = await Promise.all([
+      this.classifier.classify(
+        input.prompt,
+        input.images.map((i) => ({ path: i.path, mime: i.mime })),
+      ),
+      this.planner.triage(input.prompt),
+    ]);
 
     const id = randomUUID();
     const now = new Date().toISOString();
@@ -171,7 +178,9 @@ export class TasksService {
       id,
       title: classified.title,
       kind: classified.kind,
-      status: input.status ?? 'todo',
+      // An explicit caller status wins; otherwise the planner's triage decides
+      // the landing column.
+      status: input.status ?? (triage.ready ? 'todo' : 'backlog'),
       prompt: input.prompt,
       repo: input.repo ?? null,
       projectId: input.projectId ?? null,
