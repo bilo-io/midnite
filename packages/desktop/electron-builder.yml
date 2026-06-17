@@ -35,6 +35,9 @@ asar: true
 asarUnpack:
   - '**/*.node'
 
+# Re-assert +x on node-pty's spawn-helper after packaging (it can lose the bit).
+afterPack: scripts/afterpack.cjs
+
 mac:
   category: public.app-category.developer-tools
   target:
