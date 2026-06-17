@@ -1,63 +1,6 @@
-import 'reflect-metadata';
-import { NestFactory } from '@nestjs/core';
-import {
-  FastifyAdapter,
-  NestFastifyApplication,
-} from '@nestjs/platform-fastify';
-import { WsAdapter } from '@nestjs/platform-ws';
-import multipart from '@fastify/multipart';
-import fastifyStatic from '@fastify/static';
-import { mkdirSync } from 'node:fs';
-import { isAbsolute, resolve } from 'node:path';
-import { AppModule } from './app.module';
-import { isAllowedOrigin } from './lib/allowed-origin';
-import { loadConfigFromDisk } from './lib/load-config';
+import { startGateway } from './bootstrap';
 
-function resolveDir(p: string): string {
-  return isAbsolute(p) ? p : resolve(process.cwd(), p);
-}
-
-async function bootstrap() {
-  const config = loadConfigFromDisk();
-  const adapter = new FastifyAdapter();
-
-  const uploadsDir = resolveDir(config.gateway.uploadsDir);
-  mkdirSync(uploadsDir, { recursive: true });
-
-  await adapter.register(multipart as never, {
-    limits: {
-      fileSize: 8 * 1024 * 1024, // 8 MB
-      files: 10,
-    },
-  });
-
-  await adapter.register(fastifyStatic as never, {
-    root: uploadsDir,
-    prefix: '/uploads/',
-    decorateReply: false,
-  });
-
-  const app = await NestFactory.create<NestFastifyApplication>(
-    AppModule,
-    adapter,
-  );
-
-  // The gateway can spawn PTYs, so don't reflect arbitrary origins — only
-  // loopback (the dev web app) plus any explicitly-configured origins.
-  const { allowedOrigins } = config.gateway;
-  app.enableCors({
-    origin: (origin, cb) => cb(null, isAllowedOrigin(origin, allowedOrigins)),
-  });
-  // Live terminal WS rides the same Fastify HTTP server, routed by gateway path.
-  app.useWebSocketAdapter(new WsAdapter(app));
-
-  const { port, host } = config.gateway;
-  await app.listen(port, host);
-  // eslint-disable-next-line no-console
-  console.log(`[midnite gateway] listening on http://${host}:${port}`);
-}
-
-bootstrap().catch((err) => {
+startGateway().catch((err) => {
   // eslint-disable-next-line no-console
   console.error('[midnite gateway] failed to start', err);
   process.exit(1);

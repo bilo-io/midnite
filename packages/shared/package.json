@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./config-loader": {
+      "types": "./dist/config-loader.d.ts",
+      "default": "./dist/config-loader.js"
     }
   },
   "files": ["dist"],

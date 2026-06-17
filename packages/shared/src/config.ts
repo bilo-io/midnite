@@ -10,6 +10,19 @@ export const AgentConfigSchema = z.object({
   provider: z.enum(['claude']).default('claude'),
   plan: z.string().default('opus4.8'),
   act: z.string().default('haiku4.5'),
+  // Feature flag — the agent pool scheduler is greenfield, so it ships off by
+  // default. When off, sessions only spawn when a human attaches a terminal.
+  poolEnabled: z.boolean().default(false),
+  // How often the single pool tick loop wakes to assign ready `todo` tasks to
+  // free slots. Mirrors the workflow/heartbeat scheduler cadence knobs.
+  schedulerTickMs: z.number().int().positive().default(5000),
+  // Whether a task in `waiting` (agent blocked on user input) keeps holding its
+  // pool slot. On by default — the session's PTY is literally still alive and
+  // blocked on stdin, so freeing the slot would orphan it.
+  waitingHoldsSlot: z.boolean().default(true),
+  // Hard ceiling per autonomous agent run; the session is cancelled on expiry
+  // and the task requeued. Mirrors councils.runTimeoutMs.
+  runTimeoutMs: z.number().int().positive().default(1800000),
 });
 
 export const TerminalConfigSchema = z.object({
@@ -135,6 +148,6 @@ export function parseConfig(raw: unknown): MidniteConfig {
   return MidniteConfigSchema.parse(raw);
 }
 
-export async function loadConfig(_path: string): Promise<MidniteConfig> {
-  throw new Error('loadConfig() not implemented yet — see packages/gateway for the runtime loader');
-}
+// The runtime loader (reads midnite.json from disk) lives in the node-only
+// `@midnite/shared/config-loader` entry, kept out of this barrel so bundlers
+// never pull `node:fs` into the browser build.
