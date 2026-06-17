@@ -92,12 +92,14 @@ export function buildInstallInitCommand(chain: string): string {
 }
 
 /**
- * Resolve the runtime path to the PreToolUse hook script. `tsc -b` doesn't copy
- * non-.ts assets into dist, so the script lives in src and we walk candidates the
- * same way db.module.ts finds migrations (dev: __dirname=src/terminal; prod: dist/terminal).
+ * Resolve the runtime path to a hook script (`pre-tool-use-hook.cjs`,
+ * `stop-hook.cjs`, `notification-hook.cjs`). `tsc -b` doesn't copy non-.ts assets
+ * into dist, so the scripts live in src and we walk candidates the same way
+ * db.module.ts finds migrations (dev: __dirname=src/terminal; prod: dist/terminal,
+ * where the gateway:build step copies them — see moon.yml).
  */
-export function resolveHookScriptPath(): string {
-  const rel = 'hooks/pre-tool-use-hook.cjs';
+export function resolveHookScriptPath(filename: string): string {
+  const rel = `hooks/${filename}`;
   const candidates = [
     resolve(__dirname, rel), // dev: src/terminal/hooks/...
     resolve(__dirname, '../../src/terminal', rel), // dist/terminal -> package src
@@ -317,7 +319,7 @@ export class TerminalService implements OnModuleDestroy {
     const command = AGENT_CLI_COMMAND[this.agents.getAgentCli()];
     const args: string[] = [];
     const env = this.fullEnv();
-    const settingsFile = this.applyApprovalWiring(sessionId, command, args, env);
+    const settingsFile = this.applyHookWiring(sessionId, command, args, env, { lifecycle: true });
     args.push(spec.prompt);
 
     const cwd = this.resolveCwd(sessionId);
@@ -616,10 +618,11 @@ export class TerminalService implements OnModuleDestroy {
       return { command, args, cwd: process.cwd(), env, initCommand: adHoc.initCommand };
     }
 
-    // Wire human-in-the-loop approvals for Claude Code sessions only. The
-    // MIDNITE_* vars are injected AFTER scrubSecretEnv so the *_SECRET key
+    // Wire human-in-the-loop approvals for Claude Code sessions only (no
+    // lifecycle hooks — interactive sessions don't auto-transition the task).
+    // The MIDNITE_* vars are injected AFTER scrubSecretEnv so the *_SECRET key
     // isn't stripped.
-    const settingsFile = this.applyApprovalWiring(sessionId, command, args, env);
+    const settingsFile = this.applyHookWiring(sessionId, command, args, env, { lifecycle: false });
 
     const cwd = this.resolveCwd(sessionId);
     // On first open of a session, drop into the project dir and launch the
@@ -647,23 +650,34 @@ export class TerminalService implements OnModuleDestroy {
   }
 
   /**
-   * Register Claude's approval/lifecycle hooks for a session whose command is
-   * `claude` and approvals are enabled: write the ephemeral `--settings` file,
-   * append it to `args`, and inject the per-session secret + callback URL into
-   * `env`. Mutates `args`/`env`; returns the settings file path to track for
-   * cleanup, or undefined when wiring doesn't apply. Shared by interactive
-   * session spawn and autonomous agent spawn.
+   * Register Claude's hooks for a `claude` session: write the ephemeral
+   * `--settings` file, append it to `args`, and inject the per-session secret +
+   * callback URL into `env`. Mutates `args`/`env`; returns the settings file path
+   * to track for cleanup, or undefined when no hooks apply (non-claude command,
+   * or nothing to register).
+   *
+   * - PreToolUse (tool approvals) is registered only when `terminal.approvals`
+   *   is enabled — interactive and agent sessions alike.
+   * - Stop/Notification (task lifecycle → status) are registered when
+   *   `opts.lifecycle` is set, i.e. for autonomous agent sessions, regardless of
+   *   the approvals flag — they drive task status, not tool gating.
    */
-  private applyApprovalWiring(
+  private applyHookWiring(
     sessionId: string,
     command: string,
     args: string[],
     env: Record<string, string>,
+    opts: { lifecycle: boolean },
   ): string | undefined {
     const { terminal } = this.config;
-    if (!(terminal.approvals.enabled && basename(command) === 'claude')) return undefined;
+    if (basename(command) !== 'claude') return undefined;
+    const preToolUse = terminal.approvals.enabled;
+    if (!preToolUse && !opts.lifecycle) return undefined;
     const secret = this.approvals.mintSecret(sessionId);
-    const settingsFile = this.writeApprovalSettings(sessionId);
+    const settingsFile = this.writeHookSettings(sessionId, {
+      preToolUse,
+      lifecycle: opts.lifecycle,
+    });
     args.push('--settings', settingsFile);
     env['MIDNITE_SESSION_ID'] = sessionId;
     env['MIDNITE_HOOK_SECRET'] = secret;
@@ -682,27 +696,50 @@ export class TerminalService implements OnModuleDestroy {
     );
   }
 
-  /** Write the ephemeral Claude `--settings` file registering the PreToolUse approval hook. */
-  private writeApprovalSettings(sessionId: string): string {
+  /**
+   * Write the ephemeral Claude `--settings` file registering the requested hooks.
+   * PreToolUse blocks on a viewer decision (so it carries Claude's hook timeout);
+   * Stop/Notification are fire-and-forget status callbacks.
+   */
+  private writeHookSettings(
+    sessionId: string,
+    opts: { preToolUse: boolean; lifecycle: boolean },
+  ): string {
     const dir = this.approvalsDir();
     mkdirSync(dir, { recursive: true });
     const file = join(dir, `${sessionId}.settings.json`);
     // Give Claude's own hook timeout headroom past the gateway's, so the gateway's
     // decision (or fail-safe) always wins the race.
     const timeoutSec = Math.ceil(this.config.terminal.approvals.timeoutMs / 1000) + 30;
-    const settings = {
-      hooks: {
-        PreToolUse: [
-          {
-            matcher: '*',
-            hooks: [
-              { type: 'command', command: `node "${resolveHookScriptPath()}"`, timeout: timeoutSec },
-            ],
-          },
-        ],
-      },
-    };
-    writeFileSync(file, JSON.stringify(settings, null, 2), 'utf8');
+    const hooks: Record<string, unknown> = {};
+    if (opts.preToolUse) {
+      hooks['PreToolUse'] = [
+        {
+          matcher: '*',
+          hooks: [
+            {
+              type: 'command',
+              command: `node "${resolveHookScriptPath('pre-tool-use-hook.cjs')}"`,
+              timeout: timeoutSec,
+            },
+          ],
+        },
+      ];
+    }
+    if (opts.lifecycle) {
+      hooks['Stop'] = [
+        { hooks: [{ type: 'command', command: `node "${resolveHookScriptPath('stop-hook.cjs')}"` }] },
+      ];
+      hooks['Notification'] = [
+        {
+          matcher: '*',
+          hooks: [
+            { type: 'command', command: `node "${resolveHookScriptPath('notification-hook.cjs')}"` },
+          ],
+        },
+      ];
+    }
+    writeFileSync(file, JSON.stringify({ hooks }, null, 2), 'utf8');
     return file;
   }
 

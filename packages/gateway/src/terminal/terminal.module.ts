@@ -12,6 +12,6 @@ import { TerminalService } from './terminal.service';
   imports: [TasksModule, ProjectsModule, AgentsModule],
   controllers: [ApprovalController, TerminalController],
   providers: [TerminalService, ApprovalService, TerminalGateway],
-  exports: [TerminalService],
+  exports: [TerminalService, ApprovalService],
 })
 export class TerminalModule {}

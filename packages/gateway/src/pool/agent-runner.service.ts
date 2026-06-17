@@ -55,6 +55,15 @@ export class AgentRunnerService {
     }
   }
 
+  /** The Stop hook marked the task done: clear the timeout, free the slot, and
+   *  reap the now-idle session. Status is already `done` (set by the hook), so
+   *  the PTY's onExit won't requeue it. */
+  complete(taskId: string): void {
+    this.clearRunTimeout(taskId);
+    this.pool.release(taskId);
+    this.terminal.killManagedRun(taskId);
+  }
+
   /** User- or timeout-initiated stop: abandon the task and kill its session. The
    *  PTY's onExit then frees the slot. */
   cancel(taskId: string): void {
