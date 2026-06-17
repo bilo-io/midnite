@@ -1,0 +1,43 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+language: 'typescript'
+
+dependsOn:
+  - 'gateway'
+  - 'web'
+
+tasks:
+  build:
+    command: 'pnpm exec tsc -b'
+    inputs:
+      - 'src/**/*'
+      - 'tsconfig.json'
+    outputs:
+      - 'dist'
+
+  typecheck:
+    command: 'pnpm exec tsc --noEmit'
+    inputs:
+      - 'src/**/*'
+      - 'tsconfig.json'
+
+  # Rebuild native deps (better-sqlite3, node-pty) against Electron's ABI.
+  # Run on the target machine before `start`/`package`.
+  rebuild:
+    command: 'pnpm exec electron-rebuild'
+
+  # Dev: boots the gateway as a child + loads the Next dev server (MIDNITE_WEB_URL).
+  start:
+    command: 'pnpm exec electron .'
+    preset: 'server'
+
+  # Produce the macOS dmg/zip. Requires gateway:build + web:build (static export)
+  # and a prior `rebuild` for the current arch.
+  package:
+    command: 'pnpm exec electron-builder --mac --config electron-builder.yml'
+    deps:
+      - '~:build'
+      - 'gateway:build'
+      - 'web:build'
+    outputs:
+      - 'build'

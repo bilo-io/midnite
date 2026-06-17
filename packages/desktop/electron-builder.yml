@@ -1,0 +1,59 @@
+appId: earth.ekko.midnite
+productName: midnite
+directories:
+  output: build
+  buildResources: resources
+
+# Only the Electron main + preload go in the app asar; the gateway and web export
+# ride along as on-disk extraResources (native .node files can't load from asar,
+# and this keeps the layout simple).
+files:
+  - dist/**/*
+  - package.json
+
+extraResources:
+  - from: ../gateway/dist
+    to: gateway/dist
+  - from: ../gateway/drizzle
+    to: gateway/drizzle
+  # tsc doesn't copy the hook .cjs files; gateway:build does, but stage them
+  # explicitly too in case the build step is bypassed.
+  - from: ../gateway/src/terminal/hooks
+    to: gateway/dist/terminal/hooks
+    filter:
+      - '*.cjs'
+  # A flat, symlink-free production node_modules for the gateway, produced by
+  # `pnpm --filter @midnite/gateway deploy` and electron-rebuilt for this arch.
+  # See README "Packaging".
+  - from: build-staging/gateway/node_modules
+    to: gateway/node_modules
+  # The Next.js static export (output: 'export').
+  - from: ../web/out
+    to: web
+
+asar: true
+asarUnpack:
+  - '**/*.node'
+
+mac:
+  category: public.app-category.developer-tools
+  target:
+    - target: dmg
+      arch:
+        - arm64
+        - x64
+    - target: zip
+      arch:
+        - arm64
+        - x64
+  icon: resources/icon.icns
+  # Required for notarization later; harmless while unsigned.
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  # Unsigned for now. To sign + notarize later: set `identity`, add an
+  # `afterSign` notarize hook, and provide CSC_LINK / APPLE_ID /
+  # APPLE_APP_SPECIFIC_PASSWORD / APPLE_TEAM_ID in the environment.
+  identity: null
+
+# Auto-update later: the `zip` target + a `publish:` block (GitHub provider) is
+# all electron-updater needs; add autoUpdater.checkForUpdatesAndNotify() in main.
