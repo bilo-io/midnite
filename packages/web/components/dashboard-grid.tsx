@@ -11,6 +11,7 @@ import {
   DEFAULT_WIDGETS,
   sizeForKey,
   type Breakpoint,
+  type FinanceConfig,
   type WidgetInstance,
   type WidgetType,
 } from '@/lib/dashboard-widgets';
@@ -39,6 +40,7 @@ import { TimerWidget } from './timer-widget';
 import { CalendarWidget } from './calendar-widget';
 import { ScratchpadWidget } from './scratchpad-widget';
 import { LinksWidget } from './links-widget';
+import { FinancesWidget } from './finances-widget';
 
 const STORAGE_KEY = 'midnite-dashboard-layout-v3';
 const BREAKPOINTS: Breakpoint[] = ['lg', 'md', 'sm'];
@@ -104,6 +106,8 @@ function deriveKeys(widgets: WidgetInstance[], projectCount: number): string[] {
   for (const w of widgets) {
     if (w.type === 'projects') {
       for (let i = 0; i < projectCount; i++) keys.push(`proj-${i}`);
+    } else if (w.type === 'finances') {
+      keys.push(`finances-${w.id}`);
     } else {
       keys.push(w.type);
     }
@@ -216,6 +220,11 @@ export function DashboardGrid({
   };
 
   const removeWidget = (key: string) => {
+    if (key.startsWith('finances-')) {
+      const id = key.slice('finances-'.length);
+      setWidgets((prev) => prev.filter((w) => !(w.type === 'finances' && w.id === id)));
+      return;
+    }
     const type: WidgetType = key.startsWith('proj-') ? 'projects' : (key as WidgetType);
     setWidgets((prev) => prev.filter((w) => w.type !== type));
   };
@@ -224,11 +233,25 @@ export function DashboardGrid({
     setWidgets((prev) => prev.map((w) => (w.type === type ? ({ type, config } as WidgetInstance) : w)));
   };
 
+  const updateFinances = (id: string, config: FinanceConfig) => {
+    setWidgets((prev) => prev.map((w) => (w.type === 'finances' && w.id === id ? { ...w, config } : w)));
+  };
+
   // Inner content for one rendered grid key.
   const renderContent = (key: string): { node: React.ReactNode; scroll?: boolean } => {
     if (key.startsWith('proj-')) {
       const project = recentProjects[Number(key.slice('proj-'.length))];
       return { node: project ? <ProjectCard project={project} tasks={tasks} /> : null };
+    }
+    if (key.startsWith('finances-')) {
+      const id = key.slice('finances-'.length);
+      const w = widgets.find((x) => x.type === 'finances' && x.id === id);
+      return {
+        node:
+          w?.type === 'finances' ? (
+            <FinancesWidget config={w.config} onConfigChange={(c) => updateFinances(id, c)} />
+          ) : null,
+      };
     }
     switch (key as WidgetType) {
       case 'tile-backlog':
@@ -346,6 +369,11 @@ export function DashboardGrid({
   };
 
   const removeLabel = (key: string): string => {
+    if (key.startsWith('finances-')) {
+      const id = key.slice('finances-'.length);
+      const w = widgets.find((x) => x.type === 'finances' && x.id === id);
+      return `Remove ${(w?.type === 'finances' && w.config.title) || 'Finances'}`;
+    }
     const type: WidgetType = key.startsWith('proj-') ? 'projects' : (key as WidgetType);
     return `Remove ${DASHBOARD_WIDGETS[type]?.label ?? 'widget'}`;
   };

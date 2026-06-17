@@ -25,6 +25,7 @@ import {
   TerminalSquare,
   Timer,
   Users,
+  Wallet,
   Workflow,
   type LucideIcon,
 } from 'lucide-react';
@@ -64,7 +65,8 @@ export type WidgetType =
   | 'timer'
   | 'calendar'
   | 'scratchpad'
-  | 'links';
+  | 'links'
+  | 'finances';
 
 export type WeatherUnits = 'c' | 'f';
 export type ClockMode = 'digital' | 'analogue';
@@ -78,6 +80,18 @@ export type WorldClockZone = { label: string; tz: string };
 /** A single bookmark shown by the quick-links widget. */
 export type QuickLink = { label: string; url: string };
 
+/** A single income or expense row on a finances card. */
+export type FinanceEntry = { id: string; label: string; amount: number };
+
+/** State for one finances card: a title, income/expense rows, and a list⇄totals toggle. */
+export type FinanceConfig = {
+  title: string;
+  income: FinanceEntry[];
+  expenses: FinanceEntry[];
+  /** true = show the line-item list, false = show totals only. */
+  showDetail: boolean;
+};
+
 // Per-widget configuration persisted alongside the instance. Widgets without
 // settings carry no config.
 export type WidgetConfig = {
@@ -88,6 +102,7 @@ export type WidgetConfig = {
   timer: { workMin: number; breakMin: number };
   scratchpad: { text: string };
   links: { links: QuickLink[] };
+  finances: FinanceConfig;
 };
 
 /** Widget types that carry settings (have a `WidgetConfig` entry). */
@@ -101,6 +116,8 @@ export type WidgetInstance =
   | { type: 'timer'; config: WidgetConfig['timer'] }
   | { type: 'scratchpad'; config: WidgetConfig['scratchpad'] }
   | { type: 'links'; config: WidgetConfig['links'] }
+  // Multi-instance: each finances card carries a stable `id` (others are keyed by type alone).
+  | { type: 'finances'; id: string; config: WidgetConfig['finances'] }
   | { type: Exclude<WidgetType, ConfigurableWidget>; config?: undefined };
 
 export type WidgetSize = { w: number; h: number; minW: number; minH: number };
@@ -233,7 +250,20 @@ export const DASHBOARD_WIDGETS: Record<WidgetType, WidgetMeta> = {
     icon: LinkIcon,
     sizes: mediumSizes,
   },
+  finances: {
+    label: 'Finances',
+    description: 'Income vs expenses with the leftover — one card per budget',
+    icon: Wallet,
+    sizes: mediumSizes,
+  },
 };
+
+/**
+ * Widget types that may appear more than once on the board. Unlike single-instance
+ * widgets (keyed by their type), these carry a per-instance `id` and render under a
+ * `<type>-<id>` grid key — mirroring how `projects` fans out to `proj-N`.
+ */
+export const MULTI_INSTANCE = new Set<WidgetType>(['finances']);
 
 export const ALL_WIDGET_TYPES = Object.keys(DASHBOARD_WIDGETS) as WidgetType[];
 
@@ -277,6 +307,12 @@ export function newInstance(type: WidgetType): WidgetInstance {
       return { type, config: { text: '' } };
     case 'links':
       return { type, config: { links: [] } };
+    case 'finances':
+      return {
+        type,
+        id: crypto.randomUUID(),
+        config: { title: 'Finances', income: [], expenses: [], showDetail: true },
+      };
     default:
       return { type } as WidgetInstance;
   }
@@ -285,11 +321,18 @@ export function newInstance(type: WidgetType): WidgetInstance {
 /** Registry entries for widgets not yet on the board, in registry order. */
 export function widgetCatalog(enabled: WidgetInstance[]): Array<{ type: WidgetType } & WidgetMeta> {
   const present = new Set(enabled.map((w) => w.type));
-  return ALL_WIDGET_TYPES.filter((t) => !present.has(t)).map((type) => ({ type, ...DASHBOARD_WIDGETS[type] }));
+  // Multi-instance widgets stay in the catalogue even once placed, so you can add more.
+  return ALL_WIDGET_TYPES.filter((t) => MULTI_INSTANCE.has(t) || !present.has(t)).map((type) => ({
+    type,
+    ...DASHBOARD_WIDGETS[type],
+  }));
 }
 
 /** Default footprint for a rendered grid key (`proj-N` maps to the `projects` size). */
 export function sizeForKey(key: string, bp: Breakpoint): WidgetSize {
-  const type: WidgetType = key.startsWith('proj-') ? 'projects' : (key as WidgetType);
+  let type: WidgetType;
+  if (key.startsWith('proj-')) type = 'projects';
+  else if (key.startsWith('finances-')) type = 'finances';
+  else type = key as WidgetType;
   return (DASHBOARD_WIDGETS[type] ?? DASHBOARD_WIDGETS.notes).sizes[bp];
 }
