@@ -41,6 +41,15 @@ tasks:
       - '.storybook/**/*'
       - 'tsconfig.json'
 
+  lint:
+    command: 'pnpm exec eslint .'
+    inputs:
+      - 'app/**/*'
+      - 'components/**/*'
+      - 'hooks/**/*'
+      - 'lib/**/*'
+      - '/eslint.config.mjs'
+
   storybook:
     command: 'pnpm exec storybook dev -p 6006'
     preset: 'server'

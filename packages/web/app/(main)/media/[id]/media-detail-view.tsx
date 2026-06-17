@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -411,7 +411,6 @@ function MediaViewer({ media, onLightbox }: { media: Media; onLightbox: () => vo
         aria-label="Open image in lightbox"
       >
         {media.filePath ? (
-          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={mediaFileUrl(media.id)}
             alt={media.title}

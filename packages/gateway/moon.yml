@@ -36,3 +36,9 @@ tasks:
     inputs:
       - 'src/**/*'
       - 'tsconfig.json'
+
+  lint:
+    command: 'pnpm exec eslint .'
+    inputs:
+      - 'src/**/*'
+      - '/eslint.config.mjs'

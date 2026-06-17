@@ -30,3 +30,11 @@ tasks:
       - 'components/**/*'
       - 'lib/**/*'
       - 'tsconfig.json'
+
+  lint:
+    command: 'pnpm exec eslint .'
+    inputs:
+      - 'app/**/*'
+      - 'components/**/*'
+      - 'lib/**/*'
+      - '/eslint.config.mjs'

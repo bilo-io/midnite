@@ -65,7 +65,7 @@ export class MediaService {
     this.repo.delete(id);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   generateMedia(_id: string): never {
     throw new HttpException('generate not yet implemented', 501);
   }
