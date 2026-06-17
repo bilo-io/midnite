@@ -134,7 +134,7 @@ export function MediaView({ items, projects, error }: Props) {
         {list.map((m) => (
           <Link
             key={m.id}
-            href={`/media/${m.id}`}
+            href={`/media/view?id=${m.id}`}
             className="group overflow-hidden rounded-lg border border-border/60 bg-card transition-colors hover:border-border"
           >
             <div className="relative aspect-video bg-muted">
@@ -179,7 +179,7 @@ export function MediaView({ items, projects, error }: Props) {
         {list.map((m) => (
           <Link
             key={m.id}
-            href={`/media/${m.id}`}
+            href={`/media/view?id=${m.id}`}
             className="flex items-center gap-3 rounded-lg border border-border/60 bg-card px-3 py-2.5 transition-colors hover:border-border hover:bg-accent/40"
           >
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
@@ -210,7 +210,7 @@ export function MediaView({ items, projects, error }: Props) {
         return (
           <Link
             key={m.id}
-            href={`/media/${m.id}`}
+            href={`/media/view?id=${m.id}`}
             className="flex items-center gap-3 rounded-lg border border-border/60 bg-card px-3 py-2 transition-colors hover:border-border hover:bg-accent/40"
           >
             <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-muted">
@@ -266,7 +266,7 @@ export function MediaView({ items, projects, error }: Props) {
             return (
               <tr
                 key={m.id}
-                onClick={() => router.push(`/media/${m.id}`)}
+                onClick={() => router.push(`/media/view?id=${m.id}`)}
                 className="cursor-pointer border-b border-border/40 transition-colors last:border-0 hover:bg-accent/40"
               >
                 <td className="px-3 py-2 font-medium">{m.title}</td>

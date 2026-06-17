@@ -43,7 +43,7 @@ export function CouncilTable({
             return (
               <tr
                 key={council.id}
-                onClick={() => router.push(`/councils/${council.id}`)}
+                onClick={() => router.push(`/councils/view?id=${council.id}`)}
                 className={cn(
                   'cursor-pointer border-b border-border/40 transition-colors last:border-0 hover:bg-accent/40',
                   selected && 'bg-accent/30',

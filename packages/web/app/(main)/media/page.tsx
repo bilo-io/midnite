@@ -1,29 +1,19 @@
-import type { Media, Project } from '@midnite/shared';
-import { MediaView } from './media-view';
+'use client';
+
+import { getProjects, listMedia } from '@/lib/api';
+import { useApiData } from '@/lib/use-api-data';
 import { PageHeader } from '@/components/page-header';
 import { SearchBar } from '@/components/search-bar';
-import { getProjects, listMedia } from '@/lib/api';
+import { MediaView } from './media-view';
 
-export const dynamic = 'force-dynamic';
-
-export default async function MediaPage() {
-  let items: Media[] = [];
-  let projects: Project[] = [];
-  let error: string | null = null;
-
-  try {
-    [items, projects] = await Promise.all([listMedia(), getProjects()]);
-  } catch (err) {
-    error = err instanceof Error ? err.message : 'Failed to load media';
-  }
+export default function MediaPage() {
+  const { data, error } = useApiData(() => Promise.all([listMedia(), getProjects()]));
+  const items = data?.[0] ?? [];
+  const projects = data?.[1] ?? [];
 
   return (
     <>
-      <PageHeader
-        title="Media"
-        icon="Images"
-        actions={<SearchBar placeholder="Search media" />}
-      />
+      <PageHeader title="Media" icon="Images" actions={<SearchBar placeholder="Search media" />} />
       <MediaView items={items} projects={projects} error={error} />
     </>
   );

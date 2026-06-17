@@ -44,7 +44,7 @@ export function WorkflowCreateModal({ onClose }: { onClose: () => void }) {
     setError(null);
     try {
       const workflow = await createWorkflow({ name: name.trim(), trigger: triggerFor(triggerType) });
-      router.push(`/workflows/${workflow.id}`);
+      router.push(`/workflows/edit?id=${workflow.id}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to create workflow');
       setSaving(false);

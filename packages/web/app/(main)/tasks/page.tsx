@@ -1,22 +1,17 @@
-import type { Project, Task } from '@midnite/shared';
+'use client';
+
 import { PageHeader } from '@/components/page-header';
 import { SearchBar } from '@/components/search-bar';
 import { TasksView } from '@/components/tasks-view';
 import { getProjects, getTasks } from '@/lib/api';
+import { useApiData } from '@/lib/use-api-data';
 
-// Filters and the active view live in the URL query string and are read
-// client-side via useSearchParams, so the route must render dynamically.
-export const dynamic = 'force-dynamic';
-
-export default async function TasksPage() {
-  let tasks: Task[] = [];
-  let projects: Project[] = [];
-  let error: string | null = null;
-  try {
-    [tasks, projects] = await Promise.all([getTasks(), getProjects()]);
-  } catch (err) {
-    error = err instanceof Error ? err.message : 'Failed to load tasks';
-  }
+// Client-fetched so the app can be statically exported (output: 'export').
+// Filters and the active view live in the URL query string (read client-side).
+export default function TasksPage() {
+  const { data, error } = useApiData(() => Promise.all([getTasks(), getProjects()]));
+  const tasks = data?.[0] ?? [];
+  const projects = data?.[1] ?? [];
 
   return (
     <div className="flex h-[100dvh] flex-col overflow-hidden">

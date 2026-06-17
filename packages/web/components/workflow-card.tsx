@@ -43,7 +43,7 @@ export function WorkflowCard({
         )}
       >
         {selectIcon}
-        <Link href={`/workflows/${workflow.id}`} className="min-w-0 flex-1">
+        <Link href={`/workflows/edit?id=${workflow.id}`} className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             {archivedBadge}
             <span className="truncate text-sm font-medium group-hover:text-foreground">{workflow.name}</span>
@@ -73,7 +73,7 @@ export function WorkflowCard({
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 flex-1 items-start gap-2">
           {selectIcon}
-          <Link href={`/workflows/${workflow.id}`} className="min-w-0 flex-1">
+          <Link href={`/workflows/edit?id=${workflow.id}`} className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               {archivedBadge}
               <h3 className="truncate text-sm font-semibold group-hover:text-foreground">{workflow.name}</h3>

@@ -1,19 +1,14 @@
-import type { Council } from '@midnite/shared';
+'use client';
+
 import { PageHeader } from '@/components/page-header';
 import { SearchBar } from '@/components/search-bar';
 import { getCouncils } from '@/lib/api';
+import { useApiData } from '@/lib/use-api-data';
 import { CouncilsView } from './councils-view';
 
-export const dynamic = 'force-dynamic';
-
-export default async function CouncilsPage() {
-  let councils: Council[] = [];
-  let error: string | null = null;
-  try {
-    councils = await getCouncils();
-  } catch (err) {
-    error = err instanceof Error ? err.message : 'Failed to load councils';
-  }
+export default function CouncilsPage() {
+  const { data, error } = useApiData(() => getCouncils());
+  const councils = data ?? [];
 
   return (
     <>

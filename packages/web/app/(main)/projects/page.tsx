@@ -1,21 +1,16 @@
-import type { Memory, Project, Task } from '@midnite/shared';
+'use client';
+
 import { PageHeader } from '@/components/page-header';
 import { SearchBar } from '@/components/search-bar';
 import { getMemories, getProjects, getTasks } from '@/lib/api';
+import { useApiData } from '@/lib/use-api-data';
 import { ProjectsView } from './projects-view';
 
-export const dynamic = 'force-dynamic';
-
-export default async function ProjectsPage() {
-  let projects: Project[] = [];
-  let tasks: Task[] = [];
-  let memories: Memory[] = [];
-  let error: string | null = null;
-  try {
-    [projects, tasks, memories] = await Promise.all([getProjects(), getTasks(), getMemories()]);
-  } catch (err) {
-    error = err instanceof Error ? err.message : 'Failed to load projects';
-  }
+export default function ProjectsPage() {
+  const { data, error } = useApiData(() => Promise.all([getProjects(), getTasks(), getMemories()]));
+  const projects = data?.[0] ?? [];
+  const tasks = data?.[1] ?? [];
+  const memories = data?.[2] ?? [];
 
   return (
     <>

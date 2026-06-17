@@ -13,10 +13,18 @@ tasks:
     command: 'pnpm exec next build'
     inputs:
       - 'app/**/*'
+      - 'components/**/*'
+      - 'hooks/**/*'
+      - 'lib/**/*'
+      - 'public/**/*'
       - 'next.config.mjs'
+      - 'tailwind.config.ts'
+      - 'postcss.config.mjs'
       - 'tsconfig.json'
+    # output: 'export' writes the static site to out/ (consumed by @midnite/desktop).
     outputs:
       - '.next'
+      - 'out'
 
   start:
     command: 'pnpm exec next start -p 3000'

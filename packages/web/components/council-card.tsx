@@ -55,7 +55,7 @@ export function CouncilCard({ council, layout, selected = false, onToggleSelect 
         )}
       >
         {selectIcon}
-        <Link href={`/councils/${council.id}`} className="min-w-0 flex-1">
+        <Link href={`/councils/view?id=${council.id}`} className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             {archivedBadge}
             <span className="truncate text-sm font-medium">{council.name}</span>
@@ -84,7 +84,7 @@ export function CouncilCard({ council, layout, selected = false, onToggleSelect 
         <div className="flex min-w-0 items-center gap-2">
           {selectIcon}
           {archivedBadge}
-          <Link href={`/councils/${council.id}`} className="truncate text-sm font-medium">
+          <Link href={`/councils/view?id=${council.id}`} className="truncate text-sm font-medium">
             {council.name}
           </Link>
         </div>
@@ -93,7 +93,7 @@ export function CouncilCard({ council, layout, selected = false, onToggleSelect 
         </span>
       </div>
       {council.description ? (
-        <Link href={`/councils/${council.id}`} className="block">
+        <Link href={`/councils/view?id=${council.id}`} className="block">
           <p className="line-clamp-2 text-xs text-muted-foreground">{council.description}</p>
         </Link>
       ) : null}
