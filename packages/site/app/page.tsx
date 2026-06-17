@@ -4,6 +4,7 @@ import { Hero } from '@/components/hero';
 import { HowItWorks } from '@/components/how-it-works';
 import { Features } from '@/components/features';
 import { CliShowcase } from '@/components/cli-showcase';
+import { Download } from '@/components/download';
 import { Footer } from '@/components/footer';
 
 export default function Home() {
@@ -16,6 +17,7 @@ export default function Home() {
         <HowItWorks />
         <Features />
         <CliShowcase />
+        <Download />
         <Footer />
       </main>
     </>
