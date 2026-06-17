@@ -1,0 +1,8 @@
+**/dist
+**/.next
+**/out
+**/build
+**/node_modules
+**/build-staging
+packages/gateway/drizzle/meta
+pnpm-lock.yaml
