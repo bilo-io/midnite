@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-18 — Dedicated /download page with platform detection (site)
+
+A standalone `/download` page on the marketing site that detects the visitor's OS and features the matching desktop (Electron) build, while listing every platform so nobody is locked in. macOS (Apple Silicon + Intel) are real download buttons; Windows & Linux show as disabled "Coming soon" until those builds ship (electron-builder is macOS-only today — unchanged here).
+
+- [x] `site/lib/downloads.ts` — typed `DownloadTarget` manifest (single source of truth) + `DESKTOP_VERSION` + `assetUrl()` (`releases/latest/download/<asset>`)
+- [x] `site/lib/platform.ts` — pure `detectPlatform(ua, uaPlatform)` (UA Client Hints → UA-string fallback)
+- [x] `site/components/download-picker.tsx` — `'use client'`; detected-platform featured card (mac → Apple Silicon primary + Intel) over an all-platforms list; carries the unsigned-macOS `xattr` note
+- [x] `site/app/download/page.tsx` — Nav + `.bg-grid` backdrop + `Reveal` + picker + Footer; route metadata
+- [x] `site/components/nav.tsx` — "Download" now routes to `/download` (Next `Link` for path links); homepage `download.tsx` keeps its section + gains an "All platforms →" link
+- [x] Verified: `site:typecheck` + `site:lint` + `site:build` green; 11-assertion Playwright drive (mac/windows/linux detection via stubbed `userAgentData`, mac arm64 asset href, win/linux "Coming soon", not-locked-in, nav + homepage links → /download); macOS view screenshotted
+
 ## 2026-06-18 — Task priorities + crash retries
 
 Tasks now carry a **priority** (0 Low · 1 Normal · 2 High · 3 Urgent) that the scheduler honours (highest-priority `todo` first, oldest-first within a priority), and an agent **retry cap** that bounds the previously-unbounded crash→requeue loop.

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Download as DownloadIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -46,6 +47,15 @@ export function Download() {
             Looks like you&apos;re not on macOS — desktop builds are macOS-only for now.
           </p>
         )}
+
+        <p className="mt-6">
+          <Link
+            href="/download"
+            className="text-sm text-foreground underline-offset-4 hover:underline"
+          >
+            All platforms (Windows &amp; Linux too) →
+          </Link>
+        </p>
 
         <p className="mx-auto mt-8 max-w-md text-xs leading-relaxed text-muted-foreground">
           Builds are currently unsigned. On first open, right-click the app and choose{' '}
