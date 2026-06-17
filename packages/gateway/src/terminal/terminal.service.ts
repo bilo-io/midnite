@@ -226,12 +226,6 @@ export class TerminalService implements OnModuleDestroy {
     const pty = this.loadPty();
     if (!pty) return { ok: false, error: 'terminal backend unavailable' };
 
-    const env: Record<string, string> = {};
-    for (const [key, value] of Object.entries(process.env)) {
-      if (value !== undefined) env[key] = value;
-    }
-    env['TERM'] = 'xterm-256color';
-
     let proc: IPty;
     try {
       proc = pty.spawn(spec.command, spec.args, {
@@ -239,7 +233,7 @@ export class TerminalService implements OnModuleDestroy {
         cols: 120,
         rows: 32,
         cwd: spec.cwd,
-        env,
+        env: this.fullEnv(),
       });
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : 'spawn failed' };
@@ -289,6 +283,109 @@ export class TerminalService implements OnModuleDestroy {
       `spawned managed run ${attachId}: ${spec.command} (pid ${proc.pid}) in ${spec.cwd}`,
     );
     return { ok: true, pid: proc.pid };
+  }
+
+  /**
+   * Spawn an autonomous agent session for a task, seeded with its prompt. Like a
+   * managed run the handle is *pinned* (survives detach, lives until the process
+   * exits or {@link killManagedRun}), but it launches the preferred agent CLI
+   * with full approval/hook wiring so a human can attach via the normal token +
+   * attach flow and take over. `sessionId` is the task id.
+   *
+   * The prompt is passed as the CLI's positional arg (e.g. `claude "<prompt>"`),
+   * which seeds interactive mode and submits immediately — no fragile stdin
+   * timing — then the session stays open so the Stop hook fires and a viewer can
+   * intervene. node-pty spawns without a shell, so the prompt needs no quoting.
+   */
+  spawnAgentSession(
+    sessionId: string,
+    spec: { prompt: string },
+    hooks: { onExit: (exitCode: number, signal: number | null) => void },
+  ): { ok: true; pid: number } | { ok: false; error: string } {
+    if (this.handles.has(sessionId)) {
+      return { ok: false, error: `terminal ${sessionId} already exists` };
+    }
+    if (this.handles.size >= this.config.terminal.maxSessions) {
+      return {
+        ok: false,
+        error: `terminal session limit reached (${this.config.terminal.maxSessions})`,
+      };
+    }
+    const pty = this.loadPty();
+    if (!pty) return { ok: false, error: 'terminal backend unavailable' };
+
+    const command = AGENT_CLI_COMMAND[this.agents.getAgentCli()];
+    const args: string[] = [];
+    const env = this.fullEnv();
+    const settingsFile = this.applyApprovalWiring(sessionId, command, args, env);
+    args.push(spec.prompt);
+
+    const cwd = this.resolveCwd(sessionId);
+    let proc: IPty;
+    try {
+      proc = pty.spawn(command, args, {
+        name: 'xterm-256color',
+        cols: 120,
+        rows: 32,
+        cwd,
+        env,
+      });
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : 'spawn failed' };
+    }
+
+    const handle: PtyHandle = {
+      proc,
+      command,
+      subscribers: new Set(),
+      ring: [],
+      ringBytes: 0,
+      seq: 0,
+      disposeTimer: null,
+      disposables: [],
+      settingsFile: settingsFile ?? null,
+      pinned: true,
+    };
+    this.handles.set(sessionId, handle);
+
+    handle.disposables.push(
+      proc.onData((chunk) => {
+        const frame: OutputFrame = {
+          seq: handle.seq++,
+          data: Buffer.from(chunk, 'utf8').toString('base64'),
+          bytes: Buffer.byteLength(chunk, 'utf8'),
+        };
+        this.pushRing(handle, frame);
+        this.broadcast(handle, { type: 'output', data: frame.data, seq: frame.seq });
+      }),
+    );
+    handle.disposables.push(
+      proc.onExit(({ exitCode, signal }) => {
+        this.broadcast(handle, {
+          type: 'status',
+          phase: 'exited',
+          exitCode,
+          signal: signal ?? null,
+        });
+        hooks.onExit(exitCode, signal ?? null);
+        this.cleanup(sessionId);
+      }),
+    );
+
+    this.logger.log(
+      `spawned agent session ${sessionId}: ${command} (pid ${proc.pid}) in ${cwd}`,
+    );
+    return { ok: true, pid: proc.pid };
+  }
+
+  /** Read the decoded scrollback for a session (managed/agent runs). Used to
+   *  scrape a PR URL from an agent's output on the Stop hook. */
+  readOutput(sessionId: string): string {
+    const handle = this.handles.get(sessionId);
+    if (!handle) return '';
+    return handle.ring
+      .map((frame) => Buffer.from(frame.data, 'base64').toString('utf8'))
+      .join('');
   }
 
   /**
@@ -519,23 +616,10 @@ export class TerminalService implements OnModuleDestroy {
       return { command, args, cwd: process.cwd(), env, initCommand: adHoc.initCommand };
     }
 
-    // Wire human-in-the-loop approvals for Claude Code sessions only: register a
-    // PreToolUse hook (via an ephemeral --settings file) and give it the per-session
-    // secret + callback URL. The MIDNITE_* vars are injected AFTER scrubSecretEnv so
-    // the *_SECRET key isn't stripped.
-    let settingsFile: string | undefined;
-    if (terminal.approvals.enabled && basename(command) === 'claude') {
-      const secret = this.approvals.mintSecret(sessionId);
-      settingsFile = this.writeApprovalSettings(sessionId);
-      args.push('--settings', settingsFile);
-      env['MIDNITE_SESSION_ID'] = sessionId;
-      env['MIDNITE_HOOK_SECRET'] = secret;
-      env['MIDNITE_GATEWAY_URL'] = this.hookCallbackUrl();
-      // Hook's own fetch deadline, a touch past the gateway's so the gateway's
-      // decision (or fail-safe) lands first; the hook aborts to `ask` only if the
-      // gateway is truly unreachable.
-      env['MIDNITE_HOOK_TIMEOUT_MS'] = String(terminal.approvals.timeoutMs + 15000);
-    }
+    // Wire human-in-the-loop approvals for Claude Code sessions only. The
+    // MIDNITE_* vars are injected AFTER scrubSecretEnv so the *_SECRET key
+    // isn't stripped.
+    const settingsFile = this.applyApprovalWiring(sessionId, command, args, env);
 
     const cwd = this.resolveCwd(sessionId);
     // On first open of a session, drop into the project dir and launch the
@@ -549,6 +633,46 @@ export class TerminalService implements OnModuleDestroy {
       settingsFile,
       initCommand: buildShellInitCommand(terminal.command, cwd, launchCommand),
     };
+  }
+
+  /** A full copy of the gateway's env (unscrubbed) plus TERM. For agent CLIs and
+   *  managed runs, which need their own credentials to function. */
+  private fullEnv(): Record<string, string> {
+    const env: Record<string, string> = {};
+    for (const [key, value] of Object.entries(process.env)) {
+      if (value !== undefined) env[key] = value;
+    }
+    env['TERM'] = 'xterm-256color';
+    return env;
+  }
+
+  /**
+   * Register Claude's approval/lifecycle hooks for a session whose command is
+   * `claude` and approvals are enabled: write the ephemeral `--settings` file,
+   * append it to `args`, and inject the per-session secret + callback URL into
+   * `env`. Mutates `args`/`env`; returns the settings file path to track for
+   * cleanup, or undefined when wiring doesn't apply. Shared by interactive
+   * session spawn and autonomous agent spawn.
+   */
+  private applyApprovalWiring(
+    sessionId: string,
+    command: string,
+    args: string[],
+    env: Record<string, string>,
+  ): string | undefined {
+    const { terminal } = this.config;
+    if (!(terminal.approvals.enabled && basename(command) === 'claude')) return undefined;
+    const secret = this.approvals.mintSecret(sessionId);
+    const settingsFile = this.writeApprovalSettings(sessionId);
+    args.push('--settings', settingsFile);
+    env['MIDNITE_SESSION_ID'] = sessionId;
+    env['MIDNITE_HOOK_SECRET'] = secret;
+    env['MIDNITE_GATEWAY_URL'] = this.hookCallbackUrl();
+    // Hook's own fetch deadline, a touch past the gateway's so the gateway's
+    // decision (or fail-safe) lands first; the hook aborts to `ask` only if the
+    // gateway is truly unreachable.
+    env['MIDNITE_HOOK_TIMEOUT_MS'] = String(terminal.approvals.timeoutMs + 15000);
+    return settingsFile;
   }
 
   /** Loopback URL the in-PTY hook script calls back on (config override, else gateway port). */

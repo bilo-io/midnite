@@ -1,0 +1,126 @@
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import type { MidniteConfig, Status, Task } from '@midnite/shared';
+import { MIDNITE_CONFIG } from '../config.token';
+import { TasksService } from '../tasks/tasks.service';
+import { TerminalService } from '../terminal/terminal.service';
+import { AgentPoolService } from './agent-pool.service';
+
+/**
+ * Drives a single task through an autonomous agent run: claim a slot, move the
+ * task to `wip`, spawn the seeded agent session, and arm a timeout. The session
+ * is reaped (and the slot freed) either by the Stop hook marking the task done
+ * (Phase B) or by the PTY exiting — see {@link onExit}.
+ */
+@Injectable()
+export class AgentRunnerService {
+  private readonly logger = new Logger(AgentRunnerService.name);
+  private readonly timers = new Map<string, NodeJS.Timeout>();
+
+  constructor(
+    @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
+    @Inject(AgentPoolService) private readonly pool: AgentPoolService,
+    @Inject(TasksService) private readonly tasks: TasksService,
+    @Inject(TerminalService) private readonly terminal: TerminalService,
+  ) {}
+
+  /** Claim a slot and spawn an agent session for `task`. Returns false (leaving
+   *  the task in `todo`) if no slot was free or the spawn failed. */
+  async start(task: Task): Promise<boolean> {
+    if (this.pool.acquire(task.id) === null) return false;
+    try {
+      const prompt = await this.buildPrompt(task);
+      this.tasks.startTask(task.id);
+      const result = this.terminal.spawnAgentSession(
+        task.id,
+        { prompt },
+        { onExit: (code) => this.onExit(task.id, code) },
+      );
+      if (!result.ok) {
+        this.logger.warn(`agent session spawn failed for ${task.id}: ${result.error}`);
+        this.tasks.requeue(task.id);
+        this.pool.release(task.id);
+        return false;
+      }
+      this.pool.setPid(task.id, result.pid);
+      this.armTimeout(task.id);
+      this.logger.log(`started agent run for task ${task.id} (pid ${result.pid})`);
+      return true;
+    } catch (err) {
+      this.logger.error(
+        `failed to start agent run for ${task.id}: ${err instanceof Error ? err.message : 'unknown'}`,
+      );
+      this.safeRequeue(task.id);
+      this.pool.release(task.id);
+      return false;
+    }
+  }
+
+  /** User- or timeout-initiated stop: abandon the task and kill its session. The
+   *  PTY's onExit then frees the slot. */
+  cancel(taskId: string): void {
+    this.clearRunTimeout(taskId);
+    this.pool.abort(taskId);
+    try {
+      // → abandoned so the scheduler won't immediately re-pick it (unlike a crash,
+      // which requeues). Abandoning archives the task per existing semantics.
+      this.tasks.updateStatus(taskId, 'abandoned');
+    } catch (err) {
+      this.logger.warn(
+        `cancel: failed to abandon ${taskId}: ${err instanceof Error ? err.message : 'unknown'}`,
+      );
+    }
+    this.terminal.killManagedRun(taskId);
+  }
+
+  // The PTY exited. If the task is still wip/waiting the agent died without the
+  // Stop hook completing it (crash / external kill) — requeue it. A task already
+  // moved to done/abandoned is left as-is. Always frees the slot.
+  private onExit(taskId: string, exitCode: number): void {
+    this.clearRunTimeout(taskId);
+    let status: Status | undefined;
+    try {
+      status = this.tasks.getTask(taskId).status;
+    } catch {
+      status = undefined;
+    }
+    if (status === 'wip' || status === 'waiting') {
+      this.logger.warn(`agent session ${taskId} exited (code ${exitCode}) while ${status} — requeuing`);
+      this.safeRequeue(taskId);
+    }
+    this.pool.release(taskId);
+  }
+
+  private armTimeout(taskId: string): void {
+    const ms = this.config.agent.runTimeoutMs;
+    const timer = setTimeout(() => {
+      this.logger.warn(`agent run ${taskId} exceeded ${ms}ms — cancelling`);
+      this.cancel(taskId);
+    }, ms);
+    timer.unref?.();
+    this.timers.set(taskId, timer);
+  }
+
+  private clearRunTimeout(taskId: string): void {
+    const timer = this.timers.get(taskId);
+    if (timer) {
+      clearTimeout(timer);
+      this.timers.delete(taskId);
+    }
+  }
+
+  private safeRequeue(taskId: string): void {
+    try {
+      this.tasks.requeue(taskId);
+    } catch (err) {
+      this.logger.warn(
+        `failed to requeue ${taskId}: ${err instanceof Error ? err.message : 'unknown'}`,
+      );
+    }
+  }
+
+  // Phase E enriches this with plan/act expansion + knowledge injection. v1 uses
+  // the freeform prompt, falling back to the title.
+  private async buildPrompt(task: Task): Promise<string> {
+    return task.prompt?.trim() || task.title;
+  }
+}

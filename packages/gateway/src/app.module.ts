@@ -12,6 +12,7 @@ import { MediaModule } from './media/media.module';
 import { MemoriesModule } from './memories/memories.module';
 import { NewsModule } from './news/news.module';
 import { NotesModule } from './notes/notes.module';
+import { PoolModule } from './pool/pool.module';
 import { ProjectsModule } from './projects/projects.module';
 import { RoutinesModule } from './routines/routines.module';
 import { SessionsModule } from './sessions/sessions.module';
@@ -34,6 +35,7 @@ import { TerminalModule } from './terminal/terminal.module';
     NotesModule,
     RoutinesModule,
     TasksModule,
+    PoolModule,
     ProjectsModule,
     SessionsModule,
     WeatherModule,

@@ -66,6 +66,60 @@ export class TasksService {
     return this.getTask(id);
   }
 
+  // ---- agent pool lifecycle transitions ----
+  // Driven by the scheduler/runner and the Stop/Notification hooks. Each is
+  // idempotent on its target status so a hook firing twice (or racing the PTY's
+  // onExit) can't double-transition or clobber a later state.
+
+  /** Claim a task for an agent run: → wip, bind its session id (== task id). */
+  startTask(id: string): Task {
+    const now = new Date().toISOString();
+    if (!this.repo.getTask(id)) throw new NotFoundException(`task ${id} not found`);
+    this.repo.updateStatus(id, 'wip', now);
+    this.repo.setSession(id, id, now);
+    this.repo.insertEvent({ id: randomUUID(), taskId: id, at: now, kind: 'agent.started' });
+    return this.getTask(id);
+  }
+
+  /** Return a task to the queue (PTY died / restart reconciliation): → todo. */
+  requeue(id: string): Task {
+    const now = new Date().toISOString();
+    if (!this.repo.getTask(id)) throw new NotFoundException(`task ${id} not found`);
+    this.repo.updateStatus(id, 'todo', now);
+    this.repo.setSession(id, null, now);
+    this.repo.insertEvent({ id: randomUUID(), taskId: id, at: now, kind: 'agent.requeued' });
+    return this.getTask(id);
+  }
+
+  /** Agent blocked on user input (Notification hook): → waiting. Idempotent. */
+  markWaiting(id: string): Task {
+    const now = new Date().toISOString();
+    const row = this.repo.getTask(id);
+    if (!row) throw new NotFoundException(`task ${id} not found`);
+    if (row.status === 'waiting') return this.getTask(id);
+    this.repo.updateStatus(id, 'waiting', now);
+    this.repo.insertEvent({ id: randomUUID(), taskId: id, at: now, kind: 'agent.waiting' });
+    return this.getTask(id);
+  }
+
+  /** Agent finished (Stop hook): → done, optionally recording a PR URL. Idempotent. */
+  markDone(id: string, prUrl?: string): Task {
+    const now = new Date().toISOString();
+    const row = this.repo.getTask(id);
+    if (!row) throw new NotFoundException(`task ${id} not found`);
+    if (row.status === 'done') return this.getTask(id);
+    this.repo.updateStatus(id, 'done', now);
+    if (prUrl) this.repo.setPrUrl(id, prUrl, now);
+    this.repo.insertEvent({
+      id: randomUUID(),
+      taskId: id,
+      at: now,
+      kind: 'agent.done',
+      ...(prUrl ? { data: JSON.stringify({ prUrl }) } : {}),
+    });
+    return this.getTask(id);
+  }
+
   archive(id: string): Task {
     const now = new Date().toISOString();
     const row = this.repo.setArchived(id, now, now);
