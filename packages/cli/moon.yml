@@ -4,6 +4,8 @@ language: 'typescript'
 
 dependsOn:
   - 'shared'
+  # serve boots the gateway in-process, so it must build first.
+  - 'gateway'
 
 tasks:
   build:
@@ -17,3 +19,14 @@ tasks:
   dev:
     command: 'pnpm exec tsx watch src/index.ts'
     preset: 'server'
+
+  test:
+    command: 'pnpm exec vitest run'
+    inputs:
+      - 'src/**/*'
+
+  typecheck:
+    command: 'pnpm exec tsc --noEmit'
+    inputs:
+      - 'src/**/*'
+      - 'tsconfig.json'
