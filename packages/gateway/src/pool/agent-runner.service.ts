@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import type { MidniteConfig, Status, Task } from '@midnite/shared';
+import type { MidniteConfig, Task } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
 import { KnowledgeService } from '../knowledge/knowledge.service';
 import { TasksService } from '../tasks/tasks.service';
@@ -85,19 +85,37 @@ export class AgentRunnerService {
   }
 
   // The PTY exited. If the task is still wip/waiting the agent died without the
-  // Stop hook completing it (crash / external kill) — requeue it. A task already
-  // moved to done/abandoned is left as-is. Always frees the slot.
+  // Stop hook completing it (crash / external kill). Retry it up to maxRetries,
+  // then abandon. A task already moved to done/abandoned is left as-is. Always
+  // frees the slot.
   private onExit(taskId: string, exitCode: number): void {
     this.clearRunTimeout(taskId);
-    let status: Status | undefined;
+    let task: Task | undefined;
     try {
-      status = this.tasks.getTask(taskId).status;
+      task = this.tasks.getTask(taskId);
     } catch {
-      status = undefined;
+      task = undefined;
     }
-    if (status === 'wip' || status === 'waiting') {
-      this.logger.warn(`agent session ${taskId} exited (code ${exitCode}) while ${status} — requeuing`);
-      this.safeRequeue(taskId);
+    if (task && (task.status === 'wip' || task.status === 'waiting')) {
+      const max = this.config.agent.maxRetries;
+      const retries = task.retryCount ?? 0;
+      if (retries >= max) {
+        this.logger.warn(
+          `agent session ${taskId} exited (code ${exitCode}) while ${task.status} — exhausted ${retries}/${max} retries, abandoning`,
+        );
+        try {
+          this.tasks.updateStatus(taskId, 'abandoned');
+        } catch (err) {
+          this.logger.warn(
+            `failed to abandon ${taskId}: ${err instanceof Error ? err.message : 'unknown'}`,
+          );
+        }
+      } else {
+        this.logger.warn(
+          `agent session ${taskId} exited (code ${exitCode}) while ${task.status} — retry ${retries + 1}/${max}`,
+        );
+        this.safeRetry(taskId);
+      }
     }
     this.pool.release(taskId);
   }
@@ -126,6 +144,16 @@ export class AgentRunnerService {
     } catch (err) {
       this.logger.warn(
         `failed to requeue ${taskId}: ${err instanceof Error ? err.message : 'unknown'}`,
+      );
+    }
+  }
+
+  private safeRetry(taskId: string): void {
+    try {
+      this.tasks.retry(taskId);
+    } catch (err) {
+      this.logger.warn(
+        `failed to retry ${taskId}: ${err instanceof Error ? err.message : 'unknown'}`,
       );
     }
   }

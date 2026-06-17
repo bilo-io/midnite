@@ -4,7 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-06-17 — Collapsible / lockable side navigation
+## 2026-06-18 — Task priorities + crash retries
+
+Tasks now carry a **priority** (0 Low · 1 Normal · 2 High · 3 Urgent) that the scheduler honours (highest-priority `todo` first, oldest-first within a priority), and an agent **retry cap** that bounds the previously-unbounded crash→requeue loop.
+
+- [x] `shared`: `TaskSchema` gains `priority` (0..3, default 1) + `retryCount`; `CreateTaskRequestSchema` gains optional `priority`; `AgentConfigSchema.maxRetries` (default 3)
+- [x] `gateway/db`: `priority`/`retry_count` columns + `tasks_status_priority_idx` (migration `0018`, additive/forward-only)
+- [x] `gateway/tasks`: `listTasks` orders `priority DESC, createdAt ASC`; `incrementRetry`; service `retry()` transition (bumps count → todo) distinct from transient `requeue`; priority stored on create (clamped)
+- [x] `gateway/pool`: `agent-runner` onExit now retries up to `maxRetries` then abandons (was an uncapped requeue); timeouts/manual-cancel stay terminal
+- [x] `web`: priority selector in the new-task modal; Low/High/Urgent badge on task cards (Normal unmarked)
+- [x] Tests: repo priority-ordering + `incrementRetry` (`:memory:` SQLite); service priority-on-create + `retry`; runner retry-under-cap + exhausted→abandoned. Full `:typecheck` + `:test` (241 gateway) + gateway/web builds green
 
 The left nav can now expand to show labels and be locked open or closed. Default is unchanged (collapsed icon bar). Driven by one new `navMode` field on `AppSettings`, shared between the nav and the settings page via the existing `useLocalStorage`.
 

@@ -16,6 +16,10 @@ export const tasks = sqliteTable(
     title: text('title').notNull(),
     kind: text('kind').notNull().default('unknown'),
     status: text('status').notNull().default('todo'),
+    // Scheduling priority 0..3 (higher runs first); enforced at the app layer.
+    priority: integer('priority').notNull().default(1),
+    // Auto-retries consumed after unexpected agent-session exits (crashes).
+    retryCount: integer('retry_count').notNull().default(0),
     prompt: text('prompt'),
     repo: text('repo'),
     agentId: text('agent_id'),
@@ -30,6 +34,8 @@ export const tasks = sqliteTable(
     statusIdx: index('tasks_status_idx').on(t.status),
     projectIdx: index('tasks_project_idx').on(t.projectId),
     archivedIdx: index('tasks_archived_idx').on(t.archivedAt),
+    // Backs the scheduler's "highest-priority, oldest-first" todo selection.
+    statusPriorityIdx: index('tasks_status_priority_idx').on(t.status, t.priority),
   }),
 );
 

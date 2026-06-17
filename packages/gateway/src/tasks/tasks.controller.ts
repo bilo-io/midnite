@@ -126,6 +126,7 @@ export class TasksController {
     let repo: string | undefined;
     let projectId: string | undefined;
     let status: Status | undefined;
+    let priority: number | undefined;
     const savedFiles: Array<{
       path: string;
       relPath: string;
@@ -158,6 +159,13 @@ export class TasksController {
           if (part.fieldname === 'prompt') prompt = String(part.value ?? '');
           if (part.fieldname === 'repo') repo = String(part.value ?? '');
           if (part.fieldname === 'projectId') projectId = String(part.value ?? '');
+          if (part.fieldname === 'priority') {
+            const n = Number(part.value);
+            if (!Number.isInteger(n) || n < 0 || n > 3) {
+              throw new BadRequestException(`invalid priority: ${String(part.value)}`);
+            }
+            priority = n;
+          }
           if (part.fieldname === 'status') {
             const parsed = StatusSchema.safeParse(String(part.value ?? ''));
             if (!parsed.success) {
@@ -177,6 +185,7 @@ export class TasksController {
         repo: repo?.trim() || undefined,
         projectId: projectId?.trim() || undefined,
         status,
+        priority,
         images: savedFiles.map((f) => ({
           path: f.relPath,
           mime: f.mime,

@@ -21,6 +21,13 @@ const KIND_HUE_VARS: Record<NonNullable<Task['kind']>, string> = {
   unknown: '--kind-unknown',
 };
 
+// Badge shown only for non-Normal priorities (Normal=1 is the unmarked default).
+const PRIORITY_BADGES: Record<number, { label: string; className: string }> = {
+  0: { label: 'Low', className: 'bg-muted text-muted-foreground' },
+  2: { label: 'High', className: 'bg-amber-500/15 text-amber-600 dark:text-amber-400' },
+  3: { label: 'Urgent', className: 'bg-destructive/15 text-destructive' },
+};
+
 export function TaskCard({
   task,
   project,
@@ -33,6 +40,7 @@ export function TaskCard({
   const kind = task.kind ?? 'unknown';
   const firstImage = task.attachments?.find((a) => a.mime.startsWith('image/'));
   const hue = KIND_HUE_VARS[kind];
+  const priorityBadge = PRIORITY_BADGES[task.priority ?? 1];
 
   const body = (
     <>
@@ -51,6 +59,13 @@ export function TaskCard({
           />
           {KIND_LABELS[kind]}
         </span>
+        {priorityBadge ? (
+          <span
+            className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${priorityBadge.className}`}
+          >
+            {priorityBadge.label}
+          </span>
+        ) : null}
         {project ? <ProjectTag tag={project.tag} color={project.color} /> : null}
       </div>
       <p className="text-sm font-medium leading-snug">{task.title}</p>

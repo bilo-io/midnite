@@ -17,6 +17,7 @@ export function NewTaskModal({ projects, defaultStatus = 'todo', onCreated, onCl
   const [title, setTitle] = useState('');
   const [projectId, setProjectId] = useState('');
   const [status, setStatus] = useState<Status>(defaultStatus);
+  const [priority, setPriority] = useState(1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -37,6 +38,7 @@ export function NewTaskModal({ projects, defaultStatus = 'todo', onCreated, onCl
       const form = new FormData();
       form.append('prompt', prompt);
       form.append('status', status);
+      form.append('priority', String(priority));
       if (projectId) form.append('projectId', projectId);
       const { task } = await createTask(form);
       onCreated(task);
@@ -106,7 +108,7 @@ export function NewTaskModal({ projects, defaultStatus = 'todo', onCreated, onCl
                   </select>
                 </div>
               )}
-              <div className={projects.length > 0 ? 'w-32' : 'flex-1'}>
+              <div className={projects.length > 0 ? 'w-28' : 'flex-1'}>
                 <label htmlFor="new-task-status" className="mb-1.5 block text-xs font-medium text-muted-foreground">
                   Status
                 </label>
@@ -119,6 +121,23 @@ export function NewTaskModal({ projects, defaultStatus = 'todo', onCreated, onCl
                 >
                   <option value="backlog">Backlog</option>
                   <option value="todo">Todo</option>
+                </select>
+              </div>
+              <div className={projects.length > 0 ? 'w-28' : 'flex-1'}>
+                <label htmlFor="new-task-priority" className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                  Priority
+                </label>
+                <select
+                  id="new-task-priority"
+                  value={priority}
+                  onChange={(e) => setPriority(Number(e.target.value))}
+                  disabled={busy}
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
+                >
+                  <option value={0}>Low</option>
+                  <option value={1}>Normal</option>
+                  <option value={2}>High</option>
+                  <option value={3}>Urgent</option>
                 </select>
               </div>
             </div>

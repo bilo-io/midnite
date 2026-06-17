@@ -5,12 +5,20 @@ import { TaskClassifier, type ClassifierImage } from '../agent/classifier.servic
 import { PlannerService } from '../agent/planner.service';
 import { TasksRepository } from './tasks.repository';
 
+/** Clamp a caller-supplied priority into 0..3, defaulting to 1 (Normal). */
+function clampPriority(p: number | undefined): number {
+  if (p === undefined || !Number.isFinite(p)) return 1;
+  return Math.min(3, Math.max(0, Math.trunc(p)));
+}
+
 export interface CreateTaskInput {
   prompt: string;
   repo?: string;
   projectId?: string;
   /** Where the task should land. Defaults to 'todo' (picked up as agents free up). */
   status?: Status;
+  /** Scheduling priority 0..3 (higher runs first). Defaults to 1 (Normal). */
+  priority?: number;
   images: Array<ClassifierImage & { size: number; originalName?: string }>;
 }
 
@@ -90,6 +98,26 @@ export class TasksService {
     this.repo.updateStatus(id, 'todo', now);
     this.repo.setSession(id, null, now);
     this.repo.insertEvent({ id: randomUUID(), taskId: id, at: now, kind: 'agent.requeued' });
+    return this.getTask(id);
+  }
+
+  /** Crash retry: bump the retry counter, then → todo (clearing the session).
+   *  Distinct from {@link requeue} (a transient/restart return that doesn't
+   *  count against the retry budget). */
+  retry(id: string): Task {
+    const now = new Date().toISOString();
+    if (!this.repo.getTask(id)) throw new NotFoundException(`task ${id} not found`);
+    this.repo.incrementRetry(id, now);
+    this.repo.updateStatus(id, 'todo', now);
+    this.repo.setSession(id, null, now);
+    const retryCount = this.repo.getTask(id)?.retryCount ?? 0;
+    this.repo.insertEvent({
+      id: randomUUID(),
+      taskId: id,
+      at: now,
+      kind: 'agent.retried',
+      data: JSON.stringify({ retryCount }),
+    });
     return this.getTask(id);
   }
 
@@ -181,6 +209,7 @@ export class TasksService {
       // An explicit caller status wins; otherwise the planner's triage decides
       // the landing column.
       status: input.status ?? (triage.ready ? 'todo' : 'backlog'),
+      priority: clampPriority(input.priority),
       prompt: input.prompt,
       repo: input.repo ?? null,
       projectId: input.projectId ?? null,

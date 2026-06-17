@@ -23,6 +23,9 @@ export const AgentConfigSchema = z.object({
   // Hard ceiling per autonomous agent run; the session is cancelled on expiry
   // and the task requeued. Mirrors councils.runTimeoutMs.
   runTimeoutMs: z.number().int().positive().default(1800000),
+  // How many times a task is auto-retried after an agent session exits
+  // unexpectedly (crash) before it's abandoned. 0 = never retry crashes.
+  maxRetries: z.number().int().nonnegative().default(3),
 });
 
 export const TerminalConfigSchema = z.object({

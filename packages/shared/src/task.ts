@@ -58,6 +58,10 @@ export const TaskSchema = z.object({
   repo: z.string().optional(),
   prompt: z.string().optional(),
   status: StatusSchema,
+  /** Scheduling priority: 0 Low · 1 Normal · 2 High · 3 Urgent. Higher runs first. */
+  priority: z.number().int().min(0).max(3).default(1),
+  /** How many times an agent run has been auto-retried after an unexpected exit. */
+  retryCount: z.number().int().nonnegative().default(0),
   agentId: z.string().optional(),
   sessionId: z.string().optional(),
   projectId: z.string().optional(),
@@ -89,6 +93,7 @@ export const CreateTaskRequestSchema = z.object({
   prompt: z.string().min(1).max(8000),
   repo: z.string().optional(),
   projectId: z.string().optional(),
+  priority: z.number().int().min(0).max(3).optional(),
 });
 
 // Reassign (or clear, via null) a task's project.

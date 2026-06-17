@@ -115,6 +115,12 @@ User config lives in [`midnite.json`](midnite.json) at the repo root, validated 
 }
 ```
 
+`agent.maxRetries` (default `3`) bounds automatic retries: when an agent session
+exits unexpectedly (crash) while a task is still `wip`/`waiting`, the task is
+re-queued up to this many times before it's abandoned. Each task also carries a
+`priority` (0 Low · 1 Normal · 2 High · 3 Urgent, default Normal) — the scheduler
+assigns higher-priority `todo` tasks first, oldest-first within a priority.
+
 The session web window streams a live PTY over WebSocket (`/ws/terminal`). The
 PTY is spawned on demand when a window opens for an active session and is shared
 across reconnects. `terminal` fields control it:

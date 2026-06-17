@@ -129,6 +129,8 @@ function makeTasksStub() {
         id: `task-${created.length}`,
         title: input.title,
         status: 'todo',
+        priority: 1,
+        retryCount: 0,
         projectId: input.projectId,
         events: [],
       } as Task;

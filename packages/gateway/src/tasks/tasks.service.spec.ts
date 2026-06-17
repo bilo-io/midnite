@@ -35,6 +35,8 @@ class InMemoryRepo extends TasksRepository {
       title: row.title,
       kind: row.kind ?? 'unknown',
       status: row.status ?? 'todo',
+      priority: row.priority ?? 1,
+      retryCount: row.retryCount ?? 0,
       prompt: row.prompt ?? null,
       repo: row.repo ?? null,
       agentId: row.agentId ?? null,
@@ -47,6 +49,22 @@ class InMemoryRepo extends TasksRepository {
     };
     this.tasks.push(full);
     return full;
+  }
+
+  override setSession(id: string, sessionId: string | null, updatedAt: string): TaskRow | undefined {
+    const task = this.tasks.find((t) => t.id === id);
+    if (!task) return undefined;
+    task.sessionId = sessionId;
+    task.updatedAt = updatedAt;
+    return task;
+  }
+
+  override incrementRetry(id: string, updatedAt: string): TaskRow | undefined {
+    const task = this.tasks.find((t) => t.id === id);
+    if (!task) return undefined;
+    task.retryCount += 1;
+    task.updatedAt = updatedAt;
+    return task;
   }
 
   override insertEvent(row: TaskEventInsert): void {
@@ -124,6 +142,8 @@ class InMemoryRepo extends TasksRepository {
       title: row.title,
       kind: row.kind as Task['kind'],
       status: row.status as Status,
+      priority: row.priority,
+      retryCount: row.retryCount,
       prompt: row.prompt ?? undefined,
       repo: row.repo ?? undefined,
       agentId: row.agentId ?? undefined,
@@ -280,5 +300,33 @@ describe('TasksService', () => {
     const back = service.updateStatus('t0', 'todo');
     expect(back.status).toBe('todo');
     expect(back.archivedAt).toBeDefined();
+  });
+
+  it('createFromPrompt stores the given priority (clamped), defaulting to Normal', async () => {
+    const repo = new InMemoryRepo();
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner);
+
+    const urgent = await service.createFromPrompt({ prompt: 'ship it', priority: 3, images: [] });
+    expect(urgent.priority).toBe(3);
+
+    const normal = await service.createFromPrompt({ prompt: 'someday', images: [] });
+    expect(normal.priority).toBe(1);
+
+    const clamped = await service.createFromPrompt({ prompt: 'oops', priority: 99, images: [] });
+    expect(clamped.priority).toBe(3);
+  });
+
+  it('retry bumps retryCount, returns the task to todo, and emits agent.retried', () => {
+    const repo = new InMemoryRepo();
+    seed(repo, ['wip']);
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner);
+
+    const first = service.retry('t0');
+    expect(first.status).toBe('todo');
+    expect(first.retryCount).toBe(1);
+    expect(repo.events.some((e) => e.kind === 'agent.retried')).toBe(true);
+
+    const second = service.retry('t0');
+    expect(second.retryCount).toBe(2);
   });
 });

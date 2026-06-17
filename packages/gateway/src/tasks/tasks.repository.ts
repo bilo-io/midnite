@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, eq, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import {
   detectSourceKind,
   type Status,
@@ -64,6 +64,16 @@ export class TasksRepository {
       .get();
   }
 
+  // Bump the retry counter (used when an agent session crashes and is re-queued).
+  incrementRetry(id: string, updatedAt: string): TaskRow | undefined {
+    return this.db
+      .update(tasks)
+      .set({ retryCount: sql`${tasks.retryCount} + 1`, updatedAt })
+      .where(eq(tasks.id, id))
+      .returning()
+      .get();
+  }
+
   setProject(id: string, projectId: string | null, updatedAt: string): TaskRow | undefined {
     return this.db
       .update(tasks)
@@ -98,7 +108,14 @@ export class TasksRepository {
       status ? eq(tasks.status, status) : undefined,
       projectId ? eq(tasks.projectId, projectId) : undefined,
     );
-    return this.db.select().from(tasks).where(where).orderBy(asc(tasks.createdAt)).all();
+    // Highest priority first, then oldest within a priority — this drives the
+    // scheduler's todo selection and the board's within-column order.
+    return this.db
+      .select()
+      .from(tasks)
+      .where(where)
+      .orderBy(desc(tasks.priority), asc(tasks.createdAt))
+      .all();
   }
 
   getTask(id: string): TaskRow | undefined {
@@ -197,6 +214,8 @@ export class TasksRepository {
       title: row.title,
       kind: row.kind as Task['kind'],
       status: row.status as Status,
+      priority: row.priority,
+      retryCount: row.retryCount,
       prompt: row.prompt ?? undefined,
       repo: row.repo ?? undefined,
       agentId: row.agentId ?? undefined,

@@ -81,6 +81,8 @@ function link(taskId: string, n: number, url: string, kind: TaskLink['kind']): T
 
 export const taskFeature: Task = {
   id: 'task-feature',
+  priority: 2,
+  retryCount: 0,
   title: 'Wire the session transcript modal into the board',
   kind: 'feature',
   status: 'wip',
@@ -94,6 +96,8 @@ export const taskFeature: Task = {
 
 export const taskBug: Task = {
   id: 'task-bug',
+  priority: 3,
+  retryCount: 1,
   title: 'Theme toggle menu clips behind the page header',
   kind: 'bug',
   status: 'todo',
@@ -104,6 +108,8 @@ export const taskBug: Task = {
 
 export const taskQuestion: Task = {
   id: 'task-question',
+  priority: 0,
+  retryCount: 0,
   title: 'Should abandoned tasks count toward the project donut?',
   kind: 'question',
   status: 'backlog',
@@ -113,6 +119,8 @@ export const taskQuestion: Task = {
 
 export const taskChore: Task = {
   id: 'task-chore',
+  priority: 1,
+  retryCount: 0,
   title: 'Bump drizzle-kit and regenerate migration metadata',
   kind: 'chore',
   status: 'waiting',
@@ -122,6 +130,8 @@ export const taskChore: Task = {
 
 export const taskUnknown: Task = {
   id: 'task-unknown',
+  priority: 1,
+  retryCount: 0,
   title: 'Investigate flaky heartbeat scheduler test',
   status: 'backlog',
   events: [],
@@ -129,6 +139,8 @@ export const taskUnknown: Task = {
 
 export const taskDone: Task = {
   id: 'task-done',
+  priority: 1,
+  retryCount: 0,
   title: 'Two-stage page reveal animation',
   kind: 'feature',
   status: 'done',
@@ -138,6 +150,8 @@ export const taskDone: Task = {
 
 export const taskAbandoned: Task = {
   id: 'task-abandoned',
+  priority: 2,
+  retryCount: 3,
   title: 'Tailwind v4 migration spike',
   kind: 'chore',
   status: 'abandoned',

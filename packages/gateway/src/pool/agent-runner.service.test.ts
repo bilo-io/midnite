@@ -19,7 +19,7 @@ function config(): MidniteConfig {
 }
 
 function task(id: string, prompt?: string): Task {
-  return { id, title: `title-${id}`, status: 'todo', prompt, events: [] } as Task;
+  return { id, title: `title-${id}`, status: 'todo', priority: 1, retryCount: 0, prompt, events: [] } as Task;
 }
 
 function fakeTasks(seed: Task[]) {
@@ -29,6 +29,11 @@ function fakeTasks(seed: Task[]) {
   });
   const requeue = vi.fn((id: string) => {
     byId.get(id)!.status = 'todo';
+  });
+  const retry = vi.fn((id: string) => {
+    const t = byId.get(id)!;
+    t.retryCount = (t.retryCount ?? 0) + 1;
+    t.status = 'todo';
   });
   const updateStatus = vi.fn((id: string, status: string) => {
     byId.get(id)!.status = status as Task['status'];
@@ -42,10 +47,11 @@ function fakeTasks(seed: Task[]) {
     listTasks: () => [...byId.values()],
     startTask,
     requeue,
+    retry,
     updateStatus,
     getTask,
   } as unknown as TasksService;
-  return { service, startTask, requeue, updateStatus, byId };
+  return { service, startTask, requeue, retry, updateStatus, byId };
 }
 
 function fakeTerminal() {
@@ -97,9 +103,9 @@ describe('AgentRunnerService', () => {
     expect(pool.freeSlotCount()).toBe(1);
   });
 
-  it('requeues and releases the slot if the session exits while still wip', async () => {
+  it('retries and releases the slot if the session exits while still wip (under the cap)', async () => {
     const cfg = config();
-    const { service, requeue } = fakeTasks([task('t1', 'x')]);
+    const { service, retry } = fakeTasks([task('t1', 'x')]);
     const pool = new AgentPoolService(cfg, service);
     const { terminal, fireExit } = fakeTerminal();
     const runner = new AgentRunnerService(cfg, pool, service, terminal, knowledge);
@@ -107,7 +113,24 @@ describe('AgentRunnerService', () => {
     await runner.start(task('t1', 'x')); // task is now wip
     fireExit(1); // PTY died unexpectedly
 
-    expect(requeue).toHaveBeenCalledWith('t1');
+    expect(retry).toHaveBeenCalledWith('t1');
+    expect(pool.freeSlotCount()).toBe(1);
+  });
+
+  it('abandons (does not retry) once the retry cap is exhausted', async () => {
+    // maxRetries defaults to 3; seed a task that has already used all 3.
+    const cfg = config();
+    const exhausted = { ...task('t1', 'x'), retryCount: 3 } as Task;
+    const { service, retry, updateStatus } = fakeTasks([exhausted]);
+    const pool = new AgentPoolService(cfg, service);
+    const { terminal, fireExit } = fakeTerminal();
+    const runner = new AgentRunnerService(cfg, pool, service, terminal, knowledge);
+
+    await runner.start(exhausted); // wip
+    fireExit(1); // crash again, but the budget is spent
+
+    expect(retry).not.toHaveBeenCalled();
+    expect(updateStatus).toHaveBeenCalledWith('t1', 'abandoned');
     expect(pool.freeSlotCount()).toBe(1);
   });
 
