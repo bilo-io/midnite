@@ -39,7 +39,7 @@ function WorkflowRow({
       )}
     >
       <SelectableIcon Icon={Workflow} selected={selected} onToggle={(sk) => onToggleSelect?.(sk)} />
-      <Link href={`/workflows/${w.id}`} className="min-w-0 flex-1">
+      <Link href={`/workflows/edit?id=${w.id}`} className="min-w-0 flex-1">
         <span className="flex items-center gap-2">
           {w.archived ? (
             <span className="rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">

@@ -95,7 +95,7 @@ export function MediaDetailView({ mode, initialType, initial, projects }: Props)
         fileSize: 0,
       });
       setSaved(created);
-      router.replace(`/media/${created.id}`);
+      router.replace(`/media/view?id=${created.id}`);
     } catch {
       // show nothing — the form stays editable
     } finally {

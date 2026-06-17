@@ -1,19 +1,14 @@
-import type { WorkflowSummary } from '@midnite/shared';
+'use client';
+
 import { PageHeader } from '@/components/page-header';
 import { SearchBar } from '@/components/search-bar';
 import { listWorkflows } from '@/lib/api';
+import { useApiData } from '@/lib/use-api-data';
 import { WorkflowsView } from './workflows-view';
 
-export const dynamic = 'force-dynamic';
-
-export default async function WorkflowsPage() {
-  let workflows: WorkflowSummary[] = [];
-  let error: string | null = null;
-  try {
-    workflows = await listWorkflows();
-  } catch (err) {
-    error = err instanceof Error ? err.message : 'Failed to load workflows';
-  }
+export default function WorkflowsPage() {
+  const { data, error } = useApiData(() => listWorkflows());
+  const workflows = data ?? [];
 
   return (
     <>

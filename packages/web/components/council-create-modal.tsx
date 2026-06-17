@@ -33,7 +33,7 @@ export function CouncilCreateModal({ onClose }: { onClose: () => void }) {
         name: name.trim(),
         ...(description.trim() ? { description: description.trim() } : {}),
       });
-      router.push(`/councils/${council.id}`);
+      router.push(`/councils/view?id=${council.id}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to create council');
       setSaving(false);

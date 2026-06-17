@@ -1,20 +1,15 @@
-import type { Memory, Project } from '@midnite/shared';
+'use client';
+
 import { PageHeader } from '@/components/page-header';
 import { SearchBar } from '@/components/search-bar';
 import { getMemories, getProjects } from '@/lib/api';
+import { useApiData } from '@/lib/use-api-data';
 import { MemoryView } from './memory-view';
 
-export const dynamic = 'force-dynamic';
-
-export default async function MemoryPage() {
-  let memories: Memory[] = [];
-  let projects: Project[] = [];
-  let error: string | null = null;
-  try {
-    [memories, projects] = await Promise.all([getMemories(), getProjects()]);
-  } catch (err) {
-    error = err instanceof Error ? err.message : 'Failed to load memories';
-  }
+export default function MemoryPage() {
+  const { data, error } = useApiData(() => Promise.all([getMemories(), getProjects()]));
+  const memories = data?.[0] ?? [];
+  const projects = data?.[1] ?? [];
 
   return (
     <>

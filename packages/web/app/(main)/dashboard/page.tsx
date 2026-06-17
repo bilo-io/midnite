@@ -1,39 +1,34 @@
-import type { Note, Project, Routine, RoutineProgress, Task, TaskCounts } from '@midnite/shared';
+'use client';
+
+import type { TaskCounts } from '@midnite/shared';
 import { DashboardAddWidget } from '@/components/dashboard-add-widget';
 import { DashboardGrid } from '@/components/dashboard-grid';
 import { PageHeader } from '@/components/page-header';
 import { PromptComposer } from '@/components/prompt-composer';
 import { getNotes, getProjects, getRoutineProgress, getRoutines, getTaskCounts, getTasks } from '@/lib/api';
+import { useApiData } from '@/lib/use-api-data';
 
 const ZERO_COUNTS: TaskCounts = { backlog: 0, todo: 0, inProgress: 0, done: 0 };
 
-export default async function DashboardPage() {
-  let counts: TaskCounts = ZERO_COUNTS;
-  let projects: Project[] = [];
-  let tasks: Task[] = [];
-  let notes: Note[] = [];
-  let routines: Routine[] = [];
-  let todayProgress: RoutineProgress[] = [];
-  let error: string | null = null;
-
-  const today = new Date().toISOString().slice(0, 10);
-
-  try {
-    [counts, projects, tasks, notes, routines] = await Promise.all([
+export default function DashboardPage() {
+  const { data, error } = useApiData(async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const [counts, projects, tasks, notes, routines] = await Promise.all([
       getTaskCounts(),
       getProjects(),
       getTasks(),
       getNotes(),
       getRoutines(),
     ]);
-    if (routines.length > 0) {
-      todayProgress = (
-        await Promise.all(routines.map((r) => getRoutineProgress(r.id, today, today)))
-      ).flat();
-    }
-  } catch (err) {
-    error = err instanceof Error ? err.message : 'Failed to load dashboard';
-  }
+    const todayProgress =
+      routines.length > 0
+        ? (await Promise.all(routines.map((r) => getRoutineProgress(r.id, today, today)))).flat()
+        : [];
+    return { counts, projects, tasks, notes, routines, todayProgress };
+  });
+
+  const counts = data?.counts ?? ZERO_COUNTS;
+  const projects = data?.projects ?? [];
 
   return (
     <>
@@ -49,10 +44,10 @@ export default async function DashboardPage() {
       <DashboardGrid
         counts={counts}
         projects={projects}
-        tasks={tasks}
-        notes={notes}
-        routines={routines}
-        todayProgress={todayProgress}
+        tasks={data?.tasks ?? []}
+        notes={data?.notes ?? []}
+        routines={data?.routines ?? []}
+        todayProgress={data?.todayProgress ?? []}
         error={error}
       />
 

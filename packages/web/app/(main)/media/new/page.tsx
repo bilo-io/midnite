@@ -1,26 +1,25 @@
-import type { MediaType } from '@midnite/shared';
-import { MEDIA_TYPES } from '@midnite/shared';
-import { MediaDetailView } from '../[id]/media-detail-view';
+'use client';
+
+import { Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { MEDIA_TYPES, type MediaType } from '@midnite/shared';
 import { getProjects } from '@/lib/api';
+import { useApiData } from '@/lib/use-api-data';
+import { MediaDetailView } from '../[id]/media-detail-view';
 
-export const dynamic = 'force-dynamic';
-
-export default async function NewMediaPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ type?: string }>;
-}) {
-  const { type: rawType } = await searchParams;
+function NewMedia() {
+  const rawType = useSearchParams().get('type');
   const type: MediaType = MEDIA_TYPES.includes(rawType as MediaType)
     ? (rawType as MediaType)
     : 'image';
+  const { data: projects } = useApiData(() => getProjects());
+  return <MediaDetailView mode="create" initialType={type} projects={projects ?? []} />;
+}
 
-  let projects: Awaited<ReturnType<typeof getProjects>> = [];
-  try {
-    projects = await getProjects();
-  } catch {
-    // non-fatal — projects are optional
-  }
-
-  return <MediaDetailView mode="create" initialType={type} projects={projects} />;
+export default function NewMediaPage() {
+  return (
+    <Suspense fallback={null}>
+      <NewMedia />
+    </Suspense>
+  );
 }
