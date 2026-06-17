@@ -10,6 +10,8 @@ import { NODE_EXECUTORS, type NodeExecutor } from './engine/node-executor';
 import { HttpRequestExecutor } from './engine/executors/http-request.executor';
 import { AiClaudeExecutor } from './engine/executors/ai-claude.executor';
 import { WorkflowScheduler } from './scheduler/workflow-scheduler.service';
+import { WorkflowEventBus } from './workflow-event-bus';
+import { WorkflowsGateway } from './workflows.gateway';
 
 @Module({
   imports: [AgentModule],
@@ -20,6 +22,8 @@ import { WorkflowScheduler } from './scheduler/workflow-scheduler.service';
     WorkflowEngine,
     ExecutorRegistry,
     WorkflowScheduler,
+    WorkflowEventBus,
+    WorkflowsGateway,
     // Node executors — register the class, then collect all into NODE_EXECUTORS.
     // Adding an integration = add its executor class here (one place).
     HttpRequestExecutor,

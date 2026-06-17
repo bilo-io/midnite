@@ -92,12 +92,14 @@ export function buildInstallInitCommand(chain: string): string {
 }
 
 /**
- * Resolve the runtime path to the PreToolUse hook script. `tsc -b` doesn't copy
- * non-.ts assets into dist, so the script lives in src and we walk candidates the
- * same way db.module.ts finds migrations (dev: __dirname=src/terminal; prod: dist/terminal).
+ * Resolve the runtime path to a hook script (`pre-tool-use-hook.cjs`,
+ * `stop-hook.cjs`, `notification-hook.cjs`). `tsc -b` doesn't copy non-.ts assets
+ * into dist, so the scripts live in src and we walk candidates the same way
+ * db.module.ts finds migrations (dev: __dirname=src/terminal; prod: dist/terminal,
+ * where the gateway:build step copies them — see moon.yml).
  */
-export function resolveHookScriptPath(): string {
-  const rel = 'hooks/pre-tool-use-hook.cjs';
+export function resolveHookScriptPath(filename: string): string {
+  const rel = `hooks/${filename}`;
   const candidates = [
     resolve(__dirname, rel), // dev: src/terminal/hooks/...
     resolve(__dirname, '../../src/terminal', rel), // dist/terminal -> package src
@@ -226,12 +228,6 @@ export class TerminalService implements OnModuleDestroy {
     const pty = this.loadPty();
     if (!pty) return { ok: false, error: 'terminal backend unavailable' };
 
-    const env: Record<string, string> = {};
-    for (const [key, value] of Object.entries(process.env)) {
-      if (value !== undefined) env[key] = value;
-    }
-    env['TERM'] = 'xterm-256color';
-
     let proc: IPty;
     try {
       proc = pty.spawn(spec.command, spec.args, {
@@ -239,7 +235,7 @@ export class TerminalService implements OnModuleDestroy {
         cols: 120,
         rows: 32,
         cwd: spec.cwd,
-        env,
+        env: this.fullEnv(),
       });
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : 'spawn failed' };
@@ -289,6 +285,109 @@ export class TerminalService implements OnModuleDestroy {
       `spawned managed run ${attachId}: ${spec.command} (pid ${proc.pid}) in ${spec.cwd}`,
     );
     return { ok: true, pid: proc.pid };
+  }
+
+  /**
+   * Spawn an autonomous agent session for a task, seeded with its prompt. Like a
+   * managed run the handle is *pinned* (survives detach, lives until the process
+   * exits or {@link killManagedRun}), but it launches the preferred agent CLI
+   * with full approval/hook wiring so a human can attach via the normal token +
+   * attach flow and take over. `sessionId` is the task id.
+   *
+   * The prompt is passed as the CLI's positional arg (e.g. `claude "<prompt>"`),
+   * which seeds interactive mode and submits immediately — no fragile stdin
+   * timing — then the session stays open so the Stop hook fires and a viewer can
+   * intervene. node-pty spawns without a shell, so the prompt needs no quoting.
+   */
+  spawnAgentSession(
+    sessionId: string,
+    spec: { prompt: string },
+    hooks: { onExit: (exitCode: number, signal: number | null) => void },
+  ): { ok: true; pid: number } | { ok: false; error: string } {
+    if (this.handles.has(sessionId)) {
+      return { ok: false, error: `terminal ${sessionId} already exists` };
+    }
+    if (this.handles.size >= this.config.terminal.maxSessions) {
+      return {
+        ok: false,
+        error: `terminal session limit reached (${this.config.terminal.maxSessions})`,
+      };
+    }
+    const pty = this.loadPty();
+    if (!pty) return { ok: false, error: 'terminal backend unavailable' };
+
+    const command = AGENT_CLI_COMMAND[this.agents.getAgentCli()];
+    const args: string[] = [];
+    const env = this.fullEnv();
+    const settingsFile = this.applyHookWiring(sessionId, command, args, env, { lifecycle: true });
+    args.push(spec.prompt);
+
+    const cwd = this.resolveCwd(sessionId);
+    let proc: IPty;
+    try {
+      proc = pty.spawn(command, args, {
+        name: 'xterm-256color',
+        cols: 120,
+        rows: 32,
+        cwd,
+        env,
+      });
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : 'spawn failed' };
+    }
+
+    const handle: PtyHandle = {
+      proc,
+      command,
+      subscribers: new Set(),
+      ring: [],
+      ringBytes: 0,
+      seq: 0,
+      disposeTimer: null,
+      disposables: [],
+      settingsFile: settingsFile ?? null,
+      pinned: true,
+    };
+    this.handles.set(sessionId, handle);
+
+    handle.disposables.push(
+      proc.onData((chunk) => {
+        const frame: OutputFrame = {
+          seq: handle.seq++,
+          data: Buffer.from(chunk, 'utf8').toString('base64'),
+          bytes: Buffer.byteLength(chunk, 'utf8'),
+        };
+        this.pushRing(handle, frame);
+        this.broadcast(handle, { type: 'output', data: frame.data, seq: frame.seq });
+      }),
+    );
+    handle.disposables.push(
+      proc.onExit(({ exitCode, signal }) => {
+        this.broadcast(handle, {
+          type: 'status',
+          phase: 'exited',
+          exitCode,
+          signal: signal ?? null,
+        });
+        hooks.onExit(exitCode, signal ?? null);
+        this.cleanup(sessionId);
+      }),
+    );
+
+    this.logger.log(
+      `spawned agent session ${sessionId}: ${command} (pid ${proc.pid}) in ${cwd}`,
+    );
+    return { ok: true, pid: proc.pid };
+  }
+
+  /** Read the decoded scrollback for a session (managed/agent runs). Used to
+   *  scrape a PR URL from an agent's output on the Stop hook. */
+  readOutput(sessionId: string): string {
+    const handle = this.handles.get(sessionId);
+    if (!handle) return '';
+    return handle.ring
+      .map((frame) => Buffer.from(frame.data, 'base64').toString('utf8'))
+      .join('');
   }
 
   /**
@@ -519,23 +618,11 @@ export class TerminalService implements OnModuleDestroy {
       return { command, args, cwd: process.cwd(), env, initCommand: adHoc.initCommand };
     }
 
-    // Wire human-in-the-loop approvals for Claude Code sessions only: register a
-    // PreToolUse hook (via an ephemeral --settings file) and give it the per-session
-    // secret + callback URL. The MIDNITE_* vars are injected AFTER scrubSecretEnv so
-    // the *_SECRET key isn't stripped.
-    let settingsFile: string | undefined;
-    if (terminal.approvals.enabled && basename(command) === 'claude') {
-      const secret = this.approvals.mintSecret(sessionId);
-      settingsFile = this.writeApprovalSettings(sessionId);
-      args.push('--settings', settingsFile);
-      env['MIDNITE_SESSION_ID'] = sessionId;
-      env['MIDNITE_HOOK_SECRET'] = secret;
-      env['MIDNITE_GATEWAY_URL'] = this.hookCallbackUrl();
-      // Hook's own fetch deadline, a touch past the gateway's so the gateway's
-      // decision (or fail-safe) lands first; the hook aborts to `ask` only if the
-      // gateway is truly unreachable.
-      env['MIDNITE_HOOK_TIMEOUT_MS'] = String(terminal.approvals.timeoutMs + 15000);
-    }
+    // Wire human-in-the-loop approvals for Claude Code sessions only (no
+    // lifecycle hooks — interactive sessions don't auto-transition the task).
+    // The MIDNITE_* vars are injected AFTER scrubSecretEnv so the *_SECRET key
+    // isn't stripped.
+    const settingsFile = this.applyHookWiring(sessionId, command, args, env, { lifecycle: false });
 
     const cwd = this.resolveCwd(sessionId);
     // On first open of a session, drop into the project dir and launch the
@@ -551,6 +638,57 @@ export class TerminalService implements OnModuleDestroy {
     };
   }
 
+  /** A full copy of the gateway's env (unscrubbed) plus TERM. For agent CLIs and
+   *  managed runs, which need their own credentials to function. */
+  private fullEnv(): Record<string, string> {
+    const env: Record<string, string> = {};
+    for (const [key, value] of Object.entries(process.env)) {
+      if (value !== undefined) env[key] = value;
+    }
+    env['TERM'] = 'xterm-256color';
+    return env;
+  }
+
+  /**
+   * Register Claude's hooks for a `claude` session: write the ephemeral
+   * `--settings` file, append it to `args`, and inject the per-session secret +
+   * callback URL into `env`. Mutates `args`/`env`; returns the settings file path
+   * to track for cleanup, or undefined when no hooks apply (non-claude command,
+   * or nothing to register).
+   *
+   * - PreToolUse (tool approvals) is registered only when `terminal.approvals`
+   *   is enabled — interactive and agent sessions alike.
+   * - Stop/Notification (task lifecycle → status) are registered when
+   *   `opts.lifecycle` is set, i.e. for autonomous agent sessions, regardless of
+   *   the approvals flag — they drive task status, not tool gating.
+   */
+  private applyHookWiring(
+    sessionId: string,
+    command: string,
+    args: string[],
+    env: Record<string, string>,
+    opts: { lifecycle: boolean },
+  ): string | undefined {
+    const { terminal } = this.config;
+    if (basename(command) !== 'claude') return undefined;
+    const preToolUse = terminal.approvals.enabled;
+    if (!preToolUse && !opts.lifecycle) return undefined;
+    const secret = this.approvals.mintSecret(sessionId);
+    const settingsFile = this.writeHookSettings(sessionId, {
+      preToolUse,
+      lifecycle: opts.lifecycle,
+    });
+    args.push('--settings', settingsFile);
+    env['MIDNITE_SESSION_ID'] = sessionId;
+    env['MIDNITE_HOOK_SECRET'] = secret;
+    env['MIDNITE_GATEWAY_URL'] = this.hookCallbackUrl();
+    // Hook's own fetch deadline, a touch past the gateway's so the gateway's
+    // decision (or fail-safe) lands first; the hook aborts to `ask` only if the
+    // gateway is truly unreachable.
+    env['MIDNITE_HOOK_TIMEOUT_MS'] = String(terminal.approvals.timeoutMs + 15000);
+    return settingsFile;
+  }
+
   /** Loopback URL the in-PTY hook script calls back on (config override, else gateway port). */
   private hookCallbackUrl(): string {
     return (
@@ -558,27 +696,50 @@ export class TerminalService implements OnModuleDestroy {
     );
   }
 
-  /** Write the ephemeral Claude `--settings` file registering the PreToolUse approval hook. */
-  private writeApprovalSettings(sessionId: string): string {
+  /**
+   * Write the ephemeral Claude `--settings` file registering the requested hooks.
+   * PreToolUse blocks on a viewer decision (so it carries Claude's hook timeout);
+   * Stop/Notification are fire-and-forget status callbacks.
+   */
+  private writeHookSettings(
+    sessionId: string,
+    opts: { preToolUse: boolean; lifecycle: boolean },
+  ): string {
     const dir = this.approvalsDir();
     mkdirSync(dir, { recursive: true });
     const file = join(dir, `${sessionId}.settings.json`);
     // Give Claude's own hook timeout headroom past the gateway's, so the gateway's
     // decision (or fail-safe) always wins the race.
     const timeoutSec = Math.ceil(this.config.terminal.approvals.timeoutMs / 1000) + 30;
-    const settings = {
-      hooks: {
-        PreToolUse: [
-          {
-            matcher: '*',
-            hooks: [
-              { type: 'command', command: `node "${resolveHookScriptPath()}"`, timeout: timeoutSec },
-            ],
-          },
-        ],
-      },
-    };
-    writeFileSync(file, JSON.stringify(settings, null, 2), 'utf8');
+    const hooks: Record<string, unknown> = {};
+    if (opts.preToolUse) {
+      hooks['PreToolUse'] = [
+        {
+          matcher: '*',
+          hooks: [
+            {
+              type: 'command',
+              command: `node "${resolveHookScriptPath('pre-tool-use-hook.cjs')}"`,
+              timeout: timeoutSec,
+            },
+          ],
+        },
+      ];
+    }
+    if (opts.lifecycle) {
+      hooks['Stop'] = [
+        { hooks: [{ type: 'command', command: `node "${resolveHookScriptPath('stop-hook.cjs')}"` }] },
+      ];
+      hooks['Notification'] = [
+        {
+          matcher: '*',
+          hooks: [
+            { type: 'command', command: `node "${resolveHookScriptPath('notification-hook.cjs')}"` },
+          ],
+        },
+      ];
+    }
+    writeFileSync(file, JSON.stringify({ hooks }, null, 2), 'utf8');
     return file;
   }
 

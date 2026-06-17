@@ -46,6 +46,24 @@ export class TasksRepository {
       .get();
   }
 
+  setSession(id: string, sessionId: string | null, updatedAt: string): TaskRow | undefined {
+    return this.db
+      .update(tasks)
+      .set({ sessionId, updatedAt })
+      .where(eq(tasks.id, id))
+      .returning()
+      .get();
+  }
+
+  setPrUrl(id: string, prUrl: string, updatedAt: string): TaskRow | undefined {
+    return this.db
+      .update(tasks)
+      .set({ prUrl, updatedAt })
+      .where(eq(tasks.id, id))
+      .returning()
+      .get();
+  }
+
   setProject(id: string, projectId: string | null, updatedAt: string): TaskRow | undefined {
     return this.db
       .update(tasks)

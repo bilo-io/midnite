@@ -4,6 +4,16 @@
   "private": true,
   "description": "midnite gateway — Nest.js daemon (REST + WS) + SQLite store + scheduler + agent pool",
   "main": "dist/main.js",
+  "exports": {
+    ".": {
+      "types": "./dist/main.d.ts",
+      "default": "./dist/main.js"
+    },
+    "./bootstrap": {
+      "types": "./dist/bootstrap.d.ts",
+      "default": "./dist/bootstrap.js"
+    }
+  },
   "scripts": {
     "build": "tsc -b",
     "dev": "tsx watch src/main.ts",

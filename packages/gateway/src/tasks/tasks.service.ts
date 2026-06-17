@@ -2,6 +2,7 @@ import { BadRequestException, Inject, Injectable, NotFoundException } from '@nes
 import { randomUUID } from 'node:crypto';
 import { detectSourceKind, type Status, type Task, type TaskCounts } from '@midnite/shared';
 import { TaskClassifier, type ClassifierImage } from '../agent/classifier.service';
+import { PlannerService } from '../agent/planner.service';
 import { TasksRepository } from './tasks.repository';
 
 export interface CreateTaskInput {
@@ -18,6 +19,7 @@ export class TasksService {
   constructor(
     @Inject(TasksRepository) private readonly repo: TasksRepository,
     @Inject(TaskClassifier) private readonly classifier: TaskClassifier,
+    @Inject(PlannerService) private readonly planner: PlannerService,
   ) {}
 
   getCounts(): TaskCounts {
@@ -66,6 +68,60 @@ export class TasksService {
     return this.getTask(id);
   }
 
+  // ---- agent pool lifecycle transitions ----
+  // Driven by the scheduler/runner and the Stop/Notification hooks. Each is
+  // idempotent on its target status so a hook firing twice (or racing the PTY's
+  // onExit) can't double-transition or clobber a later state.
+
+  /** Claim a task for an agent run: → wip, bind its session id (== task id). */
+  startTask(id: string): Task {
+    const now = new Date().toISOString();
+    if (!this.repo.getTask(id)) throw new NotFoundException(`task ${id} not found`);
+    this.repo.updateStatus(id, 'wip', now);
+    this.repo.setSession(id, id, now);
+    this.repo.insertEvent({ id: randomUUID(), taskId: id, at: now, kind: 'agent.started' });
+    return this.getTask(id);
+  }
+
+  /** Return a task to the queue (PTY died / restart reconciliation): → todo. */
+  requeue(id: string): Task {
+    const now = new Date().toISOString();
+    if (!this.repo.getTask(id)) throw new NotFoundException(`task ${id} not found`);
+    this.repo.updateStatus(id, 'todo', now);
+    this.repo.setSession(id, null, now);
+    this.repo.insertEvent({ id: randomUUID(), taskId: id, at: now, kind: 'agent.requeued' });
+    return this.getTask(id);
+  }
+
+  /** Agent blocked on user input (Notification hook): → waiting. Idempotent. */
+  markWaiting(id: string): Task {
+    const now = new Date().toISOString();
+    const row = this.repo.getTask(id);
+    if (!row) throw new NotFoundException(`task ${id} not found`);
+    if (row.status === 'waiting') return this.getTask(id);
+    this.repo.updateStatus(id, 'waiting', now);
+    this.repo.insertEvent({ id: randomUUID(), taskId: id, at: now, kind: 'agent.waiting' });
+    return this.getTask(id);
+  }
+
+  /** Agent finished (Stop hook): → done, optionally recording a PR URL. Idempotent. */
+  markDone(id: string, prUrl?: string): Task {
+    const now = new Date().toISOString();
+    const row = this.repo.getTask(id);
+    if (!row) throw new NotFoundException(`task ${id} not found`);
+    if (row.status === 'done') return this.getTask(id);
+    this.repo.updateStatus(id, 'done', now);
+    if (prUrl) this.repo.setPrUrl(id, prUrl, now);
+    this.repo.insertEvent({
+      id: randomUUID(),
+      taskId: id,
+      at: now,
+      kind: 'agent.done',
+      ...(prUrl ? { data: JSON.stringify({ prUrl }) } : {}),
+    });
+    return this.getTask(id);
+  }
+
   archive(id: string): Task {
     const now = new Date().toISOString();
     const row = this.repo.setArchived(id, now, now);
@@ -105,10 +161,15 @@ export class TasksService {
   }
 
   async createFromPrompt(input: CreateTaskInput): Promise<Task> {
-    const classified = await this.classifier.classify(
-      input.prompt,
-      input.images.map((i) => ({ path: i.path, mime: i.mime })),
-    );
+    // Triage (plan model: ready→todo / not→backlog) and classify (title/kind)
+    // run concurrently — both are fail-soft, so neither breaks task creation.
+    const [classified, triage] = await Promise.all([
+      this.classifier.classify(
+        input.prompt,
+        input.images.map((i) => ({ path: i.path, mime: i.mime })),
+      ),
+      this.planner.triage(input.prompt),
+    ]);
 
     const id = randomUUID();
     const now = new Date().toISOString();
@@ -117,7 +178,9 @@ export class TasksService {
       id,
       title: classified.title,
       kind: classified.kind,
-      status: input.status ?? 'todo',
+      // An explicit caller status wins; otherwise the planner's triage decides
+      // the landing column.
+      status: input.status ?? (triage.ready ? 'todo' : 'backlog'),
       prompt: input.prompt,
       repo: input.repo ?? null,
       projectId: input.projectId ?? null,

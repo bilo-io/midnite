@@ -11,6 +11,7 @@ import {
   type WorkflowRun,
 } from '@midnite/shared';
 import { WorkflowsRepository } from '../workflows.repository';
+import { WorkflowEventBus } from '../workflow-event-bus';
 import { CyclicWorkflowError, predecessors, topologicalOrder } from '../lib/graph';
 
 const BRANCH_TYPE = 'logic.branch';
@@ -36,7 +37,12 @@ export class WorkflowEngine {
   constructor(
     @Inject(WorkflowsRepository) private readonly repo: WorkflowsRepository,
     @Inject(ExecutorRegistry) private readonly registry: ExecutorRegistry,
+    @Inject(WorkflowEventBus) private readonly bus: WorkflowEventBus,
   ) {}
+
+  private now(): string {
+    return new Date().toISOString();
+  }
 
   /**
    * Static validation used at save time: every node type is known, every node's
@@ -113,6 +119,13 @@ export class WorkflowEngine {
       startedAt,
       finishedAt: null,
     });
+    this.bus.emit({
+      type: 'run.started',
+      workflowId: workflow.id,
+      runId,
+      at: startedAt,
+      triggerSource: opts.triggerSource,
+    });
     for (const nodeId of order) {
       const node = graph.nodes.find((n) => n.id === nodeId)!;
       this.repo.createNodeRun({
@@ -188,6 +201,14 @@ export class WorkflowEngine {
         input: JSON.stringify(input ?? null),
         startedAt: new Date().toISOString(),
       });
+      this.bus.emit({
+        type: 'node.started',
+        workflowId: workflow.id,
+        runId,
+        at: this.now(),
+        nodeId,
+        nodeType: node.type,
+      });
 
       if (def.category === 'trigger') {
         outputs.set(nodeId, input);
@@ -196,6 +217,7 @@ export class WorkflowEngine {
           output: JSON.stringify(input ?? null),
           finishedAt: new Date().toISOString(),
         });
+        this.emitNodeSucceeded(workflow.id, runId, nodeId, input);
         propagate(nodeId, allPorts(node.type));
         continue;
       }
@@ -220,6 +242,7 @@ export class WorkflowEngine {
           logs: JSON.stringify(logs),
           finishedAt: new Date().toISOString(),
         });
+        this.emitNodeSucceeded(workflow.id, runId, nodeId, input);
         propagate(nodeId, new Set([taken]));
         continue;
       }
@@ -233,6 +256,7 @@ export class WorkflowEngine {
           error: message,
           finishedAt: new Date().toISOString(),
         });
+        this.emitNodeFailed(workflow.id, runId, nodeId, message);
         runStatus = 'failed';
         runError = message;
         break;
@@ -252,6 +276,7 @@ export class WorkflowEngine {
           logs: JSON.stringify(logs),
           finishedAt: new Date().toISOString(),
         });
+        this.emitNodeSucceeded(workflow.id, runId, nodeId, output);
         propagate(nodeId, allPorts(node.type));
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
@@ -261,6 +286,7 @@ export class WorkflowEngine {
           logs: JSON.stringify(logs),
           finishedAt: new Date().toISOString(),
         });
+        this.emitNodeFailed(workflow.id, runId, nodeId, message);
         runStatus = 'failed';
         runError = message;
         break;
@@ -273,5 +299,42 @@ export class WorkflowEngine {
       error: runError ?? null,
       finishedAt: new Date().toISOString(),
     });
+
+    // Emit terminal run event *after* the DB write so a client reconciling via
+    // REST sees consistent state.
+    if (runStatus === 'failed') {
+      this.bus.emit({
+        type: 'run.failed',
+        workflowId: workflow.id,
+        runId,
+        at: this.now(),
+        error: runError ?? 'workflow run failed',
+      });
+    } else {
+      const run = this.repo.getRun(workflow.id, runId);
+      if (run) {
+        this.bus.emit({ type: 'run.finished', workflowId: workflow.id, runId, at: this.now(), run });
+      }
+    }
+  }
+
+  private emitNodeSucceeded(
+    workflowId: string,
+    runId: string,
+    nodeId: string,
+    output: unknown,
+  ): void {
+    this.bus.emit({
+      type: 'node.succeeded',
+      workflowId,
+      runId,
+      at: this.now(),
+      nodeId,
+      output,
+    });
+  }
+
+  private emitNodeFailed(workflowId: string, runId: string, nodeId: string, error: string): void {
+    this.bus.emit({ type: 'node.failed', workflowId, runId, at: this.now(), nodeId, error });
   }
 }

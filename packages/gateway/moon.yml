@@ -7,7 +7,11 @@ dependsOn:
 
 tasks:
   build:
-    command: 'pnpm exec tsc -b'
+    # tsc -b ignores non-.ts assets, so copy the hook scripts into dist after
+    # compiling — the runtime resolver (resolveHookScriptPath) and the packaged
+    # desktop build both expect them beside the compiled output. `script` (not
+    # `command`) because moon only allows shell chaining via script.
+    script: "pnpm exec tsc -b && node -e \"const fs=require('node:fs');const s='src/terminal/hooks',d='dist/terminal/hooks';fs.mkdirSync(d,{recursive:true});for(const f of fs.readdirSync(s))if(f.endsWith('.cjs'))fs.copyFileSync(s+'/'+f,d+'/'+f)\""
     inputs:
       - 'src/**/*'
       - 'tsconfig.json'
