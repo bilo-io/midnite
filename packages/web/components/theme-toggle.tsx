@@ -13,7 +13,7 @@ const OPTIONS: { value: ThemePreference; label: string; Icon: typeof Sun }[] = [
   { value: 'time', label: 'Time', Icon: Clock },
 ];
 
-export function ThemeToggle() {
+export function ThemeToggle({ expanded }: { expanded?: boolean }) {
   const { preference, resolved, setPreference } = useTheme();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -38,18 +38,32 @@ export function ThemeToggle() {
 
   return (
     <div ref={rootRef} className="group relative">
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        aria-label="Toggle theme"
-        aria-haspopup="menu"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-      >
-        <TriggerIcon className="h-4 w-4" />
-      </Button>
-      {!open ? (
+      {expanded ? (
+        <button
+          type="button"
+          aria-label="Toggle theme"
+          aria-haspopup="menu"
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+          className="flex h-9 w-full items-center gap-3 rounded-md px-2.5 text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
+        >
+          <TriggerIcon className="h-4 w-4 shrink-0" />
+          <span className="truncate text-sm">Theme</span>
+        </button>
+      ) : (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label="Toggle theme"
+          aria-haspopup="menu"
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+        >
+          <TriggerIcon className="h-4 w-4" />
+        </Button>
+      )}
+      {!open && !expanded ? (
         <span
           role="tooltip"
           className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 whitespace-nowrap rounded-md border border-border/80 bg-card px-2 py-1 text-xs font-medium text-foreground opacity-0 shadow-md transition-opacity duration-100 group-hover:opacity-100"
@@ -60,7 +74,10 @@ export function ThemeToggle() {
       {open ? (
         <div
           role="menu"
-          className="absolute bottom-0 left-full z-50 ml-2 min-w-[10rem] rounded-md border bg-card text-card-foreground p-1 shadow-md"
+          className={cn(
+            'absolute z-50 min-w-[10rem] rounded-md border bg-card text-card-foreground p-1 shadow-md',
+            expanded ? 'bottom-full left-0 mb-1' : 'bottom-0 left-full ml-2',
+          )}
         >
           {OPTIONS.map(({ value, label, Icon }) => {
             const active = preference === value;

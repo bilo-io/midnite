@@ -204,7 +204,7 @@ export function NavBar() {
         <div className={cn('mt-auto flex flex-col gap-1', expandedView ? 'items-stretch' : 'items-center')}>
           {renderLink(PROFILE_LINK)}
           {renderLink(AGENTS_LINK)}
-          <ThemeToggle />
+          <ThemeToggle expanded={expandedView} />
           {renderLink(SETTINGS_LINK)}
           <div className={cn('my-1 h-px bg-border/60', expandedView ? 'w-full' : 'w-6')} />
           <button
