@@ -188,7 +188,6 @@ function CompletionChart({ progress }: { progress: RoutineProgress[] }) {
 }
 
 function SummaryStats({
-  progress,
   days,
   progressByDate,
 }: {

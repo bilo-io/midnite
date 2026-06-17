@@ -29,5 +29,13 @@ tasks:
       - '@group(configs)'
 
   lint:
-    command: 'echo "lint not configured yet"'
-    local: true
+    command: 'pnpm exec eslint .'
+    inputs:
+      - 'src/**/*'
+      - 'app/**/*'
+      - 'components/**/*'
+      - 'hooks/**/*'
+      - 'lib/**/*'
+      - 'scripts/**/*'
+      - '*.{ts,tsx,cjs,mjs}'
+      - '/eslint.config.mjs'

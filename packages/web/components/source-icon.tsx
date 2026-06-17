@@ -197,7 +197,6 @@ export function SourceIcon({
   const [broken, setBroken] = useState(false);
   if (faviconUrl && !broken) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element -- arbitrary external favicons, no loader
       <img
         src={faviconUrl}
         alt=""

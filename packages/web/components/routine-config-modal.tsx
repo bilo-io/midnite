@@ -16,7 +16,6 @@ import {
 } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { useConfirm } from '@/components/confirm-dialog';
-import { cn } from '@/lib/utils';
 
 interface RoutineConfigModalProps {
   routine: Routine | null;
@@ -90,7 +89,7 @@ export function RoutineConfigModal({ routine, onClose, onUpdate, onDelete }: Rou
     const idx = groups.findIndex((g) => g.id === gid);
     const target = groups[idx + dir];
     if (!target) return;
-    const [r1, r2] = await Promise.all([
+    const [, r2] = await Promise.all([
       updateRoutineGroup(current.id, gid, { position: target.position }),
       updateRoutineGroup(current.id, target.id, { position: groups[idx]!.position }),
     ]);

@@ -96,7 +96,7 @@ export function MediaView({ items, projects, error }: Props) {
     if (list.length === 0) return null;
     return (
       <div className="columns-2 gap-2 sm:columns-3 lg:columns-4">
-        {list.map((m, i) => (
+        {list.map((m) => (
           <button
             key={m.id}
             type="button"
@@ -108,7 +108,6 @@ export function MediaView({ items, projects, error }: Props) {
             aria-label={m.title}
           >
             {m.filePath ? (
-              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={mediaFileUrl(m.id)}
                 alt={m.title}
@@ -215,7 +214,6 @@ export function MediaView({ items, projects, error }: Props) {
           >
             <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-muted">
               {m.type === 'image' && m.filePath ? (
-                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={mediaFileUrl(m.id)}
                   alt={m.title}

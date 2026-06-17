@@ -8,6 +8,8 @@
     "build": "tsc -b",
     "start": "electron .",
     "rebuild": "electron-rebuild",
+    "stage": "node scripts/stage-gateway.mjs",
+    "dist": "pnpm stage && electron-builder --mac --config electron-builder.yml",
     "package": "electron-builder --mac --config electron-builder.yml"
   },
   "dependencies": {

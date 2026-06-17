@@ -21,6 +21,13 @@ tasks:
       - 'src/**/*'
       - 'tsconfig.json'
 
+  lint:
+    command: 'pnpm exec eslint .'
+    inputs:
+      - 'src/**/*'
+      - 'scripts/**/*'
+      - '/eslint.config.mjs'
+
   # Rebuild native deps (better-sqlite3, node-pty) against Electron's ABI.
   # Run on the target machine before `start`/`package`.
   rebuild:

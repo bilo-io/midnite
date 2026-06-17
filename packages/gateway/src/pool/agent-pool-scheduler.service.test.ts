@@ -11,7 +11,7 @@ function config(pool: number): MidniteConfig {
 
 // A mutable task list whose `todo` view shrinks as the runner starts tasks.
 function fakeTasks(todoIds: string[]) {
-  let status = new Map(todoIds.map((id) => [id, 'todo']));
+  const status = new Map(todoIds.map((id) => [id, 'todo']));
   const service = {
     listTasks: (s?: string) =>
       [...status.entries()]

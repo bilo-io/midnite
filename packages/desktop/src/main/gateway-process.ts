@@ -23,7 +23,7 @@ function gatewayEntry(): string {
   const packaged = join(process.resourcesPath, 'gateway', 'dist', 'main.js');
   if (existsSync(packaged)) return packaged;
   // Dev: resolved from @midnite/gateway's package main.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+   
   return require.resolve('@midnite/gateway');
 }
 
