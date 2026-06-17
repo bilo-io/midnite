@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 // The native `storage` event only fires in *other* tabs, so we broadcast our own
 // event to keep multiple hooks for the same key in sync within a single tab.
@@ -34,10 +34,21 @@ export function useLocalStorage<T>(
   const [value, setValue] = useState<T>(initial);
   const [hydrated, setHydrated] = useState(false);
 
+  // Mirror of the latest value so `set` can resolve functional updates without
+  // reading state inside an updater (see `set` below for why that matters).
+  const valueRef = useRef(value);
+  useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem(key);
-      if (raw !== null) setValue(reconcile(initial, JSON.parse(raw)));
+      if (raw !== null) {
+        const next = reconcile(initial, JSON.parse(raw));
+        valueRef.current = next;
+        setValue(next);
+      }
     } catch {
       // ignore malformed/unavailable storage
     }
@@ -70,20 +81,24 @@ export function useLocalStorage<T>(
 
   const set = useCallback(
     (next: T | ((prev: T) => T)) => {
-      setValue((prev) => {
-        const resolved = typeof next === 'function' ? (next as (p: T) => T)(prev) : next;
-        try {
-          localStorage.setItem(key, JSON.stringify(resolved));
-          window.dispatchEvent(
-            new CustomEvent<LocalSyncDetail>(LOCAL_SYNC_EVENT, {
-              detail: { key, value: resolved },
-            }),
-          );
-        } catch {
-          // ignore write failures (private mode, quota)
-        }
-        return resolved;
-      });
+      // Resolve and persist *outside* the state updater. Doing the write +
+      // broadcast inside `setValue`'s updater is unsafe: the synchronous dispatch
+      // re-enters the listeners (and React's dev Strict Mode invokes updaters
+      // twice), so a functional update like `prev => [...prev, item]` could append
+      // twice. Resolving against `valueRef` keeps the updater pure.
+      const resolved = typeof next === 'function' ? (next as (p: T) => T)(valueRef.current) : next;
+      valueRef.current = resolved;
+      setValue(resolved);
+      try {
+        localStorage.setItem(key, JSON.stringify(resolved));
+        window.dispatchEvent(
+          new CustomEvent<LocalSyncDetail>(LOCAL_SYNC_EVENT, {
+            detail: { key, value: resolved },
+          }),
+        );
+      } catch {
+        // ignore write failures (private mode, quota)
+      }
     },
     [key],
   );

@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-17 — Finances dashboard widget (multi-instance)
+
+A stylized **Finances** card: add income and expense line-items, toggle list⇄totals, and see the leftover (income − expenses). First **multi-instance** widget — you can place several (e.g. "Fixed costs" vs "Holiday budget"), each with its own editable title and data.
+
+- [x] `web/lib/dashboard-widgets.ts` — `FinanceEntry`/`FinanceConfig` types, `finances` registry entry (Wallet icon, `mediumSizes`), `MULTI_INSTANCE` set so the catalogue keeps offering it once placed; `newInstance('finances')` mints a `crypto.randomUUID()` id; `sizeForKey` maps the `finances-` prefix
+- [x] `web/components/finances-widget.tsx` — editable-list card (modelled on `links-widget`): per-card title, income/expense editors, list vs totals view, leftover line coloured by sign, amounts via `Intl.NumberFormat` (no symbol)
+- [x] `web/components/dashboard-grid.tsx` — fan-out to `finances-<id>` grid keys (mirroring `proj-N`); id-keyed render/update/remove/label branches; layout reconcile handles add/remove automatically
+- [x] `web/lib/use-local-storage.ts` — **bug fix exposed by multi-instance**: `set` performed the localStorage write + sync-event dispatch *inside* the React updater; the synchronous dispatch re-entered listeners and (with Strict Mode's double-invoke) appended twice. Now resolves against a `valueRef` and persists outside the updater, keeping it pure. Latent for single-instance widgets (catalogue dedup hid it); duplicate finance ids surfaced it
+- [x] Verified: `web:typecheck` + `web:build` green; full Playwright drive-through (add 2 cards → independent titles/data, list⇄totals toggle, leftover math, persistence across reload) all green
+
 ## 2026-06-13 — Marketing site (`@midnite/site`)
 
 A standalone Next.js App Router landing page on port **3001**, reusing the web app's design language (HSL token system, conic-gradient accents, grid backdrop, system fonts), with a scroll-driven 3D hero. Independent of the gateway — pure marketing surface, no `@midnite/shared` dependency.
