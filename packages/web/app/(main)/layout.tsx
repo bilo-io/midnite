@@ -6,7 +6,7 @@ export default function MainLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen">
       <NavBar />
-      <main className="pl-14">
+      <main className="transition-[padding] duration-200" style={{ paddingLeft: 'var(--nav-offset)' }}>
         <PageReveal>{children}</PageReveal>
       </main>
     </div>

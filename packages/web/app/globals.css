@@ -6,6 +6,8 @@
 
 @layer base {
   :root {
+    /* Left-nav offset for main content; the nav widens this when locked open. */
+    --nav-offset: 3.5rem;
     --background: 0 0% 100%;
     --foreground: 240 10% 3.9%;
     --card: 0 0% 100%;

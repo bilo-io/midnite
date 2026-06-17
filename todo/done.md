@@ -4,7 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-06-17 — Finances dashboard widget (multi-instance)
+## 2026-06-17 — Collapsible / lockable side navigation
+
+The left nav can now expand to show labels and be locked open or closed. Default is unchanged (collapsed icon bar). Driven by one new `navMode` field on `AppSettings`, shared between the nav and the settings page via the existing `useLocalStorage`.
+
+- [x] `web/lib/app-settings.ts` — `NavMode = 'auto' | 'expanded' | 'collapsed'`, `navMode` on `AppSettings` (default `'auto'`), `NAV_W_COLLAPSED`/`NAV_W_EXPANDED` constants
+- [x] `web/components/nav-bar.tsx` — `auto` overlay-expands on hover **and** keyboard focus-within (no content reflow); `expanded`/`collapsed` lock states; pin/unpin button in the expanded header; labels replace tooltips when expanded; an effect mirrors locked-open width into the `--nav-offset` CSS var. Collapsed rendering left identical to before
+- [x] `web/app/(main)/layout.tsx` + `globals.css` — `<main>` padding driven by `var(--nav-offset)` (default `3.5rem`) with a `transition-[padding]`; keeps the layout a server component (no client conversion)
+- [x] `web/app/(main)/settings/settings-view.tsx` — new **Navigation** card with an Auto / Locked open / Locked closed segmented radio control
+- [x] Verified: `web:typecheck` + `web:build` green; 17-assertion Playwright drive-through (default collapsed, hover overlay without reflow, pin-to-lock + reload persistence, settings lock open/closed/auto round-trip) all green
 
 A stylized **Finances** card: add income and expense line-items, toggle list⇄totals, and see the leftover (income − expenses). First **multi-instance** widget — you can place several (e.g. "Fixed costs" vs "Holiday budget"), each with its own editable title and data.
 

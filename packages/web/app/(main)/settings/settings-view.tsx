@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Activity, Clock, Cpu, Lock } from 'lucide-react';
+import { Activity, Clock, Cpu, Lock, PanelLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -23,8 +23,15 @@ import {
   SETTINGS_STORAGE_KEY,
   formatHeartbeatInterval,
   type AppSettings,
+  type NavMode,
 } from '@/lib/app-settings';
 import { cn } from '@/lib/utils';
+
+const NAV_MODE_OPTIONS: { value: NavMode; label: string; hint: string }[] = [
+  { value: 'auto', label: 'Auto', hint: 'Collapsed; expands on hover' },
+  { value: 'expanded', label: 'Locked open', hint: 'Always expanded' },
+  { value: 'collapsed', label: 'Locked closed', hint: 'Always the icon bar' },
+];
 
 function formatDuration(seconds: number): string {
   if (seconds < 60) return `${seconds}s`;
@@ -43,6 +50,9 @@ export function SettingsView() {
     SETTINGS_STORAGE_KEY,
     DEFAULT_SETTINGS,
   );
+
+  const navMode = settings.navMode ?? DEFAULT_SETTINGS.navMode;
+  const setNavMode = (mode: NavMode) => setSettings((prev) => ({ ...prev, navMode: mode }));
 
   const poolSize = Math.min(AGENT_POOL_MAX, Math.max(AGENT_POOL_MIN, settings.agentPoolSize));
   const setPoolSize = (n: number) =>
@@ -139,6 +149,56 @@ export function SettingsView() {
 
           <p className="text-xs text-muted-foreground/70">
             Default {DEFAULT_SETTINGS.agentPoolSize} · maximum {AGENT_POOL_MAX}.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <PanelLeft className="h-3.5 w-3.5" />
+            Navigation
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-start justify-between gap-6">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Side navigation</p>
+              <p className="text-xs text-muted-foreground">
+                Lock the nav open or closed, or let it stay collapsed and expand on hover.
+              </p>
+            </div>
+            <div
+              role="radiogroup"
+              aria-label="Side navigation"
+              className={cn(
+                'flex shrink-0 rounded-md border border-border/60 bg-card/60 p-0.5 transition-opacity',
+                hydrated ? 'opacity-100' : 'opacity-0',
+              )}
+            >
+              {NAV_MODE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={navMode === opt.value}
+                  onClick={() => setNavMode(opt.value)}
+                  title={opt.hint}
+                  className={cn(
+                    'rounded px-2.5 py-1 text-xs font-medium transition-colors',
+                    navMode === opt.value
+                      ? 'bg-accent text-accent-foreground'
+                      : 'text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <p className="text-xs text-muted-foreground/70">
+            {NAV_MODE_OPTIONS.find((o) => o.value === navMode)?.hint}.
           </p>
         </CardContent>
       </Card>

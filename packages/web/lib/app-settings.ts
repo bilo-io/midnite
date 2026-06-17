@@ -59,6 +59,18 @@ export function formatHeartbeatInterval(hours: number): string {
   return `Every ${Math.round(hours / 24)}d`;
 }
 
+/**
+ * How the side navigation behaves:
+ * - `auto`: collapsed icon bar at rest, overlay-expands on hover/focus (default).
+ * - `expanded`: locked open with labels; page content shifts to make room.
+ * - `collapsed`: locked as the icon bar, no hover-expand.
+ */
+export type NavMode = 'auto' | 'expanded' | 'collapsed';
+
+/** Side-nav widths, shared by the nav component and the `--nav-offset` CSS var. */
+export const NAV_W_COLLAPSED = '3.5rem';
+export const NAV_W_EXPANDED = '14rem';
+
 export type AppSettings = {
   /** Number of Claude Code sessions allowed to run in parallel. */
   agentPoolSize: number;
@@ -71,6 +83,8 @@ export type AppSettings = {
    * the lock button — the idle screensaver wakes without one.
    */
   passcodeOnlyWhenLocked: boolean;
+  /** Collapse/expand/lock behaviour of the side navigation. */
+  navMode: NavMode;
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -78,6 +92,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   inactivityTimeoutS: INACTIVITY_DEFAULT_S,
   requirePasscode: false,
   passcodeOnlyWhenLocked: false,
+  navMode: 'auto',
 };
 
 export const SETTINGS_STORAGE_KEY = 'midnite.settings';
