@@ -18,6 +18,7 @@ import {
   UpdateSubAgentRequestSchema,
   type AgentCliResponse,
   type AgentCliStatusResponse,
+  type AgentCliStatusListResponse,
   type AgentPingResponse,
   type AgentsConfigResponse,
   type HeartbeatRunResponse,
@@ -43,6 +44,13 @@ export class AgentsController {
     return { cli: this.service.updateAgentCli(parsed.data.cli) };
   }
 
+  // Static route declared before the parameterised `cli/:cli/status` so it never
+  // gets captured as `:cli = 'statuses'`.
+  @Get('cli/statuses')
+  async getCliStatuses(): Promise<AgentCliStatusListResponse> {
+    return { statuses: await this.service.getCliStatuses() };
+  }
+
   @Get('cli/:cli/status')
   async getCliStatus(@Param('cli') cli: string): Promise<AgentCliStatusResponse> {
     const parsed = AgentCliSchema.safeParse(cli);
@@ -50,7 +58,7 @@ export class AgentsController {
     return { status: await this.service.getCliStatus(parsed.data) };
   }
 
-  /** Health-check the selected CLI (Claude → API round-trip; others → version probe). */
+  /** Health-check the active LLM provider that powers the gateway's AI features. */
   @Post('ping')
   ping(): Promise<AgentPingResponse> {
     return this.service.ping();

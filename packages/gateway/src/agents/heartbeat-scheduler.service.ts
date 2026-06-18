@@ -8,7 +8,7 @@ import {
 import { randomUUID } from 'node:crypto';
 import type { HeartbeatRun, HeartbeatTriggerSource, MidniteConfig } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
-import { AnthropicService } from '../agent/anthropic.service';
+import { LlmService } from '../agent/llm/llm.service';
 import { AgentsRepository } from './agents.repository';
 
 const MS_PER_HOUR = 3_600_000;
@@ -31,7 +31,7 @@ export class HeartbeatScheduler implements OnModuleInit, OnModuleDestroy {
   constructor(
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
     @Inject(AgentsRepository) private readonly repo: AgentsRepository,
-    @Inject(AnthropicService) private readonly anthropic: AnthropicService,
+    @Inject(LlmService) private readonly llm: LlmService,
   ) {}
 
   onModuleInit(): void {
@@ -70,7 +70,7 @@ export class HeartbeatScheduler implements OnModuleInit, OnModuleDestroy {
   /**
    * Run the heartbeat once and record the outcome. Used by the tick (source
    * 'schedule') and the manual endpoint ('manual'). Manual bypasses the due
-   * check and the feature flag but still honours `anthropic.enabled`. Always
+   * check and the feature flag but still honours `llm.enabled`. Always
    * returns the recorded run; never throws.
    */
   async executeHeartbeat(triggerSource: HeartbeatTriggerSource): Promise<HeartbeatRun> {
@@ -90,16 +90,16 @@ export class HeartbeatScheduler implements OnModuleInit, OnModuleDestroy {
         error: 'heartbeat prompt is empty',
       });
     }
-    if (!this.anthropic.enabled) {
+    if (!this.llm.enabled) {
       return this.recordSkipped(id, triggerSource, startedAt, description, prompt, {
-        error: 'AI is disabled — set ANTHROPIC_API_KEY or run `claude` to log in.',
+        error: 'AI is disabled — add an API key for the active provider in settings.',
         advance: triggerSource === 'schedule',
       });
     }
 
     this.running = true;
     this.abort = new AbortController();
-    const model = this.anthropic.getActModel();
+    const model = this.llm.getActModel();
 
     // Insert the running row and advance the schedule clock BEFORE awaiting, so a
     // slow call can't be re-triggered by the next tick and a crash mid-run won't
@@ -120,17 +120,13 @@ export class HeartbeatScheduler implements OnModuleInit, OnModuleDestroy {
     else this.repo.setLastHeartbeatRunId(id);
 
     try {
-      const client = this.anthropic.getClient();
-      const message = await client.messages.create(
-        {
-          model,
-          max_tokens: HEARTBEAT_MAX_TOKENS,
-          ...(description ? { system: description } : {}),
-          messages: [{ role: 'user', content: prompt }],
-        },
-        { signal: this.abort.signal },
-      );
-      const text = message.content.map((b) => (b.type === 'text' ? b.text : '')).join('');
+      const { text } = await this.llm.generateText({
+        model,
+        maxTokens: HEARTBEAT_MAX_TOKENS,
+        ...(description ? { system: description } : {}),
+        messages: [{ role: 'user', text: prompt }],
+        signal: this.abort.signal,
+      });
       // The run row was inserted synchronously above, so the update always returns it.
       const updated = this.repo.updateHeartbeatRun(id, {
         status: 'succeeded',

@@ -3,7 +3,6 @@ import { randomUUID } from 'node:crypto';
 import {
   AGENT_CLI_COMMAND,
   AGENT_CLI_DEFAULT,
-  AGENT_CLI_LABEL,
   HEARTBEAT_DEFAULT_H,
   type AgentCli,
   type AgentCliStatus,
@@ -16,7 +15,7 @@ import {
   type UpdatePrimaryAgentRequest,
   type UpdateSubAgentRequest,
 } from '@midnite/shared';
-import { AnthropicService } from '../agent/anthropic.service';
+import { LlmService } from '../agent/llm/llm.service';
 import { AgentsRepository, PRIMARY_ID } from './agents.repository';
 import { detectCli } from './cli-detect';
 import { HeartbeatScheduler } from './heartbeat-scheduler.service';
@@ -29,35 +28,25 @@ export class AgentsService {
   constructor(
     @Inject(AgentsRepository) private readonly repo: AgentsRepository,
     @Inject(HeartbeatScheduler) private readonly scheduler: HeartbeatScheduler,
-    @Inject(AnthropicService) private readonly anthropic: AnthropicService,
+    @Inject(LlmService) private readonly llm: LlmService,
   ) {}
 
   /**
-   * Health-check the selected CLI. Claude does a real Anthropic API round-trip;
-   * the other CLIs (no API client exists) run `<cli> --version` to confirm the
-   * binary is installed and reachable.
+   * Health-check the active LLM provider — the one powering the gateway's AI
+   * features (classification, planning, heartbeat). A real round-trip confirms
+   * the credentials resolve. `cli` carries the current CLI preference for
+   * display; CLI install/version is reported separately via getCliStatuses.
    */
   async ping(): Promise<AgentPingResponse> {
     const cli = this.getAgentCli();
-    if (cli === 'claude') {
-      return { ...(await this.anthropic.ping()), cli };
-    }
-    const status = await this.getCliStatus(cli);
-    const label = AGENT_CLI_LABEL[cli];
-    if (status.installed) {
-      return {
-        ok: true,
-        cli,
-        model: status.version ? `${label} ${status.version}` : label,
-        reply: 'system status: ok',
-      };
-    }
-    return {
-      ok: false,
-      cli,
-      model: label,
-      reply: 'not found — install it from the Agents page',
-    };
+    return { ...(await this.llm.ping()), cli };
+  }
+
+  /** Installed-state of every known agent CLI, for the settings page. */
+  async getCliStatuses(): Promise<AgentCliStatus[]> {
+    return Promise.all(
+      (Object.keys(AGENT_CLI_COMMAND) as AgentCli[]).map((cli) => this.getCliStatus(cli)),
+    );
   }
 
   getConfig(): AgentsConfig {

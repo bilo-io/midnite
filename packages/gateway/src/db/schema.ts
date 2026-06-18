@@ -288,6 +288,29 @@ export const heartbeatRuns = sqliteTable(
   }),
 );
 
+// --- LLM providers (API credentials + model config for the gateway's own AI) ---
+
+// One row per provider (LlmProvider enum, validated at the app layer). The
+// api_key is stored plaintext: the gateway must read it back to build clients,
+// so it can't be hashed. It is NEVER returned raw over the API — the controller
+// maps to a masked ProviderCredential (hasKey + last-4 hint).
+export const llmProviders = sqliteTable('llm_providers', {
+  provider: text('provider').primaryKey(),
+  apiKey: text('api_key'),
+  baseUrl: text('base_url'),
+  planModel: text('plan_model'),
+  actModel: text('act_model'),
+  updatedAt: text('updated_at').notNull(),
+});
+
+// Singleton (id = 'settings'): which provider powers the gateway's AI features.
+// Independent of the agent CLI preference (primary_agent.agent_cli).
+export const llmSettings = sqliteTable('llm_settings', {
+  id: text('id').primaryKey(),
+  activeProvider: text('active_provider').notNull().default('anthropic'),
+  updatedAt: text('updated_at').notNull(),
+});
+
 // --- Councils (multi-agent debate: participants → anonymized synthesis) ---
 
 export const councils = sqliteTable('councils', {
@@ -397,6 +420,10 @@ export type SubagentRow = typeof subagents.$inferSelect;
 export type SubagentInsert = typeof subagents.$inferInsert;
 export type HeartbeatRunRow = typeof heartbeatRuns.$inferSelect;
 export type HeartbeatRunInsert = typeof heartbeatRuns.$inferInsert;
+export type LlmProviderRow = typeof llmProviders.$inferSelect;
+export type LlmProviderInsert = typeof llmProviders.$inferInsert;
+export type LlmSettingsRow = typeof llmSettings.$inferSelect;
+export type LlmSettingsInsert = typeof llmSettings.$inferInsert;
 export type CouncilRow = typeof councils.$inferSelect;
 export type CouncilInsert = typeof councils.$inferInsert;
 export type CouncilParticipantRow = typeof councilParticipants.$inferSelect;

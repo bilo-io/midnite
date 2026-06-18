@@ -7,7 +7,6 @@ import {
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
-import type Anthropic from '@anthropic-ai/sdk';
 import {
   MAX_SOURCES_PER_PROJECT,
   detectSourceKind,
@@ -17,7 +16,7 @@ import {
   type Task,
   type UpdateProjectRequest,
 } from '@midnite/shared';
-import { AnthropicService } from '../agent/anthropic.service';
+import { LlmService } from '../agent/llm/llm.service';
 import { collapseTilde, expandTilde } from '../fs/path-tilde';
 import { KnowledgeService } from '../knowledge/knowledge.service';
 import { MemoriesService } from '../memories/memories.service';
@@ -29,35 +28,27 @@ import {
   PROJECT_PLAN_SYSTEM_PROMPT,
 } from './projects.prompts';
 
-const RECORD_DESCRIPTION_TOOL = {
-  name: 'record_description',
-  description: 'Record the improved project description.',
-  input_schema: {
-    type: 'object' as const,
-    properties: {
-      description: {
-        type: 'string',
-        description: 'The improved 2-4 sentence project description, plain prose.',
-      },
+const RECORD_DESCRIPTION_SCHEMA = {
+  type: 'object' as const,
+  properties: {
+    description: {
+      type: 'string',
+      description: 'The improved 2-4 sentence project description, plain prose.',
     },
-    required: ['description'],
   },
+  required: ['description'],
 };
 
-const RECORD_PLAN_TOOL = {
-  name: 'record_plan',
-  description: 'Record the full markdown implementation plan.',
-  input_schema: {
-    type: 'object' as const,
-    properties: {
-      markdown: {
-        type: 'string',
-        description:
-          'The full GitHub-Flavored Markdown plan with ## section headings and - [ ] checkbox items.',
-      },
+const RECORD_PLAN_SCHEMA = {
+  type: 'object' as const,
+  properties: {
+    markdown: {
+      type: 'string',
+      description:
+        'The full GitHub-Flavored Markdown plan with ## section headings and - [ ] checkbox items.',
     },
-    required: ['markdown'],
   },
+  required: ['markdown'],
 };
 
 @Injectable()
@@ -66,7 +57,7 @@ export class ProjectsService {
 
   constructor(
     @Inject(ProjectsRepository) private readonly repo: ProjectsRepository,
-    @Inject(AnthropicService) private readonly anthropic: AnthropicService,
+    @Inject(LlmService) private readonly llm: LlmService,
     @Inject(TasksService) private readonly tasks: TasksService,
     @Inject(KnowledgeService) private readonly knowledge: KnowledgeService,
     @Inject(MemoriesService) private readonly memories: MemoriesService,
@@ -174,40 +165,29 @@ export class ProjectsService {
   }
 
   async enhanceDescription(req: EnhanceDescriptionRequest): Promise<string> {
-    if (!this.anthropic.enabled) return req.description.trim();
-    const client = this.anthropic.getClient();
-    const response = await client.messages.create({
-      model: this.anthropic.getActModel(),
-      max_tokens: 600,
-      system: [
-        {
-          type: 'text',
-          text: PROJECT_DESCRIPTION_SYSTEM_PROMPT,
-          cache_control: { type: 'ephemeral' },
-        },
-      ],
-      tools: [RECORD_DESCRIPTION_TOOL],
-      tool_choice: { type: 'tool', name: 'record_description' },
+    if (!this.llm.enabled) return req.description.trim();
+    const { data } = await this.llm.generateStructured({
+      model: this.llm.getActModel(),
+      maxTokens: 600,
+      system: PROJECT_DESCRIPTION_SYSTEM_PROMPT,
+      schema: RECORD_DESCRIPTION_SCHEMA,
+      schemaName: 'record_description',
+      schemaDescription: 'Record the improved project description.',
       messages: [
         {
           role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: `Project name: ${req.name?.trim() || '(untitled)'}\n\nDescription:\n${req.description}`,
-            },
-          ],
+          text: `Project name: ${req.name?.trim() || '(untitled)'}\n\nDescription:\n${req.description}`,
         },
       ],
     });
-    const input = toolInput<{ description?: string }>(response, 'record_description');
+    const input = data as { description?: string } | undefined;
     return input?.description?.trim() || req.description.trim();
   }
 
   async draftPlan(projectId: string): Promise<{ plan: string; planUpdatedAt: string }> {
     const project = this.getProject(projectId);
     const now = new Date().toISOString();
-    const markdown = this.anthropic.enabled
+    const markdown = this.llm.enabled
       ? await this.generatePlan(project)
       : this.fallbackPlan(project);
     this.repo.updateProject(projectId, {
@@ -231,7 +211,6 @@ export class ProjectsService {
   }
 
   private async generatePlan(project: Project): Promise<string> {
-    const client = this.anthropic.getClient();
     // Sources are merged by URL in increasing precedence: the global knowledge
     // base, then the project's scoped memories' sources, then the project's own
     // sources (which win on a URL collision).
@@ -255,22 +234,17 @@ export class ProjectsService {
       project.description ?? '(none provided)'
     }\n\nReference sources:\n${sourceLines}${memoryBlock}`;
 
-    const response = await client.messages.create({
-      model: this.anthropic.getPlanModel(),
-      max_tokens: 4096,
-      system: [
-        {
-          type: 'text',
-          text: PROJECT_PLAN_SYSTEM_PROMPT,
-          cache_control: { type: 'ephemeral' },
-        },
-      ],
-      tools: [RECORD_PLAN_TOOL],
-      tool_choice: { type: 'tool', name: 'record_plan' },
-      messages: [{ role: 'user', content: [{ type: 'text', text: userText }] }],
+    const { data } = await this.llm.generateStructured({
+      model: this.llm.getPlanModel(),
+      maxTokens: 4096,
+      system: PROJECT_PLAN_SYSTEM_PROMPT,
+      schema: RECORD_PLAN_SCHEMA,
+      schemaName: 'record_plan',
+      schemaDescription: 'Record the full markdown implementation plan.',
+      messages: [{ role: 'user', text: userText }],
     });
 
-    const input = toolInput<{ markdown?: string }>(response, 'record_plan');
+    const input = data as { markdown?: string } | undefined;
     const markdown = input?.markdown?.trim();
     if (!markdown) throw new Error('plan generation did not return markdown');
     return markdown;
@@ -349,14 +323,4 @@ function normalizeWorkDir(input?: string): string | null {
   const trimmed = input?.trim();
   if (!trimmed) return null;
   return collapseTilde(resolve(expandTilde(trimmed)));
-}
-
-function toolInput<T>(
-  response: Anthropic.Messages.Message,
-  name: string,
-): T | undefined {
-  const block = response.content.find(
-    (b): b is Anthropic.Messages.ToolUseBlock => b.type === 'tool_use' && b.name === name,
-  );
-  return block?.input as T | undefined;
 }

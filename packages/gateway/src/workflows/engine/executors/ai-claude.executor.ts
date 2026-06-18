@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AiClaudeParamsSchema, type AiClaudeParams } from '@midnite/shared';
-import { AnthropicService } from '../../../agent/anthropic.service';
+import { LlmService } from '../../../agent/llm/llm.service';
 import type { NodeExecutor, NodeRunContext } from '../node-executor';
 
 // Fold the upstream node's output into the prompt as plain context. Real templating
@@ -16,30 +16,28 @@ function buildPrompt(prompt: string, input: unknown): string {
 export class AiClaudeExecutor implements NodeExecutor {
   readonly typeId = 'ai.claude';
 
-  constructor(@Inject(AnthropicService) private readonly anthropic: AnthropicService) {}
+  constructor(@Inject(LlmService) private readonly llm: LlmService) {}
 
   async execute(ctx: NodeRunContext): Promise<unknown> {
     const params = AiClaudeParamsSchema.parse(ctx.params) as AiClaudeParams;
-    if (!this.anthropic.enabled) {
+    if (!this.llm.enabled) {
       throw new Error(
-        'Claude is unavailable — set ANTHROPIC_API_KEY or run `claude` to log in.',
+        'AI is unavailable — add an API key for the active provider in settings.',
       );
     }
-    const client = this.anthropic.getClient();
-    const model = this.anthropic.resolveModel(params.model);
-    ctx.log('info', `Claude ${model} (maxTokens=${params.maxTokens})`);
+    // Honour an explicit per-node model; otherwise use the active provider's act
+    // model. Provider-specific alias resolution happens inside the adapter.
+    const requested = params.model?.trim() || this.llm.getActModel();
+    ctx.log('info', `AI ${requested} (maxTokens=${params.maxTokens})`);
 
-    const message = await client.messages.create(
-      {
-        model,
-        max_tokens: params.maxTokens,
-        system: params.system,
-        messages: [{ role: 'user', content: buildPrompt(params.prompt, ctx.input) }],
-      },
-      { signal: ctx.signal },
-    );
+    const { text, model } = await this.llm.generateText({
+      model: requested,
+      maxTokens: params.maxTokens,
+      ...(params.system ? { system: params.system } : {}),
+      messages: [{ role: 'user', text: buildPrompt(params.prompt, ctx.input) }],
+      signal: ctx.signal,
+    });
 
-    const text = message.content.map((b) => (b.type === 'text' ? b.text : '')).join('');
-    return { text, model, stopReason: message.stop_reason };
+    return { text, model };
   }
 }

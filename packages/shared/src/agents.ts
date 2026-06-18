@@ -156,6 +156,11 @@ export const UpdateSubAgentRequestSchema = z.object({
 export const AgentsConfigResponseSchema = z.object({ config: AgentsConfigSchema });
 export const AgentCliResponseSchema = z.object({ cli: AgentCliSchema });
 export const AgentCliStatusResponseSchema = z.object({ status: AgentCliStatusSchema });
+// All CLI statuses in one shot, so the settings page can render every agent row
+// from a single fetch instead of probing each CLI separately.
+export const AgentCliStatusListResponseSchema = z.object({
+  statuses: z.array(AgentCliStatusSchema),
+});
 // The ad-hoc terminal id minted for an install session; the client attaches to it
 // with the existing terminal token + WS flow.
 export const InstallTerminalResponseSchema = z.object({ terminalId: z.string() });
@@ -176,6 +181,7 @@ export type AgentCliResponse = z.infer<typeof AgentCliResponseSchema>;
 export type CreateSubAgentRequest = z.infer<typeof CreateSubAgentRequestSchema>;
 export type UpdateSubAgentRequest = z.infer<typeof UpdateSubAgentRequestSchema>;
 export type AgentCliStatusResponse = z.infer<typeof AgentCliStatusResponseSchema>;
+export type AgentCliStatusListResponse = z.infer<typeof AgentCliStatusListResponseSchema>;
 export type InstallTerminalResponse = z.infer<typeof InstallTerminalResponseSchema>;
 export type AgentsConfigResponse = z.infer<typeof AgentsConfigResponseSchema>;
 export type PrimaryAgentResponse = z.infer<typeof PrimaryAgentResponseSchema>;

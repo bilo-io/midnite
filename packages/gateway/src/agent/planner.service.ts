@@ -1,26 +1,21 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import type Anthropic from '@anthropic-ai/sdk';
-import { AnthropicService } from './anthropic.service';
+import { LlmService } from './llm/llm.service';
 
 // Where a freshly-submitted item should land. The plan model triages freeform
 // input: actionable now → todo (the pool picks it up); too vague / needs
 // breaking down first → backlog.
 
-const TRIAGE_TOOL = {
-  name: 'triage',
-  description: 'Record whether the task is ready to be worked on now.',
-  input_schema: {
-    type: 'object' as const,
-    properties: {
-      ready: {
-        type: 'boolean',
-        description:
-          'true if the task is concrete and actionable now (→ todo); false if it is vague, ' +
-          'a rough idea, or needs breaking down first (→ backlog).',
-      },
+const TRIAGE_SCHEMA = {
+  type: 'object' as const,
+  properties: {
+    ready: {
+      type: 'boolean',
+      description:
+        'true if the task is concrete and actionable now (→ todo); false if it is vague, ' +
+        'a rough idea, or needs breaking down first (→ backlog).',
     },
-    required: ['ready'],
   },
+  required: ['ready'],
 };
 
 const TASK_PLAN_SYSTEM_PROMPT =
@@ -39,30 +34,23 @@ const TASK_PLAN_SYSTEM_PROMPT =
 export class PlannerService {
   private readonly logger = new Logger(PlannerService.name);
 
-  constructor(@Inject(AnthropicService) private readonly anthropic: AnthropicService) {}
+  constructor(@Inject(LlmService) private readonly llm: LlmService) {}
 
   async triage(prompt: string): Promise<{ ready: boolean }> {
-    if (!this.anthropic.enabled) return { ready: true };
+    if (!this.llm.enabled) return { ready: true };
     try {
-      const client = this.anthropic.getClient();
-      const res = await client.messages.create({
-        model: this.anthropic.getPlanModel(),
-        max_tokens: 128,
-        system: [
-          { type: 'text', text: TASK_PLAN_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } },
-        ],
-        tools: [TRIAGE_TOOL],
-        tool_choice: { type: 'tool', name: 'triage' },
-        messages: [{ role: 'user', content: prompt }],
+      const { data } = await this.llm.generateStructured({
+        model: this.llm.getPlanModel(),
+        maxTokens: 128,
+        system: TASK_PLAN_SYSTEM_PROMPT,
+        schema: TRIAGE_SCHEMA,
+        schemaName: 'triage',
+        schemaDescription: 'Record whether the task is ready to be worked on now.',
+        messages: [{ role: 'user', text: prompt }],
       });
-      const toolUse = res.content.find(
-        (block): block is Anthropic.Messages.ToolUseBlock =>
-          block.type === 'tool_use' && block.name === 'triage',
-      );
-      const input = toolUse?.input;
       const ready =
-        typeof input === 'object' && input !== null && 'ready' in input
-          ? (input as { ready: unknown }).ready
+        typeof data === 'object' && data !== null && 'ready' in data
+          ? (data as { ready: unknown }).ready
           : undefined;
       // Default to ready unless the model explicitly said false.
       return { ready: ready === false ? false : true };

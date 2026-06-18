@@ -1,44 +1,37 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { AnthropicService } from './anthropic.service';
+import type { LlmService } from './llm/llm.service';
 import { PlannerService } from './planner.service';
 
 describe('PlannerService.triage', () => {
   it('defaults to ready when AI is disabled (no API call)', async () => {
-    const getClient = vi.fn();
-    const planner = new PlannerService({ enabled: false, getClient } as unknown as AnthropicService);
+    const generateStructured = vi.fn();
+    const planner = new PlannerService({
+      enabled: false,
+      generateStructured,
+    } as unknown as LlmService);
     expect(await planner.triage('anything')).toEqual({ ready: true });
-    expect(getClient).not.toHaveBeenCalled();
+    expect(generateStructured).not.toHaveBeenCalled();
   });
 
   it('returns the model triage decision', async () => {
-    const anthropic = {
+    const llm = {
       enabled: true,
       getPlanModel: () => 'claude-opus-4-8',
-      getClient: () => ({
-        messages: {
-          create: async () => ({
-            content: [{ type: 'tool_use', name: 'triage', input: { ready: false } }],
-          }),
-        },
-      }),
-    } as unknown as AnthropicService;
-    const planner = new PlannerService(anthropic);
+      generateStructured: async () => ({ data: { ready: false }, model: 'claude-opus-4-8' }),
+    } as unknown as LlmService;
+    const planner = new PlannerService(llm);
     expect(await planner.triage('vague idea')).toEqual({ ready: false });
   });
 
   it('falls back to ready when the model call throws', async () => {
-    const anthropic = {
+    const llm = {
       enabled: true,
       getPlanModel: () => 'claude-opus-4-8',
-      getClient: () => ({
-        messages: {
-          create: async () => {
-            throw new Error('rate limited');
-          },
-        },
-      }),
-    } as unknown as AnthropicService;
-    const planner = new PlannerService(anthropic);
+      generateStructured: async () => {
+        throw new Error('rate limited');
+      },
+    } as unknown as LlmService;
+    const planner = new PlannerService(llm);
     expect(await planner.triage('x')).toEqual({ ready: true });
   });
 });

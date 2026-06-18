@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { AnthropicClassifier } from './classifier.service';
-import { AnthropicService } from './anthropic.service';
+import { LlmClassifier } from './classifier.service';
+import type { LlmService } from './llm/llm.service';
 import { parseConfig, type MidniteConfig } from '@midnite/shared';
 
 const baseConfig: MidniteConfig = parseConfig({
-  agent: { pool: 4, provider: 'claude', plan: 'opus4.7', act: 'sonnet4.7' },
+  agent: { pool: 4, provider: 'anthropic', plan: 'opus4.7', act: 'sonnet4.7' },
   terminal: {
     mode: 'pty',
     layout: 'split',
@@ -19,68 +19,60 @@ const baseConfig: MidniteConfig = parseConfig({
   gateway: { port: 7777, uploadsDir: './.midnite/uploads', dbPath: './.midnite/midnite.db' },
 });
 
-function makeClassifier(create: ReturnType<typeof vi.fn>) {
-  const anthropic = {
+function makeClassifier(generateStructured: ReturnType<typeof vi.fn>) {
+  const llm = {
     enabled: true,
-    getClient: () => ({ messages: { create } }) as never,
-    getActModel: () => 'claude-sonnet-4-7',
-    resolveModel: (s: string) => s,
-  } as unknown as AnthropicService;
-  return new AnthropicClassifier(anthropic, baseConfig);
+    getActModel: () => 'claude-sonnet-4-6',
+    generateStructured,
+  } as unknown as LlmService;
+  return new LlmClassifier(llm, baseConfig);
 }
 
-describe('AnthropicClassifier', () => {
-  it('sends a cache-controlled system prompt and forces record_task tool use', async () => {
-    const create = vi.fn().mockResolvedValue({
-      content: [
-        {
-          type: 'tool_use',
-          name: 'record_task',
-          input: { title: 'Fix login button', kind: 'bug' },
-        },
-      ],
-      usage: { input_tokens: 10, output_tokens: 5 },
-    });
+describe('LlmClassifier', () => {
+  it('asks for structured record_task output and returns it', async () => {
+    const generateStructured = vi
+      .fn()
+      .mockResolvedValue({ data: { title: 'Fix login button', kind: 'bug' }, model: 'm' });
 
-    const classifier = makeClassifier(create);
+    const classifier = makeClassifier(generateStructured);
     const result = await classifier.classify('the login is broken', []);
 
     expect(result).toEqual({ title: 'Fix login button', kind: 'bug' });
-    const call = create.mock.calls[0]![0];
-    expect(call.system[0].cache_control).toEqual({ type: 'ephemeral' });
-    expect(call.tool_choice).toEqual({ type: 'tool', name: 'record_task' });
-    expect(call.tools[0].name).toBe('record_task');
+    const call = generateStructured.mock.calls[0]![0];
+    expect(call.schemaName).toBe('record_task');
+    expect(call.model).toBe('claude-sonnet-4-6');
+    expect(typeof call.system).toBe('string');
+    expect(call.messages[0].text).toBe('the login is broken');
   });
 
   // The AI path degrades rather than throwing: a malformed model response must
   // not break task creation, so it falls back to a prompt-derived placeholder.
-  it('falls back to a placeholder title when tool output fails validation', async () => {
-    const create = vi.fn().mockResolvedValue({
-      content: [
-        {
-          type: 'tool_use',
-          name: 'record_task',
-          input: { title: 'ok', kind: 'not-a-real-kind' },
-        },
-      ],
-      usage: { input_tokens: 10, output_tokens: 5 },
-    });
+  it('falls back to a placeholder title when output fails validation', async () => {
+    const generateStructured = vi
+      .fn()
+      .mockResolvedValue({ data: { title: 'ok', kind: 'not-a-real-kind' }, model: 'm' });
 
-    const classifier = makeClassifier(create);
+    const classifier = makeClassifier(generateStructured);
     const result = await classifier.classify('hello', []);
     expect(result).toEqual({ title: 'hello', kind: 'unknown' });
-    expect(create).toHaveBeenCalledOnce();
+    expect(generateStructured).toHaveBeenCalledOnce();
   });
 
-  it('falls back to a placeholder title when no tool_use block is returned', async () => {
-    const create = vi.fn().mockResolvedValue({
-      content: [{ type: 'text', text: 'sorry' }],
-      usage: { input_tokens: 10, output_tokens: 5 },
-    });
+  it('falls back to a placeholder title when the provider call throws', async () => {
+    const generateStructured = vi.fn().mockRejectedValue(new Error('no tool call'));
 
-    const classifier = makeClassifier(create);
+    const classifier = makeClassifier(generateStructured);
     const result = await classifier.classify('hello', []);
     expect(result).toEqual({ title: 'hello', kind: 'unknown' });
-    expect(create).toHaveBeenCalledOnce();
+    expect(generateStructured).toHaveBeenCalledOnce();
+  });
+
+  it('uses a placeholder without calling the provider when AI is disabled', async () => {
+    const generateStructured = vi.fn();
+    const llm = { enabled: false, getActModel: () => 'm', generateStructured } as unknown as LlmService;
+    const classifier = new LlmClassifier(llm, baseConfig);
+    const result = await classifier.classify('do the thing', []);
+    expect(result).toEqual({ title: 'do the thing', kind: 'unknown' });
+    expect(generateStructured).not.toHaveBeenCalled();
   });
 });
