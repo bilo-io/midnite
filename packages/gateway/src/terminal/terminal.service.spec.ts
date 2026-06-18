@@ -21,7 +21,7 @@ function makeConfig(terminal: Record<string, unknown>): MidniteConfig {
 
 const noTasks = { listTasks: () => [] } as unknown as TasksService;
 const noProjects = { workDirFor: () => undefined } as unknown as ProjectsService;
-const noAgents = { getAgentCli: () => 'claude' as const } as unknown as AgentsService;
+const noAgents = { getAgentCli: () => 'claude' as const, getDefaultWorkDir: () => undefined } as unknown as AgentsService;
 
 // PTY-mechanics tests don't exercise approvals; a no-op stub satisfies the wiring.
 const noApprovals = {

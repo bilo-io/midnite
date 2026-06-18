@@ -28,6 +28,17 @@ export const LLM_PROVIDER_MODEL_SUGGESTIONS: Record<LlmProvider, string[]> = {
   'openai-compatible': ['llama3.1', 'qwen2.5', 'mistral', 'deepseek-r1'],
 };
 
+// Where to obtain an API key for each provider, linked from the settings UI.
+// `openai-compatible` has no single vendor — it points at OpenRouter, the most
+// common hosted OpenAI-compatible API that issues keys (local endpoints like
+// Ollama need none, configured via the base URL instead).
+export const LLM_PROVIDER_API_KEY_URL: Record<LlmProvider, string> = {
+  anthropic: 'https://console.anthropic.com/settings/keys',
+  openai: 'https://platform.openai.com/api-keys',
+  google: 'https://aistudio.google.com/app/apikey',
+  'openai-compatible': 'https://openrouter.ai/keys',
+};
+
 // Which provider an agent CLI's "API" tab configures. `aider` has no first-party
 // API (it proxies other providers), so it is CLI-only → no API tab.
 export const CLI_PROVIDER_MAP: Record<AgentCli, LlmProvider | null> = {

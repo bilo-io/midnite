@@ -6,6 +6,8 @@ import { getSessions } from '@/lib/api';
 import { SESSION_STATUS_HUE } from '@/components/session-card';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
+  CYCLE_MAX_S,
+  CYCLE_MIN_S,
   DEFAULT_SETTINGS,
   PASSCODE_STORAGE_KEY,
   SETTINGS_STORAGE_KEY,
@@ -298,7 +300,12 @@ export function Screensaver({
     setIndex(Math.floor(Math.random() * WORD_SETS[mode].length));
   }, [mode]);
 
-  // Type the current word out, hold it for 2s, then advance to the next one.
+  // How long a phrase dwells once typed, before the next is typed out.
+  const cycleMs =
+    clamp(settings.cycleDurationS ?? DEFAULT_SETTINGS.cycleDurationS, CYCLE_MIN_S, CYCLE_MAX_S) *
+    1000;
+
+  // Type the current word out, hold it for the cycle duration, then advance.
   useEffect(() => {
     const set = WORD_SETS[mode];
     const word = set[index % set.length] ?? 'loading';
@@ -310,14 +317,14 @@ export function Screensaver({
       setTyped(word.slice(0, i));
       if (i >= word.length) {
         clearInterval(typeTimer);
-        holdTimer = setTimeout(() => setIndex((n) => nextRandomIndex(set.length, n)), 2000);
+        holdTimer = setTimeout(() => setIndex((n) => nextRandomIndex(set.length, n)), cycleMs);
       }
     }, 65);
     return () => {
       clearInterval(typeTimer);
       clearTimeout(holdTimer);
     };
-  }, [index, mode]);
+  }, [index, mode, cycleMs]);
 
   // Pull live session counts and refresh periodically.
   useEffect(() => {

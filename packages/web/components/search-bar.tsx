@@ -41,7 +41,7 @@ export function SearchBar({ placeholder = 'Search…' }: { placeholder?: string 
         className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
       />
       <input
-        type="search"
+        type="text"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder={placeholder}

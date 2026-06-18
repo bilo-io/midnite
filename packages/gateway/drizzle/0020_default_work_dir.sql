@@ -1,0 +1,1 @@
+ALTER TABLE `primary_agent` ADD `default_work_dir` text;

@@ -763,7 +763,8 @@ export class TerminalService implements OnModuleDestroy {
   // cwd resolution for a session's PTY, in priority order:
   //   1. the work directory configured on the session's project (expanded from ~)
   //   2. the session's task repo (mapped name→path via config.repos)
-  //   3. the gateway's working directory
+  //   3. the global fallback working directory (set on the profile page)
+  //   4. the gateway's working directory
   private resolveCwd(sessionId?: string): string {
     if (sessionId) {
       const task = this.tasks.listTasks().find((t) => t.id === sessionId);
@@ -776,6 +777,8 @@ export class TerminalService implements OnModuleDestroy {
         : undefined;
       if (repo) return repo.path;
     }
+    const fallback = this.agents.getDefaultWorkDir();
+    if (fallback) return expandTilde(fallback, homedir());
     return process.cwd();
   }
 

@@ -66,11 +66,21 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
   const setArchivedFor = useCallback(
     async (ids: string[], archived: boolean) => {
       if (ids.length === 0) return;
+      const verb = archived ? 'Archive' : 'Unarchive';
+      const ok = await confirm({
+        title: `${verb} ${ids.length} memor${ids.length === 1 ? 'y' : 'ies'}?`,
+        description: archived
+          ? 'They’ll be hidden from your active memories — you can unarchive them any time.'
+          : 'They’ll return to your active memories.',
+        confirmLabel: verb,
+        destructive: false,
+      });
+      if (!ok) return;
       await Promise.all(ids.map((id) => updateMemory(id, { archived })));
       clearSelection();
       refresh();
     },
-    [clearSelection, refresh],
+    [confirm, clearSelection, refresh],
   );
 
   const deleteSelection = useCallback(async () => {

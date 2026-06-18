@@ -141,6 +141,13 @@
       "when": 1781804233807,
       "tag": "0019_llm_providers",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1781818720863,
+      "tag": "0020_default_work_dir",
+      "breakpoints": true
     }
   ]
 }

@@ -6,22 +6,15 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Bot,
-  BotMessageSquare,
-  BrainCircuit,
-  CirclePile,
-  Folder,
-  Images,
-  LayoutDashboard,
-  ListChecks,
   PanelLeftClose,
   PanelLeftOpen,
   Power,
   Settings,
   UserRound,
-  Workflow,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { FEATURES, isFeatureEnabled } from '@/lib/features';
 import { useIdleTimer } from '@/lib/use-idle-timer';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
@@ -44,17 +37,6 @@ type NavLink = {
   Icon: LucideIcon;
 };
 
-const LINKS: NavLink[] = [
-  { href: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
-  { href: '/projects', label: 'Projects', Icon: Folder },
-  { href: '/memory', label: 'Memory', Icon: BrainCircuit },
-  { href: '/tasks', label: 'Tasks', Icon: ListChecks },
-  { href: '/sessions', label: 'Sessions', Icon: BotMessageSquare },
-  { href: '/workflows', label: 'Workflows', Icon: Workflow },
-  { href: '/councils', label: 'Councils', Icon: CirclePile },
-  { href: '/media', label: 'Media', Icon: Images },
-];
-
 const PROFILE_LINK: NavLink = { href: '/profile', label: 'Profile', Icon: UserRound };
 const AGENTS_LINK: NavLink = { href: '/agents', label: 'Agents', Icon: Bot };
 const SETTINGS_LINK: NavLink = { href: '/settings', label: 'Settings', Icon: Settings };
@@ -71,6 +53,12 @@ export function NavBar() {
   // `auto` collapses at rest and expands on hover/keyboard-focus (overlay, no
   // content reflow); `expanded`/`collapsed` are the locked states.
   const navMode = settings.navMode ?? DEFAULT_SETTINGS.navMode;
+
+  // The top nav is the enabled feature set; `dashboard` keeps its lead position
+  // with a divider before the rest.
+  const dashboardEnabled = isFeatureEnabled(settings.features, 'dashboard');
+  const otherFeatures = FEATURES.slice(1).filter((f) => isFeatureEnabled(settings.features, f.key));
+
   const [hoverOpen, setHoverOpen] = useState(false);
   const expandedView = navMode === 'expanded' || (navMode === 'auto' && hoverOpen);
   const autoHandlers =
@@ -196,9 +184,11 @@ export function NavBar() {
         </div>
 
         <nav className={cn('flex flex-col gap-1', expandedView ? 'items-stretch' : 'items-center')}>
-          {LINKS[0] ? renderLink(LINKS[0]) : null}
-          <div className={cn('my-1 h-px bg-border/60', expandedView ? 'w-full' : 'w-6')} />
-          {LINKS.slice(1).map(renderLink)}
+          {dashboardEnabled ? renderLink(FEATURES[0]!) : null}
+          {dashboardEnabled && otherFeatures.length ? (
+            <div className={cn('my-1 h-px bg-border/60', expandedView ? 'w-full' : 'w-6')} />
+          ) : null}
+          {otherFeatures.map(renderLink)}
         </nav>
 
         <div className={cn('mt-auto flex flex-col gap-1', expandedView ? 'items-stretch' : 'items-center')}>
@@ -218,9 +208,9 @@ export function NavBar() {
           >
             <Power className="h-4 w-4 shrink-0" />
             {expandedView ? (
-              <span className="truncate text-sm">{settings.requirePasscode ? 'Lock' : 'Screensaver'}</span>
+              <span className="truncate text-sm">Lock</span>
             ) : (
-              <Tooltip>{settings.requirePasscode ? 'Lock' : 'Screensaver'}</Tooltip>
+              <Tooltip>Lock</Tooltip>
             )}
           </button>
         </div>

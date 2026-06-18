@@ -254,6 +254,8 @@ export const primaryAgent = sqliteTable('primary_agent', {
   heartbeatEnabled: integer('heartbeat_enabled').notNull().default(0),
   heartbeatPrompt: text('heartbeat_prompt').notNull().default(''), // markdown
   heartbeatIntervalH: integer('heartbeat_interval_h').notNull().default(4), // 1..720
+  // Fallback cwd (~-form) for session terminals when a task has no project dir.
+  defaultWorkDir: text('default_work_dir'),
   lastHeartbeatAt: text('last_heartbeat_at'), // ISO; null until first run
   lastHeartbeatRunId: text('last_heartbeat_run_id'),
   createdAt: text('created_at').notNull(),

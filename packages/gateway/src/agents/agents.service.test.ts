@@ -83,6 +83,7 @@ function toPrimaryRow(row: PrimaryAgentInsert): PrimaryAgentRow {
     heartbeatEnabled: row.heartbeatEnabled ?? 0,
     heartbeatPrompt: row.heartbeatPrompt ?? '',
     heartbeatIntervalH: row.heartbeatIntervalH ?? 4,
+    defaultWorkDir: row.defaultWorkDir ?? null,
     lastHeartbeatAt: row.lastHeartbeatAt ?? null,
     lastHeartbeatRunId: row.lastHeartbeatRunId ?? null,
     createdAt: row.createdAt,

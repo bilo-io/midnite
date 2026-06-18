@@ -69,6 +69,7 @@ function primaryRow(over: Partial<PrimaryAgentRow> = {}): PrimaryAgentRow {
     heartbeatEnabled: 1,
     heartbeatPrompt: 'sweep open work',
     heartbeatIntervalH: 1,
+    defaultWorkDir: null,
     lastHeartbeatAt: null,
     lastHeartbeatRunId: null,
     createdAt: now,

@@ -1,5 +1,6 @@
 import { Suspense, type ReactNode } from 'react';
 import { NavBar } from '@/components/nav-bar';
+import { FeatureGate } from '@/components/feature-gate';
 import { PageReveal } from '@/components/page-reveal';
 
 export default function MainLayout({ children }: { children: ReactNode }) {
@@ -13,6 +14,10 @@ export default function MainLayout({ children }: { children: ReactNode }) {
           <PageReveal>{children}</PageReveal>
         </Suspense>
       </main>
+      {/* usePathname needs a Suspense boundary under static export. */}
+      <Suspense fallback={null}>
+        <FeatureGate />
+      </Suspense>
     </div>
   );
 }

@@ -1,16 +1,21 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Activity, Clock, Cpu, Lock, PanelLeft } from 'lucide-react';
+import { Activity, Blocks, ChevronDown, Clock, Cpu, Lock, PanelLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { Collapse } from '@/components/ui/collapse';
 import { PasscodeSetupDialog } from '@/components/passcode-pad';
+import { FEATURES, isFeatureEnabled, type FeatureKey } from '@/lib/features';
 import { getAgentsConfig, updatePrimaryAgent } from '@/lib/api';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
   AGENT_POOL_MAX,
   AGENT_POOL_MIN,
+  CYCLE_DEFAULT_S,
+  CYCLE_MAX_S,
+  CYCLE_MIN_S,
   DEFAULT_SETTINGS,
   HEARTBEAT_DEFAULT_H,
   HEARTBEAT_PRESETS,
@@ -54,6 +59,10 @@ export function SettingsView() {
   const navMode = settings.navMode ?? DEFAULT_SETTINGS.navMode;
   const setNavMode = (mode: NavMode) => setSettings((prev) => ({ ...prev, navMode: mode }));
 
+  const [featuresOpen, setFeaturesOpen] = useState(true);
+  const setFeatureEnabled = (key: FeatureKey, on: boolean) =>
+    setSettings((prev) => ({ ...prev, features: { ...prev.features, [key]: on } }));
+
   const poolSize = Math.min(AGENT_POOL_MAX, Math.max(AGENT_POOL_MIN, settings.agentPoolSize));
   const setPoolSize = (n: number) =>
     setSettings((prev) => ({
@@ -69,6 +78,13 @@ export function SettingsView() {
     setSettings((prev) => ({
       ...prev,
       inactivityTimeoutS: Math.min(INACTIVITY_MAX_S, Math.max(INACTIVITY_MIN_S, n)),
+    }));
+
+  const cycleDuration = Math.min(CYCLE_MAX_S, Math.max(CYCLE_MIN_S, settings.cycleDurationS));
+  const setCycleDuration = (n: number) =>
+    setSettings((prev) => ({
+      ...prev,
+      cycleDurationS: Math.min(CYCLE_MAX_S, Math.max(CYCLE_MIN_S, n)),
     }));
 
   // The heartbeat cadence lives server-side (on the primary agent); the prompt
@@ -104,6 +120,57 @@ export function SettingsView() {
 
   return (
     <div className="container max-w-3xl space-y-6 py-2">
+      <Card>
+        <button
+          type="button"
+          onClick={() => setFeaturesOpen((o) => !o)}
+          aria-expanded={featuresOpen}
+          className="flex w-full items-center justify-between gap-2 rounded-lg p-6 text-left transition-colors hover:bg-accent/30"
+        >
+          <span className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-muted-foreground">
+            <Blocks className="h-3.5 w-3.5" />
+            Features
+          </span>
+          <ChevronDown
+            className={cn(
+              'h-4 w-4 shrink-0 text-muted-foreground transition-transform',
+              featuresOpen && 'rotate-180',
+            )}
+          />
+        </button>
+        <Collapse open={featuresOpen}>
+          <CardContent className="pt-0">
+            <p className="pb-2 text-xs text-muted-foreground/70">
+              Turn sections of the app on or off. Disabled features are hidden from the sidebar; if
+              you open one directly you&apos;ll be prompted to re-enable it here.
+            </p>
+            <div className="divide-y divide-border/50">
+              {FEATURES.map((f) => {
+                const Icon = f.Icon;
+                return (
+                  <div key={f.key} className="flex items-start justify-between gap-6 py-3">
+                    <div className="flex items-start gap-3">
+                      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border/60 bg-card/60 text-muted-foreground">
+                        <Icon className="h-4 w-4" />
+                      </span>
+                      <div className="space-y-0.5">
+                        <p className="text-sm font-medium">{f.label}</p>
+                        <p className="text-xs text-muted-foreground">{f.description}</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={isFeatureEnabled(settings.features, f.key)}
+                      onCheckedChange={(on) => setFeatureEnabled(f.key, on)}
+                      aria-label={`Enable ${f.label}`}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Collapse>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -294,6 +361,47 @@ export function SettingsView() {
             Default {formatDuration(DEFAULT_SETTINGS.inactivityTimeoutS)} · range{' '}
             {formatDuration(INACTIVITY_MIN_S)}–{formatDuration(INACTIVITY_MAX_S)}.
           </p>
+
+          <div className="space-y-4 border-t border-border/60 pt-4">
+            <div className="flex items-start justify-between gap-6">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Cycle duration</p>
+                <p className="text-xs text-muted-foreground">
+                  How long each phrase is shown before the next is typed out — on the screensaver
+                  and the home screen.
+                </p>
+              </div>
+              <div
+                className={cn(
+                  'flex h-9 min-w-[3.5rem] items-center justify-center rounded-md border border-border/60 bg-card/60 px-3 text-lg font-semibold tabular-nums transition-opacity',
+                  hydrated ? 'opacity-100' : 'opacity-0',
+                )}
+              >
+                {cycleDuration}s
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="w-8 text-right text-xs text-muted-foreground tabular-nums">
+                {CYCLE_MIN_S}s
+              </span>
+              <input
+                type="range"
+                min={CYCLE_MIN_S}
+                max={CYCLE_MAX_S}
+                step={1}
+                value={cycleDuration}
+                onChange={(e) => setCycleDuration(Number(e.target.value))}
+                aria-label="Cycle duration"
+                className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-border accent-foreground"
+              />
+              <span className="w-8 text-xs text-muted-foreground tabular-nums">{CYCLE_MAX_S}s</span>
+            </div>
+
+            <p className="text-xs text-muted-foreground/70">
+              Default {CYCLE_DEFAULT_S}s · range {CYCLE_MIN_S}–{CYCLE_MAX_S}s.
+            </p>
+          </div>
         </CardContent>
       </Card>
 

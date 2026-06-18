@@ -31,6 +31,15 @@ export const AGENT_CLI_LABEL: Record<AgentCli, string> = {
   aider: 'Aider',
 };
 
+/** Homepage / install docs for each CLI, linked from the agent settings UI. */
+export const AGENT_CLI_HOMEPAGE_URL: Record<AgentCli, string> = {
+  claude: 'https://docs.anthropic.com/en/docs/claude-code/overview',
+  gemini: 'https://github.com/google-gemini/gemini-cli',
+  codex: 'https://github.com/openai/codex',
+  opencode: 'https://opencode.ai',
+  aider: 'https://aider.chat',
+};
+
 /** The shell command typed into a fresh session shell to launch each CLI. */
 export const AGENT_CLI_COMMAND: Record<AgentCli, string> = {
   claude: 'claude',
@@ -88,6 +97,11 @@ export const PrimaryAgentSchema = z.object({
   heartbeatEnabled: z.boolean(),
   heartbeatPrompt: z.string(),
   heartbeatIntervalH: HeartbeatIntervalSchema,
+  /**
+   * Fallback working directory (`~`-form) for session terminals when a task has
+   * no project directory of its own. Absent → the gateway's own cwd is used.
+   */
+  defaultWorkDir: z.string().optional(),
   /** ISO timestamp of the last heartbeat fire; absent until the first run. */
   lastHeartbeatAt: z.string().optional(),
   updatedAt: z.string(),
@@ -132,6 +146,8 @@ export const UpdatePrimaryAgentRequestSchema = z.object({
   heartbeatEnabled: z.boolean().optional(),
   heartbeatPrompt: z.string().max(50000).optional(),
   heartbeatIntervalH: HeartbeatIntervalSchema.optional(),
+  /** Fallback session cwd (`~`-form); '' clears it back to the gateway cwd. */
+  defaultWorkDir: z.string().trim().max(1024).optional(),
 });
 
 // Set the global CLI preference. PUT /agents/cli.

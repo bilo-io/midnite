@@ -5,13 +5,16 @@ import {
   Check,
   ChevronDown,
   Download,
+  ExternalLink,
   Loader2,
   RefreshCw,
   Trash2,
 } from 'lucide-react';
 import {
+  AGENT_CLI_HOMEPAGE_URL,
   AGENT_CLI_LABEL,
   CLI_PROVIDER_MAP,
+  LLM_PROVIDER_API_KEY_URL,
   LLM_PROVIDER_LABEL,
   LLM_PROVIDER_MODEL_SUGGESTIONS,
   providerSupportsBaseUrl,
@@ -155,7 +158,16 @@ function CliTab({
     <div className="space-y-3">
       <p className="text-xs text-muted-foreground">
         The {label} CLI is launched in a session terminal to run tasks. Install or update it here,
-        then set it as the CLI used for new sessions.
+        then set it as the CLI used for new sessions.{' '}
+        <a
+          href={AGENT_CLI_HOMEPAGE_URL[cli]}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-0.5 underline underline-offset-2 hover:text-foreground"
+        >
+          {label} docs
+          <ExternalLink className="h-3 w-3" />
+        </a>
       </p>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex shrink-0 items-center gap-2">
@@ -290,7 +302,18 @@ function ApiTab({
       </p>
 
       <div className="space-y-1.5">
-        <label className="text-xs font-medium text-muted-foreground">API key</label>
+        <div className="flex items-center justify-between gap-2">
+          <label className="text-xs font-medium text-muted-foreground">API key</label>
+          <a
+            href={LLM_PROVIDER_API_KEY_URL[provider]}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-0.5 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+          >
+            Get a {providerLabel} key
+            <ExternalLink className="h-3 w-3" />
+          </a>
+        </div>
         <Input
           type="password"
           value={apiKey}

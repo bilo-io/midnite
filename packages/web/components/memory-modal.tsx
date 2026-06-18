@@ -187,7 +187,7 @@ export function MemoryModal({ memory, projects, initialProjectId, onClose, onSav
             <MarkdownEditor
               value={content}
               onChange={setContent}
-              minHeight={280}
+              minHeight={140}
               defaultMode={memory ? 'preview' : 'edit'}
               label={<span className="text-xs font-medium text-muted-foreground">Content</span>}
             />

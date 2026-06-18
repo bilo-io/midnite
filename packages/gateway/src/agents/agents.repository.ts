@@ -124,6 +124,7 @@ export class AgentsRepository {
       heartbeatEnabled: row.heartbeatEnabled !== 0,
       heartbeatPrompt: row.heartbeatPrompt,
       heartbeatIntervalH: row.heartbeatIntervalH,
+      defaultWorkDir: row.defaultWorkDir ?? undefined,
       lastHeartbeatAt: row.lastHeartbeatAt ?? undefined,
       updatedAt: row.updatedAt,
     };

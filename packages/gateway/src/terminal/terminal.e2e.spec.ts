@@ -28,7 +28,7 @@ const config: MidniteConfig = parseConfig({
 });
 const noTasks = { listTasks: () => [] } as unknown as TasksService;
 const noProjects = { workDirFor: () => undefined } as unknown as ProjectsService;
-const noAgents = { getAgentCli: () => 'claude' as const } as unknown as AgentsService;
+const noAgents = { getAgentCli: () => 'claude' as const, getDefaultWorkDir: () => undefined } as unknown as AgentsService;
 
 const noApprovals = {
   mintSecret: () => 'secret',

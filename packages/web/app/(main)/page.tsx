@@ -3,6 +3,14 @@
 import { useEffect, useState } from 'react';
 import { StatusPills } from '@/components/status-pills';
 import { Spinner } from '@/components/spinner';
+import { useLocalStorage } from '@/lib/use-local-storage';
+import {
+  CYCLE_MAX_S,
+  CYCLE_MIN_S,
+  DEFAULT_SETTINGS,
+  SETTINGS_STORAGE_KEY,
+  type AppSettings,
+} from '@/lib/app-settings';
 
 type TimeOfDay =
   | 'midnight'
@@ -111,6 +119,9 @@ export default function HomePage() {
   const [subgreeting, setSubgreeting] = useState<string | null>(null);
   const [typedSub, setTypedSub] = useState('');
   const [now, setNow] = useState<Date | null>(null);
+  const [settings] = useLocalStorage<AppSettings>(SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS);
+  const cycleMs =
+    Math.min(CYCLE_MAX_S, Math.max(CYCLE_MIN_S, settings.cycleDurationS)) * 1000;
 
   // Resolve client-only state after mount.
   useEffect(() => {
@@ -162,7 +173,7 @@ export default function HomePage() {
     return () => clearInterval(typeTimer);
   }, [titleDone, subgreeting]);
 
-  // Swap the subtitle for a fresh random phrase every 10s once the title's in,
+  // Swap the subtitle for a fresh random phrase every cycle once the title's in,
   // avoiding an immediate repeat. The typing effect above re-types it.
   useEffect(() => {
     if (!titleDone) return;
@@ -175,9 +186,9 @@ export default function HomePage() {
         }
         return next;
       });
-    }, 10000);
+    }, cycleMs);
     return () => clearInterval(id);
-  }, [titleDone]);
+  }, [titleDone, cycleMs]);
 
   const subDone = subgreeting !== null && typedSub.length === subgreeting.length;
 

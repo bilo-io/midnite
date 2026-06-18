@@ -1,5 +1,6 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
+import { resolve } from 'node:path';
 import {
   AGENT_CLI_COMMAND,
   AGENT_CLI_DEFAULT,
@@ -16,6 +17,7 @@ import {
   type UpdateSubAgentRequest,
 } from '@midnite/shared';
 import { LlmService } from '../agent/llm/llm.service';
+import { collapseTilde, expandTilde } from '../fs/path-tilde';
 import { AgentsRepository, PRIMARY_ID } from './agents.repository';
 import { detectCli } from './cli-detect';
 import { HeartbeatScheduler } from './heartbeat-scheduler.service';
@@ -87,6 +89,7 @@ export class AgentsService {
       heartbeatEnabled: 0,
       heartbeatPrompt: '',
       heartbeatIntervalH: HEARTBEAT_DEFAULT_H,
+      defaultWorkDir: null,
       lastHeartbeatAt: now,
       lastHeartbeatRunId: null,
       createdAt: now,
@@ -103,8 +106,18 @@ export class AgentsService {
     if (req.heartbeatEnabled !== undefined) patch.heartbeatEnabled = req.heartbeatEnabled ? 1 : 0;
     if (req.heartbeatPrompt !== undefined) patch.heartbeatPrompt = req.heartbeatPrompt;
     if (req.heartbeatIntervalH !== undefined) patch.heartbeatIntervalH = req.heartbeatIntervalH;
+    // An empty string clears the fallback dir; otherwise store it in ~-form.
+    if (req.defaultWorkDir !== undefined) patch.defaultWorkDir = normalizeWorkDir(req.defaultWorkDir);
     this.repo.updatePrimary(patch);
     return this.repo.hydratePrimary(this.repo.getPrimary()!);
+  }
+
+  /**
+   * The fallback session cwd (`~`-form) off the singleton, or undefined when
+   * unset. Read synchronously by the terminal when a task has no project dir.
+   */
+  getDefaultWorkDir(): string | undefined {
+    return this.ensurePrimary().defaultWorkDir;
   }
 
   listSubAgents(): SubAgent[] {
@@ -153,4 +166,11 @@ export class AgentsService {
       throw new NotFoundException(`subagent ${id} not found`);
     }
   }
+}
+
+/** Collapse a user-supplied path to canonical `~`-form, or null when blank. */
+function normalizeWorkDir(input?: string): string | null {
+  const trimmed = input?.trim();
+  if (!trimmed) return null;
+  return collapseTilde(resolve(expandTilde(trimmed)));
 }

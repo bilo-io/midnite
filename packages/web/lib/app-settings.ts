@@ -4,6 +4,8 @@
  * but the shapes here are the source of truth the UI reads from.
  */
 
+import { DEFAULT_FEATURE_FLAGS, type FeatureKey } from './features';
+
 export const AGENT_POOL_MIN = 1;
 export const AGENT_POOL_DEFAULT = 4;
 export const AGENT_POOL_MAX = 16;
@@ -32,6 +34,14 @@ export function nearestInactivityPresetIndex(seconds: number): number {
   }
   return best;
 }
+
+/**
+ * How long a cycling phrase is shown before the next one is typed out — used by
+ * both the screensaver and the home screen, in seconds.
+ */
+export const CYCLE_MIN_S = 2;
+export const CYCLE_DEFAULT_S = 5;
+export const CYCLE_MAX_S = 10;
 
 // Primary-agent heartbeat cadence, in hours: the orchestrator's heartbeat
 // prompt runs on this interval. Once an hour at the most frequent, roughly once
@@ -76,6 +86,8 @@ export type AppSettings = {
   agentPoolSize: number;
   /** Seconds of inactivity before the screensaver opens. */
   inactivityTimeoutS: number;
+  /** Seconds a cycling phrase is shown before the next is typed (screensaver + home). */
+  cycleDurationS: number;
   /** Require a passcode to wake the screensaver. */
   requirePasscode: boolean;
   /**
@@ -85,14 +97,18 @@ export type AppSettings = {
   passcodeOnlyWhenLocked: boolean;
   /** Collapse/expand/lock behaviour of the side navigation. */
   navMode: NavMode;
+  /** Which optional features (and their nav items) are enabled. */
+  features: Record<FeatureKey, boolean>;
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
   agentPoolSize: AGENT_POOL_DEFAULT,
   inactivityTimeoutS: INACTIVITY_DEFAULT_S,
+  cycleDurationS: CYCLE_DEFAULT_S,
   requirePasscode: false,
   passcodeOnlyWhenLocked: false,
   navMode: 'auto',
+  features: DEFAULT_FEATURE_FLAGS,
 };
 
 export const SETTINGS_STORAGE_KEY = 'midnite.settings';
