@@ -13,6 +13,10 @@ export type TaskViewProps = {
   onSelect: (task: Task) => void;
   /** Whether to render the tucked-away "Abandoned" section (true when no status filter is active). */
   showAbandoned: boolean;
+  /** Move a task to a new status (board drag-and-drop / Start button). A move to
+   *  `wip` from todo/backlog spawns an agent session; other moves just restatus.
+   *  Only the board wires this; list/table ignore it. */
+  onMove?: (taskId: string, target: Status) => void;
 };
 
 /** Group tasks by status into a lookup. */

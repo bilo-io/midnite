@@ -181,6 +181,16 @@ export async function updateTaskStatus(id: string, status: Status): Promise<Task
   );
 }
 
+/** Manually kick off an agent run for a task (todo/backlog → wip + session).
+ *  Rejects (409) when no agent slot is free or the task isn't startable. */
+export async function startTask(id: string): Promise<Task> {
+  return fetchJson(
+    `/tasks/${encodeURIComponent(id)}/start`,
+    { method: 'POST', headers: JSON_HEADERS },
+    TaskSchema,
+  );
+}
+
 export async function updateTaskProject(
   taskId: string,
   projectId: string | null,

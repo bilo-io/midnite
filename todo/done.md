@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-19 — Manual task kickoff (Start button + drag-to-WIP)
+
+A task could only reach `wip` (with a linked Claude Code session) via the autonomous scheduler, which is off by default — and `PATCH /tasks/:id/status` only moved the column without spawning anything. Added an explicit on-demand kickoff that reuses the existing runner, so a user can start a task themselves regardless of `agent.poolEnabled`.
+
+- [x] Gateway `POST /tasks/:id/start` in `pool.controller.ts` — guards (startable only from `todo`/`backlog`, 409 if already slotted), delegates to `AgentRunnerService.start`, 409 on `no free agent slot`. New `pool.controller.test.ts` (6 cases).
+- [x] Web `lib/api.ts` `startTask(id)`; `task-thread-modal.tsx` gains a **Start** button (todo/backlog) beside Abandon.
+- [x] `board-view.tsx` rebuilt on `@dnd-kit`: draggable cards + droppable columns; drop into *In progress* from todo/backlog (and a hover **Start** button on those cards) routes through `startTask`, every other move stays `updateTaskStatus`. `tasks-view.tsx` owns the optimistic `onMove` (rollback + error banner, e.g. "no free agent slot").
+- [x] README Configuration: documented the autonomous (`agent.poolEnabled`) vs manual (`/tasks/:id/start`) paths to `wip`.
+- [x] `:typecheck` + `:lint` green; gateway tests 270 passing.
+
 ## 2026-06-18 — Multi-provider agents + provider-agnostic LLM wrapper
 
 The Agents page now lists every coding agent as a collapsed accordion with per-agent **CLI** and **API** tabs, and the gateway's own AI calls run through a provider abstraction so any of Anthropic / OpenAI / Google Gemini / an OpenAI-compatible endpoint can power them.

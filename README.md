@@ -121,6 +121,20 @@ re-queued up to this many times before it's abandoned. Each task also carries a
 `priority` (0 Low · 1 Normal · 2 High · 3 Urgent, default Normal) — the scheduler
 assigns higher-priority `todo` tasks first, oldest-first within a priority.
 
+A task reaches `wip` (with a Claude Code session spawned and linked to it) in one
+of two ways:
+
+- **Autonomously** — set `agent.poolEnabled: true` (default `false`) and the
+  gateway runs a tick loop every `agent.schedulerTickMs` (default `5000`) that
+  fills free slots with the next ready `todo` task. With it off, nothing
+  auto-starts.
+- **Manually** — `POST /tasks/:id/start` claims a slot and spawns a session on
+  demand (the web board's **Start** button and dragging a card into *In
+  progress* both hit this). This works whether or not the autonomous scheduler
+  is enabled — the slot pool exists independent of `poolEnabled` — and returns
+  `409` when every slot is busy. Note that merely `PATCH`-ing a task's status to
+  `wip` only moves the column; it does **not** spawn a session.
+
 The session web window streams a live PTY over WebSocket (`/ws/terminal`). The
 PTY is spawned on demand when a window opens for an active session and is shared
 across reconnects. `terminal` fields control it:

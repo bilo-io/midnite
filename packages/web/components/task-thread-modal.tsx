@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Ban, ExternalLink, Plus, SquareTerminal, X } from 'lucide-react';
+import { Ban, ExternalLink, Play, Plus, SquareTerminal, X } from 'lucide-react';
 import {
   SOURCE_KIND_LABEL,
   parseGithubPr,
@@ -23,6 +23,7 @@ import {
   deleteTask,
   gatewayUrl,
   removeTaskLink,
+  startTask,
   updateTaskProject,
   updateTaskStatus,
 } from '@/lib/api';
@@ -111,6 +112,22 @@ export function TaskThreadModal({ task, projects, onClose }: Props) {
   const goToSession = () => {
     onClose();
     router.push(`/sessions?open=${encodeURIComponent(task.id)}`);
+  };
+
+  // Manual kickoff: spawn an agent session now (todo/backlog → wip). The gateway
+  // 409s when no slot is free; surface that as a non-fatal message.
+  const start = async () => {
+    setStatusBusy(true);
+    setStatusError(null);
+    try {
+      await startTask(task.id);
+      router.refresh();
+      onClose();
+    } catch (e) {
+      setStatusError(e instanceof Error ? e.message : 'Failed to start task');
+    } finally {
+      setStatusBusy(false);
+    }
   };
 
   const abandon = async () => {
@@ -244,6 +261,18 @@ export function TaskThreadModal({ task, projects, onClose }: Props) {
                   disabled={projectBusy}
                   align="right"
                 />
+              ) : null}
+              {task.status === 'todo' || task.status === 'backlog' ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => void start()}
+                  disabled={statusBusy}
+                >
+                  <Play className="h-3.5 w-3.5" />
+                  Start
+                </Button>
               ) : null}
               <Button type="button" variant="secondary" size="sm" onClick={goToSession}>
                 <SquareTerminal className="h-3.5 w-3.5" />
