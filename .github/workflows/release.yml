@@ -27,15 +27,19 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install proto
+      # A tag push checks out detached HEAD with no local `main` ref; moon's
+      # touched-files lookup (vcs.defaultBranch = main) needs one to merge-base
+      # against. fetch-depth:0 gives us origin/main to point it at.
+      - name: Make moon's default branch resolvable
         shell: bash
-        run: |
-          curl -fsSL https://moonrepo.dev/install/proto.sh | bash -s -- --yes
-          echo "$HOME/.proto/bin" >> "$GITHUB_PATH"
-          echo "$HOME/.proto/shims" >> "$GITHUB_PATH"
+        run: git branch -f main origin/main
 
-      - name: Install pinned toolchain (node, pnpm, moon)
-        run: proto install
+      # Cross-platform proto + pinned node/pnpm/moon (from .prototools), cached.
+      # Replaces the bash-only curl installer, which doesn't work on Windows.
+      - name: Set up toolchain (proto + node/pnpm/moon)
+        uses: moonrepo/setup-toolchain@v0
+        with:
+          auto-install: false
 
       # Unlike ci.yml we DO download the Electron binary — it's needed to package
       # and to electron-rebuild the gateway's native deps for this arch.
