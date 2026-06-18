@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-18 — Windows/Linux desktop builds + tagged release workflow
+
+Extends desktop packaging to all three OSes and automates publishing, so the `/download` page's Windows & Linux buttons become real (they were "Coming soon"). The Electron main process was already portable (`paths.ts` → `app.getPath`), so this is pipeline-only.
+
+- [x] `desktop/electron-builder.yml` — global `artifactName: ${productName}-${version}-${arch}.${ext}` (predictable cross-OS names); added `win` (nsis, x64) + `linux` (AppImage, x64) targets
+- [x] `.github/workflows/release.yml` — on `v*` tag: 4-OS matrix (macos-14/13, windows, ubuntu; `fail-fast: false`) → proto/pnpm install (Electron binary downloaded) → gateway+web build → `desktop run stage` (deploy + electron-rebuild per arch) → `electron-builder <os>` → upload-artifact; a `release` job downloads all and creates a **draft** GitHub Release (review gate before buttons go live)
+- [x] `site/lib/downloads.ts` — Windows + Linux flipped to `available` with x64 asset names matching electron-builder
+- [x] `desktop/package.json` `package:win`/`package:linux` scripts; README "Distribution" rewritten for the tag→workflow flow
+- [x] Verified locally: `site:typecheck`+`lint`+`build` green; Playwright drive confirms win/linux now render real `-x64.exe` / `-x64.AppImage` download links (no longer "Coming soon"); workflow YAML reviewed. **Cross-OS builds unverified here** — validated by the first `v0.0.0` tag (CI); win/linux best-effort (icons/native-rebuild may need follow-up)
+
 ## 2026-06-18 — Dedicated /download page with platform detection (site)
 
 A standalone `/download` page on the marketing site that detects the visitor's OS and features the matching desktop (Electron) build, while listing every platform so nobody is locked in. macOS (Apple Silicon + Intel) are real download buttons; Windows & Linux show as disabled "Coming soon" until those builds ship (electron-builder is macOS-only today — unchanged here).

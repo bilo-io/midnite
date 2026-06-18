@@ -10,7 +10,9 @@
     "rebuild": "electron-rebuild",
     "stage": "node scripts/stage-gateway.mjs",
     "dist": "pnpm stage && electron-builder --mac --config electron-builder.yml",
-    "package": "electron-builder --mac --config electron-builder.yml"
+    "package": "electron-builder --mac --config electron-builder.yml",
+    "package:win": "electron-builder --win --config electron-builder.yml",
+    "package:linux": "electron-builder --linux --config electron-builder.yml"
   },
   "dependencies": {
     "@midnite/gateway": "workspace:*"

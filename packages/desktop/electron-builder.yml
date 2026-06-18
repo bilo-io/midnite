@@ -4,6 +4,11 @@ directories:
   output: build
   buildResources: resources
 
+# Predictable, version- and arch-stamped asset names on every OS, so the
+# marketing site's download manifest can link them directly. Matches the macOS
+# default (midnite-<version>-<arch>.dmg) and extends the scheme to win/linux.
+artifactName: ${productName}-${version}-${arch}.${ext}
+
 # Only the Electron main + preload go in the app asar; the gateway and web export
 # ride along as on-disk extraResources (native .node files can't load from asar,
 # and this keeps the layout simple).
@@ -57,6 +62,23 @@ mac:
   # `afterSign` notarize hook, and provide CSC_LINK / APPLE_ID /
   # APPLE_APP_SPECIFIC_PASSWORD / APPLE_TEAM_ID in the environment.
   identity: null
+
+win:
+  # Unsigned NSIS installer (x64). Triggers a SmartScreen warning until signed.
+  target:
+    - target: nsis
+      arch:
+        - x64
+  # Falls back to electron's default icon until resources/icon.ico is added.
+
+linux:
+  # Portable AppImage (x64) — runs on most distros with no install step.
+  target:
+    - target: AppImage
+      arch:
+        - x64
+  category: Development
+  # Falls back to electron's default icon until resources/icon.png is added.
 
 # Auto-update later: the `zip` target + a `publish:` block (GitHub provider) is
 # all electron-updater needs; add autoUpdater.checkForUpdatesAndNotify() in main.

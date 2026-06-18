@@ -76,17 +76,31 @@ intentionally avoided.
 hook that `chmod 0o755`s it inside the built `.app` before shipping, or verify
 the bit survived.
 
-## Distribution (v1, unsigned)
+## Distribution (v1, unsigned) — automated on a version tag
+
+Pushing a `v*` tag runs [`.github/workflows/release.yml`](../../.github/workflows/release.yml):
+a per-OS matrix (macOS arm64 + x64, Windows x64, Linux x64) builds and uploads
+`midnite-<version>-<arch>.{dmg,exe,AppImage}` to a **draft** GitHub Release.
 
 ```bash
-gh release create vX.Y.Z packages/desktop/build/*.dmg --title "midnite vX.Y.Z" --notes "..."
+# from main, after the release changes have merged:
+git tag v0.0.0 && git push origin v0.0.0
+# → watch the run, then Publish the draft from the Releases page.
 ```
 
-Unsigned builds trip Gatekeeper — document right-click → Open, or
-`xattr -dr com.apple.quarantine /Applications/midnite.app`. To sign + notarize:
-set `mac.identity`, add an `afterSign` notarize hook, and provide the Apple
-credentials in CI env. To auto-update: keep the `zip` target, add a `publish`
-block (GitHub provider), and call `autoUpdater.checkForUpdatesAndNotify()`.
+The marketing site's download buttons point at `releases/latest/download/...`, so
+they go live once the draft is published. `matrix.fail-fast: false` means macOS
+still succeeds even if Windows/Linux need a follow-up on the first run.
+
+To build a single OS locally: `pnpm --filter @midnite/desktop run stage`, then
+`pnpm --filter @midnite/desktop run package` (or `package:win` / `package:linux`).
+
+Unsigned builds trip Gatekeeper (macOS) and SmartScreen (Windows) — document
+right-click → Open, or `xattr -dr com.apple.quarantine /Applications/midnite.app`.
+To sign + notarize: set `mac.identity`, add an `afterSign` notarize hook, and
+provide the Apple credentials in CI env. To auto-update: keep the `zip` target,
+add a `publish` block (GitHub provider), and call
+`autoUpdater.checkForUpdatesAndNotify()`.
 
 ## Verification checklist (on a clean Mac)
 

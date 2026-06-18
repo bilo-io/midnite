@@ -1,0 +1,81 @@
+name: Release
+
+# Push a version tag (e.g. v0.0.0) to build the desktop app on every OS and
+# publish a (draft) GitHub Release with the installers.
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos-14, label: mac-arm64, eb: '--mac --arm64' }
+          - { os: macos-13, label: mac-x64, eb: '--mac --x64' }
+          - { os: windows-latest, label: win-x64, eb: '--win --x64' }
+          - { os: ubuntu-latest, label: linux-x64, eb: '--linux --x64' }
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install proto
+        shell: bash
+        run: |
+          curl -fsSL https://moonrepo.dev/install/proto.sh | bash -s -- --yes
+          echo "$HOME/.proto/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.proto/shims" >> "$GITHUB_PATH"
+
+      - name: Install pinned toolchain (node, pnpm, moon)
+        run: proto install
+
+      # Unlike ci.yml we DO download the Electron binary — it's needed to package
+      # and to electron-rebuild the gateway's native deps for this arch.
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build gateway + web (static export)
+        run: moon run gateway:build web:build
+
+      - name: Stage gateway prod deps (deploy + electron-rebuild for this arch)
+        run: pnpm --filter @midnite/desktop run stage
+
+      - name: Package desktop app
+        run: pnpm --filter @midnite/desktop exec electron-builder ${{ matrix.eb }} --config electron-builder.yml
+
+      - name: Upload installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.label }}
+          path: |
+            packages/desktop/build/*.dmg
+            packages/desktop/build/*.exe
+            packages/desktop/build/*.AppImage
+          if-no-files-found: error
+
+  release:
+    name: Publish release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all installers
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      # Draft so the artifacts can be reviewed/tested before the download buttons
+      # go live; publish manually from the Releases page once they look good.
+      - name: Create draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          generate_release_notes: true
+          files: artifacts/**/*

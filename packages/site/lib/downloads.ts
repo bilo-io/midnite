@@ -30,8 +30,9 @@ export const PLATFORM_LABELS: Record<Platform, string> = {
 /** Platform display order (also the order of the "all platforms" list). */
 export const PLATFORM_ORDER: Platform[] = ['mac', 'windows', 'linux'];
 
-// Only macOS is built today (see packages/desktop/electron-builder.yml); Windows
-// and Linux are listed but flagged unavailable until those targets ship.
+// Built for every OS by the tagged release workflow (.github/workflows/release.yml);
+// asset names match electron-builder's `artifactName`. Links resolve once a release
+// for DESKTOP_VERSION is published.
 export const DOWNLOAD_TARGETS: DownloadTarget[] = [
   {
     platform: 'mac',
@@ -49,8 +50,22 @@ export const DOWNLOAD_TARGETS: DownloadTarget[] = [
     available: true,
     assetName: `midnite-${DESKTOP_VERSION}-x64.dmg`,
   },
-  { platform: 'windows', label: 'Windows', ext: '.exe', available: false },
-  { platform: 'linux', label: 'Linux', ext: '.AppImage', available: false },
+  {
+    platform: 'windows',
+    arch: 'x64',
+    label: 'Windows',
+    ext: '.exe',
+    available: true,
+    assetName: `midnite-${DESKTOP_VERSION}-x64.exe`,
+  },
+  {
+    platform: 'linux',
+    arch: 'x64',
+    label: 'Linux',
+    ext: '.AppImage',
+    available: true,
+    assetName: `midnite-${DESKTOP_VERSION}-x64.AppImage`,
+  },
 ];
 
 /** GitHub "latest release" deep link for an asset (resolves once a release ships). */
