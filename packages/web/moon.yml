@@ -8,6 +8,10 @@ tasks:
   dev:
     command: 'pnpm exec next dev -p 3000'
     preset: 'server'
+    # Next resolves @midnite/shared to its built dist/, so a stale build serves
+    # the app undefined exports. (Re)build shared before starting the dev server.
+    deps:
+      - 'shared:build'
 
   build:
     command: 'pnpm exec next build'
@@ -29,6 +33,8 @@ tasks:
   start:
     command: 'pnpm exec next start -p 3000'
     preset: 'server'
+    deps:
+      - 'shared:build'
 
   typecheck:
     command: 'pnpm exec tsc --noEmit'
@@ -53,6 +59,8 @@ tasks:
   storybook:
     command: 'pnpm exec storybook dev -p 6006'
     preset: 'server'
+    deps:
+      - 'shared:build'
 
   build-storybook:
     command: 'pnpm exec storybook build'
