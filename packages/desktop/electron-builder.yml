@@ -19,6 +19,11 @@ files:
 extraResources:
   - from: ../gateway/dist
     to: gateway/dist
+    # tsc -b leaves a .tsbuildinfo manifest in dist that electron-builder trips on
+    # (and it's not needed at runtime), so drop it from the copy.
+    filter:
+      - '**/*'
+      - '!**/*.tsbuildinfo'
   - from: ../gateway/drizzle
     to: gateway/drizzle
   # tsc doesn't copy the hook .cjs files; gateway:build does, but stage them

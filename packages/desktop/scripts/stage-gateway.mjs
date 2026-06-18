@@ -21,24 +21,25 @@ const staging = join(desktopDir, 'build-staging', 'gateway');
 const require = createRequire(pathToFileURL(join(desktopDir, 'package.json')));
 const electronVersion = require('electron/package.json').version;
 
-// On Windows the launcher is pnpm.cmd; execFileSync won't resolve a bare `pnpm`.
-const PNPM = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+// On Windows, pnpm is a .cmd shim — Node refuses to execFile it directly
+// (EINVAL), so run through the shell there, which resolves pnpm.cmd on PATH.
+const isWin = process.platform === 'win32';
 
 function run(cmd, args, cwd) {
 
   console.log(`$ ${cmd} ${args.join(' ')}`);
-  execFileSync(cmd, args, { cwd, stdio: 'inherit' });
+  execFileSync(cmd, args, { cwd, stdio: 'inherit', shell: isWin });
 }
 
 // 1. Fresh, flat prod deps for the gateway (pnpm deploy resolves the closure
 //    into a real directory with no symlinks).
 if (existsSync(staging)) rmSync(staging, { recursive: true, force: true });
-run(PNPM, ['--filter', '@midnite/gateway', 'deploy', '--prod', staging], repoRoot);
+run('pnpm', ['--filter', '@midnite/gateway', 'deploy', '--prod', staging], repoRoot);
 
 // 2. Rebuild the native deps in the staged tree for Electron's ABI.
 for (const mod of ['better-sqlite3', 'node-pty']) {
   run(
-    PNPM,
+    'pnpm',
     ['exec', 'electron-rebuild', '-m', staging, '-f', '-w', mod, '--version', electronVersion],
     desktopDir,
   );
