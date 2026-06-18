@@ -50,6 +50,13 @@ export function TasksView({
   projects: Project[];
 }) {
   const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
+  // The page fetches tasks client-side, so the first render passes an empty
+  // array (data still loading) and only later the real list. useState seeds
+  // localTasks once, so without this sync the board would stay empty after the
+  // fetch resolves. Local mutations (optimistic create) still apply on top.
+  useEffect(() => {
+    setLocalTasks(tasks);
+  }, [tasks]);
   const [selected, setSelected] = useState<Task | null>(null);
   const [showNewTask, setShowNewTask] = useState(false);
   const searchParams = useSearchParams();
