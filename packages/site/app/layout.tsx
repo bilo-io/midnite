@@ -1,6 +1,15 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import localFont from 'next/font/local';
 import './globals.css';
+
+// Display font for the "midnite" wordmark. Exposed as a CSS var so the
+// `font-brand` Tailwind utility can apply it wherever the brand name shows.
+const brand = localFont({
+  src: './fonts/cyberwar.ttf',
+  variable: '--font-brand',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://midnite.dev'),
@@ -24,7 +33,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   // Marketing site is dark-only — the class is hardcoded rather than driven by a
   // theme switcher. Tokens in globals.css keep a light variant one line away.
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className={`dark ${brand.variable}`}>
       <body className="min-h-screen bg-background text-foreground antialiased">{children}</body>
     </html>
   );

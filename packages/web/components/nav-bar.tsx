@@ -168,7 +168,7 @@ export function NavBar() {
               className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-border/60 transition-transform group-hover:scale-110"
             />
             {expandedView ? (
-              <span className="text-sm font-semibold">midnite</span>
+              <span className="font-brand text-sm font-semibold">midnite</span>
             ) : (
               <Tooltip>midnite</Tooltip>
             )}

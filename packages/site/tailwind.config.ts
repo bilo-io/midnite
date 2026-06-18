@@ -52,6 +52,7 @@ const config: Config = {
       },
       fontFamily: {
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'],
+        brand: ['var(--font-brand)', 'sans-serif'],
       },
     },
   },

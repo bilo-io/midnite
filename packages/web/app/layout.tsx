@@ -1,9 +1,18 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import localFont from 'next/font/local';
 import './globals.css';
 import { ConfirmProvider } from '@/components/confirm-dialog';
 import { ThemeProvider } from './theme/theme-context';
 import { themeInitScript } from './theme/theme-script';
+
+// Display font for the "midnite" wordmark, exposed as a CSS var consumed by the
+// `font-brand` Tailwind utility.
+const brand = localFont({
+  src: './fonts/cyberwar.ttf',
+  variable: '--font-brand',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'midnite',
@@ -21,7 +30,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={brand.variable}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>

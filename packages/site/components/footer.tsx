@@ -42,7 +42,7 @@ export function Footer() {
         <div className="container flex flex-col items-center justify-between gap-4 py-8 text-sm text-muted-foreground sm:flex-row">
           <div className="flex items-center gap-2 font-medium text-foreground">
             <span className="inline-block h-2.5 w-2.5 rounded-full bg-gradient-to-br from-[#8b5cf6] to-[#3b82f6]" />
-            midnite
+            <span className="font-brand">midnite</span>
           </div>
           <nav className="flex items-center gap-6">
             <a href="#how" className="transition-colors hover:text-foreground">
