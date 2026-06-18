@@ -39,7 +39,9 @@ jobs:
       - name: Set up toolchain (proto + node/pnpm/moon)
         uses: moonrepo/setup-toolchain@v0
         with:
-          auto-install: false
+          # Runs `proto install` so the .prototools-pinned node/pnpm/moon are
+          # materialized (puts pnpm on PATH for the install step below).
+          auto-install: true
 
       # Unlike ci.yml we DO download the Electron binary — it's needed to package
       # and to electron-rebuild the gateway's native deps for this arch.
