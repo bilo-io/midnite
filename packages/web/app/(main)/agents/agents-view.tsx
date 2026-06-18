@@ -13,6 +13,7 @@ import {
   Plus,
   Terminal,
   Trash2,
+  TriangleAlert,
   Users,
 } from 'lucide-react';
 import {
@@ -124,6 +125,24 @@ export function AgentsView() {
       .finally(() => !cancelled && setStatusBusy(false));
     return () => {
       cancelled = true;
+    };
+  }, []);
+
+  // Pick up changes made in another tab (provider keys, active provider, CLI
+  // install state) when this page regains focus. Deliberately does NOT refetch
+  // the primary-agent config — that holds debounced free-text fields a refetch
+  // could clobber mid-edit.
+  useEffect(() => {
+    const onFocus = () => {
+      if (document.visibilityState !== 'visible') return;
+      getProviders().then(setProviders).catch(() => {});
+      getCliStatuses().then(setStatuses).catch(() => {});
+    };
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onFocus);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onFocus);
     };
   }, []);
 
@@ -262,6 +281,10 @@ export function AgentsView() {
   const activeProvider = providers?.activeProvider ?? null;
   const providerCredFor = (provider: LlmProvider | null) =>
     provider ? providers?.providers.find((p) => p.provider === provider) : undefined;
+  // Warn when the provider powering AI features has no usable key — AI work
+  // silently degrades (placeholder titles, skipped heartbeats) until one's set.
+  const activeCred = providerCredFor(activeProvider);
+  const activeProviderUnconfigured = providers != null && activeCred != null && !activeCred.hasKey;
 
   return (
     <div className="container max-w-3xl space-y-4 py-2">
@@ -277,6 +300,20 @@ export function AgentsView() {
       </div>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
+      {activeProviderUnconfigured ? (
+        <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-300">
+          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>
+            <span className="font-medium">
+              {activeProvider ? LLM_PROVIDER_LABEL[activeProvider] : 'The active provider'}
+            </span>{' '}
+            is set as your AI provider but has no API key, so AI features (task triage, plan
+            drafting, the heartbeat) will be skipped. Add a key under its{' '}
+            <span className="font-medium">API</span> tab below, or switch the active provider.
+          </span>
+        </div>
+      ) : null}
 
       <Accordion title="Primary Agent" icon={<Bot className="h-3.5 w-3.5" />} defaultOpen>
         <div className="space-y-5 p-5">

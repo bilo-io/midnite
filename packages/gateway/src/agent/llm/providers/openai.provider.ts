@@ -22,6 +22,12 @@ export interface OpenAiProviderOptions {
   structuredMode: 'json_schema' | 'json_object';
   /** Whether a key is mandatory (false for local openai-compatible endpoints). */
   keyRequired: boolean;
+  /**
+   * The token-limit field name. OpenAI's current + reasoning models require
+   * `max_completion_tokens` (they reject `max_tokens`); most local OpenAI-
+   * compatible servers only understand `max_tokens`. Defaults to `max_tokens`.
+   */
+  maxTokensParam?: 'max_tokens' | 'max_completion_tokens';
 }
 
 export class OpenAiProvider implements LlmProviderAdapter {
@@ -53,11 +59,15 @@ export class OpenAiProvider implements LlmProviderAdapter {
     return this.client;
   }
 
+  private tokenField(n: number): Record<string, number> {
+    return { [this.opts.maxTokensParam ?? 'max_tokens']: n };
+  }
+
   async generateText(req: GenerateTextRequest): Promise<LlmTextResult> {
     const res = await this.require().chat.completions.create(
       {
         model: req.model,
-        max_tokens: req.maxTokens,
+        ...this.tokenField(req.maxTokens),
         messages: this.toMessages(req.system, req.messages),
       },
       { signal: req.signal },
@@ -76,7 +86,7 @@ export class OpenAiProvider implements LlmProviderAdapter {
     const res = await this.require().chat.completions.create(
       {
         model: req.model,
-        max_tokens: req.maxTokens,
+        ...this.tokenField(req.maxTokens),
         messages: this.toMessages(system, req.messages),
         response_format: useNative
           ? {

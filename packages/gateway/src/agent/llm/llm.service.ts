@@ -32,6 +32,9 @@ export class LlmService implements OnApplicationBootstrap {
   private active: LlmProvider = 'anthropic';
   private actModel = '';
   private planModel = '';
+  // Lazily-built adapters for non-active providers (per-node provider override).
+  // Cleared on reload so credential edits take effect.
+  private readonly overrides = new Map<LlmProvider, LlmProviderAdapter>();
 
   constructor(
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
@@ -54,6 +57,7 @@ export class LlmService implements OnApplicationBootstrap {
     this.actModel = row?.actModel || this.config.agent.act;
     this.planModel = row?.planModel || this.config.agent.plan;
     this.adapter = await this.buildAdapter(active, row);
+    this.overrides.clear();
     this.logger.log(
       `LLM active provider=${active} enabled=${this.adapter.isEnabled()} act=${this.actModel} plan=${this.planModel}`,
     );
@@ -77,6 +81,26 @@ export class LlmService implements OnApplicationBootstrap {
 
   generateText(req: GenerateTextRequest): Promise<LlmTextResult> {
     return this.adapter.generateText(req);
+  }
+
+  /**
+   * Generate text via a specific provider (per-node override). Falls back to the
+   * active provider when `provider` is undefined or already the active one.
+   */
+  async generateTextVia(
+    provider: LlmProvider | undefined,
+    req: GenerateTextRequest,
+  ): Promise<LlmTextResult> {
+    return (await this.adapterFor(provider)).generateText(req);
+  }
+
+  private async adapterFor(provider?: LlmProvider): Promise<LlmProviderAdapter> {
+    if (!provider || provider === this.active) return this.adapter;
+    const cached = this.overrides.get(provider);
+    if (cached) return cached;
+    const built = await this.buildAdapter(provider, this.repo.getProvider(provider));
+    this.overrides.set(provider, built);
+    return built;
   }
 
   generateStructured(req: GenerateStructuredRequest): Promise<LlmStructuredResult> {
@@ -103,6 +127,7 @@ export class LlmService implements OnApplicationBootstrap {
           apiKey: key ?? process.env['OPENAI_API_KEY'],
           structuredMode: 'json_schema',
           keyRequired: true,
+          maxTokensParam: 'max_completion_tokens',
         });
       case 'google':
         return new GoogleProvider(

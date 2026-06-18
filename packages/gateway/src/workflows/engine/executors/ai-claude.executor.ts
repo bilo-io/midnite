@@ -20,17 +20,17 @@ export class AiClaudeExecutor implements NodeExecutor {
 
   async execute(ctx: NodeRunContext): Promise<unknown> {
     const params = AiClaudeParamsSchema.parse(ctx.params) as AiClaudeParams;
-    if (!this.llm.enabled) {
-      throw new Error(
-        'AI is unavailable — add an API key for the active provider in settings.',
-      );
+    // No provider override → must have a usable active provider. With an override
+    // the chosen adapter throws its own clear error if it isn't configured.
+    if (!params.provider && !this.llm.enabled) {
+      throw new Error('AI is unavailable — add an API key for the active provider in settings.');
     }
     // Honour an explicit per-node model; otherwise use the active provider's act
     // model. Provider-specific alias resolution happens inside the adapter.
     const requested = params.model?.trim() || this.llm.getActModel();
-    ctx.log('info', `AI ${requested} (maxTokens=${params.maxTokens})`);
+    ctx.log('info', `AI ${params.provider ?? 'active'} ${requested} (maxTokens=${params.maxTokens})`);
 
-    const { text, model } = await this.llm.generateText({
+    const { text, model } = await this.llm.generateTextVia(params.provider, {
       model: requested,
       maxTokens: params.maxTokens,
       ...(params.system ? { system: params.system } : {}),

@@ -18,6 +18,16 @@ export const LLM_PROVIDER_LABEL: Record<LlmProvider, string> = {
   'openai-compatible': 'OpenAI-compatible',
 };
 
+// Suggested model ids per provider, surfaced as autocomplete in the model
+// fields (free-text — the user can type any id their endpoint supports). For
+// Anthropic these are friendly aliases the adapter resolves to dated ids.
+export const LLM_PROVIDER_MODEL_SUGGESTIONS: Record<LlmProvider, string[]> = {
+  anthropic: ['opus4.8', 'sonnet4.6', 'haiku4.5'],
+  openai: ['gpt-4o', 'gpt-4o-mini', 'o3-mini'],
+  google: ['gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-1.5-flash'],
+  'openai-compatible': ['llama3.1', 'qwen2.5', 'mistral', 'deepseek-r1'],
+};
+
 // Which provider an agent CLI's "API" tab configures. `aider` has no first-party
 // API (it proxies other providers), so it is CLI-only → no API tab.
 export const CLI_PROVIDER_MAP: Record<AgentCli, LlmProvider | null> = {

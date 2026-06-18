@@ -44,12 +44,12 @@ export class GoogleProvider implements LlmProviderAdapter {
       model: req.model,
       ...(req.system ? { systemInstruction: req.system } : {}),
     });
-    const res = await model.generateContent(
-      {
+    const res = await abortable(
+      model.generateContent({
         contents: this.toContents(req.messages),
         generationConfig: { maxOutputTokens: req.maxTokens },
-      },
-      { signal: req.signal },
+      }),
+      req.signal,
     );
     return { text: res.response.text(), model: req.model };
   }
@@ -62,15 +62,15 @@ export class GoogleProvider implements LlmProviderAdapter {
       model: req.model,
       systemInstruction: system,
     });
-    const res = await model.generateContent(
-      {
+    const res = await abortable(
+      model.generateContent({
         contents: this.toContents(req.messages),
         generationConfig: {
           maxOutputTokens: req.maxTokens,
           responseMimeType: 'application/json',
         },
-      },
-      { signal: req.signal },
+      }),
+      req.signal,
     );
     return { data: parseJsonObjectLoose(res.response.text()), model: req.model };
   }
@@ -101,4 +101,22 @@ export class GoogleProvider implements LlmProviderAdapter {
       return { role: m.role === 'assistant' ? 'model' : 'user', parts };
     });
   }
+}
+
+// The Gemini SDK doesn't take an AbortSignal, so enforce cancellation at our
+// layer: reject as soon as the signal fires (the in-flight request is abandoned).
+function abortable<T>(promise: Promise<T>, signal?: AbortSignal): Promise<T> {
+  if (!signal) return promise;
+  if (signal.aborted) return Promise.reject(abortError());
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = () => reject(abortError());
+    signal.addEventListener('abort', onAbort, { once: true });
+    promise.then(resolve, reject).finally(() => signal.removeEventListener('abort', onAbort));
+  });
+}
+
+function abortError(): Error {
+  const err = new Error('Gemini request aborted');
+  err.name = 'AbortError';
+  return err;
 }

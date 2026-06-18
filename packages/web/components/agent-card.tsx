@@ -13,10 +13,12 @@ import {
   AGENT_CLI_LABEL,
   CLI_PROVIDER_MAP,
   LLM_PROVIDER_LABEL,
+  LLM_PROVIDER_MODEL_SUGGESTIONS,
   providerSupportsBaseUrl,
   type AgentCli,
   type AgentCliStatus,
   type CliTerminalAction,
+  type LlmProvider,
   type ProviderCredential,
   type UpdateProviderCredentialRequest,
 } from '@midnite/shared';
@@ -115,8 +117,10 @@ export function AgentCard({
             />
           ) : provider ? (
             <ApiTab
+              provider={provider}
               providerLabel={LLM_PROVIDER_LABEL[provider]}
               supportsBaseUrl={providerSupportsBaseUrl(provider)}
+              modelSuggestions={LLM_PROVIDER_MODEL_SUGGESTIONS[provider]}
               cred={providerCred}
               isActiveProvider={isActiveProvider}
               onSave={onSaveProvider}
@@ -204,20 +208,25 @@ function CliTab({
 }
 
 function ApiTab({
+  provider,
   providerLabel,
   supportsBaseUrl,
+  modelSuggestions,
   cred,
   isActiveProvider,
   onSave,
   onSetActive,
 }: {
+  provider: LlmProvider;
   providerLabel: string;
   supportsBaseUrl: boolean;
+  modelSuggestions: string[];
   cred: ProviderCredential | undefined;
   isActiveProvider: boolean;
   onSave: (body: UpdateProviderCredentialRequest) => Promise<void>;
   onSetActive: () => Promise<void>;
 }) {
+  const modelsListId = `models-${provider}`;
   const [apiKey, setApiKey] = useState('');
   const [baseUrl, setBaseUrl] = useState(cred?.baseUrl ?? '');
   const [planModel, setPlanModel] = useState(cred?.planModel ?? '');
@@ -304,10 +313,16 @@ function ApiTab({
         </div>
       ) : null}
 
+      <datalist id={modelsListId}>
+        {modelSuggestions.map((m) => (
+          <option key={m} value={m} />
+        ))}
+      </datalist>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-muted-foreground">Plan model</label>
           <Input
+            list={modelsListId}
             value={planModel}
             onChange={(e) => setPlanModel(e.target.value)}
             placeholder="default"
@@ -317,6 +332,7 @@ function ApiTab({
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-muted-foreground">Act model</label>
           <Input
+            list={modelsListId}
             value={actModel}
             onChange={(e) => setActModel(e.target.value)}
             placeholder="default"

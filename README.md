@@ -201,6 +201,15 @@ Credential resolution per provider, when no key is stored via the UI:
 - **openai-compatible** — usually keyless; set the base URL (env `OPENAI_BASE_URL`
   as a fallback).
 
+Keys entered in the UI are stored in SQLite. Set **`MIDNITE_PROVIDER_KEY`** to
+encrypt them at rest (AES-256-GCM, key derived from that env var); without it
+they're stored as plaintext and the gateway logs a one-time warning at startup.
+Existing plaintext rows keep working after you set the key; new writes are
+encrypted. Either way the API only ever returns `hasKey` + the last 4 characters.
+
+The workflow **AI node** runs through the active provider by default, or you can
+pin it to a specific provider in the node's config.
+
 If the active provider has no usable credential, AI features degrade gracefully
 (the classifier falls back to a placeholder title, the heartbeat records a skipped
 run, etc.) and the gateway logs a warning at startup.

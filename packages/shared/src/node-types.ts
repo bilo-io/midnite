@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { HTTP_METHODS } from './trigger.js';
+import { LLM_PROVIDERS, LLM_PROVIDER_LABEL, LlmProviderSchema } from './llm.js';
 
 // Node categories drive palette grouping and graph-validation rules
 // (a trigger must be the graph root, etc.).
@@ -65,11 +66,22 @@ export const HttpRequestParamsSchema = z.object({
 });
 
 export const AiClaudeParamsSchema = z.object({
+  // Which LLM provider runs this node. Omitted/blank = the gateway's active
+  // provider (chosen on the Agents page); set it to pin the node to one.
+  provider: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    LlmProviderSchema.optional(),
+  ),
   model: z.string().min(1).default('sonnet4.7'),
   system: z.string().optional(),
   prompt: z.string().min(1),
   maxTokens: z.number().int().positive().max(8192).default(1024),
 });
+
+const PROVIDER_FIELD_OPTIONS = [
+  { value: '', label: 'Active provider' },
+  ...LLM_PROVIDERS.map((p) => ({ value: p, label: LLM_PROVIDER_LABEL[p] })),
+];
 
 // Comparison operators for the Branch node. `isTruthy`/`isFalsy` ignore `right`.
 export const BRANCH_OPERATORS = [
@@ -209,13 +221,20 @@ export const NODE_TYPE_DEFINITIONS: Record<string, NodeTypeDefinition> = {
   'ai.claude': {
     id: 'ai.claude',
     category: 'action',
-    title: 'Claude',
-    description: 'Run a Claude completion.',
+    title: 'AI',
+    description: 'Run an AI completion via the active provider, or pin one.',
     icon: 'sparkles',
     inputs: MAIN_IN,
     outputs: MAIN_OUT,
     paramsSchema: AiClaudeParamsSchema,
     fields: [
+      {
+        key: 'provider',
+        label: 'Provider',
+        kind: 'select',
+        options: PROVIDER_FIELD_OPTIONS,
+        help: 'Leave on "Active provider" to follow the Agents-page selection.',
+      },
       { key: 'model', label: 'Model', kind: 'string', placeholder: 'sonnet4.7' },
       { key: 'system', label: 'System prompt', kind: 'text' },
       { key: 'prompt', label: 'Prompt', kind: 'text', required: true },
