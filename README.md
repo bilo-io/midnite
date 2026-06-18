@@ -106,7 +106,7 @@ User config lives in [`midnite.json`](midnite.json) at the repo root, validated 
 
 ```json
 {
-  "agent":     { "pool": 4, "provider": "claude", "plan": "opus4.7", "act": "sonnet4.7" },
+  "agent":     { "pool": 4, "provider": "anthropic", "plan": "opus4.7", "act": "sonnet4.7" },
   "terminal":  { "mode": "pty", "layout": "split", "args": [], "scrollbackBytes": 262144, "idleDisposeMs": 300000, "maxSessions": 16, "inheritSecrets": false, "approvals": { "enabled": false, "timeoutMs": 120000, "onTimeout": "deny", "onNoSubscriber": "ask" } },
   "knowledge": { "dir": "./knowledge" },
   "repos":     [],
@@ -169,23 +169,43 @@ Every consumer (gateway, CLI) takes a parsed `MidniteConfig` — never `JSON.par
 
 The optional `workflows` block configures the [workflow builder](todo/phase-6-workflows-mvp.md). It ships **off** (`enabled: false`); set `enabled: true` to start the cron scheduler. `webhookBaseUrl` is the public URL used to build copyable webhook trigger URLs. Secrets are referenced by env-var name (e.g. `encryptionKeyEnv`, OAuth `clientSecretEnv`), never inlined.
 
-### Authentication
+### AI providers & authentication
 
-The gateway's classifier calls Anthropic. Two credential sources are supported, tried in this order:
+The gateway's own AI features (task triage, project plan drafting, the heartbeat,
+the workflow AI node) run through a provider-agnostic `LlmService` that dispatches
+to the **active provider**. Four are supported:
 
-1. **`ANTHROPIC_API_KEY` env var** — used for CI/prod. If set, the gateway uses pay-as-you-go API credits as normal.
-2. **Claude CLI login (macOS only, fallback)** — if no env var is set, the gateway reads the OAuth token that the `claude` CLI already manages in the macOS Keychain (`security -s "Claude Code-credentials"`) and uses it as an `authToken`. Run `claude` once to log in; nothing else to configure.
+| Provider | What it covers |
+| --- | --- |
+| `anthropic` | Claude API (default) |
+| `openai` | OpenAI / Azure-style chat completions |
+| `google` | Google Gemini |
+| `openai-compatible` | Any OpenAI-compatible endpoint via a configurable base URL — Ollama, OpenRouter, LM Studio, vLLM, … |
 
-Heads-up when using the fallback:
+Pick the active provider and add your own API key per provider on the **Agents**
+page: each agent card has a **CLI** tab (install/update the CLI that runs task
+sessions) and an **API** tab (key, optional base URL, and per-role `plan`/`act`
+model overrides). Keys are stored on the gateway (SQLite) and **write-only over
+the API** — reads return only `hasKey` + the last 4 characters. The active CLI
+(which binary runs sessions) and the active API provider (which powers AI
+features) are independent settings.
 
-- Calls consume your **Claude subscription quota**, not pay-as-you-go API credits. Same model, different meter.
-- The first time the gateway reads the Keychain entry, macOS will show a one-time "Allow access" prompt. Accept it.
-- Token refresh is handled by the `claude` CLI itself — if you see a 401 from Anthropic, re-run `claude` to refresh.
-- Linux/Windows are **not** supported by the fallback yet. Set `ANTHROPIC_API_KEY` on those platforms.
+Credential resolution per provider, when no key is stored via the UI:
 
-If neither source resolves, the classifier degrades to a placeholder (titles from the first line, `kind: "unknown"`) and the gateway logs a warning at startup.
+- **Anthropic** — `ANTHROPIC_API_KEY`, else (macOS only) the OAuth token the
+  `claude` CLI manages in the Keychain (`security -s "Claude Code-credentials"`).
+  Run `claude` once to log in. Keychain calls consume your **Claude subscription
+  quota**; macOS shows a one-time "Allow access" prompt; if you see a 401, re-run
+  `claude` to refresh. Linux/Windows: set `ANTHROPIC_API_KEY`.
+- **OpenAI** — `OPENAI_API_KEY`. **Google** — `GEMINI_API_KEY` / `GOOGLE_API_KEY`.
+- **openai-compatible** — usually keyless; set the base URL (env `OPENAI_BASE_URL`
+  as a fallback).
 
-Implementation: [`packages/gateway/src/agent/anthropic-credentials.ts`](packages/gateway/src/agent/anthropic-credentials.ts), wired into [`AnthropicService`](packages/gateway/src/agent/anthropic.service.ts).
+If the active provider has no usable credential, AI features degrade gracefully
+(the classifier falls back to a placeholder title, the heartbeat records a skipped
+run, etc.) and the gateway logs a warning at startup.
+
+Implementation: [`packages/gateway/src/agent/llm/`](packages/gateway/src/agent/llm) (the `LlmService` + per-provider adapters) and [`packages/gateway/src/agent/anthropic-credentials.ts`](packages/gateway/src/agent/anthropic-credentials.ts) for the Anthropic env/Keychain fallback.
 
 ## Common commands
 
