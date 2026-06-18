@@ -39,7 +39,8 @@ import { Button } from '@/components/ui/button';
 import { Collapse } from '@/components/ui/collapse';
 import { EmptyState } from '@/components/empty-state';
 import { Input } from '@/components/ui/input';
-import { Select, type SelectOption } from '@/components/ui/select';
+import { type SelectOption } from '@/components/ui/select';
+import { StyledSelect } from '@/components/ui/styled-select';
 import { Tabs, type TabOption } from '@/components/ui/tabs';
 import { AgentCard } from '@/components/agent-card';
 import { AgentCliLogo } from '@/components/agent-cli-logo';
@@ -502,7 +503,7 @@ function PrimaryAgentRouting({
               The coding agent launched in a session terminal to run tasks.
             </p>
           </div>
-          <Select
+          <StyledSelect
             options={CLI_OPTIONS}
             value={cli}
             onChange={onSetCli}
@@ -520,7 +521,7 @@ function PrimaryAgentRouting({
             </p>
           </div>
           {activeProvider ? (
-            <Select
+            <StyledSelect
               options={PROVIDER_OPTIONS}
               value={activeProvider}
               onChange={onSetProvider}
