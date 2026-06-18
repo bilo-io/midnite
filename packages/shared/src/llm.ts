@@ -95,6 +95,13 @@ export type UpdateActiveProviderRequest = z.infer<
 export const ProvidersResponseSchema = z.object({
   providers: z.array(ProviderCredentialSchema),
   activeProvider: LlmProviderSchema,
+  /**
+   * Whether the active provider can actually make calls right now. Unlike a
+   * provider's `hasKey` (stored/env key only), this reflects the live adapter —
+   * so Anthropic via the Claude CLI keychain reads as enabled even with no
+   * stored key. Defaults true so older clients don't false-warn.
+   */
+  activeProviderEnabled: z.boolean().default(true),
 });
 export type ProvidersResponse = z.infer<typeof ProvidersResponseSchema>;
 

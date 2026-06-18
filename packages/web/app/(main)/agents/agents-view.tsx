@@ -210,15 +210,9 @@ export function AgentsView() {
   // --- Provider (API) handlers ---
 
   const saveProvider = async (provider: LlmProvider, body: UpdateProviderCredentialRequest) => {
-    const resp = await updateProvider(provider, body);
-    setProviders((prev) =>
-      prev
-        ? {
-            activeProvider: resp.activeProvider,
-            providers: prev.providers.map((p) => (p.provider === provider ? resp.provider : p)),
-          }
-        : prev,
-    );
+    await updateProvider(provider, body);
+    // Refetch so activeProviderEnabled (live adapter state) reflects the save.
+    setProviders(await getProviders());
     flashSaved();
   };
 
@@ -281,10 +275,11 @@ export function AgentsView() {
   const activeProvider = providers?.activeProvider ?? null;
   const providerCredFor = (provider: LlmProvider | null) =>
     provider ? providers?.providers.find((p) => p.provider === provider) : undefined;
-  // Warn when the provider powering AI features has no usable key — AI work
-  // silently degrades (placeholder titles, skipped heartbeats) until one's set.
-  const activeCred = providerCredFor(activeProvider);
-  const activeProviderUnconfigured = providers != null && activeCred != null && !activeCred.hasKey;
+  // Warn when the provider powering AI features can't actually make calls — AI
+  // work silently degrades (placeholder titles, skipped heartbeats) until it's
+  // configured. Uses the live adapter state, so Anthropic-via-keychain (no
+  // stored key, but working) does NOT warn.
+  const activeProviderUnconfigured = providers != null && providers.activeProviderEnabled === false;
 
   return (
     <div className="container max-w-3xl space-y-4 py-2">

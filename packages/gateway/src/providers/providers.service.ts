@@ -28,7 +28,13 @@ export class ProvidersService {
 
   list(): ProvidersResponse {
     const providers = LLM_PROVIDERS.map((p) => this.mask(p, this.repo.getProvider(p)));
-    return { providers, activeProvider: this.repo.getActiveProvider() };
+    return {
+      providers,
+      activeProvider: this.repo.getActiveProvider(),
+      // Live adapter state — accounts for Anthropic's env/keychain fallback, not
+      // just stored keys, so the UI doesn't false-warn when AI actually works.
+      activeProviderEnabled: this.llm.enabled,
+    };
   }
 
   async updateProvider(
