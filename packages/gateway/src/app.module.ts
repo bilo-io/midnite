@@ -14,6 +14,7 @@ import { NewsModule } from './news/news.module';
 import { NotesModule } from './notes/notes.module';
 import { PoolModule } from './pool/pool.module';
 import { ProjectsModule } from './projects/projects.module';
+import { ProvidersModule } from './providers/providers.module';
 import { RoutinesModule } from './routines/routines.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { WeatherModule } from './weather/weather.module';
@@ -37,6 +38,7 @@ import { TerminalModule } from './terminal/terminal.module';
     TasksModule,
     PoolModule,
     ProjectsModule,
+    ProvidersModule,
     SessionsModule,
     WeatherModule,
     WorkflowsModule,

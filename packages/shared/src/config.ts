@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { LLM_PROVIDER_DEFAULT, LlmProviderSchema } from './llm.js';
 
 export const RepoConfigSchema = z.object({
   name: z.string(),
@@ -7,7 +8,12 @@ export const RepoConfigSchema = z.object({
 
 export const AgentConfigSchema = z.object({
   pool: z.number().int().positive().default(4),
-  provider: z.enum(['claude']).default('claude'),
+  // Default LLM provider for the gateway's own AI features. The DB (provider
+  // settings, set via the UI) is the runtime source of truth; this is the
+  // fallback. Legacy configs used 'claude' — normalised to 'anthropic'.
+  provider: z
+    .preprocess((v) => (v === 'claude' ? 'anthropic' : v), LlmProviderSchema)
+    .default(LLM_PROVIDER_DEFAULT),
   plan: z.string().default('opus4.8'),
   act: z.string().default('haiku4.5'),
   // Feature flag — the agent pool scheduler is greenfield, so it ships off by

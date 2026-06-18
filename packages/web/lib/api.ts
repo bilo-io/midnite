@@ -36,8 +36,11 @@ import {
   CouncilRunsResponseSchema,
   CouncilSchema,
   AgentCliStatusResponseSchema,
+  AgentCliStatusListResponseSchema,
   AgentPingResponseSchema,
   AgentsConfigResponseSchema,
+  ProvidersResponseSchema,
+  ProviderResponseSchema,
   GlobalSourcesResponseSchema,
   InstallTerminalResponseSchema,
   BrowseDirResponseSchema,
@@ -83,8 +86,12 @@ import {
   type GlobalSource,
   type CreateMemoryRequest,
   type HeartbeatRun,
+  type LlmProvider,
   type Memory,
   type PrimaryAgent,
+  type ProvidersResponse,
+  type ProviderResponse,
+  type UpdateProviderCredentialRequest,
   type Project,
   type SessionSummary,
   type SessionTranscript,
@@ -532,6 +539,41 @@ export async function getCliStatus(cli: AgentCli): Promise<AgentCliStatus> {
     AgentCliStatusResponseSchema,
   );
   return status;
+}
+
+/** Installed-state of every known agent CLI, in one request. */
+export async function getCliStatuses(): Promise<AgentCliStatus[]> {
+  const { statuses } = await fetchJson(
+    '/agents/cli/statuses',
+    undefined,
+    AgentCliStatusListResponseSchema,
+  );
+  return statuses;
+}
+
+// --- LLM providers (API credentials + active provider for AI features) ---
+
+export async function getProviders(): Promise<ProvidersResponse> {
+  return fetchJson('/providers', undefined, ProvidersResponseSchema);
+}
+
+export async function updateProvider(
+  provider: LlmProvider,
+  body: UpdateProviderCredentialRequest,
+): Promise<ProviderResponse> {
+  return fetchJson(
+    `/providers/${encodeURIComponent(provider)}`,
+    { method: 'PUT', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    ProviderResponseSchema,
+  );
+}
+
+export async function setActiveProvider(provider: LlmProvider): Promise<ProvidersResponse> {
+  return fetchJson(
+    '/providers/active',
+    { method: 'PUT', headers: JSON_HEADERS, body: JSON.stringify({ activeProvider: provider }) },
+    ProvidersResponseSchema,
+  );
 }
 
 /** Register a standalone install/uninstall terminal for a CLI; returns the id to attach to. */

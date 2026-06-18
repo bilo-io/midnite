@@ -7,34 +7,41 @@ import {
   Bot,
   Check,
   ChevronDown,
-  Download,
+  Cpu,
   FileText,
   Library,
-  Loader2,
   Plus,
-  RefreshCw,
   Terminal,
   Trash2,
+  TriangleAlert,
   Users,
 } from 'lucide-react';
 import {
   AGENT_CLIS,
   AGENT_CLI_LABEL,
+  CLI_PROVIDER_MAP,
+  LLM_PROVIDERS,
+  LLM_PROVIDER_LABEL,
   MAX_GLOBAL_SOURCES,
   type AgentCli,
   type AgentCliStatus,
   type AgentsConfig,
   type CliTerminalAction,
   type GlobalSource,
+  type LlmProvider,
   type PrimaryAgent,
+  type ProvidersResponse,
   type SubAgent,
   type UpdatePrimaryAgentRequest,
+  type UpdateProviderCredentialRequest,
 } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { Collapse } from '@/components/ui/collapse';
 import { EmptyState } from '@/components/empty-state';
 import { Input } from '@/components/ui/input';
 import { Select, type SelectOption } from '@/components/ui/select';
+import { Tabs, type TabOption } from '@/components/ui/tabs';
+import { AgentCard } from '@/components/agent-card';
 import { AgentCliLogo } from '@/components/agent-cli-logo';
 import { CliActionModal } from '@/components/cli-action-modal';
 import { SourceListEditor, orderByIds } from '@/components/source-list-editor';
@@ -45,12 +52,15 @@ import {
   createSubAgent,
   deleteSubAgent,
   getAgentsConfig,
-  getCliStatus,
+  getCliStatuses,
   getKnowledgeSources,
+  getProviders,
   removeKnowledgeSource,
   reorderKnowledgeSources,
+  setActiveProvider as apiSetActiveProvider,
   updateAgentCli,
   updatePrimaryAgent,
+  updateProvider,
   updateSubAgent,
 } from '@/lib/api';
 import { formatHeartbeatInterval } from '@/lib/app-settings';
@@ -65,24 +75,28 @@ const CLI_OPTIONS: SelectOption<AgentCli>[] = AGENT_CLIS.map((cli) => ({
   icon: <AgentCliLogo cli={cli} className="h-4 w-4" />,
 }));
 
+const PROVIDER_OPTIONS: SelectOption<LlmProvider>[] = LLM_PROVIDERS.map((p) => ({
+  value: p,
+  label: LLM_PROVIDER_LABEL[p],
+}));
+
 function errMsg(e: unknown): string {
   return e instanceof Error ? e.message : 'Something went wrong';
 }
 
 export function AgentsView() {
   const [agents, setAgents] = useState<AgentsConfig | null>(null);
+  const [statuses, setStatuses] = useState<AgentCliStatus[]>([]);
+  const [statusBusy, setStatusBusy] = useState(true);
+  const [providers, setProviders] = useState<ProvidersResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
-  // Install status for the currently-selected CLI, plus the open install/uninstall modal.
-  const [cliStatus, setCliStatus] = useState<AgentCliStatus | null>(null);
-  const [statusBusy, setStatusBusy] = useState(false);
   const [cliAction, setCliAction] = useState<{ cli: AgentCli; action: CliTerminalAction } | null>(
     null,
   );
   const confirm = useConfirm();
 
-  // A ref mirror of the latest config so debounced saves read fresh values
-  // rather than a stale closure.
+  // A ref mirror of the latest config so debounced saves read fresh values.
   const latest = useRef<AgentsConfig | null>(null);
   latest.current = agents;
 
@@ -92,6 +106,44 @@ export function AgentsView() {
 
   useEffect(() => {
     getAgentsConfig().then(setAgents).catch((e) => setError(errMsg(e)));
+    getProviders().then(setProviders).catch((e) => setError(errMsg(e)));
+  }, []);
+
+  const refreshCliStatuses = () => {
+    setStatusBusy(true);
+    getCliStatuses()
+      .then(setStatuses)
+      .catch(() => setStatuses([]))
+      .finally(() => setStatusBusy(false));
+  };
+  useEffect(() => {
+    let cancelled = false;
+    setStatusBusy(true);
+    getCliStatuses()
+      .then((s) => !cancelled && setStatuses(s))
+      .catch(() => !cancelled && setStatuses([]))
+      .finally(() => !cancelled && setStatusBusy(false));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Pick up changes made in another tab (provider keys, active provider, CLI
+  // install state) when this page regains focus. Deliberately does NOT refetch
+  // the primary-agent config — that holds debounced free-text fields a refetch
+  // could clobber mid-edit.
+  useEffect(() => {
+    const onFocus = () => {
+      if (document.visibilityState !== 'visible') return;
+      getProviders().then(setProviders).catch(() => {});
+      getCliStatuses().then(setStatuses).catch(() => {});
+    };
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onFocus);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onFocus);
+    };
   }, []);
 
   // Clear every pending timer on unmount.
@@ -104,37 +156,6 @@ export function AgentsView() {
     };
   }, []);
 
-  // Probe whether the selected CLI is installed (and its version). Re-runs when
-  // the selection changes and after the install modal closes.
-  const selectedCli = agents?.cli ?? null;
-  const refreshCliStatus = () => {
-    if (!selectedCli) return;
-    setStatusBusy(true);
-    getCliStatus(selectedCli)
-      .then(setCliStatus)
-      .catch(() => setCliStatus(null))
-      .finally(() => setStatusBusy(false));
-  };
-  useEffect(() => {
-    if (!selectedCli) return;
-    let cancelled = false;
-    setStatusBusy(true);
-    setCliStatus(null);
-    getCliStatus(selectedCli)
-      .then((s) => {
-        if (!cancelled) setCliStatus(s);
-      })
-      .catch(() => {
-        if (!cancelled) setCliStatus(null);
-      })
-      .finally(() => {
-        if (!cancelled) setStatusBusy(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedCli]);
-
   const flashSaved = () => {
     setSaved(true);
     clearTimeout(savedTimer.current);
@@ -146,8 +167,6 @@ export function AgentsView() {
     primaryTimer.current = setTimeout(() => {
       const p = latest.current?.primary;
       if (!p) return;
-      // Omit the heartbeat interval (owned by Settings) so we don't clobber it,
-      // and omit an empty name (it's required server-side — keep the last good one).
       const body: UpdatePrimaryAgentRequest = {
         description: p.description,
         heartbeatEnabled: p.heartbeatEnabled,
@@ -186,6 +205,26 @@ export function AgentsView() {
     updateAgentCli(cli)
       .then(flashSaved)
       .catch((e) => setError(errMsg(e)));
+  };
+
+  // --- Provider (API) handlers ---
+
+  const saveProvider = async (provider: LlmProvider, body: UpdateProviderCredentialRequest) => {
+    const resp = await updateProvider(provider, body);
+    setProviders((prev) =>
+      prev
+        ? {
+            activeProvider: resp.activeProvider,
+            providers: prev.providers.map((p) => (p.provider === provider ? resp.provider : p)),
+          }
+        : prev,
+    );
+    flashSaved();
+  };
+
+  const activateProvider = async (provider: LlmProvider) => {
+    setProviders(await apiSetActiveProvider(provider));
+    flashSaved();
   };
 
   const editSubAgent = (id: string, patch: Partial<SubAgent>) => {
@@ -239,6 +278,13 @@ export function AgentsView() {
   }
 
   const { cli, primary, subAgents } = agents;
+  const activeProvider = providers?.activeProvider ?? null;
+  const providerCredFor = (provider: LlmProvider | null) =>
+    provider ? providers?.providers.find((p) => p.provider === provider) : undefined;
+  // Warn when the provider powering AI features has no usable key — AI work
+  // silently degrades (placeholder titles, skipped heartbeats) until one's set.
+  const activeCred = providerCredFor(activeProvider);
+  const activeProviderUnconfigured = providers != null && activeCred != null && !activeCred.hasKey;
 
   return (
     <div className="container max-w-3xl space-y-4 py-2">
@@ -255,36 +301,29 @@ export function AgentsView() {
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-      <Accordion title="Agent CLI" icon={<Terminal className="h-3.5 w-3.5" />} defaultOpen>
-        <div className="space-y-3 p-5">
-          <div className="flex items-start justify-between gap-6">
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Preferred CLI</p>
-              <p className="text-xs text-muted-foreground">
-                The coding agent launched in a session terminal — it runs automatically the first
-                time you open a session, after cd-ing into the project&apos;s working directory.
-              </p>
-            </div>
-            <Select
-              options={CLI_OPTIONS}
-              value={cli}
-              onChange={editCli}
-              aria-label="Preferred agent CLI"
-              className="w-40 shrink-0"
-            />
-          </div>
-
-          <CliStatusRow
-            cli={cli}
-            status={cliStatus}
-            busy={statusBusy}
-            onAction={(action) => setCliAction({ cli, action })}
-          />
+      {activeProviderUnconfigured ? (
+        <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-300">
+          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>
+            <span className="font-medium">
+              {activeProvider ? LLM_PROVIDER_LABEL[activeProvider] : 'The active provider'}
+            </span>{' '}
+            is set as your AI provider but has no API key, so AI features (task triage, plan
+            drafting, the heartbeat) will be skipped. Add a key under its{' '}
+            <span className="font-medium">API</span> tab below, or switch the active provider.
+          </span>
         </div>
-      </Accordion>
+      ) : null}
 
       <Accordion title="Primary Agent" icon={<Bot className="h-3.5 w-3.5" />} defaultOpen>
         <div className="space-y-5 p-5">
+          <PrimaryAgentRouting
+            cli={cli}
+            activeProvider={activeProvider}
+            onSetCli={editCli}
+            onSetProvider={(p) => void activateProvider(p)}
+          />
+
           <Field label="Name" htmlFor="primary-name">
             <Input
               id="primary-name"
@@ -347,6 +386,34 @@ export function AgentsView() {
         </div>
       </Accordion>
 
+      <Accordion title="Agents" icon={<Cpu className="h-3.5 w-3.5" />} count={AGENT_CLIS.length} defaultOpen>
+        <div className="space-y-3 p-5">
+          <p className="text-xs text-muted-foreground">
+            Every coding agent midnite knows about. Expand one to install or update its CLI (used to
+            run task sessions) or, under the API tab, add your own key so that provider can power
+            midnite&apos;s own AI features.
+          </p>
+          {AGENT_CLIS.map((c) => {
+            const provider = CLI_PROVIDER_MAP[c];
+            return (
+              <AgentCard
+                key={c}
+                cli={c}
+                status={statuses.find((s) => s.cli === c)}
+                statusBusy={statusBusy}
+                isActiveCli={cli === c}
+                providerCred={providerCredFor(provider)}
+                isActiveProvider={provider != null && activeProvider === provider}
+                onSetActiveCli={() => editCli(c)}
+                onInstallAction={(action) => setCliAction({ cli: c, action })}
+                onSaveProvider={(body) => saveProvider(provider!, body)}
+                onSetActiveProvider={() => activateProvider(provider!)}
+              />
+            );
+          })}
+        </div>
+      </Accordion>
+
       <Accordion
         title="Sub Agents"
         icon={<Users className="h-3.5 w-3.5" />}
@@ -398,11 +465,76 @@ export function AgentsView() {
           action={cliAction.action}
           onClose={() => {
             setCliAction(null);
-            // The user may have just installed/uninstalled — re-probe so the row updates.
-            refreshCliStatus();
+            // The user may have just installed/uninstalled — re-probe so rows update.
+            refreshCliStatuses();
           }}
         />
       ) : null}
+    </div>
+  );
+}
+
+/**
+ * The two global selectors for the primary agent, under API / CLI tabs: which CLI
+ * runs sessions, and which provider powers the gateway's AI. Per-key configuration
+ * lives in each agent's card below.
+ */
+function PrimaryAgentRouting({
+  cli,
+  activeProvider,
+  onSetCli,
+  onSetProvider,
+}: {
+  cli: AgentCli;
+  activeProvider: LlmProvider | null;
+  onSetCli: (cli: AgentCli) => void;
+  onSetProvider: (provider: LlmProvider) => void;
+}) {
+  const [tab, setTab] = useState<'cli' | 'api'>('cli');
+  const tabs: TabOption<'cli' | 'api'>[] = [
+    { value: 'cli', label: 'CLI', icon: <Terminal className="h-3.5 w-3.5" /> },
+    { value: 'api', label: 'API', icon: <Cpu className="h-3.5 w-3.5" /> },
+  ];
+
+  return (
+    <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-4">
+      <Tabs options={tabs} value={tab} onChange={setTab} ariaLabel="Primary agent routing" />
+      {tab === 'cli' ? (
+        <div className="flex items-start justify-between gap-6">
+          <div className="space-y-1">
+            <p className="text-sm font-medium">Session CLI</p>
+            <p className="text-xs text-muted-foreground">
+              The coding agent launched in a session terminal to run tasks.
+            </p>
+          </div>
+          <Select
+            options={CLI_OPTIONS}
+            value={cli}
+            onChange={onSetCli}
+            aria-label="Session agent CLI"
+            className="w-44 shrink-0"
+          />
+        </div>
+      ) : (
+        <div className="flex items-start justify-between gap-6">
+          <div className="space-y-1">
+            <p className="text-sm font-medium">AI provider</p>
+            <p className="text-xs text-muted-foreground">
+              Powers midnite&apos;s own AI (triage, plan drafting, heartbeat). Add each provider&apos;s
+              key in its card below.
+            </p>
+          </div>
+          {activeProvider ? (
+            <Select
+              options={PROVIDER_OPTIONS}
+              value={activeProvider}
+              onChange={onSetProvider}
+              aria-label="Active AI provider"
+              className="w-44 shrink-0"
+            />
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }
@@ -472,89 +604,6 @@ function KnowledgeBaseSection() {
   );
 }
 
-/** Installed/version badge for the selected CLI, with install / update / uninstall buttons. */
-function CliStatusRow({
-  cli,
-  status,
-  busy,
-  onAction,
-}: {
-  cli: AgentCli;
-  status: AgentCliStatus | null;
-  busy: boolean;
-  onAction: (action: CliTerminalAction) => void;
-}) {
-  const label = AGENT_CLI_LABEL[cli];
-  const installed = status?.installed ?? false;
-
-  return (
-    <div className="flex items-center justify-between gap-4 rounded-lg border border-border/60 bg-muted/20 px-4 py-2.5">
-      <div className="flex min-w-0 items-center gap-2.5">
-        <AgentCliLogo cli={cli} className="h-4 w-4 shrink-0" />
-        {busy ? (
-          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            Checking {label}…
-          </span>
-        ) : installed ? (
-          <span className="flex min-w-0 items-center gap-1.5 text-xs">
-            <span
-              className="h-1.5 w-1.5 shrink-0 rounded-full"
-              style={{ background: 'hsl(142 71% 45%)' }}
-            />
-            <span className="font-medium">{label} installed</span>
-            {status?.version ? (
-              <span className="truncate font-mono text-muted-foreground">{status.version}</span>
-            ) : null}
-          </span>
-        ) : (
-          <span className="flex items-center gap-1.5 text-xs">
-            <span
-              className="h-1.5 w-1.5 shrink-0 rounded-full"
-              style={{ background: 'hsl(0 72% 55%)' }}
-            />
-            <span className="font-medium">{label} not found</span>
-          </span>
-        )}
-      </div>
-      <div className="flex shrink-0 items-center gap-2">
-        {installed ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => onAction('uninstall')}
-            disabled={busy}
-            className="text-muted-foreground hover:text-destructive"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            Uninstall
-          </Button>
-        ) : null}
-        <Button
-          type="button"
-          variant={installed ? 'outline' : 'default'}
-          size="sm"
-          onClick={() => onAction('install')}
-          disabled={busy}
-        >
-          {installed ? (
-            <>
-              <RefreshCw className="h-3.5 w-3.5" />
-              Reinstall / Update
-            </>
-          ) : (
-            <>
-              <Download className="h-3.5 w-3.5" />
-              Install
-            </>
-          )}
-        </Button>
-      </div>
-    </div>
-  );
-}
-
 function SubAgentCard({
   index,
   subAgent,
@@ -582,9 +631,7 @@ function SubAgentCard({
           aria-label={open ? 'Collapse subagent' : 'Expand subagent'}
           className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
         >
-          <ChevronDown
-            className={cn('h-4 w-4 transition-transform', !open && '-rotate-90')}
-          />
+          <ChevronDown className={cn('h-4 w-4 transition-transform', !open && '-rotate-90')} />
         </button>
         <span className="shrink-0 text-xs font-medium tabular-nums text-muted-foreground">
           #{index + 1}

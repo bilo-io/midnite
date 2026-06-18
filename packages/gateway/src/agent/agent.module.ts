@@ -1,17 +1,22 @@
 import { Module } from '@nestjs/common';
-import { AnthropicService } from './anthropic.service';
-import { AnthropicClassifier, TaskClassifier } from './classifier.service';
+import { LlmClassifier, TaskClassifier } from './classifier.service';
+import { LlmService } from './llm/llm.service';
 import { PlannerService } from './planner.service';
+import { ProviderCredentialsRepository } from './provider-credentials.repository';
 
+// The gateway's own AI layer: the provider-agnostic LlmService (active provider
+// chosen at runtime), the credential store, and the task classifier/planner that
+// build on it. Distinct from AgentsModule (`agents/`), the orchestrator feature.
 @Module({
   providers: [
-    AnthropicService,
+    LlmService,
+    ProviderCredentialsRepository,
     PlannerService,
     {
       provide: TaskClassifier,
-      useClass: AnthropicClassifier,
+      useClass: LlmClassifier,
     },
   ],
-  exports: [TaskClassifier, AnthropicService, PlannerService],
+  exports: [TaskClassifier, LlmService, PlannerService, ProviderCredentialsRepository],
 })
 export class AgentModule {}

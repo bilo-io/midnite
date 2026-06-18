@@ -29,3 +29,27 @@ describe('agent pool config defaults', () => {
     expect(config.agent.schedulerTickMs).toBe(2000);
   });
 });
+
+describe('agent.provider (LLM provider) normalisation', () => {
+  it('defaults to anthropic', () => {
+    const config = parseConfig({ agent: {}, terminal: {}, knowledge: {}, gateway: {} });
+    expect(config.agent.provider).toBe('anthropic');
+  });
+
+  it('normalises the legacy "claude" value to "anthropic"', () => {
+    const config = parseConfig({
+      agent: { provider: 'claude' },
+      terminal: {},
+      knowledge: {},
+      gateway: {},
+    });
+    expect(config.agent.provider).toBe('anthropic');
+  });
+
+  it('accepts the other providers verbatim', () => {
+    for (const p of ['openai', 'google', 'openai-compatible'] as const) {
+      const config = parseConfig({ agent: { provider: p }, terminal: {}, knowledge: {}, gateway: {} });
+      expect(config.agent.provider).toBe(p);
+    }
+  });
+});

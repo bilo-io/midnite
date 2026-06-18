@@ -6,7 +6,7 @@ import type {
   SubagentInsert,
   SubagentRow,
 } from '../db/schema';
-import type { AnthropicService } from '../agent/anthropic.service';
+import type { LlmService } from '../agent/llm/llm.service';
 import { AgentsRepository, PRIMARY_ID } from './agents.repository';
 import { AgentsService } from './agents.service';
 import type { HeartbeatScheduler } from './heartbeat-scheduler.service';
@@ -92,12 +92,12 @@ function toPrimaryRow(row: PrimaryAgentInsert): PrimaryAgentRow {
 
 function makeService(opts?: {
   scheduler?: Partial<HeartbeatScheduler>;
-  anthropic?: Partial<AnthropicService>;
+  llm?: Partial<LlmService>;
 }) {
   const repo = new InMemoryAgentsRepo();
   const sched = (opts?.scheduler ?? {}) as HeartbeatScheduler;
-  const anthropic = (opts?.anthropic ?? {}) as AnthropicService;
-  return { repo, service: new AgentsService(repo, sched, anthropic) };
+  const llm = (opts?.llm ?? {}) as LlmService;
+  return { repo, service: new AgentsService(repo, sched, llm) };
 }
 
 describe('AgentsService', () => {
@@ -175,42 +175,39 @@ describe('AgentsService', () => {
     expect(repo.getPrimary()?.id).toBe(PRIMARY_ID); // seeded as a side effect
   });
 
-  it('ping: Claude delegates to the Anthropic round-trip and is tagged cli=claude', async () => {
+  it('ping: delegates to the active LLM provider and tags the current CLI', async () => {
     const { service } = makeService({
-      anthropic: {
+      llm: {
         ping: async () => ({ ok: true, model: 'claude-haiku-4-5', reply: 'system status: ok' }),
       },
     });
-    service.updateAgentCli('claude');
+    service.updateAgentCli('gemini');
 
     const res = await service.ping();
     expect(res).toEqual({
       ok: true,
-      cli: 'claude',
+      cli: 'gemini', // informational: the CLI preference, not the provider
       model: 'claude-haiku-4-5',
       reply: 'system status: ok',
     });
   });
 
-  it('ping: a non-Claude CLI reports its label + version when installed', async () => {
-    const { service } = makeService();
-    service.updateAgentCli('gemini');
-    // Avoid spawning a real shell: stub the CLI probe.
-    service.getCliStatus = async () => ({ cli: 'gemini', installed: true, version: '0.32.1' });
-
-    const res = await service.ping();
-    expect(res).toEqual({ ok: true, cli: 'gemini', model: 'Gemini 0.32.1', reply: 'system status: ok' });
-  });
-
-  it('ping: a non-Claude CLI reports "not found" when its binary is absent', async () => {
-    const { service } = makeService();
-    service.updateAgentCli('codex');
-    service.getCliStatus = async () => ({ cli: 'codex', installed: false });
-
+  it('ping: surfaces a disabled provider as not ok', async () => {
+    const { service } = makeService({
+      llm: { ping: async () => ({ ok: false, model: '', reply: 'AI is disabled' }) },
+    });
     const res = await service.ping();
     expect(res.ok).toBe(false);
-    expect(res.cli).toBe('codex');
-    expect(res.model).toBe('Codex');
-    expect(res.reply).toMatch(/not found/);
+    expect(res.reply).toMatch(/disabled/);
+  });
+
+  it('getCliStatuses returns one status per known CLI', async () => {
+    const { service } = makeService();
+    // Avoid spawning real shells: stub the per-CLI probe.
+    service.getCliStatus = async (cli) => ({ cli, installed: true, version: '1.0.0' });
+    const statuses = await service.getCliStatuses();
+    expect(statuses.map((s) => s.cli).sort()).toEqual(
+      ['aider', 'claude', 'codex', 'gemini', 'opencode'].sort(),
+    );
   });
 });

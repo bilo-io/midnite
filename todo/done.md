@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-18 — Multi-provider agents + provider-agnostic LLM wrapper
+
+The Agents page now lists every coding agent as a collapsed accordion with per-agent **CLI** and **API** tabs, and the gateway's own AI calls run through a provider abstraction so any of Anthropic / OpenAI / Google Gemini / an OpenAI-compatible endpoint can power them.
+
+- [x] `shared/src/llm.ts` — `LlmProvider` enum, masked `ProviderCredential` (+ update/active requests, response envelopes), `CLI_PROVIDER_MAP`; `AgentCliStatusListResponse`; widened `AgentConfig.provider` (legacy `'claude'` → `'anthropic'` via preprocess)
+- [x] Gateway `agent/llm/`: `LlmProviderAdapter` interface, `LlmService` (active-provider dispatch, `reload()` on change, env/Keychain fallback), four adapters (Anthropic tool-use; OpenAI json_schema; Gemini + openai-compatible JSON-mode via `json-output.ts`); `llm_providers`/`llm_settings` tables (`0019` migration) + `ProviderCredentialsRepository`
+- [x] Migrated every internal call site off `AnthropicService` → `LlmService` (classifier, planner, project enhance/draft-plan, heartbeat, ping, workflow `ai.claude` node); deleted `anthropic.service.ts`
+- [x] Endpoints: `GET /agents/cli/statuses`, `GET /providers`, `PUT /providers/:provider`, `PUT /providers/active` (keys write-only, returned masked as `hasKey` + last-4)
+- [x] Web: `ui/tabs.tsx`, `agent-card.tsx` (per-CLI accordion, CLI + API tabs), Agents page rebuilt (per-agent rows; Primary Agent gains CLI/API routing selectors); api client `getCliStatuses`/`getProviders`/`updateProvider`/`setActiveProvider`
+- [x] Tests (257 gateway, +15): json-output parser, providers masked round-trip, adapter enabled-wiring, migrated-service fakes; README AI-providers section
+- [x] Verified live against a throwaway gateway: providers list/upsert/activate, masked key (no raw-key leak), all CLI statuses, ping routed to the active provider (real OpenAI 401 with a fake key)
+
 ## 2026-06-18 — Windows/Linux desktop builds + tagged release workflow
 
 Extends desktop packaging to all three OSes and automates publishing, so the `/download` page's Windows & Linux buttons become real (they were "Coming soon"). The Electron main process was already portable (`paths.ts` → `app.getPath`), so this is pipeline-only.

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { MidniteConfig } from '@midnite/shared';
 import type { HeartbeatRunInsert, HeartbeatRunRow, PrimaryAgentRow } from '../db/schema';
-import type { AnthropicService } from '../agent/anthropic.service';
+import type { LlmService } from '../agent/llm/llm.service';
 import { AgentsRepository } from './agents.repository';
 import { HeartbeatScheduler } from './heartbeat-scheduler.service';
 
@@ -77,23 +77,22 @@ function primaryRow(over: Partial<PrimaryAgentRow> = {}): PrimaryAgentRow {
   };
 }
 
-type CreateFn = (...args: unknown[]) => Promise<unknown>;
+type GenerateTextFn = (...args: unknown[]) => Promise<{ text: string; model: string }>;
 
-function makeAnthropic(opts: { enabled: boolean; create?: CreateFn }): AnthropicService {
-  const create: CreateFn =
-    opts.create ??
-    (async () => ({ content: [{ type: 'text', text: 'beat' }], stop_reason: 'end_turn' }));
+function makeLlm(opts: { enabled: boolean; generateText?: GenerateTextFn }): LlmService {
+  const generateText: GenerateTextFn =
+    opts.generateText ?? (async () => ({ text: 'beat', model: 'claude-test' }));
   return {
     enabled: opts.enabled,
     getActModel: () => 'claude-test',
-    getClient: () => ({ messages: { create } }),
-  } as unknown as AnthropicService;
+    generateText,
+  } as unknown as LlmService;
 }
 
 const config = { agents: { heartbeatEnabled: true, schedulerTickMs: 60000 } } as unknown as MidniteConfig;
 
-function makeScheduler(repo: InMemoryRepo, anthropic: AnthropicService) {
-  return new HeartbeatScheduler(config, repo, anthropic);
+function makeScheduler(repo: InMemoryRepo, llm: LlmService) {
+  return new HeartbeatScheduler(config, repo, llm);
 }
 
 function makeDeferred<T>() {
@@ -108,7 +107,7 @@ describe('HeartbeatScheduler', () => {
   it('fires when due, records success, and advances the schedule clock', async () => {
     const lastAt = new Date(Date.now() - 2 * HOUR_MS).toISOString();
     const repo = new InMemoryRepo(primaryRow({ lastHeartbeatAt: lastAt }));
-    const scheduler = makeScheduler(repo, makeAnthropic({ enabled: true }));
+    const scheduler = makeScheduler(repo, makeLlm({ enabled: true }));
 
     await scheduler.tick();
 
@@ -121,21 +120,21 @@ describe('HeartbeatScheduler', () => {
 
   it('does not fire when the interval has not elapsed', async () => {
     const repo = new InMemoryRepo(primaryRow({ lastHeartbeatAt: new Date().toISOString() }));
-    const scheduler = makeScheduler(repo, makeAnthropic({ enabled: true }));
+    const scheduler = makeScheduler(repo, makeLlm({ enabled: true }));
     await scheduler.tick();
     expect(repo.runs).toHaveLength(0);
   });
 
   it('does nothing when the heartbeat is disabled', async () => {
     const repo = new InMemoryRepo(primaryRow({ heartbeatEnabled: 0, lastHeartbeatAt: null }));
-    const scheduler = makeScheduler(repo, makeAnthropic({ enabled: true }));
+    const scheduler = makeScheduler(repo, makeLlm({ enabled: true }));
     await scheduler.tick();
     expect(repo.runs).toHaveLength(0);
   });
 
   it('skips on tick when the prompt is blank', async () => {
     const repo = new InMemoryRepo(primaryRow({ heartbeatPrompt: '   ', lastHeartbeatAt: null }));
-    const scheduler = makeScheduler(repo, makeAnthropic({ enabled: true }));
+    const scheduler = makeScheduler(repo, makeLlm({ enabled: true }));
     await scheduler.tick();
     expect(repo.runs).toHaveLength(0);
   });
@@ -143,7 +142,7 @@ describe('HeartbeatScheduler', () => {
   it('records a skipped run and advances the clock when AI is disabled', async () => {
     const lastAt = new Date(Date.now() - 2 * HOUR_MS).toISOString();
     const repo = new InMemoryRepo(primaryRow({ lastHeartbeatAt: lastAt }));
-    const scheduler = makeScheduler(repo, makeAnthropic({ enabled: false }));
+    const scheduler = makeScheduler(repo, makeLlm({ enabled: false }));
 
     await scheduler.tick();
 
@@ -157,9 +156,9 @@ describe('HeartbeatScheduler', () => {
     const repo = new InMemoryRepo(primaryRow({ lastHeartbeatAt: null }));
     const scheduler = makeScheduler(
       repo,
-      makeAnthropic({
+      makeLlm({
         enabled: true,
-        create: async () => {
+        generateText: async () => {
           throw new Error('rate limited');
         },
       }),
@@ -175,7 +174,7 @@ describe('HeartbeatScheduler', () => {
     const repo = new InMemoryRepo(
       primaryRow({ heartbeatEnabled: 0, lastHeartbeatAt: new Date().toISOString() }),
     );
-    const scheduler = makeScheduler(repo, makeAnthropic({ enabled: true }));
+    const scheduler = makeScheduler(repo, makeLlm({ enabled: true }));
 
     const run = await scheduler.executeHeartbeat('manual');
     expect(run.status).toBe('succeeded');
@@ -184,18 +183,18 @@ describe('HeartbeatScheduler', () => {
 
   it('records a skipped run for a manual run with a blank prompt', async () => {
     const repo = new InMemoryRepo(primaryRow({ heartbeatPrompt: '' }));
-    const scheduler = makeScheduler(repo, makeAnthropic({ enabled: true }));
+    const scheduler = makeScheduler(repo, makeLlm({ enabled: true }));
     const run = await scheduler.executeHeartbeat('manual');
     expect(run.status).toBe('skipped');
     expect(run.error).toMatch(/prompt is empty/);
   });
 
   it('refuses to run two heartbeats at once', async () => {
-    const deferred = makeDeferred<unknown>();
+    const deferred = makeDeferred<{ text: string; model: string }>();
     const repo = new InMemoryRepo(primaryRow({ lastHeartbeatAt: null }));
     const scheduler = makeScheduler(
       repo,
-      makeAnthropic({ enabled: true, create: () => deferred.promise }),
+      makeLlm({ enabled: true, generateText: () => deferred.promise }),
     );
 
     const first = scheduler.executeHeartbeat('manual'); // starts, blocks on the API
@@ -203,7 +202,7 @@ describe('HeartbeatScheduler', () => {
     expect(second.status).toBe('skipped');
     expect(second.error).toMatch(/already in progress/);
 
-    deferred.resolve({ content: [{ type: 'text', text: 'beat' }], stop_reason: 'end_turn' });
+    deferred.resolve({ text: 'beat', model: 'claude-test' });
     const firstRun = await first;
     expect(firstRun.status).toBe('succeeded');
   });
