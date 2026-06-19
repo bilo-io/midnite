@@ -45,6 +45,31 @@ const PROVIDERS: Record<
       </>
     ),
   },
+  'openai-compatible': {
+    bg: '#52525b',
+    fg: '#fff',
+    icon: () => (
+      // "</>" — a generic, vendor-neutral OpenAI-compatible endpoint
+      <>
+        <path
+          d="M6.2 5 3.7 8l2.5 3"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M9.8 5l2.5 3-2.5 3"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </>
+    ),
+  },
   gemini: {
     bg: '#4285F4',
     fg: '#fff',

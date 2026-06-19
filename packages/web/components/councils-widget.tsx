@@ -55,11 +55,11 @@ function CouncilRow({ council: c }: { council: Council }) {
       <div className="min-w-0 flex-1">
         <span className="block truncate text-sm font-medium">{c.name}</span>
         <span className="block truncate text-[11px] text-muted-foreground">
-          {c.participants.length} {c.participants.length === 1 ? 'participant' : 'participants'}
+          {c.members.length} {c.members.length === 1 ? 'member' : 'members'}
         </span>
       </div>
       <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-        {AGENT_CLI_LABEL[c.verdictProvider]}
+        {AGENT_CLI_LABEL[c.synthProvider]}
       </span>
     </li>
   );

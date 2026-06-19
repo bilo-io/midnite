@@ -162,6 +162,13 @@
       "when": 1781847668318,
       "tag": "0022_brainstorm_syntheses",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1781847768318,
+      "tag": "0023_council_formats",
+      "breakpoints": true
     }
   ]
 }

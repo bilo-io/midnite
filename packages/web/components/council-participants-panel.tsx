@@ -24,8 +24,9 @@ import {
   GripVertical,
   PanelRightClose,
   PanelRightOpen,
+  Pencil,
   Plus,
-  Scale,
+  Sparkles,
   Trash2,
   Users,
 } from 'lucide-react';
@@ -33,17 +34,20 @@ import {
   AGENT_CLIS,
   AGENT_CLI_LABEL,
   type AgentCli,
-  type CouncilParticipant,
+  type CouncilFormat,
+  type CouncilMember,
 } from '@midnite/shared';
 import { AgentCliLogo } from '@/components/agent-cli-logo';
 import { Button } from '@/components/ui/button';
 import { Collapse } from '@/components/ui/collapse';
 import { Select, type SelectOption } from '@/components/ui/select';
+import { StyledSelect } from '@/components/ui/styled-select';
+import { FORMAT_SELECT_OPTIONS } from '@/lib/council-formats';
 import {
-  createCouncilParticipant,
-  deleteCouncilParticipant,
-  reorderCouncilParticipants,
-  updateCouncilParticipant,
+  createCouncilMember,
+  deleteCouncilMember,
+  reorderCouncilMembers,
+  updateCouncilMember,
 } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -52,7 +56,7 @@ const SAVE_DEBOUNCE_MS = 600;
 const textareaClass =
   'flex min-h-[72px] w-full rounded-md border border-input bg-background px-2.5 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
 
-/** Provider choices with their brand mark, shared by the verdict + participant dropdowns. */
+/** Provider choices with their brand mark, shared by the synthesizer + member dropdowns. */
 const PROVIDER_OPTIONS: SelectOption<AgentCli>[] = AGENT_CLIS.map((cli) => ({
   value: cli,
   label: AGENT_CLI_LABEL[cli],
@@ -61,41 +65,49 @@ const PROVIDER_OPTIONS: SelectOption<AgentCli>[] = AGENT_CLIS.map((cli) => ({
 
 type Props = {
   councilId: string;
-  participants: CouncilParticipant[];
-  /** The CLI that judges the anonymized takes. */
-  verdictProvider: AgentCli;
+  members: CouncilMember[];
+  /** The CLI that distils the pooled responses into the synthesis. */
+  synthProvider: AgentCli;
+  /** Format pre-selected for new runs. */
+  defaultFormat: CouncilFormat;
   /** Edits are locked while a run is live — the run snapshots at start. */
   disabled: boolean;
-  onChanged: (participants: CouncilParticipant[]) => void;
-  onVerdictProviderChange: (cli: AgentCli) => void;
+  onChanged: (members: CouncilMember[]) => void;
+  onSynthProviderChange: (cli: AgentCli) => void;
+  onDefaultFormatChange: (format: CouncilFormat) => void;
+  /** Open the custom-prompt editor (rendered by the detail view). */
+  onEditCustom: () => void;
   open: boolean;
   onToggle: () => void;
 };
 
 /**
- * Collapsible right-side panel managing the council's standing participants.
- * Each participant collapses to a compact chevron + logo + name row and
- * expands to the full form (name, provider, perspective). Saves are debounced
- * per participant (pattern: agents-view subagent editor).
+ * Collapsible right-side panel managing the council's standing members. Each
+ * member collapses to a compact chevron + logo + name row and expands to the
+ * full form (name, provider, role). Saves are debounced per member (pattern:
+ * brainstorm contributors panel).
  */
-export function CouncilParticipantsPanel({
+export function CouncilMembersPanel({
   councilId,
-  participants,
-  verdictProvider,
+  members,
+  synthProvider,
+  defaultFormat,
   disabled,
   onChanged,
-  onVerdictProviderChange,
+  onSynthProviderChange,
+  onDefaultFormatChange,
+  onEditCustom,
   open,
   onToggle,
 }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
-  // Compact by default; a participant opens for editing (new ones auto-open).
+  // Compact by default; a member opens for editing (new ones auto-open).
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const savedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const latest = useRef(participants);
-  latest.current = participants;
+  const latest = useRef(members);
+  latest.current = members;
 
   useEffect(() => {
     const pending = timers.current;
@@ -128,12 +140,12 @@ export function CouncilParticipantsPanel({
     timers.current.set(
       id,
       setTimeout(() => {
-        const p = latest.current.find((x) => x.id === id);
-        if (!p) return;
-        updateCouncilParticipant(councilId, id, {
-          name: p.name,
-          provider: p.provider,
-          perspective: p.perspective,
+        const m = latest.current.find((x) => x.id === id);
+        if (!m) return;
+        updateCouncilMember(councilId, id, {
+          name: m.name,
+          provider: m.provider,
+          role: m.role,
         })
           .then(flashSaved)
           .catch((e) => setError(errMsg(e)));
@@ -141,15 +153,15 @@ export function CouncilParticipantsPanel({
     );
   };
 
-  const edit = (id: string, patch: Partial<CouncilParticipant>) => {
-    onChanged(latest.current.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+  const edit = (id: string, patch: Partial<CouncilMember>) => {
+    onChanged(latest.current.map((m) => (m.id === id ? { ...m, ...patch } : m)));
     scheduleSave(id);
   };
 
   const add = async () => {
     setError(null);
     try {
-      const created = await createCouncilParticipant(councilId, {});
+      const created = await createCouncilMember(councilId, {});
       onChanged([...latest.current, created]);
       setExpanded((prev) => new Set(prev).add(created.id));
       flashSaved();
@@ -164,14 +176,14 @@ export function CouncilParticipantsPanel({
     timers.current.delete(id);
     setError(null);
     try {
-      await deleteCouncilParticipant(councilId, id);
-      onChanged(latest.current.filter((p) => p.id !== id));
+      await deleteCouncilMember(councilId, id);
+      onChanged(latest.current.filter((m) => m.id !== id));
     } catch (e) {
       setError(errMsg(e));
     }
   };
 
-  // Drag a participant to reorder; this order drives the run's tab order. Apply
+  // Drag a member to reorder; this order drives the run's tab order. Apply
   // optimistically, persist, and roll back to the pre-drag order on failure.
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -182,13 +194,13 @@ export function CouncilParticipantsPanel({
     const { active, over } = event;
     if (!over || active.id === over.id) return;
     const prev = latest.current;
-    const from = prev.findIndex((p) => p.id === active.id);
-    const to = prev.findIndex((p) => p.id === over.id);
+    const from = prev.findIndex((m) => m.id === active.id);
+    const to = prev.findIndex((m) => m.id === over.id);
     if (from === -1 || to === -1) return;
     const reordered = arrayMove(prev, from, to);
     setError(null);
     onChanged(reordered);
-    reorderCouncilParticipants(councilId, reordered.map((p) => p.id))
+    reorderCouncilMembers(councilId, reordered.map((m) => m.id))
       .then(onChanged)
       .catch((e) => {
         onChanged(prev);
@@ -203,8 +215,8 @@ export function CouncilParticipantsPanel({
           type="button"
           variant="ghost"
           size="icon"
-          aria-label="Expand participants"
-          title={`Participants (${participants.length})`}
+          aria-label="Expand members"
+          title={`Members (${members.length})`}
           onClick={onToggle}
           className="h-9 w-9 text-muted-foreground"
         >
@@ -219,7 +231,7 @@ export function CouncilParticipantsPanel({
       <div className="flex items-center justify-between gap-2">
         <h2 className="flex items-center gap-1.5 text-sm font-semibold">
           <Users className="h-4 w-4 text-muted-foreground" />
-          Participants
+          Members
         </h2>
         <div className="flex items-center gap-1.5">
           {saved ? (
@@ -241,7 +253,7 @@ export function CouncilParticipantsPanel({
             type="button"
             variant="ghost"
             size="icon"
-            aria-label="Collapse participants"
+            aria-label="Collapse members"
             onClick={onToggle}
             className="h-7 w-7 text-muted-foreground"
           >
@@ -250,48 +262,66 @@ export function CouncilParticipantsPanel({
         </div>
       </div>
 
-      {/* The judge — visually set apart from the debating participants. */}
+      {/* The synthesizer — visually set apart from the members. */}
       <div className="space-y-2 rounded-lg border border-foreground/15 bg-accent/40 p-3 shadow-sm">
         <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider">
-          <Scale className="h-3.5 w-3.5" />
-          Verdict by
+          <Sparkles className="h-3.5 w-3.5" />
+          Synthesize with
         </span>
         <Select
-          aria-label="Verdict provider"
+          aria-label="Synthesizer provider"
           options={PROVIDER_OPTIONS}
-          value={verdictProvider}
-          onChange={onVerdictProviderChange}
+          value={synthProvider}
+          onChange={onSynthProviderChange}
           disabled={disabled}
         />
+        <span className="block pt-1 text-[11px] font-medium text-muted-foreground">
+          Default format
+        </span>
+        <StyledSelect
+          aria-label="Default synthesis format"
+          options={FORMAT_SELECT_OPTIONS}
+          value={defaultFormat}
+          onChange={onDefaultFormatChange}
+          disabled={disabled}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onEditCustom}
+          className="w-full"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+          Edit custom prompt
+        </Button>
         <p className="text-[11px] leading-snug text-muted-foreground">
-          Weighs the anonymized takes and writes the verdict — it never sees who said what.
+          Distils the pooled responses. The format is pre-selected for new runs and can be switched
+          per run — and re-run over the same responses.
         </p>
       </div>
 
-      {participants.length < 2 ? (
+      {members.length < 1 ? (
         <p className="text-xs text-muted-foreground">
-          Add at least 2 participants — each argues the topic from its own perspective.
+          Add at least 1 member — each responds to the prompt from its own role.
         </p>
       ) : null}
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-        <SortableContext
-          items={participants.map((p) => p.id)}
-          strategy={verticalListSortingStrategy}
-        >
+        <SortableContext items={members.map((m) => m.id)} strategy={verticalListSortingStrategy}>
           <div className="flex flex-col gap-2">
-            {participants.map((p, i) => (
-              <SortableParticipant
-                key={p.id}
-                participant={p}
+            {members.map((m, i) => (
+              <SortableMember
+                key={m.id}
+                member={m}
                 index={i}
-                isOpen={expanded.has(p.id)}
+                isOpen={expanded.has(m.id)}
                 disabled={disabled}
-                onToggle={() => toggleExpanded(p.id)}
-                onEdit={(patch) => edit(p.id, patch)}
-                onRemove={() => void remove(p.id)}
+                onToggle={() => toggleExpanded(m.id)}
+                onEdit={(patch) => edit(m.id, patch)}
+                onRemove={() => void remove(m.id)}
               />
             ))}
           </div>
@@ -301,10 +331,10 @@ export function CouncilParticipantsPanel({
   );
 }
 
-/** One draggable participant: a grip handle reorders, the title region toggles
- *  the body, the name edits inline, and a hover-revealed button removes it. */
-function SortableParticipant({
-  participant: p,
+/** One draggable member: a grip handle reorders, the title region toggles the
+ *  body, the name edits inline, and a hover-revealed button removes it. */
+function SortableMember({
+  member: m,
   index,
   isOpen,
   disabled,
@@ -312,17 +342,17 @@ function SortableParticipant({
   onEdit,
   onRemove,
 }: {
-  participant: CouncilParticipant;
+  member: CouncilMember;
   index: number;
   isOpen: boolean;
   disabled: boolean;
   onToggle: () => void;
-  onEdit: (patch: Partial<CouncilParticipant>) => void;
+  onEdit: (patch: Partial<CouncilMember>) => void;
   onRemove: () => void;
 }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
-    useSortable({ id: p.id, disabled });
-  const name = p.name.trim() || `Participant ${index + 1}`;
+    useSortable({ id: m.id, disabled });
+  const name = m.name.trim() || `Member ${index + 1}`;
 
   return (
     <div
@@ -356,14 +386,14 @@ function SortableParticipant({
           className="flex shrink-0 items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
         >
           <ChevronDown className={cn('h-4 w-4 transition-transform', !isOpen && '-rotate-90')} />
-          <AgentCliLogo cli={p.provider} className="h-4 w-4" />
+          <AgentCliLogo cli={m.provider} className="h-4 w-4" />
         </button>
         <input
           aria-label={`${name} name`}
-          value={p.name}
+          value={m.name}
           disabled={disabled}
           onChange={(e) => onEdit({ name: e.target.value })}
-          placeholder={`Participant ${index + 1}`}
+          placeholder={`Member ${index + 1}`}
           className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm font-medium placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
         />
         <Button
@@ -384,18 +414,18 @@ function SortableParticipant({
           <Select
             aria-label={`${name} provider`}
             options={PROVIDER_OPTIONS}
-            value={p.provider}
+            value={m.provider}
             disabled={disabled}
             onChange={(provider) => onEdit({ provider })}
           />
 
           <textarea
-            aria-label={`${name} perspective`}
+            aria-label={`${name} role`}
             className={textareaClass}
-            value={p.perspective}
+            value={m.role}
             disabled={disabled}
-            onChange={(e) => onEdit({ perspective: e.target.value })}
-            placeholder="Perspective on the matter — e.g. “Argue for the smallest change that ships this quarter.”"
+            onChange={(e) => onEdit({ role: e.target.value })}
+            placeholder="Role to respond from — e.g. “Argue the contrary view.”"
           />
         </div>
       </Collapse>

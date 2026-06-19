@@ -6,6 +6,8 @@ import { Check, Loader2, X, type LucideIcon } from 'lucide-react';
 import { getNodeTypeDefinition, type NodeRunStatus } from '@midnite/shared';
 import type { AppNode, WorkflowNodeData } from '@/lib/workflow-store';
 import { hueVarForCategory, iconFor } from '@/lib/workflow-node-catalog';
+import { LLM_PROVIDER_ICON_KEY, resolveAiNodeProvider } from '@/lib/ai-node';
+import { ProviderIcon } from '@/components/provider-icon';
 import { cn } from '@/lib/utils';
 
 function StatusIndicator({ status }: { status?: NodeRunStatus }) {
@@ -57,6 +59,9 @@ export function WorkflowNodeView({ data, selected }: NodeProps<AppNode>) {
   const category = def?.category ?? 'action';
   const Icon: LucideIcon = iconFor(def?.icon);
   const hueVar = hueVarForCategory(category);
+  // An AI node pinned to (or inferring) a provider wears that provider's brand
+  // icon; otherwise it falls back to the default robot below.
+  const aiProvider = data.kind === 'ai.claude' ? resolveAiNodeProvider(data.params) : null;
   // The handle id MUST equal the port name persisted on edges (sourcePort/targetPort),
   // or edges won't bind to a handle and React Flow silently drops them after a reload.
   const inputPort = def?.inputs[0];
@@ -93,12 +98,16 @@ export function WorkflowNodeView({ data, selected }: NodeProps<AppNode>) {
         className="flex items-center gap-2 rounded-t-lg border-b px-3 py-2"
         style={{ borderColor: 'hsl(var(--node-hue) / 0.25)', background: 'hsl(var(--node-hue) / 0.08)' }}
       >
-        <span
-          className="flex h-5 w-5 shrink-0 items-center justify-center rounded"
-          style={{ background: 'hsl(var(--node-hue) / 0.18)', color: 'hsl(var(--node-hue))' }}
-        >
-          <Icon className="h-3.5 w-3.5" />
-        </span>
+        {aiProvider ? (
+          <ProviderIcon provider={LLM_PROVIDER_ICON_KEY[aiProvider]} size={20} />
+        ) : (
+          <span
+            className="flex h-5 w-5 shrink-0 items-center justify-center rounded"
+            style={{ background: 'hsl(var(--node-hue) / 0.18)', color: 'hsl(var(--node-hue))' }}
+          >
+            <Icon className="h-3.5 w-3.5" />
+          </span>
+        )}
         <span className="min-w-0 flex-1 truncate text-xs font-semibold">{data.label}</span>
         <StatusIndicator status={data.status} />
       </div>

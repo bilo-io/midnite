@@ -10,7 +10,6 @@
 
 import {
   BotMessageSquare,
-  Brain,
   BrainCircuit,
   CirclePile,
   Folder,
@@ -29,7 +28,6 @@ export type FeatureKey =
   | 'sessions'
   | 'workflows'
   | 'councils'
-  | 'brainstorm'
   | 'media';
 
 export type Feature = {
@@ -89,15 +87,8 @@ export const FEATURES: Feature[] = [
     key: 'councils',
     href: '/councils',
     label: 'Councils',
-    description: 'Convene multiple agents to deliberate on a topic.',
+    description: 'Convene multiple agents, then synthesize in any format — brainstorm, debate, analyse, and more.',
     Icon: CirclePile,
-  },
-  {
-    key: 'brainstorm',
-    href: '/brainstorms',
-    label: 'Brainstorm',
-    description: 'Generate ideas with multiple agents, then synthesize them.',
-    Icon: Brain,
   },
   {
     key: 'media',
@@ -117,7 +108,6 @@ export const DEFAULT_FEATURE_FLAGS: Record<FeatureKey, boolean> = {
   sessions: true,
   workflows: true,
   councils: true,
-  brainstorm: true,
   media: true,
 };
 

@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Copy, Loader2, Trash2, X } from 'lucide-react';
+import { Bot, Copy, Loader2, Trash2, X } from 'lucide-react';
 import {
   getNodeTypeDefinition,
+  LLM_PROVIDERS,
+  LLM_PROVIDER_LABEL,
   type NodeField,
   type ScheduleTrigger,
   type Trigger,
@@ -11,7 +13,11 @@ import {
 } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { ModelComboSelect, StyledSelect } from '@/components/ui/styled-select';
+import type { SelectOption } from '@/components/ui/select';
+import { ProviderIcon } from '@/components/provider-icon';
 import { rotateWorkflowWebhook } from '@/lib/api';
+import { aiModelOptions, LLM_PROVIDER_ICON_KEY } from '@/lib/ai-node';
 import { describeCron } from '@/lib/cron';
 import { useWorkflowStore, type AppNode } from '@/lib/workflow-store';
 import { useConfirm } from '@/components/confirm-dialog';
@@ -119,6 +125,43 @@ function FieldInput({
   }
 }
 
+// Provider options for the AI node, each branded with its icon. The empty value
+// follows the gateway's active provider (chosen on the Agents page).
+const AI_PROVIDER_OPTIONS: SelectOption<string>[] = [
+  { value: '', label: 'Active provider', icon: <Bot className="h-3.5 w-3.5 text-muted-foreground" /> },
+  ...LLM_PROVIDERS.map((p) => ({
+    value: p,
+    label: LLM_PROVIDER_LABEL[p],
+    icon: <ProviderIcon provider={LLM_PROVIDER_ICON_KEY[p]} size={14} />,
+  })),
+];
+
+function AiProviderField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <StyledSelect options={AI_PROVIDER_OPTIONS} value={value} onChange={onChange} aria-label="Provider" />
+  );
+}
+
+function AiModelField({
+  provider,
+  value,
+  onChange,
+}: {
+  provider: unknown;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <ModelComboSelect
+      options={aiModelOptions(provider)}
+      value={value}
+      onChange={onChange}
+      placeholder="Select or type a model id"
+      aria-label="Model"
+    />
+  );
+}
+
 function NodeFields({ node }: { node: AppNode }) {
   const updateNodeParams = useWorkflowStore((s) => s.updateNodeParams);
   const def = getNodeTypeDefinition(node.data.kind);
@@ -134,18 +177,42 @@ function NodeFields({ node }: { node: AppNode }) {
     updateNodeParams(node.id, next);
   };
 
+  const isAi = node.data.kind === 'ai.claude';
+
   return (
     <div className="space-y-3">
-      {def.fields.map((field) => (
-        <div key={field.key} className="space-y-1">
-          <label className="text-xs font-medium text-muted-foreground">
-            {field.label}
-            {field.required ? <span className="text-destructive"> *</span> : null}
-          </label>
-          <FieldInput field={field} value={node.data.params[field.key]} onChange={(v) => setParam(field.key, v)} />
-          {field.help ? <p className="text-[11px] text-muted-foreground">{field.help}</p> : null}
-        </div>
-      ))}
+      {def.fields.map((field) => {
+        const value = node.data.params[field.key];
+        let control: React.ReactNode;
+        if (isAi && field.key === 'provider') {
+          control = (
+            <AiProviderField
+              value={typeof value === 'string' ? value : ''}
+              onChange={(v) => setParam('provider', v)}
+            />
+          );
+        } else if (isAi && field.key === 'model') {
+          control = (
+            <AiModelField
+              provider={node.data.params.provider}
+              value={typeof value === 'string' ? value : ''}
+              onChange={(v) => setParam('model', v)}
+            />
+          );
+        } else {
+          control = <FieldInput field={field} value={value} onChange={(v) => setParam(field.key, v)} />;
+        }
+        return (
+          <div key={field.key} className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">
+              {field.label}
+              {field.required ? <span className="text-destructive"> *</span> : null}
+            </label>
+            {control}
+            {field.help ? <p className="text-[11px] text-muted-foreground">{field.help}</p> : null}
+          </div>
+        );
+      })}
     </div>
   );
 }

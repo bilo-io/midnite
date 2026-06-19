@@ -20,7 +20,7 @@ function plural(n: number, word: string): string {
 
 export function CouncilCard({ council, layout, selected = false, onToggleSelect }: Props) {
   // One logo per distinct provider on the panel, stacked like source favicons.
-  const providers = [...new Set(council.participants.map((p) => p.provider))];
+  const providers = [...new Set(council.members.map((m) => m.provider))];
   const logos =
     providers.length > 0 ? (
       <div className="flex items-center -space-x-1">
@@ -66,7 +66,7 @@ export function CouncilCard({ council, layout, selected = false, onToggleSelect 
         </Link>
         {logos}
         <span className="hidden shrink-0 text-xs tabular-nums text-muted-foreground sm:block">
-          {plural(council.participants.length, 'participant')}
+          {plural(council.members.length, 'member')}
         </span>
       </div>
     );
@@ -89,7 +89,7 @@ export function CouncilCard({ council, layout, selected = false, onToggleSelect 
           </Link>
         </div>
         <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-          {plural(council.participants.length, 'participant')}
+          {plural(council.members.length, 'member')}
         </span>
       </div>
       {council.description ? (

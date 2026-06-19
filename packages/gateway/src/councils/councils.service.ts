@@ -2,18 +2,20 @@ import { Inject, Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import {
   AGENT_CLI_DEFAULT,
-  COUNCIL_VERDICT_PROVIDER_DEFAULT,
+  COUNCIL_FORMAT_DEFAULT,
+  COUNCIL_STARTER_MEMBERS,
+  COUNCIL_SYNTH_PROVIDER_DEFAULT,
   type Council,
-  type CouncilParticipant,
-  type CreateCouncilParticipantRequest,
+  type CouncilMember,
+  type CreateCouncilMemberRequest,
   type CreateCouncilRequest,
-  type UpdateCouncilParticipantRequest,
+  type UpdateCouncilMemberRequest,
   type UpdateCouncilRequest,
 } from '@midnite/shared';
 import { CouncilsRepository } from './councils.repository';
 
 export class CouncilDoesNotExistError extends Error {}
-export class CouncilParticipantDoesNotExistError extends Error {}
+export class CouncilMemberDoesNotExistError extends Error {}
 
 @Injectable()
 export class CouncilsService {
@@ -35,9 +37,25 @@ export class CouncilsService {
       id: randomUUID(),
       name: req.name,
       description: req.description ?? null,
-      verdictProvider: req.verdictProvider ?? COUNCIL_VERDICT_PROVIDER_DEFAULT,
+      synthProvider: req.synthProvider ?? COUNCIL_SYNTH_PROVIDER_DEFAULT,
+      defaultFormat: req.defaultFormat ?? COUNCIL_FORMAT_DEFAULT,
+      customPrompt: req.customPrompt ?? null,
       createdAt: now,
       updatedAt: now,
+    });
+    // Seed starter members so a fresh council is immediately useful — ordinary
+    // members the user can edit, reorder, or remove.
+    COUNCIL_STARTER_MEMBERS.forEach((m, i) => {
+      this.repo.insertMember({
+        id: randomUUID(),
+        councilId: row.id,
+        name: m.name,
+        provider: AGENT_CLI_DEFAULT,
+        role: m.role,
+        position: i,
+        createdAt: now,
+        updatedAt: now,
+      });
     });
     return this.repo.hydrateCouncil(row);
   }
@@ -46,7 +64,9 @@ export class CouncilsService {
     const row = this.repo.updateCouncil(id, {
       ...(req.name !== undefined ? { name: req.name } : {}),
       ...(req.description !== undefined ? { description: req.description } : {}),
-      ...(req.verdictProvider !== undefined ? { verdictProvider: req.verdictProvider } : {}),
+      ...(req.synthProvider !== undefined ? { synthProvider: req.synthProvider } : {}),
+      ...(req.defaultFormat !== undefined ? { defaultFormat: req.defaultFormat } : {}),
+      ...(req.customPrompt !== undefined ? { customPrompt: req.customPrompt } : {}),
       ...(req.archived !== undefined
         ? { archivedAt: req.archived ? new Date().toISOString() : null }
         : {}),
@@ -64,80 +84,80 @@ export class CouncilsService {
   }
 
   // Blank-create-then-fill (mirrors subagents): missing fields coalesce to defaults.
-  createParticipant(councilId: string, req: CreateCouncilParticipantRequest): CouncilParticipant {
+  createMember(councilId: string, req: CreateCouncilMemberRequest): CouncilMember {
     if (!this.repo.getCouncil(councilId)) {
       throw new CouncilDoesNotExistError(`council ${councilId} does not exist`);
     }
     const now = new Date().toISOString();
-    const row = this.repo.insertParticipant({
+    const row = this.repo.insertMember({
       id: randomUUID(),
       councilId,
       name: req.name ?? '',
       provider: req.provider ?? AGENT_CLI_DEFAULT,
-      perspective: req.perspective ?? '',
-      position: this.repo.nextParticipantPosition(councilId),
+      role: req.role ?? '',
+      position: this.repo.nextMemberPosition(councilId),
       createdAt: now,
       updatedAt: now,
     });
     this.repo.updateCouncil(councilId, { updatedAt: now });
-    return this.repo.hydrateParticipant(row);
+    return this.repo.hydrateMember(row);
   }
 
   /**
-   * Reorder the council's participants. `participantIds` must be exactly the
-   * council's current participant ids (every one, no extras); the new order is
-   * their index in the list. This drives the tab order of future runs.
+   * Reorder the council's members. `memberIds` must be exactly the council's
+   * current member ids (every one, no extras); the new order is their index in
+   * the list. This drives the tab order of future runs.
    */
-  reorderParticipants(councilId: string, participantIds: string[]): Council {
+  reorderMembers(councilId: string, memberIds: string[]): Council {
     const council = this.repo.getCouncil(councilId);
     if (!council) {
       throw new CouncilDoesNotExistError(`council ${councilId} does not exist`);
     }
-    const current = this.repo.listParticipants(councilId).map((p) => p.id);
+    const current = this.repo.listMembers(councilId).map((m) => m.id);
     const same =
-      current.length === participantIds.length &&
-      new Set(participantIds).size === participantIds.length &&
-      participantIds.every((id) => current.includes(id));
+      current.length === memberIds.length &&
+      new Set(memberIds).size === memberIds.length &&
+      memberIds.every((id) => current.includes(id));
     if (!same) {
-      throw new CouncilParticipantDoesNotExistError(
-        'reorder must list every current participant exactly once',
+      throw new CouncilMemberDoesNotExistError(
+        'reorder must list every current member exactly once',
       );
     }
-    this.repo.reorderParticipants(councilId, participantIds);
+    this.repo.reorderMembers(councilId, memberIds);
     this.repo.updateCouncil(councilId, { updatedAt: new Date().toISOString() });
     return this.repo.hydrateCouncil(this.repo.getCouncil(councilId)!);
   }
 
-  updateParticipant(
+  updateMember(
     councilId: string,
-    participantId: string,
-    req: UpdateCouncilParticipantRequest,
-  ): CouncilParticipant {
-    const existing = this.repo.getParticipant(participantId);
+    memberId: string,
+    req: UpdateCouncilMemberRequest,
+  ): CouncilMember {
+    const existing = this.repo.getMember(memberId);
     if (!existing || existing.councilId !== councilId) {
-      throw new CouncilParticipantDoesNotExistError(
-        `participant ${participantId} does not exist on council ${councilId}`,
+      throw new CouncilMemberDoesNotExistError(
+        `member ${memberId} does not exist on council ${councilId}`,
       );
     }
     const now = new Date().toISOString();
-    const row = this.repo.updateParticipant(participantId, {
+    const row = this.repo.updateMember(memberId, {
       ...(req.name !== undefined ? { name: req.name } : {}),
       ...(req.provider !== undefined ? { provider: req.provider } : {}),
-      ...(req.perspective !== undefined ? { perspective: req.perspective } : {}),
+      ...(req.role !== undefined ? { role: req.role } : {}),
       updatedAt: now,
     })!;
     this.repo.updateCouncil(councilId, { updatedAt: now });
-    return this.repo.hydrateParticipant(row);
+    return this.repo.hydrateMember(row);
   }
 
-  deleteParticipant(councilId: string, participantId: string): void {
-    const existing = this.repo.getParticipant(participantId);
+  deleteMember(councilId: string, memberId: string): void {
+    const existing = this.repo.getMember(memberId);
     if (!existing || existing.councilId !== councilId) {
-      throw new CouncilParticipantDoesNotExistError(
-        `participant ${participantId} does not exist on council ${councilId}`,
+      throw new CouncilMemberDoesNotExistError(
+        `member ${memberId} does not exist on council ${councilId}`,
       );
     }
-    this.repo.deleteParticipant(participantId);
+    this.repo.deleteMember(memberId);
     this.repo.updateCouncil(councilId, { updatedAt: new Date().toISOString() });
   }
 }

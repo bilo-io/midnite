@@ -31,8 +31,8 @@ type Props = {
 };
 
 /**
- * The council's thread of past debates as a collapsible left sidebar, newest
- * first. Selecting one loads it into the tabs (persisted outputs + verdict).
+ * The council's thread of past runs as a collapsible left sidebar, newest first.
+ * Selecting one loads it into the tabs (persisted outputs + synthesis).
  * Collapsed, it shrinks to a slim rail holding only the expand control.
  */
 export function CouncilRunThread({ runs, selectedId, onSelect, open, onToggle }: Props) {
@@ -74,7 +74,7 @@ export function CouncilRunThread({ runs, selectedId, onSelect, open, onToggle }:
       </div>
       {runs.length === 0 ? (
         <p className="mt-2 text-xs text-muted-foreground">
-          No debates yet — submit the first topic below.
+          No runs yet — submit the first prompt below.
         </p>
       ) : (
         <div className="mt-2 flex flex-col gap-1.5">
@@ -93,7 +93,7 @@ export function CouncilRunThread({ runs, selectedId, onSelect, open, onToggle }:
                     : 'border-border/60 bg-card/40 hover:border-foreground/20 hover:bg-accent/40',
                 )}
               >
-                <span className="line-clamp-2 text-sm leading-snug">{run.topic}</span>
+                <span className="line-clamp-2 text-sm leading-snug">{run.prompt}</span>
                 <span className="flex items-center justify-between gap-2">
                   <span
                     className={cn(

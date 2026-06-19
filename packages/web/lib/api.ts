@@ -30,16 +30,11 @@ import {
 } from '@midnite/shared';
 import {
   AgentCliResponseSchema,
-  CouncilParticipantResponseSchema,
+  CouncilMemberResponseSchema,
   CouncilResponseSchema,
   CouncilRunResponseSchema,
   CouncilRunsResponseSchema,
   CouncilSchema,
-  BrainstormContributorResponseSchema,
-  BrainstormResponseSchema,
-  BrainstormRunResponseSchema,
-  BrainstormRunsResponseSchema,
-  BrainstormSchema,
   AgentCliStatusResponseSchema,
   AgentCliStatusListResponseSchema,
   AgentPingResponseSchema,
@@ -77,20 +72,13 @@ import {
   type BrowseDirResponse,
   type CliTerminalAction,
   type Council,
-  type CouncilParticipant,
+  type CouncilFormat,
+  type CouncilMember,
   type CouncilRun,
-  type CreateCouncilParticipantRequest,
+  type CreateCouncilMemberRequest,
   type CreateCouncilRequest,
-  type UpdateCouncilParticipantRequest,
+  type UpdateCouncilMemberRequest,
   type UpdateCouncilRequest,
-  type Brainstorm,
-  type BrainstormContributor,
-  type BrainstormRun,
-  type BrainstormSynthMode,
-  type CreateBrainstormContributorRequest,
-  type CreateBrainstormRequest,
-  type UpdateBrainstormContributorRequest,
-  type UpdateBrainstormRequest,
   type CreateProjectRequest,
   type CreateSubAgentRequest,
   type CreateTaskResponse,
@@ -692,7 +680,7 @@ export async function runHeartbeatNow(): Promise<HeartbeatRun> {
   return run;
 }
 
-// --- Councils (participant panels + anonymized debate runs) ---
+// --- Councils (member panels + switchable-format synthesis runs) ---
 
 export async function getCouncils(): Promise<Council[]> {
   return fetchJson('/councils', undefined, z.array(CouncilSchema));
@@ -729,57 +717,58 @@ export async function deleteCouncil(id: string): Promise<void> {
   await fetchJson(`/councils/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
 
-export async function createCouncilParticipant(
+export async function createCouncilMember(
   councilId: string,
-  body: CreateCouncilParticipantRequest,
-): Promise<CouncilParticipant> {
-  const { participant } = await fetchJson(
-    `/councils/${encodeURIComponent(councilId)}/participants`,
+  body: CreateCouncilMemberRequest,
+): Promise<CouncilMember> {
+  const { member } = await fetchJson(
+    `/councils/${encodeURIComponent(councilId)}/members`,
     { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
-    CouncilParticipantResponseSchema,
+    CouncilMemberResponseSchema,
   );
-  return participant;
+  return member;
 }
 
-export async function updateCouncilParticipant(
+export async function updateCouncilMember(
   councilId: string,
-  participantId: string,
-  body: UpdateCouncilParticipantRequest,
-): Promise<CouncilParticipant> {
-  const { participant } = await fetchJson(
-    `/councils/${encodeURIComponent(councilId)}/participants/${encodeURIComponent(participantId)}`,
+  memberId: string,
+  body: UpdateCouncilMemberRequest,
+): Promise<CouncilMember> {
+  const { member } = await fetchJson(
+    `/councils/${encodeURIComponent(councilId)}/members/${encodeURIComponent(memberId)}`,
     { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(body) },
-    CouncilParticipantResponseSchema,
+    CouncilMemberResponseSchema,
   );
-  return participant;
+  return member;
 }
 
-export async function deleteCouncilParticipant(
-  councilId: string,
-  participantId: string,
-): Promise<void> {
+export async function deleteCouncilMember(councilId: string, memberId: string): Promise<void> {
   await fetchJson(
-    `/councils/${encodeURIComponent(councilId)}/participants/${encodeURIComponent(participantId)}`,
+    `/councils/${encodeURIComponent(councilId)}/members/${encodeURIComponent(memberId)}`,
     { method: 'DELETE' },
   );
 }
 
-export async function reorderCouncilParticipants(
+export async function reorderCouncilMembers(
   councilId: string,
-  participantIds: string[],
-): Promise<CouncilParticipant[]> {
+  memberIds: string[],
+): Promise<CouncilMember[]> {
   const { council } = await fetchJson(
-    `/councils/${encodeURIComponent(councilId)}/participants/reorder`,
-    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ participantIds }) },
+    `/councils/${encodeURIComponent(councilId)}/members/reorder`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ memberIds }) },
     CouncilResponseSchema,
   );
-  return council.participants;
+  return council.members;
 }
 
-export async function startCouncilRun(councilId: string, topic: string): Promise<CouncilRun> {
+export async function startCouncilRun(
+  councilId: string,
+  prompt: string,
+  format?: CouncilFormat,
+): Promise<CouncilRun> {
   const { run } = await fetchJson(
     `/councils/${encodeURIComponent(councilId)}/runs`,
-    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ topic }) },
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ prompt, format }) },
     CouncilRunResponseSchema,
   );
   return run;
@@ -803,197 +792,41 @@ export async function getCouncilRun(councilId: string, runId: string): Promise<C
   return run;
 }
 
-export async function skipCouncilRunParticipant(
+export async function skipCouncilRunMember(
   councilId: string,
   runId: string,
-  runParticipantId: string,
+  runMemberId: string,
 ): Promise<CouncilRun> {
   const { run } = await fetchJson(
-    `/councils/${encodeURIComponent(councilId)}/runs/${encodeURIComponent(runId)}/participants/${encodeURIComponent(runParticipantId)}/skip`,
+    `/councils/${encodeURIComponent(councilId)}/runs/${encodeURIComponent(runId)}/members/${encodeURIComponent(runMemberId)}/skip`,
     { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({}) },
     CouncilRunResponseSchema,
   );
   return run;
 }
 
-export async function retryCouncilRunParticipant(
+export async function retryCouncilRunMember(
   councilId: string,
   runId: string,
-  runParticipantId: string,
+  runMemberId: string,
 ): Promise<CouncilRun> {
   const { run } = await fetchJson(
-    `/councils/${encodeURIComponent(councilId)}/runs/${encodeURIComponent(runId)}/participants/${encodeURIComponent(runParticipantId)}/retry`,
+    `/councils/${encodeURIComponent(councilId)}/runs/${encodeURIComponent(runId)}/members/${encodeURIComponent(runMemberId)}/retry`,
     { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({}) },
     CouncilRunResponseSchema,
   );
   return run;
 }
 
-export async function retryCouncilVerdict(councilId: string, runId: string): Promise<CouncilRun> {
+export async function retryCouncilSynthesis(
+  councilId: string,
+  runId: string,
+  format?: CouncilFormat,
+): Promise<CouncilRun> {
   const { run } = await fetchJson(
-    `/councils/${encodeURIComponent(councilId)}/runs/${encodeURIComponent(runId)}/verdict/retry`,
-    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({}) },
+    `/councils/${encodeURIComponent(councilId)}/runs/${encodeURIComponent(runId)}/synthesis/retry`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ format }) },
     CouncilRunResponseSchema,
-  );
-  return run;
-}
-
-// --- Brainstorms (contributor panels + mode-based synthesis runs) ---
-
-export async function getBrainstorms(): Promise<Brainstorm[]> {
-  return fetchJson('/brainstorms', undefined, z.array(BrainstormSchema));
-}
-
-export async function getBrainstorm(id: string): Promise<Brainstorm> {
-  const { brainstorm } = await fetchJson(
-    `/brainstorms/${encodeURIComponent(id)}`,
-    undefined,
-    BrainstormResponseSchema,
-  );
-  return brainstorm;
-}
-
-export async function createBrainstorm(body: CreateBrainstormRequest): Promise<Brainstorm> {
-  const { brainstorm } = await fetchJson(
-    '/brainstorms',
-    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
-    BrainstormResponseSchema,
-  );
-  return brainstorm;
-}
-
-export async function updateBrainstorm(
-  id: string,
-  body: UpdateBrainstormRequest,
-): Promise<Brainstorm> {
-  const { brainstorm } = await fetchJson(
-    `/brainstorms/${encodeURIComponent(id)}`,
-    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(body) },
-    BrainstormResponseSchema,
-  );
-  return brainstorm;
-}
-
-export async function deleteBrainstorm(id: string): Promise<void> {
-  await fetchJson(`/brainstorms/${encodeURIComponent(id)}`, { method: 'DELETE' });
-}
-
-export async function createBrainstormContributor(
-  brainstormId: string,
-  body: CreateBrainstormContributorRequest,
-): Promise<BrainstormContributor> {
-  const { contributor } = await fetchJson(
-    `/brainstorms/${encodeURIComponent(brainstormId)}/contributors`,
-    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
-    BrainstormContributorResponseSchema,
-  );
-  return contributor;
-}
-
-export async function updateBrainstormContributor(
-  brainstormId: string,
-  contributorId: string,
-  body: UpdateBrainstormContributorRequest,
-): Promise<BrainstormContributor> {
-  const { contributor } = await fetchJson(
-    `/brainstorms/${encodeURIComponent(brainstormId)}/contributors/${encodeURIComponent(contributorId)}`,
-    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(body) },
-    BrainstormContributorResponseSchema,
-  );
-  return contributor;
-}
-
-export async function deleteBrainstormContributor(
-  brainstormId: string,
-  contributorId: string,
-): Promise<void> {
-  await fetchJson(
-    `/brainstorms/${encodeURIComponent(brainstormId)}/contributors/${encodeURIComponent(contributorId)}`,
-    { method: 'DELETE' },
-  );
-}
-
-export async function reorderBrainstormContributors(
-  brainstormId: string,
-  contributorIds: string[],
-): Promise<BrainstormContributor[]> {
-  const { brainstorm } = await fetchJson(
-    `/brainstorms/${encodeURIComponent(brainstormId)}/contributors/reorder`,
-    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ contributorIds }) },
-    BrainstormResponseSchema,
-  );
-  return brainstorm.contributors;
-}
-
-export async function startBrainstormRun(
-  brainstormId: string,
-  prompt: string,
-  mode?: BrainstormSynthMode,
-): Promise<BrainstormRun> {
-  const { run } = await fetchJson(
-    `/brainstorms/${encodeURIComponent(brainstormId)}/runs`,
-    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ prompt, mode }) },
-    BrainstormRunResponseSchema,
-  );
-  return run;
-}
-
-export async function listBrainstormRuns(brainstormId: string): Promise<BrainstormRun[]> {
-  const { runs } = await fetchJson(
-    `/brainstorms/${encodeURIComponent(brainstormId)}/runs`,
-    undefined,
-    BrainstormRunsResponseSchema,
-  );
-  return runs;
-}
-
-export async function getBrainstormRun(
-  brainstormId: string,
-  runId: string,
-): Promise<BrainstormRun> {
-  const { run } = await fetchJson(
-    `/brainstorms/${encodeURIComponent(brainstormId)}/runs/${encodeURIComponent(runId)}`,
-    undefined,
-    BrainstormRunResponseSchema,
-  );
-  return run;
-}
-
-export async function skipBrainstormRunContributor(
-  brainstormId: string,
-  runId: string,
-  runContributorId: string,
-): Promise<BrainstormRun> {
-  const { run } = await fetchJson(
-    `/brainstorms/${encodeURIComponent(brainstormId)}/runs/${encodeURIComponent(runId)}/contributors/${encodeURIComponent(runContributorId)}/skip`,
-    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({}) },
-    BrainstormRunResponseSchema,
-  );
-  return run;
-}
-
-export async function retryBrainstormRunContributor(
-  brainstormId: string,
-  runId: string,
-  runContributorId: string,
-): Promise<BrainstormRun> {
-  const { run } = await fetchJson(
-    `/brainstorms/${encodeURIComponent(brainstormId)}/runs/${encodeURIComponent(runId)}/contributors/${encodeURIComponent(runContributorId)}/retry`,
-    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({}) },
-    BrainstormRunResponseSchema,
-  );
-  return run;
-}
-
-export async function retryBrainstormSynthesis(
-  brainstormId: string,
-  runId: string,
-  mode?: BrainstormSynthMode,
-): Promise<BrainstormRun> {
-  const { run } = await fetchJson(
-    `/brainstorms/${encodeURIComponent(brainstormId)}/runs/${encodeURIComponent(runId)}/synthesis/retry`,
-    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ mode }) },
-    BrainstormRunResponseSchema,
   );
   return run;
 }

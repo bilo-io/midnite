@@ -12,28 +12,29 @@ import {
   Post,
 } from '@nestjs/common';
 import {
-  CreateCouncilParticipantRequestSchema,
+  CreateCouncilMemberRequestSchema,
   CreateCouncilRequestSchema,
-  ReorderCouncilParticipantsRequestSchema,
+  ReorderCouncilMembersRequestSchema,
+  RetryCouncilSynthesisRequestSchema,
   StartCouncilRunRequestSchema,
-  UpdateCouncilParticipantRequestSchema,
+  UpdateCouncilMemberRequestSchema,
   UpdateCouncilRequestSchema,
   type Council,
-  type CouncilParticipantResponse,
+  type CouncilMemberResponse,
   type CouncilResponse,
   type CouncilRunResponse,
   type CouncilRunsResponse,
 } from '@midnite/shared';
 import {
-  CouncilParticipantNotLiveError,
+  CouncilEmptyError,
+  CouncilMemberNotLiveError,
   CouncilRunInProgressError,
   CouncilRunNotRetryableError,
   CouncilRunnerService,
-  CouncilTooSmallError,
 } from './council-runner.service';
 import {
   CouncilDoesNotExistError,
-  CouncilParticipantDoesNotExistError,
+  CouncilMemberDoesNotExistError,
   CouncilsService,
 } from './councils.service';
 import { CouncilsRepository } from './councils.repository';
@@ -76,46 +77,39 @@ export class CouncilsController {
     return { ok: true };
   }
 
-  @Post(':id/participants')
-  createParticipant(@Param('id') id: string, @Body() body: unknown): CouncilParticipantResponse {
-    const parsed = CreateCouncilParticipantRequestSchema.safeParse(body);
+  @Post(':id/members')
+  createMember(@Param('id') id: string, @Body() body: unknown): CouncilMemberResponse {
+    const parsed = CreateCouncilMemberRequestSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
-    return { participant: this.translate(() => this.service.createParticipant(id, parsed.data)) };
+    return { member: this.translate(() => this.service.createMember(id, parsed.data)) };
   }
 
-  // Static segment, so it never collides with `:participantId` below.
-  @Post(':id/participants/reorder')
-  reorderParticipants(@Param('id') id: string, @Body() body: unknown): CouncilResponse {
-    const parsed = ReorderCouncilParticipantsRequestSchema.safeParse(body);
+  // Static segment, so it never collides with `:memberId` below.
+  @Post(':id/members/reorder')
+  reorderMembers(@Param('id') id: string, @Body() body: unknown): CouncilResponse {
+    const parsed = ReorderCouncilMembersRequestSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
     return {
-      council: this.translate(() =>
-        this.service.reorderParticipants(id, parsed.data.participantIds),
-      ),
+      council: this.translate(() => this.service.reorderMembers(id, parsed.data.memberIds)),
     };
   }
 
-  @Patch(':id/participants/:participantId')
-  updateParticipant(
+  @Patch(':id/members/:memberId')
+  updateMember(
     @Param('id') id: string,
-    @Param('participantId') participantId: string,
+    @Param('memberId') memberId: string,
     @Body() body: unknown,
-  ): CouncilParticipantResponse {
-    const parsed = UpdateCouncilParticipantRequestSchema.safeParse(body);
+  ): CouncilMemberResponse {
+    const parsed = UpdateCouncilMemberRequestSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
     return {
-      participant: this.translate(() =>
-        this.service.updateParticipant(id, participantId, parsed.data),
-      ),
+      member: this.translate(() => this.service.updateMember(id, memberId, parsed.data)),
     };
   }
 
-  @Delete(':id/participants/:participantId')
-  removeParticipant(
-    @Param('id') id: string,
-    @Param('participantId') participantId: string,
-  ): { ok: true } {
-    this.translate(() => this.service.deleteParticipant(id, participantId));
+  @Delete(':id/members/:memberId')
+  removeMember(@Param('id') id: string, @Param('memberId') memberId: string): { ok: true } {
+    this.translate(() => this.service.deleteMember(id, memberId));
     return { ok: true };
   }
 
@@ -123,30 +117,38 @@ export class CouncilsController {
   startRun(@Param('id') id: string, @Body() body: unknown): CouncilRunResponse {
     const parsed = StartCouncilRunRequestSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
-    return { run: this.translate(() => this.runner.startRun(id, parsed.data.topic)) };
+    return {
+      run: this.translate(() => this.runner.startRun(id, parsed.data.prompt, parsed.data.format)),
+    };
   }
 
-  @Post(':id/runs/:runId/participants/:runParticipantId/skip')
-  skipRunParticipant(
+  @Post(':id/runs/:runId/members/:runMemberId/skip')
+  skipRunMember(
     @Param('id') id: string,
     @Param('runId') runId: string,
-    @Param('runParticipantId') runParticipantId: string,
+    @Param('runMemberId') runMemberId: string,
   ): CouncilRunResponse {
-    return { run: this.translate(() => this.runner.skipParticipant(id, runId, runParticipantId)) };
+    return { run: this.translate(() => this.runner.skipMember(id, runId, runMemberId)) };
   }
 
-  @Post(':id/runs/:runId/participants/:runParticipantId/retry')
-  retryRunParticipant(
+  @Post(':id/runs/:runId/members/:runMemberId/retry')
+  retryRunMember(
     @Param('id') id: string,
     @Param('runId') runId: string,
-    @Param('runParticipantId') runParticipantId: string,
+    @Param('runMemberId') runMemberId: string,
   ): CouncilRunResponse {
-    return { run: this.translate(() => this.runner.retryParticipant(id, runId, runParticipantId)) };
+    return { run: this.translate(() => this.runner.retryMember(id, runId, runMemberId)) };
   }
 
-  @Post(':id/runs/:runId/verdict/retry')
-  retryVerdict(@Param('id') id: string, @Param('runId') runId: string): CouncilRunResponse {
-    return { run: this.translate(() => this.runner.retryVerdict(id, runId)) };
+  @Post(':id/runs/:runId/synthesis/retry')
+  retrySynthesis(
+    @Param('id') id: string,
+    @Param('runId') runId: string,
+    @Body() body: unknown,
+  ): CouncilRunResponse {
+    const parsed = RetryCouncilSynthesisRequestSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    return { run: this.translate(() => this.runner.retrySynthesis(id, runId, parsed.data.format)) };
   }
 
   @Get(':id/runs')
@@ -169,15 +171,12 @@ export class CouncilsController {
     try {
       return fn();
     } catch (err) {
-      if (
-        err instanceof CouncilDoesNotExistError ||
-        err instanceof CouncilParticipantDoesNotExistError
-      ) {
+      if (err instanceof CouncilDoesNotExistError || err instanceof CouncilMemberDoesNotExistError) {
         throw new NotFoundException(err.message);
       }
-      if (err instanceof CouncilTooSmallError) throw new BadRequestException(err.message);
+      if (err instanceof CouncilEmptyError) throw new BadRequestException(err.message);
       if (err instanceof CouncilRunInProgressError) throw new ConflictException(err.message);
-      if (err instanceof CouncilParticipantNotLiveError) throw new ConflictException(err.message);
+      if (err instanceof CouncilMemberNotLiveError) throw new ConflictException(err.message);
       if (err instanceof CouncilRunNotRetryableError) throw new ConflictException(err.message);
       throw err;
     }
