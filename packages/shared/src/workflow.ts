@@ -26,6 +26,9 @@ export const WorkflowSummarySchema = z.object({
   // Present for schedule triggers — lets list views sort by cadence and show the cron.
   cron: z.string().optional(),
   nodeCount: z.number().int().nonnegative(),
+  // Lightweight ordered node breakdown for list views (type id + optional label),
+  // so cards can show a step summary without hydrating the full graph.
+  steps: z.array(z.object({ type: z.string(), label: z.string().optional() })).default([]),
   lastRunAt: z.string().optional(),
   lastRunStatus: RunStatusSchema.optional(),
   archived: z.boolean().optional(),

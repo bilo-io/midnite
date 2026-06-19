@@ -1,9 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { ExternalLink, Link as LinkIcon, Settings2, Trash2, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Link as LinkIcon, Settings2, Trash2, X } from 'lucide-react';
+import { detectSourceKind } from '@midnite/shared';
 import type { QuickLink, WidgetConfig } from '@/lib/dashboard-widgets';
+import { getLinkMetadata } from '@/lib/api';
+import { SourceIcon } from './source-icon';
 import { WidgetCard } from './widget-card';
+
+const METADATA_DEBOUNCE_MS = 500;
 
 type LinksWidgetProps = {
   config: WidgetConfig['links'];
@@ -59,7 +64,11 @@ export function LinksWidget({ config, onConfigChange }: LinksWidgetProps) {
               rel="noopener noreferrer"
               className="group flex items-center gap-2 rounded-lg border border-border/60 px-2.5 py-2 text-sm transition-colors hover:bg-accent"
             >
-              <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <SourceIcon
+                kind={detectSourceKind(link.url)}
+                faviconUrl={link.faviconUrl}
+                className="h-3.5 w-3.5 shrink-0"
+              />
               <span className="min-w-0 flex-1 truncate font-medium">{link.label}</span>
             </a>
           ))}
@@ -80,14 +89,41 @@ function LinksEditor({
 }) {
   const [label, setLabel] = useState('');
   const [url, setUrl] = useState('');
+  const [faviconUrl, setFaviconUrl] = useState<string | undefined>(undefined);
+  // Once the user edits the label, stop letting fetched metadata overwrite it.
+  const [labelTouched, setLabelTouched] = useState(false);
   const normalized = normalizeUrl(url);
   const valid = label.trim() !== '' && normalized !== null;
 
+  // Debounced fetch of the pasted URL's metadata: autofill the label from its
+  // OpenGraph/title (unless the user has typed their own) and grab its favicon.
+  const reqRef = useRef(0);
+  useEffect(() => {
+    if (!normalized) {
+      setFaviconUrl(undefined);
+      return;
+    }
+    const reqId = ++reqRef.current;
+    const handle = setTimeout(async () => {
+      try {
+        const meta = await getLinkMetadata(normalized);
+        if (reqRef.current !== reqId) return; // a newer URL superseded this one
+        setFaviconUrl(meta.faviconUrl);
+        if (meta.title && !labelTouched) setLabel(meta.title);
+      } catch {
+        // best-effort — leave label/favicon as-is on failure
+      }
+    }, METADATA_DEBOUNCE_MS);
+    return () => clearTimeout(handle);
+  }, [normalized, labelTouched]);
+
   const submit = () => {
     if (!valid || !normalized) return;
-    onAdd({ label: label.trim(), url: normalized });
+    onAdd({ label: label.trim(), url: normalized, faviconUrl });
     setLabel('');
     setUrl('');
+    setFaviconUrl(undefined);
+    setLabelTouched(false);
   };
 
   return (
@@ -114,8 +150,11 @@ function LinksEditor({
       <div className="flex flex-col gap-1.5">
         <input
           value={label}
-          onChange={(e) => setLabel(e.target.value)}
-          placeholder="Label"
+          onChange={(e) => {
+            setLabel(e.target.value);
+            setLabelTouched(true);
+          }}
+          placeholder="Label (auto-fills from the link)"
           className="rounded-md border border-border/60 bg-transparent px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         />
         <input

@@ -12,6 +12,7 @@ import { CouncilsModule } from './councils/councils.module';
 import { KnowledgeModule } from './knowledge/knowledge.module';
 import { MediaModule } from './media/media.module';
 import { MemoriesModule } from './memories/memories.module';
+import { MetadataModule } from './metadata/metadata.module';
 import { NewsModule } from './news/news.module';
 import { NotesModule } from './notes/notes.module';
 import { PoolModule } from './pool/pool.module';
@@ -36,6 +37,7 @@ import { TerminalModule } from './terminal/terminal.module';
     KnowledgeModule,
     MediaModule,
     MemoriesModule,
+    MetadataModule,
     NewsModule,
     NotesModule,
     RoutinesModule,

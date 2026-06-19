@@ -3,10 +3,12 @@ import {
   NoteResponseSchema,
   NewsResponseSchema,
   WeatherResponseSchema,
+  LinkMetadataResponseSchema,
   MediaListResponseSchema,
   MediaResponseSchema,
   type HackerNewsStory,
   type WeatherResponse,
+  type LinkMetadataResponse,
   type Media,
   type MediaType,
   type CreateMediaBody,
@@ -1024,6 +1026,11 @@ export async function getNews(count: number): Promise<HackerNewsStory[]> {
 export async function getWeather(lat: number, lon: number): Promise<WeatherResponse> {
   const params = new URLSearchParams({ lat: String(lat), lon: String(lon) });
   return fetchJson(`/weather?${params.toString()}`, undefined, WeatherResponseSchema);
+}
+
+export async function getLinkMetadata(url: string): Promise<LinkMetadataResponse> {
+  const params = new URLSearchParams({ url });
+  return fetchJson(`/metadata?${params.toString()}`, undefined, LinkMetadataResponseSchema);
 }
 
 // ---- Media ----

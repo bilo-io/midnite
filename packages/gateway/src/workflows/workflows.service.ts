@@ -50,6 +50,7 @@ export class WorkflowsService {
         triggerType: workflow.trigger.type,
         cron: workflow.trigger.type === 'schedule' ? workflow.trigger.cron : undefined,
         nodeCount: workflow.nodes.length,
+        steps: workflow.nodes.map((n) => ({ type: n.type, label: n.label })),
         lastRunAt: latest?.startedAt,
         lastRunStatus: latest?.status as WorkflowSummary['lastRunStatus'] | undefined,
         archived: workflow.archived,

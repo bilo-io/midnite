@@ -7,16 +7,18 @@ import type { Layout, LayoutItem, ResponsiveLayouts } from 'react-grid-layout';
 import type { Note, Project, Routine, RoutineProgress, Task, TaskCounts } from '@midnite/shared';
 import {
   DASHBOARD_WIDGETS,
-  DASHBOARD_WIDGETS_STORAGE_KEY,
   DEFAULT_WIDGETS,
+  QUOTE_DEFAULTS,
   sizeForKey,
   type Breakpoint,
   type FinanceConfig,
   type WidgetInstance,
   type WidgetType,
 } from '@/lib/dashboard-widgets';
+import { layoutKey, useDashboardTabs, widgetsKey } from '@/lib/dashboard-tabs';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import { useGatewayErrorToast } from '@/lib/use-gateway-error-toast';
+import { DashboardTabs } from './dashboard-tabs';
 import { DashboardTile, TILES } from './dashboard-tiles';
 import { ClockWidget } from './clock-widget';
 import { DateWidget } from './date-widget';
@@ -45,7 +47,6 @@ import { ScratchpadWidget } from './scratchpad-widget';
 import { LinksWidget } from './links-widget';
 import { FinancesWidget } from './finances-widget';
 
-const STORAGE_KEY = 'midnite-dashboard-layout-v3';
 const BREAKPOINTS: Breakpoint[] = ['lg', 'md', 'sm'];
 
 const ROW_HEIGHT = 44;
@@ -175,8 +176,12 @@ export function DashboardGrid({
   useGatewayErrorToast(error);
   const { width, mounted, containerRef } = useContainerWidth({ measureBeforeMount: true });
 
+  // The active dashboard tab — its id keys this board's widget list and layout,
+  // so switching tabs swaps to an independent board.
+  const { activeId } = useDashboardTabs();
+
   const [widgets, setWidgets] = useLocalStorage<WidgetInstance[]>(
-    DASHBOARD_WIDGETS_STORAGE_KEY,
+    widgetsKey(activeId),
     DEFAULT_WIDGETS,
   );
 
@@ -196,16 +201,19 @@ export function DashboardGrid({
     [widgets, recentProjects.length],
   );
 
-  // The persisted positions (null until the mount read completes).
+  // The persisted positions for the active tab (null until the read completes).
+  // Re-read whenever the active tab changes; reset first so one board's positions
+  // never bleed into another mid-switch.
   const [stored, setStored] = useState<ResponsiveLayouts | null>(null);
   useEffect(() => {
+    setStored(null);
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(layoutKey(activeId));
       if (raw) setStored(JSON.parse(raw) as ResponsiveLayouts);
     } catch {
       // ignore corrupt storage
     }
-  }, []);
+  }, [activeId]);
 
   // Layout shown to RGL: saved positions (or the curated default) reconciled
   // against whatever widgets are currently enabled.
@@ -217,7 +225,7 @@ export function DashboardGrid({
   const handleLayoutChange = (_layout: Layout, allLayouts: ResponsiveLayouts) => {
     setStored(allLayouts);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(allLayouts));
+      localStorage.setItem(layoutKey(activeId), JSON.stringify(allLayouts));
     } catch {
       // ignore
     }
@@ -337,8 +345,19 @@ export function DashboardGrid({
         return { node: <AllProjectsWidget /> };
       case 'knowledge':
         return { node: <KnowledgeWidget /> };
-      case 'quote':
-        return { node: <QuoteWidget /> };
+      case 'quote': {
+        const w = widgets.find((x) => x.type === 'quote');
+        // Merge over defaults so quote instances saved before it gained settings still render.
+        return {
+          node:
+            w?.type === 'quote' ? (
+              <QuoteWidget
+                config={{ ...QUOTE_DEFAULTS, ...w.config }}
+                onConfigChange={(c) => updateConfig('quote', c)}
+              />
+            ) : null,
+        };
+      }
 
       // — productivity tools —
       case 'timer': {
@@ -388,6 +407,7 @@ export function DashboardGrid({
 
   return (
     <div className="container pb-48 pt-2" ref={containerRef}>
+      <DashboardTabs />
       {mounted && (
         <ResponsiveGridLayout
           width={width}

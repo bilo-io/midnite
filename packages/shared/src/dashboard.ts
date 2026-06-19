@@ -62,3 +62,20 @@ export const WeatherQuerySchema = z.object({
 
 export type WeatherResponse = z.infer<typeof WeatherResponseSchema>;
 export type WeatherQuery = z.infer<typeof WeatherQuerySchema>;
+
+// ── Link metadata ────────────────────────────────────────────
+// Backed by a gateway proxy that fetches a URL's OpenGraph/title + favicon
+// (browsers can't fetch arbitrary cross-origin HTML). Used by the dashboard
+// quick-links widget to autofill a link's label and show its favicon.
+
+export const LinkMetadataQuerySchema = z.object({
+  url: z.string().url(),
+});
+
+export const LinkMetadataResponseSchema = z.object({
+  title: z.string().optional(),
+  faviconUrl: z.string().optional(),
+});
+
+export type LinkMetadataQuery = z.infer<typeof LinkMetadataQuerySchema>;
+export type LinkMetadataResponse = z.infer<typeof LinkMetadataResponseSchema>;

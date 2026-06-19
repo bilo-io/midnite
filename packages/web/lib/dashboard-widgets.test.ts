@@ -23,17 +23,20 @@ describe('dashboard widget registry', () => {
     expect(DASHBOARD_WIDGETS.shipped.label).toBe('Shipped');
   });
 
-  it('catalog hides a placed single-instance widget but keeps multi-instance ones', () => {
+  it('catalog lists every widget, marking placed single-instance ones as added', () => {
     const finances: WidgetInstance = {
       type: 'finances',
       id: 'a',
       config: { title: 'X', income: [], expenses: [], showDetail: true },
     };
     const enabled: WidgetInstance[] = [{ type: 'shipped' }, finances];
-    const catalog = widgetCatalog(enabled).map((c) => c.type);
+    const catalog = widgetCatalog(enabled);
+    const byType = new Map(catalog.map((c) => [c.type, c]));
 
-    expect(catalog).not.toContain('shipped'); // single-instance, already placed
-    expect(catalog).toContain('finances'); // multi-instance stays available
+    expect(catalog).toHaveLength(ALL_WIDGET_TYPES.length); // every widget shows
+    expect(byType.get('shipped')?.added).toBe(true); // single-instance, placed → greyed
+    expect(byType.get('news')?.added).toBe(false); // not placed → addable
+    expect(byType.get('finances')?.added).toBe(false); // multi-instance never greys out
     expect(MULTI_INSTANCE.has('finances')).toBe(true);
   });
 
@@ -43,5 +46,15 @@ describe('dashboard widget registry', () => {
     const finances = newInstance('finances');
     expect(finances.type).toBe('finances');
     if (finances.type === 'finances') expect(typeof finances.id).toBe('string');
+  });
+
+  it('newInstance seeds quote settings (size, typing speed, 1-minute cycle)', () => {
+    const quote = newInstance('quote');
+    expect(quote.type).toBe('quote');
+    if (quote.type === 'quote') {
+      expect(quote.config.size).toBe('md');
+      expect(quote.config.cycleMs).toBe(60_000);
+      expect(quote.config.typingSpeedMs).toBeGreaterThan(0);
+    }
   });
 });

@@ -28,6 +28,45 @@ function timeIn(date: Date, tz: string): string {
   }
 }
 
+/** Minutes a timezone is ahead of UTC at `date` (negative = behind). */
+function offsetFromUtcMinutes(date: Date, tz: string): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz,
+    hourCycle: 'h23',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).formatToParts(date);
+  const part = (type: Intl.DateTimeFormatPartTypes): number =>
+    Number(parts.find((p) => p.type === type)?.value ?? 0);
+  // The instant, expressed as the wall clock the zone shows, read back as if UTC.
+  const asUtc = Date.UTC(part('year'), part('month') - 1, part('day'), part('hour'), part('minute'), part('second'));
+  return Math.round((asUtc - date.getTime()) / 60000);
+}
+
+/**
+ * A zone's offset relative to the viewer's local time, e.g. `+3h`, `−5:30`, or
+ * `same`. Computed = zone-offset-from-UTC minus local-offset-from-UTC.
+ */
+export function offsetLabel(date: Date, tz: string): string {
+  try {
+    // getTimezoneOffset is minutes to add to local to reach UTC, so local's
+    // offset from UTC is its negation.
+    const rel = offsetFromUtcMinutes(date, tz) + date.getTimezoneOffset();
+    if (rel === 0) return 'same';
+    const sign = rel > 0 ? '+' : '−';
+    const abs = Math.abs(rel);
+    const h = Math.floor(abs / 60);
+    const m = abs % 60;
+    return m === 0 ? `${sign}${h}h` : `${sign}${h}:${String(m).padStart(2, '0')}`;
+  } catch {
+    return '';
+  }
+}
+
 export function WorldClocksWidget({ config, onConfigChange }: WorldClocksWidgetProps) {
   const [now, setNow] = useState(() => new Date());
   const [editing, setEditing] = useState(false);
@@ -69,7 +108,12 @@ export function WorldClocksWidget({ config, onConfigChange }: WorldClocksWidgetP
           {zones.map((z, i) => (
             <li key={`${z.tz}-${i}`} className="flex items-center justify-between gap-2 px-4 py-2">
               <span className="min-w-0 truncate text-sm font-medium">{z.label}</span>
-              <span className="shrink-0 text-sm tabular-nums text-muted-foreground">{timeIn(now, z.tz)}</span>
+              <span className="flex shrink-0 items-center gap-2">
+                <span className="text-sm tabular-nums text-muted-foreground">{timeIn(now, z.tz)}</span>
+                <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
+                  {offsetLabel(now, z.tz)}
+                </span>
+              </span>
             </li>
           ))}
         </ul>

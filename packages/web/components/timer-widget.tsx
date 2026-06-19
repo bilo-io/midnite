@@ -13,6 +13,10 @@ type TimerWidgetProps = {
 
 type Phase = 'work' | 'break';
 
+// Progress-ring geometry (viewBox is 0 0 120 120).
+const RING_R = 52;
+const RING_C = 2 * Math.PI * RING_R;
+
 function format(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
@@ -60,7 +64,8 @@ export function TimerWidget({ config, onConfigChange }: TimerWidgetProps) {
   }, [running, phase, durationFor]);
 
   const total = durationFor(phase);
-  const pct = total > 0 ? ((total - secondsLeft) / total) * 100 : 0;
+  // Fraction of time remaining — the ring is full at the start and drains to empty.
+  const fraction = total > 0 ? secondsLeft / total : 0;
 
   const setMinutes = (key: 'workMin' | 'breakMin', value: number) => {
     const clamped = Math.max(1, Math.min(120, Math.round(value)));
@@ -99,26 +104,51 @@ export function TimerWidget({ config, onConfigChange }: TimerWidgetProps) {
           >
             {phase}
           </span>
-          <span className="text-5xl font-semibold tabular-nums leading-none">{format(secondsLeft)}</span>
-          <div className="h-1 w-full overflow-hidden rounded-full bg-border/50" aria-hidden>
-            <div className="h-full rounded-full bg-primary/60 transition-all" style={{ width: `${pct}%` }} />
+          <div className="relative flex items-center justify-center">
+            <svg viewBox="0 0 120 120" className="h-28 w-28 -rotate-90" aria-hidden>
+              <circle
+                cx="60"
+                cy="60"
+                r={RING_R}
+                fill="none"
+                strokeWidth="8"
+                className="stroke-border/50"
+              />
+              <circle
+                cx="60"
+                cy="60"
+                r={RING_R}
+                fill="none"
+                strokeWidth="8"
+                strokeLinecap="round"
+                className={cn(
+                  'transition-[stroke-dashoffset] duration-1000 ease-linear',
+                  phase === 'work' ? 'stroke-primary' : 'stroke-emerald-500',
+                )}
+                strokeDasharray={RING_C}
+                strokeDashoffset={RING_C * (1 - fraction)}
+              />
+            </svg>
+            <span className="absolute text-3xl font-semibold tabular-nums leading-none">
+              {format(secondsLeft)}
+            </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={() => setRunning((r) => !r)}
               aria-label={running ? 'Pause' : 'Start'}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground transition-opacity hover:opacity-90"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground transition-opacity hover:opacity-90"
             >
-              {running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              {running ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
             </button>
             <button
               type="button"
               onClick={reset}
               aria-label="Reset"
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
             >
-              <RotateCcw className="h-4 w-4" />
+              <RotateCcw className="h-3.5 w-3.5" />
             </button>
           </div>
         </>

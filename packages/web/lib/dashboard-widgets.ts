@@ -80,8 +80,15 @@ export type WeatherLocation = { lat: number; lon: number; label?: string };
 /** A single named timezone shown by the world-clocks widget. */
 export type WorldClockZone = { label: string; tz: string };
 
-/** A single bookmark shown by the quick-links widget. */
-export type QuickLink = { label: string; url: string };
+/** A single bookmark shown by the quick-links widget. `faviconUrl` is captured
+ *  from link metadata at add-time and rendered before the label. */
+export type QuickLink = { label: string; url: string; faviconUrl?: string };
+
+/** Quote text size and the bounds for its auto-cycle interval. */
+export type QuoteSize = 'sm' | 'md' | 'lg';
+export const QUOTE_CYCLE_MIN_MS = 15_000;
+export const QUOTE_CYCLE_DEFAULT_MS = 60_000;
+export const QUOTE_CYCLE_MAX_MS = 3_600_000;
 
 /** A single income or expense row on a finances card. */
 export type FinanceEntry = { id: string; label: string; amount: number };
@@ -105,6 +112,7 @@ export type WidgetConfig = {
   timer: { workMin: number; breakMin: number };
   scratchpad: { text: string };
   links: { links: QuickLink[] };
+  quote: { size: QuoteSize; typingSpeedMs: number; cycleMs: number };
   finances: FinanceConfig;
 };
 
@@ -119,6 +127,7 @@ export type WidgetInstance =
   | { type: 'timer'; config: WidgetConfig['timer'] }
   | { type: 'scratchpad'; config: WidgetConfig['scratchpad'] }
   | { type: 'links'; config: WidgetConfig['links'] }
+  | { type: 'quote'; config: WidgetConfig['quote'] }
   // Multi-instance: each finances card carries a stable `id` (others are keyed by type alone).
   | { type: 'finances'; id: string; config: WidgetConfig['finances'] }
   | { type: Exclude<WidgetType, ConfigurableWidget>; config?: undefined };
@@ -296,6 +305,13 @@ export const DEFAULT_WIDGETS: WidgetInstance[] = [
   { type: 'routines' },
 ];
 
+/** Default quote settings: medium text, a brisk type-out, and a 1-minute cycle. */
+export const QUOTE_DEFAULTS: WidgetConfig['quote'] = {
+  size: 'md',
+  typingSpeedMs: 40,
+  cycleMs: QUOTE_CYCLE_DEFAULT_MS,
+};
+
 /** A fresh instance (with default config) for a type just added from the catalogue. */
 export function newInstance(type: WidgetType): WidgetInstance {
   switch (type) {
@@ -322,6 +338,8 @@ export function newInstance(type: WidgetType): WidgetInstance {
       return { type, config: { text: '' } };
     case 'links':
       return { type, config: { links: [] } };
+    case 'quote':
+      return { type, config: { ...QUOTE_DEFAULTS } };
     case 'finances':
       return {
         type,
@@ -333,12 +351,19 @@ export function newInstance(type: WidgetType): WidgetInstance {
   }
 }
 
-/** Registry entries for widgets not yet on the board, in registry order. */
-export function widgetCatalog(enabled: WidgetInstance[]): Array<{ type: WidgetType } & WidgetMeta> {
+/** A catalogue entry: registry metadata plus whether it's already on the board. */
+export type WidgetCatalogEntry = { type: WidgetType; added: boolean } & WidgetMeta;
+
+/**
+ * Every widget in registry order, each tagged with `added` so the menu can show
+ * the full catalogue and grey out what's already placed. Multi-instance widgets
+ * (e.g. finances) are never `added` — you can always add another.
+ */
+export function widgetCatalog(enabled: WidgetInstance[]): WidgetCatalogEntry[] {
   const present = new Set(enabled.map((w) => w.type));
-  // Multi-instance widgets stay in the catalogue even once placed, so you can add more.
-  return ALL_WIDGET_TYPES.filter((t) => MULTI_INSTANCE.has(t) || !present.has(t)).map((type) => ({
+  return ALL_WIDGET_TYPES.map((type) => ({
     type,
+    added: !MULTI_INSTANCE.has(type) && present.has(type),
     ...DASHBOARD_WIDGETS[type],
   }));
 }
