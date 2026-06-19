@@ -25,3 +25,4 @@ export * from './note.js';
 export * from './routine.js';
 export * from './dashboard.js';
 export * from './media.js';
+export * from './report.js';

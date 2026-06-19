@@ -13,8 +13,10 @@ import {
 } from '@midnite/shared';
 import { AgentCliLogo } from '@/components/agent-cli-logo';
 import { Button } from '@/components/ui/button';
+import { ExportMenu } from '@/components/export-menu';
 import { MarkdownPreview } from '@/components/markdown-preview';
 import { StyledSelect } from '@/components/ui/styled-select';
+import { exportCouncilRunMarkdown } from '@/lib/api';
 import { FORMAT_SELECT_OPTIONS, formatIcon } from '@/lib/council-formats';
 import { cn } from '@/lib/utils';
 
@@ -56,11 +58,13 @@ const SYNTH_TAB = '__synthesis__';
  * survive; the run id keys the whole strip so a new run starts fresh.
  */
 export function CouncilRunTabs({
+  councilId,
   run,
   onSkip,
   onRetryMember,
   onReSynthesize,
 }: {
+  councilId: string;
   run: CouncilRun;
   /** Skip a still-running member (live runs only — absent for past runs). */
   onSkip?: (runMemberId: string) => void;
@@ -70,6 +74,10 @@ export function CouncilRunTabs({
   onReSynthesize?: (format: CouncilFormat) => void;
 }) {
   const [active, setActive] = useState<string>(run.members[0]?.id ?? SYNTH_TAB);
+
+  // Export is meaningful once a run has settled (it has captured responses and/or
+  // a synthesis to serialize); hidden while it's still running or synthesizing.
+  const canExport = run.status === 'completed' || run.status === 'failed';
 
   // Jump to the synthesis once it starts — the responses themselves are over.
   useEffect(() => {
@@ -124,6 +132,13 @@ export function CouncilRunTabs({
             <Sparkles className="h-3.5 w-3.5" />
             Synthesis
           </button>
+          {canExport ? (
+            <ExportMenu
+              className="ml-auto"
+              filename={`${COUNCIL_FORMATS_META[run.format].label.toLowerCase()}-${run.id.slice(0, 8)}`}
+              fetchMarkdown={() => exportCouncilRunMarkdown(councilId, run.id)}
+            />
+          ) : null}
         </div>
       </div>
 

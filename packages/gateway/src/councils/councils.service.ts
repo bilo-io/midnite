@@ -13,9 +13,11 @@ import {
   type UpdateCouncilRequest,
 } from '@midnite/shared';
 import { CouncilsRepository } from './councils.repository';
+import { buildCouncilRunReport, councilReportFilename } from './lib/council-report';
 
 export class CouncilDoesNotExistError extends Error {}
 export class CouncilMemberDoesNotExistError extends Error {}
+export class CouncilRunDoesNotExistError extends Error {}
 
 @Injectable()
 export class CouncilsService {
@@ -29,6 +31,29 @@ export class CouncilsService {
     const row = this.repo.getCouncil(id);
     if (!row) throw new CouncilDoesNotExistError(`council ${id} does not exist`);
     return this.repo.hydrateCouncil(row);
+  }
+
+  /**
+   * Serialize one run of a council as a markdown report (the export framework's
+   * first consumer). Returns the document plus a suggested download filename so
+   * the controller stays a thin encoder. PDF is rendered on the client from this
+   * same markdown — never built here.
+   */
+  exportRunMarkdown(councilId: string, runId: string): { filename: string; markdown: string } {
+    const councilRow = this.repo.getCouncil(councilId);
+    if (!councilRow) throw new CouncilDoesNotExistError(`council ${councilId} does not exist`);
+    const runRow = this.repo.getRun(runId);
+    if (!runRow || runRow.councilId !== councilId) {
+      throw new CouncilRunDoesNotExistError(
+        `run ${runId} does not exist on council ${councilId}`,
+      );
+    }
+    const council = this.repo.hydrateCouncil(councilRow);
+    const run = this.repo.hydrateRun(runRow);
+    return {
+      filename: councilReportFilename(council, run),
+      markdown: buildCouncilRunReport(council, run),
+    };
   }
 
   createCouncil(req: CreateCouncilRequest): Council {
