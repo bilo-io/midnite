@@ -12,13 +12,13 @@ import { MIDNITE_CONFIG } from '../config.token';
 import { TerminalService } from '../terminal/terminal.service';
 import { CouncilDoesNotExistError } from './councils.service';
 import { CouncilsRepository } from './councils.repository';
-import { cleanPtyOutput } from './lib/clean-output';
+import { cleanPtyOutput } from '../terminal/lib/clean-output';
 import {
   VERDICT_SYSTEM_PROMPT,
   buildParticipantPrompt,
   buildVerdictPrompt,
 } from './lib/council-prompts';
-import { oneshotCommand } from './lib/oneshot-command';
+import { oneshotCommand } from '../terminal/lib/oneshot-command';
 
 export class CouncilRunInProgressError extends Error {}
 export class CouncilTooSmallError extends Error {}

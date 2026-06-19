@@ -35,6 +35,11 @@ import {
   CouncilRunResponseSchema,
   CouncilRunsResponseSchema,
   CouncilSchema,
+  BrainstormContributorResponseSchema,
+  BrainstormResponseSchema,
+  BrainstormRunResponseSchema,
+  BrainstormRunsResponseSchema,
+  BrainstormSchema,
   AgentCliStatusResponseSchema,
   AgentCliStatusListResponseSchema,
   AgentPingResponseSchema,
@@ -78,6 +83,14 @@ import {
   type CreateCouncilRequest,
   type UpdateCouncilParticipantRequest,
   type UpdateCouncilRequest,
+  type Brainstorm,
+  type BrainstormContributor,
+  type BrainstormRun,
+  type BrainstormSynthMode,
+  type CreateBrainstormContributorRequest,
+  type CreateBrainstormRequest,
+  type UpdateBrainstormContributorRequest,
+  type UpdateBrainstormRequest,
   type CreateProjectRequest,
   type CreateSubAgentRequest,
   type CreateTaskResponse,
@@ -790,6 +803,166 @@ export async function retryCouncilVerdict(councilId: string, runId: string): Pro
     `/councils/${encodeURIComponent(councilId)}/runs/${encodeURIComponent(runId)}/verdict/retry`,
     { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({}) },
     CouncilRunResponseSchema,
+  );
+  return run;
+}
+
+// --- Brainstorms (contributor panels + mode-based synthesis runs) ---
+
+export async function getBrainstorms(): Promise<Brainstorm[]> {
+  return fetchJson('/brainstorms', undefined, z.array(BrainstormSchema));
+}
+
+export async function getBrainstorm(id: string): Promise<Brainstorm> {
+  const { brainstorm } = await fetchJson(
+    `/brainstorms/${encodeURIComponent(id)}`,
+    undefined,
+    BrainstormResponseSchema,
+  );
+  return brainstorm;
+}
+
+export async function createBrainstorm(body: CreateBrainstormRequest): Promise<Brainstorm> {
+  const { brainstorm } = await fetchJson(
+    '/brainstorms',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    BrainstormResponseSchema,
+  );
+  return brainstorm;
+}
+
+export async function updateBrainstorm(
+  id: string,
+  body: UpdateBrainstormRequest,
+): Promise<Brainstorm> {
+  const { brainstorm } = await fetchJson(
+    `/brainstorms/${encodeURIComponent(id)}`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    BrainstormResponseSchema,
+  );
+  return brainstorm;
+}
+
+export async function deleteBrainstorm(id: string): Promise<void> {
+  await fetchJson(`/brainstorms/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+export async function createBrainstormContributor(
+  brainstormId: string,
+  body: CreateBrainstormContributorRequest,
+): Promise<BrainstormContributor> {
+  const { contributor } = await fetchJson(
+    `/brainstorms/${encodeURIComponent(brainstormId)}/contributors`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    BrainstormContributorResponseSchema,
+  );
+  return contributor;
+}
+
+export async function updateBrainstormContributor(
+  brainstormId: string,
+  contributorId: string,
+  body: UpdateBrainstormContributorRequest,
+): Promise<BrainstormContributor> {
+  const { contributor } = await fetchJson(
+    `/brainstorms/${encodeURIComponent(brainstormId)}/contributors/${encodeURIComponent(contributorId)}`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    BrainstormContributorResponseSchema,
+  );
+  return contributor;
+}
+
+export async function deleteBrainstormContributor(
+  brainstormId: string,
+  contributorId: string,
+): Promise<void> {
+  await fetchJson(
+    `/brainstorms/${encodeURIComponent(brainstormId)}/contributors/${encodeURIComponent(contributorId)}`,
+    { method: 'DELETE' },
+  );
+}
+
+export async function reorderBrainstormContributors(
+  brainstormId: string,
+  contributorIds: string[],
+): Promise<BrainstormContributor[]> {
+  const { brainstorm } = await fetchJson(
+    `/brainstorms/${encodeURIComponent(brainstormId)}/contributors/reorder`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ contributorIds }) },
+    BrainstormResponseSchema,
+  );
+  return brainstorm.contributors;
+}
+
+export async function startBrainstormRun(
+  brainstormId: string,
+  prompt: string,
+  mode?: BrainstormSynthMode,
+): Promise<BrainstormRun> {
+  const { run } = await fetchJson(
+    `/brainstorms/${encodeURIComponent(brainstormId)}/runs`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ prompt, mode }) },
+    BrainstormRunResponseSchema,
+  );
+  return run;
+}
+
+export async function listBrainstormRuns(brainstormId: string): Promise<BrainstormRun[]> {
+  const { runs } = await fetchJson(
+    `/brainstorms/${encodeURIComponent(brainstormId)}/runs`,
+    undefined,
+    BrainstormRunsResponseSchema,
+  );
+  return runs;
+}
+
+export async function getBrainstormRun(
+  brainstormId: string,
+  runId: string,
+): Promise<BrainstormRun> {
+  const { run } = await fetchJson(
+    `/brainstorms/${encodeURIComponent(brainstormId)}/runs/${encodeURIComponent(runId)}`,
+    undefined,
+    BrainstormRunResponseSchema,
+  );
+  return run;
+}
+
+export async function skipBrainstormRunContributor(
+  brainstormId: string,
+  runId: string,
+  runContributorId: string,
+): Promise<BrainstormRun> {
+  const { run } = await fetchJson(
+    `/brainstorms/${encodeURIComponent(brainstormId)}/runs/${encodeURIComponent(runId)}/contributors/${encodeURIComponent(runContributorId)}/skip`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({}) },
+    BrainstormRunResponseSchema,
+  );
+  return run;
+}
+
+export async function retryBrainstormRunContributor(
+  brainstormId: string,
+  runId: string,
+  runContributorId: string,
+): Promise<BrainstormRun> {
+  const { run } = await fetchJson(
+    `/brainstorms/${encodeURIComponent(brainstormId)}/runs/${encodeURIComponent(runId)}/contributors/${encodeURIComponent(runContributorId)}/retry`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({}) },
+    BrainstormRunResponseSchema,
+  );
+  return run;
+}
+
+export async function retryBrainstormSynthesis(
+  brainstormId: string,
+  runId: string,
+  mode?: BrainstormSynthMode,
+): Promise<BrainstormRun> {
+  const { run } = await fetchJson(
+    `/brainstorms/${encodeURIComponent(brainstormId)}/runs/${encodeURIComponent(runId)}/synthesis/retry`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ mode }) },
+    BrainstormRunResponseSchema,
   );
   return run;
 }

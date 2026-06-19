@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import {
   Bot,
   BotMessageSquare,
+  Brain,
   BrainCircuit,
   CirclePile,
   Folder,
@@ -23,6 +24,7 @@ import { useTypewriter } from '@/lib/use-typewriter';
 const ICONS = {
   Bot,
   BotMessageSquare,
+  Brain,
   BrainCircuit,
   CirclePile,
   Folder,

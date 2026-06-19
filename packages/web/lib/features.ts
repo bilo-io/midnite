@@ -10,6 +10,7 @@
 
 import {
   BotMessageSquare,
+  Brain,
   BrainCircuit,
   CirclePile,
   Folder,
@@ -28,6 +29,7 @@ export type FeatureKey =
   | 'sessions'
   | 'workflows'
   | 'councils'
+  | 'brainstorm'
   | 'media';
 
 export type Feature = {
@@ -91,6 +93,13 @@ export const FEATURES: Feature[] = [
     Icon: CirclePile,
   },
   {
+    key: 'brainstorm',
+    href: '/brainstorms',
+    label: 'Brainstorms',
+    description: 'Generate ideas with multiple agents, then synthesize them.',
+    Icon: Brain,
+  },
+  {
     key: 'media',
     href: '/media',
     label: 'Media',
@@ -108,6 +117,7 @@ export const DEFAULT_FEATURE_FLAGS: Record<FeatureKey, boolean> = {
   sessions: true,
   workflows: true,
   councils: true,
+  brainstorm: true,
   media: true,
 };
 

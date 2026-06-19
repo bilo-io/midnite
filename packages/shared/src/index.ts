@@ -3,6 +3,7 @@ export * from './agent.js';
 export * from './agents.js';
 export * from './llm.js';
 export * from './council.js';
+export * from './brainstorm.js';
 export * from './task.js';
 export * from './agent-pool.js';
 export * from './session.js';
