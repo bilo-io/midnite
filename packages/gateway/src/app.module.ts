@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AdminModule } from './admin/admin.module';
 import { ConfigModule } from './config.module';
 import { CryptoModule } from './crypto/crypto.module';
 import { DbModule } from './db/db.module';
@@ -47,6 +48,7 @@ import { TerminalModule } from './terminal/terminal.module';
     WeatherModule,
     WorkflowsModule,
     TerminalModule,
+    AdminModule,
   ],
   controllers: [HealthController],
   providers: [],

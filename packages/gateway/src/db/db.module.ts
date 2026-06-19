@@ -10,21 +10,43 @@ import { MIDNITE_CONFIG } from '../config.token';
 import * as schema from './schema';
 
 export const DB_TOKEN = Symbol('MIDNITE_DB');
+/** The raw better-sqlite3 handle, for low-level ops (online backup) Drizzle doesn't expose. */
+export const SQLITE_TOKEN = Symbol('MIDNITE_SQLITE');
 
 export type MidniteDb = BetterSQLite3Database<typeof schema>;
 
 @Injectable()
 class DbFactory {
+  // Built once and memoized: DB_TOKEN and SQLITE_TOKEN must share the *same*
+  // connection, so the factory must not open the file twice.
+  private built?: { db: MidniteDb; sqlite: Database.Database };
+
   constructor(@Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig) {}
 
-  build(): { db: MidniteDb; sqlite: Database.Database } {
+  private get(): { db: MidniteDb; sqlite: Database.Database } {
+    if (this.built) return this.built;
     const dbPath = this.resolvePath(this.config.gateway.dbPath);
     mkdirSync(dirname(dbPath), { recursive: true });
     const sqlite = new Database(dbPath);
     sqlite.pragma('journal_mode = WAL');
+    // NORMAL is the recommended durability/throughput balance under WAL: a crash
+    // can lose only the last in-flight transaction, never corrupt the file.
+    sqlite.pragma('synchronous = NORMAL');
+    // Wait rather than immediately throwing when another connection holds the
+    // write lock (e.g. during a concurrent online backup checkpoint).
+    sqlite.pragma('busy_timeout = 5000');
     sqlite.pragma('foreign_keys = ON');
     const db = drizzle(sqlite, { schema });
-    return { db, sqlite };
+    this.built = { db, sqlite };
+    return this.built;
+  }
+
+  get db(): MidniteDb {
+    return this.get().db;
+  }
+
+  get sqlite(): Database.Database {
+    return this.get().sqlite;
   }
 
   private resolvePath(p: string): string {
@@ -53,10 +75,15 @@ function findMigrationsDir(): string {
     {
       provide: DB_TOKEN,
       inject: [DbFactory],
-      useFactory: (factory: DbFactory) => factory.build().db,
+      useFactory: (factory: DbFactory) => factory.db,
+    },
+    {
+      provide: SQLITE_TOKEN,
+      inject: [DbFactory],
+      useFactory: (factory: DbFactory) => factory.sqlite,
     },
   ],
-  exports: [DB_TOKEN],
+  exports: [DB_TOKEN, SQLITE_TOKEN],
 })
 export class DbModule implements OnModuleInit {
   constructor(@Inject(DB_TOKEN) private readonly db: MidniteDb) {}

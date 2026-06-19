@@ -28,3 +28,4 @@ export * from './dashboard.js';
 export * from './media.js';
 export * from './report.js';
 export * from './usage.js';
+export * from './backup.js';
