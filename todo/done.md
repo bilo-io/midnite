@@ -4,6 +4,19 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-19 — Phase 7 remaining items (hardening, widgets, Theme D, tags)
+
+Implemented the rest of [phase-7](phase-7-hardening-reports-widgets.md) directly on `main`, committed feature-by-feature (the working tree was being edited concurrently, so each commit is scoped to its own files). Phase 7 is now essentially complete; deferred items are listed in the phase doc.
+
+- [x] **A6 — task.* WebSocket broadcast** (`e2b9b73`): `TaskEventBus` + `TasksGateway` (`/ws/tasks`) emit a `TaskBoardEvent` on every transition; web `useTaskEvents` invalidates the cache (polling kept as fallback). Mirrors the workflow gateway. +9 tests.
+- [x] **Shipped widget** (`33d3380`): dashboard widget listing recent done tasks with their PR links.
+- [x] **Notifications** (`7384897`): opt-in desktop notifications on `→waiting`/`→done`, driven off the A6 event stream (web Notification API; works in Electron). Settings toggle requests permission.
+- [x] **A4 durability** (`05acd6d`): `synchronous=NORMAL` + `busy_timeout` WAL pragmas; `POST /admin/backup` (SQLite online backup + uploads copy) via `SQLITE_TOKEN`. +2 tests, boot-smoked.
+- [x] **⌘K command palette** (`0fad41c`): navigation switcher across enabled surfaces, mounted in the (main) layout.
+- [x] **A3 web tests** (`e3ad2f2`): stood up Vitest + RTL + jsdom + a `test` task (now in `moon ci`); seeded dashboard-widgets / task-events / use-local-storage (9 tests).
+- [x] **Tags + saved filters** (`d31cc00` data, `cdee3ec` UI): `tags` column (migration 0025) + `PATCH /tasks/:id/tags` (normalised) + card chips + modal editor + a board tag filter via the `tags` query param (shareable saved view).
+- [x] Verified per feature: `:typecheck`/`:lint` green, gateway tests 335, web tests 9, web build 19/19; A4 + earlier hardening boot-smoked.
+
 ## 2026-06-19 — Phase 7 Theme B: councils report export (Markdown + PDF)
 
 A reusable report-export framework, with a council run as the first consumer. Markdown is built server-side by a pure serializer; PDF is rendered client-side via print-to-PDF (no puppeteer/jsPDF, per the locked decision). Built in an isolated worktree, reviewed, and merged to `main`. (Paired with the Phase 7 Theme A hardening entry further down — both landed this day.)

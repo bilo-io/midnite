@@ -20,14 +20,14 @@ The highest-value theme. These are real, verified gaps, not hypotheticals.
 - [x] Feature tags: classifier/planner/project/agent/workflow. **Not tracked:** councils (they run via spawned CLI sessions, not `LlmService` — no SDK token counts).
 - [x] **Soft-warn** budget warnings (advisory, never blocks), per the track+soft-warn decision. ⏳ Hard-stop caps intentionally **not** built (decided soft-warn only).
 
-### A3. Web test coverage — **M**
-- [ ] **The web package has 0 automated tests** (gateway has 47). All web verification has been manual Playwright drive-throughs.
-- [ ] Wire Vitest + @testing-library/react (already the documented stack) for the highest-risk pure logic first: `use-local-storage` (had a real double-write bug — see done.md), `dashboard-widgets` registry, `lib/api.ts` client, `detectPlatform`, optimistic board moves.
+### A3. Web test coverage — **M** — ◐ PARTIAL (toolchain + seed suites shipped `e3ad2f2`)
+- [x] Web had **0 automated tests** — now Vitest + @testing-library/react + jsdom are wired with a `test` task, so `moon ci` runs web tests too.
+- [x] Seeded the highest-risk pure/hook logic: `use-local-storage` (the double-write bug), `dashboard-widgets` registry, `task-events` pub/sub (9 tests). _(`lib/api.ts`/optimistic-board tests still worth adding.)_
 - [ ] Add a small Playwright smoke suite to CI (the drive-throughs exist ad-hoc; commit a few).
 
-### A4. Resilience & data durability — **S–M**
-- [ ] SQLite WAL mode + a one-command **backup/restore** (`midnite backup` → copy DB + uploads). Single-file store with no backup path today.
-- [ ] Audit/normalise restart recovery: tasks requeue orphaned `wip`, councils/brainstorms fail stale runs — make sure workflows runs and any new long-runners do the same consistently.
+### A4. Resilience & data durability — **S–M** — ◐ PARTIAL (backup + WAL pragmas shipped `05acd6d`)
+- [x] WAL was already on; added `synchronous=NORMAL` + `busy_timeout=5000`, and a consistent online **backup** via `POST /admin/backup` (DB snapshot + uploads copy). Restore is a documented manual stop-and-copy; CLI `midnite backup` wrapper deferred.
+- [ ] Audit/normalise restart recovery: tasks requeue orphaned `wip`, councils fail stale runs — make sure workflow runs and any new long-runners do the same consistently.
 - [ ] Confirm graceful shutdown kills all PTYs (exists for terminal sessions; verify pool + managed runs).
 
 ### A5. Optional remote-access auth — **S–M** — ❌ OUT OF SCOPE (decided local-only)
@@ -35,8 +35,8 @@ The highest-value theme. These are real, verified gaps, not hypotheticals.
 - [ ] Optional bearer token (config / env) enforced by a Nest guard when `host` is non-loopback; basic per-IP rate limiting.
 - **Decision:** is remote access even a goal? If midnite stays strictly local + desktop, this is low priority.
 
-### A6. `task.*` WebSocket broadcast — **M** (pulled from [outstanding.md](outstanding.md) #1)
-- [ ] Replace polling with event-driven board updates — both a UX and a load-reliability win. See outstanding #1 for the full plug-in plan.
+### A6. `task.*` WebSocket broadcast — **M** — ✅ DONE (`e2b9b73`)
+- [x] Event-driven board updates: `TaskEventBus` + `TasksGateway` (`/ws/tasks`) publish a `TaskBoardEvent` on every transition; the web `useTaskEvents` hook invalidates the cache. Polling kept as fallback. Also powers notifications (Theme D).
 
 ---
 
@@ -69,7 +69,7 @@ The highest-value theme. These are real, verified gaps, not hypotheticals.
 > The registry is **already rich** ([`web/lib/dashboard-widgets.ts`](../packages/web/lib/dashboard-widgets.ts)): it ships `agents` (pool), `activity` (feed), `throughput`, `system-health`, `sessions`, `workflows`, `councils`, `memories`, plus tiles, clocks, weather, finances, etc. **Do not rebuild these.** Only the genuinely-missing ones below.
 
 - [x] **LLM cost & usage** widget — spend by day / provider / feature + soft-warn banner. ✅ DONE (merged `a5ab124`, with A2).
-- [ ] **Recent PRs / shipped work** — `done` tiles count completions but nothing lists recent done tasks *with their PR links*. A "what shipped" feed.
+- [x] **Recent PRs / shipped work** — "Shipped" widget lists recent done tasks with their PR links. ✅ DONE (`33d3380`).
 
 > ~~Brainstorms widget~~ — dropped: brainstorms was merged into councils (a format), so the existing `councils` widget already covers it.
 - [ ] **Quick capture** — add a task (and optionally bulk-paste, outstanding #2) straight from the dashboard.
@@ -79,9 +79,9 @@ The highest-value theme. These are real, verified gaps, not hypotheticals.
 
 ## Theme D — New features (smaller, opportunistic)
 
-- [ ] **Global search / command palette** (⌘K) across tasks, projects, memory, councils, brainstorms, workflows. The app has many surfaces and no unified find. — **M**
-- [ ] **Notifications** on `wip→waiting` (needs input) and `→done`: Electron native notifications + web Notification API. Closes the loop on autonomous runs. — **S–M**
-- [ ] **Tags/labels + saved filters** on tasks. — **M**
+- [x] **Command palette** (⌘K) — fast switcher across every enabled surface (navigation v1; content search extensible). ✅ DONE (`0fad41c`).
+- [x] **Notifications** on `→waiting` / `→done` via the web Notification API (works in Electron too); opt-in in Settings. ✅ DONE (`7384897`).
+- [x] **Tags/labels + saved filters** — tags on tasks (chips, modal editor) + a board tag filter backed by the `tags` query param (shareable/bookmarkable "saved filter"). ✅ DONE (`d31cc00` data, `cdee3ec` UI).
 
 ---
 
@@ -95,15 +95,18 @@ The highest-value theme. These are real, verified gaps, not hypotheticals.
 
 ## Recommended slice for a focused Phase 7
 
-1. ✅ **A1** encrypt provider keys + **A2** usage/cost accounting (substrate). — *shipped 2026-06-19*
-2. ✅ **B1 + B2 + B3** councils export (MD + print-to-PDF). — *shipped 2026-06-19*
-3. ◐ **C** cost/usage widget (✅ shipped with A2) + recent-PRs widget (todo).
-4. **A3** seed web tests for the riskiest logic + a CI Playwright smoke. — *next up; the export + hardening web code has no tests yet*
-5. **D** notifications (cheap delight). Command palette + tags = stretch.
+1. ✅ **A1** encrypt provider keys + **A2** usage/cost accounting (substrate). — *shipped*
+2. ✅ **B1 + B2 + B3** councils export (MD + print-to-PDF). — *shipped*
+3. ✅ **C** cost/usage widget + recent-PRs ("Shipped") widget. — *shipped*
+4. ◐ **A3** web test toolchain + seed suites shipped; CI Playwright smoke still todo.
+5. ✅ **D** notifications, ⌘K command palette, and tags + saved filters. — *shipped*
+6. ✅ **A6** task WS broadcast + ◐ **A4** backup/WAL (restore + recovery-audit still todo). — *shipped*
 
 Leave A5 (remote auth), A4's deeper bits, and Theme-D extras for a later pass unless they're explicitly wanted.
 
-> **Progress (2026-06-19):** steps 1–2 + the cost widget shipped and merged to `main` (commits `b5a1fcf` councils export, `a5ab124` hardening). Remaining in this phase: web test coverage (A3), the recent-PRs widget, A4 durability, A6 task WS broadcast, and Theme D.
+> **Progress (2026-06-19):** Phase 7 is **essentially complete.** Shipped & merged to `main`: A1+A2 hardening (`a5ab124`), councils export B1–B3 (`b5a1fcf`), A6 task WS broadcast (`e2b9b73`), Shipped/PRs widget (`33d3380`), notifications (`7384897`), A4 backup+WAL (`05acd6d`), ⌘K palette (`0fad41c`), web test toolchain A3 (`e3ad2f2`), tags data+UI (`d31cc00`, `cdee3ec`).
+>
+> **Deliberately deferred** (not blockers): A5 remote-auth (out of scope — local-only); hard-stop budget caps (decided soft-warn only); Electron one-click `printToPDF` bridge (window.print covers it); CLI `midnite backup` wrapper; live-restore; A4 restart-recovery audit + shutdown verification; CI Playwright smoke; command-palette content search; tags-on-create.
 
 ## Decisions (resolved 2026-06-19)
 
