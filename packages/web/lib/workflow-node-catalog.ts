@@ -1,4 +1,5 @@
 import {
+  Bot,
   Clock,
   Globe,
   GitBranch,
@@ -21,6 +22,7 @@ const ICONS: Record<string, LucideIcon> = {
   webhook: Webhook,
   globe: Globe,
   sparkles: Sparkles,
+  bot: Bot,
   'git-branch': GitBranch,
   cursor: MousePointerClick,
 };

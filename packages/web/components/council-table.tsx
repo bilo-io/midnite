@@ -9,9 +9,9 @@ import { cn } from '@/lib/utils';
 
 /**
  * Table layout for the Councils page: one row per council with a leading select
- * cell, then name, description, provider logos and participant count. Rows
- * navigate to the council detail on click — mirroring the cards in the
- * list/grid views — except clicks on the select icon, which toggle selection.
+ * cell, then name, description, provider logos and member count. Rows navigate
+ * to the council detail on click — mirroring the cards in the list/grid views —
+ * except clicks on the select icon, which toggle selection.
  */
 export function CouncilTable({
   councils,
@@ -32,13 +32,13 @@ export function CouncilTable({
             <th className="w-8 px-3 py-2 font-medium"></th>
             <th className="px-3 py-2 font-medium">Name</th>
             <th className="px-3 py-2 font-medium">Description</th>
-            <th className="px-3 py-2 font-medium">Participants</th>
+            <th className="px-3 py-2 font-medium">Members</th>
             <th className="px-3 py-2 text-right font-medium">Count</th>
           </tr>
         </thead>
         <tbody>
           {councils.map((council) => {
-            const providers = [...new Set(council.participants.map((p) => p.provider))];
+            const providers = [...new Set(council.members.map((m) => m.provider))];
             const selected = isSelected?.(council.id) ?? false;
             return (
               <tr
@@ -78,7 +78,7 @@ export function CouncilTable({
                   )}
                 </td>
                 <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
-                  {council.participants.length}
+                  {council.members.length}
                 </td>
               </tr>
             );

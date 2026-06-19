@@ -5,8 +5,9 @@ import { CouncilsController } from './councils.controller';
 import { CouncilsRepository } from './councils.repository';
 import { CouncilsService } from './councils.service';
 
-// Council debates: standing participant panels, one-shot CLI runs in managed
-// PTYs (TerminalModule) — participants and the anonymized verdict step alike.
+// Councils: standing member panels, one-shot CLI runs in managed PTYs
+// (TerminalModule) — members respond, then a format-based synthesis step distils
+// the responses (attributed or anonymized, per the run's format).
 @Module({
   imports: [TerminalModule],
   controllers: [CouncilsController],

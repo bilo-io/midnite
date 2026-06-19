@@ -5,9 +5,11 @@ import SelectBase, {
   components,
   type ClassNamesConfig,
   type DropdownIndicatorProps,
+  type GroupBase,
   type OptionProps,
   type SingleValueProps,
 } from 'react-select';
+import CreatableSelect from 'react-select/creatable';
 import { ChevronDown } from 'lucide-react';
 import type { SelectOption } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
@@ -119,6 +121,98 @@ export function StyledSelect<T extends string>({
         menuPortalTarget={PORTAL_TARGET}
         menuPosition="fixed"
         components={{ Option, SingleValue, DropdownIndicator }}
+      />
+    </div>
+  );
+}
+
+// ── Creatable model combobox ────────────────────────────────────────────────
+// A searchable select pre-populated with suggested model ids (optionally grouped
+// by provider) that still lets the user type any custom id their endpoint
+// supports — important for openai-compatible / local models.
+
+type ModelOpt = { value: string; label: string };
+
+const modelClassNames: ClassNamesConfig<ModelOpt, false, GroupBase<ModelOpt>> = {
+  control: ({ isFocused, isDisabled }) =>
+    cn(
+      'min-h-9 cursor-text rounded-md border bg-background pl-1 pr-0.5 text-sm transition-colors',
+      isFocused ? 'border-ring ring-1 ring-ring' : 'border-input hover:bg-accent/50',
+      isDisabled && 'cursor-not-allowed opacity-50',
+    ),
+  valueContainer: () => 'gap-2 px-2',
+  input: () => 'text-foreground text-sm',
+  placeholder: () => 'text-muted-foreground text-sm',
+  singleValue: () => 'text-foreground text-sm',
+  indicatorsContainer: () => 'px-0.5',
+  dropdownIndicator: () => 'text-muted-foreground p-1.5',
+  indicatorSeparator: () => 'hidden',
+  menu: () => 'z-[100] mt-1 overflow-hidden rounded-md border border-border bg-card shadow-lg',
+  menuList: () => 'max-h-72 overflow-auto p-1',
+  group: () => 'py-1',
+  groupHeading: () =>
+    'px-2 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground',
+  option: ({ isFocused, isSelected }) =>
+    cn(
+      'cursor-pointer rounded px-2 py-1.5 text-sm transition-colors',
+      isSelected
+        ? 'bg-accent font-medium text-accent-foreground'
+        : isFocused
+          ? 'bg-accent/50 text-foreground'
+          : 'text-foreground',
+    ),
+  noOptionsMessage: () => 'px-2.5 py-3 text-sm text-muted-foreground',
+};
+
+function ModelDropdownIndicator(props: DropdownIndicatorProps<ModelOpt, false, GroupBase<ModelOpt>>) {
+  return (
+    <components.DropdownIndicator {...props}>
+      <ChevronDown className="h-4 w-4" />
+    </components.DropdownIndicator>
+  );
+}
+
+function flattenModelOptions(
+  options: ReadonlyArray<ModelOpt | GroupBase<ModelOpt>>,
+): ModelOpt[] {
+  return options.flatMap((o) => ('options' in o ? [...o.options] : [o]));
+}
+
+export function ModelComboSelect({
+  options,
+  value,
+  onChange,
+  placeholder,
+  className,
+  'aria-label': ariaLabel,
+}: {
+  options: ReadonlyArray<ModelOpt | GroupBase<ModelOpt>>;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  className?: string;
+  'aria-label'?: string;
+}) {
+  const flat = flattenModelOptions(options);
+  // Echo a custom (typed) id back as the selected value so it survives reopen.
+  const selected = flat.find((o) => o.value === value) ?? (value ? { value, label: value } : null);
+
+  return (
+    <div className={className}>
+      <CreatableSelect<ModelOpt, false, GroupBase<ModelOpt>>
+        unstyled
+        classNames={modelClassNames}
+        options={options}
+        value={selected}
+        onChange={(opt) => onChange(opt?.value ?? '')}
+        isSearchable
+        isClearable={false}
+        placeholder={placeholder}
+        aria-label={ariaLabel}
+        formatCreateLabel={(input) => `Use “${input}”`}
+        menuPortalTarget={PORTAL_TARGET}
+        menuPosition="fixed"
+        components={{ DropdownIndicator: ModelDropdownIndicator }}
       />
     </div>
   );

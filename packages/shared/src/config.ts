@@ -134,13 +134,6 @@ export const CouncilsConfigSchema = z.object({
   runTimeoutMs: z.number().int().positive().default(600000),
 });
 
-// Runtime knobs for brainstorms (multi-agent idea generation + mode synthesis).
-export const BrainstormsConfigSchema = z.object({
-  // Hard ceiling per contributor (and per synthesis) one-shot run; the PTY is
-  // killed on expiry and the contributor is marked timed-out (partial output kept).
-  runTimeoutMs: z.number().int().positive().default(600000),
-});
-
 export const MidniteConfigSchema = z.object({
   agent: AgentConfigSchema,
   terminal: TerminalConfigSchema,
@@ -151,7 +144,6 @@ export const MidniteConfigSchema = z.object({
   workflows: WorkflowsConfigSchema.default({}),
   agents: AgentsRuntimeConfigSchema.default({}),
   councils: CouncilsConfigSchema.default({}),
-  brainstorms: BrainstormsConfigSchema.default({}),
 });
 
 export type MidniteConfig = z.infer<typeof MidniteConfigSchema>;
@@ -159,7 +151,6 @@ export type RepoConfig = z.infer<typeof RepoConfigSchema>;
 export type WorkflowsConfig = z.infer<typeof WorkflowsConfigSchema>;
 export type AgentsRuntimeConfig = z.infer<typeof AgentsRuntimeConfigSchema>;
 export type CouncilsConfig = z.infer<typeof CouncilsConfigSchema>;
-export type BrainstormsConfig = z.infer<typeof BrainstormsConfigSchema>;
 export type OAuthClientConfig = z.infer<typeof OAuthClientConfigSchema>;
 
 export function parseConfig(raw: unknown): MidniteConfig {

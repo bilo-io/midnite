@@ -1,8 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { CouncilRun } from '@midnite/shared';
-import { getCouncilRun, startCouncilRun } from '@/lib/api';
+import type { CouncilFormat, CouncilRun } from '@midnite/shared';
+import { getCouncilRun, retryCouncilSynthesis, startCouncilRun } from '@/lib/api';
 
 const TERMINAL = new Set(['completed', 'failed']);
 const POLL_MS = 1200;
@@ -11,16 +11,18 @@ export interface UseCouncilRun {
   run: CouncilRun | null;
   running: boolean;
   error: string | null;
-  start: (topic: string) => Promise<void>;
+  start: (prompt: string, format?: CouncilFormat) => Promise<void>;
+  /** Re-synthesize the shown run's captured responses in a (possibly new) format. */
+  retrySynthesis: (format?: CouncilFormat) => Promise<void>;
   /** Show a past (already finished) run in the same surface, read-only. */
   select: (run: CouncilRun) => void;
-  /** Adopt a run that became live again (a retry) and poll it to completion. */
+  /** Adopt a run that became live again (a retry/re-synthesis) and poll it. */
   resume: (run: CouncilRun) => void;
 }
 
 // Kicks off a run and polls the persisted run until it reaches a terminal state
-// (pattern: useWorkflowRun). Participant terminals stream live over their own
-// WS; this poll only tracks statuses, outputs, labels, and the verdict.
+// (pattern: useBrainstormRun). Member terminals stream live over their own WS;
+// this poll only tracks statuses, outputs, and the synthesis.
 export function useCouncilRun(councilId: string, onFinished?: () => void): UseCouncilRun {
   const [run, setRun] = useState<CouncilRun | null>(null);
   const [running, setRunning] = useState(false);
@@ -65,11 +67,11 @@ export function useCouncilRun(councilId: string, onFinished?: () => void): UseCo
   );
 
   const start = useCallback(
-    async (topic: string) => {
+    async (prompt: string, format?: CouncilFormat) => {
       setError(null);
       setRunning(true);
       try {
-        const started = await startCouncilRun(councilId, topic);
+        const started = await startCouncilRun(councilId, prompt, format);
         if (!mounted.current) return;
         setRun(started);
         poll(started.id);
@@ -80,6 +82,34 @@ export function useCouncilRun(councilId: string, onFinished?: () => void): UseCo
       }
     },
     [councilId, poll],
+  );
+
+  // Re-synthesize the *currently shown* run's captured responses, optionally in a
+  // new format. The run goes live again (synthesizing), so adopt it and resume the
+  // poll until it settles.
+  const retrySynthesis = useCallback(
+    async (format?: CouncilFormat) => {
+      const current = run;
+      if (!current) return;
+      setError(null);
+      setRunning(true);
+      try {
+        const updated = await retryCouncilSynthesis(councilId, current.id, format);
+        if (!mounted.current) return;
+        setRun(updated);
+        if (TERMINAL.has(updated.status)) {
+          setRunning(false);
+          onFinishedRef.current?.();
+          return;
+        }
+        poll(updated.id);
+      } catch (err) {
+        if (!mounted.current) return;
+        setError(err instanceof Error ? err.message : 'Failed to re-synthesize');
+        setRunning(false);
+      }
+    },
+    [councilId, run, poll],
   );
 
   const select = useCallback((past: CouncilRun) => {
@@ -104,5 +134,5 @@ export function useCouncilRun(councilId: string, onFinished?: () => void): UseCo
     [poll],
   );
 
-  return { run, running, error, start, select, resume };
+  return { run, running, error, start, retrySynthesis, select, resume };
 }

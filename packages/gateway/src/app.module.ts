@@ -6,7 +6,6 @@ import { HealthController } from './health/health.controller';
 import { TasksModule } from './tasks/tasks.module';
 import { AgentModule } from './agent/agent.module';
 import { AgentsModule } from './agents/agents.module';
-import { BrainstormsModule } from './brainstorms/brainstorms.module';
 import { CouncilsModule } from './councils/councils.module';
 import { KnowledgeModule } from './knowledge/knowledge.module';
 import { MediaModule } from './media/media.module';
@@ -29,7 +28,6 @@ import { TerminalModule } from './terminal/terminal.module';
     FsModule,
     AgentModule,
     AgentsModule,
-    BrainstormsModule,
     CouncilsModule,
     KnowledgeModule,
     MediaModule,

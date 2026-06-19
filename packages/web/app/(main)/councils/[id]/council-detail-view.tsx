@@ -1,19 +1,19 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import type { AgentCli, Council, CouncilParticipant, CouncilRun } from '@midnite/shared';
-import { CouncilParticipantsPanel } from '@/components/council-participants-panel';
+import type { AgentCli, Council, CouncilFormat, CouncilMember, CouncilRun } from '@midnite/shared';
+import { CouncilMembersPanel } from '@/components/council-participants-panel';
 import { CouncilRunTabs } from '@/components/council-run-tabs';
 import { CouncilRunThread } from '@/components/council-run-thread';
-import { CouncilTopicComposer } from '@/components/council-topic-composer';
+import { CouncilComposer } from '@/components/council-topic-composer';
+import { CouncilCustomFormatModal } from '@/components/council-custom-format-modal';
 import { PageHeader } from '@/components/page-header';
 import {
   listCouncilRuns,
-  retryCouncilRunParticipant,
-  retryCouncilVerdict,
-  skipCouncilRunParticipant,
+  retryCouncilRunMember,
+  skipCouncilRunMember,
   updateCouncil,
 } from '@/lib/api';
 import { useCouncilRun } from '@/lib/use-council-run';
@@ -25,8 +25,11 @@ type Props = {
 };
 
 export function CouncilDetailView({ initial, initialRuns }: Props) {
-  const [participants, setParticipants] = useState<CouncilParticipant[]>(initial.participants);
-  const [verdictProvider, setVerdictProvider] = useState<AgentCli>(initial.verdictProvider);
+  const [members, setMembers] = useState<CouncilMember[]>(initial.members);
+  const [synthProvider, setSynthProvider] = useState<AgentCli>(initial.synthProvider);
+  const [defaultFormat, setDefaultFormat] = useState<CouncilFormat>(initial.defaultFormat);
+  const [customPrompt, setCustomPrompt] = useState<string>(initial.customPrompt ?? '');
+  const [customOpen, setCustomOpen] = useState(false);
   const [runs, setRuns] = useState<CouncilRun[]>(initialRuns);
   const [threadOpen, setThreadOpen] = useLocalStorage<boolean>('midnite.councils.thread', true);
   const [panelOpen, setPanelOpen] = useLocalStorage<boolean>('midnite.councils.panel', true);
@@ -39,46 +42,73 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
       });
   }, [initial.id]);
 
-  const { run, running, error, start, select, resume } = useCouncilRun(initial.id, refreshRuns);
+  const { run, running, error, start, retrySynthesis, select, resume } = useCouncilRun(
+    initial.id,
+    refreshRuns,
+  );
 
   const live = running || run?.status === 'running' || run?.status === 'synthesizing';
-  const canStart = participants.length >= 2 && !live;
+  const canStart = members.length >= 1 && !live;
 
-  const submitTopic = useCallback(
-    async (topic: string) => {
-      await start(topic);
+  const submitPrompt = useCallback(
+    async (prompt: string, format: CouncilFormat) => {
+      await start(prompt, format);
       refreshRuns();
     },
     [start, refreshRuns],
   );
 
-  // A single discrete choice — save it straight away rather than debouncing.
-  const changeVerdictProvider = useCallback(
+  // Single discrete choices — save straight away rather than debouncing.
+  const changeSynthProvider = useCallback(
     (cli: AgentCli) => {
-      setVerdictProvider(cli);
-      updateCouncil(initial.id, { verdictProvider: cli }).catch(() => {
-        setVerdictProvider(initial.verdictProvider); // revert on failure
+      setSynthProvider(cli);
+      updateCouncil(initial.id, { synthProvider: cli }).catch(() => {
+        setSynthProvider(initial.synthProvider); // revert on failure
       });
     },
-    [initial.id, initial.verdictProvider],
+    [initial.id, initial.synthProvider],
   );
 
-  // Stop waiting on a hung participant; the 1.2s poll picks up the new state.
-  const skipParticipant = useCallback(
-    (runParticipantId: string) => {
+  const changeDefaultFormat = useCallback(
+    (format: CouncilFormat) => {
+      setDefaultFormat(format);
+      updateCouncil(initial.id, { defaultFormat: format }).catch(() => {
+        setDefaultFormat(initial.defaultFormat); // revert on failure
+      });
+    },
+    [initial.id, initial.defaultFormat],
+  );
+
+  // Persist the reusable custom synthesis prompt; the modal closes itself on save.
+  const saveCustomPrompt = useCallback(
+    async (next: string) => {
+      const prev = customPrompt;
+      setCustomPrompt(next);
+      try {
+        await updateCouncil(initial.id, { customPrompt: next });
+      } catch {
+        setCustomPrompt(prev); // revert on failure
+      }
+    },
+    [initial.id, customPrompt],
+  );
+
+  // Stop waiting on a hung member; the 1.2s poll picks up the new state.
+  const skipMember = useCallback(
+    (runMemberId: string) => {
       if (!run) return;
-      skipCouncilRunParticipant(initial.id, run.id, runParticipantId).catch(() => {
+      skipCouncilRunMember(initial.id, run.id, runMemberId).catch(() => {
         // racing a natural exit is fine — the poll shows whichever settled first
       });
     },
     [initial.id, run],
   );
 
-  // Rerun one settled participant of the shown run; adopt the now-live run.
-  const retryParticipant = useCallback(
-    (runParticipantId: string) => {
+  // Rerun one settled member of the shown run; adopt the now-live run.
+  const retryMember = useCallback(
+    (runMemberId: string) => {
       if (!run) return;
-      retryCouncilRunParticipant(initial.id, run.id, runParticipantId)
+      retryCouncilRunMember(initial.id, run.id, runMemberId)
         .then((updated) => {
           resume(updated);
           refreshRuns();
@@ -90,18 +120,20 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
     [initial.id, run, resume, refreshRuns],
   );
 
-  // Re-judge the shown run's saved outputs with the currently-selected provider.
-  const retryVerdict = useCallback(() => {
-    if (!run) return;
-    retryCouncilVerdict(initial.id, run.id)
-      .then((updated) => {
-        resume(updated);
-        refreshRuns();
-      })
-      .catch(() => {
-        // 409 (another run live) — the poll/thread will reflect reality
-      });
-  }, [initial.id, run, resume, refreshRuns]);
+  // Re-synthesize the shown run's captured responses, optionally switching format.
+  const reSynthesize = useCallback(
+    (format: CouncilFormat) => {
+      void retrySynthesis(format).then(refreshRuns);
+    },
+    [retrySynthesis, refreshRuns],
+  );
+
+  // The council as edited in this view — fed to the custom-prompt modal so it
+  // shows the latest saved name + customPrompt without a refetch.
+  const council = useMemo<Council>(
+    () => ({ ...initial, members, synthProvider, defaultFormat, customPrompt }),
+    [initial, members, synthProvider, defaultFormat, customPrompt],
+  );
 
   return (
     <>
@@ -121,9 +153,9 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
         }
       />
       <div className="container space-y-5 pb-48 pt-2">
-        {/* Thread (left) and participants (right) flank the run content; both
-            collapse to slim rails. The fixed composer floats over the bottom,
-            so everything gets generous bottom padding to scroll clear of it. */}
+        {/* Thread (left) and members (right) flank the run content; both collapse
+            to slim rails. The fixed composer floats over the bottom, so
+            everything gets generous bottom padding to scroll clear of it. */}
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
           <CouncilRunThread
             runs={runs}
@@ -144,32 +176,36 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
               <CouncilRunTabs
                 key={run.id}
                 run={run}
-                onSkip={live ? skipParticipant : undefined}
-                onRetryParticipant={!live ? retryParticipant : undefined}
-                onRetryVerdict={!live ? retryVerdict : undefined}
+                onSkip={live ? skipMember : undefined}
+                onRetryMember={!live ? retryMember : undefined}
+                onReSynthesize={!live ? reSynthesize : undefined}
               />
             ) : (
               <div className="rounded-lg border border-dashed border-border/60 p-10 text-center text-sm text-muted-foreground">
-                Submit a topic below and each participant will argue it from their perspective in
-                its own terminal. The takes are then anonymized and weighed into a verdict.
+                Submit a prompt below and each member will respond from its role in its own
+                terminal. The responses are then handed to the synthesizer and distilled in your
+                chosen format.
               </div>
             )}
           </div>
 
-          <CouncilParticipantsPanel
+          <CouncilMembersPanel
             councilId={initial.id}
-            participants={participants}
-            verdictProvider={verdictProvider}
+            members={members}
+            synthProvider={synthProvider}
+            defaultFormat={defaultFormat}
             disabled={Boolean(live)}
-            onChanged={setParticipants}
-            onVerdictProviderChange={changeVerdictProvider}
+            onChanged={setMembers}
+            onSynthProviderChange={changeSynthProvider}
+            onDefaultFormatChange={changeDefaultFormat}
+            onEditCustom={() => setCustomOpen(true)}
             open={panelOpen}
             onToggle={() => setPanelOpen(!panelOpen)}
           />
         </div>
       </div>
 
-      {/* Topic input pinned to the bottom, dashboard-style: content scrolls
+      {/* Prompt input pinned to the bottom, dashboard-style: content scrolls
           behind it; the page's pb-48 keeps everything reachable above it. The
           bar mirrors the content row's nav-rail offset (pl-14), container, and
           thread/panel spacers so the composer lines up exactly with the run
@@ -186,16 +222,18 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
                 style={{ width: threadOpen ? 240 : 36 }}
               />
               <div className="pointer-events-auto min-w-0 flex-1">
-                <CouncilTopicComposer
+                <CouncilComposer
                   disabled={!canStart}
                   disabledHint={
                     live
-                      ? 'A debate is in progress — wait for the verdict.'
-                      : participants.length < 2
-                        ? 'Add at least 2 participants in the panel to start a debate.'
+                      ? 'A run is in progress — wait for the synthesis.'
+                      : members.length < 1
+                        ? 'Add at least 1 member in the panel to start.'
                         : undefined
                   }
-                  onSubmit={submitTopic}
+                  defaultFormat={defaultFormat}
+                  onSubmit={submitPrompt}
+                  onEditCustom={() => setCustomOpen(true)}
                 />
               </div>
               <div
@@ -207,6 +245,14 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
           </div>
         </div>
       </div>
+
+      {customOpen ? (
+        <CouncilCustomFormatModal
+          council={council}
+          onSave={saveCustomPrompt}
+          onClose={() => setCustomOpen(false)}
+        />
+      ) : null}
     </>
   );
 }

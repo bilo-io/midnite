@@ -3,25 +3,27 @@ import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import type {
   AgentCli,
   Council,
-  CouncilParticipant,
-  CouncilParticipantRunStatus,
+  CouncilFormat,
+  CouncilMember,
+  CouncilMemberRunStatus,
   CouncilRun,
-  CouncilRunParticipant,
+  CouncilRunMember,
   CouncilRunStatus,
+  CouncilSynthesisEntry,
 } from '@midnite/shared';
 import { DB_TOKEN, type MidniteDb } from '../db/db.module';
 import {
-  councilParticipants,
-  councilRunParticipants,
+  councilMembers,
+  councilRunMembers,
   councilRuns,
   councils,
   type CouncilInsert,
-  type CouncilParticipantInsert,
-  type CouncilParticipantRow,
+  type CouncilMemberInsert,
+  type CouncilMemberRow,
   type CouncilRow,
   type CouncilRunInsert,
-  type CouncilRunParticipantInsert,
-  type CouncilRunParticipantRow,
+  type CouncilRunMemberInsert,
+  type CouncilRunMemberRow,
   type CouncilRunRow,
 } from '../db/schema';
 
@@ -47,75 +49,72 @@ export class CouncilsRepository {
     return this.db.update(councils).set(patch).where(eq(councils.id, id)).returning().get();
   }
 
-  /** Remove a council and its participants. Run history is deleted with it. */
+  /** Remove a council and its members. Run history is deleted with it. */
   deleteCouncil(id: string): void {
     this.db.transaction((tx) => {
       const runs = tx.select().from(councilRuns).where(eq(councilRuns.councilId, id)).all();
       for (const run of runs) {
-        tx.delete(councilRunParticipants).where(eq(councilRunParticipants.runId, run.id)).run();
+        tx.delete(councilRunMembers).where(eq(councilRunMembers.runId, run.id)).run();
       }
       tx.delete(councilRuns).where(eq(councilRuns.councilId, id)).run();
-      tx.delete(councilParticipants).where(eq(councilParticipants.councilId, id)).run();
+      tx.delete(councilMembers).where(eq(councilMembers.councilId, id)).run();
       tx.delete(councils).where(eq(councils.id, id)).run();
     });
   }
 
-  // ---- participants ----
+  // ---- members ----
 
-  listParticipants(councilId: string): CouncilParticipantRow[] {
+  listMembers(councilId: string): CouncilMemberRow[] {
     return this.db
       .select()
-      .from(councilParticipants)
-      .where(eq(councilParticipants.councilId, councilId))
+      .from(councilMembers)
+      .where(eq(councilMembers.councilId, councilId))
       // Explicit order first; createdAt breaks ties (e.g. legacy rows at 0).
-      .orderBy(asc(councilParticipants.position), asc(councilParticipants.createdAt))
+      .orderBy(asc(councilMembers.position), asc(councilMembers.createdAt))
       .all();
   }
 
   /** Next append position for a council (max existing + 1, or 0 when empty). */
-  nextParticipantPosition(councilId: string): number {
+  nextMemberPosition(councilId: string): number {
     const rows = this.db
-      .select({ position: councilParticipants.position })
-      .from(councilParticipants)
-      .where(eq(councilParticipants.councilId, councilId))
+      .select({ position: councilMembers.position })
+      .from(councilMembers)
+      .where(eq(councilMembers.councilId, councilId))
       .all();
     return rows.reduce((max, r) => Math.max(max, r.position), -1) + 1;
   }
 
   /** Persist a new order: each id's position becomes its index in the list. */
-  reorderParticipants(councilId: string, orderedIds: string[]): void {
+  reorderMembers(councilId: string, orderedIds: string[]): void {
     this.db.transaction((tx) => {
       orderedIds.forEach((id, position) => {
-        tx.update(councilParticipants)
+        tx.update(councilMembers)
           .set({ position })
-          .where(and(eq(councilParticipants.id, id), eq(councilParticipants.councilId, councilId)))
+          .where(and(eq(councilMembers.id, id), eq(councilMembers.councilId, councilId)))
           .run();
       });
     });
   }
 
-  getParticipant(id: string): CouncilParticipantRow | undefined {
-    return this.db.select().from(councilParticipants).where(eq(councilParticipants.id, id)).get();
+  getMember(id: string): CouncilMemberRow | undefined {
+    return this.db.select().from(councilMembers).where(eq(councilMembers.id, id)).get();
   }
 
-  insertParticipant(row: CouncilParticipantInsert): CouncilParticipantRow {
-    return this.db.insert(councilParticipants).values(row).returning().get();
+  insertMember(row: CouncilMemberInsert): CouncilMemberRow {
+    return this.db.insert(councilMembers).values(row).returning().get();
   }
 
-  updateParticipant(
-    id: string,
-    patch: Partial<CouncilParticipantInsert>,
-  ): CouncilParticipantRow | undefined {
+  updateMember(id: string, patch: Partial<CouncilMemberInsert>): CouncilMemberRow | undefined {
     return this.db
-      .update(councilParticipants)
+      .update(councilMembers)
       .set(patch)
-      .where(eq(councilParticipants.id, id))
+      .where(eq(councilMembers.id, id))
       .returning()
       .get();
   }
 
-  deleteParticipant(id: string): void {
-    this.db.delete(councilParticipants).where(eq(councilParticipants.id, id)).run();
+  deleteMember(id: string): void {
+    this.db.delete(councilMembers).where(eq(councilMembers.id, id)).run();
   }
 
   // ---- runs ----
@@ -149,31 +148,55 @@ export class CouncilsRepository {
     return this.db.update(councilRuns).set(patch).where(eq(councilRuns.id, id)).returning().get();
   }
 
-  listRunParticipants(runId: string): CouncilRunParticipantRow[] {
+  listRunMembers(runId: string): CouncilRunMemberRow[] {
     return this.db
       .select()
-      .from(councilRunParticipants)
-      // Insertion order = the participant order snapshotted at run start, which
-      // drives the tab order. Stable across retries (those reset startedAt).
-      .where(eq(councilRunParticipants.runId, runId))
+      .from(councilRunMembers)
+      // Insertion order = the member order snapshotted at run start, which drives
+      // the tab order. Stable across retries (those reset startedAt).
+      .where(eq(councilRunMembers.runId, runId))
       .orderBy(asc(sql`rowid`))
       .all();
   }
 
-  insertRunParticipant(row: CouncilRunParticipantInsert): CouncilRunParticipantRow {
-    return this.db.insert(councilRunParticipants).values(row).returning().get();
+  insertRunMember(row: CouncilRunMemberInsert): CouncilRunMemberRow {
+    return this.db.insert(councilRunMembers).values(row).returning().get();
   }
 
-  updateRunParticipant(
+  updateRunMember(
     id: string,
-    patch: Partial<CouncilRunParticipantInsert>,
-  ): CouncilRunParticipantRow | undefined {
+    patch: Partial<CouncilRunMemberInsert>,
+  ): CouncilRunMemberRow | undefined {
     return this.db
-      .update(councilRunParticipants)
+      .update(councilRunMembers)
       .set(patch)
-      .where(eq(councilRunParticipants.id, id))
+      .where(eq(councilRunMembers.id, id))
       .returning()
       .get();
+  }
+
+  private parseSyntheses(json: string | null): CouncilSynthesisEntry[] {
+    if (!json) return [];
+    try {
+      const parsed = JSON.parse(json);
+      return Array.isArray(parsed) ? (parsed as CouncilSynthesisEntry[]) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Upsert a completed synthesis for `entry.format` (keeping its position so chip
+   * order is stable), so re-synthesizing in a new format accumulates an archive
+   * rather than overwriting the previous one.
+   */
+  recordSynthesis(runId: string, entry: CouncilSynthesisEntry): void {
+    const row = this.getRun(runId);
+    if (!row) return;
+    const list = this.parseSyntheses(row.syntheses);
+    const idx = list.findIndex((e) => e.format === entry.format);
+    const next = idx >= 0 ? list.map((e, i) => (i === idx ? entry : e)) : [...list, entry];
+    this.updateRun(runId, { syntheses: JSON.stringify(next) });
   }
 
   // ---- hydration (DB row → API type) ----
@@ -183,21 +206,23 @@ export class CouncilsRepository {
       id: row.id,
       name: row.name,
       description: row.description ?? undefined,
-      verdictProvider: row.verdictProvider as AgentCli,
-      participants: this.listParticipants(row.id).map((p) => this.hydrateParticipant(p)),
+      synthProvider: row.synthProvider as AgentCli,
+      defaultFormat: row.defaultFormat as CouncilFormat,
+      customPrompt: row.customPrompt ?? undefined,
+      members: this.listMembers(row.id).map((m) => this.hydrateMember(m)),
       archived: row.archivedAt != null,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };
   }
 
-  hydrateParticipant(row: CouncilParticipantRow): CouncilParticipant {
+  hydrateMember(row: CouncilMemberRow): CouncilMember {
     return {
       id: row.id,
       councilId: row.councilId,
       name: row.name,
       provider: row.provider as AgentCli,
-      perspective: row.perspective,
+      role: row.role,
       position: row.position,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
@@ -208,33 +233,34 @@ export class CouncilsRepository {
     return {
       id: row.id,
       councilId: row.councilId,
-      topic: row.topic,
+      prompt: row.prompt,
+      format: row.format as CouncilFormat,
       status: row.status as CouncilRunStatus,
-      verdictProvider: (row.verdictProvider as AgentCli | null) ?? undefined,
+      synthProvider: (row.synthProvider as AgentCli | null) ?? undefined,
       // Deterministic attach id; the PTY behind it only exists while synthesizing.
-      verdictTerminalId: `council-${row.id}-verdict`,
-      verdict: row.verdict ?? undefined,
+      synthTerminalId: `council-${row.id}-synth`,
+      synthesis: row.synthesis ?? undefined,
+      syntheses: this.parseSyntheses(row.syntheses),
       error: row.error ?? undefined,
-      participants: this.listRunParticipants(row.id).map((p) => this.hydrateRunParticipant(p)),
+      members: this.listRunMembers(row.id).map((m) => this.hydrateRunMember(m)),
       startedAt: row.startedAt,
       finishedAt: row.finishedAt ?? undefined,
     };
   }
 
-  hydrateRunParticipant(row: CouncilRunParticipantRow): CouncilRunParticipant {
+  hydrateRunMember(row: CouncilRunMemberRow): CouncilRunMember {
     return {
       id: row.id,
       runId: row.runId,
-      participantId: row.participantId,
+      memberId: row.memberId,
       name: row.name,
       provider: row.provider as AgentCli,
-      perspective: row.perspective,
-      status: row.status as CouncilParticipantRunStatus,
+      role: row.role,
+      status: row.status as CouncilMemberRunStatus,
       terminalId: row.terminalId,
       output: row.output ?? undefined,
       exitCode: row.exitCode ?? undefined,
       error: row.error ?? undefined,
-      label: row.label ?? undefined,
       startedAt: row.startedAt,
       finishedAt: row.finishedAt ?? undefined,
     };

@@ -116,7 +116,7 @@ export function CouncilsView({ initial }: { initial: Council[] }) {
   const q = (searchParams.get('q') ?? '').trim().toLowerCase();
   const filtered = q
     ? initial.filter((c) =>
-        [c.name, c.description ?? '', ...c.participants.map((p) => p.name)].some((f) =>
+        [c.name, c.description ?? '', ...c.members.map((m) => m.name)].some((f) =>
           f.toLowerCase().includes(q),
         ),
       )
@@ -159,7 +159,7 @@ export function CouncilsView({ initial }: { initial: Council[] }) {
           <EmptyState
             Icon={CirclePile}
             title="No councils yet"
-            description="Create one, add participants with distinct perspectives, and put a topic to them."
+            description="Create one, add members with distinct roles, and put a prompt to them."
             actionLabel="New council"
             onAction={() => setCreating(true)}
           />

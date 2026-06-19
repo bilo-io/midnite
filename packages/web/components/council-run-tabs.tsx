@@ -1,12 +1,21 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Loader2, RotateCcw, Scale, SkipForward } from 'lucide-react';
-import { AGENT_CLI_LABEL, type CouncilRun, type CouncilRunParticipant } from '@midnite/shared';
+import { Loader2, RotateCcw, Sparkles, SkipForward } from 'lucide-react';
+import {
+  AGENT_CLI_LABEL,
+  COUNCIL_FORMATS_META,
+  type CouncilFormat,
+  type CouncilRun,
+  type CouncilRunMember,
+  type CouncilSynthesisEntry,
+} from '@midnite/shared';
 import { AgentCliLogo } from '@/components/agent-cli-logo';
 import { Button } from '@/components/ui/button';
 import { MarkdownPreview } from '@/components/markdown-preview';
+import { StyledSelect } from '@/components/ui/styled-select';
+import { FORMAT_SELECT_OPTIONS, formatIcon } from '@/lib/council-formats';
 import { cn } from '@/lib/utils';
 
 // xterm touches `window` — client-only, like SessionTerminal.
@@ -15,7 +24,7 @@ const LiveTerminal = dynamic(
   { ssr: false },
 );
 
-const STATUS_DOT: Record<CouncilRunParticipant['status'], string> = {
+const STATUS_DOT: Record<CouncilRunMember['status'], string> = {
   running: 'bg-blue-500 animate-pulse',
   succeeded: 'bg-emerald-500',
   failed: 'bg-destructive',
@@ -23,8 +32,8 @@ const STATUS_DOT: Record<CouncilRunParticipant['status'], string> = {
   skipped: 'bg-muted-foreground/60',
 };
 
-/** The looping highlight sweep on a still-running participant's tab (reuses
- *  the screensaver's pill-shimmer keyframes). */
+/** The looping highlight sweep on a still-running member's tab (reuses the
+ *  screensaver's pill-shimmer keyframes). */
 function TabShimmer() {
   return (
     <span
@@ -38,174 +47,168 @@ function TabShimmer() {
   );
 }
 
-const VERDICT_TAB = '__verdict__';
+const SYNTH_TAB = '__synthesis__';
 
 /**
- * The main panel of a council run: one tab per participant (live terminal
- * while running, persisted output after) plus the Verdict tab. Terminals stay
+ * The main panel of a council run: one tab per member (live terminal while
+ * running, persisted output after) plus the Synthesis tab. Terminals stay
  * mounted-but-hidden across tab switches so their sockets and scrollback
- * survive; the run id keys the whole strip so a new debate starts fresh.
+ * survive; the run id keys the whole strip so a new run starts fresh.
  */
 export function CouncilRunTabs({
   run,
   onSkip,
-  onRetryParticipant,
-  onRetryVerdict,
+  onRetryMember,
+  onReSynthesize,
 }: {
   run: CouncilRun;
-  /** Skip a still-running participant (live runs only — absent for past runs). */
-  onSkip?: (runParticipantId: string) => void;
-  /** Rerun a settled participant (finished runs only). */
-  onRetryParticipant?: (runParticipantId: string) => void;
-  /** Rerun only the verdict from the persisted outputs (finished runs only). */
-  onRetryVerdict?: () => void;
+  /** Skip a still-running member (live runs only — absent for past runs). */
+  onSkip?: (runMemberId: string) => void;
+  /** Rerun a settled member (finished runs only). */
+  onRetryMember?: (runMemberId: string) => void;
+  /** Re-synthesize the captured responses in a (possibly new) format (finished runs only). */
+  onReSynthesize?: (format: CouncilFormat) => void;
 }) {
-  const [active, setActive] = useState<string>(run.participants[0]?.id ?? VERDICT_TAB);
+  const [active, setActive] = useState<string>(run.members[0]?.id ?? SYNTH_TAB);
 
-  // Jump to the verdict once synthesis starts — the debate itself is over.
+  // Jump to the synthesis once it starts — the responses themselves are over.
   useEffect(() => {
-    if (run.status === 'synthesizing' || run.status === 'completed') setActive(VERDICT_TAB);
+    if (run.status === 'synthesizing' || run.status === 'completed') setActive(SYNTH_TAB);
   }, [run.status]);
 
-  const labelFor = (id: string | undefined) =>
-    run.participants.find((p) => p.id === id) ?? null;
-  const activeParticipant = labelFor(active);
+  const activeMember = run.members.find((m) => m.id === active) ?? null;
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Topic + tab strip stay pinned to the top while the output scrolls
+      {/* Prompt + tab strip stay pinned to the top while the output scrolls
           beneath them. Same border as the sticky page header, but near-opaque
           (vs PageHeader's frosted 60–80%) — prose scrolls directly beneath
           this strip and must not stay readable through it. */}
       <div className="sticky top-[52px] z-20 -mx-1 flex flex-col gap-2 border-b border-border/60 bg-background/95 px-1 pb-2 pt-3 backdrop-blur">
         <p className="text-xs text-muted-foreground">
-          Topic: <span className="text-foreground">{run.topic}</span>
+          Prompt: <span className="text-foreground">{run.prompt}</span>
         </p>
         <div role="tablist" aria-label="Council run" className="flex flex-wrap items-center gap-1.5">
-        {run.participants.map((p, i) => (
+          {run.members.map((m, i) => (
+            <button
+              key={m.id}
+              type="button"
+              role="tab"
+              aria-selected={active === m.id}
+              onClick={() => setActive(m.id)}
+              className={cn(
+                'relative flex items-center gap-2 overflow-hidden rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                active === m.id
+                  ? 'border-foreground/20 bg-accent text-accent-foreground'
+                  : 'border-border/60 text-muted-foreground hover:bg-accent/50 hover:text-foreground',
+              )}
+            >
+              {m.status === 'running' ? <TabShimmer /> : null}
+              <span className={cn('h-1.5 w-1.5 rounded-full', STATUS_DOT[m.status])} aria-hidden />
+              <AgentCliLogo cli={m.provider} className="h-3.5 w-3.5" />
+              {m.name.trim() || `Member ${i + 1}`}
+            </button>
+          ))}
           <button
-            key={p.id}
             type="button"
             role="tab"
-            aria-selected={active === p.id}
-            onClick={() => setActive(p.id)}
+            aria-selected={active === SYNTH_TAB}
+            onClick={() => setActive(SYNTH_TAB)}
             className={cn(
-              'relative flex items-center gap-2 overflow-hidden rounded-full border px-3 py-1 text-xs font-medium transition-colors',
-              active === p.id
+              'flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+              active === SYNTH_TAB
                 ? 'border-foreground/20 bg-accent text-accent-foreground'
                 : 'border-border/60 text-muted-foreground hover:bg-accent/50 hover:text-foreground',
             )}
           >
-            {p.status === 'running' ? <TabShimmer /> : null}
-            <span className={cn('h-1.5 w-1.5 rounded-full', STATUS_DOT[p.status])} aria-hidden />
-            <AgentCliLogo cli={p.provider} className="h-3.5 w-3.5" />
-            {p.name.trim() || `Participant ${i + 1}`}
+            <Sparkles className="h-3.5 w-3.5" />
+            Synthesis
           </button>
-        ))}
-        <button
-          type="button"
-          role="tab"
-          aria-selected={active === VERDICT_TAB}
-          onClick={() => setActive(VERDICT_TAB)}
-          className={cn(
-            'flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition-colors',
-            active === VERDICT_TAB
-              ? 'border-foreground/20 bg-accent text-accent-foreground'
-              : 'border-border/60 text-muted-foreground hover:bg-accent/50 hover:text-foreground',
-          )}
-        >
-          <Scale className="h-3.5 w-3.5" />
-          Verdict
-        </button>
         </div>
       </div>
 
       {/* Live terminals stay mounted (hidden) so a tab switch doesn't drop the WS. */}
-      {run.participants.map((p, i) =>
-        p.status === 'running' ? (
-          <div key={p.id} className={cn('space-y-2', active !== p.id && 'hidden')}>
+      {run.members.map((m, i) =>
+        m.status === 'running' ? (
+          <div key={m.id} className={cn('space-y-2', active !== m.id && 'hidden')}>
             {onSkip ? (
               <div className="flex justify-end">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => onSkip(p.id)}
-                  title="Stop waiting on this participant — the verdict proceeds without it"
+                  onClick={() => onSkip(m.id)}
+                  title="Stop waiting on this member — the synthesis proceeds without it"
                 >
                   <SkipForward className="h-3.5 w-3.5" />
-                  Skip participant
+                  Skip member
                 </Button>
               </div>
             ) : null}
             <div className="h-[420px] overflow-hidden rounded-lg border border-border/60">
               <LiveTerminal
-                attachId={p.terminalId}
-                label={`${p.name.trim() || `Participant ${i + 1}`} · ${p.provider}`}
-                ariaLabel={`${p.name.trim() || `Participant ${i + 1}`} terminal`}
+                attachId={m.terminalId}
+                label={`${m.name.trim() || `Member ${i + 1}`} · ${m.provider}`}
+                ariaLabel={`${m.name.trim() || `Member ${i + 1}`} terminal`}
               />
             </div>
           </div>
         ) : null,
       )}
 
-      {activeParticipant && activeParticipant.status !== 'running' ? (
-        <ParticipantOutput participant={activeParticipant} onRetry={onRetryParticipant} />
+      {activeMember && activeMember.status !== 'running' ? (
+        <MemberOutput member={activeMember} onRetry={onRetryMember} />
       ) : null}
 
-      {active === VERDICT_TAB ? (
-        <VerdictPanel run={run} onSkip={onSkip} onRetryVerdict={onRetryVerdict} />
+      {active === SYNTH_TAB ? (
+        <SynthesisPanel run={run} onSkip={onSkip} onReSynthesize={onReSynthesize} />
       ) : null}
     </div>
   );
 }
 
-function ParticipantOutput({
-  participant: p,
+function MemberOutput({
+  member: m,
   onRetry,
 }: {
-  participant: CouncilRunParticipant;
-  onRetry?: (runParticipantId: string) => void;
+  member: CouncilRunMember;
+  onRetry?: (runMemberId: string) => void;
 }) {
   return (
     <div className="space-y-3 rounded-lg border border-border/60 bg-card/40 p-4">
       <div className="flex items-center justify-between gap-2">
         <span className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span className={cn('h-1.5 w-1.5 rounded-full', STATUS_DOT[p.status])} aria-hidden />
-          {p.status === 'succeeded'
-            ? 'Finished'
-            : p.status === 'timeout'
-              ? 'Timed out'
-              : p.status === 'skipped'
-                ? 'Skipped'
-                : 'Failed'}
+          <span className={cn('h-1.5 w-1.5 rounded-full', STATUS_DOT[m.status])} aria-hidden />
+          {m.role.trim() ? <span className="text-foreground">{m.role.trim()}</span> : null}
+          <span>
+            {m.status === 'succeeded'
+              ? 'Finished'
+              : m.status === 'timeout'
+                ? 'Timed out'
+                : m.status === 'skipped'
+                  ? 'Skipped'
+                  : 'Failed'}
+          </span>
         </span>
-        <span className="flex items-center gap-2">
-          {p.label ? (
-            <span className="rounded-full border border-border/60 bg-background px-2.5 py-0.5 text-xs text-muted-foreground">
-              Spoke as Participant {p.label}
-            </span>
-          ) : null}
-          {onRetry && p.status !== 'succeeded' ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => onRetry(p.id)}
-              title="Rerun this participant's take, then re-synthesize the verdict"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              Rerun
-            </Button>
-          ) : null}
-        </span>
+        {onRetry && m.status !== 'succeeded' ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => onRetry(m.id)}
+            title="Rerun this member, then re-synthesize"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            Rerun
+          </Button>
+        ) : null}
       </div>
-      {p.error && p.status !== 'succeeded' ? (
-        <p className="text-sm text-destructive">{p.error}</p>
+      {m.error && m.status !== 'succeeded' ? (
+        <p className="text-sm text-destructive">{m.error}</p>
       ) : null}
-      {p.output ? (
+      {m.output ? (
         <pre className="max-h-[420px] overflow-auto whitespace-pre-wrap break-words font-mono text-xs leading-relaxed text-foreground">
-          {p.output}
+          {m.output}
         </pre>
       ) : (
         <p className="text-sm text-muted-foreground">No output captured.</p>
@@ -214,40 +217,76 @@ function ParticipantOutput({
   );
 }
 
-function VerdictPanel({
+/** The format picker + button shown on finished runs to re-synthesize the same
+ *  captured responses in a (possibly new) format. */
+function ReSynthesizeControl({
   run,
-  onSkip,
-  onRetryVerdict,
+  onReSynthesize,
 }: {
   run: CouncilRun;
-  onSkip?: (runParticipantId: string) => void;
-  onRetryVerdict?: () => void;
+  onReSynthesize: (format: CouncilFormat) => void;
 }) {
+  const [format, setFormat] = useState<CouncilFormat>(run.format);
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <StyledSelect
+        aria-label="Synthesis format"
+        className="w-44"
+        options={FORMAT_SELECT_OPTIONS}
+        value={format}
+        onChange={setFormat}
+      />
+      <Button type="button" variant="outline" size="sm" onClick={() => onReSynthesize(format)}>
+        <RotateCcw className="h-3.5 w-3.5" />
+        Re-synthesize
+      </Button>
+      <p className="text-xs text-muted-foreground">
+        Re-runs only the synthesis over the captured responses — switch formats freely; members
+        don&apos;t re-run.
+      </p>
+    </div>
+  );
+}
+
+function SynthesisPanel({
+  run,
+  onSkip,
+  onReSynthesize,
+}: {
+  run: CouncilRun;
+  onSkip?: (runMemberId: string) => void;
+  onReSynthesize?: (format: CouncilFormat) => void;
+}) {
+  // Re-synthesis re-distils the *captured* responses, so it's only meaningful when
+  // at least one member produced one (a completed run always has them; a run that
+  // failed at the response stage does not — rerun a member instead).
+  const hasOutputs = run.members.some((m) => m.status === 'succeeded');
+
   if (run.status === 'running') {
-    const waiting = run.participants.filter((p) => p.status === 'running');
+    const waiting = run.members.filter((m) => m.status === 'running');
     return (
       <div className="space-y-3 rounded-lg border border-border/60 bg-card/40 p-6">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
-          Waiting on {waiting.length} participant{waiting.length === 1 ? '' : 's'}…
+          Waiting on {waiting.length} member{waiting.length === 1 ? '' : 's'}…
         </div>
         <ul className="space-y-1.5">
-          {waiting.map((p, i) => (
-            <li key={p.id} className="flex items-center gap-2 text-sm">
+          {waiting.map((m, i) => (
+            <li key={m.id} className="flex items-center gap-2 text-sm">
               <span className={cn('h-1.5 w-1.5 rounded-full', STATUS_DOT.running)} aria-hidden />
-              <AgentCliLogo cli={p.provider} className="h-3.5 w-3.5" />
+              <AgentCliLogo cli={m.provider} className="h-3.5 w-3.5" />
               <span className="min-w-0 truncate">
-                {p.name.trim() || `Participant ${i + 1}`}
-                <span className="text-muted-foreground"> · {p.provider}</span>
+                {m.name.trim() || `Member ${i + 1}`}
+                <span className="text-muted-foreground"> · {m.provider}</span>
               </span>
               {onSkip ? (
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => onSkip(p.id)}
+                  onClick={() => onSkip(m.id)}
                   className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
-                  title="Stop waiting on this participant — the verdict proceeds without it"
+                  title="Stop waiting on this member — the synthesis proceeds without it"
                 >
                   <SkipForward className="h-3 w-3" />
                   Skip
@@ -260,71 +299,140 @@ function VerdictPanel({
     );
   }
   if (run.status === 'synthesizing') {
-    const judge = run.verdictProvider ? AGENT_CLI_LABEL[run.verdictProvider] : 'The judge';
+    const synth = run.synthProvider ? AGENT_CLI_LABEL[run.synthProvider] : 'The synthesizer';
     return (
       <div className="space-y-2">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
-          {run.verdictProvider ? <AgentCliLogo cli={run.verdictProvider} className="h-4 w-4" /> : null}
-          Synthesizing — {judge} is weighing the anonymized takes…
+          {run.synthProvider ? <AgentCliLogo cli={run.synthProvider} className="h-4 w-4" /> : null}
+          Synthesizing ({COUNCIL_FORMATS_META[run.format].label}) — {synth} is distilling the
+          responses…
         </div>
-        {run.verdictTerminalId ? (
+        {run.synthTerminalId ? (
           <div className="h-[420px] overflow-hidden rounded-lg border border-border/60">
             <LiveTerminal
-              attachId={run.verdictTerminalId}
-              label={`Verdict · ${judge}`}
-              ariaLabel="Verdict terminal"
+              attachId={run.synthTerminalId}
+              label={`Synthesis · ${synth}`}
+              ariaLabel="Synthesis terminal"
             />
           </div>
         ) : null}
       </div>
     );
   }
-  if (run.status === 'failed') {
-    return (
-      <div className="space-y-3 rounded-lg border border-destructive/40 bg-destructive/10 p-4">
-        <p className="break-words text-sm text-destructive">{run.error ?? 'The run failed.'}</p>
-        {onRetryVerdict ? (
-          <div className="flex items-center gap-3">
-            <Button type="button" variant="outline" size="sm" onClick={onRetryVerdict}>
-              <RotateCcw className="h-3.5 w-3.5" />
-              Rerun verdict
-            </Button>
-            <p className="text-xs text-muted-foreground">
-              Re-judges the saved outputs with the provider selected in the panel — participants
-              don't rerun. Rerun individual participants from their tabs.
-            </p>
-          </div>
-        ) : null}
-      </div>
-    );
-  }
 
-  const labeled = run.participants
-    .filter((p) => p.label)
-    .sort((a, b) => (a.label ?? '').localeCompare(b.label ?? ''));
+  // Settled (completed or failed). Show every archived synthesis (one per format);
+  // a failed re-synthesis still shows the formats that previously succeeded. Fall
+  // back to the single active `synthesis` for runs predating per-format archiving.
+  const archive: CouncilSynthesisEntry[] = run.syntheses.length
+    ? run.syntheses
+    : run.synthesis
+      ? [
+          {
+            format: run.format,
+            synthesis: run.synthesis,
+            synthProvider: run.synthProvider,
+            anonymized: false,
+            finishedAt: run.finishedAt ?? '',
+          },
+        ]
+      : [];
 
   return (
     <div className="space-y-4 rounded-lg border border-border/60 bg-card/40 p-4">
-      {labeled.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-1.5">
-          {labeled.map((p, i) => (
-            <span
-              key={p.id}
-              className="flex items-center gap-1.5 rounded-full border border-border/60 bg-background px-2.5 py-0.5 text-xs text-muted-foreground"
-            >
-              <span className="font-medium text-foreground">Participant {p.label}</span>
-              <AgentCliLogo cli={p.provider} className="h-3 w-3" />
-              {p.name.trim() || `Participant ${i + 1}`}
-            </span>
-          ))}
+      {run.status === 'failed' ? (
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive break-words">
+          {run.error ?? 'The run failed.'}
         </div>
       ) : null}
-      {run.verdict ? (
-        <MarkdownPreview content={run.verdict} />
-      ) : (
-        <p className="text-sm text-muted-foreground">No verdict recorded.</p>
-      )}
+      {onReSynthesize && hasOutputs ? (
+        <ReSynthesizeControl run={run} onReSynthesize={onReSynthesize} />
+      ) : null}
+      {archive.length ? (
+        <SynthesisArchive run={run} entries={archive} activeFormat={run.format} />
+      ) : run.status !== 'failed' ? (
+        <p className="text-sm text-muted-foreground">No synthesis recorded.</p>
+      ) : null}
+    </div>
+  );
+}
+
+/** Format chips over the archived syntheses; selecting one shows its markdown,
+ *  with a de-anonymization legend above it for anonymized formats. */
+function SynthesisArchive({
+  run,
+  entries,
+  activeFormat,
+}: {
+  run: CouncilRun;
+  entries: CouncilSynthesisEntry[];
+  activeFormat: CouncilFormat;
+}) {
+  // Default to the active (most-recent) format if present, else the first entry.
+  const [selected, setSelected] = useState<CouncilFormat>(
+    entries.some((e) => e.format === activeFormat) ? activeFormat : entries[0]!.format,
+  );
+  const entry = entries.find((e) => e.format === selected) ?? entries[0]!;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-1.5">
+        {entries.map((e) => {
+          const Icon = formatIcon(e.format);
+          return (
+            <button
+              key={e.format}
+              type="button"
+              onClick={() => setSelected(e.format)}
+              aria-pressed={e.format === entry.format}
+              className={cn(
+                'flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors',
+                e.format === entry.format
+                  ? 'border-foreground/20 bg-accent text-accent-foreground'
+                  : 'border-border/60 text-muted-foreground hover:bg-accent/50 hover:text-foreground',
+              )}
+            >
+              <Icon className="h-3 w-3" />
+              {COUNCIL_FORMATS_META[e.format].label}
+            </button>
+          );
+        })}
+      </div>
+      <DeAnonLegend run={run} entry={entry} />
+      <MarkdownPreview content={entry.synthesis} />
+    </div>
+  );
+}
+
+/** For an anonymized synthesis, maps each blind label (A/B/C) back to the member
+ *  that spoke as it — how the user de-anonymizes a debate after the fact. Renders
+ *  nothing for attributed (non-anonymized) formats. */
+function DeAnonLegend({ run, entry }: { run: CouncilRun; entry: CouncilSynthesisEntry }) {
+  const pairs = useMemo(() => {
+    if (!entry.anonymized || !entry.labelMap) return [];
+    return Object.entries(entry.labelMap).sort(([a], [b]) => a.localeCompare(b));
+  }, [entry]);
+
+  if (pairs.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {pairs.map(([label, runMemberId]) => {
+        const member = run.members.find((m) => m.id === runMemberId);
+        const index = run.members.findIndex((m) => m.id === runMemberId);
+        const name = member?.name.trim() || `Member ${index >= 0 ? index + 1 : ''}`.trim();
+        return (
+          <span
+            key={label}
+            className="flex items-center gap-1.5 rounded-full border border-border/60 bg-background px-2.5 py-0.5 text-xs text-muted-foreground"
+          >
+            <span className="font-medium text-foreground">Member {label}</span>
+            <span aria-hidden>=</span>
+            {member ? <AgentCliLogo cli={member.provider} className="h-3 w-3" /> : null}
+            {name}
+          </span>
+        );
+      })}
     </div>
   );
 }

@@ -223,7 +223,7 @@ export const NODE_TYPE_DEFINITIONS: Record<string, NodeTypeDefinition> = {
     category: 'action',
     title: 'AI',
     description: 'Run an AI completion via the active provider, or pin one.',
-    icon: 'sparkles',
+    icon: 'bot',
     inputs: MAIN_IN,
     outputs: MAIN_OUT,
     paramsSchema: AiClaudeParamsSchema,

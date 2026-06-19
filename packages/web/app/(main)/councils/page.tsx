@@ -15,7 +15,7 @@ export default function CouncilsPage() {
       <PageHeader
         title="Councils"
         icon="CirclePile"
-        description="Panels of AI participants that debate a topic from fixed perspectives — then an anonymized verdict weighs the options."
+        description="Panels of AI members that respond to a prompt from fixed roles — then a synthesizer distils them in any format: brainstorm, debate, analyse, and more."
         actions={<SearchBar placeholder="Search councils" />}
       />
       <div className="reveal-staged container space-y-6 pb-8 pt-2">
