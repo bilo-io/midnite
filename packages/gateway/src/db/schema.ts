@@ -392,6 +392,89 @@ export const councilRunParticipants = sqliteTable(
   }),
 );
 
+// --- Brainstorms (multi-agent idea generation → mode-based synthesis) ---
+
+export const brainstorms = sqliteTable('brainstorms', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description'),
+  // AgentCli that distills the pooled ideas into the synthesis.
+  synthProvider: text('synth_provider').notNull().default('gemini'),
+  // Synthesis mode pre-selected for new runs (each run can override).
+  defaultMode: text('default_mode').notNull().default('shortlist'),
+  // Soft-archive timestamp; null = active. Mirrors councils.archivedAt.
+  archivedAt: text('archived_at'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const brainstormContributors = sqliteTable(
+  'brainstorm_contributors',
+  {
+    id: text('id').primaryKey(),
+    brainstormId: text('brainstorm_id').notNull(),
+    name: text('name').notNull().default(''),
+    provider: text('provider').notNull().default('claude'), // AgentCli
+    lens: text('lens').notNull().default(''),
+    // Ascending display/run order within the brainstorm; drives the tab order.
+    position: integer('position').notNull().default(0),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => ({
+    brainstormIdx: index('brainstorm_contributors_brainstorm_idx').on(t.brainstormId),
+  }),
+);
+
+export const brainstormRuns = sqliteTable(
+  'brainstorm_runs',
+  {
+    id: text('id').primaryKey(),
+    brainstormId: text('brainstorm_id').notNull(),
+    prompt: text('prompt').notNull(),
+    // The synthesis mode this run was (last) synthesized in.
+    mode: text('mode').notNull().default('shortlist'),
+    status: text('status').notNull(), // running | synthesizing | completed | failed
+    // Snapshot of the brainstorm's synthesizer at (last) synthesis (null on old rows).
+    synthProvider: text('synth_provider'),
+    synthesis: text('synthesis'), // markdown for the active `mode` (also the latest entry below)
+    // JSON BrainstormSynthesisEntry[] — one completed synthesis per mode, so
+    // re-synthesizing in a new mode accumulates rather than overwriting.
+    syntheses: text('syntheses'),
+    error: text('error'),
+    startedAt: text('started_at').notNull(),
+    finishedAt: text('finished_at'),
+  },
+  (t) => ({
+    brainstormIdx: index('brainstorm_runs_brainstorm_idx').on(t.brainstormId, t.startedAt),
+  }),
+);
+
+// Snapshot of each contributor at run start, so later edits to the brainstorm
+// never rewrite history. `output` is the cleaned (ANSI-stripped) idea capture.
+// Ideas are attributed (no anonymization label, unlike council run participants).
+export const brainstormRunContributors = sqliteTable(
+  'brainstorm_run_contributors',
+  {
+    id: text('id').primaryKey(),
+    runId: text('run_id').notNull(),
+    contributorId: text('contributor_id').notNull(),
+    name: text('name').notNull(),
+    provider: text('provider').notNull(),
+    lens: text('lens').notNull(),
+    status: text('status').notNull(), // running | succeeded | failed | timeout | skipped
+    terminalId: text('terminal_id').notNull(),
+    output: text('output'),
+    exitCode: integer('exit_code'),
+    error: text('error'),
+    startedAt: text('started_at').notNull(),
+    finishedAt: text('finished_at'),
+  },
+  (t) => ({
+    runIdx: index('brainstorm_run_contributors_run_idx').on(t.runId),
+  }),
+);
+
 export type TaskRow = typeof tasks.$inferSelect;
 export type TaskInsert = typeof tasks.$inferInsert;
 export type WorkflowRow = typeof workflows.$inferSelect;
@@ -434,6 +517,14 @@ export type CouncilRunRow = typeof councilRuns.$inferSelect;
 export type CouncilRunInsert = typeof councilRuns.$inferInsert;
 export type CouncilRunParticipantRow = typeof councilRunParticipants.$inferSelect;
 export type CouncilRunParticipantInsert = typeof councilRunParticipants.$inferInsert;
+export type BrainstormRow = typeof brainstorms.$inferSelect;
+export type BrainstormInsert = typeof brainstorms.$inferInsert;
+export type BrainstormContributorRow = typeof brainstormContributors.$inferSelect;
+export type BrainstormContributorInsert = typeof brainstormContributors.$inferInsert;
+export type BrainstormRunRow = typeof brainstormRuns.$inferSelect;
+export type BrainstormRunInsert = typeof brainstormRuns.$inferInsert;
+export type BrainstormRunContributorRow = typeof brainstormRunContributors.$inferSelect;
+export type BrainstormRunContributorInsert = typeof brainstormRunContributors.$inferInsert;
 
 // --- Notes (simple checklist panel on the dashboard) ---
 

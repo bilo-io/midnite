@@ -1,0 +1,1 @@
+ALTER TABLE `brainstorm_runs` ADD `syntheses` text;
