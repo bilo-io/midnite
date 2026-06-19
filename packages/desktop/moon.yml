@@ -50,5 +50,10 @@ tasks:
       - '~:build'
       - 'gateway:build'
       - 'web:build'
+    # macOS-only release packaging (needs the Electron binary + dmg-license).
+    # Built by the tag-triggered release workflow on macOS runners — never in
+    # `moon ci` on Linux, where dmg-license is absent.
+    options:
+      runInCI: false
     outputs:
       - 'build'
