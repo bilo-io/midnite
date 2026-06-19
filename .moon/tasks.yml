@@ -18,12 +18,22 @@ tasks:
 
   typecheck:
     command: 'tsc --noEmit'
+    # `tsc --noEmit` resolves cross-package types via project references but does
+    # not build them, so upstream packages (e.g. shared) must be built first —
+    # otherwise their dist/*.d.ts is stale/missing and every importer errors
+    # (TS6305). Only bites when an upstream source actually changed.
+    deps:
+      - '^:build'
     inputs:
       - '@group(sources)'
       - '@group(configs)'
 
   test:
     command: 'vitest run'
+    # Tests import built upstream packages (@midnite/shared → dist), so build
+    # dependencies first — same rationale as typecheck.
+    deps:
+      - '^:build'
     inputs:
       - '@group(sources)'
       - '@group(configs)'

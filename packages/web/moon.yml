@@ -15,6 +15,9 @@ tasks:
 
   build:
     command: 'pnpm exec next build'
+    # next build resolves @midnite/shared to its built dist/, so build it first.
+    deps:
+      - '^:build'
     inputs:
       - 'app/**/*'
       - 'components/**/*'
@@ -38,6 +41,9 @@ tasks:
 
   typecheck:
     command: 'pnpm exec tsc --noEmit'
+    # tsc --noEmit resolves shared via project references but doesn't build it.
+    deps:
+      - '^:build'
     inputs:
       - 'app/**/*'
       - 'components/**/*'
@@ -64,6 +70,9 @@ tasks:
 
   build-storybook:
     command: 'pnpm exec storybook build'
+    # Storybook bundles components that import the built @midnite/shared.
+    deps:
+      - '^:build'
     inputs:
       - 'app/**/*'
       - 'components/**/*'

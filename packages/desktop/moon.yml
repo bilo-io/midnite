@@ -17,6 +17,10 @@ tasks:
 
   typecheck:
     command: 'pnpm exec tsc --noEmit'
+    # tsc --noEmit resolves gateway/web/shared via project references but does
+    # not build them, so build upstream deps first.
+    deps:
+      - '^:build'
     inputs:
       - 'src/**/*'
       - 'tsconfig.json'

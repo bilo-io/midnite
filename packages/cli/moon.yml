@@ -22,11 +22,17 @@ tasks:
 
   test:
     command: 'pnpm exec vitest run'
+    # Imports the built @midnite/shared (dist), so build upstream deps first.
+    deps:
+      - '^:build'
     inputs:
       - 'src/**/*'
 
   typecheck:
     command: 'pnpm exec tsc --noEmit'
+    # tsc --noEmit resolves shared via project references but doesn't build it.
+    deps:
+      - '^:build'
     inputs:
       - 'src/**/*'
       - 'tsconfig.json'
