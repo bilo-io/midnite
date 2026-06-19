@@ -6,6 +6,7 @@ import { getKnowledgeSources } from '@/lib/api';
 import { usePolling } from '@/lib/use-polling';
 import { cn, relativeTime } from '@/lib/utils';
 import { SourceIcon } from './source-icon';
+import { WidgetLoader } from './spinner';
 import { WidgetCard } from './widget-card';
 
 const REFRESH_MS = 60_000;
@@ -42,7 +43,7 @@ export function KnowledgeWidget() {
       {error && !data ? (
         <p className="px-4 py-6 text-center text-sm text-destructive">Couldn’t load sources.</p>
       ) : !data && loading ? (
-        <p className="px-4 py-6 text-center text-sm text-muted-foreground">Loading…</p>
+        <WidgetLoader />
       ) : sources.length === 0 ? (
         <p className="px-4 py-6 text-center text-sm text-muted-foreground">No knowledge sources yet.</p>
       ) : (

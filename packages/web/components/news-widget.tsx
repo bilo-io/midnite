@@ -6,6 +6,7 @@ import { getNews } from '@/lib/api';
 import type { WidgetConfig } from '@/lib/dashboard-widgets';
 import { usePolling } from '@/lib/use-polling';
 import { cn } from '@/lib/utils';
+import { WidgetLoader } from './spinner';
 import { WidgetCard } from './widget-card';
 
 const REFRESH_MS = 5 * 60_000;
@@ -72,7 +73,7 @@ export function NewsWidget({ config, onConfigChange }: NewsWidgetProps) {
       {error && !data ? (
         <p className="px-4 py-6 text-center text-sm text-destructive">Couldn’t load stories.</p>
       ) : !data && loading ? (
-        <p className="px-4 py-6 text-center text-sm text-muted-foreground">Loading…</p>
+        <WidgetLoader />
       ) : (
         <ol className="divide-y divide-border/30">
           {data?.map((story, i) => {

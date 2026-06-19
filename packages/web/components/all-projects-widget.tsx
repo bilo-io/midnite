@@ -5,6 +5,7 @@ import { getProjects, getTasks } from '@/lib/api';
 import { usePolling } from '@/lib/use-polling';
 import { cn } from '@/lib/utils';
 import { ProjectCard } from './recent-projects';
+import { WidgetLoader } from './spinner';
 import { WidgetCard } from './widget-card';
 
 const REFRESH_MS = 60_000;
@@ -41,7 +42,7 @@ export function AllProjectsWidget() {
       {projects.error && !projects.data ? (
         <p className="py-6 text-center text-sm text-destructive">Couldn’t load projects.</p>
       ) : !projects.data && projects.loading ? (
-        <p className="py-6 text-center text-sm text-muted-foreground">Loading…</p>
+        <WidgetLoader />
       ) : list.length === 0 ? (
         <p className="py-6 text-center text-sm text-muted-foreground">No projects yet.</p>
       ) : (

@@ -5,6 +5,7 @@ import { AGENT_CLI_LABEL } from '@midnite/shared';
 import { getAgentsConfig, pingAgent } from '@/lib/api';
 import { usePolling } from '@/lib/use-polling';
 import { cn, relativeTime } from '@/lib/utils';
+import { WidgetLoader } from './spinner';
 import { WidgetCard } from './widget-card';
 
 const CONFIG_REFRESH_MS = 60_000;
@@ -41,7 +42,7 @@ export function AgentsWidget() {
       {config.error && !cfg ? (
         <p className="py-6 text-center text-sm text-destructive">Couldn’t load agents.</p>
       ) : !cfg ? (
-        <p className="py-6 text-center text-sm text-muted-foreground">Loading…</p>
+        <WidgetLoader />
       ) : (
         <div className="space-y-3">
           <div className="flex items-start gap-2">

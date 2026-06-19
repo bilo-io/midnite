@@ -5,6 +5,7 @@ import type { Task } from '@midnite/shared';
 import { getTasks } from '@/lib/api';
 import { usePolling } from '@/lib/use-polling';
 import { cn, relativeTime } from '@/lib/utils';
+import { WidgetLoader } from './spinner';
 import { WidgetCard } from './widget-card';
 
 const REFRESH_MS = 20_000;
@@ -54,7 +55,7 @@ export function ActivityWidget() {
       {error && !data ? (
         <p className="px-4 py-6 text-center text-sm text-destructive">Couldn’t load activity.</p>
       ) : !data && loading ? (
-        <p className="px-4 py-6 text-center text-sm text-muted-foreground">Loading…</p>
+        <WidgetLoader />
       ) : entries.length === 0 ? (
         <p className="px-4 py-6 text-center text-sm text-muted-foreground">No activity yet.</p>
       ) : (

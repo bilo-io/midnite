@@ -5,6 +5,7 @@ import { getTasks } from '@/lib/api';
 import { completionsByDay } from '@/lib/dashboard-metrics';
 import { usePolling } from '@/lib/use-polling';
 import { cn } from '@/lib/utils';
+import { WidgetLoader } from './spinner';
 import { WidgetCard } from './widget-card';
 
 const REFRESH_MS = 60_000;
@@ -36,7 +37,7 @@ export function ThroughputWidget() {
       {error && !data ? (
         <p className="m-auto text-sm text-destructive">Couldn’t load tasks.</p>
       ) : !data && loading ? (
-        <p className="m-auto text-sm text-muted-foreground">Loading…</p>
+        <WidgetLoader />
       ) : (
         <>
           <div>

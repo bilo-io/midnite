@@ -5,6 +5,7 @@ import type { Memory } from '@midnite/shared';
 import { getMemories } from '@/lib/api';
 import { usePolling } from '@/lib/use-polling';
 import { cn, relativeTime } from '@/lib/utils';
+import { WidgetLoader } from './spinner';
 import { WidgetCard } from './widget-card';
 
 const REFRESH_MS = 60_000;
@@ -37,7 +38,7 @@ export function MemoriesWidget() {
       {error && !data ? (
         <p className="px-4 py-6 text-center text-sm text-destructive">Couldn’t load memories.</p>
       ) : !data && loading ? (
-        <p className="px-4 py-6 text-center text-sm text-muted-foreground">Loading…</p>
+        <WidgetLoader />
       ) : memories.length === 0 ? (
         <p className="px-4 py-6 text-center text-sm text-muted-foreground">No memories yet.</p>
       ) : (

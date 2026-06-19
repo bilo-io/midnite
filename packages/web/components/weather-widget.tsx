@@ -19,6 +19,7 @@ import { getWeather } from '@/lib/api';
 import type { WeatherLocation, WeatherUnits, WidgetConfig } from '@/lib/dashboard-widgets';
 import { usePolling } from '@/lib/use-polling';
 import { cn } from '@/lib/utils';
+import { WidgetLoader } from './spinner';
 import { WidgetCard } from './widget-card';
 
 const REFRESH_MS = 10 * 60_000;
@@ -119,7 +120,7 @@ export function WeatherWidget({ config, onConfigChange }: WeatherWidgetProps) {
         ) : error && !data ? (
           <p className="px-4 py-6 text-center text-sm text-destructive">Couldn’t load weather.</p>
         ) : !data ? (
-          <p className="px-4 py-6 text-center text-sm text-muted-foreground">Locating…</p>
+          <WidgetLoader />
         ) : (
           <WeatherReadout data={data} units={units} compact={compact} />
         )}

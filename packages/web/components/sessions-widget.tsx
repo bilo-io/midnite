@@ -5,6 +5,7 @@ import type { SessionStatus, SessionSummary } from '@midnite/shared';
 import { getSessions } from '@/lib/api';
 import { usePolling } from '@/lib/use-polling';
 import { cn, relativeTime } from '@/lib/utils';
+import { WidgetLoader } from './spinner';
 import { WidgetCard } from './widget-card';
 
 const REFRESH_MS = 30_000;
@@ -47,7 +48,7 @@ export function SessionsWidget() {
       {error && !data ? (
         <p className="px-4 py-6 text-center text-sm text-destructive">Couldn’t load sessions.</p>
       ) : !data && loading ? (
-        <p className="px-4 py-6 text-center text-sm text-muted-foreground">Loading…</p>
+        <WidgetLoader />
       ) : sessions.length === 0 ? (
         <p className="px-4 py-6 text-center text-sm text-muted-foreground">No active sessions.</p>
       ) : (

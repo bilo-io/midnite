@@ -200,3 +200,13 @@ export function Spinner({ variant = 'orbit' }: { variant?: SpinnerVariant } = {}
     </div>
   );
 }
+
+// Full-cell loading state for dashboard widgets: centres the spinner within the
+// widget body so it sits in the middle of the grid cell regardless of panel size.
+export function WidgetLoader({ variant }: { variant?: SpinnerVariant } = {}) {
+  return (
+    <div className="flex h-full items-center justify-center">
+      <Spinner variant={variant} />
+    </div>
+  );
+}
