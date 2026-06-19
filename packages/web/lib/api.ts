@@ -237,6 +237,14 @@ export async function updateTaskProject(
   );
 }
 
+export async function setTaskTags(taskId: string, tags: string[]): Promise<Task> {
+  return fetchJson(
+    `/tasks/${encodeURIComponent(taskId)}/tags`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ tags }) },
+    TaskSchema,
+  );
+}
+
 export async function addTaskLink(taskId: string, url: string, label?: string): Promise<Task> {
   return fetchJson(
     `/tasks/${encodeURIComponent(taskId)}/links`,

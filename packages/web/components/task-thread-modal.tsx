@@ -23,6 +23,7 @@ import {
   deleteTask,
   gatewayUrl,
   removeTaskLink,
+  setTaskTags,
   startTask,
   updateTaskProject,
   updateTaskStatus,
@@ -92,6 +93,32 @@ export function TaskThreadModal({ task, projects, onClose }: Props) {
   const [statusError, setStatusError] = useState<string | null>(null);
   const [projectId, setProjectId] = useState<string | null>(task.projectId ?? null);
   const [projectBusy, setProjectBusy] = useState(false);
+  const [tags, setTags] = useState<string[]>(task.tags);
+  const [tagInput, setTagInput] = useState('');
+
+  const saveTags = async (next: string[]) => {
+    const prev = tags;
+    setTags(next); // optimistic
+    try {
+      const updated = await setTaskTags(task.id, next);
+      setTags(updated.tags); // reflect server-side normalisation
+      invalidateData();
+    } catch {
+      setTags(prev); // roll back
+    }
+  };
+
+  const addTag = () => {
+    const tag = tagInput.trim();
+    if (!tag || tags.some((t) => t.toLowerCase() === tag.toLowerCase())) {
+      setTagInput('');
+      return;
+    }
+    setTagInput('');
+    void saveTags([...tags, tag]);
+  };
+
+  const removeTag = (tag: string) => void saveTags(tags.filter((t) => t !== tag));
 
   const reassign = async (next: string | null) => {
     const prev = projectId;
@@ -308,6 +335,43 @@ export function TaskThreadModal({ task, projects, onClose }: Props) {
                 {statusError}
               </div>
             ) : null}
+            <section>
+              <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Tags
+              </h3>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground"
+                  >
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => removeTag(tag)}
+                      aria-label={`Remove tag ${tag}`}
+                      className="text-muted-foreground/60 hover:text-destructive"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+                <input
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addTag();
+                    }
+                  }}
+                  onBlur={addTag}
+                  placeholder="Add tag…"
+                  className="min-w-[5rem] flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground"
+                  aria-label="Add a tag"
+                />
+              </div>
+            </section>
             <section>
               <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Review &amp; links

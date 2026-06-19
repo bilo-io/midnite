@@ -158,6 +158,15 @@ export function TasksView({
   const activeProjects = new Set(
     (rawProject ? rawProject.split(',') : []).filter((p) => validProjects.has(p)),
   );
+  // Tag filter: keep tasks carrying at least one of the selected tags. The
+  // active set lives in the `tags` query param, so a filtered board is a
+  // shareable/bookmarkable view — the "saved filter".
+  const allTags = Array.from(new Set(localTasks.flatMap((t) => t.tags))).sort((a, b) =>
+    a.localeCompare(b),
+  );
+  const rawTags = searchParams.get('tags');
+  const activeTags = new Set((rawTags ? rawTags.split(',') : []).filter((t) => allTags.includes(t)));
+
   const q = (searchParams.get('q') ?? '').trim().toLowerCase();
   const filteredTasks = localTasks
     .filter((t) => {
@@ -166,18 +175,22 @@ export function TasksView({
       if (t.projectId === undefined && activeProjects.has(UNASSIGNED)) return true;
       return false;
     })
+    .filter((t) => activeTags.size === 0 || t.tags.some((tag) => activeTags.has(tag)))
     .filter(
       (t) =>
         !q ||
         t.title.toLowerCase().includes(q) ||
         (t.repo ?? '').toLowerCase().includes(q) ||
-        (t.kind ?? '').toLowerCase().includes(q),
+        (t.kind ?? '').toLowerCase().includes(q) ||
+        t.tags.some((tag) => tag.toLowerCase().includes(q)),
     );
 
   const projectFilters: FilterOption[] = [
     { value: UNASSIGNED, label: 'Unassigned', color: '#94a3b8' },
     ...projects.map((p) => ({ value: p.id, label: p.tag, color: p.color })),
   ];
+
+  const tagFilters: FilterOption[] = allTags.map((tag) => ({ value: tag, label: tag }));
 
   const viewProps = {
     tasks: filteredTasks,
@@ -194,6 +207,7 @@ export function TasksView({
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
           {projects.length > 0 && <ProjectMultiSelect options={projectFilters} />}
           <FilterPills options={STATUS_FILTERS} paramKey="status" />
+          {tagFilters.length > 0 && <FilterPills options={tagFilters} paramKey="tags" />}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">

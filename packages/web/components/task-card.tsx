@@ -69,6 +69,18 @@ export function TaskCard({
         {project ? <ProjectTag tag={project.tag} color={project.color} /> : null}
       </div>
       <p className="text-sm font-medium leading-snug">{task.title}</p>
+      {task.tags.length > 0 ? (
+        <div className="mt-1.5 flex flex-wrap gap-1">
+          {task.tags.map((t) => (
+            <span
+              key={t}
+              className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+            >
+              {t}
+            </span>
+          ))}
+        </div>
+      ) : null}
       {task.links && task.links.length > 0 ? (
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-foreground/70">
           {task.links.slice(0, 6).map((l) => (

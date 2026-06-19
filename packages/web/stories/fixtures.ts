@@ -87,6 +87,7 @@ export const taskFeature: Task = {
   kind: 'feature',
   status: 'wip',
   projectId: 'proj-web',
+  tags: ['frontend', 'ui'],
   events: [],
   links: [
     link('task-feature', 1, 'https://github.com/acme/midnite/pull/42', 'github'),
@@ -102,6 +103,7 @@ export const taskBug: Task = {
   kind: 'bug',
   status: 'todo',
   projectId: 'proj-web',
+  tags: ['regression', 'theming'],
   events: [],
   links: [link('task-bug', 1, 'https://github.com/acme/midnite/issues/77', 'github')],
 };
@@ -114,6 +116,7 @@ export const taskQuestion: Task = {
   kind: 'question',
   status: 'backlog',
   projectId: 'proj-docs',
+  tags: [],
   events: [],
 };
 
@@ -125,6 +128,7 @@ export const taskChore: Task = {
   kind: 'chore',
   status: 'waiting',
   projectId: 'proj-gw',
+  tags: [],
   events: [],
 };
 
@@ -134,6 +138,7 @@ export const taskUnknown: Task = {
   retryCount: 0,
   title: 'Investigate flaky heartbeat scheduler test',
   status: 'backlog',
+  tags: [],
   events: [],
 };
 
@@ -145,6 +150,7 @@ export const taskDone: Task = {
   kind: 'feature',
   status: 'done',
   projectId: 'proj-web',
+  tags: [],
   events: [],
 };
 
@@ -157,6 +163,7 @@ export const taskAbandoned: Task = {
   status: 'abandoned',
   projectId: 'proj-web',
   archivedAt: '2026-06-01T12:00:00.000Z',
+  tags: [],
   events: [],
 };
 
