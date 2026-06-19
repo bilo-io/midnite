@@ -155,6 +155,13 @@
       "when": 1781825775778,
       "tag": "0021_brainstorms",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "6",
+      "when": 1781847668318,
+      "tag": "0022_brainstorm_syntheses",
+      "breakpoints": true
     }
   ]
 }

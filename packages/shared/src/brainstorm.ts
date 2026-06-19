@@ -60,6 +60,30 @@ export const BRAINSTORM_SYNTH_MODE_DESCRIPTION: Record<BrainstormSynthMode, stri
 
 export const BRAINSTORM_SYNTH_PROVIDER_DEFAULT = 'gemini' as const;
 
+/**
+ * Starter lenses seeded into a new brainstorm — diverse, reusable angles that
+ * give the panel immediate value and show what a good lens looks like. They are
+ * ordinary contributors: the user can edit, reorder, or remove any of them.
+ */
+export const BRAINSTORM_STARTER_LENSES: ReadonlyArray<{ name: string; lens: string }> = [
+  {
+    name: 'First principles',
+    lens: 'Reason up from the fundamentals — ignore how it is usually done and rebuild from what must be true.',
+  },
+  {
+    name: 'Contrarian',
+    lens: 'Argue the non-consensus view. What would most people disagree with that might actually be right?',
+  },
+  {
+    name: 'Customer / JTBD',
+    lens: "Start from the customer's job-to-be-done and unmet needs — ideas that remove friction or do the job better.",
+  },
+  {
+    name: 'Moonshot',
+    lens: 'Aim for a 10x outcome. Ignore near-term constraints — what would be possible without resource limits?',
+  },
+];
+
 /** A standing member of a brainstorm: a lens plus the CLI that generates through it. */
 export const BrainstormContributorSchema = z.object({
   id: z.string(),
@@ -114,19 +138,35 @@ export const BrainstormRunContributorSchema = z.object({
 });
 export type BrainstormRunContributor = z.infer<typeof BrainstormRunContributorSchema>;
 
+/**
+ * One completed synthesis of a run's captured ideas, in a given mode. A run
+ * accumulates one entry per mode it's been synthesized in, so re-synthesizing in
+ * a new mode adds an entry rather than discarding the previous one — letting the
+ * UI show, say, the shortlist and the gap analysis side by side.
+ */
+export const BrainstormSynthesisEntrySchema = z.object({
+  mode: BrainstormSynthModeSchema,
+  synthesis: z.string(),
+  synthProvider: AgentCliSchema.optional(),
+  finishedAt: z.string(),
+});
+export type BrainstormSynthesisEntry = z.infer<typeof BrainstormSynthesisEntrySchema>;
+
 export const BrainstormRunSchema = z.object({
   id: z.string(),
   brainstormId: z.string(),
   prompt: z.string(),
-  /** The synthesis mode this run was (last) synthesized in. */
+  /** The synthesis mode this run was (last) synthesized in — the active entry. */
   mode: BrainstormSynthModeSchema,
   status: BrainstormRunStatusSchema,
   /** Snapshot of the brainstorm's synthesizer when the run (last) synthesized. */
   synthProvider: AgentCliSchema.optional(),
   /** Attach id for the synthesizer CLI's terminal while status is 'synthesizing'. */
   synthTerminalId: z.string().optional(),
-  /** Markdown synthesis produced for `mode`. */
+  /** Markdown synthesis for the active `mode` (also the latest entry in `syntheses`). */
   synthesis: z.string().optional(),
+  /** All completed syntheses, one per mode (the archive `synthesis` is the active slice of). */
+  syntheses: z.array(BrainstormSynthesisEntrySchema).default([]),
   error: z.string().optional(),
   contributors: z.array(BrainstormRunContributorSchema),
   startedAt: z.string(),

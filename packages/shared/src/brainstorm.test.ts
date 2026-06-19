@@ -84,6 +84,14 @@ describe('BrainstormRunSchema', () => {
       status: 'completed',
       synthProvider: 'gemini',
       synthesis: '## Opportunities\n\nThe strongest is the SMB self-serve wedge.',
+      syntheses: [
+        {
+          mode: 'opportunities',
+          synthesis: '## Opportunities\n\nThe strongest is the SMB self-serve wedge.',
+          synthProvider: 'gemini',
+          finishedAt: '2026-06-19T00:02:00.000Z',
+        },
+      ],
       contributors: [
         {
           id: 'rc1',
@@ -104,6 +112,19 @@ describe('BrainstormRunSchema', () => {
       finishedAt: '2026-06-19T00:02:00.000Z',
     };
     expect(BrainstormRunSchema.parse(run)).toEqual(run);
+  });
+
+  it('defaults syntheses to an empty array when omitted', () => {
+    const parsed = BrainstormRunSchema.parse({
+      id: 'r2',
+      brainstormId: 'b1',
+      prompt: 'p',
+      mode: 'shortlist',
+      status: 'running',
+      contributors: [],
+      startedAt: '2026-06-19T00:00:00.000Z',
+    });
+    expect(parsed.syntheses).toEqual([]);
   });
 
   it('rejects an unknown run status', () => {

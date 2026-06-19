@@ -8,6 +8,7 @@ import type {
   BrainstormRun,
   BrainstormRunContributor,
   BrainstormRunStatus,
+  BrainstormSynthesisEntry,
   BrainstormSynthMode,
 } from '@midnite/shared';
 import { DB_TOKEN, type MidniteDb } from '../db/db.module';
@@ -193,6 +194,30 @@ export class BrainstormsRepository {
       .get();
   }
 
+  private parseSyntheses(json: string | null): BrainstormSynthesisEntry[] {
+    if (!json) return [];
+    try {
+      const parsed = JSON.parse(json);
+      return Array.isArray(parsed) ? (parsed as BrainstormSynthesisEntry[]) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Upsert a completed synthesis for `entry.mode` (keeping its position so chip
+   * order is stable), so re-synthesizing in a new mode accumulates an archive
+   * rather than overwriting the previous one.
+   */
+  recordSynthesis(runId: string, entry: BrainstormSynthesisEntry): void {
+    const row = this.getRun(runId);
+    if (!row) return;
+    const list = this.parseSyntheses(row.syntheses);
+    const idx = list.findIndex((e) => e.mode === entry.mode);
+    const next = idx >= 0 ? list.map((e, i) => (i === idx ? entry : e)) : [...list, entry];
+    this.updateRun(runId, { syntheses: JSON.stringify(next) });
+  }
+
   // ---- hydration (DB row → API type) ----
 
   hydrateBrainstorm(row: BrainstormRow): Brainstorm {
@@ -233,6 +258,7 @@ export class BrainstormsRepository {
       // Deterministic attach id; the PTY behind it only exists while synthesizing.
       synthTerminalId: `brainstorm-${row.id}-synth`,
       synthesis: row.synthesis ?? undefined,
+      syntheses: this.parseSyntheses(row.syntheses),
       error: row.error ?? undefined,
       contributors: this.listRunContributors(row.id).map((c) => this.hydrateRunContributor(c)),
       startedAt: row.startedAt,

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Loader2, Mic, MicOff, Send } from 'lucide-react';
 import {
   BRAINSTORM_SYNTH_MODES,
@@ -36,6 +36,12 @@ export function BrainstormPromptComposer({ disabled, disabledHint, defaultMode, 
   const [text, setText] = useState('');
   const [mode, setMode] = useState<BrainstormSynthMode>(defaultMode);
   const [submitting, setSubmitting] = useState(false);
+
+  // Track the board default when it changes in the panel; a per-run pick (below)
+  // still overrides it until the default itself moves.
+  useEffect(() => {
+    setMode(defaultMode);
+  }, [defaultMode]);
 
   const speech = useSpeechRecognition({
     onFinal: (transcript) => {

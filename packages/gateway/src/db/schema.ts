@@ -437,7 +437,10 @@ export const brainstormRuns = sqliteTable(
     status: text('status').notNull(), // running | synthesizing | completed | failed
     // Snapshot of the brainstorm's synthesizer at (last) synthesis (null on old rows).
     synthProvider: text('synth_provider'),
-    synthesis: text('synthesis'), // markdown produced for `mode`
+    synthesis: text('synthesis'), // markdown for the active `mode` (also the latest entry below)
+    // JSON BrainstormSynthesisEntry[] — one completed synthesis per mode, so
+    // re-synthesizing in a new mode accumulates rather than overwriting.
+    syntheses: text('syntheses'),
     error: text('error'),
     startedAt: text('started_at').notNull(),
     finishedAt: text('finished_at'),

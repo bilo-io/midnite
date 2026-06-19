@@ -110,6 +110,9 @@ describe('BrainstormRunnerService', () => {
     expect(done.contributors[0]!.output).toContain('ship it');
     expect(terminal.contributorSpawns()).toHaveLength(1);
     expect(terminal.synthSpawns()).toHaveLength(1);
+    // The completed mode is archived.
+    expect(done.syntheses.map((s) => s.mode)).toEqual(['shortlist']);
+    expect(done.syntheses[0]!.synthesis).toContain('Synthesis');
   });
 
   it('fails the run when no contributor produces ideas (and never synthesizes)', async () => {
@@ -142,5 +145,9 @@ describe('BrainstormRunnerService', () => {
     expect(terminal.contributorSpawns()).toHaveLength(contributorSpawnsAfterRun);
     expect(terminal.synthSpawns()).toHaveLength(2);
     expect(done.contributors[0]!.status).toBe('succeeded');
+    // Both modes are archived — the shortlist survives the gaps re-synthesis.
+    expect([...done.syntheses.map((s) => s.mode)].sort()).toEqual(['gaps', 'shortlist']);
+    expect(done.syntheses.find((s) => s.mode === 'shortlist')?.synthesis).toContain('Synthesis');
+    expect(done.syntheses.find((s) => s.mode === 'gaps')?.synthesis).toContain('Gap analysis');
   });
 });

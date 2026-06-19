@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import {
   AGENT_CLI_DEFAULT,
+  BRAINSTORM_STARTER_LENSES,
   BRAINSTORM_SYNTH_MODE_DEFAULT,
   BRAINSTORM_SYNTH_PROVIDER_DEFAULT,
   type Brainstorm,
@@ -40,6 +41,20 @@ export class BrainstormsService {
       defaultMode: req.defaultMode ?? BRAINSTORM_SYNTH_MODE_DEFAULT,
       createdAt: now,
       updatedAt: now,
+    });
+    // Seed starter lenses so a fresh board is immediately useful — ordinary
+    // contributors the user can edit, reorder, or remove.
+    BRAINSTORM_STARTER_LENSES.forEach((l, i) => {
+      this.repo.insertContributor({
+        id: randomUUID(),
+        brainstormId: row.id,
+        name: l.name,
+        provider: AGENT_CLI_DEFAULT,
+        lens: l.lens,
+        position: i,
+        createdAt: now,
+        updatedAt: now,
+      });
     });
     return this.repo.hydrateBrainstorm(row);
   }

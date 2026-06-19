@@ -9,6 +9,7 @@ import {
   BRAINSTORM_SYNTH_MODE_LABEL,
   type BrainstormRun,
   type BrainstormRunContributor,
+  type BrainstormSynthesisEntry,
   type BrainstormSynthMode,
 } from '@midnite/shared';
 import { AgentCliLogo } from '@/components/agent-cli-logo';
@@ -255,6 +256,11 @@ function SynthesisPanel({
   onSkip?: (runContributorId: string) => void;
   onReSynthesize?: (mode: BrainstormSynthMode) => void;
 }) {
+  // Re-synthesis re-distills the *captured* ideas, so it's only meaningful when
+  // at least one contributor produced some (a completed run always has them; a
+  // run that failed at generation does not — rerun a contributor instead).
+  const hasIdeas = run.contributors.some((c) => c.status === 'succeeded');
+
   if (run.status === 'running') {
     const waiting = run.contributors.filter((c) => c.status === 'running');
     return (
@@ -312,29 +318,77 @@ function SynthesisPanel({
       </div>
     );
   }
-  if (run.status === 'failed') {
-    return (
-      <div className="space-y-3 rounded-lg border border-destructive/40 bg-destructive/10 p-4">
-        <p className="break-words text-sm text-destructive">{run.error ?? 'The run failed.'}</p>
-        {onReSynthesize ? <ReSynthesizeControl run={run} onReSynthesize={onReSynthesize} /> : null}
-      </div>
-    );
-  }
+  // Settled (completed or failed). Show every archived synthesis (one per mode);
+  // a failed re-synthesis still shows the modes that previously succeeded. Fall
+  // back to the single active `synthesis` for runs predating per-mode archiving.
+  const archive: BrainstormSynthesisEntry[] = run.syntheses.length
+    ? run.syntheses
+    : run.synthesis
+      ? [
+          {
+            mode: run.mode,
+            synthesis: run.synthesis,
+            synthProvider: run.synthProvider,
+            finishedAt: run.finishedAt ?? '',
+          },
+        ]
+      : [];
 
   return (
     <div className="space-y-4 rounded-lg border border-border/60 bg-card/40 p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="flex items-center gap-1.5 rounded-full border border-border/60 bg-background px-2.5 py-0.5 text-xs text-muted-foreground">
-          <Sparkles className="h-3 w-3" />
-          {BRAINSTORM_SYNTH_MODE_LABEL[run.mode]}
-        </span>
-      </div>
-      {onReSynthesize ? <ReSynthesizeControl run={run} onReSynthesize={onReSynthesize} /> : null}
-      {run.synthesis ? (
-        <MarkdownPreview content={run.synthesis} />
-      ) : (
+      {run.status === 'failed' ? (
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive break-words">
+          {run.error ?? 'The run failed.'}
+        </div>
+      ) : null}
+      {onReSynthesize && hasIdeas ? (
+        <ReSynthesizeControl run={run} onReSynthesize={onReSynthesize} />
+      ) : null}
+      {archive.length ? (
+        <SynthesisArchive entries={archive} activeMode={run.mode} />
+      ) : run.status !== 'failed' ? (
         <p className="text-sm text-muted-foreground">No synthesis recorded.</p>
-      )}
+      ) : null}
+    </div>
+  );
+}
+
+/** Mode chips over the archived syntheses; selecting one shows its markdown. */
+function SynthesisArchive({
+  entries,
+  activeMode,
+}: {
+  entries: BrainstormSynthesisEntry[];
+  activeMode: BrainstormSynthMode;
+}) {
+  // Default to the active (most-recent) mode if present, else the first entry.
+  const [selected, setSelected] = useState<BrainstormSynthMode>(
+    entries.some((e) => e.mode === activeMode) ? activeMode : entries[0]!.mode,
+  );
+  const entry = entries.find((e) => e.mode === selected) ?? entries[0]!;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-1.5">
+        {entries.map((e) => (
+          <button
+            key={e.mode}
+            type="button"
+            onClick={() => setSelected(e.mode)}
+            aria-pressed={e.mode === entry.mode}
+            className={cn(
+              'flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors',
+              e.mode === entry.mode
+                ? 'border-foreground/20 bg-accent text-accent-foreground'
+                : 'border-border/60 text-muted-foreground hover:bg-accent/50 hover:text-foreground',
+            )}
+          >
+            <Sparkles className="h-3 w-3" />
+            {BRAINSTORM_SYNTH_MODE_LABEL[e.mode]}
+          </button>
+        ))}
+      </div>
+      <MarkdownPreview content={entry.synthesis} />
     </div>
   );
 }

@@ -445,7 +445,7 @@ export class BrainstormRunnerService implements OnModuleInit {
       );
       // CLIs take a single prompt, so the facilitator framing rides in front.
       const prompt = `${SYNTH_SYSTEM_PROMPT}\n\n${buildSynthesisPrompt(mode, run.prompt, entries)}`;
-      this.runSynthesis(brainstormId, runId, provider, prompt);
+      this.runSynthesis(brainstormId, runId, provider, mode, prompt);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       this.logger.warn(`brainstorm run ${runId} synthesis failed: ${errorMsg}`);
@@ -463,6 +463,7 @@ export class BrainstormRunnerService implements OnModuleInit {
     brainstormId: string,
     runId: string,
     provider: AgentCli,
+    mode: BrainstormSynthMode,
     prompt: string,
   ): void {
     const terminalId = `brainstorm-${runId}-synth`;
@@ -495,10 +496,14 @@ export class BrainstormRunnerService implements OnModuleInit {
           let output = cleanPtyOutput(state.buffer);
           if (state.truncated) output += '\n\n[output truncated]';
           if (!state.timedOut && exitCode === 0 && output.trim()) {
-            this.repo.updateRun(runId, {
-              status: 'completed',
+            const finishedAt = new Date().toISOString();
+            this.repo.updateRun(runId, { status: 'completed', synthesis: output, finishedAt });
+            // Archive this mode's result so re-synthesizing in another mode keeps it.
+            this.repo.recordSynthesis(runId, {
+              mode,
               synthesis: output,
-              finishedAt: new Date().toISOString(),
+              synthProvider: provider,
+              finishedAt,
             });
           } else {
             // Surface the output tail so auth/setup errors are visible at a glance.
