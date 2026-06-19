@@ -831,6 +831,25 @@ export async function retryCouncilSynthesis(
   return run;
 }
 
+/**
+ * Fetch a council run's report as markdown (the export framework's `md` format).
+ * Returns the raw text — the caller copies it, downloads it as a `.md` blob, or
+ * renders it for print-to-PDF. PDF is produced client-side, so it never hits the
+ * gateway.
+ */
+export async function exportCouncilRunMarkdown(
+  councilId: string,
+  runId: string,
+): Promise<string> {
+  const path = `/councils/${encodeURIComponent(councilId)}/runs/${encodeURIComponent(runId)}/export?format=md`;
+  const res = await fetch(`${gatewayUrl()}${path}`, { cache: 'no-store' });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(errorMessage(res, text));
+  }
+  return res.text();
+}
+
 // ---- Notes ----
 
 export async function getNotes(): Promise<Note[]> {

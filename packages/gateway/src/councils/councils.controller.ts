@@ -10,15 +10,21 @@ import {
   Param,
   Patch,
   Post,
+  Query,
+  Res,
 } from '@nestjs/common';
+import type { FastifyReply } from 'fastify';
 import {
   CreateCouncilMemberRequestSchema,
   CreateCouncilRequestSchema,
+  REPORT_CONTENT_TYPE,
   ReorderCouncilMembersRequestSchema,
+  ReportFormatSchema,
   RetryCouncilSynthesisRequestSchema,
   StartCouncilRunRequestSchema,
   UpdateCouncilMemberRequestSchema,
   UpdateCouncilRequestSchema,
+  isServerRenderedReportFormat,
   type Council,
   type CouncilMemberResponse,
   type CouncilResponse,
@@ -35,6 +41,7 @@ import {
 import {
   CouncilDoesNotExistError,
   CouncilMemberDoesNotExistError,
+  CouncilRunDoesNotExistError,
   CouncilsService,
 } from './councils.service';
 import { CouncilsRepository } from './councils.repository';
@@ -166,12 +173,48 @@ export class CouncilsController {
     return { run: this.repo.hydrateRun(row) };
   }
 
+  /**
+   * Export a council run as a report. Only `md` is built here — the service
+   * assembles it via the pure markdown builder, and the response is streamed back
+   * as a `text/markdown` attachment. `pdf` is rendered client-side from this same
+   * markdown (Electron `printToPDF` / the browser print dialog), so it is rejected
+   * here with a 400 explaining where it's produced.
+   */
+  @Get(':id/runs/:runId/export')
+  exportRun(
+    @Param('id') id: string,
+    @Param('runId') runId: string,
+    @Res({ passthrough: false }) reply: FastifyReply,
+    @Query('format') format?: string,
+  ): void {
+    const parsed = ReportFormatSchema.safeParse(format ?? 'md');
+    if (!parsed.success) {
+      throw new BadRequestException(`unsupported export format: ${String(format)}`);
+    }
+    if (!isServerRenderedReportFormat(parsed.data)) {
+      throw new BadRequestException(
+        `${parsed.data} is rendered client-side (print-to-PDF); request format=md`,
+      );
+    }
+    const { filename, markdown } = this.translate(() =>
+      this.service.exportRunMarkdown(id, runId),
+    );
+    void reply
+      .header('content-type', REPORT_CONTENT_TYPE.md)
+      .header('content-disposition', `attachment; filename="${filename}"`)
+      .send(markdown);
+  }
+
   // Map domain errors to HTTP at the boundary (services stay HTTP-agnostic).
   private translate<T>(fn: () => T): T {
     try {
       return fn();
     } catch (err) {
-      if (err instanceof CouncilDoesNotExistError || err instanceof CouncilMemberDoesNotExistError) {
+      if (
+        err instanceof CouncilDoesNotExistError ||
+        err instanceof CouncilMemberDoesNotExistError ||
+        err instanceof CouncilRunDoesNotExistError
+      ) {
         throw new NotFoundException(err.message);
       }
       if (err instanceof CouncilEmptyError) throw new BadRequestException(err.message);
