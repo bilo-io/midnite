@@ -62,6 +62,19 @@ tasks:
       - 'lib/**/*'
       - '/eslint.config.mjs'
 
+  test:
+    command: 'pnpm exec vitest run'
+    # Tests import the built @midnite/shared (dist), so build upstream deps first.
+    deps:
+      - '^:build'
+    inputs:
+      - 'app/**/*'
+      - 'components/**/*'
+      - 'hooks/**/*'
+      - 'lib/**/*'
+      - 'vitest.config.ts'
+      - 'vitest.setup.ts'
+
   storybook:
     command: 'pnpm exec storybook dev -p 6006'
     preset: 'server'

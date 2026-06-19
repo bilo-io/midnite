@@ -30,6 +30,15 @@
     ".storybook/**/*.ts",
     ".storybook/**/*.tsx"
   ],
-  "exclude": ["node_modules", ".next", "storybook-static"],
+  "exclude": [
+    "node_modules",
+    ".next",
+    "out",
+    "storybook-static",
+    // Build-tool config; importing vitest/config + the React plugin drags in
+    // vitest's bundled vite (v7) types, which clash with the app's vite (v6).
+    // vitest loads/validates this file at runtime — it doesn't need app tsc.
+    "vitest.config.ts"
+  ],
   "references": [{ "path": "../shared" }]
 }

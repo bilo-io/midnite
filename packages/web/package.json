@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start -p 3000",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
@@ -37,15 +38,20 @@
   },
   "devDependencies": {
     "@storybook/nextjs-vite": "^10.4.3",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/node": "^22.10.2",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
     "@types/react-grid-layout": "^2.1.0",
+    "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "^10.5.0",
+    "jsdom": "^29.1.1",
     "postcss": "^8.5.15",
     "storybook": "^10.4.3",
     "tailwindcss": "^3",
     "typescript": "^5.6.3",
-    "vite": "^6"
+    "vite": "^6",
+    "vitest": "^3.2.4"
   }
 }
