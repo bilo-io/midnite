@@ -36,6 +36,11 @@ tasks:
   # Run on the target machine before `start`/`package`.
   rebuild:
     command: 'pnpm exec electron-rebuild'
+    # Mutates the workspace's shared native binaries (better-sqlite3, node-pty)
+    # to Electron's ABI, which breaks node-based tests that load the same
+    # binaries — so never in `moon ci`. Runs locally / in the release workflow.
+    options:
+      runInCI: false
 
   # Dev: boots the gateway as a child + loads the Next dev server (MIDNITE_WEB_URL).
   start:
