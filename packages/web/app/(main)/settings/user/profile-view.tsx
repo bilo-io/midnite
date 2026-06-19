@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Check, FolderOpen, Sparkles, UserRound } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Accordion } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { FolderPicker } from '@/components/folder-picker';
@@ -57,7 +57,7 @@ export function ProfileView() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div
         className={cn(
           'flex items-center justify-end gap-1.5 text-xs text-muted-foreground transition-opacity',
@@ -69,14 +69,8 @@ export function ProfileView() {
         Saved
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <UserRound className="h-3.5 w-3.5" />
-            About you
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
+      <Accordion title="About you" icon={<UserRound className="h-3.5 w-3.5" />} defaultOpen>
+        <div className="space-y-3 p-5">
           <p className="text-xs text-muted-foreground">
             Tell midnite who you are — your role, how you like to work, the kinds of things you
             build. Agents can use this for context.
@@ -87,17 +81,11 @@ export function ProfileView() {
             placeholder="e.g. I'm a backend engineer who cares about small, well-tested commits…"
             className="min-h-[120px] resize-y"
           />
-        </CardContent>
-      </Card>
+        </div>
+      </Accordion>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FolderOpen className="h-3.5 w-3.5" />
-            Working directory
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
+      <Accordion title="Working directory" icon={<FolderOpen className="h-3.5 w-3.5" />} defaultOpen>
+        <div className="space-y-3 p-5">
           <p className="text-xs text-muted-foreground">
             The folder session terminals fall back to when a task has no project directory of its
             own. Leave it unset to use the gateway&apos;s own directory.
@@ -141,17 +129,11 @@ export function ProfileView() {
             ) : null}
           </div>
           {workDirError ? <p className="text-xs text-destructive">{workDirError}</p> : null}
-        </CardContent>
-      </Card>
+        </div>
+      </Accordion>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-3.5 w-3.5" />
-            Agent guidelines
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
+      <Accordion title="Agent guidelines" icon={<Sparkles className="h-3.5 w-3.5" />} defaultOpen>
+        <div className="space-y-3 p-5">
           <p className="text-xs text-muted-foreground">
             Guidance applied to every session, layered on top of each project&apos;s own
             guidelines. Good for standing preferences — tone, conventions, things to always or
@@ -163,8 +145,8 @@ export function ProfileView() {
             placeholder="e.g. Prefer functional style. Always run the linter before finishing. Keep PRs focused…"
             className="min-h-[160px] resize-y"
           />
-        </CardContent>
-      </Card>
+        </div>
+      </Accordion>
 
       {picking ? (
         <FolderPicker

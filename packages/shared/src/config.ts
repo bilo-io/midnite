@@ -69,10 +69,6 @@ export const TerminalConfigSchema = z.object({
   hookCallbackUrl: z.string().optional(),
 });
 
-export const KnowledgeConfigSchema = z.object({
-  dir: z.string().default('./knowledge'),
-});
-
 export const GatewayConfigSchema = z.object({
   port: z.number().int().positive().default(7777),
   /** Bind address. Loopback by default — the gateway spawns PTYs, so don't expose it to the network unless you mean to. */
@@ -138,7 +134,6 @@ export const CouncilsConfigSchema = z.object({
 export const MidniteConfigSchema = z.object({
   agent: AgentConfigSchema,
   terminal: TerminalConfigSchema,
-  knowledge: KnowledgeConfigSchema,
   repos: z.array(RepoConfigSchema).default([]),
   gateway: GatewayConfigSchema,
   // Optional block (defaulted) so existing midnite.json files keep validating.

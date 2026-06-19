@@ -9,7 +9,6 @@ import { TasksModule } from './tasks/tasks.module';
 import { AgentModule } from './agent/agent.module';
 import { AgentsModule } from './agents/agents.module';
 import { CouncilsModule } from './councils/councils.module';
-import { KnowledgeModule } from './knowledge/knowledge.module';
 import { MediaModule } from './media/media.module';
 import { MemoriesModule } from './memories/memories.module';
 import { MetadataModule } from './metadata/metadata.module';
@@ -34,7 +33,6 @@ import { TerminalModule } from './terminal/terminal.module';
     AgentModule,
     AgentsModule,
     CouncilsModule,
-    KnowledgeModule,
     MediaModule,
     MemoriesModule,
     MetadataModule,

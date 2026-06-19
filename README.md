@@ -77,7 +77,6 @@ midnite/
 │   ├── cli/                    # commander CLI client
 │   └── web/                    # Next.js App Router kanban
 ├── midnite.json                # per-project user config (validated by shared)
-├── knowledge/                  # MD knowledge base, watched by gateway
 ├── todo/                       # progress tracker (phase files + done.md)
 ├── docs/                       # design docs (INITIAL_PLAN.md)
 ├── CLAUDE.md                   # agent brief / conventions
@@ -108,7 +107,6 @@ User config lives in [`midnite.json`](midnite.json) at the repo root, validated 
 {
   "agent":     { "pool": 4, "provider": "anthropic", "plan": "opus4.7", "act": "sonnet4.7" },
   "terminal":  { "mode": "pty", "layout": "split", "args": [], "scrollbackBytes": 262144, "idleDisposeMs": 300000, "maxSessions": 16, "inheritSecrets": false, "approvals": { "enabled": false, "timeoutMs": 120000, "onTimeout": "deny", "onNoSubscriber": "ask" } },
-  "knowledge": { "dir": "./knowledge" },
   "repos":     [],
   "gateway":   { "port": 7777, "host": "127.0.0.1", "allowedOrigins": [] },
   "workflows": { "enabled": false, "defaultTimezone": "UTC", "schedulerTickMs": 30000, "webhookBaseUrl": "http://localhost:7777" }

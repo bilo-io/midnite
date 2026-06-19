@@ -39,7 +39,6 @@ import { UsageWidget } from './usage-widget';
 import { ShippedWidget } from './shipped-widget';
 import { WorldClocksWidget } from './world-clocks-widget';
 import { AllProjectsWidget } from './all-projects-widget';
-import { KnowledgeWidget } from './knowledge-widget';
 import { QuoteWidget } from './quote-widget';
 import { TimerWidget } from './timer-widget';
 import { CalendarWidget } from './calendar-widget';
@@ -343,8 +342,6 @@ export function DashboardGrid({
       }
       case 'all-projects':
         return { node: <AllProjectsWidget /> };
-      case 'knowledge':
-        return { node: <KnowledgeWidget /> };
       case 'quote': {
         const w = widgets.find((x) => x.type === 'quote');
         // Merge over defaults so quote instances saved before it gained settings still render.

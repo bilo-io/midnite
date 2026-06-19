@@ -19,7 +19,6 @@ midnite is a multitask orchestrator for Claude Code. A long-running **gateway** 
 - `packages/cli/` — commander client; `midnite serve` boots the gateway
 - `packages/web/` — Next.js App Router kanban frontend
 - `midnite.json` — per-project user config (validated by `shared`)
-- `knowledge/` — MD knowledge base injected into agent prompts
 - `todo/` — phase checklists + `done.md` log; update as work lands
 
 ### Package Boundaries
@@ -266,14 +265,6 @@ Nest module per feature → `controller → service → repository`:
 - Test behaviour, not implementation — no asserting on internal calls when a public outcome would do
 - Snapshot tests only for stable, reviewable output (CLI rendering, WS event shapes)
 - React tests with **@testing-library/react**; query by accessible role/label, not test IDs
-
----
-
-## Knowledge Base
-
-- `knowledge/*.md` files are user-authored context injected into agent prompts
-- The gateway watches `knowledge/` with chokidar and re-indexes on change
-- Never edit user files in `knowledge/` programmatically — read-only from midnite's side
 
 ---
 

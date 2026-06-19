@@ -5,7 +5,6 @@ import { app } from 'electron';
 export interface DesktopPaths {
   dbPath: string;
   uploadsDir: string;
-  knowledgeDir: string;
   logsDir: string;
 }
 
@@ -19,10 +18,8 @@ export function resolvePaths(): DesktopPaths {
   const paths: DesktopPaths = {
     dbPath: join(data, 'midnite.db'),
     uploadsDir: join(data, 'uploads'),
-    knowledgeDir: join(data, 'knowledge'),
     logsDir: app.getPath('logs'),
   };
   mkdirSync(paths.uploadsDir, { recursive: true });
-  mkdirSync(paths.knowledgeDir, { recursive: true });
   return paths;
 }

@@ -13,14 +13,12 @@ function applyEnvOverrides(config: MidniteConfig): MidniteConfig {
   const port = process.env['MIDNITE_GATEWAY_PORT'];
   const dbPath = process.env['MIDNITE_GATEWAY_DB_PATH'];
   const uploadsDir = process.env['MIDNITE_GATEWAY_UPLOADS_DIR'];
-  const knowledgeDir = process.env['MIDNITE_KNOWLEDGE_DIR'];
   if (port) {
     const parsed = Number.parseInt(port, 10);
     if (Number.isInteger(parsed) && parsed > 0) config.gateway.port = parsed;
   }
   if (dbPath) config.gateway.dbPath = dbPath;
   if (uploadsDir) config.gateway.uploadsDir = uploadsDir;
-  if (knowledgeDir) config.knowledge.dir = knowledgeDir;
   return config;
 }
 

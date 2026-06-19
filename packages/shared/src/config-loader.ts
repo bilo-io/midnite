@@ -9,7 +9,7 @@ import { parseConfig, type MidniteConfig } from './config.js';
 
 // Empty objects so the schema fills in every default; matches the gateway's
 // historical fallback behaviour.
-const DEFAULTS = { agent: {}, terminal: {}, knowledge: {}, gateway: {} } as const;
+const DEFAULTS = { agent: {}, terminal: {}, gateway: {} } as const;
 
 /**
  * Walk up from `startDir` (default cwd) looking for midnite.json. Needed because

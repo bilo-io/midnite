@@ -225,7 +225,7 @@ export const sessionIdle: SessionSummary = {
   id: 'sess-idle',
   projectSlug: 'scratch',
   projectDisplay: 'scratch',
-  title: 'Spike: knowledge base indexing',
+  title: 'Spike: memory search indexing',
   subtitle: '',
   status: 'idle',
   lastActivity: NOW - 2 * 86_400_000,

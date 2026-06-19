@@ -1,8 +1,21 @@
 'use client';
 
-import type { ReactNode } from 'react';
-import { Clock, Laptop, LayoutGrid, Moon, PanelLeft, Palette, Sun, type LucideIcon } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, type ReactNode } from 'react';
+import Image from 'next/image';
+import {
+  Check,
+  Clock,
+  Laptop,
+  LayoutGrid,
+  Moon,
+  PanelLeft,
+  Palette,
+  Sun,
+  Type,
+  type LucideIcon,
+} from 'lucide-react';
+import { Accordion } from '@/components/ui/accordion';
+import { Switch } from '@/components/ui/switch';
 import { useTheme, type ThemePreference } from '@/app/theme/theme-context';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
@@ -14,6 +27,11 @@ import {
   type BackgroundPattern,
   type NavMode,
 } from '@/lib/app-settings';
+import {
+  DEFAULT_WORDMARK_FONT,
+  WORDMARK_FONTS,
+  WORDMARK_FONT_STORAGE_KEY,
+} from '@/lib/wordmark-fonts';
 import { cn } from '@/lib/utils';
 
 const THEME_OPTIONS: { value: ThemePreference; label: string; Icon: LucideIcon }[] = [
@@ -44,15 +62,9 @@ export function AppearanceSection() {
     setSettings((prev) => ({ ...prev, backgroundPattern: pattern }));
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Palette className="h-3.5 w-3.5" />
-            Theme
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+    <div className="space-y-4">
+      <Accordion title="Theme" icon={<Palette className="h-3.5 w-3.5" />} defaultOpen>
+        <div className="p-5">
           <SettingRow
             title="Colour theme"
             description="Light, dark, follow your system, or switch automatically by time of day."
@@ -65,17 +77,11 @@ export function AppearanceSection() {
               hydrated={hydrated}
             />
           </SettingRow>
-        </CardContent>
-      </Card>
+        </div>
+      </Accordion>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <PanelLeft className="h-3.5 w-3.5" />
-            Navigation
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <Accordion title="Navigation" icon={<PanelLeft className="h-3.5 w-3.5" />} defaultOpen>
+        <div className="space-y-4 p-5">
           <SettingRow
             title="Side navigation"
             description="Lock the nav open or closed, or let it stay collapsed and expand on hover."
@@ -91,17 +97,15 @@ export function AppearanceSection() {
           <p className="text-xs text-muted-foreground/70">
             {NAV_MODE_OPTIONS.find((o) => o.value === navMode)?.hint}.
           </p>
-        </CardContent>
-      </Card>
+        </div>
+      </Accordion>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <LayoutGrid className="h-3.5 w-3.5" />
-            Background pattern
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      <Accordion
+        title="Background pattern"
+        icon={<LayoutGrid className="h-3.5 w-3.5" />}
+        defaultOpen
+      >
+        <div className="p-5">
           <SettingRow
             title="Backdrop"
             description="The decorative pattern behind the home screen, screensaver, and dashboard header."
@@ -114,9 +118,82 @@ export function AppearanceSection() {
               hydrated={hydrated}
             />
           </SettingRow>
-        </CardContent>
-      </Card>
+        </div>
+      </Accordion>
+
+      <LogoCard />
     </div>
+  );
+}
+
+/** Collapsible picker for the "midnite" wordmark font, applied app-wide live. */
+function LogoCard() {
+  const [font, setFont, hydrated] = useLocalStorage<string>(
+    WORDMARK_FONT_STORAGE_KEY,
+    DEFAULT_WORDMARK_FONT,
+  );
+  const [showIcon, setShowIcon] = useState(true);
+
+  return (
+    <Accordion title="Logo" icon={<Type className="h-3.5 w-3.5" />} defaultOpen>
+      <div className="space-y-4 p-5">
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-xs text-muted-foreground/70">
+            The font the midnite wordmark is set in across the app.
+          </p>
+          <label className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+            <span>Show icon</span>
+            <Switch checked={showIcon} onCheckedChange={setShowIcon} aria-label="Show icon" />
+          </label>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {WORDMARK_FONTS.map((f) => {
+            const selected = hydrated && font === f.key;
+            return (
+              <button
+                key={f.key}
+                type="button"
+                onClick={() => setFont(f.key)}
+                aria-pressed={selected}
+                className={cn(
+                  'group relative flex min-h-[120px] min-w-0 flex-col items-center justify-center gap-4 overflow-hidden rounded-lg border bg-card p-5 text-card-foreground transition-colors',
+                  selected
+                    ? 'border-primary ring-1 ring-primary'
+                    : 'border-border/60 hover:border-foreground/20 hover:bg-accent/30',
+                )}
+              >
+                {selected ? (
+                  <span className="absolute right-2.5 top-2.5 inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-primary-foreground">
+                    <Check className="h-3 w-3" />
+                    Active
+                  </span>
+                ) : null}
+
+                <div className="flex items-center gap-2.5 overflow-hidden">
+                  {showIcon ? (
+                    <Image
+                      src="/logo.PNG"
+                      alt=""
+                      width={36}
+                      height={36}
+                      className="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-border/60"
+                    />
+                  ) : null}
+                  <span className="text-3xl leading-none" style={{ fontFamily: `var(${f.cssVar})` }}>
+                    midnite
+                  </span>
+                </div>
+
+                <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                  {f.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </Accordion>
   );
 }
 

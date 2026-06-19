@@ -42,7 +42,6 @@ export function startGatewayProcess(paths: DesktopPaths, port: number): ChildPro
       MIDNITE_GATEWAY_PORT: String(port),
       MIDNITE_GATEWAY_DB_PATH: paths.dbPath,
       MIDNITE_GATEWAY_UPLOADS_DIR: paths.uploadsDir,
-      MIDNITE_KNOWLEDGE_DIR: paths.knowledgeDir,
     },
     stdio: ['ignore', 'pipe', 'pipe'],
     detached: true,

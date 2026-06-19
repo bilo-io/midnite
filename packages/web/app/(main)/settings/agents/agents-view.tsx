@@ -9,7 +9,6 @@ import {
   Cpu,
   FileText,
   Gauge,
-  Library,
   Plus,
   Terminal,
   Trash2,
@@ -22,12 +21,10 @@ import {
   CLI_PROVIDER_MAP,
   LLM_PROVIDERS,
   LLM_PROVIDER_LABEL,
-  MAX_GLOBAL_SOURCES,
   type AgentCli,
   type AgentCliStatus,
   type AgentsConfig,
   type CliTerminalAction,
-  type GlobalSource,
   type LlmProvider,
   type PrimaryAgent,
   type ProvidersResponse,
@@ -35,6 +32,7 @@ import {
   type UpdatePrimaryAgentRequest,
   type UpdateProviderCredentialRequest,
 } from '@midnite/shared';
+import { Accordion } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Collapse } from '@/components/ui/collapse';
 import { EmptyState } from '@/components/empty-state';
@@ -45,19 +43,14 @@ import { Tabs, type TabOption } from '@/components/ui/tabs';
 import { AgentCard } from '@/components/agent-card';
 import { AgentCliLogo } from '@/components/agent-cli-logo';
 import { CliActionModal } from '@/components/cli-action-modal';
-import { SourceListEditor, orderByIds } from '@/components/source-list-editor';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  addKnowledgeSource,
   createSubAgent,
   deleteSubAgent,
   getAgentsConfig,
   getCliStatuses,
-  getKnowledgeSources,
   getProviders,
-  removeKnowledgeSource,
-  reorderKnowledgeSources,
   setActiveProvider as apiSetActiveProvider,
   updateAgentCli,
   updatePrimaryAgent,
@@ -544,8 +537,6 @@ export function AgentsView() {
         </div>
       </Accordion>
 
-      <KnowledgeBaseSection />
-
       {cliAction ? (
         <CliActionModal
           cli={cliAction.cli}
@@ -623,71 +614,6 @@ function PrimaryAgentRouting({
         </div>
       )}
     </div>
-  );
-}
-
-/**
- * The global knowledge base: link sources shared with every project (on top of
- * each project's own sources). Mirrors the project sources UI — paste a URL, the
- * gateway extracts the favicon + title from Open Graph.
- */
-function KnowledgeBaseSection() {
-  const [sources, setSources] = useState<GlobalSource[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const confirm = useConfirm();
-
-  useEffect(() => {
-    getKnowledgeSources()
-      .then(setSources)
-      .catch((e) => setError(errMsg(e)));
-  }, []);
-
-  const remove = async (id: string) => {
-    const ok = await confirm({
-      title: 'Remove this source?',
-      description: 'It will no longer be shared with your projects.',
-      confirmLabel: 'Remove',
-    });
-    if (!ok) return;
-    setSources(await removeKnowledgeSource(id));
-  };
-
-  const reorder = async (ids: string[]) => {
-    const prev = sources;
-    setSources(orderByIds(prev, ids)); // optimistic
-    try {
-      setSources(await reorderKnowledgeSources(ids));
-    } catch (e) {
-      setSources(prev); // roll back
-      throw e;
-    }
-  };
-
-  return (
-    <Accordion
-      title="Knowledge Base"
-      icon={<Library className="h-3.5 w-3.5" />}
-      count={sources.length}
-      defaultOpen
-    >
-      <div className="space-y-3 p-5">
-        <p className="text-xs text-muted-foreground">
-          Links shared with every project, on top of its own sources — drag the grip to reorder. A
-          project&apos;s own source for the same link takes precedence.
-        </p>
-
-        {error ? <p className="text-xs text-destructive">{error}</p> : null}
-
-        <SourceListEditor
-          sources={sources}
-          max={MAX_GLOBAL_SOURCES}
-          placeholder="Paste a GitHub, Notion, Google Docs or any link"
-          onAdd={async (url) => setSources(await addKnowledgeSource(url))}
-          onRemove={remove}
-          onReorder={reorder}
-        />
-      </div>
-    </Accordion>
   );
 }
 
@@ -841,55 +767,3 @@ function Field({
   );
 }
 
-function Accordion({
-  title,
-  icon,
-  count,
-  action,
-  defaultOpen = false,
-  children,
-}: {
-  title: string;
-  icon?: ReactNode;
-  count?: number;
-  action?: ReactNode;
-  defaultOpen?: boolean;
-  children: ReactNode;
-}) {
-  const [open, setOpen] = useState(defaultOpen);
-
-  return (
-    <section className="overflow-hidden rounded-lg border bg-card/60">
-      {/* min-height keeps every header the same height whether or not it has an
-          action button (e.g. Sub Agents' Add), so the titles align down the page. */}
-      <div className="flex min-h-[3.25rem] items-center gap-2 px-3 py-2.5">
-        <button
-          type="button"
-          onClick={() => setOpen((o) => !o)}
-          aria-expanded={open}
-          className="flex flex-1 items-center gap-2 text-left"
-        >
-          <ChevronDown
-            className={cn(
-              'h-4 w-4 shrink-0 text-muted-foreground transition-transform',
-              !open && '-rotate-90',
-            )}
-          />
-          {icon ? <span className="shrink-0 text-muted-foreground">{icon}</span> : null}
-          <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            {title}
-          </h2>
-          {typeof count === 'number' ? (
-            <span className="rounded-full bg-muted/60 px-2 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
-              {count}
-            </span>
-          ) : null}
-        </button>
-        {action ? <div className="shrink-0">{action}</div> : null}
-      </div>
-      <Collapse open={open}>
-        <div className="border-t border-border/60">{children}</div>
-      </Collapse>
-    </section>
-  );
-}

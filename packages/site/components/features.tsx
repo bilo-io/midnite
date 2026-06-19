@@ -1,4 +1,4 @@
-import { KanbanSquare, Cpu, TerminalSquare, BookOpen, MonitorPlay, GitPullRequest } from 'lucide-react';
+import { KanbanSquare, Cpu, TerminalSquare, MonitorPlay, GitPullRequest } from 'lucide-react';
 
 import { Reveal } from '@/components/ui/section';
 
@@ -22,11 +22,6 @@ const FEATURES = [
     icon: MonitorPlay,
     title: 'Live terminals',
     body: 'Watch any agent work in an embedded terminal, and jump in when a task needs your input.',
-  },
-  {
-    icon: BookOpen,
-    title: 'Knowledge base',
-    body: 'Drop Markdown into knowledge/ and it is injected into every agent prompt automatically.',
   },
   {
     icon: GitPullRequest,

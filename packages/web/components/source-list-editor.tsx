@@ -63,7 +63,7 @@ type Props = {
 /**
  * The shared sources editor: paste a URL to add, drag the grip to reorder, and
  * remove. Controlled — `sources` is the source of truth and the parent applies
- * reorders optimistically. Used by projects, memories and the knowledge base.
+ * reorders optimistically. Used by projects and memories.
  */
 export function SourceListEditor({
   sources,

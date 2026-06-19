@@ -1,7 +1,6 @@
 import {
   Activity,
   BarChart3,
-  BookMarked,
   Bot,
   Brain,
   Calendar,
@@ -62,7 +61,6 @@ export type WidgetType =
   // at-a-glance extras
   | 'world-clocks'
   | 'all-projects'
-  | 'knowledge'
   | 'quote'
   // productivity tools
   | 'timer'
@@ -248,7 +246,6 @@ export const DASHBOARD_WIDGETS: Record<WidgetType, WidgetMeta> = {
     sizes: { lg: { w: 4, h: 4, minW: 2, minH: 3 }, md: { w: 4, h: 4, minW: 2, minH: 3 }, sm: { w: 4, h: 4, minW: 2, minH: 3 } },
   },
   'all-projects': { label: 'All projects', description: 'Every project with its task breakdown', icon: LayoutGrid, sizes: panelSizes },
-  knowledge: { label: 'Knowledge sources', description: 'Indexed global knowledge sources', icon: BookMarked, sizes: panelSizes },
   quote: {
     label: 'Quote',
     description: 'A quote that changes daily',

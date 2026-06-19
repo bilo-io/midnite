@@ -18,7 +18,6 @@ import {
 } from '@midnite/shared';
 import { LlmService } from '../agent/llm/llm.service';
 import { collapseTilde, expandTilde } from '../fs/path-tilde';
-import { KnowledgeService } from '../knowledge/knowledge.service';
 import { MemoriesService } from '../memories/memories.service';
 import { TasksService } from '../tasks/tasks.service';
 import { fetchSourceMetadata } from './lib/opengraph';
@@ -59,7 +58,6 @@ export class ProjectsService {
     @Inject(ProjectsRepository) private readonly repo: ProjectsRepository,
     @Inject(LlmService) private readonly llm: LlmService,
     @Inject(TasksService) private readonly tasks: TasksService,
-    @Inject(KnowledgeService) private readonly knowledge: KnowledgeService,
     @Inject(MemoriesService) private readonly memories: MemoriesService,
   ) {}
 
@@ -214,11 +212,9 @@ export class ProjectsService {
   }
 
   private async generatePlan(project: Project): Promise<string> {
-    // Sources are merged by URL in increasing precedence: the global knowledge
-    // base, then the project's scoped memories' sources, then the project's own
-    // sources (which win on a URL collision).
+    // Sources are merged by URL in increasing precedence: the project's scoped
+    // memories' sources, then the project's own sources (which win on a collision).
     const byUrl = new Map<string, { kind: string; title?: string; url: string }>();
-    for (const s of this.knowledge.listSources()) byUrl.set(s.url, s);
     const scopedMemories = this.memories.listScoped(project.id);
     for (const m of scopedMemories) for (const s of m.sources) byUrl.set(s.url, s);
     for (const s of project.sources) byUrl.set(s.url, s);

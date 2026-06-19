@@ -122,20 +122,6 @@ export const projectSources = sqliteTable(
   }),
 );
 
-// The global knowledge base: link sources applied to every project (on top of its
-// own sources). Same shape as project_sources, minus the project scope.
-export const globalSources = sqliteTable('global_sources', {
-  id: text('id').primaryKey(),
-  url: text('url').notNull(),
-  kind: text('kind').notNull(),
-  title: text('title'),
-  faviconUrl: text('favicon_url'),
-  fetchedAt: text('fetched_at'),
-  createdAt: text('created_at').notNull(),
-  // Ascending display order; drives the list/drag order.
-  position: integer('position').notNull().default(0),
-});
-
 // Memories: markdown knowledge entries injected into agent prompts. project_id
 // null = global (applies to every project); otherwise scoped to that project.
 export const memories = sqliteTable(
@@ -444,8 +430,6 @@ export type ProjectRow = typeof projects.$inferSelect;
 export type ProjectInsert = typeof projects.$inferInsert;
 export type ProjectSourceRow = typeof projectSources.$inferSelect;
 export type ProjectSourceInsert = typeof projectSources.$inferInsert;
-export type GlobalSourceRow = typeof globalSources.$inferSelect;
-export type GlobalSourceInsert = typeof globalSources.$inferInsert;
 export type MemoryRow = typeof memories.$inferSelect;
 export type MemoryInsert = typeof memories.$inferInsert;
 export type MemorySourceRow = typeof memorySources.$inferSelect;

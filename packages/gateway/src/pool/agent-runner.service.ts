@@ -1,11 +1,9 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { MidniteConfig, Task } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
-import { KnowledgeService } from '../knowledge/knowledge.service';
 import { TasksService } from '../tasks/tasks.service';
 import { TerminalService } from '../terminal/terminal.service';
 import { AgentPoolService } from './agent-pool.service';
-import { buildAgentPrompt } from './lib/build-agent-prompt';
 
 /**
  * Drives a single task through an autonomous agent run: claim a slot, move the
@@ -23,7 +21,6 @@ export class AgentRunnerService {
     @Inject(AgentPoolService) private readonly pool: AgentPoolService,
     @Inject(TasksService) private readonly tasks: TasksService,
     @Inject(TerminalService) private readonly terminal: TerminalService,
-    @Inject(KnowledgeService) private readonly knowledge: KnowledgeService,
   ) {}
 
   /** Claim a slot and spawn an agent session for `task`. Returns false (leaving
@@ -31,7 +28,7 @@ export class AgentRunnerService {
   async start(task: Task): Promise<boolean> {
     if (this.pool.acquire(task.id) === null) return false;
     try {
-      const prompt = await this.buildPrompt(task);
+      const prompt = task.prompt?.trim() || task.title;
       this.tasks.startTask(task.id);
       const result = this.terminal.spawnAgentSession(
         task.id,
@@ -176,12 +173,5 @@ export class AgentRunnerService {
         `failed to retry ${taskId}: ${err instanceof Error ? err.message : 'unknown'}`,
       );
     }
-  }
-
-  // The task's own prompt (falling back to its title) plus the knowledge-base
-  // links as reference context.
-  private async buildPrompt(task: Task): Promise<string> {
-    const base = task.prompt?.trim() || task.title;
-    return buildAgentPrompt(base, this.knowledge.listSources());
   }
 }

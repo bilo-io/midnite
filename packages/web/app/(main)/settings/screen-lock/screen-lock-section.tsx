@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Clock, Lock } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Accordion } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { PasscodeSetupDialog } from '@/components/passcode-pad';
@@ -76,15 +76,9 @@ export function ScreenLockSection() {
     setSettings((prev) => ({ ...prev, passcodeOnlyWhenLocked: on }));
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-3.5 w-3.5" />
-            Screensaver
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+    <div className="space-y-4">
+      <Accordion title="Screensaver" icon={<Clock className="h-3.5 w-3.5" />} defaultOpen>
+        <div className="space-y-4 p-5">
           <div className="flex items-start justify-between gap-6">
             <div className="space-y-1">
               <p className="text-sm font-medium">Inactivity timeout</p>
@@ -166,17 +160,11 @@ export function ScreenLockSection() {
               Default {CYCLE_DEFAULT_S}s · range {CYCLE_MIN_S}–{CYCLE_MAX_S}s.
             </p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </Accordion>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Lock className="h-3.5 w-3.5" />
-            Screen lock
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-5">
+      <Accordion title="Screen lock" icon={<Lock className="h-3.5 w-3.5" />} defaultOpen>
+        <div className="space-y-5 p-5">
           <div className="flex items-start justify-between gap-6">
             <div className="space-y-1">
               <p className="text-sm font-medium">Require passcode</p>
@@ -243,8 +231,8 @@ export function ScreenLockSection() {
               ) : null}
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </Accordion>
 
       {setup ? (
         <PasscodeSetupDialog

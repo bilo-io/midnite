@@ -46,7 +46,6 @@ import {
   AgentsConfigResponseSchema,
   ProvidersResponseSchema,
   ProviderResponseSchema,
-  GlobalSourcesResponseSchema,
   InstallTerminalResponseSchema,
   BrowseDirResponseSchema,
   CreatePlanTasksResponseSchema,
@@ -89,7 +88,6 @@ import {
   type CreateTaskResponse,
   type CreateWorkflowRequest,
   type DraftPlanResponse,
-  type GlobalSource,
   type CreateMemoryRequest,
   type HeartbeatRun,
   type LlmProvider,
@@ -370,40 +368,6 @@ export async function reorderProjectSources(id: string, sourceIds: string[]): Pr
     ProjectResponseSchema,
   );
   return project;
-}
-
-// --- Knowledge base (global sources, applied to every project) ---
-
-export async function getKnowledgeSources(): Promise<GlobalSource[]> {
-  const { sources } = await fetchJson('/knowledge/sources', undefined, GlobalSourcesResponseSchema);
-  return sources;
-}
-
-export async function addKnowledgeSource(url: string): Promise<GlobalSource[]> {
-  const { sources } = await fetchJson(
-    '/knowledge/sources',
-    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ url }) },
-    GlobalSourcesResponseSchema,
-  );
-  return sources;
-}
-
-export async function removeKnowledgeSource(id: string): Promise<GlobalSource[]> {
-  const { sources } = await fetchJson(
-    `/knowledge/sources/${encodeURIComponent(id)}`,
-    { method: 'DELETE' },
-    GlobalSourcesResponseSchema,
-  );
-  return sources;
-}
-
-export async function reorderKnowledgeSources(sourceIds: string[]): Promise<GlobalSource[]> {
-  const { sources } = await fetchJson(
-    '/knowledge/sources/reorder',
-    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ sourceIds }) },
-    GlobalSourcesResponseSchema,
-  );
-  return sources;
 }
 
 // --- Memories (markdown knowledge entries, global or project-scoped) ---

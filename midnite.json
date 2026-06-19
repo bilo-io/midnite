@@ -10,9 +10,6 @@
     "mode": "pty",
     "layout": "split"
   },
-  "knowledge": {
-    "dir": "./knowledge"
-  },
   "repos": [],
   "gateway": {
     "port": 7777
