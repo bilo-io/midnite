@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { TASKS_WS_PATH, TaskBoardEventSchema } from '@midnite/shared';
 import { gatewayWsUrl } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
+import { emitTaskEvent } from '@/lib/task-events';
 
 /**
  * Subscribe to the gateway's live task-board WebSocket. On any task event
@@ -44,8 +45,10 @@ export function useTaskEvents(): void {
       ws.onmessage = (ev) => {
         // Validate defensively so a malformed frame can't trigger refetch churn.
         try {
-          if (TaskBoardEventSchema.safeParse(JSON.parse(String(ev.data))).success) {
+          const parsed = TaskBoardEventSchema.safeParse(JSON.parse(String(ev.data)));
+          if (parsed.success) {
             invalidateData();
+            emitTaskEvent(parsed.data);
           }
         } catch {
           // ignore unparseable frames

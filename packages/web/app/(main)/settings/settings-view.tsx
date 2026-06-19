@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Activity, Blocks, ChevronDown, Clock, Cpu, Lock, PanelLeft } from 'lucide-react';
+import { Activity, Bell, Blocks, ChevronDown, Clock, Cpu, Lock, PanelLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -118,6 +118,29 @@ export function SettingsView() {
   const setOnlyWhenLocked = (on: boolean) =>
     setSettings((prev) => ({ ...prev, passcodeOnlyWhenLocked: on }));
 
+  // Enabling notifications prompts for the browser's Notification permission;
+  // if the user denies it, we flip the toggle back off so it reflects reality.
+  const toggleNotify = (on: boolean) => {
+    if (on && typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'granted') {
+        setSettings((prev) => ({ ...prev, notifyTaskUpdates: true }));
+      } else if (Notification.permission === 'denied') {
+        // Can't re-prompt once denied — keep it off; the hint explains why.
+        setSettings((prev) => ({ ...prev, notifyTaskUpdates: false }));
+      } else {
+        void Notification.requestPermission().then((perm) =>
+          setSettings((prev) => ({ ...prev, notifyTaskUpdates: perm === 'granted' })),
+        );
+      }
+      return;
+    }
+    setSettings((prev) => ({ ...prev, notifyTaskUpdates: on }));
+  };
+  const notifyDenied =
+    typeof window !== 'undefined' &&
+    'Notification' in window &&
+    Notification.permission === 'denied';
+
   return (
     <div className="container max-w-3xl space-y-6 py-2">
       <Card>
@@ -183,7 +206,7 @@ export function SettingsView() {
             <div className="space-y-1">
               <p className="text-sm font-medium">Parallel agents</p>
               <p className="text-xs text-muted-foreground">
-                How many Claude Code sessions may run at once. Extra tasks queue until a slot
+                How many agent sessions may run at once. Extra tasks queue until a slot
                 frees up.
               </p>
             </div>
@@ -483,6 +506,35 @@ export function SettingsView() {
                 </Button>
               ) : null}
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bell className="h-3.5 w-3.5" />
+            Notifications
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-start justify-between gap-6">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Task updates</p>
+              <p className="text-xs text-muted-foreground">
+                Get a desktop notification when a task needs your input or finishes. Works in the
+                browser and the desktop app.
+                {notifyDenied
+                  ? ' Notifications are blocked in your browser — allow them in site settings to enable this.'
+                  : ''}
+              </p>
+            </div>
+            <Switch
+              checked={settings.notifyTaskUpdates}
+              onCheckedChange={toggleNotify}
+              disabled={notifyDenied}
+              aria-label="Notify on task updates"
+            />
           </div>
         </CardContent>
       </Card>

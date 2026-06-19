@@ -82,7 +82,7 @@ export const NAV_W_COLLAPSED = '3.5rem';
 export const NAV_W_EXPANDED = '14rem';
 
 export type AppSettings = {
-  /** Number of Claude Code sessions allowed to run in parallel. */
+  /** Number of agent sessions allowed to run in parallel. */
   agentPoolSize: number;
   /** Seconds of inactivity before the screensaver opens. */
   inactivityTimeoutS: number;
@@ -97,6 +97,12 @@ export type AppSettings = {
   passcodeOnlyWhenLocked: boolean;
   /** Collapse/expand/lock behaviour of the side navigation. */
   navMode: NavMode;
+  /**
+   * Desktop notifications when a task needs input (→ waiting) or finishes
+   * (→ done). Opt-in: enabling it prompts for the browser's Notification
+   * permission. Works in the browser and the Electron desktop app.
+   */
+  notifyTaskUpdates: boolean;
   /** Which optional features (and their nav items) are enabled. */
   features: Record<FeatureKey, boolean>;
 };
@@ -108,6 +114,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   requirePasscode: false,
   passcodeOnlyWhenLocked: false,
   navMode: 'auto',
+  notifyTaskUpdates: false,
   features: DEFAULT_FEATURE_FLAGS,
 };
 
