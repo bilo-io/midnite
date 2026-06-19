@@ -196,7 +196,7 @@ export const DASHBOARD_WIDGETS: Record<WidgetType, WidgetMeta> = {
   },
 
   // — midnite-native ————————————————————————————————————————————————
-  sessions: { label: 'Live sessions', description: 'Active Claude Code sessions and their status', icon: TerminalSquare, sizes: panelSizes },
+  sessions: { label: 'Live sessions', description: 'Active agent sessions and their status', icon: TerminalSquare, sizes: panelSizes },
   workflows: { label: 'Workflows', description: 'Workflow definitions and last-run status', icon: Workflow, sizes: panelSizes },
   memories: { label: 'Recent memories', description: 'Most recently updated agent memories', icon: Brain, sizes: panelSizes },
   agents: { label: 'Agent pool', description: 'Primary agent, model and sub-agents', icon: Bot, sizes: mediumSizes },

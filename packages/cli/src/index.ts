@@ -6,7 +6,7 @@ const program = new Command();
 
 program
   .name('midnite')
-  .description('Multitask Claude Code — CLI client for the midnite gateway')
+  .description('Multitask coding agents — CLI client for the midnite gateway')
   .version('0.0.0')
   .option('--gateway <url>', 'gateway base URL (else $MIDNITE_GATEWAY_URL, else http://localhost:7777)');
 

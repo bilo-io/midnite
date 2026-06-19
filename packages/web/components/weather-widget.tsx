@@ -44,9 +44,15 @@ function describe(code: number): { icon: LucideIcon; label: string } {
   return { icon: CloudLightning, label: 'Thunderstorm' };
 }
 
-function temp(celsius: number, units: WeatherUnits): string {
+// Bare degrees — no unit letter. Used for the high/low range, where the unit is
+// already implied by the headline temperature and the °C/°F toggle.
+function deg(celsius: number, units: WeatherUnits): string {
   const value = units === 'f' ? celsius * 1.8 + 32 : celsius;
-  return `${Math.round(value)}°${units === 'f' ? 'F' : 'C'}`;
+  return `${Math.round(value)}°`;
+}
+
+function temp(celsius: number, units: WeatherUnits): string {
+  return `${deg(celsius, units)}${units === 'f' ? 'F' : 'C'}`;
 }
 
 export function WeatherWidget({ config, onConfigChange }: WeatherWidgetProps) {
@@ -140,7 +146,19 @@ export function WeatherWidget({ config, onConfigChange }: WeatherWidgetProps) {
 
 function WeatherReadout({ data, units, compact }: { data: WeatherResponse; units: WeatherUnits; compact: boolean }) {
   const { icon: Icon, label } = describe(data.current.weatherCode);
-  const today = describe(data.today.weatherCode);
+
+  // Shared low–high range and precipitation chance: terse, icon-led, no prose.
+  const range = (
+    <span className="tabular-nums">
+      {deg(data.today.lowC, units)} – {deg(data.today.highC, units)}
+    </span>
+  );
+  const precip = (
+    <span className="inline-flex items-center gap-1 tabular-nums">
+      <Droplets className="h-3 w-3" aria-label="Chance of precipitation" />
+      {data.today.precipitationProbability}%
+    </span>
+  );
 
   if (compact) {
     return (
@@ -149,14 +167,9 @@ function WeatherReadout({ data, units, compact }: { data: WeatherResponse; units
           <Icon className="h-5 w-5 text-muted-foreground" aria-hidden />
           <span className="text-xl font-semibold tabular-nums">{temp(data.current.temperatureC, units)}</span>
         </span>
-        <span className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="tabular-nums">
-            ↑{temp(data.today.highC, units)} ↓{temp(data.today.lowC, units)}
-          </span>
-          <span className="inline-flex items-center gap-0.5">
-            <Droplets className="h-3 w-3" />
-            {data.today.precipitationProbability}%
-          </span>
+        <span className="flex items-center gap-2.5 text-xs text-muted-foreground">
+          {range}
+          {precip}
         </span>
       </div>
     );
@@ -167,16 +180,10 @@ function WeatherReadout({ data, units, compact }: { data: WeatherResponse; units
       <Icon className="h-10 w-10 text-muted-foreground" aria-hidden />
       <span className="text-4xl font-semibold tabular-nums leading-none">{temp(data.current.temperatureC, units)}</span>
       <span className="text-sm text-muted-foreground">{label}</span>
-      <div className="mt-1 flex items-center gap-4 text-xs text-muted-foreground">
-        <span className="tabular-nums">High {temp(data.today.highC, units)}</span>
-        <span className="tabular-nums">Low {temp(data.today.lowC, units)}</span>
-      </div>
-      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-        <Droplets className="h-3 w-3" />
-        <span className="tabular-nums">{data.today.precipitationProbability}% precipitation</span>
-        <span className="px-1">·</span>
-        <today.icon className="h-3 w-3" />
-        <span>{today.label}</span>
+      <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
+        {range}
+        <span aria-hidden>·</span>
+        {precip}
       </div>
     </div>
   );

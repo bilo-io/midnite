@@ -755,3 +755,23 @@
     transition: none;
   }
 }
+
+/* Composer docked⇄full-screen morph. The card is captured under the
+   `composer-frame` name so the browser tweens its box between the docked and
+   centred positions; the rest of the page (incl. the blurred backdrop fading in)
+   rides the default root cross-fade. Same duration/easing keeps them in step. */
+::view-transition-group(composer-frame) {
+  animation-duration: 320ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+::view-transition-old(composer-frame),
+::view-transition-new(composer-frame) {
+  animation-duration: 320ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  /* Avoid the snapshots scrolling/overflowing while the box morphs. */
+  overflow: clip;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 320ms;
+}

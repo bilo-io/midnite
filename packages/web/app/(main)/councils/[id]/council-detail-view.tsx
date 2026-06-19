@@ -176,6 +176,7 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
               <CouncilRunTabs
                 key={run.id}
                 councilId={initial.id}
+                councilName={initial.name}
                 run={run}
                 onSkip={live ? skipMember : undefined}
                 onRetryMember={!live ? retryMember : undefined}

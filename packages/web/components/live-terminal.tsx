@@ -11,6 +11,7 @@ import type {
 } from '@midnite/shared';
 import { useTerminalSocket, type TerminalConnectionState } from '@/hooks/use-terminal-socket';
 import { useTheme } from '@/app/theme/theme-context';
+import { Spinner } from '@/components/spinner';
 import { Button } from '@/components/ui/button';
 
 // Palettes track the app's card surface (globals.css --card / --foreground).
@@ -45,6 +46,9 @@ type Props = {
   approvals?: boolean;
   /** Accessible label for the terminal region. */
   ariaLabel?: string;
+  /** Show a centred spinner over the (empty) terminal until the first output
+   *  arrives — avoids a blank panel while the PTY connects and the agent spins up. */
+  loaderUntilOutput?: boolean;
 };
 
 /**
@@ -52,7 +56,13 @@ type Props = {
  * streams output, forwards input/resize, and (optionally) renders tool-approval
  * prompts. Used by both session terminals and standalone install terminals.
  */
-export function LiveTerminal({ attachId, label, approvals = false, ariaLabel }: Props) {
+export function LiveTerminal({
+  attachId,
+  label,
+  approvals = false,
+  ariaLabel,
+  loaderUntilOutput = false,
+}: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
@@ -60,6 +70,10 @@ export function LiveTerminal({ attachId, label, approvals = false, ariaLabel }: 
   const [phase, setPhase] = useState<TerminalStatusPhase | null>(null);
   const [command, setCommand] = useState<string | null>(null);
   const [pending, setPending] = useState<TerminalApprovalRequestMessage[]>([]);
+  // Latches true on the first byte; gates the loading spinner so it clears the
+  // moment the agent prints anything. A ref guards against re-renders per chunk.
+  const [hasOutput, setHasOutput] = useState(false);
+  const hasOutputRef = useRef(false);
 
   const { resolved } = useTheme();
   const resolvedRef = useRef(resolved);
@@ -68,7 +82,13 @@ export function LiveTerminal({ attachId, label, approvals = false, ariaLabel }: 
   const { connectionState, sendInput, sendResize, sendApproval } = useTerminalSocket({
     attachId,
     enabled: ready,
-    onOutput: (bytes) => termRef.current?.write(bytes),
+    onOutput: (bytes) => {
+      termRef.current?.write(bytes);
+      if (!hasOutputRef.current && bytes.length > 0) {
+        hasOutputRef.current = true;
+        setHasOutput(true);
+      }
+    },
     onStatus: (p, cmd) => {
       setPhase(p);
       if (cmd) setCommand(cmd);
@@ -181,6 +201,11 @@ export function LiveTerminal({ attachId, label, approvals = false, ariaLabel }: 
           className="h-full overflow-hidden rounded-lg border border-border/60 p-2"
           style={{ background: TERMINAL_THEMES[resolved].background }}
         />
+        {loaderUntilOutput && !hasOutput && !exited ? (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <Spinner />
+          </div>
+        ) : null}
         {current ? <ApprovalOverlay request={current} onAnswer={answer} /> : null}
       </div>
     </div>

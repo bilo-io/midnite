@@ -73,7 +73,7 @@ export const FEATURES: Feature[] = [
     key: 'sessions',
     href: '/sessions',
     label: 'Sessions',
-    description: 'Live and past Claude Code sessions with embedded terminals.',
+    description: 'Live and past agent sessions with embedded terminals.',
     Icon: BotMessageSquare,
   },
   {

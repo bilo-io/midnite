@@ -20,10 +20,16 @@ import { ProjectSelect } from '@/components/project-select';
 import { cn } from '@/lib/utils';
 import { pingAgent } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
+import { useAutoResizeTextarea } from '@/lib/use-auto-resize-textarea';
 import { useSpeechRecognition } from '@/lib/use-speech-recognition';
 import { useFeatureDrafts, draftTasks } from '@/lib/feature-drafts';
 import { FeatureListPills } from '@/components/feature-list-pills';
 import { FeatureListModal } from '@/components/feature-list-modal';
+import {
+  ComposerFullscreen,
+  ComposerFullscreenToggle,
+  useComposerFullscreen,
+} from '@/components/composer-fullscreen';
 
 export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
   const [text, setText] = React.useState('');
@@ -71,6 +77,21 @@ export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
       setText((prev) => (prev ? `${prev.trimEnd()} ${transcript.trim()}` : transcript.trim()));
     },
   });
+
+  const { full, toggle, close } = useComposerFullscreen();
+
+  // Height: roomy & modal-sized in full screen; otherwise pinned small during the
+  // intro glide, then compact-when-idle that opens up on focus and grows with
+  // content up to a cap.
+  const displayText = text + (speech.interim ? ` ${speech.interim}` : '');
+  const ta = useAutoResizeTextarea(
+    displayText,
+    full
+      ? { collapsed: 360, expanded: 360, max: 520 }
+      : intro
+        ? { collapsed: 50, expanded: 50, max: 50 }
+        : { collapsed: 48, expanded: 96, max: 220 },
+  );
 
   const previews = React.useMemo(
     () => files.map((f) => ({ name: f.name, url: URL.createObjectURL(f) })),
@@ -152,20 +173,24 @@ export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
         onDismiss={() => setPingResult(null)}
       />
     )}
+    <ComposerFullscreen full={full} onClose={close}>
     <div
       className="gradient-border relative z-10 rounded-xl shadow-sm transition-[transform,box-shadow] duration-700 ease-out focus-within:shadow-lg motion-reduce:transition-none"
       style={{ transform: intro ? 'translateY(-42dvh)' : 'translateY(0)' }}
     >
       <div className="relative rounded-xl bg-card p-4">
+      <ComposerFullscreenToggle full={full} onToggle={toggle} />
       <div className="space-y-3">
         <Textarea
-          value={text + (speech.interim ? ` ${speech.interim}` : '')}
+          ref={ta.ref}
+          value={displayText}
           onChange={(e) => setText(e.target.value)}
+          onFocus={ta.onFocus}
+          onBlur={ta.onBlur}
           onKeyDown={onKeyDown}
           placeholder="Describe a feature list — one task per line. (⌘/Ctrl+Enter to add)"
-          rows={4}
-          style={{ height: intro ? 50 : 100 }}
-          className="min-h-0 resize-none border-0 bg-transparent p-0 text-base transition-[height] duration-700 ease-out focus-visible:ring-0 motion-reduce:transition-none"
+          rows={1}
+          className="min-h-0 resize-none overflow-y-auto border-0 bg-transparent p-0 pr-8 text-base transition-[height] duration-300 ease-in-out focus-visible:ring-0 motion-reduce:transition-none"
         />
 
         {speech.interim && (
@@ -278,6 +303,7 @@ export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
       </div>
       </div>
     </div>
+    </ComposerFullscreen>
 
     {openDraft && (
       <FeatureListModal

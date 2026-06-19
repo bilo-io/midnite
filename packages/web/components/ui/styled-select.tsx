@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import SelectBase, {
   components,
+  type CSSObjectWithLabel,
   type ClassNamesConfig,
   type DropdownIndicatorProps,
   type GroupBase,
@@ -23,6 +24,17 @@ import { cn } from '@/lib/utils';
 // Internal option type is non-generic (value: string) so react-select's custom
 // component props type cleanly; StyledSelect stays generic at its public edge.
 type RSOption = { value: string; label: string; icon?: ReactNode };
+
+// react-select hard-codes `zIndex: 1` on the portal wrapper (menuPortalCSS has no
+// `unstyled` branch, so it's there regardless of our styling). That loses to app
+// chrome that sits in its own stacking context above it — e.g. the council
+// composer's `.gradient-border` surface (isolation: isolate + z-10) — clipping a
+// menu that opens upward over it. Lift the wrapper above that. Must be `styles`
+// (inline), not a `classNames` z-index utility: the inline zIndex would win.
+const liftMenuPortal = (base: CSSObjectWithLabel): CSSObjectWithLabel => ({
+  ...base,
+  zIndex: 100,
+});
 
 const classNames: ClassNamesConfig<RSOption, false> = {
   control: ({ isFocused, isDisabled }) =>
@@ -112,6 +124,7 @@ export function StyledSelect<T extends string>({
       <SelectBase<RSOption>
         unstyled
         classNames={classNames}
+        styles={{ menuPortal: liftMenuPortal }}
         options={opts}
         value={selected}
         onChange={(opt) => opt && onChange(opt.value as T)}
@@ -202,6 +215,7 @@ export function ModelComboSelect({
       <CreatableSelect<ModelOpt, false, GroupBase<ModelOpt>>
         unstyled
         classNames={modelClassNames}
+        styles={{ menuPortal: liftMenuPortal }}
         options={options}
         value={selected}
         onChange={(opt) => onChange(opt?.value ?? '')}

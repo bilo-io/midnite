@@ -475,7 +475,7 @@ export function ProjectModal({
                 </Button>
               </div>
               <p className="text-[11px] text-muted-foreground">
-                Where this project&apos;s Claude Code sessions spawn. Leave blank to use the default.
+                Where this project&apos;s agent sessions spawn. Leave blank to use the default.
               </p>
             </div>
 

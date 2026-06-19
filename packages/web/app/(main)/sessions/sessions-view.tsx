@@ -386,7 +386,7 @@ export function SessionsView({
           <EmptyState
             Icon={BotMessageSquare}
             title="No sessions yet"
-            description="Create a task and its Claude Code session shows up here."
+            description="Create a task and its agent session shows up here."
           />
         ) : view === 'table' ? (
           <SortableAccordions sections={sections} storageKey="midnite.sessions.sections" />

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { Check, Copy, Download, FileDown, FileText, Loader2 } from 'lucide-react';
+import { Check, Copy, Download, FileCode2, FileDown, FileText, Loader2 } from 'lucide-react';
 import { MarkdownPreview } from '@/components/markdown-preview';
 import { useToast } from '@/components/toast';
 import { cn } from '@/lib/utils';
@@ -30,6 +30,10 @@ type Props = {
   fetchMarkdown: () => Promise<string>;
   /** Base filename (no extension) for downloads and the print title. */
   filename: string;
+  /** Optional: when provided, adds a "Download HTML" item yielding a
+   *  self-contained interactive HTML document. The domain caller assembles it
+   *  (filename + html) — this component just triggers the download. */
+  buildHtml?: () => Promise<{ filename: string; html: string }>;
   /** Disable the trigger (e.g. while a run is still in progress). */
   disabled?: boolean;
   className?: string;
@@ -67,10 +71,10 @@ function triggerDownload(filename: string, content: string, mimeType: string): v
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export function ExportMenu({ fetchMarkdown, filename, disabled, className }: Props) {
+export function ExportMenu({ fetchMarkdown, filename, buildHtml, disabled, className }: Props) {
   const toast = useToast();
   const [open, setOpen] = useState(false);
-  const [busy, setBusy] = useState<'copy' | 'md' | 'pdf' | null>(null);
+  const [busy, setBusy] = useState<'copy' | 'md' | 'pdf' | 'html' | null>(null);
   const [copied, setCopied] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   // The print container + its React root persist across prints so we can unmount.
@@ -174,10 +178,32 @@ export function ExportMenu({ fetchMarkdown, filename, disabled, className }: Pro
     }
   }, [fetchMarkdown, filename, toast]);
 
-  const items: { key: 'copy' | 'md' | 'pdf'; label: string; icon: typeof Copy; run: () => void }[] = [
+  const downloadHtml = useCallback(async () => {
+    if (!buildHtml) return;
+    setBusy('html');
+    try {
+      const { filename: name, html } = await buildHtml();
+      triggerDownload(name, html, 'text/html;charset=utf-8');
+      setOpen(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not export HTML');
+    } finally {
+      setBusy(null);
+    }
+  }, [buildHtml, toast]);
+
+  const items: {
+    key: 'copy' | 'md' | 'pdf' | 'html';
+    label: string;
+    icon: typeof Copy;
+    run: () => void;
+  }[] = [
     { key: 'copy', label: 'Copy Markdown', icon: copied ? Check : Copy, run: () => void copyMarkdown() },
     { key: 'md', label: 'Download .md', icon: Download, run: () => void downloadMarkdown() },
     { key: 'pdf', label: 'Download PDF', icon: FileDown, run: () => void downloadPdf() },
+    ...(buildHtml
+      ? [{ key: 'html' as const, label: 'Download HTML', icon: FileCode2, run: () => void downloadHtml() }]
+      : []),
   ];
 
   return (

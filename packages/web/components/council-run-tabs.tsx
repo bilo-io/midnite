@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createRoot } from 'react-dom/client';
 import dynamic from 'next/dynamic';
 import { Loader2, RotateCcw, Sparkles, SkipForward } from 'lucide-react';
 import {
@@ -15,8 +16,16 @@ import { AgentCliLogo } from '@/components/agent-cli-logo';
 import { Button } from '@/components/ui/button';
 import { ExportMenu } from '@/components/export-menu';
 import { MarkdownPreview } from '@/components/markdown-preview';
+import { Spinner } from '@/components/spinner';
 import { StyledSelect } from '@/components/ui/styled-select';
 import { exportCouncilRunMarkdown } from '@/lib/api';
+import {
+  buildCouncilRunHtml,
+  councilHtmlExportFilename,
+  type LegendEntry,
+  type MemberView,
+  type SynthesisHtmlEntry,
+} from '@/lib/council-html-export';
 import { FORMAT_SELECT_OPTIONS, formatIcon } from '@/lib/council-formats';
 import { cn } from '@/lib/utils';
 
@@ -51,6 +60,34 @@ function TabShimmer() {
 
 const SYNTH_TAB = '__synthesis__';
 
+/** Member status → the same label the in-app MemberOutput shows. */
+const MEMBER_STATUS_LABEL: Record<CouncilRunMember['status'], string> = {
+  running: 'Running',
+  succeeded: 'Finished',
+  failed: 'Failed',
+  timeout: 'Timed out',
+  skipped: 'Skipped',
+};
+
+/**
+ * Render markdown to an HTML string by mounting `<MarkdownPreview>` into a
+ * detached node and reading its `innerHTML` — the same render-and-capture trick
+ * the PDF path uses. The exported file is styled by its own embedded CSS, so the
+ * Tailwind class names that ride along on the captured nodes are harmless.
+ */
+async function captureMarkdownHtml(markdown: string): Promise<string> {
+  const container = document.createElement('div');
+  const root = createRoot(container);
+  root.render(<MarkdownPreview content={markdown} />);
+  // createRoot commits asynchronously — poll briefly until it has rendered.
+  for (let i = 0; i < 20 && container.innerHTML === ''; i++) {
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  const html = container.innerHTML;
+  root.unmount();
+  return html;
+}
+
 /**
  * The main panel of a council run: one tab per member (live terminal while
  * running, persisted output after) plus the Synthesis tab. Terminals stay
@@ -59,12 +96,15 @@ const SYNTH_TAB = '__synthesis__';
  */
 export function CouncilRunTabs({
   councilId,
+  councilName,
   run,
   onSkip,
   onRetryMember,
   onReSynthesize,
 }: {
   councilId: string;
+  /** The council's name — used as the header/title of the HTML export. */
+  councilName: string;
   run: CouncilRun;
   /** Skip a still-running member (live runs only — absent for past runs). */
   onSkip?: (runMemberId: string) => void;
@@ -85,6 +125,79 @@ export function CouncilRunTabs({
   }, [run.status]);
 
   const activeMember = run.members.find((m) => m.id === active) ?? null;
+
+  // Assemble the self-contained interactive HTML export from the structured run.
+  // Synthesis markdown is converted to HTML via a hidden render-and-capture; the
+  // builder (lib/council-html-export) handles escaping and the document shell.
+  const buildHtml = useCallback(async (): Promise<{ filename: string; html: string }> => {
+    const members: MemberView[] = run.members.map((m, i) => ({
+      name: m.name.trim() || `Member ${i + 1}`,
+      role: m.role,
+      providerLabel: AGENT_CLI_LABEL[m.provider],
+      statusLabel: MEMBER_STATUS_LABEL[m.status],
+      statusKey: m.status,
+      output: m.output ?? null,
+      error: m.error ?? null,
+    }));
+
+    // Settled syntheses (one per format), with the legacy single-synthesis
+    // fallback — mirrors SynthesisPanel's `archive`. Active format first.
+    const archive: CouncilSynthesisEntry[] = run.syntheses.length
+      ? run.syntheses
+      : run.synthesis
+        ? [
+            {
+              format: run.format,
+              synthesis: run.synthesis,
+              synthProvider: run.synthProvider,
+              anonymized: false,
+              finishedAt: run.finishedAt ?? '',
+            },
+          ]
+        : [];
+    const ordered = [
+      ...archive.filter((e) => e.format === run.format),
+      ...archive.filter((e) => e.format !== run.format),
+    ];
+
+    const legendFor = (entry: CouncilSynthesisEntry): LegendEntry[] => {
+      if (!entry.anonymized || !entry.labelMap) return [];
+      return Object.entries(entry.labelMap)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([label, runMemberId]) => {
+          const index = run.members.findIndex((m) => m.id === runMemberId);
+          const member = run.members[index];
+          return {
+            label,
+            name: member?.name.trim() || `Member ${index >= 0 ? index + 1 : ''}`.trim(),
+            providerLabel: member ? AGENT_CLI_LABEL[member.provider] : '',
+          };
+        });
+    };
+
+    const syntheses: SynthesisHtmlEntry[] = [];
+    for (const entry of ordered) {
+      syntheses.push({
+        format: entry.format,
+        label: COUNCIL_FORMATS_META[entry.format].label,
+        bodyHtml: await captureMarkdownHtml(entry.synthesis),
+        isActive: entry.format === run.format,
+        legend: legendFor(entry),
+      });
+    }
+
+    const html = buildCouncilRunHtml({
+      councilName,
+      prompt: run.prompt,
+      exportedAt: new Date(),
+      formatLabel: COUNCIL_FORMATS_META[run.format].label,
+      synthProviderLabel: run.synthProvider ? AGENT_CLI_LABEL[run.synthProvider] : null,
+      members,
+      syntheses,
+    });
+    const date = (run.finishedAt ?? run.startedAt).slice(0, 10);
+    return { filename: councilHtmlExportFilename(councilName, run.format, date), html };
+  }, [councilName, run]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -137,6 +250,7 @@ export function CouncilRunTabs({
               className="ml-auto"
               filename={`${COUNCIL_FORMATS_META[run.format].label.toLowerCase()}-${run.id.slice(0, 8)}`}
               fetchMarkdown={() => exportCouncilRunMarkdown(councilId, run.id)}
+              buildHtml={buildHtml}
             />
           ) : null}
         </div>
@@ -165,6 +279,7 @@ export function CouncilRunTabs({
                 attachId={m.terminalId}
                 label={`${m.name.trim() || `Member ${i + 1}`} · ${m.provider}`}
                 ariaLabel={`${m.name.trim() || `Member ${i + 1}`} terminal`}
+                loaderUntilOutput
               />
             </div>
           </div>
@@ -329,9 +444,14 @@ function SynthesisPanel({
               attachId={run.synthTerminalId}
               label={`Synthesis · ${synth}`}
               ariaLabel="Synthesis terminal"
+              loaderUntilOutput
             />
           </div>
-        ) : null}
+        ) : (
+          <div className="flex h-[420px] items-center justify-center rounded-lg border border-border/60">
+            <Spinner />
+          </div>
+        )}
       </div>
     );
   }

@@ -17,7 +17,7 @@ const brand = localFont({
 
 export const metadata: Metadata = {
   title: 'midnite',
-  description: 'Multitask Claude Code',
+  description: 'Multitask coding agents',
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
