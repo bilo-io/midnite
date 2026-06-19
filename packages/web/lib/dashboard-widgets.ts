@@ -21,6 +21,7 @@ import {
   Newspaper,
   NotebookPen,
   Quote,
+  Rocket,
   StickyNote,
   TerminalSquare,
   Timer,
@@ -57,6 +58,7 @@ export type WidgetType =
   | 'throughput'
   | 'health'
   | 'usage'
+  | 'shipped'
   // at-a-glance extras
   | 'world-clocks'
   | 'all-projects'
@@ -218,6 +220,12 @@ export const DASHBOARD_WIDGETS: Record<WidgetType, WidgetMeta> = {
     label: 'LLM cost & usage',
     description: 'Estimated spend by day, provider and feature',
     icon: Wallet,
+    sizes: panelSizes,
+  },
+  shipped: {
+    label: 'Shipped',
+    description: 'Recently completed tasks with their PR links',
+    icon: Rocket,
     sizes: panelSizes,
   },
 
