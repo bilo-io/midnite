@@ -1,11 +1,12 @@
 /**
  * The toggleable features that map one-to-one to the top section of the side
  * navigation. This is the single source of truth: the nav bar renders from it,
- * the settings page toggles it, and the feature gate uses it to decide whether a
- * route the user landed on is currently enabled.
+ * the settings hub's System category toggles it, and the feature gate uses it to
+ * decide whether a route the user landed on is currently enabled.
  *
- * Settings (and the profile/agents links) are intentionally not features — they
- * must always be reachable so a disabled feature can be turned back on.
+ * The settings hub is intentionally not a feature — it must always be reachable
+ * so a disabled feature can be turned back on (Appearance, Agents, screen lock,
+ * System and User all live under it).
  */
 
 import {

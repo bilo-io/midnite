@@ -57,7 +57,7 @@ export function ProfileView() {
   };
 
   return (
-    <div className="container max-w-3xl space-y-6 py-2">
+    <div className="space-y-6">
       <div
         className={cn(
           'flex items-center justify-end gap-1.5 text-xs text-muted-foreground transition-opacity',

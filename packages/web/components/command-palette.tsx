@@ -10,10 +10,12 @@ import { cn } from '@/lib/utils';
 
 type Command = { href: string; label: string; hint?: string; Icon: LucideIcon };
 
-// Always-reachable destinations that aren't toggleable features.
+// Always-reachable settings destinations that aren't toggleable features. The
+// Agents/Profile labels jump straight to their settings category by old muscle
+// memory.
 const ALWAYS_ON: Command[] = [
-  { href: '/agents', label: 'Agents', Icon: Bot },
-  { href: '/profile', label: 'Profile', Icon: UserRound },
+  { href: '/settings/agents', label: 'Agents', Icon: Bot },
+  { href: '/settings/user', label: 'Profile', Icon: UserRound },
   { href: '/settings', label: 'Settings', Icon: Settings },
 ];
 

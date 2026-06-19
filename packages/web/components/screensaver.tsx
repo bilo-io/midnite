@@ -6,6 +6,8 @@ import { getSessions } from '@/lib/api';
 import { SESSION_STATUS_HUE } from '@/components/session-card';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
+  BACKGROUND_PATTERN_CLASS,
+  BACKGROUND_PATTERN_DEFAULT,
   CYCLE_MAX_S,
   CYCLE_MIN_S,
   DEFAULT_SETTINGS,
@@ -264,6 +266,7 @@ export function Screensaver({
     DEFAULT_SETTINGS,
   );
   const [passcode, , passcodeHydrated] = useLocalStorage<string | null>(PASSCODE_STORAGE_KEY, null);
+  const patternClass = BACKGROUND_PATTERN_CLASS[settings.backgroundPattern ?? BACKGROUND_PATTERN_DEFAULT];
 
   // A passcode applies only once one is actually set; "only when locked" exempts
   // the idle screensaver. Until storage has hydrated we keep the lock closed so
@@ -385,9 +388,9 @@ export function Screensaver({
         dismissible || (requireCode && !unlocking) ? 'cursor-pointer' : ''
       }`}
     >
-      {/* Decorative grid on its own masked layer so its edge fade doesn't punch
-          holes in the opaque, blurred backdrop above. */}
-      <div aria-hidden className="bg-grid pointer-events-none absolute inset-0" />
+      {/* Decorative backdrop on its own masked layer so its edge fade doesn't
+          punch holes in the opaque, blurred backdrop above. */}
+      <div aria-hidden className={`${patternClass} pointer-events-none absolute inset-0`} />
 
       {/* ── Top-left: date ── */}
       <div className="absolute left-8 top-8 z-10 text-left">

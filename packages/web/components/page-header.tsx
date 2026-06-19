@@ -16,6 +16,7 @@ import {
   Workflow,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useBackgroundPattern } from '@/lib/use-background-pattern';
 import { useScrolled } from '@/lib/use-scrolled';
 import { useTypewriter } from '@/lib/use-typewriter';
 
@@ -72,6 +73,7 @@ export function PageHeader({
   actions,
 }: PageHeaderProps) {
   const scrolled = useScrolled();
+  const patternClass = useBackgroundPattern();
   const Icon = icon ? ICONS[icon] : null;
 
   // Type the title and subtitle out together. Both run over the same duration so
@@ -103,7 +105,8 @@ export function PageHeader({
           <div
             aria-hidden
             className={cn(
-              'bg-grid pointer-events-none absolute inset-x-0 -top-8 -z-10 h-40 transition-opacity duration-300 motion-reduce:transition-none',
+              patternClass,
+              'pointer-events-none absolute inset-x-0 -top-8 -z-10 h-40 transition-opacity duration-300 motion-reduce:transition-none',
               scrolled ? 'opacity-0' : 'opacity-50',
             )}
           />

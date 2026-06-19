@@ -11,8 +11,8 @@ import { featureForPath, isFeatureEnabled } from '@/lib/features';
 /**
  * Watches the current route and, if it belongs to a feature the user has turned
  * off, blocks the page with a modal explaining which feature to enable. Rendered
- * once in the main layout so it covers every gated route. Settings/profile/agents
- * aren't features, so they're never gated — leaving a way back in.
+ * once in the main layout so it covers every gated route. The settings hub isn't
+ * a feature, so it's never gated — leaving a way back in to re-enable things.
  */
 export function FeatureGate() {
   const router = useRouter();
@@ -32,7 +32,7 @@ export function FeatureGate() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
-        router.push('/settings');
+        router.push('/settings/system');
       }
     };
     document.addEventListener('keydown', onKey, true);
@@ -53,7 +53,7 @@ export function FeatureGate() {
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div
         className="absolute inset-0 bg-background/40 backdrop-blur-md"
-        onClick={() => router.push('/settings')}
+        onClick={() => router.push('/settings/system')}
         aria-hidden
       />
       <div
@@ -77,7 +77,7 @@ export function FeatureGate() {
           </div>
         </div>
         <div className="mt-5 flex justify-end gap-2">
-          <Button type="button" variant="ghost" size="sm" onClick={() => router.push('/settings')}>
+          <Button type="button" variant="ghost" size="sm" onClick={() => router.push('/settings/system')}>
             Open settings
           </Button>
           <Button type="button" variant="default" size="sm" onClick={enableFeature}>

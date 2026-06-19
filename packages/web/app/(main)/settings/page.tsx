@@ -1,11 +1,6 @@
-import { PageHeader } from '@/components/page-header';
-import { SettingsView } from './settings-view';
+import { AppearanceSection } from './appearance-section';
 
-export default function SettingsPage() {
-  return (
-    <div className="flex min-h-[100dvh] flex-col">
-      <PageHeader title="Settings" icon="Settings" description="Tune how midnite runs your agents." />
-      <SettingsView />
-    </div>
-  );
+/** The settings hub's index category: Appearance. */
+export default function SettingsAppearancePage() {
+  return <AppearanceSection />;
 }

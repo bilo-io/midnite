@@ -81,6 +81,27 @@ export type NavMode = 'auto' | 'expanded' | 'collapsed';
 export const NAV_W_COLLAPSED = '3.5rem';
 export const NAV_W_EXPANDED = '14rem';
 
+/**
+ * The decorative backdrop drawn behind the home screen, screensaver and the
+ * dashboard header. Each maps to a self-contained utility class in globals.css.
+ */
+export type BackgroundPattern = 'grid' | 'honeycomb' | 'gradient';
+
+export const BACKGROUND_PATTERN_DEFAULT: BackgroundPattern = 'grid';
+
+/** Pattern → CSS utility class drawn at each background site. */
+export const BACKGROUND_PATTERN_CLASS: Record<BackgroundPattern, string> = {
+  grid: 'bg-grid',
+  honeycomb: 'bg-honeycomb',
+  gradient: 'bg-animated-gradient',
+};
+
+export const BACKGROUND_PATTERN_OPTIONS: { value: BackgroundPattern; label: string }[] = [
+  { value: 'grid', label: 'Grid' },
+  { value: 'honeycomb', label: 'Honeycomb' },
+  { value: 'gradient', label: 'Animated gradient' },
+];
+
 export type AppSettings = {
   /** Number of agent sessions allowed to run in parallel. */
   agentPoolSize: number;
@@ -97,6 +118,8 @@ export type AppSettings = {
   passcodeOnlyWhenLocked: boolean;
   /** Collapse/expand/lock behaviour of the side navigation. */
   navMode: NavMode;
+  /** Decorative backdrop pattern (home screen, screensaver, dashboard header). */
+  backgroundPattern: BackgroundPattern;
   /**
    * Desktop notifications when a task needs input (→ waiting) or finishes
    * (→ done). Opt-in: enabling it prompts for the browser's Notification
@@ -114,6 +137,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   requirePasscode: false,
   passcodeOnlyWhenLocked: false,
   navMode: 'auto',
+  backgroundPattern: BACKGROUND_PATTERN_DEFAULT,
   notifyTaskUpdates: false,
   features: DEFAULT_FEATURE_FLAGS,
 };

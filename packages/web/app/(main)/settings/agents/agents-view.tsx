@@ -1,7 +1,6 @@
 'use client';
 
 import { type ReactNode, useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import {
   Activity,
   Bot,
@@ -9,6 +8,7 @@ import {
   ChevronDown,
   Cpu,
   FileText,
+  Gauge,
   Library,
   Plus,
   Terminal,
@@ -64,7 +64,16 @@ import {
   updateProvider,
   updateSubAgent,
 } from '@/lib/api';
-import { formatHeartbeatInterval } from '@/lib/app-settings';
+import { useLocalStorage } from '@/lib/use-local-storage';
+import {
+  AGENT_POOL_MAX,
+  AGENT_POOL_MIN,
+  DEFAULT_SETTINGS,
+  HEARTBEAT_PRESETS,
+  SETTINGS_STORAGE_KEY,
+  formatHeartbeatInterval,
+  type AppSettings,
+} from '@/lib/app-settings';
 import { useConfirm } from '@/components/confirm-dialog';
 import { cn } from '@/lib/utils';
 
@@ -96,6 +105,19 @@ export function AgentsView() {
     null,
   );
   const confirm = useConfirm();
+
+  // Agent pool size is a client-only preference (localStorage), not part of the
+  // server-held agents config.
+  const [settings, setSettings, settingsHydrated] = useLocalStorage<AppSettings>(
+    SETTINGS_STORAGE_KEY,
+    DEFAULT_SETTINGS,
+  );
+  const poolSize = Math.min(AGENT_POOL_MAX, Math.max(AGENT_POOL_MIN, settings.agentPoolSize));
+  const setPoolSize = (n: number) =>
+    setSettings((prev) => ({
+      ...prev,
+      agentPoolSize: Math.min(AGENT_POOL_MAX, Math.max(AGENT_POOL_MIN, n)),
+    }));
 
   // A ref mirror of the latest config so debounced saves read fresh values.
   const latest = useRef<AgentsConfig | null>(null);
@@ -208,6 +230,17 @@ export function AgentsView() {
       .catch((e) => setError(errMsg(e)));
   };
 
+  // The heartbeat cadence is a discrete choice too — save it immediately rather
+  // than via the debounced free-text path that schedulePrimarySave uses.
+  const editHeartbeatInterval = (hours: number) => {
+    setAgents((prev) =>
+      prev ? { ...prev, primary: { ...prev.primary, heartbeatIntervalH: hours } } : prev,
+    );
+    updatePrimaryAgent({ heartbeatIntervalH: hours })
+      .then(flashSaved)
+      .catch((e) => setError(errMsg(e)));
+  };
+
   // --- Provider (API) handlers ---
 
   const saveProvider = async (provider: LlmProvider, body: UpdateProviderCredentialRequest) => {
@@ -264,11 +297,9 @@ export function AgentsView() {
 
   if (!agents) {
     return (
-      <div className="container max-w-3xl py-2">
-        <p className="text-sm text-muted-foreground">
-          {error ? `Couldn't load agents: ${error}` : 'Loading…'}
-        </p>
-      </div>
+      <p className="py-2 text-sm text-muted-foreground">
+        {error ? `Couldn't load agents: ${error}` : 'Loading…'}
+      </p>
     );
   }
 
@@ -283,7 +314,7 @@ export function AgentsView() {
   const activeProviderUnconfigured = providers != null && providers.activeProviderEnabled === false;
 
   return (
-    <div className="container max-w-3xl space-y-4 py-2">
+    <div className="space-y-4">
       <div
         className={cn(
           'flex items-center justify-end gap-1.5 text-xs text-muted-foreground transition-opacity',
@@ -346,15 +377,7 @@ export function AgentsView() {
                 </p>
                 <p className="text-xs text-muted-foreground">
                   A prompt the orchestrator runs on a schedule — for sweeps, check-ins or any
-                  standing task. Runs{' '}
-                  <span className="font-medium text-foreground">
-                    {formatHeartbeatInterval(primary.heartbeatIntervalH).toLowerCase()}
-                  </span>{' '}
-                  · change the cadence in{' '}
-                  <Link href="/settings" className="underline underline-offset-2 hover:text-foreground">
-                    Settings
-                  </Link>
-                  .
+                  standing task.
                 </p>
               </div>
               <Switch
@@ -362,6 +385,32 @@ export function AgentsView() {
                 onCheckedChange={(on) => editPrimary({ heartbeatEnabled: on })}
                 aria-label="Enable heartbeat"
               />
+            </div>
+
+            <div className="flex items-start justify-between gap-6">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Interval</p>
+                <p className="text-xs text-muted-foreground">
+                  How often the heartbeat prompt runs — from every hour up to once a month.
+                </p>
+              </div>
+              <select
+                value={primary.heartbeatIntervalH}
+                onChange={(e) => editHeartbeatInterval(Number(e.target.value))}
+                aria-label="Heartbeat interval"
+                className="h-9 shrink-0 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                {HEARTBEAT_PRESETS.some((p) => p.hours === primary.heartbeatIntervalH) ? null : (
+                  <option value={primary.heartbeatIntervalH}>
+                    {formatHeartbeatInterval(primary.heartbeatIntervalH)}
+                  </option>
+                )}
+                {HEARTBEAT_PRESETS.map((p) => (
+                  <option key={p.hours} value={p.hours}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div
@@ -379,6 +428,48 @@ export function AgentsView() {
               />
             </div>
           </div>
+        </div>
+      </Accordion>
+
+      <Accordion title="Agent pool" icon={<Gauge className="h-3.5 w-3.5" />} defaultOpen>
+        <div className="space-y-4 p-5">
+          <div className="flex items-start justify-between gap-6">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Parallel agents</p>
+              <p className="text-xs text-muted-foreground">
+                How many agent sessions may run at once. Extra tasks queue until a slot frees up.
+              </p>
+            </div>
+            <div
+              className={cn(
+                'flex h-9 min-w-[3.5rem] items-center justify-center rounded-md border border-border/60 bg-card/60 px-3 text-lg font-semibold tabular-nums transition-opacity',
+                settingsHydrated ? 'opacity-100' : 'opacity-0',
+              )}
+            >
+              {poolSize}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="w-4 text-right text-xs text-muted-foreground tabular-nums">
+              {AGENT_POOL_MIN}
+            </span>
+            <input
+              type="range"
+              min={AGENT_POOL_MIN}
+              max={AGENT_POOL_MAX}
+              step={1}
+              value={poolSize}
+              onChange={(e) => setPoolSize(Number(e.target.value))}
+              aria-label="Parallel agents"
+              className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-border accent-foreground"
+            />
+            <span className="w-6 text-xs text-muted-foreground tabular-nums">{AGENT_POOL_MAX}</span>
+          </div>
+
+          <p className="text-xs text-muted-foreground/70">
+            Default {DEFAULT_SETTINGS.agentPoolSize} · maximum {AGENT_POOL_MAX}.
+          </p>
         </div>
       </Accordion>
 

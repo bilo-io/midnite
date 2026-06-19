@@ -5,12 +5,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  Bot,
   PanelLeftClose,
   PanelLeftOpen,
   Power,
   Settings,
-  UserRound,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -38,8 +36,6 @@ type NavLink = {
   Icon: LucideIcon;
 };
 
-const PROFILE_LINK: NavLink = { href: '/profile', label: 'Profile', Icon: UserRound };
-const AGENTS_LINK: NavLink = { href: '/agents', label: 'Agents', Icon: Bot };
 const SETTINGS_LINK: NavLink = { href: '/settings', label: 'Settings', Icon: Settings };
 
 export function NavBar() {
@@ -189,8 +185,6 @@ export function NavBar() {
         </nav>
 
         <div className={cn('mt-auto flex flex-col gap-1', expandedView ? 'items-stretch' : 'items-center')}>
-          {renderLink(PROFILE_LINK)}
-          {renderLink(AGENTS_LINK)}
           <ThemeToggle expanded={expandedView} />
           {renderLink(SETTINGS_LINK)}
           <div className={cn('my-1 h-px bg-border/60', expandedView ? 'w-full' : 'w-6')} />

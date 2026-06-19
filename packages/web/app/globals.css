@@ -183,6 +183,39 @@
     background-size: 32px 32px;
     mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
   }
+
+  /* Hexagonal "honeycomb" lattice: two offset columns of hex cells drawn with
+     repeating radial gradients, faded out at the edges like .bg-grid. */
+  .bg-honeycomb {
+    --hex: hsl(var(--border) / 0.6);
+    background-image:
+      radial-gradient(circle at 50% 0, transparent 11px, var(--hex) 12px, transparent 13px),
+      radial-gradient(circle at 0 18px, transparent 11px, var(--hex) 12px, transparent 13px),
+      radial-gradient(circle at 100% 18px, transparent 11px, var(--hex) 12px, transparent 13px);
+    background-size: 48px 36px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  /* Slowly drifting aurora gradient. The angle is animated via the
+     @property below so the conic sweep rotates; honours reduced-motion. */
+  .bg-animated-gradient {
+    background-image: conic-gradient(
+      from var(--gradient-angle) at 50% 50%,
+      hsl(var(--foreground) / 0.06),
+      hsl(var(--foreground) / 0.01),
+      hsl(var(--foreground) / 0.06),
+      hsl(var(--foreground) / 0.01),
+      hsl(var(--foreground) / 0.06)
+    );
+    animation: gradient-border-spin 24s linear infinite;
+    mask-image: radial-gradient(ellipse at center, black 20%, transparent 80%);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bg-animated-gradient {
+      animation: none;
+    }
+  }
 }
 
 @property --gradient-angle {

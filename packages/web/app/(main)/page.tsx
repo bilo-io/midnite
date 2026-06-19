@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Wand2 } from 'lucide-react';
 import { StatusPills } from '@/components/status-pills';
 import { Spinner } from '@/components/spinner';
+import { useBackgroundPattern } from '@/lib/use-background-pattern';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
   CYCLE_MAX_S,
@@ -201,8 +202,12 @@ export default function HomePage() {
     if (subDone) setPillsRevealed(true);
   }, [subDone]);
 
+  const patternClass = useBackgroundPattern();
+
   return (
-    <div className="bg-grid relative flex min-h-[100dvh] flex-col items-center justify-center px-6 text-center">
+    <div
+      className={`${patternClass} relative flex min-h-[100dvh] flex-col items-center justify-center px-6 text-center`}
+    >
       <Clock now={now} />
 
       <div className="mb-10">
