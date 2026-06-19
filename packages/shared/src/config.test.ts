@@ -53,3 +53,25 @@ describe('agent.provider (LLM provider) normalisation', () => {
     }
   });
 });
+
+describe('usage config defaults', () => {
+  it('defaults the usage block so existing configs stay valid', () => {
+    const config = parseConfig({ agent: {}, terminal: {}, knowledge: {}, gateway: {} });
+    expect(config.usage.dailyBudgetUsd).toBeUndefined();
+    expect(config.usage.monthlyBudgetUsd).toBeUndefined();
+    expect(config.usage.warnAtRatio).toBe(0.8);
+  });
+
+  it('accepts explicit soft budgets', () => {
+    const config = parseConfig({
+      agent: {},
+      terminal: {},
+      knowledge: {},
+      gateway: {},
+      usage: { dailyBudgetUsd: 5, monthlyBudgetUsd: 100, warnAtRatio: 0.5 },
+    });
+    expect(config.usage.dailyBudgetUsd).toBe(5);
+    expect(config.usage.monthlyBudgetUsd).toBe(100);
+    expect(config.usage.warnAtRatio).toBe(0.5);
+  });
+});

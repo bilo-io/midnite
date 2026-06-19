@@ -120,13 +120,16 @@ export class HeartbeatScheduler implements OnModuleInit, OnModuleDestroy {
     else this.repo.setLastHeartbeatRunId(id);
 
     try {
-      const { text } = await this.llm.generateText({
-        model,
-        maxTokens: HEARTBEAT_MAX_TOKENS,
-        ...(description ? { system: description } : {}),
-        messages: [{ role: 'user', text: prompt }],
-        signal: this.abort.signal,
-      });
+      const { text } = await this.llm.generateText(
+        {
+          model,
+          maxTokens: HEARTBEAT_MAX_TOKENS,
+          ...(description ? { system: description } : {}),
+          messages: [{ role: 'user', text: prompt }],
+          signal: this.abort.signal,
+        },
+        'agent',
+      );
       // The run row was inserted synchronously above, so the update always returns it.
       const updated = this.repo.updateHeartbeatRun(id, {
         status: 'succeeded',

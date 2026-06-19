@@ -215,11 +215,22 @@ Credential resolution per provider, when no key is stored via the UI:
 - **openai-compatible** — usually keyless; set the base URL (env `OPENAI_BASE_URL`
   as a fallback).
 
-Keys entered in the UI are stored in SQLite. Set **`MIDNITE_PROVIDER_KEY`** to
-encrypt them at rest (AES-256-GCM, key derived from that env var); without it
-they're stored as plaintext and the gateway logs a one-time warning at startup.
-Existing plaintext rows keep working after you set the key; new writes are
-encrypted. Either way the API only ever returns `hasKey` + the last 4 characters.
+Keys entered in the UI are stored in SQLite, **encrypted at rest** (AES-256-GCM).
+The symmetric key comes from **`MIDNITE_SECRET_KEY`** — 32 bytes encoded as hex
+(64 chars) or base64. Generate one with:
+
+```sh
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+```
+
+Encryption is **fail-closed**: with no `MIDNITE_SECRET_KEY` set, the gateway
+**cannot decrypt** stored keys (those providers read as having no key and are
+disabled) and **refuses to save** a new key (the UI shows a clear error). There
+is no silent plaintext fallback. Legacy plaintext rows (written before this
+landed) are read as-is and **re-encrypted in place** on the next write or once at
+startup when a key is present. Either way the API only ever returns `hasKey` +
+the last 4 characters. The gateway logs a one-time warning at startup when the
+key is unset.
 
 The workflow **AI node** runs through the active provider by default, or you can
 pin it to a specific provider in the node's config.
@@ -229,6 +240,31 @@ If the active provider has no usable credential, AI features degrade gracefully
 run, etc.) and the gateway logs a warning at startup.
 
 Implementation: [`packages/gateway/src/agent/llm/`](packages/gateway/src/agent/llm) (the `LlmService` + per-provider adapters) and [`packages/gateway/src/agent/anthropic-credentials.ts`](packages/gateway/src/agent/anthropic-credentials.ts) for the Anthropic env/Keychain fallback.
+
+### LLM usage & cost tracking
+
+Every call the gateway makes through `LlmService` (task triage, planner,
+projects, agent heartbeats, the workflow AI node, …) records a `llm_usage` row —
+provider, model, feature, token counts, and a **best-effort** estimated cost from
+a static price table. `GET /usage/summary?from=&to=&groupBy=day|provider|feature`
+returns totals + grouped buckets; the dashboard's **LLM cost & usage** widget
+renders it.
+
+Cost controls are **track + soft-warn only** — usage is recorded and warnings
+surface near a budget, but calls are **never blocked**. Optional soft budgets in
+`midnite.json`:
+
+```jsonc
+{
+  "usage": {
+    "dailyBudgetUsd": 5,       // optional; omit to disable the daily warning
+    "monthlyBudgetUsd": 100,   // optional; omit to disable the monthly warning
+    "warnAtRatio": 0.8         // warn once spend hits 80% of a budget (default)
+  }
+}
+```
+
+Costs are estimates only (the price table omits caching/batch/tier discounts).
 
 ## Common commands
 

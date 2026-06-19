@@ -313,6 +313,28 @@ export const llmSettings = sqliteTable('llm_settings', {
   updatedAt: text('updated_at').notNull(),
 });
 
+// One row per LLM call the gateway makes through LlmService. `feature` is a
+// validated LlmFeature string (app layer), `estCostUsd` a best-effort estimate
+// from the static price table. Append-only; aggregated by the usage summary.
+export const llmUsage = sqliteTable(
+  'llm_usage',
+  {
+    id: text('id').primaryKey(),
+    at: text('at').notNull(), // ISO timestamp of the call
+    provider: text('provider').notNull(),
+    model: text('model').notNull(),
+    feature: text('feature').notNull().default('unknown'),
+    inputTokens: integer('input_tokens').notNull().default(0),
+    outputTokens: integer('output_tokens').notNull().default(0),
+    estCostUsd: real('est_cost_usd').notNull().default(0),
+    correlationId: text('correlation_id'), // optional run/task id for drill-down
+  },
+  (t) => ({
+    atIdx: index('llm_usage_at_idx').on(t.at),
+    featureIdx: index('llm_usage_feature_idx').on(t.feature),
+  }),
+);
+
 // --- Councils (multi-agent panels → switchable-format synthesis) ---
 
 export const councils = sqliteTable('councils', {
@@ -556,3 +578,5 @@ export type RoutineItemRow = typeof routineItems.$inferSelect;
 export type RoutineItemInsert = typeof routineItems.$inferInsert;
 export type RoutineProgressRow = typeof routineProgress.$inferSelect;
 export type RoutineProgressInsert = typeof routineProgress.$inferInsert;
+export type LlmUsageRow = typeof llmUsage.$inferSelect;
+export type LlmUsageInsert = typeof llmUsage.$inferInsert;

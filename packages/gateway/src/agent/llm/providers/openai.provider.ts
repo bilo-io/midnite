@@ -8,6 +8,7 @@ import type {
   LlmProviderAdapter,
   LlmStructuredResult,
   LlmTextResult,
+  LlmUsage,
 } from '../llm-provider.interface';
 
 export interface OpenAiProviderOptions {
@@ -72,7 +73,7 @@ export class OpenAiProvider implements LlmProviderAdapter {
       },
       { signal: req.signal },
     );
-    return { text: res.choices[0]?.message?.content ?? '', model: req.model };
+    return { text: res.choices[0]?.message?.content ?? '', model: req.model, usage: toUsage(res) };
   }
 
   async generateStructured(req: GenerateStructuredRequest): Promise<LlmStructuredResult> {
@@ -98,7 +99,7 @@ export class OpenAiProvider implements LlmProviderAdapter {
       { signal: req.signal },
     );
     const content = res.choices[0]?.message?.content ?? '';
-    return { data: parseJsonObjectLoose(content), model: req.model };
+    return { data: parseJsonObjectLoose(content), model: req.model, usage: toUsage(res) };
   }
 
   async ping(): Promise<Omit<AgentPingResponse, 'cli'>> {
@@ -138,4 +139,11 @@ export class OpenAiProvider implements LlmProviderAdapter {
     }
     return out;
   }
+}
+
+function toUsage(res: OpenAI.Chat.Completions.ChatCompletion): LlmUsage {
+  return {
+    inputTokens: res.usage?.prompt_tokens ?? 0,
+    outputTokens: res.usage?.completion_tokens ?? 0,
+  };
 }

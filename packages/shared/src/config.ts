@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { LLM_PROVIDER_DEFAULT, LlmProviderSchema } from './llm.js';
+import { UsageConfigSchema } from './usage.js';
 
 export const RepoConfigSchema = z.object({
   name: z.string(),
@@ -144,6 +145,8 @@ export const MidniteConfigSchema = z.object({
   workflows: WorkflowsConfigSchema.default({}),
   agents: AgentsRuntimeConfigSchema.default({}),
   councils: CouncilsConfigSchema.default({}),
+  // LLM usage/cost tracking + optional soft budgets (track + soft-warn only).
+  usage: UsageConfigSchema.default({}),
 });
 
 export type MidniteConfig = z.infer<typeof MidniteConfigSchema>;
@@ -152,6 +155,7 @@ export type WorkflowsConfig = z.infer<typeof WorkflowsConfigSchema>;
 export type AgentsRuntimeConfig = z.infer<typeof AgentsRuntimeConfigSchema>;
 export type CouncilsConfig = z.infer<typeof CouncilsConfigSchema>;
 export type OAuthClientConfig = z.infer<typeof OAuthClientConfigSchema>;
+export type { UsageConfig } from './usage.js';
 
 export function parseConfig(raw: unknown): MidniteConfig {
   return MidniteConfigSchema.parse(raw);

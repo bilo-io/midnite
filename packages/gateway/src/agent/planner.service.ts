@@ -39,15 +39,18 @@ export class PlannerService {
   async triage(prompt: string): Promise<{ ready: boolean }> {
     if (!this.llm.enabled) return { ready: true };
     try {
-      const { data } = await this.llm.generateStructured({
-        model: this.llm.getPlanModel(),
-        maxTokens: 128,
-        system: TASK_PLAN_SYSTEM_PROMPT,
-        schema: TRIAGE_SCHEMA,
-        schemaName: 'triage',
-        schemaDescription: 'Record whether the task is ready to be worked on now.',
-        messages: [{ role: 'user', text: prompt }],
-      });
+      const { data } = await this.llm.generateStructured(
+        {
+          model: this.llm.getPlanModel(),
+          maxTokens: 128,
+          system: TASK_PLAN_SYSTEM_PROMPT,
+          schema: TRIAGE_SCHEMA,
+          schemaName: 'triage',
+          schemaDescription: 'Record whether the task is ready to be worked on now.',
+          messages: [{ role: 'user', text: prompt }],
+        },
+        'planner',
+      );
       const ready =
         typeof data === 'object' && data !== null && 'ready' in data
           ? (data as { ready: unknown }).ready

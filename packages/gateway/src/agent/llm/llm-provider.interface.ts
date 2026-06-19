@@ -33,15 +33,25 @@ export interface GenerateStructuredRequest extends GenerateTextRequest {
   schemaDescription?: string;
 }
 
+/** Token usage reported by a provider SDK for a single call. */
+export interface LlmUsage {
+  inputTokens: number;
+  outputTokens: number;
+}
+
 export interface LlmTextResult {
   text: string;
   model: string;
+  /** Token usage when the provider SDK reports it; absent for endpoints that don't. */
+  usage?: LlmUsage;
 }
 
 export interface LlmStructuredResult {
   /** Raw parsed object — the caller zod-validates it. */
   data: unknown;
   model: string;
+  /** Token usage when the provider SDK reports it; absent for endpoints that don't. */
+  usage?: LlmUsage;
 }
 
 /**

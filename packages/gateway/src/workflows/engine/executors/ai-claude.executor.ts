@@ -30,13 +30,17 @@ export class AiClaudeExecutor implements NodeExecutor {
     const requested = params.model?.trim() || this.llm.getActModel();
     ctx.log('info', `AI ${params.provider ?? 'active'} ${requested} (maxTokens=${params.maxTokens})`);
 
-    const { text, model } = await this.llm.generateTextVia(params.provider, {
-      model: requested,
-      maxTokens: params.maxTokens,
-      ...(params.system ? { system: params.system } : {}),
-      messages: [{ role: 'user', text: buildPrompt(params.prompt, ctx.input) }],
-      signal: ctx.signal,
-    });
+    const { text, model } = await this.llm.generateTextVia(
+      params.provider,
+      {
+        model: requested,
+        maxTokens: params.maxTokens,
+        ...(params.system ? { system: params.system } : {}),
+        messages: [{ role: 'user', text: buildPrompt(params.prompt, ctx.input) }],
+        signal: ctx.signal,
+      },
+      'workflow',
+    );
 
     return { text, model };
   }

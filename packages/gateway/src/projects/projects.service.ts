@@ -166,20 +166,23 @@ export class ProjectsService {
 
   async enhanceDescription(req: EnhanceDescriptionRequest): Promise<string> {
     if (!this.llm.enabled) return req.description.trim();
-    const { data } = await this.llm.generateStructured({
-      model: this.llm.getActModel(),
-      maxTokens: 600,
-      system: PROJECT_DESCRIPTION_SYSTEM_PROMPT,
-      schema: RECORD_DESCRIPTION_SCHEMA,
-      schemaName: 'record_description',
-      schemaDescription: 'Record the improved project description.',
-      messages: [
-        {
-          role: 'user',
-          text: `Project name: ${req.name?.trim() || '(untitled)'}\n\nDescription:\n${req.description}`,
-        },
-      ],
-    });
+    const { data } = await this.llm.generateStructured(
+      {
+        model: this.llm.getActModel(),
+        maxTokens: 600,
+        system: PROJECT_DESCRIPTION_SYSTEM_PROMPT,
+        schema: RECORD_DESCRIPTION_SCHEMA,
+        schemaName: 'record_description',
+        schemaDescription: 'Record the improved project description.',
+        messages: [
+          {
+            role: 'user',
+            text: `Project name: ${req.name?.trim() || '(untitled)'}\n\nDescription:\n${req.description}`,
+          },
+        ],
+      },
+      'project',
+    );
     const input = data as { description?: string } | undefined;
     return input?.description?.trim() || req.description.trim();
   }
@@ -234,15 +237,18 @@ export class ProjectsService {
       project.description ?? '(none provided)'
     }\n\nReference sources:\n${sourceLines}${memoryBlock}`;
 
-    const { data } = await this.llm.generateStructured({
-      model: this.llm.getPlanModel(),
-      maxTokens: 4096,
-      system: PROJECT_PLAN_SYSTEM_PROMPT,
-      schema: RECORD_PLAN_SCHEMA,
-      schemaName: 'record_plan',
-      schemaDescription: 'Record the full markdown implementation plan.',
-      messages: [{ role: 'user', text: userText }],
-    });
+    const { data } = await this.llm.generateStructured(
+      {
+        model: this.llm.getPlanModel(),
+        maxTokens: 4096,
+        system: PROJECT_PLAN_SYSTEM_PROMPT,
+        schema: RECORD_PLAN_SCHEMA,
+        schemaName: 'record_plan',
+        schemaDescription: 'Record the full markdown implementation plan.',
+        messages: [{ role: 'user', text: userText }],
+      },
+      'project',
+    );
 
     const input = data as { markdown?: string } | undefined;
     const markdown = input?.markdown?.trim();

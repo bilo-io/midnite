@@ -1,6 +1,13 @@
 import { Inject, Injectable, Logger, type OnApplicationBootstrap } from '@nestjs/common';
-import type { AgentPingResponse, LlmProvider, MidniteConfig } from '@midnite/shared';
+import {
+  LLM_FEATURE_DEFAULT,
+  type AgentPingResponse,
+  type LlmFeature,
+  type LlmProvider,
+  type MidniteConfig,
+} from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../../config.token';
+import { UsageService } from '../../usage/usage.service';
 import { ProviderCredentialsRepository } from '../provider-credentials.repository';
 import type { LlmProviderRow } from '../../db/schema';
 import {
@@ -16,6 +23,7 @@ import type {
   LlmProviderAdapter,
   LlmStructuredResult,
   LlmTextResult,
+  LlmUsage,
 } from './llm-provider.interface';
 
 /**
@@ -40,6 +48,7 @@ export class LlmService implements OnApplicationBootstrap {
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
     @Inject(ProviderCredentialsRepository)
     private readonly repo: ProviderCredentialsRepository,
+    @Inject(UsageService) private readonly usage: UsageService,
   ) {}
 
   // onApplicationBootstrap (not onModuleInit) so the DB migrations in
@@ -79,8 +88,13 @@ export class LlmService implements OnApplicationBootstrap {
     return this.planModel;
   }
 
-  generateText(req: GenerateTextRequest): Promise<LlmTextResult> {
-    return this.adapter.generateText(req);
+  async generateText(
+    req: GenerateTextRequest,
+    feature: LlmFeature = LLM_FEATURE_DEFAULT,
+  ): Promise<LlmTextResult> {
+    const res = await this.adapter.generateText(req);
+    this.recordUsage(this.active, res.model, feature, res.usage);
+    return res;
   }
 
   /**
@@ -90,8 +104,12 @@ export class LlmService implements OnApplicationBootstrap {
   async generateTextVia(
     provider: LlmProvider | undefined,
     req: GenerateTextRequest,
+    feature: LlmFeature = LLM_FEATURE_DEFAULT,
   ): Promise<LlmTextResult> {
-    return (await this.adapterFor(provider)).generateText(req);
+    const adapter = await this.adapterFor(provider);
+    const res = await adapter.generateText(req);
+    this.recordUsage(adapter.id, res.model, feature, res.usage);
+    return res;
   }
 
   private async adapterFor(provider?: LlmProvider): Promise<LlmProviderAdapter> {
@@ -103,8 +121,32 @@ export class LlmService implements OnApplicationBootstrap {
     return built;
   }
 
-  generateStructured(req: GenerateStructuredRequest): Promise<LlmStructuredResult> {
-    return this.adapter.generateStructured(req);
+  async generateStructured(
+    req: GenerateStructuredRequest,
+    feature: LlmFeature = LLM_FEATURE_DEFAULT,
+  ): Promise<LlmStructuredResult> {
+    const res = await this.adapter.generateStructured(req);
+    this.recordUsage(this.active, res.model, feature, res.usage);
+    return res;
+  }
+
+  // Record one usage row when the adapter reported token counts. Skipped for
+  // endpoints that don't surface usage (e.g. some local OpenAI-compatible
+  // servers) so we never invent token numbers.
+  private recordUsage(
+    provider: LlmProvider,
+    model: string,
+    feature: LlmFeature,
+    usage: LlmUsage | undefined,
+  ): void {
+    if (!usage) return;
+    this.usage.record({
+      provider,
+      model,
+      feature,
+      inputTokens: usage.inputTokens,
+      outputTokens: usage.outputTokens,
+    });
   }
 
   ping(): Promise<Omit<AgentPingResponse, 'cli'>> {
