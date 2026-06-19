@@ -13,7 +13,7 @@ export default function BrainstormsPage() {
   return (
     <>
       <PageHeader
-        title="Brainstorms"
+        title="Brainstorm"
         icon="Brain"
         description="Panels of AI contributors that generate ideas from distinct lenses — then a synthesizer distills them into a shortlist, gaps, opportunities, a critique, or combined concepts."
         actions={<SearchBar placeholder="Search brainstorms" />}

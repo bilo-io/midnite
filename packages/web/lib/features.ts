@@ -95,7 +95,7 @@ export const FEATURES: Feature[] = [
   {
     key: 'brainstorm',
     href: '/brainstorms',
-    label: 'Brainstorms',
+    label: 'Brainstorm',
     description: 'Generate ideas with multiple agents, then synthesize them.',
     Icon: Brain,
   },
