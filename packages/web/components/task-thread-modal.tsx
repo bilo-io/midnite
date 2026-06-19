@@ -27,6 +27,7 @@ import {
   updateTaskProject,
   updateTaskStatus,
 } from '@/lib/api';
+import { invalidateData } from '@/lib/data-refresh';
 
 const STATUS_HUE_VAR: Record<Status, string> = {
   backlog: '--status-backlog',
@@ -99,7 +100,7 @@ export function TaskThreadModal({ task, projects, onClose }: Props) {
     setStatusError(null);
     try {
       await updateTaskProject(task.id, next);
-      router.refresh();
+      invalidateData();
     } catch (e) {
       setProjectId(prev); // roll back
       setStatusError(e instanceof Error ? e.message : 'Failed to change project');
@@ -121,7 +122,7 @@ export function TaskThreadModal({ task, projects, onClose }: Props) {
     setStatusError(null);
     try {
       await startTask(task.id);
-      router.refresh();
+      invalidateData();
       onClose();
     } catch (e) {
       setStatusError(e instanceof Error ? e.message : 'Failed to start task');
@@ -141,7 +142,7 @@ export function TaskThreadModal({ task, projects, onClose }: Props) {
     setStatusError(null);
     try {
       await updateTaskStatus(task.id, 'abandoned'); // gateway auto-archives the session
-      router.refresh();
+      invalidateData();
       onClose();
     } catch (e) {
       setStatusError(e instanceof Error ? e.message : 'Failed to abandon task');
@@ -156,7 +157,7 @@ export function TaskThreadModal({ task, projects, onClose }: Props) {
     setStatusError(null);
     try {
       await deleteTask(task.id);
-      router.refresh();
+      invalidateData();
       onClose();
     } catch (e) {
       setStatusError(e instanceof Error ? e.message : 'Failed to delete task');
@@ -179,7 +180,7 @@ export function TaskThreadModal({ task, projects, onClose }: Props) {
       const updated = await addTaskLink(task.id, url);
       setLinks(updated.links ?? []);
       setLinkUrl('');
-      router.refresh();
+      invalidateData();
     } catch (e) {
       setLinkError(e instanceof Error ? e.message : 'Failed to add link');
     } finally {
@@ -199,7 +200,7 @@ export function TaskThreadModal({ task, projects, onClose }: Props) {
     try {
       const updated = await removeTaskLink(task.id, linkId);
       setLinks(updated.links ?? []);
-      router.refresh();
+      invalidateData();
     } catch (e) {
       setLinkError(e instanceof Error ? e.message : 'Failed to remove link');
     } finally {

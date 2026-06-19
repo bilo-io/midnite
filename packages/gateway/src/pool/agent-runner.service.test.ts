@@ -27,8 +27,8 @@ function fakeTasks(seed: Task[]) {
   const startTask = vi.fn((id: string) => {
     byId.get(id)!.status = 'wip';
   });
-  const requeue = vi.fn((id: string) => {
-    byId.get(id)!.status = 'todo';
+  const requeue = vi.fn((id: string, target: 'todo' | 'backlog' = 'todo') => {
+    byId.get(id)!.status = target;
   });
   const retry = vi.fn((id: string) => {
     const t = byId.get(id)!;
@@ -63,8 +63,19 @@ function fakeTerminal() {
     },
   );
   const killManagedRun = vi.fn();
-  const terminal = { spawnAgentSession, killManagedRun } as unknown as TerminalService;
-  return { terminal, spawnAgentSession, killManagedRun, fireExit: (c = 0) => onExit?.(c, null) };
+  const interruptManagedRun = vi.fn();
+  const terminal = {
+    spawnAgentSession,
+    killManagedRun,
+    interruptManagedRun,
+  } as unknown as TerminalService;
+  return {
+    terminal,
+    spawnAgentSession,
+    killManagedRun,
+    interruptManagedRun,
+    fireExit: (c = 0) => onExit?.(c, null),
+  };
 }
 
 describe('AgentRunnerService', () => {
@@ -146,5 +157,50 @@ describe('AgentRunnerService', () => {
 
     expect(updateStatus).toHaveBeenCalledWith('t1', 'abandoned');
     expect(killManagedRun).toHaveBeenCalledWith('t1');
+  });
+
+  it('requeues to todo (not abandoned) and interrupts the session on stop', async () => {
+    const cfg = config();
+    const { service, requeue, updateStatus } = fakeTasks([task('t1', 'x')]);
+    const pool = new AgentPoolService(cfg, service);
+    const { terminal, interruptManagedRun } = fakeTerminal();
+    const runner = new AgentRunnerService(cfg, pool, service, terminal, knowledge);
+
+    await runner.start(task('t1', 'x')); // task is now wip
+    runner.stop('t1');
+
+    expect(requeue).toHaveBeenCalledWith('t1', 'todo');
+    expect(updateStatus).not.toHaveBeenCalledWith('t1', 'abandoned');
+    expect(interruptManagedRun).toHaveBeenCalledWith('t1');
+  });
+
+  it('stop sets the task non-running before the kill, so onExit does not retry', async () => {
+    const cfg = config();
+    // requeue (→ todo) runs before the PTY is reaped; the later exit must see a
+    // non-running task and leave it alone (just free the slot), not retry it.
+    const { service, retry } = fakeTasks([task('t1', 'x')]);
+    const pool = new AgentPoolService(cfg, service);
+    const { terminal, fireExit } = fakeTerminal();
+    const runner = new AgentRunnerService(cfg, pool, service, terminal, knowledge);
+
+    await runner.start(task('t1', 'x')); // wip
+    runner.stop('t1'); // → todo, interrupt scheduled
+    fireExit(0); // PTY reaped after the interrupt
+
+    expect(retry).not.toHaveBeenCalled();
+    expect(pool.freeSlotCount()).toBe(1);
+  });
+
+  it('stop can land the task in backlog', async () => {
+    const cfg = config();
+    const { service, requeue } = fakeTasks([task('t1', 'x')]);
+    const pool = new AgentPoolService(cfg, service);
+    const { terminal } = fakeTerminal();
+    const runner = new AgentRunnerService(cfg, pool, service, terminal, knowledge);
+
+    await runner.start(task('t1', 'x'));
+    runner.stop('t1', 'backlog');
+
+    expect(requeue).toHaveBeenCalledWith('t1', 'backlog');
   });
 });

@@ -155,10 +155,32 @@ async function fetchJson<T>(
   const res = await fetch(`${gatewayUrl()}${path}`, { cache: 'no-store', ...init });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    throw new Error(`${res.status} ${res.statusText}${text ? `: ${text}` : ''}`);
+    throw new Error(errorMessage(res, text));
   }
   const body = (await res.json()) as unknown;
   return schema ? schema.parse(body) : (body as T);
+}
+
+/**
+ * Turn a failed response into a readable message. The gateway (Nest) sends errors
+ * as `{ statusCode, message, error }`, so surface `message` — a string, or an array
+ * of strings for validation errors — rather than dumping the raw JSON blob at the
+ * user. Falls back to the status line for empty/non-JSON bodies.
+ */
+function errorMessage(res: Response, text: string): string {
+  if (text) {
+    try {
+      const parsed = JSON.parse(text) as { message?: unknown };
+      if (typeof parsed.message === 'string' && parsed.message) return parsed.message;
+      if (Array.isArray(parsed.message) && parsed.message.length > 0) {
+        return parsed.message.join(', ');
+      }
+    } catch {
+      // Not JSON — fall through to the raw text below.
+    }
+    return text;
+  }
+  return `${res.status} ${res.statusText}`;
 }
 
 export async function pingAgent(): Promise<AgentPingResponse> {
@@ -197,9 +219,18 @@ export async function updateTaskStatus(id: string, status: Status): Promise<Task
 /** Manually kick off an agent run for a task (todo/backlog → wip + session).
  *  Rejects (409) when no agent slot is free or the task isn't startable. */
 export async function startTask(id: string): Promise<Task> {
+  // No request body — and crucially no JSON content-type header: Fastify rejects
+  // a POST that declares `application/json` but sends an empty body with a 400
+  // ("Body cannot be empty …").
+  return fetchJson(`/tasks/${encodeURIComponent(id)}/start`, { method: 'POST' }, TaskSchema);
+}
+
+/** Stop a running task: interrupt the agent (Ctrl+C) and return it to the queue
+ *  (→ `to`, default todo), idling its session. Rejects (409) if it isn't running. */
+export async function stopTask(id: string, to: 'todo' | 'backlog' = 'todo'): Promise<Task> {
   return fetchJson(
-    `/tasks/${encodeURIComponent(id)}/start`,
-    { method: 'POST', headers: JSON_HEADERS },
+    `/tasks/${encodeURIComponent(id)}/stop?to=${to}`,
+    { method: 'POST' },
     TaskSchema,
   );
 }
@@ -445,7 +476,7 @@ export async function enhanceProjectDescription(input: {
 export async function draftProjectPlan(id: string): Promise<DraftPlanResponse> {
   return fetchJson(
     `/projects/${encodeURIComponent(id)}/draft-plan`,
-    { method: 'POST', headers: JSON_HEADERS },
+    { method: 'POST' },
     DraftPlanResponseSchema,
   );
 }
@@ -534,7 +565,7 @@ export async function getWorkflowRun(id: string, runId: string): Promise<Workflo
 export async function rotateWorkflowWebhook(id: string): Promise<WebhookInfoResponse> {
   return fetchJson(
     `/workflows/${encodeURIComponent(id)}/webhook/rotate`,
-    { method: 'POST', headers: JSON_HEADERS },
+    { method: 'POST' },
     WebhookInfoResponseSchema,
   );
 }
@@ -655,7 +686,7 @@ export async function listHeartbeatRuns(): Promise<HeartbeatRun[]> {
 export async function runHeartbeatNow(): Promise<HeartbeatRun> {
   const { run } = await fetchJson(
     '/agents/heartbeat/run',
-    { method: 'POST', headers: JSON_HEADERS },
+    { method: 'POST' },
     HeartbeatRunResponseSchema,
   );
   return run;

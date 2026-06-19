@@ -133,6 +133,10 @@ interface PtyHandle {
 
 const TOKEN_TTL_MS = 60_000;
 
+// Grace between a Ctrl+C interrupt and the hard PTY kill on a graceful stop, so
+// the agent has a beat to abort its current turn before the process is reaped.
+const INTERRUPT_GRACE_MS = 250;
+
 /**
  * Owns the live PTYs behind session windows: spawn-on-demand, reattach with
  * scrollback replay, bounded ring buffer, idle reaping, and shutdown cleanup.
@@ -404,6 +408,24 @@ export class TerminalService implements OnModuleDestroy {
     } catch {
       // already dead — onExit either fired or is in flight
     }
+  }
+
+  /**
+   * Gracefully stop a managed run/agent session: send Ctrl+C (SIGINT to the
+   * foreground agent so it can abort the current turn cleanly), then hard-kill the
+   * PTY after a short grace so the slot always frees even if the interrupt is
+   * ignored. Reaping rides {@link killManagedRun}'s onExit path, same as a kill.
+   */
+  interruptManagedRun(attachId: string): void {
+    const handle = this.handles.get(attachId);
+    if (!handle) return;
+    try {
+      handle.proc.write('\x03'); // Ctrl+C
+    } catch {
+      // already dead — fall through to the kill, which no-ops on a dead handle
+    }
+    const timer = setTimeout(() => this.killManagedRun(attachId), INTERRUPT_GRACE_MS);
+    timer.unref?.();
   }
 
   // ---- lifecycle ----

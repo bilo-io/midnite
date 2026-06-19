@@ -5,6 +5,7 @@ import {
   Inject,
   Param,
   Post,
+  Query,
 } from '@nestjs/common';
 import type { AgentPoolSnapshot, Task } from '@midnite/shared';
 import { TasksService } from '../tasks/tasks.service';
@@ -43,6 +44,20 @@ export class PoolController {
     if (!started) {
       throw new ConflictException('no free agent slot');
     }
+    return this.tasks.getTask(id);
+  }
+
+  // Stop a running task on demand (drag back to todo/backlog, or the Stop button):
+  // interrupt the agent with Ctrl+C and return the task to the queue — distinct
+  // from cancel, which abandons. `to` picks the landing column (default todo).
+  @Post('tasks/:id/stop')
+  stop(@Param('id') id: string, @Query('to') to?: string): Task {
+    const target = to === 'backlog' ? 'backlog' : 'todo';
+    const task = this.tasks.getTask(id); // 404s if missing
+    if (task.status !== 'wip' && task.status !== 'waiting') {
+      throw new ConflictException(`task ${id} is not running (status: ${task.status})`);
+    }
+    this.runner.stop(id, target);
     return this.tasks.getTask(id);
   }
 

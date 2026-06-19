@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Columns3, List, ListTree, Plus, type LucideIcon } from 'lucide-react';
 import type { Project, Status, Task } from '@midnite/shared';
-import { startTask, updateTaskStatus } from '@/lib/api';
+import { startTask, stopTask, updateTaskStatus } from '@/lib/api';
+import { invalidateData } from '@/lib/data-refresh';
 import { Button } from '@/components/ui/button';
 import { BoardView } from '@/components/board-view';
 import { FilterPills, type FilterOption } from '@/components/filter-pills';
@@ -14,6 +15,7 @@ import { ProjectMultiSelect } from '@/components/project-multi-select';
 import { TableView } from '@/components/table-view';
 import { TaskThreadModal } from '@/components/task-thread-modal';
 import { COLUMNS, COLUMN_STATUSES } from '@/components/task-columns';
+import { useToast } from '@/components/toast';
 import { cn } from '@/lib/utils';
 
 const STATUS_FILTERS: FilterOption[] = COLUMNS.map((c) => ({
@@ -60,10 +62,21 @@ export function TasksView({
   }, [tasks]);
   const [selected, setSelected] = useState<Task | null>(null);
   const [showNewTask, setShowNewTask] = useState(false);
-  const [moveError, setMoveError] = useState<string | null>(null);
+  const toast = useToast();
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
+
+  // Surface a failed gateway fetch as a toast (deduped per message so a stuck
+  // error doesn't re-fire on every render).
+  const lastErrorRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (error && error !== lastErrorRef.current) {
+      lastErrorRef.current = error;
+      toast.error(`Could not reach the gateway: ${error}`);
+    }
+    if (!error) lastErrorRef.current = null;
+  }, [error, toast]);
 
   // Deep-link target from the session modal's "Go to task": auto-open it once.
   const openId = searchParams.get('open');
@@ -87,10 +100,12 @@ export function TasksView({
     const stored = localStorage.getItem(VIEW_STORAGE_KEY);
     if (stored && (VIEWS as readonly string[]).includes(stored)) setView(stored as TaskView);
   }, []);
-  // Board drag-and-drop / Start: optimistically restatus, then call the gateway.
-  // Dropping into "In progress" from todo/backlog spawns an agent session via the
-  // start endpoint; every other move is a plain status change. Rolls back and
-  // surfaces the error (e.g. "no free agent slot") if the gateway rejects it.
+  // Board drag-and-drop / Start / Stop: optimistically restatus, then call the
+  // gateway. Dropping into "In progress" from todo/backlog spawns an agent session
+  // (start endpoint); dragging a running task (wip/waiting) back to todo/backlog
+  // stops it — interrupting the agent and idling its session (stop endpoint);
+  // every other move is a plain status change. Rolls back and surfaces the error
+  // (e.g. "no free agent slot") if the gateway rejects it.
   const onMove = useCallback(
     (taskId: string, target: Status) => {
       const current = localTasks.find((t) => t.id === taskId);
@@ -98,24 +113,27 @@ export function TasksView({
       const prevStatus = current.status;
       const spawnsSession =
         target === 'wip' && (prevStatus === 'todo' || prevStatus === 'backlog');
-      setMoveError(null);
+      const stopsSession =
+        (prevStatus === 'wip' || prevStatus === 'waiting') &&
+        (target === 'todo' || target === 'backlog');
       setLocalTasks((prev) =>
         prev.map((t) => (t.id === taskId ? { ...t, status: target } : t)),
       );
       void (async () => {
         try {
           if (spawnsSession) await startTask(taskId);
+          else if (stopsSession) await stopTask(taskId, target as 'todo' | 'backlog');
           else await updateTaskStatus(taskId, target);
-          router.refresh();
+          invalidateData();
         } catch (e) {
           setLocalTasks((prev) =>
             prev.map((t) => (t.id === taskId ? { ...t, status: prevStatus } : t)),
           );
-          setMoveError(e instanceof Error ? e.message : 'Failed to move task');
+          toast.error(e instanceof Error ? e.message : 'Failed to move task');
         }
       })();
     },
-    [localTasks, router],
+    [localTasks, toast],
   );
 
   const onSetView = useCallback((next: TaskView) => {
@@ -213,18 +231,6 @@ export function TasksView({
         </div>
       </div>
 
-      {error && (
-        <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-          Could not reach the gateway: {error}
-        </div>
-      )}
-
-      {moveError && (
-        <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-          {moveError}
-        </div>
-      )}
-
       <div className="reveal-content flex min-h-0 flex-1 flex-col">
         {view === 'table' ? (
           <TableView {...viewProps} />
@@ -246,7 +252,12 @@ export function TasksView({
       {showNewTask && (
         <NewTaskModal
           projects={projects}
-          onCreated={(task) => setLocalTasks((prev) => [task, ...prev])}
+          onCreated={(task) => {
+            setLocalTasks((prev) => [task, ...prev]);
+            toast.success('Task created');
+            // Reconcile with the server list and refresh counts/widgets.
+            invalidateData();
+          }}
           onClose={() => setShowNewTask(false)}
         />
       )}

@@ -2,6 +2,7 @@
 
 import { Folder, ListChecks, Pencil } from 'lucide-react';
 import type { Project, Task } from '@midnite/shared';
+import { ProjectStatusBadge } from '@/components/project-status-badge';
 import { ProjectTag } from '@/components/project-tag';
 import { SelectableIcon } from '@/components/selectable-icon';
 import { SortableAccordions, type AccordionSection } from '@/components/sortable-accordions';
@@ -71,7 +72,12 @@ export function ProjectsTree({
           onToggle={(shiftKey) => onToggleSelect(p.id, shiftKey)}
         />
       ) : undefined,
-      leading: <ProjectTag tag={p.tag} color={p.color} />,
+      leading: (
+        <span className="flex items-center gap-2">
+          <ProjectTag tag={p.tag} color={p.color} />
+          <ProjectStatusBadge project={p} />
+        </span>
+      ),
       count: items.length,
       summary: `${plural(items.length, 'task')} · ${plural(p.sources.length, 'source')}`,
       actions: (

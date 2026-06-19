@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { useDataRefresh } from './data-refresh';
+
 type ApiDataState<T> = {
   data: T | null;
   error: string | null;
@@ -31,6 +33,9 @@ export function useApiData<T>(
   fetcherRef.current = fetcher;
 
   const refresh = useCallback(() => setTick((t) => t + 1), []);
+
+  // Re-fetch when any mutation calls invalidateData() — see lib/data-refresh.ts.
+  useDataRefresh(refresh);
 
   useEffect(() => {
     const controller = new AbortController();

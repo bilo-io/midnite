@@ -30,8 +30,8 @@ function fakeTasks(seed: Task[]) {
     startTask: vi.fn((id: string) => {
       byId.get(id)!.status = 'wip';
     }),
-    requeue: vi.fn((id: string) => {
-      byId.get(id)!.status = 'todo';
+    requeue: vi.fn((id: string, target: 'todo' | 'backlog' = 'todo') => {
+      byId.get(id)!.status = target;
     }),
     retry: vi.fn(),
     updateStatus: vi.fn((id: string, status: string) => {
@@ -50,7 +50,13 @@ function fakeTerminal(ok = true) {
   const spawnAgentSession = vi.fn(() =>
     ok ? { ok: true as const, pid: 42 } : { ok: false as const, error: 'no pty' },
   );
-  return { terminal: { spawnAgentSession, killManagedRun: vi.fn() } as unknown as TerminalService };
+  return {
+    terminal: {
+      spawnAgentSession,
+      killManagedRun: vi.fn(),
+      interruptManagedRun: vi.fn(),
+    } as unknown as TerminalService,
+  };
 }
 
 function build(seed: Task[], poolSize = 1, spawnOk = true) {
@@ -100,5 +106,34 @@ describe('PoolController.start', () => {
     const { controller } = build([task('t1', 'todo'), task('t2', 'todo')], 1);
     await controller.start('t1'); // fills the only slot
     await expect(controller.start('t2')).rejects.toBeInstanceOf(ConflictException);
+  });
+});
+
+describe('PoolController.stop', () => {
+  it('stops a running task: returns it to todo', async () => {
+    const { controller, byId } = build([task('t1', 'todo')]);
+    await controller.start('t1'); // now wip
+
+    const result = controller.stop('t1');
+
+    expect(result.status).toBe('todo');
+    expect(byId.get('t1')!.status).toBe('todo');
+  });
+
+  it('lands the task in backlog when to=backlog', async () => {
+    const { controller, byId } = build([task('t1', 'todo')]);
+    await controller.start('t1');
+    controller.stop('t1', 'backlog');
+    expect(byId.get('t1')!.status).toBe('backlog');
+  });
+
+  it('404s for an unknown task', () => {
+    const { controller } = build([]);
+    expect(() => controller.stop('missing')).toThrow(NotFoundException);
+  });
+
+  it('409s when the task is not running', () => {
+    const { controller } = build([task('t1', 'todo')]);
+    expect(() => controller.stop('t1')).toThrow(ConflictException);
   });
 });

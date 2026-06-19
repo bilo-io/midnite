@@ -20,11 +20,13 @@ import {
   SessionCard,
   SessionRow,
 } from '@/components/session-card';
+import { CollapsibleStatusGroups } from '@/components/collapsible-status-groups';
 import { SessionTranscriptModal } from '@/components/session-transcript-modal';
 import { SessionTerminalModal } from '@/components/session-terminal-modal';
 import { SortableAccordions, type AccordionSection } from '@/components/sortable-accordions';
 import type { ProjectTagInfo } from '@/components/task-card';
 import { archiveSession, deleteSession, getSessionTranscript, unarchiveSession } from '@/lib/api';
+import { invalidateData } from '@/lib/data-refresh';
 import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-action-bar';
 import { useConfirm } from '@/components/confirm-dialog';
 import { EmptyState } from '@/components/empty-state';
@@ -125,10 +127,10 @@ export function SessionsView({
         else await archiveSession(session.id);
       } finally {
         onClose();
-        router.refresh(); // page is force-dynamic, so this re-fetches /sessions
+        invalidateData();
       }
     },
-    [confirm, onClose, router],
+    [confirm, onClose],
   );
 
   // Permanent delete — only offered once a session is archived.
@@ -138,10 +140,10 @@ export function SessionsView({
         await deleteSession(session.id);
       } finally {
         onClose();
-        router.refresh();
+        invalidateData();
       }
     },
-    [onClose, router],
+    [onClose],
   );
 
   // --- Bulk selection ---
@@ -163,9 +165,9 @@ export function SessionsView({
       if (ids.length === 0) return;
       await Promise.all(ids.map((id) => op(id)));
       clearSelection();
-      router.refresh();
+      invalidateData();
     },
-    [clearSelection, router],
+    [clearSelection],
   );
 
   const deleteSelection = useCallback(
@@ -318,6 +320,12 @@ export function SessionsView({
     };
   });
 
+  // List & grid both group sessions by status, mirroring the table's sections.
+  // Empty groups are dropped here (the table keeps them as collapsible rows).
+  const statusGroups = visibleStatuses
+    .map((status) => ({ status, items: sessions.filter((s) => s.status === status) }))
+    .filter((g) => g.items.length > 0);
+
   return (
     <div className="space-y-4">
       <div className="reveal-controls flex flex-wrap items-center justify-between gap-3">
@@ -384,32 +392,44 @@ export function SessionsView({
           <SortableAccordions sections={sections} storageKey="midnite.sessions.sections" />
         ) : sessions.length === 0 ? (
           <EmptyState Icon={BotMessageSquare} title="No sessions match this filter" />
-        ) : view === 'list' ? (
-          <div className="flex flex-col gap-2">
-            {sessions.map((s) => (
-              <SessionCard
-                key={`${s.projectSlug}/${s.id}`}
-                session={s}
-                layout="list"
-                onClick={() => onSelect(s)}
-                selected={isSelected(s.id)}
-                onToggleSelect={(sk) => toggleSelect(s.id, sk, sessions.map((x) => x.id))}
-              />
-            ))}
-          </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {sessions.map((s) => (
-              <SessionCard
-                key={`${s.projectSlug}/${s.id}`}
-                session={s}
-                layout="grid"
-                onClick={() => onSelect(s)}
-                selected={isSelected(s.id)}
-                onToggleSelect={(sk) => toggleSelect(s.id, sk, sessions.map((x) => x.id))}
-              />
-            ))}
-          </div>
+          <CollapsibleStatusGroups
+            storageKey={`midnite.sessions.${view}Groups`}
+            groups={statusGroups.map((g) => ({
+              id: g.status,
+              label: SESSION_STATUS_LABEL[g.status],
+              hue: SESSION_STATUS_HUE[g.status],
+              count: g.items.length,
+              body:
+                view === 'list' ? (
+                  <div className="flex flex-col gap-2">
+                    {g.items.map((s) => (
+                      <SessionCard
+                        key={`${s.projectSlug}/${s.id}`}
+                        session={s}
+                        layout="list"
+                        onClick={() => onSelect(s)}
+                        selected={isSelected(s.id)}
+                        onToggleSelect={(sk) => toggleSelect(s.id, sk, sessions.map((x) => x.id))}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    {g.items.map((s) => (
+                      <SessionCard
+                        key={`${s.projectSlug}/${s.id}`}
+                        session={s}
+                        layout="grid"
+                        onClick={() => onSelect(s)}
+                        selected={isSelected(s.id)}
+                        onToggleSelect={(sk) => toggleSelect(s.id, sk, sessions.map((x) => x.id))}
+                      />
+                    ))}
+                  </div>
+                ),
+            }))}
+          />
         )}
       </div>
 

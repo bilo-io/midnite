@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { LayoutGrid, List, ListTree, Plus, Workflow } from 'lucide-react';
 import type { WorkflowSummary } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { WorkflowCard } from '@/components/workflow-card';
 import { WorkflowsTable } from '@/components/workflows-table';
 import { WorkflowCreateModal } from '@/components/workflow-create-modal';
 import { deleteWorkflow, updateWorkflow } from '@/lib/api';
+import { invalidateData } from '@/lib/data-refresh';
 import { useBulkSelection } from '@/lib/use-bulk-selection';
 import { cn } from '@/lib/utils';
 
@@ -20,7 +21,6 @@ const VIEWS: readonly View[] = ['list', 'grid', 'table'];
 const VIEW_STORAGE_KEY = 'midnite.workflows.view';
 
 export function WorkflowsView({ initial }: { initial: WorkflowSummary[] }) {
-  const router = useRouter();
   const [view, setView] = useState<View>('grid');
   const [creating, setCreating] = useState(false);
 
@@ -38,7 +38,7 @@ export function WorkflowsView({ initial }: { initial: WorkflowSummary[] }) {
     }
   }, []);
 
-  const refresh = useCallback(() => router.refresh(), [router]);
+  const refresh = useCallback(() => invalidateData(), []);
 
   // --- Bulk selection ---
   const confirm = useConfirm();

@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
 import {
   Activity,
   AlertTriangle,
@@ -20,13 +19,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { ProjectSelect } from '@/components/project-select';
 import { cn } from '@/lib/utils';
 import { pingAgent } from '@/lib/api';
+import { invalidateData } from '@/lib/data-refresh';
 import { useSpeechRecognition } from '@/lib/use-speech-recognition';
 import { useFeatureDrafts, draftTasks } from '@/lib/feature-drafts';
 import { FeatureListPills } from '@/components/feature-list-pills';
 import { FeatureListModal } from '@/components/feature-list-modal';
 
 export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
-  const router = useRouter();
   const [text, setText] = React.useState('');
   const [projectId, setProjectId] = React.useState<string | null>(null);
   const [files, setFiles] = React.useState<File[]>([]);
@@ -138,7 +137,7 @@ export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
     imagesByDraft.current.delete(id);
     drafts.remove(id);
     closeModal();
-    router.refresh();
+    invalidateData();
   };
 
   return (

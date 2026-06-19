@@ -13,6 +13,7 @@ import { MemoryCard } from '@/components/memory-card';
 import { MemoriesTree } from '@/components/memories-tree';
 import { MemoryModal } from '@/components/memory-modal';
 import { deleteMemory, updateMemory } from '@/lib/api';
+import { invalidateData } from '@/lib/data-refresh';
 import { useBulkSelection } from '@/lib/use-bulk-selection';
 
 type View = 'list' | 'grid' | 'table';
@@ -46,7 +47,7 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
     }
   }, []);
 
-  const refresh = useCallback(() => router.refresh(), [router]);
+  const refresh = useCallback(() => invalidateData(), []);
 
   // --- Bulk selection ---
   const confirm = useConfirm();

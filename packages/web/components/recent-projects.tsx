@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Project, Status, Task } from '@midnite/shared';
 import { ProjectModal } from '@/components/project-modal';
+import { invalidateData } from '@/lib/data-refresh';
 import { ProjectTag } from '@/components/project-tag';
 import { SourceIcon } from '@/components/source-icon';
 import { StatusDonut, statusCounts } from '@/components/status-donut';
@@ -111,7 +112,7 @@ export function ProjectCard({ project, tasks }: ProjectCardProps) {
           tasks={projectTasks}
           onSelectTask={(task) => router.push(`/tasks?open=${task.id}`)}
           onClose={() => setOpen(false)}
-          onSaved={() => router.refresh()}
+          onSaved={() => invalidateData()}
         />
       )}
     </>
@@ -189,7 +190,7 @@ export function RecentProjects({ projects, tasks }: { projects: Project[]; tasks
         })}
       </div>
       {editProject && (
-        <ProjectModal project={editProject} tasks={tasks.filter((t) => t.projectId === editProject.id)} onSelectTask={(task) => router.push(`/tasks?open=${task.id}`)} onClose={() => setEditProject(null)} onSaved={() => router.refresh()} />
+        <ProjectModal project={editProject} tasks={tasks.filter((t) => t.projectId === editProject.id)} onSelectTask={(task) => router.push(`/tasks?open=${task.id}`)} onClose={() => setEditProject(null)} onSaved={() => invalidateData()} />
       )}
     </section>
   );

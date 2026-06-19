@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import type { RunStatus } from '@midnite/shared';
 import { Switch } from '@/components/ui/switch';
 import { updateWorkflow } from '@/lib/api';
+import { invalidateData } from '@/lib/data-refresh';
 import { cn } from '@/lib/utils';
 
 const STATUS_HUE: Record<RunStatus, string> = {
@@ -18,7 +18,6 @@ const STATUS_HUE: Record<RunStatus, string> = {
 // Optimistic enable/disable toggle, shared by every workflow view so the action
 // behaves identically in grid, list, and table.
 export function WorkflowEnabledSwitch({ id, enabled: initial }: { id: string; enabled: boolean }) {
-  const router = useRouter();
   const [enabled, setEnabled] = useState(initial);
   const [busy, setBusy] = useState(false);
 
@@ -27,7 +26,7 @@ export function WorkflowEnabledSwitch({ id, enabled: initial }: { id: string; en
     setEnabled(next);
     try {
       await updateWorkflow(id, { enabled: next });
-      router.refresh();
+      invalidateData();
     } catch {
       setEnabled(!next); // revert on failure
     } finally {

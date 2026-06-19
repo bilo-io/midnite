@@ -67,6 +67,26 @@ export class AgentRunnerService {
     this.terminal.killManagedRun(taskId);
   }
 
+  /**
+   * User-initiated stop (drag a running task back to todo/backlog, or the Stop
+   * button): interrupt the agent with Ctrl+C and return the task to the queue —
+   * NOT abandoned, unlike {@link cancel}. The status is set to `target` first so
+   * the PTY's onExit sees a non-running task and won't retry/abandon it; the exit
+   * then frees the slot. Clearing the session makes it read as idle.
+   */
+  stop(taskId: string, target: 'todo' | 'backlog' = 'todo'): void {
+    this.clearRunTimeout(taskId);
+    this.pool.abort(taskId);
+    try {
+      this.tasks.requeue(taskId, target);
+    } catch (err) {
+      this.logger.warn(
+        `stop: failed to requeue ${taskId}: ${err instanceof Error ? err.message : 'unknown'}`,
+      );
+    }
+    this.terminal.interruptManagedRun(taskId);
+  }
+
   /** User- or timeout-initiated stop: abandon the task and kill its session. The
    *  PTY's onExit then frees the slot. */
   cancel(taskId: string): void {

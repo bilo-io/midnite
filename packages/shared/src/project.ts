@@ -100,6 +100,21 @@ export const CreatePlanTasksResponseSchema = z.object({
 
 export const ProjectResponseSchema = z.object({ project: ProjectSchema });
 
+// The things a project needs to be considered "complete". `name`, `tag` and
+// `color` are mandatory at creation, but `folder` (workDir) is filled in
+// afterwards — so a folder-less project starts out incomplete.
+export const PROJECT_REQUIREMENTS = ['name', 'tag', 'folder'] as const;
+export type ProjectRequirement = (typeof PROJECT_REQUIREMENTS)[number];
+
+/** The requirements a project is still missing (empty array means complete). */
+export function missingProjectRequirements(project: Project): ProjectRequirement[] {
+  const missing: ProjectRequirement[] = [];
+  if (!project.name.trim()) missing.push('name');
+  if (!project.tag.trim() || !project.color.trim()) missing.push('tag');
+  if (!project.workDir || !project.workDir.trim()) missing.push('folder');
+  return missing;
+}
+
 export type ProjectSource = z.infer<typeof ProjectSourceSchema>;
 export type Project = z.infer<typeof ProjectSchema>;
 export type CreateProjectRequest = z.infer<typeof CreateProjectRequestSchema>;

@@ -12,7 +12,12 @@ function Editor() {
   const id = useSearchParams().get('id') ?? '';
   const { data: workflow, loading, error } = useApiData(() => getWorkflow(id), [id]);
 
-  if (!id || error || (!loading && !workflow)) {
+  // Only bail to "not found" when we genuinely have no workflow to show. A bare
+  // `error` check would also fire on a *background* refetch failure (useApiData now
+  // re-fetches on every global invalidateData()), tearing down a fully-loaded
+  // editor — and any unsaved canvas edits — over a transient blip. As long as a
+  // workflow is in hand, keep rendering the editor.
+  if (!id || (!workflow && (error || !loading))) {
     return <div className="container py-12 text-sm text-muted-foreground">Workflow not found.</div>;
   }
   if (!workflow) return null;

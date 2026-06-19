@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { CirclePile, LayoutGrid, List, ListTree, Plus, type LucideIcon } from 'lucide-react';
 import type { Council } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { CouncilCard } from '@/components/council-card';
 import { CouncilTable } from '@/components/council-table';
 import { CouncilCreateModal } from '@/components/council-create-modal';
 import { deleteCouncil, updateCouncil } from '@/lib/api';
+import { invalidateData } from '@/lib/data-refresh';
 import { useBulkSelection } from '@/lib/use-bulk-selection';
 import { cn } from '@/lib/utils';
 
@@ -25,7 +26,6 @@ const VIEW_OPTIONS: Array<{ value: View; label: string; Icon: LucideIcon }> = [
 ];
 
 export function CouncilsView({ initial }: { initial: Council[] }) {
-  const router = useRouter();
   const [view, setView] = useState<View>('grid');
   const [creating, setCreating] = useState(false);
 
@@ -43,7 +43,7 @@ export function CouncilsView({ initial }: { initial: Council[] }) {
     }
   }, []);
 
-  const refresh = useCallback(() => router.refresh(), [router]);
+  const refresh = useCallback(() => invalidateData(), []);
 
   // --- Bulk selection ---
   const confirm = useConfirm();

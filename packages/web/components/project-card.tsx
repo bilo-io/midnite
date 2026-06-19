@@ -3,6 +3,7 @@
 import { Folder, ListChecks } from 'lucide-react';
 import type { Project } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
+import { ProjectStatusBadge } from '@/components/project-status-badge';
 import { ProjectTag } from '@/components/project-tag';
 import { SelectableIcon } from '@/components/selectable-icon';
 import { SourceIcon } from '@/components/source-icon';
@@ -77,6 +78,7 @@ export function ProjectCard({ project, layout, onOpen, onPlan, selected = false,
         <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">
           <div className="flex items-center gap-2">
             <ProjectTag tag={project.tag} color={project.color} />
+            <ProjectStatusBadge project={project} />
             {archivedBadge}
             <span className="truncate text-sm font-medium">{project.name}</span>
           </div>
@@ -105,6 +107,7 @@ export function ProjectCard({ project, layout, onOpen, onPlan, selected = false,
         <div className="flex min-w-0 items-center gap-2">
           {selectIcon}
           <ProjectTag tag={project.tag} color={project.color} />
+          <ProjectStatusBadge project={project} />
           {archivedBadge}
         </div>
         <span className="shrink-0 text-xs tabular-nums text-muted-foreground">

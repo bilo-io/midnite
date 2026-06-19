@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { FileText, Folder, LayoutGrid, List, ListTree, Plus } from 'lucide-react';
 import type { Memory, Project, Task } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ import { TemplateCard } from '@/components/template-card';
 import { TemplateModal } from '@/components/template-modal';
 import { TemplatesTable } from '@/components/templates-table';
 import { deleteProject, updateProject } from '@/lib/api';
+import { invalidateData } from '@/lib/data-refresh';
 import { useBulkSelection } from '@/lib/use-bulk-selection';
 import { TEMPLATES, createBlankTemplate, type Template } from './templates';
 import { cn } from '@/lib/utils';
@@ -41,7 +42,6 @@ export function ProjectsView({
   tasks: Task[];
   memories?: Memory[];
 }) {
-  const router = useRouter();
   const [view, setView] = useState<View>('grid');
   const [tab, setTab] = useState<Tab>('projects');
   const [creating, setCreating] = useState(false);
@@ -118,7 +118,7 @@ export function ProjectsView({
     else setOpenTemplateId(t.id);
   }, [persistTemplates, view]);
 
-  const refresh = useCallback(() => router.refresh(), [router]);
+  const refresh = useCallback(() => invalidateData(), []);
 
   // --- Bulk selection (projects tab only) ---
   const confirm = useConfirm();

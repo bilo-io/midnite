@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import localFont from 'next/font/local';
 import './globals.css';
 import { ConfirmProvider } from '@/components/confirm-dialog';
+import { ToastProvider } from '@/components/toast';
 import { ThemeProvider } from './theme/theme-context';
 import { themeInitScript } from './theme/theme-script';
 
@@ -36,7 +37,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body className="min-h-screen bg-background text-foreground">
         <ThemeProvider>
-          <ConfirmProvider>{children}</ConfirmProvider>
+          <ToastProvider>
+            <ConfirmProvider>{children}</ConfirmProvider>
+          </ToastProvider>
         </ThemeProvider>
       </body>
     </html>

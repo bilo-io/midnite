@@ -2,7 +2,6 @@
 
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { ReactFlowProvider } from '@xyflow/react';
 import {
   PanelLeftClose,
@@ -17,6 +16,7 @@ import { NodePalette } from '@/components/node-palette';
 import { RunOutputPanel } from '@/components/run-output-panel';
 import { WorkflowToolbar } from '@/components/workflow-toolbar';
 import { updateWorkflow } from '@/lib/api';
+import { invalidateData } from '@/lib/data-refresh';
 import { useWorkflowRun } from '@/lib/use-workflow-run';
 import { createWorkflowStore, WorkflowStoreContext } from '@/lib/workflow-store';
 import { cn } from '@/lib/utils';
@@ -70,7 +70,6 @@ function PanelToggle({
 }
 
 export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
-  const router = useRouter();
   const [store] = useState(() => createWorkflowStore(workflow));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -108,7 +107,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
         edges: graph.edges,
       });
       state.markSaved();
-      router.refresh();
+      invalidateData();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to save workflow');
     } finally {

@@ -91,11 +91,12 @@ export class TasksService {
     return this.getTask(id);
   }
 
-  /** Return a task to the queue (PTY died / restart reconciliation): → todo. */
-  requeue(id: string): Task {
+  /** Return a task to the queue (PTY died / restart reconciliation / user stop):
+   *  → todo by default, or backlog. Clears the bound session so it reads as idle. */
+  requeue(id: string, target: 'todo' | 'backlog' = 'todo'): Task {
     const now = new Date().toISOString();
     if (!this.repo.getTask(id)) throw new NotFoundException(`task ${id} not found`);
-    this.repo.updateStatus(id, 'todo', now);
+    this.repo.updateStatus(id, target, now);
     this.repo.setSession(id, null, now);
     this.repo.insertEvent({ id: randomUUID(), taskId: id, at: now, kind: 'agent.requeued' });
     return this.getTask(id);
