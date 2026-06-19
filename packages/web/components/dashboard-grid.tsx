@@ -16,6 +16,7 @@ import {
   type WidgetType,
 } from '@/lib/dashboard-widgets';
 import { useLocalStorage } from '@/lib/use-local-storage';
+import { useGatewayErrorToast } from '@/lib/use-gateway-error-toast';
 import { DashboardTile, TILES } from './dashboard-tiles';
 import { ClockWidget } from './clock-widget';
 import { DateWidget } from './date-widget';
@@ -169,6 +170,7 @@ export function DashboardGrid({
   todayProgress,
   error,
 }: DashboardGridProps) {
+  useGatewayErrorToast(error);
   const { width, mounted, containerRef } = useContainerWidth({ measureBeforeMount: true });
 
   const [widgets, setWidgets] = useLocalStorage<WidgetInstance[]>(
@@ -380,12 +382,6 @@ export function DashboardGrid({
 
   return (
     <div className="container pb-48 pt-2" ref={containerRef}>
-      {error && (
-        <div className="mb-4 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-          Could not reach the gateway: {error}
-        </div>
-      )}
-
       {mounted && (
         <ResponsiveGridLayout
           width={width}

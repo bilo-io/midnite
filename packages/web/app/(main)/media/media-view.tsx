@@ -14,6 +14,7 @@ import { useLocalStorage } from '@/lib/use-local-storage';
 import { MEDIA_PROVIDER_CATALOG, useMediaModels } from '@/lib/use-media-models';
 import { ModelSelect, ProjectSelect, ProviderSelectRS } from '@/components/media-select';
 import { mediaFileUrl } from '@/lib/api';
+import { useGatewayErrorToast } from '@/lib/use-gateway-error-toast';
 import Lightbox from 'yet-another-react-lightbox';
 import 'yet-another-react-lightbox/styles.css';
 
@@ -61,6 +62,7 @@ type Props = {
 };
 
 export function MediaView({ items, projects, error }: Props) {
+  useGatewayErrorToast(error);
   const [sidebarOpen, setSidebarOpen] = useLocalStorage('midnite.media.sidebar', true);
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [selectedType, setSelectedType] = useState<TabType>('all');
@@ -459,11 +461,6 @@ export function MediaView({ items, projects, error }: Props) {
           </div>
         </div>
 
-        {error && (
-          <div className="mb-4 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-            Could not reach the gateway: {error}
-          </div>
-        )}
         {renderGallery()}
       </main>
 

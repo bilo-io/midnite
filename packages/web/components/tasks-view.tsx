@@ -6,6 +6,7 @@ import { Columns3, List, ListTree, Plus, type LucideIcon } from 'lucide-react';
 import type { Project, Status, Task } from '@midnite/shared';
 import { startTask, stopTask, updateTaskStatus } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
+import { useGatewayErrorToast } from '@/lib/use-gateway-error-toast';
 import { Button } from '@/components/ui/button';
 import { BoardView } from '@/components/board-view';
 import { FilterPills, type FilterOption } from '@/components/filter-pills';
@@ -67,16 +68,8 @@ export function TasksView({
   const router = useRouter();
   const pathname = usePathname();
 
-  // Surface a failed gateway fetch as a toast (deduped per message so a stuck
-  // error doesn't re-fire on every render).
-  const lastErrorRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (error && error !== lastErrorRef.current) {
-      lastErrorRef.current = error;
-      toast.error(`Could not reach the gateway: ${error}`);
-    }
-    if (!error) lastErrorRef.current = null;
-  }, [error, toast]);
+  // Surface a failed gateway fetch as a toast instead of an inline banner.
+  useGatewayErrorToast(error);
 
   // Deep-link target from the session modal's "Go to task": auto-open it once.
   const openId = searchParams.get('open');
