@@ -220,7 +220,7 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
               <div
                 aria-hidden
-                className="hidden shrink-0 lg:block"
+                className="hidden shrink-0 transition-[width] duration-300 ease-in-out motion-reduce:transition-none lg:block"
                 style={{ width: threadOpen ? 240 : 36 }}
               />
               <div className="pointer-events-auto min-w-0 flex-1">
@@ -240,7 +240,7 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
               </div>
               <div
                 aria-hidden
-                className="hidden shrink-0 lg:block"
+                className="hidden shrink-0 transition-[width] duration-300 ease-in-out motion-reduce:transition-none lg:block"
                 style={{ width: panelOpen ? 320 : 36 }}
               />
             </div>

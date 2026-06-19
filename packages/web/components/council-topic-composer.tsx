@@ -97,9 +97,7 @@ export function CouncilComposer({
               if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') void submit();
             }}
             placeholder={
-              disabled && disabledHint
-                ? disabledHint
-                : 'Put a prompt to the council — free-form, not a task.'
+              disabled && disabledHint ? disabledHint : 'Ask the council anything · ⌘/Ctrl + ⏎'
             }
           />
           <div className="flex items-center justify-between gap-2">
@@ -120,7 +118,7 @@ export function CouncilComposer({
               ) : null}
               <StyledSelect
                 aria-label="Synthesis format"
-                className="w-44"
+                className="w-fit shrink-0"
                 options={FORMAT_SELECT_OPTIONS}
                 value={format}
                 onChange={setFormat}

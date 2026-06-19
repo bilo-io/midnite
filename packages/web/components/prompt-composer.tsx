@@ -188,7 +188,7 @@ export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
           onFocus={ta.onFocus}
           onBlur={ta.onBlur}
           onKeyDown={onKeyDown}
-          placeholder="Describe a feature list — one task per line. (⌘/Ctrl+Enter to add)"
+          placeholder="Add tasks, one per line · ⌘/Ctrl + ⏎"
           rows={1}
           className="min-h-0 resize-none overflow-y-auto border-0 bg-transparent p-0 pr-8 text-base transition-[height] duration-300 ease-in-out focus-visible:ring-0 motion-reduce:transition-none"
         />

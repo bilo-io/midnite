@@ -208,9 +208,23 @@ export function CouncilMembersPanel({
       });
   };
 
-  if (!open) {
-    return (
-      <aside className="hidden shrink-0 lg:sticky lg:top-16 lg:block">
+  return (
+    <aside
+      className={cn(
+        'relative shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out motion-reduce:transition-none lg:sticky lg:top-16',
+        // On mobile the panel only takes part when open; on lg it's always a
+        // sidebar (full width) or a slim rail.
+        open ? 'block w-full' : 'hidden lg:block',
+        open ? 'lg:w-[320px]' : 'lg:w-9',
+      )}
+    >
+      {/* Collapsed rail: the expand control, faded in only while closed. */}
+      <div
+        className={cn(
+          'absolute right-0 top-0 hidden transition-opacity duration-200 lg:block',
+          open ? 'pointer-events-none opacity-0' : 'opacity-100',
+        )}
+      >
         <Button
           type="button"
           variant="ghost"
@@ -222,12 +236,15 @@ export function CouncilMembersPanel({
         >
           <PanelRightOpen className="h-4 w-4" />
         </Button>
-      </aside>
-    );
-  }
+      </div>
 
-  return (
-    <aside className="flex w-full shrink-0 flex-col gap-3 rounded-xl border border-border/60 bg-card/40 p-4 lg:sticky lg:top-16 lg:max-h-[calc(100dvh-4.5rem)] lg:w-[320px] lg:overflow-y-auto">
+      {/* Fixed-width content so it doesn't reflow while the wrapper width animates. */}
+      <div
+        className={cn(
+          'flex w-full flex-col gap-3 rounded-xl border border-border/60 bg-card/40 p-4 transition-opacity duration-200 lg:max-h-[calc(100dvh-4.5rem)] lg:w-[320px] lg:overflow-y-auto',
+          open ? 'opacity-100' : 'pointer-events-none opacity-0',
+        )}
+      >
       <div className="flex items-center justify-between gap-2">
         <h2 className="flex items-center gap-1.5 text-sm font-semibold">
           <Users className="h-4 w-4 text-muted-foreground" />
@@ -327,6 +344,7 @@ export function CouncilMembersPanel({
           </div>
         </SortableContext>
       </DndContext>
+      </div>
     </aside>
   );
 }

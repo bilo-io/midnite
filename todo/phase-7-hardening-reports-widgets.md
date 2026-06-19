@@ -22,7 +22,7 @@ The highest-value theme. These are real, verified gaps, not hypotheticals.
 
 ### A3. Web test coverage — **M** — ◐ PARTIAL (toolchain + seed suites shipped `e3ad2f2`)
 - [x] Web had **0 automated tests** — now Vitest + @testing-library/react + jsdom are wired with a `test` task, so `moon ci` runs web tests too.
-- [x] Seeded the highest-risk pure/hook logic: `use-local-storage` (the double-write bug), `dashboard-widgets` registry, `task-events` pub/sub (9 tests). _(`lib/api.ts`/optimistic-board tests still worth adding.)_
+- [x] Seeded the highest-risk pure/hook logic: `use-local-storage` (the double-write bug), `dashboard-widgets` registry, `task-events` pub/sub, plus a `command-palette` render+keyboard suite (15 tests). _(`lib/api.ts`/optimistic-board tests still worth adding.)_
 - [ ] Add a small Playwright smoke suite to CI (the drive-throughs exist ad-hoc; commit a few).
 
 ### A4. Resilience & data durability — **S–M** — ◐ PARTIAL (backup + WAL pragmas shipped `05acd6d`)
