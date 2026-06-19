@@ -4,6 +4,7 @@ import { detectSourceKind, type Status, type Task, type TaskCounts } from '@midn
 import { TaskClassifier, type ClassifierImage } from '../agent/classifier.service';
 import { PlannerService } from '../agent/planner.service';
 import { TasksRepository } from './tasks.repository';
+import { TaskEventBus } from './task-event-bus';
 
 /** Clamp a caller-supplied priority into 0..3, defaulting to 1 (Normal). */
 function clampPriority(p: number | undefined): number {
@@ -28,7 +29,16 @@ export class TasksService {
     @Inject(TasksRepository) private readonly repo: TasksRepository,
     @Inject(TaskClassifier) private readonly classifier: TaskClassifier,
     @Inject(PlannerService) private readonly planner: PlannerService,
+    @Inject(TaskEventBus) private readonly bus: TaskEventBus,
   ) {}
+
+  // Publish a board event after a mutation. `created`/`updated` carry the full
+  // task so clients can patch their cache; the web client just invalidates and
+  // refetches. Returns the task so call sites read `return this.emit(...)`.
+  private emit(type: 'task.created' | 'task.updated', task: Task): Task {
+    this.bus.emit({ type, at: new Date().toISOString(), task });
+    return task;
+  }
 
   getCounts(): TaskCounts {
     const raw = this.repo.countsByStatus();
@@ -73,7 +83,7 @@ export class TasksService {
         data: JSON.stringify({ reason: 'abandoned' }),
       });
     }
-    return this.getTask(id);
+    return this.emit('task.updated', this.getTask(id));
   }
 
   // ---- agent pool lifecycle transitions ----
@@ -88,7 +98,7 @@ export class TasksService {
     this.repo.updateStatus(id, 'wip', now);
     this.repo.setSession(id, id, now);
     this.repo.insertEvent({ id: randomUUID(), taskId: id, at: now, kind: 'agent.started' });
-    return this.getTask(id);
+    return this.emit('task.updated', this.getTask(id));
   }
 
   /** Return a task to the queue (PTY died / restart reconciliation / user stop):
@@ -99,7 +109,7 @@ export class TasksService {
     this.repo.updateStatus(id, target, now);
     this.repo.setSession(id, null, now);
     this.repo.insertEvent({ id: randomUUID(), taskId: id, at: now, kind: 'agent.requeued' });
-    return this.getTask(id);
+    return this.emit('task.updated', this.getTask(id));
   }
 
   /** Crash retry: bump the retry counter, then → todo (clearing the session).
@@ -119,7 +129,7 @@ export class TasksService {
       kind: 'agent.retried',
       data: JSON.stringify({ retryCount }),
     });
-    return this.getTask(id);
+    return this.emit('task.updated', this.getTask(id));
   }
 
   /** Agent blocked on user input (Notification hook): → waiting. Idempotent. */
@@ -130,7 +140,7 @@ export class TasksService {
     if (row.status === 'waiting') return this.getTask(id);
     this.repo.updateStatus(id, 'waiting', now);
     this.repo.insertEvent({ id: randomUUID(), taskId: id, at: now, kind: 'agent.waiting' });
-    return this.getTask(id);
+    return this.emit('task.updated', this.getTask(id));
   }
 
   /** Agent finished (Stop hook): → done, optionally recording a PR URL. Idempotent. */
@@ -148,7 +158,7 @@ export class TasksService {
       kind: 'agent.done',
       ...(prUrl ? { data: JSON.stringify({ prUrl }) } : {}),
     });
-    return this.getTask(id);
+    return this.emit('task.updated', this.getTask(id));
   }
 
   archive(id: string): Task {
@@ -162,7 +172,7 @@ export class TasksService {
       kind: 'task.archived',
       data: JSON.stringify({ reason: 'manual' }),
     });
-    return this.repo.hydrate(row);
+    return this.emit('task.updated', this.repo.hydrate(row));
   }
 
   unarchive(id: string): Task {
@@ -175,7 +185,7 @@ export class TasksService {
       at: now,
       kind: 'task.unarchived',
     });
-    return this.repo.hydrate(row);
+    return this.emit('task.updated', this.repo.hydrate(row));
   }
 
   // Permanent deletion is gated on the task being archived first — the archive is
@@ -187,6 +197,7 @@ export class TasksService {
       throw new BadRequestException('task must be archived before it can be deleted');
     }
     this.repo.deleteTask(id);
+    this.bus.emit({ type: 'task.deleted', at: new Date().toISOString(), id });
   }
 
   async createFromPrompt(input: CreateTaskInput): Promise<Task> {
@@ -244,7 +255,7 @@ export class TasksService {
       }),
     });
 
-    return this.getTask(id);
+    return this.emit('task.created', this.getTask(id));
   }
 
   // Create a task directly from a plan checklist item: explicit title, tagged to
@@ -276,7 +287,7 @@ export class TasksService {
       data: JSON.stringify({ projectId: input.projectId, source: 'plan' }),
     });
 
-    return this.getTask(id);
+    return this.emit('task.created', this.getTask(id));
   }
 
   // Reassign a task to a project (or clear it with null). The projectId isn't
@@ -293,7 +304,7 @@ export class TasksService {
       kind: 'task.project.changed',
       data: JSON.stringify({ projectId }),
     });
-    return this.getTask(id);
+    return this.emit('task.updated', this.getTask(id));
   }
 
   addLink(taskId: string, url: string, label?: string): Task {
@@ -314,7 +325,7 @@ export class TasksService {
       kind: 'link.added',
       data: JSON.stringify({ url }),
     });
-    return this.getTask(taskId);
+    return this.emit('task.updated', this.getTask(taskId));
   }
 
   removeLink(taskId: string, linkId: string): Task {
@@ -323,6 +334,6 @@ export class TasksService {
       throw new NotFoundException(`link ${linkId} not found`);
     }
     this.repo.deleteLink(taskId, linkId);
-    return this.getTask(taskId);
+    return this.emit('task.updated', this.getTask(taskId));
   }
 }

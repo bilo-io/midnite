@@ -8,6 +8,7 @@ import type {
 } from '../db/schema';
 import { TasksRepository } from './tasks.repository';
 import { TasksService } from './tasks.service';
+import { TaskEventBus } from './task-event-bus';
 import { TaskClassifier, type ClassifierImage } from '../agent/classifier.service';
 import type { PlannerService } from '../agent/planner.service';
 
@@ -183,7 +184,7 @@ describe('TasksService', () => {
       'done', 'done',
       'abandoned',
     ]);
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner);
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
     const counts = service.getCounts();
     // backlog and todo are now distinct buckets; wip + waiting fold into
     // inProgress; abandoned is excluded from the dashboard entirely.
@@ -192,7 +193,7 @@ describe('TasksService', () => {
 
   it('createFromPrompt persists task, classifies, and emits task.created event', async () => {
     const repo = new InMemoryRepo();
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner);
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
 
     const task = await service.createFromPrompt({
       prompt: 'add a CSV export to the reports page',
@@ -208,7 +209,7 @@ describe('TasksService', () => {
 
   it('createFromPrompt honours an explicit status (e.g. backlog)', async () => {
     const repo = new InMemoryRepo();
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner);
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
 
     const task = await service.createFromPrompt({
       prompt: 'park this idea for later',
@@ -221,7 +222,7 @@ describe('TasksService', () => {
 
   it('createFromPrompt records attachments against the new task', async () => {
     const repo = new InMemoryRepo();
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner);
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
 
     const task = await service.createFromPrompt({
       prompt: 'fix layout',
@@ -238,7 +239,7 @@ describe('TasksService', () => {
   it('updateStatus changes status and emits status.changed event', () => {
     const repo = new InMemoryRepo();
     seed(repo, ['todo']);
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner);
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
     const updated = service.updateStatus('t0', 'wip');
     expect(updated.status).toBe('wip');
     expect(repo.events.some((e) => e.kind === 'status.changed')).toBe(true);
@@ -248,7 +249,7 @@ describe('TasksService', () => {
   it('abandoning a task auto-archives it and emits task.archived', () => {
     const repo = new InMemoryRepo();
     seed(repo, ['wip']);
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner);
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
     const updated = service.updateStatus('t0', 'abandoned');
     expect(updated.status).toBe('abandoned');
     expect(updated.archivedAt).toBeDefined();
@@ -258,7 +259,7 @@ describe('TasksService', () => {
   it('archive/unarchive toggles archivedAt and emits events', () => {
     const repo = new InMemoryRepo();
     seed(repo, ['done']);
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner);
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
 
     const archived = service.archive('t0');
     expect(archived.archivedAt).toBeDefined();
@@ -272,7 +273,7 @@ describe('TasksService', () => {
   it('deleteTask refuses to delete a task that is not archived', () => {
     const repo = new InMemoryRepo();
     seed(repo, ['done']);
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner);
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
     expect(() => service.deleteTask('t0')).toThrow(/archived/);
     expect(repo.tasks).toHaveLength(1);
   });
@@ -280,7 +281,7 @@ describe('TasksService', () => {
   it('deleteTask removes a task once it has been archived', () => {
     const repo = new InMemoryRepo();
     seed(repo, ['done']);
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner);
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
     service.archive('t0');
     service.deleteTask('t0');
     expect(repo.tasks).toHaveLength(0);
@@ -288,14 +289,14 @@ describe('TasksService', () => {
 
   it('deleteTask 404s for an unknown task', () => {
     const repo = new InMemoryRepo();
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner);
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
     expect(() => service.deleteTask('nope')).toThrow();
   });
 
   it('moving out of abandoned does not auto-unarchive', () => {
     const repo = new InMemoryRepo();
     seed(repo, ['wip']);
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner);
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
     service.updateStatus('t0', 'abandoned');
     const back = service.updateStatus('t0', 'todo');
     expect(back.status).toBe('todo');
@@ -304,7 +305,7 @@ describe('TasksService', () => {
 
   it('createFromPrompt stores the given priority (clamped), defaulting to Normal', async () => {
     const repo = new InMemoryRepo();
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner);
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
 
     const urgent = await service.createFromPrompt({ prompt: 'ship it', priority: 3, images: [] });
     expect(urgent.priority).toBe(3);
@@ -319,7 +320,7 @@ describe('TasksService', () => {
   it('retry bumps retryCount, returns the task to todo, and emits agent.retried', () => {
     const repo = new InMemoryRepo();
     seed(repo, ['wip']);
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner);
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
 
     const first = service.retry('t0');
     expect(first.status).toBe('todo');
