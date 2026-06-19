@@ -30,6 +30,7 @@ import {
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Screensaver } from '@/components/screensaver';
 import { PasscodeSetupDialog } from '@/components/passcode-pad';
+import { Wordmark } from '@/components/wordmark';
 
 type NavLink = {
   href: string;
@@ -155,11 +156,7 @@ export function NavBar() {
               priority
               className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-border/60 transition-transform group-hover:scale-110"
             />
-            {expandedView ? (
-              <span className="font-brand text-sm font-semibold">midnite</span>
-            ) : (
-              <Tooltip>midnite</Tooltip>
-            )}
+            {expandedView ? <Wordmark /> : <Tooltip>midnite</Tooltip>}
           </Link>
           {expandedView ? (
             <button

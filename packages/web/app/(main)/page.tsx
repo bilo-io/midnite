@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { Wand2 } from 'lucide-react';
 import { StatusPills } from '@/components/status-pills';
 import { Spinner } from '@/components/spinner';
 import { useLocalStorage } from '@/lib/use-local-storage';
@@ -242,6 +244,16 @@ export default function HomePage() {
           pillsRevealed ? 'opacity-100' : 'pointer-events-none opacity-0'
         }`}
       />
+
+      {/* The only entrance to the branding/wordmark playground. */}
+      <Link
+        href="/branding"
+        aria-label="Branding"
+        title="Branding"
+        className="fixed bottom-5 right-5 z-50 flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground/40 transition-colors hover:bg-accent/40 hover:text-foreground"
+      >
+        <Wand2 className="h-4 w-4" />
+      </Link>
     </div>
   );
 }
