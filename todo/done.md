@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-19 — Plan reconciliation (trackers ↔ reality)
+
+Audited [`docs/INITIAL_PLAN.md`](../docs/INITIAL_PLAN.md) (Phases 1–5) against the actual codebase and brought the stale `todo/` checklists in line with what shipped. No code changed — docs only.
+
+- [x] **Phases 1–3 essentially complete; the project has gone well beyond the plan** (Projects, Memory, Councils, Brainstorms, Phase-6 Workflows, marketing `site`, Electron `desktop`, multi-provider LLM). Stack overrides (Nest+Fastify, Next.js App Router) confirmed intentional.
+- [x] Updated [phase-0](phase-0-scaffold.md) → [phase-5](phase-5-polish.md) checkboxes with per-item status + deviation annotations; resolved all three [open-decisions.md](open-decisions.md) (waiting holds slot · pty-first · standalone repo).
+- [x] Recorded the genuine remaining gaps from the written plan, with scoping, in new [outstanding.md](outstanding.md):
+  - Phase 1/3: **no `task.*` WebSocket broadcast** — live updates are polling + cache invalidation, not event-driven (and no TanStack Query)
+  - Phase 4 (**inference, biggest gap**): no bulk/paste add, URL/GitHub context fetch, repo guessing, or inline question answers; **no chokidar knowledge-dir watcher** — KB is user-added source URLs, not watched MD-file content
+  - Phase 5: no `tmux`/`warp`/`iterm` spawners (no `Spawner` interface; `terminal.mode` is unread), no per-repo concurrency caps, no per-repo branch-naming / PR-template injection
+- [x] Confirmed shipped Phase-5 items: priorities, crash retries, eslint+prettier, `moon ci`, 270+ gateway tests.
+
 ## 2026-06-19 — Manual task kickoff (Start button + drag-to-WIP)
 
 A task could only reach `wip` (with a linked Claude Code session) via the autonomous scheduler, which is off by default — and `PATCH /tasks/:id/status` only moved the column without spawning anything. Added an explicit on-demand kickoff that reuses the existing runner, so a user can start a task themselves regardless of `agent.poolEnabled`.

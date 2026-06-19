@@ -1,33 +1,33 @@
 # Open decisions
 
-From [`docs/INITIAL_PLAN.md`](../docs/INITIAL_PLAN.md) §Open decisions to settle. Each entry has a **Status** line — update it when resolved and copy the resolution to [`done.md`](done.md).
+From [`docs/INITIAL_PLAN.md`](../docs/INITIAL_PLAN.md) §Open decisions to settle. **All three are now resolved** (2026-06-19) — kept here as a record.
 
 ---
 
 ## 1. Does `waiting` hold its agent slot?
 
-**Recommendation:** yes, in v1.
+**Resolution: YES (as recommended).**
 
-Claude Code blocks on input, so the pty session literally sits there. Holding the slot is simplest and matches reality; releasing it (to start more `todo`s) means suspending the waiting session — more powerful but harder.
+Claude Code blocks on input, so the PTY session literally sits there — freeing the slot would orphan it. Implemented as the configurable `agent.waitingHoldsSlot` (default `true`) in [`shared/src/config.ts`](../packages/shared/src/config.ts). Releasing/suspending `waiting` sessions remains an unbuilt Phase-5 option ([phase-5-polish.md](phase-5-polish.md)).
 
-**Status:** open. Decide before starting Phase 2.
+**Status:** ✅ resolved.
 
 ---
 
 ## 2. First execution backend
 
-**Recommendation:** `pty` first, native terminal windows second.
+**Resolution: `pty` first** (as recommended).
 
-`pty` gives the gateway-managed, browser-streamable session that powers the Phase 3 xterm.js UX. Native (tmux/warp/iterm) backends come later in Phase 5.
+`node-pty` is the only implemented backend; it powers the gateway-managed, browser-streamable xterm.js session (Phase 3). The `tmux` / `warp` / `iterm` backends — and a pluggable `Spawner` interface to select between them — are still outstanding ([phase-5-polish.md](phase-5-polish.md)).
 
-**Status:** open. Likely resolves to `pty` at start of Phase 2.
+**Status:** ✅ resolved (native backends deferred to Phase 5, not yet built).
 
 ---
 
 ## 3. Where does midnite live?
 
-**Recommendation:** new standalone repo (current location `~/Dev/midnite`).
+**Resolution: new standalone repo** (as recommended).
 
-The alternative — a folder under an existing workspace — would entangle midnite's release/PR cycle with the host repo.
+midnite is a standalone git repository at `~/Dev/midnite` with its own history, CI, and release workflow — not a folder under another workspace.
 
-**Status:** open. Current footprint is a standalone directory; needs a `git init` + first commit to fully resolve.
+**Status:** ✅ resolved.

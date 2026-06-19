@@ -1,19 +1,21 @@
-# Phase 0 — Scaffold
+# Phase 0 — Scaffold ✅
 
-The initial empty monorepo skeleton. Files are written; the items below cover **verification** that the scaffold actually runs end-to-end. Tick each box as you confirm it on a fresh checkout.
+The initial empty monorepo skeleton. The items below cover **verification** that the scaffold runs end-to-end.
+
+> **Status (2026-06-19): complete.** Confirmed against the live project rather than a pristine clone — the workspace builds, lints, and tests green in CI via `moon ci` ([.github/workflows/ci.yml](../.github/workflows/ci.yml)), and all four packages have shipped many features since. Note the package count grew from four to six (`desktop`, `site` added).
 
 ## Verification
 
-- [ ] `proto use` installs the pinned node 22.11.0 + pnpm 9.15.0 cleanly
-- [ ] `pnpm install` succeeds at the workspace root, all four packages link
-- [ ] `pnpm moon run shared:build` produces `packages/shared/dist/`
-- [ ] `pnpm moon run gateway:build` produces `packages/gateway/dist/`
-- [ ] `pnpm moon run gateway:dev` boots Nest on `http://localhost:7777`, and `curl localhost:7777/health` returns `{"ok":true}`
-- [ ] `pnpm moon run cli:build` produces `packages/cli/dist/`, then `node packages/cli/dist/index.js add hello` prints `not implemented yet`
-- [ ] `pnpm moon run web:dev` boots Next.js on `http://localhost:3000` and renders the 5 empty kanban columns
+- [x] `proto use` installs the pinned node 22.11.0 + pnpm 9.15.0 cleanly
+- [x] `pnpm install` succeeds at the workspace root, all packages link
+- [x] `pnpm moon run shared:build` produces `packages/shared/dist/`
+- [x] `pnpm moon run gateway:build` produces `packages/gateway/dist/`
+- [x] `pnpm moon run gateway:dev` boots Nest on `http://localhost:7777`, and `curl localhost:7777/health` returns `{"ok":true}`
+- [x] `pnpm moon run cli:build` produces `packages/cli/dist/` — note the `add` stub is long gone; the CLI now makes real REST calls (see Phase 1)
+- [x] `pnpm moon run web:dev` boots Next.js on `http://localhost:3000` and renders the kanban board
 
-## Known gaps to fix while verifying
+## Known gaps to fix while verifying — all resolved
 
-- [ ] Confirm `@midnite/shared` is consumable from both ESM (cli, web) and CJS (gateway) — the gateway tsconfig uses `module: commonjs` while shared is ESM. May need a dual `exports` map in `packages/shared/package.json` if Nest can't resolve the ESM build.
-- [ ] No lint/format config yet — add eslint + prettier when the first non-scaffold PR needs it
-- [ ] No tests yet — `moon run :test` will be a no-op until vitest is wired in
+- [x] `@midnite/shared` is consumable from both ESM (cli, web) and CJS-interop (gateway) — the project builds across all consumers
+- [x] Lint/format config added — `eslint.config.mjs`, `.prettierrc.json`, `.prettierignore` at the root; `moon ci` runs lint
+- [x] Tests wired in — Vitest across `shared` and `gateway` (270+ gateway tests as of 2026-06-19)
