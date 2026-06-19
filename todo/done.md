@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-19 — Phase 7 Theme B: councils report export (Markdown + PDF)
+
+A reusable report-export framework, with a council run as the first consumer. Markdown is built server-side by a pure serializer; PDF is rendered client-side via print-to-PDF (no puppeteer/jsPDF, per the locked decision). Built in an isolated worktree, reviewed, and merged to `main`. (Paired with the Phase 7 Theme A hardening entry further down — both landed this day.)
+
+- [x] `shared/src/report.ts` — `ReportFormat` enum + server/client-rendered split helpers (`SERVER_RENDERED_REPORT_FORMATS`, `isServerRenderedReportFormat`, `REPORT_CONTENT_TYPE`), reused by the export controller, the API client, and the web `ExportMenu`
+- [x] Gateway: pure `buildCouncilRunReport()` (`councils/lib/council-report.ts`) — **format-aware** across the unified council formats, de-anonymizes A/B/C syntheses via the entry `labelMap`, archives non-active per-format syntheses; `GET /councils/:id/runs/:runId/export?format=md` (text/markdown attachment; `pdf`/unknown → 400; missing council/run → 404)
+- [x] Web: reusable `ExportMenu` (Copy Markdown · Download .md · Download PDF) on the council run view; PDF via an isolated print container + `window.print()` (works in browser and Electron)
+- [x] Electron one-click `printToPDF()` bridge deferred (window.print already yields a PDF in the desktop app) — `TODO(desktop)` left in `export-menu.tsx`
+- [x] 17 new tests (14 gateway builder + 3 shared); after merge to main: `moon run :typecheck`, `:lint` (0 errors), `gateway:test` (327), and `web:build` all green
+
 ## 2026-06-19 — Plan reconciliation (trackers ↔ reality)
 
 Audited [`docs/INITIAL_PLAN.md`](../docs/INITIAL_PLAN.md) (Phases 1–5) against the actual codebase and brought the stale `todo/` checklists in line with what shipped. No code changed — docs only.
@@ -195,4 +205,4 @@ A divergent sibling of Councils: contributors each generate ideas through a fixe
 - [x] Gateway `llm_usage` table (migration **`0024_llm_usage`**, `at`+`feature` indexes) + `usage/` module (repo→service→controller); `GET /usage/summary?from=&to=&groupBy=` returns totals + by day/provider/feature + soft-warn entries (advisory; **never blocks**). Testable static price table (`usage/lib/pricing.ts`).
 - [x] Adapter interface carries `usage{inputTokens,outputTokens}`; Anthropic/OpenAI/Gemini adapters wired (openai-compatible inherits). `LlmService` records one row per call with an optional `feature` arg (default `unknown`). Tagged call sites: classifier→`classifier`, planner→`planner`, projects→`project`, heartbeat→`agent`, workflow ai-node→`workflow`. Councils run via spawned CLI sessions (not `LlmService`) → not tracked.
 - [x] Web: `getUsageSummary()` client fn + dashboard **LLM cost & usage** widget (spend by day/provider/feature + soft-warn banner) registered in the widget registry/grid.
-- [x] Verified: gateway `vitest` 313 pass (incl. 0024 on `:memory:`), shared 71 pass, eslint clean on touched files, `tsc --noEmit` clean (shared/gateway/web), `next build` green. Left uncommitted for review.
+- [x] Verified after review + merge to `main`: gateway tests **327 pass** (incl. 0024 on `:memory:`), shared 71 pass, `moon run :typecheck`/`:lint` (0 errors)/`web:build` green; an isolated gateway boot smoke confirmed the crypto + usage modules wire up and `/usage/summary` + masked `/providers` respond.

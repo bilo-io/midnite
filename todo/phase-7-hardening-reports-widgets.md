@@ -10,17 +10,15 @@
 
 The highest-value theme. These are real, verified gaps, not hypotheticals.
 
-### A1. Encrypt provider API keys at rest — **M**
-- [ ] Keys are **plaintext today** — [`db/schema.ts`](../packages/gateway/src/db/schema.ts) (`api_key` column comment admits it). Anyone with the SQLite file reads every provider key.
-- [ ] Encrypt with AES-256-GCM using a key from an env var — **reuse the vault design already specced for workflows** (`workflows.encryptionKeyEnv` / `MIDNITE_WORKFLOWS_KEY` in [`config.ts`](../packages/shared/src/config.ts)); generalise it into a small `gateway/src/crypto/` module so workflow credentials (P9) and provider keys share one implementation.
-- [ ] Migration to encrypt existing rows in place; graceful fallback if the env key is absent (read-only / disabled, not crash).
-- **Decision:** fail-closed (no key ⇒ providers disabled) vs. fall back to plaintext with a loud warning.
+### A1. Encrypt provider API keys at rest — **M** — ✅ DONE (merged `a5ab124`, 2026-06-19)
+- [x] Keys were **plaintext** — now AES-256-GCM at rest via a new `gateway/src/crypto/` module (`CryptoService`, env key **`MIDNITE_SECRET_KEY`**, per-value IV, self-describing `v1:` format).
+- [x] `provider-credentials.repository.ts` encrypts on write / decrypts on read; legacy plaintext re-encrypted in place on next write + a one-time startup pass. No schema change needed.
+- [x] **Fail-closed** (per decision): no env key ⇒ encrypted keys unusable (provider disabled) and writes rejected (→ 400) — never a silent plaintext fallback.
 
-### A2. LLM usage & cost accounting — **M** (also powers a widget + budget caps)
-- [ ] No token/cost tracking exists anywhere. Every feature (agents, councils, brainstorms, classifier, planner, workflows `ai.*`) calls the LLM blind.
-- [ ] Record per-call usage (provider, model, feature, input/output tokens, est. cost) in a `llm_usage` table; aggregate by day/feature/provider.
-- [ ] Optional **budget caps** (daily/monthly) that soft-warn then hard-stop non-interactive calls.
-- **Why now:** bulk add (outstanding #2) + autonomous pool + councils/brainstorms can fan out a lot of paid calls. Cost visibility should precede turning the pool on by default.
+### A2. LLM usage & cost accounting — **M** (also powers a widget) — ✅ DONE (merged `a5ab124`, 2026-06-19)
+- [x] `llm_usage` table (migration `0024`) + `usage/` module; `LlmService` records per-call usage (provider, model, feature, in/out tokens, est. cost) — adapters surface token counts; `GET /usage/summary` aggregates by day/provider/feature.
+- [x] Feature tags: classifier/planner/project/agent/workflow. **Not tracked:** councils (they run via spawned CLI sessions, not `LlmService` — no SDK token counts).
+- [x] **Soft-warn** budget warnings (advisory, never blocks), per the track+soft-warn decision. ⏳ Hard-stop caps intentionally **not** built (decided soft-warn only).
 
 ### A3. Web test coverage — **M**
 - [ ] **The web package has 0 automated tests** (gateway has 47). All web verification has been manual Playwright drive-throughs.
@@ -46,22 +44,20 @@ The highest-value theme. These are real, verified gaps, not hypotheticals.
 
 **Build a generic export framework, ship Councils first.** Each report type provides (1) a `toMarkdown()` serializer and (2) a print-friendly view; the same two hooks unlock every other report later.
 
-### B1. Export framework — **M**
-- [ ] `shared/src/report.ts` — `ReportFormat = 'md' | 'pdf'`, a `ReportDescriptor` shape, response types.
-- [ ] Gateway: per-domain `toMarkdown()` builders + a thin export controller (`GET /councils/:id/export?format=md` returns text/markdown; `format=pdf` see B3). Keep serialization in the service layer (testable, reusable by CLI).
-- [ ] Web: a reusable `ExportMenu` (Copy Markdown · Download .md · Download .pdf) dropped onto a report header.
+### B1. Export framework — **M** — ✅ DONE (merged `b5a1fcf`, 2026-06-19)
+- [x] `shared/src/report.ts` — `ReportFormat` enum + server/client-rendered split helpers + `REPORT_CONTENT_TYPE`.
+- [x] Gateway: pure per-domain markdown builder + a thin export controller (route shipped as `GET /councils/:id/runs/:runId/export?format=md`; serialization lives in the service, reusable by CLI).
+- [x] Web: a reusable `ExportMenu` (Copy Markdown · Download .md · Download PDF) on the council run view.
 
-### B2. Councils report — **M** (first consumer)
-- [ ] **Format-aware** (brainstorms were merged into councils — a run now has a `CouncilFormat`: brainstorm / debate / analyse / critique / motivate / demotivate / custom). A `CouncilRun` carries: `prompt`, `format`, `members[]` (each with provider/role snapshot + captured output), and `syntheses[]` — **one `CouncilSynthesisEntry` per format** the run was synthesized in, each with its own `anonymize` flag and optional `labelMap` (label→runMemberId).
-- [ ] Assemble: title + date → prompt → the **active synthesis** (and optionally each archived per-format synthesis) → per-member contributions. **De-anonymize** member responses using that entry's `labelMap` when `anonymize` is true; attribute by name otherwise.
-- [ ] Markdown export wired end-to-end; copy + download.
+### B2. Councils report — **M** (first consumer) — ✅ DONE (merged `b5a1fcf`, 2026-06-19)
+- [x] **Format-aware** across the unified council formats; `buildCouncilRunReport()` consumes `prompt`, `format`, `members[]`, and per-format `syntheses[]`.
+- [x] Assembles title + date → prompt → active synthesis (+ archived per-format syntheses) → per-member contributions; de-anonymizes A/B/C via the entry `labelMap` when anonymized.
+- [x] Markdown export wired end-to-end (copy + download); 14 builder unit tests cover attributed/anonymized/multi-synthesis/failed-member cases.
 
-### B3. PDF rendering — **S–M** (decision-gated)
-- [ ] **Recommended:** print-to-PDF, no heavy server deps.
-  - Desktop (Electron): `webContents.printToPDF()` on a hidden/print route — high fidelity, Chromium already bundled.
-  - Browser: a `/report/print` route with an `@media print` stylesheet + `window.print()`.
-- [ ] **Rejected for now:** server-side puppeteer / headless Chrome (large dep, ops burden) and `jsPDF`/`react-pdf` (re-implements layout). Revisit only if one-click serverless PDF becomes a hard requirement.
-- **Decision:** accept "PDF = print dialog / desktop print" for v1, or invest in headless rendering?
+### B3. PDF rendering — **S–M** — ✅ DONE (print-to-PDF), merged `b5a1fcf`
+- [x] Print-to-PDF, no heavy server deps: `ExportMenu` renders the markdown into an isolated print container (`@media print` hides app chrome) and calls `window.print()` — yields a PDF in both browser and Electron.
+- [ ] ⏳ Deferred: the true one-click Electron `webContents.printToPDF()` bridge (main IPC + preload) — `TODO(desktop)` left in `export-menu.tsx`. `window.print()` covers it for now.
+- [x] **Rejected (as decided):** server-side puppeteer/headless-Chrome and `jsPDF`/`react-pdf`.
 
 ### B4. Extensibility (later, free once B1 lands) — **S each**
 - [ ] Projects (plan + tasks + sources), Task threads (timeline + PR). *(Brainstorms is no longer separate — it's a council format, covered by B2.)*
@@ -72,7 +68,7 @@ The highest-value theme. These are real, verified gaps, not hypotheticals.
 
 > The registry is **already rich** ([`web/lib/dashboard-widgets.ts`](../packages/web/lib/dashboard-widgets.ts)): it ships `agents` (pool), `activity` (feed), `throughput`, `system-health`, `sessions`, `workflows`, `councils`, `memories`, plus tiles, clocks, weather, finances, etc. **Do not rebuild these.** Only the genuinely-missing ones below.
 
-- [ ] **LLM cost & usage** widget — spend by day / provider / feature. *Depends on A2.* Highest value; nothing like it exists.
+- [x] **LLM cost & usage** widget — spend by day / provider / feature + soft-warn banner. ✅ DONE (merged `a5ab124`, with A2).
 - [ ] **Recent PRs / shipped work** — `done` tiles count completions but nothing lists recent done tasks *with their PR links*. A "what shipped" feed.
 
 > ~~Brainstorms widget~~ — dropped: brainstorms was merged into councils (a format), so the existing `councils` widget already covers it.
@@ -99,13 +95,15 @@ The highest-value theme. These are real, verified gaps, not hypotheticals.
 
 ## Recommended slice for a focused Phase 7
 
-1. **A1** encrypt provider keys + **A2** usage/cost accounting (substrate).
-2. **B1 + B2 + B3** councils export (MD now, PDF via Electron/print).
-3. **C** cost/usage widget (falls out of A2) + recent-PRs widget.
-4. **A3** seed web tests for the riskiest logic + a CI Playwright smoke.
+1. ✅ **A1** encrypt provider keys + **A2** usage/cost accounting (substrate). — *shipped 2026-06-19*
+2. ✅ **B1 + B2 + B3** councils export (MD + print-to-PDF). — *shipped 2026-06-19*
+3. ◐ **C** cost/usage widget (✅ shipped with A2) + recent-PRs widget (todo).
+4. **A3** seed web tests for the riskiest logic + a CI Playwright smoke. — *next up; the export + hardening web code has no tests yet*
 5. **D** notifications (cheap delight). Command palette + tags = stretch.
 
 Leave A5 (remote auth), A4's deeper bits, and Theme-D extras for a later pass unless they're explicitly wanted.
+
+> **Progress (2026-06-19):** steps 1–2 + the cost widget shipped and merged to `main` (commits `b5a1fcf` councils export, `a5ab124` hardening). Remaining in this phase: web test coverage (A3), the recent-PRs widget, A4 durability, A6 task WS broadcast, and Theme D.
 
 ## Decisions (resolved 2026-06-19)
 
