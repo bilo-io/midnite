@@ -21,6 +21,17 @@ import {
   type TaskRow,
 } from '../db/schema';
 
+/** Parse the JSON-array `tags` column to a string[]; tolerant of null/legacy/garbage. */
+function parseTags(raw: string | null): string[] {
+  if (!raw) return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((t): t is string => typeof t === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
 @Injectable()
 export class TasksRepository {
   constructor(@Inject(DB_TOKEN) private readonly db: MidniteDb) {}
@@ -78,6 +89,15 @@ export class TasksRepository {
     return this.db
       .update(tasks)
       .set({ projectId, updatedAt })
+      .where(eq(tasks.id, id))
+      .returning()
+      .get();
+  }
+
+  setTags(id: string, tags: string[], updatedAt: string): TaskRow | undefined {
+    return this.db
+      .update(tasks)
+      .set({ tags: JSON.stringify(tags), updatedAt })
       .where(eq(tasks.id, id))
       .returning()
       .get();
@@ -222,6 +242,7 @@ export class TasksRepository {
       sessionId: row.sessionId ?? undefined,
       projectId: row.projectId ?? undefined,
       prUrl: row.prUrl ?? undefined,
+      tags: parseTags(row.tags),
       archivedAt: row.archivedAt ?? undefined,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,

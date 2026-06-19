@@ -62,4 +62,16 @@ describe('TasksRepository', () => {
     repo.incrementRetry('t1', '2026-06-03T00:00:00.000Z');
     expect(repo.getTask('t1')!.retryCount).toBe(2);
   });
+
+  it('hydrates tags as [] by default and round-trips a set via setTags', () => {
+    insert('t1', {});
+    expect(repo.hydrate(repo.getTask('t1')!).tags).toEqual([]);
+
+    repo.setTags('t1', ['bug', 'frontend'], '2026-06-02T00:00:00.000Z');
+    expect(repo.hydrate(repo.getTask('t1')!).tags).toEqual(['bug', 'frontend']);
+
+    // Clearing persists an empty set, not null garbage.
+    repo.setTags('t1', [], '2026-06-03T00:00:00.000Z');
+    expect(repo.hydrate(repo.getTask('t1')!).tags).toEqual([]);
+  });
 });

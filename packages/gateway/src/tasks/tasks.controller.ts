@@ -18,6 +18,7 @@ import { pipeline } from 'node:stream/promises';
 import { Inject } from '@nestjs/common';
 import {
   AddTaskLinkRequestSchema,
+  SetTaskTagsRequestSchema,
   StatusSchema,
   UpdateTaskProjectRequestSchema,
   type CreateTaskResponse,
@@ -88,6 +89,15 @@ export class TasksController {
       throw new BadRequestException(parsed.error.message);
     }
     return this.service.setProject(id, parsed.data.projectId);
+  }
+
+  @Patch(':id/tags')
+  updateTags(@Param('id') id: string, @Body() body: unknown): Task {
+    const parsed = SetTaskTagsRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.message);
+    }
+    return this.service.setTags(id, parsed.data.tags);
   }
 
   @Post(':id/links')

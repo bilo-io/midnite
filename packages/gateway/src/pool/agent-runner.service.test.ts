@@ -19,7 +19,7 @@ function config(): MidniteConfig {
 }
 
 function task(id: string, prompt?: string): Task {
-  return { id, title: `title-${id}`, status: 'todo', priority: 1, retryCount: 0, prompt, events: [] } as Task;
+  return { id, title: `title-${id}`, status: 'todo', priority: 1, retryCount: 0, prompt, tags: [], events: [] } as Task;
 }
 
 function fakeTasks(seed: Task[]) {

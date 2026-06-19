@@ -26,6 +26,9 @@ export const tasks = sqliteTable(
     sessionId: text('session_id'),
     projectId: text('project_id'),
     prUrl: text('pr_url'),
+    // User labels as a JSON array of strings (null/absent = none). App-layer
+    // validated; no join table — tags are a small free-form set per task.
+    tags: text('tags'),
     archivedAt: text('archived_at'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),

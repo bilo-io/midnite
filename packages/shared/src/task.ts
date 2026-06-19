@@ -66,6 +66,8 @@ export const TaskSchema = z.object({
   sessionId: z.string().optional(),
   projectId: z.string().optional(),
   prUrl: z.string().optional(),
+  /** Free-form user labels. App-validated (trimmed, de-duped, capped); defaults to none. */
+  tags: z.array(z.string()).default([]),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
   /** ISO timestamp when the task (and thus its session) was archived; absent when active. */
@@ -101,6 +103,14 @@ export const UpdateTaskProjectRequestSchema = z.object({
   projectId: z.string().nullable(),
 });
 
+/** Max tags per task and max length per tag — enforced (clamped) in the service. */
+export const MAX_TAGS_PER_TASK = 12;
+export const MAX_TASK_TAG_LENGTH = 32;
+
+export const SetTaskTagsRequestSchema = z.object({
+  tags: z.array(z.string()),
+});
+
 export const CreateTaskResponseSchema = z.object({
   task: TaskSchema,
 });
@@ -121,5 +131,6 @@ export type AgentSlot = z.infer<typeof AgentSlotSchema>;
 export type TaskCounts = z.infer<typeof TaskCountsSchema>;
 export type CreateTaskRequest = z.infer<typeof CreateTaskRequestSchema>;
 export type UpdateTaskProjectRequest = z.infer<typeof UpdateTaskProjectRequestSchema>;
+export type SetTaskTagsRequest = z.infer<typeof SetTaskTagsRequestSchema>;
 export type CreateTaskResponse = z.infer<typeof CreateTaskResponseSchema>;
 export type ClassifiedTask = z.infer<typeof ClassifiedTaskSchema>;
