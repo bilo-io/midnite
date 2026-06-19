@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { LlmProvider } from '@midnite/shared';
 import type { LlmProviderInsert, LlmProviderRow } from '../db/schema';
 import { ProviderCredentialsRepository } from '../agent/provider-credentials.repository';
+import { CryptoService } from '../crypto/crypto.service';
 import type { LlmService } from '../agent/llm/llm.service';
 import { ProvidersService } from './providers.service';
 
@@ -10,7 +11,9 @@ class InMemoryRepo extends ProviderCredentialsRepository {
   active: LlmProvider = 'anthropic';
 
   constructor() {
-    super({} as never);
+    // The fake overrides every DB-touching method, so the real db/crypto are
+    // never used; a bare CryptoService satisfies the constructor's enabled-check.
+    super({} as never, new CryptoService());
   }
 
   override getProvider(p: LlmProvider): LlmProviderRow | undefined {

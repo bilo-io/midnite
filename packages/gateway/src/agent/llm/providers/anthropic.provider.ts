@@ -12,6 +12,7 @@ import type {
   LlmProviderAdapter,
   LlmStructuredResult,
   LlmTextResult,
+  LlmUsage,
 } from '../llm-provider.interface';
 
 // Friendly aliases → concrete Anthropic model ids. Resolution lives here (not in
@@ -85,7 +86,7 @@ export class AnthropicProvider implements LlmProviderAdapter {
       },
       { signal: req.signal },
     );
-    return { text: extractText(res), model };
+    return { text: extractText(res), model, usage: toUsage(res) };
   }
 
   async generateStructured(req: GenerateStructuredRequest): Promise<LlmStructuredResult> {
@@ -116,7 +117,7 @@ export class AnthropicProvider implements LlmProviderAdapter {
     if (!toolUse) {
       throw new Error(`Anthropic did not return a ${req.schemaName} tool call`);
     }
-    return { data: toolUse.input, model };
+    return { data: toolUse.input, model, usage: toUsage(res) };
   }
 
   async ping(): Promise<Omit<AgentPingResponse, 'cli'>> {
@@ -168,4 +169,11 @@ function extractText(res: Anthropic.Messages.Message): string {
     .filter((b): b is Anthropic.Messages.TextBlock => b.type === 'text')
     .map((b) => b.text)
     .join('');
+}
+
+function toUsage(res: Anthropic.Messages.Message): LlmUsage {
+  return {
+    inputTokens: res.usage?.input_tokens ?? 0,
+    outputTokens: res.usage?.output_tokens ?? 0,
+  };
 }

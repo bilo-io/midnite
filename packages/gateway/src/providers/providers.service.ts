@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import {
   LLM_PROVIDERS,
   type LlmProvider,
@@ -8,6 +8,7 @@ import {
 } from '@midnite/shared';
 import { LlmService } from '../agent/llm/llm.service';
 import { ProviderCredentialsRepository } from '../agent/provider-credentials.repository';
+import { SecretEncryptionUnavailableError } from '../crypto/crypto.service';
 import type { LlmProviderInsert, LlmProviderRow } from '../db/schema';
 
 /** Env vars that supply a key when no DB key is stored (per provider). */
@@ -48,7 +49,17 @@ export class ProvidersService {
     if (req.planModel !== undefined) patch.planModel = req.planModel === '' ? null : req.planModel;
     if (req.actModel !== undefined) patch.actModel = req.actModel === '' ? null : req.actModel;
 
-    const row = this.repo.upsertProvider(provider, patch, new Date().toISOString());
+    let row: LlmProviderRow;
+    try {
+      row = this.repo.upsertProvider(provider, patch, new Date().toISOString());
+    } catch (err) {
+      // Fail-closed: storing a key needs MIDNITE_SECRET_KEY. Surface a clear 400
+      // rather than a 500 so the UI can tell the user to configure the env key.
+      if (err instanceof SecretEncryptionUnavailableError) {
+        throw new BadRequestException(err.message);
+      }
+      throw err;
+    }
     // Rebuild the active adapter so a key/model/base-URL edit takes effect now.
     if (this.repo.getActiveProvider() === provider) await this.llm.reload();
     return { provider: this.mask(provider, row), activeProvider: this.repo.getActiveProvider() };

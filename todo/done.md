@@ -180,3 +180,19 @@ A divergent sibling of Councils: contributors each generate ideas through a fixe
 - [x] Starter lenses (First Principles · Contrarian · Customer/JTBD · Moonshot) seeded on create as editable contributors, so a fresh board is immediately useful (`BRAINSTORM_STARTER_LENSES` in shared, seeded in the service)
 - [x] Per-mode synthesis archive: each run keeps one synthesis per mode (`syntheses` JSON, +`0022` migration), so re-synthesizing in a new mode accumulates rather than overwriting — the web Synthesis tab shows mode chips to switch between e.g. Shortlist and Gap analysis
 - [x] Verified: full `:typecheck`/`:lint`/`:test`/`:build` green (10 shared + 12 gateway brainstorm tests, incl. synthesize / fail-on-no-ideas / mode-switch re-synthesis reusing ideas + accumulating the archive / starter-lens seeding); live REST smoke against a throwaway gateway (seeded contributors, defaults, patch, 400 empty prompt / bad mode, 404 unknown; `0021`+`0022` migrations apply on boot)
+
+## 2026-06-19 — Phase 7 Theme A substrate: encrypt provider keys + LLM usage/cost
+
+**A1 — Provider API keys encrypted at rest (fail-closed).** Replaced the old `key-cipher` (`MIDNITE_PROVIDER_KEY`, plaintext pass-through) with a `gateway/src/crypto/` module (`CryptoService`, AES-256-GCM).
+
+- [x] `CryptoService` — env key **`MIDNITE_SECRET_KEY`** (32 bytes hex/base64); per-value random 12-byte IV; self-describing format `v1:<base64(iv|tag|ct)>`. **Fail-closed**: no key ⇒ encrypted values undecryptable (provider reads as no key / disabled) and writes throw `SecretEncryptionUnavailableError`. Legacy plaintext read as-is + **re-encrypted in place** on next write and via a one-time startup pass.
+- [x] `provider-credentials.repository.ts` encrypts on write / decrypts on read; masked `hasKey`+last4 unchanged (computed from decrypted value). `ProvidersService` maps the fail-closed error → 400. Global `CryptoModule`. Deleted `key-cipher.{ts,test.ts}`.
+- [x] Tests: crypto round-trip / fail-closed write+read / legacy upgrade; repo `:memory:` integration (encrypted-at-rest, startup upgrade, disabled-without-key).
+
+**A2 — LLM usage & cost accounting (track + soft-warn only).**
+
+- [x] `shared/src/usage.ts` — `LlmFeature` union, usage record / summary / bucket / budget-warning schemas, `UsageConfigSchema` (`dailyBudgetUsd`/`monthlyBudgetUsd`/`warnAtRatio`) defaulted onto `MidniteConfigSchema` (existing configs stay valid).
+- [x] Gateway `llm_usage` table (migration **`0024_llm_usage`**, `at`+`feature` indexes) + `usage/` module (repo→service→controller); `GET /usage/summary?from=&to=&groupBy=` returns totals + by day/provider/feature + soft-warn entries (advisory; **never blocks**). Testable static price table (`usage/lib/pricing.ts`).
+- [x] Adapter interface carries `usage{inputTokens,outputTokens}`; Anthropic/OpenAI/Gemini adapters wired (openai-compatible inherits). `LlmService` records one row per call with an optional `feature` arg (default `unknown`). Tagged call sites: classifier→`classifier`, planner→`planner`, projects→`project`, heartbeat→`agent`, workflow ai-node→`workflow`. Councils run via spawned CLI sessions (not `LlmService`) → not tracked.
+- [x] Web: `getUsageSummary()` client fn + dashboard **LLM cost & usage** widget (spend by day/provider/feature + soft-warn banner) registered in the widget registry/grid.
+- [x] Verified: gateway `vitest` 313 pass (incl. 0024 on `:memory:`), shared 71 pass, eslint clean on touched files, `tsc --noEmit` clean (shared/gateway/web), `next build` green. Left uncommitted for review.

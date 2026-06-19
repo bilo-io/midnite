@@ -33,6 +33,7 @@ import { CouncilsWidget } from './councils-widget';
 import { ActivityWidget } from './activity-widget';
 import { ThroughputWidget } from './throughput-widget';
 import { HealthWidget } from './health-widget';
+import { UsageWidget } from './usage-widget';
 import { WorldClocksWidget } from './world-clocks-widget';
 import { AllProjectsWidget } from './all-projects-widget';
 import { KnowledgeWidget } from './knowledge-widget';
@@ -316,6 +317,8 @@ export function DashboardGrid({
         return { node: <ThroughputWidget /> };
       case 'health':
         return { node: <HealthWidget /> };
+      case 'usage':
+        return { node: <UsageWidget /> };
 
       // — at-a-glance extras —
       case 'world-clocks': {

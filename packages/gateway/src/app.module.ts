@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from './config.module';
+import { CryptoModule } from './crypto/crypto.module';
 import { DbModule } from './db/db.module';
 import { FsModule } from './fs/fs.module';
 import { HealthController } from './health/health.controller';
@@ -17,6 +18,7 @@ import { ProjectsModule } from './projects/projects.module';
 import { ProvidersModule } from './providers/providers.module';
 import { RoutinesModule } from './routines/routines.module';
 import { SessionsModule } from './sessions/sessions.module';
+import { UsageModule } from './usage/usage.module';
 import { WeatherModule } from './weather/weather.module';
 import { WorkflowsModule } from './workflows/workflows.module';
 import { TerminalModule } from './terminal/terminal.module';
@@ -24,6 +26,7 @@ import { TerminalModule } from './terminal/terminal.module';
 @Module({
   imports: [
     ConfigModule,
+    CryptoModule,
     DbModule,
     FsModule,
     AgentModule,
@@ -40,6 +43,7 @@ import { TerminalModule } from './terminal/terminal.module';
     ProjectsModule,
     ProvidersModule,
     SessionsModule,
+    UsageModule,
     WeatherModule,
     WorkflowsModule,
     TerminalModule,

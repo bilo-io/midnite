@@ -94,15 +94,18 @@ export class LlmClassifier extends TaskClassifier {
         return { mime: img.mime, dataBase64: readFileSync(abs).toString('base64') };
       });
 
-    const { data } = await this.llm.generateStructured({
-      model: this.llm.getActModel(),
-      maxTokens: 256,
-      system: TASK_TRIAGE_SYSTEM_PROMPT,
-      schema: RECORD_TASK_SCHEMA,
-      schemaName: 'record_task',
-      schemaDescription: 'Record the classified task title and kind for the submitted prompt.',
-      messages: [{ role: 'user', text: prompt, images: imageParts }],
-    });
+    const { data } = await this.llm.generateStructured(
+      {
+        model: this.llm.getActModel(),
+        maxTokens: 256,
+        system: TASK_TRIAGE_SYSTEM_PROMPT,
+        schema: RECORD_TASK_SCHEMA,
+        schemaName: 'record_task',
+        schemaDescription: 'Record the classified task title and kind for the submitted prompt.',
+        messages: [{ role: 'user', text: prompt, images: imageParts }],
+      },
+      'classifier',
+    );
 
     const parsed = ClassifiedTaskSchema.safeParse(data);
     if (!parsed.success) {

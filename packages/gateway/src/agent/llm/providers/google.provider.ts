@@ -1,6 +1,7 @@
 import {
   GoogleGenerativeAI,
   type Content,
+  type GenerateContentResult,
   type Part,
 } from '@google/generative-ai';
 import type { AgentPingResponse, LlmProvider } from '@midnite/shared';
@@ -12,6 +13,7 @@ import type {
   LlmProviderAdapter,
   LlmStructuredResult,
   LlmTextResult,
+  LlmUsage,
 } from '../llm-provider.interface';
 
 /**
@@ -51,7 +53,7 @@ export class GoogleProvider implements LlmProviderAdapter {
       }),
       req.signal,
     );
-    return { text: res.response.text(), model: req.model };
+    return { text: res.response.text(), model: req.model, usage: toUsage(res) };
   }
 
   async generateStructured(req: GenerateStructuredRequest): Promise<LlmStructuredResult> {
@@ -72,7 +74,7 @@ export class GoogleProvider implements LlmProviderAdapter {
       }),
       req.signal,
     );
-    return { data: parseJsonObjectLoose(res.response.text()), model: req.model };
+    return { data: parseJsonObjectLoose(res.response.text()), model: req.model, usage: toUsage(res) };
   }
 
   async ping(): Promise<Omit<AgentPingResponse, 'cli'>> {
@@ -119,4 +121,12 @@ function abortError(): Error {
   const err = new Error('Gemini request aborted');
   err.name = 'AbortError';
   return err;
+}
+
+function toUsage(res: GenerateContentResult): LlmUsage {
+  const meta = res.response.usageMetadata;
+  return {
+    inputTokens: meta?.promptTokenCount ?? 0,
+    outputTokens: meta?.candidatesTokenCount ?? 0,
+  };
 }

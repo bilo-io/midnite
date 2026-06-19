@@ -27,6 +27,9 @@ import {
   type CreateItemRequest,
   type UpdateItemRequest,
   type RecordProgressRequest,
+  UsageSummaryResponseSchema,
+  type UsageSummaryResponse,
+  type UsageGroupBy,
 } from '@midnite/shared';
 import {
   AgentCliResponseSchema,
@@ -1055,4 +1058,19 @@ export async function deleteMedia(id: string): Promise<void> {
 
 export function mediaFileUrl(id: string): string {
   return `${gatewayUrl()}/media/${encodeURIComponent(id)}/file`;
+}
+
+// ---- LLM usage & cost ----
+
+export async function getUsageSummary(params?: {
+  from?: string;
+  to?: string;
+  groupBy?: UsageGroupBy;
+}): Promise<UsageSummaryResponse> {
+  const qs = new URLSearchParams();
+  if (params?.from) qs.set('from', params.from);
+  if (params?.to) qs.set('to', params.to);
+  if (params?.groupBy) qs.set('groupBy', params.groupBy);
+  const query = qs.toString() ? `?${qs.toString()}` : '';
+  return fetchJson(`/usage/summary${query}`, undefined, UsageSummaryResponseSchema);
 }

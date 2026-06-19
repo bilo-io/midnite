@@ -56,6 +56,7 @@ export type WidgetType =
   | 'activity'
   | 'throughput'
   | 'health'
+  | 'usage'
   // at-a-glance extras
   | 'world-clocks'
   | 'all-projects'
@@ -212,6 +213,12 @@ export const DASHBOARD_WIDGETS: Record<WidgetType, WidgetMeta> = {
     description: 'Gateway reachability and agent status',
     icon: HeartPulse,
     sizes: { lg: { w: 4, h: 4, minW: 2, minH: 3 }, md: { w: 4, h: 4, minW: 2, minH: 3 }, sm: { w: 4, h: 4, minW: 2, minH: 3 } },
+  },
+  usage: {
+    label: 'LLM cost & usage',
+    description: 'Estimated spend by day, provider and feature',
+    icon: Wallet,
+    sizes: panelSizes,
   },
 
   // — at-a-glance extras ————————————————————————————————————————————
