@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -181,7 +181,15 @@ export function NavBar() {
           {dashboardEnabled && otherFeatures.length ? (
             <div className={cn('my-1 h-px bg-border/60', expandedView ? 'w-full' : 'w-6')} />
           ) : null}
-          {otherFeatures.map(renderLink)}
+          {otherFeatures.map((f) => (
+            <Fragment key={f.key}>
+              {renderLink(f)}
+              {/* Group the work surfaces (Sessions onward) apart from Tasks. */}
+              {f.key === 'tasks' && isFeatureEnabled(settings.features, 'sessions') ? (
+                <div className={cn('my-1 h-px bg-border/60', expandedView ? 'w-full' : 'w-6')} />
+              ) : null}
+            </Fragment>
+          ))}
         </nav>
 
         <div className={cn('mt-auto flex flex-col gap-1', expandedView ? 'items-stretch' : 'items-center')}>

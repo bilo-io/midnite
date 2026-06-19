@@ -17,13 +17,18 @@ type QuoteWidgetProps = {
   onConfigChange: (config: WidgetConfig['quote']) => void;
 };
 
+// SignPainter is a script face that reads much smaller than its point size, so
+// the scale is bumped well past normal body sizes (smallest ≈ the old largest).
 const SIZE_CLASS: Record<QuoteSize, string> = {
-  sm: 'text-xs',
-  md: 'text-sm',
-  lg: 'text-lg',
+  sm: 'text-lg',
+  md: 'text-2xl',
+  lg: 'text-4xl',
 };
 
 const SIZES: QuoteSize[] = ['sm', 'md', 'lg'];
+
+/** How long after a quote finishes typing before its author fades in. */
+const AUTHOR_DELAY_MS = 450;
 
 /** A different random quote each cycle, never repeating the current one. */
 function nextIndex(current: number): number {
@@ -43,6 +48,7 @@ export function QuoteWidget({ config, onConfigChange }: QuoteWidgetProps) {
   // Deterministic initial index (avoids SSR/hydration mismatch); randomised on mount.
   const [index, setIndex] = useState(0);
   const [charCount, setCharCount] = useState(0);
+  const [showAuthor, setShowAuthor] = useState(false);
 
   useEffect(() => {
     setIndex(Math.floor(Math.random() * QUOTES.length));
@@ -73,6 +79,17 @@ export function QuoteWidget({ config, onConfigChange }: QuoteWidgetProps) {
   }, [quote.text, typingSpeedMs]);
 
   const typing = charCount < quote.text.length;
+
+  // Reveal the author a short beat after the quote finishes typing; hide it again
+  // whenever a new quote starts typing.
+  useEffect(() => {
+    if (typing) {
+      setShowAuthor(false);
+      return;
+    }
+    const id = setTimeout(() => setShowAuthor(true), AUTHOR_DELAY_MS);
+    return () => clearTimeout(id);
+  }, [typing]);
 
   const setSize = (next: QuoteSize) => onConfigChange({ ...config, size: next });
   const setTypingSpeed = (ms: number) =>
@@ -151,11 +168,26 @@ export function QuoteWidget({ config, onConfigChange }: QuoteWidgetProps) {
         </div>
       ) : (
         <>
-          <p className={cn('font-medium leading-snug', SIZE_CLASS[size])}>
+          <p
+            className={cn('italic leading-snug', SIZE_CLASS[size])}
+            style={{ fontFamily: 'var(--font-signpainter)' }}
+          >
             “{quote.text.slice(0, charCount)}
-            {typing && <span className="animate-pulse">▌</span>}”
+            {typing && (
+              <span
+                aria-hidden
+                className="ml-0.5 inline-block h-[0.9em] w-px translate-y-[0.1em] bg-current align-baseline animate-pulse"
+              />
+            )}”
           </p>
-          <p className="text-xs text-muted-foreground">— {quote.author}</p>
+          <p
+            className={cn(
+              'text-xs text-muted-foreground transition-opacity duration-500',
+              showAuthor ? 'opacity-100' : 'opacity-0',
+            )}
+          >
+            — {quote.author}
+          </p>
         </>
       )}
     </WidgetCard>

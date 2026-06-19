@@ -73,6 +73,8 @@ export type WidgetType =
 
 export type WeatherUnits = 'c' | 'f';
 export type ClockMode = 'digital' | 'analogue';
+/** How the Hacker News widget arranges its stories. */
+export type NewsLayout = 'list' | 'grid';
 
 /** Manual location fallback when geolocation is denied/unavailable. */
 export type WeatherLocation = { lat: number; lon: number; label?: string };
@@ -105,10 +107,10 @@ export type FinanceConfig = {
 // Per-widget configuration persisted alongside the instance. Widgets without
 // settings carry no config.
 export type WidgetConfig = {
-  news: { count: number };
+  news: { count: number; layout: NewsLayout };
   weather: { units: WeatherUnits; location: WeatherLocation | null };
   clock: { mode: ClockMode };
-  'world-clocks': { zones: WorldClockZone[] };
+  'world-clocks': { zones: WorldClockZone[]; mode: ClockMode };
   timer: { workMin: number; breakMin: number };
   scratchpad: { text: string };
   links: { links: QuickLink[] };
@@ -316,7 +318,7 @@ export const QUOTE_DEFAULTS: WidgetConfig['quote'] = {
 export function newInstance(type: WidgetType): WidgetInstance {
   switch (type) {
     case 'news':
-      return { type, config: { count: NEWS_MAX_COUNT } };
+      return { type, config: { count: NEWS_MAX_COUNT, layout: 'list' } };
     case 'weather':
       return { type, config: { units: 'c', location: null } };
     case 'clock':
@@ -325,6 +327,7 @@ export function newInstance(type: WidgetType): WidgetInstance {
       return {
         type,
         config: {
+          mode: 'digital',
           zones: [
             { label: 'London', tz: 'Europe/London' },
             { label: 'New York', tz: 'America/New_York' },

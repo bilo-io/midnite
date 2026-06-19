@@ -51,7 +51,13 @@ export function ClockWidget({ config, onConfigChange }: ClockWidgetProps) {
 }
 
 function DigitalClock({ date }: { date: Date }) {
-  const time = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  // 24-hour clock (h23) so there's no AM/PM.
+  const time = date.toLocaleTimeString(undefined, {
+    hourCycle: 'h23',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
   return <span className="text-4xl font-semibold tabular-nums tracking-tight">{time}</span>;
 }
 
