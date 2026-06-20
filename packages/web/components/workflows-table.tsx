@@ -10,8 +10,8 @@ import { cronIntervalSeconds, describeCron, describeFrequency } from '@/lib/cron
 import { cn } from '@/lib/utils';
 
 // One accordion per trigger type. Sections are collapsible + reorderable (persisted),
-// matching the Tasks/Projects tables.
-const SECTIONS: Array<{ type: TriggerType; label: string; hue: string }> = [
+// matching the Tasks/Projects tables. Shared with the grid/list views.
+export const TRIGGER_SECTIONS: Array<{ type: TriggerType; label: string; hue: string }> = [
   { type: 'manual', label: 'Manual', hue: 'var(--status-backlog)' },
   { type: 'schedule', label: 'Schedule', hue: 'var(--status-todo)' },
   { type: 'webhook', label: 'Webhook', hue: 'var(--kind-feature)' },
@@ -78,7 +78,7 @@ export function WorkflowsTable({
   isSelected?: (id: string) => boolean;
   onToggleSelect?: (id: string, shiftKey: boolean) => void;
 }) {
-  const sections: AccordionSection[] = SECTIONS.map(({ type, label, hue }) => {
+  const sections: AccordionSection[] = TRIGGER_SECTIONS.map(({ type, label, hue }) => {
     let items = workflows.filter((w) => w.triggerType === type);
     let summary = items.length === 0 ? 'Empty' : `${items.length} workflow${items.length === 1 ? '' : 's'}`;
 

@@ -8,8 +8,9 @@ import { Button } from '@/components/ui/button';
 import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-action-bar';
 import { EmptyState } from '@/components/empty-state';
 import { useConfirm } from '@/components/confirm-dialog';
+import { CollapsibleStatusGroups, type StatusGroup } from '@/components/collapsible-status-groups';
 import { WorkflowCard } from '@/components/workflow-card';
-import { WorkflowsTable } from '@/components/workflows-table';
+import { WorkflowsTable, TRIGGER_SECTIONS } from '@/components/workflows-table';
 import { WorkflowCreateModal } from '@/components/workflow-create-modal';
 import { deleteWorkflow, updateWorkflow } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
@@ -113,6 +114,47 @@ export function WorkflowsView({ initial }: { initial: WorkflowSummary[] }) {
     ? initial.filter((w) => [w.name, w.description ?? ''].some((f) => f.toLowerCase().includes(q)))
     : initial;
 
+  // Group the grid/list views by trigger type into reorderable accordions,
+  // mirroring the table view (and the sessions list/grid).
+  const triggerGroups = (layout: 'list' | 'grid'): StatusGroup[] =>
+    TRIGGER_SECTIONS.map(({ type, label, hue }) => {
+      const items = filtered.filter((w) => w.triggerType === type);
+      return {
+        id: `trigger-${type}`,
+        label,
+        hue,
+        count: items.length,
+        body:
+          items.length === 0 ? (
+            <p className="text-xs text-muted-foreground/60">No {label.toLowerCase()} workflows</p>
+          ) : layout === 'list' ? (
+            <div className="flex flex-col gap-2">
+              {items.map((w) => (
+                <WorkflowCard
+                  key={w.id}
+                  workflow={w}
+                  layout="list"
+                  selected={isSelected(w.id)}
+                  onToggleSelect={() => toggleSelect(w.id)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {items.map((w) => (
+                <WorkflowCard
+                  key={w.id}
+                  workflow={w}
+                  layout="grid"
+                  selected={isSelected(w.id)}
+                  onToggleSelect={() => toggleSelect(w.id)}
+                />
+              ))}
+            </div>
+          ),
+      };
+    });
+
   return (
     <div className="space-y-4">
       <div className="reveal-controls flex items-center justify-between gap-3">
@@ -182,29 +224,15 @@ export function WorkflowsView({ initial }: { initial: WorkflowSummary[] }) {
             onToggleSelect={(id, sk) => toggleSelect(id, sk, filtered.map((x) => x.id))}
           />
         ) : view === 'list' ? (
-          <div className="flex flex-col gap-2">
-            {filtered.map((w) => (
-              <WorkflowCard
-                key={w.id}
-                workflow={w}
-                layout="list"
-                selected={isSelected(w.id)}
-                onToggleSelect={() => toggleSelect(w.id)}
-              />
-            ))}
-          </div>
+          <CollapsibleStatusGroups
+            groups={triggerGroups('list')}
+            storageKey="midnite.workflows.listGroups"
+          />
         ) : (
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {filtered.map((w) => (
-              <WorkflowCard
-                key={w.id}
-                workflow={w}
-                layout="grid"
-                selected={isSelected(w.id)}
-                onToggleSelect={() => toggleSelect(w.id)}
-              />
-            ))}
-          </div>
+          <CollapsibleStatusGroups
+            groups={triggerGroups('grid')}
+            storageKey="midnite.workflows.gridGroups"
+          />
         )}
       </div>
 
