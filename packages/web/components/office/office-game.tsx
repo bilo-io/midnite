@@ -6,19 +6,28 @@ import { createOfficeGame } from './scenes/office-scene';
 type Game = ReturnType<typeof createOfficeGame>;
 
 /**
- * Mounts the Phaser game into a div and tears it down on unmount. The guard +
- * destroy(true) keep this safe under React StrictMode's double-invoke in dev
- * (reactStrictMode is on), and out of the server graph (it only ever runs in an
- * effect, and is itself only reached via the ssr:false wrapper in office-view).
+ * Mounts the Phaser game into a div and tears it down on unmount.
+ *
+ * Creation is deferred one tick so React StrictMode's dev-only
+ * mount→unmount→mount collapses to a single game: the first scheduled create is
+ * cancelled by the cleanup before it runs, so we never briefly have two Phaser
+ * canvases/scenes. (Two scenes left a destroyed scene's store subscription
+ * firing renderOccupants into dead GameObjects — the "drawImage of null" crash.)
+ * Only ever runs client-side, via the ssr:false wrapper in office-view.
  */
 export function OfficeGame() {
   const parentRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Game | null>(null);
 
   useEffect(() => {
-    if (gameRef.current || !parentRef.current) return;
-    gameRef.current = createOfficeGame(parentRef.current);
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      if (cancelled || gameRef.current || !parentRef.current) return;
+      gameRef.current = createOfficeGame(parentRef.current);
+    }, 0);
     return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
       gameRef.current?.destroy(true);
       gameRef.current = null;
     };
