@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-20 — Phase 9 office A1: multi-room floor plan (PR #19)
+
+Turned `/office` from a single room into a six-room walled floor plan — the foundational seam the rest of Phase 9 builds on.
+
+- [x] **A1 — room model**: replaced the single `LAYOUT` grid with a 34×22 multi-room plan (`layout.ts`) — a 3×2 arrangement (work · board · library over lounge · kitchen · corner office) connected by 2-tile doorways in every shared wall, so the whole map stays one connected walkable space. New `ROOMS` describes each room's interior rect + label. `dimensions.ts` bumped to 34×22.
+- [x] **Per-room palette**: `ROOM_STYLES` in `theme.ts` — a translucent floor accent over the theme-driven base (light/dark still shows through) + an accent-coloured label per room, so each room reads as a distinct space.
+- [x] Added bookshelf + door textures; built the **library** (bookshelves + reading chair) and a **corner-office door**; repositioned the existing desks/lounge/kitchen/board fixtures into their rooms. Agent A* pathfinding routes through the doorways unchanged.
+- [x] `layout.test.ts` (4 tests) asserts the grid invariants and that **every room is reachable from the spawn** (no walled-off pockets). Verified `web:typecheck` (`--force`, to dodge moon's stale typecheck cache), `web:lint`, `web:build`, `web:build-storybook` green; `moon ci` green on PR #19.
+- Note: deferred to later Phase 9 slices — camera-follow for the bigger map (**A2**), the searchable library modal (**C**, anchor `BOOKSHELF_POS` ready), the corner-office scene + desk toys (**F**), and per-room decor variety (**B2**).
+
 ## 2026-06-20 — Phase 9 office E1: kitchen coffee break (PR #18)
 
 Added a kitchenette to `/office` and a personal "on a break" toggle.

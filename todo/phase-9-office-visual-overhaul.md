@@ -35,10 +35,10 @@
 
 Today one room holds three zones ([`layout.ts`](../packages/web/lib/office/layout.ts)). Phase 9 grows it into **distinct rooms**, each with its own decor/style, connected by doorways.
 
-### A1. Room model — **M**
-- [ ] Replace the single `LAYOUT` grid with a **multi-room floor plan**: open-plan **work area** (hot desks), **lounge**, **board room**, **library** (bookshelves), **kitchen**, and a doorway to the **corner office** (own scene, Theme F). Each room is a walled region with its own doorway; reuse the existing partition/doorway approach in [`layout.ts`](../packages/web/lib/office/layout.ts).
-- [ ] Per-room **decor/style**: distinct floor tile + wall + accent palette per room (warm kitchen, bookish library, sleek board room). Extend [`theme.ts`](../packages/web/lib/office/theme.ts) `buildOfficePalette()` to carry a per-room palette, keeping the light/dark token mapping.
-- [ ] Drive rooms + fixtures from the Tiled object layer (Phase 8 A1) rather than more hardcoded constant arrays where practical.
+### A1. Room model — **M** — ✅ DONE (2026-06-20, PR #19)
+- [x] Replaced the single `LAYOUT` grid with a 34×22 **multi-room floor plan** ([`layout.ts`](../packages/web/lib/office/layout.ts)): **work** (hot desks), **lounge**, **board room**, **library** (bookshelves), **kitchen**, and a door to the **corner office** — six walled rooms in a 3×2 arrangement connected by 2-tile doorways (one connected walkable space; `layout.test.ts` proves no room is walled off). New `ROOMS` describes each room's interior rect + label.
+- [x] Per-room **palette**: `ROOM_STYLES` in [`theme.ts`](../packages/web/lib/office/theme.ts) — a translucent floor accent over the theme-driven base (keeps the light/dark token mapping) + an accent-coloured label, so each room reads as a distinct space.
+- [ ] ⏳ Drive rooms + fixtures from the Tiled object layer — still gated on Phase 8 A1 (external assets); this is the constant-driven version. Walls are theme-uniform for now (per-room wall tints a later refinement). See [done.md](done.md).
 
 ### A2. Navigation & camera — **M**
 - [ ] Camera follows the player across the larger map (Phase 8 **B2** — finish it here); soft room-to-room transitions. Optional minimap (Phase 8 D2).
