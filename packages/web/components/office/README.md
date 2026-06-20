@@ -70,8 +70,11 @@ actors. Opening any panel disables Phaser's keyboard so typing/Escape go to Reac
 `buildOfficePalette()` reads the CSS design tokens into Phaser ints and `office-game.tsx`
 re-applies them to the scene (`applyPalette`) on `useTheme()` change. Each room also gets a
 **per-room palette** (`ROOM_STYLES`): a translucent floor accent laid over the theme floor (so the
-light/dark base still shows through) + an accent colour for its label, so every room reads as a
-distinct space. Decorative colours (furniture, avatars, highlight) and status tints stay fixed.
+light/dark base still shows through), so every room reads as a distinct space. Each room is also
+labelled by a **wall-mounted name plate** (Phase 9 A3, `roomSignStyle` + `buildLabels`): a rounded
+sign board on the room's top wall whose **fill follows the theme** (redrawn on flip in `applyPalette`)
+and whose **border + text** use the room accent. Decorative colours (furniture, avatars, highlight)
+and status tints stay fixed.
 
 > Requires the gateway running (`moon run gateway:dev` or `midnite serve`). With no
 > gateway/active sessions the office shows empty furniture and an error toast.
@@ -92,8 +95,9 @@ portalled to `<body>` to escape the stage's `overflow-hidden` / any persisted pa
 The procedural pixel-art pass (sprites, walk animations + pathfinding, the board-room projects hub,
 communal-area coffee break, desk Call/Messages wired to the gateway, status bubbles, shadows/vignette,
 fixed-aspect layout), the **multi-room floor plan** (Phase 9 A1), and the **Agent pool** (Phase 9 G —
-pool basin + animated water + lounging/occasional swims) have landed. Remaining Phase 9 work —
-camera-follow (A2), room signage (A3), the searchable **library** modal (C), the communal couches +
+pool basin + animated water + lounging/occasional swims), and **room signage** (Phase 9 A3 —
+wall-mounted name plates) have landed. Remaining Phase 9 work —
+camera-follow (A2), the searchable **library** modal (C), the communal couches +
 super-sized TV/PlayStation + retro-games menu (E), the **corner-office** scene + desk toys (F),
 distinct character art (B), and an external Tiled map + LimeZu/Kenney pack — is tracked in
 [todo/phase-9-office-visual-overhaul.md](../../../../todo/phase-9-office-visual-overhaul.md).
