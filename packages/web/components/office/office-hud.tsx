@@ -11,6 +11,7 @@ import { getSessionTranscript } from '@/lib/api';
 import { STATUS_CSS, STATUS_LABEL, type OfficeAgent } from '@/lib/office/agents';
 import { useOfficeStore } from '@/lib/office-store';
 import { BoardroomPanel } from './boardroom-panel';
+import { LibraryModal } from './library-modal';
 
 /**
  * React overlay for the office: a controls hint, an online count, proximity
@@ -22,15 +23,18 @@ export function OfficeHud() {
   const nearbyId = useOfficeStore((s) => s.nearbyId);
   const nearBoard = useOfficeStore((s) => s.nearBoard);
   const nearKitchen = useOfficeStore((s) => s.nearKitchen);
+  const nearLibrary = useOfficeStore((s) => s.nearLibrary);
   const onBreak = useOfficeStore((s) => s.onBreak);
   const active = useOfficeStore((s) => s.active);
   const boardOpen = useOfficeStore((s) => s.boardOpen);
+  const libraryOpen = useOfficeStore((s) => s.libraryOpen);
   const close = useOfficeStore((s) => s.close);
   const closeBoard = useOfficeStore((s) => s.closeBoard);
+  const closeLibrary = useOfficeStore((s) => s.closeLibrary);
 
   const nearby = nearbyId ? agents.find((a) => a.id === nearbyId) : undefined;
   const activeAgent = active ? agents.find((a) => a.id === active.id) : undefined;
-  const panelOpen = active !== null || boardOpen;
+  const panelOpen = active !== null || boardOpen || libraryOpen;
 
   return (
     <div className="pointer-events-none absolute inset-0 z-20">
@@ -58,6 +62,10 @@ export function OfficeHud() {
           Press <Key>E</Key> to{' '}
           <span className="font-semibold">{onBreak ? 'get back to work' : 'take a coffee break'}</span>
         </Prompt>
+      ) : nearLibrary ? (
+        <Prompt>
+          Press <Key>E</Key> to browse the <span className="font-semibold">Library</span>
+        </Prompt>
       ) : nearby ? (
         <Prompt>
           Press <Key>E</Key> to talk to <span className="font-semibold">{nearby.name}</span>
@@ -71,6 +79,8 @@ export function OfficeHud() {
       {active && activeAgent ? <InteractionPanel agent={activeAgent} onClose={close} /> : null}
 
       {boardOpen ? <BoardroomPanel onClose={closeBoard} /> : null}
+
+      {libraryOpen ? <LibraryModal onClose={closeLibrary} /> : null}
     </div>
   );
 }

@@ -7,6 +7,7 @@ import {
   ASTRO_TURF,
   BOARD_POS,
   blockedGrid,
+  BOOKSHELF_POS,
   BOOKSHELVES,
   COFFEE_POS,
   CONSOLE_POS,
@@ -117,9 +118,11 @@ class OfficeScene extends Phaser.Scene {
   private blocked: boolean[][] = [];
   private boardCenter = { x: 0, y: 0 };
   private kitchenCenter = { x: 0, y: 0 };
+  private libraryCenter = { x: 0, y: 0 };
   private lastNearby: string | null = null;
   private nearBoardFlag = false;
   private nearKitchenFlag = false;
+  private nearLibraryFlag = false;
   /** ☕ shown over the player while on a coffee break. */
   private breakIcon!: Phaser.GameObjects.Text;
   private facing: 'down' | 'up' | 'side' = 'down';
@@ -201,8 +204,8 @@ class OfficeScene extends Phaser.Scene {
     this.unsub = useOfficeStore.subscribe((state, prev) => {
       if (!this.alive) return;
       if (state.agents !== prev.agents) this.renderActors(state.agents);
-      const frozen = state.active !== null || state.boardOpen;
-      const wasFrozen = prev.active !== null || prev.boardOpen;
+      const frozen = state.active !== null || state.boardOpen || state.libraryOpen;
+      const wasFrozen = prev.active !== null || prev.boardOpen || prev.libraryOpen;
       if (frozen !== wasFrozen) {
         this.inputEnabled = !frozen;
         const kb = this.input.keyboard;
@@ -274,6 +277,14 @@ class OfficeScene extends Phaser.Scene {
     if (nearKitchen !== this.nearKitchenFlag) {
       this.nearKitchenFlag = nearKitchen;
       useOfficeStore.getState().setNearKitchen(nearKitchen);
+    }
+
+    // Library bookshelf proximity.
+    const lDist = (px - this.libraryCenter.x) ** 2 + (py - this.libraryCenter.y) ** 2;
+    const nearLibrary = lDist <= (PROXIMITY * 1.3) ** 2;
+    if (nearLibrary !== this.nearLibraryFlag) {
+      this.nearLibraryFlag = nearLibrary;
+      useOfficeStore.getState().setNearLibrary(nearLibrary);
     }
 
     // ☕ floats over the player while on a break.
@@ -728,6 +739,10 @@ class OfficeScene extends Phaser.Scene {
       useOfficeStore.getState().toggleBreak();
       return;
     }
+    if (this.nearLibraryFlag) {
+      useOfficeStore.getState().openLibrary();
+      return;
+    }
     if (this.lastNearby) useOfficeStore.getState().open(this.lastNearby);
   }
 
@@ -829,11 +844,13 @@ class OfficeScene extends Phaser.Scene {
     this.boardCenter = { x: board.x, y: board.y + TILE };
   }
 
-  /** Library: bookshelves lining the walls + a reading chair (decor for now; the
-   *  searchable library modal is Phase 9 C, anchored at BOOKSHELF_POS). */
+  /** Library: bookshelves lining the walls + a reading chair. The bookshelf at
+   *  BOOKSHELF_POS is the interactable — walk up + E opens the library modal (C). */
   private buildLibrary() {
     for (const s of BOOKSHELVES) this.add.image(center(s.x), center(s.y), TEX.bookshelf).setDepth(3);
     this.add.image(center(READING_CHAIR.x), center(READING_CHAIR.y), TEX.armchair).setDepth(2);
+    // Anchor proximity just below the shelf so the player reaches it from the floor.
+    this.libraryCenter = { x: center(BOOKSHELF_POS.x), y: center(BOOKSHELF_POS.y) + TILE };
   }
 
   /** Corner office: a door + welcome mat the player will step through (Phase 9 F). */

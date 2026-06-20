@@ -5,7 +5,7 @@ while each **live midnite agent** (gateway session) appears as a little **robot*
 agents sit at **hot desks** in the work room (walk up to call/message them), idle agents lounge
 in the **Agent pool** (poolside leisure), the **communal area** lets you take a coffee break, the
 **board room** is the **projects hub** (walk up to open the live project list), the **library**
-holds bookshelves, and a door leads to a **corner office**. Everything updates in real time as
+bookshelf opens a **searchable book list** (walk up + E), and a door leads to a **corner office**. Everything updates in real time as
 agents start, change status, and finish — and robots walk between the pool and a desk when
 their status flips.
 
@@ -33,8 +33,7 @@ connected by 2-tile doorways in every shared wall, so the whole map is one conne
 lounger paddling through the basin (with a trailing wake ripple) and back. When an agent's status flips
 it **walks** there — 4-directional A* over a walkability grid (`blockedGrid()`, which now blocks the
 pool basin) so it routes around furniture/walls and through the doorways. (Camera-follow for the larger
-map is Phase 9 A2; the corner office becomes a separate scene in Phase 9 F; the library bookshelf becomes
-a searchable modal in Phase 9 C. The communal area now has a chill-corner seating cluster (couches +
+map is Phase 9 A2; the corner office becomes a separate scene in Phase 9 F. The communal area now has a chill-corner seating cluster (couches +
 armchair + rug), an astro-turf patch, and a gaming-corner carpet under the TV/console (Phase 9 E2); the
 TV/PlayStation get super-sized + interactable with a retro-games menu in Phase 9 E3–E4.)
 
@@ -100,8 +99,9 @@ fixed-aspect layout), the **multi-room floor plan** (Phase 9 A1), and the **Agen
 pool basin + animated water + lounging/occasional swims), **room signage** (Phase 9 A3 —
 wall-mounted name plates), and **props, plants & decor** (Phase 9 B2 — several plants per room in three
 species/sizes, framed wall art, and area rugs), and **communal furnishings** (Phase 9 E2 — chill-corner
-couches + armchair, an astro-turf patch, and a gaming-corner carpet) have landed. Remaining Phase 9 work —
-camera-follow (A2), the searchable **library** modal (C), the super-sized/interactable
+couches + armchair, an astro-turf patch, and a gaming-corner carpet), and the **searchable library**
+(Phase 9 C — bookshelf interactable → `LibraryModal` with search + category filter) have landed.
+Remaining Phase 9 work — camera-follow (A2), the super-sized/interactable
 TV/PlayStation + retro-games menu (E3–E4), the **corner-office** scene + desk toys (F),
 distinct character art (B1), and an external Tiled map + LimeZu/Kenney pack — is tracked in
 [todo/phase-9-office-visual-overhaul.md](../../../../todo/phase-9-office-visual-overhaul.md).
