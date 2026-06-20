@@ -12,6 +12,7 @@
 import {
   BotMessageSquare,
   BrainCircuit,
+  Building2,
   CirclePile,
   Folder,
   Images,
@@ -27,6 +28,7 @@ export type FeatureKey =
   | 'memory'
   | 'tasks'
   | 'sessions'
+  | 'office'
   | 'workflows'
   | 'councils'
   | 'media';
@@ -78,6 +80,13 @@ export const FEATURES: Feature[] = [
     Icon: BotMessageSquare,
   },
   {
+    key: 'office',
+    href: '/office',
+    label: 'Office',
+    description: 'A pixel-art floor of your agents — walk up to a desk to call or message.',
+    Icon: Building2,
+  },
+  {
     key: 'workflows',
     href: '/workflows',
     label: 'Workflows',
@@ -107,6 +116,7 @@ export const DEFAULT_FEATURE_FLAGS: Record<FeatureKey, boolean> = {
   memory: true,
   tasks: true,
   sessions: true,
+  office: true,
   workflows: true,
   councils: true,
   media: true,
