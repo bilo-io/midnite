@@ -1,6 +1,6 @@
 # Phase 9 — Office visual overhaul
 
-> Phase 8 ([phase-8-office-fidelity.md](phase-8-office-fidelity.md)) turned the [`/office`](../packages/web/components/office/README.md) prototype into a higher-fidelity single room — real sprites, theme-aware colours, status presence. **Phase 9 makes it a place.** Multiple themed **rooms**, **distinct characters** per agent, richer **props/decor** (plants, bookshelves, a kitchen), and four genuinely interactive fixtures: a **bookshelf** that opens a searchable library modal, a **board room** for managing projects, a **kitchen** for a coffee break, and a **corner office** — a separate scene where you customise your own desk (fidget toys, a 4×4×4 Rubik's cube, a lava lamp, and a laptop with a blinking cursor).
+> Phase 8 ([phase-8-office-fidelity.md](phase-8-office-fidelity.md)) turned the [`/office`](../packages/web/components/office/README.md) prototype into a higher-fidelity single room — real sprites, theme-aware colours, status presence. **Phase 9 makes it a place.** Multiple themed **rooms**, **distinct characters** per agent, richer **props/decor** (lots of plants, bookshelves, a communal area), **clearly-labelled rooms** (wall-mounted name plates on a background panel), and several genuinely interactive fixtures: a **bookshelf** that opens a searchable library modal, a **board room** for managing projects, an **"Agent pool"** — a swimming pool with sun benches where agents lounge and occasionally swim lanes — a **communal area** (couches, astro turf, a gaming corner with an oversized TV + PlayStation) where you can take a coffee break and fire up a retro-games menu, and a **corner office** — a separate scene where you customise your own desk (fidget toys, a 4×4×4 Rubik's cube, a lava lamp, and a laptop with a blinking cursor).
 
 > Status legend: boxes start unchecked; themes are largely independent. Phase 9 **builds on Phase 8's seam** — the desk-slot model, movement/collision, the Zustand↔HUD bridge ([`office-store.ts`](../packages/web/lib/office-store.ts)), and the live-data hook ([`use-office-agents.ts`](../packages/web/components/office/use-office-agents.ts)) stay; we extend the layout, the texture/asset set, the interactable set, and add a second scene. Don't re-do Phase 8's A1 asset-pack/Tiled work here — Phase 9 **consumes** it (see Libraries).
 
@@ -39,6 +39,11 @@ Today one room holds three zones ([`layout.ts`](../packages/web/lib/office/layou
 - [x] Replaced the single `LAYOUT` grid with a 34×22 **multi-room floor plan** ([`layout.ts`](../packages/web/lib/office/layout.ts)): **work** (hot desks), **lounge**, **board room**, **library** (bookshelves), **kitchen**, and a door to the **corner office** — six walled rooms in a 3×2 arrangement connected by 2-tile doorways (one connected walkable space; `layout.test.ts` proves no room is walled off). New `ROOMS` describes each room's interior rect + label.
 - [x] Per-room **palette**: `ROOM_STYLES` in [`theme.ts`](../packages/web/lib/office/theme.ts) — a translucent floor accent over the theme-driven base (keeps the light/dark token mapping) + an accent-coloured label, so each room reads as a distinct space.
 - [ ] ⏳ Drive rooms + fixtures from the Tiled object layer — still gated on Phase 8 A1 (external assets); this is the constant-driven version. Walls are theme-uniform for now (per-room wall tints a later refinement). See [done.md](done.md).
+- [x] **Re-theme two rooms** (drives Theme G + the updated Theme E) — ✅ DONE (2026-06-20, PR #20): the **lounge** is now the **Agent pool** and the **kitchen** the **Communal area**. Renamed the `RoomId`s (lounge→pool, kitchen→communal), `ROOMS` labels (AGENT POOL / COMMUNAL), and `ROOM_STYLES` palettes (pool → tiled-aqua floor + cyan accent; communal → warm floor + orange accent); `layout.test.ts` still passes. **Seam only** — the pool basin/swims (G) and communal couches + super-sized TV/PlayStation (E) furnish the rooms in their own slices.
+
+### A3. Room signage — **S**
+- [ ] Each room gets a **clearly-visible name plate**: the label renders **above the room, mounted on the wall**, on its own **background panel** (rounded rect / sign board behind the text) rather than floating translucent over the floor — so every room is unmistakable at a glance. Replace the current accent-coloured floor label in `ROOM_STYLES` with a wall-anchored sign drawn at the top wall of each room's interior rect.
+- [ ] Panel styling follows the per-room accent (A1) but stays theme-aware (light/dark); text uses the room's accent colour on a contrasting panel fill. One sign per room (work, Agent pool, board room, library, communal area, + the corner-office door).
 
 ### A2. Navigation & camera — **M**
 - [ ] Camera follows the player across the larger map (Phase 8 **B2** — finish it here); soft room-to-room transitions. Optional minimap (Phase 8 D2).
@@ -54,7 +59,8 @@ Today one room holds three zones ([`layout.ts`](../packages/web/lib/office/layou
 - [ ] The **player** gets a customisable character (ties into Theme F corner-office customisation; persist the choice — see F4).
 
 ### B2. Props, plants & decor — **S–M**
-- [ ] Richer prop set across rooms: **plants** (varied), **bookshelves** (library), rugs, wall art, coffee machine + counters (kitchen), a big screen (board room). Builds on Phase 8 **A3** and the current `PLANTS`/`RUGS`/`COUCHES` in [`layout.ts`](../packages/web/lib/office/layout.ts).
+- [ ] Richer prop set across rooms: **plants** (varied), **bookshelves** (library), rugs, wall art, a big screen (board room), plus the pool/communal props called out in Themes E & G. Builds on Phase 8 **A3** and the current `PLANTS`/`RUGS`/`COUCHES` in [`layout.ts`](../packages/web/lib/office/layout.ts).
+- [ ] **More greenery everywhere** — most rooms should have **several plants** (corners, beside doorways, flanking signage), varied in species/size, not one token plant per room. Expand `PLANTS` placements across work, board room, library, Agent pool (poolside), and communal area.
 - [ ] Decor varies **per room style** (A1) so each room reads as a different space at a glance.
 
 ---
@@ -85,12 +91,25 @@ Repurpose the board room (today a static "documents whiteboard") into the **proj
 
 ---
 
-## Theme E — Kitchen → coffee break
+## Theme E — Communal area (was kitchen) → coffee break + gaming corner
+
+> The **kitchen** room is re-themed into a **Communal area** (rename in A1): a relaxed living space rather than a galley. It keeps the coffee-break interaction (E1) and gains real lounge furniture and the relocated, super-sized gaming setup.
 
 ### E1. Coffee break — **S** — ✅ DONE (2026-06-20, PR #18)
 - [x] A **kitchenette** nook (counter + stool + coffee machine) in the lounge's bottom-left corner — interactable. (A full walled kitchen *room* awaits the multi-room layout, A1; this is the corner-nook version that ships independently.)
 - [x] Pressing **E** toggles an **"on a break"** state: `onBreak` + `toggleBreak()` (and `nearKitchen`/`setNearKitchen`) on [`office-store.ts`](../packages/web/lib/office-store.ts); a `☕ On a break` badge + proximity prompt in the HUD, and a `☕` floats over the player sprite.
 - [x] **Mock/local** for now (Decisions §5) — `reset()` preserves `onBreak` as a personal presence flag. See [done.md](done.md).
+
+### E2. Communal furnishings — **M**
+- [ ] Furnish the Communal area as a genuine lounge: **actual couches** (not just the Phase-8 couch sprite — a seating arrangement), a **patch of astro turf** in one corner (bright green textured tile), and a **carpet/rug** marking out the **gaming area**. Add the props to [`layout.ts`](../packages/web/lib/office/layout.ts) (`COUCHES`/`RUGS` + a new astro-turf surface) and zone them so the room reads as coffee corner + chill corner + gaming corner.
+- [ ] Plenty of **plants** (per B2) to soften the space.
+
+### E3. Relocated, super-sized TV + PlayStation — **M**
+- [ ] **Move the TV and PlayStation here** from their current home and render them **much larger** — a wall-mounted big screen over the gaming-area carpet with a console + controllers below it. Update wherever the TV/console props are currently placed so they live in the Communal area only.
+- [ ] The **PlayStation is an interactable** (proximity flag + **E**, same pattern as the board/kitchenette): `nearPlaystation`/`setNearPlaystation` + open/close state on [`office-store.ts`](../packages/web/lib/office-store.ts).
+
+### E4. Retro-games menu (placeholder) — **S**
+- [ ] Interacting with the PlayStation opens a **retro-games menu** modal (follow the existing modal-component convention, rendered from [`office-hud.tsx`](../packages/web/components/office/office-hud.tsx)) listing a few retro titles. **Placeholder only** — selecting a game is a no-op / "coming soon"; leave a clear seam to flesh out actual gameplay in a later phase. Phaser keyboard disabled while the menu is open (as the board panel already does).
 
 ---
 
@@ -113,23 +132,40 @@ A doorway leads to a **corner office** that swaps to a **completely separate sce
 
 ---
 
+## Theme G — Agent pool (was lounge) → swimming pool
+
+> The **lounge** is re-themed into the **"Agent pool"** (rename in A1) — a poolside leisure space. It's décor + ambient animation (no new modal); the playful payoff is agents lounging and occasionally taking a dip.
+
+### G1. Pool & poolside — **M**
+- [ ] Lay out a **small swimming pool** in the room: a tiled pool basin (aqua/blue tiles, a coping edge) plus a few **sun benches / loungers** along the side. Add the surfaces + props to [`layout.ts`](../packages/web/lib/office/layout.ts); the pool basin is **non-walkable for normal movement** (agents route around it) but allows the swim behaviour in G3.
+- [ ] Poolside **plants** (per B2) — potted palms / greenery framing the loungers.
+
+### G2. Animated water — **S–M**
+- [ ] The pool water is **slightly animated** — a gentle looping shimmer/ripple (Phaser tween over a tiled water sprite, a small TileSprite scroll, or a light shader). Subtle and ambient, not flashy; just enough to read as moving water.
+
+### G3. Lounging & occasional swims — **M**
+- [ ] Some agents **sit on the sun benches** (reuse Phase 8's seated logic — assign a few poolside loungers as seats, like desks/stools).
+- [ ] Occasionally an agent **swims a lane**: it enters the pool and traverses back and forth along a lane for a while, then climbs out. The **swim animation + water disturbance just needs to be convincing enough** — a swimming pose/bob + a small wake ripple following the swimmer, on a timer (akin to the Phase 8 idle sleep/walk behaviours). Not every agent, not constantly — an occasional flourish.
+
 ## Files this phase touches (map)
 
 - **Layout/rooms:** [`lib/office/layout.ts`](../packages/web/lib/office/layout.ts), [`lib/office/dimensions.ts`](../packages/web/lib/office/dimensions.ts), [`lib/office/theme.ts`](../packages/web/lib/office/theme.ts)
 - **Art/characters/props:** [`lib/office/textures.ts`](../packages/web/lib/office/textures.ts) (or Tiled assets under `packages/web/public/office/` per Phase 8 A1), [`lib/office/agents.ts`](../packages/web/lib/office/agents.ts)
 - **Scene(s):** [`components/office/scenes/office-scene.ts`](../packages/web/components/office/scenes/office-scene.ts) + new `scenes/corner-office-scene.ts`; mount in [`office-game.tsx`](../packages/web/components/office/office-game.tsx)
-- **State bridge:** [`lib/office-store.ts`](../packages/web/lib/office-store.ts) (add `library`, `kitchen`/`onBreak`, `room`/scene, project-board state)
-- **HUD + modals:** [`components/office/office-hud.tsx`](../packages/web/components/office/office-hud.tsx) + new `LibraryModal`; reuse [`project-modal.tsx`](../packages/web/components/project-modal.tsx)
-- **Mock data:** new `lib/office/books.ts`
+- **State bridge:** [`lib/office-store.ts`](../packages/web/lib/office-store.ts) (add `library`, `kitchen`/`onBreak`, `playstation`/retro-games, `room`/scene, project-board state)
+- **HUD + modals:** [`components/office/office-hud.tsx`](../packages/web/components/office/office-hud.tsx) + new `LibraryModal` + a retro-games-menu modal; reuse [`project-modal.tsx`](../packages/web/components/project-modal.tsx)
+- **Mock data:** new `lib/office/books.ts`; a retro-games list (placeholder)
+- **Room signage:** wall-mounted name plates drawn in the scene / [`theme.ts`](../packages/web/lib/office/theme.ts) `ROOM_STYLES`
 - **Docs:** update [`components/office/README.md`](../packages/web/components/office/README.md) and append to [`done.md`](done.md) as items land.
 
 ## Verification
 
 - `moon run gateway:dev` + `moon run web:dev`, open `/office`:
-  - [ ] Walk between rooms; each room reads as a distinct style; agents appear as distinct characters.
+  - [ ] Walk between rooms; each room reads as a distinct style; **every room has a wall-mounted name plate on a background panel** above it; most rooms are dotted with plants; agents appear as distinct characters.
   - [ ] Bookshelf → **E** opens the library modal; search + category filter narrow the list; clicking a book opens a Google search in a **new tab**.
   - [ ] Board room → projects listed; clicking one opens the **project modal over the office** (URL stays `/office`); close returns to the room.
-  - [ ] Kitchen → **E** toggles the `☕ On a break` badge.
+  - [ ] **Agent pool** → the pool water animates; agents sit on the sun benches and one occasionally swims a lane (convincing-enough swim + ripple).
+  - [ ] **Communal area** → couches, an astro-turf corner and a carpeted gaming area; the **enlarged TV + PlayStation** live here; **E** at the kitchenette toggles the `☕ On a break` badge; **E** at the PlayStation opens the **retro-games menu** (placeholder).
   - [ ] Corner-office doorway swaps to the second scene; desk items can be chosen and animate; the laptop shows a blinking cursor; choices persist across reload.
 - `moon run :typecheck`, `moon run :lint`, `moon run :test` green. (Run web tests from the **primary checkout**, not a `.git` worktree — vite can't collect inside `.git/**`.)
 

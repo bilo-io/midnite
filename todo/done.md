@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-20 — Phase 9 office A1 re-theme: Agent pool + Communal area (PR #20)
+
+Re-themed the two bottom rooms so the Pool (G) and Communal (E) themes have named, fittingly-coloured rooms to build on.
+
+- [x] Renamed `RoomId`s — **lounge → pool**, **kitchen → communal** (`layout.ts`); `ROOMS` labels now **AGENT POOL** / **COMMUNAL**.
+- [x] Re-paletted in `ROOM_STYLES` (`theme.ts`): pool → tiled-aqua floor + cyan accent; communal → cosy warm floor + orange accent. All six room accents now read distinctly (work blue · board sky · library amber · pool cyan · communal orange · corner green), still translucent over the light/dark base.
+- [x] **Seam only** — the pool basin/animated water/swims (G1–G3) and communal couches/astro-turf + relocated super-sized TV/PlayStation + retro-games menu (E2–E4) furnish those rooms in their own slices; coffee break (E1) still works in the communal area. `layout.test.ts` green; verified `web:typecheck --force` + `web:lint`; `moon ci` green on PR #20.
+
 ## 2026-06-20 — Phase 9 office A1: multi-room floor plan (PR #19)
 
 Turned `/office` from a single room into a six-room walled floor plan — the foundational seam the rest of Phase 9 builds on.
