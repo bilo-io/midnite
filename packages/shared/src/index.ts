@@ -15,6 +15,7 @@ export * from './memory.js';
 export * from './plan.js';
 export * from './node.js';
 export * from './node-types.js';
+export * from './expression.js';
 export * from './trigger.js';
 export * from './run.js';
 export * from './workflow.js';

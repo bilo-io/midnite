@@ -25,6 +25,13 @@ export interface NodeField {
   placeholder?: string;
   help?: string;
   options?: NodeFieldOption[];
+  /**
+   * This field accepts `{{ }}` expressions (see `expression.ts`), so the editor
+   * offers the ƒx toggle + data picker on it (Phase 12 Theme D). Set on fields
+   * whose value flows into the executor as data — URLs, bodies, prompts — not on
+   * structural selects (method, provider) or numeric knobs.
+   */
+  expressionable?: boolean;
 }
 
 export interface PortSpec {
@@ -213,9 +220,9 @@ export const NODE_TYPE_DEFINITIONS: Record<string, NodeTypeDefinition> = {
         required: true,
         options: HTTP_METHODS.map((m) => ({ value: m, label: m })),
       },
-      { key: 'url', label: 'URL', kind: 'string', required: true, placeholder: 'https://api.example.com/…' },
-      { key: 'headers', label: 'Headers', kind: 'json', help: 'JSON object of header name → value.' },
-      { key: 'body', label: 'Body', kind: 'text', placeholder: 'Raw request body' },
+      { key: 'url', label: 'URL', kind: 'string', required: true, placeholder: 'https://api.example.com/…', expressionable: true },
+      { key: 'headers', label: 'Headers', kind: 'json', help: 'JSON object of header name → value.', expressionable: true },
+      { key: 'body', label: 'Body', kind: 'text', placeholder: 'Raw request body', expressionable: true },
     ],
   },
   'ai.claude': {
@@ -236,8 +243,8 @@ export const NODE_TYPE_DEFINITIONS: Record<string, NodeTypeDefinition> = {
         help: 'Leave on "Active provider" to follow the Agents-page selection.',
       },
       { key: 'model', label: 'Model', kind: 'string', placeholder: 'sonnet4.7' },
-      { key: 'system', label: 'System prompt', kind: 'text' },
-      { key: 'prompt', label: 'Prompt', kind: 'text', required: true },
+      { key: 'system', label: 'System prompt', kind: 'text', expressionable: true },
+      { key: 'prompt', label: 'Prompt', kind: 'text', required: true, expressionable: true },
       { key: 'maxTokens', label: 'Max tokens', kind: 'number' },
     ],
   },
@@ -285,6 +292,7 @@ export const NODE_TYPE_DEFINITIONS: Record<string, NodeTypeDefinition> = {
         kind: 'string',
         placeholder: 'ok',
         help: 'Compared against the value. Ignored for “is truthy/falsy”.',
+        expressionable: true,
       },
     ],
   },
