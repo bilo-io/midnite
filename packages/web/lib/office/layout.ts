@@ -163,15 +163,71 @@ export const READING_CHAIR: TilePos = { x: 27, y: 6 };
 /** Corner office: a door the player will step through (Phase 9 F). */
 export const DOOR_POS: TilePos = { x: 27, y: 20 };
 
-/** Potted plants for a bit of life — room corners + poolside palms framing the deck. */
-export const PLANTS: readonly TilePos[] = [
-  { x: 1.5, y: 1.5 },
-  { x: 20.5, y: 1.5 },
-  { x: 31.5, y: 8.5 },
-  { x: 31.5, y: 20 },
-  { x: 1.4, y: 13.5 }, // poolside (left)
-  { x: 10.6, y: 13.5 }, // poolside (right)
-  { x: 1.5, y: 19.5 }, // pool corner
+/**
+ * Greenery & decor (Phase 9 B2). Plants come in three **species/sizes** so the
+ * rooms don't all read the same — a `leafy` potted shrub, a tall `palm`, and a
+ * small `succulent`. Several per room (corners, beside doorways, flanking the
+ * signage), with poolside palms framing the deck. The scene maps each variant to
+ * its texture (see `plantTexture`).
+ */
+export type PlantVariant = 'leafy' | 'palm' | 'succulent';
+export interface Plant extends TilePos {
+  variant: PlantVariant;
+}
+
+export const PLANTS: readonly Plant[] = [
+  // Work (hot desks) — corners, clear of the desk rows.
+  { x: 1.5, y: 1.5, variant: 'leafy' },
+  { x: 10.5, y: 1.5, variant: 'palm' },
+  { x: 1.5, y: 8.5, variant: 'succulent' },
+  { x: 10.5, y: 8.5, variant: 'leafy' },
+  // Board room — flanking the whiteboard wall + the doorway corners.
+  { x: 13.5, y: 1.5, variant: 'palm' },
+  { x: 20.5, y: 1.5, variant: 'leafy' },
+  { x: 13.5, y: 8.5, variant: 'succulent' },
+  { x: 20.5, y: 8.5, variant: 'palm' },
+  // Library — corners around the bookshelves + reading nook.
+  { x: 23.5, y: 1.5, variant: 'leafy' },
+  { x: 23.5, y: 8.5, variant: 'palm' },
+  { x: 31.5, y: 8.5, variant: 'succulent' },
+  // Agent pool — poolside palms framing the deck + a corner shrub.
+  { x: 1.4, y: 13.5, variant: 'palm' }, // poolside (left)
+  { x: 10.6, y: 13.5, variant: 'palm' }, // poolside (right)
+  { x: 10.6, y: 11.5, variant: 'leafy' },
+  { x: 1.5, y: 19.5, variant: 'succulent' }, // pool corner
+  // Communal area — softening the lounge.
+  { x: 13.5, y: 11.5, variant: 'palm' },
+  { x: 21, y: 11.5, variant: 'leafy' },
+  { x: 21, y: 20, variant: 'succulent' },
+  // Corner office — private greenery.
+  { x: 23.5, y: 11.5, variant: 'palm' },
+  { x: 32, y: 11.5, variant: 'leafy' },
+  { x: 23.5, y: 19.5, variant: 'succulent' },
+  { x: 31.5, y: 20, variant: 'leafy' },
+];
+
+/**
+ * Framed wall art (Phase 9 B2) — pictures hung on the **top wall** of the three
+ * top-band rooms, offset to either side of the centred name plate (A3), so the
+ * walls aren't bare. `y` sits on the wall row, not the floor.
+ */
+export const WALL_ART: readonly TilePos[] = [
+  { x: 3, y: 0.3 }, // work
+  { x: 10, y: 0.3 },
+  { x: 14.5, y: 0.3 }, // board
+  { x: 19.5, y: 0.3 },
+  { x: 24.5, y: 0.3 }, // library
+  { x: 30.5, y: 0.3 },
+];
+
+/**
+ * Area rugs (Phase 9 B2) — a warm rug grounds the work room, the library reading
+ * nook, and the communal lounge. Pure decor drawn under the furniture.
+ */
+export const RUGS: readonly TilePos[] = [
+  { x: 6, y: 4 }, // work — central walkway
+  { x: 27, y: 6 }, // library — under the reading chair
+  { x: 17, y: 14 }, // communal — lounge centre
 ];
 
 export const PLAYER_SPAWN: TilePos = { x: 6, y: 8 };

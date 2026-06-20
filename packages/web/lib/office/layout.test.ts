@@ -1,9 +1,32 @@
 import { describe, expect, it } from 'vitest';
 import { OFFICE_COLS, OFFICE_ROWS } from './dimensions';
-import { blockedGrid, LAYOUT, LAYOUT_OK, PLAYER_SPAWN, POOL, ROOMS } from './layout';
+import {
+  blockedGrid,
+  LAYOUT,
+  LAYOUT_OK,
+  PLANTS,
+  PLAYER_SPAWN,
+  POOL,
+  ROOMS,
+  RUGS,
+  type RoomId,
+  type TilePos,
+  WALL_ART,
+} from './layout';
 
 const isFloor = (x: number, y: number) =>
   y >= 0 && y < OFFICE_ROWS && x >= 0 && x < OFFICE_COLS && LAYOUT[y]![x] === '.';
+
+/** Which room interior (if any) a tile falls inside. */
+const roomAt = (x: number, y: number): RoomId | undefined =>
+  ROOMS.find((r) => x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h)?.id;
+
+/** A decor tile rounds to a floor tile inside some room (so it never sits on a wall). */
+const onRoomFloor = (p: TilePos) => {
+  const x = Math.round(p.x);
+  const y = Math.round(p.y);
+  return isFloor(x, y) && roomAt(x, y) !== undefined;
+};
 
 /** Flood-fill the walkable floor (4-directional) from a starting tile. */
 function reachable(start: { x: number; y: number }): Set<string> {
@@ -100,5 +123,43 @@ describe('agent pool', () => {
     // communal-doorway approach must still be reachable on foot from the spawn.
     expect(seen.has('10,18'), 'corridor right of the pool').toBe(true);
     expect(seen.has('11,16'), 'communal-doorway approach').toBe(true);
+  });
+});
+
+describe('decor & greenery (Phase 9 B2)', () => {
+  it('places every plant on a floor tile inside a room (never on a wall)', () => {
+    for (const p of PLANTS) {
+      expect(onRoomFloor(p), `plant ${p.x},${p.y} (${p.variant}) on a room floor`).toBe(true);
+    }
+  });
+
+  it('grounds every rug on a floor tile inside a room', () => {
+    for (const r of RUGS) {
+      expect(onRoomFloor(r), `rug ${r.x},${r.y} on a room floor`).toBe(true);
+    }
+  });
+
+  it('dots every room with at least two plants (greenery everywhere)', () => {
+    const perRoom = new Map<RoomId, number>();
+    for (const p of PLANTS) {
+      const id = roomAt(Math.round(p.x), Math.round(p.y));
+      if (id) perRoom.set(id, (perRoom.get(id) ?? 0) + 1);
+    }
+    for (const room of ROOMS) {
+      expect(perRoom.get(room.id) ?? 0, `${room.id} plant count`).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it('uses all three plant species so rooms read differently', () => {
+    expect(new Set(PLANTS.map((p) => p.variant))).toEqual(new Set(['leafy', 'palm', 'succulent']));
+  });
+
+  it('hangs wall art on a top wall (not floating over the floor)', () => {
+    for (const a of WALL_ART) {
+      const x = Math.round(a.x);
+      const y = Math.round(a.y);
+      expect(isFloor(x, y), `wall art ${a.x},${a.y} is on a wall row`).toBe(false);
+      expect(y, `wall art ${a.x},${a.y} sits on the top outer wall`).toBe(0);
+    }
   });
 });

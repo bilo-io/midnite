@@ -19,14 +19,25 @@ import {
   READING_CHAIR,
   ROOMS,
   type RoomId,
+  RUGS,
   STOOL_POS,
   TABLE_CHAIRS,
   TABLE_POS,
   TV_POS,
   type TilePos,
+  WALL_ART,
 } from '@/lib/office/layout';
 import { buildOfficePalette, ROOM_STYLES, roomSignStyle, type OfficePalette } from '@/lib/office/theme';
-import { agentTint, charKey, ensureOfficeAnims, ensureOfficeTextures, robotVariant, TEX, walkAnim } from '@/lib/office/textures';
+import {
+  agentTint,
+  charKey,
+  ensureOfficeAnims,
+  ensureOfficeTextures,
+  plantTexture,
+  robotVariant,
+  TEX,
+  walkAnim,
+} from '@/lib/office/textures';
 
 // Phase 9 office: a sprite-based, multi-room floor plan (work · board · library
 // over agent pool · communal area · corner office, connected by doorways — see
@@ -142,6 +153,7 @@ class OfficeScene extends Phaser.Scene {
       .setDepth(-10);
 
     this.buildRoomFloors();
+    this.buildRugs();
     this.buildWalls();
     this.buildDesks();
     this.buildPool();
@@ -820,8 +832,22 @@ class OfficeScene extends Phaser.Scene {
     this.add.image(center(DOOR_POS.x), center(DOOR_POS.y), TEX.door).setDepth(5);
   }
 
+  /** Greenery (B2): several plants per room, varied by species/size + poolside palms. */
   private buildPlants() {
-    for (const p of PLANTS) this.add.image(center(p.x), center(p.y), TEX.plant).setDepth(3);
+    for (const p of PLANTS) {
+      // Anchor at the base so taller variants (palm) grow upward, not centred.
+      this.add.image(center(p.x), center(p.y), plantTexture(p.variant)).setOrigin(0.5, 0.7).setDepth(3);
+    }
+  }
+
+  /** Framed wall art (B2): pictures on the top walls, behind/below the name plates. */
+  private buildWallArt() {
+    for (const a of WALL_ART) this.add.image(center(a.x), center(a.y), TEX.wallArt).setDepth(4);
+  }
+
+  /** Area rugs (B2): drawn just above the floor accent, under the furniture. */
+  private buildRugs() {
+    for (const r of RUGS) this.add.image(center(r.x), center(r.y), TEX.rug).setDepth(-5);
   }
 
   /**
