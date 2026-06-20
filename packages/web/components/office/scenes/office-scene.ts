@@ -82,6 +82,8 @@ class OfficeScene extends Phaser.Scene {
   private lastNearby: string | null = null;
   /** False while the React interaction panel is open — freezes input/movement. */
   private inputEnabled = true;
+  /** True between create() and teardown; guards late store callbacks. */
+  private alive = false;
   private unsub?: () => void;
 
   constructor() {
@@ -119,9 +121,14 @@ class OfficeScene extends Phaser.Scene {
     this.input.keyboard!.on('keydown-E', this.tryInteract, this);
     this.input.keyboard!.on('keydown-ENTER', this.tryInteract, this);
 
+    // Live now — the guarded callbacks below check this so a late store update
+    // can't touch destroyed objects after teardown.
+    this.alive = true;
+
     // React to the store: re-render occupants when the agent list changes, and
     // freeze input + hand the keyboard to React while the panel is open.
     this.unsub = useOfficeStore.subscribe((state, prev) => {
+      if (!this.alive) return;
       if (state.agents !== prev.agents) this.renderOccupants(state.agents);
       if (state.active !== prev.active) {
         const open = state.active !== null;
@@ -134,15 +141,20 @@ class OfficeScene extends Phaser.Scene {
     // Paint whatever's already loaded (data may arrive before or after create).
     this.renderOccupants(useOfficeStore.getState().agents);
 
-    // Leave the store clean when navigating away / on StrictMode remount.
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+    // Tear down on shutdown AND destroy (whichever fires first) so a late store
+    // update can't reach destroyed text/objects after a StrictMode/HMR remount.
+    const teardown = () => {
+      this.alive = false;
       this.unsub?.();
       this.unsub = undefined;
       useOfficeStore.getState().reset();
-    });
+    };
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, teardown);
+    this.events.once(Phaser.Scenes.Events.DESTROY, teardown);
   }
 
   override update() {
+    if (!this.alive) return;
     if (!this.inputEnabled) {
       this.body().setVelocity(0, 0);
       return;
@@ -183,6 +195,7 @@ class OfficeScene extends Phaser.Scene {
 
   /** Assign agents to desks in order; show/hide each desk's occupant visuals. */
   private renderOccupants(agents: OfficeAgent[]) {
+    if (!this.alive) return;
     this.slots.forEach((slot, i) => {
       const agent = agents[i];
       if (agent) {
