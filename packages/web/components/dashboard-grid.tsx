@@ -11,7 +11,8 @@ import {
   QUOTE_DEFAULTS,
   sizeForKey,
   type Breakpoint,
-  type FinanceConfig,
+  type MarketAssetConfig,
+  type MarketWatchlistConfig,
   type WidgetInstance,
   type WidgetType,
 } from '@/lib/dashboard-widgets';
@@ -45,6 +46,8 @@ import { CalendarWidget } from './calendar-widget';
 import { ScratchpadWidget } from './scratchpad-widget';
 import { LinksWidget } from './links-widget';
 import { FinancesWidget } from './finances-widget';
+import { MarketAssetWidget } from './market-asset-widget';
+import { MarketWatchlistWidget } from './market-watchlist-widget';
 
 const BREAKPOINTS: Breakpoint[] = ['lg', 'md', 'sm'];
 
@@ -109,8 +112,8 @@ function deriveKeys(widgets: WidgetInstance[], projectCount: number): string[] {
   for (const w of widgets) {
     if (w.type === 'projects') {
       for (let i = 0; i < projectCount; i++) keys.push(`proj-${i}`);
-    } else if (w.type === 'finances') {
-      keys.push(`finances-${w.id}`);
+    } else if (w.type === 'finances' || w.type === 'market-asset' || w.type === 'market-watchlist') {
+      keys.push(`${w.type}-${w.id}`);
     } else {
       keys.push(w.type);
     }
@@ -230,10 +233,19 @@ export function DashboardGrid({
     }
   };
 
+  // Multi-instance widgets render under a `<type>-<id>` key; map one back to its parts.
+  const parseInstanceKey = (key: string): { type: WidgetType; id: string } | null => {
+    for (const type of ['market-asset', 'market-watchlist', 'finances'] as const) {
+      const prefix = `${type}-`;
+      if (key.startsWith(prefix)) return { type, id: key.slice(prefix.length) };
+    }
+    return null;
+  };
+
   const removeWidget = (key: string) => {
-    if (key.startsWith('finances-')) {
-      const id = key.slice('finances-'.length);
-      setWidgets((prev) => prev.filter((w) => !(w.type === 'finances' && w.id === id)));
+    const inst = parseInstanceKey(key);
+    if (inst) {
+      setWidgets((prev) => prev.filter((w) => !(w.type === inst.type && 'id' in w && w.id === inst.id)));
       return;
     }
     const type: WidgetType = key.startsWith('proj-') ? 'projects' : (key as WidgetType);
@@ -244,8 +256,11 @@ export function DashboardGrid({
     setWidgets((prev) => prev.map((w) => (w.type === type ? ({ type, config } as WidgetInstance) : w)));
   };
 
-  const updateFinances = (id: string, config: FinanceConfig) => {
-    setWidgets((prev) => prev.map((w) => (w.type === 'finances' && w.id === id ? { ...w, config } : w)));
+  // Patch one multi-instance card's config by id, preserving its discriminant + id.
+  const updateInstance = (type: WidgetType, id: string, config: WidgetInstance['config']) => {
+    setWidgets((prev) =>
+      prev.map((w) => (w.type === type && 'id' in w && w.id === id ? ({ ...w, config } as WidgetInstance) : w)),
+    );
   };
 
   // Inner content for one rendered grid key.
@@ -260,7 +275,33 @@ export function DashboardGrid({
       return {
         node:
           w?.type === 'finances' ? (
-            <FinancesWidget config={w.config} onConfigChange={(c) => updateFinances(id, c)} />
+            <FinancesWidget config={w.config} onConfigChange={(c) => updateInstance('finances', id, c)} />
+          ) : null,
+      };
+    }
+    if (key.startsWith('market-asset-')) {
+      const id = key.slice('market-asset-'.length);
+      const w = widgets.find((x) => x.type === 'market-asset' && x.id === id);
+      return {
+        node:
+          w?.type === 'market-asset' ? (
+            <MarketAssetWidget
+              config={w.config}
+              onConfigChange={(c: MarketAssetConfig) => updateInstance('market-asset', id, c)}
+            />
+          ) : null,
+      };
+    }
+    if (key.startsWith('market-watchlist-')) {
+      const id = key.slice('market-watchlist-'.length);
+      const w = widgets.find((x) => x.type === 'market-watchlist' && x.id === id);
+      return {
+        node:
+          w?.type === 'market-watchlist' ? (
+            <MarketWatchlistWidget
+              config={w.config}
+              onConfigChange={(c: MarketWatchlistConfig) => updateInstance('market-watchlist', id, c)}
+            />
           ) : null,
       };
     }
@@ -393,10 +434,13 @@ export function DashboardGrid({
   };
 
   const removeLabel = (key: string): string => {
-    if (key.startsWith('finances-')) {
-      const id = key.slice('finances-'.length);
-      const w = widgets.find((x) => x.type === 'finances' && x.id === id);
-      return `Remove ${(w?.type === 'finances' && w.config.title) || 'Finances'}`;
+    const inst = parseInstanceKey(key);
+    if (inst) {
+      if (inst.type === 'finances') {
+        const w = widgets.find((x) => x.type === 'finances' && x.id === inst.id);
+        return `Remove ${(w?.type === 'finances' && w.config.title) || 'Finances'}`;
+      }
+      return `Remove ${DASHBOARD_WIDGETS[inst.type]?.label ?? 'widget'}`;
     }
     const type: WidgetType = key.startsWith('proj-') ? 'projects' : (key as WidgetType);
     return `Remove ${DASHBOARD_WIDGETS[type]?.label ?? 'widget'}`;
