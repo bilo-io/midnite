@@ -12,9 +12,16 @@ app/(main)/office/page.tsx
   └─ <OfficeView>                office-view.tsx — dynamic(ssr:false) wrapper (keeps Phaser client-only)
        └─ <OfficeViewImpl>       office-view-impl.tsx — relative stage box; runs useOfficeAgents()
             ├─ <OfficeGame>      office-game.tsx — mounts/destroys the Phaser game (StrictMode-safe)
-            │    └─ OfficeScene  scenes/office-scene.ts — tilemap, movement, collision, desk slots
+            │    └─ OfficeScene  scenes/office-scene.ts — tiles/sprites, movement, collision, desk slots
             └─ <OfficeHud>       office-hud.tsx — controls hint, online count, proximity prompt, panel
 ```
+
+**Art:** sprites/tiles are **generated procedurally** in [`lib/office/textures.ts`](../../lib/office/textures.ts)
+(a tiled floor, brick walls, wooden desks, and character sprites with a 2-frame walk cycle) — no
+external asset pack. The player walks/animates; agents sit behind their desks with a per-agent identity
+tint (`agentTint`) and a status speech bubble. Soft shadows + a radial vignette add depth. The grid
+size + canvas aspect ratio live in the Phaser-free [`lib/office/dimensions.ts`](../../lib/office/dimensions.ts)
+so the layout shell can use them without importing Phaser.
 
 **Live data:** `use-office-agents.ts` fetches sessions + tasks via the typed client
 (`getSessions`/`getTasks`) with the same `useApiData` pattern as the Sessions page,
@@ -46,6 +53,7 @@ re-applies them to the scene (`applyPalette`) on `useTheme()` change. Decorative
 
 ## Roadmap
 
-Higher-fidelity work — a real Tiled map + LimeZu/Kenney sprites (replacing the procedural
-blobs), walk animations, status-driven liveliness, and wiring Call/Message to the gateway —
-is tracked in [todo/phase-8-office-fidelity.md](../../../../todo/phase-8-office-fidelity.md).
+The procedural pixel-art pass (sprites + walk animations, status bubbles, shadows/vignette,
+fixed-aspect layout) has landed. Remaining higher-fidelity work — an external Tiled map +
+LimeZu/Kenney pack, richer per-status body animations, pathfinding, and wiring Call/Message to
+the gateway — is tracked in [todo/phase-8-office-fidelity.md](../../../../todo/phase-8-office-fidelity.md).

@@ -4,23 +4,34 @@
 
 > Status legend: boxes start unchecked; themes are independent. **Only the rendering layer changes** — the desk-slot model, movement/collision, proximity detection, the Zustand ↔ HUD bridge, and the live-data hook ([`use-office-agents.ts`](../packages/web/components/office/use-office-agents.ts)) all stay as-is.
 
+> **Progress (2026-06-20):** the procedural pixel-art pass landed — ✅ A2 (sprites + walk cycle), B1 (theme colours), B3 (fixed-aspect layout); ◐ A3 / B2 / C1 (partial). **Open:** A1 external Tiled/LimeZu pack, B2 day-night + camera, C2/C3 presence depth, D (wire Call/Message), E (multiplayer).
+
 ---
 
 ## Theme A — Real pixel art (replace the procedural blobs)
 
-The headline: swap shapes for an actual tileset + character sprites.
+The headline: swap shapes for real sprites + tiles.
 
-### A1. Tileset + Tiled map — **M**
+> **Procedural pass shipped (2026-06-20).** Rather than block on an external asset
+> pack (LimeZu is paid) + Tiled authoring, the sprites/tiles are **generated in code**
+> ([`lib/office/textures.ts`](../packages/web/lib/office/textures.ts)): a tiled floor,
+> brick walls, wooden desks/monitors/chairs, and little character sprites with a
+> 2-frame walk cycle. Deterministic, themeable (tiles drawn neutral + tinted), and
+> zero-licensing. The external **Tiled + LimeZu/Kenney** route (A1) remains open as a
+> later upgrade — the texture keys + scene structure are the seam to swap at.
+
+### A1. Tileset + Tiled map (external-asset upgrade) — **M**
 - [ ] Drop a pixel-art office tileset into `packages/web/public/office/` — [LimeZu "Modern Office"](https://limezu.itch.io/modernoffice) (cheap commercial license; the standard look) or [Kenney](https://kenney.nl/assets) (CC0). `images: { unoptimized: true }` means static assets under `public/` just work.
 - [ ] Author the floor/walls/furniture in [Tiled](https://www.mapeditor.org/), export `.tmj`; add an **object layer** of desks carrying custom props (`deskId`/`agentSlot`) so slots come from the map, not the hardcoded `DESK_SLOTS`.
-- [ ] In [`office-scene.ts`](../packages/web/components/office/scenes/office-scene.ts), replace `paintFloor`/`buildWalls`/`buildDesks` with `this.load` (preload) + `this.make.tilemap` + tileset layers; derive colliders from the wall/furniture layer and desk positions from the object layer.
+- [ ] In [`office-scene.ts`](../packages/web/components/office/scenes/office-scene.ts), replace the procedural `TileSprite`/`staticImage` build with `this.load` (preload) + `this.make.tilemap` + tileset layers; derive colliders from the wall/furniture layer and desk positions from the object layer.
 
-### A2. Character sprites + walk animations — **M**
-- [ ] Replace the player & seated-agent `Arc` "blobs" with a character spritesheet (4-direction walk cycle + idle + a seated pose). The player animates while walking; agents render seated at their desks.
-- [ ] Per-agent variety: deterministic outfit/tint by agent id (like the reference repos) so desks are distinguishable at a glance.
+### A2. Character sprites + walk animations — **M** — ✅ DONE (2026-06-20, procedural)
+- [x] The player & seated-agent `Arc` "blobs" are now character **sprites** ([`textures.ts`](../packages/web/lib/office/textures.ts) `charKey`/`walkAnim`): down/up/side facings with a 2-frame walk cycle. The player animates + flips while walking; agents render seated behind their desks. (Future: smoother multi-frame cycles + a dedicated seated pose come with the A1 asset pack.)
+- [x] Per-agent variety: deterministic identity tint by agent id (`agentTint`) so desks are distinguishable at a glance; the player has its own tint.
 
-### A3. Furniture & decor — **S**
-- [ ] Desk variety, plants, rugs, a coffee corner — cosmetic tiles from the same pack to make the room feel inhabited.
+### A3. Furniture & decor — **S** — ◐ partial
+- [x] Desks, monitors, chairs (procedural). 
+- [ ] Desk variety, plants, rugs, a coffee corner — cosmetic tiles to make the room feel inhabited (best with the A1 pack).
 
 ---
 
@@ -29,13 +40,14 @@ The headline: swap shapes for an actual tileset + character sprites.
 ### B1. Theme-aware colours (light/dark) — **S** — ✅ DONE (2026-06-20)
 - [x] The canvas hardcoded a dark palette; now structural colours + labels read the app's CSS design tokens and flip with light/dark. [`lib/office/theme.ts`](../packages/web/lib/office/theme.ts) `buildOfficePalette()` maps `--background`/`--muted`/`--border`/`--secondary`/`--foreground` → Phaser ints (reusing `hslTripletToInt`); the scene exposes `applyPalette()` and [`office-game.tsx`](../packages/web/components/office/office-game.tsx) re-applies it on `useTheme()` change. Decorative colours (desk, screen, avatar, highlight) + status tints stay fixed.
 
-### B2. Ambient polish — **S–M**
-- [ ] Day/night floor tint aligned with the `time` theme; soft drop-shadows under characters/desks; a subtle vignette.
+### B2. Ambient polish — **S–M** — ◐ partial
+- [x] Soft drop-shadows under characters/desks; a subtle radial vignette at the room edges (`buildVignette`, a generated canvas texture).
+- [ ] Day/night floor tint aligned with the `time` theme.
 - [ ] Pixel-perfect camera with zoom; a larger scrolling map (camera follows the player) once the Tiled map (A1) lands.
 
-### B3. Fixed-aspect-ratio layout — **S**
-- [ ] The Phaser window has a **fixed aspect ratio**. The HTML container that holds the corner buttons/labels (the HUD overlay) should always be **full width**, with its **height derived to preserve that aspect ratio** (`height = width / aspectRatio`) — i.e. the canvas + overlay scale together as one box and never distort.
-- [ ] If that derived height exceeds the available viewport height, **let the page scroll on the HTML side** rather than shrinking the canvas. This happens in the normal content area, which collapses the header bar on scroll like everywhere else — so no extra header work is needed; just don't clamp the stage box to `100%` height or trap it in a non-scrolling container.
+### B3. Fixed-aspect-ratio layout — **S** — ✅ DONE (2026-06-20)
+- [x] The Phaser window has a **fixed aspect ratio**, so the stage box is **full width** with its **height derived from `OFFICE_ASPECT`** ([`lib/office/dimensions.ts`](../packages/web/lib/office/dimensions.ts)) via CSS `aspect-ratio` — canvas + HUD overlay scale together, never distorted. ([`office-view-impl.tsx`](../packages/web/components/office/office-view-impl.tsx) + the loading shell in [`office-view.tsx`](../packages/web/components/office/office-view.tsx).)
+- [x] When that height overflows the viewport the page just scrolls in the normal content area (the header bar collapses on scroll as everywhere else) — the box no longer clamps to a fixed `vh` height.
 
 ---
 
@@ -43,8 +55,9 @@ The headline: swap shapes for an actual tileset + character sprites.
 
 Make agents *look* like they're doing what their status says.
 
-### C1. Status-driven animations — **M**
-- [ ] `running` → typing animation; `waiting` → a `?` thought bubble; `idle` → `zzz`; `completed` → a brief celebrate, then settle. Driven off the existing `OfficeAgent.status` — no new data.
+### C1. Status-driven presence — **M** — ◐ partial (2026-06-20)
+- [x] Each seated agent shows a status **speech bubble** above their head driven off `OfficeAgent.status` — `running` → `···`, `waiting` → `?`, `idle` → `z`, `completed` → `✓` — coloured by the shared status tint and gently bobbing (`STATUS_BUBBLE` in [`office-scene.ts`](../packages/web/components/office/scenes/office-scene.ts)).
+- [ ] Richer per-status **body** animations (typing pose, a real celebrate-then-settle) — needs the multi-frame character sheet from A1/A2.
 
 ### C2. Activity indicators — **S–M**
 - [ ] Per-tool glow / icon over a working agent (Edit, Bash, Read…). Needs a current-tool field surfaced on the session/activity (see Theme D data work).

@@ -4,6 +4,19 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-20 — Phase 8 office fidelity: procedural pixel-art sprites, presence, layout
+
+Executed the achievable slice of [phase-8](phase-8-office-fidelity.md) on `main`. Rather than block on a paid asset pack (LimeZu) + Tiled authoring, the fidelity jump is done **procedurally** — sprites/tiles generated in code — which is deterministic, themeable, and zero-licensing; the external Tiled/LimeZu route stays open as a later upgrade.
+
+- [x] **Procedural pixel-art** (`lib/office/textures.ts`): generated textures for a tiled floor, brick walls, wooden desks/monitors/chairs, and character sprites (down/up/side, 2-frame walk cycle). Idempotent (`exists()`-guarded) so a StrictMode/HMR remount can't double-register a key. Tiles drawn neutral and tinted to the theme palette.
+- [x] **Sprites replace blobs** (A2): `office-scene.ts` rewritten — player is a `Sprite` that walks + flips via `walkAnim`; agents sit behind their desks. Per-agent identity tint (`agentTint`) for variety; player has its own tint. All Milestone-1 movement/proximity/store-bridge/teardown logic preserved.
+- [x] **Presence** (C1): per-agent status speech bubble (`···`/`?`/`z`/`✓`) coloured by the shared status tint, gently bobbing.
+- [x] **Polish** (B2): soft drop-shadows under characters/desks + a radial vignette (`buildVignette`, generated canvas texture).
+- [x] **Fixed-aspect-ratio layout** (B3): `OFFICE_ASPECT` (new Phaser-free `lib/office/dimensions.ts`) drives a full-width CSS `aspect-ratio` box; the canvas + HUD scale together and the page scrolls when it overflows the viewport (no more `vh` clamp).
+- [x] Trimmed `theme.ts` to the palette fields still used (decorative colours now baked into textures).
+- [x] Verified: `web:typecheck` / `web:build` (23 static pages; `/office` 3.35 kB, Phaser in its dynamic chunk) / `web:test` (38 pass) all green.
+- [ ] **Deferred** (with reasons in phase-8): D1 wire Call/Message → gateway (separate API/transcript work, deserves its own tested change); C2 per-tool glow (needs a current-tool field on the session); C3 pathfinding/wander/sub-agents; A1 external Tiled/LimeZu pack; B2 day/night + camera zoom/scroll; Theme E multiplayer.
+
 ## 2026-06-20 — Office theme-aware colours + Phase 8 roadmap
 
 The [`/office`](../packages/web/components/office/README.md) Phaser canvas hardcoded a dark palette, so it stayed dark on the light theme while the rest of the app flipped. Made the structural colours + labels follow the app's light/dark tokens, and captured the larger fidelity roadmap in [phase-8](phase-8-office-fidelity.md).

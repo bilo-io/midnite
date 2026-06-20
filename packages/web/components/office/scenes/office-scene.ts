@@ -1,21 +1,33 @@
 import Phaser from 'phaser';
 import { useOfficeStore } from '@/lib/office-store';
-import { STATUS_LABEL, STATUS_TINT, type OfficeAgent } from '@/lib/office/agents';
+import { STATUS_LABEL, STATUS_TINT, type OfficeAgent, type OfficeStatus } from '@/lib/office/agents';
+import { OFFICE_COLS, OFFICE_ROWS, OFFICE_TILE } from '@/lib/office/dimensions';
 import { buildOfficePalette, type OfficePalette } from '@/lib/office/theme';
+import {
+  agentTint,
+  charKey,
+  ensureOfficeAnims,
+  ensureOfficeTextures,
+  TEX,
+  walkAnim,
+  type Dir,
+} from '@/lib/office/textures';
 
-// Milestone 1 renders a procedural office — a tile grid drawn with shapes, no art
-// assets. The office has a fixed set of desks; live agents (from the store) fill
-// them in order and update reactively. Colours come from the app's theme tokens
-// (see lib/office/theme.ts) so the canvas follows light/dark. Milestone 2 swaps
-// the procedural drawing for a Tiled (.tmj) map + a pixel-art tileset, keeping the
-// movement, proximity, theme, and store-bridge logic below (see todo/phase-8).
+// Phase 8 renders the office with procedurally-generated pixel-art sprites/tiles
+// (see lib/office/textures.ts) instead of Milestone-1's flat shapes: a tiled floor,
+// brick walls, wooden desks, and little character sprites that walk (player) or sit
+// (agents). Tiles are drawn neutral and tinted to the live theme palette so the
+// canvas still follows light/dark (lib/office/theme.ts). The movement, proximity,
+// theme-bridge, and store/HUD logic below are unchanged from Milestone 1.
 
-const TILE = 32;
-const COLS = 22;
-const ROWS = 14;
-const PLAYER_SPEED = 160;
+const TILE = OFFICE_TILE;
+const COLS = OFFICE_COLS;
+const ROWS = OFFICE_ROWS;
+const PLAYER_SPEED = 150;
 /** How close (px) the player must be to a desk to "reach" it. */
 const PROXIMITY = TILE * 1.5;
+/** Native character sprite (12×15) scaled up for the 32px grid. */
+const CHAR_SCALE = 1.7;
 
 // '#' wall, '.' floor.
 const LAYOUT = [
@@ -47,13 +59,23 @@ const DESK_SLOTS: ReadonlyArray<{ x: number; y: number }> = [
   { x: 16, y: 7 },
 ];
 
+/** Status → speech-bubble glyph shown above a seated agent. */
+const STATUS_BUBBLE: Record<OfficeStatus, string> = {
+  running: '···',
+  waiting: '?',
+  completed: '✓',
+  idle: 'z',
+};
+
 const center = (tile: number) => tile * TILE + TILE / 2;
 const toHex = (n: number) => `#${n.toString(16).padStart(6, '0')}`;
 
 type Slot = {
   cx: number;
   cy: number;
-  occupant: Phaser.GameObjects.Arc;
+  occupant: Phaser.GameObjects.Sprite;
+  shadow: Phaser.GameObjects.Ellipse;
+  bubble: Phaser.GameObjects.Text;
   nameText: Phaser.GameObjects.Text;
   statusText: Phaser.GameObjects.Text;
   agentId: string | null;
@@ -61,15 +83,17 @@ type Slot = {
 
 class OfficeScene extends Phaser.Scene {
   private palette!: OfficePalette;
-  private player!: Phaser.GameObjects.Arc;
+  private player!: Phaser.GameObjects.Sprite;
+  private playerShadow!: Phaser.GameObjects.Ellipse;
   private highlight!: Phaser.GameObjects.Arc;
-  private floorGfx!: Phaser.GameObjects.Graphics;
+  private floor!: Phaser.GameObjects.TileSprite;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: Record<'up' | 'down' | 'left' | 'right', Phaser.Input.Keyboard.Key>;
   private readonly slots: Slot[] = [];
-  private readonly walls: Phaser.GameObjects.Rectangle[] = [];
+  private readonly walls: Phaser.GameObjects.Image[] = [];
   private readonly solids: Phaser.GameObjects.GameObject[] = [];
   private lastNearby: string | null = null;
+  private facing: Dir = 'down';
   /** False while the React interaction panel is open — freezes input/movement. */
   private inputEnabled = true;
   /** True between create() and teardown; guards late store/theme callbacks. */
@@ -82,13 +106,20 @@ class OfficeScene extends Phaser.Scene {
 
   create() {
     this.palette = buildOfficePalette();
+    ensureOfficeTextures(this);
+    ensureOfficeAnims(this);
+
     const worldW = COLS * TILE;
     const worldH = ROWS * TILE;
     this.physics.world.setBounds(0, 0, worldW, worldH);
     this.cameras.main.setBackgroundColor(this.palette.background);
 
-    this.floorGfx = this.add.graphics().setDepth(-10);
-    this.paintFloor();
+    this.floor = this.add
+      .tileSprite(0, 0, worldW, worldH, TEX.floor)
+      .setOrigin(0, 0)
+      .setTint(this.palette.floor)
+      .setDepth(-10);
+
     this.buildWalls();
     this.buildDesks();
     this.buildPlayer();
@@ -101,7 +132,9 @@ class OfficeScene extends Phaser.Scene {
       .circle(0, 0, TILE * 0.85, this.palette.highlight, 0)
       .setStrokeStyle(2, this.palette.highlight, 0.9)
       .setVisible(false)
-      .setDepth(3);
+      .setDepth(9);
+
+    this.buildVignette(worldW, worldH);
 
     this.cursors = this.input.keyboard!.createCursorKeys();
     this.wasd = this.input.keyboard!.addKeys({
@@ -150,6 +183,7 @@ class OfficeScene extends Phaser.Scene {
     if (!this.alive) return;
     if (!this.inputEnabled) {
       this.body().setVelocity(0, 0);
+      this.idle();
       return;
     }
 
@@ -158,9 +192,12 @@ class OfficeScene extends Phaser.Scene {
     if (vx || vy) {
       const inv = PLAYER_SPEED / Math.hypot(vx, vy);
       this.body().setVelocity(vx * inv, vy * inv);
+      this.animateWalk(vx, vy);
     } else {
       this.body().setVelocity(0, 0);
+      this.idle();
     }
+    this.playerShadow.setPosition(this.player.x, this.player.y + TILE * 0.42);
 
     // Nearest *occupied* desk within reach drives the highlight + the store.
     const px = this.player.x;
@@ -191,13 +228,10 @@ class OfficeScene extends Phaser.Scene {
     if (!this.alive) return;
     this.palette = palette;
     this.cameras.main.setBackgroundColor(palette.background);
-    this.paintFloor();
-    for (const wall of this.walls) wall.setFillStyle(palette.wall).setStrokeStyle(1, palette.wallStroke);
-    for (const slot of this.slots) {
-      slot.occupant.setStrokeStyle(2, palette.background, 0.7);
-      slot.nameText.setColor(toHex(palette.text));
-    }
-    this.player.setStrokeStyle(2, palette.playerOutline, 0.9);
+    this.floor.setTint(palette.floor);
+    for (const wall of this.walls) wall.setTint(palette.wall);
+    for (const slot of this.slots) slot.nameText.setColor(toHex(palette.text));
+    this.highlight.setStrokeStyle(2, palette.highlight, 0.9);
   }
 
   /** Assign agents to desks in order; show/hide each desk's occupant visuals. */
@@ -207,21 +241,43 @@ class OfficeScene extends Phaser.Scene {
       const agent = agents[i];
       if (agent) {
         slot.agentId = agent.id;
-        const tint = STATUS_TINT[agent.status];
-        slot.occupant.setFillStyle(tint).setVisible(true);
+        slot.occupant.setTexture(charKey('down', 0)).setTint(agentTint(agent.id)).setVisible(true);
+        slot.shadow.setVisible(true);
         slot.nameText.setText(this.truncate(agent.name)).setVisible(true);
+        const tint = STATUS_TINT[agent.status];
         slot.statusText.setText(STATUS_LABEL[agent.status]).setColor(toHex(tint)).setVisible(true);
+        slot.bubble.setText(STATUS_BUBBLE[agent.status]).setColor(toHex(tint)).setVisible(true);
       } else {
         slot.agentId = null;
         slot.occupant.setVisible(false);
+        slot.shadow.setVisible(false);
         slot.nameText.setVisible(false);
         slot.statusText.setVisible(false);
+        slot.bubble.setVisible(false);
       }
     });
 
     // If the open agent vanished (session ended), close its panel.
     const active = useOfficeStore.getState().active;
     if (active && !agents.some((a) => a.id === active.id)) useOfficeStore.getState().close();
+  }
+
+  /** Drive the player's walk animation + facing from the movement vector. */
+  private animateWalk(vx: number, vy: number) {
+    if (Math.abs(vx) > Math.abs(vy)) {
+      this.facing = 'side';
+      this.player.setFlipX(vx < 0);
+    } else {
+      this.facing = vy < 0 ? 'up' : 'down';
+      this.player.setFlipX(false);
+    }
+    this.player.anims.play(walkAnim(this.facing), true);
+  }
+
+  /** Settle the player onto a static idle frame in the current facing. */
+  private idle() {
+    this.player.anims.stop();
+    this.player.setTexture(charKey(this.facing, 0));
   }
 
   private tryInteract() {
@@ -241,23 +297,11 @@ class OfficeScene extends Phaser.Scene {
   private up = () => this.cursors.up.isDown || this.wasd.up.isDown;
   private down = () => this.cursors.down.isDown || this.wasd.down.isDown;
 
-  private paintFloor() {
-    const g = this.floorGfx;
-    g.clear();
-    g.fillStyle(this.palette.floor, 1).fillRect(0, 0, COLS * TILE, ROWS * TILE);
-    g.lineStyle(1, this.palette.grid, 0.6);
-    for (let x = 0; x <= COLS; x++) g.lineBetween(x * TILE, 0, x * TILE, ROWS * TILE);
-    for (let y = 0; y <= ROWS; y++) g.lineBetween(0, y * TILE, COLS * TILE, y * TILE);
-  }
-
   private buildWalls() {
     for (let y = 0; y < ROWS; y++) {
       for (let x = 0; x < COLS; x++) {
         if (LAYOUT[y]![x] !== '#') continue;
-        const wall = this.add
-          .rectangle(center(x), center(y), TILE, TILE, this.palette.wall)
-          .setStrokeStyle(1, this.palette.wallStroke);
-        this.physics.add.existing(wall, true);
+        const wall = this.physics.add.staticImage(center(x), center(y), TEX.wall).setTint(this.palette.wall);
         this.walls.push(wall);
         this.solids.push(wall);
       }
@@ -270,53 +314,87 @@ class OfficeScene extends Phaser.Scene {
       const cx = center(x);
       const cy = center(y);
 
-      this.add.rectangle(cx, cy + TILE * 0.12, TILE * 0.5, TILE * 0.5, this.palette.chair).setDepth(1);
-      const desk = this.add
-        .rectangle(cx, cy, TILE * 0.92, TILE * 0.92, this.palette.desk)
-        .setStrokeStyle(1, this.palette.deskStroke)
-        .setDepth(1);
-      this.physics.add.existing(desk, true);
-      this.solids.push(desk);
-      this.add
-        .rectangle(cx, cy - TILE * 0.16, TILE * 0.5, TILE * 0.34, this.palette.monitor)
-        .setStrokeStyle(1, this.palette.monitorStroke)
-        .setDepth(2);
-
+      const shadow = this.add.ellipse(cx, cy + TILE * 0.42, TILE * 0.5, TILE * 0.2, 0x000000, 0.22).setDepth(1);
+      this.add.image(cx, cy + TILE * 0.25, TEX.chair).setDepth(2);
       const occupant = this.add
-        .circle(cx, cy - TILE * 0.55, TILE * 0.26, 0xffffff)
-        .setStrokeStyle(2, this.palette.background, 0.7)
-        .setVisible(false)
-        .setDepth(2);
-      const nameText = this.add
-        .text(cx, cy - TILE * 1.15, '', {
+        .sprite(cx, cy - TILE * 0.03, charKey('down', 0))
+        .setScale(CHAR_SCALE)
+        .setDepth(4)
+        .setVisible(false);
+      // Desk sits in front of the seated agent so their lower half is hidden.
+      const desk = this.physics.add.staticImage(cx, cy + TILE * 0.28, TEX.desk).setDepth(6);
+      this.solids.push(desk);
+      this.add.image(cx, cy + TILE * 0.16, TEX.monitor).setDepth(7);
+
+      const bubble = this.add
+        .text(cx + TILE * 0.34, cy - TILE * 0.5, '', {
           fontFamily: 'monospace',
           fontSize: '11px',
-          color: toHex(this.palette.text),
+          color: '#e5e7eb',
+          backgroundColor: '#0b0b12cc',
+          padding: { x: 3, y: 1 },
         })
         .setOrigin(0.5)
         .setResolution(2)
-        .setDepth(5)
+        .setDepth(11)
         .setVisible(false);
-      const statusText = this.add
-        .text(cx, cy - TILE * 0.92, '', { fontFamily: 'monospace', fontSize: '9px', color: '#e5e7eb' })
+      this.tweens.add({ targets: bubble, y: bubble.y - 3, duration: 720, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+
+      const nameText = this.add
+        .text(cx, cy - TILE * 0.92, '', { fontFamily: 'monospace', fontSize: '11px', color: toHex(this.palette.text) })
         .setOrigin(0.5)
         .setResolution(2)
-        .setDepth(5)
+        .setDepth(11)
+        .setVisible(false);
+      const statusText = this.add
+        .text(cx, cy - TILE * 0.66, '', { fontFamily: 'monospace', fontSize: '9px', color: '#e5e7eb' })
+        .setOrigin(0.5)
+        .setResolution(2)
+        .setDepth(11)
         .setVisible(false);
 
-      this.slots.push({ cx, cy, occupant, nameText, statusText, agentId: null });
+      this.slots.push({ cx, cy, occupant, shadow, bubble, nameText, statusText, agentId: null });
     }
   }
 
   private buildPlayer() {
     const spawn = { x: center(10), y: center(11) };
+    this.playerShadow = this.add
+      .ellipse(spawn.x, spawn.y + TILE * 0.42, TILE * 0.45, TILE * 0.18, 0x000000, 0.25)
+      .setDepth(7);
     this.player = this.add
-      .circle(spawn.x, spawn.y, TILE * 0.32, this.palette.player)
-      .setStrokeStyle(2, this.palette.playerOutline, 0.9)
-      .setDepth(4);
+      .sprite(spawn.x, spawn.y, charKey('down', 0))
+      .setScale(CHAR_SCALE)
+      .setTint(this.palette.player)
+      .setDepth(8);
     this.physics.add.existing(this.player);
-    this.body().setCircle(TILE * 0.32);
+    this.body().setSize(8, 6).setOffset(2, 9);
     this.body().setCollideWorldBounds(true);
+  }
+
+  /** A soft radial darkening at the room edges. Generated once as a canvas texture. */
+  private buildVignette(worldW: number, worldH: number) {
+    const key = 'office-vignette';
+    if (!this.textures.exists(key)) {
+      const canvas = this.textures.createCanvas(key, worldW, worldH);
+      const ctx = canvas?.getContext();
+      if (ctx) {
+        const grd = ctx.createRadialGradient(
+          worldW / 2,
+          worldH / 2,
+          Math.min(worldW, worldH) * 0.25,
+          worldW / 2,
+          worldH / 2,
+          Math.max(worldW, worldH) * 0.62,
+        );
+        grd.addColorStop(0, 'rgba(0,0,0,0)');
+        grd.addColorStop(1, 'rgba(0,0,0,0.32)');
+        ctx.fillStyle = grd;
+        ctx.fillRect(0, 0, worldW, worldH);
+        canvas?.refresh();
+      }
+    }
+    this.add.image(worldW / 2, worldH / 2, key).setDepth(40);
   }
 }
 
