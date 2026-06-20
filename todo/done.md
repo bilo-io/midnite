@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-20 — Phase 9 office E1: kitchen coffee break (PR #18)
+
+Added a kitchenette to `/office` and a personal "on a break" toggle.
+
+- [x] **E1 — coffee break**: a kitchenette nook in the lounge's bottom-left corner — a **counter** + **stool** (new procedural textures in `textures.ts`) beside the existing **coffee machine**, plus a `KITCHEN` zone label (`layout.ts`). All decor (no colliders).
+- [x] The coffee machine is **interactable**: walk up + press **E** toggles an "on a break" state, mirroring the board-room `nearBoard`/`openBoard` proximity+interact pattern (`nearKitchen` → `toggleBreak`). The HUD shows a `☕ On a break` badge + a *take a break / get back to work* prompt; a `☕` floats over the player while on a break.
+- [x] State on `office-store.ts`: `onBreak`/`toggleBreak`, `nearKitchen`/`setNearKitchen`. Per Decisions §5 the flag is **mock/local** to the session; `reset()` leaves `onBreak` alone (personal presence flag, not transient scene state). Covered by `office-store.test.ts` (3 tests).
+- [x] Verified: `web:typecheck` / `web:lint` green; store test passes from the primary checkout; `moon ci` green on PR #18.
+- Note: a standalone walled kitchen **room** comes with the multi-room layout (A1) — this is the corner-nook version that ships independently of it.
+
 ## 2026-06-20 — Phase 9 office D1: board room → projects hub (PR #17)
 
 Repurposed the `/office` board room from a static documents whiteboard (Phase 8 D3) into the **live projects hub**, the highest-utility office interaction.

@@ -87,10 +87,10 @@ Repurpose the board room (today a static "documents whiteboard") into the **proj
 
 ## Theme E — Kitchen → coffee break
 
-### E1. Coffee break — **S**
-- [ ] A small **kitchen** room (counter + coffee machine + a stool or two). Walking up to the coffee machine is an interactable.
-- [ ] Pressing **E** there toggles an **"on a break"** state: add `onBreak: boolean` + `toggleBreak()` to [`office-store.ts`](../packages/web/lib/office-store.ts); show a `☕ On a break` badge in the HUD and (optional) a coffee-cup over the player sprite / a sip animation.
-- [ ] **Mock only** for now — it's a personal presence indicator; later it can surface to teammates (Phase 8 Theme E multiplayer) or pause idle nudges.
+### E1. Coffee break — **S** — ✅ DONE (2026-06-20, PR #18)
+- [x] A **kitchenette** nook (counter + stool + coffee machine) in the lounge's bottom-left corner — interactable. (A full walled kitchen *room* awaits the multi-room layout, A1; this is the corner-nook version that ships independently.)
+- [x] Pressing **E** toggles an **"on a break"** state: `onBreak` + `toggleBreak()` (and `nearKitchen`/`setNearKitchen`) on [`office-store.ts`](../packages/web/lib/office-store.ts); a `☕ On a break` badge + proximity prompt in the HUD, and a `☕` floats over the player sprite.
+- [x] **Mock/local** for now (Decisions §5) — `reset()` preserves `onBreak` as a personal presence flag. See [done.md](done.md).
 
 ---
 
