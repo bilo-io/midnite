@@ -3,8 +3,8 @@
 A walkable, zoned office. The **player** (a human avatar) roams while each **live
 midnite agent** (gateway session) appears as a little **robot**: working agents sit
 at **hot desks** (walk up to call/message them), idle agents chill in the **lounge**
-(TV + console + couches), and a walled **board room** lets you browse the plans /
-documents for a project. Everything updates in real time as agents start, change
+(TV + console + couches), and a walled **board room** is the **projects hub** — walk
+up to open the live project list and manage any project. Everything updates in real time as agents start, change
 status, and finish — and robots walk between the lounge and a desk when their status
 flips.
 
@@ -18,8 +18,8 @@ app/(main)/office/page.tsx
             │    └─ OfficeScene  scenes/office-scene.ts — tiles/sprites, zones, movement, collision, actors
             └─ <OfficeHud>       office-hud.tsx — controls hint, online count, proximity prompts, panels
                  ├─ InteractionPanel   call/message a desk agent (mock)
-                 └─ <BoardroomPanel>   boardroom-panel.tsx — project filter + document list
-                      └─ <DocumentModal>  document-modal.tsx — read-only MarkdownPreview of a doc
+                 └─ <BoardroomPanel>   boardroom-panel.tsx — live project list (the projects hub)
+                      └─ <ProjectModal>  project-modal.tsx — reused as-is, portalled over the office
 ```
 
 **Zones** ([`lib/office/layout.ts`](../../lib/office/layout.ts) — Phaser-free floor plan): the left
@@ -45,8 +45,10 @@ so the gateway task-board WebSocket (via `<LiveData/>` → `invalidateData`) ref
 it automatically. `lib/office/agents.ts` maps `SessionSummary` → occupants and derives
 the status palette from the Sessions page's `SESSION_STATUS_*` constants so
 colours/labels match exactly. The board room fetches its own data (`getProjects` +
-`getMemories`); `lib/office/documents.ts` assembles each project's **plan** + scoped
-**memories** into the document list.
+`getTasks` + `getMemories`) and lists the active projects (`lib/office/projects.ts`);
+clicking one opens the full [`project-modal.tsx`](../project-modal.tsx) **portalled over
+the office** (the URL stays `/office`) so plans, sources, tasks, and the project's memory
+are all reachable without leaving the room.
 
 **Bridge:** the scene and HUD never talk directly. The scene writes transient state
 (`nearbyId`, `nearBoard`, `active`, `boardOpen`) into the Zustand store
@@ -76,7 +78,7 @@ portalled to `<body>` to escape the stage's `overflow-hidden` / any persisted pa
 ## Roadmap
 
 The procedural pixel-art pass (human + robot sprites, walk animations, lounge/board-room zones, the
-board-room document viewer, desk Call/Messages wired to the gateway, status bubbles, shadows/vignette,
+board-room projects hub, desk Call/Messages wired to the gateway, status bubbles, shadows/vignette,
 fixed-aspect layout) has landed. Remaining work — an external Tiled map + LimeZu/Kenney pack, richer
 per-status body animations, grid pathfinding, and click-to-walk — is tracked in
 [todo/phase-8-office-fidelity.md](../../../../todo/phase-8-office-fidelity.md).
