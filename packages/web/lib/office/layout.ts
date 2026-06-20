@@ -15,15 +15,11 @@
  *   └──────────┴───────────┴─────────────┘
  *
  *   - Working agents (running / waiting / completed) sit at WORK hot desks → interactable.
- *   - Idle agents lounge in the AGENT POOL (poolside leisure — pool + swims land in Phase 9 G).
+ *   - Idle agents lie on the AGENT POOL sun loungers and occasionally swim a lane (Phase 9 G).
  *   - Walking up to the BOARD whiteboard opens the projects panel.
- *   - The COMMUNAL AREA keeps the coffee break (E to toggle); couches + gaming corner land in Phase 9 E.
+ *   - The COMMUNAL AREA keeps the coffee break (E to toggle); couches + the relocated TV/PlayStation gaming corner land in Phase 9 E.
  *   - LIBRARY holds bookshelves (the searchable library is Phase 9 C).
  *   - CORNER OFFICE is a doorway to a private scene (Phase 9 F) — a door + label for now.
- *
- * NOTE: this slice re-themes the two bottom rooms (ids + labels + palette) so the
- * Pool (G) and Communal (E) themes can build on them; the actual pool basin /
- * lounge furniture / super-sized TV still live where Phase 8 put them until then.
  *
  * Each room carries its own palette (floor tint + accent) — see lib/office/theme.ts.
  */
@@ -98,33 +94,35 @@ export const DESK_SEATS: readonly TilePos[] = [
   { x: 9, y: 6 },
 ];
 
-/** Lounge seats (idle agents), in fill order — a couch row, then an armchair row. */
+/**
+ * AGENT POOL (Phase 9 G). Idle agents lie on **sun loungers** along the deck at
+ * the top of the room and occasionally swim a lane in the pool below. `LOUNGE_SEATS`
+ * keeps its name (the seat slots the live-data hook fills) but the seats are now
+ * loungers facing the pool.
+ */
 export const LOUNGE_SEATS: readonly TilePos[] = [
-  { x: 3, y: 13 },
-  { x: 6, y: 13 },
-  { x: 9, y: 13 },
-  { x: 3, y: 17 },
-  { x: 6, y: 17 },
-  { x: 9, y: 17 },
+  { x: 2, y: 12 },
+  { x: 4, y: 12 },
+  { x: 6, y: 12 },
+  { x: 8, y: 12 },
+  { x: 10, y: 12 },
 ];
 
-/** Couches behind the upper lounge seats (one per seat, centred under it). */
-export const COUCHES: readonly TilePos[] = [
-  { x: 3, y: 13 },
-  { x: 6, y: 13 },
-  { x: 9, y: 13 },
-];
+/**
+ * The swimming pool basin (tile rect): non-walkable (agents route around it, the
+ * player collides), but the swim behaviour tweens a swimmer through it. Sits below
+ * the lounger deck; leaves the right column (cols 10–11) clear as the corridor to
+ * the communal-area doorway, and the top rows clear for the work doorway.
+ */
+export const POOL = { x: 2, y: 15, w: 8, h: 5 } as const;
 
-/** Armchairs behind the lower lounge seats. */
-export const ARMCHAIRS: readonly TilePos[] = [
-  { x: 3, y: 17 },
-  { x: 6, y: 17 },
-  { x: 9, y: 17 },
-];
-
-/** TV + gaming console along the lounge's lower edge (the seats face them). */
-export const TV_POS: TilePos = { x: 6, y: 20 };
-export const CONSOLE_POS: TilePos = { x: 9, y: 20.1 };
+/**
+ * TV + gaming console — relocated into the COMMUNAL area (Phase 9 G moved them out
+ * of the now-pool room). Plain decor for now; Phase 9 E3 super-sizes them and makes
+ * the console an interactable.
+ */
+export const TV_POS: TilePos = { x: 20, y: 11 };
+export const CONSOLE_POS: TilePos = { x: 20, y: 12.2 };
 
 /**
  * Kitchenette in the KITCHEN room: a coffee machine (the **interactable** — walk
@@ -165,13 +163,15 @@ export const READING_CHAIR: TilePos = { x: 27, y: 6 };
 /** Corner office: a door the player will step through (Phase 9 F). */
 export const DOOR_POS: TilePos = { x: 27, y: 20 };
 
-/** Potted plants for a bit of life, one per room corner. */
+/** Potted plants for a bit of life — room corners + poolside palms framing the deck. */
 export const PLANTS: readonly TilePos[] = [
   { x: 1.5, y: 1.5 },
   { x: 20.5, y: 1.5 },
   { x: 31.5, y: 8.5 },
-  { x: 1.5, y: 20 },
   { x: 31.5, y: 20 },
+  { x: 1.4, y: 13.5 }, // poolside (left)
+  { x: 10.6, y: 13.5 }, // poolside (right)
+  { x: 1.5, y: 19.5 }, // pool corner
 ];
 
 export const PLAYER_SPAWN: TilePos = { x: 6, y: 8 };
@@ -193,9 +193,12 @@ export function blockedGrid(): boolean[][] {
     if (grid[yy] && xx >= 0 && xx < grid[yy]!.length) grid[yy]![xx] = true;
   };
   for (const s of DESK_SEATS) block(s.x, s.y);
-  for (const s of LOUNGE_SEATS) block(s.x, s.y); // couches + armchairs share these tiles
+  for (const s of LOUNGE_SEATS) block(s.x, s.y); // sun loungers — agents sit, don't path through
   block(TV_POS.x, TV_POS.y);
   block(CONSOLE_POS.x, CONSOLE_POS.y);
   for (let y = 6; y <= 8; y++) for (let x = 16; x <= 18; x++) block(x, y); // conference table
+  // Swimming pool basin — non-walkable; the swim behaviour tweens swimmers through it.
+  for (let y = POOL.y; y < POOL.y + POOL.h; y++)
+    for (let x = POOL.x; x < POOL.x + POOL.w; x++) block(x, y);
   return grid;
 }
