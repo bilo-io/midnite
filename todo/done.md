@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-20 — Phase 9 office A3: room signage (PR #22)
+
+Replaced the room labels floating over the floor with **wall-mounted name plates** so every room is unmistakable at a glance.
+
+- [x] **A3 — room signage**: `buildLabels()` now draws, per room, a rounded **sign board** (`Phaser.Graphics` plate) on the room's top wall behind a full-opacity accent label — replacing the old alpha-0.7 floating label. One sign per room (work · board · library · Agent pool · communal · corner office).
+- [x] **Theme-aware**: the plate **fill follows the theme** (`background`) and is **redrawn on light/dark flip** in `applyPalette` (tracked via a new `roomSigns` list); the **border + text** use the per-room accent so each sign reads as that room's.
+- [x] The colour decision is a pure, tested `roomSignStyle(id, palette)` helper in [`theme.ts`](../packages/web/lib/office/theme.ts) (kept out of the Phaser scene); new `theme.test.ts` (3 tests) covers accent border/text, theme-driven fill flip, and distinct per-room accents. Verified `web:typecheck --force` + `web:lint` green, the new test passes from the primary checkout; `moon ci` green on PR #22. README updated.
+
 ## 2026-06-20 — Phase 9 office G: Agent pool (pool, water & swims) (PR #21)
 
 Furnished the re-themed Agent pool room into a real poolside leisure space.
