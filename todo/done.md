@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-20 — Phase 9 office B1: distinct per-agent robot characters (PR #16)
+
+Every agent's robot was the same sprite with a per-agent colour **tint**, so a deskful of agents was hard to tell apart. B1 makes each agent a visually distinct **character** (procedural pass; ◐ partial — real-art swap + provider-aware + activity poses + player customisation remain open in the phase file).
+
+- [x] **B1 (silhouette + accent)**: robot **variant registry** in [`textures.ts`](../packages/web/lib/office/textures.ts) — `ROBOT_VARIANTS` (6 designs) + `robotVariant(id)`, varying antenna shape (rod/twin/bulb/dish/sensor-bar), optional side fins, and eye/accent/visor colours. Picked **deterministically by agent id** (a different hash multiplier than `agentTint`, so shape and chassis colour aren't correlated) and layered on the existing per-agent tint.
+- [x] Texture + walk-anim keys carry a **variant segment** (`office-robot-v3-side-1`); `Actor` tracks its `variant` for the seated frame and walk cycle. Human player stays `v0`.
+- [x] **Provider-agnostic** and a clean **seam**: one variant spec ↔ one sprite sheet, so an external pack (MetroCity CC0 / pixel-agents MIT) drops in later with keys unchanged. Procedural art, no new deps. Resolved a merge conflict against the pool/signage work that landed first; `web:typecheck --force` + `web:lint` green; `moon ci` green on PR #16.
+
 ## 2026-06-20 — Phase 10 A1: shared unit coverage (PR #23)
 
 Closed the highest-leverage test gap: the `shared` contract package had ~19 untested modules, where a broken zod shape breaks gateway + cli + web at once. Tests only — no product behaviour changed.
