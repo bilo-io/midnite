@@ -13,6 +13,10 @@
     "./config-loader": {
       "types": "./dist/config-loader.d.ts",
       "default": "./dist/config-loader.js"
+    },
+    "./fixtures": {
+      "types": "./dist/__fixtures__/index.d.ts",
+      "default": "./dist/__fixtures__/index.js"
     }
   },
   "files": ["dist"],
