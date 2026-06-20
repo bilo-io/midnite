@@ -38,3 +38,4 @@ storybook-static/
 # Claude Code: machine-local settings + agent worktrees (never committed)
 .claude/settings.local.json
 .claude/worktrees/
+.claude/scheduled_tasks.lock

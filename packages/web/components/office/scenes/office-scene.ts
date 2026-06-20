@@ -3,33 +3,39 @@ import { useOfficeStore } from '@/lib/office-store';
 import { STATUS_LABEL, STATUS_TINT, type OfficeAgent, type OfficeStatus } from '@/lib/office/agents';
 import { OFFICE_COLS, OFFICE_ROWS, OFFICE_TILE } from '@/lib/office/dimensions';
 import {
-  ARMCHAIRS,
   BOARD_POS,
   blockedGrid,
+  BOOKSHELVES,
   COFFEE_POS,
   CONSOLE_POS,
-  COUCHES,
+  COUNTER_POS,
   DESK_SEATS,
+  DOOR_POS,
   LAYOUT,
   LOUNGE_SEATS,
   PLANTS,
   PLAYER_SPAWN,
-  RUGS,
+  POOL,
+  READING_CHAIR,
+  ROOMS,
+  type RoomId,
+  STOOL_POS,
   TABLE_CHAIRS,
   TABLE_POS,
   TV_POS,
-  ZONE_LABELS,
   type TilePos,
 } from '@/lib/office/layout';
-import { buildOfficePalette, type OfficePalette } from '@/lib/office/theme';
+import { buildOfficePalette, ROOM_STYLES, roomSignStyle, type OfficePalette } from '@/lib/office/theme';
 import { agentTint, charKey, ensureOfficeAnims, ensureOfficeTextures, robotVariant, TEX, walkAnim } from '@/lib/office/textures';
 
-// Phase 8 office: a zoned, sprite-based room. Working agents (robots) sit at hot
-// desks (interactable); idle agents chill in the lounge (TV + console + couches);
-// a walled board room holds a conference table + a documents whiteboard the player
-// walks up to. Agents walk between the lounge and their desk when their status
-// flips. Tiles are tinted to the theme palette so the canvas still follows
-// light/dark. See lib/office/{layout,textures,theme}.ts.
+// Phase 9 office: a sprite-based, multi-room floor plan (work · board · library
+// over agent pool · communal area · corner office, connected by doorways — see
+// layout.ts). Working agents (robots) sit at WORK hot desks (interactable); idle
+// agents lounge in the AGENT POOL; the BOARD whiteboard opens the projects panel;
+// the COMMUNAL coffee machine toggles a break. Each room gets its own translucent
+// floor accent + a wall-mounted name plate (A3) over the theme-tinted base, so the
+// canvas still follows light/dark.
+// See lib/office/{layout,textures,theme}.ts.
 
 const TILE = OFFICE_TILE;
 const COLS = OFFICE_COLS;
@@ -68,10 +74,14 @@ type Actor = {
   ty: number;
   walking: boolean;
   tween?: Phaser.Tweens.Tween | Phaser.Tweens.TweenChain;
-  /** Idle lounge agent that's sleeping (vs gaming) — drives the animated zzz. */
+  /** Idle agent lounging on a sun lounger — drives the animated zzz. */
   sleeping: boolean;
   /** Robot design index (by agent id) — distinct silhouette/accent per agent. */
   variant: number;
+  /** Mid-swim in the pool (G3) — suppresses lounging bubble + re-seat walks. */
+  swimming: boolean;
+  /** Wake ripple that trails a swimmer; removed when they climb out. */
+  ripple?: Phaser.GameObjects.Ellipse;
 };
 
 class OfficeScene extends Phaser.Scene {
@@ -80,17 +90,24 @@ class OfficeScene extends Phaser.Scene {
   private playerShadow!: Phaser.GameObjects.Ellipse;
   private highlight!: Phaser.GameObjects.Arc;
   private floor!: Phaser.GameObjects.TileSprite;
+  /** Pool water (TileSprite) — scrolled each frame for a gentle shimmer (G2). */
+  private water?: Phaser.GameObjects.TileSprite;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: Record<'up' | 'down' | 'left' | 'right', Phaser.Input.Keyboard.Key>;
   private readonly actors = new Map<string, Actor>();
   private readonly walls: Phaser.GameObjects.Image[] = [];
-  private readonly labels: Phaser.GameObjects.Text[] = [];
   private readonly solids: Phaser.GameObjects.GameObject[] = [];
+  /** Wall-mounted room name plates (A3) — redrawn on theme flip (fill is theme-driven). */
+  private readonly roomSigns: { plate: Phaser.GameObjects.Graphics; id: RoomId; rect: Phaser.Geom.Rectangle }[] = [];
   /** Pathfinding walkability grid (true = blocked); seats handled specially. */
   private blocked: boolean[][] = [];
   private boardCenter = { x: 0, y: 0 };
+  private kitchenCenter = { x: 0, y: 0 };
   private lastNearby: string | null = null;
   private nearBoardFlag = false;
+  private nearKitchenFlag = false;
+  /** ☕ shown over the player while on a coffee break. */
+  private breakIcon!: Phaser.GameObjects.Text;
   private facing: 'down' | 'up' | 'side' = 'down';
   /** Click-to-walk: pixel waypoints the player is auto-following, or null. */
   private playerPath: { x: number; y: number }[] | null = null;
@@ -124,11 +141,14 @@ class OfficeScene extends Phaser.Scene {
       .setTint(this.palette.floor)
       .setDepth(-10);
 
-    this.buildRugs();
+    this.buildRoomFloors();
     this.buildWalls();
     this.buildDesks();
-    this.buildLounge();
+    this.buildPool();
+    this.buildKitchen();
     this.buildBoardroom();
+    this.buildLibrary();
+    this.buildCornerOffice();
     this.buildPlants();
     this.buildLabels();
     this.buildPlayer();
@@ -157,8 +177,10 @@ class OfficeScene extends Phaser.Scene {
 
     this.alive = true;
 
-    // Animate the sleeping agents' "z / zz / zzz" bubble. Auto-removed on shutdown.
+    // Animate the lounging agents' "z / zz / zzz" bubble. Auto-removed on shutdown.
     this.time.addEvent({ delay: 450, loop: true, callback: this.tickIdleBubbles, callbackScope: this });
+    // Occasionally send a lounging agent for a swim (G3).
+    this.time.addEvent({ delay: 4500, loop: true, callback: this.maybeSwim, callbackScope: this });
 
     this.unsub = useOfficeStore.subscribe((state, prev) => {
       if (!this.alive) return;
@@ -189,8 +211,16 @@ class OfficeScene extends Phaser.Scene {
     this.movePlayer();
     this.playerShadow.setPosition(this.player.x, this.player.y + TILE * 0.42);
 
-    // Keep each actor's shadow + labels glued to its (possibly tweening) sprite.
-    for (const actor of this.actors.values()) this.positionActorChrome(actor);
+    // Gentle pool shimmer (G2) + keep each actor's chrome glued to its sprite; a
+    // swimmer's wake ripple trails just below it.
+    if (this.water) {
+      this.water.tilePositionX += 0.15;
+      this.water.tilePositionY += 0.08;
+    }
+    for (const actor of this.actors.values()) {
+      this.positionActorChrome(actor);
+      if (actor.swimming && actor.ripple) actor.ripple.setPosition(actor.sprite.x, actor.sprite.y + 8);
+    }
 
     // Nearest *interactable* (desk, seated) agent within reach drives the highlight.
     const px = this.player.x;
@@ -221,6 +251,18 @@ class OfficeScene extends Phaser.Scene {
       this.nearBoardFlag = nearBoard;
       useOfficeStore.getState().setNearBoard(nearBoard);
     }
+
+    // Kitchen coffee-machine proximity.
+    const kDist = (px - this.kitchenCenter.x) ** 2 + (py - this.kitchenCenter.y) ** 2;
+    const nearKitchen = kDist <= (PROXIMITY * 1.3) ** 2;
+    if (nearKitchen !== this.nearKitchenFlag) {
+      this.nearKitchenFlag = nearKitchen;
+      useOfficeStore.getState().setNearKitchen(nearKitchen);
+    }
+
+    // ☕ floats over the player while on a break.
+    this.breakIcon.setPosition(this.player.x + 11, this.player.y - 16);
+    this.breakIcon.setVisible(useOfficeStore.getState().onBreak);
   }
 
   /** Re-tint the theme-driven objects when the app's light/dark theme flips. */
@@ -230,7 +272,9 @@ class OfficeScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(palette.background);
     this.floor.setTint(palette.floor);
     for (const wall of this.walls) wall.setTint(palette.wall);
-    for (const label of this.labels) label.setColor(toHex(palette.text));
+    // Room name plates: text/border are fixed per-room accents, but the plate fill
+    // is theme-driven — redraw it so the signs flip with light/dark.
+    for (const sign of this.roomSigns) this.drawSignPlate(sign.plate, sign.id, sign.rect);
     for (const actor of this.actors.values()) actor.nameText.setColor(toHex(palette.text));
     this.highlight.setStrokeStyle(2, palette.highlight, 0.9);
   }
@@ -317,6 +361,7 @@ class OfficeScene extends Phaser.Scene {
       walking: false,
       sleeping: false,
       variant,
+      swimming: false,
     };
     this.updateActorContent(actor, agent);
     this.positionActorChrome(actor);
@@ -324,32 +369,89 @@ class OfficeScene extends Phaser.Scene {
   }
 
   /**
-   * Idle agents in the lounge either **sleep** (animated zzz) or **game** (▶),
-   * split deterministically by id; working agents keep their status bubble.
+   * Idle agents lounge on the pool's sun loungers (animated zzz); working agents
+   * keep their status bubble. A swimmer's bubble is cleared while it's in the pool.
    */
   private setActivity(actor: Actor, agent: OfficeAgent) {
-    if (agent.status !== 'idle') {
+    if (agent.status !== 'idle' || actor.swimming) {
       actor.sleeping = false;
       return;
     }
-    const gaming = this.isGamer(agent.id);
-    actor.sleeping = !gaming;
-    actor.bubble.setColor(toHex(STATUS_TINT.idle)).setText(gaming ? '▶' : 'z'.repeat(this.zzzPhase + 1));
+    actor.sleeping = true;
+    actor.bubble.setColor(toHex(STATUS_TINT.idle)).setText('z'.repeat(this.zzzPhase + 1));
   }
 
-  /** Deterministic "is this idle agent gaming (vs sleeping)?" split by id. */
-  private isGamer(id: string) {
-    let hash = 0;
-    for (let i = 0; i < id.length; i++) hash = (hash + id.charCodeAt(i)) >>> 0;
-    return hash % 2 === 0;
-  }
-
-  /** Cycle the sleeping agents' bubble z → zz → zzz. */
+  /** Cycle the lounging agents' bubble z → zz → zzz. */
   private tickIdleBubbles() {
     if (!this.alive) return;
     this.zzzPhase = (this.zzzPhase + 1) % 3;
     const z = 'z'.repeat(this.zzzPhase + 1);
     for (const actor of this.actors.values()) if (actor.sleeping) actor.bubble.setText(z);
+  }
+
+  /**
+   * Occasionally (G3) send one lounging agent for a swim: it leaves its lounger,
+   * paddles a couple of lanes in the pool, then climbs back out. Not every agent,
+   * not constantly — driven off a periodic timer with a coin-flip.
+   */
+  private maybeSwim() {
+    if (!this.alive) return;
+    const loungers = [...this.actors.values()].filter(
+      (a) => a.kind === 'lounge' && a.sleeping && !a.walking && !a.swimming,
+    );
+    if (loungers.length === 0) return;
+    // ~50% of ticks, and a random lounger — keeps it an occasional flourish.
+    if ((this.zzzPhase + loungers.length) % 2 === 0) return;
+    const actor = loungers[(this.zzzPhase * 7 + loungers.length) % loungers.length]!;
+    this.swimActor(actor);
+  }
+
+  /** Tween an actor from its lounger through a couple of pool lanes and back. */
+  private swimActor(actor: Actor) {
+    actor.swimming = true;
+    actor.sleeping = false;
+    actor.bubble.setText('');
+    actor.sprite.setDepth(5);
+
+    const leftPx = center(POOL.x);
+    const rightPx = center(POOL.x + POOL.w - 1);
+    const topPx = center(POOL.y);
+    const midPx = center(POOL.y + Math.floor(POOL.h / 2));
+    const homeX = actor.sprite.x;
+    const homeY = actor.sprite.y;
+    const entryX = Phaser.Math.Clamp(homeX, leftPx, rightPx);
+
+    actor.ripple = this.add.ellipse(entryX, topPx, 22, 10, 0x7fd6ea, 0.6).setDepth(4);
+
+    const lane = (x: number, y: number) => ({
+      x,
+      y,
+      duration: Math.max(220, (Math.hypot(x - entryX, y - topPx) / PLAYER_SPEED) * 1000),
+      ease: 'Sine.InOut',
+      onStart: () => this.faceActor(actor, { x, y }),
+    });
+
+    actor.tween?.stop();
+    actor.tween = this.tweens.chain({
+      targets: actor.sprite,
+      tweens: [
+        lane(entryX, midPx), // wade in
+        lane(rightPx, midPx), // lane 1
+        lane(leftPx, midPx), // lane 2
+        lane(entryX, topPx), // back to the edge
+        lane(homeX, homeY), // climb out onto the lounger
+      ],
+      onComplete: () => this.endSwim(actor),
+    });
+  }
+
+  /** End a swim (reached the lounger, re-seated, or interrupted) — reset chrome. */
+  private endSwim(actor: Actor) {
+    actor.swimming = false;
+    actor.ripple?.destroy();
+    actor.ripple = undefined;
+    actor.sprite.setDepth(4).anims.stop();
+    actor.sprite.setTexture(charKey('robot', 'down', 0)).setFlipX(false);
   }
 
   private updateActorContent(actor: Actor, agent: OfficeAgent) {
@@ -366,6 +468,7 @@ class OfficeScene extends Phaser.Scene {
    * Falls back to a direct tween if no grid path is found.
    */
   private walkActor(actor: Actor, tx: number, ty: number) {
+    if (actor.swimming) this.endSwim(actor); // interrupt a swim if it's re-seated
     actor.tx = tx;
     actor.ty = ty;
     actor.walking = true;
@@ -496,6 +599,7 @@ class OfficeScene extends Phaser.Scene {
 
   private destroyActor(actor: Actor) {
     actor.tween?.stop();
+    actor.ripple?.destroy();
     actor.sprite.destroy();
     actor.shadow.destroy();
     actor.bubble.destroy();
@@ -604,6 +708,10 @@ class OfficeScene extends Phaser.Scene {
       useOfficeStore.getState().openBoard();
       return;
     }
+    if (this.nearKitchenFlag) {
+      useOfficeStore.getState().toggleBreak();
+      return;
+    }
     if (this.lastNearby) useOfficeStore.getState().open(this.lastNearby);
   }
 
@@ -622,10 +730,16 @@ class OfficeScene extends Phaser.Scene {
 
   // ---- room construction -------------------------------------------------
 
-  private buildRugs() {
-    for (const r of RUGS) {
+  /**
+   * Tint each room's interior floor with its own translucent accent so every
+   * room reads as a distinct space, while the theme-driven base floor (and
+   * light/dark flip) still shows through underneath.
+   */
+  private buildRoomFloors() {
+    for (const room of ROOMS) {
+      const style = ROOM_STYLES[room.id];
       this.add
-        .rectangle((r.x + r.w / 2) * TILE, (r.y + r.h / 2) * TILE, r.w * TILE, r.h * TILE, r.color, 0.55)
+        .rectangle((room.x + room.w / 2) * TILE, (room.y + room.h / 2) * TILE, room.w * TILE, room.h * TILE, style.floor, 0.32)
         .setDepth(-8);
     }
   }
@@ -653,12 +767,35 @@ class OfficeScene extends Phaser.Scene {
     }
   }
 
-  private buildLounge() {
-    for (const c of COUCHES) this.solids.push(this.staticDecor(c, TEX.couch, 2));
-    for (const a of ARMCHAIRS) this.solids.push(this.staticDecor(a, TEX.armchair, 2));
+  /**
+   * Agent pool (Phase 9 G): a tiled pool basin with a coping edge + a scrolled
+   * water TileSprite (G2), and sun loungers along the deck where idle agents lie
+   * (G3). The basin is non-walkable (blockedGrid) so the player + walking agents
+   * route around it; swimmers tween through it.
+   */
+  private buildPool() {
+    const cx = (POOL.x + POOL.w / 2) * TILE;
+    const cy = (POOL.y + POOL.h / 2) * TILE;
+    // Coping edge (a stone border a touch larger than the basin).
+    this.add.rectangle(cx, cy, POOL.w * TILE + 10, POOL.h * TILE + 10, 0x9aa7b4).setDepth(-7);
+    this.water = this.add
+      .tileSprite(cx, cy, POOL.w * TILE, POOL.h * TILE, TEX.water)
+      .setDepth(-6);
+    // The player collides with the basin (can't walk on water); swimmers tween through it.
+    this.physics.add.existing(this.water, true);
+    this.solids.push(this.water);
+    for (const s of LOUNGE_SEATS) this.add.image(center(s.x), center(s.y) + 2, TEX.lounger).setDepth(2);
+  }
+
+  /** Communal area: coffee machine (interactable) + counter/stool, plus the
+   *  relocated TV + console decor (Phase 9 E3 super-sizes + wires the console). */
+  private buildKitchen() {
+    this.add.image(center(COUNTER_POS.x), center(COUNTER_POS.y), TEX.counter).setDepth(2);
+    this.add.image(center(STOOL_POS.x), center(STOOL_POS.y), TEX.stool).setDepth(3);
+    const machine = this.add.image(center(COFFEE_POS.x), center(COFFEE_POS.y), TEX.coffee).setDepth(3);
+    this.kitchenCenter = { x: machine.x, y: machine.y };
     this.solids.push(this.staticDecor(TV_POS, TEX.tv, 5));
     this.add.image(center(CONSOLE_POS.x), center(CONSOLE_POS.y), TEX.console).setDepth(5);
-    this.add.image(center(COFFEE_POS.x), center(COFFEE_POS.y), TEX.coffee).setDepth(3); // corner decor
   }
 
   private buildBoardroom() {
@@ -668,25 +805,69 @@ class OfficeScene extends Phaser.Scene {
     this.boardCenter = { x: board.x, y: board.y + TILE };
   }
 
+  /** Library: bookshelves lining the walls + a reading chair (decor for now; the
+   *  searchable library modal is Phase 9 C, anchored at BOOKSHELF_POS). */
+  private buildLibrary() {
+    for (const s of BOOKSHELVES) this.add.image(center(s.x), center(s.y), TEX.bookshelf).setDepth(3);
+    this.add.image(center(READING_CHAIR.x), center(READING_CHAIR.y), TEX.armchair).setDepth(2);
+  }
+
+  /** Corner office: a door + welcome mat the player will step through (Phase 9 F). */
+  private buildCornerOffice() {
+    this.add
+      .rectangle(center(DOOR_POS.x), center(DOOR_POS.y) + TILE * 0.4, TILE * 0.9, TILE * 0.35, 0x6ee7b7, 0.25)
+      .setDepth(1); // welcome mat
+    this.add.image(center(DOOR_POS.x), center(DOOR_POS.y), TEX.door).setDepth(5);
+  }
+
   private buildPlants() {
     for (const p of PLANTS) this.add.image(center(p.x), center(p.y), TEX.plant).setDepth(3);
   }
 
+  /**
+   * One **wall-mounted name plate** per room (Phase 9 A3): the room label on its
+   * own rounded sign board, anchored on the room's top wall — so each room is
+   * unmistakable at a glance, instead of a translucent label floating over the
+   * floor. The plate fill is theme-driven (redrawn on flip in `applyPalette`); the
+   * border + text use the room's fixed accent. See `roomSignStyle`.
+   */
   private buildLabels() {
-    for (const l of ZONE_LABELS) {
+    const padX = 6;
+    const padY = 3;
+    for (const room of ROOMS) {
+      const style = roomSignStyle(room.id, this.palette);
       const label = this.add
-        .text(center(l.x), center(l.y), l.text, {
+        .text(center(room.lx), center(room.ly), room.label, {
           fontFamily: 'monospace',
           fontSize: '10px',
-          color: toHex(this.palette.text),
+          color: toHex(style.text),
           fontStyle: 'bold',
         })
         .setOrigin(0.5)
         .setResolution(2)
-        .setAlpha(0.55)
-        .setDepth(11);
-      this.labels.push(label);
+        .setDepth(12);
+      const rect = new Phaser.Geom.Rectangle(
+        label.x - label.width / 2 - padX,
+        label.y - label.height / 2 - padY,
+        label.width + padX * 2,
+        label.height + padY * 2,
+      );
+      const plate = this.add.graphics().setDepth(11);
+      this.roomSigns.push({ plate, id: room.id, rect });
+      this.drawSignPlate(plate, room.id, rect);
     }
+  }
+
+  /** Draw (or redraw) a room sign's rounded plate with the current theme fill. */
+  private drawSignPlate(plate: Phaser.GameObjects.Graphics, id: RoomId, rect: Phaser.Geom.Rectangle) {
+    const style = roomSignStyle(id, this.palette);
+    const radius = 5;
+    plate
+      .clear()
+      .fillStyle(style.fill, 0.92)
+      .fillRoundedRect(rect.x, rect.y, rect.width, rect.height, radius)
+      .lineStyle(1.5, style.border, 0.9)
+      .strokeRoundedRect(rect.x, rect.y, rect.width, rect.height, radius);
   }
 
   /** Add a static (collidable) furniture image at a tile, return it for `solids`. */
@@ -708,6 +889,13 @@ class OfficeScene extends Phaser.Scene {
     this.physics.add.existing(this.player);
     this.body().setSize(10, 7).setOffset(3, 12);
     this.body().setCollideWorldBounds(true);
+
+    this.breakIcon = this.add
+      .text(sx, sy, '☕', { fontSize: '13px' })
+      .setOrigin(0.5)
+      .setResolution(2)
+      .setVisible(false)
+      .setDepth(11);
   }
 
   private buildVignette(worldW: number, worldH: number) {

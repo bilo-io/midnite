@@ -11,6 +11,7 @@
  */
 
 import { hslTripletToInt } from '@/lib/office/agents';
+import type { RoomId } from '@/lib/office/layout';
 
 export interface OfficePalette {
   // Theme-driven (flip with light/dark)
@@ -21,6 +22,47 @@ export interface OfficePalette {
   // Fixed decorative
   player: number;
   highlight: number;
+}
+
+/**
+ * Per-room style: a translucent **floor tint** laid over the theme-driven floor
+ * (so the light/dark base still shows through) + an **accent** used for the room
+ * label. Each room reads as a distinct space at a glance — warm kitchen, bookish
+ * library, sleek board room — without abandoning the token-driven base palette.
+ */
+export interface RoomStyle {
+  floor: number;
+  accent: number;
+}
+
+export const ROOM_STYLES: Record<RoomId, RoomStyle> = {
+  work: { floor: 0x3b4252, accent: 0x60a5fa }, // cool slate / blue
+  board: { floor: 0x2f3a4a, accent: 0x38bdf8 }, // sleek navy / sky
+  library: { floor: 0x4a3b2a, accent: 0xfbbf24 }, // bookish warm brown / amber
+  pool: { floor: 0x1d4e5f, accent: 0x22d3ee }, // tiled aqua / cyan
+  communal: { floor: 0x4a3528, accent: 0xfb923c }, // cosy living-room / warm orange
+  corner: { floor: 0x2f4a3a, accent: 0x6ee7b7 }, // private green
+};
+
+/**
+ * Colours for a room's **wall-mounted name plate** (Phase 9 A3): a sign board
+ * drawn on the room's top wall instead of a translucent label floating over the
+ * floor. The plate **fill follows the theme** (`background`, so it flips with
+ * light/dark), while the **border + text** use the room's fixed accent — so the
+ * sign reads as that room's at a glance and stays legible on either theme.
+ */
+export interface RoomSignStyle {
+  /** Plate fill — theme-driven, flips with light/dark. */
+  fill: number;
+  /** Plate border — the room accent. */
+  border: number;
+  /** Label text — the room accent. */
+  text: number;
+}
+
+export function roomSignStyle(id: RoomId, palette: OfficePalette): RoomSignStyle {
+  const { accent } = ROOM_STYLES[id];
+  return { fill: palette.background, border: accent, text: accent };
 }
 
 /** Decorative colours that read well on both themes — kept constant. */

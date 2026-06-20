@@ -4,6 +4,69 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-20 — Phase 10 A1: shared unit coverage (PR #23)
+
+Closed the highest-leverage test gap: the `shared` contract package had ~19 untested modules, where a broken zod shape breaks gateway + cli + web at once. Tests only — no product behaviour changed.
+
+- [x] **A1 — cover the untested `shared` modules**: added `*.test.ts` alongside **agent, backup, dashboard, fs, llm, media, memory, node, note, project, routine, run, session, task, trigger, usage, workflow, events/workflow, config-loader** (19 files, ~150 tests).
+- [x] Each suite **round-trips** a valid fixture, **rejects** representative invalid inputs (bad enums/unions, out-of-range, non-url, missing required), asserts **applied defaults** (e.g. `task.priority`, trigger method/timezone, workflow `enabled`/`steps`), narrows the **discriminated unions** (`trigger`, `events/workflow`) on their `type`, and covers the pure helpers (`missingProjectRequirements`, `providerSupportsBaseUrl`, `CLI_PROVIDER_MAP`).
+- [x] `config-loader` (node-only) exercised against a real temp dir: ancestor walk, explicit-path load, defaults fallback on missing/unparseable. `moon run shared:test` → 32 files / 204 tests; `shared:typecheck` + `shared:lint` green; `moon ci` green on PR #23.
+- Note: A1's "task state machine" bullet is N/A here — `shared/task.ts` holds only schemas/enums; transition logic lives in the gateway, covered separately under Theme B.
+
+## 2026-06-20 — Phase 9 office A3: room signage (PR #22)
+
+Replaced the room labels floating over the floor with **wall-mounted name plates** so every room is unmistakable at a glance.
+
+- [x] **A3 — room signage**: `buildLabels()` now draws, per room, a rounded **sign board** (`Phaser.Graphics` plate) on the room's top wall behind a full-opacity accent label — replacing the old alpha-0.7 floating label. One sign per room (work · board · library · Agent pool · communal · corner office).
+- [x] **Theme-aware**: the plate **fill follows the theme** (`background`) and is **redrawn on light/dark flip** in `applyPalette` (tracked via a new `roomSigns` list); the **border + text** use the per-room accent so each sign reads as that room's.
+- [x] The colour decision is a pure, tested `roomSignStyle(id, palette)` helper in [`theme.ts`](../packages/web/lib/office/theme.ts) (kept out of the Phaser scene); new `theme.test.ts` (3 tests) covers accent border/text, theme-driven fill flip, and distinct per-room accents. Verified `web:typecheck --force` + `web:lint` green, the new test passes from the primary checkout; `moon ci` green on PR #22. README updated.
+
+## 2026-06-20 — Phase 9 office G: Agent pool (pool, water & swims) (PR #21)
+
+Furnished the re-themed Agent pool room into a real poolside leisure space.
+
+- [x] **G1 — pool & poolside**: tiled pool basin (`POOL` rect) + coping edge + **sun loungers** along the deck (`LOUNGE_SEATS` are now loungers) + poolside palms. Basin is **non-walkable** — in `blockedGrid()` (agents route around) + a static body so the player collides; new `water`/`lounger` textures.
+- [x] **G2 — animated water**: the water `TileSprite` scrolls each frame for a gentle ambient shimmer.
+- [x] **G3 — lounging & occasional swims**: idle agents lie on loungers (`zzz`); a periodic timer occasionally sends one swimming a couple of lanes through the basin (trailing a wake ripple), then climbing out — interrupted cleanly if it starts working. The old lounge sleep/**game** split was dropped (gaming relocates to the communal area in Theme E).
+- [x] Relocated the TV + console into the **communal area** as decor (Phase 9 E3 super-sizes + wires the console). `layout.test.ts` gains pool coverage (basin blocked + room still navigable around it); verified `web:typecheck --force` + `web:lint`; `moon ci` green on PR #21.
+
+## 2026-06-20 — Phase 9 office A1 re-theme: Agent pool + Communal area (PR #20)
+
+Re-themed the two bottom rooms so the Pool (G) and Communal (E) themes have named, fittingly-coloured rooms to build on.
+
+- [x] Renamed `RoomId`s — **lounge → pool**, **kitchen → communal** (`layout.ts`); `ROOMS` labels now **AGENT POOL** / **COMMUNAL**.
+- [x] Re-paletted in `ROOM_STYLES` (`theme.ts`): pool → tiled-aqua floor + cyan accent; communal → cosy warm floor + orange accent. All six room accents now read distinctly (work blue · board sky · library amber · pool cyan · communal orange · corner green), still translucent over the light/dark base.
+- [x] **Seam only** — the pool basin/animated water/swims (G1–G3) and communal couches/astro-turf + relocated super-sized TV/PlayStation + retro-games menu (E2–E4) furnish those rooms in their own slices; coffee break (E1) still works in the communal area. `layout.test.ts` green; verified `web:typecheck --force` + `web:lint`; `moon ci` green on PR #20.
+
+## 2026-06-20 — Phase 9 office A1: multi-room floor plan (PR #19)
+
+Turned `/office` from a single room into a six-room walled floor plan — the foundational seam the rest of Phase 9 builds on.
+
+- [x] **A1 — room model**: replaced the single `LAYOUT` grid with a 34×22 multi-room plan (`layout.ts`) — a 3×2 arrangement (work · board · library over lounge · kitchen · corner office) connected by 2-tile doorways in every shared wall, so the whole map stays one connected walkable space. New `ROOMS` describes each room's interior rect + label. `dimensions.ts` bumped to 34×22.
+- [x] **Per-room palette**: `ROOM_STYLES` in `theme.ts` — a translucent floor accent over the theme-driven base (light/dark still shows through) + an accent-coloured label per room, so each room reads as a distinct space.
+- [x] Added bookshelf + door textures; built the **library** (bookshelves + reading chair) and a **corner-office door**; repositioned the existing desks/lounge/kitchen/board fixtures into their rooms. Agent A* pathfinding routes through the doorways unchanged.
+- [x] `layout.test.ts` (4 tests) asserts the grid invariants and that **every room is reachable from the spawn** (no walled-off pockets). Verified `web:typecheck` (`--force`, to dodge moon's stale typecheck cache), `web:lint`, `web:build`, `web:build-storybook` green; `moon ci` green on PR #19.
+- Note: deferred to later Phase 9 slices — camera-follow for the bigger map (**A2**), the searchable library modal (**C**, anchor `BOOKSHELF_POS` ready), the corner-office scene + desk toys (**F**), and per-room decor variety (**B2**).
+
+## 2026-06-20 — Phase 9 office E1: kitchen coffee break (PR #18)
+
+Added a kitchenette to `/office` and a personal "on a break" toggle.
+
+- [x] **E1 — coffee break**: a kitchenette nook in the lounge's bottom-left corner — a **counter** + **stool** (new procedural textures in `textures.ts`) beside the existing **coffee machine**, plus a `KITCHEN` zone label (`layout.ts`). All decor (no colliders).
+- [x] The coffee machine is **interactable**: walk up + press **E** toggles an "on a break" state, mirroring the board-room `nearBoard`/`openBoard` proximity+interact pattern (`nearKitchen` → `toggleBreak`). The HUD shows a `☕ On a break` badge + a *take a break / get back to work* prompt; a `☕` floats over the player while on a break.
+- [x] State on `office-store.ts`: `onBreak`/`toggleBreak`, `nearKitchen`/`setNearKitchen`. Per Decisions §5 the flag is **mock/local** to the session; `reset()` leaves `onBreak` alone (personal presence flag, not transient scene state). Covered by `office-store.test.ts` (3 tests).
+- [x] Verified: `web:typecheck` / `web:lint` green; store test passes from the primary checkout; `moon ci` green on PR #18.
+- Note: a standalone walled kitchen **room** comes with the multi-room layout (A1) — this is the corner-nook version that ships independently of it.
+
+## 2026-06-20 — Phase 9 office D1: board room → projects hub (PR #17)
+
+Repurposed the `/office` board room from a static documents whiteboard (Phase 8 D3) into the **live projects hub**, the highest-utility office interaction.
+
+- [x] **D1 — projects in the board room**: `boardroom-panel.tsx` now lists active projects (`getProjects`) — each row shows the project tag, name, and task count. Clicking one opens the existing `project-modal.tsx` **as-is**, portalled over the office (`<body>`, escaping the stage's `overflow-hidden` / page-reveal transform), so the URL stays `/office`. Plans, sources, tasks, and the project's memory are all reachable without leaving the room. Escape from a project returns to the list; Escape from the list returns to the room.
+- [x] The project modal subsumes the old per-project document browser (its Plan tab + memory link cover what the whiteboard showed), so `documents.ts`, `documents.test.ts`, and `document-modal.tsx` were removed and replaced by a small, tested `lib/office/projects.ts` (`boardroomProjects` → active + alphabetised) seam.
+- [x] `nearBoard`/`openBoard`/`boardOpen` scene+store flow unchanged; web-only, no gateway/shared changes. README updated.
+- [x] Verified: `web:typecheck` / `web:lint` green; `projects.test.ts` (2 tests) pass from the primary checkout; `moon ci` green on PR #17.
+
 ## 2026-06-20 — Phase 8 office: idle sleep/game (C1), click-to-walk (D2), coffee corner (A3)
 
 Rounded out the achievable rest of Phase 8 (remaining open items need external assets, new session data, or are out of scope).
