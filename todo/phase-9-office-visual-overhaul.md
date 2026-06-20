@@ -70,14 +70,14 @@ Today one room holds three zones ([`layout.ts`](../packages/web/lib/office/layou
 
 A bookshelf prop the player walks up to (an interactable, same pattern as the board) opens a **real React modal** of "books".
 
-### C1. Library interactable + modal — **M**
-- [ ] Add a `bookshelf` interactable: proximity flag + `openLibrary()`/`closeLibrary()` on [`office-store.ts`](../packages/web/lib/office-store.ts) (mirror `nearBoard`/`boardOpen`/`openBoard`). The scene sets proximity; pressing **E** opens the modal; Phaser keyboard disabled while open (as the panel already does).
-- [ ] New `LibraryModal` component (follow the existing modal-component convention, e.g. [`memory-modal.tsx`](../packages/web/components/memory-modal.tsx)) rendered from the HUD ([`office-hud.tsx`](../packages/web/components/office/office-hud.tsx)).
+### C1. Library interactable + modal — **M** — ✅ DONE (2026-06-20, PR #29)
+- [x] Added the `bookshelf` interactable: `nearLibrary` + `openLibrary()`/`closeLibrary()` on [`office-store.ts`](../packages/web/lib/office-store.ts) (mirrors `nearBoard`/`boardOpen`/`openBoard`; opening any one panel closes the others; `reset()` clears them). The scene sets proximity from `BOOKSHELF_POS`; pressing **E** opens the modal; the keyboard-freeze condition now includes `libraryOpen`.
+- [x] New `LibraryModal` component (follows the `boardroom-panel` modal convention — backdrop, own-Escape, header) rendered from the HUD ([`office-hud.tsx`](../packages/web/components/office/office-hud.tsx)), with a proximity prompt.
 
-### C2. Books data, search & filter — **S**
-- [ ] **Mock** book data in `lib/office/books.ts`: `{ id, title, author, category, blurb }[]` spanning a few categories.
-- [ ] In the modal: a **search box** (title/author substring; Fuse.js optional) + **category filter** (chips/select). Reuse `ui/` `Input`/`Select`/`StyledSelect`.
-- [ ] Clicking a book opens a **Google search in a new tab**: `window.open('https://www.google.com/search?q=' + encodeURIComponent(`${title} ${author}`), '_blank', 'noopener')`. (Real fetch/reader is a later upgrade.)
+### C2. Books data, search & filter — **S** — ✅ DONE (2026-06-20, PR #29)
+- [x] **Mock** book data in [`lib/office/books.ts`](../packages/web/lib/office/books.ts): `{ id, title, author, category, blurb }[]` across five categories, + pure helpers (`bookCategories`, `filterBooks`, `bookSearchUrl`) tested in `books.test.ts`.
+- [x] In the modal: a **search box** (title/author substring) + **category filter chips**. Reuses `ui/Input` + a `cn`-styled chip (Fuse.js not needed for mock data).
+- [x] Clicking a book opens a **Google search in a new tab** (`bookSearchUrl` + `<a target="_blank" rel="noopener noreferrer">`). Real reader is a later upgrade. See [done.md](done.md).
 
 ---
 

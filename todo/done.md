@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-20 — Phase 9 office C: searchable library modal (PR #29)
+
+The library room's bookshelves were decorative; C makes the bookshelf a real interactable.
+
+- [x] **C1 — interactable + modal**: `nearLibrary`/`libraryOpen` + `openLibrary`/`closeLibrary` on `office-store.ts` (mirrors the board panel; opening one panel closes the others; `reset()` clears them). The scene anchors proximity at `BOOKSHELF_POS` → **E** opens a new `LibraryModal` (follows the `boardroom-panel` convention — backdrop, own-Escape, header); keyboard-freeze + HUD `panelOpen` include `libraryOpen`; HUD shows a proximity prompt.
+- [x] **C2 — books data, search & filter**: mock `Book` data in `lib/office/books.ts` across five categories + pure helpers (`bookCategories`, `filterBooks` by title/author substring + category, `bookSearchUrl`). Modal has a title/author search box + category-filter chips; clicking a book opens a Google search in a new tab (`noopener`).
+- [x] Tests: `books.test.ts` (5 — categories, case-insensitive title/author match, empty query, category+query combine, encoded URL); `office-store.test.ts` still green. Verified `web:typecheck --force` + `web:lint` green, both suites pass from the primary checkout; `moon ci` green on PR #29. README updated.
+
 ## 2026-06-20 — Phase 10 B1 (partial): gateway controller boundary coverage (PR #28)
 
 The gateway HTTP boundary was thinly tested (2 of 27 controllers). Established the pattern + covered the highest-value boundaries; the remaining controllers are a follow-up (B1 stays ◐ partial).
