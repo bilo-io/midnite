@@ -3,7 +3,8 @@
 A walkable, zoned office. The **player** (a human avatar) roams while each **live
 midnite agent** (gateway session) appears as a little **robot**: working agents sit
 at **hot desks** (walk up to call/message them), idle agents chill in the **lounge**
-(TV + console + couches), and a walled **board room** is the **projects hub** — walk
+(TV + console + couches), a **kitchenette** corner lets you take a coffee break, and a walled
+**board room** is the **projects hub** — walk
 up to open the live project list and manage any project. Everything updates in real time as agents start, change
 status, and finish — and robots walk between the lounge and a desk when their status
 flips.
@@ -23,14 +24,18 @@ app/(main)/office/page.tsx
 ```
 
 **Zones** ([`lib/office/layout.ts`](../../lib/office/layout.ts) — Phaser-free floor plan): the left
-half is open-plan **hot desks** (work) over a **lounge** (TV + console + coffee station); the right
+half is open-plan **hot desks** (work) over a **lounge** (TV + console + couches) with a **kitchenette**
+nook in the bottom-left corner (counter + stool + coffee machine); the right
 half is a walled **board room** (doorway in the partition). `office-scene.ts` seats **working** agents
 (`status !== 'idle'`) at desks and **idle** agents on lounge couches/armchairs, where they **sleep**
 (animated `zzz`) or **game** (`▶`, facing the TV) split by id. When an agent's status flips it **walks**
 there — 4-directional A* over a walkability grid (`blockedGrid()`) so it routes around furniture/walls.
+(A standalone walled kitchen comes with the multi-room layout, Phase 9 A1.)
 
 **Controls:** WASD/arrows or **click-to-walk** (the player pathfinds to the clicked tile; manual input
-cancels it). **E** interacts with the nearest desk agent or the board-room whiteboard.
+cancels it). **E** interacts with the nearest desk agent, the board-room whiteboard, or the coffee
+machine — at the kitchenette **E** toggles an "on a break" state (a `☕ On a break` badge in the HUD +
+a ☕ over the player). The break flag is local/mock for now (Phase 9 E1).
 
 **Art:** sprites/tiles are **generated procedurally** in [`lib/office/textures.ts`](../../lib/office/textures.ts)
 — a tiled floor, brick walls, desks/monitors, couches, a TV + console, a conference table, a documents
