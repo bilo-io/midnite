@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-20 — Phase 9 office G: Agent pool (pool, water & swims) (PR #21)
+
+Furnished the re-themed Agent pool room into a real poolside leisure space.
+
+- [x] **G1 — pool & poolside**: tiled pool basin (`POOL` rect) + coping edge + **sun loungers** along the deck (`LOUNGE_SEATS` are now loungers) + poolside palms. Basin is **non-walkable** — in `blockedGrid()` (agents route around) + a static body so the player collides; new `water`/`lounger` textures.
+- [x] **G2 — animated water**: the water `TileSprite` scrolls each frame for a gentle ambient shimmer.
+- [x] **G3 — lounging & occasional swims**: idle agents lie on loungers (`zzz`); a periodic timer occasionally sends one swimming a couple of lanes through the basin (trailing a wake ripple), then climbing out — interrupted cleanly if it starts working. The old lounge sleep/**game** split was dropped (gaming relocates to the communal area in Theme E).
+- [x] Relocated the TV + console into the **communal area** as decor (Phase 9 E3 super-sizes + wires the console). `layout.test.ts` gains pool coverage (basin blocked + room still navigable around it); verified `web:typecheck --force` + `web:lint`; `moon ci` green on PR #21.
+
 ## 2026-06-20 — Phase 9 office A1 re-theme: Agent pool + Communal area (PR #20)
 
 Re-themed the two bottom rooms so the Pool (G) and Communal (E) themes have named, fittingly-coloured rooms to build on.

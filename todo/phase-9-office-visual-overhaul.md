@@ -132,20 +132,20 @@ A doorway leads to a **corner office** that swaps to a **completely separate sce
 
 ---
 
-## Theme G — Agent pool (was lounge) → swimming pool
+## Theme G — Agent pool (was lounge) → swimming pool ✅ DONE (2026-06-20, PR #21)
 
 > The **lounge** is re-themed into the **"Agent pool"** (rename in A1) — a poolside leisure space. It's décor + ambient animation (no new modal); the playful payoff is agents lounging and occasionally taking a dip.
 
-### G1. Pool & poolside — **M**
-- [ ] Lay out a **small swimming pool** in the room: a tiled pool basin (aqua/blue tiles, a coping edge) plus a few **sun benches / loungers** along the side. Add the surfaces + props to [`layout.ts`](../packages/web/lib/office/layout.ts); the pool basin is **non-walkable for normal movement** (agents route around it) but allows the swim behaviour in G3.
-- [ ] Poolside **plants** (per B2) — potted palms / greenery framing the loungers.
+### G1. Pool & poolside — **M** — ✅ DONE
+- [x] A tiled pool basin (`POOL` rect in [`layout.ts`](../packages/web/lib/office/layout.ts)) with a coping edge + **sun loungers** along the deck (`LOUNGE_SEATS` are now the loungers). The basin is **non-walkable** — added to `blockedGrid()` (walking agents route around it) + a static body so the player collides; swimmers tween through it. New `water`/`lounger` textures.
+- [x] Poolside **palms** framing the deck (added to `PLANTS`).
 
-### G2. Animated water — **S–M**
-- [ ] The pool water is **slightly animated** — a gentle looping shimmer/ripple (Phaser tween over a tiled water sprite, a small TileSprite scroll, or a light shader). Subtle and ambient, not flashy; just enough to read as moving water.
+### G2. Animated water — **S–M** — ✅ DONE
+- [x] The water `TileSprite` gently scrolls each frame (`update()`), a subtle ambient shimmer.
 
-### G3. Lounging & occasional swims — **M**
-- [ ] Some agents **sit on the sun benches** (reuse Phase 8's seated logic — assign a few poolside loungers as seats, like desks/stools).
-- [ ] Occasionally an agent **swims a lane**: it enters the pool and traverses back and forth along a lane for a while, then climbs out. The **swim animation + water disturbance just needs to be convincing enough** — a swimming pose/bob + a small wake ripple following the swimmer, on a timer (akin to the Phase 8 idle sleep/walk behaviours). Not every agent, not constantly — an occasional flourish.
+### G3. Lounging & occasional swims — **M** — ✅ DONE
+- [x] Idle agents lie on the loungers (animated `zzz`; the old lounge sleep/**game** split was dropped — gaming moves to the communal area, Theme E).
+- [x] A periodic timer occasionally sends **one** lounger swimming a couple of lanes through the basin — trailing a wake ripple — then climbing back out (interrupted cleanly if it starts working). Not every agent, not constantly. See [done.md](done.md).
 
 ## Files this phase touches (map)
 
