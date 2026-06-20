@@ -1,124 +1,173 @@
 /**
- * The office floor plan (Phase 8). Phaser-free data only — the scene reads this to
- * build the room, place furniture, and assign agents to seats; nothing here
- * imports Phaser.
+ * The office floor plan (Phase 9 A1 — multi-room). Phaser-free data only: the
+ * scene reads this to build the rooms, place furniture, and assign agents to
+ * seats; nothing here imports Phaser.
  *
- * Three zones share one room. The left half is open-plan: **hot desks** (work) up
- * top and a **lounge** (TV + console + couches) below, with a **kitchenette** nook
- * in the bottom-left corner. The right half is a walled **board room** (a doorway
- * in the partition) with a conference table and a documents whiteboard.
+ * Six walled **rooms** share one 34×22 grid, connected by doorways into a 3×2
+ * arrangement — a top band (work · board · library) over a bottom band
+ * (lounge · kitchen · corner office), with 2-tile doorways in every shared wall
+ * so the whole map is one connected walkable space:
  *
- *   - Working agents (running / waiting / completed) sit at hot desks → interactable.
- *   - Idle agents chill in the lounge.
- *   - Walking up to the whiteboard opens the board-room projects panel.
- *   - Walking up to the coffee machine + pressing E toggles a coffee break.
+ *   ┌── WORK ──┬── BOARD ──┬── LIBRARY ──┐   (top band, rows 1–9)
+ *   │  desks   │  table    │  shelves    │
+ *   ├──────────┼───────────┼─────────────┤   (wall row 10, 3 doorways down)
+ *   │  LOUNGE  │  KITCHEN  │  CORNER →   │   (bottom band, rows 11–20)
+ *   └──────────┴───────────┴─────────────┘
+ *
+ *   - Working agents (running / waiting / completed) sit at WORK hot desks → interactable.
+ *   - Idle agents chill in the LOUNGE.
+ *   - Walking up to the BOARD whiteboard opens the projects panel.
+ *   - Walking up to the KITCHEN coffee machine + pressing E toggles a coffee break.
+ *   - LIBRARY holds bookshelves (the searchable library is Phase 9 C).
+ *   - CORNER OFFICE is a doorway to a private scene (Phase 9 F) — a door + label for now.
+ *
+ * Each room carries its own palette (floor tint + accent) — see lib/office/theme.ts.
  */
 
 import { OFFICE_COLS, OFFICE_ROWS } from './dimensions';
 
 export type TilePos = { x: number; y: number };
 
-// '#' wall, '.' floor. 24×16. Partition at col 13 (doorway at rows 7–8) walls off
-// the board room (cols 14–22) from the open-plan left side (cols 1–12).
+export type RoomId = 'work' | 'board' | 'library' | 'lounge' | 'kitchen' | 'corner';
+
+/** A walled room: its interior tile rect + a label and where to anchor it. */
+export interface OfficeRoom {
+  id: RoomId;
+  label: string;
+  /** Interior rect (tiles), excluding the surrounding walls. */
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  /** Label anchor (tile coords) — sits on the room's top wall. */
+  lx: number;
+  ly: number;
+}
+
+// '#' wall, '.' floor. 34×22. Internal walls at cols 12 & 22 and row 10 split the
+// space into six rooms; 2-tile doorways are punched in each shared wall:
+//   • rows 4–5 open cols 12 & 22 (top band: work↔board↔library)
+//   • rows 15–16 open cols 12 & 22 (bottom band: lounge↔kitchen↔corner)
+//   • row 10 open at cols 5–6, 16–17, 26–27 (top band ↕ bottom band)
 export const LAYOUT: readonly string[] = [
-  '########################',
-  '#............#.........#',
-  '#............#.........#',
-  '#............#.........#',
-  '#............#.........#',
-  '#............#.........#',
-  '#............#.........#',
-  '#......................#',
-  '#......................#',
-  '#............#.........#',
-  '#............#.........#',
-  '#............#.........#',
-  '#............#.........#',
-  '#............#.........#',
-  '#............#.........#',
-  '########################',
+  '##################################',
+  '#...........#.........#..........#',
+  '#...........#.........#..........#',
+  '#...........#.........#..........#',
+  '#................................#',
+  '#................................#',
+  '#...........#.........#..........#',
+  '#...........#.........#..........#',
+  '#...........#.........#..........#',
+  '#...........#.........#..........#',
+  '#####..#########..########..######',
+  '#...........#.........#..........#',
+  '#...........#.........#..........#',
+  '#...........#.........#..........#',
+  '#...........#.........#..........#',
+  '#................................#',
+  '#................................#',
+  '#...........#.........#..........#',
+  '#...........#.........#..........#',
+  '#...........#.........#..........#',
+  '#...........#.........#..........#',
+  '##################################',
 ];
 
-/** Hot desks (work zone), in fill order — two rows of three. */
+/** The six rooms (interior rects) with their label anchors (on the top wall). */
+export const ROOMS: readonly OfficeRoom[] = [
+  { id: 'work', label: 'HOT DESKS', x: 1, y: 1, w: 11, h: 9, lx: 6.5, ly: 0.8 },
+  { id: 'board', label: 'BOARD ROOM', x: 13, y: 1, w: 9, h: 9, lx: 17, ly: 0.8 },
+  { id: 'library', label: 'LIBRARY', x: 23, y: 1, w: 10, h: 9, lx: 27.5, ly: 0.8 },
+  { id: 'lounge', label: 'LOUNGE', x: 1, y: 11, w: 11, h: 10, lx: 6.5, ly: 10.8 },
+  { id: 'kitchen', label: 'KITCHEN', x: 13, y: 11, w: 9, h: 10, lx: 17, ly: 10.8 },
+  { id: 'corner', label: 'CORNER OFFICE', x: 23, y: 11, w: 10, h: 10, lx: 27.5, ly: 10.8 },
+];
+
+/** Hot desks (WORK), in fill order — two rows of three. */
 export const DESK_SEATS: readonly TilePos[] = [
   { x: 3, y: 2 },
-  { x: 7, y: 2 },
-  { x: 11, y: 2 },
-  { x: 3, y: 5 },
-  { x: 7, y: 5 },
-  { x: 11, y: 5 },
+  { x: 6, y: 2 },
+  { x: 9, y: 2 },
+  { x: 3, y: 6 },
+  { x: 6, y: 6 },
+  { x: 9, y: 6 },
 ];
 
 /** Lounge seats (idle agents), in fill order — a couch row, then an armchair row. */
 export const LOUNGE_SEATS: readonly TilePos[] = [
-  { x: 3, y: 10 },
-  { x: 7, y: 10 },
-  { x: 11, y: 10 },
-  { x: 3, y: 12 },
-  { x: 7, y: 12 },
-  { x: 11, y: 12 },
+  { x: 3, y: 13 },
+  { x: 6, y: 13 },
+  { x: 9, y: 13 },
+  { x: 3, y: 17 },
+  { x: 6, y: 17 },
+  { x: 9, y: 17 },
 ];
 
 /** Couches behind the upper lounge seats (one per seat, centred under it). */
 export const COUCHES: readonly TilePos[] = [
-  { x: 3, y: 10 },
-  { x: 7, y: 10 },
-  { x: 11, y: 10 },
+  { x: 3, y: 13 },
+  { x: 6, y: 13 },
+  { x: 9, y: 13 },
 ];
 
 /** Armchairs behind the lower lounge seats. */
 export const ARMCHAIRS: readonly TilePos[] = [
-  { x: 3, y: 12 },
-  { x: 7, y: 12 },
-  { x: 11, y: 12 },
+  { x: 3, y: 17 },
+  { x: 6, y: 17 },
+  { x: 9, y: 17 },
 ];
 
 /** TV + gaming console along the lounge's lower edge (the seats face them). */
-export const TV_POS: TilePos = { x: 6, y: 14 };
-export const CONSOLE_POS: TilePos = { x: 9, y: 14.2 };
+export const TV_POS: TilePos = { x: 6, y: 20 };
+export const CONSOLE_POS: TilePos = { x: 9, y: 20.1 };
 
 /**
- * Kitchenette in the lounge's bottom-left corner: a coffee machine (the
- * **interactable** — walk up + press E to toggle a coffee break), a counter, and
- * a stool. All pure decor (no colliders). A standalone walled kitchen comes with
- * the multi-room layout (Phase 9 A1); for now it's a corner nook.
+ * Kitchenette in the KITCHEN room: a coffee machine (the **interactable** — walk
+ * up + press E to toggle a coffee break), a counter, and a stool. Pure decor.
  */
-export const COFFEE_POS: TilePos = { x: 1.6, y: 13.5 };
-export const COUNTER_POS: TilePos = { x: 3.1, y: 13.8 };
-export const STOOL_POS: TilePos = { x: 3, y: 12.5 };
+export const COFFEE_POS: TilePos = { x: 14, y: 19 };
+export const COUNTER_POS: TilePos = { x: 15.6, y: 19.2 };
+export const STOOL_POS: TilePos = { x: 15.5, y: 17.7 };
 
-/** Board room: a big conference table + the interactable documents whiteboard. */
-export const TABLE_POS: TilePos = { x: 18, y: 8 };
-export const BOARD_POS: TilePos = { x: 18, y: 1.4 };
+/** Board room: a conference table + the interactable projects whiteboard. */
+export const TABLE_POS: TilePos = { x: 17, y: 7 };
+export const BOARD_POS: TilePos = { x: 17, y: 1.4 };
 /** Decorative chairs around the conference table. */
 export const TABLE_CHAIRS: readonly TilePos[] = [
   { x: 15, y: 6 },
-  { x: 18, y: 5 },
-  { x: 21, y: 6 },
-  { x: 15, y: 10 },
-  { x: 18, y: 11 },
-  { x: 21, y: 10 },
+  { x: 19, y: 6 },
+  { x: 14, y: 7 },
+  { x: 20, y: 7 },
+  { x: 15, y: 8 },
+  { x: 19, y: 8 },
 ];
 
-/** Potted plants for a bit of life. */
+/**
+ * Library: bookshelves lining the walls + a reading chair. The bookshelf the
+ * player walks up to (the Phase 9 C interactable anchor) is `BOOKSHELF_POS`.
+ */
+export const BOOKSHELF_POS: TilePos = { x: 27, y: 1.5 };
+export const BOOKSHELVES: readonly TilePos[] = [
+  { x: 25, y: 1 },
+  { x: 27, y: 1 },
+  { x: 29, y: 1 },
+  { x: 31, y: 1 },
+  { x: 32, y: 4 },
+  { x: 32, y: 6 },
+];
+export const READING_CHAIR: TilePos = { x: 27, y: 6 };
+
+/** Corner office: a door the player will step through (Phase 9 F). */
+export const DOOR_POS: TilePos = { x: 27, y: 20 };
+
+/** Potted plants for a bit of life, one per room corner. */
 export const PLANTS: readonly TilePos[] = [
-  { x: 1.4, y: 1.4 },
-  { x: 11.6, y: 13.6 },
-  { x: 21.4, y: 13.6 },
-];
-
-/** Floor rugs (tile-rect regions): [x, y, w, h] in tiles, decorative. */
-export const RUGS: readonly { x: number; y: number; w: number; h: number; color: number }[] = [
-  { x: 2, y: 9, w: 10, h: 4, color: 0x3b4252 }, // lounge
-  { x: 15, y: 5, w: 7, h: 6, color: 0x2f3a4a }, // board room
-];
-
-/** Zone labels: text + tile anchor (top-centre of each zone). */
-export const ZONE_LABELS: readonly { text: string; x: number; y: number }[] = [
-  { text: 'HOT DESKS', x: 6.5, y: 0.7 },
-  { text: 'LOUNGE', x: 7.5, y: 8.4 },
-  { text: 'KITCHEN', x: 2.3, y: 11.3 },
-  { text: 'BOARD ROOM', x: 18, y: 0.5 },
+  { x: 1.5, y: 1.5 },
+  { x: 20.5, y: 1.5 },
+  { x: 31.5, y: 8.5 },
+  { x: 1.5, y: 20 },
+  { x: 31.5, y: 20 },
 ];
 
 export const PLAYER_SPAWN: TilePos = { x: 6, y: 8 };
@@ -143,6 +192,6 @@ export function blockedGrid(): boolean[][] {
   for (const s of LOUNGE_SEATS) block(s.x, s.y); // couches + armchairs share these tiles
   block(TV_POS.x, TV_POS.y);
   block(CONSOLE_POS.x, CONSOLE_POS.y);
-  for (let y = 6; y <= 10; y++) for (let x = 16; x <= 20; x++) block(x, y); // conference table
+  for (let y = 6; y <= 8; y++) for (let x = 16; x <= 18; x++) block(x, y); // conference table
   return grid;
 }
