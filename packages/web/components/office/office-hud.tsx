@@ -33,7 +33,7 @@ export function OfficeHud() {
   return (
     <div className="pointer-events-none absolute inset-0 z-20">
       <div className="absolute left-3 top-3 rounded-md border border-border/60 bg-background/70 px-2.5 py-1.5 text-[11px] text-muted-foreground backdrop-blur">
-        <Key>WASD</Key> / arrows to move · <Key>E</Key> to interact
+        <Key>WASD</Key> / arrows or click to move · <Key>E</Key> to interact
       </div>
 
       <div className="absolute right-3 top-3 rounded-md border border-border/60 bg-background/70 px-2.5 py-1.5 text-[11px] text-muted-foreground backdrop-blur">

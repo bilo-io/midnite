@@ -75,6 +75,8 @@ export const ARMCHAIRS: readonly TilePos[] = [
 /** TV + gaming console along the lounge's lower edge (the seats face them). */
 export const TV_POS: TilePos = { x: 6, y: 14 };
 export const CONSOLE_POS: TilePos = { x: 9, y: 14.2 };
+/** A coffee station in the lounge corner (pure decor — no collider). */
+export const COFFEE_POS: TilePos = { x: 1.6, y: 13.5 };
 
 /** Board room: a big conference table + the interactable documents whiteboard. */
 export const TABLE_POS: TilePos = { x: 18, y: 8 };

@@ -27,6 +27,7 @@ export const TEX = {
   table: 'office-table',
   board: 'office-board',
   plant: 'office-plant',
+  coffee: 'office-coffee',
 } as const;
 
 export type Dir = 'down' | 'up' | 'side';
@@ -276,6 +277,15 @@ export function ensureOfficeTextures(scene: Phaser.Scene): void {
     rect(g, 7, 7, 24, 3, 0x64748b); // title line
     g.fillStyle(0x94a3b8, 1);
     for (let i = 0; i < 4; i++) g.fillRect(7, 15 + i * 5, 40 - i * 4, 1); // text lines
+  });
+  make(TEX.coffee, 20, 26, (g) => {
+    rect(g, 1, 14, 18, 12, 0x3a4150); // counter cabinet
+    rect(g, 1, 14, 18, 2, 0x4b5563); // counter top
+    rect(g, 3, 2, 14, 11, 0x1f2937); // machine body
+    rect(g, 5, 4, 10, 4, 0x111827); // display
+    rect(g, 6, 5, 3, 1, 0x34d399); // ready light
+    rect(g, 8, 9, 4, 3, 0x6b4f3a); // mug
+    rect(g, 9, 11, 6, 1, 0x0b0f17); // drip
   });
   make(TEX.plant, 18, 24, (g) => {
     rect(g, 6, 16, 6, 8, 0x6b4f3a); // pot

@@ -4,7 +4,7 @@
 
 > Status legend: boxes start unchecked; themes are independent. **Only the rendering layer changes** — the desk-slot model, movement/collision, proximity detection, the Zustand ↔ HUD bridge, and the live-data hook ([`use-office-agents.ts`](../packages/web/components/office/use-office-agents.ts)) all stay as-is.
 
-> **Progress (2026-06-20):** procedural pixel-art + zones + interaction landed — ✅ A2 (human + robot sprites, walk cycle), B1 (theme colours), B3 (fixed-aspect layout), zones (hot desks / lounge / board room), D1 (Call → live terminal, Messages → transcript), D3 (board-room document viewer); ◐ A3 / B2 / C1 / C3 (partial). **Open:** A1 external Tiled/LimeZu pack, B2 day-night + camera, C2 per-tool glow, D2 click-to-walk, E (multiplayer).
+> **Progress (2026-06-20):** procedural pixel-art + zones + interaction + presence landed — ✅ A2 (human + robot sprites, walk cycle), B1 (theme colours), B3 (fixed-aspect layout), C3 (grid pathfinding), zones (hot desks / lounge / board room), D1 (Call → live terminal, Messages → transcript), D3 (board-room document viewer); ◐ A3 (rich decor; desk variety left), C1 (status bubbles + idle sleep/game; body anims left), D2 (click-to-walk; nameplates/minimap left). **Open (need external assets / new data / out of scope):** A1 external Tiled/LimeZu pack, B2 day-night + camera/scrolling map, C2 per-tool glow (no current-tool field on the session), E (multiplayer).
 
 ---
 
@@ -30,8 +30,8 @@ The headline: swap shapes for real sprites + tiles.
 - [x] Per-agent variety: deterministic identity tint by agent id (`agentTint`) so desks are distinguishable at a glance; the player has its own tint.
 
 ### A3. Furniture & decor — **S** — ◐ partial
-- [x] Desks, monitors, chairs (procedural). 
-- [ ] Desk variety, plants, rugs, a coffee corner — cosmetic tiles to make the room feel inhabited (best with the A1 pack).
+- [x] Desks, monitors, chairs, couches, armchairs, TV, gaming console, conference table, whiteboard, rugs, plants, and a **coffee station** in the lounge corner (all procedural).
+- [ ] Desk variety + more clutter — best with the A1 asset pack.
 
 ---
 
@@ -56,7 +56,8 @@ The headline: swap shapes for real sprites + tiles.
 Make agents *look* like they're doing what their status says.
 
 ### C1. Status-driven presence — **M** — ◐ partial (2026-06-20)
-- [x] Each seated agent shows a status **speech bubble** above their head driven off `OfficeAgent.status` — `running` → `···`, `waiting` → `?`, `idle` → `z`, `completed` → `✓` — coloured by the shared status tint and gently bobbing (`STATUS_BUBBLE` in [`office-scene.ts`](../packages/web/components/office/scenes/office-scene.ts)).
+- [x] Each agent shows a status **speech bubble** driven off `OfficeAgent.status` — `running` → `···`, `waiting` → `?`, `completed` → `✓` — coloured by the shared status tint (`STATUS_BUBBLE` in [`office-scene.ts`](../packages/web/components/office/scenes/office-scene.ts)).
+- [x] **Idle agents sleep or game** in the lounge: split deterministically by id (`isGamer`) — sleepers show an animated `z`/`zz`/`zzz` (timer-driven, `setActivity`/`tickIdleBubbles`); gamers show `▶` and face the TV.
 - [ ] Richer per-status **body** animations (typing pose, a real celebrate-then-settle) — needs the multi-frame character sheet from A1/A2.
 
 ### C2. Activity indicators — **S–M**
@@ -75,8 +76,9 @@ Make agents *look* like they're doing what their status says.
 - [x] [`office-hud.tsx`](../packages/web/components/office/office-hud.tsx) is wired to the gateway (no more mock). **Call** → the agent's live session terminal (`SessionTerminalModal`, enabled while running/waiting); **Messages** → its transcript (`SessionTranscriptModal`, fetched via `getSessionTranscript`). Reuses the Sessions-page modals; `OfficeAgent` now carries its `SessionSummary`. The transcript modal is portalled to `<body>` so the stage's `overflow-hidden` / a persisted page-reveal transform can't clip it.
 - Note: there's no one-off "send a prompt" gateway API — the terminal is the live interaction channel, so Call opens it rather than a fire-and-forget message box.
 
-### D2. Navigation niceties — **S**
-- [ ] Click-to-walk (pointer → grid pathfinding to the target desk); hover nameplates/tooltips; a small minimap once the map grows.
+### D2. Navigation niceties — **S** — ◐ partial (2026-06-20)
+- [x] **Click-to-walk** — clicking the floor pathfinds the player there (reuses the A* + a velocity-steered waypoint follower; manual WASD cancels it, and a deadline aborts if it gets nudged into furniture). `onPointerDown`/`movePlayer` in [`office-scene.ts`](../packages/web/components/office/scenes/office-scene.ts).
+- [ ] Hover nameplates/tooltips; a small minimap once the map grows.
 
 ### D3. Board room — plans & documents — **M** — ✅ DONE (2026-06-20)
 - [x] A walled board room (left-open / right-walled floor plan in [`layout.ts`](../packages/web/lib/office/layout.ts)) with a conference table and a documents **whiteboard** the player walks up to (E). Opens [`boardroom-panel.tsx`](../packages/web/components/office/boardroom-panel.tsx): a **project filter** (`Select`) listing that project's plan + scoped memories; clicking opens a read-only `MarkdownPreview` modal ([`document-modal.tsx`](../packages/web/components/office/document-modal.tsx)). Document assembly is pure + tested ([`documents.ts`](../packages/web/lib/office/documents.ts)).

@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-20 — Phase 8 office: idle sleep/game (C1), click-to-walk (D2), coffee corner (A3)
+
+Rounded out the achievable rest of Phase 8 (remaining open items need external assets, new session data, or are out of scope).
+
+- [x] **C1 — idle agents sleep or game**: idle lounge agents split deterministically by id (`isGamer`) — sleepers show an animated `z`/`zz`/`zzz` (timer-driven `tickIdleBubbles`/`setActivity`), gamers show `▶` and face the TV. Closes the original "sleep or game" lounge ask.
+- [x] **D2 — click-to-walk**: clicking the floor pathfinds the player there, reusing the A* (`findPath` gained an `openEnds` flag so the player can't end on furniture) + a velocity-steered waypoint follower in `movePlayer`. Manual WASD cancels it; a deadline aborts if it's nudged into furniture (`onPointerDown`/`nearestOpenTile`).
+- [x] **A3 — coffee corner**: a procedural coffee-station texture in the lounge corner (pure decor).
+- [x] Verified: `web:typecheck` / `web:build` (`/office` 4.6 kB) / `web:test` (42 pass).
+- Note: B2 day/night is effectively covered (the office already follows the `time` theme via `resolved`); C2 per-tool glow is blocked (no current-tool field on `SessionSummary`); A1 (external pack) + E (multiplayer) remain out of scope.
+
 ## 2026-06-20 — Phase 8 office C3: grid pathfinding for agent movement
 
 Agents now route around walls + furniture when they walk between the lounge and a hot desk (previously a straight-line tween that could clip).

@@ -6,6 +6,7 @@ import {
   ARMCHAIRS,
   BOARD_POS,
   blockedGrid,
+  COFFEE_POS,
   CONSOLE_POS,
   COUCHES,
   DESK_SEATS,
@@ -67,6 +68,8 @@ type Actor = {
   ty: number;
   walking: boolean;
   tween?: Phaser.Tweens.Tween | Phaser.Tweens.TweenChain;
+  /** Idle lounge agent that's sleeping (vs gaming) — drives the animated zzz. */
+  sleeping: boolean;
 };
 
 class OfficeScene extends Phaser.Scene {
@@ -87,6 +90,11 @@ class OfficeScene extends Phaser.Scene {
   private lastNearby: string | null = null;
   private nearBoardFlag = false;
   private facing: 'down' | 'up' | 'side' = 'down';
+  /** Click-to-walk: pixel waypoints the player is auto-following, or null. */
+  private playerPath: { x: number; y: number }[] | null = null;
+  private playerPathDeadline = 0;
+  /** Animation phase for the sleeping agents' "z / zz / zzz" bubble. */
+  private zzzPhase = 0;
   /** False while a React panel is open — freezes input/movement. */
   private inputEnabled = true;
   /** True between create() and teardown; guards late store/theme callbacks. */
@@ -143,8 +151,12 @@ class OfficeScene extends Phaser.Scene {
 
     this.input.keyboard!.on('keydown-E', this.tryInteract, this);
     this.input.keyboard!.on('keydown-ENTER', this.tryInteract, this);
+    this.input.on('pointerdown', this.onPointerDown, this);
 
     this.alive = true;
+
+    // Animate the sleeping agents' "z / zz / zzz" bubble. Auto-removed on shutdown.
+    this.time.addEvent({ delay: 450, loop: true, callback: this.tickIdleBubbles, callbackScope: this });
 
     this.unsub = useOfficeStore.subscribe((state, prev) => {
       if (!this.alive) return;
@@ -172,21 +184,7 @@ class OfficeScene extends Phaser.Scene {
 
   override update() {
     if (!this.alive) return;
-    if (this.inputEnabled) {
-      const vx = (this.right() ? 1 : 0) - (this.left() ? 1 : 0);
-      const vy = (this.down() ? 1 : 0) - (this.up() ? 1 : 0);
-      if (vx || vy) {
-        const inv = PLAYER_SPEED / Math.hypot(vx, vy);
-        this.body().setVelocity(vx * inv, vy * inv);
-        this.animatePlayer(vx, vy);
-      } else {
-        this.body().setVelocity(0, 0);
-        this.idlePlayer();
-      }
-    } else {
-      this.body().setVelocity(0, 0);
-      this.idlePlayer();
-    }
+    this.movePlayer();
     this.playerShadow.setPosition(this.player.x, this.player.y + TILE * 0.42);
 
     // Keep each actor's shadow + labels glued to its (possibly tweening) sprite.
@@ -252,14 +250,16 @@ class OfficeScene extends Phaser.Scene {
       seen.add(d.agent.id);
       const tx = center(d.seat.x);
       const ty = center(d.seat.y) - SEAT_LIFT;
-      const existing = this.actors.get(d.agent.id);
-      if (!existing) {
-        this.actors.set(d.agent.id, this.createActor(d.agent, tx, ty, d.kind));
+      let actor = this.actors.get(d.agent.id);
+      if (!actor) {
+        actor = this.createActor(d.agent, tx, ty, d.kind);
+        this.actors.set(d.agent.id, actor);
       } else {
-        this.updateActorContent(existing, d.agent);
-        existing.kind = d.kind;
-        if (existing.tx !== tx || existing.ty !== ty) this.walkActor(existing, tx, ty);
+        this.updateActorContent(actor, d.agent);
+        actor.kind = d.kind;
+        if (actor.tx !== tx || actor.ty !== ty) this.walkActor(actor, tx, ty);
       }
+      this.setActivity(actor, d.agent);
     }
 
     for (const [id, actor] of this.actors) {
@@ -301,10 +301,51 @@ class OfficeScene extends Phaser.Scene {
       .setResolution(2)
       .setDepth(11);
 
-    const actor: Actor = { id: agent.id, sprite, shadow, bubble, nameText, statusText, kind, tx, ty, walking: false };
+    const actor: Actor = {
+      id: agent.id,
+      sprite,
+      shadow,
+      bubble,
+      nameText,
+      statusText,
+      kind,
+      tx,
+      ty,
+      walking: false,
+      sleeping: false,
+    };
     this.updateActorContent(actor, agent);
     this.positionActorChrome(actor);
     return actor;
+  }
+
+  /**
+   * Idle agents in the lounge either **sleep** (animated zzz) or **game** (▶),
+   * split deterministically by id; working agents keep their status bubble.
+   */
+  private setActivity(actor: Actor, agent: OfficeAgent) {
+    if (agent.status !== 'idle') {
+      actor.sleeping = false;
+      return;
+    }
+    const gaming = this.isGamer(agent.id);
+    actor.sleeping = !gaming;
+    actor.bubble.setColor(toHex(STATUS_TINT.idle)).setText(gaming ? '▶' : 'z'.repeat(this.zzzPhase + 1));
+  }
+
+  /** Deterministic "is this idle agent gaming (vs sleeping)?" split by id. */
+  private isGamer(id: string) {
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) hash = (hash + id.charCodeAt(i)) >>> 0;
+    return hash % 2 === 0;
+  }
+
+  /** Cycle the sleeping agents' bubble z → zz → zzz. */
+  private tickIdleBubbles() {
+    if (!this.alive) return;
+    this.zzzPhase = (this.zzzPhase + 1) % 3;
+    const z = 'z'.repeat(this.zzzPhase + 1);
+    for (const actor of this.actors.values()) if (actor.sleeping) actor.bubble.setText(z);
   }
 
   private updateActorContent(actor: Actor, agent: OfficeAgent) {
@@ -378,10 +419,18 @@ class OfficeScene extends Phaser.Scene {
    * even when blocked (an agent sits *on* furniture), so the route leaves one
    * seat and arrives at another without cutting through anything between.
    */
-  private findPath(start: { x: number; y: number }, goal: { x: number; y: number }): { x: number; y: number }[] {
+  private findPath(
+    start: { x: number; y: number },
+    goal: { x: number; y: number },
+    openEnds = true,
+  ): { x: number; y: number }[] {
     const key = (x: number, y: number) => y * COLS + x;
     const passable = (x: number, y: number) =>
-      y >= 0 && y < ROWS && x >= 0 && x < COLS && (!this.blocked[y]![x] || (x === goal.x && y === goal.y));
+      y >= 0 &&
+      y < ROWS &&
+      x >= 0 &&
+      x < COLS &&
+      (!this.blocked[y]![x] || (openEnds && x === goal.x && y === goal.y));
 
     const startK = key(start.x, start.y);
     const goalK = key(goal.x, goal.y);
@@ -451,6 +500,83 @@ class OfficeScene extends Phaser.Scene {
   }
 
   // ---- player ------------------------------------------------------------
+
+  /** Player movement: manual WASD/arrows, else follow a click-to-walk path. */
+  private movePlayer() {
+    if (!this.inputEnabled) {
+      this.playerPath = null;
+      this.body().setVelocity(0, 0);
+      this.idlePlayer();
+      return;
+    }
+
+    const vx = (this.right() ? 1 : 0) - (this.left() ? 1 : 0);
+    const vy = (this.down() ? 1 : 0) - (this.up() ? 1 : 0);
+    if (vx || vy) {
+      this.playerPath = null; // manual input cancels click-to-walk
+      const inv = PLAYER_SPEED / Math.hypot(vx, vy);
+      this.body().setVelocity(vx * inv, vy * inv);
+      this.animatePlayer(vx, vy);
+      return;
+    }
+
+    if (this.playerPath?.length) {
+      if (this.time.now > this.playerPathDeadline) {
+        this.playerPath = null; // gave up (e.g. nudged into furniture)
+      } else {
+        const wp = this.playerPath[0]!;
+        const dx = wp.x - this.player.x;
+        const dy = wp.y - this.player.y;
+        const d = Math.hypot(dx, dy);
+        if (d < 4) {
+          this.playerPath.shift();
+        } else {
+          const inv = PLAYER_SPEED / d;
+          this.body().setVelocity(dx * inv, dy * inv);
+          this.animatePlayer(dx, dy);
+          return;
+        }
+      }
+    }
+
+    this.body().setVelocity(0, 0);
+    this.idlePlayer();
+  }
+
+  /** Click-to-walk: pathfind the player to the clicked (walkable) tile. */
+  private onPointerDown(pointer: Phaser.Input.Pointer) {
+    if (!this.alive || !this.inputEnabled) return;
+    const goal = this.nearestOpenTile(this.tileOf(pointer.worldX, pointer.worldY));
+    if (!goal) return;
+    const start = this.tileOf(this.player.x, this.player.y);
+    const tiles = this.findPath(start, goal, false);
+    if (tiles.length < 2) {
+      this.playerPath = null;
+      return;
+    }
+    const pts = tiles.slice(1).map((t) => ({ x: center(t.x), y: center(t.y) }));
+    this.playerPath = pts;
+    // Bail out if we don't arrive within ~2× the expected travel time (stuck).
+    this.playerPathDeadline = this.time.now + (pts.length * TILE * 2 * 1000) / PLAYER_SPEED + 600;
+  }
+
+  private isOpen(x: number, y: number) {
+    return y >= 0 && y < ROWS && x >= 0 && x < COLS && !this.blocked[y]![x];
+  }
+
+  /** The clicked tile if walkable, else the nearest walkable tile within reach. */
+  private nearestOpenTile(t: { x: number; y: number }): { x: number; y: number } | null {
+    if (this.isOpen(t.x, t.y)) return t;
+    for (let r = 1; r <= 3; r++) {
+      for (let dy = -r; dy <= r; dy++) {
+        for (let dx = -r; dx <= r; dx++) {
+          if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+          if (this.isOpen(t.x + dx, t.y + dy)) return { x: t.x + dx, y: t.y + dy };
+        }
+      }
+    }
+    return null;
+  }
 
   private animatePlayer(vx: number, vy: number) {
     if (Math.abs(vx) > Math.abs(vy)) {
@@ -528,6 +654,7 @@ class OfficeScene extends Phaser.Scene {
     for (const a of ARMCHAIRS) this.solids.push(this.staticDecor(a, TEX.armchair, 2));
     this.solids.push(this.staticDecor(TV_POS, TEX.tv, 5));
     this.add.image(center(CONSOLE_POS.x), center(CONSOLE_POS.y), TEX.console).setDepth(5);
+    this.add.image(center(COFFEE_POS.x), center(COFFEE_POS.y), TEX.coffee).setDepth(3); // corner decor
   }
 
   private buildBoardroom() {
