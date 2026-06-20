@@ -36,12 +36,12 @@ export interface RoomStyle {
 }
 
 export const ROOM_STYLES: Record<RoomId, RoomStyle> = {
-  work: { floor: 0x3b4252, accent: 0x60a5fa },
-  board: { floor: 0x2f3a4a, accent: 0x38bdf8 },
-  library: { floor: 0x4a3b2a, accent: 0xfbbf24 },
-  lounge: { floor: 0x3b3450, accent: 0xc4b5fd },
-  kitchen: { floor: 0x4a3a30, accent: 0xfca5a5 },
-  corner: { floor: 0x2f4a3a, accent: 0x6ee7b7 },
+  work: { floor: 0x3b4252, accent: 0x60a5fa }, // cool slate / blue
+  board: { floor: 0x2f3a4a, accent: 0x38bdf8 }, // sleek navy / sky
+  library: { floor: 0x4a3b2a, accent: 0xfbbf24 }, // bookish warm brown / amber
+  pool: { floor: 0x1d4e5f, accent: 0x22d3ee }, // tiled aqua / cyan
+  communal: { floor: 0x4a3528, accent: 0xfb923c }, // cosy living-room / warm orange
+  corner: { floor: 0x2f4a3a, accent: 0x6ee7b7 }, // private green
 };
 
 /** Decorative colours that read well on both themes — kept constant. */

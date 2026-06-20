@@ -5,21 +5,25 @@
  *
  * Six walled **rooms** share one 34×22 grid, connected by doorways into a 3×2
  * arrangement — a top band (work · board · library) over a bottom band
- * (lounge · kitchen · corner office), with 2-tile doorways in every shared wall
- * so the whole map is one connected walkable space:
+ * (agent pool · communal area · corner office), with 2-tile doorways in every
+ * shared wall so the whole map is one connected walkable space:
  *
  *   ┌── WORK ──┬── BOARD ──┬── LIBRARY ──┐   (top band, rows 1–9)
  *   │  desks   │  table    │  shelves    │
  *   ├──────────┼───────────┼─────────────┤   (wall row 10, 3 doorways down)
- *   │  LOUNGE  │  KITCHEN  │  CORNER →   │   (bottom band, rows 11–20)
+ *   │   POOL   │ COMMUNAL  │  CORNER →   │   (bottom band, rows 11–20)
  *   └──────────┴───────────┴─────────────┘
  *
  *   - Working agents (running / waiting / completed) sit at WORK hot desks → interactable.
- *   - Idle agents chill in the LOUNGE.
+ *   - Idle agents lounge in the AGENT POOL (poolside leisure — pool + swims land in Phase 9 G).
  *   - Walking up to the BOARD whiteboard opens the projects panel.
- *   - Walking up to the KITCHEN coffee machine + pressing E toggles a coffee break.
+ *   - The COMMUNAL AREA keeps the coffee break (E to toggle); couches + gaming corner land in Phase 9 E.
  *   - LIBRARY holds bookshelves (the searchable library is Phase 9 C).
  *   - CORNER OFFICE is a doorway to a private scene (Phase 9 F) — a door + label for now.
+ *
+ * NOTE: this slice re-themes the two bottom rooms (ids + labels + palette) so the
+ * Pool (G) and Communal (E) themes can build on them; the actual pool basin /
+ * lounge furniture / super-sized TV still live where Phase 8 put them until then.
  *
  * Each room carries its own palette (floor tint + accent) — see lib/office/theme.ts.
  */
@@ -28,7 +32,7 @@ import { OFFICE_COLS, OFFICE_ROWS } from './dimensions';
 
 export type TilePos = { x: number; y: number };
 
-export type RoomId = 'work' | 'board' | 'library' | 'lounge' | 'kitchen' | 'corner';
+export type RoomId = 'work' | 'board' | 'library' | 'pool' | 'communal' | 'corner';
 
 /** A walled room: its interior tile rect + a label and where to anchor it. */
 export interface OfficeRoom {
@@ -79,8 +83,8 @@ export const ROOMS: readonly OfficeRoom[] = [
   { id: 'work', label: 'HOT DESKS', x: 1, y: 1, w: 11, h: 9, lx: 6.5, ly: 0.8 },
   { id: 'board', label: 'BOARD ROOM', x: 13, y: 1, w: 9, h: 9, lx: 17, ly: 0.8 },
   { id: 'library', label: 'LIBRARY', x: 23, y: 1, w: 10, h: 9, lx: 27.5, ly: 0.8 },
-  { id: 'lounge', label: 'LOUNGE', x: 1, y: 11, w: 11, h: 10, lx: 6.5, ly: 10.8 },
-  { id: 'kitchen', label: 'KITCHEN', x: 13, y: 11, w: 9, h: 10, lx: 17, ly: 10.8 },
+  { id: 'pool', label: 'AGENT POOL', x: 1, y: 11, w: 11, h: 10, lx: 6.5, ly: 10.8 },
+  { id: 'communal', label: 'COMMUNAL', x: 13, y: 11, w: 9, h: 10, lx: 17, ly: 10.8 },
   { id: 'corner', label: 'CORNER OFFICE', x: 23, y: 11, w: 10, h: 10, lx: 27.5, ly: 10.8 },
 ];
 

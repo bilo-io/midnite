@@ -29,11 +29,12 @@ import { buildOfficePalette, ROOM_STYLES, type OfficePalette } from '@/lib/offic
 import { agentTint, charKey, ensureOfficeAnims, ensureOfficeTextures, TEX, walkAnim } from '@/lib/office/textures';
 
 // Phase 9 office: a sprite-based, multi-room floor plan (work · board · library
-// over lounge · kitchen · corner office, connected by doorways — see layout.ts).
-// Working agents (robots) sit at WORK hot desks (interactable); idle agents chill
-// in the LOUNGE; the BOARD whiteboard opens the projects panel; the KITCHEN coffee
-// machine toggles a break. Each room gets its own translucent floor accent + label
-// over the theme-tinted base, so the canvas still follows light/dark.
+// over agent pool · communal area · corner office, connected by doorways — see
+// layout.ts). Working agents (robots) sit at WORK hot desks (interactable); idle
+// agents lounge in the AGENT POOL; the BOARD whiteboard opens the projects panel;
+// the COMMUNAL coffee machine toggles a break. Each room gets its own translucent
+// floor accent + label over the theme-tinted base, so the canvas still follows
+// light/dark.
 // See lib/office/{layout,textures,theme}.ts.
 
 const TILE = OFFICE_TILE;
