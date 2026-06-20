@@ -23,8 +23,8 @@ describe('CommandPalette', () => {
     pressCmdK();
 
     expect(screen.getByRole('dialog', { name: 'Command palette' })).toBeInTheDocument();
-    // 8 toggleable features + 3 always-on destinations (Agents, Profile, Settings).
-    expect(screen.getAllByRole('button')).toHaveLength(11);
+    // 9 toggleable features + 3 always-on destinations (Agents, Profile, Settings).
+    expect(screen.getAllByRole('button')).toHaveLength(12);
   });
 
   it('⌘K toggles it shut again', () => {
