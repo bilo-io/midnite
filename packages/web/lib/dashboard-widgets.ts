@@ -14,6 +14,7 @@ import {
   HeartPulse,
   Inbox,
   LayoutGrid,
+  LineChart,
   Link as LinkIcon,
   ListTodo,
   Loader,
@@ -21,6 +22,7 @@ import {
   NotebookPen,
   Quote,
   Rocket,
+  Star,
   StickyNote,
   TerminalSquare,
   Timer,
@@ -29,7 +31,7 @@ import {
   Workflow,
   type LucideIcon,
 } from 'lucide-react';
-import { NEWS_MAX_COUNT } from '@midnite/shared';
+import { NEWS_MAX_COUNT, type AssetKind } from '@midnite/shared';
 
 // A widget's stable type doubles as its react-grid-layout item key `i`. The one
 // exception is `projects`, which expands to one `proj-N` grid item per recent
@@ -67,7 +69,10 @@ export type WidgetType =
   | 'calendar'
   | 'scratchpad'
   | 'links'
-  | 'finances';
+  | 'finances'
+  // market data
+  | 'market-asset'
+  | 'market-watchlist';
 
 export type WeatherUnits = 'c' | 'f';
 export type ClockMode = 'digital' | 'analogue';
@@ -102,6 +107,15 @@ export type FinanceConfig = {
   showDetail: boolean;
 };
 
+/** A reference to a tradeable asset: ticker (stocks) or CoinGecko coin id (crypto) + display name. */
+export type MarketAsset = { kind: AssetKind; symbol: string; name: string };
+
+/** One single-asset card. An empty `symbol` means "not configured yet" — show the picker. */
+export type MarketAssetConfig = MarketAsset;
+
+/** One watchlist card: a title and a short list of assets (capped at MARKET_WATCHLIST_MAX). */
+export type MarketWatchlistConfig = { title: string; assets: MarketAsset[] };
+
 // Per-widget configuration persisted alongside the instance. Widgets without
 // settings carry no config.
 export type WidgetConfig = {
@@ -114,6 +128,8 @@ export type WidgetConfig = {
   links: { links: QuickLink[] };
   quote: { size: QuoteSize; typingSpeedMs: number; cycleMs: number };
   finances: FinanceConfig;
+  'market-asset': MarketAssetConfig;
+  'market-watchlist': MarketWatchlistConfig;
 };
 
 /** Widget types that carry settings (have a `WidgetConfig` entry). */
@@ -128,8 +144,10 @@ export type WidgetInstance =
   | { type: 'scratchpad'; config: WidgetConfig['scratchpad'] }
   | { type: 'links'; config: WidgetConfig['links'] }
   | { type: 'quote'; config: WidgetConfig['quote'] }
-  // Multi-instance: each finances card carries a stable `id` (others are keyed by type alone).
+  // Multi-instance: each card carries a stable `id` (others are keyed by type alone).
   | { type: 'finances'; id: string; config: WidgetConfig['finances'] }
+  | { type: 'market-asset'; id: string; config: WidgetConfig['market-asset'] }
+  | { type: 'market-watchlist'; id: string; config: WidgetConfig['market-watchlist'] }
   | { type: Exclude<WidgetType, ConfigurableWidget>; config?: undefined };
 
 export type WidgetSize = { w: number; h: number; minW: number; minH: number };
@@ -279,6 +297,20 @@ export const DASHBOARD_WIDGETS: Record<WidgetType, WidgetMeta> = {
     icon: Wallet,
     sizes: mediumSizes,
   },
+
+  // — market data ———————————————————————————————————————————————————
+  'market-asset': {
+    label: 'Stock / Crypto',
+    description: 'Live price, OHLC and a historic area chart for one asset',
+    icon: LineChart,
+    sizes: mediumSizes,
+  },
+  'market-watchlist': {
+    label: 'Watchlist',
+    description: 'A handful of stocks or coins with price and gain/loss',
+    icon: Star,
+    sizes: mediumSizes,
+  },
 };
 
 /**
@@ -286,7 +318,7 @@ export const DASHBOARD_WIDGETS: Record<WidgetType, WidgetMeta> = {
  * widgets (keyed by their type), these carry a per-instance `id` and render under a
  * `<type>-<id>` grid key — mirroring how `projects` fans out to `proj-N`.
  */
-export const MULTI_INSTANCE = new Set<WidgetType>(['finances']);
+export const MULTI_INSTANCE = new Set<WidgetType>(['finances', 'market-asset', 'market-watchlist']);
 
 export const ALL_WIDGET_TYPES = Object.keys(DASHBOARD_WIDGETS) as WidgetType[];
 
@@ -346,6 +378,10 @@ export function newInstance(type: WidgetType): WidgetInstance {
         id: crypto.randomUUID(),
         config: { title: 'Finances', income: [], expenses: [], showDetail: true },
       };
+    case 'market-asset':
+      return { type, id: crypto.randomUUID(), config: { kind: 'crypto', symbol: '', name: '' } };
+    case 'market-watchlist':
+      return { type, id: crypto.randomUUID(), config: { title: 'Watchlist', assets: [] } };
     default:
       return { type } as WidgetInstance;
   }
@@ -373,6 +409,8 @@ export function sizeForKey(key: string, bp: Breakpoint): WidgetSize {
   let type: WidgetType;
   if (key.startsWith('proj-')) type = 'projects';
   else if (key.startsWith('finances-')) type = 'finances';
+  else if (key.startsWith('market-asset-')) type = 'market-asset';
+  else if (key.startsWith('market-watchlist-')) type = 'market-watchlist';
   else type = key as WidgetType;
   return (DASHBOARD_WIDGETS[type] ?? DASHBOARD_WIDGETS.notes).sizes[bp];
 }

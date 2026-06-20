@@ -4,6 +4,14 @@ import {
   NewsResponseSchema,
   WeatherResponseSchema,
   LinkMetadataResponseSchema,
+  AssetSearchResponseSchema,
+  MarketQuoteSchema,
+  MarketHistoryResponseSchema,
+  type AssetKind,
+  type AssetSearchResult,
+  type MarketQuote,
+  type MarketHistoryResponse,
+  type MarketTimeframe,
   MediaListResponseSchema,
   MediaResponseSchema,
   type HackerNewsStory,
@@ -995,6 +1003,28 @@ export async function getWeather(lat: number, lon: number): Promise<WeatherRespo
 export async function getLinkMetadata(url: string): Promise<LinkMetadataResponse> {
   const params = new URLSearchParams({ url });
   return fetchJson(`/metadata?${params.toString()}`, undefined, LinkMetadataResponseSchema);
+}
+
+// ---- Dashboard widgets: Market stocks & crypto (gateway proxy) ----
+
+export async function searchAssets(kind: AssetKind, query: string): Promise<AssetSearchResult[]> {
+  const params = new URLSearchParams({ kind, query });
+  const { results } = await fetchJson(`/market/search?${params.toString()}`, undefined, AssetSearchResponseSchema);
+  return results;
+}
+
+export async function getMarketQuote(kind: AssetKind, symbol: string): Promise<MarketQuote> {
+  const params = new URLSearchParams({ kind, symbol });
+  return fetchJson(`/market/quote?${params.toString()}`, undefined, MarketQuoteSchema);
+}
+
+export async function getMarketHistory(
+  kind: AssetKind,
+  symbol: string,
+  timeframe: MarketTimeframe,
+): Promise<MarketHistoryResponse> {
+  const params = new URLSearchParams({ kind, symbol, timeframe });
+  return fetchJson(`/market/history?${params.toString()}`, undefined, MarketHistoryResponseSchema);
 }
 
 // ---- Media ----

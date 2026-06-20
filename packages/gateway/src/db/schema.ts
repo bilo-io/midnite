@@ -567,3 +567,20 @@ export type RoutineProgressRow = typeof routineProgress.$inferSelect;
 export type RoutineProgressInsert = typeof routineProgress.$inferInsert;
 export type LlmUsageRow = typeof llmUsage.$inferSelect;
 export type LlmUsageInsert = typeof llmUsage.$inferInsert;
+
+// Read-through cache for the market (stock/crypto) proxy. One row per request key
+// (e.g. `quote:crypto:bitcoin`); the service serves the stored payload until it is
+// older than 30 min, then refetches upstream and upserts — saving API credits and
+// surviving gateway restarts. `payload` is the endpoint's JSON response as text.
+export const marketCache = sqliteTable(
+  'market_cache',
+  {
+    key: text('key').primaryKey(),
+    payload: text('payload').notNull(),
+    fetchedAt: text('fetched_at').notNull(),
+  },
+  (t) => ({ fetchedIdx: index('market_cache_fetched_idx').on(t.fetchedAt) }),
+);
+
+export type MarketCacheRow = typeof marketCache.$inferSelect;
+export type MarketCacheInsert = typeof marketCache.$inferInsert;
