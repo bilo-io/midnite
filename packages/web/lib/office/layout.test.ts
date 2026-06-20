@@ -12,12 +12,13 @@ function reachable(start: { x: number; y: number }): Set<string> {
   seen.add(`${start.x},${start.y}`);
   while (queue.length) {
     const { x, y } = queue.shift()!;
-    for (const [nx, ny] of [
+    const neighbours: readonly [number, number][] = [
       [x + 1, y],
       [x - 1, y],
       [x, y + 1],
       [x, y - 1],
-    ]) {
+    ];
+    for (const [nx, ny] of neighbours) {
       const key = `${nx},${ny}`;
       if (isFloor(nx, ny) && !seen.has(key)) {
         seen.add(key);
