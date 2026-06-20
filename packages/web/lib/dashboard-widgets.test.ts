@@ -3,6 +3,8 @@ import {
   ALL_WIDGET_TYPES,
   DASHBOARD_WIDGETS,
   MULTI_INSTANCE,
+  WIDGET_CATEGORIES,
+  groupWidgetCatalog,
   newInstance,
   widgetCatalog,
   type WidgetInstance,
@@ -21,6 +23,46 @@ describe('dashboard widget registry', () => {
   it('includes the shipped widget added in Phase 7', () => {
     expect(ALL_WIDGET_TYPES).toContain('shipped');
     expect(DASHBOARD_WIDGETS.shipped.label).toBe('Shipped');
+  });
+
+  it('includes the system-monitor widget', () => {
+    expect(ALL_WIDGET_TYPES).toContain('system-monitor');
+    expect(DASHBOARD_WIDGETS['system-monitor'].label).toBe('System monitor');
+    expect(DASHBOARD_WIDGETS['system-monitor'].category).toBe('system');
+  });
+
+  it('files every widget under a known category', () => {
+    const known = new Set(WIDGET_CATEGORIES.map((c) => c.key));
+    for (const type of ALL_WIDGET_TYPES) {
+      expect(known, type).toContain(DASHBOARD_WIDGETS[type].category);
+    }
+  });
+});
+
+describe('groupWidgetCatalog', () => {
+  it('buckets the catalogue into category order, dropping empty sections', () => {
+    const groups = groupWidgetCatalog(widgetCatalog([]), '');
+    // Sections preserve WIDGET_CATEGORIES order, and every survivor is non-empty.
+    const order = groups.map((g) => g.category);
+    const expectedOrder = WIDGET_CATEGORIES.map((c) => c.key).filter((k) =>
+      order.includes(k),
+    );
+    expect(order).toEqual(expectedOrder);
+    expect(groups.every((g) => g.items.length > 0)).toBe(true);
+    // Nothing is dropped: grouped items sum to the full catalogue.
+    expect(groups.reduce((n, g) => n + g.items.length, 0)).toBe(ALL_WIDGET_TYPES.length);
+  });
+
+  it('filters by label and description, case-insensitively', () => {
+    const byLabel = groupWidgetCatalog(widgetCatalog([]), 'system monitor');
+    const hits = byLabel.flatMap((g) => g.items.map((i) => i.type));
+    expect(hits).toContain('system-monitor');
+
+    // "memory" only appears in the system-monitor description, not its label.
+    const byDescription = groupWidgetCatalog(widgetCatalog([]), 'MEMORY');
+    expect(byDescription.flatMap((g) => g.items.map((i) => i.type))).toContain('system-monitor');
+
+    expect(groupWidgetCatalog(widgetCatalog([]), 'zzz-no-such-widget')).toEqual([]);
   });
 
   it('catalog lists every widget, marking placed single-instance ones as added', () => {

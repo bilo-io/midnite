@@ -5,6 +5,11 @@ export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs));
 }
 
+/** Clamp `n` to the inclusive range [lo, hi]. */
+export function clamp(n: number, lo: number, hi: number): number {
+  return Math.max(lo, Math.min(hi, n));
+}
+
 /** Compact "just now" / "3m ago" / "2h ago" / "5d ago" for an ISO string or epoch ms. */
 export function relativeTime(input: string | number): string {
   const ms = typeof input === 'number' ? input : new Date(input).getTime();

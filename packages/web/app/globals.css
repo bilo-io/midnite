@@ -744,11 +744,30 @@
   opacity: 1 !important;
 }
 
+/* Staggered entrance: each card fades in after a per-card random delay (set
+   inline, 0.5–2s). Opacity only — the grid positions panels via `transform`, so
+   animating transform here would fight that positioning. */
+@keyframes dashboard-card-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 /* Panel wrapper: fills the grid item's fixed height */
 .dashboard-panel {
   height: 100%;
   display: flex;
   flex-direction: column;
+  animation: dashboard-card-in 0.45s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-panel {
+    animation: none;
+  }
 }
 
 /* Scrollable region for panel content */

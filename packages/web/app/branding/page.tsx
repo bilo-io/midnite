@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Wordmark } from '@/components/wordmark';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
   DEFAULT_WORDMARK_FONT,
@@ -99,12 +100,7 @@ export default function BrandingPage() {
                       className="h-11 w-11 shrink-0 rounded-full object-cover ring-1 ring-border/60"
                     />
                   ) : null}
-                  <span
-                    className="text-4xl leading-none"
-                    style={{ fontFamily: `var(${f.cssVar})` }}
-                  >
-                    midnite
-                  </span>
+                  <Wordmark font={f.key} className={cn('leading-none', f.previewSize)} />
                 </div>
 
                 <span className="text-xs uppercase tracking-wider text-muted-foreground">

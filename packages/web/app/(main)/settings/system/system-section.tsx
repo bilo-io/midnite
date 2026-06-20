@@ -6,6 +6,13 @@ import { Switch } from '@/components/ui/switch';
 import { FEATURES, isFeatureEnabled, type FeatureKey } from '@/lib/features';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY, type AppSettings } from '@/lib/app-settings';
+import { cn } from '@/lib/utils';
+import { EnvironmentAccordion } from './environment-accordion';
+
+// Feature rows that begin a new group — their top divider is drawn a touch more
+// opaque than the regular row separators, echoing the grouping dividers in the
+// side nav (dashboard | projects, tasks | sessions).
+const GROUP_START: ReadonlySet<FeatureKey> = new Set(['projects', 'sessions']);
 
 export function SystemSection() {
   const [settings, setSettings] = useLocalStorage<AppSettings>(
@@ -41,6 +48,8 @@ export function SystemSection() {
 
   return (
     <div className="space-y-4">
+      <EnvironmentAccordion />
+
       <Accordion
         title="Features"
         icon={<Blocks className="h-3.5 w-3.5" />}
@@ -52,11 +61,24 @@ export function SystemSection() {
             Turn sections of the app on or off. Disabled features are hidden from the sidebar; if
             you open one directly you&apos;ll be prompted to re-enable it here.
           </p>
-          <div className="divide-y divide-border/50">
-            {FEATURES.map((f) => {
+          <div>
+            {FEATURES.map((f, i) => {
               const Icon = f.Icon;
               return (
-                <div key={f.key} className="flex items-start justify-between gap-6 py-3">
+                <div
+                  key={f.key}
+                  className={cn(
+                    'flex items-start justify-between gap-6 py-3',
+                    // Top border acts as the inter-row divider (skip the first row).
+                    // Group starts get a higher-contrast line to mimic the side nav.
+                    i > 0 && 'border-t',
+                    // The `border` token is nearly the card colour in dark mode, so a
+                    // group divider needs a lighter base (muted-foreground) to actually
+                    // read — opacity alone on `border` is invisible.
+                    i > 0 &&
+                      (GROUP_START.has(f.key) ? 'border-muted-foreground/30' : 'border-border/50'),
+                  )}
+                >
                   <div className="flex items-start gap-3">
                     <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border/60 bg-card/60 text-muted-foreground">
                       <Icon className="h-4 w-4" />

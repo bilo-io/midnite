@@ -5,6 +5,9 @@ import {
   AGENT_CLI_UNINSTALL_COMMAND,
   AgentCliSchema,
   CliTerminalActionSchema,
+  EnvToolActionSchema,
+  EnvToolIdSchema,
+  envToolMeta,
   type InstallTerminalResponse,
 } from '@midnite/shared';
 import { TerminalService, buildInstallInitCommand } from './terminal.service';
@@ -44,6 +47,40 @@ export class TerminalController {
       initCommand = buildInstallInitCommand(chain);
     }
     const terminalId = this.terminal.createAdHocTerminal(initCommand);
+    return { terminalId };
+  }
+
+  /**
+   * Register a standalone terminal for a system tool (Homebrew, Node, proto,
+   * moon) and return its id. Like the CLI route, the server builds the command
+   * and the user presses Enter to run it.
+   * - `install` / `update`: run the command, then re-probe the version.
+   * - `uninstall`: run the removal command.
+   */
+  @Post('env/:action/:tool')
+  createEnvTerminal(
+    @Param('action') action: string,
+    @Param('tool') tool: string,
+  ): InstallTerminalResponse {
+    const parsedAction = EnvToolActionSchema.safeParse(action);
+    if (!parsedAction.success) throw new BadRequestException(parsedAction.error.message);
+    const parsedTool = EnvToolIdSchema.safeParse(tool);
+    if (!parsedTool.success) throw new BadRequestException(parsedTool.error.message);
+
+    const meta = envToolMeta(parsedTool.data);
+    if (!meta) throw new BadRequestException(`Unknown tool: ${parsedTool.data}`);
+
+    const cmd =
+      parsedAction.data === 'install'
+        ? meta.installCommand
+        : parsedAction.data === 'update'
+          ? meta.updateCommand
+          : meta.uninstallCommand;
+    // install/update confirm the result by re-printing the version; uninstall
+    // just runs.
+    const chain =
+      parsedAction.data === 'uninstall' ? cmd : `${cmd} && ${meta.command} --version`;
+    const terminalId = this.terminal.createAdHocTerminal(buildInstallInitCommand(chain));
     return { terminalId };
   }
 }

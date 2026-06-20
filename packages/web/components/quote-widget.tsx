@@ -10,6 +10,13 @@ import {
 } from '@/lib/dashboard-widgets';
 import { QUOTES } from '@/lib/quotes';
 import { cn } from '@/lib/utils';
+import {
+  WORDMARK_FONTS,
+  wordmarkFontScale,
+  wordmarkFontVar,
+  type WordmarkFontKey,
+} from '@/lib/wordmark-fonts';
+import { Wordmark } from './wordmark';
 import { WidgetCard } from './widget-card';
 
 type QuoteWidgetProps = {
@@ -17,12 +24,15 @@ type QuoteWidgetProps = {
   onConfigChange: (config: WidgetConfig['quote']) => void;
 };
 
-// SignPainter is a script face that reads much smaller than its point size, so
-// the scale is bumped well past normal body sizes (smallest ≈ the old largest).
-const SIZE_CLASS: Record<QuoteSize, string> = {
-  sm: 'text-lg',
-  md: 'text-2xl',
-  lg: 'text-4xl',
+// Base font-size (rem) per size setting, tuned for SignPainter — a script face
+// that reads much smaller than its point size, so the scale sits well past normal
+// body sizes. Other fonts are nudged off this baseline by their per-font `scale`
+// (see wordmark-fonts.ts), mirroring the logo picker: heavier display faces render
+// smaller, Cannet Agency smaller still.
+const SIZE_REM: Record<QuoteSize, number> = {
+  sm: 1.125, // text-lg
+  md: 1.5, // text-2xl
+  lg: 2.25, // text-4xl
 };
 
 const SIZES: QuoteSize[] = ['sm', 'md', 'lg'];
@@ -43,7 +53,7 @@ function nextIndex(current: number): number {
  * interval. Text size, typing speed, and cycle duration live in the settings panel.
  */
 export function QuoteWidget({ config, onConfigChange }: QuoteWidgetProps) {
-  const { size, typingSpeedMs, cycleMs } = config;
+  const { size, typingSpeedMs, cycleMs, font } = config;
   const [editing, setEditing] = useState(false);
   // Deterministic initial index (avoids SSR/hydration mismatch); randomised on mount.
   const [index, setIndex] = useState(0);
@@ -92,6 +102,7 @@ export function QuoteWidget({ config, onConfigChange }: QuoteWidgetProps) {
   }, [typing]);
 
   const setSize = (next: QuoteSize) => onConfigChange({ ...config, size: next });
+  const setFont = (next: WordmarkFontKey) => onConfigChange({ ...config, font: next });
   const setTypingSpeed = (ms: number) =>
     onConfigChange({ ...config, typingSpeedMs: Math.max(0, Math.min(200, Math.round(ms))) });
   const setCycleSeconds = (secs: number) => {
@@ -140,6 +151,40 @@ export function QuoteWidget({ config, onConfigChange }: QuoteWidgetProps) {
               ))}
             </div>
           </div>
+          <div className="flex flex-col gap-2">
+            <span className="text-muted-foreground">Font</span>
+            <div className="grid grid-cols-2 gap-1.5">
+              {WORDMARK_FONTS.map((f) => {
+                const active = f.key === font;
+                return (
+                  <button
+                    key={f.key}
+                    type="button"
+                    onClick={() => setFont(f.key)}
+                    aria-pressed={active}
+                    title={f.label}
+                    className={cn(
+                      'flex min-w-0 flex-col items-center justify-center gap-1 overflow-hidden rounded-md border px-2 py-2 transition-colors',
+                      active
+                        ? 'border-primary bg-primary/10'
+                        : 'border-border/60 hover:bg-accent',
+                    )}
+                  >
+                    <Wordmark
+                      font={f.key}
+                      className={cn(
+                        'text-base leading-none',
+                        active ? 'text-primary' : 'text-foreground',
+                      )}
+                    />
+                    <span className="max-w-full truncate text-[10px] uppercase tracking-wide text-muted-foreground">
+                      {f.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <label className="flex items-center justify-between gap-2">
             <span className="text-muted-foreground">Typing speed</span>
             <input
@@ -169,8 +214,11 @@ export function QuoteWidget({ config, onConfigChange }: QuoteWidgetProps) {
       ) : (
         <>
           <p
-            className={cn('italic leading-snug', SIZE_CLASS[size])}
-            style={{ fontFamily: 'var(--font-signpainter)' }}
+            className="italic leading-snug"
+            style={{
+              fontFamily: `var(${wordmarkFontVar(font)})`,
+              fontSize: `${SIZE_REM[size] * wordmarkFontScale(font)}rem`,
+            }}
           >
             “{quote.text.slice(0, charCount)}
             {typing && (

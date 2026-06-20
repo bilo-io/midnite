@@ -55,6 +55,10 @@ import {
   ProvidersResponseSchema,
   ProviderResponseSchema,
   InstallTerminalResponseSchema,
+  EnvironmentResponseSchema,
+  type EnvironmentResponse,
+  type EnvToolAction,
+  type EnvToolId,
   BrowseDirResponseSchema,
   CreatePlanTasksResponseSchema,
   CreateTaskResponseSchema,
@@ -610,6 +614,26 @@ export async function createCliTerminal(
 ): Promise<string> {
   const { terminalId } = await fetchJson(
     `/terminal/${action}/${encodeURIComponent(cli)}`,
+    { method: 'POST' },
+    InstallTerminalResponseSchema,
+  );
+  return terminalId;
+}
+
+// --- Environment (system toolchain checker for Settings → System) ---
+
+/** Gateway host OS + install-state of every system tool for that OS. */
+export async function getEnvironment(): Promise<EnvironmentResponse> {
+  return fetchJson('/environment', undefined, EnvironmentResponseSchema);
+}
+
+/** Register a standalone install/update/uninstall terminal for a system tool. */
+export async function createEnvTerminal(
+  tool: EnvToolId,
+  action: EnvToolAction,
+): Promise<string> {
+  const { terminalId } = await fetchJson(
+    `/terminal/env/${action}/${encodeURIComponent(tool)}`,
     { method: 'POST' },
     InstallTerminalResponseSchema,
   );
