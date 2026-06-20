@@ -33,6 +33,10 @@ The headline: swap shapes for an actual tileset + character sprites.
 - [ ] Day/night floor tint aligned with the `time` theme; soft drop-shadows under characters/desks; a subtle vignette.
 - [ ] Pixel-perfect camera with zoom; a larger scrolling map (camera follows the player) once the Tiled map (A1) lands.
 
+### B3. Fixed-aspect-ratio layout — **S**
+- [ ] The Phaser window has a **fixed aspect ratio**. The HTML container that holds the corner buttons/labels (the HUD overlay) should always be **full width**, with its **height derived to preserve that aspect ratio** (`height = width / aspectRatio`) — i.e. the canvas + overlay scale together as one box and never distort.
+- [ ] If that derived height exceeds the available viewport height, **let the page scroll on the HTML side** rather than shrinking the canvas. This happens in the normal content area, which collapses the header bar on scroll like everywhere else — so no extra header work is needed; just don't clamp the stage box to `100%` height or trap it in a non-scrolling container.
+
 ---
 
 ## Theme C — Presence & liveliness (inspired by pixtuoid / agentroom)
