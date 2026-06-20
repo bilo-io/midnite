@@ -30,9 +30,9 @@
 - [x] Each zod schema **round-trips** valid fixtures + **rejects** invalid inputs; discriminated unions (`trigger`, `events/workflow`) asserted to narrow on `type`; pure helpers (`missingProjectRequirements`, `providerSupportsBaseUrl`, `CLI_PROVIDER_MAP`) covered. See [done.md](done.md).
 - ❌ **N/A** — the "task state machine" bullet: `shared/task.ts` holds only schemas/enums; the status-transition logic lives in the gateway and is covered under Theme B, not here.
 
-### A2. Schema invariants & client contract — **S–M**
-- [ ] Property-style sanity for the **typed API client** and the WS event unions in [`events/`](../packages/shared/src/events/): every `type` in the discriminated union has at least one fixture; encoding then decoding is identity.
-- [ ] A small **fixtures module** (`shared/src/__fixtures__/` or `test-fixtures.ts`) of canonical valid objects (a Task, Session, Project, WorkflowNode, etc.) reusable by gateway/web tests so we don't hand-roll fakes everywhere. Export from a test-only entry, not the package root.
+### A2. Schema invariants & client contract — **S–M** — ✅ DONE (PR #25, 2026-06-20)
+- [x] WS event unions in [`events/`](../packages/shared/src/events/) — `TaskBoardEvent`, `WorkflowEvent`, `Client`/`ServerTerminalMessage` — each have a fixture for **every discriminant** and a **JSON encode→decode identity** assertion. (No standalone "typed API client" module exists in `shared`; the request/response + event schemas are the contract, covered here + in A1.)
+- [x] `shared/src/__fixtures__/` — canonical *complete* valid objects (Task, Session, Project, Workflow(Node/Edge/Run), Memory, Note, Media, Routine, triggers, UsageRecord, …), each asserted to **parse to identity**. Exposed via the **`@midnite/shared/fixtures`** subpath (test-only entry, not the package root) so gateway/web tests reuse them. See [done.md](done.md).
 
 ---
 

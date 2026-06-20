@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-20 — Phase 10 A2: fixtures module + client-contract tests (PR #25)
+
+Follow-on to A1: gateway/web tests hand-rolled fakes everywhere and the WS event unions had no systematic encode→decode check.
+
+- [x] **A2 — fixtures module**: `shared/src/__fixtures__/index.ts` — canonical *complete* valid objects (Task, Session(Summary/Transcript), Project, Memory, Note, Media, Routine, Workflow(Node/Edge/Run), NodeRun, the three triggers, UsageRecord, + one fixture per WS-event discriminant). Each spells out defaulted fields so it **parses to identity**.
+- [x] Exposed via a new **`@midnite/shared/fixtures`** package export — a test-only entry, **not** the package root — so gateway/web tests reuse them instead of fresh fakes (verified the subpath resolves from a consumer package).
+- [x] **A2 — client contract**: `fixtures.test.ts` asserts every fixture parses to identity and each WS union (`TaskBoardEvent`, `WorkflowEvent`, `Client`/`ServerTerminalMessage`) has a fixture for **every discriminant** + survives **JSON encode→decode** unchanged. `shared` now 33 files / 225 tests; `shared:test`/`typecheck`/`lint`/`build` green; `moon ci` green on PR #25. (No standalone typed-API-client module exists in `shared`; the schemas are the contract.)
+
 ## 2026-06-20 — Phase 9 office B2: props, plants & decor (PR #24)
 
 Furnished the rooms so the office reads as lived-in and varied, not sparse.
