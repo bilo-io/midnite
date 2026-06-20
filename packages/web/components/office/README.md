@@ -95,9 +95,10 @@ portalled to `<body>` to escape the stage's `overflow-hidden` / any persisted pa
 The procedural pixel-art pass (sprites, walk animations + pathfinding, the board-room projects hub,
 communal-area coffee break, desk Call/Messages wired to the gateway, status bubbles, shadows/vignette,
 fixed-aspect layout), the **multi-room floor plan** (Phase 9 A1), and the **Agent pool** (Phase 9 G —
-pool basin + animated water + lounging/occasional swims), and **room signage** (Phase 9 A3 —
-wall-mounted name plates) have landed. Remaining Phase 9 work —
+pool basin + animated water + lounging/occasional swims), **room signage** (Phase 9 A3 —
+wall-mounted name plates), and **props, plants & decor** (Phase 9 B2 — several plants per room in three
+species/sizes, framed wall art, and area rugs) have landed. Remaining Phase 9 work —
 camera-follow (A2), the searchable **library** modal (C), the communal couches +
 super-sized TV/PlayStation + retro-games menu (E), the **corner-office** scene + desk toys (F),
-distinct character art (B), and an external Tiled map + LimeZu/Kenney pack — is tracked in
+distinct character art (B1), and an external Tiled map + LimeZu/Kenney pack — is tracked in
 [todo/phase-9-office-visual-overhaul.md](../../../../todo/phase-9-office-visual-overhaul.md).

@@ -14,6 +14,8 @@
 
 import type Phaser from 'phaser';
 
+import type { PlantVariant } from './layout';
+
 export const TEX = {
   floor: 'office-floor',
   wall: 'office-wall',
@@ -34,7 +36,15 @@ export const TEX = {
   door: 'office-door',
   water: 'office-water',
   lounger: 'office-lounger',
+  plantPalm: 'office-plant-palm',
+  plantSucculent: 'office-plant-succulent',
+  wallArt: 'office-wall-art',
+  rug: 'office-rug',
 } as const;
+
+/** Texture key for a plant species/size (Phase 9 B2). */
+export const plantTexture = (variant: PlantVariant): string =>
+  variant === 'palm' ? TEX.plantPalm : variant === 'succulent' ? TEX.plantSucculent : TEX.plant;
 
 export type Dir = 'down' | 'up' | 'side';
 export type CharKind = 'human' | 'robot';
@@ -398,6 +408,44 @@ export function ensureOfficeTextures(scene: Phaser.Scene): void {
     rect(g, 3, 6, 5, 6, 0x5b9b5b); // leaves
     rect(g, 10, 6, 5, 6, 0x5b9b5b);
     rect(g, 6, 2, 6, 5, 0x6bbf6b);
+  });
+  // Tall palm — a slimmer pot, a long trunk and a fan of fronds up top (B2).
+  make(TEX.plantPalm, 18, 32, (g) => {
+    rect(g, 6, 26, 6, 6, 0x8a5a34); // pot
+    rect(g, 5, 24, 8, 2, 0x5a3a1f);
+    rect(g, 8, 10, 2, 16, 0x7a5a3a); // trunk
+    rect(g, 1, 11, 6, 2, 0x3f7d3f); // fronds (drooping)
+    rect(g, 11, 11, 6, 2, 0x3f7d3f);
+    rect(g, 2, 7, 5, 2, 0x4d8c4d);
+    rect(g, 11, 7, 5, 2, 0x4d8c4d);
+    rect(g, 6, 3, 6, 4, 0x6bbf6b); // crown
+    rect(g, 4, 5, 10, 2, 0x5b9b5b);
+  });
+  // Small succulent — a squat pot on the floor, a tuft of leaves (B2).
+  make(TEX.plantSucculent, 14, 14, (g) => {
+    rect(g, 4, 8, 6, 6, 0x9c6a40); // pot
+    rect(g, 3, 7, 8, 2, 0x6e4526);
+    rect(g, 5, 2, 4, 6, 0x5b9b5b); // central rosette
+    rect(g, 2, 5, 3, 3, 0x4d8c4d);
+    rect(g, 9, 5, 3, 3, 0x4d8c4d);
+    rect(g, 5, 1, 4, 2, 0x6bbf6b);
+  });
+  // Framed wall art — a small landscape behind a wooden frame (B2).
+  make(TEX.wallArt, 20, 15, (g) => {
+    rect(g, 0, 0, 20, 15, 0x4a2e1a); // frame
+    rect(g, 1, 1, 18, 1, 0x8a5a34); // top bevel highlight
+    rect(g, 2, 2, 16, 11, 0x2f4a6a); // sky
+    rect(g, 2, 9, 16, 4, 0x3f7d3f); // hills
+    rect(g, 14, 4, 3, 3, 0xfacc15); // sun
+    rect(g, 4, 7, 6, 2, 0x5b8c6b); // ridge
+  });
+  // Area rug — a warm woven rug with a bordered field + centre motif (B2).
+  make(TEX.rug, 46, 32, (g) => {
+    rect(g, 0, 0, 46, 32, 0x5a3636); // dark border
+    rect(g, 3, 3, 40, 26, 0x8a4f4f); // field
+    rect(g, 7, 6, 32, 20, 0x9c6a6a); // inner field
+    rect(g, 18, 12, 10, 8, 0xc89b9b); // centre motif
+    rect(g, 21, 14, 4, 4, 0x8a4f4f);
   });
   // Seamless water tile — scrolled in update() for a gentle shimmer.
   make(TEX.water, 32, 32, (g) => {
