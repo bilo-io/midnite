@@ -4,7 +4,7 @@
 
 > Status legend: boxes start unchecked; themes are independent. **Only the rendering layer changes** — the desk-slot model, movement/collision, proximity detection, the Zustand ↔ HUD bridge, and the live-data hook ([`use-office-agents.ts`](../packages/web/components/office/use-office-agents.ts)) all stay as-is.
 
-> **Progress (2026-06-20):** the procedural pixel-art pass landed — ✅ A2 (sprites + walk cycle), B1 (theme colours), B3 (fixed-aspect layout); ◐ A3 / B2 / C1 (partial). **Open:** A1 external Tiled/LimeZu pack, B2 day-night + camera, C2/C3 presence depth, D (wire Call/Message), E (multiplayer).
+> **Progress (2026-06-20):** procedural pixel-art + zones landed — ✅ A2 (human + robot sprites, walk cycle), B1 (theme colours), B3 (fixed-aspect layout), zones (hot desks / lounge / board room), board-room document viewer (D3); ◐ A3 / B2 / C1 / C3 (partial). **Open:** A1 external Tiled/LimeZu pack, B2 day-night + camera, C2 per-tool glow, D1 wire Call/Message, E (multiplayer).
 
 ---
 
@@ -62,8 +62,9 @@ Make agents *look* like they're doing what their status says.
 ### C2. Activity indicators — **S–M**
 - [ ] Per-tool glow / icon over a working agent (Edit, Bash, Read…). Needs a current-tool field surfaced on the session/activity (see Theme D data work).
 
-### C3. Movement & sub-agents — **M–L**
-- [ ] Agents walk to their desk on spawn (grid pathfinding) instead of popping in; gentle idle wander; render sub-agents as linked characters near their parent.
+### C3. Movement & sub-agents — **M–L** — ◐ partial (2026-06-20)
+- [x] Agents **walk** between zones when their status flips — idle agents sit in the lounge, working agents at hot desks, and the robot tweens (with its walk animation) lounge ↔ desk on change (`walkActor` in [`office-scene.ts`](../packages/web/components/office/scenes/office-scene.ts)).
+- [ ] True **grid pathfinding** (current movement is a straight-line tween that can clip furniture/walls between zones); gentle idle wander; render sub-agents as linked characters near their parent.
 
 ---
 
@@ -74,6 +75,10 @@ Make agents *look* like they're doing what their status says.
 
 ### D2. Navigation niceties — **S**
 - [ ] Click-to-walk (pointer → grid pathfinding to the target desk); hover nameplates/tooltips; a small minimap once the map grows.
+
+### D3. Board room — plans & documents — **M** — ✅ DONE (2026-06-20)
+- [x] A walled board room (left-open / right-walled floor plan in [`layout.ts`](../packages/web/lib/office/layout.ts)) with a conference table and a documents **whiteboard** the player walks up to (E). Opens [`boardroom-panel.tsx`](../packages/web/components/office/boardroom-panel.tsx): a **project filter** (`Select`) listing that project's plan + scoped memories; clicking opens a read-only `MarkdownPreview` modal ([`document-modal.tsx`](../packages/web/components/office/document-modal.tsx)). Document assembly is pure + tested ([`documents.ts`](../packages/web/lib/office/documents.ts)).
+- Decision: a project's "documents" = its `plan` + memories scoped to it. Future: councils' synthesis, session transcripts, task specs.
 
 ---
 

@@ -5,6 +5,7 @@ import { MessageSquare, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { STATUS_CSS, STATUS_LABEL, type OfficeAgent } from '@/lib/office/agents';
 import { useOfficeStore, type InteractionMode } from '@/lib/office-store';
+import { BoardroomPanel } from './boardroom-panel';
 
 /**
  * React overlay for the office: a controls hint, an online count, a proximity
@@ -14,12 +15,16 @@ import { useOfficeStore, type InteractionMode } from '@/lib/office-store';
 export function OfficeHud() {
   const agents = useOfficeStore((s) => s.agents);
   const nearbyId = useOfficeStore((s) => s.nearbyId);
+  const nearBoard = useOfficeStore((s) => s.nearBoard);
   const active = useOfficeStore((s) => s.active);
+  const boardOpen = useOfficeStore((s) => s.boardOpen);
   const setMode = useOfficeStore((s) => s.setMode);
   const close = useOfficeStore((s) => s.close);
+  const closeBoard = useOfficeStore((s) => s.closeBoard);
 
   const nearby = nearbyId ? agents.find((a) => a.id === nearbyId) : undefined;
   const activeAgent = active ? agents.find((a) => a.id === active.id) : undefined;
+  const panelOpen = active !== null || boardOpen;
 
   return (
     <div className="pointer-events-none absolute inset-0 z-20">
@@ -31,19 +36,33 @@ export function OfficeHud() {
         {agents.length} agent{agents.length === 1 ? '' : 's'} online
       </div>
 
-      {agents.length === 0 ? (
+      {panelOpen ? null : nearBoard ? (
+        <Prompt>
+          Press <Key>E</Key> to open the <span className="font-semibold">Board Room</span>
+        </Prompt>
+      ) : nearby ? (
+        <Prompt>
+          Press <Key>E</Key> to talk to <span className="font-semibold">{nearby.name}</span>
+        </Prompt>
+      ) : agents.length === 0 ? (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border border-border/60 bg-card/80 px-4 py-2 text-sm text-muted-foreground backdrop-blur">
           No active agents — start a task to fill the office.
-        </div>
-      ) : nearby && !active ? (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border border-border bg-card/90 px-4 py-2 text-sm shadow-lg backdrop-blur">
-          Press <Key>E</Key> to talk to <span className="font-semibold">{nearby.name}</span>
         </div>
       ) : null}
 
       {active && activeAgent ? (
         <InteractionPanel agent={activeAgent} mode={active.mode} onMode={setMode} onClose={close} />
       ) : null}
+
+      {boardOpen ? <BoardroomPanel onClose={closeBoard} /> : null}
+    </div>
+  );
+}
+
+function Prompt({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border border-border bg-card/90 px-4 py-2 text-sm shadow-lg backdrop-blur">
+      {children}
     </div>
   );
 }

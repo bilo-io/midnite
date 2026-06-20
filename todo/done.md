@@ -4,6 +4,19 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-20 — Phase 8 office: zones (lounge / hot desks / board room), robot agents, document viewer
+
+Turned `/office` into a zoned, lived-in room. The left half is open-plan **hot desks** (work) over a **lounge** (TV + gaming console + couches); the right half is a walled **board room**. Agents are now little **robots**; the human player roams. Boardroom decision: a project's "documents" = its `plan` + memories scoped to it (rendered read-only via the app's `MarkdownPreview`).
+
+- [x] **Zones + floor plan** (`lib/office/layout.ts`, Phaser-free): 24×16 room, partition wall + doorway, desk/lounge seat positions, furniture/label/board anchors, rugs, plants.
+- [x] **Actor model + movement** (`office-scene.ts`): working agents (`status !== 'idle'`) sit at hot desks (interactable); idle agents chill on lounge couches/armchairs. On a status flip the robot **walks** (tweened + walk animation) lounge ↔ desk. Furniture (desks, couches, TV, console, conference table) are static colliders; doorway is passable.
+- [x] **Higher-fidelity characters** (`lib/office/textures.ts`): 16×20 (was 12×15), two kinds — a **human** player and **robot** agents (antenna, visor + glowing eyes, chest panel/light), down/up/side × 2 walk frames. Plus couch/armchair/TV/console/table/whiteboard/plant textures.
+- [x] **Board room** (`boardroom-panel.tsx` + `document-modal.tsx` + `lib/office/documents.ts`): walk up to the whiteboard (E) → panel with a **project filter** (`Select`) listing that project's plan + scoped memories; click → read-only `MarkdownPreview` modal. Fetches `getProjects` + `getMemories` via `useApiData`.
+- [x] **Store + HUD**: `office-store.ts` gains `nearBoard`/`boardOpen` (+ freeze input while any panel is open); HUD shows a board prompt and renders `<BoardroomPanel>`.
+- [x] Grid bumped to 24×16 (aspect follows via `OFFICE_ASPECT`).
+- [x] Verified: `web:typecheck` / `web:build` (`/office` 4.6 kB, Phaser in its dynamic chunk) / `web:test` (42 pass, incl. 4 new `boardroomDocs` tests).
+- [ ] **Still deferred**: wire Call/Message → gateway; grid pathfinding (walk uses straight-line tweens through the doorway region); external Tiled/LimeZu pack.
+
 ## 2026-06-20 — Phase 8 office fidelity: procedural pixel-art sprites, presence, layout
 
 Executed the achievable slice of [phase-8](phase-8-office-fidelity.md) on `main`. Rather than block on a paid asset pack (LimeZu) + Tiled authoring, the fidelity jump is done **procedurally** — sprites/tiles generated in code — which is deterministic, themeable, and zero-licensing; the external Tiled/LimeZu route stays open as a later upgrade.
