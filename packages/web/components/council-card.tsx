@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { CirclePile } from 'lucide-react';
 import type { Council } from '@midnite/shared';
 import { AgentCliLogo } from '@/components/agent-cli-logo';
+import { CouncilStats } from '@/components/council-stats';
 import { SelectableIcon } from '@/components/selectable-icon';
 import { cn } from '@/lib/utils';
 
@@ -13,10 +14,6 @@ type Props = {
   selected?: boolean;
   onToggleSelect?: (shiftKey: boolean) => void;
 };
-
-function plural(n: number, word: string): string {
-  return `${n} ${word}${n === 1 ? '' : 's'}`;
-}
 
 export function CouncilCard({ council, layout, selected = false, onToggleSelect }: Props) {
   // One logo per distinct provider on the panel, stacked like source favicons.
@@ -65,9 +62,7 @@ export function CouncilCard({ council, layout, selected = false, onToggleSelect 
           ) : null}
         </Link>
         {logos}
-        <span className="hidden shrink-0 text-xs tabular-nums text-muted-foreground sm:block">
-          {plural(council.members.length, 'member')}
-        </span>
+        <CouncilStats council={council} className="hidden sm:flex" />
       </div>
     );
   }
@@ -88,9 +83,7 @@ export function CouncilCard({ council, layout, selected = false, onToggleSelect 
             {council.name}
           </Link>
         </div>
-        <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-          {plural(council.members.length, 'member')}
-        </span>
+        <CouncilStats council={council} />
       </div>
       {council.description ? (
         <Link href={`/councils/view?id=${council.id}`} className="block">

@@ -132,6 +132,16 @@ export class CouncilsRepository {
     return this.db.select().from(councilRuns).where(eq(councilRuns.id, id)).get();
   }
 
+  /** How many runs (consultations) a council has had. */
+  countRuns(councilId: string): number {
+    const row = this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(councilRuns)
+      .where(eq(councilRuns.councilId, councilId))
+      .get();
+    return row?.count ?? 0;
+  }
+
   listStaleRuns(): CouncilRunRow[] {
     return this.db
       .select()
@@ -210,6 +220,7 @@ export class CouncilsRepository {
       defaultFormat: row.defaultFormat as CouncilFormat,
       customPrompt: row.customPrompt ?? undefined,
       members: this.listMembers(row.id).map((m) => this.hydrateMember(m)),
+      consultationCount: this.countRuns(row.id),
       archived: row.archivedAt != null,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,

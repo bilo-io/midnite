@@ -122,6 +122,10 @@ export class InMemoryCouncilsRepo extends CouncilsRepository {
     return this.runs.find((r) => r.id === id);
   }
 
+  override countRuns(councilId: string): number {
+    return this.runs.filter((r) => r.councilId === councilId).length;
+  }
+
   override listStaleRuns(): CouncilRunRow[] {
     return this.runs.filter((r) => r.status === 'running' || r.status === 'synthesizing');
   }

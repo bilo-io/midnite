@@ -165,6 +165,9 @@ export const CouncilSchema = z.object({
   /** The reusable synthesis prompt used when a run's format is 'custom'. */
   customPrompt: z.string().optional(),
   members: z.array(CouncilMemberSchema),
+  /** Number of consultations (runs) this council has had. Populated in list
+   *  responses; absent on writes. */
+  consultationCount: z.number().int().nonnegative().optional(),
   archived: z.boolean().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),

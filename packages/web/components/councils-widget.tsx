@@ -2,11 +2,12 @@
 
 import Link from 'next/link';
 import { RefreshCw, Users } from 'lucide-react';
-import { AGENT_CLI_LABEL, type Council } from '@midnite/shared';
+import type { Council } from '@midnite/shared';
 import { getCouncils } from '@/lib/api';
 import { usePolling } from '@/lib/use-polling';
 import { cn } from '@/lib/utils';
 import { AgentCliLogo } from './agent-cli-logo';
+import { CouncilStats } from './council-stats';
 import { WidgetLoader } from './spinner';
 import { WidgetCard } from './widget-card';
 
@@ -78,9 +79,7 @@ function CouncilRow({ council: c }: { council: Council }) {
             <span className="block text-[11px] text-muted-foreground">No members</span>
           )}
         </div>
-        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-          {AGENT_CLI_LABEL[c.synthProvider]}
-        </span>
+        <CouncilStats council={c} />
       </Link>
     </li>
   );

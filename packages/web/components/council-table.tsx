@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { CirclePile } from 'lucide-react';
 import type { Council } from '@midnite/shared';
 import { AgentCliLogo } from '@/components/agent-cli-logo';
+import { CouncilStats } from '@/components/council-stats';
 import { SelectableIcon } from '@/components/selectable-icon';
 import { cn } from '@/lib/utils';
 
@@ -32,8 +33,8 @@ export function CouncilTable({
             <th className="w-8 px-3 py-2 font-medium"></th>
             <th className="px-3 py-2 font-medium">Name</th>
             <th className="px-3 py-2 font-medium">Description</th>
-            <th className="px-3 py-2 font-medium">Members</th>
-            <th className="px-3 py-2 text-right font-medium">Count</th>
+            <th className="px-3 py-2 font-medium">Providers</th>
+            <th className="px-3 py-2 text-right font-medium">Activity</th>
           </tr>
         </thead>
         <tbody>
@@ -77,8 +78,8 @@ export function CouncilTable({
                     <span className="text-muted-foreground">—</span>
                   )}
                 </td>
-                <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
-                  {council.members.length}
+                <td className="px-3 py-2">
+                  <CouncilStats council={council} className="justify-end" />
                 </td>
               </tr>
             );
