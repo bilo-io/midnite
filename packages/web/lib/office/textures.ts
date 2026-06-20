@@ -43,8 +43,12 @@ export type CharKind = 'human' | 'robot';
 export const CHAR_W = 16;
 export const CHAR_H = 20;
 
-export const charKey = (kind: CharKind, dir: Dir, frame: 0 | 1) => `office-${kind}-${dir}-${frame}`;
-export const walkAnim = (kind: CharKind, dir: Dir) => `office-walk-${kind}-${dir}`;
+// Keys carry a variant segment (`v0`, `v1`, …). The human player is always `v0`;
+// agent robots pick a variant by id (see `robotVariant`) so a deskful of agents
+// are visually distinct, not just tinted.
+export const charKey = (kind: CharKind, dir: Dir, frame: 0 | 1, variant = 0) =>
+  `office-${kind}-v${variant}-${dir}-${frame}`;
+export const walkAnim = (kind: CharKind, dir: Dir, variant = 0) => `office-walk-${kind}-v${variant}-${dir}`;
 
 // Human pixel palette. Drawn mostly light (cloth = white) so a per-sprite tint
 // colours the clothing; dark parts (outline, hair, boots) survive the multiply.
@@ -132,6 +136,39 @@ const R = {
   ant: 0xf87171,
 } as const;
 
+/**
+ * Per-agent robot variety. Each agent's robot picks one spec by a hash of its id,
+ * so a roomful of agents differ in **silhouette** (antenna shape, side fins) and
+ * **accent/eye/visor colours** — on top of the per-agent chassis {@link agentTint}.
+ * Chassis metal stays light so the tint still reads. This array is the **seam an
+ * external character pack swaps in at**: one spec → one sprite sheet, keys unchanged.
+ */
+export type RobotAntenna = 'rod' | 'twin' | 'bulb' | 'dish' | 'none';
+export interface RobotVariantSpec {
+  antenna: RobotAntenna;
+  eye: number;
+  accent: number;
+  visor: number;
+  fins: boolean;
+}
+
+export const ROBOT_VARIANTS: readonly RobotVariantSpec[] = [
+  { antenna: 'rod', eye: 0x67e8f9, accent: 0x34d399, visor: 0x10141c, fins: false },
+  { antenna: 'twin', eye: 0xfbbf24, accent: 0xf472b6, visor: 0x10141c, fins: true },
+  { antenna: 'bulb', eye: 0xe879f9, accent: 0x38bdf8, visor: 0x0b1220, fins: false },
+  { antenna: 'dish', eye: 0x4ade80, accent: 0xfb923c, visor: 0x10141c, fins: true },
+  { antenna: 'none', eye: 0xf8fafc, accent: 0xa78bfa, visor: 0x0b1220, fins: false },
+  { antenna: 'twin', eye: 0xf87171, accent: 0x2dd4bf, visor: 0x10141c, fins: true },
+];
+
+/** Deterministic robot design index for an agent id. Uses a different multiplier
+ *  to {@link agentTint} so shape and chassis colour aren't perfectly correlated. */
+export function robotVariant(id: string): number {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash * 33 + id.charCodeAt(i)) >>> 0;
+  return hash % ROBOT_VARIANTS.length;
+}
+
 function drawGrid(g: Phaser.GameObjects.Graphics, rows: string[]) {
   rows.forEach((row, y) => {
     for (let x = 0; x < row.length; x++) {
@@ -146,34 +183,57 @@ function rect(g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h
   g.fillStyle(color, 1).fillRect(x, y, w, h);
 }
 
-/** A boxy robot, 16×20, facing `dir`, walk `frame`. */
-function drawRobot(g: Phaser.GameObjects.Graphics, dir: Dir, frame: 0 | 1) {
-  // Antenna
-  rect(g, 8, 0, 1, 3, R.dark);
-  rect(g, 7, 0, 2, 2, R.ant);
+/** A boxy robot, 16×20, facing `dir`, walk `frame`, styled by `spec`. */
+function drawRobot(g: Phaser.GameObjects.Graphics, dir: Dir, frame: 0 | 1, spec: RobotVariantSpec) {
+  const { antenna, eye, accent, visor, fins } = spec;
+  // Antenna (silhouette varies by variant)
+  if (antenna === 'rod') {
+    rect(g, 8, 0, 1, 3, R.dark);
+    rect(g, 7, 0, 2, 2, accent);
+  } else if (antenna === 'twin') {
+    rect(g, 6, 0, 1, 3, R.dark);
+    rect(g, 10, 0, 1, 3, R.dark);
+    rect(g, 6, 0, 1, 1, accent);
+    rect(g, 10, 0, 1, 1, accent);
+  } else if (antenna === 'bulb') {
+    rect(g, 8, 1, 1, 2, R.dark);
+    rect(g, 7, 0, 3, 2, accent);
+  } else if (antenna === 'dish') {
+    rect(g, 8, 1, 1, 2, R.dark);
+    rect(g, 6, 0, 5, 1, R.panel);
+    rect(g, 7, 0, 3, 1, accent);
+  } else {
+    // none → a flush sensor bar
+    rect(g, 5, 2, 6, 1, R.panel);
+    rect(g, 7, 2, 2, 1, accent);
+  }
   // Head (dark outline + metal fill)
   rect(g, 4, 3, 8, 7, R.dark);
   rect(g, 5, 4, 6, 5, R.metal);
-  // Side bolts
+  // Side fins (variant) or plain bolts
+  if (fins) {
+    rect(g, 3, 5, 1, 3, R.panel);
+    rect(g, 12, 5, 1, 3, R.panel);
+  }
   rect(g, 4, 6, 1, 2, R.dark);
   rect(g, 11, 6, 1, 2, R.dark);
   // Visor
-  rect(g, 5, 5, 6, 3, R.visor);
+  rect(g, 5, 5, 6, 3, visor);
   // Eyes by facing
   if (dir === 'down') {
-    rect(g, 6, 6, 1, 1, R.eye);
-    rect(g, 9, 6, 1, 1, R.eye);
+    rect(g, 6, 6, 1, 1, eye);
+    rect(g, 9, 6, 1, 1, eye);
   } else if (dir === 'side') {
-    rect(g, 9, 6, 1, 1, R.eye);
+    rect(g, 9, 6, 1, 1, eye);
   }
   // Neck
   rect(g, 7, 10, 2, 1, R.dark);
   // Torso
   rect(g, 3, 11, 10, 6, R.dark);
   rect(g, 4, 12, 8, 4, R.metal);
-  // Chest panel + status light
+  // Chest panel + status light (accent)
   rect(g, 6, 12, 4, 3, R.panel);
-  rect(g, 7, 13, 1, 1, R.light);
+  rect(g, 7, 13, 1, 1, accent);
   // Arms
   rect(g, 2, 12, 2, 4, R.metal);
   rect(g, 12, 12, 2, 4, R.metal);
@@ -361,30 +421,33 @@ export function ensureOfficeTextures(scene: Phaser.Scene): void {
     rect(g, 13, 17, 2, 4, 0x6b7280);
   });
 
-  // --- Characters: human (player) + robot (agents) ---
+  // --- Characters: human (player, v0) + robot (agents, one sheet per variant) ---
   (['down', 'up', 'side'] as Dir[]).forEach((dir) => {
     ([0, 1] as const).forEach((frame) => {
       make(charKey('human', dir, frame), CHAR_W, CHAR_H, (g) =>
         drawGrid(g, [...HUMAN_TORSO[dir], ...HUMAN_LEGS[frame]]),
       );
-      make(charKey('robot', dir, frame), CHAR_W, CHAR_H, (g) => drawRobot(g, dir, frame));
+      ROBOT_VARIANTS.forEach((spec, v) =>
+        make(charKey('robot', dir, frame, v), CHAR_W, CHAR_H, (g) => drawRobot(g, dir, frame, spec)),
+      );
     });
   });
 }
 
 /** Register the walk-cycle animations once. Safe to call repeatedly. */
 export function ensureOfficeAnims(scene: Phaser.Scene): void {
-  (['human', 'robot'] as CharKind[]).forEach((kind) => {
-    (['down', 'up', 'side'] as Dir[]).forEach((dir) => {
-      const key = walkAnim(kind, dir);
-      if (scene.anims.exists(key)) return;
-      scene.anims.create({
-        key,
-        frames: [{ key: charKey(kind, dir, 0) }, { key: charKey(kind, dir, 1) }],
-        frameRate: 6,
-        repeat: -1,
-      });
+  const reg = (key: string, kind: CharKind, dir: Dir, variant: number) => {
+    if (scene.anims.exists(key)) return;
+    scene.anims.create({
+      key,
+      frames: [{ key: charKey(kind, dir, 0, variant) }, { key: charKey(kind, dir, 1, variant) }],
+      frameRate: 6,
+      repeat: -1,
     });
+  };
+  (['down', 'up', 'side'] as Dir[]).forEach((dir) => {
+    reg(walkAnim('human', dir), 'human', dir, 0);
+    ROBOT_VARIANTS.forEach((_, v) => reg(walkAnim('robot', dir, v), 'robot', dir, v));
   });
 }
 

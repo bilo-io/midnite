@@ -26,7 +26,7 @@ import {
   type TilePos,
 } from '@/lib/office/layout';
 import { buildOfficePalette, ROOM_STYLES, roomSignStyle, type OfficePalette } from '@/lib/office/theme';
-import { agentTint, charKey, ensureOfficeAnims, ensureOfficeTextures, TEX, walkAnim } from '@/lib/office/textures';
+import { agentTint, charKey, ensureOfficeAnims, ensureOfficeTextures, robotVariant, TEX, walkAnim } from '@/lib/office/textures';
 
 // Phase 9 office: a sprite-based, multi-room floor plan (work · board · library
 // over agent pool · communal area · corner office, connected by doorways — see
@@ -76,6 +76,8 @@ type Actor = {
   tween?: Phaser.Tweens.Tween | Phaser.Tweens.TweenChain;
   /** Idle agent lounging on a sun lounger — drives the animated zzz. */
   sleeping: boolean;
+  /** Robot design index (by agent id) — distinct silhouette/accent per agent. */
+  variant: number;
   /** Mid-swim in the pool (G3) — suppresses lounging bubble + re-seat walks. */
   swimming: boolean;
   /** Wake ripple that trails a swimmer; removed when they climb out. */
@@ -317,8 +319,9 @@ class OfficeScene extends Phaser.Scene {
   }
 
   private createActor(agent: OfficeAgent, tx: number, ty: number, kind: 'desk' | 'lounge'): Actor {
+    const variant = robotVariant(agent.id);
     const sprite = this.add
-      .sprite(tx, ty, charKey('robot', 'down', 0))
+      .sprite(tx, ty, charKey('robot', 'down', 0, variant))
       .setScale(CHAR_SCALE)
       .setTint(agentTint(agent.id))
       .setDepth(4);
@@ -357,6 +360,7 @@ class OfficeScene extends Phaser.Scene {
       ty,
       walking: false,
       sleeping: false,
+      variant,
       swimming: false,
     };
     this.updateActorContent(actor, agent);
@@ -482,7 +486,7 @@ class OfficeScene extends Phaser.Scene {
     const settle = () => {
       actor.walking = false;
       actor.sprite.anims.stop();
-      actor.sprite.setTexture(charKey('robot', 'down', 0)).setFlipX(false);
+      actor.sprite.setTexture(charKey('robot', 'down', 0, actor.variant)).setFlipX(false);
     };
 
     let prev = { x: actor.sprite.x, y: actor.sprite.y };
@@ -507,7 +511,7 @@ class OfficeScene extends Phaser.Scene {
     const dy = target.y - actor.sprite.y;
     const dir = Math.abs(dx) > Math.abs(dy) ? 'side' : dy < 0 ? 'up' : 'down';
     actor.sprite.setFlipX(dir === 'side' && dx < 0);
-    actor.sprite.play(walkAnim('robot', dir), true);
+    actor.sprite.play(walkAnim('robot', dir, actor.variant), true);
   }
 
   private tileOf(px: number, py: number) {
