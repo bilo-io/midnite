@@ -6,8 +6,8 @@
  */
 
 export const OFFICE_TILE = 32;
-export const OFFICE_COLS = 24;
-export const OFFICE_ROWS = 16;
+export const OFFICE_COLS = 34;
+export const OFFICE_ROWS = 22;
 
 /** Canvas aspect ratio (width / height), e.g. for a CSS `aspect-ratio` box. */
 export const OFFICE_ASPECT = `${OFFICE_COLS} / ${OFFICE_ROWS}`;

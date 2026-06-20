@@ -30,6 +30,8 @@ export const TEX = {
   coffee: 'office-coffee',
   counter: 'office-counter',
   stool: 'office-stool',
+  bookshelf: 'office-bookshelf',
+  door: 'office-door',
 } as const;
 
 export type Dir = 'down' | 'up' | 'side';
@@ -305,6 +307,26 @@ export function ensureOfficeTextures(scene: Phaser.Scene): void {
     rect(g, 2, 7, 2, 8, 0x3f4756); // legs
     rect(g, 8, 7, 2, 8, 0x3f4756);
     rect(g, 2, 10, 8, 1, 0x3f4756); // cross-bar
+  });
+  make(TEX.bookshelf, 28, 32, (g) => {
+    rect(g, 0, 0, 28, 32, 0x5a4230); // wood frame
+    rect(g, 2, 2, 24, 28, 0x3a2a1a); // dark interior
+    for (let s = 0; s < 4; s++) {
+      const y = 3 + s * 7;
+      rect(g, 2, y + 6, 24, 1, 0x5a4230); // shelf board
+      // a row of book spines, alternating colours
+      const spines = [0xb45309, 0x166534, 0x7c3aed, 0x9f1239, 0x1d4ed8, 0xca8a04];
+      for (let b = 0; b < 6; b++) rect(g, 3 + b * 4, y, 3, 6, spines[(s + b) % spines.length]!);
+    }
+  });
+  make(TEX.door, 24, 30, (g) => {
+    rect(g, 0, 0, 24, 30, 0x3f2f22); // frame
+    rect(g, 3, 2, 18, 28, 0x6b4f3a); // door slab
+    rect(g, 5, 5, 6, 9, 0x5a4230); // upper panel
+    rect(g, 13, 5, 6, 9, 0x5a4230);
+    rect(g, 5, 16, 6, 11, 0x5a4230); // lower panel
+    rect(g, 13, 16, 6, 11, 0x5a4230);
+    rect(g, 16, 14, 2, 3, 0xfacc15); // handle
   });
   make(TEX.plant, 18, 24, (g) => {
     rect(g, 6, 16, 6, 8, 0x6b4f3a); // pot

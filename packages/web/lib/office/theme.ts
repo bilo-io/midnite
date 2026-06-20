@@ -11,6 +11,7 @@
  */
 
 import { hslTripletToInt } from '@/lib/office/agents';
+import type { RoomId } from '@/lib/office/layout';
 
 export interface OfficePalette {
   // Theme-driven (flip with light/dark)
@@ -22,6 +23,26 @@ export interface OfficePalette {
   player: number;
   highlight: number;
 }
+
+/**
+ * Per-room style: a translucent **floor tint** laid over the theme-driven floor
+ * (so the light/dark base still shows through) + an **accent** used for the room
+ * label. Each room reads as a distinct space at a glance — warm kitchen, bookish
+ * library, sleek board room — without abandoning the token-driven base palette.
+ */
+export interface RoomStyle {
+  floor: number;
+  accent: number;
+}
+
+export const ROOM_STYLES: Record<RoomId, RoomStyle> = {
+  work: { floor: 0x3b4252, accent: 0x60a5fa },
+  board: { floor: 0x2f3a4a, accent: 0x38bdf8 },
+  library: { floor: 0x4a3b2a, accent: 0xfbbf24 },
+  lounge: { floor: 0x3b3450, accent: 0xc4b5fd },
+  kitchen: { floor: 0x4a3a30, accent: 0xfca5a5 },
+  corner: { floor: 0x2f4a3a, accent: 0x6ee7b7 },
+};
 
 /** Decorative colours that read well on both themes — kept constant. */
 const DECOR = {

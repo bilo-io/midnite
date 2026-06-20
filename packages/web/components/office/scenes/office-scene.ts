@@ -6,32 +6,35 @@ import {
   ARMCHAIRS,
   BOARD_POS,
   blockedGrid,
+  BOOKSHELVES,
   COFFEE_POS,
   CONSOLE_POS,
   COUCHES,
   COUNTER_POS,
   DESK_SEATS,
+  DOOR_POS,
   LAYOUT,
   LOUNGE_SEATS,
   PLANTS,
   PLAYER_SPAWN,
-  RUGS,
+  READING_CHAIR,
+  ROOMS,
   STOOL_POS,
   TABLE_CHAIRS,
   TABLE_POS,
   TV_POS,
-  ZONE_LABELS,
   type TilePos,
 } from '@/lib/office/layout';
-import { buildOfficePalette, type OfficePalette } from '@/lib/office/theme';
+import { buildOfficePalette, ROOM_STYLES, type OfficePalette } from '@/lib/office/theme';
 import { agentTint, charKey, ensureOfficeAnims, ensureOfficeTextures, TEX, walkAnim } from '@/lib/office/textures';
 
-// Phase 8 office: a zoned, sprite-based room. Working agents (robots) sit at hot
-// desks (interactable); idle agents chill in the lounge (TV + console + couches);
-// a walled board room holds a conference table + a documents whiteboard the player
-// walks up to. Agents walk between the lounge and their desk when their status
-// flips. Tiles are tinted to the theme palette so the canvas still follows
-// light/dark. See lib/office/{layout,textures,theme}.ts.
+// Phase 9 office: a sprite-based, multi-room floor plan (work · board · library
+// over lounge · kitchen · corner office, connected by doorways — see layout.ts).
+// Working agents (robots) sit at WORK hot desks (interactable); idle agents chill
+// in the LOUNGE; the BOARD whiteboard opens the projects panel; the KITCHEN coffee
+// machine toggles a break. Each room gets its own translucent floor accent + label
+// over the theme-tinted base, so the canvas still follows light/dark.
+// See lib/office/{layout,textures,theme}.ts.
 
 const TILE = OFFICE_TILE;
 const COLS = OFFICE_COLS;
@@ -84,7 +87,6 @@ class OfficeScene extends Phaser.Scene {
   private wasd!: Record<'up' | 'down' | 'left' | 'right', Phaser.Input.Keyboard.Key>;
   private readonly actors = new Map<string, Actor>();
   private readonly walls: Phaser.GameObjects.Image[] = [];
-  private readonly labels: Phaser.GameObjects.Text[] = [];
   private readonly solids: Phaser.GameObjects.GameObject[] = [];
   /** Pathfinding walkability grid (true = blocked); seats handled specially. */
   private blocked: boolean[][] = [];
@@ -128,12 +130,14 @@ class OfficeScene extends Phaser.Scene {
       .setTint(this.palette.floor)
       .setDepth(-10);
 
-    this.buildRugs();
+    this.buildRoomFloors();
     this.buildWalls();
     this.buildDesks();
     this.buildLounge();
     this.buildKitchen();
     this.buildBoardroom();
+    this.buildLibrary();
+    this.buildCornerOffice();
     this.buildPlants();
     this.buildLabels();
     this.buildPlayer();
@@ -247,7 +251,7 @@ class OfficeScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(palette.background);
     this.floor.setTint(palette.floor);
     for (const wall of this.walls) wall.setTint(palette.wall);
-    for (const label of this.labels) label.setColor(toHex(palette.text));
+    // Room labels use fixed per-room accents, so they don't re-tint with the theme.
     for (const actor of this.actors.values()) actor.nameText.setColor(toHex(palette.text));
     this.highlight.setStrokeStyle(2, palette.highlight, 0.9);
   }
@@ -641,10 +645,16 @@ class OfficeScene extends Phaser.Scene {
 
   // ---- room construction -------------------------------------------------
 
-  private buildRugs() {
-    for (const r of RUGS) {
+  /**
+   * Tint each room's interior floor with its own translucent accent so every
+   * room reads as a distinct space, while the theme-driven base floor (and
+   * light/dark flip) still shows through underneath.
+   */
+  private buildRoomFloors() {
+    for (const room of ROOMS) {
+      const style = ROOM_STYLES[room.id];
       this.add
-        .rectangle((r.x + r.w / 2) * TILE, (r.y + r.h / 2) * TILE, r.w * TILE, r.h * TILE, r.color, 0.55)
+        .rectangle((room.x + room.w / 2) * TILE, (room.y + room.h / 2) * TILE, room.w * TILE, room.h * TILE, style.floor, 0.32)
         .setDepth(-8);
     }
   }
@@ -694,24 +704,39 @@ class OfficeScene extends Phaser.Scene {
     this.boardCenter = { x: board.x, y: board.y + TILE };
   }
 
+  /** Library: bookshelves lining the walls + a reading chair (decor for now; the
+   *  searchable library modal is Phase 9 C, anchored at BOOKSHELF_POS). */
+  private buildLibrary() {
+    for (const s of BOOKSHELVES) this.add.image(center(s.x), center(s.y), TEX.bookshelf).setDepth(3);
+    this.add.image(center(READING_CHAIR.x), center(READING_CHAIR.y), TEX.armchair).setDepth(2);
+  }
+
+  /** Corner office: a door + welcome mat the player will step through (Phase 9 F). */
+  private buildCornerOffice() {
+    this.add
+      .rectangle(center(DOOR_POS.x), center(DOOR_POS.y) + TILE * 0.4, TILE * 0.9, TILE * 0.35, 0x6ee7b7, 0.25)
+      .setDepth(1); // welcome mat
+    this.add.image(center(DOOR_POS.x), center(DOOR_POS.y), TEX.door).setDepth(5);
+  }
+
   private buildPlants() {
     for (const p of PLANTS) this.add.image(center(p.x), center(p.y), TEX.plant).setDepth(3);
   }
 
+  /** One bold, accent-coloured label per room, anchored on its top wall. */
   private buildLabels() {
-    for (const l of ZONE_LABELS) {
-      const label = this.add
-        .text(center(l.x), center(l.y), l.text, {
+    for (const room of ROOMS) {
+      this.add
+        .text(center(room.lx), center(room.ly), room.label, {
           fontFamily: 'monospace',
           fontSize: '10px',
-          color: toHex(this.palette.text),
+          color: toHex(ROOM_STYLES[room.id].accent),
           fontStyle: 'bold',
         })
         .setOrigin(0.5)
         .setResolution(2)
-        .setAlpha(0.55)
+        .setAlpha(0.7)
         .setDepth(11);
-      this.labels.push(label);
     }
   }
 
