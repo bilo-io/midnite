@@ -104,6 +104,17 @@ Fix anything red before opening the PR. Don't push known-failing code.
    - A `## ✨ Completed in this PR` H2: succinctly state what this last PR delivered — the todo item(s) that moved to `done.md`, the merged PR link, and the key changes.
    - A `## ⏭️ Next up` H2: the next logical unblocked task.
 
+## ♻️ Stage 10 — Context hygiene & loop continuation
+
+This stage matters most when this command is being run on a loop (e.g. `/loop /execute-phase`) so it keeps picking up the next task without a human re-triggering it each time.
+
+1. After the Stage 9 wrap-up, **check how full the context window is** (use the context/token usage the harness surfaces — the auto-compact warning, the percentage in the status line, or your own estimate of how large the conversation has grown).
+2. **If context usage is at or above 60%**, the next iteration must start from a clean slate:
+   - Run `/clear` to reset the conversation context.
+   - Then re-trigger this workflow exactly the way it was originally invoked — if it was started with `/loop /execute-phase`, restart that (`/loop /execute-phase`); if it was a bare `/execute-phase`, run `/execute-phase` again. Preserve any `$ARGUMENTS` that were passed in.
+3. **If context usage is below 60%**, do **not** clear — just continue to the next iteration in the same session (pick the next unblocked task starting again from Stage 1).
+4. The point is to avoid degrading on a bloated context across many phases: clear early enough that the fresh session has room to do real work, but don't clear needlessly when there's still plenty of headroom.
+
 ---
 
-Be autonomous through Stages 3–9 once the user has chosen in Stage 2 — only stop to ask if you hit a real decision the user must make (an unresolved design question, a destructive/irreversible step, a plan-level issue surfaced in the Stage 7 review, or a CI failure you can't resolve).
+Be autonomous through Stages 3–10 once the user has chosen in Stage 2 — only stop to ask if you hit a real decision the user must make (an unresolved design question, a destructive/irreversible step, a plan-level issue surfaced in the Stage 7 review, or a CI failure you can't resolve).
