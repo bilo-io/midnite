@@ -16,6 +16,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Status, Task } from '@midnite/shared';
 import { AbandonedRow } from '@/components/abandoned-row';
+import { SelectableIcon } from '@/components/selectable-icon';
 import { TaskCard, type ProjectTagInfo } from '@/components/task-card';
 import { type TaskViewProps, groupByStatus } from '@/components/task-columns';
 import { cn } from '@/lib/utils';
@@ -34,6 +35,8 @@ export function BoardView({
   onSelect,
   showAbandoned,
   onMove,
+  isSelected,
+  onToggleSelect,
 }: TaskViewProps) {
   const grouped = groupByStatus(tasks);
 
@@ -89,6 +92,8 @@ export function BoardView({
                 onSelect={() => onSelect(t)}
                 onStart={onMove ? () => onMove(t.id, 'wip') : undefined}
                 onStop={onMove ? () => onMove(t.id, 'todo') : undefined}
+                selected={isSelected?.(t.id) ?? false}
+                onToggleSelect={onToggleSelect ? (sk) => onToggleSelect(t.id, sk) : undefined}
               />
             ))}
           </Column>
@@ -190,12 +195,16 @@ function DraggableCard({
   onSelect,
   onStart,
   onStop,
+  selected = false,
+  onToggleSelect,
 }: {
   task: Task;
   project?: ProjectTagInfo;
   onSelect: () => void;
   onStart?: () => void;
   onStop?: () => void;
+  selected?: boolean;
+  onToggleSelect?: (shiftKey: boolean) => void;
 }) {
   const { setNodeRef, listeners, attributes, isDragging } = useDraggable({
     id: task.id,
@@ -211,8 +220,25 @@ function DraggableCard({
       {...attributes}
       // The floating card follows the cursor via DragOverlay; here we just leave
       // a dimmed placeholder in the source column.
-      className={cn('group relative touch-none', isDragging && 'opacity-40')}
+      className={cn(
+        'group relative touch-none rounded-md',
+        isDragging && 'opacity-40',
+        selected && 'ring-2 ring-primary',
+      )}
     >
+      {onToggleSelect ? (
+        // Sibling of the card (not nested in its button); stop pointer-down so the
+        // drag sensor doesn't claim the click. Hidden until hover, shown when selected.
+        <span
+          onPointerDown={(e) => e.stopPropagation()}
+          className={cn(
+            'absolute left-2 top-2 z-10 rounded-md bg-background/90 backdrop-blur transition-opacity',
+            selected ? 'opacity-100' : 'opacity-0 focus-within:opacity-100 group-hover:opacity-100',
+          )}
+        >
+          <SelectableIcon Icon={Square} selected={selected} onToggle={(sk) => onToggleSelect(sk)} />
+        </span>
+      ) : null}
       <TaskCard task={task} project={project} onSelect={onSelect} />
       {canStart && onStart ? (
         <CardActionButton

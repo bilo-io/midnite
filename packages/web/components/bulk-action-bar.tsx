@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -23,6 +24,8 @@ type Props = {
   actions: BulkAction[];
   onClear: () => void;
   className?: string;
+  /** Extra controls rendered after the action chips (e.g. a "Move to…" menu). */
+  extra?: ReactNode;
 };
 
 const tint = (color: string, pct: number) => `color-mix(in srgb, ${color} ${pct}%, transparent)`;
@@ -33,7 +36,7 @@ const tint = (color: string, pct: number) => `color-mix(in srgb, ${color} ${pct}
  * but carry no status dot; each is tinted with its action color and sits at
  * reduced opacity until hovered or focused, when it becomes fully opaque.
  */
-export function BulkActionBar({ count, actions, onClear, className }: Props) {
+export function BulkActionBar({ count, actions, onClear, className, extra }: Props) {
   const open = count > 0;
   return (
     <div
@@ -69,6 +72,7 @@ export function BulkActionBar({ count, actions, onClear, className }: Props) {
             {a.label}
           </button>
         ))}
+        {extra}
       </div>
     </div>
   );

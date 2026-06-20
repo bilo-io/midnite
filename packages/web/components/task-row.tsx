@@ -1,5 +1,7 @@
+import { Square } from 'lucide-react';
 import type { Task } from '@midnite/shared';
 import { ProjectTag } from '@/components/project-tag';
+import { SelectableIcon } from '@/components/selectable-icon';
 import type { ProjectTagInfo } from '@/components/task-card';
 import { statusLabel, statusHueVar } from '@/components/task-columns';
 import { cn } from '@/lib/utils';
@@ -30,14 +32,19 @@ export function TaskRow({
   project,
   onSelect,
   showStatus = false,
+  selected = false,
+  onToggleSelect,
 }: {
   task: Task;
   project?: ProjectTagInfo;
   onSelect?: () => void;
   showStatus?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (shiftKey: boolean) => void;
 }) {
   const kind = task.kind ?? 'unknown';
   const interactive = Boolean(onSelect);
+  const selectable = Boolean(onToggleSelect);
 
   const body = (
     <>
@@ -67,9 +74,31 @@ export function TaskRow({
 
   const className = cn(
     'flex w-full items-center gap-3 border-b border-border/40 px-3 py-2 text-left last:border-b-0',
-    interactive && 'hover:bg-accent/40',
+    (interactive || selectable) && 'hover:bg-accent/40',
+    selected && 'bg-accent/30',
   );
   const style = { ['--kind-hue' as string]: `var(${KIND_HUE_VARS[kind]})` };
+
+  // Selectable rows can't be a single <button> (the SelectableIcon is itself a
+  // button) — split into a select cell plus a clickable body.
+  if (selectable) {
+    return (
+      <div style={style} className={className}>
+        <SelectableIcon Icon={Square} selected={selected} onToggle={(sk) => onToggleSelect?.(sk)} />
+        {interactive ? (
+          <button
+            type="button"
+            onClick={onSelect}
+            className="flex min-w-0 flex-1 items-center gap-3 text-left"
+          >
+            {body}
+          </button>
+        ) : (
+          <div className="flex min-w-0 flex-1 items-center gap-3">{body}</div>
+        )}
+      </div>
+    );
+  }
 
   if (interactive) {
     return (

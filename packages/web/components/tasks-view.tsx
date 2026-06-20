@@ -1,14 +1,17 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Columns3, List, ListTree, Plus, type LucideIcon } from 'lucide-react';
+import { ChevronDown, Columns3, List, ListTree, Plus, type LucideIcon } from 'lucide-react';
 import type { Project, Status, Task } from '@midnite/shared';
-import { startTask, stopTask, updateTaskStatus } from '@/lib/api';
+import { deleteTask, startTask, stopTask, updateTaskStatus } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
+import { useBulkSelection } from '@/lib/use-bulk-selection';
 import { useGatewayErrorToast } from '@/lib/use-gateway-error-toast';
 import { Button } from '@/components/ui/button';
 import { BoardView } from '@/components/board-view';
+import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-action-bar';
+import { useConfirm } from '@/components/confirm-dialog';
 import { FilterPills, type FilterOption } from '@/components/filter-pills';
 import { ListView } from '@/components/list-view';
 import { NewTaskModal } from '@/components/new-task-modal';
@@ -18,6 +21,44 @@ import { TaskThreadModal } from '@/components/task-thread-modal';
 import { COLUMNS, COLUMN_STATUSES } from '@/components/task-columns';
 import { useToast } from '@/components/toast';
 import { cn } from '@/lib/utils';
+
+/** Bulk "Move to…" status menu shown in the selection toolbar. */
+function MoveToMenu({ onMove }: { onMove: (status: Status) => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="inline-flex items-center gap-1 rounded-full border border-border/60 px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
+      >
+        Move to
+        <ChevronDown className="h-3 w-3" />
+      </button>
+      {open ? (
+        <>
+          <div className="fixed inset-0 z-40" aria-hidden onClick={() => setOpen(false)} />
+          <div className="absolute left-0 z-50 mt-1 w-40 rounded-md border bg-popover p-1 shadow-md">
+            {COLUMNS.map((c) => (
+              <button
+                key={c.status}
+                type="button"
+                onClick={() => {
+                  onMove(c.status);
+                  setOpen(false);
+                }}
+                className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors hover:bg-accent"
+              >
+                <span aria-hidden className="h-2 w-2 rounded-full" style={{ background: `hsl(var(${c.hueVar}))` }} />
+                {c.label}
+              </button>
+            ))}
+          </div>
+        </>
+      ) : null}
+    </div>
+  );
+}
 
 const STATUS_FILTERS: FilterOption[] = COLUMNS.map((c) => ({
   value: c.status,
@@ -138,6 +179,84 @@ export function TasksView({
     }
   }, []);
 
+  // --- Bulk selection (shared across all three views) ---
+  const confirm = useConfirm();
+  const {
+    selectedIds,
+    count: selectedCount,
+    clear: clearSelection,
+    isSelected,
+    toggle: toggleSelect,
+  } = useBulkSelection();
+
+  const selectedTasks = useMemo(
+    () => localTasks.filter((t) => selectedIds.includes(t.id)),
+    [localTasks, selectedIds],
+  );
+
+  // Bulk move uses a plain restatus (no session spawn) — bulk-starting many
+  // agents at once is never what's wanted. Optimistic, then reconcile.
+  const applyStatus = useCallback(
+    (ids: string[], status: Status) => {
+      if (ids.length === 0) return;
+      setLocalTasks((prev) => prev.map((t) => (ids.includes(t.id) ? { ...t, status } : t)));
+      clearSelection();
+      void Promise.all(ids.map((id) => updateTaskStatus(id, status)))
+        .then(invalidateData)
+        .catch((e) => {
+          toast.error(e instanceof Error ? e.message : 'Failed to move tasks');
+          invalidateData();
+        });
+    },
+    [clearSelection, toast],
+  );
+
+  const deleteSelected = useCallback(async () => {
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
+    const ok = await confirm({
+      title: `Delete ${ids.length} task${ids.length === 1 ? '' : 's'}?`,
+      description: 'This cannot be undone.',
+      confirmLabel: 'Delete',
+    });
+    if (!ok) return;
+    setLocalTasks((prev) => prev.filter((t) => !ids.includes(t.id)));
+    clearSelection();
+    try {
+      await Promise.all(ids.map((id) => deleteTask(id)));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to delete tasks');
+    }
+    invalidateData();
+  }, [selectedIds, confirm, clearSelection, toast]);
+
+  const bulkActions = useMemo<BulkAction[]>(() => {
+    const actions: BulkAction[] = [];
+    const nonAbandoned = selectedTasks.filter((t) => t.status !== 'abandoned').map((t) => t.id);
+    const abandoned = selectedTasks.filter((t) => t.status === 'abandoned').map((t) => t.id);
+    if (nonAbandoned.length)
+      actions.push({
+        key: 'abandon',
+        label: 'Abandon',
+        color: BULK_COLORS.archive,
+        onClick: () => applyStatus(nonAbandoned, 'abandoned'),
+      });
+    if (abandoned.length)
+      actions.push({
+        key: 'restore',
+        label: 'Restore',
+        color: BULK_COLORS.archive,
+        onClick: () => applyStatus(abandoned, 'todo'),
+      });
+    actions.push({
+      key: 'delete',
+      label: 'Delete',
+      color: BULK_COLORS.delete,
+      onClick: () => void deleteSelected(),
+    });
+    return actions;
+  }, [selectedTasks, applyStatus, deleteSelected]);
+
   const projectsById = new Map(
     projects.map((p) => [p.id, { tag: p.tag, color: p.color }] as const),
   );
@@ -192,6 +311,7 @@ export function TasksView({
 
   const tagFilters: FilterOption[] = allTags.map((tag) => ({ value: tag, label: tag }));
 
+  const orderedIds = filteredTasks.map((t) => t.id);
   const viewProps = {
     tasks: filteredTasks,
     columns: visibleColumns,
@@ -199,6 +319,8 @@ export function TasksView({
     onSelect: setSelected,
     showAbandoned: showAllStatuses,
     onMove,
+    isSelected,
+    onToggleSelect: (id: string, sk: boolean) => toggleSelect(id, sk, orderedIds),
   };
 
   return (
@@ -237,6 +359,17 @@ export function TasksView({
           </Button>
         </div>
       </div>
+
+      <BulkActionBar
+        count={selectedCount}
+        actions={bulkActions}
+        onClear={clearSelection}
+        extra={
+          selectedCount > 0 ? (
+            <MoveToMenu onMove={(status) => applyStatus(selectedIds, status)} />
+          ) : null
+        }
+      />
 
       <div className="reveal-content flex min-h-0 flex-1 flex-col">
         {view === 'table' ? (

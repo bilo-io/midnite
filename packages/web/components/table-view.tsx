@@ -11,7 +11,15 @@ import { type TaskViewProps, distinctProjectCount, groupByStatus } from '@/compo
  * order and collapsed state persist via SortableAccordions. Task rows are not
  * draggable — task status follows the Claude session, not manual moves.
  */
-export function TableView({ tasks, columns, projectsById, onSelect, showAbandoned }: TaskViewProps) {
+export function TableView({
+  tasks,
+  columns,
+  projectsById,
+  onSelect,
+  showAbandoned,
+  isSelected,
+  onToggleSelect,
+}: TaskViewProps) {
   const grouped = groupByStatus(tasks);
 
   const sections: AccordionSection[] = columns.map((col) => {
@@ -38,6 +46,8 @@ export function TableView({ tasks, columns, projectsById, onSelect, showAbandone
               task={t}
               project={t.projectId ? projectsById.get(t.projectId) : undefined}
               onSelect={() => onSelect(t)}
+              selected={isSelected?.(t.id) ?? false}
+              onToggleSelect={onToggleSelect ? (sk) => onToggleSelect(t.id, sk) : undefined}
             />
           ))
         ),

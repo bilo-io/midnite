@@ -17,6 +17,9 @@ export type TaskViewProps = {
    *  `wip` from todo/backlog spawns an agent session; other moves just restatus.
    *  Only the board wires this; list/table ignore it. */
   onMove?: (taskId: string, target: Status) => void;
+  // Bulk selection (optional; wired by TasksView across all three views).
+  isSelected?: (id: string) => boolean;
+  onToggleSelect?: (id: string, shiftKey: boolean) => void;
 };
 
 /** Group tasks by status into a lookup. */
