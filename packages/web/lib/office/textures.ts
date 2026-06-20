@@ -32,6 +32,8 @@ export const TEX = {
   stool: 'office-stool',
   bookshelf: 'office-bookshelf',
   door: 'office-door',
+  water: 'office-water',
+  lounger: 'office-lounger',
 } as const;
 
 export type Dir = 'down' | 'up' | 'side';
@@ -336,6 +338,27 @@ export function ensureOfficeTextures(scene: Phaser.Scene): void {
     rect(g, 3, 6, 5, 6, 0x5b9b5b); // leaves
     rect(g, 10, 6, 5, 6, 0x5b9b5b);
     rect(g, 6, 2, 6, 5, 0x6bbf6b);
+  });
+  // Seamless water tile — scrolled in update() for a gentle shimmer.
+  make(TEX.water, 32, 32, (g) => {
+    rect(g, 0, 0, 32, 32, 0x2a9fc4); // base aqua
+    g.fillStyle(0x3fb6d8, 1); // lighter band
+    rect(g, 0, 4, 32, 3, 0x3fb6d8);
+    rect(g, 0, 18, 32, 3, 0x3fb6d8);
+    g.fillStyle(0x7fd6ea, 0.9); // ripple highlights
+    rect(g, 4, 10, 8, 1, 0x7fd6ea);
+    rect(g, 20, 24, 8, 1, 0x7fd6ea);
+    rect(g, 14, 2, 6, 1, 0x7fd6ea);
+  });
+  // Sun lounger / deck chair (faces down toward the pool).
+  make(TEX.lounger, 18, 22, (g) => {
+    rect(g, 2, 16, 14, 3, 0x6b7280); // frame base
+    rect(g, 3, 4, 12, 12, 0xf4f4f5); // reclined cushion
+    rect(g, 3, 4, 12, 2, 0xe2e8f0); // headrest
+    g.fillStyle(0x60a5fa, 1); // towel stripe
+    rect(g, 3, 9, 12, 3, 0x60a5fa);
+    rect(g, 3, 17, 2, 4, 0x6b7280); // legs
+    rect(g, 13, 17, 2, 4, 0x6b7280);
   });
 
   // --- Characters: human (player) + robot (agents) ---

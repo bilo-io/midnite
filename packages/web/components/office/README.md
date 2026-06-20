@@ -28,13 +28,13 @@ split by internal walls into **six rooms** in a 3×2 arrangement — a top band 
 **board room** · **library**) over a bottom band (**Agent pool** · **communal area** · **corner office**) —
 connected by 2-tile doorways in every shared wall, so the whole map is one connected walkable space
 (`ROOMS` describes each room's interior rect + label). `office-scene.ts` seats **working** agents
-(`status !== 'idle'`) at desks and **idle** agents on poolside couches/armchairs, where they **sleep**
-(animated `zzz`) or **game** (`▶`, facing the TV) split by id. When an agent's status flips it **walks**
-there — 4-directional A* over a walkability grid (`blockedGrid()`) so it routes around furniture/walls
-and through the doorways. (Camera-follow for the larger map is Phase 9 A2; the corner office becomes a
-separate scene in Phase 9 F; the library bookshelf becomes a searchable modal in Phase 9 C. The pool
-basin/swims (G) and communal couches + super-sized TV/PlayStation (E) furnish those two rooms next —
-this slice re-themed their ids/labels/palettes.)
+(`status !== 'idle'`) at desks and **idle** agents on the **Agent pool** sun loungers, where they
+**lounge** (animated `zzz`) and **occasionally swim a lane** in the pool — a periodic timer sends one
+lounger paddling through the basin (with a trailing wake ripple) and back. When an agent's status flips
+it **walks** there — 4-directional A* over a walkability grid (`blockedGrid()`, which now blocks the
+pool basin) so it routes around furniture/walls and through the doorways. (Camera-follow for the larger
+map is Phase 9 A2; the corner office becomes a separate scene in Phase 9 F; the library bookshelf becomes
+a searchable modal in Phase 9 C. The communal area gains couches + a super-sized, interactable TV/PlayStation + retro-games menu in Phase 9 E — the TV/console already moved there as decor.)
 
 **Controls:** WASD/arrows or **click-to-walk** (the player pathfinds to the clicked tile; manual input
 cancels it). **E** interacts with the nearest desk agent, the board-room whiteboard, or the communal-area
@@ -42,8 +42,8 @@ coffee machine — there **E** toggles an "on a break" state (a `☕ On a break`
 a ☕ over the player). The break flag is local/mock for now (Phase 9 E1).
 
 **Art:** sprites/tiles are **generated procedurally** in [`lib/office/textures.ts`](../../lib/office/textures.ts)
-— a tiled floor, brick walls, desks/monitors, couches, a TV + console, a conference table, a projects
-whiteboard, a counter, bookshelves, a corner-office door, plus two character kinds: a **human**
+— a tiled floor, brick walls, desks/monitors, a TV + console, a conference table, a projects
+whiteboard, a counter, bookshelves, a corner-office door, a pool water tile + sun loungers, plus two character kinds: a **human**
 player and **robot** agents (16×20, down/up/side, a 2-frame walk cycle). Agents get a deterministic
 identity tint (`agentTint`) + a status speech bubble; per-room floor accents, plants, soft shadows, and a
 radial vignette add depth. No external asset pack. Grid size + canvas aspect ratio live in the Phaser-free
@@ -91,7 +91,9 @@ portalled to `<body>` to escape the stage's `overflow-hidden` / any persisted pa
 
 The procedural pixel-art pass (sprites, walk animations + pathfinding, the board-room projects hub,
 communal-area coffee break, desk Call/Messages wired to the gateway, status bubbles, shadows/vignette,
-fixed-aspect layout) and the **multi-room floor plan** (Phase 9 A1) have landed. Remaining Phase 9 work —
-camera-follow (A2), the searchable **library** modal (C), the **corner-office** scene + desk toys (F),
+fixed-aspect layout), the **multi-room floor plan** (Phase 9 A1), and the **Agent pool** (Phase 9 G —
+pool basin + animated water + lounging/occasional swims) have landed. Remaining Phase 9 work —
+camera-follow (A2), room signage (A3), the searchable **library** modal (C), the communal couches +
+super-sized TV/PlayStation + retro-games menu (E), the **corner-office** scene + desk toys (F),
 distinct character art (B), and an external Tiled map + LimeZu/Kenney pack — is tracked in
 [todo/phase-9-office-visual-overhaul.md](../../../../todo/phase-9-office-visual-overhaul.md).

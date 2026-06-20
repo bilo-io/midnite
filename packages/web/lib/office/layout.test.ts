@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { OFFICE_COLS, OFFICE_ROWS } from './dimensions';
-import { LAYOUT, LAYOUT_OK, PLAYER_SPAWN, ROOMS } from './layout';
+import { blockedGrid, LAYOUT, LAYOUT_OK, PLAYER_SPAWN, POOL, ROOMS } from './layout';
 
 const isFloor = (x: number, y: number) =>
   y >= 0 && y < OFFICE_ROWS && x >= 0 && x < OFFICE_COLS && LAYOUT[y]![x] === '.';
@@ -57,5 +57,48 @@ describe('office layout', () => {
       expect(isFloor(cx, cy), `${room.id} centre is floor`).toBe(true);
       expect(reached.has(`${cx},${cy}`), `${room.id} reachable from spawn`).toBe(true);
     }
+  });
+});
+
+describe('agent pool', () => {
+  it('blocks every pool-basin tile (non-walkable)', () => {
+    const grid = blockedGrid();
+    for (let y = POOL.y; y < POOL.y + POOL.h; y++) {
+      for (let x = POOL.x; x < POOL.x + POOL.w; x++) {
+        expect(grid[y]![x], `pool tile ${x},${y} blocked`).toBe(true);
+      }
+    }
+  });
+
+  it('leaves the pool room navigable around the basin (doorways + corridor stay open)', () => {
+    const grid = blockedGrid();
+    const open = (x: number, y: number) =>
+      y >= 0 && y < OFFICE_ROWS && x >= 0 && x < OFFICE_COLS && !grid[y]![x];
+
+    // Flood the non-blocked grid from the spawn.
+    const seen = new Set<string>();
+    const queue = [PLAYER_SPAWN];
+    seen.add(`${PLAYER_SPAWN.x},${PLAYER_SPAWN.y}`);
+    while (queue.length) {
+      const { x, y } = queue.shift()!;
+      const neighbours: readonly [number, number][] = [
+        [x + 1, y],
+        [x - 1, y],
+        [x, y + 1],
+        [x, y - 1],
+      ];
+      for (const [nx, ny] of neighbours) {
+        const key = `${nx},${ny}`;
+        if (open(nx, ny) && !seen.has(key)) {
+          seen.add(key);
+          queue.push({ x: nx, y: ny });
+        }
+      }
+    }
+
+    // The basin must not seal the room: the corridor right of the pool and the
+    // communal-doorway approach must still be reachable on foot from the spawn.
+    expect(seen.has('10,18'), 'corridor right of the pool').toBe(true);
+    expect(seen.has('11,16'), 'communal-doorway approach').toBe(true);
   });
 });
