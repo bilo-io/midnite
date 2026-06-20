@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-20 — Phase 9 office B2: props, plants & decor (PR #24)
+
+Furnished the rooms so the office reads as lived-in and varied, not sparse.
+
+- [x] **B2 — greenery everywhere**: `PLANTS` now carries a `variant` and is expanded to ~3–4 per room across all six rooms (corners, beside doorways, flanking the A3 signage), in three species/sizes — `leafy` shrub, tall `palm`, small `succulent`. Each is a new procedural texture, mapped by a pure `plantTexture(variant)` helper. Poolside palms kept.
+- [x] **B2 — props**: framed **wall art** (`WALL_ART`) hung on the top walls of the three top-band rooms (offset from the name plates), and warm **area rugs** (`RUGS`) grounding the work room, the library reading nook, and the communal lounge (drawn under the furniture). New `wallArt`/`rug`/`plantPalm`/`plantSucculent` textures; `buildPlants` is variant-aware (base-anchored) + new `buildWallArt`/`buildRugs`.
+- [x] **Tests**: `layout.test.ts` decor invariants (every plant/rug on a room floor, ≥2 plants per room, all three species present, wall art on a wall row) + `textures.test.ts` (`plantTexture` mapping). Verified `web:typecheck --force` + `web:lint` green, both suites pass from the primary checkout; rebased cleanly over the B1 character work (PR #16); `moon ci` green on PR #24. README updated.
+
 ## 2026-06-20 — Phase 9 office B1: distinct per-agent robot characters (PR #16)
 
 Every agent's robot was the same sprite with a per-agent colour **tint**, so a deskful of agents was hard to tell apart. B1 makes each agent a visually distinct **character** (procedural pass; ◐ partial — real-art swap + provider-aware + activity poses + player customisation remain open in the phase file).

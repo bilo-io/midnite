@@ -59,10 +59,10 @@ Today one room holds three zones ([`layout.ts`](../packages/web/lib/office/layou
 - [ ] **Activity-driven poses** (typing / reading / waiting / celebrate) — adopt **pixel-agents'** activity→animation state-machine approach (finishes Phase 8 **C1**/**C2**); render **sub-agents as linked characters** near their parent (Phase 8 **C3**), again per pixel-agents.
 - [ ] The **player** gets a customisable character (ties into Theme F corner-office customisation; persist the choice — see F4).
 
-### B2. Props, plants & decor — **S–M**
-- [ ] Richer prop set across rooms: **plants** (varied), **bookshelves** (library), rugs, wall art, a big screen (board room), plus the pool/communal props called out in Themes E & G. Builds on Phase 8 **A3** and the current `PLANTS`/`RUGS`/`COUCHES` in [`layout.ts`](../packages/web/lib/office/layout.ts).
-- [ ] **More greenery everywhere** — most rooms should have **several plants** (corners, beside doorways, flanking signage), varied in species/size, not one token plant per room. Expand `PLANTS` placements across work, board room, library, Agent pool (poolside), and communal area.
-- [ ] Decor varies **per room style** (A1) so each room reads as a different space at a glance.
+### B2. Props, plants & decor — **S–M** — ✅ DONE (2026-06-20, PR #24)
+- [x] Richer prop set across rooms: **plants** (varied), **rugs** (work / library nook / communal lounge), and **framed wall art** on the top walls. `PLANTS` gained a `variant`; new `WALL_ART` + `RUGS` placements in [`layout.ts`](../packages/web/lib/office/layout.ts). (Bookshelves already shipped in A1; the board-room "big screen" + pool/communal props remain to Themes D/E/G.)
+- [x] **More greenery everywhere** — `PLANTS` expanded to **~3–4 per room** across all six rooms (corners, beside doorways, flanking the signage), in **three species/sizes** — `leafy` shrub, tall `palm`, small `succulent` (new procedural textures + a pure `plantTexture` map). Poolside palms framing the deck kept.
+- [x] Decor varies **per room** so each reads as a different space. Covered by `layout.test.ts` (every plant/rug on a room floor, ≥2 plants/room, all three species, wall art on the top wall) + `textures.test.ts` (`plantTexture`). See [done.md](done.md).
 
 ---
 
