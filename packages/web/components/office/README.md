@@ -2,11 +2,11 @@
 
 A walkable, **multi-room** office. The **player** (a human avatar) roams between six rooms
 while each **live midnite agent** (gateway session) appears as a little **robot**: working
-agents sit at **hot desks** in the work room (walk up to call/message them), idle agents chill
-in the **lounge** (TV + console + couches), the **kitchen** lets you take a coffee break, the
+agents sit at **hot desks** in the work room (walk up to call/message them), idle agents lounge
+in the **Agent pool** (poolside leisure), the **communal area** lets you take a coffee break, the
 **board room** is the **projects hub** (walk up to open the live project list), the **library**
 holds bookshelves, and a door leads to a **corner office**. Everything updates in real time as
-agents start, change status, and finish — and robots walk between the lounge and a desk when
+agents start, change status, and finish — and robots walk between the pool and a desk when
 their status flips.
 
 ## Architecture
@@ -25,23 +25,25 @@ app/(main)/office/page.tsx
 
 **Rooms** ([`lib/office/layout.ts`](../../lib/office/layout.ts) — Phaser-free floor plan): a 34×22 grid
 split by internal walls into **six rooms** in a 3×2 arrangement — a top band (**work** hot desks ·
-**board room** · **library**) over a bottom band (**lounge** · **kitchen** · **corner office**) —
+**board room** · **library**) over a bottom band (**Agent pool** · **communal area** · **corner office**) —
 connected by 2-tile doorways in every shared wall, so the whole map is one connected walkable space
 (`ROOMS` describes each room's interior rect + label). `office-scene.ts` seats **working** agents
-(`status !== 'idle'`) at desks and **idle** agents on lounge couches/armchairs, where they **sleep**
+(`status !== 'idle'`) at desks and **idle** agents on poolside couches/armchairs, where they **sleep**
 (animated `zzz`) or **game** (`▶`, facing the TV) split by id. When an agent's status flips it **walks**
 there — 4-directional A* over a walkability grid (`blockedGrid()`) so it routes around furniture/walls
 and through the doorways. (Camera-follow for the larger map is Phase 9 A2; the corner office becomes a
-separate scene in Phase 9 F; the library bookshelf becomes a searchable modal in Phase 9 C.)
+separate scene in Phase 9 F; the library bookshelf becomes a searchable modal in Phase 9 C. The pool
+basin/swims (G) and communal couches + super-sized TV/PlayStation (E) furnish those two rooms next —
+this slice re-themed their ids/labels/palettes.)
 
 **Controls:** WASD/arrows or **click-to-walk** (the player pathfinds to the clicked tile; manual input
-cancels it). **E** interacts with the nearest desk agent, the board-room whiteboard, or the kitchen
-coffee machine — at the kitchen **E** toggles an "on a break" state (a `☕ On a break` badge in the HUD +
+cancels it). **E** interacts with the nearest desk agent, the board-room whiteboard, or the communal-area
+coffee machine — there **E** toggles an "on a break" state (a `☕ On a break` badge in the HUD +
 a ☕ over the player). The break flag is local/mock for now (Phase 9 E1).
 
 **Art:** sprites/tiles are **generated procedurally** in [`lib/office/textures.ts`](../../lib/office/textures.ts)
 — a tiled floor, brick walls, desks/monitors, couches, a TV + console, a conference table, a projects
-whiteboard, kitchen counter, bookshelves, a corner-office door, plus two character kinds: a **human**
+whiteboard, a counter, bookshelves, a corner-office door, plus two character kinds: a **human**
 player and **robot** agents (16×20, down/up/side, a 2-frame walk cycle). Agents get a deterministic
 identity tint (`agentTint`) + a status speech bubble; per-room floor accents, plants, soft shadows, and a
 radial vignette add depth. No external asset pack. Grid size + canvas aspect ratio live in the Phaser-free
@@ -88,7 +90,7 @@ portalled to `<body>` to escape the stage's `overflow-hidden` / any persisted pa
 ## Roadmap
 
 The procedural pixel-art pass (sprites, walk animations + pathfinding, the board-room projects hub,
-kitchen coffee break, desk Call/Messages wired to the gateway, status bubbles, shadows/vignette,
+communal-area coffee break, desk Call/Messages wired to the gateway, status bubbles, shadows/vignette,
 fixed-aspect layout) and the **multi-room floor plan** (Phase 9 A1) have landed. Remaining Phase 9 work —
 camera-follow (A2), the searchable **library** modal (C), the **corner-office** scene + desk toys (F),
 distinct character art (B), and an external Tiled map + LimeZu/Kenney pack — is tracked in
