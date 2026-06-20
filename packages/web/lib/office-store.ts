@@ -22,18 +22,24 @@ interface OfficeState {
   nearbyId: string | null;
   /** Whether the player is standing at the board room's documents board. */
   nearBoard: boolean;
+  /** Whether the player is standing at the kitchen's coffee machine. */
+  nearKitchen: boolean;
   /** The desk the player opened, plus which panel view is showing. */
   active: { id: string; mode: InteractionMode } | null;
   /** Whether the board room document panel is open. */
   boardOpen: boolean;
+  /** Personal "on a coffee break" presence flag (mock — local to this session). */
+  onBreak: boolean;
   setAgents(agents: OfficeAgent[]): void;
   setNearby(id: string | null): void;
   setNearBoard(near: boolean): void;
+  setNearKitchen(near: boolean): void;
   open(id: string): void;
   setMode(mode: InteractionMode): void;
   close(): void;
   openBoard(): void;
   closeBoard(): void;
+  toggleBreak(): void;
   /** Clear transient UI state — called when the scene tears down. */
   reset(): void;
 }
@@ -42,16 +48,22 @@ export const useOfficeStore = create<OfficeState>((set) => ({
   agents: [],
   nearbyId: null,
   nearBoard: false,
+  nearKitchen: false,
   active: null,
   boardOpen: false,
+  onBreak: false,
   setAgents: (agents) => set({ agents }),
   // Skip the update when unchanged — `update()` calls these every frame.
   setNearby: (id) => set((s) => (s.nearbyId === id ? s : { nearbyId: id })),
   setNearBoard: (near) => set((s) => (s.nearBoard === near ? s : { nearBoard: near })),
+  setNearKitchen: (near) => set((s) => (s.nearKitchen === near ? s : { nearKitchen: near })),
   open: (id) => set({ active: { id, mode: 'menu' }, boardOpen: false }),
   setMode: (mode) => set((s) => (s.active ? { active: { ...s.active, mode } } : s)),
   close: () => set({ active: null }),
   openBoard: () => set({ boardOpen: true, active: null }),
   closeBoard: () => set({ boardOpen: false }),
-  reset: () => set({ nearbyId: null, nearBoard: false, active: null, boardOpen: false }),
+  toggleBreak: () => set((s) => ({ onBreak: !s.onBreak })),
+  // onBreak persists across teardown only within a session — it's a personal
+  // presence flag, not transient scene state, so reset() leaves it alone.
+  reset: () => set({ nearbyId: null, nearBoard: false, nearKitchen: false, active: null, boardOpen: false }),
 }));

@@ -21,6 +21,8 @@ export function OfficeHud() {
   const agents = useOfficeStore((s) => s.agents);
   const nearbyId = useOfficeStore((s) => s.nearbyId);
   const nearBoard = useOfficeStore((s) => s.nearBoard);
+  const nearKitchen = useOfficeStore((s) => s.nearKitchen);
+  const onBreak = useOfficeStore((s) => s.onBreak);
   const active = useOfficeStore((s) => s.active);
   const boardOpen = useOfficeStore((s) => s.boardOpen);
   const close = useOfficeStore((s) => s.close);
@@ -36,13 +38,25 @@ export function OfficeHud() {
         <Key>WASD</Key> / arrows or click to move · <Key>E</Key> to interact
       </div>
 
-      <div className="absolute right-3 top-3 rounded-md border border-border/60 bg-background/70 px-2.5 py-1.5 text-[11px] text-muted-foreground backdrop-blur">
-        {agents.length} agent{agents.length === 1 ? '' : 's'} online
+      <div className="absolute right-3 top-3 flex items-center gap-2">
+        {onBreak ? (
+          <span className="rounded-md border border-amber-500/40 bg-amber-500/15 px-2.5 py-1.5 text-[11px] font-medium text-amber-600 backdrop-blur dark:text-amber-400">
+            ☕ On a break
+          </span>
+        ) : null}
+        <span className="rounded-md border border-border/60 bg-background/70 px-2.5 py-1.5 text-[11px] text-muted-foreground backdrop-blur">
+          {agents.length} agent{agents.length === 1 ? '' : 's'} online
+        </span>
       </div>
 
       {panelOpen ? null : nearBoard ? (
         <Prompt>
           Press <Key>E</Key> to open the <span className="font-semibold">Board Room</span>
+        </Prompt>
+      ) : nearKitchen ? (
+        <Prompt>
+          Press <Key>E</Key> to{' '}
+          <span className="font-semibold">{onBreak ? 'get back to work' : 'take a coffee break'}</span>
         </Prompt>
       ) : nearby ? (
         <Prompt>

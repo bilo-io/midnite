@@ -4,13 +4,14 @@
  * imports Phaser.
  *
  * Three zones share one room. The left half is open-plan: **hot desks** (work) up
- * top and a **lounge** (TV + console + couches) below. The right half is a walled
- * **board room** (a doorway in the partition) with a conference table and a
- * documents whiteboard the player walks up to.
+ * top and a **lounge** (TV + console + couches) below, with a **kitchenette** nook
+ * in the bottom-left corner. The right half is a walled **board room** (a doorway
+ * in the partition) with a conference table and a documents whiteboard.
  *
  *   - Working agents (running / waiting / completed) sit at hot desks → interactable.
  *   - Idle agents chill in the lounge.
- *   - Walking up to the whiteboard opens the board-room document panel.
+ *   - Walking up to the whiteboard opens the board-room projects panel.
+ *   - Walking up to the coffee machine + pressing E toggles a coffee break.
  */
 
 import { OFFICE_COLS, OFFICE_ROWS } from './dimensions';
@@ -75,8 +76,16 @@ export const ARMCHAIRS: readonly TilePos[] = [
 /** TV + gaming console along the lounge's lower edge (the seats face them). */
 export const TV_POS: TilePos = { x: 6, y: 14 };
 export const CONSOLE_POS: TilePos = { x: 9, y: 14.2 };
-/** A coffee station in the lounge corner (pure decor — no collider). */
+
+/**
+ * Kitchenette in the lounge's bottom-left corner: a coffee machine (the
+ * **interactable** — walk up + press E to toggle a coffee break), a counter, and
+ * a stool. All pure decor (no colliders). A standalone walled kitchen comes with
+ * the multi-room layout (Phase 9 A1); for now it's a corner nook.
+ */
 export const COFFEE_POS: TilePos = { x: 1.6, y: 13.5 };
+export const COUNTER_POS: TilePos = { x: 3.1, y: 13.8 };
+export const STOOL_POS: TilePos = { x: 3, y: 12.5 };
 
 /** Board room: a big conference table + the interactable documents whiteboard. */
 export const TABLE_POS: TilePos = { x: 18, y: 8 };
@@ -107,7 +116,8 @@ export const RUGS: readonly { x: number; y: number; w: number; h: number; color:
 /** Zone labels: text + tile anchor (top-centre of each zone). */
 export const ZONE_LABELS: readonly { text: string; x: number; y: number }[] = [
   { text: 'HOT DESKS', x: 6.5, y: 0.7 },
-  { text: 'LOUNGE', x: 6.5, y: 8.4 },
+  { text: 'LOUNGE', x: 7.5, y: 8.4 },
+  { text: 'KITCHEN', x: 2.3, y: 11.3 },
   { text: 'BOARD ROOM', x: 18, y: 0.5 },
 ];
 

@@ -9,12 +9,14 @@ import {
   COFFEE_POS,
   CONSOLE_POS,
   COUCHES,
+  COUNTER_POS,
   DESK_SEATS,
   LAYOUT,
   LOUNGE_SEATS,
   PLANTS,
   PLAYER_SPAWN,
   RUGS,
+  STOOL_POS,
   TABLE_CHAIRS,
   TABLE_POS,
   TV_POS,
@@ -87,8 +89,12 @@ class OfficeScene extends Phaser.Scene {
   /** Pathfinding walkability grid (true = blocked); seats handled specially. */
   private blocked: boolean[][] = [];
   private boardCenter = { x: 0, y: 0 };
+  private kitchenCenter = { x: 0, y: 0 };
   private lastNearby: string | null = null;
   private nearBoardFlag = false;
+  private nearKitchenFlag = false;
+  /** ☕ shown over the player while on a coffee break. */
+  private breakIcon!: Phaser.GameObjects.Text;
   private facing: 'down' | 'up' | 'side' = 'down';
   /** Click-to-walk: pixel waypoints the player is auto-following, or null. */
   private playerPath: { x: number; y: number }[] | null = null;
@@ -126,6 +132,7 @@ class OfficeScene extends Phaser.Scene {
     this.buildWalls();
     this.buildDesks();
     this.buildLounge();
+    this.buildKitchen();
     this.buildBoardroom();
     this.buildPlants();
     this.buildLabels();
@@ -219,6 +226,18 @@ class OfficeScene extends Phaser.Scene {
       this.nearBoardFlag = nearBoard;
       useOfficeStore.getState().setNearBoard(nearBoard);
     }
+
+    // Kitchen coffee-machine proximity.
+    const kDist = (px - this.kitchenCenter.x) ** 2 + (py - this.kitchenCenter.y) ** 2;
+    const nearKitchen = kDist <= (PROXIMITY * 1.3) ** 2;
+    if (nearKitchen !== this.nearKitchenFlag) {
+      this.nearKitchenFlag = nearKitchen;
+      useOfficeStore.getState().setNearKitchen(nearKitchen);
+    }
+
+    // ☕ floats over the player while on a break.
+    this.breakIcon.setPosition(this.player.x + 11, this.player.y - 16);
+    this.breakIcon.setVisible(useOfficeStore.getState().onBreak);
   }
 
   /** Re-tint the theme-driven objects when the app's light/dark theme flips. */
@@ -600,6 +619,10 @@ class OfficeScene extends Phaser.Scene {
       useOfficeStore.getState().openBoard();
       return;
     }
+    if (this.nearKitchenFlag) {
+      useOfficeStore.getState().toggleBreak();
+      return;
+    }
     if (this.lastNearby) useOfficeStore.getState().open(this.lastNearby);
   }
 
@@ -654,7 +677,14 @@ class OfficeScene extends Phaser.Scene {
     for (const a of ARMCHAIRS) this.solids.push(this.staticDecor(a, TEX.armchair, 2));
     this.solids.push(this.staticDecor(TV_POS, TEX.tv, 5));
     this.add.image(center(CONSOLE_POS.x), center(CONSOLE_POS.y), TEX.console).setDepth(5);
-    this.add.image(center(COFFEE_POS.x), center(COFFEE_POS.y), TEX.coffee).setDepth(3); // corner decor
+  }
+
+  /** Kitchenette nook: counter + stool (decor) + the interactable coffee machine. */
+  private buildKitchen() {
+    this.add.image(center(COUNTER_POS.x), center(COUNTER_POS.y), TEX.counter).setDepth(2);
+    this.add.image(center(STOOL_POS.x), center(STOOL_POS.y), TEX.stool).setDepth(3);
+    const machine = this.add.image(center(COFFEE_POS.x), center(COFFEE_POS.y), TEX.coffee).setDepth(3);
+    this.kitchenCenter = { x: machine.x, y: machine.y };
   }
 
   private buildBoardroom() {
@@ -704,6 +734,13 @@ class OfficeScene extends Phaser.Scene {
     this.physics.add.existing(this.player);
     this.body().setSize(10, 7).setOffset(3, 12);
     this.body().setCollideWorldBounds(true);
+
+    this.breakIcon = this.add
+      .text(sx, sy, '☕', { fontSize: '13px' })
+      .setOrigin(0.5)
+      .setResolution(2)
+      .setVisible(false)
+      .setDepth(11);
   }
 
   private buildVignette(worldW: number, worldH: number) {

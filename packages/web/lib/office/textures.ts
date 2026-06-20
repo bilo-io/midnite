@@ -28,6 +28,8 @@ export const TEX = {
   board: 'office-board',
   plant: 'office-plant',
   coffee: 'office-coffee',
+  counter: 'office-counter',
+  stool: 'office-stool',
 } as const;
 
 export type Dir = 'down' | 'up' | 'side';
@@ -286,6 +288,23 @@ export function ensureOfficeTextures(scene: Phaser.Scene): void {
     rect(g, 6, 5, 3, 1, 0x34d399); // ready light
     rect(g, 8, 9, 4, 3, 0x6b4f3a); // mug
     rect(g, 9, 11, 6, 1, 0x0b0f17); // drip
+  });
+  make(TEX.counter, 30, 22, (g) => {
+    rect(g, 0, 6, 30, 16, 0x3a4150); // cabinet
+    rect(g, 0, 4, 30, 4, 0x4b5563); // counter top
+    rect(g, 2, 12, 11, 8, 0x2b313c); // left door
+    rect(g, 15, 12, 11, 8, 0x2b313c); // right door
+    rect(g, 11, 15, 2, 2, 0x9aa3b2); // left handle
+    rect(g, 17, 15, 2, 2, 0x9aa3b2); // right handle
+    rect(g, 20, 1, 7, 4, 0x9ca3af); // sink basin
+    rect(g, 23, 0, 1, 3, 0xcbd5e1); // tap
+  });
+  make(TEX.stool, 12, 16, (g) => {
+    rect(g, 1, 3, 10, 4, 0x6b4f3a); // seat
+    rect(g, 1, 3, 10, 1, 0x8a6a4a); // seat highlight
+    rect(g, 2, 7, 2, 8, 0x3f4756); // legs
+    rect(g, 8, 7, 2, 8, 0x3f4756);
+    rect(g, 2, 10, 8, 1, 0x3f4756); // cross-bar
   });
   make(TEX.plant, 18, 24, (g) => {
     rect(g, 6, 16, 6, 8, 0x6b4f3a); // pot
