@@ -38,6 +38,7 @@ import { ThroughputWidget } from './throughput-widget';
 import { HealthWidget } from './health-widget';
 import { UsageWidget } from './usage-widget';
 import { ShippedWidget } from './shipped-widget';
+import { SystemMonitorWidget } from './system-monitor-widget';
 import { WorldClocksWidget } from './world-clocks-widget';
 import { AllProjectsWidget } from './all-projects-widget';
 import { QuoteWidget } from './quote-widget';
@@ -370,6 +371,8 @@ export function DashboardGrid({
         return { node: <UsageWidget /> };
       case 'shipped':
         return { node: <ShippedWidget /> };
+      case 'system-monitor':
+        return { node: <SystemMonitorWidget /> };
 
       // — at-a-glance extras —
       case 'world-clocks': {

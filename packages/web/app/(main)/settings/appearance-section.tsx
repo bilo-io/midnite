@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Accordion } from '@/components/ui/accordion';
 import { Switch } from '@/components/ui/switch';
+import { Wordmark } from '@/components/wordmark';
 import { useTheme, type ThemePreference } from '@/app/theme/theme-context';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
@@ -180,9 +181,7 @@ function LogoCard() {
                       className="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-border/60"
                     />
                   ) : null}
-                  <span className="text-3xl leading-none" style={{ fontFamily: `var(${f.cssVar})` }}>
-                    midnite
-                  </span>
+                  <Wordmark font={f.key} className={cn('leading-none', f.previewSize)} />
                 </div>
 
                 <span className="text-[11px] uppercase tracking-wider text-muted-foreground">

@@ -17,6 +17,9 @@ import {
 } from '@/lib/app-settings';
 import { PasscodeUnlockDialog } from '@/components/passcode-pad';
 import { Spinner } from '@/components/spinner';
+import { AreaChart, LegendDot } from '@/components/system-chart';
+import { useSystemTelemetry } from '@/lib/use-system-telemetry';
+import { clamp } from '@/lib/utils';
 
 // Playful phrases shown one at a time in the big title slot. Which set we draw
 // from tracks what the agents are doing: at least one acting → ACTIVE; none
@@ -232,23 +235,6 @@ function pad(n: number): string {
   return n.toString().padStart(2, '0');
 }
 
-function clamp(n: number, lo: number, hi: number): number {
-  return Math.max(lo, Math.min(hi, n));
-}
-
-// Number of samples held in the CPU/RAM rolling charts.
-const SERIES_LEN = 32;
-
-function seedSeries(base: number): number[] {
-  return Array.from({ length: SERIES_LEN }, () => clamp(base + (Math.random() - 0.5) * 18, 4, 96));
-}
-
-// Smooth random walk: drop the oldest sample, append a nudged new one.
-function walkSeries(prev: number[], spread: number, lo: number, hi: number): number[] {
-  const last = prev[prev.length - 1] ?? 50;
-  return [...prev.slice(1), clamp(last + (Math.random() - 0.5) * spread, lo, hi)];
-}
-
 export function Screensaver({
   onClose,
   locked = false,
@@ -283,16 +269,13 @@ export function Screensaver({
   const [unlocking, setUnlocking] = useState(false);
 
   // Corner widgets: live clock plus simulated system telemetry.
+  const { cpu, ram, cpuNow, ramNow } = useSystemTelemetry();
   const [now, setNow] = useState(() => new Date());
-  const [cpu, setCpu] = useState<number[]>(() => seedSeries(38));
-  const [ram, setRam] = useState<number[]>(() => seedSeries(56));
   const [quota, setQuota] = useState(() => clamp(58 + (Math.random() - 0.5) * 20, 35, 90));
 
   useEffect(() => {
     const id = setInterval(() => {
       setNow(new Date());
-      setCpu((prev) => walkSeries(prev, 22, 5, 96));
-      setRam((prev) => walkSeries(prev, 9, 22, 92));
       setQuota((q) => clamp(q + (Math.random() - 0.42) * 1.4, 30, 97));
     }, 1000);
     return () => clearInterval(id);
@@ -374,8 +357,6 @@ export function Screensaver({
   const agentsPct = poolSize > 0 ? clamp((active / poolSize) * 100, 0, 100) : 0;
 
   const time = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-  const cpuNow = Math.round(cpu[cpu.length - 1] ?? 0);
-  const ramNow = Math.round(ram[ram.length - 1] ?? 0);
 
   return (
     <div
@@ -498,54 +479,6 @@ export function Screensaver({
         />
       ) : null}
     </div>
-  );
-}
-
-function LegendDot({ hueVar, label, value }: { hueVar: string; label: string; value: number }) {
-  return (
-    <span className="flex items-center gap-1.5 text-muted-foreground">
-      <span
-        aria-hidden
-        className="h-2 w-2 rounded-full"
-        style={{ background: `hsl(var(${hueVar}))` }}
-      />
-      {label}
-      <span className="tabular-nums text-foreground">{value}%</span>
-    </span>
-  );
-}
-
-const CHART_W = 184;
-const CHART_H = 52;
-
-function seriesPaths(data: number[]): { line: string; area: string } {
-  const n = data.length;
-  const pts = data.map((v, i) => {
-    const x = (i / (n - 1)) * CHART_W;
-    const y = CHART_H - (v / 100) * CHART_H;
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  });
-  const line = `M${pts.join(' L')}`;
-  const area = `${line} L${CHART_W},${CHART_H} L0,${CHART_H} Z`;
-  return { line, area };
-}
-
-function AreaChart({ cpu, ram }: { cpu: number[]; ram: number[] }) {
-  const c = seriesPaths(cpu);
-  const r = seriesPaths(ram);
-  return (
-    <svg
-      width={CHART_W}
-      height={CHART_H}
-      viewBox={`0 0 ${CHART_W} ${CHART_H}`}
-      className="overflow-visible"
-      aria-hidden
-    >
-      <path d={r.area} fill="hsl(var(--status-todo) / 0.14)" />
-      <path d={c.area} fill="hsl(var(--status-wip) / 0.16)" />
-      <path d={r.line} fill="none" stroke="hsl(var(--status-todo))" strokeWidth={1.5} />
-      <path d={c.line} fill="none" stroke="hsl(var(--status-wip))" strokeWidth={1.5} />
-    </svg>
   );
 }
 

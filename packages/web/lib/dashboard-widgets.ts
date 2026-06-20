@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Clock,
   CloudSun,
+  Cpu,
   FolderKanban,
   Globe,
   HeartPulse,
@@ -32,6 +33,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { NEWS_MAX_COUNT, type AssetKind } from '@midnite/shared';
+import type { WordmarkFontKey } from './wordmark-fonts';
 
 // A widget's stable type doubles as its react-grid-layout item key `i`. The one
 // exception is `projects`, which expands to one `proj-N` grid item per recent
@@ -60,6 +62,7 @@ export type WidgetType =
   | 'health'
   | 'usage'
   | 'shipped'
+  | 'system-monitor'
   // at-a-glance extras
   | 'world-clocks'
   | 'all-projects'
@@ -126,7 +129,7 @@ export type WidgetConfig = {
   timer: { workMin: number; breakMin: number };
   scratchpad: { text: string };
   links: { links: QuickLink[] };
-  quote: { size: QuoteSize; typingSpeedMs: number; cycleMs: number };
+  quote: { size: QuoteSize; typingSpeedMs: number; cycleMs: number; font: WordmarkFontKey };
   finances: FinanceConfig;
   'market-asset': MarketAssetConfig;
   'market-watchlist': MarketWatchlistConfig;
@@ -153,10 +156,35 @@ export type WidgetInstance =
 export type WidgetSize = { w: number; h: number; minW: number; minH: number };
 export type Breakpoint = 'lg' | 'md' | 'sm';
 
+/** The section a widget is filed under in the "add widget" picker. */
+export type WidgetCategory =
+  | 'tasks'
+  | 'agents'
+  | 'activity'
+  | 'system'
+  | 'datetime'
+  | 'finance'
+  | 'info'
+  | 'productivity';
+
+/** Picker section order + display labels. Every widget's `category` must appear here. */
+export const WIDGET_CATEGORIES: readonly { key: WidgetCategory; label: string }[] = [
+  { key: 'tasks', label: 'Tasks & projects' },
+  { key: 'agents', label: 'Agents' },
+  { key: 'activity', label: 'Activity' },
+  { key: 'system', label: 'System' },
+  { key: 'datetime', label: 'Date & time' },
+  { key: 'finance', label: 'Finance & markets' },
+  { key: 'info', label: 'News & weather' },
+  { key: 'productivity', label: 'Productivity' },
+];
+
 type WidgetMeta = {
   label: string;
   description: string;
   icon: LucideIcon;
+  /** Section in the add-widget picker. */
+  category: WidgetCategory;
   /** Default grid footprint per breakpoint (cols: lg 12, md 8, sm 4). */
   sizes: Record<Breakpoint, WidgetSize>;
 };
@@ -181,79 +209,95 @@ const mediumSizes: Record<Breakpoint, WidgetSize> = {
 };
 
 export const DASHBOARD_WIDGETS: Record<WidgetType, WidgetMeta> = {
-  'tile-backlog': { label: 'Backlog', description: 'Count of parked or ambiguous tasks', icon: Inbox, sizes: tileSizes },
-  'tile-todo': { label: 'Todo', description: 'Count of queued, ready-to-start tasks', icon: ListTodo, sizes: tileSizes },
-  'tile-inProgress': { label: 'In progress', description: 'Count of running or waiting tasks', icon: Loader, sizes: tileSizes },
-  'tile-done': { label: 'Done', description: 'Count of completed tasks', icon: CheckCircle2, sizes: tileSizes },
+  'tile-backlog': { label: 'Backlog', description: 'Count of parked or ambiguous tasks', icon: Inbox, category: 'tasks', sizes: tileSizes },
+  'tile-todo': { label: 'Todo', description: 'Count of queued, ready-to-start tasks', icon: ListTodo, category: 'tasks', sizes: tileSizes },
+  'tile-inProgress': { label: 'In progress', description: 'Count of running or waiting tasks', icon: Loader, category: 'tasks', sizes: tileSizes },
+  'tile-done': { label: 'Done', description: 'Count of completed tasks', icon: CheckCircle2, category: 'tasks', sizes: tileSizes },
   projects: {
     label: 'Recent projects',
     description: 'Cards for your most recently updated projects',
     icon: FolderKanban,
+    category: 'tasks',
     sizes: {
       lg: { w: 4, h: 5, minW: 2, minH: 3 },
       md: { w: 4, h: 5, minW: 2, minH: 3 },
       sm: { w: 4, h: 5, minW: 2, minH: 3 },
     },
   },
-  notes: { label: 'Notes', description: 'Quick notes with speech-to-text', icon: StickyNote, sizes: panelSizes },
-  routines: { label: 'Routines', description: 'Track your daily routines', icon: CalendarCheck, sizes: panelSizes },
+  notes: { label: 'Notes', description: 'Quick notes with speech-to-text', icon: StickyNote, category: 'productivity', sizes: panelSizes },
+  routines: { label: 'Routines', description: 'Track your daily routines', icon: CalendarCheck, category: 'productivity', sizes: panelSizes },
   news: {
     label: 'Hacker News',
     description: 'Top stories from Hacker News',
     icon: Newspaper,
+    category: 'info',
     sizes: { lg: { w: 4, h: 8, minW: 3, minH: 4 }, md: { w: 4, h: 8, minW: 3, minH: 4 }, sm: { w: 4, h: 8, minW: 3, minH: 4 } },
   },
   weather: {
     label: 'Weather',
     description: 'Current conditions and today’s outlook',
     icon: CloudSun,
+    category: 'info',
     sizes: { lg: { w: 3, h: 5, minW: 2, minH: 2 }, md: { w: 3, h: 5, minW: 2, minH: 2 }, sm: { w: 2, h: 5, minW: 2, minH: 2 } },
   },
   clock: {
     label: 'Clock',
     description: 'Digital or analogue clock',
     icon: Clock,
+    category: 'datetime',
     sizes: { lg: { w: 3, h: 4, minW: 2, minH: 3 }, md: { w: 3, h: 4, minW: 2, minH: 3 }, sm: { w: 2, h: 4, minW: 2, minH: 3 } },
   },
   date: {
     label: 'Date',
     description: 'Today’s date',
     icon: Calendar,
+    category: 'datetime',
     sizes: { lg: { w: 3, h: 2, minW: 2, minH: 2 }, md: { w: 2, h: 2, minW: 2, minH: 2 }, sm: { w: 2, h: 2, minW: 2, minH: 2 } },
   },
 
   // — midnite-native ————————————————————————————————————————————————
-  sessions: { label: 'Live sessions', description: 'Active agent sessions and their status', icon: TerminalSquare, sizes: panelSizes },
-  workflows: { label: 'Workflows', description: 'Workflow definitions and last-run status', icon: Workflow, sizes: panelSizes },
-  memories: { label: 'Recent memories', description: 'Most recently updated agent memories', icon: Brain, sizes: panelSizes },
-  agents: { label: 'Agent pool', description: 'Primary agent, model and sub-agents', icon: Bot, sizes: mediumSizes },
-  councils: { label: 'Councils', description: 'Your councils and their participants', icon: Users, sizes: panelSizes },
+  sessions: { label: 'Live sessions', description: 'Active agent sessions and their status', icon: TerminalSquare, category: 'agents', sizes: panelSizes },
+  workflows: { label: 'Workflows', description: 'Workflow definitions and last-run status', icon: Workflow, category: 'agents', sizes: panelSizes },
+  memories: { label: 'Recent memories', description: 'Most recently updated agent memories', icon: Brain, category: 'agents', sizes: panelSizes },
+  agents: { label: 'Agent pool', description: 'Primary agent, model and sub-agents', icon: Bot, category: 'agents', sizes: mediumSizes },
+  councils: { label: 'Councils', description: 'Your councils and their participants', icon: Users, category: 'agents', sizes: panelSizes },
 
   // — live activity —————————————————————————————————————————————————
-  activity: { label: 'Activity feed', description: 'Recent task status changes', icon: Activity, sizes: panelSizes },
+  activity: { label: 'Activity feed', description: 'Recent task status changes', icon: Activity, category: 'activity', sizes: panelSizes },
   throughput: {
     label: 'Throughput',
     description: 'Tasks completed over the last two weeks',
     icon: BarChart3,
+    category: 'activity',
     sizes: { lg: { w: 4, h: 4, minW: 3, minH: 3 }, md: { w: 4, h: 4, minW: 3, minH: 3 }, sm: { w: 4, h: 4, minW: 3, minH: 3 } },
   },
   health: {
     label: 'System health',
     description: 'Gateway reachability and agent status',
     icon: HeartPulse,
+    category: 'system',
     sizes: { lg: { w: 4, h: 4, minW: 2, minH: 3 }, md: { w: 4, h: 4, minW: 2, minH: 3 }, sm: { w: 4, h: 4, minW: 2, minH: 3 } },
   },
   usage: {
     label: 'LLM cost & usage',
     description: 'Estimated spend by day, provider and feature',
     icon: Wallet,
+    category: 'activity',
     sizes: panelSizes,
   },
   shipped: {
     label: 'Shipped',
     description: 'Recently completed tasks with their PR links',
     icon: Rocket,
+    category: 'tasks',
     sizes: panelSizes,
+  },
+  'system-monitor': {
+    label: 'System monitor',
+    description: 'Live CPU and memory usage',
+    icon: Cpu,
+    category: 'system',
+    sizes: { lg: { w: 4, h: 4, minW: 2, minH: 3 }, md: { w: 4, h: 4, minW: 2, minH: 3 }, sm: { w: 4, h: 4, minW: 2, minH: 3 } },
   },
 
   // — at-a-glance extras ————————————————————————————————————————————
@@ -261,13 +305,15 @@ export const DASHBOARD_WIDGETS: Record<WidgetType, WidgetMeta> = {
     label: 'World clocks',
     description: 'Current time across multiple timezones',
     icon: Globe,
+    category: 'datetime',
     sizes: { lg: { w: 4, h: 4, minW: 2, minH: 3 }, md: { w: 4, h: 4, minW: 2, minH: 3 }, sm: { w: 4, h: 4, minW: 2, minH: 3 } },
   },
-  'all-projects': { label: 'All projects', description: 'Every project with its task breakdown', icon: LayoutGrid, sizes: panelSizes },
+  'all-projects': { label: 'All projects', description: 'Every project with its task breakdown', icon: LayoutGrid, category: 'tasks', sizes: panelSizes },
   quote: {
     label: 'Quote',
     description: 'A quote that changes daily',
     icon: Quote,
+    category: 'productivity',
     sizes: { lg: { w: 4, h: 3, minW: 2, minH: 2 }, md: { w: 4, h: 3, minW: 2, minH: 2 }, sm: { w: 4, h: 3, minW: 2, minH: 2 } },
   },
 
@@ -276,25 +322,29 @@ export const DASHBOARD_WIDGETS: Record<WidgetType, WidgetMeta> = {
     label: 'Focus timer',
     description: 'Pomodoro-style work / break countdown',
     icon: Timer,
+    category: 'productivity',
     sizes: { lg: { w: 3, h: 5, minW: 2, minH: 4 }, md: { w: 3, h: 5, minW: 2, minH: 4 }, sm: { w: 2, h: 5, minW: 2, minH: 4 } },
   },
   calendar: {
     label: 'Calendar',
     description: 'Mini month calendar',
     icon: CalendarDays,
+    category: 'datetime',
     sizes: { lg: { w: 4, h: 6, minW: 3, minH: 5 }, md: { w: 4, h: 6, minW: 3, minH: 5 }, sm: { w: 4, h: 6, minW: 3, minH: 5 } },
   },
-  scratchpad: { label: 'Scratchpad', description: 'Freeform notepad saved on this device', icon: NotebookPen, sizes: panelSizes },
+  scratchpad: { label: 'Scratchpad', description: 'Freeform notepad saved on this device', icon: NotebookPen, category: 'productivity', sizes: panelSizes },
   links: {
     label: 'Quick links',
     description: 'Your own grid of bookmarks',
     icon: LinkIcon,
+    category: 'productivity',
     sizes: mediumSizes,
   },
   finances: {
     label: 'Finances',
     description: 'Income vs expenses with the leftover — one card per budget',
     icon: Wallet,
+    category: 'finance',
     sizes: mediumSizes,
   },
 
@@ -303,12 +353,14 @@ export const DASHBOARD_WIDGETS: Record<WidgetType, WidgetMeta> = {
     label: 'Stock / Crypto',
     description: 'Live price, OHLC and a historic area chart for one asset',
     icon: LineChart,
+    category: 'finance',
     sizes: mediumSizes,
   },
   'market-watchlist': {
     label: 'Watchlist',
     description: 'A handful of stocks or coins with price and gain/loss',
     icon: Star,
+    category: 'finance',
     sizes: mediumSizes,
   },
 };
@@ -336,11 +388,46 @@ export const DEFAULT_WIDGETS: WidgetInstance[] = [
   { type: 'routines' },
 ];
 
-/** Default quote settings: medium text, a brisk type-out, and a 1-minute cycle. */
+/**
+ * Seed for a freshly-added dashboard tab: a near-empty board with just the time
+ * and date in the top-left (the grid auto-places them at x=0). Only the first
+ * tab uses the fuller {@link DEFAULT_WIDGETS}.
+ */
+export const NEW_TAB_WIDGETS: WidgetInstance[] = [
+  { type: 'clock', config: { mode: 'digital' } },
+  { type: 'date' },
+];
+
+/** One react-grid-layout item, keyed by the grid item id (the widget type here). */
+type SeedLayoutItem = { i: string; x: number; y: number; w: number; h: number; minW: number; minH: number };
+
+/**
+ * Matching seed layout for {@link NEW_TAB_WIDGETS}: the clock and date sit side by
+ * side, equal size, in the top-left (rather than the grid's default top-stacked
+ * auto-placement). Persisted to the new tab's layout key; the grid reconciles it.
+ */
+export const NEW_TAB_LAYOUT: Record<Breakpoint, SeedLayoutItem[]> = {
+  lg: [
+    { i: 'clock', x: 0, y: 0, w: 3, h: 3, minW: 2, minH: 3 },
+    { i: 'date', x: 3, y: 0, w: 3, h: 3, minW: 2, minH: 2 },
+  ],
+  md: [
+    { i: 'clock', x: 0, y: 0, w: 3, h: 3, minW: 2, minH: 3 },
+    { i: 'date', x: 3, y: 0, w: 3, h: 3, minW: 2, minH: 2 },
+  ],
+  sm: [
+    { i: 'clock', x: 0, y: 0, w: 2, h: 3, minW: 2, minH: 3 },
+    { i: 'date', x: 2, y: 0, w: 2, h: 3, minW: 2, minH: 2 },
+  ],
+};
+
+/** Default quote settings: medium text, a brisk type-out, a 1-minute cycle, and
+ *  the SignPainter wordmark face. */
 export const QUOTE_DEFAULTS: WidgetConfig['quote'] = {
   size: 'md',
   typingSpeedMs: 40,
   cycleMs: QUOTE_CYCLE_DEFAULT_MS,
+  font: 'signpainter',
 };
 
 /** A fresh instance (with default config) for a type just added from the catalogue. */
@@ -402,6 +489,30 @@ export function widgetCatalog(enabled: WidgetInstance[]): WidgetCatalogEntry[] {
     added: !MULTI_INSTANCE.has(type) && present.has(type),
     ...DASHBOARD_WIDGETS[type],
   }));
+}
+
+/** One section of the add-widget picker: a category and the entries filed under it. */
+export type WidgetCatalogGroup = { category: WidgetCategory; label: string; items: WidgetCatalogEntry[] };
+
+/**
+ * Filter a catalogue by a search query (matched case-insensitively against label
+ * and description), then bucket the survivors into {@link WIDGET_CATEGORIES} order.
+ * Empty sections are dropped, so an empty result means "nothing matched".
+ */
+export function groupWidgetCatalog(
+  entries: WidgetCatalogEntry[],
+  query: string,
+): WidgetCatalogGroup[] {
+  const q = query.trim().toLowerCase();
+  const matched = entries.filter(
+    (e) =>
+      !q || e.label.toLowerCase().includes(q) || e.description.toLowerCase().includes(q),
+  );
+  return WIDGET_CATEGORIES.map(({ key, label }) => ({
+    category: key,
+    label,
+    items: matched.filter((e) => e.category === key),
+  })).filter((group) => group.items.length > 0);
 }
 
 /** Default footprint for a rendered grid key (`proj-N` maps to the `projects` size). */

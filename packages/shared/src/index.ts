@@ -1,6 +1,7 @@
 export * from './config.js';
 export * from './agent.js';
 export * from './agents.js';
+export * from './environment.js';
 export * from './llm.js';
 export * from './council.js';
 export * from './task.js';
