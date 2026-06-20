@@ -25,10 +25,10 @@
 
 > `shared` is the contract every other package depends on (CLAUDE.md "Golden Rule"). Untested schemas are the highest-leverage gap: a broken zod shape or state-machine transition breaks gateway + cli + web at once.
 
-### A1. Cover the untested `shared` modules — **M**
-- [ ] Add `*.test.ts` alongside each untested module: **agent, backup, dashboard, fs, llm, media, memory, node, note, project, routine, run, session, task, trigger, usage, workflow, events/workflow, config-loader**. Match the existing convention (`foo.ts` → `foo.test.ts`).
-- [ ] For each zod schema: **round-trip** valid fixtures (`parse` succeeds, output shape is exact) and **reject** representative invalid inputs (missing/extra/wrong-typed fields, bad enums/unions). Assert discriminated unions narrow on their `type` field.
-- [ ] For the **task state machine** ([`task.ts`](../packages/shared/src/task.ts)) and any other transition logic: table-test legal transitions allowed and illegal ones rejected.
+### A1. Cover the untested `shared` modules — **M** — ✅ DONE (PR #23, 2026-06-20)
+- [x] Added `*.test.ts` alongside all 19 previously-untested modules (**agent, backup, dashboard, fs, llm, media, memory, node, note, project, routine, run, session, task, trigger, usage, workflow, events/workflow, config-loader**) — ~150 tests, `shared` now 32 files / 204 tests.
+- [x] Each zod schema **round-trips** valid fixtures + **rejects** invalid inputs; discriminated unions (`trigger`, `events/workflow`) asserted to narrow on `type`; pure helpers (`missingProjectRequirements`, `providerSupportsBaseUrl`, `CLI_PROVIDER_MAP`) covered. See [done.md](done.md).
+- ❌ **N/A** — the "task state machine" bullet: `shared/task.ts` holds only schemas/enums; the status-transition logic lives in the gateway and is covered under Theme B, not here.
 
 ### A2. Schema invariants & client contract — **S–M**
 - [ ] Property-style sanity for the **typed API client** and the WS event unions in [`events/`](../packages/shared/src/events/): every `type` in the discriminated union has at least one fixture; encoding then decoding is identity.

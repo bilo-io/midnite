@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-20 — Phase 10 A1: shared unit coverage (PR #23)
+
+Closed the highest-leverage test gap: the `shared` contract package had ~19 untested modules, where a broken zod shape breaks gateway + cli + web at once. Tests only — no product behaviour changed.
+
+- [x] **A1 — cover the untested `shared` modules**: added `*.test.ts` alongside **agent, backup, dashboard, fs, llm, media, memory, node, note, project, routine, run, session, task, trigger, usage, workflow, events/workflow, config-loader** (19 files, ~150 tests).
+- [x] Each suite **round-trips** a valid fixture, **rejects** representative invalid inputs (bad enums/unions, out-of-range, non-url, missing required), asserts **applied defaults** (e.g. `task.priority`, trigger method/timezone, workflow `enabled`/`steps`), narrows the **discriminated unions** (`trigger`, `events/workflow`) on their `type`, and covers the pure helpers (`missingProjectRequirements`, `providerSupportsBaseUrl`, `CLI_PROVIDER_MAP`).
+- [x] `config-loader` (node-only) exercised against a real temp dir: ancestor walk, explicit-path load, defaults fallback on missing/unparseable. `moon run shared:test` → 32 files / 204 tests; `shared:typecheck` + `shared:lint` green; `moon ci` green on PR #23.
+- Note: A1's "task state machine" bullet is N/A here — `shared/task.ts` holds only schemas/enums; transition logic lives in the gateway, covered separately under Theme B.
+
 ## 2026-06-20 — Phase 9 office A3: room signage (PR #22)
 
 Replaced the room labels floating over the floor with **wall-mounted name plates** so every room is unmistakable at a glance.
