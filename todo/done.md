@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-20 — Phase 9 office D1: board room → projects hub (PR #17)
+
+Repurposed the `/office` board room from a static documents whiteboard (Phase 8 D3) into the **live projects hub**, the highest-utility office interaction.
+
+- [x] **D1 — projects in the board room**: `boardroom-panel.tsx` now lists active projects (`getProjects`) — each row shows the project tag, name, and task count. Clicking one opens the existing `project-modal.tsx` **as-is**, portalled over the office (`<body>`, escaping the stage's `overflow-hidden` / page-reveal transform), so the URL stays `/office`. Plans, sources, tasks, and the project's memory are all reachable without leaving the room. Escape from a project returns to the list; Escape from the list returns to the room.
+- [x] The project modal subsumes the old per-project document browser (its Plan tab + memory link cover what the whiteboard showed), so `documents.ts`, `documents.test.ts`, and `document-modal.tsx` were removed and replaced by a small, tested `lib/office/projects.ts` (`boardroomProjects` → active + alphabetised) seam.
+- [x] `nearBoard`/`openBoard`/`boardOpen` scene+store flow unchanged; web-only, no gateway/shared changes. README updated.
+- [x] Verified: `web:typecheck` / `web:lint` green; `projects.test.ts` (2 tests) pass from the primary checkout; `moon ci` green on PR #17.
+
 ## 2026-06-20 — Phase 8 office: idle sleep/game (C1), click-to-walk (D2), coffee corner (A3)
 
 Rounded out the achievable rest of Phase 8 (remaining open items need external assets, new session data, or are out of scope).

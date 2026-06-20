@@ -78,10 +78,10 @@ A bookshelf prop the player walks up to (an interactable, same pattern as the bo
 
 Repurpose the board room (today a static "documents whiteboard") into the **projects** hub.
 
-### D1. Projects in the board room — **M**
-- [ ] On entering/opening the board (extend the existing `nearBoard`/`openBoard` flow), show the live **project list** (`getProjects()` from [`lib/api.ts`](../packages/web/lib/api.ts), same hook style as `use-office-agents`). Render projects as either rows in the board panel or as clickable stations around the conference table (`TABLE_*` in [`layout.ts`](../packages/web/lib/office/layout.ts)).
-- [ ] Clicking a project opens the existing [`project-modal.tsx`](../packages/web/components/project-modal.tsx) **as a React modal overlaid on the office — stays on `/office`**, no navigation. Reuse it as-is; just mount it from the office HUD with the selected `projectId`.
-- [ ] Keep the modal's own actions working (it already handles project view/edit); Escape/close returns to the room.
+### D1. Projects in the board room — **M** — ✅ DONE (2026-06-20, PR #17)
+- [x] The board panel lists active projects (`getProjects`) as rows (tag · name · task count); reuses the existing `nearBoard`/`openBoard` flow. Pure shaping in [`lib/office/projects.ts`](../packages/web/lib/office/projects.ts) (`boardroomProjects` → active + alphabetised, tested). (Conference-table "stations" left as a future flourish.)
+- [x] Clicking a project opens the existing [`project-modal.tsx`](../packages/web/components/project-modal.tsx) **as-is**, portalled over the office — the URL stays `/office`, no navigation.
+- [x] The modal's own actions work; Escape from a project returns to the list, Escape from the list returns to the room. The old documents whiteboard (`documents.ts` / `document-modal.tsx`) was removed — the project modal's Plan tab + memory link subsume it. See [done.md](done.md).
 
 ---
 
