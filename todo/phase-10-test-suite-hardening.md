@@ -40,9 +40,11 @@
 
 > Already the strongest layer; the work here is **filling holes and standardising**, not a rewrite. Keep the layering discipline: unit-test services with in-memory repository fakes, integration-test against real `:memory:` SQLite (CLAUDE.md "Testing").
 
-### B1. Controller + WS boundary coverage — **M**
-- [ ] Audit each Nest feature module for an untested **controller** (HTTP decode/encode + status codes) and **gateway** (WS event shapes). Add specs where missing — assert the `ZodValidationPipe` rejects bad bodies with the right status, and that services throwing domain errors map to the right HTTP codes.
-- [ ] Cover the **authenticated webhook path** (`POST /hooks/:taskId/:event`, per-session secret) — accept valid, reject missing/wrong secret. (Build on the existing `lifecycle-hook.controller.test.ts`.)
+### B1. Controller + WS boundary coverage — **M** — ◐ PARTIAL (PR #28, 2026-06-20)
+- [x] Pattern + first slice landed: `tasks`, `projects`, `notes` controllers (manual Zod `safeParse` rejection → `BadRequestException` 400; valid input delegates with parsed data; service-thrown domain errors propagate, e.g. `NotFoundException` → 404). All 3 WS gateways were already tested.
+- [x] **Authenticated hook path** covered: `approval` (PreToolUse — missing/wrong `x-midnite-hook-secret` → 404, valid + bad payload → 400, valid → delegates) + `workflows/webhook` (forwards id/token/body, defaults null body, propagates bad-token rejection). Builds on the existing `lifecycle-hook.controller.test.ts`.
+- [ ] **Follow-up:** the remaining ~20 untested controllers (admin, agents, councils, media, memories, routines, sessions, providers, usage, workflows, market/news/weather proxies, …) under the same direct-instantiation + `vi.fn()` pattern. (Note: no `ZodValidationPipe` class exists — controllers validate via manual `safeParse`; the brief's "pipe" is that pattern.)
+- ⚠️ **Flaky test noticed (pre-existing, not from this PR):** `terminal/terminal.service.spec.ts:162` ("injects MIDNITE_* hook env … surviving the secret scrub") intermittently fails on CI — looks like cross-file `process.env` leakage between Vitest worker-shared files. Worth a small isolation fix (snapshot/restore `process.env`) in a separate commit.
 
 ### B2. Scheduler, pool & lifecycle integration — **M**
 - [ ] Integration tests around the **scheduler tick** + **agent pool** slot transitions and the **heartbeat** scheduler — drive a few task/agent lifecycles end-to-end against `:memory:` SQLite and assert the emitted WS events + persisted state agree. Use `AbortSignal`-driven ticks so tests stay deterministic (no wall-clock sleeps; inject a clock/fake timers).

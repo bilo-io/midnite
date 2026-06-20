@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-20 — Phase 10 B1 (partial): gateway controller boundary coverage (PR #28)
+
+The gateway HTTP boundary was thinly tested (2 of 27 controllers). Established the pattern + covered the highest-value boundaries; the remaining controllers are a follow-up (B1 stays ◐ partial).
+
+- [x] **Validation + delegation + error mapping**: `tasks`, `projects`, `notes` controller specs — bad body/query (`safeParse` failure) → `BadRequestException` (400); valid input delegates to the service with parsed data; a service-thrown `NotFoundException` propagates through the controller (404).
+- [x] **Authenticated hook path**: `approval` (PreToolUse) — missing/wrong `x-midnite-hook-secret` → 404 (service never consulted), valid secret + malformed payload → 400, valid → returns the decision; `workflows/webhook` — forwards id/token/body, defaults a null body to `{}`, propagates a bad-token rejection.
+- [x] Direct-instantiation + `vi.fn()` fakes (no DB), mirroring the existing `pool`/`lifecycle-hook` specs. `gateway` now 60 files / 370 tests; `gateway:test`/`typecheck`/`lint` green; `moon ci` green on PR #28 (after a re-run cleared a **pre-existing** flake in `terminal.service.spec.ts` — cross-file `process.env` leakage, noted in the phase doc as a follow-up).
+
 ## 2026-06-20 — Phase 12 Theme A: safe `{{ }}` expression engine (PR #27)
 
 The new contract for Phase 12 field-level data flow — a no-`eval` resolver in `@midnite/shared` so the gateway engine and the web editor share one grammar. Unblocks all of Phase 12 B–F.
