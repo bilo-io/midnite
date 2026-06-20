@@ -162,6 +162,7 @@ class OfficeScene extends Phaser.Scene {
     this.buildLibrary();
     this.buildCornerOffice();
     this.buildPlants();
+    this.buildWallArt();
     this.buildLabels();
     this.buildPlayer();
 
