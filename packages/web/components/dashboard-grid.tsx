@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { ResponsiveGridLayout, useContainerWidth } from 'react-grid-layout';
 import type { Layout, LayoutItem, ResponsiveLayouts } from 'react-grid-layout';
@@ -187,6 +187,19 @@ export function DashboardGrid({
     widgetsKey(activeId),
     DEFAULT_WIDGETS,
   );
+
+  // A stable random entrance delay (0.5–2s) per card key, so cards fade in
+  // staggered. Cached per key so re-renders/drags neither reshuffle nor replay it.
+  const cardDelaysRef = useRef(new Map<string, number>());
+  const cardDelayMs = (key: string): number => {
+    const cache = cardDelaysRef.current;
+    let delay = cache.get(key);
+    if (delay === undefined) {
+      delay = 500 + Math.random() * 1500;
+      cache.set(key, delay);
+    }
+    return delay;
+  };
 
   const recentProjects = useMemo(
     () =>
@@ -467,7 +480,11 @@ export function DashboardGrid({
           {renderedKeys.map((key) => {
             const { node, scroll } = renderContent(key);
             return (
-              <div key={key} className="dashboard-panel group/panel relative">
+              <div
+                key={key}
+                className="dashboard-panel group/panel relative"
+                style={{ animationDelay: `${cardDelayMs(key)}ms` }}
+              >
                 <div className="drag-handle" aria-hidden="true" />
                 <button
                   type="button"
