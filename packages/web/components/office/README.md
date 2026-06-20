@@ -58,14 +58,21 @@ re-applies them to the scene (`applyPalette`) on `useTheme()` change. Decorative
 > Requires the gateway running (`moon run gateway:dev` or `midnite serve`). With no
 > gateway/active sessions the office shows empty furniture and an error toast.
 
-## Still mock / not yet wired
+## Desk interaction (wired to the gateway)
 
-- **Call / Message** (desk agents) are mock UI — not yet sending anything to the gateway.
+Walking up to a desk agent (E) opens a panel with two real actions, reusing the Sessions-page modals:
+
+- **Call** → the agent's live session terminal (`SessionTerminalModal`) — enabled while the session is
+  running/waiting.
+- **Messages** → the agent's transcript (`SessionTranscriptModal`, fetched via `getSessionTranscript`).
+
+`OfficeAgent` carries its `SessionSummary` so the panel can open these. The transcript modal is
+portalled to `<body>` to escape the stage's `overflow-hidden` / any persisted page-reveal transform.
 
 ## Roadmap
 
-The procedural pixel-art pass (human + robot sprites, walk animations, lounge/board-room zones,
-the board-room document viewer, status bubbles, shadows/vignette, fixed-aspect layout) has landed.
-Remaining work — an external Tiled map + LimeZu/Kenney pack, richer per-status body animations, grid
-pathfinding, and wiring Call/Message to the gateway — is tracked in
+The procedural pixel-art pass (human + robot sprites, walk animations, lounge/board-room zones, the
+board-room document viewer, desk Call/Messages wired to the gateway, status bubbles, shadows/vignette,
+fixed-aspect layout) has landed. Remaining work — an external Tiled map + LimeZu/Kenney pack, richer
+per-status body animations, grid pathfinding, and click-to-walk — is tracked in
 [todo/phase-8-office-fidelity.md](../../../../todo/phase-8-office-fidelity.md).

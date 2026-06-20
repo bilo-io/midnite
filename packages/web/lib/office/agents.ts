@@ -19,6 +19,8 @@ export interface OfficeAgent {
   status: OfficeStatus;
   /** One-liner of what they're up to. */
   activity: string;
+  /** The underlying session — used to open the live terminal / transcript. */
+  session: SessionSummary;
 }
 
 /** Parse a `"142 71% 45%"` HSL triplet into 0xRRGGBB for Phaser tints. */
@@ -80,6 +82,7 @@ export function sessionsToOfficeAgents(sessions: SessionSummary[], tasks: Task[]
         project: s.projectDisplay,
         status: s.status,
         activity: s.subtitle || task?.title || '—',
+        session: s,
       };
     });
 }

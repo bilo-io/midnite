@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-20 — Phase 8 office D1: wire desk Call/Messages to the gateway
+
+Finished the last "still mock" piece of `/office`. Walking up to a desk agent now opens real session views, reusing the Sessions-page modals.
+
+- [x] **Call** → live session terminal (`SessionTerminalModal`), enabled while the session is running/waiting; **Messages** → transcript (`SessionTranscriptModal`, fetched via `getSessionTranscript`). `OfficeAgent` now carries its `SessionSummary` (`agents.ts`); `office-hud.tsx` drops the mock call-ring/textarea. Transcript modal portalled to `<body>` so the stage's `overflow-hidden` / a persisted page-reveal transform can't clip it.
+- [x] No one-off "send prompt" gateway API exists — the terminal is the live channel, so Call opens it.
+- [x] Verified: `web:typecheck` / `web:build` (`/office` 4.6 kB) / `web:test` (42 pass).
+
 ## 2026-06-20 — Phase 8 office: zones (lounge / hot desks / board room), robot agents, document viewer
 
 Turned `/office` into a zoned, lived-in room. The left half is open-plan **hot desks** (work) over a **lounge** (TV + gaming console + couches); the right half is a walled **board room**. Agents are now little **robots**; the human player roams. Boardroom decision: a project's "documents" = its `plan` + memories scoped to it (rendered read-only via the app's `MarkdownPreview`).

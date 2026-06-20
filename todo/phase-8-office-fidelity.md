@@ -4,7 +4,7 @@
 
 > Status legend: boxes start unchecked; themes are independent. **Only the rendering layer changes** — the desk-slot model, movement/collision, proximity detection, the Zustand ↔ HUD bridge, and the live-data hook ([`use-office-agents.ts`](../packages/web/components/office/use-office-agents.ts)) all stay as-is.
 
-> **Progress (2026-06-20):** procedural pixel-art + zones landed — ✅ A2 (human + robot sprites, walk cycle), B1 (theme colours), B3 (fixed-aspect layout), zones (hot desks / lounge / board room), board-room document viewer (D3); ◐ A3 / B2 / C1 / C3 (partial). **Open:** A1 external Tiled/LimeZu pack, B2 day-night + camera, C2 per-tool glow, D1 wire Call/Message, E (multiplayer).
+> **Progress (2026-06-20):** procedural pixel-art + zones + interaction landed — ✅ A2 (human + robot sprites, walk cycle), B1 (theme colours), B3 (fixed-aspect layout), zones (hot desks / lounge / board room), D1 (Call → live terminal, Messages → transcript), D3 (board-room document viewer); ◐ A3 / B2 / C1 / C3 (partial). **Open:** A1 external Tiled/LimeZu pack, B2 day-night + camera, C2 per-tool glow, D2 click-to-walk, E (multiplayer).
 
 ---
 
@@ -70,8 +70,9 @@ Make agents *look* like they're doing what their status says.
 
 ## Theme D — Richer interaction (wire the mocks)
 
-### D1. Call / Message → gateway — **M**
-- [ ] [`office-hud.tsx`](../packages/web/components/office/office-hud.tsx) Call/Message are **mock**. Wire **Call** → open the agent's session transcript/terminal (reuse the Sessions transcript/terminal components); wire **Message** → send a prompt to the session via the typed API client.
+### D1. Call / Message → gateway — **M** — ✅ DONE (2026-06-20)
+- [x] [`office-hud.tsx`](../packages/web/components/office/office-hud.tsx) is wired to the gateway (no more mock). **Call** → the agent's live session terminal (`SessionTerminalModal`, enabled while running/waiting); **Messages** → its transcript (`SessionTranscriptModal`, fetched via `getSessionTranscript`). Reuses the Sessions-page modals; `OfficeAgent` now carries its `SessionSummary`. The transcript modal is portalled to `<body>` so the stage's `overflow-hidden` / a persisted page-reveal transform can't clip it.
+- Note: there's no one-off "send a prompt" gateway API — the terminal is the live interaction channel, so Call opens it rather than a fire-and-forget message box.
 
 ### D2. Navigation niceties — **S**
 - [ ] Click-to-walk (pointer → grid pathfinding to the target desk); hover nameplates/tooltips; a small minimap once the map grows.

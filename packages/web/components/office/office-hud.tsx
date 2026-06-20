@@ -1,16 +1,21 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { MessageSquare, Phone } from 'lucide-react';
+import type { SessionTranscript } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
+import { SessionTerminalModal } from '@/components/session-terminal-modal';
+import { SessionTranscriptModal } from '@/components/session-transcript-modal';
+import { getSessionTranscript } from '@/lib/api';
 import { STATUS_CSS, STATUS_LABEL, type OfficeAgent } from '@/lib/office/agents';
-import { useOfficeStore, type InteractionMode } from '@/lib/office-store';
+import { useOfficeStore } from '@/lib/office-store';
 import { BoardroomPanel } from './boardroom-panel';
 
 /**
- * React overlay for the office: a controls hint, an online count, a proximity
- * prompt, and the call/message interaction panel. All state comes from the office
- * store, which the live-data hook and the Phaser scene drive.
+ * React overlay for the office: a controls hint, an online count, proximity
+ * prompts, and the call/message interaction panel. All state comes from the
+ * office store, which the live-data hook and the Phaser scene drive.
  */
 export function OfficeHud() {
   const agents = useOfficeStore((s) => s.agents);
@@ -18,7 +23,6 @@ export function OfficeHud() {
   const nearBoard = useOfficeStore((s) => s.nearBoard);
   const active = useOfficeStore((s) => s.active);
   const boardOpen = useOfficeStore((s) => s.boardOpen);
-  const setMode = useOfficeStore((s) => s.setMode);
   const close = useOfficeStore((s) => s.close);
   const closeBoard = useOfficeStore((s) => s.closeBoard);
 
@@ -50,9 +54,7 @@ export function OfficeHud() {
         </div>
       ) : null}
 
-      {active && activeAgent ? (
-        <InteractionPanel agent={activeAgent} mode={active.mode} onMode={setMode} onClose={close} />
-      ) : null}
+      {active && activeAgent ? <InteractionPanel agent={activeAgent} onClose={close} /> : null}
 
       {boardOpen ? <BoardroomPanel onClose={closeBoard} /> : null}
     </div>
@@ -75,23 +77,23 @@ function Key({ children }: { children: React.ReactNode }) {
   );
 }
 
-function InteractionPanel({
-  agent,
-  mode,
-  onMode,
-  onClose,
-}: {
-  agent: OfficeAgent;
-  mode: InteractionMode;
-  onMode: (mode: InteractionMode) => void;
-  onClose: () => void;
-}) {
-  const [message, setMessage] = useState('');
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+type PanelView = 'menu' | 'terminal' | 'transcript';
 
-  useEffect(() => {
-    if (mode === 'message') textareaRef.current?.focus();
-  }, [mode]);
+/**
+ * Desk interaction: **Call** opens the agent's live session terminal (real-time,
+ * while it's running/waiting); **Messages** opens its transcript (what it's been
+ * up to). Both reuse the Sessions-page modals, so this is wired to the gateway —
+ * no more mock. The transcript modal is portalled to <body> so a persisted
+ * page-reveal transform / the stage's `overflow-hidden` can't clip it.
+ */
+function InteractionPanel({ agent, onClose }: { agent: OfficeAgent; onClose: () => void }) {
+  const [view, setView] = useState<PanelView>('menu');
+  const [transcript, setTranscript] = useState<SessionTranscript | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const session = agent.session;
+  const live = session.status === 'running' || session.status === 'waiting';
 
   // Own Escape so it closes the panel (Phaser's keyboard is disabled while open).
   useEffect(() => {
@@ -105,6 +107,34 @@ function InteractionPanel({
     document.addEventListener('keydown', onKey, true);
     return () => document.removeEventListener('keydown', onKey, true);
   }, [onClose]);
+
+  const openTranscript = async () => {
+    setView('transcript');
+    setTranscript(null);
+    setError(null);
+    setLoading(true);
+    try {
+      setTranscript(await getSessionTranscript(session.projectSlug, session.id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load transcript');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (view === 'terminal') return <SessionTerminalModal session={session} onClose={onClose} />;
+  if (view === 'transcript' && typeof document !== 'undefined') {
+    return createPortal(
+      <SessionTranscriptModal
+        session={session}
+        transcript={transcript}
+        loading={loading}
+        error={error}
+        onClose={onClose}
+      />,
+      document.body,
+    );
+  }
 
   return (
     <div className="pointer-events-auto absolute inset-0 z-30 flex items-center justify-center p-4">
@@ -128,57 +158,26 @@ function InteractionPanel({
 
         <p className="mt-3 text-sm text-muted-foreground">{agent.activity}</p>
 
-        {mode === 'menu' ? (
-          <div className="mt-5 grid grid-cols-2 gap-2">
-            <Button type="button" variant="default" onClick={() => onMode('call')}>
-              <Phone className="h-4 w-4" /> Call
-            </Button>
-            <Button type="button" variant="secondary" onClick={() => onMode('message')}>
-              <MessageSquare className="h-4 w-4" /> Message
-            </Button>
-          </div>
-        ) : null}
+        <div className="mt-5 grid grid-cols-2 gap-2">
+          <Button
+            type="button"
+            variant="default"
+            onClick={() => setView('terminal')}
+            disabled={!live}
+            title={live ? 'Open the live session terminal' : 'Live terminal is available while the agent is running'}
+          >
+            <Phone className="h-4 w-4" /> Call
+          </Button>
+          <Button type="button" variant="secondary" onClick={() => void openTranscript()}>
+            <MessageSquare className="h-4 w-4" /> Messages
+          </Button>
+        </div>
 
-        {mode === 'call' ? (
-          <div className="mt-5 flex flex-col items-center gap-3 py-2">
-            <span className="relative flex h-10 w-10 items-center justify-center">
-              <span
-                className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-40"
-                style={{ backgroundColor: STATUS_CSS[agent.status] }}
-              />
-              <Phone className="relative h-5 w-5 text-foreground" />
-            </span>
-            <p className="text-sm text-muted-foreground">Calling {agent.name}…</p>
-            <Button type="button" variant="destructive" size="sm" onClick={onClose}>
-              End call
-            </Button>
-          </div>
+        {!live ? (
+          <p className="mt-3 text-[11px] text-muted-foreground">
+            {agent.name} isn’t live right now — open <span className="font-medium">Messages</span> to see what they did.
+          </p>
         ) : null}
-
-        {mode === 'message' ? (
-          <div className="mt-4 space-y-3">
-            <textarea
-              ref={textareaRef}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              rows={3}
-              placeholder={`Message ${agent.name}…`}
-              className="w-full resize-none rounded-md border border-input bg-background p-2 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            />
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button type="button" variant="default" size="sm" disabled={!message.trim()} onClick={onClose}>
-                Send
-              </Button>
-            </div>
-          </div>
-        ) : null}
-
-        <p className="mt-4 border-t border-border/60 pt-3 text-[11px] text-muted-foreground">
-          Mock interaction — not yet wired to the gateway.
-        </p>
       </div>
     </div>
   );
