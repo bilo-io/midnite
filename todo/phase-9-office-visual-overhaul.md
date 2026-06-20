@@ -47,8 +47,9 @@ Today one room holds three zones ([`layout.ts`](../packages/web/lib/office/layou
 
 ## Theme B — Distinct characters, props & decor
 
-### B1. Distinct agent characters — **M**
-- [ ] Each agent gets a **visually distinct character** (different sprite, not just a tint) — deterministic by agent id so a given agent always looks the same. Source sprites from **MetroCity** (CC0) and/or **pixel-agents'** 6 bundled characters, or LimeZu's character generator; extend [`textures.ts`](../packages/web/lib/office/textures.ts)/[`agents.ts`](../packages/web/lib/office/agents.ts). Keeps the status bubble + seated logic from Phase 8.
+### B1. Distinct agent characters — **M** — ◐ partial (2026-06-20, procedural)
+- [x] Each agent gets a **visually distinct character** — a robot **variant registry** ([`textures.ts`](../packages/web/lib/office/textures.ts) `ROBOT_VARIANTS`/`robotVariant`): differing antenna shape, side fins, and eye/accent/visor colours, picked deterministically by agent id and combined with the existing per-agent chassis tint. This is the **seam an external pack swaps into** (one spec → one sheet, keys unchanged).
+- [ ] **Upgrade to real art:** swap the procedural variants for **MetroCity** (CC0) and/or **pixel-agents'** 6 bundled characters, or LimeZu's character generator — at the same registry seam.
 - [ ] **Provider-aware, not provider-locked** — where an agent's provider is known (anthropic / google / openai / openai-compatible — see `LlmProvider` and the providers feature), reflect it subtly (a per-provider accent colour or small badge on the character/nameplate) so a mixed pool reads at a glance. Unknown/local agents fall back to the id-based character. Requires surfacing a `provider` (and ideally model/CLI label) on the office agent — extend the `SessionSummary → OfficeAgent` mapping in [`agents.ts`](../packages/web/lib/office/agents.ts) (add a gateway field if it isn't already exposed).
 - [ ] **Activity-driven poses** (typing / reading / waiting / celebrate) — adopt **pixel-agents'** activity→animation state-machine approach (finishes Phase 8 **C1**/**C2**); render **sub-agents as linked characters** near their parent (Phase 8 **C3**), again per pixel-agents.
 - [ ] The **player** gets a customisable character (ties into Theme F corner-office customisation; persist the choice — see F4).

@@ -22,7 +22,7 @@ import {
   type TilePos,
 } from '@/lib/office/layout';
 import { buildOfficePalette, type OfficePalette } from '@/lib/office/theme';
-import { agentTint, charKey, ensureOfficeAnims, ensureOfficeTextures, TEX, walkAnim } from '@/lib/office/textures';
+import { agentTint, charKey, ensureOfficeAnims, ensureOfficeTextures, robotVariant, TEX, walkAnim } from '@/lib/office/textures';
 
 // Phase 8 office: a zoned, sprite-based room. Working agents (robots) sit at hot
 // desks (interactable); idle agents chill in the lounge (TV + console + couches);
@@ -70,6 +70,8 @@ type Actor = {
   tween?: Phaser.Tweens.Tween | Phaser.Tweens.TweenChain;
   /** Idle lounge agent that's sleeping (vs gaming) — drives the animated zzz. */
   sleeping: boolean;
+  /** Robot design index (by agent id) — distinct silhouette/accent per agent. */
+  variant: number;
 };
 
 class OfficeScene extends Phaser.Scene {
@@ -273,8 +275,9 @@ class OfficeScene extends Phaser.Scene {
   }
 
   private createActor(agent: OfficeAgent, tx: number, ty: number, kind: 'desk' | 'lounge'): Actor {
+    const variant = robotVariant(agent.id);
     const sprite = this.add
-      .sprite(tx, ty, charKey('robot', 'down', 0))
+      .sprite(tx, ty, charKey('robot', 'down', 0, variant))
       .setScale(CHAR_SCALE)
       .setTint(agentTint(agent.id))
       .setDepth(4);
@@ -313,6 +316,7 @@ class OfficeScene extends Phaser.Scene {
       ty,
       walking: false,
       sleeping: false,
+      variant,
     };
     this.updateActorContent(actor, agent);
     this.positionActorChrome(actor);
@@ -379,7 +383,7 @@ class OfficeScene extends Phaser.Scene {
     const settle = () => {
       actor.walking = false;
       actor.sprite.anims.stop();
-      actor.sprite.setTexture(charKey('robot', 'down', 0)).setFlipX(false);
+      actor.sprite.setTexture(charKey('robot', 'down', 0, actor.variant)).setFlipX(false);
     };
 
     let prev = { x: actor.sprite.x, y: actor.sprite.y };
@@ -404,7 +408,7 @@ class OfficeScene extends Phaser.Scene {
     const dy = target.y - actor.sprite.y;
     const dir = Math.abs(dx) > Math.abs(dy) ? 'side' : dy < 0 ? 'up' : 'down';
     actor.sprite.setFlipX(dir === 'side' && dx < 0);
-    actor.sprite.play(walkAnim('robot', dir), true);
+    actor.sprite.play(walkAnim('robot', dir, actor.variant), true);
   }
 
   private tileOf(px: number, py: number) {
