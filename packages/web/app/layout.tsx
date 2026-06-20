@@ -8,7 +8,8 @@ import { ThemeProvider } from './theme/theme-context';
 import { themeInitScript } from './theme/theme-script';
 
 // Display fonts trialled for the "midnite" wordmark. Each is exposed as its own
-// CSS var; the active one is chosen on /branding and applied by <Wordmark />.
+// CSS var; the active one is chosen in Settings → Appearance → Logo and applied
+// by <Wordmark />.
 // `cyberwar` keeps the legacy `--font-brand`/`font-brand` name so existing usage
 // stays valid. Loaded once here; only the wordmark's rendered font varies.
 const cyberwar = localFont({ src: './fonts/cyberwar.ttf', variable: '--font-brand', display: 'swap' });

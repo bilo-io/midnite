@@ -9,8 +9,9 @@ import {
 } from '@/lib/wordmark-fonts';
 
 // The "midnite" wordmark, rendered in whichever trial font is currently selected
-// on /branding. Backed by localStorage and synced live across the tab, so picking
-// a font there updates every wordmark instance at once. Defaults to SignPainter.
+// in Settings → Appearance → Logo. Backed by localStorage and synced live across
+// the tab, so picking a font there updates every wordmark instance at once.
+// Defaults to SignPainter.
 //
 // Pass `font` to pin a specific font (e.g. the font-picker preview cards) instead
 // of following the stored selection — every instance then shares this one styling.
