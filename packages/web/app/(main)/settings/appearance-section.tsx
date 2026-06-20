@@ -171,17 +171,19 @@ function LogoCard() {
                   </span>
                 ) : null}
 
-                <div className="flex items-center gap-2.5 overflow-hidden">
+                {/* Mirror the sidenav exactly: h-8 w-8 logo, gap-2, and the
+                    Wordmark at its own per-font base size (no size override). */}
+                <div className="flex items-center gap-2 overflow-hidden">
                   {showIcon ? (
                     <Image
                       src="/logo.PNG"
                       alt=""
-                      width={36}
-                      height={36}
-                      className="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-border/60"
+                      width={32}
+                      height={32}
+                      className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-border/60"
                     />
                   ) : null}
-                  <Wordmark font={f.key} className={cn('leading-none', f.previewSize)} />
+                  <Wordmark font={f.key} />
                 </div>
 
                 <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
