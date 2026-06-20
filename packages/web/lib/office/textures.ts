@@ -40,6 +40,7 @@ export const TEX = {
   plantSucculent: 'office-plant-succulent',
   wallArt: 'office-wall-art',
   rug: 'office-rug',
+  astroTurf: 'office-astro-turf',
 } as const;
 
 /** Texture key for a plant species/size (Phase 9 B2). */
@@ -446,6 +447,14 @@ export function ensureOfficeTextures(scene: Phaser.Scene): void {
     rect(g, 7, 6, 32, 20, 0x9c6a6a); // inner field
     rect(g, 18, 12, 10, 8, 0xc89b9b); // centre motif
     rect(g, 21, 14, 4, 4, 0x8a4f4f);
+  });
+  // Seamless astro-turf tile — bright green with light/dark blades (B2/E2 communal).
+  make(TEX.astroTurf, 32, 32, (g) => {
+    rect(g, 0, 0, 32, 32, 0x3da35a); // turf base
+    g.fillStyle(0x2f8a4a, 1); // darker blades
+    for (let y = 0; y < 32; y += 4) for (let x = (y / 4) % 2 ? 0 : 2; x < 32; x += 4) g.fillRect(x, y, 1, 3);
+    g.fillStyle(0x57c777, 1); // light blade highlights
+    for (let y = 2; y < 32; y += 6) for (let x = 1; x < 32; x += 6) g.fillRect(x, y, 1, 2);
   });
   // Seamless water tile — scrolled in update() for a gentle shimmer.
   make(TEX.water, 32, 32, (g) => {
