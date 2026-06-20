@@ -22,7 +22,7 @@ export interface OfficeAgent {
 }
 
 /** Parse a `"142 71% 45%"` HSL triplet into 0xRRGGBB for Phaser tints. */
-function hslTripletToInt(triplet: string): number {
+export function hslTripletToInt(triplet: string): number {
   const parts = triplet.split(/\s+/);
   const h = parseFloat(parts[0] ?? '0') / 360;
   const s = parseFloat(parts[1] ?? '0') / 100;

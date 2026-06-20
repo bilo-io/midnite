@@ -4,6 +4,13 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-20 — Office theme-aware colours + Phase 8 roadmap
+
+The [`/office`](../packages/web/components/office/README.md) Phaser canvas hardcoded a dark palette, so it stayed dark on the light theme while the rest of the app flipped. Made the structural colours + labels follow the app's light/dark tokens, and captured the larger fidelity roadmap in [phase-8](phase-8-office-fidelity.md).
+
+- [x] **Theme-aware office** (`feature/office-theme-colors`): `lib/office/theme.ts` `buildOfficePalette()` reads the CSS design tokens (`--background`/`--muted`/`--border`/`--secondary`/`--foreground`) into Phaser ints (reusing the now-exported `hslTripletToInt`); `office-scene.ts` gains `applyPalette()` + tracks recolourable objects; `office-game.tsx` re-applies on `useTheme()` change. Decorative colours (desk/screen/avatar/highlight) + status tints stay fixed.
+- [x] **Phase 8 doc** ([phase-8-office-fidelity.md](phase-8-office-fidelity.md)): real sprites via Tiled + LimeZu/Kenney (replace the blobs), walk animations, status-driven liveliness, and wiring Call/Message to the gateway.
+
 ## 2026-06-19 — Phase 7 remaining items (hardening, widgets, Theme D, tags)
 
 Implemented the rest of [phase-7](phase-7-hardening-reports-widgets.md) directly on `main`, committed feature-by-feature (the working tree was being edited concurrently, so each commit is scoped to its own files). Phase 7 is now essentially complete; deferred items are listed in the phase doc.

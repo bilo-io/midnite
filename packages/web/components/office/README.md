@@ -32,6 +32,11 @@ API (`useOfficeStore.getState()/.subscribe()`); the HUD reads it through the hoo
 and `setAgents` (from the live-data hook) drives the desks. Opening the panel
 disables Phaser's keyboard so typing goes to the message box.
 
+**Theme:** structural colours follow the app's light/dark theme — `lib/office/theme.ts`
+`buildOfficePalette()` reads the CSS design tokens into Phaser ints and `office-game.tsx`
+re-applies them to the scene (`applyPalette`) on `useTheme()` change. Decorative colours
+(desk, screen, avatar, highlight) and status tints stay fixed.
+
 > Requires the gateway running (`moon run gateway:dev` or `midnite serve`). With no
 > gateway/active sessions the office shows empty desks and an error toast.
 
@@ -39,14 +44,8 @@ disables Phaser's keyboard so typing goes to the message box.
 
 - **Call / Message** are mock UI — not yet sending anything to the gateway.
 
-## Milestone 2 (real pixel art) — not yet done
+## Roadmap
 
-1. Drop a tileset + character spritesheet into `packages/web/public/office/`
-   (e.g. [LimeZu Modern Office](https://limezu.itch.io/modernoffice), or
-   [Kenney](https://kenney.nl/assets) CC0).
-2. Author the floor in [Tiled](https://www.mapeditor.org/), export `.tmj`, and add an
-   object layer of desks.
-3. In `office-scene.ts`, replace the procedural `drawFloor`/`buildWalls`/`buildDesks`
-   with `this.load` (preload) + `this.make.tilemap` + tileset layers. Movement,
-   proximity, the desk-slot model, and the store bridge stay as-is.
-4. Add walk-cycle animations for the player and seated agents.
+Higher-fidelity work — a real Tiled map + LimeZu/Kenney sprites (replacing the procedural
+blobs), walk animations, status-driven liveliness, and wiring Call/Message to the gateway —
+is tracked in [todo/phase-8-office-fidelity.md](../../../../todo/phase-8-office-fidelity.md).
