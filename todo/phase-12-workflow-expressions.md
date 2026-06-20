@@ -10,15 +10,15 @@
 
 ---
 
-## Theme A — Expression engine in `shared` (the contract)
+## Theme A — Expression engine in `shared` (the contract) — ✅ DONE (PR #27, 2026-06-20)
 
 The new syntax both sides must agree on. A **safe** resolver — no `eval`, no `Function` — just template interpolation over a typed context.
 
-- [ ] **S** Define the grammar: `{{ ... }}` template spans inside any string param, resolving against a context exposing `$json` (the node's merged input), `$node` (a map of completed upstream outputs by label), and `$env` (allow-listed env vars). Dotted + bracket paths (`$json.body.items[0].id`, `$node["Fetch issues"].json.title`).
-- [ ] **M** `resolveExpression(template, context)` + `resolveParams(params, context)` in [`packages/shared/src/`](../packages/shared/src/) (e.g. `expression.ts`): parse spans, walk paths, coerce — a bare `{{$json.x}}` returns the *typed* value; mixed text (`id-{{$json.id}}`) returns a string. Pure, dependency-light.
-- [ ] **S** Missing-reference policy: a resolved path that doesn't exist **throws** a typed `ExpressionError` (fails the node) by default; support optional access (`{{$json.maybe?.x}}`) that resolves to `null` without throwing.
-- [ ] **S** Mark template-capable params in the registry so the editor knows which fields get the ƒx affordance — add an `expressionable`/`templatable` flag to the relevant `PortSpec`/param metadata in [`node-types.ts`](../packages/shared/src/node-types.ts).
-- [ ] **M** Tests: grammar (paths, brackets, optional, mixed text, escaping `\{{`), missing-ref throw vs optional, type preservation, and a fuzz-ish set of malformed templates (no crash, clear error).
+- [x] **S** Grammar: `{{ ... }}` spans over a typed context (`$json` / `$node` by label / `$env`), dotted + bracket paths (`$json.items[0].id`, `$node["Fetch issues"].json.title`, quoted keys), in [`expression.ts`](../packages/shared/src/expression.ts).
+- [x] **M** `resolveExpression` + `resolveParams` (+ `isExpression`): a bare single span returns the **typed** value; mixed text returns a string (objects JSON-stringified); a non-templated string passes through. Pure, dependency-light.
+- [x] **S** Missing-reference policy: an unresolved path **throws** a typed `ExpressionError` naming the path; optional access (`{{$json.maybe?.x}}`) resolves to `null`. Honors decision §3 + §1 (no-eval) / §2 ($node by label).
+- [x] **S** `expressionable` flag added to `NodeField` ([`node-types.ts`](../packages/shared/src/node-types.ts)), marking the template-capable fields (http `url`/`headers`/`body`, ai `prompt`/`system`, branch `right`) for the editor's ƒx affordance (Theme D).
+- [x] **M** Tests (33 cases): paths, brackets, optional, mixed text, escaping `\{{`, missing-ref throw vs optional, type preservation, malformed templates (clear error, no crash), `resolveParams`. `shared` now 34 files / 257 tests; `shared:test`/`typecheck`/`lint`/`build` green; `moon ci` green on PR #27. See [done.md](done.md).
 
 ## Theme B — Engine integration (resolve before execute)
 

@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-20 — Phase 12 Theme A: safe `{{ }}` expression engine (PR #27)
+
+The new contract for Phase 12 field-level data flow — a no-`eval` resolver in `@midnite/shared` so the gateway engine and the web editor share one grammar. Unblocks all of Phase 12 B–F.
+
+- [x] **expression.ts** — `resolveExpression` / `resolveParams` / `isExpression` over a typed `ExpressionContext` (`$json` / `$node` by label / `$env`): dotted + bracket paths, quoted keys, `\{{` escape. A bare single span returns the **typed** value; mixed text returns a string (objects JSON-stringified); non-templated strings pass through.
+- [x] Missing-reference policy: an unresolved path throws a typed **`ExpressionError`** naming the path; opt into null-safe access with `?.` (`{{$json.maybe?.x}}` → `null`). Honors decisions §1 (no eval/Function), §2 ($node keyed by label), §3 (hard-fail + opt-in optional).
+- [x] **`expressionable`** flag on `NodeField` marking the template-capable fields (http `url`/`headers`/`body`, ai `prompt`/`system`, branch `right`) so the editor offers the ƒx affordance (Theme D). Exported from the shared barrel.
+- [x] 33 expression tests (paths, brackets, optional, mixed text, escaping, missing-ref throw vs optional, type preservation, malformed-template errors, `resolveParams`). `shared` now 34 files / 257 tests; `shared:test`/`typecheck`/`lint`/`build` green; `moon ci` green on PR #27. Engine integration (resolve-before-execute) is Theme B — not in this slice.
+
 ## 2026-06-20 — Phase 9 office E2: communal furnishings (PR #26)
 
 Furnished the communal area into a real lounge — coffee + chill + gaming corners.
