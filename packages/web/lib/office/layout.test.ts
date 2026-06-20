@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { OFFICE_COLS, OFFICE_ROWS } from './dimensions';
 import {
+  ARMCHAIRS,
+  ASTRO_TURF,
   blockedGrid,
+  COUCHES,
   LAYOUT,
   LAYOUT_OK,
   PLANTS,
@@ -161,5 +164,32 @@ describe('decor & greenery (Phase 9 B2)', () => {
       expect(isFloor(x, y), `wall art ${a.x},${a.y} is on a wall row`).toBe(false);
       expect(y, `wall art ${a.x},${a.y} sits on the top outer wall`).toBe(0);
     }
+  });
+});
+
+describe('communal furnishings (Phase 9 E2)', () => {
+  const COMMUNAL = ROOMS.find((r) => r.id === 'communal')!;
+  const inCommunal = (p: TilePos) => roomAt(Math.round(p.x), Math.round(p.y)) === 'communal';
+
+  it('stands every couch + armchair on a communal floor tile', () => {
+    for (const c of [...COUCHES, ...ARMCHAIRS]) {
+      expect(onRoomFloor(c), `seat ${c.x},${c.y} on a room floor`).toBe(true);
+      expect(inCommunal(c), `seat ${c.x},${c.y} is in the communal area`).toBe(true);
+    }
+  });
+
+  it('keeps the astro-turf patch entirely on communal floor', () => {
+    for (let y = ASTRO_TURF.y; y < ASTRO_TURF.y + ASTRO_TURF.h; y++) {
+      for (let x = ASTRO_TURF.x; x < ASTRO_TURF.x + ASTRO_TURF.w; x++) {
+        expect(isFloor(x, y), `turf tile ${x},${y} is floor`).toBe(true);
+        expect(roomAt(x, y), `turf tile ${x},${y} is communal`).toBe('communal');
+      }
+    }
+  });
+
+  it('fits the astro-turf patch inside the communal interior', () => {
+    expect(ASTRO_TURF.x).toBeGreaterThanOrEqual(COMMUNAL.x);
+    expect(ASTRO_TURF.x + ASTRO_TURF.w).toBeLessThanOrEqual(COMMUNAL.x + COMMUNAL.w);
+    expect(ASTRO_TURF.y + ASTRO_TURF.h).toBeLessThanOrEqual(COMMUNAL.y + COMMUNAL.h);
   });
 });

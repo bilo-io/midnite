@@ -227,8 +227,29 @@ export const WALL_ART: readonly TilePos[] = [
 export const RUGS: readonly TilePos[] = [
   { x: 6, y: 4 }, // work — central walkway
   { x: 27, y: 6 }, // library — under the reading chair
-  { x: 17, y: 14 }, // communal — lounge centre
+  { x: 17, y: 14 }, // communal — chill-corner rug
+  { x: 19.5, y: 13 }, // communal — gaming-area carpet, in front of the TV
 ];
+
+/**
+ * Communal lounge seating (Phase 9 E2) — couches + an armchair grouped into a
+ * **chill corner** around the rug, with the main sofa facing the gaming TV.
+ * Collidable decor (a static body, like the TV), so the player can't walk through.
+ */
+export const COUCHES: readonly TilePos[] = [
+  { x: 18, y: 14.5 }, // main sofa facing the gaming TV
+  { x: 15, y: 15 }, // chill-corner sofa
+];
+export const ARMCHAIRS: readonly TilePos[] = [
+  { x: 14, y: 13.5 }, // chill-corner armchair
+];
+
+/**
+ * Astro-turf patch (Phase 9 E2) — a bright green corner of the communal area (a
+ * tiled surface, like the pool water). A relaxed spot apart from the coffee
+ * (bottom-left) and gaming (top-right) corners.
+ */
+export const ASTRO_TURF = { x: 18, y: 18, w: 3, h: 2 } as const;
 
 export const PLAYER_SPAWN: TilePos = { x: 6, y: 8 };
 

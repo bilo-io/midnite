@@ -3,11 +3,14 @@ import { useOfficeStore } from '@/lib/office-store';
 import { STATUS_LABEL, STATUS_TINT, type OfficeAgent, type OfficeStatus } from '@/lib/office/agents';
 import { OFFICE_COLS, OFFICE_ROWS, OFFICE_TILE } from '@/lib/office/dimensions';
 import {
+  ARMCHAIRS,
+  ASTRO_TURF,
   BOARD_POS,
   blockedGrid,
   BOOKSHELVES,
   COFFEE_POS,
   CONSOLE_POS,
+  COUCHES,
   COUNTER_POS,
   DESK_SEATS,
   DOOR_POS,
@@ -800,9 +803,17 @@ class OfficeScene extends Phaser.Scene {
     for (const s of LOUNGE_SEATS) this.add.image(center(s.x), center(s.y) + 2, TEX.lounger).setDepth(2);
   }
 
-  /** Communal area: coffee machine (interactable) + counter/stool, plus the
-   *  relocated TV + console decor (Phase 9 E3 super-sizes + wires the console). */
+  /** Communal area: a coffee corner (machine — interactable — + counter/stool), a
+   *  chill corner (couches + armchair around a rug), an astro-turf patch, and the
+   *  relocated TV + console gaming corner (Phase 9 E2; E3 super-sizes + wires it). */
   private buildKitchen() {
+    // Astro-turf patch — a tiled green surface just above the floor accent (E2).
+    const turfCx = (ASTRO_TURF.x + ASTRO_TURF.w / 2) * TILE;
+    const turfCy = (ASTRO_TURF.y + ASTRO_TURF.h / 2) * TILE;
+    this.add.tileSprite(turfCx, turfCy, ASTRO_TURF.w * TILE, ASTRO_TURF.h * TILE, TEX.astroTurf).setDepth(-6);
+    // Chill-corner seating — collidable, like the TV (E2).
+    for (const c of COUCHES) this.solids.push(this.staticDecor(c, TEX.couch, 2));
+    for (const a of ARMCHAIRS) this.solids.push(this.staticDecor(a, TEX.armchair, 2));
     this.add.image(center(COUNTER_POS.x), center(COUNTER_POS.y), TEX.counter).setDepth(2);
     this.add.image(center(STOOL_POS.x), center(STOOL_POS.y), TEX.stool).setDepth(3);
     const machine = this.add.image(center(COFFEE_POS.x), center(COFFEE_POS.y), TEX.coffee).setDepth(3);

@@ -34,7 +34,9 @@ lounger paddling through the basin (with a trailing wake ripple) and back. When 
 it **walks** there — 4-directional A* over a walkability grid (`blockedGrid()`, which now blocks the
 pool basin) so it routes around furniture/walls and through the doorways. (Camera-follow for the larger
 map is Phase 9 A2; the corner office becomes a separate scene in Phase 9 F; the library bookshelf becomes
-a searchable modal in Phase 9 C. The communal area gains couches + a super-sized, interactable TV/PlayStation + retro-games menu in Phase 9 E — the TV/console already moved there as decor.)
+a searchable modal in Phase 9 C. The communal area now has a chill-corner seating cluster (couches +
+armchair + rug), an astro-turf patch, and a gaming-corner carpet under the TV/console (Phase 9 E2); the
+TV/PlayStation get super-sized + interactable with a retro-games menu in Phase 9 E3–E4.)
 
 **Controls:** WASD/arrows or **click-to-walk** (the player pathfinds to the clicked tile; manual input
 cancels it). **E** interacts with the nearest desk agent, the board-room whiteboard, or the communal-area
@@ -97,8 +99,9 @@ communal-area coffee break, desk Call/Messages wired to the gateway, status bubb
 fixed-aspect layout), the **multi-room floor plan** (Phase 9 A1), and the **Agent pool** (Phase 9 G —
 pool basin + animated water + lounging/occasional swims), **room signage** (Phase 9 A3 —
 wall-mounted name plates), and **props, plants & decor** (Phase 9 B2 — several plants per room in three
-species/sizes, framed wall art, and area rugs) have landed. Remaining Phase 9 work —
-camera-follow (A2), the searchable **library** modal (C), the communal couches +
-super-sized TV/PlayStation + retro-games menu (E), the **corner-office** scene + desk toys (F),
+species/sizes, framed wall art, and area rugs), and **communal furnishings** (Phase 9 E2 — chill-corner
+couches + armchair, an astro-turf patch, and a gaming-corner carpet) have landed. Remaining Phase 9 work —
+camera-follow (A2), the searchable **library** modal (C), the super-sized/interactable
+TV/PlayStation + retro-games menu (E3–E4), the **corner-office** scene + desk toys (F),
 distinct character art (B1), and an external Tiled map + LimeZu/Kenney pack — is tracked in
 [todo/phase-9-office-visual-overhaul.md](../../../../todo/phase-9-office-visual-overhaul.md).
