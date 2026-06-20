@@ -44,6 +44,27 @@ export const ROOM_STYLES: Record<RoomId, RoomStyle> = {
   corner: { floor: 0x2f4a3a, accent: 0x6ee7b7 }, // private green
 };
 
+/**
+ * Colours for a room's **wall-mounted name plate** (Phase 9 A3): a sign board
+ * drawn on the room's top wall instead of a translucent label floating over the
+ * floor. The plate **fill follows the theme** (`background`, so it flips with
+ * light/dark), while the **border + text** use the room's fixed accent — so the
+ * sign reads as that room's at a glance and stays legible on either theme.
+ */
+export interface RoomSignStyle {
+  /** Plate fill — theme-driven, flips with light/dark. */
+  fill: number;
+  /** Plate border — the room accent. */
+  border: number;
+  /** Label text — the room accent. */
+  text: number;
+}
+
+export function roomSignStyle(id: RoomId, palette: OfficePalette): RoomSignStyle {
+  const { accent } = ROOM_STYLES[id];
+  return { fill: palette.background, border: accent, text: accent };
+}
+
 /** Decorative colours that read well on both themes — kept constant. */
 const DECOR = {
   player: 0x38bdf8,

@@ -18,13 +18,14 @@ import {
   POOL,
   READING_CHAIR,
   ROOMS,
+  type RoomId,
   STOOL_POS,
   TABLE_CHAIRS,
   TABLE_POS,
   TV_POS,
   type TilePos,
 } from '@/lib/office/layout';
-import { buildOfficePalette, ROOM_STYLES, type OfficePalette } from '@/lib/office/theme';
+import { buildOfficePalette, ROOM_STYLES, roomSignStyle, type OfficePalette } from '@/lib/office/theme';
 import { agentTint, charKey, ensureOfficeAnims, ensureOfficeTextures, TEX, walkAnim } from '@/lib/office/textures';
 
 // Phase 9 office: a sprite-based, multi-room floor plan (work · board · library
@@ -32,8 +33,8 @@ import { agentTint, charKey, ensureOfficeAnims, ensureOfficeTextures, TEX, walkA
 // layout.ts). Working agents (robots) sit at WORK hot desks (interactable); idle
 // agents lounge in the AGENT POOL; the BOARD whiteboard opens the projects panel;
 // the COMMUNAL coffee machine toggles a break. Each room gets its own translucent
-// floor accent + label over the theme-tinted base, so the canvas still follows
-// light/dark.
+// floor accent + a wall-mounted name plate (A3) over the theme-tinted base, so the
+// canvas still follows light/dark.
 // See lib/office/{layout,textures,theme}.ts.
 
 const TILE = OFFICE_TILE;
@@ -94,6 +95,8 @@ class OfficeScene extends Phaser.Scene {
   private readonly actors = new Map<string, Actor>();
   private readonly walls: Phaser.GameObjects.Image[] = [];
   private readonly solids: Phaser.GameObjects.GameObject[] = [];
+  /** Wall-mounted room name plates (A3) — redrawn on theme flip (fill is theme-driven). */
+  private readonly roomSigns: { plate: Phaser.GameObjects.Graphics; id: RoomId; rect: Phaser.Geom.Rectangle }[] = [];
   /** Pathfinding walkability grid (true = blocked); seats handled specially. */
   private blocked: boolean[][] = [];
   private boardCenter = { x: 0, y: 0 };
@@ -267,7 +270,9 @@ class OfficeScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(palette.background);
     this.floor.setTint(palette.floor);
     for (const wall of this.walls) wall.setTint(palette.wall);
-    // Room labels use fixed per-room accents, so they don't re-tint with the theme.
+    // Room name plates: text/border are fixed per-room accents, but the plate fill
+    // is theme-driven — redraw it so the signs flip with light/dark.
+    for (const sign of this.roomSigns) this.drawSignPlate(sign.plate, sign.id, sign.rect);
     for (const actor of this.actors.values()) actor.nameText.setColor(toHex(palette.text));
     this.highlight.setStrokeStyle(2, palette.highlight, 0.9);
   }
@@ -815,21 +820,50 @@ class OfficeScene extends Phaser.Scene {
     for (const p of PLANTS) this.add.image(center(p.x), center(p.y), TEX.plant).setDepth(3);
   }
 
-  /** One bold, accent-coloured label per room, anchored on its top wall. */
+  /**
+   * One **wall-mounted name plate** per room (Phase 9 A3): the room label on its
+   * own rounded sign board, anchored on the room's top wall — so each room is
+   * unmistakable at a glance, instead of a translucent label floating over the
+   * floor. The plate fill is theme-driven (redrawn on flip in `applyPalette`); the
+   * border + text use the room's fixed accent. See `roomSignStyle`.
+   */
   private buildLabels() {
+    const padX = 6;
+    const padY = 3;
     for (const room of ROOMS) {
-      this.add
+      const style = roomSignStyle(room.id, this.palette);
+      const label = this.add
         .text(center(room.lx), center(room.ly), room.label, {
           fontFamily: 'monospace',
           fontSize: '10px',
-          color: toHex(ROOM_STYLES[room.id].accent),
+          color: toHex(style.text),
           fontStyle: 'bold',
         })
         .setOrigin(0.5)
         .setResolution(2)
-        .setAlpha(0.7)
-        .setDepth(11);
+        .setDepth(12);
+      const rect = new Phaser.Geom.Rectangle(
+        label.x - label.width / 2 - padX,
+        label.y - label.height / 2 - padY,
+        label.width + padX * 2,
+        label.height + padY * 2,
+      );
+      const plate = this.add.graphics().setDepth(11);
+      this.roomSigns.push({ plate, id: room.id, rect });
+      this.drawSignPlate(plate, room.id, rect);
     }
+  }
+
+  /** Draw (or redraw) a room sign's rounded plate with the current theme fill. */
+  private drawSignPlate(plate: Phaser.GameObjects.Graphics, id: RoomId, rect: Phaser.Geom.Rectangle) {
+    const style = roomSignStyle(id, this.palette);
+    const radius = 5;
+    plate
+      .clear()
+      .fillStyle(style.fill, 0.92)
+      .fillRoundedRect(rect.x, rect.y, rect.width, rect.height, radius)
+      .lineStyle(1.5, style.border, 0.9)
+      .strokeRoundedRect(rect.x, rect.y, rect.width, rect.height, radius);
   }
 
   /** Add a static (collidable) furniture image at a tile, return it for `solids`. */
