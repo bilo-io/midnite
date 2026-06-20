@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-20 — Phase 9 office E2: communal furnishings (PR #26)
+
+Furnished the communal area into a real lounge — coffee + chill + gaming corners.
+
+- [x] **E2 — chill corner**: a seating arrangement — two `COUCHES` + an `ARMCHAIRS` armchair (collidable decor, like the TV) grouped around the B2 rug, the main sofa facing the gaming TV.
+- [x] **E2 — astro turf + gaming carpet**: a bright-green `ASTRO_TURF` patch in a free corner (a new seamless `astroTurf` texture, rendered as a tiled surface like the pool water), and a **carpet** marking the gaming area in front of the TV/console (added to `RUGS`). Zoned alongside the existing coffee corner so the room reads as coffee + chill + gaming.
+- [x] `buildKitchen` renders the turf (tiled) + collidable seating in their zones. Tests: `layout.test.ts` communal-furnishing invariants (seats on communal floor; turf entirely on communal floor + inside the interior). Verified `web:typecheck --force` + `web:lint` green, `layout.test.ts` (14 tests) passes from the primary checkout; `moon ci` green on PR #26. README updated.
+
 ## 2026-06-20 — Phase 10 A2: fixtures module + client-contract tests (PR #25)
 
 Follow-on to A1: gateway/web tests hand-rolled fakes everywhere and the WS event unions had no systematic encode→decode check.

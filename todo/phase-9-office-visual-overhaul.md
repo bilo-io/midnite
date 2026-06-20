@@ -101,9 +101,9 @@ Repurpose the board room (today a static "documents whiteboard") into the **proj
 - [x] Pressing **E** toggles an **"on a break"** state: `onBreak` + `toggleBreak()` (and `nearKitchen`/`setNearKitchen`) on [`office-store.ts`](../packages/web/lib/office-store.ts); a `☕ On a break` badge + proximity prompt in the HUD, and a `☕` floats over the player sprite.
 - [x] **Mock/local** for now (Decisions §5) — `reset()` preserves `onBreak` as a personal presence flag. See [done.md](done.md).
 
-### E2. Communal furnishings — **M**
-- [ ] Furnish the Communal area as a genuine lounge: **actual couches** (not just the Phase-8 couch sprite — a seating arrangement), a **patch of astro turf** in one corner (bright green textured tile), and a **carpet/rug** marking out the **gaming area**. Add the props to [`layout.ts`](../packages/web/lib/office/layout.ts) (`COUCHES`/`RUGS` + a new astro-turf surface) and zone them so the room reads as coffee corner + chill corner + gaming corner.
-- [ ] Plenty of **plants** (per B2) to soften the space.
+### E2. Communal furnishings — **M** — ✅ DONE (2026-06-20, PR #26)
+- [x] Furnished the Communal area as a genuine lounge: **a couch + armchair seating arrangement** (`COUCHES`/`ARMCHAIRS`, collidable decor) grouped into a **chill corner** around the rug with the main sofa facing the gaming TV, a **patch of astro turf** in a corner (`ASTRO_TURF` — a new bright-green tiled surface, rendered like the pool water), and a **carpet** marking the **gaming area** in front of the TV (added to `RUGS`). Zoned so the room reads as coffee corner (existing) + chill corner + gaming corner. New `astroTurf` texture; `buildKitchen` renders them.
+- [x] Plenty of **plants** already soften the space (B2). Covered by `layout.test.ts` (seats on communal floor; turf entirely on communal floor + inside the interior). See [done.md](done.md).
 
 ### E3. Relocated, super-sized TV + PlayStation — **M**
 - [ ] **Move the TV and PlayStation here** from their current home and render them **much larger** — a wall-mounted big screen over the gaming-area carpet with a console + controllers below it. Update wherever the TV/console props are currently placed so they live in the Communal area only.
