@@ -67,6 +67,7 @@ export function LinksWidget({ config, onConfigChange }: LinksWidgetProps) {
               <SourceIcon
                 kind={detectSourceKind(link.url)}
                 faviconUrl={link.faviconUrl}
+                url={link.url}
                 className="h-3.5 w-3.5 shrink-0"
               />
               <span className="min-w-0 flex-1 truncate font-medium">{link.label}</span>

@@ -102,7 +102,7 @@ export function QuoteWidget({ config, onConfigChange }: QuoteWidgetProps) {
   }, [typing]);
 
   const setSize = (next: QuoteSize) => onConfigChange({ ...config, size: next });
-  const setFont = (next: WordmarkFontKey) => onConfigChange({ ...config, font: next });
+  const setFont = (next: WordmarkFontKey | 'system') => onConfigChange({ ...config, font: next });
   const setTypingSpeed = (ms: number) =>
     onConfigChange({ ...config, typingSpeedMs: Math.max(0, Math.min(200, Math.round(ms))) });
   const setCycleSeconds = (secs: number) => {
@@ -154,6 +154,28 @@ export function QuoteWidget({ config, onConfigChange }: QuoteWidgetProps) {
           <div className="flex flex-col gap-2">
             <span className="text-muted-foreground">Font</span>
             <div className="grid grid-cols-2 gap-1.5">
+              <button
+                type="button"
+                onClick={() => setFont('system')}
+                aria-pressed={font === 'system'}
+                title="System font"
+                className={cn(
+                  'flex min-w-0 flex-col items-center justify-center gap-1 overflow-hidden rounded-md border px-2 py-2 transition-colors',
+                  font === 'system' ? 'border-primary bg-primary/10' : 'border-border/60 hover:bg-accent',
+                )}
+              >
+                <span
+                  className={cn(
+                    'text-base font-semibold leading-none',
+                    font === 'system' ? 'text-primary' : 'text-foreground',
+                  )}
+                >
+                  midnite
+                </span>
+                <span className="max-w-full truncate text-[10px] uppercase tracking-wide text-muted-foreground">
+                  System
+                </span>
+              </button>
               {WORDMARK_FONTS.map((f) => {
                 const active = f.key === font;
                 return (
@@ -215,10 +237,14 @@ export function QuoteWidget({ config, onConfigChange }: QuoteWidgetProps) {
         <>
           <p
             className="italic leading-snug"
-            style={{
-              fontFamily: `var(${wordmarkFontVar(font)})`,
-              fontSize: `${SIZE_REM[size] * wordmarkFontScale(font)}rem`,
-            }}
+            style={
+              font === 'system'
+                ? { fontSize: `${SIZE_REM[size]}rem` }
+                : {
+                    fontFamily: `var(${wordmarkFontVar(font)})`,
+                    fontSize: `${SIZE_REM[size] * wordmarkFontScale(font)}rem`,
+                  }
+            }
           >
             “{quote.text.slice(0, charCount)}
             {typing && (

@@ -129,7 +129,7 @@ export function TimerWidget({ config, onConfigChange }: TimerWidgetProps) {
                 strokeDashoffset={RING_C * (1 - fraction)}
               />
             </svg>
-            <span className="absolute text-3xl font-semibold tabular-nums leading-none">
+            <span className="absolute text-2xl font-semibold tabular-nums leading-none">
               {format(secondsLeft)}
             </span>
           </div>

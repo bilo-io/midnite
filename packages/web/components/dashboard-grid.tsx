@@ -59,22 +59,20 @@ function item(i: string, x: number, y: number, w: number, h: number, extra?: Par
   return { i, x, y, w, h, ...extra };
 }
 
-// Curated arrangement for the default widget set. Used as the placement base when
-// there's no saved layout; new/removed widgets are reconciled on top of it.
-function defaultLayouts(projectCount: number): ResponsiveLayouts {
+// Curated arrangement for the default widget set (the lone `proj-default-project`
+// card from DEFAULT_WIDGETS). Used as the placement base when there's no saved
+// layout; other project/widget instances are reconciled (appended) on top.
+function defaultLayouts(): ResponsiveLayouts {
   const tileY = 0;
   const projY = 3;
-  const panelY = projY + (projectCount > 0 ? 5 : 0);
-  const mdPanelY = panelY + (projectCount > 2 ? 5 : 0);
+  const panelY = 8;
 
   const lg: LayoutItem[] = [
     item('tile-backlog',    0,  tileY, 3, 3, { minH: 2, minW: 1 }),
     item('tile-todo',       3,  tileY, 3, 3, { minH: 2, minW: 1 }),
     item('tile-inProgress', 6,  tileY, 3, 3, { minH: 2, minW: 1 }),
     item('tile-done',       9,  tileY, 3, 3, { minH: 2, minW: 1 }),
-    ...Array.from({ length: projectCount }, (_, i) =>
-      item(`proj-${i}`, i * 4, projY, 4, 5, { minH: 3, minW: 2 }),
-    ),
+    item('proj-default-project', 0, projY, 4, 5, { minH: 3, minW: 2 }),
     item('notes',    0, panelY, 6, 8, { minH: 4, minW: 3 }),
     item('routines', 6, panelY, 6, 8, { minH: 4, minW: 3 }),
   ];
@@ -84,11 +82,9 @@ function defaultLayouts(projectCount: number): ResponsiveLayouts {
     item('tile-todo',       2, tileY, 2, 3, { minH: 2 }),
     item('tile-inProgress', 4, tileY, 2, 3, { minH: 2 }),
     item('tile-done',       6, tileY, 2, 3, { minH: 2 }),
-    ...Array.from({ length: projectCount }, (_, i) =>
-      item(`proj-${i}`, (i % 2) * 4, projY + Math.floor(i / 2) * 5, 4, 5, { minH: 3 }),
-    ),
-    item('notes',    0, mdPanelY, 4, 8, { minH: 4 }),
-    item('routines', 4, mdPanelY, 4, 8, { minH: 4 }),
+    item('proj-default-project', 0, projY, 4, 5, { minH: 3 }),
+    item('notes',    0, panelY, 4, 8, { minH: 4 }),
+    item('routines', 4, panelY, 4, 8, { minH: 4 }),
   ];
 
   const sm: LayoutItem[] = [
@@ -96,25 +92,30 @@ function defaultLayouts(projectCount: number): ResponsiveLayouts {
     item('tile-todo',       2, 0, 2, 3, { minH: 2 }),
     item('tile-inProgress', 0, 3, 2, 3, { minH: 2 }),
     item('tile-done',       2, 3, 2, 3, { minH: 2 }),
-    ...Array.from({ length: projectCount }, (_, i) =>
-      item(`proj-${i}`, 0, 6 + i * 5, 4, 5, { minH: 3 }),
-    ),
-    item('notes',    0, 6 + projectCount * 5,     4, 8, { minH: 4 }),
-    item('routines', 0, 6 + projectCount * 5 + 8, 4, 8, { minH: 4 }),
+    item('proj-default-project', 0, 6, 4, 5, { minH: 3 }),
+    item('notes',    0, 11, 4, 8, { minH: 4 }),
+    item('routines', 0, 19, 4, 8, { minH: 4 }),
   ];
 
   return { lg, md, sm };
 }
 
-// The grid item keys a widget set renders to. `projects` fans out to one card per
-// recent project; every other widget maps to its own type.
-function deriveKeys(widgets: WidgetInstance[], projectCount: number): string[] {
+// The grid item keys a widget set renders to. Multi-instance widgets render under
+// `<type>-<id>` (projects use the `proj-` prefix); single-instance widgets map to
+// their own type. The `'id' in w` fallbacks cover legacy instances saved before a
+// widget became multi-instance (the grid migrates them on mount).
+function deriveKeys(widgets: WidgetInstance[]): string[] {
   const keys: string[] = [];
   for (const w of widgets) {
     if (w.type === 'projects') {
-      for (let i = 0; i < projectCount; i++) keys.push(`proj-${i}`);
-    } else if (w.type === 'finances' || w.type === 'market-asset' || w.type === 'market-watchlist') {
-      keys.push(`${w.type}-${w.id}`);
+      keys.push(`proj-${'id' in w ? w.id : 'default-project'}`);
+    } else if (
+      w.type === 'scratchpad' ||
+      w.type === 'finances' ||
+      w.type === 'market-asset' ||
+      w.type === 'market-watchlist'
+    ) {
+      keys.push(`${w.type}-${'id' in w ? w.id : ''}`);
     } else {
       keys.push(w.type);
     }
@@ -125,9 +126,9 @@ function deriveKeys(widgets: WidgetInstance[], projectCount: number): string[] {
 // Reconcile a base layout against the rendered keys: keep positioned items that
 // are still rendered, drop the rest, and append defaults (at the bottom) for keys
 // with no position yet. Replaces the old brittle exact-count guard.
-function reconcile(base: ResponsiveLayouts, renderedKeys: string[], projectCount: number): ResponsiveLayouts {
+function reconcile(base: ResponsiveLayouts, renderedKeys: string[]): ResponsiveLayouts {
   const rendered = new Set(renderedKeys);
-  const defaults = defaultLayouts(projectCount);
+  const defaults = defaultLayouts();
   const out = {} as ResponsiveLayouts;
 
   for (const bp of BREAKPOINTS) {
@@ -183,10 +184,36 @@ export function DashboardGrid({
   // so switching tabs swaps to an independent board.
   const { activeId } = useDashboardTabs();
 
-  const [widgets, setWidgets] = useLocalStorage<WidgetInstance[]>(
+  const [widgets, setWidgets, widgetsHydrated] = useLocalStorage<WidgetInstance[]>(
     widgetsKey(activeId),
     DEFAULT_WIDGETS,
   );
+
+  // Backfill ids/config for widgets that became multi-instance (projects,
+  // scratchpad) so boards saved before the change keep rendering. Runs once per
+  // tab after its stored widgets hydrate.
+  useEffect(() => {
+    if (!widgetsHydrated) return;
+    let changed = false;
+    const migrated = widgets.map((w) => {
+      if (w.type === 'projects' && !('id' in w && w.id)) {
+        changed = true;
+        return { type: 'projects', id: crypto.randomUUID(), config: { projectId: null } } as WidgetInstance;
+      }
+      if (w.type === 'scratchpad' && !('id' in w && w.id)) {
+        changed = true;
+        const text = (w as { config?: { text?: string } }).config?.text ?? '';
+        return {
+          type: 'scratchpad',
+          id: crypto.randomUUID(),
+          config: { title: 'Scratchpad', text },
+        } as WidgetInstance;
+      }
+      return w;
+    });
+    if (changed) setWidgets(migrated);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- migrate once per tab after hydration
+  }, [widgetsHydrated, activeId]);
 
   // A stable random entrance delay (0.5–2s) per card key, so cards fade in
   // staggered. Cached per key so re-renders/drags neither reshuffle nor replay it.
@@ -212,10 +239,7 @@ export function DashboardGrid({
   const total =
     (counts.backlog ?? 0) + (counts.todo ?? 0) + (counts.inProgress ?? 0) + (counts.done ?? 0);
 
-  const renderedKeys = useMemo(
-    () => deriveKeys(widgets, recentProjects.length),
-    [widgets, recentProjects.length],
-  );
+  const renderedKeys = useMemo(() => deriveKeys(widgets), [widgets]);
 
   // The persisted positions for the active tab (null until the read completes).
   // Re-read whenever the active tab changes; reset first so one board's positions
@@ -234,8 +258,8 @@ export function DashboardGrid({
   // Layout shown to RGL: saved positions (or the curated default) reconciled
   // against whatever widgets are currently enabled.
   const layouts = useMemo(
-    () => reconcile(stored ?? defaultLayouts(recentProjects.length), renderedKeys, recentProjects.length),
-    [stored, renderedKeys, recentProjects.length],
+    () => reconcile(stored ?? defaultLayouts(), renderedKeys),
+    [stored, renderedKeys],
   );
 
   const handleLayoutChange = (_layout: Layout, allLayouts: ResponsiveLayouts) => {
@@ -247,9 +271,11 @@ export function DashboardGrid({
     }
   };
 
-  // Multi-instance widgets render under a `<type>-<id>` key; map one back to its parts.
+  // Multi-instance widgets render under a `<type>-<id>` key (projects use `proj-`);
+  // map one back to its parts.
   const parseInstanceKey = (key: string): { type: WidgetType; id: string } | null => {
-    for (const type of ['market-asset', 'market-watchlist', 'finances'] as const) {
+    if (key.startsWith('proj-')) return { type: 'projects', id: key.slice('proj-'.length) };
+    for (const type of ['market-asset', 'market-watchlist', 'finances', 'scratchpad'] as const) {
       const prefix = `${type}-`;
       if (key.startsWith(prefix)) return { type, id: key.slice(prefix.length) };
     }
@@ -262,8 +288,7 @@ export function DashboardGrid({
       setWidgets((prev) => prev.filter((w) => !(w.type === inst.type && 'id' in w && w.id === inst.id)));
       return;
     }
-    const type: WidgetType = key.startsWith('proj-') ? 'projects' : (key as WidgetType);
-    setWidgets((prev) => prev.filter((w) => w.type !== type));
+    setWidgets((prev) => prev.filter((w) => w.type !== (key as WidgetType)));
   };
 
   const updateConfig = (type: WidgetType, config: WidgetInstance['config']) => {
@@ -280,8 +305,33 @@ export function DashboardGrid({
   // Inner content for one rendered grid key.
   const renderContent = (key: string): { node: React.ReactNode; scroll?: boolean } => {
     if (key.startsWith('proj-')) {
-      const project = recentProjects[Number(key.slice('proj-'.length))];
-      return { node: project ? <ProjectCard project={project} tasks={tasks} /> : null };
+      const id = key.slice('proj-'.length);
+      const w = widgets.find((x) => x.type === 'projects' && 'id' in x && x.id === id);
+      const projectId = w?.type === 'projects' ? w.config.projectId : null;
+      // Pinned project, or the most-recently-updated one as a sensible default.
+      const project = projectId
+        ? projects.find((p) => p.id === projectId)
+        : recentProjects[0];
+      return {
+        node: (
+          <ProjectCard
+            project={project}
+            tasks={tasks}
+            projects={projects}
+            onSelectProject={(pid) => updateInstance('projects', id, { projectId: pid })}
+          />
+        ),
+      };
+    }
+    if (key.startsWith('scratchpad-')) {
+      const id = key.slice('scratchpad-'.length);
+      const w = widgets.find((x) => x.type === 'scratchpad' && 'id' in x && x.id === id);
+      return {
+        node:
+          w?.type === 'scratchpad' ? (
+            <ScratchpadWidget config={w.config} onConfigChange={(c) => updateInstance('scratchpad', id, c)} />
+          ) : null,
+      };
     }
     if (key.startsWith('finances-')) {
       const id = key.slice('finances-'.length);
@@ -425,15 +475,6 @@ export function DashboardGrid({
       }
       case 'calendar':
         return { node: <CalendarWidget /> };
-      case 'scratchpad': {
-        const w = widgets.find((x) => x.type === 'scratchpad');
-        return {
-          node:
-            w?.type === 'scratchpad' ? (
-              <ScratchpadWidget config={w.config} onConfigChange={(c) => updateConfig('scratchpad', c)} />
-            ) : null,
-        };
-      }
       case 'links': {
         const w = widgets.find((x) => x.type === 'links');
         return {

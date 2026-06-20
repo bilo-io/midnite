@@ -17,7 +17,7 @@ export function WidgetCard({
   children,
   bodyClassName,
 }: {
-  title: string;
+  title: ReactNode;
   icon: LucideIcon;
   actions?: ReactNode;
   children: ReactNode;

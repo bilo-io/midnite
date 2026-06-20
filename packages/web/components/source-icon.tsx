@@ -180,25 +180,46 @@ const BRAND_MARK: Partial<Record<SourceKind, ComponentType<MarkProps>>> = {
   substack: SubstackMark,
 };
 
+/** A reliable favicon from a URL's host, for providers without a bespoke brand
+ *  mark — so YouTube (red) and Google (multicolor) show their real favicons
+ *  even when no favicon was scraped. */
+function faviconFromUrl(url?: string): string | undefined {
+  if (!url) return undefined;
+  try {
+    return `https://icons.duckduckgo.com/ip3/${new URL(url).hostname}.ico`;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
- * The provider icon for a link: its real favicon when resolved, otherwise the
- * brand mark / lucide glyph for the detected kind (falls back to the icon if the
- * favicon fails to load).
+ * The provider icon for a link: its real favicon when resolved (scraped, or
+ * derived from the host for non-branded providers), otherwise the brand mark /
+ * lucide glyph for the detected kind (falls back to the icon if the image fails).
  */
 export function SourceIcon({
   kind,
   faviconUrl,
+  url,
   className,
 }: {
   kind: SourceKind;
   faviconUrl?: string;
+  /** The link URL — lets us derive a host favicon when none was scraped. */
+  url?: string;
   className?: string;
 }) {
   const [broken, setBroken] = useState(false);
-  if (faviconUrl && !broken) {
+  // Prefer a scraped favicon; otherwise, for providers without a bespoke brand
+  // mark, derive one from the host (YouTube, Google, …). Branded providers keep
+  // their crisp inline mark.
+  const src = !broken
+    ? (faviconUrl ?? (BRAND_MARK[kind] ? undefined : faviconFromUrl(url)))
+    : undefined;
+  if (src) {
     return (
       <img
-        src={faviconUrl}
+        src={src}
         alt=""
         onError={() => setBroken(true)}
         className={cn('h-4 w-4 rounded-sm object-contain', className)}

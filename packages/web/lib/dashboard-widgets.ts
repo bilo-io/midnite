@@ -35,9 +35,9 @@ import {
 import { NEWS_MAX_COUNT, type AssetKind } from '@midnite/shared';
 import type { WordmarkFontKey } from './wordmark-fonts';
 
-// A widget's stable type doubles as its react-grid-layout item key `i`. The one
-// exception is `projects`, which expands to one `proj-N` grid item per recent
-// project (see the grid's key derivation).
+// A widget's stable type doubles as its react-grid-layout item key `i`. The
+// exceptions are the multi-instance widgets (e.g. `projects` → `proj-<id>`,
+// `scratchpad` → `scratchpad-<id>`), keyed per instance (see the grid).
 export type WidgetType =
   | 'tile-backlog'
   | 'tile-todo'
@@ -127,9 +127,13 @@ export type WidgetConfig = {
   clock: { mode: ClockMode };
   'world-clocks': { zones: WorldClockZone[]; mode: ClockMode };
   timer: { workMin: number; breakMin: number };
-  scratchpad: { text: string };
+  // One scratchpad card: an editable title + freeform text.
+  scratchpad: { title: string; text: string };
+  // One project card: which project to show (null = most recently updated).
+  projects: { projectId: string | null };
   links: { links: QuickLink[] };
-  quote: { size: QuoteSize; typingSpeedMs: number; cycleMs: number; font: WordmarkFontKey };
+  // `font: 'system'` renders the quote in the app's normal UI font; otherwise a wordmark face.
+  quote: { size: QuoteSize; typingSpeedMs: number; cycleMs: number; font: WordmarkFontKey | 'system' };
   finances: FinanceConfig;
   'market-asset': MarketAssetConfig;
   'market-watchlist': MarketWatchlistConfig;
@@ -144,10 +148,11 @@ export type WidgetInstance =
   | { type: 'clock'; config: WidgetConfig['clock'] }
   | { type: 'world-clocks'; config: WidgetConfig['world-clocks'] }
   | { type: 'timer'; config: WidgetConfig['timer'] }
-  | { type: 'scratchpad'; config: WidgetConfig['scratchpad'] }
   | { type: 'links'; config: WidgetConfig['links'] }
   | { type: 'quote'; config: WidgetConfig['quote'] }
   // Multi-instance: each card carries a stable `id` (others are keyed by type alone).
+  | { type: 'projects'; id: string; config: WidgetConfig['projects'] }
+  | { type: 'scratchpad'; id: string; config: WidgetConfig['scratchpad'] }
   | { type: 'finances'; id: string; config: WidgetConfig['finances'] }
   | { type: 'market-asset'; id: string; config: WidgetConfig['market-asset'] }
   | { type: 'market-watchlist'; id: string; config: WidgetConfig['market-watchlist'] }
@@ -370,7 +375,13 @@ export const DASHBOARD_WIDGETS: Record<WidgetType, WidgetMeta> = {
  * widgets (keyed by their type), these carry a per-instance `id` and render under a
  * `<type>-<id>` grid key — mirroring how `projects` fans out to `proj-N`.
  */
-export const MULTI_INSTANCE = new Set<WidgetType>(['finances', 'market-asset', 'market-watchlist']);
+export const MULTI_INSTANCE = new Set<WidgetType>([
+  'projects',
+  'scratchpad',
+  'finances',
+  'market-asset',
+  'market-watchlist',
+]);
 
 export const ALL_WIDGET_TYPES = Object.keys(DASHBOARD_WIDGETS) as WidgetType[];
 
@@ -383,7 +394,7 @@ export const DEFAULT_WIDGETS: WidgetInstance[] = [
   { type: 'tile-todo' },
   { type: 'tile-inProgress' },
   { type: 'tile-done' },
-  { type: 'projects' },
+  { type: 'projects', id: 'default-project', config: { projectId: null } },
   { type: 'notes' },
   { type: 'routines' },
 ];
@@ -454,7 +465,9 @@ export function newInstance(type: WidgetType): WidgetInstance {
     case 'timer':
       return { type, config: { workMin: 25, breakMin: 5 } };
     case 'scratchpad':
-      return { type, config: { text: '' } };
+      return { type, id: crypto.randomUUID(), config: { title: 'Scratchpad', text: '' } };
+    case 'projects':
+      return { type, id: crypto.randomUUID(), config: { projectId: null } };
     case 'links':
       return { type, config: { links: [] } };
     case 'quote':
@@ -519,6 +532,7 @@ export function groupWidgetCatalog(
 export function sizeForKey(key: string, bp: Breakpoint): WidgetSize {
   let type: WidgetType;
   if (key.startsWith('proj-')) type = 'projects';
+  else if (key.startsWith('scratchpad-')) type = 'scratchpad';
   else if (key.startsWith('finances-')) type = 'finances';
   else if (key.startsWith('market-asset-')) type = 'market-asset';
   else if (key.startsWith('market-watchlist-')) type = 'market-watchlist';

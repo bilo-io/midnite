@@ -2,12 +2,14 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { ChevronsUpDown, FolderKanban } from 'lucide-react';
 import type { Project, Status, Task } from '@midnite/shared';
 import { ProjectModal } from '@/components/project-modal';
 import { invalidateData } from '@/lib/data-refresh';
 import { ProjectTag } from '@/components/project-tag';
 import { SourceIcon } from '@/components/source-icon';
 import { StatusDonut, statusCounts } from '@/components/status-donut';
+import { cn } from '@/lib/utils';
 
 export const RECENT_LIMIT = 3;
 
@@ -20,15 +22,76 @@ function relativeTime(iso: string): string {
 }
 
 interface ProjectCardProps {
-  project: Project;
+  /** The project to show. Undefined → render the empty "choose a project" state. */
+  project?: Project;
   tasks: Task[];
+  // Configurable-card mode (dashboard): supply the full project list + a setter to
+  // enable the per-card project picker.
+  projects?: Project[];
+  onSelectProject?: (projectId: string | null) => void;
 }
 
-export function ProjectCard({ project, tasks }: ProjectCardProps) {
+/** A small dropdown to pick which project a configurable card shows. */
+function ProjectPicker({
+  projects,
+  selectedId,
+  onSelect,
+}: {
+  projects: Project[];
+  selectedId: string | null;
+  onSelect: (projectId: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-label="Choose project"
+        className="flex h-6 w-6 items-center justify-center rounded-md bg-background/70 text-muted-foreground backdrop-blur transition-colors hover:bg-accent hover:text-foreground"
+      >
+        <ChevronsUpDown className="h-3.5 w-3.5" />
+      </button>
+      {open ? (
+        <>
+          <div className="fixed inset-0 z-40" aria-hidden onClick={() => setOpen(false)} />
+          <div className="absolute right-0 z-50 mt-1 max-h-60 w-48 overflow-auto rounded-md border bg-popover p-1 shadow-md">
+            {projects.length === 0 ? (
+              <p className="px-2 py-1.5 text-xs text-muted-foreground">No projects</p>
+            ) : (
+              projects.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => {
+                    onSelect(p.id);
+                    setOpen(false);
+                  }}
+                  className={cn(
+                    'flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors hover:bg-accent',
+                    p.id === selectedId && 'bg-accent',
+                  )}
+                >
+                  <span aria-hidden className="h-2 w-2 shrink-0 rounded-full" style={{ background: p.color }} />
+                  <span className="truncate">{p.name}</span>
+                </button>
+              ))
+            )}
+          </div>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+export function ProjectCard({ project, tasks, projects, onSelectProject }: ProjectCardProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
 
-  const projectTasks = useMemo(() => tasks.filter((t) => t.projectId === project.id), [tasks, project.id]);
+  const projectTasks = useMemo(
+    () => (project ? tasks.filter((t) => t.projectId === project.id) : []),
+    [tasks, project],
+  );
 
   const countsMap = useMemo(() => {
     const map = new Map<Status, number>();
@@ -40,13 +103,34 @@ export function ProjectCard({ project, tasks }: ProjectCardProps) {
   const total = counts.reduce((sum, c) => sum + c.count, 0);
   const legend = counts.filter((c) => c.count > 0);
 
+  const picker =
+    onSelectProject && projects ? (
+      <ProjectPicker
+        projects={projects}
+        selectedId={project?.id ?? null}
+        onSelect={(id) => onSelectProject(id)}
+      />
+    ) : null;
+
+  // Configurable card with nothing to show yet (no projects, or the pinned one
+  // was deleted): a compact "pick a project" prompt.
+  if (!project) {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed bg-card/40 p-4 text-center">
+        <FolderKanban className="h-5 w-5 text-muted-foreground/60" />
+        <p className="text-xs text-muted-foreground">No project selected</p>
+        {picker}
+      </div>
+    );
+  }
+
   return (
-    <>
+    <div className="relative h-full w-full" style={{ ['--proj-color' as string]: project.color }}>
+      {picker ? <div className="absolute right-9 top-1.5 z-20">{picker}</div> : null}
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="group relative flex h-full w-full flex-col gap-3 overflow-hidden rounded-xl border bg-card p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-        style={{ ['--proj-color' as string]: project.color }}
+        className="group flex h-full w-full flex-col gap-3 overflow-hidden rounded-xl border bg-card p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         <span
           aria-hidden
@@ -115,7 +199,7 @@ export function ProjectCard({ project, tasks }: ProjectCardProps) {
           onSaved={() => invalidateData()}
         />
       )}
-    </>
+    </div>
   );
 }
 
