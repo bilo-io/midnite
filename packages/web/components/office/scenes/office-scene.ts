@@ -5,6 +5,7 @@ import { OFFICE_COLS, OFFICE_ROWS, OFFICE_TILE } from '@/lib/office/dimensions';
 import {
   ARMCHAIRS,
   BOARD_POS,
+  blockedGrid,
   CONSOLE_POS,
   COUCHES,
   DESK_SEATS,
@@ -65,7 +66,7 @@ type Actor = {
   tx: number;
   ty: number;
   walking: boolean;
-  tween?: Phaser.Tweens.Tween;
+  tween?: Phaser.Tweens.Tween | Phaser.Tweens.TweenChain;
 };
 
 class OfficeScene extends Phaser.Scene {
@@ -80,6 +81,8 @@ class OfficeScene extends Phaser.Scene {
   private readonly walls: Phaser.GameObjects.Image[] = [];
   private readonly labels: Phaser.GameObjects.Text[] = [];
   private readonly solids: Phaser.GameObjects.GameObject[] = [];
+  /** Pathfinding walkability grid (true = blocked); seats handled specially. */
+  private blocked: boolean[][] = [];
   private boardCenter = { x: 0, y: 0 };
   private lastNearby: string | null = null;
   private nearBoardFlag = false;
@@ -96,6 +99,7 @@ class OfficeScene extends Phaser.Scene {
 
   create() {
     this.palette = buildOfficePalette();
+    this.blocked = blockedGrid();
     ensureOfficeTextures(this);
     ensureOfficeAnims(this);
 
@@ -311,29 +315,121 @@ class OfficeScene extends Phaser.Scene {
     actor.bubble.setText(STATUS_BUBBLE[agent.status]).setColor(toHex(tint));
   }
 
-  /** Walk an actor to a new seat (e.g. lounge → desk when it starts working). */
+  /**
+   * Walk an actor to a new seat (e.g. lounge → desk when it starts working),
+   * routing around walls + furniture via A* and tweening through the waypoints.
+   * Falls back to a direct tween if no grid path is found.
+   */
   private walkActor(actor: Actor, tx: number, ty: number) {
     actor.tx = tx;
     actor.ty = ty;
     actor.walking = true;
-    const dx = tx - actor.sprite.x;
-    const dy = ty - actor.sprite.y;
+    actor.tween?.stop();
+
+    const start = this.tileOf(actor.sprite.x, actor.sprite.y);
+    const goal = this.tileOf(tx, ty);
+    const tiles = this.findPath(start, goal);
+
+    // Waypoints in px: skip the start tile; snap the last to the exact seat.
+    const pts = tiles.slice(1).map((t) => ({ x: center(t.x), y: center(t.y) }));
+    if (pts.length === 0) pts.push({ x: tx, y: ty });
+    else pts[pts.length - 1] = { x: tx, y: ty };
+
+    const settle = () => {
+      actor.walking = false;
+      actor.sprite.anims.stop();
+      actor.sprite.setTexture(charKey('robot', 'down', 0)).setFlipX(false);
+    };
+
+    let prev = { x: actor.sprite.x, y: actor.sprite.y };
+    const tweens = pts.map((p) => {
+      const dist = Math.hypot(p.x - prev.x, p.y - prev.y);
+      prev = p;
+      return {
+        x: p.x,
+        y: p.y,
+        duration: Math.max(140, (dist / PLAYER_SPEED) * 1000),
+        ease: 'Linear',
+        onStart: () => this.faceActor(actor, p),
+      };
+    });
+
+    actor.tween = this.tweens.chain({ targets: actor.sprite, tweens, onComplete: settle });
+  }
+
+  /** Point a robot toward `target` and play its walk cycle. */
+  private faceActor(actor: Actor, target: { x: number; y: number }) {
+    const dx = target.x - actor.sprite.x;
+    const dy = target.y - actor.sprite.y;
     const dir = Math.abs(dx) > Math.abs(dy) ? 'side' : dy < 0 ? 'up' : 'down';
     actor.sprite.setFlipX(dir === 'side' && dx < 0);
     actor.sprite.play(walkAnim('robot', dir), true);
-    actor.tween?.stop();
-    actor.tween = this.tweens.add({
-      targets: actor.sprite,
-      x: tx,
-      y: ty,
-      duration: Math.max(220, (Math.hypot(dx, dy) / PLAYER_SPEED) * 1000),
-      ease: 'Linear',
-      onComplete: () => {
-        actor.walking = false;
-        actor.sprite.anims.stop();
-        actor.sprite.setTexture(charKey('robot', 'down', 0)).setFlipX(false);
-      },
-    });
+  }
+
+  private tileOf(px: number, py: number) {
+    return {
+      x: Phaser.Math.Clamp(Math.floor(px / TILE), 0, COLS - 1),
+      y: Phaser.Math.Clamp(Math.floor(py / TILE), 0, ROWS - 1),
+    };
+  }
+
+  /**
+   * 4-directional A* over the blocked grid. The start and goal tiles are allowed
+   * even when blocked (an agent sits *on* furniture), so the route leaves one
+   * seat and arrives at another without cutting through anything between.
+   */
+  private findPath(start: { x: number; y: number }, goal: { x: number; y: number }): { x: number; y: number }[] {
+    const key = (x: number, y: number) => y * COLS + x;
+    const passable = (x: number, y: number) =>
+      y >= 0 && y < ROWS && x >= 0 && x < COLS && (!this.blocked[y]![x] || (x === goal.x && y === goal.y));
+
+    const startK = key(start.x, start.y);
+    const goalK = key(goal.x, goal.y);
+    const came = new Map<number, number>();
+    const g = new Map<number, number>([[startK, 0]]);
+    const open = new Set<number>([startK]);
+    const heur = (x: number, y: number) => Math.abs(x - goal.x) + Math.abs(y - goal.y);
+
+    while (open.size) {
+      let cur = -1;
+      let bestF = Infinity;
+      for (const k of open) {
+        const f = (g.get(k) ?? Infinity) + heur(k % COLS, Math.floor(k / COLS));
+        if (f < bestF) {
+          bestF = f;
+          cur = k;
+        }
+      }
+      if (cur === goalK) break;
+      open.delete(cur);
+      const cx = cur % COLS;
+      const cy = Math.floor(cur / COLS);
+      const neighbours: [number, number][] = [
+        [cx + 1, cy],
+        [cx - 1, cy],
+        [cx, cy + 1],
+        [cx, cy - 1],
+      ];
+      for (const [nx, ny] of neighbours) {
+        if (!passable(nx, ny)) continue;
+        const nk = key(nx, ny);
+        const tentative = (g.get(cur) ?? Infinity) + 1;
+        if (tentative < (g.get(nk) ?? Infinity)) {
+          came.set(nk, cur);
+          g.set(nk, tentative);
+          open.add(nk);
+        }
+      }
+    }
+
+    if (!came.has(goalK) && startK !== goalK) return []; // unreachable → caller falls back
+    const path: { x: number; y: number }[] = [];
+    let k: number | undefined = goalK;
+    while (k !== undefined) {
+      path.unshift({ x: k % COLS, y: Math.floor(k / COLS) });
+      k = came.get(k);
+    }
+    return path;
   }
 
   /** Glue an actor's shadow + labels to its sprite each frame. */

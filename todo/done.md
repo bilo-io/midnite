@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-20 — Phase 8 office C3: grid pathfinding for agent movement
+
+Agents now route around walls + furniture when they walk between the lounge and a hot desk (previously a straight-line tween that could clip).
+
+- [x] `blockedGrid()` (`lib/office/layout.ts`, Phaser-free): walkability grid = walls + furniture; seat tiles are blocked but the start/goal seat is special-cased so an agent leaves its couch and steps onto its desk without cutting through anything between.
+- [x] 4-directional A* + waypoint tween chain in `office-scene.ts` (`findPath`/`tileOf`/`faceActor`, rewritten `walkActor`): per-segment walk facing/animation; degrades to a direct tween if a path isn't found.
+- [x] Verified: `web:typecheck` / `web:build` (`/office` 4.6 kB) / `web:test` (42 pass).
+
 ## 2026-06-20 — Phase 8 office D1: wire desk Call/Messages to the gateway
 
 Finished the last "still mock" piece of `/office`. Walking up to a desk agent now opens real session views, reusing the Sessions-page modals.

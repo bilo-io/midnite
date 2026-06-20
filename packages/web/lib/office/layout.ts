@@ -113,3 +113,24 @@ export const PLAYER_SPAWN: TilePos = { x: 6, y: 8 };
 
 /** Sanity: the room dimensions match the layout grid. */
 export const LAYOUT_OK = LAYOUT.length === OFFICE_ROWS && LAYOUT.every((r) => r.length === OFFICE_COLS);
+
+/**
+ * Walkability grid for agent pathfinding: `true` = blocked (walls + furniture an
+ * agent must route around). Seat tiles are intentionally blocked too — A* treats
+ * the start/goal seat as a special case so an agent leaves its couch and steps
+ * onto its desk, but never walks *through* another piece of furniture en route.
+ */
+export function blockedGrid(): boolean[][] {
+  const grid = LAYOUT.map((row) => Array.from(row, (c) => c === '#'));
+  const block = (x: number, y: number) => {
+    const xx = Math.round(x);
+    const yy = Math.round(y);
+    if (grid[yy] && xx >= 0 && xx < grid[yy]!.length) grid[yy]![xx] = true;
+  };
+  for (const s of DESK_SEATS) block(s.x, s.y);
+  for (const s of LOUNGE_SEATS) block(s.x, s.y); // couches + armchairs share these tiles
+  block(TV_POS.x, TV_POS.y);
+  block(CONSOLE_POS.x, CONSOLE_POS.y);
+  for (let y = 6; y <= 10; y++) for (let x = 16; x <= 20; x++) block(x, y); // conference table
+  return grid;
+}
