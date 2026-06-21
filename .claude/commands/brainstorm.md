@@ -76,7 +76,7 @@ The new plan is a doc-only change and belongs in the **source of truth**, so com
    ```
    Then `git push origin main`.
 2. **Clean up before continuing.** Remove any scratch/intermediate files the brainstorm created, and confirm a clean state with `git status` — the working tree should be clean and the new doc present on `main` (and pushed). If anything unexpected is staged or dirty, stop and show the user rather than committing it.
-3. Tell the user the file path + the commit/push result, give a 2–3 line recap, and suggest that `/execute-phase` is how they'd later pick up a slice of it.
+3. Tell the user the file path + the commit/push result, give a 2–3 line recap, and suggest that `/exec` is how they'd later pick up a slice of it.
 
 ---
 
