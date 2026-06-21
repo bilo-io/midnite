@@ -29,9 +29,9 @@ Make the core monitoring surfaces reflow to a phone; gate the canvas-heavy ones 
 - [x] Next.js `viewport` export with theme-aware `themeColor` (light/dark `--background`, no longer hardcoded white) in [`layout.tsx`](../packages/web/app/layout.tsx).
 - [x] Breakpoint approach settled (Decision §4): Tailwind responsive variants + single-source [`lib/breakpoints.ts`](../packages/web/lib/breakpoints.ts) + SSR-safe [`useMediaQuery`/`useIsMobile`/`useIsTablet`/`useIsDesktop`](../packages/web/hooks/use-media-query.ts). Cutoffs documented once (mobile `<md` · tablet `md–lg` · desktop `≥lg`). ↪️ container-queries plugin deferred to A3 (wire when the first self-reflowing component needs it); dynamic `theme-color` on an *explicit* theme override deferred to Theme C.
 
-### A2. Mobile navigation — **M**
-- [ ] Adapt [`nav-bar.tsx`](../packages/web/components/nav-bar.tsx): below the breakpoint, the sidebar becomes a **drawer or bottom-tab bar** (Decision §5) — primary surfaces reachable in one tap; the icon-rail/expanded states stay for desktop. The command palette (⌘K) remains the power-user jump.
-- [ ] Header/page chrome ([`page-header.tsx`](../packages/web/components/page-header.tsx)) collapses gracefully; no horizontal overflow at narrow widths.
+### A2. Mobile navigation — **M** — ✅ DONE (PR #75, 2026-06-22 — see [done.md](done.md))
+- [x] Adapt [`nav-bar.tsx`](../packages/web/components/nav-bar.tsx): below `md` the sidebar is hidden and a fixed **bottom-tab bar** ([`mobile-nav.tsx`](../packages/web/components/mobile-nav.tsx)) takes over — the first four enabled surfaces get one-tap tabs and a **More** sheet holds the overflow plus Settings / Theme / Lock (always present so they stay reachable). The icon-rail/expanded states stay for tablet/desktop; ⌘K remains the power-user jump. (Decision §5 settled: bottom-tabs + overflow drawer.)
+- [x] Header/page chrome ([`page-header.tsx`](../packages/web/components/page-header.tsx)) collapses gracefully: the title/actions row wraps instead of overflowing at narrow widths; page content clears the bar via bottom padding (safe-area aware) on mobile and keeps the `--nav-offset` left offset at `md+`.
 
 ### A3. Per-surface reflow (core monitoring) — **M–L**
 - [ ] **Board** ([`board-view.tsx`](../packages/web/components/board-view.tsx)): columns stack / horizontally page on a phone; cards stay legible (Theme B handles moving them).

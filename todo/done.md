@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 24 Theme A2: mobile bottom-tab navigation (PR #75)
+
+On a phone the desktop sidebar was still pinned left as a 3.5rem icon rail, eating width and shifting every page right — no thumb-reachable nav. A2 swaps it for a mobile-native pattern below `md` while leaving tablet/desktop untouched.
+
+- [x] **New `mobile-nav.tsx`** — a fixed **bottom-tab bar** rendered below `md`: the first four enabled surfaces (same `lib/features` order the sidebar uses) get one-tap tabs with an active top-indicator + `aria-current`, and a **More** button opens a bottom **sheet** (`role="dialog"`, Escape/backdrop/navigation dismiss) holding the overflow surfaces plus **Settings / Theme / Lock**. `More` is always present so those last three stay reachable even when every tab slot is a feature (Decision §5 settled: bottom-tabs + overflow drawer).
+- [x] **`nav-bar.tsx`** — the sidebar is now `hidden md:flex` (icon-rail/expanded states unchanged at `md+`); it computes the ordered enabled-feature list once and hands it to `MobileNav`, keeping the lock/passcode/idle flow in one place. ⌘K stays the power-user jump.
+- [x] **Layout/header hygiene** — `(main)/layout.tsx` clears the fixed bar with safe-area-aware bottom padding on mobile and keeps the `--nav-offset` left offset only at `md+` (inline style → `md:[padding-left:var(--nav-offset)]`). `page-header.tsx` wraps its title/actions row (`flex-wrap` + `min-w-0`) instead of overflowing at narrow widths.
+- [x] **Tests** — `mobile-nav.test.tsx` (RTL): tab set, active state, sheet contents, Settings-always-reachable, Lock fires + closes, overflow-route active flag, Escape/navigation dismiss.
+- [x] `:typecheck` · `:lint` · `:test` (web 252) · `web:build` green; `moon ci` green on PR #75. Before/after phone screenshots (390×844) in the PR.
+
+**A2 complete.** Remaining Phase 24: **A3** (per-surface reflow + office/editor desktop-only gates) → **B** (touch interactions) → **C** (PWA installability).
+
 ## 2026-06-22 — Phase 14 Theme A: live run streaming via incremental event reducer (PR #72)
 
 The workflow run panel was half-wired — the hook opened `/ws/workflows` but re-pulled the whole run over REST on every event, so it was effectively still polling. Theme A finishes the live path so a running workflow updates straight off the event stream.
