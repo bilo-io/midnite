@@ -4,6 +4,19 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 12 Theme D: full n8n-style expression editor (PR #76)
+
+Phase 12 shipped the `{{ }}` engine (A–C) and the ƒx toggle (D starter, #63), but references were still hand-typed with no discovery or feedback. This finishes Theme D's headline UX: references become discoverable, insertable, and previewable. Web-only; the grammar/resolver stays the shared contract — the new code only *navigates* it.
+
+- [x] **Autocomplete** — typing in a ƒx field suggests roots (`$json`/`$node`/`$env`), upstream node **labels** inside `$node["…"]`, and object **keys** after any resolvable parent path; keyboard-navigable (↑/↓/Enter/Esc).
+- [x] **Data picker** — a click-to-insert tree of the last run's data: the node's own input under `$json` and each **ancestor** node's output under `$node[label]` (downstream nodes can't be referenced), drilling into nested objects/arrays.
+- [x] **Inline resolved-value preview** — what the field resolves to against the last run, a path-naming error for a bad reference, and a "run once to preview" empty state. Pinned sample data stays deferred to Theme E.
+- [x] Pure, tested logic in [`lib/expression-editor.ts`](../packages/web/lib/expression-editor.ts) (ancestor walk, design-time `ExpressionContext`, reference tree, cursor-aware suggestions, insertion); React wiring in [`components/expression-editor.tsx`](../packages/web/components/expression-editor.tsx); the last run is threaded `WorkflowEditor → NodeConfigPanel → NodeFields`. Design-time context mirrors the engine exactly.
+- [x] Review caught + fixed an edge-case bug: a caret before a leading `{{` was reported as *inside* the span (would splice a bare ref outside the braces) — bound the `lastIndexOf` search to `cursor - 2`, with a regression test.
+- [x] 16 lib unit tests + RTL on `NodeConfigPanel` (preview, missing-ref error, autocomplete, picker insert) + a Storybook catalog with interaction tests; `:typecheck`/`:lint`/`:test` (270 web) green; CI green on #76.
+
+Phase 12 status: **A–D + F all ✅**. Remaining: **Theme E** pin-sample-data (deferred — its consumer, the picker/preview, now exists).
+
 ## 2026-06-22 — Phase 19 Theme C: soft first-run setup nudge (PR #79)
 
 Surfaces the Theme-A readiness model. A dismissible corner card that appears when the install isn't `ready`, points the user at what's missing, and **never blocks the board** (Decision §2). Web-only.
