@@ -35,13 +35,13 @@ Stand up the package and its build before moving anything into it. **Landed — 
 
 ---
 
-## Theme B — Tokens & theming as the design-system foundation — **M**
+## Theme B — Tokens & theming as the design-system foundation — **M** — ✅ DONE (PR #57, 2026-06-21)
 
-The library owns the design system's source of truth (Decision §1 — tokens move, not just components).
+The library owns the design system's source of truth (Decision §1 — tokens move, not just components). **Landed — see [done.md](done.md).**
 
-- [ ] **Move the token set** — the HSL CSS vars + `.dark` block from [`globals.css`](../packages/web/app/globals.css) into `@midnite/ui` as a CSS entry (`tokens.css` / `@midnite/ui/styles`), plus a **typed token map** (TS constants for the same values, for JS consumers). Web imports the lib's token CSS instead of defining them locally (keep web's app-specific, non-DS globals in web).
-- [ ] **Move the theme runtime** — `ThemeProvider` / theme-context + the no-flash theme-script + the `useTheme` hook into the lib (light / dark / system / time), so any consumer gets theming for free. `theme-toggle` becomes a lib primitive.
-- [ ] **Scaffold the full DS taxonomy with placeholders** — structure the system end-to-end: **color** (filled), **spacing**, **typography**, **radius**, **shadow/elevation**, **z-index**, **motion/easing** — real values where they exist today, clearly-marked **placeholder** entries where they don't, so the design system is structurally complete and obviously extensible.
+- [x] **Move the token set** — HSL CSS vars + `.dark` block now in `@midnite/ui/styles` (`tokens.css`, framework-agnostic) + a typed token map in `src/tokens`; web imports the lib's token CSS and keeps only app-specific globals (`--nav-offset`).
+- [x] **Move the theme runtime** — `ThemeProvider` / `useTheme` / theme-context + the no-flash script now in `@midnite/ui/theme` (the Vite build preserves `'use client'` for RSC); web re-exports via shims. (`theme-toggle` deferred to Theme C — it composes the `Button` primitive that moves there.)
+- [x] **Scaffold the full DS taxonomy with placeholders** — `color` + `radius` filled; `spacing`/`typography`/`shadow`/`zIndex`/`motion` present as clearly-marked placeholders.
 
 ---
 

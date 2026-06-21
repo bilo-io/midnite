@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 25 Theme B: design tokens + theme runtime → `@midnite/ui` (PR #57)
+
+Moves the design system's *foundation* out of `packages/web` into the `@midnite/ui` leaf (Theme A stood up the empty package). Extraction, not redesign — token values unchanged; web's appearance is identical.
+
+- [x] **Tokens → `@midnite/ui/styles`** — the shadcn-style HSL custom properties + `.dark` block now live in `src/styles/tokens.css` (framework-agnostic: no `@layer`/`@tailwind`, so a non-Tailwind consumer can use them). A typed token map in `src/tokens` mirrors them for JS consumers; verified byte-exact against the values removed from `globals.css`.
+- [x] **Full DS taxonomy** — `color` + `radius` filled; `spacing`/`typography`/`shadow`/`zIndex`/`motion` present as clearly-marked `{ placeholder: true }` so the system is structurally complete + extensible.
+- [x] **Theme runtime → `@midnite/ui/theme`** — `ThemeProvider`/`useTheme`/theme-context + the no-flash init script. The Vite build now **preserves `'use client'`** on `dist/theme.js` (a `preserveUseClient` rollup plugin re-emits the directive rollup strips by default) so a Next.js RSC consumer gets a real client boundary — confirmed in `dist` + `next build`.
+- [x] **Web consumes the lib** — `globals.css` imports `@midnite/ui/styles` (drops the duplicated tokens, keeps `--nav-offset` + app CSS); `app/theme/*` become thin re-export shims (Decision §2, codemod later); `@midnite/ui` added to deps + `transpilePackages` + web's moon `dependsOn`.
+
+`theme-toggle` stays in web until Theme C (it composes the `Button` primitive that moves there). Verified: lib build/typecheck/lint/vitest (15); web `next build` + typecheck + lint + vitest **194** (incl. storybook chromium rendering `ThemeProvider` via the shim); pristine frozen install; CI green. **Next:** Theme C (migrate the generic primitives + their stories, web keeps re-export shims).
+
 ## 2026-06-21 — Phase 4: inline answers for question-kind tasks (PR #55)
 
 A task classified as a `question` is answered directly by the plan model at intake instead of being queued for a coding agent — closing a Phase 4 done-criterion (also Phase 15 Theme C).
