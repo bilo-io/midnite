@@ -51,8 +51,9 @@
 - [x] **Restart recovery** confirmed: a fresh `AgentPoolService.onModuleInit()` requeues orphaned `wip`/`waiting` → `todo` (persisted state is authoritative), leaves terminal states alone, slots start idle, and the scheduler re-runs the recovered tasks.
 - [x] **Heartbeat scheduler** due-logic covered with the LLM faked disabled: a due tick records a skip and advances the schedule clock so the next tick is not due; not-due / disabled / blank-prompt / never-fired cases. (`agents/heartbeat-scheduler.integration.spec.ts`)
 
-### B3. Standardise gateway test harness — **S**
-- [ ] A shared gateway test helper (`gateway/src/test/`) to build a `Db` on `:memory:` with migrations applied and to spin a Nest testing module with overridable providers — so new feature tests have one obvious setup path. Refactor a couple of existing specs onto it as proof; don't churn all of them.
+### B3. Standardise gateway test harness — **S** — ✅ DONE (PR #32, 2026-06-21)
+- [x] `gateway/src/test/createTestDb()` consolidates the `:memory:` → `foreign_keys = ON` → `drizzle(schema)` → `migrate` block that **nine** specs hand-rolled, returning `{ db, sqlite, close }` (the `MidniteDb` repositories accept + the raw handle); migration-folder resolution mirrors the production `DbModule`. Refactored `tasks` + `projects` repository specs onto it as proof; `db.test.ts` covers migrations-applied / FK-on / usable handle / per-instance isolation / close.
+- ⚠️ **Deviation (documented):** no "Nest testing module with overridable providers" — `@nestjs/testing` isn't a dep and the house style settled in PRs #28/#30/#31 is direct instantiation + `vi.fn()` fakes, so the real duplication (DB setup) is what was consolidated; provider wiring stays explicit. `gateway:typecheck`/`lint`/`test` (481 pass) green; `moon ci` green on PR #32.
 
 ---
 

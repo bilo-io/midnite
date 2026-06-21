@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 10 B3 complete: shared gateway test harness (PR #32)
+
+Standardises the `:memory:` database setup that nine gateway specs hand-rolled. B3 is now ✅ DONE.
+
+- [x] `gateway/src/test/db.ts` — `createTestDb()` returns `{ db, sqlite, close }`: a fully-migrated in-memory SQLite (open `:memory:` → `foreign_keys = ON` → `drizzle(schema)` → `migrate`). `db` is the `MidniteDb` type repositories accept; `sqlite` is the raw handle; `close()` frees the connection. Migration-folder resolution mirrors the production `DbModule` (module-relative path, cwd fallback). Barrel at `gateway/src/test/index.ts`.
+- [x] `gateway/src/test/db.test.ts` (5 tests) — migrations applied (domain tables exist), FK enforcement on, a usable Drizzle handle against the migrated schema, per-instance isolation (writes don't leak), and close frees the connection.
+- [x] **Proof refactor:** `tasks.repository.test.ts` + `projects.repository.test.ts` now build their DB via `createTestDb()` instead of the copy-pasted block (per the doc: "a couple as proof; don't churn all").
+- ⚠️ **Documented deviation:** the doc's "spin a Nest testing module with overridable providers" was **not** built — `@nestjs/testing` isn't a dependency and the house style (PRs #28/#30/#31) is direct instantiation + `vi.fn()` fakes. The duplicated pain was the DB setup, not provider wiring, so that's what was consolidated.
+- [x] Test-only; no product code changed. `gateway:test` 481 pass (+5); `:typecheck`/`:lint` green; `moon ci` green on PR #32.
+
 ## 2026-06-21 — Phase 10 B2 complete: scheduler/pool & heartbeat lifecycle integration (PR #31)
 
 Adds the integration layer B2 asked for — real lifecycles driven end-to-end against `:memory:` SQLite, asserting emitted WS events and persisted state agree, plus restart recovery and the heartbeat scheduler. B2 is now ✅ DONE.
