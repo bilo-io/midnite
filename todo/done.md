@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 10 C2: data-fetching widget stories + fetch-stub helper (PR #53)
+
+Continues [Phase 10](phase-10-test-suite-hardening.md#c2-interaction-tests-on-key-components--partial-pr-36--48--53-2026-06-21) C2 — the data-fetching widgets that previously couldn't be storied because they self-fetch. Adds the missing mock infra + the first widget stories on it. Pure coverage; no product change.
+
+- [x] **`installMockFetch` helper** ([`stories/mock-fetch.ts`](../packages/web/stories/mock-fetch.ts)): swaps `globalThis.fetch` for a path-keyed stub of canned, schema-valid gateway responses; a `status >= 400` handler drives a widget's error branch. **Unmatched requests fall through to the real fetch** — important so Storybook's own browser module loading is never intercepted (the first cut returned 502 for unmatched and broke later stories' dynamic imports; caught in the local run and fixed).
+- [x] **Widget stories:** `news-widget` (list / grid / error), `weather-widget` (°C / °F / error), multi-endpoint `health-widget` (healthy / gateway-down — `/health` + `/agents/cli/statuses` + `/agents`, handlers ordered specific→general). Each a render + interaction test in the headless-chromium story run.
+- [x] 8 new story tests; `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #53 (`web:test` 202).
+- ↪️ **Remaining (logged in phase-10 C2):** the rest of the self-fetching widgets (`market-*`, `sessions`/`agents`/`throughput`/`usage`/`system-monitor`, `boardroom-panel`) can now be backfilled with the same helper — each a small add.
+
 ## 2026-06-21 — Phase 13 COMPLETE — Theme B: repos selectable & validated (PR #52)
 
 The last theme of [Phase 13](phase-13-repos-first-class.md#theme-b--selectable--validated--m--done-pr-52-2026-06-21). Theme A (PR #45) made repos a DB-backed registry; B makes them selectable at task-creation time and makes `task.repo` always point at a known repo. **Phase 13 is now done** (Themes A + B; the C–F follow-ons stay explicitly deferred). Spans gateway + web; CLI flag was already in place from PR #47.
