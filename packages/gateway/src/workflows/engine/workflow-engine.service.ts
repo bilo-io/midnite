@@ -1,8 +1,11 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import {
+  ExpressionError,
   evaluateBranchCondition,
   getNodeTypeDefinition,
+  resolveParams,
+  type ExpressionContext,
   type NodeRunLog,
   type RunStatus,
   type RunTriggerSource,
@@ -153,6 +156,14 @@ export class WorkflowEngine {
   ): Promise<void> {
     const { runId, graph, order, triggerId } = prepared;
     const outputs = new Map<string, unknown>();
+    // Completed node outputs keyed by label (falling back to id), each wrapped as
+    // `{ json: <output> }` — the `$node` half of the expression context. Built up
+    // as nodes finish; topological order guarantees a node's references resolve.
+    const nodeContext: Record<string, unknown> = {};
+    const recordOutput = (label: string | undefined, nodeId: string, value: unknown): void => {
+      outputs.set(nodeId, value);
+      nodeContext[label?.trim() ? label : nodeId] = { json: value };
+    };
     let runStatus: RunStatus = 'succeeded';
     let runError: string | undefined;
 
@@ -211,7 +222,7 @@ export class WorkflowEngine {
       });
 
       if (def.category === 'trigger') {
-        outputs.set(nodeId, input);
+        recordOutput(node.label, nodeId, input);
         this.repo.updateNodeRun(runId, nodeId, {
           status: 'succeeded',
           output: JSON.stringify(input ?? null),
@@ -222,12 +233,42 @@ export class WorkflowEngine {
         continue;
       }
 
+      // Resolve `{{expr}}` params against the run context before this node runs.
+      // $json is the node's merged input; $node exposes completed upstream outputs
+      // by label; $env exposes process env. A bad reference fails *this* node
+      // (short-circuiting the run) with a path-naming message — never a silent
+      // empty string. Trigger nodes are skipped above (no upstream to reference).
+      const context: ExpressionContext = {
+        $json: input,
+        $node: nodeContext,
+        $env: process.env,
+      };
+      let resolvedParams: Record<string, unknown>;
+      try {
+        resolvedParams = resolveParams((node.params ?? {}) as Record<string, unknown>, context);
+      } catch (err) {
+        const message =
+          err instanceof ExpressionError
+            ? `expression error in "${node.label ?? node.id}": ${err.message}`
+            : err instanceof Error
+              ? err.message
+              : String(err);
+        this.repo.updateNodeRun(runId, nodeId, {
+          status: 'failed',
+          error: message,
+          finishedAt: new Date().toISOString(),
+        });
+        this.emitNodeFailed(workflow.id, runId, nodeId, message);
+        runStatus = 'failed';
+        runError = message;
+        break;
+      }
+      this.repo.updateNodeRun(runId, nodeId, { resolvedParams: JSON.stringify(resolvedParams) });
+
       // Branch: evaluate the condition, pass the input through unchanged, and open only
       // the matching port so the other path's downstream nodes are skipped.
       if (node.type === BRANCH_TYPE) {
-        const taken = evaluateBranchCondition(input, (node.params ?? {}) as Record<string, unknown>)
-          ? 'true'
-          : 'false';
+        const taken = evaluateBranchCondition(input, resolvedParams) ? 'true' : 'false';
         const logs: NodeRunLog[] = [
           {
             at: new Date().toISOString(),
@@ -235,7 +276,7 @@ export class WorkflowEngine {
             message: `condition ${taken === 'true' ? 'met' : 'not met'} → taking "${taken}" path`,
           },
         ];
-        outputs.set(nodeId, input);
+        recordOutput(node.label, nodeId, input);
         this.repo.updateNodeRun(runId, nodeId, {
           status: 'succeeded',
           output: JSON.stringify(input ?? null),
@@ -265,11 +306,11 @@ export class WorkflowEngine {
       try {
         const output = await executor.execute({
           input,
-          params: (node.params ?? {}) as Record<string, unknown>,
+          params: resolvedParams,
           signal,
           log: (level, message) => logs.push({ at: new Date().toISOString(), level, message }),
         });
-        outputs.set(nodeId, output);
+        recordOutput(node.label, nodeId, output);
         this.repo.updateNodeRun(runId, nodeId, {
           status: 'succeeded',
           output: JSON.stringify(output ?? null),

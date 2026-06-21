@@ -3,8 +3,9 @@ import { AiClaudeParamsSchema, type AiClaudeParams } from '@midnite/shared';
 import { LlmService } from '../../../agent/llm/llm.service';
 import type { NodeExecutor, NodeRunContext } from '../node-executor';
 
-// Fold the upstream node's output into the prompt as plain context. Real templating
-// (e.g. {{$json.field}}) lands in the logic-nodes phase.
+// `params.prompt`/`system` are already `{{expr}}`-resolved by the engine before
+// this runs. As a convenience we additionally fold the raw upstream output into
+// the prompt as plain context, for prompts that don't reference it explicitly.
 function buildPrompt(prompt: string, input: unknown): string {
   if (input === undefined || input === null) return prompt;
   const ctxStr = typeof input === 'string' ? input : JSON.stringify(input, null, 2);
