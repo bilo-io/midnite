@@ -1,11 +1,18 @@
 import {
   BulkCreateTaskResponseSchema,
+  RunResponseSchema,
   StatusSchema,
   TaskSchema,
+  WorkflowRunSchema,
+  WorkflowSchema,
+  WorkflowSummarySchema,
   type BulkCreateTaskRequest,
   type BulkCreateTaskResponse,
   type Status,
   type Task,
+  type Workflow,
+  type WorkflowRun,
+  type WorkflowSummary,
 } from '@midnite/shared';
 
 /** Batch-wide defaults applied to every task in a create (single or bulk). */
@@ -25,6 +32,11 @@ export interface GatewayClient {
   createTask(prompt: string, defaults?: TaskDefaults): Promise<Task>;
   createBulk(raw: string, defaults?: TaskDefaults): Promise<BulkCreateTaskResponse>;
   moveTask(id: string, status: Status): Promise<Task>;
+  listWorkflows(): Promise<WorkflowSummary[]>;
+  getWorkflow(id: string): Promise<Workflow>;
+  runWorkflow(id: string): Promise<WorkflowRun>;
+  listWorkflowRuns(id: string): Promise<WorkflowRun[]>;
+  getWorkflowRun(id: string, runId: string): Promise<WorkflowRun>;
 }
 
 /** A thin typed client over the gateway REST API. Responses are validated with
@@ -92,6 +104,42 @@ export function createClient(baseUrl: string): GatewayClient {
           body: JSON.stringify({ status }),
         }),
       );
+    },
+
+    async listWorkflows(): Promise<WorkflowSummary[]> {
+      return WorkflowSummarySchema.array().parse(await request('/workflows', { method: 'GET' }));
+    },
+
+    async getWorkflow(id: string): Promise<Workflow> {
+      const body = (await request(`/workflows/${encodeURIComponent(id)}`, { method: 'GET' })) as {
+        workflow: unknown;
+      };
+      return WorkflowSchema.parse(body.workflow);
+    },
+
+    async runWorkflow(id: string): Promise<WorkflowRun> {
+      return RunResponseSchema.parse(
+        await request(`/workflows/${encodeURIComponent(id)}/run`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({}),
+        }),
+      ).run;
+    },
+
+    async listWorkflowRuns(id: string): Promise<WorkflowRun[]> {
+      return WorkflowRunSchema.array().parse(
+        await request(`/workflows/${encodeURIComponent(id)}/runs`, { method: 'GET' }),
+      );
+    },
+
+    async getWorkflowRun(id: string, runId: string): Promise<WorkflowRun> {
+      return RunResponseSchema.parse(
+        await request(
+          `/workflows/${encodeURIComponent(id)}/runs/${encodeURIComponent(runId)}`,
+          { method: 'GET' },
+        ),
+      ).run;
     },
   };
 }
