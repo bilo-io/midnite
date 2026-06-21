@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 12 Theme C (reshape nodes): setData / merge / filter (PR #34)
+
+Three pure data-flow node types that make "use outputs as inputs" practical, consuming Theme B's resolve-before-execute (expression-valued fields arrive already resolved). Theme C is now ◐ partial — only the persisted `storage.set/get` nodes remain (they need a new table).
+
+- [x] `logic.setData` — builds a payload from key→value `fields`; `replace` emits only the set fields, `merge` overlays them onto the input object. One `shared` registry entry + one gateway executor.
+- [x] `logic.merge` — fan-in over a multi-predecessor node's array of outputs: `shallowMerge` (object overlay) / `array` (collect) / `concat` (flatten arrays).
+- [x] `data.filter` — pick or omit a set of top-level fields; introduces a `data` node category (web's `hueVarForCategory` already falls back safely).
+- [x] Registered all three in `node-types.ts` with param schemas + form fields + categories; executors wired into the module's `NODE_EXECUTORS` (one place).
+- [x] Tests: executor behaviour per mode + non-object inputs; shared param-schema defaults/rejections; an engine integration proving `setData` resolves `{{$json}}`/`{{$node[...]}}` fields end-to-end and persists `resolvedParams`. `shared` 262 / `gateway` 498 green; `moon ci` green on PR #34.
+- **Deferred:** `storage.set`/`storage.get` (Theme C's `workflow_storage` table) — the remaining Theme C slice.
+
 ## 2026-06-21 — Phase 12 Theme B complete: workflow engine expression integration (PR #33)
 
 The keystone of Phase 12 — nodes can now reference each other's output. Theme A shipped the resolver in `shared`; Theme B wires it into the engine so params resolve against a per-run context before each node executes.
