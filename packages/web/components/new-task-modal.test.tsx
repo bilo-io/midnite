@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
-import type { BulkCreateTaskResponse } from '@midnite/shared';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { BulkCreateTaskResponse, Repo } from '@midnite/shared';
 
 const createBulk = vi.fn();
 const createTask = vi.fn();
@@ -13,10 +13,13 @@ import { NewTaskModal } from './new-task-modal';
 
 const BLOB = ['fix login bug', '- add dark mode', '# a comment', '', 'write docs'].join('\n');
 
-function renderModal(overrides?: { onBulkCreated?: () => void }) {
+const REPO: Repo = { id: 'r1', name: 'midnite', path: '~/Dev/midnite', createdAt: '', updatedAt: '' };
+
+function renderModal(overrides?: { onBulkCreated?: () => void; repos?: Repo[] }) {
   render(
     <NewTaskModal
       projects={[]}
+      repos={overrides?.repos ?? []}
       onCreated={vi.fn()}
       onBulkCreated={overrides?.onBulkCreated ?? vi.fn()}
       onClose={vi.fn()}
@@ -74,5 +77,32 @@ describe('NewTaskModal — bulk paste', () => {
     expect(screen.getByText('write docs')).toBeInTheDocument();
     expect(screen.getByText(/classification failed/)).toBeInTheDocument();
     expect(onBulkCreated).toHaveBeenCalledWith(response);
+  });
+});
+
+describe('NewTaskModal — repo picker', () => {
+  it('hides the repo control when no repos are registered', () => {
+    renderModal();
+    expect(screen.queryByLabelText('Repo')).toBeNull();
+  });
+
+  it('sends the chosen repo on create and defaults to unassigned (no field)', async () => {
+    createTask.mockResolvedValue({ task: { id: 't1', title: 'do thing', status: 'todo', events: [] } });
+    renderModal({ repos: [REPO] });
+
+    // Default selection is "Unassigned" → no repo field sent.
+    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'do thing' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create task' }));
+    await waitFor(() => expect(createTask).toHaveBeenCalledTimes(1));
+    expect((createTask.mock.calls[0]![0] as FormData).has('repo')).toBe(false);
+
+    createTask.mockClear();
+    // Picking a repo sends its name on the form.
+    renderModal({ repos: [REPO] });
+    fireEvent.change(screen.getByLabelText('Repo'), { target: { value: 'midnite' } });
+    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'do thing' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create task' }));
+    await waitFor(() => expect(createTask).toHaveBeenCalledTimes(1));
+    expect((createTask.mock.calls[0]![0] as FormData).get('repo')).toBe('midnite');
   });
 });

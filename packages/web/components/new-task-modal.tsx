@@ -7,6 +7,7 @@ import {
   parseBulkLines,
   type BulkCreateTaskResponse,
   type Project,
+  type Repo,
   type Status,
   type Task,
 } from '@midnite/shared';
@@ -18,6 +19,8 @@ type Mode = 'single' | 'bulk';
 
 type Props = {
   projects: Project[];
+  /** Registered repos for the picker; an empty list hides the control. */
+  repos: Repo[];
   defaultStatus?: Status;
   onCreated: (task: Task) => void;
   /** Called after a bulk batch lands, so the parent can refresh the board. */
@@ -30,6 +33,7 @@ const INPUT_CLASS =
 
 export function NewTaskModal({
   projects,
+  repos,
   defaultStatus = 'todo',
   onCreated,
   onBulkCreated,
@@ -39,6 +43,7 @@ export function NewTaskModal({
   const [title, setTitle] = useState('');
   const [bulkText, setBulkText] = useState('');
   const [projectId, setProjectId] = useState('');
+  const [repo, setRepo] = useState('');
   const [status, setStatus] = useState<Status>(defaultStatus);
   const [priority, setPriority] = useState(1);
   const [busy, setBusy] = useState(false);
@@ -86,6 +91,7 @@ export function NewTaskModal({
       form.append('status', status);
       form.append('priority', String(priority));
       if (projectId) form.append('projectId', projectId);
+      if (repo) form.append('repo', repo);
       const { task } = await createTask(form);
       onCreated(task);
       onClose();
@@ -103,6 +109,7 @@ export function NewTaskModal({
       const response = await createBulk({
         raw: bulkText,
         projectId: projectId || undefined,
+        repo: repo || undefined,
         priority,
       });
       setResult(response);
@@ -264,6 +271,28 @@ export function NewTaskModal({
                 </select>
               </div>
             </div>
+
+            {/* Repo picker — the chosen repo's checkout is where the task's
+                session opens (see resolveCwd). "Unassigned" leaves it unset. */}
+            {repos.length > 0 && (
+              <div>
+                <label htmlFor="new-task-repo" className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                  Repo
+                </label>
+                <select
+                  id="new-task-repo"
+                  value={repo}
+                  onChange={(e) => setRepo(e.target.value)}
+                  disabled={busy}
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
+                >
+                  <option value="">Unassigned</option>
+                  {repos.map((r) => (
+                    <option key={r.id} value={r.name}>{r.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {error && <p className="text-sm text-destructive">{error}</p>}
 
