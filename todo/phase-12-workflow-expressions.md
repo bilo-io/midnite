@@ -30,16 +30,16 @@ Wire the resolver into the run so executors receive **resolved** params and we c
 - [x] **S** Stale "templating lands later" comments updated in [`ai-claude.executor.ts`](../packages/gateway/src/workflows/engine/executors/ai-claude.executor.ts) + `node-executor.ts`; `http.request` (url/headers/body) and `ai.claude` (prompt/system) params now flow through resolution.
 - [x] **M** Engine tests (`workflow-engine.expression.spec.ts`): typed `{{$node["…"]}}` ref, mixed-text `{{$json}}` → string, resolved params persisted + returned by `getRun`, missing-ref fails the referencing node (not its predecessors), templated branch condition. Plus a shared `NodeRunSchema` round-trip. See [done.md](done.md).
 
-## Theme C — Reshape & storage nodes (registry + executors) — ◐ PARTIAL (reshape nodes done, PR #34, 2026-06-21)
+## Theme C — Reshape & storage nodes (registry + executors) — ✅ DONE (reshape PR #34, storage PR #37, 2026-06-21)
 
 New node types — one registry entry in `shared` + one executor in the gateway each (the Phase 6 "adding an integration is one definition + one executor" rule).
 
 - [x] **M** `logic.setData` — builds an object from key→value `fields` (values may be `{{expr}}`, resolved by the engine before execute); `replace` emits only the set fields, `merge` overlays them onto the input. (PR #34)
 - [x] **M** `logic.merge` — fan-in over a multi-predecessor node's array of outputs: `shallowMerge` / `array` / `concat`. (PR #34)
 - [x] **S** `data.filter` — pick or omit a set of top-level fields from the payload. New `data` node category. (PR #34)
-- [ ] **L** `storage.set` / `storage.get` — a persisted key-value store so a run can stash data and a later run (or node) read it. New Drizzle table `workflow_storage` (scoped per workflow; key + JSON value + timestamps), repository → service → executor; values readable via `{{$node}}` within a run and via `storage.get` across runs. *(See Decisions §4 for scoping.)* **← the remaining Theme C slice (deferred from PR #34 — needs the new table).**
-- [x] **S** Registered `logic.setData` / `logic.merge` / `data.filter` in [`node-types.ts`](../packages/shared/src/node-types.ts) with param schemas, ports, and categories; executors under [`engine/executors/`](../packages/gateway/src/workflows/engine/executors/) wired into the module's `NODE_EXECUTORS`. (storage.* still to register.)
-- [x] **M** Tests: each reshape executor's param schema + behaviour + an engine integration (setData resolves `{{expr}}` end-to-end); `logic.merge` modes. (storage round-trip pending with storage.*.)
+- [x] **L** `storage.set` / `storage.get` — a persisted key-value store so a run can stash data and a later run (or node) read it. New Drizzle table `workflow_storage` (scoped per workflow; key + JSON value + timestamps; nullable `scope` for a future global tier), repository → service → executor; values readable via `{{$node}}` within a run and via `storage.get` across runs. A never-set key reads back the node's `defaultValue` (null default). (PR #37 — Decision §4: per-workflow.)
+- [x] **S** Registered `logic.setData` / `logic.merge` / `data.filter` / `storage.set` / `storage.get` in [`node-types.ts`](../packages/shared/src/node-types.ts) with param schemas, ports, and categories (new `storage` category); executors under [`engine/executors/`](../packages/gateway/src/workflows/engine/executors/) wired into the module's `NODE_EXECUTORS`.
+- [x] **M** Tests: each reshape executor's param schema + behaviour + an engine integration (setData resolves `{{expr}}` end-to-end); `logic.merge` modes; storage cross-run round-trip + per-workflow scoping against `:memory:`.
 
 ## Theme D — Full n8n-style expression editor (web)
 

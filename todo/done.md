@@ -14,6 +14,14 @@ Builds on C1: `play` functions assert real interactions on the highest-value com
 - [x] **command-palette** (new backfilled story) — `Ctrl+K` opens the dialog; typing `profile` filters to Profile (Settings drops out); a non-matching query shows the "No matches." empty state.
 - ⏳ **filter-pills** play deferred — the Next router mock doesn't feed `router.replace` back into `useSearchParams`, so a click can't assert a visible toggle; render stories already cover it.
 - [x] All assert visible outcomes / `storybook/test` spies, querying by role/label (CLAUDE.md). 71 story tests (was 68) + 67 unit green; `web:typecheck`/`lint`/`test` green; `moon ci` green on PR #36. **Remaining for C2:** the broad story backfill (office HUD pieces, project/memory/library modals, widgets).
+## 2026-06-21 — Phase 12 Theme C complete: storage.set / storage.get nodes (PR #37)
+
+The last Theme C slice — persisted, per-workflow key-value state so a run can stash data and a **later** run (or downstream node) read it back. Theme C is now ✅ DONE.
+
+- [x] New `workflow_storage` table (forward-only migration `0029`), scoped per workflow with a nullable `scope` column reserved for a future global/project tier (Decision §4); unique index on `(workflow_id, key)`.
+- [x] `repository → service → executors` per gateway layering; `storage.set` / `storage.get` registered in [`node-types.ts`](../packages/shared/src/node-types.ts) (new `storage` category) and the module's `NODE_EXECUTORS`. `NodeRunContext` now carries `workflowId` for per-workflow scoping.
+- [x] Key/value flow through Theme B's resolve-before-execute, so both accept `{{expr}}`; `storage.set` returns the stored value (readable via `{{$node}}` in the same run). A never-set key reads back the node's `defaultValue` (null default) rather than hard-failing — and a stored `null` stays distinct from a miss.
+- [x] Tests: executor schema + behaviour, per-workflow scoping, upsert overwrite, stored-null vs miss, plus an engine integration proving set-in-one-run / get-in-a-later-run round-trips against `:memory:`. `gateway` 508 green; `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #37.
 
 ## 2026-06-21 — Phase 10 C1 complete: Storybook stories run as browser tests (PR #35)
 
