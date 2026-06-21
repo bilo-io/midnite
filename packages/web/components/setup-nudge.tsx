@@ -4,32 +4,16 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ArrowRight, Check, Rocket, X } from 'lucide-react';
-import type { SetupItemId, SetupItemState, SetupStatus } from '@midnite/shared';
+import type { SetupStatus } from '@midnite/shared';
 import { buttonVariants } from '@/components/ui/button';
 import { getSetupStatus } from '@/lib/api';
+import { SETUP_DOT, SETUP_ITEM_HREF } from '@/lib/setup-items';
 
 // Session-scoped so a dismiss lasts the browsing session and the nudge returns
 // in a fresh session while setup is still incomplete (Decision §4 — the
 // localStorage/session fallback; the server-side per-install marker lands with
 // the wizard in Theme B).
 const DISMISS_KEY = 'midnite.setup-nudge.dismissed';
-
-// Status-dot colours mirror the system toolchain checker (env-tool-card).
-const DOT: Record<SetupItemState, string> = {
-  ok: 'hsl(142 71% 45%)',
-  warn: 'hsl(38 92% 50%)',
-  missing: 'hsl(0 72% 55%)',
-};
-
-// Where each checklist item is fixed. Deep-links into the existing settings
-// surfaces — the dedicated guided wizard is Theme B (not built yet).
-const ITEM_HREF: Record<SetupItemId, string> = {
-  provider: '/settings/agents',
-  'secret-key': '/settings/system',
-  'agent-cli': '/settings/system',
-  'agent-pool': '/settings/agents',
-  repo: '/settings/repos',
-};
 
 /**
  * A soft, dismissible first-run nudge (Phase 19 Theme C). When the install isn't
@@ -83,7 +67,7 @@ export function SetupNudge() {
 
   const blockers = status.items.filter((item) => item.state === 'missing');
   const primary = blockers[0] ?? status.items.find((item) => item.state !== 'ok');
-  const primaryHref = primary ? ITEM_HREF[primary.id] : '/settings';
+  const primaryHref = primary ? SETUP_ITEM_HREF[primary.id] : '/settings';
 
   return (
     <div
@@ -119,11 +103,11 @@ export function SetupNudge() {
           const inner = (
             <span className="flex items-center gap-2 text-xs">
               {done ? (
-                <Check className="h-3.5 w-3.5 shrink-0" style={{ color: DOT.ok }} />
+                <Check className="h-3.5 w-3.5 shrink-0" style={{ color: SETUP_DOT.ok }} />
               ) : (
                 <span
                   className="h-1.5 w-1.5 shrink-0 rounded-full"
-                  style={{ background: DOT[item.state] }}
+                  style={{ background: SETUP_DOT[item.state] }}
                   aria-hidden
                 />
               )}
@@ -141,7 +125,7 @@ export function SetupNudge() {
                 <span className="block py-0.5">{inner}</span>
               ) : (
                 <Link
-                  href={ITEM_HREF[item.id]}
+                  href={SETUP_ITEM_HREF[item.id]}
                   className="block rounded-md py-0.5 transition-colors hover:text-foreground"
                 >
                   {inner}
