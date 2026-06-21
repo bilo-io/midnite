@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 13 follow-on F: repo chip on task cards (PR #64)
+
+Surfaces a task's target repo on the board now that repos are a first-class entity (Themes A+B).
+
+- [x] New `RepoChip` ([`repo-chip.tsx`](../packages/web/components/repo-chip.tsx)) — a monochrome folder-git + repo-name chip, distinct from the colored project tag (repo and project are orthogonal axes).
+- [x] Rendered in the task-card badge row ([`task-card.tsx`](../packages/web/components/task-card.tsx)) when `task.repo` is set; the task thread already showed the repo. A `WithRepo` story (run as a test) asserts it renders. `web:typecheck`/`lint`/`test`/`build` green (web 54 files / 226 tests) on PR #64.
+- [x] Reconciled phase-13 follow-ons: **D (per-repo concurrency caps) already shipped via Phase 5 / PR #49**; the optional per-repo status widget remains → Phase 7 Theme C; C (repo guessing) + E (branch/PR templates) still open.
+
 ## 2026-06-21 — Phase 11 COMPLETE: scrollytelling core — particles, panel, hero, modules (PR #59)
 
 Completes the public-site rewrite. The interlocking core the foundations slice (PR #44, Themes A/D/G/H) was built to carry: the three always-mounted layers the scroll controller drives. **Phase 11 is now fully done** (all 8 themes). `packages/site` only; added `motion` (Decision §2).
