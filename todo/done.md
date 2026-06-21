@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 5: per-repo agent concurrency cap (PR #49)
+
+The agent pool was a single global FIFO, so multiple agents could run on the same repo and race on one working tree. New `agent.maxPerRepo` caps concurrent agents per `task.repo`.
+
+- [x] `agent.maxPerRepo` config ([`shared/config.ts`](../packages/shared/src/config.ts)), default `0` = unlimited; documented in the README config section.
+- [x] The scheduler ([`agent-pool-scheduler.service.ts`](../packages/gateway/src/pool/agent-pool-scheduler.service.ts)) skips a `todo` task whose repo already has `maxPerRepo` agents running and picks the next eligible one; the per-repo running counts are recomputed each tick iteration (so an in-tick start counts) and built once per iteration, not per scanned candidate. Repo-less tasks are never capped. New `busyTaskIds()` accessor on the pool exposes the live running set.
+- [x] Tests (+3): a repo at cap is skipped while another repo runs and resumes when a slot frees; `maxPerRepo: 0` is unlimited; repo-less tasks uncapped. `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #49 (gateway 544). **Phase 5 remaining:** spawner backends → Phase 17; per-repo branch/PR-template config overlaps Phase 13; suspend-`waiting` deliberately deferred.
+
 ## 2026-06-21 — Phase 10 Theme C2: Storybook story backfill for modals, office HUD & widgets (PR #48)
 
 Closes the high-value half of [Phase 10](phase-10-test-suite-hardening.md#c2-interaction-tests-on-key-components--partial-pr-36--48-2026-06-21) C2's "backfill un-storied components" item. The C1 `@storybook/addon-vitest` run mounts every story in headless chromium during `web:test`, so each story is a real render/interaction test (and feeds the Theme E screenshot pipeline). Pure coverage — no product code changed.
