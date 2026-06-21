@@ -1,4 +1,19 @@
-import { StatusSchema, TaskSchema, type Status, type Task } from '@midnite/shared';
+import {
+  BulkCreateTaskResponseSchema,
+  StatusSchema,
+  TaskSchema,
+  type BulkCreateTaskRequest,
+  type BulkCreateTaskResponse,
+  type Status,
+  type Task,
+} from '@midnite/shared';
+
+/** Batch-wide defaults applied to every task in a create (single or bulk). */
+export interface TaskDefaults {
+  repo?: string;
+  projectId?: string;
+  priority?: number;
+}
 
 /** Resolve the gateway base URL: explicit flag → env → loopback default. */
 export function resolveBaseUrl(flag?: string): string {
@@ -7,7 +22,8 @@ export function resolveBaseUrl(flag?: string): string {
 
 export interface GatewayClient {
   listTasks(status?: string): Promise<Task[]>;
-  createTask(prompt: string): Promise<Task>;
+  createTask(prompt: string, defaults?: TaskDefaults): Promise<Task>;
+  createBulk(raw: string, defaults?: TaskDefaults): Promise<BulkCreateTaskResponse>;
   moveTask(id: string, status: Status): Promise<Task>;
 }
 
@@ -42,11 +58,30 @@ export function createClient(baseUrl: string): GatewayClient {
       return TaskSchema.array().parse(await request(`/tasks${query}`, { method: 'GET' }));
     },
 
-    async createTask(prompt: string): Promise<Task> {
+    async createTask(prompt: string, defaults?: TaskDefaults): Promise<Task> {
       const form = new FormData();
       form.set('prompt', prompt);
+      if (defaults?.repo) form.set('repo', defaults.repo);
+      if (defaults?.projectId) form.set('projectId', defaults.projectId);
+      if (defaults?.priority !== undefined) form.set('priority', String(defaults.priority));
       const body = (await request('/tasks', { method: 'POST', body: form })) as { task: unknown };
       return TaskSchema.parse(body.task);
+    },
+
+    async createBulk(raw: string, defaults?: TaskDefaults): Promise<BulkCreateTaskResponse> {
+      const payload: BulkCreateTaskRequest = {
+        raw,
+        repo: defaults?.repo,
+        projectId: defaults?.projectId,
+        priority: defaults?.priority,
+      };
+      return BulkCreateTaskResponseSchema.parse(
+        await request('/tasks/bulk', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(payload),
+        }),
+      );
     },
 
     async moveTask(id: string, status: Status): Promise<Task> {

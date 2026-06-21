@@ -1,8 +1,34 @@
 #!/usr/bin/env node
+import { readFile } from 'node:fs/promises';
 import { Command } from 'commander';
-import { createClient, parseStatus, resolveBaseUrl } from './client';
+import Table from 'cli-table3';
+import { bulkExitCode, bulkResultRows, bulkSummaryLine } from './bulk.js';
+import { createClient, parseStatus, resolveBaseUrl, type TaskDefaults } from './client.js';
 
 const program = new Command();
+
+/** Build the batch-wide task defaults from the shared `add` flags. */
+function parseDefaults(opts: { repo?: string; project?: string; priority?: string }): TaskDefaults {
+  const defaults: TaskDefaults = {};
+  if (opts.repo) defaults.repo = opts.repo;
+  if (opts.project) defaults.projectId = opts.project;
+  if (opts.priority !== undefined) {
+    const n = Number(opts.priority);
+    if (!Number.isInteger(n) || n < 0 || n > 3) {
+      throw new Error(`invalid priority "${opts.priority}" — expected an integer 0–3`);
+    }
+    defaults.priority = n;
+  }
+  return defaults;
+}
+
+/** Read all of stdin (for `add --bulk` without `--file`). Empty when attached to a TTY. */
+async function readStdin(): Promise<string> {
+  if (process.stdin.isTTY) return '';
+  const chunks: Buffer[] = [];
+  for await (const chunk of process.stdin) chunks.push(Buffer.from(chunk));
+  return Buffer.concat(chunks).toString('utf8');
+}
 
 program
   .name('midnite')
@@ -15,12 +41,44 @@ function client(): ReturnType<typeof createClient> {
 }
 
 program
-  .command('add <prompt>')
-  .description('Add a task (the gateway triages it to todo or backlog)')
-  .action(async (prompt: string) => {
-    const task = await client().createTask(prompt);
-    console.log(`added ${task.id}  [${task.status}]  ${task.title}`);
-  });
+  .command('add [prompt]')
+  .description('Add a task — or many with --bulk (one per line from --file or stdin)')
+  .option('--bulk', 'create one task per line, read from --file or stdin')
+  .option('--file <path>', 'read bulk input from a file (implies --bulk-style input)')
+  .option('-r, --repo <repo>', 'repo applied to the created task(s)')
+  .option('-p, --priority <n>', 'priority 0–3 applied to the created task(s)')
+  .option('--project <id>', 'project id applied to the created task(s)')
+  .action(
+    async (
+      prompt: string | undefined,
+      opts: { bulk?: boolean; file?: string; repo?: string; priority?: string; project?: string },
+    ) => {
+      const defaults = parseDefaults(opts);
+
+      if (opts.bulk || opts.file) {
+        const raw = opts.file ? await readFile(opts.file, 'utf8') : await readStdin();
+        if (!raw.trim()) {
+          throw new Error('no bulk input — pass --file <path> or pipe a list to stdin');
+        }
+        const res = await client().createBulk(raw, defaults);
+        if (res.results.length > 0) {
+          const table = new Table({ head: ['Line', 'Kind', 'Result'], wordWrap: true });
+          for (const row of bulkResultRows(res)) table.push(row);
+          console.log(table.toString());
+        }
+        console.log(bulkSummaryLine(res.counts));
+        // Partial batches succeed; only an all-failed batch exits non-zero.
+        process.exitCode = bulkExitCode(res.counts);
+        return;
+      }
+
+      if (!prompt) {
+        throw new Error('a task prompt is required — pass one, or use --bulk with --file/stdin');
+      }
+      const task = await client().createTask(prompt, defaults);
+      console.log(`added ${task.id}  [${task.status}]  ${task.title}`);
+    },
+  );
 
 program
   .command('list')

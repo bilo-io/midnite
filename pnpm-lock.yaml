@@ -44,6 +44,9 @@ importers:
       '@midnite/shared':
         specifier: workspace:*
         version: link:../shared
+      cli-table3:
+        specifier: ^0.6.5
+        version: 0.6.5
       commander:
         specifier: ^12.1.0
         version: 12.1.0

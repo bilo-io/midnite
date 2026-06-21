@@ -4,6 +4,25 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 10 Theme C2: Storybook story backfill for modals, office HUD & widgets (PR #48)
+
+Closes the high-value half of [Phase 10](phase-10-test-suite-hardening.md#c2-interaction-tests-on-key-components--partial-pr-36--48-2026-06-21) C2's "backfill un-storied components" item. The C1 `@storybook/addon-vitest` run mounts every story in headless chromium during `web:test`, so each story is a real render/interaction test (and feeds the Theme E screenshot pipeline). Pure coverage — no product code changed.
+
+- [x] **Modals:** `project-modal` (create/edit render + Sources tab-switch), `memory-modal` (new/edit + close), office `library-modal` (search filters to empty-state + close). Modal stories that call `useConfirm()` mount inside a `ConfirmProvider`; the project modal's `useRouter()` uses the existing global `nextjs.appDirectory` mock.
+- [x] **Office HUD:** `office-hud` — seeds the Zustand `office-store` per story (empty / with-agents / near-board / on-break) via a meta-level `beforeEach` that resets state after each story so nothing leaks. Conditional data-fetching children (board/library panels) left closed so the HUD stays offline.
+- [x] **Widget primitives:** `memory-card` (global/scoped/archived + open `play`), `widget-card`, `empty-state` (CTA `play`).
+- [x] Shared `Memory` (global/scoped/archived) + `OfficeAgent` fixtures in [`stories/fixtures.ts`](../packages/web/stories/fixtures.ts). 20 new story tests; `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #48 (web `web:test` 190 passed). `play` functions query by role/label and assert visible outcomes / `storybook/test` spies, per the C2 pattern.
+- ↪️ **Remaining (logged in phase-10 C2):** data-fetching widgets (`health-widget`, `market-*`, `news-widget`, `boardroom-panel`, …) stay un-storied — they self-fetch via `usePolling`/`useApiData` and need a query/API-mock story decorator (new infra) before they can be storied.
+
+## 2026-06-21 — Phase 16 COMPLETE — Theme B: CLI `add --bulk` (PR #47)
+
+The CLI client for plural intake — the last theme of Phase 16 (A API #40, C web modal #42). **Phase 16 is now fully done.**
+
+- [x] `midnite add --bulk` ([`cli/src/index.ts`](../packages/cli/src/index.ts)): reads a list from `--file <path>` or **stdin** (`cat ideas.txt | midnite add --bulk`, heredocs) → `POST /tasks/bulk`. Renders a **cli-table3** summary (Line → Kind → Result) + an `N created, M skipped, K failed` tally. Partial batches succeed; exits non-zero only if every attempted line failed.
+- [x] `createBulk` + a `TaskDefaults` type on the typed client ([`cli/src/client.ts`](../packages/cli/src/client.ts)); `--repo`/`--priority`/`--project` apply batch-wide and are now also threaded through a single `add`. Added `cli-table3` to the CLI.
+- [x] **ESM fix:** the CLI binary used extensionless relative imports, so `node dist/index.js` threw `ERR_MODULE_NOT_FOUND` (latent — CI runs vitest, not the binary). Switched to `.js` extensions (repo convention). Live-verified `add --bulk` end-to-end against a running gateway.
+- [x] Pure helpers in [`cli/src/bulk.ts`](../packages/cli/src/bulk.ts) (exit code / summary / rows), unit-tested; `client.test.ts` covers createBulk + createTask defaults. `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #47 (cli 15 · shared 288 · gateway 541 · web 170). **README CLI usage docs intentionally skipped** — no per-command CLI section exists yet (siblings `add`/`list`/`move` undocumented too); commander `--help` covers it.
+
 ## 2026-06-21 — Phase 13 Theme A complete: repos as a first-class DB-backed entity (PR #45)
 
 Promote `repos` from a dormant `config.repos` array to a managed, DB-backed registry. Closes [Phase 13](phase-13-repos-first-class.md) Theme A (A1–A4); satisfies the registry half of [outstanding.md](outstanding.md) #4. **Theme B** (task-creation picker, write-time `task.repo` validation, cwd-precedence tests) remains.
