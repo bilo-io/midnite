@@ -7,11 +7,13 @@ import { ReposModule } from '../repos/repos.module';
 import { TasksModule } from '../tasks/tasks.module';
 import { ApprovalController } from './approval.controller';
 import { ApprovalService } from './approval.service';
+import { HookSecretRepository } from './hook-secret.repository';
 import { TerminalController } from './terminal.controller';
 import { TerminalGateway } from './terminal.gateway';
 import { TerminalService } from './terminal.service';
 import { PtySpawner } from './spawner/pty-spawner';
-import { SPAWNER } from './spawner/spawner';
+import { TmuxSpawner } from './spawner/tmux-spawner';
+import { SPAWNER, type Spawner } from './spawner/spawner';
 
 @Module({
   imports: [TasksModule, ProjectsModule, AgentsModule, ReposModule],
@@ -19,12 +21,15 @@ import { SPAWNER } from './spawner/spawner';
   providers: [
     TerminalService,
     ApprovalService,
+    HookSecretRepository,
     TerminalGateway,
     {
-      // Selected by terminal.mode. Only 'pty' is implemented today; the other
-      // modes (tmux/warp/iterm) fall back to PtySpawner until their backends land.
+      // Selected by terminal.mode: 'pty' (the default, dies with the gateway) or
+      // 'tmux' (durable sessions that survive a restart). The enum is closed to
+      // these two (Phase 17 §C1), so a falling-through default is just defensive.
       provide: SPAWNER,
-      useFactory: (_config: MidniteConfig) => new PtySpawner(),
+      useFactory: (config: MidniteConfig): Spawner =>
+        config.terminal.mode === 'tmux' ? new TmuxSpawner() : new PtySpawner(),
       inject: [MIDNITE_CONFIG],
     },
   ],

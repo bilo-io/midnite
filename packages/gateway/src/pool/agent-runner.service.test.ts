@@ -18,10 +18,10 @@ function reposWith(repo: Partial<Repo> & { name: string }): ReposService {
   return { findByName: (name: string) => (name === repo.name ? repo : undefined) } as unknown as ReposService;
 }
 
-function config(): MidniteConfig {
+function config(pool = 1, terminal: Record<string, unknown> = {}): MidniteConfig {
   return parseConfig({
-    agent: { pool: 1, runTimeoutMs: 60000 },
-    terminal: {},
+    agent: { pool, runTimeoutMs: 60000 },
+    terminal,
     gateway: {},
   });
 }
@@ -62,7 +62,7 @@ function fakeTasks(seed: Task[]) {
   return { service, startTask, requeue, retry, updateStatus, byId };
 }
 
-function fakeTerminal() {
+function fakeTerminal(opts?: { durable?: boolean; live?: string[]; reattachOk?: boolean }) {
   let onExit: ((code: number, signal: number | null) => void) | undefined;
   const spawnAgentSession = vi.fn(
     (_id: string, _spec: { prompt: string }, hooks: { onExit: (c: number, s: number | null) => void }) => {
@@ -72,16 +72,33 @@ function fakeTerminal() {
   );
   const killManagedRun = vi.fn();
   const interruptManagedRun = vi.fn();
+  // Durable-backend recovery surface (Phase 17 §C2). `durable` + `live` are
+  // configurable per test; reattach succeeds for live sessions by default.
+  const reattachAgentSession = vi.fn(
+    (id: string, hooks: { onExit: (c: number, s: number | null) => void }) => {
+      const live = (opts?.live ?? []).includes(id) && (opts?.reattachOk ?? true);
+      if (!live) return { ok: false as const, error: 'no live session' };
+      onExit = hooks.onExit;
+      return { ok: true as const, pid: 7 };
+    },
+  );
+  const discardSession = vi.fn();
   const terminal = {
     spawnAgentSession,
     killManagedRun,
     interruptManagedRun,
+    reattachAgentSession,
+    discardSession,
+    isDurable: () => opts?.durable ?? false,
+    liveSessionIds: () => opts?.live ?? [],
   } as unknown as TerminalService;
   return {
     terminal,
     spawnAgentSession,
     killManagedRun,
     interruptManagedRun,
+    reattachAgentSession,
+    discardSession,
     fireExit: (c = 0) => onExit?.(c, null),
   };
 }
@@ -241,5 +258,73 @@ describe('AgentRunnerService', () => {
     runner.stop('t1', 'backlog');
 
     expect(requeue).toHaveBeenCalledWith('t1', 'backlog');
+  });
+
+  describe('boot recovery (onModuleInit)', () => {
+    const wip = (id: string) => ({ ...task(id), status: 'wip' as const });
+    const waiting = (id: string) => ({ ...task(id), status: 'waiting' as const });
+
+    it('pty backend: requeues every orphaned wip/waiting task, leaves others', () => {
+      const cfg = config(4);
+      const { service, requeue } = fakeTasks([
+        wip('w1'),
+        waiting('w2'),
+        { ...task('d1'), status: 'done' } as Task,
+        task('t1'),
+      ]);
+      const pool = new AgentPoolService(cfg, service);
+      const { terminal, discardSession } = fakeTerminal({ durable: false });
+      const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, noRepos);
+
+      runner.onModuleInit();
+
+      expect(requeue).toHaveBeenCalledTimes(2);
+      expect(requeue).toHaveBeenCalledWith('w1');
+      expect(requeue).toHaveBeenCalledWith('w2');
+      expect(requeue).not.toHaveBeenCalledWith('d1');
+      expect(requeue).not.toHaveBeenCalledWith('t1');
+      expect(discardSession).not.toHaveBeenCalled();
+    });
+
+    it('tmux backend: reattaches live sessions, requeues dead ones, discards strays', () => {
+      const cfg = config(4, { mode: 'tmux' });
+      const { service, requeue } = fakeTasks([wip('w1'), waiting('w2')]);
+      // w1's session survived; w2's died; 'ghost' is a live session with no task.
+      const { terminal, reattachAgentSession, discardSession } = fakeTerminal({
+        durable: true,
+        live: ['w1', 'ghost'],
+      });
+      const pool = new AgentPoolService(cfg, service);
+      const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, noRepos);
+
+      runner.onModuleInit();
+
+      expect(reattachAgentSession).toHaveBeenCalledWith('w1', expect.anything());
+      expect(pool.slotForTask('w1')?.pid).toBe(7); // re-claimed its slot
+      expect(requeue).toHaveBeenCalledWith('w2'); // dead session → requeued
+      expect(requeue).not.toHaveBeenCalledWith('w1');
+      expect(discardSession).toHaveBeenCalledWith('w2'); // dead session's secret forgotten
+      expect(discardSession).toHaveBeenCalledWith('ghost'); // stray reaped
+    });
+
+    it('tmux backend: requeues + frees the slot when reattach fails', () => {
+      const cfg = config(4, { mode: 'tmux' });
+      const { service, requeue } = fakeTasks([wip('w1')]);
+      // Listed as live but reattach returns not-ok (session vanished between
+      // list and attach) — must release the slot and requeue, not leave it wip.
+      const { terminal, reattachAgentSession } = fakeTerminal({
+        durable: true,
+        live: ['w1'],
+        reattachOk: false,
+      });
+      const pool = new AgentPoolService(cfg, service);
+      const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, noRepos);
+
+      runner.onModuleInit();
+
+      expect(reattachAgentSession).toHaveBeenCalledWith('w1', expect.anything());
+      expect(requeue).toHaveBeenCalledWith('w1');
+      expect(pool.slotForTask('w1')).toBeUndefined();
+    });
   });
 });

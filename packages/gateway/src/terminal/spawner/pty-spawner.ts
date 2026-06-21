@@ -11,6 +11,9 @@ export class PtySpawner implements Spawner {
   private readonly logger = new Logger(PtySpawner.name);
   private nodePty: NodePtyModule | null = null;
   private loadFailed = false;
+  // PTYs die with the gateway process: nothing to rediscover or reattach, so
+  // shutdown kills and boot finds no live sessions (the default reconcile path).
+  readonly durable = false;
 
   spawn(spec: SpawnSpec): SpawnHandle {
     const pty = this.load();

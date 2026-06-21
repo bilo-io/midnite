@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, type OnModuleInit } from '@nestjs/common';
 import type { MidniteConfig, Task } from '@midnite/shared';
 import { UrlContextService } from '../agent/url-context.service';
 import { MIDNITE_CONFIG } from '../config.token';
@@ -13,9 +13,17 @@ import { appendRepoConventions } from './lib/build-agent-prompt';
  * task to `wip`, spawn the seeded agent session, and arm a timeout. The session
  * is reaped (and the slot freed) either by the Stop hook marking the task done
  * (Phase B) or by the PTY exiting — see {@link onExit}.
+ *
+ * It also owns **boot recovery** ({@link onModuleInit}): tasks left `wip`/`waiting`
+ * by a previous process. With the `pty` backend their sessions died, so they're
+ * requeued; with the durable `tmux` backend a session may have survived, so the
+ * still-live ones are reattached instead of orphaned (Phase 17 §C2). Recovery
+ * lives here, not in the pool, because reattach needs the same slot + timeout +
+ * onExit wiring as a fresh {@link start}; it runs after the pool initialises and
+ * before the scheduler's first tick (dependency order).
  */
 @Injectable()
-export class AgentRunnerService {
+export class AgentRunnerService implements OnModuleInit {
   private readonly logger = new Logger(AgentRunnerService.name);
   private readonly timers = new Map<string, NodeJS.Timeout>();
 
@@ -27,6 +35,71 @@ export class AgentRunnerService {
     @Inject(UrlContextService) private readonly urlContext: UrlContextService,
     @Inject(ReposService) private readonly repos: ReposService,
   ) {}
+
+  /**
+   * Reconcile tasks left `wip`/`waiting` by a previous gateway process. For the
+   * `pty` backend every such session is dead, so all are requeued (slots start
+   * idle, the scheduler re-runs them). For the durable `tmux` backend, sessions
+   * that survived the restart are reattached (the run resumes, not requeued);
+   * sessions that died while we were down are requeued; and any live `midnite-*`
+   * session with no owning `wip`/`waiting` task is reaped as a stray.
+   */
+  onModuleInit(): void {
+    const stale = this.tasks
+      .listTasks()
+      .filter((t) => t.status === 'wip' || t.status === 'waiting');
+
+    if (!this.terminal.isDurable()) {
+      for (const task of stale) this.safeRequeue(task.id);
+      if (stale.length > 0) {
+        this.logger.log(`reconciled ${stale.length} orphaned wip/waiting task(s) → todo`);
+      }
+      return;
+    }
+
+    const live = new Set(this.terminal.liveSessionIds());
+    let reattached = 0;
+    let requeued = 0;
+    for (const task of stale) {
+      const recovered = live.has(task.id) && this.reattach(task);
+      live.delete(task.id); // claimed (reattached) or dead (requeued) — never a stray
+      if (recovered) {
+        reattached++;
+      } else {
+        // Its session died with the previous process — requeue and forget its
+        // (now-orphaned) hook secret so the persisted row doesn't linger.
+        this.terminal.discardSession(task.id);
+        this.safeRequeue(task.id);
+        requeued++;
+      }
+    }
+    // Live sessions whose task is gone/finished: don't double-spawn — reap them.
+    for (const id of live) this.terminal.discardSession(id);
+    if (reattached > 0 || requeued > 0 || live.size > 0) {
+      this.logger.log(
+        `tmux recovery: reattached ${reattached}, requeued ${requeued}, discarded ${live.size} stray session(s)`,
+      );
+    }
+  }
+
+  /** Reattach a still-live tmux session for an in-flight task: re-claim its slot,
+   *  rewire onExit + timeout, and leave it `wip`. Returns false (caller requeues)
+   *  if no slot is free or the session couldn't be reattached. */
+  private reattach(task: Task): boolean {
+    if (this.pool.acquire(task.id) === null) return false;
+    const result = this.terminal.reattachAgentSession(task.id, {
+      onExit: (code) => this.onExit(task.id, code),
+    });
+    if (!result.ok) {
+      this.logger.warn(`reattach failed for ${task.id}: ${result.error}`);
+      this.pool.release(task.id);
+      return false;
+    }
+    this.pool.setPid(task.id, result.pid);
+    this.armTimeout(task.id);
+    this.logger.log(`reattached agent run for task ${task.id} (pid ${result.pid})`);
+    return true;
+  }
 
   /** Claim a slot and spawn an agent session for `task`. Returns false (leaving
    *  the task in `todo`) if no slot was free or the spawn failed. */

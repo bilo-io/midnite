@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger, forwardRef } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional, forwardRef } from '@nestjs/common';
 import { randomBytes, randomUUID } from 'node:crypto';
 import type {
   ApprovalDecision,
@@ -10,6 +10,7 @@ import type {
 } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
 import { hashToken, tokenMatches } from '../lib/token-hash';
+import { HookSecretRepository } from './hook-secret.repository';
 import { summarizeToolCall } from './lib/summarize-tool-call';
 import { TerminalService, type TerminalSubscriber } from './terminal.service';
 
@@ -43,19 +44,33 @@ export class ApprovalService {
     // TerminalService <-> ApprovalService form a lifecycle/broadcast cycle within
     // the terminal module; forwardRef breaks the DI ordering.
     @Inject(forwardRef(() => TerminalService)) private readonly terminal: TerminalService,
+    // Durable secret store (Phase 17 §C2). Optional so direct construction in
+    // specs keeps the pre-existing in-memory-only behaviour; Nest always injects it.
+    @Optional() @Inject(HookSecretRepository) private readonly secretStore?: HookSecretRepository,
   ) {}
 
   // ---- per-session secret (authenticates the in-PTY hook callback) ----
 
-  /** Mint a long-lived secret for a session's PTY; returns plaintext (stored hashed). */
+  /** Mint a long-lived secret for a session's PTY; returns plaintext (stored
+   *  hashed). The hash is also persisted so a durable session reattached after a
+   *  gateway restart can still authenticate its hooks (the in-memory map is gone,
+   *  but the running process keeps the plaintext in its env). */
   mintSecret(sessionId: string): string {
     const secret = randomBytes(24).toString('base64url');
-    this.secrets.set(sessionId, hashToken(secret));
+    const hash = hashToken(secret);
+    this.secrets.set(sessionId, hash);
+    this.secretStore?.upsert(sessionId, hash, new Date().toISOString());
     return secret;
   }
 
   verifySecret(sessionId: string, token: string): boolean {
-    const hash = this.secrets.get(sessionId);
+    // Rehydrate from the durable store on a cache miss — after a restart the map
+    // is empty but a reattached session's secret is still on disk.
+    let hash = this.secrets.get(sessionId);
+    if (!hash) {
+      hash = this.secretStore?.find(sessionId);
+      if (hash) this.secrets.set(sessionId, hash);
+    }
     if (!hash) return false;
     return tokenMatches(token, hash);
   }
@@ -151,6 +166,7 @@ export class ApprovalService {
       this.settle(requestId, 'expired', { decision: 'deny', reason: 'session ended' });
     }
     this.secrets.delete(sessionId);
+    this.secretStore?.delete(sessionId);
     this.allowList.delete(sessionId);
   }
 

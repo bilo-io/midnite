@@ -17,7 +17,7 @@ Scoping for the parts of [`docs/INITIAL_PLAN.md`](../docs/INITIAL_PLAN.md) (Phas
 | 7 | Knowledge-dir watcher (chokidar) + MD injection | 4 | M | — |
 | 8 | Per-repo concurrency caps | 5 | M | #4 |
 | 9 | Per-repo branch naming + PR templates ✅ | 5 | S | #4 |
-| 10 | `Spawner` interface + tmux/warp/iterm | 5 | L | — |
+| 10 | ✅ `Spawner` interface + tmux (warp/iterm dropped) — Phase 17 A–D | 5 | L | — |
 | 11 | Serve Next.js prod build from gateway (optional) | 3 | S | — |
 | 12 | Suspend `waiting` sessions to free the slot (optional) | 5 | M | — |
 
@@ -148,9 +148,9 @@ Scoping for the parts of [`docs/INITIAL_PLAN.md`](../docs/INITIAL_PLAN.md) (Phas
 
 ---
 
-## 10. `Spawner` interface + tmux/warp/iterm backends (Phase 5)
+## 10. `Spawner` interface + tmux/warp/iterm backends (Phase 5 → Phase 17)
 
-- [ ] **Not started**
+- [x] **Done — [Phase 17](phase-17-spawner-tmux.md) A–D.** `Spawner` seam extracted (A, PR #56); durable `TmuxSpawner` + backend selection + survive-restart reattach + contract tests (B/C/D, PR #77). `warp`/`iterm` **dropped** from the enum (native windows don't compose with the gateway-owned browser stream — exactly the concern flagged below).
 
 **Goal:** the planned pluggable spawner selected by `terminal.mode` (the enum exists but is never read; only `pty` is wired).
 

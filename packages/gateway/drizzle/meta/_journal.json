@@ -232,6 +232,13 @@
       "when": 1782083426189,
       "tag": "0032_workflow_credentials",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "6",
+      "when": 1782085444542,
+      "tag": "0033_hook_secrets",
+      "breakpoints": true
     }
   ]
 }
