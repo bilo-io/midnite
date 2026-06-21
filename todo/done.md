@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 11 Themes A, D, G, H: public-site foundations, sections, download, legal (PR #44)
+
+The first independent slice of the public-site rewrite — the four self-contained, individually-shippable themes, leaving the interlocking panel/particle/hero core (B/C/E/F) for later. `packages/site` only; no `@midnite/web` internals imported (the theme + markdown bits are copies with source-of-truth comments).
+
+- [x] **Theme A — Foundations:** ported the web app's theme system — no-flash init script + `ThemeProvider` (light/dark/system/time) sharing the same `midnite.theme` localStorage key, a nav theme toggle, favicons/manifest copied into [`packages/site/public/`](../packages/site/public/), `metadata.icons` wired, hardcoded `dark` class dropped so tokens drive both themes.
+- [x] **Theme D — Sections + typed titles:** a typed section registry (with forward-looking panel/particle fields for B/C), a single-IntersectionObserver [`SectionProvider`](../packages/site/components/sections/section-controller.tsx) as the active-section source of truth, a [`useTypewriter`](../packages/site/components/sections/use-typewriter.ts) hook, and a [`TypedTitle`](../packages/site/components/sections/typed-title.tsx) (types title→subtitle then fades in children) wired into the How/Features/CLI headings. Type-once on first activation; full reduced-motion degradation; `sr-only` full text for a11y.
+- [x] **Theme G — Download restyle:** featured recommended-platform card + elegant all-platforms list, version badge + release-notes link, particle backdrop carried onto the route. [`downloads.ts`](../packages/site/lib/downloads.ts)/[`platform.ts`](../packages/site/lib/platform.ts) and all detection/coming-soon/deep-link behaviour unchanged; `data-testid`/`data-platform` hooks preserved.
+- [x] **Theme H — Legal pages:** nested [`/legal`](../packages/site/app/legal/) sub-layout with a sidebar of all docs (active-link highlight, mobile top-selector) + a react-markdown/remark-gfm renderer, driven from a shared [legal-docs registry](../packages/site/lib/legal.ts); placeholder Privacy + EULA (marked draft / not legal advice), linked from the footer.
+- [x] Tests: new site vitest (jsdom + Testing Library) project + moon `test` task — `useTypewriter`, section registry, `SectionProvider` (most-visible + sticky), `TypedTitle` a11y (10 tests). Config clears vite's `.git` fs-deny so tests collect in a `.git/worktrees` checkout too. `:typecheck`/`:lint` green across the graph; `site:test` + `site:build` (7 routes prerender) green; `moon ci` green on PR #44.
+- [ ] **Remaining in Phase 11:** Theme B (cursor-following particle field), Theme C (persistent preview panel), Theme E (epic hero + cycling typed titles), Theme F (panel content modules) — the interlocking scrollytelling core.
+
 ## 2026-06-21 — Phase 6 P11: workflow editor autosave (PR #43)
 
 Editor edits only persisted on an explicit Save; this debounces a save ~1.5s after the last dirty edit so work isn't lost. While here, the Phase 6 follow-ups were reconciled — minimap/zoom + drag-from-palette were already shipped, P8 (logic nodes + `{{expr}}`) was closed by Phase 12, and P7/P9/P10 are tracked under Phase 14.

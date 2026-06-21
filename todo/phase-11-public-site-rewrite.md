@@ -22,19 +22,19 @@ A scroll/section controller (Theme D) is the single source of truth for "which s
 
 ---
 
-## Theme A — Foundations (themes, shell, fonts, favicon)
+## Theme A — Foundations (themes, shell, fonts, favicon) — ✅ DONE (PR #44, 2026-06-21)
 
 ### A1. Multi-theme support (parity with the web app) — **M**
-- [ ] Port the web app's theme system to the site: the **HSL CSS-variable tokens** + `.dark` block from [`packages/web/app/globals.css`](../packages/web/app/globals.css), a **`ThemeProvider`** (light / dark / **system** / **time**) modelled on [`packages/web/app/theme/theme-context.tsx`](../packages/web/app/theme/theme-context.tsx), and a no-flash inline **theme script** (cf. `theme-script.ts`). Use the **same `localStorage` key** so a visitor's choice is consistent with the app.
-- [ ] Replace the hardcoded `dark` class on `<html>` in [`app/layout.tsx`](../packages/site/app/layout.tsx) with the provider; add a **theme toggle** to the nav (port/adapt [`theme-toggle.tsx`](../packages/web/components/theme-toggle.tsx)).
-- [ ] Every new surface (panel, particles, text, download, legal) reads from tokens so both themes look intentional — not just an inverted dark page.
+- [x] Port the web app's theme system to the site: the **HSL CSS-variable tokens** + `.dark` block from [`packages/web/app/globals.css`](../packages/web/app/globals.css), a **`ThemeProvider`** (light / dark / **system** / **time**) modelled on [`packages/web/app/theme/theme-context.tsx`](../packages/web/app/theme/theme-context.tsx), and a no-flash inline **theme script** (cf. `theme-script.ts`). Use the **same `localStorage` key** so a visitor's choice is consistent with the app.
+- [x] Replace the hardcoded `dark` class on `<html>` in [`app/layout.tsx`](../packages/site/app/layout.tsx) with the provider; add a **theme toggle** to the nav (port/adapt [`theme-toggle.tsx`](../packages/web/components/theme-toggle.tsx)).
+- [x] Every new surface (panel, particles, text, download, legal) reads from tokens so both themes look intentional — not just an inverted dark page.
 
 ### A2. Favicon & brand assets — **S**
-- [ ] Use the **same favicon as the web app** — copy `favicon.ico`, `favicon-16x16.png`, `favicon-32x32.png`, `apple-touch-icon.png` (and `logo.PNG`) from [`packages/web/public/`](../packages/web/public/) into a new `packages/site/public/`, and wire `metadata.icons` in [`app/layout.tsx`](../packages/site/app/layout.tsx) exactly like the web layout. (Static copy, not a cross-package import — keeps the boundary clean; note the source of truth in a comment so they stay in sync.)
-- [ ] Keep the existing `cyberwar.ttf` brand font; confirm OG/Twitter metadata still reads well.
+- [x] Use the **same favicon as the web app** — copy `favicon.ico`, `favicon-16x16.png`, `favicon-32x32.png`, `apple-touch-icon.png` (and `logo.PNG`) from [`packages/web/public/`](../packages/web/public/) into a new `packages/site/public/`, and wire `metadata.icons` in [`app/layout.tsx`](../packages/site/app/layout.tsx) exactly like the web layout. (Static copy, not a cross-package import — keeps the boundary clean; note the source of truth in a comment so they stay in sync.)
+- [x] Keep the existing `cyberwar.ttf` brand font; confirm OG/Twitter metadata still reads well.
 
 ### A3. Layout shell & nav — **S–M**
-- [ ] App Router shell: a sticky, translucent **nav** (wordmark + links: Features / Download / GitHub + theme toggle) and a refined **footer** (add legal links — Theme H). Both restyled to the new look; reuse the existing nav/footer as a starting point.
+- [x] App Router shell: a sticky, translucent **nav** (wordmark + links: Features / Download / GitHub + theme toggle) and a refined **footer** (add legal links — Theme H). Both restyled to the new look; reuse the existing nav/footer as a starting point.
 
 ---
 
@@ -73,15 +73,15 @@ A scroll/section controller (Theme D) is the single source of truth for "which s
 
 ---
 
-## Theme D — Scroll-driven sections, typed titles & reveal
+## Theme D — Scroll-driven sections, typed titles & reveal — ✅ DONE (PR #44, 2026-06-21)
 
 ### D1. Section controller & registry — **M**
-- [ ] A typed **section registry** — each entry: `{ id, title, subtitle, panelRect, panelContent, particleStyle, bodyContent? }`. The page renders from this list; Themes B/C read their per-section config from it. One place to add/reorder sections.
-- [ ] A controller tracks the **active section** (IntersectionObserver) and exposes it to the panel, particles, and text layers without re-rendering on every scroll frame (refs + a light context/store).
+- [x] A typed **section registry** — each entry: `{ id, title, subtitle, panelRect, panelContent, particleStyle, bodyContent? }`. The page renders from this list; Themes B/C read their per-section config from it. One place to add/reorder sections.
+- [x] A controller tracks the **active section** (IntersectionObserver) and exposes it to the panel, particles, and text layers without re-rendering on every scroll frame (refs + a light context/store).
 
 ### D2. Typed title/subtitle + fade-in — **M**
-- [ ] A reusable **`useTypewriter`** hook (or `<Typed>` component): on a section becoming active, **types out the title then subtitle quickly**, cursor caret while typing. After typing completes, **fade in** any other elements in the section (body copy, CTAs, badges) with a short stagger.
-- [ ] Re-running on re-entry is configurable (type once vs. retype on scroll-back — Decisions §4). SSR-safe; under reduced motion, render full text immediately and skip the fade.
+- [x] A reusable **`useTypewriter`** hook (or `<Typed>` component): on a section becoming active, **types out the title then subtitle quickly**, cursor caret while typing. After typing completes, **fade in** any other elements in the section (body copy, CTAs, badges) with a short stagger.
+- [x] Re-running on re-entry is configurable (type once vs. retype on scroll-back — Decisions §4). SSR-safe; under reduced motion, render full text immediately and skip the fade.
 
 ---
 
@@ -110,24 +110,24 @@ A scroll/section controller (Theme D) is the single source of truth for "which s
 
 ---
 
-## Theme G — Download page restyle
+## Theme G — Download page restyle — ✅ DONE (PR #44, 2026-06-21)
 
 > Keep the **function** of today's [`download/page.tsx`](../packages/site/app/download/page.tsx) + [`lib/downloads.ts`](../packages/site/lib/downloads.ts) (platform detection, per-arch macOS builds, GitHub release deep links, "coming soon" disabled states) — restyle the **presentation**.
 
 ### G1. Elegant download layout — **M**
-- [ ] Rebuild the download UI in the new look & feel: detected-platform **primary CTA** up top, an elegant grid/list of **all platforms** (macOS arm64/x64, Windows, Linux) below, version + release-notes link, consistent panel/particle treatment and theming. Reuse `downloads.ts` data and `platform.ts` detection **as-is** — no behavioural change.
-- [ ] Carry the persistent particle field + theming onto this route so it feels part of the same site (the panel mechanic is landing-page-specific; the download page just shares the visual language).
+- [x] Rebuild the download UI in the new look & feel: detected-platform **primary CTA** up top, an elegant grid/list of **all platforms** (macOS arm64/x64, Windows, Linux) below, version + release-notes link, consistent panel/particle treatment and theming. Reuse `downloads.ts` data and `platform.ts` detection **as-is** — no behavioural change.
+- [x] Carry the persistent particle field + theming onto this route so it feels part of the same site (the panel mechanic is landing-page-specific; the download page just shares the visual language).
 
 ---
 
-## Theme H — Legal pages (sub-layout + markdown)
+## Theme H — Legal pages (sub-layout + markdown) — ✅ DONE (PR #44, 2026-06-21)
 
 ### H1. Legal sub-layout — **M**
-- [ ] A nested App Router layout at `app/legal/layout.tsx` with a **sidebar** listing **all legal docs** (active-link highlighting) beside a **content area** that renders **pretty-printed markdown**. Responsive: sidebar collapses to a top selector on mobile.
-- [ ] Render markdown with **`react-markdown` + `remark-gfm`** (the web app's stack) styled to the site (typography, code blocks, tables) — mirror the [`markdown-preview.tsx`](../packages/web/components/markdown-preview.tsx) treatment. Docs authored as markdown/MDX files so adding a doc = adding a file + a sidebar entry.
+- [x] A nested App Router layout at `app/legal/layout.tsx` with a **sidebar** listing **all legal docs** (active-link highlighting) beside a **content area** that renders **pretty-printed markdown**. Responsive: sidebar collapses to a top selector on mobile.
+- [x] Render markdown with **`react-markdown` + `remark-gfm`** (the web app's stack) styled to the site (typography, code blocks, tables) — mirror the [`markdown-preview.tsx`](../packages/web/components/markdown-preview.tsx) treatment. Docs authored as markdown/MDX files so adding a doc = adding a file + a sidebar entry.
 
 ### H2. Placeholder docs — **S**
-- [ ] Create **Privacy Policy** (`app/legal/privacy/`) and **EULA** (`app/legal/eula/`) as **placeholder** content (clear "draft / placeholder — not legal advice" note, standard section scaffolding). Wire both into the sidebar and the footer.
+- [x] Create **Privacy Policy** (`app/legal/privacy/`) and **EULA** (`app/legal/eula/`) as **placeholder** content (clear "draft / placeholder — not legal advice" note, standard section scaffolding). Wire both into the sidebar and the footer.
 
 ---
 
