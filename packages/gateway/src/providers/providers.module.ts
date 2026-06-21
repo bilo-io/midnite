@@ -10,5 +10,7 @@ import { ProvidersService } from './providers.service';
   imports: [AgentModule],
   controllers: [ProvidersController],
   providers: [ProvidersService],
+  // Exported so the setup-readiness service (Phase 19) can compose it.
+  exports: [ProvidersService],
 })
 export class ProvidersModule {}

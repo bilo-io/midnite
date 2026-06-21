@@ -57,6 +57,8 @@ import {
   InstallTerminalResponseSchema,
   EnvironmentResponseSchema,
   type EnvironmentResponse,
+  SetupStatusSchema,
+  type SetupStatus,
   type EnvToolAction,
   type EnvToolId,
   BrowseDirResponseSchema,
@@ -668,6 +670,13 @@ export async function createCliTerminal(
     InstallTerminalResponseSchema,
   );
   return terminalId;
+}
+
+// --- Setup readiness (Phase 19 — first-run wizard / soft nudge / status panel) ---
+
+/** Aggregate first-run readiness: the per-item checklist + derived `ready`. */
+export async function getSetupStatus(): Promise<SetupStatus> {
+  return fetchJson('/setup/status', undefined, SetupStatusSchema);
 }
 
 // --- Environment (system toolchain checker for Settings → System) ---
