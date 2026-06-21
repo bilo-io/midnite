@@ -25,7 +25,12 @@ export function PanelFrame({
   className?: string;
 }) {
   return (
-    <div className={cn('gradient-border pointer-events-auto h-full w-full rounded-2xl', className)}>
+    <div
+      className={cn(
+        'gradient-border panel-glow pointer-events-auto h-full w-full rounded-2xl',
+        className,
+      )}
+    >
       <div className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-border/70 bg-card/70 shadow-2xl backdrop-blur-md">
         <div className="flex shrink-0 items-center gap-2 border-b border-border/60 px-4 py-3">
           <span className="h-3 w-3 rounded-full bg-[#f43f5e]/80" />
