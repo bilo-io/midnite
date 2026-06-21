@@ -135,6 +135,15 @@ CI runs `moon ci`. Lint violations fail the build — fix locally rather than af
 - Create PRs as drafts until ready for review
 - PR description should explain *why*, not just *what*
 
+### Releases
+
+- Versioning is **lockstep on `MAJOR.MINOR`** (every package shares it) with an
+  **independent `PATCH`** per package. `moon run root:version-check` enforces the
+  invariant in CI; the bump math lives in [`packages/shared/src/version.ts`](packages/shared/src/version.ts).
+- Cutting a release is a two-step flow (`/release-prep` → `/release-complete`); the
+  policy, bump triggers, and tag/branch scheme are documented in
+  [`docs/RELEASING.md`](docs/RELEASING.md). User-facing notes go in [`CHANGELOG.md`](CHANGELOG.md), kept separate from `todo/done.md`.
+
 ---
 
 ## TypeScript Code Style
