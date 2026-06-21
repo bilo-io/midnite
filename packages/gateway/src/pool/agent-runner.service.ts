@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { MidniteConfig, Task } from '@midnite/shared';
+import { UrlContextService } from '../agent/url-context.service';
 import { MIDNITE_CONFIG } from '../config.token';
 import { TasksService } from '../tasks/tasks.service';
 import { TerminalService } from '../terminal/terminal.service';
@@ -21,6 +22,7 @@ export class AgentRunnerService {
     @Inject(AgentPoolService) private readonly pool: AgentPoolService,
     @Inject(TasksService) private readonly tasks: TasksService,
     @Inject(TerminalService) private readonly terminal: TerminalService,
+    @Inject(UrlContextService) private readonly urlContext: UrlContextService,
   ) {}
 
   /** Claim a slot and spawn an agent session for `task`. Returns false (leaving
@@ -28,7 +30,9 @@ export class AgentRunnerService {
   async start(task: Task): Promise<boolean> {
     if (this.pool.acquire(task.id) === null) return false;
     try {
-      const prompt = task.prompt?.trim() || task.title;
+      // Fold any linked GitHub issue/PR + URL context into the seed prompt
+      // (best-effort, fail-open — never blocks the run). Phase 15 Theme B.
+      const prompt = await this.urlContext.enrich(task.prompt?.trim() || task.title);
       this.tasks.startTask(task.id);
       const result = this.terminal.spawnAgentSession(
         task.id,

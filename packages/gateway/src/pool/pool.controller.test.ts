@@ -1,11 +1,14 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 import { parseConfig, type MidniteConfig, type Task } from '@midnite/shared';
+import type { UrlContextService } from '../agent/url-context.service';
 import type { TasksService } from '../tasks/tasks.service';
 import type { TerminalService } from '../terminal/terminal.service';
 import { AgentPoolService } from './agent-pool.service';
 import { AgentRunnerService } from './agent-runner.service';
 import { PoolController } from './pool.controller';
+
+const noUrlContext = { enrich: async (p: string) => p } as unknown as UrlContextService;
 
 function config(pool = 1): MidniteConfig {
   return parseConfig({
@@ -60,7 +63,7 @@ function build(seed: Task[], poolSize = 1, spawnOk = true) {
   const { service, byId } = fakeTasks(seed);
   const pool = new AgentPoolService(cfg, service);
   const { terminal } = fakeTerminal(spawnOk);
-  const runner = new AgentRunnerService(cfg, pool, service, terminal);
+  const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext);
   const controller = new PoolController(pool, runner, service);
   return { controller, pool, byId };
 }

@@ -4,6 +4,7 @@ import { LlmClassifier, TaskClassifier } from './classifier.service';
 import { LlmService } from './llm/llm.service';
 import { PlannerService } from './planner.service';
 import { ProviderCredentialsRepository } from './provider-credentials.repository';
+import { UrlContextService } from './url-context.service';
 
 // The gateway's own AI layer: the provider-agnostic LlmService (active provider
 // chosen at runtime), the credential store, and the task classifier/planner that
@@ -15,11 +16,12 @@ import { ProviderCredentialsRepository } from './provider-credentials.repository
     LlmService,
     ProviderCredentialsRepository,
     PlannerService,
+    UrlContextService,
     {
       provide: TaskClassifier,
       useClass: LlmClassifier,
     },
   ],
-  exports: [TaskClassifier, LlmService, PlannerService, ProviderCredentialsRepository],
+  exports: [TaskClassifier, LlmService, PlannerService, ProviderCredentialsRepository, UrlContextService],
 })
 export class AgentModule {}
