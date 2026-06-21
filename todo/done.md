@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 10 C1 complete: Storybook stories run as browser tests (PR #35)
+
+18 stories existed but nothing asserted them. C1 makes every story a smoke test inside `moon run web:test` (so `moon ci` covers it). C1 is now ✅ DONE; C2 (interaction `play` tests) + C3 (a11y) remain.
+
+- [x] `@storybook/addon-vitest` (+ `@vitest/browser`, `playwright`) added to `@midnite/web`, registered in `.storybook/main.ts`. `vitest.config.ts` split into two projects: **`unit`** (jsdom — the existing component/hook/lib specs) and **`storybook`** (headless **chromium** via Playwright — every `*.stories.tsx` mounted; a render-time throw fails the test). The addon (Storybook ≥10.3) auto-applies the `.storybook/preview` decorators (`ThemeProvider`), so no extra setup file is needed.
+- [x] **CI:** a `playwright install --with-deps chromium` step before `moon ci`, since `web:test` now needs a browser. `.storybook/**` added to the `web:test` moon inputs so Storybook-config changes invalidate the test cache.
+- [x] All **18 stories (68 story tests)** pass next to the **67 unit tests** — 135 total; `:typecheck`/`:lint`/`:test` green; `moon ci` green on PR #35. No story needed a fix. (Decisions §2 — addon-vitest, the recommended path.)
+
 ## 2026-06-21 — Phase 12 Theme C (reshape nodes): setData / merge / filter (PR #34)
 
 Three pure data-flow node types that make "use outputs as inputs" practical, consuming Theme B's resolve-before-execute (expression-valued fields arrive already resolved). Theme C is now ◐ partial — only the persisted `storage.set/get` nodes remain (they need a new table).

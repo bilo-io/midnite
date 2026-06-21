@@ -61,9 +61,9 @@
 
 > 18 stories already exist but nothing asserts them. Storybook 10's **Vitest addon** runs every story as a test (mount + optional `play` interaction) in a real browser via Playwright, sharing our existing Vitest config — so "story renders without error" becomes a test for free, and `play` functions become interaction tests.
 
-### C1. Wire Storybook-as-tests — **M**
-- [ ] Add **`@storybook/addon-vitest`** (SB 10) + its Playwright browser provider; register it in [`.storybook/main.ts`](../packages/web/.storybook/main.ts) and add the Vitest **project** so `moon run web:test` runs unit specs **and** stories. (Alternative if the addon fights Next: `@storybook/test-runner` as a separate `web:test-stories` task — see Decisions §2.)
-- [ ] Every story must **render without throwing** (the addon's default per-story smoke test). Fix any story that currently only renders by luck.
+### C1. Wire Storybook-as-tests — **M** — ✅ DONE (PR #35, 2026-06-21)
+- [x] `@storybook/addon-vitest` (+ `@vitest/browser`, `playwright`) added to web and registered in [`.storybook/main.ts`](../packages/web/.storybook/main.ts). `vitest.config.ts` split into two projects — **`unit`** (jsdom, the existing specs) and **`storybook`** (headless chromium via Playwright) — so `moon run web:test` runs both. The addon (SB ≥10.3) auto-applies the `.storybook/preview` decorators, so no extra setup file. CI installs chromium (`playwright install --with-deps chromium`) before `moon ci`; `.storybook/**` added to the `web:test` inputs.
+- [x] All **18 stories render without throwing** (68 story smoke tests) alongside the 67 unit tests — 135 total green. No story needed fixing.
 
 ### C2. Interaction tests on key components — **M**
 - [ ] Add `play` functions (using `storybook/test` — `within`, `userEvent`, `expect`) to the highest-value interactive components: **board-view** (drag/cards), **task-card**, **session-card**, **command-palette**, **filter-pills**, **templates-table**, **theme-toggle**. Assert the visible outcome, query by role/label (not test IDs), per CLAUDE.md.
