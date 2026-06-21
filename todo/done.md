@@ -4,6 +4,13 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 6 follow-up: ai.claude node defaults to canonical sonnet4.6 (PR #46)
+
+The workflow `ai.claude` node defaulted to `sonnet4.7`, a retired alias whose dated id 404s — the adapter only kept it resolving as a legacy fallback. New nodes now default to the canonical `sonnet4.6` (same underlying `claude-sonnet-4-6`, but in the adapter's advertised list), so a freshly-added node works against real credentials.
+
+- [x] `node-types.ts`: `ai.claude` default model + field placeholder → `sonnet4.6`. Legacy `sonnet4.7`/`opus4.7` aliases stay resolving in [`anthropic.provider.ts`](../packages/gateway/src/agent/llm/providers/anthropic.provider.ts) for existing configs — only the default changed, so no migration.
+- [x] `node-types.test.ts`: updated the default assertion + a guard that the default is always one of `LLM_PROVIDER_MODEL_SUGGESTIONS.anthropic` (a retired alias can't sneak back as the default). `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #46 (shared 279 · gateway 521 · cli 7 · web 165).
+
 ## 2026-06-21 — Phase 11 Themes A, D, G, H: public-site foundations, sections, download, legal (PR #44)
 
 The first independent slice of the public-site rewrite — the four self-contained, individually-shippable themes, leaving the interlocking panel/particle/hero core (B/C/E/F) for later. `packages/site` only; no `@midnite/web` internals imported (the theme + markdown bits are copies with source-of-truth comments).
