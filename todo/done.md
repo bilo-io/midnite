@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 25 Theme A: `@midnite/ui` package scaffold + Vite library build (PR #50)
+
+Stands up [Phase 25](phase-25-ui-library.md)'s first theme — a new **leaf** design-system package, built and wired, before any primitives/tokens migrate into it (Themes B/C/D). No components moved yet; this is extraction *infrastructure*.
+
+- [x] **`@midnite/ui` package** — `"type":"module"`, React/React-DOM as `peerDependencies`, `exports` map mirroring `shared`'s subpaths: `.` (components) / `./theme` / `./styles` (token CSS). `sideEffects: ["**/*.css"]`.
+- [x] **Vite library mode** — `vite.config.ts` with `build.lib` (ESM, `index` + `theme` entries) + `vite-plugin-dts` for `.d.ts`; every declared dep + peer dep externalized so the bundle ships only our code and consumers dedupe. A small plugin copies the token CSS to `dist/tokens.css`. **Decision §4 settled:** the lib ships compiled CSS + token CSS (framework-agnostic), documented in the package README (§7 Vite-lib divergence).
+- [x] **`moon.yml`** — `build` (vite, overriding the `tsc -b` default) / `typecheck` / `lint` / `test`; leaf (no `dependsOn`); `moon ci` auto-registers via `packages/*`. `storybook`/`build-storybook` deferred to Theme D (Storybook not installed yet — declaring the task would give `moon ci` an unrunnable job).
+- [x] **Boundary guard** — `src/boundary.test.ts` fails if the lib imports any in-repo package (`shared`/`web`/`gateway`/`cli`/`desktop`/`site`); enforces the leaf rule in CI. Seeded with the `cn()` class-merge helper (+ unit test) and reserved `./theme` (`THEME_MODES`) + `./styles` `tokens.css` placeholders for Themes B/C.
+- [x] **Docs** — `CLAUDE.md` gains `ui` in the dependency graph + Repo Layout + the leaf rule; the stale "Tailwind not yet wired" Styling note corrected (Tailwind **is** wired; primitives + tokens are extracting into `@midnite/ui`).
+
+Lockfile reconciled with PR #47's `cli-table3` addition on merge; `pnpm install --frozen-lockfile` green. `ui` build (ESM + `.d.ts`) / typecheck / lint / vitest (5 tests) green; CI green. **Next:** Theme B (move tokens + theme runtime into the lib).
+
 ## 2026-06-21 — Phase 5: per-repo agent concurrency cap (PR #49)
 
 The agent pool was a single global FIFO, so multiple agents could run on the same repo and race on one working tree. New `agent.maxPerRepo` caps concurrent agents per `task.repo`.

@@ -45,7 +45,7 @@ A lightweight place to track what's been done and what's outstanding, without le
 - [phase-22-fleet-visibility.md](phase-22-fleet-visibility.md) — Fleet visibility: ops metrics & PR lifecycle ◻
 - [phase-23-approvals-autonomy.md](phase-23-approvals-autonomy.md) — Approvals & autonomy policy ◻
 - [phase-24-responsive-mobile-pwa.md](phase-24-responsive-mobile-pwa.md) — Responsive & mobile companion (PWA) ◻
-- [phase-25-ui-library.md](phase-25-ui-library.md) — @midnite/ui: reusable component library & design system ◻
+- [phase-25-ui-library.md](phase-25-ui-library.md) — @midnite/ui: reusable component library & design system ⚠️ (Theme A done)
 - [phase-26-docs-app.md](phase-26-docs-app.md) — Docs app (packages/docs) on @midnite/ui ◻
 - [phase-27-task-dependencies.md](phase-27-task-dependencies.md) — Task dependencies & dependency-aware scheduling ◻
 - [phase-28-project-planning-breakdown.md](phase-28-project-planning-breakdown.md) — Project planning & structured task breakdown ◻

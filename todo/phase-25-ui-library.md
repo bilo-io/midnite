@@ -24,14 +24,14 @@
 
 ---
 
-## Theme A — Package scaffold & Vite library build — **M**
+## Theme A — Package scaffold & Vite library build — **M** — ✅ DONE (PR #50, 2026-06-21)
 
-Stand up the package and its build before moving anything into it.
+Stand up the package and its build before moving anything into it. **Landed — see [done.md](done.md).**
 
-- [ ] **`packages/ui` (`@midnite/ui`)** — `package.json` with `"type":"module"`, **React/React-DOM as `peerDependencies`** (not bundled), and an `exports` map mirroring [`shared`](../packages/shared/)'s subpath pattern (`.` for components, `./styles` (or `./tokens.css`) for the token CSS, `./theme` for the provider).
-- [ ] **Vite library mode** — `vite.config.ts` with `build.lib` (ESM output) + `vite-plugin-dts` for `.d.ts`; externalize React. Decision §4 (styling): the lib **ships its compiled CSS** (Vite bundles component styles) **plus** the token CSS entry, so consumers import the lib's stylesheet — vs. a shared Tailwind preset consumers extend. Pick one and document it.
-- [ ] **`moon.yml`** with `build` (vite build), `typecheck` (`tsc --noEmit`), `lint`, `test` (vitest), and a `storybook`/`build-storybook` task; `dependsOn` reflecting the leaf position. Confirm `moon ci` picks it up.
-- [ ] **Boundary check:** `@midnite/ui` imports **nothing** from `@midnite/shared`/`web`/`gateway`. A lint/CI guard or a simple grep test asserts the leaf stays clean.
+- [x] **`packages/ui` (`@midnite/ui`)** — `package.json` with `"type":"module"`, **React/React-DOM as `peerDependencies`** (not bundled), and an `exports` map mirroring [`shared`](../packages/shared/)'s subpath pattern (`.` for components, `./styles` for the token CSS, `./theme` for the provider).
+- [x] **Vite library mode** — `vite.config.ts` with `build.lib` (ESM output) + `vite-plugin-dts` for `.d.ts`; externalizes every declared + peer dep. Decision §4 settled: the lib **ships compiled CSS + the token CSS entry** (framework-agnostic), documented in the package README.
+- [x] **`moon.yml`** with `build` (vite build), `typecheck`, `lint`, `test` (vitest); leaf position (no `dependsOn`); `moon ci` picks it up via `packages/*`. (`storybook`/`build-storybook` deferred to Theme D, where Storybook is installed.)
+- [x] **Boundary check:** `src/boundary.test.ts` fails if `@midnite/ui` imports any in-repo package (`shared`/`web`/`gateway`/…) — enforces the leaf in CI.
 
 ---
 
