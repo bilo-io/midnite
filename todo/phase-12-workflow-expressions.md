@@ -41,16 +41,16 @@ New node types — one registry entry in `shared` + one executor in the gateway 
 - [x] **S** Registered `logic.setData` / `logic.merge` / `data.filter` / `storage.set` / `storage.get` in [`node-types.ts`](../packages/shared/src/node-types.ts) with param schemas, ports, and categories (new `storage` category); executors under [`engine/executors/`](../packages/gateway/src/workflows/engine/executors/) wired into the module's `NODE_EXECUTORS`.
 - [x] **M** Tests: each reshape executor's param schema + behaviour + an engine integration (setData resolves `{{expr}}` end-to-end); `logic.merge` modes; storage cross-run round-trip + per-workflow scoping against `:memory:`.
 
-## Theme D — Full n8n-style expression editor (web)
+## Theme D — Full n8n-style expression editor (web) — ◐ IN PROGRESS (starter: PR #63)
 
 The headline UX: make references discoverable and previewable instead of hand-typed. Most of the phase's polish lives here.
 
-- [ ] **S** **ƒx toggle** per templatable field in the config panel ([`workflow-editor.tsx`](../packages/web/components/workflow-editor.tsx) / its field forms): switch a field between literal and expression mode (driven by the Theme-A `expressionable` flag).
-- [ ] **L** **Expression input** with autocomplete: typing `$node["` suggests upstream node labels; `.` after a node suggests fields drawn from that node's **last-run output**; `$json` / `$env` completions too.
+- [x] **S** **ƒx toggle** per templatable field in the config panel ([`node-config-panel.tsx`](../packages/web/components/node-config-panel.tsx)): flips an `expressionable` field between its literal control and a monospace expression input; mode is seeded from whether the saved value is already a `{{ }}` template. (PR #63)
+- [ ] **L** **Expression input** with autocomplete: typing `$node["` suggests upstream node labels; `.` after a node suggests fields drawn from that node's **last-run output**; `$json` / `$env` completions too. *(The ƒx input is the plain entry point; autocomplete is the remaining work.)*
 - [ ] **L** **Data picker** panel: show the selected node's upstream inputs as an explorable tree of the last run's data; **click a leaf to insert** its `{{...}}` reference at the cursor.
 - [ ] **M** **Inline resolved-value preview**: render what an expression resolves to using the last successful run's data (or pinned sample data, Theme E), with a clear "no data yet — run once or pin sample" empty state.
-- [ ] **S** Enforce **unique node labels** in the editor (the picker references by label) — inline validation + auto-suffix on collision in [`workflow-store.ts`](../packages/web/lib/workflow-store.ts).
-- [ ] **M** Web tests: ƒx toggle round-trips a field to/from an expression; picker inserts a correct reference string; preview renders a resolved value from mocked run data.
+- [x] **S** Enforce **unique node labels** in the editor (the picker references by label) — `uniqueLabel` auto-suffixes on collision in [`workflow-store.ts`](../packages/web/lib/workflow-store.ts) (both `addNode` and a new `setLabel`); the config-panel header gains an editable, de-duping rename field. (PR #63)
+- [◐] **M** Web tests: **ƒx toggle round-trips a field** (done) + unique-label/rename (done); picker-inserts and preview-renders await those L/M items. (PR #63)
 
 ## Theme E — Run-history & design-time debugging (web) — ◐ PARTIAL (PR #41, 2026-06-21)
 

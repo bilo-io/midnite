@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Bot, Copy, Loader2, Trash2, X } from 'lucide-react';
 import {
   getNodeTypeDefinition,
@@ -125,6 +125,83 @@ function FieldInput({
   }
 }
 
+/** A field value is in expression mode when it carries a `{{ }}` template. */
+function isExpressionValue(value: unknown): boolean {
+  return typeof value === 'string' && value.includes('{{');
+}
+
+/** Monospace input for a `{{ }}` expression. The data-picker/autocomplete that
+ *  enriches this is the larger Theme-D follow-up; this is the literal entry. */
+function ExpressionInput({
+  value,
+  onChange,
+  placeholder,
+  fieldLabel,
+}: {
+  value: unknown;
+  onChange: (v: unknown) => void;
+  placeholder?: string;
+  fieldLabel: string;
+}) {
+  return (
+    <input
+      className={cn(inputClass, 'font-mono text-xs')}
+      value={typeof value === 'string' ? value : ''}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder ?? '{{ $json.field }}'}
+      spellCheck={false}
+      aria-label={`${fieldLabel} expression`}
+    />
+  );
+}
+
+/** The ƒx affordance: flip an expressionable field between a literal control and
+ *  the expression input. */
+function FxToggle({ active, onToggle, fieldLabel }: { active: boolean; onToggle: () => void; fieldLabel: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={active}
+      aria-label={`Toggle expression mode for ${fieldLabel}`}
+      title={active ? 'Use a literal value' : 'Use an expression'}
+      className={cn(
+        'rounded px-1.5 py-0.5 font-mono text-[11px] font-semibold italic transition-colors',
+        active
+          ? 'bg-accent text-accent-foreground'
+          : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
+      )}
+    >
+      fx
+    </button>
+  );
+}
+
+/** Editable node label in the config header. Commits on blur/Enter; the store
+ *  may auto-suffix a clashing name, so we re-sync the draft from the prop. */
+function NodeLabelInput({ id, label }: { id: string; label: string }) {
+  const setLabel = useWorkflowStore((s) => s.setLabel);
+  const [draft, setDraft] = useState(label);
+  useEffect(() => setDraft(label), [label]);
+  const commit = () => {
+    const trimmed = draft.trim();
+    if (trimmed && trimmed !== label) setLabel(id, trimmed);
+    else setDraft(label); // revert a blank/no-op edit to the canonical label
+  };
+  return (
+    <input
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') e.currentTarget.blur();
+      }}
+      aria-label="Node label"
+      className="-mx-1 w-full truncate rounded border border-transparent bg-transparent px-1 text-sm font-semibold hover:border-border focus-visible:border-border focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+    />
+  );
+}
+
 // Provider options for the AI node, each branded with its icon. The empty value
 // follows the gateway's active provider (chosen on the Agents page).
 const AI_PROVIDER_OPTIONS: SelectOption<string>[] = [
@@ -165,6 +242,17 @@ function AiModelField({
 function NodeFields({ node }: { node: AppNode }) {
   const updateNodeParams = useWorkflowStore((s) => s.updateNodeParams);
   const def = getNodeTypeDefinition(node.data.kind);
+  // Per-field expression mode, seeded from whether the saved value is already a
+  // `{{ }}` template. Mounted per node (keyed on node.id by the caller), so it
+  // re-seeds when a different node is selected.
+  const [fxMode, setFxMode] = useState<Record<string, boolean>>(() => {
+    const init: Record<string, boolean> = {};
+    for (const f of def?.fields ?? []) {
+      if (f.expressionable) init[f.key] = isExpressionValue(node.data.params[f.key]);
+    }
+    return init;
+  });
+
   if (!def) return null;
   if (def.fields.length === 0) {
     return <p className="text-xs text-muted-foreground">This node has no configuration.</p>;
@@ -183,8 +271,19 @@ function NodeFields({ node }: { node: AppNode }) {
     <div className="space-y-3">
       {def.fields.map((field) => {
         const value = node.data.params[field.key];
+        const expressionable = field.expressionable === true;
+        const inFx = expressionable && (fxMode[field.key] ?? false);
         let control: React.ReactNode;
-        if (isAi && field.key === 'provider') {
+        if (inFx) {
+          control = (
+            <ExpressionInput
+              value={value}
+              onChange={(v) => setParam(field.key, v)}
+              placeholder={field.placeholder}
+              fieldLabel={field.label}
+            />
+          );
+        } else if (isAi && field.key === 'provider') {
           control = (
             <AiProviderField
               value={typeof value === 'string' ? value : ''}
@@ -204,12 +303,27 @@ function NodeFields({ node }: { node: AppNode }) {
         }
         return (
           <div key={field.key} className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">
-              {field.label}
-              {field.required ? <span className="text-destructive"> *</span> : null}
-            </label>
+            <div className="flex items-center justify-between gap-2">
+              <label className="text-xs font-medium text-muted-foreground">
+                {field.label}
+                {field.required ? <span className="text-destructive"> *</span> : null}
+              </label>
+              {expressionable ? (
+                <FxToggle
+                  active={inFx}
+                  fieldLabel={field.label}
+                  onToggle={() => setFxMode((m) => ({ ...m, [field.key]: !(m[field.key] ?? false) }))}
+                />
+              ) : null}
+            </div>
             {control}
-            {field.help ? <p className="text-[11px] text-muted-foreground">{field.help}</p> : null}
+            {inFx ? (
+              <p className="text-[11px] text-muted-foreground">
+                Expression — reference run data, e.g. <code className="font-mono">{'{{ $json.field }}'}</code>.
+              </p>
+            ) : field.help ? (
+              <p className="text-[11px] text-muted-foreground">{field.help}</p>
+            ) : null}
           </div>
         );
       })}
@@ -374,7 +488,11 @@ export function NodeConfigPanel({ workflowId }: { workflowId: string }) {
     <aside className="flex w-80 shrink-0 flex-col border-l border-border/60 bg-background/40">
       <header className="flex items-center justify-between gap-2 border-b border-border/60 px-4 py-3">
         <div className="min-w-0">
-          <h3 className="truncate text-sm font-semibold">{node.data.label}</h3>
+          {isTrigger ? (
+            <h3 className="truncate text-sm font-semibold">{node.data.label}</h3>
+          ) : (
+            <NodeLabelInput id={node.id} label={node.data.label} />
+          )}
           <p className="text-[11px] text-muted-foreground">{def?.title ?? node.data.kind}</p>
         </div>
         <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={() => select(null)}>
@@ -383,7 +501,7 @@ export function NodeConfigPanel({ workflowId }: { workflowId: string }) {
       </header>
 
       <div className="flex-1 space-y-4 overflow-y-auto p-4">
-        {isTrigger ? <TriggerConfig workflowId={workflowId} /> : <NodeFields node={node} />}
+        {isTrigger ? <TriggerConfig workflowId={workflowId} /> : <NodeFields key={node.id} node={node} />}
       </div>
 
       {!isTrigger ? (
