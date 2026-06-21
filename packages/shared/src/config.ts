@@ -33,6 +33,11 @@ export const AgentConfigSchema = z.object({
   // How many times a task is auto-retried after an agent session exits
   // unexpectedly (crash) before it's abandoned. 0 = never retry crashes.
   maxRetries: z.number().int().nonnegative().default(3),
+  // Max concurrent agents running on the same repo (keyed by `task.repo`).
+  // 0 = unlimited. Guards against N agents racing on one working tree: the
+  // scheduler skips a task whose repo is already at this cap and picks the next
+  // eligible one instead. Repo-less tasks are never capped.
+  maxPerRepo: z.number().int().nonnegative().default(0),
 });
 
 export const TerminalConfigSchema = z.object({
