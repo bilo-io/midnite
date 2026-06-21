@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 10 C3 (partial): axe a11y checks on stories (PR #39)
+
+Wires `@storybook/addon-a11y` into the C1 Storybook-as-tests run so axe-core scans every story during `moon run web:test`. C3 is ◐ partial — the addon is enabled at `'todo'` (warnings) per "start as warnings"; promoting to `'error'` is gated on clearing the surfaced backlog.
+
+- [x] `@storybook/addon-a11y` (pinned `10.4.3`, matching `addon-vitest`) added to `@midnite/web` + registered in [`.storybook/main.ts`](../packages/web/.storybook/main.ts). The SB ≥10.3 vitest addon auto-applies its preview annotations, so axe runs on every story with **no setup file**.
+- [x] `parameters.a11y.test: 'todo'` in [`.storybook/preview.tsx`](../packages/web/.storybook/preview.tsx) — violations surface as warnings (a11y panel + run output) without failing CI; an in-file comment documents the promotion path. `:typecheck`/`:lint`/`web:test` green (33 files / 144 tests; 71 stories scanned); `moon ci` green on PR #39.
+- [ ] **Remaining for C3:** fix the real violations then promote to `'error'` — `board-view` (color-contrast, nested-interactive, scrollable-region-focusable); `task-card`/`project-card`/`workflow-card` (color-contrast); `session-card` (aria-prohibited-attr); `page-header` (empty-heading); `markdown-preview` (label — task-list checkboxes). Design-system/clickable-card work, deliberately out of scope for this infra slice.
+
 ## 2026-06-21 — Phase 16 Theme A complete: bulk task creation API (PR #40)
 
 Plural intake substrate — `POST /tasks/bulk` turns a pasted blob into one task per line with a single coalesced board update. Theme A (the API) is ✅ DONE; the CLI `add --bulk` (B) and web paste modal (C) clients remain. Satisfies [outstanding.md](outstanding.md) #2's API half / Phase 15 Theme A.
