@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 18 Theme D: generalize the report renderer (PR #62)
+
+The shared substrate for [Phase 18](phase-18-reports-exports.md#theme-d--generalize-the-renderer--reuse-shared-substrate--sm--done-pr-62-2026-06-21) — lift the councils-only client-side renderer so tasks/projects/workflow-run exports (Themes A/B/C) just plug in. Reuse, no redesign; the no-puppeteer (markdown server-side · PDF client-side) contract is untouched.
+
+- [x] **Generic renderer** — new pure, unit-tested [`report-html-export.ts`](../packages/web/lib/report-html-export.ts): `buildReportHtml({ title, bodyHtml, metaLine? })` → self-contained offline printable HTML, with `escapeHtml` + `REPORT_PROSE_CSS` lifted out of `council-html-export.ts`, plus `reportHtmlFilename`.
+- [x] **Shared markdown capture** — [`capture-markdown-html.tsx`](../packages/web/lib/capture-markdown-html.tsx) lifts the render-`MarkdownPreview`-and-capture helper out of `council-run-tabs.tsx` so every HTML export matches in-app rendering + sanitization.
+- [x] **Councils reuses the substrate** — `council-html-export.ts` imports the shared `escapeHtml` + prose CSS; output is **byte-identical** (verified) — no behaviour change, proving the lift.
+- [x] **`ExportMenu`** was already generic with copy-as-markdown; added an optional `title` for the print document title (distinct from the download slug) — the `{ fetchMarkdown, filename, title }` shape A/B/C drop in.
+- [x] 6 new `report-html-export` unit tests; `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #62 (`web:test` 208).
+- ⏳ The *optional* gateway export-response helper is deferred to land with Theme A's first export route (no consumer yet). **Next:** Theme A (task export) — pure `taskToMarkdown` + `GET /tasks/:id/export` + `ExportMenu` in the task thread.
+
 ## 2026-06-21 — Phase 10 C2: stories for sessions/memories/activity widgets (PR #60)
 
 More self-fetching dashboard widgets storied on the `installMockFetch` helper (#53), continuing [Phase 10 C2](phase-10-test-suite-hardening.md#c2-interaction-tests-on-key-components--partial-pr-36--48--53--60-2026-06-21). Pure coverage; no product change.
