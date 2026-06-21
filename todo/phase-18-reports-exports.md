@@ -17,14 +17,14 @@
 
 ---
 
-## Theme D — Generalize the renderer & reuse (shared substrate) — **S–M**
+## Theme D — Generalize the renderer & reuse (shared substrate) — **S–M** — ✅ DONE (PR #62, 2026-06-21)
 
-Do this first (or alongside A) so A/B/C just plug in. Today the client-side PDF/HTML rendering lives in a councils-specific file; lift it so every domain shares one path.
+The client-side renderer is now domain-agnostic so A/B/C just plug in. See [done.md](done.md).
 
-- [ ] **Generic client renderer** — lift [`council-html-export.ts`](../packages/web/lib/council-html-export.ts) into a domain-agnostic `report-html-export.ts` (markdown string + a title → printable HTML → `printToPDF`/print). Councils switches to it (no behaviour change); A/B/C reuse it.
-- [ ] **`ExportMenu` stays the single component** — confirm [`export-menu.tsx`](../packages/web/components/export-menu.tsx) takes a generic `{ fetchMarkdown, filename, title }` shape (refactor if it's councils-coupled) so each view drops it in identically.
-- [ ] **"Copy as markdown" quick action** — add a copy-to-clipboard affordance to `ExportMenu` (same server markdown, no download), since copying into a doc/chat is the most common path.
-- [ ] **Gateway helper (optional)** — a tiny shared export-response helper so each controller route sets `REPORT_CONTENT_TYPE` + `Content-Disposition` identically (kept as a thin util, not a module that owns domain logic).
+- [x] **Generic client renderer** — new pure, unit-tested [`report-html-export.ts`](../packages/web/lib/report-html-export.ts): `buildReportHtml({ title, bodyHtml, metaLine? })` → standalone printable HTML, with `escapeHtml` + the prose CSS lifted out of `council-html-export.ts` (+ `reportHtmlFilename`). Markdown→HTML capture lifted to a shared [`capture-markdown-html.tsx`](../packages/web/lib/capture-markdown-html.tsx). Councils reuses both — **byte-identical output, no behaviour change**.
+- [x] **`ExportMenu` stays the single component** — confirmed already generic (`{ fetchMarkdown, filename, buildHtml? }`); added an optional `title` for the print/PDF document title (distinct from the download filename slug), giving the `{ fetchMarkdown, filename, title }` shape A/B/C drop in.
+- [x] **"Copy as markdown" quick action** — already present in `ExportMenu` (the "Copy Markdown" item); confirmed.
+- [ ] **Gateway helper (optional)** — ⏳ deferred to land with Theme A's first export route (no consumer yet — avoids dead code).
 
 ---
 

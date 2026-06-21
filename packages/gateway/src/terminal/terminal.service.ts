@@ -11,10 +11,14 @@ import { ProjectsService } from '../projects/projects.service';
 import { ReposService } from '../repos/repos.service';
 import { TasksService } from '../tasks/tasks.service';
 import { ApprovalService } from './approval.service';
-
-type NodePtyModule = typeof import('node-pty');
-type IPty = import('node-pty').IPty;
-type IDisposable = import('node-pty').IDisposable;
+import { pickSessionCwd } from './lib/resolve-cwd';
+import { PtySpawner } from './spawner/pty-spawner';
+import {
+  SPAWNER,
+  type Spawner,
+  type SpawnHandle,
+  type SpawnDisposable,
+} from './spawner/spawner';
 
 /** A sink for server→client terminal messages. The WS gateway implements this. */
 export interface TerminalSubscriber {
@@ -117,14 +121,14 @@ interface OutputFrame {
 }
 
 interface PtyHandle {
-  proc: IPty;
+  proc: SpawnHandle;
   command: string;
   subscribers: Set<TerminalSubscriber>;
   ring: OutputFrame[];
   ringBytes: number;
   seq: number;
   disposeTimer: NodeJS.Timeout | null;
-  disposables: IDisposable[];
+  disposables: SpawnDisposable[];
   /** Ephemeral Claude `--settings` file for approvals; deleted on reap. */
   settingsFile: string | null;
   /** Pinned PTYs (managed one-shot runs) survive subscriber detach — they live
@@ -152,8 +156,6 @@ export class TerminalService implements OnModuleDestroy {
   // Standalone (non-session) terminals — e.g. CLI installs. Keyed by a synthetic
   // id; the value is the init command pasted into the spawned shell.
   private readonly adHoc = new Map<string, { initCommand: string }>();
-  private nodePty: NodePtyModule | null = null;
-  private ptyLoadFailed = false;
 
   constructor(
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
@@ -163,6 +165,10 @@ export class TerminalService implements OnModuleDestroy {
     @Inject(AgentsService) private readonly agents: AgentsService,
     // Mutual lifecycle/broadcast dependency within the terminal module.
     @Inject(forwardRef(() => ApprovalService)) private readonly approvals: ApprovalService,
+    // The process backend, selected by config in the module factory. Defaults to a
+    // real PtySpawner so direct construction (tests, the in-process serve path)
+    // spawns live PTYs without DI; Nest always injects the configured SPAWNER.
+    @Inject(SPAWNER) private readonly spawner: Spawner = new PtySpawner(),
   ) {}
 
   // ---- token auth (single-use, short-lived) ----
@@ -231,15 +237,11 @@ export class TerminalService implements OnModuleDestroy {
         error: `terminal session limit reached (${this.config.terminal.maxSessions})`,
       };
     }
-    const pty = this.loadPty();
-    if (!pty) return { ok: false, error: 'terminal backend unavailable' };
-
-    let proc: IPty;
+    let proc: SpawnHandle;
     try {
-      proc = pty.spawn(spec.command, spec.args, {
-        name: 'xterm-256color',
-        cols: 120,
-        rows: 32,
+      proc = this.spawner.spawn({
+        command: spec.command,
+        args: spec.args,
         cwd: spec.cwd,
         env: this.fullEnv(),
       });
@@ -319,9 +321,6 @@ export class TerminalService implements OnModuleDestroy {
         error: `terminal session limit reached (${this.config.terminal.maxSessions})`,
       };
     }
-    const pty = this.loadPty();
-    if (!pty) return { ok: false, error: 'terminal backend unavailable' };
-
     const command = AGENT_CLI_COMMAND[this.agents.getAgentCli()];
     const args: string[] = [];
     const env = this.fullEnv();
@@ -329,15 +328,9 @@ export class TerminalService implements OnModuleDestroy {
     args.push(spec.prompt);
 
     const cwd = this.resolveCwd(sessionId);
-    let proc: IPty;
+    let proc: SpawnHandle;
     try {
-      proc = pty.spawn(command, args, {
-        name: 'xterm-256color',
-        cols: 120,
-        rows: 32,
-        cwd,
-        env,
-      });
+      proc = this.spawner.spawn({ command, args, cwd, env });
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : 'spawn failed' };
     }
@@ -465,16 +458,6 @@ export class TerminalService implements OnModuleDestroy {
       return;
     }
 
-    const pty = this.loadPty();
-    if (!pty) {
-      subscriber.send({
-        type: 'error',
-        code: 'spawn-failed',
-        message: 'terminal backend unavailable',
-      });
-      return;
-    }
-
     // Managed-run ids (council debates) are spawned eagerly by their owner; an
     // attach that finds no live handle means the run already exited — never
     // fall through and spawn a stray interactive shell under that id.
@@ -490,7 +473,7 @@ export class TerminalService implements OnModuleDestroy {
     subscriber.send({ type: 'status', phase: 'spawning' });
     let handle: PtyHandle;
     try {
-      handle = this.spawn(pty, sessionId, geom);
+      handle = this.spawn(sessionId, geom);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'spawn failed';
       this.logger.error(`pty spawn failed for session ${sessionId}: ${message}`);
@@ -553,14 +536,15 @@ export class TerminalService implements OnModuleDestroy {
 
   // ---- internals ----
 
-  private spawn(pty: NodePtyModule, sessionId: string, geom: TerminalGeometry): PtyHandle {
+  private spawn(sessionId: string, geom: TerminalGeometry): PtyHandle {
     const spec = this.resolveSpawnSpec(sessionId);
-    const proc = pty.spawn(spec.command, spec.args, {
-      name: 'xterm-256color',
-      cols: geom.cols,
-      rows: geom.rows,
+    const proc = this.spawner.spawn({
+      command: spec.command,
+      args: spec.args,
       cwd: spec.cwd,
       env: spec.env,
+      cols: geom.cols,
+      rows: geom.rows,
     });
 
     const handle: PtyHandle = {
@@ -790,18 +774,22 @@ export class TerminalService implements OnModuleDestroy {
   //   3. the global fallback working directory (set on the profile page)
   //   4. the gateway's working directory
   private resolveCwd(sessionId?: string): string {
+    let projectWorkDir: string | undefined;
+    let repoPath: string | undefined;
     if (sessionId) {
       const task = this.tasks.listTasks().find((t) => t.id === sessionId);
-      if (task?.projectId) {
-        const workDir = this.projects.workDirFor(task.projectId);
-        if (workDir) return expandTilde(workDir, homedir());
-      }
-      const repo = task?.repo ? this.repos.findByName(task.repo) : undefined;
-      if (repo) return expandTilde(repo.path, homedir());
+      if (task?.projectId) projectWorkDir = this.projects.workDirFor(task.projectId);
+      if (task?.repo) repoPath = this.repos.findByName(task.repo)?.path;
     }
-    const fallback = this.agents.getDefaultWorkDir();
-    if (fallback) return expandTilde(fallback, homedir());
-    return process.cwd();
+    const chosen = pickSessionCwd({
+      projectWorkDir,
+      repoPath,
+      fallback: this.agents.getDefaultWorkDir(),
+      gatewayCwd: process.cwd(),
+    });
+    // expandTilde is a no-op on the already-absolute gateway cwd, so applying it
+    // uniformly to whichever candidate won preserves the prior per-branch calls.
+    return expandTilde(chosen, homedir());
   }
 
   private pushRing(handle: PtyHandle, frame: OutputFrame): void {
@@ -862,23 +850,5 @@ export class TerminalService implements OnModuleDestroy {
     }
     this.handles.delete(sessionId);
     this.adHoc.delete(sessionId);
-  }
-
-  // Loaded lazily and fail-soft: a broken node-pty native build disables live
-  // terminals but must not take down the REST gateway.
-  private loadPty(): NodePtyModule | null {
-    if (this.nodePty) return this.nodePty;
-    if (this.ptyLoadFailed) return null;
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      this.nodePty = require('node-pty') as NodePtyModule;
-      return this.nodePty;
-    } catch (err) {
-      this.ptyLoadFailed = true;
-      this.logger.error(
-        `node-pty failed to load — live terminals disabled: ${err instanceof Error ? err.message : 'unknown'}`,
-      );
-      return null;
-    }
   }
 }

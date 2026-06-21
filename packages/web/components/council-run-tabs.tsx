@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { createRoot } from 'react-dom/client';
 import dynamic from 'next/dynamic';
 import { Loader2, RotateCcw, Sparkles, SkipForward } from 'lucide-react';
 import {
@@ -19,6 +18,7 @@ import { MarkdownPreview } from '@/components/markdown-preview';
 import { Spinner } from '@/components/spinner';
 import { StyledSelect } from '@/components/ui/styled-select';
 import { exportCouncilRunMarkdown } from '@/lib/api';
+import { captureMarkdownHtml } from '@/lib/capture-markdown-html';
 import {
   buildCouncilRunHtml,
   councilHtmlExportFilename,
@@ -68,25 +68,6 @@ const MEMBER_STATUS_LABEL: Record<CouncilRunMember['status'], string> = {
   timeout: 'Timed out',
   skipped: 'Skipped',
 };
-
-/**
- * Render markdown to an HTML string by mounting `<MarkdownPreview>` into a
- * detached node and reading its `innerHTML` — the same render-and-capture trick
- * the PDF path uses. The exported file is styled by its own embedded CSS, so the
- * Tailwind class names that ride along on the captured nodes are harmless.
- */
-async function captureMarkdownHtml(markdown: string): Promise<string> {
-  const container = document.createElement('div');
-  const root = createRoot(container);
-  root.render(<MarkdownPreview content={markdown} />);
-  // createRoot commits asynchronously — poll briefly until it has rendered.
-  for (let i = 0; i < 20 && container.innerHTML === ''; i++) {
-    await new Promise((resolve) => setTimeout(resolve, 10));
-  }
-  const html = container.innerHTML;
-  root.unmount();
-  return html;
-}
 
 /**
  * The main panel of a council run: one tab per member (live terminal while

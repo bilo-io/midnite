@@ -38,21 +38,21 @@ Repos are now a managed, DB-backed entity users CRUD in the app — not an empty
 
 ---
 
-## Theme B — Selectable & validated — **M**
+## Theme B — Selectable & validated — **M** — ✅ DONE (PR #52, 2026-06-21)
 
-A repo you can choose at task-creation time, and a `task.repo` that always points at a *known* repo.
+A repo you can choose at task-creation time, and a `task.repo` that always points at a *known* repo. **Phase 13 is now complete** (Themes A + B; the C–F follow-ons below stay explicitly deferred). See [done.md](done.md).
 
-### B1. Repo picker in task creation — **M**
-- [ ] **Web:** a repo picker (select / combobox) in the new-task flow, populated from `GET /repos`, with an explicit **"Unassigned"** choice. Sends the chosen repo on `POST /tasks` (the request already carries `repo`).
-- [ ] **CLI:** an `add --repo <name>` flag ([`cli/src/`](../packages/cli/src/)); thin — parse → typed client call. Optionally list valid names on an unknown value.
+### B1. Repo picker in task creation — **M** — ✅ DONE
+- [x] **Web:** a repo `<select>` in the new-task modal, fed by `GET /repos` with an explicit **"Unassigned"** default, alongside the project picker (orthogonal scope axes); sends the chosen repo name on single + bulk create; hidden when no repos are registered.
+- [x] **CLI:** `add --repo <name>` (landed earlier in PR #47); a thin pass-through to the typed client. With B2 the server now rejects an unknown name, which the CLI surfaces.
 
-### B2. Validated references (no silent fall-through) — **M**
-- [ ] On task **create/update**, validate `repo` against the registry: an unknown name is **rejected** (clear error) or coerced to explicit "unassigned" — never persisted as a dangling free string. (Decision §3.)
-- [ ] [`resolveCwd`](../packages/gateway/src/terminal/terminal.service.ts) now resolves `task.repo` against the registry; because references are validated on write, a stored repo always resolves (or is explicitly unassigned).
-- [ ] Reference key stays the repo **name** (registry-unique), not a new `repoId` — avoids a churny migration across `task.repo` consumers. (Decision §1.)
+### B2. Validated references (no silent fall-through) — **M** — ✅ DONE
+- [x] On task **create/bulk**, `TasksService.resolveRepoReference` validates `repo` against the registry: an unknown name is **rejected** with a 400, a blank stays explicit "unassigned" (null) — never a dangling free string. (Bulk fails fast on a bad batch repo before creating anything.) (Decision §3.) (No task-`repo` *update* endpoint exists; repo is set at create time.)
+- [x] [`resolveCwd`](../packages/gateway/src/terminal/terminal.service.ts) resolves `task.repo` against the registry (since A3); validated-on-write means a stored repo always resolves or is explicitly unassigned.
+- [x] Reference key stays the repo **name** (registry-unique), not a new `repoId`. (Decision §1.)
 
-### B3. Define + test cwd precedence — **S**
-- [ ] Document and **test** the cwd precedence (kept orthogonal per Decision §4): **project workDir → repo → profile fallback → `process.cwd()`**. Add gateway tests covering: project workDir wins over repo; repo used when no project workDir; explicit-unassigned + no project → fallback. This pins the behaviour that's currently implicit in `resolveCwd`.
+### B3. Define + test cwd precedence — **S** — ✅ DONE
+- [x] Precedence (**project workDir → repo → profile fallback → `process.cwd()`**, Decision §4) extracted into a pure, unit-tested `pickSessionCwd` helper ([`terminal/lib/resolve-cwd.ts`](../packages/gateway/src/terminal/lib/resolve-cwd.ts)) and consumed by `resolveCwd` (behaviour unchanged). Tests cover project-wins-over-repo, repo-when-no-project, unassigned→fallback, and empty→next.
 
 ---
 

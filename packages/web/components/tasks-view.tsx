@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { ChevronDown, Columns3, List, ListTree, Plus, type LucideIcon } from 'lucide-react';
-import type { Project, Status, Task } from '@midnite/shared';
+import type { Project, Repo, Status, Task } from '@midnite/shared';
 import { deleteTask, startTask, stopTask, updateTaskStatus } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { useBulkSelection } from '@/lib/use-bulk-selection';
@@ -89,10 +89,12 @@ export function TasksView({
   tasks,
   error,
   projects,
+  repos,
 }: {
   tasks: Task[];
   error: string | null;
   projects: Project[];
+  repos: Repo[];
 }) {
   const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
   // The page fetches tasks client-side, so the first render passes an empty
@@ -392,6 +394,7 @@ export function TasksView({
       {showNewTask && (
         <NewTaskModal
           projects={projects}
+          repos={repos}
           onCreated={(task) => {
             setLocalTasks((prev) => [task, ...prev]);
             toast.success('Task created');

@@ -24,24 +24,24 @@
 
 ---
 
-## Theme A — Package scaffold & Vite library build — **M**
+## Theme A — Package scaffold & Vite library build — **M** — ✅ DONE (PR #50, 2026-06-21)
 
-Stand up the package and its build before moving anything into it.
+Stand up the package and its build before moving anything into it. **Landed — see [done.md](done.md).**
 
-- [ ] **`packages/ui` (`@midnite/ui`)** — `package.json` with `"type":"module"`, **React/React-DOM as `peerDependencies`** (not bundled), and an `exports` map mirroring [`shared`](../packages/shared/)'s subpath pattern (`.` for components, `./styles` (or `./tokens.css`) for the token CSS, `./theme` for the provider).
-- [ ] **Vite library mode** — `vite.config.ts` with `build.lib` (ESM output) + `vite-plugin-dts` for `.d.ts`; externalize React. Decision §4 (styling): the lib **ships its compiled CSS** (Vite bundles component styles) **plus** the token CSS entry, so consumers import the lib's stylesheet — vs. a shared Tailwind preset consumers extend. Pick one and document it.
-- [ ] **`moon.yml`** with `build` (vite build), `typecheck` (`tsc --noEmit`), `lint`, `test` (vitest), and a `storybook`/`build-storybook` task; `dependsOn` reflecting the leaf position. Confirm `moon ci` picks it up.
-- [ ] **Boundary check:** `@midnite/ui` imports **nothing** from `@midnite/shared`/`web`/`gateway`. A lint/CI guard or a simple grep test asserts the leaf stays clean.
+- [x] **`packages/ui` (`@midnite/ui`)** — `package.json` with `"type":"module"`, **React/React-DOM as `peerDependencies`** (not bundled), and an `exports` map mirroring [`shared`](../packages/shared/)'s subpath pattern (`.` for components, `./styles` for the token CSS, `./theme` for the provider).
+- [x] **Vite library mode** — `vite.config.ts` with `build.lib` (ESM output) + `vite-plugin-dts` for `.d.ts`; externalizes every declared + peer dep. Decision §4 settled: the lib **ships compiled CSS + the token CSS entry** (framework-agnostic), documented in the package README.
+- [x] **`moon.yml`** with `build` (vite build), `typecheck`, `lint`, `test` (vitest); leaf position (no `dependsOn`); `moon ci` picks it up via `packages/*`. (`storybook`/`build-storybook` deferred to Theme D, where Storybook is installed.)
+- [x] **Boundary check:** `src/boundary.test.ts` fails if `@midnite/ui` imports any in-repo package (`shared`/`web`/`gateway`/…) — enforces the leaf in CI.
 
 ---
 
-## Theme B — Tokens & theming as the design-system foundation — **M**
+## Theme B — Tokens & theming as the design-system foundation — **M** — ✅ DONE (PR #57, 2026-06-21)
 
-The library owns the design system's source of truth (Decision §1 — tokens move, not just components).
+The library owns the design system's source of truth (Decision §1 — tokens move, not just components). **Landed — see [done.md](done.md).**
 
-- [ ] **Move the token set** — the HSL CSS vars + `.dark` block from [`globals.css`](../packages/web/app/globals.css) into `@midnite/ui` as a CSS entry (`tokens.css` / `@midnite/ui/styles`), plus a **typed token map** (TS constants for the same values, for JS consumers). Web imports the lib's token CSS instead of defining them locally (keep web's app-specific, non-DS globals in web).
-- [ ] **Move the theme runtime** — `ThemeProvider` / theme-context + the no-flash theme-script + the `useTheme` hook into the lib (light / dark / system / time), so any consumer gets theming for free. `theme-toggle` becomes a lib primitive.
-- [ ] **Scaffold the full DS taxonomy with placeholders** — structure the system end-to-end: **color** (filled), **spacing**, **typography**, **radius**, **shadow/elevation**, **z-index**, **motion/easing** — real values where they exist today, clearly-marked **placeholder** entries where they don't, so the design system is structurally complete and obviously extensible.
+- [x] **Move the token set** — HSL CSS vars + `.dark` block now in `@midnite/ui/styles` (`tokens.css`, framework-agnostic) + a typed token map in `src/tokens`; web imports the lib's token CSS and keeps only app-specific globals (`--nav-offset`).
+- [x] **Move the theme runtime** — `ThemeProvider` / `useTheme` / theme-context + the no-flash script now in `@midnite/ui/theme` (the Vite build preserves `'use client'` for RSC); web re-exports via shims. (`theme-toggle` deferred to Theme C — it composes the `Button` primitive that moves there.)
+- [x] **Scaffold the full DS taxonomy with placeholders** — `color` + `radius` filled; `spacing`/`typography`/`shadow`/`zIndex`/`motion` present as clearly-marked placeholders.
 
 ---
 
