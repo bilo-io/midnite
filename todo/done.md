@@ -12,6 +12,15 @@ Three more list-style self-fetching widgets storied on the `installMockFetch` he
 - [x] 9 new story tests; `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #70 (`web:test` 245).
 - ↪️ Remaining un-storied widgets are the chart/multi-endpoint ones (`throughput`/`usage`/`system-monitor`, `agents`/`all-projects`, `market-*`, `boardroom-panel`) — each needs more than the list-widget pattern (a pinned clock or multi-endpoint mocks).
 
+## 2026-06-21 — Site: remove 3D for now + gradient-border on the preview panel (PR #68)
+
+Two requested tweaks to the public site. The WebGL field was heavy and we're stepping back from it for now; the panel gains the brand gradient-border motif.
+
+- [x] **Removed the 3D/WebGL particle field** (Phase 11 Theme B, ⏳ parked): deleted [`components/scene/`](../packages/site/components/) (particles/core/shaders/scene/backdrop), dropped `SceneBackdrop` from the landing + download routes, removed the `@react-three/*` + `three` deps (the scene was a dynamic chunk, so the WebGL bundle is gone at runtime). Relocated `prefersReducedMotion` → [`lib/reduced-motion.ts`](../packages/site/lib/reduced-motion.ts).
+- [x] **Static [`AmbientBackdrop`](../packages/site/components/ambient-backdrop.tsx)** replacement: fixed, pointer-events-none, soft brand-tinted CSS blurs — keeps some depth without any canvas, themed for light/dark.
+- [x] **Gradient-border on the persistent panel** (Theme C refinement): restructured [`PanelFrame`](../packages/site/components/panel/panel-frame.tsx) (ring/glow on an outer un-clipped element, content clipped on an inner one) + `pointer-events-auto` so it reacts to hover inside the panel's pointer-events-none wrapper. Subtle edge at rest → pronounced rotating conic gradient + a `.panel-glow` breathing pulse on hover/focus ([`globals.css`](../packages/site/app/globals.css)); disabled under reduced motion. Applies to the inline mobile panel too.
+- [x] `:typecheck`/`:lint` green across the graph; `site:test` (19) + `site:build` (7 routes) green; `moon ci` green on PR #68.
+
 ## 2026-06-21 — Phase 15 Theme B: URL + GitHub-context inference (PR #67)
 
 Links in a task's prompt are fetched and folded into the agent's seed prompt as a "Linked context" block — closing part of [Phase 15](phase-15-smart-intake.md#theme-b--url--github-context-inference--m--done-pr-67-2026-06-21) / [outstanding.md](outstanding.md) #3. Best-effort + fail-open; no new fetch path or runtime dep.

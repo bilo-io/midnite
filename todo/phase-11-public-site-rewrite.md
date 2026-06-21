@@ -38,7 +38,9 @@ A scroll/section controller (Theme D) is the single source of truth for "which s
 
 ---
 
-## Theme B — Persistent cursor-following particle field — ✅ DONE (PR #59, 2026-06-21)
+## Theme B — Persistent cursor-following particle field — ⏳ REMOVED for now (PR #68, 2026-06-21)
+
+> **Update (PR #68):** the WebGL/R3F particle field was **removed for now** — `components/scene/` and the `@react-three/*`/`three` deps are gone, replaced by a static CSS `AmbientBackdrop` (soft brand-tinted blurs). It originally shipped in PR #59 (per-section + theme-aware field); parked, not deleted from history. Revisit if/when we want the 3D back.
 
 > Evolve the existing [`scene/`](../packages/site/components/scene/) (R3F + custom shader, already cursor-aware via `usePointer`) rather than starting over.
 
@@ -58,6 +60,8 @@ A scroll/section controller (Theme D) is the single source of truth for "which s
 ## Theme C — The persistent preview panel — ✅ DONE (PR #59, 2026-06-21)
 
 > The signature element: one Mac-window panel that lives for the whole page and morphs between sections.
+
+> **Refinement (PR #68):** the panel now carries the brand `gradient-border` — subtle at rest, becoming a pronounced rotating conic gradient + breathing glow pulse on hover/focus (`.panel-glow`); degrades under reduced motion.
 
 ### C1. Panel chrome & persistence — **M**
 - [x] A single **`<PreviewPanel>`** rendered once at the page root (not per section), styled as a **macOS window**: rounded corners, subtle shadow/depth (the "subtle 3D"), translucent token-driven surface, and the **three red/yellow/green traffic-light dots** in the top-left, **always** present.
