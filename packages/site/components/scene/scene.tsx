@@ -5,6 +5,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Bloom, EffectComposer, Vignette } from '@react-three/postprocessing';
 import * as THREE from 'three';
 
+import type { ResolvedTheme } from '@/app/theme/theme-context';
 import { Core } from './core';
 import { ParticleField } from './particles';
 import { prefersReducedMotion, usePointer, useScrollProgress } from './use-scroll-progress';
@@ -35,8 +36,15 @@ function Rig({ progress }: { progress: React.MutableRefObject<number> }) {
  * dynamic import) because WebGL touches `window`/`canvas` at setup. Sits behind
  * all page content at z-0; sections render above it on translucent surfaces.
  */
-export default function Scene() {
+export default function Scene({
+  activeSection,
+  resolved = 'dark',
+}: {
+  activeSection?: string | null;
+  resolved?: ResolvedTheme;
+}) {
   const progress = useScrollProgress();
+  const light = resolved === 'light';
 
   return (
     <div className="pointer-events-none fixed inset-0 z-0" aria-hidden>
@@ -45,26 +53,30 @@ export default function Scene() {
         camera={{ position: [0, 0, 11], fov: 52 }}
         gl={{ antialias: false, alpha: true, powerPreference: 'high-performance' }}
         onCreated={({ scene, gl }) => {
-          scene.fog = new THREE.FogExp2('#09090b', 0.045);
+          // Fog + tone exposure track the theme so the field sits on the page
+          // background rather than a fixed dark void (Theme B / Decision §7).
+          scene.fog = new THREE.FogExp2(light ? '#e7e7ee' : '#09090b', 0.045);
           gl.toneMapping = THREE.ACESFilmicToneMapping;
-          gl.toneMappingExposure = 1.0;
+          gl.toneMappingExposure = light ? 1.15 : 1.0;
         }}
       >
         <Rig progress={progress} />
         <Core progress={progress} />
-        <ParticleField progress={progress} />
+        <ParticleField progress={progress} activeSection={activeSection} resolved={resolved} />
 
         <EffectComposer multisampling={4}>
           {/* High threshold so only the hottest particle cores + the fresnel rim
               bloom — the field stays crisp instead of washing to a haze. */}
           <Bloom
-            intensity={0.6}
+            intensity={light ? 0.4 : 0.6}
             luminanceThreshold={0.6}
             luminanceSmoothing={0.3}
             mipmapBlur
             radius={0.6}
           />
-          <Vignette offset={0.3} darkness={0.85} />
+          {/* Lighter vignette on light theme — a heavy dark edge would look like a
+              dirty lens over a bright page. */}
+          <Vignette offset={0.3} darkness={light ? 0.35 : 0.85} />
         </EffectComposer>
       </Canvas>
       {/* Fade the scene into the page background at the edges for legibility. */}
