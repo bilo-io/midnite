@@ -5,6 +5,7 @@ import {
   getNodeTypeDefinition,
   listNodeTypes,
 } from './node-types.js';
+import { LLM_PROVIDER_MODEL_SUGGESTIONS } from './llm.js';
 import { TriggerSchema } from './trigger.js';
 import { WorkflowSchema } from './workflow.js';
 
@@ -46,9 +47,17 @@ describe('node-type registry', () => {
     const ok = def.paramsSchema.safeParse({ prompt: 'hello' });
     expect(ok.success).toBe(true);
     if (ok.success) {
-      expect(ok.data.model).toBe('sonnet4.7');
+      expect(ok.data.model).toBe('sonnet4.6');
       expect(ok.data.maxTokens).toBe(1024);
     }
+  });
+
+  it('defaults ai.claude to a canonical, currently-supported model alias', () => {
+    // Guards against re-introducing a retired alias (e.g. the old `sonnet4.7`,
+    // whose dated id 404'd) as the default — it must be one the adapter advertises.
+    const def = getNodeTypeDefinition('ai.claude')!;
+    const parsed = def.paramsSchema.parse({ prompt: 'hi' }) as { model: string };
+    expect(LLM_PROVIDER_MODEL_SUGGESTIONS.anthropic).toContain(parsed.model);
   });
 });
 

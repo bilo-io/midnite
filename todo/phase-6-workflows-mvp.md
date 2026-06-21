@@ -47,4 +47,4 @@
 - [ ] P9 — Credential vault (AES-256-GCM, `encryptionKeyEnv`) + OAuth2 start/callback; HTTP node moves to credential references → **moved to [Phase 14](phase-14-workflows-connect.md)**
 - [ ] P10 — Integration executors: Slack, Google Docs/Sheets, Email (SMTP → Gmail OAuth) → **moved to [Phase 14](phase-14-workflows-connect.md)**
 - [ ] P11 — Polish: ✅ drag-from-palette · ✅ minimap/zoom · ✅ **autosave (PR #43)** · **remaining:** run-history replay, templates; CLI `workflow` commands → [Phase 14](phase-14-workflows-connect.md) (CLI parity)
-- [ ] Map the default `ai.claude` model alias to a model the deployment's credential can access (env `sonnet4.7` alias 404'd on the dev credential)
+- [x] Map the default `ai.claude` model alias to a model the deployment's credential can access — the node now defaults to the canonical **`sonnet4.6`** (in the adapter's supported list) instead of the retired `sonnet4.7`, which 404'd. The legacy `sonnet4.7`/`opus4.7` aliases stay resolving for old configs. (PR #44)
