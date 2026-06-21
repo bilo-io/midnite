@@ -217,6 +217,7 @@ export const nodeRuns = sqliteTable(
     nodeType: text('node_type').notNull(),
     status: text('status').notNull(),
     input: text('input'), // JSON
+    resolvedParams: text('resolved_params'), // JSON — params after {{expr}} resolution
     output: text('output'), // JSON
     error: text('error'),
     logs: text('logs'), // JSON array

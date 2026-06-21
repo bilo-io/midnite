@@ -22,6 +22,9 @@ export const NodeRunSchema = z.object({
   nodeType: z.string(),
   status: NodeRunStatusSchema,
   input: z.unknown().optional(),
+  /** Node params after `{{expr}}` resolution against the run context — what the
+   *  executor actually received. Absent for trigger nodes (no resolution). */
+  resolvedParams: z.unknown().optional(),
   output: z.unknown().optional(),
   error: z.string().optional(),
   logs: z.array(NodeRunLogSchema).default([]),
