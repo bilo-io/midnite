@@ -8,12 +8,12 @@
 
 - [x] Plan/act model split — `config.agent.plan` (default `opus4.8`) vs `act` (default `haiku4.5`), exposed via `LlmService.getPlanModel()`/`getActModel()` ([`gateway/src/agent/llm/llm.service.ts`](../packages/gateway/src/agent/llm/llm.service.ts))
 - [x] Classification of a task — _split across two services, not one `InferenceService`:_ `LlmClassifier` infers kind (bug/feature/question/chore) on the act model ([`agent/classifier.service.ts`](../packages/gateway/src/agent/classifier.service.ts)); `PlannerService` decides readiness → `todo` vs `backlog` on the plan model ([`agent/planner.service.ts`](../packages/gateway/src/agent/planner.service.ts))
-- [ ] Input: raw freeform **list** (multi-line `midnite add --bulk`, or a web "paste list" modal) — **NOT IMPLEMENTED;** single task per `add` / `POST /tasks`
-- [ ] Detect URLs and fetch GitHub issue/PR context via `gh api` — **NOT IMPLEMENTED**
-- [ ] Guess target repo from `config.repos` — **NOT IMPLEMENTED** (`repos` is empty in the sample config and unused for inference)
+- [x] Input: raw freeform **list** (multi-line `midnite add --bulk`, or a web "paste list" modal) — **DONE via Phase 16** (`POST /tasks/bulk`, web paste modal, CLI `add --bulk`; PRs #40/#42/#47)
+- [ ] Detect URLs and fetch GitHub issue/PR context via `gh api` — **NOT IMPLEMENTED** (→ [Phase 15](phase-15-smart-intake.md) Theme B)
+- [ ] Guess target repo from `config.repos` — **NOT IMPLEMENTED** (overlaps [Phase 13](phase-13-repos-first-class.md) — repos are now DB-backed)
 - [x] Output `todo` with a generated execution prompt
 - [x] Output `backlog` (ambiguous), with a reason
-- [ ] Output a direct answer for question-type items — **NOT IMPLEMENTED** (kind is classified as `question`, but no inline answer is produced)
+- [x] Output a direct answer for question-type items — `question`-kind tasks are answered by the plan model at intake and resolved to `done` with the answer on the task thread; falls back to the queue when AI is off. (PR #55)
 
 ## Knowledge base injection
 
@@ -23,4 +23,4 @@
 
 ## Done criteria
 
-- [ ] Paste a 10-line mixed list → gateway returns a classified set, 7 land as `todo` with prompts, 2 in `backlog`, 1 answered inline — **not met** (no bulk/paste path; no inline answers)
+- [◐] Paste a 10-line mixed list → gateway returns a classified set, 7 land as `todo` with prompts, 2 in `backlog`, 1 answered inline — **bulk/paste path (Phase 16) and inline answers (PR #55) now met**; URL/GitHub context (→ Phase 15 B) and repo-guessing (→ Phase 13) remain.
