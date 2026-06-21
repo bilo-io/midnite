@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 29 Theme A1/A3: docs/RELEASING.md — versioning policy + release flow (PR #85)
+
+The CHANGELOG (PR #80) and version-sync tooling (PR #66) existed, but the policy tying them together lived only in the phase doc. A1/A3 write it down where contributors and the release skills look.
+
+- [x] New [`docs/RELEASING.md`](../docs/RELEASING.md): the lockstep `MAJOR.MINOR` + independent `PATCH` rule; the conventional-commit **bump-trigger table** (BREAKING→major, feat→minor, fix-only→scoped patch, docs/chore/refactor/test→none); the **tag/branch scheme** (`release/vX.Y.Z` branch, `vX.Y.Z` lockstep tag, `@midnite/‹pkg›@X.Y.Z` scoped patch tag); the `/release-prep`→`/release-complete` flow; references to `planVersionBump`/`root:version-check`; notes the `v*`-tag → desktop-build + draft-Release workflow.
+- [x] Linked from the README and a new **Releases** subsection in [`CLAUDE.md`](../CLAUDE.md). Docs-only — typecheck + lint green; CI green first try.
+- [x] **Phase 29 policy half complete** (Theme A1+A2+A3 + Theme B). Remaining: the `/release-prep` (C) and `/release-complete` (D) skills.
+
 ## 2026-06-22 — Phase 17 B/C/D: durable `tmux` spawner + survive-restart reattach (PR #77) — **Phase 17 COMPLETE**
 
 The pluggable `Spawner` (extracted in A, PR #56) gains its first alternative backend: a durable `tmux` mode whose sessions outlive the gateway, so an in-flight agent run survives a restart instead of being orphaned/requeued. The `pty` path is unchanged (its specs run unedited). Closes [outstanding.md](outstanding.md) #10 (scoped to tmux; warp/iterm dropped).
