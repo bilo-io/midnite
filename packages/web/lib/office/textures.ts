@@ -41,6 +41,15 @@ export const TEX = {
   wallArt: 'office-wall-art',
   rug: 'office-rug',
   astroTurf: 'office-astro-turf',
+  // Desk clutter (E3) — small items scattered on the hot desks for life.
+  paperStack: 'office-paper-stack',
+  deskMug: 'office-desk-mug',
+  deskPlantlet: 'office-desk-plantlet',
+  // Communal games corner (E3).
+  poolTable: 'office-pool-table',
+  pingPong: 'office-ping-pong',
+  gameTable: 'office-game-table',
+  controller: 'office-controller',
 } as const;
 
 /** Texture key for a plant species/size (Phase 9 B2). */
@@ -288,13 +297,34 @@ export function ensureOfficeTextures(scene: Phaser.Scene): void {
     }
   });
 
-  // --- Desk workstation ---
-  make(TEX.desk, 30, 22, (g) => {
-    rect(g, 0, 0, 30, 22, 0x4a2e1a);
-    rect(g, 1, 1, 28, 20, 0x8a5a34);
-    rect(g, 1, 1, 28, 5, 0x9c6a40);
+  // --- Desk workstation (wider top — E3) ---
+  make(TEX.desk, 44, 22, (g) => {
+    rect(g, 0, 0, 44, 22, 0x4a2e1a);
+    rect(g, 1, 1, 42, 20, 0x8a5a34);
+    rect(g, 1, 1, 42, 5, 0x9c6a40);
     g.fillStyle(0x6e4526, 1);
-    for (let x = 4; x < 28; x += 6) g.fillRect(x, 7, 1, 13);
+    for (let x = 4; x < 42; x += 6) g.fillRect(x, 7, 1, 13);
+  });
+  // Desk clutter (E3) — a stack of papers, a coffee mug, a tiny desk plant.
+  make(TEX.paperStack, 10, 8, (g) => {
+    rect(g, 1, 5, 9, 3, 0xcbd5e1); // bottom sheet (shadow)
+    rect(g, 0, 3, 9, 3, 0xf1f5f9); // middle sheet
+    rect(g, 1, 1, 9, 3, 0xffffff); // top sheet
+    rect(g, 2, 2, 6, 1, 0x94a3b8); // text line
+  });
+  make(TEX.deskMug, 8, 8, (g) => {
+    rect(g, 1, 1, 5, 6, 0xdc2626); // mug body
+    rect(g, 1, 1, 5, 1, 0xef4444); // rim highlight
+    rect(g, 6, 2, 2, 4, 0xdc2626); // handle
+    rect(g, 2, 2, 3, 1, 0x3a2a1a); // coffee surface
+  });
+  make(TEX.deskPlantlet, 8, 10, (g) => {
+    rect(g, 2, 6, 4, 4, 0x9c6a40); // pot
+    rect(g, 1, 5, 6, 2, 0x6e4526); // pot rim
+    rect(g, 3, 2, 2, 4, 0x4d8c4d); // stem
+    rect(g, 1, 2, 3, 3, 0x5b9b5b); // leaves
+    rect(g, 4, 2, 3, 3, 0x5b9b5b);
+    rect(g, 3, 0, 2, 2, 0x6bbf6b);
   });
   make(TEX.monitor, 18, 14, (g) => {
     rect(g, 0, 0, 18, 12, 0x0f172a);
@@ -324,20 +354,48 @@ export function ensureOfficeTextures(scene: Phaser.Scene): void {
     rect(g, 0, 2, 5, 22, 0x3a4150);
     rect(g, 21, 2, 5, 22, 0x3a4150);
   });
-  make(TEX.tv, 46, 32, (g) => {
-    rect(g, 18, 27, 10, 5, 0x1f2937); // stand
-    rect(g, 1, 0, 44, 27, 0x0b0f17); // bezel
-    rect(g, 3, 2, 40, 23, 0x14233f); // screen
-    rect(g, 3, 2, 40, 4, 0x38bdf8); // glow bar
-    g.fillStyle(0x1e3a5f, 1);
-    rect(g, 7, 9, 14, 12, 0x1e3a5f); // picture blocks
-    rect(g, 24, 9, 14, 12, 0x24507a);
+  // Super-sized flatscreen (E3) — a big wall TV for the gaming corner.
+  make(TEX.tv, 64, 44, (g) => {
+    rect(g, 26, 38, 12, 4, 0x1f2937); // stand neck
+    rect(g, 20, 41, 24, 3, 0x111827); // stand base
+    rect(g, 1, 0, 62, 38, 0x0b0f17); // bezel
+    rect(g, 3, 2, 58, 33, 0x14233f); // screen
+    rect(g, 3, 2, 58, 5, 0x38bdf8); // glow bar
+    rect(g, 8, 12, 22, 18, 0x1e3a5f); // picture block (left)
+    rect(g, 34, 12, 22, 18, 0x24507a); // picture block (right)
+    rect(g, 8, 12, 48, 2, 0x2c5d8a); // scanline highlight
   });
-  make(TEX.console, 22, 14, (g) => {
-    rect(g, 1, 1, 16, 9, 0x1f2937); // box
-    rect(g, 3, 3, 2, 2, R.light); // power light
-    rect(g, 3, 6, 11, 1, 0x111827); // slot
-    rect(g, 17, 8, 4, 4, 0x334155); // controller
+  // White PS5-style console (E3) — twin white fins, black core, blue light strip.
+  make(TEX.console, 26, 16, (g) => {
+    rect(g, 9, 1, 8, 14, 0x0b0f17); // black core
+    rect(g, 2, 0, 7, 16, 0xf5f5f7); // left fin
+    rect(g, 17, 0, 7, 16, 0xf5f5f7); // right fin
+    rect(g, 2, 0, 7, 2, 0xe2e6ec); // fin bevel highlights
+    rect(g, 17, 0, 7, 2, 0xe2e6ec);
+    rect(g, 8, 0, 1, 16, 0xcbd5e1); // inner seams
+    rect(g, 17, 0, 1, 16, 0xcbd5e1);
+    rect(g, 12, 2, 2, 12, 0x38bdf8); // blue light strip
+    rect(g, 12, 2, 2, 3, 0x7dd3fc); // brighter strip top
+    rect(g, 10, 12, 6, 1, 0x1f2937); // disc slot
+    rect(g, 10, 4, 1, 1, 0x9aa3b2); // power button
+    rect(g, 15, 4, 1, 1, 0x9aa3b2); // eject button
+  });
+  // Low gaming/coffee table — holds the controllers in front of the couches (E3).
+  make(TEX.gameTable, 28, 18, (g) => {
+    rect(g, 0, 2, 28, 14, 0x3f2f22); // frame edge
+    rect(g, 2, 4, 24, 10, 0x6b4f3a); // table top
+    rect(g, 2, 4, 24, 2, 0x7c5a42); // top highlight
+    rect(g, 3, 16, 3, 2, 0x2a1f16); // legs
+    rect(g, 22, 16, 3, 2, 0x2a1f16);
+  });
+  // Tiny gamepad (E3) — body + grips + stick/buttons + touchpad.
+  make(TEX.controller, 10, 8, (g) => {
+    rect(g, 1, 2, 8, 4, 0x2b313c); // body
+    rect(g, 0, 3, 2, 4, 0x2b313c); // left grip
+    rect(g, 8, 3, 2, 4, 0x2b313c); // right grip
+    rect(g, 2, 3, 1, 1, 0x67e8f9); // left stick
+    rect(g, 7, 3, 1, 1, 0xf472b6); // right buttons
+    rect(g, 4, 2, 2, 1, 0x9aa3b2); // touchpad
   });
 
   // --- Board room ---
@@ -476,6 +534,44 @@ export function ensureOfficeTextures(scene: Phaser.Scene): void {
     rect(g, 3, 9, 12, 3, 0x60a5fa);
     rect(g, 3, 17, 2, 4, 0x6b7280); // legs
     rect(g, 13, 17, 2, 4, 0x6b7280);
+  });
+
+  // --- Communal games corner (E3): a pool table + a ping-pong table (3×2 tiles) ---
+  make(TEX.poolTable, 96, 64, (g) => {
+    rect(g, 0, 0, 96, 64, 0x2a1f16); // dark outer edge
+    rect(g, 3, 3, 90, 58, 0x6b4f3a); // wood rail
+    rect(g, 4, 4, 88, 56, 0x7c5a42); // rail highlight
+    rect(g, 10, 10, 76, 44, 0x15803d); // green felt
+    rect(g, 10, 10, 76, 2, 0x16a34a); // felt top sheen
+    g.fillStyle(0x0b0f17, 1); // six pockets
+    g.fillRect(7, 7, 7, 7);
+    g.fillRect(82, 7, 7, 7);
+    g.fillRect(7, 50, 7, 7);
+    g.fillRect(82, 50, 7, 7);
+    g.fillRect(45, 6, 7, 7);
+    g.fillRect(45, 51, 7, 7);
+    rect(g, 30, 28, 5, 5, 0xfacc15); // balls
+    rect(g, 38, 23, 5, 5, 0xdc2626);
+    rect(g, 38, 33, 5, 5, 0x2563eb);
+    rect(g, 58, 30, 5, 5, 0xf8fafc); // cue ball
+    rect(g, 20, 40, 56, 2, 0xb45309); // cue stick
+  });
+  make(TEX.pingPong, 96, 64, (g) => {
+    rect(g, 4, 6, 88, 52, 0x14235a); // table edge
+    rect(g, 6, 8, 84, 48, 0x1d4ed8); // blue surface
+    rect(g, 6, 8, 84, 2, 0x3b82f6); // top sheen
+    g.fillStyle(0xf8fafc, 1); // white boundary + centre lines
+    g.fillRect(6, 8, 84, 1);
+    g.fillRect(6, 55, 84, 1);
+    g.fillRect(6, 8, 1, 48);
+    g.fillRect(89, 8, 1, 48);
+    g.fillRect(6, 31, 84, 1); // long centre line
+    g.fillStyle(0xcbd5e1, 0.85); // net across the middle
+    g.fillRect(46, 4, 4, 56);
+    rect(g, 47, 2, 2, 60, 0xe5e7eb); // net tape
+    rect(g, 68, 24, 9, 9, 0xb91c1c); // paddle head
+    rect(g, 74, 31, 5, 2, 0x6b4f3a); // paddle handle
+    rect(g, 28, 30, 3, 3, 0xfef08a); // ball
   });
 
   // --- Characters: human (player, v0) + robot (agents, one sheet per variant) ---
