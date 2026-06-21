@@ -6,20 +6,23 @@ import { Features } from '@/components/features';
 import { CliShowcase } from '@/components/cli-showcase';
 import { Download } from '@/components/download';
 import { Footer } from '@/components/footer';
+import { SectionProvider } from '@/components/sections/section-controller';
 
 export default function Home() {
   return (
     <>
       <SceneBackdrop />
       <Nav />
-      <main className="relative">
-        <Hero />
-        <HowItWorks />
-        <Features />
-        <CliShowcase />
-        <Download />
-        <Footer />
-      </main>
+      <SectionProvider>
+        <main className="relative">
+          <Hero />
+          <HowItWorks />
+          <Features />
+          <CliShowcase />
+          <Download />
+          <Footer />
+        </main>
+      </SectionProvider>
     </>
   );
 }

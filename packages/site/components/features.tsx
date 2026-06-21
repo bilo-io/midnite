@@ -1,6 +1,7 @@
 import { KanbanSquare, Cpu, TerminalSquare, MonitorPlay, GitPullRequest } from 'lucide-react';
 
 import { Reveal } from '@/components/ui/section';
+import { TypedTitle } from '@/components/sections/typed-title';
 
 const FEATURES = [
   {
@@ -33,14 +34,11 @@ const FEATURES = [
 export function Features() {
   return (
     <section id="features" className="relative z-10 mx-auto max-w-6xl px-6 py-28">
-      <Reveal>
-        <p className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
-          Features
-        </p>
-        <h2 className="mt-3 max-w-2xl text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
-          One gateway. Many agents. Full visibility.
-        </h2>
-      </Reveal>
+      <TypedTitle
+        sectionId="features"
+        eyebrow="Features"
+        title="One gateway. Many agents. Full visibility."
+      />
 
       <div className="mt-14 grid gap-px overflow-hidden rounded-xl border border-border/60 bg-border/40 sm:grid-cols-2 lg:grid-cols-3">
         {FEATURES.map((f, i) => (

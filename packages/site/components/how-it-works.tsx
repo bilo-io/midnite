@@ -1,4 +1,5 @@
 import { Reveal } from '@/components/ui/section';
+import { TypedTitle } from '@/components/sections/typed-title';
 
 const STEPS = [
   {
@@ -31,14 +32,11 @@ const STEPS = [
 export function HowItWorks() {
   return (
     <section id="how" className="relative z-10 mx-auto max-w-5xl px-6 py-28">
-      <Reveal>
-        <p className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
-          How it works
-        </p>
-        <h2 className="mt-3 max-w-2xl text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
-          From a messy list to merged work, on autopilot.
-        </h2>
-      </Reveal>
+      <TypedTitle
+        sectionId="how"
+        eyebrow="How it works"
+        title="From a messy list to merged work, on autopilot."
+      />
 
       <ol className="mt-14 space-y-px">
         {STEPS.map((step, i) => (
