@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 4: inline answers for question-kind tasks (PR #55)
+
+A task classified as a `question` is answered directly by the plan model at intake instead of being queued for a coding agent — closing a Phase 4 done-criterion (also Phase 15 Theme C).
+
+- [x] `PlannerService.answer(prompt)` ([`planner.service.ts`](../packages/gateway/src/agent/planner.service.ts)): a plain-text answer on the plan model, fail-soft → `null` (AI off / error / empty), mirroring `triage`.
+- [x] `createFromPrompt` ([`tasks.service.ts`](../packages/gateway/src/tasks/tasks.service.ts)): `question`-kind tasks generate an answer; a successful answer resolves the task to **`done`** (no agent run) with the answer recorded as an `answer` thread event. Only questions take this path; falls back to the triage column when no answer is produced.
+- [x] Web ([`task-thread-modal.tsx`](../packages/web/components/task-thread-modal.tsx)): the `answer` event renders as Markdown rather than a JSON payload dump.
+- [x] Tests (+6): planner answer (disabled/trimmed+usage-tag/empty+throw); service question→done+event, null→queued, non-question never answers. `:typecheck`/`:lint`/`:test` + `gateway:build` green on PR #55 (gateway 559 · web 194). **Phase 4 remaining:** URL/GitHub context → Phase 15 B; repo-guessing → Phase 13; KB watcher → Phase 15 D; bulk-input already done via Phase 16.
+
 ## 2026-06-21 — Phase 17 Theme A: extract the `Spawner` interface from TerminalService (PR #56)
 
 The behaviour-preserving refactor that gates the pluggable terminal backends ([Phase 17](phase-17-spawner-tmux.md#theme-a--extract-the-spawner-interface--l--done-pr-56-2026-06-21)). Puts the node-pty process lifecycle behind a `Spawner` seam so a `tmux` backend (Theme B) can slot in without touching the ring/streaming/approval machinery. Gateway-only; `pty` behaviour byte-for-byte unchanged.
