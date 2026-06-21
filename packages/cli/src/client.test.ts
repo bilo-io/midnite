@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createClient, parseStatus, resolveBaseUrl } from './client';
+import { createClient, parseStatus, resolveBaseUrl } from './client.js';
 
 const TASK = {
   id: 't1',
@@ -56,6 +56,40 @@ describe('createClient', () => {
     const task = await createClient('http://gw').createTask('do the thing');
     expect(method).toBe('POST');
     expect(task.title).toBe('do the thing');
+  });
+
+  it('createTask threads repo/priority/projectId into the form', async () => {
+    let form: FormData | undefined;
+    stubFetch((_url, init) => {
+      form = init?.body as FormData;
+      return new Response(JSON.stringify({ task: TASK }), { status: 200 });
+    });
+    await createClient('http://gw').createTask('do the thing', { repo: 'acme/app', priority: 2, projectId: 'p1' });
+    expect(form?.get('prompt')).toBe('do the thing');
+    expect(form?.get('repo')).toBe('acme/app');
+    expect(form?.get('priority')).toBe('2');
+    expect(form?.get('projectId')).toBe('p1');
+  });
+
+  it('createBulk posts JSON to /tasks/bulk and validates the response', async () => {
+    let seenUrl = '';
+    let body: unknown;
+    stubFetch((url, init) => {
+      seenUrl = url;
+      body = JSON.parse(String(init?.body));
+      return new Response(
+        JSON.stringify({
+          results: [{ line: 'a', taskId: 't1', kind: 'bug', status: 'todo' }],
+          counts: { created: 1, skipped: 0, failed: 0 },
+        }),
+        { status: 200 },
+      );
+    });
+    const res = await createClient('http://gw').createBulk('a\nb', { repo: 'r', priority: 1 });
+    expect(seenUrl).toBe('http://gw/tasks/bulk');
+    expect(body).toMatchObject({ raw: 'a\nb', repo: 'r', priority: 1 });
+    expect(res.counts.created).toBe(1);
+    expect(res.results[0]!.kind).toBe('bug');
   });
 
   it('moveTask PATCHes the status endpoint', async () => {
