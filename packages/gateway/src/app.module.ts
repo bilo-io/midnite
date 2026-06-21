@@ -26,6 +26,7 @@ import { SetupModule } from './setup/setup.module';
 import { UsageModule } from './usage/usage.module';
 import { WeatherModule } from './weather/weather.module';
 import { WorkflowsModule } from './workflows/workflows.module';
+import { WorkflowCredentialsModule } from './workflows/credentials/workflow-credentials.module';
 import { TerminalModule } from './terminal/terminal.module';
 
 @Module({
@@ -55,6 +56,7 @@ import { TerminalModule } from './terminal/terminal.module';
     UsageModule,
     WeatherModule,
     WorkflowsModule,
+    WorkflowCredentialsModule,
     TerminalModule,
     AdminModule,
   ],

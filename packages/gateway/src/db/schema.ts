@@ -271,6 +271,18 @@ export const workflowStorage = sqliteTable(
   }),
 );
 
+// Secrets that integration/HTTP nodes reference by id. `data` holds the AES-256-GCM
+// encrypted JSON payload ("v1:..."); the plaintext secret never leaves the gateway.
+// Mirrors the llm_providers at-rest encryption contract (CryptoService, fail-closed).
+export const workflowCredentials = sqliteTable('workflow_credentials', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  type: text('type').notNull(), // WorkflowCredentialType
+  data: text('data').notNull(), // encrypted JSON blob, never returned to a client
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
 // --- Agents (single primary orchestrator + subagents + heartbeat audit) ---
 
 // Singleton: exactly one row, id = 'primary'. Heartbeat scheduling bookkeeping
@@ -465,6 +477,8 @@ export type NodeRunRow = typeof nodeRuns.$inferSelect;
 export type NodeRunInsert = typeof nodeRuns.$inferInsert;
 export type WorkflowStorageRow = typeof workflowStorage.$inferSelect;
 export type WorkflowStorageInsert = typeof workflowStorage.$inferInsert;
+export type WorkflowCredentialRow = typeof workflowCredentials.$inferSelect;
+export type WorkflowCredentialInsert = typeof workflowCredentials.$inferInsert;
 export type TaskEventRow = typeof taskEvents.$inferSelect;
 export type TaskEventInsert = typeof taskEvents.$inferInsert;
 export type TaskAttachmentRow = typeof taskAttachments.$inferSelect;
