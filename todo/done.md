@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 10 C2: stories for sessions/memories/activity widgets (PR #60)
+
+More self-fetching dashboard widgets storied on the `installMockFetch` helper (#53), continuing [Phase 10 C2](phase-10-test-suite-hardening.md#c2-interaction-tests-on-key-components--partial-pr-36--48--53--60-2026-06-21). Pure coverage; no product change.
+
+- [x] `sessions-widget` (`GET /sessions`, raw array), `memories-widget` (`GET /memories`, `{ memories }` envelope), `activity-widget` (`GET /tasks`) — each with **loaded / empty / error** stories asserting visible text in the headless-chromium run; static fixtures, no relative-time assertions.
+- [x] 9 new story tests; `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #60 (`web:test` 211).
+- ↪️ Remaining self-fetching widgets (`market-*`, `agents`/`throughput`/`usage`/`system-monitor`/`workflows`/`councils`/`all-projects`, `boardroom-panel`) still backfillable with the same helper.
+
 ## 2026-06-21 — Phase 25 Theme B: design tokens + theme runtime → `@midnite/ui` (PR #57)
 
 Moves the design system's *foundation* out of `packages/web` into the `@midnite/ui` leaf (Theme A stood up the empty package). Extraction, not redesign — token values unchanged; web's appearance is identical.
