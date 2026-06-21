@@ -52,13 +52,13 @@ The headline UX: make references discoverable and previewable instead of hand-ty
 - [ ] **S** Enforce **unique node labels** in the editor (the picker references by label) — inline validation + auto-suffix on collision in [`workflow-store.ts`](../packages/web/lib/workflow-store.ts).
 - [ ] **M** Web tests: ƒx toggle round-trips a field to/from an expression; picker inserts a correct reference string; preview renders a resolved value from mocked run data.
 
-## Theme E — Run-history & design-time debugging (web)
+## Theme E — Run-history & design-time debugging (web) — ◐ PARTIAL (PR #41, 2026-06-21)
 
 See what references actually resolved to — the payoff of Theme B's persisted resolved params.
 
-- [ ] **M** Run-output panel: per node show **input → resolved params → output** (use the new `NodeRun` field), so a failed reference is obvious. Extend the existing `use-workflow-run` polling view ([`use-workflow-run.ts`](../packages/web/lib/use-workflow-run.ts)).
-- [ ] **S** **Pin sample data** on a node: store a sample payload (editor-local + optionally persisted) so the Theme-D picker/preview work *before* a real run.
-- [ ] **S** Surface `ExpressionError` messages from a failed run inline on the offending node (red port/field), not just in the run log.
+- [x] **M** Run-output panel: per node show **input → resolved params → output** (new [`run-output-panel.tsx`](../packages/web/components/run-output-panel.tsx); each block renders only when it has data — resolved params absent for trigger nodes — plus the error in red for a failed node). (PR #41)
+- [ ] **S** **Pin sample data** on a node: store a sample payload (editor-local + optionally persisted) so the Theme-D picker/preview work *before* a real run. ⏳ **deferred** — its consumer is the Theme D picker/preview, not yet built.
+- [x] **S** Surface `ExpressionError` messages from a failed run inline on the offending node (red strip under the summary, full text on hover) — not just in the run log. `WorkflowNodeData` gains `error`; `applyRunStatuses` → `applyRunState(nodeRuns)` reflects status + error together and stale-clears both. (PR #41)
 
 ## Theme F — Palette grouping & new-node surfacing (web) — ✅ DONE (PR #38, 2026-06-21)
 

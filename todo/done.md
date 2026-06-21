@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 12 Theme E (partial): run-history debugging — input→resolved→output + inline node errors (PR #41)
+
+See what references actually resolved to — the payoff of Theme B's persisted `resolvedParams`. Until now the run-output panel only showed a node's output, and a failed `{{expr}}` reference was buried in the run log. Theme E is ◐ partial: the run-output panel + inline node errors landed; "pin sample data" is deferred.
+
+- [x] **Run-output panel** ([`run-output-panel.tsx`](../packages/web/components/run-output-panel.tsx)): expanding a node shows **Input → Resolved params → Output**, each block rendered only when it has data (resolved params absent for trigger nodes), plus the error in red for a failed node.
+- [x] **Inline node errors** ([`workflow-node-view.tsx`](../packages/web/components/nodes/workflow-node-view.tsx)): a failed node now carries its run error onto the canvas (red strip under the summary, full text on hover) — not just in the log. `WorkflowNodeData` gains an `error` field; `applyRunStatuses` → `applyRunState(nodeRuns)` reflects status **and** error together and clears both for nodes absent from a re-run.
+- [x] Tests: `workflow-store` (`applyRunState` applies + stale-clears status/error) and `run-output-panel` (input/resolved/output on expand; failed node surfaces its `ExpressionError`; empty state). `web:typecheck`/`lint`/`test` (35 files / 149 tests) + `moon ci` green on PR #41.
+- [ ] **Deferred — pin sample data** (Theme E item 2): store an editor-local/persisted sample payload so the Theme-D picker/preview work *before* a real run. Its consumer (Theme D expression editor) isn't built yet. **Remaining in Phase 12:** Theme D (expression editor) + this pin-sample item.
+
 ## 2026-06-21 — Phase 10 C3 (partial): axe a11y checks on stories (PR #39)
 
 Wires `@storybook/addon-a11y` into the C1 Storybook-as-tests run so axe-core scans every story during `moon run web:test`. C3 is ◐ partial — the addon is enabled at `'todo'` (warnings) per "start as warnings"; promoting to `'error'` is gated on clearing the surfaced backlog.
