@@ -52,6 +52,9 @@ tasks:
       - 'lib/**/*'
       - 'stories/**/*'
       - '.storybook/**/*'
+      # tsconfig's `**/*.ts` glob also typechecks these, so changes must bust the cache.
+      - 'e2e/**/*'
+      - 'playwright.config.ts'
       - 'tsconfig.json'
 
   lint:
@@ -61,6 +64,8 @@ tasks:
       - 'components/**/*'
       - 'hooks/**/*'
       - 'lib/**/*'
+      - 'e2e/**/*'
+      - 'playwright.config.ts'
       - '/eslint.config.mjs'
 
   test:
@@ -78,6 +83,24 @@ tasks:
       - '.storybook/**/*'
       - 'vitest.config.ts'
       - 'vitest.setup.ts'
+
+  e2e:
+    command: 'pnpm exec playwright test'
+    # Playwright boots its own gateway (tsx) + Next dev server, so the workspace
+    # deps (shared, ui) must be built first. Heavy + spawns servers, so it stays
+    # out of `moon ci` (runInCI: false) and out of the default `:test` gate — a
+    # dedicated CI job is Phase 10 Theme F. Run it with `moon run web:e2e`.
+    deps:
+      - '^:build'
+    options:
+      runInCI: false
+    inputs:
+      - 'app/**/*'
+      - 'components/**/*'
+      - 'hooks/**/*'
+      - 'lib/**/*'
+      - 'e2e/**/*'
+      - 'playwright.config.ts'
 
   storybook:
     command: 'pnpm exec storybook dev -p 6006'
