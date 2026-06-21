@@ -47,6 +47,7 @@ A lightweight place to track what's been done and what's outstanding, without le
 - [phase-24-responsive-mobile-pwa.md](phase-24-responsive-mobile-pwa.md) — Responsive & mobile companion (PWA) ◻
 - [phase-25-ui-library.md](phase-25-ui-library.md) — @midnite/ui: reusable component library & design system ◻
 - [phase-26-docs-app.md](phase-26-docs-app.md) — Docs app (packages/docs) on @midnite/ui ◻
+- [phase-27-task-dependencies.md](phase-27-task-dependencies.md) — Task dependencies & dependency-aware scheduling ◻
 
 **Meta:**
 
