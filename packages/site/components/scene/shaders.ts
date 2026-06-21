@@ -38,6 +38,7 @@ void main() {
 
 export const particleFragment = /* glsl */ `
 uniform float uOpacity;
+uniform vec3 uTint;
 varying vec3 vColor;
 varying float vTwinkle;
 
@@ -48,7 +49,10 @@ void main() {
   float glow = smoothstep(0.5, 0.0, d);
   glow = pow(glow, 1.8);
   float core = smoothstep(0.14, 0.0, d);
-  vec3 col = vColor + core * 0.5;
+  // uTint biases the per-particle brand colour toward the active section's accent;
+  // mixed half-way so the shift stays subtle. White is a true no-op (mix → vColor).
+  vec3 tinted = mix(vColor, vColor * uTint, 0.5);
+  vec3 col = tinted + core * 0.5;
   gl_FragColor = vec4(col, glow * uOpacity * (0.35 + vTwinkle * 0.5));
 }`;
 

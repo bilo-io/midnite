@@ -4,6 +4,7 @@ import { useMemo, useRef, type MutableRefObject } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 
+import type { ResolvedTheme } from '@/app/theme/theme-context';
 import { particleFragment, particleVertex } from './shaders';
 import { prefersReducedMotion } from './use-scroll-progress';
 
@@ -14,12 +15,32 @@ const ACCENTS = ['#3b82f6', '#8b5cf6', '#f43f5e', '#f59e0b', '#10b981', '#ec4899
 
 const COUNT = 4200;
 
+// Per-section look: the field's accent tint, point size and swirl speed lerp toward
+// the active section's style so the backdrop shifts subtly as you scroll (Theme B).
+type ParticleStyle = { tint: string; size: number; speed: number; opacity: number };
+const SECTION_STYLE: Record<string, ParticleStyle> = {
+  top: { tint: '#8b5cf6', size: 2.4, speed: 1.0, opacity: 0.9 },
+  how: { tint: '#3b82f6', size: 2.0, speed: 0.8, opacity: 0.82 },
+  features: { tint: '#10b981', size: 2.2, speed: 1.2, opacity: 0.82 },
+  cli: { tint: '#f59e0b', size: 2.0, speed: 0.9, opacity: 0.82 },
+  download: { tint: '#ec4899', size: 2.2, speed: 0.7, opacity: 0.78 },
+};
+const DEFAULT_STYLE = SECTION_STYLE.top!;
+
 /**
- * GPU particle field rendered with a custom additive shader: each point is a soft
- * glowing sprite that twinkles and swirls into a slow vortex (see particleVertex).
- * The field parallaxes and grows as `progress` advances.
+ * GPU particle field with a custom additive shader. The field parallaxes and grows
+ * as `progress` advances, and lerps its tint/size/opacity toward the active section's
+ * style. Light theme dials opacity back so the field reads over a bright background.
  */
-export function ParticleField({ progress }: { progress: MutableRefObject<number> }) {
+export function ParticleField({
+  progress,
+  activeSection,
+  resolved,
+}: {
+  progress: MutableRefObject<number>;
+  activeSection?: string | null;
+  resolved: ResolvedTheme;
+}) {
   const ref = useRef<THREE.Points>(null);
   const matRef = useRef<THREE.ShaderMaterial>(null);
   const { size, viewport } = useThree();
@@ -58,16 +79,27 @@ export function ParticleField({ progress }: { progress: MutableRefObject<number>
       uPixelRatio: { value: 1 },
       uProgress: { value: 0 },
       uOpacity: { value: 0.85 },
+      uTint: { value: new THREE.Color('#ffffff') },
     }),
     [],
   );
 
-  useFrame((state, delta) => {
+  const style = (activeSection && SECTION_STYLE[activeSection]) || DEFAULT_STYLE;
+  const targetTint = useMemo(() => new THREE.Color(style.tint), [style.tint]);
+  const targetOpacity = resolved === 'light' ? style.opacity * 0.6 : style.opacity;
+
+  useFrame((_state, delta) => {
     const m = matRef.current;
     if (m) {
-      if (!reduced) m.uniforms.uTime!.value += delta;
-      m.uniforms.uProgress!.value = progress.current;
-      m.uniforms.uPixelRatio!.value = Math.min(viewport.dpr, 2);
+      const lerp = reduced ? 1 : 0.05;
+      const u = m.uniforms;
+      u.uSize!.value += (style.size - u.uSize!.value) * lerp;
+      u.uOpacity!.value += (targetOpacity - u.uOpacity!.value) * lerp;
+      (u.uTint!.value as THREE.Color).lerp(targetTint, lerp);
+      // Pause the time advance when the tab is hidden (perf) and under reduced motion.
+      if (!reduced && !document.hidden) u.uTime!.value += delta * style.speed;
+      u.uProgress!.value = progress.current;
+      u.uPixelRatio!.value = Math.min(viewport.dpr, 2);
     }
     if (ref.current) {
       ref.current.rotation.x = progress.current * 0.5;

@@ -2,6 +2,7 @@ import { KanbanSquare, Cpu, TerminalSquare, MonitorPlay, GitPullRequest } from '
 
 import { Reveal } from '@/components/ui/section';
 import { TypedTitle } from '@/components/sections/typed-title';
+import { InlinePanel } from '@/components/panel/inline-panel';
 
 const FEATURES = [
   {
@@ -39,6 +40,8 @@ export function Features() {
         eyebrow="Features"
         title="One gateway. Many agents. Full visibility."
       />
+
+      <InlinePanel content="session" className="mt-10" />
 
       <div className="mt-14 grid gap-px overflow-hidden rounded-xl border border-border/60 bg-border/40 sm:grid-cols-2 lg:grid-cols-3">
         {FEATURES.map((f, i) => (
