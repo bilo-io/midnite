@@ -27,9 +27,9 @@ const isCI = !!process.env['CI'];
  * (its node grandchild outliving the killed pnpm wrapper) keeps answering and
  * gets silently reused with stale data. This dev box runs several agents in
  * parallel, so that orphan is real. Clearing our ports here, at config-eval
- * (before Playwright launches anything), guarantees a fresh gateway with an
- * empty `:memory:` store and a fresh app pointed at it. The ports are
- * harness-private (see e2e/config.ts), so this only ever kills our own orphans.
+ * (before Playwright launches anything), guarantees a fresh gateway on a clean
+ * temp DB and a fresh app pointed at it. The ports are harness-private (see
+ * e2e/config.ts), so this only ever kills our own orphans.
  * No-op on CI (no orphans; `lsof` may be absent).
  */
 function freePort(port: number): void {
@@ -63,9 +63,9 @@ if (process.env['TEST_WORKER_INDEX'] === undefined) {
 /**
  * Playwright flow tests (Phase 10 Theme D). Two web servers boot together:
  *
- *  - the **real gateway** via `tsx`, on a temp `:memory:` SQLite (fresh each run,
- *    so seed data is deterministic) with its agent pool disabled and no LLM
- *    credentials — it serves real REST/WS but never spawns an agent or calls out;
+ *  - the **real gateway** via `tsx`, on a throwaway temp SQLite file (removed
+ *    before each run, so seed data is deterministic) with its agent pool disabled
+ *    and no LLM credentials — it serves real REST/WS but never spawns or calls out;
  *  - the **Next dev server**, pointed at that gateway via `NEXT_PUBLIC_GATEWAY_URL`.
  *
  * Kept out of `moon ci` / the default `:test` gate (it's heavier and spawns
@@ -96,7 +96,7 @@ export default defineConfig({
       command: 'node --import tsx src/main.ts',
       cwd: gatewayDir,
       url: `${GATEWAY_ORIGIN}/health`,
-      // Always boot a fresh gateway so its `:memory:` store starts empty.
+      // Always boot a fresh gateway so its (pre-cleared) temp store starts empty.
       reuseExistingServer: false,
       timeout: 60_000,
       stdout: 'pipe',
