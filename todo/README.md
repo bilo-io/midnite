@@ -46,6 +46,7 @@ A lightweight place to track what's been done and what's outstanding, without le
 - [phase-23-approvals-autonomy.md](phase-23-approvals-autonomy.md) — Approvals & autonomy policy ◻
 - [phase-24-responsive-mobile-pwa.md](phase-24-responsive-mobile-pwa.md) — Responsive & mobile companion (PWA) ◻
 - [phase-25-ui-library.md](phase-25-ui-library.md) — @midnite/ui: reusable component library & design system ◻
+- [phase-26-docs-app.md](phase-26-docs-app.md) — Docs app (packages/docs) on @midnite/ui ◻
 
 **Meta:**
 
