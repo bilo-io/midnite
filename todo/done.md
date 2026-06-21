@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 29 Theme A2: lockstep version planner + version-check CI task (PR #66)
+
+The versioning core the release skills depend on ([Phase 29](phase-29-releases-versioning-changelog.md#theme-a--versioning-policy--the-lockstep-tool--m)). Encodes the rule once: every package shares `MAJOR.MINOR`, only `PATCH` advances independently.
+
+- [x] **`planVersionBump` + `sharesLockstepMajorMinor`** in [`@midnite/shared`](../packages/shared/src/version.ts) — pure bump math: `major`/`minor` move every package in lockstep (`(X+1).0.0` / `X.(Y+1).0`), `patch` bumps only the changed packages, `none` is identity; throws if the input isn't already in lockstep. 12 unit tests.
+- [x] **`scripts/version-check.mjs`** + a workspace-root `root:version-check` moon task (new root [`moon.yml`](../moon.yml) + `.moon/workspace.yml` glob/sources split) — fails CI if package.json versions don't share one `MAJOR.MINOR` (patch may differ), naming divergers; runs once in `moon ci`. No versions changed (all stay `0.0.0`).
+- [x] `:typecheck` (all projects resolve) · `:lint` · `shared:test` (300, +12) · `root:version-check` green; `moon ci` green on PR #66 (one re-run for the known-flaky terminal env-dump spec, unrelated).
+- ↪️ **Remaining (phase-29):** A1 policy doc (`docs/RELEASING.md`) · A3 tag/branch scheme · B root `CHANGELOG.md` · C `/release-prep` · D `/release-complete`.
+
 ## 2026-06-21 — Phase 24 Theme A1: viewport + responsive breakpoint foundation (PR #51)
 
 First slice of [Phase 24](phase-24-responsive-mobile-pwa.md) — the foundation the rest of Theme A (mobile nav A2, per-surface reflow A3) builds on. Web-only; the loopback data contract is unchanged (Decision §1). Settles the breakpoint-approach decision (§4): Tailwind v3 was already wired, so the answer is Tailwind responsive variants + one shared source of truth, not hand-rolled `@media`.

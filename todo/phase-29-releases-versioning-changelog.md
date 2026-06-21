@@ -29,9 +29,9 @@ The rule, encoded once so humans and skills agree.
 - [ ] A short `docs/RELEASING.md`: the lockstep `MAJOR.MINOR` + independent `PATCH` rule, what triggers each bump (below), the tag scheme (A3), and the two-skill flow. Link it from the README and [`CLAUDE.md`](../CLAUDE.md).
 - [ ] Bump triggers (from conventional commits since the last release): a `feat` (or any `feat`/`fix` carrying a `BREAKING CHANGE`) → **major**; any other `feat` → **minor** (lockstep, all packages); `fix`-only → **patch** of just the packages whose files changed; `docs`/`chore`/`refactor`/`test`-only → **no release** (unless they touch shipped output). (Decision §1/§2.)
 
-### A2. Version-sync helper + check — **M**
-- [ ] A pure helper (e.g. `scripts/version.ts` or `packages/shared/src/version/` if it should be importable) that, given the current versions + a categorised change set, computes the next version for every package under the lockstep rule. Unit-tested: lockstep minor moves all to `X.Y+1.0`; `fix`-only patches only affected packages; mixed sets resolve major>minor>patch; idempotent on an empty set.
-- [ ] A **`version:check`** moon task asserting the invariant — every `package.json` shares one `MAJOR.MINOR` — so a hand-edit that breaks lockstep fails CI with a clear message. Wire into `moon ci` (cheap, no network).
+### A2. Version-sync helper + check — **M** — ✅ DONE (PR #66, 2026-06-21)
+- [x] Pure helper [`packages/shared/src/version.ts`](../packages/shared/src/version.ts) — `planVersionBump(current, { level, changedPackages })` (major/minor move all packages in lockstep; patch bumps only the changed packages; idempotent on `none`; throws if input isn't in lockstep) + `sharesLockstepMajorMinor`. 12 unit tests.
+- [x] [`scripts/version-check.mjs`](../scripts/version-check.mjs) + a workspace-root `root:version-check` moon task (new root [`moon.yml`](../moon.yml), registered in [`.moon/workspace.yml`](../.moon/workspace.yml)) — asserts every `package.json` shares one `MAJOR.MINOR` (patch may differ), names divergers, runs once in `moon ci`. Passes on the current all-`0.0.0` tree.
 
 ### A3. Tag & branch scheme — **S**
 - [ ] **Decision §3:** a minor/major release cuts a single repo tag `vMAJOR.MINOR.0` (lockstep); an independent package patch cuts a scoped tag `@midnite/‹pkg›@MAJOR.MINOR.PATCH`. Release work happens on a `release/vX.Y.Z` branch, merged via a release PR. Document in `docs/RELEASING.md`.
