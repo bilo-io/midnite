@@ -195,6 +195,15 @@ export function NewTaskModal({
                       ? `${taskWord(parsedLines.length)} detected — over the ${MAX_BULK_LINES}-line limit.`
                       : `${taskWord(parsedLines.length)} detected.`}
                 </p>
+                {/* The cleaned prompts (markers stripped, blanks/comments dropped) so the
+                    user sees exactly what will be created before submitting. */}
+                {parsedLines.length > 0 && !overLimit && !result && (
+                  <ul className="mt-1.5 max-h-24 list-disc space-y-0.5 overflow-y-auto rounded-md border border-border/40 bg-background/40 py-2 pl-6 pr-2 text-xs text-muted-foreground">
+                    {parsedLines.map((line, i) => (
+                      <li key={i} className="truncate">{line}</li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
 

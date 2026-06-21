@@ -39,6 +39,8 @@ describe('NewTaskModal — bulk paste', () => {
 
     // Comment + blank dropped, the "- " bullet stripped → 3 prompts.
     expect(screen.getByText('3 tasks detected.')).toBeInTheDocument();
+    // The preview lists the cleaned prompts (the "- " marker is stripped).
+    expect(screen.getByText('add dark mode')).toBeInTheDocument();
     // Bulk status is decided per task by triage, so no status control.
     expect(screen.queryByLabelText('Status')).toBeNull();
     expect(screen.getByRole('button', { name: 'Create 3 tasks' })).toBeEnabled();
