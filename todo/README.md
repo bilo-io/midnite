@@ -41,6 +41,7 @@ A lightweight place to track what's been done and what's outstanding, without le
 - [phase-18-reports-exports.md](phase-18-reports-exports.md) — Reports & exports across the app (tasks, projects, workflow runs) ◻
 - [phase-19-onboarding-wizard.md](phase-19-onboarding-wizard.md) — First-run onboarding & setup wizard ◻
 - [phase-20-global-search.md](phase-20-global-search.md) — Global search (full-text across the app) ◻
+- [phase-21-notifications.md](phase-21-notifications.md) — Notifications & alerting (in-app, browser, webhook) ◻
 
 **Meta:**
 
