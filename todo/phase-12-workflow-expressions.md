@@ -6,7 +6,7 @@
 
 > Effort tags: **S** small · **M** medium · **L** large. Themes are ordered A→F (engine before UI); A–C are prerequisites for D–E. Each is independently shippable behind that ordering.
 
-> **Out of scope (named Phase 6 follow-ups — do not start here):** live WS run streaming (P7 — emit `WorkflowEvent`s, swap polling), credential vault + OAuth (P9), Slack/Google/Email integration executors (P10), and arbitrary-JS `code` nodes (an `eval`/sandbox security surface we deliberately avoid — `logic.setData` covers reshaping declaratively).
+> **Out of scope — these are [Phase 13](phase-13-workflows-connect.md), not here:** live WS run streaming (P7 — emit `WorkflowEvent`s, swap polling), credential vault + OAuth (P9), Slack/Google/Email integration executors (P10), and CLI workflow parity. Phase 13 *consumes* this phase's expression engine; it does not change the grammar. Also out of scope and deliberately never built: arbitrary-JS `code` nodes (an `eval`/sandbox security surface we avoid — `logic.setData` covers reshaping declaratively).
 
 ---
 
