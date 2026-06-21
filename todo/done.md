@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 24 Theme A1: viewport + responsive breakpoint foundation (PR #51)
+
+First slice of [Phase 24](phase-24-responsive-mobile-pwa.md) — the foundation the rest of Theme A (mobile nav A2, per-surface reflow A3) builds on. Web-only; the loopback data contract is unchanged (Decision §1). Settles the breakpoint-approach decision (§4): Tailwind v3 was already wired, so the answer is Tailwind responsive variants + one shared source of truth, not hand-rolled `@media`.
+
+> ⚠️ **MERGED DURING A GITHUB ACTIONS OUTAGE — CI did not run on PR #51.** Actions was stalled repo-wide on 2026-06-21 (no runs anywhere 15:23–15:40+ UTC); PR open, close/reopen, and an empty-commit `synchronize` push all failed to spawn a workflow run. Merged at the user's instruction on a full **green local gate on the rebased tree** (rebased onto current `main` incl. #50/#65 `@midnite/ui`): `web:typecheck` ✅ · `web:lint` ✅ (0 errors) · `web:test` ✅ **56 files / 236 passed**. **To verify independently from `main`:** check the `push: main` CI run for squash commit `4e29b0b` once Actions recovers. (Same note on the PR #51 thread.)
+
+- [x] **A1.1 — viewport export** ([`app/layout.tsx`](../packages/web/app/layout.tsx)): Next.js `viewport` (`width=device-width, initial-scale=1`); `themeColor` follows the `--background` token (light `#ffffff` / dark `#09090b`) via `prefers-color-scheme` instead of hardcoded white; pinch-zoom left enabled for a11y.
+- [x] **A1.2 — breakpoint foundation** ([`lib/breakpoints.ts`](../packages/web/lib/breakpoints.ts)): Tailwind-aligned px values (`sm`–`2xl`) + `mediaUp`/`mediaDown`/`mediaBetween` helpers — one place CSS (`md:`/`lg:` variants) and JS agree on cutoffs (mobile `<md` 768 · tablet `md–lg` · desktop `≥lg` 1024). SSR-safe [`useMediaQuery`](../packages/web/hooks/use-media-query.ts) (`useSyncExternalStore`, no hydration mismatch) + semantic `useIsMobile`/`useIsTablet`/`useIsDesktop` for JS-driven reflow.
+- [x] Added the **Responsive** convention to CLAUDE.md's Web section (the stale "Tailwind not yet wired" note was already corrected by #50). 10 new tests (`breakpoints` + `use-media-query`).
+- ↪️ **Deferred within A1 (noted, not dropped):** dynamic `theme-color` on an *explicit* theme override (vs. system `prefers-color-scheme`) lands with Theme C's manifest colours; the `@tailwindcss/container-queries` plugin gets wired when A3's first self-reflowing component needs it. **Remaining in Phase 24:** Theme A2 (mobile nav), A3 (per-surface reflow + desktop gates), Theme B (touch), Theme C (PWA).
+
 ## 2026-06-21 — Phase 25 Theme C: migrate generic primitives → `@midnite/ui` (PR #65)
 
 Moves the 10 generic UI primitives out of `packages/web/components/ui` into the library (Theme A scaffolded it, Theme B moved tokens + theme). Behavior-preserving — every primitive is logic-identical, web keeps working via re-export shims (Decision §2).

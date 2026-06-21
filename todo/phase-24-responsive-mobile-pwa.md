@@ -25,9 +25,9 @@
 
 Make the core monitoring surfaces reflow to a phone; gate the canvas-heavy ones (Decision §2).
 
-### A1. Viewport + breakpoint foundation — **S–M**
-- [ ] Add the Next.js `viewport` export (`width=device-width, initial-scale=1`, `themeColor` reading the theme tokens) in [`layout.tsx`](../packages/web/app/layout.tsx).
-- [ ] Establish the **breakpoint approach** (Decision §4 — use the existing utility/styling system; container queries where a component reflows independently of viewport). Document the mobile/tablet/desktop cutoffs once so every surface uses the same ones.
+### A1. Viewport + breakpoint foundation — **S–M** — ✅ DONE (PR #51, 2026-06-21 — see [done.md](done.md))
+- [x] Next.js `viewport` export with theme-aware `themeColor` (light/dark `--background`, no longer hardcoded white) in [`layout.tsx`](../packages/web/app/layout.tsx).
+- [x] Breakpoint approach settled (Decision §4): Tailwind responsive variants + single-source [`lib/breakpoints.ts`](../packages/web/lib/breakpoints.ts) + SSR-safe [`useMediaQuery`/`useIsMobile`/`useIsTablet`/`useIsDesktop`](../packages/web/hooks/use-media-query.ts). Cutoffs documented once (mobile `<md` · tablet `md–lg` · desktop `≥lg`). ↪️ container-queries plugin deferred to A3 (wire when the first self-reflowing component needs it); dynamic `theme-color` on an *explicit* theme override deferred to Theme C.
 
 ### A2. Mobile navigation — **M**
 - [ ] Adapt [`nav-bar.tsx`](../packages/web/components/nav-bar.tsx): below the breakpoint, the sidebar becomes a **drawer or bottom-tab bar** (Decision §5) — primary surfaces reachable in one tap; the icon-rail/expanded states stay for desktop. The command palette (⌘K) remains the power-user jump.
@@ -96,7 +96,7 @@ A real installable app, not a stub manifest.
 1. **Access model** *(settled in brainstorm).* **Client-only** — responsive + touch + PWA. Reaching from a phone uses the existing LAN/Tailscale/tunnel path; the non-loopback bind + bearer-token guard + rate limiting **stays Phase 7 A5** (deferred). No reversal of local-only.
 2. **Surface scope** *(settled in brainstorm).* **Core monitoring responsive + desktop-only gates** — board, sessions, tasks, dashboard, notifications (P21), approvals (P23) reflow; the office canvas and workflow editor show a "best on desktop" notice rather than being forced onto a phone.
 3. **Touch task-move** *(settled in brainstorm).* **Both** — tuned dnd-kit drag (activation delay/handle) **and** a tap-to-move fallback, so a column change never depends on a finicky drag.
-4. **Breakpoint approach** *(open).* Use the existing utility/styling system's responsive variants + container queries for self-reflowing components, vs. hand-rolled `@media` in `globals.css`. (The codebase already uses utility classes — confirm Tailwind is wired and CLAUDE.md's "not yet" note is stale.) Pick once and apply uniformly; settle in the A1 PR.
+4. **Breakpoint approach** *(settled in A1, PR #51).* **Tailwind responsive variants + a single source of truth** ([`lib/breakpoints.ts`](../packages/web/lib/breakpoints.ts)) consumed by both CSS (`md:`/`lg:` variants) and JS (`useMediaQuery`/`useIsMobile`/`useIsTablet`/`useIsDesktop`) — not hand-rolled `@media`. Tailwind v3 was already wired (CLAUDE.md's "not yet" note was stale and is corrected). Cutoffs documented once: mobile `<md` (768px) · tablet `md–lg` · desktop `≥lg` (1024px). Container queries (`@tailwindcss/container-queries`) are the per-component tool for self-reflowing components — wired when A3's first one lands.
 5. **Mobile nav pattern** *(open).* A slide-in **drawer** vs. a **bottom-tab bar** for primary navigation on a phone. Recommend bottom-tabs for the top few surfaces + a drawer/overflow for the rest; confirm in the A2 PR.
 6. **Service-worker strategy** *(open).* Network-first for app code (avoid stale UI) with a precached shell, vs. stale-while-revalidate + an update prompt. Since data is live and only the shell is cached, recommend network-first-for-code + precached static assets. Confirm in the C PR.
 7. **xterm on touch** *(recommend: read/scroll only).* Typing into a live PTY from a phone is a non-goal; the terminal is a read/scroll surface on touch, clearly indicated. Revisit only if there's real demand.
