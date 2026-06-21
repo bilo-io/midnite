@@ -45,13 +45,13 @@ The library owns the design system's source of truth (Decision §1 — tokens mo
 
 ---
 
-## Theme C — Migrate the primitives + their stories — **M–L**
+## Theme C — Migrate the primitives + their stories — **M–L** — ✅ DONE (PR #65, 2026-06-21)
 
-Move the generic primitives in, keep web working with zero churn (Decision §2 — re-export shim first).
+Move the generic primitives in, keep web working with zero churn (Decision §2 — re-export shim first). **Landed — see [done.md](done.md).**
 
-- [ ] **Move** the generic primitives ([`web/components/ui/`](../packages/web/components/ui/): button, card, input, select, styled-select, switch, tabs, textarea, accordion, collapse) into `@midnite/ui`, with their `*.stories.tsx`. Assess `styled-select` (likely generic → moves) vs `asset-search-select` (domain-coupled → **stays in web**).
-- [ ] **Re-export shim** — `web/components/ui/*` become thin re-exports of `@midnite/ui` so the existing import sites across `web` keep compiling untouched (low-risk, incremental). A codemod that rewrites imports to `@midnite/ui` and deletes the shim is a **later** sweep (Decision §2), not this phase.
-- [ ] **Preserve Phase 10 coverage** — the migrated stories keep their `addon-vitest` + `addon-a11y` runs in the **lib's** Storybook (Theme D), so the a11y/interaction coverage isn't lost; web's Storybook keeps the **domain-component** stories. No story regresses.
+- [x] **Move** the 10 generic primitives (button, card, input, select, styled-select, switch, tabs, textarea, accordion, collapse) into `@midnite/ui/src/components` — logic-identical, only the `cn` import rewritten. `styled-select` moved (generic, wraps react-select); `asset-search-select` stays in web (domain-coupled).
+- [x] **Re-export shim** — `web/components/ui/*` are now thin re-exports of `@midnite/ui`; every import site compiles unchanged. Import-rewrite codemod deferred (Decision §2).
+- [◐] **Preserve Phase 10 coverage** — the primitive `*.stories.tsx` **stay in web** for now (still running in web's Storybook, consuming the shims → no regression); they migrate to the lib's own Storybook in **Theme D**.
 
 ---
 

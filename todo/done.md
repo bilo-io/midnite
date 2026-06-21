@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 25 Theme C: migrate generic primitives → `@midnite/ui` (PR #65)
+
+Moves the 10 generic UI primitives out of `packages/web/components/ui` into the library (Theme A scaffolded it, Theme B moved tokens + theme). Behavior-preserving — every primitive is logic-identical, web keeps working via re-export shims (Decision §2).
+
+- [x] **10 primitives → `@midnite/ui/src/components`** — accordion, button, card, collapse, input, select, styled-select, switch, tabs, textarea. Only the `cn` import is rewritten to the lib's own `./lib/cn` (+ accordion→collapse, styled-select→select intra-refs); `'use client'` preserved on the 6 stateful ones so `dist/index.js` keeps its RSC boundary. `src/index.ts` re-exports each primitive's full surface (components + types + `buttonVariants`).
+- [x] **`asset-search-select` stays in web** — domain-coupled (`@midnite/shared` types + `@/lib/api`).
+- [x] **Web shims** — the 10 `web/components/ui/*` files are now thin re-exports of `@midnite/ui`; every import site (incl. `*.stories.tsx` + `asset-search-select`) compiles unchanged. Codemod that deletes the shims is a later sweep.
+- [x] New lib deps: `class-variance-authority`, `lucide-react`, `react-select`. `button`'s `buttonVariants` gets an explicit type annotation (cva's inferred type tripped TS2742 on `.d.ts` emit — runtime + `VariantProps` inference unchanged).
+- [◐] Primitive **stories stay in web** (running via the shims) until Theme D brings the lib's own Storybook — no story regresses.
+
+Verified: lib build (`"use client"` on `dist/index.js`) / typecheck / lint / vitest; web `next build` + typecheck + lint + vitest **211** (52 files, incl. storybook chromium rendering the primitives via shims); pristine frozen install; CI green. Independent review: faithful, behavior-preserving. **Next:** Theme D (lib's own Storybook `@storybook/react-vite` + MDX DS docs; migrate the primitive stories) — completes Phase 25.
+
 ## 2026-06-21 — Phase 13 follow-on F: repo chip on task cards (PR #64)
 
 Surfaces a task's target repo on the board now that repos are a first-class entity (Themes A+B).
