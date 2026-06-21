@@ -1,4 +1,5 @@
 import type {
+  Memory,
   Project,
   SessionSummary,
   Task,
@@ -6,6 +7,7 @@ import type {
   WorkflowSummary,
 } from '@midnite/shared';
 
+import type { OfficeAgent } from '@/lib/office/agents';
 import type { ProjectTagInfo } from '@/components/task-card';
 
 /**
@@ -334,3 +336,71 @@ export function add(a: number, b: number): number {
 
 Done.
 `;
+
+// --- Memories ---
+
+export const memoryGlobal: Memory = {
+  id: 'mem-style',
+  title: 'House TypeScript style',
+  content:
+    '# House style\n\nPrefer `type` for object shapes; discriminated unions for state.\nAlways `import type` for type-only imports.',
+  projectId: null,
+  sources: [
+    {
+      id: 'mem-src-1',
+      memoryId: 'mem-style',
+      url: 'https://github.com/acme/midnite/blob/main/CLAUDE.md',
+      kind: 'github',
+      createdAt: '2026-05-01T09:00:00.000Z',
+    },
+  ],
+  createdAt: '2026-05-01T09:00:00.000Z',
+  updatedAt: '2026-06-09T09:00:00.000Z',
+};
+
+export const memoryProjectScoped: Memory = {
+  id: 'mem-web-routing',
+  title: 'Web routing conventions',
+  content:
+    '# Routing\n\nApp Router only. Server components by default; mark client components with `use client`.',
+  projectId: 'proj-web',
+  sources: [],
+  createdAt: '2026-05-20T09:00:00.000Z',
+  updatedAt: '2026-06-12T09:00:00.000Z',
+};
+
+export const memoryArchived: Memory = {
+  id: 'mem-old',
+  title: 'Legacy Vite build notes',
+  content: 'Superseded by the Next.js migration — kept for reference.',
+  projectId: 'proj-web',
+  sources: [],
+  archived: true,
+  createdAt: '2026-04-01T09:00:00.000Z',
+  updatedAt: '2026-04-30T09:00:00.000Z',
+};
+
+export const memories: Memory[] = [memoryGlobal, memoryProjectScoped, memoryArchived];
+
+// --- Office agents ---
+// Desk occupants for the office HUD, derived from the session fixtures above.
+
+export const officeAgentRunning: OfficeAgent = {
+  id: sessionRunning.id,
+  name: sessionRunning.title,
+  project: sessionRunning.projectDisplay,
+  status: sessionRunning.status,
+  activity: sessionRunning.subtitle,
+  session: sessionRunning,
+};
+
+export const officeAgentWaiting: OfficeAgent = {
+  id: sessionWaiting.id,
+  name: sessionWaiting.title,
+  project: sessionWaiting.projectDisplay,
+  status: sessionWaiting.status,
+  activity: sessionWaiting.subtitle,
+  session: sessionWaiting,
+};
+
+export const officeAgents: OfficeAgent[] = [officeAgentRunning, officeAgentWaiting];
