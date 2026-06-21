@@ -177,7 +177,12 @@ export function expressionTree(context: ExpressionContext): TreeEntry[] {
 /** The active `{{ … }}` span the cursor sits in, or null if outside any span.
  *  An unterminated `{{` (still being typed) counts as open. */
 function activeSpan(text: string, cursor: number): { start: number; end: number } | null {
-  const open = text.lastIndexOf('{{', Math.max(0, cursor - 1));
+  // Search for the opening `{{` whose *content* starts at or before the cursor:
+  // its `{{` must end by `cursor`, i.e. begin at `cursor - 2` or earlier. With
+  // `cursor < 2` no such brace can exist (and `lastIndexOf` clamps a negative
+  // bound to 0, which would wrongly match a leading `{{` the caret precedes).
+  if (cursor < 2) return null;
+  const open = text.lastIndexOf('{{', cursor - 2);
   if (open === -1) return null;
   // A `}}` between the `{{` and the cursor means the cursor is past this span.
   const close = text.indexOf('}}', open + 2);

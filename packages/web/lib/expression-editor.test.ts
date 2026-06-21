@@ -125,6 +125,15 @@ describe('cursorInExpression', () => {
     expect(cursorInExpression('hi {{ ', 6)).toBe(true); // unterminated
     expect(cursorInExpression('hello', 2)).toBe(false);
     expect(cursorInExpression('{{ x }} after', 10)).toBe(false); // past the span
+    // A caret before a leading `{{` precedes the span — it is not inside it.
+    expect(cursorInExpression('{{x}}', 0)).toBe(false);
+    expect(cursorInExpression('{{x}}', 2)).toBe(true); // at content start
+  });
+
+  it('wraps rather than splices when the caret precedes a leading {{', () => {
+    // Regression: the caret at index 0 of a "{{…}}" field must wrap, not insert
+    // a bare ref outside the braces (which would be a malformed expression).
+    expect(insertReference('{{x}}', 0, '$json').value).toBe('{{ $json }}{{x}}');
   });
 });
 
