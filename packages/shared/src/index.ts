@@ -5,6 +5,7 @@ export * from './environment.js';
 export * from './llm.js';
 export * from './council.js';
 export * from './task.js';
+export * from './bulk.js';
 export * from './agent-pool.js';
 export * from './session.js';
 export * from './color.js';

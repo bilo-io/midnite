@@ -9,10 +9,15 @@ import { TaskSchema } from '../task.js';
 //
 // Named `TaskBoardEvent` to avoid colliding with `TaskEvent` (the per-task audit
 // timeline entry in `task.ts`) — different concept, both exported from the barrel.
+//
+// `tasks.bulkCreated` coalesces a bulk add (Phase 16) into ONE board signal
+// carrying the new ids, instead of N `task.created` events that each trigger a
+// refetch — the client invalidates once for the whole batch.
 export const TaskBoardEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('task.created'), at: z.string(), task: TaskSchema }),
   z.object({ type: z.literal('task.updated'), at: z.string(), task: TaskSchema }),
   z.object({ type: z.literal('task.deleted'), at: z.string(), id: z.string() }),
+  z.object({ type: z.literal('tasks.bulkCreated'), at: z.string(), taskIds: z.array(z.string()) }),
 ]);
 export type TaskBoardEvent = z.infer<typeof TaskBoardEventSchema>;
 

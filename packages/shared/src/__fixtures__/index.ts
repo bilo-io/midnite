@@ -214,6 +214,7 @@ export const taskBoardEventFixtures: TaskBoardEvent[] = [
   { type: 'task.created', at: TS, task: taskFixture },
   { type: 'task.updated', at: TS, task: taskFixture },
   { type: 'task.deleted', at: TS, id: taskFixture.id },
+  { type: 'tasks.bulkCreated', at: TS, taskIds: [taskFixture.id] },
 ];
 
 export const workflowEventFixtures: WorkflowEvent[] = [
