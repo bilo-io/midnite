@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import localFont from 'next/font/local';
 import './globals.css';
@@ -92,6 +92,20 @@ export const metadata: Metadata = {
     apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
   },
   manifest: '/site.webmanifest',
+};
+
+// Phase 24 (responsive/PWA): make the layout phone-aware. `width=device-width`
+// lets breakpoints (lib/breakpoints.ts) take effect; pinch-zoom stays enabled
+// for accessibility. `themeColor` tints the browser/OS chrome to match the
+// surface — values mirror the `--background` token in globals.css (light vs
+// `.dark`), so it follows the colour scheme instead of the old hardcoded white.
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#09090b' },
+  ],
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
