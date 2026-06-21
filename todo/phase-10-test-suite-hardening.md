@@ -70,8 +70,14 @@
 - ⏳ **filter-pills** play deferred: its story documents that the Next router mock doesn't feed `router.replace` back into `useSearchParams`, so a click can't assert a visible toggle — render stories already cover it.
 - [ ] Backfill **stories for un-storied high-value components** (office HUD pieces, project/memory/library modals, widgets) — only command-palette done so far; the broad backfill remains (also feeds Theme E screenshots).
 
-### C3. Accessibility checks — **S**
-- [ ] Enable the Storybook **a11y addon** in the test run (axe) so stories also assert no critical a11y violations. Start as warnings; promote to failures once clean.
+### C3. Accessibility checks — ◐ PARTIAL (PR #39, 2026-06-21)
+- [x] `@storybook/addon-a11y` (pinned `10.4.3`, matching `addon-vitest`) added to web + registered in [`.storybook/main.ts`](../packages/web/.storybook/main.ts). SB ≥10.3 auto-applies the addon's preview annotations, so **axe-core runs against every story** in `moon run web:test` (and the Storybook a11y panel) — no setup file needed. Enabled at `parameters.a11y.test: 'todo'` (warnings) in [`.storybook/preview.tsx`](../packages/web/.storybook/preview.tsx), per "start as warnings": violations surface without failing CI. `web:test` green (71 stories scanned).
+- [ ] **Promote to `'error'` once clean.** The run surfaces a real backlog (each fixed in a *separate behavioural commit* — out of scope for this infra slice — then flip to `'error'` globally or per-component):
+  - `board-view` — `color-contrast`, `nested-interactive` (clickable card wraps interactive children), `scrollable-region-focusable`
+  - `task-card` / `project-card` / `workflow-card` — `color-contrast`
+  - `session-card` — `aria-prohibited-attr`
+  - `page-header` — `empty-heading`
+  - `markdown-preview` — `label` (GFM task-list checkboxes render unlabeled `<input>`)
 
 ---
 
