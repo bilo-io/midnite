@@ -256,6 +256,7 @@ Nest module per feature → `controller → service → repository`:
 - Components: function components + hooks only — no class components
 - No prop drilling beyond two levels — lift to Zustand or Context
 - Styling: **Tailwind CSS** (utility classes composed via a `cn()` helper) + shadcn-style HSL design tokens (CSS custom properties + a `.dark` block) in `globals.css`. The generic primitives and those tokens are the **design system**, being extracted into **`@midnite/ui`** (Phase 25) as the reusable, framework-agnostic source of truth — `web` consumes the lib's primitives + token CSS, while domain-coupled components (`TaskCard`, the board, the office) stay in `web`.
+- Responsive: breakpoints are defined once in [`lib/breakpoints.ts`](packages/web/lib/breakpoints.ts) (Tailwind-aligned `sm`/`md`/`lg`/`xl`/`2xl`). Device cutoffs: **mobile** `< md` (768px), **tablet** `md`–`lg`, **desktop** `>= lg` (1024px). Prefer Tailwind responsive variants (`md:`, `lg:`) for layout that reflows with the viewport; for JS that must branch its render (mount a drawer vs. a sidebar, desktop-only gates) use `useMediaQuery` / `useIsMobile` / `useIsTablet` / `useIsDesktop` from [`hooks/use-media-query.ts`](packages/web/hooks/use-media-query.ts) — never hand-write widths so CSS and JS stay on the same cutoffs
 
 ---
 
