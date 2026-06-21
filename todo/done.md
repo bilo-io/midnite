@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 15 Theme C: answered-question affordance + filter (PR #83)
+
+The gateway already answered `question`-kind tasks inline at intake (PR #55: `PlannerService.answer` → resolve to **done** + an `answer` task-event, with the thread rendering the markdown answer). But on the board an answered question was indistinguishable from any other completed task and there was no way to find them. This finishes Theme C's UI.
+
+- [x] **`shared`** — `isAnsweredQuestion(task)` predicate + `ANSWER_EVENT_KIND` constant: the single contract for "this question was answered inline" (kind `question` + an `answer` event). The gateway's answer-event write now uses the constant instead of a string literal. Unit-tested.
+- [x] **`web`** — an **"Answered"** badge on the task card and in the thread header, and an **"Answered"** filter toggle on the Tasks page so resolved questions are distinguishable from ordinary completed work and findable apart from it. `FilterPills` gained a `hideAll` option for the single-toggle case; the thread timeline now keys off `ANSWER_EVENT_KIND`.
+- [x] **Tests** — shared predicate tests; `task-card.test.tsx` (badge shows for an answered question, not for a plain done task or an unanswered question); an `AnsweredQuestion` Storybook story (browser-tested) + board fixture.
+- ↪️ **Decision §3 resolved:** `done` + `answer` event (not a new `answered` status) — matching what PR #55 already shipped, so no migration.
+- [x] `:typecheck` · `:lint` · `:test` (web 265, gateway 594, shared, ui 15) green; `moon ci` green on PR #83. Before/after card + board screenshots in the PR.
+
+**Theme C complete.** Remaining Phase 15: **Theme A** (bulk add — note already shipped via Phase 16) and **Theme D** (knowledge-files watcher) — D is the last net-new infra slice.
+
 ## 2026-06-22 — Phase 19 Theme D: ongoing setup-readiness panel in settings (PR #82)
 
 A permanent **Setup readiness** section in Settings → System — readiness isn't only a first-run concern, an install can break later (a revoked key, an uninstalled CLI). Reuses the Theme-A endpoint; no second source of truth. Web-only.

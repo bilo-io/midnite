@@ -43,14 +43,14 @@ Links in a task's prompt are fetched and folded into the agent's seed prompt as 
 
 ---
 
-## Theme C — Inline answers for question-type items — **M**
+## Theme C — Inline answers for question-type items — **M** — ✅ DONE (PRs #55 + #83, 2026-06-22 — see [done.md](done.md))
 
 When classification yields `kind: question`, answer it directly instead of landing an actionable task.
 
-- [ ] An **answer-generation step** in the agent module (plan model) invoked when the classifier returns `question`; produces a concise answer (with the URL/knowledge context from Themes B/D if present).
-- [ ] **Surface in the task thread, not the board** (Decision §3): write the answer as a `task_events` entry and move the item to an **`answered`** resolution (a terminal state / status handling) so questions don't clog the active columns. Reuse the existing task-event timeline the thread modal renders.
-- [ ] Web: the task thread shows the answer (markdown-rendered) with a clear "answered" affordance; the item is filterable/visible without occupying a working column.
-- [ ] Fail-open: if answer generation fails or the LLM is disabled, fall back to landing the item as a normal task (never silently drop a question).
+- [x] An **answer-generation step** in the agent module (plan model) invoked when the classifier returns `question`; produces a concise answer. *(PR #55: `PlannerService.answer`, called from `tasks.service` for question-kind tasks.)*
+- [x] **Surface in the task thread, not the board** (Decision §3 — resolved as **`done` + an `answer` event**, not a new status): the answer is written as an `answer` `task_events` entry and the task resolves to `done`, so questions don't clog the working columns. *(PR #55.)*
+- [x] Web: the task thread renders the answer (markdown) *(PR #55)*; a clear **"Answered" affordance** (badge on the card + thread header, single-sourced via `isAnsweredQuestion`/`ANSWER_EVENT_KIND` in `shared`) plus an **"Answered" filter toggle** so the item is findable apart from ordinary completed work *(PR #83)*.
+- [x] Fail-open: if answer generation fails or the LLM is disabled, the item lands as a normal task (never silently dropped). *(PR #55.)*
 
 ---
 
