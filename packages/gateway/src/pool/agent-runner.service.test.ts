@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { parseConfig, type MidniteConfig, type Task } from '@midnite/shared';
+import { parseConfig, type MidniteConfig, type Repo, type Task } from '@midnite/shared';
 import type { UrlContextService } from '../agent/url-context.service';
+import type { ReposService } from '../repos/repos.service';
 import type { TasksService } from '../tasks/tasks.service';
 import type { TerminalService } from '../terminal/terminal.service';
 import { AgentPoolService } from './agent-pool.service';
@@ -9,6 +10,13 @@ import { AgentRunnerService } from './agent-runner.service';
 // Prompt enrichment is exercised in url-context.service.spec; here it's a
 // passthrough so the seed prompt reaches spawnAgentSession unchanged.
 const noUrlContext = { enrich: async (p: string) => p } as unknown as UrlContextService;
+
+// No registered repos → seed prompt is left untouched (no conventions).
+const noRepos = { findByName: () => undefined } as unknown as ReposService;
+
+function reposWith(repo: Partial<Repo> & { name: string }): ReposService {
+  return { findByName: (name: string) => (name === repo.name ? repo : undefined) } as unknown as ReposService;
+}
 
 function config(): MidniteConfig {
   return parseConfig({
@@ -84,7 +92,7 @@ describe('AgentRunnerService', () => {
     const { service, startTask } = fakeTasks([task('t1', '  do the thing  ')]);
     const pool = new AgentPoolService(cfg, service);
     const { terminal, spawnAgentSession } = fakeTerminal();
-    const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext);
+    const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, noRepos);
 
     const ok = await runner.start(task('t1', '  do the thing  '));
     expect(ok).toBe(true);
@@ -98,6 +106,37 @@ describe('AgentRunnerService', () => {
     expect(pool.snapshot().slots.find((s) => s.taskId === 't1')?.pid).toBe(42);
   });
 
+  it("appends the task repo's branch/PR conventions to the seed prompt", async () => {
+    const cfg = config();
+    const t = { ...task('t1', 'do the thing'), repo: 'api' } as Task;
+    const { service } = fakeTasks([t]);
+    const pool = new AgentPoolService(cfg, service);
+    const { terminal, spawnAgentSession } = fakeTerminal();
+    const repos = reposWith({ name: 'api', branchPrefix: 'feature/', prTemplate: '## Why' });
+    const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, repos);
+
+    await runner.start(t);
+
+    const prompt = spawnAgentSession.mock.calls[0]![1].prompt;
+    expect(prompt).toContain('do the thing');
+    expect(prompt).toContain('## Repository conventions');
+    expect(prompt).toContain('`feature/`');
+    expect(prompt).toContain('## Why');
+  });
+
+  it('leaves the seed prompt untouched when the task has no repo', async () => {
+    const cfg = config();
+    const { service } = fakeTasks([task('t1', 'do the thing')]);
+    const pool = new AgentPoolService(cfg, service);
+    const { terminal, spawnAgentSession } = fakeTerminal();
+    const repos = reposWith({ name: 'api', branchPrefix: 'feature/' });
+    const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, repos);
+
+    await runner.start(task('t1', 'do the thing'));
+
+    expect(spawnAgentSession.mock.calls[0]![1].prompt).toBe('do the thing');
+  });
+
   it('requeues and frees the slot when the spawn fails', async () => {
     const cfg = config();
     const { service, requeue } = fakeTasks([task('t1', 'x')]);
@@ -106,7 +145,7 @@ describe('AgentRunnerService', () => {
       spawnAgentSession: vi.fn(() => ({ ok: false as const, error: 'no pty' })),
       killManagedRun: vi.fn(),
     } as unknown as TerminalService;
-    const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext);
+    const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, noRepos);
 
     const ok = await runner.start(task('t1', 'x'));
     expect(ok).toBe(false);
@@ -119,7 +158,7 @@ describe('AgentRunnerService', () => {
     const { service, retry } = fakeTasks([task('t1', 'x')]);
     const pool = new AgentPoolService(cfg, service);
     const { terminal, fireExit } = fakeTerminal();
-    const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext);
+    const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, noRepos);
 
     await runner.start(task('t1', 'x')); // task is now wip
     fireExit(1); // PTY died unexpectedly
@@ -135,7 +174,7 @@ describe('AgentRunnerService', () => {
     const { service, retry, updateStatus } = fakeTasks([exhausted]);
     const pool = new AgentPoolService(cfg, service);
     const { terminal, fireExit } = fakeTerminal();
-    const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext);
+    const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, noRepos);
 
     await runner.start(exhausted); // wip
     fireExit(1); // crash again, but the budget is spent
@@ -150,7 +189,7 @@ describe('AgentRunnerService', () => {
     const { service, updateStatus } = fakeTasks([task('t1', 'x')]);
     const pool = new AgentPoolService(cfg, service);
     const { terminal, killManagedRun } = fakeTerminal();
-    const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext);
+    const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, noRepos);
 
     await runner.start(task('t1', 'x'));
     runner.cancel('t1');
@@ -164,7 +203,7 @@ describe('AgentRunnerService', () => {
     const { service, requeue, updateStatus } = fakeTasks([task('t1', 'x')]);
     const pool = new AgentPoolService(cfg, service);
     const { terminal, interruptManagedRun } = fakeTerminal();
-    const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext);
+    const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, noRepos);
 
     await runner.start(task('t1', 'x')); // task is now wip
     runner.stop('t1');
@@ -181,7 +220,7 @@ describe('AgentRunnerService', () => {
     const { service, retry } = fakeTasks([task('t1', 'x')]);
     const pool = new AgentPoolService(cfg, service);
     const { terminal, fireExit } = fakeTerminal();
-    const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext);
+    const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, noRepos);
 
     await runner.start(task('t1', 'x')); // wip
     runner.stop('t1'); // → todo, interrupt scheduled
@@ -196,7 +235,7 @@ describe('AgentRunnerService', () => {
     const { service, requeue } = fakeTasks([task('t1', 'x')]);
     const pool = new AgentPoolService(cfg, service);
     const { terminal } = fakeTerminal();
-    const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext);
+    const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, noRepos);
 
     await runner.start(task('t1', 'x'));
     runner.stop('t1', 'backlog');

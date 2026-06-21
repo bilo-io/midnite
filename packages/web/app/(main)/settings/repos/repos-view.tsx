@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Check, FolderGit2, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { Check, FolderGit2, GitBranch, Pencil, Plus, Trash2, X } from 'lucide-react';
 import type { Repo } from '@midnite/shared';
 import { Accordion } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { useConfirm } from '@/components/confirm-dialog';
 import { createRepo, deleteRepo, getRepos, updateRepo } from '@/lib/api';
 
@@ -18,7 +19,8 @@ const byName = (a: Repo, b: Repo) => a.name.localeCompare(b.name);
 /**
  * Settings > Repos — CRUD over the DB-backed repo registry. A repo is a named
  * checkout the orchestrator runs agents against; a task's `repo` resolves to its
- * path when the session's terminal opens.
+ * path when the session's terminal opens. Optional per-repo conventions — a
+ * branch prefix and a PR-body template — are folded into the agent's seed prompt.
  */
 export function ReposView() {
   const confirm = useConfirm();
@@ -27,11 +29,15 @@ export function ReposView() {
 
   const [name, setName] = useState('');
   const [path, setPath] = useState('');
+  const [branchPrefix, setBranchPrefix] = useState('');
+  const [prTemplate, setPrTemplate] = useState('');
   const [adding, setAdding] = useState(false);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editPath, setEditPath] = useState('');
+  const [editBranchPrefix, setEditBranchPrefix] = useState('');
+  const [editPrTemplate, setEditPrTemplate] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
 
   useEffect(() => {
@@ -51,10 +57,17 @@ export function ReposView() {
     }
     setAdding(true);
     try {
-      const created = await createRepo({ name: name.trim(), path: path.trim() });
+      const created = await createRepo({
+        name: name.trim(),
+        path: path.trim(),
+        branchPrefix: branchPrefix.trim() || undefined,
+        prTemplate: prTemplate.trim() || undefined,
+      });
       setRepos((prev) => [...(prev ?? []), created].sort(byName));
       setName('');
       setPath('');
+      setBranchPrefix('');
+      setPrTemplate('');
     } catch (e) {
       setError(errMsg(e));
     } finally {
@@ -67,6 +80,8 @@ export function ReposView() {
     setEditingId(repo.id);
     setEditName(repo.name);
     setEditPath(repo.path);
+    setEditBranchPrefix(repo.branchPrefix ?? '');
+    setEditPrTemplate(repo.prTemplate ?? '');
   };
 
   const onSaveEdit = async (id: string) => {
@@ -77,7 +92,13 @@ export function ReposView() {
     }
     setSavingEdit(true);
     try {
-      const updated = await updateRepo(id, { name: editName.trim(), path: editPath.trim() });
+      // Send conventions verbatim — an empty string clears them server-side.
+      const updated = await updateRepo(id, {
+        name: editName.trim(),
+        path: editPath.trim(),
+        branchPrefix: editBranchPrefix.trim(),
+        prTemplate: editPrTemplate.trim(),
+      });
       setRepos((prev) => (prev ?? []).map((r) => (r.id === id ? updated : r)).sort(byName));
       setEditingId(null);
     } catch (e) {
@@ -114,7 +135,8 @@ export function ReposView() {
           <p className="text-xs text-muted-foreground">
             Named checkouts the orchestrator runs agents against. A task’s repo resolves to the
             checkout’s folder when its session opens. Paths may use <code>~</code> for your home
-            directory.
+            directory. An optional branch prefix and PR-body template are folded into the agent’s
+            prompt for tasks targeting the repo.
           </p>
 
           {error ? (
@@ -133,31 +155,48 @@ export function ReposView() {
                 editingId === repo.id ? (
                   <li
                     key={repo.id}
-                    className="flex flex-wrap items-center gap-2 rounded-md border border-border/60 bg-muted/20 p-2"
+                    className="space-y-2 rounded-md border border-border/60 bg-muted/20 p-3"
                   >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Input
+                        aria-label="Repo name"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        className="w-32"
+                      />
+                      <Input
+                        aria-label="Repo path"
+                        value={editPath}
+                        onChange={(e) => setEditPath(e.target.value)}
+                        className="min-w-0 flex-1"
+                      />
+                    </div>
                     <Input
-                      aria-label="Repo name"
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      className="w-32"
+                      aria-label="Branch prefix"
+                      value={editBranchPrefix}
+                      onChange={(e) => setEditBranchPrefix(e.target.value)}
+                      placeholder="Branch prefix (e.g. feature/)"
                     />
-                    <Input
-                      aria-label="Repo path"
-                      value={editPath}
-                      onChange={(e) => setEditPath(e.target.value)}
-                      className="min-w-0 flex-1"
+                    <Textarea
+                      aria-label="PR template"
+                      value={editPrTemplate}
+                      onChange={(e) => setEditPrTemplate(e.target.value)}
+                      placeholder="PR body template (optional)"
+                      rows={3}
                     />
-                    <Button size="sm" onClick={() => onSaveEdit(repo.id)} disabled={savingEdit}>
-                      <Check className="h-3.5 w-3.5" /> Save
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setEditingId(null)}
-                      disabled={savingEdit}
-                    >
-                      <X className="h-3.5 w-3.5" /> Cancel
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" onClick={() => onSaveEdit(repo.id)} disabled={savingEdit}>
+                        <Check className="h-3.5 w-3.5" /> Save
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setEditingId(null)}
+                        disabled={savingEdit}
+                      >
+                        <X className="h-3.5 w-3.5" /> Cancel
+                      </Button>
+                    </div>
                   </li>
                 ) : (
                   <li
@@ -167,6 +206,17 @@ export function ReposView() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">{repo.name}</p>
                       <p className="truncate text-xs text-muted-foreground">{repo.path}</p>
+                      {repo.branchPrefix || repo.prTemplate ? (
+                        <p className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                          {repo.branchPrefix ? (
+                            <span className="inline-flex items-center gap-1">
+                              <GitBranch className="h-3 w-3" />
+                              <code>{repo.branchPrefix}</code>
+                            </span>
+                          ) : null}
+                          {repo.prTemplate ? <span>· PR template</span> : null}
+                        </p>
+                      ) : null}
                     </div>
                     <Button
                       size="sm"
@@ -190,28 +240,56 @@ export function ReposView() {
             </ul>
           )}
 
-          <div className="flex flex-wrap items-end gap-2 border-t border-border/60 pt-4">
+          <div className="space-y-2 border-t border-border/60 pt-4">
+            <div className="flex flex-wrap items-end gap-2">
+              <div className="space-y-1">
+                <label htmlFor="repo-name" className="text-xs font-medium text-muted-foreground">
+                  Name
+                </label>
+                <Input
+                  id="repo-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="api"
+                  className="w-32"
+                />
+              </div>
+              <div className="min-w-0 flex-1 space-y-1">
+                <label htmlFor="repo-path" className="text-xs font-medium text-muted-foreground">
+                  Path
+                </label>
+                <Input
+                  id="repo-path"
+                  value={path}
+                  onChange={(e) => setPath(e.target.value)}
+                  placeholder="~/Dev/api"
+                />
+              </div>
+            </div>
             <div className="space-y-1">
-              <label htmlFor="repo-name" className="text-xs font-medium text-muted-foreground">
-                Name
+              <label
+                htmlFor="repo-branch-prefix"
+                className="text-xs font-medium text-muted-foreground"
+              >
+                Branch prefix <span className="font-normal">(optional)</span>
               </label>
               <Input
-                id="repo-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="api"
-                className="w-32"
+                id="repo-branch-prefix"
+                value={branchPrefix}
+                onChange={(e) => setBranchPrefix(e.target.value)}
+                placeholder="feature/"
               />
             </div>
-            <div className="min-w-0 flex-1 space-y-1">
-              <label htmlFor="repo-path" className="text-xs font-medium text-muted-foreground">
-                Path
+            <div className="space-y-1">
+              <label htmlFor="repo-pr-template" className="text-xs font-medium text-muted-foreground">
+                PR template <span className="font-normal">(optional)</span>
               </label>
-              <Input
-                id="repo-path"
-                value={path}
-                onChange={(e) => setPath(e.target.value)}
-                placeholder="~/Dev/api"
+              <Textarea
+                id="repo-pr-template"
+                value={prTemplate}
+                onChange={(e) => setPrTemplate(e.target.value)}
+                placeholder="## Summary&#10;&#10;## Testing"
+                rows={3}
               />
             </div>
             <Button onClick={onAdd} disabled={adding}>
