@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 10 B1 complete: remaining controller boundary coverage + flake fix (PR #30)
+
+Finishes the B1 follow-up left open by PR #28: every gateway controller now has a boundary spec, and the noted `terminal.service.spec` flake is fixed. B1 is now ✅ DONE.
+
+- [x] Controller boundary specs for the remaining 18 controllers — admin, agents, councils, environment, fs, health, market, media, memories, metadata, news, providers, routines, sessions, terminal, usage, weather, workflows — same direct-instantiate + `vi.fn()` service pattern as PR #28: body/query validation → `BadRequestException` (400), valid input delegates with the **parsed** payload, and domain/service errors propagate or map (councils → 404/400/409 via its `translate`; market/news/weather wrap upstream failures → 500).
+- [x] **Flake fixed:** `terminal/terminal.service.spec.ts` snapshots/restores `process.env` around each test. The spec copies `process.env` into spawned PTY envs and asserts which `MIDNITE_*` vars are present/absent, so a var leaked from another Vitest worker-shared spec could break the secret-scrub assertions; it's now isolated regardless of run order.
+- [x] No product code changed (tests + one test-isolation fix). `moon run gateway:test` (462 pass), `:typecheck`, `:lint` green; `moon ci` green on PR #30.
+
 ## 2026-06-20 — Phase 9 office C: searchable library modal (PR #29)
 
 The library room's bookshelves were decorative; C makes the bookshelf a real interactable.
