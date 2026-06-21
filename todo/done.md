@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 19 Theme D: ongoing setup-readiness panel in settings (PR #82)
+
+A permanent **Setup readiness** section in Settings → System — readiness isn't only a first-run concern, an install can break later (a revoked key, an uninstalled CLI). Reuses the Theme-A endpoint; no second source of truth. Web-only.
+
+- [x] **`SetupStatusPanel`** ([app/(main)/settings/system/setup-status-panel.tsx](../packages/web/app/(main)/settings/system/setup-status-panel.tsx)) wired into `SystemSection`: an `Accordion` with a Ready / Setup-incomplete badge, the per-item checklist (dot + label + detail + a **Fix/Manage** deep-link), a **Re-check** button, and graceful loading + error/retry states. Re-checks on window focus.
+- [x] **DRY:** extracted the status-dot colours + per-item settings hrefs into [lib/setup-items.ts](../packages/web/lib/setup-items.ts), shared by the panel and the Theme-C nudge.
+- [x] RTL ([setup-status-panel.test.tsx](../packages/web/app/(main)/settings/system/setup-status-panel.test.tsx)) + Storybook (`NotReady`/`Ready`/`Error`) coverage; `web:typecheck`/`web:lint`/`web:test` (277) green; CI green on PR #82.
+
+**Phase 19 is now A + C + D done** — only **Theme B** (the guided wizard, which also folds in the server-side completed marker + first-run auto-open deferred from C) remains.
+
 ## 2026-06-22 — Phase 14 Theme B1 (part): workflow credential vault — encrypted store + REST (PR #81)
 
 A secure home for the secrets Theme C integration nodes will reference by id. Lands the security-critical store; consumers follow.

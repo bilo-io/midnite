@@ -54,12 +54,12 @@ Surface the wizard when it's useful; never get in the way.
 
 ---
 
-## Theme D — Ongoing Status panel — **S**
+## Theme D — Ongoing Status panel — **S** — ✅ DONE (PR #82, 2026-06-22 — see [done.md](done.md))
 
 The readiness checklist isn't only for first-run — a setup can break later (a revoked key, an uninstalled CLI).
 
-- [ ] A **Status / readiness panel** in [`settings/system`](../packages/web/app/(main)/settings/system/system-section.tsx) rendering the same `SetupStatus` (the green/amber/red checklist) as a permanent view, with deep-links to the relevant settings page per item.
-- [ ] Reuses Theme A's endpoint — no second source of truth for "are we set up."
+- [x] A **Status / readiness panel** in [`settings/system`](../packages/web/app/(main)/settings/system/system-section.tsx) (`SetupStatusPanel`) rendering the same `SetupStatus` (green/amber/red checklist) as a permanent view, with a Ready/Setup-incomplete badge, a deep-link per item, and a Re-check button. Re-checks on focus so a regressed setup turns amber/red without a reload.
+- [x] Reuses Theme A's endpoint — no second source of truth. Shared presentation helper ([`lib/setup-items.ts`](../packages/web/lib/setup-items.ts)) keeps the panel and the Theme-C nudge in lock-step.
 
 ---
 
