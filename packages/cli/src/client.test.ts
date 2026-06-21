@@ -49,13 +49,27 @@ describe('createClient', () => {
 
   it('createTask posts multipart and unwraps { task }', async () => {
     let method = '';
+    let body: unknown;
     stubFetch((_url, init) => {
       method = init?.method ?? '';
+      body = init?.body;
       return new Response(JSON.stringify({ task: TASK }), { status: 200 });
     });
     const task = await createClient('http://gw').createTask('do the thing');
     expect(method).toBe('POST');
     expect(task.title).toBe('do the thing');
+    // No repo flag → the field is omitted entirely (unassigned).
+    expect((body as FormData).has('repo')).toBe(false);
+  });
+
+  it('createTask sends the repo field when given', async () => {
+    let body: unknown;
+    stubFetch((_url, init) => {
+      body = init?.body;
+      return new Response(JSON.stringify({ task: TASK }), { status: 200 });
+    });
+    await createClient('http://gw').createTask('do the thing', { repo: 'midnite' });
+    expect((body as FormData).get('repo')).toBe('midnite');
   });
 
   it('moveTask PATCHes the status endpoint', async () => {

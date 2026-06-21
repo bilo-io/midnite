@@ -7,7 +7,7 @@ export function resolveBaseUrl(flag?: string): string {
 
 export interface GatewayClient {
   listTasks(status?: string): Promise<Task[]>;
-  createTask(prompt: string): Promise<Task>;
+  createTask(prompt: string, opts?: { repo?: string }): Promise<Task>;
   moveTask(id: string, status: Status): Promise<Task>;
 }
 
@@ -42,9 +42,12 @@ export function createClient(baseUrl: string): GatewayClient {
       return TaskSchema.array().parse(await request(`/tasks${query}`, { method: 'GET' }));
     },
 
-    async createTask(prompt: string): Promise<Task> {
+    async createTask(prompt: string, opts?: { repo?: string }): Promise<Task> {
       const form = new FormData();
       form.set('prompt', prompt);
+      // The gateway validates `repo` against the registry and 400s on an unknown
+      // name (with the known names listed), surfaced by `request` above.
+      if (opts?.repo) form.set('repo', opts.repo);
       const body = (await request('/tasks', { method: 'POST', body: form })) as { task: unknown };
       return TaskSchema.parse(body.task);
     },

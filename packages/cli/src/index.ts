@@ -17,8 +17,9 @@ function client(): ReturnType<typeof createClient> {
 program
   .command('add <prompt>')
   .description('Add a task (the gateway triages it to todo or backlog)')
-  .action(async (prompt: string) => {
-    const task = await client().createTask(prompt);
+  .option('--repo <name>', 'assign the task to a registered repo (its session opens there)')
+  .action(async (prompt: string, opts: { repo?: string }) => {
+    const task = await client().createTask(prompt, { repo: opts.repo });
     console.log(`added ${task.id}  [${task.status}]  ${task.title}`);
   });
 
