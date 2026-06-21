@@ -15,6 +15,7 @@ import {
 import { TaskClassifier, type ClassifierImage } from '../agent/classifier.service';
 import { PlannerService } from '../agent/planner.service';
 import { mapWithConcurrency } from '../lib/map-with-concurrency';
+import { ReposService } from '../repos/repos.service';
 import { TasksRepository } from './tasks.repository';
 import { TaskEventBus } from './task-event-bus';
 
@@ -62,7 +63,22 @@ export class TasksService {
     @Inject(TaskClassifier) private readonly classifier: TaskClassifier,
     @Inject(PlannerService) private readonly planner: PlannerService,
     @Inject(TaskEventBus) private readonly bus: TaskEventBus,
+    @Inject(ReposService) private readonly repos: ReposService,
   ) {}
+
+  // Resolve a task's repo reference against the registry (Phase 13 B2). A blank
+  // value means "unassigned" (null). A non-empty name must match a registered
+  // repo — an unknown name is rejected up front rather than persisted as a
+  // dangling free string that silently no-ops at cwd-resolution time (Decision
+  // §3). The stored reference is the registry-unique name, not an id (Decision §1).
+  private resolveRepoReference(repo: string | undefined): string | null {
+    const name = repo?.trim();
+    if (!name) return null;
+    if (!this.repos.findByName(name)) {
+      throw new BadRequestException(`unknown repo "${name}"`);
+    }
+    return name;
+  }
 
   // Publish a board event after a mutation. `created`/`updated` carry the full
   // task so clients can patch their cache; the web client just invalidates and
@@ -236,6 +252,9 @@ export class TasksService {
   // create can coalesce the whole batch into one board event (createBulk); the
   // task is still persisted and returned. Defaults to broadcasting.
   async createFromPrompt(input: CreateTaskInput, opts: { emit?: boolean } = {}): Promise<Task> {
+    // Reject an unknown repo before any work (classify/triage/insert).
+    const repo = this.resolveRepoReference(input.repo);
+
     // Triage (plan model: ready→todo / not→backlog) and classify (title/kind)
     // run concurrently — both are fail-soft, so neither breaks task creation.
     const [classified, triage] = await Promise.all([
@@ -258,7 +277,7 @@ export class TasksService {
       status: input.status ?? (triage.ready ? 'todo' : 'backlog'),
       priority: clampPriority(input.priority),
       prompt: input.prompt,
-      repo: input.repo ?? null,
+      repo,
       projectId: input.projectId ?? null,
       agentId: null,
       sessionId: null,
@@ -321,6 +340,10 @@ export class TasksService {
         `bulk request exceeds the ${MAX_BULK_LINES}-line cap (got ${lines.length})`,
       );
     }
+
+    // The repo applies batch-wide, so reject an unknown one once up front rather
+    // than letting every line fail individually (createFromPrompt re-validates).
+    this.resolveRepoReference(input.repo);
 
     const results = await mapWithConcurrency(
       lines,

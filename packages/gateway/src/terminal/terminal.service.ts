@@ -11,6 +11,7 @@ import { ProjectsService } from '../projects/projects.service';
 import { ReposService } from '../repos/repos.service';
 import { TasksService } from '../tasks/tasks.service';
 import { ApprovalService } from './approval.service';
+import { pickSessionCwd } from './lib/resolve-cwd';
 
 type NodePtyModule = typeof import('node-pty');
 type IPty = import('node-pty').IPty;
@@ -790,18 +791,22 @@ export class TerminalService implements OnModuleDestroy {
   //   3. the global fallback working directory (set on the profile page)
   //   4. the gateway's working directory
   private resolveCwd(sessionId?: string): string {
+    let projectWorkDir: string | undefined;
+    let repoPath: string | undefined;
     if (sessionId) {
       const task = this.tasks.listTasks().find((t) => t.id === sessionId);
-      if (task?.projectId) {
-        const workDir = this.projects.workDirFor(task.projectId);
-        if (workDir) return expandTilde(workDir, homedir());
-      }
-      const repo = task?.repo ? this.repos.findByName(task.repo) : undefined;
-      if (repo) return expandTilde(repo.path, homedir());
+      if (task?.projectId) projectWorkDir = this.projects.workDirFor(task.projectId);
+      if (task?.repo) repoPath = this.repos.findByName(task.repo)?.path;
     }
-    const fallback = this.agents.getDefaultWorkDir();
-    if (fallback) return expandTilde(fallback, homedir());
-    return process.cwd();
+    const chosen = pickSessionCwd({
+      projectWorkDir,
+      repoPath,
+      fallback: this.agents.getDefaultWorkDir(),
+      gatewayCwd: process.cwd(),
+    });
+    // expandTilde is a no-op on the already-absolute gateway cwd, so applying it
+    // uniformly to whichever candidate won preserves the prior per-branch calls.
+    return expandTilde(chosen, homedir());
   }
 
   private pushRing(handle: PtyHandle, frame: OutputFrame): void {

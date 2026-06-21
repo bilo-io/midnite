@@ -12,6 +12,7 @@ import { TasksService } from './tasks.service';
 import { TaskEventBus } from './task-event-bus';
 import { TaskClassifier, type ClassifierImage } from '../agent/classifier.service';
 import type { PlannerService } from '../agent/planner.service';
+import type { ReposService } from '../repos/repos.service';
 
 class StubClassifier extends TaskClassifier {
   async classify(prompt: string, _images: ClassifierImage[]) {
@@ -21,6 +22,18 @@ class StubClassifier extends TaskClassifier {
 
 // Always-ready planner so existing status assertions (→ todo) hold.
 const stubPlanner = { triage: async () => ({ ready: true }) } as unknown as PlannerService;
+
+// A repo-registry stub: the given names resolve to a repo, everything else is
+// unknown. `stubRepos` (no names) is the default for tests that don't set a repo.
+function reposWith(...names: string[]): ReposService {
+  return {
+    findByName: (name: string) =>
+      names.includes(name)
+        ? { id: name, name, path: `~/repos/${name}`, createdAt: '', updatedAt: '' }
+        : undefined,
+  } as unknown as ReposService;
+}
+const stubRepos = reposWith();
 
 class InMemoryRepo extends TasksRepository {
   readonly tasks: TaskRow[] = [];
@@ -187,7 +200,7 @@ describe('TasksService', () => {
       'done', 'done',
       'abandoned',
     ]);
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus(), stubRepos);
     const counts = service.getCounts();
     // backlog and todo are now distinct buckets; wip + waiting fold into
     // inProgress; abandoned is excluded from the dashboard entirely.
@@ -196,7 +209,7 @@ describe('TasksService', () => {
 
   it('createFromPrompt persists task, classifies, and emits task.created event', async () => {
     const repo = new InMemoryRepo();
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus(), stubRepos);
 
     const task = await service.createFromPrompt({
       prompt: 'add a CSV export to the reports page',
@@ -212,7 +225,7 @@ describe('TasksService', () => {
 
   it('createFromPrompt honours an explicit status (e.g. backlog)', async () => {
     const repo = new InMemoryRepo();
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus(), stubRepos);
 
     const task = await service.createFromPrompt({
       prompt: 'park this idea for later',
@@ -223,9 +236,38 @@ describe('TasksService', () => {
     expect(task.status).toBe('backlog');
   });
 
+  it('createFromPrompt persists a known repo by name (Phase 13 B2)', async () => {
+    const repo = new InMemoryRepo();
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus(), reposWith('web'));
+
+    const task = await service.createFromPrompt({ prompt: 'tweak the nav', repo: 'web', images: [] });
+
+    expect(task.repo).toBe('web');
+  });
+
+  it('createFromPrompt rejects an unknown repo and persists nothing (Phase 13 B2)', async () => {
+    const repo = new InMemoryRepo();
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus(), reposWith('web'));
+
+    await expect(
+      service.createFromPrompt({ prompt: 'tweak the nav', repo: 'ghost', images: [] }),
+    ).rejects.toThrow(/unknown repo "ghost"/);
+    expect(repo.tasks).toHaveLength(0);
+  });
+
+  it('createFromPrompt treats a blank repo as unassigned (null)', async () => {
+    const repo = new InMemoryRepo();
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus(), reposWith('web'));
+
+    const task = await service.createFromPrompt({ prompt: 'no repo', repo: '   ', images: [] });
+
+    expect(task.repo).toBeUndefined();
+    expect(repo.tasks[0]!.repo).toBeNull();
+  });
+
   it('createFromPrompt records attachments against the new task', async () => {
     const repo = new InMemoryRepo();
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus(), stubRepos);
 
     const task = await service.createFromPrompt({
       prompt: 'fix layout',
@@ -242,7 +284,7 @@ describe('TasksService', () => {
   it('updateStatus changes status and emits status.changed event', () => {
     const repo = new InMemoryRepo();
     seed(repo, ['todo']);
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus(), stubRepos);
     const updated = service.updateStatus('t0', 'wip');
     expect(updated.status).toBe('wip');
     expect(repo.events.some((e) => e.kind === 'status.changed')).toBe(true);
@@ -252,7 +294,7 @@ describe('TasksService', () => {
   it('abandoning a task auto-archives it and emits task.archived', () => {
     const repo = new InMemoryRepo();
     seed(repo, ['wip']);
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus(), stubRepos);
     const updated = service.updateStatus('t0', 'abandoned');
     expect(updated.status).toBe('abandoned');
     expect(updated.archivedAt).toBeDefined();
@@ -262,7 +304,7 @@ describe('TasksService', () => {
   it('archive/unarchive toggles archivedAt and emits events', () => {
     const repo = new InMemoryRepo();
     seed(repo, ['done']);
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus(), stubRepos);
 
     const archived = service.archive('t0');
     expect(archived.archivedAt).toBeDefined();
@@ -276,7 +318,7 @@ describe('TasksService', () => {
   it('deleteTask refuses to delete a task that is not archived', () => {
     const repo = new InMemoryRepo();
     seed(repo, ['done']);
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus(), stubRepos);
     expect(() => service.deleteTask('t0')).toThrow(/archived/);
     expect(repo.tasks).toHaveLength(1);
   });
@@ -284,7 +326,7 @@ describe('TasksService', () => {
   it('deleteTask removes a task once it has been archived', () => {
     const repo = new InMemoryRepo();
     seed(repo, ['done']);
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus(), stubRepos);
     service.archive('t0');
     service.deleteTask('t0');
     expect(repo.tasks).toHaveLength(0);
@@ -292,14 +334,14 @@ describe('TasksService', () => {
 
   it('deleteTask 404s for an unknown task', () => {
     const repo = new InMemoryRepo();
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus(), stubRepos);
     expect(() => service.deleteTask('nope')).toThrow();
   });
 
   it('moving out of abandoned does not auto-unarchive', () => {
     const repo = new InMemoryRepo();
     seed(repo, ['wip']);
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus(), stubRepos);
     service.updateStatus('t0', 'abandoned');
     const back = service.updateStatus('t0', 'todo');
     expect(back.status).toBe('todo');
@@ -308,7 +350,7 @@ describe('TasksService', () => {
 
   it('createFromPrompt stores the given priority (clamped), defaulting to Normal', async () => {
     const repo = new InMemoryRepo();
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus(), stubRepos);
 
     const urgent = await service.createFromPrompt({ prompt: 'ship it', priority: 3, images: [] });
     expect(urgent.priority).toBe(3);
@@ -323,7 +365,7 @@ describe('TasksService', () => {
   it('retry bumps retryCount, returns the task to todo, and emits agent.retried', () => {
     const repo = new InMemoryRepo();
     seed(repo, ['wip']);
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus(), stubRepos);
 
     const first = service.retry('t0');
     expect(first.status).toBe('todo');
@@ -347,7 +389,7 @@ class FlakyClassifier extends TaskClassifier {
 describe('TasksService.createBulk', () => {
   it('creates one task per parsed line, stripping a markdown marker', async () => {
     const repo = new InMemoryRepo();
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus(), stubRepos);
 
     const res = await service.createBulk({ raw: 'fix login bug\n- add dark mode\nwrite docs' });
 
@@ -359,7 +401,7 @@ describe('TasksService.createBulk', () => {
 
   it('skips blank and comment lines, counting them as skipped', async () => {
     const repo = new InMemoryRepo();
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus(), stubRepos);
 
     const res = await service.createBulk({ raw: 'fix login bug\n# a comment\n\nwrite docs\n' });
 
@@ -369,7 +411,7 @@ describe('TasksService.createBulk', () => {
 
   it('returns a per-line error for a failing line while the rest succeed', async () => {
     const repo = new InMemoryRepo();
-    const service = new TasksService(repo, new FlakyClassifier(), stubPlanner, new TaskEventBus());
+    const service = new TasksService(repo, new FlakyClassifier(), stubPlanner, new TaskEventBus(), stubRepos);
 
     const res = await service.createBulk({ lines: ['good one', 'BOOM bad', 'good two'] });
 
@@ -385,7 +427,7 @@ describe('TasksService.createBulk', () => {
     const bus = new TaskEventBus();
     const events: TaskBoardEvent[] = [];
     bus.subscribe((e) => events.push(e));
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner, bus);
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, bus, stubRepos);
 
     await service.createBulk({ raw: 'a\nb\nc' });
 
@@ -399,16 +441,26 @@ describe('TasksService.createBulk', () => {
 
   it('applies batch-wide repo and priority to every created task', async () => {
     const repo = new InMemoryRepo();
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus(), reposWith('midnite'));
 
     await service.createBulk({ lines: ['one', 'two'], repo: 'midnite', priority: 3 });
 
     expect(repo.tasks.every((t) => t.repo === 'midnite' && t.priority === 3)).toBe(true);
   });
 
+  it('rejects a batch with an unknown repo before creating anything (Phase 13 B2)', async () => {
+    const repo = new InMemoryRepo();
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus(), reposWith('midnite'));
+
+    await expect(service.createBulk({ lines: ['one', 'two'], repo: 'ghost' })).rejects.toThrow(
+      /unknown repo "ghost"/,
+    );
+    expect(repo.tasks).toHaveLength(0);
+  });
+
   it('rejects a batch over the line cap before creating anything', async () => {
     const repo = new InMemoryRepo();
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus(), stubRepos);
 
     const lines = Array.from({ length: MAX_BULK_LINES + 1 }, (_, i) => `task ${i}`);
     await expect(service.createBulk({ lines })).rejects.toThrow(/cap/);
@@ -417,7 +469,7 @@ describe('TasksService.createBulk', () => {
 
   it('rejects a request with no usable task lines', async () => {
     const repo = new InMemoryRepo();
-    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus(), stubRepos);
 
     await expect(service.createBulk({ raw: '# only a comment\n\n' })).rejects.toThrow(/no task lines/);
   });
