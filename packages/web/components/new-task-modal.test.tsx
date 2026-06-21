@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { BulkCreateTaskResponse, Repo } from '@midnite/shared';
 
@@ -8,6 +8,13 @@ vi.mock('@/lib/api', () => ({
   createBulk: (...args: unknown[]) => createBulk(...args),
   createTask: (...args: unknown[]) => createTask(...args),
 }));
+
+// The api mocks are module-level, so reset call history between tests to keep
+// per-test call-count assertions independent.
+beforeEach(() => {
+  createBulk.mockReset();
+  createTask.mockReset();
+});
 
 import { NewTaskModal } from './new-task-modal';
 
@@ -86,19 +93,20 @@ describe('NewTaskModal — repo picker', () => {
     expect(screen.queryByLabelText('Repo')).toBeNull();
   });
 
-  it('sends the chosen repo on create and defaults to unassigned (no field)', async () => {
+  it('defaults to "Unassigned" and sends no repo field', async () => {
     createTask.mockResolvedValue({ task: { id: 't1', title: 'do thing', status: 'todo', events: [] } });
     renderModal({ repos: [REPO] });
 
-    // Default selection is "Unassigned" → no repo field sent.
     fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'do thing' } });
     fireEvent.click(screen.getByRole('button', { name: 'Create task' }));
     await waitFor(() => expect(createTask).toHaveBeenCalledTimes(1));
     expect((createTask.mock.calls[0]![0] as FormData).has('repo')).toBe(false);
+  });
 
-    createTask.mockClear();
-    // Picking a repo sends its name on the form.
+  it('sends the chosen repo name on the create form', async () => {
+    createTask.mockResolvedValue({ task: { id: 't1', title: 'do thing', status: 'todo', events: [] } });
     renderModal({ repos: [REPO] });
+
     fireEvent.change(screen.getByLabelText('Repo'), { target: { value: 'midnite' } });
     fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'do thing' } });
     fireEvent.click(screen.getByRole('button', { name: 'Create task' }));
