@@ -52,6 +52,34 @@ describe('node-type registry', () => {
   });
 });
 
+describe('reshape nodes (Phase 12 Theme C)', () => {
+  it('registers setData / merge / filter with the right categories', () => {
+    expect(getNodeTypeDefinition('logic.setData')!.category).toBe('logic');
+    expect(getNodeTypeDefinition('logic.merge')!.category).toBe('logic');
+    expect(getNodeTypeDefinition('data.filter')!.category).toBe('data');
+  });
+
+  it('defaults setData to replace mode with an empty fields object', () => {
+    const ok = getNodeTypeDefinition('logic.setData')!.paramsSchema.safeParse({});
+    expect(ok.success).toBe(true);
+    if (ok.success) expect(ok.data).toEqual({ mode: 'replace', fields: {} });
+  });
+
+  it('defaults merge to shallowMerge and rejects an unknown mode', () => {
+    const def = getNodeTypeDefinition('logic.merge')!;
+    const ok = def.paramsSchema.safeParse({});
+    expect(ok.success).toBe(true);
+    if (ok.success) expect(ok.data.mode).toBe('shallowMerge');
+    expect(def.paramsSchema.safeParse({ mode: 'bogus' }).success).toBe(false);
+  });
+
+  it('defaults data.filter to pick with an empty field list', () => {
+    const ok = getNodeTypeDefinition('data.filter')!.paramsSchema.safeParse({});
+    expect(ok.success).toBe(true);
+    if (ok.success) expect(ok.data).toEqual({ mode: 'pick', fields: [] });
+  });
+});
+
 describe('branch node', () => {
   it('is registered as a logic node with true/false ports', () => {
     const def = getNodeTypeDefinition('logic.branch')!;

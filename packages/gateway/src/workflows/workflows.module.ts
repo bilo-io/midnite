@@ -9,6 +9,9 @@ import { ExecutorRegistry } from './engine/executor-registry';
 import { NODE_EXECUTORS, type NodeExecutor } from './engine/node-executor';
 import { HttpRequestExecutor } from './engine/executors/http-request.executor';
 import { AiClaudeExecutor } from './engine/executors/ai-claude.executor';
+import { SetDataExecutor } from './engine/executors/set-data.executor';
+import { MergeExecutor } from './engine/executors/merge.executor';
+import { DataFilterExecutor } from './engine/executors/data-filter.executor';
 import { WorkflowScheduler } from './scheduler/workflow-scheduler.service';
 import { WorkflowEventBus } from './workflow-event-bus';
 import { WorkflowsGateway } from './workflows.gateway';
@@ -28,10 +31,19 @@ import { WorkflowsGateway } from './workflows.gateway';
     // Adding an integration = add its executor class here (one place).
     HttpRequestExecutor,
     AiClaudeExecutor,
+    SetDataExecutor,
+    MergeExecutor,
+    DataFilterExecutor,
     {
       provide: NODE_EXECUTORS,
       useFactory: (...executors: NodeExecutor[]) => executors,
-      inject: [HttpRequestExecutor, AiClaudeExecutor],
+      inject: [
+        HttpRequestExecutor,
+        AiClaudeExecutor,
+        SetDataExecutor,
+        MergeExecutor,
+        DataFilterExecutor,
+      ],
     },
   ],
   exports: [WorkflowsService],
