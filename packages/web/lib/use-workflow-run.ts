@@ -3,13 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   WORKFLOW_WS_PATH,
+  applyWorkflowEvent,
+  isRunTerminal,
   type NodeRunStatus,
   type WorkflowEvent,
   type WorkflowRun,
 } from '@midnite/shared';
 import { gatewayWsUrl, getWorkflowRun, runWorkflow } from '@/lib/api';
-
-const TERMINAL = new Set(['succeeded', 'failed', 'canceled']);
 
 export interface UseWorkflowRun {
   run: WorkflowRun | null;
@@ -19,10 +19,11 @@ export interface UseWorkflowRun {
   start: () => Promise<void>;
 }
 
-// Kicks off a manual run and tracks it to a terminal state, surfacing per-node
-// status. Prefers a live WebSocket subscription (instant updates); if the socket
-// can't open or drops mid-run, it falls back to polling the persisted run. Either
-// way the persisted run stays authoritative — events just trigger a refetch.
+// Kicks off a manual run and tracks it to a terminal state, surfacing per-node status.
+// The live path folds each WorkflowEvent into local run state via the shared reducer —
+// no REST refetch per event. REST is the initial seed (the started run, with every node
+// pending), the reconnect/backfill path when the socket drops, and a single reconcile on
+// `run.failed` (which carries no run body) to pull authoritative skipped/log detail.
 export function useWorkflowRun(workflowId: string): UseWorkflowRun {
   const [run, setRun] = useState<WorkflowRun | null>(null);
   const [running, setRunning] = useState(false);
@@ -30,6 +31,12 @@ export function useWorkflowRun(workflowId: string): UseWorkflowRun {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const ws = useRef<WebSocket | null>(null);
   const mounted = useRef(true);
+  // Read inside socket callbacks to avoid stale-closure reads of `running`.
+  const runningRef = useRef(false);
+  const setRunningBoth = useCallback((value: boolean) => {
+    runningRef.current = value;
+    setRunning(value);
+  }, []);
 
   const cleanup = useCallback(() => {
     if (timer.current) clearTimeout(timer.current);
@@ -49,14 +56,16 @@ export function useWorkflowRun(workflowId: string): UseWorkflowRun {
     };
   }, [cleanup]);
 
+  // Pull the persisted run over REST — the initial seed, the polling fallback tick, and
+  // the post-failure reconcile. Returns true once the run has reached a terminal state.
   const refresh = useCallback(
     async (runId: string): Promise<boolean> => {
       try {
         const next = await getWorkflowRun(workflowId, runId);
         if (!mounted.current) return true;
         setRun(next);
-        if (TERMINAL.has(next.status)) {
-          setRunning(false);
+        if (isRunTerminal(next.status)) {
+          setRunningBoth(false);
           return true;
         }
       } catch (err) {
@@ -64,10 +73,10 @@ export function useWorkflowRun(workflowId: string): UseWorkflowRun {
       }
       return false;
     },
-    [workflowId],
+    [workflowId, setRunningBoth],
   );
 
-  // Polling fallback — used when the WebSocket isn't available.
+  // Polling fallback — used when the WebSocket can't open or drops mid-run.
   const poll = useCallback(
     (runId: string) => {
       const tick = async () => {
@@ -80,7 +89,8 @@ export function useWorkflowRun(workflowId: string): UseWorkflowRun {
     [refresh],
   );
 
-  // Live updates over the workflow WS; on any failure, degrade to polling.
+  // Live updates over the workflow WS; fold each event into local state via the reducer.
+  // On any connection failure, degrade to polling.
   const subscribe = useCallback(
     (runId: string) => {
       let opened = false;
@@ -103,32 +113,36 @@ export function useWorkflowRun(workflowId: string): UseWorkflowRun {
         } catch {
           return;
         }
-        if (event.runId !== runId) return;
+        if (event.runId !== runId || !mounted.current) return;
+
+        // Apply incrementally — node transitions and outputs land without re-fetching.
+        setRun((prev) => applyWorkflowEvent(prev, event));
+
         if (event.type === 'run.finished') {
-          if (mounted.current) {
-            setRun(event.run);
-            setRunning(false);
-          }
+          setRunningBoth(false);
           cleanup();
-          return;
+        } else if (event.type === 'run.failed') {
+          setRunningBoth(false);
+          // The run.failed event carries no run body; reconcile once over REST to pull the
+          // authoritative skipped-node statuses + per-node logs the stream doesn't carry.
+          void refresh(runId);
+          cleanup();
         }
-        void refresh(runId);
-        if (event.type === 'run.failed') cleanup();
       };
       socket.onerror = () => {
         if (!opened) poll(runId); // never connected → poll instead
       };
       socket.onclose = () => {
         // Dropped before the run finished (and we did connect) → resume via polling.
-        if (opened && mounted.current && running) poll(runId);
+        if (opened && mounted.current && runningRef.current) poll(runId);
       };
     },
-    [cleanup, poll, refresh, running],
+    [cleanup, poll, refresh, setRunningBoth],
   );
 
   const start = useCallback(async () => {
     setError(null);
-    setRunning(true);
+    setRunningBoth(true);
     cleanup();
     try {
       const started = await runWorkflow(workflowId);
@@ -138,9 +152,9 @@ export function useWorkflowRun(workflowId: string): UseWorkflowRun {
     } catch (err) {
       if (!mounted.current) return;
       setError(err instanceof Error ? err.message : 'Failed to start run');
-      setRunning(false);
+      setRunningBoth(false);
     }
-  }, [workflowId, cleanup, subscribe]);
+  }, [workflowId, cleanup, subscribe, setRunningBoth]);
 
   const nodeStatuses: Record<string, NodeRunStatus> = {};
   for (const nr of run?.nodeRuns ?? []) nodeStatuses[nr.nodeId] = nr.status;
