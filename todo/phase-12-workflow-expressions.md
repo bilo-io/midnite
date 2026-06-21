@@ -60,13 +60,13 @@ See what references actually resolved to — the payoff of Theme B's persisted r
 - [ ] **S** **Pin sample data** on a node: store a sample payload (editor-local + optionally persisted) so the Theme-D picker/preview work *before* a real run.
 - [ ] **S** Surface `ExpressionError` messages from a failed run inline on the offending node (red port/field), not just in the run log.
 
-## Theme F — Palette grouping & new-node surfacing (web)
+## Theme F — Palette grouping & new-node surfacing (web) — ✅ DONE (PR #38, 2026-06-21)
 
 Make the growing node set navigable in the left sidebar.
 
-- [ ] **S** Group the palette into **categories** — Triggers · Actions · Logic · Data · Storage — using the registry `category` field; the catalog/accent-hue plumbing already exists ([`workflow-node-catalog.ts`](../packages/web/lib/workflow-node-catalog.ts), `hueVarForCategory`).
-- [ ] **S** Add the new nodes (`logic.setData`, `logic.merge`, `data.filter`, `storage.set`, `storage.get`) to the palette with icons + one-line descriptions; collapsible category sections.
-- [ ] **S** Palette **search/filter** box (filter node types by name/description) — small quality-of-life win as the set grows.
+- [x] **S** Group the palette into **categories** — Actions · Logic · Data · Storage (Triggers stay excluded — one canonical trigger per workflow) — using the registry `category` field; extended `hueVarForCategory` + `--node-data`/`--node-storage` accent hues ([`workflow-node-catalog.ts`](../packages/web/lib/workflow-node-catalog.ts)).
+- [x] **S** Added the new nodes (`logic.setData`, `logic.merge`, `data.filter`, `storage.set`, `storage.get`) to the palette with mapped icons + registry-description tooltips; collapsible category sections with per-section counts.
+- [x] **S** Palette **search/filter** box (filter node types by name/description) — already present; kept, and search now force-expands matching sections.
 
 ---
 
@@ -101,7 +101,7 @@ Make the growing node set navigable in the left sidebar.
 - [ ] `logic.setData` builds an object from two upstream nodes' fields; `logic.merge` combines two branches; `data.filter` drops a field — each verified in a run.
 - [ ] `storage.set` in one run, `storage.get` in a later run returns the stored value (round-trip across runs against `:memory:` in tests, and live).
 - [ ] In the editor: toggle a field to ƒx, autocomplete an upstream node, click a leaf in the data picker to insert a reference, and see the resolved-value preview from the last run / pinned sample.
-- [ ] Palette shows grouped categories (Triggers · Actions · Logic · Data · Storage) with the new nodes and a working search filter.
+- [x] Palette shows grouped categories (Actions · Logic · Data · Storage) with the new nodes and a working search filter. (PR #38)
 - [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph (run web tests from the primary checkout, not a `.git` worktree).
 
 ---

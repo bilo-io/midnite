@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 12 Theme F complete: palette grouping & new-node surfacing (PR #38)
+
+The growing node set is now navigable in the editor's left sidebar, and the Theme-C nodes that shipped but were unreachable are finally draggable. Theme F is ✅ DONE.
+
+- [x] Palette groups into **Actions · Logic · Data · Storage** from the registry `category`, with **collapsible** sections (chevron + per-section count); searching force-expands matches.
+- [x] The Phase 12 reshape/storage nodes (`logic.setData`, `logic.merge`, `data.filter`, `storage.set`, `storage.get`) now render — they were registered but invisible because the palette only knew `action`/`logic` categories. Their icons (`pencil`, `git-merge`, `filter`, `database`) are mapped and `data`/`storage` get distinct accent hues (`--node-data`/`--node-storage`, light + dark) for consistent palette + canvas styling.
+- [x] Search/filter box (Theme F item 3) was already present; kept. Triggers stay intentionally excluded (a workflow has one canonical trigger).
+- [x] New `node-palette.test.tsx` (RTL, 6 cases): grouping, new-node surfacing, trigger omission, search + empty state, collapse/expand, click-to-add. `web:typecheck`/`lint`/`test` (144) green; `moon ci` green on PR #38. **Remaining in Phase 12:** Theme D (expression editor) + Theme E (run-history/debugging).
+
 ## 2026-06-21 — Phase 10 C2 (partial): Storybook interaction tests (PR #36)
 
 Builds on C1: `play` functions assert real interactions on the highest-value components, plus a backfilled command-palette story. C2 is ◐ partial — the broad un-storied-component backfill remains.
