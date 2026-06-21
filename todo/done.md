@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 15 Theme B: URL + GitHub-context inference (PR #67)
+
+Links in a task's prompt are fetched and folded into the agent's seed prompt as a "Linked context" block — closing part of [Phase 15](phase-15-smart-intake.md#theme-b--url--github-context-inference--m--done-pr-67-2026-06-21) / [outstanding.md](outstanding.md) #3. Best-effort + fail-open; no new fetch path or runtime dep.
+
+- [x] **Detect** — pure `extractUrls` + shared `parseGithubIssueOrPr` (resolves both `/issues/N` and `/pull/N`); helpers + formatting in `agent/lib/url-context.ts`, unit-tested.
+- [x] **GitHub** — `gh api repos/{repo}/issues/{n}` (user auth → private repos) with an anonymous `api.github.com` REST fallback when `gh` is absent. `UrlContextService` owns the shell-out + fetch (network primitives are protected seams the spec overrides).
+- [x] **General URLs** — fetched through the existing outbound SSRF guard (`isSafeHttpUrl`, private/loopback blocked) and reduced to readable text/title; reuses `readCapped`/`parseHtmlMetadata` from `opengraph.ts` rather than adding a second fetch path.
+- [x] **Inject** — appended at the agent-run seed-prompt point (`agent-runner.start()`), byte-capped (5 URLs · 4k/source · 12k total), fail-open. `gateway:test` 573 · `shared` 290 · `cli` 15; `moon ci` green on PR #67.
+- ↪️ **Phase 15 remaining:** Theme D (knowledge-files watcher). Theme A (bulk add) shipped via Phase 16; Theme C (inline answers) via PR #55.
+
 ## 2026-06-21 — Phase 29 Theme A2: lockstep version planner + version-check CI task (PR #66)
 
 The versioning core the release skills depend on ([Phase 29](phase-29-releases-versioning-changelog.md#theme-a--versioning-policy--the-lockstep-tool--m)). Encodes the rule once: every package shares `MAJOR.MINOR`, only `PATCH` advances independently.

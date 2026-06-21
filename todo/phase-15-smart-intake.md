@@ -32,14 +32,14 @@ Accept a freeform multi-line list in one shot, one task per line.
 
 ---
 
-## Theme B — URL + GitHub-context inference — **M**
+## Theme B — URL + GitHub-context inference — **M** — ✅ DONE (PR #67, 2026-06-21)
 
-Detect URLs on a submitted item; fetch context for GitHub issue/PR links (and general URLs) and fold it into the generated execution prompt.
+Links in a task's prompt are fetched and folded into the agent's seed prompt as a "Linked context" block. See [done.md](done.md).
 
-- [ ] Detect URLs in the task prompt during classify/plan, reusing [`source.ts`](../packages/shared/src/source.ts) kind detection (GitHub gets special handling; other kinds fetched as generic pages).
-- [ ] **GitHub context** — when `gh` is available, shell out to `gh api` for issue/PR title + body + state (uses the user's existing auth, handles private repos); **fall back to anonymous `api.github.com` REST** for public resources when `gh` is absent. (Decision §2 — settled gh-first.)
-- [ ] **General URL context** — fetch via the existing SSRF guard [`allowed-origin.ts`](../packages/gateway/src/lib/allowed-origin.ts) (block private ranges), extract readable text/title; never fetch a blocked origin.
-- [ ] **Inject, truncated** — fold the fetched context into the execution prompt (the same place sources are injected, [`pool/agent-pool.service.ts`](../packages/gateway/src/pool/agent-pool.service.ts)), capped to a sane byte budget so a huge issue thread can't blow the context. Failures degrade gracefully (skip the fetch, log a warn — never break task creation, mirroring the planner's fail-open stance).
+- [x] Detect URLs in the prompt at agent-run start (pure `extractUrls` in `agent/lib/url-context.ts`); shared `parseGithubIssueOrPr` gives GitHub issue/PR links special handling, other URLs are fetched as generic pages.
+- [x] **GitHub context** — `gh api repos/{repo}/issues/{n}` (user auth → private repos) for issue/PR title+body+state, with an anonymous `api.github.com` REST fallback when `gh` is absent. (Decision §2.)
+- [x] **General URL context** — fetched through the **real** outbound SSRF guard (`isSafeHttpUrl` in [`projects/lib/opengraph.ts`](../packages/gateway/src/projects/lib/opengraph.ts), private/loopback blocked) — *not* `allowed-origin.ts` (that's the inbound CORS gate). Reduced to readable text/title; a second fetch path was avoided by reusing `readCapped`/`parseHtmlMetadata`.
+- [x] **Inject, truncated** — appended at the agent-run seed-prompt point ([`pool/agent-runner.service.ts`](../packages/gateway/src/pool/agent-runner.service.ts) `start()` — sources aren't injected in `agent-pool.service.ts` as the doc assumed), byte-capped (5 URLs · 4k chars/source · 12k total). Fail-open per-URL and overall — never blocks a run.
 
 ---
 
