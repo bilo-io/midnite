@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { Status, Task, TaskAttachment, TaskEvent } from '@midnite/shared';
+import { MAX_BULK_LINES } from '@midnite/shared';
+import type { Status, Task, TaskAttachment, TaskBoardEvent, TaskEvent } from '@midnite/shared';
 import type {
   TaskAttachmentInsert,
   TaskEventInsert,
@@ -331,5 +332,93 @@ describe('TasksService', () => {
 
     const second = service.retry('t0');
     expect(second.retryCount).toBe(2);
+  });
+});
+
+// Throws on any prompt containing BOOM, so a single line can fail classification
+// while its neighbours succeed (partial-failure test).
+class FlakyClassifier extends TaskClassifier {
+  async classify(prompt: string, _images: ClassifierImage[]) {
+    if (prompt.includes('BOOM')) throw new Error('classify failed');
+    return { title: prompt.slice(0, 40), kind: 'bug' as const };
+  }
+}
+
+describe('TasksService.createBulk', () => {
+  it('creates one task per parsed line, stripping a markdown marker', async () => {
+    const repo = new InMemoryRepo();
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
+
+    const res = await service.createBulk({ raw: 'fix login bug\n- add dark mode\nwrite docs' });
+
+    expect(res.counts.created).toBe(3);
+    expect(repo.tasks).toHaveLength(3);
+    expect(repo.tasks.map((t) => t.title)).toEqual(['fix login bug', 'add dark mode', 'write docs']);
+    expect(res.results.every((r) => r.kind === 'feature' && r.status === 'todo')).toBe(true);
+  });
+
+  it('skips blank and comment lines, counting them as skipped', async () => {
+    const repo = new InMemoryRepo();
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
+
+    const res = await service.createBulk({ raw: 'fix login bug\n# a comment\n\nwrite docs\n' });
+
+    expect(res.counts).toEqual({ created: 2, skipped: 2, failed: 0 });
+    expect(repo.tasks).toHaveLength(2);
+  });
+
+  it('returns a per-line error for a failing line while the rest succeed', async () => {
+    const repo = new InMemoryRepo();
+    const service = new TasksService(repo, new FlakyClassifier(), stubPlanner, new TaskEventBus());
+
+    const res = await service.createBulk({ lines: ['good one', 'BOOM bad', 'good two'] });
+
+    expect(res.counts).toEqual({ created: 2, skipped: 0, failed: 1 });
+    expect(repo.tasks).toHaveLength(2);
+    const bad = res.results.find((r) => r.line === 'BOOM bad');
+    expect(bad?.taskId).toBeUndefined();
+    expect(bad?.error).toMatch(/classify failed/);
+  });
+
+  it('emits exactly one coalesced board event for the whole batch', async () => {
+    const repo = new InMemoryRepo();
+    const bus = new TaskEventBus();
+    const events: TaskBoardEvent[] = [];
+    bus.subscribe((e) => events.push(e));
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, bus);
+
+    await service.createBulk({ raw: 'a\nb\nc' });
+
+    expect(events).toHaveLength(1);
+    const evt = events[0]!;
+    expect(evt.type).toBe('tasks.bulkCreated');
+    if (evt.type === 'tasks.bulkCreated') {
+      expect(evt.taskIds).toHaveLength(3);
+    }
+  });
+
+  it('applies batch-wide repo and priority to every created task', async () => {
+    const repo = new InMemoryRepo();
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
+
+    await service.createBulk({ lines: ['one', 'two'], repo: 'midnite', priority: 3 });
+
+    expect(repo.tasks.every((t) => t.repo === 'midnite' && t.priority === 3)).toBe(true);
+  });
+
+  it('rejects a batch over the line cap before creating anything', async () => {
+    const repo = new InMemoryRepo();
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
+
+    const lines = Array.from({ length: MAX_BULK_LINES + 1 }, (_, i) => `task ${i}`);
+    await expect(service.createBulk({ lines })).rejects.toThrow(/cap/);
+    expect(repo.tasks).toHaveLength(0);
+  });
+
+  it('rejects a request with no usable task lines', async () => {
+    const repo = new InMemoryRepo();
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus());
+
+    await expect(service.createBulk({ raw: '# only a comment\n\n' })).rejects.toThrow(/no task lines/);
   });
 });
