@@ -1,9 +1,13 @@
 import {
   Bot,
   Clock,
+  Database,
+  Filter,
   Globe,
   GitBranch,
+  GitMerge,
   MousePointerClick,
+  Pencil,
   Play,
   Sparkles,
   Webhook,
@@ -24,6 +28,10 @@ const ICONS: Record<string, LucideIcon> = {
   sparkles: Sparkles,
   bot: Bot,
   'git-branch': GitBranch,
+  'git-merge': GitMerge,
+  pencil: Pencil,
+  filter: Filter,
+  database: Database,
   cursor: MousePointerClick,
 };
 
@@ -35,5 +43,7 @@ export function iconFor(name: string | undefined): LucideIcon {
 export function hueVarForCategory(category: NodeCategory | string): string {
   if (category === 'trigger') return '--node-trigger';
   if (category === 'logic') return '--node-logic';
+  if (category === 'data') return '--node-data';
+  if (category === 'storage') return '--node-storage';
   return '--node-action';
 }

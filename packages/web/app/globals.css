@@ -49,6 +49,8 @@
     --node-trigger: 217 91% 60%;
     --node-action: 262 83% 58%;
     --node-logic: 38 92% 50%;
+    --node-data: 173 80% 40%;
+    --node-storage: 333 80% 52%;
   }
 
   .dark {
@@ -90,6 +92,8 @@
     --node-trigger: 217 91% 68%;
     --node-action: 262 83% 68%;
     --node-logic: 38 92% 60%;
+    --node-data: 173 70% 50%;
+    --node-storage: 333 75% 62%;
   }
 }
 
