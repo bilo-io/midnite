@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 13 COMPLETE — Theme B: repos selectable & validated (PR #52)
+
+The last theme of [Phase 13](phase-13-repos-first-class.md#theme-b--selectable--validated--m--done-pr-52-2026-06-21). Theme A (PR #45) made repos a DB-backed registry; B makes them selectable at task-creation time and makes `task.repo` always point at a known repo. **Phase 13 is now done** (Themes A + B; the C–F follow-ons stay explicitly deferred). Spans gateway + web; CLI flag was already in place from PR #47.
+
+- [x] **B1 picker (web):** a Repo `<select>` in the new-task modal ([`new-task-modal.tsx`](../packages/web/components/new-task-modal.tsx)), fed by `GET /repos` with an explicit **Unassigned** default, alongside the project picker as an orthogonal scope axis; threaded through [`tasks-view`](../packages/web/components/tasks-view.tsx) + the tasks page; sent on single + bulk create; hidden when no repos exist. (CLI `add --repo` landed in PR #47.)
+- [x] **B2 validation (gateway):** `TasksService.resolveRepoReference` validates `repo` against the registry on create/bulk — unknown name → 400, blank → unassigned (null), never a dangling free string; bulk fails fast on a bad batch repo. References stay the registry-unique **name**, not an id (Decision §1/§3). `TasksService` gains a `ReposService` dep (`TasksModule` imports `ReposModule`).
+- [x] **B3 cwd precedence:** extracted the project workDir → repo → fallback → gateway-cwd ordering into a pure, unit-tested [`pickSessionCwd`](../packages/gateway/src/terminal/lib/resolve-cwd.ts) helper, pinning the behaviour `resolveCwd` relies on (Decision §4); refactor is behaviour-preserving.
+- [x] Tests at each layer: gateway service (known/unknown/blank repo, bulk fail-fast), `pickSessionCwd` precedence, web RTL (picker options, repo sent / omitted). `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #52 (gateway 550 · web 194).
+- ↪️ **Deferred (still in phase-13):** C repo-guessing in inference · D per-repo concurrency caps · E branch/PR templates · F repo chip in UI — all depend only on the now-shipped registry.
+
 ## 2026-06-21 — Phase 25 Theme A: `@midnite/ui` package scaffold + Vite library build (PR #50)
 
 Stands up [Phase 25](phase-25-ui-library.md)'s first theme — a new **leaf** design-system package, built and wired, before any primitives/tokens migrate into it (Themes B/C/D). No components moved yet; this is extraction *infrastructure*.
