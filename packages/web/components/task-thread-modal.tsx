@@ -14,6 +14,7 @@ import {
   type TaskLink,
 } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
+import { MarkdownPreview } from '@/components/markdown-preview';
 import { ProjectSelect } from '@/components/project-select';
 import { SourceIcon } from '@/components/source-icon';
 import { DeleteConfirmButton } from '@/components/delete-confirm-button';
@@ -493,9 +494,15 @@ function Timeline({ events }: { events: TaskEvent[] }) {
             ) : null}
           </div>
           <div className="min-w-0 flex-1 pb-1">
-            <p className="text-sm font-medium leading-snug">{ev.kind}</p>
+            <p className="text-sm font-medium leading-snug">{ev.kind === 'answer' ? 'Answer' : ev.kind}</p>
             <p className="text-[11px] text-muted-foreground">{formatTime(ev.at)}</p>
-            {ev.data && Object.keys(ev.data).length > 0 ? (
+            {ev.kind === 'answer' && typeof ev.data?.text === 'string' ? (
+              // A question answered inline at intake — render the markdown answer
+              // rather than dumping the event payload as JSON.
+              <div className="mt-1 rounded-md border border-border/60 bg-muted/30 px-3 py-2">
+                <MarkdownPreview content={ev.data.text} />
+              </div>
+            ) : ev.data && Object.keys(ev.data).length > 0 ? (
               <pre className="mt-1 overflow-x-auto whitespace-pre-wrap break-words rounded bg-muted/50 px-2 py-1 font-mono text-[11px] text-muted-foreground">
                 {JSON.stringify(ev.data, null, 2)}
               </pre>

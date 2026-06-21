@@ -6,7 +6,7 @@
 
 > Effort tags: **S** small · **M** medium · **L** large. Themes are ordered A→F (engine before UI); A–C are prerequisites for D–E. Each is independently shippable behind that ordering.
 
-> **Out of scope (named Phase 6 follow-ups — do not start here):** live WS run streaming (P7 — emit `WorkflowEvent`s, swap polling), credential vault + OAuth (P9), Slack/Google/Email integration executors (P10), and arbitrary-JS `code` nodes (an `eval`/sandbox security surface we deliberately avoid — `logic.setData` covers reshaping declaratively).
+> **Out of scope — these are [Phase 14](phase-14-workflows-connect.md), not here:** live WS run streaming (P7 — emit `WorkflowEvent`s, swap polling), credential vault + OAuth (P9), Slack/Google/Email integration executors (P10), and CLI workflow parity. Phase 13 *consumes* this phase's expression engine; it does not change the grammar. Also out of scope and deliberately never built: arbitrary-JS `code` nodes (an `eval`/sandbox security surface we avoid — `logic.setData` covers reshaping declaratively).
 
 ---
 
@@ -20,53 +20,53 @@ The new syntax both sides must agree on. A **safe** resolver — no `eval`, no `
 - [x] **S** `expressionable` flag added to `NodeField` ([`node-types.ts`](../packages/shared/src/node-types.ts)), marking the template-capable fields (http `url`/`headers`/`body`, ai `prompt`/`system`, branch `right`) for the editor's ƒx affordance (Theme D).
 - [x] **M** Tests (33 cases): paths, brackets, optional, mixed text, escaping `\{{`, missing-ref throw vs optional, type preservation, malformed templates (clear error, no crash), `resolveParams`. `shared` now 34 files / 257 tests; `shared:test`/`typecheck`/`lint`/`build` green; `moon ci` green on PR #27. See [done.md](done.md).
 
-## Theme B — Engine integration (resolve before execute)
+## Theme B — Engine integration (resolve before execute) — ✅ DONE (PR #33, 2026-06-21)
 
 Wire the resolver into the run so executors receive **resolved** params and we can debug what each reference became.
 
-- [ ] **M** Build the run context in [`workflow-engine.service.ts`](../packages/gateway/src/workflows/engine/workflow-engine.service.ts): keep accumulating `outputs` (already done), expose them to expressions as `$node` keyed by node **label** (fall back to id), and set `$json` to the node's computed `input`.
-- [ ] **M** Resolve a node's params via `resolveParams` **before** handing `ctx.params` to the executor; on `ExpressionError`, fail that node (short-circuit) with a clear message naming the unresolved path.
-- [ ] **S** Persist **resolved params** on each `NodeRun` (alongside `input`/`output`) — add the column via a forward-only migration in [`packages/gateway/drizzle/`](../packages/gateway/drizzle/) (next is `0028_*`) and the field in [`run.ts`](../packages/shared/src/run.ts). This is what Theme E surfaces.
-- [ ] **S** Strip the now-stale "templating lands later" comment in [`ai-claude.executor.ts`](../packages/gateway/src/workflows/engine/executors/ai-claude.executor.ts); confirm `http.request` URL/headers/body and `ai.claude` prompt all flow through resolution.
-- [ ] **M** Engine tests: a 2-node chain where node 2's param pulls `{{$node["..."].json.x}}`; missing-ref fails the right node; resolved params are persisted and returned by `GET /runs/:id`.
+- [x] **M** Build the run context in [`workflow-engine.service.ts`](../packages/gateway/src/workflows/engine/workflow-engine.service.ts): `$node` is built up from completed node outputs keyed by **label** (fall back to id), each wrapped as `{ json: output }`; `$json` is the node's computed `input`; `$env` is `process.env`.
+- [x] **M** Resolve a node's params via `resolveParams` **before** handing them to the executor (and to the branch condition); on `ExpressionError` (or any resolution error), fail that node and short-circuit the run with a path-naming message (`expression error in "<label>": …`).
+- [x] **S** Persist **resolved params** on each `NodeRun`: `node_runs.resolved_params` column (migration `0028_node_runs_resolved_params`) + `resolvedParams` on [`run.ts`](../packages/shared/src/run.ts) `NodeRunSchema`; the repository hydrates it. Trigger nodes carry none.
+- [x] **S** Stale "templating lands later" comments updated in [`ai-claude.executor.ts`](../packages/gateway/src/workflows/engine/executors/ai-claude.executor.ts) + `node-executor.ts`; `http.request` (url/headers/body) and `ai.claude` (prompt/system) params now flow through resolution.
+- [x] **M** Engine tests (`workflow-engine.expression.spec.ts`): typed `{{$node["…"]}}` ref, mixed-text `{{$json}}` → string, resolved params persisted + returned by `getRun`, missing-ref fails the referencing node (not its predecessors), templated branch condition. Plus a shared `NodeRunSchema` round-trip. See [done.md](done.md).
 
-## Theme C — Reshape & storage nodes (registry + executors)
+## Theme C — Reshape & storage nodes (registry + executors) — ✅ DONE (reshape PR #34, storage PR #37, 2026-06-21)
 
 New node types — one registry entry in `shared` + one executor in the gateway each (the Phase 6 "adding an integration is one definition + one executor" rule).
 
-- [ ] **M** `logic.setData` — build/merge an object from expression-valued fields (key → `{{expr}}`), with a "keep only set fields" vs "merge onto input" toggle. The explicit reshape node central to *use outputs as inputs*.
-- [ ] **M** `logic.merge` — fan-in: combine multiple upstream branches into one payload (by-index append / shallow-merge / collect-into-array mode). Pairs with the engine's existing multi-predecessor handling.
-- [ ] **S** `data.filter` / pick — select or drop a set of fields from the payload (lighter than `setData`).
-- [ ] **L** `storage.set` / `storage.get` — a persisted key-value store so a run can stash data and a later run (or node) read it. New Drizzle table `workflow_storage` (scoped per workflow; key + JSON value + timestamps), repository → service → executor; values readable via `{{$node}}` within a run and via `storage.get` across runs. *(See Decisions §4 for scoping.)*
-- [ ] **S** Register all four in [`node-types.ts`](../packages/shared/src/node-types.ts) with param schemas, ports, and a category so they group in the palette (Theme F); executors under [`engine/executors/`](../packages/gateway/src/workflows/engine/executors/) wired into [`executor-registry.ts`](../packages/gateway/src/workflows/engine/executor-registry.ts).
-- [ ] **M** Tests: each executor's param schema + behaviour; `storage.set`→`storage.get` round-trip against `:memory:` SQLite; `logic.merge` modes.
+- [x] **M** `logic.setData` — builds an object from key→value `fields` (values may be `{{expr}}`, resolved by the engine before execute); `replace` emits only the set fields, `merge` overlays them onto the input. (PR #34)
+- [x] **M** `logic.merge` — fan-in over a multi-predecessor node's array of outputs: `shallowMerge` / `array` / `concat`. (PR #34)
+- [x] **S** `data.filter` — pick or omit a set of top-level fields from the payload. New `data` node category. (PR #34)
+- [x] **L** `storage.set` / `storage.get` — a persisted key-value store so a run can stash data and a later run (or node) read it. New Drizzle table `workflow_storage` (scoped per workflow; key + JSON value + timestamps; nullable `scope` for a future global tier), repository → service → executor; values readable via `{{$node}}` within a run and via `storage.get` across runs. A never-set key reads back the node's `defaultValue` (null default). (PR #37 — Decision §4: per-workflow.)
+- [x] **S** Registered `logic.setData` / `logic.merge` / `data.filter` / `storage.set` / `storage.get` in [`node-types.ts`](../packages/shared/src/node-types.ts) with param schemas, ports, and categories (new `storage` category); executors under [`engine/executors/`](../packages/gateway/src/workflows/engine/executors/) wired into the module's `NODE_EXECUTORS`.
+- [x] **M** Tests: each reshape executor's param schema + behaviour + an engine integration (setData resolves `{{expr}}` end-to-end); `logic.merge` modes; storage cross-run round-trip + per-workflow scoping against `:memory:`.
 
-## Theme D — Full n8n-style expression editor (web)
+## Theme D — Full n8n-style expression editor (web) — ◐ IN PROGRESS (starter: PR #63)
 
 The headline UX: make references discoverable and previewable instead of hand-typed. Most of the phase's polish lives here.
 
-- [ ] **S** **ƒx toggle** per templatable field in the config panel ([`workflow-editor.tsx`](../packages/web/components/workflow-editor.tsx) / its field forms): switch a field between literal and expression mode (driven by the Theme-A `expressionable` flag).
-- [ ] **L** **Expression input** with autocomplete: typing `$node["` suggests upstream node labels; `.` after a node suggests fields drawn from that node's **last-run output**; `$json` / `$env` completions too.
+- [x] **S** **ƒx toggle** per templatable field in the config panel ([`node-config-panel.tsx`](../packages/web/components/node-config-panel.tsx)): flips an `expressionable` field between its literal control and a monospace expression input; mode is seeded from whether the saved value is already a `{{ }}` template. (PR #63)
+- [ ] **L** **Expression input** with autocomplete: typing `$node["` suggests upstream node labels; `.` after a node suggests fields drawn from that node's **last-run output**; `$json` / `$env` completions too. *(The ƒx input is the plain entry point; autocomplete is the remaining work.)*
 - [ ] **L** **Data picker** panel: show the selected node's upstream inputs as an explorable tree of the last run's data; **click a leaf to insert** its `{{...}}` reference at the cursor.
 - [ ] **M** **Inline resolved-value preview**: render what an expression resolves to using the last successful run's data (or pinned sample data, Theme E), with a clear "no data yet — run once or pin sample" empty state.
-- [ ] **S** Enforce **unique node labels** in the editor (the picker references by label) — inline validation + auto-suffix on collision in [`workflow-store.ts`](../packages/web/lib/workflow-store.ts).
-- [ ] **M** Web tests: ƒx toggle round-trips a field to/from an expression; picker inserts a correct reference string; preview renders a resolved value from mocked run data.
+- [x] **S** Enforce **unique node labels** in the editor (the picker references by label) — `uniqueLabel` auto-suffixes on collision in [`workflow-store.ts`](../packages/web/lib/workflow-store.ts) (both `addNode` and a new `setLabel`); the config-panel header gains an editable, de-duping rename field. (PR #63)
+- [◐] **M** Web tests: **ƒx toggle round-trips a field** (done) + unique-label/rename (done); picker-inserts and preview-renders await those L/M items. (PR #63)
 
-## Theme E — Run-history & design-time debugging (web)
+## Theme E — Run-history & design-time debugging (web) — ◐ PARTIAL (PR #41, 2026-06-21)
 
 See what references actually resolved to — the payoff of Theme B's persisted resolved params.
 
-- [ ] **M** Run-output panel: per node show **input → resolved params → output** (use the new `NodeRun` field), so a failed reference is obvious. Extend the existing `use-workflow-run` polling view ([`use-workflow-run.ts`](../packages/web/lib/use-workflow-run.ts)).
-- [ ] **S** **Pin sample data** on a node: store a sample payload (editor-local + optionally persisted) so the Theme-D picker/preview work *before* a real run.
-- [ ] **S** Surface `ExpressionError` messages from a failed run inline on the offending node (red port/field), not just in the run log.
+- [x] **M** Run-output panel: per node show **input → resolved params → output** (new [`run-output-panel.tsx`](../packages/web/components/run-output-panel.tsx); each block renders only when it has data — resolved params absent for trigger nodes — plus the error in red for a failed node). (PR #41)
+- [ ] **S** **Pin sample data** on a node: store a sample payload (editor-local + optionally persisted) so the Theme-D picker/preview work *before* a real run. ⏳ **deferred** — its consumer is the Theme D picker/preview, not yet built.
+- [x] **S** Surface `ExpressionError` messages from a failed run inline on the offending node (red strip under the summary, full text on hover) — not just in the run log. `WorkflowNodeData` gains `error`; `applyRunStatuses` → `applyRunState(nodeRuns)` reflects status + error together and stale-clears both. (PR #41)
 
-## Theme F — Palette grouping & new-node surfacing (web)
+## Theme F — Palette grouping & new-node surfacing (web) — ✅ DONE (PR #38, 2026-06-21)
 
 Make the growing node set navigable in the left sidebar.
 
-- [ ] **S** Group the palette into **categories** — Triggers · Actions · Logic · Data · Storage — using the registry `category` field; the catalog/accent-hue plumbing already exists ([`workflow-node-catalog.ts`](../packages/web/lib/workflow-node-catalog.ts), `hueVarForCategory`).
-- [ ] **S** Add the new nodes (`logic.setData`, `logic.merge`, `data.filter`, `storage.set`, `storage.get`) to the palette with icons + one-line descriptions; collapsible category sections.
-- [ ] **S** Palette **search/filter** box (filter node types by name/description) — small quality-of-life win as the set grows.
+- [x] **S** Group the palette into **categories** — Actions · Logic · Data · Storage (Triggers stay excluded — one canonical trigger per workflow) — using the registry `category` field; extended `hueVarForCategory` + `--node-data`/`--node-storage` accent hues ([`workflow-node-catalog.ts`](../packages/web/lib/workflow-node-catalog.ts)).
+- [x] **S** Added the new nodes (`logic.setData`, `logic.merge`, `data.filter`, `storage.set`, `storage.get`) to the palette with mapped icons + registry-description tooltips; collapsible category sections with per-section counts.
+- [x] **S** Palette **search/filter** box (filter node types by name/description) — already present; kept, and search now force-expands matching sections.
 
 ---
 
@@ -101,7 +101,7 @@ Make the growing node set navigable in the left sidebar.
 - [ ] `logic.setData` builds an object from two upstream nodes' fields; `logic.merge` combines two branches; `data.filter` drops a field — each verified in a run.
 - [ ] `storage.set` in one run, `storage.get` in a later run returns the stored value (round-trip across runs against `:memory:` in tests, and live).
 - [ ] In the editor: toggle a field to ƒx, autocomplete an upstream node, click a leaf in the data picker to insert a reference, and see the resolved-value preview from the last run / pinned sample.
-- [ ] Palette shows grouped categories (Triggers · Actions · Logic · Data · Storage) with the new nodes and a working search filter.
+- [x] Palette shows grouped categories (Actions · Logic · Data · Storage) with the new nodes and a working search filter. (PR #38)
 - [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph (run web tests from the primary checkout, not a `.git` worktree).
 
 ---

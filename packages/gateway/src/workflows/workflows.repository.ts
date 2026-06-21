@@ -156,6 +156,7 @@ export class WorkflowsRepository {
       nodeType: row.nodeType,
       status: row.status as NodeRun['status'],
       input: row.input ? (JSON.parse(row.input) as unknown) : undefined,
+      resolvedParams: row.resolvedParams ? (JSON.parse(row.resolvedParams) as unknown) : undefined,
       output: row.output ? (JSON.parse(row.output) as unknown) : undefined,
       error: row.error ?? undefined,
       logs: row.logs ? (JSON.parse(row.logs) as NodeRun['logs']) : [],

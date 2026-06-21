@@ -2,16 +2,26 @@ import { BadRequestException, Inject, Injectable, NotFoundException } from '@nes
 import { randomUUID } from 'node:crypto';
 import {
   detectSourceKind,
+  MAX_BULK_LINES,
   MAX_TAGS_PER_TASK,
   MAX_TASK_TAG_LENGTH,
+  parseBulkLines,
+  type BulkCreateTaskResponse,
+  type BulkLineResult,
   type Status,
   type Task,
   type TaskCounts,
 } from '@midnite/shared';
 import { TaskClassifier, type ClassifierImage } from '../agent/classifier.service';
 import { PlannerService } from '../agent/planner.service';
+import { mapWithConcurrency } from '../lib/map-with-concurrency';
+import { ReposService } from '../repos/repos.service';
 import { TasksRepository } from './tasks.repository';
 import { TaskEventBus } from './task-event-bus';
+
+// How many bulk lines classify/triage concurrently. Bounded so a large paste
+// neither serialises slowly nor floods the LLM (Phase 16 Decision §6).
+const BULK_CONCURRENCY = 5;
 
 /** Clamp a caller-supplied priority into 0..3, defaulting to 1 (Normal). */
 function clampPriority(p: number | undefined): number {
@@ -53,7 +63,22 @@ export class TasksService {
     @Inject(TaskClassifier) private readonly classifier: TaskClassifier,
     @Inject(PlannerService) private readonly planner: PlannerService,
     @Inject(TaskEventBus) private readonly bus: TaskEventBus,
+    @Inject(ReposService) private readonly repos: ReposService,
   ) {}
+
+  // Resolve a task's repo reference against the registry (Phase 13 B2). A blank
+  // value means "unassigned" (null). A non-empty name must match a registered
+  // repo — an unknown name is rejected up front rather than persisted as a
+  // dangling free string that silently no-ops at cwd-resolution time (Decision
+  // §3). The stored reference is the registry-unique name, not an id (Decision §1).
+  private resolveRepoReference(repo: string | undefined): string | null {
+    const name = repo?.trim();
+    if (!name) return null;
+    if (!this.repos.findByName(name)) {
+      throw new BadRequestException(`unknown repo "${name}"`);
+    }
+    return name;
+  }
 
   // Publish a board event after a mutation. `created`/`updated` carry the full
   // task so clients can patch their cache; the web client just invalidates and
@@ -223,7 +248,13 @@ export class TasksService {
     this.bus.emit({ type: 'task.deleted', at: new Date().toISOString(), id });
   }
 
-  async createFromPrompt(input: CreateTaskInput): Promise<Task> {
+  // `opts.emit: false` suppresses the per-task `task.created` broadcast so a bulk
+  // create can coalesce the whole batch into one board event (createBulk); the
+  // task is still persisted and returned. Defaults to broadcasting.
+  async createFromPrompt(input: CreateTaskInput, opts: { emit?: boolean } = {}): Promise<Task> {
+    // Reject an unknown repo before any work (classify/triage/insert).
+    const repo = this.resolveRepoReference(input.repo);
+
     // Triage (plan model: ready→todo / not→backlog) and classify (title/kind)
     // run concurrently — both are fail-soft, so neither breaks task creation.
     const [classified, triage] = await Promise.all([
@@ -234,6 +265,12 @@ export class TasksService {
       this.planner.triage(input.prompt),
     ]);
 
+    // A question is answered inline rather than queued for an agent: generate a
+    // direct answer (fail-soft → null) and, if we got one, resolve the task to
+    // `done` with the answer recorded on its thread. Only `question`-kind tasks
+    // take this path, so the extra plan-model call is rare.
+    const answer = classified.kind === 'question' ? await this.planner.answer(input.prompt) : null;
+
     const id = randomUUID();
     const now = new Date().toISOString();
 
@@ -241,12 +278,12 @@ export class TasksService {
       id,
       title: classified.title,
       kind: classified.kind,
-      // An explicit caller status wins; otherwise the planner's triage decides
-      // the landing column.
-      status: input.status ?? (triage.ready ? 'todo' : 'backlog'),
+      // A generated inline answer resolves the task to `done`; otherwise an
+      // explicit caller status wins, falling back to the planner's triage column.
+      status: answer ? 'done' : (input.status ?? (triage.ready ? 'todo' : 'backlog')),
       priority: clampPriority(input.priority),
       prompt: input.prompt,
-      repo: input.repo ?? null,
+      repo,
       projectId: input.projectId ?? null,
       agentId: null,
       sessionId: null,
@@ -278,7 +315,107 @@ export class TasksService {
       }),
     });
 
-    return this.emit('task.created', this.getTask(id));
+    // Record the inline answer on the task thread (surfaced in the web thread
+    // view) so the resolved question carries its answer with it.
+    if (answer) {
+      this.repo.insertEvent({
+        id: randomUUID(),
+        taskId: id,
+        at: now,
+        kind: 'answer',
+        data: JSON.stringify({ text: answer }),
+      });
+    }
+
+    const task = this.getTask(id);
+    if (opts.emit === false) return task;
+    return this.emit('task.created', task);
+  }
+
+  // Create many tasks from a pasted blob — pure composition over the single-task
+  // pipeline: each parsed line fans through `createFromPrompt` (so classify,
+  // triage, repo/project/priority all apply uniformly) with its per-task
+  // broadcast suppressed, and the batch emits ONE `tasks.bulkCreated` event.
+  // Partial failure is first-class: a line that throws comes back as an error
+  // row while the rest succeed (Phase 16 Decisions §1/§2/§6).
+  async createBulk(input: {
+    raw?: string;
+    lines?: string[];
+    repo?: string;
+    projectId?: string;
+    priority?: number;
+  }): Promise<BulkCreateTaskResponse> {
+    const lines =
+      input.lines && input.lines.length > 0
+        ? input.lines.map((l) => l.trim()).filter(Boolean)
+        : parseBulkLines(input.raw ?? '');
+
+    if (lines.length === 0) {
+      throw new BadRequestException('no task lines found in the bulk request');
+    }
+    if (lines.length > MAX_BULK_LINES) {
+      throw new BadRequestException(
+        `bulk request exceeds the ${MAX_BULK_LINES}-line cap (got ${lines.length})`,
+      );
+    }
+
+    // The repo applies batch-wide, so reject an unknown one once up front rather
+    // than letting every line fail individually (createFromPrompt re-validates).
+    this.resolveRepoReference(input.repo);
+
+    const results = await mapWithConcurrency(
+      lines,
+      BULK_CONCURRENCY,
+      async (line): Promise<BulkLineResult> => {
+        try {
+          const task = await this.createFromPrompt(
+            {
+              prompt: line,
+              repo: input.repo,
+              projectId: input.projectId,
+              priority: input.priority,
+              images: [],
+            },
+            { emit: false },
+          );
+          return { line, taskId: task.id, kind: task.kind, status: task.status };
+        } catch (err) {
+          return { line, error: err instanceof Error ? err.message : String(err) };
+        }
+      },
+    );
+
+    const createdIds = results.flatMap((r) => (r.taskId ? [r.taskId] : []));
+    // One coalesced board signal for the whole batch instead of N refetches.
+    if (createdIds.length > 0) {
+      this.bus.emit({
+        type: 'tasks.bulkCreated',
+        at: new Date().toISOString(),
+        taskIds: createdIds,
+      });
+    }
+
+    return {
+      results,
+      counts: {
+        created: createdIds.length,
+        skipped: this.countSkipped(input, lines.length),
+        failed: results.length - createdIds.length,
+      },
+    };
+  }
+
+  // Lines dropped before creation: input lines the client sent that didn't make
+  // it past parsing (blanks / comments / markers-only). For `raw`, count the
+  // physical lines (ignoring a trailing newline) minus what survived parsing.
+  private countSkipped(input: { raw?: string; lines?: string[] }, keptCount: number): number {
+    if (input.lines && input.lines.length > 0) {
+      return Math.max(0, input.lines.length - keptCount);
+    }
+    const raw = input.raw ?? '';
+    if (!raw) return 0;
+    const physical = raw.replace(/\n+$/, '').split('\n').length;
+    return Math.max(0, physical - keptCount);
   }
 
   // Create a task directly from a plan checklist item: explicit title, tagged to

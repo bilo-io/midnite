@@ -17,6 +17,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@midnite/shared": "workspace:*",
+    "@midnite/ui": "workspace:*",
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.5.0",
     "@xyflow/react": "^12.3.0",
@@ -39,6 +40,8 @@
     "zustand": "^5.0.2"
   },
   "devDependencies": {
+    "@storybook/addon-a11y": "10.4.3",
+    "@storybook/addon-vitest": "10.4.3",
     "@storybook/nextjs-vite": "^10.4.3",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -47,8 +50,10 @@
     "@types/react-dom": "^19.0.2",
     "@types/react-grid-layout": "^2.1.0",
     "@vitejs/plugin-react": "^4.7.0",
+    "@vitest/browser": "^3.2.4",
     "autoprefixer": "^10.5.0",
     "jsdom": "^29.1.1",
+    "playwright": "^1.61.0",
     "postcss": "^8.5.15",
     "storybook": "^10.4.3",
     "tailwindcss": "^3",

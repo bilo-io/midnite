@@ -16,7 +16,7 @@
 
 - [x] Priorities on tasks (`priority: 0..3`, default 1), scheduler picks highest first (oldest-first within a priority) — migration `0018`
 - [x] Retries for tasks that hit a crash → requeue, capped by `agent.maxRetries` (default 3), then `abandoned`
-- [ ] Per-repo concurrency caps (don't run N agents on the same repo) — **NOT IMPLEMENTED** (pool is a single global FIFO)
+- [x] Per-repo concurrency caps (don't run N agents on the same repo) — `agent.maxPerRepo` (default `0` = unlimited); the scheduler skips a `todo` task whose repo is at the cap and picks the next eligible. Repo-less tasks uncapped. (PR #49)
 - [ ] Optional: suspend `waiting` sessions so the slot frees up — **NOT IMPLEMENTED** (deliberately deferred; `waitingHoldsSlot` defaults to holding)
 
 ## Multi-repo / quality of life

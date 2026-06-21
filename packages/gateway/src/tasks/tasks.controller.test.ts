@@ -18,6 +18,7 @@ function build(overrides: Partial<Record<keyof TasksService, unknown>> = {}) {
     addLink: vi.fn(() => fakeTask),
     removeLink: vi.fn(() => fakeTask),
     deleteTask: vi.fn(),
+    createBulk: vi.fn(async () => ({ results: [], counts: { created: 0, skipped: 0, failed: 0 } })),
     ...overrides,
   } as unknown as TasksService;
   return { controller: new TasksController(service, config), service };
@@ -47,6 +48,11 @@ describe('TasksController — query/body validation (400)', () => {
   it('rejects a non-url link body', () => {
     const { controller } = build();
     expect(() => controller.addLink('t1', { url: 'not-a-url' })).toThrow(BadRequestException);
+  });
+
+  it('rejects a bulk body with neither raw nor lines', async () => {
+    const { controller } = build();
+    await expect(controller.createBulk({ repo: 'midnite' })).rejects.toThrow(BadRequestException);
   });
 });
 
@@ -79,6 +85,18 @@ describe('TasksController — valid input delegates to the service', () => {
     const { controller, service } = build();
     expect(controller.remove('t1')).toEqual({ ok: true });
     expect(service.deleteTask).toHaveBeenCalledWith('t1');
+  });
+
+  it('forwards a valid bulk body, trimming repo to undefined when blank', async () => {
+    const { controller, service } = build();
+    await controller.createBulk({ raw: 'a\nb', repo: '  midnite  ', priority: 2 });
+    expect(service.createBulk).toHaveBeenCalledWith({
+      raw: 'a\nb',
+      lines: undefined,
+      repo: 'midnite',
+      projectId: undefined,
+      priority: 2,
+    });
   });
 });
 

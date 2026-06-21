@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { detectSourceKind, parseGithubPr, parseGithubRepo } from './source.js';
+import {
+  detectSourceKind,
+  parseGithubIssueOrPr,
+  parseGithubPr,
+  parseGithubRepo,
+} from './source.js';
 
 describe('detectSourceKind', () => {
   it('detects GitHub and Figma', () => {
@@ -65,5 +70,24 @@ describe('parseGithubPr / parseGithubRepo', () => {
   it('parses owner/repo for any github url', () => {
     expect(parseGithubRepo('https://github.com/bilo-io/midnite/issues/3')).toBe('bilo-io/midnite');
     expect(parseGithubRepo('https://example.com/x')).toBeNull();
+  });
+});
+
+describe('parseGithubIssueOrPr', () => {
+  it('parses both issue and PR urls into repo + number', () => {
+    expect(parseGithubIssueOrPr('https://github.com/bilo-io/midnite/issues/7')).toEqual({
+      repo: 'bilo-io/midnite',
+      number: 7,
+    });
+    expect(parseGithubIssueOrPr('https://github.com/bilo-io/midnite/pull/42')).toEqual({
+      repo: 'bilo-io/midnite',
+      number: 42,
+    });
+  });
+
+  it('returns null for a repo root, non-numeric number, or non-github url', () => {
+    expect(parseGithubIssueOrPr('https://github.com/bilo-io/midnite')).toBeNull();
+    expect(parseGithubIssueOrPr('https://github.com/bilo-io/midnite/issues/abc')).toBeNull();
+    expect(parseGithubIssueOrPr('https://example.com/bilo-io/midnite/issues/1')).toBeNull();
   });
 });

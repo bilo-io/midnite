@@ -7,7 +7,7 @@ const nextConfig = {
   images: { unoptimized: true },
   // Emit dir/index.html so paths resolve when served as static files.
   trailingSlash: true,
-  transpilePackages: ['@midnite/shared', 'yet-another-react-lightbox'],
+  transpilePackages: ['@midnite/shared', '@midnite/ui', 'yet-another-react-lightbox'],
   reactStrictMode: true,
 };
 

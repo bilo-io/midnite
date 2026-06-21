@@ -18,9 +18,11 @@ import { pipeline } from 'node:stream/promises';
 import { Inject } from '@nestjs/common';
 import {
   AddTaskLinkRequestSchema,
+  BulkCreateTaskRequestSchema,
   SetTaskTagsRequestSchema,
   StatusSchema,
   UpdateTaskProjectRequestSchema,
+  type BulkCreateTaskResponse,
   type CreateTaskResponse,
   type MidniteConfig,
   type Status,
@@ -119,6 +121,25 @@ export class TasksController {
   remove(@Param('id') id: string): { ok: true } {
     this.service.deleteTask(id);
     return { ok: true };
+  }
+
+  // Bulk create from a pasted blob (JSON, no attachments). Thin: validate the
+  // batch body, delegate to the service, which fans each line through the normal
+  // create pipeline and coalesces the board broadcast.
+  @Post('bulk')
+  async createBulk(@Body() body: unknown): Promise<BulkCreateTaskResponse> {
+    const parsed = BulkCreateTaskRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.message);
+    }
+    const { raw, lines, repo, projectId, priority } = parsed.data;
+    return this.service.createBulk({
+      raw,
+      lines,
+      repo: repo?.trim() || undefined,
+      projectId: projectId?.trim() || undefined,
+      priority,
+    });
   }
 
   @Post()

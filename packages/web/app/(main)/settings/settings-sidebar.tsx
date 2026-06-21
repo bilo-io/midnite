@@ -2,7 +2,15 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Bot, Lock, Palette, SlidersHorizontal, UserRound, type LucideIcon } from 'lucide-react';
+import {
+  Bot,
+  FolderGit2,
+  Lock,
+  Palette,
+  SlidersHorizontal,
+  UserRound,
+  type LucideIcon,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type Category = { href: string; label: string; Icon: LucideIcon };
@@ -12,6 +20,7 @@ const CATEGORIES: Category[] = [
   { href: '/settings', label: 'Appearance', Icon: Palette },
   { href: '/settings/screen-lock', label: 'Screen lock', Icon: Lock },
   { href: '/settings/agents', label: 'Agents', Icon: Bot },
+  { href: '/settings/repos', label: 'Repos', Icon: FolderGit2 },
   { href: '/settings/system', label: 'System', Icon: SlidersHorizontal },
   { href: '/settings/user', label: 'User', Icon: UserRound },
 ];

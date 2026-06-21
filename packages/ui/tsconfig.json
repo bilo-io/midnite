@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": false,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    // The `typecheck` task runs `tsc --noEmit`; the library's `.d.ts` files are
+    // emitted by vite-plugin-dts (its own TS program), not by this tsc. Leaving
+    // the base config's `declaration` on makes `tsc --noEmit` do declaration-emit
+    // checking, which throws TS2742 on Storybook's `Meta`/`StoryObj` types whose
+    // realpath isn't portably nameable under pnpm's .pnpm store. Turn it off here
+    // (same fix web uses) so stories typecheck; the library types stay sound via
+    // the explicit annotations in the components + the vite build's dts step.
+    "declaration": false,
+    "declarationMap": false
+  },
+  "include": ["src/**/*"],
+  "exclude": ["dist", "node_modules"]
+}

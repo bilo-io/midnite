@@ -1,4 +1,5 @@
 import { Reveal } from '@/components/ui/section';
+import { TypedTitle } from '@/components/sections/typed-title';
 
 type Line = { kind: 'cmd' | 'out' | 'muted'; text: string };
 
@@ -26,18 +27,16 @@ export function CliShowcase() {
   return (
     <section id="cli" className="relative z-10 mx-auto max-w-5xl px-6 py-28">
       <div className="grid items-center gap-12 lg:grid-cols-2">
-        <Reveal>
-          <p className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
-            From the terminal
-          </p>
-          <h2 className="mt-3 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
-            Start the gateway, dump your list, walk away.
-          </h2>
+        <TypedTitle
+          sectionId="cli"
+          eyebrow="From the terminal"
+          title="Start the gateway, dump your list, walk away."
+        >
           <p className="mt-4 max-w-md text-pretty leading-relaxed text-muted-foreground">
             One command boots the orchestrator. Add tasks in plain language and let the pool work
             through them — check progress from the CLI or open the board in your browser.
           </p>
-        </Reveal>
+        </TypedTitle>
 
         <Reveal delay={120} className="gradient-border rounded-xl">
           <div className="overflow-hidden rounded-xl border border-border/70 bg-[#0b0b0f]/90 shadow-2xl backdrop-blur">

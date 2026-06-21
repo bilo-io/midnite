@@ -1,9 +1,14 @@
 import type { NodeRunLog } from '@midnite/shared';
 
-// Everything an executor needs to run one node. `params` is the node's raw params
-// (the executor re-parses against its own schema for defaults + type safety); `input`
-// is the merged output of upstream nodes; `signal` aborts a cancelled run.
+// Everything an executor needs to run one node. `params` is the node's params
+// after the engine has resolved any `{{expr}}` templates against the run context
+// (the executor still re-parses against its own schema for defaults + type
+// safety); `input` is the merged output of upstream nodes; `signal` aborts a
+// cancelled run.
 export interface NodeRunContext {
+  // The id of the workflow this run belongs to — used by persistence-backed nodes
+  // (storage.*) to scope their reads/writes per workflow.
+  workflowId: string;
   input: unknown;
   params: Record<string, unknown>;
   signal: AbortSignal;

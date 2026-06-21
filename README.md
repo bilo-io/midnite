@@ -119,6 +119,11 @@ re-queued up to this many times before it's abandoned. Each task also carries a
 `priority` (0 Low · 1 Normal · 2 High · 3 Urgent, default Normal) — the scheduler
 assigns higher-priority `todo` tasks first, oldest-first within a priority.
 
+`agent.maxPerRepo` (default `0` = unlimited) caps how many agents may run on the
+same repo (by `task.repo`) at once: the scheduler skips a `todo` task whose repo
+is already at the cap and picks the next eligible one, so two agents don't race
+on one working tree. Tasks without a repo are never capped.
+
 A task reaches `wip` (with a Claude Code session spawned and linked to it) in one
 of two ways:
 
@@ -132,6 +137,14 @@ of two ways:
   is enabled — the slot pool exists independent of `poolEnabled` — and returns
   `409` when every slot is busy. Note that merely `PATCH`-ing a task's status to
   `wip` only moves the column; it does **not** spawn a session.
+
+When a task is started, any links in its prompt are folded into the agent's seed
+prompt as a **"Linked context"** block: GitHub issue/PR URLs resolve via `gh`
+(your auth, so private repos work) with an anonymous `api.github.com` fallback,
+and other URLs are fetched through the SSRF guard (private/loopback ranges
+blocked) and reduced to readable text. It's best-effort and fail-open — a fetch
+that errors is skipped, never blocking the run — and capped to a byte budget so a
+huge thread can't blow the model's context.
 
 The session web window streams a live PTY over WebSocket (`/ws/terminal`). The
 PTY is spawned on demand when a window opens for an active session and is shared

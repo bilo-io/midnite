@@ -5,6 +5,7 @@ import {
   getNodeTypeDefinition,
   listNodeTypes,
 } from './node-types.js';
+import { LLM_PROVIDER_MODEL_SUGGESTIONS } from './llm.js';
 import { TriggerSchema } from './trigger.js';
 import { WorkflowSchema } from './workflow.js';
 
@@ -46,9 +47,56 @@ describe('node-type registry', () => {
     const ok = def.paramsSchema.safeParse({ prompt: 'hello' });
     expect(ok.success).toBe(true);
     if (ok.success) {
-      expect(ok.data.model).toBe('sonnet4.7');
+      expect(ok.data.model).toBe('sonnet4.6');
       expect(ok.data.maxTokens).toBe(1024);
     }
+  });
+
+  it('defaults ai.claude to a canonical, currently-supported model alias', () => {
+    // Guards against re-introducing a retired alias (e.g. the old `sonnet4.7`,
+    // whose dated id 404'd) as the default — it must be one the adapter advertises.
+    const def = getNodeTypeDefinition('ai.claude')!;
+    const parsed = def.paramsSchema.parse({ prompt: 'hi' }) as { model: string };
+    expect(LLM_PROVIDER_MODEL_SUGGESTIONS.anthropic).toContain(parsed.model);
+  });
+});
+
+describe('reshape nodes (Phase 12 Theme C)', () => {
+  it('registers setData / merge / filter with the right categories', () => {
+    expect(getNodeTypeDefinition('logic.setData')!.category).toBe('logic');
+    expect(getNodeTypeDefinition('logic.merge')!.category).toBe('logic');
+    expect(getNodeTypeDefinition('data.filter')!.category).toBe('data');
+  });
+
+  it('defaults setData to replace mode with an empty fields object', () => {
+    const ok = getNodeTypeDefinition('logic.setData')!.paramsSchema.safeParse({});
+    expect(ok.success).toBe(true);
+    if (ok.success) expect(ok.data).toEqual({ mode: 'replace', fields: {} });
+  });
+
+  it('defaults merge to shallowMerge and rejects an unknown mode', () => {
+    const def = getNodeTypeDefinition('logic.merge')!;
+    const ok = def.paramsSchema.safeParse({});
+    expect(ok.success).toBe(true);
+    if (ok.success) expect(ok.data.mode).toBe('shallowMerge');
+    expect(def.paramsSchema.safeParse({ mode: 'bogus' }).success).toBe(false);
+  });
+
+  it('defaults data.filter to pick with an empty field list', () => {
+    const ok = getNodeTypeDefinition('data.filter')!.paramsSchema.safeParse({});
+    expect(ok.success).toBe(true);
+    if (ok.success) expect(ok.data).toEqual({ mode: 'pick', fields: [] });
+  });
+
+  it('registers storage.set / storage.get in the storage category', () => {
+    expect(getNodeTypeDefinition('storage.set')!.category).toBe('storage');
+    expect(getNodeTypeDefinition('storage.get')!.category).toBe('storage');
+  });
+
+  it('requires a non-empty key on storage nodes', () => {
+    expect(getNodeTypeDefinition('storage.set')!.paramsSchema.safeParse({ value: 1 }).success).toBe(false);
+    expect(getNodeTypeDefinition('storage.set')!.paramsSchema.safeParse({ key: '', value: 1 }).success).toBe(false);
+    expect(getNodeTypeDefinition('storage.get')!.paramsSchema.safeParse({ key: 'k' }).success).toBe(true);
   });
 });
 

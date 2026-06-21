@@ -1,0 +1,29 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+# The workspace-root project. It exists only to host repo-wide checks; it has no
+# TypeScript sources of its own, so don't inherit the global build/test/typecheck/
+# lint tasks (those are per-package, defined in .moon/tasks.yml).
+id: 'root'
+language: 'bash'
+layer: 'tool'
+
+workspace:
+  inheritedTasks:
+    exclude:
+      - 'build'
+      - 'test'
+      - 'typecheck'
+      - 'lint'
+
+tasks:
+  # version-check: assert the lockstep invariant (every package.json shares one
+  # MAJOR.MINOR). Pure static check — no build deps, no network — so it runs in
+  # `moon ci` (runInCI defaults true) right alongside typecheck/test/build/lint.
+  version-check:
+    command: 'node scripts/version-check.mjs'
+    inputs:
+      - 'scripts/version-check.mjs'
+      - 'package.json'
+      - 'packages/*/package.json'
+    options:
+      runInCI: true

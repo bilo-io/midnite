@@ -30,6 +30,18 @@ describe('NodeRunSchema', () => {
     expect(parsed.output).toEqual([1, 2, 3]);
   });
 
+  it('preserves resolvedParams (the post-{{expr}} params the executor received)', () => {
+    const parsed = NodeRunSchema.parse({
+      id: 'nr1',
+      runId: 'r1',
+      nodeId: 'n1',
+      nodeType: 'ai.claude',
+      status: 'succeeded',
+      resolvedParams: { prompt: 'hello', maxTokens: 256 },
+    });
+    expect(parsed.resolvedParams).toEqual({ prompt: 'hello', maxTokens: 256 });
+  });
+
   it('rejects an invalid node-run status', () => {
     expect(
       NodeRunSchema.safeParse({

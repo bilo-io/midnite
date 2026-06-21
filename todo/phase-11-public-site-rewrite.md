@@ -22,112 +22,116 @@ A scroll/section controller (Theme D) is the single source of truth for "which s
 
 ---
 
-## Theme A — Foundations (themes, shell, fonts, favicon)
+## Theme A — Foundations (themes, shell, fonts, favicon) — ✅ DONE (PR #44, 2026-06-21)
 
 ### A1. Multi-theme support (parity with the web app) — **M**
-- [ ] Port the web app's theme system to the site: the **HSL CSS-variable tokens** + `.dark` block from [`packages/web/app/globals.css`](../packages/web/app/globals.css), a **`ThemeProvider`** (light / dark / **system** / **time**) modelled on [`packages/web/app/theme/theme-context.tsx`](../packages/web/app/theme/theme-context.tsx), and a no-flash inline **theme script** (cf. `theme-script.ts`). Use the **same `localStorage` key** so a visitor's choice is consistent with the app.
-- [ ] Replace the hardcoded `dark` class on `<html>` in [`app/layout.tsx`](../packages/site/app/layout.tsx) with the provider; add a **theme toggle** to the nav (port/adapt [`theme-toggle.tsx`](../packages/web/components/theme-toggle.tsx)).
-- [ ] Every new surface (panel, particles, text, download, legal) reads from tokens so both themes look intentional — not just an inverted dark page.
+- [x] Port the web app's theme system to the site: the **HSL CSS-variable tokens** + `.dark` block from [`packages/web/app/globals.css`](../packages/web/app/globals.css), a **`ThemeProvider`** (light / dark / **system** / **time**) modelled on [`packages/web/app/theme/theme-context.tsx`](../packages/web/app/theme/theme-context.tsx), and a no-flash inline **theme script** (cf. `theme-script.ts`). Use the **same `localStorage` key** so a visitor's choice is consistent with the app.
+- [x] Replace the hardcoded `dark` class on `<html>` in [`app/layout.tsx`](../packages/site/app/layout.tsx) with the provider; add a **theme toggle** to the nav (port/adapt [`theme-toggle.tsx`](../packages/web/components/theme-toggle.tsx)).
+- [x] Every new surface (panel, particles, text, download, legal) reads from tokens so both themes look intentional — not just an inverted dark page.
 
 ### A2. Favicon & brand assets — **S**
-- [ ] Use the **same favicon as the web app** — copy `favicon.ico`, `favicon-16x16.png`, `favicon-32x32.png`, `apple-touch-icon.png` (and `logo.PNG`) from [`packages/web/public/`](../packages/web/public/) into a new `packages/site/public/`, and wire `metadata.icons` in [`app/layout.tsx`](../packages/site/app/layout.tsx) exactly like the web layout. (Static copy, not a cross-package import — keeps the boundary clean; note the source of truth in a comment so they stay in sync.)
-- [ ] Keep the existing `cyberwar.ttf` brand font; confirm OG/Twitter metadata still reads well.
+- [x] Use the **same favicon as the web app** — copy `favicon.ico`, `favicon-16x16.png`, `favicon-32x32.png`, `apple-touch-icon.png` (and `logo.PNG`) from [`packages/web/public/`](../packages/web/public/) into a new `packages/site/public/`, and wire `metadata.icons` in [`app/layout.tsx`](../packages/site/app/layout.tsx) exactly like the web layout. (Static copy, not a cross-package import — keeps the boundary clean; note the source of truth in a comment so they stay in sync.)
+- [x] Keep the existing `cyberwar.ttf` brand font; confirm OG/Twitter metadata still reads well.
 
 ### A3. Layout shell & nav — **S–M**
-- [ ] App Router shell: a sticky, translucent **nav** (wordmark + links: Features / Download / GitHub + theme toggle) and a refined **footer** (add legal links — Theme H). Both restyled to the new look; reuse the existing nav/footer as a starting point.
+- [x] App Router shell: a sticky, translucent **nav** (wordmark + links: Features / Download / GitHub + theme toggle) and a refined **footer** (add legal links — Theme H). Both restyled to the new look; reuse the existing nav/footer as a starting point.
 
 ---
 
-## Theme B — Persistent cursor-following particle field
+## Theme B — Persistent cursor-following particle field — ⏳ REMOVED for now (PR #68, 2026-06-21)
+
+> **Update (PR #68):** the WebGL/R3F particle field was **removed for now** — `components/scene/` and the `@react-three/*`/`three` deps are gone, replaced by a static CSS `AmbientBackdrop` (soft brand-tinted blurs). It originally shipped in PR #59 (per-section + theme-aware field); parked, not deleted from history. Revisit if/when we want the 3D back.
 
 > Evolve the existing [`scene/`](../packages/site/components/scene/) (R3F + custom shader, already cursor-aware via `usePointer`) rather than starting over.
 
 ### B1. Cursor-follow & always-on field — **M**
-- [ ] The particle field **loosely follows the cursor** (eased lerp toward pointer, not a hard lock) and remains a fixed, `pointer-events-none`, full-viewport backdrop across **all** sections (it currently exists; make it the persistent base layer). Single `<Canvas>` for the whole page.
-- [ ] Drive colours from the **active theme tokens** so the field recolours on theme switch (light vs dark palettes), not a fixed dark-only ramp.
+- [x] The particle field **loosely follows the cursor** (eased lerp toward pointer, not a hard lock) and remains a fixed, `pointer-events-none`, full-viewport backdrop across **all** sections (it currently exists; make it the persistent base layer). Single `<Canvas>` for the whole page.
+- [x] Drive colours from the **active theme tokens** so the field recolours on theme switch (light vs dark palettes), not a fixed dark-only ramp.
 
 ### B2. Per-section particle styles (transitioned) — **M**
-- [ ] Each section defines a **particle style** — palette accent, density/size, motion character (e.g. calm drift → faster swirl → grid-snap). On section change, **lerp the shader uniforms** between styles so the look shifts *slightly* and *smoothly* (no hard cut). Subtle is the goal.
-- [ ] Tie the style set to the section registry (Theme D) so adding a section = adding a style entry.
+- [x] Each section defines a **particle style** — palette accent, density/size, motion character (e.g. calm drift → faster swirl → grid-snap). On section change, **lerp the shader uniforms** between styles so the look shifts *slightly* and *smoothly* (no hard cut). Subtle is the goal.
+- [x] Tie the style set to the section registry (Theme D) so adding a section = adding a style entry.
 
 ### B3. Performance & reduced motion — **S**
-- [ ] Cap DPR, pause the rAF loop when the canvas is offscreen/tab hidden, and **disable drift + cursor-follow** under `prefers-reduced-motion` (render a static field). Keep 60fps on a mid laptop.
+- [x] Cap DPR, pause the rAF loop when the canvas is offscreen/tab hidden, and **disable drift + cursor-follow** under `prefers-reduced-motion` (render a static field). Keep 60fps on a mid laptop.
 
 ---
 
-## Theme C — The persistent preview panel
+## Theme C — The persistent preview panel — ✅ DONE (PR #59, 2026-06-21)
 
 > The signature element: one Mac-window panel that lives for the whole page and morphs between sections.
 
+> **Refinement (PR #68):** the panel now carries the brand `gradient-border` — subtle at rest, becoming a pronounced rotating conic gradient + breathing glow pulse on hover/focus (`.panel-glow`); degrades under reduced motion.
+
 ### C1. Panel chrome & persistence — **M**
-- [ ] A single **`<PreviewPanel>`** rendered once at the page root (not per section), styled as a **macOS window**: rounded corners, subtle shadow/depth (the "subtle 3D"), translucent token-driven surface, and the **three red/yellow/green traffic-light dots** in the top-left, **always** present.
-- [ ] The panel is **shared across sections** — implement with a shared-layout/FLIP technique (Framer Motion `layoutId`, or a measured FLIP) so it's the *same* element morphing, not a swap.
+- [x] A single **`<PreviewPanel>`** rendered once at the page root (not per section), styled as a **macOS window**: rounded corners, subtle shadow/depth (the "subtle 3D"), translucent token-driven surface, and the **three red/yellow/green traffic-light dots** in the top-left, **always** present.
+- [x] The panel is **shared across sections** — implement with a shared-layout/FLIP technique (Framer Motion `layoutId`, or a measured FLIP) so it's the *same* element morphing, not a swap.
 
 ### C2. Position & size transitions — **M**
-- [ ] Each section declares the panel's **target rect** (x, y, width, height) — e.g. hero = centred & grid-card-sized; a feature section = larger and offset to one side. On active-section change the panel **animates position *and* size** with a smooth spring/ease. Width and height both transition (not just translate).
-- [ ] Layout is **responsive**: rects are expressed relatively (vw/vh or a layout grid) and recompute on resize; on narrow viewports sections may stack the panel above/below the text instead of beside it.
+- [x] Each section declares the panel's **target rect** (x, y, width, height) — e.g. hero = centred & grid-card-sized; a feature section = larger and offset to one side. On active-section change the panel **animates position *and* size** with a smooth spring/ease. Width and height both transition (not just translate).
+- [x] Layout is **responsive**: rects are expressed relatively (vw/vh or a layout grid) and recompute on resize; on narrow viewports sections may stack the panel above/below the text instead of beside it.
 
 ### C3. Dynamic content swap — **M**
-- [ ] The panel's **inner content fills the frame** and is **swapped per section** with a cross-fade (+ slight scale/blur) timed against the panel's move, so content settles as the panel arrives. Content modules come from Theme F via the section registry.
-- [ ] Reduced motion: instant placement + instant content swap (no morph, no fade).
+- [x] The panel's **inner content fills the frame** and is **swapped per section** with a cross-fade (+ slight scale/blur) timed against the panel's move, so content settles as the panel arrives. Content modules come from Theme F via the section registry.
+- [x] Reduced motion: instant placement + instant content swap (no morph, no fade).
 
 ---
 
-## Theme D — Scroll-driven sections, typed titles & reveal
+## Theme D — Scroll-driven sections, typed titles & reveal — ✅ DONE (PR #44, 2026-06-21)
 
 ### D1. Section controller & registry — **M**
-- [ ] A typed **section registry** — each entry: `{ id, title, subtitle, panelRect, panelContent, particleStyle, bodyContent? }`. The page renders from this list; Themes B/C read their per-section config from it. One place to add/reorder sections.
-- [ ] A controller tracks the **active section** (IntersectionObserver) and exposes it to the panel, particles, and text layers without re-rendering on every scroll frame (refs + a light context/store).
+- [x] A typed **section registry** — each entry: `{ id, title, subtitle, panelRect, panelContent, particleStyle, bodyContent? }`. The page renders from this list; Themes B/C read their per-section config from it. One place to add/reorder sections.
+- [x] A controller tracks the **active section** (IntersectionObserver) and exposes it to the panel, particles, and text layers without re-rendering on every scroll frame (refs + a light context/store).
 
 ### D2. Typed title/subtitle + fade-in — **M**
-- [ ] A reusable **`useTypewriter`** hook (or `<Typed>` component): on a section becoming active, **types out the title then subtitle quickly**, cursor caret while typing. After typing completes, **fade in** any other elements in the section (body copy, CTAs, badges) with a short stagger.
-- [ ] Re-running on re-entry is configurable (type once vs. retype on scroll-back — Decisions §4). SSR-safe; under reduced motion, render full text immediately and skip the fade.
+- [x] A reusable **`useTypewriter`** hook (or `<Typed>` component): on a section becoming active, **types out the title then subtitle quickly**, cursor caret while typing. After typing completes, **fade in** any other elements in the section (body copy, CTAs, badges) with a short stagger.
+- [x] Re-running on re-entry is configurable (type once vs. retype on scroll-back — Decisions §4). SSR-safe; under reduced motion, render full text immediately and skip the fade.
 
 ---
 
-## Theme E — Hero (epic but clean)
+## Theme E — Hero (epic but clean) — ✅ DONE (PR #59, 2026-06-21)
 
 ### E1. Epic hero composition — **M–L**
-- [ ] A standout hero: prominent **app icon + "midnite" logo/wordmark**, big calm headline, the particle field at its densest/most dynamic here, generous space. Epic, but uncluttered — one focal centrepiece.
-- [ ] The **persistent panel sits centred** in the hero at roughly **grid-card size** (small), establishing the element that will grow/travel as the user scrolls into later sections.
+- [x] A standout hero: prominent **app icon + "midnite" logo/wordmark**, big calm headline, the particle field at its densest/most dynamic here, generous space. Epic, but uncluttered — one focal centrepiece.
+- [x] The **persistent panel sits centred** in the hero at roughly **grid-card size** (small), establishing the element that will grow/travel as the user scrolls into later sections.
 
 ### E2. Cycling typed titles — **S–M**
-- [ ] The hero headline **cycles through 3 title/subtitle pairs**, each **typed out**, held briefly, cleared, then the next — looping. (e.g. "Multitask Claude Code", "Your agents, in parallel", "One board, every task" — final copy TBD, Decisions §5.) Built on the `useTypewriter` hook (D2).
-- [ ] Pauses on reduced motion (show the first pair statically) and is legible against the busy hero backdrop (scrim/backdrop-blur behind the text).
+- [x] The hero headline **cycles through 3 title/subtitle pairs**, each **typed out**, held briefly, cleared, then the next — looping. (e.g. "Multitask Claude Code", "Your agents, in parallel", "One board, every task" — final copy TBD, Decisions §5.) Built on the `useTypewriter` hook (D2).
+- [x] Pauses on reduced motion (show the first pair statically) and is legible against the busy hero backdrop (scrim/backdrop-blur behind the text).
 
 ---
 
-## Theme F — Panel content modules
+## Theme F — Panel content modules — ✅ DONE (PR #59, 2026-06-21)
 
 > The interchangeable things shown *inside* the panel (C3). All token-themed, all degrade under reduced motion.
 
 ### F1. Terminal-typing module — **M**
-- [ ] A **terminal mockup** inside the panel that **types out a command** (and a plausible faux response), monospaced, with a blinking caret — used for "install / run" style sections. Reuse the `useTypewriter` engine (D2). Mac dots already come from the panel chrome (C1).
+- [x] A **terminal mockup** inside the panel that **types out a command** (and a plausible faux response), monospaced, with a blinking caret — used for "install / run" style sections. Reuse the `useTypewriter` engine (D2). Mac dots already come from the panel chrome (C1).
 
 ### F2. Webapp-mockup modules — **M–L**
-- [ ] **Simplified mockups inspired by the actual web app** to communicate features — e.g. a stylised **kanban board** (a few task cards moving across columns), a **session/agent card**, a **dashboard widget**, or an **office** vignette. These are *evocations*, not the real components — lightweight, token-themed, lightly animated. One module per feature section.
-- [ ] Each module fills the panel frame and has an idle micro-animation (a card sliding, a value ticking) so the panel feels alive, not a screenshot.
+- [x] **Simplified mockups inspired by the actual web app** to communicate features — e.g. a stylised **kanban board** (a few task cards moving across columns), a **session/agent card**, a **dashboard widget**, or an **office** vignette. These are *evocations*, not the real components — lightweight, token-themed, lightly animated. One module per feature section.
+- [x] Each module fills the panel frame and has an idle micro-animation (a card sliding, a value ticking) so the panel feels alive, not a screenshot.
 
 ---
 
-## Theme G — Download page restyle
+## Theme G — Download page restyle — ✅ DONE (PR #44, 2026-06-21)
 
 > Keep the **function** of today's [`download/page.tsx`](../packages/site/app/download/page.tsx) + [`lib/downloads.ts`](../packages/site/lib/downloads.ts) (platform detection, per-arch macOS builds, GitHub release deep links, "coming soon" disabled states) — restyle the **presentation**.
 
 ### G1. Elegant download layout — **M**
-- [ ] Rebuild the download UI in the new look & feel: detected-platform **primary CTA** up top, an elegant grid/list of **all platforms** (macOS arm64/x64, Windows, Linux) below, version + release-notes link, consistent panel/particle treatment and theming. Reuse `downloads.ts` data and `platform.ts` detection **as-is** — no behavioural change.
-- [ ] Carry the persistent particle field + theming onto this route so it feels part of the same site (the panel mechanic is landing-page-specific; the download page just shares the visual language).
+- [x] Rebuild the download UI in the new look & feel: detected-platform **primary CTA** up top, an elegant grid/list of **all platforms** (macOS arm64/x64, Windows, Linux) below, version + release-notes link, consistent panel/particle treatment and theming. Reuse `downloads.ts` data and `platform.ts` detection **as-is** — no behavioural change.
+- [x] Carry the persistent particle field + theming onto this route so it feels part of the same site (the panel mechanic is landing-page-specific; the download page just shares the visual language).
 
 ---
 
-## Theme H — Legal pages (sub-layout + markdown)
+## Theme H — Legal pages (sub-layout + markdown) — ✅ DONE (PR #44, 2026-06-21)
 
 ### H1. Legal sub-layout — **M**
-- [ ] A nested App Router layout at `app/legal/layout.tsx` with a **sidebar** listing **all legal docs** (active-link highlighting) beside a **content area** that renders **pretty-printed markdown**. Responsive: sidebar collapses to a top selector on mobile.
-- [ ] Render markdown with **`react-markdown` + `remark-gfm`** (the web app's stack) styled to the site (typography, code blocks, tables) — mirror the [`markdown-preview.tsx`](../packages/web/components/markdown-preview.tsx) treatment. Docs authored as markdown/MDX files so adding a doc = adding a file + a sidebar entry.
+- [x] A nested App Router layout at `app/legal/layout.tsx` with a **sidebar** listing **all legal docs** (active-link highlighting) beside a **content area** that renders **pretty-printed markdown**. Responsive: sidebar collapses to a top selector on mobile.
+- [x] Render markdown with **`react-markdown` + `remark-gfm`** (the web app's stack) styled to the site (typography, code blocks, tables) — mirror the [`markdown-preview.tsx`](../packages/web/components/markdown-preview.tsx) treatment. Docs authored as markdown/MDX files so adding a doc = adding a file + a sidebar entry.
 
 ### H2. Placeholder docs — **S**
-- [ ] Create **Privacy Policy** (`app/legal/privacy/`) and **EULA** (`app/legal/eula/`) as **placeholder** content (clear "draft / placeholder — not legal advice" note, standard section scaffolding). Wire both into the sidebar and the footer.
+- [x] Create **Privacy Policy** (`app/legal/privacy/`) and **EULA** (`app/legal/eula/`) as **placeholder** content (clear "draft / placeholder — not legal advice" note, standard section scaffolding). Wire both into the sidebar and the footer.
 
 ---
 

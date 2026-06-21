@@ -1,0 +1,102 @@
+# Phase 26 — Docs app (`packages/docs`) on `@midnite/ui`
+
+> [Phase 25](phase-25-ui-library.md) extracts a reusable `@midnite/ui` component library + design tokens and catalogues them in Storybook. **Phase 26 builds the consumer that proves it:** a standalone **Vite + React docs app** (`packages/docs`) whose entire shell is built from `@midnite/ui` — the real-world proof that the library is genuinely consumable outside `web`, and a single home for **both** the design-system documentation and the project's developer docs. Today the docs that exist ([`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md), [`docs/INITIAL_PLAN.md`](../docs/INITIAL_PLAN.md), [`docs/TESTING_PLAN.md`](../docs/TESTING_PLAN.md), the README) are raw markdown with no browsable surface, and the design system will only live in Storybook (an interactive playground, not curated narrative). Phase 26 gives both a polished, navigable site — authored in **MDX** so prose and **live component examples** sit side by side.
+
+> **This is the `docs` app you flagged when scoping Phase 25** ("later create a docs app that uses the ui lib as well"). It's deliberately a **hand-rolled Vite app that imports `@midnite/ui`**, *not* a docs framework (VitePress/Nextra/Astro) — a framework would ship its own components and defeat the point of dogfooding the library.
+
+> **Scope guardrails (CLAUDE.md).** `docs` is a **new leaf app, a pure consumer of `@midnite/ui`** — it extends the graph with `ui ◀── docs` (joining `ui ◀── web`). It does **not** talk to the gateway (the docs site is **fully static** — no live data, no API client), does **not** import `@midnite/shared`/`web`/`gateway` internals, and does **not** duplicate the design tokens (it consumes the lib's token CSS). It reuses the lib's `ThemeProvider` for light/dark. New package auto-registers via `packages/*` (pnpm + moon). **Depends on [Phase 25](phase-25-ui-library.md)** — sequence after it.
+
+> Effort tags: **S** small · **M** medium · **L** large. Themes ordered **A → B/C → D** (scaffold gates the content; B and C are independent). Every box starts unchecked — this is net-new work.
+
+---
+
+## Current state (baseline to build on)
+
+- **packages:** `cli · desktop · gateway · shared · site · web` — and `ui` (incoming, Phase 25). **No `docs` app, no doc-site tooling** (no VitePress/Nextra/Astro/Docusaurus anywhere). `packages/*` auto-registers in [`pnpm-workspace.yaml`](../pnpm-workspace.yaml) + [`.moon/workspace.yml`](../.moon/workspace.yml).
+- **content that exists:** [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md), [`docs/INITIAL_PLAN.md`](../docs/INITIAL_PLAN.md), [`docs/TESTING_PLAN.md`](../docs/TESTING_PLAN.md), [`README.md`](../README.md), [`CLAUDE.md`](../CLAUDE.md), and 30 `todo/phase-*.md` plans — all raw markdown, **no browsable surface**.
+- **markdown stack already in repo:** `react-markdown` + `remark-gfm` (used by [`markdown-preview.tsx`](../packages/web/components/markdown-preview.tsx)) — reusable for rendering repo markdown.
+- **the marketing site is separate:** [`packages/site`](../packages/site/) is **Next 15 + R3F** (the Phase 11 scrollytelling marketing rewrite) — a different package, stack, and audience. `docs` is the **developer / design-system** surface, not marketing; no overlap.
+- **design system source (incoming):** Phase 25's `@midnite/ui` will expose primitives, a token CSS entry, and a `ThemeProvider` — the things this app consumes.
+
+---
+
+## Theme A — Docs app scaffold (Vite + `@midnite/ui`) — **M**
+
+Stand up the app as a clean consumer of the library.
+
+- [ ] **`packages/docs`** — a Vite + React app: `package.json` with `"@midnite/ui": "workspace:*"` (+ React), `vite.config.ts` (with the MDX plugin, Theme B), `tsconfig.json`, `moon.yml` (`dev` / `build` / `preview` / `lint` / `typecheck`). Auto-registers in pnpm + moon.
+- [ ] **Shell from the lib** — the app chrome (layout, nav/sidebar, header, theme toggle, buttons, cards) is built **entirely from `@midnite/ui` primitives + tokens**, importing the lib's token CSS and wrapping in its `ThemeProvider`. This *is* the proof-of-consumption for Phase 25 — if a primitive can't build the docs shell, that's a Phase 25 gap to fix.
+- [ ] **Routing** (Decision §1) — a lightweight client router (react-router) or file-based MDX routes; pick one and keep the page registry in one obvious place. Fully static — no gateway, no API client.
+- [ ] **Boundary check:** `docs` imports only `@midnite/ui` (and React/router/MDX) — nothing from `shared`/`web`/`gateway`. A simple grep/lint guard keeps the leaf clean.
+
+---
+
+## Theme B — Design-system documentation (MDX) — **M–L**
+
+Curated narrative docs for the library, complementing (not duplicating) Storybook (Decision §2).
+
+- [ ] **MDX authoring** (Decision §3) — `@mdx-js/rollup` (or `vite-plugin-mdx`) so a page is markdown prose **with inline live JSX examples** rendered using the real `@midnite/ui` components. One format for explanation + demo.
+- [ ] **A page per primitive** — usage guidance, canonical live examples, props/variants, do/don't. **Link out to Storybook** for the full interactive prop matrix (Storybook stays the playground + a11y/test runner from Phase 25 D); the docs app is the narrative + canonical examples, no re-implementation of the interactive controls.
+- [ ] **Foundations pages** — render the design tokens live: a **colour palette**, **typography** specimen, **spacing/radius/shadow/motion** scales (the Phase 25 §B *placeholder* taxonomy gets real, browsable doc pages here). Theming explained (light/dark/system/time via the lib provider).
+- [ ] **Getting-started** — "install `@midnite/ui`, import the token CSS, wrap in `ThemeProvider`, use the primitives" — the on-ramp a new consumer (incl. the `docs` app itself) follows.
+
+---
+
+## Theme C — Product / developer docs — **M**
+
+Make the project's existing markdown browsable, from one source of truth.
+
+- [ ] **Render the real repo markdown** (Decision §4 — **import, don't duplicate**): surface [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md), [`docs/INITIAL_PLAN.md`](../docs/INITIAL_PLAN.md), [`docs/TESTING_PLAN.md`](../docs/TESTING_PLAN.md), a getting-started/overview, and a **config reference**, by importing the actual files at build time (via the MDX/markdown pipeline or `?raw` + `react-markdown`) so docs can't drift from the repo.
+- [ ] **Sidebar nav + GFM rendering** — grouped sections (Design System · Guides · Architecture · Reference), styled with the lib's typography; reuse `remark-gfm` so tables/task-lists/code render well.
+- [ ] **Keep prose styling in the lib's tokens** — the markdown renderer reads the same type/spacing scale as everything else, so product docs and DS docs look like one site.
+
+---
+
+## Theme D — Navigation, search & build seam — **S–M**
+
+- [ ] **Navigation** — a responsive sidebar (DS vs product sections) + on-page nav; mobile collapses (reuse Phase 24 patterns if landed). Active-route highlighting.
+- [ ] **Client-side search** — a lightweight filter/index over doc titles + headings (no server; the site is static). The existing [`search-bar.tsx`](../packages/web/components/search-bar.tsx) pattern is the reference, not a dependency.
+- [ ] **Static build + deploy seam** — `moon run docs:build` emits a static site; a **deploy story** (GitHub Pages / any static host) is **scoped but deferred to a follow-on** — this phase ships the buildable app, not the hosting. `moon ci` builds it.
+
+---
+
+## Out of scope (named, not built here)
+
+- **The marketing `site`** ([Phase 11](phase-11-public-site-rewrite.md)) — separate package/stack/audience; `docs` doesn't touch it. (If the site later wants `@midnite/ui`, that's a separate coordination, not this phase.)
+- **Live / gateway-connected content** — `docs` is **static**: no API client, no live board/usage data. Documenting the REST/WS API is prose, not a live console.
+- **Replacing Storybook** — Storybook stays the interactive component playground + the a11y/interaction test runner (Phase 25 D); `docs` complements it.
+- **Hosting / CD** — the deploy pipeline (GH Pages action, custom domain) is a deferred follow-on; this phase makes the app build.
+- **Auto-generated API/prop docs from types** — hand-authored MDX this phase; a typedoc/react-docgen pipeline is a possible later upgrade.
+- **Versioned docs** — single "latest" version only.
+
+---
+
+## Files this phase touches (map)
+
+- **new `packages/docs/`:** `package.json` (`@midnite/ui` + React + router + MDX), `vite.config.ts` (MDX plugin), `tsconfig.json`, `moon.yml`, `index.html`, `src/` (app shell from `@midnite/ui`, router, nav/sidebar/search), `src/content/**` (MDX pages: DS components + foundations + guides), and build-time imports of the repo's [`docs/*.md`](../docs/) + README for the product-docs section.
+- **`@midnite/ui` (Phase 25):** consumed as-is; if the docs shell needs a primitive the lib lacks, add it **in Phase 25's** lib (don't build app-specific primitives in `docs`).
+- **No gateway/shared/web/cli changes.**
+- **Docs/config:** update [`CLAUDE.md`](../CLAUDE.md) (add `docs` to the package list + the `ui ◀ docs` graph edge) + README (how to run the docs app); append to [`done.md`](../todo/done.md) as slices land.
+
+---
+
+## Verification
+
+- [ ] `moon run docs:dev` serves the site; its entire shell renders via `@midnite/ui` primitives + tokens, with working light/dark/system theming from the lib's `ThemeProvider`.
+- [ ] An MDX component page shows **live** `@midnite/ui` examples inline next to prose; the foundations pages render the real token palette/type/spacing scales; a "see it interactively" link goes to Storybook.
+- [ ] The product-docs section renders the **actual** [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md) / [`docs/INITIAL_PLAN.md`](../docs/INITIAL_PLAN.md) / [`docs/TESTING_PLAN.md`](../docs/TESTING_PLAN.md) (imported, not copied — editing the source file updates the page).
+- [ ] Sidebar nav groups DS vs product docs; client-side search filters pages; the site is responsive; **no network/gateway calls** (fully static).
+- [ ] `docs` imports only `@midnite/ui` (boundary guard passes — nothing from `shared`/`web`/`gateway`).
+- [ ] `moon run docs:build` produces a static site; `moon ci` builds it; `moon run :typecheck` · `:lint` · `:test` green across the graph. (Run web tests from the **primary checkout**, not a `.git` worktree.)
+
+---
+
+## Decisions / open questions
+
+1. **Routing** *(open).* `react-router` (explicit route table) vs file-based MDX routing (a Vite plugin maps `src/content/**` to routes). Recommend file-based MDX routing so adding a doc = adding a file; confirm in the A PR.
+2. **Storybook relationship** *(settled in brainstorm).* **Complement.** Storybook stays the interactive playground + test/a11y runner (Phase 25 D); `docs` is curated narrative + canonical live examples + foundations, linking to Storybook for the full prop matrix. No duplication.
+3. **Authoring format** *(settled in brainstorm).* **MDX** — prose with inline live JSX examples, the natural fit for design-system docs. One format for explanation + demo.
+4. **Repo markdown: import vs duplicate** *(recommend: import).* Render the **actual** `docs/*.md` + README at build time (MDX import or `?raw`) so docs can't drift from the repo's source of truth, rather than copying content into `packages/docs`.
+5. **Content scope** *(settled in brainstorm).* **Design-system docs + core developer docs** (getting-started, architecture, config) — the full docs site, not DS-only. The 30 `todo/` phase plans are **not** rendered this phase (a "living roadmap" view is a possible follow-on).
+6. **Deploy** *(open / deferred).* Where the static build is hosted (GitHub Pages action, a static host) is a follow-on; this phase ships a buildable app. Confirm the target when hosting is wanted.
+7. **Dependency on Phase 25** *(sequencing).* Phase 26 consumes `@midnite/ui`; it can't start meaningfully until Phase 25's lib + token CSS + `ThemeProvider` exist. Plan accordingly.

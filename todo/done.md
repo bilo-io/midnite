@@ -4,6 +4,368 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 25 Theme D: Storybook catalog + DS docs + browser tests (PR #69) — **Phase 25 COMPLETE**
+
+The final Phase 25 theme — `@midnite/ui` now has its own Storybook (component catalog + design-system docs) and runs its stories as browser tests. **Closes out Phase 25** (Themes A–D all merged); unblocks Phase 26 (the docs app).
+
+- [x] **Lib Storybook on `@storybook/react-vite`** (no Next) — addon-a11y + addon-vitest + addon-docs. Preview applies the lib's tokens + a dedicated Tailwind config (content scans `src` + `.storybook`; colours → `hsl(var(--token))`) and wraps stories in `ThemeProvider` with a light/dark toolbar, so primitives render exactly as in the app.
+- [x] **Primitive stories authored fresh** — the base primitives had no stories (Phase 10 storied domain components); a `Primitives/*` story per primitive covering key variants/states.
+- [x] **Design-system MDX docs** (`Design System/*`) — colour-token palette, typography specimen, radius scale + clearly-marked placeholders (spacing/shadow/z-index/motion), getting-started on-ramp.
+- [x] **Browser-test wiring** — `vitest.config.ts` splits into `unit` (node: boundary/tokens/theme-script/cn) + `storybook` (chromium: every story as a render+a11y test). `moon run ui:test` runs both; `moon.yml` gains `storybook`/`build-storybook`. CI installs chromium repo-wide.
+- [x] **Docs-app seam** — lib cleanly consumable (`exports`, token CSS, peer React); Storybook is the v1 docs surface. `tsconfig` sets `declaration:false` for the typecheck pass (Storybook types trip TS2742 on declaration-check); shipped `.d.ts` come from vite-plugin-dts.
+
+No `web` changes. Verified: `ui:build` (`"use client"` preserved) / typecheck / lint / build-storybook (31 stories + 4 docs) / `ui:test` **46 passed** (15 node unit + 31 chromium story tests); pristine frozen install; CI green. Independent review: faithful.
+
+**🎉 `@midnite/ui` is now a complete, self-documenting design-system package** (Themes A scaffold → B tokens+theme → C primitives → D catalog). Next: Phase 26 (docs app on `@midnite/ui`).
+
+## 2026-06-21 — Phase 10 C2: stories for workflows/councils/shipped widgets (PR #70)
+
+Three more list-style self-fetching widgets storied on the `installMockFetch` helper (#53), continuing [Phase 10 C2](phase-10-test-suite-hardening.md). Pure coverage; no product change.
+
+- [x] `workflows-widget` (`GET /workflows`), `councils-widget` (`GET /councils`), `shipped-widget` (`GET /tasks`) — each loaded / empty / error, asserting visible text in the headless-chromium run; static fixtures, no clock-derived assertions.
+- [x] 9 new story tests; `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #70 (`web:test` 245).
+- ↪️ Remaining un-storied widgets are the chart/multi-endpoint ones (`throughput`/`usage`/`system-monitor`, `agents`/`all-projects`, `market-*`, `boardroom-panel`) — each needs more than the list-widget pattern (a pinned clock or multi-endpoint mocks).
+
+## 2026-06-21 — Site: remove 3D for now + gradient-border on the preview panel (PR #68)
+
+Two requested tweaks to the public site. The WebGL field was heavy and we're stepping back from it for now; the panel gains the brand gradient-border motif.
+
+- [x] **Removed the 3D/WebGL particle field** (Phase 11 Theme B, ⏳ parked): deleted [`components/scene/`](../packages/site/components/) (particles/core/shaders/scene/backdrop), dropped `SceneBackdrop` from the landing + download routes, removed the `@react-three/*` + `three` deps (the scene was a dynamic chunk, so the WebGL bundle is gone at runtime). Relocated `prefersReducedMotion` → [`lib/reduced-motion.ts`](../packages/site/lib/reduced-motion.ts).
+- [x] **Static [`AmbientBackdrop`](../packages/site/components/ambient-backdrop.tsx)** replacement: fixed, pointer-events-none, soft brand-tinted CSS blurs — keeps some depth without any canvas, themed for light/dark.
+- [x] **Gradient-border on the persistent panel** (Theme C refinement): restructured [`PanelFrame`](../packages/site/components/panel/panel-frame.tsx) (ring/glow on an outer un-clipped element, content clipped on an inner one) + `pointer-events-auto` so it reacts to hover inside the panel's pointer-events-none wrapper. Subtle edge at rest → pronounced rotating conic gradient + a `.panel-glow` breathing pulse on hover/focus ([`globals.css`](../packages/site/app/globals.css)); disabled under reduced motion. Applies to the inline mobile panel too.
+- [x] `:typecheck`/`:lint` green across the graph; `site:test` (19) + `site:build` (7 routes) green; `moon ci` green on PR #68.
+
+## 2026-06-21 — Phase 15 Theme B: URL + GitHub-context inference (PR #67)
+
+Links in a task's prompt are fetched and folded into the agent's seed prompt as a "Linked context" block — closing part of [Phase 15](phase-15-smart-intake.md#theme-b--url--github-context-inference--m--done-pr-67-2026-06-21) / [outstanding.md](outstanding.md) #3. Best-effort + fail-open; no new fetch path or runtime dep.
+
+- [x] **Detect** — pure `extractUrls` + shared `parseGithubIssueOrPr` (resolves both `/issues/N` and `/pull/N`); helpers + formatting in `agent/lib/url-context.ts`, unit-tested.
+- [x] **GitHub** — `gh api repos/{repo}/issues/{n}` (user auth → private repos) with an anonymous `api.github.com` REST fallback when `gh` is absent. `UrlContextService` owns the shell-out + fetch (network primitives are protected seams the spec overrides).
+- [x] **General URLs** — fetched through the existing outbound SSRF guard (`isSafeHttpUrl`, private/loopback blocked) and reduced to readable text/title; reuses `readCapped`/`parseHtmlMetadata` from `opengraph.ts` rather than adding a second fetch path.
+- [x] **Inject** — appended at the agent-run seed-prompt point (`agent-runner.start()`), byte-capped (5 URLs · 4k/source · 12k total), fail-open. `gateway:test` 573 · `shared` 290 · `cli` 15; `moon ci` green on PR #67.
+- ↪️ **Phase 15 remaining:** Theme D (knowledge-files watcher). Theme A (bulk add) shipped via Phase 16; Theme C (inline answers) via PR #55.
+
+## 2026-06-21 — Phase 29 Theme A2: lockstep version planner + version-check CI task (PR #66)
+
+The versioning core the release skills depend on ([Phase 29](phase-29-releases-versioning-changelog.md#theme-a--versioning-policy--the-lockstep-tool--m)). Encodes the rule once: every package shares `MAJOR.MINOR`, only `PATCH` advances independently.
+
+- [x] **`planVersionBump` + `sharesLockstepMajorMinor`** in [`@midnite/shared`](../packages/shared/src/version.ts) — pure bump math: `major`/`minor` move every package in lockstep (`(X+1).0.0` / `X.(Y+1).0`), `patch` bumps only the changed packages, `none` is identity; throws if the input isn't already in lockstep. 12 unit tests.
+- [x] **`scripts/version-check.mjs`** + a workspace-root `root:version-check` moon task (new root [`moon.yml`](../moon.yml) + `.moon/workspace.yml` glob/sources split) — fails CI if package.json versions don't share one `MAJOR.MINOR` (patch may differ), naming divergers; runs once in `moon ci`. No versions changed (all stay `0.0.0`).
+- [x] `:typecheck` (all projects resolve) · `:lint` · `shared:test` (300, +12) · `root:version-check` green; `moon ci` green on PR #66 (one re-run for the known-flaky terminal env-dump spec, unrelated).
+- ↪️ **Remaining (phase-29):** A1 policy doc (`docs/RELEASING.md`) · A3 tag/branch scheme · B root `CHANGELOG.md` · C `/release-prep` · D `/release-complete`.
+
+## 2026-06-21 — Phase 24 Theme A1: viewport + responsive breakpoint foundation (PR #51)
+
+First slice of [Phase 24](phase-24-responsive-mobile-pwa.md) — the foundation the rest of Theme A (mobile nav A2, per-surface reflow A3) builds on. Web-only; the loopback data contract is unchanged (Decision §1). Settles the breakpoint-approach decision (§4): Tailwind v3 was already wired, so the answer is Tailwind responsive variants + one shared source of truth, not hand-rolled `@media`.
+
+> ⚠️ **MERGED DURING A GITHUB ACTIONS OUTAGE — CI did not run on PR #51.** Actions was stalled repo-wide on 2026-06-21 (no runs anywhere 15:23–15:40+ UTC); PR open, close/reopen, and an empty-commit `synchronize` push all failed to spawn a workflow run. Merged at the user's instruction on a full **green local gate on the rebased tree** (rebased onto current `main` incl. #50/#65 `@midnite/ui`): `web:typecheck` ✅ · `web:lint` ✅ (0 errors) · `web:test` ✅ **56 files / 236 passed**. **To verify independently from `main`:** check the `push: main` CI run for squash commit `4e29b0b` once Actions recovers. (Same note on the PR #51 thread.)
+
+- [x] **A1.1 — viewport export** ([`app/layout.tsx`](../packages/web/app/layout.tsx)): Next.js `viewport` (`width=device-width, initial-scale=1`); `themeColor` follows the `--background` token (light `#ffffff` / dark `#09090b`) via `prefers-color-scheme` instead of hardcoded white; pinch-zoom left enabled for a11y.
+- [x] **A1.2 — breakpoint foundation** ([`lib/breakpoints.ts`](../packages/web/lib/breakpoints.ts)): Tailwind-aligned px values (`sm`–`2xl`) + `mediaUp`/`mediaDown`/`mediaBetween` helpers — one place CSS (`md:`/`lg:` variants) and JS agree on cutoffs (mobile `<md` 768 · tablet `md–lg` · desktop `≥lg` 1024). SSR-safe [`useMediaQuery`](../packages/web/hooks/use-media-query.ts) (`useSyncExternalStore`, no hydration mismatch) + semantic `useIsMobile`/`useIsTablet`/`useIsDesktop` for JS-driven reflow.
+- [x] Added the **Responsive** convention to CLAUDE.md's Web section (the stale "Tailwind not yet wired" note was already corrected by #50). 10 new tests (`breakpoints` + `use-media-query`).
+- ↪️ **Deferred within A1 (noted, not dropped):** dynamic `theme-color` on an *explicit* theme override (vs. system `prefers-color-scheme`) lands with Theme C's manifest colours; the `@tailwindcss/container-queries` plugin gets wired when A3's first self-reflowing component needs it. **Remaining in Phase 24:** Theme A2 (mobile nav), A3 (per-surface reflow + desktop gates), Theme B (touch), Theme C (PWA).
+
+## 2026-06-21 — Phase 25 Theme C: migrate generic primitives → `@midnite/ui` (PR #65)
+
+Moves the 10 generic UI primitives out of `packages/web/components/ui` into the library (Theme A scaffolded it, Theme B moved tokens + theme). Behavior-preserving — every primitive is logic-identical, web keeps working via re-export shims (Decision §2).
+
+- [x] **10 primitives → `@midnite/ui/src/components`** — accordion, button, card, collapse, input, select, styled-select, switch, tabs, textarea. Only the `cn` import is rewritten to the lib's own `./lib/cn` (+ accordion→collapse, styled-select→select intra-refs); `'use client'` preserved on the 6 stateful ones so `dist/index.js` keeps its RSC boundary. `src/index.ts` re-exports each primitive's full surface (components + types + `buttonVariants`).
+- [x] **`asset-search-select` stays in web** — domain-coupled (`@midnite/shared` types + `@/lib/api`).
+- [x] **Web shims** — the 10 `web/components/ui/*` files are now thin re-exports of `@midnite/ui`; every import site (incl. `*.stories.tsx` + `asset-search-select`) compiles unchanged. Codemod that deletes the shims is a later sweep.
+- [x] New lib deps: `class-variance-authority`, `lucide-react`, `react-select`. `button`'s `buttonVariants` gets an explicit type annotation (cva's inferred type tripped TS2742 on `.d.ts` emit — runtime + `VariantProps` inference unchanged).
+- [◐] Primitive **stories stay in web** (running via the shims) until Theme D brings the lib's own Storybook — no story regresses.
+
+Verified: lib build (`"use client"` on `dist/index.js`) / typecheck / lint / vitest; web `next build` + typecheck + lint + vitest **211** (52 files, incl. storybook chromium rendering the primitives via shims); pristine frozen install; CI green. Independent review: faithful, behavior-preserving. **Next:** Theme D (lib's own Storybook `@storybook/react-vite` + MDX DS docs; migrate the primitive stories) — completes Phase 25.
+
+## 2026-06-21 — Phase 13 follow-on F: repo chip on task cards (PR #64)
+
+Surfaces a task's target repo on the board now that repos are a first-class entity (Themes A+B).
+
+- [x] New `RepoChip` ([`repo-chip.tsx`](../packages/web/components/repo-chip.tsx)) — a monochrome folder-git + repo-name chip, distinct from the colored project tag (repo and project are orthogonal axes).
+- [x] Rendered in the task-card badge row ([`task-card.tsx`](../packages/web/components/task-card.tsx)) when `task.repo` is set; the task thread already showed the repo. A `WithRepo` story (run as a test) asserts it renders. `web:typecheck`/`lint`/`test`/`build` green (web 54 files / 226 tests) on PR #64.
+- [x] Reconciled phase-13 follow-ons: **D (per-repo concurrency caps) already shipped via Phase 5 / PR #49**; the optional per-repo status widget remains → Phase 7 Theme C; C (repo guessing) + E (branch/PR templates) still open.
+
+## 2026-06-21 — Phase 11 COMPLETE: scrollytelling core — particles, panel, hero, modules (PR #59)
+
+Completes the public-site rewrite. The interlocking core the foundations slice (PR #44, Themes A/D/G/H) was built to carry: the three always-mounted layers the scroll controller drives. **Phase 11 is now fully done** (all 8 themes). `packages/site` only; added `motion` (Decision §2).
+
+- [x] **Theme C — Persistent preview panel:** one Mac-window [`<PreviewPanel>`](../packages/site/components/panel/preview-panel.tsx) rendered once at the page root that morphs position **and** size between sections (Framer Motion spring) and cross-fades its content, driven by the scroll controller as the single source of truth. Per-section target rects from a pure [`panelRectFor`](../packages/site/components/panel/panel-rect.ts) helper ([`panel-sections.ts`](../packages/site/components/panel/panel-sections.ts)); fades out over the download section. Desktop-only; mobile stacks an inline panel. Instant under reduced motion.
+- [x] **Theme F — Panel content modules:** stylised evocations (Decision §3) — a typing [terminal](../packages/site/components/panel-content/terminal-module.tsx), a [kanban board](../packages/site/components/panel-content/kanban-module.tsx) with a card looping across columns, and a live [agent/session card](../packages/site/components/panel-content/session-module.tsx) with a ticking timer — in a shared [`PanelFrame`](../packages/site/components/panel/panel-frame.tsx) (traffic-light chrome). Each has an idle micro-animation; all degrade under reduced motion.
+- [x] **Theme E — Epic hero:** app icon + wordmark, a headline cycling three typed title/subtitle pairs ([`useTypewriterCycle`](../packages/site/components/sections/use-typewriter-cycle.ts), Decision §5 placeholder copy), radial scrim, the centred grid-card panel; `sr-only` stable text. Reduced motion shows pair 1.
+- [x] **Theme B — Particle field:** lerps accent tint/size/swirl toward the active section's style, recolours fog/vignette/exposure for light vs dark (Decision §7), pauses the rAF time-advance when the tab is hidden; reduced motion snaps to static. Reads the active section + theme from outside the R3F canvas and passes them in as props.
+- [x] Tests: `useTypewriterCycle`, the panel-sections config, and the pure `panelRectFor` helper (site suite now 19 tests). `:typecheck`/`:lint` green across the graph; `site:test` + `site:build` (7 routes prerender) green; `moon ci` green on PR #59. (CI initially didn't fire — the branch had a `pnpm-lock.yaml` conflict with the fast-moving main, so GitHub couldn't build the merge ref; merging main in resolved it.)
+
+## 2026-06-21 — Phase 12 Theme D (start): ƒx expression toggle + unique node labels (PR #63)
+
+The two **S** foundations of the n8n-style expression editor — the autocomplete input, data picker, and resolved-value preview remain.
+
+- [x] **ƒx toggle** ([`node-config-panel.tsx`](../packages/web/components/node-config-panel.tsx)): every `expressionable` field gets a per-field ƒx button flipping it between its literal control and a monospace expression input (field-specific aria-label). Mode seeds from whether the saved value is already a `{{ }}` template; the field forms re-seed per selected node (keyed on node id).
+- [x] **Unique node labels** ([`workflow-store.ts`](../packages/web/lib/workflow-store.ts)): a `uniqueLabel` helper auto-suffixes a clash (" 2", " 3", …), applied in `addNode` and a new `setLabel` action; the config-panel header becomes an editable rename field that commits on blur/Enter and re-syncs when the store de-dupes. Labels matter because expressions reference upstream nodes by label.
+- [x] Tests (+8): `workflow-store` (`uniqueLabel`; addNode/setLabel auto-suffix; free rename) + `node-config-panel` (ƒx round-trips a field literal↔expression; seeds from a template; rename auto-suffixes). `:typecheck`/`:lint`/`:test` + `web:build` green on PR #63 (web 50 files / 210 tests).
+
+## 2026-06-21 — Phase 18 Theme D: generalize the report renderer (PR #62)
+
+The shared substrate for [Phase 18](phase-18-reports-exports.md#theme-d--generalize-the-renderer--reuse-shared-substrate--sm--done-pr-62-2026-06-21) — lift the councils-only client-side renderer so tasks/projects/workflow-run exports (Themes A/B/C) just plug in. Reuse, no redesign; the no-puppeteer (markdown server-side · PDF client-side) contract is untouched.
+
+- [x] **Generic renderer** — new pure, unit-tested [`report-html-export.ts`](../packages/web/lib/report-html-export.ts): `buildReportHtml({ title, bodyHtml, metaLine? })` → self-contained offline printable HTML, with `escapeHtml` + `REPORT_PROSE_CSS` lifted out of `council-html-export.ts`, plus `reportHtmlFilename`.
+- [x] **Shared markdown capture** — [`capture-markdown-html.tsx`](../packages/web/lib/capture-markdown-html.tsx) lifts the render-`MarkdownPreview`-and-capture helper out of `council-run-tabs.tsx` so every HTML export matches in-app rendering + sanitization.
+- [x] **Councils reuses the substrate** — `council-html-export.ts` imports the shared `escapeHtml` + prose CSS; output is **byte-identical** (verified) — no behaviour change, proving the lift.
+- [x] **`ExportMenu`** was already generic with copy-as-markdown; added an optional `title` for the print document title (distinct from the download slug) — the `{ fetchMarkdown, filename, title }` shape A/B/C drop in.
+- [x] 6 new `report-html-export` unit tests; `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #62 (`web:test` 208).
+- ⏳ The *optional* gateway export-response helper is deferred to land with Theme A's first export route (no consumer yet). **Next:** Theme A (task export) — pure `taskToMarkdown` + `GET /tasks/:id/export` + `ExportMenu` in the task thread.
+
+## 2026-06-21 — Phase 10 C2: stories for sessions/memories/activity widgets (PR #60)
+
+More self-fetching dashboard widgets storied on the `installMockFetch` helper (#53), continuing [Phase 10 C2](phase-10-test-suite-hardening.md#c2-interaction-tests-on-key-components--partial-pr-36--48--53--60-2026-06-21). Pure coverage; no product change.
+
+- [x] `sessions-widget` (`GET /sessions`, raw array), `memories-widget` (`GET /memories`, `{ memories }` envelope), `activity-widget` (`GET /tasks`) — each with **loaded / empty / error** stories asserting visible text in the headless-chromium run; static fixtures, no relative-time assertions.
+- [x] 9 new story tests; `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #60 (`web:test` 211).
+- ↪️ Remaining self-fetching widgets (`market-*`, `agents`/`throughput`/`usage`/`system-monitor`/`workflows`/`councils`/`all-projects`, `boardroom-panel`) still backfillable with the same helper.
+
+## 2026-06-21 — Phase 25 Theme B: design tokens + theme runtime → `@midnite/ui` (PR #57)
+
+Moves the design system's *foundation* out of `packages/web` into the `@midnite/ui` leaf (Theme A stood up the empty package). Extraction, not redesign — token values unchanged; web's appearance is identical.
+
+- [x] **Tokens → `@midnite/ui/styles`** — the shadcn-style HSL custom properties + `.dark` block now live in `src/styles/tokens.css` (framework-agnostic: no `@layer`/`@tailwind`, so a non-Tailwind consumer can use them). A typed token map in `src/tokens` mirrors them for JS consumers; verified byte-exact against the values removed from `globals.css`.
+- [x] **Full DS taxonomy** — `color` + `radius` filled; `spacing`/`typography`/`shadow`/`zIndex`/`motion` present as clearly-marked `{ placeholder: true }` so the system is structurally complete + extensible.
+- [x] **Theme runtime → `@midnite/ui/theme`** — `ThemeProvider`/`useTheme`/theme-context + the no-flash init script. The Vite build now **preserves `'use client'`** on `dist/theme.js` (a `preserveUseClient` rollup plugin re-emits the directive rollup strips by default) so a Next.js RSC consumer gets a real client boundary — confirmed in `dist` + `next build`.
+- [x] **Web consumes the lib** — `globals.css` imports `@midnite/ui/styles` (drops the duplicated tokens, keeps `--nav-offset` + app CSS); `app/theme/*` become thin re-export shims (Decision §2, codemod later); `@midnite/ui` added to deps + `transpilePackages` + web's moon `dependsOn`.
+
+`theme-toggle` stays in web until Theme C (it composes the `Button` primitive that moves there). Verified: lib build/typecheck/lint/vitest (15); web `next build` + typecheck + lint + vitest **194** (incl. storybook chromium rendering `ThemeProvider` via the shim); pristine frozen install; CI green. **Next:** Theme C (migrate the generic primitives + their stories, web keeps re-export shims).
+
+## 2026-06-21 — Phase 4: inline answers for question-kind tasks (PR #55)
+
+A task classified as a `question` is answered directly by the plan model at intake instead of being queued for a coding agent — closing a Phase 4 done-criterion (also Phase 15 Theme C).
+
+- [x] `PlannerService.answer(prompt)` ([`planner.service.ts`](../packages/gateway/src/agent/planner.service.ts)): a plain-text answer on the plan model, fail-soft → `null` (AI off / error / empty), mirroring `triage`.
+- [x] `createFromPrompt` ([`tasks.service.ts`](../packages/gateway/src/tasks/tasks.service.ts)): `question`-kind tasks generate an answer; a successful answer resolves the task to **`done`** (no agent run) with the answer recorded as an `answer` thread event. Only questions take this path; falls back to the triage column when no answer is produced.
+- [x] Web ([`task-thread-modal.tsx`](../packages/web/components/task-thread-modal.tsx)): the `answer` event renders as Markdown rather than a JSON payload dump.
+- [x] Tests (+6): planner answer (disabled/trimmed+usage-tag/empty+throw); service question→done+event, null→queued, non-question never answers. `:typecheck`/`:lint`/`:test` + `gateway:build` green on PR #55 (gateway 559 · web 194). **Phase 4 remaining:** URL/GitHub context → Phase 15 B; repo-guessing → Phase 13; KB watcher → Phase 15 D; bulk-input already done via Phase 16.
+
+## 2026-06-21 — Phase 17 Theme A: extract the `Spawner` interface from TerminalService (PR #56)
+
+The behaviour-preserving refactor that gates the pluggable terminal backends ([Phase 17](phase-17-spawner-tmux.md#theme-a--extract-the-spawner-interface--l--done-pr-56-2026-06-21)). Puts the node-pty process lifecycle behind a `Spawner` seam so a `tmux` backend (Theme B) can slot in without touching the ring/streaming/approval machinery. Gateway-only; `pty` behaviour byte-for-byte unchanged.
+
+- [x] **`Spawner` / `SpawnSpec` / `SpawnHandle` + `SPAWNER` token** ([`terminal/spawner/spawner.ts`](../packages/gateway/src/terminal/spawner/spawner.ts)) — gateway-internal; `SpawnHandle` mirrors node-pty's `IPty` so `PtyHandle.proc`'s type swap is the only call-site change.
+- [x] **`PtySpawner`** ([`terminal/spawner/pty-spawner.ts`](../packages/gateway/src/terminal/spawner/pty-spawner.ts)) — owns the lazy `require('node-pty')` + fail-closed semantics (throws `SpawnUnavailableError`, never a silent disable); a thin pass-through. Now the only node-pty importer in the spawn path.
+- [x] **`TerminalService`** drops its node-pty import / `loadPty()`; all three spawn paths route through the injected `Spawner`. Module provides `SPAWNER` via a `terminal.mode` factory (PtySpawner default); the constructor also defaults the spawner to a real `PtySpawner` so direct-construction specs work without DI.
+- [x] Every terminal/approval/gateway spec passes **unedited** — `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #56 (gateway 553; one re-run for the known-flaky terminal env-dump spec, unrelated).
+- ↪️ **Remaining (phase-17):** B `TmuxSpawner` (durable sessions) · C backend selection + survive-restart reattach + drop warp/iterm · D Spawner contract tests.
+
+## 2026-06-21 — Phase 10 C2: data-fetching widget stories + fetch-stub helper (PR #53)
+
+Continues [Phase 10](phase-10-test-suite-hardening.md#c2-interaction-tests-on-key-components--partial-pr-36--48--53-2026-06-21) C2 — the data-fetching widgets that previously couldn't be storied because they self-fetch. Adds the missing mock infra + the first widget stories on it. Pure coverage; no product change.
+
+- [x] **`installMockFetch` helper** ([`stories/mock-fetch.ts`](../packages/web/stories/mock-fetch.ts)): swaps `globalThis.fetch` for a path-keyed stub of canned, schema-valid gateway responses; a `status >= 400` handler drives a widget's error branch. **Unmatched requests fall through to the real fetch** — important so Storybook's own browser module loading is never intercepted (the first cut returned 502 for unmatched and broke later stories' dynamic imports; caught in the local run and fixed).
+- [x] **Widget stories:** `news-widget` (list / grid / error), `weather-widget` (°C / °F / error), multi-endpoint `health-widget` (healthy / gateway-down — `/health` + `/agents/cli/statuses` + `/agents`, handlers ordered specific→general). Each a render + interaction test in the headless-chromium story run.
+- [x] 8 new story tests; `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #53 (`web:test` 202).
+- ↪️ **Remaining (logged in phase-10 C2):** the rest of the self-fetching widgets (`market-*`, `sessions`/`agents`/`throughput`/`usage`/`system-monitor`, `boardroom-panel`) can now be backfilled with the same helper — each a small add.
+
+## 2026-06-21 — Phase 13 COMPLETE — Theme B: repos selectable & validated (PR #52)
+
+The last theme of [Phase 13](phase-13-repos-first-class.md#theme-b--selectable--validated--m--done-pr-52-2026-06-21). Theme A (PR #45) made repos a DB-backed registry; B makes them selectable at task-creation time and makes `task.repo` always point at a known repo. **Phase 13 is now done** (Themes A + B; the C–F follow-ons stay explicitly deferred). Spans gateway + web; CLI flag was already in place from PR #47.
+
+- [x] **B1 picker (web):** a Repo `<select>` in the new-task modal ([`new-task-modal.tsx`](../packages/web/components/new-task-modal.tsx)), fed by `GET /repos` with an explicit **Unassigned** default, alongside the project picker as an orthogonal scope axis; threaded through [`tasks-view`](../packages/web/components/tasks-view.tsx) + the tasks page; sent on single + bulk create; hidden when no repos exist. (CLI `add --repo` landed in PR #47.)
+- [x] **B2 validation (gateway):** `TasksService.resolveRepoReference` validates `repo` against the registry on create/bulk — unknown name → 400, blank → unassigned (null), never a dangling free string; bulk fails fast on a bad batch repo. References stay the registry-unique **name**, not an id (Decision §1/§3). `TasksService` gains a `ReposService` dep (`TasksModule` imports `ReposModule`).
+- [x] **B3 cwd precedence:** extracted the project workDir → repo → fallback → gateway-cwd ordering into a pure, unit-tested [`pickSessionCwd`](../packages/gateway/src/terminal/lib/resolve-cwd.ts) helper, pinning the behaviour `resolveCwd` relies on (Decision §4); refactor is behaviour-preserving.
+- [x] Tests at each layer: gateway service (known/unknown/blank repo, bulk fail-fast), `pickSessionCwd` precedence, web RTL (picker options, repo sent / omitted). `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #52 (gateway 550 · web 194).
+- ↪️ **Deferred (still in phase-13):** C repo-guessing in inference · D per-repo concurrency caps · E branch/PR templates · F repo chip in UI — all depend only on the now-shipped registry.
+
+## 2026-06-21 — Phase 25 Theme A: `@midnite/ui` package scaffold + Vite library build (PR #50)
+
+Stands up [Phase 25](phase-25-ui-library.md)'s first theme — a new **leaf** design-system package, built and wired, before any primitives/tokens migrate into it (Themes B/C/D). No components moved yet; this is extraction *infrastructure*.
+
+- [x] **`@midnite/ui` package** — `"type":"module"`, React/React-DOM as `peerDependencies`, `exports` map mirroring `shared`'s subpaths: `.` (components) / `./theme` / `./styles` (token CSS). `sideEffects: ["**/*.css"]`.
+- [x] **Vite library mode** — `vite.config.ts` with `build.lib` (ESM, `index` + `theme` entries) + `vite-plugin-dts` for `.d.ts`; every declared dep + peer dep externalized so the bundle ships only our code and consumers dedupe. A small plugin copies the token CSS to `dist/tokens.css`. **Decision §4 settled:** the lib ships compiled CSS + token CSS (framework-agnostic), documented in the package README (§7 Vite-lib divergence).
+- [x] **`moon.yml`** — `build` (vite, overriding the `tsc -b` default) / `typecheck` / `lint` / `test`; leaf (no `dependsOn`); `moon ci` auto-registers via `packages/*`. `storybook`/`build-storybook` deferred to Theme D (Storybook not installed yet — declaring the task would give `moon ci` an unrunnable job).
+- [x] **Boundary guard** — `src/boundary.test.ts` fails if the lib imports any in-repo package (`shared`/`web`/`gateway`/`cli`/`desktop`/`site`); enforces the leaf rule in CI. Seeded with the `cn()` class-merge helper (+ unit test) and reserved `./theme` (`THEME_MODES`) + `./styles` `tokens.css` placeholders for Themes B/C.
+- [x] **Docs** — `CLAUDE.md` gains `ui` in the dependency graph + Repo Layout + the leaf rule; the stale "Tailwind not yet wired" Styling note corrected (Tailwind **is** wired; primitives + tokens are extracting into `@midnite/ui`).
+
+Lockfile reconciled with PR #47's `cli-table3` addition on merge; `pnpm install --frozen-lockfile` green. `ui` build (ESM + `.d.ts`) / typecheck / lint / vitest (5 tests) green; CI green. **Next:** Theme B (move tokens + theme runtime into the lib).
+
+## 2026-06-21 — Phase 5: per-repo agent concurrency cap (PR #49)
+
+The agent pool was a single global FIFO, so multiple agents could run on the same repo and race on one working tree. New `agent.maxPerRepo` caps concurrent agents per `task.repo`.
+
+- [x] `agent.maxPerRepo` config ([`shared/config.ts`](../packages/shared/src/config.ts)), default `0` = unlimited; documented in the README config section.
+- [x] The scheduler ([`agent-pool-scheduler.service.ts`](../packages/gateway/src/pool/agent-pool-scheduler.service.ts)) skips a `todo` task whose repo already has `maxPerRepo` agents running and picks the next eligible one; the per-repo running counts are recomputed each tick iteration (so an in-tick start counts) and built once per iteration, not per scanned candidate. Repo-less tasks are never capped. New `busyTaskIds()` accessor on the pool exposes the live running set.
+- [x] Tests (+3): a repo at cap is skipped while another repo runs and resumes when a slot frees; `maxPerRepo: 0` is unlimited; repo-less tasks uncapped. `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #49 (gateway 544). **Phase 5 remaining:** spawner backends → Phase 17; per-repo branch/PR-template config overlaps Phase 13; suspend-`waiting` deliberately deferred.
+
+## 2026-06-21 — Phase 10 Theme C2: Storybook story backfill for modals, office HUD & widgets (PR #48)
+
+Closes the high-value half of [Phase 10](phase-10-test-suite-hardening.md#c2-interaction-tests-on-key-components--partial-pr-36--48-2026-06-21) C2's "backfill un-storied components" item. The C1 `@storybook/addon-vitest` run mounts every story in headless chromium during `web:test`, so each story is a real render/interaction test (and feeds the Theme E screenshot pipeline). Pure coverage — no product code changed.
+
+- [x] **Modals:** `project-modal` (create/edit render + Sources tab-switch), `memory-modal` (new/edit + close), office `library-modal` (search filters to empty-state + close). Modal stories that call `useConfirm()` mount inside a `ConfirmProvider`; the project modal's `useRouter()` uses the existing global `nextjs.appDirectory` mock.
+- [x] **Office HUD:** `office-hud` — seeds the Zustand `office-store` per story (empty / with-agents / near-board / on-break) via a meta-level `beforeEach` that resets state after each story so nothing leaks. Conditional data-fetching children (board/library panels) left closed so the HUD stays offline.
+- [x] **Widget primitives:** `memory-card` (global/scoped/archived + open `play`), `widget-card`, `empty-state` (CTA `play`).
+- [x] Shared `Memory` (global/scoped/archived) + `OfficeAgent` fixtures in [`stories/fixtures.ts`](../packages/web/stories/fixtures.ts). 20 new story tests; `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #48 (web `web:test` 190 passed). `play` functions query by role/label and assert visible outcomes / `storybook/test` spies, per the C2 pattern.
+- ↪️ **Remaining (logged in phase-10 C2):** data-fetching widgets (`health-widget`, `market-*`, `news-widget`, `boardroom-panel`, …) stay un-storied — they self-fetch via `usePolling`/`useApiData` and need a query/API-mock story decorator (new infra) before they can be storied.
+
+## 2026-06-21 — Phase 16 COMPLETE — Theme B: CLI `add --bulk` (PR #47)
+
+The CLI client for plural intake — the last theme of Phase 16 (A API #40, C web modal #42). **Phase 16 is now fully done.**
+
+- [x] `midnite add --bulk` ([`cli/src/index.ts`](../packages/cli/src/index.ts)): reads a list from `--file <path>` or **stdin** (`cat ideas.txt | midnite add --bulk`, heredocs) → `POST /tasks/bulk`. Renders a **cli-table3** summary (Line → Kind → Result) + an `N created, M skipped, K failed` tally. Partial batches succeed; exits non-zero only if every attempted line failed.
+- [x] `createBulk` + a `TaskDefaults` type on the typed client ([`cli/src/client.ts`](../packages/cli/src/client.ts)); `--repo`/`--priority`/`--project` apply batch-wide and are now also threaded through a single `add`. Added `cli-table3` to the CLI.
+- [x] **ESM fix:** the CLI binary used extensionless relative imports, so `node dist/index.js` threw `ERR_MODULE_NOT_FOUND` (latent — CI runs vitest, not the binary). Switched to `.js` extensions (repo convention). Live-verified `add --bulk` end-to-end against a running gateway.
+- [x] Pure helpers in [`cli/src/bulk.ts`](../packages/cli/src/bulk.ts) (exit code / summary / rows), unit-tested; `client.test.ts` covers createBulk + createTask defaults. `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #47 (cli 15 · shared 288 · gateway 541 · web 170). **README CLI usage docs intentionally skipped** — no per-command CLI section exists yet (siblings `add`/`list`/`move` undocumented too); commander `--help` covers it.
+
+## 2026-06-21 — Phase 13 Theme A complete: repos as a first-class DB-backed entity (PR #45)
+
+Promote `repos` from a dormant `config.repos` array to a managed, DB-backed registry. Closes [Phase 13](phase-13-repos-first-class.md) Theme A (A1–A4); satisfies the registry half of [outstanding.md](outstanding.md) #4. **Theme B** (task-creation picker, write-time `task.repo` validation, cwd-precedence tests) remains.
+
+- [x] **shared:** new [`repo.ts`](../packages/shared/src/repo.ts) — `RepoSchema` + `CreateRepoRequestSchema`/`UpdateRepoRequestSchema` (trim/min/max; empty-patch rejected) + `RepoResponseSchema`; barrel export + zod tests.
+- [x] **gateway:** `repos` Drizzle table (UUIDv7 id, **unique** `name`, `path`, timestamps) + forward-only migration `0030_repos` (minimal columns — deferred `branchPrefix`/`prTemplate`/`cap` to Themes D/E, Decision §5). New `repos/` module — `ReposRepository` (Drizzle-only), `ReposService` (unique-name enforcement → `RepoNameTakenError`, `~`-path normalisation, `RepoDoesNotExistError`), thin `ReposController` (`GET`/`GET /:id`/`POST`/`PATCH /:id`/`DELETE /:id`; 400/404/409 translation); registered in `AppModule`. (Plural class names match the `projects` module convention.)
+- [x] **seed + cwd (A3):** `ReposService.onModuleInit` seeds from `config.repos` insert-if-absent by name (DB authoritative thereafter; never overwrites/deletes — Decision §2). `resolveCwd` resolves `task.repo` → path via the registry (`expandTilde` on read) instead of `config.repos` — also fixes a latent raw-`~` bug where config paths weren't expanded.
+- [x] **web:** typed `getRepos`/`createRepo`/`updateRepo`/`deleteRepo` client; a **Settings > Repos** panel (list · add · inline-edit · remove) with inline validation + surfaced server errors + a sidebar nav entry.
+- [x] Tests at each layer — shared schema, gateway service (`:memory:`: CRUD, unique-name on create+rename, seed idempotency) + controller (400/404/409), web RTL (list/add/error/validation). `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #45 (one pre-existing flaky terminal env-dump spec needed a CI re-run — unrelated).
+
+## 2026-06-21 — Phase 6 follow-up: ai.claude node defaults to canonical sonnet4.6 (PR #46)
+
+The workflow `ai.claude` node defaulted to `sonnet4.7`, a retired alias whose dated id 404s — the adapter only kept it resolving as a legacy fallback. New nodes now default to the canonical `sonnet4.6` (same underlying `claude-sonnet-4-6`, but in the adapter's advertised list), so a freshly-added node works against real credentials.
+
+- [x] `node-types.ts`: `ai.claude` default model + field placeholder → `sonnet4.6`. Legacy `sonnet4.7`/`opus4.7` aliases stay resolving in [`anthropic.provider.ts`](../packages/gateway/src/agent/llm/providers/anthropic.provider.ts) for existing configs — only the default changed, so no migration.
+- [x] `node-types.test.ts`: updated the default assertion + a guard that the default is always one of `LLM_PROVIDER_MODEL_SUGGESTIONS.anthropic` (a retired alias can't sneak back as the default). `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #46 (shared 279 · gateway 521 · cli 7 · web 165).
+
+## 2026-06-21 — Phase 11 Themes A, D, G, H: public-site foundations, sections, download, legal (PR #44)
+
+The first independent slice of the public-site rewrite — the four self-contained, individually-shippable themes, leaving the interlocking panel/particle/hero core (B/C/E/F) for later. `packages/site` only; no `@midnite/web` internals imported (the theme + markdown bits are copies with source-of-truth comments).
+
+- [x] **Theme A — Foundations:** ported the web app's theme system — no-flash init script + `ThemeProvider` (light/dark/system/time) sharing the same `midnite.theme` localStorage key, a nav theme toggle, favicons/manifest copied into [`packages/site/public/`](../packages/site/public/), `metadata.icons` wired, hardcoded `dark` class dropped so tokens drive both themes.
+- [x] **Theme D — Sections + typed titles:** a typed section registry (with forward-looking panel/particle fields for B/C), a single-IntersectionObserver [`SectionProvider`](../packages/site/components/sections/section-controller.tsx) as the active-section source of truth, a [`useTypewriter`](../packages/site/components/sections/use-typewriter.ts) hook, and a [`TypedTitle`](../packages/site/components/sections/typed-title.tsx) (types title→subtitle then fades in children) wired into the How/Features/CLI headings. Type-once on first activation; full reduced-motion degradation; `sr-only` full text for a11y.
+- [x] **Theme G — Download restyle:** featured recommended-platform card + elegant all-platforms list, version badge + release-notes link, particle backdrop carried onto the route. [`downloads.ts`](../packages/site/lib/downloads.ts)/[`platform.ts`](../packages/site/lib/platform.ts) and all detection/coming-soon/deep-link behaviour unchanged; `data-testid`/`data-platform` hooks preserved.
+- [x] **Theme H — Legal pages:** nested [`/legal`](../packages/site/app/legal/) sub-layout with a sidebar of all docs (active-link highlight, mobile top-selector) + a react-markdown/remark-gfm renderer, driven from a shared [legal-docs registry](../packages/site/lib/legal.ts); placeholder Privacy + EULA (marked draft / not legal advice), linked from the footer.
+- [x] Tests: new site vitest (jsdom + Testing Library) project + moon `test` task — `useTypewriter`, section registry, `SectionProvider` (most-visible + sticky), `TypedTitle` a11y (10 tests). Config clears vite's `.git` fs-deny so tests collect in a `.git/worktrees` checkout too. `:typecheck`/`:lint` green across the graph; `site:test` + `site:build` (7 routes prerender) green; `moon ci` green on PR #44.
+- [ ] **Remaining in Phase 11:** Theme B (cursor-following particle field), Theme C (persistent preview panel), Theme E (epic hero + cycling typed titles), Theme F (panel content modules) — the interlocking scrollytelling core.
+
+## 2026-06-21 — Phase 6 P11: workflow editor autosave (PR #43)
+
+Editor edits only persisted on an explicit Save; this debounces a save ~1.5s after the last dirty edit so work isn't lost. While here, the Phase 6 follow-ups were reconciled — minimap/zoom + drag-from-palette were already shipped, P8 (logic nodes + `{{expr}}`) was closed by Phase 12, and P7/P9/P10 are tracked under Phase 14.
+
+- [x] **`use-autosave` hook** ([`lib/use-autosave.ts`](../packages/web/lib/use-autosave.ts)): subscribes to the editor store, debounces, and calls `save()` after a quiet interval. Pauses while a save is in flight or a run is active (`run()` saves first — no double-POST); selection-only changes never trigger it; `save`/`paused` read through refs so it never re-subscribes.
+- [x] **Save-status indicator** ([`workflow-toolbar.tsx`](../packages/web/components/workflow-toolbar.tsx)): an `aria-live` "Saving… / Unsaved changes / All changes saved" label; the manual Save button stays as an escape hatch.
+- [x] **Revision guard** (self-review): `save()` snapshots the graph before its `await` but `markSaved()` cleared `dirty` unconditionally — an edit landing mid-save was marked saved-but-not-persisted (the walk-away case). The store now tracks a monotonic `revision`; `markSaved(atRevision)` clears `dirty` only if none landed since, else it persists and autosave re-fires.
+- [x] Tests: `use-autosave.test.ts` (5, fake timers — debounce/coalesce/paused/selection/clean) + `workflow-store.test.ts` (+3 revision-guard). `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #43 (web 38 files / 165 tests). **Phase 6 P11 remaining:** run-history replay, templates (CLI `workflow` commands → Phase 14).
+
+## 2026-06-21 — Phase 16 Theme C complete: web paste-list modal (PR #42)
+
+The web client for plural intake — paste a multi-line list into the New task modal and create one task per line in a single batch, consuming the Theme A API (PR #40). Theme C is ✅ DONE; only Theme B (CLI `add --bulk`) remains in Phase 16.
+
+- [x] **web client:** `createBulk` on the typed [`lib/api.ts`](../packages/web/lib/api.ts) → `POST /tasks/bulk`, sending the **raw** text so the gateway re-parses it with the same `parseBulkLines` the preview uses.
+- [x] **Bulk mode in [`new-task-modal.tsx`](../packages/web/components/new-task-modal.tsx):** a `Single` / `Bulk paste` toggle + textarea; **live preview** (detected-task count, over-`MAX_BULK_LINES` warning, and the cleaned prompts listed with markers stripped); **per-line result summary** (created / skipped / failed with failing lines surfaced for fix-and-re-submit). Status hidden in bulk (per-task triage decides it); project + priority apply batch-wide. **Repo deferred** — no repo picker in the UI yet (Phase 13).
+- [x] Board refreshes once off the coalesced `tasks.bulkCreated` event (the payload-agnostic `useTaskEvents` already invalidates on it); `tasks-view` also invalidates directly on the callback so it works without a live socket.
+- [x] `new-task-modal.test.tsx` (RTL, 3 cases): single default; bulk preview counts + strips markers + hides status; submit sends raw blob + renders result summary incl. a failing line. `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #42 (web 36 files / 152 tests). Honors Decisions §1/§2/§4/§5.
+
+## 2026-06-21 — Phase 12 Theme E (partial): run-history debugging — input→resolved→output + inline node errors (PR #41)
+
+See what references actually resolved to — the payoff of Theme B's persisted `resolvedParams`. Until now the run-output panel only showed a node's output, and a failed `{{expr}}` reference was buried in the run log. Theme E is ◐ partial: the run-output panel + inline node errors landed; "pin sample data" is deferred.
+
+- [x] **Run-output panel** ([`run-output-panel.tsx`](../packages/web/components/run-output-panel.tsx)): expanding a node shows **Input → Resolved params → Output**, each block rendered only when it has data (resolved params absent for trigger nodes), plus the error in red for a failed node.
+- [x] **Inline node errors** ([`workflow-node-view.tsx`](../packages/web/components/nodes/workflow-node-view.tsx)): a failed node now carries its run error onto the canvas (red strip under the summary, full text on hover) — not just in the log. `WorkflowNodeData` gains an `error` field; `applyRunStatuses` → `applyRunState(nodeRuns)` reflects status **and** error together and clears both for nodes absent from a re-run.
+- [x] Tests: `workflow-store` (`applyRunState` applies + stale-clears status/error) and `run-output-panel` (input/resolved/output on expand; failed node surfaces its `ExpressionError`; empty state). `web:typecheck`/`lint`/`test` (35 files / 149 tests) + `moon ci` green on PR #41.
+- [ ] **Deferred — pin sample data** (Theme E item 2): store an editor-local/persisted sample payload so the Theme-D picker/preview work *before* a real run. Its consumer (Theme D expression editor) isn't built yet. **Remaining in Phase 12:** Theme D (expression editor) + this pin-sample item.
+
+## 2026-06-21 — Phase 10 C3 (partial): axe a11y checks on stories (PR #39)
+
+Wires `@storybook/addon-a11y` into the C1 Storybook-as-tests run so axe-core scans every story during `moon run web:test`. C3 is ◐ partial — the addon is enabled at `'todo'` (warnings) per "start as warnings"; promoting to `'error'` is gated on clearing the surfaced backlog.
+
+- [x] `@storybook/addon-a11y` (pinned `10.4.3`, matching `addon-vitest`) added to `@midnite/web` + registered in [`.storybook/main.ts`](../packages/web/.storybook/main.ts). The SB ≥10.3 vitest addon auto-applies its preview annotations, so axe runs on every story with **no setup file**.
+- [x] `parameters.a11y.test: 'todo'` in [`.storybook/preview.tsx`](../packages/web/.storybook/preview.tsx) — violations surface as warnings (a11y panel + run output) without failing CI; an in-file comment documents the promotion path. `:typecheck`/`:lint`/`web:test` green (33 files / 144 tests; 71 stories scanned); `moon ci` green on PR #39.
+- [ ] **Remaining for C3:** fix the real violations then promote to `'error'` — `board-view` (color-contrast, nested-interactive, scrollable-region-focusable); `task-card`/`project-card`/`workflow-card` (color-contrast); `session-card` (aria-prohibited-attr); `page-header` (empty-heading); `markdown-preview` (label — task-list checkboxes). Design-system/clickable-card work, deliberately out of scope for this infra slice.
+
+## 2026-06-21 — Phase 16 Theme A complete: bulk task creation API (PR #40)
+
+Plural intake substrate — `POST /tasks/bulk` turns a pasted blob into one task per line with a single coalesced board update. Theme A (the API) is ✅ DONE; the CLI `add --bulk` (B) and web paste modal (C) clients remain. Satisfies [outstanding.md](outstanding.md) #2's API half / Phase 15 Theme A.
+
+- [x] **shared:** pure `parseBulkLines` (drops blanks/`#`-comments, strips `- `/`* `/`1. `/`- [ ] ` markers), `BulkCreateTaskRequest/Response` schemas (raw **or** `lines[]`, batch-wide repo/project/priority, per-line result rows + `{created,skipped,failed}`), `MAX_BULK_LINES` (200), and a coalesced `tasks.bulkCreated` member on the `TaskBoardEvent` union (+ fixture/identity test).
+- [x] **gateway:** `TasksService.createBulk` fans each line through the existing `createFromPrompt` (no forked create path; an `emit` flag suppresses the per-task broadcast) and emits one `tasks.bulkCreated` event. Partial failure is first-class (error rows); batch capped at 200 → 400; bounded concurrency via a new `mapWithConcurrency` lib helper (pool 5). Thin `POST /tasks/bulk` route.
+- [x] **web:** notifications hook skips the bulk event (no single task); the payload-agnostic invalidation hook already fires one refresh for the batch.
+- [x] Tests at each layer (shared schema/parse/event, gateway service+controller+concurrency); `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #40. Decisions §1/§2/§3/§4/§6 honored.
+
+## 2026-06-21 — Phase 12 Theme F complete: palette grouping & new-node surfacing (PR #38)
+
+The growing node set is now navigable in the editor's left sidebar, and the Theme-C nodes that shipped but were unreachable are finally draggable. Theme F is ✅ DONE.
+
+- [x] Palette groups into **Actions · Logic · Data · Storage** from the registry `category`, with **collapsible** sections (chevron + per-section count); searching force-expands matches.
+- [x] The Phase 12 reshape/storage nodes (`logic.setData`, `logic.merge`, `data.filter`, `storage.set`, `storage.get`) now render — they were registered but invisible because the palette only knew `action`/`logic` categories. Their icons (`pencil`, `git-merge`, `filter`, `database`) are mapped and `data`/`storage` get distinct accent hues (`--node-data`/`--node-storage`, light + dark) for consistent palette + canvas styling.
+- [x] Search/filter box (Theme F item 3) was already present; kept. Triggers stay intentionally excluded (a workflow has one canonical trigger).
+- [x] New `node-palette.test.tsx` (RTL, 6 cases): grouping, new-node surfacing, trigger omission, search + empty state, collapse/expand, click-to-add. `web:typecheck`/`lint`/`test` (144) green; `moon ci` green on PR #38. **Remaining in Phase 12:** Theme D (expression editor) + Theme E (run-history/debugging).
+
+## 2026-06-21 — Phase 10 C2 (partial): Storybook interaction tests (PR #36)
+
+Builds on C1: `play` functions assert real interactions on the highest-value components, plus a backfilled command-palette story. C2 is ◐ partial — the broad un-storied-component backfill remains.
+
+- [x] **task-card / session-card / board-view** — clicking a card fires `onSelect` / `onClick` (a plain click, not a flaky dnd drag).
+- [x] **theme-toggle** — open the menu → pick **Light** → reopen and confirm it's the checked option (`menuitemradio` aria-checked).
+- [x] **templates-table** — expand an accordion row; the Expand→Collapse label flip is asserted.
+- [x] **command-palette** (new backfilled story) — `Ctrl+K` opens the dialog; typing `profile` filters to Profile (Settings drops out); a non-matching query shows the "No matches." empty state.
+- ⏳ **filter-pills** play deferred — the Next router mock doesn't feed `router.replace` back into `useSearchParams`, so a click can't assert a visible toggle; render stories already cover it.
+- [x] All assert visible outcomes / `storybook/test` spies, querying by role/label (CLAUDE.md). 71 story tests (was 68) + 67 unit green; `web:typecheck`/`lint`/`test` green; `moon ci` green on PR #36. **Remaining for C2:** the broad story backfill (office HUD pieces, project/memory/library modals, widgets).
+## 2026-06-21 — Phase 12 Theme C complete: storage.set / storage.get nodes (PR #37)
+
+The last Theme C slice — persisted, per-workflow key-value state so a run can stash data and a **later** run (or downstream node) read it back. Theme C is now ✅ DONE.
+
+- [x] New `workflow_storage` table (forward-only migration `0029`), scoped per workflow with a nullable `scope` column reserved for a future global/project tier (Decision §4); unique index on `(workflow_id, key)`.
+- [x] `repository → service → executors` per gateway layering; `storage.set` / `storage.get` registered in [`node-types.ts`](../packages/shared/src/node-types.ts) (new `storage` category) and the module's `NODE_EXECUTORS`. `NodeRunContext` now carries `workflowId` for per-workflow scoping.
+- [x] Key/value flow through Theme B's resolve-before-execute, so both accept `{{expr}}`; `storage.set` returns the stored value (readable via `{{$node}}` in the same run). A never-set key reads back the node's `defaultValue` (null default) rather than hard-failing — and a stored `null` stays distinct from a miss.
+- [x] Tests: executor schema + behaviour, per-workflow scoping, upsert overwrite, stored-null vs miss, plus an engine integration proving set-in-one-run / get-in-a-later-run round-trips against `:memory:`. `gateway` 508 green; `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #37.
+
+## 2026-06-21 — Phase 10 C1 complete: Storybook stories run as browser tests (PR #35)
+
+18 stories existed but nothing asserted them. C1 makes every story a smoke test inside `moon run web:test` (so `moon ci` covers it). C1 is now ✅ DONE; C2 (interaction `play` tests) + C3 (a11y) remain.
+
+- [x] `@storybook/addon-vitest` (+ `@vitest/browser`, `playwright`) added to `@midnite/web`, registered in `.storybook/main.ts`. `vitest.config.ts` split into two projects: **`unit`** (jsdom — the existing component/hook/lib specs) and **`storybook`** (headless **chromium** via Playwright — every `*.stories.tsx` mounted; a render-time throw fails the test). The addon (Storybook ≥10.3) auto-applies the `.storybook/preview` decorators (`ThemeProvider`), so no extra setup file is needed.
+- [x] **CI:** a `playwright install --with-deps chromium` step before `moon ci`, since `web:test` now needs a browser. `.storybook/**` added to the `web:test` moon inputs so Storybook-config changes invalidate the test cache.
+- [x] All **18 stories (68 story tests)** pass next to the **67 unit tests** — 135 total; `:typecheck`/`:lint`/`:test` green; `moon ci` green on PR #35. No story needed a fix. (Decisions §2 — addon-vitest, the recommended path.)
+
+## 2026-06-21 — Phase 12 Theme C (reshape nodes): setData / merge / filter (PR #34)
+
+Three pure data-flow node types that make "use outputs as inputs" practical, consuming Theme B's resolve-before-execute (expression-valued fields arrive already resolved). Theme C is now ◐ partial — only the persisted `storage.set/get` nodes remain (they need a new table).
+
+- [x] `logic.setData` — builds a payload from key→value `fields`; `replace` emits only the set fields, `merge` overlays them onto the input object. One `shared` registry entry + one gateway executor.
+- [x] `logic.merge` — fan-in over a multi-predecessor node's array of outputs: `shallowMerge` (object overlay) / `array` (collect) / `concat` (flatten arrays).
+- [x] `data.filter` — pick or omit a set of top-level fields; introduces a `data` node category (web's `hueVarForCategory` already falls back safely).
+- [x] Registered all three in `node-types.ts` with param schemas + form fields + categories; executors wired into the module's `NODE_EXECUTORS` (one place).
+- [x] Tests: executor behaviour per mode + non-object inputs; shared param-schema defaults/rejections; an engine integration proving `setData` resolves `{{$json}}`/`{{$node[...]}}` fields end-to-end and persists `resolvedParams`. `shared` 262 / `gateway` 498 green; `moon ci` green on PR #34.
+- **Deferred:** `storage.set`/`storage.get` (Theme C's `workflow_storage` table) — the remaining Theme C slice.
+
+## 2026-06-21 — Phase 12 Theme B complete: workflow engine expression integration (PR #33)
+
+The keystone of Phase 12 — nodes can now reference each other's output. Theme A shipped the resolver in `shared`; Theme B wires it into the engine so params resolve against a per-run context before each node executes.
+
+- [x] **Run context + resolve-before-execute** in [`workflow-engine.service.ts`](../packages/gateway/src/workflows/engine/workflow-engine.service.ts): for each non-trigger node the engine builds `{ $json: <merged input>, $node: <completed outputs by label, each as { json: output }>, $env: process.env }` and runs `resolveParams` over `node.params` before handing them to the executor (and to the branch condition). A missing/invalid reference fails *that* node and short-circuits the run with a path-naming message (`expression error in "<label>": …`) — never a silent empty string.
+- [x] **Persisted resolved params:** `node_runs.resolved_params` column (forward-only migration `0028_node_runs_resolved_params`, drizzle-kit generated) + optional `resolvedParams` on `NodeRunSchema` ([`run.ts`](../packages/shared/src/run.ts)); the repository hydrates it and `GET /runs/:id` returns it. Trigger nodes carry none.
+- [x] Stale "templating lands later" comments updated in `ai-claude.executor.ts` + `node-executor.ts`; `http.request` and `ai.claude` params now flow through resolution.
+- [x] Tests: `workflow-engine.expression.spec.ts` (typed `$node` ref with type preservation, mixed-text `$json` → string, persisted resolved params via `getRun`, missing-ref fails the referencing node not its predecessors, templated branch condition) + a shared `NodeRunSchema` round-trip. `shared`/`gateway` `:test` (481 gateway) / `:typecheck` / `:lint` green; `moon ci` green on PR #33.
+- Unblocks Phase 12 Themes C (reshape/storage nodes), D (n8n-style editor), E (run-history debugging).
+
+## 2026-06-21 — Phase 10 B3 complete: shared gateway test harness (PR #32)
+
+Standardises the `:memory:` database setup that nine gateway specs hand-rolled. B3 is now ✅ DONE.
+
+- [x] `gateway/src/test/db.ts` — `createTestDb()` returns `{ db, sqlite, close }`: a fully-migrated in-memory SQLite (open `:memory:` → `foreign_keys = ON` → `drizzle(schema)` → `migrate`). `db` is the `MidniteDb` type repositories accept; `sqlite` is the raw handle; `close()` frees the connection. Migration-folder resolution mirrors the production `DbModule` (module-relative path, cwd fallback). Barrel at `gateway/src/test/index.ts`.
+- [x] `gateway/src/test/db.test.ts` (5 tests) — migrations applied (domain tables exist), FK enforcement on, a usable Drizzle handle against the migrated schema, per-instance isolation (writes don't leak), and close frees the connection.
+- [x] **Proof refactor:** `tasks.repository.test.ts` + `projects.repository.test.ts` now build their DB via `createTestDb()` instead of the copy-pasted block (per the doc: "a couple as proof; don't churn all").
+- ⚠️ **Documented deviation:** the doc's "spin a Nest testing module with overridable providers" was **not** built — `@nestjs/testing` isn't a dependency and the house style (PRs #28/#30/#31) is direct instantiation + `vi.fn()` fakes. The duplicated pain was the DB setup, not provider wiring, so that's what was consolidated.
+- [x] Test-only; no product code changed. `gateway:test` 481 pass (+5); `:typecheck`/`:lint` green; `moon ci` green on PR #32.
+
+## 2026-06-21 — Phase 10 B2 complete: scheduler/pool & heartbeat lifecycle integration (PR #31)
+
+Adds the integration layer B2 asked for — real lifecycles driven end-to-end against `:memory:` SQLite, asserting emitted WS events and persisted state agree, plus restart recovery and the heartbeat scheduler. B2 is now ✅ DONE.
+
+- [x] `pool/agent-pool.integration.spec.ts` — real `TasksService` (+ repository, `TaskEventBus`) wired to the pool/scheduler/runner over in-memory SQLite; only the PTY boundary (`TerminalService`) is faked so each spawn's `onExit` is driven deterministically (no wall-clock sleeps). Covers: scheduler tick fills free slots from the todo queue and leaves the rest queued; emitted `task.*` events agree with persisted state; Stop-hook completion (`markDone` + `complete`) frees and reuses a slot; PTY crash → retry (todo, retryCount bumped) → abandoned once exhausted; failed spawn requeues + frees the slot.
+- [x] **Restart recovery:** a fresh `AgentPoolService.onModuleInit()` requeues orphaned `wip`/`waiting` → `todo` (persisted state is the source of truth), leaves terminal states untouched, slots start idle, and the scheduler re-runs recovered tasks.
+- [x] `agents/heartbeat-scheduler.integration.spec.ts` — elapsed-since-last due logic with the LLM faked disabled: a due tick records a skip and advances the clock so the next tick is not due; not-due / disabled / blank-prompt / never-fired covered.
+- [x] Test-only; no product code changed. `gateway:test` 476 pass (+14); `:typecheck`/`:lint` green; `moon ci` green on PR #31.
+
+## 2026-06-21 — Phase 10 B1 complete: remaining controller boundary coverage + flake fix (PR #30)
+
+Finishes the B1 follow-up left open by PR #28: every gateway controller now has a boundary spec, and the noted `terminal.service.spec` flake is fixed. B1 is now ✅ DONE.
+
+- [x] Controller boundary specs for the remaining 18 controllers — admin, agents, councils, environment, fs, health, market, media, memories, metadata, news, providers, routines, sessions, terminal, usage, weather, workflows — same direct-instantiate + `vi.fn()` service pattern as PR #28: body/query validation → `BadRequestException` (400), valid input delegates with the **parsed** payload, and domain/service errors propagate or map (councils → 404/400/409 via its `translate`; market/news/weather wrap upstream failures → 500).
+- [x] **Flake fixed:** `terminal/terminal.service.spec.ts` snapshots/restores `process.env` around each test. The spec copies `process.env` into spawned PTY envs and asserts which `MIDNITE_*` vars are present/absent, so a var leaked from another Vitest worker-shared spec could break the secret-scrub assertions; it's now isolated regardless of run order.
+- [x] No product code changed (tests + one test-isolation fix). `moon run gateway:test` (462 pass), `:typecheck`, `:lint` green; `moon ci` green on PR #30.
+
 ## 2026-06-20 — Phase 9 office C: searchable library modal (PR #29)
 
 The library room's bookshelves were decorative; C makes the bookshelf a real interactable.

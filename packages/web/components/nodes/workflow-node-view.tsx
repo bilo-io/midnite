@@ -114,6 +114,18 @@ export function WorkflowNodeView({ data, selected }: NodeProps<AppNode>) {
 
       <div className="truncate px-3 py-2 text-[11px] text-muted-foreground">{summarize(data)}</div>
 
+      {data.status === 'failed' && data.error ? (
+        // Surface the run failure (e.g. an ExpressionError) inline so a bad
+        // {{expr}} reference is obvious on the canvas, not just in the run log.
+        <div
+          className="truncate border-t px-3 py-1.5 text-[11px]"
+          style={{ borderColor: 'hsl(var(--destructive) / 0.25)', color: 'hsl(var(--destructive))' }}
+          title={data.error}
+        >
+          {data.error}
+        </div>
+      ) : null}
+
       {multiOutput ? <div className="h-3" /> : null}
       {outputPorts.map((port, i) => {
         // Single output stays vertically centered; multiple ports fan out down the right edge.

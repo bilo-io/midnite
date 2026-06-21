@@ -1,8 +1,10 @@
+import Link from 'next/link';
 import { ArrowRight, GitBranch } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Reveal } from '@/components/ui/section';
 import { GITHUB_URL } from '@/lib/site';
+import { LEGAL_DOCS } from '@/lib/legal';
 
 export function Footer() {
   return (
@@ -44,14 +46,14 @@ export function Footer() {
             <span className="inline-block h-2.5 w-2.5 rounded-full bg-gradient-to-br from-[#8b5cf6] to-[#3b82f6]" />
             <span className="font-brand">midnite</span>
           </div>
-          <nav className="flex items-center gap-6">
-            <a href="#how" className="transition-colors hover:text-foreground">
+          <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+            <a href="/#how" className="transition-colors hover:text-foreground">
               How it works
             </a>
-            <a href="#features" className="transition-colors hover:text-foreground">
+            <a href="/#features" className="transition-colors hover:text-foreground">
               Features
             </a>
-            <a href="#cli" className="transition-colors hover:text-foreground">
+            <a href="/#cli" className="transition-colors hover:text-foreground">
               CLI
             </a>
             <a
@@ -62,6 +64,15 @@ export function Footer() {
             >
               GitHub
             </a>
+            {LEGAL_DOCS.map((doc) => (
+              <Link
+                key={doc.slug}
+                href={`/legal/${doc.slug}`}
+                className="transition-colors hover:text-foreground"
+              >
+                {doc.title}
+              </Link>
+            ))}
           </nav>
           <p className="text-muted-foreground/60">Multitask Claude Code</p>
         </div>

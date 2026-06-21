@@ -15,11 +15,14 @@ import {
   COUNTER_POS,
   DESK_SEATS,
   DOOR_POS,
+  GAME_TABLE_POS,
   LAYOUT,
   LOUNGE_SEATS,
+  PING_PONG,
   PLANTS,
   PLAYER_SPAWN,
   POOL,
+  POOL_TABLE,
   READING_CHAIR,
   ROOMS,
   type RoomId,
@@ -31,6 +34,7 @@ import {
   type TilePos,
   WALL_ART,
 } from '@/lib/office/layout';
+import { assignStableSeats } from '@/lib/office/seats';
 import { buildOfficePalette, ROOM_STYLES, roomSignStyle, type OfficePalette } from '@/lib/office/theme';
 import {
   agentTint,
@@ -115,6 +119,9 @@ class OfficeScene extends Phaser.Scene {
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: Record<'up' | 'down' | 'left' | 'right', Phaser.Input.Keyboard.Key>;
   private readonly actors = new Map<string, Actor>();
+  /** Stable seat claims: agent id → desk/lounge seat index, kept until it leaves. */
+  private readonly deskByAgent = new Map<string, number>();
+  private readonly loungeByAgent = new Map<string, number>();
   private readonly walls: Phaser.GameObjects.Image[] = [];
   private readonly solids: Phaser.GameObjects.GameObject[] = [];
   /** Wall-mounted room name plates (A3) — redrawn on theme flip (fill is theme-driven). */
@@ -338,8 +345,16 @@ class OfficeScene extends Phaser.Scene {
     const working = agents.filter((a) => a.status !== 'idle').slice(0, DESK_SEATS.length);
     const idle = agents.filter((a) => a.status === 'idle').slice(0, LOUNGE_SEATS.length);
     const desired: { agent: OfficeAgent; seat: TilePos; kind: 'desk' | 'lounge' }[] = [
-      ...working.map((agent, i) => ({ agent, seat: DESK_SEATS[i]!, kind: 'desk' as const })),
-      ...idle.map((agent, i) => ({ agent, seat: LOUNGE_SEATS[i]!, kind: 'lounge' as const })),
+      ...assignStableSeats(working, DESK_SEATS.length, this.deskByAgent).map((s) => ({
+        agent: s.agent,
+        seat: DESK_SEATS[s.seatIndex]!,
+        kind: 'desk' as const,
+      })),
+      ...assignStableSeats(idle, LOUNGE_SEATS.length, this.loungeByAgent).map((s) => ({
+        agent: s.agent,
+        seat: LOUNGE_SEATS[s.seatIndex]!,
+        kind: 'lounge' as const,
+      })),
     ];
 
     const seen = new Set<string>();
@@ -826,14 +841,20 @@ class OfficeScene extends Phaser.Scene {
 
   /** Hot desks (work zone). Furniture always shows; agents sit on top when assigned. */
   private buildDesks() {
-    for (const { x, y } of DESK_SEATS) {
+    // Clutter on the desk front, varied deterministically by seat index (E3).
+    const clutter = [TEX.paperStack, TEX.deskMug, TEX.deskPlantlet];
+    DESK_SEATS.forEach(({ x, y }, i) => {
       const cx = center(x);
       const cy = center(y);
       this.add.image(cx, cy + TILE * 0.25, TEX.chair).setDepth(2);
       const desk = this.physics.add.staticImage(cx, cy + TILE * 0.3, TEX.desk).setDepth(6);
       this.solids.push(desk);
       this.add.image(cx, cy + TILE * 0.18, TEX.monitor).setDepth(7);
-    }
+      // A couple of items flanking the monitor on the desk's front edge.
+      const surfaceY = cy + TILE * 0.42;
+      this.add.image(cx - 15, surfaceY, clutter[i % clutter.length]!).setDepth(8);
+      this.add.image(cx + 15, surfaceY, clutter[(i + 1) % clutter.length]!).setDepth(8);
+    });
   }
 
   /**
@@ -856,23 +877,58 @@ class OfficeScene extends Phaser.Scene {
     for (const s of LOUNGE_SEATS) this.add.image(center(s.x), center(s.y) + 2, TEX.lounger).setDepth(2);
   }
 
-  /** Communal area: a coffee corner (machine — interactable — + counter/stool), a
-   *  chill corner (couches + armchair around a rug), an astro-turf patch, and the
-   *  relocated TV + console gaming corner (Phase 9 E2; E3 super-sizes + wires it). */
+  /** Communal area (E3): a coffee corner (top-left), a TV/PS5 gaming lounge with an
+   *  L of couches on an astro-turf patch (top-right), and pool + ping-pong tables
+   *  along the bottom. The coffee machine is the only interactable. */
   private buildKitchen() {
-    // Astro-turf patch — a tiled green surface just above the floor accent (E2).
+    // Astro-turf floor of the top-right gaming corner.
     const turfCx = (ASTRO_TURF.x + ASTRO_TURF.w / 2) * TILE;
     const turfCy = (ASTRO_TURF.y + ASTRO_TURF.h / 2) * TILE;
     this.add.tileSprite(turfCx, turfCy, ASTRO_TURF.w * TILE, ASTRO_TURF.h * TILE, TEX.astroTurf).setDepth(-6);
-    // Chill-corner seating — collidable, like the TV (E2).
-    for (const c of COUCHES) this.solids.push(this.staticDecor(c, TEX.couch, 2));
-    for (const a of ARMCHAIRS) this.solids.push(this.staticDecor(a, TEX.armchair, 2));
+
+    // Coffee corner (top-left) — machine is the interactable; counter + stool decor.
     this.add.image(center(COUNTER_POS.x), center(COUNTER_POS.y), TEX.counter).setDepth(2);
     this.add.image(center(STOOL_POS.x), center(STOOL_POS.y), TEX.stool).setDepth(3);
     const machine = this.add.image(center(COFFEE_POS.x), center(COFFEE_POS.y), TEX.coffee).setDepth(3);
     this.kitchenCenter = { x: machine.x, y: machine.y };
+
+    // Gaming lounge (top-right): super-sized TV + white PS5, an L of couches + an
+    // armchair facing it, and a low table holding four controllers. Couches are
+    // collidable; the L's left arm is rotated upright (its `angle`).
     this.solids.push(this.staticDecor(TV_POS, TEX.tv, 5));
     this.add.image(center(CONSOLE_POS.x), center(CONSOLE_POS.y), TEX.console).setDepth(5);
+    for (const c of COUCHES) {
+      const couch = this.staticDecor(c, TEX.couch, 2);
+      if (c.angle) couch.setAngle(c.angle).refreshBody();
+      this.solids.push(couch);
+    }
+    for (const a of ARMCHAIRS) this.solids.push(this.staticDecor(a, TEX.armchair, 2));
+    this.buildGameTable();
+
+    // Games tables along the bottom: pool (bottom-right) + ping-pong (centre).
+    this.solids.push(this.tableDecor(POOL_TABLE, TEX.poolTable));
+    this.solids.push(this.tableDecor(PING_PONG, TEX.pingPong));
+  }
+
+  /** The low gaming table + four controllers laid out 2×2 on its top (E3). */
+  private buildGameTable() {
+    const cx = center(GAME_TABLE_POS.x);
+    const cy = center(GAME_TABLE_POS.y);
+    this.solids.push(this.physics.add.staticImage(cx, cy, TEX.gameTable).setDepth(2));
+    const spots: [number, number][] = [
+      [-7, -3],
+      [7, -3],
+      [-7, 4],
+      [7, 4],
+    ];
+    for (const [dx, dy] of spots) this.add.image(cx + dx, cy + dy, TEX.controller).setDepth(3);
+  }
+
+  /** A collidable furniture image centred on a multi-tile rect (pool/ping-pong). */
+  private tableDecor(rect: { x: number; y: number; w: number; h: number }, key: string) {
+    const cx = (rect.x + rect.w / 2) * TILE;
+    const cy = (rect.y + rect.h / 2) * TILE;
+    return this.physics.add.staticImage(cx, cy, key).setDepth(2);
   }
 
   private buildBoardroom() {

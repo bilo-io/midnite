@@ -181,7 +181,7 @@ function Column({
           Nothing here
         </div>
       ) : (
-        <div className="-mr-1 -mt-1 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1 pt-1">
+        <div className="-m-1.5 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-1.5">
           {children}
         </div>
       )}

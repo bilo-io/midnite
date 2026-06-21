@@ -1,7 +1,13 @@
 $schema: 'https://moonrepo.dev/schemas/workspace.json'
 
 projects:
-  - 'packages/*'
+  # `packages/*` are globbed; the workspace root is registered explicitly as the
+  # `root` project so workspace-wide checks (e.g. the version-lockstep invariant)
+  # run once via `moon ci`, not per package.
+  globs:
+    - 'packages/*'
+  sources:
+    root: '.'
 
 # This repo's default branch is `main` (moon defaults to `master`). Without this,
 # moon's touched-files/merge-base lookup fails on a detached tag checkout in CI.

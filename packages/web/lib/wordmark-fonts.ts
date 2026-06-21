@@ -11,7 +11,30 @@ export type WordmarkFontKey =
   | 'cyber-punk-city'
   | 'quantum-sector'
   | 'goretax'
-  | 'cyberwar';
+  | 'cyberwar'
+  | 'rooster'
+  | 'cassandra'
+  | 'lemon-jelly'
+  | 'radeil-3d'
+  | 'quicking'
+  | 'pardell'
+  | 'october-twilight'
+  | 'mollina-signature'
+  | 'campana-script'
+  | 'majestic'
+  | 'quick-kiss'
+  | 'danny-brassco'
+  | 'fasthin'
+  | 'consultant'
+  | 'watermelon-script'
+  | 'bite-chocolate'
+  | 'lovya'
+  | 'southern-aire'
+  | 'brooklyn'
+  | 'bettani-sellia'
+  | 'amsterdam'
+  | 'brotherland-signature'
+  | 'heart-rommatte';
 
 export type WordmarkFont = {
   key: WordmarkFontKey;
@@ -33,6 +56,31 @@ export const WORDMARK_FONTS: readonly WordmarkFont[] = [
   { key: 'quantum-sector', label: 'Quantum Sector', cssVar: '--font-quantum-sector', scale: 0.75 },
   { key: 'goretax', label: 'Goretax', cssVar: '--font-goretax', scale: 0.75 },
   { key: 'cyberwar', label: 'Cyberwar (current)', cssVar: '--font-brand', scale: 0.75 },
+  // FontSpace trial fonts — `scale` is a starting optical nudge; tune per-font in
+  // the picker if a face renders noticeably larger/smaller than its neighbours.
+  { key: 'rooster', label: 'Rooster', cssVar: '--font-rooster', scale: 0.75 },
+  { key: 'cassandra', label: 'Cassandra', cssVar: '--font-cassandra', scale: 0.75 },
+  { key: 'lemon-jelly', label: 'Lemon Jelly', cssVar: '--font-lemon-jelly', scale: 0.75 },
+  { key: 'radeil-3d', label: 'Radeil 3D', cssVar: '--font-radeil-3d', scale: 0.75 },
+  { key: 'quicking', label: 'Quicking', cssVar: '--font-quicking', scale: 0.75 },
+  { key: 'pardell', label: 'Pardell', cssVar: '--font-pardell', scale: 0.75 },
+  { key: 'october-twilight', label: 'October Twilight', cssVar: '--font-october-twilight', scale: 0.75 },
+  { key: 'mollina-signature', label: 'Mollina Signature', cssVar: '--font-mollina-signature', scale: 0.75 },
+  { key: 'campana-script', label: 'Campana Script', cssVar: '--font-campana-script', scale: 0.75 },
+  { key: 'majestic', label: 'Majestic', cssVar: '--font-majestic', scale: 0.75 },
+  { key: 'quick-kiss', label: 'Quick Kiss', cssVar: '--font-quick-kiss', scale: 0.75 },
+  { key: 'danny-brassco', label: 'Danny Brassco', cssVar: '--font-danny-brassco', scale: 0.75 },
+  { key: 'fasthin', label: 'Fasthin', cssVar: '--font-fasthin', scale: 0.75 },
+  { key: 'consultant', label: 'Consultant', cssVar: '--font-consultant', scale: 0.75 },
+  { key: 'watermelon-script', label: 'Watermelon Script', cssVar: '--font-watermelon-script', scale: 0.75 },
+  { key: 'bite-chocolate', label: 'Bite Chocolate', cssVar: '--font-bite-chocolate', scale: 0.75 },
+  { key: 'lovya', label: 'Lovya', cssVar: '--font-lovya', scale: 0.75 },
+  { key: 'southern-aire', label: 'Southern Aire', cssVar: '--font-southern-aire', scale: 0.75 },
+  { key: 'brooklyn', label: 'Brooklyn', cssVar: '--font-brooklyn', scale: 0.75 },
+  { key: 'bettani-sellia', label: 'Bettani Sellia', cssVar: '--font-bettani-sellia', scale: 0.75 },
+  { key: 'amsterdam', label: 'Amsterdam', cssVar: '--font-amsterdam', scale: 0.75 },
+  { key: 'brotherland-signature', label: 'Brotherland Signature', cssVar: '--font-brotherland-signature', scale: 0.75 },
+  { key: 'heart-rommatte', label: 'Heart Rommatte', cssVar: '--font-heart-rommatte', scale: 0.75 },
 ];
 
 export const WORDMARK_FONT_STORAGE_KEY = 'midnite.wordmark-font';

@@ -1,5 +1,6 @@
 import type { Task } from '@midnite/shared';
 import { ProjectTag } from '@/components/project-tag';
+import { RepoChip } from '@/components/repo-chip';
 import { SourceIcon } from '@/components/source-icon';
 import { gatewayUrl } from '@/lib/api';
 
@@ -67,6 +68,7 @@ export function TaskCard({
           </span>
         ) : null}
         {project ? <ProjectTag tag={project.tag} color={project.color} /> : null}
+        {task.repo ? <RepoChip repo={task.repo} /> : null}
       </div>
       <p className="text-sm font-medium leading-snug">{task.title}</p>
       {task.tags.length > 0 ? (

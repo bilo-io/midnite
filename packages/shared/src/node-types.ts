@@ -4,7 +4,7 @@ import { LLM_PROVIDERS, LLM_PROVIDER_LABEL, LlmProviderSchema } from './llm.js';
 
 // Node categories drive palette grouping and graph-validation rules
 // (a trigger must be the graph root, etc.).
-export const NODE_CATEGORIES = ['trigger', 'action', 'logic'] as const;
+export const NODE_CATEGORIES = ['trigger', 'action', 'logic', 'data', 'storage'] as const;
 export type NodeCategory = (typeof NODE_CATEGORIES)[number];
 
 // Field descriptors let the web render a node's config form generically,
@@ -79,7 +79,7 @@ export const AiClaudeParamsSchema = z.object({
     (v) => (v === '' ? undefined : v),
     LlmProviderSchema.optional(),
   ),
-  model: z.string().min(1).default('sonnet4.7'),
+  model: z.string().min(1).default('sonnet4.6'),
   system: z.string().optional(),
   prompt: z.string().min(1),
   maxTokens: z.number().int().positive().max(8192).default(1024),
@@ -111,9 +111,61 @@ export const BranchParamsSchema = z.object({
   right: z.string().optional(),
 });
 
+// --- Reshape node params (Phase 12 Theme C) ---
+// These three are pure data-flow nodes: they consume the engine's
+// resolve-before-execute (Theme B), so their expression-valued fields arrive
+// already resolved. No credentials, no network, no persistence.
+
+// logic.setData — build an object from key → value pairs (values may be `{{expr}}`,
+// resolved by the engine before the executor runs). `merge` keeps the incoming
+// input and overlays the set fields; `replace` emits only the set fields.
+export const SET_DATA_MODES = ['replace', 'merge'] as const;
+export const SetDataParamsSchema = z.object({
+  mode: z.enum(SET_DATA_MODES).default('replace'),
+  fields: z.record(z.string(), z.unknown()).default({}),
+});
+
+// logic.merge — fan-in: combine the outputs of multiple upstream branches (the
+// engine hands a multi-predecessor node an array of their outputs).
+//   shallowMerge — Object.assign the object inputs left-to-right
+//   array        — collect the inputs into an array as-is
+//   concat       — concatenate array inputs (non-arrays are wrapped)
+export const MERGE_MODES = ['shallowMerge', 'array', 'concat'] as const;
+export const MergeParamsSchema = z.object({
+  mode: z.enum(MERGE_MODES).default('shallowMerge'),
+});
+
+// data.filter — pick or omit a set of top-level fields from the input object.
+export const FILTER_MODES = ['pick', 'omit'] as const;
+export const DataFilterParamsSchema = z.object({
+  mode: z.enum(FILTER_MODES).default('pick'),
+  fields: z.array(z.string()).default([]),
+});
+
+// --- Storage node params (Phase 12 Theme C) ---
+// A persisted key-value store scoped per workflow: `storage.set` stashes a value
+// under a key, `storage.get` reads it back — within the same run via {{$node}} or
+// across later runs. Key/value flow through the engine's resolve-before-execute,
+// so both may be `{{expr}}`. A missing key reads back `defaultValue` (default null)
+// rather than hard-failing, since the first run legitimately finds nothing stored.
+export const StorageSetParamsSchema = z.object({
+  key: z.string().min(1),
+  value: z.unknown(),
+});
+
+export const StorageGetParamsSchema = z.object({
+  key: z.string().min(1),
+  defaultValue: z.unknown(),
+});
+
 export type HttpRequestParams = z.infer<typeof HttpRequestParamsSchema>;
 export type AiClaudeParams = z.infer<typeof AiClaudeParamsSchema>;
 export type BranchParams = z.infer<typeof BranchParamsSchema>;
+export type SetDataParams = z.infer<typeof SetDataParamsSchema>;
+export type MergeParams = z.infer<typeof MergeParamsSchema>;
+export type DataFilterParams = z.infer<typeof DataFilterParamsSchema>;
+export type StorageSetParams = z.infer<typeof StorageSetParamsSchema>;
+export type StorageGetParams = z.infer<typeof StorageGetParamsSchema>;
 
 // The two output ports of a Branch node — also the sourcePort values on its edges.
 export const BRANCH_PORTS = ['true', 'false'] as const;
@@ -242,7 +294,7 @@ export const NODE_TYPE_DEFINITIONS: Record<string, NodeTypeDefinition> = {
         options: PROVIDER_FIELD_OPTIONS,
         help: 'Leave on "Active provider" to follow the Agents-page selection.',
       },
-      { key: 'model', label: 'Model', kind: 'string', placeholder: 'sonnet4.7' },
+      { key: 'model', label: 'Model', kind: 'string', placeholder: 'sonnet4.6' },
       { key: 'system', label: 'System prompt', kind: 'text', expressionable: true },
       { key: 'prompt', label: 'Prompt', kind: 'text', required: true, expressionable: true },
       { key: 'maxTokens', label: 'Max tokens', kind: 'number' },
@@ -292,6 +344,140 @@ export const NODE_TYPE_DEFINITIONS: Record<string, NodeTypeDefinition> = {
         kind: 'string',
         placeholder: 'ok',
         help: 'Compared against the value. Ignored for “is truthy/falsy”.',
+        expressionable: true,
+      },
+    ],
+  },
+  'logic.setData': {
+    id: 'logic.setData',
+    category: 'logic',
+    title: 'Set Data',
+    description: 'Build a payload from fields, using {{ }} to pull from upstream nodes.',
+    icon: 'pencil',
+    inputs: MAIN_IN,
+    outputs: MAIN_OUT,
+    paramsSchema: SetDataParamsSchema,
+    fields: [
+      {
+        key: 'mode',
+        label: 'Mode',
+        kind: 'select',
+        required: true,
+        options: [
+          { value: 'replace', label: 'Replace — emit only the set fields' },
+          { value: 'merge', label: 'Merge — overlay the set fields onto the input' },
+        ],
+      },
+      {
+        key: 'fields',
+        label: 'Fields',
+        kind: 'json',
+        help: 'JSON object of key → value. Values may use {{ }} expressions.',
+        expressionable: true,
+      },
+    ],
+  },
+  'logic.merge': {
+    id: 'logic.merge',
+    category: 'logic',
+    title: 'Merge',
+    description: 'Combine the outputs of multiple upstream branches into one payload.',
+    icon: 'git-merge',
+    inputs: MAIN_IN,
+    outputs: MAIN_OUT,
+    paramsSchema: MergeParamsSchema,
+    fields: [
+      {
+        key: 'mode',
+        label: 'Mode',
+        kind: 'select',
+        required: true,
+        options: [
+          { value: 'shallowMerge', label: 'Shallow merge objects' },
+          { value: 'array', label: 'Collect into an array' },
+          { value: 'concat', label: 'Concatenate arrays' },
+        ],
+      },
+    ],
+  },
+  'data.filter': {
+    id: 'data.filter',
+    category: 'data',
+    title: 'Filter Fields',
+    description: 'Pick or drop a set of top-level fields from the payload.',
+    icon: 'filter',
+    inputs: MAIN_IN,
+    outputs: MAIN_OUT,
+    paramsSchema: DataFilterParamsSchema,
+    fields: [
+      {
+        key: 'mode',
+        label: 'Mode',
+        kind: 'select',
+        required: true,
+        options: [
+          { value: 'pick', label: 'Pick — keep only these fields' },
+          { value: 'omit', label: 'Omit — drop these fields' },
+        ],
+      },
+      {
+        key: 'fields',
+        label: 'Fields',
+        kind: 'json',
+        help: 'JSON array of top-level field names.',
+      },
+    ],
+  },
+  'storage.set': {
+    id: 'storage.set',
+    category: 'storage',
+    title: 'Store Value',
+    description: 'Save a value under a key — readable later in this run or a future run.',
+    icon: 'database',
+    inputs: MAIN_IN,
+    outputs: MAIN_OUT,
+    paramsSchema: StorageSetParamsSchema,
+    fields: [
+      {
+        key: 'key',
+        label: 'Key',
+        kind: 'string',
+        required: true,
+        placeholder: 'lastSeenId',
+        expressionable: true,
+      },
+      {
+        key: 'value',
+        label: 'Value',
+        kind: 'json',
+        help: 'The value to store. Use {{ }} to pull from upstream nodes.',
+        expressionable: true,
+      },
+    ],
+  },
+  'storage.get': {
+    id: 'storage.get',
+    category: 'storage',
+    title: 'Read Value',
+    description: 'Read a stored value by key (from this or a previous run).',
+    icon: 'database',
+    inputs: MAIN_IN,
+    outputs: MAIN_OUT,
+    paramsSchema: StorageGetParamsSchema,
+    fields: [
+      {
+        key: 'key',
+        label: 'Key',
+        kind: 'string',
+        required: true,
+        placeholder: 'lastSeenId',
+        expressionable: true,
+      },
+      {
+        key: 'defaultValue',
+        label: 'Default',
+        kind: 'json',
+        help: 'Returned when the key has never been set. Defaults to null.',
         expressionable: true,
       },
     ],

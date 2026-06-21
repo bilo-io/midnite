@@ -1,0 +1,57 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Design System/Scales" />
+
+# Scales
+
+## Border radius (real)
+
+Derived from the `--radius` token (`0.5rem`), the shadcn convention. Tailwind maps these to
+`rounded-sm` / `rounded-md` / `rounded-lg`.
+
+export const RADII = [
+  { name: 'sm', value: 'calc(var(--radius) - 4px)' },
+  { name: 'md', value: 'calc(var(--radius) - 2px)' },
+  { name: 'lg', value: 'var(--radius)' },
+];
+
+export const RadiusScale = () => (
+  <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+    {RADII.map((r) => (
+      <div key={r.name} style={{ textAlign: 'center' }}>
+        <div
+          style={{
+            width: 72,
+            height: 72,
+            background: 'hsl(var(--secondary))',
+            border: '1px solid hsl(var(--border))',
+            borderRadius: r.value,
+          }}
+        />
+        <div style={{ marginTop: 8, fontSize: 12, fontFamily: 'monospace' }}>{r.name}</div>
+        <div style={{ fontSize: 11, color: 'hsl(var(--muted-foreground))' }}>{r.value}</div>
+      </div>
+    ))}
+  </div>
+);
+
+<RadiusScale />
+
+---
+
+## Placeholder scales
+
+These dimensions are **not yet formalized** as design-system tokens — the app uses
+Tailwind's default scales for them today. They are reserved (clearly marked
+`placeholder: true`) in `src/tokens/index.ts` so the taxonomy is structurally complete and
+obviously extensible.
+
+- **Spacing** — _PLACEHOLDER._ Uses Tailwind's default rem spacing scale.
+- **Shadow / elevation** — _PLACEHOLDER._ Uses Tailwind's default `shadow-*` (e.g. cards use `shadow-sm`).
+- **Z-index** — partially real: a few stacking levels the UI relies on today
+  (`dropdown: 50`, `tooltip: 50`); the rest is _PLACEHOLDER._
+- **Motion / easing** — _PLACEHOLDER._ Durations + easing curves are inline today
+  (e.g. `Collapse` uses `duration-200 ease-out`).
+
+Formalize each as the design system grows — promote it from a placeholder to a real,
+documented scale here.

@@ -4,6 +4,7 @@ import {
   real,
   sqliteTable,
   text,
+  uniqueIndex,
 } from 'drizzle-orm/sqlite-core';
 
 // NOTE: status/kind validity is enforced at the app layer via zod
@@ -102,6 +103,25 @@ export const projects = sqliteTable('projects', {
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 });
+
+// Repo registry: named checkouts the orchestrator runs agents against. The DB
+// is the runtime source of truth; `config.repos` seeds it on first boot. A task
+// references a repo by its unique `name` (no cross-domain FK). Paths stored in
+// `~`-form. Deferred columns (branchPrefix/prTemplate/cap) land in a later
+// forward migration when Phase 13 Themes D/E need them.
+export const repos = sqliteTable(
+  'repos',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    path: text('path').notNull(),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => ({
+    nameIdx: uniqueIndex('repos_name_idx').on(t.name),
+  }),
+);
 
 export const projectSources = sqliteTable(
   'project_sources',
@@ -217,6 +237,7 @@ export const nodeRuns = sqliteTable(
     nodeType: text('node_type').notNull(),
     status: text('status').notNull(),
     input: text('input'), // JSON
+    resolvedParams: text('resolved_params'), // JSON — params after {{expr}} resolution
     output: text('output'), // JSON
     error: text('error'),
     logs: text('logs'), // JSON array
@@ -225,6 +246,26 @@ export const nodeRuns = sqliteTable(
   },
   (t) => ({
     runIdx: index('node_runs_run_idx').on(t.runId),
+  }),
+);
+
+// Persisted key-value store for workflow runs (storage.set / storage.get nodes,
+// Phase 12 Theme C). Scoped per workflow: one row per (workflow_id, key), value is
+// JSON text. `scope` is reserved for a future global/project tier (Decision §4) —
+// null = workflow-scoped; the unique index keys on (workflow_id, key) for now.
+export const workflowStorage = sqliteTable(
+  'workflow_storage',
+  {
+    id: text('id').primaryKey(),
+    workflowId: text('workflow_id').notNull(),
+    scope: text('scope'),
+    key: text('key').notNull(),
+    value: text('value').notNull(), // JSON
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => ({
+    workflowKeyIdx: uniqueIndex('workflow_storage_workflow_key_idx').on(t.workflowId, t.key),
   }),
 );
 
@@ -420,6 +461,8 @@ export type WorkflowRunRow = typeof workflowRuns.$inferSelect;
 export type WorkflowRunInsert = typeof workflowRuns.$inferInsert;
 export type NodeRunRow = typeof nodeRuns.$inferSelect;
 export type NodeRunInsert = typeof nodeRuns.$inferInsert;
+export type WorkflowStorageRow = typeof workflowStorage.$inferSelect;
+export type WorkflowStorageInsert = typeof workflowStorage.$inferInsert;
 export type TaskEventRow = typeof taskEvents.$inferSelect;
 export type TaskEventInsert = typeof taskEvents.$inferInsert;
 export type TaskAttachmentRow = typeof taskAttachments.$inferSelect;
@@ -428,6 +471,8 @@ export type TaskLinkRow = typeof taskLinks.$inferSelect;
 export type TaskLinkInsert = typeof taskLinks.$inferInsert;
 export type ProjectRow = typeof projects.$inferSelect;
 export type ProjectInsert = typeof projects.$inferInsert;
+export type RepoRow = typeof repos.$inferSelect;
+export type RepoInsert = typeof repos.$inferInsert;
 export type ProjectSourceRow = typeof projectSources.$inferSelect;
 export type ProjectSourceInsert = typeof projectSources.$inferInsert;
 export type MemoryRow = typeof memories.$inferSelect;

@@ -3,6 +3,7 @@ language: 'typescript'
 
 dependsOn:
   - 'shared'
+  - 'ui'
 
 tasks:
   dev:
@@ -72,6 +73,9 @@ tasks:
       - 'components/**/*'
       - 'hooks/**/*'
       - 'lib/**/*'
+      # Stories run as browser tests, so Storybook config changes (preview
+      # decorators, addons) must invalidate the test cache too.
+      - '.storybook/**/*'
       - 'vitest.config.ts'
       - 'vitest.setup.ts'
 

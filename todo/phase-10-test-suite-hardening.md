@@ -40,18 +40,20 @@
 
 > Already the strongest layer; the work here is **filling holes and standardising**, not a rewrite. Keep the layering discipline: unit-test services with in-memory repository fakes, integration-test against real `:memory:` SQLite (CLAUDE.md "Testing").
 
-### B1. Controller + WS boundary coverage — **M** — ◐ PARTIAL (PR #28, 2026-06-20)
-- [x] Pattern + first slice landed: `tasks`, `projects`, `notes` controllers (manual Zod `safeParse` rejection → `BadRequestException` 400; valid input delegates with parsed data; service-thrown domain errors propagate, e.g. `NotFoundException` → 404). All 3 WS gateways were already tested.
-- [x] **Authenticated hook path** covered: `approval` (PreToolUse — missing/wrong `x-midnite-hook-secret` → 404, valid + bad payload → 400, valid → delegates) + `workflows/webhook` (forwards id/token/body, defaults null body, propagates bad-token rejection). Builds on the existing `lifecycle-hook.controller.test.ts`.
-- [ ] **Follow-up:** the remaining ~20 untested controllers (admin, agents, councils, media, memories, routines, sessions, providers, usage, workflows, market/news/weather proxies, …) under the same direct-instantiation + `vi.fn()` pattern. (Note: no `ZodValidationPipe` class exists — controllers validate via manual `safeParse`; the brief's "pipe" is that pattern.)
-- ⚠️ **Flaky test noticed (pre-existing, not from this PR):** `terminal/terminal.service.spec.ts:162` ("injects MIDNITE_* hook env … surviving the secret scrub") intermittently fails on CI — looks like cross-file `process.env` leakage between Vitest worker-shared files. Worth a small isolation fix (snapshot/restore `process.env`) in a separate commit.
+### B1. Controller + WS boundary coverage — **M** — ✅ DONE (PR #28 + #30, 2026-06-21)
+- [x] Pattern + first slice landed: `tasks`, `projects`, `notes` controllers (manual Zod `safeParse` rejection → `BadRequestException` 400; valid input delegates with parsed data; service-thrown domain errors propagate, e.g. `NotFoundException` → 404). All 3 WS gateways were already tested. (PR #28)
+- [x] **Authenticated hook path** covered: `approval` (PreToolUse — missing/wrong `x-midnite-hook-secret` → 404, valid + bad payload → 400, valid → delegates) + `workflows/webhook` (forwards id/token/body, defaults null body, propagates bad-token rejection). Builds on the existing `lifecycle-hook.controller.test.ts`. (PR #28)
+- [x] **Follow-up done (PR #30):** the remaining 18 controllers (admin, agents, councils, environment, fs, health, market, media, memories, metadata, news, providers, routines, sessions, terminal, usage, weather, workflows) under the same direct-instantiation + `vi.fn()` pattern. Councils maps domain errors to 404/400/409; market/news/weather wrap upstream failures as 500. (No `ZodValidationPipe` class exists — controllers validate via manual `safeParse`.)
+- [x] **Flaky test fixed (PR #30):** `terminal/terminal.service.spec.ts` snapshots/restores `process.env` per test, so cross-file `MIDNITE_*` leakage between Vitest worker-shared specs can no longer break the secret-scrub assertions.
 
-### B2. Scheduler, pool & lifecycle integration — **M**
-- [ ] Integration tests around the **scheduler tick** + **agent pool** slot transitions and the **heartbeat** scheduler — drive a few task/agent lifecycles end-to-end against `:memory:` SQLite and assert the emitted WS events + persisted state agree. Use `AbortSignal`-driven ticks so tests stay deterministic (no wall-clock sleeps; inject a clock/fake timers).
-- [ ] Confirm **restart recovery**: persisted state is the source of truth — seed the DB, boot the service, assert in-memory slots reconstruct correctly.
+### B2. Scheduler, pool & lifecycle integration — **M** — ✅ DONE (PR #31, 2026-06-21)
+- [x] Integration tests driving lifecycles end-to-end against `:memory:` SQLite: real `TasksService` (+ repository, `TaskEventBus`) wired to the agent pool, scheduler, and runner, with only the PTY boundary (`TerminalService`) faked so each spawn's `onExit` is driven deterministically (no wall-clock sleeps, no real processes). Covers: tick fills slots from the queue; emitted `task.*` WS events agree with persisted state; Stop-hook completion frees + reuses a slot; PTY crash → retry then abandon; failed spawn requeues. (`pool/agent-pool.integration.spec.ts`)
+- [x] **Restart recovery** confirmed: a fresh `AgentPoolService.onModuleInit()` requeues orphaned `wip`/`waiting` → `todo` (persisted state is authoritative), leaves terminal states alone, slots start idle, and the scheduler re-runs the recovered tasks.
+- [x] **Heartbeat scheduler** due-logic covered with the LLM faked disabled: a due tick records a skip and advances the schedule clock so the next tick is not due; not-due / disabled / blank-prompt / never-fired cases. (`agents/heartbeat-scheduler.integration.spec.ts`)
 
-### B3. Standardise gateway test harness — **S**
-- [ ] A shared gateway test helper (`gateway/src/test/`) to build a `Db` on `:memory:` with migrations applied and to spin a Nest testing module with overridable providers — so new feature tests have one obvious setup path. Refactor a couple of existing specs onto it as proof; don't churn all of them.
+### B3. Standardise gateway test harness — **S** — ✅ DONE (PR #32, 2026-06-21)
+- [x] `gateway/src/test/createTestDb()` consolidates the `:memory:` → `foreign_keys = ON` → `drizzle(schema)` → `migrate` block that **nine** specs hand-rolled, returning `{ db, sqlite, close }` (the `MidniteDb` repositories accept + the raw handle); migration-folder resolution mirrors the production `DbModule`. Refactored `tasks` + `projects` repository specs onto it as proof; `db.test.ts` covers migrations-applied / FK-on / usable handle / per-instance isolation / close.
+- ⚠️ **Deviation (documented):** no "Nest testing module with overridable providers" — `@nestjs/testing` isn't a dep and the house style settled in PRs #28/#30/#31 is direct instantiation + `vi.fn()` fakes, so the real duplication (DB setup) is what was consolidated; provider wiring stays explicit. `gateway:typecheck`/`lint`/`test` (481 pass) green; `moon ci` green on PR #32.
 
 ---
 
@@ -59,16 +61,27 @@
 
 > 18 stories already exist but nothing asserts them. Storybook 10's **Vitest addon** runs every story as a test (mount + optional `play` interaction) in a real browser via Playwright, sharing our existing Vitest config — so "story renders without error" becomes a test for free, and `play` functions become interaction tests.
 
-### C1. Wire Storybook-as-tests — **M**
-- [ ] Add **`@storybook/addon-vitest`** (SB 10) + its Playwright browser provider; register it in [`.storybook/main.ts`](../packages/web/.storybook/main.ts) and add the Vitest **project** so `moon run web:test` runs unit specs **and** stories. (Alternative if the addon fights Next: `@storybook/test-runner` as a separate `web:test-stories` task — see Decisions §2.)
-- [ ] Every story must **render without throwing** (the addon's default per-story smoke test). Fix any story that currently only renders by luck.
+### C1. Wire Storybook-as-tests — **M** — ✅ DONE (PR #35, 2026-06-21)
+- [x] `@storybook/addon-vitest` (+ `@vitest/browser`, `playwright`) added to web and registered in [`.storybook/main.ts`](../packages/web/.storybook/main.ts). `vitest.config.ts` split into two projects — **`unit`** (jsdom, the existing specs) and **`storybook`** (headless chromium via Playwright) — so `moon run web:test` runs both. The addon (SB ≥10.3) auto-applies the `.storybook/preview` decorators, so no extra setup file. CI installs chromium (`playwright install --with-deps chromium`) before `moon ci`; `.storybook/**` added to the `web:test` inputs.
+- [x] All **18 stories render without throwing** (68 story smoke tests) alongside the 67 unit tests — 135 total green. No story needed fixing.
 
-### C2. Interaction tests on key components — **M**
-- [ ] Add `play` functions (using `storybook/test` — `within`, `userEvent`, `expect`) to the highest-value interactive components: **board-view** (drag/cards), **task-card**, **session-card**, **command-palette**, **filter-pills**, **templates-table**, **theme-toggle**. Assert the visible outcome, query by role/label (not test IDs), per CLAUDE.md.
-- [ ] Backfill **stories for un-storied high-value components** so the component layer is broadly covered — prioritise anything a phase is likely to touch (office HUD pieces, project/memory/library modals, widgets). Stories double as the screenshot source for Theme E.
+### C2. Interaction tests on key components — ◐ PARTIAL (PR #36 + #48 + #53, 2026-06-21)
+- [x] `play` functions added to **task-card** / **session-card** / **board-view** (click a card → `onSelect`/`onClick`, a plain click not a flaky dnd drag), **theme-toggle** (open menu → pick Light → it becomes the checked option), **templates-table** (expand an accordion row), and a **backfilled command-palette** story (Ctrl+K opens it; typing filters the list; a non-matching query shows the empty state). All assert visible outcomes / `storybook/test` spies, querying by role/label. 71 story tests green. (PR #36)
+- ⏳ **filter-pills** play deferred: its story documents that the Next router mock doesn't feed `router.replace` back into `useSearchParams`, so a click can't assert a visible toggle — render stories already cover it.
+- [x] **High-value backfill done (PR #48):** stories for the named un-storied components — **modals** (`project-modal`, `memory-modal`, office `library-modal`), the **office HUD** (`office-hud`, seeding the Zustand office store per story), and **widget primitives** (`memory-card`, `widget-card`, `empty-state`). Render smoke + `play` interaction (search/close, tab-switch, store-driven HUD states); `useConfirm` callers wrap in `ConfirmProvider`, `useRouter` uses the global `nextjs.appDirectory` mock. Shared `Memory`/`OfficeAgent` fixtures added. 20 new story tests; `web:test` 190 green.
+- [x] **Data-fetching mock infra + first widgets (PR #53):** added a story-only `installMockFetch` helper ([`stories/mock-fetch.ts`](../packages/web/stories/mock-fetch.ts)) that swaps `globalThis.fetch` for a path-keyed stub of canned, schema-valid gateway responses (a `status >= 400` handler drives the error branch; unmatched requests fall through to the real fetch so Storybook's own module loading isn't intercepted). Storied **`news-widget`** (list/grid/error), **`weather-widget`** (°C/°F/error), and the multi-endpoint **`health-widget`** (healthy / gateway-down). 8 new story tests; `web:test` 202 green.
+- [x] **More widgets storied (PR #60):** `sessions-widget` (`GET /sessions`), `memories-widget` (`GET /memories`), `activity-widget` (`GET /tasks`) — each loaded/empty/error on `installMockFetch`. 9 more story tests; `web:test` 211 green.
+- [x] **List widgets storied (PR #70):** `workflows-widget` (`GET /workflows`), `councils-widget` (`GET /councils`), `shipped-widget` (`GET /tasks`) — each loaded/empty/error. 9 more story tests; `web:test` 245 green.
+- [ ] **Remaining (uses the helper above):** the **chart/multi-endpoint** widgets still un-storied — `throughput`/`usage`/`system-monitor` (bar charts off `Date.now()` — need a pinned clock to assert), `agents`/`all-projects` (2 endpoints each), `market-asset`/`market-watchlist` (multi-endpoint), `boardroom-panel`. Each needs a bit more than the list-widget pattern.
 
-### C3. Accessibility checks — **S**
-- [ ] Enable the Storybook **a11y addon** in the test run (axe) so stories also assert no critical a11y violations. Start as warnings; promote to failures once clean.
+### C3. Accessibility checks — ◐ PARTIAL (PR #39, 2026-06-21)
+- [x] `@storybook/addon-a11y` (pinned `10.4.3`, matching `addon-vitest`) added to web + registered in [`.storybook/main.ts`](../packages/web/.storybook/main.ts). SB ≥10.3 auto-applies the addon's preview annotations, so **axe-core runs against every story** in `moon run web:test` (and the Storybook a11y panel) — no setup file needed. Enabled at `parameters.a11y.test: 'todo'` (warnings) in [`.storybook/preview.tsx`](../packages/web/.storybook/preview.tsx), per "start as warnings": violations surface without failing CI. `web:test` green (71 stories scanned).
+- [ ] **Promote to `'error'` once clean.** The run surfaces a real backlog (each fixed in a *separate behavioural commit* — out of scope for this infra slice — then flip to `'error'` globally or per-component):
+  - `board-view` — `color-contrast`, `nested-interactive` (clickable card wraps interactive children), `scrollable-region-focusable`
+  - `task-card` / `project-card` / `workflow-card` — `color-contrast`
+  - `session-card` — `aria-prohibited-attr`
+  - `page-header` — `empty-heading`
+  - `markdown-preview` — `label` (GFM task-list checkboxes render unlabeled `<input>`)
 
 ---
 

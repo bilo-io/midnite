@@ -114,7 +114,9 @@ export function parseHtmlMetadata(html: string, baseUrl: string): SourceMetadata
   return meta;
 }
 
-async function readCapped(res: Response, maxBytes: number): Promise<string> {
+/** Read a response body as UTF-8, stopping once `maxBytes` is reached (so a huge
+ *  page can't exhaust memory). Exported for reuse by other SSRF-guarded fetchers. */
+export async function readCapped(res: Response, maxBytes: number): Promise<string> {
   const reader = res.body?.getReader();
   if (!reader) return '';
   const chunks: Uint8Array[] = [];
