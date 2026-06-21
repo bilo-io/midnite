@@ -8,6 +8,7 @@ import { useLocalStorage } from '@/lib/use-local-storage';
 import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY, type AppSettings } from '@/lib/app-settings';
 import { cn } from '@/lib/utils';
 import { EnvironmentAccordion } from './environment-accordion';
+import { SetupStatusPanel } from './setup-status-panel';
 
 // Feature rows that begin a new group — their top divider is drawn a touch more
 // opaque than the regular row separators, echoing the grouping dividers in the
@@ -48,6 +49,8 @@ export function SystemSection() {
 
   return (
     <div className="space-y-4">
+      <SetupStatusPanel />
+
       <EnvironmentAccordion />
 
       <Accordion
