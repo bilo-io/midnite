@@ -60,3 +60,12 @@ export const UnknownKind: Story = {
 export const NonInteractive: Story = {
   args: { task: taskFeature, project: projectTagInfo, onSelect: undefined },
 };
+
+/** A task assigned to a repo shows the repo chip alongside the project tag. */
+export const WithRepo: Story = {
+  args: { task: { ...taskFeature, repo: 'acme/api' }, project: projectTagInfo },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText('acme/api')).toBeInTheDocument();
+  },
+};
