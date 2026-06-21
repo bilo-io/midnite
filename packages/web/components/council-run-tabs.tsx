@@ -318,9 +318,7 @@ function MemberOutput({
         <p className="text-sm text-destructive">{m.error}</p>
       ) : null}
       {m.output ? (
-        <pre className="max-h-[420px] overflow-auto whitespace-pre-wrap break-words font-mono text-xs leading-relaxed text-foreground">
-          {m.output}
-        </pre>
+        <MarkdownPreview content={m.output} />
       ) : (
         <p className="text-sm text-muted-foreground">No output captured.</p>
       )}
