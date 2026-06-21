@@ -4,6 +4,7 @@ import { FeatureGate } from '@/components/feature-gate';
 import { LiveData } from '@/components/live-data';
 import { CommandPalette } from '@/components/command-palette';
 import { PageReveal } from '@/components/page-reveal';
+import { SetupNudge } from '@/components/setup-nudge';
 
 export default function MainLayout({ children }: { children: ReactNode }) {
   return (
@@ -25,6 +26,8 @@ export default function MainLayout({ children }: { children: ReactNode }) {
       {/* usePathname needs a Suspense boundary under static export. */}
       <Suspense fallback={null}>
         <FeatureGate />
+        {/* Soft first-run setup nudge — never blocks the board (Phase 19 C). */}
+        <SetupNudge />
       </Suspense>
     </div>
   );
