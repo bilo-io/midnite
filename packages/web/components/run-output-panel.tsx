@@ -96,9 +96,22 @@ export function RunOutputPanel({ run }: { run: WorkflowRun | null }) {
                     <span className="capitalize text-muted-foreground">{nr.status}</span>
                   </button>
                   {expanded === nr.id ? (
-                    <pre className="max-h-40 overflow-auto whitespace-pre-wrap border-t border-border/40 px-2.5 py-2 text-[11px] text-muted-foreground">
-                      {nr.error ?? JSON.stringify(nr.output ?? null, null, 2)}
-                    </pre>
+                    <div className="space-y-2 border-t border-border/40 px-2.5 py-2">
+                      {nr.error ? <DataBlock label="Error" value={nr.error} tone="error" /> : null}
+                      {nr.input !== undefined ? <DataBlock label="Input" value={nr.input} /> : null}
+                      {/* Params after {{expr}} resolution — what the executor actually
+                          received. Absent for trigger nodes (no resolution). */}
+                      {nr.resolvedParams !== undefined ? (
+                        <DataBlock label="Resolved params" value={nr.resolvedParams} />
+                      ) : null}
+                      {nr.output !== undefined ? <DataBlock label="Output" value={nr.output} /> : null}
+                      {!nr.error &&
+                      nr.input === undefined &&
+                      nr.resolvedParams === undefined &&
+                      nr.output === undefined ? (
+                        <p className="text-[11px] text-muted-foreground">No data.</p>
+                      ) : null}
+                    </div>
                   ) : null}
                 </div>
               ))
@@ -128,6 +141,26 @@ export function RunOutputPanel({ run }: { run: WorkflowRun | null }) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// A labelled block of run data: a string is shown verbatim (errors, text output);
+// anything else is pretty-printed JSON. Drives the per-node input → resolved
+// params → output view.
+function DataBlock({ label, value, tone }: { label: string; value: unknown; tone?: 'error' }) {
+  const text = typeof value === 'string' ? value : JSON.stringify(value ?? null, null, 2);
+  return (
+    <div>
+      <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        {label}
+      </p>
+      <pre
+        className="max-h-28 overflow-auto whitespace-pre-wrap rounded bg-muted/40 px-2 py-1 text-[11px] text-muted-foreground"
+        style={tone === 'error' ? { color: 'hsl(var(--destructive))' } : undefined}
+      >
+        {text}
+      </pre>
     </div>
   );
 }

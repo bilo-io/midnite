@@ -10,7 +10,7 @@ import {
   PanelRightOpen,
   type LucideIcon,
 } from 'lucide-react';
-import type { NodeRunStatus, Workflow } from '@midnite/shared';
+import type { Workflow } from '@midnite/shared';
 import { NodeConfigPanel } from '@/components/node-config-panel';
 import { NodePalette } from '@/components/node-palette';
 import { RunOutputPanel } from '@/components/run-output-panel';
@@ -77,11 +77,9 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
   const [configOpen, setConfigOpen] = useState(true);
   const runner = useWorkflowRun(workflow.id);
 
-  // Reflect live run state onto the canvas nodes.
+  // Reflect live run state (status + failure message) onto the canvas nodes.
   useEffect(() => {
-    const map: Record<string, NodeRunStatus> = {};
-    for (const nr of runner.run?.nodeRuns ?? []) map[nr.nodeId] = nr.status;
-    store.getState().applyRunStatuses(map);
+    store.getState().applyRunState(runner.run?.nodeRuns ?? []);
   }, [runner.run, store]);
 
   // Open the config panel when a node is selected, so a node click is never a no-op

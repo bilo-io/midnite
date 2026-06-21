@@ -14,6 +14,7 @@ import {
 } from '@xyflow/react';
 import {
   getNodeTypeDefinition,
+  type NodeRun,
   type NodeRunStatus,
   type Trigger,
   type Workflow,
@@ -26,6 +27,9 @@ export interface WorkflowNodeData extends Record<string, unknown> {
   label: string;
   params: Record<string, unknown>;
   status?: NodeRunStatus;
+  /** Failure message from the latest run (e.g. an `ExpressionError`), surfaced
+   *  inline on the node so a bad `{{expr}}` reference is obvious on the canvas. */
+  error?: string;
 }
 
 export type AppNode = Node<WorkflowNodeData>;
@@ -53,7 +57,7 @@ export interface WorkflowState {
   updateNodeParams(id: string, params: Record<string, unknown>): void;
   removeNode(id: string): void;
   select(id: string | null): void;
-  applyRunStatuses(map: Record<string, NodeRunStatus>): void;
+  applyRunState(runs: NodeRun[]): void;
   markSaved(): void;
   toGraph(): WorkflowGraphPayload;
 }
@@ -155,10 +159,19 @@ export function createWorkflowStore(workflow: Workflow): StoreApi<WorkflowState>
 
     select: (id) => set({ selectedId: id }),
 
-    applyRunStatuses: (map) =>
-      set((s) => ({
-        nodes: s.nodes.map((n) => ({ ...n, data: { ...n.data, status: map[n.id] } })),
-      })),
+    // Reflect a run's per-node state onto the canvas: status drives the node's
+    // border/badge, error surfaces the failure message inline. Nodes absent from
+    // the run are cleared, so a re-run doesn't leave stale status/error behind.
+    applyRunState: (runs) =>
+      set((s) => {
+        const byId = new Map(runs.map((r) => [r.nodeId, r]));
+        return {
+          nodes: s.nodes.map((n) => {
+            const r = byId.get(n.id);
+            return { ...n, data: { ...n.data, status: r?.status, error: r?.error } };
+          }),
+        };
+      }),
 
     markSaved: () => set({ dirty: false }),
 
