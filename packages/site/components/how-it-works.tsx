@@ -1,5 +1,6 @@
 import { Reveal } from '@/components/ui/section';
 import { TypedTitle } from '@/components/sections/typed-title';
+import { InlinePanel } from '@/components/panel/inline-panel';
 
 const STEPS = [
   {
@@ -37,6 +38,8 @@ export function HowItWorks() {
         eyebrow="How it works"
         title="From a messy list to merged work, on autopilot."
       />
+
+      <InlinePanel content="kanban" className="mt-10" />
 
       <ol className="mt-14 space-y-px">
         {STEPS.map((step, i) => (

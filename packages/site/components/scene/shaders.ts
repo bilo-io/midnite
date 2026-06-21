@@ -50,8 +50,8 @@ void main() {
   glow = pow(glow, 1.8);
   float core = smoothstep(0.14, 0.0, d);
   // uTint biases the per-particle brand colour toward the active section's accent;
-  // mixed (not hard-multiplied) so the shift stays subtle. Defaults to white (no-op).
-  vec3 tinted = mix(vColor, vColor * uTint * 1.8, 0.5);
+  // mixed half-way so the shift stays subtle. White is a true no-op (mix → vColor).
+  vec3 tinted = mix(vColor, vColor * uTint, 0.5);
   vec3 col = tinted + core * 0.5;
   gl_FragColor = vec4(col, glow * uOpacity * (0.35 + vTwinkle * 0.5));
 }`;
