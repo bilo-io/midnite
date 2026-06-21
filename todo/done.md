@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 16 COMPLETE — Theme B: CLI `add --bulk` (PR #47)
+
+The CLI client for plural intake — the last theme of Phase 16 (A API #40, C web modal #42). **Phase 16 is now fully done.**
+
+- [x] `midnite add --bulk` ([`cli/src/index.ts`](../packages/cli/src/index.ts)): reads a list from `--file <path>` or **stdin** (`cat ideas.txt | midnite add --bulk`, heredocs) → `POST /tasks/bulk`. Renders a **cli-table3** summary (Line → Kind → Result) + an `N created, M skipped, K failed` tally. Partial batches succeed; exits non-zero only if every attempted line failed.
+- [x] `createBulk` + a `TaskDefaults` type on the typed client ([`cli/src/client.ts`](../packages/cli/src/client.ts)); `--repo`/`--priority`/`--project` apply batch-wide and are now also threaded through a single `add`. Added `cli-table3` to the CLI.
+- [x] **ESM fix:** the CLI binary used extensionless relative imports, so `node dist/index.js` threw `ERR_MODULE_NOT_FOUND` (latent — CI runs vitest, not the binary). Switched to `.js` extensions (repo convention). Live-verified `add --bulk` end-to-end against a running gateway.
+- [x] Pure helpers in [`cli/src/bulk.ts`](../packages/cli/src/bulk.ts) (exit code / summary / rows), unit-tested; `client.test.ts` covers createBulk + createTask defaults. `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #47 (cli 15 · shared 288 · gateway 541 · web 170). **README CLI usage docs intentionally skipped** — no per-command CLI section exists yet (siblings `add`/`list`/`move` undocumented too); commander `--help` covers it.
+
 ## 2026-06-21 — Phase 13 Theme A complete: repos as a first-class DB-backed entity (PR #45)
 
 Promote `repos` from a dormant `config.repos` array to a managed, DB-backed registry. Closes [Phase 13](phase-13-repos-first-class.md) Theme A (A1–A4); satisfies the registry half of [outstanding.md](outstanding.md) #4. **Theme B** (task-creation picker, write-time `task.repo` validation, cwd-precedence tests) remains.
