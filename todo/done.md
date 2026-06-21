@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 19 Theme C: soft first-run setup nudge (PR #79)
+
+Surfaces the Theme-A readiness model. A dismissible corner card that appears when the install isn't `ready`, points the user at what's missing, and **never blocks the board** (Decision §2). Web-only.
+
+- [x] **`SetupNudge`** ([components/setup-nudge.tsx](../packages/web/components/setup-nudge.tsx)) mounted once in the `(main)` layout: fetches `/setup/status`, and when `!ready` floats a compact red/amber/green checklist (mirroring the system-toolchain dots) with each unfinished row deep-linking into its settings surface + a primary CTA at the first blocker.
+- [x] **Soft only:** hidden when `ready`, hidden on `/settings/*` (Theme D owns the in-settings view), dismissible for the session, fail-open on a fetch error. Re-fetches on window focus so a regressed setup (revoked key / uninstalled CLI) re-surfaces.
+- ◐ **Dismiss flag (Decision §4):** shipped the sanctioned **localStorage/session** fallback (sessionStorage); the **server-side per-install marker + first-run wizard auto-open** are deferred to **Theme B** (the wizard) where they're actually needed — avoids a gateway migration colliding with the in-flight schema work.
+- [x] RTL ([setup-nudge.test.tsx](../packages/web/components/setup-nudge.test.tsx)) + Storybook (`NotReady`/`AlmostReady`/`Ready`) coverage; `web:typecheck`/`web:lint`/`web:test` (260) green; CI green on PR #79.
+
+Next on Phase 19: **Theme B** (guided wizard UI — folds in the server-side completed marker + auto-open) and **Theme D** (ongoing Status panel in settings/system). Both consume the Theme-A endpoint.
+
 ## 2026-06-22 — Phase 14 Theme D: CLI workflow commands with live `--watch` (PR #78)
 
 Workflows were API-only from the terminal. Theme D adds `midnite workflow` parity, and `--watch` reuses the live-streaming reducer from Theme A (#72) — the terminal tail and the web run panel now fold the same event stream.

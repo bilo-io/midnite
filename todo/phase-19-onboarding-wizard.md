@@ -44,13 +44,13 @@ A first-run flow that walks the user through the required setup, reusing the exi
 
 ---
 
-## Theme C — First-run detection & soft gating — **S–M**
+## Theme C — First-run detection & soft gating — **S–M** — ✅ DONE (PR #79, 2026-06-22 — see [done.md](done.md))
 
 Surface the wizard when it's useful; never get in the way.
 
-- [ ] **On load, fetch `/setup/status`.** If `!ready` (or never completed), show a **dismissible, resumable** "finish setting up" banner + a compact checklist, and an entry into the wizard. **Soft only — never block the board** (Decision §2).
-- [ ] **Persist a completed/dismissed flag** (Decision §4): a small **server-side** marker (per-install — e.g. an `admin`/settings key) so it's consistent across browsers, with a localStorage fallback for "dismissed this session." Re-show if setup regresses to not-`ready`.
-- [ ] First-run = `!ready` **and** never-completed → auto-open the wizard once; thereafter it's the banner unless reopened.
+- [x] **On load, fetch `/setup/status`.** When `!ready`, show a **dismissible** "finish setting up" corner card + a compact checklist, with each unfinished item deep-linking into its settings surface (the dedicated wizard is Theme B — not built yet). **Soft only — never blocks the board** (Decision §2): hidden when `ready`, hidden on `/settings/*` (Theme D's view), re-fetches on window focus so a regressed setup re-surfaces.
+- ◐ **Persist a completed/dismissed flag** (Decision §4): shipped the **sanctioned localStorage/session fallback** (sessionStorage — dismiss lasts the session, returns in a fresh session while still `!ready`). The **server-side per-install marker** is deferred to Theme B (the wizard), where auto-open-once + cross-browser consistency actually need it — avoids a gateway migration colliding with the in-flight schema work.
+- ⏳ First-run auto-open of the **wizard** — deferred to Theme B (no wizard yet); the soft card covers the nudge in the meantime.
 
 ---
 
