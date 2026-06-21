@@ -61,9 +61,9 @@ A repo you can choose at task-creation time, and a `task.repo` that always point
 These all *depend on* a real repo entity (Themes A+B) and are the natural next slices — captured here so the boundary is explicit. They map to [`outstanding.md`](outstanding.md) #5/#8/#9 and Phase 7 Theme C.
 
 - **C · Repo guessing in inference** — the planner gets the repo manifest and picks a target repo per task; persist to `task.repo`. (`outstanding.md` #5.) **S.**
-- **D · Per-repo concurrency caps** — the scheduler ([`agent-pool-scheduler.service.ts`](../packages/gateway/src/pool/agent-pool-scheduler.service.ts)) tracks a per-repo in-flight counter + a cap so N agents don't hit the same repo at once. *(Bonus candidate: the tick is currently a pure FIFO that ignores `task.priority` — worth fixing alongside.)* (`outstanding.md` #8.) **M.**
+- ✅ **D · Per-repo concurrency caps** — **DONE via Phase 5 (PR #49)**: `agent.maxPerRepo` caps concurrent agents per `task.repo` in the scheduler (skips a task whose repo is at the cap). (`outstanding.md` #8.)
 - **E · Per-repo branch naming + PR templates** — extend the repo entity with `branchPrefix`/`prTemplate`; consume in [`build-agent-prompt.ts`](../packages/gateway/src/pool/lib/build-agent-prompt.ts) / `gh pr create`. (`outstanding.md` #9.) **S.**
-- **F · Surface repo in UI** — repo chip on task cards/threads; an optional **per-repo status** dashboard widget (in-flight agents / queue depth per repo). (Phase 7 Theme C.) **S.**
+- ◐ **F · Surface repo in UI** — ✅ **repo chip on task cards** (`RepoChip`) + the thread already shows it (PR #64); the optional **per-repo status** dashboard widget (in-flight agents / queue depth per repo) remains → Phase 7 Theme C. **S.**
 - **Repo-on-disk management** — midnite cloning/pulling/worktree-creating repos. Out of scope; the registry assumes the checkout already exists at `path`.
 
 ---
