@@ -8,6 +8,10 @@ language: 'typescript'
 # This is the one package built with Vite library mode instead of `tsc -b`
 # (Phase 25 §7): Vite bundles JSX/CSS/assets, vite-plugin-dts emits the types,
 # and typechecking still runs through `tsc --noEmit`.
+#
+# The `storybook` / `build-storybook` tasks land in Theme D alongside the
+# Storybook deps + `.storybook` config — declaring them here before Storybook
+# is installed would only give `moon ci` a task that can't run.
 tasks:
   build:
     command: 'pnpm exec vite build'
