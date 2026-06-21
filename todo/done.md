@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 13 follow-on E: per-repo branch naming + PR templates (PR #74)
+
+Every agent run got the same bare seed prompt regardless of target repo — no way to express "branch off `feature/` here" or "follow this PR-body shape." Follow-on E adds optional per-repo conventions that fold into the agent's prompt.
+
+- [x] **`shared`** — `branchPrefix` / `prTemplate` (optional, length-capped: 100 / 4000) on `RepoSchema`, the create/update requests, and the `config.repos` seed shape (`repo.ts` / `config.ts`); tests for trim/optional/over-long/clear-with-empty.
+- [x] **`gateway`** — `branch_prefix` / `pr_template` columns (forward migration `0031_repo_conventions`), threaded through `ReposService` create/update/seed (empty string clears → null). A pure `appendRepoConventions` helper ([`pool/lib/build-agent-prompt.ts`](../packages/gateway/src/pool/lib/build-agent-prompt.ts)) appends a `## Repository conventions` section to the seed prompt, wired into `AgentRunnerService` after URL-context enrichment. A task with no/unknown repo, or a repo with no conventions, leaves the prompt untouched. Helper + service + runner tests.
+- [x] **`web`** — branch-prefix + PR-template fields in the Settings → Repos add/edit forms, plus a branch chip + "PR template" indicator per repo row. RTL: send-on-create, edit, display.
+- [x] Gate green (typecheck · lint · 585 gateway · 248 web); ticks [`outstanding.md`](outstanding.md) #9. Phase 13 follow-on E done — C (inference repo-guessing) and F (per-repo status widget) remain.
+
 ## 2026-06-22 — Phase 24 Theme A2: mobile bottom-tab navigation (PR #75)
 
 On a phone the desktop sidebar was still pinned left as a 3.5rem icon rail, eating width and shifting every page right — no thumb-reachable nav. A2 swaps it for a mobile-native pattern below `md` while leaving tablet/desktop untouched.
