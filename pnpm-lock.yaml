@@ -317,6 +317,9 @@ importers:
         specifier: ^5.0.2
         version: 5.0.14(@types/react@19.2.15)(react@19.2.6)(use-sync-external-store@1.6.0(react@19.2.6))
     devDependencies:
+      '@storybook/addon-a11y':
+        specifier: 10.4.3
+        version: 10.4.3(storybook@10.4.3(@testing-library/dom@10.4.1)(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))
       '@storybook/addon-vitest':
         specifier: 10.4.3
         version: 10.4.3(@vitest/browser@3.2.4)(@vitest/runner@3.2.4)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(storybook@10.4.3(@testing-library/dom@10.4.1)(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(vitest@3.2.4)
@@ -2377,6 +2380,11 @@ packages:
   '@stablelib/base64@1.0.1':
     resolution: {integrity: sha512-1bnPQqSxSuc3Ii6MhBysoWCg58j97aUjuCSZrGSmDxNqtytIi0k8utUenAwTZN4V5mXXYGsVUI9zeBqy+jBOSQ==}
 
+  '@storybook/addon-a11y@10.4.3':
+    resolution: {integrity: sha512-xAgeSCU2XZJWv+Dz18ZdTp7/DFIrLWwtVMXQUvtL+l4AWEvjLwis3SvH34bmyjSC1Otp/OnBjzZNxy3EbmFLGQ==}
+    peerDependencies:
+      storybook: ^10.4.3
+
   '@storybook/addon-vitest@10.4.3':
     resolution: {integrity: sha512-np5qbyc/A7bZTvRlap9eaNmp9ix9yBBhMc3ClF4u2NkyI9MNLRH2xh66mI9lsShTyUZ6NAD8Uj72YJXkcigP6w==}
     peerDependencies:
@@ -3113,6 +3121,10 @@ packages:
 
   avvio@8.4.0:
     resolution: {integrity: sha512-CDSwaxINFy59iNwhYnkvALBwZiTydGkOecZyPkqBpABYR1KqGEsET0VOOYDwtleZSUIdeY36DC2bSZ24CO1igA==}
+
+  axe-core@4.12.1:
+    resolution: {integrity: sha512-s7iGf5GaVMxEG0ENN9x+xTr7GFZCb1ZP/1uATUpCEK2X78nDB3RwbtFCo9pGAf9ru+VwoQ464DkaLEeRM08wJA==}
+    engines: {node: '>=4'}
 
   babel-plugin-macros@3.1.0:
     resolution: {integrity: sha512-Cg7TFGpIr01vOQNODXOOaGz2NpCU5gl8x1qJFbb6hbZxR7XrcE2vtbAsTAbJ7/xwJtUuJEw8K8Zr/AE0LHlesg==}
@@ -8503,6 +8515,12 @@ snapshots:
 
   '@stablelib/base64@1.0.1': {}
 
+  '@storybook/addon-a11y@10.4.3(storybook@10.4.3(@testing-library/dom@10.4.1)(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))':
+    dependencies:
+      '@storybook/global': 5.0.0
+      axe-core: 4.12.1
+      storybook: 10.4.3(@testing-library/dom@10.4.1)(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+
   '@storybook/addon-vitest@10.4.3(@vitest/browser@3.2.4)(@vitest/runner@3.2.4)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(storybook@10.4.3(@testing-library/dom@10.4.1)(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(vitest@3.2.4)':
     dependencies:
       '@storybook/global': 5.0.0
@@ -9406,6 +9424,8 @@ snapshots:
     dependencies:
       '@fastify/error': 3.4.1
       fastq: 1.20.1
+
+  axe-core@4.12.1: {}
 
   babel-plugin-macros@3.1.0:
     dependencies:

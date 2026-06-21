@@ -39,6 +39,15 @@ const preview: Preview = {
     nextjs: { appDirectory: true },
     backgrounds: { disable: true },
     controls: { matchers: { color: /color$/i } },
+    // @storybook/addon-a11y runs axe-core against every story during the
+    // Vitest browser run (`moon run web:test`) and in the Storybook a11y panel.
+    // 'todo' surfaces violations as warnings without failing the run; 'error'
+    // fails a story on any violation. We start at 'todo' because the current
+    // components carry a known backlog (color-contrast, nested-interactive on
+    // clickable cards, empty-heading, unlabeled markdown task-list checkboxes —
+    // see todo/phase-10 C3). Promote to 'error' (globally, or per-component as
+    // each is cleaned) once that backlog is cleared. See .storybook/main.ts.
+    a11y: { test: 'todo' },
   },
 };
 
