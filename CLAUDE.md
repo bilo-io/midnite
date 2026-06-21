@@ -225,6 +225,9 @@ Nest module per feature → `controller → service → repository`:
 - The scheduler is a single tick loop owned by the gateway — never spawn parallel schedulers
 - Agent slots are tracked in-memory; persisted state is the source of truth on restart
 - Status transitions caused by Claude Code hooks come in as authenticated webhook calls (`POST /hooks/:taskId/:event`) with a per-session secret — never trust the body alone
+- **Process backend is pluggable** (Phase 17): the node-pty lifecycle lives behind a `Spawner` interface (`terminal/spawner/`), selected by `terminal.mode`. `pty` (default) dies with the gateway; `tmux` runs each session in a detached `midnite-<sessionId>` session that survives a restart. New backend code is **additive** — the `pty` path must stay behavior-preserving (its specs run unedited)
+- **Boot recovery lives in `AgentRunnerService.onModuleInit`** (not the pool): tasks left `wip`/`waiting` are requeued under `pty`, or **reattached** under durable `tmux` (still-live sessions resume; dead ones requeue; stray sessions are reaped). It runs after the pool initialises and before the scheduler's first tick (Nest dependency order) — keep it there so reattach has the slot/timeout/onExit wiring `start()` uses
+- **Durable shutdown diverges by mode**: `pty` `onModuleDestroy` kills every PTY; `tmux` *detaches* (leaves the session running) so a restart can reattach. Only explicit kill / idle-reap / graceful-stop ends a durable session
 
 ### Logging
 

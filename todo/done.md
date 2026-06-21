@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 17 B/C/D: durable `tmux` spawner + survive-restart reattach (PR #72) — **Phase 17 COMPLETE**
+
+The pluggable `Spawner` (extracted in A, PR #56) gains its first alternative backend: a durable `tmux` mode whose sessions outlive the gateway, so an in-flight agent run survives a restart instead of being orphaned/requeued. The `pty` path is unchanged (its specs run unedited). Closes [outstanding.md](outstanding.md) #10 (scoped to tmux; warp/iterm dropped).
+
+- [x] **B — `TmuxSpawner`** ([`terminal/spawner/tmux-spawner.ts`](../packages/gateway/src/terminal/spawner/tmux-spawner.ts)): `tmux new-session -d -s midnite-<id>` running `exec env … <cmd>`, chained with `remain-on-exit on`, + a node-pty `tmux attach-session` for the live stream (reuses the whole ring/broadcast path). `onExit` fires from a `pane_dead_status` poll so callers get the **real inner exit code**; `detach()` drops the stream but leaves the session; fail-closed `TmuxUnavailableError` (no silent `pty` fallback).
+- [x] **C1 — selection + enum prune**: module factory picks the backend by `terminal.mode`; `warp`/`iterm` removed → enum is `pty | tmux` (a config naming them now fails validation).
+- [x] **C2 — boot reattach**: recovery moved from `AgentPoolService` to [`AgentRunnerService.onModuleInit`](../packages/gateway/src/pool/agent-runner.service.ts) (it owns the slot/timeout/onExit wiring; runs after the pool, before the scheduler). Under tmux it reattaches still-live sessions, requeues dead ones, and reaps strays; under pty it requeues as before.
+- [x] **C3 — shutdown divergence**: `TerminalService.onModuleDestroy` detaches durable sessions (leaves them running) and kills pty ones.
+- [x] **D — tests**: a `Spawner` contract spec (pty always; tmux skip-guarded on `tmux -V` — ran green locally) + pure-helper unit tests + recovery tests (the deterministic survive-restart equivalent) + a config-schema test. `:typecheck`/`:lint`/`:test` + `moon ci` green; existing terminal/approval/gateway/pool specs unedited.
+
+**🎉 Phase 17 complete** (A seam → B tmux → C selection/reattach → D contract tests). midnite agent runs can now survive a gateway restart.
+
 ## 2026-06-21 — Phase 25 Theme D: Storybook catalog + DS docs + browser tests (PR #69) — **Phase 25 COMPLETE**
 
 The final Phase 25 theme — `@midnite/ui` now has its own Storybook (component catalog + design-system docs) and runs its stories as browser tests. **Closes out Phase 25** (Themes A–D all merged); unblocks Phase 26 (the docs app).

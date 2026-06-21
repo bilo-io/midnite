@@ -28,7 +28,7 @@ Drop in a freeform list, let midnite classify each item, queue them, and run the
 - **Phase 2 — Agents** (pool, scheduler, pty spawner, Claude Code hooks): ⏳ [phase-2-agents.md](todo/phase-2-agents.md)
 - **Phase 3 — Browser** kanban + embedded terminals: ⏳ [phase-3-browser.md](todo/phase-3-browser.md)
 - **Phase 4 — Inference** (plan/act split, KB injection): ⏳ [phase-4-inference.md](todo/phase-4-inference.md)
-- **Phase 5 — Polish** (tmux/warp/iterm, priorities, retries): ⏳ [phase-5-polish.md](todo/phase-5-polish.md)
+- **Phase 5 — Polish** (priorities, retries, per-repo caps): ⏳ [phase-5-polish.md](todo/phase-5-polish.md) · pluggable spawner + durable `tmux` moved to [phase-17-spawner-tmux.md](todo/phase-17-spawner-tmux.md)
 
 ## Quick start
 
@@ -58,7 +58,7 @@ curl http://localhost:7777/health   # → {"ok":true}
 - **CLI** ([`packages/cli`](packages/cli)): **commander**.
 - **Web** ([`packages/web`](packages/web)): **Next.js** App Router (React 19). `@dnd-kit` for the kanban + `xterm.js` for embedded agent terminals (Phase 3).
 - **Shared** ([`packages/shared`](packages/shared)): **zod** config schema + cross-package types (the only place those live).
-- **Process spawning** (Phase 2): `node-pty` for managed sessions; tmux/warp/iterm backends in Phase 5.
+- **Process spawning** (Phase 2): `node-pty` for managed sessions, behind a pluggable `Spawner` (Phase 17) — a durable `tmux` backend whose sessions survive a gateway restart is opt-in via `terminal.mode`.
 
 > Note: [`docs/INITIAL_PLAN.md`](docs/INITIAL_PLAN.md) was written for bare Fastify + React/Vite. The implementation uses Nest.js (with the Fastify adapter underneath) and Next.js instead. Everything else in the plan still holds.
 
@@ -150,6 +150,13 @@ The session web window streams a live PTY over WebSocket (`/ws/terminal`). The
 PTY is spawned on demand when a window opens for an active session and is shared
 across reconnects. `terminal` fields control it:
 
+- `mode` — the process backend: `"pty"` (default) runs each session in a
+  node-pty the gateway owns, so it dies with the gateway; `"tmux"` runs each
+  session in a detached `tmux` session (`midnite-<id>`) that **outlives** the
+  gateway, so an in-flight agent run **survives a restart** — on boot the
+  gateway rediscovers live sessions and reattaches instead of requeuing. `tmux`
+  fails closed if the binary is missing (it never silently falls back to `pty`).
+  (`warp`/`iterm` were dropped — native windows bypass the browser stream.)
 - `command` (optional) — what each session PTY runs. Defaults to an interactive
   login shell (`$SHELL`, else `/bin/bash`) in the session's repo cwd. Set it to
   `"claude"` to drive a live Claude Code session instead.
