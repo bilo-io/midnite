@@ -106,6 +106,20 @@ export function parseGithubRepo(url: string): string | null {
   return `${parts[0]}/${parts[1]}`;
 }
 
+/**
+ * Parse a GitHub issue *or* PR URL into "owner/repo" + number. Both
+ * `/owner/repo/issues/N` and `/owner/repo/pull/N` resolve, since GitHub's REST
+ * `repos/{repo}/issues/{n}` endpoint serves both. Returns null for any other
+ * GitHub URL (repo root, file, etc.) or a non-GitHub URL.
+ */
+export function parseGithubIssueOrPr(url: string): { repo: string; number: number } | null {
+  const parts = githubParts(url);
+  if (!parts || parts.length < 4 || (parts[2] !== 'issues' && parts[2] !== 'pull')) return null;
+  const n = Number(parts[3]);
+  if (!Number.isInteger(n) || n <= 0) return null;
+  return { repo: `${parts[0]}/${parts[1]}`, number: n };
+}
+
 // A new display/run order for a list of sources — every source id, once, in the
 // desired order. Generic across project, memory and global-knowledge sources
 // (mirrors ReorderCouncilParticipantsRequestSchema).
