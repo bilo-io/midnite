@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 11 COMPLETE: scrollytelling core — particles, panel, hero, modules (PR #59)
+
+Completes the public-site rewrite. The interlocking core the foundations slice (PR #44, Themes A/D/G/H) was built to carry: the three always-mounted layers the scroll controller drives. **Phase 11 is now fully done** (all 8 themes). `packages/site` only; added `motion` (Decision §2).
+
+- [x] **Theme C — Persistent preview panel:** one Mac-window [`<PreviewPanel>`](../packages/site/components/panel/preview-panel.tsx) rendered once at the page root that morphs position **and** size between sections (Framer Motion spring) and cross-fades its content, driven by the scroll controller as the single source of truth. Per-section target rects from a pure [`panelRectFor`](../packages/site/components/panel/panel-rect.ts) helper ([`panel-sections.ts`](../packages/site/components/panel/panel-sections.ts)); fades out over the download section. Desktop-only; mobile stacks an inline panel. Instant under reduced motion.
+- [x] **Theme F — Panel content modules:** stylised evocations (Decision §3) — a typing [terminal](../packages/site/components/panel-content/terminal-module.tsx), a [kanban board](../packages/site/components/panel-content/kanban-module.tsx) with a card looping across columns, and a live [agent/session card](../packages/site/components/panel-content/session-module.tsx) with a ticking timer — in a shared [`PanelFrame`](../packages/site/components/panel/panel-frame.tsx) (traffic-light chrome). Each has an idle micro-animation; all degrade under reduced motion.
+- [x] **Theme E — Epic hero:** app icon + wordmark, a headline cycling three typed title/subtitle pairs ([`useTypewriterCycle`](../packages/site/components/sections/use-typewriter-cycle.ts), Decision §5 placeholder copy), radial scrim, the centred grid-card panel; `sr-only` stable text. Reduced motion shows pair 1.
+- [x] **Theme B — Particle field:** lerps accent tint/size/swirl toward the active section's style, recolours fog/vignette/exposure for light vs dark (Decision §7), pauses the rAF time-advance when the tab is hidden; reduced motion snaps to static. Reads the active section + theme from outside the R3F canvas and passes them in as props.
+- [x] Tests: `useTypewriterCycle`, the panel-sections config, and the pure `panelRectFor` helper (site suite now 19 tests). `:typecheck`/`:lint` green across the graph; `site:test` + `site:build` (7 routes prerender) green; `moon ci` green on PR #59. (CI initially didn't fire — the branch had a `pnpm-lock.yaml` conflict with the fast-moving main, so GitHub couldn't build the merge ref; merging main in resolved it.)
+
 ## 2026-06-21 — Phase 12 Theme D (start): ƒx expression toggle + unique node labels (PR #63)
 
 The two **S** foundations of the n8n-style expression editor — the autocomplete input, data picker, and resolved-value preview remain.
