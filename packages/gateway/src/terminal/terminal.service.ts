@@ -244,6 +244,7 @@ export class TerminalService implements OnModuleDestroy {
         args: spec.args,
         cwd: spec.cwd,
         env: this.fullEnv(),
+        sessionId: attachId,
       });
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : 'spawn failed' };
@@ -330,11 +331,71 @@ export class TerminalService implements OnModuleDestroy {
     const cwd = this.resolveCwd(sessionId);
     let proc: SpawnHandle;
     try {
-      proc = this.spawner.spawn({ command, args, cwd, env });
+      proc = this.spawner.spawn({ command, args, cwd, env, sessionId });
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : 'spawn failed' };
     }
 
+    const handle = this.registerAgentHandle(sessionId, proc, command, settingsFile ?? null, hooks);
+    this.logger.log(`spawned agent session ${sessionId}: ${command} (pid ${proc.pid}) in ${cwd}`);
+    return { ok: true, pid: handle.proc.pid };
+  }
+
+  /**
+   * Reattach to an autonomous agent session that survived a gateway restart
+   * (durable `tmux` backend only). Unlike {@link spawnAgentSession} this starts
+   * no new process — it asks the spawner for a fresh stream onto the existing
+   * `midnite-<sessionId>` session and re-registers the pinned handle with the
+   * same onExit wiring, so the run picks up where it left off instead of being
+   * orphaned/requeued (Phase 17 §C2). Returns `ok: false` when the backend can't
+   * reattach (pty mode) or the session is no longer live.
+   */
+  reattachAgentSession(
+    sessionId: string,
+    hooks: { onExit: (exitCode: number, signal: number | null) => void },
+  ): { ok: true; pid: number } | { ok: false; error: string } {
+    if (this.handles.has(sessionId)) {
+      return { ok: false, error: `terminal ${sessionId} already exists` };
+    }
+    const proc = this.spawner.reattach?.({ sessionId });
+    if (!proc) return { ok: false, error: 'no live session to reattach' };
+    // The running session already carries its --settings/hook wiring from the
+    // original spawn; we don't own that file on reattach, so don't track it for
+    // unlink. The display command is the configured agent CLI.
+    const command = AGENT_CLI_COMMAND[this.agents.getAgentCli()];
+    const handle = this.registerAgentHandle(sessionId, proc, command, null, hooks);
+    this.logger.log(`reattached agent session ${sessionId}: ${command} (pid ${proc.pid})`);
+    return { ok: true, pid: handle.proc.pid };
+  }
+
+  /** Live durable-session ids (tmux) that survived a restart — empty for pty.
+   *  The boot-time rediscovery set consumed by the pool's recovery. */
+  liveSessionIds(): string[] {
+    return this.spawner.listSessions?.() ?? [];
+  }
+
+  /** Tear down a durable session with no owning task (stray after a restart). */
+  discardSession(sessionId: string): void {
+    this.spawner.killSession?.(sessionId);
+  }
+
+  /** Whether the configured backend's sessions survive the gateway process. */
+  isDurable(): boolean {
+    return this.spawner.durable === true;
+  }
+
+  /**
+   * Register a *pinned* handle (agent session) with the standard onData/onExit
+   * streaming wiring. Shared by spawn and reattach so both behave identically
+   * once the stream is live.
+   */
+  private registerAgentHandle(
+    sessionId: string,
+    proc: SpawnHandle,
+    command: string,
+    settingsFile: string | null,
+    hooks: { onExit: (exitCode: number, signal: number | null) => void },
+  ): PtyHandle {
     const handle: PtyHandle = {
       proc,
       command,
@@ -344,7 +405,7 @@ export class TerminalService implements OnModuleDestroy {
       seq: 0,
       disposeTimer: null,
       disposables: [],
-      settingsFile: settingsFile ?? null,
+      settingsFile,
       pinned: true,
     };
     this.handles.set(sessionId, handle);
@@ -372,11 +433,7 @@ export class TerminalService implements OnModuleDestroy {
         this.cleanup(sessionId);
       }),
     );
-
-    this.logger.log(
-      `spawned agent session ${sessionId}: ${command} (pid ${proc.pid}) in ${cwd}`,
-    );
-    return { ok: true, pid: proc.pid };
+    return handle;
   }
 
   /** Read the decoded scrollback for a session (managed/agent runs). Used to
@@ -531,7 +588,41 @@ export class TerminalService implements OnModuleDestroy {
   }
 
   onModuleDestroy(): void {
+    // Durable backend (tmux): leave the sessions running so a restart can
+    // reattach (Phase 17 §C3) — only drop our local streams/timers here. The
+    // pty backend can't outlive the process, so its sessions are killed as
+    // before. Explicit kill / idle-reap / graceful-stop still ends a durable
+    // session; this path is shutdown only.
+    if (this.isDurable()) {
+      for (const sessionId of [...this.handles.keys()]) this.detachOnShutdown(sessionId);
+      return;
+    }
     for (const sessionId of [...this.handles.keys()]) this.kill(sessionId);
+  }
+
+  /** Shutdown teardown for a durable session: drop the local stream + timers and
+   *  forget the handle, but leave the tmux session (and its --settings file)
+   *  intact so boot-time reattach can resume it. */
+  private detachOnShutdown(sessionId: string): void {
+    const handle = this.handles.get(sessionId);
+    if (!handle) return;
+    try {
+      handle.proc.detach?.();
+    } catch {
+      // attach client already gone
+    }
+    if (handle.disposeTimer) {
+      clearTimeout(handle.disposeTimer);
+      handle.disposeTimer = null;
+    }
+    for (const d of handle.disposables) {
+      try {
+        d.dispose();
+      } catch {
+        // ignore
+      }
+    }
+    this.handles.delete(sessionId);
   }
 
   // ---- internals ----
@@ -545,6 +636,7 @@ export class TerminalService implements OnModuleDestroy {
       env: spec.env,
       cols: geom.cols,
       rows: geom.rows,
+      sessionId,
     });
 
     const handle: PtyHandle = {

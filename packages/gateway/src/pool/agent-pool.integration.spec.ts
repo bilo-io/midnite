@@ -54,6 +54,11 @@ function makeFakeTerminal(): FakeTerminal {
     spawnAgentSession: spawn,
     killManagedRun: kill,
     interruptManagedRun: interrupt,
+    // The pty backend: boot recovery requeues (no reattach). See the dedicated
+    // tmux-reattach coverage in agent-runner.service.test.ts.
+    isDurable: () => false,
+    liveSessionIds: () => [],
+    discardSession: vi.fn(),
   } as unknown as TerminalService;
   return {
     service,
@@ -259,8 +264,9 @@ describe('agent pool — restart recovery (persisted state is the source of trut
     h.seedTask('d1', 'done');
     h.seedTask('t1', 'todo');
 
-    // A fresh pool models a gateway restart: slots start idle, persisted state rules.
-    h.pool.onModuleInit();
+    // A fresh runner models a gateway restart: slots start idle, persisted state
+    // rules, and boot recovery (now owned by the runner) reconciles the orphans.
+    h.runner.onModuleInit();
 
     expect(status(h, 'w1')).toBe('todo');
     expect(status(h, 'w2')).toBe('todo');
@@ -280,7 +286,7 @@ describe('agent pool — restart recovery (persisted state is the source of trut
   it('reconstructs the queue so the scheduler re-runs recovered tasks', async () => {
     const h = makeHarness({ pool: 2 });
     h.seedTask('w1', 'wip');
-    h.pool.onModuleInit();
+    h.runner.onModuleInit();
     expect(status(h, 'w1')).toBe('todo');
 
     await h.scheduler.tick();
