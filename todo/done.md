@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 17 Theme A: extract the `Spawner` interface from TerminalService (PR #56)
+
+The behaviour-preserving refactor that gates the pluggable terminal backends ([Phase 17](phase-17-spawner-tmux.md#theme-a--extract-the-spawner-interface--l--done-pr-56-2026-06-21)). Puts the node-pty process lifecycle behind a `Spawner` seam so a `tmux` backend (Theme B) can slot in without touching the ring/streaming/approval machinery. Gateway-only; `pty` behaviour byte-for-byte unchanged.
+
+- [x] **`Spawner` / `SpawnSpec` / `SpawnHandle` + `SPAWNER` token** ([`terminal/spawner/spawner.ts`](../packages/gateway/src/terminal/spawner/spawner.ts)) — gateway-internal; `SpawnHandle` mirrors node-pty's `IPty` so `PtyHandle.proc`'s type swap is the only call-site change.
+- [x] **`PtySpawner`** ([`terminal/spawner/pty-spawner.ts`](../packages/gateway/src/terminal/spawner/pty-spawner.ts)) — owns the lazy `require('node-pty')` + fail-closed semantics (throws `SpawnUnavailableError`, never a silent disable); a thin pass-through. Now the only node-pty importer in the spawn path.
+- [x] **`TerminalService`** drops its node-pty import / `loadPty()`; all three spawn paths route through the injected `Spawner`. Module provides `SPAWNER` via a `terminal.mode` factory (PtySpawner default); the constructor also defaults the spawner to a real `PtySpawner` so direct-construction specs work without DI.
+- [x] Every terminal/approval/gateway spec passes **unedited** — `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #56 (gateway 553; one re-run for the known-flaky terminal env-dump spec, unrelated).
+- ↪️ **Remaining (phase-17):** B `TmuxSpawner` (durable sessions) · C backend selection + survive-restart reattach + drop warp/iterm · D Spawner contract tests.
+
 ## 2026-06-21 — Phase 10 C2: data-fetching widget stories + fetch-stub helper (PR #53)
 
 Continues [Phase 10](phase-10-test-suite-hardening.md#c2-interaction-tests-on-key-components--partial-pr-36--48--53-2026-06-21) C2 — the data-fetching widgets that previously couldn't be storied because they self-fetch. Adds the missing mock infra + the first widget stories on it. Pure coverage; no product change.

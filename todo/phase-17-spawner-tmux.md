@@ -20,19 +20,18 @@
 
 ---
 
-## Theme A — Extract the `Spawner` interface — **L**
+## Theme A — Extract the `Spawner` interface — **L** — ✅ DONE (PR #56, 2026-06-21)
 
-The dominant, behavior-preserving refactor. Get the node-pty specifics behind a seam without changing what the terminal does.
+The dominant, behavior-preserving refactor — node-pty now lives behind a `Spawner` seam; `pty` behaviour is byte-for-byte unchanged (553 gateway tests pass unedited). See [done.md](done.md). **Themes B (TmuxSpawner) / C (selection + restart-reattach) / D (contract tests) remain.**
 
-### A1. Define `Spawner` + `SpawnHandle` — **S**
-- [ ] A `Spawner` interface in the gateway terminal module: `spawn(spec: SpawnSpec) → SpawnHandle`, where `SpawnSpec = { command, args, cwd, env, cols?, rows? }` and `SpawnHandle = { pid, write(data), resize(cols, rows), onData(cb): IDisposable, onExit(cb): IDisposable, kill(signal?) }`. Mirror node-pty's surface so `PtySpawner` is a thin pass-through. Keep it gateway-internal (an implementation detail, not a wire shape) unless `web` needs to *display* the active backend — if so, only a `mode` string crosses into `shared`.
+### A1. Define `Spawner` + `SpawnHandle` — **S** — ✅ DONE
+- [x] `Spawner` / `SpawnSpec` / `SpawnHandle` + `SPAWNER` DI token in [`terminal/spawner/spawner.ts`](../packages/gateway/src/terminal/spawner/spawner.ts). `SpawnHandle` mirrors node-pty's `IPty` surface so the field type swap is the only call-site change. Gateway-internal (no wire shape).
 
-### A2. `PtySpawner implements Spawner` — **M**
-- [ ] Move the `loadPty()` / `pty.spawn()` / `onData` / `onExit` / `resize` / `kill` calls out of `TerminalService` into `PtySpawner` (carry the lazy-load + fail-closed `ptyLoadFailed` semantics). `TerminalService` no longer imports `node-pty`.
-- [ ] Route **all three** spawn paths — `spawnAgentSession`, `spawnManagedRun`, on-attach shell — through the injected `Spawner`. The ring buffer, scrollback replay, tokens, idle-reap, approval `--settings` wiring, `resolveCwd`, and `onModuleDestroy` cleanup all **stay in `TerminalService`**, now driving a `SpawnHandle` instead of an `IPty`.
+### A2. `PtySpawner implements Spawner` — **M** — ✅ DONE
+- [x] [`terminal/spawner/pty-spawner.ts`](../packages/gateway/src/terminal/spawner/pty-spawner.ts) owns the lazy `require('node-pty')` + fail-closed semantics (throws `SpawnUnavailableError` — never a silent disable) and is the only node-pty importer in the spawn path; a thin pass-through (returns the `IPty` as a `SpawnHandle`). `TerminalService` no longer imports `node-pty`; `PtyHandle.proc` is a `SpawnHandle` and all three paths (`spawnAgentSession`, `spawnManagedRun`, on-attach) route through the injected `Spawner`. Ring/scrollback/tokens/idle-reap/approvals/`resolveCwd`/`onModuleDestroy` unchanged.
 
-### A3. Wire it in the module — **S**
-- [ ] Provide the `Spawner` in [`terminal.module.ts`](../packages/gateway/src/terminal/terminal.module.ts) (a factory selecting by `config.terminal.mode`; defaults to `PtySpawner`). `pty` behaviour is **byte-for-byte unchanged** — existing terminal/approval/gateway specs pass without edits.
+### A3. Wire it in the module — **S** — ✅ DONE
+- [x] [`terminal.module.ts`](../packages/gateway/src/terminal/terminal.module.ts) provides `SPAWNER` via a `config.terminal.mode` factory (returns `PtySpawner` for every mode until tmux lands). `TerminalService` also defaults the injected spawner to a real `PtySpawner` so direct construction (specs, in-process `serve`) keeps working without DI — existing specs pass unedited.
 
 ---
 
