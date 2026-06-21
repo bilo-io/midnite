@@ -1,0 +1,20 @@
+{
+  "agent": {
+    "pool": 1,
+    "poolEnabled": false,
+    "provider": "claude",
+    "plan": "opus4.7",
+    "act": "haiku4.5"
+  },
+  "terminal": {
+    "mode": "pty",
+    "layout": "split"
+  },
+  "repos": [],
+  "gateway": {
+    "port": 7799
+  },
+  "workflows": {
+    "allowLoopbackHttp": true
+  }
+}
