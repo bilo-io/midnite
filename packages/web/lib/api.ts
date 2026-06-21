@@ -71,6 +71,8 @@ import {
   PrimaryAgentResponseSchema,
   ProjectResponseSchema,
   ProjectSchema,
+  RepoResponseSchema,
+  RepoSchema,
   RunResponseSchema,
   SessionSummarySchema,
   SessionTranscriptSchema,
@@ -109,6 +111,9 @@ import {
   type ProviderResponse,
   type UpdateProviderCredentialRequest,
   type Project,
+  type Repo,
+  type CreateRepoRequest,
+  type UpdateRepoRequest,
   type SessionSummary,
   type SessionTranscript,
   type AgentPingResponse,
@@ -380,6 +385,34 @@ export async function reorderProjectSources(id: string, sourceIds: string[]): Pr
     ProjectResponseSchema,
   );
   return project;
+}
+
+// --- Repos (the DB-backed repo registry) ---
+
+export async function getRepos(): Promise<Repo[]> {
+  return fetchJson('/repos', undefined, z.array(RepoSchema));
+}
+
+export async function createRepo(body: CreateRepoRequest): Promise<Repo> {
+  const { repo } = await fetchJson(
+    '/repos',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    RepoResponseSchema,
+  );
+  return repo;
+}
+
+export async function updateRepo(id: string, body: UpdateRepoRequest): Promise<Repo> {
+  const { repo } = await fetchJson(
+    `/repos/${encodeURIComponent(id)}`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    RepoResponseSchema,
+  );
+  return repo;
+}
+
+export async function deleteRepo(id: string): Promise<void> {
+  await fetchJson(`/repos/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
 
 // --- Memories (markdown knowledge entries, global or project-scoped) ---
