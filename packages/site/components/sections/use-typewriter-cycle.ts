@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-import { prefersReducedMotion } from '@/components/scene/use-scroll-progress';
+import { prefersReducedMotion } from '@/lib/reduced-motion';
 
 export type TitlePair = { title: string; subtitle: string };
 
