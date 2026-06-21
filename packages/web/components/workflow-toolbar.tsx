@@ -70,6 +70,10 @@ export function WorkflowToolbar({
           {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
           Run
         </Button>
+        {/* Autosave status — edits persist on their own; the button is the manual escape hatch. */}
+        <span className="text-xs text-muted-foreground tabular-nums" aria-live="polite">
+          {saving ? 'Saving…' : dirty ? 'Unsaved changes' : 'All changes saved'}
+        </span>
         <Button type="button" size="sm" variant="secondary" onClick={onSave} disabled={!dirty || saving}>
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           {dirty ? 'Save' : 'Saved'}
