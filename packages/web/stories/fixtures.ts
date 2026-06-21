@@ -122,6 +122,26 @@ export const taskQuestion: Task = {
   events: [],
 };
 
+// A question resolved inline at intake (Phase 15 Theme C): answered → done, with
+// the answer recorded as an `answer` task-event.
+export const taskAnsweredQuestion: Task = {
+  id: 'task-answered',
+  priority: 1,
+  retryCount: 0,
+  title: 'What does the scheduler tick interval default to?',
+  kind: 'question',
+  status: 'done',
+  tags: [],
+  events: [
+    { at: '2026-06-22T00:00:00Z', kind: 'task.created' },
+    {
+      at: '2026-06-22T00:00:01Z',
+      kind: 'answer',
+      data: { text: 'It defaults to **2000ms**, configurable via `scheduler.tickMs`.' },
+    },
+  ],
+};
+
 export const taskChore: Task = {
   id: 'task-chore',
   priority: 1,
@@ -172,6 +192,7 @@ export const taskAbandoned: Task = {
 /** A spread of tasks across every status, sized for the board view. */
 export const tasks: Task[] = [
   taskQuestion,
+  taskAnsweredQuestion,
   taskUnknown,
   taskBug,
   { ...taskBug, id: 'task-bug-2', title: 'Source icon favicon fallback flashes on load', projectId: 'proj-gw' },

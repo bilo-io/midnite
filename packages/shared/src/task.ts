@@ -134,3 +134,17 @@ export type UpdateTaskProjectRequest = z.infer<typeof UpdateTaskProjectRequestSc
 export type SetTaskTagsRequest = z.infer<typeof SetTaskTagsRequestSchema>;
 export type CreateTaskResponse = z.infer<typeof CreateTaskResponseSchema>;
 export type ClassifiedTask = z.infer<typeof ClassifiedTaskSchema>;
+
+/** Task-event kind written when a `question` is answered inline at intake (Phase 15 Theme C). */
+export const ANSWER_EVENT_KIND = 'answer';
+
+/**
+ * True for a `question`-kind task that was answered inline at intake: the planner
+ * generated a direct answer (recorded as an `answer` task-event) and the task was
+ * resolved to `done` instead of being queued for an agent. The shared contract for
+ * "this is an answered question" so the web UI can show an *Answered* affordance and
+ * filter these apart from ordinary completed work without re-deriving the rule.
+ */
+export function isAnsweredQuestion(task: Pick<Task, 'kind' | 'events'>): boolean {
+  return task.kind === 'question' && task.events.some((e) => e.kind === ANSWER_EVENT_KIND);
+}

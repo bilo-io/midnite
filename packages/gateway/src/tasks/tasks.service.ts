@@ -1,6 +1,7 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import {
+  ANSWER_EVENT_KIND,
   detectSourceKind,
   MAX_BULK_LINES,
   MAX_TAGS_PER_TASK,
@@ -322,7 +323,7 @@ export class TasksService {
         id: randomUUID(),
         taskId: id,
         at: now,
-        kind: 'answer',
+        kind: ANSWER_EVENT_KIND,
         data: JSON.stringify({ text: answer }),
       });
     }
