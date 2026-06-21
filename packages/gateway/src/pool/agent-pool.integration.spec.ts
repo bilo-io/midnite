@@ -7,6 +7,7 @@ import { parseConfig, type MidniteConfig, type Status, type TaskBoardEvent } fro
 import * as schema from '../db/schema';
 import { TaskClassifier } from '../agent/classifier.service';
 import { PlannerService } from '../agent/planner.service';
+import type { ReposService } from '../repos/repos.service';
 import { TasksRepository } from '../tasks/tasks.repository';
 import { TasksService } from '../tasks/tasks.service';
 import { TaskEventBus } from '../tasks/task-event-bus';
@@ -100,10 +101,11 @@ function makeHarness(agent: Record<string, unknown> = {}): Harness {
   const events: TaskBoardEvent[] = [];
   bus.subscribe((e) => events.push(e));
 
-  // Lifecycle paths never call the classifier/planner; stubs satisfy the ctor.
+  // Lifecycle paths never call the classifier/planner/repos; stubs satisfy the ctor.
   const classifier = {} as TaskClassifier;
   const planner = {} as PlannerService;
-  const tasks = new TasksService(repo, classifier, planner, bus);
+  const repos = {} as ReposService;
+  const tasks = new TasksService(repo, classifier, planner, bus, repos);
 
   const terminal = makeFakeTerminal();
   const pool = new AgentPoolService(config, tasks);

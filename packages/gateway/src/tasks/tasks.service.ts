@@ -15,6 +15,7 @@ import {
 import { TaskClassifier, type ClassifierImage } from '../agent/classifier.service';
 import { PlannerService } from '../agent/planner.service';
 import { mapWithConcurrency } from '../lib/map-with-concurrency';
+import { ReposService } from '../repos/repos.service';
 import { TasksRepository } from './tasks.repository';
 import { TaskEventBus } from './task-event-bus';
 
@@ -62,7 +63,23 @@ export class TasksService {
     @Inject(TaskClassifier) private readonly classifier: TaskClassifier,
     @Inject(PlannerService) private readonly planner: PlannerService,
     @Inject(TaskEventBus) private readonly bus: TaskEventBus,
+    @Inject(ReposService) private readonly repos: ReposService,
   ) {}
+
+  // Validate a task's repo reference against the registry (Phase 13 B2/Decision §3):
+  // an absent/blank repo is "unassigned" (→ undefined); a non-empty name must
+  // resolve to a known repo, else we reject rather than persist a dangling string
+  // that would silently no-op when resolveCwd later tries to map it to a path.
+  private resolveRepoReference(repo: string | undefined): string | undefined {
+    const name = repo?.trim();
+    if (!name) return undefined;
+    if (!this.repos.findByName(name)) {
+      const known = this.repos.list().map((r) => r.name);
+      const hint = known.length ? ` — known repos: ${known.join(', ')}` : ' — no repos are registered';
+      throw new BadRequestException(`unknown repo "${name}"${hint}`);
+    }
+    return name;
+  }
 
   // Publish a board event after a mutation. `created`/`updated` carry the full
   // task so clients can patch their cache; the web client just invalidates and
@@ -236,6 +253,11 @@ export class TasksService {
   // create can coalesce the whole batch into one board event (createBulk); the
   // task is still persisted and returned. Defaults to broadcasting.
   async createFromPrompt(input: CreateTaskInput, opts: { emit?: boolean } = {}): Promise<Task> {
+    // Validate the repo reference up front so an unknown repo fails fast (before
+    // spending the classify/triage model calls) rather than persisting a dangling
+    // name.
+    const repo = this.resolveRepoReference(input.repo);
+
     // Triage (plan model: ready→todo / not→backlog) and classify (title/kind)
     // run concurrently — both are fail-soft, so neither breaks task creation.
     const [classified, triage] = await Promise.all([
@@ -258,7 +280,7 @@ export class TasksService {
       status: input.status ?? (triage.ready ? 'todo' : 'backlog'),
       priority: clampPriority(input.priority),
       prompt: input.prompt,
-      repo: input.repo ?? null,
+      repo: repo ?? null,
       projectId: input.projectId ?? null,
       agentId: null,
       sessionId: null,
@@ -321,6 +343,10 @@ export class TasksService {
         `bulk request exceeds the ${MAX_BULK_LINES}-line cap (got ${lines.length})`,
       );
     }
+    // The repo is batch-wide, so validate it once: an unknown one fails the whole
+    // request with a single clear error rather than N identical per-line error rows
+    // (createFromPrompt re-validates the same name per line — cheap and idempotent).
+    this.resolveRepoReference(input.repo);
 
     const results = await mapWithConcurrency(
       lines,

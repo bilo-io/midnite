@@ -10,6 +10,7 @@ import type { AgentsService } from '../agents/agents.service';
 import {
   TerminalService,
   buildShellInitCommand,
+  resolveSessionCwd,
   scrubSecretEnv,
   trimRingByBytes,
   type TerminalSubscriber,
@@ -315,6 +316,37 @@ describe('buildShellInitCommand', () => {
     expect(buildShellInitCommand(undefined, '/home/me/proj', '')).toBe(
       "cd '/home/me/proj' && clear\r",
     );
+  });
+});
+
+describe('resolveSessionCwd (cwd precedence)', () => {
+  // Phase 13 B3: pin project workDir → repo → fallback → gateway cwd. Paths are
+  // stored in ~-form and expanded against the given home.
+  const base = { cwd: '/gateway/cwd', home: '/home/me' };
+
+  it('prefers the project work directory over repo and fallback', () => {
+    expect(
+      resolveSessionCwd({
+        ...base,
+        projectWorkDir: '~/proj',
+        repoPath: '~/repo',
+        fallbackWorkDir: '~/fallback',
+      }),
+    ).toBe('/home/me/proj');
+  });
+
+  it('uses the repo path when there is no project work directory', () => {
+    expect(
+      resolveSessionCwd({ ...base, repoPath: '~/repo', fallbackWorkDir: '~/fallback' }),
+    ).toBe('/home/me/repo');
+  });
+
+  it('falls back to the profile work directory when neither project nor repo is set', () => {
+    expect(resolveSessionCwd({ ...base, fallbackWorkDir: '~/fallback' })).toBe('/home/me/fallback');
+  });
+
+  it('falls back to the gateway cwd when nothing is configured (explicit unassigned)', () => {
+    expect(resolveSessionCwd({ ...base })).toBe('/gateway/cwd');
   });
 });
 

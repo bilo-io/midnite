@@ -62,6 +62,29 @@ function shellQuote(path: string): string {
 }
 
 /**
+ * Resolve a session's working directory by precedence (Phase 13 B3 / Decision §4):
+ *   1. the session's project work directory
+ *   2. the session's task repo path (resolved name→path via the repo registry)
+ *   3. the global fallback work directory (set on the profile page)
+ *   4. the gateway's own cwd
+ * The first three are stored in `~`-form and expanded against `home`. Pure/exported
+ * for testing — pins the precedence that was previously implicit in resolveCwd.
+ */
+export function resolveSessionCwd(inputs: {
+  projectWorkDir?: string;
+  repoPath?: string;
+  fallbackWorkDir?: string;
+  cwd: string;
+  home: string;
+}): string {
+  const { projectWorkDir, repoPath, fallbackWorkDir, cwd, home } = inputs;
+  if (projectWorkDir) return expandTilde(projectWorkDir, home);
+  if (repoPath) return expandTilde(repoPath, home);
+  if (fallbackWorkDir) return expandTilde(fallbackWorkDir, home);
+  return cwd;
+}
+
+/**
  * The first line fed to a freshly-spawned session shell: change into the
  * project's working directory, clear the startup noise, and — on first open —
  * launch the preferred agent CLI, so the terminal opens on the agent rooted at
@@ -784,24 +807,25 @@ export class TerminalService implements OnModuleDestroy {
     return this.handles.get(sessionId)?.subscribers.size ?? 0;
   }
 
-  // cwd resolution for a session's PTY, in priority order:
-  //   1. the work directory configured on the session's project (expanded from ~)
-  //   2. the session's task repo (resolved name→path via the repo registry)
-  //   3. the global fallback working directory (set on the profile page)
-  //   4. the gateway's working directory
+  // cwd resolution for a session's PTY. Gathers the candidate directories, then
+  // applies the precedence in the pure {@link resolveSessionCwd} (project workDir →
+  // repo → fallback → gateway cwd). The repo registry is only consulted when no
+  // project workDir wins, matching the precedence (and skipping a needless lookup).
   private resolveCwd(sessionId?: string): string {
+    let projectWorkDir: string | undefined;
+    let repoPath: string | undefined;
     if (sessionId) {
       const task = this.tasks.listTasks().find((t) => t.id === sessionId);
-      if (task?.projectId) {
-        const workDir = this.projects.workDirFor(task.projectId);
-        if (workDir) return expandTilde(workDir, homedir());
-      }
-      const repo = task?.repo ? this.repos.findByName(task.repo) : undefined;
-      if (repo) return expandTilde(repo.path, homedir());
+      if (task?.projectId) projectWorkDir = this.projects.workDirFor(task.projectId);
+      if (!projectWorkDir && task?.repo) repoPath = this.repos.findByName(task.repo)?.path;
     }
-    const fallback = this.agents.getDefaultWorkDir();
-    if (fallback) return expandTilde(fallback, homedir());
-    return process.cwd();
+    return resolveSessionCwd({
+      projectWorkDir,
+      repoPath,
+      fallbackWorkDir: this.agents.getDefaultWorkDir(),
+      cwd: process.cwd(),
+      home: homedir(),
+    });
   }
 
   private pushRing(handle: PtyHandle, frame: OutputFrame): void {
