@@ -7,6 +7,7 @@ import { parseConfig, type MidniteConfig, type Status, type TaskBoardEvent } fro
 import * as schema from '../db/schema';
 import { TaskClassifier } from '../agent/classifier.service';
 import { PlannerService } from '../agent/planner.service';
+import type { UrlContextService } from '../agent/url-context.service';
 import { TasksRepository } from '../tasks/tasks.repository';
 import { TasksService } from '../tasks/tasks.service';
 import { TaskEventBus } from '../tasks/task-event-bus';
@@ -110,7 +111,8 @@ function makeHarness(agent: Record<string, unknown> = {}): Harness {
 
   const terminal = makeFakeTerminal();
   const pool = new AgentPoolService(config, tasks);
-  const runner = new AgentRunnerService(config, pool, tasks, terminal.service);
+  const urlContext = { enrich: async (p: string) => p } as unknown as UrlContextService;
+  const runner = new AgentRunnerService(config, pool, tasks, terminal.service, urlContext);
   const scheduler = new AgentPoolScheduler(config, tasks, pool, runner);
 
   let order = 0;

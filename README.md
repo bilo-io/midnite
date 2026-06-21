@@ -138,6 +138,14 @@ of two ways:
   `409` when every slot is busy. Note that merely `PATCH`-ing a task's status to
   `wip` only moves the column; it does **not** spawn a session.
 
+When a task is started, any links in its prompt are folded into the agent's seed
+prompt as a **"Linked context"** block: GitHub issue/PR URLs resolve via `gh`
+(your auth, so private repos work) with an anonymous `api.github.com` fallback,
+and other URLs are fetched through the SSRF guard (private/loopback ranges
+blocked) and reduced to readable text. It's best-effort and fail-open — a fetch
+that errors is skipped, never blocking the run — and capped to a byte budget so a
+huge thread can't blow the model's context.
+
 The session web window streams a live PTY over WebSocket (`/ws/terminal`). The
 PTY is spawned on demand when a window opens for an active session and is shared
 across reconnects. `terminal` fields control it:
