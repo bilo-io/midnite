@@ -61,7 +61,8 @@ export function DownloadPicker() {
   const [detected, setDetected] = useState<Platform | null>(null);
 
   useEffect(() => {
-    const uaData = (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData;
+    const uaData = (navigator as Navigator & { userAgentData?: { platform?: string } })
+      .userAgentData;
     setDetected(detectPlatform(navigator.userAgent, uaData?.platform));
   }, []);
 
@@ -77,47 +78,47 @@ export function DownloadPicker() {
       <div
         data-testid="featured"
         data-platform={featured}
-        className="rounded-xl border border-border/60 bg-card/40 p-6 text-center"
+        className="gradient-border overflow-hidden rounded-2xl"
       >
-        <p className="text-sm text-muted-foreground">
-          {detected ? (
-            <>
-              Detected <span className="font-medium text-foreground">{PLATFORM_LABELS[detected]}</span>
-            </>
-          ) : (
-            'Choose your platform'
-          )}
-        </p>
+        <div className="rounded-2xl border border-border/60 bg-card/50 p-8 text-center backdrop-blur">
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            {detected ? 'Recommended for you' : 'Choose your platform'}
+          </p>
+          <p className="mt-1 text-lg font-semibold tracking-tight">{PLATFORM_LABELS[featured]}</p>
 
-        {featuredAvailable ? (
-          <div className="mt-4 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            {featuredTargets.map((t, i) => (
-              <DownloadButton key={t.label} target={t} primary={i === 0} />
-            ))}
-          </div>
-        ) : (
-          <div className="mt-4">
-            <Button size="lg" variant="outline" disabled>
-              <DownloadIcon className="h-4 w-4" />
-              {PLATFORM_LABELS[featured]}
-              <ComingSoon />
-            </Button>
-            <p className="mt-3 text-sm text-muted-foreground">
-              {PLATFORM_LABELS[featured]} builds aren&apos;t ready yet — grab macOS below, or check back soon.
-            </p>
-          </div>
-        )}
+          {featuredAvailable ? (
+            <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              {featuredTargets.map((t, i) => (
+                <DownloadButton key={t.label} target={t} primary={i === 0} />
+              ))}
+            </div>
+          ) : (
+            <div className="mt-6">
+              <Button size="lg" variant="outline" disabled>
+                <DownloadIcon className="h-4 w-4" />
+                {PLATFORM_LABELS[featured]}
+                <ComingSoon />
+              </Button>
+              <p className="mt-3 text-sm text-muted-foreground">
+                {PLATFORM_LABELS[featured]} builds aren&apos;t ready yet — grab macOS below, or check
+                back soon.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Every platform, so nobody is locked to the one they're on. */}
-      <div className="mt-10">
-        <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">All platforms</h3>
-        <ul className="mt-4 divide-y divide-border/60 overflow-hidden rounded-xl border border-border/60">
+      <div className="mt-12">
+        <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          All platforms
+        </h3>
+        <ul className="mt-4 divide-y divide-border/60 overflow-hidden rounded-xl border border-border/60 bg-card/30">
           {PLATFORM_ORDER.map((p) => (
             <li
               key={p}
               data-platform={p}
-              className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
+              className="flex flex-col gap-3 p-4 transition-colors hover:bg-card/60 sm:flex-row sm:items-center sm:justify-between"
             >
               <span className="font-medium">{PLATFORM_LABELS[p]}</span>
               <div className="flex flex-wrap gap-2">

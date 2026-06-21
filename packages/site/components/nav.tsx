@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { GitBranch } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { GITHUB_URL } from '@/lib/site';
 
 const LINKS = [
@@ -34,7 +35,8 @@ export function Nav() {
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          <ThemeToggle />
           <a
             href={GITHUB_URL}
             target="_blank"
