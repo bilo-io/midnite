@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 14 Theme B1 (part): workflow credential vault — encrypted store + REST (PR #81)
+
+A secure home for the secrets Theme C integration nodes will reference by id. Lands the security-critical store; consumers follow.
+
+- [x] **shared** — `workflow-credential.ts`: secret-free public view (id/name/type/timestamps), per-type secret payload as a discriminated union (`http-bearer`/`http-basic`/`http-header`/`slack`/`smtp`), create/list responses. `type` = the payload discriminant (one home).
+- [x] **gateway** — `workflow_credentials` table (migration **0032**); repo AES-256-GCM-encrypts the JSON secret blob before disk and decrypts only for server-side resolve; `WorkflowCredentialsService` (`list`/`create`/`remove`/`resolve`); thin `GET/POST/DELETE /workflow-credentials`. Reuses the existing `CryptoService` (no second crypto path).
+- [x] **Fail-closed** — `create` rejected with 400 + WARN when `MIDNITE_SECRET_KEY` is unset; secrets unusable without the key (same contract as provider keys, Phase 7 A1).
+- [x] **Write-only secrets** — list/create return names + types only; plaintext never serialised to a client. `service.resolve(id)` returns the decrypted, validated payload for executors, inside the gateway.
+- [x] 10 service tests (real `:memory:` SQLite + `CryptoService`): round-trip via resolve, type-from-discriminant, encrypted-at-rest (`v1:` row, no plaintext), never-leak (list+create), delete, unknown-id, both fail-closed paths. Full gateway suite green (94 files / 604 tests — also proves AppModule boots). `moon ci` green on #81.
+- ↪️ **Follow-ons (B1 remainder):** HTTP-node `credentialId` consumption in the engine (`WorkflowNode.credentialId` + `service.resolve()` already exist) and the web credentials manager + node-config picker; then **B2** (OAuth2). Gates **Theme C** integrations.
+
 ## 2026-06-22 — Phase 29 Theme B: root CHANGELOG.md (PR #80)
 
 midnite had no user-facing release history — `0.0.0` everywhere, one `v0.0.0` tag, changes living only in commit subjects and `todo/done.md` (a phase tracker, different audience). Theme B seeds the curated changelog the release tooling writes into.
