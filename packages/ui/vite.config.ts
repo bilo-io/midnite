@@ -3,8 +3,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
 import dts from 'vite-plugin-dts';
-// `vitest/config`'s defineConfig types the `test` block alongside Vite's options.
-import { defineConfig } from 'vitest/config';
+import { defineConfig } from 'vite';
 
 const here = fileURLToPath(new URL('.', import.meta.url));
 const r = (p: string) => resolve(here, p);
@@ -67,7 +66,16 @@ export default defineConfig({
     react(),
     dts({
       include: ['src'],
-      exclude: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'src/**/*.spec.ts', 'src/**/*.spec.tsx'],
+      exclude: [
+        'src/**/*.test.ts',
+        'src/**/*.test.tsx',
+        'src/**/*.spec.ts',
+        'src/**/*.spec.tsx',
+        // Stories + MDX docs are catalog inputs, never library build entries —
+        // keep them out of declaration emit (Theme D).
+        'src/**/*.stories.tsx',
+        'src/**/*.mdx',
+      ],
     }),
     copyTokensCss(),
     preserveUseClient(),
@@ -89,9 +97,5 @@ export default defineConfig({
         warn(warning);
       },
     },
-  },
-  test: {
-    environment: 'node',
-    include: ['src/**/*.{test,spec}.{ts,tsx}'],
   },
 });
