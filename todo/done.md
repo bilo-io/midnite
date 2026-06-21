@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 29 Theme B: root CHANGELOG.md (PR #80)
+
+midnite had no user-facing release history — `0.0.0` everywhere, one `v0.0.0` tag, changes living only in commit subjects and `todo/done.md` (a phase tracker, different audience). Theme B seeds the curated changelog the release tooling writes into.
+
+- [x] Root [`CHANGELOG.md`](../CHANGELOG.md) in **Keep a Changelog** format: `## [Unreleased]` (curated, grouped highlights heading toward `0.1.0`) + `## [0.0.0] - 2026-06-18` scaffold baseline + compare/tag links.
+- [x] Preamble states the **lockstep** rule (shared `MAJOR.MINOR`, independent `PATCH`) and that release sections are cut via `/release-prep`→`/release-complete` (Themes C/D), kept separate from `done.md`. README links it.
+- [x] Scaffold + high-level seed only (Decision §7); precise per-release notes land when the first release is cut. Docs-only — typecheck + lint green. Phase 29: A2 + B done; A1/A3 (RELEASING.md) and C/D (skills) remain.
+
 ## 2026-06-22 — Phase 12 Theme D: full n8n-style expression editor (PR #76)
 
 Phase 12 shipped the `{{ }}` engine (A–C) and the ƒx toggle (D starter, #63), but references were still hand-typed with no discovery or feedback. This finishes Theme D's headline UX: references become discoverable, insertable, and previewable. Web-only; the grammar/resolver stays the shared contract — the new code only *navigates* it.
