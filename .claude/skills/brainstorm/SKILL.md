@@ -1,4 +1,5 @@
 ---
+name: brainstorm
 description: Interactively brainstorm a brand-new todo/ phase — scan existing phases, show a status overview, riff on proposals together, then write the phase doc.
 argument-hint: "[optional: a topic/theme to seed the new phase, e.g. 'mobile app' or 'observability']"
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, AskUserQuestion, TodoWrite
@@ -9,7 +10,7 @@ You are running the **brainstorm** workflow for the **midnite** repo: an interac
 ## Context you must respect
 
 - Phase plans live in **`todo/`** (note: *not* `docs/todo/`), one file per phase: `phase-N-<slug>.md`. `docs/INITIAL_PLAN.md` is the design source of truth; `todo/README.md` has the conventions; `done.md` is the append-only completed log.
-- Match the **house style** of the existing phase docs (read a couple first — e.g. [`todo/phase-9-office-visual-overhaul.md`](../../todo/phase-9-office-visual-overhaul.md), [`todo/phase-11-public-site-rewrite.md`](../../todo/phase-11-public-site-rewrite.md)): a `# Phase N — Title` heading; framing **blockquotes** up top (what this builds on + scope guardrails); **`S`/`M`/`L`** effort tags; work grouped into **Themes** with checkbox items; a **Files this phase touches** map; a **Verification** checklist; a **Decisions / open questions** section with recommendations.
+- Match the **house style** of the existing phase docs (read a couple first — e.g. [`todo/phase-9-office-visual-overhaul.md`](../../../todo/phase-9-office-visual-overhaul.md), [`todo/phase-11-public-site-rewrite.md`](../../../todo/phase-11-public-site-rewrite.md)): a `# Phase N — Title` heading; framing **blockquotes** up top (what this builds on + scope guardrails); **`S`/`M`/`L`** effort tags; work grouped into **Themes** with checkbox items; a **Files this phase touches** map; a **Verification** checklist; a **Decisions / open questions** section with recommendations.
 - Respect `CLAUDE.md` (package boundaries, gateway layering, the "shared is the contract" rule) — proposals must fit the architecture, not fight it.
 - **Checkboxes** start unchecked (`- [ ]`) in a fresh plan — this is net-new work, nothing is done yet.
 

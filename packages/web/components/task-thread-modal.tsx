@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Ban, ExternalLink, Play, Plus, SquareTerminal, X } from 'lucide-react';
+import { Ban, Check, ExternalLink, Play, Plus, SquareTerminal, X } from 'lucide-react';
 import {
+  ANSWER_EVENT_KIND,
   SOURCE_KIND_LABEL,
+  isAnsweredQuestion,
   parseGithubPr,
   parseGithubRepo,
   type Project,
@@ -273,6 +275,12 @@ export function TaskThreadModal({ task, projects, onClose }: Props) {
                   {KIND_LABEL[kind]}
                 </span>
                 <span className="shrink-0">{STATUS_LABEL[task.status]}</span>
+                {isAnsweredQuestion(task) ? (
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded bg-success/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-success">
+                    <Check aria-hidden className="h-3 w-3" />
+                    Answered
+                  </span>
+                ) : null}
                 {task.repo ? (
                   <>
                     <span aria-hidden>·</span>
@@ -494,9 +502,11 @@ function Timeline({ events }: { events: TaskEvent[] }) {
             ) : null}
           </div>
           <div className="min-w-0 flex-1 pb-1">
-            <p className="text-sm font-medium leading-snug">{ev.kind === 'answer' ? 'Answer' : ev.kind}</p>
+            <p className="text-sm font-medium leading-snug">
+              {ev.kind === ANSWER_EVENT_KIND ? 'Answer' : ev.kind}
+            </p>
             <p className="text-[11px] text-muted-foreground">{formatTime(ev.at)}</p>
-            {ev.kind === 'answer' && typeof ev.data?.text === 'string' ? (
+            {ev.kind === ANSWER_EVENT_KIND && typeof ev.data?.text === 'string' ? (
               // A question answered inline at intake — render the markdown answer
               // rather than dumping the event payload as JSON.
               <div className="mt-1 rounded-md border border-border/60 bg-muted/30 px-3 py-2">

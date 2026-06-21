@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { ChevronDown, Columns3, List, ListTree, Plus, type LucideIcon } from 'lucide-react';
-import type { Project, Repo, Status, Task } from '@midnite/shared';
+import { isAnsweredQuestion, type Project, type Repo, type Status, type Task } from '@midnite/shared';
 import { deleteTask, startTask, stopTask, updateTaskStatus } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { useBulkSelection } from '@/lib/use-bulk-selection';
@@ -65,6 +65,14 @@ const STATUS_FILTERS: FilterOption[] = COLUMNS.map((c) => ({
   label: c.label,
   hue: `var(${c.hueVar})`,
 }));
+
+// Single-toggle filter to surface inline-answered questions (Phase 15 Theme C),
+// which resolve to Done and so are otherwise mixed in with completed work.
+const ANSWERED_PARAM = 'answered';
+const ANSWERED_VALUE = '1';
+const ANSWERED_FILTERS: FilterOption[] = [
+  { value: ANSWERED_VALUE, label: 'Answered', hue: 'var(--success)' },
+];
 
 // Sentinel project-filter value for tasks with no project. A UUID can't collide.
 const UNASSIGNED = 'none';
@@ -288,8 +296,12 @@ export function TasksView({
   const rawTags = searchParams.get('tags');
   const activeTags = new Set((rawTags ? rawTags.split(',') : []).filter((t) => allTags.includes(t)));
 
+  // "Answered" toggle: narrow to inline-answered questions (Phase 15 Theme C).
+  const answeredOnly = searchParams.get(ANSWERED_PARAM) === ANSWERED_VALUE;
+
   const q = (searchParams.get('q') ?? '').trim().toLowerCase();
   const filteredTasks = localTasks
+    .filter((t) => !answeredOnly || isAnsweredQuestion(t))
     .filter((t) => {
       if (activeProjects.size === 0) return true;
       if (t.projectId !== undefined && activeProjects.has(t.projectId)) return true;
@@ -332,6 +344,7 @@ export function TasksView({
           {projects.length > 0 && <ProjectMultiSelect options={projectFilters} />}
           <FilterPills options={STATUS_FILTERS} paramKey="status" />
           {tagFilters.length > 0 && <FilterPills options={tagFilters} paramKey="tags" />}
+          <FilterPills options={ANSWERED_FILTERS} paramKey={ANSWERED_PARAM} hideAll />
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">

@@ -1,4 +1,5 @@
 ---
+name: exec
 description: Pick an unblocked todo/ task, build it in a worktree, screenshot visual changes with Playwright, open a PR, drive CI green, merge.
 argument-hint: "[optional: phase number or task hint]"
 allowed-tools: Bash, Read, Edit, Write, Glob, Grep, AskUserQuestion, TodoWrite, Agent, ToolSearch

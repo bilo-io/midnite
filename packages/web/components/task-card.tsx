@@ -1,4 +1,5 @@
-import type { Task } from '@midnite/shared';
+import { Check } from 'lucide-react';
+import { isAnsweredQuestion, type Task } from '@midnite/shared';
 import { ProjectTag } from '@/components/project-tag';
 import { RepoChip } from '@/components/repo-chip';
 import { SourceIcon } from '@/components/source-icon';
@@ -60,6 +61,14 @@ export function TaskCard({
           />
           {KIND_LABELS[kind]}
         </span>
+        {isAnsweredQuestion(task) ? (
+          // A question resolved inline at intake (Phase 15 Theme C) — distinguish
+          // it from ordinary completed work sitting in the Done column.
+          <span className="inline-flex items-center gap-1 rounded bg-success/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-success">
+            <Check aria-hidden className="h-3 w-3" />
+            Answered
+          </span>
+        ) : null}
         {priorityBadge ? (
           <span
             className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${priorityBadge.className}`}

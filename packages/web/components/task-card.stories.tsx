@@ -3,6 +3,7 @@ import { expect, fn, userEvent, within } from 'storybook/test';
 
 import {
   projectTagInfo,
+  taskAnsweredQuestion,
   taskBug,
   taskChore,
   taskFeature,
@@ -45,6 +46,15 @@ export const Bug: Story = {
 
 export const Question: Story = {
   args: { task: taskQuestion },
+};
+
+/** A question answered inline at intake — resolved to Done with an "Answered" badge. */
+export const AnsweredQuestion: Story = {
+  args: { task: taskAnsweredQuestion },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText('Answered')).toBeInTheDocument();
+  },
 };
 
 export const Chore: Story = {

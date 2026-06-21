@@ -1,4 +1,5 @@
 ---
+name: git-report
 description: Git activity report for the repo over a day/week/month — merged PRs (linked), phases tackled + per-phase diff, and overall phase progress, as tables + a chart.
 argument-hint: "[today | yesterday | YYYY-MM-DD | this-week | this-month | YYYY-MM-DD..YYYY-MM-DD]"
 allowed-tools: Bash, Read, Glob, Grep, AskUserQuestion, Artifact
