@@ -1,11 +1,15 @@
 // Theme runtime entry — exposed as `@midnite/ui/theme`.
 //
-// Phase 25 Theme A reserves this subpath so the package + build are wired before
-// the runtime moves. The actual theme runtime — ThemeProvider, useTheme, the
-// no-flash inline script, and theme-toggle — migrates here from
-// packages/web/app/theme in Theme B, so any consumer gets theming for free.
+// The provider + hook are a client component ('use client' in ./theme/theme-context);
+// the Vite build preserves that directive on dist/theme.js so a Next.js (RSC)
+// consumer gets a real client boundary. The no-flash init script is a plain
+// string for the document <head> (runs before React).
 
-/** The theme modes `@midnite/ui` supports — the runtime that consumes them lands in Theme B. */
+export { ThemeProvider, useTheme } from './theme/theme-context';
+export type { ThemePreference, ResolvedTheme } from './theme/theme-context';
+export { THEME_STORAGE_KEY, themeInitScript } from './theme/theme-script';
+
+/** The theme modes `@midnite/ui` supports (== `ThemePreference`). */
 export const THEME_MODES = ['light', 'dark', 'system', 'time'] as const;
 
 export type ThemeMode = (typeof THEME_MODES)[number];
