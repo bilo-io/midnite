@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 6 P11: workflow editor autosave (PR #43)
+
+Editor edits only persisted on an explicit Save; this debounces a save ~1.5s after the last dirty edit so work isn't lost. While here, the Phase 6 follow-ups were reconciled — minimap/zoom + drag-from-palette were already shipped, P8 (logic nodes + `{{expr}}`) was closed by Phase 12, and P7/P9/P10 are tracked under Phase 14.
+
+- [x] **`use-autosave` hook** ([`lib/use-autosave.ts`](../packages/web/lib/use-autosave.ts)): subscribes to the editor store, debounces, and calls `save()` after a quiet interval. Pauses while a save is in flight or a run is active (`run()` saves first — no double-POST); selection-only changes never trigger it; `save`/`paused` read through refs so it never re-subscribes.
+- [x] **Save-status indicator** ([`workflow-toolbar.tsx`](../packages/web/components/workflow-toolbar.tsx)): an `aria-live` "Saving… / Unsaved changes / All changes saved" label; the manual Save button stays as an escape hatch.
+- [x] **Revision guard** (self-review): `save()` snapshots the graph before its `await` but `markSaved()` cleared `dirty` unconditionally — an edit landing mid-save was marked saved-but-not-persisted (the walk-away case). The store now tracks a monotonic `revision`; `markSaved(atRevision)` clears `dirty` only if none landed since, else it persists and autosave re-fires.
+- [x] Tests: `use-autosave.test.ts` (5, fake timers — debounce/coalesce/paused/selection/clean) + `workflow-store.test.ts` (+3 revision-guard). `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #43 (web 38 files / 165 tests). **Phase 6 P11 remaining:** run-history replay, templates (CLI `workflow` commands → Phase 14).
+
 ## 2026-06-21 — Phase 16 Theme C complete: web paste-list modal (PR #42)
 
 The web client for plural intake — paste a multi-line list into the New task modal and create one task per line in a single batch, consuming the Theme A API (PR #40). Theme C is ✅ DONE; only Theme B (CLI `add --bulk`) remains in Phase 16.
