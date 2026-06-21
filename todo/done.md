@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 14 Theme A: live run streaming via incremental event reducer (PR #72)
+
+The workflow run panel was half-wired — the hook opened `/ws/workflows` but re-pulled the whole run over REST on every event, so it was effectively still polling. Theme A finishes the live path so a running workflow updates straight off the event stream.
+
+- [x] **`shared` — pure `applyWorkflowEvent(run, event)` reducer** (+ `isRunTerminal`) in `workflow-run-reducer.ts`: folds one `WorkflowEvent` into a run snapshot (start → per-node transitions → finish), never mutating the input. Lives in `shared` so the web hook **and** the future CLI `--watch` (Theme D) share it, and liveness is testable without a browser (the doc's explicit ask). Fixtures-only unit test (transitions, purity, run-mismatch, `run.failed` vs `run.finished`, full fold).
+- [x] **`web` — `use-workflow-run.ts` folds events incrementally** instead of refetching per message. Node statuses, outputs, and the canvas colouring update live; the run-output panel reads the same `run.nodeRuns` so it updates for free. Polling is the explicit fallback when the socket is down.
+- [x] **REST kept to four roles**: initial seed (`runWorkflow` returns all nodes `pending`), one **connect-time backfill**, the reconnect/poll fallback, and a single reconcile on `run.failed` (no run body in the event). A terminal-state guard stops a slow backfill from clobbering the final run. Hook test drives a fake WebSocket to prove no per-event refetch.
+- ↪️ **Latent bug fixed:** the run starts server-side before the WS handshake completes and the gateway has no event replay, so a trigger-only / instant run finished before the client subscribed and the old code hung at `running` forever. The connect-time backfill resolves it.
+- [x] `:typecheck` · `:lint` · `:test` green across the graph (web 252, gateway 90, ui 14, cli 2, shared 316); `moon ci` green on PR #72. No static visual change (only update *timing*), so no screenshots.
+
+**Theme A complete.** Remaining Phase 14: **B** (credential vault) → **C** (integrations), with **D** (CLI parity, reuses this reducer for `--watch`) and **E** (editor polish) sliceable in parallel.
+
 ## 2026-06-22 — Phase 19 Theme A: setup-readiness model + `GET /setup/status` (PR #73)
 
 The substrate for first-run onboarding — a single "is this install set up?" signal the wizard / soft nudge / status panel (Themes B–D) will all key off. Model + endpoint only; no UI yet.

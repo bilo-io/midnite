@@ -23,15 +23,15 @@
 
 ---
 
-## Theme A — Live run streaming — **M**
+## Theme A — Live run streaming — **M** ✅ (PR #72)
 
 > **Data flow / `{{expr}}` templating is Phase 12, not here.** The expression engine ([`expression.ts`](../packages/shared/src/expression.ts)) already shipped — `resolveExpression` / `resolveParams`, a typed `ExpressionError`, and the `expressionable` field marker (PR #27). Wiring it through the engine (resolve-before-execute), the `logic.setData` / reshape / storage nodes, and the editor's ƒx affordance are all [phase-12-workflow-expressions.md](phase-12-workflow-expressions.md) (Themes B–F). **Phase 14 consumes that work** — every integration node in Theme C templates its params off upstream output once Phase 12 lands. Do not rebuild the resolver or re-add a `logic.setData` node.
 
 What's left on the **live-updates** side — which Phase 12 explicitly leaves out of scope (its P7) — is finishing the half-wired WS stream so the run panel updates without re-polling:
 
-- [ ] Rework [`use-workflow-run.ts`](../packages/web/lib/use-workflow-run.ts) to **apply `WorkflowEvent`s incrementally** to local run state (start → per-node transitions → finish) instead of re-fetching on every message; keep REST as the initial load + reconnect/backfill path only.
-- [ ] Run-output panel updates node statuses live from the event stream; polling becomes the explicit fallback when the socket is down.
-- [ ] Test the event→state reducer in isolation (shared event fixtures) so liveness is verifiable without a browser. *(Reused by the CLI `--watch` in Theme D.)*
+- [x] Rework [`use-workflow-run.ts`](../packages/web/lib/use-workflow-run.ts) to **apply `WorkflowEvent`s incrementally** to local run state (start → per-node transitions → finish) instead of re-fetching on every message; keep REST as the initial load + reconnect/backfill path only.
+- [x] Run-output panel updates node statuses live from the event stream; polling becomes the explicit fallback when the socket is down.
+- [x] Test the event→state reducer in isolation (shared event fixtures) so liveness is verifiable without a browser. *(Reused by the CLI `--watch` in Theme D.)*
 
 ---
 
