@@ -34,6 +34,9 @@ export function useTaskNotifications(): void {
         lastStatus.current.delete(event.id);
         return;
       }
+      // Bulk creates land tasks in backlog/todo (never a notify-worthy status)
+      // and carry no single task — they're a board-refresh signal, skip them.
+      if (event.type === 'tasks.bulkCreated') return;
       const { task } = event;
       const prev = lastStatus.current.get(task.id);
       lastStatus.current.set(task.id, task.status);
