@@ -14,6 +14,7 @@ A lightweight place to track what's been done and what's outstanding, without le
 - When an item is finished, **move it** from its phase file into `done.md` with a date — don't just tick the box in place. Keeps the phase files focused on what's left.
 - New unplanned work goes into the relevant phase file (or `phase-5-polish.md` if it doesn't fit anywhere else).
 - Resolved open decisions: update the `Status:` line in `open-decisions.md` and copy the resolution into `done.md`.
+- **Adding a new phase file: claim the number in the [Quick links](#quick-links) index in the *same commit*.** Phase docs get added from parallel sessions, so the next free number isn't reliable until it's listed here — the index is the source of truth for which numbers are taken. Pick the lowest unused number, add the `phase-N-*.md` file and its index line together, and you won't collide with a doc another session is writing.
 
 ## Quick links
 
