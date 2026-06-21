@@ -2,8 +2,8 @@
 import { readFile } from 'node:fs/promises';
 import { Command } from 'commander';
 import Table from 'cli-table3';
-import { bulkExitCode, bulkResultRows, bulkSummaryLine } from './bulk';
-import { createClient, parseStatus, resolveBaseUrl, type TaskDefaults } from './client';
+import { bulkExitCode, bulkResultRows, bulkSummaryLine } from './bulk.js';
+import { createClient, parseStatus, resolveBaseUrl, type TaskDefaults } from './client.js';
 
 const program = new Command();
 

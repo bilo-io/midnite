@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createClient, parseStatus, resolveBaseUrl } from './client';
+import { createClient, parseStatus, resolveBaseUrl } from './client.js';
 
 const TASK = {
   id: 't1',

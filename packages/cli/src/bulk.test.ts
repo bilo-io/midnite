@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { BulkCreateTaskResponse } from '@midnite/shared';
-import { bulkExitCode, bulkResultRows, bulkSummaryLine } from './bulk';
+import { bulkExitCode, bulkResultRows, bulkSummaryLine } from './bulk.js';
 
 const RES: BulkCreateTaskResponse = {
   results: [
