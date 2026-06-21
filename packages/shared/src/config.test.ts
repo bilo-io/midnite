@@ -30,6 +30,27 @@ describe('agent pool config defaults', () => {
   });
 });
 
+describe('terminal.mode backend', () => {
+  it('defaults to pty', () => {
+    const config = parseConfig({ agent: {}, terminal: {}, knowledge: {}, gateway: {} });
+    expect(config.terminal.mode).toBe('pty');
+  });
+
+  it('accepts the durable tmux backend', () => {
+    const config = parseConfig({ agent: {}, terminal: { mode: 'tmux' }, knowledge: {}, gateway: {} });
+    expect(config.terminal.mode).toBe('tmux');
+  });
+
+  it('rejects the dropped warp/iterm backends (Phase 17 §C1)', () => {
+    expect(() =>
+      parseConfig({ agent: {}, terminal: { mode: 'warp' }, knowledge: {}, gateway: {} }),
+    ).toThrow();
+    expect(() =>
+      parseConfig({ agent: {}, terminal: { mode: 'iterm' }, knowledge: {}, gateway: {} }),
+    ).toThrow();
+  });
+});
+
 describe('agent.provider (LLM provider) normalisation', () => {
   it('defaults to anthropic', () => {
     const config = parseConfig({ agent: {}, terminal: {}, knowledge: {}, gateway: {} });

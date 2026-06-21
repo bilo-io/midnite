@@ -41,7 +41,13 @@ export const AgentConfigSchema = z.object({
 });
 
 export const TerminalConfigSchema = z.object({
-  mode: z.enum(['pty', 'tmux', 'warp', 'iterm']).default('pty'),
+  // The process backend. `pty` (default) spawns each session in a node-pty the
+  // gateway owns — it dies with the gateway. `tmux` runs each session in a
+  // detached tmux session that outlives the gateway, so an in-flight agent run
+  // survives a restart (the gateway reattaches on boot). `warp`/`iterm` were
+  // dropped (Phase 17 §3): native windows bypass the browser stream, approval
+  // routing, and the ring buffer, so they never composed with the model.
+  mode: z.enum(['pty', 'tmux']).default('pty'),
   layout: z.enum(['split', 'tabs', 'windows']).default('split'),
   /** Command spawned for an on-demand session PTY. Defaults to an interactive login shell. */
   command: z.string().optional(),
