@@ -96,6 +96,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
     setSaving(true);
     setError(null);
     const state = store.getState();
+    const atRevision = state.revision;
     const graph = state.toGraph();
     try {
       await updateWorkflow(workflow.id, {
@@ -105,7 +106,9 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
         nodes: graph.nodes,
         edges: graph.edges,
       });
-      state.markSaved();
+      // Only mark clean if no edit landed during the round-trip; otherwise the
+      // edit stays dirty and autosave re-fires (it isn't silently lost).
+      store.getState().markSaved(atRevision);
       invalidateData();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to save workflow');
