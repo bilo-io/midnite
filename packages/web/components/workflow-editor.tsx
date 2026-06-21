@@ -195,7 +195,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
                 configOpen ? 'w-80' : 'w-0',
               )}
             >
-              <NodeConfigPanel workflowId={workflow.id} />
+              <NodeConfigPanel workflowId={workflow.id} run={runner.run} />
             </div>
           </div>
 

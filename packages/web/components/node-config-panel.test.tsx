@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
-import { WorkflowSchema, type Workflow } from '@midnite/shared';
+import { fireEvent, render, screen, within } from '@testing-library/react';
+import { WorkflowRunSchema, WorkflowSchema, type Workflow, type WorkflowRun } from '@midnite/shared';
 
 import { NodeConfigPanel } from './node-config-panel';
 import { ConfirmProvider } from './confirm-dialog';
@@ -55,6 +55,84 @@ describe('NodeConfigPanel — ƒx toggle', () => {
     setup('n2'); // n2.url = '{{ $json.id }}'
     const expr = screen.getByLabelText('URL expression');
     expect(expr).toHaveValue('{{ $json.id }}');
+  });
+});
+
+// A two-node workflow (Fetch → Claude) with a finished run, so the selected
+// node's expression context has both its own `$json` input and the upstream
+// `$node["Fetch"]` output to explore.
+function setupWithRun(selectId: string) {
+  const workflow: Workflow = WorkflowSchema.parse({
+    id: 'wf-1',
+    name: 'Test',
+    trigger: { type: 'manual' },
+    nodes: [
+      { id: 'n1', type: 'http.request', position: { x: 0, y: 0 }, label: 'Fetch', params: {} },
+      { id: 'n2', type: 'http.request', position: { x: 120, y: 0 }, label: 'Claude', params: {} },
+    ],
+    edges: [{ id: 'e1', source: 'n1', sourcePort: 'main', target: 'n2', targetPort: 'main' }],
+    createdAt: '2026-06-21T00:00:00.000Z',
+    updatedAt: '2026-06-21T00:00:00.000Z',
+  });
+  const run: WorkflowRun = WorkflowRunSchema.parse({
+    id: 'r1',
+    workflowId: 'wf-1',
+    status: 'succeeded',
+    triggerSource: 'manual',
+    startedAt: '2026-06-21T00:00:00.000Z',
+    nodeRuns: [
+      { id: 'nr1', runId: 'r1', nodeId: 'n1', nodeType: 'http.request', status: 'succeeded', output: { body: { title: 'Bug' } } },
+      { id: 'nr2', runId: 'r1', nodeId: 'n2', nodeType: 'http.request', status: 'succeeded', input: { body: { title: 'Bug' } } },
+    ],
+  });
+  const store = createWorkflowStore(workflow);
+  store.getState().select(selectId);
+  render(
+    <WorkflowStoreContext.Provider value={store}>
+      <ConfirmProvider>
+        <NodeConfigPanel workflowId="wf-1" run={run} />
+      </ConfirmProvider>
+    </WorkflowStoreContext.Provider>,
+  );
+  return store;
+}
+
+describe('NodeConfigPanel — expression editor', () => {
+  const enterFx = () => {
+    fireEvent.click(screen.getByLabelText('Toggle expression mode for URL'));
+    return screen.getByLabelText('URL expression');
+  };
+
+  it('previews what an expression resolves to from the last run', () => {
+    setupWithRun('n2'); // $json = n2's input = { body: { title: 'Bug' } }
+    const input = enterFx();
+    fireEvent.change(input, { target: { value: '{{ $json.body.title }}' } });
+    expect(screen.getByText('Bug')).toBeInTheDocument();
+  });
+
+  it('shows the resolution error for a missing reference', () => {
+    setupWithRun('n2');
+    const input = enterFx();
+    fireEvent.change(input, { target: { value: '{{ $json.body.missing.x }}' } });
+    expect(screen.getByText(/does not resolve/i)).toBeInTheDocument();
+  });
+
+  it('autocompletes object keys after a parent path', () => {
+    setupWithRun('n2');
+    const input = enterFx();
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: '{{ $json.', selectionStart: 9 } });
+    const list = screen.getByRole('listbox', { name: /URL expression suggestions/i });
+    expect(within(list).getByText('body')).toBeInTheDocument();
+  });
+
+  it('inserts a reference from the data picker', () => {
+    const store = setupWithRun('n2');
+    enterFx();
+    fireEvent.click(screen.getByLabelText('Toggle data picker for URL'));
+    // The upstream node is explorable by label, and its root inserts a reference.
+    fireEvent.click(screen.getByTitle('Insert $node["Fetch"]'));
+    expect(store.getState().nodes.find((n) => n.id === 'n2')!.data.params.url).toBe('{{ $node["Fetch"] }}');
   });
 });
 
