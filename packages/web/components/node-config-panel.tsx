@@ -136,10 +136,12 @@ function ExpressionInput({
   value,
   onChange,
   placeholder,
+  fieldLabel,
 }: {
   value: unknown;
   onChange: (v: unknown) => void;
   placeholder?: string;
+  fieldLabel: string;
 }) {
   return (
     <input
@@ -148,7 +150,7 @@ function ExpressionInput({
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder ?? '{{ $json.field }}'}
       spellCheck={false}
-      aria-label="Expression"
+      aria-label={`${fieldLabel} expression`}
     />
   );
 }
@@ -274,7 +276,12 @@ function NodeFields({ node }: { node: AppNode }) {
         let control: React.ReactNode;
         if (inFx) {
           control = (
-            <ExpressionInput value={value} onChange={(v) => setParam(field.key, v)} placeholder={field.placeholder} />
+            <ExpressionInput
+              value={value}
+              onChange={(v) => setParam(field.key, v)}
+              placeholder={field.placeholder}
+              fieldLabel={field.label}
+            />
           );
         } else if (isAi && field.key === 'provider') {
           control = (

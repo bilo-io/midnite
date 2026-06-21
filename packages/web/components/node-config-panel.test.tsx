@@ -39,21 +39,21 @@ describe('NodeConfigPanel — ƒx toggle', () => {
   it('round-trips a field between literal and expression mode', () => {
     const store = setup('n1');
     // The URL field is expressionable and starts literal (no value yet).
-    expect(screen.queryByLabelText('Expression')).toBeNull();
+    expect(screen.queryByLabelText('URL expression')).toBeNull();
 
     fireEvent.click(screen.getByLabelText('Toggle expression mode for URL'));
-    fireEvent.change(screen.getByLabelText('Expression'), { target: { value: '{{ $json.url }}' } });
+    fireEvent.change(screen.getByLabelText('URL expression'), { target: { value: '{{ $json.url }}' } });
     expect(urlOf(store, 'n1')).toBe('{{ $json.url }}');
 
     // Toggling back to literal keeps the value (round-trip, not discarded).
     fireEvent.click(screen.getByLabelText('Toggle expression mode for URL'));
-    expect(screen.queryByLabelText('Expression')).toBeNull();
+    expect(screen.queryByLabelText('URL expression')).toBeNull();
     expect(urlOf(store, 'n1')).toBe('{{ $json.url }}');
   });
 
   it('seeds expression mode from a value that is already a template', () => {
     setup('n2'); // n2.url = '{{ $json.id }}'
-    const expr = screen.getByLabelText('Expression');
+    const expr = screen.getByLabelText('URL expression');
     expect(expr).toHaveValue('{{ $json.id }}');
   });
 });
