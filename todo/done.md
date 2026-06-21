@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 19 Theme A: setup-readiness model + `GET /setup/status` (PR #73)
+
+The substrate for first-run onboarding — a single "is this install set up?" signal the wizard / soft nudge / status panel (Themes B–D) will all key off. Model + endpoint only; no UI yet.
+
+- [x] **`SetupStatus` contract in `shared`** (`setup.ts`): a per-item checklist (`provider` · `secret-key` · `agent-cli` · `agent-pool` · `repo`), each `{ id, label, state: ok|warn|missing, detail? }`, plus a derived `ready`. `isSetupReady()` encodes **Decision §3** — ready ⇔ a usable secret key **AND** a reachable model (a provider key **or** a working agent CLI); `warn` items (pool off, no repo) never block. zod schema + truth-table tests.
+- [x] **`GET /setup/status`** — thin `SetupController` over a `SetupService` that **composes existing services** (`ProvidersService` / `CryptoService` / `AgentsService`) + the loaded config. Pure aggregation: no new persistence, no cross-domain repository access. `ProvidersModule` now exports its service.
+- [x] **`web`** — `getSetupStatus()` added to the typed API client for Themes B–D.
+- ↪️ **Deviation noted:** the agent-CLI check uses `AgentsService` (where `claude`/`gemini`/… detection lives), not `EnvironmentService` (dev toolchain only — homebrew/node/proto/moon, none of which gate readiness). Same `detectCli` login-shell probe.
+- [x] `:typecheck` · `:lint` · `shared/gateway:test` (582) · `web:test` (245) green; `moon ci` green on PR #73. No visual change.
+
+Next on Phase 19: **Theme B** (guided wizard UI reusing env cards + provider form), **C** (first-run soft nudge banner), **D** (ongoing status panel in settings/system) — all consume this endpoint.
+
 ## 2026-06-21 — Phase 25 Theme D: Storybook catalog + DS docs + browser tests (PR #69) — **Phase 25 COMPLETE**
 
 The final Phase 25 theme — `@midnite/ui` now has its own Storybook (component catalog + design-system docs) and runs its stories as browser tests. **Closes out Phase 25** (Themes A–D all merged); unblocks Phase 26 (the docs app).

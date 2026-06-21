@@ -21,13 +21,13 @@
 
 ---
 
-## Theme A — Setup-readiness model + endpoint — **M**
+## Theme A — Setup-readiness model + endpoint — **M** — ✅ DONE (PR #73, 2026-06-22 — see [done.md](done.md))
 
 The single signal everything else keys off. One contract, one composing endpoint.
 
-- [ ] **`SetupStatus` contract in `shared`** (`setup.ts`): a list of **checklist items**, each `{ id, label, state: 'ok' | 'warn' | 'missing', detail? }`, plus a derived **`ready: boolean`**. Items cover: a provider configured with a key, the agent CLI present (`claude`/`gh` from the environment probe), `MIDNITE_SECRET_KEY` present, the agent pool sized/enabled, and (forward-compat) at least one repo. zod schema + tests.
-- [ ] **`GET /setup/status`** — a thin `SetupController` + `SetupService` that **composes** `EnvironmentService` (tool presence), `ProvidersService` (a provider with a key + active), `CryptoService` (is the secret key usable), and `loadConfig()` (pool/repos) into a `SetupStatus`. No new persistence for the *computation*; pure aggregation.
-- [ ] **`ready` definition** (Decision §3): `ready` = **≥1 provider has a key** (or a working agent CLI for CLI-driven providers) **AND** `MIDNITE_SECRET_KEY` is present. Tool *warnings* (outdated version) are `warn`, not `missing`, and don't block `ready`. Document the rule next to the schema.
+- [x] **`SetupStatus` contract in `shared`** (`setup.ts`): a list of **checklist items**, each `{ id, label, state: 'ok' | 'warn' | 'missing', detail? }`, plus a derived **`ready: boolean`**. Items cover: a provider configured with a key, the agent CLI present, `MIDNITE_SECRET_KEY` present, the agent pool sized/enabled, and (forward-compat) at least one repo. zod schema + tests.
+- [x] **`GET /setup/status`** — a thin `SetupController` + `SetupService` that **composes** `ProvidersService` (a provider with a key + active), `CryptoService` (is the secret key usable), `AgentsService` (configured agent CLI on PATH — the `claude`/`gemini`/… detector, since `EnvironmentService` only probes the dev toolchain), and the loaded config (pool/repos) into a `SetupStatus`. No new persistence; pure aggregation.
+- [x] **`ready` definition** (Decision §3): `ready` = **≥1 provider has a key** (or a working agent CLI for CLI-driven providers) **AND** `MIDNITE_SECRET_KEY` is present. Tool *warnings* (outdated version) are `warn`, not `missing`, and don't block `ready`. Rule documented next to the schema in `isSetupReady`.
 
 ---
 
