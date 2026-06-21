@@ -1,0 +1,15 @@
+/*
+ * Storybook stylesheet for @midnite/ui (Phase 25 Theme D).
+ *
+ * The token import MUST precede the @tailwind directives: it defines the
+ * `--background`/`--foreground`/… custom properties that Tailwind's generated
+ * utilities (mapped in tailwind.config.ts) resolve via `hsl(var(--token))`, and
+ * the `.dark` override block the theme runtime toggles. With the tokens in
+ * scope, `bg-background`, `text-foreground`, `border-input`, etc. render the
+ * primitives exactly as a real consumer would see them.
+ */
+@import '../src/styles/tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
