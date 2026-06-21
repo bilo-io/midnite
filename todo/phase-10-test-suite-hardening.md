@@ -65,9 +65,10 @@
 - [x] `@storybook/addon-vitest` (+ `@vitest/browser`, `playwright`) added to web and registered in [`.storybook/main.ts`](../packages/web/.storybook/main.ts). `vitest.config.ts` split into two projects — **`unit`** (jsdom, the existing specs) and **`storybook`** (headless chromium via Playwright) — so `moon run web:test` runs both. The addon (SB ≥10.3) auto-applies the `.storybook/preview` decorators, so no extra setup file. CI installs chromium (`playwright install --with-deps chromium`) before `moon ci`; `.storybook/**` added to the `web:test` inputs.
 - [x] All **18 stories render without throwing** (68 story smoke tests) alongside the 67 unit tests — 135 total green. No story needed fixing.
 
-### C2. Interaction tests on key components — **M**
-- [ ] Add `play` functions (using `storybook/test` — `within`, `userEvent`, `expect`) to the highest-value interactive components: **board-view** (drag/cards), **task-card**, **session-card**, **command-palette**, **filter-pills**, **templates-table**, **theme-toggle**. Assert the visible outcome, query by role/label (not test IDs), per CLAUDE.md.
-- [ ] Backfill **stories for un-storied high-value components** so the component layer is broadly covered — prioritise anything a phase is likely to touch (office HUD pieces, project/memory/library modals, widgets). Stories double as the screenshot source for Theme E.
+### C2. Interaction tests on key components — ◐ PARTIAL (PR #36, 2026-06-21)
+- [x] `play` functions added to **task-card** / **session-card** / **board-view** (click a card → `onSelect`/`onClick`, a plain click not a flaky dnd drag), **theme-toggle** (open menu → pick Light → it becomes the checked option), **templates-table** (expand an accordion row), and a **backfilled command-palette** story (Ctrl+K opens it; typing filters the list; a non-matching query shows the empty state). All assert visible outcomes / `storybook/test` spies, querying by role/label. 71 story tests green.
+- ⏳ **filter-pills** play deferred: its story documents that the Next router mock doesn't feed `router.replace` back into `useSearchParams`, so a click can't assert a visible toggle — render stories already cover it.
+- [ ] Backfill **stories for un-storied high-value components** (office HUD pieces, project/memory/library modals, widgets) — only command-palette done so far; the broad backfill remains (also feeds Theme E screenshots).
 
 ### C3. Accessibility checks — **S**
 - [ ] Enable the Storybook **a11y addon** in the test run (axe) so stories also assert no critical a11y violations. Start as warnings; promote to failures once clean.

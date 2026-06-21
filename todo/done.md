@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 10 C2 (partial): Storybook interaction tests (PR #36)
+
+Builds on C1: `play` functions assert real interactions on the highest-value components, plus a backfilled command-palette story. C2 is ◐ partial — the broad un-storied-component backfill remains.
+
+- [x] **task-card / session-card / board-view** — clicking a card fires `onSelect` / `onClick` (a plain click, not a flaky dnd drag).
+- [x] **theme-toggle** — open the menu → pick **Light** → reopen and confirm it's the checked option (`menuitemradio` aria-checked).
+- [x] **templates-table** — expand an accordion row; the Expand→Collapse label flip is asserted.
+- [x] **command-palette** (new backfilled story) — `Ctrl+K` opens the dialog; typing `profile` filters to Profile (Settings drops out); a non-matching query shows the "No matches." empty state.
+- ⏳ **filter-pills** play deferred — the Next router mock doesn't feed `router.replace` back into `useSearchParams`, so a click can't assert a visible toggle; render stories already cover it.
+- [x] All assert visible outcomes / `storybook/test` spies, querying by role/label (CLAUDE.md). 71 story tests (was 68) + 67 unit green; `web:typecheck`/`lint`/`test` green; `moon ci` green on PR #36. **Remaining for C2:** the broad story backfill (office HUD pieces, project/memory/library modals, widgets).
+
 ## 2026-06-21 — Phase 10 C1 complete: Storybook stories run as browser tests (PR #35)
 
 18 stories existed but nothing asserted them. C1 makes every story a smoke test inside `moon run web:test` (so `moon ci` covers it). C1 is now ✅ DONE; C2 (interaction `play` tests) + C3 (a11y) remain.
