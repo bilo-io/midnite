@@ -30,5 +30,8 @@ jobs:
           ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
         run: pnpm install --frozen-lockfile
 
+      - name: Install Playwright chromium (Storybook stories run as browser tests in web:test)
+        run: pnpm exec playwright install --with-deps chromium
+
       - name: moon ci (typecheck + test + build + lint)
         run: moon ci
