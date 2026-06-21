@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import { fn } from 'storybook/test';
+import { expect, fn, userEvent, within } from 'storybook/test';
 
 import {
   projectTagInfo,
@@ -31,6 +31,12 @@ export const Running: Story = {
       </div>
     ),
   ],
+  // The whole card is clickable — opening the session.
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByText(sessionRunning.title));
+    await expect(args.onClick).toHaveBeenCalledOnce();
+  },
 };
 
 export const Waiting: Story = {

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import { fn } from 'storybook/test';
+import { expect, fn, userEvent, within } from 'storybook/test';
 
 import {
   projectTagInfo,
@@ -31,6 +31,12 @@ type Story = StoryObj<typeof meta>;
 /** A feature with a project tag and source links. */
 export const Feature: Story = {
   args: { task: taskFeature, project: projectTagInfo },
+  // With `onSelect` set the card is a button — clicking it selects the task.
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByText(taskFeature.title));
+    await expect(args.onSelect).toHaveBeenCalledOnce();
+  },
 };
 
 export const Bug: Story = {

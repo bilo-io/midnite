@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import { fn } from 'storybook/test';
+import { expect, fn, userEvent, within } from 'storybook/test';
 
 import { TEMPLATES } from '@/app/(main)/projects/templates';
 
@@ -25,6 +25,13 @@ type Story = StoryObj<typeof meta>;
 
 export const Collapsed: Story = {
   args: { templates: TEMPLATES },
+  // Each row is an accordion: clicking "Expand" toggles it open (label flips).
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const name = TEMPLATES[0]!.name;
+    await userEvent.click(canvas.getByRole('button', { name: `Expand ${name}` }));
+    await expect(canvas.getByRole('button', { name: `Collapse ${name}` })).toBeInTheDocument();
+  },
 };
 
 /** `expandId` pre-opens a row — here the PRD template's accordion. */
