@@ -5,6 +5,11 @@ import { UsageConfigSchema } from './usage.js';
 export const RepoConfigSchema = z.object({
   name: z.string(),
   path: z.string(),
+  // Optional per-repo conventions seeded into the registry on first boot; the
+  // DB is authoritative thereafter. Fed to the agent's seed prompt — see the
+  // gateway's `appendRepoConventions`.
+  branchPrefix: z.string().optional(),
+  prTemplate: z.string().optional(),
 });
 
 export const AgentConfigSchema = z.object({
