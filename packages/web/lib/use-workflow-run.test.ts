@@ -46,7 +46,7 @@ class FakeWebSocket {
   }
 }
 
-function seededRun(): WorkflowRun {
+function seededRun(overrides: Partial<WorkflowRun> = {}): WorkflowRun {
   return {
     id: RUN_ID,
     workflowId: WF_ID,
@@ -57,6 +57,7 @@ function seededRun(): WorkflowRun {
       { id: 'nr-trigger', runId: RUN_ID, nodeId: 'trigger', nodeType: 'trigger.manual', status: 'pending', logs: [] },
       { id: 'nr-fetch', runId: RUN_ID, nodeId: 'fetch', nodeType: 'http.request', status: 'pending', logs: [] },
     ],
+    ...overrides,
   };
 }
 
@@ -82,6 +83,8 @@ describe('useWorkflowRun', () => {
     runWorkflow.mockReset();
     getWorkflowRun.mockReset();
     runWorkflow.mockResolvedValue(seededRun());
+    // Default connect-time backfill mirrors the seed (run still in flight).
+    getWorkflowRun.mockResolvedValue(seededRun());
     vi.stubGlobal('WebSocket', FakeWebSocket as unknown as typeof WebSocket);
     FakeWebSocket.last = null;
   });
@@ -95,19 +98,27 @@ describe('useWorkflowRun', () => {
     return view;
   }
 
+  // Open the socket and flush the connect-time backfill microtask.
+  async function openSocket(sock: FakeWebSocket) {
+    await act(async () => {
+      sock.open();
+    });
+  }
+
   it('seeds the run from REST and subscribes over WS', async () => {
     const { result } = await startRun();
     expect(result.current.run?.id).toBe(RUN_ID);
     expect(result.current.running).toBe(true);
     const sock = FakeWebSocket.last!;
-    act(() => sock.open());
+    await openSocket(sock);
     expect(sock.sent).toEqual([JSON.stringify({ type: 'subscribe', runId: RUN_ID })]);
   });
 
-  it('applies node events incrementally without re-fetching the run', async () => {
+  it('applies node events incrementally without re-fetching per event', async () => {
     const { result } = await startRun();
     const sock = FakeWebSocket.last!;
-    act(() => sock.open());
+    await openSocket(sock); // one connect-time backfill
+    expect(getWorkflowRun).toHaveBeenCalledTimes(1);
 
     act(() => sock.emit(nodeStarted('fetch')));
     expect(result.current.nodeStatuses.fetch).toBe('running');
@@ -118,34 +129,47 @@ describe('useWorkflowRun', () => {
       ok: true,
     });
 
-    // The whole point: no REST refetch per event.
-    expect(getWorkflowRun).not.toHaveBeenCalled();
+    // The whole point: events don't trigger further refetches.
+    expect(getWorkflowRun).toHaveBeenCalledTimes(1);
   });
 
   it('ignores events for a different run and malformed frames', async () => {
     const { result } = await startRun();
     const sock = FakeWebSocket.last!;
-    act(() => sock.open());
+    await openSocket(sock);
 
     act(() => sock.emitRaw('not json'));
-    act(() =>
-      sock.emit({ ...nodeSucceeded('fetch', 1), runId: 'other' } as WorkflowEvent),
-    );
+    act(() => sock.emit({ ...nodeSucceeded('fetch', 1), runId: 'other' } as WorkflowEvent));
     expect(result.current.nodeStatuses.fetch).toBe('pending');
-    expect(getWorkflowRun).not.toHaveBeenCalled();
   });
 
-  it('finishes from the run.finished event without REST', async () => {
+  it('backfills a run that finished before the subscription landed (no event arrives)', async () => {
+    // Trigger-only / instant run: the terminal event fired before we subscribed.
+    getWorkflowRun.mockResolvedValue(
+      seededRun({
+        status: 'succeeded',
+        finishedAt: 't9',
+        nodeRuns: seededRun().nodeRuns.map((nr) => ({ ...nr, status: 'succeeded' as const })),
+      }),
+    );
     const { result } = await startRun();
     const sock = FakeWebSocket.last!;
-    act(() => sock.open());
+    await openSocket(sock);
 
-    const finalRun: WorkflowRun = {
-      ...seededRun(),
+    await waitFor(() => expect(result.current.running).toBe(false));
+    expect(result.current.run?.status).toBe('succeeded');
+  });
+
+  it('finishes from the run.finished event', async () => {
+    const { result } = await startRun();
+    const sock = FakeWebSocket.last!;
+    await openSocket(sock);
+
+    const finalRun = seededRun({
       status: 'succeeded',
       finishedAt: 't9',
       nodeRuns: seededRun().nodeRuns.map((nr) => ({ ...nr, status: 'succeeded' as const })),
-    };
+    });
     act(() =>
       sock.emit({ type: 'run.finished', workflowId: WF_ID, runId: RUN_ID, at: 't9', run: finalRun }),
     );
@@ -153,12 +177,17 @@ describe('useWorkflowRun', () => {
     expect(result.current.running).toBe(false);
     expect(result.current.run?.status).toBe('succeeded');
     expect(sock.closed).toBe(true);
-    expect(getWorkflowRun).not.toHaveBeenCalled();
+    // Only the connect-time backfill — run.finished carries the full run, no extra fetch.
+    expect(getWorkflowRun).toHaveBeenCalledTimes(1);
   });
 
-  it('reconciles once over REST on run.failed (no run body in the event)', async () => {
+  it('reconciles over REST on run.failed (the event carries no run body)', async () => {
+    const { result } = await startRun();
+    const sock = FakeWebSocket.last!;
+    await openSocket(sock); // backfill #1 (running)
+
     const base = seededRun();
-    const failedRun: WorkflowRun = {
+    getWorkflowRun.mockResolvedValue({
       ...base,
       status: 'failed',
       error: 'boom',
@@ -167,12 +196,7 @@ describe('useWorkflowRun', () => {
           ? { ...nr, status: 'failed' as const, error: 'boom' }
           : { ...nr, status: 'succeeded' as const },
       ),
-    };
-    getWorkflowRun.mockResolvedValue(failedRun);
-
-    const { result } = await startRun();
-    const sock = FakeWebSocket.last!;
-    act(() => sock.open());
+    });
 
     await act(async () => {
       sock.emit({ type: 'run.failed', workflowId: WF_ID, runId: RUN_ID, at: 't9', error: 'boom' });
@@ -180,12 +204,12 @@ describe('useWorkflowRun', () => {
 
     await waitFor(() => expect(result.current.run?.status).toBe('failed'));
     expect(result.current.running).toBe(false);
-    expect(getWorkflowRun).toHaveBeenCalledTimes(1); // single reconcile, not per-event polling
     expect(result.current.run?.error).toBe('boom');
+    expect(result.current.nodeStatuses.fetch).toBe('failed');
   });
 
   it('falls back to polling when the socket never opens', async () => {
-    getWorkflowRun.mockResolvedValue({ ...seededRun(), status: 'succeeded' });
+    getWorkflowRun.mockResolvedValue(seededRun({ status: 'succeeded' }));
     const { result } = await startRun();
     const sock = FakeWebSocket.last!;
 

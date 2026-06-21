@@ -33,6 +33,9 @@ export function useWorkflowRun(workflowId: string): UseWorkflowRun {
   const mounted = useRef(true);
   // Read inside socket callbacks to avoid stale-closure reads of `running`.
   const runningRef = useRef(false);
+  // Set once a terminal event settles the run, so a slower in-flight connect-time
+  // backfill can't clobber the final state with a stale snapshot.
+  const terminalRef = useRef(false);
   const setRunningBoth = useCallback((value: boolean) => {
     runningRef.current = value;
     setRunning(value);
@@ -56,15 +59,20 @@ export function useWorkflowRun(workflowId: string): UseWorkflowRun {
     };
   }, [cleanup]);
 
-  // Pull the persisted run over REST — the initial seed, the polling fallback tick, and
-  // the post-failure reconcile. Returns true once the run has reached a terminal state.
+  // Pull the persisted run over REST — the connect-time backfill, the polling fallback
+  // tick, and the post-failure reconcile. Returns true once the run is terminal.
+  // `respectTerminal` makes the backfill bow out if a terminal event already settled the
+  // run while this fetch was in flight (avoids clobbering the final state with a stale
+  // snapshot); the deliberate reconcile/poll callers leave it off so their pull applies.
   const refresh = useCallback(
-    async (runId: string): Promise<boolean> => {
+    async (runId: string, respectTerminal = false): Promise<boolean> => {
+      if (respectTerminal && terminalRef.current) return true;
       try {
         const next = await getWorkflowRun(workflowId, runId);
-        if (!mounted.current) return true;
+        if (!mounted.current || (respectTerminal && terminalRef.current)) return true;
         setRun(next);
         if (isRunTerminal(next.status)) {
+          terminalRef.current = true;
           setRunningBoth(false);
           return true;
         }
@@ -105,6 +113,11 @@ export function useWorkflowRun(workflowId: string): UseWorkflowRun {
       socket.onopen = () => {
         opened = true;
         socket.send(JSON.stringify({ type: 'subscribe', runId }));
+        // The run starts server-side before this handshake completes, so the trigger
+        // node's events (and, for a trigger-only/instant run, the terminal event) fire
+        // before we subscribe and there's no replay. Backfill once on connect to catch
+        // up; live events then apply incrementally on top.
+        void refresh(runId, true);
       };
       socket.onmessage = (ev) => {
         let event: WorkflowEvent;
@@ -119,9 +132,11 @@ export function useWorkflowRun(workflowId: string): UseWorkflowRun {
         setRun((prev) => applyWorkflowEvent(prev, event));
 
         if (event.type === 'run.finished') {
+          terminalRef.current = true;
           setRunningBoth(false);
           cleanup();
         } else if (event.type === 'run.failed') {
+          terminalRef.current = true;
           setRunningBoth(false);
           // The run.failed event carries no run body; reconcile once over REST to pull the
           // authoritative skipped-node statuses + per-node logs the stream doesn't carry.
@@ -142,6 +157,7 @@ export function useWorkflowRun(workflowId: string): UseWorkflowRun {
 
   const start = useCallback(async () => {
     setError(null);
+    terminalRef.current = false;
     setRunningBoth(true);
     cleanup();
     try {
