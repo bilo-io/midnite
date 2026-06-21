@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 10 B2 complete: scheduler/pool & heartbeat lifecycle integration (PR #31)
+
+Adds the integration layer B2 asked for — real lifecycles driven end-to-end against `:memory:` SQLite, asserting emitted WS events and persisted state agree, plus restart recovery and the heartbeat scheduler. B2 is now ✅ DONE.
+
+- [x] `pool/agent-pool.integration.spec.ts` — real `TasksService` (+ repository, `TaskEventBus`) wired to the pool/scheduler/runner over in-memory SQLite; only the PTY boundary (`TerminalService`) is faked so each spawn's `onExit` is driven deterministically (no wall-clock sleeps). Covers: scheduler tick fills free slots from the todo queue and leaves the rest queued; emitted `task.*` events agree with persisted state; Stop-hook completion (`markDone` + `complete`) frees and reuses a slot; PTY crash → retry (todo, retryCount bumped) → abandoned once exhausted; failed spawn requeues + frees the slot.
+- [x] **Restart recovery:** a fresh `AgentPoolService.onModuleInit()` requeues orphaned `wip`/`waiting` → `todo` (persisted state is the source of truth), leaves terminal states untouched, slots start idle, and the scheduler re-runs recovered tasks.
+- [x] `agents/heartbeat-scheduler.integration.spec.ts` — elapsed-since-last due logic with the LLM faked disabled: a due tick records a skip and advances the clock so the next tick is not due; not-due / disabled / blank-prompt / never-fired covered.
+- [x] Test-only; no product code changed. `gateway:test` 476 pass (+14); `:typecheck`/`:lint` green; `moon ci` green on PR #31.
+
 ## 2026-06-21 — Phase 10 B1 complete: remaining controller boundary coverage + flake fix (PR #30)
 
 Finishes the B1 follow-up left open by PR #28: every gateway controller now has a boundary spec, and the noted `terminal.service.spec` flake is fixed. B1 is now ✅ DONE.
