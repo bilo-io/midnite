@@ -119,6 +119,11 @@ re-queued up to this many times before it's abandoned. Each task also carries a
 `priority` (0 Low · 1 Normal · 2 High · 3 Urgent, default Normal) — the scheduler
 assigns higher-priority `todo` tasks first, oldest-first within a priority.
 
+`agent.maxPerRepo` (default `0` = unlimited) caps how many agents may run on the
+same repo (by `task.repo`) at once: the scheduler skips a `todo` task whose repo
+is already at the cap and picks the next eligible one, so two agents don't race
+on one working tree. Tasks without a repo are never capped.
+
 A task reaches `wip` (with a Claude Code session spawned and linked to it) in one
 of two ways:
 

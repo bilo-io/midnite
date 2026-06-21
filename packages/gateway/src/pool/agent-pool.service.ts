@@ -66,6 +66,12 @@ export class AgentPoolService implements OnModuleInit {
     return this.slots.find((s) => s.taskId === taskId);
   }
 
+  /** Task ids currently occupying a busy slot — the live set of running agents,
+   *  used by the scheduler to enforce per-repo concurrency caps. */
+  busyTaskIds(): string[] {
+    return this.slots.flatMap((s) => (s.status === 'busy' && s.taskId ? [s.taskId] : []));
+  }
+
   /** Claim a free slot for a task. Returns its AbortSignal, or null if full. */
   acquire(taskId: string): AbortSignal | null {
     const slot = this.slots.find((s) => s.status === 'idle');

@@ -45,16 +45,21 @@ export class AgentPoolScheduler implements OnModuleInit, OnModuleDestroy {
     if (this.timer) clearInterval(this.timer);
   }
 
-  // Fill every free slot with the oldest unassigned `todo` task. Public so tests
-  // can drive it directly. Never throws (runner.start swallows its own errors).
+  // Fill every free slot with the oldest unassigned `todo` task, skipping any
+  // whose repo is already at the per-repo concurrency cap. Public so tests can
+  // drive it directly. Never throws (runner.start swallows its own errors).
   async tick(): Promise<void> {
     if (this.running) return;
     this.running = true;
     try {
       while (this.pool.freeSlotCount() > 0) {
+        // Recompute per-tick-iteration: a task started earlier in this loop now
+        // occupies a slot, so its repo's running count is up to date here.
         const next = this.tasks
           .listTasks('todo')
-          .find((t) => !this.pool.slotForTask(t.id));
+          .find((t) => !this.pool.slotForTask(t.id) && this.repoHasCapacity(t.repo));
+        // No eligible task — either the queue is empty or every remaining task is
+        // blocked by its repo's cap; either way, nothing more to start this tick.
         if (!next) break;
         const started = await this.runner.start(next);
         // A failed start (e.g. terminal session cap reached) means further
@@ -64,5 +69,19 @@ export class AgentPoolScheduler implements OnModuleInit, OnModuleDestroy {
     } finally {
       this.running = false;
     }
+  }
+
+  /** Whether another agent may start on `repo` without exceeding the cap. A
+   *  repo-less task is never capped; `maxPerRepo <= 0` means unlimited. */
+  private repoHasCapacity(repo: string | undefined): boolean {
+    const cap = this.config.agent.maxPerRepo;
+    if (!repo || cap <= 0) return true;
+    return this.runningCountForRepo(repo) < cap;
+  }
+
+  /** How many busy slots are running a task targeting `repo` right now. */
+  private runningCountForRepo(repo: string): number {
+    const repoById = new Map(this.tasks.listTasks().map((t) => [t.id, t.repo]));
+    return this.pool.busyTaskIds().filter((id) => repoById.get(id) === repo).length;
   }
 }
