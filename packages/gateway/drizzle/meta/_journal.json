@@ -218,6 +218,13 @@
       "when": 1782038829672,
       "tag": "0030_repos",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "6",
+      "when": 1782083012036,
+      "tag": "0031_hook_secrets",
+      "breakpoints": true
     }
   ]
 }

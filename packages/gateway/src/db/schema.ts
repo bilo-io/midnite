@@ -629,3 +629,18 @@ export const marketCache = sqliteTable(
 
 export type MarketCacheRow = typeof marketCache.$inferSelect;
 export type MarketCacheInsert = typeof marketCache.$inferInsert;
+
+// Per-session hook secret (the token that authenticates a Claude session's
+// in-PTY PreToolUse/Stop/Notification callbacks). Only the *hash* is stored —
+// the plaintext lives in the running process's env. Persisted (not just held in
+// memory) so a durable `tmux` session reattached after a gateway restart can
+// still have its hooks authenticate (Phase 17 §C2). One row per session id
+// (task id for agent runs); deleted when the session ends.
+export const hookSecrets = sqliteTable('hook_secrets', {
+  sessionId: text('session_id').primaryKey(),
+  secretHash: text('secret_hash').notNull(),
+  createdAt: text('created_at').notNull(),
+});
+
+export type HookSecretRow = typeof hookSecrets.$inferSelect;
+export type HookSecretInsert = typeof hookSecrets.$inferInsert;

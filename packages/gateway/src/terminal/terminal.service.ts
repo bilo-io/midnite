@@ -374,9 +374,13 @@ export class TerminalService implements OnModuleDestroy {
     return this.spawner.listSessions?.() ?? [];
   }
 
-  /** Tear down a durable session with no owning task (stray after a restart). */
+  /** Forget a session that won't be reattached after a restart: reap its durable
+   *  (tmux) session if any, and clear its hook secret so the persisted row doesn't
+   *  outlive the run. Safe for `pty` (killSession is a no-op) and for a sessionId
+   *  with no live session — used by boot recovery for strays and dead tasks. */
   discardSession(sessionId: string): void {
     this.spawner.killSession?.(sessionId);
+    this.approvals.clearSession(sessionId);
   }
 
   /** Whether the configured backend's sessions survive the gateway process. */

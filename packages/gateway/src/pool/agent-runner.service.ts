@@ -63,6 +63,9 @@ export class AgentRunnerService implements OnModuleInit {
       if (recovered) {
         reattached++;
       } else {
+        // Its session died with the previous process — requeue and forget its
+        // (now-orphaned) hook secret so the persisted row doesn't linger.
+        this.terminal.discardSession(task.id);
         this.safeRequeue(task.id);
         requeued++;
       }

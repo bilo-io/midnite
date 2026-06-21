@@ -7,6 +7,7 @@ import { ReposModule } from '../repos/repos.module';
 import { TasksModule } from '../tasks/tasks.module';
 import { ApprovalController } from './approval.controller';
 import { ApprovalService } from './approval.service';
+import { HookSecretRepository } from './hook-secret.repository';
 import { TerminalController } from './terminal.controller';
 import { TerminalGateway } from './terminal.gateway';
 import { TerminalService } from './terminal.service';
@@ -20,6 +21,7 @@ import { SPAWNER, type Spawner } from './spawner/spawner';
   providers: [
     TerminalService,
     ApprovalService,
+    HookSecretRepository,
     TerminalGateway,
     {
       // Selected by terminal.mode: 'pty' (the default, dies with the gateway) or

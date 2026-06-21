@@ -264,6 +264,7 @@ describe('AgentRunnerService', () => {
       expect(pool.slotForTask('w1')?.pid).toBe(7); // re-claimed its slot
       expect(requeue).toHaveBeenCalledWith('w2'); // dead session → requeued
       expect(requeue).not.toHaveBeenCalledWith('w1');
+      expect(discardSession).toHaveBeenCalledWith('w2'); // dead session's secret forgotten
       expect(discardSession).toHaveBeenCalledWith('ghost'); // stray reaped
     });
 

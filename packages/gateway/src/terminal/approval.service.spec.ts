@@ -1,7 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { parseConfig, type MidniteConfig, type ServerTerminalMessage } from '@midnite/shared';
 import { ApprovalService } from './approval.service';
+import type { HookSecretRepository } from './hook-secret.repository';
 import type { TerminalService } from './terminal.service';
+
+/** In-memory stand-in for the durable hook-secret store. */
+class FakeSecretStore {
+  readonly rows = new Map<string, string>();
+  upsert(sessionId: string, secretHash: string): void {
+    this.rows.set(sessionId, secretHash);
+  }
+  find(sessionId: string): string | undefined {
+    return this.rows.get(sessionId);
+  }
+  delete(sessionId: string): void {
+    this.rows.delete(sessionId);
+  }
+}
 
 class FakeTerminal {
   subscribers = 1;
@@ -57,6 +72,33 @@ describe('ApprovalService secrets', () => {
     expect(service.verifySecret(SID, secret)).toBe(true);
     expect(service.verifySecret(SID, 'nope')).toBe(false);
     expect(service.verifySecret('other', secret)).toBe(false);
+  });
+
+  it('persists the hash so a restarted gateway can still verify (Phase 17 §C2)', () => {
+    const config = parseConfig({ agent: {}, terminal: {}, knowledge: {}, gateway: {} });
+    const store = new FakeSecretStore();
+    const first = new ApprovalService(
+      config,
+      new FakeTerminal() as unknown as TerminalService,
+      store as unknown as HookSecretRepository,
+    );
+    const secret = first.mintSecret(SID);
+    expect(store.rows.has(SID)).toBe(true);
+
+    // A fresh instance over the same store models a gateway restart: the
+    // in-memory map is empty, but the persisted hash rehydrates verification.
+    const afterRestart = new ApprovalService(
+      config,
+      new FakeTerminal() as unknown as TerminalService,
+      store as unknown as HookSecretRepository,
+    );
+    expect(afterRestart.verifySecret(SID, secret)).toBe(true);
+    expect(afterRestart.verifySecret(SID, 'wrong')).toBe(false);
+
+    // clearSession forgets it from the durable store too.
+    afterRestart.clearSession(SID);
+    expect(store.rows.has(SID)).toBe(false);
+    expect(afterRestart.verifySecret(SID, secret)).toBe(false);
   });
 });
 
