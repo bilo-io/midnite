@@ -41,6 +41,9 @@ export function SectionProvider({
             best = id;
           }
         }
+        // Sticky: only advance when some section is visible. When everything leaves
+        // the viewport (hero / footer, which aren't observed) the last active section
+        // stays active rather than flickering to null — type-once consumers want that.
         if (best) setActive(best);
       },
       { threshold: [0, 0.25, 0.5, 0.75, 1], rootMargin: '-20% 0px -20% 0px' },
