@@ -104,6 +104,25 @@ export const projects = sqliteTable('projects', {
   updatedAt: text('updated_at').notNull(),
 });
 
+// Repo registry: named checkouts the orchestrator runs agents against. The DB
+// is the runtime source of truth; `config.repos` seeds it on first boot. A task
+// references a repo by its unique `name` (no cross-domain FK). Paths stored in
+// `~`-form. Deferred columns (branchPrefix/prTemplate/cap) land in a later
+// forward migration when Phase 13 Themes D/E need them.
+export const repos = sqliteTable(
+  'repos',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    path: text('path').notNull(),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => ({
+    nameIdx: uniqueIndex('repos_name_idx').on(t.name),
+  }),
+);
+
 export const projectSources = sqliteTable(
   'project_sources',
   {
@@ -452,6 +471,8 @@ export type TaskLinkRow = typeof taskLinks.$inferSelect;
 export type TaskLinkInsert = typeof taskLinks.$inferInsert;
 export type ProjectRow = typeof projects.$inferSelect;
 export type ProjectInsert = typeof projects.$inferInsert;
+export type RepoRow = typeof repos.$inferSelect;
+export type RepoInsert = typeof repos.$inferInsert;
 export type ProjectSourceRow = typeof projectSources.$inferSelect;
 export type ProjectSourceInsert = typeof projectSources.$inferInsert;
 export type MemoryRow = typeof memories.$inferSelect;

@@ -19,6 +19,7 @@ import { NotesModule } from './notes/notes.module';
 import { PoolModule } from './pool/pool.module';
 import { ProjectsModule } from './projects/projects.module';
 import { ProvidersModule } from './providers/providers.module';
+import { ReposModule } from './repos/repos.module';
 import { RoutinesModule } from './routines/routines.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { UsageModule } from './usage/usage.module';
@@ -47,6 +48,7 @@ import { TerminalModule } from './terminal/terminal.module';
     PoolModule,
     ProjectsModule,
     ProvidersModule,
+    ReposModule,
     SessionsModule,
     UsageModule,
     WeatherModule,
