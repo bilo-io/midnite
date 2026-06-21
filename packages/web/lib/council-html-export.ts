@@ -1,4 +1,5 @@
 import type { CouncilFormat, CouncilRunMember } from '@midnite/shared';
+import { REPORT_PROSE_CSS, escapeHtml } from '@/lib/report-html-export';
 
 /**
  * Client-side analogue of the gateway's `buildCouncilRunReport`
@@ -9,22 +10,14 @@ import type { CouncilFormat, CouncilRunMember } from '@midnite/shared';
  * It is a pure string builder with no React dependency: synthesis markdown is
  * converted to HTML by the caller (rendered into a detached node and captured)
  * and handed in as `bodyHtml`, so this module stays trivially unit-testable.
+ * `escapeHtml` and the markdown prose CSS are shared with the generic report
+ * renderer (`report-html-export.ts`).
  *
  * The output is fully offline: all CSS and the tab-switching JS are inlined, no
  * external assets are referenced, and every interpolated value except the
  * pre-sanitized synthesis `bodyHtml` is HTML-escaped — so a literal `</pre>` or
  * `<script>` in a member's terminal output can never break or inject markup.
  */
-
-/** Escape the five HTML-significant characters. Applied to every interpolated value. */
-export function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
 
 /** A single member's contribution as shown in its tab. */
 export type MemberView = {
@@ -120,25 +113,7 @@ const STYLE = `
     border-radius: 999px; padding: 3px 10px; font-size: 12.5px; color: #64748b;
   }
   .legend b { color: #0f172a; font-weight: 600; }
-  .synth-body[hidden] { display: none; }
-  .prose { font-size: 14.5px; }
-  .prose > :first-child { margin-top: 0; }
-  .prose h1 { font-size: 19px; margin: 22px 0 10px; }
-  .prose h2 { font-size: 17px; margin: 20px 0 10px; }
-  .prose h3 { font-size: 14px; margin: 16px 0 8px; text-transform: uppercase; letter-spacing: .04em; color: #64748b; }
-  .prose h4 { font-size: 14px; margin: 14px 0 6px; }
-  .prose p, .prose ul, .prose ol, .prose blockquote, .prose table { margin: 0 0 12px; }
-  .prose ul, .prose ol { padding-left: 22px; }
-  .prose li { margin: 4px 0; }
-  .prose blockquote { border-left: 3px solid #cbd5e1; padding-left: 14px; color: #475569; }
-  .prose hr { border: none; border-top: 1px solid #e2e8f0; margin: 20px 0; }
-  .prose code { background: #f1f5f9; border-radius: 4px; padding: 1px 5px; font: 12.5px ui-monospace, SFMono-Regular, Menlo, monospace; }
-  .prose pre { background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 14px; overflow: auto; }
-  .prose pre code { background: none; padding: 0; color: inherit; }
-  .prose table { border-collapse: collapse; width: 100%; }
-  .prose th, .prose td { border: 1px solid #e2e8f0; padding: 7px 10px; text-align: left; }
-  .prose th { background: #f8fafc; }
-  .prose a { color: #2563eb; }
+  .synth-body[hidden] { display: none; }${REPORT_PROSE_CSS}
 `;
 
 const SCRIPT = `
