@@ -2,9 +2,11 @@ import { Inject, Injectable, Logger, type OnModuleInit } from '@nestjs/common';
 import type { MidniteConfig, Task } from '@midnite/shared';
 import { UrlContextService } from '../agent/url-context.service';
 import { MIDNITE_CONFIG } from '../config.token';
+import { ReposService } from '../repos/repos.service';
 import { TasksService } from '../tasks/tasks.service';
 import { TerminalService } from '../terminal/terminal.service';
 import { AgentPoolService } from './agent-pool.service';
+import { appendRepoConventions } from './lib/build-agent-prompt';
 
 /**
  * Drives a single task through an autonomous agent run: claim a slot, move the
@@ -31,6 +33,7 @@ export class AgentRunnerService implements OnModuleInit {
     @Inject(TasksService) private readonly tasks: TasksService,
     @Inject(TerminalService) private readonly terminal: TerminalService,
     @Inject(UrlContextService) private readonly urlContext: UrlContextService,
+    @Inject(ReposService) private readonly repos: ReposService,
   ) {}
 
   /**
@@ -105,7 +108,11 @@ export class AgentRunnerService implements OnModuleInit {
     try {
       // Fold any linked GitHub issue/PR + URL context into the seed prompt
       // (best-effort, fail-open — never blocks the run). Phase 15 Theme B.
-      const prompt = await this.urlContext.enrich(task.prompt?.trim() || task.title);
+      const enriched = await this.urlContext.enrich(task.prompt?.trim() || task.title);
+      // Append the target repo's branch-naming / PR-body conventions, if any
+      // (Phase 13 Theme E). Unknown/unassigned repo → prompt unchanged.
+      const repo = task.repo ? this.repos.findByName(task.repo) : undefined;
+      const prompt = appendRepoConventions(enriched, repo);
       this.tasks.startTask(task.id);
       const result = this.terminal.spawnAgentSession(
         task.id,

@@ -22,7 +22,7 @@
 
 ## Theme A — Extract the `Spawner` interface — **L** — ✅ DONE (PR #56, 2026-06-21)
 
-The dominant, behavior-preserving refactor — node-pty now lives behind a `Spawner` seam; `pty` behaviour is byte-for-byte unchanged (553 gateway tests pass unedited). See [done.md](done.md). **Themes B / C / D landed in PR #72 (2026-06-22) — phase complete.**
+The dominant, behavior-preserving refactor — node-pty now lives behind a `Spawner` seam; `pty` behaviour is byte-for-byte unchanged (553 gateway tests pass unedited). See [done.md](done.md). **Themes B / C / D landed in PR #77 (2026-06-22) — phase complete.**
 
 ### A1. Define `Spawner` + `SpawnHandle` — **S** — ✅ DONE
 - [x] `Spawner` / `SpawnSpec` / `SpawnHandle` + `SPAWNER` DI token in [`terminal/spawner/spawner.ts`](../packages/gateway/src/terminal/spawner/spawner.ts). `SpawnHandle` mirrors node-pty's `IPty` surface so the field type swap is the only call-site change. Gateway-internal (no wire shape).
@@ -35,7 +35,7 @@ The dominant, behavior-preserving refactor — node-pty now lives behind a `Spaw
 
 ---
 
-## Theme B — `TmuxSpawner`: durable sessions — **M–L** — ✅ DONE (PR #72, 2026-06-22)
+## Theme B — `TmuxSpawner`: durable sessions — **M–L** — ✅ DONE (PR #77, 2026-06-22)
 
 The first alternative backend. A `tmux` session is a process that outlives the gateway; the spawner reuses the existing stream path.
 
@@ -46,7 +46,7 @@ The first alternative backend. A `tmux` session is a process that outlives the g
 
 ---
 
-## Theme C — Backend selection + survive-restart reattach — **M** — ✅ DONE (PR #72, 2026-06-22)
+## Theme C — Backend selection + survive-restart reattach — **M** — ✅ DONE (PR #77, 2026-06-22)
 
 Read the config, prune the dead backends, and make tmux durability real on boot.
 
@@ -63,7 +63,7 @@ Read the config, prune the dead backends, and make tmux durability real on boot.
 
 ---
 
-## Theme D — Spawner contract tests + tmux in CI — **S–M** — ✅ DONE (PR #72, 2026-06-22)
+## Theme D — Spawner contract tests + tmux in CI — **S–M** — ✅ DONE (PR #77, 2026-06-22)
 
 - [x] A **`Spawner` contract spec** ([`spawner.contract.spec.ts`](../packages/gateway/src/terminal/spawner/spawner.contract.spec.ts)) that both backends satisfy: spawn → stream output → `write` reaches the process → `resize` takes → `onExit` fires with the **inner** exit code. Runs against `pty` always and `tmux` **skip-guarded** on `tmux -V` (it ran green locally — tmux present). Plus pure-helper unit tests ([`tmux-spawner.test.ts`](../packages/gateway/src/terminal/spawner/tmux-spawner.test.ts)) for command/arg/list/status parsing.
 - [x] **Survive-restart** behaviour is covered at the recovery layer ([`agent-runner.service.test.ts`](../packages/gateway/src/pool/agent-runner.service.test.ts)): a fresh runner over the same persisted state reattaches live sessions, requeues dead ones, and reaps strays — the deterministic equivalent of a gateway restart without a real cross-process tmux dance.

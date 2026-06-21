@@ -4,18 +4,129 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-06-22 — Phase 17 B/C/D: durable `tmux` spawner + survive-restart reattach (PR #72) — **Phase 17 COMPLETE**
+## 2026-06-22 — Phase 17 B/C/D: durable `tmux` spawner + survive-restart reattach (PR #77) — **Phase 17 COMPLETE**
 
 The pluggable `Spawner` (extracted in A, PR #56) gains its first alternative backend: a durable `tmux` mode whose sessions outlive the gateway, so an in-flight agent run survives a restart instead of being orphaned/requeued. The `pty` path is unchanged (its specs run unedited). Closes [outstanding.md](outstanding.md) #10 (scoped to tmux; warp/iterm dropped).
 
 - [x] **B — `TmuxSpawner`** ([`terminal/spawner/tmux-spawner.ts`](../packages/gateway/src/terminal/spawner/tmux-spawner.ts)): `tmux new-session -d -s midnite-<id>` running `exec env … <cmd>`, chained with `remain-on-exit on`, + a node-pty `tmux attach-session` for the live stream (reuses the whole ring/broadcast path). `onExit` fires from a `pane_dead_status` poll so callers get the **real inner exit code**; `detach()` drops the stream but leaves the session; fail-closed `TmuxUnavailableError` (no silent `pty` fallback).
 - [x] **C1 — selection + enum prune**: module factory picks the backend by `terminal.mode`; `warp`/`iterm` removed → enum is `pty | tmux` (a config naming them now fails validation).
 - [x] **C2 — boot reattach**: recovery moved from `AgentPoolService` to [`AgentRunnerService.onModuleInit`](../packages/gateway/src/pool/agent-runner.service.ts) (it owns the slot/timeout/onExit wiring; runs after the pool, before the scheduler). Under tmux it reattaches still-live sessions, requeues dead ones, and reaps strays; under pty it requeues as before.
-- [x] **C2.5 — hook auth survives restart**: the per-session hook secret was in-memory, so reattached `claude` sessions' Stop/PreToolUse callbacks would fail auth (a completed run would hang). The secret **hash** is now persisted (`hook_secrets` table + `HookSecretRepository`, migration `0031`) and rehydrated by `ApprovalService.verifySecret` on a cache miss; cleared on session end/discard.
+- [x] **C2.5 — hook auth survives restart**: the per-session hook secret was in-memory, so reattached `claude` sessions' Stop/PreToolUse callbacks would fail auth (a completed run would hang). The secret **hash** is now persisted (`hook_secrets` table + `HookSecretRepository`, migration `0033`) and rehydrated by `ApprovalService.verifySecret` on a cache miss; cleared on session end/discard.
 - [x] **C3 — shutdown divergence**: `TerminalService.onModuleDestroy` detaches durable sessions (leaves them running) and kills pty ones.
 - [x] **D — tests**: a `Spawner` contract spec (pty always; tmux skip-guarded on `tmux -V` — ran green locally) + pure-helper unit tests + recovery tests (the deterministic survive-restart equivalent) + a config-schema test. `:typecheck`/`:lint`/`:test` + `moon ci` green; existing terminal/approval/gateway/pool specs unedited.
 
 **🎉 Phase 17 complete** (A seam → B tmux → C selection/reattach → D contract tests). midnite agent runs can now survive a gateway restart.
+
+## 2026-06-22 — Phase 19 Theme D: ongoing setup-readiness panel in settings (PR #82)
+
+A permanent **Setup readiness** section in Settings → System — readiness isn't only a first-run concern, an install can break later (a revoked key, an uninstalled CLI). Reuses the Theme-A endpoint; no second source of truth. Web-only.
+
+- [x] **`SetupStatusPanel`** ([app/(main)/settings/system/setup-status-panel.tsx](../packages/web/app/(main)/settings/system/setup-status-panel.tsx)) wired into `SystemSection`: an `Accordion` with a Ready / Setup-incomplete badge, the per-item checklist (dot + label + detail + a **Fix/Manage** deep-link), a **Re-check** button, and graceful loading + error/retry states. Re-checks on window focus.
+- [x] **DRY:** extracted the status-dot colours + per-item settings hrefs into [lib/setup-items.ts](../packages/web/lib/setup-items.ts), shared by the panel and the Theme-C nudge.
+- [x] RTL ([setup-status-panel.test.tsx](../packages/web/app/(main)/settings/system/setup-status-panel.test.tsx)) + Storybook (`NotReady`/`Ready`/`Error`) coverage; `web:typecheck`/`web:lint`/`web:test` (277) green; CI green on PR #82.
+
+**Phase 19 is now A + C + D done** — only **Theme B** (the guided wizard, which also folds in the server-side completed marker + first-run auto-open deferred from C) remains.
+
+## 2026-06-22 — Phase 14 Theme B1 (part): workflow credential vault — encrypted store + REST (PR #81)
+
+A secure home for the secrets Theme C integration nodes will reference by id. Lands the security-critical store; consumers follow.
+
+- [x] **shared** — `workflow-credential.ts`: secret-free public view (id/name/type/timestamps), per-type secret payload as a discriminated union (`http-bearer`/`http-basic`/`http-header`/`slack`/`smtp`), create/list responses. `type` = the payload discriminant (one home).
+- [x] **gateway** — `workflow_credentials` table (migration **0032**); repo AES-256-GCM-encrypts the JSON secret blob before disk and decrypts only for server-side resolve; `WorkflowCredentialsService` (`list`/`create`/`remove`/`resolve`); thin `GET/POST/DELETE /workflow-credentials`. Reuses the existing `CryptoService` (no second crypto path).
+- [x] **Fail-closed** — `create` rejected with 400 + WARN when `MIDNITE_SECRET_KEY` is unset; secrets unusable without the key (same contract as provider keys, Phase 7 A1).
+- [x] **Write-only secrets** — list/create return names + types only; plaintext never serialised to a client. `service.resolve(id)` returns the decrypted, validated payload for executors, inside the gateway.
+- [x] 10 service tests (real `:memory:` SQLite + `CryptoService`): round-trip via resolve, type-from-discriminant, encrypted-at-rest (`v1:` row, no plaintext), never-leak (list+create), delete, unknown-id, both fail-closed paths. Full gateway suite green (94 files / 604 tests — also proves AppModule boots). `moon ci` green on #81.
+- ↪️ **Follow-ons (B1 remainder):** HTTP-node `credentialId` consumption in the engine (`WorkflowNode.credentialId` + `service.resolve()` already exist) and the web credentials manager + node-config picker; then **B2** (OAuth2). Gates **Theme C** integrations.
+
+## 2026-06-22 — Phase 29 Theme B: root CHANGELOG.md (PR #80)
+
+midnite had no user-facing release history — `0.0.0` everywhere, one `v0.0.0` tag, changes living only in commit subjects and `todo/done.md` (a phase tracker, different audience). Theme B seeds the curated changelog the release tooling writes into.
+
+- [x] Root [`CHANGELOG.md`](../CHANGELOG.md) in **Keep a Changelog** format: `## [Unreleased]` (curated, grouped highlights heading toward `0.1.0`) + `## [0.0.0] - 2026-06-18` scaffold baseline + compare/tag links.
+- [x] Preamble states the **lockstep** rule (shared `MAJOR.MINOR`, independent `PATCH`) and that release sections are cut via `/release-prep`→`/release-complete` (Themes C/D), kept separate from `done.md`. README links it.
+- [x] Scaffold + high-level seed only (Decision §7); precise per-release notes land when the first release is cut. Docs-only — typecheck + lint green. Phase 29: A2 + B done; A1/A3 (RELEASING.md) and C/D (skills) remain.
+
+## 2026-06-22 — Phase 12 Theme D: full n8n-style expression editor (PR #76)
+
+Phase 12 shipped the `{{ }}` engine (A–C) and the ƒx toggle (D starter, #63), but references were still hand-typed with no discovery or feedback. This finishes Theme D's headline UX: references become discoverable, insertable, and previewable. Web-only; the grammar/resolver stays the shared contract — the new code only *navigates* it.
+
+- [x] **Autocomplete** — typing in a ƒx field suggests roots (`$json`/`$node`/`$env`), upstream node **labels** inside `$node["…"]`, and object **keys** after any resolvable parent path; keyboard-navigable (↑/↓/Enter/Esc).
+- [x] **Data picker** — a click-to-insert tree of the last run's data: the node's own input under `$json` and each **ancestor** node's output under `$node[label]` (downstream nodes can't be referenced), drilling into nested objects/arrays.
+- [x] **Inline resolved-value preview** — what the field resolves to against the last run, a path-naming error for a bad reference, and a "run once to preview" empty state. Pinned sample data stays deferred to Theme E.
+- [x] Pure, tested logic in [`lib/expression-editor.ts`](../packages/web/lib/expression-editor.ts) (ancestor walk, design-time `ExpressionContext`, reference tree, cursor-aware suggestions, insertion); React wiring in [`components/expression-editor.tsx`](../packages/web/components/expression-editor.tsx); the last run is threaded `WorkflowEditor → NodeConfigPanel → NodeFields`. Design-time context mirrors the engine exactly.
+- [x] Review caught + fixed an edge-case bug: a caret before a leading `{{` was reported as *inside* the span (would splice a bare ref outside the braces) — bound the `lastIndexOf` search to `cursor - 2`, with a regression test.
+- [x] 16 lib unit tests + RTL on `NodeConfigPanel` (preview, missing-ref error, autocomplete, picker insert) + a Storybook catalog with interaction tests; `:typecheck`/`:lint`/`:test` (270 web) green; CI green on #76.
+
+Phase 12 status: **A–D + F all ✅**. Remaining: **Theme E** pin-sample-data (deferred — its consumer, the picker/preview, now exists).
+
+## 2026-06-22 — Phase 19 Theme C: soft first-run setup nudge (PR #79)
+
+Surfaces the Theme-A readiness model. A dismissible corner card that appears when the install isn't `ready`, points the user at what's missing, and **never blocks the board** (Decision §2). Web-only.
+
+- [x] **`SetupNudge`** ([components/setup-nudge.tsx](../packages/web/components/setup-nudge.tsx)) mounted once in the `(main)` layout: fetches `/setup/status`, and when `!ready` floats a compact red/amber/green checklist (mirroring the system-toolchain dots) with each unfinished row deep-linking into its settings surface + a primary CTA at the first blocker.
+- [x] **Soft only:** hidden when `ready`, hidden on `/settings/*` (Theme D owns the in-settings view), dismissible for the session, fail-open on a fetch error. Re-fetches on window focus so a regressed setup (revoked key / uninstalled CLI) re-surfaces.
+- ◐ **Dismiss flag (Decision §4):** shipped the sanctioned **localStorage/session** fallback (sessionStorage); the **server-side per-install marker + first-run wizard auto-open** are deferred to **Theme B** (the wizard) where they're actually needed — avoids a gateway migration colliding with the in-flight schema work.
+- [x] RTL ([setup-nudge.test.tsx](../packages/web/components/setup-nudge.test.tsx)) + Storybook (`NotReady`/`AlmostReady`/`Ready`) coverage; `web:typecheck`/`web:lint`/`web:test` (260) green; CI green on PR #79.
+
+Next on Phase 19: **Theme B** (guided wizard UI — folds in the server-side completed marker + auto-open) and **Theme D** (ongoing Status panel in settings/system). Both consume the Theme-A endpoint.
+
+## 2026-06-22 — Phase 14 Theme D: CLI workflow commands with live `--watch` (PR #78)
+
+Workflows were API-only from the terminal. Theme D adds `midnite workflow` parity, and `--watch` reuses the live-streaming reducer from Theme A (#72) — the terminal tail and the web run panel now fold the same event stream.
+
+- [x] **`midnite workflow list`** — table: id · name · enabled · trigger (cron inline for schedules) · steps · last run.
+- [x] **`midnite workflow run <id>`** — trigger a manual run (`run <id> [status]`); `-w/--watch` streams per-node status live until terminal (exit 1 on failure).
+- [x] **`midnite workflow runs <id>`** — recent run history.
+- [x] **`--watch` folds `/ws/workflows` through the shared `applyWorkflowEvent` reducer**, printing per-node lines with real node labels. REST backs it like the web hook: connect-time backfill (early/instant-run events precede the subscribe), a reconcile on `run.failed`, and a poll fallback if the socket dies. Global `WebSocket` (Node 22) — no new deps.
+- [x] **Typed client methods** validate every response against the shared zod schemas (`WorkflowSummary`/`Workflow`/`WorkflowRun`/`RunResponse`). CLI stays a pure HTTP/WS client.
+- [x] 12 unit tests over the pure render helpers (27 cli tests total); `:typecheck`/`:lint` green; `moon ci` green on #78. **Verified live** against a running gateway — `list`, `runs`, and `run --watch` (`✓ Fetch todo #1 → … → ✓ run succeeded`, exit 0).
+
+Phase 14 status: **A ✅ (#72), D ✅ (#78)**. Remaining: **B** (credential vault) → **C** (integrations), **E** (editor polish).
+
+## 2026-06-22 — Phase 13 follow-on E: per-repo branch naming + PR templates (PR #74)
+
+Every agent run got the same bare seed prompt regardless of target repo — no way to express "branch off `feature/` here" or "follow this PR-body shape." Follow-on E adds optional per-repo conventions that fold into the agent's prompt.
+
+- [x] **`shared`** — `branchPrefix` / `prTemplate` (optional, length-capped: 100 / 4000) on `RepoSchema`, the create/update requests, and the `config.repos` seed shape (`repo.ts` / `config.ts`); tests for trim/optional/over-long/clear-with-empty.
+- [x] **`gateway`** — `branch_prefix` / `pr_template` columns (forward migration `0031_repo_conventions`), threaded through `ReposService` create/update/seed (empty string clears → null). A pure `appendRepoConventions` helper ([`pool/lib/build-agent-prompt.ts`](../packages/gateway/src/pool/lib/build-agent-prompt.ts)) appends a `## Repository conventions` section to the seed prompt, wired into `AgentRunnerService` after URL-context enrichment. A task with no/unknown repo, or a repo with no conventions, leaves the prompt untouched. Helper + service + runner tests.
+- [x] **`web`** — branch-prefix + PR-template fields in the Settings → Repos add/edit forms, plus a branch chip + "PR template" indicator per repo row. RTL: send-on-create, edit, display.
+- [x] Gate green (typecheck · lint · 585 gateway · 248 web); ticks [`outstanding.md`](outstanding.md) #9. Phase 13 follow-on E done — C (inference repo-guessing) and F (per-repo status widget) remain.
+
+## 2026-06-22 — Phase 24 Theme A2: mobile bottom-tab navigation (PR #75)
+
+On a phone the desktop sidebar was still pinned left as a 3.5rem icon rail, eating width and shifting every page right — no thumb-reachable nav. A2 swaps it for a mobile-native pattern below `md` while leaving tablet/desktop untouched.
+
+- [x] **New `mobile-nav.tsx`** — a fixed **bottom-tab bar** rendered below `md`: the first four enabled surfaces (same `lib/features` order the sidebar uses) get one-tap tabs with an active top-indicator + `aria-current`, and a **More** button opens a bottom **sheet** (`role="dialog"`, Escape/backdrop/navigation dismiss) holding the overflow surfaces plus **Settings / Theme / Lock**. `More` is always present so those last three stay reachable even when every tab slot is a feature (Decision §5 settled: bottom-tabs + overflow drawer).
+- [x] **`nav-bar.tsx`** — the sidebar is now `hidden md:flex` (icon-rail/expanded states unchanged at `md+`); it computes the ordered enabled-feature list once and hands it to `MobileNav`, keeping the lock/passcode/idle flow in one place. ⌘K stays the power-user jump.
+- [x] **Layout/header hygiene** — `(main)/layout.tsx` clears the fixed bar with safe-area-aware bottom padding on mobile and keeps the `--nav-offset` left offset only at `md+` (inline style → `md:[padding-left:var(--nav-offset)]`). `page-header.tsx` wraps its title/actions row (`flex-wrap` + `min-w-0`) instead of overflowing at narrow widths.
+- [x] **Tests** — `mobile-nav.test.tsx` (RTL): tab set, active state, sheet contents, Settings-always-reachable, Lock fires + closes, overflow-route active flag, Escape/navigation dismiss.
+- [x] `:typecheck` · `:lint` · `:test` (web 252) · `web:build` green; `moon ci` green on PR #75. Before/after phone screenshots (390×844) in the PR.
+
+**A2 complete.** Remaining Phase 24: **A3** (per-surface reflow + office/editor desktop-only gates) → **B** (touch interactions) → **C** (PWA installability).
+
+## 2026-06-22 — Phase 14 Theme A: live run streaming via incremental event reducer (PR #72)
+
+The workflow run panel was half-wired — the hook opened `/ws/workflows` but re-pulled the whole run over REST on every event, so it was effectively still polling. Theme A finishes the live path so a running workflow updates straight off the event stream.
+
+- [x] **`shared` — pure `applyWorkflowEvent(run, event)` reducer** (+ `isRunTerminal`) in `workflow-run-reducer.ts`: folds one `WorkflowEvent` into a run snapshot (start → per-node transitions → finish), never mutating the input. Lives in `shared` so the web hook **and** the future CLI `--watch` (Theme D) share it, and liveness is testable without a browser (the doc's explicit ask). Fixtures-only unit test (transitions, purity, run-mismatch, `run.failed` vs `run.finished`, full fold).
+- [x] **`web` — `use-workflow-run.ts` folds events incrementally** instead of refetching per message. Node statuses, outputs, and the canvas colouring update live; the run-output panel reads the same `run.nodeRuns` so it updates for free. Polling is the explicit fallback when the socket is down.
+- [x] **REST kept to four roles**: initial seed (`runWorkflow` returns all nodes `pending`), one **connect-time backfill**, the reconnect/poll fallback, and a single reconcile on `run.failed` (no run body in the event). A terminal-state guard stops a slow backfill from clobbering the final run. Hook test drives a fake WebSocket to prove no per-event refetch.
+- ↪️ **Latent bug fixed:** the run starts server-side before the WS handshake completes and the gateway has no event replay, so a trigger-only / instant run finished before the client subscribed and the old code hung at `running` forever. The connect-time backfill resolves it.
+- [x] `:typecheck` · `:lint` · `:test` green across the graph (web 252, gateway 90, ui 14, cli 2, shared 316); `moon ci` green on PR #72. No static visual change (only update *timing*), so no screenshots.
+
+**Theme A complete.** Remaining Phase 14: **B** (credential vault) → **C** (integrations), with **D** (CLI parity, reuses this reducer for `--watch`) and **E** (editor polish) sliceable in parallel.
+
+## 2026-06-22 — Phase 19 Theme A: setup-readiness model + `GET /setup/status` (PR #73)
+
+The substrate for first-run onboarding — a single "is this install set up?" signal the wizard / soft nudge / status panel (Themes B–D) will all key off. Model + endpoint only; no UI yet.
+
+- [x] **`SetupStatus` contract in `shared`** (`setup.ts`): a per-item checklist (`provider` · `secret-key` · `agent-cli` · `agent-pool` · `repo`), each `{ id, label, state: ok|warn|missing, detail? }`, plus a derived `ready`. `isSetupReady()` encodes **Decision §3** — ready ⇔ a usable secret key **AND** a reachable model (a provider key **or** a working agent CLI); `warn` items (pool off, no repo) never block. zod schema + truth-table tests.
+- [x] **`GET /setup/status`** — thin `SetupController` over a `SetupService` that **composes existing services** (`ProvidersService` / `CryptoService` / `AgentsService`) + the loaded config. Pure aggregation: no new persistence, no cross-domain repository access. `ProvidersModule` now exports its service.
+- [x] **`web`** — `getSetupStatus()` added to the typed API client for Themes B–D.
+- ↪️ **Deviation noted:** the agent-CLI check uses `AgentsService` (where `claude`/`gemini`/… detection lives), not `EnvironmentService` (dev toolchain only — homebrew/node/proto/moon, none of which gate readiness). Same `detectCli` login-shell probe.
+- [x] `:typecheck` · `:lint` · `shared/gateway:test` (582) · `web:test` (245) green; `moon ci` green on PR #73. No visual change.
+
+Next on Phase 19: **Theme B** (guided wizard UI reusing env cards + provider form), **C** (first-run soft nudge banner), **D** (ongoing status panel in settings/system) — all consume this endpoint.
 
 ## 2026-06-21 — Phase 25 Theme D: Storybook catalog + DS docs + browser tests (PR #69) — **Phase 25 COMPLETE**
 

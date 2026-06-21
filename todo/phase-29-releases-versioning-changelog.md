@@ -38,12 +38,12 @@ The rule, encoded once so humans and skills agree.
 
 ---
 
-## Theme B — Root `CHANGELOG.md` — **S–M**
+## Theme B — Root `CHANGELOG.md` — **S–M** — ✅ DONE (PR #80, 2026-06-22)
 
-The curated, user-facing history.
+The curated, user-facing history. Seeded; per-release curation lands with `/release-prep` (Theme C).
 
-- [ ] A root [`CHANGELOG.md`](../CHANGELOG.md) in **Keep a Changelog** format (`## [X.Y.Z] - YYYY-MM-DD`, grouped **Added / Changed / Fixed / Removed**), seeded with an `## [Unreleased]` section and a `## [0.0.0]` baseline. Single root changelog (lockstep), with per-package patch notes called out inline (e.g. "*(cli)* …"). (Decision §4 — one root file, not per-package.)
-- [ ] Entries are **curated from conventional commits**, not a raw `git log` dump — `/release-prep` drafts them (grouping by type, dropping noise like `chore`/`test`), the human edits. Keep `done.md` (phase tracker) and `CHANGELOG.md` (release notes) **separate** — different audiences.
+- [x] A root [`CHANGELOG.md`](../CHANGELOG.md) in **Keep a Changelog** format, seeded with an `## [Unreleased]` section (curated highlights heading toward `0.1.0`) and a `## [0.0.0] - 2026-06-18` scaffold baseline + compare/tag links. Single root changelog (lockstep); the lockstep versioning note + the `/release-prep`→`/release-complete` flow are stated in the preamble. Linked from the README. (Decision §4.)
+- [x] Entries are **curated from conventional commits**, not a raw `git log` dump. The Theme-B seed is high-level; `/release-prep` (Theme C) drafts the precise per-release section at release time. `done.md` (phase tracker) and `CHANGELOG.md` (release notes) stay **separate**.
 
 ---
 

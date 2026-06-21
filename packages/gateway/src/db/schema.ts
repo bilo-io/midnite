@@ -107,14 +107,16 @@ export const projects = sqliteTable('projects', {
 // Repo registry: named checkouts the orchestrator runs agents against. The DB
 // is the runtime source of truth; `config.repos` seeds it on first boot. A task
 // references a repo by its unique `name` (no cross-domain FK). Paths stored in
-// `~`-form. Deferred columns (branchPrefix/prTemplate/cap) land in a later
-// forward migration when Phase 13 Themes D/E need them.
+// `~`-form. `branchPrefix`/`prTemplate` are optional per-repo conventions fed to
+// the agent's seed prompt (Phase 13 Theme E); the `cap` column stays deferred.
 export const repos = sqliteTable(
   'repos',
   {
     id: text('id').primaryKey(),
     name: text('name').notNull(),
     path: text('path').notNull(),
+    branchPrefix: text('branch_prefix'),
+    prTemplate: text('pr_template'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
   },
@@ -268,6 +270,18 @@ export const workflowStorage = sqliteTable(
     workflowKeyIdx: uniqueIndex('workflow_storage_workflow_key_idx').on(t.workflowId, t.key),
   }),
 );
+
+// Secrets that integration/HTTP nodes reference by id. `data` holds the AES-256-GCM
+// encrypted JSON payload ("v1:..."); the plaintext secret never leaves the gateway.
+// Mirrors the llm_providers at-rest encryption contract (CryptoService, fail-closed).
+export const workflowCredentials = sqliteTable('workflow_credentials', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  type: text('type').notNull(), // WorkflowCredentialType
+  data: text('data').notNull(), // encrypted JSON blob, never returned to a client
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
 
 // --- Agents (single primary orchestrator + subagents + heartbeat audit) ---
 
@@ -463,6 +477,8 @@ export type NodeRunRow = typeof nodeRuns.$inferSelect;
 export type NodeRunInsert = typeof nodeRuns.$inferInsert;
 export type WorkflowStorageRow = typeof workflowStorage.$inferSelect;
 export type WorkflowStorageInsert = typeof workflowStorage.$inferInsert;
+export type WorkflowCredentialRow = typeof workflowCredentials.$inferSelect;
+export type WorkflowCredentialInsert = typeof workflowCredentials.$inferInsert;
 export type TaskEventRow = typeof taskEvents.$inferSelect;
 export type TaskEventInsert = typeof taskEvents.$inferInsert;
 export type TaskAttachmentRow = typeof taskAttachments.$inferSelect;

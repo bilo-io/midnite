@@ -16,7 +16,7 @@ Scoping for the parts of [`docs/INITIAL_PLAN.md`](../docs/INITIAL_PLAN.md) (Phas
 | 6 | Inline answers for questions | 4 | M | — |
 | 7 | Knowledge-dir watcher (chokidar) + MD injection | 4 | M | — |
 | 8 | Per-repo concurrency caps | 5 | M | #4 |
-| 9 | Per-repo branch naming + PR templates | 5 | S | #4 |
+| 9 | Per-repo branch naming + PR templates ✅ | 5 | S | #4 |
 | 10 | ✅ `Spawner` interface + tmux (warp/iterm dropped) — Phase 17 A–D | 5 | L | — |
 | 11 | Serve Next.js prod build from gateway (optional) | 3 | S | — |
 | 12 | Suspend `waiting` sessions to free the slot (optional) | 5 | M | — |
@@ -138,7 +138,7 @@ Scoping for the parts of [`docs/INITIAL_PLAN.md`](../docs/INITIAL_PLAN.md) (Phas
 
 ## 9. Per-repo branch naming + PR-template injection (Phase 5)
 
-- [ ] **Not started**
+- ✅ **DONE** — Phase 13 follow-on E (PR #74, 2026-06-22): `branchPrefix`/`prTemplate` on the repo entity + config seed (migration `0031`); a pure `appendRepoConventions` helper folds a `## Repository conventions` section into the agent seed prompt; settable in Settings → Repos.
 
 **Goal:** per-repo branch prefix/template and a PR-body template.
 
@@ -150,7 +150,7 @@ Scoping for the parts of [`docs/INITIAL_PLAN.md`](../docs/INITIAL_PLAN.md) (Phas
 
 ## 10. `Spawner` interface + tmux/warp/iterm backends (Phase 5 → Phase 17)
 
-- [x] **Done — [Phase 17](phase-17-spawner-tmux.md) A–D.** `Spawner` seam extracted (A, PR #56); durable `TmuxSpawner` + backend selection + survive-restart reattach + contract tests (B/C/D, PR #72). `warp`/`iterm` **dropped** from the enum (native windows don't compose with the gateway-owned browser stream — exactly the concern flagged below).
+- [x] **Done — [Phase 17](phase-17-spawner-tmux.md) A–D.** `Spawner` seam extracted (A, PR #56); durable `TmuxSpawner` + backend selection + survive-restart reattach + contract tests (B/C/D, PR #77). `warp`/`iterm` **dropped** from the enum (native windows don't compose with the gateway-owned browser stream — exactly the concern flagged below).
 
 **Goal:** the planned pluggable spawner selected by `terminal.mode` (the enum exists but is never read; only `pty` is wired).
 

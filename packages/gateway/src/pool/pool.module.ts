@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AgentModule } from '../agent/agent.module';
+import { ReposModule } from '../repos/repos.module';
 import { TasksModule } from '../tasks/tasks.module';
 import { TerminalModule } from '../terminal/terminal.module';
 import { AgentPoolScheduler } from './agent-pool-scheduler.service';
@@ -9,7 +10,7 @@ import { LifecycleHookController } from './lifecycle-hook.controller';
 import { PoolController } from './pool.controller';
 
 @Module({
-  imports: [AgentModule, TasksModule, TerminalModule],
+  imports: [AgentModule, ReposModule, TasksModule, TerminalModule],
   controllers: [PoolController, LifecycleHookController],
   providers: [AgentPoolService, AgentRunnerService, AgentPoolScheduler],
   exports: [AgentPoolService, AgentRunnerService],

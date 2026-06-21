@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Bot, Copy, Loader2, Trash2, X } from 'lucide-react';
 import {
   getNodeTypeDefinition,
@@ -10,14 +10,17 @@ import {
   type ScheduleTrigger,
   type Trigger,
   type TriggerType,
+  type WorkflowRun,
 } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { ModelComboSelect, StyledSelect } from '@/components/ui/styled-select';
 import type { SelectOption } from '@/components/ui/select';
 import { ProviderIcon } from '@/components/provider-icon';
+import { ExpressionField } from '@/components/expression-editor';
 import { rotateWorkflowWebhook } from '@/lib/api';
 import { aiModelOptions, LLM_PROVIDER_ICON_KEY } from '@/lib/ai-node';
+import { buildExpressionContext } from '@/lib/expression-editor';
 import { describeCron } from '@/lib/cron';
 import { useWorkflowStore, type AppNode } from '@/lib/workflow-store';
 import { useConfirm } from '@/components/confirm-dialog';
@@ -130,31 +133,6 @@ function isExpressionValue(value: unknown): boolean {
   return typeof value === 'string' && value.includes('{{');
 }
 
-/** Monospace input for a `{{ }}` expression. The data-picker/autocomplete that
- *  enriches this is the larger Theme-D follow-up; this is the literal entry. */
-function ExpressionInput({
-  value,
-  onChange,
-  placeholder,
-  fieldLabel,
-}: {
-  value: unknown;
-  onChange: (v: unknown) => void;
-  placeholder?: string;
-  fieldLabel: string;
-}) {
-  return (
-    <input
-      className={cn(inputClass, 'font-mono text-xs')}
-      value={typeof value === 'string' ? value : ''}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder ?? '{{ $json.field }}'}
-      spellCheck={false}
-      aria-label={`${fieldLabel} expression`}
-    />
-  );
-}
-
 /** The ƒx affordance: flip an expressionable field between a literal control and
  *  the expression input. */
 function FxToggle({ active, onToggle, fieldLabel }: { active: boolean; onToggle: () => void; fieldLabel: string }) {
@@ -239,9 +217,25 @@ function AiModelField({
   );
 }
 
-function NodeFields({ node }: { node: AppNode }) {
+function NodeFields({ node, run }: { node: AppNode; run: WorkflowRun | null }) {
   const updateNodeParams = useWorkflowStore((s) => s.updateNodeParams);
+  const nodes = useWorkflowStore((s) => s.nodes);
+  const edges = useWorkflowStore((s) => s.edges);
   const def = getNodeTypeDefinition(node.data.kind);
+
+  // The design-time expression context for this node: its own last-run input as
+  // `$json` and each upstream node's output as `$node[label]`, drawn from the last
+  // run. Drives autocomplete, the data picker, and the resolved-value preview.
+  const { context, hasData } = useMemo(
+    () =>
+      buildExpressionContext({
+        selectedNodeId: node.id,
+        nodes: nodes.map((n) => ({ id: n.id, label: n.data.label })),
+        edges,
+        run,
+      }),
+    [node.id, nodes, edges, run],
+  );
   // Per-field expression mode, seeded from whether the saved value is already a
   // `{{ }}` template. Mounted per node (keyed on node.id by the caller), so it
   // re-seeds when a different node is selected.
@@ -276,11 +270,13 @@ function NodeFields({ node }: { node: AppNode }) {
         let control: React.ReactNode;
         if (inFx) {
           control = (
-            <ExpressionInput
+            <ExpressionField
               value={value}
               onChange={(v) => setParam(field.key, v)}
               placeholder={field.placeholder}
               fieldLabel={field.label}
+              context={context}
+              hasData={hasData}
             />
           );
         } else if (isAi && field.key === 'provider') {
@@ -317,11 +313,8 @@ function NodeFields({ node }: { node: AppNode }) {
               ) : null}
             </div>
             {control}
-            {inFx ? (
-              <p className="text-[11px] text-muted-foreground">
-                Expression — reference run data, e.g. <code className="font-mono">{'{{ $json.field }}'}</code>.
-              </p>
-            ) : field.help ? (
+            {/* In ƒx mode the ExpressionField owns its own preview/hint line. */}
+            {!inFx && field.help ? (
               <p className="text-[11px] text-muted-foreground">{field.help}</p>
             ) : null}
           </div>
@@ -456,7 +449,7 @@ function TriggerConfig({ workflowId }: { workflowId: string }) {
   );
 }
 
-export function NodeConfigPanel({ workflowId }: { workflowId: string }) {
+export function NodeConfigPanel({ workflowId, run = null }: { workflowId: string; run?: WorkflowRun | null }) {
   const selectedId = useWorkflowStore((s) => s.selectedId);
   const node = useWorkflowStore((s) => s.nodes.find((n) => n.id === selectedId) ?? null);
   const select = useWorkflowStore((s) => s.select);
@@ -501,7 +494,7 @@ export function NodeConfigPanel({ workflowId }: { workflowId: string }) {
       </header>
 
       <div className="flex-1 space-y-4 overflow-y-auto p-4">
-        {isTrigger ? <TriggerConfig workflowId={workflowId} /> : <NodeFields key={node.id} node={node} />}
+        {isTrigger ? <TriggerConfig workflowId={workflowId} /> : <NodeFields key={node.id} node={node} run={run} />}
       </div>
 
       {!isTrigger ? (

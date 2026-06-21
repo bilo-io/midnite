@@ -62,7 +62,7 @@ These all *depend on* a real repo entity (Themes A+B) and are the natural next s
 
 - **C · Repo guessing in inference** — the planner gets the repo manifest and picks a target repo per task; persist to `task.repo`. (`outstanding.md` #5.) **S.**
 - ✅ **D · Per-repo concurrency caps** — **DONE via Phase 5 (PR #49)**: `agent.maxPerRepo` caps concurrent agents per `task.repo` in the scheduler (skips a task whose repo is at the cap). (`outstanding.md` #8.)
-- **E · Per-repo branch naming + PR templates** — extend the repo entity with `branchPrefix`/`prTemplate`; consume in [`build-agent-prompt.ts`](../packages/gateway/src/pool/lib/build-agent-prompt.ts) / `gh pr create`. (`outstanding.md` #9.) **S.**
+- ✅ **E · Per-repo branch naming + PR templates** — **DONE (PR #74, 2026-06-22)**: `branchPrefix`/`prTemplate` on the repo entity (migration `0031`) + a pure `appendRepoConventions` helper ([`build-agent-prompt.ts`](../packages/gateway/src/pool/lib/build-agent-prompt.ts)) that folds a `## Repository conventions` section into the agent seed prompt (wired into `AgentRunnerService`); settable in Settings → Repos. (`outstanding.md` #9.)
 - ◐ **F · Surface repo in UI** — ✅ **repo chip on task cards** (`RepoChip`) + the thread already shows it (PR #64); the optional **per-repo status** dashboard widget (in-flight agents / queue depth per repo) remains → Phase 7 Theme C. **S.**
 - **Repo-on-disk management** — midnite cloning/pulling/worktree-creating repos. Out of scope; the registry assumes the checkout already exists at `path`.
 
