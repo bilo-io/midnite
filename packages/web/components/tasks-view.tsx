@@ -398,6 +398,12 @@ export function TasksView({
             // Reconcile with the server list and refresh counts/widgets.
             invalidateData();
           }}
+          onBulkCreated={({ counts }) => {
+            if (counts.created > 0) toast.success(`${counts.created} task${counts.created === 1 ? '' : 's'} created`);
+            // The coalesced `tasks.bulkCreated` WS event also refreshes the board;
+            // invalidate directly too so it updates without a live socket.
+            invalidateData();
+          }}
           onClose={() => setShowNewTask(false)}
         />
       )}
