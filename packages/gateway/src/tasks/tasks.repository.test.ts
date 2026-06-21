@@ -1,18 +1,10 @@
-import { resolve } from 'node:path';
-import Database from 'better-sqlite3';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { beforeEach, describe, expect, it } from 'vitest';
-import * as schema from '../db/schema';
+import { createTestDb } from '../test';
 import { TasksRepository } from './tasks.repository';
 import type { TaskInsert } from '../db/schema';
 
 function makeRepo() {
-  const sqlite = new Database(':memory:');
-  sqlite.pragma('foreign_keys = ON');
-  const db = drizzle(sqlite, { schema });
-  migrate(db, { migrationsFolder: resolve(process.cwd(), 'drizzle') });
-  return new TasksRepository(db);
+  return new TasksRepository(createTestDb().db);
 }
 
 let repo: TasksRepository;
