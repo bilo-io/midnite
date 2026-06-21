@@ -4,6 +4,19 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 14 Theme D: CLI workflow commands with live `--watch` (PR #78)
+
+Workflows were API-only from the terminal. Theme D adds `midnite workflow` parity, and `--watch` reuses the live-streaming reducer from Theme A (#72) — the terminal tail and the web run panel now fold the same event stream.
+
+- [x] **`midnite workflow list`** — table: id · name · enabled · trigger (cron inline for schedules) · steps · last run.
+- [x] **`midnite workflow run <id>`** — trigger a manual run (`run <id> [status]`); `-w/--watch` streams per-node status live until terminal (exit 1 on failure).
+- [x] **`midnite workflow runs <id>`** — recent run history.
+- [x] **`--watch` folds `/ws/workflows` through the shared `applyWorkflowEvent` reducer**, printing per-node lines with real node labels. REST backs it like the web hook: connect-time backfill (early/instant-run events precede the subscribe), a reconcile on `run.failed`, and a poll fallback if the socket dies. Global `WebSocket` (Node 22) — no new deps.
+- [x] **Typed client methods** validate every response against the shared zod schemas (`WorkflowSummary`/`Workflow`/`WorkflowRun`/`RunResponse`). CLI stays a pure HTTP/WS client.
+- [x] 12 unit tests over the pure render helpers (27 cli tests total); `:typecheck`/`:lint` green; `moon ci` green on #78. **Verified live** against a running gateway — `list`, `runs`, and `run --watch` (`✓ Fetch todo #1 → … → ✓ run succeeded`, exit 0).
+
+Phase 14 status: **A ✅ (#72), D ✅ (#78)**. Remaining: **B** (credential vault) → **C** (integrations), **E** (editor polish).
+
 ## 2026-06-22 — Phase 13 follow-on E: per-repo branch naming + PR templates (PR #74)
 
 Every agent run got the same bare seed prompt regardless of target repo — no way to express "branch off `feature/` here" or "follow this PR-body shape." Follow-on E adds optional per-repo conventions that fold into the agent's prompt.

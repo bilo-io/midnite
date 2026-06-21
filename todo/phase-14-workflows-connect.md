@@ -64,13 +64,13 @@ The payoff. Each is **one `NodeTypeDefinition` + one executor**, consuming Phase
 
 ---
 
-## Theme D — CLI parity — **S**
+## Theme D — CLI parity — **S** ✅ (PR #78)
 
 Workflows are API-only from the terminal today. Thin commander commands over the typed client (no business logic — CLAUDE.md).
 
-- [ ] `midnite workflow list` — table of workflows (name, enabled, trigger, last run).
-- [ ] `midnite workflow run <id>` — trigger a manual run; `--watch` tails the run via the WS stream (reuse the Theme A reducer) and renders per-node status.
-- [ ] `midnite workflow runs <id>` — recent run history for a workflow.
+- [x] `midnite workflow list` — table of workflows (name, enabled, trigger, last run).
+- [x] `midnite workflow run <id>` — trigger a manual run; `--watch` tails the run via the WS stream (reuse the Theme A reducer) and renders per-node status.
+- [x] `midnite workflow runs <id>` — recent run history for a workflow.
 
 ---
 
