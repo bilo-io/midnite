@@ -232,6 +232,34 @@
   }
 }
 
+/* The preview panel (Theme C) layers a gentle "breathing" opacity pulse on top of
+   the rotating glow when hovered/focused — a more alive highlight than the steady
+   glow used elsewhere. Scoped to `.panel-glow` so other gradient-border surfaces
+   keep the calmer treatment. */
+@keyframes panel-glow-pulse {
+  0%,
+  100% {
+    opacity: 0.18;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.gradient-border.panel-glow:hover::after,
+.gradient-border.panel-glow:focus-within::after {
+  animation:
+    gradient-border-spin 4s linear infinite,
+    panel-glow-pulse 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gradient-border.panel-glow:hover::after,
+  .gradient-border.panel-glow:focus-within::after {
+    animation: none;
+  }
+}
+
 /* Terminal caret blink for the CLI showcase. */
 .caret {
   display: inline-block;
