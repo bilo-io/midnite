@@ -113,6 +113,15 @@ User config lives in [`midnite.json`](midnite.json) at the repo root, validated 
 }
 ```
 
+`config.repos` is a **seed** for the DB-backed repo registry: on first boot each
+entry is inserted (by name) if absent, and the database is the runtime source of
+truth thereafter (manage repos under **Settings → Repos**). A task references a
+repo by its registry-unique **name** — choose it from the picker in the new-task
+modal or with `midnite add "…" --repo <name>`. The name is validated against the
+registry on create (an unknown name is rejected, never stored as a dangling
+string), and the task's session opens in that repo's checkout. Working-directory
+precedence is **project workDir → repo → profile fallback → gateway cwd**.
+
 `agent.maxRetries` (default `3`) bounds automatic retries: when an agent session
 exits unexpectedly (crash) while a task is still `wip`/`waiting`, the task is
 re-queued up to this many times before it's abandoned. Each task also carries a
