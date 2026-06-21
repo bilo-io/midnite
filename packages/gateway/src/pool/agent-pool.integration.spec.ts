@@ -112,7 +112,7 @@ function makeHarness(agent: Record<string, unknown> = {}): Harness {
   const terminal = makeFakeTerminal();
   const pool = new AgentPoolService(config, tasks);
   const urlContext = { enrich: async (p: string) => p } as unknown as UrlContextService;
-  const runner = new AgentRunnerService(config, pool, tasks, terminal.service, urlContext);
+  const runner = new AgentRunnerService(config, pool, tasks, terminal.service, urlContext, repos);
   const scheduler = new AgentPoolScheduler(config, tasks, pool, runner);
 
   let order = 0;

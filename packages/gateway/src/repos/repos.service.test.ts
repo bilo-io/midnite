@@ -29,6 +29,32 @@ describe('ReposService — CRUD', () => {
     expect(() => service.create({ name: 'api', path: '~/Dev/other' })).toThrow(RepoNameTakenError);
   });
 
+  it('persists branchPrefix and prTemplate conventions', () => {
+    const created = service.create({
+      name: 'api',
+      path: '~/Dev/api',
+      branchPrefix: 'feature/',
+      prTemplate: '## Summary',
+    });
+    expect(created.branchPrefix).toBe('feature/');
+    expect(created.prTemplate).toBe('## Summary');
+    expect(service.findByName('api')?.branchPrefix).toBe('feature/');
+  });
+
+  it('leaves conventions unset when omitted', () => {
+    const created = service.create({ name: 'api', path: '~/Dev/api' });
+    expect(created.branchPrefix).toBeUndefined();
+    expect(created.prTemplate).toBeUndefined();
+  });
+
+  it('updates a convention and clears it with an empty string', () => {
+    const created = service.create({ name: 'api', path: '~/Dev/api', branchPrefix: 'feature/' });
+    const renamed = service.update(created.id, { branchPrefix: 'fix/' });
+    expect(renamed.branchPrefix).toBe('fix/');
+    const cleared = service.update(created.id, { branchPrefix: '' });
+    expect(cleared.branchPrefix).toBeUndefined();
+  });
+
   it('lists repos ordered by name', () => {
     service.create({ name: 'zeta', path: '~/z' });
     service.create({ name: 'alpha', path: '~/a' });
@@ -81,6 +107,16 @@ describe('ReposService — seed from config (onModuleInit)', () => {
     ]);
     service.onModuleInit();
     expect(service.list().map((r) => r.name)).toEqual(['api', 'web']);
+  });
+
+  it('seeds conventions from config', () => {
+    const service = build([
+      { name: 'api', path: '~/Dev/api', branchPrefix: 'feature/', prTemplate: '## Why' },
+    ]);
+    service.onModuleInit();
+    const seeded = service.findByName('api');
+    expect(seeded?.branchPrefix).toBe('feature/');
+    expect(seeded?.prTemplate).toBe('## Why');
   });
 
   it('is idempotent and never overwrites an existing DB row', () => {

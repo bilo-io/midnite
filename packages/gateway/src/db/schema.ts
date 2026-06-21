@@ -107,14 +107,16 @@ export const projects = sqliteTable('projects', {
 // Repo registry: named checkouts the orchestrator runs agents against. The DB
 // is the runtime source of truth; `config.repos` seeds it on first boot. A task
 // references a repo by its unique `name` (no cross-domain FK). Paths stored in
-// `~`-form. Deferred columns (branchPrefix/prTemplate/cap) land in a later
-// forward migration when Phase 13 Themes D/E need them.
+// `~`-form. `branchPrefix`/`prTemplate` are optional per-repo conventions fed to
+// the agent's seed prompt (Phase 13 Theme E); the `cap` column stays deferred.
 export const repos = sqliteTable(
   'repos',
   {
     id: text('id').primaryKey(),
     name: text('name').notNull(),
     path: text('path').notNull(),
+    branchPrefix: text('branch_prefix'),
+    prTemplate: text('pr_template'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
   },
