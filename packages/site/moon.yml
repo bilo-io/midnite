@@ -31,6 +31,15 @@ tasks:
       - 'lib/**/*'
       - 'tsconfig.json'
 
+  test:
+    command: 'pnpm exec vitest run'
+    inputs:
+      - 'app/**/*'
+      - 'components/**/*'
+      - 'lib/**/*'
+      - 'vitest.config.ts'
+      - 'vitest.setup.ts'
+
   lint:
     command: 'pnpm exec eslint .'
     inputs:
