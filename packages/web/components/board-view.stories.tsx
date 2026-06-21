@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import { fn } from 'storybook/test';
+import { expect, fn, userEvent, within } from 'storybook/test';
 
-import { projectsById, tasks } from '@/stories/fixtures';
+import { projectsById, taskFeature, tasks } from '@/stories/fixtures';
 
 import { BoardView } from './board-view';
 import { COLUMNS } from './task-columns';
@@ -31,6 +31,12 @@ export const Populated: Story = {
     columns: COLUMNS,
     projectsById,
     showAbandoned: true,
+  },
+  // Clicking a card (a plain click, not a drag) selects its task.
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByText(taskFeature.title));
+    await expect(args.onSelect).toHaveBeenCalledOnce();
   },
 };
 

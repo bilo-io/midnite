@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import { expect, userEvent, within } from 'storybook/test';
 
 import { ThemeToggle } from './theme-toggle';
 
@@ -24,3 +25,16 @@ type Story = StoryObj<typeof meta>;
  * (The toolbar "Theme" global re-seeds it on the next remount.)
  */
 export const Default: Story = {};
+
+/** Opening the menu and picking "Light" makes it the active (checked) choice. */
+export const SelectLight: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('button', { name: 'Toggle theme' }));
+    const menu = await canvas.findByRole('menu');
+    await userEvent.click(within(menu).getByRole('menuitemradio', { name: 'Light' }));
+    // Selecting closes the menu; reopen and confirm Light is now checked.
+    await userEvent.click(canvas.getByRole('button', { name: 'Toggle theme' }));
+    await expect(canvas.getByRole('menuitemradio', { name: 'Light' })).toBeChecked();
+  },
+};
