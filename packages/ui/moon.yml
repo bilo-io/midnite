@@ -1,0 +1,43 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+language: 'typescript'
+
+# @midnite/ui is a LEAF: it depends on nothing else in the repo (Phase 25 §1) —
+# not even `shared`. So there is no `dependsOn`, and the boundary test in
+# src/boundary.test.ts enforces the rule stays true.
+#
+# This is the one package built with Vite library mode instead of `tsc -b`
+# (Phase 25 §7): Vite bundles JSX/CSS/assets, vite-plugin-dts emits the types,
+# and typechecking still runs through `tsc --noEmit`.
+#
+# The `storybook` / `build-storybook` tasks land in Theme D alongside the
+# Storybook deps + `.storybook` config — declaring them here before Storybook
+# is installed would only give `moon ci` a task that can't run.
+tasks:
+  build:
+    command: 'pnpm exec vite build'
+    inputs:
+      - 'src/**/*'
+      - 'vite.config.ts'
+      - 'tsconfig.json'
+      - 'package.json'
+    outputs:
+      - 'dist'
+
+  typecheck:
+    command: 'pnpm exec tsc --noEmit'
+    inputs:
+      - 'src/**/*'
+      - 'tsconfig.json'
+
+  test:
+    command: 'pnpm exec vitest run'
+    inputs:
+      - 'src/**/*'
+      - 'vite.config.ts'
+
+  lint:
+    command: 'pnpm exec eslint .'
+    inputs:
+      - 'src/**/*'
+      - 'vite.config.ts'
+      - '/eslint.config.mjs'
