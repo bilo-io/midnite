@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { MAX_BULK_LINES } from '@midnite/shared';
 import type { Status, Task, TaskAttachment, TaskBoardEvent, TaskEvent } from '@midnite/shared';
 import type {
@@ -360,6 +360,52 @@ describe('TasksService', () => {
 
     const clamped = await service.createFromPrompt({ prompt: 'oops', priority: 99, images: [] });
     expect(clamped.priority).toBe(3);
+  });
+
+  it('answers a question-kind task inline → resolves to done with an answer event', async () => {
+    const repo = new InMemoryRepo();
+    const classifier = {
+      classify: async (p: string) => ({ title: p.slice(0, 40), kind: 'question' as const }),
+    } as unknown as TaskClassifier;
+    const planner = {
+      triage: async () => ({ ready: true }),
+      answer: async () => 'Use a memoization helper.',
+    } as unknown as PlannerService;
+    const service = new TasksService(repo, classifier, planner, new TaskEventBus(), stubRepos);
+
+    const task = await service.createFromPrompt({ prompt: 'how do I memoize a fn?', images: [] });
+    expect(task.kind).toBe('question');
+    expect(task.status).toBe('done'); // answered inline, not queued for an agent
+    const answerEvent = repo.events.find((e) => e.kind === 'answer');
+    expect(answerEvent).toBeDefined();
+    expect(JSON.parse(answerEvent!.data as string)).toEqual({ text: 'Use a memoization helper.' });
+  });
+
+  it('leaves a question queued when no answer is produced (fail-soft)', async () => {
+    const repo = new InMemoryRepo();
+    const classifier = {
+      classify: async (p: string) => ({ title: p.slice(0, 40), kind: 'question' as const }),
+    } as unknown as TaskClassifier;
+    const planner = {
+      triage: async () => ({ ready: true }),
+      answer: async () => null,
+    } as unknown as PlannerService;
+    const service = new TasksService(repo, classifier, planner, new TaskEventBus(), stubRepos);
+
+    const task = await service.createFromPrompt({ prompt: 'unanswerable?', images: [] });
+    expect(task.status).toBe('todo'); // falls back to the planner's triage column
+    expect(repo.events.some((e) => e.kind === 'answer')).toBe(false);
+  });
+
+  it('does not attempt to answer non-question tasks', async () => {
+    const repo = new InMemoryRepo();
+    const answer = vi.fn();
+    const planner = { triage: async () => ({ ready: true }), answer } as unknown as PlannerService;
+    // StubClassifier returns kind 'feature'.
+    const service = new TasksService(repo, new StubClassifier(), planner, new TaskEventBus(), stubRepos);
+
+    await service.createFromPrompt({ prompt: 'add a setting', images: [] });
+    expect(answer).not.toHaveBeenCalled();
   });
 
   it('retry bumps retryCount, returns the task to todo, and emits agent.retried', () => {

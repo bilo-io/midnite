@@ -265,6 +265,12 @@ export class TasksService {
       this.planner.triage(input.prompt),
     ]);
 
+    // A question is answered inline rather than queued for an agent: generate a
+    // direct answer (fail-soft → null) and, if we got one, resolve the task to
+    // `done` with the answer recorded on its thread. Only `question`-kind tasks
+    // take this path, so the extra plan-model call is rare.
+    const answer = classified.kind === 'question' ? await this.planner.answer(input.prompt) : null;
+
     const id = randomUUID();
     const now = new Date().toISOString();
 
@@ -272,9 +278,9 @@ export class TasksService {
       id,
       title: classified.title,
       kind: classified.kind,
-      // An explicit caller status wins; otherwise the planner's triage decides
-      // the landing column.
-      status: input.status ?? (triage.ready ? 'todo' : 'backlog'),
+      // A generated inline answer resolves the task to `done`; otherwise an
+      // explicit caller status wins, falling back to the planner's triage column.
+      status: answer ? 'done' : (input.status ?? (triage.ready ? 'todo' : 'backlog')),
       priority: clampPriority(input.priority),
       prompt: input.prompt,
       repo,
@@ -308,6 +314,18 @@ export class TasksService {
         attachments: input.images.length,
       }),
     });
+
+    // Record the inline answer on the task thread (surfaced in the web thread
+    // view) so the resolved question carries its answer with it.
+    if (answer) {
+      this.repo.insertEvent({
+        id: randomUUID(),
+        taskId: id,
+        at: now,
+        kind: 'answer',
+        data: JSON.stringify({ text: answer }),
+      });
+    }
 
     const task = this.getTask(id);
     if (opts.emit === false) return task;
