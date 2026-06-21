@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { parseConfig, type MidniteConfig, type ServerTerminalMessage } from '@midnite/shared';
 import type { TasksService } from '../tasks/tasks.service';
 import type { ProjectsService } from '../projects/projects.service';
+import type { ReposService } from '../repos/repos.service';
 import type { AgentsService } from '../agents/agents.service';
 import {
   TerminalService,
@@ -34,6 +35,7 @@ afterEach(() => {
 
 const noTasks = { listTasks: () => [] } as unknown as TasksService;
 const noProjects = { workDirFor: () => undefined } as unknown as ProjectsService;
+const noRepos = { findByName: () => undefined } as unknown as ReposService;
 const noAgents = { getAgentCli: () => 'claude' as const, getDefaultWorkDir: () => undefined } as unknown as AgentsService;
 
 // PTY-mechanics tests don't exercise approvals; a no-op stub satisfies the wiring.
@@ -47,7 +49,14 @@ const noApprovals = {
 } as unknown as ApprovalService;
 
 function makeService(terminal: Record<string, unknown>): TerminalService {
-  return new TerminalService(makeConfig(terminal), noTasks, noProjects, noAgents, noApprovals);
+  return new TerminalService(
+    makeConfig(terminal),
+    noTasks,
+    noProjects,
+    noRepos,
+    noAgents,
+    noApprovals,
+  );
 }
 
 function decode(data: string): string {

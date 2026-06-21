@@ -8,6 +8,7 @@ import { MIDNITE_CONFIG } from '../config.token';
 import { AgentsService } from '../agents/agents.service';
 import { expandTilde } from '../fs/path-tilde';
 import { ProjectsService } from '../projects/projects.service';
+import { ReposService } from '../repos/repos.service';
 import { TasksService } from '../tasks/tasks.service';
 import { ApprovalService } from './approval.service';
 
@@ -158,6 +159,7 @@ export class TerminalService implements OnModuleDestroy {
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
     @Inject(TasksService) private readonly tasks: TasksService,
     @Inject(ProjectsService) private readonly projects: ProjectsService,
+    @Inject(ReposService) private readonly repos: ReposService,
     @Inject(AgentsService) private readonly agents: AgentsService,
     // Mutual lifecycle/broadcast dependency within the terminal module.
     @Inject(forwardRef(() => ApprovalService)) private readonly approvals: ApprovalService,
@@ -784,7 +786,7 @@ export class TerminalService implements OnModuleDestroy {
 
   // cwd resolution for a session's PTY, in priority order:
   //   1. the work directory configured on the session's project (expanded from ~)
-  //   2. the session's task repo (mapped name→path via config.repos)
+  //   2. the session's task repo (resolved name→path via the repo registry)
   //   3. the global fallback working directory (set on the profile page)
   //   4. the gateway's working directory
   private resolveCwd(sessionId?: string): string {
@@ -794,10 +796,8 @@ export class TerminalService implements OnModuleDestroy {
         const workDir = this.projects.workDirFor(task.projectId);
         if (workDir) return expandTilde(workDir, homedir());
       }
-      const repo = task?.repo
-        ? this.config.repos.find((r) => r.name === task.repo)
-        : undefined;
-      if (repo) return repo.path;
+      const repo = task?.repo ? this.repos.findByName(task.repo) : undefined;
+      if (repo) return expandTilde(repo.path, homedir());
     }
     const fallback = this.agents.getDefaultWorkDir();
     if (fallback) return expandTilde(fallback, homedir());

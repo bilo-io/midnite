@@ -20,6 +20,7 @@ describe('ad-hoc terminals', () => {
     {} as never,
     {} as never,
     {} as never,
+    {} as never,
   );
 
   it('registers an ad-hoc terminal and recognises its id', () => {
