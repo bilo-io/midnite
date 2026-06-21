@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 12 Theme D (start): ƒx expression toggle + unique node labels (PR #63)
+
+The two **S** foundations of the n8n-style expression editor — the autocomplete input, data picker, and resolved-value preview remain.
+
+- [x] **ƒx toggle** ([`node-config-panel.tsx`](../packages/web/components/node-config-panel.tsx)): every `expressionable` field gets a per-field ƒx button flipping it between its literal control and a monospace expression input (field-specific aria-label). Mode seeds from whether the saved value is already a `{{ }}` template; the field forms re-seed per selected node (keyed on node id).
+- [x] **Unique node labels** ([`workflow-store.ts`](../packages/web/lib/workflow-store.ts)): a `uniqueLabel` helper auto-suffixes a clash (" 2", " 3", …), applied in `addNode` and a new `setLabel` action; the config-panel header becomes an editable rename field that commits on blur/Enter and re-syncs when the store de-dupes. Labels matter because expressions reference upstream nodes by label.
+- [x] Tests (+8): `workflow-store` (`uniqueLabel`; addNode/setLabel auto-suffix; free rename) + `node-config-panel` (ƒx round-trips a field literal↔expression; seeds from a template; rename auto-suffixes). `:typecheck`/`:lint`/`:test` + `web:build` green on PR #63 (web 50 files / 210 tests).
+
 ## 2026-06-21 — Phase 18 Theme D: generalize the report renderer (PR #62)
 
 The shared substrate for [Phase 18](phase-18-reports-exports.md#theme-d--generalize-the-renderer--reuse-shared-substrate--sm--done-pr-62-2026-06-21) — lift the councils-only client-side renderer so tasks/projects/workflow-run exports (Themes A/B/C) just plug in. Reuse, no redesign; the no-puppeteer (markdown server-side · PDF client-side) contract is untouched.
