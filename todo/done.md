@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 13 Theme A complete: repos as a first-class DB-backed entity (PR #45)
+
+Promote `repos` from a dormant `config.repos` array to a managed, DB-backed registry. Closes [Phase 13](phase-13-repos-first-class.md) Theme A (A1–A4); satisfies the registry half of [outstanding.md](outstanding.md) #4. **Theme B** (task-creation picker, write-time `task.repo` validation, cwd-precedence tests) remains.
+
+- [x] **shared:** new [`repo.ts`](../packages/shared/src/repo.ts) — `RepoSchema` + `CreateRepoRequestSchema`/`UpdateRepoRequestSchema` (trim/min/max; empty-patch rejected) + `RepoResponseSchema`; barrel export + zod tests.
+- [x] **gateway:** `repos` Drizzle table (UUIDv7 id, **unique** `name`, `path`, timestamps) + forward-only migration `0030_repos` (minimal columns — deferred `branchPrefix`/`prTemplate`/`cap` to Themes D/E, Decision §5). New `repos/` module — `ReposRepository` (Drizzle-only), `ReposService` (unique-name enforcement → `RepoNameTakenError`, `~`-path normalisation, `RepoDoesNotExistError`), thin `ReposController` (`GET`/`GET /:id`/`POST`/`PATCH /:id`/`DELETE /:id`; 400/404/409 translation); registered in `AppModule`. (Plural class names match the `projects` module convention.)
+- [x] **seed + cwd (A3):** `ReposService.onModuleInit` seeds from `config.repos` insert-if-absent by name (DB authoritative thereafter; never overwrites/deletes — Decision §2). `resolveCwd` resolves `task.repo` → path via the registry (`expandTilde` on read) instead of `config.repos` — also fixes a latent raw-`~` bug where config paths weren't expanded.
+- [x] **web:** typed `getRepos`/`createRepo`/`updateRepo`/`deleteRepo` client; a **Settings > Repos** panel (list · add · inline-edit · remove) with inline validation + surfaced server errors + a sidebar nav entry.
+- [x] Tests at each layer — shared schema, gateway service (`:memory:`: CRUD, unique-name on create+rename, seed idempotency) + controller (400/404/409), web RTL (list/add/error/validation). `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #45 (one pre-existing flaky terminal env-dump spec needed a CI re-run — unrelated).
+
 ## 2026-06-21 — Phase 6 follow-up: ai.claude node defaults to canonical sonnet4.6 (PR #46)
 
 The workflow `ai.claude` node defaulted to `sonnet4.7`, a retired alias whose dated id 404s — the adapter only kept it resolving as a legacy fallback. New nodes now default to the canonical `sonnet4.6` (same underlying `claude-sonnet-4-6`, but in the adapter's advertised list), so a freshly-added node works against real credentials.

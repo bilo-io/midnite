@@ -70,7 +70,7 @@ Scoping for the parts of [`docs/INITIAL_PLAN.md`](../docs/INITIAL_PLAN.md) (Phas
 
 ## 4. Make `repos` first-class (Phase 4/5 prerequisite)
 
-- [ ] **Not started**
+- ◐ **Registry done** — the DB-backed repo registry + REST + Settings UI + config-seed + registry-backed `resolveCwd` landed in [Phase 13](phase-13-repos-first-class.md) Theme A (PR #45, 2026-06-21). Still open (Theme B): a task-creation **picker**, write-time `task.repo` **validation** (no silent fall-through), and the cwd-precedence tests — plus the deferred follow-ons (#5 repo guessing, #8 caps, #9 branch/PR templates).
 
 **Goal:** promote `repos` from a dormant config shape to a managed entity the workflow revolves around. Today it's half-wired: `RepoConfig` is `{ name, path }`, `config.repos` is empty in the sample, and `tasks.repo` is a **nullable free-text name**. The create endpoint accepts a `repo` field ([`tasks.controller.ts`](../packages/gateway/src/tasks/tasks.controller.ts), [`tasks.service.ts`](../packages/gateway/src/tasks/tasks.service.ts)), and there is exactly **one consumer** — [`terminal.service.ts`](../packages/gateway/src/terminal/terminal.service.ts) `resolveCwd()` maps `task.repo` (name) → `config.repos[].path` to pick the PTY cwd. But it's dormant: the list is empty, the web new-task modal has no repo picker, inference never sets it, and a missing/mismatched name silently falls through to a fallback dir.
 

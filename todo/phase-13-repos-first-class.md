@@ -20,25 +20,21 @@
 
 ---
 
-## Theme A — Repo registry (DB-backed) — **M**
+## Theme A — Repo registry (DB-backed) — **M** — ✅ DONE (PR #45, 2026-06-21)
 
-Make repos a managed entity users populate and CRUD in the app, not an empty config array.
+Repos are now a managed, DB-backed entity users CRUD in the app — not an empty config array. (Class names landed plural — `ReposService`/`ReposController`/`ReposRepository`/`ReposModule` — to match the existing `projects` module convention.) See [done.md](done.md). **Theme B** (picker + write-time validation + cwd-precedence tests) remains.
 
-### A1. `repos` table + repository — **S–M**
-- [ ] New Drizzle table `repos` in [`db/schema.ts`](../packages/gateway/src/db/schema.ts): `id` (UUIDv7), `name` (**unique**), `path`, timestamps. Forward-only migration (next in [`packages/gateway/drizzle/`](../packages/gateway/drizzle/)). Carry a nullable `branchPrefix` / `prTemplate` / `cap` column shape only if cheap — otherwise leave them to the deferred themes (don't gold-plate the migration; a later forward migration can add them).
-- [ ] `RepoRepository` — Drizzle queries only (`list`, `getById`, `getByName`, `insert`, `update`, `delete`), accepting a `Db` so the service owns transactions.
+### A1. `repos` table + repository — **S–M** — ✅ DONE
+- [x] Drizzle table `repos` (`id`, unique `name`, `path`, timestamps) + forward-only migration `0030_repos`. Deferred `branchPrefix`/`prTemplate`/`cap` columns left to Themes D/E (Decision §5). `ReposRepository` is Drizzle-only (`list`/`getById`/`getByName`/`insert`/`update`/`delete`), accepting the injected `Db`.
 
-### A2. `RepoService` + module + REST — **M**
-- [ ] `ReposModule` registered in `AppModule`; `RepoService` owns business logic (UUIDv7 generation, **unique-name enforcement** → a typed domain error, path validation/normalisation — expand `~`).
-- [ ] Thin `RepoController`: `GET /repos`, `POST /repos`, `PATCH /repos/:id`, `DELETE /repos/:id` — validate bodies via the shared schemas; translate domain errors to HTTP (duplicate name → 409, unknown id → 404).
-- [ ] Shared schemas in [`shared/src/repo.ts`](../packages/shared/src/) (new): `RepoSchema`, `CreateRepoRequestSchema`, `UpdateRepoRequestSchema`; barrel export + typed client functions in the shared API client. (`RepoConfigSchema` stays for the config/seed path.)
+### A2. `ReposService` + module + REST — **M** — ✅ DONE
+- [x] `ReposModule` registered in `AppModule`; `ReposService` owns logic (`randomUUID` id, unique-name enforcement → `RepoNameTakenError`, `~`-path normalisation). Thin `ReposController`: `GET /repos`, `GET /repos/:id`, `POST`, `PATCH /:id`, `DELETE /:id` — zod-validated bodies; domain errors → HTTP (duplicate → 409, unknown id → 404, empty patch → 400). Shared `RepoSchema`/`CreateRepoRequestSchema`/`UpdateRepoRequestSchema` + barrel; typed client fns in `web/lib/api.ts`. `RepoConfigSchema` kept for the seed path.
 
-### A3. Seed from config + source-of-truth handoff — **S**
-- [ ] On first boot, **seed** the `repos` table from `config.repos` (insert any config repo whose name isn't already a row). After seeding, the **DB is the runtime source of truth**; `midnite.json` `repos` becomes a one-time seed (+ a safe re-import that upserts by name, never deletes).
-- [ ] `resolveCwd` reads the repo path from the **registry** (via `RepoService`/repository), not directly from `config.repos`. (Decision §2.)
+### A3. Seed from config + source-of-truth handoff — **S** — ✅ DONE
+- [x] On boot, `ReposService.onModuleInit` seeds the registry from `config.repos` insert-if-absent by name (DB is the runtime source of truth thereafter; never overwrites a DB row, never deletes — Decision §2). `resolveCwd` now resolves `task.repo` → path via the registry (`expandTilde` on read), not `config.repos`.
 
-### A4. Settings UI — **S–M**
-- [ ] A **Settings > Repos** panel (web): list repos (name · path), add / edit / remove, with inline validation (duplicate name, empty path). Follow the existing settings/modal conventions — no new modal primitive.
+### A4. Settings UI — **S–M** — ✅ DONE
+- [x] A **Settings > Repos** panel (list · add · inline-edit · remove) with inline validation (name + path required) and server errors (e.g. duplicate name) surfaced; reuses the existing `Accordion`/`Button`/`Input`/`useConfirm` primitives + a sidebar nav entry. RTL-tested.
 
 ---
 
