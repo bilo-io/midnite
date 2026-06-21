@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import type { BulkCreateTaskResponse } from '@midnite/shared';
+import type { BulkCreateTaskResponse, Repo } from '@midnite/shared';
 
 const createBulk = vi.fn();
 const createTask = vi.fn();
@@ -13,10 +13,22 @@ import { NewTaskModal } from './new-task-modal';
 
 const BLOB = ['fix login bug', '- add dark mode', '# a comment', '', 'write docs'].join('\n');
 
-function renderModal(overrides?: { onBulkCreated?: () => void }) {
+const REPOS: Repo[] = [
+  { id: 'r1', name: 'web', path: '~/Dev/web', createdAt: '', updatedAt: '' },
+  { id: 'r2', name: 'gateway', path: '~/Dev/gateway', createdAt: '', updatedAt: '' },
+];
+
+// createTask/createBulk are module-level spies, so clear call history between
+// tests — otherwise `mock.calls[0]` leaks the previous test's FormData.
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
+function renderModal(overrides?: { onBulkCreated?: () => void; repos?: Repo[] }) {
   render(
     <NewTaskModal
       projects={[]}
+      repos={overrides?.repos ?? []}
       onCreated={vi.fn()}
       onBulkCreated={overrides?.onBulkCreated ?? vi.fn()}
       onClose={vi.fn()}
@@ -74,5 +86,45 @@ describe('NewTaskModal — bulk paste', () => {
     expect(screen.getByText('write docs')).toBeInTheDocument();
     expect(screen.getByText(/classification failed/)).toBeInTheDocument();
     expect(onBulkCreated).toHaveBeenCalledWith(response);
+  });
+});
+
+describe('NewTaskModal — repo picker (Phase 13 B1)', () => {
+  it('hides the repo picker when there are no registered repos', () => {
+    renderModal({ repos: [] });
+    expect(screen.queryByLabelText('Repo')).toBeNull();
+  });
+
+  it('lists registered repos with an explicit Unassigned default', () => {
+    renderModal({ repos: REPOS });
+    const select = screen.getByLabelText('Repo') as HTMLSelectElement;
+    const options = Array.from(select.options).map((o) => o.textContent);
+    expect(options).toEqual(['Unassigned', 'web', 'gateway']);
+    // Unassigned is the empty value (sent as no repo).
+    expect(select.value).toBe('');
+  });
+
+  it('sends the chosen repo name on a single create', async () => {
+    createTask.mockResolvedValueOnce({ task: { id: 't1', title: 'x', status: 'todo', kind: 'feature' } });
+    renderModal({ repos: REPOS });
+
+    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'tweak nav' } });
+    fireEvent.change(screen.getByLabelText('Repo'), { target: { value: 'gateway' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create task' }));
+
+    expect(createTask).toHaveBeenCalledTimes(1);
+    const form = createTask.mock.calls[0]![0] as FormData;
+    expect(form.get('repo')).toBe('gateway');
+  });
+
+  it('omits repo when left Unassigned', async () => {
+    createTask.mockResolvedValueOnce({ task: { id: 't2', title: 'x', status: 'todo', kind: 'feature' } });
+    renderModal({ repos: REPOS });
+
+    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'no repo' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create task' }));
+
+    const form = createTask.mock.calls[0]![0] as FormData;
+    expect(form.get('repo')).toBeNull();
   });
 });
