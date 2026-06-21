@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 10 C2: stories for workflows/councils/shipped widgets (PR #70)
+
+Three more list-style self-fetching widgets storied on the `installMockFetch` helper (#53), continuing [Phase 10 C2](phase-10-test-suite-hardening.md). Pure coverage; no product change.
+
+- [x] `workflows-widget` (`GET /workflows`), `councils-widget` (`GET /councils`), `shipped-widget` (`GET /tasks`) — each loaded / empty / error, asserting visible text in the headless-chromium run; static fixtures, no clock-derived assertions.
+- [x] 9 new story tests; `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #70 (`web:test` 245).
+- ↪️ Remaining un-storied widgets are the chart/multi-endpoint ones (`throughput`/`usage`/`system-monitor`, `agents`/`all-projects`, `market-*`, `boardroom-panel`) — each needs more than the list-widget pattern (a pinned clock or multi-endpoint mocks).
+
 ## 2026-06-21 — Phase 15 Theme B: URL + GitHub-context inference (PR #67)
 
 Links in a task's prompt are fetched and folded into the agent's seed prompt as a "Linked context" block — closing part of [Phase 15](phase-15-smart-intake.md#theme-b--url--github-context-inference--m--done-pr-67-2026-06-21) / [outstanding.md](outstanding.md) #3. Best-effort + fail-open; no new fetch path or runtime dep.
