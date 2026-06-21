@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import localFont from 'next/font/local';
 import './globals.css';
+import { ThemeProvider } from './theme/theme-context';
+import { themeInitScript } from './theme/theme-script';
 
 // Display font for the "midnite" wordmark. Exposed as a CSS var so the
 // `font-brand` Tailwind utility can apply it wherever the brand name shows.
@@ -16,6 +18,17 @@ export const metadata: Metadata = {
   title: 'midnite — Multitask Claude Code',
   description:
     'A task orchestrator wrapped around a pool of Claude Code agents. Drop in a list, let midnite classify and queue it, and run every task in parallel — tracked on one live board.',
+  // Favicons copied from packages/web/public/ (source of truth there) so the site
+  // and the app share one brand mark; wired identically to the web layout.
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon-32x32.png', type: 'image/png', sizes: '32x32' },
+      { url: '/favicon-16x16.png', type: 'image/png', sizes: '16x16' },
+    ],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
+  },
+  manifest: '/site.webmanifest',
   openGraph: {
     title: 'midnite — Multitask Claude Code',
     description:
@@ -30,11 +43,17 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
-  // Marketing site is dark-only — the class is hardcoded rather than driven by a
-  // theme switcher. Tokens in globals.css keep a light variant one line away.
+  // The resolved theme class is applied before paint by themeInitScript (no flash);
+  // ThemeProvider then keeps it in sync. suppressHydrationWarning because the script
+  // mutates <html> before React hydrates. Tokens in globals.css drive both themes.
   return (
-    <html lang="en" className={`dark ${brand.variable}`}>
-      <body className="min-h-screen bg-background text-foreground antialiased">{children}</body>
+    <html lang="en" suppressHydrationWarning className={brand.variable}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
+      <body className="min-h-screen bg-background text-foreground antialiased">
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   );
 }
