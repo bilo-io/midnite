@@ -22,6 +22,7 @@ import { ProvidersModule } from './providers/providers.module';
 import { ReposModule } from './repos/repos.module';
 import { RoutinesModule } from './routines/routines.module';
 import { SessionsModule } from './sessions/sessions.module';
+import { SetupModule } from './setup/setup.module';
 import { UsageModule } from './usage/usage.module';
 import { WeatherModule } from './weather/weather.module';
 import { WorkflowsModule } from './workflows/workflows.module';
@@ -50,6 +51,7 @@ import { TerminalModule } from './terminal/terminal.module';
     ProvidersModule,
     ReposModule,
     SessionsModule,
+    SetupModule,
     UsageModule,
     WeatherModule,
     WorkflowsModule,
