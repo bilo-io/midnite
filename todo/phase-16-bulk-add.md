@@ -33,15 +33,15 @@ The substrate both clients call. One endpoint, one batch, one coalesced board up
 - [x] **Coalesced broadcast:** one `tasks.bulkCreated` event carrying the created ids added to the `TaskBoardEvent` union (+ fixture + identity test); the payload-agnostic web invalidation hook fires one refresh (Decision §1).
 - [x] Gateway tests: 3-line blob → 3 tasks; blank/comment skipped (+ skipped count); a failing line → error row while the rest succeed; exactly one board event; batch-wide repo/priority; over-cap + empty-batch rejection. `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #40.
 
-> **Theme B (CLI `add --bulk`) remains** — it consumes this API. (Theme C — web paste modal — landed in PR #42.)
+> **Phase 16 complete** — Theme A (API, PR #40), Theme C (web modal, PR #42), Theme B (CLI `add --bulk`, PR #47) all landed.
 
 ---
 
-## Theme B — CLI `add --bulk` — **S**
+## Theme B — CLI `add --bulk` — **S** — ✅ DONE (PR #47, 2026-06-21)
 
-- [ ] `add --bulk` in [`cli/src/index.ts`](../packages/cli/src/index.ts): read from a `--file <path>` or **stdin** (so `cat ideas.txt | midnite add --bulk` and heredocs work); pass the raw text to the bulk client. Honor existing `--repo`/`--priority`/project flags as the batch-wide defaults.
-- [ ] A `createBulk` function on the typed client [`cli/src/client.ts`](../packages/cli/src/client.ts).
-- [ ] Render a **result summary table** (cli-table3, per CLAUDE.md): line → title/kind → status (or error). Print a final `N created, M skipped, K failed` line; exit non-zero only if **every** line failed (a partial batch is a success).
+- [x] `add --bulk` in [`cli/src/index.ts`](../packages/cli/src/index.ts): reads from `--file <path>` or **stdin** (so `cat ideas.txt | midnite add --bulk` and heredocs work); passes the raw text to the bulk client. `--repo`/`--priority`/`--project` apply as batch-wide defaults (and now also to a single `add`). `--file` implies bulk input.
+- [x] A `createBulk` function on the typed client [`cli/src/client.ts`](../packages/cli/src/client.ts) (+ `TaskDefaults` threaded through `createTask`).
+- [x] **Result summary table** (cli-table3, per CLAUDE.md): Line → Kind → Result (status, or `error: …`). Prints a final `N created, M skipped, K failed` line; exits non-zero **only** if every attempted line failed — a partial batch is a success (pure helpers in [`cli/src/bulk.ts`](../packages/cli/src/bulk.ts), unit-tested).
 
 ---
 
@@ -66,7 +66,7 @@ The substrate both clients call. One endpoint, one batch, one coalesced board up
 
 ## Verification
 
-- [ ] `printf 'fix login bug\n- add dark mode\n# a comment\n\nwrite docs\n' | midnite add --bulk` → **3** tasks created (comment + blank skipped, the `- ` stripped), each classified, summary table prints, exit 0.
+- [x] `printf 'fix login bug\n- add dark mode\n# a comment\n\nwrite docs\n' | midnite add --bulk` → **3** tasks created (comment + blank skipped, the `- ` stripped), each classified, summary table prints, exit 0. (PR #47)
 - [x] In the web modal, paste a 10-line list → the preview shows "10 tasks" → submit → 10 cards appear with **one** board update (not 10 refetches). (PR #42)
 - [ ] A line that fails classification (or an over-cap batch) returns a clear per-line error while the rest succeed; the failing line is shown so it can be re-submitted; the batch as a whole still reports success.
 - [ ] Batch-wide `--repo` / priority / project apply to every created task.
