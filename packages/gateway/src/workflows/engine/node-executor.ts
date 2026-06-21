@@ -6,6 +6,9 @@ import type { NodeRunLog } from '@midnite/shared';
 // safety); `input` is the merged output of upstream nodes; `signal` aborts a
 // cancelled run.
 export interface NodeRunContext {
+  // The id of the workflow this run belongs to — used by persistence-backed nodes
+  // (storage.*) to scope their reads/writes per workflow.
+  workflowId: string;
   input: unknown;
   params: Record<string, unknown>;
   signal: AbortSignal;
