@@ -19,19 +19,21 @@
 
 ---
 
-## Theme A — Bulk create API — **M**
+## Theme A — Bulk create API — **M** — ✅ DONE (PR #40, 2026-06-21)
 
 The substrate both clients call. One endpoint, one batch, one coalesced board update.
 
-### A1. Pure line-parsing helper in `shared` — **S**
-- [ ] A pure `parseBulkLines(raw: string): string[]` in [`@midnite/shared`](../packages/shared/src/) (e.g. `task.ts` or a small `bulk.ts`): split on newlines, **trim**, drop blanks and `#`-prefixed comment lines, strip leading markdown list markers (`- `, `* `, `1. `, `- [ ] `) so a pasted checklist becomes clean prompts. Deterministic + unit-tested (the CLI and web both use it, so the split is identical).
-- [ ] `BulkCreateTaskRequestSchema` + `BulkCreateTaskResponseSchema` in `shared`: request carries the raw text **or** a `lines: string[]`, plus optional shared `repo` / `projectId` / `priority` applied to every line; response is a per-line result list (`{ line, taskId?, kind?, status?, error? }`) + counts.
+### A1. Pure line-parsing helper in `shared` — **S** — ✅ DONE
+- [x] A pure `parseBulkLines(raw: string): string[]` in [`@midnite/shared`](../packages/shared/src/bulk.ts) (`bulk.ts`): split on newlines, **trim**, drop blanks and `#`-prefixed comment lines, strip leading markdown list/checklist markers (`- `, `* `, `1. `, `- [ ] `). Deterministic + unit-tested.
+- [x] `BulkCreateTaskRequestSchema` + `BulkCreateTaskResponseSchema` in `shared`: request carries the raw text **or** a `lines: string[]`, plus optional shared `repo` / `projectId` / `priority`; response is a per-line result list (`{ line, taskId?, kind?, status?, error? }`) + `{ created, skipped, failed }` counts. `MAX_BULK_LINES` exported.
 
-### A2. `POST /tasks/bulk` — **M**
-- [ ] Thin controller route in [`tasks.controller.ts`](../packages/gateway/src/tasks/tasks.controller.ts): validate the batch body, delegate to the service. Cap the batch size (reject absurd payloads → 400, Decision §3).
-- [ ] `TasksService.createBulk(input)`: parse → for each line call the **existing** `createFromPrompt()` (so classify/triage/repo/project/priority all apply uniformly), collecting per-line success/failure. **Partial failure is first-class** — one bad line doesn't abort the batch; it comes back as an error row (Decision §2). Classification across lines runs with bounded concurrency (`Promise.all` over a small pool, not strictly sequential `await`s — CLAUDE.md async rule).
-- [ ] **Coalesced broadcast:** emit a single board-refresh signal for the batch rather than N independent `task.created` events that each trigger a refetch. Options: a new `tasks.bulkCreated` event carrying the created ids, **or** emit the per-task events but let the client debounce. Recommend the explicit batch event (Decision §1); add it to the `TaskBoardEvent` union in [`events/task.ts`](../packages/shared/src/events/) with a fixture + identity test.
-- [ ] Gateway tests (`:memory:` SQLite): a 3-line blob creates 3 tasks with correct kinds; a blank/comment line is skipped; a line that throws in classify comes back as an error row while the rest succeed; exactly one board event is emitted.
+### A2. `POST /tasks/bulk` — **M** — ✅ DONE
+- [x] Thin controller route in [`tasks.controller.ts`](../packages/gateway/src/tasks/tasks.controller.ts): validates the batch body, delegates. Over-cap (`MAX_BULK_LINES` = 200) → 400 (Decision §3).
+- [x] `TasksService.createBulk(input)`: parse → fan each line through the **existing** `createFromPrompt()` (per-task broadcast suppressed via an `emit` flag), collecting per-line success/failure. **Partial failure is first-class** (Decision §2). Bounded concurrency via a new `mapWithConcurrency` lib helper (pool of 5, Decision §6).
+- [x] **Coalesced broadcast:** one `tasks.bulkCreated` event carrying the created ids added to the `TaskBoardEvent` union (+ fixture + identity test); the payload-agnostic web invalidation hook fires one refresh (Decision §1).
+- [x] Gateway tests: 3-line blob → 3 tasks; blank/comment skipped (+ skipped count); a failing line → error row while the rest succeed; exactly one board event; batch-wide repo/priority; over-cap + empty-batch rejection. `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #40.
+
+> **Themes B (CLI `add --bulk`) and C (web paste modal) remain** — they consume this API.
 
 ---
 

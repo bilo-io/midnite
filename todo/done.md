@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 16 Theme A complete: bulk task creation API (PR #40)
+
+Plural intake substrate — `POST /tasks/bulk` turns a pasted blob into one task per line with a single coalesced board update. Theme A (the API) is ✅ DONE; the CLI `add --bulk` (B) and web paste modal (C) clients remain. Satisfies [outstanding.md](outstanding.md) #2's API half / Phase 15 Theme A.
+
+- [x] **shared:** pure `parseBulkLines` (drops blanks/`#`-comments, strips `- `/`* `/`1. `/`- [ ] ` markers), `BulkCreateTaskRequest/Response` schemas (raw **or** `lines[]`, batch-wide repo/project/priority, per-line result rows + `{created,skipped,failed}`), `MAX_BULK_LINES` (200), and a coalesced `tasks.bulkCreated` member on the `TaskBoardEvent` union (+ fixture/identity test).
+- [x] **gateway:** `TasksService.createBulk` fans each line through the existing `createFromPrompt` (no forked create path; an `emit` flag suppresses the per-task broadcast) and emits one `tasks.bulkCreated` event. Partial failure is first-class (error rows); batch capped at 200 → 400; bounded concurrency via a new `mapWithConcurrency` lib helper (pool 5). Thin `POST /tasks/bulk` route.
+- [x] **web:** notifications hook skips the bulk event (no single task); the payload-agnostic invalidation hook already fires one refresh for the batch.
+- [x] Tests at each layer (shared schema/parse/event, gateway service+controller+concurrency); `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #40. Decisions §1/§2/§3/§4/§6 honored.
+
 ## 2026-06-21 — Phase 12 Theme F complete: palette grouping & new-node surfacing (PR #38)
 
 The growing node set is now navigable in the editor's left sidebar, and the Theme-C nodes that shipped but were unreachable are finally draggable. Theme F is ✅ DONE.

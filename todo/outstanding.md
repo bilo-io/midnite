@@ -42,7 +42,7 @@ Scoping for the parts of [`docs/INITIAL_PLAN.md`](../docs/INITIAL_PLAN.md) (Phas
 
 ## 2. Bulk / paste add (Phase 4)
 
-- [ ] **Not started**
+- ◐ **API done** — `POST /tasks/bulk` (the bulk endpoint + coalesced event) landed in [Phase 16](phase-16-bulk-add.md) Theme A (PR #40, 2026-06-21). The CLI `add --bulk` (Theme B) and web paste modal (Theme C) clients remain.
 
 **Goal:** accept a multi-line freeform list in one shot, one task per line.
 
