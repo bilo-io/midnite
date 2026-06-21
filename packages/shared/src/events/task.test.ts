@@ -12,6 +12,21 @@ describe('task board events', () => {
     expect(parsed).toEqual(event);
   });
 
+  it('round-trips a tasks.bulkCreated event carrying the new ids', () => {
+    const event = {
+      type: 'tasks.bulkCreated' as const,
+      at: '2026-06-21T00:00:00.000Z',
+      taskIds: ['t1', 't2', 't3'],
+    };
+    expect(TaskBoardEventSchema.parse(event)).toEqual(event);
+  });
+
+  it('rejects a tasks.bulkCreated event without taskIds', () => {
+    expect(TaskBoardEventSchema.safeParse({ type: 'tasks.bulkCreated', at: 'now' }).success).toBe(
+      false,
+    );
+  });
+
   it('rejects an unknown event type', () => {
     expect(TaskBoardEventSchema.safeParse({ type: 'task.exploded', at: 'now', id: 'x' }).success).toBe(
       false,
