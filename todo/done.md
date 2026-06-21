@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 12 Theme B complete: workflow engine expression integration (PR #33)
+
+The keystone of Phase 12 — nodes can now reference each other's output. Theme A shipped the resolver in `shared`; Theme B wires it into the engine so params resolve against a per-run context before each node executes.
+
+- [x] **Run context + resolve-before-execute** in [`workflow-engine.service.ts`](../packages/gateway/src/workflows/engine/workflow-engine.service.ts): for each non-trigger node the engine builds `{ $json: <merged input>, $node: <completed outputs by label, each as { json: output }>, $env: process.env }` and runs `resolveParams` over `node.params` before handing them to the executor (and to the branch condition). A missing/invalid reference fails *that* node and short-circuits the run with a path-naming message (`expression error in "<label>": …`) — never a silent empty string.
+- [x] **Persisted resolved params:** `node_runs.resolved_params` column (forward-only migration `0028_node_runs_resolved_params`, drizzle-kit generated) + optional `resolvedParams` on `NodeRunSchema` ([`run.ts`](../packages/shared/src/run.ts)); the repository hydrates it and `GET /runs/:id` returns it. Trigger nodes carry none.
+- [x] Stale "templating lands later" comments updated in `ai-claude.executor.ts` + `node-executor.ts`; `http.request` and `ai.claude` params now flow through resolution.
+- [x] Tests: `workflow-engine.expression.spec.ts` (typed `$node` ref with type preservation, mixed-text `$json` → string, persisted resolved params via `getRun`, missing-ref fails the referencing node not its predecessors, templated branch condition) + a shared `NodeRunSchema` round-trip. `shared`/`gateway` `:test` (481 gateway) / `:typecheck` / `:lint` green; `moon ci` green on PR #33.
+- Unblocks Phase 12 Themes C (reshape/storage nodes), D (n8n-style editor), E (run-history debugging).
+
 ## 2026-06-21 — Phase 10 B3 complete: shared gateway test harness (PR #32)
 
 Standardises the `:memory:` database setup that nine gateway specs hand-rolled. B3 is now ✅ DONE.

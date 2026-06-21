@@ -20,15 +20,15 @@ The new syntax both sides must agree on. A **safe** resolver — no `eval`, no `
 - [x] **S** `expressionable` flag added to `NodeField` ([`node-types.ts`](../packages/shared/src/node-types.ts)), marking the template-capable fields (http `url`/`headers`/`body`, ai `prompt`/`system`, branch `right`) for the editor's ƒx affordance (Theme D).
 - [x] **M** Tests (33 cases): paths, brackets, optional, mixed text, escaping `\{{`, missing-ref throw vs optional, type preservation, malformed templates (clear error, no crash), `resolveParams`. `shared` now 34 files / 257 tests; `shared:test`/`typecheck`/`lint`/`build` green; `moon ci` green on PR #27. See [done.md](done.md).
 
-## Theme B — Engine integration (resolve before execute)
+## Theme B — Engine integration (resolve before execute) — ✅ DONE (PR #33, 2026-06-21)
 
 Wire the resolver into the run so executors receive **resolved** params and we can debug what each reference became.
 
-- [ ] **M** Build the run context in [`workflow-engine.service.ts`](../packages/gateway/src/workflows/engine/workflow-engine.service.ts): keep accumulating `outputs` (already done), expose them to expressions as `$node` keyed by node **label** (fall back to id), and set `$json` to the node's computed `input`.
-- [ ] **M** Resolve a node's params via `resolveParams` **before** handing `ctx.params` to the executor; on `ExpressionError`, fail that node (short-circuit) with a clear message naming the unresolved path.
-- [ ] **S** Persist **resolved params** on each `NodeRun` (alongside `input`/`output`) — add the column via a forward-only migration in [`packages/gateway/drizzle/`](../packages/gateway/drizzle/) (next is `0028_*`) and the field in [`run.ts`](../packages/shared/src/run.ts). This is what Theme E surfaces.
-- [ ] **S** Strip the now-stale "templating lands later" comment in [`ai-claude.executor.ts`](../packages/gateway/src/workflows/engine/executors/ai-claude.executor.ts); confirm `http.request` URL/headers/body and `ai.claude` prompt all flow through resolution.
-- [ ] **M** Engine tests: a 2-node chain where node 2's param pulls `{{$node["..."].json.x}}`; missing-ref fails the right node; resolved params are persisted and returned by `GET /runs/:id`.
+- [x] **M** Build the run context in [`workflow-engine.service.ts`](../packages/gateway/src/workflows/engine/workflow-engine.service.ts): `$node` is built up from completed node outputs keyed by **label** (fall back to id), each wrapped as `{ json: output }`; `$json` is the node's computed `input`; `$env` is `process.env`.
+- [x] **M** Resolve a node's params via `resolveParams` **before** handing them to the executor (and to the branch condition); on `ExpressionError` (or any resolution error), fail that node and short-circuit the run with a path-naming message (`expression error in "<label>": …`).
+- [x] **S** Persist **resolved params** on each `NodeRun`: `node_runs.resolved_params` column (migration `0028_node_runs_resolved_params`) + `resolvedParams` on [`run.ts`](../packages/shared/src/run.ts) `NodeRunSchema`; the repository hydrates it. Trigger nodes carry none.
+- [x] **S** Stale "templating lands later" comments updated in [`ai-claude.executor.ts`](../packages/gateway/src/workflows/engine/executors/ai-claude.executor.ts) + `node-executor.ts`; `http.request` (url/headers/body) and `ai.claude` (prompt/system) params now flow through resolution.
+- [x] **M** Engine tests (`workflow-engine.expression.spec.ts`): typed `{{$node["…"]}}` ref, mixed-text `{{$json}}` → string, resolved params persisted + returned by `getRun`, missing-ref fails the referencing node (not its predecessors), templated branch condition. Plus a shared `NodeRunSchema` round-trip. See [done.md](done.md).
 
 ## Theme C — Reshape & storage nodes (registry + executors)
 
