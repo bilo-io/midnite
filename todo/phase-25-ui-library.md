@@ -55,13 +55,13 @@ Move the generic primitives in, keep web working with zero churn (Decision §2 �
 
 ---
 
-## Theme D — Storybook catalog + docs-app seam — **S–M**
+## Theme D — Storybook catalog + docs-app seam — **S–M** — ✅ DONE (PR #69, 2026-06-21)
 
-The library's Storybook is the component catalog and v1 design-system docs (Decision §3).
+The library's Storybook is the component catalog and v1 design-system docs (Decision §3). **Landed — see [done.md](done.md). Phase 25 is complete.**
 
-- [ ] **Storybook in `@midnite/ui`** — `@storybook/react-vite` (pure Vite, no Next) + `addon-a11y` + `addon-vitest`, pinned to match Phase 10's versions. The primitive stories live here; `moon run ui:test` runs them as browser tests (parity with Phase 10 C1).
-- [ ] **Design-system docs (MDX)** — catalog pages beyond components: a **color/token palette**, **typography** specimen, spacing/radius/shadow scales, and **placeholder** pages for the not-yet-built parts — so the Storybook documents the *system*, not just the widgets.
-- [ ] **Docs-app seam (structure only)** — ensure the lib is cleanly consumable (working `exports`, the token CSS, peer-dep React) so a **future `packages/docs` Vite app** can import `@midnite/ui` and the tokens. The docs app itself is **out of scope** this phase (your "later" note) — the Storybook is the v1 docs surface.
+- [x] **Storybook in `@midnite/ui`** — `@storybook/react-vite` + `addon-a11y` + `addon-vitest` (+ `addon-docs` for MDX), pinned to Phase 10's versions. Primitive stories authored fresh (the primitives had none); `moon run ui:test` runs them as chromium browser tests (Phase 10 C1 parity) alongside the node unit tests.
+- [x] **Design-system docs (MDX)** — `Design System/*` pages: colour-token palette, typography specimen, radius scale + clearly-marked placeholders for spacing/shadow/z-index/motion, and a getting-started on-ramp.
+- [x] **Docs-app seam** — the lib is cleanly consumable (working `exports`, token CSS, peer React); Storybook is the v1 docs surface. `packages/docs` (Phase 26) can now import it.
 
 ---
 

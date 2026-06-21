@@ -4,6 +4,20 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 25 Theme D: Storybook catalog + DS docs + browser tests (PR #69) — **Phase 25 COMPLETE**
+
+The final Phase 25 theme — `@midnite/ui` now has its own Storybook (component catalog + design-system docs) and runs its stories as browser tests. **Closes out Phase 25** (Themes A–D all merged); unblocks Phase 26 (the docs app).
+
+- [x] **Lib Storybook on `@storybook/react-vite`** (no Next) — addon-a11y + addon-vitest + addon-docs. Preview applies the lib's tokens + a dedicated Tailwind config (content scans `src` + `.storybook`; colours → `hsl(var(--token))`) and wraps stories in `ThemeProvider` with a light/dark toolbar, so primitives render exactly as in the app.
+- [x] **Primitive stories authored fresh** — the base primitives had no stories (Phase 10 storied domain components); a `Primitives/*` story per primitive covering key variants/states.
+- [x] **Design-system MDX docs** (`Design System/*`) — colour-token palette, typography specimen, radius scale + clearly-marked placeholders (spacing/shadow/z-index/motion), getting-started on-ramp.
+- [x] **Browser-test wiring** — `vitest.config.ts` splits into `unit` (node: boundary/tokens/theme-script/cn) + `storybook` (chromium: every story as a render+a11y test). `moon run ui:test` runs both; `moon.yml` gains `storybook`/`build-storybook`. CI installs chromium repo-wide.
+- [x] **Docs-app seam** — lib cleanly consumable (`exports`, token CSS, peer React); Storybook is the v1 docs surface. `tsconfig` sets `declaration:false` for the typecheck pass (Storybook types trip TS2742 on declaration-check); shipped `.d.ts` come from vite-plugin-dts.
+
+No `web` changes. Verified: `ui:build` (`"use client"` preserved) / typecheck / lint / build-storybook (31 stories + 4 docs) / `ui:test` **46 passed** (15 node unit + 31 chromium story tests); pristine frozen install; CI green. Independent review: faithful.
+
+**🎉 `@midnite/ui` is now a complete, self-documenting design-system package** (Themes A scaffold → B tokens+theme → C primitives → D catalog). Next: Phase 26 (docs app on `@midnite/ui`).
+
 ## 2026-06-21 — Phase 10 C2: stories for workflows/councils/shipped widgets (PR #70)
 
 Three more list-style self-fetching widgets storied on the `installMockFetch` helper (#53), continuing [Phase 10 C2](phase-10-test-suite-hardening.md). Pure coverage; no product change.
