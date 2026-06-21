@@ -78,6 +78,17 @@ describe('reshape nodes (Phase 12 Theme C)', () => {
     expect(ok.success).toBe(true);
     if (ok.success) expect(ok.data).toEqual({ mode: 'pick', fields: [] });
   });
+
+  it('registers storage.set / storage.get in the storage category', () => {
+    expect(getNodeTypeDefinition('storage.set')!.category).toBe('storage');
+    expect(getNodeTypeDefinition('storage.get')!.category).toBe('storage');
+  });
+
+  it('requires a non-empty key on storage nodes', () => {
+    expect(getNodeTypeDefinition('storage.set')!.paramsSchema.safeParse({ value: 1 }).success).toBe(false);
+    expect(getNodeTypeDefinition('storage.set')!.paramsSchema.safeParse({ key: '', value: 1 }).success).toBe(false);
+    expect(getNodeTypeDefinition('storage.get')!.paramsSchema.safeParse({ key: 'k' }).success).toBe(true);
+  });
 });
 
 describe('branch node', () => {

@@ -4,7 +4,7 @@ import { LLM_PROVIDERS, LLM_PROVIDER_LABEL, LlmProviderSchema } from './llm.js';
 
 // Node categories drive palette grouping and graph-validation rules
 // (a trigger must be the graph root, etc.).
-export const NODE_CATEGORIES = ['trigger', 'action', 'logic', 'data'] as const;
+export const NODE_CATEGORIES = ['trigger', 'action', 'logic', 'data', 'storage'] as const;
 export type NodeCategory = (typeof NODE_CATEGORIES)[number];
 
 // Field descriptors let the web render a node's config form generically,
@@ -142,12 +142,30 @@ export const DataFilterParamsSchema = z.object({
   fields: z.array(z.string()).default([]),
 });
 
+// --- Storage node params (Phase 12 Theme C) ---
+// A persisted key-value store scoped per workflow: `storage.set` stashes a value
+// under a key, `storage.get` reads it back — within the same run via {{$node}} or
+// across later runs. Key/value flow through the engine's resolve-before-execute,
+// so both may be `{{expr}}`. A missing key reads back `defaultValue` (default null)
+// rather than hard-failing, since the first run legitimately finds nothing stored.
+export const StorageSetParamsSchema = z.object({
+  key: z.string().min(1),
+  value: z.unknown(),
+});
+
+export const StorageGetParamsSchema = z.object({
+  key: z.string().min(1),
+  defaultValue: z.unknown(),
+});
+
 export type HttpRequestParams = z.infer<typeof HttpRequestParamsSchema>;
 export type AiClaudeParams = z.infer<typeof AiClaudeParamsSchema>;
 export type BranchParams = z.infer<typeof BranchParamsSchema>;
 export type SetDataParams = z.infer<typeof SetDataParamsSchema>;
 export type MergeParams = z.infer<typeof MergeParamsSchema>;
 export type DataFilterParams = z.infer<typeof DataFilterParamsSchema>;
+export type StorageSetParams = z.infer<typeof StorageSetParamsSchema>;
+export type StorageGetParams = z.infer<typeof StorageGetParamsSchema>;
 
 // The two output ports of a Branch node — also the sourcePort values on its edges.
 export const BRANCH_PORTS = ['true', 'false'] as const;
@@ -407,6 +425,60 @@ export const NODE_TYPE_DEFINITIONS: Record<string, NodeTypeDefinition> = {
         label: 'Fields',
         kind: 'json',
         help: 'JSON array of top-level field names.',
+      },
+    ],
+  },
+  'storage.set': {
+    id: 'storage.set',
+    category: 'storage',
+    title: 'Store Value',
+    description: 'Save a value under a key — readable later in this run or a future run.',
+    icon: 'database',
+    inputs: MAIN_IN,
+    outputs: MAIN_OUT,
+    paramsSchema: StorageSetParamsSchema,
+    fields: [
+      {
+        key: 'key',
+        label: 'Key',
+        kind: 'string',
+        required: true,
+        placeholder: 'lastSeenId',
+        expressionable: true,
+      },
+      {
+        key: 'value',
+        label: 'Value',
+        kind: 'json',
+        help: 'The value to store. Use {{ }} to pull from upstream nodes.',
+        expressionable: true,
+      },
+    ],
+  },
+  'storage.get': {
+    id: 'storage.get',
+    category: 'storage',
+    title: 'Read Value',
+    description: 'Read a stored value by key (from this or a previous run).',
+    icon: 'database',
+    inputs: MAIN_IN,
+    outputs: MAIN_OUT,
+    paramsSchema: StorageGetParamsSchema,
+    fields: [
+      {
+        key: 'key',
+        label: 'Key',
+        kind: 'string',
+        required: true,
+        placeholder: 'lastSeenId',
+        expressionable: true,
+      },
+      {
+        key: 'defaultValue',
+        label: 'Default',
+        kind: 'json',
+        help: 'Returned when the key has never been set. Defaults to null.',
+        expressionable: true,
       },
     ],
   },

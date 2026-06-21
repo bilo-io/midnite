@@ -4,6 +4,7 @@ import {
   real,
   sqliteTable,
   text,
+  uniqueIndex,
 } from 'drizzle-orm/sqlite-core';
 
 // NOTE: status/kind validity is enforced at the app layer via zod
@@ -229,6 +230,26 @@ export const nodeRuns = sqliteTable(
   }),
 );
 
+// Persisted key-value store for workflow runs (storage.set / storage.get nodes,
+// Phase 12 Theme C). Scoped per workflow: one row per (workflow_id, key), value is
+// JSON text. `scope` is reserved for a future global/project tier (Decision §4) —
+// null = workflow-scoped; the unique index keys on (workflow_id, key) for now.
+export const workflowStorage = sqliteTable(
+  'workflow_storage',
+  {
+    id: text('id').primaryKey(),
+    workflowId: text('workflow_id').notNull(),
+    scope: text('scope'),
+    key: text('key').notNull(),
+    value: text('value').notNull(), // JSON
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => ({
+    workflowKeyIdx: uniqueIndex('workflow_storage_workflow_key_idx').on(t.workflowId, t.key),
+  }),
+);
+
 // --- Agents (single primary orchestrator + subagents + heartbeat audit) ---
 
 // Singleton: exactly one row, id = 'primary'. Heartbeat scheduling bookkeeping
@@ -421,6 +442,8 @@ export type WorkflowRunRow = typeof workflowRuns.$inferSelect;
 export type WorkflowRunInsert = typeof workflowRuns.$inferInsert;
 export type NodeRunRow = typeof nodeRuns.$inferSelect;
 export type NodeRunInsert = typeof nodeRuns.$inferInsert;
+export type WorkflowStorageRow = typeof workflowStorage.$inferSelect;
+export type WorkflowStorageInsert = typeof workflowStorage.$inferInsert;
 export type TaskEventRow = typeof taskEvents.$inferSelect;
 export type TaskEventInsert = typeof taskEvents.$inferInsert;
 export type TaskAttachmentRow = typeof taskAttachments.$inferSelect;
