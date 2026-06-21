@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 10 Theme D: Playwright e2e harness + core flow specs (PR #84)
+
+Phases 0–9 built the product; this is the first **end-to-end flow coverage** — Playwright driving the real Next.js app against a real, seeded gateway, exercising the cross-package paths unit/Storybook tests can't (navigation, the kanban drag, live gateway data, the office canvas).
+
+- [x] **D1 — harness** ([playwright.config.ts](../packages/web/playwright.config.ts), [e2e/](../packages/web/e2e/)): boots two servers per run — the **real gateway** as a direct `node --import tsx` child (killable, so teardown can't orphan it → no stale reuse) on a **throwaway absolute temp SQLite file**, with pool/heartbeat/workflows disabled and **no LLM credentials** (serves real REST/WS, never spawns or calls out), plus a **Next dev server** pointed at it via `NEXT_PUBLIC_GATEWAY_URL`. Deterministic & isolated: ports freed + temp DB removed before each run, on oddball dedicated ports clear of dev (3000/7777). Seeded over the gateway REST API; asserts by role/text. IPv4-pinned origins (the gateway binds 127.0.0.1).
+- [x] **D2 — flow specs:** **board** (seed → assert columns → drag Todo→Backlog → persists across reload, a plain restatus that never spawns), **office** (Phaser canvas + HUD mount, store-driven DOM not pixels), **workflows/councils/dashboard** (one happy-path each; dashboard stubs external widget calls).
+- [x] New **`web:e2e`** moon task with **`runInCI: false`** — out of `moon ci` and the default `:test` gate (heavier, spawns servers). Added `@playwright/test`; `e2e/**` + `playwright.config.ts` added to web's typecheck/lint cache inputs.
+- ⏳ **Deferred:** the office **proximity-walk** interactions (board room / library / break) — need deterministic Phaser physics control (flaky); covered at the component level by the office-HUD stories (C2).
+- [x] `web:e2e` **6/6 green** (repeatable, no accumulation); pre-push gate green (`:typecheck`, `:lint`, `:test` — web 245 + all packages, run from a worktree outside `.git` since Vite denies `.git/**`); `moon ci` green on PR #84. Self-review caught + fixed the IPv4 binding and the parallel-invocation foot-gun (documented).
+
+**Theme D done** (bar the deferred office walk). Remaining Phase 10: **Theme E** (screenshot previews — depends on this) and **Theme F** (CI wiring: the e2e job, coverage). Themes A/B/C already shipped.
+
 ## 2026-06-22 — Phase 15 Theme C: answered-question affordance + filter (PR #83)
 
 The gateway already answered `question`-kind tasks inline at intake (PR #55: `PlannerService.answer` → resolve to **done** + an `answer` task-event, with the thread rendering the markdown answer). But on the board an answered question was indistinguishable from any other completed task and there was no way to find them. This finishes Theme C's UI.

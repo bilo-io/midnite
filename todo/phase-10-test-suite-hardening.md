@@ -89,15 +89,16 @@
 
 > No e2e exists. Playwright drives the **real Next.js app against a real (or seeded) gateway**, covering the cross-package flows unit/component tests can't: navigation, live WS updates, the kanban, the office.
 
-### D1. Playwright harness — **M**
-- [ ] Add `packages/web/playwright.config.ts` + an `e2e/` dir. `webServer` boots the app for the run; point tests at a **gateway with seeded, deterministic data** — either `midnite serve` against a temp `:memory:`/seeded store, or a lightweight mock-gateway fixture (Decisions §3). No reliance on real Claude Code agents or network.
-- [ ] New moon task **`web:e2e`** (`pnpm exec playwright test`) with `deps: ['^:build']` and Playwright browsers installed in CI. Keep it **out of the default `:test`** (it's heavier) — run it in its own CI job (Theme F).
+### D1. Playwright harness — **M** — ✅ DONE (PR #84, 2026-06-22)
+- [x] Added [`packages/web/playwright.config.ts`](../packages/web/playwright.config.ts) + [`e2e/`](../packages/web/e2e/). `webServer` boots **both** the real gateway (a direct `node --import tsx` child — killable, so teardown can't orphan it) on a throwaway absolute temp SQLite file with its pool/heartbeat/workflows disabled and **no LLM credentials**, and a Next dev server pointed at it. State reset before each run (ports freed + temp DB removed); seeded over the gateway REST API. Per Decisions §3 (seeded real gateway).
+- [x] New moon task **`web:e2e`** (`pnpm exec playwright test`, `deps: ['^:build']`) with **`runInCI: false`** — kept out of `moon ci` and the default `:test`. The dedicated CI job + browser-install step is Theme F.
 
-### D2. Core flow specs — **M–L**
-- [ ] **Board:** load `/`, see seeded tasks in columns, drag a task between columns, assert it persists + the WS-driven board reflects it.
-- [ ] **Office:** load `/office`, the canvas mounts, walk to the **board room** and open the project modal (URL stays `/office`), open the **library** (E), toggle a **break** (E) — proximity → `E` → modal/badge. (Phaser canvas: drive via keyboard + assert the HUD/store-driven DOM, not pixels.)
-- [ ] **Workflows / councils / dashboard:** one happy-path flow each (create/view), enough to catch a broken route or a contract mismatch with the gateway.
-- [ ] Tests are **deterministic & isolated** — seed per test, no shared mutable state, no arbitrary `waitForTimeout` (await on roles/text/network-idle).
+### D2. Core flow specs — **M–L** — ◐ MOSTLY DONE (PR #84, 2026-06-22)
+- [x] **Board:** load `/tasks` (the board route), see seeded tasks in their columns, drag a card Todo→Backlog, assert it **persists across a reload**. (A plain restatus — never into `wip`, which would spawn an agent.)
+- [x] **Office:** load `/office`, assert the Phaser **canvas + HUD mount** against the live gateway (controls hint, "0 agents online"), driving the store-driven DOM, not pixels.
+  - [ ] ⏳ **Deferred:** the proximity-walk interactions (walk to board room / library / break via `E`) — they need deterministic Phaser physics control that's inherently flaky; covered at the component level by the office-HUD stories (C2).
+- [x] **Workflows / councils / dashboard:** one happy-path "view" flow each — the route loads and the gateway-backed view renders (empty state / chrome), catching a broken route or a contract mismatch. Dashboard stubs the external widget calls.
+- [x] Tests are **deterministic & isolated** — fresh gateway + temp DB per run, assertions query by role/text (no test IDs), no arbitrary `waitForTimeout`.
 
 ---
 
