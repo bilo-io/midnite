@@ -29,6 +29,35 @@ function nodeRun(over: Partial<NodeRun> & { nodeId: string }): NodeRun {
   };
 }
 
+describe('workflow-store markSaved revision guard', () => {
+  it('clears dirty when the save completes at the current revision', () => {
+    const store = makeStore();
+    store.getState().setName('Renamed');
+    const rev = store.getState().revision;
+    expect(store.getState().dirty).toBe(true);
+
+    store.getState().markSaved(rev);
+    expect(store.getState().dirty).toBe(false);
+  });
+
+  it('keeps dirty when an edit landed during the save (stale revision)', () => {
+    const store = makeStore();
+    store.getState().setName('first');
+    const rev = store.getState().revision; // captured when the save starts
+    store.getState().setName('second'); // edit arrives mid-save → revision advances
+
+    store.getState().markSaved(rev); // stale → must not clear
+    expect(store.getState().dirty).toBe(true);
+  });
+
+  it('clears unconditionally when called with no revision', () => {
+    const store = makeStore();
+    store.getState().setName('Renamed');
+    store.getState().markSaved();
+    expect(store.getState().dirty).toBe(false);
+  });
+});
+
 describe('workflow-store applyRunState', () => {
   it('reflects per-node status and failure message onto the canvas nodes', () => {
     const store = makeStore();

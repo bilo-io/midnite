@@ -47,6 +47,10 @@ export interface WorkflowState {
   edges: Edge[];
   selectedId: string | null;
   dirty: boolean;
+  /** Monotonic edit counter, bumped on every content edit. Lets a save started
+   *  at revision R clear `dirty` only if no edit landed during its round-trip
+   *  (see `markSaved`), so an edit mid-save isn't silently marked saved. */
+  revision: number;
   setName(name: string): void;
   setEnabled(enabled: boolean): void;
   setTrigger(trigger: Trigger): void;
@@ -58,7 +62,7 @@ export interface WorkflowState {
   removeNode(id: string): void;
   select(id: string | null): void;
   applyRunState(runs: NodeRun[]): void;
-  markSaved(): void;
+  markSaved(atRevision?: number): void;
   toGraph(): WorkflowGraphPayload;
 }
 
@@ -97,15 +101,17 @@ export function createWorkflowStore(workflow: Workflow): StoreApi<WorkflowState>
     edges: toAppEdges(workflow),
     selectedId: null,
     dirty: false,
+    revision: 0,
 
-    setName: (name) => set({ name, dirty: true }),
-    setEnabled: (enabled) => set({ enabled, dirty: true }),
+    setName: (name) => set((s) => ({ name, dirty: true, revision: s.revision + 1 })),
+    setEnabled: (enabled) => set((s) => ({ enabled, dirty: true, revision: s.revision + 1 })),
 
     // workflow.trigger is canonical — keep the single trigger node's kind in lockstep.
     setTrigger: (trigger) =>
       set((s) => ({
         trigger,
         dirty: true,
+        revision: s.revision + 1,
         nodes: s.nodes.map((n) =>
           n.data.kind.startsWith('trigger.')
             ? { ...n, type: 'trigger', data: { ...n.data, kind: `trigger.${trigger.type}` } }
@@ -114,18 +120,27 @@ export function createWorkflowStore(workflow: Workflow): StoreApi<WorkflowState>
       })),
 
     onNodesChange: (changes) =>
-      set((s) => ({
-        nodes: applyNodeChanges(changes, s.nodes),
-        dirty: s.dirty || changes.some((c) => c.type !== 'select' && c.type !== 'dimensions'),
-      })),
+      set((s) => {
+        const edited = changes.some((c) => c.type !== 'select' && c.type !== 'dimensions');
+        return {
+          nodes: applyNodeChanges(changes, s.nodes),
+          dirty: s.dirty || edited,
+          revision: edited ? s.revision + 1 : s.revision,
+        };
+      }),
 
     onEdgesChange: (changes) =>
-      set((s) => ({
-        edges: applyEdgeChanges(changes, s.edges),
-        dirty: s.dirty || changes.some((c) => c.type !== 'select'),
-      })),
+      set((s) => {
+        const edited = changes.some((c) => c.type !== 'select');
+        return {
+          edges: applyEdgeChanges(changes, s.edges),
+          dirty: s.dirty || edited,
+          revision: edited ? s.revision + 1 : s.revision,
+        };
+      }),
 
-    onConnect: (connection) => set((s) => ({ edges: addEdge(connection, s.edges), dirty: true })),
+    onConnect: (connection) =>
+      set((s) => ({ edges: addEdge(connection, s.edges), dirty: true, revision: s.revision + 1 })),
 
     addNode: (kind, position) => {
       const def = getNodeTypeDefinition(kind);
@@ -140,13 +155,14 @@ export function createWorkflowStore(workflow: Workflow): StoreApi<WorkflowState>
         position: at,
         data: { kind, label: def.title, params: {} },
       };
-      set((s) => ({ nodes: [...s.nodes, node], selectedId: id, dirty: true }));
+      set((s) => ({ nodes: [...s.nodes, node], selectedId: id, dirty: true, revision: s.revision + 1 }));
     },
 
     updateNodeParams: (id, params) =>
       set((s) => ({
         nodes: s.nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, params } } : n)),
         dirty: true,
+        revision: s.revision + 1,
       })),
 
     removeNode: (id) =>
@@ -155,6 +171,7 @@ export function createWorkflowStore(workflow: Workflow): StoreApi<WorkflowState>
         edges: s.edges.filter((e) => e.source !== id && e.target !== id),
         selectedId: s.selectedId === id ? null : s.selectedId,
         dirty: true,
+        revision: s.revision + 1,
       })),
 
     select: (id) => set({ selectedId: id }),
@@ -173,7 +190,10 @@ export function createWorkflowStore(workflow: Workflow): StoreApi<WorkflowState>
         };
       }),
 
-    markSaved: () => set({ dirty: false }),
+    // Clear `dirty` only if no edit landed since the save that's completing
+    // started (its revision). Called with no argument it clears unconditionally.
+    markSaved: (atRevision) =>
+      set((s) => (atRevision !== undefined && atRevision !== s.revision ? {} : { dirty: false })),
 
     toGraph: () => {
       const { nodes, edges } = get();

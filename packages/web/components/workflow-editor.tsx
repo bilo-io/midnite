@@ -17,6 +17,7 @@ import { RunOutputPanel } from '@/components/run-output-panel';
 import { WorkflowToolbar } from '@/components/workflow-toolbar';
 import { updateWorkflow } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
+import { useAutosave } from '@/lib/use-autosave';
 import { useWorkflowRun } from '@/lib/use-workflow-run';
 import { createWorkflowStore, WorkflowStoreContext } from '@/lib/workflow-store';
 import { cn } from '@/lib/utils';
@@ -95,6 +96,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
     setSaving(true);
     setError(null);
     const state = store.getState();
+    const atRevision = state.revision;
     const graph = state.toGraph();
     try {
       await updateWorkflow(workflow.id, {
@@ -104,7 +106,9 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
         nodes: graph.nodes,
         edges: graph.edges,
       });
-      state.markSaved();
+      // Only mark clean if no edit landed during the round-trip; otherwise the
+      // edit stays dirty and autosave re-fires (it isn't silently lost).
+      store.getState().markSaved(atRevision);
       invalidateData();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to save workflow');
@@ -117,6 +121,10 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
     if (store.getState().dirty) await save();
     await runner.start();
   };
+
+  // Persist dirty edits automatically after a quiet interval; pause while a save
+  // is in flight or a run is active (run() saves first), so we never double-POST.
+  useAutosave(store, () => void save(), () => saving || runner.running);
 
   // Surface the existing trigger editor (in the config panel) from the toolbar: select
   // the canonical trigger node and force the panel open even if it was collapsed.
