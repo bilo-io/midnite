@@ -60,6 +60,7 @@ import {
   type EnvToolAction,
   type EnvToolId,
   BrowseDirResponseSchema,
+  BulkCreateTaskResponseSchema,
   CreatePlanTasksResponseSchema,
   CreateTaskResponseSchema,
   DraftPlanResponseSchema,
@@ -86,6 +87,8 @@ import {
   type AgentCliStatus,
   type AgentsConfig,
   type BrowseDirResponse,
+  type BulkCreateTaskRequest,
+  type BulkCreateTaskResponse,
   type CliTerminalAction,
   type Council,
   type CouncilFormat,
@@ -208,6 +211,20 @@ export async function createTask(form: FormData): Promise<CreateTaskResponse> {
     '/tasks',
     { method: 'POST', body: form, cache: 'no-store' },
     CreateTaskResponseSchema,
+  );
+}
+
+/**
+ * Create many tasks from one pasted blob (Phase 16). Sends the raw text so the
+ * gateway re-parses it with the same `parseBulkLines` the preview uses — one
+ * coalesced `tasks.bulkCreated` board event lands for the whole batch. Partial
+ * failure is first-class: the response carries a per-line result row + counts.
+ */
+export async function createBulk(body: BulkCreateTaskRequest): Promise<BulkCreateTaskResponse> {
+  return fetchJson(
+    '/tasks/bulk',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    BulkCreateTaskResponseSchema,
   );
 }
 
