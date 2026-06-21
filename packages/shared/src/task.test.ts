@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  ANSWER_EVENT_KIND,
   CreateTaskRequestSchema,
   MAX_TASK_TAG_LENGTH,
   SetTaskTagsRequestSchema,
@@ -7,6 +8,7 @@ import {
   TaskKindSchema,
   TaskSchema,
   UpdateTaskProjectRequestSchema,
+  isAnsweredQuestion,
 } from './task.js';
 
 const baseTask = {
@@ -71,5 +73,24 @@ describe('SetTaskTagsRequestSchema', () => {
   it('round-trips an array of tags (clamping is enforced in the service)', () => {
     const tags = ['a', 'b'.repeat(MAX_TASK_TAG_LENGTH)];
     expect(SetTaskTagsRequestSchema.parse({ tags }).tags).toEqual(tags);
+  });
+});
+
+describe('isAnsweredQuestion', () => {
+  const answerEvent = { at: '2026-06-22T00:00:00Z', kind: ANSWER_EVENT_KIND };
+
+  it('is true for a question with an answer event', () => {
+    expect(isAnsweredQuestion({ kind: 'question', events: [answerEvent] })).toBe(true);
+  });
+
+  it('is false for a question with no answer event', () => {
+    expect(
+      isAnsweredQuestion({ kind: 'question', events: [{ at: '', kind: 'task.created' }] }),
+    ).toBe(false);
+  });
+
+  it('is false for a non-question even if it somehow carries an answer event', () => {
+    expect(isAnsweredQuestion({ kind: 'bug', events: [answerEvent] })).toBe(false);
+    expect(isAnsweredQuestion({ kind: undefined, events: [answerEvent] })).toBe(false);
   });
 });
