@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { chmodSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -18,6 +18,19 @@ import type { ApprovalService } from './approval.service';
 function makeConfig(terminal: Record<string, unknown>): MidniteConfig {
   return parseConfig({ agent: {}, terminal, knowledge: {}, gateway: {} });
 }
+
+// These specs copy `process.env` into the spawned PTY's env and assert on which
+// MIDNITE_* vars are present/absent. Vitest worker-shared files mutate the same
+// `process.env`, so a var leaked from another spec (e.g. a stray MIDNITE_*)
+// could otherwise flake the secret-scrub assertions. Snapshot + restore around
+// every test so this file is isolated regardless of run order.
+let envSnapshot: NodeJS.ProcessEnv;
+beforeEach(() => {
+  envSnapshot = { ...process.env };
+});
+afterEach(() => {
+  process.env = envSnapshot;
+});
 
 const noTasks = { listTasks: () => [] } as unknown as TasksService;
 const noProjects = { workDirFor: () => undefined } as unknown as ProjectsService;
