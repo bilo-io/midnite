@@ -16,6 +16,7 @@ import { TaskClassifier, type ClassifierImage } from '../agent/classifier.servic
 import { PlannerService } from '../agent/planner.service';
 import { mapWithConcurrency } from '../lib/map-with-concurrency';
 import { ReposService } from '../repos/repos.service';
+import { buildTaskReport, taskReportFilename } from './lib/task-report';
 import { TasksRepository } from './tasks.repository';
 import { TaskEventBus } from './task-event-bus';
 
@@ -106,6 +107,12 @@ export class TasksService {
     const row = this.repo.getTask(id);
     if (!row) throw new NotFoundException(`task ${id} not found`);
     return this.repo.hydrate(row);
+  }
+
+  /** Serialize a task thread (+ its events/links) as a downloadable markdown report. */
+  exportMarkdown(id: string): { filename: string; markdown: string } {
+    const task = this.getTask(id); // throws NotFoundException for an unknown id
+    return { filename: taskReportFilename(task), markdown: buildTaskReport(task) };
   }
 
   updateStatus(id: string, status: Status): Task {

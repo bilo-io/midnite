@@ -14,6 +14,7 @@ import {
   type TaskLink,
 } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
+import { ExportMenu } from '@/components/export-menu';
 import { ProjectSelect } from '@/components/project-select';
 import { SourceIcon } from '@/components/source-icon';
 import { DeleteConfirmButton } from '@/components/delete-confirm-button';
@@ -21,6 +22,7 @@ import { useConfirm } from '@/components/confirm-dialog';
 import {
   addTaskLink,
   deleteTask,
+  exportTask,
   gatewayUrl,
   removeTaskLink,
   setTaskTags,
@@ -82,6 +84,14 @@ export function TaskThreadModal({ task, projects, onClose }: Props) {
   const kind = task.kind ?? 'unknown';
   const statusHue = STATUS_HUE_VAR[task.status];
   const images = task.attachments?.filter((a) => a.mime.startsWith('image/')) ?? [];
+  // Slugged base name for the export download / print title (the gateway also
+  // sends its own Content-Disposition; this is the client-side download name).
+  const exportFilename =
+    (task.title.trim() || 'task')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 60) || 'task';
 
   const router = useRouter();
   const confirm = useConfirm();
@@ -302,6 +312,7 @@ export function TaskThreadModal({ task, projects, onClose }: Props) {
                   Start
                 </Button>
               ) : null}
+              <ExportMenu fetchMarkdown={() => exportTask(task.id)} filename={exportFilename} />
               <Button type="button" variant="secondary" size="sm" onClick={goToSession}>
                 <SquareTerminal className="h-3.5 w-3.5" />
                 Session

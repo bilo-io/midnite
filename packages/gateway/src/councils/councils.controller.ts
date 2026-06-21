@@ -17,7 +17,6 @@ import type { FastifyReply } from 'fastify';
 import {
   CreateCouncilMemberRequestSchema,
   CreateCouncilRequestSchema,
-  REPORT_CONTENT_TYPE,
   ReorderCouncilMembersRequestSchema,
   ReportFormatSchema,
   RetryCouncilSynthesisRequestSchema,
@@ -31,6 +30,7 @@ import {
   type CouncilRunResponse,
   type CouncilRunsResponse,
 } from '@midnite/shared';
+import { sendMarkdownReport } from '../lib/report-response';
 import {
   CouncilEmptyError,
   CouncilMemberNotLiveError,
@@ -199,10 +199,7 @@ export class CouncilsController {
     const { filename, markdown } = this.translate(() =>
       this.service.exportRunMarkdown(id, runId),
     );
-    void reply
-      .header('content-type', REPORT_CONTENT_TYPE.md)
-      .header('content-disposition', `attachment; filename="${filename}"`)
-      .send(markdown);
+    sendMarkdownReport(reply, filename, markdown);
   }
 
   // Map domain errors to HTTP at the boundary (services stay HTTP-agnostic).
