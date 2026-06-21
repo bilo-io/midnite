@@ -32,6 +32,10 @@ Dedicated ports keep an e2e run from colliding with your dev `:3000`/`:7777`.
 Specs seed data over the gateway REST API ([`helpers/gateway.ts`](helpers/gateway.ts))
 and assert against accessible roles/text — never pixels or test IDs.
 
+> **One run per machine at a time.** The ports and the temp DB path are fixed, so
+> a second concurrent `web:e2e` on the same box would free the first run's ports
+> and wipe its DB. Fine for CI (isolated) and normal local use; don't run two at once.
+
 ## Not in `moon ci`
 
 `web:e2e` is heavier and spawns servers, so it's kept out of the default `:test`

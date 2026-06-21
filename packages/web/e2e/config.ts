@@ -12,5 +12,9 @@
 export const E2E_WEB_PORT = 3311;
 export const E2E_GATEWAY_PORT = 7811;
 
-export const WEB_ORIGIN = `http://localhost:${E2E_WEB_PORT}`;
-export const GATEWAY_ORIGIN = `http://localhost:${E2E_GATEWAY_PORT}`;
+// Use 127.0.0.1, not `localhost`: the gateway binds IPv4 (config default host
+// 127.0.0.1), but on Node ≥18 with verbatim DNS ordering `localhost` can resolve
+// to ::1 (IPv6) first — so the Node-side health poll + seed fetch would hit a
+// port nothing is listening on. Pinning IPv4 keeps every hop consistent.
+export const WEB_ORIGIN = `http://127.0.0.1:${E2E_WEB_PORT}`;
+export const GATEWAY_ORIGIN = `http://127.0.0.1:${E2E_GATEWAY_PORT}`;
