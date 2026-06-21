@@ -15,9 +15,20 @@ type Props = {
   onClose: () => void;
   onArchiveToggle?: () => void;
   onDelete?: () => void;
+  /**
+   * Hide the "Task" deep-link. Set when the modal is opened from a context that
+   * must not navigate away (e.g. the office overlay, which stays on `/office`).
+   */
+  disableNavigation?: boolean;
 };
 
-export function SessionTerminalModal({ session, onClose, onArchiveToggle, onDelete }: Props) {
+export function SessionTerminalModal({
+  session,
+  onClose,
+  onArchiveToggle,
+  onDelete,
+  disableNavigation = false,
+}: Props) {
   const router = useRouter();
 
   // session.id === task.id; deep-link into the tasks board, which auto-opens it.
@@ -77,7 +88,7 @@ export function SessionTerminalModal({ session, onClose, onArchiveToggle, onDele
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-1.5">
-              {session.linkedTaskId ? (
+              {session.linkedTaskId && !disableNavigation ? (
                 <Button type="button" variant="secondary" size="sm" onClick={goToTask}>
                   <ListTodo className="h-3.5 w-3.5" />
                   Task
