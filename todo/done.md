@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 16 Theme C complete: web paste-list modal (PR #42)
+
+The web client for plural intake — paste a multi-line list into the New task modal and create one task per line in a single batch, consuming the Theme A API (PR #40). Theme C is ✅ DONE; only Theme B (CLI `add --bulk`) remains in Phase 16.
+
+- [x] **web client:** `createBulk` on the typed [`lib/api.ts`](../packages/web/lib/api.ts) → `POST /tasks/bulk`, sending the **raw** text so the gateway re-parses it with the same `parseBulkLines` the preview uses.
+- [x] **Bulk mode in [`new-task-modal.tsx`](../packages/web/components/new-task-modal.tsx):** a `Single` / `Bulk paste` toggle + textarea; **live preview** (detected-task count, over-`MAX_BULK_LINES` warning, and the cleaned prompts listed with markers stripped); **per-line result summary** (created / skipped / failed with failing lines surfaced for fix-and-re-submit). Status hidden in bulk (per-task triage decides it); project + priority apply batch-wide. **Repo deferred** — no repo picker in the UI yet (Phase 13).
+- [x] Board refreshes once off the coalesced `tasks.bulkCreated` event (the payload-agnostic `useTaskEvents` already invalidates on it); `tasks-view` also invalidates directly on the callback so it works without a live socket.
+- [x] `new-task-modal.test.tsx` (RTL, 3 cases): single default; bulk preview counts + strips markers + hides status; submit sends raw blob + renders result summary incl. a failing line. `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #42 (web 36 files / 152 tests). Honors Decisions §1/§2/§4/§5.
+
 ## 2026-06-21 — Phase 12 Theme E (partial): run-history debugging — input→resolved→output + inline node errors (PR #41)
 
 See what references actually resolved to — the payoff of Theme B's persisted `resolvedParams`. Until now the run-output panel only showed a node's output, and a failed `{{expr}}` reference was buried in the run log. Theme E is ◐ partial: the run-output panel + inline node errors landed; "pin sample data" is deferred.

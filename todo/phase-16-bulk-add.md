@@ -33,7 +33,7 @@ The substrate both clients call. One endpoint, one batch, one coalesced board up
 - [x] **Coalesced broadcast:** one `tasks.bulkCreated` event carrying the created ids added to the `TaskBoardEvent` union (+ fixture + identity test); the payload-agnostic web invalidation hook fires one refresh (Decision §1).
 - [x] Gateway tests: 3-line blob → 3 tasks; blank/comment skipped (+ skipped count); a failing line → error row while the rest succeed; exactly one board event; batch-wide repo/priority; over-cap + empty-batch rejection. `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #40.
 
-> **Themes B (CLI `add --bulk`) and C (web paste modal) remain** — they consume this API.
+> **Theme B (CLI `add --bulk`) remains** — it consumes this API. (Theme C — web paste modal — landed in PR #42.)
 
 ---
 
@@ -45,12 +45,12 @@ The substrate both clients call. One endpoint, one batch, one coalesced board up
 
 ---
 
-## Theme C — Web paste-list modal — **M**
+## Theme C — Web paste-list modal — **M** — ✅ DONE (PR #42, 2026-06-21)
 
-- [ ] A bulk/paste mode in (or alongside) [`new-task-modal.tsx`](../packages/web/components/new-task-modal.tsx): a large textarea (placeholder "one task per line"), a toggle between single and bulk add, and the shared repo/project/priority controls applied to the whole batch.
-- [ ] **Live preview** using the shared `parseBulkLines` helper: show the count of detected tasks (and the cleaned lines) before submit, so the user sees "12 tasks" not a wall of text.
-- [ ] On submit, call `POST /tasks/bulk`; show a **result summary** (created / skipped / failed with the failing lines surfaced so they can be fixed and re-submitted). The board updates once off the coalesced event.
-- [ ] Component test (Storybook/RTL per Phase 10 conventions): paste N lines → preview shows N → submit calls the bulk client; an error row renders the failing line.
+- [x] A bulk/paste mode in [`new-task-modal.tsx`](../packages/web/components/new-task-modal.tsx): a `Single` / `Bulk paste` toggle, a large textarea, and the shared project/priority controls applied to the whole batch. (Status hidden in bulk — per-task triage decides it. **Repo deferred:** no repo picker exists in the UI yet — Phase 13; `repo` stays an optional API field.)
+- [x] **Live preview** using the shared `parseBulkLines` helper: the detected-task count ("N tasks detected"), an over-limit warning past `MAX_BULK_LINES`, and the cleaned prompts listed (markers stripped) so the user sees what will be created.
+- [x] On submit, call `POST /tasks/bulk` (sends **raw** text so the gateway re-parses with the same helper); show a **result summary** (created / skipped / failed with the failing lines surfaced for fix-and-re-submit). Board updates once off the coalesced `tasks.bulkCreated` event (payload-agnostic `useTaskEvents`).
+- [x] Component test (RTL, `new-task-modal.test.tsx`, 3 cases): single is default; bulk preview counts parsed lines + strips markers + hides the status control; submit sends the raw blob and renders the result summary incl. a failing line.
 
 ---
 
@@ -67,7 +67,7 @@ The substrate both clients call. One endpoint, one batch, one coalesced board up
 ## Verification
 
 - [ ] `printf 'fix login bug\n- add dark mode\n# a comment\n\nwrite docs\n' | midnite add --bulk` → **3** tasks created (comment + blank skipped, the `- ` stripped), each classified, summary table prints, exit 0.
-- [ ] In the web modal, paste a 10-line list → the preview shows "10 tasks" → submit → 10 cards appear with **one** board update (not 10 refetches).
+- [x] In the web modal, paste a 10-line list → the preview shows "10 tasks" → submit → 10 cards appear with **one** board update (not 10 refetches). (PR #42)
 - [ ] A line that fails classification (or an over-cap batch) returns a clear per-line error while the rest succeed; the failing line is shown so it can be re-submitted; the batch as a whole still reports success.
 - [ ] Batch-wide `--repo` / priority / project apply to every created task.
 - [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph; `moon ci` green. (Run web tests from the **primary checkout**, not a `.git` worktree.)
