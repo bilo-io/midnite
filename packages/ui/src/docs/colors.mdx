@@ -1,0 +1,71 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Design System/Colors" />
+
+# Colors
+
+The semantic color tokens are HSL triplets defined in `@midnite/ui/styles`, consumed as
+`hsl(var(--token))`. Every token has a light value (`:root`) and a dark override (`.dark`).
+The swatches below read the live custom properties, so each block reflects whichever theme
+is active — flip the **Theme** toolbar to compare.
+
+export const TOKENS = [
+  'background',
+  'foreground',
+  'card',
+  'card-foreground',
+  'popover',
+  'popover-foreground',
+  'primary',
+  'primary-foreground',
+  'secondary',
+  'secondary-foreground',
+  'muted',
+  'muted-foreground',
+  'accent',
+  'accent-foreground',
+  'destructive',
+  'destructive-foreground',
+  'success',
+  'success-foreground',
+  'border',
+  'input',
+  'ring',
+];
+
+export const Swatches = () => (
+  <div
+    style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+      gap: 12,
+    }}
+  >
+    {TOKENS.map((name) => (
+      <div
+        key={name}
+        style={{
+          border: '1px solid hsl(var(--border))',
+          borderRadius: 'var(--radius)',
+          overflow: 'hidden',
+          background: 'hsl(var(--card))',
+          color: 'hsl(var(--card-foreground))',
+        }}
+      >
+        <div style={{ height: 56, background: `hsl(var(--${name}))` }} />
+        <div style={{ padding: '8px 10px', fontSize: 12, fontFamily: 'monospace' }}>
+          --{name}
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+<Swatches />
+
+## Domain accent hues
+
+Beyond the semantic palette, the tokens file also defines domain accent hues for task
+**status** (`--status-*`), item **kind** (`--kind-*`), and workflow **node** category
+(`--node-*`). These are bare hues paired with lightness at the call site — see
+`src/tokens/index.ts` (`accentHues`) for the typed mirror.

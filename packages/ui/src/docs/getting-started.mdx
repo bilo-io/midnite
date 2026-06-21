@@ -1,0 +1,66 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Design System/Getting Started" />
+
+# @midnite/ui
+
+The reusable component library + design system behind midnite's web UI. A Vite-built
+leaf package: framework-agnostic React primitives, the design tokens, and a theme runtime.
+
+## Install
+
+```bash
+pnpm add @midnite/ui
+```
+
+(Inside the monorepo it's wired as `"@midnite/ui": "workspace:*"`.)
+
+## Import the tokens
+
+The design tokens ship as a plain stylesheet — import it once, near the root of your app:
+
+```ts
+import '@midnite/ui/styles';
+```
+
+This defines the HSL custom properties (`--background`, `--foreground`, `--primary`, …)
+plus the `.dark` override block. Your Tailwind config maps utilities onto them
+(`bg-background`, `text-foreground`, …) — see the web app's `tailwind.config.ts`.
+
+## Wrap in the theme provider
+
+Mount `ThemeProvider` near the root so light/dark (and `system`/`time`) resolve and the
+`dark` class is toggled on `<html>`:
+
+```tsx
+import { ThemeProvider } from '@midnite/ui/theme';
+
+export function App({ children }: { children: React.ReactNode }) {
+  return <ThemeProvider>{children}</ThemeProvider>;
+}
+```
+
+For zero flash of the wrong theme before React hydrates, inject `themeInitScript`
+(also from `@midnite/ui/theme`) as a render-blocking `<script>` in the document `<head>`.
+
+## Use a primitive
+
+```tsx
+import { Button, Card, CardHeader, CardTitle, CardContent } from '@midnite/ui';
+
+export function Example() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Hello</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Button>Click me</Button>
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+Browse the **Primitives** section for every component and its variants, and the rest of
+**Design System** for the color, typography, and scale references.

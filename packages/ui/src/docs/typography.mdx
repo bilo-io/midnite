@@ -1,0 +1,33 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Design System/Typography" />
+
+# Typography
+
+The library uses Tailwind's default type scale today (font sizes, weights, and
+line-heights). A dedicated typography token scale is reserved as a placeholder in
+`src/tokens/index.ts` (`typography`) until the design system formalizes its own.
+
+The specimen below uses Tailwind text utilities over the theme's `foreground` /
+`muted-foreground` tokens.
+
+export const Specimen = () => (
+  <div className="space-y-4 text-foreground">
+    <p className="text-3xl font-semibold tracking-tight">Heading 1 — text-3xl / semibold</p>
+    <p className="text-2xl font-semibold tracking-tight">Heading 2 — text-2xl / semibold</p>
+    <p className="text-xl font-medium">Heading 3 — text-xl / medium</p>
+    <p className="text-base">
+      Body — text-base. The quick brown fox jumps over the lazy dog. Orchestrate Claude Code
+      sessions across an agent pool from one long-running gateway.
+    </p>
+    <p className="text-sm text-muted-foreground">
+      Small / muted — text-sm. Secondary copy, hints, and metadata use the muted foreground.
+    </p>
+    <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+      Overline — text-xs / uppercase / tracking-wider (the CardTitle treatment)
+    </p>
+    <p className="font-mono text-sm">Mono — font-mono. const taskId = uuidv7();</p>
+  </div>
+);
+
+<Specimen />
