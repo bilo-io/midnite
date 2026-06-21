@@ -21,7 +21,7 @@ Drop in a freeform list, let midnite classify each item, queue them, and run the
 
 ## Status
 
-**Phase 0 — scaffold.** Empty project skeleton in place; nothing runs end-to-end yet. See [`todo/`](todo/) for the per-phase checklists and `done.md` log, and [`CHANGELOG.md`](CHANGELOG.md) for the user-facing release history.
+**Phase 0 — scaffold.** Empty project skeleton in place; nothing runs end-to-end yet. See [`todo/`](todo/) for the per-phase checklists and `done.md` log, [`CHANGELOG.md`](CHANGELOG.md) for the user-facing release history, and [`docs/RELEASING.md`](docs/RELEASING.md) for the versioning + release process.
 
 - **Phase 0 — Monorepo scaffold:** ✅ files in place; verification on a fresh checkout still pending — see [phase-0-scaffold.md](todo/phase-0-scaffold.md).
 - **Phase 1 — Board you drive by hand** (gateway + REST/WS + CLI): ⏳ [phase-1-board.md](todo/phase-1-board.md)
