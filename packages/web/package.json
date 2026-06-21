@@ -39,6 +39,7 @@
     "zustand": "^5.0.2"
   },
   "devDependencies": {
+    "@storybook/addon-a11y": "10.4.3",
     "@storybook/addon-vitest": "10.4.3",
     "@storybook/nextjs-vite": "^10.4.3",
     "@testing-library/jest-dom": "^6.9.1",
