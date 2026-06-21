@@ -1,0 +1,15 @@
+/*
+ * @midnite/ui design tokens — exposed as `@midnite/ui/styles`.
+ *
+ * Phase 25 Theme A reserves this stylesheet so the package + build are wired
+ * before the move. The real token set — the shadcn-style HSL custom properties
+ * (`--background` / `--foreground` / `--card` / `--primary` / … plus the `.dark`
+ * block) — migrates here from packages/web/app/globals.css in Theme B, making
+ * the library the single source of truth for the design system's tokens.
+ *
+ * Until then this is intentionally a placeholder so consumers can import the
+ * stable `@midnite/ui/styles` path today.
+ */
+:root {
+  /* design tokens land in Phase 25 Theme B */
+}
