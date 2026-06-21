@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-21 — Phase 10 Theme C2: Storybook story backfill for modals, office HUD & widgets (PR #48)
+
+Closes the high-value half of [Phase 10](phase-10-test-suite-hardening.md#c2-interaction-tests-on-key-components--partial-pr-36--48-2026-06-21) C2's "backfill un-storied components" item. The C1 `@storybook/addon-vitest` run mounts every story in headless chromium during `web:test`, so each story is a real render/interaction test (and feeds the Theme E screenshot pipeline). Pure coverage — no product code changed.
+
+- [x] **Modals:** `project-modal` (create/edit render + Sources tab-switch), `memory-modal` (new/edit + close), office `library-modal` (search filters to empty-state + close). Modal stories that call `useConfirm()` mount inside a `ConfirmProvider`; the project modal's `useRouter()` uses the existing global `nextjs.appDirectory` mock.
+- [x] **Office HUD:** `office-hud` — seeds the Zustand `office-store` per story (empty / with-agents / near-board / on-break) via a meta-level `beforeEach` that resets state after each story so nothing leaks. Conditional data-fetching children (board/library panels) left closed so the HUD stays offline.
+- [x] **Widget primitives:** `memory-card` (global/scoped/archived + open `play`), `widget-card`, `empty-state` (CTA `play`).
+- [x] Shared `Memory` (global/scoped/archived) + `OfficeAgent` fixtures in [`stories/fixtures.ts`](../packages/web/stories/fixtures.ts). 20 new story tests; `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #48 (web `web:test` 190 passed). `play` functions query by role/label and assert visible outcomes / `storybook/test` spies, per the C2 pattern.
+- ↪️ **Remaining (logged in phase-10 C2):** data-fetching widgets (`health-widget`, `market-*`, `news-widget`, `boardroom-panel`, …) stay un-storied — they self-fetch via `usePolling`/`useApiData` and need a query/API-mock story decorator (new infra) before they can be storied.
+
 ## 2026-06-21 — Phase 16 COMPLETE — Theme B: CLI `add --bulk` (PR #47)
 
 The CLI client for plural intake — the last theme of Phase 16 (A API #40, C web modal #42). **Phase 16 is now fully done.**
