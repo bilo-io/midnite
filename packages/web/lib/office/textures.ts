@@ -13,6 +13,7 @@
  */
 
 import type Phaser from 'phaser';
+import type { LlmProvider } from '@midnite/shared';
 
 import type { PlantVariant } from './layout';
 
@@ -518,4 +519,19 @@ export function agentTint(id: string): number {
   let hash = 0;
   for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
   return IDENTITY_TINTS[hash % IDENTITY_TINTS.length]!;
+}
+
+// Brand-ish accent per LLM provider, used for a small provider pip on an agent so
+// a mixed pool reads at a glance. Kept here (not provider-locked) — unknown/local
+// agents have no provider and get no pip (see providerAccent → null).
+const PROVIDER_ACCENT: Record<LlmProvider, number> = {
+  anthropic: 0xd97757,
+  openai: 0x10a37f,
+  google: 0x4285f4,
+  'openai-compatible': 0xa78bfa,
+};
+
+/** Accent colour for a known provider, or null when the provider is unknown/absent. */
+export function providerAccent(provider: LlmProvider | undefined): number | null {
+  return provider ? PROVIDER_ACCENT[provider] ?? null : null;
 }

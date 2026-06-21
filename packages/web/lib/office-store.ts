@@ -32,6 +32,8 @@ interface OfficeState {
   boardOpen: boolean;
   /** Whether the library modal is open. */
   libraryOpen: boolean;
+  /** Whether the character-customisation picker is open. */
+  characterPickerOpen: boolean;
   /** Personal "on a coffee break" presence flag (mock — local to this session). */
   onBreak: boolean;
   setAgents(agents: OfficeAgent[]): void;
@@ -46,6 +48,8 @@ interface OfficeState {
   closeBoard(): void;
   openLibrary(): void;
   closeLibrary(): void;
+  openCharacterPicker(): void;
+  closeCharacterPicker(): void;
   toggleBreak(): void;
   /** Clear transient UI state — called when the scene tears down. */
   reset(): void;
@@ -60,6 +64,7 @@ export const useOfficeStore = create<OfficeState>((set) => ({
   active: null,
   boardOpen: false,
   libraryOpen: false,
+  characterPickerOpen: false,
   onBreak: false,
   setAgents: (agents) => set({ agents }),
   // Skip the update when unchanged — `update()` calls these every frame.
@@ -68,16 +73,20 @@ export const useOfficeStore = create<OfficeState>((set) => ({
   setNearKitchen: (near) => set((s) => (s.nearKitchen === near ? s : { nearKitchen: near })),
   setNearLibrary: (near) => set((s) => (s.nearLibrary === near ? s : { nearLibrary: near })),
   // Opening any one full-screen panel closes the others.
-  open: (id) => set({ active: { id, mode: 'menu' }, boardOpen: false, libraryOpen: false }),
+  open: (id) =>
+    set({ active: { id, mode: 'menu' }, boardOpen: false, libraryOpen: false, characterPickerOpen: false }),
   setMode: (mode) => set((s) => (s.active ? { active: { ...s.active, mode } } : s)),
   close: () => set({ active: null }),
-  openBoard: () => set({ boardOpen: true, active: null, libraryOpen: false }),
+  openBoard: () => set({ boardOpen: true, active: null, libraryOpen: false, characterPickerOpen: false }),
   closeBoard: () => set({ boardOpen: false }),
-  openLibrary: () => set({ libraryOpen: true, active: null, boardOpen: false }),
+  openLibrary: () => set({ libraryOpen: true, active: null, boardOpen: false, characterPickerOpen: false }),
   closeLibrary: () => set({ libraryOpen: false }),
+  openCharacterPicker: () =>
+    set({ characterPickerOpen: true, active: null, boardOpen: false, libraryOpen: false }),
+  closeCharacterPicker: () => set({ characterPickerOpen: false }),
   toggleBreak: () => set((s) => ({ onBreak: !s.onBreak })),
   // onBreak persists across teardown only within a session — it's a personal
   // presence flag, not transient scene state, so reset() leaves it alone.
   reset: () =>
-    set({ nearbyId: null, nearBoard: false, nearKitchen: false, nearLibrary: false, active: null, boardOpen: false, libraryOpen: false }),
+    set({ nearbyId: null, nearBoard: false, nearKitchen: false, nearLibrary: false, active: null, boardOpen: false, libraryOpen: false, characterPickerOpen: false }),
 }));

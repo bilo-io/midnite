@@ -38,10 +38,13 @@ import {
   ensureOfficeAnims,
   ensureOfficeTextures,
   plantTexture,
+  providerAccent,
   robotVariant,
   TEX,
   walkAnim,
+  type CharKind,
 } from '@/lib/office/textures';
+import { resolveCharacter, type OfficeCustomisation } from '@/lib/office/customisation';
 
 // Phase 9 office: a sprite-based, multi-room floor plan (work · board · library
 // over agent pool · communal area · corner office, connected by doorways — see
@@ -93,6 +96,8 @@ type Actor = {
   sleeping: boolean;
   /** Robot design index (by agent id) — distinct silhouette/accent per agent. */
   variant: number;
+  /** Small dot coloured by the agent's LLM provider (absent when unknown). */
+  providerPip?: Phaser.GameObjects.Arc;
   /** Mid-swim in the pool (G3) — suppresses lounging bubble + re-seat walks. */
   swimming: boolean;
   /** Wake ripple that trails a swimmer; removed when they climb out. */
@@ -126,6 +131,12 @@ class OfficeScene extends Phaser.Scene {
   /** ☕ shown over the player while on a coffee break. */
   private breakIcon!: Phaser.GameObjects.Text;
   private facing: 'down' | 'up' | 'side' = 'down';
+
+  // Player character customisation (Phase 9 B1/F4) — kind/variant pick the sprite
+  // sheet, tint overrides the theme-driven player colour. Set via setPlayerCustomisation.
+  private playerKind: CharKind = 'human';
+  private playerVariant = 0;
+  private playerTint: number | null = null;
   /** Click-to-walk: pixel waypoints the player is auto-following, or null. */
   private playerPath: { x: number; y: number }[] | null = null;
   private playerPathDeadline = 0;
@@ -204,8 +215,10 @@ class OfficeScene extends Phaser.Scene {
     this.unsub = useOfficeStore.subscribe((state, prev) => {
       if (!this.alive) return;
       if (state.agents !== prev.agents) this.renderActors(state.agents);
-      const frozen = state.active !== null || state.boardOpen || state.libraryOpen;
-      const wasFrozen = prev.active !== null || prev.boardOpen || prev.libraryOpen;
+      const frozen =
+        state.active !== null || state.boardOpen || state.libraryOpen || state.characterPickerOpen;
+      const wasFrozen =
+        prev.active !== null || prev.boardOpen || prev.libraryOpen || prev.characterPickerOpen;
       if (frozen !== wasFrozen) {
         this.inputEnabled = !frozen;
         const kb = this.input.keyboard;
@@ -306,6 +319,17 @@ class OfficeScene extends Phaser.Scene {
     this.highlight.setStrokeStyle(2, palette.highlight, 0.9);
   }
 
+  /** Apply the player's chosen character + tint (Phase 9 B1/F4). Safe before/after create. */
+  setPlayerCustomisation(custom: OfficeCustomisation) {
+    const { kind, variant } = resolveCharacter(custom);
+    this.playerKind = kind;
+    this.playerVariant = variant;
+    this.playerTint = custom.tint;
+    if (!this.alive) return; // create() reads the fields in buildPlayer once it runs
+    this.player.setTexture(charKey(kind, this.facing, 0, variant));
+    this.player.setTint(custom.tint ?? this.palette.player);
+  }
+
   // ---- agents (actors) ---------------------------------------------------
 
   /** Place working agents at hot desks, idle agents in the lounge; walk on change. */
@@ -375,6 +399,17 @@ class OfficeScene extends Phaser.Scene {
       .setResolution(2)
       .setDepth(11);
 
+    // Provider pip: a small dot coloured by the agent's LLM provider, so a mixed
+    // pool reads at a glance. Absent (no pip) when the provider is unknown/local.
+    const accent = providerAccent(agent.provider);
+    const providerPip =
+      accent === null
+        ? undefined
+        : this.add
+            .circle(tx, ty, 2.5, accent)
+            .setStrokeStyle(1, 0x0b0b12, 0.85)
+            .setDepth(11);
+
     const actor: Actor = {
       id: agent.id,
       sprite,
@@ -388,6 +423,7 @@ class OfficeScene extends Phaser.Scene {
       walking: false,
       sleeping: false,
       variant,
+      providerPip,
       swimming: false,
     };
     this.updateActorContent(actor, agent);
@@ -622,6 +658,7 @@ class OfficeScene extends Phaser.Scene {
     actor.nameText.setPosition(x, y - 19);
     actor.statusText.setPosition(x, y - 10);
     actor.bubble.setPosition(x + 12, y - 15);
+    actor.providerPip?.setPosition(x - 9, y - 8);
   }
 
   private destroyActor(actor: Actor) {
@@ -632,6 +669,7 @@ class OfficeScene extends Phaser.Scene {
     actor.bubble.destroy();
     actor.nameText.destroy();
     actor.statusText.destroy();
+    actor.providerPip?.destroy();
   }
 
   // ---- player ------------------------------------------------------------
@@ -721,12 +759,12 @@ class OfficeScene extends Phaser.Scene {
       this.facing = vy < 0 ? 'up' : 'down';
       this.player.setFlipX(false);
     }
-    this.player.anims.play(walkAnim('human', this.facing), true);
+    this.player.anims.play(walkAnim(this.playerKind, this.facing, this.playerVariant), true);
   }
 
   private idlePlayer() {
     this.player.anims.stop();
-    this.player.setTexture(charKey('human', this.facing, 0));
+    this.player.setTexture(charKey(this.playerKind, this.facing, 0, this.playerVariant));
   }
 
   private tryInteract() {
@@ -937,9 +975,9 @@ class OfficeScene extends Phaser.Scene {
       .ellipse(sx, sy + TILE * 0.42, TILE * 0.45, TILE * 0.18, 0x000000, 0.25)
       .setDepth(7);
     this.player = this.add
-      .sprite(sx, sy, charKey('human', 'down', 0))
+      .sprite(sx, sy, charKey(this.playerKind, 'down', 0, this.playerVariant))
       .setScale(CHAR_SCALE)
-      .setTint(this.palette.player)
+      .setTint(this.playerTint ?? this.palette.player)
       .setDepth(8);
     this.physics.add.existing(this.player);
     this.body().setSize(10, 7).setOffset(3, 12);
@@ -997,4 +1035,10 @@ export function createOfficeGame(parent: HTMLElement): Phaser.Game {
 export function applyOfficeTheme(game: Phaser.Game): void {
   const scene = game.scene.getScene('office') as OfficeScene | null;
   scene?.applyPalette(buildOfficePalette());
+}
+
+/** Push the player's character customisation into the running office scene. */
+export function applyOfficeCustomisation(game: Phaser.Game, custom: OfficeCustomisation): void {
+  const scene = game.scene.getScene('office') as OfficeScene | null;
+  scene?.setPlayerCustomisation(custom);
 }

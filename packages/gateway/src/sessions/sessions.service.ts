@@ -1,6 +1,8 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
+  CLI_PROVIDER_MAP,
   TERMINAL_WS_PATH,
+  type LlmProvider,
   type SessionStatus,
   type SessionSummary,
   type SessionTranscript,
@@ -9,6 +11,7 @@ import {
   type TerminalTokenResponse,
   type TranscriptMessage,
 } from '@midnite/shared';
+import { AgentsService } from '../agents/agents.service';
 import { TasksService } from '../tasks/tasks.service';
 import { TerminalService } from '../terminal/terminal.service';
 import { loadTranscript } from './sessions.reader';
@@ -31,7 +34,16 @@ export class SessionsService {
   constructor(
     @Inject(TasksService) private readonly tasks: TasksService,
     @Inject(TerminalService) private readonly terminal: TerminalService,
+    @Inject(AgentsService) private readonly agents: AgentsService,
   ) {}
+
+  // The provider behind every session right now: midnite runs one configured
+  // agent CLI globally, so we map that CLI → provider (claude→anthropic, …).
+  // Provider-less CLIs (aider) yield undefined. A per-session provider can
+  // replace this later without changing the wire shape.
+  private currentProvider(): LlmProvider | undefined {
+    return CLI_PROVIDER_MAP[this.agents.getAgentCli()] ?? undefined;
+  }
 
   // Mint a short-lived, single-use token the web client presents on the WS
   // `attach` — the trust boundary for driving a PTY (arbitrary code in a repo).
@@ -81,6 +93,7 @@ export class SessionsService {
       contextTokens: deriveContextTokens(task),
       contextLimit: CONTEXT_LIMIT,
       archivedAt: task.archivedAt,
+      provider: this.currentProvider(),
     };
   }
 

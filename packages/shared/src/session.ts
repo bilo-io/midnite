@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { LlmProviderSchema } from './llm.js';
 import { TaskEventSchema } from './task.js';
 
 export const SESSION_STATUSES = ['running', 'waiting', 'completed', 'idle'] as const;
@@ -18,6 +19,12 @@ export const SessionSummarySchema = z.object({
   contextLimit: z.number().int().positive().optional(),
   /** ISO timestamp when the session was archived; absent when active. */
   archivedAt: z.string().optional(),
+  /**
+   * The LLM provider behind this session's agent, when known — derived from the
+   * configured agent CLI (claude→anthropic, gemini→google, …). Lets the office
+   * tint a character by provider; absent for provider-less CLIs (e.g. aider).
+   */
+  provider: LlmProviderSchema.optional(),
 });
 export type SessionSummary = z.infer<typeof SessionSummarySchema>;
 

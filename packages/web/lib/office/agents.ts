@@ -4,7 +4,7 @@
  * `SESSION_STATUS_*` constants, so a status looks identical in both places.
  */
 
-import type { SessionSummary, Task } from '@midnite/shared';
+import type { LlmProvider, SessionSummary, Task } from '@midnite/shared';
 import { SESSION_STATUS_HUE, SESSION_STATUS_LABEL } from '@/components/session-card';
 
 export type OfficeStatus = SessionSummary['status']; // 'running' | 'waiting' | 'completed' | 'idle'
@@ -19,6 +19,8 @@ export interface OfficeAgent {
   status: OfficeStatus;
   /** One-liner of what they're up to. */
   activity: string;
+  /** LLM provider behind the agent, when known — drives the provider pip. */
+  provider?: LlmProvider;
   /** The underlying session — used to open the live terminal / transcript. */
   session: SessionSummary;
 }
@@ -82,6 +84,7 @@ export function sessionsToOfficeAgents(sessions: SessionSummary[], tasks: Task[]
         project: s.projectDisplay,
         status: s.status,
         activity: s.subtitle || task?.title || '—',
+        provider: s.provider,
         session: s,
       };
     });
