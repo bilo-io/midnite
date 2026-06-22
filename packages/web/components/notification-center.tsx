@@ -34,8 +34,13 @@ const DONE_ICON: LucideIcon = CircleCheck;
  * source entity (marking that one read on click); the header offers Mark all read
  * + Clear. Desktop-first — anchored under the bell. Reads everything from the
  * {@link useNotifications} provider mounted in the (main) layout.
+ *
+ * Lives in the sidebar's bottom group alongside the theme toggle / settings, so
+ * it mirrors their two states: `expanded` shows the bell + a "Notifications"
+ * label (with the unread count as a trailing pill); collapsed shows the icon with
+ * a corner badge + a hover tooltip — the same shape as {@link NavBar}'s links.
  */
-export function NotificationCenter() {
+export function NotificationCenter({ expanded }: { expanded?: boolean }) {
   const router = useRouter();
   const { feed, unread, loading, markRead, markAllRead, clear } = useNotifications();
   const [open, setOpen] = useState(false);
@@ -67,7 +72,7 @@ export function NotificationCenter() {
   const badge = unread > 99 ? '99+' : String(unread);
 
   return (
-    <div ref={rootRef} className="relative">
+    <div ref={rootRef} className="group relative">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -75,20 +80,39 @@ export function NotificationCenter() {
         aria-haspopup="menu"
         aria-expanded={open}
         className={cn(
-          'group relative flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground',
+          // Match the sidebar links/toggle: full-width labelled row when expanded,
+          // a centred icon button when collapsed (`relative` anchors the badge).
+          'relative flex h-9 items-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground',
+          expanded ? 'w-full gap-3 px-2.5' : 'w-9 justify-center',
           open && 'bg-accent text-accent-foreground',
         )}
       >
         <Bell className="h-4 w-4 shrink-0" />
+        {expanded ? <span className="truncate text-sm">Notifications</span> : null}
         {unread > 0 ? (
+          // Same pill in both states: a trailing count when expanded, a corner
+          // badge on the icon when collapsed.
           <span
             aria-hidden
-            className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold leading-none text-destructive-foreground"
+            className={cn(
+              'flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold leading-none text-destructive-foreground',
+              expanded ? 'ml-auto' : 'absolute -right-0.5 -top-0.5',
+            )}
           >
             {badge}
           </span>
         ) : null}
       </button>
+
+      {/* Collapsed-only hover tooltip, mirroring the nav links + theme toggle. */}
+      {!open && !expanded ? (
+        <span
+          role="tooltip"
+          className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 whitespace-nowrap rounded-md border border-border/80 bg-card px-2 py-1 text-xs font-medium text-foreground opacity-0 shadow-md transition-opacity duration-100 group-hover:opacity-100"
+        >
+          Notifications
+        </span>
+      ) : null}
 
       {open ? (
         // The bell lives at the bottom-left of the sidebar, so the panel opens

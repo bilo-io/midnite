@@ -76,6 +76,22 @@ describe('NotificationCenter', () => {
     expect(bell).not.toHaveTextContent('1');
   });
 
+  it('shows the "Notifications" label and unread count inside the button when expanded', () => {
+    render(<NotificationCenter expanded />);
+    const bell = screen.getByRole('button', { name: 'Notifications, 1 unread' });
+    expect(bell).toHaveTextContent('Notifications');
+    expect(bell).toHaveTextContent('1');
+  });
+
+  it('is an icon-only button (no inline label) when collapsed', () => {
+    render(<NotificationCenter />);
+    const bell = screen.getByRole('button', { name: 'Notifications, 1 unread' });
+    // Collapsed shows the icon + a separate hover tooltip — the label is never
+    // inline in the button itself, only the corner unread badge.
+    expect(bell).not.toHaveTextContent('Notifications');
+    expect(bell).toHaveTextContent('1');
+  });
+
   it('opens the dropdown and lists the feed newest-first', () => {
     render(<NotificationCenter />);
     expect(screen.queryByRole('menu')).toBeNull();
