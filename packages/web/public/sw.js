@@ -43,13 +43,19 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Request destinations that make up the app *shell* — documents and static
+// assets. API calls (fetch/XHR) have an empty destination, so keying off this
+// excludes live data even when the gateway serves the UI from its own origin
+// (Phase 3 `gateway.webDir`), where an origin check alone wouldn't.
+const SHELL_DESTINATIONS = new Set(['document', 'script', 'style', 'image', 'font', 'manifest']);
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-  // Only ever handle same-origin GETs. Cross-origin (the gateway API/WS) and
-  // non-GET requests pass straight through — we never cache live data.
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
+  // Same-origin only, and only the shell — never the gateway API/WS or live data.
   if (url.origin !== self.location.origin) return;
+  if (!SHELL_DESTINATIONS.has(request.destination)) return;
 
   event.respondWith(networkFirst(request));
 });
