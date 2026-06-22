@@ -237,6 +237,7 @@ Nest module per feature → `controller → service → repository`:
 
 ### Scheduler & Agent Pool
 
+- **Task scheduling already orders by priority** (`task.priority` 0–3, `desc(priority), asc(createdAt)` in `listTasks`). **Task dependencies** (Phase 27) layer on top: a normalized `task_dependencies` edge table (`task_id` → `depends_on_task_id`) stores blockers, the dependent task's `dependsOn` is *derived* from the edges (no new status — "blocked" is computed, not stored), and integrity (self-ref / unknown / **cycle** via a DFS over the edges, mirroring the workflow-engine reachability check) lives in `tasks.service`. `TasksRepository.listReadyTodoTasks()` is the SQL ready-set (`todo` tasks whose every blocker is `done`); the scheduler's ready-gating consumes it in Theme B. Deleting a task clears its edges both directions (its dependents become unblocked).
 - The scheduler is a single tick loop owned by the gateway — never spawn parallel schedulers
 - Agent slots are tracked in-memory; persisted state is the source of truth on restart
 - Status transitions caused by Claude Code hooks come in as authenticated webhook calls (`POST /hooks/:taskId/:event`) with a per-session secret — never trust the body alone

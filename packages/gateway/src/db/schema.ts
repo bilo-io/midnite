@@ -1,6 +1,7 @@
 import {
   index,
   integer,
+  primaryKey,
   real,
   sqliteTable,
   text,
@@ -85,6 +86,24 @@ export const taskLinks = sqliteTable(
   },
   (t) => ({
     taskIdx: index('task_links_task_idx').on(t.taskId),
+  }),
+);
+
+// Blocker edges (Phase 27): `task_id` depends on `depends_on_task_id` (its
+// blocker). A task is ready only when every blocker is `done`. Composite PK on
+// the pair prevents a duplicate edge; the extra index on `depends_on_task_id`
+// makes "who depends on me" cheap (the PK already covers "my blockers"). Plain
+// intra-domain id reference — no cross-domain FK (CLAUDE.md).
+export const taskDependencies = sqliteTable(
+  'task_dependencies',
+  {
+    taskId: text('task_id').notNull(),
+    dependsOnTaskId: text('depends_on_task_id').notNull(),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.taskId, t.dependsOnTaskId] }),
+    dependsOnIdx: index('task_dependencies_depends_on_idx').on(t.dependsOnTaskId),
   }),
 );
 
@@ -485,6 +504,8 @@ export type TaskAttachmentRow = typeof taskAttachments.$inferSelect;
 export type TaskAttachmentInsert = typeof taskAttachments.$inferInsert;
 export type TaskLinkRow = typeof taskLinks.$inferSelect;
 export type TaskLinkInsert = typeof taskLinks.$inferInsert;
+export type TaskDependencyRow = typeof taskDependencies.$inferSelect;
+export type TaskDependencyInsert = typeof taskDependencies.$inferInsert;
 export type ProjectRow = typeof projects.$inferSelect;
 export type ProjectInsert = typeof projects.$inferInsert;
 export type RepoRow = typeof repos.$inferSelect;
