@@ -121,6 +121,9 @@ importers:
       better-sqlite3:
         specifier: ^11.7.0
         version: 11.10.0
+      chokidar:
+        specifier: ^3.6.0
+        version: 3.6.0
       croner:
         specifier: ^9.0.0
         version: 9.1.0
