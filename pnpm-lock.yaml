@@ -69,6 +69,9 @@ importers:
       '@midnite/gateway':
         specifier: workspace:*
         version: link:../gateway
+      '@midnite/shared':
+        specifier: workspace:*
+        version: link:../shared
     devDependencies:
       '@electron/rebuild':
         specifier: ^3.7.0
