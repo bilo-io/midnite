@@ -22,6 +22,30 @@ Electron main (dist/main/index.js)
 The gateway honours `MIDNITE_GATEWAY_PORT / _DB_PATH / _UPLOADS_DIR`,
 `MIDNITE_KNOWLEDGE_DIR`, `MIDNITE_CONFIG_PATH` (added in `gateway/src/lib/load-config.ts`).
 
+## Native notifications (Phase 21 Theme D)
+
+The web app already raises notifications (in-app toasts + a notification center,
+and the browser `Notification` API when the window is backgrounded). Inside the
+desktop shell those are upgraded to **native OS notifications** fired from the
+**main process** — reliable even when the renderer is hidden and throttled, where
+its own `Notification` API is not.
+
+```
+renderer (web NotificationsProvider)
+  └─ window.midniteDesktop.notify(n)        ← preload bridge (contextBridge)
+       └─ ipcRenderer.send('midnite:notify')
+            └─ main: new Notification(...).show()   (main/notifications.ts)
+                 └─ on click → focus window + webContents.send('midnite:navigate', route)
+                      └─ renderer router.push(route)
+```
+
+The preload exposes `window.midniteDesktop` (`notify` + `onNavigate`), whose shape
+the web mirrors in `packages/web/lib/desktop-bridge.ts`. The renderer feature-detects
+the bridge: present → native path, absent (plain browser) → web `Notification` API.
+The opt-in (`notifyTaskUpdates`) + "only while the window is away" gate are shared by
+both paths; the OS owns the native permission, so the native path has no web-permission
+gate.
+
 ## Prerequisites (must run on a real macOS machine — not the CI sandbox)
 
 Native modules (`better-sqlite3`, `node-pty`) and the Electron binary cannot be

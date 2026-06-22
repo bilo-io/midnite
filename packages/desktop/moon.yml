@@ -4,6 +4,7 @@ language: 'typescript'
 
 dependsOn:
   - 'gateway'
+  - 'shared'
   - 'web'
 
 tasks:

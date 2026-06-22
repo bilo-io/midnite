@@ -35,14 +35,14 @@ The blocker graph and its integrity rules.
 
 ---
 
-## Theme B — Dependency-aware scheduling (gateway) — **M**
+## Theme B — Dependency-aware scheduling (gateway) — **M** — ✅ DONE (PR #109)
 
-Make the tick respect the graph, keeping the existing priority+age ordering.
+Make the tick respect the graph, keeping the existing priority+age ordering. **Landed — see [done.md](done.md).**
 
-- [ ] **Ready-gating:** the scheduler selects from **ready** `todo` tasks only — a task is *ready* iff every `dependsOn` blocker is in a terminal **`done`** state. Replace the `listTasks('todo').find(...)` selection with the repository's ready-set query, preserving `desc(priority), asc(createdAt)` among ready tasks.
-- [ ] **Unblock-on-complete:** when a blocker reaches `done`, its dependents become eligible on the **next tick** automatically (the tick re-evaluates readiness — no new event needed); optionally emit `task.updated` for newly-unblocked dependents so the board chips refresh promptly.
-- [ ] **Abandoned-blocker policy** (Decision §3): a blocker that ends `abandoned` (not `done`) leaves its dependents **blocked**, surfaced clearly (a warning / "blocked by an abandoned task" state) with an explicit user action to drop the dead edge — rather than silently never-running. Confirm exact behaviour in the B PR.
-- [ ] Tests (`:memory:`): a 3-task chain runs in order; raising a mid-chain task's priority doesn't let it jump its blocker; completing a blocker releases its dependent next tick; an abandoned blocker holds its dependent.
+- [x] **Ready-gating:** the scheduler selects from **ready** `todo` tasks only — a task is *ready* iff every `dependsOn` blocker is in a terminal **`done`** state. The `listTasks('todo').find(...)` selection now reads the repository's ready-set query via `TasksService.listReadyTodoTasks()` (→ `TasksRepository.listReadyTodoTasks()`), preserving `desc(priority), asc(createdAt)` among ready tasks.
+- [x] **Unblock-on-complete:** when a blocker reaches `done`, its dependents become eligible on the **next tick** automatically (the tick re-evaluates readiness — no new event needed). The service also re-emits `task.updated` for the blocker's dependents (`notifyDependents`) so the board's "blocked by N" chip refreshes promptly.
+- [x] **Abandoned-blocker policy** (Decision §3/§4 — **hold + surface**): a blocker that ends `abandoned` (not `done`) is `!= 'done'`, so the ready-set query keeps its dependents **out** of scheduling (held, never silently run). Dependents are re-broadcast on the abandon transition so a derived "blocked by an abandoned task" state can surface; the explicit "drop the dead edge" action is the existing `removeDependency` (Theme A). The richer warning UI is Theme C.
+- [x] Tests (`:memory:`): a 3-task chain runs in order; raising a mid-chain task's priority doesn't let it jump its blocker; completing a blocker releases its dependent next tick (and emits its `task.updated`); an abandoned blocker holds its dependent. (Scheduler unit + pool integration specs.)
 
 ---
 
@@ -57,10 +57,12 @@ Express and see the graph; "blocked" is derived, not a new status (Decision §2)
 
 ---
 
-## Theme D — CLI + coverage — **S**
+## Theme D — CLI + coverage — **S** — ✅ DONE (PR #113)
 
-- [ ] **`midnite add --depends-on <id>`** (repeatable) in the CLI ([`cli/src/`](../packages/cli/src/)) — thin: parse → typed client; unknown/cyclic id errors clearly. Optionally `midnite task block <id> --on <id>` to add an edge to an existing task.
-- [ ] **End-to-end tests** covering: cycle rejection (400/409), ready-computation, scheduler skips blocked + runs in dependency order, blocker-done unblocks, abandoned-blocker holds, edge cleanup on task delete.
+**Landed — see [done.md](done.md). Only the Theme C web UI affordances remain to fully close Phase 27.**
+
+- [x] **`midnite add --depends-on <id>`** (repeatable) in the CLI ([`cli/src/index.ts`](../packages/cli/src/index.ts)) — thin: parse → typed client (repeatable multipart `dependsOn` fields). Rejected alongside `--bulk` (a blocker graph is per-task, not a batch default). Unknown/cyclic ids error clearly — the create path now maps `TaskDependencyError` → 4xx (was a 500). Also **`midnite block <id> --on <blockerId>`** / **`unblock <id> --on <blockerId>`** — thin POST/DELETE to `/tasks/:id/dependencies`.
+- [x] **End-to-end tests** covering: cycle rejection (400/409 — controller dependency-route tests + new create→400), ready-computation + edge cleanup on delete ([`tasks.dependencies.spec.ts`](../packages/gateway/src/tasks/tasks.dependencies.spec.ts)), scheduler skips blocked + runs in dependency order + blocker-done unblocks + abandoned-blocker holds (Phase 27 B [`agent-pool.integration.spec.ts`](../packages/gateway/src/pool/agent-pool.integration.spec.ts)). Theme D adds the CLI client tests (repeatable `dependsOn`, add/remove endpoints, 409 cycle message surfaced).
 
 ---
 

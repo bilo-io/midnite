@@ -23,6 +23,8 @@ export interface TaskDefaults {
   repo?: string;
   projectId?: string;
   priority?: number;
+  /** Blocker task ids (single `add` only — a per-line bulk blocker makes no sense). */
+  dependsOn?: string[];
 }
 
 /** Resolve the gateway base URL: explicit flag → env → loopback default. */
@@ -35,6 +37,8 @@ export interface GatewayClient {
   createTask(prompt: string, defaults?: TaskDefaults): Promise<Task>;
   createBulk(raw: string, defaults?: TaskDefaults): Promise<BulkCreateTaskResponse>;
   moveTask(id: string, status: Status): Promise<Task>;
+  addDependency(id: string, dependsOnId: string): Promise<Task>;
+  removeDependency(id: string, dependsOnId: string): Promise<Task>;
   search(query: SearchQuery): Promise<SearchResponse>;
   listWorkflows(): Promise<WorkflowSummary[]>;
   getWorkflow(id: string): Promise<Workflow>;
@@ -80,6 +84,9 @@ export function createClient(baseUrl: string): GatewayClient {
       if (defaults?.repo) form.set('repo', defaults.repo);
       if (defaults?.projectId) form.set('projectId', defaults.projectId);
       if (defaults?.priority !== undefined) form.set('priority', String(defaults.priority));
+      // Repeatable `dependsOn` fields — the gateway collects each into the
+      // blocker list (matches the multipart parse in tasks.controller).
+      for (const id of defaults?.dependsOn ?? []) form.append('dependsOn', id);
       const body = (await request('/tasks', { method: 'POST', body: form })) as { task: unknown };
       return TaskSchema.parse(body.task);
     },
@@ -107,6 +114,25 @@ export function createClient(baseUrl: string): GatewayClient {
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ status }),
         }),
+      );
+    },
+
+    async addDependency(id: string, dependsOnId: string): Promise<Task> {
+      return TaskSchema.parse(
+        await request(`/tasks/${encodeURIComponent(id)}/dependencies`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ dependsOnId }),
+        }),
+      );
+    },
+
+    async removeDependency(id: string, dependsOnId: string): Promise<Task> {
+      return TaskSchema.parse(
+        await request(
+          `/tasks/${encodeURIComponent(id)}/dependencies/${encodeURIComponent(dependsOnId)}`,
+          { method: 'DELETE' },
+        ),
       );
     },
 

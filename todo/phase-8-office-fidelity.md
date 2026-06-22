@@ -4,7 +4,7 @@
 
 > Status legend: boxes start unchecked; themes are independent. **Only the rendering layer changes** — the desk-slot model, movement/collision, proximity detection, the Zustand ↔ HUD bridge, and the live-data hook ([`use-office-agents.ts`](../packages/web/components/office/use-office-agents.ts)) all stay as-is.
 
-> **Progress (2026-06-20):** procedural pixel-art + zones + interaction + presence landed — ✅ A2 (human + robot sprites, walk cycle), B1 (theme colours), B3 (fixed-aspect layout), C3 (grid pathfinding), zones (hot desks / lounge / board room), D1 (Call → live terminal, Messages → transcript), D3 (board-room document viewer); ◐ A3 (rich decor; desk variety left), C1 (status bubbles + idle sleep/game; body anims left), D2 (click-to-walk; nameplates/minimap left). **Open (need external assets / new data / out of scope):** A1 external Tiled/LimeZu pack, B2 day-night + camera/scrolling map, C2 per-tool glow (no current-tool field on the session), E (multiplayer).
+> **Progress (2026-06-20):** procedural pixel-art + zones + interaction + presence landed — ✅ A2 (human + robot sprites, walk cycle), B1 (theme colours), B3 (fixed-aspect layout), C3 (grid pathfinding), zones (hot desks / lounge / board room), D1 (Call → live terminal, Messages → transcript), D3 (board-room document viewer); ◐ A3 (rich decor; desk variety left), C1 (status bubbles + idle sleep/game; body anims left), D2 (click-to-walk; nameplates/minimap left). **Open (need external assets / new data / out of scope):** A1 external Tiled/LimeZu pack, B2 camera/scrolling map (day-night ✅ #112), C2 per-tool glow (no current-tool field on the session), E (multiplayer).
 
 ---
 
@@ -42,7 +42,7 @@ The headline: swap shapes for real sprites + tiles.
 
 ### B2. Ambient polish — **S–M** — ◐ partial
 - [x] Soft drop-shadows under characters/desks; a subtle radial vignette at the room edges (`buildVignette`, a generated canvas texture).
-- [ ] Day/night floor tint aligned with the `time` theme.
+- [x] Day/night floor tint aligned with the `time` theme. ✅ (2026-06-22, PR #112 — see done.md)
 - [ ] Pixel-perfect camera with zoom; a larger scrolling map (camera follows the player) once the Tiled map (A1) lands.
 
 ### B3. Fixed-aspect-ratio layout — **S** — ✅ DONE (2026-06-20)

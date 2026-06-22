@@ -4,6 +4,53 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 27 Theme D: CLI task dependencies (PR #113)
+
+The dependency graph existed in the model (#106) and the scheduler (#109), but the **CLI** couldn't express it — blockers could only be set from the web. Theme D adds the CLI surface, closing the last build slice of Phase 27 (only the Theme C web UI affordances remain). `cli` + `gateway` only.
+
+- [x] **`midnite add --depends-on <id>`** (repeatable) — threads blocker ids as repeatable multipart `dependsOn` fields into `POST /tasks`; rejected alongside `--bulk` (a blocker graph is per-task, not a batch default).
+- [x] **`midnite block <id> --on <blockerId>`** / **`unblock <id> --on <blockerId>`** — thin `POST` / `DELETE` to `/tasks/:id/dependencies`; the typed client validates the returned task.
+- [x] **Gateway fix** — the create path maps a `TaskDependencyError` (unknown blocker) to a clean **4xx** (mirrors the `addDependency` route) instead of a 500, so `add --depends-on <bad>` reads clearly.
+- [x] Tests: CLI client (repeatable `dependsOn` form fields, add/remove endpoints + verbs, 409 cycle message surfaced); controller create→400 on an unknown blocker. The scheduler-order / blocker-done-unblocks / abandoned-holds / edge-cleanup / cycle-rejection e2e was already covered by the Phase 27 B integration spec + `tasks.dependencies` + controller dependency-route tests. `:typecheck`/`:lint` green; `gateway:test` 742, `cli:test` 38; CI green first try.
+
+---
+
+## 2026-06-22 — Phase 8 Theme B2: day/night office floor tint (PR #112)
+
+The office floor flipped light/dark with the theme but never read the **time of day**. Phase 8 B2 (Ambient polish) asks for a *"day/night floor tint aligned with the `time` theme"* — so the room now feels like the hour: cool after dark, warm at dawn/dusk, near-neutral at midday. It **composes on top of** the existing light/dark base + per-room floor accents (Phase 9) rather than replacing them.
+
+- [x] **Pure helper** [`lib/office/daynight.ts`](../packages/web/lib/office/daynight.ts): `dayNightPhase(hour)` buckets the clock into `dawn / day / dusk / night` on boundaries **aligned with the `time` theme's 08:00–18:00 light window** (dusk begins exactly where the theme flips to dark; night wraps past midnight); out-of-range/fractional hours are normalised so `getHours()` passes raw. `dayNightTint(hour)` → `{ color, alpha }`, kept subtle (lightest midday, deepest at night) so it never overrides the theme floor.
+- [x] **Scene wash** ([`office-scene.ts`](../packages/web/components/office/scenes/office-scene.ts)): one world-spanning translucent rectangle at depth −4 — over floor/room-accents/rugs/pool, **under** furniture + characters — tinted from the helper. Refreshed on a 60s timer (same cadence the time theme re-evaluates the flip) and on theme flip via `applyPalette`, so it tracks the clock and stays in sync with the light/dark base.
+- [x] Tests: `daynight.test.ts` (phase boundaries, hour normalisation, subtlety ordering) — `web:test` green. The office e2e drives **HUD/DOM, not canvas pixels** (Phase 10 Theme D), so the tint is verified by before/after + 4-phase screenshots in the PR, not an e2e assertion.
+- [x] `:typecheck` / `:lint` / `web:test` + `moon ci` green. (Local-only: the gateway `tmux` spawner contract spec flakes on this macOS sandbox — alternate-screen escapes instead of `READY` — and passes on CI.)
+- [ ] **Still open in B2:** pixel-perfect camera + larger scrolling map (camera follows the player) — gated on the A1 external Tiled asset pack; tracked under Phase 9 A2.
+
+---
+
+## 2026-06-22 — Phase 21 Theme D: desktop native notifications (PR #110) — **Phase 21 COMPLETE**
+
+The desktop shell now upgrades the notification feed (toasts/center + browser API, #103/#107/#108) to **native OS notifications** — the tap-on-the-shoulder when you've started a batch and walked away with the window backgrounded. Implemented Decision §5's robust path (a **main-process IPC bridge**), not just the renderer-API v1, because a hidden Electron renderer is throttled (its own `Notification` construction + `window.focus()` are unreliable) where the main process is not.
+
+- [x] **Main-process bridge** — preload exposes `window.midniteDesktop` (`notify` + `onNavigate`); [`main/notifications.ts`](../packages/desktop/src/main/notifications.ts) raises a native `Notification` on `midnite:notify` and, on click, focuses the window (`restore`/`focus`) + sends the entity `route` back over `midnite:navigate`. `getWindow` read lazily per click; single `ipcMain.on` at boot; `isSupported()`/`isDestroyed()` guarded.
+- [x] **Web routes through the bridge when present** — [`NotificationsProvider`](../packages/web/components/notifications-provider.tsx) feature-detects `window.midniteDesktop` (new [`lib/desktop-bridge.ts`](../packages/web/lib/desktop-bridge.ts), mirroring the `__NEXT_PUBLIC_GATEWAY_URL` idiom). Present → native path; absent → existing web Notification API. An `onNavigate` effect routes the window on click.
+- [x] **Consistent policy** — pure, exported `chooseNotificationDelivery()` (`desktop`/`browser`/`none`) keeps the shared `notifyTaskUpdates` opt-in + "only while the window is away" gate on both paths; the OS owns the native permission, so the desktop path has no web-permission gate. `shouldRaiseBrowserNotification` refactored to share the gate.
+- [x] **Contract + typecheck** — the IPC payload **is** a shared `Notification` (Golden Rule); added `@midnite/shared` to desktop + the shared TS project reference (mirrors gateway) so desktop typechecks against shared's declarations.
+- [x] Tests: `chooseNotificationDelivery` (desktop-preferred / browser-fallback / none, incl. opt-in + visibility gates) + `getDesktopBridge` (web). `web:test` 371 green; `:typecheck`/`:lint` + `moon ci` green. No Playwright shots — the surface is a native OS notification, not the web DOM (the in-app toast/center were shown in #107). README documents the bridge.
+- [x] **Deferred (unchanged):** the Theme C ◐ Settings *policy/webhook* editing panel (config-mirroring UI); Slack/email channels → Phase 14.
+
+---
+
+## 2026-06-22 — Phase 27 Theme B: dependency-aware scheduling (PR #109)
+
+Theme A (#106) landed the dependency **model** (edge table, `dependsOn`, integrity rules, and the SQL ready-set query) but the scheduler still filled slots from *all* `todo` tasks, so an explicit blocker graph had no effect on run order. Theme B wires the graph into the tick so a multi-step project runs in DAG order. Gateway-only; no wire-shape or client changes.
+
+- [x] **Ready-gating** — the tick selects from the dependency ready-set (`todo` tasks whose every blocker is `done`) via `TasksService.listReadyTodoTasks()` (→ `TasksRepository.listReadyTodoTasks()`) instead of `listTasks('todo')`. Priority+age ordering still applies, but **only among ready tasks**, so a higher-priority blocked task can't jump its blocker.
+- [x] **Unblock-on-complete** — a blocker reaching `done` makes its dependents eligible on the **next tick** automatically (readiness is recomputed in SQL — no scheduling event needed); the service also re-emits `task.updated` for the blocker's dependents (`notifyDependents`) so the board's derived "blocked by N" chip refreshes promptly.
+- [x] **Abandoned-blocker policy** (Decision §4 — *hold + surface*) — an `abandoned` blocker is never `done`, so the ready-set keeps its dependents out of scheduling (held, not silently run); dependents are re-broadcast on the abandon transition so a "blocked by an abandoned task" affordance can surface (richer UI is Theme C). Dropping the dead edge is the existing `removeDependency`.
+- [x] Tests: scheduler unit (blocked task waits until its blocker is `done`); pool integration (`:memory:`) — 3-task chain runs one blocker at a time, a higher-priority blocked task can't jump its blocker, completing a blocker emits its dependent's `task.updated`, an abandoned blocker holds its dependent. `gateway:typecheck`/`lint` green; `gateway:test` 734 green; CI green (after a re-run of the pre-existing flaky `terminal` env-dump spec — unrelated).
+
+---
+
 ## 2026-06-22 — Phase 21 Theme B: notification channel dispatch (PR #108)
 
 Theme A (#103) emitted `notification.created` over WS directly; Theme B introduces the channel abstraction so a notification fans to N configurable sinks (in-app feed + optional webhook), with Slack/email deferred to Phase 14 as drop-in channels. Composes with the Theme C web center (#107), which reads the same unchanged WS event.

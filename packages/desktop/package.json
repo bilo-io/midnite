@@ -15,7 +15,8 @@
     "package:linux": "electron-builder --linux --config electron-builder.yml"
   },
   "dependencies": {
-    "@midnite/gateway": "workspace:*"
+    "@midnite/gateway": "workspace:*",
+    "@midnite/shared": "workspace:*"
   },
   "devDependencies": {
     "@electron/rebuild": "^3.7.0",
