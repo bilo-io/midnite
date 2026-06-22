@@ -10,12 +10,31 @@ import fastifyStatic from '@fastify/static';
 import { mkdirSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
 import { AppModule } from './app.module';
+import { isLoopbackHost, resolveAuthToken } from './auth/lib/auth-policy';
 import { isAllowedOrigin } from './lib/allowed-origin';
 import { loadConfigFromDisk } from './lib/load-config';
 import { registerWebStatic } from './lib/serve-web';
 
 function resolveDir(p: string): string {
   return isAbsolute(p) ? p : resolve(process.cwd(), p);
+}
+
+/**
+ * Fail-closed (Phase 7 A5): binding a non-loopback host with no auth token would
+ * expose an unauthenticated, PTY-spawning API on the network. Refuse to boot
+ * unless the operator either sets a token or explicitly opts out
+ * (`gateway.auth.requireOnNonLoopback: false`). Loopback binds (the default) are
+ * unaffected.
+ */
+function assertAuthForHost(config: ReturnType<typeof loadConfigFromDisk>): void {
+  const { host, auth } = config.gateway;
+  if (isLoopbackHost(host) || !auth.requireOnNonLoopback) return;
+  if (!resolveAuthToken(config)) {
+    throw new Error(
+      `gateway.host is non-loopback (${host}) but no auth token is set: define $${auth.tokenEnv}, ` +
+        `or set gateway.auth.requireOnNonLoopback=false to bind it unauthenticated on purpose`,
+    );
+  }
 }
 
 /**
@@ -29,6 +48,8 @@ function resolveDir(p: string): string {
  */
 export async function startGateway(): Promise<NestFastifyApplication> {
   const config = loadConfigFromDisk();
+  // Fail-closed before binding: never expose an unauthenticated API off-box.
+  assertAuthForHost(config);
   const adapter = new FastifyAdapter();
 
   const uploadsDir = resolveDir(config.gateway.uploadsDir);

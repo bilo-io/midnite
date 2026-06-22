@@ -1,0 +1,75 @@
+import { describe, expect, it } from 'vitest';
+import { parseConfig, type MidniteConfig } from '@midnite/shared';
+import {
+  bearerTokenFromHeader,
+  isAuthExemptPath,
+  isLoopbackHost,
+  resolveAuthToken,
+  safeEqual,
+} from './auth-policy';
+
+function configWith(authOverrides: Record<string, unknown> = {}): MidniteConfig {
+  return parseConfig({ agent: {}, terminal: {}, gateway: { auth: authOverrides } });
+}
+
+describe('isLoopbackHost', () => {
+  it('accepts the loopback block, localhost and ::1', () => {
+    for (const h of ['127.0.0.1', '127.0.0.53', 'localhost', 'LOCALHOST', '::1', '[::1]']) {
+      expect(isLoopbackHost(h)).toBe(true);
+    }
+  });
+
+  it('rejects bind-all and routable addresses', () => {
+    for (const h of ['0.0.0.0', '::', '192.168.1.10', '10.0.0.2', 'example.com']) {
+      expect(isLoopbackHost(h)).toBe(false);
+    }
+  });
+});
+
+describe('resolveAuthToken', () => {
+  it('reads the token from the configured env var', () => {
+    const config = configWith({ tokenEnv: 'MY_TOKEN' });
+    expect(resolveAuthToken(config, { MY_TOKEN: 's3cret' })).toBe('s3cret');
+  });
+
+  it('treats unset or blank as no token (auth off)', () => {
+    const config = configWith({ tokenEnv: 'MY_TOKEN' });
+    expect(resolveAuthToken(config, {})).toBeNull();
+    expect(resolveAuthToken(config, { MY_TOKEN: '   ' })).toBeNull();
+  });
+});
+
+describe('isAuthExemptPath', () => {
+  it('exempts health and hook callbacks (incl. query strings / trailing slashes)', () => {
+    for (const p of ['/health', '/health?x=1', '/hooks/sessions/abc/stop', '/hooks/workflows/x', '/hooks/']) {
+      expect(isAuthExemptPath(p)).toBe(true);
+    }
+  });
+
+  it('protects everything else', () => {
+    for (const p of ['/tasks', '/health/extra', '/hooksy', '/projects?type=x', '/']) {
+      expect(isAuthExemptPath(p)).toBe(false);
+    }
+  });
+});
+
+describe('bearerTokenFromHeader', () => {
+  it('extracts the token, scheme case-insensitive', () => {
+    expect(bearerTokenFromHeader('Bearer abc')).toBe('abc');
+    expect(bearerTokenFromHeader('bearer  abc ')).toBe('abc');
+  });
+
+  it('returns null for missing or non-bearer headers', () => {
+    expect(bearerTokenFromHeader(undefined)).toBeNull();
+    expect(bearerTokenFromHeader('Basic abc')).toBeNull();
+    expect(bearerTokenFromHeader('Bearer')).toBeNull();
+  });
+});
+
+describe('safeEqual', () => {
+  it('matches equal strings and rejects mismatches / length diffs', () => {
+    expect(safeEqual('token', 'token')).toBe(true);
+    expect(safeEqual('token', 'tokeN')).toBe(false);
+    expect(safeEqual('token', 'tok')).toBe(false);
+  });
+});

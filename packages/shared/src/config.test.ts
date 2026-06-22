@@ -30,6 +30,29 @@ describe('agent pool config defaults', () => {
   });
 });
 
+describe('gateway.auth defaults (Phase 7 A5)', () => {
+  it('is off by default — env-named token, fail-closed on non-loopback, no rate limit', () => {
+    const config = parseConfig({ agent: {}, terminal: {}, gateway: {} });
+    expect(config.gateway.auth.tokenEnv).toBe('MIDNITE_AUTH_TOKEN');
+    expect(config.gateway.auth.requireOnNonLoopback).toBe(true);
+    expect(config.gateway.auth.rateLimit.max).toBe(0);
+    expect(config.gateway.auth.rateLimit.windowMs).toBe(60000);
+  });
+
+  it('honours explicit overrides', () => {
+    const config = parseConfig({
+      agent: {},
+      terminal: {},
+      gateway: {
+        auth: { tokenEnv: 'MY_TOKEN', requireOnNonLoopback: false, rateLimit: { max: 120, windowMs: 1000 } },
+      },
+    });
+    expect(config.gateway.auth.tokenEnv).toBe('MY_TOKEN');
+    expect(config.gateway.auth.requireOnNonLoopback).toBe(false);
+    expect(config.gateway.auth.rateLimit).toEqual({ max: 120, windowMs: 1000 });
+  });
+});
+
 describe('terminal.mode backend', () => {
   it('defaults to pty', () => {
     const config = parseConfig({ agent: {}, terminal: {}, knowledge: {}, gateway: {} });
