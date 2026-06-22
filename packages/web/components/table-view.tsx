@@ -19,6 +19,7 @@ export function TableView({
   showAbandoned,
   isSelected,
   onToggleSelect,
+  blockedCounts,
 }: TaskViewProps) {
   const grouped = groupByStatus(tasks);
 
@@ -48,6 +49,7 @@ export function TableView({
               onSelect={() => onSelect(t)}
               selected={isSelected?.(t.id) ?? false}
               onToggleSelect={onToggleSelect ? (sk) => onToggleSelect(t.id, sk) : undefined}
+              blockedBy={blockedCounts?.get(t.id)}
             />
           ))
         ),
@@ -64,6 +66,7 @@ export function TableView({
             onSelect={onSelect}
             projectsById={projectsById}
             layout="table"
+            blockedCounts={blockedCounts}
           />
         </div>
       )}

@@ -19,12 +19,15 @@ import { Button } from '@/components/ui/button';
 import { MarkdownPreview } from '@/components/markdown-preview';
 import { ProjectSelect } from '@/components/project-select';
 import { SourceIcon } from '@/components/source-icon';
+import { TaskPicker } from '@/components/task-picker';
 import { DeleteConfirmButton } from '@/components/delete-confirm-button';
 import { useConfirm } from '@/components/confirm-dialog';
 import {
+  addTaskDependency,
   addTaskLink,
   deleteTask,
   gatewayUrl,
+  removeTaskDependency,
   removeTaskLink,
   setTaskTags,
   startTask,
@@ -32,6 +35,7 @@ import {
   updateTaskStatus,
 } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
+import { dependentsOf, unmetBlockerCount } from '@/lib/task-dependencies';
 
 const STATUS_HUE_VAR: Record<Status, string> = {
   backlog: '--status-backlog',
@@ -70,10 +74,12 @@ const KIND_HUE_VAR: Record<NonNullable<Task['kind']>, string> = {
 type Props = {
   task: Task;
   projects: Project[];
+  /** The full board list — resolves blockers/dependents and feeds the add-blocker picker (Phase 27). */
+  tasks: Task[];
   onClose: () => void;
 };
 
-export function TaskThreadModal({ task, projects, onClose }: Props) {
+export function TaskThreadModal({ task, projects, tasks, onClose }: Props) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -98,6 +104,45 @@ export function TaskThreadModal({ task, projects, onClose }: Props) {
   const [projectBusy, setProjectBusy] = useState(false);
   const [tags, setTags] = useState<string[]>(task.tags);
   const [tagInput, setTagInput] = useState('');
+  const [dependsOn, setDependsOn] = useState<string[]>(task.dependsOn ?? []);
+  const [depError, setDepError] = useState<string | null>(null);
+  const [depBusy, setDepBusy] = useState(false);
+
+  const tasksById = new Map(tasks.map((t) => [t.id, t] as const));
+  // Open tasks that aren't this task and aren't already a blocker — candidates to add.
+  const blockerCandidates = tasks.filter(
+    (t) => t.id !== task.id && !dependsOn.includes(t.id) && t.status !== 'done' && t.status !== 'abandoned',
+  );
+  const dependents = dependentsOf(task.id, tasks);
+
+  const addBlocker = async (blockerId: string) => {
+    setDepBusy(true);
+    setDepError(null);
+    try {
+      const updated = await addTaskDependency(task.id, blockerId);
+      setDependsOn(updated.dependsOn ?? []);
+      invalidateData();
+    } catch (e) {
+      // Surfaces the gateway's self-reference / cycle / unknown-task message.
+      setDepError(e instanceof Error ? e.message : 'Failed to add dependency');
+    } finally {
+      setDepBusy(false);
+    }
+  };
+
+  const removeBlocker = async (blockerId: string) => {
+    setDepBusy(true);
+    setDepError(null);
+    try {
+      const updated = await removeTaskDependency(task.id, blockerId);
+      setDependsOn(updated.dependsOn ?? []);
+      invalidateData();
+    } catch (e) {
+      setDepError(e instanceof Error ? e.message : 'Failed to remove dependency');
+    } finally {
+      setDepBusy(false);
+    }
+  };
 
   const saveTags = async (next: string[]) => {
     const prev = tags;
@@ -146,8 +191,18 @@ export function TaskThreadModal({ task, projects, onClose }: Props) {
   };
 
   // Manual kickoff: spawn an agent session now (todo/backlog → wip). The gateway
-  // 409s when no slot is free; surface that as a non-fatal message.
+  // 409s when no slot is free; surface that as a non-fatal message. Starting a
+  // blocked task is a human override (Phase 27) — warn + confirm first.
   const start = async () => {
+    const unmet = unmetBlockerCount(task, tasksById);
+    if (unmet > 0) {
+      const ok = await confirm({
+        title: 'Start a blocked task?',
+        description: `${unmet} blocker${unmet === 1 ? " isn't" : "s aren't"} done yet. The scheduler skips blocked tasks; starting it manually runs it anyway.`,
+        confirmLabel: 'Start anyway',
+      });
+      if (!ok) return;
+    }
     setStatusBusy(true);
     setStatusError(null);
     try {
@@ -380,6 +435,93 @@ export function TaskThreadModal({ task, projects, onClose }: Props) {
                   aria-label="Add a tag"
                 />
               </div>
+            </section>
+            <section>
+              <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Dependencies
+              </h3>
+              <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
+                Blocked by
+              </p>
+              {dependsOn.length > 0 ? (
+                <ul className="mb-2 space-y-1.5">
+                  {dependsOn.map((id) => {
+                    const blocker = tasksById.get(id);
+                    const done = blocker?.status === 'done';
+                    const blockerStatus = blocker?.status;
+                    return (
+                      <li
+                        key={id}
+                        className="flex items-center gap-2 rounded-md border border-border/60 bg-background/60 px-2.5 py-1.5"
+                      >
+                        <span
+                          aria-hidden
+                          className="h-1.5 w-1.5 shrink-0 rounded-full"
+                          style={{
+                            background: blockerStatus
+                              ? `hsl(var(${STATUS_HUE_VAR[blockerStatus]}))`
+                              : 'hsl(var(--muted-foreground))',
+                          }}
+                        />
+                        <span className="min-w-0 flex-1 truncate text-sm">
+                          {blocker ? blocker.title : '(unknown)'}
+                        </span>
+                        <span
+                          className={`shrink-0 text-[10px] font-medium uppercase tracking-wider ${
+                            done ? 'text-success' : 'text-muted-foreground'
+                          }`}
+                        >
+                          {done ? 'done' : 'pending'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => void removeBlocker(id)}
+                          disabled={depBusy}
+                          aria-label={`Remove blocker ${blocker ? blocker.title : id}`}
+                          className="shrink-0 text-muted-foreground hover:text-destructive disabled:opacity-50"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p className="mb-2 text-sm text-muted-foreground">No blockers.</p>
+              )}
+              <TaskPicker
+                candidates={blockerCandidates}
+                onPick={(t) => void addBlocker(t.id)}
+                disabled={depBusy}
+                label="Search tasks to block on"
+                placeholder="Add a blocking task…"
+              />
+              {depError ? <p className="mt-1.5 text-xs text-destructive">{depError}</p> : null}
+              {dependents.length > 0 ? (
+                <div className="mt-3">
+                  <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
+                    Blocks
+                  </p>
+                  <ul className="space-y-1.5">
+                    {dependents.map((d) => (
+                      <li
+                        key={d.id}
+                        className="flex items-center gap-2 rounded-md border border-border/60 bg-background/60 px-2.5 py-1.5"
+                      >
+                        <span
+                          aria-hidden
+                          className="h-1.5 w-1.5 shrink-0 rounded-full"
+                          style={{ background: `hsl(var(${STATUS_HUE_VAR[d.status]}))` }}
+                        />
+                        <span className="min-w-0 flex-1 truncate text-sm">{d.title}</span>
+                        <span className="shrink-0 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                          {STATUS_LABEL[d.status]}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
             </section>
             <section>
               <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">

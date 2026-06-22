@@ -1,5 +1,6 @@
 import { Square } from 'lucide-react';
 import type { Task } from '@midnite/shared';
+import { BlockedBadge } from '@/components/blocked-badge';
 import { ProjectTag } from '@/components/project-tag';
 import { SelectableIcon } from '@/components/selectable-icon';
 import type { ProjectTagInfo } from '@/components/task-card';
@@ -34,6 +35,7 @@ export function TaskRow({
   showStatus = false,
   selected = false,
   onToggleSelect,
+  blockedBy,
 }: {
   task: Task;
   project?: ProjectTagInfo;
@@ -41,6 +43,8 @@ export function TaskRow({
   showStatus?: boolean;
   selected?: boolean;
   onToggleSelect?: (shiftKey: boolean) => void;
+  /** Count of unmet blockers (Phase 27); shows a chip when > 0. */
+  blockedBy?: number;
 }) {
   const kind = task.kind ?? 'unknown';
   const interactive = Boolean(onSelect);
@@ -60,6 +64,7 @@ export function TaskRow({
         <span className="hidden shrink-0 truncate text-xs text-muted-foreground sm:inline">{task.repo}</span>
       )}
       {project && <ProjectTag tag={project.tag} color={project.color} className="shrink-0" />}
+      {(blockedBy ?? 0) > 0 ? <BlockedBadge count={blockedBy ?? 0} /> : null}
       {showStatus && (
         <span
           className="inline-flex shrink-0 items-center gap-1.5 text-[11px] text-muted-foreground"
