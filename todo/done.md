@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 16 verify-and-close — Bulk / paste add COMPLETE
+
+The build (API + CLI + web, Themes A/B/C — PRs #40/#47/#42) shipped a while ago, but the phase's acceptance checks were never ticked. Verified them against the code + tests and closed the phase:
+
+- [x] **Per-line error handling** + over-cap/empty rejection — already covered by `tasks.service.spec` (`returns a per-line error for a failing line while the rest succeed`, plus the cap / no-lines rejection cases).
+- [x] **Batch-wide repo/priority/project** — `createBulk` threads all three to every line; the existing batch-wide test asserted repo+priority, so I **strengthened it to also assert `projectId`** ("applies batch-wide repo, priority, and project to every created task"). `gateway:test` green.
+- [x] Ticked the 3 acceptance items in [`phase-16-bulk-add.md`](phase-16-bulk-add.md) → phase ✅.
+
 ## 2026-06-22 — Phase 24 Theme C: installable PWA (PR #101)
 
 Phase 24 made the app responsive; the manifest was still an empty white stub, so it wasn't installable. This makes midnite a real PWA — installable to the home screen, launching standalone with a fast cached shell. **Installable, not offline:** board/session data stays live from the loopback gateway.
