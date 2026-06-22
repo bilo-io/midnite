@@ -23,21 +23,21 @@
 
 ---
 
-## Theme A — Notification model + ingestion + persisted feed + config — **M**
+## Theme A — Notification model + ingestion + persisted feed + config — **M** — ✅ DONE (PR #103, 2026-06-22 — see [done.md](done.md))
 
 The substrate: turn state transitions into a stored, policy-filtered feed.
 
 ### A1. Contract + config in `shared` — **S**
-- [ ] A `Notification` schema ([`notification.ts`](../packages/shared/src/)): `{ id, kind, severity ('info'|'warn'|'urgent'), title, body, entity: { type, id }, route, readAt, createdAt }`; a `notification.created` member added to a WS event union; `config.notifications` block — `{ enabled, events: {...}, channels: { web, browser, webhook? } }`. zod + tests.
-- [ ] A small **policy** type mapping transitions → notify decision (severity + copy), so "which events notify" is data, not scattered `if`s.
+- [x] A `Notification` schema ([`notification.ts`](../packages/shared/src/notification.ts)): `{ id, kind, severity ('info'|'warn'|'urgent'), title, body, entity: { type, id }, route, readAt, createdAt }`; the `notification.created` WS event + path; `config.notifications` block — `{ enabled, events, channels: { web, browser, webhook? } }`. zod + tests.
+- [x] A pure **policy** (`notifyForTask`) mapping a task's status → notify decision (severity + copy), so "which events notify" is data, not scattered `if`s.
 
 ### A2. Table + repository — **S–M**
-- [ ] A `notifications` Drizzle table (forward-only migration): `id` (UUIDv7), `kind`, `severity`, `title`, `body`, `entity_type`, `entity_id`, `read_at` (nullable), `created_at`. Repository: `insert`, `list` (paged, unread-first), `markRead(ids)`, `markAllRead`, `clear`.
+- [x] A `notifications` Drizzle table (migration `0035`): `id`, `kind`, `severity`, `title`, `body`, `entity_type`, `entity_id`, `route`, `read_at` (nullable), `created_at`. Repository: `insert`, `list` (paged, unread-first), `markRead(ids)`, `markAllRead`, `clear`, `countUnread`.
 
-### A3. `NotificationService` — ingestion + policy — **M**
-- [ ] Subscribe to [`TaskEventBus`](../packages/gateway/src/tasks/task-event-bus.ts) (and approval/session transitions); on a `task.updated` whose status entered `waiting`/`done`/`abandoned` (or a pending approval), apply the **policy**, build a `Notification`, persist it, and hand it to the dispatcher (Theme B). Default policy: **session→waiting** (needs input), **task→done**, **task→abandoned** (Decision §3) — all toggleable via `config.notifications.events`.
-- [ ] Debounce/coalesce bursts (a bulk-create shouldn't fire 50 notifications) — collapse same-kind events in a short window.
-- [ ] `GET /notifications` (paged), `POST /notifications/read` (ids / all), `DELETE /notifications` (clear) — thin controller; emit `notification.created` over WS on insert (Theme C consumes it).
+### A3. `NotificationsService` — ingestion + policy — **M**
+- [x] Subscribes to [`TaskEventBus`](../packages/gateway/src/tasks/task-event-bus.ts); on a `task.updated` whose status entered `waiting`/`done`/`abandoned` it applies the **policy**, persists a `Notification`, and emits `notification.created`. Default policy: task→`waiting` (warn), `done` (info), `abandoned` (urgent) — all toggleable via `config.notifications.events`. *(Approval/session-specific signals + the dispatcher hand-off are Theme B.)*
+- [x] Coalesces same-kind bursts in a 1.5s window (a mass move → one "N tasks finished", not a storm).
+- [x] `GET /notifications` (paged + unread count), `POST /notifications/read` (ids / all), `DELETE /notifications` (clear) — thin controller; emits `notification.created` over WS via `NotificationEventBus` → `NotificationsGateway` (`/ws/notifications`).
 
 ---
 
