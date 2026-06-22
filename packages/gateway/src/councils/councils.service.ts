@@ -12,6 +12,7 @@ import {
   type UpdateCouncilMemberRequest,
   type UpdateCouncilRequest,
 } from '@midnite/shared';
+import { SearchIndexService } from '../search/search-index.service';
 import { CouncilsRepository } from './councils.repository';
 import { buildCouncilRunReport, councilReportFilename } from './lib/council-report';
 
@@ -21,7 +22,10 @@ export class CouncilRunDoesNotExistError extends Error {}
 
 @Injectable()
 export class CouncilsService {
-  constructor(@Inject(CouncilsRepository) private readonly repo: CouncilsRepository) {}
+  constructor(
+    @Inject(CouncilsRepository) private readonly repo: CouncilsRepository,
+    @Inject(SearchIndexService) private readonly searchIndex: SearchIndexService,
+  ) {}
 
   listCouncils(): Council[] {
     return this.repo.listCouncils().map((row) => this.repo.hydrateCouncil(row));
@@ -82,6 +86,7 @@ export class CouncilsService {
         updatedAt: now,
       });
     });
+    this.searchIndex.upsert('council', row.id, row.name, row.description ?? '');
     return this.repo.hydrateCouncil(row);
   }
 
@@ -98,6 +103,8 @@ export class CouncilsService {
       updatedAt: new Date().toISOString(),
     });
     if (!row) throw new CouncilDoesNotExistError(`council ${id} does not exist`);
+    // Re-index from the current row so an edited name/description stays findable.
+    this.searchIndex.upsert('council', row.id, row.name, row.description ?? '');
     return this.repo.hydrateCouncil(row);
   }
 
@@ -106,6 +113,7 @@ export class CouncilsService {
       throw new CouncilDoesNotExistError(`council ${id} does not exist`);
     }
     this.repo.deleteCouncil(id);
+    this.searchIndex.remove('council', id);
   }
 
   // Blank-create-then-fill (mirrors subagents): missing fields coalesce to defaults.

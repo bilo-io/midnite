@@ -19,6 +19,7 @@ import {
 } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
 import { hashToken, tokenMatches } from '../lib/token-hash';
+import { SearchIndexService } from '../search/search-index.service';
 import { WorkflowsRepository } from './workflows.repository';
 import { WorkflowEngine } from './engine/workflow-engine.service';
 
@@ -34,6 +35,7 @@ export class WorkflowsService {
     @Inject(WorkflowsRepository) private readonly repo: WorkflowsRepository,
     @Inject(WorkflowEngine) private readonly engine: WorkflowEngine,
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
+    @Inject(SearchIndexService) private readonly searchIndex: SearchIndexService,
   ) {}
 
   // --- reads ---
@@ -111,6 +113,7 @@ export class WorkflowsService {
       createdAt: now,
       updatedAt: now,
     });
+    this.searchIndex.upsert('workflow', id, req.name, req.description ?? '');
     return this.repo.hydrateWorkflow(row);
   }
 
@@ -142,12 +145,15 @@ export class WorkflowsService {
 
     const row = this.repo.updateWorkflowRow(id, patch);
     if (!row) throw new NotFoundException(`workflow ${id} not found`);
+    // Re-index from the current row so an edited name/description stays findable.
+    this.searchIndex.upsert('workflow', id, row.name, row.description ?? '');
     return this.repo.hydrateWorkflow(row);
   }
 
   delete(id: string): void {
     this.getWorkflow(id); // 404 if missing
     this.repo.deleteWorkflow(id);
+    this.searchIndex.remove('workflow', id);
   }
 
   run(id: string, input: unknown, source: RunTriggerSource = 'manual'): WorkflowRun {

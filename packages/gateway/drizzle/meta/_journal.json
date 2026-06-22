@@ -239,6 +239,13 @@
       "when": 1782085444542,
       "tag": "0033_hook_secrets",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "6",
+      "when": 1782090000000,
+      "tag": "0034_search_index",
+      "breakpoints": true
     }
   ]
 }

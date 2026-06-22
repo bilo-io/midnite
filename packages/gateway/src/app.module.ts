@@ -21,6 +21,8 @@ import { ProjectsModule } from './projects/projects.module';
 import { ProvidersModule } from './providers/providers.module';
 import { ReposModule } from './repos/repos.module';
 import { RoutinesModule } from './routines/routines.module';
+import { SearchModule } from './search/search.module';
+import { SearchIndexModule } from './search/search-index.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { SetupModule } from './setup/setup.module';
 import { UsageModule } from './usage/usage.module';
@@ -34,6 +36,7 @@ import { TerminalModule } from './terminal/terminal.module';
     ConfigModule,
     CryptoModule,
     DbModule,
+    SearchIndexModule,
     EnvironmentModule,
     FsModule,
     AgentModule,
@@ -51,6 +54,7 @@ import { TerminalModule } from './terminal/terminal.module';
     ProjectsModule,
     ProvidersModule,
     ReposModule,
+    SearchModule,
     SessionsModule,
     SetupModule,
     UsageModule,

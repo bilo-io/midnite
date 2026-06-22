@@ -5,11 +5,12 @@ import {
   CouncilMemberDoesNotExistError,
   CouncilsService,
 } from './councils.service';
+import { fakeSearchIndex } from '../test/search-index';
 import { InMemoryCouncilsRepo } from './test-fixtures';
 
 function makeService(): { service: CouncilsService; repo: InMemoryCouncilsRepo } {
   const repo = new InMemoryCouncilsRepo();
-  return { service: new CouncilsService(repo), repo };
+  return { service: new CouncilsService(repo, fakeSearchIndex()), repo };
 }
 
 describe('CouncilsService', () => {

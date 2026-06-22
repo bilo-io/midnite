@@ -14,13 +14,17 @@ import {
   type UpdateMemoryRequest,
 } from '@midnite/shared';
 import { fetchSourceMetadata } from '../projects/lib/opengraph';
+import { SearchIndexService } from '../search/search-index.service';
 import { MemoriesRepository } from './memories.repository';
 
 @Injectable()
 export class MemoriesService {
   private readonly logger = new Logger(MemoriesService.name);
 
-  constructor(@Inject(MemoriesRepository) private readonly repo: MemoriesRepository) {}
+  constructor(
+    @Inject(MemoriesRepository) private readonly repo: MemoriesRepository,
+    @Inject(SearchIndexService) private readonly searchIndex: SearchIndexService,
+  ) {}
 
   listMemories(): Memory[] {
     return this.repo.listMemories().map((r) => this.repo.hydrate(r));
@@ -48,6 +52,7 @@ export class MemoriesService {
       createdAt: now,
       updatedAt: now,
     });
+    this.searchIndex.upsert('memory', id, req.title, req.content);
 
     // Positions are assigned by staged order up front, so the parallel inserts
     // below preserve it (computing positions inside each would race to 0).
@@ -68,12 +73,16 @@ export class MemoriesService {
         : {}),
       updatedAt: new Date().toISOString(),
     });
-    return this.getMemory(id);
+    const memory = this.getMemory(id);
+    // Re-index from the current row so an edited title/content stays findable.
+    this.searchIndex.upsert('memory', id, memory.title, memory.content);
+    return memory;
   }
 
   removeMemory(id: string): void {
     if (!this.repo.getMemory(id)) throw new NotFoundException(`memory ${id} not found`);
     this.repo.deleteMemory(id);
+    this.searchIndex.remove('memory', id);
   }
 
   async addSource(memoryId: string, url: string): Promise<Memory> {

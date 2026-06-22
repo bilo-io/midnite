@@ -223,6 +223,15 @@ Nest module per feature → `controller → service → repository`:
 - No triggers / no computed columns / no foreign keys across logical domains within the gateway
 - Repositories accept a `Db` (which can be a transaction) so services own transaction boundaries
 
+### Global Search (FTS5, maintained in the service layer)
+
+Cross-entity search lives in `gateway/src/search/` and is backed by a single SQLite **FTS5** virtual table, `search_index(type, entity_id UNINDEXED, title, body)` — one unified index so a `MATCH` ranks tasks, projects, memories, notes, councils and workflows together.
+
+- **Drizzle can't model an FTS5 virtual table**, so its migration is **hand-authored**: write the `CREATE VIRTUAL TABLE` SQL in a forward-only `drizzle/NNNN_*.sql`, add the matching `meta/_journal.json` entry, and copy the previous `meta/NNNN_snapshot.json` (bump `id`, set `prevId`) so a future `drizzle-kit generate` still chains. The table is **kept out of `db/schema.ts`**.
+- **Triggers are banned**, so the index is kept fresh from the **service write-path**, not DB triggers. Each domain service injects `SearchIndexService` (provided by the **global** `SearchIndexModule`) and calls `upsert(type, id, title, body)` on create/update and `remove(type, id)` on delete. `SearchIndexService` is the only place that runs raw FTS SQL (via the `SQLITE_TOKEN` handle).
+- `SearchModule` composes the domain **services** (never their repositories) for the boot **backfill** (`onModuleInit`, only when the index is empty) and the `POST /search/reindex` rebuild — the package-boundary rule still holds.
+- **Adding a searchable domain:** inject `SearchIndexService`, `upsert` on create/update + `remove` on delete (map its name/title → `title`, its longer text → `body`), and add it to `SearchService.collectRows()` so backfill/reindex cover it.
+
 ### WebSocket Events
 
 - Event shapes live in `shared/src/events/` with discriminated `type` field

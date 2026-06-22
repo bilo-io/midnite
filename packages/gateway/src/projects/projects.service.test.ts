@@ -9,6 +9,7 @@ import type {
 import type { LlmService } from '../agent/llm/llm.service';
 import type { MemoriesService } from '../memories/memories.service';
 import type { TasksService } from '../tasks/tasks.service';
+import { fakeSearchIndex } from '../test/search-index';
 import { ProjectsRepository } from './projects.repository';
 import { ProjectsService } from './projects.service';
 
@@ -141,7 +142,7 @@ describe('ProjectsService', () => {
   it('creates and hydrates a project with no sources', async () => {
     const repo = new InMemoryProjectsRepo();
     const { service: tasks } = makeTasksStub();
-    const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub);
+    const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub, fakeSearchIndex());
 
     const project = await service.createProject({
       name: 'Atlas',
@@ -158,7 +159,7 @@ describe('ProjectsService', () => {
   it('enforces the source limit before any fetch', async () => {
     const repo = new InMemoryProjectsRepo();
     const { service: tasks } = makeTasksStub();
-    const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub);
+    const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub, fakeSearchIndex());
     const project = await service.createProject({ name: 'P', tag: 'p', color: '#000' });
 
     // Seed the repo at the limit directly so addSource rejects before fetching.
@@ -180,7 +181,7 @@ describe('ProjectsService', () => {
   it('reorders sources and rejects an incomplete id set', async () => {
     const repo = new InMemoryProjectsRepo();
     const { service: tasks } = makeTasksStub();
-    const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub);
+    const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub, fakeSearchIndex());
     const project = await service.createProject({ name: 'P', tag: 'p', color: '#000' });
 
     for (let i = 0; i < 3; i++) {
@@ -203,7 +204,7 @@ describe('ProjectsService', () => {
   it('enhanceDescription returns trimmed input when AI is disabled', async () => {
     const repo = new InMemoryProjectsRepo();
     const { service: tasks } = makeTasksStub();
-    const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub);
+    const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub, fakeSearchIndex());
 
     const out = await service.enhanceDescription({ description: '  rough notes  ' });
     expect(out).toBe('rough notes');
@@ -212,7 +213,7 @@ describe('ProjectsService', () => {
   it('draftPlan persists a checklist template when AI is disabled', async () => {
     const repo = new InMemoryProjectsRepo();
     const { service: tasks } = makeTasksStub();
-    const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub);
+    const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub, fakeSearchIndex());
     const project = await service.createProject({ name: 'P', tag: 'p', color: '#000' });
 
     const { plan } = await service.draftPlan(project.id);
@@ -223,7 +224,7 @@ describe('ProjectsService', () => {
   it('createTasksFromPlan creates one task per title, tagged to the project', async () => {
     const repo = new InMemoryProjectsRepo();
     const { service: tasks, created } = makeTasksStub();
-    const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub);
+    const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub, fakeSearchIndex());
     const project = await service.createProject({ name: 'P', tag: 'p', color: '#000' });
 
     const result = service.createTasksFromPlan(project.id, ['Do A', 'Do B']);

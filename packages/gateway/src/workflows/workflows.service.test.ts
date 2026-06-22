@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Workflow } from '@midnite/shared';
 import type { WorkflowRow, WorkflowRunRow } from '../db/schema';
+import { fakeSearchIndex } from '../test/search-index';
 import { WorkflowsRepository } from './workflows.repository';
 import { WorkflowsService } from './workflows.service';
 
@@ -21,7 +22,7 @@ class FakeRepo extends WorkflowsRepository {
 }
 
 function makeService(workflows: Workflow[]): WorkflowsService {
-  return new WorkflowsService(new FakeRepo(workflows), {} as never, {} as never);
+  return new WorkflowsService(new FakeRepo(workflows), {} as never, {} as never, fakeSearchIndex());
 }
 
 const workflow: Workflow = {

@@ -6,6 +6,7 @@ import type {
   MemorySourceInsert,
   MemorySourceRow,
 } from '../db/schema';
+import { fakeSearchIndex } from '../test/search-index';
 import { MemoriesRepository } from './memories.repository';
 import { MemoriesService } from './memories.service';
 
@@ -110,7 +111,7 @@ class InMemoryMemoriesRepo extends MemoriesRepository {
 
 describe('MemoriesService', () => {
   it('creates a global memory when no project is given', async () => {
-    const service = new MemoriesService(new InMemoryMemoriesRepo());
+    const service = new MemoriesService(new InMemoryMemoriesRepo(), fakeSearchIndex());
     const memory = await service.createMemory({ title: 'Conventions', content: '# Rules' });
     expect(memory.projectId).toBeNull();
     expect(memory.title).toBe('Conventions');
@@ -119,7 +120,7 @@ describe('MemoriesService', () => {
   });
 
   it('creates a memory with staged sources in order', async () => {
-    const service = new MemoriesService(new InMemoryMemoriesRepo());
+    const service = new MemoriesService(new InMemoryMemoriesRepo(), fakeSearchIndex());
     const memory = await service.createMemory({
       title: 'API notes',
       content: '',
@@ -133,7 +134,7 @@ describe('MemoriesService', () => {
   });
 
   it('updates only the provided fields and re-scopes on explicit null', async () => {
-    const service = new MemoriesService(new InMemoryMemoriesRepo());
+    const service = new MemoriesService(new InMemoryMemoriesRepo(), fakeSearchIndex());
     const created = await service.createMemory({ title: 'API notes', content: 'v1', projectId: 'p1' });
 
     const renamed = service.updateMemory(created.id, { title: 'API notes v2' });
@@ -146,13 +147,13 @@ describe('MemoriesService', () => {
   });
 
   it('throws when updating or removing a memory that does not exist', () => {
-    const service = new MemoriesService(new InMemoryMemoriesRepo());
+    const service = new MemoriesService(new InMemoryMemoriesRepo(), fakeSearchIndex());
     expect(() => service.updateMemory('nope', { title: 'x' })).toThrow(NotFoundException);
     expect(() => service.removeMemory('nope')).toThrow(NotFoundException);
   });
 
   it('removes a memory and cascades its sources', async () => {
-    const service = new MemoriesService(new InMemoryMemoriesRepo());
+    const service = new MemoriesService(new InMemoryMemoriesRepo(), fakeSearchIndex());
     const a = await service.createMemory({
       title: 'a',
       content: '',
@@ -167,7 +168,7 @@ describe('MemoriesService', () => {
 
   it('adds, lists and removes sources, enforcing the limit', async () => {
     const repo = new InMemoryMemoriesRepo();
-    const service = new MemoriesService(repo);
+    const service = new MemoriesService(repo, fakeSearchIndex());
     const memory = await service.createMemory({ title: 'm', content: '' });
 
     // Seed at the limit directly so addSource rejects before any fetch.
@@ -192,7 +193,7 @@ describe('MemoriesService', () => {
 
   it('reorders sources and rejects an incomplete id set', async () => {
     const repo = new InMemoryMemoriesRepo();
-    const service = new MemoriesService(repo);
+    const service = new MemoriesService(repo, fakeSearchIndex());
     const memory = await service.createMemory({
       title: 'm',
       content: '',
@@ -207,7 +208,7 @@ describe('MemoriesService', () => {
   });
 
   it('listScoped returns global plus the project memories', async () => {
-    const service = new MemoriesService(new InMemoryMemoriesRepo());
+    const service = new MemoriesService(new InMemoryMemoriesRepo(), fakeSearchIndex());
     const g = await service.createMemory({ title: 'global', content: '' });
     const p1 = await service.createMemory({ title: 'p1', content: '', projectId: 'p1' });
     await service.createMemory({ title: 'p2', content: '', projectId: 'p2' });

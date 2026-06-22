@@ -13,6 +13,7 @@ import { TasksService } from '../tasks/tasks.service';
 import { TaskEventBus } from '../tasks/task-event-bus';
 import type { ReposService } from '../repos/repos.service';
 import type { TerminalService } from '../terminal/terminal.service';
+import { fakeSearchIndex } from '../test/search-index';
 import { AgentPoolService } from './agent-pool.service';
 import { AgentRunnerService } from './agent-runner.service';
 import { AgentPoolScheduler } from './agent-pool-scheduler.service';
@@ -112,7 +113,7 @@ function makeHarness(agent: Record<string, unknown> = {}): Harness {
   const classifier = {} as TaskClassifier;
   const planner = {} as PlannerService;
   const repos = { findByName: () => undefined } as unknown as ReposService;
-  const tasks = new TasksService(repo, classifier, planner, bus, repos);
+  const tasks = new TasksService(repo, classifier, planner, bus, repos, fakeSearchIndex());
 
   const terminal = makeFakeTerminal();
   const pool = new AgentPoolService(config, tasks);

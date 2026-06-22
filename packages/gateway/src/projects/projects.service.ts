@@ -19,6 +19,7 @@ import {
 import { LlmService } from '../agent/llm/llm.service';
 import { collapseTilde, expandTilde } from '../fs/path-tilde';
 import { MemoriesService } from '../memories/memories.service';
+import { SearchIndexService } from '../search/search-index.service';
 import { TasksService } from '../tasks/tasks.service';
 import { fetchSourceMetadata } from './lib/opengraph';
 import { ProjectsRepository } from './projects.repository';
@@ -59,6 +60,7 @@ export class ProjectsService {
     @Inject(LlmService) private readonly llm: LlmService,
     @Inject(TasksService) private readonly tasks: TasksService,
     @Inject(MemoriesService) private readonly memories: MemoriesService,
+    @Inject(SearchIndexService) private readonly searchIndex: SearchIndexService,
   ) {}
 
   listProjects(): Project[] {
@@ -94,6 +96,7 @@ export class ProjectsService {
       createdAt: now,
       updatedAt: now,
     });
+    this.searchIndex.upsert('project', id, req.name, req.description ?? '');
 
     // Positions are assigned by staged order up front, so the parallel inserts
     // below preserve it (computing positions inside each would race to 0).
@@ -124,12 +127,16 @@ export class ProjectsService {
     // Archive is a soft flag: store the timestamp when set, clear it when unset.
     if (req.archived !== undefined) patch.archivedAt = req.archived ? now : null;
     this.repo.updateProject(id, patch);
-    return this.getProject(id);
+    const project = this.getProject(id);
+    // Re-index from the current row so an edited name/description stays findable.
+    this.searchIndex.upsert('project', id, project.name, project.description ?? '');
+    return project;
   }
 
   deleteProject(id: string): void {
     this.assertExists(id);
     this.repo.deleteProject(id);
+    this.searchIndex.remove('project', id);
   }
 
   async addSource(projectId: string, url: string): Promise<Project> {

@@ -17,6 +17,7 @@ import { TaskClassifier, type ClassifierImage } from '../agent/classifier.servic
 import { PlannerService } from '../agent/planner.service';
 import { mapWithConcurrency } from '../lib/map-with-concurrency';
 import { ReposService } from '../repos/repos.service';
+import { SearchIndexService } from '../search/search-index.service';
 import { TasksRepository } from './tasks.repository';
 import { TaskEventBus } from './task-event-bus';
 
@@ -65,6 +66,7 @@ export class TasksService {
     @Inject(PlannerService) private readonly planner: PlannerService,
     @Inject(TaskEventBus) private readonly bus: TaskEventBus,
     @Inject(ReposService) private readonly repos: ReposService,
+    @Inject(SearchIndexService) private readonly searchIndex: SearchIndexService,
   ) {}
 
   // Resolve a task's repo reference against the registry (Phase 13 B2). A blank
@@ -246,6 +248,7 @@ export class TasksService {
       throw new BadRequestException('task must be archived before it can be deleted');
     }
     this.repo.deleteTask(id);
+    this.searchIndex.remove('task', id);
     this.bus.emit({ type: 'task.deleted', at: new Date().toISOString(), id });
   }
 
@@ -327,6 +330,11 @@ export class TasksService {
         data: JSON.stringify({ text: answer }),
       });
     }
+
+    // Index the task's title + prompt for global search. Title/prompt are
+    // immutable after creation, so create + delete are the only write-path hooks
+    // tasks need (status churn never touches the indexed text).
+    this.searchIndex.upsert('task', id, classified.title, input.prompt);
 
     const task = this.getTask(id);
     if (opts.emit === false) return task;
@@ -447,6 +455,8 @@ export class TasksService {
       kind: 'task.created',
       data: JSON.stringify({ projectId: input.projectId, source: 'plan' }),
     });
+
+    this.searchIndex.upsert('task', id, input.title, '');
 
     return this.emit('task.created', this.getTask(id));
   }

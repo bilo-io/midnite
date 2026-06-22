@@ -10,6 +10,7 @@ import { ExecutorRegistry } from './engine/executor-registry';
 import { WorkflowEngine } from './engine/workflow-engine.service';
 import { WorkflowsService } from './workflows.service';
 import { WorkflowEventBus } from './workflow-event-bus';
+import { fakeSearchIndex } from '../test/search-index';
 import type { NodeExecutor } from './engine/node-executor';
 import type { WorkflowEvent } from '@midnite/shared';
 
@@ -186,7 +187,7 @@ describe('WorkflowsService', () => {
   beforeEach(() => {
     repo = new WorkflowsRepository(makeDb());
     const engine = new WorkflowEngine(repo, new ExecutorRegistry([echo, boom]), new WorkflowEventBus());
-    service = new WorkflowsService(repo, engine, CONFIG);
+    service = new WorkflowsService(repo, engine, CONFIG, fakeSearchIndex());
   });
 
   it('seeds a single trigger node on create', () => {
