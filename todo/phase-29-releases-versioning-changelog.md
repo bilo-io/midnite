@@ -53,7 +53,7 @@ The curated, user-facing history. Seeded; per-release curation lands with `/rele
 
 Everything up to (but not including) the irreversible commit/tag. Read-mostly; ends by handing the human a ready-to-finish release branch.
 
-- [ ] New [`.claude/commands/release-prep.md`](../.claude/commands/release-prep.md). Flow:
+- [x] ✅ DONE (PR #87, 2026-06-22) — shipped as [`.claude/skills/release-prep/SKILL.md`](../.claude/skills/release-prep/SKILL.md) (skills moved from `.claude/commands/` to `.claude/skills/<name>/SKILL.md`); the commit→bump categorisation it applies is the tested pure helper [`packages/shared/src/release.ts`](../packages/shared/src/release.ts) (28 tests). Flow:
   1. **Find the last release** — latest `v*` tag (and any scoped tags); compute the diff base.
   2. **Gather changes since** — `git log ‹base›..HEAD` parsed as conventional commits, categorised by type + scope → which packages changed; cross-reference **merged PRs** (`gh pr list --state merged --search 'merged:>‹tag-date›'`) for titles/context.
   3. **Propose the version** — run the A2 helper to compute the next version(s) under the lockstep rule; show the reasoning (what triggered major/minor/patch).
@@ -97,7 +97,7 @@ The irreversible half, run after a human has reviewed the prepped branch.
 
 - [ ] `version:check` fails when a `package.json` is hand-edited to break the shared `MAJOR.MINOR`, and passes on a clean lockstep set; it runs in `moon ci`.
 - [ ] The A2 helper's unit tests cover: lockstep minor (all → `X.Y+1.0`), `fix`-only patch (only affected packages bump), mixed major>minor>patch precedence, empty set → no-op.
-- [ ] `/release-prep` on a repo with commits since the last tag produces: a correct proposed version, a drafted `CHANGELOG.md` section, version bumps on a `release/vX.Y.Z` branch, and stops for confirmation without tagging.
+- [x] `/release-prep` on a repo with commits since the last tag produces: a correct proposed version, a drafted `CHANGELOG.md` section, version bumps on a `release/vX.Y.Z` branch, and stops for confirmation without tagging. (PR #87 — skill in place; the version/categorisation math is unit-tested in [`release.test.ts`](../packages/shared/src/release.test.ts) + [`version.test.ts`](../packages/shared/src/version.test.ts). The first live end-to-end run lands when the first real release is cut, Decision §7.)
 - [ ] `/release-complete` on a prepped branch commits `chore(release): vX.Y.Z`, creates the tag(s), pushes, and opens a GitHub Release from the changelog — and refuses to run if preconditions (clean tree, green CI, dated changelog section) aren't met.
 - [ ] `moon run :typecheck` · `:lint` · `:test` + `moon ci` green.
 

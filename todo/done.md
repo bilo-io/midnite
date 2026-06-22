@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 29 Theme C: `/release-prep` skill + conventional-commit categorisation (PR #87)
+
+The policy half of Phase 29 was done (A: RELEASING.md + version-sync tooling; B: CHANGELOG). This lands the analysis-and-prepare half of the two-step release flow. `version.ts` only consumes an already-categorised `ChangeSet`, so the genuinely-new, decision-bearing logic — and the only part a prose skill can't unit-test — is turning commits into that change set. It lives in a tested helper per CLAUDE.md ("skills orchestrate; they don't hide business logic").
+
+- [x] **Pure helper** [`packages/shared/src/release.ts`](../packages/shared/src/release.ts): `parseConventionalCommit` (type/scope/`!`/`BREAKING CHANGE` footer); `bumpLevelFromCommits` (strongest-signal — breaking→major, feat→minor, fix→patch, else none; Decision §2); `changelogGroupForCommit` (Keep a Changelog grouping, non-user-facing types omitted, `revert`→Removed but non-bumping); `packagesForChangedPaths` (longest-dir attribution + root fallback, to scope a patch); `changeSetFromCommits` (bridge to `planVersionBump`). Exported from the shared barrel.
+- [x] **28 unit tests** [`release.test.ts`](../packages/shared/src/release.test.ts) over all four helpers — the "Tests for /release-prep" item (a prose skill isn't unit-testable; the rules are pinned as tested code).
+- [x] **Skill** [`.claude/skills/release-prep/SKILL.md`](../.claude/skills/release-prep/SKILL.md): preconditions (clean tree, fresh main) → gather commits + merged PRs since the base tag → propose the version citing the helpers as source of truth → confirm via `AskUserQuestion` → prep a `release/vX.Y.Z` branch (version bumps + drafted, curated CHANGELOG section, `root:version-check` re-run) → **stop before anything irreversible**, hand off to `/release-complete`.
+- [x] [`docs/RELEASING.md`](../docs/RELEASING.md) status note updated (C landed; D is the remaining slice). No runtime wire shapes — pure tooling + process. `:typecheck`/`:lint`/`shared:test` (365) + `moon ci` green first try; independent review found no blocking bugs (its coverage/clarity tighteners were applied).
+- [x] **Remaining for Phase 29:** Theme D (`/release-complete`) + cutting the first real `v0.1.0` (Decision §7).
+
 ## 2026-06-22 — Phase 29 Theme A1/A3: docs/RELEASING.md — versioning policy + release flow (PR #85)
 
 The CHANGELOG (PR #80) and version-sync tooling (PR #66) existed, but the policy tying them together lived only in the phase doc. A1/A3 write it down where contributors and the release skills look.
