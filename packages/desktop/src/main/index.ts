@@ -4,6 +4,7 @@ import type { ChildProcess } from 'node:child_process';
 import { app, BrowserWindow } from 'electron';
 import { findFreePort, startGatewayProcess, stopGatewayProcess } from './gateway-process';
 import { waitForHealth } from './health-wait';
+import { registerNotificationBridge } from './notifications';
 import { resolvePaths } from './paths';
 import { serveStatic } from './static-server';
 
@@ -14,6 +15,9 @@ let win: BrowserWindow | null = null;
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 }
+
+// Renderer notifications → native OS notifications (reads `win` lazily, per click).
+registerNotificationBridge(() => win);
 
 /** Locate the web static export: packaged extraResources first, else the dev build. */
 function webRoot(): string | null {
