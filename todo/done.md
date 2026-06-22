@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 21 Theme C: notification center + toasts + browser opt-in (PR #107)
+
+Surfaces the Theme-A notification feed in the web app — the "an agent needs you / a task finished/abandoned" signal now actually reaches the user.
+
+- [x] **Typed clients** (`web/lib/api.ts`): `getNotifications` / `markNotificationsRead` / `clearNotifications` (the existing `GET /notifications`, `POST /notifications/read`, `DELETE /notifications`).
+- [x] **`NotificationsProvider` + `useNotifications`** ([`web/components/notifications-provider.tsx`](../packages/web/components/notifications-provider.tsx)): fetches the feed on mount, opens the `/ws/notifications` socket (mirrors `use-task-events` — subscribe frame, `NotificationEventSchema`-validated frames, capped-backoff reconnect, runs once via a stable ref). On `notification.created`: prepend + bump unread (pure, tested `notificationsReducer`, de-duped by id), fire a severity-styled toast (urgent = long-lived), and raise a browser notification when gated (pure, tested `shouldRaiseBrowserNotification`: `notifyTaskUpdates` + granted + hidden tab).
+- [x] **`NotificationCenter`** ([`web/components/notification-center.tsx`](../packages/web/components/notification-center.tsx)) in the nav bar: bell + unread badge (hidden at 0, `99+` cap), dropdown feed (newest-first, severity icons, relative time), per-row deep-link that marks-read, Mark-all-read + Clear, loading/empty states, outside-click/Escape close, accessible. Mounted in `(main)/layout.tsx` beside the other live-data providers.
+- [x] Removed the superseded task-event `use-task-notifications` hook (feed path covers waiting/done + abandoned, avoids double-fire). Caught + fixed a real dropdown clip (bell at bottom-left → opens upward+right). `web:test` 359 green (NotificationCenter RTL 9 + provider 13); `web:typecheck`/`:lint` + CI green. Screenshot under [`docs/screenshots/notification-center/`](../docs/screenshots/notification-center/). Built via a delegated subagent + independent review (its socket-deps + gate-test findings applied).
+- [x] **Deferred:** the Settings *policy/webhook* editing panel (Theme C's 4th bullet, ◐) — config-mirroring UI, a follow-up. Theme D (desktop-native notifications) still open.
+
 ## 2026-06-22 — Phase 27 Theme A: task dependency model (PR #106)
 
 The agent pool ran tasks independently — no way to say "B can't start until A ships". This adds the blocker-graph substrate (model + integrity); ready-gated scheduling (Theme B) and UI/CLI (C/D) build on it. **No new status** — "blocked" stays *derived* from the edges + blocker states (Decision §2).

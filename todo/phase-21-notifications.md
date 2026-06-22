@@ -54,10 +54,10 @@ One interface, pluggable channels; config decides which fire.
 
 ## Theme C — Web notification center + toasts + browser opt-in — **M**
 
-- [ ] **Notification center** — a bell icon in the app chrome with an **unread badge**; a dropdown feed (grouped/recent, severity styling), **mark-read / mark-all-read / clear**, deep-link to the entity via the notification's `route`. Backed by `GET /notifications` + the live `notification.created` WS event.
-- [ ] **In-app toasts** — transient toast on a live `notification.created` (severity-styled; urgent ones sticky). A lightweight toast primitive if none exists.
-- [ ] **Browser/OS notifications** — opt-in via the **Notification API** (permission prompt from a user gesture); when granted and the tab is unfocused, raise a browser notification mirroring the toast. Gated behind a settings toggle.
-- [ ] **Settings panel** — toggle the policy (which events notify), the webhook URL, and browser-notification opt-in; reflects `config.notifications`.
+- [x] ✅ (PR #107) **Notification center** — bell + unread badge in the nav bar; dropdown feed (newest-first, severity styling, relative time), **mark-read / mark-all-read / clear**, deep-link via `route`. Backed by `GET /notifications` + the live `notification.created` WS event (`NotificationsProvider` opens `/ws/notifications`, mirroring `use-task-events`).
+- [x] ✅ (PR #107) **In-app toasts** — severity-styled toast on each live `notification.created` (reused the existing `toast.tsx` primitive; `urgent` = long-lived, the closest to "sticky" the toast API allows).
+- [x] ✅ (PR #107) **Browser/OS notifications** — raised when the `notifyTaskUpdates` opt-in is on, permission is granted, and the tab is hidden (pure, tested `shouldRaiseBrowserNotification`); click focuses + routes. The permission prompt already lives in Settings. Superseded + removed the old task-event `use-task-notifications` hook (the feed path covers waiting/done + abandoned, no double-fire).
+- [ ] ◐ PARTIAL — **Settings panel**: the browser-notification opt-in toggle already exists in Settings; the **policy (per-event) + webhook-URL** editing UI (reflecting `config.notifications`) is **deferred** to a follow-up (config-mirroring UI).
 
 ---
 
