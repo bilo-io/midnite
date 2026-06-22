@@ -1,6 +1,6 @@
 import { KanbanSquare, Cpu, TerminalSquare, MonitorPlay, GitPullRequest } from 'lucide-react';
 
-import { Reveal } from '@/components/ui/section';
+import { Reveal, SideColumn } from '@/components/ui/section';
 import { TypedTitle } from '@/components/sections/typed-title';
 import { InlinePanel } from '@/components/panel/inline-panel';
 
@@ -34,29 +34,32 @@ const FEATURES = [
 
 export function Features() {
   return (
-    <section id="features" className="relative z-10 mx-auto max-w-6xl px-6 py-28">
-      <TypedTitle
-        sectionId="features"
-        eyebrow="Features"
-        title="One gateway. Many agents. Full visibility."
-      />
+    <section id="features" className="relative z-10 px-6 py-28">
+      {/* Panel sits left on this section → keep the static content in the right half. */}
+      <SideColumn side="right">
+        <TypedTitle
+          sectionId="features"
+          eyebrow="Features"
+          title="One gateway. Many agents. Full visibility."
+        />
 
-      <InlinePanel content="session" className="mt-10" />
+        <InlinePanel content="session" className="mt-10" />
 
-      <div className="mt-14 grid gap-px overflow-hidden rounded-xl border border-border/60 bg-border/40 sm:grid-cols-2 lg:grid-cols-3">
-        {FEATURES.map((f, i) => (
-          <Reveal
-            as="article"
-            key={f.title}
-            delay={(i % 3) * 80}
-            className="group bg-card/40 p-7 backdrop-blur-sm transition-colors hover:bg-card/70"
-          >
-            <f.icon className="h-6 w-6 text-[#8b5cf6] transition-transform duration-300 group-hover:-translate-y-0.5" />
-            <h3 className="mt-4 font-medium">{f.title}</h3>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.body}</p>
-          </Reveal>
-        ))}
-      </div>
+        <div className="mt-14 grid gap-px overflow-hidden rounded-xl border border-border/60 bg-border/40 sm:grid-cols-2">
+          {FEATURES.map((f, i) => (
+            <Reveal
+              as="article"
+              key={f.title}
+              delay={(i % 2) * 80}
+              className="group bg-card/40 p-7 backdrop-blur-sm transition-colors hover:bg-card/70"
+            >
+              <f.icon className="h-6 w-6 text-[#8b5cf6] transition-transform duration-300 group-hover:-translate-y-0.5" />
+              <h3 className="mt-4 font-medium">{f.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.body}</p>
+            </Reveal>
+          ))}
+        </div>
+      </SideColumn>
     </section>
   );
 }
