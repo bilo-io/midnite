@@ -50,7 +50,7 @@ One interface, pluggable channels; config decides which fire.
 - [x] **`WebhookChannel`** — POSTs the notification JSON to a configured URL, **SSRF-guarded via `isSafeHttpUrl`** (the project's real outbound guard; the doc's `allowed-origin.ts` is the CORS helper) with bounded retry/backoff, best-effort. Off unless `config.notifications.channels.webhook` is set.
 - [x] Unit tests (mocked fetch): dispatcher fans to enabled channels + isolates a failure; webhook POSTs to a safe URL, **refuses loopback/private**, no-ops when unset, retries-then-gives-up without throwing; the service spec still asserts the WS emit via a real WebChannel.
 
-**This closes Phase 21 Themes A–C (D — desktop native notifications — remains).**
+**This closed Phase 21 Themes A–C** (D — desktop native notifications — landed later in PR #110).
 
 ---
 
@@ -63,11 +63,13 @@ One interface, pluggable channels; config decides which fire.
 
 ---
 
-## Theme D — Desktop native notifications — **S–M**
+## Theme D — Desktop native notifications — **S–M** — ✅ DONE (PR #110, 2026-06-22 — see [done.md](done.md))
 
-- [ ] In the [Electron app](../packages/desktop/), surface notifications as **native OS notifications** — especially valuable when the window is backgrounded. v1: the renderer's Notification API works inside Electron; **enhancement**: a main-process IPC bridge so notifications fire even when the renderer is hidden/throttled (Decision §5).
-- [ ] **Click → focus** — clicking a desktop notification focuses the window and routes to the entity (`route`).
-- [ ] Respect the same `config.notifications` policy + the user's OS-level permission.
+- [x] In the [Electron app](../packages/desktop/), surface notifications as **native OS notifications** — especially valuable when the window is backgrounded. Implemented the **enhancement** (Decision §5) directly: a **main-process IPC bridge** (preload `window.midniteDesktop.notify` → `midnite:notify` → main `new Notification().show()`), so they fire reliably even when the renderer is hidden/throttled (where its own Notification API isn't).
+- [x] **Click → focus** — clicking a desktop notification focuses the window (`win.restore()`/`focus()`) and routes to the entity by sending `route` back over `midnite:navigate` → the renderer's `onNavigate` → `router.push`.
+- [x] Respect the same `config.notifications` policy + the user's OS-level permission — the shared `notifyTaskUpdates` opt-in + "only while the window is away" gate apply to both paths (`chooseNotificationDelivery`); the OS owns the native permission (no web-permission gate on the desktop path). Plain browsers keep the web Notification API. Coverage: `chooseNotificationDelivery` + `getDesktopBridge` unit tests (web).
+
+**This closes Phase 21 Themes A–D — Phase 21 COMPLETE** (the Theme C ◐ Settings policy/webhook editing panel remains a deferred config-mirroring follow-up; Slack/email channels remain deferred to Phase 14).
 
 ---
 

@@ -4,6 +4,19 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 21 Theme D: desktop native notifications (PR #110) — **Phase 21 COMPLETE**
+
+The desktop shell now upgrades the notification feed (toasts/center + browser API, #103/#107/#108) to **native OS notifications** — the tap-on-the-shoulder when you've started a batch and walked away with the window backgrounded. Implemented Decision §5's robust path (a **main-process IPC bridge**), not just the renderer-API v1, because a hidden Electron renderer is throttled (its own `Notification` construction + `window.focus()` are unreliable) where the main process is not.
+
+- [x] **Main-process bridge** — preload exposes `window.midniteDesktop` (`notify` + `onNavigate`); [`main/notifications.ts`](../packages/desktop/src/main/notifications.ts) raises a native `Notification` on `midnite:notify` and, on click, focuses the window (`restore`/`focus`) + sends the entity `route` back over `midnite:navigate`. `getWindow` read lazily per click; single `ipcMain.on` at boot; `isSupported()`/`isDestroyed()` guarded.
+- [x] **Web routes through the bridge when present** — [`NotificationsProvider`](../packages/web/components/notifications-provider.tsx) feature-detects `window.midniteDesktop` (new [`lib/desktop-bridge.ts`](../packages/web/lib/desktop-bridge.ts), mirroring the `__NEXT_PUBLIC_GATEWAY_URL` idiom). Present → native path; absent → existing web Notification API. An `onNavigate` effect routes the window on click.
+- [x] **Consistent policy** — pure, exported `chooseNotificationDelivery()` (`desktop`/`browser`/`none`) keeps the shared `notifyTaskUpdates` opt-in + "only while the window is away" gate on both paths; the OS owns the native permission, so the desktop path has no web-permission gate. `shouldRaiseBrowserNotification` refactored to share the gate.
+- [x] **Contract + typecheck** — the IPC payload **is** a shared `Notification` (Golden Rule); added `@midnite/shared` to desktop + the shared TS project reference (mirrors gateway) so desktop typechecks against shared's declarations.
+- [x] Tests: `chooseNotificationDelivery` (desktop-preferred / browser-fallback / none, incl. opt-in + visibility gates) + `getDesktopBridge` (web). `web:test` 371 green; `:typecheck`/`:lint` + `moon ci` green. No Playwright shots — the surface is a native OS notification, not the web DOM (the in-app toast/center were shown in #107). README documents the bridge.
+- [x] **Deferred (unchanged):** the Theme C ◐ Settings *policy/webhook* editing panel (config-mirroring UI); Slack/email channels → Phase 14.
+
+---
+
 ## 2026-06-22 — Phase 27 Theme B: dependency-aware scheduling (PR #109)
 
 Theme A (#106) landed the dependency **model** (edge table, `dependsOn`, integrity rules, and the SQL ready-set query) but the scheduler still filled slots from *all* `todo` tasks, so an explicit blocker graph had no effect on run order. Theme B wires the graph into the tick so a multi-step project runs in DAG order. Gateway-only; no wire-shape or client changes.
