@@ -51,13 +51,13 @@ The kanban is the signature surface; make moving a card work by finger, two ways
 
 ---
 
-## Theme C — PWA installability — **S–M**
+## Theme C — PWA installability — **S–M** — ✅ DONE (PR #101, 2026-06-22 — see [done.md](done.md))
 
 A real installable app, not a stub manifest.
 
-- [ ] **Flesh out the manifest** ([`public/site.webmanifest`](../packages/web/public/)): real `name`/`short_name`, **theme-aware** `theme_color`/`background_color` (not hardcoded white — match the app tokens / default theme), a full icon set + maskable icon, `start_url`, `scope`, `display: standalone`. Add **apple-touch** + `apple-mobile-web-app-*` meta in [`layout.tsx`](../packages/web/app/layout.tsx).
-- [ ] **Service worker + app shell** — register a SW that caches the static shell (JS/CSS/icons) for fast launch + installability. **Be honest about offline:** the data is live from the loopback gateway, so this is **installable + fast shell, not an offline app** — the SW does not pretend to cache live board/session data. Guard against staleness (network-first for app code, or a clear update prompt).
-- [ ] **Install affordance** — "Add to home screen" launches the responsive UI standalone (no browser chrome); verify on iOS Safari + Android Chrome behaviours.
+- [x] **Flesh out the manifest** ([`public/site.webmanifest`](../packages/web/public/)): real `name`/`short_name`, **theme-aware** `theme_color`/`background_color` (dark `#09090b`, not hardcoded white), a full icon set + maskable icon (SVG, logo padded to the safe zone), `start_url`/`scope`/`id`, `display: standalone`. Apple chrome via `metadata.appleWebApp` in [`layout.tsx`](../packages/web/app/layout.tsx) (Next emits `mobile-web-app-capable` + `apple-mobile-web-app-*`).
+- [x] **Service worker + app shell** — [`public/sw.js`](../packages/web/public/sw.js) caches the static shell, **network-first for same-origin shell code** (Decision §6), scoped to asset/navigation `destination`s so it **never caches gateway API data** (even under Phase 3 same-origin serving). Honest about offline: installable fast shell, not an offline app. Registered production-only by [`pwa-register.tsx`](../packages/web/components/pwa-register.tsx).
+- [x] **Install affordance** — [`pwa-install.tsx`](../packages/web/components/pwa-install.tsx) in Settings → Appearance: drives `beforeinstallprompt` on Chromium, shows manual Share → Add to Home Screen steps on iOS, confirms when already standalone.
 
 ---
 
@@ -84,8 +84,8 @@ A real installable app, not a stub manifest.
 - [ ] At a phone width (e.g. 390px) the board, sessions, tasks, dashboard, the notification center, and the approvals inbox are **usable** — single-column, no horizontal overflow, legible, with a mobile nav (drawer/tabs).
 - [ ] On a touchscreen, a card can be moved between columns **two ways**: a press-and-hold drag (without hijacking scroll) **and** a tap-to-move affordance; a plain swipe scrolls the board.
 - [ ] The office and workflow editor show a clean **"best on desktop"** notice on a phone rather than a broken canvas.
-- [ ] The app is **installable** (valid manifest with real name/icons/theme colour; "Add to home screen") and launches **standalone**; the shell loads fast via the service worker; the app still requires a live gateway connection (no false offline promise).
-- [ ] `theme-color` + manifest colours **follow the theme** (not hardcoded white); light/dark both look intentional installed.
+- [x] The app is **installable** (valid manifest with real name/icons/theme colour; "Add to home screen") and launches **standalone**; the shell loads fast via the service worker; the app still requires a live gateway connection (no false offline promise). *(Theme C — PR #101.)*
+- [x] `theme-color` + manifest colours **follow the theme** (not hardcoded white); the dark default reads intentionally installed. *(Theme C — PR #101.)*
 - [ ] Reaching the PWA from an actual phone over the user's LAN/tunnel works because the **gateway is not modified** — and the docs state plainly that exposing it beyond loopback is the separate Phase 7 A5 work.
 - [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green; Storybook/RTL responsive states covered where practical. (Run web tests from the **primary checkout**, not a `.git` worktree.)
 

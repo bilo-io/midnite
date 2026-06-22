@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 24 Theme C: installable PWA (PR #101)
+
+Phase 24 made the app responsive; the manifest was still an empty white stub, so it wasn't installable. This makes midnite a real PWA — installable to the home screen, launching standalone with a fast cached shell. **Installable, not offline:** board/session data stays live from the loopback gateway.
+
+- [x] **Manifest** ([`site.webmanifest`](../packages/web/public/site.webmanifest)) — real `name`/`description`, **theme-aware dark** `theme_color`/`background_color` (was `#ffffff`), `id`/`start_url`/`scope`, `display: standalone`, and a **maskable** icon (the logo padded into the safe zone as an SVG — no image tooling needed). Apple chrome via `metadata.appleWebApp` in [`layout.tsx`](../packages/web/app/layout.tsx).
+- [x] **Service worker** ([`public/sw.js`](../packages/web/public/sw.js)) — network-first for the same-origin shell + a precached static set; **scoped to asset/navigation `destination`s so it never caches gateway API data**, even under Phase 3 same-origin serving (review caught this). Registered production-only by [`pwa-register.tsx`](../packages/web/components/pwa-register.tsx) (a SW would fight `next dev` HMR).
+- [x] **Install affordance** ([`pwa-install.tsx`](../packages/web/components/pwa-install.tsx)) in Settings → Appearance: `beforeinstallprompt` on Chromium, manual Share → Add to Home Screen on iOS, confirms when already standalone.
+- [x] Tests: RTL (install flow, registration gating, manifest validity); ESLint gained a service-worker-globals scope for `public/sw.js`. README + CLAUDE.md document installable-not-offline + the loopback-only reach caveat. `:typecheck`/`:lint`/`web:test` (337) + `moon ci` green. Phase 24 now has Theme A3 + Theme B open.
+
 ## 2026-06-22 — Phase 4 tracker reconcile — Inference COMPLETE (docs)
 
 Phase 4's remaining items shipped under later phases but the trackers still said "NOT IMPLEMENTED". Verified each against the code and reconciled (no code change):
