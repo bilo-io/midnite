@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Bot,
@@ -25,6 +25,7 @@ import {
   type SearchType,
 } from '@midnite/shared';
 import { searchAll } from '@/lib/api';
+import { renderSnippet } from '@/lib/highlight';
 import { FEATURES, isFeatureEnabled } from '@/lib/features';
 import { AppSettings, DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY } from '@/lib/app-settings';
 import { useLocalStorage } from '@/lib/use-local-storage';
@@ -65,35 +66,6 @@ type FlatItem =
 
 /** A rendered group: a heading, its selectable rows, and any hidden overflow. */
 type Section = { key: string; label: string; items: FlatItem[]; moreCount: number };
-
-/**
- * Render a snippet whose only markup is `<mark>…</mark>` (the surrounding text is
- * raw entity content). We split on the literal tags and emit the matched spans as
- * real `<mark>` elements while letting React escape everything else — so we get
- * highlighting without `dangerouslySetInnerHTML` (and without its XSS surface).
- */
-function renderSnippet(snippet: string) {
-  const parts = snippet.split(/(<mark>|<\/mark>)/);
-  let marking = false;
-  return parts.map((part, i) => {
-    if (part === '<mark>') {
-      marking = true;
-      return null;
-    }
-    if (part === '</mark>') {
-      marking = false;
-      return null;
-    }
-    if (!part) return null;
-    return marking ? (
-      <mark key={i} className="rounded-sm bg-primary/25 px-0.5 text-foreground">
-        {part}
-      </mark>
-    ) : (
-      <Fragment key={i}>{part}</Fragment>
-    );
-  });
-}
 
 /**
  * ⌘K / Ctrl+K command palette: a fast switcher across every enabled surface and,
@@ -346,8 +318,18 @@ export function CommandPalette() {
                     );
                   })}
                   {section.moreCount > 0 && (
-                    <li className="px-3 py-1.5 pl-10 text-xs text-muted-foreground/80">
-                      +{section.moreCount} more {section.label.toLowerCase()}
+                    <li>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          go(
+                            `/search?q=${encodeURIComponent(query.trim())}&type=${section.key}`,
+                          )
+                        }
+                        className="w-full px-3 py-1.5 pl-10 text-left text-xs text-muted-foreground/80 hover:text-foreground"
+                      >
+                        +{section.moreCount} more {section.label.toLowerCase()} — see all in Search
+                      </button>
                     </li>
                   )}
                 </ul>
