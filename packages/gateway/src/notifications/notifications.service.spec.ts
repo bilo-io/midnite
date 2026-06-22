@@ -7,6 +7,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MidniteDb } from '../db/db.module';
 import * as schema from '../db/schema';
 import { TaskEventBus } from '../tasks/task-event-bus';
+import { WebChannel } from './channels/web.channel';
+import { NotificationDispatcher } from './notification-dispatcher.service';
 import { NotificationEventBus } from './notification-event-bus';
 import { NotificationsRepository } from './notifications.repository';
 import { NOTIFICATION_COALESCE_MS, NotificationsService } from './notifications.service';
@@ -30,8 +32,10 @@ function makeHarness(opts: { enabled?: boolean; events?: Partial<Events> } = {})
   const bus = new NotificationEventBus();
   const events: NotificationEvent[] = [];
   bus.subscribe((e) => events.push(e));
+  // Real dispatcher + WebChannel so the WS emit still flows (Theme B wiring).
+  const dispatcher = new NotificationDispatcher(config, [new WebChannel(bus)]);
   const taskBus = new TaskEventBus();
-  const svc = new NotificationsService(config, repo, bus, taskBus);
+  const svc = new NotificationsService(config, repo, dispatcher, taskBus);
   svc.onModuleInit();
   return { svc, repo, bus, taskBus, events };
 }
@@ -41,14 +45,17 @@ const task = (id: string, status: Task['status'], title = 'Fix login'): Task =>
 
 const updated = (t: Task) => ({ type: 'task.updated' as const, at: 'now', task: t });
 
+/** Flush the coalesce timer + the async dispatch microtasks. */
+const settle = () => vi.advanceTimersByTimeAsync(NOTIFICATION_COALESCE_MS);
+
 describe('NotificationsService', () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 
-  it('persists + emits one notification when a task enters done', () => {
+  it('persists + emits one notification when a task enters done', async () => {
     const h = makeHarness();
     h.taskBus.emit(updated(task('t1', 'done')));
-    vi.advanceTimersByTime(NOTIFICATION_COALESCE_MS);
+    await settle();
 
     expect(h.events).toHaveLength(1);
     expect(h.events[0]).toMatchObject({
@@ -60,35 +67,35 @@ describe('NotificationsService', () => {
     expect(unread).toBe(1);
   });
 
-  it('maps waiting → warn and abandoned → urgent', () => {
+  it('maps waiting → warn and abandoned → urgent', async () => {
     const h = makeHarness();
     h.taskBus.emit(updated(task('w', 'waiting')));
     h.taskBus.emit(updated(task('a', 'abandoned')));
-    vi.advanceTimersByTime(NOTIFICATION_COALESCE_MS);
+    await settle();
     const kinds = h.events.map((e) => e.notification.severity).sort();
     expect(kinds).toEqual(['urgent', 'warn']);
   });
 
-  it('ignores non-terminal statuses', () => {
+  it('ignores non-terminal statuses', async () => {
     const h = makeHarness();
     for (const s of ['backlog', 'todo', 'wip'] as const) h.taskBus.emit(updated(task('x', s)));
-    vi.advanceTimersByTime(NOTIFICATION_COALESCE_MS);
+    await settle();
     expect(h.events).toHaveLength(0);
   });
 
-  it('honours a disabled event toggle', () => {
+  it('honours a disabled event toggle', async () => {
     const h = makeHarness({ events: { taskDone: false } });
     h.taskBus.emit(updated(task('t1', 'done')));
-    vi.advanceTimersByTime(NOTIFICATION_COALESCE_MS);
+    await settle();
     expect(h.events).toHaveLength(0);
   });
 
-  it('coalesces a same-kind burst into one counted notification', () => {
+  it('coalesces a same-kind burst into one counted notification', async () => {
     const h = makeHarness();
     h.taskBus.emit(updated(task('t1', 'done')));
     h.taskBus.emit(updated(task('t2', 'done')));
     h.taskBus.emit(updated(task('t3', 'done', 'Last one')));
-    vi.advanceTimersByTime(NOTIFICATION_COALESCE_MS);
+    await settle();
 
     expect(h.events).toHaveLength(1);
     expect(h.events[0]!.notification.title).toBe('3 tasks finished');
@@ -96,18 +103,18 @@ describe('NotificationsService', () => {
     expect(h.svc.list({}).unread).toBe(1);
   });
 
-  it('does not subscribe when notifications are disabled', () => {
+  it('does not subscribe when notifications are disabled', async () => {
     const h = makeHarness({ enabled: false });
     h.taskBus.emit(updated(task('t1', 'done')));
-    vi.advanceTimersByTime(NOTIFICATION_COALESCE_MS);
+    await settle();
     expect(h.events).toHaveLength(0);
   });
 
-  it('marks ids / all read and clears', () => {
+  it('marks ids / all read and clears', async () => {
     const h = makeHarness();
     h.taskBus.emit(updated(task('t1', 'done')));
     h.taskBus.emit(updated(task('w', 'waiting')));
-    vi.advanceTimersByTime(NOTIFICATION_COALESCE_MS);
+    await settle();
     expect(h.svc.list({}).unread).toBe(2);
 
     const firstId = h.svc.list({}).notifications[0]!.id;
@@ -118,22 +125,22 @@ describe('NotificationsService', () => {
     expect(h.svc.list({}).notifications).toHaveLength(0);
   });
 
-  it('stops ingesting after destroy', () => {
+  it('stops ingesting after destroy', async () => {
     const h = makeHarness();
     h.svc.onModuleDestroy();
     h.taskBus.emit(updated(task('t1', 'done')));
-    vi.advanceTimersByTime(NOTIFICATION_COALESCE_MS);
+    await settle();
     expect(h.events).toHaveLength(0);
   });
 
-  it('orders the feed unread-first', () => {
+  it('orders the feed unread-first', async () => {
     const h = makeHarness();
     h.taskBus.emit(updated(task('t1', 'done')));
-    vi.advanceTimersByTime(NOTIFICATION_COALESCE_MS);
+    await settle();
     const firstId = h.svc.list({}).notifications[0]!.id;
     h.svc.markRead({ ids: [firstId] });
     h.taskBus.emit(updated(task('w', 'waiting')));
-    vi.advanceTimersByTime(NOTIFICATION_COALESCE_MS);
+    await settle();
 
     // The still-unread one sorts ahead of the read one.
     const feed = h.svc.list({}).notifications;

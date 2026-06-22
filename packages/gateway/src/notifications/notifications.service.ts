@@ -21,7 +21,7 @@ import {
 } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
 import { TaskEventBus } from '../tasks/task-event-bus';
-import { NotificationEventBus } from './notification-event-bus';
+import { NotificationDispatcher } from './notification-dispatcher.service';
 import { NotificationsRepository } from './notifications.repository';
 
 /**
@@ -54,7 +54,7 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
   constructor(
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
     @Inject(NotificationsRepository) private readonly repo: NotificationsRepository,
-    @Inject(NotificationEventBus) private readonly bus: NotificationEventBus,
+    @Inject(NotificationDispatcher) private readonly dispatcher: NotificationDispatcher,
     @Inject(TaskEventBus) private readonly taskBus: TaskEventBus,
   ) {}
 
@@ -105,20 +105,22 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
       existing.task = task; // keep the latest as the representative
       return;
     }
-    const timer = setTimeout(() => this.flush(decision.kind), NOTIFICATION_COALESCE_MS);
+    const timer = setTimeout(() => void this.flush(decision.kind), NOTIFICATION_COALESCE_MS);
     timer.unref?.();
     this.pending.set(decision.kind, { decision, task, count: 1, timer });
   }
 
-  private flush(kind: NotificationKind): void {
+  private async flush(kind: NotificationKind): Promise<void> {
     const p = this.pending.get(kind);
     if (!p) return;
     this.pending.delete(kind);
     try {
       const notification = this.persist(p);
-      this.bus.emit({ type: 'notification.created', notification });
+      // Persist first (the durable feed), then fan to the enabled channels —
+      // the web channel re-emits notification.created over WS for live clients.
+      await this.dispatcher.dispatch(notification);
     } catch (err) {
-      this.logger.warn(`failed to emit ${kind} notification: ${String(err)}`);
+      this.logger.warn(`failed to dispatch ${kind} notification: ${String(err)}`);
     }
   }
 
