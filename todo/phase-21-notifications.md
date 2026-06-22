@@ -41,14 +41,16 @@ The substrate: turn state transitions into a stored, policy-filtered feed.
 
 ---
 
-## Theme B — Channel dispatch — **M**
+## Theme B — Channel dispatch — **M** — ✅ DONE (PR #108, 2026-06-22 — see [done.md](done.md))
 
 One interface, pluggable channels; config decides which fire.
 
-- [ ] A **`NotificationChannel`** interface (`send(notification): Promise<void>`), with a dispatcher that fans a persisted notification to all **enabled** channels (`Promise.all`, per-channel failure isolated + logged — never let one channel break another).
-- [ ] **`WebChannel`** — emits the `notification.created` WS event (the in-app feed/toasts in Theme C). Always on.
-- [ ] **`WebhookChannel`** — POST the notification JSON to a configured URL, **SSRF-guarded** via [`allowed-origin.ts`](../packages/gateway/src/lib/allowed-origin.ts); ret/backoff on failure, capped. Off unless `config.notifications.channels.webhook` is set.
-- [ ] Engine/unit tests (`:memory:` + mocked fetch): a `waiting` transition produces one persisted notification + a WebChannel emit + a webhook POST when configured; a blocked/loopback webhook URL is never called; a failing channel doesn't drop the others.
+- [x] A **`NotificationChannel`** interface (`name`/`enabled(config)`/`send`), collected via a `NOTIFICATION_CHANNELS` multi-provider; **`NotificationDispatcher`** fans a persisted notification to all **enabled** channels (`Promise.all`, per-channel failure isolated + logged).
+- [x] **`WebChannel`** — emits the `notification.created` WS event (the in-app feed/toasts, Theme C #107). Always on. The service now routes through the dispatcher, so this channel performs the emit (behavior-preserving).
+- [x] **`WebhookChannel`** — POSTs the notification JSON to a configured URL, **SSRF-guarded via `isSafeHttpUrl`** (the project's real outbound guard; the doc's `allowed-origin.ts` is the CORS helper) with bounded retry/backoff, best-effort. Off unless `config.notifications.channels.webhook` is set.
+- [x] Unit tests (mocked fetch): dispatcher fans to enabled channels + isolates a failure; webhook POSTs to a safe URL, **refuses loopback/private**, no-ops when unset, retries-then-gives-up without throwing; the service spec still asserts the WS emit via a real WebChannel.
+
+**This closes Phase 21 Themes A–C (D — desktop native notifications — remains).**
 
 ---
 

@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 21 Theme B: notification channel dispatch (PR #108)
+
+Theme A (#103) emitted `notification.created` over WS directly; Theme B introduces the channel abstraction so a notification fans to N configurable sinks (in-app feed + optional webhook), with Slack/email deferred to Phase 14 as drop-in channels. Composes with the Theme C web center (#107), which reads the same unchanged WS event.
+
+- [x] **`NotificationChannel`** interface (`name`/`enabled(config)`/`send`) collected via a `NOTIFICATION_CHANNELS` multi-provider (same "one interface, N implementations" shape as the workflow executors / Phase 17 spawner).
+- [x] **`NotificationDispatcher`** — fans each persisted notification to every enabled channel concurrently with **per-channel failure isolation** (a dead webhook never stops the in-app feed).
+- [x] **`WebChannel`** (always on) emits `notification.created` over WS; **`WebhookChannel`** (opt-in) POSTs the JSON to `channels.webhook`, **SSRF-guarded via `isSafeHttpUrl`** (loopback/private refused — the doc's `allowed-origin.ts` is the CORS helper, not the right guard), bounded retry/backoff, best-effort.
+- [x] **Service refactor** — `NotificationsService` persists then hands off to the dispatcher (the WebChannel does the WS emit, so the feed is behavior-preserving); `flush()` is now async; coalescing untouched.
+- [x] Tests: dispatcher spec (fan-out + failure isolation), webhook spec (safe POST / SSRF refusal / no-op / retry-then-give-up, mocked fetch), updated service spec. `gateway:typecheck`/`lint` green; `gateway:test` 736 green; CI green (after re-runs of the pre-existing flaky `terminal` env-dump spec — unrelated; worth a deflake).
+
+---
+
 ## 2026-06-22 — Phase 21 Theme C: notification center + toasts + browser opt-in (PR #107)
 
 Surfaces the Theme-A notification feed in the web app — the "an agent needs you / a task finished/abandoned" signal now actually reaches the user.
