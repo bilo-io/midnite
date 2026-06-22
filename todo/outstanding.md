@@ -2,13 +2,13 @@
 
 Scoping for the parts of [`docs/INITIAL_PLAN.md`](../docs/INITIAL_PLAN.md) (Phases 1–5) that are **not yet built**, as of 2026-06-19. Everything below is forward-looking; what shipped is logged in [done.md](done.md). Effort is rough: **S** ≲1 day · **M** 1–3 days · **L** multi-day.
 
-**None of these are started** — every box below is unchecked by design; tick them as they land.
+This list was unchecked by design at authoring (2026-06-19); tick items as they land. **Since then, #1 (task WS), #4 (repo registry), #9 (branch/PR templates), and #10 (Spawner + tmux) have shipped** — see their rows and [done.md](done.md).
 
 > Note: the project has also grown a Phase-6 Workflows builder with its own named follow-ups (live WS streaming, logic nodes, credential vault, integration executors) — see [phase-6-workflows-mvp.md](phase-6-workflows-mvp.md). Phase 7 (hardening, reports, widgets) is scoped separately in [phase-7-hardening-reports-widgets.md](phase-7-hardening-reports-widgets.md). This doc only covers the original 1–5 plan.
 
 | # | Gap | Phase | Effort | Prereqs |
 |---|-----|-------|--------|---------|
-| 1 | `task.*` WebSocket broadcast | 1 / 3 | M | — |
+| 1 | ✅ `task.*` WebSocket broadcast — Phase 7 A6 | 1 / 3 | M | — |
 | 2 | Bulk / paste add | 4 | S–M | — |
 | 3 | URL + GitHub-context inference | 4 | M | — |
 | 4 | Make `repos` first-class | 4 / 5 | S–M | — |
@@ -25,18 +25,14 @@ Scoping for the parts of [`docs/INITIAL_PLAN.md`](../docs/INITIAL_PLAN.md) (Phas
 
 ## 1. `task.*` WebSocket broadcast (Phase 1/3)
 
-- [ ] **Not started**
+- ✅ **DONE — [Phase 7](phase-7-hardening-reports-widgets.md) A6 (`e2b9b73`).** Event-driven board updates replaced the poll-only refresh.
 
-**Goal:** event-driven board updates (`task.created` / `task.updated` / `task.deleted` / `status.changed`) instead of the current polling + `invalidateData()` refetch.
+**What shipped (matches the recommendation below):**
+- `shared/src/events/task.ts` — a discriminated `TaskBoardEvent` union (`task.created` / `task.updated` / `task.deleted` + `tasks.bulkCreated`), `TaskSubscribeMessage`, and `TASKS_WS_PATH = '/ws/tasks'`. Mirrors `events/terminal.ts` / `events/workflow.ts`.
+- Gateway: a thin [`TasksGateway`](../packages/gateway/src/tasks/tasks.gateway.ts) on `/ws/tasks` (origin-guarded; `subscribe` → fan-out). The service stays decoupled via an in-process [`TaskEventBus`](../packages/gateway/src/tasks/task-event-bus.ts) (the workflow-gateway pattern, not `EventEmitter2`) that [`TasksService`](../packages/gateway/src/tasks/tasks.service.ts) emits on every mutation path.
+- Web: [`useTaskEvents`](../packages/web/hooks/use-task-events.ts) (capped-backoff reconnect) → `invalidateData()` + a client fan-out, mounted app-wide via [`LiveData`](../packages/web/components/live-data.tsx).
 
-**Where it plugs in:**
-- `shared/src/events/task.ts` — new discriminated `TaskEvent` union (mirror the existing [`events/terminal.ts`](../packages/shared/src/events/terminal.ts) / [`events/workflow.ts`](../packages/shared/src/events/workflow.ts) shapes).
-- Gateway: a `TasksGateway` (Nest WS, thin) modelled on [`workflows/workflows.gateway.ts`](../packages/gateway/src/workflows/workflows.gateway.ts). Publish from `TasksService` mutation paths ([`tasks/tasks.service.ts`](../packages/gateway/src/tasks/tasks.service.ts)) via an in-process emitter (Nest `EventEmitter2`) so the service stays decoupled from the WS layer.
-- Web: a `use-task-events` subscription hook; on event, either call `invalidateData()` (cheap, minimal change) or patch the local cache.
-
-**Decisions:** (a) full-object payloads vs. id-only + refetch; (b) one board channel vs. per-task topics; (c) keep polling as a fallback or remove it. Recommend full-object payloads on a single board channel, polling kept as a degraded fallback.
-
-**Effort:** M. The WS plumbing pattern already exists twice — most of the work is the service→gateway publish wiring and the client hook.
+**Decisions as settled:** (a) **full-object payloads** on create/update (id-only on delete); (b) **one board channel** (no per-task topics); (c) **polling kept** as a degraded fallback. Phase-7 D layered desktop notifications on the same stream (`7384897`).
 
 ---
 

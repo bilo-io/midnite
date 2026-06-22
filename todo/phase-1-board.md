@@ -1,8 +1,8 @@
-# Phase 1 — Board you drive by hand ✅ (one deviation)
+# Phase 1 — Board you drive by hand ✅
 
 > Gateway + SQLite store + REST/WS + CLI `add` / `list` / `move`. No agents yet. Proves the data model and live updates.
 
-> **Status (2026-06-19): functionally complete.** One deviation from the spec: there is **no `task.*` WebSocket broadcast** — live board updates are delivered by polling + manual cache invalidation on the web side, not a WS subscription. See [phase-3-browser.md](phase-3-browser.md) and the outstanding-work note in [done.md](done.md).
+> **Status (2026-06-22): complete.** The one-time deviation (no `task.*` WebSocket broadcast — live updates by polling + manual cache invalidation) was closed in **Phase 7 A6** (`e2b9b73`): `TaskEventBus` + `TasksGateway` (`/ws/tasks`) now emit a `TaskBoardEvent` on every transition, and the web client subscribes via `useTaskEvents`. See [done.md](done.md) (Phase 7 A6) and [phase-3-browser.md](phase-3-browser.md).
 
 ## Gateway
 
@@ -13,7 +13,7 @@
   - [x] `GET /tasks` — list, optional `?status=` (and `?projectId=`)
   - [x] `PATCH /tasks/:id` — move status — _split into `PATCH /tasks/:id/status` (+ `/tasks/:id/project`) rather than one generic PATCH_
   - [x] `DELETE /tasks/:id` — abandon/remove — _archive-gated (archive first, then delete); abandon is also reachable via stop/cancel transitions_
-- [ ] WebSocket gateway pushing `task.created` / `task.updated` / `task.deleted` events — **NOT IMPLEMENTED.** `task_events` rows are written, but no WS gateway broadcasts them. (WS infra exists, but only for terminals and workflow runs.)
+- [x] WebSocket gateway pushing `task.created` / `task.updated` / `task.deleted` events — **DONE (Phase 7 A6, `e2b9b73`).** `TasksGateway` on `/ws/tasks` broadcasts a `TaskBoardEvent` (the discriminated union in [`shared/src/events/task.ts`](../packages/shared/src/events/task.ts), incl. `tasks.bulkCreated`) via the `TaskEventBus` that `TasksService` emits on every transition.
 - [x] Config loader (`MidniteConfigModule`) reading `midnite.json` at startup
 
 ## CLI
@@ -27,4 +27,4 @@
 ## Done criteria
 
 - [x] Two terminals: `midnite serve` in one, `midnite add "buy milk" && midnite list` in another — task appears
-- [ ] WS client (e.g. `wscat`) receives a `task.created` event when `midnite add` runs — **not met** (no task WS broadcast; see above)
+- [x] WS client (e.g. `wscat`) receives a `task.created` event when `midnite add` runs — **met** via `/ws/tasks` after a `{ "type": "subscribe" }` frame (Phase 7 A6).
