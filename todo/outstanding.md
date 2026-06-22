@@ -2,19 +2,19 @@
 
 Scoping for the parts of [`docs/INITIAL_PLAN.md`](../docs/INITIAL_PLAN.md) (Phases 1–5) that are **not yet built**, as of 2026-06-19. Everything below is forward-looking; what shipped is logged in [done.md](done.md). Effort is rough: **S** ≲1 day · **M** 1–3 days · **L** multi-day.
 
-This list was unchecked by design at authoring (2026-06-19); tick items as they land. **Since then, #1 (task WS), #4 (repo registry), #9 (branch/PR templates), and #10 (Spawner + tmux) have shipped** — see their rows and [done.md](done.md).
+This list was unchecked by design at authoring (2026-06-19); tick items as they land. **Most have since shipped** — all of Phase 4 (#2 bulk, #3 URL/GitHub context, #5 repo guessing, #6 inline answers, #7 knowledge watcher), plus #1 (task WS), #4 (repo registry), #9 (branch/PR templates), and #10 (Spawner + tmux). Only the optional/low-priority items remain (#8 per-repo caps, #11 serve prod build, #12 suspend `waiting`). See the rows and [done.md](done.md).
 
 > Note: the project has also grown a Phase-6 Workflows builder with its own named follow-ups (live WS streaming, logic nodes, credential vault, integration executors) — see [phase-6-workflows-mvp.md](phase-6-workflows-mvp.md). Phase 7 (hardening, reports, widgets) is scoped separately in [phase-7-hardening-reports-widgets.md](phase-7-hardening-reports-widgets.md). This doc only covers the original 1–5 plan.
 
 | # | Gap | Phase | Effort | Prereqs |
 |---|-----|-------|--------|---------|
 | 1 | ✅ `task.*` WebSocket broadcast — Phase 7 A6 | 1 / 3 | M | — |
-| 2 | Bulk / paste add | 4 | S–M | — |
-| 3 | URL + GitHub-context inference | 4 | M | — |
+| 2 | ✅ Bulk / paste add — Phase 16 | 4 | S–M | — |
+| 3 | ✅ URL + GitHub-context inference — Phase 15 B | 4 | M | — |
 | 4 | Make `repos` first-class | 4 / 5 | S–M | — |
 | 5 | ✅ Repo guessing in inference — PR #88 | 4 | S | #4 |
-| 6 | Inline answers for questions | 4 | M | — |
-| 7 | Knowledge-dir watcher (chokidar) + MD injection | 4 | M | — |
+| 6 | ✅ Inline answers for questions — PR #55 | 4 | M | — |
+| 7 | ✅ Knowledge-dir watcher (chokidar) + MD injection — Phase 15 D | 4 | M | — |
 | 8 | Per-repo concurrency caps | 5 | M | #4 |
 | 9 | Per-repo branch naming + PR templates ✅ | 5 | S | #4 |
 | 10 | ✅ `Spawner` interface + tmux (warp/iterm dropped) — Phase 17 A–D | 5 | L | — |
@@ -38,7 +38,7 @@ This list was unchecked by design at authoring (2026-06-19); tick items as they 
 
 ## 2. Bulk / paste add (Phase 4)
 
-- ◐ **API done** — `POST /tasks/bulk` (the bulk endpoint + coalesced event) landed in [Phase 16](phase-16-bulk-add.md) Theme A (PR #40, 2026-06-21). The CLI `add --bulk` (Theme B) and web paste modal (Theme C) clients remain.
+- ✅ **DONE — [Phase 16](phase-16-bulk-add.md).** `POST /tasks/bulk` + coalesced event (Theme A, PR #40), CLI `add --bulk` (Theme B, PR #47), and the web paste-list modal (Theme C, PR #42) all shipped.
 
 **Goal:** accept a multi-line freeform list in one shot, one task per line.
 
@@ -52,15 +52,9 @@ This list was unchecked by design at authoring (2026-06-19); tick items as they 
 
 ## 3. URL + GitHub-context inference (Phase 4)
 
-- [ ] **Not started**
+- ✅ **DONE — [Phase 15](phase-15-smart-intake.md) Theme B.** [`UrlContextService`](../packages/gateway/src/agent/url-context.service.ts) detects URLs at agent-run start, resolves GitHub issue/PR links via `gh` (anonymous `api.github.com` REST fallback) and other links through the SSRF guard, reduces them to text, and injects a truncated "Linked context" block — wired in [`agent-runner.service.ts`](../packages/gateway/src/pool/agent-runner.service.ts) `start()` (fail-open, byte-capped: 5 URLs · 4k chars/source · 12k total).
 
-**Goal:** detect URLs in a task line; for GitHub issue/PR links, fetch context and fold it into the generated execution prompt.
-
-**Where:** in the classify/plan path ([`agent/classifier.service.ts`](../packages/gateway/src/agent/classifier.service.ts) / [`agent/planner.service.ts`](../packages/gateway/src/agent/planner.service.ts)). Reuse the SSRF-guarded fetch already written for OpenGraph ([`lib/opengraph.ts`](../packages/gateway/src/lib/opengraph.ts)) as the model for safe fetching; for GitHub, prefer `gh api` (shell) or the REST API with a token.
-
-**Decisions:** require the `gh` CLI vs. a `GITHUB_TOKEN`; how much issue/PR body to inject (truncate). 
-
-**Effort:** M.
+**Decisions as settled:** `gh`-first (existing auth → private repos) with anonymous REST fallback; injected at the seed-prompt point, truncated.
 
 ---
 
@@ -92,29 +86,17 @@ This list was unchecked by design at authoring (2026-06-19); tick items as they 
 
 ## 6. Inline answers for question-type items (Phase 4)
 
-- [ ] **Not started**
+- ✅ **DONE — PR #55.** A `question`-kind task is answered by the plan model at intake ([`PlannerService.answer`](../packages/gateway/src/agent/planner.service.ts)) and resolved to `done` with the answer recorded on its thread (an answer `task_events` entry); fail-soft → falls back to the normal queue when AI is off.
 
-**Goal:** when classification yields `kind: question`, produce a direct answer instead of landing an actionable task.
-
-**Where:** classifier already detects `question`; add an answer-generation step (plan model) and surface the answer in the task thread (a `task_events` entry, or a dedicated answered state).
-
-**Decisions:** does an answered item occupy a board column, or resolve out of the board into the thread only? 
-
-**Effort:** M.
+**Decision as settled:** the answered item resolves out of the working columns (→ `done`) with its answer on the thread, rather than occupying a board column.
 
 ---
 
 ## 7. Knowledge-dir watcher + MD injection (Phase 4)
 
-- [ ] **Not started**
+- ✅ **DONE — [Phase 15](phase-15-smart-intake.md) Theme D (PR #95).** [`knowledge-watcher.service.ts`](../packages/gateway/src/agent/knowledge-watcher.service.ts) watches `config.knowledge.dir` with `chokidar` (now a gateway dep), maintaining an in-memory filename+headings manifest; the planner selects relevant files and their **content** is injected (byte-capped) into the execution prompt.
 
-**Goal:** the plan's "watched folder of MD files" — index `config.knowledge.dir`, let the plan model pick relevant files, inject their **content** into the execution prompt. Today the only "knowledge base" is user-added **source URLs** (title+link), injected as a reference list by [`pool/lib/build-agent-prompt.ts`](../packages/gateway/src/pool/lib/build-agent-prompt.ts).
-
-**Where:** a new gateway service watching `config.knowledge.dir` with `chokidar` (add to gateway runtime deps), maintaining an in-memory manifest (filename + headings); extend `build-agent-prompt.ts` to append selected file contents. CLAUDE.md already describes this watcher as a feature — implement to match.
-
-**Decisions:** disambiguate the two "knowledge bases" (file-KB vs. source-link-KB) in naming/UI; cap injected bytes; how the plan model selects files (pass manifest → ask for filenames). Defer embeddings/RAG.
-
-**Effort:** M.
+**Decisions as settled:** surfaced as **"Knowledge files"** (distinct from the link-based **"Sources"**); injected bytes capped; the plan model picks filenames from the manifest; embeddings/RAG deferred.
 
 ---
 

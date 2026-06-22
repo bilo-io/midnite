@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 4 tracker reconcile — Inference COMPLETE (docs)
+
+Phase 4's remaining items shipped under later phases but the trackers still said "NOT IMPLEMENTED". Verified each against the code and reconciled (no code change):
+
+- [x] **URL + GitHub-context inference** (#3) — done via **Phase 15 Theme B** (`UrlContextService` wired into `agent-runner.start()`, `gh`-first + SSRF-guarded, truncated injection).
+- [x] **Knowledge-dir watcher + MD injection** (#7) — done via **Phase 15 Theme D** (PR #95): `knowledge-watcher.service.ts` + `chokidar`, manifest → planner selection → byte-capped content injection ("Knowledge files", distinct from link "Sources").
+- [x] Also ticked the already-shipped Phase-4 items the gap tracker missed: **bulk/paste** (#2, Phase 16 A/B/C), **inline answers** (#6, PR #55) — alongside **repo guessing** (#5, PR #88).
+- [x] [`phase-4-inference.md`](phase-4-inference.md) → ✅ complete; [`outstanding.md`](outstanding.md) Phase-4 rows + intro reconciled (only optional #8/#11/#12 remain).
+
 ## 2026-06-22 — Phase 11 B3: global reduced-motion catch-all for the public site (PR #98)
 
 Closed out Phase 11's reduced-motion acceptance. B3's perf items (cap DPR / pause rAF) were already **moot** — the WebGL particle field was removed in PR #68 for a static CSS `AmbientBackdrop` — so the remaining gap was motion *coverage*: the site disabled its named keyframe animations one-by-one (reveal/gradient-border/panel-glow/caret) and gated JS motion (typewriter, panel FLIP) via `lib/reduced-motion.ts`, but the many component **transitions** (hover/layout/colour) and smooth-scroll weren't covered.
