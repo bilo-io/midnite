@@ -85,11 +85,32 @@ tasks:
       - 'vitest.setup.ts'
 
   e2e:
-    command: 'pnpm exec playwright test'
+    # `--project=chromium` runs only the flow specs; the screenshot-capture
+    # project is a sibling task (`web:screenshots`) so e2e stays fast.
+    command: 'pnpm exec playwright test --project=chromium'
     # Playwright boots its own gateway (tsx) + Next dev server, so the workspace
     # deps (shared, ui) must be built first. Heavy + spawns servers, so it stays
     # out of `moon ci` (runInCI: false) and out of the default `:test` gate — a
     # dedicated CI job is Phase 10 Theme F. Run it with `moon run web:e2e`.
+    deps:
+      - '^:build'
+    options:
+      runInCI: false
+    inputs:
+      - 'app/**/*'
+      - 'components/**/*'
+      - 'hooks/**/*'
+      - 'lib/**/*'
+      - 'e2e/**/*'
+      - 'playwright.config.ts'
+
+  screenshots:
+    # Phase 10 Theme E1 — deterministic per-page screenshot capture. Drives the
+    # same Playwright webServer (gateway + Next dev) as `web:e2e` but runs only
+    # the `screenshots` project, writing PNGs to e2e/__shots__/ (gitignored).
+    # Like e2e it's heavy + spawns servers, so it's runInCI:false; CI artifact
+    # upload + a baseline diff are Themes E2/E3.
+    command: 'pnpm exec playwright test --project=screenshots'
     deps:
       - '^:build'
     options:
