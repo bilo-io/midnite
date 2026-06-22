@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 20 Theme A+B: global search FTS5 substrate + endpoint (PR #90)
+
+The app had grown wide (tasks, projects, memory, notes, councils, workflows) with no way to jump to a thing by name — the ⌘K palette was navigation-only and per-page search only filtered already-loaded rows. This lands the **server-side substrate** for real global search; the web palette/page (Theme C/D) are a follow-on.
+
+- [x] **Contract (`shared/src/search.ts`)** — `SearchResult` discriminated union (6 domains), `SearchResponse` (`results` + `total` + per-type `byType`), `SearchQuery` (zod, coerced `limit`). zod + tests.
+- [x] **FTS5 index** — migration `0034` adds a unified `search_index(type, entity_id, title, body)` virtual table (both keys UNINDEXED); `SearchIndexService` owns `upsert`/`remove`/`query` with `bm25()` ranking (title boosted over body) and `<mark>` snippets. Authored as a `drizzle-kit --custom` migration; raw `sql` queries.
+- [x] **Write-path maintenance, no triggers** (per CLAUDE.md) — `SearchIndexService` is a `@Global` module. **Tasks** reuse the existing `TaskEventBus` (the search module subscribes — `tasks.service` untouched); the other **five** domains inject the index `@Optional()` (so unit specs need no edit) and upsert/remove on create/update/delete. Per-domain field→`title`/`body` mapping centralised in `search/lib/index-mappers.ts`.
+- [x] **Backfill + reindex** — boot backfill (fail-soft) populates a freshly-migrated index from the domain services; `POST /search/reindex` rebuilds it.
+- [x] **`GET /search`** (Theme B) — thin controller → `SearchService` mapping hits to routed `SearchResult`s + per-type counts; short/blank `q` short-circuits. FTS `MATCH` built from a quoted-prefix tokeniser (`search/lib/fts-query.ts`) so user syntax chars can't error or inject.
+- [x] **CLI** — `midnite search <query>` (`--type`/`--limit`) + a typed `search()` client method.
+- [x] Tests: 27 gateway search specs + 7 shared + 10 CLI, all green. `:typecheck`/`:lint`/`web:typecheck` green; CI green (only local failure was the pre-existing sandbox-only `tmux` spawner-contract spec, untouched here). Documented the search module + FTS-in-service-layer pattern in CLAUDE.md.
+
 ## 2026-06-22 — Phase 29 Theme D: `/release-complete` skill + release-finalising helpers (PR #89) — **Phase 29 tooling COMPLETE**
 
 The irreversible half of the two-step release flow, pairing with `/release-prep` (Theme C, PR #87). Same split as C: the skill orchestrates git/gh, but the decision-bearing logic lives in tested pure helpers.
