@@ -1,4 +1,5 @@
 import {
+  Inject,
   Injectable,
   Logger,
   type OnApplicationBootstrap,
@@ -44,14 +45,14 @@ export class SearchService implements OnApplicationBootstrap, OnModuleDestroy {
   private unsubscribeTasks?: () => void;
 
   constructor(
-    private readonly index: SearchIndexService,
-    private readonly tasks: TasksService,
-    private readonly projects: ProjectsService,
-    private readonly memories: MemoriesService,
-    private readonly notes: NotesService,
-    private readonly councils: CouncilsService,
-    private readonly workflows: WorkflowsService,
-    private readonly taskBus: TaskEventBus,
+    @Inject(SearchIndexService) private readonly index: SearchIndexService,
+    @Inject(TasksService) private readonly tasks: TasksService,
+    @Inject(ProjectsService) private readonly projects: ProjectsService,
+    @Inject(MemoriesService) private readonly memories: MemoriesService,
+    @Inject(NotesService) private readonly notes: NotesService,
+    @Inject(CouncilsService) private readonly councils: CouncilsService,
+    @Inject(WorkflowsService) private readonly workflows: WorkflowsService,
+    @Inject(TaskEventBus) private readonly taskBus: TaskEventBus,
   ) {}
 
   onApplicationBootstrap(): void {
