@@ -71,6 +71,50 @@ describe('createClient', () => {
     expect(form?.get('projectId')).toBe('p1');
   });
 
+  it('createTask appends each --depends-on id as a repeatable form field', async () => {
+    let form: FormData | undefined;
+    stubFetch((_url, init) => {
+      form = init?.body as FormData;
+      return new Response(JSON.stringify({ task: { ...TASK, dependsOn: ['a', 'b'] } }), { status: 200 });
+    });
+    const task = await createClient('http://gw').createTask('do the thing', { dependsOn: ['a', 'b'] });
+    expect(form?.getAll('dependsOn')).toEqual(['a', 'b']);
+    expect(task.dependsOn).toEqual(['a', 'b']);
+  });
+
+  it('addDependency POSTs the dependencies endpoint with the blocker id', async () => {
+    let seenUrl = '';
+    let body: unknown;
+    stubFetch((url, init) => {
+      seenUrl = url;
+      body = JSON.parse(String(init?.body));
+      return new Response(JSON.stringify({ ...TASK, dependsOn: ['blk'] }), { status: 200 });
+    });
+    const task = await createClient('http://gw').addDependency('t1', 'blk');
+    expect(seenUrl).toBe('http://gw/tasks/t1/dependencies');
+    expect(body).toEqual({ dependsOnId: 'blk' });
+    expect(task.dependsOn).toEqual(['blk']);
+  });
+
+  it('removeDependency DELETEs the scoped dependency edge', async () => {
+    let seenUrl = '';
+    let method = '';
+    stubFetch((url, init) => {
+      seenUrl = url;
+      method = init?.method ?? '';
+      return new Response(JSON.stringify({ ...TASK, dependsOn: [] }), { status: 200 });
+    });
+    const task = await createClient('http://gw').removeDependency('t1', 'blk');
+    expect(seenUrl).toBe('http://gw/tasks/t1/dependencies/blk');
+    expect(method).toBe('DELETE');
+    expect(task.dependsOn).toEqual([]);
+  });
+
+  it('surfaces a cycle rejection (409) message from addDependency', async () => {
+    stubFetch(() => new Response(JSON.stringify({ message: 'depending on t2 would create a dependency cycle' }), { status: 409 }));
+    await expect(createClient('http://gw').addDependency('t1', 't2')).rejects.toThrow(/dependency cycle/);
+  });
+
   it('createBulk posts JSON to /tasks/bulk and validates the response', async () => {
     let seenUrl = '';
     let body: unknown;

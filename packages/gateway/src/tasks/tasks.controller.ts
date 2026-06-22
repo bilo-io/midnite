@@ -270,6 +270,14 @@ export class TasksController {
           try { unlinkSync(f.path); } catch {}
         }
       }
+      // A bad `dependsOn` blocker (unknown id) on create surfaces as a clean 4xx
+      // rather than a 500 — mirrors the addDependency route. A brand-new task has
+      // no dependents, so 'cycle' isn't reachable here, but map it for parity.
+      if (err instanceof TaskDependencyError) {
+        throw err.reason === 'cycle'
+          ? new ConflictException(err.message)
+          : new BadRequestException(err.message);
+      }
       throw err;
     }
   }
