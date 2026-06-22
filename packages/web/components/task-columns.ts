@@ -20,6 +20,8 @@ export type TaskViewProps = {
   // Bulk selection (optional; wired by TasksView across all three views).
   isSelected?: (id: string) => boolean;
   onToggleSelect?: (id: string, shiftKey: boolean) => void;
+  /** id → unmet blocker count (Phase 27); drives the "Blocked by N" chip + card dim. */
+  blockedCounts?: Map<string, number>;
 };
 
 /** Group tasks by status into a lookup. */

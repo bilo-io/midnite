@@ -6,6 +6,10 @@ import { ChevronDown, Columns3, List, ListTree, Plus, type LucideIcon } from 'lu
 import { isAnsweredQuestion, type Project, type Repo, type Status, type Task } from '@midnite/shared';
 import { deleteTask, startTask, stopTask, updateTaskStatus } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
+import {
+  blockedCounts as computeBlockedCounts,
+  unmetBlockerCount,
+} from '@/lib/task-dependencies';
 import { useBulkSelection } from '@/lib/use-bulk-selection';
 import { useGatewayErrorToast } from '@/lib/use-gateway-error-toast';
 import { Button } from '@/components/ui/button';
@@ -138,6 +142,8 @@ export function TasksView({
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }, [openId, tasks, router, pathname, searchParams]);
 
+  const confirm = useConfirm();
+
   // The active view persists locally (like the other pages), not in the URL.
   const [view, setView] = useState<TaskView>('board');
   useEffect(() => {
@@ -151,7 +157,7 @@ export function TasksView({
   // every other move is a plain status change. Rolls back and surfaces the error
   // (e.g. "no free agent slot") if the gateway rejects it.
   const onMove = useCallback(
-    (taskId: string, target: Status) => {
+    async (taskId: string, target: Status) => {
       const current = localTasks.find((t) => t.id === taskId);
       if (!current || current.status === target) return;
       const prevStatus = current.status;
@@ -160,24 +166,37 @@ export function TasksView({
       const stopsSession =
         (prevStatus === 'wip' || prevStatus === 'waiting') &&
         (target === 'todo' || target === 'backlog');
+      // Manually starting a task whose blockers aren't done is a human override
+      // (Phase 27) — warn + confirm before the optimistic restatus so a decline
+      // leaves the board untouched.
+      if (spawnsSession) {
+        const tasksById = new Map(localTasks.map((t) => [t.id, t] as const));
+        const unmet = unmetBlockerCount(current, tasksById);
+        if (unmet > 0) {
+          const ok = await confirm({
+            title: 'Start a blocked task?',
+            description: `${unmet} blocker${unmet === 1 ? " isn't" : "s aren't"} done yet. The scheduler skips blocked tasks; starting it manually runs it anyway.`,
+            confirmLabel: 'Start anyway',
+          });
+          if (!ok) return;
+        }
+      }
       setLocalTasks((prev) =>
         prev.map((t) => (t.id === taskId ? { ...t, status: target } : t)),
       );
-      void (async () => {
-        try {
-          if (spawnsSession) await startTask(taskId);
-          else if (stopsSession) await stopTask(taskId, target as 'todo' | 'backlog');
-          else await updateTaskStatus(taskId, target);
-          invalidateData();
-        } catch (e) {
-          setLocalTasks((prev) =>
-            prev.map((t) => (t.id === taskId ? { ...t, status: prevStatus } : t)),
-          );
-          toast.error(e instanceof Error ? e.message : 'Failed to move task');
-        }
-      })();
+      try {
+        if (spawnsSession) await startTask(taskId);
+        else if (stopsSession) await stopTask(taskId, target as 'todo' | 'backlog');
+        else await updateTaskStatus(taskId, target);
+        invalidateData();
+      } catch (e) {
+        setLocalTasks((prev) =>
+          prev.map((t) => (t.id === taskId ? { ...t, status: prevStatus } : t)),
+        );
+        toast.error(e instanceof Error ? e.message : 'Failed to move task');
+      }
     },
-    [localTasks, toast],
+    [localTasks, toast, confirm],
   );
 
   const onSetView = useCallback((next: TaskView) => {
@@ -190,7 +209,6 @@ export function TasksView({
   }, []);
 
   // --- Bulk selection (shared across all three views) ---
-  const confirm = useConfirm();
   const {
     selectedIds,
     count: selectedCount,
@@ -325,6 +343,10 @@ export function TasksView({
 
   const tagFilters: FilterOption[] = allTags.map((tag) => ({ value: tag, label: tag }));
 
+  // Unmet-blocker count per task, computed over the full (unfiltered) list so a
+  // blocker hidden by a status/project filter still counts toward "blocked".
+  const blocked = useMemo(() => computeBlockedCounts(localTasks), [localTasks]);
+
   const orderedIds = filteredTasks.map((t) => t.id);
   const viewProps = {
     tasks: filteredTasks,
@@ -335,6 +357,7 @@ export function TasksView({
     onMove,
     isSelected,
     onToggleSelect: (id: string, sk: boolean) => toggleSelect(id, sk, orderedIds),
+    blockedCounts: blocked,
   };
 
   return (
@@ -400,6 +423,7 @@ export function TasksView({
         <TaskThreadModal
           task={selected}
           projects={projects}
+          tasks={localTasks}
           onClose={() => setSelected(null)}
         />
       ) : null}
@@ -408,6 +432,7 @@ export function TasksView({
         <NewTaskModal
           projects={projects}
           repos={repos}
+          tasks={localTasks}
           onCreated={(task) => {
             setLocalTasks((prev) => [task, ...prev]);
             toast.success('Task created');

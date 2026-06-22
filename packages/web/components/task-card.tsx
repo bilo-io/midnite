@@ -1,9 +1,11 @@
 import { Check } from 'lucide-react';
 import { isAnsweredQuestion, type Task } from '@midnite/shared';
+import { BlockedBadge } from '@/components/blocked-badge';
 import { ProjectTag } from '@/components/project-tag';
 import { RepoChip } from '@/components/repo-chip';
 import { SourceIcon } from '@/components/source-icon';
 import { gatewayUrl } from '@/lib/api';
+import { cn } from '@/lib/utils';
 
 export type ProjectTagInfo = { tag: string; color: string };
 
@@ -34,15 +36,19 @@ export function TaskCard({
   task,
   project,
   onSelect,
+  blockedBy,
 }: {
   task: Task;
   project?: ProjectTagInfo;
   onSelect?: () => void;
+  /** Count of unmet blockers (Phase 27); when > 0 shows a chip and dims the card. */
+  blockedBy?: number;
 }) {
   const kind = task.kind ?? 'unknown';
   const firstImage = task.attachments?.find((a) => a.mime.startsWith('image/'));
   const hue = KIND_HUE_VARS[kind];
   const priorityBadge = PRIORITY_BADGES[task.priority ?? 1];
+  const isBlocked = (blockedBy ?? 0) > 0;
 
   const body = (
     <>
@@ -78,6 +84,7 @@ export function TaskCard({
         ) : null}
         {project ? <ProjectTag tag={project.tag} color={project.color} /> : null}
         {task.repo ? <RepoChip repo={task.repo} /> : null}
+        {isBlocked ? <BlockedBadge count={blockedBy ?? 0} /> : null}
       </div>
       <p className="text-sm font-medium leading-snug">{task.title}</p>
       {task.tags.length > 0 ? (
@@ -109,8 +116,10 @@ export function TaskCard({
     </>
   );
 
-  const className =
-    'group block w-full rounded-md border bg-background p-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow';
+  const className = cn(
+    'group block w-full rounded-md border bg-background p-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow',
+    isBlocked && 'opacity-60',
+  );
 
   if (onSelect) {
     return (

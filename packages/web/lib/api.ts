@@ -304,6 +304,24 @@ export async function removeTaskLink(taskId: string, linkId: string): Promise<Ta
   );
 }
 
+/** Add a blocker edge (Phase 27). The gateway 400s a self-ref/unknown blocker and
+ *  409s an edge that would close a cycle — `fetchJson` throws with the message. */
+export async function addTaskDependency(taskId: string, dependsOnId: string): Promise<Task> {
+  return fetchJson(
+    `/tasks/${encodeURIComponent(taskId)}/dependencies`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ dependsOnId }) },
+    TaskSchema,
+  );
+}
+
+export async function removeTaskDependency(taskId: string, dependsOnId: string): Promise<Task> {
+  return fetchJson(
+    `/tasks/${encodeURIComponent(taskId)}/dependencies/${encodeURIComponent(dependsOnId)}`,
+    { method: 'DELETE' },
+    TaskSchema,
+  );
+}
+
 // Permanent delete — the gateway rejects this unless the task is archived.
 export async function deleteTask(id: string): Promise<void> {
   await fetchJson(`/tasks/${encodeURIComponent(id)}`, { method: 'DELETE' });

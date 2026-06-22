@@ -37,6 +37,7 @@ export function BoardView({
   onMove,
   isSelected,
   onToggleSelect,
+  blockedCounts,
 }: TaskViewProps) {
   const grouped = groupByStatus(tasks);
 
@@ -94,6 +95,7 @@ export function BoardView({
                 onStop={onMove ? () => onMove(t.id, 'todo') : undefined}
                 selected={isSelected?.(t.id) ?? false}
                 onToggleSelect={onToggleSelect ? (sk) => onToggleSelect(t.id, sk) : undefined}
+                blockedBy={blockedCounts?.get(t.id)}
               />
             ))}
           </Column>
@@ -105,6 +107,7 @@ export function BoardView({
           tasks={grouped.get('abandoned') ?? []}
           onSelect={onSelect}
           projectsById={projectsById}
+          blockedCounts={blockedCounts}
         />
       )}
 
@@ -119,6 +122,7 @@ export function BoardView({
                     activeTask.projectId ? projectsById.get(activeTask.projectId) : undefined
                   }
                   onSelect={() => {}}
+                  blockedBy={blockedCounts?.get(activeTask.id)}
                 />
               </div>
             ) : null}
@@ -197,6 +201,7 @@ function DraggableCard({
   onStop,
   selected = false,
   onToggleSelect,
+  blockedBy,
 }: {
   task: Task;
   project?: ProjectTagInfo;
@@ -205,6 +210,7 @@ function DraggableCard({
   onStop?: () => void;
   selected?: boolean;
   onToggleSelect?: (shiftKey: boolean) => void;
+  blockedBy?: number;
 }) {
   const { setNodeRef, listeners, attributes, isDragging } = useDraggable({
     id: task.id,
@@ -239,7 +245,7 @@ function DraggableCard({
           <SelectableIcon Icon={Square} selected={selected} onToggle={(sk) => onToggleSelect(sk)} />
         </span>
       ) : null}
-      <TaskCard task={task} project={project} onSelect={onSelect} />
+      <TaskCard task={task} project={project} onSelect={onSelect} blockedBy={blockedBy} />
       {canStart && onStart ? (
         <CardActionButton
           onClick={onStart}

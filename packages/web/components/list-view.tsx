@@ -18,6 +18,7 @@ export function ListView({
   showAbandoned,
   isSelected,
   onToggleSelect,
+  blockedCounts,
 }: TaskViewProps) {
   const grouped = groupByStatus(tasks);
 
@@ -41,6 +42,7 @@ export function ListView({
                 onSelect={() => onSelect(t)}
                 selected={isSelected?.(t.id) ?? false}
                 onToggleSelect={onToggleSelect ? (sk) => onToggleSelect(t.id, sk) : undefined}
+                blockedBy={blockedCounts?.get(t.id)}
               />
             ))}
           </div>
@@ -59,6 +61,7 @@ export function ListView({
             onSelect={onSelect}
             projectsById={projectsById}
             layout="list"
+            blockedCounts={blockedCounts}
           />
         </div>
       )}

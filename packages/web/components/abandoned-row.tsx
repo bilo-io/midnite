@@ -15,11 +15,14 @@ export function AbandonedRow({
   onSelect,
   projectsById,
   layout = 'board',
+  blockedCounts,
 }: {
   tasks: Task[];
   onSelect?: (task: Task) => void;
   projectsById?: Map<string, ProjectTagInfo>;
   layout?: 'board' | 'list' | 'table';
+  /** id → unmet blocker count (Phase 27), threaded down to each card/row. */
+  blockedCounts?: Map<string, number>;
 }) {
   const [open, setOpen] = useState(false);
   if (tasks.length === 0) return null;
@@ -44,6 +47,7 @@ export function AbandonedRow({
                 task={t}
                 project={projectFor(t)}
                 onSelect={onSelect ? () => onSelect(t) : undefined}
+                blockedBy={blockedCounts?.get(t.id)}
               />
             ))}
           </div>
@@ -55,6 +59,7 @@ export function AbandonedRow({
                 task={t}
                 project={projectFor(t)}
                 onSelect={onSelect ? () => onSelect(t) : undefined}
+                blockedBy={blockedCounts?.get(t.id)}
               />
             ))}
           </div>

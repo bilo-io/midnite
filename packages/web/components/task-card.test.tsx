@@ -36,3 +36,25 @@ describe('TaskCard — answered affordance', () => {
     expect(screen.queryByText('Answered')).toBeNull();
   });
 });
+
+describe('TaskCard — blocked badge', () => {
+  it('shows the blocked badge when blockedBy > 0', () => {
+    render(<TaskCard task={{ ...baseTask, status: 'todo' }} blockedBy={2} />);
+    expect(screen.getByLabelText('Blocked by 2 tasks')).toBeInTheDocument();
+    expect(screen.getByText('Blocked')).toBeInTheDocument();
+    expect(screen.getByText('2')).toBeInTheDocument();
+  });
+
+  it('uses the singular label for a single blocker', () => {
+    render(<TaskCard task={{ ...baseTask, status: 'todo' }} blockedBy={1} />);
+    expect(screen.getByLabelText('Blocked by 1 task')).toBeInTheDocument();
+  });
+
+  it('omits the badge when blockedBy is 0 or absent', () => {
+    render(<TaskCard task={{ ...baseTask, status: 'todo' }} blockedBy={0} />);
+    expect(screen.queryByText('Blocked')).toBeNull();
+    cleanup();
+    render(<TaskCard task={{ ...baseTask, status: 'todo' }} />);
+    expect(screen.queryByText('Blocked')).toBeNull();
+  });
+});

@@ -416,6 +416,7 @@ export function ProjectsView({
         <TaskThreadModal
           task={selectedTask}
           projects={initial}
+          tasks={tasks}
           onClose={() => setSelectedTask(null)}
         />
       ) : null}

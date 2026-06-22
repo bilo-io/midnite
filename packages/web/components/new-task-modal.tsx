@@ -13,7 +13,11 @@ import {
 } from '@midnite/shared';
 import { createBulk, createTask } from '@/lib/api';
 import { Button } from '@/components/ui/button';
+import { TaskPicker } from '@/components/task-picker';
 import { cn } from '@/lib/utils';
+
+/** Statuses that make a task useful as a blocker (a done/abandoned task never blocks). */
+const BLOCKER_CANDIDATE_STATUSES = new Set<Status>(['backlog', 'todo', 'wip', 'waiting']);
 
 type Mode = 'single' | 'bulk';
 
@@ -21,6 +25,8 @@ type Props = {
   projects: Project[];
   /** Registered repos for the picker; empty hides it (Phase 13 B1). */
   repos: Repo[];
+  /** Existing tasks, candidates for the single-mode "Blocked by" picker (Phase 27). */
+  tasks?: Task[];
   defaultStatus?: Status;
   onCreated: (task: Task) => void;
   /** Called after a bulk batch lands, so the parent can refresh the board. */
@@ -36,6 +42,7 @@ const SELECT_CLASS =
 export function NewTaskModal({
   projects,
   repos,
+  tasks = [],
   defaultStatus = 'todo',
   onCreated,
   onBulkCreated,
@@ -48,10 +55,24 @@ export function NewTaskModal({
   const [repo, setRepo] = useState('');
   const [status, setStatus] = useState<Status>(defaultStatus);
   const [priority, setPriority] = useState(1);
+  const [selectedBlockerIds, setSelectedBlockerIds] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<BulkCreateTaskResponse | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Only open tasks make useful blockers; drop ones already chosen.
+  const blockerCandidates = useMemo(
+    () =>
+      tasks.filter(
+        (t) => BLOCKER_CANDIDATE_STATUSES.has(t.status) && !selectedBlockerIds.includes(t.id),
+      ),
+    [tasks, selectedBlockerIds],
+  );
+  const selectedBlockers = useMemo(
+    () => selectedBlockerIds.map((id) => tasks.find((t) => t.id === id)).filter((t): t is Task => Boolean(t)),
+    [selectedBlockerIds, tasks],
+  );
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -94,6 +115,7 @@ export function NewTaskModal({
       form.append('priority', String(priority));
       if (projectId) form.append('projectId', projectId);
       if (repo) form.append('repo', repo);
+      for (const id of selectedBlockerIds) form.append('dependsOn', id);
       const { task } = await createTask(form);
       onCreated(task);
       onClose();
@@ -299,6 +321,46 @@ export function NewTaskModal({
                 </select>
               </div>
             </div>
+
+            {/* Blocked by: choose existing tasks that must be done first (Phase 27).
+                Single-create only — bulk lines can't express per-line dependencies. */}
+            {mode === 'single' && tasks.length > 0 && (
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                  Blocked by
+                </label>
+                {selectedBlockers.length > 0 && (
+                  <div className="mb-1.5 flex flex-wrap gap-1.5">
+                    {selectedBlockers.map((b) => (
+                      <span
+                        key={b.id}
+                        className="inline-flex max-w-full items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground"
+                      >
+                        <span className="truncate">{b.title}</span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSelectedBlockerIds((ids) => ids.filter((id) => id !== b.id))
+                          }
+                          aria-label={`Remove blocker ${b.title}`}
+                          className="shrink-0 text-muted-foreground/60 hover:text-destructive"
+                          disabled={busy}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <TaskPicker
+                  candidates={blockerCandidates}
+                  onPick={(t) => setSelectedBlockerIds((ids) => [...ids, t.id])}
+                  disabled={busy}
+                  label="Search tasks to block on"
+                  placeholder="Add a blocking task…"
+                />
+              </div>
+            )}
 
             {error && <p className="text-sm text-destructive">{error}</p>}
 
