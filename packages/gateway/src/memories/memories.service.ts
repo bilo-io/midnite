@@ -4,6 +4,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import {
@@ -14,13 +15,19 @@ import {
   type UpdateMemoryRequest,
 } from '@midnite/shared';
 import { fetchSourceMetadata } from '../projects/lib/opengraph';
+import { memoryToIndexDoc } from '../search/lib/index-mappers';
+import { SearchIndexService } from '../search/search-index.service';
 import { MemoriesRepository } from './memories.repository';
 
 @Injectable()
 export class MemoriesService {
   private readonly logger = new Logger(MemoriesService.name);
 
-  constructor(@Inject(MemoriesRepository) private readonly repo: MemoriesRepository) {}
+  constructor(
+    @Inject(MemoriesRepository) private readonly repo: MemoriesRepository,
+    // Optional: see NotesService — global index in prod, omitted in unit specs.
+    @Optional() @Inject(SearchIndexService) private readonly searchIndex?: SearchIndexService,
+  ) {}
 
   listMemories(): Memory[] {
     return this.repo.listMemories().map((r) => this.repo.hydrate(r));
@@ -54,7 +61,9 @@ export class MemoriesService {
     const urls = dedupe(req.sources ?? []).slice(0, MAX_SOURCES_PER_MEMORY);
     await Promise.all(urls.map((url, i) => this.addSourceRow(id, url, i)));
 
-    return this.getMemory(id);
+    const memory = this.getMemory(id);
+    this.searchIndex?.upsert(memoryToIndexDoc(memory));
+    return memory;
   }
 
   updateMemory(id: string, req: UpdateMemoryRequest): Memory {
@@ -68,12 +77,15 @@ export class MemoriesService {
         : {}),
       updatedAt: new Date().toISOString(),
     });
-    return this.getMemory(id);
+    const memory = this.getMemory(id);
+    this.searchIndex?.upsert(memoryToIndexDoc(memory));
+    return memory;
   }
 
   removeMemory(id: string): void {
     if (!this.repo.getMemory(id)) throw new NotFoundException(`memory ${id} not found`);
     this.repo.deleteMemory(id);
+    this.searchIndex?.remove('memory', id);
   }
 
   async addSource(memoryId: string, url: string): Promise<Memory> {

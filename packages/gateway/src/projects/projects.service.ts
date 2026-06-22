@@ -4,6 +4,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
@@ -19,6 +20,8 @@ import {
 import { LlmService } from '../agent/llm/llm.service';
 import { collapseTilde, expandTilde } from '../fs/path-tilde';
 import { MemoriesService } from '../memories/memories.service';
+import { projectToIndexDoc } from '../search/lib/index-mappers';
+import { SearchIndexService } from '../search/search-index.service';
 import { TasksService } from '../tasks/tasks.service';
 import { fetchSourceMetadata } from './lib/opengraph';
 import { ProjectsRepository } from './projects.repository';
@@ -59,6 +62,8 @@ export class ProjectsService {
     @Inject(LlmService) private readonly llm: LlmService,
     @Inject(TasksService) private readonly tasks: TasksService,
     @Inject(MemoriesService) private readonly memories: MemoriesService,
+    // Optional: see NotesService — global index in prod, omitted in unit specs.
+    @Optional() @Inject(SearchIndexService) private readonly searchIndex?: SearchIndexService,
   ) {}
 
   listProjects(): Project[] {
@@ -100,7 +105,9 @@ export class ProjectsService {
     const urls = dedupe(req.sources ?? []).slice(0, MAX_SOURCES_PER_PROJECT);
     await Promise.all(urls.map((url, i) => this.addSourceRow(id, url, i)));
 
-    return this.getProject(id);
+    const project = this.getProject(id);
+    this.searchIndex?.upsert(projectToIndexDoc(project));
+    return project;
   }
 
   updateProject(id: string, req: UpdateProjectRequest): Project {
@@ -124,12 +131,15 @@ export class ProjectsService {
     // Archive is a soft flag: store the timestamp when set, clear it when unset.
     if (req.archived !== undefined) patch.archivedAt = req.archived ? now : null;
     this.repo.updateProject(id, patch);
-    return this.getProject(id);
+    const project = this.getProject(id);
+    this.searchIndex?.upsert(projectToIndexDoc(project));
+    return project;
   }
 
   deleteProject(id: string): void {
     this.assertExists(id);
     this.repo.deleteProject(id);
+    this.searchIndex?.remove('project', id);
   }
 
   async addSource(projectId: string, url: string): Promise<Project> {
@@ -196,6 +206,8 @@ export class ProjectsService {
       planUpdatedAt: now,
       updatedAt: now,
     });
+    // The plan is part of the indexed body — keep search current on a redraft.
+    this.searchIndex?.upsert(projectToIndexDoc(this.getProject(projectId)));
     return { plan: markdown, planUpdatedAt: now };
   }
 
@@ -203,7 +215,9 @@ export class ProjectsService {
     this.assertExists(projectId);
     const now = new Date().toISOString();
     this.repo.updateProject(projectId, { plan, planUpdatedAt: now, updatedAt: now });
-    return this.getProject(projectId);
+    const project = this.getProject(projectId);
+    this.searchIndex?.upsert(projectToIndexDoc(project));
+    return project;
   }
 
   createTasksFromPlan(projectId: string, titles: string[]): Task[] {

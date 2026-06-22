@@ -11,6 +11,6 @@ import { TasksGateway } from './tasks.gateway';
   imports: [AgentModule, ReposModule],
   controllers: [TasksController],
   providers: [TasksService, TasksRepository, TaskEventBus, TasksGateway],
-  exports: [TasksService],
+  exports: [TasksService, TaskEventBus],
 })
 export class TasksModule {}
