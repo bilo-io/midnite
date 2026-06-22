@@ -4,13 +4,37 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-06-22 — Phase 16 verify-and-close — Bulk / paste add COMPLETE
+## 2026-06-22 — Phase 27 Theme A: task dependency model (PR #106)
 
-The build (API + CLI + web, Themes A/B/C — PRs #40/#47/#42) shipped a while ago, but the phase's acceptance checks were never ticked. Verified them against the code + tests and closed the phase:
+The agent pool ran tasks independently — no way to say "B can't start until A ships". This adds the blocker-graph substrate (model + integrity); ready-gated scheduling (Theme B) and UI/CLI (C/D) build on it. **No new status** — "blocked" stays *derived* from the edges + blocker states (Decision §2).
 
-- [x] **Per-line error handling** + over-cap/empty rejection — already covered by `tasks.service.spec` (`returns a per-line error for a failing line while the rest succeed`, plus the cap / no-lines rejection cases).
-- [x] **Batch-wide repo/priority/project** — `createBulk` threads all three to every line; the existing batch-wide test asserted repo+priority, so I **strengthened it to also assert `projectId`** ("applies batch-wide repo, priority, and project to every created task"). `gateway:test` green.
-- [x] Ticked the 3 acceptance items in [`phase-16-bulk-add.md`](phase-16-bulk-add.md) → phase ✅.
+- [x] **A1 — model:** `task_dependencies` edge table (`task_id` → `depends_on_task_id`, composite PK + reverse index) via forward-only migration `0036`. Repository `addDependency`/`removeDependency`/`dependenciesOf`/`dependentsOf` + `listReadyTodoTasks()` — the **ready-set** SQL (`todo` whose every blocker is `done`, correlated `NOT EXISTS`, keeping `desc(priority), asc(createdAt)`) that backs Theme B. `hydrate` derives `dependsOn`; `deleteTask` clears edges both directions (dependents unblock).
+- [x] **A2 — contract (`shared`):** optional `dependsOn` on the task read shape + `CreateTaskRequest`, an `AddTaskDependencyRequest` body, a typed `TaskDependencyError` (reason: self-reference | cycle | unknown-task). `.optional()` to match `links`/`attachments` (gateway always populates on read).
+- [x] **A3 — integrity + routes:** `tasks.service` rejects self-reference / unknown blocker / **cycle** (DFS over edges, mirroring the workflow-engine reachability check); `createFromPrompt` validates + attaches blockers. `POST`/`DELETE /tasks/:id/dependencies` map `TaskDependencyError` → 400 (self/unknown) / 409 (cycle).
+- [x] Tests: integration spec (add/self/unknown/cycle/diamond/remove, create-with-deps, delete cleanup + unblock, ready-set), controller 400/409 mapping, shared contract. `:typecheck`/`:lint`/`:test` (gateway 108 files · shared 406 · cli 34 · web 74) + CI green. CLAUDE.md documents the model. **Themes B/C/D remain.**
+
+---
+
+## 2026-06-22 — Phase 20 Theme D: dedicated /search page (PR #105) — **Phase 20 COMPLETE**
+
+The "see everything" surface — the last theme of global search (substrate A/B #90, palette C #96 already shipped). The palette caps each type with a "+N more" that now has a destination.
+
+- [x] **`/search` page** — reads `?q=` (the header `SearchBar` writes it) + `?type=` (`FilterPills`), runs one `GET /search` at the max limit, renders hits **grouped by type** with highlighted snippets, per-type counts, and a result-count summary. Idle / short-query / loading / no-results / error states.
+- [x] **Client-side type filtering** — the API `type` is single-value, so the page fetches all types once and the pills filter the single response locally (no refetch on toggle); pills show only matched types, labelled with counts.
+- [x] **Palette seam** — the per-type "+N more" is now a button that deep-links to `/search?q=&type=`.
+- [x] **DRY** — extracted the `<mark>`-snippet renderer into `lib/highlight.tsx` (shared by palette + page; no `dangerouslySetInnerHTML`); added a `Search` icon to `PageHeader`.
+- [x] Tests: 5-case RTL `search-results.test.tsx` (empty/short/grouped+highlighted+routing/client-filter-no-refetch/no-results) + palette test updated for the deep-link + a Playwright `search-page.e2e.ts` (seed → search → grouped → route; no-results). `web:typecheck`/`web:lint` green; `web:test` 342 green (via a throwaway worktree — vitest can't collect in `.git/worktrees`); CI green. *(Live screenshot skipped — the e2e harness's gateway wouldn't boot in the sandboxed worktree, unrelated to this web-only change; RTL + the CI e2e cover the states.)*
+
+---
+
+## 2026-06-22 — Phase 30 Theme A: quality-gate checks contract + runner (PR #102)
+
+The engine for "verified completion": Phase 30 will gate a task's `done` transition on configured checks. Theme A lands the contract + the runner only — no lifecycle wiring (B), no DB (B), no auto-fix (C), no surfaces (D).
+
+- [x] **shared `checks.ts`** — `Check` / `CheckResult` / `CheckRun` / `CheckTrigger` / `CheckRunStatus` zod shapes (barrel-exported), the optional+defaulted **`config.checks`** block (enabled, gates, per-repo `byRepo` overrides, autoFix, perCheckTimeoutMs, outputCapBytes), and the pure **`resolveChecksForRepo(checks, repoName)`** (byRepo REPLACES gates, Decision §5). Back-compat: a `midnite.json` with no `checks` key still parses. 9 unit tests.
+- [x] **gateway `ChecksService`** ([`checks/checks.service.ts`](../packages/gateway/src/checks/checks.service.ts) + [`lib/run-check.ts`](../packages/gateway/src/checks/lib/run-check.ts)) — runs a resolved `Check[]` sequentially in a repo cwd → a structured `CheckRun`. Each check runs `/bin/sh -c` via `spawn` (not `execFile` — output is tail-truncated to `outputCapBytes`, not a `maxBuffer` error), in a **detached process group** so a per-check timeout SIGKILLs the whole group (the shell *and* a forked grandchild like `sleep`, which would otherwise hold the pipes open) → `passed:false`, `exitCode:null`. Never throws into the caller. New `ChecksModule`, registered in `AppModule`.
+- [x] 10 gateway tests (pass/fail/stderr/timeout-kill/spawn-error/truncation/repo-relative-cwd + run aggregation). README documents `config.checks`. `:typecheck`/`:lint`/`shared:test` (402)/`gateway:test` (705) + `moon ci` green. **CI caught a real cross-platform bug** (Linux/dash forks `sleep` where macOS exec-replaces it — the orphaned child stalled `close`); fixed with the detached-group kill. Independent review otherwise clean.
+- [x] **Remaining for Phase 30:** Theme B (gate the `done` seam + `task_check_runs` table), C (auto-fix loop), D (web/CLI surfaces).
 
 ## 2026-06-22 — Phase 21 Theme A: notifications foundation — model + ingestion + feed (PR #103)
 
@@ -20,6 +44,8 @@ midnite runs many agents in parallel, but you had to *watch the board* to know w
 - [x] **Table + repo** — a `notifications` table (migration `0035`) + repository: paged **unread-first** feed, `markRead(ids)`/`markAllRead`, `clear`, `countUnread`.
 - [x] **`NotificationsService`** — a **pure subscriber** to `TaskEventBus` (no new emit paths): applies the policy, **coalesces** same-kind bursts in a 1.5s window (a mass move → one "N tasks finished", not a storm), persists, and emits `notification.created` via `NotificationEventBus` → `NotificationsGateway` (`/ws/notifications`, origin-guarded). Thin REST: `GET /notifications`, `POST /notifications/read`, `DELETE /notifications`.
 - [x] Tests: 9-case `:memory:` service spec (severity mapping, non-terminal ignored, toggle off, burst-coalesce, disabled-no-subscribe, mark-read/all + clear, unread-first ordering, destroy stops ingestion) + 9 shared contract/policy/config tests. `:typecheck`/`:lint` green; `gateway:test` 704 green; CI green on re-run (first run hit the pre-existing flaky `terminal` env-dump spec, unrelated). Backend-only — no web surface yet.
+
+---
 
 ## 2026-06-22 — Phase 24 Theme C: installable PWA (PR #101)
 

@@ -134,6 +134,17 @@ CORS. Unset, the UI runs as its own dev server (`moon run web:dev` on `:3000`).
 The export is fully static (every route is a real `index.html`, all data fetched
 client-side), so the API routes keep priority over the file mount.
 
+`config.checks` (Phase 30 — gate the `done` transition on quality checks) is
+**off by default**. When `checks.enabled` is `true`, a task's `gates` (a list of
+`{ name, command, cwd?, timeoutMs? }`) run in its repo cwd before completion;
+`checks.byRepo['<repo-name>']` **replaces** the global `gates` for that repo
+(not merged). Each check runs via the shell, bounded by `perCheckTimeoutMs`
+(per-check timeout → kill → fail) with output tail-truncated to `outputCapBytes`.
+`checks.autoFix` (also off by default) re-spawns the agent to fix failures, up to
+`maxAttempts`. The runner + contract land in this phase's Theme A; gating the
+completion seam, persistence, and the surfaces follow. The command runner never
+infers a command — you opt in per install/repo.
+
 A task reaches `wip` (with a Claude Code session spawned and linked to it) in one
 of two ways:
 

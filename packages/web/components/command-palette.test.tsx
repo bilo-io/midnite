@@ -163,10 +163,14 @@ describe('CommandPalette', () => {
     pressCmdK();
     fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), { target: { value: 'qzxtask' } });
 
-    expect(await screen.findByText('+4 more tasks')).toBeInTheDocument();
+    const more = await screen.findByText(/\+4 more tasks/);
+    expect(more).toBeInTheDocument();
     // 5 shown of the 6 returned (cap), the 6th rolls into the "+N more".
     expect(screen.getByText('Task 4')).toBeInTheDocument();
     expect(screen.queryByText('Task 5')).toBeNull();
+    // "+N more" deep-links into the dedicated /search page (Theme D seam).
+    fireEvent.click(more);
+    expect(push).toHaveBeenCalledWith('/search?q=qzxtask&type=task');
   });
 
   it('highlights matched terms from the snippet without raw HTML', async () => {

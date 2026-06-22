@@ -26,17 +26,17 @@
 The engine everything keys off: what a check *is*, and a service that runs a list of them in a cwd and reports structured results.
 
 ### A1. `config.checks` schema + per-repo overrides — **S–M**
-- [ ] Extend [`config.ts`](../packages/shared/src/config.ts) with an optional, defaulted `checks` block (so existing `midnite.json` keeps validating):
+- [x] ✅ (PR #102) Extend [`config.ts`](../packages/shared/src/config.ts) with an optional, defaulted `checks` block (so existing `midnite.json` keeps validating):
   - `enabled` (default **false** — opt in), `gates: Check[]` (defaults applied to any repo), `byRepo: Record<repoName, Check[]>` (per-repo **override**, not merge — Decision §5), `autoFix: { enabled (default false), maxAttempts (default 2) }`, `perCheckTimeoutMs` (default e.g. 10min), `outputCapBytes` (default e.g. 16 KiB).
   - `Check = { name, command, cwd? (repo-relative), timeoutMs? }`. zod + tests; read only via `loadConfig()`.
-- [ ] A pure helper `resolveChecksForRepo(config, repoName) → Check[]` in `shared` (`byRepo[name] ?? gates`), unit-tested — both the gateway and any client agree on which checks apply.
+- [x] ✅ (PR #102) A pure helper `resolveChecksForRepo(checks, repoName) → Check[]` in `shared` (`byRepo[name] ?? gates`), unit-tested — both the gateway and any client agree on which checks apply.
 
 ### A2. `Check` / `CheckResult` / `CheckRun` wire shapes — **S**
-- [ ] New [`checks.ts`](../packages/shared/src/) in `shared`: `CheckResult = { name, command, exitCode, passed, durationMs, output (truncated) }`; `CheckRun = { id, taskId, trigger: 'gate' | 'manual' | 'auto-fix', startedAt, finishedAt, passed, results: CheckResult[] }`; a `CheckRunStatus` for the derived board affordance. zod schemas + barrel export + tests; typed client functions stubbed for Theme D.
+- [x] ✅ (PR #102) New [`checks.ts`](../packages/shared/src/checks.ts) in `shared`: `CheckResult = { name, command, exitCode, passed, durationMs, output (truncated) }`; `CheckRun = { id, taskId, trigger: 'gate' | 'manual' | 'auto-fix', startedAt, finishedAt, passed, results: CheckResult[] }`; a `CheckRunStatus` for the derived board affordance. zod schemas + barrel export + tests; typed client functions stubbed for Theme D.
 
 ### A3. `ChecksService` runner (gateway) — **M**
-- [ ] New `checks` module: `ChecksService.run(taskId, checks, cwd, trigger) → CheckRun`. Each check runs via **bounded `node:child_process` `execFile`** (shell-parsed command), with a **per-check timeout** that kills the child → `passed: false`, output captured and **ring-buffer-truncated** to `outputCapBytes`. Runs are sequential (predictable, cwd not contended); first definition is enough — parallelism is a later optimization.
-- [ ] Fail-safe + boundary: the runner **never throws into the lifecycle path** (a spawn error → a failed `CheckResult`, not an unhandled rejection); it owns no task status (that's Theme B); it resolves no config itself (takes a resolved `Check[]` + `cwd`). Unit tests with a fake command set: all-pass, one-fail, timeout-kill, spawn-error, output truncation.
+- [x] ✅ (PR #102) New `checks` module: `ChecksService.run(taskId, checks, cwd, trigger) → CheckRun`. Each check runs via **bounded `node:child_process`** — `spawn('/bin/sh','-c',command)` in a **detached process group** (not `execFile`: `spawn` lets us *tail-truncate* output to `outputCapBytes` rather than error on `maxBuffer` overflow), with a **per-check timeout** that SIGKILLs the whole group → `passed: false`, `exitCode: null`. Runs sequential.
+- [x] ✅ (PR #102) Fail-safe + boundary: the runner **never throws into the lifecycle path** (a spawn error → a failed `CheckResult`, not an unhandled rejection); it owns no task status (that's Theme B); it resolves no config itself (takes a resolved `Check[]` + `cwd`). Unit tests: all-pass, one-fail, stderr, timeout-kill, spawn-error, output truncation, repo-relative cwd + run aggregation (10 gateway tests).
 
 ---
 
@@ -111,7 +111,7 @@ Run the gate on demand, and see results everywhere a task lives.
 - [ ] With `checks.autoFix.enabled`, a failing gate **re-spawns** the agent with the failure output; a fix that passes re-verifies → `done`; exhausting `maxAttempts` lands at `waiting` with a clear event. Fix attempts are counted **separately** from crash `retryCount` / `agent.maxRetries`.
 - [ ] A per-check **timeout** kills the child and records a failed result (doesn't hang the slot); captured output is **truncated** to the configured cap.
 - [ ] The slot is held during verification and released **exactly once** on every branch (pass / fail-wait / fail-fix-exhausted / spawn-error).
-- [ ] `config.checks.byRepo['x']` **overrides** the global `gates` for repo `x` and leaves other repos on the defaults.
+- [x] (PR #102) `config.checks.byRepo['x']` **overrides** the global `gates` for repo `x` and leaves other repos on the defaults. (Verified by `resolveChecksForRepo` unit tests — Theme A; the live gate that consumes it is Theme B.)
 - [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph; `moon ci` green. (Run web tests from the **primary checkout**, not a `.git` worktree.)
 
 ---

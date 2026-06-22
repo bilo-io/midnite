@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AdminModule } from './admin/admin.module';
 import { ConfigModule } from './config.module';
+import { ChecksModule } from './checks/checks.module';
 import { CryptoModule } from './crypto/crypto.module';
 import { DbModule } from './db/db.module';
 import { EnvironmentModule } from './environment/environment.module';
@@ -35,6 +36,7 @@ import { TerminalModule } from './terminal/terminal.module';
 @Module({
   imports: [
     ConfigModule,
+    ChecksModule,
     CryptoModule,
     DbModule,
     EnvironmentModule,

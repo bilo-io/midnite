@@ -7,6 +7,7 @@ import {
   MAX_TAGS_PER_TASK,
   MAX_TASK_TAG_LENGTH,
   parseBulkLines,
+  TaskDependencyError,
   type BulkCreateTaskResponse,
   type BulkLineResult,
   type Status,
@@ -54,6 +55,8 @@ export interface CreateTaskInput {
   status?: Status;
   /** Scheduling priority 0..3 (higher runs first). Defaults to 1 (Normal). */
   priority?: number;
+  /** Ids of blocker tasks (Phase 27) — each must exist; the new task can't form a cycle. */
+  dependsOn?: string[];
   images: Array<ClassifierImage & { size: number; originalName?: string }>;
 }
 
@@ -256,6 +259,11 @@ export class TasksService {
     // Reject an unknown repo before any work (classify/triage/insert).
     const explicitRepo = this.resolveRepoReference(input.repo);
 
+    // Validate any requested blockers up front (existence + dedupe). A brand-new
+    // task can't be in a cycle — nothing depends on it yet — so only existence is
+    // checked; the edges are written after the task row exists.
+    const dependsOn = this.resolveDependencies(input.dependsOn);
+
     // When the caller named no repo at all (vs. an explicit blank = "unassigned"),
     // let the planner guess one from the registry (Phase 4 / outstanding #5).
     // Runs alongside classify/triage and is fail-soft (→ null on AI-off/error/no
@@ -309,6 +317,10 @@ export class TasksService {
       createdAt: now,
       updatedAt: now,
     });
+
+    for (const dep of dependsOn) {
+      this.repo.addDependency(id, dep, now);
+    }
 
     for (const image of input.images) {
       this.repo.insertAttachment({
@@ -532,5 +544,74 @@ export class TasksService {
     }
     this.repo.deleteLink(taskId, linkId);
     return this.emit('task.updated', this.getTask(taskId));
+  }
+
+  // ---- dependencies (Phase 27) ----
+
+  /**
+   * Add a blocker edge: `taskId` depends on `dependsOnId`. Rejects a
+   * self-reference, an unknown blocker, or an edge that would close a cycle
+   * (`TaskDependencyError`, mapped to 400/409 at the controller). Idempotent on
+   * a duplicate pair. Emits `task.updated` so the board's blocked chip refreshes.
+   */
+  addDependency(taskId: string, dependsOnId: string): Task {
+    if (!this.repo.getTask(taskId)) throw new NotFoundException(`task ${taskId} not found`);
+    if (taskId === dependsOnId) {
+      throw new TaskDependencyError('self-reference', 'a task cannot depend on itself');
+    }
+    if (!this.repo.getTask(dependsOnId)) {
+      throw new TaskDependencyError('unknown-task', `blocker task ${dependsOnId} not found`);
+    }
+    if (this.wouldCreateCycle(taskId, dependsOnId)) {
+      throw new TaskDependencyError(
+        'cycle',
+        `depending on ${dependsOnId} would create a dependency cycle`,
+      );
+    }
+    this.repo.addDependency(taskId, dependsOnId, new Date().toISOString());
+    return this.emit('task.updated', this.getTask(taskId));
+  }
+
+  /** Drop a blocker edge (idempotent). Emits `task.updated`. */
+  removeDependency(taskId: string, dependsOnId: string): Task {
+    if (!this.repo.getTask(taskId)) throw new NotFoundException(`task ${taskId} not found`);
+    this.repo.removeDependency(taskId, dependsOnId);
+    return this.emit('task.updated', this.getTask(taskId));
+  }
+
+  // Validate caller-supplied blocker ids for a new task: dedupe, drop blanks,
+  // reject a non-existent blocker. No cycle check needed — a task being created
+  // has no dependents yet, so no edge into it can exist.
+  private resolveDependencies(dependsOn: string[] | undefined): string[] {
+    if (!dependsOn || dependsOn.length === 0) return [];
+    const out: string[] = [];
+    const seen = new Set<string>();
+    for (const raw of dependsOn) {
+      const id = raw.trim();
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      if (!this.repo.getTask(id)) {
+        throw new TaskDependencyError('unknown-task', `blocker task ${id} not found`);
+      }
+      out.push(id);
+    }
+    return out;
+  }
+
+  // Would adding `taskId → dependsOnId` close a cycle? It does iff `dependsOnId`
+  // already (transitively) depends on `taskId`. DFS over the blocker edges from
+  // `dependsOnId` looking for `taskId` (mirrors the workflow-engine reachability
+  // check); `seen` guards against an already-cyclic store looping forever.
+  private wouldCreateCycle(taskId: string, dependsOnId: string): boolean {
+    const seen = new Set<string>();
+    const stack = [dependsOnId];
+    while (stack.length > 0) {
+      const current = stack.pop()!;
+      if (current === taskId) return true;
+      if (seen.has(current)) continue;
+      seen.add(current);
+      stack.push(...this.repo.dependenciesOf(current));
+    }
+    return false;
   }
 }
