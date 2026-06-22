@@ -1,10 +1,27 @@
+import { randomUUID } from 'node:crypto';
+import { rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import type { FastifyRequest } from 'fastify';
 import { describe, expect, it, vi } from 'vitest';
 import { parseConfig, TaskDependencyError, type MidniteConfig, type Task } from '@midnite/shared';
 import type { TasksService } from './tasks.service';
 import { TasksController } from './tasks.controller';
 
 const config: MidniteConfig = parseConfig({ agent: {}, terminal: {}, gateway: {} });
+
+/** A minimal multipart FastifyRequest yielding the given `field` parts. */
+function multipartReq(fields: Array<[string, string]>): FastifyRequest {
+  return {
+    isMultipart: () => true,
+    async *parts() {
+      for (const [fieldname, value] of fields) {
+        yield { type: 'field', fieldname, value };
+      }
+    },
+  } as unknown as FastifyRequest;
+}
 
 function build(overrides: Partial<Record<keyof TasksService, unknown>> = {}) {
   const fakeTask = { id: 't1', title: 'x', status: 'todo', events: [] } as unknown as Task;
@@ -147,5 +164,31 @@ describe('TasksController — dependency routes', () => {
     const { controller, service } = build();
     controller.removeDependency('t1', 't2');
     expect(service.removeDependency).toHaveBeenCalledWith('t1', 't2');
+  });
+
+  // The create path validates blockers in the service (resolveDependencies); an
+  // unknown one must surface as a clean 400, not a 500, so `add --depends-on
+  // <bad>` reads clearly in the CLI.
+  it('maps an unknown dependsOn blocker on create to 400', async () => {
+    const uploadsDir = join(tmpdir(), `midnite-create-test-${randomUUID()}`);
+    const cfg = parseConfig({ agent: {}, terminal: {}, gateway: { uploadsDir } });
+    const service = {
+      createFromPrompt: vi.fn(async () => {
+        throw new TaskDependencyError('unknown-task', 'blocker task ghost not found');
+      }),
+    } as unknown as TasksService;
+    const controller = new TasksController(service, cfg);
+    try {
+      await expect(
+        controller.create(
+          multipartReq([
+            ['prompt', 'do the thing'],
+            ['dependsOn', 'ghost'],
+          ]),
+        ),
+      ).rejects.toThrow(BadRequestException);
+    } finally {
+      rmSync(uploadsDir, { recursive: true, force: true });
+    }
   });
 });

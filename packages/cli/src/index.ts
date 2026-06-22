@@ -46,6 +46,11 @@ function parseDefaults(opts: { repo?: string; project?: string; priority?: strin
   return defaults;
 }
 
+/** commander collector for a repeatable option (`--depends-on a --depends-on b`). */
+function collect(value: string, prev: string[]): string[] {
+  return [...prev, value];
+}
+
 /** Read all of stdin (for `add --bulk` without `--file`). Empty when attached to a TTY. */
 async function readStdin(): Promise<string> {
   if (process.stdin.isTTY) return '';
@@ -72,14 +77,27 @@ program
   .option('-r, --repo <repo>', 'repo applied to the created task(s)')
   .option('-p, --priority <n>', 'priority 0–3 applied to the created task(s)')
   .option('--project <id>', 'project id applied to the created task(s)')
+  .option('-d, --depends-on <id>', 'blocker task id that must finish first (repeatable; single add only)', collect, [])
   .action(
     async (
       prompt: string | undefined,
-      opts: { bulk?: boolean; file?: string; repo?: string; priority?: string; project?: string },
+      opts: {
+        bulk?: boolean;
+        file?: string;
+        repo?: string;
+        priority?: string;
+        project?: string;
+        dependsOn: string[];
+      },
     ) => {
       const defaults = parseDefaults(opts);
 
       if (opts.bulk || opts.file) {
+        // A blocker graph is per-task; applying one set of blockers to every line
+        // of a batch is meaningless, so reject the combination rather than guess.
+        if (opts.dependsOn.length > 0) {
+          throw new Error('--depends-on is not supported with --bulk; add blockers per task');
+        }
         const raw = opts.file ? await readFile(opts.file, 'utf8') : await readStdin();
         if (!raw.trim()) {
           throw new Error('no bulk input — pass --file <path> or pipe a list to stdin');
@@ -99,8 +117,11 @@ program
       if (!prompt) {
         throw new Error('a task prompt is required — pass one, or use --bulk with --file/stdin');
       }
+      if (opts.dependsOn.length > 0) defaults.dependsOn = opts.dependsOn;
       const task = await client().createTask(prompt, defaults);
-      console.log(`added ${task.id}  [${task.status}]  ${task.title}`);
+      const blockers = task.dependsOn ?? [];
+      const suffix = blockers.length > 0 ? `  (blocked by: ${blockers.join(', ')})` : '';
+      console.log(`added ${task.id}  [${task.status}]  ${task.title}${suffix}`);
     },
   );
 
@@ -128,6 +149,26 @@ program
   .action(async (id: string, status: string) => {
     const task = await client().moveTask(id, parseStatus(status));
     console.log(`moved ${task.id} → ${task.status}`);
+  });
+
+program
+  .command('block <id>')
+  .description('Add a blocker edge: <id> depends on (waits for) the --on task')
+  .requiredOption('--on <blockerId>', 'the blocker task that must finish first')
+  .action(async (id: string, opts: { on: string }) => {
+    const task = await client().addDependency(id, opts.on);
+    const blockers = task.dependsOn ?? [];
+    console.log(`blocked ${task.id} on ${opts.on}  (now depends on: ${blockers.join(', ') || 'none'})`);
+  });
+
+program
+  .command('unblock <id>')
+  .description('Remove a blocker edge: <id> no longer depends on the --on task')
+  .requiredOption('--on <blockerId>', 'the blocker task to drop')
+  .action(async (id: string, opts: { on: string }) => {
+    const task = await client().removeDependency(id, opts.on);
+    const blockers = task.dependsOn ?? [];
+    console.log(`unblocked ${task.id} from ${opts.on}  (now depends on: ${blockers.join(', ') || 'none'})`);
   });
 
 program
