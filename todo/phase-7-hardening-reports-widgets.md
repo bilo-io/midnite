@@ -25,10 +25,10 @@ The highest-value theme. These are real, verified gaps, not hypotheticals.
 - [x] Seeded the highest-risk pure/hook logic: `use-local-storage` (the double-write bug), `dashboard-widgets` registry, `task-events` pub/sub, plus a `command-palette` render+keyboard suite (15 tests). _(`lib/api.ts`/optimistic-board tests still worth adding.)_
 - [ ] Add a small Playwright smoke suite to CI (the drive-throughs exist ad-hoc; commit a few).
 
-### A4. Resilience & data durability — **S–M** — ◐ PARTIAL (backup + WAL pragmas shipped `05acd6d`)
+### A4. Resilience & data durability — **S–M** — ✅ DONE (recovery audit: PR #99, 2026-06-22 — see [done.md](done.md))
 - [x] WAL was already on; added `synchronous=NORMAL` + `busy_timeout=5000`, and a consistent online **backup** via `POST /admin/backup` (DB snapshot + uploads copy). Restore is a documented manual stop-and-copy; CLI `midnite backup` wrapper deferred.
-- [ ] Audit/normalise restart recovery: tasks requeue orphaned `wip`, councils fail stale runs — make sure workflow runs and any new long-runners do the same consistently.
-- [ ] Confirm graceful shutdown kills all PTYs (exists for terminal sessions; verify pool + managed runs).
+- [x] Audit/normalise restart recovery: tasks requeue orphaned `wip`, councils fail stale runs — now **workflow runs** do too (`WorkflowRecoveryService.onModuleInit` fails runs left `running` + their in-flight node-runs, emits `run.failed`). PR #99.
+- [x] Confirm graceful shutdown kills all PTYs: the real gap was that **shutdown hooks were never enabled** — `app.enableShutdownHooks()` now makes `onModuleDestroy` fire on SIGINT/SIGTERM (terminal kills under `pty` / detaches under `tmux`; managed agent-run PTYs are pinned handles in that same teardown, so they're covered). PR #99.
 
 ### A5. Optional remote-access auth — **S–M** — ❌ OUT OF SCOPE (decided local-only)
 - [ ] Gateway is loopback-only with per-session hook secrets + terminal tokens, but the **REST API itself is unauthenticated**. Fine for localhost; unsafe the moment someone binds `0.0.0.0` or tunnels it.
