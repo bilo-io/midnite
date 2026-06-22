@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { useOfficeStore } from '@/lib/office-store';
 import { STATUS_LABEL, STATUS_TINT, type OfficeAgent, type OfficeStatus } from '@/lib/office/agents';
+import { dayNightTint } from '@/lib/office/daynight';
 import { OFFICE_COLS, OFFICE_ROWS, OFFICE_TILE } from '@/lib/office/dimensions';
 import {
   ARMCHAIRS,
@@ -109,6 +110,9 @@ class OfficeScene extends Phaser.Scene {
   private playerShadow!: Phaser.GameObjects.Ellipse;
   private highlight!: Phaser.GameObjects.Arc;
   private floor!: Phaser.GameObjects.TileSprite;
+  /** Day/night floor wash (B2) — a subtle time-of-day colour over the ground, below
+   *  furniture/characters; refreshed on a timer + on theme flip. See lib/office/daynight. */
+  private dayNight!: Phaser.GameObjects.Rectangle;
   /** Pool water (TileSprite) — scrolled each frame for a gentle shimmer (G2). */
   private water?: Phaser.GameObjects.TileSprite;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -167,6 +171,7 @@ class OfficeScene extends Phaser.Scene {
 
     this.buildRoomFloors();
     this.buildRugs();
+    this.buildDayNight(worldW, worldH);
     this.buildWalls();
     this.buildDesks();
     this.buildPool();
@@ -207,6 +212,9 @@ class OfficeScene extends Phaser.Scene {
     this.time.addEvent({ delay: 450, loop: true, callback: this.tickIdleBubbles, callbackScope: this });
     // Occasionally send a lounging agent for a swim (G3).
     this.time.addEvent({ delay: 4500, loop: true, callback: this.maybeSwim, callbackScope: this });
+    // Drift the day/night floor wash with the clock (B2) — same cadence the time
+    // theme re-evaluates the light/dark flip. Auto-removed on shutdown.
+    this.time.addEvent({ delay: 60_000, loop: true, callback: this.refreshDayNight, callbackScope: this });
 
     this.unsub = useOfficeStore.subscribe((state, prev) => {
       if (!this.alive) return;
@@ -311,6 +319,9 @@ class OfficeScene extends Phaser.Scene {
     for (const sign of this.roomSigns) this.drawSignPlate(sign.plate, sign.id, sign.rect);
     for (const actor of this.actors.values()) actor.nameText.setColor(toHex(palette.text));
     this.highlight.setStrokeStyle(2, palette.highlight, 0.9);
+    // The time theme flips light/dark on the same 08:00/18:00 boundary the day/night
+    // wash crosses — re-tint it here so floor base + wash stay in sync on the flip.
+    this.refreshDayNight();
   }
 
   // ---- agents (actors) ---------------------------------------------------
@@ -788,6 +799,28 @@ class OfficeScene extends Phaser.Scene {
         .rectangle((room.x + room.w / 2) * TILE, (room.y + room.h / 2) * TILE, room.w * TILE, room.h * TILE, style.floor, 0.32)
         .setDepth(-8);
     }
+  }
+
+  /**
+   * Day/night floor wash (B2): a single world-spanning translucent rectangle over
+   * the ground (floor, room accents, rugs, pool) but **below** furniture +
+   * characters (depth −4), tinting the floor for the time of day. The colour/alpha
+   * come from the time-of-day helper (aligned with the `time` theme's day window)
+   * and are refreshed on a timer + on theme flip — see `refreshDayNight`.
+   */
+  private buildDayNight(worldW: number, worldH: number) {
+    const tint = dayNightTint(new Date().getHours());
+    this.dayNight = this.add
+      .rectangle(0, 0, worldW, worldH, tint.color, tint.alpha)
+      .setOrigin(0, 0)
+      .setDepth(-4);
+  }
+
+  /** Re-read the clock and re-tint the day/night floor wash (timer + theme flip). */
+  private refreshDayNight() {
+    if (!this.alive) return;
+    const tint = dayNightTint(new Date().getHours());
+    this.dayNight.setFillStyle(tint.color, tint.alpha);
   }
 
   private buildWalls() {
