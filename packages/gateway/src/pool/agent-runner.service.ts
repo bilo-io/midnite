@@ -1,5 +1,6 @@
-import { Inject, Injectable, Logger, type OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional, type OnModuleInit } from '@nestjs/common';
 import type { MidniteConfig, Task } from '@midnite/shared';
+import { KnowledgeService } from '../agent/knowledge.service';
 import { UrlContextService } from '../agent/url-context.service';
 import { MIDNITE_CONFIG } from '../config.token';
 import { ReposService } from '../repos/repos.service';
@@ -34,6 +35,9 @@ export class AgentRunnerService implements OnModuleInit {
     @Inject(TerminalService) private readonly terminal: TerminalService,
     @Inject(UrlContextService) private readonly urlContext: UrlContextService,
     @Inject(ReposService) private readonly repos: ReposService,
+    // Optional so the runner's unit specs construct it positionally without a
+    // stub; Nest provides it in production (AgentModule exports it). Phase 15 D.
+    @Optional() @Inject(KnowledgeService) private readonly knowledge?: KnowledgeService,
   ) {}
 
   /**
@@ -109,10 +113,13 @@ export class AgentRunnerService implements OnModuleInit {
       // Fold any linked GitHub issue/PR + URL context into the seed prompt
       // (best-effort, fail-open — never blocks the run). Phase 15 Theme B.
       const enriched = await this.urlContext.enrich(task.prompt?.trim() || task.title);
+      // Fold in relevant watched "knowledge files" the plan model picks for this
+      // task (best-effort, fail-open). Phase 15 Theme D.
+      const withKnowledge = this.knowledge ? await this.knowledge.enrich(enriched, task) : enriched;
       // Append the target repo's branch-naming / PR-body conventions, if any
       // (Phase 13 Theme E). Unknown/unassigned repo → prompt unchanged.
       const repo = task.repo ? this.repos.findByName(task.repo) : undefined;
-      const prompt = appendRepoConventions(enriched, repo);
+      const prompt = appendRepoConventions(withKnowledge, repo);
       this.tasks.startTask(task.id);
       const result = this.terminal.spawnAgentSession(
         task.id,

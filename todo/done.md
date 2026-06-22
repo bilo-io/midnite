@@ -12,6 +12,31 @@ Closed out Phase 11's reduced-motion acceptance. B3's perf items (cap DPR / paus
 - [x] Verified against `moon run site:dev` under Playwright's emulated reduced-motion: the at-rest landing render is pixel-identical to normal (byte-identical screenshots) → fully usable, nothing hidden/broken. Screenshot committed under `docs/screenshots/site-reduced-motion/`.
 - [x] Reconciled the Phase 11 acceptance checklist: ticked the reduced-motion item; marked the particle-field item ❌ superseded by PR #68. `site:typecheck`/`:lint`/`site:test` (19) green.
 
+## 2026-06-22 — Phase 7 Theme C: per-repo status dashboard widget (PR #97) — **Theme C COMPLETE**
+
+The last open Theme C widget (after LLM-usage, Shipped, Quick capture): how the fleet is spread across repos at a glance. Unblocked by repos-first-class (Phase 13).
+
+- [x] **Pure `summarizeByRepo(tasks, repos)`** ([`web/lib/repo-status.ts`](../packages/web/lib/repo-status.ts)): per-repo rollup — `running`=wip+waiting (holding an agent), `queued`=todo, +backlog/done. Every registered repo gets a row (idle at zero); **Unassigned** only when some task has no repo, pinned last; archived/abandoned excluded; sorted by activity.
+- [x] **`RepoStatusWidget`** ([`web/components/repo-status-widget.tsx`](../packages/web/components/repo-status-widget.tsx)): polls `getTasks`+`getRepos` (the task WS broadcast also refreshes); status-coloured count chips, dimmed zeros; loading/error/empty states mirror the Shipped widget. Registered (agents category, single-instance) + wired into the grid renderer.
+- [x] Tests: 5 helper + 3 RTL + a registry assertion + a Playwright e2e (`repo-status.e2e.ts`, seeds repos + repo-assigned tasks over the live gateway). `web:test`/`:typecheck`/`:lint` + CI green. Screenshot under [`docs/screenshots/repo-status/`](../docs/screenshots/repo-status/). (The e2e wasn't runnable locally — the e2e *gateway* fails to boot from a fresh DB on this box, reproduced on the unmodified `board.e2e`; a local e2e-harness/env issue, not this change, and CI's gateway tests are green.)
+
+## 2026-06-22 — Phase 20 Theme C: command palette content search (PR #96)
+
+Surfaces the global-search backend (Theme A/B) in the UI: the ⌘K palette now searches content, not just navigates. Closes the gap where `GET /search` had no consumer in the app.
+
+- [x] **`searchAll()` typed client** ([`web/lib/api.ts`](../packages/web/lib/api.ts)) — wraps `GET /search` with an `AbortSignal` for cancellation.
+- [x] **Palette content search** ([`command-palette.tsx`](../packages/web/components/command-palette.tsx)) — a **debounced, abort-on-keystroke** query renders ranked hits **grouped by type** (Tasks · Projects · Memory · Notes · Councils · Workflows) beneath the instant page jumps. Keyboard nav spans every group; Enter routes to the entity. Snippets highlight matches via real `<mark>` elements parsed from the server's `<mark>`-wrapped snippet — **no `dangerouslySetInnerHTML`**. Per-group cap with a **"+N more"** count (from the response's full `byType`); short/blank queries never touch the network so page-jump stays instant.
+- [x] Tests: RTL suite (grouping, capping, snippet highlighting, result routing, the short-query gate, network-skip on empty query), an updated Storybook interaction, and a new [`search-palette.e2e.ts`](../packages/web/e2e/search-palette.e2e.ts) flow proving the real index→endpoint→palette→route wire. `:typecheck`/`:lint`/`web:test` (318) green; `moon ci` green first try; independent review found no bugs (XSS-safe snippet, correct abort/cleanup, aligned keyboard nav). The "see all → `/search` page" deep-link is deferred to **Theme D** (the `/search` page); Phase 20 now has only Theme D open.
+
+## 2026-06-22 — Phase 15 Theme D: knowledge-files watcher + MD injection (PR #95) — **Phase 15 COMPLETE**
+
+The original plan's "watched folder of MD files" — the last open theme of Phase 15. Gives midnite a second, file-based knowledge base distinct from the link-based **Sources**: standing project conventions/runbooks/domain notes injected automatically into the right runs.
+
+- [x] **`config.knowledge`** (`shared`) — `{ enabled, dir?, maxBytes }`, defaulted so existing `midnite.json` files keep validating.
+- [x] **`KnowledgeWatcherService`** — watches `config.knowledge.dir` with **chokidar v3** (CommonJS — v4/v5 are ESM-only and the gateway builds CJS), keeps an in-memory manifest of each file's headings fresh on add/change/unlink, reads selected content on demand (path-guarded to the root). Files on disk are the source of truth — no DB.
+- [x] **`KnowledgeService`** — at task start, shows the plan model the manifest, it picks relevant files (validated against the manifest — can't name an off-disk file), and their content is folded into the seed prompt as a capped **"Knowledge files"** block, between URL-context and repo-conventions. Mirrors `UrlContextService`: best-effort + fail-open. Wired via `AgentRunnerService` (`@Optional()` so the runner's unit specs are unchanged).
+- [x] Tests: pure-helper (heading parse, manifest render, selection validation, byte-capped block) + `KnowledgeService` spec (disabled/AI-off/empty/selection/fail-open/path-rejection, with fakes) + a real-temp-dir watcher spec (boot index, live add/change/unlink, path-traversal refusal). Full-graph `:typecheck`/`:lint` green; `gateway:test` 686 green; CI green. README documents `config.knowledge` + knowledge-files-vs-sources.
+
 ## 2026-06-22 — Phase 3: serve the web static export from the gateway (PR #93)
 
 Closes Phase 3's last real gap: a single process can serve both the API and the browser UI in prod. The web app is a Next `output: 'export'` bundle (fully static, multi-page; all data fetched client-side; the `[id]` dirs are colocated components, not routes), so this needed no SSR / SPA-fallback / proxy — just a static mount mirroring `/uploads/`.

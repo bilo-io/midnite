@@ -5,6 +5,9 @@ import {
   WeatherResponseSchema,
   LinkMetadataResponseSchema,
   AssetSearchResponseSchema,
+  SearchResponseSchema,
+  type SearchResponse,
+  type SearchType,
   MarketQuoteSchema,
   MarketHistoryResponseSchema,
   type AssetKind,
@@ -1086,6 +1089,24 @@ export async function getWeather(lat: number, lon: number): Promise<WeatherRespo
 export async function getLinkMetadata(url: string): Promise<LinkMetadataResponse> {
   const params = new URLSearchParams({ url });
   return fetchJson(`/metadata?${params.toString()}`, undefined, LinkMetadataResponseSchema);
+}
+
+// ---- Global full-text search (Phase 20) ----
+
+/**
+ * Cross-domain full-text search. The gateway returns ranked, self-contained
+ * {@link SearchResponse} hits (each carries its own `route` + `<mark>`ed snippet),
+ * so callers render and route without a per-hit re-fetch. Pass `signal` to abort
+ * a stale request when the user keeps typing (the command palette does this).
+ */
+export async function searchAll(
+  query: string,
+  opts: { type?: SearchType; limit?: number; signal?: AbortSignal } = {},
+): Promise<SearchResponse> {
+  const params = new URLSearchParams({ q: query });
+  if (opts.type) params.set('type', opts.type);
+  if (opts.limit != null) params.set('limit', String(opts.limit));
+  return fetchJson(`/search?${params.toString()}`, { signal: opts.signal }, SearchResponseSchema);
 }
 
 // ---- Dashboard widgets: Market stocks & crypto (gateway proxy) ----

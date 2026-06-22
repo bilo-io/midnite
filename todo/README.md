@@ -35,7 +35,7 @@ A lightweight place to track what's been done and what's outstanding, without le
 - [phase-12-workflow-expressions.md](phase-12-workflow-expressions.md) — Workflow data flow & expressions ◻
 - [phase-13-repos-first-class.md](phase-13-repos-first-class.md) — Repos as a first-class entity ⚠️ (Theme A done)
 - [phase-14-workflows-connect.md](phase-14-workflows-connect.md) — Workflows part 2: vault, integrations, CLI ◻
-- [phase-15-smart-intake.md](phase-15-smart-intake.md) — Smart intake & inference (bulk, URL/GitHub context, answers, knowledge files) ◻
+- [phase-15-smart-intake.md](phase-15-smart-intake.md) — Smart intake & inference (bulk, URL/GitHub context, answers, knowledge files) ✅
 - [phase-16-bulk-add.md](phase-16-bulk-add.md) — Bulk / paste add (standalone build-out of P15 Theme A) ◻
 - [phase-17-spawner-tmux.md](phase-17-spawner-tmux.md) — Pluggable spawner & durable tmux sessions ◻
 - [phase-18-reports-exports.md](phase-18-reports-exports.md) — Reports & exports across the app (tasks, projects, workflow runs) ◻
