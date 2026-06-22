@@ -20,6 +20,7 @@ import {
 } from '@/lib/api';
 import type { AppSettings } from '@/lib/app-settings';
 import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY } from '@/lib/app-settings';
+import { getDesktopBridge } from '@/lib/desktop-bridge';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import { useToast } from '@/components/toast';
 
@@ -132,18 +133,49 @@ export function toastForSeverity(
 }
 
 /**
- * Whether a created notification should raise a browser/OS notification: the user
- * opted in (`notifyTaskUpdates`), the browser granted permission, and the tab is
- * backgrounded — so we don't double up with the in-app toast while they're looking
- * at the app. Pure so the gate (the behaviour that replaced the old task-event
- * hook) is unit-testable without a DOM.
+ * Shared gate for raising an out-of-app notification: the user opted in
+ * (`notifyTaskUpdates`) **and** the tab/window is backgrounded — so we don't double
+ * up with the in-app toast while they're looking at the app.
+ */
+function shouldNotifyWhileAway(notifyEnabled: boolean, hidden: boolean): boolean {
+  return notifyEnabled && hidden;
+}
+
+/**
+ * Whether a created notification should raise a *browser* notification (the plain-web
+ * path): {@link shouldNotifyWhileAway} **and** the browser granted permission. Pure so
+ * the gate (the behaviour that replaced the old task-event hook) is unit-testable
+ * without a DOM. The desktop path uses {@link chooseNotificationDelivery} instead — the
+ * OS, not the web Notification API, governs its permission.
  */
 export function shouldRaiseBrowserNotification(opts: {
   notifyEnabled: boolean;
   permission: NotificationPermission;
   hidden: boolean;
 }): boolean {
-  return opts.notifyEnabled && opts.permission === 'granted' && opts.hidden;
+  return shouldNotifyWhileAway(opts.notifyEnabled, opts.hidden) && opts.permission === 'granted';
+}
+
+export type NotificationDelivery = 'desktop' | 'browser' | 'none';
+
+/**
+ * Pick how a created notification is raised out-of-app. Inside the Electron shell
+ * (`hasDesktopBridge`) we hand it to the main process for a native OS notification —
+ * which fires reliably even when the window is backgrounded/throttled and where the OS
+ * (not the web Notification API) owns the permission, so no `permission` gate applies.
+ * In a plain browser we fall back to the web Notification API, which needs a granted
+ * permission. Either way the user must have opted in and the window must be away
+ * (otherwise the in-app toast covers it). Pure + exported for unit tests.
+ */
+export function chooseNotificationDelivery(opts: {
+  hasDesktopBridge: boolean;
+  notifyEnabled: boolean;
+  permission: NotificationPermission;
+  hidden: boolean;
+}): NotificationDelivery {
+  if (!shouldNotifyWhileAway(opts.notifyEnabled, opts.hidden)) return 'none';
+  if (opts.hasDesktopBridge) return 'desktop';
+  return opts.permission === 'granted' ? 'browser' : 'none';
 }
 
 /**
@@ -191,19 +223,28 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     };
   }, []);
 
-  // Raise the browser/OS notification for a created entry, gated on the opt-in,
-  // a granted permission, and a backgrounded tab (don't double up with the toast
-  // while the user is looking at the app).
-  const maybeRaiseBrowserNotification = useCallback((n: Notification) => {
+  // Raise the out-of-app notification for a created entry, gated on the opt-in and a
+  // backgrounded window (don't double up with the toast while the user is looking at
+  // the app). Inside the desktop shell this hands off to the main process for a native
+  // OS notification (which also owns the click → focus/route); in a plain browser it
+  // uses the web Notification API, which additionally needs a granted permission.
+  const maybeRaiseNativeNotification = useCallback((n: Notification) => {
     const { notifyEnabled: enabled, router: r } = handlerDeps.current;
-    if (typeof window === 'undefined' || !('Notification' in window)) return;
-    if (
-      !shouldRaiseBrowserNotification({
-        notifyEnabled: enabled,
-        permission: Notification.permission,
-        hidden: document.hidden,
-      })
-    ) {
+    if (typeof window === 'undefined') return;
+    const bridge = getDesktopBridge();
+    const permission: NotificationPermission =
+      'Notification' in window ? Notification.permission : 'denied';
+    const delivery = chooseNotificationDelivery({
+      hasDesktopBridge: bridge !== null,
+      notifyEnabled: enabled,
+      permission,
+      hidden: document.hidden,
+    });
+    if (delivery === 'none') return;
+    if (delivery === 'desktop') {
+      // The main process raises the native notification and, on click, focuses the
+      // window + sends the route back over IPC (see the onNavigate effect below).
+      bridge?.notify(n);
       return;
     }
     try {
@@ -223,8 +264,17 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
 
   // Route the (stable) raiser through a ref so the socket effect can run once
   // (`[]` deps, like use-task-events) and never churn if the callback gains deps.
-  const maybeRaiseRef = useRef(maybeRaiseBrowserNotification);
-  maybeRaiseRef.current = maybeRaiseBrowserNotification;
+  const maybeRaiseRef = useRef(maybeRaiseNativeNotification);
+  maybeRaiseRef.current = maybeRaiseNativeNotification;
+
+  // Desktop only: when a native notification is clicked, the main process focuses the
+  // window and sends its route here — push it onto the router. Mounted once; no-op (and
+  // no listener) in a plain browser where the bridge is absent.
+  useEffect(() => {
+    const bridge = getDesktopBridge();
+    if (!bridge) return;
+    return bridge.onNavigate((route) => handlerDeps.current.router.push(route));
+  }, []);
 
   // The live socket — mounted once, mirrors use-task-events.
   useEffect(() => {

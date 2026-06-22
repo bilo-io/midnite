@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { Notification } from '@midnite/shared';
 import {
   URGENT_TOAST_MS,
+  chooseNotificationDelivery,
   initialNotificationsState,
   notificationsReducer,
   shouldRaiseBrowserNotification,
@@ -39,6 +40,46 @@ describe('shouldRaiseBrowserNotification', () => {
 
   it('does not raise while the tab is visible (toast covers it)', () => {
     expect(shouldRaiseBrowserNotification({ ...base, hidden: false })).toBe(false);
+  });
+});
+
+describe('chooseNotificationDelivery', () => {
+  const base = {
+    hasDesktopBridge: false,
+    notifyEnabled: true,
+    permission: 'granted' as NotificationPermission,
+    hidden: true,
+  };
+
+  it('prefers the desktop bridge when present (no permission gate — the OS owns it)', () => {
+    expect(chooseNotificationDelivery({ ...base, hasDesktopBridge: true })).toBe('desktop');
+    // even with the web permission denied, the native OS notification still applies
+    expect(
+      chooseNotificationDelivery({ ...base, hasDesktopBridge: true, permission: 'denied' }),
+    ).toBe('desktop');
+  });
+
+  it('falls back to the browser path when no bridge and permission is granted', () => {
+    expect(chooseNotificationDelivery(base)).toBe('browser');
+  });
+
+  it('chooses none in a browser without granted permission', () => {
+    expect(chooseNotificationDelivery({ ...base, permission: 'default' })).toBe('none');
+    expect(chooseNotificationDelivery({ ...base, permission: 'denied' })).toBe('none');
+  });
+
+  it('chooses none when the opt-in is off — even with a desktop bridge', () => {
+    expect(chooseNotificationDelivery({ ...base, notifyEnabled: false })).toBe('none');
+    expect(
+      chooseNotificationDelivery({ ...base, hasDesktopBridge: true, notifyEnabled: false }),
+    ).toBe('none');
+  });
+
+  it('chooses none while the window is visible (toast covers it) — both paths', () => {
+    expect(chooseNotificationDelivery({ ...base, hidden: false })).toBe('none');
+    expect(
+      chooseNotificationDelivery({ ...base, hasDesktopBridge: true, hidden: false }),
+    ).toBe('none');
   });
 });
 
