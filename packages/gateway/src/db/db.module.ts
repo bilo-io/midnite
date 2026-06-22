@@ -1,4 +1,4 @@
-import { Global, Module, type OnModuleInit } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { Inject, Injectable } from '@nestjs/common';
 import Database from 'better-sqlite3';
 import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
@@ -16,7 +16,7 @@ export const SQLITE_TOKEN = Symbol('MIDNITE_SQLITE');
 export type MidniteDb = BetterSQLite3Database<typeof schema>;
 
 @Injectable()
-class DbFactory {
+export class DbFactory {
   // Built once and memoized: DB_TOKEN and SQLITE_TOKEN must share the *same*
   // connection, so the factory must not open the file twice.
   private built?: { db: MidniteDb; sqlite: Database.Database };
@@ -37,6 +37,16 @@ class DbFactory {
     sqlite.pragma('busy_timeout = 5000');
     sqlite.pragma('foreign_keys = ON');
     const db = drizzle(sqlite, { schema });
+    // Apply migrations as part of *building* the handle — not in a separate
+    // onModuleInit. Nest fully instantiates the provider graph (which resolves
+    // DB_TOKEN through this factory) before it fires any lifecycle hook, so a
+    // service whose `onModuleInit` queries a table (e.g. CouncilRunnerService's
+    // stale-run sweep) is guaranteed the schema already exists. On a persisted
+    // dev/prod DB the tables happen to be there from a prior run regardless of
+    // hook order; on a *fresh* DB — every Playwright e2e run — they only exist
+    // if migration is tied to handle construction like this. (Otherwise a feature
+    // module's onModuleInit can run before DbModule's and crash the boot.)
+    migrate(db, { migrationsFolder: findMigrationsDir() });
     this.built = { db, sqlite };
     return this.built;
   }
@@ -85,11 +95,4 @@ function findMigrationsDir(): string {
   ],
   exports: [DB_TOKEN, SQLITE_TOKEN],
 })
-export class DbModule implements OnModuleInit {
-  constructor(@Inject(DB_TOKEN) private readonly db: MidniteDb) {}
-
-  onModuleInit(): void {
-    const migrationsFolder = findMigrationsDir();
-    migrate(this.db, { migrationsFolder });
-  }
-}
+export class DbModule {}
