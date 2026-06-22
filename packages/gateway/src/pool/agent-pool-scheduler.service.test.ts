@@ -14,21 +14,27 @@ function config(pool: number, maxPerRepo = 0): MidniteConfig {
   });
 }
 
-// A mutable task list whose `todo` view shrinks as the runner starts tasks.
-// Items may be a bare id or `{ id, repo }` to exercise the per-repo cap.
-function fakeTasks(todo: Array<string | { id: string; repo?: string }>) {
+// A mutable task list whose `todo`/ready views shrink as the runner starts tasks.
+// Items may be a bare id, `{ id, repo }` (per-repo cap) or `{ id, dependsOn }`
+// (dependency ready-gating). A task is *ready* when it's `todo` and every blocker
+// is `done` — mirroring the repository's `listReadyTodoTasks` SQL.
+function fakeTasks(todo: Array<string | { id: string; repo?: string; dependsOn?: string[] }>) {
   const specs = todo.map((t) => (typeof t === 'string' ? { id: t } : t));
   const status = new Map(specs.map((s) => [s.id, 'todo']));
   const repos = new Map(specs.map((s) => [s.id, s.repo]));
+  const deps = new Map(specs.map((s) => [s.id, s.dependsOn ?? []]));
+  const view = (id: string) =>
+    ({ id, title: id, status: status.get(id), repo: repos.get(id) }) as unknown as Task;
+  const isReady = (id: string) => (deps.get(id) ?? []).every((d) => status.get(d) === 'done');
   const service = {
-    listTasks: (s?: string) =>
-      [...status.entries()]
-        .filter(([, st]) => !s || st === s)
-        .map(([id]) => ({ id, title: id, status: status.get(id), repo: repos.get(id) }) as unknown as Task),
+    listTasks: (s?: string) => [...status.keys()].filter((id) => !s || status.get(id) === s).map(view),
+    listReadyTodoTasks: () =>
+      [...status.keys()].filter((id) => status.get(id) === 'todo' && isReady(id)).map(view),
     requeue: (id: string) => status.set(id, 'todo'),
   } as unknown as TasksService;
   const markStarted = (id: string) => status.set(id, 'wip');
-  return { service, markStarted };
+  const markDone = (id: string) => status.set(id, 'done');
+  return { service, markStarted, markDone };
 }
 
 // Build a runner that claims a slot + marks the task wip on start (the real
@@ -71,6 +77,28 @@ describe('AgentPoolScheduler.tick', () => {
     pool.release('t1');
     await scheduler.tick();
     expect(runner.start).toHaveBeenCalledTimes(3);
+  });
+
+  it('only starts ready tasks — a blocked task waits until its blocker is done', async () => {
+    const cfg = config(4); // ample slots, so only readiness gates starting
+    const { service, markStarted, markDone } = fakeTasks([
+      { id: 't1' },
+      { id: 't2', dependsOn: ['t1'] },
+    ]);
+    const pool = new AgentPoolService(cfg, service);
+    const runner = fakeRunner(pool, markStarted);
+    const scheduler = new AgentPoolScheduler(cfg, service, pool, runner);
+
+    await scheduler.tick();
+    // t2 is blocked by the not-yet-done t1, so it's excluded from the ready set
+    // even with free slots — only t1 starts.
+    expect(startedIds(runner)).toEqual(['t1']);
+
+    // Completing t1 releases t2 on the next tick (readiness is re-evaluated).
+    pool.release('t1');
+    markDone('t1');
+    await scheduler.tick();
+    expect(startedIds(runner)).toEqual(['t1', 't2']);
   });
 
   it('does nothing when there are no todo tasks', async () => {

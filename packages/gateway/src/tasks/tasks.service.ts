@@ -92,6 +92,17 @@ export class TasksService {
     return task;
   }
 
+  // Re-broadcast a blocker's dependents after the blocker reaches a terminal
+  // state (Phase 27 Theme B). Scheduling readiness is recomputed in SQL each
+  // tick, so this changes no scheduling outcome — it only nudges the board to
+  // re-render the derived "blocked by N" chip (`done` → may unblock; `abandoned`
+  // → held, now blocked-by-abandoned) without waiting for a natural refresh.
+  private notifyDependents(blockerId: string): void {
+    for (const dependentId of this.repo.dependentsOf(blockerId)) {
+      this.emit('task.updated', this.getTask(dependentId));
+    }
+  }
+
   getCounts(): TaskCounts {
     const raw = this.repo.countsByStatus();
     return {
@@ -104,6 +115,16 @@ export class TasksService {
 
   listTasks(status?: Status, projectId?: string): Task[] {
     return this.repo.listTasks(status, projectId).map((r) => this.repo.hydrate(r));
+  }
+
+  /**
+   * `todo` tasks that are *ready* to schedule — every blocker is `done` (Phase 27
+   * Theme B). Backs the scheduler's ready-gating; preserves the
+   * `desc(priority), asc(createdAt)` ordering of {@link listTasks} among ready
+   * tasks, so a blocked high-priority task can't jump its blocker.
+   */
+  listReadyTodoTasks(): Task[] {
+    return this.repo.listReadyTodoTasks().map((r) => this.repo.hydrate(r));
   }
 
   getTask(id: string): Task {
@@ -135,7 +156,11 @@ export class TasksService {
         data: JSON.stringify({ reason: 'abandoned' }),
       });
     }
-    return this.emit('task.updated', this.getTask(id));
+    const updated = this.emit('task.updated', this.getTask(id));
+    // A blocker reaching a terminal state changes its dependents' readiness, so
+    // refresh their derived "blocked by N" chip promptly (Phase 27 Theme B).
+    if (status === 'done' || status === 'abandoned') this.notifyDependents(id);
+    return updated;
   }
 
   // ---- agent pool lifecycle transitions ----
@@ -210,7 +235,12 @@ export class TasksService {
       kind: 'agent.done',
       ...(prUrl ? { data: JSON.stringify({ prUrl }) } : {}),
     });
-    return this.emit('task.updated', this.getTask(id));
+    const done = this.emit('task.updated', this.getTask(id));
+    // Completing a blocker may release its dependents — the scheduler picks them
+    // up on its next tick automatically; re-emit them so the board's "blocked by
+    // N" chip clears promptly (Phase 27 Theme B).
+    this.notifyDependents(id);
+    return done;
   }
 
   archive(id: string): Task {

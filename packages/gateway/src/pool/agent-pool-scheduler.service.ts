@@ -45,9 +45,13 @@ export class AgentPoolScheduler implements OnModuleInit, OnModuleDestroy {
     if (this.timer) clearInterval(this.timer);
   }
 
-  // Fill every free slot with the oldest unassigned `todo` task, skipping any
-  // whose repo is already at the per-repo concurrency cap. Public so tests can
-  // drive it directly. Never throws (runner.start swallows its own errors).
+  // Fill every free slot with the oldest unassigned *ready* `todo` task, skipping
+  // any whose repo is already at the per-repo concurrency cap. "Ready" = every
+  // dependency blocker is `done` (Phase 27 Theme B) — a blocked task (incl. one
+  // held by an `abandoned` blocker, which is never `done`) is excluded from the
+  // ready set, so priority+age ordering among ready tasks can't promote it past
+  // its blocker. Public so tests can drive it directly. Never throws
+  // (runner.start swallows its own errors).
   async tick(): Promise<void> {
     if (this.running) return;
     this.running = true;
@@ -58,10 +62,11 @@ export class AgentPoolScheduler implements OnModuleInit, OnModuleDestroy {
         // below (nothing starts mid-scan), so compute it once, not per candidate.
         const running = this.runningCountsByRepo();
         const next = this.tasks
-          .listTasks('todo')
+          .listReadyTodoTasks()
           .find((t) => !this.pool.slotForTask(t.id) && this.repoHasCapacity(t.repo, running));
-        // No eligible task — either the queue is empty or every remaining task is
-        // blocked by its repo's cap; either way, nothing more to start this tick.
+        // No eligible task — the queue is empty, every remaining todo is blocked by
+        // an unmet dependency, or every ready one is at its repo's cap; either way,
+        // nothing more to start this tick.
         if (!next) break;
         const started = await this.runner.start(next);
         // A failed start (e.g. terminal session cap reached) means further
