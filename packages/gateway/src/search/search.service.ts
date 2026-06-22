@@ -61,9 +61,15 @@ export class SearchService implements OnApplicationBootstrap, OnModuleDestroy {
     this.unsubscribeTasks = this.taskBus.subscribe((event) => this.onTaskEvent(event));
     // Pre-existing data must be searchable without a manual step: backfill once
     // when a fresh migration leaves the index empty on a populated DB.
-    if (this.index.count() === 0) {
-      const indexed = this.reindex();
-      if (indexed > 0) this.logger.log(`backfilled search index with ${indexed} entities`);
+    try {
+      if (this.index.count() === 0) {
+        const indexed = this.reindex();
+        if (indexed > 0) this.logger.log(`backfilled search index with ${indexed} entities`);
+      }
+    } catch (err) {
+      // A backfill problem must never stop the gateway serving — new writes still
+      // maintain the index, and POST /search/reindex can recover it later.
+      this.logger.error(`search index backfill failed: ${String(err)}`);
     }
   }
 
@@ -119,10 +125,20 @@ export class SearchService implements OnApplicationBootstrap, OnModuleDestroy {
       case 'task.deleted':
         this.index.remove('task', event.id);
         break;
-      case 'tasks.bulkCreated':
+      case 'tasks.bulkCreated': {
         // The coalesced bulk event carries only ids — fetch each to index it.
-        this.index.upsertMany(event.taskIds.map((id) => taskToIndexDoc(this.tasks.getTask(id))));
+        const docs: IndexDoc[] = [];
+        for (const id of event.taskIds) {
+          try {
+            docs.push(taskToIndexDoc(this.tasks.getTask(id)));
+          } catch {
+            // A task can vanish between emit and handling — skip it (it'll be
+            // (re)indexed on its next mutation) rather than dropping the batch.
+          }
+        }
+        this.index.upsertMany(docs);
         break;
+      }
     }
   }
 }

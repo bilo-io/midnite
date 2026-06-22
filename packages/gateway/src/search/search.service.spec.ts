@@ -141,6 +141,13 @@ describe('SearchService', () => {
       expect(h.svc.search({ q: 'widget' }).total).toBe(2);
     });
 
+    it('still indexes the rest of a bulk batch when one id has vanished', () => {
+      h.fx.tasks.push(task('b1', 'bulk gadget one'));
+      // 'gone' was deleted between emit and handling — must not drop the batch.
+      h.bus.emit({ type: 'tasks.bulkCreated', at: 'now', taskIds: ['b1', 'gone'] });
+      expect(h.svc.search({ q: 'gadget' }).total).toBe(1);
+    });
+
     it('stops maintaining the index after destroy', () => {
       h.svc.onModuleDestroy();
       h.bus.emit({ type: 'task.created', at: 'now', task: task('t9', 'orphan') });
