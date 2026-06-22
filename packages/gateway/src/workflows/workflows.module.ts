@@ -18,6 +18,7 @@ import { StorageSetExecutor } from './engine/executors/storage-set.executor';
 import { StorageGetExecutor } from './engine/executors/storage-get.executor';
 import { WorkflowScheduler } from './scheduler/workflow-scheduler.service';
 import { WorkflowEventBus } from './workflow-event-bus';
+import { WorkflowRecoveryService } from './workflow-recovery.service';
 import { WorkflowsGateway } from './workflows.gateway';
 
 @Module({
@@ -32,6 +33,7 @@ import { WorkflowsGateway } from './workflows.gateway';
     ExecutorRegistry,
     WorkflowScheduler,
     WorkflowEventBus,
+    WorkflowRecoveryService,
     WorkflowsGateway,
     // Node executors — register the class, then collect all into NODE_EXECUTORS.
     // Adding an integration = add its executor class here (one place).

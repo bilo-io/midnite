@@ -76,6 +76,12 @@ export async function startGateway(): Promise<NestFastifyApplication> {
   // Live terminal WS rides the same Fastify HTTP server, routed by gateway path.
   app.useWebSocketAdapter(new WsAdapter(app));
 
+  // Register SIGINT/SIGTERM listeners so Nest runs onModuleDestroy on shutdown —
+  // without this the terminal service's PTY teardown (kill under `pty`, detach
+  // under `tmux`) and the schedulers' timer cleanup never fire on a normal exit,
+  // orphaning live PTYs. (Phase 7 A4.)
+  app.enableShutdownHooks();
+
   const { port, host } = config.gateway;
   await app.listen(port, host);
   // eslint-disable-next-line no-console
