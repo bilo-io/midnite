@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_SEARCH_LIMIT,
+  EMPTY_SEARCH_RESPONSE,
   MAX_SEARCH_LIMIT,
+  SEARCH_TYPES,
   SearchQuerySchema,
   SearchResponseSchema,
   SearchResultSchema,
@@ -77,5 +79,18 @@ describe('emptySearchCounts', () => {
       council: 0,
       workflow: 0,
     });
+  });
+});
+
+describe('SEARCH_TYPES + EMPTY_SEARCH_RESPONSE', () => {
+  it('lists the six searchable types in display order', () => {
+    expect(SEARCH_TYPES).toEqual(['task', 'project', 'memory', 'note', 'council', 'workflow']);
+  });
+
+  it('EMPTY_SEARCH_RESPONSE is a valid, zeroed response', () => {
+    expect(SearchResponseSchema.parse(EMPTY_SEARCH_RESPONSE)).toEqual(EMPTY_SEARCH_RESPONSE);
+    expect(EMPTY_SEARCH_RESPONSE.results).toEqual([]);
+    expect(EMPTY_SEARCH_RESPONSE.total).toBe(0);
+    expect(EMPTY_SEARCH_RESPONSE.byType).toEqual(emptySearchCounts());
   });
 });

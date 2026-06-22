@@ -1,7 +1,8 @@
 import { z } from 'zod';
 
-/** The domain entities the unified global index covers (Phase 20 Decision §5). */
-export const SEARCH_ENTITY_TYPES = [
+// The domain entities the unified global index covers (Phase 20 Decision §5).
+// Order is the display order the palette/results page group by (tasks first).
+export const SEARCH_TYPES = [
   'task',
   'project',
   'memory',
@@ -9,8 +10,8 @@ export const SEARCH_ENTITY_TYPES = [
   'council',
   'workflow',
 ] as const;
-export const SearchEntityTypeSchema = z.enum(SEARCH_ENTITY_TYPES);
-export type SearchEntityType = z.infer<typeof SearchEntityTypeSchema>;
+export const SearchTypeSchema = z.enum(SEARCH_TYPES);
+export type SearchType = z.infer<typeof SearchTypeSchema>;
 
 /** Shortest query we run a full-text scan for — a single char is too noisy. */
 export const MIN_SEARCH_QUERY_LENGTH = 2;
@@ -67,7 +68,7 @@ export type SearchResponse = z.infer<typeof SearchResponseSchema>;
 // is coerced; `q` is trimmed and length-bounded.
 export const SearchQuerySchema = z.object({
   q: z.string().trim().min(1).max(200),
-  type: SearchEntityTypeSchema.optional(),
+  type: SearchTypeSchema.optional(),
   limit: z.coerce.number().int().min(1).max(MAX_SEARCH_LIMIT).default(DEFAULT_SEARCH_LIMIT),
 });
 export type SearchQuery = z.infer<typeof SearchQuerySchema>;
@@ -76,3 +77,14 @@ export type SearchQuery = z.infer<typeof SearchQuerySchema>;
 export function emptySearchCounts(): SearchCountsByType {
   return { task: 0, project: 0, memory: 0, note: 0, council: 0, workflow: 0 };
 }
+
+/**
+ * The empty response — no hits, zero counts. Clients use it as the initial /
+ * reset state (e.g. the command palette before a query, or after clearing), and
+ * the gateway returns it for a too-short query without touching the index.
+ */
+export const EMPTY_SEARCH_RESPONSE: SearchResponse = {
+  results: [],
+  total: 0,
+  byType: emptySearchCounts(),
+};

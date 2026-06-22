@@ -41,6 +41,13 @@ describe('SearchIndexService', () => {
     }
   });
 
+  it('ranks a title match above a body-only match (title boost)', () => {
+    index.upsert('task', 'body', 'unrelated heading', 'the kestrel nests on cliffs');
+    index.upsert('project', 'title', 'kestrel', 'a falconry program');
+    const hits = index.query('kestrel');
+    expect(hits.map((h) => h.id)).toEqual(['title', 'body']);
+  });
+
   it('emphasises the match in title and snippet', () => {
     seed();
     const [hit] = index.query('billing');

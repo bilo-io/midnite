@@ -1,4 +1,13 @@
 import { Inject, Injectable, Logger, type OnModuleInit } from '@nestjs/common';
+import {
+  EMPTY_SEARCH_RESPONSE,
+  MIN_SEARCH_QUERY_LENGTH,
+  emptySearchCounts,
+  type SearchQuery,
+  type SearchResponse,
+  type SearchResult,
+  type SearchType,
+} from '@midnite/shared';
 import { CouncilsService } from '../councils/councils.service';
 import { MemoriesService } from '../memories/memories.service';
 import { noteIndexTitle, NotesService } from '../notes/notes.service';
@@ -8,13 +17,11 @@ import { WorkflowsService } from '../workflows/workflows.service';
 import { SearchIndexService, type IndexableRow } from './search-index.service';
 
 /**
- * Owns the index's lifecycle across the whole app (Phase 20 Theme A5): a boot
- * backfill so pre-existing rows are searchable, and an admin reindex for
- * recovery. It composes domain **services** for reads — never their repositories
+ * Owns global search across the app. {@link query} (Theme B) is the ranked
+ * `GET /search` read path; the boot backfill + reindex (Theme A5) keep the index
+ * complete. It composes domain **services** for reads — never their repositories
  * (CLAUDE.md package boundary) — while the per-mutation maintenance lives in the
  * domain services themselves via {@link SearchIndexService}.
- *
- * The `GET /search` query path lands in Theme B; Theme A is the substrate.
  */
 @Injectable()
 export class SearchService implements OnModuleInit {
@@ -29,6 +36,26 @@ export class SearchService implements OnModuleInit {
     @Inject(CouncilsService) private readonly councils: CouncilsService,
     @Inject(WorkflowsService) private readonly workflows: WorkflowsService,
   ) {}
+
+  // Ranked full-text query (Theme B). A too-short query returns the empty
+  // response without touching the index. Each hit is mapped to a self-contained
+  // SearchResult (denormalised title/snippet + a route), and counts are tallied
+  // by type for the palette's group headers.
+  query(input: SearchQuery): SearchResponse {
+    const q = input.q.trim();
+    if (q.length < MIN_SEARCH_QUERY_LENGTH) return EMPTY_SEARCH_RESPONSE;
+
+    const hits = this.index.query(q, { type: input.type, limit: input.limit });
+    // The hit already carries everything but the route; cast is sound because the
+    // union members are structurally identical apart from the `type` discriminant.
+    const results = hits.map(
+      (h) => ({ ...h, route: routeFor(h.type) }) as SearchResult,
+    );
+
+    const byType = emptySearchCounts();
+    for (const r of results) byType[r.type] += 1;
+    return { results, total: results.length, byType };
+  }
 
   // Boot backfill (Decision §7): a freshly-migrated index is empty, so populate
   // it from existing rows — pre-existing data must be searchable without a manual
@@ -75,4 +102,21 @@ export class SearchService implements OnModuleInit {
     }
     return rows;
   }
+}
+
+// Where a result of each type lives in the web app. These are the section pages
+// (the app has no per-entity detail routes yet, and notes render as a dashboard
+// widget rather than a `/notes` page). Deep-linking to a specific item is a
+// follow-up once those routes exist — change this one map when they do.
+const ROUTE_BY_TYPE: Record<SearchType, string> = {
+  task: '/tasks',
+  project: '/projects',
+  memory: '/memory',
+  note: '/dashboard',
+  council: '/councils',
+  workflow: '/workflows',
+};
+
+function routeFor(type: SearchType): string {
+  return ROUTE_BY_TYPE[type];
 }

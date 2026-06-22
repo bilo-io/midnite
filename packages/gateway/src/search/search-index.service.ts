@@ -3,14 +3,14 @@ import type Database from 'better-sqlite3';
 import {
   DEFAULT_SEARCH_LIMIT,
   MAX_SEARCH_LIMIT,
-  type SearchEntityType,
+  type SearchType,
 } from '@midnite/shared';
 import { SQLITE_TOKEN } from '../db/db.module';
 
 /** One ranked hit from the FTS index — a `SearchResult` minus its `route`, which
  *  the `SearchService` derives from `type` + `id` (Theme B). */
 export interface SearchHit {
-  type: SearchEntityType;
+  type: SearchType;
   id: string;
   /** Title with `<mark>…</mark>` emphasis around matched terms. */
   title: string;
@@ -22,14 +22,14 @@ export interface SearchHit {
 
 /** The denormalised text indexed for one entity. */
 export interface IndexableRow {
-  type: SearchEntityType;
+  type: SearchType;
   id: string;
   title: string;
   body: string;
 }
 
 export interface SearchQueryOptions {
-  type?: SearchEntityType;
+  type?: SearchType;
   limit?: number;
 }
 
@@ -43,6 +43,12 @@ const SNIPPET_TOKENS = 24;
 // 0034 migration.
 const COL_TITLE = 2;
 const COL_BODY = 3;
+
+// bm25 column weights, in declaration order (type, entity_id, title, body). A
+// match in the short `title` outranks a body-only match (Phase 20 Theme B's
+// "light title boost"); `entity_id` is UNINDEXED so its weight is inert. Used in
+// both the SELECT score and the ORDER BY so ranking and reported score agree.
+const BM25 = 'bm25(search_index, 1.0, 1.0, 5.0, 1.0)';
 
 /**
  * Low-level maintenance of the unified FTS5 `search_index` (Phase 20 Theme A).
@@ -58,7 +64,7 @@ export class SearchIndexService {
   constructor(@Inject(SQLITE_TOKEN) private readonly sqlite: Database.Database) {}
 
   /** Insert-or-replace one entity's row. FTS5 has no native upsert, so delete-then-insert. */
-  upsert(type: SearchEntityType, id: string, title: string, body: string): void {
+  upsert(type: SearchType, id: string, title: string, body: string): void {
     const tx = this.sqlite.transaction(() => {
       this.deleteStmt().run(type, id);
       this.insertStmt().run(type, id, title, body);
@@ -67,7 +73,7 @@ export class SearchIndexService {
   }
 
   /** Drop one entity's row (idempotent — a no-op when absent). */
-  remove(type: SearchEntityType, id: string): void {
+  remove(type: SearchType, id: string): void {
     this.deleteStmt().run(type, id);
   }
 
@@ -117,15 +123,15 @@ export class SearchIndexService {
         entity_id AS id,
         highlight(search_index, ${COL_TITLE}, '${MARK_OPEN}', '${MARK_CLOSE}') AS title,
         snippet(search_index, ${COL_BODY}, '${MARK_OPEN}', '${MARK_CLOSE}', '${SNIPPET_ELLIPSIS}', ${SNIPPET_TOKENS}) AS snippet,
-        -bm25(search_index) AS score
+        -${BM25} AS score
       FROM search_index
       WHERE ${clauses.join(' AND ')}
-      ORDER BY bm25(search_index)
+      ORDER BY ${BM25}
       LIMIT ?
     `;
 
     const rows = this.sqlite.prepare(sql).all(...params) as Array<{
-      type: SearchEntityType;
+      type: SearchType;
       id: string;
       title: string;
       snippet: string;

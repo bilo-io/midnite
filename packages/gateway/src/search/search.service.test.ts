@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { EMPTY_SEARCH_RESPONSE } from '@midnite/shared';
 import type { CouncilsService } from '../councils/councils.service';
 import type { MemoriesService } from '../memories/memories.service';
 import type { NotesService } from '../notes/notes.service';
@@ -73,6 +74,50 @@ describe('SearchService — boot backfill', () => {
     data.tasks.push({ id: 't2', title: 'second task', prompt: 'more' });
     service.onModuleInit(); // index non-empty → no-op
     expect(index.count()).toBe(6);
+  });
+});
+
+describe('SearchService — query', () => {
+  it('maps hits to self-contained results with a route per type', () => {
+    const { service } = build();
+    service.onModuleInit();
+    const res = service.query({ q: 'billing', limit: 20 });
+    expect(res.total).toBe(1);
+    expect(res.byType.project).toBe(1);
+    expect(res.results[0]).toMatchObject({ type: 'project', id: 'p1', route: '/projects' });
+    expect(res.results[0]!.title).toContain('<mark>');
+  });
+
+  it('tallies counts by type across a multi-type match', () => {
+    const { service } = build();
+    data.tasks.push({ id: 't2', title: 'invoice review', prompt: 'check the billing run' });
+    service.onModuleInit();
+    const res = service.query({ q: 'invoice', limit: 20 });
+    // 'invoice' hits project p1 (body) and task t2 (title).
+    expect(res.total).toBe(2);
+    expect(res.byType).toMatchObject({ project: 1, task: 1 });
+  });
+
+  it('filters by type', () => {
+    const { service } = build();
+    data.tasks.push({ id: 't2', title: 'invoice review', prompt: 'billing' });
+    service.onModuleInit();
+    const res = service.query({ q: 'invoice', type: 'task', limit: 20 });
+    expect(res.results.every((r) => r.type === 'task')).toBe(true);
+    expect(res.byType.task).toBe(res.total);
+  });
+
+  it('returns the empty response for a too-short query without scanning', () => {
+    const { service } = build();
+    service.onModuleInit();
+    expect(service.query({ q: 'a', limit: 20 })).toEqual(EMPTY_SEARCH_RESPONSE);
+  });
+
+  it('routes a note result to the dashboard (no /notes page)', () => {
+    const { service } = build();
+    service.onModuleInit();
+    const res = service.query({ q: 'rotate', limit: 20 });
+    expect(res.results.find((r) => r.type === 'note')?.route).toBe('/dashboard');
   });
 });
 
