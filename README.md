@@ -109,6 +109,7 @@ User config lives in [`midnite.json`](midnite.json) at the repo root, validated 
   "terminal":  { "mode": "pty", "layout": "split", "args": [], "scrollbackBytes": 262144, "idleDisposeMs": 300000, "maxSessions": 16, "inheritSecrets": false, "approvals": { "enabled": false, "timeoutMs": 120000, "onTimeout": "deny", "onNoSubscriber": "ask" } },
   "repos":     [],
   "gateway":   { "port": 7777, "host": "127.0.0.1", "allowedOrigins": [] },
+  "knowledge": { "enabled": false, "maxBytes": 16384 },
   "workflows": { "enabled": false, "defaultTimezone": "UTC", "schedulerTickMs": 30000, "webhookBaseUrl": "http://localhost:7777" }
 }
 ```
@@ -145,6 +146,16 @@ and other URLs are fetched through the SSRF guard (private/loopback ranges
 blocked) and reduced to readable text. It's best-effort and fail-open — a fetch
 that errors is skipped, never blocking the run — and capped to a byte budget so a
 huge thread can't blow the model's context.
+
+**Knowledge files** are a second, distinct knowledge base (don't confuse them
+with the link-based *Sources* above). Point `knowledge.dir` at a folder of
+Markdown and set `knowledge.enabled: true`: the gateway watches it (live — edits
+are picked up without a restart) and keeps a manifest of each file's headings.
+When a task starts, the plan model is shown that manifest and picks the files
+relevant to the task; their **content** is injected into the seed prompt as a
+**"Knowledge files"** block, capped to `knowledge.maxBytes` (default `16384`).
+Like linked context it's best-effort and fail-open. Use it for standing project
+conventions, runbooks, and domain notes the agent should always have on hand.
 
 The session web window streams a live PTY over WebSocket (`/ws/terminal`). The
 PTY is spawned on demand when a window opens for an active session and is shared
