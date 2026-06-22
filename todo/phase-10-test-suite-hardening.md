@@ -106,8 +106,9 @@
 
 > The payoff the user asked for: **whenever a phase lands, preview screenshots of new/changed UI**, and diff them against a baseline. Two complementary sources — **Storybook** (per-component) and **Playwright** (per-flow/page) — both capture deterministically and publish as PR artifacts, feeding the [`execute-phase`](../.claude/commands/execute-phase.md) Stage 7 review.
 
-### E1. Deterministic screenshot capture — **M**
-- [ ] **Playwright screenshots** of key pages/flows (board, office rooms, workflows, dashboard, councils) in both **light & dark** theme, at a fixed viewport. Freeze nondeterminism: stable seed data, disable animations (`prefers-reduced-motion` / CSS), pin any clock-driven widgets (the world-clocks/market widgets) to fixed values.
+### E1. Deterministic screenshot capture — **M** — ◐ PARTIAL (PR #111, 2026-06-22)
+- [x] **Playwright screenshots** of key pages (board, office, workflows, dashboard, councils) in both **light & dark**, at a fixed 1440×900 viewport. A new `screenshots` Playwright project + [`e2e/screenshots/pages.shots.ts`](../packages/web/e2e/screenshots/pages.shots.ts) (+ `moon run web:screenshots`, `runInCI:false`); output → `e2e/__shots__/` (gitignored). Nondeterminism frozen: stable seed data, `setFixedTime` (clocks don't drift but rAF still paints the office canvas), forced reduced-motion (the typewriter header + page-reveal render their final state) + an animation-kill stylesheet, the setup nudge dismissed, external widgets (news/weather/market) stubbed. **Preview artifacts, not pixel-asserted baselines** (that's E2). `web:e2e` scoped to `--project=chromium`.
+- [x] **🐛 Surfaced + fixed a real bug:** the e2e gateway never booted on a *fresh* DB (`no such table: council_runs`) — migration ran in `DbModule.onModuleInit`, but a feature module's `onModuleInit` could fire first. Moved migration to DB-handle build (`DbFactory`), before any lifecycle hook; regression test added. (`web:e2e` is `runInCI:false`, so CI never caught it.) Also stabilised the `terminal.service.spec` `MIDNITE_*` env-dump flake (grep `^MIDNITE_` so a large CI env can't truncate the capture).
 - [ ] **Storybook screenshots** of the storied components (reuse the Theme C browser run — capture per story) so component-level changes show up even without a full page.
 
 ### E2. Visual baseline & diff — **M**

@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 10 Theme E1: deterministic screenshot capture + fresh-DB boot fix (PR #111)
+
+The Theme E payoff: a Playwright pass that captures preview screenshots of every key page (board, office, workflows, dashboard, councils) in light + dark, so `execute-phase` Stage 7 reviews get real artifacts. Building it surfaced a latent boot bug that had silently broken the whole e2e harness.
+
+- [x] **`screenshots` Playwright project + [`pages.shots.ts`](../packages/web/e2e/screenshots/pages.shots.ts)** — captures the 5 key pages × 2 themes at a fixed 1440×900 viewport. New `moon run web:screenshots` (`runInCI:false`); PNGs → `e2e/__shots__/` (gitignored). `web:e2e` scoped to `--project=chromium`.
+- [x] **Determinism engineered:** stable seed data · `setFixedTime` (clocks stable, rAF still paints the office canvas) · forced reduced-motion (typewriter header + page-reveal settle instantly) + animation-kill stylesheet · setup nudge dismissed · external widgets (news/weather/market) stubbed. Preview artifacts only — **no pixel assertion** (committed baselines are E2).
+- [x] **🐛 Fresh-DB boot fix** — `no such table: council_runs`: migration ran in `DbModule.onModuleInit`, but Nest can fire a feature module's `onModuleInit` (CouncilRunnerService's stale-run sweep) first. Tied migration to **building the DB handle** ([`DbFactory`](../packages/gateway/src/db/db.module.ts)), which Nest completes before any lifecycle hook; regression test added. Persisted dev/prod DBs hid it; the fresh DB every e2e run uses exposed it, and `web:e2e` (`runInCI:false`) never caught it.
+- [x] **Stabilised the `terminal.service.spec` `MIDNITE_*` env-dump flake** — the fake `claude` now greps `^MIDNITE_` so a large CI env can't truncate the captured output before `MIDNITE_GATEWAY_URL`.
+- [x] Verified locally: `:typecheck`/`:lint` green, `web:test` 364/364, gateway tests green; all 10 captures rendered. Screenshots under [`docs/screenshots/screenshot-previews/`](../docs/screenshots/screenshot-previews/). **Phase 10 E1 is ◐ PARTIAL** — Storybook per-story capture (E1 bullet 2) + E2/E3 remain.
+
+---
+
 ## 2026-06-22 — Phase 27 Theme C: dependency UI (PR #114) — **Phase 27 COMPLETE**
 
 The blocker graph (model #106, scheduling #109, CLI #113) becomes visible + editable in the web app — express dependencies, see what's blocked, understand why a task isn't running. "blocked" stays **derived** (Decision §2): no new status, no column move.
