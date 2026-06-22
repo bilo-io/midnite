@@ -3,6 +3,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { randomBytes, randomUUID } from 'node:crypto';
 import {
@@ -19,6 +20,8 @@ import {
 } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
 import { hashToken, tokenMatches } from '../lib/token-hash';
+import { workflowToIndexDoc } from '../search/lib/index-mappers';
+import { SearchIndexService } from '../search/search-index.service';
 import { WorkflowsRepository } from './workflows.repository';
 import { WorkflowEngine } from './engine/workflow-engine.service';
 
@@ -34,6 +37,8 @@ export class WorkflowsService {
     @Inject(WorkflowsRepository) private readonly repo: WorkflowsRepository,
     @Inject(WorkflowEngine) private readonly engine: WorkflowEngine,
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
+    // Optional: see NotesService — global index in prod, omitted in unit specs.
+    @Optional() @Inject(SearchIndexService) private readonly searchIndex?: SearchIndexService,
   ) {}
 
   // --- reads ---
@@ -111,7 +116,9 @@ export class WorkflowsService {
       createdAt: now,
       updatedAt: now,
     });
-    return this.repo.hydrateWorkflow(row);
+    const workflow = this.repo.hydrateWorkflow(row);
+    this.searchIndex?.upsert(workflowToIndexDoc(workflow));
+    return workflow;
   }
 
   update(id: string, req: UpdateWorkflowRequest): Workflow {
@@ -142,12 +149,15 @@ export class WorkflowsService {
 
     const row = this.repo.updateWorkflowRow(id, patch);
     if (!row) throw new NotFoundException(`workflow ${id} not found`);
-    return this.repo.hydrateWorkflow(row);
+    const workflow = this.repo.hydrateWorkflow(row);
+    this.searchIndex?.upsert(workflowToIndexDoc(workflow));
+    return workflow;
   }
 
   delete(id: string): void {
     this.getWorkflow(id); // 404 if missing
     this.repo.deleteWorkflow(id);
+    this.searchIndex?.remove('workflow', id);
   }
 
   run(id: string, input: unknown, source: RunTriggerSource = 'manual'): WorkflowRun {
