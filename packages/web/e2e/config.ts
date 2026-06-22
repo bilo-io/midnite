@@ -18,3 +18,9 @@ export const E2E_GATEWAY_PORT = 7811;
 // port nothing is listening on. Pinning IPv4 keeps every hop consistent.
 export const WEB_ORIGIN = `http://127.0.0.1:${E2E_WEB_PORT}`;
 export const GATEWAY_ORIGIN = `http://127.0.0.1:${E2E_GATEWAY_PORT}`;
+
+// Where the Theme E1 screenshot capture writes its PNGs (relative to this
+// package). Not a Playwright `toHaveScreenshot` baseline dir — these are
+// preview artifacts (browsable locally, uploadable as CI artifacts), so the
+// folder is gitignored. Committed OS-pinned visual baselines are Theme E2.
+export const SCREENSHOTS_DIR = 'e2e/__shots__';

@@ -158,10 +158,14 @@ describe('TerminalService', () => {
   });
 
   it('injects MIDNITE_* hook env for a claude command, surviving the secret scrub', async () => {
-    // A fake `claude` (basename triggers approval wiring) that prints its env and exits.
+    // A fake `claude` (basename triggers approval wiring) that prints just the
+    // injected hook vars and exits. Grepping `^MIDNITE_` (rather than dumping the
+    // whole `env`) keeps the PTY output to a few short lines: on a CI runner with
+    // a large environment, a full `env` dump can be truncated before the last
+    // vars are read, intermittently dropping `MIDNITE_GATEWAY_URL` from `printed`.
     const dir = mkdtempSync(join(tmpdir(), 'midnite-claude-'));
     const fakeClaude = join(dir, 'claude');
-    writeFileSync(fakeClaude, '#!/bin/sh\nenv\n');
+    writeFileSync(fakeClaude, "#!/bin/sh\nenv | grep '^MIDNITE_'\n");
     chmodSync(fakeClaude, 0o755);
 
     service = makeService({

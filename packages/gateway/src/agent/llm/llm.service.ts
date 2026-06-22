@@ -51,9 +51,10 @@ export class LlmService implements OnApplicationBootstrap {
     @Inject(UsageService) private readonly usage: UsageService,
   ) {}
 
-  // onApplicationBootstrap (not onModuleInit) so the DB migrations in
-  // DbModule.onModuleInit have already created the provider tables before the
-  // first credential read.
+  // onApplicationBootstrap (not the constructor) so the provider tables exist
+  // before the first credential read. Migrations run when the DB handle is built
+  // (DbFactory), i.e. before any lifecycle hook, so onModuleInit would also be
+  // safe — this stays on the later hook to read a fully-initialised store.
   async onApplicationBootstrap(): Promise<void> {
     await this.reload();
   }

@@ -86,7 +86,26 @@ export default defineConfig({
     baseURL: WEB_ORIGIN,
     trace: 'on-first-retry',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    // Flow tests (Theme D): the `*.e2e.ts` specs.
+    {
+      name: 'chromium',
+      testMatch: '**/*.e2e.ts',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    // Deterministic screenshot capture (Theme E1): the `*.shots.ts` specs at a
+    // fixed 1440×900 viewport. The spec itself forces reduced motion (via
+    // page.emulateMedia), pins the clock, and stubs external widgets. Shares the
+    // same webServer — run it on its own with `moon run web:screenshots`.
+    {
+      name: 'screenshots',
+      testMatch: '**/*.shots.ts',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1440, height: 900 },
+      },
+    },
+  ],
   webServer: [
     {
       // Boot the gateway as a direct `node` child (tsx as a loader, not the tsx
