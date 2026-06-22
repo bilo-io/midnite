@@ -4,6 +4,13 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 7 Theme C: quick-capture dashboard widget (PR #91)
+
+The last open Theme C widget (LLM-usage + Shipped already shipped): add a task — or paste a list — without leaving the dashboard. A *placeable* grid widget (addable/removable/positionable from the catalogue), distinct from the always-on bottom prompt composer.
+
+- [x] **`QuickCaptureWidget`** ([`web/components/quick-capture-widget.tsx`](../packages/web/components/quick-capture-widget.tsx)): single mode → `POST /tasks`; **Bulk** toggle → `POST /tasks/bulk` (outstanding #2, one coalesced board event). Status defaults to `todo` (planner triages); the repo is **inferred** (PR #88). `⌘/Ctrl+↵` submits; inline confirmation/error; `invalidateData()` (the task WS broadcast also refreshes). Registered in the widget registry (tasks category, single-instance, no config) + wired into the grid renderer.
+- [x] Tests: 5 RTL cases + a registry assertion + a Playwright e2e (`quick-capture.e2e.ts` — seed widget → add against the live gateway → appears in the board's Todo column; single + bulk). `:typecheck`/`:lint`/`web:test`/`web:build` green; CI green. Screenshots committed under [`docs/screenshots/quick-capture/`](../docs/screenshots/quick-capture/).
+
 ## 2026-06-22 — Phase 20 Theme A+B: global search FTS5 substrate + endpoint (PR #90)
 
 The app had grown wide (tasks, projects, memory, notes, councils, workflows) with no way to jump to a thing by name — the ⌘K palette was navigation-only and per-page search only filtered already-loaded rows. This lands the **server-side substrate** for real global search; the web palette/page (Theme C/D) are a follow-on.

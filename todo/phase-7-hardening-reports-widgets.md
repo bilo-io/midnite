@@ -72,7 +72,7 @@ The highest-value theme. These are real, verified gaps, not hypotheticals.
 - [x] **Recent PRs / shipped work** — "Shipped" widget lists recent done tasks with their PR links. ✅ DONE (`33d3380`).
 
 > ~~Brainstorms widget~~ — dropped: brainstorms was merged into councils (a format), so the existing `councils` widget already covers it.
-- [ ] **Quick capture** — add a task (and optionally bulk-paste, outstanding #2) straight from the dashboard.
+- [x] **Quick capture** — add a task (and optionally bulk-paste, outstanding #2) straight from the dashboard. ✅ DONE (PR #91): a placeable `QuickCaptureWidget` (single → `POST /tasks`, Bulk toggle → `POST /tasks/bulk`); status defaults to `todo` (triaged) and the repo is inferred (PR #88). RTL + registry + Playwright e2e coverage.
 - [ ] (If repos go first-class, outstanding #4) a **per-repo status** widget — in-flight agents / queue depth per repo.
 
 ---
