@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 27 Theme B: dependency-aware scheduling (PR #109)
+
+Theme A (#106) landed the dependency **model** (edge table, `dependsOn`, integrity rules, and the SQL ready-set query) but the scheduler still filled slots from *all* `todo` tasks, so an explicit blocker graph had no effect on run order. Theme B wires the graph into the tick so a multi-step project runs in DAG order. Gateway-only; no wire-shape or client changes.
+
+- [x] **Ready-gating** — the tick selects from the dependency ready-set (`todo` tasks whose every blocker is `done`) via `TasksService.listReadyTodoTasks()` (→ `TasksRepository.listReadyTodoTasks()`) instead of `listTasks('todo')`. Priority+age ordering still applies, but **only among ready tasks**, so a higher-priority blocked task can't jump its blocker.
+- [x] **Unblock-on-complete** — a blocker reaching `done` makes its dependents eligible on the **next tick** automatically (readiness is recomputed in SQL — no scheduling event needed); the service also re-emits `task.updated` for the blocker's dependents (`notifyDependents`) so the board's derived "blocked by N" chip refreshes promptly.
+- [x] **Abandoned-blocker policy** (Decision §4 — *hold + surface*) — an `abandoned` blocker is never `done`, so the ready-set keeps its dependents out of scheduling (held, not silently run); dependents are re-broadcast on the abandon transition so a "blocked by an abandoned task" affordance can surface (richer UI is Theme C). Dropping the dead edge is the existing `removeDependency`.
+- [x] Tests: scheduler unit (blocked task waits until its blocker is `done`); pool integration (`:memory:`) — 3-task chain runs one blocker at a time, a higher-priority blocked task can't jump its blocker, completing a blocker emits its dependent's `task.updated`, an abandoned blocker holds its dependent. `gateway:typecheck`/`lint` green; `gateway:test` 734 green; CI green (after a re-run of the pre-existing flaky `terminal` env-dump spec — unrelated).
+
+---
+
 ## 2026-06-22 — Phase 21 Theme B: notification channel dispatch (PR #108)
 
 Theme A (#103) emitted `notification.created` over WS directly; Theme B introduces the channel abstraction so a notification fans to N configurable sinks (in-app feed + optional webhook), with Slack/email deferred to Phase 14 as drop-in channels. Composes with the Theme C web center (#107), which reads the same unchanged WS event.
