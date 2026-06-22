@@ -13,6 +13,7 @@ export * from './color.js';
 export * from './fs.js';
 export * from './source.js';
 export * from './version.js';
+export * from './release.js';
 export * from './project.js';
 export * from './repo.js';
 export * from './memory.js';
