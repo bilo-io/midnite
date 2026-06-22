@@ -73,7 +73,7 @@ The highest-value theme. These are real, verified gaps, not hypotheticals.
 
 > ~~Brainstorms widget~~ — dropped: brainstorms was merged into councils (a format), so the existing `councils` widget already covers it.
 - [x] **Quick capture** — add a task (and optionally bulk-paste, outstanding #2) straight from the dashboard. ✅ DONE (PR #91): a placeable `QuickCaptureWidget` (single → `POST /tasks`, Bulk toggle → `POST /tasks/bulk`); status defaults to `todo` (triaged) and the repo is inferred (PR #88). RTL + registry + Playwright e2e coverage.
-- [ ] (If repos go first-class, outstanding #4) a **per-repo status** widget — in-flight agents / queue depth per repo.
+- [x] (repos went first-class, outstanding #4 done) a **per-repo status** widget — in-flight agents / queue depth per repo. ✅ DONE (PR #97): `RepoStatusWidget` + pure `summarizeByRepo` rollup (running=wip+waiting, queued=todo, +backlog/done; every registered repo, Unassigned last, sorted by activity). Unit + RTL + e2e.
 
 ---
 

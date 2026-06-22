@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 7 Theme C: per-repo status dashboard widget (PR #97) — **Theme C COMPLETE**
+
+The last open Theme C widget (after LLM-usage, Shipped, Quick capture): how the fleet is spread across repos at a glance. Unblocked by repos-first-class (Phase 13).
+
+- [x] **Pure `summarizeByRepo(tasks, repos)`** ([`web/lib/repo-status.ts`](../packages/web/lib/repo-status.ts)): per-repo rollup — `running`=wip+waiting (holding an agent), `queued`=todo, +backlog/done. Every registered repo gets a row (idle at zero); **Unassigned** only when some task has no repo, pinned last; archived/abandoned excluded; sorted by activity.
+- [x] **`RepoStatusWidget`** ([`web/components/repo-status-widget.tsx`](../packages/web/components/repo-status-widget.tsx)): polls `getTasks`+`getRepos` (the task WS broadcast also refreshes); status-coloured count chips, dimmed zeros; loading/error/empty states mirror the Shipped widget. Registered (agents category, single-instance) + wired into the grid renderer.
+- [x] Tests: 5 helper + 3 RTL + a registry assertion + a Playwright e2e (`repo-status.e2e.ts`, seeds repos + repo-assigned tasks over the live gateway). `web:test`/`:typecheck`/`:lint` + CI green. Screenshot under [`docs/screenshots/repo-status/`](../docs/screenshots/repo-status/). (The e2e wasn't runnable locally — the e2e *gateway* fails to boot from a fresh DB on this box, reproduced on the unmodified `board.e2e`; a local e2e-harness/env issue, not this change, and CI's gateway tests are green.)
+
 ## 2026-06-22 — Phase 20 Theme C: command palette content search (PR #96)
 
 Surfaces the global-search backend (Theme A/B) in the UI: the ⌘K palette now searches content, not just navigates. Closes the gap where `GET /search` had no consumer in the app.
