@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 30 Theme A: quality-gate checks contract + runner (PR #102)
+
+The engine for "verified completion": Phase 30 will gate a task's `done` transition on configured checks. Theme A lands the contract + the runner only — no lifecycle wiring (B), no DB (B), no auto-fix (C), no surfaces (D).
+
+- [x] **shared `checks.ts`** — `Check` / `CheckResult` / `CheckRun` / `CheckTrigger` / `CheckRunStatus` zod shapes (barrel-exported), the optional+defaulted **`config.checks`** block (enabled, gates, per-repo `byRepo` overrides, autoFix, perCheckTimeoutMs, outputCapBytes), and the pure **`resolveChecksForRepo(checks, repoName)`** (byRepo REPLACES gates, Decision §5). Back-compat: a `midnite.json` with no `checks` key still parses. 9 unit tests.
+- [x] **gateway `ChecksService`** ([`checks/checks.service.ts`](../packages/gateway/src/checks/checks.service.ts) + [`lib/run-check.ts`](../packages/gateway/src/checks/lib/run-check.ts)) — runs a resolved `Check[]` sequentially in a repo cwd → a structured `CheckRun`. Each check runs `/bin/sh -c` via `spawn` (not `execFile` — output is tail-truncated to `outputCapBytes`, not a `maxBuffer` error), in a **detached process group** so a per-check timeout SIGKILLs the whole group (the shell *and* a forked grandchild like `sleep`, which would otherwise hold the pipes open) → `passed:false`, `exitCode:null`. Never throws into the caller. New `ChecksModule`, registered in `AppModule`.
+- [x] 10 gateway tests (pass/fail/stderr/timeout-kill/spawn-error/truncation/repo-relative-cwd + run aggregation). README documents `config.checks`. `:typecheck`/`:lint`/`shared:test` (402)/`gateway:test` (705) + `moon ci` green. **CI caught a real cross-platform bug** (Linux/dash forks `sleep` where macOS exec-replaces it — the orphaned child stalled `close`); fixed with the detached-group kill. Independent review otherwise clean.
+- [x] **Remaining for Phase 30:** Theme B (gate the `done` seam + `task_check_runs` table), C (auto-fix loop), D (web/CLI surfaces).
+
 ## 2026-06-22 — Phase 21 Theme A: notifications foundation — model + ingestion + feed (PR #103)
 
 midnite runs many agents in parallel, but you had to *watch the board* to know when one needed you. Theme A is the substrate for a "tap on the shoulder"; channel dispatch (browser/webhook = Theme B) and the web center/toasts (Theme C) layer on top.
