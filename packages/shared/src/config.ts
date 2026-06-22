@@ -169,6 +169,29 @@ export const KnowledgeConfigSchema = z.object({
   maxBytes: z.number().int().positive().default(16384),
 });
 
+// Notifications & alerting (Phase 21). The gateway watches state transitions,
+// applies this notify-policy, and dispatches to the enabled channels. `events`
+// toggles which transitions notify; `channels` which sinks fire (web is the
+// always-on in-app feed; browser is an opt-in OS notification; webhook is an
+// optional SSRF-guarded POST target — both dispatched in a later theme).
+export const NotificationsConfigSchema = z.object({
+  enabled: z.boolean().default(true),
+  events: z
+    .object({
+      taskWaiting: z.boolean().default(true),
+      taskDone: z.boolean().default(true),
+      taskAbandoned: z.boolean().default(true),
+    })
+    .default({}),
+  channels: z
+    .object({
+      web: z.boolean().default(true),
+      browser: z.boolean().default(false),
+      webhook: z.string().optional(),
+    })
+    .default({}),
+});
+
 export const MidniteConfigSchema = z.object({
   agent: AgentConfigSchema,
   terminal: TerminalConfigSchema,
@@ -176,6 +199,7 @@ export const MidniteConfigSchema = z.object({
   gateway: GatewayConfigSchema,
   // Optional (defaulted) so existing midnite.json files keep validating.
   knowledge: KnowledgeConfigSchema.default({}),
+  notifications: NotificationsConfigSchema.default({}),
   // Optional block (defaulted) so existing midnite.json files keep validating.
   workflows: WorkflowsConfigSchema.default({}),
   agents: AgentsRuntimeConfigSchema.default({}),
@@ -186,6 +210,7 @@ export const MidniteConfigSchema = z.object({
 
 export type MidniteConfig = z.infer<typeof MidniteConfigSchema>;
 export type KnowledgeConfig = z.infer<typeof KnowledgeConfigSchema>;
+export type NotificationsConfig = z.infer<typeof NotificationsConfigSchema>;
 export type RepoConfig = z.infer<typeof RepoConfigSchema>;
 export type WorkflowsConfig = z.infer<typeof WorkflowsConfigSchema>;
 export type AgentsRuntimeConfig = z.infer<typeof AgentsRuntimeConfigSchema>;
