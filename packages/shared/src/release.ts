@@ -154,3 +154,94 @@ export function changeSetFromCommits(
 ): ChangeSet {
   return { level: bumpLevelFromCommits(commits), changedPackages };
 }
+
+// --- Finalising a release (the /release-complete half) ------------------------
+
+/** A parsed `## [version] - date` section of a Keep a Changelog file. */
+export type ChangelogSection = {
+  /** The version in the heading, e.g. `0.1.0`. */
+  version: string;
+  /** The `YYYY-MM-DD` date in the heading, or `null` when undated (e.g. Unreleased). */
+  date: string | null;
+  /** The section body — everything up to the next `##` heading or the link refs, trimmed. */
+  body: string;
+};
+
+const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Pull a single version's section out of a CHANGELOG.md (Keep a Changelog format),
+ * so `/release-complete` can feed it to `gh release create --notes` and check the
+ * section is present + dated as a precondition. Returns `null` when there's no
+ * `## [version]` heading. `date` is `null` for an undated heading (e.g. while still
+ * `## [Unreleased]`), which the skill treats as "not ready to finalise".
+ */
+export function extractChangelogSection(
+  changelog: string,
+  version: string,
+): ChangelogSection | null {
+  const lines = changelog.split('\n');
+  const headingRe = new RegExp(
+    `^##\\s+\\[${escapeRegExp(version)}\\](?:\\s+-\\s+(\\d{4}-\\d{2}-\\d{2}))?\\s*$`,
+  );
+
+  let start = -1;
+  let date: string | null = null;
+  for (let i = 0; i < lines.length; i++) {
+    const match = headingRe.exec(lines[i] ?? '');
+    if (match) {
+      start = i;
+      date = match[1] ?? null;
+      break;
+    }
+  }
+  if (start === -1) return null;
+
+  const body: string[] = [];
+  for (let i = start + 1; i < lines.length; i++) {
+    const line = lines[i] ?? '';
+    if (/^##\s/.test(line)) break; // next section
+    if (/^\[[^\]]+\]:\s/.test(line)) break; // the compare/tag link-ref block
+    body.push(line);
+  }
+  return { version, date, body: body.join('\n').trim() };
+}
+
+/**
+ * The git tags a release cuts, per the scheme (Decision §3 / docs/RELEASING.md):
+ *
+ * - **lockstep minor/major** — the shared MAJOR.MINOR advanced and every package
+ *   moved to the new `X.Y.0` → a single repo tag `vX.Y.Z`.
+ * - **independent patch** — MAJOR.MINOR unchanged, only some packages' patches
+ *   bumped → a scoped tag `‹pkg›@X.Y.Z` per bumped package.
+ *
+ * Returns `[]` when nothing changed. `previous`/`next` are the version maps either
+ * side of {@link planVersionBump}.
+ */
+export function planReleaseTags(
+  previous: Record<string, string>,
+  next: Record<string, string>,
+): string[] {
+  const changed = Object.keys(next).filter((name) => next[name] !== previous[name]);
+  if (changed.length === 0) return [];
+
+  const majorMinor = (version: string): string => version.split('.').slice(0, 2).join('.');
+  const prevFirst = Object.values(previous)[0];
+  const prevPrefix = prevFirst === undefined ? null : majorMinor(prevFirst);
+
+  const changedNext = changed.map((name) => ({ name, version: next[name] ?? '' }));
+  const lockstepBump =
+    prevPrefix !== null && changedNext.every((entry) => majorMinor(entry.version) !== prevPrefix);
+
+  if (lockstepBump) {
+    const shared = changedNext[0]?.version ?? '';
+    return [`v${shared}`];
+  }
+  return changedNext.map((entry) => `${entry.name}@${entry.version}`);
+}
+
+/** Extract `X.Y.Z` from a `release/vX.Y.Z` branch name, or `null` if it isn't one. */
+export function versionFromReleaseBranch(branch: string): string | null {
+  const match = /^release\/v(\d+\.\d+\.\d+)$/.exec(branch);
+  return match ? (match[1] ?? null) : null;
+}

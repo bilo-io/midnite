@@ -4,8 +4,11 @@ import {
   bumpLevelFromCommits,
   changeSetFromCommits,
   changelogGroupForCommit,
+  extractChangelogSection,
   packagesForChangedPaths,
   parseConventionalCommit,
+  planReleaseTags,
+  versionFromReleaseBranch,
   type ConventionalCommit,
 } from './release.js';
 
@@ -202,5 +205,102 @@ describe('changeSetFromCommits', () => {
     expect(
       changeSetFromCommits([commit({ type: 'fix' })], ['@midnite/cli']),
     ).toEqual({ level: 'patch', changedPackages: ['@midnite/cli'] });
+  });
+});
+
+const CHANGELOG = `# Changelog
+
+## [Unreleased]
+
+### Added
+
+- something in flight
+
+## [0.1.0] - 2026-06-22
+
+### Added
+
+- A real feature.
+
+### Fixed
+
+- A real bug.
+
+## [0.0.0] - 2026-06-18
+
+### Added
+
+- Initial scaffold.
+
+[Unreleased]: https://example.com/compare/v0.1.0...HEAD
+[0.1.0]: https://example.com/releases/tag/v0.1.0
+[0.0.0]: https://example.com/releases/tag/v0.0.0
+`;
+
+describe('extractChangelogSection', () => {
+  it('returns the dated section body for a released version', () => {
+    const section = extractChangelogSection(CHANGELOG, '0.1.0');
+    expect(section).toMatchObject({ version: '0.1.0', date: '2026-06-22' });
+    expect(section?.body).toBe('### Added\n\n- A real feature.\n\n### Fixed\n\n- A real bug.');
+  });
+
+  it('stops at the next section heading (no bleed into older versions)', () => {
+    expect(extractChangelogSection(CHANGELOG, '0.1.0')?.body).not.toContain('Initial scaffold');
+  });
+
+  it('does not include the link-ref block in the body', () => {
+    expect(extractChangelogSection(CHANGELOG, '0.0.0')?.body).toBe('### Added\n\n- Initial scaffold.');
+  });
+
+  it('reports an undated section (e.g. Unreleased) with date null', () => {
+    expect(extractChangelogSection(CHANGELOG, 'Unreleased')).toMatchObject({ date: null });
+  });
+
+  it('returns null when the version has no section', () => {
+    expect(extractChangelogSection(CHANGELOG, '9.9.9')).toBeNull();
+  });
+});
+
+describe('planReleaseTags', () => {
+  const repo = {
+    midnite: '0.1.0',
+    '@midnite/shared': '0.1.0',
+    '@midnite/cli': '0.1.0',
+  };
+
+  it('cuts a single lockstep tag when a minor moves every package', () => {
+    const next = { midnite: '0.2.0', '@midnite/shared': '0.2.0', '@midnite/cli': '0.2.0' };
+    expect(planReleaseTags(repo, next)).toEqual(['v0.2.0']);
+  });
+
+  it('cuts a single lockstep tag for a major', () => {
+    const next = { midnite: '1.0.0', '@midnite/shared': '1.0.0', '@midnite/cli': '1.0.0' };
+    expect(planReleaseTags(repo, next)).toEqual(['v1.0.0']);
+  });
+
+  it('cuts scoped tags per changed package on a patch (MAJOR.MINOR unchanged)', () => {
+    const next = { midnite: '0.1.0', '@midnite/shared': '0.1.0', '@midnite/cli': '0.1.1' };
+    expect(planReleaseTags(repo, next)).toEqual(['@midnite/cli@0.1.1']);
+  });
+
+  it('scopes the root package patch as midnite@X.Y.Z', () => {
+    const next = { midnite: '0.1.1', '@midnite/shared': '0.1.0', '@midnite/cli': '0.1.0' };
+    expect(planReleaseTags(repo, next)).toEqual(['midnite@0.1.1']);
+  });
+
+  it('returns [] when nothing changed', () => {
+    expect(planReleaseTags(repo, { ...repo })).toEqual([]);
+  });
+});
+
+describe('versionFromReleaseBranch', () => {
+  it('extracts the version from a release/vX.Y.Z branch', () => {
+    expect(versionFromReleaseBranch('release/v0.1.0')).toBe('0.1.0');
+  });
+
+  it('returns null for a non-release branch', () => {
+    expect(versionFromReleaseBranch('feature/x')).toBeNull();
+    expect(versionFromReleaseBranch('release/0.1.0')).toBeNull();
+    expect(versionFromReleaseBranch('release/v0.1')).toBeNull();
   });
 });
