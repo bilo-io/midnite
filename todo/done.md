@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 27 Theme C: dependency UI (PR #114) — **Phase 27 COMPLETE**
+
+The blocker graph (model #106, scheduling #109, CLI #113) becomes visible + editable in the web app — express dependencies, see what's blocked, understand why a task isn't running. "blocked" stays **derived** (Decision §2): no new status, no column move.
+
+- [x] **Typed client + pure helpers** — `addTaskDependency`/`removeTaskDependency` ([`lib/api.ts`](../packages/web/lib/api.ts), errors surface the gateway message); pure derived-blocked helpers ([`lib/task-dependencies.ts`](../packages/web/lib/task-dependencies.ts)): `unmetBlockerCount`/`blockedCounts`/`dependentsOf` — a blocker satisfies only when `done`, mirroring the scheduler ready-set.
+- [x] **Set/edit blockers** — reusable `TaskPicker` combobox ([`task-picker.tsx`](../packages/web/components/task-picker.tsx)) in the new-task modal (single mode) + the task thread's new **Dependencies** section; the service's cycle / self-reference / unknown-task errors surface inline.
+- [x] **Derived "Blocked by N" chip** ([`blocked-badge.tsx`](../packages/web/components/blocked-badge.tsx)) on cards (board + abandoned) and rows (list/table), dimmed; count computed over the **full** task list so a filtered-out blocker still counts.
+- [x] **Thread blocker/dependent lists** — each blocker with status (done/pending) + remove; a read-only "Blocks" dependents list. **Manual-start warn+confirm** in both the board drag/Start and the thread Start (human override; the scheduler still auto-skips) — Decision §4.
+- [x] Tests: helper unit tests, `TaskPicker` (filter/pick), `BlockedBadge` on cards, thread Dependencies (blocker rows + status, cycle error surfaced, remove). `web:test` **391 passed**; `:typecheck`/`:lint` + `moon ci` green. Screenshots under [`docs/screenshots/deps-web-ui/`](../docs/screenshots/deps-web-ui/). Built via a delegated subagent + my own diff review. **This closes Phase 27 (A–D).**
+
+---
+
 ## 2026-06-22 — Phase 27 Theme D: CLI task dependencies (PR #113)
 
 The dependency graph existed in the model (#106) and the scheduler (#109), but the **CLI** couldn't express it — blockers could only be set from the web. Theme D adds the CLI surface, closing the last build slice of Phase 27 (only the Theme C web UI affordances remain). `cli` + `gateway` only.

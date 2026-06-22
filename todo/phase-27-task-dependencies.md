@@ -46,20 +46,20 @@ Make the tick respect the graph, keeping the existing priority+age ordering. **L
 
 ---
 
-## Theme C — Dependencies in the UI (web) — **M**
+## Theme C — Dependencies in the UI (web) — **M** — ✅ DONE (PR #114)
 
 Express and see the graph; "blocked" is derived, not a new status (Decision §2).
 
-- [ ] **Set/edit blockers** — a dependency picker in the new-task modal ([`new-task-modal.tsx`](../packages/web/components/new-task-modal.tsx)) and the task thread: choose blocker task(s); inline validation surfaces cycle/self errors from the service.
-- [ ] **Derived "blocked" affordance** — a **"blocked by N"** chip on cards for tasks with unmet blockers (visually locked/dimmed until ready); the task stays in its column (no status change). Readiness comes from the derived `dependsOn` + blocker states.
-- [ ] **Blocker list in the thread** — show each blocker with its status + a link; show **dependents** ("blocks: …") too. A small dependency view (list is fine; a graph is a nice-to-have, not required).
-- [ ] **Manual start respects deps** (Decision §4): starting a blocked task from the board **warns** and requires confirmation (human override allowed — manual intent), while the scheduler auto-skips. Don't silently run a blocked task without acknowledgement.
+- [x] **Set/edit blockers** — a `TaskPicker` combobox in the new-task modal ([`new-task-modal.tsx`](../packages/web/components/new-task-modal.tsx), single mode) and the task thread's new **Dependencies** section: choose blocker task(s); the service's cycle / self-reference / unknown-task errors surface inline (`depError`).
+- [x] **Derived "blocked" affordance** — a **"Blocked by N"** chip ([`blocked-badge.tsx`](../packages/web/components/blocked-badge.tsx)) on cards (board + abandoned) and rows (list/table), visually dimmed; the task stays in its column. Count is the unmet-blocker count from pure helpers ([`task-dependencies.ts`](../packages/web/lib/task-dependencies.ts)) computed over the *full* list (a filtered-out blocker still counts), mirroring the scheduler's `done`-only rule.
+- [x] **Blocker list in the thread** — each blocker shown with its status (done/pending) + remove; a read-only **"Blocks"** list of dependents (`dependentsOf`).
+- [x] **Manual start respects deps** (Decision §4): starting a blocked task from the board (drag/Start) **and** the thread Start **warns + requires confirmation** (human override allowed); the scheduler auto-skips. Doesn't silently run a blocked task.
 
 ---
 
 ## Theme D — CLI + coverage — **S** — ✅ DONE (PR #113)
 
-**Landed — see [done.md](done.md). Only the Theme C web UI affordances remain to fully close Phase 27.**
+**Landed — see [done.md](done.md). With Theme C (PR #114), Phase 27 is COMPLETE (A–D).**
 
 - [x] **`midnite add --depends-on <id>`** (repeatable) in the CLI ([`cli/src/index.ts`](../packages/cli/src/index.ts)) — thin: parse → typed client (repeatable multipart `dependsOn` fields). Rejected alongside `--bulk` (a blocker graph is per-task, not a batch default). Unknown/cyclic ids error clearly — the create path now maps `TaskDependencyError` → 4xx (was a 500). Also **`midnite block <id> --on <blockerId>`** / **`unblock <id> --on <blockerId>`** — thin POST/DELETE to `/tasks/:id/dependencies`.
 - [x] **End-to-end tests** covering: cycle rejection (400/409 — controller dependency-route tests + new create→400), ready-computation + edge cleanup on delete ([`tasks.dependencies.spec.ts`](../packages/gateway/src/tasks/tasks.dependencies.spec.ts)), scheduler skips blocked + runs in dependency order + blocker-done unblocks + abandoned-blocker holds (Phase 27 B [`agent-pool.integration.spec.ts`](../packages/gateway/src/pool/agent-pool.integration.spec.ts)). Theme D adds the CLI client tests (repeatable `dependsOn`, add/remove endpoints, 409 cycle message surfaced).
