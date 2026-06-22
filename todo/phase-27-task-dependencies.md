@@ -35,14 +35,14 @@ The blocker graph and its integrity rules.
 
 ---
 
-## Theme B — Dependency-aware scheduling (gateway) — **M**
+## Theme B — Dependency-aware scheduling (gateway) — **M** — ✅ DONE (PR #109)
 
-Make the tick respect the graph, keeping the existing priority+age ordering.
+Make the tick respect the graph, keeping the existing priority+age ordering. **Landed — see [done.md](done.md).**
 
-- [ ] **Ready-gating:** the scheduler selects from **ready** `todo` tasks only — a task is *ready* iff every `dependsOn` blocker is in a terminal **`done`** state. Replace the `listTasks('todo').find(...)` selection with the repository's ready-set query, preserving `desc(priority), asc(createdAt)` among ready tasks.
-- [ ] **Unblock-on-complete:** when a blocker reaches `done`, its dependents become eligible on the **next tick** automatically (the tick re-evaluates readiness — no new event needed); optionally emit `task.updated` for newly-unblocked dependents so the board chips refresh promptly.
-- [ ] **Abandoned-blocker policy** (Decision §3): a blocker that ends `abandoned` (not `done`) leaves its dependents **blocked**, surfaced clearly (a warning / "blocked by an abandoned task" state) with an explicit user action to drop the dead edge — rather than silently never-running. Confirm exact behaviour in the B PR.
-- [ ] Tests (`:memory:`): a 3-task chain runs in order; raising a mid-chain task's priority doesn't let it jump its blocker; completing a blocker releases its dependent next tick; an abandoned blocker holds its dependent.
+- [x] **Ready-gating:** the scheduler selects from **ready** `todo` tasks only — a task is *ready* iff every `dependsOn` blocker is in a terminal **`done`** state. The `listTasks('todo').find(...)` selection now reads the repository's ready-set query via `TasksService.listReadyTodoTasks()` (→ `TasksRepository.listReadyTodoTasks()`), preserving `desc(priority), asc(createdAt)` among ready tasks.
+- [x] **Unblock-on-complete:** when a blocker reaches `done`, its dependents become eligible on the **next tick** automatically (the tick re-evaluates readiness — no new event needed). The service also re-emits `task.updated` for the blocker's dependents (`notifyDependents`) so the board's "blocked by N" chip refreshes promptly.
+- [x] **Abandoned-blocker policy** (Decision §3/§4 — **hold + surface**): a blocker that ends `abandoned` (not `done`) is `!= 'done'`, so the ready-set query keeps its dependents **out** of scheduling (held, never silently run). Dependents are re-broadcast on the abandon transition so a derived "blocked by an abandoned task" state can surface; the explicit "drop the dead edge" action is the existing `removeDependency` (Theme A). The richer warning UI is Theme C.
+- [x] Tests (`:memory:`): a 3-task chain runs in order; raising a mid-chain task's priority doesn't let it jump its blocker; completing a blocker releases its dependent next tick (and emits its `task.updated`); an abandoned blocker holds its dependent. (Scheduler unit + pool integration specs.)
 
 ---
 
