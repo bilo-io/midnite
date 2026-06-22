@@ -2,12 +2,12 @@
 
 > React kanban with live WS; xterm.js terminals embedded per task.
 
-> **Status (2026-06-19): functionally complete**, with one deviation: server-state sync uses **custom polling hooks + manual cache invalidation**, not TanStack Query or a `task.*` WS subscription. The board stays live, but coarsely (poll/refetch) rather than event-driven. See [phase-1-board.md](phase-1-board.md) for the missing task WS broadcast.
+> **Status (2026-06-22): complete**, with one remaining deviation in *how* sync is implemented: server-state lives in **custom polling hooks**, not **TanStack Query**. The `task.*` WS subscription is now in place (**Phase 7 A6**, `e2b9b73`) — `useTaskEvents` subscribes to `/ws/tasks` and the board is event-driven (an event triggers `invalidateData()` → immediate refetch, with polling kept only as a fallback). The deviation is that events drive a coarse invalidate-and-refetch rather than patching a normalized client store. See [phase-1-board.md](phase-1-board.md).
 
 ## Web
 
 - [ ] TanStack Query setup, REST client pointed at the gateway — _NOT as specified; custom `useApiData`/`usePolling` hooks + `invalidateData()` pub/sub instead ([`web/lib/data-refresh.ts`](../packages/web/lib/data-refresh.ts), [`web/lib/api.ts`](../packages/web/lib/api.ts))_
-- [ ] WebSocket subscription, store synced via `task.*` events — _NOT IMPLEMENTED; relies on polling/invalidation_
+- [x] WebSocket subscription, store synced via `task.*` events — **DONE (Phase 7 A6, `e2b9b73`).** [`useTaskEvents`](../packages/web/hooks/use-task-events.ts) subscribes to `/ws/tasks` (capped-backoff reconnect), mounted app-wide via [`LiveData`](../packages/web/components/live-data.tsx) in [`(main)/layout.tsx`](../packages/web/app/(main)/layout.tsx). _Sync model: an event triggers `invalidateData()` (coarse refetch) + a client fan-out ([`task-events.ts`](../packages/web/lib/task-events.ts)) rather than patching a normalized store — polling remains as a fallback._
 - [x] Kanban board (`@dnd-kit/core`) — drag cards across the status columns, optimistic update + rollback — [`web/components/board-view.tsx`](../packages/web/components/board-view.tsx)
 - [x] Task card: title, repo, status, priority/project badges, PR link when present
 - [x] Embedded `xterm.js` terminal with a **2-way** WS stream to a gateway-spawned PTY — live session window for active sessions (`use-terminal-socket` + `live-terminal` + `session-terminal`); static transcript kept for completed/idle
