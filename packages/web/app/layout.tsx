@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import localFont from 'next/font/local';
 import './globals.css';
 import { ConfirmProvider } from '@/components/confirm-dialog';
+import { PwaRegister } from '@/components/pwa-register';
 import { ToastProvider } from '@/components/toast';
 import { ThemeProvider } from './theme/theme-context';
 import { themeInitScript } from './theme/theme-script';
@@ -83,6 +84,7 @@ const fontVariables = [
 export const metadata: Metadata = {
   title: 'midnite',
   description: 'Multitask coding agents',
+  applicationName: 'midnite',
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
@@ -92,6 +94,13 @@ export const metadata: Metadata = {
     apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
   },
   manifest: '/site.webmanifest',
+  // Installed-PWA chrome on iOS: launch standalone (no Safari UI), a dark status
+  // bar to match the app's default surface, and the app name on the home screen.
+  appleWebApp: {
+    capable: true,
+    title: 'midnite',
+    statusBarStyle: 'black-translucent',
+  },
 };
 
 // Phase 24 (responsive/PWA): make the layout phone-aware. `width=device-width`
@@ -115,6 +124,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body className="min-h-screen bg-background text-foreground">
+        <PwaRegister />
         <ThemeProvider>
           <ToastProvider>
             <ConfirmProvider>{children}</ConfirmProvider>

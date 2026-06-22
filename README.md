@@ -56,7 +56,7 @@ curl http://localhost:7777/health   # → {"ok":true}
 - **Toolchain:** [proto](https://moonrepo.dev/proto) (pins node/pnpm) + [moon](https://moonrepo.dev) (task graph, caching, affected-only builds) + pnpm workspaces.
 - **Gateway** ([`packages/gateway`](packages/gateway)): **Nest.js** with the **Fastify** adapter, SQLite via **better-sqlite3 + Drizzle**, WebSockets via `@nestjs/platform-ws`.
 - **CLI** ([`packages/cli`](packages/cli)): **commander**.
-- **Web** ([`packages/web`](packages/web)): **Next.js** App Router (React 19). `@dnd-kit` for the kanban + `xterm.js` for embedded agent terminals (Phase 3).
+- **Web** ([`packages/web`](packages/web)): **Next.js** App Router (React 19). `@dnd-kit` for the kanban + `xterm.js` for embedded agent terminals (Phase 3). Responsive and **installable as a PWA** (Phase 24) — "Add to home screen" from Settings → Appearance launches a standalone window with a cached shell for a fast start. It's an installable *shell*, not an offline app: the board/session data is still live from the gateway. Reaching it from a phone uses your own network path (LAN / Tailscale / tunnel) — the gateway stays **loopback-only**, so exposing it beyond `127.0.0.1` is the separate, deferred Phase 7 A5 work.
 - **Shared** ([`packages/shared`](packages/shared)): **zod** config schema + cross-package types (the only place those live).
 - **Process spawning** (Phase 2): `node-pty` for managed sessions, behind a pluggable `Spawner` (Phase 17) — a durable `tmux` backend whose sessions survive a gateway restart is opt-in via `terminal.mode`.
 
