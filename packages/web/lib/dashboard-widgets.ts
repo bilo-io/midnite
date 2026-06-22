@@ -10,6 +10,7 @@ import {
   Clock,
   CloudSun,
   Cpu,
+  FolderGit2,
   FolderKanban,
   Globe,
   HeartPulse,
@@ -58,6 +59,7 @@ export type WidgetType =
   | 'memories'
   | 'agents'
   | 'councils'
+  | 'repo-status'
   // live activity
   | 'activity'
   | 'throughput'
@@ -279,6 +281,13 @@ export const DASHBOARD_WIDGETS: Record<WidgetType, WidgetMeta> = {
   memories: { label: 'Recent memories', description: 'Most recently updated agent memories', icon: Brain, category: 'agents', sizes: panelSizes },
   agents: { label: 'Agent pool', description: 'Primary agent, model and sub-agents', icon: Bot, category: 'agents', sizes: mediumSizes },
   councils: { label: 'Councils', description: 'Your councils and their participants', icon: Users, category: 'agents', sizes: panelSizes },
+  'repo-status': {
+    label: 'Per-repo status',
+    description: 'In-flight agents and queue depth per repo',
+    icon: FolderGit2,
+    category: 'agents',
+    sizes: mediumSizes,
+  },
 
   // — live activity —————————————————————————————————————————————————
   activity: { label: 'Activity feed', description: 'Recent task status changes', icon: Activity, category: 'activity', sizes: panelSizes },

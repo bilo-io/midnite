@@ -33,6 +33,7 @@ import { WorkflowsWidget } from './workflows-widget';
 import { MemoriesWidget } from './memories-widget';
 import { AgentsWidget } from './agents-widget';
 import { CouncilsWidget } from './councils-widget';
+import { RepoStatusWidget } from './repo-status-widget';
 import { ActivityWidget } from './activity-widget';
 import { ThroughputWidget } from './throughput-widget';
 import { HealthWidget } from './health-widget';
@@ -423,6 +424,8 @@ export function DashboardGrid({
         return { node: <AgentsWidget /> };
       case 'councils':
         return { node: <CouncilsWidget /> };
+      case 'repo-status':
+        return { node: <RepoStatusWidget /> };
 
       // — live activity —
       case 'activity':
