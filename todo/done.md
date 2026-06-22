@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 4: infer target repo at task creation (PR #88) — closes outstanding #5
+
+Repos went first-class + DB-backed in Phase 13, but nothing ever *set* `task.repo` automatically — a user had to pick it. With #4 done, the planner now guesses it, completing the repos-first-class story (the agent's PTY opens in the right repo unattended).
+
+- [x] **`PlannerService.guessRepo(prompt, manifest)`** ([`agent/planner.service.ts`](../packages/gateway/src/agent/planner.service.ts)): guesses the target repo on the plan model from the registry manifest (name + path). Picks from an **enum of known names (+ `""`)** and **validates the result against the manifest** — can't introduce a dangling reference (the Phase 13 B2 anti-footgun). **Fail-soft** like `triage`/`answer` (AI-off / error / empty registry / no clear match → `null`); a **single** registered repo is returned without an LLM call.
+- [x] **`TasksService.createFromPrompt`**: guesses **only when the caller named no repo** (`input.repo === undefined`) — an explicit blank stays "unassigned", an explicit name wins and short-circuits the guess. Runs **concurrently** with classify/triage; records `repoInferred` + the chosen repo on the `task.created` event for audit. Bulk add inherits it per-line for free.
+- [x] **No wire change** — gateway-internal; `task.repo` already exists. Tests: 7 planner cases + 3 service cases. `:typecheck`/`:lint`/`gateway:test` green; CI green (the only local failure is the pre-existing sandbox-only `tmux` spawner-contract spec, untouched here).
+
 ## 2026-06-22 — Phase 29 Theme C: `/release-prep` skill + conventional-commit categorisation (PR #87)
 
 The policy half of Phase 29 was done (A: RELEASING.md + version-sync tooling; B: CHANGELOG). This lands the analysis-and-prepare half of the two-step release flow. `version.ts` only consumes an already-categorised `ChangeSet`, so the genuinely-new, decision-bearing logic — and the only part a prose skill can't unit-test — is turning commits into that change set. It lives in a tested helper per CLAUDE.md ("skills orchestrate; they don't hide business logic").

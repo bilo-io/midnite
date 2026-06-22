@@ -12,7 +12,7 @@ This list was unchecked by design at authoring (2026-06-19); tick items as they 
 | 2 | Bulk / paste add | 4 | S–M | — |
 | 3 | URL + GitHub-context inference | 4 | M | — |
 | 4 | Make `repos` first-class | 4 / 5 | S–M | — |
-| 5 | Repo guessing in inference | 4 | S | #4 |
+| 5 | ✅ Repo guessing in inference — PR #88 | 4 | S | #4 |
 | 6 | Inline answers for questions | 4 | M | — |
 | 7 | Knowledge-dir watcher (chokidar) + MD injection | 4 | M | — |
 | 8 | Per-repo concurrency caps | 5 | M | #4 |
@@ -82,13 +82,11 @@ This list was unchecked by design at authoring (2026-06-19); tick items as they 
 
 ## 5. Repo guessing in inference (Phase 4)
 
-- [ ] **Not started**
+- ✅ **DONE — PR #88.** `PlannerService.guessRepo` picks the target repo from the DB-backed registry (Phase 13) on the plan model when a task is created without an explicit one; persisted to `task.repo`.
 
-**Goal:** the plan model picks the target repo from `config.repos` for each task.
+**As built:** the planner is handed the registry manifest (name + path) and returns a name validated against it (an enum + post-check, so the model can't introduce a dangling reference). Fail-soft like triage/answer (AI-off / error / no clear match → unassigned); a single registered repo is chosen without an LLM call; an explicit caller repo still wins and short-circuits the guess. `repoInferred` is recorded on the `task.created` event for audit.
 
-**Where:** extend the planner prompt to include the repo manifest and return a repo name; persist to `tasks.repo`.
-
-**Effort:** S. **Depends on #4.**
+**Effort:** S. **Was blocked on #4** (repo registry), now done.
 
 ---
 
