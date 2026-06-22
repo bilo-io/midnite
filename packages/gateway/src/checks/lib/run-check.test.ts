@@ -1,12 +1,19 @@
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 
 import { runCheck } from './run-check';
 
 const opts = { cwd: tmpdir(), defaultTimeoutMs: 5_000, outputCapBytes: 16_384 };
+const cleanup: string[] = [];
 
 describe('runCheck', () => {
+  afterAll(() => {
+    for (const dir of cleanup) rmSync(dir, { recursive: true, force: true });
+  });
+
   it('passes a zero-exit command and captures output', async () => {
     const r = await runCheck({ name: 'ok', command: 'echo hello' }, opts);
     expect(r).toMatchObject({ name: 'ok', exitCode: 0, passed: true });
@@ -39,6 +46,15 @@ describe('runCheck', () => {
     );
     expect(r).toMatchObject({ exitCode: null, passed: false });
     expect(r.output).toContain('failed to spawn');
+  });
+
+  it('runs in a repo-relative check.cwd resolved against opts.cwd', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'midnite-check-'));
+    mkdirSync(join(root, 'sub'));
+    cleanup.push(root);
+    const r = await runCheck({ name: 'pwd', command: 'pwd', cwd: 'sub' }, { ...opts, cwd: root });
+    expect(r.passed).toBe(true);
+    expect(r.output).toContain(join(root, 'sub'));
   });
 
   it('tail-truncates output to the configured cap', async () => {

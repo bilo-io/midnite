@@ -38,7 +38,7 @@ export const ChecksConfigSchema = z.object({
   autoFix: ChecksAutoFixConfigSchema.default({}),
   /** Timeout per check when a Check sets no `timeoutMs` (default 10 min). */
   perCheckTimeoutMs: z.number().int().positive().default(600_000),
-  /** Captured stdout+stderr is tail-truncated to this many bytes (default 16 KiB). */
+  /** Captured stdout+stderr is tail-truncated to ~this many bytes (+ a short marker; default 16 KiB). */
   outputCapBytes: z.number().int().positive().default(16_384),
 });
 export type ChecksConfig = z.infer<typeof ChecksConfigSchema>;

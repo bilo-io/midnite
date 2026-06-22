@@ -8,11 +8,14 @@ export type RunCheckOptions = {
   cwd: string;
   /** Timeout used when the check sets no `timeoutMs` of its own. */
   defaultTimeoutMs: number;
-  /** Tail-truncate combined stdout+stderr to this many bytes. */
+  /** Tail-truncate combined stdout+stderr to about this many bytes. */
   outputCapBytes: number;
 };
 
-/** Keep the last `cap` bytes of `text`, prefixed with a truncation note when cut. */
+/**
+ * Keep the last `cap` bytes of `text`, prefixed with a short truncation note when
+ * cut (so the result is `cap` bytes + the note — an approximate, not hard, cap).
+ */
 function capTail(text: string, cap: number): string {
   const buf = Buffer.from(text, 'utf8');
   if (buf.length <= cap) return text;
@@ -23,10 +26,12 @@ function capTail(text: string, cap: number): string {
 /**
  * Run one check to completion and report a structured {@link CheckResult}. The
  * command is run via `/bin/sh -c` so a normal shell command string works as
- * written. `spawn`'s own `timeout`/`killSignal` bounds the run — on timeout Node
- * SIGKILLs the child and `close` fires with a null exit code (→ `passed: false`).
- * We use `spawn` + a manual byte cap rather than `execFile`'s `maxBuffer`, so
- * large output is *truncated*, not turned into an error.
+ * written, in a **detached process group** so a timeout can kill the whole group
+ * (the shell *and* any child it forked — e.g. `sleep` — which would otherwise
+ * keep the output pipes open and stall `close`). On timeout the group is SIGKILL'd
+ * and the result resolves immediately (`passed: false`, `exitCode: null`). We use
+ * `spawn` + a manual byte cap rather than `execFile`'s `maxBuffer`, so large output
+ * is *truncated*, not turned into an error.
  *
  * **Never rejects**: a spawn failure (e.g. a missing cwd) or a timeout becomes a
  * failed result, so the gate path never sees an unhandled rejection.
@@ -60,15 +65,22 @@ export function runCheck(check: Check, opts: RunCheckOptions): Promise<CheckResu
 
     let child;
     try {
-      child = spawn('/bin/sh', ['-c', check.command], {
-        cwd,
-        timeout: timeoutMs,
-        killSignal: 'SIGKILL',
-      });
+      child = spawn('/bin/sh', ['-c', check.command], { cwd, detached: true });
     } catch (err) {
       finish(null, `failed to spawn: ${(err as Error).message}`);
       return;
     }
+
+    const timeout = setTimeout(() => {
+      // Kill the whole process group (negative pid) so a forked grandchild dies
+      // too and doesn't hold the pipes open past `close`.
+      try {
+        if (child.pid) process.kill(-child.pid, 'SIGKILL');
+      } catch {
+        // Already exited — nothing to kill.
+      }
+      finish(null, `\n[killed: exceeded ${timeoutMs}ms timeout]`);
+    }, timeoutMs);
 
     const append = (chunk: Buffer): void => {
       output += chunk.toString('utf8');
@@ -77,13 +89,13 @@ export function runCheck(check: Check, opts: RunCheckOptions): Promise<CheckResu
     child.stderr?.on('data', append);
 
     // Async spawn failures (missing cwd → ENOENT, etc.).
-    child.on('error', (err) => finish(null, `failed to spawn: ${err.message}`));
-    child.on('close', (code, signal) => {
-      if (code === null) {
-        finish(null, `\n[killed${signal ? ` (${signal})` : ''}: exceeded ${timeoutMs}ms timeout]`);
-      } else {
-        finish(code);
-      }
+    child.on('error', (err) => {
+      clearTimeout(timeout);
+      finish(null, `failed to spawn: ${err.message}`);
+    });
+    child.on('close', (code) => {
+      clearTimeout(timeout);
+      finish(code);
     });
   });
 }
