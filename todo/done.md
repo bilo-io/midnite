@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 27 Theme A: task dependency model (PR #106)
+
+The agent pool ran tasks independently — no way to say "B can't start until A ships". This adds the blocker-graph substrate (model + integrity); ready-gated scheduling (Theme B) and UI/CLI (C/D) build on it. **No new status** — "blocked" stays *derived* from the edges + blocker states (Decision §2).
+
+- [x] **A1 — model:** `task_dependencies` edge table (`task_id` → `depends_on_task_id`, composite PK + reverse index) via forward-only migration `0036`. Repository `addDependency`/`removeDependency`/`dependenciesOf`/`dependentsOf` + `listReadyTodoTasks()` — the **ready-set** SQL (`todo` whose every blocker is `done`, correlated `NOT EXISTS`, keeping `desc(priority), asc(createdAt)`) that backs Theme B. `hydrate` derives `dependsOn`; `deleteTask` clears edges both directions (dependents unblock).
+- [x] **A2 — contract (`shared`):** optional `dependsOn` on the task read shape + `CreateTaskRequest`, an `AddTaskDependencyRequest` body, a typed `TaskDependencyError` (reason: self-reference | cycle | unknown-task). `.optional()` to match `links`/`attachments` (gateway always populates on read).
+- [x] **A3 — integrity + routes:** `tasks.service` rejects self-reference / unknown blocker / **cycle** (DFS over edges, mirroring the workflow-engine reachability check); `createFromPrompt` validates + attaches blockers. `POST`/`DELETE /tasks/:id/dependencies` map `TaskDependencyError` → 400 (self/unknown) / 409 (cycle).
+- [x] Tests: integration spec (add/self/unknown/cycle/diamond/remove, create-with-deps, delete cleanup + unblock, ready-set), controller 400/409 mapping, shared contract. `:typecheck`/`:lint`/`:test` (gateway 108 files · shared 406 · cli 34 · web 74) + CI green. CLAUDE.md documents the model. **Themes B/C/D remain.**
+
+---
+
 ## 2026-06-22 — Phase 20 Theme D: dedicated /search page (PR #105) — **Phase 20 COMPLETE**
 
 The "see everything" surface — the last theme of global search (substrate A/B #90, palette C #96 already shipped). The palette caps each type with a "+N more" that now has a destination.
