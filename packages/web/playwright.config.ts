@@ -93,9 +93,9 @@ export default defineConfig({
       testMatch: '**/*.e2e.ts',
       use: { ...devices['Desktop Chrome'] },
     },
-    // Deterministic screenshot capture (Theme E1): the `*.shots.ts` specs. A
-    // fixed 1440×900 viewport + reduced-motion so captures don't shift between
-    // runs; the spec also pins the clock and stubs external widgets. Shares the
+    // Deterministic screenshot capture (Theme E1): the `*.shots.ts` specs at a
+    // fixed 1440×900 viewport. The spec itself forces reduced motion (via
+    // page.emulateMedia), pins the clock, and stubs external widgets. Shares the
     // same webServer — run it on its own with `moon run web:screenshots`.
     {
       name: 'screenshots',
@@ -103,7 +103,6 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         viewport: { width: 1440, height: 900 },
-        reducedMotion: 'reduce',
       },
     },
   ],

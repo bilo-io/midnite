@@ -43,10 +43,11 @@ for (const theme of THEMES) {
 
     test.beforeEach(async ({ page }) => {
       await freezeForCapture(page, theme);
-      // Force reduced-motion at the page level (the project `use` sets it too, but
-      // assert it here so it's unmissable): the app's typewriter header + page-reveal
-      // honour `prefers-reduced-motion` and render their final state instantly, so a
-      // capture never lands mid-animation.
+      // Force reduced-motion at the page level: the app's typewriter header +
+      // page-reveal honour `prefers-reduced-motion` and render their final state
+      // instantly, so a capture never lands mid-animation. (`reducedMotion` isn't
+      // accepted in a project's `use` in this Playwright version, so it's set
+      // here — the one place that actually drives the running page.)
       await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: theme });
       // Fix Date.now()/new Date() without pausing timers — clocks read stable,
       // but rAF/timer-driven UI (the office canvas) still animates and paints.
