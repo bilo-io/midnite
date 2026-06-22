@@ -4,6 +4,7 @@ import {
   URGENT_TOAST_MS,
   initialNotificationsState,
   notificationsReducer,
+  shouldRaiseBrowserNotification,
   toastForSeverity,
 } from './notifications-provider';
 
@@ -18,6 +19,27 @@ const notification = (over: Partial<Notification> = {}): Notification => ({
   readAt: null,
   createdAt: new Date().toISOString(),
   ...over,
+});
+
+describe('shouldRaiseBrowserNotification', () => {
+  const base = { notifyEnabled: true, permission: 'granted' as const, hidden: true };
+
+  it('raises only when opted in, permission granted, and the tab is hidden', () => {
+    expect(shouldRaiseBrowserNotification(base)).toBe(true);
+  });
+
+  it('does not raise when the opt-in is off', () => {
+    expect(shouldRaiseBrowserNotification({ ...base, notifyEnabled: false })).toBe(false);
+  });
+
+  it('does not raise without granted permission', () => {
+    expect(shouldRaiseBrowserNotification({ ...base, permission: 'default' })).toBe(false);
+    expect(shouldRaiseBrowserNotification({ ...base, permission: 'denied' })).toBe(false);
+  });
+
+  it('does not raise while the tab is visible (toast covers it)', () => {
+    expect(shouldRaiseBrowserNotification({ ...base, hidden: false })).toBe(false);
+  });
 });
 
 describe('notificationsReducer', () => {

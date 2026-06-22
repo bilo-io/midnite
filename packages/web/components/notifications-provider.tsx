@@ -18,7 +18,8 @@ import {
   getNotifications,
   markNotificationsRead,
 } from '@/lib/api';
-import { AppSettings, DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY } from '@/lib/app-settings';
+import type { AppSettings } from '@/lib/app-settings';
+import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY } from '@/lib/app-settings';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import { useToast } from '@/components/toast';
 
@@ -131,6 +132,21 @@ export function toastForSeverity(
 }
 
 /**
+ * Whether a created notification should raise a browser/OS notification: the user
+ * opted in (`notifyTaskUpdates`), the browser granted permission, and the tab is
+ * backgrounded — so we don't double up with the in-app toast while they're looking
+ * at the app. Pure so the gate (the behaviour that replaced the old task-event
+ * hook) is unit-testable without a DOM.
+ */
+export function shouldRaiseBrowserNotification(opts: {
+  notifyEnabled: boolean;
+  permission: NotificationPermission;
+  hidden: boolean;
+}): boolean {
+  return opts.notifyEnabled && opts.permission === 'granted' && opts.hidden;
+}
+
+/**
  * Live notification center wiring: fetch the persisted feed on mount, then keep
  * it current from the gateway's `/ws/notifications` socket (mirrors
  * {@link useTaskEvents}: subscribe frame, validate with `NotificationEventSchema`,
@@ -180,10 +196,16 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   // while the user is looking at the app).
   const maybeRaiseBrowserNotification = useCallback((n: Notification) => {
     const { notifyEnabled: enabled, router: r } = handlerDeps.current;
-    if (!enabled) return;
     if (typeof window === 'undefined' || !('Notification' in window)) return;
-    if (Notification.permission !== 'granted') return;
-    if (!document.hidden) return;
+    if (
+      !shouldRaiseBrowserNotification({
+        notifyEnabled: enabled,
+        permission: Notification.permission,
+        hidden: document.hidden,
+      })
+    ) {
+      return;
+    }
     try {
       const browserNotification = new Notification(n.title, {
         body: n.body,
@@ -198,6 +220,11 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       // construction can throw if blocked; ignore
     }
   }, []);
+
+  // Route the (stable) raiser through a ref so the socket effect can run once
+  // (`[]` deps, like use-task-events) and never churn if the callback gains deps.
+  const maybeRaiseRef = useRef(maybeRaiseBrowserNotification);
+  maybeRaiseRef.current = maybeRaiseBrowserNotification;
 
   // The live socket — mounted once, mirrors use-task-events.
   useEffect(() => {
@@ -234,7 +261,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
             const { notification } = parsed.data;
             dispatch({ type: 'created', notification });
             toastForSeverity(handlerDeps.current.toast, notification.severity, notification.title);
-            maybeRaiseBrowserNotification(notification);
+            maybeRaiseRef.current(notification);
           }
         } catch {
           // ignore unparseable frames
@@ -263,7 +290,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
         // already closing
       }
     };
-  }, [maybeRaiseBrowserNotification]);
+  }, []);
 
   const markRead = useCallback((ids: string[]) => {
     if (ids.length === 0) return;
