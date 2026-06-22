@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 5 reconciled & closed ✅ — **Phase 5 COMPLETE**
+
+Phase 5 ("Polish") had sat ⚠️ PARTIAL since 2026-06-19 with six open boxes, but every one had since been resolved by a later phase or deliberately dropped — the doc just hadn't been reconciled. Verified each against the code and closed the phase (docs-only; no behaviour change):
+
+- [x] **`TmuxSpawner`** → done via **Phase 17 B** (PR #77): pluggable `Spawner` interface + durable `tmux` backend that survives a gateway restart. Verified [`terminal/spawner/spawner.ts`](../packages/gateway/src/terminal/spawner/spawner.ts) + [`tmux-spawner.ts`](../packages/gateway/src/terminal/spawner/tmux-spawner.ts).
+- [x] **`WarpSpawner` / `ItermSpawner`** → ❌ dropped in **Phase 17 C1** (PR #77): `terminal.mode` pruned to `pty | tmux` (verified [`config.ts`](../packages/shared/src/config.ts)). Native terminal windows don't compose with the gateway-owned browser PTY stream (outstanding.md #10).
+- [x] **Per-repo branch naming + PR-template injection** → done via **Phase 13** (PR #74): `branchPrefix`/`prTemplate` per-repo fields, injected into the agent seed prompt by [`pool/lib/build-agent-prompt.ts`](../packages/gateway/src/pool/lib/build-agent-prompt.ts) under a "Repository conventions" section (verified). Landed on the DB-backed repo registry rather than raw `RepoConfig`.
+- [x] ⏳ **Suspend `waiting` sessions** → deliberately deferred: `waitingHoldsSlot` defaults `true` (verified [`config.ts`](../packages/shared/src/config.ts)); the conservative behaviour, revisit only under real slot pressure.
+- [x] Priorities, retries, per-repo caps, eslint/prettier, CI, and the Vitest suites had already shipped in Phase 5 itself.
+
+Phase 5's status is now ✅ COMPLETE; outstanding.md #8/#9/#10 were already ticked, #12 stays deferred. No code changed — `moon ci` trivially green (no packages affected).
+
 ## 2026-06-22 — Phase 7 Theme C: quick-capture dashboard widget (PR #91)
 
 The last open Theme C widget (LLM-usage + Shipped already shipped): add a task — or paste a list — without leaving the dashboard. A *placeable* grid widget (addable/removable/positionable from the catalogue), distinct from the always-on bottom prompt composer.
