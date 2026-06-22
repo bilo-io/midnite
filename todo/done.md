@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 3: serve the web static export from the gateway (PR #93)
+
+Closes Phase 3's last real gap: a single process can serve both the API and the browser UI in prod. The web app is a Next `output: 'export'` bundle (fully static, multi-page; all data fetched client-side; the `[id]` dirs are colocated components, not routes), so this needed no SSR / SPA-fallback / proxy — just a static mount mirroring `/uploads/`.
+
+- [x] **`gateway.webDir`** config field ([`shared/src/config.ts`](../packages/shared/src/config.ts)) + `MIDNITE_WEB_DIR` env override ([`gateway/lib/load-config.ts`](../packages/gateway/src/lib/load-config.ts)). Optional — unset = off (dev keeps the standalone `next` server), so no default behaviour change.
+- [x] **[`lib/serve-web.ts`](../packages/gateway/src/lib/serve-web.ts)** — `registerWebStatic` mounts the export at `/` via `@fastify/static` (`decorateReply: false`, like `/uploads/`); returns `{ served, root }`. bootstrap wires it when `webDir` is set. Controllers' specific routes (`/tasks`, `/search`, `/uploads/…`) keep priority over the `/*` file mount; the terminal WS upgrade isn't a GET route.
+- [x] **Integration test** ([`serve-web.test.ts`](../packages/gateway/src/lib/serve-web.test.ts), 4 tests): boots Fastify against a temp export — `/` + nested `/board/` + `/_next/*` served, a specific API route still wins, missing path 404s, relative `webDir` resolves to an absolute root.
+- [x] README documents `webDir` / `MIDNITE_WEB_DIR` + the build-then-serve flow. `:typecheck`/`:lint`/`gateway:test` (668) + `moon ci` green first try; independent review found no bugs (its return-value + coverage tidy applied). Phase 3's only remaining open item is the TanStack-Query setup — a recorded deliberate deviation (custom hooks ship instead).
+
 ## 2026-06-22 — Phase 5 reconciled & closed ✅ — **Phase 5 COMPLETE**
 
 Phase 5 ("Polish") had sat ⚠️ PARTIAL since 2026-06-19 with six open boxes, but every one had since been resolved by a later phase or deliberately dropped — the doc just hadn't been reconciled. Verified each against the code and closed the phase (docs-only; no behaviour change):

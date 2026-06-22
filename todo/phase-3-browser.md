@@ -16,7 +16,7 @@
 ## Gateway support
 
 - [x] Live terminal stream — `WS /ws/terminal` (platform-ws `WsAdapter` on the Fastify server) with a bounded ring buffer for scrollback replay; per-session token via `POST /sessions/:id/terminal-token`. On-demand PTY spawn, reattach, idle reap, shutdown cleanup. (Replaces the originally-sketched `GET /tasks/:id/terminal/stream`.)
-- [ ] Serve the Next.js production build from the gateway in prod mode — **NOT IMPLEMENTED.** `bootstrap.ts` serves `/uploads/` static only; the web app runs as a separate Next.js server (and is also wrapped by the Electron desktop app).
+- [x] ✅ DONE (PR #93, 2026-06-22) — Serve the Next.js production build from the gateway in prod mode. `gateway.webDir` (or `MIDNITE_WEB_DIR`) points at the static export (`packages/web/out`); [`lib/serve-web.ts`](../packages/gateway/src/lib/serve-web.ts) mounts it at `/` via `@fastify/static` (mirroring `/uploads/`), so one process serves API + UI in prod. Off unless set (dev keeps the standalone `next` server). The export is fully static, so the controllers' specific routes keep priority over the `/*` file mount.
 
 ## Done criteria
 
