@@ -48,6 +48,9 @@ export const SHOT_PAGES: ShotPage[] = [
     path: '/dashboard',
     ready: async (page) => {
       await expect(page.getByRole('heading', { name: 'Dashboard', exact: true })).toBeVisible();
+      // The always-present prompt composer (fed the loaded project list) is the
+      // dashboard's stable anchor — same readiness signal the flow spec uses.
+      await expect(page.getByPlaceholder(/Add tasks, one per line/)).toBeVisible();
     },
   },
   {
@@ -55,6 +58,9 @@ export const SHOT_PAGES: ShotPage[] = [
     path: '/workflows',
     ready: async (page) => {
       await expect(page.getByRole('heading', { name: 'Workflows', exact: true })).toBeVisible();
+      // Wait for the gateway-backed empty state, not just the heading — the
+      // heading renders while data is still loading.
+      await expect(page.getByText('No workflows yet')).toBeVisible();
     },
   },
   {
@@ -62,6 +68,7 @@ export const SHOT_PAGES: ShotPage[] = [
     path: '/councils',
     ready: async (page) => {
       await expect(page.getByRole('heading', { name: 'Councils', exact: true })).toBeVisible();
+      await expect(page.getByText('No councils yet')).toBeVisible();
     },
   },
   {

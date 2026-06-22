@@ -30,8 +30,9 @@ export class ProviderCredentialsRepository implements OnApplicationBootstrap {
     }
   }
 
-  // onApplicationBootstrap (not the constructor) so DbModule.onModuleInit has run
-  // the migrations before we touch the table for the one-time re-encrypt pass.
+  // onApplicationBootstrap (not the constructor) so the store is fully
+  // initialised before the one-time re-encrypt pass touches the table.
+  // (Migrations run when the DB handle is built — DbFactory — before any hook.)
   onApplicationBootstrap(): void {
     this.upgradePlaintextKeys();
   }
