@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 11 B3: global reduced-motion catch-all for the public site (PR #95)
+
+Closed out Phase 11's reduced-motion acceptance. B3's perf items (cap DPR / pause rAF) were already **moot** — the WebGL particle field was removed in PR #68 for a static CSS `AmbientBackdrop` — so the remaining gap was motion *coverage*: the site disabled its named keyframe animations one-by-one (reveal/gradient-border/panel-glow/caret) and gated JS motion (typewriter, panel FLIP) via `lib/reduced-motion.ts`, but the many component **transitions** (hover/layout/colour) and smooth-scroll weren't covered.
+
+- [x] Added a **global `@media (prefers-reduced-motion: reduce)` catch-all** to [`packages/site/app/globals.css`](../packages/site/app/globals.css): floors `animation-duration`/`transition-duration` to ~instant for `*`, caps `animation-iteration-count`, and forces `scroll-behavior: auto` — a belt-and-suspenders floor so current transitions and any future animation degrade safely, complementing the existing targeted rules + JS guards.
+- [x] Verified against `moon run site:dev` under Playwright's emulated reduced-motion: the at-rest landing render is pixel-identical to normal (byte-identical screenshots) → fully usable, nothing hidden/broken. Screenshot committed under `docs/screenshots/site-reduced-motion/`.
+- [x] Reconciled the Phase 11 acceptance checklist: ticked the reduced-motion item; marked the particle-field item ❌ superseded by PR #68. `site:typecheck`/`:lint`/`site:test` (19) green.
+
 ## 2026-06-22 — Phase 3: serve the web static export from the gateway (PR #93)
 
 Closes Phase 3's last real gap: a single process can serve both the API and the browser UI in prod. The web app is a Next `output: 'export'` bundle (fully static, multi-page; all data fetched client-side; the `[id]` dirs are colocated components, not routes), so this needed no SSR / SPA-fallback / proxy — just a static mount mirroring `/uploads/`.

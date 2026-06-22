@@ -160,12 +160,12 @@ A scroll/section controller (Theme D) is the single source of truth for "which s
   - [ ] One **persistent panel** travels and **resizes** (width *and* height) smoothly between sections; it always shows the **three Mac dots**; its content swaps per section with a cross-fade.
   - [ ] Hero: app icon + logo present; the centred grid-card-sized panel; the headline **cycles through 3 typed title/subtitle pairs**.
   - [ ] Each section's **title + subtitle type out quickly**, then other elements **fade in**; complementary text sits outside the panel.
-  - [ ] The **particle field follows the cursor** and its **style shifts smoothly** between sections; recolours on theme change.
+  - [x] ❌ SUPERSEDED (PR #68) — the WebGL **particle field** (cursor-follow + per-section style) was **removed** and replaced by a static CSS `AmbientBackdrop`; this acceptance item no longer applies. Revisit if the 3D field is ever restored.
   - [ ] **Theme toggle** works (light/dark/system/time), matches the web app, and persists; no flash on reload.
   - [ ] Some sections show a **typed terminal command**; others show a **web-app-inspired mockup** in the panel.
   - [ ] **Download page**: same platforms/links/behaviour as before, restyled elegantly; theming + particles consistent.
   - [ ] **Legal**: `/legal/privacy` and `/legal/eula` render placeholder markdown with a **sidebar** of all legal docs; footer links to them.
-  - [ ] **Reduced motion**: typing, particle drift, and panel morph all degrade to instant/static; the site is fully usable.
+  - [x] **Reduced motion** (PR #95, 2026-06-22): typing (`use-typewriter`) and the panel FLIP morph degrade via [`lib/reduced-motion.ts`](../packages/site/components/../lib/reduced-motion.ts); per-animation `@media (prefers-reduced-motion: reduce)` rules disable the named keyframes (reveal/gradient-border/panel-glow/caret); and a **global catch-all** in `globals.css` floors every transition + any future animation to ~instant and drops smooth-scroll. Particle drift is moot (field removed, PR #68). Verified against `site:dev` under emulated reduced-motion — the at-rest render is pixel-identical to normal, i.e. fully usable.
 - `moon run site:typecheck`, `moon run :lint`, `moon run :test` green; `moon run site:build` succeeds (static/SSR build clean).
 
 ## Decisions / open questions
