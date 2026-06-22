@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 7 A4: recovery audit — orphaned workflow runs + shutdown hooks (PR #99)
+
+Closed the two open A4 items. Both were invisible until a crash/restart:
+
+- [x] **Orphaned workflow runs.** Runs execute as in-process JS (no PTY/process), so a run still `running` after a restart was stuck forever — tasks requeue orphaned `wip` and councils fail stale runs, but workflows had no boot recovery. New `WorkflowRecoveryService.onModuleInit` fails every `running` run (sets `error: "gateway restarted mid-run"` + `finishedAt`), fails its in-flight (`running`) node-runs, and emits `run.failed` on the bus. Idempotent. Repo gained `listRunningRunRows()` + `failRunningNodeRuns()`.
+- [x] **Graceful shutdown.** `bootstrap.ts` never called `app.enableShutdownHooks()`, so Nest didn't listen for SIGINT/SIGTERM and **`onModuleDestroy` never ran on a normal exit** — the terminal service's PTY teardown (kill under `pty`, detach under `tmux`) and the schedulers' timer cleanup silently didn't fire, orphaning live PTYs. Added the call. Audit finding: managed agent-run PTYs are pinned handles in the terminal service's same teardown loop, so they were already covered — only the hooks were missing.
+- [x] Tests: 5-case `:memory:` spec for `WorkflowRecoveryService` (clean-boot no-op, stale→failed + event, node-run reconciliation, finished-runs untouched, cross-workflow sweep). `gateway:typecheck`/`lint` green; `gateway:test` 695 green; CI green on re-run (first run hit the pre-existing flaky `terminal` env-dump spec, unrelated).
+
 ## 2026-06-22 — Phase 7 Theme C: per-repo status dashboard widget (PR #97) — **Theme C COMPLETE**
 
 The last open Theme C widget (after LLM-usage, Shipped, Quick capture): how the fleet is spread across repos at a glance. Unblocked by repos-first-class (Phase 13).
