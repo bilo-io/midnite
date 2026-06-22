@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-06-22 — Phase 11 B3: global reduced-motion catch-all for the public site (PR #95)
+## 2026-06-22 — Phase 11 B3: global reduced-motion catch-all for the public site (PR #98)
 
 Closed out Phase 11's reduced-motion acceptance. B3's perf items (cap DPR / pause rAF) were already **moot** — the WebGL particle field was removed in PR #68 for a static CSS `AmbientBackdrop` — so the remaining gap was motion *coverage*: the site disabled its named keyframe animations one-by-one (reveal/gradient-border/panel-glow/caret) and gated JS motion (typewriter, panel FLIP) via `lib/reduced-motion.ts`, but the many component **transitions** (hover/layout/colour) and smooth-scroll weren't covered.
 
