@@ -21,7 +21,9 @@ export function panelRectFor(placement: PanelPlacement, vw: number, vh: number):
   if (placement === 'hero') {
     const width = clamp(vw * 0.34, 300, 420);
     const height = clamp(width * 0.66, 200, 300);
-    return { x: (vw - width) / 2, y: clamp(vh * 0.5, 280, vh - height - 24), width, height };
+    // Sit low so the panel reads below the headline + CTAs (which now rise with
+    // the tightened hero spacing) instead of crowding them.
+    return { x: (vw - width) / 2, y: clamp(vh * 0.62, 360, vh - height - 24), width, height };
   }
 
   const width = clamp(vw * 0.42, 360, 580);

@@ -1,4 +1,4 @@
-import { Reveal } from '@/components/ui/section';
+import { Reveal, SideColumn } from '@/components/ui/section';
 import { TypedTitle } from '@/components/sections/typed-title';
 import { InlinePanel } from '@/components/panel/inline-panel';
 
@@ -32,16 +32,18 @@ const STEPS = [
 
 export function HowItWorks() {
   return (
-    <section id="how" className="relative z-10 mx-auto max-w-5xl px-6 py-28">
-      <TypedTitle
-        sectionId="how"
-        eyebrow="How it works"
-        title="From a messy list to merged work, on autopilot."
-      />
+    <section id="how" className="relative z-10 px-6 py-28">
+      {/* Panel sits right on this section → keep the static content in the left half. */}
+      <SideColumn side="left">
+        <TypedTitle
+          sectionId="how"
+          eyebrow="How it works"
+          title="From a messy list to merged work, on autopilot."
+        />
 
-      <InlinePanel content="kanban" className="mt-10" />
+        <InlinePanel content="kanban" className="mt-10" />
 
-      <ol className="mt-14 space-y-px">
+        <ol className="mt-14 space-y-px">
         {STEPS.map((step, i) => (
           <Reveal
             as="li"
@@ -60,7 +62,8 @@ export function HowItWorks() {
             </div>
           </Reveal>
         ))}
-      </ol>
+        </ol>
+      </SideColumn>
     </section>
   );
 }

@@ -21,7 +21,7 @@ export function Hero() {
   return (
     <section
       id="top"
-      className="relative flex min-h-[100svh] flex-col items-center overflow-hidden px-6 pb-16 pt-[16vh] text-center"
+      className="relative flex min-h-[100svh] flex-col items-center overflow-hidden px-6 pb-16 pt-[11vh] text-center"
     >
       {/* Faint engineering grid between the 3D backdrop and the copy. */}
       <div className="bg-grid pointer-events-none absolute inset-0 -z-0 opacity-60" />
@@ -30,7 +30,7 @@ export function Hero() {
         {/* Soft radial scrim: keeps the busy backdrop from sapping text contrast. */}
         <div className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[150%] w-[170%] -translate-x-1/2 -translate-y-1/2 bg-[radial-gradient(ellipse_at_center,hsl(var(--background)/0.78),hsl(var(--background)/0.4)_45%,transparent_70%)]" />
 
-        <div className="mb-6 flex items-center justify-center gap-3">
+        <div className="mb-4 flex items-center justify-center gap-3">
           <Image
             src="/logo.PNG"
             alt="midnite logo"
@@ -42,12 +42,15 @@ export function Hero() {
           <span className="font-brand text-2xl tracking-tight">midnite</span>
         </div>
 
-        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/40 px-3 py-1 text-xs text-muted-foreground backdrop-blur">
+        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/40 px-3 py-1 text-xs text-muted-foreground backdrop-blur">
           <span className="h-1.5 w-1.5 rounded-full bg-[#10b981] shadow-[0_0_8px_-1px_#10b981]" />
           A task orchestrator for Claude Code
         </div>
 
-        <h1 className="flex min-h-[2.3em] items-end justify-center text-balance text-5xl font-semibold leading-[1.05] tracking-tight sm:text-6xl md:text-7xl">
+        {/* min-h reserves a single line so the cycling title never shifts the copy
+            below it; capped at 6xl so each headline stays on one line within
+            max-w-3xl (no 2-line reservation gap opening above the title). */}
+        <h1 className="flex min-h-[1.25em] items-end justify-center text-balance text-5xl font-semibold leading-[1.05] tracking-tight sm:text-6xl">
           <span>
             <span className="text-gradient" aria-hidden="true">
               {title}

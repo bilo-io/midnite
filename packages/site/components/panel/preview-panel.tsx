@@ -20,11 +20,13 @@ function useViewport() {
   return vp;
 }
 
-// The morphing fixed panel is a desktop affordance; mobile uses the inline panel.
+// The morphing fixed panel is a desktop (≥ lg) affordance; below that the inline
+// panel stacks, so each section can keep its content in the half opposite the
+// panel without the tablet-width panel crowding it.
 function useIsDesktop() {
   const [desktop, setDesktop] = useState(false);
   useEffect(() => {
-    const mql = window.matchMedia('(min-width: 768px)');
+    const mql = window.matchMedia('(min-width: 1024px)');
     const update = () => setDesktop(mql.matches);
     update();
     mql.addEventListener('change', update);

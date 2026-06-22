@@ -1,4 +1,4 @@
-import { Reveal } from '@/components/ui/section';
+import { Reveal, SideColumn } from '@/components/ui/section';
 import { TypedTitle } from '@/components/sections/typed-title';
 
 type Line = { kind: 'cmd' | 'out' | 'muted'; text: string };
@@ -25,8 +25,11 @@ const color: Record<Line['kind'], string> = {
 
 export function CliShowcase() {
   return (
-    <section id="cli" className="relative z-10 mx-auto max-w-5xl px-6 py-28">
-      <div className="grid items-center gap-12 lg:grid-cols-2">
+    <section id="cli" className="relative z-10 px-6 py-28">
+      {/* Panel sits right on this section → keep the static content in the left half.
+          The fixed terminal panel is the desktop preview, so the inline terminal
+          card only renders below lg (where the panel stacks inline elsewhere). */}
+      <SideColumn side="left">
         <TypedTitle
           sectionId="cli"
           eyebrow="From the terminal"
@@ -38,7 +41,7 @@ export function CliShowcase() {
           </p>
         </TypedTitle>
 
-        <Reveal delay={120} className="gradient-border rounded-xl">
+        <Reveal delay={120} className="mt-10 gradient-border rounded-xl lg:hidden">
           <div className="overflow-hidden rounded-xl border border-border/70 bg-[#0b0b0f]/90 shadow-2xl backdrop-blur">
             <div className="flex items-center gap-2 border-b border-border/60 px-4 py-3">
               <span className="h-3 w-3 rounded-full bg-[#f43f5e]/70" />
@@ -65,7 +68,7 @@ export function CliShowcase() {
             </pre>
           </div>
         </Reveal>
-      </div>
+      </SideColumn>
     </section>
   );
 }
