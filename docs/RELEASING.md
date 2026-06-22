@@ -6,10 +6,11 @@ so cutting a release is deliberate, not a manual scramble. The curated, user-fac
 notes live in [`CHANGELOG.md`](../CHANGELOG.md); this file is the *policy*.
 
 > Status: the **versioning policy + the lockstep tooling** (this doc + the
-> version-sync helper + `version-check`), the **root changelog**, and the
-> **`/release-prep`** skill (Phase 29 Theme C) are in place. **`/release-complete`**
-> (Theme D) is the remaining slice — until it lands, finalise a prepped branch by
-> following the manual steps in §2 below.
+> version-sync helper + `version-check`), the **root changelog**, and **both
+> skills** — [`/release-prep`](../.claude/skills/release-prep/SKILL.md) (Theme C) and
+> [`/release-complete`](../.claude/skills/release-complete/SKILL.md) (Theme D) — are
+> in place. Phase 29's tooling is complete; what remains is cutting the first real
+> release (`v0.1.0`) as a deliberate run (Decision §7).
 
 ## Versioning rule — lockstep major.minor, independent patch
 
