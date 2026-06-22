@@ -213,6 +213,87 @@ describe('agent pool — completion frees the slot for the next task', () => {
   });
 });
 
+describe('agent pool — dependency-aware scheduling (Phase 27 Theme B)', () => {
+  /** Statuses carried by the task.updated events emitted for a task id, in order. */
+  function updatesFor(h: Harness, id: string): Status[] {
+    return h.events
+      .filter((e): e is Extract<TaskBoardEvent, { type: 'task.updated' }> => e.type === 'task.updated')
+      .filter((e) => e.task.id === id)
+      .map((e) => e.task.status);
+  }
+
+  it('runs a 3-task chain in dependency order, one blocker at a time', async () => {
+    const h = makeHarness({ pool: 2 }); // free slots remain — only readiness gates
+    h.seedTask('a');
+    h.seedTask('b');
+    h.seedTask('c');
+    h.repo.addDependency('b', 'a', '2026-06-08T01:00:00.000Z'); // b ← a
+    h.repo.addDependency('c', 'b', '2026-06-08T01:00:01.000Z'); // c ← b
+
+    // Only a is ready; b and c stay queued despite an open slot.
+    await h.scheduler.tick();
+    expect(status(h, 'a')).toBe('wip');
+    expect(status(h, 'b')).toBe('todo');
+    expect(status(h, 'c')).toBe('todo');
+
+    // a done → b becomes ready next tick; c still blocked by b.
+    h.tasks.markDone('a', 'https://example.com/pr/a');
+    h.runner.complete('a');
+    await h.scheduler.tick();
+    expect(status(h, 'b')).toBe('wip');
+    expect(status(h, 'c')).toBe('todo');
+
+    // b done → c becomes ready next tick.
+    h.tasks.markDone('b', 'https://example.com/pr/b');
+    h.runner.complete('b');
+    await h.scheduler.tick();
+    expect(status(h, 'c')).toBe('wip');
+  });
+
+  it('does not let a higher-priority blocked task jump its blocker', async () => {
+    const h = makeHarness({ pool: 2 });
+    h.seedTask('blocker'); // default priority 1 (Normal)
+    h.seedTask('urgent', 'todo', { priority: 3 }); // Urgent
+    h.repo.addDependency('urgent', 'blocker', '2026-06-08T01:00:00.000Z');
+
+    await h.scheduler.tick();
+    // Urgent outranks blocker by priority, but it's excluded from the ready set
+    // until its blocker is done — so the lower-priority blocker starts and the
+    // urgent task waits.
+    expect(status(h, 'blocker')).toBe('wip');
+    expect(status(h, 'urgent')).toBe('todo');
+  });
+
+  it('emits task.updated for a dependent when its blocker completes (board chip refresh)', async () => {
+    const h = makeHarness({ pool: 1 });
+    h.seedTask('a');
+    h.seedTask('b');
+    h.repo.addDependency('b', 'a', '2026-06-08T01:00:00.000Z');
+
+    await h.scheduler.tick(); // a → wip
+    const before = updatesFor(h, 'b').length;
+    h.tasks.markDone('a', 'https://example.com/pr/a');
+    // Completing the blocker re-broadcasts the (still-todo) dependent so the
+    // board can re-render its derived "blocked by N" chip.
+    expect(updatesFor(h, 'b').length).toBeGreaterThan(before);
+    expect(updatesFor(h, 'b').at(-1)).toBe('todo');
+  });
+
+  it('holds a dependent whose blocker was abandoned, and surfaces the dependent', async () => {
+    const h = makeHarness({ pool: 2 });
+    h.seedTask('a');
+    h.seedTask('b');
+    h.repo.addDependency('b', 'a', '2026-06-08T01:00:00.000Z');
+
+    // Abandon the blocker (not done) — its dependent stays blocked.
+    h.tasks.updateStatus('a', 'abandoned');
+    expect(updatesFor(h, 'b').at(-1)).toBe('todo'); // dependent re-broadcast
+
+    await h.scheduler.tick();
+    expect(status(h, 'b')).toBe('todo'); // never starts — abandoned ≠ done
+  });
+});
+
 describe('agent pool — crash handling on PTY exit', () => {
   it('retries a still-wip task (→ todo, retryCount bumped) and frees the slot', async () => {
     const h = makeHarness({ pool: 1, maxRetries: 3 });

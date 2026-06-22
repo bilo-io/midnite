@@ -122,6 +122,13 @@ class InMemoryRepo extends TasksRepository {
     if (idx >= 0) this.tasks.splice(idx, 1);
   }
 
+  // This fake models no dependency edges (those are exercised against a real DB
+  // in tasks.dependencies.spec.ts); stub the lookup the terminal-transition
+  // notify hook calls so it stays a no-op here.
+  override dependentsOf(): string[] {
+    return [];
+  }
+
   override listTasks(status?: Status): TaskRow[] {
     return status ? this.tasks.filter((t) => t.status === status) : [...this.tasks];
   }
