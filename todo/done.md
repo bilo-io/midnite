@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 27 Theme D: CLI task dependencies (PR #113)
+
+The dependency graph existed in the model (#106) and the scheduler (#109), but the **CLI** couldn't express it — blockers could only be set from the web. Theme D adds the CLI surface, closing the last build slice of Phase 27 (only the Theme C web UI affordances remain). `cli` + `gateway` only.
+
+- [x] **`midnite add --depends-on <id>`** (repeatable) — threads blocker ids as repeatable multipart `dependsOn` fields into `POST /tasks`; rejected alongside `--bulk` (a blocker graph is per-task, not a batch default).
+- [x] **`midnite block <id> --on <blockerId>`** / **`unblock <id> --on <blockerId>`** — thin `POST` / `DELETE` to `/tasks/:id/dependencies`; the typed client validates the returned task.
+- [x] **Gateway fix** — the create path maps a `TaskDependencyError` (unknown blocker) to a clean **4xx** (mirrors the `addDependency` route) instead of a 500, so `add --depends-on <bad>` reads clearly.
+- [x] Tests: CLI client (repeatable `dependsOn` form fields, add/remove endpoints + verbs, 409 cycle message surfaced); controller create→400 on an unknown blocker. The scheduler-order / blocker-done-unblocks / abandoned-holds / edge-cleanup / cycle-rejection e2e was already covered by the Phase 27 B integration spec + `tasks.dependencies` + controller dependency-route tests. `:typecheck`/`:lint` green; `gateway:test` 742, `cli:test` 38; CI green first try.
+
+---
+
 ## 2026-06-22 — Phase 8 Theme B2: day/night office floor tint (PR #112)
 
 The office floor flipped light/dark with the theme but never read the **time of day**. Phase 8 B2 (Ambient polish) asks for a *"day/night floor tint aligned with the `time` theme"* — so the room now feels like the hour: cool after dark, warm at dawn/dusk, near-neutral at midday. It **composes on top of** the existing light/dark base + per-room floor accents (Phase 9) rather than replacing them.
