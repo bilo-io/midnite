@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 8 Theme B2: day/night office floor tint (PR #112)
+
+The office floor flipped light/dark with the theme but never read the **time of day**. Phase 8 B2 (Ambient polish) asks for a *"day/night floor tint aligned with the `time` theme"* — so the room now feels like the hour: cool after dark, warm at dawn/dusk, near-neutral at midday. It **composes on top of** the existing light/dark base + per-room floor accents (Phase 9) rather than replacing them.
+
+- [x] **Pure helper** [`lib/office/daynight.ts`](../packages/web/lib/office/daynight.ts): `dayNightPhase(hour)` buckets the clock into `dawn / day / dusk / night` on boundaries **aligned with the `time` theme's 08:00–18:00 light window** (dusk begins exactly where the theme flips to dark; night wraps past midnight); out-of-range/fractional hours are normalised so `getHours()` passes raw. `dayNightTint(hour)` → `{ color, alpha }`, kept subtle (lightest midday, deepest at night) so it never overrides the theme floor.
+- [x] **Scene wash** ([`office-scene.ts`](../packages/web/components/office/scenes/office-scene.ts)): one world-spanning translucent rectangle at depth −4 — over floor/room-accents/rugs/pool, **under** furniture + characters — tinted from the helper. Refreshed on a 60s timer (same cadence the time theme re-evaluates the flip) and on theme flip via `applyPalette`, so it tracks the clock and stays in sync with the light/dark base.
+- [x] Tests: `daynight.test.ts` (phase boundaries, hour normalisation, subtlety ordering) — `web:test` green. The office e2e drives **HUD/DOM, not canvas pixels** (Phase 10 Theme D), so the tint is verified by before/after + 4-phase screenshots in the PR, not an e2e assertion.
+- [x] `:typecheck` / `:lint` / `web:test` + `moon ci` green. (Local-only: the gateway `tmux` spawner contract spec flakes on this macOS sandbox — alternate-screen escapes instead of `READY` — and passes on CI.)
+- [ ] **Still open in B2:** pixel-perfect camera + larger scrolling map (camera follows the player) — gated on the A1 external Tiled asset pack; tracked under Phase 9 A2.
+
+---
+
 ## 2026-06-22 — Phase 21 Theme D: desktop native notifications (PR #110) — **Phase 21 COMPLETE**
 
 The desktop shell now upgrades the notification feed (toasts/center + browser API, #103/#107/#108) to **native OS notifications** — the tap-on-the-shoulder when you've started a batch and walked away with the window backgrounded. Implemented Decision §5's robust path (a **main-process IPC bridge**), not just the renderer-API v1, because a hidden Electron renderer is throttled (its own `Notification` construction + `window.focus()` are unreliable) where the main process is not.
