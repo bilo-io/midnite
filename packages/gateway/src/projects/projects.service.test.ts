@@ -130,6 +130,7 @@ function makeTasksStub() {
         retryCount: 0,
         projectId: input.projectId,
         tags: [],
+        dependsOn: [],
         events: [],
       } as Task;
     },

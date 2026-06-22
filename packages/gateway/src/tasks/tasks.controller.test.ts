@@ -1,6 +1,6 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
-import { parseConfig, type MidniteConfig, type Task } from '@midnite/shared';
+import { parseConfig, TaskDependencyError, type MidniteConfig, type Task } from '@midnite/shared';
 import type { TasksService } from './tasks.service';
 import { TasksController } from './tasks.controller';
 
@@ -17,6 +17,8 @@ function build(overrides: Partial<Record<keyof TasksService, unknown>> = {}) {
     setTags: vi.fn(() => fakeTask),
     addLink: vi.fn(() => fakeTask),
     removeLink: vi.fn(() => fakeTask),
+    addDependency: vi.fn(() => fakeTask),
+    removeDependency: vi.fn(() => fakeTask),
     deleteTask: vi.fn(),
     createBulk: vi.fn(async () => ({ results: [], counts: { created: 0, skipped: 0, failed: 0 } })),
     ...overrides,
@@ -108,5 +110,42 @@ describe('TasksController — domain errors propagate to the HTTP layer', () => 
       }),
     });
     expect(() => controller.get('t9')).toThrow(NotFoundException);
+  });
+});
+
+describe('TasksController — dependency routes', () => {
+  it('rejects a body missing dependsOnId (400)', () => {
+    const { controller } = build();
+    expect(() => controller.addDependency('t1', {})).toThrow(BadRequestException);
+  });
+
+  it('adds a valid edge and delegates to the service', () => {
+    const { controller, service } = build();
+    controller.addDependency('t1', { dependsOnId: 't2' });
+    expect(service.addDependency).toHaveBeenCalledWith('t1', 't2');
+  });
+
+  it('maps a self/unknown dependency error to 400', () => {
+    const { controller } = build({
+      addDependency: vi.fn(() => {
+        throw new TaskDependencyError('self-reference', 'no self');
+      }),
+    });
+    expect(() => controller.addDependency('t1', { dependsOnId: 't1' })).toThrow(BadRequestException);
+  });
+
+  it('maps a cycle dependency error to 409', () => {
+    const { controller } = build({
+      addDependency: vi.fn(() => {
+        throw new TaskDependencyError('cycle', 'would cycle');
+      }),
+    });
+    expect(() => controller.addDependency('t1', { dependsOnId: 't2' })).toThrow(ConflictException);
+  });
+
+  it('removeDependency delegates to the service', () => {
+    const { controller, service } = build();
+    controller.removeDependency('t1', 't2');
+    expect(service.removeDependency).toHaveBeenCalledWith('t1', 't2');
   });
 });

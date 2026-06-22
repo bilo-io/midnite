@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, desc, eq, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, or, sql } from 'drizzle-orm';
 import {
   detectSourceKind,
   type Status,
@@ -11,6 +11,7 @@ import {
 import { DB_TOKEN, type MidniteDb } from '../db/db.module';
 import {
   taskAttachments,
+  taskDependencies,
   taskEvents,
   taskLinks,
   tasks,
@@ -112,13 +113,20 @@ export class TasksRepository {
       .get();
   }
 
-  // Deleting a task removes its event log, attachments and links too. Wrapped in
-  // a transaction so the four writes are atomic.
+  // Deleting a task removes its event log, attachments, links and dependency
+  // edges too. Edges are cleared in *both* directions: as a dependent (its own
+  // blockers) and as a blocker (whatever depended on it — those become unblocked).
+  // Wrapped in a transaction so the writes are atomic.
   deleteTask(id: string): void {
     this.db.transaction((tx) => {
       tx.delete(taskLinks).where(eq(taskLinks.taskId, id)).run();
       tx.delete(taskAttachments).where(eq(taskAttachments.taskId, id)).run();
       tx.delete(taskEvents).where(eq(taskEvents.taskId, id)).run();
+      tx.delete(taskDependencies)
+        .where(
+          or(eq(taskDependencies.taskId, id), eq(taskDependencies.dependsOnTaskId, id)),
+        )
+        .run();
       tx.delete(tasks).where(eq(tasks.id, id)).run();
     });
   }
@@ -206,6 +214,73 @@ export class TasksRepository {
       .run();
   }
 
+  // ---- dependency edges (Phase 27) ----
+
+  /** Add a blocker edge `taskId → dependsOnTaskId`; a duplicate pair is a no-op. */
+  addDependency(taskId: string, dependsOnTaskId: string, createdAt: string): void {
+    this.db
+      .insert(taskDependencies)
+      .values({ taskId, dependsOnTaskId, createdAt })
+      .onConflictDoNothing()
+      .run();
+  }
+
+  removeDependency(taskId: string, dependsOnTaskId: string): void {
+    this.db
+      .delete(taskDependencies)
+      .where(
+        and(
+          eq(taskDependencies.taskId, taskId),
+          eq(taskDependencies.dependsOnTaskId, dependsOnTaskId),
+        ),
+      )
+      .run();
+  }
+
+  /** Ids of the tasks that block `taskId` (its blockers). */
+  dependenciesOf(taskId: string): string[] {
+    return this.db
+      .select({ id: taskDependencies.dependsOnTaskId })
+      .from(taskDependencies)
+      .where(eq(taskDependencies.taskId, taskId))
+      .all()
+      .map((r) => r.id);
+  }
+
+  /** Ids of the tasks that `taskId` blocks (its dependents). */
+  dependentsOf(taskId: string): string[] {
+    return this.db
+      .select({ id: taskDependencies.taskId })
+      .from(taskDependencies)
+      .where(eq(taskDependencies.dependsOnTaskId, taskId))
+      .all()
+      .map((r) => r.id);
+  }
+
+  /**
+   * `todo` tasks that are *ready* — every blocker is `done` (or has none) —
+   * keeping the scheduler's `desc(priority), asc(createdAt)` ordering. Readiness
+   * is evaluated in SQL (a correlated `NOT EXISTS` over unmet blockers) so the
+   * tick stays cheap at scale. Backs the Theme B scheduler.
+   */
+  listReadyTodoTasks(): TaskRow[] {
+    return this.db
+      .select()
+      .from(tasks)
+      .where(
+        and(
+          eq(tasks.status, 'todo'),
+          sql`NOT EXISTS (
+            SELECT 1 FROM task_dependencies d
+            JOIN tasks b ON b.id = d.depends_on_task_id
+            WHERE d.task_id = tasks.id AND b.status != 'done'
+          )`,
+        ),
+      )
+      .orderBy(desc(tasks.priority), asc(tasks.createdAt))
+      .all();
+  }
+
   countsByStatus(): Record<Status, number> {
     const result: Record<Status, number> = {
       backlog: 0,
@@ -243,6 +318,7 @@ export class TasksRepository {
       projectId: row.projectId ?? undefined,
       prUrl: row.prUrl ?? undefined,
       tags: parseTags(row.tags),
+      dependsOn: this.dependenciesOf(row.id),
       archivedAt: row.archivedAt ?? undefined,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,

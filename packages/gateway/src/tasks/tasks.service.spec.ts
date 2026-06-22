@@ -177,6 +177,7 @@ class InMemoryRepo extends TasksRepository {
       projectId: row.projectId ?? undefined,
       prUrl: row.prUrl ?? undefined,
       tags: [],
+      dependsOn: [],
       archivedAt: row.archivedAt ?? undefined,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
