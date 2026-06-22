@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 15 Theme D: knowledge-files watcher + MD injection (PR #95) — **Phase 15 COMPLETE**
+
+The original plan's "watched folder of MD files" — the last open theme of Phase 15. Gives midnite a second, file-based knowledge base distinct from the link-based **Sources**: standing project conventions/runbooks/domain notes injected automatically into the right runs.
+
+- [x] **`config.knowledge`** (`shared`) — `{ enabled, dir?, maxBytes }`, defaulted so existing `midnite.json` files keep validating.
+- [x] **`KnowledgeWatcherService`** — watches `config.knowledge.dir` with **chokidar v3** (CommonJS — v4/v5 are ESM-only and the gateway builds CJS), keeps an in-memory manifest of each file's headings fresh on add/change/unlink, reads selected content on demand (path-guarded to the root). Files on disk are the source of truth — no DB.
+- [x] **`KnowledgeService`** — at task start, shows the plan model the manifest, it picks relevant files (validated against the manifest — can't name an off-disk file), and their content is folded into the seed prompt as a capped **"Knowledge files"** block, between URL-context and repo-conventions. Mirrors `UrlContextService`: best-effort + fail-open. Wired via `AgentRunnerService` (`@Optional()` so the runner's unit specs are unchanged).
+- [x] Tests: pure-helper (heading parse, manifest render, selection validation, byte-capped block) + `KnowledgeService` spec (disabled/AI-off/empty/selection/fail-open/path-rejection, with fakes) + a real-temp-dir watcher spec (boot index, live add/change/unlink, path-traversal refusal). Full-graph `:typecheck`/`:lint` green; `gateway:test` 686 green; CI green. README documents `config.knowledge` + knowledge-files-vs-sources.
+
 ## 2026-06-22 — Phase 3: serve the web static export from the gateway (PR #93)
 
 Closes Phase 3's last real gap: a single process can serve both the API and the browser UI in prod. The web app is a Next `output: 'export'` bundle (fully static, multi-page; all data fetched client-side; the `[id]` dirs are colocated components, not routes), so this needed no SSR / SPA-fallback / proxy — just a static mount mirroring `/uploads/`.

@@ -54,15 +54,17 @@ When classification yields `kind: question`, answer it directly instead of landi
 
 ---
 
-## Theme D — Knowledge-files watcher + MD injection — **M**
+## Theme D — Knowledge-files watcher + MD injection — **M** — ✅ DONE (PR #95, 2026-06-22 — see [done.md](done.md))
 
 The original plan's "watched folder of MD files." Index a knowledge directory, let the plan model pick relevant files, inject their **content** into the execution prompt.
 
-- [ ] **New `config.knowledge` block** in [`config.ts`](../packages/shared/src/config.ts): `{ dir?: string, maxBytes: number, enabled: boolean }` (defaulted; documented in the README). Read only via `loadConfig()`.
-- [ ] A gateway **knowledge service** that watches `config.knowledge.dir` with **`chokidar`** (new gateway runtime dep), maintaining an in-memory **manifest** (filename + headings) that updates on add/change/unlink. No DB — the files on disk are the source of truth.
-- [ ] **Plan-model file selection** — pass the manifest to the planner; it returns the filenames relevant to the task; the service reads those files and the prompt builder injects their **content**, capped to `maxBytes`.
-- [ ] **Naming** (Decision §4): surface this as **"Knowledge files"** — distinct from the existing link-based **"Sources"** — in config docs and any UI copy, so the two knowledge bases aren't conflated.
-- [ ] Defer embeddings/RAG entirely — keyword/heading manifest + model selection is the v1.
+- [x] **New `config.knowledge` block** in [`config.ts`](../packages/shared/src/config.ts): `{ enabled, dir?, maxBytes }` (defaulted; documented in the README). Read only via `loadConfig()`.
+- [x] A gateway **knowledge service** (`KnowledgeWatcherService`) that watches `config.knowledge.dir` with **`chokidar`** v3 (CJS — matches the gateway build), maintaining an in-memory **manifest** (filename + headings) that updates on add/change/unlink. No DB — the files on disk are the source of truth.
+- [x] **Plan-model file selection** — `KnowledgeService` passes the manifest to the plan model; it returns relevant filenames (validated against the manifest, path-guarded); the content is injected into the seed prompt (capped to `maxBytes`), between URL context and repo conventions. Best-effort + fail-open.
+- [x] **Naming** (Decision §4): surfaced as **"Knowledge files"** — distinct from the link-based **"Sources"** — in the README.
+- [x] Embeddings/RAG deferred entirely — keyword/heading manifest + model selection is the v1.
+
+**This closes Phase 15 (all themes A–D shipped).**
 
 ---
 
