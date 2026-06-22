@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 29 Theme D: `/release-complete` skill + release-finalising helpers (PR #89) — **Phase 29 tooling COMPLETE**
+
+The irreversible half of the two-step release flow, pairing with `/release-prep` (Theme C, PR #87). Same split as C: the skill orchestrates git/gh, but the decision-bearing logic lives in tested pure helpers.
+
+- [x] **Helpers** [`packages/shared/src/release.ts`](../packages/shared/src/release.ts): `extractChangelogSection` (pull a version's section for `gh release create --notes`; also the dated-section precondition — `date: null` ⇒ not finalised); `planReleaseTags` (the tag scheme, Decision §3 — lockstep `vX.Y.Z` vs scoped `‹pkg›@X.Y.Z` per bumped package; first release with empty `previous` → `vX.Y.Z`; throws on non-lockstep `previous`); `versionFromReleaseBranch` (`release/vX.Y.Z` → `X.Y.Z`).
+- [x] **Tests** [`release.test.ts`](../packages/shared/src/release.test.ts) — 44 in the file (16 new): section extraction (dated/undated/missing/no-bleed/no-link-refs/dot-escaping/empty-body), the lockstep-vs-scoped split (incl. root `midnite@X.Y.Z`, first-release, skew-throws), branch parsing.
+- [x] **Skill** [`.claude/skills/release-complete/SKILL.md`](../.claude/skills/release-complete/SKILL.md): refuse-on-failed-preconditions (release branch / clean tree / version-check + `moon ci` green / dated changelog) → tag plan + explicit go/no-go `AskUserQuestion` → `chore(release)` commit + tag(s) → push + merge to `main` + GitHub Release (edits the `release.yml` draft so desktop installers survive) → re-seed `Unreleased`. Aborts cleanly before the first irreversible step; reports partial state on mid-publish failure rather than retrying.
+- [x] [`docs/RELEASING.md`](../docs/RELEASING.md) status: both skills landed. `:typecheck`/`:lint`/`shared:test` (381) + `moon ci` green first try; independent review found two `planReleaseTags` gaps (first-release + skewed input) — both fixed + tested.
+- [x] **Phase 29 tooling complete** (A policy + B changelog + C `/release-prep` + D `/release-complete`). Remaining: cut the first real `v0.1.0` as a deliberate run (Decision §7).
+
 ## 2026-06-22 — Phase 4: infer target repo at task creation (PR #88) — closes outstanding #5
 
 Repos went first-class + DB-backed in Phase 13, but nothing ever *set* `task.repo` automatically — a user had to pick it. With #4 done, the planner now guesses it, completing the repos-first-class story (the agent's PTY opens in the right repo unattended).

@@ -65,7 +65,7 @@ Everything up to (but not including) the irreversible commit/tag. Read-mostly; e
 
 The irreversible half, run after a human has reviewed the prepped branch.
 
-- [ ] New [`.claude/commands/release-complete.md`](../.claude/commands/release-complete.md). Flow:
+- [x] ✅ DONE (PR #89, 2026-06-22) — shipped as [`.claude/skills/release-complete/SKILL.md`](../.claude/skills/release-complete/SKILL.md); the finalising logic (changelog-section extraction, tag-scheme planning, release-branch parse) is the tested pure helper [`packages/shared/src/release.ts`](../packages/shared/src/release.ts) (44 tests). Flow:
   1. **Preconditions** — on a `release/vX.Y.Z` branch, working tree clean, `version:check` + `moon ci` green, changelog `## [X.Y.Z]` section present and dated.
   2. **Finalise** — ensure version bumps are applied lockstep (re-run the A2 helper to be safe), move `Unreleased` → the dated section.
   3. **Commit + tag** — `chore(release): vX.Y.Z`, then the tag(s) per A3 (`vX.Y.Z` + any scoped patch tags).
@@ -98,7 +98,7 @@ The irreversible half, run after a human has reviewed the prepped branch.
 - [ ] `version:check` fails when a `package.json` is hand-edited to break the shared `MAJOR.MINOR`, and passes on a clean lockstep set; it runs in `moon ci`.
 - [ ] The A2 helper's unit tests cover: lockstep minor (all → `X.Y+1.0`), `fix`-only patch (only affected packages bump), mixed major>minor>patch precedence, empty set → no-op.
 - [x] `/release-prep` on a repo with commits since the last tag produces: a correct proposed version, a drafted `CHANGELOG.md` section, version bumps on a `release/vX.Y.Z` branch, and stops for confirmation without tagging. (PR #87 — skill in place; the version/categorisation math is unit-tested in [`release.test.ts`](../packages/shared/src/release.test.ts) + [`version.test.ts`](../packages/shared/src/version.test.ts). The first live end-to-end run lands when the first real release is cut, Decision §7.)
-- [ ] `/release-complete` on a prepped branch commits `chore(release): vX.Y.Z`, creates the tag(s), pushes, and opens a GitHub Release from the changelog — and refuses to run if preconditions (clean tree, green CI, dated changelog section) aren't met.
+- [x] `/release-complete` on a prepped branch commits `chore(release): vX.Y.Z`, creates the tag(s), pushes, and opens a GitHub Release from the changelog — and refuses to run if preconditions (clean tree, green CI, dated changelog section) aren't met. (PR #89 — skill in place; preconditions + tag-scheme + changelog-extraction logic unit-tested in [`release.test.ts`](../packages/shared/src/release.test.ts). First live run lands when `v0.1.0` is cut, Decision §7.)
 - [ ] `moon run :typecheck` · `:lint` · `:test` + `moon ci` green.
 
 ---
