@@ -45,9 +45,10 @@ const BREAKING_FOOTER_RE = /(^|\n)[ \t]*BREAKING[ -]CHANGE[ \t]*:/i;
 
 /**
  * Parse a commit message into a {@link ConventionalCommit}, or `null` when the
- * subject isn't conventional-commit shaped. The first non-empty line is the
- * subject; `breaking` is set by a `!` marker on the subject or a `BREAKING CHANGE`
- * footer in the body.
+ * subject doesn't fit the `type: subject` / `type(scope): subject` shape. The
+ * first non-empty line is the subject; an unrecognised `type` parses but is
+ * flagged `known: false` (the skill surfaces those for the human). `breaking` is
+ * set by a `!` marker on the subject or a `BREAKING CHANGE` footer in the body.
  */
 export function parseConventionalCommit(message: string): ConventionalCommit | null {
   const subject = message.split('\n').find((line) => line.trim().length > 0)?.trim();
@@ -96,6 +97,11 @@ const GROUP_BY_TYPE: Record<string, ChangelogGroup> = {
 /**
  * The changelog section a commit belongs under, or `null` when it isn't
  * user-facing (and so shouldn't appear in the curated notes).
+ *
+ * Note `revert` is changelog-visible (`Removed`) but does not, on its own, trigger
+ * a release ({@link bumpLevelFromCommits} fires only on breaking/feat/fix). That's
+ * deliberate: a revert-only range nets to no release, but a revert alongside other
+ * releasable changes is documented under Removed.
  */
 export function changelogGroupForCommit(commit: ConventionalCommit): ChangelogGroup | null {
   return GROUP_BY_TYPE[commit.type] ?? null;

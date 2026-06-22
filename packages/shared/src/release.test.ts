@@ -49,6 +49,16 @@ describe('parseConventionalCommit', () => {
     expect(parseConventionalCommit(msg)).toMatchObject({ type: 'refactor', breaking: true });
   });
 
+  it('flags the hyphenated BREAKING-CHANGE footer variant', () => {
+    const msg = 'fix(cli): retire the flag\n\nBREAKING-CHANGE: --legacy is gone';
+    expect(parseConventionalCommit(msg)).toMatchObject({ type: 'fix', breaking: true });
+  });
+
+  it('does not treat a mid-line "breaking change" mention as breaking', () => {
+    const msg = 'fix(web): note this is not a breaking change in the body';
+    expect(parseConventionalCommit(msg)).toMatchObject({ type: 'fix', breaking: false });
+  });
+
   it('lower-cases the type and scope', () => {
     expect(parseConventionalCommit('FEAT(Web): X')).toMatchObject({ type: 'feat', scope: 'web' });
   });
@@ -81,8 +91,18 @@ describe('bumpLevelFromCommits', () => {
     ).toBe('major');
   });
 
+  it('is `major` for a breaking feat (the `!` case) over a plain feat', () => {
+    expect(
+      bumpLevelFromCommits([commit({ type: 'feat' }), commit({ type: 'feat', breaking: true })]),
+    ).toBe('major');
+  });
+
   it('is `minor` when a feat is present without a breaking change', () => {
     expect(bumpLevelFromCommits([commit({ type: 'fix' }), commit({ type: 'feat' })])).toBe('minor');
+  });
+
+  it('is `none` for a revert-only range (revert does not trigger a release)', () => {
+    expect(bumpLevelFromCommits([commit({ type: 'revert' })])).toBe('none');
   });
 
   it('is `patch` for fix-only', () => {
@@ -161,6 +181,19 @@ describe('packagesForChangedPaths', () => {
     expect(packagesForChangedPaths(['./packages/shared/src/x.ts'], packages)).toEqual([
       '@midnite/shared',
     ]);
+  });
+
+  it('matches a path equal to the package directory itself', () => {
+    expect(packagesForChangedPaths(['packages/cli'], packages)).toEqual(['@midnite/cli']);
+  });
+
+  it('drops an unattributable path when there is no root package', () => {
+    const noRoot = [{ name: '@midnite/cli', dir: 'packages/cli' }];
+    expect(packagesForChangedPaths(['docs/RELEASING.md'], noRoot)).toEqual([]);
+  });
+
+  it('returns [] for no changed paths', () => {
+    expect(packagesForChangedPaths([], packages)).toEqual([]);
   });
 });
 

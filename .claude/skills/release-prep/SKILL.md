@@ -69,7 +69,7 @@ Honour an explicit `$ARGUMENTS` override but still show what auto-detect picked.
 - Branch off the gathered `main`: `git switch -c release/vX.Y.Z` (for an independent package patch use the lockstep `vX.Y.Z` the bumped package lands on as the branch name).
 - **Bump versions:** set each affected `package.json` `"version"` to the planned value (lockstep minor/major → all packages; patch → only the changed ones). Edit the `version` field only.
 - **Draft the changelog** in [`CHANGELOG.md`](../../../CHANGELOG.md), **Keep a Changelog** style:
-  - Move the curated `## [Unreleased]` content into a new `## [X.Y.Z] - YYYY-MM-DD` section (today's date), grouped **Added / Changed / Fixed / Removed** via `changelogGroupForCommit` (commits that map to `null` — docs/chore/test/ci/style — are omitted). **Curate** — merge related commits into one readable line, drop noise; this is release notes, not a `git log` dump.
+  - Move the curated `## [Unreleased]` content into a new `## [X.Y.Z] - YYYY-MM-DD` section (today's date), grouped **Added / Changed / Fixed / Removed** via `changelogGroupForCommit` (feat→Added, fix→Fixed, refactor/perf→Changed, revert→Removed; the non-user-facing types — docs/chore/test/build/ci/style — map to `null` and are omitted). **Curate** — merge related commits into one readable line, drop noise; this is release notes, not a `git log` dump.
   - Flag any **breaking** change prominently in the section.
   - Re-seed an empty `## [Unreleased]` stub above it, and update the compare/tag link refs at the bottom (`[Unreleased]: …compare/vX.Y.Z...HEAD`, add `[X.Y.Z]: …/releases/tag/vX.Y.Z`).
   - Keep this separate from `todo/done.md` (phase tracker, not release notes).
