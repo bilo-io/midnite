@@ -547,13 +547,16 @@ describe('TasksService.createBulk', () => {
     }
   });
 
-  it('applies batch-wide repo and priority to every created task', async () => {
+  it('applies batch-wide repo, priority, and project to every created task', async () => {
     const repo = new InMemoryRepo();
     const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus(), reposWith('midnite'));
 
-    await service.createBulk({ lines: ['one', 'two'], repo: 'midnite', priority: 3 });
+    await service.createBulk({ lines: ['one', 'two'], repo: 'midnite', priority: 3, projectId: 'proj-1' });
 
-    expect(repo.tasks.every((t) => t.repo === 'midnite' && t.priority === 3)).toBe(true);
+    expect(repo.tasks).toHaveLength(2);
+    expect(
+      repo.tasks.every((t) => t.repo === 'midnite' && t.priority === 3 && t.projectId === 'proj-1'),
+    ).toBe(true);
   });
 
   it('rejects a batch with an unknown repo before creating anything (Phase 13 B2)', async () => {

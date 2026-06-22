@@ -1,4 +1,4 @@
-# Phase 16 — Bulk / paste add
+# Phase 16 — Bulk / paste add ✅
 
 > Task creation today is strictly **one item at a time**: `POST /tasks` takes a single `prompt`, and [`tasks.service.ts`](../packages/gateway/src/tasks/tasks.service.ts) `createFromPrompt()` runs classify → triage on it before persisting and emitting `task.created`. Dropping a backlog of ten ideas means ten round-trips and ten dialog submissions. **Phase 16 makes intake plural:** paste a multi-line list (or pipe a file) and get one task per line, each classified, with a single clean board update. This is [Phase 15](phase-15-smart-intake.md)'s Theme A promoted to a focused, standalone phase — built end-to-end (API → CLI → web) with the parsing and partial-failure handling a real paste flow needs. *(Phase 15 keeps Theme A listed; whichever lands first satisfies it — see Decision §5.)*
 
@@ -68,9 +68,9 @@ The substrate both clients call. One endpoint, one batch, one coalesced board up
 
 - [x] `printf 'fix login bug\n- add dark mode\n# a comment\n\nwrite docs\n' | midnite add --bulk` → **3** tasks created (comment + blank skipped, the `- ` stripped), each classified, summary table prints, exit 0. (PR #47)
 - [x] In the web modal, paste a 10-line list → the preview shows "10 tasks" → submit → 10 cards appear with **one** board update (not 10 refetches). (PR #42)
-- [ ] A line that fails classification (or an over-cap batch) returns a clear per-line error while the rest succeed; the failing line is shown so it can be re-submitted; the batch as a whole still reports success.
-- [ ] Batch-wide `--repo` / priority / project apply to every created task.
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph; `moon ci` green. (Run web tests from the **primary checkout**, not a `.git` worktree.)
+- [x] A line that fails classification (or an over-cap batch) returns a clear per-line error while the rest succeed; the failing line is shown so it can be re-submitted; the batch as a whole still reports success. — covered by `tasks.service.spec` (`returns a per-line error for a failing line while the rest succeed`); over-cap + comment-only batches reject up front.
+- [x] Batch-wide `--repo` / priority / project apply to every created task. — `createBulk` threads `repo`/`priority`/`projectId` to every line; asserted in `tasks.service.spec` (`applies batch-wide repo, priority, and project to every created task`).
+- [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph; `moon ci` green. (Run web tests from the **primary checkout**, not a `.git` worktree.)
 
 ---
 
