@@ -91,10 +91,12 @@ export function NotificationCenter() {
       </button>
 
       {open ? (
+        // The bell lives at the bottom-left of the sidebar, so the panel opens
+        // upward and to the right — into open canvas — not down-and-left off-screen.
         <div
           role="menu"
           aria-label="Notifications"
-          className="absolute right-0 top-full z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border bg-popover shadow-2xl"
+          className="absolute bottom-full left-0 z-50 mb-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border bg-popover shadow-2xl"
         >
           <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-2">
             <p className="text-sm font-semibold">Notifications</p>
