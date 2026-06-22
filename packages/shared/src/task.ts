@@ -68,6 +68,14 @@ export const TaskSchema = z.object({
   prUrl: z.string().optional(),
   /** Free-form user labels. App-validated (trimmed, de-duped, capped); defaults to none. */
   tags: z.array(z.string()).default([]),
+  /**
+   * Ids of the tasks that block this one — derived from the dependency edges, not
+   * a stored column (Phase 27). The task is *ready* to run only when every blocker
+   * is `done`; "blocked" is computed from these + blocker states, not a status.
+   * Optional like `links`/`attachments` (the gateway always populates it on read);
+   * absent on a fixture/partial means "no blockers".
+   */
+  dependsOn: z.array(z.string()).optional(),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
   /** ISO timestamp when the task (and thus its session) was archived; absent when active. */
@@ -91,11 +99,21 @@ export const TaskCountsSchema = z.object({
   done: z.number().int().nonnegative(),
 });
 
+/** Max blocker edges accepted on a single task — a sane bound on a paste/automation. */
+export const MAX_TASK_DEPENDENCIES = 50;
+
 export const CreateTaskRequestSchema = z.object({
   prompt: z.string().min(1).max(8000),
   repo: z.string().optional(),
   projectId: z.string().optional(),
   priority: z.number().int().min(0).max(3).optional(),
+  /** Ids of tasks that must be `done` before this one can start (Phase 27). */
+  dependsOn: z.array(z.string().min(1)).max(MAX_TASK_DEPENDENCIES).optional(),
+});
+
+/** Body for `POST /tasks/:id/dependencies` — add one blocker edge. */
+export const AddTaskDependencyRequestSchema = z.object({
+  dependsOnId: z.string().min(1),
 });
 
 // Reassign (or clear, via null) a task's project.
@@ -130,10 +148,30 @@ export type Task = z.infer<typeof TaskSchema>;
 export type AgentSlot = z.infer<typeof AgentSlotSchema>;
 export type TaskCounts = z.infer<typeof TaskCountsSchema>;
 export type CreateTaskRequest = z.infer<typeof CreateTaskRequestSchema>;
+export type AddTaskDependencyRequest = z.infer<typeof AddTaskDependencyRequestSchema>;
 export type UpdateTaskProjectRequest = z.infer<typeof UpdateTaskProjectRequestSchema>;
 export type SetTaskTagsRequest = z.infer<typeof SetTaskTagsRequestSchema>;
 export type CreateTaskResponse = z.infer<typeof CreateTaskResponseSchema>;
 export type ClassifiedTask = z.infer<typeof ClassifiedTaskSchema>;
+
+/** Why a dependency edge was rejected (Phase 27) — maps to 400 (self/unknown) or 409 (cycle). */
+export const TASK_DEPENDENCY_ERROR_REASONS = ['self-reference', 'cycle', 'unknown-task'] as const;
+export type TaskDependencyErrorReason = (typeof TASK_DEPENDENCY_ERROR_REASONS)[number];
+
+/**
+ * Thrown by the gateway when a dependency edge is invalid: a self-reference, a
+ * blocker that doesn't exist, or an edge that would close a cycle. The gateway
+ * controller translates `reason` to an HTTP status; clients can narrow on it.
+ */
+export class TaskDependencyError extends Error {
+  constructor(
+    readonly reason: TaskDependencyErrorReason,
+    message: string,
+  ) {
+    super(message);
+    this.name = 'TaskDependencyError';
+  }
+}
 
 /** Task-event kind written when a `question` is answered inline at intake (Phase 15 Theme C). */
 export const ANSWER_EVENT_KIND = 'answer';
