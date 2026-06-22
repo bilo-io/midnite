@@ -93,6 +93,14 @@ export const GatewayConfigSchema = z.object({
   allowedOrigins: z.array(z.string()).default([]),
   uploadsDir: z.string().default('./.midnite/uploads'),
   dbPath: z.string().default('./.midnite/midnite.db'),
+  /**
+   * Path to the web app's static export (`packages/web/out`, from `next build`
+   * with `output: 'export'`). When set and the directory has an `index.html`,
+   * the gateway serves the UI at `/` so a single process serves both the API and
+   * the browser app in prod. Unset (the default) means the UI runs as a separate
+   * `next` server — the dev setup. Override at runtime with `MIDNITE_WEB_DIR`.
+   */
+  webDir: z.string().optional(),
 });
 
 // OAuth client config for an integration provider. Secrets are referenced by env-var
