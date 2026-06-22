@@ -124,6 +124,15 @@ same repo (by `task.repo`) at once: the scheduler skips a `todo` task whose repo
 is already at the cap and picks the next eligible one, so two agents don't race
 on one working tree. Tasks without a repo are never capped.
 
+`gateway.webDir` (unset by default) points the gateway at the web app's static
+export so a **single process serves both the API and the browser UI** in prod.
+Build the UI with `moon run web:build` (Next `output: 'export'` → `packages/web/out`),
+then set `webDir` to that path (or pass `MIDNITE_WEB_DIR`); the gateway mounts it
+at `/` and the app talks to the same origin's API — no separate `next` server, no
+CORS. Unset, the UI runs as its own dev server (`moon run web:dev` on `:3000`).
+The export is fully static (every route is a real `index.html`, all data fetched
+client-side), so the API routes keep priority over the file mount.
+
 A task reaches `wip` (with a Claude Code session spawned and linked to it) in one
 of two ways:
 
