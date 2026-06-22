@@ -6,10 +6,12 @@ import {
   WORKFLOW_WS_PATH,
   applyWorkflowEvent,
   isRunTerminal,
+  type SearchQuery,
   type WorkflowEvent,
   type WorkflowRun,
 } from '@midnite/shared';
 import { bulkExitCode, bulkResultRows, bulkSummaryLine } from './bulk.js';
+import { parseSearchType, searchResultRows, searchSummaryLine } from './search.js';
 import {
   createClient,
   parseStatus,
@@ -126,6 +128,30 @@ program
   .action(async (id: string, status: string) => {
     const task = await client().moveTask(id, parseStatus(status));
     console.log(`moved ${task.id} → ${task.status}`);
+  });
+
+program
+  .command('search <query>')
+  .description('Full-text search across tasks, projects, memory, notes, councils & workflows')
+  .option('-t, --type <type>', 'restrict to one type (task|project|memory|note|council|workflow)')
+  .option('-n, --limit <n>', 'max results (default 20, max 100)')
+  .action(async (query: string, opts: { type?: string; limit?: string }) => {
+    const q: SearchQuery = { q: query };
+    if (opts.type) q.type = parseSearchType(opts.type);
+    if (opts.limit !== undefined) {
+      const n = Number(opts.limit);
+      if (!Number.isInteger(n) || n < 1) {
+        throw new Error(`invalid --limit "${opts.limit}" — expected a positive integer`);
+      }
+      q.limit = n;
+    }
+    const res = await client().search(q);
+    if (res.results.length > 0) {
+      const table = new Table({ head: ['Type', 'ID', 'Title', 'Match'], wordWrap: true });
+      for (const row of searchResultRows(res)) table.push(row);
+      console.log(table.toString());
+    }
+    console.log(searchSummaryLine(res));
   });
 
 // Tail a workflow run live over the WS stream, folding events through the shared

@@ -1,6 +1,7 @@
 import {
   BulkCreateTaskResponseSchema,
   RunResponseSchema,
+  SearchResponseSchema,
   StatusSchema,
   TaskSchema,
   WorkflowRunSchema,
@@ -8,6 +9,8 @@ import {
   WorkflowSummarySchema,
   type BulkCreateTaskRequest,
   type BulkCreateTaskResponse,
+  type SearchQuery,
+  type SearchResponse,
   type Status,
   type Task,
   type Workflow,
@@ -32,6 +35,7 @@ export interface GatewayClient {
   createTask(prompt: string, defaults?: TaskDefaults): Promise<Task>;
   createBulk(raw: string, defaults?: TaskDefaults): Promise<BulkCreateTaskResponse>;
   moveTask(id: string, status: Status): Promise<Task>;
+  search(query: SearchQuery): Promise<SearchResponse>;
   listWorkflows(): Promise<WorkflowSummary[]>;
   getWorkflow(id: string): Promise<Workflow>;
   runWorkflow(id: string): Promise<WorkflowRun>;
@@ -103,6 +107,15 @@ export function createClient(baseUrl: string): GatewayClient {
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ status }),
         }),
+      );
+    },
+
+    async search(query: SearchQuery): Promise<SearchResponse> {
+      const params = new URLSearchParams({ q: query.q });
+      if (query.type) params.set('type', query.type);
+      if (query.limit !== undefined) params.set('limit', String(query.limit));
+      return SearchResponseSchema.parse(
+        await request(`/search?${params.toString()}`, { method: 'GET' }),
       );
     },
 
