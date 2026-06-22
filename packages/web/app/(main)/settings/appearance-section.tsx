@@ -5,6 +5,7 @@ import Image from 'next/image';
 import {
   Check,
   Clock,
+  Download,
   Laptop,
   LayoutGrid,
   Moon,
@@ -15,6 +16,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { Accordion } from '@/components/ui/accordion';
+import { PwaInstall } from '@/components/pwa-install';
 import { Switch } from '@/components/ui/switch';
 import { Wordmark } from '@/components/wordmark';
 import { useTheme, type ThemePreference } from '@/app/theme/theme-context';
@@ -119,6 +121,12 @@ export function AppearanceSection() {
               hydrated={hydrated}
             />
           </SettingRow>
+        </div>
+      </Accordion>
+
+      <Accordion title="Install app" icon={<Download className="h-3.5 w-3.5" />} defaultOpen>
+        <div className="p-5">
+          <PwaInstall />
         </div>
       </Accordion>
 

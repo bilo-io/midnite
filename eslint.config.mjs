@@ -64,6 +64,13 @@ export default tseslint.config(
     rules: { 'no-console': 'off' },
   },
 
+  // The PWA service worker runs in the ServiceWorkerGlobalScope (self, caches,
+  // clients, fetch, …), not a node/window context.
+  {
+    files: ['**/public/sw.js'],
+    languageOptions: { globals: { ...globals.browser, ...globals.serviceworker } },
+  },
+
   // Keep ESLint out of Prettier's lane (formatting rules disabled).
   prettier,
 );
