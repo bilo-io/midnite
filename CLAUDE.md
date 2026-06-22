@@ -223,6 +223,12 @@ Nest module per feature → `controller → service → repository`:
 - No triggers / no computed columns / no foreign keys across logical domains within the gateway
 - Repositories accept a `Db` (which can be a transaction) so services own transaction boundaries
 
+### Global Search (FTS5)
+
+- Cross-domain full-text search lives in the `search/` module: a single FTS5 virtual table `search_index(type, entity_id, title, body)` ranked with `bm25()` (Phase 20). `GET /search` is thin; `SearchService` maps hits → the shared `SearchResult` contract and adds the per-type route.
+- **No triggers means the index is maintained in the service write-path**, not by SQL: `SearchIndexService` (a `@Global` module, like the DB handle) exposes `upsert`/`remove`, and each domain service keeps its own rows current on create/update/delete. Tasks reuse the existing `TaskEventBus` (the search module subscribes — `tasks.service` is untouched); the other domains inject `SearchIndexService` directly (`@Optional()`, so unit specs need no edit). Per-domain field→`title`/`body` mapping lives in one place: `search/lib/index-mappers.ts`.
+- A boot **backfill** populates a freshly-migrated index from the domain services; `POST /search/reindex` rebuilds it. A new searchable domain adds a mapper + a write-path call (or a bus subscription).
+
 ### WebSocket Events
 
 - Event shapes live in `shared/src/events/` with discriminated `type` field
