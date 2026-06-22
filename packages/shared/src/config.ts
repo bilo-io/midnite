@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ChecksConfigSchema } from './checks.js';
 import { LLM_PROVIDER_DEFAULT, LlmProviderSchema } from './llm.js';
 import { UsageConfigSchema } from './usage.js';
 
@@ -206,6 +207,9 @@ export const MidniteConfigSchema = z.object({
   councils: CouncilsConfigSchema.default({}),
   // LLM usage/cost tracking + optional soft budgets (track + soft-warn only).
   usage: UsageConfigSchema.default({}),
+  // Quality-gate checks run before a task's `done` transition (Phase 30).
+  // Optional (defaulted) so existing midnite.json files keep validating.
+  checks: ChecksConfigSchema.default({}),
 });
 
 export type MidniteConfig = z.infer<typeof MidniteConfigSchema>;
