@@ -30,6 +30,7 @@ export * from './events/terminal.js';
 export * from './events/hooks.js';
 export * from './events/task.js';
 export * from './note.js';
+export * from './search.js';
 export * from './routine.js';
 export * from './dashboard.js';
 export * from './media.js';
