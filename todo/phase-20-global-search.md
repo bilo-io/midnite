@@ -52,13 +52,13 @@ The substrate. One unified index, kept fresh in the service layer (no triggers).
 
 ---
 
-## Theme C — Command palette integration — **M**
+## Theme C — Command palette integration — **M** — ✅ DONE (PR #96, 2026-06-22 — see [done.md](done.md))
 
 Realize the palette's anticipated "content search."
 
-- [ ] Extend [`command-palette.tsx`](../packages/web/components/command-palette.tsx) beyond navigation: a **debounced** query (with **abort-on-keystroke**) hits `GET /search`; render results **grouped by type** (Pages · Tasks · Projects · Memory · Notes · Councils · Workflows), with the existing page/nav commands as their own group.
-- [ ] Keyboard nav across groups (arrow keys, Enter to route to the entity's page, the existing ⌘K open/close). Per-group result cap with a "see all in Search" affordance → the `/search` page (Theme D).
-- [ ] Loading + empty states; keep nav-only behaviour instant (don't block page-jump on the network search).
+- [x] Extend [`command-palette.tsx`](../packages/web/components/command-palette.tsx) beyond navigation: a **debounced** query (with **abort-on-keystroke**) hits `GET /search`; render results **grouped by type** (Pages · Tasks · Projects · Memory · Notes · Councils · Workflows), with the existing page/nav commands as their own group.
+- [x] Keyboard nav across groups (arrow keys, Enter to route to the entity's page, the existing ⌘K open/close). Per-group result cap with a **"+N more"** count (the "see all in Search" deep-link → the `/search` page lands with **Theme D**).
+- [x] Loading + empty states; keep nav-only behaviour instant (don't block page-jump on the network search).
 
 ---
 
@@ -93,7 +93,7 @@ The "see everything" surface.
 
 ## Verification
 
-- [ ] With data across types, ⌘K → type a term → **grouped, ranked results** (tasks, projects, memory, …) appear; Enter routes to the entity. Page/nav commands still work instantly.
+- [x] With data across types, ⌘K → type a term → **grouped, ranked results** (tasks, projects, memory, …) appear; Enter routes to the entity. Page/nav commands still work instantly. *(Theme C — PR #96.)*
 - [ ] `GET /search?q=foo` returns ranked `SearchResult`s with snippets; `?type=task` filters to one type; counts-by-type are correct.
 - [ ] Creating an entity makes it findable; editing its title updates the match; deleting it removes it from results (write-path maintenance works, no trigger).
 - [ ] A DB with **pre-existing** rows (migration applied to populated data) is fully searchable after **boot backfill**; `POST /search/reindex` rebuilds the index.

@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 20 Theme C: command palette content search (PR #96)
+
+Surfaces the global-search backend (Theme A/B) in the UI: the ⌘K palette now searches content, not just navigates. Closes the gap where `GET /search` had no consumer in the app.
+
+- [x] **`searchAll()` typed client** ([`web/lib/api.ts`](../packages/web/lib/api.ts)) — wraps `GET /search` with an `AbortSignal` for cancellation.
+- [x] **Palette content search** ([`command-palette.tsx`](../packages/web/components/command-palette.tsx)) — a **debounced, abort-on-keystroke** query renders ranked hits **grouped by type** (Tasks · Projects · Memory · Notes · Councils · Workflows) beneath the instant page jumps. Keyboard nav spans every group; Enter routes to the entity. Snippets highlight matches via real `<mark>` elements parsed from the server's `<mark>`-wrapped snippet — **no `dangerouslySetInnerHTML`**. Per-group cap with a **"+N more"** count (from the response's full `byType`); short/blank queries never touch the network so page-jump stays instant.
+- [x] Tests: RTL suite (grouping, capping, snippet highlighting, result routing, the short-query gate, network-skip on empty query), an updated Storybook interaction, and a new [`search-palette.e2e.ts`](../packages/web/e2e/search-palette.e2e.ts) flow proving the real index→endpoint→palette→route wire. `:typecheck`/`:lint`/`web:test` (318) green; `moon ci` green first try; independent review found no bugs (XSS-safe snippet, correct abort/cleanup, aligned keyboard nav). The "see all → `/search` page" deep-link is deferred to **Theme D** (the `/search` page); Phase 20 now has only Theme D open.
+
 ## 2026-06-22 — Phase 15 Theme D: knowledge-files watcher + MD injection (PR #95) — **Phase 15 COMPLETE**
 
 The original plan's "watched folder of MD files" — the last open theme of Phase 15. Gives midnite a second, file-based knowledge base distinct from the link-based **Sources**: standing project conventions/runbooks/domain notes injected automatically into the right runs.
