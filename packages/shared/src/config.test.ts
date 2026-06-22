@@ -75,6 +75,30 @@ describe('agent.provider (LLM provider) normalisation', () => {
   });
 });
 
+describe('knowledge config defaults', () => {
+  it('defaults the knowledge block off with a byte cap, no dir', () => {
+    const config = parseConfig({ agent: {}, terminal: {}, knowledge: {}, gateway: {} });
+    expect(config.knowledge.enabled).toBe(false);
+    expect(config.knowledge.dir).toBeUndefined();
+    expect(config.knowledge.maxBytes).toBeGreaterThan(0);
+  });
+
+  it('defaults knowledge even when the block is omitted entirely', () => {
+    const config = parseConfig({ agent: {}, terminal: {}, gateway: {} });
+    expect(config.knowledge.enabled).toBe(false);
+  });
+
+  it('accepts an explicit knowledge folder + cap', () => {
+    const config = parseConfig({
+      agent: {},
+      terminal: {},
+      knowledge: { enabled: true, dir: '~/notes', maxBytes: 4096 },
+      gateway: {},
+    });
+    expect(config.knowledge).toEqual({ enabled: true, dir: '~/notes', maxBytes: 4096 });
+  });
+});
+
 describe('usage config defaults', () => {
   it('defaults the usage block so existing configs stay valid', () => {
     const config = parseConfig({ agent: {}, terminal: {}, knowledge: {}, gateway: {} });
