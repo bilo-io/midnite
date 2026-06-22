@@ -62,13 +62,15 @@ Realize the palette's anticipated "content search."
 
 ---
 
-## Theme D — Dedicated `/search` page — **M**
+## Theme D — Dedicated `/search` page — **M** — ✅ DONE (PR #105, 2026-06-22 — see [done.md](done.md))
 
 The "see everything" surface.
 
-- [ ] A `/search` route (App Router) reading `?q=` (deep-linkable; reuse [`search-bar.tsx`](../packages/web/components/search-bar.tsx)'s URL-backed pattern) → `GET /search` with a higher limit.
-- [ ] **Filter by type** (tabs / pills via [`filter-pills.tsx`](../packages/web/components/filter-pills.tsx)) and more rows per group than the palette; each result links to its entity. Highlighted snippets.
-- [ ] Empty / no-results / typing states; the palette's "see all" deep-links here with the query prefilled.
+- [x] A `/search` route (App Router) reading `?q=` (deep-linkable; reuses [`search-bar.tsx`](../packages/web/components/search-bar.tsx)'s URL-backed pattern) → one `GET /search` at the max limit.
+- [x] **Filter by type** ([`filter-pills.tsx`](../packages/web/components/filter-pills.tsx), `?type=`) — client-side over the single response (no refetch on toggle); pills show only matched types + counts. Grouped by type, more rows than the palette, each result links to its entity, highlighted snippets (shared `lib/highlight.tsx`).
+- [x] Empty / short-query / loading / no-results states; the palette's per-type "+N more" deep-links here with the query + type prefilled.
+
+**This closes Phase 20 (all themes A–D shipped).**
 
 ---
 

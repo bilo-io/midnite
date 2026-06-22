@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 20 Theme D: dedicated /search page (PR #105) — **Phase 20 COMPLETE**
+
+The "see everything" surface — the last theme of global search (substrate A/B #90, palette C #96 already shipped). The palette caps each type with a "+N more" that now has a destination.
+
+- [x] **`/search` page** — reads `?q=` (the header `SearchBar` writes it) + `?type=` (`FilterPills`), runs one `GET /search` at the max limit, renders hits **grouped by type** with highlighted snippets, per-type counts, and a result-count summary. Idle / short-query / loading / no-results / error states.
+- [x] **Client-side type filtering** — the API `type` is single-value, so the page fetches all types once and the pills filter the single response locally (no refetch on toggle); pills show only matched types, labelled with counts.
+- [x] **Palette seam** — the per-type "+N more" is now a button that deep-links to `/search?q=&type=`.
+- [x] **DRY** — extracted the `<mark>`-snippet renderer into `lib/highlight.tsx` (shared by palette + page; no `dangerouslySetInnerHTML`); added a `Search` icon to `PageHeader`.
+- [x] Tests: 5-case RTL `search-results.test.tsx` (empty/short/grouped+highlighted+routing/client-filter-no-refetch/no-results) + palette test updated for the deep-link + a Playwright `search-page.e2e.ts` (seed → search → grouped → route; no-results). `web:typecheck`/`web:lint` green; `web:test` 342 green (via a throwaway worktree — vitest can't collect in `.git/worktrees`); CI green. *(Live screenshot skipped — the e2e harness's gateway wouldn't boot in the sandboxed worktree, unrelated to this web-only change; RTL + the CI e2e cover the states.)*
+
+---
+
 ## 2026-06-22 — Phase 30 Theme A: quality-gate checks contract + runner (PR #102)
 
 The engine for "verified completion": Phase 30 will gate a task's `done` transition on configured checks. Theme A lands the contract + the runner only — no lifecycle wiring (B), no DB (B), no auto-fix (C), no surfaces (D).
