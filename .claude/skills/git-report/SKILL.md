@@ -2,7 +2,7 @@
 name: git-report
 description: Git activity report for the repo over a day/week/month — merged PRs (linked), phases tackled + per-phase diff, and overall phase progress, as tables + a chart.
 argument-hint: "[today | yesterday | YYYY-MM-DD | this-week | this-month | YYYY-MM-DD..YYYY-MM-DD]"
-allowed-tools: Bash, Read, Glob, Grep, AskUserQuestion, Artifact
+allowed-tools: Bash, Read, Glob, Grep, AskUserQuestion, Artifact, Agent
 ---
 
 A git activity + phase-progress report for **midnite** over a chosen window.
@@ -19,17 +19,26 @@ Resolve to a concrete inclusive `START`/`END` (`YYYY-MM-DD`). macOS `date`:
 
 Echo the resolved range back in one line before the report.
 
-## 2 · Gather (read-only)
+## 2 · Gather (read-only) — fan out to subagents
+
+The gathering is independent and read-heavy (raw PR JSON + ~30 phase-doc reads), so once `START`/`END` are resolved **dispatch two read-only subagents in a single message** so they run concurrently. Pass the resolved `START`/`END` into each prompt. Each returns a compact structured digest — keep the raw JSON and file dumps out of this thread; you compose the report from the digests.
+
+**Subagent A — GitHub / PR data:**
 - **Merged PRs in range** (the spine of the report):
   ```bash
   gh pr list --state merged --search "merged:START..END" \
     --json number,title,url,mergedAt,additions,deletions,author --limit 200
   ```
-  (Default limit is 30 — keep `--limit 200`; bump it and note if you hit it.)
-- **Status mix** for the range: also run with `--state all --search "updated:START..END"` and bucket by state → merged / still-open / closed-unmerged.
+  (Default limit is 30 — keep `--limit 200`; bump it and note if the cap is hit.)
+- **Status mix** for the range: also run `--state all --search "updated:START..END"` and bucket by state → merged / still-open / closed-unmerged.
 - **Phase mapping:** parse each PR's title (and body if needed) for `Phase N` (+ Theme). Cross-check against phase docs touched in range: `git log --since=START --until="END 23:59" --name-only -- 'todo/phase-*.md'`. PRs with no phase → an "—" bucket.
-- **Phase progress (whole repo, not just the range):** for each `todo/phase-*.md` count `- [x]`/`✅` vs `- [ ]`; read the status markers in `todo/README.md` Quick links. Compute done/total + %.
+- If `gh` isn't available/authed, say so and fall back to merge commits via `git log` — don't fail the report.
+- **Return:** the merged-PR rows (`number, title, url, mergedAt, additions, deletions, author, phase`), the status-mix counts, and the phase→PRs aggregation.
+
+**Subagent B — repo doc / phase state:**
+- **Phase progress (whole repo, not just the range):** for each `todo/phase-*.md` count `- [x]`/`✅` vs `- [ ]` (exclude `OUT OF SCOPE`/`deferred`); read the status markers in `todo/README.md` Quick links. Compute done/total + %.
 - **Items shipped in range:** count `done.md` entries whose date falls in `START..END`, grouped by phase.
+- **Return:** one row per phase (`number, title, done, total, %, statusMarker`) plus the per-phase shipped-in-range counts.
 
 ## 3 · Report — markdown, tables-first
 Emit in this order:
