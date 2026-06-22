@@ -147,11 +147,27 @@ export const CouncilsConfigSchema = z.object({
   runTimeoutMs: z.number().int().positive().default(600000),
 });
 
+// "Knowledge files" — a watched folder of Markdown the plan model can pull
+// relevant files from into an agent's execution prompt. Distinct from the
+// link-based "Sources" KB (URLs + titles); this injects file *content*.
+export const KnowledgeConfigSchema = z.object({
+  // Feature flag — off by default (no folder is configured out of the box).
+  enabled: z.boolean().default(false),
+  // Directory of Markdown files to watch. Optional; the feature is inert when
+  // unset even if enabled. `~` and relative paths are resolved by the gateway.
+  dir: z.string().optional(),
+  // Total byte cap on knowledge-file content injected into one execution prompt,
+  // so a large folder can't blow the model's context window.
+  maxBytes: z.number().int().positive().default(16384),
+});
+
 export const MidniteConfigSchema = z.object({
   agent: AgentConfigSchema,
   terminal: TerminalConfigSchema,
   repos: z.array(RepoConfigSchema).default([]),
   gateway: GatewayConfigSchema,
+  // Optional (defaulted) so existing midnite.json files keep validating.
+  knowledge: KnowledgeConfigSchema.default({}),
   // Optional block (defaulted) so existing midnite.json files keep validating.
   workflows: WorkflowsConfigSchema.default({}),
   agents: AgentsRuntimeConfigSchema.default({}),
@@ -161,6 +177,7 @@ export const MidniteConfigSchema = z.object({
 });
 
 export type MidniteConfig = z.infer<typeof MidniteConfigSchema>;
+export type KnowledgeConfig = z.infer<typeof KnowledgeConfigSchema>;
 export type RepoConfig = z.infer<typeof RepoConfigSchema>;
 export type WorkflowsConfig = z.infer<typeof WorkflowsConfigSchema>;
 export type AgentsRuntimeConfig = z.infer<typeof AgentsRuntimeConfigSchema>;
