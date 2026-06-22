@@ -26,6 +26,7 @@ import {
   type AppSettings,
 } from '@/lib/app-settings';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { NotificationCenter } from '@/components/notification-center';
 import { Screensaver } from '@/components/screensaver';
 import { PasscodeSetupDialog } from '@/components/passcode-pad';
 import { Wordmark } from '@/components/wordmark';
@@ -199,6 +200,7 @@ export function NavBar() {
         </nav>
 
         <div className={cn('mt-auto flex flex-col gap-1', expandedView ? 'items-stretch' : 'items-center')}>
+          <NotificationCenter />
           <ThemeToggle expanded={expandedView} />
           {renderLink(SETTINGS_LINK)}
           <div className={cn('my-1 h-px bg-border/60', expandedView ? 'w-full' : 'w-6')} />

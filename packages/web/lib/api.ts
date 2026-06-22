@@ -43,6 +43,10 @@ import {
   UsageSummaryResponseSchema,
   type UsageSummaryResponse,
   type UsageGroupBy,
+  NotificationListResponseSchema,
+  type NotificationListResponse,
+  type NotificationListQuery,
+  type MarkReadRequest,
 } from '@midnite/shared';
 import {
   AgentCliResponseSchema,
@@ -1186,4 +1190,31 @@ export async function getUsageSummary(params?: {
   if (params?.groupBy) qs.set('groupBy', params.groupBy);
   const query = qs.toString() ? `?${qs.toString()}` : '';
   return fetchJson(`/usage/summary${query}`, undefined, UsageSummaryResponseSchema);
+}
+
+// ---- Notifications (Phase 21 — notification center + live feed) ----
+
+/** The persisted notification feed + unread count (`GET /notifications`). */
+export async function getNotifications(
+  query?: NotificationListQuery,
+): Promise<NotificationListResponse> {
+  const qs = new URLSearchParams();
+  if (query?.limit != null) qs.set('limit', String(query.limit));
+  if (query?.offset != null) qs.set('offset', String(query.offset));
+  const suffix = qs.toString() ? `?${qs.toString()}` : '';
+  return fetchJson(`/notifications${suffix}`, undefined, NotificationListResponseSchema);
+}
+
+/** Mark specific notifications read (`ids`) or all of them (`all`); returns the new unread count. */
+export async function markNotificationsRead(req: MarkReadRequest): Promise<{ unread: number }> {
+  return fetchJson(
+    '/notifications/read',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(req) },
+    z.object({ unread: z.number().int().nonnegative() }),
+  );
+}
+
+/** Clear the entire notification feed (`DELETE /notifications`). */
+export async function clearNotifications(): Promise<void> {
+  await fetchJson('/notifications', { method: 'DELETE' });
 }
