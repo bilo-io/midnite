@@ -660,3 +660,29 @@ export const hookSecrets = sqliteTable('hook_secrets', {
 
 export type HookSecretRow = typeof hookSecrets.$inferSelect;
 export type HookSecretInsert = typeof hookSecrets.$inferInsert;
+
+// Persisted notification feed (Phase 21). The notifications service turns
+// notify-worthy state transitions into rows here; the web center reads them
+// (unread-first) and marks them read. `read_at` null = unread.
+export const notifications = sqliteTable(
+  'notifications',
+  {
+    id: text('id').primaryKey(),
+    kind: text('kind').notNull(),
+    severity: text('severity').notNull(),
+    title: text('title').notNull(),
+    body: text('body').notNull(),
+    entityType: text('entity_type').notNull(),
+    entityId: text('entity_id').notNull(),
+    route: text('route').notNull(),
+    readAt: text('read_at'),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    createdIdx: index('notifications_created_idx').on(t.createdAt),
+    readIdx: index('notifications_read_idx').on(t.readAt),
+  }),
+);
+
+export type NotificationRow = typeof notifications.$inferSelect;
+export type NotificationInsert = typeof notifications.$inferInsert;

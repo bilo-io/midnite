@@ -16,6 +16,7 @@ import { MemoriesModule } from './memories/memories.module';
 import { MetadataModule } from './metadata/metadata.module';
 import { NewsModule } from './news/news.module';
 import { NotesModule } from './notes/notes.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { PoolModule } from './pool/pool.module';
 import { ProjectsModule } from './projects/projects.module';
 import { ProvidersModule } from './providers/providers.module';
@@ -47,6 +48,7 @@ import { TerminalModule } from './terminal/terminal.module';
     MetadataModule,
     NewsModule,
     NotesModule,
+    NotificationsModule,
     RoutinesModule,
     SearchIndexModule,
     SearchModule,
