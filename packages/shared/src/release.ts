@@ -5,7 +5,7 @@
 // buried in the skill prose means docs/RELEASING.md, the skill, and the bump math
 // can't drift. See version.ts for the bump math these feed.
 
-import type { BumpLevel, ChangeSet } from './version.js';
+import { sharesLockstepMajorMinor, type BumpLevel, type ChangeSet } from './version.js';
 
 /** A single conventional commit, parsed from its message. */
 export type ConventionalCommit = {
@@ -216,7 +216,10 @@ export function extractChangelogSection(
  *   bumped → a scoped tag `‹pkg›@X.Y.Z` per bumped package.
  *
  * Returns `[]` when nothing changed. `previous`/`next` are the version maps either
- * side of {@link planVersionBump}.
+ * side of {@link planVersionBump}; with no prior release (`previous` empty) a
+ * release where every package lands on one version is the lockstep baseline → a
+ * single `vX.Y.Z`. Throws if `previous` isn't itself in lockstep (a broken prior
+ * release) rather than silently cutting a wrong tag — matching version.ts.
  */
 export function planReleaseTags(
   previous: Record<string, string>,
@@ -225,18 +228,25 @@ export function planReleaseTags(
   const changed = Object.keys(next).filter((name) => next[name] !== previous[name]);
   if (changed.length === 0) return [];
 
-  const majorMinor = (version: string): string => version.split('.').slice(0, 2).join('.');
-  const prevFirst = Object.values(previous)[0];
-  const prevPrefix = prevFirst === undefined ? null : majorMinor(prevFirst);
-
-  const changedNext = changed.map((name) => ({ name, version: next[name] ?? '' }));
-  const lockstepBump =
-    prevPrefix !== null && changedNext.every((entry) => majorMinor(entry.version) !== prevPrefix);
-
-  if (lockstepBump) {
-    const shared = changedNext[0]?.version ?? '';
-    return [`v${shared}`];
+  const prevVersions = Object.values(previous);
+  if (!sharesLockstepMajorMinor(prevVersions)) {
+    throw new Error('cannot plan release tags: previous versions are not in lockstep MAJOR.MINOR');
   }
+
+  const majorMinor = (version: string): string => version.split('.').slice(0, 2).join('.');
+  const changedNext = changed.map((name) => ({ name, version: next[name] ?? '' }));
+  const target = changedNext[0]?.version ?? '';
+  const prevFirst = prevVersions[0];
+
+  // Lockstep minor/major → a single repo tag. Detected by the shared MAJOR.MINOR
+  // advancing; with no prior release, by every package landing on one version.
+  const lockstepBump =
+    prevFirst === undefined
+      ? Object.values(next).every((version) => version === target)
+      : changedNext.every((entry) => majorMinor(entry.version) !== majorMinor(prevFirst));
+
+  if (lockstepBump) return [`v${target}`];
+  // Independent patch → a scoped tag per bumped package.
   return changedNext.map((entry) => `${entry.name}@${entry.version}`);
 }
 

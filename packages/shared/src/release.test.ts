@@ -259,6 +259,16 @@ describe('extractChangelogSection', () => {
   it('returns null when the version has no section', () => {
     expect(extractChangelogSection(CHANGELOG, '9.9.9')).toBeNull();
   });
+
+  it('treats the version dots literally (no regex wildcard match)', () => {
+    // `0x1x0` must not match the `[0.1.0]` heading via a dot-as-any-char regex.
+    expect(extractChangelogSection(CHANGELOG, '0x1x0')).toBeNull();
+  });
+
+  it('returns an empty body for a heading with no content (e.g. at EOF)', () => {
+    const section = extractChangelogSection('# Changelog\n\n## [0.2.0] - 2026-07-01', '0.2.0');
+    expect(section).toMatchObject({ version: '0.2.0', date: '2026-07-01', body: '' });
+  });
 });
 
 describe('planReleaseTags', () => {
@@ -288,8 +298,19 @@ describe('planReleaseTags', () => {
     expect(planReleaseTags(repo, next)).toEqual(['midnite@0.1.1']);
   });
 
+  it('cuts a single lockstep tag for the first release (no prior versions)', () => {
+    const next = { midnite: '0.1.0', '@midnite/shared': '0.1.0', '@midnite/cli': '0.1.0' };
+    expect(planReleaseTags({}, next)).toEqual(['v0.1.0']);
+  });
+
   it('returns [] when nothing changed', () => {
     expect(planReleaseTags(repo, { ...repo })).toEqual([]);
+  });
+
+  it('throws when the previous versions are not in lockstep', () => {
+    const skewed = { a: '0.2.0', b: '0.1.0' };
+    const next = { a: '0.2.0', b: '0.1.1' };
+    expect(() => planReleaseTags(skewed, next)).toThrow(/lockstep/);
   });
 });
 
