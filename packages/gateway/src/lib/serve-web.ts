@@ -23,15 +23,18 @@ function resolveDir(dir: string): string {
  * GET route. A request for a path with no matching controller and no file 404s
  * (the export ships its own `404.html`).
  *
- * Returns `true` when the export was found and mounted, `false` when `webDir`
+ * Returns the resolved `root` (so the caller can log it without re-resolving) and
+ * `served`: `true` when the export was found and mounted, `false` when `webDir`
  * has no `index.html` (so the caller can warn and carry on serving API-only).
  */
+export type WebStaticResult = { served: boolean; root: string };
+
 export async function registerWebStatic(
   fastify: FastifyInstance,
   webDir: string,
-): Promise<boolean> {
+): Promise<WebStaticResult> {
   const root = resolveDir(webDir);
-  if (!existsSync(join(root, 'index.html'))) return false;
+  if (!existsSync(join(root, 'index.html'))) return { served: false, root };
 
   await fastify.register(fastifyStatic as never, {
     root,
@@ -39,5 +42,5 @@ export async function registerWebStatic(
     // `/uploads/` already registered the decorator; a second one would throw.
     decorateReply: false,
   });
-  return true;
+  return { served: true, root };
 }

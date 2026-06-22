@@ -53,12 +53,12 @@ export async function startGateway(): Promise<NestFastifyApplication> {
   // file mount. See lib/serve-web.ts.
   const { webDir } = config.gateway;
   if (webDir) {
-    const served = await registerWebStatic(adapter.getInstance(), webDir);
+    const { served, root } = await registerWebStatic(adapter.getInstance(), webDir);
     // eslint-disable-next-line no-console
     console.log(
       served
-        ? `[midnite gateway] serving web app from ${resolveDir(webDir)}`
-        : `[midnite gateway] webDir ${resolveDir(webDir)} has no index.html — serving API only`,
+        ? `[midnite gateway] serving web app from ${root}`
+        : `[midnite gateway] webDir ${root} has no index.html — serving API only`,
     );
   }
 

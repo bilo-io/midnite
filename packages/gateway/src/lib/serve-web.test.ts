@@ -1,6 +1,6 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { isAbsolute, join } from 'node:path';
 
 import Fastify from 'fastify';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -18,13 +18,22 @@ describe('registerWebStatic', () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
-  it('returns false and mounts nothing when the export has no index.html', async () => {
+  it('returns served:false and mounts nothing when the export has no index.html', async () => {
     const app = Fastify();
-    expect(await registerWebStatic(app, dir)).toBe(false);
+    const result = await registerWebStatic(app, dir);
+    expect(result).toEqual({ served: false, root: dir });
     await app.ready();
 
     const res = await app.inject({ method: 'GET', url: '/' });
     expect(res.statusCode).toBe(404);
+    await app.close();
+  });
+
+  it('resolves a relative webDir to an absolute root', async () => {
+    const app = Fastify();
+    const result = await registerWebStatic(app, 'some/relative/export');
+    expect(result.served).toBe(false); // dir doesn't exist, but resolution still happens
+    expect(isAbsolute(result.root)).toBe(true);
     await app.close();
   });
 
@@ -36,7 +45,7 @@ describe('registerWebStatic', () => {
     writeFileSync(join(dir, '_next', 'app.js'), 'console.log("hi")');
 
     const app = Fastify();
-    expect(await registerWebStatic(app, dir)).toBe(true);
+    expect((await registerWebStatic(app, dir)).served).toBe(true);
     await app.ready();
 
     const root = await app.inject({ method: 'GET', url: '/' });
@@ -64,7 +73,7 @@ describe('registerWebStatic', () => {
     const app = Fastify();
     // Mirror the bootstrap order: the file mount is registered before the
     // controllers' routes; Fastify still matches the specific route first.
-    expect(await registerWebStatic(app, dir)).toBe(true);
+    expect((await registerWebStatic(app, dir)).served).toBe(true);
     app.get('/tasks', async () => ({ ok: true }));
     await app.ready();
 
