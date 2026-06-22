@@ -254,17 +254,34 @@ export class TasksService {
   // task is still persisted and returned. Defaults to broadcasting.
   async createFromPrompt(input: CreateTaskInput, opts: { emit?: boolean } = {}): Promise<Task> {
     // Reject an unknown repo before any work (classify/triage/insert).
-    const repo = this.resolveRepoReference(input.repo);
+    const explicitRepo = this.resolveRepoReference(input.repo);
 
-    // Triage (plan model: ready→todo / not→backlog) and classify (title/kind)
-    // run concurrently — both are fail-soft, so neither breaks task creation.
-    const [classified, triage] = await Promise.all([
+    // When the caller named no repo at all (vs. an explicit blank = "unassigned"),
+    // let the planner guess one from the registry (Phase 4 / outstanding #5).
+    // Runs alongside classify/triage and is fail-soft (→ null on AI-off/error/no
+    // match), so it never breaks creation. Skipped when the registry is empty.
+    const registry = input.repo === undefined ? this.repos.list() : [];
+    const guessPromise =
+      registry.length > 0
+        ? this.planner.guessRepo(
+            input.prompt,
+            registry.map((r) => ({ name: r.name, path: r.path })),
+          )
+        : Promise.resolve<string | null>(null);
+
+    // Triage (plan model: ready→todo / not→backlog), classify (title/kind), and
+    // the repo guess run concurrently — all fail-soft, so none breaks creation.
+    const [classified, triage, guessedRepo] = await Promise.all([
       this.classifier.classify(
         input.prompt,
         input.images.map((i) => ({ path: i.path, mime: i.mime })),
       ),
       this.planner.triage(input.prompt),
+      guessPromise,
     ]);
+
+    const repo = explicitRepo ?? guessedRepo;
+    const repoInferred = explicitRepo === null && guessedRepo !== null;
 
     // A question is answered inline rather than queued for an agent: generate a
     // direct answer (fail-soft → null) and, if we got one, resolve the task to
@@ -313,6 +330,9 @@ export class TasksService {
       data: JSON.stringify({
         promptLength: input.prompt.length,
         attachments: input.images.length,
+        // Audit trail: note when the repo was inferred by the planner rather
+        // than set by the caller, so an unexpected assignment is explainable.
+        ...(repoInferred ? { repo, repoInferred: true } : {}),
       }),
     });
 

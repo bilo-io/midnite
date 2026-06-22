@@ -78,3 +78,88 @@ describe('PlannerService.answer', () => {
     expect(await new PlannerService(boom).answer('x')).toBeNull();
   });
 });
+
+describe('PlannerService.guessRepo', () => {
+  const repos = [
+    { name: 'web', path: '~/repos/web' },
+    { name: 'api', path: '~/repos/api' },
+  ];
+
+  it('returns null when AI is disabled (no API call)', async () => {
+    const generateStructured = vi.fn();
+    const planner = new PlannerService({
+      enabled: false,
+      generateStructured,
+    } as unknown as LlmService);
+    expect(await planner.guessRepo('fix the nav', repos)).toBeNull();
+    expect(generateStructured).not.toHaveBeenCalled();
+  });
+
+  it('returns null for an empty registry (no API call)', async () => {
+    const generateStructured = vi.fn();
+    const planner = new PlannerService({
+      enabled: true,
+      getPlanModel: () => 'm',
+      generateStructured,
+    } as unknown as LlmService);
+    expect(await planner.guessRepo('anything', [])).toBeNull();
+    expect(generateStructured).not.toHaveBeenCalled();
+  });
+
+  it('returns the sole repo without an API call when exactly one is registered', async () => {
+    const generateStructured = vi.fn();
+    const planner = new PlannerService({
+      enabled: true,
+      getPlanModel: () => 'm',
+      generateStructured,
+    } as unknown as LlmService);
+    expect(await planner.guessRepo('whatever', [{ name: 'only', path: '/p' }])).toBe('only');
+    expect(generateStructured).not.toHaveBeenCalled();
+  });
+
+  it("returns the model's pick when it names a known repo", async () => {
+    const generateStructured = vi.fn(
+      async (_req: { messages: Array<{ text: string }> }, _feature: string) => ({
+        data: { repo: 'api' },
+        model: 'm',
+      }),
+    );
+    const planner = new PlannerService({
+      enabled: true,
+      getPlanModel: () => 'm',
+      generateStructured,
+    } as unknown as LlmService);
+    expect(await planner.guessRepo('add an endpoint', repos)).toBe('api');
+    // the prompt carries the repo manifest (names + paths)
+    expect(generateStructured.mock.calls[0]![0].messages[0]!.text).toContain('~/repos/api');
+  });
+
+  it('returns null when the model picks an off-list (hallucinated) name', async () => {
+    const llm = {
+      enabled: true,
+      getPlanModel: () => 'm',
+      generateStructured: async () => ({ data: { repo: 'ghost' }, model: 'm' }),
+    } as unknown as LlmService;
+    expect(await new PlannerService(llm).guessRepo('x', repos)).toBeNull();
+  });
+
+  it('returns null when the model returns an empty string (no clear match)', async () => {
+    const llm = {
+      enabled: true,
+      getPlanModel: () => 'm',
+      generateStructured: async () => ({ data: { repo: '' }, model: 'm' }),
+    } as unknown as LlmService;
+    expect(await new PlannerService(llm).guessRepo('generic task', repos)).toBeNull();
+  });
+
+  it('returns null (fail-soft) when the model call throws', async () => {
+    const llm = {
+      enabled: true,
+      getPlanModel: () => 'm',
+      generateStructured: async () => {
+        throw new Error('rate limited');
+      },
+    } as unknown as LlmService;
+    expect(await new PlannerService(llm).guessRepo('x', repos)).toBeNull();
+  });
+});

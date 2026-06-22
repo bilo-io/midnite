@@ -20,17 +20,27 @@ class StubClassifier extends TaskClassifier {
   }
 }
 
-// Always-ready planner so existing status assertions (→ todo) hold.
-const stubPlanner = { triage: async () => ({ ready: true }) } as unknown as PlannerService;
+// Always-ready planner that guesses no repo, so existing status assertions
+// (→ todo) and unassigned-repo assertions hold.
+const stubPlanner = {
+  triage: async () => ({ ready: true }),
+  guessRepo: async () => null,
+} as unknown as PlannerService;
 
-// A repo-registry stub: the given names resolve to a repo, everything else is
-// unknown. `stubRepos` (no names) is the default for tests that don't set a repo.
+// A repo-registry stub: the given names resolve to a repo (by name and via
+// `list()`); everything else is unknown. `stubRepos` (no names) is the default
+// for tests that don't set a repo.
 function reposWith(...names: string[]): ReposService {
+  const repos = names.map((name) => ({
+    id: name,
+    name,
+    path: `~/repos/${name}`,
+    createdAt: '',
+    updatedAt: '',
+  }));
   return {
-    findByName: (name: string) =>
-      names.includes(name)
-        ? { id: name, name, path: `~/repos/${name}`, createdAt: '', updatedAt: '' }
-        : undefined,
+    list: () => repos,
+    findByName: (name: string) => repos.find((r) => r.name === name),
   } as unknown as ReposService;
 }
 const stubRepos = reposWith();
@@ -263,6 +273,57 @@ describe('TasksService', () => {
 
     expect(task.repo).toBeUndefined();
     expect(repo.tasks[0]!.repo).toBeNull();
+  });
+
+  it('infers the repo from the registry when the caller names none (Phase 4 / outstanding #5)', async () => {
+    const repo = new InMemoryRepo();
+    const guessRepo = vi.fn(
+      async (_prompt: string, _repos: Array<{ name: string; path: string }>) => 'web',
+    );
+    const planner = { triage: async () => ({ ready: true }), guessRepo } as unknown as PlannerService;
+    const service = new TasksService(repo, new StubClassifier(), planner, new TaskEventBus(), reposWith('web', 'api'));
+
+    const task = await service.createFromPrompt({ prompt: 'fix the kanban drag', images: [] });
+
+    expect(task.repo).toBe('web');
+    // the guess was offered the full registry manifest (name + path)
+    expect(guessRepo.mock.calls[0]![1]).toEqual([
+      { name: 'web', path: '~/repos/web' },
+      { name: 'api', path: '~/repos/api' },
+    ]);
+    // the inference is recorded on the task.created event for auditability
+    const created = repo.events.find((e) => e.kind === 'task.created');
+    expect(JSON.parse(created!.data!)).toMatchObject({ repo: 'web', repoInferred: true });
+  });
+
+  it('an explicit repo wins over inference and the planner is not consulted', async () => {
+    const repo = new InMemoryRepo();
+    const guessRepo = vi.fn(
+      async (_prompt: string, _repos: Array<{ name: string; path: string }>) => 'web',
+    );
+    const planner = { triage: async () => ({ ready: true }), guessRepo } as unknown as PlannerService;
+    const service = new TasksService(repo, new StubClassifier(), planner, new TaskEventBus(), reposWith('web', 'api'));
+
+    const task = await service.createFromPrompt({ prompt: 'tweak the API', repo: 'api', images: [] });
+
+    expect(task.repo).toBe('api');
+    expect(guessRepo).not.toHaveBeenCalled();
+    const created = repo.events.find((e) => e.kind === 'task.created');
+    expect(JSON.parse(created!.data!).repoInferred).toBeUndefined();
+  });
+
+  it('does not infer a repo when the registry is empty', async () => {
+    const repo = new InMemoryRepo();
+    const guessRepo = vi.fn(
+      async (_prompt: string, _repos: Array<{ name: string; path: string }>) => 'web',
+    );
+    const planner = { triage: async () => ({ ready: true }), guessRepo } as unknown as PlannerService;
+    const service = new TasksService(repo, new StubClassifier(), planner, new TaskEventBus(), stubRepos);
+
+    const task = await service.createFromPrompt({ prompt: 'no repos registered', images: [] });
+
+    expect(task.repo).toBeUndefined();
+    expect(guessRepo).not.toHaveBeenCalled();
   });
 
   it('createFromPrompt records attachments against the new task', async () => {
