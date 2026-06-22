@@ -2,7 +2,7 @@
 name: brainstorm
 description: Interactively brainstorm a brand-new todo/ phase — scan existing phases, show a status overview, riff on proposals together, then write the phase doc.
 argument-hint: "[optional: a topic/theme to seed the new phase, e.g. 'mobile app' or 'observability']"
-allowed-tools: Bash, Read, Write, Edit, Glob, Grep, AskUserQuestion, TodoWrite
+allowed-tools: Bash, Read, Write, Edit, Glob, Grep, AskUserQuestion, TodoWrite, Agent
 ---
 
 You are running the **brainstorm** workflow for the **midnite** repo: an interactive, human-in-the-loop session that lands a **new `todo/phase-N-*.md`** plan. It's a back-and-forth — propose, let the user steer, refine over a few rounds, then write the doc. **Do not write the phase file until the user has converged on a direction** (Stage 5).
@@ -18,14 +18,14 @@ You are running the **brainstorm** workflow for the **midnite** repo: an interac
 
 ## 🔭 Stage 1 — Scan & show the overview (do this BEFORE prompting for anything)
 
-1. Read **every** `todo/phase-*.md` (read them, don't guess from filenames) and skim `open-decisions.md` / `outstanding.md`. Note each phase's title, theme spread, and how much is done vs outstanding.
-2. **Check the git state** — it's part of the status picture (a phase may be further along than its checkboxes show if work is committed-but-unmerged or sitting in a PR). Run:
-   - `git status --short` + `git branch --show-current` — current branch and any uncommitted/untracked work.
-   - `git log --oneline -15` — recent merges, to corroborate what's actually landed.
-   - `gh pr list --state open` (and `git worktree list`) — **open PRs / active worktrees**. For each open PR, note its title, branch, and which phase/theme it advances.
-   - If `gh` isn't available/authed, say so and fall back to branch + log only — don't fail the command.
-3. **Compute completion** per phase: count the checklist items — `- [x]` (done) and `- [ ]` (outstanding). `completion% = round(100 × done / (done + outstanding))`. Exclude items explicitly marked `OUT OF SCOPE` or `deferred`/`⏳` from the denominator (they're not in-scope work). A phase whose items are all `✅ DONE` is 100%. Where an open PR or unmerged branch clearly advances a phase, reflect it (e.g. an `🔄` icon + a "PR #N pending" note) even if the boxes aren't ticked yet.
-4. **Print an overview table first thing** — before any question — covering all phases:
+The scan is read-heavy — **every** `todo/phase-*.md` (a couple of dozen files) plus git/PR state — so **delegate it to a single read-only subagent** (e.g. the `Explore` agent) and keep the raw file dumps out of this conversation. You only need the digest it returns to render the table.
+
+1. **Dispatch one scan subagent** with these instructions; have it return a structured per-phase digest:
+   - Read **every** `todo/phase-*.md` (actually read them, don't guess from filenames) and skim `open-decisions.md` / `outstanding.md`. For each phase capture: number, title, a one-clause summary, theme spread, and the done-vs-outstanding split.
+   - **Compute completion per phase:** count `- [x]`/`✅` (done) vs `- [ ]` (outstanding); `completion% = round(100 × done / (done + outstanding))`. **Exclude** items marked `OUT OF SCOPE` or `deferred`/`⏳` from the denominator (not in-scope work). A phase whose items are all `✅ DONE` is 100%.
+   - **Gather git state** (part of the status picture — a phase may be further along than its checkboxes if work is committed-but-unmerged or in a PR): `git status --short`, `git branch --show-current`, `git log --oneline -15`, `gh pr list --state open`, `git worktree list`. If `gh` isn't available/authed, note it and fall back to branch + log only — don't fail. **Map each open PR / unmerged branch / worktree to the phase/theme it advances.**
+   - **Return** structured text (not raw file contents): one row per phase — `{ number, title, summary, done%, doneCount, outstandingCount, inFlight: "PR #N" | branch | "—" }` — plus a git-state line (current branch, uncommitted-work flag, open-PR count) and the highest phase number seen.
+2. **Print an overview table first thing** — before any question — from the digest, covering all phases:
 
    | Phase | Status | Summary | Done | In flight |
    |-------|--------|---------|------|-----------|
@@ -33,12 +33,12 @@ You are running the **brainstorm** workflow for the **midnite** repo: an interac
    | 8 · Office fidelity | 🔄 | Sprites + movement in; assets/Tiled pending | 60% | PR #21 |
    | 11 · Public site rewrite | ⬜ | Not started — plan only | 0% | — |
 
-   - **Status icon:** `✅` complete (100%) · `🔄` in progress · `🟡` early/partial · `⬜` not started (0%).
+   - **Status icon:** `✅` complete (100%) · `🔄` in progress · `🟡` early/partial · `⬜` not started (0%). Where an open PR/branch advances a phase, prefer `🔄` + a "PR #N pending" note even if boxes aren't ticked yet.
    - **Summary:** one terse clause — what it is + where it stands.
    - **Done:** the computed completion %.
-   - **In flight:** any open PR / unmerged branch / worktree touching that phase (from step 2), else `—`.
-   - Order by phase number. Keep it skimmable. Below the table, add a one-line **git note** (current branch + any uncommitted work + open-PR count) so the overall state is clear at a glance.
-5. State the **next phase number** (max existing + 1) — that's the one we're about to brainstorm. If `$ARGUMENTS` named a topic, acknowledge it as the seed.
+   - **In flight:** the PR/branch/worktree from the digest, else `—`.
+   - Order by phase number. Keep it skimmable. Below the table, add the one-line **git note** (current branch + any uncommitted work + open-PR count) from the digest.
+3. State the **next phase number** (max existing + 1) — that's the one we're about to brainstorm. If `$ARGUMENTS` named a topic, acknowledge it as the seed.
 
 ## 💡 Stage 2 — Seed 5 proposals
 
@@ -50,7 +50,7 @@ You are running the **brainstorm** workflow for the **midnite** repo: an interac
 
 1. Take the user's pick (or their custom/combined idea) and **go deeper**: sketch the themes it would contain, surface trade-offs, name the risky/unknown bits, and propose what's in vs. out of scope.
 2. Keep it conversational and **iterate over a few rounds** — each round, refine the shape and re-offer choices via AskUserQuestion (e.g. "which themes are in scope?", "how far do we take X?"). **Every round, keep the "suggest your own / add to this" door open** — never force a choice from only your options.
-3. Pull in concrete repo detail to keep proposals honest — grep/read the relevant files so themes reference real modules, not hand-waving. Flag anything that would violate `CLAUDE.md` boundaries and adjust.
+3. Pull in concrete repo detail to keep proposals honest — themes must reference real modules, not hand-waving. For a quick check, grep/read inline; when grounding a direction needs more than a glance, **dispatch a focused read-only subagent** (e.g. `Explore`) to research that area and return just the honest detail (real module names, boundaries, existing patterns) rather than reading swathes of code in this thread. Flag anything that would violate `CLAUDE.md` boundaries and adjust.
 4. Converge when the scope, themes, and the big open decisions are clear enough to write down. Don't over-iterate — a few solid rounds, then move on.
 
 ## ✍️ Stage 4 — Confirm before writing

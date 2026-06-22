@@ -12,6 +12,15 @@ The build (API + CLI + web, Themes A/B/C — PRs #40/#47/#42) shipped a while ag
 - [x] **Batch-wide repo/priority/project** — `createBulk` threads all three to every line; the existing batch-wide test asserted repo+priority, so I **strengthened it to also assert `projectId`** ("applies batch-wide repo, priority, and project to every created task"). `gateway:test` green.
 - [x] Ticked the 3 acceptance items in [`phase-16-bulk-add.md`](phase-16-bulk-add.md) → phase ✅.
 
+## 2026-06-22 — Phase 21 Theme A: notifications foundation — model + ingestion + feed (PR #103)
+
+midnite runs many agents in parallel, but you had to *watch the board* to know when one needed you. Theme A is the substrate for a "tap on the shoulder"; channel dispatch (browser/webhook = Theme B) and the web center/toasts (Theme C) layer on top.
+
+- [x] **Contract (`shared/src/notification.ts`)** — `Notification` schema (kind/severity/entity/route/readAt), the `notification.created` WS event + path, list/mark-read request schemas, and a pure `notifyForTask` policy (waiting→warn, done→info, abandoned→urgent — all toggleable). Defaulted `config.notifications` block (events + channels). zod + tests.
+- [x] **Table + repo** — a `notifications` table (migration `0035`) + repository: paged **unread-first** feed, `markRead(ids)`/`markAllRead`, `clear`, `countUnread`.
+- [x] **`NotificationsService`** — a **pure subscriber** to `TaskEventBus` (no new emit paths): applies the policy, **coalesces** same-kind bursts in a 1.5s window (a mass move → one "N tasks finished", not a storm), persists, and emits `notification.created` via `NotificationEventBus` → `NotificationsGateway` (`/ws/notifications`, origin-guarded). Thin REST: `GET /notifications`, `POST /notifications/read`, `DELETE /notifications`.
+- [x] Tests: 9-case `:memory:` service spec (severity mapping, non-terminal ignored, toggle off, burst-coalesce, disabled-no-subscribe, mark-read/all + clear, unread-first ordering, destroy stops ingestion) + 9 shared contract/policy/config tests. `:typecheck`/`:lint` green; `gateway:test` 704 green; CI green on re-run (first run hit the pre-existing flaky `terminal` env-dump spec, unrelated). Backend-only — no web surface yet.
+
 ## 2026-06-22 — Phase 24 Theme C: installable PWA (PR #101)
 
 Phase 24 made the app responsive; the manifest was still an empty white stub, so it wasn't installable. This makes midnite a real PWA — installable to the home screen, launching standalone with a fast cached shell. **Installable, not offline:** board/session data stays live from the loopback gateway.
