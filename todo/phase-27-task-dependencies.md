@@ -57,10 +57,12 @@ Express and see the graph; "blocked" is derived, not a new status (Decision §2)
 
 ---
 
-## Theme D — CLI + coverage — **S**
+## Theme D — CLI + coverage — **S** — ✅ DONE (PR #113)
 
-- [ ] **`midnite add --depends-on <id>`** (repeatable) in the CLI ([`cli/src/`](../packages/cli/src/)) — thin: parse → typed client; unknown/cyclic id errors clearly. Optionally `midnite task block <id> --on <id>` to add an edge to an existing task.
-- [ ] **End-to-end tests** covering: cycle rejection (400/409), ready-computation, scheduler skips blocked + runs in dependency order, blocker-done unblocks, abandoned-blocker holds, edge cleanup on task delete.
+**Landed — see [done.md](done.md). Only the Theme C web UI affordances remain to fully close Phase 27.**
+
+- [x] **`midnite add --depends-on <id>`** (repeatable) in the CLI ([`cli/src/index.ts`](../packages/cli/src/index.ts)) — thin: parse → typed client (repeatable multipart `dependsOn` fields). Rejected alongside `--bulk` (a blocker graph is per-task, not a batch default). Unknown/cyclic ids error clearly — the create path now maps `TaskDependencyError` → 4xx (was a 500). Also **`midnite block <id> --on <blockerId>`** / **`unblock <id> --on <blockerId>`** — thin POST/DELETE to `/tasks/:id/dependencies`.
+- [x] **End-to-end tests** covering: cycle rejection (400/409 — controller dependency-route tests + new create→400), ready-computation + edge cleanup on delete ([`tasks.dependencies.spec.ts`](../packages/gateway/src/tasks/tasks.dependencies.spec.ts)), scheduler skips blocked + runs in dependency order + blocker-done unblocks + abandoned-blocker holds (Phase 27 B [`agent-pool.integration.spec.ts`](../packages/gateway/src/pool/agent-pool.integration.spec.ts)). Theme D adds the CLI client tests (repeatable `dependsOn`, add/remove endpoints, 409 cycle message surfaced).
 
 ---
 
