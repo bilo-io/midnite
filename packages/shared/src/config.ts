@@ -86,10 +86,38 @@ export const TerminalConfigSchema = z.object({
   hookCallbackUrl: z.string().optional(),
 });
 
+// Optional remote-access auth (Phase 7 A5). Off by default — midnite is local-only
+// out of the box. When a bearer token is configured (or the gateway binds a
+// non-loopback host), a Nest guard requires `Authorization: Bearer <token>` on the
+// REST API; basic per-IP rate limiting is available too.
+export const GatewayAuthConfigSchema = z.object({
+  // Name of the env var holding the bearer token — never inline the secret into
+  // committed config (mirrors `encryptionKeyEnv` / OAuth `clientSecretEnv`). When
+  // that env var is set (non-empty), every REST route requires the token except
+  // liveness (`/health`) and the self-authenticating hook callbacks (`/hooks/*`,
+  // which carry their own per-session secret). Unset ⇒ no auth (local-only default).
+  tokenEnv: z.string().default('MIDNITE_AUTH_TOKEN'),
+  // Fail-closed when the gateway binds a non-loopback host with no token resolved:
+  // refuse to boot rather than silently exposing an unauthenticated API to the
+  // network. Set false to bind non-loopback intentionally without a token.
+  requireOnNonLoopback: z.boolean().default(true),
+  // Basic per-IP fixed-window rate limit. `max: 0` disables it (the default — a
+  // local single-user gateway needs no throttling). When > 0, requests beyond
+  // `max` per `windowMs` from one IP get a 429. `/health` is never throttled.
+  rateLimit: z
+    .object({
+      windowMs: z.number().int().positive().default(60000),
+      max: z.number().int().nonnegative().default(0),
+    })
+    .default({}),
+});
+
 export const GatewayConfigSchema = z.object({
   port: z.number().int().positive().default(7777),
   /** Bind address. Loopback by default — the gateway spawns PTYs, so don't expose it to the network unless you mean to. */
   host: z.string().default('127.0.0.1'),
+  /** Optional remote-access auth: bearer token + per-IP rate limiting (off by default). */
+  auth: GatewayAuthConfigSchema.default({}),
   /** Extra browser origins allowed to call the API / open the terminal WS. Loopback origins are always allowed. */
   allowedOrigins: z.array(z.string()).default([]),
   uploadsDir: z.string().default('./.midnite/uploads'),
@@ -216,6 +244,8 @@ export type MidniteConfig = z.infer<typeof MidniteConfigSchema>;
 export type KnowledgeConfig = z.infer<typeof KnowledgeConfigSchema>;
 export type NotificationsConfig = z.infer<typeof NotificationsConfigSchema>;
 export type RepoConfig = z.infer<typeof RepoConfigSchema>;
+export type GatewayConfig = z.infer<typeof GatewayConfigSchema>;
+export type GatewayAuthConfig = z.infer<typeof GatewayAuthConfigSchema>;
 export type WorkflowsConfig = z.infer<typeof WorkflowsConfigSchema>;
 export type AgentsRuntimeConfig = z.infer<typeof AgentsRuntimeConfigSchema>;
 export type CouncilsConfig = z.infer<typeof CouncilsConfigSchema>;

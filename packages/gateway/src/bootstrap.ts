@@ -10,12 +10,31 @@ import fastifyStatic from '@fastify/static';
 import { mkdirSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
 import { AppModule } from './app.module';
+import { isLoopbackHost, isValidBearer, resolveAuthToken } from './auth/lib/auth-policy';
 import { isAllowedOrigin } from './lib/allowed-origin';
 import { loadConfigFromDisk } from './lib/load-config';
 import { registerWebStatic } from './lib/serve-web';
 
 function resolveDir(p: string): string {
   return isAbsolute(p) ? p : resolve(process.cwd(), p);
+}
+
+/**
+ * Fail-closed (Phase 7 A5): binding a non-loopback host with no auth token would
+ * expose an unauthenticated, PTY-spawning API on the network. Refuse to boot
+ * unless the operator either sets a token or explicitly opts out
+ * (`gateway.auth.requireOnNonLoopback: false`). Loopback binds (the default) are
+ * unaffected.
+ */
+function assertAuthForHost(config: ReturnType<typeof loadConfigFromDisk>): void {
+  const { host, auth } = config.gateway;
+  if (isLoopbackHost(host) || !auth.requireOnNonLoopback) return;
+  if (!resolveAuthToken(config)) {
+    throw new Error(
+      `gateway.host is non-loopback (${host}) but no auth token is set: define $${auth.tokenEnv}, ` +
+        `or set gateway.auth.requireOnNonLoopback=false to bind it unauthenticated on purpose`,
+    );
+  }
 }
 
 /**
@@ -29,6 +48,8 @@ function resolveDir(p: string): string {
  */
 export async function startGateway(): Promise<NestFastifyApplication> {
   const config = loadConfigFromDisk();
+  // Fail-closed before binding: never expose an unauthenticated API off-box.
+  assertAuthForHost(config);
   const adapter = new FastifyAdapter();
 
   const uploadsDir = resolveDir(config.gateway.uploadsDir);
@@ -46,6 +67,23 @@ export async function startGateway(): Promise<NestFastifyApplication> {
     prefix: '/uploads/',
     decorateReply: false,
   });
+
+  // `@fastify/static` serves `/uploads/*` natively on the Fastify instance, so
+  // Nest's global auth guard (an APP_GUARD, Nest-routes-only) never covers it.
+  // When bearer auth is on, guard the uploads route here too — those are real
+  // user attachments/media, not public assets. (The web export below stays
+  // public: it's the client shell, and the data it fetches goes through the
+  // guarded API; the browser also can't ride a bearer on its initial document GET.)
+  const authToken = resolveAuthToken(config);
+  if (authToken) {
+    adapter.getInstance().addHook('onRequest', (req, reply, done) => {
+      if ((req.url ?? '').startsWith('/uploads/') && !isValidBearer(req.headers.authorization, authToken)) {
+        reply.code(401).send({ statusCode: 401, message: 'missing or invalid bearer token' });
+        return;
+      }
+      done();
+    });
+  }
 
   // In prod, serve the web app's static export from the gateway (single process
   // serves API + UI). Off unless `gateway.webDir` (or MIDNITE_WEB_DIR) points at

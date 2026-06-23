@@ -108,7 +108,7 @@ User config lives in [`midnite.json`](midnite.json) at the repo root, validated 
   "agent":     { "pool": 4, "provider": "anthropic", "plan": "opus4.7", "act": "sonnet4.7" },
   "terminal":  { "mode": "pty", "layout": "split", "args": [], "scrollbackBytes": 262144, "idleDisposeMs": 300000, "maxSessions": 16, "inheritSecrets": false, "approvals": { "enabled": false, "timeoutMs": 120000, "onTimeout": "deny", "onNoSubscriber": "ask" } },
   "repos":     [],
-  "gateway":   { "port": 7777, "host": "127.0.0.1", "allowedOrigins": [] },
+  "gateway":   { "port": 7777, "host": "127.0.0.1", "allowedOrigins": [], "auth": { "tokenEnv": "MIDNITE_AUTH_TOKEN", "requireOnNonLoopback": true, "rateLimit": { "windowMs": 60000, "max": 0 } } },
   "knowledge": { "enabled": false, "maxBytes": 16384 },
   "workflows": { "enabled": false, "defaultTimezone": "UTC", "schedulerTickMs": 30000, "webhookBaseUrl": "http://localhost:7777" }
 }
@@ -227,6 +227,22 @@ loopback by default**:
   the terminal WS. Loopback origins (any port) are always allowed; add others
   here. Non-loopback origins are rejected (CORS + a WS `Origin` check) to block
   drive-by pages from driving a terminal.
+- `gateway.auth` — **optional remote-access auth (off by default)**. midnite is
+  local-only out of the box; this is for the rare case you bind it off-loopback.
+  - `auth.tokenEnv` (default `MIDNITE_AUTH_TOKEN`) names the env var holding a
+    bearer token — the secret is never inlined into committed config. When that
+    var is set, every REST route (and the `/uploads/*` attachment files) requires
+    `Authorization: Bearer <token>` except `/health` (liveness) and `/hooks/*`
+    (they carry their own per-session secret). The gateway-served web bundle
+    (`gateway.webDir`) stays public — it's the client shell; the data it loads
+    goes through the guarded API.
+  - `auth.requireOnNonLoopback` (default `true`) is **fail-closed**: binding a
+    non-loopback `host` with no token resolved refuses to boot. Set `false` to
+    bind unauthenticated on purpose.
+  - `auth.rateLimit` (`{ windowMs: 60000, max: 0 }`) is a basic per-IP
+    fixed-window limit; `max: 0` disables it (the default). `/health` is never
+    throttled. *(WS streams aren't yet token-guarded — the terminal WS uses
+    one-time tokens; the board/workflow WS is a follow-on.)*
 
 Every consumer (gateway, CLI) takes a parsed `MidniteConfig` — never `JSON.parse` the file yourself.
 
