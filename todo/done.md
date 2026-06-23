@@ -15,6 +15,15 @@ The gateway half of structured planning: turn a confirmed `Breakdown` (Theme A's
 
 **Scope notes:** the create step is intentionally **LLM-free** — the doc's "reuse `createFromPrompt` classify/triage" was dropped since the breakdown already carries title/kind, and the "LLM-disabled → flat" fallback belongs to Theme A's *generation* step (still open), not this create mechanism. The core lives in `TasksService` so Theme D's standalone `POST /tasks/breakdown` can reuse it. **Still open:** Theme A's breakdown-LLM step + prompt; Theme C (web preview/edit); Theme D (standalone endpoint + `midnite plan`).
 
+## 2026-06-23 — Phase 30 B3: check-lifecycle task events (PR #136)
+
+Emits `checks.started` / `checks.passed` / `checks.failed` task events around the gate run, each triggering `task.updated`. Board reacts in real time without polling.
+
+- [x] `TasksService.recordCheckEvent(taskId, kind)` — event row + `task.updated` broadcast
+- [x] `completeWithChecks` now emits `checks.started` before the run and `checks.passed|failed` after
+
+---
+
 ## 2026-06-23 — Phase 30 B2: gate the `done` transition via `completeWithChecks` (PR #134)
 
 Routes the Stop-hook completion through `AgentRunnerService.completeWithChecks` — runs configured checks in the task's repo cwd, persists the run, and either `markDone` (pass) or `markWaiting` (fail). Slot released exactly once in every branch. Default `config.checks.enabled = false` is fail-open. B3 (events + derived flags) is next.
