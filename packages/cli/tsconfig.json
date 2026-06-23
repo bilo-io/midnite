@@ -3,9 +3,22 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "tsBuildInfoFile": "./dist/.tsbuildinfo"
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    "jsx": "react-jsx"
   },
-  "include": ["src/**/*"],
-  "exclude": ["dist", "node_modules"],
-  "references": [{ "path": "../shared" }]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules"
+  ],
+  "references": [
+    {
+      "path": "../gateway"
+    },
+    {
+      "path": "../shared"
+    }
+  ]
 }
