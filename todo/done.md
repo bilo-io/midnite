@@ -4,17 +4,32 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-06-23 — Phase 19 Theme B: guided setup wizard (PR #121) — **Phase 19 COMPLETE**
+## 2026-06-23 — Phase 32 A2: reusable WS-subscribe helper `openWs<T>` (PR #124)
 
-The final piece of the onboarding flow: a multi-step guided wizard that walks a new user through every required setup step. Auto-opens on first visit when `!ready`; the nudge's CTA opens the same wizard. Board stays fully accessible throughout.
+Extracted the hand-rolled WebSocket lifecycle inlined in `workflow watch` into a small, reusable `openWs<T>()` helper in `packages/cli/src/ws.ts`. `workflow watch` is refactored to consume it; the upcoming `midnite watch` TUI dashboard (Phase 32 A1) will too.
 
-- [x] **`SetupWizard.tsx`** — modal overlay wizard (step breadcrumb, back/skip nav, Escape/× dismiss). 5 steps: Provider (pick + paste key); Tools (claude/gh status + install links); Pool (range slider, localStorage); Repo (optional — name+path → `createRepo`, skip link); Finish (re-fetches `SetupStatus`, "You're all set!" badge, "Start building" CTA).
-- [x] **`SetupWizardController`** — mounts in the main layout; auto-opens on first visit when `!ready` + not dismissed (localStorage); registers open callback for the nudge.
-- [x] **`SetupNudge`** — new `onOpenWizard` prop; CTA becomes "Open setup wizard" when wired.
-- [x] **`shared/src/setup.ts`** — `AGENT_POOL_SIZE_MIN/MAX` + `UpdateAgentPoolRequestSchema`.
-- [x] Tests: 5 RTL tests; `run-output-panel.test.tsx` + `SetupWizard.test.tsx` wrapped in `ToastProvider`. Web 403/403; typecheck green. Also cleaned up 6 stale worktrees (~8GB freed).
+- [x] **`packages/cli/src/ws.ts`** — `openWs<T>()`: connect, `{type:'subscribe',...extra}` handshake, caller-supplied `parse`, `onReady` callback (post-subscribe backfill), `onError`, reconnect-with-exponential-backoff (`reconnect: false` to opt out), `WsHandle.close()` teardown.
+- [x] **`packages/cli/src/ws.test.ts`** — 12 unit tests covering: handshake, extra fields, onReady, message delivery, null-parse filtering, onError, constructor throw, close teardown, backoff doubling, delay reset, `reconnect: false`.
+- [x] **`packages/cli/src/index.ts`** — `watchWorkflowRun` refactored onto `openWs` (behavior-identical).
 
 ---
+
+## 2026-06-23 — Phase 26 Themes A+B: `@midnite/docs` app scaffold + design-system docs (PR #123)
+
+New `packages/docs` (`@midnite/docs`) — a static **Vite + React** documentation site whose entire shell is built from `@midnite/ui`, proving the library is consumable outside `web`. Authored in **MDX** with live component examples; the graph gains the `ui ◀── docs` leaf edge.
+
+**Theme A — scaffold:**
+- [x] Vite + React SPA: `package.json` (`@midnite/ui: workspace:*`), `vite.config.ts` (MDX via `@mdx-js/rollup` + `remark-gfm`/frontmatter), Tailwind/PostCSS, `tsconfig`, `index.html`, `moon.yml` (`dev`/`build`/`preview`/`typecheck`/`test`/`lint`). Auto-registers via `packages/*`.
+- [x] Shell built entirely from the lib — header, grouped sidebar, content well, theme switcher (the lib's `Tabs` + `useTheme`), wrapped in `ThemeProvider`, token CSS from `@midnite/ui/styles`. No app-local primitives.
+- [x] **Hash router** (Decision §1) — deep links work on a static host with no rewrites; route table + sidebar nav both derived from the MDX content glob (adding a page = adding a file).
+- [x] **Boundary test** (`src/boundary.test.ts`) — fails if `docs` imports anything in-repo but `@midnite/ui`; enforces the leaf edge in CI.
+
+**Theme B — design-system docs (MDX):**
+- [x] Getting-started on-ramp + a page per primitive (Button/Card/Input/Switch/Tabs) with live examples, props tables, do/don't, and a Storybook pointer (Storybook stays the interactive/a11y source of truth — Decision §2).
+- [x] Foundations pages (colours/typography/radius + reserved scales) rendering the **real exported tokens** (live swatches + canonical light/dark HSL values), so they can't drift.
+- [x] `CLAUDE.md` updated (package list + `ui ◀── docs` graph edge); `packages/docs/README.md` documents running it. Tests: boundary + nav helpers + Layout RTL (11). `docs:typecheck`/`lint`/`test`/`build` + full-graph `:typecheck`/`:lint` + `version-check` green.
+
+Remaining for Phase 26: Theme C (product/developer docs from repo markdown), Theme D (nav/search/build seam), hosting (deferred follow-on).
 
 ## 2026-06-23 — Phase 18 Theme B: project markdown export (PR #119)
 

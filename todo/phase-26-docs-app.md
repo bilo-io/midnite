@@ -20,25 +20,25 @@
 
 ---
 
-## Theme A — Docs app scaffold (Vite + `@midnite/ui`) — **M**
+## Theme A — Docs app scaffold (Vite + `@midnite/ui`) — **M** — ✅ DONE (PR #123, 2026-06-23 — see [done.md](done.md))
 
 Stand up the app as a clean consumer of the library.
 
-- [ ] **`packages/docs`** — a Vite + React app: `package.json` with `"@midnite/ui": "workspace:*"` (+ React), `vite.config.ts` (with the MDX plugin, Theme B), `tsconfig.json`, `moon.yml` (`dev` / `build` / `preview` / `lint` / `typecheck`). Auto-registers in pnpm + moon.
-- [ ] **Shell from the lib** — the app chrome (layout, nav/sidebar, header, theme toggle, buttons, cards) is built **entirely from `@midnite/ui` primitives + tokens**, importing the lib's token CSS and wrapping in its `ThemeProvider`. This *is* the proof-of-consumption for Phase 25 — if a primitive can't build the docs shell, that's a Phase 25 gap to fix.
-- [ ] **Routing** (Decision §1) — a lightweight client router (react-router) or file-based MDX routes; pick one and keep the page registry in one obvious place. Fully static — no gateway, no API client.
-- [ ] **Boundary check:** `docs` imports only `@midnite/ui` (and React/router/MDX) — nothing from `shared`/`web`/`gateway`. A simple grep/lint guard keeps the leaf clean.
+- [x] **`packages/docs`** (`@midnite/docs`) — a Vite + React app: `package.json` (`"@midnite/ui": "workspace:*"` + React), `vite.config.ts` (MDX via `@mdx-js/rollup` + `remark-gfm`/frontmatter), `tsconfig.json`, Tailwind/PostCSS, `moon.yml` (`dev` / `build` / `preview` / `typecheck` / `test` / `lint`). Auto-registers in pnpm + moon.
+- [x] **Shell from the lib** — header, grouped sidebar, content well + a theme switcher built from the lib's `Tabs` + `useTheme`; wrapped in the lib's `ThemeProvider`, token CSS from `@midnite/ui/styles`. No app-local primitives — the proof-of-consumption holds (no Phase 25 gap surfaced).
+- [x] **Routing** (Decision §1, resolved → **hash router**) — any deep link works on a static host with no server rewrites; the route table **and** sidebar nav are both derived from the MDX content glob (`content/registry.ts`), so adding a page = adding a file (frontmatter sets `title`/`section`/`order`).
+- [x] **Boundary check** (`src/boundary.test.ts`) — fails if `docs` imports anything in-repo other than `@midnite/ui`; enforces the `ui ◀── docs` leaf edge in CI.
 
 ---
 
-## Theme B — Design-system documentation (MDX) — **M–L**
+## Theme B — Design-system documentation (MDX) — **M–L** — ✅ DONE (PR #123, 2026-06-23 — see [done.md](done.md))
 
 Curated narrative docs for the library, complementing (not duplicating) Storybook (Decision §2).
 
-- [ ] **MDX authoring** (Decision §3) — `@mdx-js/rollup` (or `vite-plugin-mdx`) so a page is markdown prose **with inline live JSX examples** rendered using the real `@midnite/ui` components. One format for explanation + demo.
-- [ ] **A page per primitive** — usage guidance, canonical live examples, props/variants, do/don't. **Link out to Storybook** for the full interactive prop matrix (Storybook stays the playground + a11y/test runner from Phase 25 D); the docs app is the narrative + canonical examples, no re-implementation of the interactive controls.
-- [ ] **Foundations pages** — render the design tokens live: a **colour palette**, **typography** specimen, **spacing/radius/shadow/motion** scales (the Phase 25 §B *placeholder* taxonomy gets real, browsable doc pages here). Theming explained (light/dark/system/time via the lib provider).
-- [ ] **Getting-started** — "install `@midnite/ui`, import the token CSS, wrap in `ThemeProvider`, use the primitives" — the on-ramp a new consumer (incl. the `docs` app itself) follows.
+- [x] **MDX authoring** (Decision §3) — `@mdx-js/rollup` so a page is markdown prose **with inline live JSX examples** rendered by the real `@midnite/ui` components; prose elements are themed via an MDXProvider mapping (`mdx-components.tsx`).
+- [x] **A page per primitive** — Button / Card / Input / Switch / Tabs: usage guidance, canonical **live** examples (stateful ones interactive), props/variants, do/don't, and a "run the playground" pointer to Storybook (it stays the interactive/a11y source of truth — Decision §2; no controls re-implemented).
+- [x] **Foundations pages** — colour palette (live `hsl(var(--token))` swatches + canonical light/dark HSL values), typography specimen, radius scale + a reserved-scales table — all driven from `@midnite/ui`'s **typed token map**, so they can't drift. Theming via the lib's `ThemeProvider` (light/dark/system/time).
+- [x] **Getting-started** — install, import the token CSS, generate the utilities, wrap in `ThemeProvider`, use the primitives — the on-ramp a new consumer (incl. this docs app) follows.
 
 ---
 

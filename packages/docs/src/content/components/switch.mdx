@@ -1,0 +1,39 @@
+---
+title: Switch
+section: Components
+order: 3
+---
+
+import { Demo } from '../../components/demo';
+import { SwitchDemo } from '../../components/examples';
+
+# Switch
+
+A binary on/off toggle. **Controlled**: the caller owns `checked` and updates it from
+`onCheckedChange`. Rendered as a `role="switch"` button, so it's keyboard- and
+screen-reader-friendly.
+
+<Demo>
+  <SwitchDemo />
+</Demo>
+
+## Props
+
+| Prop | Type | Notes |
+| --- | --- | --- |
+| `checked` | `boolean` | required — controlled state |
+| `onCheckedChange` | `(checked: boolean) => void` | required |
+| `disabled` | `boolean` | optional |
+| `aria-label` / `aria-labelledby` | `string` | label the control for a11y |
+
+## Usage
+
+```tsx
+import { Switch } from '@midnite/ui';
+
+const [enabled, setEnabled] = useState(false);
+
+<Switch checked={enabled} onCheckedChange={setEnabled} aria-label="Enable agent pool" />;
+```
+
+Playground: `moon run ui:storybook` → **Components / Switch**.

@@ -1,0 +1,44 @@
+---
+title: Overview
+section: Overview
+order: 0
+---
+
+import { Button, Card, CardHeader, CardTitle, CardContent } from '@midnite/ui';
+import { Demo } from '../components/demo';
+
+# midnite design system & docs
+
+This is **`@midnite/ui`** — the reusable component library and design system behind
+midnite's web UI — documented in an app that is itself built entirely from it. The
+shell you're looking at (header, sidebar, theme switcher, this content frame) renders
+from the library's primitives and design tokens, so the site is its own proof that
+the library is consumable outside the web app.
+
+<Demo>
+  <Button>Primary</Button>
+  <Button variant="secondary">Secondary</Button>
+  <Button variant="outline">Outline</Button>
+  <Button variant="destructive">Destructive</Button>
+</Demo>
+
+## What's here
+
+- **Foundations** — the design tokens (colour, typography, radius) rendered live.
+- **Components** — a page per primitive with usage guidance and live examples.
+
+For the full interactive prop matrix and accessibility checks, each component page
+links out to **Storybook** — the playground stays the source of interactive truth;
+these docs are the narrative and canonical examples.
+
+<Card className="my-6 max-w-md">
+  <CardHeader>
+    <CardTitle>Try the theme switcher</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <p className="text-sm text-muted-foreground">
+      Use the control in the header — light, dark, system, and time-of-day all resolve
+      through the library's own <code>ThemeProvider</code>, the same runtime the web app ships.
+    </p>
+  </CardContent>
+</Card>
