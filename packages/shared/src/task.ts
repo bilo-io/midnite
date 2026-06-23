@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { SOURCE_KINDS } from './source.js';
+import { PrStatusSchema, SOURCE_KINDS } from './source.js';
 
 export const STATUSES = [
   'backlog',
@@ -66,6 +66,12 @@ export const TaskSchema = z.object({
   sessionId: z.string().optional(),
   projectId: z.string().optional(),
   prUrl: z.string().optional(),
+  /**
+   * Live status of the task's GitHub PR (Phase 22 Theme C), resolved by the
+   * gateway's poller from {@link prUrl}. Absent until first fetched (or when the
+   * URL isn't a parseable PR). The gateway always populates it on read when known.
+   */
+  prStatus: PrStatusSchema.optional(),
   /** Free-form user labels. App-validated (trimmed, de-duped, capped); defaults to none. */
   tags: z.array(z.string()).default([]),
   /**

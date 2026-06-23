@@ -221,6 +221,19 @@ export const NotificationsConfigSchema = z.object({
     .default({}),
 });
 
+// PR-status polling (Phase 22 Theme C). A single gateway-owned loop refreshes
+// the GitHub state/CI/review of tasks whose PR isn't yet merged/closed — gh-first
+// with an anonymous REST fallback for public repos, fail-open on any error.
+export const PrStatusConfigSchema = z.object({
+  // Poll open PRs for live state. Fail-open: a missing `gh` / private repo when
+  // unauthenticated / network error leaves the last-known status untouched.
+  enabled: z.boolean().default(true),
+  // How often the single poller wakes to refresh unmerged PRs.
+  pollIntervalMs: z.number().int().positive().default(60000),
+  // Max PRs fetched concurrently per poll cycle (bounded for gh/REST rate limits).
+  pollConcurrency: z.number().int().positive().default(4),
+});
+
 export const MidniteConfigSchema = z.object({
   agent: AgentConfigSchema,
   terminal: TerminalConfigSchema,
@@ -238,6 +251,9 @@ export const MidniteConfigSchema = z.object({
   // Quality-gate checks run before a task's `done` transition (Phase 30).
   // Optional (defaulted) so existing midnite.json files keep validating.
   checks: ChecksConfigSchema.default({}),
+  // Live PR-status polling (Phase 22 Theme C). Optional (defaulted) so existing
+  // midnite.json files keep validating.
+  prStatus: PrStatusConfigSchema.default({}),
 });
 
 export type MidniteConfig = z.infer<typeof MidniteConfigSchema>;
@@ -250,6 +266,7 @@ export type WorkflowsConfig = z.infer<typeof WorkflowsConfigSchema>;
 export type AgentsRuntimeConfig = z.infer<typeof AgentsRuntimeConfigSchema>;
 export type CouncilsConfig = z.infer<typeof CouncilsConfigSchema>;
 export type OAuthClientConfig = z.infer<typeof OAuthClientConfigSchema>;
+export type PrStatusConfig = z.infer<typeof PrStatusConfigSchema>;
 export type { UsageConfig } from './usage.js';
 
 export function parseConfig(raw: unknown): MidniteConfig {

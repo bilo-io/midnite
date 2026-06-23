@@ -120,6 +120,38 @@ export function parseGithubIssueOrPr(url: string): { repo: string; number: numbe
   return { repo: `${parts[0]}/${parts[1]}`, number: n };
 }
 
+// --- PR lifecycle status (Phase 22 Theme C) ---
+// The gateway polls a task's GitHub PR and resolves it to this shape; the board
+// and thread render it. Parsed from a PR URL via `parseGithubPr` above, so the
+// gateway poller and the web parse the same way.
+
+export const PR_STATES = ['open', 'draft', 'merged', 'closed'] as const;
+export type PrState = (typeof PR_STATES)[number];
+
+/** Rolled-up CI/status-check verdict across a PR's checks. `none` = no checks. */
+export const PR_CHECK_STATES = ['passing', 'failing', 'pending', 'none'] as const;
+export type PrCheckState = (typeof PR_CHECK_STATES)[number];
+
+export const PR_REVIEW_DECISIONS = ['approved', 'changes_requested', 'review_required'] as const;
+export type PrReviewDecision = (typeof PR_REVIEW_DECISIONS)[number];
+
+export const PrStatusSchema = z.object({
+  state: z.enum(PR_STATES),
+  checks: z.enum(PR_CHECK_STATES),
+  /** Aggregate review decision; absent when no review has been requested/given. */
+  reviewDecision: z.enum(PR_REVIEW_DECISIONS).optional(),
+  url: z.string().url(),
+  number: z.number().int().positive(),
+  /** ISO timestamp of the last successful fetch. */
+  fetchedAt: z.string(),
+});
+export type PrStatus = z.infer<typeof PrStatusSchema>;
+
+/** A PR whose lifecycle is settled — the poller stops refreshing it. */
+export function isPrTerminal(state: PrState): boolean {
+  return state === 'merged' || state === 'closed';
+}
+
 // A new display/run order for a list of sources — every source id, once, in the
 // desired order. Generic across project, memory and global-knowledge sources
 // (mirrors ReorderCouncilParticipantsRequestSchema).

@@ -44,6 +44,30 @@ export const tasks = sqliteTable(
   }),
 );
 
+// Live GitHub PR status for a task (Phase 22 Theme C). One row per task with a
+// resolvable PR URL, keyed by task id and kept fresh by the gateway's poller.
+// No FK to `tasks` (cross-row integrity stays in the service); the row is cleared
+// when its task is deleted.
+export const prStatus = sqliteTable(
+  'pr_status',
+  {
+    taskId: text('task_id').primaryKey(),
+    url: text('url').notNull(),
+    number: integer('number').notNull(),
+    // PrState: open | draft | merged | closed (validated at the app layer).
+    state: text('state').notNull(),
+    // PrCheckState: passing | failing | pending | none.
+    checks: text('checks').notNull().default('none'),
+    // PrReviewDecision or null when no review requested/given.
+    reviewDecision: text('review_decision'),
+    fetchedAt: text('fetched_at').notNull(),
+  },
+  (t) => ({
+    // The poller selects rows whose state isn't terminal (merged/closed).
+    stateIdx: index('pr_status_state_idx').on(t.state),
+  }),
+);
+
 export const taskEvents = sqliteTable(
   'task_events',
   {
@@ -506,6 +530,8 @@ export type TaskLinkRow = typeof taskLinks.$inferSelect;
 export type TaskLinkInsert = typeof taskLinks.$inferInsert;
 export type TaskDependencyRow = typeof taskDependencies.$inferSelect;
 export type TaskDependencyInsert = typeof taskDependencies.$inferInsert;
+export type PrStatusRow = typeof prStatus.$inferSelect;
+export type PrStatusInsert = typeof prStatus.$inferInsert;
 export type ProjectRow = typeof projects.$inferSelect;
 export type ProjectInsert = typeof projects.$inferInsert;
 export type RepoRow = typeof repos.$inferSelect;
