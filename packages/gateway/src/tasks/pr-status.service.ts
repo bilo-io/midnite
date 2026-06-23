@@ -92,37 +92,52 @@ export class PrStatusService implements OnModuleInit, OnModuleDestroy {
     return this.repo.hydrate(this.repo.getTask(taskId)!);
   }
 
-  /** Fetch + persist one row's PR status, broadcasting `task.updated` on a change. */
+  /**
+   * Fetch + persist one row's PR status, broadcasting `task.updated` on a change.
+   * Never throws — a per-row failure is logged and skipped so it can't abort a
+   * poll cycle (or surface as an unhandled rejection from the interval).
+   */
   private async refreshRow(row: TaskRow): Promise<void> {
     if (!row.prUrl) return;
     const parsed = parseGithubPr(row.prUrl);
     if (!parsed) return;
-    const status = await this.fetchStatus(row.prUrl, parsed.repo, parsed.prNumber);
-    if (!status) return; // fail-open — keep the last-known status
+    try {
+      const status = await this.fetchStatus(row.prUrl, parsed.repo, parsed.prNumber);
+      if (!status) return; // fail-open — keep the last-known status
 
-    const prev = this.repo.getPrStatusRow(row.id);
-    this.repo.upsertPrStatus({
-      taskId: row.id,
-      url: status.url,
-      number: status.number,
-      state: status.state,
-      checks: status.checks,
-      reviewDecision: status.reviewDecision ?? null,
-      fetchedAt: status.fetchedAt,
-    });
+      // The task may have been deleted between listing and now — skip rather than
+      // persist an orphan row or assert on a missing task when broadcasting.
+      const current = this.repo.getTask(row.id);
+      if (!current) return;
 
-    // Only nudge the board when something visible actually changed.
-    const changed =
-      !prev ||
-      prev.state !== status.state ||
-      prev.checks !== status.checks ||
-      (prev.reviewDecision ?? undefined) !== status.reviewDecision;
-    if (changed) {
-      this.bus.emit({
-        type: 'task.updated',
-        at: new Date().toISOString(),
-        task: this.repo.hydrate(this.repo.getTask(row.id)!),
+      const prev = this.repo.getPrStatusRow(row.id);
+      this.repo.upsertPrStatus({
+        taskId: row.id,
+        url: status.url,
+        number: status.number,
+        state: status.state,
+        checks: status.checks,
+        reviewDecision: status.reviewDecision ?? null,
+        fetchedAt: status.fetchedAt,
       });
+
+      // Only nudge the board when something visible actually changed.
+      const changed =
+        !prev ||
+        prev.state !== status.state ||
+        prev.checks !== status.checks ||
+        (prev.reviewDecision ?? undefined) !== status.reviewDecision;
+      if (changed) {
+        this.bus.emit({
+          type: 'task.updated',
+          at: new Date().toISOString(),
+          task: this.repo.hydrate(current),
+        });
+      }
+    } catch (err) {
+      this.logger.warn(
+        `pr-status: refresh failed for task ${row.id}: ${err instanceof Error ? err.message : 'unknown error'}`,
+      );
     }
   }
 
