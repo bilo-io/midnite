@@ -47,6 +47,8 @@ export class LifecycleHookController {
     if (!StopHookRequestSchema.safeParse(body).success) {
       throw new BadRequestException('invalid Stop payload');
     }
+    // Idle signal first so the office clears any running/blocked state immediately.
+    this.tasks.emitActivity(sessionId, 'idle');
     // Claude fires Stop at the end of *every* turn, so a Stop alone isn't "done".
     // Treat it as completion only when the agent left a PR URL in its output;
     // otherwise it has paused and is awaiting input → waiting.
@@ -67,10 +69,15 @@ export class LifecycleHookController {
     @Body() body: unknown,
   ): HookAck {
     this.verify(sessionId, secret);
-    if (!NotificationHookRequestSchema.safeParse(body).success) {
+    const parsed = NotificationHookRequestSchema.safeParse(body);
+    if (!parsed.success) {
       throw new BadRequestException('invalid Notification payload');
     }
     this.tasks.markWaiting(sessionId);
+    // Surface the notification message as an attention event so the office can
+    // show an unmistakable "needs you" state.
+    const summary = typeof parsed.data.message === 'string' ? parsed.data.message : undefined;
+    this.tasks.emitAttention(sessionId, 'waiting', summary);
     return { ok: true };
   }
 

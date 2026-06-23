@@ -13,11 +13,41 @@ import { TaskSchema } from '../task.js';
 // `tasks.bulkCreated` coalesces a bulk add (Phase 16) into ONE board signal
 // carrying the new ids, instead of N `task.created` events that each trigger a
 // refetch — the client invalidates once for the whole batch.
+// Agent activity / attention events piggyback on the same /ws/tasks socket
+// (Decision §1 from Phase 31) so the office and CLI dashboard can subscribe
+// without opening a second connection. They carry only a short summarized label —
+// never raw tool_input (which can hold file contents, secrets, or prompts).
+export const AgentActivityEventSchema = z.object({
+  type: z.literal('agent.activity'),
+  at: z.string(),
+  sessionId: z.string(),
+  /** Coarse lifecycle phase. */
+  phase: z.enum(['running', 'blocked', 'idle']),
+  /** Tool name as reported by Claude Code (e.g. "Bash", "Edit"). Optional when idle. */
+  tool: z.string().optional(),
+  /** One-line human-readable label derived from the tool call. Never raw input. */
+  label: z.string().optional(),
+});
+export type AgentActivityEvent = z.infer<typeof AgentActivityEventSchema>;
+
+export const AgentAttentionEventSchema = z.object({
+  type: z.literal('agent.attention'),
+  at: z.string(),
+  sessionId: z.string(),
+  /** Why the agent is blocking on the user. */
+  reason: z.enum(['approval', 'waiting']),
+  /** Short human-readable summary of what the agent is waiting on. */
+  summary: z.string().optional(),
+});
+export type AgentAttentionEvent = z.infer<typeof AgentAttentionEventSchema>;
+
 export const TaskBoardEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('task.created'), at: z.string(), task: TaskSchema }),
   z.object({ type: z.literal('task.updated'), at: z.string(), task: TaskSchema }),
   z.object({ type: z.literal('task.deleted'), at: z.string(), id: z.string() }),
   z.object({ type: z.literal('tasks.bulkCreated'), at: z.string(), taskIds: z.array(z.string()) }),
+  AgentActivityEventSchema,
+  AgentAttentionEventSchema,
 ]);
 export type TaskBoardEvent = z.infer<typeof TaskBoardEventSchema>;
 

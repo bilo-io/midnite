@@ -216,6 +216,8 @@ export const taskBoardEventFixtures: TaskBoardEvent[] = [
   { type: 'task.updated', at: TS, task: taskFixture },
   { type: 'task.deleted', at: TS, id: taskFixture.id },
   { type: 'tasks.bulkCreated', at: TS, taskIds: [taskFixture.id] },
+  { type: 'agent.activity', at: TS, sessionId: 'sess-1', phase: 'running', tool: 'Bash', label: 'Run: npm test' },
+  { type: 'agent.attention', at: TS, sessionId: 'sess-1', reason: 'approval', summary: 'Bash: rm -rf /tmp' },
 ];
 
 export const workflowEventFixtures: WorkflowEvent[] = [

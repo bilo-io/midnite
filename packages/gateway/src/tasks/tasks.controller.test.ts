@@ -7,9 +7,14 @@ import type { FastifyRequest } from 'fastify';
 import { describe, expect, it, vi } from 'vitest';
 import type { FastifyReply } from 'fastify';
 import { parseConfig, TaskDependencyError, type MidniteConfig, type Task } from '@midnite/shared';
+import type { BreakdownService } from '../agent/breakdown.service';
 import type { PrStatusService } from './pr-status.service';
 import type { TasksService } from './tasks.service';
 import { TasksController } from './tasks.controller';
+
+const breakdownStub = {
+  generate: async () => ({ breakdown: { tasks: [] }, isFallback: true }),
+} as unknown as BreakdownService;
 
 const config: MidniteConfig = parseConfig({ agent: {}, terminal: {}, gateway: {} });
 
@@ -44,7 +49,7 @@ function build(overrides: Partial<Record<keyof TasksService, unknown>> = {}) {
     ...overrides,
   } as unknown as TasksService;
   const prStatus = { refresh: vi.fn(async () => fakeTask) } as unknown as PrStatusService;
-  return { controller: new TasksController(service, config, prStatus), service, prStatus };
+  return { controller: new TasksController(service, config, prStatus, breakdownStub), service, prStatus };
 }
 
 describe('TasksController — query/body validation (400)', () => {
@@ -182,7 +187,7 @@ describe('TasksController — dependency routes', () => {
       }),
     } as unknown as TasksService;
     const prStatus = { refresh: vi.fn() } as unknown as PrStatusService;
-    const controller = new TasksController(service, cfg, prStatus);
+    const controller = new TasksController(service, cfg, prStatus, breakdownStub);
     try {
       await expect(
         controller.create(
