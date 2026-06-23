@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger, Optional, type OnModuleInit } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { MidniteConfig, Task } from '@midnite/shared';
@@ -7,6 +8,7 @@ import { KnowledgeService } from '../agent/knowledge.service';
 import { UrlContextService } from '../agent/url-context.service';
 import { ChecksService } from '../checks/checks.service';
 import { MIDNITE_CONFIG } from '../config.token';
+import { MetricsService } from '../metrics/metrics.service';
 import { ReposService } from '../repos/repos.service';
 import { TasksService } from '../tasks/tasks.service';
 import { TerminalService } from '../terminal/terminal.service';
@@ -45,7 +47,12 @@ export class AgentRunnerService implements OnModuleInit {
     // Optional so existing unit specs that build AgentRunnerService directly need
     // no ChecksService stub. When absent the gate is skipped (fail-open). Phase 30 B2.
     @Optional() @Inject(ChecksService) private readonly checks?: ChecksService,
+    // Optional — MetricsService wires in production; absent in unit specs. Phase 22 A3.
+    @Optional() @Inject(MetricsService) private readonly metrics?: MetricsService,
   ) {}
+
+  /** Per-task metric run tracking — id + wall-clock start for duration. */
+  private readonly metricRunIds = new Map<string, { id: string; startedAt: number }>();
 
   /**
    * Reconcile tasks left `wip`/`waiting` by a previous gateway process. For the
@@ -142,6 +149,9 @@ export class AgentRunnerService implements OnModuleInit {
       this.pool.setPid(task.id, result.pid);
       this.armTimeout(task.id);
       this.logger.log(`started agent run for task ${task.id} (pid ${result.pid})`);
+      const metricId = randomUUID();
+      this.metrics?.recordRunStart(metricId, task.id, task.retryCount, task.repo);
+      this.metricRunIds.set(task.id, { id: metricId, startedAt: Date.now() });
       return true;
     } catch (err) {
       this.logger.error(
@@ -157,9 +167,17 @@ export class AgentRunnerService implements OnModuleInit {
    *  reap the now-idle session. Status is already `done` (set by the hook), so
    *  the PTY's onExit won't requeue it. */
   complete(taskId: string): void {
+    this.endMetricRun(taskId, 'done');
     this.clearRunTimeout(taskId);
     this.pool.release(taskId);
     this.terminal.killManagedRun(taskId);
+  }
+
+  private endMetricRun(taskId: string, outcome: 'done' | 'abandoned' | 'failed' | 'cancelled'): void {
+    const entry = this.metricRunIds.get(taskId);
+    if (!entry) return;
+    this.metricRunIds.delete(taskId);
+    this.metrics?.recordRunEnd(entry.id, outcome, Date.now() - entry.startedAt);
   }
 
   /**
@@ -231,6 +249,7 @@ export class AgentRunnerService implements OnModuleInit {
   /** User- or timeout-initiated stop: abandon the task and kill its session. The
    *  PTY's onExit then frees the slot. */
   cancel(taskId: string): void {
+    this.endMetricRun(taskId, 'cancelled');
     this.clearRunTimeout(taskId);
     this.pool.abort(taskId);
     try {
@@ -264,6 +283,7 @@ export class AgentRunnerService implements OnModuleInit {
         this.logger.warn(
           `agent session ${taskId} exited (code ${exitCode}) while ${task.status} — exhausted ${retries}/${max} retries, abandoning`,
         );
+        this.endMetricRun(taskId, 'abandoned');
         try {
           this.tasks.updateStatus(taskId, 'abandoned');
         } catch (err) {
@@ -275,6 +295,7 @@ export class AgentRunnerService implements OnModuleInit {
         this.logger.warn(
           `agent session ${taskId} exited (code ${exitCode}) while ${task.status} — retry ${retries + 1}/${max}`,
         );
+        this.endMetricRun(taskId, 'failed');
         this.safeRetry(taskId);
       }
     }

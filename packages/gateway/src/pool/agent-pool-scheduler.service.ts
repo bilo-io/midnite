@@ -2,11 +2,13 @@ import {
   Inject,
   Injectable,
   Logger,
+  Optional,
   type OnModuleDestroy,
   type OnModuleInit,
 } from '@nestjs/common';
 import type { MidniteConfig } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
+import { MetricsService } from '../metrics/metrics.service';
 import { TasksService } from '../tasks/tasks.service';
 import { AgentPoolService } from './agent-pool.service';
 import { AgentRunnerService } from './agent-runner.service';
@@ -28,6 +30,7 @@ export class AgentPoolScheduler implements OnModuleInit, OnModuleDestroy {
     @Inject(TasksService) private readonly tasks: TasksService,
     @Inject(AgentPoolService) private readonly pool: AgentPoolService,
     @Inject(AgentRunnerService) private readonly runner: AgentRunnerService,
+    @Optional() @Inject(MetricsService) private readonly metrics?: MetricsService,
   ) {}
 
   onModuleInit(): void {
@@ -55,25 +58,21 @@ export class AgentPoolScheduler implements OnModuleInit, OnModuleDestroy {
   async tick(): Promise<void> {
     if (this.running) return;
     this.running = true;
+    const tickStart = Date.now();
     try {
+      // Record queue depth before assigning — "how many tasks were waiting".
+      this.metrics?.recordQueueDepth(this.tasks.listReadyTodoTasks().length);
       while (this.pool.freeSlotCount() > 0) {
-        // Snapshot per iteration: a task started earlier in this loop now occupies
-        // a slot, so its repo's count is reflected here. Constant within the find
-        // below (nothing starts mid-scan), so compute it once, not per candidate.
         const running = this.runningCountsByRepo();
         const next = this.tasks
           .listReadyTodoTasks()
           .find((t) => !this.pool.slotForTask(t.id) && this.repoHasCapacity(t.repo, running));
-        // No eligible task — the queue is empty, every remaining todo is blocked by
-        // an unmet dependency, or every ready one is at its repo's cap; either way,
-        // nothing more to start this tick.
         if (!next) break;
         const started = await this.runner.start(next);
-        // A failed start (e.g. terminal session cap reached) means further
-        // attempts this tick will fail too — stop and retry next tick.
         if (!started) break;
       }
     } finally {
+      this.metrics?.recordTickLatency(Date.now() - tickStart);
       this.running = false;
     }
   }

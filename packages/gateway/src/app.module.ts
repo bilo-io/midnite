@@ -62,6 +62,7 @@ import { TerminalModule } from './terminal/terminal.module';
     ProjectsModule,
     ProvidersModule,
     ReposModule,
+    MetricsModule,
     SessionsModule,
     SetupModule,
     MetricsModule,
