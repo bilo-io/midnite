@@ -42,11 +42,11 @@ Curated narrative docs for the library, complementing (not duplicating) Storyboo
 
 ---
 
-## Theme C — Product / developer docs — **M** — ◐ PARTIAL (PR #127, 2026-06-23 — see [done.md](done.md); config reference deferred)
+## Theme C — Product / developer docs — **M** — ✅ DONE (PRs #127 + #145, 2026-06-23 — see [done.md](done.md))
 
 Make the project's existing markdown browsable, from one source of truth.
 
-- [x] ◐ **Render the real repo markdown** (Decision §4 — **import, don't duplicate**): README + [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md) + [`docs/INITIAL_PLAN.md`](../docs/INITIAL_PLAN.md) + [`docs/TESTING_PLAN.md`](../docs/TESTING_PLAN.md) + [`docs/RELEASING.md`](../docs/RELEASING.md) are imported via `?raw` ([`content/product-docs.tsx`](../packages/docs/src/content/product-docs.tsx)) and rendered with `react-markdown` + `remark-gfm` (not the MDX pipeline — repo docs are full of bare `<…>`/`{…}` MDX would parse as JSX). ⏳ **config reference deferred**: there's no existing markdown to import (`midnite.json` is a zod schema in `shared`, which `docs` can't import under the leaf rule) — needs a hand-author-vs-schema-extract decision.
+- [x] **Render the real repo markdown** (Decision §4 — **import, don't duplicate**): README + [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md) + [`docs/INITIAL_PLAN.md`](../docs/INITIAL_PLAN.md) + [`docs/TESTING_PLAN.md`](../docs/TESTING_PLAN.md) + [`docs/RELEASING.md`](../docs/RELEASING.md) are imported via `?raw` ([`content/product-docs.tsx`](../packages/docs/src/content/product-docs.tsx)) and rendered with `react-markdown` + `remark-gfm` (not the MDX pipeline — repo docs are full of bare `<…>`/`{…}` MDX would parse as JSX). ✅ **config reference landed** (PR #145): a hand-authored MDX page at [`content/reference/config.mdx`](../packages/docs/src/content/reference/config.mdx) documents every `midnite.json` block. The field docs live in `//` comments (not zod `.describe()`), so hand-authoring beats a schema-extract that would lose the prose, and `docs` stays a pure `@midnite/ui` consumer (no `shared` import). Auto-generation remains a possible later upgrade.
 - [x] **Sidebar nav + GFM rendering** — product pages share the route table + sidebar with the DS docs, grouped under new **Guides · Architecture · Reference** sections (`SECTION_ORDER` extended); `remark-gfm` renders tables/task-lists/code.
 - [x] **Keep prose styling in the lib's tokens** — `MarkdownPage` reuses the `mdx-components` prose mapping (the lib's type/spacing tokens), so product docs and DS docs read as one site.
 

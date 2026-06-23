@@ -4,6 +4,13 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 26 Theme C: config reference page (PR #145)
+
+Closed Theme C's last deferred item — the `midnite.json` config reference — completing Theme C. Resolved the open hand-author-vs-extract question: the schema's field docs live in `//` comments, not zod `.describe()`, so a schema-extract would emit bare type/default tables and lose the prose. Hand-authored instead.
+
+- [x] **`content/reference/config.mdx`** (`/reference/config`, auto-registered into the existing Reference nav section) documents every config block — `agent`, `terminal` (+`approvals`), `repos`, `gateway` (+`auth`/`rateLimit`), `checks`, `notifications`, `workflows`, `agents`, `councils`, `usage`, `knowledge`, `prStatus` — as field/type/default/description tables, with a minimal-config example, a secrets-by-env-var callout, and a "source of truth" pointer to `packages/shared/src/config.ts`.
+- [x] **Leaf rule intact** — pure MDX prose, no `shared` import; boundary guard stays green. Verified against the schema (no drift); `docs:build`/`typecheck`/`lint`/`test` green. The page also renders the #140 on-page TOC.
+
 ## 2026-06-23 — Phase 9 E3/E4: PlayStation interactable + retro-games menu (PR #143)
 
 Wires the PS5 console in the communal gaming corner as a proximity interactable (E key) and adds the retro-games placeholder modal.
