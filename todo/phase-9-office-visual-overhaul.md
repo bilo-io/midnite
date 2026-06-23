@@ -105,12 +105,11 @@ Repurpose the board room (today a static "documents whiteboard") into the **proj
 - [x] Furnished the Communal area as a genuine lounge: **a couch + armchair seating arrangement** (`COUCHES`/`ARMCHAIRS`, collidable decor) grouped into a **chill corner** around the rug with the main sofa facing the gaming TV, a **patch of astro turf** in a corner (`ASTRO_TURF` — a new bright-green tiled surface, rendered like the pool water), and a **carpet** marking the **gaming area** in front of the TV (added to `RUGS`). Zoned so the room reads as coffee corner (existing) + chill corner + gaming corner. New `astroTurf` texture; `buildKitchen` renders them.
 - [x] Plenty of **plants** already soften the space (B2). Covered by `layout.test.ts` (seats on communal floor; turf entirely on communal floor + inside the interior). See [done.md](done.md).
 
-### E3. Relocated, super-sized TV + PlayStation — **M**
-- [ ] **Move the TV and PlayStation here** from their current home and render them **much larger** — a wall-mounted big screen over the gaming-area carpet with a console + controllers below it. Update wherever the TV/console props are currently placed so they live in the Communal area only.
-- [ ] The **PlayStation is an interactable** (proximity flag + **E**, same pattern as the board/kitchenette): `nearPlaystation`/`setNearPlaystation` + open/close state on [`office-store.ts`](../packages/web/lib/office-store.ts).
+### E3. Relocated, super-sized TV + PlayStation — **M** — ✅ DONE (2026-06-23, PR #143)
+- [x] TV + PS5 console already placed in the top-right gaming corner of the Communal area with super-sized textures (64×44 TV, white PS5 fins + blue light strip) — E3 layout work was complete from the E2 PR. This item wires the **PlayStation interactable**: `nearPlaystation`/`setNearPlaystation` + `playstationOpen`/`openPlaystation`/`closePlaystation` on [`office-store.ts`](../packages/web/lib/office-store.ts); `playstationCenter` anchor set in `buildKitchen()`; per-frame proximity check in `update()`; E-key handler in `tryInteract()`; `playstationOpen` added to the keyboard-frozen guard.
 
-### E4. Retro-games menu (placeholder) — **S**
-- [ ] Interacting with the PlayStation opens a **retro-games menu** modal (follow the existing modal-component convention, rendered from [`office-hud.tsx`](../packages/web/components/office/office-hud.tsx)) listing a few retro titles. **Placeholder only** — selecting a game is a no-op / "coming soon"; leave a clear seam to flesh out actual gameplay in a later phase. Phaser keyboard disabled while the menu is open (as the board panel already does).
+### E4. Retro-games menu (placeholder) — **S** — ✅ DONE (2026-06-23, PR #143)
+- [x] [`RetroGamesMenu`](../packages/web/components/office/retro-games-menu.tsx) modal opened from the HUD when `playstationOpen`. Lists 8 retro titles (PAC-MAN → STREET FIGHTER II); selecting a game shows "coming soon". Own Escape handler (first press de-selects, second closes). Seam is `onGameSelect(id)` — wire actual gameplay in a later phase. 4 new tests in `lib/office-store.test.ts` cover all new state transitions.
 
 ---
 

@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
+import rehypeSlug from 'rehype-slug';
 import remarkGfm from 'remark-gfm';
 
 import { mdxComponents } from './mdx-components';
@@ -15,6 +16,10 @@ import { mdxComponents } from './mdx-components';
 // adaptation: react-markdown passes each renderer a `node` (hast) prop, and the
 // shared mapping spreads its props straight onto DOM elements — so we drop `node`
 // to avoid React's unknown-attribute warning.
+//
+// `rehype-slug` stamps a text-derived `id` on every heading (the same plugin the
+// MDX path runs — see vite.config.ts), so the on-page TOC and deep links anchor
+// to the same slugs across both render paths. The `id` rides through on `...props`.
 const markdownComponents = Object.fromEntries(
   Object.entries(mdxComponents).map(([tag, Themed]) => {
     const Element = Themed as ComponentType<Record<string, unknown>>;
@@ -24,7 +29,7 @@ const markdownComponents = Object.fromEntries(
 
 export function MarkdownPage({ source }: { source: string }) {
   return (
-    <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]} components={markdownComponents}>
       {source}
     </ReactMarkdown>
   );

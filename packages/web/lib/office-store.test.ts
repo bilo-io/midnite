@@ -4,7 +4,16 @@ import { useOfficeStore } from './office-store';
 const store = useOfficeStore;
 
 beforeEach(() => {
-  store.setState({ nearKitchen: false, onBreak: false, nearBoard: false, boardOpen: false, active: null });
+  store.setState({
+    nearKitchen: false,
+    nearPlaystation: false,
+    onBreak: false,
+    nearBoard: false,
+    boardOpen: false,
+    libraryOpen: false,
+    playstationOpen: false,
+    active: null,
+  });
 });
 
 describe('coffee break', () => {
@@ -35,5 +44,39 @@ describe('coffee break', () => {
     expect(s.boardOpen).toBe(false);
     // onBreak is a personal presence flag, not transient scene state.
     expect(s.onBreak).toBe(true);
+  });
+});
+
+describe('retro-games / playstation', () => {
+  it('setNearPlaystation sets the proximity flag', () => {
+    store.getState().setNearPlaystation(true);
+    expect(store.getState().nearPlaystation).toBe(true);
+    store.getState().setNearPlaystation(false);
+    expect(store.getState().nearPlaystation).toBe(false);
+  });
+
+  it('openPlaystation sets playstationOpen and closes other panels', () => {
+    store.getState().openLibrary();
+    store.getState().openPlaystation();
+    const s = store.getState();
+    expect(s.playstationOpen).toBe(true);
+    expect(s.libraryOpen).toBe(false);
+    expect(s.boardOpen).toBe(false);
+    expect(s.active).toBeNull();
+  });
+
+  it('closePlaystation clears playstationOpen', () => {
+    store.getState().openPlaystation();
+    store.getState().closePlaystation();
+    expect(store.getState().playstationOpen).toBe(false);
+  });
+
+  it('reset clears nearPlaystation and playstationOpen', () => {
+    store.getState().setNearPlaystation(true);
+    store.getState().openPlaystation();
+    store.getState().reset();
+    const s = store.getState();
+    expect(s.nearPlaystation).toBe(false);
+    expect(s.playstationOpen).toBe(false);
   });
 });

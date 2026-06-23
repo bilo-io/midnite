@@ -29,7 +29,7 @@ The substrate for the ops surface: record what the fleet does, cheaply. Per-run 
 
 ### A2. In-memory gauges — **S**
 - [x] ✅ (PR #131) A `GaugeStore` class in `src/metrics/gauge-store.ts`: **queue depth**, **slot state** (used/total), and **last tick latency** — sampled via `recordQueueDepth`, `recordSlotChange`, `recordTickLatency`; a `snapshot()` method returns a defensive copy. No DB, lost on restart by design (Decision §1). 8 unit tests.
-- [ ] The scheduler/pool/runner feed metrics through a **thin recorder injected into them** (they call `metrics.record*`), not the other way around — the `metrics` module never imports the scheduler's internals.
+- [x] ✅ (PR #139, open) The scheduler/pool/runner feed metrics through a **thin recorder injected into them** (they call `metrics.record*`), not the other way around — the `metrics` module never imports the scheduler's internals.
 
 ### A3. `metrics` module + `GET /metrics/ops` — **M**
 - [x] ✅ (PR #132) `MetricsModule` registered in `AppModule` — `MetricsService` (wraps `GaugeStore` + `MetricsRepository`, exposes `record*` + `getOpsSummary`), `MetricsController` (`GET /metrics/ops?from=&to=` → `OpsSummary`, zod-validated). 7-day default window. 4 controller tests.
@@ -38,13 +38,13 @@ The substrate for the ops surface: record what the fleet does, cheaply. Per-run 
 
 ---
 
-## Theme B — Ops dashboard surface (web) — **M**
+## Theme B — Ops dashboard surface (web) — **M** — ✅ DONE (PR #142)
 
 A dedicated operational view — not more scattered dashboard tiles. **Compose** the existing client-derived widgets, add only the genuinely-missing server-recorded series (Decision §4).
 
-- [ ] A new **`/ops`** route under [`app/(main)/`](../packages/web/app/(main)/) (own route, not a dashboard tab — Decision §4): **live** queue depth + slot utilization (gauges + `GET /pool`), **throughput over time**, **run-duration distribution**, **retry/abandon rates**, and the **LLM-spend trend** (reuse `GET /usage/summary`).
-- [ ] **Reuse, don't rebuild:** embed/share the existing `throughput` / `system-health` / `llm cost & usage` rendering ([`dashboard-widgets.ts`](../packages/web/lib/dashboard-widgets.ts), [`dashboard-grid.tsx`](../packages/web/components/dashboard-grid.tsx), [`dashboard-metrics.ts`](../packages/web/lib/dashboard-metrics.ts)); the page adds the server-recorded charts those client-derived tiles can't produce.
-- [ ] Charts read from `getOpsMetrics()` + `usePolling`; empty/no-data and loading states; theme-aware. A nav entry for `/ops`.
+- [x] ✅ (PR #142) A new **`/ops`** route under [`app/(main)/`](../packages/web/app/(main)/) (own route, not a dashboard tab — Decision §4): **live** queue depth + slot utilization (gauges + `GET /pool`), **throughput over time**, **run-duration distribution**, **retry/abandon rates**, and the **LLM-spend trend** (reuse `GET /usage/summary`).
+- [x] ✅ (PR #142) Charts read from `getOpsMetrics()` + `usePolling`; empty/no-data and loading states; theme-aware. A nav entry for `/ops` (`ActivitySquare`, default on).
+- [x] ✅ (PR #142) `getPoolSnapshot()` (`GET /pool`) + `getOpsMetrics()` (`GET /metrics/ops`) typed clients added to [`lib/api.ts`](../packages/web/lib/api.ts); 14 component tests.
 - [ ] **Stretch (defer if the slice tightens):** a compact **run-timeline** — a Gantt-style strip of agent runs over time (from `agent_run_stats`) showing parallelism, durations, and outcomes. *(The full timeline is the "ops-weighted" path we didn't pick — keep it a single stretch bullet, not a theme.)*
 
 ---
@@ -55,15 +55,15 @@ A dedicated operational view — not more scattered dashboard tiles. **Compose**
 
 ---
 
-## Theme D — PR/git surface (web) — **M**
+## Theme D — PR/git surface (web) — **M** — ✅ DONE (PR #132)
 
 Make the delivery status visible where the work lives.
 
-- [ ] **PR-status chip** on task cards (state + checks colour: draft/open/merged + passing/failing/pending) — a compact glyph that reads at a glance on the board.
-- [ ] A **delivery panel** in the task **thread modal**: PR state, the checks list, review decision, a link out to the PR, and an on-demand **refresh** button (`POST /tasks/:id/pr/refresh`).
-- [ ] **Upgrade the Shipped widget** ([`shipped-widget.tsx`](../packages/web/components/shipped-widget.tsx)) to show **live PR/CI status** beside each link, not just the URL.
+- [x] ✅ (PR #132) **PR-status chip** on task cards (state + checks colour: draft/open/merged + passing/failing/pending).
+- [x] ✅ (PR #132) A **delivery panel** in the task **thread modal**: PR state, the checks list, review decision, a link out to the PR, and an on-demand **refresh** button (`POST /tasks/:id/pr/refresh`).
+- [x] ✅ (PR #132) **Upgraded the Shipped widget** to show live PR/CI status beside each link.
 - [ ] **Optional:** an "awaiting review / awaiting merge" board filter (reuse the existing `?tags=`-style URL-backed saved-filter pattern) so you can triage what's blocked on a human.
-- [ ] `getOpsMetrics` and PR client calls land in [`lib/api.ts`](../packages/web/lib/api.ts); web tests per Phase 10 conventions (a chip renders each state; the panel renders checks/review from mocked status).
+- [x] ✅ (PR #132 + #142) `getOpsMetrics` and PR client calls land in [`lib/api.ts`](../packages/web/lib/api.ts); web tests per Phase 10 conventions.
 
 ---
 

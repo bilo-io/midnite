@@ -51,7 +51,7 @@ export default function DashboardPage() {
         error={error}
       />
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30">
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 transition-[padding] duration-200 md:[padding-left:var(--nav-offset)]">
         <div className="bg-background/0 pb-6 pt-2">
           <div className="container">
             <div className="pointer-events-auto mx-auto w-full max-w-3xl">

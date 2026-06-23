@@ -159,3 +159,32 @@ describe('createClient', () => {
     await expect(createClient('http://gw').listTasks()).rejects.toThrow(/cannot reach the midnite gateway/);
   });
 });
+
+const CHECK_RUN = {
+  id: 'cr1',
+  taskId: 't1',
+  trigger: 'manual',
+  startedAt: '2026-06-23T10:00:00.000Z',
+  finishedAt: '2026-06-23T10:00:01.000Z',
+  passed: true,
+  results: [{ name: 'test', command: 'pnpm test', exitCode: 0, passed: true, durationMs: 800, output: '' }],
+};
+
+describe('triggerCheck', () => {
+  it('POSTs to /tasks/:id/check and returns the run', async () => {
+    stubFetch(() => new Response(JSON.stringify({ run: CHECK_RUN }), { status: 200 }));
+    const run = await createClient('http://gw').triggerCheck('t1');
+    expect(run.id).toBe('cr1');
+    expect(run.passed).toBe(true);
+    expect(run.results).toHaveLength(1);
+  });
+});
+
+describe('getCheckRuns', () => {
+  it('GETs /tasks/:id/check-runs and returns the run list', async () => {
+    stubFetch(() => new Response(JSON.stringify({ runs: [CHECK_RUN] }), { status: 200 }));
+    const runs = await createClient('http://gw').getCheckRuns('t1');
+    expect(runs).toHaveLength(1);
+    expect(runs[0]?.trigger).toBe('manual');
+  });
+});

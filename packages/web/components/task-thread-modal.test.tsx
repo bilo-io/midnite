@@ -25,6 +25,9 @@ vi.mock('@/lib/api', () => ({
   updateTaskStatus: vi.fn(),
   refreshPrStatus: vi.fn(),
   exportTask: vi.fn(),
+  // ChecksPanel mounts and calls this; return empty so tests are unaffected.
+  getCheckRuns: vi.fn().mockResolvedValue({ runs: [] }),
+  triggerCheck: vi.fn(),
 }));
 
 import { ConfirmProvider } from './confirm-dialog';

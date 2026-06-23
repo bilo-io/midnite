@@ -5,6 +5,8 @@ language: 'typescript'
 tasks:
   build:
     command: 'pnpm exec tsc -b'
+    deps:
+      - 'root:install'
     inputs:
       - 'src/**/*'
       - 'tsconfig.json'

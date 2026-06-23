@@ -172,6 +172,49 @@ program
     console.log(`unblocked ${task.id} from ${opts.on}  (now depends on: ${blockers.join(', ') || 'none'})`);
   });
 
+// Run the quality gate for a task on demand and render per-check pass/fail.
+// Exits non-zero when the gate fails (any check exits non-zero or times out).
+program
+  .command('check <id>')
+  .description('Run quality-gate checks for a task and report pass/fail per check')
+  .action(async (id: string) => {
+    const run = await client().triggerCheck(id);
+
+    if (run.results.length === 0) {
+      console.log(`${run.passed ? '✓' : '✗'} ${id}  (no checks configured — gate skipped)`);
+      process.exit(0);
+    }
+
+    const table = new Table({
+      head: ['Check', 'Status', 'Duration', 'Exit'],
+      wordWrap: true,
+      colWidths: [24, 8, 10, 6],
+    });
+    for (const r of run.results) {
+      table.push([
+        r.name,
+        r.passed ? '✓ pass' : '✗ fail',
+        r.durationMs < 1000 ? `${r.durationMs}ms` : `${(r.durationMs / 1000).toFixed(1)}s`,
+        r.exitCode !== null ? String(r.exitCode) : '—',
+      ]);
+    }
+    console.log(table.toString());
+
+    if (!run.passed) {
+      const failed = run.results.filter((r) => !r.passed);
+      for (const r of failed) {
+        if (r.output.trim()) {
+          console.log(`\n--- ${r.name} output ---`);
+          console.log(r.output.trimEnd());
+        }
+      }
+      console.error(`\nchecks failed (${failed.length}/${run.results.length})`);
+      process.exit(1);
+    }
+
+    console.log(`\nchecks passed (${run.results.length}/${run.results.length})`);
+  });
+
 program
   .command('search <query>')
   .description('Full-text search across tasks, projects, memory, notes, councils & workflows')

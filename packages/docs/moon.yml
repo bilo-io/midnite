@@ -14,12 +14,14 @@ tasks:
     preset: 'server'
     # Vite resolves @midnite/ui to its built dist/, so build it before serving.
     deps:
+      - 'root:install'
       - 'ui:build'
 
   build:
     command: 'pnpm exec vite build'
     # The bundle imports the built @midnite/ui (dist/ + token CSS), so build it first.
     deps:
+      - 'root:install'
       - '^:build'
     inputs:
       - 'src/**/*'

@@ -1,14 +1,17 @@
 import {
   BulkCreateTaskResponseSchema,
+  CheckRunListResponseSchema,
   RunResponseSchema,
   SearchResponseSchema,
   StatusSchema,
   TaskSchema,
+  TriggerCheckResponseSchema,
   WorkflowRunSchema,
   WorkflowSchema,
   WorkflowSummarySchema,
   type BulkCreateTaskRequest,
   type BulkCreateTaskResponse,
+  type CheckRun,
   type SearchQuery,
   type SearchResponse,
   type Status,
@@ -45,6 +48,8 @@ export interface GatewayClient {
   runWorkflow(id: string): Promise<WorkflowRun>;
   listWorkflowRuns(id: string): Promise<WorkflowRun[]>;
   getWorkflowRun(id: string, runId: string): Promise<WorkflowRun>;
+  triggerCheck(taskId: string): Promise<CheckRun>;
+  getCheckRuns(taskId: string): Promise<CheckRun[]>;
 }
 
 /** A thin typed client over the gateway REST API. Responses are validated with
@@ -179,6 +184,18 @@ export function createClient(baseUrl: string): GatewayClient {
           { method: 'GET' },
         ),
       ).run;
+    },
+
+    async triggerCheck(taskId: string): Promise<CheckRun> {
+      return TriggerCheckResponseSchema.parse(
+        await request(`/tasks/${encodeURIComponent(taskId)}/check`, { method: 'POST' }),
+      ).run;
+    },
+
+    async getCheckRuns(taskId: string): Promise<CheckRun[]> {
+      return CheckRunListResponseSchema.parse(
+        await request(`/tasks/${encodeURIComponent(taskId)}/check-runs`, { method: 'GET' }),
+      ).runs;
     },
   };
 }

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Ban, Check, ExternalLink, Loader2, Play, Plus, RefreshCw, SquareTerminal, X } from 'lucide-react';
+import { Ban, Check, ExternalLink, Play, Plus, RefreshCw, SquareTerminal, X } from 'lucide-react';
+import { ChecksPanel } from '@/components/checks-panel';
 import {
   ANSWER_EVENT_KIND,
   SOURCE_KIND_LABEL,
@@ -682,6 +683,10 @@ export function TaskThreadModal({ task, projects, tasks, onClose }: Props) {
                 </div>
               </section>
             ) : null}
+
+            <section>
+              <ChecksPanel taskId={task.id} />
+            </section>
 
             <section>
               <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">

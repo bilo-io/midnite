@@ -4,6 +4,83 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 30 D: quality-gate surfaces (PR #144)
+
+Surfaces for the already-landed gate engine (A–B): make check results visible and actionable in the web thread, on task cards, and via CLI.
+
+- [x] `shared/checks.ts`: `TriggerCheckResponseSchema` + `CheckRunListResponseSchema`
+- [x] `shared/task.ts`: `checkRunStatus?: 'verifying' | 'passed' | 'failing'` on `TaskSchema`
+- [x] `gateway/tasks.repository.ts`: `deriveCheckRunStatus()` in `hydrate()`
+- [x] `gateway/tasks.service.ts`: `runManualCheck()` + `getCheckRuns()`
+- [x] `gateway/tasks.controller.ts`: `POST /tasks/:id/check` + `GET /tasks/:id/check-runs`
+- [x] `web/checks-panel.tsx`: latest run with per-check output + Re-run button + older-runs history
+- [x] `web/task-card.tsx`: "Checks failing" badge on `checkRunStatus === 'failing'`
+- [x] `web/task-thread-modal.tsx`: ChecksPanel wired in above Activity section
+- [x] `cli/index.ts`: `midnite check <id>` — pass/fail table, failed output, non-zero exit on failure
+- [x] gateway: 872 / 872 tests; web: 448 / 448 tests
+
+## 2026-06-23 — Phase 10 C2: agents + all-projects widget stories (PR #146)
+
+Storied two more multi-endpoint dashboard widgets (Theme C2 interaction tests), following the established `installMockFetch` pattern.
+
+- [x] **`agents-widget`** — two endpoints (`GET /agents` config + `POST /agents/ping`); Default / no-sub-agents+heartbeat-off / `/agents` 500 error. The ping handler is listed before `/agents` so the broader substring match can't swallow it.
+- [x] **`all-projects-widget`** — `GET /projects` + `GET /tasks`, reusing `@/stories/fixtures`; loaded grid / empty / `/projects` 500 error. Stories inherit the `QueryClientProvider` from `.storybook/preview.tsx` (widgets read via `usePolling` → TanStack Query). CI (`moon ci`) green.
+- [ ] C2 still leaves the chart widgets (`throughput`/`usage`/`system-monitor`, needing a pinned clock), `market-*`, and `boardroom-panel`.
+
+## 2026-06-23 — Phase 26 Theme C: config reference page (PR #145)
+
+Closed Theme C's last deferred item — the `midnite.json` config reference — completing Theme C. Resolved the open hand-author-vs-extract question: the schema's field docs live in `//` comments, not zod `.describe()`, so a schema-extract would emit bare type/default tables and lose the prose. Hand-authored instead.
+
+- [x] **`content/reference/config.mdx`** (`/reference/config`, auto-registered into the existing Reference nav section) documents every config block — `agent`, `terminal` (+`approvals`), `repos`, `gateway` (+`auth`/`rateLimit`), `checks`, `notifications`, `workflows`, `agents`, `councils`, `usage`, `knowledge`, `prStatus` — as field/type/default/description tables, with a minimal-config example, a secrets-by-env-var callout, and a "source of truth" pointer to `packages/shared/src/config.ts`.
+- [x] **Leaf rule intact** — pure MDX prose, no `shared` import; boundary guard stays green. Verified against the schema (no drift); `docs:build`/`typecheck`/`lint`/`test` green. The page also renders the #140 on-page TOC.
+
+## 2026-06-23 — Phase 9 E3/E4: PlayStation interactable + retro-games menu (PR #143)
+
+Wires the PS5 console in the communal gaming corner as a proximity interactable (E key) and adds the retro-games placeholder modal.
+
+- [x] `lib/office-store.ts` — `nearPlaystation`, `playstationOpen`, `setNearPlaystation`, `openPlaystation`, `closePlaystation`; opening closes all other panels; `reset()` clears both flags
+- [x] `components/office/scenes/office-scene.ts` — `playstationCenter` anchor in `buildKitchen()`, per-frame proximity check, E-key handler, `playstationOpen` added to keyboard-frozen guard
+- [x] `components/office/retro-games-menu.tsx` — 8 retro titles, "coming soon" on selection, own Escape handler, seam for future gameplay
+- [x] `components/office/office-hud.tsx` — "Press E to open the Game Library" proximity prompt + `<RetroGamesMenu>` render
+- [x] `lib/office-store.test.ts` — 4 new tests (7 total, all green)
+
+---
+
+## 2026-06-23 — Phase 22 Theme B: /ops fleet health dashboard (PR #142)
+
+A dedicated `/ops` route exposing the server-recorded metrics backbone (A1–A3) as an operational surface. Five sections: live slot utilization bar, server-recorded throughput chart, run-duration 5-bucket histogram, outcome rate bars, and 30-day LLM spend trend. Polling every 10 s (pool + ops) / 60 s (spend).
+
+- [x] `lib/api.ts` — `getPoolSnapshot()` (`GET /pool`) + `getOpsMetrics()` (`GET /metrics/ops`); typed from shared schemas
+- [x] `lib/features.ts` — `'ops'` feature key + `ActivitySquare` nav entry, default on
+- [x] `app/(main)/ops/page.tsx` — polls pool + ops metrics + usage, wires gateway error toast
+- [x] `components/ops-view.tsx` — `GaugesSection`, `ThroughputSection`, `DurationSection`, `OutcomesSection`, `SpendSection`; loading + empty states; theme-aware
+- [x] `components/ops-view.test.tsx` — 14 tests; 431 web tests pass
+
+## 2026-06-23 — Phase 3: TanStack Query item closed out (tracker fix; landed in PR #125)
+
+Reconciled the last open Phase 3 checkbox. The "TanStack Query setup" item was still marked open with a "custom hooks, not TanStack Query" note — but that note predated **PR #125**, which already migrated the web data layer to TanStack Query. No code change; this just corrects the stale tracker so Phase 3 has zero open items and the phase title drops the "(state-sync deviation)" qualifier.
+
+- [x] **Verified the migration is live on `main`** — `@tanstack/react-query` dep; `useApiData`/`usePolling` are thin `useQuery` wrappers (same external API, so no call-site churn); `QueryClientProvider` mounted in `(main)/layout.tsx`; `invalidateData()` → `queryClient.invalidateQueries()`. CLAUDE.md's "TanStack Query for server state" line is now accurate (left as-is).
+- [x] **Closed the checkbox** referencing PR #125; updated the phase status line; WS sync staying coarse invalidate-and-refetch (vs. normalized cache patching) noted as a deliberate v1, not a gap.
+
+## 2026-06-23 — Phase 26 Theme D: on-page table of contents (PR #140)
+
+Landed the deferred on-page nav from Theme D: long docs now get a sticky "On this page" rail so readers can see a page's shape and jump between sections. Closes the last functional gap in Theme D (only the deploy story stays deferred).
+
+- [x] **`TableOfContents`** — a sticky right rail (`xl+` only; hidden where it would crowd the prose) that scans the *rendered* article for `h2/h3[id]`, so MDX (DS docs) and react-markdown (product docs) feed it identically. IntersectionObserver scroll-spy highlights the section in view; links scroll via JS rather than `href="#id"` (the app is a hash router — an anchor hash would be read as a route).
+- [x] **`rehype-slug`** wired into both render paths (MDX via `vite.config.ts`, product markdown via `react-markdown`) → stable, text-derived heading ids shared by the TOC and any deep link; `scroll-mt` on headings clears the sticky header.
+- [x] **Tests** — `table-of-contents.test.tsx` (4: `collectHeadings` extraction, rail render + active marker, click-to-scroll, single-section no-op). `docs:typecheck`/`lint`/`test` (31)/`build` green; boundary guard still green (only `@midnite/ui` imported).
+
+## 2026-06-23 — Phase 14 Theme E: starter workflow templates (PR #138)
+
+A "Start from" gallery in the New-workflow modal seeds a ready-made graph instead of a blank canvas — the *Starter templates* item of Theme E (autosave already shipped in PR #43; run-history replay remains).
+
+- [x] **`web/lib/workflow-templates.ts`** — three templates, each a linear chain of shipped node types: *Summarise a web page with AI* (`http.request → ai.claude`), *Daily API digest* (`http.request → data.filter → ai.claude`), *Track the latest value across runs* (`storage.get → http.request → storage.set`). AI prompts reference upstream nodes by label via `{{ }}` expressions.
+- [x] **`buildTemplateGraph()`** (pure, `makeId` injectable) keeps the trigger and wires `trigger → step0 → step1 → …` cascading right; `triggerNodeOf()` reuses the gateway-seeded trigger node (synthesises one only if absent).
+- [x] **`WorkflowCreateModal`** — Blank + template cards; picking a template prefills the name, replaces the trigger picker with the template's trigger, relabels the action to "Create from template", and on submit `createWorkflow` → `updateWorkflow(graph)` → opens the seeded canvas.
+- [x] **`fix(web)`** removed a dead `Loader2` import in `task-thread-modal.tsx` that was failing `next build`'s `no-unused-vars` on main (blocked any web build).
+- [x] Tests: `workflow-templates.test.ts` (6 — validity, chain/positions/params, trigger reuse vs. synthesise) + `workflow-create-modal.test.tsx` (3 — gallery, prefill/relabel, create-from-template seeds the expected chain). `web:typecheck`/`lint`/`test` (287)/`build` green.
+
 ## 2026-06-23 — Phase 26 Theme D: client-side search + responsive mobile nav (PR #137)
 
 Made the docs site navigable on any device. A header search filters all pages with no server, and the sidebar collapses to a drawer on mobile. Builds on Theme C's grouped content; the static build seam (`docs:build` + `moon ci`) already landed with the Theme A scaffold.

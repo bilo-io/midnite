@@ -6,3 +6,4 @@
 
 # Screenshot capture output (Phase 10 Theme E1) — preview artifacts, not baselines
 /e2e/__shots__/
+.vercel

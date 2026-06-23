@@ -53,7 +53,7 @@ Wire the runner into the `markDone` seam so completion is verified, and persist 
 
 ### B3. Derived "verifying" / "checks failing" + events — **S–M**
 - [x] ✅ (PR #135) `checks.started` / `checks.passed` / `checks.failed` task events via `TasksService.recordCheckEvent()` — emitted around the gate run; each triggers `task.updated` broadcast. No new status (Decision §3).
-- [ ] Derived `checkRunStatus` flag (`verifying` / `failing` / `passed`) on the task read shape for the board UI (Theme D). The "verifying" case requires a partial in-flight row (schema currently requires `finished_at` NOT NULL) — deferred to Theme D when the board chip is built.
+- [x] ✅ (PR #144) Derived `checkRunStatus` flag (`passed` / `failing`) on the task read shape — `deriveCheckRunStatus()` in `hydrate()`. `verifying` deferred (requires nullable `finished_at`).
 
 ---
 
@@ -67,14 +67,14 @@ Close the loop: on a failed gate, optionally hand the failures back to the agent
 
 ---
 
-## Theme D — Surfaces: web + CLI — **M**
+## Theme D — Surfaces: web + CLI — **M** — ✅ DONE (PR #144)
 
 Run the gate on demand, and see results everywhere a task lives.
 
-- [ ] **On-demand gate** — `POST /tasks/:id/check` (thin controller → `ChecksService` via the same orchestration, `trigger: 'manual'`): re-run a task's checks any time (e.g. after a human edit, or before merging) without changing status. Typed client in [`api.ts`](../packages/web/lib/api.ts). This is the shared substrate for the web "re-run" button and the CLI command.
-- [ ] **Web checks panel** — in the task thread ([`task-thread-modal.tsx`](../packages/web/components/task-thread-modal.tsx)): the latest run's per-check pass/fail, duration, and an expandable output excerpt; a **"Re-run checks"** button; run history. A derived **"checks failing"** / **"verifying"** badge on [`task-card.tsx`](../packages/web/components/task-card.tsx) (locked/dimmed affordance, like Phase 27's "blocked" chip) — no column move.
-- [ ] **CLI** — `midnite check <id>` ([`cli/src/`](../packages/cli/src/)): trigger a run and render per-check pass/fail (chalk + table), exit non-zero if the gate fails. Thin: parse → typed client → render.
-- [ ] **End-to-end coverage** — gate passes → done; gate fails → held (+ auto-fix loop when enabled → fixed → done); manual `POST /tasks/:id/check`; repo-less / disabled pass-through; CLI render snapshot.
+- [x] ✅ (PR #144) **On-demand gate** — `POST /tasks/:id/check` + `GET /tasks/:id/check-runs`; typed clients in `lib/api.ts`.
+- [x] ✅ (PR #144) **Web checks panel** — `ChecksPanel` in the task thread: latest run expanded (per-check pass/fail, duration, expandable output), older runs in `<details>`, Re-run button. "Checks failing" badge on `task-card.tsx`.
+- [x] ✅ (PR #144) **CLI** — `midnite check <id>`: triggers gate, renders pass/fail table, prints failed output, exits non-zero on failure.
+- [x] ✅ (PR #144) **Tests**: 6 `ChecksPanel` tests, 3 card badge tests, 4 `completeWithChecks` integration tests, 2 client tests.
 
 ---
 

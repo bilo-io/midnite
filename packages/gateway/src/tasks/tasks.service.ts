@@ -1,4 +1,6 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import {
   ANSWER_EVENT_KIND,
@@ -7,17 +9,21 @@ import {
   MAX_TAGS_PER_TASK,
   MAX_TASK_TAG_LENGTH,
   parseBulkLines,
+  resolveChecksForRepo,
   TaskDependencyError,
   type Breakdown,
   type BulkCreateTaskResponse,
   type BulkLineResult,
   type CheckRun,
+  type MidniteConfig,
   type Status,
   type Task,
   type TaskCounts,
 } from '@midnite/shared';
 import { TaskClassifier, type ClassifierImage } from '../agent/classifier.service';
 import { PlannerService } from '../agent/planner.service';
+import { ChecksService } from '../checks/checks.service';
+import { MIDNITE_CONFIG } from '../config.token';
 import { mapWithConcurrency } from '../lib/map-with-concurrency';
 import { ReposService } from '../repos/repos.service';
 import { buildTaskReport, taskReportFilename } from './lib/task-report';
@@ -71,6 +77,10 @@ export class TasksService {
     @Inject(PlannerService) private readonly planner: PlannerService,
     @Inject(TaskEventBus) private readonly bus: TaskEventBus,
     @Inject(ReposService) private readonly repos: ReposService,
+    @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
+    // ChecksService is optional — when absent (unit tests, partial installs) the
+    // gate is skipped fail-open (same as the runner's @Optional wiring, Phase 30).
+    @Optional() @Inject(ChecksService) private readonly checks?: ChecksService,
   ) {}
 
   // Resolve a task's repo reference against the registry (Phase 13 B2). A blank
@@ -735,6 +745,49 @@ export class TasksService {
     const now = new Date().toISOString();
     this.repo.insertEvent({ id: randomUUID(), taskId, at: now, kind });
     this.emit('task.updated', this.getTask(taskId));
+  }
+
+  // ── Manual check trigger (Phase 30 D) ────────────────────────────────────
+
+  /**
+   * Trigger a manual check run for a task (`POST /tasks/:id/check`). Mirrors the
+   * gate flow in `AgentRunnerService.completeWithChecks` but uses trigger `manual`.
+   * Returns a no-op stub run (passed, zero results) when the gate is disabled, the
+   * task has no repo, no checks are configured, or `ChecksService` is absent.
+   */
+  async runManualCheck(taskId: string): Promise<CheckRun> {
+    const task = this.getTask(taskId); // 404 if missing
+    const cfg = this.config.checks;
+    const resolved = cfg.enabled ? resolveChecksForRepo(cfg, task.repo ?? null) : [];
+    const repo = task.repo ? this.repos.findByName(task.repo) : undefined;
+
+    if (!cfg.enabled || resolved.length === 0 || !repo || !this.checks) {
+      // No-op: return a synthetic passed run without persisting (gate is off/absent).
+      const now = new Date().toISOString();
+      return {
+        id: randomUUID(),
+        taskId,
+        trigger: 'manual',
+        startedAt: now,
+        finishedAt: now,
+        passed: true,
+        results: [],
+      };
+    }
+
+    const cwd = repo.path.startsWith('~/') ? join(homedir(), repo.path.slice(2)) : repo.path;
+
+    this.recordCheckEvent(taskId, 'checks.started');
+    const run = await this.checks.run(taskId, resolved, cwd, 'manual');
+    this.saveCheckRun(run);
+    this.recordCheckEvent(taskId, run.passed ? 'checks.passed' : 'checks.failed');
+    return run;
+  }
+
+  /** Return all check runs for a task, ordered oldest-first. */
+  getCheckRuns(taskId: string): CheckRun[] {
+    this.getTask(taskId); // 404 if missing
+    return this.repo.checkRunsForTask(taskId);
   }
 
   // Would adding `taskId → dependsOnId` close a cycle? It does iff `dependsOnId`

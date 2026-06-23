@@ -12,12 +12,14 @@ tasks:
     # Next resolves @midnite/shared to its built dist/, so a stale build serves
     # the app undefined exports. (Re)build shared before starting the dev server.
     deps:
+      - 'root:install'
       - 'shared:build'
 
   build:
     command: 'pnpm exec next build'
     # next build resolves @midnite/shared to its built dist/, so build it first.
     deps:
+      - 'root:install'
       - '^:build'
     inputs:
       - 'app/**/*'

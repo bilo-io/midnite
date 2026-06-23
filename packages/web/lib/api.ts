@@ -49,6 +49,11 @@ import {
   type NotificationListResponse,
   type NotificationListQuery,
   type MarkReadRequest,
+  AgentPoolSnapshotSchema,
+  type AgentPoolSnapshot,
+  OpsSummarySchema,
+  type OpsSummary,
+  type OpsQuery,
 } from '@midnite/shared';
 import {
   AgentCliResponseSchema,
@@ -72,9 +77,11 @@ import {
   type EnvToolId,
   BrowseDirResponseSchema,
   BulkCreateTaskResponseSchema,
+  CheckRunListResponseSchema,
   CreatePlanTasksResponseSchema,
   CreateTaskResponseSchema,
   DraftPlanResponseSchema,
+  TriggerCheckResponseSchema,
   EnhanceDescriptionResponseSchema,
   HeartbeatRunResponseSchema,
   HeartbeatRunsResponseSchema,
@@ -102,6 +109,8 @@ import {
   type BrowseDirResponse,
   type BulkCreateTaskRequest,
   type BulkCreateTaskResponse,
+  type CheckRunListResponse,
+  type TriggerCheckResponse,
   type CliTerminalAction,
   type Council,
   type CouncilFormat,
@@ -335,6 +344,28 @@ export async function refreshPrStatus(id: string): Promise<Task> {
     `/tasks/${encodeURIComponent(id)}/pr/refresh`,
     { method: 'POST' },
     TaskSchema,
+  );
+}
+
+/**
+ * Trigger a manual quality-gate check run for a task (Phase 30 Theme D).
+ * Returns a no-op stub (passed, zero results) when checks are disabled or
+ * the task has no configured checks.
+ */
+export async function triggerCheck(taskId: string): Promise<TriggerCheckResponse> {
+  return fetchJson(
+    `/tasks/${encodeURIComponent(taskId)}/check`,
+    { method: 'POST' },
+    TriggerCheckResponseSchema,
+  );
+}
+
+/** Return all check runs for a task, oldest-first (Phase 30 Theme D). */
+export async function getCheckRuns(taskId: string): Promise<CheckRunListResponse> {
+  return fetchJson(
+    `/tasks/${encodeURIComponent(taskId)}/check-runs`,
+    undefined,
+    CheckRunListResponseSchema,
   );
 }
 
@@ -1291,4 +1322,22 @@ export async function markNotificationsRead(req: MarkReadRequest): Promise<{ unr
 /** Clear the entire notification feed (`DELETE /notifications`). */
 export async function clearNotifications(): Promise<void> {
   await fetchJson('/notifications', { method: 'DELETE' });
+}
+
+// ---- Agent pool ----
+
+/** Live slot snapshot from `GET /pool`. */
+export async function getPoolSnapshot(): Promise<AgentPoolSnapshot> {
+  return fetchJson('/pool', undefined, AgentPoolSnapshotSchema);
+}
+
+// ---- Ops metrics (Phase 22 B) ----
+
+/** Server-recorded ops summary from `GET /metrics/ops`. */
+export async function getOpsMetrics(params?: OpsQuery): Promise<OpsSummary> {
+  const qs = new URLSearchParams();
+  if (params?.from) qs.set('from', params.from);
+  if (params?.to) qs.set('to', params.to);
+  const query = qs.toString() ? `?${qs.toString()}` : '';
+  return fetchJson(`/metrics/ops${query}`, undefined, OpsSummarySchema);
 }

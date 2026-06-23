@@ -5,9 +5,13 @@ tasks:
   dev:
     command: 'pnpm exec next dev -p 3001'
     preset: 'server'
+    deps:
+      - 'root:install'
 
   build:
     command: 'pnpm exec next build'
+    deps:
+      - 'root:install'
     inputs:
       - 'app/**/*'
       - 'components/**/*'

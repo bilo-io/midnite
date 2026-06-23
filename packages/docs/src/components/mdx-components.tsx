@@ -11,17 +11,19 @@ export const mdxComponents = {
   h1: (props: ComponentProps<'h1'>) => (
     <h1 {...props} className={cn('mt-2 mb-4 text-3xl font-semibold tracking-tight', props.className)} />
   ),
+  // h2/h3 carry rehype-slug ids and are the on-page TOC's anchor targets; the
+  // scroll-margin keeps an anchored heading clear of the sticky header.
   h2: (props: ComponentProps<'h2'>) => (
     <h2
       {...props}
       className={cn(
-        'mt-10 mb-3 border-b border-border pb-1.5 text-xl font-semibold tracking-tight',
+        'mt-10 mb-3 scroll-mt-20 border-b border-border pb-1.5 text-xl font-semibold tracking-tight',
         props.className,
       )}
     />
   ),
   h3: (props: ComponentProps<'h3'>) => (
-    <h3 {...props} className={cn('mt-6 mb-2 text-base font-semibold', props.className)} />
+    <h3 {...props} className={cn('mt-6 mb-2 scroll-mt-20 text-base font-semibold', props.className)} />
   ),
   p: (props: ComponentProps<'p'>) => (
     <p {...props} className={cn('my-4 leading-7 text-foreground/90', props.className)} />
