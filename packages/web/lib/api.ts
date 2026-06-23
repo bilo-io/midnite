@@ -52,6 +52,10 @@ import {
   OpsSummarySchema,
   type OpsSummary,
   type OpsQuery,
+  TriggerCheckResponseSchema,
+  type TriggerCheckResponse,
+  CheckRunListResponseSchema,
+  type CheckRunListResponse,
 } from '@midnite/shared';
 import {
   AgentCliResponseSchema,
@@ -75,9 +79,11 @@ import {
   type EnvToolId,
   BrowseDirResponseSchema,
   BulkCreateTaskResponseSchema,
+  CheckRunListResponseSchema,
   CreatePlanTasksResponseSchema,
   CreateTaskResponseSchema,
   DraftPlanResponseSchema,
+  TriggerCheckResponseSchema,
   EnhanceDescriptionResponseSchema,
   HeartbeatRunResponseSchema,
   HeartbeatRunsResponseSchema,
@@ -105,6 +111,8 @@ import {
   type BrowseDirResponse,
   type BulkCreateTaskRequest,
   type BulkCreateTaskResponse,
+  type CheckRunListResponse,
+  type TriggerCheckResponse,
   type CliTerminalAction,
   type Council,
   type CouncilFormat,
@@ -338,6 +346,28 @@ export async function refreshPrStatus(id: string): Promise<Task> {
     `/tasks/${encodeURIComponent(id)}/pr/refresh`,
     { method: 'POST' },
     TaskSchema,
+  );
+}
+
+/**
+ * Trigger a manual quality-gate check run for a task (Phase 30 Theme D).
+ * Returns a no-op stub (passed, zero results) when checks are disabled or
+ * the task has no configured checks.
+ */
+export async function triggerCheck(taskId: string): Promise<TriggerCheckResponse> {
+  return fetchJson(
+    `/tasks/${encodeURIComponent(taskId)}/check`,
+    { method: 'POST' },
+    TriggerCheckResponseSchema,
+  );
+}
+
+/** Return all check runs for a task, oldest-first (Phase 30 Theme D). */
+export async function getCheckRuns(taskId: string): Promise<CheckRunListResponse> {
+  return fetchJson(
+    `/tasks/${encodeURIComponent(taskId)}/check-runs`,
+    undefined,
+    CheckRunListResponseSchema,
   );
 }
 
@@ -1291,6 +1321,26 @@ export async function clearNotifications(): Promise<void> {
 /** Live slot snapshot from `GET /pool`. */
 export async function getPoolSnapshot(): Promise<AgentPoolSnapshot> {
   return fetchJson('/pool', undefined, AgentPoolSnapshotSchema);
+}
+
+// ---- Quality-gate checks (Phase 30 D) ----
+
+/** Trigger a manual check run for a task (`POST /tasks/:id/check`). */
+export async function triggerCheck(taskId: string): Promise<TriggerCheckResponse> {
+  return fetchJson(
+    `/tasks/${encodeURIComponent(taskId)}/check`,
+    { method: 'POST', headers: JSON_HEADERS },
+    TriggerCheckResponseSchema,
+  );
+}
+
+/** All check runs for a task (`GET /tasks/:id/check-runs`), oldest-first. */
+export async function getCheckRuns(taskId: string): Promise<CheckRunListResponse> {
+  return fetchJson(
+    `/tasks/${encodeURIComponent(taskId)}/check-runs`,
+    undefined,
+    CheckRunListResponseSchema,
+  );
 }
 
 // ---- Ops metrics (Phase 22 B) ----

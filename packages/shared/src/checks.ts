@@ -81,6 +81,14 @@ export type CheckRun = z.infer<typeof CheckRunSchema>;
 export const CheckRunStatusSchema = z.enum(['verifying', 'passed', 'failing']);
 export type CheckRunStatus = z.infer<typeof CheckRunStatusSchema>;
 
+/** Response shape for `GET /tasks/:id/check-runs`. */
+export const CheckRunListResponseSchema = z.object({ runs: z.array(CheckRunSchema) });
+export type CheckRunListResponse = z.infer<typeof CheckRunListResponseSchema>;
+
+/** Response shape for `POST /tasks/:id/check`. */
+export const TriggerCheckResponseSchema = z.object({ run: CheckRunSchema });
+export type TriggerCheckResponse = z.infer<typeof TriggerCheckResponseSchema>;
+
 /**
  * Which checks apply to a repo: the per-repo override if present, else the global
  * `gates`. `byRepo` REPLACES `gates` for a named repo (Decision §5) — it does not
@@ -94,3 +102,13 @@ export function resolveChecksForRepo(
   const override = repoName ? checks.byRepo[repoName] : undefined;
   return override ?? checks.gates;
 }
+
+// ── Wire shapes for Phase 30 D surfaces ─────────────────────────────────────
+
+/** Response from `POST /tasks/:id/check` — the triggered run. */
+export const TriggerCheckResponseSchema = z.object({ run: CheckRunSchema });
+export type TriggerCheckResponse = z.infer<typeof TriggerCheckResponseSchema>;
+
+/** Response from `GET /tasks/:id/check-runs` — ordered oldest-first. */
+export const CheckRunListResponseSchema = z.object({ runs: z.array(CheckRunSchema) });
+export type CheckRunListResponse = z.infer<typeof CheckRunListResponseSchema>;
