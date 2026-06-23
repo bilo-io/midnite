@@ -200,7 +200,7 @@ export function NavBar() {
         </nav>
 
         <div className={cn('mt-auto flex flex-col gap-1', expandedView ? 'items-stretch' : 'items-center')}>
-          <NotificationCenter />
+          <NotificationCenter expanded={expandedView} />
           <ThemeToggle expanded={expandedView} />
           {renderLink(SETTINGS_LINK)}
           <div className={cn('my-1 h-px bg-border/60', expandedView ? 'w-full' : 'w-6')} />
