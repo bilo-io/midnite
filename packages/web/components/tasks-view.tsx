@@ -10,6 +10,7 @@ import {
   blockedCounts as computeBlockedCounts,
   unmetBlockerCount,
 } from '@/lib/task-dependencies';
+import { DELIVERY_STATES, matchesDelivery } from '@/lib/pr-delivery';
 import { useBulkSelection } from '@/lib/use-bulk-selection';
 import { useGatewayErrorToast } from '@/lib/use-gateway-error-toast';
 import { Button } from '@/components/ui/button';
@@ -76,6 +77,14 @@ const ANSWERED_PARAM = 'answered';
 const ANSWERED_VALUE = '1';
 const ANSWERED_FILTERS: FilterOption[] = [
   { value: ANSWERED_VALUE, label: 'Answered', hue: 'var(--success)' },
+];
+
+// Delivery filter (Phase 22 Theme D): triage open PRs by what human action they
+// await. Backed by the `delivery` query param, so a filtered board is shareable.
+const DELIVERY_PARAM = 'delivery';
+const DELIVERY_FILTERS: FilterOption[] = [
+  { value: DELIVERY_STATES[0], label: 'Awaiting review', hue: '38 92% 50%' },
+  { value: DELIVERY_STATES[1], label: 'Awaiting merge', hue: 'var(--success)' },
 ];
 
 // Sentinel project-filter value for tasks with no project. A UUID can't collide.
@@ -317,6 +326,14 @@ export function TasksView({
   // "Answered" toggle: narrow to inline-answered questions (Phase 15 Theme C).
   const answeredOnly = searchParams.get(ANSWERED_PARAM) === ANSWERED_VALUE;
 
+  // Delivery filter (Phase 22 Theme D): triage open PRs awaiting a human.
+  const rawDelivery = searchParams.get(DELIVERY_PARAM);
+  const activeDelivery = new Set(
+    (rawDelivery ? rawDelivery.split(',') : []).filter((d) =>
+      (DELIVERY_STATES as readonly string[]).includes(d),
+    ),
+  );
+
   const q = (searchParams.get('q') ?? '').trim().toLowerCase();
   const filteredTasks = localTasks
     .filter((t) => !answeredOnly || isAnsweredQuestion(t))
@@ -327,6 +344,7 @@ export function TasksView({
       return false;
     })
     .filter((t) => activeTags.size === 0 || t.tags.some((tag) => activeTags.has(tag)))
+    .filter((t) => matchesDelivery(t, activeDelivery))
     .filter(
       (t) =>
         !q ||
@@ -368,6 +386,7 @@ export function TasksView({
           <FilterPills options={STATUS_FILTERS} paramKey="status" />
           {tagFilters.length > 0 && <FilterPills options={tagFilters} paramKey="tags" />}
           <FilterPills options={ANSWERED_FILTERS} paramKey={ANSWERED_PARAM} hideAll />
+          <FilterPills options={DELIVERY_FILTERS} paramKey={DELIVERY_PARAM} hideAll />
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
