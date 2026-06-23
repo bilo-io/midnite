@@ -110,7 +110,8 @@ User config lives in [`midnite.json`](midnite.json) at the repo root, validated 
   "repos":     [],
   "gateway":   { "port": 7777, "host": "127.0.0.1", "allowedOrigins": [], "auth": { "tokenEnv": "MIDNITE_AUTH_TOKEN", "requireOnNonLoopback": true, "rateLimit": { "windowMs": 60000, "max": 0 } } },
   "knowledge": { "enabled": false, "maxBytes": 16384 },
-  "workflows": { "enabled": false, "defaultTimezone": "UTC", "schedulerTickMs": 30000, "webhookBaseUrl": "http://localhost:7777" }
+  "workflows": { "enabled": false, "defaultTimezone": "UTC", "schedulerTickMs": 30000, "webhookBaseUrl": "http://localhost:7777" },
+  "prStatus":  { "enabled": true, "pollIntervalMs": 60000, "pollConcurrency": 4 }
 }
 ```
 
@@ -144,6 +145,17 @@ client-side), so the API routes keep priority over the file mount.
 `maxAttempts`. The runner + contract land in this phase's Theme A; gating the
 completion seam, persistence, and the surfaces follow. The command runner never
 infers a command — you opt in per install/repo.
+
+`config.prStatus` (Phase 22 — live GitHub PR status) is **on by default**. A
+single gateway-owned poller wakes every `pollIntervalMs` (default `60000`) and
+refreshes the state/CI/review of tasks whose PR isn't yet merged or closed,
+`pollConcurrency` (default `4`) at a time; settled PRs stop being polled.
+Resolution is **gh-first** (uses your `gh` auth, so private-repo PRs resolve)
+with an anonymous `api.github.com` REST fallback for public repos, and is
+**fail-open** — a missing `gh`, an unauthenticated private repo, or a network
+error leaves the last-known status untouched and never breaks the board. The
+resolved status rides on a task's `prStatus`; `POST /tasks/:id/pr/refresh` forces
+an on-demand refresh. Set `prStatus.enabled` to `false` to turn polling off.
 
 A task reaches `wip` (with a Claude Code session spawned and linked to it) in one
 of two ways:

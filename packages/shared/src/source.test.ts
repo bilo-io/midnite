@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   detectSourceKind,
+  isPrTerminal,
   parseGithubIssueOrPr,
   parseGithubPr,
   parseGithubRepo,
+  PrStatusSchema,
 } from './source.js';
 
 describe('detectSourceKind', () => {
@@ -89,5 +91,37 @@ describe('parseGithubIssueOrPr', () => {
     expect(parseGithubIssueOrPr('https://github.com/bilo-io/midnite')).toBeNull();
     expect(parseGithubIssueOrPr('https://github.com/bilo-io/midnite/issues/abc')).toBeNull();
     expect(parseGithubIssueOrPr('https://example.com/bilo-io/midnite/issues/1')).toBeNull();
+  });
+});
+
+describe('PrStatusSchema', () => {
+  it('accepts a full status and one without a review decision', () => {
+    const full = {
+      state: 'open',
+      checks: 'passing',
+      reviewDecision: 'approved',
+      url: 'https://github.com/bilo-io/midnite/pull/1',
+      number: 1,
+      fetchedAt: '2026-06-23T00:00:00.000Z',
+    };
+    expect(PrStatusSchema.parse(full)).toEqual(full);
+    const { reviewDecision: _omitted, ...minimal } = full;
+    expect(PrStatusSchema.parse({ ...minimal, checks: 'none' }).reviewDecision).toBeUndefined();
+  });
+
+  it('rejects an unknown state, check value, or non-positive number', () => {
+    const base = { checks: 'none', url: 'https://x/pull/1', number: 1, fetchedAt: 'z' };
+    expect(PrStatusSchema.safeParse({ ...base, state: 'reopened' }).success).toBe(false);
+    expect(PrStatusSchema.safeParse({ ...base, state: 'open', checks: 'flaky' }).success).toBe(false);
+    expect(PrStatusSchema.safeParse({ ...base, state: 'open', number: 0 }).success).toBe(false);
+  });
+});
+
+describe('isPrTerminal', () => {
+  it('is true only for merged/closed', () => {
+    expect(isPrTerminal('merged')).toBe(true);
+    expect(isPrTerminal('closed')).toBe(true);
+    expect(isPrTerminal('open')).toBe(false);
+    expect(isPrTerminal('draft')).toBe(false);
   });
 });

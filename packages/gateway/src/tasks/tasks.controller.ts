@@ -33,6 +33,7 @@ import {
   type TaskCounts,
 } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
+import { PrStatusService } from './pr-status.service';
 import { TasksService } from './tasks.service';
 
 const IMAGE_MIME_ALLOWLIST = new Set([
@@ -47,6 +48,7 @@ export class TasksController {
   constructor(
     @Inject(TasksService) private readonly service: TasksService,
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
+    @Inject(PrStatusService) private readonly prStatus: PrStatusService,
   ) {}
 
   @Get('counts')
@@ -117,6 +119,14 @@ export class TasksController {
   @Delete(':id/links/:linkId')
   removeLink(@Param('id') id: string, @Param('linkId') linkId: string): Task {
     return this.service.removeLink(id, linkId);
+  }
+
+  // On-demand refresh of the task's GitHub PR status (Phase 22 Theme C). Returns
+  // the re-hydrated task; a missing task 404s, a task without a parseable PR URL
+  // is a no-op. Thin: the service owns the gh-first/REST fetch + persistence.
+  @Post(':id/pr/refresh')
+  async refreshPr(@Param('id') id: string): Promise<Task> {
+    return this.prStatus.refresh(id);
   }
 
   // Add a blocker edge. A self-reference / unknown blocker → 400; a cycle → 409.

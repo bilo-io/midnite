@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useRef, Suspense, type ReactNode } from 'react';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { NavBar } from '@/components/nav-bar';
 import { FeatureGate } from '@/components/feature-gate';
 import { LiveData } from '@/components/live-data';
@@ -9,6 +10,7 @@ import { CommandPalette } from '@/components/command-palette';
 import { PageReveal } from '@/components/page-reveal';
 import { SetupNudge } from '@/components/setup-nudge';
 import { SetupWizardController } from '@/components/SetupWizard';
+import { queryClient } from '@/lib/query-client';
 
 export default function MainLayout({ children }: { children: ReactNode }) {
   const openWizardRef = useRef<(() => void) | null>(null);
@@ -16,6 +18,7 @@ export default function MainLayout({ children }: { children: ReactNode }) {
   const openWizard = useCallback(() => openWizardRef.current?.(), []);
 
   return (
+    <QueryClientProvider client={queryClient}>
     <NotificationsProvider>
       <div className="min-h-screen">
         <LiveData />
@@ -33,5 +36,6 @@ export default function MainLayout({ children }: { children: ReactNode }) {
         <SetupWizardController onOpenWizard={registerOpen} />
       </div>
     </NotificationsProvider>
+    </QueryClientProvider>
   );
 }

@@ -1,10 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, desc, eq, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNotNull, notInArray, or, sql } from 'drizzle-orm';
 import {
   detectSourceKind,
   type CheckResult,
   type CheckRun,
   type CheckTrigger,
+  type PrStatus,
   type Status,
   type Task,
   type TaskAttachment,
@@ -13,12 +14,15 @@ import {
 } from '@midnite/shared';
 import { DB_TOKEN, type MidniteDb } from '../db/db.module';
 import {
+  prStatus,
   taskAttachments,
   taskCheckRuns,
   taskDependencies,
   taskEvents,
   taskLinks,
   tasks,
+  type PrStatusInsert,
+  type PrStatusRow,
   type TaskAttachmentInsert,
   type TaskCheckRunInsert,
   type TaskEventInsert,
@@ -152,6 +156,7 @@ export class TasksRepository {
           or(eq(taskDependencies.taskId, id), eq(taskDependencies.dependsOnTaskId, id)),
         )
         .run();
+      tx.delete(prStatus).where(eq(prStatus.taskId, id)).run();
       tx.delete(tasks).where(eq(tasks.id, id)).run();
     });
   }
@@ -306,6 +311,50 @@ export class TasksRepository {
       .all();
   }
 
+  // ---- PR status (Phase 22 Theme C) ----
+
+  getPrStatusRow(taskId: string): PrStatusRow | undefined {
+    return this.db.select().from(prStatus).where(eq(prStatus.taskId, taskId)).get();
+  }
+
+  /** Insert or replace the PR status for a task (keyed by `taskId`). */
+  upsertPrStatus(row: PrStatusInsert): void {
+    this.db
+      .insert(prStatus)
+      .values(row)
+      .onConflictDoUpdate({
+        target: prStatus.taskId,
+        set: {
+          url: row.url,
+          number: row.number,
+          state: row.state,
+          checks: row.checks,
+          reviewDecision: row.reviewDecision ?? null,
+          fetchedAt: row.fetchedAt,
+        },
+      })
+      .run();
+  }
+
+  /**
+   * Tasks the poller should refresh: those with a PR URL whose last-known status
+   * isn't terminal (merged/closed). A task with a URL but no status row yet is
+   * included (never fetched). Terminal rows are excluded so a settled PR stops
+   * being polled. Highest-priority/oldest first, matching the board order.
+   */
+  listTasksWithUnmergedPr(): TaskRow[] {
+    const terminal = this.db
+      .select({ id: prStatus.taskId })
+      .from(prStatus)
+      .where(inArray(prStatus.state, ['merged', 'closed']));
+    return this.db
+      .select()
+      .from(tasks)
+      .where(and(isNotNull(tasks.prUrl), notInArray(tasks.id, terminal)))
+      .orderBy(desc(tasks.priority), asc(tasks.createdAt))
+      .all();
+  }
+
   countsByStatus(): Record<Status, number> {
     const result: Record<Status, number> = {
       backlog: 0,
@@ -342,6 +391,7 @@ export class TasksRepository {
       sessionId: row.sessionId ?? undefined,
       projectId: row.projectId ?? undefined,
       prUrl: row.prUrl ?? undefined,
+      prStatus: this.toPrStatus(this.getPrStatusRow(row.id)),
       tags: parseTags(row.tags),
       dependsOn: this.dependenciesOf(row.id),
       archivedAt: row.archivedAt ?? undefined,
@@ -350,6 +400,20 @@ export class TasksRepository {
       events: this.listEvents(row.id),
       attachments: this.listAttachments(row.id),
       links: this.resolveLinks(row),
+    };
+  }
+
+  // Map a persisted pr_status row to the shared PrStatus shape (the text columns
+  // are app-validated enums; cast on read). Undefined when no row exists yet.
+  private toPrStatus(row: PrStatusRow | undefined): PrStatus | undefined {
+    if (!row) return undefined;
+    return {
+      state: row.state as PrStatus['state'],
+      checks: row.checks as PrStatus['checks'],
+      reviewDecision: (row.reviewDecision as PrStatus['reviewDecision']) ?? undefined,
+      url: row.url,
+      number: row.number,
+      fetchedAt: row.fetchedAt,
     };
   }
 

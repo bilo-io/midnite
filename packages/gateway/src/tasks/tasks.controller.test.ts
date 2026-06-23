@@ -6,6 +6,7 @@ import { BadRequestException, ConflictException, NotFoundException } from '@nest
 import type { FastifyRequest } from 'fastify';
 import { describe, expect, it, vi } from 'vitest';
 import { parseConfig, TaskDependencyError, type MidniteConfig, type Task } from '@midnite/shared';
+import type { PrStatusService } from './pr-status.service';
 import type { TasksService } from './tasks.service';
 import { TasksController } from './tasks.controller';
 
@@ -40,7 +41,8 @@ function build(overrides: Partial<Record<keyof TasksService, unknown>> = {}) {
     createBulk: vi.fn(async () => ({ results: [], counts: { created: 0, skipped: 0, failed: 0 } })),
     ...overrides,
   } as unknown as TasksService;
-  return { controller: new TasksController(service, config), service };
+  const prStatus = { refresh: vi.fn(async () => fakeTask) } as unknown as PrStatusService;
+  return { controller: new TasksController(service, config, prStatus), service, prStatus };
 }
 
 describe('TasksController — query/body validation (400)', () => {
@@ -177,7 +179,8 @@ describe('TasksController — dependency routes', () => {
         throw new TaskDependencyError('unknown-task', 'blocker task ghost not found');
       }),
     } as unknown as TasksService;
-    const controller = new TasksController(service, cfg);
+    const prStatus = { refresh: vi.fn() } as unknown as PrStatusService;
+    const controller = new TasksController(service, cfg, prStatus);
     try {
       await expect(
         controller.create(
@@ -190,5 +193,14 @@ describe('TasksController — dependency routes', () => {
     } finally {
       rmSync(uploadsDir, { recursive: true, force: true });
     }
+  });
+});
+
+describe('TasksController — PR refresh route', () => {
+  it('delegates to PrStatusService.refresh and returns the task', async () => {
+    const { controller, prStatus } = build();
+    const task = await controller.refreshPr('t1');
+    expect(prStatus.refresh).toHaveBeenCalledWith('t1');
+    expect(task).toMatchObject({ id: 't1' });
   });
 });

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type { MarketAssetConfig } from '@/lib/dashboard-widgets';
+import { withQueryClient } from '@/lib/test-query-wrapper';
 
 // Pin the global timeframe so the widget renders deterministically, keeping the
 // module's other exports (used by the in-card timeframe picker) real.
@@ -37,7 +38,7 @@ const QUOTE = {
 describe('MarketAssetWidget', () => {
   it('shows the asset picker when unconfigured', () => {
     const config: MarketAssetConfig = { kind: 'crypto', symbol: '', name: '' };
-    render(<MarketAssetWidget config={config} onConfigChange={vi.fn()} />);
+    render(withQueryClient(<MarketAssetWidget config={config} onConfigChange={vi.fn()} />));
 
     // The kind toggle is present; data fetchers are never called without a symbol.
     expect(screen.getByRole('button', { name: 'Crypto' })).toBeInTheDocument();
@@ -50,7 +51,7 @@ describe('MarketAssetWidget', () => {
     getMarketHistory.mockResolvedValue({ kind: 'crypto', symbol: 'bitcoin', timeframe: '7D', points: [] });
     const config: MarketAssetConfig = { kind: 'crypto', symbol: 'bitcoin', name: 'Bitcoin' };
 
-    render(<MarketAssetWidget config={config} onConfigChange={vi.fn()} />);
+    render(withQueryClient(<MarketAssetWidget config={config} onConfigChange={vi.fn()} />));
 
     // Price shows in the headline and again as the close in the OHLC readout.
     expect((await screen.findAllByText('$60,000.00')).length).toBeGreaterThan(0);

@@ -167,3 +167,55 @@ describe('TasksRepository — check runs', () => {
     expect(repo.checkRunsForTask('t2').map((r) => r.id)).toEqual(['r2']);
   });
 });
+
+describe('TasksRepository — PR status (Phase 22 Theme C)', () => {
+  const url1 = 'https://github.com/bilo-io/midnite/pull/1';
+  const url2 = 'https://github.com/bilo-io/midnite/pull/2';
+
+  it('upserts, hydrates, and excludes terminal PRs from the poll set', () => {
+    insert('t1', { prUrl: url1 });
+    insert('t2', { prUrl: url2 });
+    insert('t3', {}); // no PR — never in the poll set
+
+    // Before any status row, both PR tasks are due for a refresh.
+    expect(repo.listTasksWithUnmergedPr().map((r) => r.id).sort()).toEqual(['t1', 't2']);
+    expect(repo.hydrate(repo.getTask('t1')!).prStatus).toBeUndefined();
+
+    repo.upsertPrStatus({
+      taskId: 't1',
+      url: url1,
+      number: 1,
+      state: 'open',
+      checks: 'passing',
+      fetchedAt: 'z',
+    });
+    expect(repo.hydrate(repo.getTask('t1')!).prStatus).toMatchObject({
+      state: 'open',
+      checks: 'passing',
+      number: 1,
+      url: url1,
+    });
+
+    // Upsert replaces the row in place (keyed by task id) and persists a review decision.
+    repo.upsertPrStatus({
+      taskId: 't1',
+      url: url1,
+      number: 1,
+      state: 'merged',
+      checks: 'passing',
+      reviewDecision: 'approved',
+      fetchedAt: 'z2',
+    });
+    expect(repo.getPrStatusRow('t1')).toMatchObject({ state: 'merged', reviewDecision: 'approved' });
+
+    // A merged PR drops out of the poll set; t2 (no status yet) stays.
+    expect(repo.listTasksWithUnmergedPr().map((r) => r.id)).toEqual(['t2']);
+  });
+
+  it('clears the pr_status row when the task is deleted', () => {
+    insert('t1', { prUrl: url1, archivedAt: '2026-01-01T00:00:00.000Z' });
+    repo.upsertPrStatus({ taskId: 't1', url: url1, number: 1, state: 'open', checks: 'none', fetchedAt: 'z' });
+    repo.deleteTask('t1');
+    expect(repo.getPrStatusRow('t1')).toBeUndefined();
+  });
+});

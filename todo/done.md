@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 22 Theme C: live PR status — model, fetcher & poller (PR #122)
+
+Upgraded `task.prUrl` from an inert link to a **polled, status-aware deliverable** — the gateway half of Phase 22's delivery spine. A task's GitHub PR is resolved to a live status and surfaced on the task read shape, so a later Theme D can render chips/panels with no new backend work. Resolution is **gh-first** (the user's `gh` auth → private repos) with an anonymous `api.github.com` REST fallback for public repos, and **fail-open** (missing `gh` / unauth'd private repo / network error → keep last-known, never throw). No web surfaces yet — that's Theme D.
+
+- [x] **C1 — contract (`shared`):** `PrStatus` shape (`state`/`checks`/`reviewDecision`/`url`/`number`/`fetchedAt`) + `isPrTerminal` in [`source.ts`](../packages/shared/src/source.ts), beside the existing `parseGithubPr`; `prStatus` added as an optional field on `TaskSchema`. (The shipped-widget regex consolidation is deferred to Theme D, which rewrites that widget.)
+- [x] **C2 — fetcher + persistence (`gateway`):** `PrStatusService` resolves a PR gh-first (`gh pr view --json state,isDraft,statusCheckRollup,reviewDecision`) → anonymous REST fallback; pure gh/REST→`PrStatus` mappers in `tasks/lib/pr-status-map.ts` (rollup verdict `fail ≫ pending ≫ pass`). A `pr_status` table keyed by `task_id` (migration **`0037`** — the doc's `0030_*` was stale), surfaced via `TasksRepository.hydrate`, cleared on task delete.
+- [x] **C3 — refresh loop + on-demand:** single gateway-owned poller (mirrors the agent-pool scheduler: `OnModuleInit/Destroy`, `setInterval` + `unref`, reentrancy guard) refreshing only non-terminal PRs with bounded concurrency; `POST /tasks/:id/pr/refresh`; `config.prStatus` knobs (`enabled`/`pollIntervalMs`/`pollConcurrency`, on by default). Emits `task.updated` only on a real status change; per-row failures logged & skipped (never abort a cycle).
+- [x] **Tests:** shared zod + `isPrTerminal`; gateway pure mappers, `PrStatusService` (gh-first→REST fallback, fail-open, persist + broadcast-on-change, poll selects only non-terminal), the refresh route, and a real-SQLite repository test. Settled decisions: §7 dedicated `pr_status` table; §8 cadence 60s / concurrency 4.
+- [x] **Drive-by:** wrapped `run-output-panel.test.tsx` in `ToastProvider` (fixed a pre-existing `main` `ExportMenu` regression).
+
+**Deferred to Theme D (web surfaces):** PR-status chip on task cards, delivery panel in the thread modal, Shipped-widget live status, the optional "awaiting review/merge" board filter. Themes A/B (ops metrics + `/ops`) remain open.
+
 ## 2026-06-23 — Phase 32 A2: reusable WS-subscribe helper `openWs<T>` (PR #124)
 
 Extracted the hand-rolled WebSocket lifecycle inlined in `workflow watch` into a small, reusable `openWs<T>()` helper in `packages/cli/src/ws.ts`. `workflow watch` is refactored to consume it; the upcoming `midnite watch` TUI dashboard (Phase 32 A1) will too.
