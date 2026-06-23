@@ -42,13 +42,13 @@ Curated narrative docs for the library, complementing (not duplicating) Storyboo
 
 ---
 
-## Theme C — Product / developer docs — **M**
+## Theme C — Product / developer docs — **M** — ◐ PARTIAL (PR #127, 2026-06-23 — see [done.md](done.md); config reference deferred)
 
 Make the project's existing markdown browsable, from one source of truth.
 
-- [ ] **Render the real repo markdown** (Decision §4 — **import, don't duplicate**): surface [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md), [`docs/INITIAL_PLAN.md`](../docs/INITIAL_PLAN.md), [`docs/TESTING_PLAN.md`](../docs/TESTING_PLAN.md), a getting-started/overview, and a **config reference**, by importing the actual files at build time (via the MDX/markdown pipeline or `?raw` + `react-markdown`) so docs can't drift from the repo.
-- [ ] **Sidebar nav + GFM rendering** — grouped sections (Design System · Guides · Architecture · Reference), styled with the lib's typography; reuse `remark-gfm` so tables/task-lists/code render well.
-- [ ] **Keep prose styling in the lib's tokens** — the markdown renderer reads the same type/spacing scale as everything else, so product docs and DS docs look like one site.
+- [x] ◐ **Render the real repo markdown** (Decision §4 — **import, don't duplicate**): README + [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md) + [`docs/INITIAL_PLAN.md`](../docs/INITIAL_PLAN.md) + [`docs/TESTING_PLAN.md`](../docs/TESTING_PLAN.md) + [`docs/RELEASING.md`](../docs/RELEASING.md) are imported via `?raw` ([`content/product-docs.tsx`](../packages/docs/src/content/product-docs.tsx)) and rendered with `react-markdown` + `remark-gfm` (not the MDX pipeline — repo docs are full of bare `<…>`/`{…}` MDX would parse as JSX). ⏳ **config reference deferred**: there's no existing markdown to import (`midnite.json` is a zod schema in `shared`, which `docs` can't import under the leaf rule) — needs a hand-author-vs-schema-extract decision.
+- [x] **Sidebar nav + GFM rendering** — product pages share the route table + sidebar with the DS docs, grouped under new **Guides · Architecture · Reference** sections (`SECTION_ORDER` extended); `remark-gfm` renders tables/task-lists/code.
+- [x] **Keep prose styling in the lib's tokens** — `MarkdownPage` reuses the `mdx-components` prose mapping (the lib's type/spacing tokens), so product docs and DS docs read as one site.
 
 ---
 

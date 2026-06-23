@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 26 Theme C: render the repo's real markdown as product docs (PR #127)
+
+Made the project's existing markdown browsable from one source of truth, inside the `@midnite/ui`-built docs app. The repo's real docs — README, `INITIAL_PLAN`, `ARCHITECTURE`, `TESTING_PLAN`, `RELEASING` — are imported as raw text and rendered at runtime, so a page can never drift from its source file (Decision §4: import, don't duplicate). They share the route table + sidebar with the DS docs, so the whole site reads as one navigable surface.
+
+- [x] **Product docs from source** — `content/product-docs.tsx` `?raw`-imports the repo `.md`/README and maps each to a route (Guides · Architecture · Reference); `registry.ts` concatenates them with the MDX-globbed DS routes into one route table + nav.
+- [x] **react-markdown, not MDX** — `MarkdownPage` renders raw markdown with `react-markdown` + `remark-gfm`; `mdExtensions: []` scopes the MDX plugin to `.mdx` so `.md?raw` reaches Vite's raw loader (repo docs contain bare `<…>`/`{…}` that MDX would parse as JSX). Reuses the `mdx-components` prose mapping (stripping react-markdown's hast `node` prop) so product + DS docs share the lib's type/spacing tokens.
+- [x] **Nav** — `SECTION_ORDER` extended with Guides · Architecture · Reference (after the DS sections); active-route highlight via the existing sidebar.
+- [x] **Tests** — `markdown-page.test.tsx` (GFM headings/tables/code render; no `node`-prop leak) + `nav.test.ts` (product sections order after DS; unknown-section test moved off the now-known `Guides`). Boundary guard stays green (only `@midnite/ui` in-repo).
+
+**Deferred:** the **config reference** named in the Theme C bullet — `midnite.json` lives as a zod schema in `shared` (no markdown to import; `docs` can't import `shared` under the leaf rule), so it needs a separate hand-author-vs-schema-extract decision. Theme D (responsive nav drawer, client-side search, deploy seam) remains open.
+
 ## 2026-06-23 — Phase 22 Theme C: live PR status — model, fetcher & poller (PR #122)
 
 Upgraded `task.prUrl` from an inert link to a **polled, status-aware deliverable** — the gateway half of Phase 22's delivery spine. A task's GitHub PR is resolved to a live status and surfaced on the task read shape, so a later Theme D can render chips/panels with no new backend work. Resolution is **gh-first** (the user's `gh` auth → private repos) with an anonymous `api.github.com` REST fallback for public repos, and **fail-open** (missing `gh` / unauth'd private repo / network error → keep last-known, never throw). No web surfaces yet — that's Theme D.
