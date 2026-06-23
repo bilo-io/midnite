@@ -4,6 +4,13 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 3: TanStack Query item closed out (tracker fix; landed in PR #125)
+
+Reconciled the last open Phase 3 checkbox. The "TanStack Query setup" item was still marked open with a "custom hooks, not TanStack Query" note — but that note predated **PR #125**, which already migrated the web data layer to TanStack Query. No code change; this just corrects the stale tracker so Phase 3 has zero open items and the phase title drops the "(state-sync deviation)" qualifier.
+
+- [x] **Verified the migration is live on `main`** — `@tanstack/react-query` dep; `useApiData`/`usePolling` are thin `useQuery` wrappers (same external API, so no call-site churn); `QueryClientProvider` mounted in `(main)/layout.tsx`; `invalidateData()` → `queryClient.invalidateQueries()`. CLAUDE.md's "TanStack Query for server state" line is now accurate (left as-is).
+- [x] **Closed the checkbox** referencing PR #125; updated the phase status line; WS sync staying coarse invalidate-and-refetch (vs. normalized cache patching) noted as a deliberate v1, not a gap.
+
 ## 2026-06-23 — Phase 26 Theme D: on-page table of contents (PR #140)
 
 Landed the deferred on-page nav from Theme D: long docs now get a sticky "On this page" rail so readers can see a page's shape and jump between sections. Closes the last functional gap in Theme D (only the deploy story stays deferred).
