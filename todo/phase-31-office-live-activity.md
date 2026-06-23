@@ -15,16 +15,16 @@
 The contract piece, and the spine the rest of the phase hangs off. Today the gateway receives `PreToolUse` at [`lifecycle-hook.controller.ts`](../packages/gateway/src/pool/lifecycle-hook.controller.ts) (`POST /hooks/sessions/:sessionId/pre-tool-use`) only to make an allow/deny decision, and approval/attention state rides the per-session terminal WS. We surface a coarse, **summarized** activity signal to the board WS instead.
 
 ### A1. `agent.activity` event type — **S**
-- [ ] Add an `agent.activity` event to the discriminated union in [`shared/src/events/task.ts`](../packages/shared/src/events/task.ts) (piggybacked on the existing `/ws/tasks` socket — **Decisions §1**), e.g. `{ type: 'agent.activity', at, sessionId, phase: 'running' | 'blocked' | 'idle', tool?: string, label?: string }`. Extend `TaskBoardEventSchema` so existing clients validate it.
-- [ ] Add a coarse **attention** event `{ type: 'agent.attention', at, sessionId, reason: 'approval' | 'waiting', summary? }` on the same socket (**Decisions §2**) — fired when an agent blocks on the user.
+- [x] ✅ (PR #157) Add an `agent.activity` event to the discriminated union in [`shared/src/events/task.ts`](../packages/shared/src/events/task.ts) (piggybacked on the existing `/ws/tasks` socket — **Decisions §1**), e.g. `{ type: 'agent.activity', at, sessionId, phase: 'running' | 'blocked' | 'idle', tool?: string, label?: string }`. Extend `TaskBoardEventSchema` so existing clients validate it.
+- [x] ✅ (PR #157) Add a coarse **attention** event `{ type: 'agent.attention', at, sessionId, reason: 'approval' | 'waiting', summary? }` on the same socket (**Decisions §2**) — fired when an agent blocks on the user.
 
 ### A2. Gateway emission — **M**
-- [ ] In [`lifecycle-hook.controller.ts`](../packages/gateway/src/pool/lifecycle-hook.controller.ts), after the existing allow/deny logic, derive a `tool` + one-line `label` from `tool_name` + a **summary** of `tool_input` (reuse the approval summarizer — **never** raw input) and emit `agent.activity` via the [`TaskEventBus`](../packages/gateway/src/tasks/task-event-bus.ts).
-- [ ] Emit `agent.attention` from the `notification` hook (`markWaiting`) and from the approval-request path, and a `phase: 'idle'`/clearing `agent.activity` when a turn stops (`stop` hook). Keep the emit helper alongside the existing one in [`tasks.service.ts`](../packages/gateway/src/tasks/tasks.service.ts) (or a small sibling) so [`tasks.gateway.ts`](../packages/gateway/src/tasks/tasks.gateway.ts) fans it out unchanged.
-- [ ] Tests: gateway integration test asserting a `PreToolUse` POST produces a summarized `agent.activity` broadcast (and that raw `tool_input` never appears in the payload).
+- [x] ✅ (PR #157) In [`lifecycle-hook.controller.ts`](../packages/gateway/src/pool/lifecycle-hook.controller.ts), after the existing allow/deny logic, derive a `tool` + one-line `label` from `tool_name` + a **summary** of `tool_input` (reuse the approval summarizer — **never** raw input) and emit `agent.activity` via the [`TaskEventBus`](../packages/gateway/src/tasks/task-event-bus.ts).
+- [x] ✅ (PR #157) Emit `agent.attention` from the `notification` hook (`markWaiting`) and from the approval-request path, and a `phase: 'idle'`/clearing `agent.activity` when a turn stops (`stop` hook). Keep the emit helper alongside the existing one in [`tasks.service.ts`](../packages/gateway/src/tasks/tasks.service.ts) (or a small sibling) so [`tasks.gateway.ts`](../packages/gateway/src/tasks/tasks.gateway.ts) fans it out unchanged.
+- [x] ✅ (PR #157) Tests: gateway integration test asserting a `PreToolUse` POST produces a summarized `agent.activity` broadcast (and that raw `tool_input` never appears in the payload).
 
 ### A3. Web consumption — **S**
-- [ ] Extend the web WS client to surface the new events: add a typed listener path in [`lib/task-events.ts`](../packages/web/lib/task-events.ts) / [`use-task-events.ts`](../packages/web/hooks/use-task-events.ts) so consumers can subscribe to `agent.activity` / `agent.attention` without a full refetch (the refetch path stays for board events). Feeds Themes C/D/E.
+- [x] ✅ (PR #157) Extend the web WS client to surface the new events: add a typed listener path in [`lib/task-events.ts`](../packages/web/lib/task-events.ts) / [`use-task-events.ts`](../packages/web/hooks/use-task-events.ts) so consumers can subscribe to `agent.activity` / `agent.attention` without a full refetch (the refetch path stays for board events). Feeds Themes C/D/E.
 
 ---
 

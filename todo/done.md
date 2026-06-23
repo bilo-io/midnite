@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 31 Theme A: agent.activity/attention event backbone (PR #157)
+
+Wires per-tool activity to the board WS so the office and CLI watch can track agent state without a new socket.
+
+- [x] `AgentActivityEventSchema` / `AgentAttentionEventSchema` + `TaskBoardEventSchema` extended; `applyTaskEvent` handles both; 8 schema tests; fixtures updated
+- [x] `TasksService.emitActivity` / `emitAttention` — broadcast via `TaskEventBus`
+- [x] `ApprovalController`: running activity + attention:approval on PreToolUse; `summarizeToolCall` prevents raw input leaking
+- [x] `LifecycleHookController`: idle on stop, attention:waiting on notification
+- [x] `useTaskEvents`: skips `invalidateData()` for ephemeral events; `useAgentActivityListener` / `useAgentAttentionListener` hooks added
+
 ## 2026-06-23 — Phase 32 D: live logs panel + session selection (PR #156)
 
 `midnite watch` now has a live logs panel: Tab cycles wip tasks, the selected session's terminal output streams into a capped scrollback panel.
