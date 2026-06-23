@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { parseConfig, type Breakdown, type Task } from '@midnite/shared';
-const stubConfig = parseConfig({});
+const stubConfig = parseConfig({ agent: {}, terminal: {}, gateway: {} });
 import { TaskClassifier, type ClassifierImage } from '../agent/classifier.service';
 import type { PlannerService } from '../agent/planner.service';
 import type { ReposService } from '../repos/repos.service';

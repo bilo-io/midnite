@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { MAX_BULK_LINES, parseConfig } from '@midnite/shared';
 
-const stubConfig = parseConfig({});
+const stubConfig = parseConfig({ agent: {}, terminal: {}, gateway: {} });
 import type { Status, Task, TaskAttachment, TaskBoardEvent, TaskEvent } from '@midnite/shared';
 import type {
   TaskAttachmentInsert,

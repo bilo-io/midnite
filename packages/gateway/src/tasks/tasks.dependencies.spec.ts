@@ -1,7 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TaskDependencyError, parseConfig, type Status } from '@midnite/shared';
-const stubConfig = parseConfig({});
+const stubConfig = parseConfig({ agent: {}, terminal: {}, gateway: {} });
 import { TaskClassifier, type ClassifierImage } from '../agent/classifier.service';
 import type { PlannerService } from '../agent/planner.service';
 import type { ReposService } from '../repos/repos.service';
