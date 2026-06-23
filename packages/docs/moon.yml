@@ -1,0 +1,71 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+language: 'typescript'
+
+# The docs app is a pure consumer of @midnite/ui (Phase 26): the graph gains the
+# `ui ◀── docs` edge, joining `ui ◀── web`. It depends on NOTHING else in-repo —
+# no shared/gateway/web — enforced by src/boundary.test.ts. Built with Vite (an
+# SPA), so build/dev/preview override the repo's default `tsc -b` build.
+dependsOn:
+  - 'ui'
+
+tasks:
+  dev:
+    command: 'pnpm exec vite'
+    preset: 'server'
+    # Vite resolves @midnite/ui to its built dist/, so build it before serving.
+    deps:
+      - 'ui:build'
+
+  build:
+    command: 'pnpm exec vite build'
+    # The bundle imports the built @midnite/ui (dist/ + token CSS), so build it first.
+    deps:
+      - '^:build'
+    inputs:
+      - 'src/**/*'
+      - 'index.html'
+      - 'vite.config.ts'
+      - 'tailwind.config.ts'
+      - 'postcss.config.mjs'
+      - 'tsconfig.json'
+    outputs:
+      - 'dist'
+
+  preview:
+    command: 'pnpm exec vite preview'
+    preset: 'server'
+    deps:
+      - 'ui:build'
+
+  typecheck:
+    command: 'pnpm exec tsc --noEmit'
+    # tsc resolves @midnite/ui via its dist .d.ts, so build it first.
+    deps:
+      - '^:build'
+    inputs:
+      - 'src/**/*'
+      - 'vite.config.ts'
+      - 'vitest.config.ts'
+      - 'tailwind.config.ts'
+      - 'tsconfig.json'
+
+  test:
+    command: 'pnpm exec vitest run'
+    # RTL tests import the built @midnite/ui (dist), so build upstream deps first.
+    deps:
+      - '^:build'
+    inputs:
+      - 'src/**/*'
+      - 'vite.config.ts'
+      - 'vitest.config.ts'
+      - 'vitest.setup.ts'
+
+  lint:
+    command: 'pnpm exec eslint .'
+    inputs:
+      - 'src/**/*'
+      - 'vite.config.ts'
+      - 'vitest.config.ts'
+      - 'tailwind.config.ts'
+      - 'postcss.config.mjs'
+      - '/eslint.config.mjs'

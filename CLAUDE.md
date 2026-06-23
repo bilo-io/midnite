@@ -19,6 +19,7 @@ midnite is a multitask orchestrator for Claude Code. A long-running **gateway** 
 - `packages/cli/` — commander client; `midnite serve` boots the gateway
 - `packages/web/` — Next.js App Router kanban frontend
 - `packages/ui/` — `@midnite/ui`: reusable component library + design system (generic primitives + design tokens), built with **Vite library mode**. A leaf — depends on nothing else in the repo.
+- `packages/docs/` — `@midnite/docs`: the static **Vite + React** documentation site (design-system docs + developer docs), authored in **MDX** with live `@midnite/ui` examples. A pure consumer of `@midnite/ui` (Phase 26); never talks to the gateway.
 - `midnite.json` — per-project user config (validated by `shared`)
 - `todo/` — phase checklists + `done.md` log; update as work lands
 
@@ -30,13 +31,15 @@ Strict, one-way dependency graph:
 shared ◀── gateway
 shared ◀── cli      (cli also imports from shared, never gateway internals)
 shared ◀── web      (web also imports from shared, never gateway internals)
-ui     ◀── web      (ui is a leaf: depends on nothing in-repo; later: docs/site)
+ui     ◀── web      (ui is a leaf: depends on nothing in-repo)
+ui     ◀── docs     (docs is a pure consumer of ui; later: site may join)
 ```
 
 - `shared` depends on nothing else in the repo
 - `cli` and `web` are pure clients of `gateway` over HTTP/WS — they never import gateway internals
 - `gateway` never imports from `cli` or `web`
-- `ui` (`@midnite/ui`) is a **leaf design-system package** — generic primitives + design tokens. It depends on **nothing** else in the repo (not even `shared`); React is a peer dependency. `web` consumes it (a future `docs` app will too). The library's primitives + tokens are migrating in across Phase 25; a boundary test in the package enforces the leaf rule in CI.
+- `ui` (`@midnite/ui`) is a **leaf design-system package** — generic primitives + design tokens. It depends on **nothing** else in the repo (not even `shared`); React is a peer dependency. `web` and `docs` consume it. The library's primitives + tokens migrated in across Phase 25; a boundary test in the package enforces the leaf rule in CI.
+- `docs` (`@midnite/docs`) is a **pure consumer of `@midnite/ui`** (Phase 26) — the static documentation site. It imports only `@midnite/ui` (no `shared`/`gateway`/`web`), never talks to the gateway, and its own boundary test enforces the `ui ◀── docs` leaf edge in CI.
 - Cross-package types live in `shared`; never duplicate them
 - moon enforces this via `dependsOn` in each `moon.yml`
 
