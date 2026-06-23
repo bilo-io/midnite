@@ -64,3 +64,21 @@ export function isSetupReady(items: readonly SetupItem[]): boolean {
   const modelReachable = stateOf('provider') === 'ok' || stateOf('agent-cli') === 'ok';
   return secretReady && modelReachable;
 }
+
+/** Bounds for the agent-pool size, shared by the wizard slider and the writer. */
+export const AGENT_POOL_SIZE_MIN = 1;
+export const AGENT_POOL_SIZE_MAX = 16;
+
+/**
+ * The wizard's concurrency step writes the agent pool (Phase 19 Theme B,
+ * Decision §6 — the minimal config-write path). `pool` sizes the slots,
+ * `poolEnabled` toggles autonomous scheduling. Persisted to `midnite.json` and
+ * mirrored into the in-memory config so `/setup/status` reflects it at once;
+ * the scheduler reads these at boot, so enabling takes effect on the next
+ * gateway restart.
+ */
+export const UpdateAgentPoolRequestSchema = z.object({
+  pool: z.number().int().min(AGENT_POOL_SIZE_MIN).max(AGENT_POOL_SIZE_MAX),
+  poolEnabled: z.boolean(),
+});
+export type UpdateAgentPoolRequest = z.infer<typeof UpdateAgentPoolRequestSchema>;
