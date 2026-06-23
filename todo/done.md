@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 28 A: `Breakdown` / `BreakdownTask` zod schema (PR #129)
+
+Establishes the shared contract for structured task breakdowns. The plan model will return a `Breakdown`; the gateway (Theme B) resolves local refs to real task ids and wires Phase 27 dependency edges at creation time. Also fixed a pre-existing lint failure in `setup.test.ts` (unused imports from PR #121).
+
+- [x] `BreakdownTaskSchema`, `BreakdownSchema`, `BreakdownGoalRequestSchema`, `BreakdownPreviewResponseSchema` in `@midnite/shared`
+- [x] 10 unit tests; barrel-exported
+- [x] Fixed `setup.test.ts` unused-import lint failure
+
+---
+
 ## 2026-06-23 — Phase 30 B1: `task_check_runs` table + repository methods (PR #126)
 
 Added the DB substrate for quality-gate run history. Migration `0038_task_check_runs` adds a normalized child table (id, task_id, trigger, passed, started_at, finished_at, results JSON) mirroring `task_events`. `TasksRepository` gains `insertCheckRun`, `checkRunsForTask`, and `latestCheckRunForTask`. 8 integration tests against `:memory:` cover round-trip, ordering, scoping, null-on-empty, passed/failed flags, and all trigger variants.
