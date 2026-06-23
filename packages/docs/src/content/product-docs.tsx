@@ -16,17 +16,19 @@ import releasing from '../../../../docs/RELEASING.md?raw';
 import testingPlan from '../../../../docs/TESTING_PLAN.md?raw';
 import readme from '../../../../README.md?raw';
 
-type ProductDoc = {
+export type ProductDoc = {
   path: string;
   title: string;
   section: string;
   order: number;
+  /** Raw markdown source — rendered by the page, and indexed for search. */
   source: string;
 };
 
 // Grouped into product sections that sit after the design-system ones in the
-// sidebar (SECTION_ORDER in nav.ts): Guides · Architecture · Reference.
-const PRODUCT_DOCS: ProductDoc[] = [
+// sidebar (SECTION_ORDER in nav.ts): Guides · Architecture · Reference. Exported
+// so the search index (content/search-index.ts) reads the same raw sources.
+export const productDocs: ProductDoc[] = [
   { path: '/guides/readme', title: 'README', section: 'Guides', order: 0, source: readme },
   { path: '/guides/initial-plan', title: 'Initial plan', section: 'Guides', order: 1, source: initialPlan },
   { path: '/architecture', title: 'Architecture', section: 'Architecture', order: 0, source: architecture },
@@ -34,7 +36,7 @@ const PRODUCT_DOCS: ProductDoc[] = [
   { path: '/reference/releasing', title: 'Releasing', section: 'Reference', order: 1, source: releasing },
 ];
 
-export const productRoutes: ResolvedRoute[] = PRODUCT_DOCS.map(({ source, ...route }) => ({
+export const productRoutes: ResolvedRoute[] = productDocs.map(({ source, ...route }) => ({
   ...route,
   Component: () => <MarkdownPage source={source} />,
 }));
