@@ -553,6 +553,16 @@ export async function createTasksFromPlan(id: string, titles: string[]): Promise
   return tasks;
 }
 
+export async function exportProjectMarkdown(id: string): Promise<string> {
+  const path = `/projects/${encodeURIComponent(id)}/export?format=md`;
+  const res = await fetch(`${gatewayUrl()}${path}`, { cache: 'no-store' });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(errorMessage(res, text));
+  }
+  return res.text();
+}
+
 // --- Workflows ---
 
 export async function listWorkflows(): Promise<WorkflowSummary[]> {

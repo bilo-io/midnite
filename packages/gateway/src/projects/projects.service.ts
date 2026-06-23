@@ -24,6 +24,7 @@ import { projectToIndexDoc } from '../search/lib/index-mappers';
 import { SearchIndexService } from '../search/search-index.service';
 import { TasksService } from '../tasks/tasks.service';
 import { fetchSourceMetadata } from './lib/opengraph';
+import { projectReportFilename, projectToMarkdown } from './lib/project-report';
 import { ProjectsRepository } from './projects.repository';
 import {
   PROJECT_DESCRIPTION_SYSTEM_PROMPT,
@@ -289,6 +290,16 @@ export class ProjectsService {
       for (const s of project.sources) lines.push(`- [ ] Review ${s.title ?? s.url}`);
     }
     return lines.join('\n');
+  }
+
+  exportMarkdown(id: string): { filename: string; markdown: string } {
+    const project = this.getProject(id);
+    const tasks = this.tasks.listTasks(undefined, id);
+    const memories = this.memories.listScoped(id);
+    return {
+      filename: projectReportFilename(project),
+      markdown: projectToMarkdown(project, tasks, memories),
+    };
   }
 
   private assertExists(id: string): void {
