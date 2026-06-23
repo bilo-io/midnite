@@ -8,15 +8,21 @@ import {
   Param,
   Patch,
   Post,
+  Query,
+  Res,
 } from '@nestjs/common';
+import type { FastifyReply } from 'fastify';
 import {
   AddSourceRequestSchema,
   CreatePlanTasksRequestSchema,
   CreateProjectRequestSchema,
   EnhanceDescriptionRequestSchema,
+  REPORT_CONTENT_TYPE,
   ReorderSourcesRequestSchema,
+  ReportFormatSchema,
   UpdatePlanRequestSchema,
   UpdateProjectRequestSchema,
+  isServerRenderedReportFormat,
   type CreatePlanTasksResponse,
   type DraftPlanResponse,
   type EnhanceDescriptionResponse,
@@ -107,5 +113,27 @@ export class ProjectsController {
     const parsed = CreatePlanTasksRequestSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
     return { tasks: this.service.createTasksFromPlan(id, parsed.data.titles) };
+  }
+
+  @Get(':id/export')
+  exportProject(
+    @Param('id') id: string,
+    @Res({ passthrough: false }) reply: FastifyReply,
+    @Query('format') format?: string,
+  ): void {
+    const parsed = ReportFormatSchema.safeParse(format ?? 'md');
+    if (!parsed.success) {
+      throw new BadRequestException(`unsupported export format: ${String(format)}`);
+    }
+    if (!isServerRenderedReportFormat(parsed.data)) {
+      throw new BadRequestException(
+        `${parsed.data} is rendered client-side (print-to-PDF); request format=md`,
+      );
+    }
+    const { filename, markdown } = this.service.exportMarkdown(id);
+    void reply
+      .header('content-type', REPORT_CONTENT_TYPE.md)
+      .header('content-disposition', `attachment; filename="${filename}"`)
+      .send(markdown);
   }
 }
