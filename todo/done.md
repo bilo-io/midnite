@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 9 F1–F4: corner office scene (PR #146)
+
+Private corner office scene reachable from the CORNER OFFICE doorway — your own customisable desk with animated items, a blinking laptop cursor, and localStorage persistence.
+
+- [x] `CornerOfficeScene` (14×10 tiles): walled room, exit door, desk + laptop, animated item sprites
+- [x] `createOfficeGame` registers both scenes; E-key triggers `scene.start('corner-office')` / `scene.start('office')`
+- [x] `currentScene`, `nearDoor`, `deskItems`, `deskPickerOpen` added to `useOfficeStore`
+- [x] `DeskItemPicker` modal: 6 items, up to 3 selected, procedural animated sprites (lava lamp bobs, spinner rotates)
+- [x] Laptop blinking cursor via Phaser tween
+- [x] `setDeskItems()` persists to `localStorage`; `parseDeskItems()` validates on load
+- [x] `desk-items.ts` + 9 tests; HUD back button + door/desk proximity prompts
+
 ## 2026-06-23 — Phase 30 D: quality-gate surfaces (PR #144)
 
 Surfaces for the already-landed gate engine (A–B): make check results visible and actionable in the web thread, on task cards, and via CLI.
