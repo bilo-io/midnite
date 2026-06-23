@@ -12,7 +12,34 @@ Idle pool agents now occasionally stand up and mill around instead of sitting fr
 - [x] ~1-in-3 ticks fires; picks a different lounger than `maybeSwim`
 - [x] Walks to nearest valid offset tile, pauses 3s, returns to seat, restores sleeping state
 
-## 2026-06-23 — Phase 8 D2: proximity nameplates (PR #149)
+## 2026-06-23 — Phase 10 C2 complete: market widgets + boardroom panel (PR #150)
+
+Storied the last three un-storied widgets, **completing Theme C2** (every dashboard/office widget now has interaction tests).
+
+- [x] **`market-asset-widget`** — a configured (props-driven) asset; mocks `/market/quote` + `/market/history`, asserts the price headline, % change, OHLC; plus the both-endpoints-fail error fallback.
+- [x] **`market-watchlist-widget`** — rows off `/market/history` (path mock serves every row, awaited for the async % change), plus the no-assets empty state.
+- [x] **`boardroom-panel`** (office projects hub) — mocks the `Promise.all` of `/projects` + `/tasks` + `/memories` (the last returns a `{ memories }` wrapper, not a bare array) → loaded list / empty / error.
+- [x] CI: the three new files' Storybook `play` assertions pass. Merged with `--admin` over pre-existing main redness (`mobile-nav.test.tsx` + a `phaser` `web:build` error, both already failing on `main` and unrelated to these story-only changes).
+
+## 2026-06-23 — Phase 32 A1: `midnite watch` ink dashboard scaffold (PR #149)
+
+Full-screen TUI dashboard command for the CLI. Introduces ink (React for the terminal), the `watch` command with alt-screen + clean teardown, `StatusBar`/`BoardPanel`/`PoolPanel` components seeded from REST and kept live via the tasks WS. `gatewayWsUrl` moved to `ws.ts`. 11 new tests.
+
+- [x] `ink@5.x` + `react@18` added to CLI deps; `"jsx": "react-jsx"` in tsconfig
+- [x] `midnite watch` command: alt-screen, lazy ink import, SIGINT/uncaughtException teardown
+- [x] `watch/` scaffold: `Dashboard`, `StatusBar`, `BoardPanel`, `PoolPanel`
+- [x] `gatewayWsUrl` moved from `workflow.ts` → `ws.ts`; re-exported for backward compat
+- [x] 11 tests in `src/watch/Dashboard.test.tsx` (StatusBar states, BoardPanel, PoolPanel)
+
+## 2026-06-23 — Phase 22 A2 recorder wiring: scheduler/pool/runner → MetricsService (PR #139)
+
+Closed the stale A2 open item. The runner, pool, and scheduler now feed MetricsService so /ops shows server-recorded data.
+
+- [x] `agent-runner.service.ts`: `@Optional` MetricsService; `recordRunStart()` on spawn, `endMetricRun(done/cancelled/abandoned/failed)` at each terminal path
+- [x] `metrics.service.spec.ts`: rewritten to match the shipped API (was against a stale shape)
+- [x] `web/lib/api.ts`: removed duplicate stale `getOpsMetrics` and dead imports from pre-merge conflict
+
+## 2026-06-23 — Phase 8 D2: proximity nameplates (PR #151)
 
 Agent name + status labels now appear as styled pill nameplates when the player is within 4 tiles; hidden otherwise.
 
