@@ -29,11 +29,13 @@ import {
   UpdateTaskProjectRequestSchema,
   isServerRenderedReportFormat,
   type BulkCreateTaskResponse,
+  type CheckRunListResponse,
   type CreateTaskResponse,
   type MidniteConfig,
   type Status,
   type Task,
   type TaskCounts,
+  type TriggerCheckResponse,
 } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
 import { sendMarkdownReport } from '../lib/report-response';
@@ -180,6 +182,22 @@ export class TasksController {
     @Param('dependsOnId') dependsOnId: string,
   ): Task {
     return this.service.removeDependency(id, dependsOnId);
+  }
+
+  // Trigger a manual check run for a task (Phase 30 Theme D). Returns a no-op
+  // stub when the gate is disabled / no repo / no checks configured. Thin: the
+  // service owns the run/save/event logic (mirrors the gate path in the runner).
+  @Post(':id/check')
+  async triggerCheck(@Param('id') id: string): Promise<TriggerCheckResponse> {
+    const run = await this.service.runManualCheck(id);
+    return { run };
+  }
+
+  // Return all check runs for a task, oldest-first. Thin: no pagination yet.
+  @Get(':id/check-runs')
+  listCheckRuns(@Param('id') id: string): CheckRunListResponse {
+    const runs = this.service.getCheckRuns(id);
+    return { runs };
   }
 
   // Permanent delete — only valid once the task is archived (the service enforces).

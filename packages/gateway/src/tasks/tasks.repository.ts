@@ -4,6 +4,7 @@ import {
   detectSourceKind,
   type CheckResult,
   type CheckRun,
+  type CheckRunStatus,
   type CheckTrigger,
   type PrStatus,
   type Status,
@@ -394,6 +395,7 @@ export class TasksRepository {
       prStatus: this.toPrStatus(this.getPrStatusRow(row.id)),
       tags: parseTags(row.tags),
       dependsOn: this.dependenciesOf(row.id),
+      checkRunStatus: this.deriveCheckRunStatus(row.id),
       archivedAt: row.archivedAt ?? undefined,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
@@ -401,6 +403,12 @@ export class TasksRepository {
       attachments: this.listAttachments(row.id),
       links: this.resolveLinks(row),
     };
+  }
+
+  private deriveCheckRunStatus(taskId: string): CheckRunStatus | undefined {
+    const run = this.latestCheckRunForTask(taskId);
+    if (!run) return undefined;
+    return run.passed ? 'passed' : 'failing';
   }
 
   // Map a persisted pr_status row to the shared PrStatus shape (the text columns

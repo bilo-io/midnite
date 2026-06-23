@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CheckRunStatusSchema } from './checks.js';
 import { PrStatusSchema, SOURCE_KINDS } from './source.js';
 
 export const STATUSES = [
@@ -82,6 +83,12 @@ export const TaskSchema = z.object({
    * absent on a fixture/partial means "no blockers".
    */
   dependsOn: z.array(z.string()).optional(),
+  /**
+   * Derived quality-gate status for the task's latest check run (Phase 30 Theme D).
+   * Absent when no check run exists. `passing` when the latest run passed; `failing`
+   * when it failed (and the task isn't yet `done`). Computed — not stored.
+   */
+  checkRunStatus: CheckRunStatusSchema.optional(),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
   /** ISO timestamp when the task (and thus its session) was archived; absent when active. */
