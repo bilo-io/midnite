@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { ArrowLeft } from 'lucide-react';
 import type { SessionTranscript } from '@midnite/shared';
 import { SessionTerminalModal } from '@/components/session-terminal-modal';
 import { SessionTranscriptModal } from '@/components/session-transcript-modal';
@@ -9,6 +10,7 @@ import { getSessionTranscript } from '@/lib/api';
 import { type OfficeAgent } from '@/lib/office/agents';
 import { useOfficeStore } from '@/lib/office-store';
 import { BoardroomPanel } from './boardroom-panel';
+import { DeskItemPicker } from './desk-item-picker';
 import { LibraryModal } from './library-modal';
 import { RetroGamesMenu } from './retro-games-menu';
 
@@ -24,38 +26,69 @@ export function OfficeHud() {
   const nearKitchen = useOfficeStore((s) => s.nearKitchen);
   const nearLibrary = useOfficeStore((s) => s.nearLibrary);
   const nearPlaystation = useOfficeStore((s) => s.nearPlaystation);
+  const nearDoor = useOfficeStore((s) => s.nearDoor);
   const onBreak = useOfficeStore((s) => s.onBreak);
   const active = useOfficeStore((s) => s.active);
   const boardOpen = useOfficeStore((s) => s.boardOpen);
   const libraryOpen = useOfficeStore((s) => s.libraryOpen);
   const playstationOpen = useOfficeStore((s) => s.playstationOpen);
+  const deskPickerOpen = useOfficeStore((s) => s.deskPickerOpen);
+  const currentScene = useOfficeStore((s) => s.currentScene);
   const close = useOfficeStore((s) => s.close);
   const closeBoard = useOfficeStore((s) => s.closeBoard);
   const closeLibrary = useOfficeStore((s) => s.closeLibrary);
   const closePlaystation = useOfficeStore((s) => s.closePlaystation);
+  const closeDeskPicker = useOfficeStore((s) => s.closeDeskPicker);
 
   const nearby = nearbyId ? agents.find((a) => a.id === nearbyId) : undefined;
   const activeAgent = active ? agents.find((a) => a.id === active.id) : undefined;
-  const panelOpen = active !== null || boardOpen || libraryOpen || playstationOpen;
+  const panelOpen = active !== null || boardOpen || libraryOpen || playstationOpen || deskPickerOpen;
+  const inCorner = currentScene === 'corner';
 
   return (
     <div className="pointer-events-none absolute inset-0 z-20">
       <div className="absolute left-3 top-3 rounded-md border border-border/60 bg-background/70 px-2.5 py-1.5 text-[11px] text-muted-foreground backdrop-blur">
-        <Key>WASD</Key> / arrows or click to move · <Key>E</Key> to interact
+        <Key>WASD</Key> / arrows to move · <Key>E</Key> to interact
       </div>
 
       <div className="absolute right-3 top-3 flex items-center gap-2">
-        {onBreak ? (
-          <span className="rounded-md border border-amber-500/40 bg-amber-500/15 px-2.5 py-1.5 text-[11px] font-medium text-amber-600 backdrop-blur dark:text-amber-400">
-            ☕ On a break
-          </span>
-        ) : null}
-        <span className="rounded-md border border-border/60 bg-background/70 px-2.5 py-1.5 text-[11px] text-muted-foreground backdrop-blur">
-          {agents.length} agent{agents.length === 1 ? '' : 's'} online
-        </span>
+        {inCorner ? (
+          <button
+            type="button"
+            onClick={() => {
+              // The corner office scene will pick up currentScene='office' via its store sub.
+              useOfficeStore.getState().setCurrentScene('office');
+            }}
+            className="pointer-events-auto flex items-center gap-1.5 rounded-md border border-border/60 bg-background/70 px-2.5 py-1.5 text-[11px] text-muted-foreground backdrop-blur transition-colors hover:bg-muted/60 hover:text-foreground"
+          >
+            <ArrowLeft className="h-3 w-3" />
+            Back to Office
+          </button>
+        ) : (
+          <>
+            {onBreak ? (
+              <span className="rounded-md border border-amber-500/40 bg-amber-500/15 px-2.5 py-1.5 text-[11px] font-medium text-amber-600 backdrop-blur dark:text-amber-400">
+                ☕ On a break
+              </span>
+            ) : null}
+            <span className="rounded-md border border-border/60 bg-background/70 px-2.5 py-1.5 text-[11px] text-muted-foreground backdrop-blur">
+              {agents.length} agent{agents.length === 1 ? '' : 's'} online
+            </span>
+          </>
+        )}
       </div>
 
-      {panelOpen ? null : nearBoard ? (
+      {panelOpen ? null : inCorner ? (
+        nearDoor ? (
+          <Prompt>
+            Press <Key>E</Key> to return to the <span className="font-semibold">Main Office</span>
+          </Prompt>
+        ) : (
+          <Prompt>
+            Press <Key>E</Key> near the desk to <span className="font-semibold">customise</span>
+          </Prompt>
+        )
+      ) : nearBoard ? (
         <Prompt>
           Press <Key>E</Key> to open the <span className="font-semibold">Board Room</span>
         </Prompt>
@@ -72,11 +105,15 @@ export function OfficeHud() {
         <Prompt>
           Press <Key>E</Key> to open the <span className="font-semibold">Game Library</span>
         </Prompt>
+      ) : nearDoor ? (
+        <Prompt>
+          Press <Key>E</Key> to enter the <span className="font-semibold">Corner Office</span>
+        </Prompt>
       ) : nearby ? (
         <Prompt>
-          Press <Key>E</Key> to open <span className="font-semibold">{nearby.name}</span>’s session
+          Press <Key>E</Key> to open <span className="font-semibold">{nearby.name}</span>'s session
         </Prompt>
-      ) : agents.length === 0 ? (
+      ) : agents.length === 0 && !inCorner ? (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border border-border/60 bg-card/80 px-4 py-2 text-sm text-muted-foreground backdrop-blur">
           No active agents — start a task to fill the office.
         </div>
@@ -89,6 +126,8 @@ export function OfficeHud() {
       {libraryOpen ? <LibraryModal onClose={closeLibrary} /> : null}
 
       {playstationOpen ? <RetroGamesMenu onClose={closePlaystation} /> : null}
+
+      {deskPickerOpen ? <DeskItemPicker onClose={closeDeskPicker} /> : null}
     </div>
   );
 }
