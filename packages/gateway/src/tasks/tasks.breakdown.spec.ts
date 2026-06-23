@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Breakdown } from '@midnite/shared';
+import type { Breakdown, Task } from '@midnite/shared';
 import { TaskClassifier, type ClassifierImage } from '../agent/classifier.service';
 import type { PlannerService } from '../agent/planner.service';
 import type { ReposService } from '../repos/repos.service';
@@ -38,7 +38,7 @@ describe('TasksService.createTasksFromBreakdown (Phase 28 Theme B)', () => {
   afterEach(() => handle.close());
 
   /** Map title → its created Task, for asserting on the returned board. */
-  const byTitle = (tasks: { title: string }[]) => new Map(tasks.map((t) => [t.title, t]));
+  const byTitle = (tasks: Task[]) => new Map(tasks.map((t) => [t.title, t]));
 
   it('creates a task per ref with explicit title/kind/priority, tagged to the project', () => {
     const breakdown: Breakdown = {
