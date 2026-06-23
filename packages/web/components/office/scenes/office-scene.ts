@@ -218,6 +218,8 @@ class OfficeScene extends Phaser.Scene {
     this.time.addEvent({ delay: 450, loop: true, callback: this.tickIdleBubbles, callbackScope: this });
     // Occasionally send a lounging agent for a swim (G3).
     this.time.addEvent({ delay: 4500, loop: true, callback: this.maybeSwim, callbackScope: this });
+    // Gentle idle wander (C3): occasionally a lounging agent gets up and mills around.
+    this.time.addEvent({ delay: 6700, loop: true, callback: this.maybeWander, callbackScope: this });
     // Drift the day/night floor wash with the clock (B2) — same cadence the time
     // theme re-evaluates the light/dark flip. Auto-removed on shutdown.
     this.time.addEvent({ delay: 60_000, loop: true, callback: this.refreshDayNight, callbackScope: this });
@@ -503,6 +505,53 @@ class OfficeScene extends Phaser.Scene {
     if ((this.zzzPhase + loungers.length) % 2 === 0) return;
     const actor = loungers[(this.zzzPhase * 7 + loungers.length) % loungers.length]!;
     this.swimActor(actor);
+  }
+
+  /**
+   * Gentle idle wander (C3): occasionally a lounging (sleeping) agent gets up,
+   * walks to a nearby walkable tile in the pool zone, pauses, then returns to its
+   * lounger. ~1-in-3 ticks fire; a different agent is picked than maybeSwim uses.
+   */
+  private maybeWander() {
+    if (!this.alive) return;
+    const candidates = [...this.actors.values()].filter(
+      (a) => a.kind === 'lounge' && a.sleeping && !a.walking && !a.swimming,
+    );
+    if (candidates.length === 0) return;
+    // ~1-in-3 ticks, different phase offset from maybeSwim to avoid synchronisation.
+    if ((this.zzzPhase * 3 + candidates.length) % 3 !== 1) return;
+    const actor = candidates[(this.zzzPhase * 11 + candidates.length * 7) % candidates.length]!;
+
+    const seatX = actor.tx;
+    const seatY = actor.ty;
+    const seat = this.tileOf(seatX, seatY);
+
+    // Try offsets around the seat until we land on a walkable tile.
+    const offsets: [number, number][] = [[-2, 0], [2, 0], [0, -2], [0, 2], [-1, 1], [1, -1], [-2, 1], [1, 2]];
+    let wanderTile: { x: number; y: number } | null = null;
+    for (const [dx, dy] of offsets) {
+      const t = { x: seat.x + dx, y: seat.y + dy };
+      if (t.x > 0 && t.y > 0 && t.x < COLS - 1 && t.y < ROWS - 1 && !this.blocked[t.y]?.[t.x]) {
+        wanderTile = t;
+        break;
+      }
+    }
+    if (!wanderTile) return;
+
+    actor.sleeping = false;
+    actor.bubble.setText('');
+    this.walkActor(actor, center(wanderTile.x), center(wanderTile.y));
+
+    // After a brief pause at the wander spot, walk home and restore sleeping state.
+    this.time.delayedCall(3000, () => {
+      if (!this.alive || actor.swimming) return;
+      this.walkActor(actor, seatX, seatY);
+      this.time.delayedCall(2000, () => {
+        if (!this.alive || actor.swimming || actor.walking) return;
+        actor.sleeping = true;
+        actor.bubble.setColor(toHex(STATUS_TINT.idle)).setText('z'.repeat(this.zzzPhase + 1));
+      });
+    });
   }
 
   /** Tween an actor from its lounger through a couple of pool lanes and back. */
