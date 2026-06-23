@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 8 C3: gentle idle wander (PR #152)
+
+Idle pool agents now occasionally stand up and mill around instead of sitting frozen on their loungers.
+
+- [x] `maybeWander()` timer added at 6.7s cadence (offset from swim at 4.5s to avoid sync)
+- [x] ~1-in-3 ticks fires; picks a different lounger than `maybeSwim`
+- [x] Walks to nearest valid offset tile, pauses 3s, returns to seat, restores sleeping state
+
 ## 2026-06-23 — Phase 10 C2 complete: market widgets + boardroom panel (PR #150)
 
 Storied the last three un-storied widgets, **completing Theme C2** (every dashboard/office widget now has interaction tests).
@@ -31,7 +39,7 @@ Closed the stale A2 open item. The runner, pool, and scheduler now feed MetricsS
 - [x] `metrics.service.spec.ts`: rewritten to match the shipped API (was against a stale shape)
 - [x] `web/lib/api.ts`: removed duplicate stale `getOpsMetrics` and dead imports from pre-merge conflict
 
-## 2026-06-23 — Phase 8 D2: proximity nameplates (PR #149)
+## 2026-06-23 — Phase 8 D2: proximity nameplates (PR #151)
 
 Agent name + status labels now appear as styled pill nameplates when the player is within 4 tiles; hidden otherwise.
 
