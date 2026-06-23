@@ -44,7 +44,7 @@ function build(overrides: Partial<Record<keyof TasksService, unknown>> = {}) {
     ...overrides,
   } as unknown as TasksService;
   const prStatus = { refresh: vi.fn(async () => fakeTask) } as unknown as PrStatusService;
-  return { controller: new TasksController(service, config, prStatus), service, prStatus };
+  return { controller: new TasksController(service, config, prStatus, {} as never), service, prStatus };
 }
 
 describe('TasksController — query/body validation (400)', () => {
@@ -182,7 +182,7 @@ describe('TasksController — dependency routes', () => {
       }),
     } as unknown as TasksService;
     const prStatus = { refresh: vi.fn() } as unknown as PrStatusService;
-    const controller = new TasksController(service, cfg, prStatus);
+    const controller = new TasksController(service, cfg, prStatus, {} as never);
     try {
       await expect(
         controller.create(
