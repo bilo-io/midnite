@@ -105,6 +105,8 @@ type Actor = {
   swimming: boolean;
   /** Wake ripple that trails a swimmer; removed when they climb out. */
   ripple?: Phaser.GameObjects.Ellipse;
+  /** Pulse tween running while the agent needs attention (D1). */
+  attentionTween?: Phaser.Tweens.Tween;
 };
 
 class OfficeScene extends Phaser.Scene {
@@ -516,10 +518,34 @@ class OfficeScene extends Phaser.Scene {
   private setActivity(actor: Actor, agent: OfficeAgent) {
     if (agent.status !== 'idle' || actor.swimming) {
       actor.sleeping = false;
+      // C2: apply a pose driven by the live activity phase. Only changes the
+      // animation when the agent has settled (not mid-walk) so we don't fight
+      // the walk-tween's own frame management.
+      if (!actor.walking) this.applyPose(actor, agent);
       return;
     }
     actor.sleeping = true;
     actor.bubble.setColor(toHex(STATUS_TINT.idle)).setText('z'.repeat(this.zzzPhase + 1));
+  }
+
+  /**
+   * C2: set a sprite pose matching the live activity phase.
+   * - `running` → slow typing animation (walk cycle at 2 fps).
+   * - `blocked`  → still frame 1 (standing upright, awaiting input).
+   * - `idle` / unknown → still frame 0 (neutral seated position).
+   */
+  private applyPose(actor: Actor, agent: OfficeAgent) {
+    const phase = agent.liveActivity?.phase;
+    if (phase === 'running') {
+      // Slow "typing" — reuse the down-facing walk cycle at a fraction of walk speed.
+      actor.sprite.play({ key: walkAnim('robot', 'down', actor.variant), frameRate: 2 }, true);
+    } else if (phase === 'blocked') {
+      actor.sprite.anims.stop();
+      actor.sprite.setTexture(charKey('robot', 'down', 1, actor.variant)).setFlipX(false);
+    } else {
+      actor.sprite.anims.stop();
+      actor.sprite.setTexture(charKey('robot', 'down', 0, actor.variant)).setFlipX(false);
+    }
   }
 
   /** Cycle the lounging agents' bubble z → zz → zzz. */
@@ -643,11 +669,48 @@ class OfficeScene extends Phaser.Scene {
   }
 
   private updateActorContent(actor: Actor, agent: OfficeAgent) {
-    actor.sprite.setTint(agentTint(agent.id));
     actor.nameText.setText(this.truncate(agent.name));
     const tint = STATUS_TINT[agent.status];
     actor.statusText.setText(STATUS_LABEL[agent.status]).setColor(toHex(tint));
-    actor.bubble.setText(STATUS_BUBBLE[agent.status]).setColor(toHex(tint));
+
+    // C1: show the live tool label when present and not idle; fall back to the
+    // status glyph so the bubble always has something meaningful.
+    const livLabel = agent.liveActivity?.label;
+    const bubbleText =
+      livLabel && agent.status !== 'idle' ? this.truncate(livLabel, 18) : STATUS_BUBBLE[agent.status];
+    actor.bubble.setText(bubbleText).setColor(toHex(tint));
+
+    // D1: start/stop the attention pulse tween depending on whether the agent
+    // is waiting on the user. The tween loops indefinitely until cleared.
+    if (agent.attention) {
+      this.applyAttention(actor);
+    } else {
+      this.clearAttention(actor);
+    }
+  }
+
+  /** Pulse the sprite scale 1.0→1.18→1.0 + orange tint when an agent needs you. */
+  private applyAttention(actor: Actor) {
+    if (actor.attentionTween?.isPlaying()) return; // already pulsing
+    actor.attentionTween?.stop();
+    actor.sprite.setTint(0xff6b35); // vivid orange — unmistakable
+    actor.attentionTween = this.tweens.add({
+      targets: actor.sprite,
+      scaleX: { from: CHAR_SCALE, to: CHAR_SCALE * 1.18 },
+      scaleY: { from: CHAR_SCALE, to: CHAR_SCALE * 1.18 },
+      duration: 420,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+  }
+
+  /** Restore normal tint + scale; stop the pulse tween. */
+  private clearAttention(actor: Actor) {
+    if (!actor.attentionTween) return;
+    actor.attentionTween.stop();
+    actor.attentionTween = undefined;
+    actor.sprite.setScale(CHAR_SCALE).setTint(agentTint(actor.id));
   }
 
   /**
@@ -787,6 +850,7 @@ class OfficeScene extends Phaser.Scene {
 
   private destroyActor(actor: Actor) {
     actor.tween?.stop();
+    actor.attentionTween?.stop();
     actor.ripple?.destroy();
     actor.sprite.destroy();
     actor.shadow.destroy();
