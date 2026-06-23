@@ -28,6 +28,7 @@ import {
   workflowListRows,
   type NodeLabel,
 } from './workflow.js';
+import { openWs } from './ws.js';
 
 const program = new Command();
 
@@ -216,16 +217,12 @@ async function watchWorkflowRun(
   let run = seed;
   return await new Promise<WorkflowRun>((resolve) => {
     let settled = false;
-    let socket: WebSocket;
+    let wsHandle: ReturnType<typeof openWs> | null = null;
 
     const done = (final: WorkflowRun): void => {
       if (settled) return;
       settled = true;
-      try {
-        socket.close();
-      } catch {
-        // already closing
-      }
+      wsHandle?.close();
       resolve(final);
     };
 
@@ -249,49 +246,46 @@ async function watchWorkflowRun(
       void tick();
     };
 
-    try {
-      socket = new WebSocket(gatewayWsUrl(baseUrl) + WORKFLOW_WS_PATH);
-    } catch {
-      pollToEnd();
-      return;
-    }
-
-    socket.onopen = () => {
-      socket.send(JSON.stringify({ type: 'subscribe', runId: seed.id }));
-      void c
-        .getWorkflowRun(workflowId, seed.id)
-        .then((r) => {
-          run = r;
-          if (isRunTerminal(r.status)) finishTerminal(r);
-        })
-        .catch(() => {
-          // events will carry the state
-        });
-    };
-    socket.onmessage = (ev) => {
-      let event: WorkflowEvent;
-      try {
-        event = JSON.parse(typeof ev.data === 'string' ? ev.data : '') as WorkflowEvent;
-      } catch {
-        return;
-      }
-      if (event.runId !== seed.id) return;
-      const line = watchEventLine(event, labelOf);
-      if (line) console.log(line);
-      run = applyWorkflowEvent(run, event) ?? run;
-      if (event.type === 'run.finished') {
-        done(event.run);
-      } else if (event.type === 'run.failed') {
-        // run.failed carries no run body — reconcile once for the final detail.
+    wsHandle = openWs<WorkflowEvent>(gatewayWsUrl(baseUrl) + WORKFLOW_WS_PATH, {
+      extra: { runId: seed.id },
+      reconnect: false,
+      parse: (data) => {
+        try {
+          const event = JSON.parse(data) as WorkflowEvent;
+          return event.runId === seed.id ? event : null;
+        } catch {
+          return null;
+        }
+      },
+      onReady: () => {
         void c
           .getWorkflowRun(workflowId, seed.id)
-          .then(done)
-          .catch(() => done(run));
-      }
-    };
-    socket.onerror = () => {
-      if (!settled) pollToEnd();
-    };
+          .then((r) => {
+            run = r;
+            if (isRunTerminal(r.status)) finishTerminal(r);
+          })
+          .catch(() => {
+            // events will carry the state
+          });
+      },
+      onMessage: (event) => {
+        const line = watchEventLine(event, labelOf);
+        if (line) console.log(line);
+        run = applyWorkflowEvent(run, event) ?? run;
+        if (event.type === 'run.finished') {
+          done(event.run);
+        } else if (event.type === 'run.failed') {
+          // run.failed carries no run body — reconcile once for the final detail.
+          void c
+            .getWorkflowRun(workflowId, seed.id)
+            .then(done)
+            .catch(() => done(run));
+        }
+      },
+      onError: () => {
+        if (!settled) pollToEnd();
+      },
+    });
   });
 }
 
