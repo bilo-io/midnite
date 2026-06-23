@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 
 import { buildNav, toDocRoute, type DocRoute, type NavGroup } from './nav';
+import { productRoutes } from './product-docs';
 
 type MdxModule = {
   default: ComponentType;
@@ -15,9 +16,14 @@ export type ResolvedRoute = DocRoute & { Component: ComponentType };
 // section / order.
 const modules = import.meta.glob<MdxModule>('./**/*.mdx', { eager: true });
 
-export const routes: ResolvedRoute[] = Object.entries(modules).map(([id, module]) => ({
+const mdxRoutes: ResolvedRoute[] = Object.entries(modules).map(([id, module]) => ({
   ...toDocRoute(id, module.frontmatter ?? {}),
   Component: module.default,
 }));
+
+// The DS docs (authored MDX, globbed above) and the product docs (the repo's real
+// markdown, imported in product-docs.tsx) share one route table + sidebar nav, so
+// the whole site reads as one navigable surface.
+export const routes: ResolvedRoute[] = [...mdxRoutes, ...productRoutes];
 
 export const nav: NavGroup[] = buildNav(routes);
