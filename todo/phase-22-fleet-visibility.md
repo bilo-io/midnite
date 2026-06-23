@@ -32,9 +32,9 @@ The substrate for the ops surface: record what the fleet does, cheaply. Per-run 
 - [ ] The scheduler/pool/runner feed metrics through a **thin recorder injected into them** (they call `metrics.record*`), not the other way around — the `metrics` module never imports the scheduler's internals.
 
 ### A3. `metrics` module + `GET /metrics/ops` — **M**
-- [ ] New `MetricsModule` (registered in `AppModule`) — `MetricsService` composes the gauge store + `MetricsRepository`; a thin `MetricsController` serves `GET /metrics/ops?from=&to=` → current gauges + aggregated run stats (throughput, duration distribution, retry/abandon rates) over the window. Validate the query against a shared schema.
-- [ ] **Don't re-aggregate LLM spend** — the ops summary references/links `GET /usage/summary`; the web page calls both. (Decision §5.)
-- [ ] `OpsSummary` / `MetricsGauges` shapes in [`@midnite/shared`](../packages/shared/src/) (new `metrics.ts`) + zod + tests; typed client `getOpsMetrics()`.
+- [x] ✅ (PR #132) `MetricsModule` registered in `AppModule` — `MetricsService` (wraps `GaugeStore` + `MetricsRepository`, exposes `record*` + `getOpsSummary`), `MetricsController` (`GET /metrics/ops?from=&to=` → `OpsSummary`, zod-validated). 7-day default window. 4 controller tests.
+- [x] ✅ (PR #132) LLM spend not re-aggregated — `OpsSummary` has no cost field (Decision §5); the web page will call `GET /usage/summary` separately.
+- [x] ✅ (PR #132) `MetricsGauges`, `RunCountByDay`, `DurationBuckets`, `OutcomeCounts`, `OpsQuery`, `OpsSummary` zod schemas in `@midnite/shared/metrics.ts` + 8 tests. Typed web client `getOpsMetrics()` deferred to Theme B.
 
 ---
 

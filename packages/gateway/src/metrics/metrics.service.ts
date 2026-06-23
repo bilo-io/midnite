@@ -1,32 +1,25 @@
-import { randomUUID } from 'node:crypto';
-import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
-import type { OpsSummary, OpsQuery } from '@midnite/shared';
-import type { Db } from '../db/db.module';
-import { DB } from '../db/db.module';
-import { GaugeStore } from './gauge-store';
+import { Injectable } from '@nestjs/common';
+import type { MetricsGauges, OpsSummary, OpsQuery } from '@midnite/shared';
+
 import { MetricsRepository } from './metrics.repository';
+import { GaugeStore } from './gauge-store';
 
-const DEFAULT_WINDOW_DAYS = 30;
+/** Default window: last 7 days when no from/to is supplied. */
+const DEFAULT_WINDOW_DAYS = 7;
 
-function defaultFrom(): string {
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() - DEFAULT_WINDOW_DAYS);
-  return d.toISOString().slice(0, 10);
-}
-
-function defaultTo(): string {
-  return new Date().toISOString().slice(0, 10);
+function defaultWindow(): { from: string; to: string } {
+  const to = new Date().toISOString();
+  const from = new Date(Date.now() - DEFAULT_WINDOW_DAYS * 24 * 60 * 60 * 1_000).toISOString();
+  return { from, to };
 }
 
 @Injectable()
 export class MetricsService {
-  private readonly logger = new Logger(MetricsService.name);
   private readonly gauges = new GaugeStore();
 
-  constructor(
-    @Inject(DB) private readonly db: Db,
-    @Optional() @Inject(MetricsRepository) private readonly repo?: MetricsRepository,
-  ) {}
+  constructor(private readonly repo: MetricsRepository) {}
+
+  // ── Gauge setters (called by scheduler / pool / runner) ─────────────────────
 
   recordQueueDepth(depth: number): void {
     this.gauges.recordQueueDepth(depth, new Date().toISOString());
@@ -40,34 +33,45 @@ export class MetricsService {
     this.gauges.recordTickLatency(ms, new Date().toISOString());
   }
 
-  recordRunStart(taskId: string, repo?: string | null): string {
-    const id = randomUUID();
-    try {
-      this.repo?.insertStart({ id, taskId, repo: repo ?? null, startedAt: new Date().toISOString() });
-    } catch (err) {
-      this.logger.warn({ err }, 'metrics: recordRunStart failed');
-    }
-    return id;
+  // ── Run lifecycle (called by agent runner) ───────────────────────────────────
+
+  recordRunStart(id: string, taskId: string, retryCount: number, repo?: string): void {
+    this.repo.insertStart({
+      id,
+      taskId,
+      startedAt: new Date().toISOString(),
+      retryCount,
+      repo: repo ?? null,
+    });
   }
 
-  recordRunEnd(runId: string, outcome: 'done' | 'abandoned' | 'failed' | 'cancelled', retryCount: number): void {
-    const endedAt = new Date().toISOString();
-    try {
-      this.repo?.recordEnd(runId, outcome, retryCount, endedAt);
-    } catch (err) {
-      this.logger.warn({ err }, 'metrics: recordRunEnd failed');
-    }
+  recordRunEnd(
+    id: string,
+    outcome: 'done' | 'abandoned' | 'failed' | 'cancelled',
+    durationMs: number,
+  ): void {
+    this.repo.recordEnd(id, new Date().toISOString(), durationMs, outcome);
   }
 
-  getOpsSummary(query: OpsQuery = {}): OpsSummary {
-    const from = query.from ?? defaultFrom();
-    const to = query.to ?? defaultTo();
+  // ── Query ────────────────────────────────────────────────────────────────────
+
+  getOpsSummary(query: OpsQuery): OpsSummary {
+    const { from, to } = query.from && query.to ? { from: query.from, to: query.to } : defaultWindow();
+
+    const snap = this.gauges.snapshot();
+    const gauges: MetricsGauges = {
+      queueDepth: snap.queueDepth,
+      slotsUsed: snap.slots?.used ?? null,
+      slotsTotal: snap.slots?.total ?? null,
+      lastTickLatencyMs: snap.lastTickLatencyMs,
+      updatedAt: snap.updatedAt,
+    };
+
     return {
-      gauges: this.gauges.snapshot(),
-      throughput: this.repo?.countByDay(from, to) ?? [],
-      durations: this.repo?.durationBuckets(from, to) ?? { under30s: 0, under2m: 0, under10m: 0, under30m: 0, over30m: 0 },
-      outcomes: this.repo?.outcomeCounts(from, to) ?? { done: 0, abandoned: 0, failed: 0, cancelled: 0 },
-      window: { from, to },
+      gauges,
+      throughputByDay: this.repo.countByDay(from, to),
+      durationBuckets: this.repo.durationBuckets(from, to),
+      outcomeCounts: this.repo.outcomeCounts(from, to),
     };
   }
 }

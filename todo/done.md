@@ -4,6 +4,57 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 26 Theme D: client-side search + responsive mobile nav (PR #137)
+
+Made the docs site navigable on any device. A header search filters all pages with no server, and the sidebar collapses to a drawer on mobile. Builds on Theme C's grouped content; the static build seam (`docs:build` + `moon ci`) already landed with the Theme A scaffold.
+
+- [x] **Client-side search** — pure `content/search.ts` (frontmatter + ATX-heading extraction, ranked substring match: title ≫ heading ≫ section) + `content/search-index.ts` (built once at load); a header `DocSearch` (`@midnite/ui` `Input` + a token-styled results popover) navigates to a hit. The whole index ships in the bundle — no network/gateway.
+- [x] **Heading coverage** — product docs (raw `.md`) are indexed with full headings; the `.mdx` DS pages are indexed by title/section via the route table, because the MDX rollup plugin strips the `?raw` query (can't read their text without compiling) and they're short single-primitive pages.
+- [x] **Responsive nav** — `Layout` gains a hamburger (`< md`) that opens the sidebar as a slide-in drawer with a backdrop, closed on route change; pins as a column on `md+`. Active-route highlight via `NavLink` as before.
+- [x] **Tests** — `search.test.ts` (parse/extract/rank) + `doc-search.test.tsx` (filter → navigate, heading match, no-results; index mocked so the MDX-less vitest runner needn't transform `.mdx`) + `layout.test.tsx` drawer/search coverage. Boundary guard stays green.
+
+**Deferred:** on-page TOC (the "+ on-page nav" half — not in the Theme D verification line) and the deploy/hosting story (Decision §6). With Themes A–D landed (C + D partial), Phase 26's docs app is functionally complete bar those follow-ons.
+
+## 2026-06-23 — Phase 28 Theme B: create-with-dependencies from a Breakdown (PR #135)
+
+The gateway half of structured planning: turn a confirmed `Breakdown` (Theme A's contract, #129) into a real, **dependency-wired** board. The piece a later preview/confirm UI (Theme C) and standalone goal flow (Theme D) both call; fed a `Breakdown` directly, so it's deterministic + fully testable without the LLM.
+
+- [x] **`TasksService.createTasksFromBreakdown(breakdown, { projectId?, repo? })`** — create a task per local `ref` with its **explicit** title/kind/priority (no AI re-classify; the breakdown is already typed), tagged to the optional project/repo, as `todo`; then resolve local refs → created ids and wire the **Phase 27 dependency edges**.
+- [x] **Conservative pruning, never fatal** (Decision §3): a self-reference / unknown ref / cycle-closing edge is skipped (reusing `wouldCreateCycle`); a duplicate `ref` is de-duped (first wins). **One coalesced `tasks.bulkCreated`** event (no per-task broadcast).
+- [x] **Project path:** `ProjectsService.createTasksFromBreakdown` delegates; `POST /projects/:id/plan/create-from-breakdown`. The flat `createTasksFromPlan` path is untouched (Decision §1/§6). Shared: `CreateFromBreakdownRequest`/`Response` zod.
+- [x] **Tests:** gateway `:memory:` (explicit fields applied + project-tagged; blocker edge gates `listReadyTodoTasks`; independent tasks parallel; unknown/self/cycle pruned not fatal; dup de-duped; one coalesced event; empty no-op), controller route validation+delegation, shared `CreateFromBreakdownRequestSchema`.
+
+**Scope notes:** the create step is intentionally **LLM-free** — the doc's "reuse `createFromPrompt` classify/triage" was dropped since the breakdown already carries title/kind, and the "LLM-disabled → flat" fallback belongs to Theme A's *generation* step (still open), not this create mechanism. The core lives in `TasksService` so Theme D's standalone `POST /tasks/breakdown` can reuse it. **Still open:** Theme A's breakdown-LLM step + prompt; Theme C (web preview/edit); Theme D (standalone endpoint + `midnite plan`).
+
+## 2026-06-23 — Phase 30 B3: check-lifecycle task events (PR #136)
+
+Emits `checks.started` / `checks.passed` / `checks.failed` task events around the gate run, each triggering `task.updated`. Board reacts in real time without polling.
+
+- [x] `TasksService.recordCheckEvent(taskId, kind)` — event row + `task.updated` broadcast
+- [x] `completeWithChecks` now emits `checks.started` before the run and `checks.passed|failed` after
+
+---
+
+## 2026-06-23 — Phase 30 B2: gate the `done` transition via `completeWithChecks` (PR #134)
+
+Routes the Stop-hook completion through `AgentRunnerService.completeWithChecks` — runs configured checks in the task's repo cwd, persists the run, and either `markDone` (pass) or `markWaiting` (fail). Slot released exactly once in every branch. Default `config.checks.enabled = false` is fail-open. B3 (events + derived flags) is next.
+
+- [x] `AgentRunnerService.completeWithChecks(taskId, prUrl)` — resolve checks → skip/gate → persist → markDone or markWaiting
+- [x] `TasksService.saveCheckRun(run)` — persistence without events (B3 adds those)
+- [x] `LifecycleHookController` thinned; `ChecksModule` imported into `PoolModule`
+
+---
+
+## 2026-06-23 — Phase 22 A3: MetricsModule + GET /metrics/ops (PR #133)
+
+Completes the ops-metrics spine. `MetricsService` wires `GaugeStore` + `MetricsRepository`; `MetricsController` serves `GET /metrics/ops`; `MetricsModule` is registered in `AppModule`. `OpsSummary`/`MetricsGauges`/etc. zod schemas in shared. Phase 22 Theme A is now fully done.
+
+- [x] `MetricsService` — `record*` + `getOpsSummary()` with 7-day default window
+- [x] `MetricsController` + `MetricsModule`; registered in `AppModule`; 4 controller tests
+- [x] `metrics.ts` in shared — `MetricsGauges`, `OpsSummary`, `OpsQuery` + 8 tests
+
+---
+
 ## 2026-06-23 — Phase 22 A2: GaugeStore — in-memory ops gauges (PR #131)
 
 A plain-class `GaugeStore` that holds the three fast-moving operational signals: queue depth, slot utilization (used/total), and last tick latency. Callers record via `record*`; `snapshot()` returns a defensive copy. The `MetricsService` (A3) will wrap it. Lost on restart by design. 8 unit tests.

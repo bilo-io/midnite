@@ -65,6 +65,7 @@ import { TerminalModule } from './terminal/terminal.module';
     MetricsModule,
     SessionsModule,
     SetupModule,
+    MetricsModule,
     UsageModule,
     WeatherModule,
     WorkflowsModule,
