@@ -1,6 +1,7 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import type { AgentPoolSnapshot, MidniteConfig } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
+import { MetricsService } from '../metrics/metrics.service';
 import { TasksService } from '../tasks/tasks.service';
 
 interface PoolSlot {
@@ -28,11 +29,17 @@ export class AgentPoolService {
   constructor(
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
     @Inject(TasksService) private readonly tasks: TasksService,
+    @Optional() @Inject(MetricsService) private readonly metrics?: MetricsService,
   ) {
     this.slots = Array.from({ length: this.config.agent.pool }, (_, i) => ({
       id: `slot-${i}`,
       status: 'idle',
     }));
+  }
+
+  private emitSlotGauge(): void {
+    const used = this.slots.filter((s) => s.status === 'busy').length;
+    this.metrics?.recordSlotChange(used, this.slots.length);
   }
 
   capacity(): number {
@@ -60,6 +67,7 @@ export class AgentPoolService {
     slot.status = 'busy';
     slot.taskId = taskId;
     slot.abort = new AbortController();
+    this.emitSlotGauge();
     return slot.abort.signal;
   }
 
@@ -81,6 +89,7 @@ export class AgentPoolService {
     slot.taskId = undefined;
     slot.pid = undefined;
     slot.abort = undefined;
+    this.emitSlotGauge();
   }
 
   snapshot(): AgentPoolSnapshot {

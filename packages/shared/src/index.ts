@@ -38,6 +38,7 @@ export * from './search.js';
 export * from './routine.js';
 export * from './dashboard.js';
 export * from './media.js';
+export * from './metrics.js';
 export * from './report.js';
 export * from './usage.js';
 export * from './backup.js';

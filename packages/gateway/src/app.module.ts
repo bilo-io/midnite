@@ -28,6 +28,7 @@ import { SearchModule } from './search/search.module';
 import { SearchIndexModule } from './search/search-index.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { SetupModule } from './setup/setup.module';
+import { MetricsModule } from './metrics/metrics.module';
 import { UsageModule } from './usage/usage.module';
 import { WeatherModule } from './weather/weather.module';
 import { WorkflowsModule } from './workflows/workflows.module';
@@ -61,6 +62,7 @@ import { TerminalModule } from './terminal/terminal.module';
     ProjectsModule,
     ProvidersModule,
     ReposModule,
+    MetricsModule,
     SessionsModule,
     SetupModule,
     UsageModule,

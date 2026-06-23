@@ -3,6 +3,7 @@ import type { MidniteConfig, Task } from '@midnite/shared';
 import { KnowledgeService } from '../agent/knowledge.service';
 import { UrlContextService } from '../agent/url-context.service';
 import { MIDNITE_CONFIG } from '../config.token';
+import { MetricsService } from '../metrics/metrics.service';
 import { ReposService } from '../repos/repos.service';
 import { TasksService } from '../tasks/tasks.service';
 import { TerminalService } from '../terminal/terminal.service';
@@ -38,7 +39,11 @@ export class AgentRunnerService implements OnModuleInit {
     // Optional so the runner's unit specs construct it positionally without a
     // stub; Nest provides it in production (AgentModule exports it). Phase 15 D.
     @Optional() @Inject(KnowledgeService) private readonly knowledge?: KnowledgeService,
+    @Optional() @Inject(MetricsService) private readonly metrics?: MetricsService,
   ) {}
+
+  /** Per-task opaque metric run IDs — populated on start, consumed on end. */
+  private readonly metricRunIds = new Map<string, string>();
 
   /**
    * Reconcile tasks left `wip`/`waiting` by a previous gateway process. For the
@@ -135,6 +140,8 @@ export class AgentRunnerService implements OnModuleInit {
       this.pool.setPid(task.id, result.pid);
       this.armTimeout(task.id);
       this.logger.log(`started agent run for task ${task.id} (pid ${result.pid})`);
+      const runId = this.metrics?.recordRunStart(task.id, task.repo ?? null);
+      if (runId) this.metricRunIds.set(task.id, runId);
       return true;
     } catch (err) {
       this.logger.error(
@@ -151,6 +158,7 @@ export class AgentRunnerService implements OnModuleInit {
    *  the PTY's onExit won't requeue it. */
   complete(taskId: string): void {
     this.clearRunTimeout(taskId);
+    this.endMetricRun(taskId, 'done');
     this.pool.release(taskId);
     this.terminal.killManagedRun(taskId);
   }
@@ -179,6 +187,7 @@ export class AgentRunnerService implements OnModuleInit {
    *  PTY's onExit then frees the slot. */
   cancel(taskId: string): void {
     this.clearRunTimeout(taskId);
+    this.endMetricRun(taskId, 'cancelled');
     this.pool.abort(taskId);
     try {
       // → abandoned so the scheduler won't immediately re-pick it (unlike a crash,
@@ -196,6 +205,16 @@ export class AgentRunnerService implements OnModuleInit {
   // Stop hook completing it (crash / external kill). Retry it up to maxRetries,
   // then abandon. A task already moved to done/abandoned is left as-is. Always
   // frees the slot.
+  /** Record the metric run end (best-effort — never throws). */
+  private endMetricRun(taskId: string, outcome: 'done' | 'abandoned' | 'failed' | 'cancelled'): void {
+    const runId = this.metricRunIds.get(taskId);
+    if (!runId) return;
+    this.metricRunIds.delete(taskId);
+    let retryCount = 0;
+    try { retryCount = this.tasks.getTask(taskId).retryCount ?? 0; } catch { /* ignore */ }
+    this.metrics?.recordRunEnd(runId, outcome, retryCount);
+  }
+
   private onExit(taskId: string, exitCode: number): void {
     this.clearRunTimeout(taskId);
     let task: Task | undefined;
@@ -211,6 +230,7 @@ export class AgentRunnerService implements OnModuleInit {
         this.logger.warn(
           `agent session ${taskId} exited (code ${exitCode}) while ${task.status} — exhausted ${retries}/${max} retries, abandoning`,
         );
+        this.endMetricRun(taskId, 'abandoned');
         try {
           this.tasks.updateStatus(taskId, 'abandoned');
         } catch (err) {
@@ -222,6 +242,7 @@ export class AgentRunnerService implements OnModuleInit {
         this.logger.warn(
           `agent session ${taskId} exited (code ${exitCode}) while ${task.status} — retry ${retries + 1}/${max}`,
         );
+        this.endMetricRun(taskId, 'failed');
         this.safeRetry(taskId);
       }
     }
