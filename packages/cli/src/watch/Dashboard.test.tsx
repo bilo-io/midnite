@@ -68,6 +68,20 @@ describe('BoardPanel', () => {
     const { lastFrame } = render(<BoardPanel tasks={[task as never]} />);
     expect(lastFrame()).toContain('Fix the bug');
   });
+
+  it('shows short task id, priority indicator, and repo when present', () => {
+    const task = {
+      id: 'abc1234567',
+      title: 'Build feature',
+      status: 'wip' as const,
+      priority: 2,
+      repo: 'myrepo',
+    };
+    const { lastFrame } = render(<BoardPanel tasks={[task as never]} />);
+    expect(lastFrame()).toContain('abc1234');
+    expect(lastFrame()).toContain('Build feature');
+    expect(lastFrame()).toContain('myrepo');
+  });
 });
 
 describe('PoolPanel', () => {
