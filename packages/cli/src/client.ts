@@ -8,6 +8,7 @@ import {
   SearchResponseSchema,
   StatusSchema,
   TaskSchema,
+  TerminalTokenResponseSchema,
   TriggerCheckResponseSchema,
   WorkflowRunSchema,
   WorkflowSchema,
@@ -22,6 +23,7 @@ import {
   type SearchResponse,
   type Status,
   type Task,
+  type TerminalTokenResponse,
   type Workflow,
   type WorkflowRun,
   type WorkflowSummary,
@@ -56,6 +58,7 @@ export interface GatewayClient {
   getWorkflowRun(id: string, runId: string): Promise<WorkflowRun>;
   triggerCheck(taskId: string): Promise<CheckRun>;
   getCheckRuns(taskId: string): Promise<CheckRun[]>;
+  getTerminalToken(sessionId: string): Promise<TerminalTokenResponse>;
   draftBreakdown(goal: string): Promise<BreakdownPreviewResponse>;
   createFromBreakdown(breakdown: Breakdown, repo?: string): Promise<CreateFromBreakdownResponse>;
 }
@@ -206,6 +209,11 @@ export function createClient(baseUrl: string): GatewayClient {
       ).runs;
     },
 
+<<<<<<< HEAD
+    async getTerminalToken(sessionId: string): Promise<TerminalTokenResponse> {
+      return TerminalTokenResponseSchema.parse(
+        await request(`/sessions/${encodeURIComponent(sessionId)}/terminal-token`, { method: 'GET' }),
+=======
     async draftBreakdown(goal: string): Promise<BreakdownPreviewResponse> {
       return BreakdownPreviewResponseSchema.parse(
         await request('/tasks/breakdown', {
@@ -226,6 +234,7 @@ export function createClient(baseUrl: string): GatewayClient {
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ breakdown: BreakdownSchema.parse(breakdown), repo }),
         }),
+>>>>>>> origin/main
       );
     },
   };

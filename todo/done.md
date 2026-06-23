@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 32 D: live logs panel + session selection (PR #156)
+
+`midnite watch` now has a live logs panel: Tab cycles wip tasks, the selected session's terminal output streams into a capped scrollback panel.
+
+- [x] `cli/client.ts`: `getTerminalToken(sessionId)` via `TerminalTokenResponseSchema`
+- [x] `cli/ws.ts`: `WsHandle.send()` + `noHandshake` option (terminal uses custom `attach`)
+- [x] `cli/watch/Dashboard.tsx`: Tab session selection; separate log WS effect with token fetch + attach + buffer
+- [x] `cli/watch/BoardPanel.tsx`: `selectedTaskId` prop + `▶` indicator
+- [x] `cli/watch/LogPanel.tsx`: `appendLines()` (base64-decode + ANSI-strip + 100-line cap) + `LogPanel`
+- [x] `cli/watch/LogPanel.test.tsx`: 9 tests (4 `appendLines` + 5 `LogPanel`)
+- [x] gateway: pre-existing `projects.service.test.ts` typecheck error fixed
+
 ## 2026-06-23 — Phase 28 A+D: BreakdownService + `midnite plan` (PR #155)
 
 Added the LLM generation step (Theme A remaining) and the standalone goal→tasks flow (Theme D).

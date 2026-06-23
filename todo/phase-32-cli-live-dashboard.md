@@ -51,12 +51,11 @@ What's running *right now*.
 
 The ambitious panel — sequenced last, and shippable on its own if it proves heavy (**Decisions §4**).
 
-### D1. Session selection — **S**
-- [ ] Keyboard-select which session's logs to follow (from the live board/pool — e.g. focus a `wip` task → its session). Show the selected session in the panel header.
+### D1. Session selection — **S** ✅ DONE (PR #156)
+- [x] ✅ (PR #156) Tab cycles wip tasks; selected task highlighted with `▶` in BoardPanel; selected session shown in LogPanel header.
 
-### D2. Streamed scrollback — **M/L**
-- [ ] Subscribe to the selected session's terminal output (per-session terminal WS; base64 `output` frames + `status` phases from [`events/terminal.ts`](../packages/shared/src/events/terminal.ts)) and render a **scrollback log panel** (decode frames, append, cap buffer length).
-- [ ] Handle the realities: ordering by `seq`, backpressure / cap the buffer, switch cleanly when the selected session changes (unsubscribe old, subscribe new), and a graceful "session exited" footer. ANSI in the stream is rendered or stripped (decide as built).
+### D2. Streamed scrollback — **M/L** ✅ DONE (PR #156)
+- [x] ✅ (PR #156) Terminal WS via token (`GET /sessions/:id/terminal-token`); noHandshake + `attach` message; base64 decode + ANSI strip + 100-line cap. Switches cleanly on session change (old WS closed). Exited footer on `status.exited/dead`.
 
 ---
 
