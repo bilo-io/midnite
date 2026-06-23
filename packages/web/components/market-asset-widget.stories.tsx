@@ -16,7 +16,7 @@ const QUOTE: MarketQuote = {
   open: 63_000,
   high: 66_000,
   low: 62_500,
-  close: 65_000,
+  close: 64_800,
   change: 2_000,
   changePct: 2.5,
   currency: 'USD',

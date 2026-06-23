@@ -30,12 +30,13 @@ export const Default: Story = {
     installMockFetch([
       { match: '/projects', json: [project, projectMinimal] },
       { match: '/tasks', json: tasks },
-      { match: '/memories', json: [] },
+      { match: '/memories', json: { memories: [] } },
     ]),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByRole('heading', { name: 'Board Room' })).toBeInTheDocument();
-    await expect(canvas.getByText(project.name)).toBeInTheDocument();
+    // The project list loads asynchronously (Promise.all of three endpoints).
+    await expect(await canvas.findByText(project.name)).toBeInTheDocument();
     await expect(canvas.getByText(projectMinimal.name)).toBeInTheDocument();
   },
 };
@@ -46,7 +47,7 @@ export const Empty: Story = {
     installMockFetch([
       { match: '/projects', json: [] },
       { match: '/tasks', json: [] },
-      { match: '/memories', json: [] },
+      { match: '/memories', json: { memories: [] } },
     ]),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -60,7 +61,7 @@ export const Error: Story = {
     installMockFetch([
       { match: '/projects', status: 500 },
       { match: '/tasks', json: [] },
-      { match: '/memories', json: [] },
+      { match: '/memories', json: { memories: [] } },
     ]),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

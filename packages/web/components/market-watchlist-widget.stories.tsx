@@ -51,8 +51,9 @@ export const Default: Story = {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('Bitcoin')).toBeInTheDocument();
     await expect(canvas.getByText('Ethereum')).toBeInTheDocument();
-    // last close 100 → +11.11% vs the first point (90).
-    expect(canvas.getAllByText('+11.11%').length).toBeGreaterThan(0);
+    // last close 100 → +11.11% vs the first point (90); the per-row history loads
+    // asynchronously, so wait for it.
+    expect(await canvas.findAllByText('+11.11%')).not.toHaveLength(0);
   },
 };
 
