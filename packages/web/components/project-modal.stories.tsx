@@ -5,19 +5,22 @@ import { memoryProjectScoped, project, taskBug, taskFeature } from '@/stories/fi
 
 import { ConfirmProvider } from './confirm-dialog';
 import { ProjectModal } from './project-modal';
+import { ToastProvider } from './toast';
 
-// ProjectModal calls `useConfirm()` (delete flow) and `useRouter()` — the former
-// needs a ConfirmProvider, the latter is satisfied by the global
-// `nextjs.appDirectory` router mock in .storybook/preview.
+// ProjectModal calls `useConfirm()` (delete flow), `useRouter()`, and now
+// `useToast()` (via ExportMenu in the edit header). ConfirmProvider + ToastProvider
+// wrap the story; the router is satisfied by the global nextjs.appDirectory mock.
 const meta = {
   title: 'Components/ProjectModal',
   component: ProjectModal,
   args: { onClose: fn(), onSaved: fn() },
   decorators: [
     (Story) => (
-      <ConfirmProvider>
-        <Story />
-      </ConfirmProvider>
+      <ToastProvider>
+        <ConfirmProvider>
+          <Story />
+        </ConfirmProvider>
+      </ToastProvider>
     ),
   ],
 } satisfies Meta<typeof ProjectModal>;

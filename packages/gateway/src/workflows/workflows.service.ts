@@ -18,6 +18,7 @@ import {
   type WorkflowRun,
   type WorkflowSummary,
 } from '@midnite/shared';
+import { runReportFilename, runToMarkdown } from './lib/run-report';
 import { MIDNITE_CONFIG } from '../config.token';
 import { hashToken, tokenMatches } from '../lib/token-hash';
 import { workflowToIndexDoc } from '../search/lib/index-mappers';
@@ -81,6 +82,15 @@ export class WorkflowsService {
     const run = this.repo.getRun(workflowId, runId);
     if (!run) throw new NotFoundException(`run ${runId} not found`);
     return run;
+  }
+
+  exportRunMarkdown(workflowId: string, runId: string): { filename: string; markdown: string } {
+    const workflow = this.getWorkflow(workflowId);
+    const run = this.getRun(workflowId, runId);
+    return {
+      filename: runReportFilename(workflow, run),
+      markdown: runToMarkdown(workflow, run),
+    };
   }
 
   // --- writes ---

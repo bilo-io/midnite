@@ -8,11 +8,17 @@ import {
   Param,
   Patch,
   Post,
+  Query,
+  Res,
 } from '@nestjs/common';
+import type { FastifyReply } from 'fastify';
 import {
+  REPORT_CONTENT_TYPE,
   CreateWorkflowRequestSchema,
+  ReportFormatSchema,
   RunWorkflowRequestSchema,
   UpdateWorkflowRequestSchema,
+  isServerRenderedReportFormat,
   type RunResponse,
   type WebhookInfoResponse,
   type WorkflowResponse,
@@ -70,6 +76,29 @@ export class WorkflowsController {
   @Get(':id/runs/:runId')
   getRun(@Param('id') id: string, @Param('runId') runId: string): RunResponse {
     return { run: this.service.getRun(id, runId) };
+  }
+
+  @Get(':id/runs/:runId/export')
+  exportRun(
+    @Param('id') id: string,
+    @Param('runId') runId: string,
+    @Res({ passthrough: false }) reply: FastifyReply,
+    @Query('format') format?: string,
+  ): void {
+    const parsed = ReportFormatSchema.safeParse(format ?? 'md');
+    if (!parsed.success) {
+      throw new BadRequestException(`unsupported export format: ${String(format)}`);
+    }
+    if (!isServerRenderedReportFormat(parsed.data)) {
+      throw new BadRequestException(
+        `${parsed.data} is rendered client-side (print-to-PDF); request format=md`,
+      );
+    }
+    const { filename, markdown } = this.service.exportRunMarkdown(id, runId);
+    void reply
+      .header('content-type', REPORT_CONTENT_TYPE.md)
+      .header('content-disposition', `attachment; filename="${filename}"`)
+      .send(markdown);
   }
 
   @Post(':id/webhook/rotate')
