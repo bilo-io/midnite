@@ -52,8 +52,8 @@ Wire the runner into the `markDone` seam so completion is verified, and persist 
 - [x] ✅ (PR #134) `ChecksModule` imported in `PoolModule`; `ChecksService` is `@Optional()` in the runner so existing unit specs need no update. `TasksService.saveCheckRun()` added (persistence without events — B3 adds events).
 
 ### B3. Derived "verifying" / "checks failing" + events — **S–M**
-- [ ] No new status (Decision §3): insert `checks.started` / `checks.passed` / `checks.failed` task events, and surface state as a **derived** flag computed from the latest `task_check_runs` row (`verifying` while a gate run is in flight, `failing` when the latest gate run failed and the task isn't `done`). Emit `task.updated` so the board reflects it.
-- [ ] Tests (`:memory:`): a passing gate completes the task; a failing gate holds it at `waiting` with a recorded run + `checks.failed` event; a repo-less task and a checks-disabled config both pass straight through unchanged; the slot is released exactly once in every branch.
+- [x] ✅ (PR #135) `checks.started` / `checks.passed` / `checks.failed` task events via `TasksService.recordCheckEvent()` — emitted around the gate run; each triggers `task.updated` broadcast. No new status (Decision §3).
+- [ ] Derived `checkRunStatus` flag (`verifying` / `failing` / `passed`) on the task read shape for the board UI (Theme D). The "verifying" case requires a partial in-flight row (schema currently requires `finished_at` NOT NULL) — deferred to Theme D when the board chip is built.
 
 ---
 
