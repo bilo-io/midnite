@@ -52,11 +52,11 @@ Make the project's existing markdown browsable, from one source of truth.
 
 ---
 
-## Theme D — Navigation, search & build seam — **S–M**
+## Theme D — Navigation, search & build seam — **S–M** — ◐ PARTIAL (PR #137, 2026-06-23 — see [done.md](done.md); on-page TOC + deploy deferred)
 
-- [ ] **Navigation** — a responsive sidebar (DS vs product sections) + on-page nav; mobile collapses (reuse Phase 24 patterns if landed). Active-route highlighting.
-- [ ] **Client-side search** — a lightweight filter/index over doc titles + headings (no server; the site is static). The existing [`search-bar.tsx`](../packages/web/components/search-bar.tsx) pattern is the reference, not a dependency.
-- [ ] **Static build + deploy seam** — `moon run docs:build` emits a static site; a **deploy story** (GitHub Pages / any static host) is **scoped but deferred to a follow-on** — this phase ships the buildable app, not the hosting. `moon ci` builds it.
+- [x] ◐ **Navigation** — below `md` the sidebar collapses behind a hamburger into a slide-in drawer (closed on navigation); pins as a column on `md+`. Active-route highlighting (NavLink) as before. ⏳ **on-page nav (TOC) deferred** — not required by the verification line; a follow-on.
+- [x] **Client-side search** — a static index ([`content/search-index.ts`](../packages/docs/src/content/search-index.ts)) over page titles + markdown headings, filtered by the pure [`search.ts`](../packages/docs/src/content/search.ts); a header `DocSearch` shows ranked hits (title ≫ heading ≫ section) that navigate to the page. No server — the index ships in the bundle. (Product docs get full heading search; the `.mdx` DS pages are indexed by title/section — the MDX plugin strips the `?raw` query, so their source isn't readable without compiling.)
+- [x] **Static build + deploy seam** — `moon run docs:build` emits a static site and `moon ci` builds it (landed with the Theme A scaffold, PR #123). The **deploy story** (GitHub Pages / static host) stays **deferred to a follow-on** (Decision §6).
 
 ---
 

@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 26 Theme D: client-side search + responsive mobile nav (PR #137)
+
+Made the docs site navigable on any device. A header search filters all pages with no server, and the sidebar collapses to a drawer on mobile. Builds on Theme C's grouped content; the static build seam (`docs:build` + `moon ci`) already landed with the Theme A scaffold.
+
+- [x] **Client-side search** — pure `content/search.ts` (frontmatter + ATX-heading extraction, ranked substring match: title ≫ heading ≫ section) + `content/search-index.ts` (built once at load); a header `DocSearch` (`@midnite/ui` `Input` + a token-styled results popover) navigates to a hit. The whole index ships in the bundle — no network/gateway.
+- [x] **Heading coverage** — product docs (raw `.md`) are indexed with full headings; the `.mdx` DS pages are indexed by title/section via the route table, because the MDX rollup plugin strips the `?raw` query (can't read their text without compiling) and they're short single-primitive pages.
+- [x] **Responsive nav** — `Layout` gains a hamburger (`< md`) that opens the sidebar as a slide-in drawer with a backdrop, closed on route change; pins as a column on `md+`. Active-route highlight via `NavLink` as before.
+- [x] **Tests** — `search.test.ts` (parse/extract/rank) + `doc-search.test.tsx` (filter → navigate, heading match, no-results; index mocked so the MDX-less vitest runner needn't transform `.mdx`) + `layout.test.tsx` drawer/search coverage. Boundary guard stays green.
+
+**Deferred:** on-page TOC (the "+ on-page nav" half — not in the Theme D verification line) and the deploy/hosting story (Decision §6). With Themes A–D landed (C + D partial), Phase 26's docs app is functionally complete bar those follow-ons.
+
 ## 2026-06-23 — Phase 28 Theme B: create-with-dependencies from a Breakdown (PR #135)
 
 The gateway half of structured planning: turn a confirmed `Breakdown` (Theme A's contract, #129) into a real, **dependency-wired** board. The piece a later preview/confirm UI (Theme C) and standalone goal flow (Theme D) both call; fed a `Breakdown` directly, so it's deterministic + fully testable without the LLM.
