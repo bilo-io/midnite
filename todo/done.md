@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 32 B+C: live board reducer + enhanced task cards (PR #154)
+
+Completed the live board panel and pool panel for `midnite watch`. The inline reducer is now shared, bulkCreated properly triggers a refetch, and task cards show id/priority/repo.
+
+- [x] `shared/task-board-reducer.ts`: pure `applyTaskEvent(tasks, event) → Task[] | null`; 8 tests
+- [x] `cli/watch/Dashboard.tsx`: uses shared `applyTaskEvent`; `tasks.bulkCreated` triggers refetch
+- [x] `cli/watch/BoardPanel.tsx`: task cards show 7-char id, priority arrow, title, `[repo]`; colour-coded column headers
+
 ## 2026-06-23 — Phase 8 C3: gentle idle wander (PR #152)
 
 Idle pool agents now occasionally stand up and mill around instead of sitting frozen on their loungers.
