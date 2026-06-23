@@ -24,6 +24,8 @@
  * Each room carries its own palette (floor tint + accent) — see lib/office/theme.ts.
  */
 
+import type { Status } from '@midnite/shared';
+
 import { OFFICE_COLS, OFFICE_ROWS } from './dimensions';
 
 export type TilePos = { x: number; y: number };
@@ -299,30 +301,24 @@ export function blockedGrid(): boolean[][] {
   return grid;
 }
 
-
-import type { Status } from '@midnite/shared';
+// ── Phase 31 B — task-status → room routing ──────────────────────────────────
 
 /**
- * Maps a task's status to whether the agent occupies a work desk or the lounge
- * (Phase 31 Theme B, Decision §3).
+ * Map a task's `Status` to the room where its agent should sit (Phase 31 B).
  *
- * - `wip` / `waiting` → `'desk'`  — agent is actively working (or blocked, but still at their seat)
- * - `done` / `abandoned` → `'lounge'`  — task finished; agent relaxes
- * - `undefined` (no linked task) → `'lounge'`  — treat taskless sessions as idle
- * - `backlog` / `todo` → `'hidden'`  — not yet started; don't clutter the floor
+ * - `wip`      → `'work'`     (hot desks — the agent is actively running)
+ * - `waiting`  → `'board'`    (board room — waiting on input / blocked)
+ * - `done`     → `'pool'`     (agent pool lounge — run is complete)
+ * - everything else (backlog / todo / abandoned) → `null` (agent not on floor)
+ *
+ * Pure function — no side effects, unit-testable without Phaser.
  */
-export function statusToRoom(taskStatus: Status | undefined): 'desk' | 'lounge' | 'hidden' {
-  switch (taskStatus) {
-    case 'wip':
-    case 'waiting':
-      return 'desk';
-    case 'done':
-    case 'abandoned':
-      return 'lounge';
-    case 'backlog':
-    case 'todo':
-      return 'hidden';
-    default:
-      return 'lounge'; // undefined / unknown → lounge (idle)
+export function statusToRoom(status: Status | undefined): RoomId | null {
+  switch (status) {
+    case 'wip':      return 'work';
+    case 'waiting':  return 'board';
+    case 'done':     return 'pool';
+    default:         return null; // backlog/todo/abandoned → not on floor
   }
 }
+

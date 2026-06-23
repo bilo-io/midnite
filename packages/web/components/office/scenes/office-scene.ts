@@ -26,6 +26,7 @@ import {
   POOL_TABLE,
   READING_CHAIR,
   ROOMS,
+  statusToRoom,
   type RoomId,
   RUGS,
   STOOL_POS,
@@ -34,7 +35,6 @@ import {
   TV_POS,
   type TilePos,
   WALL_ART,
-  statusToRoom,
 } from '@/lib/office/layout';
 import { assignStableSeats } from '@/lib/office/seats';
 import { buildOfficePalette, ROOM_STYLES, roomSignStyle, type OfficePalette } from '@/lib/office/theme';
@@ -361,6 +361,32 @@ class OfficeScene extends Phaser.Scene {
 
   // ---- agents (actors) ---------------------------------------------------
 
+<<<<<<< HEAD
+  /**
+   * Place agents in their task-status-derived room (Phase 31 B).
+   * - wip     → WORK hot desks
+   * - waiting → BOARD room conference chairs
+   * - done    → AGENT POOL lounge
+   * - backlog/todo/abandoned/no-task → not on floor (hidden)
+   */
+  private renderActors(agents: OfficeAgent[]) {
+    if (!this.alive) return;
+
+    // Partition by task-status room target; fall back to session-status for
+    // agents without a linked task (treat as wip so they appear at desks).
+    const deskAgents = agents
+      .filter((a) => statusToRoom(a.taskStatus ?? 'wip') === 'work')
+      .slice(0, DESK_SEATS.length);
+    const boardAgents = agents
+      .filter((a) => statusToRoom(a.taskStatus) === 'board')
+      .slice(0, TABLE_CHAIRS.length);
+    const loungeAgents = agents
+      .filter((a) => statusToRoom(a.taskStatus) === 'pool' || a.status === 'idle')
+      .slice(0, LOUNGE_SEATS.length);
+
+    const desired: { agent: OfficeAgent; seat: TilePos; kind: 'desk' | 'lounge' }[] = [
+      ...assignStableSeats(deskAgents, DESK_SEATS.length, this.deskByAgent).map((s) => ({
+=======
   /** Place agents by task status: wip/waiting → desks, done/idle → lounge, hidden → off-screen. */
   private renderActors(agents: OfficeAgent[]) {
     if (!this.alive) return;
@@ -370,11 +396,22 @@ class OfficeScene extends Phaser.Scene {
     const lounge = agents.filter((a) => statusToRoom(a.taskStatus) === 'lounge').slice(0, LOUNGE_SEATS.length);
     const desired: { agent: OfficeAgent; seat: TilePos; kind: 'desk' | 'lounge' }[] = [
       ...assignStableSeats(desk, DESK_SEATS.length, this.deskByAgent).map((s) => ({
+>>>>>>> origin/main
         agent: s.agent,
         seat: DESK_SEATS[s.seatIndex]!,
         kind: 'desk' as const,
       })),
+<<<<<<< HEAD
+      // Waiting agents sit at board-room chairs (stable assignment reuses deskByAgent map).
+      ...assignStableSeats(boardAgents, TABLE_CHAIRS.length, this.deskByAgent).map((s) => ({
+        agent: s.agent,
+        seat: TABLE_CHAIRS[s.seatIndex]!,
+        kind: 'desk' as const,
+      })),
+      ...assignStableSeats(loungeAgents, LOUNGE_SEATS.length, this.loungeByAgent).map((s) => ({
+=======
       ...assignStableSeats(lounge, LOUNGE_SEATS.length, this.loungeByAgent).map((s) => ({
+>>>>>>> origin/main
         agent: s.agent,
         seat: LOUNGE_SEATS[s.seatIndex]!,
         kind: 'lounge' as const,

@@ -17,7 +17,7 @@ vi.mock('@/components/notifications-provider', () => ({
 afterEach(cleanup);
 
 const bar = () => screen.getByRole('navigation', { name: 'Mobile navigation' });
-const openMore = () => fireEvent.click(within(bar()).getByRole('button', { name: 'More' }));
+const openMore = () => fireEvent.click(within(bar()).getByRole('button', { name: 'Menu' }));
 
 describe('MobileNav', () => {
   it('renders the first four surfaces as one-tap tabs, with the rest behind More', () => {
@@ -25,7 +25,7 @@ describe('MobileNav', () => {
 
     const tabs = within(bar()).getAllByRole('link');
     expect(tabs.map((t) => t.getAttribute('aria-label'))).toEqual(['Dashboard', 'Projects', 'Memory', 'Tasks']);
-    expect(within(bar()).getByRole('button', { name: 'More' })).toBeInTheDocument();
+    expect(within(bar()).getByRole('button', { name: 'Menu' })).toBeInTheDocument();
     // The sheet is closed until tapped.
     expect(screen.queryByRole('dialog')).toBeNull();
   });
@@ -40,7 +40,7 @@ describe('MobileNav', () => {
     render(<MobileNav pathname="/dashboard" features={FEATURES} onLock={vi.fn()} />);
     openMore();
 
-    const sheet = screen.getByRole('dialog', { name: 'More' });
+    const sheet = screen.getByRole('dialog', { name: 'Menu' });
     // Sessions/office/… spilled past the four tab slots; Settings always lives here.
     expect(within(sheet).getByRole('link', { name: 'Sessions' })).toBeInTheDocument();
     expect(within(sheet).getByRole('link', { name: 'Office' })).toBeInTheDocument();
