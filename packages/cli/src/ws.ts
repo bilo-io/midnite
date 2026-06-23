@@ -1,3 +1,8 @@
+/** Convert a gateway HTTP(S) base URL to its ws(s):// form. */
+export function gatewayWsUrl(baseUrl: string): string {
+  return baseUrl.replace(/^http/, 'ws');
+}
+
 /**
  * Reusable WebSocket subscriber for the CLI.
  *

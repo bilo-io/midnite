@@ -6,12 +6,9 @@ import type {
   WorkflowSummary,
 } from '@midnite/shared';
 
-const DASH = '—';
+export { gatewayWsUrl } from './ws.js';
 
-/** Convert the gateway HTTP(S) base URL to its ws(s):// form for the run stream. */
-export function gatewayWsUrl(baseUrl: string): string {
-  return baseUrl.replace(/^http/, 'ws');
-}
+const DASH = '—';
 
 /** Locale-free ISO → `YYYY-MM-DD HH:MM` so table output is stable across machines. */
 function formatTime(iso: string): string {

@@ -17,10 +17,14 @@
     "@midnite/gateway": "workspace:*",
     "@midnite/shared": "workspace:*",
     "cli-table3": "^0.6.5",
-    "commander": "^12.1.0"
+    "commander": "^12.1.0",
+    "ink": "^5.2.1",
+    "react": "^18.3.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
+    "@types/react": "^18.3.0",
+    "ink-testing-library": "^4.0.0",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",
     "vitest": "^3.2.4"

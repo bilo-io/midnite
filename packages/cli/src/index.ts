@@ -385,6 +385,52 @@ workflow
   });
 
 program
+  .command('watch')
+  .description('Open a live full-screen dashboard (board, pool, and logs) — requires a running gateway')
+  .action(async () => {
+    const baseUrl = resolveBaseUrl(program.opts().gateway as string | undefined);
+
+    // Lazy imports keep startup light for every other command.
+    const [{ render }, { createElement }] = await Promise.all([
+      import('ink') as Promise<typeof import('ink')>,
+      import('react') as Promise<typeof import('react')>,
+    ]);
+    const { Dashboard } = await import('./watch/Dashboard.js');
+
+    // Enter alt-screen and hide cursor before handing control to ink.
+    const ENTER_ALT = '\x1B[?1049h\x1B[2J\x1B[H\x1B[?25l';
+    const LEAVE_ALT = '\x1B[?1049l\x1B[?25h\x1B[0m';
+
+    process.stdout.write(ENTER_ALT);
+
+    const { waitUntilExit, unmount } = render(createElement(Dashboard, { baseUrl }));
+
+    const onSigint = (): void => {
+      unmount();
+      process.stdout.write(LEAVE_ALT);
+      process.exit(0);
+    };
+    const onUncaught = (err: Error): void => {
+      unmount();
+      process.stdout.write(LEAVE_ALT);
+      // Restore stdout before printing the error message.
+      process.stderr.write(`midnite watch crashed: ${err.message}\n`);
+      process.exit(1);
+    };
+
+    process.once('SIGINT', onSigint);
+    process.once('uncaughtException', onUncaught);
+
+    try {
+      await waitUntilExit();
+    } finally {
+      process.off('SIGINT', onSigint);
+      process.off('uncaughtException', onUncaught);
+      process.stdout.write(LEAVE_ALT);
+    }
+  });
+
+program
   .command('serve')
   .description('Start the midnite gateway daemon in-process')
   .action(async () => {

@@ -12,10 +12,10 @@
 
 The scaffold every panel sits in. The CLI currently has **no TUI framework** (deps are just `commander` + `cli-table3`); this introduces one and the `watch` command.
 
-### A1. ink app + `watch` command — **M**
-- [ ] Add **ink** (React for the terminal — **Decisions §1**) + `react` to [`packages/cli/package.json`](../packages/cli/package.json); register a `watch` command in [`index.ts`](../packages/cli/src/index.ts) that resolves the gateway URL (`resolveBaseUrl`) and renders the dashboard app.
-- [ ] Full-screen **alt-screen** app (ink `<Box>` flexbox layout — board / pool / logs regions) with a top status bar (gateway URL, connection state, last-update tick).
-- [ ] **Clean teardown:** restore the terminal (leave alt-screen, show cursor) on `q`/`Ctrl-C`/`SIGINT`/uncaught error — never leave the user's terminal wedged. Unsubscribe the WS on unmount.
+### A1. ink app + `watch` command — **M** ✅ DONE (PR #149, 2026-06-23)
+- [x] Add **ink@5.x** (React for the terminal — **Decisions §1**) + `react@18` to [`packages/cli/package.json`](../packages/cli/package.json); register a `watch` command in [`index.ts`](../packages/cli/src/index.ts) that resolves the gateway URL (`resolveBaseUrl`) and renders the dashboard app. `gatewayWsUrl` moved to `ws.ts` so both the new dashboard and `workflow watch` share it.
+- [x] Full-screen **alt-screen** app (ink `<Box>` flexbox layout — board / pool / logs regions) with a top status bar (gateway URL, connection state, last-update tick). Seeds board and pool from REST snapshots (`GET /tasks`, `GET /pool`) on mount; applies live `task.*` events from `/ws/tasks` incrementally.
+- [x] **Clean teardown:** restore the terminal (leave alt-screen, show cursor) on `q`/`Ctrl-C`/`SIGINT`/uncaught error — never leave the user's terminal wedged. Unsubscribe the WS on unmount. 11 unit tests (StatusBar states, BoardPanel, PoolPanel) in `src/watch/Dashboard.test.tsx`.
 
 ### A2. Reusable WS-subscribe helper — **S**
 - [x] ✅ Factor the hand-rolled WS-subscribe currently inline for `workflow watch` (`gatewayWsUrl()` + the `new WebSocket` + subscribe handshake) into **one small reusable helper** in the CLI (e.g. `cli/src/ws.ts`): connect, send the `{type:'subscribe'}` handshake, validate frames against a shared schema, reconnect-with-backoff, and a teardown handle. `watch` and `workflow watch` both consume it.
