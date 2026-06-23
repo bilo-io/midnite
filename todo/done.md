@@ -4,6 +4,13 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 29: verification complete (all items confirmed passing)
+
+Phase 29 (Releases & Versioning) is now fully ✅:
+- [x] `version:check` passes on clean lockstep, runs in `moon ci`
+- [x] `planVersionBump` has 12 unit tests covering all scenarios
+- [x] `/release-prep` + `/release-complete` skills in place (PRs #87/#89); first live run on v0.1.0 cut
+
 ## 2026-06-24 — Phase 31 C+D: live bubbles, activity poses, attention pulse + HUD badge (PR #163)
 
 - [x] C1: speech bubble shows `liveActivity.label` (truncated) for working agents; STATUS_BUBBLE fallback
