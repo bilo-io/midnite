@@ -4,6 +4,7 @@ import type { Task } from '@midnite/shared';
 
 interface Props {
   tasks: Task[] | null;
+  selectedTaskId?: string | null;
 }
 
 const COLUMNS = ['backlog', 'todo', 'wip', 'waiting', 'done'] as const;
@@ -19,19 +20,20 @@ const COL_COLOR: Record<Col, string> = {
 
 const PRIORITY_LABEL = ['↓', '–', '↑', '↑↑'] as const;
 
-function TaskCard({ task }: { task: Task }) {
+function TaskCard({ task, selected }: { task: Task; selected?: boolean }) {
   const priority = PRIORITY_LABEL[task.priority ?? 1] ?? '–';
   return (
     <Box gap={1} marginBottom={0}>
+      {selected ? <Text color="cyan">▶</Text> : <Text> </Text>}
       <Text color="gray">{task.id.slice(0, 7)}</Text>
       <Text color="yellow" dimColor>{priority}</Text>
-      <Text wrap="truncate">{task.title}</Text>
+      <Text wrap="truncate" bold={selected}>{task.title}</Text>
       {task.repo ? <Text color="blue" dimColor>[{task.repo}]</Text> : null}
     </Box>
   );
 }
 
-export function BoardPanel({ tasks }: Props) {
+export function BoardPanel({ tasks, selectedTaskId }: Props) {
   if (tasks === null) {
     return (
       <Box borderStyle="round" flexGrow={1} padding={1}>
@@ -52,7 +54,7 @@ export function BoardPanel({ tasks }: Props) {
             {colTasks.length === 0 ? (
               <Text dimColor>—</Text>
             ) : (
-              colTasks.slice(0, 8).map((t) => <TaskCard key={t.id} task={t} />)
+              colTasks.slice(0, 8).map((t) => <TaskCard key={t.id} task={t} selected={t.id === selectedTaskId} />)
             )}
           </Box>
         );

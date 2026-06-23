@@ -20,6 +20,8 @@ const RECONNECT_MAX_MS = 30_000;
 export interface WsHandle {
   /** Stop reconnecting and close the underlying socket. */
   close(): void;
+  /** Send a raw JSON string over the open socket (no-op if not yet connected). */
+  send(data: string): void;
 }
 
 export interface WsOptions<T> {
@@ -56,6 +58,13 @@ export interface WsOptions<T> {
    * their own fallback (e.g. `workflow watch` with its poll-to-end path).
    */
   reconnect?: boolean;
+
+  /**
+   * When `true`, skip the default `{type:'subscribe'}` handshake — the caller
+   * will send its own first message via `handle.send()` in `onReady`. Used for
+   * the terminal WS which requires a custom `attach` message instead.
+   */
+  noHandshake?: boolean;
 }
 
 /**
@@ -87,8 +96,10 @@ export function openWs<T>(url: string, opts: WsOptions<T>): WsHandle {
 
     socket.onopen = () => {
       reconnectDelay = RECONNECT_BASE_MS;
-      const payload: Record<string, unknown> = { type: 'subscribe', ...(opts.extra ?? {}) };
-      socket!.send(JSON.stringify(payload));
+      if (!opts.noHandshake) {
+        const payload: Record<string, unknown> = { type: 'subscribe', ...(opts.extra ?? {}) };
+        socket!.send(JSON.stringify(payload));
+      }
       opts.onReady?.();
     };
 
@@ -114,11 +125,12 @@ export function openWs<T>(url: string, opts: WsOptions<T>): WsHandle {
   return {
     close(): void {
       closed = true;
+      try { socket?.close(); } catch { /* already closing */ }
+    },
+    send(data: string): void {
       try {
-        socket?.close();
-      } catch {
-        // already closing — ignore
-      }
+        if (socket && socket.readyState === WebSocket.OPEN) socket.send(data);
+      } catch { /* ignore */ }
     },
   };
 }
