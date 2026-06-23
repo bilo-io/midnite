@@ -149,9 +149,6 @@ describe('ProjectsService', () => {
     const { service: tasks } = makeTasksStub();
 
     const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub, breakdownStub);
-=======
-
-
 
     const project = await service.createProject({
       name: 'Atlas',
@@ -170,8 +167,6 @@ describe('ProjectsService', () => {
     const { service: tasks } = makeTasksStub();
 
     const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub, breakdownStub);
-=======
-
 
     const project = await service.createProject({ name: 'P', tag: 'p', color: '#000' });
 
@@ -196,8 +191,6 @@ describe('ProjectsService', () => {
     const { service: tasks } = makeTasksStub();
 
     const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub, breakdownStub);
-=======
-
 
     const project = await service.createProject({ name: 'P', tag: 'p', color: '#000' });
 
@@ -223,9 +216,6 @@ describe('ProjectsService', () => {
     const { service: tasks } = makeTasksStub();
 
     const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub, breakdownStub);
-=======
-
-
 
     const out = await service.enhanceDescription({ description: '  rough notes  ' });
     expect(out).toBe('rough notes');
@@ -236,8 +226,6 @@ describe('ProjectsService', () => {
     const { service: tasks } = makeTasksStub();
 
     const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub, breakdownStub);
-=======
-
 
     const project = await service.createProject({ name: 'P', tag: 'p', color: '#000' });
 
@@ -251,8 +239,6 @@ describe('ProjectsService', () => {
     const { service: tasks, created } = makeTasksStub();
 
     const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub, breakdownStub);
-=======
-
 
     const project = await service.createProject({ name: 'P', tag: 'p', color: '#000' });
 
