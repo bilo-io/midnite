@@ -33,11 +33,13 @@ import { WorkflowsWidget } from './workflows-widget';
 import { MemoriesWidget } from './memories-widget';
 import { AgentsWidget } from './agents-widget';
 import { CouncilsWidget } from './councils-widget';
+import { RepoStatusWidget } from './repo-status-widget';
 import { ActivityWidget } from './activity-widget';
 import { ThroughputWidget } from './throughput-widget';
 import { HealthWidget } from './health-widget';
 import { UsageWidget } from './usage-widget';
 import { ShippedWidget } from './shipped-widget';
+import { QuickCaptureWidget } from './quick-capture-widget';
 import { SystemMonitorWidget } from './system-monitor-widget';
 import { WorldClocksWidget } from './world-clocks-widget';
 import { AllProjectsWidget } from './all-projects-widget';
@@ -422,6 +424,8 @@ export function DashboardGrid({
         return { node: <AgentsWidget /> };
       case 'councils':
         return { node: <CouncilsWidget /> };
+      case 'repo-status':
+        return { node: <RepoStatusWidget /> };
 
       // — live activity —
       case 'activity':
@@ -434,6 +438,8 @@ export function DashboardGrid({
         return { node: <UsageWidget /> };
       case 'shipped':
         return { node: <ShippedWidget /> };
+      case 'quick-capture':
+        return { node: <QuickCaptureWidget /> };
       case 'system-monitor':
         return { node: <SystemMonitorWidget /> };
 

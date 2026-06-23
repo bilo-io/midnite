@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Body,
+  ConflictException,
   Controller,
   Delete,
   Get,
@@ -18,11 +19,13 @@ import { randomUUID } from 'node:crypto';
 import { pipeline } from 'node:stream/promises';
 import { Inject } from '@nestjs/common';
 import {
+  AddTaskDependencyRequestSchema,
   AddTaskLinkRequestSchema,
   BulkCreateTaskRequestSchema,
   ReportFormatSchema,
   SetTaskTagsRequestSchema,
   StatusSchema,
+  TaskDependencyError,
   UpdateTaskProjectRequestSchema,
   isServerRenderedReportFormat,
   type BulkCreateTaskResponse,
@@ -141,6 +144,34 @@ export class TasksController {
     return this.service.removeLink(id, linkId);
   }
 
+  // Add a blocker edge. A self-reference / unknown blocker → 400; a cycle → 409.
+  // A missing :id task surfaces as the service's 404.
+  @Post(':id/dependencies')
+  addDependency(@Param('id') id: string, @Body() body: unknown): Task {
+    const parsed = AddTaskDependencyRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.message);
+    }
+    try {
+      return this.service.addDependency(id, parsed.data.dependsOnId);
+    } catch (err) {
+      if (err instanceof TaskDependencyError) {
+        throw err.reason === 'cycle'
+          ? new ConflictException(err.message)
+          : new BadRequestException(err.message);
+      }
+      throw err;
+    }
+  }
+
+  @Delete(':id/dependencies/:dependsOnId')
+  removeDependency(
+    @Param('id') id: string,
+    @Param('dependsOnId') dependsOnId: string,
+  ): Task {
+    return this.service.removeDependency(id, dependsOnId);
+  }
+
   // Permanent delete — only valid once the task is archived (the service enforces).
   @Delete(':id')
   remove(@Param('id') id: string): { ok: true } {
@@ -183,6 +214,8 @@ export class TasksController {
     let projectId: string | undefined;
     let status: Status | undefined;
     let priority: number | undefined;
+    // Repeatable `dependsOn` form fields → blocker ids (Phase 27).
+    const dependsOn: string[] = [];
     const savedFiles: Array<{
       path: string;
       relPath: string;
@@ -215,6 +248,10 @@ export class TasksController {
           if (part.fieldname === 'prompt') prompt = String(part.value ?? '');
           if (part.fieldname === 'repo') repo = String(part.value ?? '');
           if (part.fieldname === 'projectId') projectId = String(part.value ?? '');
+          if (part.fieldname === 'dependsOn') {
+            const id = String(part.value ?? '').trim();
+            if (id) dependsOn.push(id);
+          }
           if (part.fieldname === 'priority') {
             const n = Number(part.value);
             if (!Number.isInteger(n) || n < 0 || n > 3) {
@@ -242,6 +279,7 @@ export class TasksController {
         projectId: projectId?.trim() || undefined,
         status,
         priority,
+        dependsOn: dependsOn.length > 0 ? dependsOn : undefined,
         images: savedFiles.map((f) => ({
           path: f.relPath,
           mime: f.mime,

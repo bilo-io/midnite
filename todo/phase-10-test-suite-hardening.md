@@ -65,11 +65,14 @@
 - [x] `@storybook/addon-vitest` (+ `@vitest/browser`, `playwright`) added to web and registered in [`.storybook/main.ts`](../packages/web/.storybook/main.ts). `vitest.config.ts` split into two projects — **`unit`** (jsdom, the existing specs) and **`storybook`** (headless chromium via Playwright) — so `moon run web:test` runs both. The addon (SB ≥10.3) auto-applies the `.storybook/preview` decorators, so no extra setup file. CI installs chromium (`playwright install --with-deps chromium`) before `moon ci`; `.storybook/**` added to the `web:test` inputs.
 - [x] All **18 stories render without throwing** (68 story smoke tests) alongside the 67 unit tests — 135 total green. No story needed fixing.
 
-### C2. Interaction tests on key components — ◐ PARTIAL (PR #36 + #48, 2026-06-21)
+### C2. Interaction tests on key components — ◐ PARTIAL (PR #36 + #48 + #53, 2026-06-21)
 - [x] `play` functions added to **task-card** / **session-card** / **board-view** (click a card → `onSelect`/`onClick`, a plain click not a flaky dnd drag), **theme-toggle** (open menu → pick Light → it becomes the checked option), **templates-table** (expand an accordion row), and a **backfilled command-palette** story (Ctrl+K opens it; typing filters the list; a non-matching query shows the empty state). All assert visible outcomes / `storybook/test` spies, querying by role/label. 71 story tests green. (PR #36)
 - ⏳ **filter-pills** play deferred: its story documents that the Next router mock doesn't feed `router.replace` back into `useSearchParams`, so a click can't assert a visible toggle — render stories already cover it.
 - [x] **High-value backfill done (PR #48):** stories for the named un-storied components — **modals** (`project-modal`, `memory-modal`, office `library-modal`), the **office HUD** (`office-hud`, seeding the Zustand office store per story), and **widget primitives** (`memory-card`, `widget-card`, `empty-state`). Render smoke + `play` interaction (search/close, tab-switch, store-driven HUD states); `useConfirm` callers wrap in `ConfirmProvider`, `useRouter` uses the global `nextjs.appDirectory` mock. Shared `Memory`/`OfficeAgent` fixtures added. 20 new story tests; `web:test` 190 green.
-- [ ] **Remaining (smaller follow-up):** the **data-fetching widgets** (`health-widget`, `market-*`, `news-widget`, `sessions/agents/throughput` widgets, `boardroom-panel`) stay un-storied — they self-fetch via `usePolling`/`useApiData`, so storying them needs a query/API-mock decorator (new test infra, not yet present). Scope that decorator first, then backfill them.
+- [x] **Data-fetching mock infra + first widgets (PR #53):** added a story-only `installMockFetch` helper ([`stories/mock-fetch.ts`](../packages/web/stories/mock-fetch.ts)) that swaps `globalThis.fetch` for a path-keyed stub of canned, schema-valid gateway responses (a `status >= 400` handler drives the error branch; unmatched requests fall through to the real fetch so Storybook's own module loading isn't intercepted). Storied **`news-widget`** (list/grid/error), **`weather-widget`** (°C/°F/error), and the multi-endpoint **`health-widget`** (healthy / gateway-down). 8 new story tests; `web:test` 202 green.
+- [x] **More widgets storied (PR #60):** `sessions-widget` (`GET /sessions`), `memories-widget` (`GET /memories`), `activity-widget` (`GET /tasks`) — each loaded/empty/error on `installMockFetch`. 9 more story tests; `web:test` 211 green.
+- [x] **List widgets storied (PR #70):** `workflows-widget` (`GET /workflows`), `councils-widget` (`GET /councils`), `shipped-widget` (`GET /tasks`) — each loaded/empty/error. 9 more story tests; `web:test` 245 green.
+- [ ] **Remaining (uses the helper above):** the **chart/multi-endpoint** widgets still un-storied — `throughput`/`usage`/`system-monitor` (bar charts off `Date.now()` — need a pinned clock to assert), `agents`/`all-projects` (2 endpoints each), `market-asset`/`market-watchlist` (multi-endpoint), `boardroom-panel`. Each needs a bit more than the list-widget pattern.
 
 ### C3. Accessibility checks — ◐ PARTIAL (PR #39, 2026-06-21)
 - [x] `@storybook/addon-a11y` (pinned `10.4.3`, matching `addon-vitest`) added to web + registered in [`.storybook/main.ts`](../packages/web/.storybook/main.ts). SB ≥10.3 auto-applies the addon's preview annotations, so **axe-core runs against every story** in `moon run web:test` (and the Storybook a11y panel) — no setup file needed. Enabled at `parameters.a11y.test: 'todo'` (warnings) in [`.storybook/preview.tsx`](../packages/web/.storybook/preview.tsx), per "start as warnings": violations surface without failing CI. `web:test` green (71 stories scanned).
@@ -86,15 +89,16 @@
 
 > No e2e exists. Playwright drives the **real Next.js app against a real (or seeded) gateway**, covering the cross-package flows unit/component tests can't: navigation, live WS updates, the kanban, the office.
 
-### D1. Playwright harness — **M**
-- [ ] Add `packages/web/playwright.config.ts` + an `e2e/` dir. `webServer` boots the app for the run; point tests at a **gateway with seeded, deterministic data** — either `midnite serve` against a temp `:memory:`/seeded store, or a lightweight mock-gateway fixture (Decisions §3). No reliance on real Claude Code agents or network.
-- [ ] New moon task **`web:e2e`** (`pnpm exec playwright test`) with `deps: ['^:build']` and Playwright browsers installed in CI. Keep it **out of the default `:test`** (it's heavier) — run it in its own CI job (Theme F).
+### D1. Playwright harness — **M** — ✅ DONE (PR #84, 2026-06-22)
+- [x] Added [`packages/web/playwright.config.ts`](../packages/web/playwright.config.ts) + [`e2e/`](../packages/web/e2e/). `webServer` boots **both** the real gateway (a direct `node --import tsx` child — killable, so teardown can't orphan it) on a throwaway absolute temp SQLite file with its pool/heartbeat/workflows disabled and **no LLM credentials**, and a Next dev server pointed at it. State reset before each run (ports freed + temp DB removed); seeded over the gateway REST API. Per Decisions §3 (seeded real gateway).
+- [x] New moon task **`web:e2e`** (`pnpm exec playwright test`, `deps: ['^:build']`) with **`runInCI: false`** — kept out of `moon ci` and the default `:test`. The dedicated CI job + browser-install step is Theme F.
 
-### D2. Core flow specs — **M–L**
-- [ ] **Board:** load `/`, see seeded tasks in columns, drag a task between columns, assert it persists + the WS-driven board reflects it.
-- [ ] **Office:** load `/office`, the canvas mounts, walk to the **board room** and open the project modal (URL stays `/office`), open the **library** (E), toggle a **break** (E) — proximity → `E` → modal/badge. (Phaser canvas: drive via keyboard + assert the HUD/store-driven DOM, not pixels.)
-- [ ] **Workflows / councils / dashboard:** one happy-path flow each (create/view), enough to catch a broken route or a contract mismatch with the gateway.
-- [ ] Tests are **deterministic & isolated** — seed per test, no shared mutable state, no arbitrary `waitForTimeout` (await on roles/text/network-idle).
+### D2. Core flow specs — **M–L** — ◐ MOSTLY DONE (PR #84, 2026-06-22)
+- [x] **Board:** load `/tasks` (the board route), see seeded tasks in their columns, drag a card Todo→Backlog, assert it **persists across a reload**. (A plain restatus — never into `wip`, which would spawn an agent.)
+- [x] **Office:** load `/office`, assert the Phaser **canvas + HUD mount** against the live gateway (controls hint, "0 agents online"), driving the store-driven DOM, not pixels.
+  - [ ] ⏳ **Deferred:** the proximity-walk interactions (walk to board room / library / break via `E`) — they need deterministic Phaser physics control that's inherently flaky; covered at the component level by the office-HUD stories (C2).
+- [x] **Workflows / councils / dashboard:** one happy-path "view" flow each — the route loads and the gateway-backed view renders (empty state / chrome), catching a broken route or a contract mismatch. Dashboard stubs the external widget calls.
+- [x] Tests are **deterministic & isolated** — fresh gateway + temp DB per run, assertions query by role/text (no test IDs), no arbitrary `waitForTimeout`.
 
 ---
 

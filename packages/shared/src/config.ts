@@ -1,10 +1,16 @@
 import { z } from 'zod';
+import { ChecksConfigSchema } from './checks.js';
 import { LLM_PROVIDER_DEFAULT, LlmProviderSchema } from './llm.js';
 import { UsageConfigSchema } from './usage.js';
 
 export const RepoConfigSchema = z.object({
   name: z.string(),
   path: z.string(),
+  // Optional per-repo conventions seeded into the registry on first boot; the
+  // DB is authoritative thereafter. Fed to the agent's seed prompt — see the
+  // gateway's `appendRepoConventions`.
+  branchPrefix: z.string().optional(),
+  prTemplate: z.string().optional(),
 });
 
 export const AgentConfigSchema = z.object({
@@ -41,7 +47,13 @@ export const AgentConfigSchema = z.object({
 });
 
 export const TerminalConfigSchema = z.object({
-  mode: z.enum(['pty', 'tmux', 'warp', 'iterm']).default('pty'),
+  // The process backend. `pty` (default) spawns each session in a node-pty the
+  // gateway owns — it dies with the gateway. `tmux` runs each session in a
+  // detached tmux session that outlives the gateway, so an in-flight agent run
+  // survives a restart (the gateway reattaches on boot). `warp`/`iterm` were
+  // dropped (Phase 17 §3): native windows bypass the browser stream, approval
+  // routing, and the ring buffer, so they never composed with the model.
+  mode: z.enum(['pty', 'tmux']).default('pty'),
   layout: z.enum(['split', 'tabs', 'windows']).default('split'),
   /** Command spawned for an on-demand session PTY. Defaults to an interactive login shell. */
   command: z.string().optional(),
@@ -82,6 +94,14 @@ export const GatewayConfigSchema = z.object({
   allowedOrigins: z.array(z.string()).default([]),
   uploadsDir: z.string().default('./.midnite/uploads'),
   dbPath: z.string().default('./.midnite/midnite.db'),
+  /**
+   * Path to the web app's static export (`packages/web/out`, from `next build`
+   * with `output: 'export'`). When set and the directory has an `index.html`,
+   * the gateway serves the UI at `/` so a single process serves both the API and
+   * the browser app in prod. Unset (the default) means the UI runs as a separate
+   * `next` server — the dev setup. Override at runtime with `MIDNITE_WEB_DIR`.
+   */
+  webDir: z.string().optional(),
 });
 
 // OAuth client config for an integration provider. Secrets are referenced by env-var
@@ -136,20 +156,65 @@ export const CouncilsConfigSchema = z.object({
   runTimeoutMs: z.number().int().positive().default(600000),
 });
 
+// "Knowledge files" — a watched folder of Markdown the plan model can pull
+// relevant files from into an agent's execution prompt. Distinct from the
+// link-based "Sources" KB (URLs + titles); this injects file *content*.
+export const KnowledgeConfigSchema = z.object({
+  // Feature flag — off by default (no folder is configured out of the box).
+  enabled: z.boolean().default(false),
+  // Directory of Markdown files to watch. Optional; the feature is inert when
+  // unset even if enabled. `~` and relative paths are resolved by the gateway.
+  dir: z.string().optional(),
+  // Total byte cap on knowledge-file content injected into one execution prompt,
+  // so a large folder can't blow the model's context window.
+  maxBytes: z.number().int().positive().default(16384),
+});
+
+// Notifications & alerting (Phase 21). The gateway watches state transitions,
+// applies this notify-policy, and dispatches to the enabled channels. `events`
+// toggles which transitions notify; `channels` which sinks fire (web is the
+// always-on in-app feed; browser is an opt-in OS notification; webhook is an
+// optional SSRF-guarded POST target — both dispatched in a later theme).
+export const NotificationsConfigSchema = z.object({
+  enabled: z.boolean().default(true),
+  events: z
+    .object({
+      taskWaiting: z.boolean().default(true),
+      taskDone: z.boolean().default(true),
+      taskAbandoned: z.boolean().default(true),
+    })
+    .default({}),
+  channels: z
+    .object({
+      web: z.boolean().default(true),
+      browser: z.boolean().default(false),
+      webhook: z.string().optional(),
+    })
+    .default({}),
+});
+
 export const MidniteConfigSchema = z.object({
   agent: AgentConfigSchema,
   terminal: TerminalConfigSchema,
   repos: z.array(RepoConfigSchema).default([]),
   gateway: GatewayConfigSchema,
+  // Optional (defaulted) so existing midnite.json files keep validating.
+  knowledge: KnowledgeConfigSchema.default({}),
+  notifications: NotificationsConfigSchema.default({}),
   // Optional block (defaulted) so existing midnite.json files keep validating.
   workflows: WorkflowsConfigSchema.default({}),
   agents: AgentsRuntimeConfigSchema.default({}),
   councils: CouncilsConfigSchema.default({}),
   // LLM usage/cost tracking + optional soft budgets (track + soft-warn only).
   usage: UsageConfigSchema.default({}),
+  // Quality-gate checks run before a task's `done` transition (Phase 30).
+  // Optional (defaulted) so existing midnite.json files keep validating.
+  checks: ChecksConfigSchema.default({}),
 });
 
 export type MidniteConfig = z.infer<typeof MidniteConfigSchema>;
+export type KnowledgeConfig = z.infer<typeof KnowledgeConfigSchema>;
+export type NotificationsConfig = z.infer<typeof NotificationsConfigSchema>;
 export type RepoConfig = z.infer<typeof RepoConfigSchema>;
 export type WorkflowsConfig = z.infer<typeof WorkflowsConfigSchema>;
 export type AgentsRuntimeConfig = z.infer<typeof AgentsRuntimeConfigSchema>;

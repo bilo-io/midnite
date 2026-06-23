@@ -59,6 +59,9 @@ export interface WorkflowState {
   onConnect(connection: Connection): void;
   addNode(kind: string, position?: { x: number; y: number }): void;
   updateNodeParams(id: string, params: Record<string, unknown>): void;
+  /** Rename a node, keeping labels unique (expressions reference nodes by label,
+   *  so a collision would be ambiguous) — a clashing name is auto-suffixed. */
+  setLabel(id: string, label: string): void;
   removeNode(id: string): void;
   select(id: string | null): void;
   applyRunState(runs: NodeRun[]): void;
@@ -68,6 +71,21 @@ export interface WorkflowState {
 
 function categoryOf(kind: string): string {
   return getNodeTypeDefinition(kind)?.category ?? 'action';
+}
+
+/**
+ * A label unique among `taken`, suffixing " 2", " 3", … on collision (e.g. a
+ * second "HTTP Request" becomes "HTTP Request 2"). Node labels must be unique
+ * because expressions reference upstream nodes by label. A blank desired label
+ * falls back to `fallback`.
+ */
+export function uniqueLabel(desired: string, taken: Iterable<string>, fallback = 'Node'): string {
+  const used = new Set(taken);
+  const base = desired.trim() || fallback;
+  if (!used.has(base)) return base;
+  let n = 2;
+  while (used.has(`${base} ${n}`)) n += 1;
+  return `${base} ${n}`;
 }
 
 function toAppNodes(workflow: Workflow): AppNode[] {
@@ -153,7 +171,9 @@ export function createWorkflowStore(workflow: Workflow): StoreApi<WorkflowState>
         id,
         type: def.category,
         position: at,
-        data: { kind, label: def.title, params: {} },
+        // Keep labels unique on creation — a second node of the same type would
+        // otherwise share its title (e.g. two "HTTP Request" nodes).
+        data: { kind, label: uniqueLabel(def.title, get().nodes.map((n) => n.data.label)), params: {} },
       };
       set((s) => ({ nodes: [...s.nodes, node], selectedId: id, dirty: true, revision: s.revision + 1 }));
     },
@@ -164,6 +184,20 @@ export function createWorkflowStore(workflow: Workflow): StoreApi<WorkflowState>
         dirty: true,
         revision: s.revision + 1,
       })),
+
+    setLabel: (id, label) =>
+      set((s) => {
+        const node = s.nodes.find((n) => n.id === id);
+        if (!node) return {};
+        const others = s.nodes.filter((n) => n.id !== id).map((n) => n.data.label);
+        const unique = uniqueLabel(label, others, node.data.label);
+        if (unique === node.data.label) return {}; // no-op (unchanged after de-dup)
+        return {
+          nodes: s.nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, label: unique } } : n)),
+          dirty: true,
+          revision: s.revision + 1,
+        };
+      }),
 
     removeNode: (id) =>
       set((s) => ({

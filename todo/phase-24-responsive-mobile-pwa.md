@@ -25,13 +25,13 @@
 
 Make the core monitoring surfaces reflow to a phone; gate the canvas-heavy ones (Decision §2).
 
-### A1. Viewport + breakpoint foundation — **S–M**
-- [ ] Add the Next.js `viewport` export (`width=device-width, initial-scale=1`, `themeColor` reading the theme tokens) in [`layout.tsx`](../packages/web/app/layout.tsx).
-- [ ] Establish the **breakpoint approach** (Decision §4 — use the existing utility/styling system; container queries where a component reflows independently of viewport). Document the mobile/tablet/desktop cutoffs once so every surface uses the same ones.
+### A1. Viewport + breakpoint foundation — **S–M** — ✅ DONE (PR #51, 2026-06-21 — see [done.md](done.md))
+- [x] Next.js `viewport` export with theme-aware `themeColor` (light/dark `--background`, no longer hardcoded white) in [`layout.tsx`](../packages/web/app/layout.tsx).
+- [x] Breakpoint approach settled (Decision §4): Tailwind responsive variants + single-source [`lib/breakpoints.ts`](../packages/web/lib/breakpoints.ts) + SSR-safe [`useMediaQuery`/`useIsMobile`/`useIsTablet`/`useIsDesktop`](../packages/web/hooks/use-media-query.ts). Cutoffs documented once (mobile `<md` · tablet `md–lg` · desktop `≥lg`). ↪️ container-queries plugin deferred to A3 (wire when the first self-reflowing component needs it); dynamic `theme-color` on an *explicit* theme override deferred to Theme C.
 
-### A2. Mobile navigation — **M**
-- [ ] Adapt [`nav-bar.tsx`](../packages/web/components/nav-bar.tsx): below the breakpoint, the sidebar becomes a **drawer or bottom-tab bar** (Decision §5) — primary surfaces reachable in one tap; the icon-rail/expanded states stay for desktop. The command palette (⌘K) remains the power-user jump.
-- [ ] Header/page chrome ([`page-header.tsx`](../packages/web/components/page-header.tsx)) collapses gracefully; no horizontal overflow at narrow widths.
+### A2. Mobile navigation — **M** — ✅ DONE (PR #75, 2026-06-22 — see [done.md](done.md))
+- [x] Adapt [`nav-bar.tsx`](../packages/web/components/nav-bar.tsx): below `md` the sidebar is hidden and a fixed **bottom-tab bar** ([`mobile-nav.tsx`](../packages/web/components/mobile-nav.tsx)) takes over — the first four enabled surfaces get one-tap tabs and a **More** sheet holds the overflow plus Settings / Theme / Lock (always present so they stay reachable). The icon-rail/expanded states stay for tablet/desktop; ⌘K remains the power-user jump. (Decision §5 settled: bottom-tabs + overflow drawer.)
+- [x] Header/page chrome ([`page-header.tsx`](../packages/web/components/page-header.tsx)) collapses gracefully: the title/actions row wraps instead of overflowing at narrow widths; page content clears the bar via bottom padding (safe-area aware) on mobile and keeps the `--nav-offset` left offset at `md+`.
 
 ### A3. Per-surface reflow (core monitoring) — **M–L**
 - [ ] **Board** ([`board-view.tsx`](../packages/web/components/board-view.tsx)): columns stack / horizontally page on a phone; cards stay legible (Theme B handles moving them).
@@ -51,13 +51,13 @@ The kanban is the signature surface; make moving a card work by finger, two ways
 
 ---
 
-## Theme C — PWA installability — **S–M**
+## Theme C — PWA installability — **S–M** — ✅ DONE (PR #101, 2026-06-22 — see [done.md](done.md))
 
 A real installable app, not a stub manifest.
 
-- [ ] **Flesh out the manifest** ([`public/site.webmanifest`](../packages/web/public/)): real `name`/`short_name`, **theme-aware** `theme_color`/`background_color` (not hardcoded white — match the app tokens / default theme), a full icon set + maskable icon, `start_url`, `scope`, `display: standalone`. Add **apple-touch** + `apple-mobile-web-app-*` meta in [`layout.tsx`](../packages/web/app/layout.tsx).
-- [ ] **Service worker + app shell** — register a SW that caches the static shell (JS/CSS/icons) for fast launch + installability. **Be honest about offline:** the data is live from the loopback gateway, so this is **installable + fast shell, not an offline app** — the SW does not pretend to cache live board/session data. Guard against staleness (network-first for app code, or a clear update prompt).
-- [ ] **Install affordance** — "Add to home screen" launches the responsive UI standalone (no browser chrome); verify on iOS Safari + Android Chrome behaviours.
+- [x] **Flesh out the manifest** ([`public/site.webmanifest`](../packages/web/public/)): real `name`/`short_name`, **theme-aware** `theme_color`/`background_color` (dark `#09090b`, not hardcoded white), a full icon set + maskable icon (SVG, logo padded to the safe zone), `start_url`/`scope`/`id`, `display: standalone`. Apple chrome via `metadata.appleWebApp` in [`layout.tsx`](../packages/web/app/layout.tsx) (Next emits `mobile-web-app-capable` + `apple-mobile-web-app-*`).
+- [x] **Service worker + app shell** — [`public/sw.js`](../packages/web/public/sw.js) caches the static shell, **network-first for same-origin shell code** (Decision §6), scoped to asset/navigation `destination`s so it **never caches gateway API data** (even under Phase 3 same-origin serving). Honest about offline: installable fast shell, not an offline app. Registered production-only by [`pwa-register.tsx`](../packages/web/components/pwa-register.tsx).
+- [x] **Install affordance** — [`pwa-install.tsx`](../packages/web/components/pwa-install.tsx) in Settings → Appearance: drives `beforeinstallprompt` on Chromium, shows manual Share → Add to Home Screen steps on iOS, confirms when already standalone.
 
 ---
 
@@ -84,8 +84,8 @@ A real installable app, not a stub manifest.
 - [ ] At a phone width (e.g. 390px) the board, sessions, tasks, dashboard, the notification center, and the approvals inbox are **usable** — single-column, no horizontal overflow, legible, with a mobile nav (drawer/tabs).
 - [ ] On a touchscreen, a card can be moved between columns **two ways**: a press-and-hold drag (without hijacking scroll) **and** a tap-to-move affordance; a plain swipe scrolls the board.
 - [ ] The office and workflow editor show a clean **"best on desktop"** notice on a phone rather than a broken canvas.
-- [ ] The app is **installable** (valid manifest with real name/icons/theme colour; "Add to home screen") and launches **standalone**; the shell loads fast via the service worker; the app still requires a live gateway connection (no false offline promise).
-- [ ] `theme-color` + manifest colours **follow the theme** (not hardcoded white); light/dark both look intentional installed.
+- [x] The app is **installable** (valid manifest with real name/icons/theme colour; "Add to home screen") and launches **standalone**; the shell loads fast via the service worker; the app still requires a live gateway connection (no false offline promise). *(Theme C — PR #101.)*
+- [x] `theme-color` + manifest colours **follow the theme** (not hardcoded white); the dark default reads intentionally installed. *(Theme C — PR #101.)*
 - [ ] Reaching the PWA from an actual phone over the user's LAN/tunnel works because the **gateway is not modified** — and the docs state plainly that exposing it beyond loopback is the separate Phase 7 A5 work.
 - [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green; Storybook/RTL responsive states covered where practical. (Run web tests from the **primary checkout**, not a `.git` worktree.)
 
@@ -96,7 +96,7 @@ A real installable app, not a stub manifest.
 1. **Access model** *(settled in brainstorm).* **Client-only** — responsive + touch + PWA. Reaching from a phone uses the existing LAN/Tailscale/tunnel path; the non-loopback bind + bearer-token guard + rate limiting **stays Phase 7 A5** (deferred). No reversal of local-only.
 2. **Surface scope** *(settled in brainstorm).* **Core monitoring responsive + desktop-only gates** — board, sessions, tasks, dashboard, notifications (P21), approvals (P23) reflow; the office canvas and workflow editor show a "best on desktop" notice rather than being forced onto a phone.
 3. **Touch task-move** *(settled in brainstorm).* **Both** — tuned dnd-kit drag (activation delay/handle) **and** a tap-to-move fallback, so a column change never depends on a finicky drag.
-4. **Breakpoint approach** *(open).* Use the existing utility/styling system's responsive variants + container queries for self-reflowing components, vs. hand-rolled `@media` in `globals.css`. (The codebase already uses utility classes — confirm Tailwind is wired and CLAUDE.md's "not yet" note is stale.) Pick once and apply uniformly; settle in the A1 PR.
+4. **Breakpoint approach** *(settled in A1, PR #51).* **Tailwind responsive variants + a single source of truth** ([`lib/breakpoints.ts`](../packages/web/lib/breakpoints.ts)) consumed by both CSS (`md:`/`lg:` variants) and JS (`useMediaQuery`/`useIsMobile`/`useIsTablet`/`useIsDesktop`) — not hand-rolled `@media`. Tailwind v3 was already wired (CLAUDE.md's "not yet" note was stale and is corrected). Cutoffs documented once: mobile `<md` (768px) · tablet `md–lg` · desktop `≥lg` (1024px). Container queries (`@tailwindcss/container-queries`) are the per-component tool for self-reflowing components — wired when A3's first one lands.
 5. **Mobile nav pattern** *(open).* A slide-in **drawer** vs. a **bottom-tab bar** for primary navigation on a phone. Recommend bottom-tabs for the top few surfaces + a drawer/overflow for the rest; confirm in the A2 PR.
 6. **Service-worker strategy** *(open).* Network-first for app code (avoid stale UI) with a precached shell, vs. stale-while-revalidate + an update prompt. Since data is live and only the shell is cached, recommend network-first-for-code + precached static assets. Confirm in the C PR.
 7. **xterm on touch** *(recommend: read/scroll only).* Typing into a live PTY from a phone is a non-goal; the terminal is a read/scroll surface on touch, clearly indicated. Revisit only if there's real demand.

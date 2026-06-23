@@ -32,6 +32,8 @@ export class ReposService implements OnModuleInit {
         id: randomUUID(),
         name: r.name,
         path: normalizePath(r.path),
+        branchPrefix: normalizeConvention(r.branchPrefix),
+        prTemplate: normalizeConvention(r.prTemplate),
         createdAt: now,
         updatedAt: now,
       });
@@ -64,6 +66,8 @@ export class ReposService implements OnModuleInit {
       id: randomUUID(),
       name: req.name,
       path: normalizePath(req.path),
+      branchPrefix: normalizeConvention(req.branchPrefix),
+      prTemplate: normalizeConvention(req.prTemplate),
       createdAt: now,
       updatedAt: now,
     });
@@ -82,6 +86,9 @@ export class ReposService implements OnModuleInit {
     const patch: Partial<RepoInsert> = { updatedAt: new Date().toISOString() };
     if (req.name !== undefined) patch.name = req.name;
     if (req.path !== undefined) patch.path = normalizePath(req.path);
+    // An empty string is an explicit clear → store null.
+    if (req.branchPrefix !== undefined) patch.branchPrefix = normalizeConvention(req.branchPrefix);
+    if (req.prTemplate !== undefined) patch.prTemplate = normalizeConvention(req.prTemplate);
     const row = this.repo.update(id, patch);
     if (!row) throw new RepoDoesNotExistError(`repo ${id} not found`);
     return toRepo(row);
@@ -98,6 +105,8 @@ function toRepo(row: RepoRow): Repo {
     id: row.id,
     name: row.name,
     path: row.path,
+    branchPrefix: row.branchPrefix ?? undefined,
+    prTemplate: row.prTemplate ?? undefined,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -108,4 +117,11 @@ function toRepo(row: RepoRow): Repo {
 // terminal expands it back to absolute when resolving a session's cwd.
 function normalizePath(input: string): string {
   return collapseTilde(resolve(expandTilde(input.trim())));
+}
+
+// Trim a convention value; treat blank/undefined as "unset" (null) so an empty
+// edit clears it rather than storing whitespace.
+function normalizeConvention(value: string | undefined): string | null {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
 }

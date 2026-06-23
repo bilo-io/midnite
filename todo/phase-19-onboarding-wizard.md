@@ -21,13 +21,13 @@
 
 ---
 
-## Theme A — Setup-readiness model + endpoint — **M**
+## Theme A — Setup-readiness model + endpoint — **M** — ✅ DONE (PR #73, 2026-06-22 — see [done.md](done.md))
 
 The single signal everything else keys off. One contract, one composing endpoint.
 
-- [ ] **`SetupStatus` contract in `shared`** (`setup.ts`): a list of **checklist items**, each `{ id, label, state: 'ok' | 'warn' | 'missing', detail? }`, plus a derived **`ready: boolean`**. Items cover: a provider configured with a key, the agent CLI present (`claude`/`gh` from the environment probe), `MIDNITE_SECRET_KEY` present, the agent pool sized/enabled, and (forward-compat) at least one repo. zod schema + tests.
-- [ ] **`GET /setup/status`** — a thin `SetupController` + `SetupService` that **composes** `EnvironmentService` (tool presence), `ProvidersService` (a provider with a key + active), `CryptoService` (is the secret key usable), and `loadConfig()` (pool/repos) into a `SetupStatus`. No new persistence for the *computation*; pure aggregation.
-- [ ] **`ready` definition** (Decision §3): `ready` = **≥1 provider has a key** (or a working agent CLI for CLI-driven providers) **AND** `MIDNITE_SECRET_KEY` is present. Tool *warnings* (outdated version) are `warn`, not `missing`, and don't block `ready`. Document the rule next to the schema.
+- [x] **`SetupStatus` contract in `shared`** (`setup.ts`): a list of **checklist items**, each `{ id, label, state: 'ok' | 'warn' | 'missing', detail? }`, plus a derived **`ready: boolean`**. Items cover: a provider configured with a key, the agent CLI present, `MIDNITE_SECRET_KEY` present, the agent pool sized/enabled, and (forward-compat) at least one repo. zod schema + tests.
+- [x] **`GET /setup/status`** — a thin `SetupController` + `SetupService` that **composes** `ProvidersService` (a provider with a key + active), `CryptoService` (is the secret key usable), `AgentsService` (configured agent CLI on PATH — the `claude`/`gemini`/… detector, since `EnvironmentService` only probes the dev toolchain), and the loaded config (pool/repos) into a `SetupStatus`. No new persistence; pure aggregation.
+- [x] **`ready` definition** (Decision §3): `ready` = **≥1 provider has a key** (or a working agent CLI for CLI-driven providers) **AND** `MIDNITE_SECRET_KEY` is present. Tool *warnings* (outdated version) are `warn`, not `missing`, and don't block `ready`. Rule documented next to the schema in `isSetupReady`.
 
 ---
 
@@ -44,22 +44,22 @@ A first-run flow that walks the user through the required setup, reusing the exi
 
 ---
 
-## Theme C — First-run detection & soft gating — **S–M**
+## Theme C — First-run detection & soft gating — **S–M** — ✅ DONE (PR #79, 2026-06-22 — see [done.md](done.md))
 
 Surface the wizard when it's useful; never get in the way.
 
-- [ ] **On load, fetch `/setup/status`.** If `!ready` (or never completed), show a **dismissible, resumable** "finish setting up" banner + a compact checklist, and an entry into the wizard. **Soft only — never block the board** (Decision §2).
-- [ ] **Persist a completed/dismissed flag** (Decision §4): a small **server-side** marker (per-install — e.g. an `admin`/settings key) so it's consistent across browsers, with a localStorage fallback for "dismissed this session." Re-show if setup regresses to not-`ready`.
-- [ ] First-run = `!ready` **and** never-completed → auto-open the wizard once; thereafter it's the banner unless reopened.
+- [x] **On load, fetch `/setup/status`.** When `!ready`, show a **dismissible** "finish setting up" corner card + a compact checklist, with each unfinished item deep-linking into its settings surface (the dedicated wizard is Theme B — not built yet). **Soft only — never blocks the board** (Decision §2): hidden when `ready`, hidden on `/settings/*` (Theme D's view), re-fetches on window focus so a regressed setup re-surfaces.
+- ◐ **Persist a completed/dismissed flag** (Decision §4): shipped the **sanctioned localStorage/session fallback** (sessionStorage — dismiss lasts the session, returns in a fresh session while still `!ready`). The **server-side per-install marker** is deferred to Theme B (the wizard), where auto-open-once + cross-browser consistency actually need it — avoids a gateway migration colliding with the in-flight schema work.
+- ⏳ First-run auto-open of the **wizard** — deferred to Theme B (no wizard yet); the soft card covers the nudge in the meantime.
 
 ---
 
-## Theme D — Ongoing Status panel — **S**
+## Theme D — Ongoing Status panel — **S** — ✅ DONE (PR #82, 2026-06-22 — see [done.md](done.md))
 
 The readiness checklist isn't only for first-run — a setup can break later (a revoked key, an uninstalled CLI).
 
-- [ ] A **Status / readiness panel** in [`settings/system`](../packages/web/app/(main)/settings/system/system-section.tsx) rendering the same `SetupStatus` (the green/amber/red checklist) as a permanent view, with deep-links to the relevant settings page per item.
-- [ ] Reuses Theme A's endpoint — no second source of truth for "are we set up."
+- [x] A **Status / readiness panel** in [`settings/system`](../packages/web/app/(main)/settings/system/system-section.tsx) (`SetupStatusPanel`) rendering the same `SetupStatus` (green/amber/red checklist) as a permanent view, with a Ready/Setup-incomplete badge, a deep-link per item, and a Re-check button. Re-checks on focus so a regressed setup turns amber/red without a reload.
+- [x] Reuses Theme A's endpoint — no second source of truth. Shared presentation helper ([`lib/setup-items.ts`](../packages/web/lib/setup-items.ts)) keeps the panel and the Theme-C nudge in lock-step.
 
 ---
 

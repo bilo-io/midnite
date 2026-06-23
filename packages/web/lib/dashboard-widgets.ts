@@ -10,6 +10,7 @@ import {
   Clock,
   CloudSun,
   Cpu,
+  FolderGit2,
   FolderKanban,
   Globe,
   HeartPulse,
@@ -21,6 +22,7 @@ import {
   Loader,
   Newspaper,
   NotebookPen,
+  PlusCircle,
   Quote,
   Rocket,
   Star,
@@ -43,6 +45,7 @@ export type WidgetType =
   | 'tile-todo'
   | 'tile-inProgress'
   | 'tile-done'
+  | 'quick-capture'
   | 'projects'
   | 'notes'
   | 'routines'
@@ -56,6 +59,7 @@ export type WidgetType =
   | 'memories'
   | 'agents'
   | 'councils'
+  | 'repo-status'
   // live activity
   | 'activity'
   | 'throughput'
@@ -218,6 +222,17 @@ export const DASHBOARD_WIDGETS: Record<WidgetType, WidgetMeta> = {
   'tile-todo': { label: 'Todo', description: 'Count of queued, ready-to-start tasks', icon: ListTodo, category: 'tasks', sizes: tileSizes },
   'tile-inProgress': { label: 'In progress', description: 'Count of running or waiting tasks', icon: Loader, category: 'tasks', sizes: tileSizes },
   'tile-done': { label: 'Done', description: 'Count of completed tasks', icon: CheckCircle2, category: 'tasks', sizes: tileSizes },
+  'quick-capture': {
+    label: 'Quick capture',
+    description: 'Add a task (or paste a list) without leaving the dashboard',
+    icon: PlusCircle,
+    category: 'tasks',
+    sizes: {
+      lg: { w: 4, h: 4, minW: 2, minH: 3 },
+      md: { w: 4, h: 4, minW: 2, minH: 3 },
+      sm: { w: 4, h: 4, minW: 2, minH: 3 },
+    },
+  },
   projects: {
     label: 'Recent projects',
     description: 'Cards for your most recently updated projects',
@@ -266,6 +281,13 @@ export const DASHBOARD_WIDGETS: Record<WidgetType, WidgetMeta> = {
   memories: { label: 'Recent memories', description: 'Most recently updated agent memories', icon: Brain, category: 'agents', sizes: panelSizes },
   agents: { label: 'Agent pool', description: 'Primary agent, model and sub-agents', icon: Bot, category: 'agents', sizes: mediumSizes },
   councils: { label: 'Councils', description: 'Your councils and their participants', icon: Users, category: 'agents', sizes: panelSizes },
+  'repo-status': {
+    label: 'Per-repo status',
+    description: 'In-flight agents and queue depth per repo',
+    icon: FolderGit2,
+    category: 'agents',
+    sizes: mediumSizes,
+  },
 
   // — live activity —————————————————————————————————————————————————
   activity: { label: 'Activity feed', description: 'Recent task status changes', icon: Activity, category: 'activity', sizes: panelSizes },

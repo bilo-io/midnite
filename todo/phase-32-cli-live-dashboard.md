@@ -1,0 +1,100 @@
+# Phase 32 — CLI live dashboard (`midnite watch`)
+
+> The CLI ([`packages/cli`](../packages/cli)) is today line-based — `commander` + `cli-table3`, one-shot `console.log` output (`add`, `list`, `search`, `workflow …`). **Phase 32 gives it a live face.** A new `midnite watch` command opens a full-screen, terminal-native dashboard — the board, the agent pool, and live session logs — that subscribes to the gateway WS and updates in real time, for people who live in the terminal and don't want to alt-tab to the browser kanban.
+
+> Scope guardrails: this **builds on existing seams** — the REST snapshots (`GET /tasks`, `GET /sessions`, `GET /pool`), the typed client `createClient()` in [`client.ts`](../packages/cli/src/client.ts), and the WS-subscribe precedent already used by `midnite workflow watch` (`gatewayWsUrl()` in [`workflow.ts`](../packages/cli/src/workflow.ts) + the `applyWorkflowEvent` reducer in [`workflow-run-reducer.ts`](../packages/shared/src/workflow-run-reducer.ts)). The CLI stays a **pure HTTP/WS client of the gateway** — no gateway internals, no new gateway endpoints (reuse what exists). Commands stay thin: parse → call the typed client → render. **Out of scope:** mouse support (keyboard-first), session control (start/stop/kill an agent — that's a later autonomy/control phase), office-style visuals, multiplayer, and Windows-terminal edge cases (best-effort, not a goal).
+
+> Effort tags: **S** small · **M** medium · **L** large.
+
+---
+
+## Theme A — TUI foundation, render loop & WS seam — **M**
+
+The scaffold every panel sits in. The CLI currently has **no TUI framework** (deps are just `commander` + `cli-table3`); this introduces one and the `watch` command.
+
+### A1. ink app + `watch` command — **M**
+- [ ] Add **ink** (React for the terminal — **Decisions §1**) + `react` to [`packages/cli/package.json`](../packages/cli/package.json); register a `watch` command in [`index.ts`](../packages/cli/src/index.ts) that resolves the gateway URL (`resolveBaseUrl`) and renders the dashboard app.
+- [ ] Full-screen **alt-screen** app (ink `<Box>` flexbox layout — board / pool / logs regions) with a top status bar (gateway URL, connection state, last-update tick).
+- [ ] **Clean teardown:** restore the terminal (leave alt-screen, show cursor) on `q`/`Ctrl-C`/`SIGINT`/uncaught error — never leave the user's terminal wedged. Unsubscribe the WS on unmount.
+
+### A2. Reusable WS-subscribe helper — **S**
+- [ ] Factor the hand-rolled WS-subscribe currently inline for `workflow watch` (`gatewayWsUrl()` + the `new WebSocket` + subscribe handshake) into **one small reusable helper** in the CLI (e.g. `cli/src/ws.ts`): connect, send the `{type:'subscribe'}` handshake, validate frames against a shared schema, reconnect-with-backoff, and a teardown handle. `watch` and `workflow watch` both consume it.
+- [ ] Keep it **CLI-local**, not in `shared` — `web` already has its own browser `WebSocket` client ([`use-task-events.ts`](../packages/web/hooks/use-task-events.ts)); this is the Node-side equivalent and there's no third consumer (**Decisions §2**).
+
+---
+
+## Theme B — Live board panel — **M**
+
+The headline panel: the kanban, live, in the terminal.
+
+### B1. Board snapshot + columns — **S–M**
+- [ ] Initial board from `client().listTasks()`; render columns for the [`task.ts`](../packages/shared/src/task.ts) statuses (`backlog` · `todo` · `wip` · `waiting` · `done`; `abandoned` hidden by default) as ink columns, each task a compact card (id short · title · repo · priority).
+
+### B2. Live updates via a board reducer — **M**
+- [ ] Subscribe to `/ws/tasks` (via Theme A's helper) and apply `task.created` / `task.updated` / `task.deleted` / `tasks.bulkCreated` from [`events/task.ts`](../packages/shared/src/events/task.ts) to an in-memory board.
+- [ ] Add a **pure `applyTaskEvent` board reducer in `shared`** (`packages/shared/src/task-board-reducer.ts`, mirroring [`workflow-run-reducer.ts`](../packages/shared/src/workflow-run-reducer.ts)) — `(board, event) => board`. Lives in `shared` because it's contract-shaped state derivation, unit-testable, and reusable (the web board could adopt it later instead of refetch-on-event). **Decisions §3.**
+- [ ] No flicker: ink re-renders from the reduced state; no full refetch per event.
+
+---
+
+## Theme C — Agent slots / pool panel — **S–M**
+
+What's running *right now*.
+
+### C1. Pool panel — **S–M**
+- [ ] Render the agent pool from `GET /pool` ([`pool.controller.ts`](../packages/gateway/src/pool/pool.controller.ts)): one row per slot — `idle`/`busy`, the `taskId` it's working, and `pid` where present.
+- [ ] Reflect slot changes live (the pool/session state the gateway already emits) so the panel tracks spawns/exits without a manual refresh. If a dedicated slot-change event isn't on the board WS, derive busy/idle from the live board + sessions snapshot refreshed on `task.*` events (note the chosen source in the doc as built).
+
+---
+
+## Theme D — Live logs panel — **M/L**
+
+The ambitious panel — sequenced last, and shippable on its own if it proves heavy (**Decisions §4**).
+
+### D1. Session selection — **S**
+- [ ] Keyboard-select which session's logs to follow (from the live board/pool — e.g. focus a `wip` task → its session). Show the selected session in the panel header.
+
+### D2. Streamed scrollback — **M/L**
+- [ ] Subscribe to the selected session's terminal output (per-session terminal WS; base64 `output` frames + `status` phases from [`events/terminal.ts`](../packages/shared/src/events/terminal.ts)) and render a **scrollback log panel** (decode frames, append, cap buffer length).
+- [ ] Handle the realities: ordering by `seq`, backpressure / cap the buffer, switch cleanly when the selected session changes (unsubscribe old, subscribe new), and a graceful "session exited" footer. ANSI in the stream is rendered or stripped (decide as built).
+
+---
+
+## Theme E — Keyboard navigation & task moves — **M**
+
+Navigation + the single mutation we allow (**Decisions §5** — read-only otherwise).
+
+### E1. Navigation & selection — **S–M**
+- [ ] Move focus between panels (board ↔ pool ↔ logs) and between columns/cards with arrow/`hjkl` keys; a visible focus indicator; a help/footer line of keybindings.
+
+### E2. Move a task's status — **M**
+- [ ] On a focused task, move its status (e.g. `wip → waiting → done`) via `client().moveTask(id, status)` — the **only** mutation in this phase. Optimistic update reconciled by the next `task.updated` event. No destructive actions (no kill/stop/retry — explicitly out of scope).
+
+---
+
+## Files this phase touches (map)
+
+- **CLI app + command:** [`cli/src/index.ts`](../packages/cli/src/index.ts) (register `watch`), new `cli/src/watch/` (ink app + panels: board, pool, logs), [`cli/package.json`](../packages/cli/package.json) (add `ink` + `react`)
+- **CLI client + WS:** [`cli/src/client.ts`](../packages/cli/src/client.ts) (reuse `createClient`; possibly add `listSessions`/`getPool` if missing), new `cli/src/ws.ts` (reusable WS-subscribe), [`cli/src/workflow.ts`](../packages/cli/src/workflow.ts) (migrate its inline WS onto the shared helper)
+- **Shared (contract):** new `shared/src/task-board-reducer.ts` (`applyTaskEvent`), referencing [`events/task.ts`](../packages/shared/src/events/task.ts), [`events/terminal.ts`](../packages/shared/src/events/terminal.ts), [`task.ts`](../packages/shared/src/task.ts), [`session.ts`](../packages/shared/src/session.ts)
+- **Gateway (read-only, no changes expected):** existing routes — [`tasks/tasks.controller.ts`](../packages/gateway/src/tasks/tasks.controller.ts), [`sessions/sessions.controller.ts`](../packages/gateway/src/sessions/sessions.controller.ts), [`pool/pool.controller.ts`](../packages/gateway/src/pool/pool.controller.ts); WS at [`tasks/tasks.gateway.ts`](../packages/gateway/src/tasks/tasks.gateway.ts)
+- **Docs:** update the CLI README and append to [`done.md`](done.md) as items land.
+
+## Verification
+
+- `moon run gateway:dev` (with a couple of tasks/sessions running), then `midnite watch` (via `moon run cli:dev -- watch`):
+  - [ ] A full-screen dashboard opens; the **board panel** shows columns and live-updates as tasks are added/moved (in the web UI or via `midnite add`/`move`) **without** a manual refresh.
+  - [ ] The **pool panel** shows agent slots (idle/busy · task · pid) and tracks spawns/exits.
+  - [ ] Selecting a running session streams its **live logs** into the scrollback panel; switching sessions swaps cleanly; an exited session shows a clear footer.
+  - [ ] Keyboard nav moves focus between panels/columns; moving a focused task's status updates both the TUI and the gateway (confirm in the web board).
+  - [ ] Pressing `q` / `Ctrl-C` **restores the terminal cleanly** (no wedged alt-screen, cursor visible).
+- `moon run :typecheck`, `moon run :lint`, `moon run :test` green — including unit tests for `applyTaskEvent` (pure reducer) and snapshot tests of rendered panels (ink testing util / `ink-testing-library`). (Run web tests from the **primary checkout**, not a `.git` worktree.)
+
+## Decisions / open questions
+
+1. **Renderer** — *resolved:* **ink (React for the terminal)**. Declarative flexbox layout, handles alt-screen + redraw, and matches the React-heavy repo (the web team already knows React). Trade-off accepted: it adds `ink` + `react` to an otherwise lean CLI (`commander` + `cli-table3` only).
+2. **WS helper location** — *resolved:* **CLI-local** (`cli/src/ws.ts`), not `shared`. `web` has its own browser `WebSocket` client; there's no third Node consumer, so promoting to `shared` would be premature. Revisit if a third consumer appears.
+3. **`applyTaskEvent` reducer location** — *recommend (default in B2):* **`shared`** — it's pure, contract-shaped state derivation, unit-testable, and the web board could later adopt it instead of refetch-on-event. Alternative: keep it CLI-local if it ends up CLI-specific.
+4. **Theme D (live logs) commitment** — *recommend:* **in scope but sequenced last**, and shippable independently. If the per-session terminal streaming proves heavy (backpressure, ANSI handling), land A–C + E first and let D follow as its own slice — the dashboard is useful without it.
+5. **Interactivity** — *resolved:* **read-only + task moves**. The only mutation is `moveTask`; no session start/stop/kill/retry this phase (those belong with a later control/autonomy phase, gated by Phase 23 approvals).
+6. **Pool slot-change source** — *open:* if the gateway doesn't emit a dedicated slot-change event on the board WS, derive busy/idle from the live board + a sessions snapshot refreshed on `task.*` events. Confirm the source while building C1 and document what was chosen (no new gateway endpoint either way).

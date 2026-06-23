@@ -12,6 +12,7 @@ import {
   Images,
   LayoutDashboard,
   ListChecks,
+  Search,
   Settings,
   UserRound,
   Workflow,
@@ -34,6 +35,7 @@ const ICONS = {
   Images,
   LayoutDashboard,
   ListChecks,
+  Search,
   Settings,
   UserRound,
   Workflow,
@@ -114,7 +116,10 @@ export function PageHeader({
           />
         )}
 
-        <div className="flex items-start justify-between gap-4">
+        {/* Wrap (not overflow) on a phone: if the title + actions can't share a
+            row, the actions drop to the next line rather than pushing past the
+            viewport. No effect at desktop widths, where they always fit. */}
+        <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
           <div className="min-w-0 flex-1">
             <h1
               className={cn(
@@ -150,7 +155,7 @@ export function PageHeader({
               </div>
             )}
           </div>
-          {actions ? <div className="shrink-0 pt-0.5">{actions}</div> : null}
+          {actions ? <div className="min-w-0 shrink-0 pt-0.5">{actions}</div> : null}
         </div>
       </div>
     </header>

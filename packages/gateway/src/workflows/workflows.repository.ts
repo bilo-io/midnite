@@ -103,6 +103,17 @@ export class WorkflowsRepository {
       .get();
   }
 
+  /** All runs still marked `running` across every workflow — orphaned after a
+   *  crash/restart (runs execute in-process, so there's no process to resume). */
+  listRunningRunRows(): WorkflowRunRow[] {
+    return this.db
+      .select()
+      .from(workflowRuns)
+      .where(eq(workflowRuns.status, 'running'))
+      .orderBy(desc(workflowRuns.startedAt))
+      .all();
+  }
+
   // --- node runs ---
 
   createNodeRun(row: NodeRunInsert): void {
@@ -122,6 +133,16 @@ export class WorkflowsRepository {
       .update(nodeRuns)
       .set({ status: 'skipped', finishedAt: new Date().toISOString() })
       .where(and(eq(nodeRuns.runId, runId), eq(nodeRuns.status, 'pending')))
+      .run();
+  }
+
+  /** Mark a run's still-`running` node-runs failed — used by boot recovery when
+   *  the owning run is reconciled as a stale orphan. */
+  failRunningNodeRuns(runId: string, error: string, finishedAt: string): void {
+    this.db
+      .update(nodeRuns)
+      .set({ status: 'failed', error, finishedAt })
+      .where(and(eq(nodeRuns.runId, runId), eq(nodeRuns.status, 'running')))
       .run();
   }
 

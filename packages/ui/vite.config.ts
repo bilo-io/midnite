@@ -3,8 +3,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
 import dts from 'vite-plugin-dts';
-// `vitest/config`'s defineConfig types the `test` block alongside Vite's options.
-import { defineConfig } from 'vitest/config';
+import { defineConfig } from 'vite';
 
 const here = fileURLToPath(new URL('.', import.meta.url));
 const r = (p: string) => resolve(here, p);
@@ -34,6 +33,30 @@ function copyTokensCss() {
   };
 }
 
+// Rollup strips module-level directives when bundling, which would drop the
+// `'use client'` boundary off the theme runtime — a Next.js (RSC) consumer would
+// then treat ThemeProvider/useTheme as a server component and error. Re-emit the
+// directive on any output chunk built from a source module that declared it.
+function preserveUseClient() {
+  const declaresUseClient = (id: string) => {
+    const file = id.split('?')[0];
+    if (!/\.[jt]sx?$/.test(file)) return false;
+    try {
+      return /^\s*['"]use client['"]\s*;?/.test(readFileSync(file, 'utf8'));
+    } catch {
+      return false;
+    }
+  };
+  return {
+    name: 'midnite-ui-preserve-use-client',
+    renderChunk(code: string, chunk: { moduleIds: string[] }) {
+      if (!chunk.moduleIds.some(declaresUseClient)) return null;
+      // build.sourcemap is off, so no map to maintain.
+      return { code: `'use client';\n${code}`, map: null };
+    },
+  };
+}
+
 // @midnite/ui is the one package built with Vite library mode rather than the
 // repo's `tsc -b` convention: it bundles JSX/CSS/assets that tsc won't emit.
 // Typechecking still runs via `tsc --noEmit` (the `typecheck` task); the `.d.ts`
@@ -43,9 +66,19 @@ export default defineConfig({
     react(),
     dts({
       include: ['src'],
-      exclude: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'src/**/*.spec.ts', 'src/**/*.spec.tsx'],
+      exclude: [
+        'src/**/*.test.ts',
+        'src/**/*.test.tsx',
+        'src/**/*.spec.ts',
+        'src/**/*.spec.tsx',
+        // Stories + MDX docs are catalog inputs, never library build entries —
+        // keep them out of declaration emit (Theme D).
+        'src/**/*.stories.tsx',
+        'src/**/*.mdx',
+      ],
     }),
     copyTokensCss(),
+    preserveUseClient(),
   ],
   build: {
     lib: {
@@ -57,10 +90,12 @@ export default defineConfig({
     },
     rollupOptions: {
       external,
+      // The `'use client'` directive is re-emitted by preserveUseClient(); silence
+      // rollup's strip-and-warn so the build output stays clean.
+      onwarn(warning, warn) {
+        if (warning.code === 'MODULE_LEVEL_DIRECTIVE') return;
+        warn(warning);
+      },
     },
-  },
-  test: {
-    environment: 'node',
-    include: ['src/**/*.{test,spec}.{ts,tsx}'],
   },
 });

@@ -2,22 +2,22 @@
 
 Scoping for the parts of [`docs/INITIAL_PLAN.md`](../docs/INITIAL_PLAN.md) (Phases 1–5) that are **not yet built**, as of 2026-06-19. Everything below is forward-looking; what shipped is logged in [done.md](done.md). Effort is rough: **S** ≲1 day · **M** 1–3 days · **L** multi-day.
 
-**None of these are started** — every box below is unchecked by design; tick them as they land.
+This list was unchecked by design at authoring (2026-06-19); tick items as they land. **Most have since shipped** — all of Phase 4 (#2 bulk, #3 URL/GitHub context, #5 repo guessing, #6 inline answers, #7 knowledge watcher), plus #1 (task WS), #4 (repo registry), #9 (branch/PR templates), and #10 (Spawner + tmux). Only the optional/low-priority items remain (#8 per-repo caps, #11 serve prod build, #12 suspend `waiting`). See the rows and [done.md](done.md).
 
 > Note: the project has also grown a Phase-6 Workflows builder with its own named follow-ups (live WS streaming, logic nodes, credential vault, integration executors) — see [phase-6-workflows-mvp.md](phase-6-workflows-mvp.md). Phase 7 (hardening, reports, widgets) is scoped separately in [phase-7-hardening-reports-widgets.md](phase-7-hardening-reports-widgets.md). This doc only covers the original 1–5 plan.
 
 | # | Gap | Phase | Effort | Prereqs |
 |---|-----|-------|--------|---------|
-| 1 | `task.*` WebSocket broadcast | 1 / 3 | M | — |
-| 2 | Bulk / paste add | 4 | S–M | — |
-| 3 | URL + GitHub-context inference | 4 | M | — |
+| 1 | ✅ `task.*` WebSocket broadcast — Phase 7 A6 | 1 / 3 | M | — |
+| 2 | ✅ Bulk / paste add — Phase 16 | 4 | S–M | — |
+| 3 | ✅ URL + GitHub-context inference — Phase 15 B | 4 | M | — |
 | 4 | Make `repos` first-class | 4 / 5 | S–M | — |
-| 5 | Repo guessing in inference | 4 | S | #4 |
-| 6 | Inline answers for questions | 4 | M | — |
-| 7 | Knowledge-dir watcher (chokidar) + MD injection | 4 | M | — |
+| 5 | ✅ Repo guessing in inference — PR #88 | 4 | S | #4 |
+| 6 | ✅ Inline answers for questions — PR #55 | 4 | M | — |
+| 7 | ✅ Knowledge-dir watcher (chokidar) + MD injection — Phase 15 D | 4 | M | — |
 | 8 | Per-repo concurrency caps | 5 | M | #4 |
-| 9 | Per-repo branch naming + PR templates | 5 | S | #4 |
-| 10 | `Spawner` interface + tmux/warp/iterm | 5 | L | — |
+| 9 | Per-repo branch naming + PR templates ✅ | 5 | S | #4 |
+| 10 | ✅ `Spawner` interface + tmux (warp/iterm dropped) — Phase 17 A–D | 5 | L | — |
 | 11 | Serve Next.js prod build from gateway (optional) | 3 | S | — |
 | 12 | Suspend `waiting` sessions to free the slot (optional) | 5 | M | — |
 
@@ -25,24 +25,20 @@ Scoping for the parts of [`docs/INITIAL_PLAN.md`](../docs/INITIAL_PLAN.md) (Phas
 
 ## 1. `task.*` WebSocket broadcast (Phase 1/3)
 
-- [ ] **Not started**
+- ✅ **DONE — [Phase 7](phase-7-hardening-reports-widgets.md) A6 (`e2b9b73`).** Event-driven board updates replaced the poll-only refresh.
 
-**Goal:** event-driven board updates (`task.created` / `task.updated` / `task.deleted` / `status.changed`) instead of the current polling + `invalidateData()` refetch.
+**What shipped (matches the recommendation below):**
+- `shared/src/events/task.ts` — a discriminated `TaskBoardEvent` union (`task.created` / `task.updated` / `task.deleted` + `tasks.bulkCreated`), `TaskSubscribeMessage`, and `TASKS_WS_PATH = '/ws/tasks'`. Mirrors `events/terminal.ts` / `events/workflow.ts`.
+- Gateway: a thin [`TasksGateway`](../packages/gateway/src/tasks/tasks.gateway.ts) on `/ws/tasks` (origin-guarded; `subscribe` → fan-out). The service stays decoupled via an in-process [`TaskEventBus`](../packages/gateway/src/tasks/task-event-bus.ts) (the workflow-gateway pattern, not `EventEmitter2`) that [`TasksService`](../packages/gateway/src/tasks/tasks.service.ts) emits on every mutation path.
+- Web: [`useTaskEvents`](../packages/web/hooks/use-task-events.ts) (capped-backoff reconnect) → `invalidateData()` + a client fan-out, mounted app-wide via [`LiveData`](../packages/web/components/live-data.tsx).
 
-**Where it plugs in:**
-- `shared/src/events/task.ts` — new discriminated `TaskEvent` union (mirror the existing [`events/terminal.ts`](../packages/shared/src/events/terminal.ts) / [`events/workflow.ts`](../packages/shared/src/events/workflow.ts) shapes).
-- Gateway: a `TasksGateway` (Nest WS, thin) modelled on [`workflows/workflows.gateway.ts`](../packages/gateway/src/workflows/workflows.gateway.ts). Publish from `TasksService` mutation paths ([`tasks/tasks.service.ts`](../packages/gateway/src/tasks/tasks.service.ts)) via an in-process emitter (Nest `EventEmitter2`) so the service stays decoupled from the WS layer.
-- Web: a `use-task-events` subscription hook; on event, either call `invalidateData()` (cheap, minimal change) or patch the local cache.
-
-**Decisions:** (a) full-object payloads vs. id-only + refetch; (b) one board channel vs. per-task topics; (c) keep polling as a fallback or remove it. Recommend full-object payloads on a single board channel, polling kept as a degraded fallback.
-
-**Effort:** M. The WS plumbing pattern already exists twice — most of the work is the service→gateway publish wiring and the client hook.
+**Decisions as settled:** (a) **full-object payloads** on create/update (id-only on delete); (b) **one board channel** (no per-task topics); (c) **polling kept** as a degraded fallback. Phase-7 D layered desktop notifications on the same stream (`7384897`).
 
 ---
 
 ## 2. Bulk / paste add (Phase 4)
 
-- ◐ **API done** — `POST /tasks/bulk` (the bulk endpoint + coalesced event) landed in [Phase 16](phase-16-bulk-add.md) Theme A (PR #40, 2026-06-21). The CLI `add --bulk` (Theme B) and web paste modal (Theme C) clients remain.
+- ✅ **DONE — [Phase 16](phase-16-bulk-add.md).** `POST /tasks/bulk` + coalesced event (Theme A, PR #40), CLI `add --bulk` (Theme B, PR #47), and the web paste-list modal (Theme C, PR #42) all shipped.
 
 **Goal:** accept a multi-line freeform list in one shot, one task per line.
 
@@ -56,15 +52,9 @@ Scoping for the parts of [`docs/INITIAL_PLAN.md`](../docs/INITIAL_PLAN.md) (Phas
 
 ## 3. URL + GitHub-context inference (Phase 4)
 
-- [ ] **Not started**
+- ✅ **DONE — [Phase 15](phase-15-smart-intake.md) Theme B.** [`UrlContextService`](../packages/gateway/src/agent/url-context.service.ts) detects URLs at agent-run start, resolves GitHub issue/PR links via `gh` (anonymous `api.github.com` REST fallback) and other links through the SSRF guard, reduces them to text, and injects a truncated "Linked context" block — wired in [`agent-runner.service.ts`](../packages/gateway/src/pool/agent-runner.service.ts) `start()` (fail-open, byte-capped: 5 URLs · 4k chars/source · 12k total).
 
-**Goal:** detect URLs in a task line; for GitHub issue/PR links, fetch context and fold it into the generated execution prompt.
-
-**Where:** in the classify/plan path ([`agent/classifier.service.ts`](../packages/gateway/src/agent/classifier.service.ts) / [`agent/planner.service.ts`](../packages/gateway/src/agent/planner.service.ts)). Reuse the SSRF-guarded fetch already written for OpenGraph ([`lib/opengraph.ts`](../packages/gateway/src/lib/opengraph.ts)) as the model for safe fetching; for GitHub, prefer `gh api` (shell) or the REST API with a token.
-
-**Decisions:** require the `gh` CLI vs. a `GITHUB_TOKEN`; how much issue/PR body to inject (truncate). 
-
-**Effort:** M.
+**Decisions as settled:** `gh`-first (existing auth → private repos) with anonymous REST fallback; injected at the seed-prompt point, truncated.
 
 ---
 
@@ -86,41 +76,27 @@ Scoping for the parts of [`docs/INITIAL_PLAN.md`](../docs/INITIAL_PLAN.md) (Phas
 
 ## 5. Repo guessing in inference (Phase 4)
 
-- [ ] **Not started**
+- ✅ **DONE — PR #88.** `PlannerService.guessRepo` picks the target repo from the DB-backed registry (Phase 13) on the plan model when a task is created without an explicit one; persisted to `task.repo`.
 
-**Goal:** the plan model picks the target repo from `config.repos` for each task.
+**As built:** the planner is handed the registry manifest (name + path) and returns a name validated against it (an enum + post-check, so the model can't introduce a dangling reference). Fail-soft like triage/answer (AI-off / error / no clear match → unassigned); a single registered repo is chosen without an LLM call; an explicit caller repo still wins and short-circuits the guess. `repoInferred` is recorded on the `task.created` event for audit.
 
-**Where:** extend the planner prompt to include the repo manifest and return a repo name; persist to `tasks.repo`.
-
-**Effort:** S. **Depends on #4.**
+**Effort:** S. **Was blocked on #4** (repo registry), now done.
 
 ---
 
 ## 6. Inline answers for question-type items (Phase 4)
 
-- [ ] **Not started**
+- ✅ **DONE — PR #55.** A `question`-kind task is answered by the plan model at intake ([`PlannerService.answer`](../packages/gateway/src/agent/planner.service.ts)) and resolved to `done` with the answer recorded on its thread (an answer `task_events` entry); fail-soft → falls back to the normal queue when AI is off.
 
-**Goal:** when classification yields `kind: question`, produce a direct answer instead of landing an actionable task.
-
-**Where:** classifier already detects `question`; add an answer-generation step (plan model) and surface the answer in the task thread (a `task_events` entry, or a dedicated answered state).
-
-**Decisions:** does an answered item occupy a board column, or resolve out of the board into the thread only? 
-
-**Effort:** M.
+**Decision as settled:** the answered item resolves out of the working columns (→ `done`) with its answer on the thread, rather than occupying a board column.
 
 ---
 
 ## 7. Knowledge-dir watcher + MD injection (Phase 4)
 
-- [ ] **Not started**
+- ✅ **DONE — [Phase 15](phase-15-smart-intake.md) Theme D (PR #95).** [`knowledge-watcher.service.ts`](../packages/gateway/src/agent/knowledge-watcher.service.ts) watches `config.knowledge.dir` with `chokidar` (now a gateway dep), maintaining an in-memory filename+headings manifest; the planner selects relevant files and their **content** is injected (byte-capped) into the execution prompt.
 
-**Goal:** the plan's "watched folder of MD files" — index `config.knowledge.dir`, let the plan model pick relevant files, inject their **content** into the execution prompt. Today the only "knowledge base" is user-added **source URLs** (title+link), injected as a reference list by [`pool/lib/build-agent-prompt.ts`](../packages/gateway/src/pool/lib/build-agent-prompt.ts).
-
-**Where:** a new gateway service watching `config.knowledge.dir` with `chokidar` (add to gateway runtime deps), maintaining an in-memory manifest (filename + headings); extend `build-agent-prompt.ts` to append selected file contents. CLAUDE.md already describes this watcher as a feature — implement to match.
-
-**Decisions:** disambiguate the two "knowledge bases" (file-KB vs. source-link-KB) in naming/UI; cap injected bytes; how the plan model selects files (pass manifest → ask for filenames). Defer embeddings/RAG.
-
-**Effort:** M.
+**Decisions as settled:** surfaced as **"Knowledge files"** (distinct from the link-based **"Sources"**); injected bytes capped; the plan model picks filenames from the manifest; embeddings/RAG deferred.
 
 ---
 
@@ -138,7 +114,7 @@ Scoping for the parts of [`docs/INITIAL_PLAN.md`](../docs/INITIAL_PLAN.md) (Phas
 
 ## 9. Per-repo branch naming + PR-template injection (Phase 5)
 
-- [ ] **Not started**
+- ✅ **DONE** — Phase 13 follow-on E (PR #74, 2026-06-22): `branchPrefix`/`prTemplate` on the repo entity + config seed (migration `0031`); a pure `appendRepoConventions` helper folds a `## Repository conventions` section into the agent seed prompt; settable in Settings → Repos.
 
 **Goal:** per-repo branch prefix/template and a PR-body template.
 
@@ -148,9 +124,9 @@ Scoping for the parts of [`docs/INITIAL_PLAN.md`](../docs/INITIAL_PLAN.md) (Phas
 
 ---
 
-## 10. `Spawner` interface + tmux/warp/iterm backends (Phase 5)
+## 10. `Spawner` interface + tmux/warp/iterm backends (Phase 5 → Phase 17)
 
-- [ ] **Not started**
+- [x] **Done — [Phase 17](phase-17-spawner-tmux.md) A–D.** `Spawner` seam extracted (A, PR #56); durable `TmuxSpawner` + backend selection + survive-restart reattach + contract tests (B/C/D, PR #77). `warp`/`iterm` **dropped** from the enum (native windows don't compose with the gateway-owned browser stream — exactly the concern flagged below).
 
 **Goal:** the planned pluggable spawner selected by `terminal.mode` (the enum exists but is never read; only `pty` is wired).
 

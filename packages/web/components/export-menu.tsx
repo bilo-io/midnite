@@ -28,8 +28,10 @@ import { cn } from '@/lib/utils';
 type Props = {
   /** Fetches the report markdown (typically a `lib/api.ts` client call). */
   fetchMarkdown: () => Promise<string>;
-  /** Base filename (no extension) for downloads and the print title. */
+  /** Base filename (no extension) for downloads. */
   filename: string;
+  /** Human-readable document title for the print/PDF dialog; defaults to `filename`. */
+  title?: string;
   /** Optional: when provided, adds a "Download HTML" item yielding a
    *  self-contained interactive HTML document. The domain caller assembles it
    *  (filename + html) — this component just triggers the download. */
@@ -71,7 +73,7 @@ function triggerDownload(filename: string, content: string, mimeType: string): v
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export function ExportMenu({ fetchMarkdown, filename, buildHtml, disabled, className }: Props) {
+export function ExportMenu({ fetchMarkdown, filename, title, buildHtml, disabled, className }: Props) {
   const toast = useToast();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<'copy' | 'md' | 'pdf' | 'html' | null>(null);
@@ -161,7 +163,7 @@ export function ExportMenu({ fetchMarkdown, filename, buildHtml, disabled, class
       // Render the markdown, wait a tick for layout, then open the print dialog.
       // The page title seeds the default "Save as PDF" filename.
       const previousTitle = document.title;
-      document.title = filename;
+      document.title = title ?? filename;
       printRootRef.current.render(
         <div style={{ padding: '2rem', color: '#000', background: '#fff' }}>
           <MarkdownPreview content={markdown} />
@@ -176,7 +178,7 @@ export function ExportMenu({ fetchMarkdown, filename, buildHtml, disabled, class
     } finally {
       setBusy(null);
     }
-  }, [fetchMarkdown, filename, toast]);
+  }, [fetchMarkdown, filename, title, toast]);
 
   const downloadHtml = useCallback(async () => {
     if (!buildHtml) return;

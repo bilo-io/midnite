@@ -20,55 +20,57 @@
 
 ---
 
-## Theme A — FTS5 index + contract + maintenance — **M–L**
+## Theme A — FTS5 index + contract + maintenance — **M–L** — ✅ DONE (PR #90, 2026-06-22 — see [done.md](done.md))
 
 The substrate. One unified index, kept fresh in the service layer (no triggers).
 
 ### A1. `SearchResult` contract in `shared` — **S**
-- [ ] A discriminated union `SearchResult` (`search.ts`): `{ type: 'task'|'project'|'memory'|'note'|'council'|'workflow', id, title, snippet, route, score }` + a `SearchResponse` (`{ results, total, byType }`) + the request query shape (`q`, optional `type`, `limit`). zod + tests. (Decision §5 — entity set.)
+- [x] A discriminated union `SearchResult` (`search.ts`): `{ type: 'task'|'project'|'memory'|'note'|'council'|'workflow', id, title, snippet, route, score }` + a `SearchResponse` (`{ results, total, byType }`) + the request query shape (`q`, optional `type`, `limit`). zod + tests. (Decision §5 — entity set.)
 
 ### A2. Unified `search_index` FTS5 table + migration — **M**
-- [ ] A forward-only migration creating an FTS5 **virtual table** `search_index(type, entity_id UNINDEXED, title, body)` — a **single unified** index so one `MATCH` query ranks across all domains (Decision §3). `entity_id` + `type` are the lookup key back to the source row; `title`/`body` are the indexed text. (Drizzle doesn't model FTS virtual tables — author the migration SQL directly; keep the table out of the typed schema or wrap raw queries.)
+- [x] A forward-only migration (`0034`) creating an FTS5 **virtual table** `search_index(type, entity_id, title, body)` (both keys UNINDEXED) — a **single unified** index so one `MATCH` query ranks across all domains (Decision §3). `entity_id` + `type` are the lookup key back to the source row; `title`/`body` are the indexed text. Authored as a `drizzle-kit --custom` migration (Drizzle can't model FTS virtual tables); queried via raw `sql`.
 
 ### A3. `SearchIndexService` (upsert / remove / query) — **M**
-- [ ] A `SearchIndexService` in the new `search` module: `upsert(type, id, title, body)`, `remove(type, id)`, and `query(q, { type?, limit })` running `… WHERE search_index MATCH ? ORDER BY bm25(search_index)` with `snippet()`/`highlight()` for the snippet. Pure-ish around the DB; unit-tested against `:memory:`.
+- [x] A `SearchIndexService` in the new `search` module: `upsert(doc)`, `remove(type, id)`, `clear`, `count`, and `query(match, { type?, limit })` running `… WHERE search_index MATCH ? ORDER BY bm25(...)` with `snippet()` (title-boosted bm25 weights, `<mark>` markers). Around the DB; unit-tested against `:memory:`.
 
 ### A4. Write-path maintenance per domain — **M**
-- [ ] Each domain **service** keeps the index current on create/update/delete: a direct `searchIndex.upsert(...)` / `.remove(...)` call (Decision §4), or — where a bus exists ([`TaskEventBus`](../packages/gateway/src/tasks/task-event-bus.ts)) — the search module subscribes and maintains it (decoupled). Keep the per-domain mapping (which fields → `title`/`body`) in one obvious place per domain.
-- [ ] **Boundary:** the search module depends on domain **services** for backfill reads; domain services depend on `SearchIndexService` for maintenance. No repository crossing.
+- [x] Each domain keeps the index current on create/update/delete: **tasks** reuse the existing [`TaskEventBus`](../packages/gateway/src/tasks/task-event-bus.ts) (the search module subscribes — `tasks.service` untouched); the other five inject `SearchIndexService` (`@Optional()`) and `upsert`/`remove` directly. Per-domain field→`title`/`body` mapping lives in one place: `search/lib/index-mappers.ts`.
+- [x] **Boundary:** the search module depends on domain **services** for backfill reads; domain services depend on the `@Global` `SearchIndexService` for maintenance. No repository crossing.
 
 ### A5. Backfill + reindex — **S–M**
-- [ ] **Boot backfill** — on startup, if the index is empty (fresh migration), populate it from existing rows across all domains (bounded batches). Pre-existing data must be searchable without a manual step.
-- [ ] **`POST /search/reindex`** — an admin route that rebuilds the index from scratch (drop + repopulate), for recovery / schema changes. Logged, idempotent.
+- [x] **Boot backfill** — `onApplicationBootstrap` populates a freshly-migrated (empty) index from all domains; fail-soft so a backfill problem can't crash startup.
+- [x] **`POST /search/reindex`** — an admin route that rebuilds the index from scratch (drop + repopulate). Idempotent.
 
 ---
 
-## Theme B — Search endpoint + ranking/snippets — **M**
+## Theme B — Search endpoint + ranking/snippets — **M** — ✅ DONE (PR #90, 2026-06-22 — see [done.md](done.md))
 
-- [ ] **`GET /search?q=&type=&limit=`** — a thin `SearchController` → `SearchService` that runs `SearchIndexService.query`, maps rows to `SearchResult` (route per `type`+`id`), groups counts by type, and returns `SearchResponse`. Empty/short `q` → empty result (don't scan on one char). Validate query via the shared schema.
-- [ ] **Ranking** — `bm25()` order; a light boost for **title** matches over **body** matches (a second indexed column weight or a post-rank nudge). Snippets via `snippet()`/`highlight()` with the match emphasized.
-- [ ] **Results render from the index** (Decision §6) — the denormalized `title`/`snippet` make a result row self-contained; the client routes by `type`+`id` without a re-fetch per result.
-- [ ] Gateway tests (`:memory:`): index 3 entity types, `MATCH` returns ranked results with snippets; `type=` filters; a deleted entity drops out after `.remove`; reindex rebuilds.
+- [x] **`GET /search?q=&type=&limit=`** — a thin `SearchController` → `SearchService` that runs `SearchIndexService.query`, maps rows to `SearchResult` (route per `type`+`id`), groups counts by type, and returns `SearchResponse`. Empty/short `q` (< 2 chars) → empty result. Validate query via the shared schema.
+- [x] **Ranking** — `bm25()` order with title weighted over body; `snippet()` with the match wrapped in `<mark>`.
+- [x] **Results render from the index** (Decision §6) — the denormalized `title`/`snippet` make a result row self-contained; the client routes by `type`+`id` without a re-fetch per result.
+- [x] Gateway tests (`:memory:`): ranked results + snippets; `type=` filters; counts-by-type; a deleted entity drops out; reindex rebuilds; backfill across all 6 domains. (Also: a `midnite search` CLI command + typed `search()` client.)
 
 ---
 
-## Theme C — Command palette integration — **M**
+## Theme C — Command palette integration — **M** — ✅ DONE (PR #96, 2026-06-22 — see [done.md](done.md))
 
 Realize the palette's anticipated "content search."
 
-- [ ] Extend [`command-palette.tsx`](../packages/web/components/command-palette.tsx) beyond navigation: a **debounced** query (with **abort-on-keystroke**) hits `GET /search`; render results **grouped by type** (Pages · Tasks · Projects · Memory · Notes · Councils · Workflows), with the existing page/nav commands as their own group.
-- [ ] Keyboard nav across groups (arrow keys, Enter to route to the entity's page, the existing ⌘K open/close). Per-group result cap with a "see all in Search" affordance → the `/search` page (Theme D).
-- [ ] Loading + empty states; keep nav-only behaviour instant (don't block page-jump on the network search).
+- [x] Extend [`command-palette.tsx`](../packages/web/components/command-palette.tsx) beyond navigation: a **debounced** query (with **abort-on-keystroke**) hits `GET /search`; render results **grouped by type** (Pages · Tasks · Projects · Memory · Notes · Councils · Workflows), with the existing page/nav commands as their own group.
+- [x] Keyboard nav across groups (arrow keys, Enter to route to the entity's page, the existing ⌘K open/close). Per-group result cap with a **"+N more"** count (the "see all in Search" deep-link → the `/search` page lands with **Theme D**).
+- [x] Loading + empty states; keep nav-only behaviour instant (don't block page-jump on the network search).
 
 ---
 
-## Theme D — Dedicated `/search` page — **M**
+## Theme D — Dedicated `/search` page — **M** — ✅ DONE (PR #105, 2026-06-22 — see [done.md](done.md))
 
 The "see everything" surface.
 
-- [ ] A `/search` route (App Router) reading `?q=` (deep-linkable; reuse [`search-bar.tsx`](../packages/web/components/search-bar.tsx)'s URL-backed pattern) → `GET /search` with a higher limit.
-- [ ] **Filter by type** (tabs / pills via [`filter-pills.tsx`](../packages/web/components/filter-pills.tsx)) and more rows per group than the palette; each result links to its entity. Highlighted snippets.
-- [ ] Empty / no-results / typing states; the palette's "see all" deep-links here with the query prefilled.
+- [x] A `/search` route (App Router) reading `?q=` (deep-linkable; reuses [`search-bar.tsx`](../packages/web/components/search-bar.tsx)'s URL-backed pattern) → one `GET /search` at the max limit.
+- [x] **Filter by type** ([`filter-pills.tsx`](../packages/web/components/filter-pills.tsx), `?type=`) — client-side over the single response (no refetch on toggle); pills show only matched types + counts. Grouped by type, more rows than the palette, each result links to its entity, highlighted snippets (shared `lib/highlight.tsx`).
+- [x] Empty / short-query / loading / no-results states; the palette's per-type "+N more" deep-links here with the query + type prefilled.
+
+**This closes Phase 20 (all themes A–D shipped).**
 
 ---
 
@@ -93,7 +95,7 @@ The "see everything" surface.
 
 ## Verification
 
-- [ ] With data across types, ⌘K → type a term → **grouped, ranked results** (tasks, projects, memory, …) appear; Enter routes to the entity. Page/nav commands still work instantly.
+- [x] With data across types, ⌘K → type a term → **grouped, ranked results** (tasks, projects, memory, …) appear; Enter routes to the entity. Page/nav commands still work instantly. *(Theme C — PR #96.)*
 - [ ] `GET /search?q=foo` returns ranked `SearchResult`s with snippets; `?type=task` filters to one type; counts-by-type are correct.
 - [ ] Creating an entity makes it findable; editing its title updates the match; deleting it removes it from results (write-path maintenance works, no trigger).
 - [ ] A DB with **pre-existing** rows (migration applied to populated data) is fully searchable after **boot backfill**; `POST /search/reindex` rebuilds the index.

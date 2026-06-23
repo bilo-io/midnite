@@ -232,6 +232,34 @@
   }
 }
 
+/* The preview panel (Theme C) layers a gentle "breathing" opacity pulse on top of
+   the rotating glow when hovered/focused — a more alive highlight than the steady
+   glow used elsewhere. Scoped to `.panel-glow` so other gradient-border surfaces
+   keep the calmer treatment. */
+@keyframes panel-glow-pulse {
+  0%,
+  100% {
+    opacity: 0.18;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.gradient-border.panel-glow:hover::after,
+.gradient-border.panel-glow:focus-within::after {
+  animation:
+    gradient-border-spin 4s linear infinite,
+    panel-glow-pulse 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gradient-border.panel-glow:hover::after,
+  .gradient-border.panel-glow:focus-within::after {
+    animation: none;
+  }
+}
+
 /* Terminal caret blink for the CLI showcase. */
 .caret {
   display: inline-block;
@@ -246,5 +274,25 @@
 @media (prefers-reduced-motion: reduce) {
   .caret {
     animation: none;
+  }
+}
+
+/*
+ * Global reduced-motion catch-all (Phase 11 B3). The rules above disable the
+ * site's named keyframe animations one by one; this is the belt-and-suspenders
+ * floor so every *transition* (hover/layout/colour, of which the components have
+ * many) and any animation added later also degrades to ~instant, and smooth
+ * scrolling falls back to a jump. JS-driven motion (the typewriter, the panel
+ * FLIP morph) is gated separately via lib/reduced-motion.ts. Together: no drift,
+ * no typing, instant panel placement — the site stays fully usable.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

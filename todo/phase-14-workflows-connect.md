@@ -23,15 +23,15 @@
 
 ---
 
-## Theme A — Live run streaming — **M**
+## Theme A — Live run streaming — **M** ✅ (PR #72)
 
 > **Data flow / `{{expr}}` templating is Phase 12, not here.** The expression engine ([`expression.ts`](../packages/shared/src/expression.ts)) already shipped — `resolveExpression` / `resolveParams`, a typed `ExpressionError`, and the `expressionable` field marker (PR #27). Wiring it through the engine (resolve-before-execute), the `logic.setData` / reshape / storage nodes, and the editor's ƒx affordance are all [phase-12-workflow-expressions.md](phase-12-workflow-expressions.md) (Themes B–F). **Phase 14 consumes that work** — every integration node in Theme C templates its params off upstream output once Phase 12 lands. Do not rebuild the resolver or re-add a `logic.setData` node.
 
 What's left on the **live-updates** side — which Phase 12 explicitly leaves out of scope (its P7) — is finishing the half-wired WS stream so the run panel updates without re-polling:
 
-- [ ] Rework [`use-workflow-run.ts`](../packages/web/lib/use-workflow-run.ts) to **apply `WorkflowEvent`s incrementally** to local run state (start → per-node transitions → finish) instead of re-fetching on every message; keep REST as the initial load + reconnect/backfill path only.
-- [ ] Run-output panel updates node statuses live from the event stream; polling becomes the explicit fallback when the socket is down.
-- [ ] Test the event→state reducer in isolation (shared event fixtures) so liveness is verifiable without a browser. *(Reused by the CLI `--watch` in Theme D.)*
+- [x] Rework [`use-workflow-run.ts`](../packages/web/lib/use-workflow-run.ts) to **apply `WorkflowEvent`s incrementally** to local run state (start → per-node transitions → finish) instead of re-fetching on every message; keep REST as the initial load + reconnect/backfill path only.
+- [x] Run-output panel updates node statuses live from the event stream; polling becomes the explicit fallback when the socket is down.
+- [x] Test the event→state reducer in isolation (shared event fixtures) so liveness is verifiable without a browser. *(Reused by the CLI `--watch` in Theme D.)*
 
 ---
 
@@ -39,11 +39,11 @@ What's left on the **live-updates** side — which Phase 12 explicitly leaves ou
 
 A secure home for the secrets that integration nodes need. Gate before Theme C.
 
-### B1. Workflow credential store — **M**
-- [ ] `workflow_credentials` table + repository (Drizzle migration): `id`, `name`, `type` (e.g. `slack`, `smtp`, `google-oauth`, `http-bearer`), encrypted `data` blob, timestamps. Reuse `CryptoService` — encrypt on write, decrypt on read, **fail-closed** when `MIDNITE_SECRET_KEY` is absent (same contract as provider keys, see [phase-7](phase-7-hardening-reports-widgets.md) A1).
-- [ ] `GET/POST/DELETE /workflow-credentials` (names + types only on read — **never** return secret material to the client). Zod schemas in `shared`.
-- [ ] HTTP node uses `credentialId` references for auth (bearer / basic / header) instead of inline plaintext; the engine resolves the credential server-side at execute time.
-- [ ] Web: a credentials manager (list / add / delete) and a credential picker in the node config panel.
+### B1. Workflow credential store — **M** ◐ PARTIAL (store + REST landed, PR #81)
+- [x] `workflow_credentials` table + repository (Drizzle migration 0032): `id`, `name`, `type` (`http-bearer`/`http-basic`/`http-header`/`slack`/`smtp`), encrypted `data` blob, timestamps. Reuses `CryptoService` — encrypt on write, decrypt only for server-side resolve, **fail-closed** when `MIDNITE_SECRET_KEY` is absent (same contract as provider keys, see [phase-7](phase-7-hardening-reports-widgets.md) A1).
+- [x] `GET/POST/DELETE /workflow-credentials` (names + types only on read — secret is write-only, **never** returned). Zod schemas in `shared`. `service.resolve(id)` decrypts+validates for executors.
+- [ ] HTTP node uses `credentialId` references for auth (bearer / basic / header) instead of inline plaintext; the engine resolves the credential server-side at execute time. *(follow-on — `WorkflowNode.credentialId` + `service.resolve()` already exist)*
+- [ ] Web: a credentials manager (list / add / delete) and a credential picker in the node config panel. *(follow-on)*
 
 ### B2. OAuth2 start/callback — **M**
 - [ ] `GET /oauth/:provider/start` → provider consent redirect; `GET /oauth/:provider/callback` → exchange code, store tokens as a `workflow_credentials` row, handle refresh. Driven by the existing `workflows.oauth` config block.
@@ -64,13 +64,13 @@ The payoff. Each is **one `NodeTypeDefinition` + one executor**, consuming Phase
 
 ---
 
-## Theme D — CLI parity — **S**
+## Theme D — CLI parity — **S** ✅ (PR #78)
 
 Workflows are API-only from the terminal today. Thin commander commands over the typed client (no business logic — CLAUDE.md).
 
-- [ ] `midnite workflow list` — table of workflows (name, enabled, trigger, last run).
-- [ ] `midnite workflow run <id>` — trigger a manual run; `--watch` tails the run via the WS stream (reuse the Theme A reducer) and renders per-node status.
-- [ ] `midnite workflow runs <id>` — recent run history for a workflow.
+- [x] `midnite workflow list` — table of workflows (name, enabled, trigger, last run).
+- [x] `midnite workflow run <id>` — trigger a manual run; `--watch` tails the run via the WS stream (reuse the Theme A reducer) and renders per-node status.
+- [x] `midnite workflow runs <id>` — recent run history for a workflow.
 
 ---
 

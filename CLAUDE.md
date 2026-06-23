@@ -135,6 +135,15 @@ CI runs `moon ci`. Lint violations fail the build — fix locally rather than af
 - Create PRs as drafts until ready for review
 - PR description should explain *why*, not just *what*
 
+### Releases
+
+- Versioning is **lockstep on `MAJOR.MINOR`** (every package shares it) with an
+  **independent `PATCH`** per package. `moon run root:version-check` enforces the
+  invariant in CI; the bump math lives in [`packages/shared/src/version.ts`](packages/shared/src/version.ts).
+- Cutting a release is a two-step flow (`/release-prep` → `/release-complete`); the
+  policy, bump triggers, and tag/branch scheme are documented in
+  [`docs/RELEASING.md`](docs/RELEASING.md). User-facing notes go in [`CHANGELOG.md`](CHANGELOG.md), kept separate from `todo/done.md`.
+
 ---
 
 ## TypeScript Code Style
@@ -214,6 +223,12 @@ Nest module per feature → `controller → service → repository`:
 - No triggers / no computed columns / no foreign keys across logical domains within the gateway
 - Repositories accept a `Db` (which can be a transaction) so services own transaction boundaries
 
+### Global Search (FTS5)
+
+- Cross-domain full-text search lives in the `search/` module: a single FTS5 virtual table `search_index(type, entity_id, title, body)` ranked with `bm25()` (Phase 20). `GET /search` is thin; `SearchService` maps hits → the shared `SearchResult` contract and adds the per-type route.
+- **No triggers means the index is maintained in the service write-path**, not by SQL: `SearchIndexService` (a `@Global` module, like the DB handle) exposes `upsert`/`remove`, and each domain service keeps its own rows current on create/update/delete. Tasks reuse the existing `TaskEventBus` (the search module subscribes — `tasks.service` is untouched); the other domains inject `SearchIndexService` directly (`@Optional()`, so unit specs need no edit). Per-domain field→`title`/`body` mapping lives in one place: `search/lib/index-mappers.ts`.
+- A boot **backfill** populates a freshly-migrated index from the domain services; `POST /search/reindex` rebuilds it. A new searchable domain adds a mapper + a write-path call (or a bus subscription).
+
 ### WebSocket Events
 
 - Event shapes live in `shared/src/events/` with discriminated `type` field
@@ -222,9 +237,13 @@ Nest module per feature → `controller → service → repository`:
 
 ### Scheduler & Agent Pool
 
+- **Task scheduling already orders by priority** (`task.priority` 0–3, `desc(priority), asc(createdAt)` in `listTasks`). **Task dependencies** (Phase 27) layer on top: a normalized `task_dependencies` edge table (`task_id` → `depends_on_task_id`) stores blockers, the dependent task's `dependsOn` is *derived* from the edges (no new status — "blocked" is computed, not stored), and integrity (self-ref / unknown / **cycle** via a DFS over the edges, mirroring the workflow-engine reachability check) lives in `tasks.service`. `TasksRepository.listReadyTodoTasks()` is the SQL ready-set (`todo` tasks whose every blocker is `done`); the scheduler's ready-gating consumes it in Theme B. Deleting a task clears its edges both directions (its dependents become unblocked).
 - The scheduler is a single tick loop owned by the gateway — never spawn parallel schedulers
 - Agent slots are tracked in-memory; persisted state is the source of truth on restart
 - Status transitions caused by Claude Code hooks come in as authenticated webhook calls (`POST /hooks/:taskId/:event`) with a per-session secret — never trust the body alone
+- **Process backend is pluggable** (Phase 17): the node-pty lifecycle lives behind a `Spawner` interface (`terminal/spawner/`), selected by `terminal.mode`. `pty` (default) dies with the gateway; `tmux` runs each session in a detached `midnite-<sessionId>` session that survives a restart. New backend code is **additive** — the `pty` path must stay behavior-preserving (its specs run unedited)
+- **Boot recovery lives in `AgentRunnerService.onModuleInit`** (not the pool): tasks left `wip`/`waiting` are requeued under `pty`, or **reattached** under durable `tmux` (still-live sessions resume; dead ones requeue; stray sessions are reaped). It runs after the pool initialises and before the scheduler's first tick (Nest dependency order) — keep it there so reattach has the slot/timeout/onExit wiring `start()` uses
+- **Durable shutdown diverges by mode**: `pty` `onModuleDestroy` kills every PTY; `tmux` *detaches* (leaves the session running) so a restart can reattach. Only explicit kill / idle-reap / graceful-stop ends a durable session
 
 ### Logging
 
@@ -256,6 +275,8 @@ Nest module per feature → `controller → service → repository`:
 - Components: function components + hooks only — no class components
 - No prop drilling beyond two levels — lift to Zustand or Context
 - Styling: **Tailwind CSS** (utility classes composed via a `cn()` helper) + shadcn-style HSL design tokens (CSS custom properties + a `.dark` block) in `globals.css`. The generic primitives and those tokens are the **design system**, being extracted into **`@midnite/ui`** (Phase 25) as the reusable, framework-agnostic source of truth — `web` consumes the lib's primitives + token CSS, while domain-coupled components (`TaskCard`, the board, the office) stay in `web`.
+- Responsive: breakpoints are defined once in [`lib/breakpoints.ts`](packages/web/lib/breakpoints.ts) (Tailwind-aligned `sm`/`md`/`lg`/`xl`/`2xl`). Device cutoffs: **mobile** `< md` (768px), **tablet** `md`–`lg`, **desktop** `>= lg` (1024px). Prefer Tailwind responsive variants (`md:`, `lg:`) for layout that reflows with the viewport; for JS that must branch its render (mount a drawer vs. a sidebar, desktop-only gates) use `useMediaQuery` / `useIsMobile` / `useIsTablet` / `useIsDesktop` from [`hooks/use-media-query.ts`](packages/web/hooks/use-media-query.ts) — never hand-write widths so CSS and JS stay on the same cutoffs
+- PWA (Phase 24 Theme C): the app is **installable**, not offline-capable. The manifest ([`public/site.webmanifest`](packages/web/public/site.webmanifest)) carries the real name/icons + theme-aware (dark) colours; iOS chrome comes from `metadata.appleWebApp` in [`layout.tsx`](packages/web/app/layout.tsx). The service worker ([`public/sw.js`](packages/web/public/sw.js), registered by [`pwa-register.tsx`](packages/web/components/pwa-register.tsx)) is **network-first for same-origin code** + a precached shell — it **never touches the gateway origin**, so live data is always fresh and there's no false offline promise. It only activates in a production build (skipped in `next dev`). The install affordance lives in Settings → Appearance ([`pwa-install.tsx`](packages/web/components/pwa-install.tsx)).
 
 ---
 

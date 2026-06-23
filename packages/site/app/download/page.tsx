@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { ArrowUpRight } from 'lucide-react';
 
-import { SceneBackdrop } from '@/components/scene/scene-backdrop';
+import { AmbientBackdrop } from '@/components/ambient-backdrop';
 import { Nav } from '@/components/nav';
 import { Footer } from '@/components/footer';
 import { Reveal } from '@/components/ui/section';
@@ -17,9 +17,9 @@ export const metadata: Metadata = {
 export default function DownloadPage() {
   return (
     <>
-      {/* Share the landing page's particle field + theming so the route feels part
-          of the same site (the panel mechanic stays landing-only). */}
-      <SceneBackdrop />
+      {/* Share the landing page's ambient backdrop so the route feels part of the
+          same site (the panel mechanic stays landing-only). */}
+      <AmbientBackdrop />
       <Nav />
       <main className="relative">
         <div className="bg-grid pointer-events-none absolute inset-0 -z-10 opacity-40" aria-hidden />

@@ -35,33 +35,33 @@ Stand up the package and its build before moving anything into it. **Landed — 
 
 ---
 
-## Theme B — Tokens & theming as the design-system foundation — **M**
+## Theme B — Tokens & theming as the design-system foundation — **M** — ✅ DONE (PR #57, 2026-06-21)
 
-The library owns the design system's source of truth (Decision §1 — tokens move, not just components).
+The library owns the design system's source of truth (Decision §1 — tokens move, not just components). **Landed — see [done.md](done.md).**
 
-- [ ] **Move the token set** — the HSL CSS vars + `.dark` block from [`globals.css`](../packages/web/app/globals.css) into `@midnite/ui` as a CSS entry (`tokens.css` / `@midnite/ui/styles`), plus a **typed token map** (TS constants for the same values, for JS consumers). Web imports the lib's token CSS instead of defining them locally (keep web's app-specific, non-DS globals in web).
-- [ ] **Move the theme runtime** — `ThemeProvider` / theme-context + the no-flash theme-script + the `useTheme` hook into the lib (light / dark / system / time), so any consumer gets theming for free. `theme-toggle` becomes a lib primitive.
-- [ ] **Scaffold the full DS taxonomy with placeholders** — structure the system end-to-end: **color** (filled), **spacing**, **typography**, **radius**, **shadow/elevation**, **z-index**, **motion/easing** — real values where they exist today, clearly-marked **placeholder** entries where they don't, so the design system is structurally complete and obviously extensible.
-
----
-
-## Theme C — Migrate the primitives + their stories — **M–L**
-
-Move the generic primitives in, keep web working with zero churn (Decision §2 — re-export shim first).
-
-- [ ] **Move** the generic primitives ([`web/components/ui/`](../packages/web/components/ui/): button, card, input, select, styled-select, switch, tabs, textarea, accordion, collapse) into `@midnite/ui`, with their `*.stories.tsx`. Assess `styled-select` (likely generic → moves) vs `asset-search-select` (domain-coupled → **stays in web**).
-- [ ] **Re-export shim** — `web/components/ui/*` become thin re-exports of `@midnite/ui` so the existing import sites across `web` keep compiling untouched (low-risk, incremental). A codemod that rewrites imports to `@midnite/ui` and deletes the shim is a **later** sweep (Decision §2), not this phase.
-- [ ] **Preserve Phase 10 coverage** — the migrated stories keep their `addon-vitest` + `addon-a11y` runs in the **lib's** Storybook (Theme D), so the a11y/interaction coverage isn't lost; web's Storybook keeps the **domain-component** stories. No story regresses.
+- [x] **Move the token set** — HSL CSS vars + `.dark` block now in `@midnite/ui/styles` (`tokens.css`, framework-agnostic) + a typed token map in `src/tokens`; web imports the lib's token CSS and keeps only app-specific globals (`--nav-offset`).
+- [x] **Move the theme runtime** — `ThemeProvider` / `useTheme` / theme-context + the no-flash script now in `@midnite/ui/theme` (the Vite build preserves `'use client'` for RSC); web re-exports via shims. (`theme-toggle` deferred to Theme C — it composes the `Button` primitive that moves there.)
+- [x] **Scaffold the full DS taxonomy with placeholders** — `color` + `radius` filled; `spacing`/`typography`/`shadow`/`zIndex`/`motion` present as clearly-marked placeholders.
 
 ---
 
-## Theme D — Storybook catalog + docs-app seam — **S–M**
+## Theme C — Migrate the primitives + their stories — **M–L** — ✅ DONE (PR #65, 2026-06-21)
 
-The library's Storybook is the component catalog and v1 design-system docs (Decision §3).
+Move the generic primitives in, keep web working with zero churn (Decision §2 — re-export shim first). **Landed — see [done.md](done.md).**
 
-- [ ] **Storybook in `@midnite/ui`** — `@storybook/react-vite` (pure Vite, no Next) + `addon-a11y` + `addon-vitest`, pinned to match Phase 10's versions. The primitive stories live here; `moon run ui:test` runs them as browser tests (parity with Phase 10 C1).
-- [ ] **Design-system docs (MDX)** — catalog pages beyond components: a **color/token palette**, **typography** specimen, spacing/radius/shadow scales, and **placeholder** pages for the not-yet-built parts — so the Storybook documents the *system*, not just the widgets.
-- [ ] **Docs-app seam (structure only)** — ensure the lib is cleanly consumable (working `exports`, the token CSS, peer-dep React) so a **future `packages/docs` Vite app** can import `@midnite/ui` and the tokens. The docs app itself is **out of scope** this phase (your "later" note) — the Storybook is the v1 docs surface.
+- [x] **Move** the 10 generic primitives (button, card, input, select, styled-select, switch, tabs, textarea, accordion, collapse) into `@midnite/ui/src/components` — logic-identical, only the `cn` import rewritten. `styled-select` moved (generic, wraps react-select); `asset-search-select` stays in web (domain-coupled).
+- [x] **Re-export shim** — `web/components/ui/*` are now thin re-exports of `@midnite/ui`; every import site compiles unchanged. Import-rewrite codemod deferred (Decision §2).
+- [◐] **Preserve Phase 10 coverage** — the primitive `*.stories.tsx` **stay in web** for now (still running in web's Storybook, consuming the shims → no regression); they migrate to the lib's own Storybook in **Theme D**.
+
+---
+
+## Theme D — Storybook catalog + docs-app seam — **S–M** — ✅ DONE (PR #69, 2026-06-21)
+
+The library's Storybook is the component catalog and v1 design-system docs (Decision §3). **Landed — see [done.md](done.md). Phase 25 is complete.**
+
+- [x] **Storybook in `@midnite/ui`** — `@storybook/react-vite` + `addon-a11y` + `addon-vitest` (+ `addon-docs` for MDX), pinned to Phase 10's versions. Primitive stories authored fresh (the primitives had none); `moon run ui:test` runs them as chromium browser tests (Phase 10 C1 parity) alongside the node unit tests.
+- [x] **Design-system docs (MDX)** — `Design System/*` pages: colour-token palette, typography specimen, radius scale + clearly-marked placeholders for spacing/shadow/z-index/motion, and a getting-started on-ramp.
+- [x] **Docs-app seam** — the lib is cleanly consumable (working `exports`, token CSS, peer React); Storybook is the v1 docs surface. `packages/docs` (Phase 26) can now import it.
 
 ---
 

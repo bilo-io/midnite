@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AdminModule } from './admin/admin.module';
 import { ConfigModule } from './config.module';
+import { ChecksModule } from './checks/checks.module';
 import { CryptoModule } from './crypto/crypto.module';
 import { DbModule } from './db/db.module';
 import { EnvironmentModule } from './environment/environment.module';
@@ -16,20 +17,26 @@ import { MemoriesModule } from './memories/memories.module';
 import { MetadataModule } from './metadata/metadata.module';
 import { NewsModule } from './news/news.module';
 import { NotesModule } from './notes/notes.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { PoolModule } from './pool/pool.module';
 import { ProjectsModule } from './projects/projects.module';
 import { ProvidersModule } from './providers/providers.module';
 import { ReposModule } from './repos/repos.module';
 import { RoutinesModule } from './routines/routines.module';
+import { SearchModule } from './search/search.module';
+import { SearchIndexModule } from './search/search-index.module';
 import { SessionsModule } from './sessions/sessions.module';
+import { SetupModule } from './setup/setup.module';
 import { UsageModule } from './usage/usage.module';
 import { WeatherModule } from './weather/weather.module';
 import { WorkflowsModule } from './workflows/workflows.module';
+import { WorkflowCredentialsModule } from './workflows/credentials/workflow-credentials.module';
 import { TerminalModule } from './terminal/terminal.module';
 
 @Module({
   imports: [
     ConfigModule,
+    ChecksModule,
     CryptoModule,
     DbModule,
     EnvironmentModule,
@@ -43,16 +50,21 @@ import { TerminalModule } from './terminal/terminal.module';
     MetadataModule,
     NewsModule,
     NotesModule,
+    NotificationsModule,
     RoutinesModule,
+    SearchIndexModule,
+    SearchModule,
     TasksModule,
     PoolModule,
     ProjectsModule,
     ProvidersModule,
     ReposModule,
     SessionsModule,
+    SetupModule,
     UsageModule,
     WeatherModule,
     WorkflowsModule,
+    WorkflowCredentialsModule,
     TerminalModule,
     AdminModule,
   ],

@@ -5,6 +5,9 @@ import {
   WeatherResponseSchema,
   LinkMetadataResponseSchema,
   AssetSearchResponseSchema,
+  SearchResponseSchema,
+  type SearchResponse,
+  type SearchType,
   MarketQuoteSchema,
   MarketHistoryResponseSchema,
   type AssetKind,
@@ -40,6 +43,10 @@ import {
   UsageSummaryResponseSchema,
   type UsageSummaryResponse,
   type UsageGroupBy,
+  NotificationListResponseSchema,
+  type NotificationListResponse,
+  type NotificationListQuery,
+  type MarkReadRequest,
 } from '@midnite/shared';
 import {
   AgentCliResponseSchema,
@@ -57,6 +64,8 @@ import {
   InstallTerminalResponseSchema,
   EnvironmentResponseSchema,
   type EnvironmentResponse,
+  SetupStatusSchema,
+  type SetupStatus,
   type EnvToolAction,
   type EnvToolId,
   BrowseDirResponseSchema,
@@ -670,6 +679,13 @@ export async function createCliTerminal(
   return terminalId;
 }
 
+// --- Setup readiness (Phase 19 — first-run wizard / soft nudge / status panel) ---
+
+/** Aggregate first-run readiness: the per-item checklist + derived `ready`. */
+export async function getSetupStatus(): Promise<SetupStatus> {
+  return fetchJson('/setup/status', undefined, SetupStatusSchema);
+}
+
 // --- Environment (system toolchain checker for Settings → System) ---
 
 /** Gateway host OS + install-state of every system tool for that OS. */
@@ -1091,6 +1107,24 @@ export async function getLinkMetadata(url: string): Promise<LinkMetadataResponse
   return fetchJson(`/metadata?${params.toString()}`, undefined, LinkMetadataResponseSchema);
 }
 
+// ---- Global full-text search (Phase 20) ----
+
+/**
+ * Cross-domain full-text search. The gateway returns ranked, self-contained
+ * {@link SearchResponse} hits (each carries its own `route` + `<mark>`ed snippet),
+ * so callers render and route without a per-hit re-fetch. Pass `signal` to abort
+ * a stale request when the user keeps typing (the command palette does this).
+ */
+export async function searchAll(
+  query: string,
+  opts: { type?: SearchType; limit?: number; signal?: AbortSignal } = {},
+): Promise<SearchResponse> {
+  const params = new URLSearchParams({ q: query });
+  if (opts.type) params.set('type', opts.type);
+  if (opts.limit != null) params.set('limit', String(opts.limit));
+  return fetchJson(`/search?${params.toString()}`, { signal: opts.signal }, SearchResponseSchema);
+}
+
 // ---- Dashboard widgets: Market stocks & crypto (gateway proxy) ----
 
 export async function searchAssets(kind: AssetKind, query: string): Promise<AssetSearchResult[]> {
@@ -1168,4 +1202,31 @@ export async function getUsageSummary(params?: {
   if (params?.groupBy) qs.set('groupBy', params.groupBy);
   const query = qs.toString() ? `?${qs.toString()}` : '';
   return fetchJson(`/usage/summary${query}`, undefined, UsageSummaryResponseSchema);
+}
+
+// ---- Notifications (Phase 21 — notification center + live feed) ----
+
+/** The persisted notification feed + unread count (`GET /notifications`). */
+export async function getNotifications(
+  query?: NotificationListQuery,
+): Promise<NotificationListResponse> {
+  const qs = new URLSearchParams();
+  if (query?.limit != null) qs.set('limit', String(query.limit));
+  if (query?.offset != null) qs.set('offset', String(query.offset));
+  const suffix = qs.toString() ? `?${qs.toString()}` : '';
+  return fetchJson(`/notifications${suffix}`, undefined, NotificationListResponseSchema);
+}
+
+/** Mark specific notifications read (`ids`) or all of them (`all`); returns the new unread count. */
+export async function markNotificationsRead(req: MarkReadRequest): Promise<{ unread: number }> {
+  return fetchJson(
+    '/notifications/read',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(req) },
+    z.object({ unread: z.number().int().nonnegative() }),
+  );
+}
+
+/** Clear the entire notification feed (`DELETE /notifications`). */
+export async function clearNotifications(): Promise<void> {
+  await fetchJson('/notifications', { method: 'DELETE' });
 }

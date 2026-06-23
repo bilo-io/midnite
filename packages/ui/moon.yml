@@ -9,9 +9,9 @@ language: 'typescript'
 # (Phase 25 §7): Vite bundles JSX/CSS/assets, vite-plugin-dts emits the types,
 # and typechecking still runs through `tsc --noEmit`.
 #
-# The `storybook` / `build-storybook` tasks land in Theme D alongside the
-# Storybook deps + `.storybook` config — declaring them here before Storybook
-# is installed would only give `moon ci` a task that can't run.
+# Theme D adds the `storybook` (dev server) + `build-storybook` (static catalog)
+# tasks alongside the Storybook deps + `.storybook` config, and wires the story
+# browser-test inputs into `test` (which vitest.config.ts now owns).
 tasks:
   build:
     command: 'pnpm exec vite build'
@@ -34,6 +34,26 @@ tasks:
     inputs:
       - 'src/**/*'
       - 'vite.config.ts'
+      - 'vitest.config.ts'
+      # Stories run as browser tests, so Storybook config (preview decorators,
+      # addons) + the Tailwind/PostCSS pipeline must invalidate the test cache.
+      - '.storybook/**/*'
+      - 'tailwind.config.ts'
+      - 'postcss.config.mjs'
+
+  storybook:
+    command: 'pnpm exec storybook dev -p 6007'
+    preset: 'server'
+
+  build-storybook:
+    command: 'pnpm exec storybook build'
+    inputs:
+      - 'src/**/*'
+      - '.storybook/**/*'
+      - 'tailwind.config.ts'
+      - 'postcss.config.mjs'
+    outputs:
+      - 'storybook-static'
 
   lint:
     command: 'pnpm exec eslint .'

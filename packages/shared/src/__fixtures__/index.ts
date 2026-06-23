@@ -42,6 +42,7 @@ export const taskFixture: Task = {
   priority: 1,
   retryCount: 0,
   tags: [],
+  dependsOn: [],
   events: [],
 };
 

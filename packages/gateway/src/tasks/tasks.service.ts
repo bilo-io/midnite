@@ -1,11 +1,13 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import {
+  ANSWER_EVENT_KIND,
   detectSourceKind,
   MAX_BULK_LINES,
   MAX_TAGS_PER_TASK,
   MAX_TASK_TAG_LENGTH,
   parseBulkLines,
+  TaskDependencyError,
   type BulkCreateTaskResponse,
   type BulkLineResult,
   type Status,
@@ -54,6 +56,8 @@ export interface CreateTaskInput {
   status?: Status;
   /** Scheduling priority 0..3 (higher runs first). Defaults to 1 (Normal). */
   priority?: number;
+  /** Ids of blocker tasks (Phase 27) — each must exist; the new task can't form a cycle. */
+  dependsOn?: string[];
   images: Array<ClassifierImage & { size: number; originalName?: string }>;
 }
 
@@ -260,17 +264,45 @@ export class TasksService {
   // task is still persisted and returned. Defaults to broadcasting.
   async createFromPrompt(input: CreateTaskInput, opts: { emit?: boolean } = {}): Promise<Task> {
     // Reject an unknown repo before any work (classify/triage/insert).
-    const repo = this.resolveRepoReference(input.repo);
+    const explicitRepo = this.resolveRepoReference(input.repo);
 
-    // Triage (plan model: ready→todo / not→backlog) and classify (title/kind)
-    // run concurrently — both are fail-soft, so neither breaks task creation.
-    const [classified, triage] = await Promise.all([
+    // Validate any requested blockers up front (existence + dedupe). A brand-new
+    // task can't be in a cycle — nothing depends on it yet — so only existence is
+    // checked; the edges are written after the task row exists.
+    const dependsOn = this.resolveDependencies(input.dependsOn);
+
+    // When the caller named no repo at all (vs. an explicit blank = "unassigned"),
+    // let the planner guess one from the registry (Phase 4 / outstanding #5).
+    // Runs alongside classify/triage and is fail-soft (→ null on AI-off/error/no
+    // match), so it never breaks creation. Skipped when the registry is empty.
+    const registry = input.repo === undefined ? this.repos.list() : [];
+    const guessPromise =
+      registry.length > 0
+        ? this.planner.guessRepo(
+            input.prompt,
+            registry.map((r) => ({ name: r.name, path: r.path })),
+          )
+        : Promise.resolve<string | null>(null);
+
+    // Triage (plan model: ready→todo / not→backlog), classify (title/kind), and
+    // the repo guess run concurrently — all fail-soft, so none breaks creation.
+    const [classified, triage, guessedRepo] = await Promise.all([
       this.classifier.classify(
         input.prompt,
         input.images.map((i) => ({ path: i.path, mime: i.mime })),
       ),
       this.planner.triage(input.prompt),
+      guessPromise,
     ]);
+
+    const repo = explicitRepo ?? guessedRepo;
+    const repoInferred = explicitRepo === null && guessedRepo !== null;
+
+    // A question is answered inline rather than queued for an agent: generate a
+    // direct answer (fail-soft → null) and, if we got one, resolve the task to
+    // `done` with the answer recorded on its thread. Only `question`-kind tasks
+    // take this path, so the extra plan-model call is rare.
+    const answer = classified.kind === 'question' ? await this.planner.answer(input.prompt) : null;
 
     const id = randomUUID();
     const now = new Date().toISOString();
@@ -279,9 +311,9 @@ export class TasksService {
       id,
       title: classified.title,
       kind: classified.kind,
-      // An explicit caller status wins; otherwise the planner's triage decides
-      // the landing column.
-      status: input.status ?? (triage.ready ? 'todo' : 'backlog'),
+      // A generated inline answer resolves the task to `done`; otherwise an
+      // explicit caller status wins, falling back to the planner's triage column.
+      status: answer ? 'done' : (input.status ?? (triage.ready ? 'todo' : 'backlog')),
       priority: clampPriority(input.priority),
       prompt: input.prompt,
       repo,
@@ -292,6 +324,10 @@ export class TasksService {
       createdAt: now,
       updatedAt: now,
     });
+
+    for (const dep of dependsOn) {
+      this.repo.addDependency(id, dep, now);
+    }
 
     for (const image of input.images) {
       this.repo.insertAttachment({
@@ -313,8 +349,23 @@ export class TasksService {
       data: JSON.stringify({
         promptLength: input.prompt.length,
         attachments: input.images.length,
+        // Audit trail: note when the repo was inferred by the planner rather
+        // than set by the caller, so an unexpected assignment is explainable.
+        ...(repoInferred ? { repo, repoInferred: true } : {}),
       }),
     });
+
+    // Record the inline answer on the task thread (surfaced in the web thread
+    // view) so the resolved question carries its answer with it.
+    if (answer) {
+      this.repo.insertEvent({
+        id: randomUUID(),
+        taskId: id,
+        at: now,
+        kind: ANSWER_EVENT_KIND,
+        data: JSON.stringify({ text: answer }),
+      });
+    }
 
     const task = this.getTask(id);
     if (opts.emit === false) return task;
@@ -500,5 +551,74 @@ export class TasksService {
     }
     this.repo.deleteLink(taskId, linkId);
     return this.emit('task.updated', this.getTask(taskId));
+  }
+
+  // ---- dependencies (Phase 27) ----
+
+  /**
+   * Add a blocker edge: `taskId` depends on `dependsOnId`. Rejects a
+   * self-reference, an unknown blocker, or an edge that would close a cycle
+   * (`TaskDependencyError`, mapped to 400/409 at the controller). Idempotent on
+   * a duplicate pair. Emits `task.updated` so the board's blocked chip refreshes.
+   */
+  addDependency(taskId: string, dependsOnId: string): Task {
+    if (!this.repo.getTask(taskId)) throw new NotFoundException(`task ${taskId} not found`);
+    if (taskId === dependsOnId) {
+      throw new TaskDependencyError('self-reference', 'a task cannot depend on itself');
+    }
+    if (!this.repo.getTask(dependsOnId)) {
+      throw new TaskDependencyError('unknown-task', `blocker task ${dependsOnId} not found`);
+    }
+    if (this.wouldCreateCycle(taskId, dependsOnId)) {
+      throw new TaskDependencyError(
+        'cycle',
+        `depending on ${dependsOnId} would create a dependency cycle`,
+      );
+    }
+    this.repo.addDependency(taskId, dependsOnId, new Date().toISOString());
+    return this.emit('task.updated', this.getTask(taskId));
+  }
+
+  /** Drop a blocker edge (idempotent). Emits `task.updated`. */
+  removeDependency(taskId: string, dependsOnId: string): Task {
+    if (!this.repo.getTask(taskId)) throw new NotFoundException(`task ${taskId} not found`);
+    this.repo.removeDependency(taskId, dependsOnId);
+    return this.emit('task.updated', this.getTask(taskId));
+  }
+
+  // Validate caller-supplied blocker ids for a new task: dedupe, drop blanks,
+  // reject a non-existent blocker. No cycle check needed — a task being created
+  // has no dependents yet, so no edge into it can exist.
+  private resolveDependencies(dependsOn: string[] | undefined): string[] {
+    if (!dependsOn || dependsOn.length === 0) return [];
+    const out: string[] = [];
+    const seen = new Set<string>();
+    for (const raw of dependsOn) {
+      const id = raw.trim();
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      if (!this.repo.getTask(id)) {
+        throw new TaskDependencyError('unknown-task', `blocker task ${id} not found`);
+      }
+      out.push(id);
+    }
+    return out;
+  }
+
+  // Would adding `taskId → dependsOnId` close a cycle? It does iff `dependsOnId`
+  // already (transitively) depends on `taskId`. DFS over the blocker edges from
+  // `dependsOnId` looking for `taskId` (mirrors the workflow-engine reachability
+  // check); `seen` guards against an already-cyclic store looping forever.
+  private wouldCreateCycle(taskId: string, dependsOnId: string): boolean {
+    const seen = new Set<string>();
+    const stack = [dependsOnId];
+    while (stack.length > 0) {
+      const current = stack.pop()!;
+      if (current === taskId) return true;
+      if (seen.has(current)) continue;
+      seen.add(current);
+      stack.push(...this.repo.dependenciesOf(current));
+    }
+    return false;
   }
 }

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { MAX_BULK_LINES } from '@midnite/shared';
 import type { Status, Task, TaskAttachment, TaskBoardEvent, TaskEvent } from '@midnite/shared';
 import type {
@@ -20,17 +20,27 @@ class StubClassifier extends TaskClassifier {
   }
 }
 
-// Always-ready planner so existing status assertions (→ todo) hold.
-const stubPlanner = { triage: async () => ({ ready: true }) } as unknown as PlannerService;
+// Always-ready planner that guesses no repo, so existing status assertions
+// (→ todo) and unassigned-repo assertions hold.
+const stubPlanner = {
+  triage: async () => ({ ready: true }),
+  guessRepo: async () => null,
+} as unknown as PlannerService;
 
-// A repo-registry stub: the given names resolve to a repo, everything else is
-// unknown. `stubRepos` (no names) is the default for tests that don't set a repo.
+// A repo-registry stub: the given names resolve to a repo (by name and via
+// `list()`); everything else is unknown. `stubRepos` (no names) is the default
+// for tests that don't set a repo.
 function reposWith(...names: string[]): ReposService {
+  const repos = names.map((name) => ({
+    id: name,
+    name,
+    path: `~/repos/${name}`,
+    createdAt: '',
+    updatedAt: '',
+  }));
   return {
-    findByName: (name: string) =>
-      names.includes(name)
-        ? { id: name, name, path: `~/repos/${name}`, createdAt: '', updatedAt: '' }
-        : undefined,
+    list: () => repos,
+    findByName: (name: string) => repos.find((r) => r.name === name),
   } as unknown as ReposService;
 }
 const stubRepos = reposWith();
@@ -167,6 +177,7 @@ class InMemoryRepo extends TasksRepository {
       projectId: row.projectId ?? undefined,
       prUrl: row.prUrl ?? undefined,
       tags: [],
+      dependsOn: [],
       archivedAt: row.archivedAt ?? undefined,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
@@ -263,6 +274,57 @@ describe('TasksService', () => {
 
     expect(task.repo).toBeUndefined();
     expect(repo.tasks[0]!.repo).toBeNull();
+  });
+
+  it('infers the repo from the registry when the caller names none (Phase 4 / outstanding #5)', async () => {
+    const repo = new InMemoryRepo();
+    const guessRepo = vi.fn(
+      async (_prompt: string, _repos: Array<{ name: string; path: string }>) => 'web',
+    );
+    const planner = { triage: async () => ({ ready: true }), guessRepo } as unknown as PlannerService;
+    const service = new TasksService(repo, new StubClassifier(), planner, new TaskEventBus(), reposWith('web', 'api'));
+
+    const task = await service.createFromPrompt({ prompt: 'fix the kanban drag', images: [] });
+
+    expect(task.repo).toBe('web');
+    // the guess was offered the full registry manifest (name + path)
+    expect(guessRepo.mock.calls[0]![1]).toEqual([
+      { name: 'web', path: '~/repos/web' },
+      { name: 'api', path: '~/repos/api' },
+    ]);
+    // the inference is recorded on the task.created event for auditability
+    const created = repo.events.find((e) => e.kind === 'task.created');
+    expect(JSON.parse(created!.data!)).toMatchObject({ repo: 'web', repoInferred: true });
+  });
+
+  it('an explicit repo wins over inference and the planner is not consulted', async () => {
+    const repo = new InMemoryRepo();
+    const guessRepo = vi.fn(
+      async (_prompt: string, _repos: Array<{ name: string; path: string }>) => 'web',
+    );
+    const planner = { triage: async () => ({ ready: true }), guessRepo } as unknown as PlannerService;
+    const service = new TasksService(repo, new StubClassifier(), planner, new TaskEventBus(), reposWith('web', 'api'));
+
+    const task = await service.createFromPrompt({ prompt: 'tweak the API', repo: 'api', images: [] });
+
+    expect(task.repo).toBe('api');
+    expect(guessRepo).not.toHaveBeenCalled();
+    const created = repo.events.find((e) => e.kind === 'task.created');
+    expect(JSON.parse(created!.data!).repoInferred).toBeUndefined();
+  });
+
+  it('does not infer a repo when the registry is empty', async () => {
+    const repo = new InMemoryRepo();
+    const guessRepo = vi.fn(
+      async (_prompt: string, _repos: Array<{ name: string; path: string }>) => 'web',
+    );
+    const planner = { triage: async () => ({ ready: true }), guessRepo } as unknown as PlannerService;
+    const service = new TasksService(repo, new StubClassifier(), planner, new TaskEventBus(), stubRepos);
+
+    const task = await service.createFromPrompt({ prompt: 'no repos registered', images: [] });
+
+    expect(task.repo).toBeUndefined();
+    expect(guessRepo).not.toHaveBeenCalled();
   });
 
   it('createFromPrompt records attachments against the new task', async () => {
@@ -362,6 +424,52 @@ describe('TasksService', () => {
     expect(clamped.priority).toBe(3);
   });
 
+  it('answers a question-kind task inline → resolves to done with an answer event', async () => {
+    const repo = new InMemoryRepo();
+    const classifier = {
+      classify: async (p: string) => ({ title: p.slice(0, 40), kind: 'question' as const }),
+    } as unknown as TaskClassifier;
+    const planner = {
+      triage: async () => ({ ready: true }),
+      answer: async () => 'Use a memoization helper.',
+    } as unknown as PlannerService;
+    const service = new TasksService(repo, classifier, planner, new TaskEventBus(), stubRepos);
+
+    const task = await service.createFromPrompt({ prompt: 'how do I memoize a fn?', images: [] });
+    expect(task.kind).toBe('question');
+    expect(task.status).toBe('done'); // answered inline, not queued for an agent
+    const answerEvent = repo.events.find((e) => e.kind === 'answer');
+    expect(answerEvent).toBeDefined();
+    expect(JSON.parse(answerEvent!.data as string)).toEqual({ text: 'Use a memoization helper.' });
+  });
+
+  it('leaves a question queued when no answer is produced (fail-soft)', async () => {
+    const repo = new InMemoryRepo();
+    const classifier = {
+      classify: async (p: string) => ({ title: p.slice(0, 40), kind: 'question' as const }),
+    } as unknown as TaskClassifier;
+    const planner = {
+      triage: async () => ({ ready: true }),
+      answer: async () => null,
+    } as unknown as PlannerService;
+    const service = new TasksService(repo, classifier, planner, new TaskEventBus(), stubRepos);
+
+    const task = await service.createFromPrompt({ prompt: 'unanswerable?', images: [] });
+    expect(task.status).toBe('todo'); // falls back to the planner's triage column
+    expect(repo.events.some((e) => e.kind === 'answer')).toBe(false);
+  });
+
+  it('does not attempt to answer non-question tasks', async () => {
+    const repo = new InMemoryRepo();
+    const answer = vi.fn();
+    const planner = { triage: async () => ({ ready: true }), answer } as unknown as PlannerService;
+    // StubClassifier returns kind 'feature'.
+    const service = new TasksService(repo, new StubClassifier(), planner, new TaskEventBus(), stubRepos);
+
+    await service.createFromPrompt({ prompt: 'add a setting', images: [] });
+    expect(answer).not.toHaveBeenCalled();
+  });
+
   it('retry bumps retryCount, returns the task to todo, and emits agent.retried', () => {
     const repo = new InMemoryRepo();
     seed(repo, ['wip']);
@@ -439,13 +547,16 @@ describe('TasksService.createBulk', () => {
     }
   });
 
-  it('applies batch-wide repo and priority to every created task', async () => {
+  it('applies batch-wide repo, priority, and project to every created task', async () => {
     const repo = new InMemoryRepo();
     const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus(), reposWith('midnite'));
 
-    await service.createBulk({ lines: ['one', 'two'], repo: 'midnite', priority: 3 });
+    await service.createBulk({ lines: ['one', 'two'], repo: 'midnite', priority: 3, projectId: 'proj-1' });
 
-    expect(repo.tasks.every((t) => t.repo === 'midnite' && t.priority === 3)).toBe(true);
+    expect(repo.tasks).toHaveLength(2);
+    expect(
+      repo.tasks.every((t) => t.repo === 'midnite' && t.priority === 3 && t.projectId === 'proj-1'),
+    ).toBe(true);
   });
 
   it('rejects a batch with an unknown repo before creating anything (Phase 13 B2)', async () => {

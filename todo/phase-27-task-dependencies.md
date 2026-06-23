@@ -18,20 +18,20 @@
 
 ---
 
-## Theme A — Dependency model (shared + gateway) — **M**
+## Theme A — Dependency model (shared + gateway) — **M** ✅ (PR #106)
 
 The blocker graph and its integrity rules.
 
 ### A1. `task_dependencies` table + repository — **S–M**
-- [ ] A normalized edge table `task_dependencies` (`task_id`, `depends_on_task_id`, `created_at`; unique on the pair) — forward-only migration; indexed both directions so "my blockers" and "who depends on me" are both cheap. Mirrors `task_links`/`task_events`.
-- [ ] Repository methods (Drizzle only): `addDependency`, `removeDependency`, `dependenciesOf(taskId)`, `dependentsOf(taskId)`, and a **ready-set** query (`todo` tasks whose every blocker is `done`) to back the scheduler (Theme B).
+- [x] A normalized edge table `task_dependencies` (`task_id`, `depends_on_task_id`, `created_at`; unique on the pair) — forward-only migration; indexed both directions so "my blockers" and "who depends on me" are both cheap. Mirrors `task_links`/`task_events`.
+- [x] Repository methods (Drizzle only): `addDependency`, `removeDependency`, `dependenciesOf(taskId)`, `dependentsOf(taskId)`, and a **ready-set** query (`todo` tasks whose every blocker is `done`) to back the scheduler (Theme B).
 
 ### A2. Shared schema + create/update — **S**
-- [ ] Extend [`task.ts`](../packages/shared/src/task.ts): a `dependsOn: string[]` on the read shape (derived from edges) and on `CreateTaskRequest`/an update request; a typed `TaskDependencyError`. zod + tests; typed client functions.
+- [x] Extend [`task.ts`](../packages/shared/src/task.ts): a `dependsOn: string[]` on the read shape (derived from edges) and on `CreateTaskRequest`/an update request; a typed `TaskDependencyError`. zod + tests; typed client functions. *(`dependsOn` is `.optional()` to match `links`/`attachments`; web/cli client calls deferred to Themes C/D when consumed.)*
 
 ### A3. Integrity: cycles, self-refs, existence — **M**
-- [ ] In [`tasks.service.ts`](../packages/gateway/src/tasks/tasks.service.ts): adding a dependency **rejects** a self-reference, a non-existent task, and any edge that would create a **cycle** (DFS over the existing edges — reuse the [`workflow-engine`](../packages/gateway/src/workflows/engine/workflow-engine.service.ts) cycle-check approach). Errors map to 400/409 at the controller.
-- [ ] Deleting a task cleans up its edges (both as blocker and dependent); document what happens to a task whose blocker is deleted (becomes unblocked).
+- [x] In [`tasks.service.ts`](../packages/gateway/src/tasks/tasks.service.ts): adding a dependency **rejects** a self-reference, a non-existent task, and any edge that would create a **cycle** (DFS over the existing edges — reuse the [`workflow-engine`](../packages/gateway/src/workflows/engine/workflow-engine.service.ts) cycle-check approach). Errors map to 400/409 at the controller.
+- [x] Deleting a task cleans up its edges (both as blocker and dependent); document what happens to a task whose blocker is deleted (becomes unblocked).
 
 ---
 

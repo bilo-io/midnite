@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger, type OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import type { AgentPoolSnapshot, MidniteConfig } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
 import { TasksService } from '../tasks/tasks.service';
@@ -15,12 +15,14 @@ interface PoolSlot {
 
 /**
  * Tracks the gateway's fixed set of agent slots in memory. Slots are NOT
- * persisted — tasks are the source of truth — so on boot we reconcile any task
- * left `wip`/`waiting` (its PTY died with the previous process) back to `todo`.
+ * persisted — tasks are the source of truth, so slots start idle on boot and are
+ * re-acquired on the next tick. Reconciling tasks left `wip`/`waiting` by a
+ * previous process (requeue, or reattach under the durable `tmux` backend) is
+ * owned by {@link AgentRunnerService.onModuleInit} (Phase 17 §C2), which has the
+ * session wiring reattach needs.
  */
 @Injectable()
-export class AgentPoolService implements OnModuleInit {
-  private readonly logger = new Logger(AgentPoolService.name);
+export class AgentPoolService {
   private readonly slots: PoolSlot[];
 
   constructor(
@@ -31,27 +33,6 @@ export class AgentPoolService implements OnModuleInit {
       id: `slot-${i}`,
       status: 'idle',
     }));
-  }
-
-  onModuleInit(): void {
-    // PTYs don't survive a gateway restart, so any task still wip/waiting has an
-    // orphaned (dead) session. Return them to the queue so the scheduler re-runs
-    // them; slots start idle and are re-acquired on the next tick.
-    const stale = this.tasks
-      .listTasks()
-      .filter((t) => t.status === 'wip' || t.status === 'waiting');
-    for (const task of stale) {
-      try {
-        this.tasks.requeue(task.id);
-      } catch (err) {
-        this.logger.warn(
-          `failed to reconcile orphaned task ${task.id}: ${err instanceof Error ? err.message : 'unknown'}`,
-        );
-      }
-    }
-    if (stale.length > 0) {
-      this.logger.log(`reconciled ${stale.length} orphaned wip/waiting task(s) → todo`);
-    }
   }
 
   capacity(): number {

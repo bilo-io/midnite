@@ -4,6 +4,498 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-22 — Phase 21 Theme C: notification center + toasts + browser opt-in (PR #107)
+
+Surfaces the Theme-A notification feed in the web app — the "an agent needs you / a task finished/abandoned" signal now actually reaches the user.
+
+- [x] **Typed clients** (`web/lib/api.ts`): `getNotifications` / `markNotificationsRead` / `clearNotifications` (the existing `GET /notifications`, `POST /notifications/read`, `DELETE /notifications`).
+- [x] **`NotificationsProvider` + `useNotifications`** ([`web/components/notifications-provider.tsx`](../packages/web/components/notifications-provider.tsx)): fetches the feed on mount, opens the `/ws/notifications` socket (mirrors `use-task-events` — subscribe frame, `NotificationEventSchema`-validated frames, capped-backoff reconnect, runs once via a stable ref). On `notification.created`: prepend + bump unread (pure, tested `notificationsReducer`, de-duped by id), fire a severity-styled toast (urgent = long-lived), and raise a browser notification when gated (pure, tested `shouldRaiseBrowserNotification`: `notifyTaskUpdates` + granted + hidden tab).
+- [x] **`NotificationCenter`** ([`web/components/notification-center.tsx`](../packages/web/components/notification-center.tsx)) in the nav bar: bell + unread badge (hidden at 0, `99+` cap), dropdown feed (newest-first, severity icons, relative time), per-row deep-link that marks-read, Mark-all-read + Clear, loading/empty states, outside-click/Escape close, accessible. Mounted in `(main)/layout.tsx` beside the other live-data providers.
+- [x] Removed the superseded task-event `use-task-notifications` hook (feed path covers waiting/done + abandoned, avoids double-fire). Caught + fixed a real dropdown clip (bell at bottom-left → opens upward+right). `web:test` 359 green (NotificationCenter RTL 9 + provider 13); `web:typecheck`/`:lint` + CI green. Screenshot under [`docs/screenshots/notification-center/`](../docs/screenshots/notification-center/). Built via a delegated subagent + independent review (its socket-deps + gate-test findings applied).
+- [x] **Deferred:** the Settings *policy/webhook* editing panel (Theme C's 4th bullet, ◐) — config-mirroring UI, a follow-up. Theme D (desktop-native notifications) still open.
+
+## 2026-06-22 — Phase 27 Theme A: task dependency model (PR #106)
+
+The agent pool ran tasks independently — no way to say "B can't start until A ships". This adds the blocker-graph substrate (model + integrity); ready-gated scheduling (Theme B) and UI/CLI (C/D) build on it. **No new status** — "blocked" stays *derived* from the edges + blocker states (Decision §2).
+
+- [x] **A1 — model:** `task_dependencies` edge table (`task_id` → `depends_on_task_id`, composite PK + reverse index) via forward-only migration `0036`. Repository `addDependency`/`removeDependency`/`dependenciesOf`/`dependentsOf` + `listReadyTodoTasks()` — the **ready-set** SQL (`todo` whose every blocker is `done`, correlated `NOT EXISTS`, keeping `desc(priority), asc(createdAt)`) that backs Theme B. `hydrate` derives `dependsOn`; `deleteTask` clears edges both directions (dependents unblock).
+- [x] **A2 — contract (`shared`):** optional `dependsOn` on the task read shape + `CreateTaskRequest`, an `AddTaskDependencyRequest` body, a typed `TaskDependencyError` (reason: self-reference | cycle | unknown-task). `.optional()` to match `links`/`attachments` (gateway always populates on read).
+- [x] **A3 — integrity + routes:** `tasks.service` rejects self-reference / unknown blocker / **cycle** (DFS over edges, mirroring the workflow-engine reachability check); `createFromPrompt` validates + attaches blockers. `POST`/`DELETE /tasks/:id/dependencies` map `TaskDependencyError` → 400 (self/unknown) / 409 (cycle).
+- [x] Tests: integration spec (add/self/unknown/cycle/diamond/remove, create-with-deps, delete cleanup + unblock, ready-set), controller 400/409 mapping, shared contract. `:typecheck`/`:lint`/`:test` (gateway 108 files · shared 406 · cli 34 · web 74) + CI green. CLAUDE.md documents the model. **Themes B/C/D remain.**
+
+---
+
+## 2026-06-22 — Phase 20 Theme D: dedicated /search page (PR #105) — **Phase 20 COMPLETE**
+
+The "see everything" surface — the last theme of global search (substrate A/B #90, palette C #96 already shipped). The palette caps each type with a "+N more" that now has a destination.
+
+- [x] **`/search` page** — reads `?q=` (the header `SearchBar` writes it) + `?type=` (`FilterPills`), runs one `GET /search` at the max limit, renders hits **grouped by type** with highlighted snippets, per-type counts, and a result-count summary. Idle / short-query / loading / no-results / error states.
+- [x] **Client-side type filtering** — the API `type` is single-value, so the page fetches all types once and the pills filter the single response locally (no refetch on toggle); pills show only matched types, labelled with counts.
+- [x] **Palette seam** — the per-type "+N more" is now a button that deep-links to `/search?q=&type=`.
+- [x] **DRY** — extracted the `<mark>`-snippet renderer into `lib/highlight.tsx` (shared by palette + page; no `dangerouslySetInnerHTML`); added a `Search` icon to `PageHeader`.
+- [x] Tests: 5-case RTL `search-results.test.tsx` (empty/short/grouped+highlighted+routing/client-filter-no-refetch/no-results) + palette test updated for the deep-link + a Playwright `search-page.e2e.ts` (seed → search → grouped → route; no-results). `web:typecheck`/`web:lint` green; `web:test` 342 green (via a throwaway worktree — vitest can't collect in `.git/worktrees`); CI green. *(Live screenshot skipped — the e2e harness's gateway wouldn't boot in the sandboxed worktree, unrelated to this web-only change; RTL + the CI e2e cover the states.)*
+
+---
+
+## 2026-06-22 — Phase 30 Theme A: quality-gate checks contract + runner (PR #102)
+
+The engine for "verified completion": Phase 30 will gate a task's `done` transition on configured checks. Theme A lands the contract + the runner only — no lifecycle wiring (B), no DB (B), no auto-fix (C), no surfaces (D).
+
+- [x] **shared `checks.ts`** — `Check` / `CheckResult` / `CheckRun` / `CheckTrigger` / `CheckRunStatus` zod shapes (barrel-exported), the optional+defaulted **`config.checks`** block (enabled, gates, per-repo `byRepo` overrides, autoFix, perCheckTimeoutMs, outputCapBytes), and the pure **`resolveChecksForRepo(checks, repoName)`** (byRepo REPLACES gates, Decision §5). Back-compat: a `midnite.json` with no `checks` key still parses. 9 unit tests.
+- [x] **gateway `ChecksService`** ([`checks/checks.service.ts`](../packages/gateway/src/checks/checks.service.ts) + [`lib/run-check.ts`](../packages/gateway/src/checks/lib/run-check.ts)) — runs a resolved `Check[]` sequentially in a repo cwd → a structured `CheckRun`. Each check runs `/bin/sh -c` via `spawn` (not `execFile` — output is tail-truncated to `outputCapBytes`, not a `maxBuffer` error), in a **detached process group** so a per-check timeout SIGKILLs the whole group (the shell *and* a forked grandchild like `sleep`, which would otherwise hold the pipes open) → `passed:false`, `exitCode:null`. Never throws into the caller. New `ChecksModule`, registered in `AppModule`.
+- [x] 10 gateway tests (pass/fail/stderr/timeout-kill/spawn-error/truncation/repo-relative-cwd + run aggregation). README documents `config.checks`. `:typecheck`/`:lint`/`shared:test` (402)/`gateway:test` (705) + `moon ci` green. **CI caught a real cross-platform bug** (Linux/dash forks `sleep` where macOS exec-replaces it — the orphaned child stalled `close`); fixed with the detached-group kill. Independent review otherwise clean.
+- [x] **Remaining for Phase 30:** Theme B (gate the `done` seam + `task_check_runs` table), C (auto-fix loop), D (web/CLI surfaces).
+
+## 2026-06-22 — Phase 21 Theme A: notifications foundation — model + ingestion + feed (PR #103)
+
+midnite runs many agents in parallel, but you had to *watch the board* to know when one needed you. Theme A is the substrate for a "tap on the shoulder"; channel dispatch (browser/webhook = Theme B) and the web center/toasts (Theme C) layer on top.
+
+- [x] **Contract (`shared/src/notification.ts`)** — `Notification` schema (kind/severity/entity/route/readAt), the `notification.created` WS event + path, list/mark-read request schemas, and a pure `notifyForTask` policy (waiting→warn, done→info, abandoned→urgent — all toggleable). Defaulted `config.notifications` block (events + channels). zod + tests.
+- [x] **Table + repo** — a `notifications` table (migration `0035`) + repository: paged **unread-first** feed, `markRead(ids)`/`markAllRead`, `clear`, `countUnread`.
+- [x] **`NotificationsService`** — a **pure subscriber** to `TaskEventBus` (no new emit paths): applies the policy, **coalesces** same-kind bursts in a 1.5s window (a mass move → one "N tasks finished", not a storm), persists, and emits `notification.created` via `NotificationEventBus` → `NotificationsGateway` (`/ws/notifications`, origin-guarded). Thin REST: `GET /notifications`, `POST /notifications/read`, `DELETE /notifications`.
+- [x] Tests: 9-case `:memory:` service spec (severity mapping, non-terminal ignored, toggle off, burst-coalesce, disabled-no-subscribe, mark-read/all + clear, unread-first ordering, destroy stops ingestion) + 9 shared contract/policy/config tests. `:typecheck`/`:lint` green; `gateway:test` 704 green; CI green on re-run (first run hit the pre-existing flaky `terminal` env-dump spec, unrelated). Backend-only — no web surface yet.
+
+---
+
+## 2026-06-22 — Phase 24 Theme C: installable PWA (PR #101)
+
+Phase 24 made the app responsive; the manifest was still an empty white stub, so it wasn't installable. This makes midnite a real PWA — installable to the home screen, launching standalone with a fast cached shell. **Installable, not offline:** board/session data stays live from the loopback gateway.
+
+- [x] **Manifest** ([`site.webmanifest`](../packages/web/public/site.webmanifest)) — real `name`/`description`, **theme-aware dark** `theme_color`/`background_color` (was `#ffffff`), `id`/`start_url`/`scope`, `display: standalone`, and a **maskable** icon (the logo padded into the safe zone as an SVG — no image tooling needed). Apple chrome via `metadata.appleWebApp` in [`layout.tsx`](../packages/web/app/layout.tsx).
+- [x] **Service worker** ([`public/sw.js`](../packages/web/public/sw.js)) — network-first for the same-origin shell + a precached static set; **scoped to asset/navigation `destination`s so it never caches gateway API data**, even under Phase 3 same-origin serving (review caught this). Registered production-only by [`pwa-register.tsx`](../packages/web/components/pwa-register.tsx) (a SW would fight `next dev` HMR).
+- [x] **Install affordance** ([`pwa-install.tsx`](../packages/web/components/pwa-install.tsx)) in Settings → Appearance: `beforeinstallprompt` on Chromium, manual Share → Add to Home Screen on iOS, confirms when already standalone.
+- [x] Tests: RTL (install flow, registration gating, manifest validity); ESLint gained a service-worker-globals scope for `public/sw.js`. README + CLAUDE.md document installable-not-offline + the loopback-only reach caveat. `:typecheck`/`:lint`/`web:test` (337) + `moon ci` green. Phase 24 now has Theme A3 + Theme B open.
+
+## 2026-06-22 — Phase 4 tracker reconcile — Inference COMPLETE (docs)
+
+Phase 4's remaining items shipped under later phases but the trackers still said "NOT IMPLEMENTED". Verified each against the code and reconciled (no code change):
+
+- [x] **URL + GitHub-context inference** (#3) — done via **Phase 15 Theme B** (`UrlContextService` wired into `agent-runner.start()`, `gh`-first + SSRF-guarded, truncated injection).
+- [x] **Knowledge-dir watcher + MD injection** (#7) — done via **Phase 15 Theme D** (PR #95): `knowledge-watcher.service.ts` + `chokidar`, manifest → planner selection → byte-capped content injection ("Knowledge files", distinct from link "Sources").
+- [x] Also ticked the already-shipped Phase-4 items the gap tracker missed: **bulk/paste** (#2, Phase 16 A/B/C), **inline answers** (#6, PR #55) — alongside **repo guessing** (#5, PR #88).
+- [x] [`phase-4-inference.md`](phase-4-inference.md) → ✅ complete; [`outstanding.md`](outstanding.md) Phase-4 rows + intro reconciled (only optional #8/#11/#12 remain).
+
+## 2026-06-22 — Phase 11 B3: global reduced-motion catch-all for the public site (PR #98)
+
+Closed out Phase 11's reduced-motion acceptance. B3's perf items (cap DPR / pause rAF) were already **moot** — the WebGL particle field was removed in PR #68 for a static CSS `AmbientBackdrop` — so the remaining gap was motion *coverage*: the site disabled its named keyframe animations one-by-one (reveal/gradient-border/panel-glow/caret) and gated JS motion (typewriter, panel FLIP) via `lib/reduced-motion.ts`, but the many component **transitions** (hover/layout/colour) and smooth-scroll weren't covered.
+
+- [x] Added a **global `@media (prefers-reduced-motion: reduce)` catch-all** to [`packages/site/app/globals.css`](../packages/site/app/globals.css): floors `animation-duration`/`transition-duration` to ~instant for `*`, caps `animation-iteration-count`, and forces `scroll-behavior: auto` — a belt-and-suspenders floor so current transitions and any future animation degrade safely, complementing the existing targeted rules + JS guards.
+- [x] Verified against `moon run site:dev` under Playwright's emulated reduced-motion: the at-rest landing render is pixel-identical to normal (byte-identical screenshots) → fully usable, nothing hidden/broken. Screenshot committed under `docs/screenshots/site-reduced-motion/`.
+- [x] Reconciled the Phase 11 acceptance checklist: ticked the reduced-motion item; marked the particle-field item ❌ superseded by PR #68. `site:typecheck`/`:lint`/`site:test` (19) green.
+
+## 2026-06-22 — Phase 7 A4: recovery audit — orphaned workflow runs + shutdown hooks (PR #99)
+
+Closed the two open A4 items. Both were invisible until a crash/restart:
+
+- [x] **Orphaned workflow runs.** Runs execute as in-process JS (no PTY/process), so a run still `running` after a restart was stuck forever — tasks requeue orphaned `wip` and councils fail stale runs, but workflows had no boot recovery. New `WorkflowRecoveryService.onModuleInit` fails every `running` run (sets `error: "gateway restarted mid-run"` + `finishedAt`), fails its in-flight (`running`) node-runs, and emits `run.failed` on the bus. Idempotent. Repo gained `listRunningRunRows()` + `failRunningNodeRuns()`.
+- [x] **Graceful shutdown.** `bootstrap.ts` never called `app.enableShutdownHooks()`, so Nest didn't listen for SIGINT/SIGTERM and **`onModuleDestroy` never ran on a normal exit** — the terminal service's PTY teardown (kill under `pty`, detach under `tmux`) and the schedulers' timer cleanup silently didn't fire, orphaning live PTYs. Added the call. Audit finding: managed agent-run PTYs are pinned handles in the terminal service's same teardown loop, so they were already covered — only the hooks were missing.
+- [x] Tests: 5-case `:memory:` spec for `WorkflowRecoveryService` (clean-boot no-op, stale→failed + event, node-run reconciliation, finished-runs untouched, cross-workflow sweep). `gateway:typecheck`/`lint` green; `gateway:test` 695 green; CI green on re-run (first run hit the pre-existing flaky `terminal` env-dump spec, unrelated).
+
+## 2026-06-22 — Phase 7 Theme C: per-repo status dashboard widget (PR #97) — **Theme C COMPLETE**
+
+The last open Theme C widget (after LLM-usage, Shipped, Quick capture): how the fleet is spread across repos at a glance. Unblocked by repos-first-class (Phase 13).
+
+- [x] **Pure `summarizeByRepo(tasks, repos)`** ([`web/lib/repo-status.ts`](../packages/web/lib/repo-status.ts)): per-repo rollup — `running`=wip+waiting (holding an agent), `queued`=todo, +backlog/done. Every registered repo gets a row (idle at zero); **Unassigned** only when some task has no repo, pinned last; archived/abandoned excluded; sorted by activity.
+- [x] **`RepoStatusWidget`** ([`web/components/repo-status-widget.tsx`](../packages/web/components/repo-status-widget.tsx)): polls `getTasks`+`getRepos` (the task WS broadcast also refreshes); status-coloured count chips, dimmed zeros; loading/error/empty states mirror the Shipped widget. Registered (agents category, single-instance) + wired into the grid renderer.
+- [x] Tests: 5 helper + 3 RTL + a registry assertion + a Playwright e2e (`repo-status.e2e.ts`, seeds repos + repo-assigned tasks over the live gateway). `web:test`/`:typecheck`/`:lint` + CI green. Screenshot under [`docs/screenshots/repo-status/`](../docs/screenshots/repo-status/). (The e2e wasn't runnable locally — the e2e *gateway* fails to boot from a fresh DB on this box, reproduced on the unmodified `board.e2e`; a local e2e-harness/env issue, not this change, and CI's gateway tests are green.)
+
+## 2026-06-22 — Phase 20 Theme C: command palette content search (PR #96)
+
+Surfaces the global-search backend (Theme A/B) in the UI: the ⌘K palette now searches content, not just navigates. Closes the gap where `GET /search` had no consumer in the app.
+
+- [x] **`searchAll()` typed client** ([`web/lib/api.ts`](../packages/web/lib/api.ts)) — wraps `GET /search` with an `AbortSignal` for cancellation.
+- [x] **Palette content search** ([`command-palette.tsx`](../packages/web/components/command-palette.tsx)) — a **debounced, abort-on-keystroke** query renders ranked hits **grouped by type** (Tasks · Projects · Memory · Notes · Councils · Workflows) beneath the instant page jumps. Keyboard nav spans every group; Enter routes to the entity. Snippets highlight matches via real `<mark>` elements parsed from the server's `<mark>`-wrapped snippet — **no `dangerouslySetInnerHTML`**. Per-group cap with a **"+N more"** count (from the response's full `byType`); short/blank queries never touch the network so page-jump stays instant.
+- [x] Tests: RTL suite (grouping, capping, snippet highlighting, result routing, the short-query gate, network-skip on empty query), an updated Storybook interaction, and a new [`search-palette.e2e.ts`](../packages/web/e2e/search-palette.e2e.ts) flow proving the real index→endpoint→palette→route wire. `:typecheck`/`:lint`/`web:test` (318) green; `moon ci` green first try; independent review found no bugs (XSS-safe snippet, correct abort/cleanup, aligned keyboard nav). The "see all → `/search` page" deep-link is deferred to **Theme D** (the `/search` page); Phase 20 now has only Theme D open.
+
+## 2026-06-22 — Phase 15 Theme D: knowledge-files watcher + MD injection (PR #95) — **Phase 15 COMPLETE**
+
+The original plan's "watched folder of MD files" — the last open theme of Phase 15. Gives midnite a second, file-based knowledge base distinct from the link-based **Sources**: standing project conventions/runbooks/domain notes injected automatically into the right runs.
+
+- [x] **`config.knowledge`** (`shared`) — `{ enabled, dir?, maxBytes }`, defaulted so existing `midnite.json` files keep validating.
+- [x] **`KnowledgeWatcherService`** — watches `config.knowledge.dir` with **chokidar v3** (CommonJS — v4/v5 are ESM-only and the gateway builds CJS), keeps an in-memory manifest of each file's headings fresh on add/change/unlink, reads selected content on demand (path-guarded to the root). Files on disk are the source of truth — no DB.
+- [x] **`KnowledgeService`** — at task start, shows the plan model the manifest, it picks relevant files (validated against the manifest — can't name an off-disk file), and their content is folded into the seed prompt as a capped **"Knowledge files"** block, between URL-context and repo-conventions. Mirrors `UrlContextService`: best-effort + fail-open. Wired via `AgentRunnerService` (`@Optional()` so the runner's unit specs are unchanged).
+- [x] Tests: pure-helper (heading parse, manifest render, selection validation, byte-capped block) + `KnowledgeService` spec (disabled/AI-off/empty/selection/fail-open/path-rejection, with fakes) + a real-temp-dir watcher spec (boot index, live add/change/unlink, path-traversal refusal). Full-graph `:typecheck`/`:lint` green; `gateway:test` 686 green; CI green. README documents `config.knowledge` + knowledge-files-vs-sources.
+
+## 2026-06-22 — Phase 3: serve the web static export from the gateway (PR #93)
+
+Closes Phase 3's last real gap: a single process can serve both the API and the browser UI in prod. The web app is a Next `output: 'export'` bundle (fully static, multi-page; all data fetched client-side; the `[id]` dirs are colocated components, not routes), so this needed no SSR / SPA-fallback / proxy — just a static mount mirroring `/uploads/`.
+
+- [x] **`gateway.webDir`** config field ([`shared/src/config.ts`](../packages/shared/src/config.ts)) + `MIDNITE_WEB_DIR` env override ([`gateway/lib/load-config.ts`](../packages/gateway/src/lib/load-config.ts)). Optional — unset = off (dev keeps the standalone `next` server), so no default behaviour change.
+- [x] **[`lib/serve-web.ts`](../packages/gateway/src/lib/serve-web.ts)** — `registerWebStatic` mounts the export at `/` via `@fastify/static` (`decorateReply: false`, like `/uploads/`); returns `{ served, root }`. bootstrap wires it when `webDir` is set. Controllers' specific routes (`/tasks`, `/search`, `/uploads/…`) keep priority over the `/*` file mount; the terminal WS upgrade isn't a GET route.
+- [x] **Integration test** ([`serve-web.test.ts`](../packages/gateway/src/lib/serve-web.test.ts), 4 tests): boots Fastify against a temp export — `/` + nested `/board/` + `/_next/*` served, a specific API route still wins, missing path 404s, relative `webDir` resolves to an absolute root.
+- [x] README documents `webDir` / `MIDNITE_WEB_DIR` + the build-then-serve flow. `:typecheck`/`:lint`/`gateway:test` (668) + `moon ci` green first try; independent review found no bugs (its return-value + coverage tidy applied). Phase 3's only remaining open item is the TanStack-Query setup — a recorded deliberate deviation (custom hooks ship instead).
+
+## 2026-06-22 — Phase 5 reconciled & closed ✅ — **Phase 5 COMPLETE**
+
+Phase 5 ("Polish") had sat ⚠️ PARTIAL since 2026-06-19 with six open boxes, but every one had since been resolved by a later phase or deliberately dropped — the doc just hadn't been reconciled. Verified each against the code and closed the phase (docs-only; no behaviour change):
+
+- [x] **`TmuxSpawner`** → done via **Phase 17 B** (PR #77): pluggable `Spawner` interface + durable `tmux` backend that survives a gateway restart. Verified [`terminal/spawner/spawner.ts`](../packages/gateway/src/terminal/spawner/spawner.ts) + [`tmux-spawner.ts`](../packages/gateway/src/terminal/spawner/tmux-spawner.ts).
+- [x] **`WarpSpawner` / `ItermSpawner`** → ❌ dropped in **Phase 17 C1** (PR #77): `terminal.mode` pruned to `pty | tmux` (verified [`config.ts`](../packages/shared/src/config.ts)). Native terminal windows don't compose with the gateway-owned browser PTY stream (outstanding.md #10).
+- [x] **Per-repo branch naming + PR-template injection** → done via **Phase 13** (PR #74): `branchPrefix`/`prTemplate` per-repo fields, injected into the agent seed prompt by [`pool/lib/build-agent-prompt.ts`](../packages/gateway/src/pool/lib/build-agent-prompt.ts) under a "Repository conventions" section (verified). Landed on the DB-backed repo registry rather than raw `RepoConfig`.
+- [x] ⏳ **Suspend `waiting` sessions** → deliberately deferred: `waitingHoldsSlot` defaults `true` (verified [`config.ts`](../packages/shared/src/config.ts)); the conservative behaviour, revisit only under real slot pressure.
+- [x] Priorities, retries, per-repo caps, eslint/prettier, CI, and the Vitest suites had already shipped in Phase 5 itself.
+
+Phase 5's status is now ✅ COMPLETE; outstanding.md #8/#9/#10 were already ticked, #12 stays deferred. No code changed — `moon ci` trivially green (no packages affected).
+
+## 2026-06-22 — Phase 7 Theme C: quick-capture dashboard widget (PR #91)
+
+The last open Theme C widget (LLM-usage + Shipped already shipped): add a task — or paste a list — without leaving the dashboard. A *placeable* grid widget (addable/removable/positionable from the catalogue), distinct from the always-on bottom prompt composer.
+
+- [x] **`QuickCaptureWidget`** ([`web/components/quick-capture-widget.tsx`](../packages/web/components/quick-capture-widget.tsx)): single mode → `POST /tasks`; **Bulk** toggle → `POST /tasks/bulk` (outstanding #2, one coalesced board event). Status defaults to `todo` (planner triages); the repo is **inferred** (PR #88). `⌘/Ctrl+↵` submits; inline confirmation/error; `invalidateData()` (the task WS broadcast also refreshes). Registered in the widget registry (tasks category, single-instance, no config) + wired into the grid renderer.
+- [x] Tests: 5 RTL cases + a registry assertion + a Playwright e2e (`quick-capture.e2e.ts` — seed widget → add against the live gateway → appears in the board's Todo column; single + bulk). `:typecheck`/`:lint`/`web:test`/`web:build` green; CI green. Screenshots committed under [`docs/screenshots/quick-capture/`](../docs/screenshots/quick-capture/).
+
+## 2026-06-22 — Phase 20 Theme A+B: global search FTS5 substrate + endpoint (PR #90)
+
+The app had grown wide (tasks, projects, memory, notes, councils, workflows) with no way to jump to a thing by name — the ⌘K palette was navigation-only and per-page search only filtered already-loaded rows. This lands the **server-side substrate** for real global search; the web palette/page (Theme C/D) are a follow-on.
+
+- [x] **Contract (`shared/src/search.ts`)** — `SearchResult` discriminated union (6 domains), `SearchResponse` (`results` + `total` + per-type `byType`), `SearchQuery` (zod, coerced `limit`). zod + tests.
+- [x] **FTS5 index** — migration `0034` adds a unified `search_index(type, entity_id, title, body)` virtual table (both keys UNINDEXED); `SearchIndexService` owns `upsert`/`remove`/`query` with `bm25()` ranking (title boosted over body) and `<mark>` snippets. Authored as a `drizzle-kit --custom` migration; raw `sql` queries.
+- [x] **Write-path maintenance, no triggers** (per CLAUDE.md) — `SearchIndexService` is a `@Global` module. **Tasks** reuse the existing `TaskEventBus` (the search module subscribes — `tasks.service` untouched); the other **five** domains inject the index `@Optional()` (so unit specs need no edit) and upsert/remove on create/update/delete. Per-domain field→`title`/`body` mapping centralised in `search/lib/index-mappers.ts`.
+- [x] **Backfill + reindex** — boot backfill (fail-soft) populates a freshly-migrated index from the domain services; `POST /search/reindex` rebuilds it.
+- [x] **`GET /search`** (Theme B) — thin controller → `SearchService` mapping hits to routed `SearchResult`s + per-type counts; short/blank `q` short-circuits. FTS `MATCH` built from a quoted-prefix tokeniser (`search/lib/fts-query.ts`) so user syntax chars can't error or inject.
+- [x] **CLI** — `midnite search <query>` (`--type`/`--limit`) + a typed `search()` client method.
+- [x] Tests: 27 gateway search specs + 7 shared + 10 CLI, all green. `:typecheck`/`:lint`/`web:typecheck` green; CI green (only local failure was the pre-existing sandbox-only `tmux` spawner-contract spec, untouched here). Documented the search module + FTS-in-service-layer pattern in CLAUDE.md.
+
+## 2026-06-22 — Phase 29 Theme D: `/release-complete` skill + release-finalising helpers (PR #89) — **Phase 29 tooling COMPLETE**
+
+The irreversible half of the two-step release flow, pairing with `/release-prep` (Theme C, PR #87). Same split as C: the skill orchestrates git/gh, but the decision-bearing logic lives in tested pure helpers.
+
+- [x] **Helpers** [`packages/shared/src/release.ts`](../packages/shared/src/release.ts): `extractChangelogSection` (pull a version's section for `gh release create --notes`; also the dated-section precondition — `date: null` ⇒ not finalised); `planReleaseTags` (the tag scheme, Decision §3 — lockstep `vX.Y.Z` vs scoped `‹pkg›@X.Y.Z` per bumped package; first release with empty `previous` → `vX.Y.Z`; throws on non-lockstep `previous`); `versionFromReleaseBranch` (`release/vX.Y.Z` → `X.Y.Z`).
+- [x] **Tests** [`release.test.ts`](../packages/shared/src/release.test.ts) — 44 in the file (16 new): section extraction (dated/undated/missing/no-bleed/no-link-refs/dot-escaping/empty-body), the lockstep-vs-scoped split (incl. root `midnite@X.Y.Z`, first-release, skew-throws), branch parsing.
+- [x] **Skill** [`.claude/skills/release-complete/SKILL.md`](../.claude/skills/release-complete/SKILL.md): refuse-on-failed-preconditions (release branch / clean tree / version-check + `moon ci` green / dated changelog) → tag plan + explicit go/no-go `AskUserQuestion` → `chore(release)` commit + tag(s) → push + merge to `main` + GitHub Release (edits the `release.yml` draft so desktop installers survive) → re-seed `Unreleased`. Aborts cleanly before the first irreversible step; reports partial state on mid-publish failure rather than retrying.
+- [x] [`docs/RELEASING.md`](../docs/RELEASING.md) status: both skills landed. `:typecheck`/`:lint`/`shared:test` (381) + `moon ci` green first try; independent review found two `planReleaseTags` gaps (first-release + skewed input) — both fixed + tested.
+- [x] **Phase 29 tooling complete** (A policy + B changelog + C `/release-prep` + D `/release-complete`). Remaining: cut the first real `v0.1.0` as a deliberate run (Decision §7).
+
+## 2026-06-22 — Phase 4: infer target repo at task creation (PR #88) — closes outstanding #5
+
+Repos went first-class + DB-backed in Phase 13, but nothing ever *set* `task.repo` automatically — a user had to pick it. With #4 done, the planner now guesses it, completing the repos-first-class story (the agent's PTY opens in the right repo unattended).
+
+- [x] **`PlannerService.guessRepo(prompt, manifest)`** ([`agent/planner.service.ts`](../packages/gateway/src/agent/planner.service.ts)): guesses the target repo on the plan model from the registry manifest (name + path). Picks from an **enum of known names (+ `""`)** and **validates the result against the manifest** — can't introduce a dangling reference (the Phase 13 B2 anti-footgun). **Fail-soft** like `triage`/`answer` (AI-off / error / empty registry / no clear match → `null`); a **single** registered repo is returned without an LLM call.
+- [x] **`TasksService.createFromPrompt`**: guesses **only when the caller named no repo** (`input.repo === undefined`) — an explicit blank stays "unassigned", an explicit name wins and short-circuits the guess. Runs **concurrently** with classify/triage; records `repoInferred` + the chosen repo on the `task.created` event for audit. Bulk add inherits it per-line for free.
+- [x] **No wire change** — gateway-internal; `task.repo` already exists. Tests: 7 planner cases + 3 service cases. `:typecheck`/`:lint`/`gateway:test` green; CI green (the only local failure is the pre-existing sandbox-only `tmux` spawner-contract spec, untouched here).
+
+## 2026-06-22 — Phase 29 Theme C: `/release-prep` skill + conventional-commit categorisation (PR #87)
+
+The policy half of Phase 29 was done (A: RELEASING.md + version-sync tooling; B: CHANGELOG). This lands the analysis-and-prepare half of the two-step release flow. `version.ts` only consumes an already-categorised `ChangeSet`, so the genuinely-new, decision-bearing logic — and the only part a prose skill can't unit-test — is turning commits into that change set. It lives in a tested helper per CLAUDE.md ("skills orchestrate; they don't hide business logic").
+
+- [x] **Pure helper** [`packages/shared/src/release.ts`](../packages/shared/src/release.ts): `parseConventionalCommit` (type/scope/`!`/`BREAKING CHANGE` footer); `bumpLevelFromCommits` (strongest-signal — breaking→major, feat→minor, fix→patch, else none; Decision §2); `changelogGroupForCommit` (Keep a Changelog grouping, non-user-facing types omitted, `revert`→Removed but non-bumping); `packagesForChangedPaths` (longest-dir attribution + root fallback, to scope a patch); `changeSetFromCommits` (bridge to `planVersionBump`). Exported from the shared barrel.
+- [x] **28 unit tests** [`release.test.ts`](../packages/shared/src/release.test.ts) over all four helpers — the "Tests for /release-prep" item (a prose skill isn't unit-testable; the rules are pinned as tested code).
+- [x] **Skill** [`.claude/skills/release-prep/SKILL.md`](../.claude/skills/release-prep/SKILL.md): preconditions (clean tree, fresh main) → gather commits + merged PRs since the base tag → propose the version citing the helpers as source of truth → confirm via `AskUserQuestion` → prep a `release/vX.Y.Z` branch (version bumps + drafted, curated CHANGELOG section, `root:version-check` re-run) → **stop before anything irreversible**, hand off to `/release-complete`.
+- [x] [`docs/RELEASING.md`](../docs/RELEASING.md) status note updated (C landed; D is the remaining slice). No runtime wire shapes — pure tooling + process. `:typecheck`/`:lint`/`shared:test` (365) + `moon ci` green first try; independent review found no blocking bugs (its coverage/clarity tighteners were applied).
+- [x] **Remaining for Phase 29:** Theme D (`/release-complete`) + cutting the first real `v0.1.0` (Decision §7).
+
+## 2026-06-22 — Phase 29 Theme A1/A3: docs/RELEASING.md — versioning policy + release flow (PR #85)
+
+The CHANGELOG (PR #80) and version-sync tooling (PR #66) existed, but the policy tying them together lived only in the phase doc. A1/A3 write it down where contributors and the release skills look.
+
+- [x] New [`docs/RELEASING.md`](../docs/RELEASING.md): the lockstep `MAJOR.MINOR` + independent `PATCH` rule; the conventional-commit **bump-trigger table** (BREAKING→major, feat→minor, fix-only→scoped patch, docs/chore/refactor/test→none); the **tag/branch scheme** (`release/vX.Y.Z` branch, `vX.Y.Z` lockstep tag, `@midnite/‹pkg›@X.Y.Z` scoped patch tag); the `/release-prep`→`/release-complete` flow; references to `planVersionBump`/`root:version-check`; notes the `v*`-tag → desktop-build + draft-Release workflow.
+- [x] Linked from the README and a new **Releases** subsection in [`CLAUDE.md`](../CLAUDE.md). Docs-only — typecheck + lint green; CI green first try.
+- [x] **Phase 29 policy half complete** (Theme A1+A2+A3 + Theme B). Remaining: the `/release-prep` (C) and `/release-complete` (D) skills.
+
+## 2026-06-22 — Phase 17 B/C/D: durable `tmux` spawner + survive-restart reattach (PR #77) — **Phase 17 COMPLETE**
+
+The pluggable `Spawner` (extracted in A, PR #56) gains its first alternative backend: a durable `tmux` mode whose sessions outlive the gateway, so an in-flight agent run survives a restart instead of being orphaned/requeued. The `pty` path is unchanged (its specs run unedited). Closes [outstanding.md](outstanding.md) #10 (scoped to tmux; warp/iterm dropped).
+
+- [x] **B — `TmuxSpawner`** ([`terminal/spawner/tmux-spawner.ts`](../packages/gateway/src/terminal/spawner/tmux-spawner.ts)): `tmux new-session -d -s midnite-<id>` running `exec env … <cmd>`, chained with `remain-on-exit on`, + a node-pty `tmux attach-session` for the live stream (reuses the whole ring/broadcast path). `onExit` fires from a `pane_dead_status` poll so callers get the **real inner exit code**; `detach()` drops the stream but leaves the session; fail-closed `TmuxUnavailableError` (no silent `pty` fallback).
+- [x] **C1 — selection + enum prune**: module factory picks the backend by `terminal.mode`; `warp`/`iterm` removed → enum is `pty | tmux` (a config naming them now fails validation).
+- [x] **C2 — boot reattach**: recovery moved from `AgentPoolService` to [`AgentRunnerService.onModuleInit`](../packages/gateway/src/pool/agent-runner.service.ts) (it owns the slot/timeout/onExit wiring; runs after the pool, before the scheduler). Under tmux it reattaches still-live sessions, requeues dead ones, and reaps strays; under pty it requeues as before.
+- [x] **C2.5 — hook auth survives restart**: the per-session hook secret was in-memory, so reattached `claude` sessions' Stop/PreToolUse callbacks would fail auth (a completed run would hang). The secret **hash** is now persisted (`hook_secrets` table + `HookSecretRepository`, migration `0033`) and rehydrated by `ApprovalService.verifySecret` on a cache miss; cleared on session end/discard.
+- [x] **C3 — shutdown divergence**: `TerminalService.onModuleDestroy` detaches durable sessions (leaves them running) and kills pty ones.
+- [x] **D — tests**: a `Spawner` contract spec (pty always; tmux skip-guarded on `tmux -V` — ran green locally) + pure-helper unit tests + recovery tests (the deterministic survive-restart equivalent) + a config-schema test. `:typecheck`/`:lint`/`:test` + `moon ci` green; existing terminal/approval/gateway/pool specs unedited.
+
+**🎉 Phase 17 complete** (A seam → B tmux → C selection/reattach → D contract tests). midnite agent runs can now survive a gateway restart.
+## 2026-06-22 — Phase 10 Theme D: Playwright e2e harness + core flow specs (PR #84)
+
+Phases 0–9 built the product; this is the first **end-to-end flow coverage** — Playwright driving the real Next.js app against a real, seeded gateway, exercising the cross-package paths unit/Storybook tests can't (navigation, the kanban drag, live gateway data, the office canvas).
+
+- [x] **D1 — harness** ([playwright.config.ts](../packages/web/playwright.config.ts), [e2e/](../packages/web/e2e/)): boots two servers per run — the **real gateway** as a direct `node --import tsx` child (killable, so teardown can't orphan it → no stale reuse) on a **throwaway absolute temp SQLite file**, with pool/heartbeat/workflows disabled and **no LLM credentials** (serves real REST/WS, never spawns or calls out), plus a **Next dev server** pointed at it via `NEXT_PUBLIC_GATEWAY_URL`. Deterministic & isolated: ports freed + temp DB removed before each run, on oddball dedicated ports clear of dev (3000/7777). Seeded over the gateway REST API; asserts by role/text. IPv4-pinned origins (the gateway binds 127.0.0.1).
+- [x] **D2 — flow specs:** **board** (seed → assert columns → drag Todo→Backlog → persists across reload, a plain restatus that never spawns), **office** (Phaser canvas + HUD mount, store-driven DOM not pixels), **workflows/councils/dashboard** (one happy-path each; dashboard stubs external widget calls).
+- [x] New **`web:e2e`** moon task with **`runInCI: false`** — out of `moon ci` and the default `:test` gate (heavier, spawns servers). Added `@playwright/test`; `e2e/**` + `playwright.config.ts` added to web's typecheck/lint cache inputs.
+- ⏳ **Deferred:** the office **proximity-walk** interactions (board room / library / break) — need deterministic Phaser physics control (flaky); covered at the component level by the office-HUD stories (C2).
+- [x] `web:e2e` **6/6 green** (repeatable, no accumulation); pre-push gate green (`:typecheck`, `:lint`, `:test` — web 245 + all packages, run from a worktree outside `.git` since Vite denies `.git/**`); `moon ci` green on PR #84. Self-review caught + fixed the IPv4 binding and the parallel-invocation foot-gun (documented).
+
+**Theme D done** (bar the deferred office walk). Remaining Phase 10: **Theme E** (screenshot previews — depends on this) and **Theme F** (CI wiring: the e2e job, coverage). Themes A/B/C already shipped.
+
+## 2026-06-22 — Phase 15 Theme C: answered-question affordance + filter (PR #83)
+
+The gateway already answered `question`-kind tasks inline at intake (PR #55: `PlannerService.answer` → resolve to **done** + an `answer` task-event, with the thread rendering the markdown answer). But on the board an answered question was indistinguishable from any other completed task and there was no way to find them. This finishes Theme C's UI.
+
+- [x] **`shared`** — `isAnsweredQuestion(task)` predicate + `ANSWER_EVENT_KIND` constant: the single contract for "this question was answered inline" (kind `question` + an `answer` event). The gateway's answer-event write now uses the constant instead of a string literal. Unit-tested.
+- [x] **`web`** — an **"Answered"** badge on the task card and in the thread header, and an **"Answered"** filter toggle on the Tasks page so resolved questions are distinguishable from ordinary completed work and findable apart from it. `FilterPills` gained a `hideAll` option for the single-toggle case; the thread timeline now keys off `ANSWER_EVENT_KIND`.
+- [x] **Tests** — shared predicate tests; `task-card.test.tsx` (badge shows for an answered question, not for a plain done task or an unanswered question); an `AnsweredQuestion` Storybook story (browser-tested) + board fixture.
+- ↪️ **Decision §3 resolved:** `done` + `answer` event (not a new `answered` status) — matching what PR #55 already shipped, so no migration.
+- [x] `:typecheck` · `:lint` · `:test` (web 265, gateway 594, shared, ui 15) green; `moon ci` green on PR #83. Before/after card + board screenshots in the PR.
+
+**Theme C complete.** Remaining Phase 15: **Theme A** (bulk add — note already shipped via Phase 16) and **Theme D** (knowledge-files watcher) — D is the last net-new infra slice.
+
+## 2026-06-22 — Phase 19 Theme D: ongoing setup-readiness panel in settings (PR #82)
+
+A permanent **Setup readiness** section in Settings → System — readiness isn't only a first-run concern, an install can break later (a revoked key, an uninstalled CLI). Reuses the Theme-A endpoint; no second source of truth. Web-only.
+
+- [x] **`SetupStatusPanel`** ([app/(main)/settings/system/setup-status-panel.tsx](../packages/web/app/(main)/settings/system/setup-status-panel.tsx)) wired into `SystemSection`: an `Accordion` with a Ready / Setup-incomplete badge, the per-item checklist (dot + label + detail + a **Fix/Manage** deep-link), a **Re-check** button, and graceful loading + error/retry states. Re-checks on window focus.
+- [x] **DRY:** extracted the status-dot colours + per-item settings hrefs into [lib/setup-items.ts](../packages/web/lib/setup-items.ts), shared by the panel and the Theme-C nudge.
+- [x] RTL ([setup-status-panel.test.tsx](../packages/web/app/(main)/settings/system/setup-status-panel.test.tsx)) + Storybook (`NotReady`/`Ready`/`Error`) coverage; `web:typecheck`/`web:lint`/`web:test` (277) green; CI green on PR #82.
+
+**Phase 19 is now A + C + D done** — only **Theme B** (the guided wizard, which also folds in the server-side completed marker + first-run auto-open deferred from C) remains.
+
+## 2026-06-22 — Phase 14 Theme B1 (part): workflow credential vault — encrypted store + REST (PR #81)
+
+A secure home for the secrets Theme C integration nodes will reference by id. Lands the security-critical store; consumers follow.
+
+- [x] **shared** — `workflow-credential.ts`: secret-free public view (id/name/type/timestamps), per-type secret payload as a discriminated union (`http-bearer`/`http-basic`/`http-header`/`slack`/`smtp`), create/list responses. `type` = the payload discriminant (one home).
+- [x] **gateway** — `workflow_credentials` table (migration **0032**); repo AES-256-GCM-encrypts the JSON secret blob before disk and decrypts only for server-side resolve; `WorkflowCredentialsService` (`list`/`create`/`remove`/`resolve`); thin `GET/POST/DELETE /workflow-credentials`. Reuses the existing `CryptoService` (no second crypto path).
+- [x] **Fail-closed** — `create` rejected with 400 + WARN when `MIDNITE_SECRET_KEY` is unset; secrets unusable without the key (same contract as provider keys, Phase 7 A1).
+- [x] **Write-only secrets** — list/create return names + types only; plaintext never serialised to a client. `service.resolve(id)` returns the decrypted, validated payload for executors, inside the gateway.
+- [x] 10 service tests (real `:memory:` SQLite + `CryptoService`): round-trip via resolve, type-from-discriminant, encrypted-at-rest (`v1:` row, no plaintext), never-leak (list+create), delete, unknown-id, both fail-closed paths. Full gateway suite green (94 files / 604 tests — also proves AppModule boots). `moon ci` green on #81.
+- ↪️ **Follow-ons (B1 remainder):** HTTP-node `credentialId` consumption in the engine (`WorkflowNode.credentialId` + `service.resolve()` already exist) and the web credentials manager + node-config picker; then **B2** (OAuth2). Gates **Theme C** integrations.
+
+## 2026-06-22 — Phase 29 Theme B: root CHANGELOG.md (PR #80)
+
+midnite had no user-facing release history — `0.0.0` everywhere, one `v0.0.0` tag, changes living only in commit subjects and `todo/done.md` (a phase tracker, different audience). Theme B seeds the curated changelog the release tooling writes into.
+
+- [x] Root [`CHANGELOG.md`](../CHANGELOG.md) in **Keep a Changelog** format: `## [Unreleased]` (curated, grouped highlights heading toward `0.1.0`) + `## [0.0.0] - 2026-06-18` scaffold baseline + compare/tag links.
+- [x] Preamble states the **lockstep** rule (shared `MAJOR.MINOR`, independent `PATCH`) and that release sections are cut via `/release-prep`→`/release-complete` (Themes C/D), kept separate from `done.md`. README links it.
+- [x] Scaffold + high-level seed only (Decision §7); precise per-release notes land when the first release is cut. Docs-only — typecheck + lint green. Phase 29: A2 + B done; A1/A3 (RELEASING.md) and C/D (skills) remain.
+
+## 2026-06-22 — Phase 12 Theme D: full n8n-style expression editor (PR #76)
+
+Phase 12 shipped the `{{ }}` engine (A–C) and the ƒx toggle (D starter, #63), but references were still hand-typed with no discovery or feedback. This finishes Theme D's headline UX: references become discoverable, insertable, and previewable. Web-only; the grammar/resolver stays the shared contract — the new code only *navigates* it.
+
+- [x] **Autocomplete** — typing in a ƒx field suggests roots (`$json`/`$node`/`$env`), upstream node **labels** inside `$node["…"]`, and object **keys** after any resolvable parent path; keyboard-navigable (↑/↓/Enter/Esc).
+- [x] **Data picker** — a click-to-insert tree of the last run's data: the node's own input under `$json` and each **ancestor** node's output under `$node[label]` (downstream nodes can't be referenced), drilling into nested objects/arrays.
+- [x] **Inline resolved-value preview** — what the field resolves to against the last run, a path-naming error for a bad reference, and a "run once to preview" empty state. Pinned sample data stays deferred to Theme E.
+- [x] Pure, tested logic in [`lib/expression-editor.ts`](../packages/web/lib/expression-editor.ts) (ancestor walk, design-time `ExpressionContext`, reference tree, cursor-aware suggestions, insertion); React wiring in [`components/expression-editor.tsx`](../packages/web/components/expression-editor.tsx); the last run is threaded `WorkflowEditor → NodeConfigPanel → NodeFields`. Design-time context mirrors the engine exactly.
+- [x] Review caught + fixed an edge-case bug: a caret before a leading `{{` was reported as *inside* the span (would splice a bare ref outside the braces) — bound the `lastIndexOf` search to `cursor - 2`, with a regression test.
+- [x] 16 lib unit tests + RTL on `NodeConfigPanel` (preview, missing-ref error, autocomplete, picker insert) + a Storybook catalog with interaction tests; `:typecheck`/`:lint`/`:test` (270 web) green; CI green on #76.
+
+Phase 12 status: **A–D + F all ✅**. Remaining: **Theme E** pin-sample-data (deferred — its consumer, the picker/preview, now exists).
+
+## 2026-06-22 — Phase 19 Theme C: soft first-run setup nudge (PR #79)
+
+Surfaces the Theme-A readiness model. A dismissible corner card that appears when the install isn't `ready`, points the user at what's missing, and **never blocks the board** (Decision §2). Web-only.
+
+- [x] **`SetupNudge`** ([components/setup-nudge.tsx](../packages/web/components/setup-nudge.tsx)) mounted once in the `(main)` layout: fetches `/setup/status`, and when `!ready` floats a compact red/amber/green checklist (mirroring the system-toolchain dots) with each unfinished row deep-linking into its settings surface + a primary CTA at the first blocker.
+- [x] **Soft only:** hidden when `ready`, hidden on `/settings/*` (Theme D owns the in-settings view), dismissible for the session, fail-open on a fetch error. Re-fetches on window focus so a regressed setup (revoked key / uninstalled CLI) re-surfaces.
+- ◐ **Dismiss flag (Decision §4):** shipped the sanctioned **localStorage/session** fallback (sessionStorage); the **server-side per-install marker + first-run wizard auto-open** are deferred to **Theme B** (the wizard) where they're actually needed — avoids a gateway migration colliding with the in-flight schema work.
+- [x] RTL ([setup-nudge.test.tsx](../packages/web/components/setup-nudge.test.tsx)) + Storybook (`NotReady`/`AlmostReady`/`Ready`) coverage; `web:typecheck`/`web:lint`/`web:test` (260) green; CI green on PR #79.
+
+Next on Phase 19: **Theme B** (guided wizard UI — folds in the server-side completed marker + auto-open) and **Theme D** (ongoing Status panel in settings/system). Both consume the Theme-A endpoint.
+
+## 2026-06-22 — Phase 14 Theme D: CLI workflow commands with live `--watch` (PR #78)
+
+Workflows were API-only from the terminal. Theme D adds `midnite workflow` parity, and `--watch` reuses the live-streaming reducer from Theme A (#72) — the terminal tail and the web run panel now fold the same event stream.
+
+- [x] **`midnite workflow list`** — table: id · name · enabled · trigger (cron inline for schedules) · steps · last run.
+- [x] **`midnite workflow run <id>`** — trigger a manual run (`run <id> [status]`); `-w/--watch` streams per-node status live until terminal (exit 1 on failure).
+- [x] **`midnite workflow runs <id>`** — recent run history.
+- [x] **`--watch` folds `/ws/workflows` through the shared `applyWorkflowEvent` reducer**, printing per-node lines with real node labels. REST backs it like the web hook: connect-time backfill (early/instant-run events precede the subscribe), a reconcile on `run.failed`, and a poll fallback if the socket dies. Global `WebSocket` (Node 22) — no new deps.
+- [x] **Typed client methods** validate every response against the shared zod schemas (`WorkflowSummary`/`Workflow`/`WorkflowRun`/`RunResponse`). CLI stays a pure HTTP/WS client.
+- [x] 12 unit tests over the pure render helpers (27 cli tests total); `:typecheck`/`:lint` green; `moon ci` green on #78. **Verified live** against a running gateway — `list`, `runs`, and `run --watch` (`✓ Fetch todo #1 → … → ✓ run succeeded`, exit 0).
+
+Phase 14 status: **A ✅ (#72), D ✅ (#78)**. Remaining: **B** (credential vault) → **C** (integrations), **E** (editor polish).
+
+## 2026-06-22 — Phase 13 follow-on E: per-repo branch naming + PR templates (PR #74)
+
+Every agent run got the same bare seed prompt regardless of target repo — no way to express "branch off `feature/` here" or "follow this PR-body shape." Follow-on E adds optional per-repo conventions that fold into the agent's prompt.
+
+- [x] **`shared`** — `branchPrefix` / `prTemplate` (optional, length-capped: 100 / 4000) on `RepoSchema`, the create/update requests, and the `config.repos` seed shape (`repo.ts` / `config.ts`); tests for trim/optional/over-long/clear-with-empty.
+- [x] **`gateway`** — `branch_prefix` / `pr_template` columns (forward migration `0031_repo_conventions`), threaded through `ReposService` create/update/seed (empty string clears → null). A pure `appendRepoConventions` helper ([`pool/lib/build-agent-prompt.ts`](../packages/gateway/src/pool/lib/build-agent-prompt.ts)) appends a `## Repository conventions` section to the seed prompt, wired into `AgentRunnerService` after URL-context enrichment. A task with no/unknown repo, or a repo with no conventions, leaves the prompt untouched. Helper + service + runner tests.
+- [x] **`web`** — branch-prefix + PR-template fields in the Settings → Repos add/edit forms, plus a branch chip + "PR template" indicator per repo row. RTL: send-on-create, edit, display.
+- [x] Gate green (typecheck · lint · 585 gateway · 248 web); ticks [`outstanding.md`](outstanding.md) #9. Phase 13 follow-on E done — C (inference repo-guessing) and F (per-repo status widget) remain.
+
+## 2026-06-22 — Phase 24 Theme A2: mobile bottom-tab navigation (PR #75)
+
+On a phone the desktop sidebar was still pinned left as a 3.5rem icon rail, eating width and shifting every page right — no thumb-reachable nav. A2 swaps it for a mobile-native pattern below `md` while leaving tablet/desktop untouched.
+
+- [x] **New `mobile-nav.tsx`** — a fixed **bottom-tab bar** rendered below `md`: the first four enabled surfaces (same `lib/features` order the sidebar uses) get one-tap tabs with an active top-indicator + `aria-current`, and a **More** button opens a bottom **sheet** (`role="dialog"`, Escape/backdrop/navigation dismiss) holding the overflow surfaces plus **Settings / Theme / Lock**. `More` is always present so those last three stay reachable even when every tab slot is a feature (Decision §5 settled: bottom-tabs + overflow drawer).
+- [x] **`nav-bar.tsx`** — the sidebar is now `hidden md:flex` (icon-rail/expanded states unchanged at `md+`); it computes the ordered enabled-feature list once and hands it to `MobileNav`, keeping the lock/passcode/idle flow in one place. ⌘K stays the power-user jump.
+- [x] **Layout/header hygiene** — `(main)/layout.tsx` clears the fixed bar with safe-area-aware bottom padding on mobile and keeps the `--nav-offset` left offset only at `md+` (inline style → `md:[padding-left:var(--nav-offset)]`). `page-header.tsx` wraps its title/actions row (`flex-wrap` + `min-w-0`) instead of overflowing at narrow widths.
+- [x] **Tests** — `mobile-nav.test.tsx` (RTL): tab set, active state, sheet contents, Settings-always-reachable, Lock fires + closes, overflow-route active flag, Escape/navigation dismiss.
+- [x] `:typecheck` · `:lint` · `:test` (web 252) · `web:build` green; `moon ci` green on PR #75. Before/after phone screenshots (390×844) in the PR.
+
+**A2 complete.** Remaining Phase 24: **A3** (per-surface reflow + office/editor desktop-only gates) → **B** (touch interactions) → **C** (PWA installability).
+
+## 2026-06-22 — Phase 14 Theme A: live run streaming via incremental event reducer (PR #72)
+
+The workflow run panel was half-wired — the hook opened `/ws/workflows` but re-pulled the whole run over REST on every event, so it was effectively still polling. Theme A finishes the live path so a running workflow updates straight off the event stream.
+
+- [x] **`shared` — pure `applyWorkflowEvent(run, event)` reducer** (+ `isRunTerminal`) in `workflow-run-reducer.ts`: folds one `WorkflowEvent` into a run snapshot (start → per-node transitions → finish), never mutating the input. Lives in `shared` so the web hook **and** the future CLI `--watch` (Theme D) share it, and liveness is testable without a browser (the doc's explicit ask). Fixtures-only unit test (transitions, purity, run-mismatch, `run.failed` vs `run.finished`, full fold).
+- [x] **`web` — `use-workflow-run.ts` folds events incrementally** instead of refetching per message. Node statuses, outputs, and the canvas colouring update live; the run-output panel reads the same `run.nodeRuns` so it updates for free. Polling is the explicit fallback when the socket is down.
+- [x] **REST kept to four roles**: initial seed (`runWorkflow` returns all nodes `pending`), one **connect-time backfill**, the reconnect/poll fallback, and a single reconcile on `run.failed` (no run body in the event). A terminal-state guard stops a slow backfill from clobbering the final run. Hook test drives a fake WebSocket to prove no per-event refetch.
+- ↪️ **Latent bug fixed:** the run starts server-side before the WS handshake completes and the gateway has no event replay, so a trigger-only / instant run finished before the client subscribed and the old code hung at `running` forever. The connect-time backfill resolves it.
+- [x] `:typecheck` · `:lint` · `:test` green across the graph (web 252, gateway 90, ui 14, cli 2, shared 316); `moon ci` green on PR #72. No static visual change (only update *timing*), so no screenshots.
+
+**Theme A complete.** Remaining Phase 14: **B** (credential vault) → **C** (integrations), with **D** (CLI parity, reuses this reducer for `--watch`) and **E** (editor polish) sliceable in parallel.
+
+## 2026-06-22 — Phase 19 Theme A: setup-readiness model + `GET /setup/status` (PR #73)
+
+The substrate for first-run onboarding — a single "is this install set up?" signal the wizard / soft nudge / status panel (Themes B–D) will all key off. Model + endpoint only; no UI yet.
+
+- [x] **`SetupStatus` contract in `shared`** (`setup.ts`): a per-item checklist (`provider` · `secret-key` · `agent-cli` · `agent-pool` · `repo`), each `{ id, label, state: ok|warn|missing, detail? }`, plus a derived `ready`. `isSetupReady()` encodes **Decision §3** — ready ⇔ a usable secret key **AND** a reachable model (a provider key **or** a working agent CLI); `warn` items (pool off, no repo) never block. zod schema + truth-table tests.
+- [x] **`GET /setup/status`** — thin `SetupController` over a `SetupService` that **composes existing services** (`ProvidersService` / `CryptoService` / `AgentsService`) + the loaded config. Pure aggregation: no new persistence, no cross-domain repository access. `ProvidersModule` now exports its service.
+- [x] **`web`** — `getSetupStatus()` added to the typed API client for Themes B–D.
+- ↪️ **Deviation noted:** the agent-CLI check uses `AgentsService` (where `claude`/`gemini`/… detection lives), not `EnvironmentService` (dev toolchain only — homebrew/node/proto/moon, none of which gate readiness). Same `detectCli` login-shell probe.
+- [x] `:typecheck` · `:lint` · `shared/gateway:test` (582) · `web:test` (245) green; `moon ci` green on PR #73. No visual change.
+
+Next on Phase 19: **Theme B** (guided wizard UI reusing env cards + provider form), **C** (first-run soft nudge banner), **D** (ongoing status panel in settings/system) — all consume this endpoint.
+
+## 2026-06-21 — Phase 25 Theme D: Storybook catalog + DS docs + browser tests (PR #69) — **Phase 25 COMPLETE**
+
+The final Phase 25 theme — `@midnite/ui` now has its own Storybook (component catalog + design-system docs) and runs its stories as browser tests. **Closes out Phase 25** (Themes A–D all merged); unblocks Phase 26 (the docs app).
+
+- [x] **Lib Storybook on `@storybook/react-vite`** (no Next) — addon-a11y + addon-vitest + addon-docs. Preview applies the lib's tokens + a dedicated Tailwind config (content scans `src` + `.storybook`; colours → `hsl(var(--token))`) and wraps stories in `ThemeProvider` with a light/dark toolbar, so primitives render exactly as in the app.
+- [x] **Primitive stories authored fresh** — the base primitives had no stories (Phase 10 storied domain components); a `Primitives/*` story per primitive covering key variants/states.
+- [x] **Design-system MDX docs** (`Design System/*`) — colour-token palette, typography specimen, radius scale + clearly-marked placeholders (spacing/shadow/z-index/motion), getting-started on-ramp.
+- [x] **Browser-test wiring** — `vitest.config.ts` splits into `unit` (node: boundary/tokens/theme-script/cn) + `storybook` (chromium: every story as a render+a11y test). `moon run ui:test` runs both; `moon.yml` gains `storybook`/`build-storybook`. CI installs chromium repo-wide.
+- [x] **Docs-app seam** — lib cleanly consumable (`exports`, token CSS, peer React); Storybook is the v1 docs surface. `tsconfig` sets `declaration:false` for the typecheck pass (Storybook types trip TS2742 on declaration-check); shipped `.d.ts` come from vite-plugin-dts.
+
+No `web` changes. Verified: `ui:build` (`"use client"` preserved) / typecheck / lint / build-storybook (31 stories + 4 docs) / `ui:test` **46 passed** (15 node unit + 31 chromium story tests); pristine frozen install; CI green. Independent review: faithful.
+
+**🎉 `@midnite/ui` is now a complete, self-documenting design-system package** (Themes A scaffold → B tokens+theme → C primitives → D catalog). Next: Phase 26 (docs app on `@midnite/ui`).
+
+## 2026-06-21 — Phase 10 C2: stories for workflows/councils/shipped widgets (PR #70)
+
+Three more list-style self-fetching widgets storied on the `installMockFetch` helper (#53), continuing [Phase 10 C2](phase-10-test-suite-hardening.md). Pure coverage; no product change.
+
+- [x] `workflows-widget` (`GET /workflows`), `councils-widget` (`GET /councils`), `shipped-widget` (`GET /tasks`) — each loaded / empty / error, asserting visible text in the headless-chromium run; static fixtures, no clock-derived assertions.
+- [x] 9 new story tests; `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #70 (`web:test` 245).
+- ↪️ Remaining un-storied widgets are the chart/multi-endpoint ones (`throughput`/`usage`/`system-monitor`, `agents`/`all-projects`, `market-*`, `boardroom-panel`) — each needs more than the list-widget pattern (a pinned clock or multi-endpoint mocks).
+
+## 2026-06-21 — Site: remove 3D for now + gradient-border on the preview panel (PR #68)
+
+Two requested tweaks to the public site. The WebGL field was heavy and we're stepping back from it for now; the panel gains the brand gradient-border motif.
+
+- [x] **Removed the 3D/WebGL particle field** (Phase 11 Theme B, ⏳ parked): deleted [`components/scene/`](../packages/site/components/) (particles/core/shaders/scene/backdrop), dropped `SceneBackdrop` from the landing + download routes, removed the `@react-three/*` + `three` deps (the scene was a dynamic chunk, so the WebGL bundle is gone at runtime). Relocated `prefersReducedMotion` → [`lib/reduced-motion.ts`](../packages/site/lib/reduced-motion.ts).
+- [x] **Static [`AmbientBackdrop`](../packages/site/components/ambient-backdrop.tsx)** replacement: fixed, pointer-events-none, soft brand-tinted CSS blurs — keeps some depth without any canvas, themed for light/dark.
+- [x] **Gradient-border on the persistent panel** (Theme C refinement): restructured [`PanelFrame`](../packages/site/components/panel/panel-frame.tsx) (ring/glow on an outer un-clipped element, content clipped on an inner one) + `pointer-events-auto` so it reacts to hover inside the panel's pointer-events-none wrapper. Subtle edge at rest → pronounced rotating conic gradient + a `.panel-glow` breathing pulse on hover/focus ([`globals.css`](../packages/site/app/globals.css)); disabled under reduced motion. Applies to the inline mobile panel too.
+- [x] `:typecheck`/`:lint` green across the graph; `site:test` (19) + `site:build` (7 routes) green; `moon ci` green on PR #68.
+
+## 2026-06-21 — Phase 15 Theme B: URL + GitHub-context inference (PR #67)
+
+Links in a task's prompt are fetched and folded into the agent's seed prompt as a "Linked context" block — closing part of [Phase 15](phase-15-smart-intake.md#theme-b--url--github-context-inference--m--done-pr-67-2026-06-21) / [outstanding.md](outstanding.md) #3. Best-effort + fail-open; no new fetch path or runtime dep.
+
+- [x] **Detect** — pure `extractUrls` + shared `parseGithubIssueOrPr` (resolves both `/issues/N` and `/pull/N`); helpers + formatting in `agent/lib/url-context.ts`, unit-tested.
+- [x] **GitHub** — `gh api repos/{repo}/issues/{n}` (user auth → private repos) with an anonymous `api.github.com` REST fallback when `gh` is absent. `UrlContextService` owns the shell-out + fetch (network primitives are protected seams the spec overrides).
+- [x] **General URLs** — fetched through the existing outbound SSRF guard (`isSafeHttpUrl`, private/loopback blocked) and reduced to readable text/title; reuses `readCapped`/`parseHtmlMetadata` from `opengraph.ts` rather than adding a second fetch path.
+- [x] **Inject** — appended at the agent-run seed-prompt point (`agent-runner.start()`), byte-capped (5 URLs · 4k/source · 12k total), fail-open. `gateway:test` 573 · `shared` 290 · `cli` 15; `moon ci` green on PR #67.
+- ↪️ **Phase 15 remaining:** Theme D (knowledge-files watcher). Theme A (bulk add) shipped via Phase 16; Theme C (inline answers) via PR #55.
+
+## 2026-06-21 — Phase 29 Theme A2: lockstep version planner + version-check CI task (PR #66)
+
+The versioning core the release skills depend on ([Phase 29](phase-29-releases-versioning-changelog.md#theme-a--versioning-policy--the-lockstep-tool--m)). Encodes the rule once: every package shares `MAJOR.MINOR`, only `PATCH` advances independently.
+
+- [x] **`planVersionBump` + `sharesLockstepMajorMinor`** in [`@midnite/shared`](../packages/shared/src/version.ts) — pure bump math: `major`/`minor` move every package in lockstep (`(X+1).0.0` / `X.(Y+1).0`), `patch` bumps only the changed packages, `none` is identity; throws if the input isn't already in lockstep. 12 unit tests.
+- [x] **`scripts/version-check.mjs`** + a workspace-root `root:version-check` moon task (new root [`moon.yml`](../moon.yml) + `.moon/workspace.yml` glob/sources split) — fails CI if package.json versions don't share one `MAJOR.MINOR` (patch may differ), naming divergers; runs once in `moon ci`. No versions changed (all stay `0.0.0`).
+- [x] `:typecheck` (all projects resolve) · `:lint` · `shared:test` (300, +12) · `root:version-check` green; `moon ci` green on PR #66 (one re-run for the known-flaky terminal env-dump spec, unrelated).
+- ↪️ **Remaining (phase-29):** A1 policy doc (`docs/RELEASING.md`) · A3 tag/branch scheme · B root `CHANGELOG.md` · C `/release-prep` · D `/release-complete`.
+
+## 2026-06-21 — Phase 24 Theme A1: viewport + responsive breakpoint foundation (PR #51)
+
+First slice of [Phase 24](phase-24-responsive-mobile-pwa.md) — the foundation the rest of Theme A (mobile nav A2, per-surface reflow A3) builds on. Web-only; the loopback data contract is unchanged (Decision §1). Settles the breakpoint-approach decision (§4): Tailwind v3 was already wired, so the answer is Tailwind responsive variants + one shared source of truth, not hand-rolled `@media`.
+
+> ⚠️ **MERGED DURING A GITHUB ACTIONS OUTAGE — CI did not run on PR #51.** Actions was stalled repo-wide on 2026-06-21 (no runs anywhere 15:23–15:40+ UTC); PR open, close/reopen, and an empty-commit `synchronize` push all failed to spawn a workflow run. Merged at the user's instruction on a full **green local gate on the rebased tree** (rebased onto current `main` incl. #50/#65 `@midnite/ui`): `web:typecheck` ✅ · `web:lint` ✅ (0 errors) · `web:test` ✅ **56 files / 236 passed**. **To verify independently from `main`:** check the `push: main` CI run for squash commit `4e29b0b` once Actions recovers. (Same note on the PR #51 thread.)
+
+- [x] **A1.1 — viewport export** ([`app/layout.tsx`](../packages/web/app/layout.tsx)): Next.js `viewport` (`width=device-width, initial-scale=1`); `themeColor` follows the `--background` token (light `#ffffff` / dark `#09090b`) via `prefers-color-scheme` instead of hardcoded white; pinch-zoom left enabled for a11y.
+- [x] **A1.2 — breakpoint foundation** ([`lib/breakpoints.ts`](../packages/web/lib/breakpoints.ts)): Tailwind-aligned px values (`sm`–`2xl`) + `mediaUp`/`mediaDown`/`mediaBetween` helpers — one place CSS (`md:`/`lg:` variants) and JS agree on cutoffs (mobile `<md` 768 · tablet `md–lg` · desktop `≥lg` 1024). SSR-safe [`useMediaQuery`](../packages/web/hooks/use-media-query.ts) (`useSyncExternalStore`, no hydration mismatch) + semantic `useIsMobile`/`useIsTablet`/`useIsDesktop` for JS-driven reflow.
+- [x] Added the **Responsive** convention to CLAUDE.md's Web section (the stale "Tailwind not yet wired" note was already corrected by #50). 10 new tests (`breakpoints` + `use-media-query`).
+- ↪️ **Deferred within A1 (noted, not dropped):** dynamic `theme-color` on an *explicit* theme override (vs. system `prefers-color-scheme`) lands with Theme C's manifest colours; the `@tailwindcss/container-queries` plugin gets wired when A3's first self-reflowing component needs it. **Remaining in Phase 24:** Theme A2 (mobile nav), A3 (per-surface reflow + desktop gates), Theme B (touch), Theme C (PWA).
+
+## 2026-06-21 — Phase 25 Theme C: migrate generic primitives → `@midnite/ui` (PR #65)
+
+Moves the 10 generic UI primitives out of `packages/web/components/ui` into the library (Theme A scaffolded it, Theme B moved tokens + theme). Behavior-preserving — every primitive is logic-identical, web keeps working via re-export shims (Decision §2).
+
+- [x] **10 primitives → `@midnite/ui/src/components`** — accordion, button, card, collapse, input, select, styled-select, switch, tabs, textarea. Only the `cn` import is rewritten to the lib's own `./lib/cn` (+ accordion→collapse, styled-select→select intra-refs); `'use client'` preserved on the 6 stateful ones so `dist/index.js` keeps its RSC boundary. `src/index.ts` re-exports each primitive's full surface (components + types + `buttonVariants`).
+- [x] **`asset-search-select` stays in web** — domain-coupled (`@midnite/shared` types + `@/lib/api`).
+- [x] **Web shims** — the 10 `web/components/ui/*` files are now thin re-exports of `@midnite/ui`; every import site (incl. `*.stories.tsx` + `asset-search-select`) compiles unchanged. Codemod that deletes the shims is a later sweep.
+- [x] New lib deps: `class-variance-authority`, `lucide-react`, `react-select`. `button`'s `buttonVariants` gets an explicit type annotation (cva's inferred type tripped TS2742 on `.d.ts` emit — runtime + `VariantProps` inference unchanged).
+- [◐] Primitive **stories stay in web** (running via the shims) until Theme D brings the lib's own Storybook — no story regresses.
+
+Verified: lib build (`"use client"` on `dist/index.js`) / typecheck / lint / vitest; web `next build` + typecheck + lint + vitest **211** (52 files, incl. storybook chromium rendering the primitives via shims); pristine frozen install; CI green. Independent review: faithful, behavior-preserving. **Next:** Theme D (lib's own Storybook `@storybook/react-vite` + MDX DS docs; migrate the primitive stories) — completes Phase 25.
+
+## 2026-06-21 — Phase 13 follow-on F: repo chip on task cards (PR #64)
+
+Surfaces a task's target repo on the board now that repos are a first-class entity (Themes A+B).
+
+- [x] New `RepoChip` ([`repo-chip.tsx`](../packages/web/components/repo-chip.tsx)) — a monochrome folder-git + repo-name chip, distinct from the colored project tag (repo and project are orthogonal axes).
+- [x] Rendered in the task-card badge row ([`task-card.tsx`](../packages/web/components/task-card.tsx)) when `task.repo` is set; the task thread already showed the repo. A `WithRepo` story (run as a test) asserts it renders. `web:typecheck`/`lint`/`test`/`build` green (web 54 files / 226 tests) on PR #64.
+- [x] Reconciled phase-13 follow-ons: **D (per-repo concurrency caps) already shipped via Phase 5 / PR #49**; the optional per-repo status widget remains → Phase 7 Theme C; C (repo guessing) + E (branch/PR templates) still open.
+
+## 2026-06-21 — Phase 11 COMPLETE: scrollytelling core — particles, panel, hero, modules (PR #59)
+
+Completes the public-site rewrite. The interlocking core the foundations slice (PR #44, Themes A/D/G/H) was built to carry: the three always-mounted layers the scroll controller drives. **Phase 11 is now fully done** (all 8 themes). `packages/site` only; added `motion` (Decision §2).
+
+- [x] **Theme C — Persistent preview panel:** one Mac-window [`<PreviewPanel>`](../packages/site/components/panel/preview-panel.tsx) rendered once at the page root that morphs position **and** size between sections (Framer Motion spring) and cross-fades its content, driven by the scroll controller as the single source of truth. Per-section target rects from a pure [`panelRectFor`](../packages/site/components/panel/panel-rect.ts) helper ([`panel-sections.ts`](../packages/site/components/panel/panel-sections.ts)); fades out over the download section. Desktop-only; mobile stacks an inline panel. Instant under reduced motion.
+- [x] **Theme F — Panel content modules:** stylised evocations (Decision §3) — a typing [terminal](../packages/site/components/panel-content/terminal-module.tsx), a [kanban board](../packages/site/components/panel-content/kanban-module.tsx) with a card looping across columns, and a live [agent/session card](../packages/site/components/panel-content/session-module.tsx) with a ticking timer — in a shared [`PanelFrame`](../packages/site/components/panel/panel-frame.tsx) (traffic-light chrome). Each has an idle micro-animation; all degrade under reduced motion.
+- [x] **Theme E — Epic hero:** app icon + wordmark, a headline cycling three typed title/subtitle pairs ([`useTypewriterCycle`](../packages/site/components/sections/use-typewriter-cycle.ts), Decision §5 placeholder copy), radial scrim, the centred grid-card panel; `sr-only` stable text. Reduced motion shows pair 1.
+- [x] **Theme B — Particle field:** lerps accent tint/size/swirl toward the active section's style, recolours fog/vignette/exposure for light vs dark (Decision §7), pauses the rAF time-advance when the tab is hidden; reduced motion snaps to static. Reads the active section + theme from outside the R3F canvas and passes them in as props.
+- [x] Tests: `useTypewriterCycle`, the panel-sections config, and the pure `panelRectFor` helper (site suite now 19 tests). `:typecheck`/`:lint` green across the graph; `site:test` + `site:build` (7 routes prerender) green; `moon ci` green on PR #59. (CI initially didn't fire — the branch had a `pnpm-lock.yaml` conflict with the fast-moving main, so GitHub couldn't build the merge ref; merging main in resolved it.)
+
+## 2026-06-21 — Phase 12 Theme D (start): ƒx expression toggle + unique node labels (PR #63)
+
+The two **S** foundations of the n8n-style expression editor — the autocomplete input, data picker, and resolved-value preview remain.
+
+- [x] **ƒx toggle** ([`node-config-panel.tsx`](../packages/web/components/node-config-panel.tsx)): every `expressionable` field gets a per-field ƒx button flipping it between its literal control and a monospace expression input (field-specific aria-label). Mode seeds from whether the saved value is already a `{{ }}` template; the field forms re-seed per selected node (keyed on node id).
+- [x] **Unique node labels** ([`workflow-store.ts`](../packages/web/lib/workflow-store.ts)): a `uniqueLabel` helper auto-suffixes a clash (" 2", " 3", …), applied in `addNode` and a new `setLabel` action; the config-panel header becomes an editable rename field that commits on blur/Enter and re-syncs when the store de-dupes. Labels matter because expressions reference upstream nodes by label.
+- [x] Tests (+8): `workflow-store` (`uniqueLabel`; addNode/setLabel auto-suffix; free rename) + `node-config-panel` (ƒx round-trips a field literal↔expression; seeds from a template; rename auto-suffixes). `:typecheck`/`:lint`/`:test` + `web:build` green on PR #63 (web 50 files / 210 tests).
+
+## 2026-06-21 — Phase 18 Theme D: generalize the report renderer (PR #62)
+
+The shared substrate for [Phase 18](phase-18-reports-exports.md#theme-d--generalize-the-renderer--reuse-shared-substrate--sm--done-pr-62-2026-06-21) — lift the councils-only client-side renderer so tasks/projects/workflow-run exports (Themes A/B/C) just plug in. Reuse, no redesign; the no-puppeteer (markdown server-side · PDF client-side) contract is untouched.
+
+- [x] **Generic renderer** — new pure, unit-tested [`report-html-export.ts`](../packages/web/lib/report-html-export.ts): `buildReportHtml({ title, bodyHtml, metaLine? })` → self-contained offline printable HTML, with `escapeHtml` + `REPORT_PROSE_CSS` lifted out of `council-html-export.ts`, plus `reportHtmlFilename`.
+- [x] **Shared markdown capture** — [`capture-markdown-html.tsx`](../packages/web/lib/capture-markdown-html.tsx) lifts the render-`MarkdownPreview`-and-capture helper out of `council-run-tabs.tsx` so every HTML export matches in-app rendering + sanitization.
+- [x] **Councils reuses the substrate** — `council-html-export.ts` imports the shared `escapeHtml` + prose CSS; output is **byte-identical** (verified) — no behaviour change, proving the lift.
+- [x] **`ExportMenu`** was already generic with copy-as-markdown; added an optional `title` for the print document title (distinct from the download slug) — the `{ fetchMarkdown, filename, title }` shape A/B/C drop in.
+- [x] 6 new `report-html-export` unit tests; `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #62 (`web:test` 208).
+- ⏳ The *optional* gateway export-response helper is deferred to land with Theme A's first export route (no consumer yet). **Next:** Theme A (task export) — pure `taskToMarkdown` + `GET /tasks/:id/export` + `ExportMenu` in the task thread.
+
+## 2026-06-21 — Phase 10 C2: stories for sessions/memories/activity widgets (PR #60)
+
+More self-fetching dashboard widgets storied on the `installMockFetch` helper (#53), continuing [Phase 10 C2](phase-10-test-suite-hardening.md#c2-interaction-tests-on-key-components--partial-pr-36--48--53--60-2026-06-21). Pure coverage; no product change.
+
+- [x] `sessions-widget` (`GET /sessions`, raw array), `memories-widget` (`GET /memories`, `{ memories }` envelope), `activity-widget` (`GET /tasks`) — each with **loaded / empty / error** stories asserting visible text in the headless-chromium run; static fixtures, no relative-time assertions.
+- [x] 9 new story tests; `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #60 (`web:test` 211).
+- ↪️ Remaining self-fetching widgets (`market-*`, `agents`/`throughput`/`usage`/`system-monitor`/`workflows`/`councils`/`all-projects`, `boardroom-panel`) still backfillable with the same helper.
+
+## 2026-06-21 — Phase 25 Theme B: design tokens + theme runtime → `@midnite/ui` (PR #57)
+
+Moves the design system's *foundation* out of `packages/web` into the `@midnite/ui` leaf (Theme A stood up the empty package). Extraction, not redesign — token values unchanged; web's appearance is identical.
+
+- [x] **Tokens → `@midnite/ui/styles`** — the shadcn-style HSL custom properties + `.dark` block now live in `src/styles/tokens.css` (framework-agnostic: no `@layer`/`@tailwind`, so a non-Tailwind consumer can use them). A typed token map in `src/tokens` mirrors them for JS consumers; verified byte-exact against the values removed from `globals.css`.
+- [x] **Full DS taxonomy** — `color` + `radius` filled; `spacing`/`typography`/`shadow`/`zIndex`/`motion` present as clearly-marked `{ placeholder: true }` so the system is structurally complete + extensible.
+- [x] **Theme runtime → `@midnite/ui/theme`** — `ThemeProvider`/`useTheme`/theme-context + the no-flash init script. The Vite build now **preserves `'use client'`** on `dist/theme.js` (a `preserveUseClient` rollup plugin re-emits the directive rollup strips by default) so a Next.js RSC consumer gets a real client boundary — confirmed in `dist` + `next build`.
+- [x] **Web consumes the lib** — `globals.css` imports `@midnite/ui/styles` (drops the duplicated tokens, keeps `--nav-offset` + app CSS); `app/theme/*` become thin re-export shims (Decision §2, codemod later); `@midnite/ui` added to deps + `transpilePackages` + web's moon `dependsOn`.
+
+`theme-toggle` stays in web until Theme C (it composes the `Button` primitive that moves there). Verified: lib build/typecheck/lint/vitest (15); web `next build` + typecheck + lint + vitest **194** (incl. storybook chromium rendering `ThemeProvider` via the shim); pristine frozen install; CI green. **Next:** Theme C (migrate the generic primitives + their stories, web keeps re-export shims).
+
+## 2026-06-21 — Phase 4: inline answers for question-kind tasks (PR #55)
+
+A task classified as a `question` is answered directly by the plan model at intake instead of being queued for a coding agent — closing a Phase 4 done-criterion (also Phase 15 Theme C).
+
+- [x] `PlannerService.answer(prompt)` ([`planner.service.ts`](../packages/gateway/src/agent/planner.service.ts)): a plain-text answer on the plan model, fail-soft → `null` (AI off / error / empty), mirroring `triage`.
+- [x] `createFromPrompt` ([`tasks.service.ts`](../packages/gateway/src/tasks/tasks.service.ts)): `question`-kind tasks generate an answer; a successful answer resolves the task to **`done`** (no agent run) with the answer recorded as an `answer` thread event. Only questions take this path; falls back to the triage column when no answer is produced.
+- [x] Web ([`task-thread-modal.tsx`](../packages/web/components/task-thread-modal.tsx)): the `answer` event renders as Markdown rather than a JSON payload dump.
+- [x] Tests (+6): planner answer (disabled/trimmed+usage-tag/empty+throw); service question→done+event, null→queued, non-question never answers. `:typecheck`/`:lint`/`:test` + `gateway:build` green on PR #55 (gateway 559 · web 194). **Phase 4 remaining:** URL/GitHub context → Phase 15 B; repo-guessing → Phase 13; KB watcher → Phase 15 D; bulk-input already done via Phase 16.
+
+## 2026-06-21 — Phase 17 Theme A: extract the `Spawner` interface from TerminalService (PR #56)
+
+The behaviour-preserving refactor that gates the pluggable terminal backends ([Phase 17](phase-17-spawner-tmux.md#theme-a--extract-the-spawner-interface--l--done-pr-56-2026-06-21)). Puts the node-pty process lifecycle behind a `Spawner` seam so a `tmux` backend (Theme B) can slot in without touching the ring/streaming/approval machinery. Gateway-only; `pty` behaviour byte-for-byte unchanged.
+
+- [x] **`Spawner` / `SpawnSpec` / `SpawnHandle` + `SPAWNER` token** ([`terminal/spawner/spawner.ts`](../packages/gateway/src/terminal/spawner/spawner.ts)) — gateway-internal; `SpawnHandle` mirrors node-pty's `IPty` so `PtyHandle.proc`'s type swap is the only call-site change.
+- [x] **`PtySpawner`** ([`terminal/spawner/pty-spawner.ts`](../packages/gateway/src/terminal/spawner/pty-spawner.ts)) — owns the lazy `require('node-pty')` + fail-closed semantics (throws `SpawnUnavailableError`, never a silent disable); a thin pass-through. Now the only node-pty importer in the spawn path.
+- [x] **`TerminalService`** drops its node-pty import / `loadPty()`; all three spawn paths route through the injected `Spawner`. Module provides `SPAWNER` via a `terminal.mode` factory (PtySpawner default); the constructor also defaults the spawner to a real `PtySpawner` so direct-construction specs work without DI.
+- [x] Every terminal/approval/gateway spec passes **unedited** — `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #56 (gateway 553; one re-run for the known-flaky terminal env-dump spec, unrelated).
+- ↪️ **Remaining (phase-17):** B `TmuxSpawner` (durable sessions) · C backend selection + survive-restart reattach + drop warp/iterm · D Spawner contract tests.
+
+## 2026-06-21 — Phase 10 C2: data-fetching widget stories + fetch-stub helper (PR #53)
+
+Continues [Phase 10](phase-10-test-suite-hardening.md#c2-interaction-tests-on-key-components--partial-pr-36--48--53-2026-06-21) C2 — the data-fetching widgets that previously couldn't be storied because they self-fetch. Adds the missing mock infra + the first widget stories on it. Pure coverage; no product change.
+
+- [x] **`installMockFetch` helper** ([`stories/mock-fetch.ts`](../packages/web/stories/mock-fetch.ts)): swaps `globalThis.fetch` for a path-keyed stub of canned, schema-valid gateway responses; a `status >= 400` handler drives a widget's error branch. **Unmatched requests fall through to the real fetch** — important so Storybook's own browser module loading is never intercepted (the first cut returned 502 for unmatched and broke later stories' dynamic imports; caught in the local run and fixed).
+- [x] **Widget stories:** `news-widget` (list / grid / error), `weather-widget` (°C / °F / error), multi-endpoint `health-widget` (healthy / gateway-down — `/health` + `/agents/cli/statuses` + `/agents`, handlers ordered specific→general). Each a render + interaction test in the headless-chromium story run.
+- [x] 8 new story tests; `:typecheck`/`:lint`/`:test` + `moon ci` green on PR #53 (`web:test` 202).
+- ↪️ **Remaining (logged in phase-10 C2):** the rest of the self-fetching widgets (`market-*`, `sessions`/`agents`/`throughput`/`usage`/`system-monitor`, `boardroom-panel`) can now be backfilled with the same helper — each a small add.
+
 ## 2026-06-21 — Phase 13 COMPLETE — Theme B: repos selectable & validated (PR #52)
 
 The last theme of [Phase 13](phase-13-repos-first-class.md#theme-b--selectable--validated--m--done-pr-52-2026-06-21). Theme A (PR #45) made repos a DB-backed registry; B makes them selectable at task-creation time and makes `task.repo` always point at a known repo. **Phase 13 is now done** (Themes A + B; the C–F follow-ons stay explicitly deferred). Spans gateway + web; CLI flag was already in place from PR #47.

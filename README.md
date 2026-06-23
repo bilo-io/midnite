@@ -21,14 +21,14 @@ Drop in a freeform list, let midnite classify each item, queue them, and run the
 
 ## Status
 
-**Phase 0 — scaffold.** Empty project skeleton in place; nothing runs end-to-end yet. See [`todo/`](todo/) for the per-phase checklists and `done.md` log.
+**Phase 0 — scaffold.** Empty project skeleton in place; nothing runs end-to-end yet. See [`todo/`](todo/) for the per-phase checklists and `done.md` log, [`CHANGELOG.md`](CHANGELOG.md) for the user-facing release history, and [`docs/RELEASING.md`](docs/RELEASING.md) for the versioning + release process.
 
 - **Phase 0 — Monorepo scaffold:** ✅ files in place; verification on a fresh checkout still pending — see [phase-0-scaffold.md](todo/phase-0-scaffold.md).
 - **Phase 1 — Board you drive by hand** (gateway + REST/WS + CLI): ⏳ [phase-1-board.md](todo/phase-1-board.md)
 - **Phase 2 — Agents** (pool, scheduler, pty spawner, Claude Code hooks): ⏳ [phase-2-agents.md](todo/phase-2-agents.md)
 - **Phase 3 — Browser** kanban + embedded terminals: ⏳ [phase-3-browser.md](todo/phase-3-browser.md)
 - **Phase 4 — Inference** (plan/act split, KB injection): ⏳ [phase-4-inference.md](todo/phase-4-inference.md)
-- **Phase 5 — Polish** (tmux/warp/iterm, priorities, retries): ⏳ [phase-5-polish.md](todo/phase-5-polish.md)
+- **Phase 5 — Polish** (priorities, retries, per-repo caps): ⏳ [phase-5-polish.md](todo/phase-5-polish.md) · pluggable spawner + durable `tmux` moved to [phase-17-spawner-tmux.md](todo/phase-17-spawner-tmux.md)
 
 ## Quick start
 
@@ -56,9 +56,9 @@ curl http://localhost:7777/health   # → {"ok":true}
 - **Toolchain:** [proto](https://moonrepo.dev/proto) (pins node/pnpm) + [moon](https://moonrepo.dev) (task graph, caching, affected-only builds) + pnpm workspaces.
 - **Gateway** ([`packages/gateway`](packages/gateway)): **Nest.js** with the **Fastify** adapter, SQLite via **better-sqlite3 + Drizzle**, WebSockets via `@nestjs/platform-ws`.
 - **CLI** ([`packages/cli`](packages/cli)): **commander**.
-- **Web** ([`packages/web`](packages/web)): **Next.js** App Router (React 19). `@dnd-kit` for the kanban + `xterm.js` for embedded agent terminals (Phase 3).
+- **Web** ([`packages/web`](packages/web)): **Next.js** App Router (React 19). `@dnd-kit` for the kanban + `xterm.js` for embedded agent terminals (Phase 3). Responsive and **installable as a PWA** (Phase 24) — "Add to home screen" from Settings → Appearance launches a standalone window with a cached shell for a fast start. It's an installable *shell*, not an offline app: the board/session data is still live from the gateway. Reaching it from a phone uses your own network path (LAN / Tailscale / tunnel) — the gateway stays **loopback-only**, so exposing it beyond `127.0.0.1` is the separate, deferred Phase 7 A5 work.
 - **Shared** ([`packages/shared`](packages/shared)): **zod** config schema + cross-package types (the only place those live).
-- **Process spawning** (Phase 2): `node-pty` for managed sessions; tmux/warp/iterm backends in Phase 5.
+- **Process spawning** (Phase 2): `node-pty` for managed sessions, behind a pluggable `Spawner` (Phase 17) — a durable `tmux` backend whose sessions survive a gateway restart is opt-in via `terminal.mode`.
 
 > Note: [`docs/INITIAL_PLAN.md`](docs/INITIAL_PLAN.md) was written for bare Fastify + React/Vite. The implementation uses Nest.js (with the Fastify adapter underneath) and Next.js instead. Everything else in the plan still holds.
 
@@ -109,6 +109,7 @@ User config lives in [`midnite.json`](midnite.json) at the repo root, validated 
   "terminal":  { "mode": "pty", "layout": "split", "args": [], "scrollbackBytes": 262144, "idleDisposeMs": 300000, "maxSessions": 16, "inheritSecrets": false, "approvals": { "enabled": false, "timeoutMs": 120000, "onTimeout": "deny", "onNoSubscriber": "ask" } },
   "repos":     [],
   "gateway":   { "port": 7777, "host": "127.0.0.1", "allowedOrigins": [] },
+  "knowledge": { "enabled": false, "maxBytes": 16384 },
   "workflows": { "enabled": false, "defaultTimezone": "UTC", "schedulerTickMs": 30000, "webhookBaseUrl": "http://localhost:7777" }
 }
 ```
@@ -124,6 +125,26 @@ same repo (by `task.repo`) at once: the scheduler skips a `todo` task whose repo
 is already at the cap and picks the next eligible one, so two agents don't race
 on one working tree. Tasks without a repo are never capped.
 
+`gateway.webDir` (unset by default) points the gateway at the web app's static
+export so a **single process serves both the API and the browser UI** in prod.
+Build the UI with `moon run web:build` (Next `output: 'export'` → `packages/web/out`),
+then set `webDir` to that path (or pass `MIDNITE_WEB_DIR`); the gateway mounts it
+at `/` and the app talks to the same origin's API — no separate `next` server, no
+CORS. Unset, the UI runs as its own dev server (`moon run web:dev` on `:3000`).
+The export is fully static (every route is a real `index.html`, all data fetched
+client-side), so the API routes keep priority over the file mount.
+
+`config.checks` (Phase 30 — gate the `done` transition on quality checks) is
+**off by default**. When `checks.enabled` is `true`, a task's `gates` (a list of
+`{ name, command, cwd?, timeoutMs? }`) run in its repo cwd before completion;
+`checks.byRepo['<repo-name>']` **replaces** the global `gates` for that repo
+(not merged). Each check runs via the shell, bounded by `perCheckTimeoutMs`
+(per-check timeout → kill → fail) with output tail-truncated to `outputCapBytes`.
+`checks.autoFix` (also off by default) re-spawns the agent to fix failures, up to
+`maxAttempts`. The runner + contract land in this phase's Theme A; gating the
+completion seam, persistence, and the surfaces follow. The command runner never
+infers a command — you opt in per install/repo.
+
 A task reaches `wip` (with a Claude Code session spawned and linked to it) in one
 of two ways:
 
@@ -138,10 +159,35 @@ of two ways:
   `409` when every slot is busy. Note that merely `PATCH`-ing a task's status to
   `wip` only moves the column; it does **not** spawn a session.
 
+When a task is started, any links in its prompt are folded into the agent's seed
+prompt as a **"Linked context"** block: GitHub issue/PR URLs resolve via `gh`
+(your auth, so private repos work) with an anonymous `api.github.com` fallback,
+and other URLs are fetched through the SSRF guard (private/loopback ranges
+blocked) and reduced to readable text. It's best-effort and fail-open — a fetch
+that errors is skipped, never blocking the run — and capped to a byte budget so a
+huge thread can't blow the model's context.
+
+**Knowledge files** are a second, distinct knowledge base (don't confuse them
+with the link-based *Sources* above). Point `knowledge.dir` at a folder of
+Markdown and set `knowledge.enabled: true`: the gateway watches it (live — edits
+are picked up without a restart) and keeps a manifest of each file's headings.
+When a task starts, the plan model is shown that manifest and picks the files
+relevant to the task; their **content** is injected into the seed prompt as a
+**"Knowledge files"** block, capped to `knowledge.maxBytes` (default `16384`).
+Like linked context it's best-effort and fail-open. Use it for standing project
+conventions, runbooks, and domain notes the agent should always have on hand.
+
 The session web window streams a live PTY over WebSocket (`/ws/terminal`). The
 PTY is spawned on demand when a window opens for an active session and is shared
 across reconnects. `terminal` fields control it:
 
+- `mode` — the process backend: `"pty"` (default) runs each session in a
+  node-pty the gateway owns, so it dies with the gateway; `"tmux"` runs each
+  session in a detached `tmux` session (`midnite-<id>`) that **outlives** the
+  gateway, so an in-flight agent run **survives a restart** — on boot the
+  gateway rediscovers live sessions and reattaches instead of requeuing. `tmux`
+  fails closed if the binary is missing (it never silently falls back to `pty`).
+  (`warp`/`iterm` were dropped — native windows bypass the browser stream.)
 - `command` (optional) — what each session PTY runs. Defaults to an interactive
   login shell (`$SHELL`, else `/bin/bash`) in the session's repo cwd. Set it to
   `"claude"` to drive a live Claude Code session instead.

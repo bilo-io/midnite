@@ -2,8 +2,32 @@
 import { readFile } from 'node:fs/promises';
 import { Command } from 'commander';
 import Table from 'cli-table3';
+import {
+  WORKFLOW_WS_PATH,
+  applyWorkflowEvent,
+  isRunTerminal,
+  type SearchQuery,
+  type WorkflowEvent,
+  type WorkflowRun,
+} from '@midnite/shared';
 import { bulkExitCode, bulkResultRows, bulkSummaryLine } from './bulk.js';
-import { createClient, parseStatus, resolveBaseUrl, type TaskDefaults } from './client.js';
+import { parseSearchType, searchResultRows, searchSummaryLine } from './search.js';
+import {
+  createClient,
+  parseStatus,
+  resolveBaseUrl,
+  type GatewayClient,
+  type TaskDefaults,
+} from './client.js';
+import {
+  gatewayWsUrl,
+  nodeLabelOf,
+  runListRows,
+  runSummaryLines,
+  watchEventLine,
+  workflowListRows,
+  type NodeLabel,
+} from './workflow.js';
 
 const program = new Command();
 
@@ -104,6 +128,182 @@ program
   .action(async (id: string, status: string) => {
     const task = await client().moveTask(id, parseStatus(status));
     console.log(`moved ${task.id} → ${task.status}`);
+  });
+
+program
+  .command('search <query>')
+  .description('Full-text search across tasks, projects, memory, notes, councils & workflows')
+  .option('-t, --type <type>', 'restrict to one type (task|project|memory|note|council|workflow)')
+  .option('-n, --limit <n>', 'max results (default 20, max 100)')
+  .action(async (query: string, opts: { type?: string; limit?: string }) => {
+    const q: SearchQuery = { q: query };
+    if (opts.type) q.type = parseSearchType(opts.type);
+    if (opts.limit !== undefined) {
+      const n = Number(opts.limit);
+      if (!Number.isInteger(n) || n < 1) {
+        throw new Error(`invalid --limit "${opts.limit}" — expected a positive integer`);
+      }
+      q.limit = n;
+    }
+    const res = await client().search(q);
+    if (res.results.length > 0) {
+      const table = new Table({ head: ['Type', 'ID', 'Title', 'Match'], wordWrap: true });
+      for (const row of searchResultRows(res)) table.push(row);
+      console.log(table.toString());
+    }
+    console.log(searchSummaryLine(res));
+  });
+
+// Tail a workflow run live over the WS stream, folding events through the shared
+// reducer (the same one the web run panel uses) and printing per-node status. REST
+// backs it up: a connect-time backfill (early/instant-run events fire before we
+// subscribe), a reconcile on run.failed, and a poll fallback if the socket dies.
+// Resolves with the final run so the caller can set the process exit code.
+async function watchWorkflowRun(
+  c: GatewayClient,
+  baseUrl: string,
+  workflowId: string,
+  seed: WorkflowRun,
+): Promise<WorkflowRun> {
+  let labelOf: NodeLabel = (id) => id;
+  try {
+    labelOf = nodeLabelOf(await c.getWorkflow(workflowId));
+  } catch {
+    // node labels are cosmetic — fall back to ids
+  }
+
+  let run = seed;
+  return await new Promise<WorkflowRun>((resolve) => {
+    let settled = false;
+    let socket: WebSocket;
+
+    const done = (final: WorkflowRun): void => {
+      if (settled) return;
+      settled = true;
+      try {
+        socket.close();
+      } catch {
+        // already closing
+      }
+      resolve(final);
+    };
+
+    const finishTerminal = (r: WorkflowRun): void => {
+      for (const line of runSummaryLines(r, labelOf)) console.log(line);
+      done(r);
+    };
+
+    // Poll the run to completion — used only when the socket can't carry events.
+    const pollToEnd = (): void => {
+      const tick = async (): Promise<void> => {
+        if (settled) return;
+        try {
+          run = await c.getWorkflowRun(workflowId, seed.id);
+          if (isRunTerminal(run.status)) return finishTerminal(run);
+        } catch {
+          // transient — keep polling
+        }
+        setTimeout(() => void tick(), 1000);
+      };
+      void tick();
+    };
+
+    try {
+      socket = new WebSocket(gatewayWsUrl(baseUrl) + WORKFLOW_WS_PATH);
+    } catch {
+      pollToEnd();
+      return;
+    }
+
+    socket.onopen = () => {
+      socket.send(JSON.stringify({ type: 'subscribe', runId: seed.id }));
+      void c
+        .getWorkflowRun(workflowId, seed.id)
+        .then((r) => {
+          run = r;
+          if (isRunTerminal(r.status)) finishTerminal(r);
+        })
+        .catch(() => {
+          // events will carry the state
+        });
+    };
+    socket.onmessage = (ev) => {
+      let event: WorkflowEvent;
+      try {
+        event = JSON.parse(typeof ev.data === 'string' ? ev.data : '') as WorkflowEvent;
+      } catch {
+        return;
+      }
+      if (event.runId !== seed.id) return;
+      const line = watchEventLine(event, labelOf);
+      if (line) console.log(line);
+      run = applyWorkflowEvent(run, event) ?? run;
+      if (event.type === 'run.finished') {
+        done(event.run);
+      } else if (event.type === 'run.failed') {
+        // run.failed carries no run body — reconcile once for the final detail.
+        void c
+          .getWorkflowRun(workflowId, seed.id)
+          .then(done)
+          .catch(() => done(run));
+      }
+    };
+    socket.onerror = () => {
+      if (!settled) pollToEnd();
+    };
+  });
+}
+
+const workflow = program.command('workflow').description('Inspect and run workflows');
+
+workflow
+  .command('list')
+  .description('List workflows (name, enabled, trigger, last run)')
+  .action(async () => {
+    const summaries = await client().listWorkflows();
+    if (summaries.length === 0) {
+      console.log('no workflows');
+      return;
+    }
+    const table = new Table({
+      head: ['ID', 'Name', 'On', 'Trigger', 'Steps', 'Last run'],
+      wordWrap: true,
+    });
+    for (const row of workflowListRows(summaries)) table.push(row);
+    console.log(table.toString());
+  });
+
+workflow
+  .command('run <id>')
+  .description('Trigger a manual run; --watch tails it live')
+  .option('-w, --watch', 'stream per-node status until the run finishes')
+  .action(async (id: string, opts: { watch?: boolean }) => {
+    const c = client();
+    const run = await c.runWorkflow(id);
+    if (!opts.watch) {
+      console.log(`run ${run.id}  [${run.status}]`);
+      return;
+    }
+    const baseUrl = resolveBaseUrl(program.opts().gateway as string | undefined);
+    const final = await watchWorkflowRun(c, baseUrl, id, run);
+    if (final.status === 'failed') process.exitCode = 1;
+  });
+
+workflow
+  .command('runs <id>')
+  .description('Recent run history for a workflow')
+  .action(async (id: string) => {
+    const runs = await client().listWorkflowRuns(id);
+    if (runs.length === 0) {
+      console.log('no runs');
+      return;
+    }
+    const table = new Table({
+      head: ['Run', 'Status', 'Trigger', 'Started', 'Finished', 'Nodes'],
+      wordWrap: true,
+    });
+    for (const row of runListRows(runs)) table.push(row);
+    console.log(table.toString());
   });
 
 program

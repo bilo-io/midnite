@@ -25,6 +25,18 @@ describe('dashboard widget registry', () => {
     expect(DASHBOARD_WIDGETS.shipped.label).toBe('Shipped');
   });
 
+  it('includes the quick-capture widget added in Phase 7 Theme C', () => {
+    expect(ALL_WIDGET_TYPES).toContain('quick-capture');
+    expect(DASHBOARD_WIDGETS['quick-capture'].label).toBe('Quick capture');
+    expect(DASHBOARD_WIDGETS['quick-capture'].category).toBe('tasks');
+  });
+
+  it('includes the per-repo status widget added in Phase 7 Theme C', () => {
+    expect(ALL_WIDGET_TYPES).toContain('repo-status');
+    expect(DASHBOARD_WIDGETS['repo-status'].label).toBe('Per-repo status');
+    expect(DASHBOARD_WIDGETS['repo-status'].category).toBe('agents');
+  });
+
   it('includes the system-monitor widget', () => {
     expect(ALL_WIDGET_TYPES).toContain('system-monitor');
     expect(DASHBOARD_WIDGETS['system-monitor'].label).toBe('System monitor');

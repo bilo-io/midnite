@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
+  AddTaskDependencyRequestSchema,
+  ANSWER_EVENT_KIND,
   CreateTaskRequestSchema,
+  MAX_TASK_DEPENDENCIES,
   MAX_TASK_TAG_LENGTH,
   SetTaskTagsRequestSchema,
   StatusSchema,
+  TaskDependencyError,
   TaskKindSchema,
   TaskSchema,
   UpdateTaskProjectRequestSchema,
+  isAnsweredQuestion,
 } from './task.js';
 
 const baseTask = {
@@ -41,6 +46,11 @@ describe('TaskSchema', () => {
     expect(TaskSchema.safeParse({ ...baseTask, priority: 4 }).success).toBe(false);
   });
 
+  it('carries an optional dependsOn list (absent = no blockers)', () => {
+    expect(TaskSchema.parse(baseTask).dependsOn).toBeUndefined();
+    expect(TaskSchema.parse({ ...baseTask, dependsOn: ['a', 'b'] }).dependsOn).toEqual(['a', 'b']);
+  });
+
   it('rejects a non-url task link', () => {
     expect(
       TaskSchema.safeParse({
@@ -59,6 +69,32 @@ describe('CreateTaskRequestSchema', () => {
   it('rejects a prompt over 8000 chars', () => {
     expect(CreateTaskRequestSchema.safeParse({ prompt: 'a'.repeat(8001) }).success).toBe(false);
   });
+
+  it('accepts an optional dependsOn list and caps it', () => {
+    expect(CreateTaskRequestSchema.parse({ prompt: 'x', dependsOn: ['a', 'b'] }).dependsOn).toEqual([
+      'a',
+      'b',
+    ]);
+    const tooMany = Array.from({ length: MAX_TASK_DEPENDENCIES + 1 }, (_, i) => `t${i}`);
+    expect(CreateTaskRequestSchema.safeParse({ prompt: 'x', dependsOn: tooMany }).success).toBe(false);
+  });
+});
+
+describe('AddTaskDependencyRequestSchema', () => {
+  it('requires a non-empty dependsOnId', () => {
+    expect(AddTaskDependencyRequestSchema.parse({ dependsOnId: 't2' }).dependsOnId).toBe('t2');
+    expect(AddTaskDependencyRequestSchema.safeParse({ dependsOnId: '' }).success).toBe(false);
+    expect(AddTaskDependencyRequestSchema.safeParse({}).success).toBe(false);
+  });
+});
+
+describe('TaskDependencyError', () => {
+  it('carries a typed reason and is an Error', () => {
+    const err = new TaskDependencyError('cycle', 'would cycle');
+    expect(err).toBeInstanceOf(Error);
+    expect(err.reason).toBe('cycle');
+    expect(err.name).toBe('TaskDependencyError');
+  });
 });
 
 describe('UpdateTaskProjectRequestSchema', () => {
@@ -71,5 +107,24 @@ describe('SetTaskTagsRequestSchema', () => {
   it('round-trips an array of tags (clamping is enforced in the service)', () => {
     const tags = ['a', 'b'.repeat(MAX_TASK_TAG_LENGTH)];
     expect(SetTaskTagsRequestSchema.parse({ tags }).tags).toEqual(tags);
+  });
+});
+
+describe('isAnsweredQuestion', () => {
+  const answerEvent = { at: '2026-06-22T00:00:00Z', kind: ANSWER_EVENT_KIND };
+
+  it('is true for a question with an answer event', () => {
+    expect(isAnsweredQuestion({ kind: 'question', events: [answerEvent] })).toBe(true);
+  });
+
+  it('is false for a question with no answer event', () => {
+    expect(
+      isAnsweredQuestion({ kind: 'question', events: [{ at: '', kind: 'task.created' }] }),
+    ).toBe(false);
+  });
+
+  it('is false for a non-question even if it somehow carries an answer event', () => {
+    expect(isAnsweredQuestion({ kind: 'bug', events: [answerEvent] })).toBe(false);
+    expect(isAnsweredQuestion({ kind: undefined, events: [answerEvent] })).toBe(false);
   });
 });

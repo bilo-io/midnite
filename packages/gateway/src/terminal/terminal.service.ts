@@ -12,10 +12,13 @@ import { ReposService } from '../repos/repos.service';
 import { TasksService } from '../tasks/tasks.service';
 import { ApprovalService } from './approval.service';
 import { pickSessionCwd } from './lib/resolve-cwd';
-
-type NodePtyModule = typeof import('node-pty');
-type IPty = import('node-pty').IPty;
-type IDisposable = import('node-pty').IDisposable;
+import { PtySpawner } from './spawner/pty-spawner';
+import {
+  SPAWNER,
+  type Spawner,
+  type SpawnHandle,
+  type SpawnDisposable,
+} from './spawner/spawner';
 
 /** A sink for server→client terminal messages. The WS gateway implements this. */
 export interface TerminalSubscriber {
@@ -118,14 +121,14 @@ interface OutputFrame {
 }
 
 interface PtyHandle {
-  proc: IPty;
+  proc: SpawnHandle;
   command: string;
   subscribers: Set<TerminalSubscriber>;
   ring: OutputFrame[];
   ringBytes: number;
   seq: number;
   disposeTimer: NodeJS.Timeout | null;
-  disposables: IDisposable[];
+  disposables: SpawnDisposable[];
   /** Ephemeral Claude `--settings` file for approvals; deleted on reap. */
   settingsFile: string | null;
   /** Pinned PTYs (managed one-shot runs) survive subscriber detach — they live
@@ -153,8 +156,6 @@ export class TerminalService implements OnModuleDestroy {
   // Standalone (non-session) terminals — e.g. CLI installs. Keyed by a synthetic
   // id; the value is the init command pasted into the spawned shell.
   private readonly adHoc = new Map<string, { initCommand: string }>();
-  private nodePty: NodePtyModule | null = null;
-  private ptyLoadFailed = false;
 
   constructor(
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
@@ -164,6 +165,10 @@ export class TerminalService implements OnModuleDestroy {
     @Inject(AgentsService) private readonly agents: AgentsService,
     // Mutual lifecycle/broadcast dependency within the terminal module.
     @Inject(forwardRef(() => ApprovalService)) private readonly approvals: ApprovalService,
+    // The process backend, selected by config in the module factory. Defaults to a
+    // real PtySpawner so direct construction (tests, the in-process serve path)
+    // spawns live PTYs without DI; Nest always injects the configured SPAWNER.
+    @Inject(SPAWNER) private readonly spawner: Spawner = new PtySpawner(),
   ) {}
 
   // ---- token auth (single-use, short-lived) ----
@@ -232,17 +237,14 @@ export class TerminalService implements OnModuleDestroy {
         error: `terminal session limit reached (${this.config.terminal.maxSessions})`,
       };
     }
-    const pty = this.loadPty();
-    if (!pty) return { ok: false, error: 'terminal backend unavailable' };
-
-    let proc: IPty;
+    let proc: SpawnHandle;
     try {
-      proc = pty.spawn(spec.command, spec.args, {
-        name: 'xterm-256color',
-        cols: 120,
-        rows: 32,
+      proc = this.spawner.spawn({
+        command: spec.command,
+        args: spec.args,
         cwd: spec.cwd,
         env: this.fullEnv(),
+        sessionId: attachId,
       });
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : 'spawn failed' };
@@ -320,9 +322,6 @@ export class TerminalService implements OnModuleDestroy {
         error: `terminal session limit reached (${this.config.terminal.maxSessions})`,
       };
     }
-    const pty = this.loadPty();
-    if (!pty) return { ok: false, error: 'terminal backend unavailable' };
-
     const command = AGENT_CLI_COMMAND[this.agents.getAgentCli()];
     const args: string[] = [];
     const env = this.fullEnv();
@@ -330,19 +329,77 @@ export class TerminalService implements OnModuleDestroy {
     args.push(spec.prompt);
 
     const cwd = this.resolveCwd(sessionId);
-    let proc: IPty;
+    let proc: SpawnHandle;
     try {
-      proc = pty.spawn(command, args, {
-        name: 'xterm-256color',
-        cols: 120,
-        rows: 32,
-        cwd,
-        env,
-      });
+      proc = this.spawner.spawn({ command, args, cwd, env, sessionId });
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : 'spawn failed' };
     }
 
+    const handle = this.registerAgentHandle(sessionId, proc, command, settingsFile ?? null, hooks);
+    this.logger.log(`spawned agent session ${sessionId}: ${command} (pid ${proc.pid}) in ${cwd}`);
+    return { ok: true, pid: handle.proc.pid };
+  }
+
+  /**
+   * Reattach to an autonomous agent session that survived a gateway restart
+   * (durable `tmux` backend only). Unlike {@link spawnAgentSession} this starts
+   * no new process — it asks the spawner for a fresh stream onto the existing
+   * `midnite-<sessionId>` session and re-registers the pinned handle with the
+   * same onExit wiring, so the run picks up where it left off instead of being
+   * orphaned/requeued (Phase 17 §C2). Returns `ok: false` when the backend can't
+   * reattach (pty mode) or the session is no longer live.
+   */
+  reattachAgentSession(
+    sessionId: string,
+    hooks: { onExit: (exitCode: number, signal: number | null) => void },
+  ): { ok: true; pid: number } | { ok: false; error: string } {
+    if (this.handles.has(sessionId)) {
+      return { ok: false, error: `terminal ${sessionId} already exists` };
+    }
+    const proc = this.spawner.reattach?.({ sessionId });
+    if (!proc) return { ok: false, error: 'no live session to reattach' };
+    // The running session already carries its --settings/hook wiring from the
+    // original spawn; we don't own that file on reattach, so don't track it for
+    // unlink. The display command is the configured agent CLI.
+    const command = AGENT_CLI_COMMAND[this.agents.getAgentCli()];
+    const handle = this.registerAgentHandle(sessionId, proc, command, null, hooks);
+    this.logger.log(`reattached agent session ${sessionId}: ${command} (pid ${proc.pid})`);
+    return { ok: true, pid: handle.proc.pid };
+  }
+
+  /** Live durable-session ids (tmux) that survived a restart — empty for pty.
+   *  The boot-time rediscovery set consumed by the pool's recovery. */
+  liveSessionIds(): string[] {
+    return this.spawner.listSessions?.() ?? [];
+  }
+
+  /** Forget a session that won't be reattached after a restart: reap its durable
+   *  (tmux) session if any, and clear its hook secret so the persisted row doesn't
+   *  outlive the run. Safe for `pty` (killSession is a no-op) and for a sessionId
+   *  with no live session — used by boot recovery for strays and dead tasks. */
+  discardSession(sessionId: string): void {
+    this.spawner.killSession?.(sessionId);
+    this.approvals.clearSession(sessionId);
+  }
+
+  /** Whether the configured backend's sessions survive the gateway process. */
+  isDurable(): boolean {
+    return this.spawner.durable === true;
+  }
+
+  /**
+   * Register a *pinned* handle (agent session) with the standard onData/onExit
+   * streaming wiring. Shared by spawn and reattach so both behave identically
+   * once the stream is live.
+   */
+  private registerAgentHandle(
+    sessionId: string,
+    proc: SpawnHandle,
+    command: string,
+    settingsFile: string | null,
+    hooks: { onExit: (exitCode: number, signal: number | null) => void },
+  ): PtyHandle {
     const handle: PtyHandle = {
       proc,
       command,
@@ -352,7 +409,7 @@ export class TerminalService implements OnModuleDestroy {
       seq: 0,
       disposeTimer: null,
       disposables: [],
-      settingsFile: settingsFile ?? null,
+      settingsFile,
       pinned: true,
     };
     this.handles.set(sessionId, handle);
@@ -380,11 +437,7 @@ export class TerminalService implements OnModuleDestroy {
         this.cleanup(sessionId);
       }),
     );
-
-    this.logger.log(
-      `spawned agent session ${sessionId}: ${command} (pid ${proc.pid}) in ${cwd}`,
-    );
-    return { ok: true, pid: proc.pid };
+    return handle;
   }
 
   /** Read the decoded scrollback for a session (managed/agent runs). Used to
@@ -466,16 +519,6 @@ export class TerminalService implements OnModuleDestroy {
       return;
     }
 
-    const pty = this.loadPty();
-    if (!pty) {
-      subscriber.send({
-        type: 'error',
-        code: 'spawn-failed',
-        message: 'terminal backend unavailable',
-      });
-      return;
-    }
-
     // Managed-run ids (council debates) are spawned eagerly by their owner; an
     // attach that finds no live handle means the run already exited — never
     // fall through and spawn a stray interactive shell under that id.
@@ -491,7 +534,7 @@ export class TerminalService implements OnModuleDestroy {
     subscriber.send({ type: 'status', phase: 'spawning' });
     let handle: PtyHandle;
     try {
-      handle = this.spawn(pty, sessionId, geom);
+      handle = this.spawn(sessionId, geom);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'spawn failed';
       this.logger.error(`pty spawn failed for session ${sessionId}: ${message}`);
@@ -549,19 +592,55 @@ export class TerminalService implements OnModuleDestroy {
   }
 
   onModuleDestroy(): void {
+    // Durable backend (tmux): leave the sessions running so a restart can
+    // reattach (Phase 17 §C3) — only drop our local streams/timers here. The
+    // pty backend can't outlive the process, so its sessions are killed as
+    // before. Explicit kill / idle-reap / graceful-stop still ends a durable
+    // session; this path is shutdown only.
+    if (this.isDurable()) {
+      for (const sessionId of [...this.handles.keys()]) this.detachOnShutdown(sessionId);
+      return;
+    }
     for (const sessionId of [...this.handles.keys()]) this.kill(sessionId);
+  }
+
+  /** Shutdown teardown for a durable session: drop the local stream + timers and
+   *  forget the handle, but leave the tmux session (and its --settings file)
+   *  intact so boot-time reattach can resume it. */
+  private detachOnShutdown(sessionId: string): void {
+    const handle = this.handles.get(sessionId);
+    if (!handle) return;
+    try {
+      handle.proc.detach?.();
+    } catch {
+      // attach client already gone
+    }
+    if (handle.disposeTimer) {
+      clearTimeout(handle.disposeTimer);
+      handle.disposeTimer = null;
+    }
+    for (const d of handle.disposables) {
+      try {
+        d.dispose();
+      } catch {
+        // ignore
+      }
+    }
+    this.handles.delete(sessionId);
   }
 
   // ---- internals ----
 
-  private spawn(pty: NodePtyModule, sessionId: string, geom: TerminalGeometry): PtyHandle {
+  private spawn(sessionId: string, geom: TerminalGeometry): PtyHandle {
     const spec = this.resolveSpawnSpec(sessionId);
-    const proc = pty.spawn(spec.command, spec.args, {
-      name: 'xterm-256color',
-      cols: geom.cols,
-      rows: geom.rows,
+    const proc = this.spawner.spawn({
+      command: spec.command,
+      args: spec.args,
       cwd: spec.cwd,
       env: spec.env,
+      cols: geom.cols,
+      rows: geom.rows,
+      sessionId,
     });
 
     const handle: PtyHandle = {
@@ -867,23 +946,5 @@ export class TerminalService implements OnModuleDestroy {
     }
     this.handles.delete(sessionId);
     this.adHoc.delete(sessionId);
-  }
-
-  // Loaded lazily and fail-soft: a broken node-pty native build disables live
-  // terminals but must not take down the REST gateway.
-  private loadPty(): NodePtyModule | null {
-    if (this.nodePty) return this.nodePty;
-    if (this.ptyLoadFailed) return null;
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      this.nodePty = require('node-pty') as NodePtyModule;
-      return this.nodePty;
-    } catch (err) {
-      this.ptyLoadFailed = true;
-      this.logger.error(
-        `node-pty failed to load — live terminals disabled: ${err instanceof Error ? err.message : 'unknown'}`,
-      );
-      return null;
-    }
   }
 }

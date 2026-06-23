@@ -1,6 +1,7 @@
 import {
   index,
   integer,
+  primaryKey,
   real,
   sqliteTable,
   text,
@@ -88,6 +89,24 @@ export const taskLinks = sqliteTable(
   }),
 );
 
+// Blocker edges (Phase 27): `task_id` depends on `depends_on_task_id` (its
+// blocker). A task is ready only when every blocker is `done`. Composite PK on
+// the pair prevents a duplicate edge; the extra index on `depends_on_task_id`
+// makes "who depends on me" cheap (the PK already covers "my blockers"). Plain
+// intra-domain id reference — no cross-domain FK (CLAUDE.md).
+export const taskDependencies = sqliteTable(
+  'task_dependencies',
+  {
+    taskId: text('task_id').notNull(),
+    dependsOnTaskId: text('depends_on_task_id').notNull(),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.taskId, t.dependsOnTaskId] }),
+    dependsOnIdx: index('task_dependencies_depends_on_idx').on(t.dependsOnTaskId),
+  }),
+);
+
 export const projects = sqliteTable('projects', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
@@ -107,14 +126,16 @@ export const projects = sqliteTable('projects', {
 // Repo registry: named checkouts the orchestrator runs agents against. The DB
 // is the runtime source of truth; `config.repos` seeds it on first boot. A task
 // references a repo by its unique `name` (no cross-domain FK). Paths stored in
-// `~`-form. Deferred columns (branchPrefix/prTemplate/cap) land in a later
-// forward migration when Phase 13 Themes D/E need them.
+// `~`-form. `branchPrefix`/`prTemplate` are optional per-repo conventions fed to
+// the agent's seed prompt (Phase 13 Theme E); the `cap` column stays deferred.
 export const repos = sqliteTable(
   'repos',
   {
     id: text('id').primaryKey(),
     name: text('name').notNull(),
     path: text('path').notNull(),
+    branchPrefix: text('branch_prefix'),
+    prTemplate: text('pr_template'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
   },
@@ -268,6 +289,18 @@ export const workflowStorage = sqliteTable(
     workflowKeyIdx: uniqueIndex('workflow_storage_workflow_key_idx').on(t.workflowId, t.key),
   }),
 );
+
+// Secrets that integration/HTTP nodes reference by id. `data` holds the AES-256-GCM
+// encrypted JSON payload ("v1:..."); the plaintext secret never leaves the gateway.
+// Mirrors the llm_providers at-rest encryption contract (CryptoService, fail-closed).
+export const workflowCredentials = sqliteTable('workflow_credentials', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  type: text('type').notNull(), // WorkflowCredentialType
+  data: text('data').notNull(), // encrypted JSON blob, never returned to a client
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
 
 // --- Agents (single primary orchestrator + subagents + heartbeat audit) ---
 
@@ -463,12 +496,16 @@ export type NodeRunRow = typeof nodeRuns.$inferSelect;
 export type NodeRunInsert = typeof nodeRuns.$inferInsert;
 export type WorkflowStorageRow = typeof workflowStorage.$inferSelect;
 export type WorkflowStorageInsert = typeof workflowStorage.$inferInsert;
+export type WorkflowCredentialRow = typeof workflowCredentials.$inferSelect;
+export type WorkflowCredentialInsert = typeof workflowCredentials.$inferInsert;
 export type TaskEventRow = typeof taskEvents.$inferSelect;
 export type TaskEventInsert = typeof taskEvents.$inferInsert;
 export type TaskAttachmentRow = typeof taskAttachments.$inferSelect;
 export type TaskAttachmentInsert = typeof taskAttachments.$inferInsert;
 export type TaskLinkRow = typeof taskLinks.$inferSelect;
 export type TaskLinkInsert = typeof taskLinks.$inferInsert;
+export type TaskDependencyRow = typeof taskDependencies.$inferSelect;
+export type TaskDependencyInsert = typeof taskDependencies.$inferInsert;
 export type ProjectRow = typeof projects.$inferSelect;
 export type ProjectInsert = typeof projects.$inferInsert;
 export type RepoRow = typeof repos.$inferSelect;
@@ -629,3 +666,44 @@ export const marketCache = sqliteTable(
 
 export type MarketCacheRow = typeof marketCache.$inferSelect;
 export type MarketCacheInsert = typeof marketCache.$inferInsert;
+
+// Per-session hook secret (the token that authenticates a Claude session's
+// in-PTY PreToolUse/Stop/Notification callbacks). Only the *hash* is stored —
+// the plaintext lives in the running process's env. Persisted (not just held in
+// memory) so a durable `tmux` session reattached after a gateway restart can
+// still have its hooks authenticate (Phase 17 §C2). One row per session id
+// (task id for agent runs); deleted when the session ends.
+export const hookSecrets = sqliteTable('hook_secrets', {
+  sessionId: text('session_id').primaryKey(),
+  secretHash: text('secret_hash').notNull(),
+  createdAt: text('created_at').notNull(),
+});
+
+export type HookSecretRow = typeof hookSecrets.$inferSelect;
+export type HookSecretInsert = typeof hookSecrets.$inferInsert;
+
+// Persisted notification feed (Phase 21). The notifications service turns
+// notify-worthy state transitions into rows here; the web center reads them
+// (unread-first) and marks them read. `read_at` null = unread.
+export const notifications = sqliteTable(
+  'notifications',
+  {
+    id: text('id').primaryKey(),
+    kind: text('kind').notNull(),
+    severity: text('severity').notNull(),
+    title: text('title').notNull(),
+    body: text('body').notNull(),
+    entityType: text('entity_type').notNull(),
+    entityId: text('entity_id').notNull(),
+    route: text('route').notNull(),
+    readAt: text('read_at'),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    createdIdx: index('notifications_created_idx').on(t.createdAt),
+    readIdx: index('notifications_read_idx').on(t.readAt),
+  }),
+);
+
+export type NotificationRow = typeof notifications.$inferSelect;
+export type NotificationInsert = typeof notifications.$inferInsert;

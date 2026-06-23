@@ -12,6 +12,7 @@ import { isAbsolute, resolve } from 'node:path';
 import { AppModule } from './app.module';
 import { isAllowedOrigin } from './lib/allowed-origin';
 import { loadConfigFromDisk } from './lib/load-config';
+import { registerWebStatic } from './lib/serve-web';
 
 function resolveDir(p: string): string {
   return isAbsolute(p) ? p : resolve(process.cwd(), p);
@@ -46,6 +47,21 @@ export async function startGateway(): Promise<NestFastifyApplication> {
     decorateReply: false,
   });
 
+  // In prod, serve the web app's static export from the gateway (single process
+  // serves API + UI). Off unless `gateway.webDir` (or MIDNITE_WEB_DIR) points at
+  // a built export; the controllers' specific routes still win over the `/`
+  // file mount. See lib/serve-web.ts.
+  const { webDir } = config.gateway;
+  if (webDir) {
+    const { served, root } = await registerWebStatic(adapter.getInstance(), webDir);
+    // eslint-disable-next-line no-console
+    console.log(
+      served
+        ? `[midnite gateway] serving web app from ${root}`
+        : `[midnite gateway] webDir ${root} has no index.html — serving API only`,
+    );
+  }
+
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     adapter,
@@ -59,6 +75,12 @@ export async function startGateway(): Promise<NestFastifyApplication> {
   });
   // Live terminal WS rides the same Fastify HTTP server, routed by gateway path.
   app.useWebSocketAdapter(new WsAdapter(app));
+
+  // Register SIGINT/SIGTERM listeners so Nest runs onModuleDestroy on shutdown —
+  // without this the terminal service's PTY teardown (kill under `pty`, detach
+  // under `tmux`) and the schedulers' timer cleanup never fire on a normal exit,
+  // orphaning live PTYs. (Phase 7 A4.)
+  app.enableShutdownHooks();
 
   const { port, host } = config.gateway;
   await app.listen(port, host);

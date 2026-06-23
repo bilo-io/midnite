@@ -29,7 +29,7 @@ export const Filters: Story = {
     const canvas = within(canvasElement);
     await userEvent.keyboard('{Control>}k{/Control}');
     const dialog = await canvas.findByRole('dialog', { name: 'Command palette' });
-    const input = within(dialog).getByRole('textbox', { name: 'Search commands' });
+    const input = within(dialog).getByRole('textbox', { name: 'Search commands and content' });
 
     await userEvent.type(input, 'profile');
     await expect(within(dialog).getByText('Profile')).toBeInTheDocument();
@@ -37,6 +37,6 @@ export const Filters: Story = {
 
     await userEvent.clear(input);
     await userEvent.type(input, 'zzzzz');
-    await expect(within(dialog).getByText('No matches.')).toBeInTheDocument();
+    await expect(await within(dialog).findByText('No matches.')).toBeInTheDocument();
   },
 };

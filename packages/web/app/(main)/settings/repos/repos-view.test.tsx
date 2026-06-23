@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { Repo } from '@midnite/shared';
 import { ConfirmProvider } from '@/components/confirm-dialog';
 
@@ -65,6 +65,58 @@ describe('ReposView', () => {
       expect(createRepo).toHaveBeenCalledWith({ name: 'service', path: '~/Dev/service' }),
     );
     expect(await screen.findByText('service')).toBeInTheDocument();
+  });
+
+  it('sends branch prefix and PR template when creating', async () => {
+    getRepos.mockResolvedValue([]);
+    createRepo.mockResolvedValue(repo({ id: 'r9', name: 'service', branchPrefix: 'feature/' }));
+    renderView();
+    await screen.findByText(/no repos yet/i);
+
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'service' } });
+    fireEvent.change(screen.getByLabelText('Path'), { target: { value: '~/Dev/service' } });
+    fireEvent.change(screen.getByLabelText(/branch prefix/i), { target: { value: 'feature/' } });
+    fireEvent.change(screen.getByLabelText(/pr template/i), { target: { value: '## Why' } });
+    fireEvent.click(screen.getByRole('button', { name: /add repo/i }));
+
+    await waitFor(() =>
+      expect(createRepo).toHaveBeenCalledWith({
+        name: 'service',
+        path: '~/Dev/service',
+        branchPrefix: 'feature/',
+        prTemplate: '## Why',
+      }),
+    );
+  });
+
+  it('shows the branch prefix on a repo that has one', async () => {
+    getRepos.mockResolvedValue([repo({ name: 'api', branchPrefix: 'feature/', prTemplate: '## Why' })]);
+    renderView();
+    await screen.findByText('api');
+    // Scope to the repo's row — the add form also has a "PR template" label.
+    const row = within(screen.getByRole('listitem'));
+    expect(row.getByText('feature/')).toBeInTheDocument();
+    expect(row.getByText(/PR template/i)).toBeInTheDocument();
+  });
+
+  it('edits a repo’s conventions', async () => {
+    getRepos.mockResolvedValue([repo({ id: 'r1', name: 'api', branchPrefix: 'feature/' })]);
+    updateRepo.mockResolvedValue(repo({ id: 'r1', name: 'api', branchPrefix: 'fix/' }));
+    renderView();
+    await screen.findByText('api');
+
+    fireEvent.click(screen.getByRole('button', { name: /edit api/i }));
+    const prefixField = screen.getByLabelText('Branch prefix');
+    expect(prefixField).toHaveValue('feature/');
+    fireEvent.change(prefixField, { target: { value: 'fix/' } });
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+
+    await waitFor(() =>
+      expect(updateRepo).toHaveBeenCalledWith(
+        'r1',
+        expect.objectContaining({ branchPrefix: 'fix/' }),
+      ),
+    );
   });
 
   it('surfaces a server error (e.g. duplicate name) without adding a row', async () => {

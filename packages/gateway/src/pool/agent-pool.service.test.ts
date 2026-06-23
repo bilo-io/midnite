@@ -59,22 +59,8 @@ describe('AgentPoolService', () => {
     expect(snap.slots.find((s) => s.taskId === 'a')?.pid).toBe(999);
   });
 
-  it('reconciles orphaned wip/waiting tasks to todo on boot', () => {
-    const { service, requeue } = fakeTasks([
-      { id: 'w1', status: 'wip' },
-      { id: 'w2', status: 'waiting' },
-      { id: 'd1', status: 'done' },
-      { id: 't1', status: 'todo' },
-    ]);
-    const pool = new AgentPoolService(config(4), service);
-    pool.onModuleInit();
-
-    expect(requeue).toHaveBeenCalledTimes(2);
-    expect(requeue).toHaveBeenCalledWith('w1');
-    expect(requeue).toHaveBeenCalledWith('w2');
-    expect(requeue).not.toHaveBeenCalledWith('d1');
-    expect(requeue).not.toHaveBeenCalledWith('t1');
-  });
+  // Boot reconcile (requeue / tmux-reattach of orphaned wip/waiting tasks) moved
+  // to AgentRunnerService.onModuleInit (Phase 17 §C2) — see agent-runner.service.test.ts.
 
   it('trips the abort signal without freeing the slot', () => {
     const { service } = fakeTasks([]);

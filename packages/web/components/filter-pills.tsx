@@ -19,6 +19,8 @@ type FilterPillsProps = {
   paramKey?: string;
   /** Label for the pill that clears all filters. */
   allLabel?: string;
+  /** Hide the "All" pill — for a single-option toggle, where the lone pill is the toggle. */
+  hideAll?: boolean;
   className?: string;
 };
 
@@ -32,6 +34,7 @@ export function FilterPills({
   options,
   paramKey = 'status',
   allLabel = 'All',
+  hideAll = false,
   className,
 }: FilterPillsProps) {
   const router = useRouter();
@@ -67,19 +70,21 @@ export function FilterPills({
 
   return (
     <div className={cn('flex flex-wrap items-center gap-2', className)}>
-      <button
-        type="button"
-        onClick={() => apply(new Set())}
-        aria-pressed={noneActive}
-        className={cn(
-          'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
-          noneActive
-            ? 'border-foreground/20 bg-accent text-accent-foreground'
-            : 'border-border/60 text-muted-foreground hover:bg-accent/50 hover:text-foreground',
-        )}
-      >
-        {allLabel}
-      </button>
+      {hideAll ? null : (
+        <button
+          type="button"
+          onClick={() => apply(new Set())}
+          aria-pressed={noneActive}
+          className={cn(
+            'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+            noneActive
+              ? 'border-foreground/20 bg-accent text-accent-foreground'
+              : 'border-border/60 text-muted-foreground hover:bg-accent/50 hover:text-foreground',
+          )}
+        >
+          {allLabel}
+        </button>
+      )}
       {options.map((o) => {
         const on = active.has(o.value);
         // Project pills carry a raw hex `color`; status pills carry an `hue` (HSL

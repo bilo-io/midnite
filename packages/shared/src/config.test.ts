@@ -30,6 +30,27 @@ describe('agent pool config defaults', () => {
   });
 });
 
+describe('terminal.mode backend', () => {
+  it('defaults to pty', () => {
+    const config = parseConfig({ agent: {}, terminal: {}, knowledge: {}, gateway: {} });
+    expect(config.terminal.mode).toBe('pty');
+  });
+
+  it('accepts the durable tmux backend', () => {
+    const config = parseConfig({ agent: {}, terminal: { mode: 'tmux' }, knowledge: {}, gateway: {} });
+    expect(config.terminal.mode).toBe('tmux');
+  });
+
+  it('rejects the dropped warp/iterm backends (Phase 17 §C1)', () => {
+    expect(() =>
+      parseConfig({ agent: {}, terminal: { mode: 'warp' }, knowledge: {}, gateway: {} }),
+    ).toThrow();
+    expect(() =>
+      parseConfig({ agent: {}, terminal: { mode: 'iterm' }, knowledge: {}, gateway: {} }),
+    ).toThrow();
+  });
+});
+
 describe('agent.provider (LLM provider) normalisation', () => {
   it('defaults to anthropic', () => {
     const config = parseConfig({ agent: {}, terminal: {}, knowledge: {}, gateway: {} });
@@ -51,6 +72,30 @@ describe('agent.provider (LLM provider) normalisation', () => {
       const config = parseConfig({ agent: { provider: p }, terminal: {}, knowledge: {}, gateway: {} });
       expect(config.agent.provider).toBe(p);
     }
+  });
+});
+
+describe('knowledge config defaults', () => {
+  it('defaults the knowledge block off with a byte cap, no dir', () => {
+    const config = parseConfig({ agent: {}, terminal: {}, knowledge: {}, gateway: {} });
+    expect(config.knowledge.enabled).toBe(false);
+    expect(config.knowledge.dir).toBeUndefined();
+    expect(config.knowledge.maxBytes).toBeGreaterThan(0);
+  });
+
+  it('defaults knowledge even when the block is omitted entirely', () => {
+    const config = parseConfig({ agent: {}, terminal: {}, gateway: {} });
+    expect(config.knowledge.enabled).toBe(false);
+  });
+
+  it('accepts an explicit knowledge folder + cap', () => {
+    const config = parseConfig({
+      agent: {},
+      terminal: {},
+      knowledge: { enabled: true, dir: '~/notes', maxBytes: 4096 },
+      gateway: {},
+    });
+    expect(config.knowledge).toEqual({ enabled: true, dir: '~/notes', maxBytes: 4096 });
   });
 });
 

@@ -218,6 +218,48 @@
       "when": 1782038829672,
       "tag": "0030_repos",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "6",
+      "when": 1782079678099,
+      "tag": "0031_repo_conventions",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "6",
+      "when": 1782083426189,
+      "tag": "0032_workflow_credentials",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "6",
+      "when": 1782085444542,
+      "tag": "0033_hook_secrets",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "6",
+      "when": 1782088019567,
+      "tag": "0034_search_index",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "6",
+      "when": 1782124835549,
+      "tag": "0035_notifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "6",
+      "when": 1782129326540,
+      "tag": "0036_task_dependencies",
+      "breakpoints": true
     }
   ]
 }

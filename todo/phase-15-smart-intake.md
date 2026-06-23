@@ -32,37 +32,39 @@ Accept a freeform multi-line list in one shot, one task per line.
 
 ---
 
-## Theme B — URL + GitHub-context inference — **M**
+## Theme B — URL + GitHub-context inference — **M** — ✅ DONE (PR #67, 2026-06-21)
 
-Detect URLs on a submitted item; fetch context for GitHub issue/PR links (and general URLs) and fold it into the generated execution prompt.
+Links in a task's prompt are fetched and folded into the agent's seed prompt as a "Linked context" block. See [done.md](done.md).
 
-- [ ] Detect URLs in the task prompt during classify/plan, reusing [`source.ts`](../packages/shared/src/source.ts) kind detection (GitHub gets special handling; other kinds fetched as generic pages).
-- [ ] **GitHub context** — when `gh` is available, shell out to `gh api` for issue/PR title + body + state (uses the user's existing auth, handles private repos); **fall back to anonymous `api.github.com` REST** for public resources when `gh` is absent. (Decision §2 — settled gh-first.)
-- [ ] **General URL context** — fetch via the existing SSRF guard [`allowed-origin.ts`](../packages/gateway/src/lib/allowed-origin.ts) (block private ranges), extract readable text/title; never fetch a blocked origin.
-- [ ] **Inject, truncated** — fold the fetched context into the execution prompt (the same place sources are injected, [`pool/agent-pool.service.ts`](../packages/gateway/src/pool/agent-pool.service.ts)), capped to a sane byte budget so a huge issue thread can't blow the context. Failures degrade gracefully (skip the fetch, log a warn — never break task creation, mirroring the planner's fail-open stance).
+- [x] Detect URLs in the prompt at agent-run start (pure `extractUrls` in `agent/lib/url-context.ts`); shared `parseGithubIssueOrPr` gives GitHub issue/PR links special handling, other URLs are fetched as generic pages.
+- [x] **GitHub context** — `gh api repos/{repo}/issues/{n}` (user auth → private repos) for issue/PR title+body+state, with an anonymous `api.github.com` REST fallback when `gh` is absent. (Decision §2.)
+- [x] **General URL context** — fetched through the **real** outbound SSRF guard (`isSafeHttpUrl` in [`projects/lib/opengraph.ts`](../packages/gateway/src/projects/lib/opengraph.ts), private/loopback blocked) — *not* `allowed-origin.ts` (that's the inbound CORS gate). Reduced to readable text/title; a second fetch path was avoided by reusing `readCapped`/`parseHtmlMetadata`.
+- [x] **Inject, truncated** — appended at the agent-run seed-prompt point ([`pool/agent-runner.service.ts`](../packages/gateway/src/pool/agent-runner.service.ts) `start()` — sources aren't injected in `agent-pool.service.ts` as the doc assumed), byte-capped (5 URLs · 4k chars/source · 12k total). Fail-open per-URL and overall — never blocks a run.
 
 ---
 
-## Theme C — Inline answers for question-type items — **M**
+## Theme C — Inline answers for question-type items — **M** — ✅ DONE (PRs #55 + #83, 2026-06-22 — see [done.md](done.md))
 
 When classification yields `kind: question`, answer it directly instead of landing an actionable task.
 
-- [ ] An **answer-generation step** in the agent module (plan model) invoked when the classifier returns `question`; produces a concise answer (with the URL/knowledge context from Themes B/D if present).
-- [ ] **Surface in the task thread, not the board** (Decision §3): write the answer as a `task_events` entry and move the item to an **`answered`** resolution (a terminal state / status handling) so questions don't clog the active columns. Reuse the existing task-event timeline the thread modal renders.
-- [ ] Web: the task thread shows the answer (markdown-rendered) with a clear "answered" affordance; the item is filterable/visible without occupying a working column.
-- [ ] Fail-open: if answer generation fails or the LLM is disabled, fall back to landing the item as a normal task (never silently drop a question).
+- [x] An **answer-generation step** in the agent module (plan model) invoked when the classifier returns `question`; produces a concise answer. *(PR #55: `PlannerService.answer`, called from `tasks.service` for question-kind tasks.)*
+- [x] **Surface in the task thread, not the board** (Decision §3 — resolved as **`done` + an `answer` event**, not a new status): the answer is written as an `answer` `task_events` entry and the task resolves to `done`, so questions don't clog the working columns. *(PR #55.)*
+- [x] Web: the task thread renders the answer (markdown) *(PR #55)*; a clear **"Answered" affordance** (badge on the card + thread header, single-sourced via `isAnsweredQuestion`/`ANSWER_EVENT_KIND` in `shared`) plus an **"Answered" filter toggle** so the item is findable apart from ordinary completed work *(PR #83)*.
+- [x] Fail-open: if answer generation fails or the LLM is disabled, the item lands as a normal task (never silently dropped). *(PR #55.)*
 
 ---
 
-## Theme D — Knowledge-files watcher + MD injection — **M**
+## Theme D — Knowledge-files watcher + MD injection — **M** — ✅ DONE (PR #95, 2026-06-22 — see [done.md](done.md))
 
 The original plan's "watched folder of MD files." Index a knowledge directory, let the plan model pick relevant files, inject their **content** into the execution prompt.
 
-- [ ] **New `config.knowledge` block** in [`config.ts`](../packages/shared/src/config.ts): `{ dir?: string, maxBytes: number, enabled: boolean }` (defaulted; documented in the README). Read only via `loadConfig()`.
-- [ ] A gateway **knowledge service** that watches `config.knowledge.dir` with **`chokidar`** (new gateway runtime dep), maintaining an in-memory **manifest** (filename + headings) that updates on add/change/unlink. No DB — the files on disk are the source of truth.
-- [ ] **Plan-model file selection** — pass the manifest to the planner; it returns the filenames relevant to the task; the service reads those files and the prompt builder injects their **content**, capped to `maxBytes`.
-- [ ] **Naming** (Decision §4): surface this as **"Knowledge files"** — distinct from the existing link-based **"Sources"** — in config docs and any UI copy, so the two knowledge bases aren't conflated.
-- [ ] Defer embeddings/RAG entirely — keyword/heading manifest + model selection is the v1.
+- [x] **New `config.knowledge` block** in [`config.ts`](../packages/shared/src/config.ts): `{ enabled, dir?, maxBytes }` (defaulted; documented in the README). Read only via `loadConfig()`.
+- [x] A gateway **knowledge service** (`KnowledgeWatcherService`) that watches `config.knowledge.dir` with **`chokidar`** v3 (CJS — matches the gateway build), maintaining an in-memory **manifest** (filename + headings) that updates on add/change/unlink. No DB — the files on disk are the source of truth.
+- [x] **Plan-model file selection** — `KnowledgeService` passes the manifest to the plan model; it returns relevant filenames (validated against the manifest, path-guarded); the content is injected into the seed prompt (capped to `maxBytes`), between URL context and repo conventions. Best-effort + fail-open.
+- [x] **Naming** (Decision §4): surfaced as **"Knowledge files"** — distinct from the link-based **"Sources"** — in the README.
+- [x] Embeddings/RAG deferred entirely — keyword/heading manifest + model selection is the v1.
+
+**This closes Phase 15 (all themes A–D shipped).**
 
 ---
 

@@ -3,6 +3,7 @@ import { expect, fn, userEvent, within } from 'storybook/test';
 
 import {
   projectTagInfo,
+  taskAnsweredQuestion,
   taskBug,
   taskChore,
   taskFeature,
@@ -47,6 +48,15 @@ export const Question: Story = {
   args: { task: taskQuestion },
 };
 
+/** A question answered inline at intake — resolved to Done with an "Answered" badge. */
+export const AnsweredQuestion: Story = {
+  args: { task: taskAnsweredQuestion },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText('Answered')).toBeInTheDocument();
+  },
+};
+
 export const Chore: Story = {
   args: { task: taskChore, project: { tag: 'GATEWAY', color: '#0ea5e9' } },
 };
@@ -59,4 +69,13 @@ export const UnknownKind: Story = {
 /** Without `onSelect` the card renders as a static div instead of a button. */
 export const NonInteractive: Story = {
   args: { task: taskFeature, project: projectTagInfo, onSelect: undefined },
+};
+
+/** A task assigned to a repo shows the repo chip alongside the project tag. */
+export const WithRepo: Story = {
+  args: { task: { ...taskFeature, repo: 'acme/api' }, project: projectTagInfo },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText('acme/api')).toBeInTheDocument();
+  },
 };

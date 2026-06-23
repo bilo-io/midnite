@@ -38,38 +38,42 @@ A scroll/section controller (Theme D) is the single source of truth for "which s
 
 ---
 
-## Theme B — Persistent cursor-following particle field
+## Theme B — Persistent cursor-following particle field — ⏳ REMOVED for now (PR #68, 2026-06-21)
+
+> **Update (PR #68):** the WebGL/R3F particle field was **removed for now** — `components/scene/` and the `@react-three/*`/`three` deps are gone, replaced by a static CSS `AmbientBackdrop` (soft brand-tinted blurs). It originally shipped in PR #59 (per-section + theme-aware field); parked, not deleted from history. Revisit if/when we want the 3D back.
 
 > Evolve the existing [`scene/`](../packages/site/components/scene/) (R3F + custom shader, already cursor-aware via `usePointer`) rather than starting over.
 
 ### B1. Cursor-follow & always-on field — **M**
-- [ ] The particle field **loosely follows the cursor** (eased lerp toward pointer, not a hard lock) and remains a fixed, `pointer-events-none`, full-viewport backdrop across **all** sections (it currently exists; make it the persistent base layer). Single `<Canvas>` for the whole page.
-- [ ] Drive colours from the **active theme tokens** so the field recolours on theme switch (light vs dark palettes), not a fixed dark-only ramp.
+- [x] The particle field **loosely follows the cursor** (eased lerp toward pointer, not a hard lock) and remains a fixed, `pointer-events-none`, full-viewport backdrop across **all** sections (it currently exists; make it the persistent base layer). Single `<Canvas>` for the whole page.
+- [x] Drive colours from the **active theme tokens** so the field recolours on theme switch (light vs dark palettes), not a fixed dark-only ramp.
 
 ### B2. Per-section particle styles (transitioned) — **M**
-- [ ] Each section defines a **particle style** — palette accent, density/size, motion character (e.g. calm drift → faster swirl → grid-snap). On section change, **lerp the shader uniforms** between styles so the look shifts *slightly* and *smoothly* (no hard cut). Subtle is the goal.
-- [ ] Tie the style set to the section registry (Theme D) so adding a section = adding a style entry.
+- [x] Each section defines a **particle style** — palette accent, density/size, motion character (e.g. calm drift → faster swirl → grid-snap). On section change, **lerp the shader uniforms** between styles so the look shifts *slightly* and *smoothly* (no hard cut). Subtle is the goal.
+- [x] Tie the style set to the section registry (Theme D) so adding a section = adding a style entry.
 
 ### B3. Performance & reduced motion — **S**
-- [ ] Cap DPR, pause the rAF loop when the canvas is offscreen/tab hidden, and **disable drift + cursor-follow** under `prefers-reduced-motion` (render a static field). Keep 60fps on a mid laptop.
+- [x] Cap DPR, pause the rAF loop when the canvas is offscreen/tab hidden, and **disable drift + cursor-follow** under `prefers-reduced-motion` (render a static field). Keep 60fps on a mid laptop.
 
 ---
 
-## Theme C — The persistent preview panel
+## Theme C — The persistent preview panel — ✅ DONE (PR #59, 2026-06-21)
 
 > The signature element: one Mac-window panel that lives for the whole page and morphs between sections.
 
+> **Refinement (PR #68):** the panel now carries the brand `gradient-border` — subtle at rest, becoming a pronounced rotating conic gradient + breathing glow pulse on hover/focus (`.panel-glow`); degrades under reduced motion.
+
 ### C1. Panel chrome & persistence — **M**
-- [ ] A single **`<PreviewPanel>`** rendered once at the page root (not per section), styled as a **macOS window**: rounded corners, subtle shadow/depth (the "subtle 3D"), translucent token-driven surface, and the **three red/yellow/green traffic-light dots** in the top-left, **always** present.
-- [ ] The panel is **shared across sections** — implement with a shared-layout/FLIP technique (Framer Motion `layoutId`, or a measured FLIP) so it's the *same* element morphing, not a swap.
+- [x] A single **`<PreviewPanel>`** rendered once at the page root (not per section), styled as a **macOS window**: rounded corners, subtle shadow/depth (the "subtle 3D"), translucent token-driven surface, and the **three red/yellow/green traffic-light dots** in the top-left, **always** present.
+- [x] The panel is **shared across sections** — implement with a shared-layout/FLIP technique (Framer Motion `layoutId`, or a measured FLIP) so it's the *same* element morphing, not a swap.
 
 ### C2. Position & size transitions — **M**
-- [ ] Each section declares the panel's **target rect** (x, y, width, height) — e.g. hero = centred & grid-card-sized; a feature section = larger and offset to one side. On active-section change the panel **animates position *and* size** with a smooth spring/ease. Width and height both transition (not just translate).
-- [ ] Layout is **responsive**: rects are expressed relatively (vw/vh or a layout grid) and recompute on resize; on narrow viewports sections may stack the panel above/below the text instead of beside it.
+- [x] Each section declares the panel's **target rect** (x, y, width, height) — e.g. hero = centred & grid-card-sized; a feature section = larger and offset to one side. On active-section change the panel **animates position *and* size** with a smooth spring/ease. Width and height both transition (not just translate).
+- [x] Layout is **responsive**: rects are expressed relatively (vw/vh or a layout grid) and recompute on resize; on narrow viewports sections may stack the panel above/below the text instead of beside it.
 
 ### C3. Dynamic content swap — **M**
-- [ ] The panel's **inner content fills the frame** and is **swapped per section** with a cross-fade (+ slight scale/blur) timed against the panel's move, so content settles as the panel arrives. Content modules come from Theme F via the section registry.
-- [ ] Reduced motion: instant placement + instant content swap (no morph, no fade).
+- [x] The panel's **inner content fills the frame** and is **swapped per section** with a cross-fade (+ slight scale/blur) timed against the panel's move, so content settles as the panel arrives. Content modules come from Theme F via the section registry.
+- [x] Reduced motion: instant placement + instant content swap (no morph, no fade).
 
 ---
 
@@ -85,28 +89,28 @@ A scroll/section controller (Theme D) is the single source of truth for "which s
 
 ---
 
-## Theme E — Hero (epic but clean)
+## Theme E — Hero (epic but clean) — ✅ DONE (PR #59, 2026-06-21)
 
 ### E1. Epic hero composition — **M–L**
-- [ ] A standout hero: prominent **app icon + "midnite" logo/wordmark**, big calm headline, the particle field at its densest/most dynamic here, generous space. Epic, but uncluttered — one focal centrepiece.
-- [ ] The **persistent panel sits centred** in the hero at roughly **grid-card size** (small), establishing the element that will grow/travel as the user scrolls into later sections.
+- [x] A standout hero: prominent **app icon + "midnite" logo/wordmark**, big calm headline, the particle field at its densest/most dynamic here, generous space. Epic, but uncluttered — one focal centrepiece.
+- [x] The **persistent panel sits centred** in the hero at roughly **grid-card size** (small), establishing the element that will grow/travel as the user scrolls into later sections.
 
 ### E2. Cycling typed titles — **S–M**
-- [ ] The hero headline **cycles through 3 title/subtitle pairs**, each **typed out**, held briefly, cleared, then the next — looping. (e.g. "Multitask Claude Code", "Your agents, in parallel", "One board, every task" — final copy TBD, Decisions §5.) Built on the `useTypewriter` hook (D2).
-- [ ] Pauses on reduced motion (show the first pair statically) and is legible against the busy hero backdrop (scrim/backdrop-blur behind the text).
+- [x] The hero headline **cycles through 3 title/subtitle pairs**, each **typed out**, held briefly, cleared, then the next — looping. (e.g. "Multitask Claude Code", "Your agents, in parallel", "One board, every task" — final copy TBD, Decisions §5.) Built on the `useTypewriter` hook (D2).
+- [x] Pauses on reduced motion (show the first pair statically) and is legible against the busy hero backdrop (scrim/backdrop-blur behind the text).
 
 ---
 
-## Theme F — Panel content modules
+## Theme F — Panel content modules — ✅ DONE (PR #59, 2026-06-21)
 
 > The interchangeable things shown *inside* the panel (C3). All token-themed, all degrade under reduced motion.
 
 ### F1. Terminal-typing module — **M**
-- [ ] A **terminal mockup** inside the panel that **types out a command** (and a plausible faux response), monospaced, with a blinking caret — used for "install / run" style sections. Reuse the `useTypewriter` engine (D2). Mac dots already come from the panel chrome (C1).
+- [x] A **terminal mockup** inside the panel that **types out a command** (and a plausible faux response), monospaced, with a blinking caret — used for "install / run" style sections. Reuse the `useTypewriter` engine (D2). Mac dots already come from the panel chrome (C1).
 
 ### F2. Webapp-mockup modules — **M–L**
-- [ ] **Simplified mockups inspired by the actual web app** to communicate features — e.g. a stylised **kanban board** (a few task cards moving across columns), a **session/agent card**, a **dashboard widget**, or an **office** vignette. These are *evocations*, not the real components — lightweight, token-themed, lightly animated. One module per feature section.
-- [ ] Each module fills the panel frame and has an idle micro-animation (a card sliding, a value ticking) so the panel feels alive, not a screenshot.
+- [x] **Simplified mockups inspired by the actual web app** to communicate features — e.g. a stylised **kanban board** (a few task cards moving across columns), a **session/agent card**, a **dashboard widget**, or an **office** vignette. These are *evocations*, not the real components — lightweight, token-themed, lightly animated. One module per feature section.
+- [x] Each module fills the panel frame and has an idle micro-animation (a card sliding, a value ticking) so the panel feels alive, not a screenshot.
 
 ---
 
@@ -156,12 +160,12 @@ A scroll/section controller (Theme D) is the single source of truth for "which s
   - [ ] One **persistent panel** travels and **resizes** (width *and* height) smoothly between sections; it always shows the **three Mac dots**; its content swaps per section with a cross-fade.
   - [ ] Hero: app icon + logo present; the centred grid-card-sized panel; the headline **cycles through 3 typed title/subtitle pairs**.
   - [ ] Each section's **title + subtitle type out quickly**, then other elements **fade in**; complementary text sits outside the panel.
-  - [ ] The **particle field follows the cursor** and its **style shifts smoothly** between sections; recolours on theme change.
+  - [x] ❌ SUPERSEDED (PR #68) — the WebGL **particle field** (cursor-follow + per-section style) was **removed** and replaced by a static CSS `AmbientBackdrop`; this acceptance item no longer applies. Revisit if the 3D field is ever restored.
   - [ ] **Theme toggle** works (light/dark/system/time), matches the web app, and persists; no flash on reload.
   - [ ] Some sections show a **typed terminal command**; others show a **web-app-inspired mockup** in the panel.
   - [ ] **Download page**: same platforms/links/behaviour as before, restyled elegantly; theming + particles consistent.
   - [ ] **Legal**: `/legal/privacy` and `/legal/eula` render placeholder markdown with a **sidebar** of all legal docs; footer links to them.
-  - [ ] **Reduced motion**: typing, particle drift, and panel morph all degrade to instant/static; the site is fully usable.
+  - [x] **Reduced motion** (PR #98, 2026-06-22): typing (`use-typewriter`) and the panel FLIP morph degrade via [`lib/reduced-motion.ts`](../packages/site/components/../lib/reduced-motion.ts); per-animation `@media (prefers-reduced-motion: reduce)` rules disable the named keyframes (reveal/gradient-border/panel-glow/caret); and a **global catch-all** in `globals.css` floors every transition + any future animation to ~instant and drops smooth-scroll. Particle drift is moot (field removed, PR #68). Verified against `site:dev` under emulated reduced-motion — the at-rest render is pixel-identical to normal, i.e. fully usable.
 - `moon run site:typecheck`, `moon run :lint`, `moon run :test` green; `moon run site:build` succeeds (static/SSR build clean).
 
 ## Decisions / open questions

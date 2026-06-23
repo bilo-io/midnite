@@ -26,9 +26,11 @@ import {
   type AppSettings,
 } from '@/lib/app-settings';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { NotificationCenter } from '@/components/notification-center';
 import { Screensaver } from '@/components/screensaver';
 import { PasscodeSetupDialog } from '@/components/passcode-pad';
 import { Wordmark } from '@/components/wordmark';
+import { MobileNav } from '@/components/mobile-nav';
 
 type NavLink = {
   href: string;
@@ -55,6 +57,9 @@ export function NavBar() {
   // with a divider before the rest.
   const dashboardEnabled = isFeatureEnabled(settings.features, 'dashboard');
   const otherFeatures = FEATURES.slice(1).filter((f) => isFeatureEnabled(settings.features, f.key));
+  // Enabled surfaces in nav order — the mobile bottom-tab bar renders from the
+  // same list the sidebar does (dashboard first when enabled).
+  const navFeatures = [...(dashboardEnabled ? [FEATURES[0]!] : []), ...otherFeatures];
 
   const [hoverOpen, setHoverOpen] = useState(false);
   const expandedView = navMode === 'expanded' || (navMode === 'auto' && hoverOpen);
@@ -124,7 +129,9 @@ export function NavBar() {
       <aside
         {...autoHandlers}
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex flex-col border-r border-border/60 py-3 backdrop-blur transition-[width] duration-200',
+          // Hidden on phones (the bottom-tab bar takes over below `md`); the
+          // icon-rail/expanded states stay for tablet and desktop.
+          'fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border/60 py-3 backdrop-blur transition-[width] duration-200 md:flex',
           expandedView
             ? 'w-56 items-stretch bg-background/95 px-2 shadow-xl'
             : 'w-14 items-center bg-background/70 supports-[backdrop-filter]:bg-background/50',
@@ -193,6 +200,7 @@ export function NavBar() {
         </nav>
 
         <div className={cn('mt-auto flex flex-col gap-1', expandedView ? 'items-stretch' : 'items-center')}>
+          <NotificationCenter />
           <ThemeToggle expanded={expandedView} />
           {renderLink(SETTINGS_LINK)}
           <div className={cn('my-1 h-px bg-border/60', expandedView ? 'w-full' : 'w-6')} />
@@ -214,6 +222,8 @@ export function NavBar() {
           </button>
         </div>
       </aside>
+
+      <MobileNav pathname={pathname} features={navFeatures} onLock={lock} />
 
       {settingUp ? (
         <PasscodeSetupDialog
