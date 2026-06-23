@@ -19,18 +19,27 @@ Resolve to a concrete inclusive `START`/`END` (`YYYY-MM-DD`). macOS `date`:
 
 Echo the resolved range back in one line before the report.
 
+**Timezone — render every time in SAST** (`Africa/Johannesburg`, UTC+2, no DST). The host clock is SAST, so `date +%F` already yields the SAST date and `git log --since/--until` is SAST. The trap is GitHub: `gh`'s `mergedAt` is **UTC** (`…Z`) and a bare-date `merged:`/`updated:` search buckets by the **UTC** day — both must be pinned to SAST explicitly (see §2), or the window slips and every merge time reads 2h early. Any "now"/"generated" stamp you print is plain `date` (already SAST).
+
 ## 2 · Gather (read-only) — fan out to subagents
 
 The gathering is independent and read-heavy (raw PR JSON + ~30 phase-doc reads), so once `START`/`END` are resolved **dispatch two read-only subagents in a single message** so they run concurrently. Pass the resolved `START`/`END` into each prompt. Each returns a compact structured digest — keep the raw JSON and file dumps out of this thread; you compose the report from the digests.
 
 **Subagent A — GitHub / PR data:**
-- **Merged PRs in range** (the spine of the report):
+- **Merged PRs in range** (the spine of the report) — pin the window to SAST with a `+02:00` offset on both bounds so the search brackets the **SAST** day, not the UTC day:
   ```bash
-  gh pr list --state merged --search "merged:START..END" \
+  gh pr list --state merged \
+    --search "merged:${START}T00:00:00+02:00..${END}T23:59:59+02:00" \
     --json number,title,url,mergedAt,additions,deletions,author --limit 200
   ```
   (Default limit is 30 — keep `--limit 200`; bump it and note if the cap is hit.)
-- **Status mix** for the range: also run `--state all --search "updated:START..END"` and bucket by state → merged / still-open / closed-unmerged.
+  **The `Merged` column must be SAST.** `mergedAt` is UTC — convert it with jq (`+7200`; SAST has no DST so the constant is safe year-round) rather than slicing the raw `…Z` string:
+  ```bash
+  ... | jq -r 'sort_by(.mergedAt) | reverse | .[]
+        | "\(.number)\t\(.mergedAt|fromdateiso8601+7200|strftime("%H:%M"))\t\(.additions)\t\(.deletions)\t\(.title)"'
+  ```
+  Pitfall: do **not** display the raw `mergedAt` HH:MM (that's UTC), and do **not** use `date -ju -f '%Y-%m-%dT%H:%M:%SZ' "$utc"` — the `-u` flag forces UTC *output* too, so it returns the time unconverted (16:19Z → "16:19", not "18:19"). The jq `+7200` path is the reliable one.
+- **Status mix** for the range: also run `--state all --search "updated:${START}T00:00:00+02:00..${END}T23:59:59+02:00"` and bucket by state → merged / still-open / closed-unmerged.
 - **Phase mapping:** parse each PR's title (and body if needed) for `Phase N` (+ Theme). Cross-check against phase docs touched in range: `git log --since=START --until="END 23:59" --name-only -- 'todo/phase-*.md'`. PRs with no phase → an "—" bucket.
 - If `gh` isn't available/authed, say so and fall back to merge commits via `git log` — don't fail the report.
 - **Return:** the merged-PR rows (`number, title, url, mergedAt, additions, deletions, author, phase`), the status-mix counts, and the phase→PRs aggregation.
@@ -47,9 +56,9 @@ Emit in this order:
 
 A one-line **status mix**: `N merged · M open · K closed-unmerged`.
 
-`## 🔀 Merged PRs` — newest first, link every PR via its `url`:
-| PR | Title | Phase | Δ lines | Merged |
-|----|-------|-------|---------|--------|
+`## 🔀 Merged PRs` — newest first, link every PR via its `url`. The **Merged** column is **SAST** (`mergedAt` converted per §2):
+| PR | Title | Phase | Δ lines | Merged (SAST) |
+|----|-------|-------|---------|---------------|
 | [#69](url) | … | 25 · Theme D | +982 / −12 | 19:53 |
 
 `## 🧭 Phases tackled` — aggregate the range's PRs per phase:
