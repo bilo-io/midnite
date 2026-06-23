@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { WorkflowSchema, type WorkflowRun } from '@midnite/shared';
 
 import { RunOutputPanel } from './run-output-panel';
+import { ToastProvider } from './toast';
 import { createWorkflowStore, WorkflowStoreContext } from '@/lib/workflow-store';
 
 function renderPanel(run: WorkflowRun | null) {
@@ -18,9 +19,11 @@ function renderPanel(run: WorkflowRun | null) {
     updatedAt: '2026-06-21T00:00:00.000Z',
   });
   render(
-    <WorkflowStoreContext.Provider value={createWorkflowStore(workflow)}>
-      <RunOutputPanel run={run} />
-    </WorkflowStoreContext.Provider>,
+    <ToastProvider>
+      <WorkflowStoreContext.Provider value={createWorkflowStore(workflow)}>
+        <RunOutputPanel run={run} />
+      </WorkflowStoreContext.Provider>
+    </ToastProvider>,
   );
 }
 

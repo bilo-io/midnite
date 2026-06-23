@@ -23,10 +23,12 @@ describe('SetupWizard', () => {
   it('renders the dialog with step breadcrumb when open', () => {
     render(<SetupWizard open={true} onClose={vi.fn()} />);
     expect(screen.getByRole('dialog', { name: 'Setup wizard' })).toBeTruthy();
-    expect(screen.getByText('AI provider')).toBeTruthy();
+    // Step labels appear in the breadcrumb (queryAllByText since "AI provider" also
+    // appears as a heading inside the active step body).
+    expect(screen.getAllByText('AI provider').length).toBeGreaterThan(0);
     expect(screen.getByText('System tools')).toBeTruthy();
     expect(screen.getByText('Repository')).toBeTruthy();
-    expect(screen.getByText('Ready!')).toBeTruthy();
+    expect(screen.getByText("Ready!")).toBeTruthy();
   });
 
   it('shows the Provider step first', () => {
