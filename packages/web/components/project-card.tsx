@@ -3,10 +3,12 @@
 import { Folder, ListChecks } from 'lucide-react';
 import type { Project } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
+import { ExportMenu } from '@/components/export-menu';
 import { ProjectStatusBadge } from '@/components/project-status-badge';
 import { ProjectTag } from '@/components/project-tag';
 import { SelectableIcon } from '@/components/selectable-icon';
 import { SourceIcon } from '@/components/source-icon';
+import { exportProjectMarkdown } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -25,6 +27,7 @@ function plural(n: number, word: string): string {
 export function ProjectCard({ project, layout, onOpen, onPlan, selected = false, onToggleSelect }: Props) {
   const tasks = project.taskCount ?? 0;
   const sourceCount = project.sources.length;
+  const exportFilename = (project.name || 'project').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40);
 
   const selectIcon = (
     <SelectableIcon Icon={Folder} selected={selected} onToggle={(sk) => onToggleSelect?.(sk)} />
@@ -49,6 +52,16 @@ export function ProjectCard({ project, layout, onOpen, onPlan, selected = false,
       <ListChecks className="h-4 w-4" />
       {project.plan ? 'Plan' : 'Draft plan'}
     </Button>
+  );
+
+  const exportMenu = (
+    <div onClick={(e) => e.stopPropagation()}>
+      <ExportMenu
+        fetchMarkdown={() => exportProjectMarkdown(project.id)}
+        filename={exportFilename}
+        title={project.name}
+      />
+    </div>
   );
 
   const favicons =
@@ -90,6 +103,7 @@ export function ProjectCard({ project, layout, onOpen, onPlan, selected = false,
         <span className="hidden shrink-0 text-xs tabular-nums text-muted-foreground sm:block">
           {plural(tasks, 'task')}
         </span>
+        {exportMenu}
         {planButton}
       </div>
     );
@@ -126,7 +140,10 @@ export function ProjectCard({ project, layout, onOpen, onPlan, selected = false,
         {favicons ?? (
           <span className="text-xs text-muted-foreground/60">{plural(0, 'source')}</span>
         )}
-        {planButton}
+        <div className="flex items-center gap-1">
+          {exportMenu}
+          {planButton}
+        </div>
       </div>
     </div>
   );

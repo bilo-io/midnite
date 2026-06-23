@@ -60,8 +60,9 @@ The highest-value theme. These are real, verified gaps, not hypotheticals.
 - [ ] ⏳ Deferred: the true one-click Electron `webContents.printToPDF()` bridge (main IPC + preload) — `TODO(desktop)` left in `export-menu.tsx`. `window.print()` covers it for now.
 - [x] **Rejected (as decided):** server-side puppeteer/headless-Chrome and `jsPDF`/`react-pdf`.
 
-### B4. Extensibility (later, free once B1 lands) — **S each**
-- [ ] Projects (plan + tasks + sources), Task threads (timeline + PR). *(Brainstorms is no longer separate — it's a council format, covered by B2.)*
+### B4. Extensibility (later, free once B1 lands) — **S each** — ✅ DONE
+- [x] **Projects** — `GET /projects/:id/export?format=md` + `ExportMenu` on `ProjectCard` (list + grid). Report includes: description, AI plan, tasks by status, agent activity (active runs + recent completions with PR links), sources, scoped memories.
+- [x] **Task threads** — `GET /tasks/:id/export?format=md` + `ExportMenu` already on `TaskThreadModal`. Report includes: metadata, prompt, session summary (start/end/duration/outcome derived from events + PR link), full event timeline, links. *(Brainstorms is no longer separate — it's a council format, covered by B2.)*
 
 ---
 
@@ -105,7 +106,7 @@ The highest-value theme. These are real, verified gaps, not hypotheticals.
 
 Leave A5 (remote auth), A4's deeper bits, and Theme-D extras for a later pass unless they're explicitly wanted.
 
-> **Progress (2026-06-19):** Phase 7 is **essentially complete.** Shipped & merged to `main`: A1+A2 hardening (`a5ab124`), councils export B1–B3 (`b5a1fcf`), A6 task WS broadcast (`e2b9b73`), Shipped/PRs widget (`33d3380`), notifications (`7384897`), A4 backup+WAL (`05acd6d`), ⌘K palette (`0fad41c`), web test toolchain A3 (`e3ad2f2`), tags data+UI (`d31cc00`, `cdee3ec`).
+> **Progress (2026-06-24):** Phase 7 is **complete.** Shipped & merged to `main`: A1+A2 hardening (`a5ab124`), councils export B1–B3 (`b5a1fcf`), A6 task WS broadcast (`e2b9b73`), Shipped/PRs widget (`33d3380`), notifications (`7384897`), A4 backup+WAL (`05acd6d`), ⌘K palette (`0fad41c`), web test toolchain A3 (`e3ad2f2`), tags data+UI (`d31cc00`, `cdee3ec`), A5 remote auth (PR #117), **B4 project + task-thread exports** (this PR).
 >
 > **Deliberately deferred** (not blockers): A5 remote-auth (out of scope — local-only); hard-stop budget caps (decided soft-warn only); Electron one-click `printToPDF` bridge (window.print covers it); CLI `midnite backup` wrapper; live-restore; A4 restart-recovery audit + shutdown verification; CI Playwright smoke; command-palette content search; tags-on-create.
 

@@ -6,9 +6,11 @@
  *   # <project name>
  *   *Exported …*
  *   <description if present>
- *   ## Tasks by status (only statuses that have tasks)
- *   ## Sources (if any)
- *   ## Knowledge / Memories (if any)
+ *   ## Plan             (AI-drafted plan markdown, if present)
+ *   ## Tasks by status  (only statuses that have tasks)
+ *   ## Agent activity   (recent runs: active + completed with PR links)
+ *   ## Sources          (if any)
+ *   ## Knowledge        (memories, if any)
  *
  * No DB or Nest dependency — the caller hands it already-hydrated shapes so
  * it stays trivially unit-testable.
@@ -63,6 +65,48 @@ function renderSourcesSection(sources: ProjectSource[]): string {
   return ['## Sources', lines.join('\n')].join('\n\n');
 }
 
+function renderPlanSection(plan: string | null | undefined): string {
+  const trimmed = plan?.trim();
+  if (!trimmed) return '';
+  return ['## Plan', trimmed].join('\n\n');
+}
+
+/** Active runs + recently-done agent runs (tasks with a PR or done status). */
+function renderAgentActivitySection(tasks: Task[]): string {
+  const active = tasks.filter((t) => t.status === 'wip' || t.status === 'waiting');
+  const done = tasks
+    .filter((t) => t.status === 'done')
+    .sort((a, b) => {
+      const ta = a.updatedAt ?? a.createdAt ?? '';
+      const tb = b.updatedAt ?? b.createdAt ?? '';
+      return tb.localeCompare(ta);
+    })
+    .slice(0, 10);
+
+  if (active.length === 0 && done.length === 0) return '';
+
+  const lines: string[] = ['## Agent activity'];
+
+  if (active.length > 0) {
+    lines.push('### Active');
+    for (const t of active) {
+      const flag = t.status === 'waiting' ? ' _(waiting)_' : ' _(running)_';
+      lines.push(`- **${t.title.trim()}**${flag}`);
+    }
+  }
+
+  if (done.length > 0) {
+    lines.push('### Recent completions');
+    for (const t of done) {
+      const pr = t.prUrl ? ` — [PR](${t.prUrl})` : '';
+      const repo = t.repo ? ` \`${t.repo}\`` : '';
+      lines.push(`- **${t.title.trim()}**${repo}${pr}`);
+    }
+  }
+
+  return lines.join('\n\n');
+}
+
 function renderMemoriesSection(memories: Memory[]): string {
   if (memories.length === 0) return '';
   const items = memories
@@ -101,8 +145,14 @@ export function projectToMarkdown(
     sections.push(project.description.trim());
   }
 
+  const planSection = renderPlanSection(project.plan);
+  if (planSection) sections.push(planSection);
+
   const tasksSection = renderTasksSection(tasks);
   if (tasksSection) sections.push(tasksSection);
+
+  const agentSection = renderAgentActivitySection(tasks);
+  if (agentSection) sections.push(agentSection);
 
   const sourcesSection = renderSourcesSection(project.sources);
   if (sourcesSection) sections.push(sourcesSection);

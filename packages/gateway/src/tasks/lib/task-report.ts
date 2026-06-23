@@ -8,6 +8,7 @@
  *   *Exported …*
  *   - **Kind/Status/Priority/Repo/Project/PR/Tags** metadata
  *   ## Prompt           (when the task carries one)
+ *   ## Session summary  (agent run: start/end timestamps + duration derived from events)
  *   ## Timeline         (the task_events history, oldest → newest)
  *   ## Links            (attached source links, if any)
  *
@@ -37,6 +38,61 @@ function eventDataSummary(data: TaskEvent['data']): string {
     .filter(([, v]) => v !== undefined && v !== null && v !== '')
     .map(([k, v]) => `${k}: ${typeof v === 'string' ? v : JSON.stringify(v)}`);
   return parts.join(', ');
+}
+
+/**
+ * Derive an agent session summary from the task's event log. Finds the most
+ * recent `agent.started` / terminal-status pair to compute start time, end time,
+ * and elapsed duration. The agent's live transcript is not persisted to the DB,
+ * so "session transcript" is noted as available only in the Terminal tab.
+ */
+function renderSessionSummary(task: Task): string {
+  const sorted = [...task.events].sort((a, b) => a.at.localeCompare(b.at));
+  const startEvent = [...sorted].reverse().find((e) => e.kind === 'agent.started');
+  const endEvent = startEvent
+    ? sorted.find(
+        (e) =>
+          e.at >= startEvent.at &&
+          (e.kind === 'agent.completed' ||
+            e.kind === 'agent.stopped' ||
+            e.kind === 'agent.failed' ||
+            (e.kind === 'status.changed' &&
+              (e.data?.status === 'done' || e.data?.status === 'abandoned'))),
+      )
+    : undefined;
+
+  if (!startEvent) return '';
+
+  const lines: string[] = ['## Session summary'];
+  lines.push(`- **Started:** \`${startEvent.at}\``);
+
+  if (endEvent) {
+    lines.push(`- **Ended:** \`${endEvent.at}\``);
+    const ms = new Date(endEvent.at).getTime() - new Date(startEvent.at).getTime();
+    if (ms > 0) {
+      const mins = Math.floor(ms / 60000);
+      const secs = Math.floor((ms % 60000) / 1000);
+      lines.push(`- **Duration:** ${mins > 0 ? `${mins}m ` : ''}${secs}s`);
+    }
+    const outcome =
+      endEvent.kind === 'agent.failed' || endEvent.data?.status === 'abandoned'
+        ? 'failed / abandoned'
+        : 'completed';
+    lines.push(`- **Outcome:** ${outcome}`);
+  } else {
+    lines.push('- **Status:** still running');
+  }
+
+  if (task.prUrl) {
+    lines.push(`- **Pull request:** [${task.prUrl}](${task.prUrl})`);
+  }
+
+  lines.push(
+    '',
+    '_Full session transcript is available in the Terminal tab while the session is live._',
+  );
+
+  return lines.join('\n');
 }
 
 /** Render the `task_events` history as a markdown bullet list, oldest → newest. */
@@ -76,6 +132,9 @@ export function buildTaskReport(task: Task, options: TaskReportOptions = {}): st
   if (task.prompt?.trim()) {
     sections.push(['## Prompt', task.prompt.trim()].join('\n\n'));
   }
+
+  const sessionSection = renderSessionSummary(task);
+  if (sessionSection) sections.push(sessionSection);
 
   sections.push(['## Timeline', renderTimeline(task.events)].join('\n\n'));
 
