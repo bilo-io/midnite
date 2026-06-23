@@ -16,13 +16,16 @@ import { MergeExecutor } from './engine/executors/merge.executor';
 import { DataFilterExecutor } from './engine/executors/data-filter.executor';
 import { StorageSetExecutor } from './engine/executors/storage-set.executor';
 import { StorageGetExecutor } from './engine/executors/storage-get.executor';
+import { SlackMessageExecutor } from './engine/executors/slack-message.executor';
+import { EmailSendExecutor } from './engine/executors/email-send.executor';
+import { WorkflowCredentialsModule } from './credentials/workflow-credentials.module';
 import { WorkflowScheduler } from './scheduler/workflow-scheduler.service';
 import { WorkflowEventBus } from './workflow-event-bus';
 import { WorkflowRecoveryService } from './workflow-recovery.service';
 import { WorkflowsGateway } from './workflows.gateway';
 
 @Module({
-  imports: [AgentModule],
+  imports: [AgentModule, WorkflowCredentialsModule],
   controllers: [WorkflowsController, WebhookController],
   providers: [
     WorkflowsService,
@@ -44,6 +47,8 @@ import { WorkflowsGateway } from './workflows.gateway';
     DataFilterExecutor,
     StorageSetExecutor,
     StorageGetExecutor,
+    SlackMessageExecutor,
+    EmailSendExecutor,
     {
       provide: NODE_EXECUTORS,
       useFactory: (...executors: NodeExecutor[]) => executors,
@@ -55,6 +60,8 @@ import { WorkflowsGateway } from './workflows.gateway';
         DataFilterExecutor,
         StorageSetExecutor,
         StorageGetExecutor,
+        SlackMessageExecutor,
+        EmailSendExecutor,
       ],
     },
   ],
