@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 22 Theme B: /ops fleet health dashboard (PR #142)
+
+A dedicated `/ops` route exposing the server-recorded metrics backbone (A1–A3) as an operational surface. Five sections: live slot utilization bar, server-recorded throughput chart, run-duration 5-bucket histogram, outcome rate bars, and 30-day LLM spend trend. Polling every 10 s (pool + ops) / 60 s (spend).
+
+- [x] `lib/api.ts` — `getPoolSnapshot()` (`GET /pool`) + `getOpsMetrics()` (`GET /metrics/ops`); typed from shared schemas
+- [x] `lib/features.ts` — `'ops'` feature key + `ActivitySquare` nav entry, default on
+- [x] `app/(main)/ops/page.tsx` — polls pool + ops metrics + usage, wires gateway error toast
+- [x] `components/ops-view.tsx` — `GaugesSection`, `ThroughputSection`, `DurationSection`, `OutcomesSection`, `SpendSection`; loading + empty states; theme-aware
+- [x] `components/ops-view.test.tsx` — 14 tests; 431 web tests pass
+
 ## 2026-06-23 — Phase 3: TanStack Query item closed out (tracker fix; landed in PR #125)
 
 Reconciled the last open Phase 3 checkbox. The "TanStack Query setup" item was still marked open with a "custom hooks, not TanStack Query" note — but that note predated **PR #125**, which already migrated the web data layer to TanStack Query. No code change; this just corrects the stale tracker so Phase 3 has zero open items and the phase title drops the "(state-sync deviation)" qualifier.
