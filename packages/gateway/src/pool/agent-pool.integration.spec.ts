@@ -112,7 +112,7 @@ function makeHarness(agent: Record<string, unknown> = {}): Harness {
   const classifier = {} as TaskClassifier;
   const planner = {} as PlannerService;
   const repos = { findByName: () => undefined } as unknown as ReposService;
-  const tasks = new TasksService(repo, classifier, planner, bus, repos);
+  const tasks = new TasksService(repo, classifier, planner, bus, repos, config);
 
   const terminal = makeFakeTerminal();
   const pool = new AgentPoolService(config, tasks);

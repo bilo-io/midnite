@@ -58,3 +58,20 @@ describe('TaskCard — blocked badge', () => {
     expect(screen.queryByText('Blocked')).toBeNull();
   });
 });
+
+describe('TaskCard — checks failing badge', () => {
+  it('shows a "Checks failing" badge when checkRunStatus is failing', () => {
+    render(<TaskCard task={{ ...baseTask, status: 'wip', checkRunStatus: 'failing' }} />);
+    expect(screen.getByText('Checks failing')).toBeInTheDocument();
+  });
+
+  it('omits the badge when checkRunStatus is passed', () => {
+    render(<TaskCard task={{ ...baseTask, status: 'wip', checkRunStatus: 'passed' }} />);
+    expect(screen.queryByText('Checks failing')).toBeNull();
+  });
+
+  it('omits the badge when checkRunStatus is absent', () => {
+    render(<TaskCard task={{ ...baseTask, status: 'wip' }} />);
+    expect(screen.queryByText('Checks failing')).toBeNull();
+  });
+});

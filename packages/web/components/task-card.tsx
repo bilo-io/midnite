@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { Check, ShieldAlert } from 'lucide-react';
 import { isAnsweredQuestion, type Task } from '@midnite/shared';
 import { BlockedBadge } from '@/components/blocked-badge';
 import { PrStatusChip } from '@/components/pr-status-chip';
@@ -86,6 +86,12 @@ export function TaskCard({
         {project ? <ProjectTag tag={project.tag} color={project.color} /> : null}
         {task.repo ? <RepoChip repo={task.repo} /> : null}
         {isBlocked ? <BlockedBadge count={blockedBy ?? 0} /> : null}
+        {task.checkRunStatus === 'failing' ? (
+          <span className="inline-flex items-center gap-1 rounded bg-destructive/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-destructive">
+            <ShieldAlert aria-hidden className="h-3 w-3" />
+            Checks failing
+          </span>
+        ) : null}
         {task.prStatus ? <PrStatusChip status={task.prStatus} /> : null}
       </div>
       <p className="text-sm font-medium leading-snug">{task.title}</p>

@@ -1,6 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { TaskDependencyError, type Status } from '@midnite/shared';
+import { TaskDependencyError, parseConfig, type Status } from '@midnite/shared';
+const stubConfig = parseConfig({ agent: {}, terminal: {}, gateway: {} });
 import { TaskClassifier, type ClassifierImage } from '../agent/classifier.service';
 import type { PlannerService } from '../agent/planner.service';
 import type { ReposService } from '../repos/repos.service';
@@ -31,7 +32,7 @@ describe('Task dependencies (Phase 27 Theme A)', () => {
   beforeEach(() => {
     handle = createTestDb();
     repo = new TasksRepository(handle.db);
-    service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus(), stubRepos);
+    service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus(), stubRepos, stubConfig);
   });
 
   afterEach(() => handle.close());

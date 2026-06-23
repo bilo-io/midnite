@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { parseConfig, type MidniteConfig, type Repo, type Task } from '@midnite/shared';
+import { parseConfig, type CheckRun, type MidniteConfig, type Repo, type Task } from '@midnite/shared';
+import type { ChecksService } from '../checks/checks.service';
 import type { UrlContextService } from '../agent/url-context.service';
 import type { ReposService } from '../repos/repos.service';
 import type { TasksService } from '../tasks/tasks.service';
@@ -325,6 +326,119 @@ describe('AgentRunnerService', () => {
       expect(reattachAgentSession).toHaveBeenCalledWith('w1', expect.anything());
       expect(requeue).toHaveBeenCalledWith('w1');
       expect(pool.slotForTask('w1')).toBeUndefined();
+    });
+  });
+
+  // ── completeWithChecks (Phase 30 B2/B3) ──────────────────────────────────────
+
+  function fakeGateTask(id: string, repo?: string): Task {
+    return { id, title: `title-${id}`, status: 'wip', priority: 1, retryCount: 0, repo, tags: [], dependsOn: [], events: [] } as Task;
+  }
+
+  function fakeGateTasks(t: Task) {
+    const markDone = vi.fn();
+    const markWaiting = vi.fn();
+    const saveCheckRun = vi.fn();
+    const recordCheckEvent = vi.fn();
+    const getTask = vi.fn().mockReturnValue(t);
+    const service = { markDone, markWaiting, saveCheckRun, recordCheckEvent, getTask, listTasks: () => [] } as unknown as TasksService;
+    return { service, markDone, markWaiting, saveCheckRun, recordCheckEvent };
+  }
+
+  function passRun(): CheckRun {
+    return { id: 'cr1', taskId: 't1', trigger: 'gate', passed: true, startedAt: 'a', finishedAt: 'b', results: [] };
+  }
+
+  function failRun(): CheckRun {
+    return { id: 'cr1', taskId: 't1', trigger: 'gate', passed: false, startedAt: 'a', finishedAt: 'b', results: [] };
+  }
+
+  function fakeChecks(run: CheckRun): ChecksService {
+    return { run: vi.fn().mockResolvedValue(run) } as unknown as ChecksService;
+  }
+
+  function reposWithPath(name: string, path: string): ReposService {
+    return { findByName: (n: string) => n === name ? { id: 'r1', name, path, createdAt: 'x', updatedAt: 'x' } : undefined } as unknown as ReposService;
+  }
+
+  function makeGateRunner(
+    t: Task,
+    checks: ChecksService | undefined,
+    repos: ReposService = noRepos,
+    checksEnabled = true,
+  ) {
+    const cfg = parseConfig({
+      agent: { pool: 1, runTimeoutMs: 60000 },
+      terminal: {},
+      gateway: {},
+      checks: checksEnabled ? { enabled: true, gates: [{ name: 'test', command: 'exit 0' }] } : { enabled: false },
+    });
+    const { service, markDone, markWaiting, saveCheckRun, recordCheckEvent } = fakeGateTask(t.id, t.repo)
+      ? fakeGateTasks(t)
+      : fakeGateTasks(t);
+    const pool = new AgentPoolService(cfg, service);
+    // Claim the slot first so complete() can release it
+    pool.acquire(t.id);
+    const { terminal, killManagedRun } = fakeTerminal();
+    const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, repos, undefined, checks);
+    return { runner, pool, markDone, markWaiting, saveCheckRun, recordCheckEvent, killManagedRun };
+  }
+
+  describe('completeWithChecks', () => {
+    it('passes gate → markDone + slot released + checks.passed event', async () => {
+      const t = fakeGateTask('t1', 'myrepo');
+      const checks = fakeChecks(passRun());
+      const repos = reposWithPath('myrepo', '/tmp/myrepo');
+      const { runner, pool, markDone, markWaiting, saveCheckRun, recordCheckEvent } = makeGateRunner(t, checks, repos);
+
+      await runner.completeWithChecks('t1', 'https://github.com/acme/repo/pull/1');
+
+      expect(markDone).toHaveBeenCalledWith('t1', 'https://github.com/acme/repo/pull/1');
+      expect(markWaiting).not.toHaveBeenCalled();
+      expect(saveCheckRun).toHaveBeenCalledOnce();
+      expect(recordCheckEvent).toHaveBeenCalledWith('t1', 'checks.started');
+      expect(recordCheckEvent).toHaveBeenCalledWith('t1', 'checks.passed');
+      expect(pool.slotForTask('t1')).toBeUndefined(); // slot released
+    });
+
+    it('fails gate → markWaiting + slot released + checks.failed event', async () => {
+      const t = fakeGateTask('t1', 'myrepo');
+      const checks = fakeChecks(failRun());
+      const repos = reposWithPath('myrepo', '/tmp/myrepo');
+      const { runner, pool, markDone, markWaiting, recordCheckEvent } = makeGateRunner(t, checks, repos);
+
+      await runner.completeWithChecks('t1', 'https://github.com/acme/repo/pull/1');
+
+      expect(markWaiting).toHaveBeenCalledWith('t1');
+      expect(markDone).not.toHaveBeenCalled();
+      expect(recordCheckEvent).toHaveBeenCalledWith('t1', 'checks.failed');
+      expect(pool.slotForTask('t1')).toBeUndefined();
+    });
+
+    it('repo-less task skips gate → markDone directly, slot released', async () => {
+      const t = fakeGateTask('t1'); // no repo
+      const checks = fakeChecks(passRun());
+      const { runner, pool, markDone, saveCheckRun, recordCheckEvent } = makeGateRunner(t, checks);
+
+      await runner.completeWithChecks('t1', 'https://github.com/acme/repo/pull/1');
+
+      expect(markDone).toHaveBeenCalledWith('t1', 'https://github.com/acme/repo/pull/1');
+      expect(saveCheckRun).not.toHaveBeenCalled();
+      expect(recordCheckEvent).not.toHaveBeenCalled();
+      expect(pool.slotForTask('t1')).toBeUndefined();
+    });
+
+    it('checks disabled → skips gate, markDone directly', async () => {
+      const t = fakeGateTask('t1', 'myrepo');
+      const checks = fakeChecks(passRun());
+      const repos = reposWithPath('myrepo', '/tmp/myrepo');
+      const { runner, pool, markDone, saveCheckRun } = makeGateRunner(t, checks, repos, false);
+
+      await runner.completeWithChecks('t1', 'https://github.com/acme/repo/pull/1');
+
+      expect(markDone).toHaveBeenCalledWith('t1', 'https://github.com/acme/repo/pull/1');
+      expect(saveCheckRun).not.toHaveBeenCalled();
+      expect(pool.slotForTask('t1')).toBeUndefined();
     });
   });
 });

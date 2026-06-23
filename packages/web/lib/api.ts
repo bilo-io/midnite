@@ -75,9 +75,11 @@ import {
   type EnvToolId,
   BrowseDirResponseSchema,
   BulkCreateTaskResponseSchema,
+  CheckRunListResponseSchema,
   CreatePlanTasksResponseSchema,
   CreateTaskResponseSchema,
   DraftPlanResponseSchema,
+  TriggerCheckResponseSchema,
   EnhanceDescriptionResponseSchema,
   HeartbeatRunResponseSchema,
   HeartbeatRunsResponseSchema,
@@ -105,6 +107,8 @@ import {
   type BrowseDirResponse,
   type BulkCreateTaskRequest,
   type BulkCreateTaskResponse,
+  type CheckRunListResponse,
+  type TriggerCheckResponse,
   type CliTerminalAction,
   type Council,
   type CouncilFormat,
@@ -338,6 +342,28 @@ export async function refreshPrStatus(id: string): Promise<Task> {
     `/tasks/${encodeURIComponent(id)}/pr/refresh`,
     { method: 'POST' },
     TaskSchema,
+  );
+}
+
+/**
+ * Trigger a manual quality-gate check run for a task (Phase 30 Theme D).
+ * Returns a no-op stub (passed, zero results) when checks are disabled or
+ * the task has no configured checks.
+ */
+export async function triggerCheck(taskId: string): Promise<TriggerCheckResponse> {
+  return fetchJson(
+    `/tasks/${encodeURIComponent(taskId)}/check`,
+    { method: 'POST' },
+    TriggerCheckResponseSchema,
+  );
+}
+
+/** Return all check runs for a task, oldest-first (Phase 30 Theme D). */
+export async function getCheckRuns(taskId: string): Promise<CheckRunListResponse> {
+  return fetchJson(
+    `/tasks/${encodeURIComponent(taskId)}/check-runs`,
+    undefined,
+    CheckRunListResponseSchema,
   );
 }
 
