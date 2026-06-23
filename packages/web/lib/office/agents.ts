@@ -4,7 +4,7 @@
  * `SESSION_STATUS_*` constants, so a status looks identical in both places.
  */
 
-import type { SessionSummary, Task } from '@midnite/shared';
+import type { AgentActivityEvent, AgentAttentionEvent, SessionSummary, Status, Task } from '@midnite/shared';
 import { SESSION_STATUS_HUE, SESSION_STATUS_LABEL } from '@/components/session-card';
 
 export type OfficeStatus = SessionSummary['status']; // 'running' | 'waiting' | 'completed' | 'idle'
@@ -17,10 +17,27 @@ export interface OfficeAgent {
   /** Project the session belongs to. */
   project: string;
   status: OfficeStatus;
-  /** One-liner of what they're up to. */
+  /** One-liner of what they're up to (static, from the session/task). */
   activity: string;
   /** The underlying session — used to open the live terminal / transcript. */
   session: SessionSummary;
+  /**
+   * Task-level status — drives room routing (Phase 31 B): `wip` → desk,
+   * everything else → lounge. Absent when the session has no linked task.
+   */
+  taskStatus?: Status;
+  /**
+   * Latest live tool activity pushed via `agent.activity` WS events (Phase 31 E).
+   * Null until the first event arrives; cleared to null when phase becomes `idle`.
+   * Used by the scene to show the current tool label in the speech bubble (Theme C).
+   */
+  liveActivity: { phase: AgentActivityEvent['phase']; tool?: string; label?: string } | null;
+  /**
+   * Whether the agent is actively blocking on the user (Phase 31 E).
+   * Null when not blocking; cleared when the next `agent.activity` with
+   * `phase: 'running'` arrives. Drives the attention glow + HUD badge (Theme D).
+   */
+  liveAttention: { reason: AgentAttentionEvent['reason']; summary?: string } | null;
 }
 
 /** Parse a `"142 71% 45%"` HSL triplet into 0xRRGGBB for Phaser tints. */
@@ -66,7 +83,9 @@ export const STATUS_LABEL = SESSION_STATUS_LABEL;
 /**
  * Active (non-archived) sessions → desk occupants, most-recently-active first so
  * desk assignment is stable across refetches. Activity falls back to the linked
- * task's title when the session has no subtitle.
+ * task's title when the session has no subtitle. `liveActivity` and `liveAttention`
+ * start null — they are patched directly by `patchAgentActivity` /
+ * `patchAgentAttention` in the office store as WS events arrive.
  */
 export function sessionsToOfficeAgents(sessions: SessionSummary[], tasks: Task[]): OfficeAgent[] {
   const taskById = new Map(tasks.map((t) => [t.id, t]));
@@ -83,6 +102,9 @@ export function sessionsToOfficeAgents(sessions: SessionSummary[], tasks: Task[]
         status: s.status,
         activity: s.subtitle || task?.title || '—',
         session: s,
+        taskStatus: task?.status,
+        liveActivity: null,
+        liveAttention: null,
       };
     });
 }

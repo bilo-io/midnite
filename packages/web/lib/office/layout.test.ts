@@ -12,6 +12,7 @@ import {
   POOL,
   ROOMS,
   RUGS,
+  statusToRoom,
   type RoomId,
   type TilePos,
   WALL_ART,
@@ -191,5 +192,22 @@ describe('communal furnishings (Phase 9 E2)', () => {
     expect(ASTRO_TURF.x).toBeGreaterThanOrEqual(COMMUNAL.x);
     expect(ASTRO_TURF.x + ASTRO_TURF.w).toBeLessThanOrEqual(COMMUNAL.x + COMMUNAL.w);
     expect(ASTRO_TURF.y + ASTRO_TURF.h).toBeLessThanOrEqual(COMMUNAL.y + COMMUNAL.h);
+  });
+});
+
+describe('statusToRoom (Phase 31 B2)', () => {
+  it('maps wip to desk', () => {
+    expect(statusToRoom('wip')).toBe('desk');
+  });
+
+  it.each(['waiting', 'done', 'abandoned', 'backlog', 'todo'] as const)(
+    'maps %s to lounge',
+    (status) => {
+      expect(statusToRoom(status)).toBe('lounge');
+    },
+  );
+
+  it('maps undefined (no linked task) to lounge', () => {
+    expect(statusToRoom(undefined)).toBe('lounge');
   });
 });

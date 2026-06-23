@@ -24,6 +24,8 @@
  * Each room carries its own palette (floor tint + accent) — see lib/office/theme.ts.
  */
 
+import type { Status } from '@midnite/shared';
+
 import { OFFICE_COLS, OFFICE_ROWS } from './dimensions';
 
 export type TilePos = { x: number; y: number };
@@ -297,4 +299,13 @@ export function blockedGrid(): boolean[][] {
   for (let y = POOL.y; y < POOL.y + POOL.h; y++)
     for (let x = POOL.x; x < POOL.x + POOL.w; x++) block(x, y);
   return grid;
+}
+
+/**
+ * Maps a task-level status to the office zone an agent occupies (Phase 31 B2).
+ * `wip` agents sit at a work desk; every other status (waiting, done, abandoned,
+ * backlog, todo, or absent) sends the agent to the lounge / pool.
+ */
+export function statusToRoom(taskStatus: Status | undefined): 'desk' | 'lounge' {
+  return taskStatus === 'wip' ? 'desk' : 'lounge';
 }

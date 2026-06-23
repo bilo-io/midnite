@@ -28,6 +28,7 @@ import {
   ROOMS,
   type RoomId,
   RUGS,
+  statusToRoom,
   STOOL_POS,
   TABLE_CHAIRS,
   TABLE_POS,
@@ -363,8 +364,13 @@ class OfficeScene extends Phaser.Scene {
   /** Place working agents at hot desks, idle agents in the lounge; walk on change. */
   private renderActors(agents: OfficeAgent[]) {
     if (!this.alive) return;
-    const working = agents.filter((a) => a.status !== 'idle').slice(0, DESK_SEATS.length);
-    const idle = agents.filter((a) => a.status === 'idle').slice(0, LOUNGE_SEATS.length);
+    // Phase 31 B2: route by task status when available; fall back to session status.
+    const working = agents
+      .filter((a) => statusToRoom(a.taskStatus) === 'desk' || (a.taskStatus === undefined && a.status !== 'idle'))
+      .slice(0, DESK_SEATS.length);
+    const idle = agents
+      .filter((a) => statusToRoom(a.taskStatus) === 'lounge' || (a.taskStatus === undefined && a.status === 'idle'))
+      .slice(0, LOUNGE_SEATS.length);
     const desired: { agent: OfficeAgent; seat: TilePos; kind: 'desk' | 'lounge' }[] = [
       ...assignStableSeats(working, DESK_SEATS.length, this.deskByAgent).map((s) => ({
         agent: s.agent,
