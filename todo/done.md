@@ -4,6 +4,21 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 30 D: quality-gate surfaces (PR #144)
+
+Surfaces for the already-landed gate engine (A–B): make check results visible and actionable in the web thread, on task cards, and via CLI.
+
+- [x] `shared/checks.ts`: `TriggerCheckResponseSchema` + `CheckRunListResponseSchema`
+- [x] `shared/task.ts`: `checkRunStatus?: 'verifying' | 'passed' | 'failing'` on `TaskSchema`
+- [x] `gateway/tasks.repository.ts`: `deriveCheckRunStatus()` in `hydrate()`
+- [x] `gateway/tasks.service.ts`: `runManualCheck()` + `getCheckRuns()`
+- [x] `gateway/tasks.controller.ts`: `POST /tasks/:id/check` + `GET /tasks/:id/check-runs`
+- [x] `web/checks-panel.tsx`: latest run with per-check output + Re-run button + older-runs history
+- [x] `web/task-card.tsx`: "Checks failing" badge on `checkRunStatus === 'failing'`
+- [x] `web/task-thread-modal.tsx`: ChecksPanel wired in above Activity section
+- [x] `cli/index.ts`: `midnite check <id>` — pass/fail table, failed output, non-zero exit on failure
+- [x] gateway: 872 / 872 tests; web: 448 / 448 tests
+
 ## 2026-06-23 — Phase 10 C2: agents + all-projects widget stories (PR #146)
 
 Storied two more multi-endpoint dashboard widgets (Theme C2 interaction tests), following the established `installMockFetch` pattern.
