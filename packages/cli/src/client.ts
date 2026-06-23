@@ -1,6 +1,9 @@
 import {
+  BreakdownPreviewResponseSchema,
+  BreakdownSchema,
   BulkCreateTaskResponseSchema,
   CheckRunListResponseSchema,
+  CreateFromBreakdownResponseSchema,
   RunResponseSchema,
   SearchResponseSchema,
   StatusSchema,
@@ -9,9 +12,12 @@ import {
   WorkflowRunSchema,
   WorkflowSchema,
   WorkflowSummarySchema,
+  type Breakdown,
+  type BreakdownPreviewResponse,
   type BulkCreateTaskRequest,
   type BulkCreateTaskResponse,
   type CheckRun,
+  type CreateFromBreakdownResponse,
   type SearchQuery,
   type SearchResponse,
   type Status,
@@ -50,6 +56,8 @@ export interface GatewayClient {
   getWorkflowRun(id: string, runId: string): Promise<WorkflowRun>;
   triggerCheck(taskId: string): Promise<CheckRun>;
   getCheckRuns(taskId: string): Promise<CheckRun[]>;
+  draftBreakdown(goal: string): Promise<BreakdownPreviewResponse>;
+  createFromBreakdown(breakdown: Breakdown, repo?: string): Promise<CreateFromBreakdownResponse>;
 }
 
 /** A thin typed client over the gateway REST API. Responses are validated with
@@ -196,6 +204,29 @@ export function createClient(baseUrl: string): GatewayClient {
       return CheckRunListResponseSchema.parse(
         await request(`/tasks/${encodeURIComponent(taskId)}/check-runs`, { method: 'GET' }),
       ).runs;
+    },
+
+    async draftBreakdown(goal: string): Promise<BreakdownPreviewResponse> {
+      return BreakdownPreviewResponseSchema.parse(
+        await request('/tasks/breakdown', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ goal }),
+        }),
+      );
+    },
+
+    async createFromBreakdown(
+      breakdown: Breakdown,
+      repo?: string,
+    ): Promise<CreateFromBreakdownResponse> {
+      return CreateFromBreakdownResponseSchema.parse(
+        await request('/tasks/breakdown/create', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ breakdown: BreakdownSchema.parse(breakdown), repo }),
+        }),
+      );
     },
   };
 }

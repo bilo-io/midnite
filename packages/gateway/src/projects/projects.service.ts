@@ -12,12 +12,14 @@ import {
   MAX_SOURCES_PER_PROJECT,
   detectSourceKind,
   type Breakdown,
+  type BreakdownPreviewResponse,
   type CreateProjectRequest,
   type EnhanceDescriptionRequest,
   type Project,
   type Task,
   type UpdateProjectRequest,
 } from '@midnite/shared';
+import { BreakdownService } from '../agent/breakdown.service';
 import { LlmService } from '../agent/llm/llm.service';
 import { collapseTilde, expandTilde } from '../fs/path-tilde';
 import { MemoriesService } from '../memories/memories.service';
@@ -64,6 +66,7 @@ export class ProjectsService {
     @Inject(LlmService) private readonly llm: LlmService,
     @Inject(TasksService) private readonly tasks: TasksService,
     @Inject(MemoriesService) private readonly memories: MemoriesService,
+    @Inject(BreakdownService) private readonly breakdown: BreakdownService,
     // Optional: see NotesService — global index in prod, omitted in unit specs.
     @Optional() @Inject(SearchIndexService) private readonly searchIndex?: SearchIndexService,
   ) {}
@@ -211,6 +214,22 @@ export class ProjectsService {
     // The plan is part of the indexed body — keep search current on a redraft.
     this.searchIndex?.upsert(projectToIndexDoc(this.getProject(projectId)));
     return { plan: markdown, planUpdatedAt: now };
+  }
+
+  async draftBreakdown(projectId: string): Promise<BreakdownPreviewResponse> {
+    const project = this.getProject(projectId);
+    const context = [
+      `Project: ${project.name}`,
+      project.description ? `Description: ${project.description}` : null,
+      project.plan ? `Existing plan:\n${project.plan}` : null,
+    ]
+      .filter(Boolean)
+      .join('\n\n');
+    return this.breakdown.generate({
+      goal: project.description || project.name,
+      context,
+      isProject: true,
+    });
   }
 
   updatePlan(projectId: string, plan: string): Project {
