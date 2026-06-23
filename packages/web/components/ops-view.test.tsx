@@ -60,7 +60,8 @@ describe('GaugesSection', () => {
 
   it('shows loading state when pool and summary are null', () => {
     const { container } = render(<GaugesSection pool={null} summary={null} loading={true} />);
-    expect(container.querySelector('svg')).toBeTruthy();
+    // WidgetLoader renders a div with items-center class (the spinner wrapper)
+    expect(container.querySelector('.items-center')).toBeTruthy();
   });
 });
 
