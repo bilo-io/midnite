@@ -49,21 +49,9 @@ A dedicated operational view — not more scattered dashboard tiles. **Compose**
 
 ---
 
-## Theme C — PR status model + refresh (gateway, tasks module) — **M**
+## Theme C — PR status model + refresh (gateway, tasks module) — **M** — ✅ DONE (PR #122)
 
-Upgrade `prUrl` from a link to a polled, status-aware deliverable. gh-first, interval-poll-open-PRs + on-demand (Decision §2).
-
-### C1. PR-status model + shared parse helper — **S**
-- [ ] Lift the `github.com/owner/repo/pull/N` regex out of [`shipped-widget.tsx`](../packages/web/components/shipped-widget.tsx) into a **pure helper in [`@midnite/shared`](../packages/shared/src/)** (`pr-url.ts` or extend [`source.ts`](../packages/shared/src/source.ts)) so the gateway poller and the web both parse identically.
-- [ ] `PrStatus` shape in `shared`: `{ state: 'open' | 'draft' | 'merged' | 'closed', checks: 'passing' | 'failing' | 'pending' | 'none', reviewDecision?: 'approved' | 'changes_requested' | 'review_required', url, number, fetchedAt }`. zod + tests.
-
-### C2. PR fetcher + persistence — **M**
-- [ ] A `PrStatusService` in the tasks module: fetch a PR's status **gh-first** (`gh pr view <url> --json state,isDraft,statusCheckRollup,reviewDecision,mergeStateStatus`), fall back to **anonymous `api.github.com` REST** for public repos when `gh` is absent (Phase 15 §2). Degrade gracefully — `gh` missing / private repo unauthenticated / network failure logs a warn and leaves the last-known status, never throws into task flow.
-- [ ] Persist the status — **home is open (Decision §7):** a small `pr_status` table keyed by `task_id` (recommended), or columns on `task_links` / `tasks`. Forward-only migration (shares `0030_*` or a sibling). Exposed on the task read shape so the board/thread render it.
-
-### C3. Refresh loop + on-demand — **S–M**
-- [ ] A **single gateway-owned poller** (mirror [`agent-pool-scheduler.service.ts`](../packages/gateway/src/pool/agent-pool-scheduler.service.ts): `OnModuleInit`/`Destroy`, `setInterval` + `unref`, reentrancy guard) that refreshes **only tasks whose PR is not yet merged/closed**, on a modest interval, with bounded concurrency (reuse the `mapWithConcurrency` lib helper from Phase 16). Stops polling a PR once it's terminal (merged/closed).
-- [ ] `POST /tasks/:id/pr/refresh` for an on-demand refresh; `config` knob for the poll interval (read via `loadConfig()` only). Respect GitHub rate limits (back off on 403/secondary-limit).
+✅ **Landed 2026-06-23 (PR #122)** — see [`done.md`](done.md). C1 `PrStatus` contract + `parseGithubPr` (already in `shared/source.ts`); C2 `PrStatusService` (gh-first → anonymous REST, fail-open) + `pr_status` table (migration `0037`, keyed by `task_id`, on the task read shape); C3 single gateway-owned poller (unmerged-only, bounded concurrency) + `POST /tasks/:id/pr/refresh` + `config.prStatus` knob. **Note for follow-ups:** the migration landed as `0037` (the doc's `0030_*` was stale); the shipped-widget regex consolidation (C1's "lift out of `shipped-widget.tsx`") was deferred to **Theme D**, which rewrites that widget anyway.
 
 ---
 
