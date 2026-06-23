@@ -29,5 +29,10 @@ export function applyTaskEvent(tasks: Task[], event: TaskBoardEvent): Task[] | n
     case 'tasks.bulkCreated':
       // The event carries only IDs, not full objects — caller must refetch.
       return null;
+
+    case 'agent.activity':
+    case 'agent.attention':
+      // Ephemeral signal — no board state change, no refetch needed.
+      return tasks;
   }
 }
