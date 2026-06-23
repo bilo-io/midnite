@@ -63,6 +63,8 @@ const ROWS = OFFICE_ROWS;
 const PLAYER_SPEED = 150;
 /** How close (px) the player must be to a desk/board to "reach" it. */
 const PROXIMITY = TILE * 1.6;
+/** How close (px) the player must be for an agent's nameplate to appear. */
+const NAMEPLATE_RANGE = TILE * 4;
 /** Native character sprite (16×20) scaled up for the 32px grid. */
 const CHAR_SCALE = 1.3;
 /** Lift a seated sprite up a touch so it sits behind its desk / on its couch. */
@@ -255,14 +257,24 @@ class OfficeScene extends Phaser.Scene {
       this.water.tilePositionX += 0.15;
       this.water.tilePositionY += 0.08;
     }
+    // Nameplate range check uses player position — compute first.
+    const px = this.player.x;
+    const py = this.player.y;
+    const nrSq = NAMEPLATE_RANGE * NAMEPLATE_RANGE;
+
     for (const actor of this.actors.values()) {
       this.positionActorChrome(actor);
       if (actor.swimming && actor.ripple) actor.ripple.setPosition(actor.sprite.x, actor.sprite.y + 8);
+      // Show nameplate when the player is within NAMEPLATE_RANGE; hide otherwise.
+      const distSq = (px - actor.sprite.x) ** 2 + (py - actor.sprite.y) ** 2;
+      const visible = distSq <= nrSq;
+      if (actor.nameText.alpha !== (visible ? 1 : 0)) {
+        actor.nameText.setAlpha(visible ? 1 : 0);
+        actor.statusText.setAlpha(visible ? 1 : 0);
+      }
     }
 
     // Nearest *interactable* (desk, seated) agent within reach drives the highlight.
-    const px = this.player.x;
-    const py = this.player.y;
     let nearest: Actor | null = null;
     let best = PROXIMITY * PROXIMITY;
     for (const actor of this.actors.values()) {
@@ -411,14 +423,28 @@ class OfficeScene extends Phaser.Scene {
       .setResolution(2)
       .setDepth(11);
     const nameText = this.add
-      .text(tx, ty, '', { fontFamily: 'monospace', fontSize: '11px', color: toHex(this.palette.text) })
+      .text(tx, ty, '', {
+        fontFamily: 'monospace',
+        fontSize: '11px',
+        color: toHex(this.palette.text),
+        backgroundColor: '#0b0b12bb',
+        padding: { x: 5, y: 2 },
+      })
       .setOrigin(0.5)
       .setResolution(2)
+      .setAlpha(0)
       .setDepth(11);
     const statusText = this.add
-      .text(tx, ty, '', { fontFamily: 'monospace', fontSize: '9px', color: '#e5e7eb' })
+      .text(tx, ty, '', {
+        fontFamily: 'monospace',
+        fontSize: '9px',
+        color: '#9ca3af',
+        backgroundColor: '#0b0b12aa',
+        padding: { x: 4, y: 1 },
+      })
       .setOrigin(0.5)
       .setResolution(2)
+      .setAlpha(0)
       .setDepth(11);
 
     const actor: Actor = {
