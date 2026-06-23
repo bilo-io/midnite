@@ -4,6 +4,24 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 31 B+E: task-status room routing + push-patch activity store (PR #161)
+
+- [x] `statusToRoom(taskStatus)` pure helper: wip/waiting→desk, done/abandoned→lounge, backlog/todo→hidden, undefined→lounge; 7 unit tests
+- [x] `OfficeAgent` gains `taskStatus`, `liveActivity`, `attention` fields; `sessionsToOfficeAgents` threads `task.status` through
+- [x] `office-scene.ts` `renderActors` uses `statusToRoom` — agents walk to the correct room when their task status changes
+- [x] `patchAgent(id, patch)` added to office-store — no full refetch for ephemeral activity events
+- [x] `use-office-agents.ts` wires `useAgentActivityListener`/`useAgentAttentionListener` with 250ms debounce + instant attention patches
+
+## 2026-06-24 — Phase 28 C: Goal → planned board flow, web (PR #160)
+
+Completed **Phase 28 — Theme C**: the web UI for dependency-aware task breakdown, building on the gateway+CLI from Themes A/B/D (PRs #128/#135/#155). `PlanPanel` now has a **Checklist | Breakdown** tab toggle; the Breakdown tab turns a project goal into a typed, dependency-sequenced board you review and edit before creating.
+
+- [x] **`PlanPanel` tabs** — `Checklist | Breakdown` toggle (`@midnite/ui` `Tabs`); the markdown checklist is unchanged and viewable alongside.
+- [x] **`BreakdownEditor`** (new) — generates a preview via `POST /projects/:id/plan/draft-breakdown`; per-task inline **title / kind / priority** editing, removable **"blocked by" chips** + an add-blocker picker, and prune (also strips the task from siblings' `dependsOn`). Confirm → `create-from-breakdown`, so the board appears already sequenced (Phase 27 chips). Self/unknown/cycle edges pruned by the gateway on create.
+- [x] **Fallback** — LLM-disabled `draft-breakdown` returns a flat list with a clear "AI planning was unavailable" notice; still editable + creatable.
+- [x] **Client + tests** — `draftProjectBreakdown` / `createTasksFromBreakdown` in `lib/api.ts`; unit tests (editor edit/prune/edge-removal; panel generate→confirm + fallback) and a live-gateway Playwright e2e (`e2e/breakdown.e2e.ts`).
+- _Note: merged on local verification (lint + new unit tests + e2e green) — GitHub Actions CI was billing-blocked repo-wide at merge time._
+
 ## 2026-06-24 — Phase 7 B4 + test fixes: project + task-thread exports (PR #159)
 
 Closes Phase 7 completely. Project and task thread reports now fully implemented.

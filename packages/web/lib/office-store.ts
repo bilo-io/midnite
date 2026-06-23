@@ -50,6 +50,12 @@ interface OfficeState {
   /** Item ids currently placed on the corner-office desk (persisted to localStorage). */
   deskItems: string[];
   setAgents(agents: OfficeAgent[]): void;
+  /**
+   * Patch a single agent's live-activity fields without replacing the whole array
+   * (Phase 31 Theme E). Used for `agent.activity` / `agent.attention` events so
+   * the office scene reacts without a full sessions+tasks refetch.
+   */
+  patchAgent(id: string, patch: Partial<Pick<OfficeAgent, 'liveActivity' | 'attention'>>): void;
   setNearby(id: string | null): void;
   setNearBoard(near: boolean): void;
   setNearKitchen(near: boolean): void;
@@ -96,6 +102,14 @@ export const useOfficeStore = create<OfficeState>((set) => ({
   currentScene: 'office',
   deskItems: loadDeskItems(),
   setAgents: (agents) => set({ agents }),
+  patchAgent: (id, patch) =>
+    set((s) => {
+      const idx = s.agents.findIndex((a) => a.id === id);
+      if (idx === -1) return s; // session not yet visible — ignore
+      const updated = [...s.agents];
+      updated[idx] = { ...updated[idx]!, ...patch };
+      return { agents: updated };
+    }),
   // Skip the update when unchanged — `update()` calls these every frame.
   setNearby: (id) => set((s) => (s.nearbyId === id ? s : { nearbyId: id })),
   setNearBoard: (near) => set((s) => (s.nearBoard === near ? s : { nearBoard: near })),

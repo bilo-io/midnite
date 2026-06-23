@@ -33,12 +33,12 @@ The contract piece, and the spine the rest of the phase hangs off. Today the gat
 Make rooms *mean* something. Today an agent sits at a desk when `status !== 'idle'` and on a lounger when idle — room choice ignores the task. Drive room assignment from task status instead.
 
 ### B1. Surface `task.status` on the office agent — **S**
-- [ ] Add `taskStatus` (one of the [`shared/src/task.ts`](../packages/shared/src/task.ts) statuses: `backlog`/`todo`/`wip`/`waiting`/`done`/`abandoned`) to the `OfficeAgent` shape in [`lib/office/agents.ts`](../packages/web/lib/office/agents.ts). The linked task is **already fetched** in the `sessionsToOfficeAgents` mapping — thread its status through (no new gateway call).
+- [x] ✅ (PR #161) Add `taskStatus` (one of the [`shared/src/task.ts`](../packages/shared/src/task.ts) statuses: `backlog`/`todo`/`wip`/`waiting`/`done`/`abandoned`) to the `OfficeAgent` shape in [`lib/office/agents.ts`](../packages/web/lib/office/agents.ts). The linked task is **already fetched** in the `sessionsToOfficeAgents` mapping — thread its status through (no new gateway call).
 
 ### B2. Status→room mapping — **S–M**
-- [ ] Define a pure `statusToRoom` table over the `ROOMS` in [`lib/office/layout.ts`](../packages/web/lib/office/layout.ts): `wip` → work-room desks, `waiting` → a "blocked"/meeting spot, `done` → the Agent pool / lounge. **Backlog/todo agents don't appear** until they're `wip` (**Decisions §3**) — keeps the floor uncluttered.
-- [ ] Route actors to the mapped room on status change, **reusing the existing walk-tweens** in [`office-scene.ts`](../packages/web/components/office/scenes/office-scene.ts) (the desk/lounge seat-assignment + tween machinery already exists — extend the target selection, don't rebuild movement).
-- [ ] Tests: `statusToRoom` is pure + unit-tested; a status change yields a different room target.
+- [x] ✅ (PR #161) Define a pure `statusToRoom` table over the `ROOMS` in [`lib/office/layout.ts`](../packages/web/lib/office/layout.ts): `wip` → work-room desks, `waiting` → a "blocked"/meeting spot, `done` → the Agent pool / lounge. **Backlog/todo agents don't appear** until they're `wip` (**Decisions §3**) — keeps the floor uncluttered.
+- [x] ✅ (PR #161) Route actors to the mapped room on status change, **reusing the existing walk-tweens** in [`office-scene.ts`](../packages/web/components/office/scenes/office-scene.ts) (the desk/lounge seat-assignment + tween machinery already exists — extend the target selection, don't rebuild movement).
+- [x] ✅ (PR #161) Tests: `statusToRoom` is pure + unit-tested; a status change yields a different room target.
 
 ---
 
@@ -72,10 +72,10 @@ When an agent is blocked on *you*, the office should shout — not bury it in a 
 Today every board WS fire calls `invalidateData()` → a full sessions+tasks refetch → `setAgents()`. Fine for board moves; **too coarse for tool events** that can fire several times a second.
 
 ### E1. Patch the store directly — **S**
-- [ ] Apply `agent.activity` / `agent.attention` straight onto the matching `OfficeAgent` in the [`office-store.ts`](../packages/web/lib/office-store.ts) Zustand store (patch one agent's `activity`/`phase`/`attention`), **without** a full refetch. Board events (`task.created/updated/...`) keep the refetch path.
+- [x] ✅ (PR #161) Apply `agent.activity` / `agent.attention` straight onto the matching `OfficeAgent` in the [`office-store.ts`](../packages/web/lib/office-store.ts) Zustand store (patch one agent's `activity`/`phase`/`attention`), **without** a full refetch. Board events (`task.created/updated/...`) keep the refetch path.
 
 ### E2. Throttle/coalesce — **S**
-- [ ] Debounce per-agent activity updates (latest-wins, ~250ms — **Decisions §4**) so a burst of tool calls renders as a smooth "current action", not a flood. Coalesce in the web client (the gateway emits per hook; the client smooths).
+- [x] ✅ (PR #161) Debounce per-agent activity updates (latest-wins, ~250ms — **Decisions §4**) so a burst of tool calls renders as a smooth "current action", not a flood. Coalesce in the web client (the gateway emits per hook; the client smooths).
 
 ---
 
