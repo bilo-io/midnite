@@ -75,6 +75,15 @@ export class ApprovalService {
     return tokenMatches(token, hash);
   }
 
+  // Whether this tool call will be auto-approved without blocking on the user.
+  // True when the tool is already on the session allow-list, or when there are
+  // no terminal subscribers (so requestDecision would fall back immediately).
+  willAutoApprove(sessionId: string, toolName: string): boolean {
+    if (this.allowList.get(sessionId)?.has(toolName)) return true;
+    if (this.terminal.subscriberCount(sessionId) === 0) return true;
+    return false;
+  }
+
   // ---- the blocking bridge: hook request -> WS prompt -> decision ----
 
   async requestDecision(

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  AgentActivityEventSchema,
+  AgentAttentionEventSchema,
   TaskBoardEventSchema,
   TaskSubscribeMessageSchema,
   TASKS_WS_PATH,
@@ -43,5 +45,61 @@ describe('task board events', () => {
     expect(TaskSubscribeMessageSchema.safeParse({ type: 'subscribe' }).success).toBe(true);
     expect(TaskSubscribeMessageSchema.safeParse({ type: 'nope' }).success).toBe(false);
     expect(TASKS_WS_PATH).toBe('/ws/tasks');
+  });
+
+  it('round-trips an agent.activity running event (with tool + label)', () => {
+    const event = {
+      type: 'agent.activity' as const,
+      at: '2026-06-23T00:00:00.000Z',
+      sessionId: 'sess-1',
+      phase: 'running' as const,
+      tool: 'Bash',
+      label: 'Run: npm test',
+    };
+    expect(TaskBoardEventSchema.parse(event)).toEqual(event);
+    expect(AgentActivityEventSchema.parse(event)).toEqual(event);
+  });
+
+  it('round-trips an agent.activity idle event (no tool or label)', () => {
+    const event = {
+      type: 'agent.activity' as const,
+      at: '2026-06-23T00:00:00.000Z',
+      sessionId: 'sess-1',
+      phase: 'idle' as const,
+    };
+    expect(TaskBoardEventSchema.parse(event)).toEqual(event);
+  });
+
+  it('rejects an agent.activity event with an invalid phase', () => {
+    expect(
+      AgentActivityEventSchema.safeParse({
+        type: 'agent.activity',
+        at: 'now',
+        sessionId: 's',
+        phase: 'exploding',
+      }).success,
+    ).toBe(false);
+  });
+
+  it('round-trips an agent.attention approval event', () => {
+    const event = {
+      type: 'agent.attention' as const,
+      at: '2026-06-23T00:00:00.000Z',
+      sessionId: 'sess-1',
+      reason: 'approval' as const,
+      summary: 'Bash: rm -rf /tmp/foo',
+    };
+    expect(TaskBoardEventSchema.parse(event)).toEqual(event);
+    expect(AgentAttentionEventSchema.parse(event)).toEqual(event);
+  });
+
+  it('round-trips an agent.attention waiting event with no summary', () => {
+    const event = {
+      type: 'agent.attention' as const,
+      at: 'now',
+      sessionId: 's',
+      reason: 'waiting' as const,
+    };
+    expect(TaskBoardEventSchema.parse(event)).toEqual(event);
   });
 });

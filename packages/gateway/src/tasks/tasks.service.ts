@@ -11,6 +11,8 @@ import {
   parseBulkLines,
   resolveChecksForRepo,
   TaskDependencyError,
+  type AgentActivityEvent,
+  type AgentAttentionEvent,
   type Breakdown,
   type BulkCreateTaskResponse,
   type BulkLineResult,
@@ -103,6 +105,22 @@ export class TasksService {
   private emit(type: 'task.created' | 'task.updated', task: Task): Task {
     this.bus.emit({ type, at: new Date().toISOString(), task });
     return task;
+  }
+
+  // Emit a coarse agent-activity event on the board WS (Phase 31 Theme A). Carries
+  // only a summarized label — never raw tool_input. Fire-and-forget; never throws.
+  emitActivity(
+    sessionId: string,
+    phase: AgentActivityEvent['phase'],
+    tool?: string,
+    label?: string,
+  ): void {
+    this.bus.emit({ type: 'agent.activity', at: new Date().toISOString(), sessionId, phase, tool, label });
+  }
+
+  // Emit an agent-attention event when an agent blocks on the user (Phase 31 Theme A).
+  emitAttention(sessionId: string, reason: AgentAttentionEvent['reason'], summary?: string): void {
+    this.bus.emit({ type: 'agent.attention', at: new Date().toISOString(), sessionId, reason, summary });
   }
 
   // Re-broadcast a blocker's dependents after the blocker reaches a terminal

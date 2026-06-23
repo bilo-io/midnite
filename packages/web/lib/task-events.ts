@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect } from 'react';
-import type { TaskBoardEvent } from '@midnite/shared';
+import type { AgentActivityEvent, AgentAttentionEvent, TaskBoardEvent } from '@midnite/shared';
 
 /**
  * Client-side fan-out for parsed task-board events. The single live WS hook
  * ({@link useTaskEvents}) feeds events in here; interested consumers (e.g.
- * desktop notifications) subscribe — so we keep one socket, not one per feature.
+ * desktop notifications, the office store) subscribe — so we keep one socket,
+ * not one per feature.
  */
 const listeners = new Set<(event: TaskBoardEvent) => void>();
 
@@ -26,6 +27,40 @@ export function useTaskEventListener(handler: (event: TaskBoardEvent) => void): 
     listeners.add(handler);
     return () => {
       listeners.delete(handler);
+    };
+  }, [handler]);
+}
+
+/**
+ * Subscribe to `agent.activity` events for the component's lifetime.
+ * These are ephemeral tool-call signals — they don't trigger a board refetch.
+ * `handler` must be stable (wrap in useCallback if needed).
+ */
+export function useAgentActivityListener(handler: (event: AgentActivityEvent) => void): void {
+  useEffect(() => {
+    const listener = (event: TaskBoardEvent): void => {
+      if (event.type === 'agent.activity') handler(event);
+    };
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
+    };
+  }, [handler]);
+}
+
+/**
+ * Subscribe to `agent.attention` events for the component's lifetime.
+ * These fire when an agent blocks on the user (approval or notification).
+ * `handler` must be stable.
+ */
+export function useAgentAttentionListener(handler: (event: AgentAttentionEvent) => void): void {
+  useEffect(() => {
+    const listener = (event: TaskBoardEvent): void => {
+      if (event.type === 'agent.attention') handler(event);
+    };
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
     };
   }, [handler]);
 }

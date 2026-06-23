@@ -46,10 +46,15 @@ export function useTaskEvents(): void {
         // Validate defensively so a malformed frame can't trigger refetch churn.
         try {
           const parsed = TaskBoardEventSchema.safeParse(JSON.parse(String(ev.data)));
-          if (parsed.success) {
-            invalidateData();
-            emitTaskEvent(parsed.data);
-          }
+          if (!parsed.success) return;
+          // Activity / attention events are ephemeral (agent state, not board state)
+          // — consumers patch the office store directly (Theme E). Skipping
+          // invalidateData() here avoids a full sessions+tasks refetch on every
+          // tool call, which can be several times per second.
+          const isEphemeral =
+            parsed.data.type === 'agent.activity' || parsed.data.type === 'agent.attention';
+          if (!isEphemeral) invalidateData();
+          emitTaskEvent(parsed.data);
         } catch {
           // ignore unparseable frames
         }
