@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { Command } from 'commander';
 import Table from 'cli-table3';
 import {
@@ -213,6 +213,23 @@ program
     }
 
     console.log(`\nchecks passed (${run.results.length}/${run.results.length})`);
+  });
+
+// Task-scoped operations that don't fit the flat verbs (add/list/move/…).
+const task = program.command('task').description('Task operations');
+
+task
+  .command('export <id>')
+  .description('Export a task thread as markdown (to stdout, or a file with --output)')
+  .option('-o, --output <path>', 'write the markdown to a file instead of stdout')
+  .action(async (id: string, opts: { output?: string }) => {
+    const markdown = await client().exportTask(id);
+    if (opts.output) {
+      await writeFile(opts.output, markdown, 'utf8');
+      console.log(`exported ${id} → ${opts.output}`);
+    } else {
+      process.stdout.write(markdown);
+    }
   });
 
 program
