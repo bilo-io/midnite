@@ -94,11 +94,10 @@ describe('ChecksPanel — with runs', () => {
 });
 
 describe('ChecksPanel — re-run button', () => {
-  it('shows the re-run checks button', async () => {
+  it('shows the re-run checks button', () => {
     getCheckRuns.mockResolvedValue({ runs: [] });
     render(<ChecksPanel taskId="t1" />);
-
-    await waitFor(() => screen.getByRole('button', { name: 're-run checks', exact: false }));
+    // The Re-run button is always in the DOM (not behind a loading gate).
     expect(screen.getByRole('button', { name: /re-run checks/i })).toBeInTheDocument();
   });
 
