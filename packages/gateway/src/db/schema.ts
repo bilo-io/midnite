@@ -759,3 +759,29 @@ export const notifications = sqliteTable(
 
 export type NotificationRow = typeof notifications.$inferSelect;
 export type NotificationInsert = typeof notifications.$inferInsert;
+
+// Runtime metrics (Phase 22 A1): one low-volume row per agent run — start/end
+// timing, outcome, retry count, and the optional repo it ran against. In-memory
+// gauges (queue depth, slot utilization) are not persisted; only per-run history
+// lives here. `ended_at` and `duration_ms` are null while the run is live.
+export const agentRunStats = sqliteTable(
+  'agent_run_stats',
+  {
+    id: text('id').primaryKey(),
+    taskId: text('task_id').notNull(),
+    startedAt: text('started_at').notNull(),
+    endedAt: text('ended_at'),
+    durationMs: integer('duration_ms'),
+    /** 'done' | 'abandoned' | 'failed' | 'cancelled' — null while live. */
+    outcome: text('outcome'),
+    retryCount: integer('retry_count').notNull().default(0),
+    repo: text('repo'),
+  },
+  (t) => ({
+    taskIdx: index('agent_run_stats_task_idx').on(t.taskId),
+    startedIdx: index('agent_run_stats_started_idx').on(t.startedAt),
+  }),
+);
+
+export type AgentRunStatsRow = typeof agentRunStats.$inferSelect;
+export type AgentRunStatsInsert = typeof agentRunStats.$inferInsert;
