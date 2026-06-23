@@ -4,6 +4,23 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 26 Themes A+B: `@midnite/docs` app scaffold + design-system docs (PR #123)
+
+New `packages/docs` (`@midnite/docs`) — a static **Vite + React** documentation site whose entire shell is built from `@midnite/ui`, proving the library is consumable outside `web`. Authored in **MDX** with live component examples; the graph gains the `ui ◀── docs` leaf edge.
+
+**Theme A — scaffold:**
+- [x] Vite + React SPA: `package.json` (`@midnite/ui: workspace:*`), `vite.config.ts` (MDX via `@mdx-js/rollup` + `remark-gfm`/frontmatter), Tailwind/PostCSS, `tsconfig`, `index.html`, `moon.yml` (`dev`/`build`/`preview`/`typecheck`/`test`/`lint`). Auto-registers via `packages/*`.
+- [x] Shell built entirely from the lib — header, grouped sidebar, content well, theme switcher (the lib's `Tabs` + `useTheme`), wrapped in `ThemeProvider`, token CSS from `@midnite/ui/styles`. No app-local primitives.
+- [x] **Hash router** (Decision §1) — deep links work on a static host with no rewrites; route table + sidebar nav both derived from the MDX content glob (adding a page = adding a file).
+- [x] **Boundary test** (`src/boundary.test.ts`) — fails if `docs` imports anything in-repo but `@midnite/ui`; enforces the leaf edge in CI.
+
+**Theme B — design-system docs (MDX):**
+- [x] Getting-started on-ramp + a page per primitive (Button/Card/Input/Switch/Tabs) with live examples, props tables, do/don't, and a Storybook pointer (Storybook stays the interactive/a11y source of truth — Decision §2).
+- [x] Foundations pages (colours/typography/radius + reserved scales) rendering the **real exported tokens** (live swatches + canonical light/dark HSL values), so they can't drift.
+- [x] `CLAUDE.md` updated (package list + `ui ◀── docs` graph edge); `packages/docs/README.md` documents running it. Tests: boundary + nav helpers + Layout RTL (11). `docs:typecheck`/`lint`/`test`/`build` + full-graph `:typecheck`/`:lint` + `version-check` green.
+
+Remaining for Phase 26: Theme C (product/developer docs from repo markdown), Theme D (nav/search/build seam), hosting (deferred follow-on).
+
 ## 2026-06-23 — Phase 18 Theme B: project markdown export (PR #119)
 
 Projects now have a markdown export — title, tasks grouped by status, sources as links, and scoped memories as a Knowledge section — using the same `ExportMenu` + `report-html-export` substrate already proven by the councils export (Phase 7 B).
