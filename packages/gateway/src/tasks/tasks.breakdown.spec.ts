@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Breakdown, Task } from '@midnite/shared';
+import { parseConfig, type Breakdown, type Task } from '@midnite/shared';
+const stubConfig = parseConfig({});
 import { TaskClassifier, type ClassifierImage } from '../agent/classifier.service';
 import type { PlannerService } from '../agent/planner.service';
 import type { ReposService } from '../repos/repos.service';
@@ -32,7 +33,7 @@ describe('TasksService.createTasksFromBreakdown (Phase 28 Theme B)', () => {
     handle = createTestDb();
     repo = new TasksRepository(handle.db);
     bus = new TaskEventBus();
-    service = new TasksService(repo, new StubClassifier(), stubPlanner, bus, stubRepos);
+    service = new TasksService(repo, new StubClassifier(), stubPlanner, bus, stubRepos, stubConfig);
   });
 
   afterEach(() => handle.close());
