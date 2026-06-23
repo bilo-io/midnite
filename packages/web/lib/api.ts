@@ -327,6 +327,15 @@ export async function deleteTask(id: string): Promise<void> {
   await fetchJson(`/tasks/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
 
+/** Trigger an on-demand PR status refresh for a task. Returns the updated task. */
+export async function refreshPrStatus(id: string): Promise<Task> {
+  return fetchJson(
+    `/tasks/${encodeURIComponent(id)}/pr/refresh`,
+    { method: 'POST' },
+    TaskSchema,
+  );
+}
+
 export async function getSessions(): Promise<SessionSummary[]> {
   return fetchJson('/sessions', undefined, z.array(SessionSummarySchema));
 }

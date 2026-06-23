@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Ban, Check, ExternalLink, Play, Plus, SquareTerminal, X } from 'lucide-react';
+import { Ban, Check, ExternalLink, Loader2, Play, Plus, RefreshCw, SquareTerminal, X } from 'lucide-react';
 import {
   ANSWER_EVENT_KIND,
   SOURCE_KIND_LABEL,
@@ -18,6 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { ExportMenu } from '@/components/export-menu';
 import { MarkdownPreview } from '@/components/markdown-preview';
+import { PrStatusChip } from '@/components/pr-status-chip';
 import { ProjectSelect } from '@/components/project-select';
 import { SourceIcon } from '@/components/source-icon';
 import { TaskPicker } from '@/components/task-picker';
@@ -29,6 +30,7 @@ import {
   deleteTask,
   exportTask,
   gatewayUrl,
+  refreshPrStatus,
   removeTaskDependency,
   removeTaskLink,
   setTaskTags,
@@ -116,6 +118,21 @@ export function TaskThreadModal({ task, projects, tasks, onClose }: Props) {
   const [tagInput, setTagInput] = useState('');
   const [dependsOn, setDependsOn] = useState<string[]>(task.dependsOn ?? []);
   const [depError, setDepError] = useState<string | null>(null);
+  const [prStatus, setPrStatus] = useState(task.prStatus);
+  const [prRefreshing, setPrRefreshing] = useState(false);
+
+  const refreshPr = async () => {
+    setPrRefreshing(true);
+    try {
+      const updated = await refreshPrStatus(task.id);
+      setPrStatus(updated.prStatus);
+      invalidateData();
+    } catch {
+      // fail-open — keep showing last-known status
+    } finally {
+      setPrRefreshing(false);
+    }
+  };
   const [depBusy, setDepBusy] = useState(false);
 
   const tasksById = new Map(tasks.map((t) => [t.id, t] as const));
@@ -623,6 +640,45 @@ export function TaskThreadModal({ task, projects, tasks, onClose }: Props) {
                       className="max-h-32 w-full rounded border object-cover"
                     />
                   ))}
+                </div>
+              </section>
+            ) : null}
+
+            {task.prUrl ? (
+              <section>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Pull request
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => void refreshPr()}
+                    disabled={prRefreshing}
+                    aria-label="Refresh PR status"
+                    className="rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${prRefreshing ? 'animate-spin' : ''}`} />
+                  </button>
+                </div>
+                <div className="flex items-center gap-2 rounded-lg border border-border/60 px-3 py-2">
+                  {prStatus ? (
+                    <PrStatusChip status={prStatus} />
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Status unknown</span>
+                  )}
+                  {prStatus?.reviewDecision ? (
+                    <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground capitalize">
+                      {prStatus.reviewDecision.replace(/_/g, ' ')}
+                    </span>
+                  ) : null}
+                  <a
+                    href={task.prUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="ml-auto flex items-center gap-1 text-xs text-primary hover:underline"
+                  >
+                    Open PR <ExternalLink className="h-3 w-3" />
+                  </a>
                 </div>
               </section>
             ) : null}
