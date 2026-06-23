@@ -21,15 +21,15 @@ Read every `todo/phase-*.md` (skim `open-decisions.md`/`outstanding.md`). `gh pr
 ## 2 · Choose — STOP for the human
 Pick the 3–4 strongest **unblocked** candidates (favor: doc-flagged "next" slices; small/self-contained/high-value; unblockers). For **each candidate** assign a t-shirt size estimate and show it in brackets after the label:
 
-| Size | Approx effort |
-|------|---------------|
-| `[XS]` | < 30 min — trivial tweak, one file |
-| `[S]` | 30 min – 2 h — single component / small feature |
-| `[M]` | 2 – 4 h — a few files, one self-contained feature |
-| `[L]` | 4 – 8 h — multiple systems, meaningful complexity |
-| `[XL]` | 1 – 2 d — large feature, cross-package work |
-| `[XXL]` | 2 – 5 d — significant subsystem |
-| `[XXXL]` | 5 + d — major overhaul |
+| Size | Time |
+|------|------|
+| `[XS]` | < 30 min |
+| `[S]` | 30 min – 2 h |
+| `[M]` | 2 – 4 h |
+| `[L]` | 4 – 8 h |
+| `[XL]` | 1 – 2 d |
+| `[XXL]` | 2 – 5 d |
+| `[XXXL]` | 5 + d |
 
 Present via **AskUserQuestion**, recommended first. Bias toward `$ARGUMENTS` if given. **Do not implement until they pick.**
 
@@ -62,7 +62,7 @@ All green before pushing — never push red.
 
 ## 7 · Open the PR (draft) + report it
 - Push branch; `gh pr create --draft --base main`.
-- **PR title:** `<conventional-commit-title> [<size>]` — append the t-shirt size chosen in Stage 2, e.g. `feat(web): add retro games modal [M]`.
+- **PR title:** `<conventional-commit-title> [<size> · <time>]` — append the size and time estimate from Stage 2, e.g. `feat(web): add retro games modal [M · 2-4h]`.
 - **PR body:** succinct *why* (not a wall of what) · a **link to the phase doc + section** (anchor = lower-cased heading, spaces→`-`, punctuation stripped) and the phase/item id · **embedded screenshots** for any visual change · the `🤖 Generated with [Claude Code]` trailer. To embed shots: commit the PNGs on the branch under `docs/screenshots/<slice>/` and reference them with **commit-pinned** raw URLs (`https://github.com/<owner>/<repo>/raw/<sha>/docs/screenshots/...`) so they survive a squash-merge + branch delete.
 - **Report in this thread when posted:** the PR URL · a 3–5 **bullet** summary of what was done · the line diff in a ` ```diff ` fenced block (`gh pr diff <n> --patch`, trimmed to the meaningful hunks) · the screenshots again if the change was visual.
 
