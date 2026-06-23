@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 10 C2 complete: market widgets + boardroom panel (PR #150)
+
+Storied the last three un-storied widgets, **completing Theme C2** (every dashboard/office widget now has interaction tests).
+
+- [x] **`market-asset-widget`** — a configured (props-driven) asset; mocks `/market/quote` + `/market/history`, asserts the price headline, % change, OHLC; plus the both-endpoints-fail error fallback.
+- [x] **`market-watchlist-widget`** — rows off `/market/history` (path mock serves every row, awaited for the async % change), plus the no-assets empty state.
+- [x] **`boardroom-panel`** (office projects hub) — mocks the `Promise.all` of `/projects` + `/tasks` + `/memories` (the last returns a `{ memories }` wrapper, not a bare array) → loaded list / empty / error.
+- [x] CI: the three new files' Storybook `play` assertions pass. Merged with `--admin` over pre-existing main redness (`mobile-nav.test.tsx` + a `phaser` `web:build` error, both already failing on `main` and unrelated to these story-only changes).
+
 ## 2026-06-23 — Phase 32 A1: `midnite watch` ink dashboard scaffold (PR #149)
 
 Full-screen TUI dashboard command for the CLI. Introduces ink (React for the terminal), the `watch` command with alt-screen + clean teardown, `StatusBar`/`BoardPanel`/`PoolPanel` components seeded from REST and kept live via the tasks WS. `gatewayWsUrl` moved to `ws.ts`. 11 new tests.
