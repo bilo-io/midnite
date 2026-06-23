@@ -76,9 +76,10 @@ Make agents *look* like they're doing what their status says.
 - [x] [`office-hud.tsx`](../packages/web/components/office/office-hud.tsx) is wired to the gateway (no more mock). **Call** → the agent's live session terminal (`SessionTerminalModal`, enabled while running/waiting); **Messages** → its transcript (`SessionTranscriptModal`, fetched via `getSessionTranscript`). Reuses the Sessions-page modals; `OfficeAgent` now carries its `SessionSummary`. The transcript modal is portalled to `<body>` so the stage's `overflow-hidden` / a persisted page-reveal transform can't clip it.
 - Note: there's no one-off "send a prompt" gateway API — the terminal is the live interaction channel, so Call opens it rather than a fire-and-forget message box.
 
-### D2. Navigation niceties — **S** — ◐ partial (2026-06-20)
+### D2. Navigation niceties — **S** — ◐ partial (2026-06-23)
 - [x] **Click-to-walk** — clicking the floor pathfinds the player there (reuses the A* + a velocity-steered waypoint follower; manual WASD cancels it, and a deadline aborts if it gets nudged into furniture). `onPointerDown`/`movePlayer` in [`office-scene.ts`](../packages/web/components/office/scenes/office-scene.ts).
-- [ ] Hover nameplates/tooltips; a small minimap once the map grows.
+- [x] **Proximity nameplates** — agent name + status chips are hidden by default (alpha 0) and snap visible when the player is within `NAMEPLATE_RANGE` (4 tiles). Both labels gain a dark semi-transparent `backgroundColor` so they read as proper pill nameplates. See PR #149.
+- [ ] Minimap — deferred until the map grows (needs Phase 8 A1 / B2 larger scrolling map).
 
 ### D3. Board room — plans & documents — **M** — ✅ DONE (2026-06-20)
 - [x] A walled board room (left-open / right-walled floor plan in [`layout.ts`](../packages/web/lib/office/layout.ts)) with a conference table and a documents **whiteboard** the player walks up to (E). Opens [`boardroom-panel.tsx`](../packages/web/components/office/boardroom-panel.tsx): a **project filter** (`Select`) listing that project's plan + scoped memories; clicking opens a read-only `MarkdownPreview` modal ([`document-modal.tsx`](../packages/web/components/office/document-modal.tsx)). Document assembly is pure + tested ([`documents.ts`](../packages/web/lib/office/documents.ts)).

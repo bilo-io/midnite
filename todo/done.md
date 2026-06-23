@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 8 D2: proximity nameplates (PR #149)
+
+Agent name + status labels now appear as styled pill nameplates when the player is within 4 tiles; hidden otherwise.
+
+- [x] `NAMEPLATE_RANGE = TILE * 4` constant added to `office-scene.ts`
+- [x] `nameText` + `statusText` styled with `backgroundColor` + padding chips; `setAlpha(0)` on create
+- [x] Per-actor distance check in `update()` snaps alpha 0↔1 based on player proximity
+
 ## 2026-06-23 — Phase 10 C2: chart widget stories (PR #148)
 
 Storied the three chart widgets — the half of C2 the note flagged as needing a pinned clock — and established that pinning pattern.
