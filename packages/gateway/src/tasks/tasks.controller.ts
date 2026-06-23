@@ -10,8 +10,9 @@ import {
   Post,
   Query,
   Req,
+  Res,
 } from '@nestjs/common';
-import type { FastifyRequest } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 import { join, resolve, isAbsolute } from 'node:path';
 import { mkdirSync, createWriteStream, unlinkSync, existsSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
@@ -21,10 +22,12 @@ import {
   AddTaskDependencyRequestSchema,
   AddTaskLinkRequestSchema,
   BulkCreateTaskRequestSchema,
+  ReportFormatSchema,
   SetTaskTagsRequestSchema,
   StatusSchema,
   TaskDependencyError,
   UpdateTaskProjectRequestSchema,
+  isServerRenderedReportFormat,
   type BulkCreateTaskResponse,
   type CreateTaskResponse,
   type MidniteConfig,
@@ -33,6 +36,7 @@ import {
   type TaskCounts,
 } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
+import { sendMarkdownReport } from '../lib/report-response';
 import { PrStatusService } from './pr-status.service';
 import { TasksService } from './tasks.service';
 
@@ -75,6 +79,27 @@ export class TasksController {
   @Get(':id')
   get(@Param('id') id: string): Task {
     return this.service.getTask(id);
+  }
+
+  // Export the task thread as a portable markdown document. `pdf` is rendered
+  // client-side from this markdown (print-to-PDF), so only `md` is served here.
+  @Get(':id/export')
+  exportTask(
+    @Param('id') id: string,
+    @Res({ passthrough: false }) reply: FastifyReply,
+    @Query('format') format?: string,
+  ): void {
+    const parsed = ReportFormatSchema.safeParse(format ?? 'md');
+    if (!parsed.success) {
+      throw new BadRequestException(`unsupported export format: ${String(format)}`);
+    }
+    if (!isServerRenderedReportFormat(parsed.data)) {
+      throw new BadRequestException(
+        `${parsed.data} is rendered client-side (print-to-PDF); request format=md`,
+      );
+    }
+    const { filename, markdown } = this.service.exportMarkdown(id);
+    sendMarkdownReport(reply, filename, markdown);
   }
 
   @Patch(':id/status')

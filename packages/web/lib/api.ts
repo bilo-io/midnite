@@ -966,6 +966,18 @@ export async function exportCouncilRunMarkdown(
   return res.text();
 }
 
+/** Fetch a task thread as markdown (the gateway's `taskToMarkdown`). Backs the
+ *  task thread modal's ExportMenu (download .md / print-to-PDF / copy). */
+export async function exportTask(taskId: string): Promise<string> {
+  const path = `/tasks/${encodeURIComponent(taskId)}/export?format=md`;
+  const res = await fetch(`${gatewayUrl()}${path}`, { cache: 'no-store' });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(errorMessage(res, text));
+  }
+  return res.text();
+}
+
 // ---- Notes ----
 
 export async function getNotes(): Promise<Note[]> {

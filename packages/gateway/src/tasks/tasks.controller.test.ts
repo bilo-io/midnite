@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
 import { describe, expect, it, vi } from 'vitest';
+import type { FastifyReply } from 'fastify';
 import { parseConfig, TaskDependencyError, type MidniteConfig, type Task } from '@midnite/shared';
 import type { PrStatusService } from './pr-status.service';
 import type { TasksService } from './tasks.service';
@@ -39,6 +40,7 @@ function build(overrides: Partial<Record<keyof TasksService, unknown>> = {}) {
     removeDependency: vi.fn(() => fakeTask),
     deleteTask: vi.fn(),
     createBulk: vi.fn(async () => ({ results: [], counts: { created: 0, skipped: 0, failed: 0 } })),
+    exportMarkdown: vi.fn(() => ({ filename: 'x-2026-06-21.md', markdown: '# x' })),
     ...overrides,
   } as unknown as TasksService;
   const prStatus = { refresh: vi.fn(async () => fakeTask) } as unknown as PrStatusService;
@@ -202,5 +204,50 @@ describe('TasksController — PR refresh route', () => {
     const task = await controller.refreshPr('t1');
     expect(prStatus.refresh).toHaveBeenCalledWith('t1');
     expect(task).toMatchObject({ id: 't1' });
+  });
+});
+
+describe('TasksController — export', () => {
+  it('streams a markdown export with attachment headers', () => {
+    const { controller, service } = build();
+    const header = vi.fn();
+    const send = vi.fn();
+    const reply = { header, send } as unknown as FastifyReply;
+    header.mockReturnValue(reply);
+    send.mockReturnValue(reply);
+    controller.exportTask('t1', reply, 'md');
+    expect(service.exportMarkdown).toHaveBeenCalledWith('t1');
+    expect(header).toHaveBeenCalledWith(
+      'content-disposition',
+      'attachment; filename="x-2026-06-21.md"',
+    );
+    expect(send).toHaveBeenCalledWith('# x');
+  });
+
+  it('defaults to md when no format is given', () => {
+    const { controller, service } = build();
+    const reply = { header: vi.fn().mockReturnThis(), send: vi.fn().mockReturnThis() } as unknown as FastifyReply;
+    controller.exportTask('t1', reply);
+    expect(service.exportMarkdown).toHaveBeenCalledWith('t1');
+  });
+
+  it('rejects an unknown format', () => {
+    const { controller } = build();
+    expect(() => controller.exportTask('t1', {} as FastifyReply, 'csv')).toThrow(BadRequestException);
+  });
+
+  it('rejects a client-rendered format (pdf)', () => {
+    const { controller } = build();
+    expect(() => controller.exportTask('t1', {} as FastifyReply, 'pdf')).toThrow(BadRequestException);
+  });
+
+  it('lets a service NotFoundException surface for an unknown id', () => {
+    const { controller } = build({
+      exportMarkdown: vi.fn(() => {
+        throw new NotFoundException('task t9 not found');
+      }),
+    });
+    const reply = { header: vi.fn().mockReturnThis(), send: vi.fn().mockReturnThis() } as unknown as FastifyReply;
+    expect(() => controller.exportTask('t9', reply, 'md')).toThrow(NotFoundException);
   });
 });
