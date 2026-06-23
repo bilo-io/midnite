@@ -2,7 +2,7 @@
 name: git-report
 description: Git activity report for the repo over a day/week/month — merged PRs (linked), phases tackled + per-phase diff, and overall phase progress, as tables + a chart.
 argument-hint: "[today | yesterday | YYYY-MM-DD | this-week | this-month | YYYY-MM-DD..YYYY-MM-DD]"
-allowed-tools: Bash, Read, Glob, Grep, AskUserQuestion, Artifact, Agent
+allowed-tools: Bash, Read, Write, Glob, Grep, AskUserQuestion, Artifact, Agent, SendUserFile
 ---
 
 A git activity + phase-progress report for **midnite** over a chosen window.
@@ -70,9 +70,29 @@ Sum the additions/deletions of the PRs mapped to each phase; `Items → done` = 
 | Phase | Status | Done / total | % | Bar |
 |-------|--------|--------------|---|-----|
 | 25 · UI library | ✅ | 18 / 18 | 100% | `██████████` |
-Bar = 10 cells: `█` × round(%/10), `░` for the rest. Status emoji from the checkbox ratio + README markers: ✅ complete · 🔄 in progress · ⬜ not started.
+Bar = 10 cells: `█` × round(%/10), `░` for the rest. Status emoji from the checkbox ratio + README markers: ✅ complete · 🔄 wip · ⬜ not started.
 
 End with a one-line **headline** — e.g. *"5 PRs · +2.3k/−1.0k · Phase 25 closed, Phase 15 advanced; 24/29 phases complete."*
 
 ## 4 · Optional richer chart
 For a week/month window, or if the user asks for a visual, offer an **Artifact**: a small self-contained HTML page with a bar chart of PRs (and lines changed) per day plus a phase-completion chart. Otherwise the unicode bars suffice — they render in the terminal, whereas mermaid does not.
+
+## 5 · PDF export (end-of-day full-day report)
+
+For a **complete-day window** — a past date, `yesterday`, or `today` **when this is the day's final report** (current SAST time ≥ 22:00, i.e. the ~23:00 run) — also export the report as a polished PDF and surface it in chat. Do it **once per day**: skip it on the 09:00 / 17:00 mid-day runs. (Also export on demand, for any window, whenever the user asks.)
+
+A bundled, data-driven template lives at `.claude/skills/git-report/pdf-template.html` — all three tables render from one `DATA` object, so you only edit that block (no hand-written rows). Steps:
+
+1. Copy the template into your scratchpad: `cp .claude/skills/git-report/pdf-template.html "$TMP/git-report-$END.html"`.
+2. Replace the object between `/* DATA-START */` and `/* DATA-END */` with this run's values — **identical to the chat tables**. Tuple shapes are documented inline; `status` is `"done"` (complete) / `"wip"` (in progress) / `"todo"` (not started); all times SAST.
+3. Render with headless Chrome (JS builds the tables, so allow virtual time):
+   ```bash
+   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+     --headless=new --disable-gpu --no-pdf-header-footer --virtual-time-budget=3000 \
+     --print-to-pdf="$HOME/Desktop/midnite-git-report-$END.pdf" \
+     "file://$TMP/git-report-$END.html"
+   ```
+   If Chrome isn't at that path, detect a Chromium/Edge binary; if none exists, say so and skip the PDF — **never fail the report over it**.
+4. Surface it with **SendUserFile** (the PDF path) alongside the chat report; if that's unavailable, print the absolute path.
+
+The PDF is the same report rendered for archiving — keep its data in lockstep with the chat output.

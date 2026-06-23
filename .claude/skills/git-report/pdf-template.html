@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>midnite — Git report</title>
+<style>
+  :root{
+    --ink:#11161d; --muted:#5b6675; --line:#e3e8ef; --soft:#f5f7fa;
+    --green:#15803d; --green-bg:#dcfce7;
+    --amber:#b45309; --amber-bg:#fef3c7;
+    --gray:#64748b; --gray-bg:#eef1f5;
+    --bar:#3b82f6; --bar-track:#e8edf3; --accent:#0f172a;
+  }
+  *{box-sizing:border-box;}
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+        color:var(--ink); margin:0; font-size:11px; line-height:1.45; }
+  .page{ padding:34px 40px 30px; }
+  header.report{ border-bottom:3px solid var(--accent); padding-bottom:14px; margin-bottom:20px; }
+  header.report h1{ font-size:23px; margin:0 0 4px; letter-spacing:-.01em; }
+  header.report .sub{ color:var(--muted); font-size:11.5px; }
+  .chips{ margin-top:11px; display:flex; gap:8px; flex-wrap:wrap; }
+  .chip{ font-size:11px; font-weight:600; padding:4px 11px; border-radius:999px; background:var(--soft); border:1px solid var(--line); }
+  .chip.m{ background:var(--green-bg); border-color:#bbf7d0; color:var(--green); }
+  .chip.o{ background:var(--amber-bg); border-color:#fde68a; color:var(--amber); }
+  .chip.c{ background:#fee2e2; border-color:#fecaca; color:#b91c1c; }
+  .chip.k{ background:#eef2ff; border-color:#e0e7ff; color:#4338ca; }
+  h2{ font-size:14px; margin:24px 0 9px; padding-bottom:5px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:7px; break-after:avoid; }
+  h2 .em{ font-size:15px; }
+  table{ width:100%; border-collapse:collapse; font-size:10px; }
+  thead th{ text-align:left; font-size:9px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted);
+            font-weight:700; padding:5px 8px; border-bottom:1.5px solid var(--line); background:var(--soft); }
+  tbody td{ padding:4.5px 8px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  tbody tr:nth-child(even){ background:#fafbfc; }
+  tr{ break-inside:avoid; }
+  td.right{ text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  td.num{ font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .pr{ font-weight:700; color:#1d4ed8; white-space:nowrap; }
+  .ph{ white-space:nowrap; color:var(--accent); font-weight:600; }
+  .add{ color:var(--green); font-weight:600; }
+  .del{ color:#b91c1c; font-weight:600; }
+  .badge{ display:inline-block; min-width:74px; text-align:center; font-size:9px; font-weight:700; padding:2.5px 7px;
+          border-radius:5px; text-transform:uppercase; letter-spacing:.03em; }
+  .badge.done{ background:var(--green-bg); color:var(--green); }
+  .badge.wip{ background:var(--amber-bg); color:var(--amber); }
+  .badge.todo{ background:var(--gray-bg); color:var(--gray); }
+  .barwrap{ display:flex; align-items:center; gap:8px; }
+  .track{ flex:1; height:8px; background:var(--bar-track); border-radius:999px; overflow:hidden; min-width:90px; }
+  .fill{ height:100%; border-radius:999px; }
+  .fill.done{ background:var(--green); } .fill.wip{ background:var(--bar); } .fill.todo{ background:transparent; }
+  .pct{ width:34px; text-align:right; font-variant-numeric:tabular-nums; font-weight:600; color:var(--muted); }
+  .headline{ margin-top:24px; padding:13px 16px; background:var(--soft); border:1px solid var(--line);
+             border-left:4px solid var(--accent); border-radius:7px; font-size:11.5px; }
+  .note{ color:var(--muted); font-size:9.5px; margin:5px 0 0; }
+  footer{ margin-top:18px; color:var(--muted); font-size:9.5px; border-top:1px solid var(--line); padding-top:9px; }
+  @page{ size:A4; margin:12mm 10mm; }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="report">
+    <h1 id="title"></h1>
+    <div class="sub" id="sub"></div>
+    <div class="chips" id="chips"></div>
+  </header>
+  <h2><span class="em">🔀</span> Merged PRs</h2>
+  <table><thead><tr><th>PR</th><th>Title</th><th>Phase</th><th class="right">Δ lines</th><th class="right">Merged (SAST)</th></tr></thead><tbody id="prs"></tbody></table>
+  <h2><span class="em">🧭</span> Phases tackled</h2>
+  <table><thead><tr><th>Phase</th><th>PRs</th><th class="right">Δ lines (period)</th><th class="right">Items → done</th></tr></thead><tbody id="tackled"></tbody></table>
+  <p class="note" id="tackled-note"></p>
+  <h2><span class="em">📊</span> Phase progress (overall)</h2>
+  <table><thead><tr><th style="width:170px">Phase</th><th style="width:80px">Status</th><th class="right" style="width:62px">Done / total</th><th>Progress</th></tr></thead><tbody id="phases"></tbody></table>
+  <div class="headline" id="headline"></div>
+  <footer id="footer"></footer>
+</div>
+
+<script>
+/* The /git-report skill (§5) replaces the block between the DATA-START / DATA-END
+   markers each run. Times are SAST. prs/tackled/phases are arrays of fixed-shape
+   tuples (see keys). status: "done" (complete) | "wip" (in progress) | "todo" (not started). */
+/* DATA-START */
+const DATA = {
+  date: "YYYY-MM-DD",
+  generated: "HH:MM SAST",
+  status: { merged: 0, open: 0, closed: 0 },
+  linesAdded: "+0", linesRemoved: "−0",
+  phasesComplete: "0 / 0",
+  // [number, title, phase, additions, deletions, "HH:MM"]
+  prs: [],
+  // [phaseLabel, prsText, additions, deletions, itemsDone]
+  tackled: [],
+  tackledNote: "",
+  // [n, title, status, done, total, pct]
+  phases: [],
+  headline: "",
+};
+/* DATA-END */
+
+const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const lines = (a,d) => `<span class="add">+${a}</span> / <span class="del">−${d}</span>`;
+const BADGE = { done:"complete", wip:"wip", todo:"not started" };
+
+document.getElementById("title").textContent = `📈 Git report — ${DATA.date}`;
+document.getElementById("sub").textContent =
+  `midnite · multitask orchestrator for Claude Code · single-day window (SAST) · generated ${DATA.generated}`;
+document.getElementById("chips").innerHTML = [
+  `<span class="chip m"><b>${DATA.status.merged}</b> merged</span>`,
+  `<span class="chip o"><b>${DATA.status.open}</b> open</span>`,
+  `<span class="chip c"><b>${DATA.status.closed}</b> closed-unmerged</span>`,
+  `<span class="chip k"><b>${DATA.linesAdded}</b> / <b>${DATA.linesRemoved}</b> lines</span>`,
+  `<span class="chip k"><b>${DATA.phasesComplete}</b> phases complete</span>`,
+].join("");
+
+document.getElementById("prs").innerHTML = DATA.prs.map(([n,t,ph,a,d,m]) =>
+  `<tr><td class="pr">#${n}</td><td>${esc(t)}</td><td class="ph">${esc(ph)}</td><td class="right">${lines(a,d)}</td><td class="right">${esc(m)}</td></tr>`
+).join("");
+
+document.getElementById("tackled").innerHTML = DATA.tackled.map(([ph,prs,a,d,done]) =>
+  `<tr><td class="ph">${esc(ph)}</td><td class="num">${esc(prs)}</td><td class="right">${a==null?"—":lines(a,d)}</td><td class="right">${esc(done)}</td></tr>`
+).join("");
+document.getElementById("tackled-note").innerHTML = DATA.tackledNote ? esc(DATA.tackledNote) : "";
+
+const labels = BADGE;
+document.getElementById("phases").innerHTML = DATA.phases.map(([n,t,s,done,tot,p]) =>
+  `<tr><td class="ph">${n} · ${esc(t)}</td>`+
+  `<td><span class="badge ${s}">${labels[s]}</span></td>`+
+  `<td class="right">${done} / ${tot}</td>`+
+  `<td><div class="barwrap"><div class="track"><div class="fill ${s}" style="width:${p}%"></div></div><div class="pct">${p}%</div></div></td></tr>`
+).join("");
+
+document.getElementById("headline").innerHTML = `<b>Headline:</b> ${esc(DATA.headline)}`;
+document.getElementById("footer").textContent =
+  `midnite git report · window ${DATA.date} (SAST, Africa/Johannesburg UTC+2) · merge times in SAST · generated by /git-report.`;
+</script>
+</body>
+</html>
