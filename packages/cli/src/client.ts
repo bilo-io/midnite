@@ -209,11 +209,12 @@ export function createClient(baseUrl: string): GatewayClient {
       ).runs;
     },
 
-<<<<<<< HEAD
     async getTerminalToken(sessionId: string): Promise<TerminalTokenResponse> {
       return TerminalTokenResponseSchema.parse(
         await request(`/sessions/${encodeURIComponent(sessionId)}/terminal-token`, { method: 'GET' }),
-=======
+      );
+    },
+
     async draftBreakdown(goal: string): Promise<BreakdownPreviewResponse> {
       return BreakdownPreviewResponseSchema.parse(
         await request('/tasks/breakdown', {
@@ -234,7 +235,6 @@ export function createClient(baseUrl: string): GatewayClient {
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ breakdown: BreakdownSchema.parse(breakdown), repo }),
         }),
->>>>>>> origin/main
       );
     },
   };

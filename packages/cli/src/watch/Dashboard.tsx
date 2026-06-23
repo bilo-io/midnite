@@ -9,6 +9,7 @@ import {
   ServerTerminalMessageSchema,
   applyTaskEvent,
   type AgentSlot,
+  type Status,
   type Task,
   type TaskBoardEvent,
 } from '@midnite/shared';
@@ -17,6 +18,16 @@ import { StatusBar, type ConnectionState } from './StatusBar.js';
 import { BoardPanel } from './BoardPanel.js';
 import { PoolPanel } from './PoolPanel.js';
 import { LogPanel, appendLines } from './LogPanel.js';
+
+// Column order matches BoardPanel's COLUMNS
+const COLUMNS: Status[] = ['backlog', 'todo', 'wip', 'waiting', 'done'];
+// Status left/right cycling for task moves (wraps at ends)
+function adjacentStatus(current: Status, direction: 'left' | 'right'): Status {
+  const idx = COLUMNS.indexOf(current);
+  if (idx === -1) return current;
+  const next = direction === 'right' ? idx + 1 : idx - 1;
+  return COLUMNS[Math.max(0, Math.min(COLUMNS.length - 1, next))] ?? current;
+}
 
 interface Props {
   baseUrl: string;
@@ -29,16 +40,26 @@ export function Dashboard({ baseUrl }: Props) {
   const [tasks, setTasks] = useState<Task[] | null>(null);
   const [slots, setSlots] = useState<AgentSlot[] | null>(null);
 
-  // ── D1: session selection ────────────────────────────────────────────────────
+  // ── E1: board focus state ────────────────────────────────────────────────────
+  const [focusedColIdx, setFocusedColIdx] = useState(0);
+  const [focusedTaskIdx, setFocusedTaskIdx] = useState(0);
+
+  // Derived: the task currently focused on the board
+  const colTasks = (tasks ?? []).filter((t) => t.status === COLUMNS[focusedColIdx]);
+  const focusedTask = colTasks[focusedTaskIdx % Math.max(1, colTasks.length)] ?? null;
+
+  // ── D1: wip session selection (Tab) ─────────────────────────────────────────
   const [selectedIdx, setSelectedIdx] = useState(0);
+  const wipTasks = tasks?.filter((t) => t.status === 'wip') ?? [];
+  const selectedTask = wipTasks[selectedIdx % Math.max(1, wipTasks.length)] ?? null;
+
   // Log state for the selected session
   const [logLines, setLogLines] = useState<string[]>([]);
   const [logExited, setLogExited] = useState(false);
   const logWsRef = useRef<{ close(): void } | null>(null);
 
-  // The wip tasks at any given moment — stable list the Tab key cycles.
-  const wipTasks = tasks?.filter((t) => t.status === 'wip') ?? [];
-  const selectedTask = wipTasks[selectedIdx % Math.max(1, wipTasks.length)] ?? null;
+  // ── E2: move task ────────────────────────────────────────────────────────────
+  const [moving, setMoving] = useState(false);
 
   // ── REST + board WS ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -95,7 +116,6 @@ export function Dashboard({ baseUrl }: Props) {
   // ── D2: subscribe to the selected session's terminal output ──────────────────
   useEffect(() => {
     if (!selectedTask?.sessionId) {
-      // No session yet — clear the log panel.
       setLogLines([]);
       setLogExited(false);
       logWsRef.current?.close();
@@ -110,7 +130,6 @@ export function Dashboard({ baseUrl }: Props) {
     logWsRef.current?.close();
     logWsRef.current = null;
 
-    // Fetch a short-lived token, then open the terminal WS.
     const connectLog = async (): Promise<void> => {
       try {
         const tokenRes = await fetch(`${baseUrl}/sessions/${encodeURIComponent(sessionId)}/terminal-token`);
@@ -129,14 +148,7 @@ export function Dashboard({ baseUrl }: Props) {
               catch { return null; }
             },
             onReady: () => {
-              // Send attach message once connected.
-              handle.send(JSON.stringify({
-                type: 'attach',
-                sessionId,
-                token,
-                cols: 120,
-                rows: 30,
-              }));
+              handle.send(JSON.stringify({ type: 'attach', sessionId, token, cols: 120, rows: 30 }));
             },
             onMessage: (msg) => {
               if (!active) return;
@@ -151,9 +163,7 @@ export function Dashboard({ baseUrl }: Props) {
         );
         if (active) logWsRef.current = handle;
         else handle.close();
-      } catch {
-        // fail-open
-      }
+      } catch { /* fail-open */ }
     };
 
     void connectLog();
@@ -167,8 +177,64 @@ export function Dashboard({ baseUrl }: Props) {
   // ── Keyboard ─────────────────────────────────────────────────────────────────
   useInput((input, key) => {
     if (input === 'q' || (key.ctrl && input === 'c')) exit();
+
+    // Tab: cycle wip sessions for log panel
     if (key.tab && wipTasks.length > 0) {
       setSelectedIdx((i) => (i + 1) % wipTasks.length);
+      return;
+    }
+
+    // E1: column navigation (← h, → l)
+    if (key.leftArrow || input === 'h') {
+      setFocusedColIdx((c) => Math.max(0, c - 1));
+      setFocusedTaskIdx(0);
+      return;
+    }
+    if (key.rightArrow || input === 'l') {
+      setFocusedColIdx((c) => Math.min(COLUMNS.length - 1, c + 1));
+      setFocusedTaskIdx(0);
+      return;
+    }
+
+    // E1: task navigation within column (↑ k, ↓ j)
+    if (key.upArrow || input === 'k') {
+      setFocusedTaskIdx((t) => Math.max(0, t - 1));
+      return;
+    }
+    if (key.downArrow || input === 'j') {
+      setFocusedTaskIdx((t) => Math.min(Math.max(0, colTasks.length - 1), t + 1));
+      return;
+    }
+
+    // E2: move focused task right (+) or left (-) in column order
+    if ((input === 'm' || input === '>') && focusedTask && !moving) {
+      const newStatus = adjacentStatus(focusedTask.status, 'right');
+      if (newStatus === focusedTask.status) return;
+      setMoving(true);
+      // Optimistic update
+      setTasks((prev) => prev?.map((t) => t.id === focusedTask.id ? { ...t, status: newStatus } : t) ?? prev);
+      void fetch(`${baseUrl}/tasks/${encodeURIComponent(focusedTask.id)}/status`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      }).catch(() => {
+        // Revert optimistic update on failure
+        setTasks((prev) => prev?.map((t) => t.id === focusedTask.id ? { ...t, status: focusedTask.status } : t) ?? prev);
+      }).finally(() => { setMoving(false); });
+      return;
+    }
+    if ((input === 'M' || input === '<') && focusedTask && !moving) {
+      const newStatus = adjacentStatus(focusedTask.status, 'left');
+      if (newStatus === focusedTask.status) return;
+      setMoving(true);
+      setTasks((prev) => prev?.map((t) => t.id === focusedTask.id ? { ...t, status: newStatus } : t) ?? prev);
+      void fetch(`${baseUrl}/tasks/${encodeURIComponent(focusedTask.id)}/status`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      }).catch(() => {
+        setTasks((prev) => prev?.map((t) => t.id === focusedTask.id ? { ...t, status: focusedTask.status } : t) ?? prev);
+      }).finally(() => { setMoving(false); });
     }
   });
 
@@ -177,7 +243,12 @@ export function Dashboard({ baseUrl }: Props) {
       <StatusBar baseUrl={baseUrl} connState={connState} lastUpdate={lastUpdate} />
       <Box flexDirection="row" flexGrow={1} gap={1}>
         <Box flexDirection="column" flexGrow={2}>
-          <BoardPanel tasks={tasks} selectedTaskId={selectedTask?.id ?? null} />
+          <BoardPanel
+            tasks={tasks}
+            selectedTaskId={selectedTask?.id ?? null}
+            focusedColIdx={focusedColIdx}
+            focusedTaskId={focusedTask?.id ?? null}
+          />
           <PoolPanel slots={slots} />
         </Box>
         <Box flexGrow={1}>
@@ -190,7 +261,9 @@ export function Dashboard({ baseUrl }: Props) {
         </Box>
       </Box>
       <Box paddingX={1}>
-        <Text dimColor>q quit  Tab cycle wip sessions</Text>
+        <Text dimColor>
+          q quit  Tab logs  ←→/hl col  ↑↓/jk task  m/M move  {moving ? '⟳ moving…' : ''}
+        </Text>
       </Box>
     </Box>
   );
