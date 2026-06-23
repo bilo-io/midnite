@@ -78,6 +78,10 @@ import {
   CheckRunListResponseSchema,
   CreatePlanTasksResponseSchema,
   CreateTaskResponseSchema,
+  CreateFromBreakdownResponseSchema,
+  BreakdownPreviewResponseSchema,
+  type Breakdown,
+  type BreakdownPreviewResponse,
   DraftPlanResponseSchema,
   TriggerCheckResponseSchema,
   EnhanceDescriptionResponseSchema,
@@ -589,6 +593,32 @@ export async function createTasksFromPlan(id: string, titles: string[]): Promise
     `/projects/${encodeURIComponent(id)}/plan/create-tasks`,
     { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ titles }) },
     CreatePlanTasksResponseSchema,
+  );
+  return tasks;
+}
+
+/**
+ * Generate a structured, dependency-aware breakdown for a project (Phase 28 C).
+ * Preview-only — the client edits/confirms before `createTasksFromBreakdown`.
+ */
+export async function draftProjectBreakdown(id: string): Promise<BreakdownPreviewResponse> {
+  return fetchJson(
+    `/projects/${encodeURIComponent(id)}/plan/draft-breakdown`,
+    { method: 'POST' },
+    BreakdownPreviewResponseSchema,
+  );
+}
+
+/** Turn a confirmed/edited breakdown into the project's dependency-wired board. */
+export async function createTasksFromBreakdown(
+  id: string,
+  breakdown: Breakdown,
+  repo?: string,
+): Promise<Task[]> {
+  const { tasks } = await fetchJson(
+    `/projects/${encodeURIComponent(id)}/plan/create-from-breakdown`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ breakdown, repo }) },
+    CreateFromBreakdownResponseSchema,
   );
   return tasks;
 }

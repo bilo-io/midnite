@@ -30,3 +30,25 @@ export async function seedTask(prompt: string, status: Status = 'todo'): Promise
   const { task } = (await res.json()) as { task: SeededTask };
   return { id: task.id, title: task.title, status: task.status };
 }
+
+/** A project created over the gateway REST API. */
+export type SeededProject = { id: string; name: string };
+
+/**
+ * Create a project via `POST /projects` (JSON, as the web client does). The
+ * `description` doubles as the breakdown "goal" — with the LLM disabled in e2e,
+ * `draft-breakdown` falls back to a single task whose title IS that description,
+ * which keeps the breakdown-flow assertion deterministic.
+ */
+export async function seedProject(name: string, description: string): Promise<SeededProject> {
+  const res = await fetch(`${GATEWAY_ORIGIN}/projects`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name, description, tag: 'E2E', color: '#3366ff' }),
+  });
+  if (!res.ok) {
+    throw new Error(`seedProject failed (${res.status}): ${await res.text().catch(() => '')}`);
+  }
+  const { project } = (await res.json()) as { project: { id: string; name: string } };
+  return { id: project.id, name: project.name };
+}
