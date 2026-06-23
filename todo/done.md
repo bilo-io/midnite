@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 7 B4 + test fixes: project + task-thread exports (PR #159)
+
+Closes Phase 7 completely. Project and task thread reports now fully implemented.
+
+- [x] `project-report.ts`: added `## Plan` (AI-drafted markdown) + `## Agent activity` (active/recent runs with PR links) sections
+- [x] `task-report.ts`: added `## Session summary` section (start/end/duration/outcome derived from events; notes live transcript is Terminal-only)
+- [x] `project-card.tsx`: `ExportMenu` added to list + grid layouts alongside Plan button
+- [x] Pre-existing test fixes: `BreakdownService` stub added to `projects.service.test` + `tasks.controller.test`; `mobile-nav.test` updated for `'Menu'` rename
+
+---
+
 ## 2026-06-24 — Phase 32 E: keyboard nav + task moves for midnite watch (PR #158)
 
 Completes Phase 32 — `midnite watch` now has full board navigation.
