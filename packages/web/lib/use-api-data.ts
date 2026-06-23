@@ -1,8 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-
-import { useDataRefresh } from './data-refresh';
+import { useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 type ApiDataState<T> = {
   data: T | null;
@@ -11,57 +10,37 @@ type ApiDataState<T> = {
   refresh: () => void;
 };
 
+let _keyCounter = 0;
+
 /**
- * Fetch once on mount (and on demand via `refresh`), cancelling in-flight work
- * on unmount. Unlike {@link usePolling} there's no interval — it's the static
- * export's replacement for what used to be a server-component `await` in the
- * page shell: the page renders as a client component and loads its data here.
+ * Fetch once on mount (and on demand via `refresh` or via `invalidateData`),
+ * now backed by TanStack Query (Phase 3). Same external API as before —
+ * callers don't need to change.
  *
- * `fetcher` receives an AbortSignal; pass it through to `fetch` where supported.
+ * Each mounted instance gets its own stable query key so queries are
+ * independent; `invalidateData()` broadcasts a global invalidation that hits
+ * all active queries at once (matching the old pub/sub behaviour).
  */
 export function useApiData<T>(
   fetcher: (signal: AbortSignal) => Promise<T>,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- arbitrary dep list, like useEffect
   deps: readonly any[] = [],
 ): ApiDataState<T> {
-  const [data, setData] = useState<T | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [tick, setTick] = useState(0);
+  // Stable per-instance key prefix assigned once on first render.
+  const keyPrefixRef = useRef<number | null>(null);
+  if (keyPrefixRef.current === null) keyPrefixRef.current = _keyCounter++;
 
-  const fetcherRef = useRef(fetcher);
-  fetcherRef.current = fetcher;
+  const queryKey = [keyPrefixRef.current, ...deps];
 
-  const refresh = useCallback(() => setTick((t) => t + 1), []);
+  const { data, error, isFetching, isPending, refetch } = useQuery<T>({
+    queryKey,
+    queryFn: ({ signal }) => fetcher(signal),
+  });
 
-  // Re-fetch when any mutation calls invalidateData() — see lib/data-refresh.ts.
-  useDataRefresh(refresh);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    let active = true;
-    setLoading(true);
-
-    void (async () => {
-      try {
-        const result = await fetcherRef.current(controller.signal);
-        if (!active) return;
-        setData(result);
-        setError(null);
-      } catch (err) {
-        if (!active || controller.signal.aborted) return;
-        setError(err instanceof Error ? err.message : 'request failed');
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
-
-    return () => {
-      active = false;
-      controller.abort();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- caller-supplied dep list
-  }, [tick, ...deps]);
-
-  return { data, error, loading, refresh };
+  return {
+    data: data ?? null,
+    error: error ? (error instanceof Error ? error.message : 'request failed') : null,
+    loading: isPending || isFetching,
+    refresh: () => void refetch(),
+  };
 }

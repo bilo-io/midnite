@@ -1,38 +1,21 @@
-'use client';
-
-import { useEffect } from 'react';
-
 /**
- * A tiny pub/sub so a mutation anywhere can force every live data hook to
- * re-fetch — our stand-in for TanStack Query's `invalidateQueries`.
+ * Global data invalidation — now backed by TanStack Query (Phase 3).
  *
- * Why this exists: the web app is a static export (`output: 'export'`), so all
- * data is fetched client-side via {@link useApiData}/{@link usePolling}. Next's
- * `router.refresh()` only re-runs *server* components, of which a static export
- * has none — so calling it after a create/delete did nothing, leaving the UI
- * showing stale (or already-deleted) resources until a full page reload.
- *
- * Instead, after any mutation call {@link invalidateData}; every mounted
- * {@link useApiData}/{@link usePolling} hook subscribes and re-runs its fetcher.
- * Invalidation is coarse (all hooks refetch), but only one page is mounted at a
- * time, so the cost is a handful of cheap gateway reads.
+ * Calling `invalidateData()` marks every active query as stale and triggers an
+ * immediate background refetch, exactly matching the old pub/sub behaviour.
+ * `useDataRefresh` is kept as a no-op for backward compatibility (the new hooks
+ * don't need it — TanStack handles the subscription lifecycle internally).
  */
-const listeners = new Set<() => void>();
+import { queryClient } from './query-client';
 
-/** Tell every live data hook to re-fetch. Call after a successful mutation. */
+/** Mark every active query stale and trigger a background refetch. */
 export function invalidateData(): void {
-  for (const listener of listeners) listener();
+  void queryClient.invalidateQueries();
 }
 
-/**
- * Subscribe a re-fetch callback to global invalidation for the lifetime of the
- * component. Used internally by the data hooks; `refresh` must be stable.
- */
-export function useDataRefresh(refresh: () => void): void {
-  useEffect(() => {
-    listeners.add(refresh);
-    return () => {
-      listeners.delete(refresh);
-    };
-  }, [refresh]);
+/** @deprecated No-op — TanStack Query handles subscriptions internally. */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function useDataRefresh(_refresh: () => void): void {
+  // intentionally empty
 }
+

@@ -1,10 +1,21 @@
 import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import type { Decorator, Preview } from '@storybook/nextjs-vite';
 
 import { ThemeProvider } from '../app/theme/theme-context';
 import { THEME_STORAGE_KEY } from '../app/theme/theme-script';
 import '../app/globals.css';
+
+// Each story gets a fresh QueryClient so state never leaks between tests.
+const withQueryClient: Decorator = (Story) => {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 0 } } });
+  return (
+    <QueryClientProvider client={client}>
+      <Story />
+    </QueryClientProvider>
+  );
+};
 
 // Seed the stored preference from the toolbar, then remount ThemeProvider so it
 // re-reads it — the provider itself toggles the `dark` class on <html>, which is
@@ -22,7 +33,7 @@ const withTheme: Decorator = (Story, { globals }) => {
 };
 
 const preview: Preview = {
-  decorators: [withTheme],
+  decorators: [withQueryClient, withTheme],
   globalTypes: {
     theme: {
       description: 'Color theme',
