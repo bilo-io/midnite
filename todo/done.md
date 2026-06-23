@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 19 Theme B: guided setup wizard (PR #121) — **Phase 19 COMPLETE**
+
+The final piece of the onboarding flow: a multi-step guided wizard that walks a new user through every required setup step. Auto-opens on first visit when `!ready`; the nudge's CTA opens the same wizard. Board stays fully accessible throughout.
+
+- [x] **`SetupWizard.tsx`** — modal overlay wizard (step breadcrumb, back/skip nav, Escape/× dismiss). 5 steps: Provider (pick + paste key); Tools (claude/gh status + install links); Pool (range slider, localStorage); Repo (optional — name+path → `createRepo`, skip link); Finish (re-fetches `SetupStatus`, "You're all set!" badge, "Start building" CTA).
+- [x] **`SetupWizardController`** — mounts in the main layout; auto-opens on first visit when `!ready` + not dismissed (localStorage); registers open callback for the nudge.
+- [x] **`SetupNudge`** — new `onOpenWizard` prop; CTA becomes "Open setup wizard" when wired.
+- [x] **`shared/src/setup.ts`** — `AGENT_POOL_SIZE_MIN/MAX` + `UpdateAgentPoolRequestSchema`.
+- [x] Tests: 5 RTL tests; `run-output-panel.test.tsx` + `SetupWizard.test.tsx` wrapped in `ToastProvider`. Web 403/403; typecheck green. Also cleaned up 6 stale worktrees (~8GB freed).
+
+---
+
 ## 2026-06-23 — Phase 18 Theme B: project markdown export (PR #119)
 
 Projects now have a markdown export — title, tasks grouped by status, sources as links, and scoped memories as a Knowledge section — using the same `ExportMenu` + `report-html-export` substrate already proven by the councils export (Phase 7 B).

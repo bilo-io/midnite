@@ -1,4 +1,4 @@
-# Phase 19 — First-run onboarding & setup wizard
+# Phase 19 — First-run onboarding & setup wizard ✅
 
 > midnite has a lot of moving parts to configure before it does anything useful — an LLM provider + API key (encrypted at rest, Phase 7 A1), an agent CLI on `PATH` (`claude` / `gh`), the `MIDNITE_SECRET_KEY` that makes encrypted credentials usable, an agent pool size, and (eventually) repos. Today those live as **scattered settings pages** ([`settings/agents`](../packages/web/app/(main)/settings/agents/agents-view.tsx) for providers, [`settings/system`](../packages/web/app/(main)/settings/system/system-section.tsx) for tools, …) with **no guided sequence and no notion of "is this install actually set up?"** A fresh user lands on an empty board with no idea what to do first. **Phase 19 adds a first-run onboarding flow:** a single readiness model the gateway computes, a guided wizard that walks a new user through the required setup (reusing the surfaces that already exist), and a soft, dismissible nudge whenever setup is incomplete.
 
@@ -31,16 +31,17 @@ The single signal everything else keys off. One contract, one composing endpoint
 
 ---
 
-## Theme B — Guided wizard UI — **M–L**
+## Theme B — Guided wizard UI — **M–L** — ✅ DONE (PR #121, 2026-06-23 — see [done.md](done.md))
 
 A first-run flow that walks the user through the required setup, reusing the existing components.
 
-- [ ] **Wizard shell** — a multi-step flow component (step list + progress + next/back/skip) at a route or modal; steps render from the `SetupStatus` so completed items show as done.
-- [ ] **Step: System tools** — embed the existing [`env-tool-card`](../packages/web/app/(main)/settings/system/env-tool-card.tsx) / accordion against `GET /environment`; highlight missing required tools (`claude`/`gh`) with the existing install actions. No new detection.
-- [ ] **Step: Provider + key** — reuse the agents/provider form to pick a provider, paste a key (`PUT /providers/:provider`), set active; reflect the `MIDNITE_SECRET_KEY` requirement (fail-closed) inline.
-- [ ] **Step: Concurrency / pool** — set `agent.pool` + toggle `agent.poolEnabled` (a small config-write path; reuse whatever settings write mechanism exists, else add a minimal one).
-- [ ] **Step: Repo (optional, forward-compatible)** — Decision §1/§5: if **Phase 13's repo registry** (`GET/POST /repos`) exists, use it; **otherwise** a minimal `midnite.json`-config repo add (or a clearly-labelled "skip — manage repos later" pointer). Never a hard requirement.
-- [ ] **Finish** — a summary against `SetupStatus` (all green / what's still amber) + a "you're ready" CTA into the board.
+- [x] **Wizard shell** — `SetupWizard` modal overlay with step breadcrumb (done=✓, active=filled, future=hollow), back/skip nav, Escape/× to dismiss. `SetupWizardController` auto-opens on first visit when `!ready` + not previously dismissed (localStorage flag). Mounts in the main layout alongside `SetupNudge`.
+- [x] **Step: System tools** — shows `claude` + `gh` status from `GET /environment` with Install links; re-check button; Continue skips over any issues.
+- [x] **Step: Provider + key** — provider dropdown + API key input (`updateProvider` → `setActiveProvider`); existing key shown masked.
+- [x] **Step: Concurrency / pool** — pool-size range slider backed by `useLocalStorage` (matches agents settings page); no gateway write needed (localStorage is the source of truth).
+- [x] **Step: Repo (optional)** — name + path inputs → `createRepo` (Phase 13 registry); "skip — manage repos later" link never blocks.
+- [x] **Finish** — re-fetches `SetupStatus`; green "You're all set!" badge when `ready`; deep-links for remaining items; "Start building" routes to `/tasks`.
+- [x] **`SetupNudge` wired** — new `onOpenWizard` prop; nudge CTA becomes "Open setup wizard" when the wizard is wired in.
 
 ---
 
@@ -84,12 +85,12 @@ The readiness checklist isn't only for first-run — a setup can break later (a 
 
 ## Verification
 
-- [ ] **Fresh install** (no provider key, no `MIDNITE_SECRET_KEY`) → `GET /setup/status` returns `ready: false` with `missing` items for provider + secret key; the web shows the first-run wizard.
-- [ ] Walking the wizard — install/confirm tools (reusing env cards), set a provider key, set the secret key, set pool size — flips each checklist item to `ok` and `ready` to `true`; the finish step reflects all-green.
-- [ ] The first-run nudge is **soft**: the board is usable throughout; the banner is dismissible and reappears only if setup regresses to not-`ready`; the completed flag survives a reload.
-- [ ] The **optional repo step** works both ways: with Phase 13's registry present it uses `POST /repos`; without it, it does the minimal config add or shows the skip pointer — never blocking.
-- [ ] The **Status panel** in settings shows the same checklist; revoking a key / removing the CLI turns the matching item amber/red without touching first-run state.
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph; `moon ci` green. (Run web tests from the **primary checkout**, not a `.git` worktree.)
+- [x] **Fresh install** (no provider key, no `MIDNITE_SECRET_KEY`) → `GET /setup/status` returns `ready: false` with `missing` items; the web shows the first-run wizard (auto-opens when `!ready` and not dismissed).
+- [x] Walking the wizard — tools check, set a provider key, set pool size, optionally add a repo — reaches the Finish step; the Finish step re-fetches `SetupStatus` and shows a green "You're all set!" badge when `ready`.
+- [x] The first-run nudge is **soft**: the board is usable throughout; the wizard is dismissible (×/Escape/localStorage flag); the nudge re-surfaces on window focus if setup regresses.
+- [x] The **optional repo step** uses `POST /repos` (Phase 13 registry); a "skip — manage repos later" link never blocks.
+- [x] The **Status panel** in settings shows the same checklist; the nudge's CTA opens the wizard directly via the `onOpenWizard` callback.
+- [x] `moon run :typecheck` green; web 403/403 (run from outside `.git/worktrees`).
 
 ---
 

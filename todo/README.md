@@ -38,8 +38,8 @@ A lightweight place to track what's been done and what's outstanding, without le
 - [phase-15-smart-intake.md](phase-15-smart-intake.md) — Smart intake & inference (bulk, URL/GitHub context, answers, knowledge files) ✅
 - [phase-16-bulk-add.md](phase-16-bulk-add.md) — Bulk / paste add (standalone build-out of P15 Theme A) ◻
 - [phase-17-spawner-tmux.md](phase-17-spawner-tmux.md) — Pluggable spawner & durable tmux sessions ◻
-- [phase-18-reports-exports.md](phase-18-reports-exports.md) — Reports & exports across the app (tasks, projects, workflow runs) ◻
-- [phase-19-onboarding-wizard.md](phase-19-onboarding-wizard.md) — First-run onboarding & setup wizard ◻
+- [phase-18-reports-exports.md](phase-18-reports-exports.md) — Reports & exports across the app ⚠️ (Theme A still open — task export PR #61; B+C+D done)
+- [phase-19-onboarding-wizard.md](phase-19-onboarding-wizard.md) — First-run onboarding & setup wizard ✅
 - [phase-20-global-search.md](phase-20-global-search.md) — Global search (full-text across the app) ✅
 - [phase-21-notifications.md](phase-21-notifications.md) — Notifications & alerting (in-app, browser, webhook) ✅
 - [phase-22-fleet-visibility.md](phase-22-fleet-visibility.md) — Fleet visibility: ops metrics & PR lifecycle ◻
