@@ -4,6 +4,13 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 32 E: keyboard nav + task moves for midnite watch (PR #158)
+
+Completes Phase 32 — `midnite watch` now has full board navigation.
+
+- [x] `cli/watch/Dashboard.tsx`: ←→/hl cols; ↑↓/jk tasks; m/M moves status (optimistic + revert)
+- [x] `cli/watch/BoardPanel.tsx`: focused col gets magenta border; focused task shows ●
+
 ## 2026-06-24 — Phase 31 Theme A: agent.activity/attention event backbone (PR #157)
 
 Wires per-tool activity to the board WS so the office and CLI watch can track agent state without a new socket.
