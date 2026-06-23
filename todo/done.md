@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 30 B1: `task_check_runs` table + repository methods (PR #126)
+
+Added the DB substrate for quality-gate run history. Migration `0038_task_check_runs` adds a normalized child table (id, task_id, trigger, passed, started_at, finished_at, results JSON) mirroring `task_events`. `TasksRepository` gains `insertCheckRun`, `checkRunsForTask`, and `latestCheckRunForTask`. 8 integration tests against `:memory:` cover round-trip, ordering, scoping, null-on-empty, passed/failed flags, and all trigger variants.
+
+- [x] `task_check_runs` table in `schema.ts` + migration `0038`
+- [x] `insertCheckRun` / `checkRunsForTask` / `latestCheckRunForTask` on `TasksRepository`
+- [x] 8 integration tests; also merged Phase 22 Theme C (PR #122 `pr_status` table) into the branch
+
+---
+
 ## 2026-06-23 — Phase 26 Theme C: render the repo's real markdown as product docs (PR #127)
 
 Made the project's existing markdown browsable from one source of truth, inside the `@midnite/ui`-built docs app. The repo's real docs — README, `INITIAL_PLAN`, `ARCHITECTURE`, `TESTING_PLAN`, `RELEASING` — are imported as raw text and rendered at runtime, so a page can never drift from its source file (Decision §4: import, don't duplicate). They share the route table + sidebar with the DS docs, so the whole site reads as one navigable surface.
