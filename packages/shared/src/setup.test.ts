@@ -1,11 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AGENT_POOL_SIZE_MAX,
-  AGENT_POOL_SIZE_MIN,
   isSetupReady,
   SetupItemSchema,
   SetupStatusSchema,
-  UpdateAgentPoolRequestSchema,
   type SetupItem,
   type SetupItemId,
   type SetupItemState,
