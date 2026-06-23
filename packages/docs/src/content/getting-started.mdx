@@ -1,0 +1,77 @@
+---
+title: Getting started
+section: Overview
+order: 1
+---
+
+# Getting started
+
+`@midnite/ui` is a Vite-built **leaf** package: framework-agnostic React primitives,
+the design tokens, and a theme runtime. It depends on nothing else in the repo. Here's
+the on-ramp a new consumer follows — the same steps this docs app uses.
+
+## 1. Install
+
+```bash
+pnpm add @midnite/ui
+```
+
+Inside the monorepo it's wired with the workspace protocol:
+
+```json
+{ "dependencies": { "@midnite/ui": "workspace:*" } }
+```
+
+## 2. Import the token CSS
+
+The design tokens ship as a plain stylesheet — import it once, near the root of your
+app (before your Tailwind layers):
+
+```css
+@import '@midnite/ui/styles';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+```
+
+This defines the HSL custom properties (`--background`, `--foreground`, `--primary`, …)
+plus the `.dark` override block.
+
+## 3. Generate the utilities
+
+The library ships the token **variables**, not the Tailwind utility classes the
+primitives reference. Your own Tailwind config maps utilities onto the tokens and scans
+the library's source so those classes are generated:
+
+```ts
+// tailwind.config.ts
+export default {
+  darkMode: ['class'],
+  content: ['./src/**/*.{ts,tsx}', '../ui/src/**/*.{ts,tsx}'],
+  theme: { extend: { colors: { background: 'hsl(var(--background))' /* … */ } } },
+};
+```
+
+## 4. Wrap in the theme provider
+
+Mount `ThemeProvider` near the root so light / dark / system / time resolve and the
+`dark` class is toggled on `<html>`:
+
+```tsx
+import { ThemeProvider } from '@midnite/ui/theme';
+
+export function App({ children }) {
+  return <ThemeProvider>{children}</ThemeProvider>;
+}
+```
+
+## 5. Use the primitives
+
+```tsx
+import { Button } from '@midnite/ui';
+
+<Button variant="secondary">Click me</Button>;
+```
+
+That's it — see **Components** for each primitive and **Foundations** for the tokens.

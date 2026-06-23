@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // A bundled Vite app, not a `tsc -b` library: no declaration/composite emit,
+    // and `tsc` runs only as `--noEmit` typecheck (the `typecheck` task).
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"]
+  },
+  // `vitest.setup.ts` is included so its `@testing-library/jest-dom/vitest` import
+  // registers the matcher augmentation (toBeInTheDocument, …) program-wide.
+  // `vite.config.ts`/`vitest.config.ts` are intentionally NOT typechecked: importing
+  // vitest/config drags in vitest's bundled vite (v7) types, which clash with the
+  // app's vite (v6). vite loads/validates them at runtime — they don't need tsc.
+  "include": ["src/**/*", "vitest.setup.ts"],
+  "exclude": ["dist", "node_modules"]
+}

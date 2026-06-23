@@ -1,0 +1,13 @@
+/* The design tokens (HSL custom properties + the .dark block) are the library's,
+ * imported once here; the .dark class is toggled on <html> by @midnite/ui/theme. */
+@import '@midnite/ui/styles';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
