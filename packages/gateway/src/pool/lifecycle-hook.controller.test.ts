@@ -8,15 +8,17 @@ import { LifecycleHookController } from './lifecycle-hook.controller';
 
 function setup(output: string) {
   const markWaiting = vi.fn();
+  const emitActivity = vi.fn();
+  const emitAttention = vi.fn();
   const completeWithChecks = vi.fn().mockResolvedValue(undefined);
   const approvals = {
     verifySecret: (id: string, secret: string) => secret === 'good',
   } as unknown as ApprovalService;
-  const tasks = { markWaiting } as unknown as TasksService;
+  const tasks = { markWaiting, emitActivity, emitAttention } as unknown as TasksService;
   const terminal = { readOutput: () => output } as unknown as TerminalService;
   const runner = { completeWithChecks } as unknown as AgentRunnerService;
   const controller = new LifecycleHookController(approvals, tasks, terminal, runner);
-  return { controller, markWaiting, completeWithChecks };
+  return { controller, markWaiting, emitActivity, emitAttention, completeWithChecks };
 }
 
 describe('LifecycleHookController', () => {
@@ -46,5 +48,23 @@ describe('LifecycleHookController', () => {
     const { controller, markWaiting } = setup('');
     expect(controller.notification('t1', 'good', { message: 'need input' })).toEqual({ ok: true });
     expect(markWaiting).toHaveBeenCalledWith('t1');
+  });
+
+  it('emits agent.activity(idle) on Stop', () => {
+    const { controller, emitActivity } = setup('');
+    controller.stop('t1', 'good', {});
+    expect(emitActivity).toHaveBeenCalledWith('t1', 'idle');
+  });
+
+  it('emits agent.attention(waiting) on Notification', () => {
+    const { controller, emitAttention } = setup('');
+    controller.notification('t1', 'good', { message: 'please review' });
+    expect(emitAttention).toHaveBeenCalledWith('t1', 'waiting', 'please review');
+  });
+
+  it('emits agent.attention(waiting) with no summary when notification has no message', () => {
+    const { controller, emitAttention } = setup('');
+    controller.notification('t1', 'good', {});
+    expect(emitAttention).toHaveBeenCalledWith('t1', 'waiting', undefined);
   });
 });

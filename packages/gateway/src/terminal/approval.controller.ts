@@ -12,7 +12,9 @@ import {
 } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
 import { PreToolUseHookRequestSchema, type PreToolUseHookDecision } from '@midnite/shared';
+import { TasksService } from '../tasks/tasks.service';
 import { ApprovalService } from './approval.service';
+import { summarizeToolCall } from './lib/summarize-tool-call';
 
 /**
  * Callback target for the in-PTY Claude Code PreToolUse hook. Authenticated by the
@@ -22,7 +24,10 @@ import { ApprovalService } from './approval.service';
  */
 @Controller('hooks/sessions')
 export class ApprovalController {
-  constructor(@Inject(ApprovalService) private readonly approvals: ApprovalService) {}
+  constructor(
+    @Inject(ApprovalService) private readonly approvals: ApprovalService,
+    @Inject(TasksService) private readonly tasks: TasksService,
+  ) {}
 
   @Post(':sessionId/pre-tool-use')
   @HttpCode(200)
@@ -39,6 +44,20 @@ export class ApprovalController {
     if (!parsed.success) {
       throw new BadRequestException('invalid PreToolUse payload');
     }
+
+    const toolName = parsed.data.tool_name;
+    const label = summarizeToolCall(toolName, parsed.data.tool_input);
+
+    if (this.approvals.willAutoApprove(sessionId, toolName)) {
+      // Fast path — no human needed, just signal the current activity.
+      this.tasks.emitActivity(sessionId, 'running', toolName, label);
+    } else {
+      // Will block on a human — emit activity first (so the office sees what's
+      // pending), then attention so it shows the "needs you" state.
+      this.tasks.emitActivity(sessionId, 'running', toolName, label);
+      this.tasks.emitAttention(sessionId, 'approval', label);
+    }
+
     // Release the held promise if the hook process / client goes away.
     const ac = new AbortController();
     req.raw.on('close', () => ac.abort());
