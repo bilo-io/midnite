@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger, Optional, type OnModuleInit } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import type { MidniteConfig, Task } from '@midnite/shared';
 import { KnowledgeService } from '../agent/knowledge.service';
 import { UrlContextService } from '../agent/url-context.service';
@@ -42,8 +43,8 @@ export class AgentRunnerService implements OnModuleInit {
     @Optional() @Inject(MetricsService) private readonly metrics?: MetricsService,
   ) {}
 
-  /** Per-task opaque metric run IDs — populated on start, consumed on end. */
-  private readonly metricRunIds = new Map<string, string>();
+  /** Per-task metric run tracking — id + wall-clock start for duration. */
+  private readonly metricRunIds = new Map<string, { id: string; startedAt: number }>();
 
   /**
    * Reconcile tasks left `wip`/`waiting` by a previous gateway process. For the
@@ -140,8 +141,9 @@ export class AgentRunnerService implements OnModuleInit {
       this.pool.setPid(task.id, result.pid);
       this.armTimeout(task.id);
       this.logger.log(`started agent run for task ${task.id} (pid ${result.pid})`);
-      const runId = this.metrics?.recordRunStart(task.id, task.repo ?? null);
-      if (runId) this.metricRunIds.set(task.id, runId);
+      const metricId = randomUUID();
+      this.metrics?.recordRunStart(metricId, task.id, task.retryCount, task.repo);
+      this.metricRunIds.set(task.id, { id: metricId, startedAt: Date.now() });
       return true;
     } catch (err) {
       this.logger.error(
@@ -207,12 +209,11 @@ export class AgentRunnerService implements OnModuleInit {
   // frees the slot.
   /** Record the metric run end (best-effort — never throws). */
   private endMetricRun(taskId: string, outcome: 'done' | 'abandoned' | 'failed' | 'cancelled'): void {
-    const runId = this.metricRunIds.get(taskId);
-    if (!runId) return;
+    const entry = this.metricRunIds.get(taskId);
+    if (!entry) return;
     this.metricRunIds.delete(taskId);
-    let retryCount = 0;
-    try { retryCount = this.tasks.getTask(taskId).retryCount ?? 0; } catch { /* ignore */ }
-    this.metrics?.recordRunEnd(runId, outcome, retryCount);
+    const durationMs = Date.now() - entry.startedAt;
+    this.metrics?.recordRunEnd(entry.id, outcome, durationMs);
   }
 
   private onExit(taskId: string, exitCode: number): void {
