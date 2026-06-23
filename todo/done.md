@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 31 B+E: task-status routing + push-patch activity store (PR #162)
+
+`agent.activity`/`agent.attention` events (already emitted by the gateway) now flow to the office: agents route by task status and live tool signals patch the store without a full refetch.
+
+- [x] `OfficeAgent` extended with `taskStatus`, `liveActivity`, `liveAttention`
+- [x] `statusToRoom()` pure fn — `wip` → desk, all else → lounge; 9 tests
+- [x] `renderActors` uses `statusToRoom` with session-status fallback
+- [x] `patchAgent()` in store — partial patch, no refetch
+- [x] `use-office-agents` subscribes to WS activity/attention events; 250ms per-agent debounce
+
 ## 2026-06-24 — Phase 7 B4 + test fixes: project + task-thread exports (PR #159)
 
 Closes Phase 7 completely. Project and task thread reports now fully implemented.
