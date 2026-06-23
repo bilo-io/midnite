@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { UsageModule } from '../usage/usage.module';
+import { BreakdownService } from './breakdown.service';
 import { LlmClassifier, TaskClassifier } from './classifier.service';
 import { KnowledgeService } from './knowledge.service';
 import { KnowledgeWatcherService } from './knowledge-watcher.service';
@@ -18,6 +19,7 @@ import { UrlContextService } from './url-context.service';
     LlmService,
     ProviderCredentialsRepository,
     PlannerService,
+    BreakdownService,
     UrlContextService,
     KnowledgeWatcherService,
     KnowledgeService,
@@ -30,6 +32,7 @@ import { UrlContextService } from './url-context.service';
     TaskClassifier,
     LlmService,
     PlannerService,
+    BreakdownService,
     ProviderCredentialsRepository,
     UrlContextService,
     KnowledgeService,

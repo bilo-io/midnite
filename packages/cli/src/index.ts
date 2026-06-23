@@ -431,6 +431,70 @@ program
   });
 
 program
+  .command('plan <goal>')
+  .description(
+    'Generate a structured, dependency-aware breakdown of a goal and optionally create the tasks',
+  )
+  .option('-r, --repo <repo>', 'batch default repo applied to every created task')
+  .option('-y, --yes', 'skip the confirmation prompt and create tasks immediately')
+  .action(async (goal: string, opts: { repo?: string; yes?: boolean }) => {
+    const c = client();
+    const { breakdown, isFallback } = await c.draftBreakdown(goal);
+
+    if (isFallback) {
+      console.log('(planning unavailable — showing flat task)');
+    }
+
+    if (breakdown.tasks.length === 0) {
+      console.log('no tasks proposed');
+      return;
+    }
+
+    // Render the proposed breakdown as a table.
+    const table = new Table({
+      head: ['Ref', 'Title', 'Kind', 'Pri', 'Depends on'],
+      wordWrap: true,
+    });
+    for (const t of breakdown.tasks) {
+      table.push([
+        t.ref,
+        t.title,
+        t.kind ?? '',
+        String(t.priority ?? 1),
+        t.dependsOn.join(', ') || '—',
+      ]);
+    }
+    console.log(table.toString());
+    console.log(`${breakdown.tasks.length} task(s) proposed`);
+
+    // Confirm before creating.
+    let confirmed = opts.yes ?? false;
+    if (!confirmed) {
+      const readline = await import('node:readline');
+      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+      confirmed = await new Promise<boolean>((resolve) => {
+        rl.question('Create these tasks? [y/N] ', (answer) => {
+          rl.close();
+          resolve(answer.trim().toLowerCase() === 'y');
+        });
+      });
+    }
+
+    if (!confirmed) {
+      console.log('aborted');
+      return;
+    }
+
+    const { tasks } = await c.createFromBreakdown(breakdown, opts.repo);
+    console.log(`created ${tasks.length} task(s)`);
+    for (const t of tasks) {
+      const blockers = t.dependsOn ?? [];
+      const suffix = blockers.length > 0 ? `  (depends on: ${blockers.join(', ')})` : '';
+      console.log(`  ${t.id.slice(0, 8)}  [${t.status}]  ${t.title}${suffix}`);
+    }
+  });
+
+program
   .command('serve')
   .description('Start the midnite gateway daemon in-process')
   .action(async () => {
