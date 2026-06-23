@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 8 C3: gentle idle wander (PR #152)
+
+Idle pool agents now occasionally stand up and mill around instead of sitting frozen on their loungers.
+
+- [x] `maybeWander()` timer added at 6.7s cadence (offset from swim at 4.5s to avoid sync)
+- [x] ~1-in-3 ticks fires; picks a different lounger than `maybeSwim`
+- [x] Walks to nearest valid offset tile, pauses 3s, returns to seat, restores sleeping state
+
 ## 2026-06-23 — Phase 8 D2: proximity nameplates (PR #149)
 
 Agent name + status labels now appear as styled pill nameplates when the player is within 4 tiles; hidden otherwise.

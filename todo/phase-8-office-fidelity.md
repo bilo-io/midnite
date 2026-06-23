@@ -63,10 +63,11 @@ Make agents *look* like they're doing what their status says.
 ### C2. Activity indicators — **S–M**
 - [ ] Per-tool glow / icon over a working agent (Edit, Bash, Read…). Needs a current-tool field surfaced on the session/activity (see Theme D data work).
 
-### C3. Movement & sub-agents — **M–L** — ◐ partial (2026-06-20)
+### C3. Movement & sub-agents — **M–L** — ◐ partial (2026-06-23)
 - [x] Agents **walk** between zones when their status flips — idle agents sit in the lounge, working agents at hot desks, and the robot animates lounge ↔ desk on change (`walkActor` in [`office-scene.ts`](../packages/web/components/office/scenes/office-scene.ts)).
 - [x] **Grid pathfinding** — 4-directional A* over a walkability grid (`blockedGrid()` in [`layout.ts`](../packages/web/lib/office/layout.ts): walls + furniture, with the start/goal seat special-cased). The robot tweens through the waypoints (per-segment facing), so it routes *around* furniture/walls instead of sliding through them; falls back to a direct tween if unreachable.
-- [ ] Gentle idle wander; render sub-agents as linked characters near their parent.
+- [x] **Gentle idle wander** (PR #152) — a `maybeWander()` timer (6.7s) picks a sleeping lounger (~1-in-3 ticks), finds a walkable tile within 2 steps of its seat, walks there, pauses 3s, then returns and re-applies the zzz bubble. Distinct cadence from `maybeSwim` to avoid visual synchronisation.
+- [ ] Render sub-agents as linked characters near their parent — deferred until sub-agent data is surfaced on `OfficeAgent` (needs gateway changes).
 
 ---
 
