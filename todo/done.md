@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 22 A1: `agent_run_stats` table + MetricsRepository (PR #130)
+
+Adds the per-run stats substrate for the ops surface. `agent_run_stats` (migration 0039) stores start/end timing, outcome, retry count per agent run. `MetricsRepository` exposes `insertStart`, `recordEnd`, and three windowed aggregates (`countByDay`, `durationBuckets`, `outcomeCounts`).
+
+- [x] `agent_run_stats` table in `schema.ts` + migration `0039`; indexed by task_id + started_at
+- [x] `MetricsRepository` with 5 methods; 11 integration tests against `:memory:` SQLite
+
+---
+
 ## 2026-06-23 — Phase 28 A: `Breakdown` / `BreakdownTask` zod schema (PR #129)
 
 Establishes the shared contract for structured task breakdowns. The plan model will return a `Breakdown`; the gateway (Theme B) resolves local refs to real task ids and wires Phase 27 dependency edges at creation time. Also fixed a pre-existing lint failure in `setup.test.ts` (unused imports from PR #121).
