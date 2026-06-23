@@ -52,10 +52,6 @@ import {
   OpsSummarySchema,
   type OpsSummary,
   type OpsQuery,
-  TriggerCheckResponseSchema,
-  type TriggerCheckResponse,
-  CheckRunListResponseSchema,
-  type CheckRunListResponse,
 } from '@midnite/shared';
 import {
   AgentCliResponseSchema,
@@ -1321,26 +1317,6 @@ export async function clearNotifications(): Promise<void> {
 /** Live slot snapshot from `GET /pool`. */
 export async function getPoolSnapshot(): Promise<AgentPoolSnapshot> {
   return fetchJson('/pool', undefined, AgentPoolSnapshotSchema);
-}
-
-// ---- Quality-gate checks (Phase 30 D) ----
-
-/** Trigger a manual check run for a task (`POST /tasks/:id/check`). */
-export async function triggerCheck(taskId: string): Promise<TriggerCheckResponse> {
-  return fetchJson(
-    `/tasks/${encodeURIComponent(taskId)}/check`,
-    { method: 'POST', headers: JSON_HEADERS },
-    TriggerCheckResponseSchema,
-  );
-}
-
-/** All check runs for a task (`GET /tasks/:id/check-runs`), oldest-first. */
-export async function getCheckRuns(taskId: string): Promise<CheckRunListResponse> {
-  return fetchJson(
-    `/tasks/${encodeURIComponent(taskId)}/check-runs`,
-    undefined,
-    CheckRunListResponseSchema,
-  );
 }
 
 // ---- Ops metrics (Phase 22 B) ----
