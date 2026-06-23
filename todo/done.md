@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 22 A2: GaugeStore — in-memory ops gauges (PR #131)
+
+A plain-class `GaugeStore` that holds the three fast-moving operational signals: queue depth, slot utilization (used/total), and last tick latency. Callers record via `record*`; `snapshot()` returns a defensive copy. The `MetricsService` (A3) will wrap it. Lost on restart by design. 8 unit tests.
+
+- [x] `GaugeStore` class with `recordQueueDepth` / `recordSlotChange` / `recordTickLatency` / `snapshot()` (defensive copy)
+- [x] 8 unit tests; typecheck green
+
+---
+
 ## 2026-06-23 — Phase 22 A1: `agent_run_stats` table + MetricsRepository (PR #130)
 
 Adds the per-run stats substrate for the ops surface. `agent_run_stats` (migration 0039) stores start/end timing, outcome, retry count per agent run. `MetricsRepository` exposes `insertStart`, `recordEnd`, and three windowed aggregates (`countByDay`, `durationBuckets`, `outcomeCounts`).
