@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 14 Theme E: starter workflow templates (PR #138)
+
+A "Start from" gallery in the New-workflow modal seeds a ready-made graph instead of a blank canvas — the *Starter templates* item of Theme E (autosave already shipped in PR #43; run-history replay remains).
+
+- [x] **`web/lib/workflow-templates.ts`** — three templates, each a linear chain of shipped node types: *Summarise a web page with AI* (`http.request → ai.claude`), *Daily API digest* (`http.request → data.filter → ai.claude`), *Track the latest value across runs* (`storage.get → http.request → storage.set`). AI prompts reference upstream nodes by label via `{{ }}` expressions.
+- [x] **`buildTemplateGraph()`** (pure, `makeId` injectable) keeps the trigger and wires `trigger → step0 → step1 → …` cascading right; `triggerNodeOf()` reuses the gateway-seeded trigger node (synthesises one only if absent).
+- [x] **`WorkflowCreateModal`** — Blank + template cards; picking a template prefills the name, replaces the trigger picker with the template's trigger, relabels the action to "Create from template", and on submit `createWorkflow` → `updateWorkflow(graph)` → opens the seeded canvas.
+- [x] **`fix(web)`** removed a dead `Loader2` import in `task-thread-modal.tsx` that was failing `next build`'s `no-unused-vars` on main (blocked any web build).
+- [x] Tests: `workflow-templates.test.ts` (6 — validity, chain/positions/params, trigger reuse vs. synthesise) + `workflow-create-modal.test.tsx` (3 — gallery, prefill/relabel, create-from-template seeds the expected chain). `web:typecheck`/`lint`/`test` (287)/`build` green.
+
 ## 2026-06-23 — Phase 26 Theme D: client-side search + responsive mobile nav (PR #137)
 
 Made the docs site navigable on any device. A header search filters all pages with no server, and the sidebar collapses to a drawer on mobile. Builds on Theme C's grouped content; the static build seam (`docs:build` + `moon ci`) already landed with the Theme A scaffold.

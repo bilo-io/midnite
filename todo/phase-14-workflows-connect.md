@@ -78,9 +78,9 @@ Workflows are API-only from the terminal today. Thin commander commands over the
 
 Quality-of-life on the canvas; independent of A–D.
 
-- [ ] **Autosave** — debounced save on graph change, replacing/augmenting the manual Save button; clear saved/dirty indicator.
-- [ ] **Run-history replay** — select a past run and step/play through its node transitions on the canvas (the Theme A event reducer replayed over a stored run).
-- [ ] **Starter templates** — a small gallery ("AI summarize a webhook → Slack", "scheduled HTTP check → email on failure") that seed a new workflow graph.
+- [x] **Autosave** — ✅ shipped earlier (PR #43): debounced save on graph change (`use-autosave.ts`) with a saved/dirty indicator in the toolbar; pauses while a save is in flight or a run is active.
+- [ ] **Run-history replay** — select a past run and step/play through its node transitions on the canvas (the Theme A event reducer replayed over a stored run). _Remaining — the substrate exists (`listWorkflowRuns`, `applyRunState`, per-node canvas status); a focused follow-up wires the picker + step player._
+- [x] **Starter templates** — ✅ DONE (PR #138, 2026-06-23 — see [done.md](done.md)). A "Start from" gallery in the New-workflow modal seeds a ready-made graph: three templates (AI page summary, daily API digest, track-latest) built only from shipped node types; a pure `buildTemplateGraph` wires `trigger → steps` and seeds via `createWorkflow` + `updateWorkflow`. (Templates use shipped nodes; the doc's Slack/email examples await Theme C executors.)
 
 ---
 
