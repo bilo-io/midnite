@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   Bot,
   FolderGit2,
+  KeyRound,
   Lock,
   Palette,
   SlidersHorizontal,
@@ -21,6 +22,7 @@ const CATEGORIES: Category[] = [
   { href: '/settings/screen-lock', label: 'Screen lock', Icon: Lock },
   { href: '/settings/agents', label: 'Agents', Icon: Bot },
   { href: '/settings/repos', label: 'Repos', Icon: FolderGit2 },
+  { href: '/settings/credentials', label: 'Credentials', Icon: KeyRound },
   { href: '/settings/system', label: 'System', Icon: SlidersHorizontal },
   { href: '/settings/user', label: 'User', Icon: UserRound },
 ];

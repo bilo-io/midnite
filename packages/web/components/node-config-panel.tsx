@@ -18,7 +18,8 @@ import { ModelComboSelect, StyledSelect } from '@/components/ui/styled-select';
 import type { SelectOption } from '@/components/ui/select';
 import { ProviderIcon } from '@/components/provider-icon';
 import { ExpressionField } from '@/components/expression-editor';
-import { rotateWorkflowWebhook } from '@/lib/api';
+import { listWorkflowCredentials, rotateWorkflowWebhook } from '@/lib/api';
+import { useApiData } from '@/lib/use-api-data';
 import { aiModelOptions, LLM_PROVIDER_ICON_KEY } from '@/lib/ai-node';
 import { buildExpressionContext } from '@/lib/expression-editor';
 import { describeCron } from '@/lib/cron';
@@ -69,6 +70,36 @@ function JsonField({
   );
 }
 
+/** Dropdown that lists saved credentials, optionally filtered to a specific type. */
+function CredentialPicker({
+  credentialType,
+  value,
+  onChange,
+}: {
+  credentialType?: string;
+  value: string;
+  onChange: (v: unknown) => void;
+}) {
+  const { data } = useApiData(listWorkflowCredentials);
+  const all = data ?? [];
+  const filtered = credentialType ? all.filter((c) => c.type === credentialType) : all;
+
+  return (
+    <select
+      className={inputClass}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    >
+      <option value="">— select a credential —</option>
+      {filtered.map((c) => (
+        <option key={c.id} value={c.id}>
+          {c.name}
+        </option>
+      ))}
+    </select>
+  );
+}
+
 function FieldInput({
   field,
   value,
@@ -116,6 +147,14 @@ function FieldInput({
       );
     case 'json':
       return <JsonField value={value} onChange={onChange} />;
+    case 'credential':
+      return (
+        <CredentialPicker
+          credentialType={field.credentialType}
+          value={typeof value === 'string' ? value : ''}
+          onChange={onChange}
+        />
+      );
     default:
       return (
         <input
