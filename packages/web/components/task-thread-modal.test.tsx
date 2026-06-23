@@ -23,10 +23,14 @@ vi.mock('@/lib/api', () => ({
   deleteTask: vi.fn(),
   updateTaskProject: vi.fn(),
   updateTaskStatus: vi.fn(),
+  refreshPrStatus: vi.fn(),
+  exportTask: vi.fn(),
 }));
 
 import { ConfirmProvider } from './confirm-dialog';
+import { ToastProvider } from './toast';
 import { TaskThreadModal } from './task-thread-modal';
+import { withQueryClient } from '@/lib/test-query-wrapper';
 
 afterEach(cleanup);
 beforeEach(() => vi.clearAllMocks());
@@ -37,9 +41,13 @@ function task(id: string, over: Partial<Task> = {}): Task {
 
 function renderModal(task: Task, tasks: Task[]) {
   render(
-    <ConfirmProvider>
-      <TaskThreadModal task={task} projects={[]} tasks={tasks} onClose={vi.fn()} />
-    </ConfirmProvider>,
+    withQueryClient(
+      <ToastProvider>
+        <ConfirmProvider>
+          <TaskThreadModal task={task} projects={[]} tasks={tasks} onClose={vi.fn()} />
+        </ConfirmProvider>
+      </ToastProvider>,
+    ),
   );
 }
 
