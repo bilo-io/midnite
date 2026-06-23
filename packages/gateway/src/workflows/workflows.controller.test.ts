@@ -71,3 +71,39 @@ describe('WorkflowsController — service errors propagate', () => {
     expect(() => controller.get('wf9')).toThrow(NotFoundException);
   });
 });
+
+describe('WorkflowsController — run export', () => {
+  function fakeReply() {
+    const h = vi.fn().mockReturnThis();
+    return { header: h, send: vi.fn() } as unknown as import('fastify').FastifyReply;
+  }
+
+  it('rejects unsupported format with 400', () => {
+    const { controller } = build({ exportRunMarkdown: vi.fn() });
+    expect(() => controller.exportRun('wf1', 'r1', fakeReply(), 'xml')).toThrow(BadRequestException);
+  });
+
+  it('rejects pdf (client-rendered) with 400', () => {
+    const { controller } = build({ exportRunMarkdown: vi.fn() });
+    expect(() => controller.exportRun('wf1', 'r1', fakeReply(), 'pdf')).toThrow(BadRequestException);
+  });
+
+  it('serves markdown for format=md', () => {
+    const { controller, service } = build({
+      exportRunMarkdown: vi.fn(() => ({ filename: 'flow-run.md', markdown: '# Flow\n' })),
+    });
+    const reply = fakeReply();
+    controller.exportRun('wf1', 'r1', reply, 'md');
+    expect(service.exportRunMarkdown).toHaveBeenCalledWith('wf1', 'r1');
+    expect(reply.header).toHaveBeenCalledWith('content-type', expect.stringContaining('text/markdown'));
+    expect(reply.send).toHaveBeenCalledWith('# Flow\n');
+  });
+
+  it('defaults to md when format is omitted', () => {
+    const { controller, service } = build({
+      exportRunMarkdown: vi.fn(() => ({ filename: 'f.md', markdown: '#\n' })),
+    });
+    controller.exportRun('wf1', 'r1', fakeReply());
+    expect(service.exportRunMarkdown).toHaveBeenCalledWith('wf1', 'r1');
+  });
+});

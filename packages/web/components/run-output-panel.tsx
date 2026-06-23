@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { ChevronUp } from 'lucide-react';
 import type { NodeRunLog, NodeRunStatus, WorkflowRun } from '@midnite/shared';
+import { ExportMenu } from '@/components/export-menu';
+import { exportWorkflowRunMarkdown } from '@/lib/api';
 import { useWorkflowStore } from '@/lib/workflow-store';
 import { cn } from '@/lib/utils';
 
@@ -28,6 +30,7 @@ export function RunOutputPanel({ run }: { run: WorkflowRun | null }) {
   const [tab, setTab] = useState<Tab>('nodes');
   const [expanded, setExpanded] = useState<string | null>(null);
   const nodes = useWorkflowStore((s) => s.nodes);
+  const workflowName = useWorkflowStore((s) => s.name);
   const labelOf = (nodeId: string) => nodes.find((n) => n.id === nodeId)?.data.label ?? nodeId;
 
   // Flatten every node's logs into one chronological stream, tagged with the node label.
@@ -65,6 +68,13 @@ export function RunOutputPanel({ run }: { run: WorkflowRun | null }) {
               {t}
             </button>
           ))}
+          {run ? (
+            <ExportMenu
+              filename={`${(workflowName || 'workflow').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40)}-run`}
+              title={`${workflowName} — Run`}
+              fetchMarkdown={() => exportWorkflowRunMarkdown(run.workflowId, run.id)}
+            />
+          ) : null}
         </div>
       </div>
 

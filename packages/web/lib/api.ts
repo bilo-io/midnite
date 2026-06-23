@@ -626,6 +626,19 @@ export async function getWorkflowRun(id: string, runId: string): Promise<Workflo
   return run;
 }
 
+export async function exportWorkflowRunMarkdown(
+  workflowId: string,
+  runId: string,
+): Promise<string> {
+  const path = `/workflows/${encodeURIComponent(workflowId)}/runs/${encodeURIComponent(runId)}/export?format=md`;
+  const res = await fetch(`${gatewayUrl()}${path}`, { cache: 'no-store' });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(errorMessage(res, text));
+  }
+  return res.text();
+}
+
 export async function rotateWorkflowWebhook(id: string): Promise<WebhookInfoResponse> {
   return fetchJson(
     `/workflows/${encodeURIComponent(id)}/webhook/rotate`,
