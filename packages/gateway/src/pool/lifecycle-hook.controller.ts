@@ -52,8 +52,7 @@ export class LifecycleHookController {
     // otherwise it has paused and is awaiting input → waiting.
     const prUrl = extractPrUrl(this.terminal.readOutput(sessionId));
     if (prUrl) {
-      this.tasks.markDone(sessionId, prUrl);
-      this.runner.complete(sessionId);
+      void this.runner.completeWithChecks(sessionId, prUrl);
     } else {
       this.tasks.markWaiting(sessionId);
     }

@@ -48,10 +48,8 @@ Wire the runner into the `markDone` seam so completion is verified, and persist 
 - [x] ✅ Normalized `task_check_runs` child table (`id`, `task_id`, `trigger`, `passed`, `started_at`, `finished_at`, `results` JSON; indexed by `task_id`) — forward-only migration `0037` (PR #125), mirroring `task_events`. Repository methods (Drizzle only): `insertCheckRun`, `checkRunsForTask(taskId)`, `latestCheckRunForTask(taskId)`.
 
 ### B2. Intercept the seam — **M**
-- [ ] Route the Stop-hook completion through a single orchestration method (Decision §2 — recommend it lives in [`AgentRunnerService`](../packages/gateway/src/pool/agent-runner.service.ts), which already owns the slot/session/timeout) instead of the controller calling `markDone` + `complete` directly. The controller stays thin: `runner.completeWithChecks(sessionId, prUrl)`.
-- [ ] Decision flow: resolve the task's checks (A1 helper) for its repo. **Skip the gate** (→ `markDone` as today) when checks are disabled, the task has **no repo**, or the resolved set is empty. Otherwise: keep the **slot held** (task stays `wip`, cwd not contended by another run), run the gate (A3) in the resolved cwd, persist the run (B1), then branch:
-  - **all pass** → `markDone(prUrl)` + reap the session (today's behaviour, now earned).
-  - **any fail** → do **not** mark done; record the failure and take the failure action (default → `markWaiting`; Theme C if auto-fix is enabled).
+- [x] ✅ (PR #134) `AgentRunnerService.completeWithChecks(taskId, prUrl)` — resolves checks, skips when disabled/no-repo/empty, runs gate via `ChecksService`, persists via `TasksService.saveCheckRun`, then `markDone`+`complete` (pass) or `markWaiting`+`complete` (fail). Slot released exactly once in every branch. Controller now calls `runner.completeWithChecks` — thin seam preserved.
+- [x] ✅ (PR #134) `ChecksModule` imported in `PoolModule`; `ChecksService` is `@Optional()` in the runner so existing unit specs need no update. `TasksService.saveCheckRun()` added (persistence without events — B3 adds events).
 
 ### B3. Derived "verifying" / "checks failing" + events — **S–M**
 - [ ] No new status (Decision §3): insert `checks.started` / `checks.passed` / `checks.failed` task events, and surface state as a **derived** flag computed from the latest `task_check_runs` row (`verifying` while a gate run is in flight, `failing` when the latest gate run failed and the task isn't `done`). Emit `task.updated` so the board reflects it.
