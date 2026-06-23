@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import type { NavGroup } from '../content/nav';
 import { DocSearch } from './doc-search';
 import { Sidebar } from './sidebar';
+import { TableOfContents } from './table-of-contents';
 import { ThemeToggle } from './theme-toggle';
 
 // The app chrome — header + sidebar + content well — built entirely from the
@@ -13,7 +14,8 @@ import { ThemeToggle } from './theme-toggle';
 //
 // Theme D: the sidebar pins as a column on md+; below md it collapses behind a
 // hamburger into a slide-in drawer (closed on navigation). Client-side search
-// lives in the header (DocSearch).
+// lives in the header (DocSearch). On xl+ an on-page TOC pins as a right rail
+// (TableOfContents) — hidden on narrower viewports where it would crowd the prose.
 export function Layout({ nav, children }: { nav: NavGroup[]; children: ReactNode }) {
   const [navOpen, setNavOpen] = useState(false);
   const { pathname } = useLocation();
@@ -70,11 +72,16 @@ export function Layout({ nav, children }: { nav: NavGroup[]; children: ReactNode
         </div>
       ) : null}
 
-      <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-8 sm:px-6 md:grid md:grid-cols-[13rem_minmax(0,1fr)] md:gap-12">
+      <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-8 sm:px-6 md:grid md:grid-cols-[13rem_minmax(0,1fr)] md:gap-12 xl:grid-cols-[13rem_minmax(0,1fr)_14rem]">
         <div className="hidden md:block">
           <Sidebar nav={nav} />
         </div>
         <main className="min-w-0">{children}</main>
+        <aside className="hidden xl:block">
+          <div className="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto">
+            <TableOfContents />
+          </div>
+        </aside>
       </div>
     </div>
   );
