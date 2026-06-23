@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Ban, Check, ExternalLink, Loader2, Play, Plus, RefreshCw, SquareTerminal, X } from 'lucide-react';
+import { Ban, Check, ExternalLink, Play, Plus, RefreshCw, SquareTerminal, X } from 'lucide-react';
 import {
   ANSWER_EVENT_KIND,
   SOURCE_KIND_LABEL,
