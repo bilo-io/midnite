@@ -23,7 +23,7 @@ const DISMISS_KEY = 'midnite.setup-nudge.dismissed';
  * and dismissible for the session. Rendered once in the main layout so it covers
  * every primary surface.
  */
-export function SetupNudge({ onOpenWizard }: { onOpenWizard?: () => void } = {}) {
+export function SetupNudge({ onOpenWizard }: { onOpenWizard?: () => void }) {
   const pathname = usePathname();
   const [status, setStatus] = useState<SetupStatus | null>(null);
   // Assume dismissed until the session flag is read, so a prior dismiss never
