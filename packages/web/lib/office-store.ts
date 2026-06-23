@@ -2,6 +2,9 @@
 
 import { create } from 'zustand';
 import type { OfficeAgent } from '@/lib/office/agents';
+import { DEFAULT_DESK_ITEMS, parseDeskItems } from '@/lib/office/desk-items';
+
+const LS_CUSTOMISATION_KEY = 'midnite.office.customisation';
 
 /** Which view the interaction panel is showing for the selected desk. */
 export type InteractionMode = 'menu' | 'call' | 'message';
@@ -28,6 +31,8 @@ interface OfficeState {
   nearLibrary: boolean;
   /** Whether the player is standing at the PlayStation console. */
   nearPlaystation: boolean;
+  /** Whether the player is near the corner-office door (main scene). */
+  nearDoor: boolean;
   /** The desk the player opened, plus which panel view is showing. */
   active: { id: string; mode: InteractionMode } | null;
   /** Whether the board room document panel is open. */
@@ -36,14 +41,21 @@ interface OfficeState {
   libraryOpen: boolean;
   /** Whether the retro-games menu is open. */
   playstationOpen: boolean;
+  /** Whether the corner-office desk-item picker is open. */
+  deskPickerOpen: boolean;
   /** Personal "on a coffee break" presence flag (mock — local to this session). */
   onBreak: boolean;
+  /** Which Phaser scene is active — drives the HUD (back button vs. normal). */
+  currentScene: 'office' | 'corner';
+  /** Item ids currently placed on the corner-office desk (persisted to localStorage). */
+  deskItems: string[];
   setAgents(agents: OfficeAgent[]): void;
   setNearby(id: string | null): void;
   setNearBoard(near: boolean): void;
   setNearKitchen(near: boolean): void;
   setNearLibrary(near: boolean): void;
   setNearPlaystation(near: boolean): void;
+  setNearDoor(near: boolean): void;
   open(id: string): void;
   setMode(mode: InteractionMode): void;
   close(): void;
@@ -53,9 +65,18 @@ interface OfficeState {
   closeLibrary(): void;
   openPlaystation(): void;
   closePlaystation(): void;
+  openDeskPicker(): void;
+  closeDeskPicker(): void;
   toggleBreak(): void;
+  setCurrentScene(scene: 'office' | 'corner'): void;
+  setDeskItems(items: string[]): void;
   /** Clear transient UI state — called when the scene tears down. */
   reset(): void;
+}
+
+function loadDeskItems(): string[] {
+  if (typeof window === 'undefined') return DEFAULT_DESK_ITEMS;
+  return parseDeskItems(window.localStorage.getItem(LS_CUSTOMISATION_KEY));
 }
 
 export const useOfficeStore = create<OfficeState>((set) => ({
@@ -65,11 +86,15 @@ export const useOfficeStore = create<OfficeState>((set) => ({
   nearKitchen: false,
   nearLibrary: false,
   nearPlaystation: false,
+  nearDoor: false,
   active: null,
   boardOpen: false,
   libraryOpen: false,
   playstationOpen: false,
+  deskPickerOpen: false,
   onBreak: false,
+  currentScene: 'office',
+  deskItems: loadDeskItems(),
   setAgents: (agents) => set({ agents }),
   // Skip the update when unchanged — `update()` calls these every frame.
   setNearby: (id) => set((s) => (s.nearbyId === id ? s : { nearbyId: id })),
@@ -77,19 +102,44 @@ export const useOfficeStore = create<OfficeState>((set) => ({
   setNearKitchen: (near) => set((s) => (s.nearKitchen === near ? s : { nearKitchen: near })),
   setNearLibrary: (near) => set((s) => (s.nearLibrary === near ? s : { nearLibrary: near })),
   setNearPlaystation: (near) => set((s) => (s.nearPlaystation === near ? s : { nearPlaystation: near })),
+  setNearDoor: (near) => set((s) => (s.nearDoor === near ? s : { nearDoor: near })),
   // Opening any one full-screen panel closes the others.
-  open: (id) => set({ active: { id, mode: 'menu' }, boardOpen: false, libraryOpen: false, playstationOpen: false }),
+  open: (id) =>
+    set({ active: { id, mode: 'menu' }, boardOpen: false, libraryOpen: false, playstationOpen: false, deskPickerOpen: false }),
   setMode: (mode) => set((s) => (s.active ? { active: { ...s.active, mode } } : s)),
   close: () => set({ active: null }),
-  openBoard: () => set({ boardOpen: true, active: null, libraryOpen: false, playstationOpen: false }),
+  openBoard: () => set({ boardOpen: true, active: null, libraryOpen: false, playstationOpen: false, deskPickerOpen: false }),
   closeBoard: () => set({ boardOpen: false }),
-  openLibrary: () => set({ libraryOpen: true, active: null, boardOpen: false, playstationOpen: false }),
+  openLibrary: () => set({ libraryOpen: true, active: null, boardOpen: false, playstationOpen: false, deskPickerOpen: false }),
   closeLibrary: () => set({ libraryOpen: false }),
-  openPlaystation: () => set({ playstationOpen: true, active: null, boardOpen: false, libraryOpen: false }),
+  openPlaystation: () =>
+    set({ playstationOpen: true, active: null, boardOpen: false, libraryOpen: false, deskPickerOpen: false }),
   closePlaystation: () => set({ playstationOpen: false }),
+  openDeskPicker: () =>
+    set({ deskPickerOpen: true, active: null, boardOpen: false, libraryOpen: false, playstationOpen: false }),
+  closeDeskPicker: () => set({ deskPickerOpen: false }),
   toggleBreak: () => set((s) => ({ onBreak: !s.onBreak })),
-  // onBreak persists across teardown only within a session — it's a personal
-  // presence flag, not transient scene state, so reset() leaves it alone.
+  setCurrentScene: (currentScene) => set({ currentScene }),
+  setDeskItems: (deskItems) => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(LS_CUSTOMISATION_KEY, JSON.stringify(deskItems));
+    }
+    set({ deskItems });
+  },
+  // onBreak + deskItems persist across teardown — personal flags, not transient scene state.
   reset: () =>
-    set({ nearbyId: null, nearBoard: false, nearKitchen: false, nearLibrary: false, nearPlaystation: false, active: null, boardOpen: false, libraryOpen: false, playstationOpen: false }),
+    set({
+      nearbyId: null,
+      nearBoard: false,
+      nearKitchen: false,
+      nearLibrary: false,
+      nearPlaystation: false,
+      nearDoor: false,
+      active: null,
+      boardOpen: false,
+      libraryOpen: false,
+      playstationOpen: false,
+      deskPickerOpen: false,
+      currentScene: 'office',
+    }),
 }));

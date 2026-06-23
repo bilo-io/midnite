@@ -131,11 +131,13 @@ class OfficeScene extends Phaser.Scene {
   private kitchenCenter = { x: 0, y: 0 };
   private libraryCenter = { x: 0, y: 0 };
   private playstationCenter = { x: 0, y: 0 };
+  private doorCenter = { x: 0, y: 0 };
   private lastNearby: string | null = null;
   private nearBoardFlag = false;
   private nearKitchenFlag = false;
   private nearLibraryFlag = false;
   private nearPlaystationFlag = false;
+  private nearDoorFlag = false;
   /** ☕ shown over the player while on a coffee break. */
   private breakIcon!: Phaser.GameObjects.Text;
   private facing: 'down' | 'up' | 'side' = 'down';
@@ -310,6 +312,14 @@ class OfficeScene extends Phaser.Scene {
     if (nearPlaystation !== this.nearPlaystationFlag) {
       this.nearPlaystationFlag = nearPlaystation;
       useOfficeStore.getState().setNearPlaystation(nearPlaystation);
+    }
+
+    // Corner-office door proximity.
+    const dDist = (px - this.doorCenter.x) ** 2 + (py - this.doorCenter.y) ** 2;
+    const nearDoor = dDist <= (PROXIMITY * 1.3) ** 2;
+    if (nearDoor !== this.nearDoorFlag) {
+      this.nearDoorFlag = nearDoor;
+      useOfficeStore.getState().setNearDoor(nearDoor);
     }
 
     // ☕ floats over the player while on a break.
@@ -783,6 +793,12 @@ class OfficeScene extends Phaser.Scene {
       useOfficeStore.getState().openPlaystation();
       return;
     }
+    if (this.nearDoorFlag) {
+      useOfficeStore.getState().setNearDoor(false);
+      useOfficeStore.getState().setCurrentScene('corner');
+      this.scene.start('corner-office');
+      return;
+    }
     if (this.lastNearby) useOfficeStore.getState().open(this.lastNearby);
   }
 
@@ -963,7 +979,9 @@ class OfficeScene extends Phaser.Scene {
     this.add
       .rectangle(center(DOOR_POS.x), center(DOOR_POS.y) + TILE * 0.4, TILE * 0.9, TILE * 0.35, 0x6ee7b7, 0.25)
       .setDepth(1); // welcome mat
-    this.add.image(center(DOOR_POS.x), center(DOOR_POS.y), TEX.door).setDepth(5);
+    const door = this.add.image(center(DOOR_POS.x), center(DOOR_POS.y), TEX.door).setDepth(5);
+    // Proximity anchor one tile above the door (player approaches from the north).
+    this.doorCenter = { x: door.x, y: door.y - TILE };
   }
 
   /** Greenery (B2): several plants per room, varied by species/size + poolside palms. */
@@ -1085,6 +1103,10 @@ class OfficeScene extends Phaser.Scene {
 
 /** Build a Phaser game mounted into `parent`. Caller owns destroy(). */
 export function createOfficeGame(parent: HTMLElement): Phaser.Game {
+  // Import CornerOfficeScene here to avoid a circular module reference (both
+  // scenes share the office-store but office-scene is the main entry point).
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { CornerOfficeScene } = require('./corner-office-scene') as typeof import('./corner-office-scene');
   return new Phaser.Game({
     type: Phaser.AUTO,
     parent,
@@ -1094,7 +1116,7 @@ export function createOfficeGame(parent: HTMLElement): Phaser.Game {
     pixelArt: true, // nearest-neighbour scaling — keeps tiles/sprites crisp
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
     physics: { default: 'arcade', arcade: { debug: false } },
-    scene: OfficeScene,
+    scene: [OfficeScene, CornerOfficeScene],
   });
 }
 

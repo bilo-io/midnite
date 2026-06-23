@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useTheme } from '@/app/theme/theme-context';
 import { applyOfficeTheme, createOfficeGame } from './scenes/office-scene';
+import { applyCornerOfficeTheme } from './scenes/corner-office-scene';
 
 type Game = ReturnType<typeof createOfficeGame>;
 
@@ -35,10 +36,11 @@ export function OfficeGame() {
     };
   }, []);
 
-  // Re-tint the scene when the app theme flips. The scene reads its initial
-  // palette in create(); this keeps it in sync on later light/dark changes.
+  // Re-tint whichever scene is active when the app theme flips.
   useEffect(() => {
-    if (gameRef.current) applyOfficeTheme(gameRef.current);
+    if (!gameRef.current) return;
+    applyOfficeTheme(gameRef.current);
+    applyCornerOfficeTheme(gameRef.current);
   }, [resolved]);
 
   return <div ref={parentRef} className="absolute inset-0" />;

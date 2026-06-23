@@ -117,18 +117,17 @@ Repurpose the board room (today a static "documents whiteboard") into the **proj
 
 A doorway leads to a **corner office** that swaps to a **completely separate scene** (Phaser `scene.start`, or a dedicated R3F view per **Decisions §3**) — your private space.
 
-### F1. Scene switch — **M**
-- [ ] Register a second scene `corner-office` and transition in/out via a doorway interactable; the HUD reflects which scene is active (back-to-office control). Reuse the mount/destroy + store-reset discipline in [`office-game.tsx`](../packages/web/components/office/office-game.tsx).
+### F1. Scene switch — **M** — ✅ DONE (2026-06-23, PR #146)
+- [x] `CornerOfficeScene` (14×10 tiles) registered alongside `OfficeScene` in `createOfficeGame`; E-key at `DOOR_POS` starts `'corner-office'`; E-key at the exit door / HUD "Back to Office" button starts `'office'`. `currentScene: 'office' | 'corner'` in the store drives the HUD (back button vs. normal chrome). `nearDoor` proximity flag added to `OfficeScene` + prompt wired.
 
-### F2. Desk customisation — **M**
-- [ ] A desk you can decorate from a small **palette of items**: fidget spinner, **4×4×4 Rubik's cube**, **lava lamp**, plant, mug, etc. Clicking the desk (or an "edit" affordance) opens a picker; chosen items render on the desk.
-- [ ] Items are **animated/idle-alive**: fidget spinner spins, lava lamp blobs drift, cube gently rotates (3D if R3F per §3; else looping sprite/shader).
+### F2. Desk customisation — **M** — ✅ DONE (2026-06-23, PR #146)
+- [x] `DeskItemPicker` modal (6 items: lava lamp, fidget spinner, Rubik's cube, photo frame, succulent, mug; up to 3 selected). Procedural animated sprites rendered on `ITEM_SLOTS` via `renderDeskItems()`; lava lamp bobs, fidget spinner rotates, Rubik's cube drawn as a 3×3 colour grid. Store re-renders on `deskItems` change.
 
-### F3. Laptop with a blinking cursor — **S**
-- [ ] A **laptop** on the desk whose screen shows a **flashing cursor** (Phaser tween blink, or a CSS caret on an overlay). **Non-interactive placeholder** now — leave a clear seam (`onLaptopInteract` no-op / "coming soon") to wire later (e.g. open a terminal/notes).
+### F3. Laptop with a blinking cursor — **S** — ✅ DONE (2026-06-23, PR #146)
+- [x] A laptop sprite (scaled monitor) sits left of the desk; `buildLaptopCursor()` adds a green `▋` text that tweens `alpha → 0` (yoyo, repeat -1, Stepped ease) for a clean terminal blink. Non-interactive; `onLaptopInteract` seam left open.
 
-### F4. Persistence — **S**
-- [ ] Persist the player's character choice (B1) + desk layout to `localStorage` via the existing `useLocalStorage` hook (key e.g. `midnite.office.customisation`). No gateway/DB work in Phase 9.
+### F4. Persistence — **S** — ✅ DONE (2026-06-23, PR #146)
+- [x] `setDeskItems()` in the store writes to `window.localStorage` (`midnite.office.customisation`); `loadDeskItems()` reads + validates on store init via `parseDeskItems()` (unknown ids dropped, falls back to defaults). Character-choice persistence deferred to when B1 real-art lands (no picker yet).
 
 ---
 
