@@ -11,6 +11,7 @@ import { resolve } from 'node:path';
 import {
   MAX_SOURCES_PER_PROJECT,
   detectSourceKind,
+  type Breakdown,
   type CreateProjectRequest,
   type EnhanceDescriptionRequest,
   type Project,
@@ -224,6 +225,16 @@ export class ProjectsService {
   createTasksFromPlan(projectId: string, titles: string[]): Task[] {
     this.assertExists(projectId);
     return titles.map((title) => this.tasks.createForProject({ projectId, title }));
+  }
+
+  // Structured, dependency-aware creation (Phase 28 Theme B): turn a confirmed
+  // `Breakdown` into the project's edge-wired board. Thin — the create-with-deps
+  // mechanism (ref resolution, Phase 27 edges, cycle pruning, coalesced event)
+  // lives in `TasksService`; this just scopes it to the project. The flat
+  // `createTasksFromPlan` path stays for the markdown-checkbox / LLM-off flow.
+  createTasksFromBreakdown(projectId: string, breakdown: Breakdown, repo?: string): Task[] {
+    this.assertExists(projectId);
+    return this.tasks.createTasksFromBreakdown(breakdown, { projectId, repo });
   }
 
   private async generatePlan(project: Project): Promise<string> {

@@ -14,6 +14,7 @@ import {
 import type { FastifyReply } from 'fastify';
 import {
   AddSourceRequestSchema,
+  CreateFromBreakdownRequestSchema,
   CreatePlanTasksRequestSchema,
   CreateProjectRequestSchema,
   EnhanceDescriptionRequestSchema,
@@ -23,6 +24,7 @@ import {
   UpdatePlanRequestSchema,
   UpdateProjectRequestSchema,
   isServerRenderedReportFormat,
+  type CreateFromBreakdownResponse,
   type CreatePlanTasksResponse,
   type DraftPlanResponse,
   type EnhanceDescriptionResponse,
@@ -113,6 +115,20 @@ export class ProjectsController {
     const parsed = CreatePlanTasksRequestSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
     return { tasks: this.service.createTasksFromPlan(id, parsed.data.titles) };
+  }
+
+  // Structured create (Phase 28 Theme B): turn a confirmed/edited `Breakdown`
+  // into the project's dependency-wired board. Thin — validate, delegate.
+  @Post(':id/plan/create-from-breakdown')
+  createFromBreakdown(
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ): CreateFromBreakdownResponse {
+    const parsed = CreateFromBreakdownRequestSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    return {
+      tasks: this.service.createTasksFromBreakdown(id, parsed.data.breakdown, parsed.data.repo),
+    };
   }
 
   @Get(':id/export')
