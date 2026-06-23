@@ -5,6 +5,7 @@ import {
   TASKS_WS_PATH,
   TaskBoardEventSchema,
   TaskSchema,
+  applyTaskEvent,
   type AgentSlot,
   type Task,
   type TaskBoardEvent,
@@ -69,7 +70,16 @@ export function Dashboard({ baseUrl }: Props) {
       onMessage: (event) => {
         if (!active) return;
         setLastUpdate(new Date());
-        setTasks((prev) => applyBoardEvent(prev, event));
+        setTasks((prev) => {
+          if (prev === null) return null;
+          const next = applyTaskEvent(prev, event);
+          if (next === null) {
+            // bulkCreated — refetch the board snapshot.
+            void fetchSnapshots();
+            return prev; // keep stale board until the refetch resolves
+          }
+          return next;
+        });
       },
       onError: () => {
         if (active) setConnState('disconnected');
@@ -98,20 +108,3 @@ export function Dashboard({ baseUrl }: Props) {
   );
 }
 
-function applyBoardEvent(prev: Task[] | null, event: TaskBoardEvent): Task[] | null {
-  if (prev === null) return null;
-  switch (event.type) {
-    case 'task.created':
-      return [...prev, event.task];
-    case 'task.updated':
-      return prev.map((t) => (t.id === event.task.id ? event.task : t));
-    case 'task.deleted':
-      return prev.filter((t) => t.id !== event.id);
-    case 'tasks.bulkCreated':
-      // Bulk create only carries ids — a full refetch would be needed for the
-      // full task objects. For now, mark as stale by returning null so the
-      // next WS connection triggers a fresh seed. B2 will handle this properly
-      // with the full board reducer.
-      return null;
-  }
-}
