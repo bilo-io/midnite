@@ -47,6 +47,11 @@ import {
   type NotificationListResponse,
   type NotificationListQuery,
   type MarkReadRequest,
+  AgentPoolSnapshotSchema,
+  type AgentPoolSnapshot,
+  OpsSummarySchema,
+  type OpsSummary,
+  type OpsQuery,
 } from '@midnite/shared';
 import {
   AgentCliResponseSchema,
@@ -1279,4 +1284,22 @@ export async function markNotificationsRead(req: MarkReadRequest): Promise<{ unr
 /** Clear the entire notification feed (`DELETE /notifications`). */
 export async function clearNotifications(): Promise<void> {
   await fetchJson('/notifications', { method: 'DELETE' });
+}
+
+// ---- Agent pool ----
+
+/** Live slot snapshot from `GET /pool`. */
+export async function getPoolSnapshot(): Promise<AgentPoolSnapshot> {
+  return fetchJson('/pool', undefined, AgentPoolSnapshotSchema);
+}
+
+// ---- Ops metrics (Phase 22 B) ----
+
+/** Server-recorded ops summary from `GET /metrics/ops`. */
+export async function getOpsMetrics(params?: OpsQuery): Promise<OpsSummary> {
+  const qs = new URLSearchParams();
+  if (params?.from) qs.set('from', params.from);
+  if (params?.to) qs.set('to', params.to);
+  const query = qs.toString() ? `?${qs.toString()}` : '';
+  return fetchJson(`/metrics/ops${query}`, undefined, OpsSummarySchema);
 }

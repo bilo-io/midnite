@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import {
+  ActivitySquare,
   Bot,
   BotMessageSquare,
   Brain,
@@ -25,6 +26,7 @@ import { useTypewriter } from '@/lib/use-typewriter';
 // Icon names that can be passed as a plain string across the server→client
 // boundary. Adding an icon here: import it above and add an entry below.
 const ICONS = {
+  ActivitySquare,
   Bot,
   BotMessageSquare,
   Brain,

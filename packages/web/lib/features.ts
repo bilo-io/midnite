@@ -10,6 +10,7 @@
  */
 
 import {
+  ActivitySquare,
   BotMessageSquare,
   BrainCircuit,
   Building2,
@@ -31,7 +32,8 @@ export type FeatureKey =
   | 'office'
   | 'workflows'
   | 'councils'
-  | 'media';
+  | 'media'
+  | 'ops';
 
 export type Feature = {
   key: FeatureKey;
@@ -107,6 +109,13 @@ export const FEATURES: Feature[] = [
     description: 'Your generated images and media library.',
     Icon: Images,
   },
+  {
+    key: 'ops',
+    href: '/ops',
+    label: 'Ops',
+    description: 'Fleet health — live slot utilization, run throughput, duration distribution, and LLM spend.',
+    Icon: ActivitySquare,
+  },
 ];
 
 /** All features start enabled. */
@@ -120,6 +129,7 @@ export const DEFAULT_FEATURE_FLAGS: Record<FeatureKey, boolean> = {
   workflows: true,
   councils: true,
   media: true,
+  ops: true,
 };
 
 /**
