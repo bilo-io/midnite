@@ -42,6 +42,8 @@ export function OfficeHud() {
 
   const nearby = nearbyId ? agents.find((a) => a.id === nearbyId) : undefined;
   const activeAgent = active ? agents.find((a) => a.id === active.id) : undefined;
+  // D2: inline count — no extra store state needed (mirrors agents.length above).
+  const attentionCount = agents.filter((a) => a.attention).length;
   const panelOpen = active !== null || boardOpen || libraryOpen || playstationOpen || deskPickerOpen;
   const inCorner = currentScene === 'corner';
 
@@ -66,6 +68,11 @@ export function OfficeHud() {
           </button>
         ) : (
           <>
+            {attentionCount > 0 ? (
+              <span className="pointer-events-auto animate-pulse rounded-md border border-orange-500/60 bg-orange-500/20 px-2.5 py-1.5 text-[11px] font-medium text-orange-600 backdrop-blur dark:text-orange-400">
+                🙋 {attentionCount} agent{attentionCount === 1 ? '' : 's'} need{attentionCount === 1 ? 's' : ''} you
+              </span>
+            ) : null}
             {onBreak ? (
               <span className="rounded-md border border-amber-500/40 bg-amber-500/15 px-2.5 py-1.5 text-[11px] font-medium text-amber-600 backdrop-blur dark:text-amber-400">
                 ☕ On a break
