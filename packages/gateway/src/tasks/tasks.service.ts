@@ -712,7 +712,7 @@ export class TasksService {
     return out;
   }
 
-  // ── Check-run persistence (Phase 30 B2) ────────────────────────────────────
+  // ── Check-run persistence + events (Phase 30 B2/B3) ──────────────────────
 
   /** Persist a completed gate/manual/auto-fix check run for a task. */
   saveCheckRun(run: CheckRun): void {
@@ -725,6 +725,16 @@ export class TasksService {
       finishedAt: run.finishedAt,
       results: JSON.stringify(run.results),
     });
+  }
+
+  /**
+   * Emit a check-lifecycle task event and broadcast `task.updated` (Phase 30 B3).
+   * `kind` is one of `checks.started` / `checks.passed` / `checks.failed`.
+   */
+  recordCheckEvent(taskId: string, kind: 'checks.started' | 'checks.passed' | 'checks.failed'): void {
+    const now = new Date().toISOString();
+    this.repo.insertEvent({ id: randomUUID(), taskId, at: now, kind });
+    this.emit('task.updated', this.getTask(taskId));
   }
 
   // Would adding `taskId → dependsOnId` close a cycle? It does iff `dependsOnId`

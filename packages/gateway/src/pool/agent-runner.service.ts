@@ -195,8 +195,10 @@ export class AgentRunnerService implements OnModuleInit {
       ? join(homedir(), repo.path.slice(2))
       : repo.path;
 
+    this.tasks.recordCheckEvent(taskId, 'checks.started');
     const run = await this.checks.run(taskId, resolved, cwd, 'gate');
     this.tasks.saveCheckRun(run);
+    this.tasks.recordCheckEvent(taskId, run.passed ? 'checks.passed' : 'checks.failed');
 
     if (run.passed) {
       this.tasks.markDone(taskId, prUrl);
