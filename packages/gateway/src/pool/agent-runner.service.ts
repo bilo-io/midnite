@@ -1,8 +1,12 @@
 import { Inject, Injectable, Logger, Optional, type OnModuleInit } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 import type { MidniteConfig, Task } from '@midnite/shared';
+import { resolveChecksForRepo } from '@midnite/shared';
 import { KnowledgeService } from '../agent/knowledge.service';
 import { UrlContextService } from '../agent/url-context.service';
+import { ChecksService } from '../checks/checks.service';
 import { MIDNITE_CONFIG } from '../config.token';
 import { MetricsService } from '../metrics/metrics.service';
 import { ReposService } from '../repos/repos.service';
@@ -40,6 +44,10 @@ export class AgentRunnerService implements OnModuleInit {
     // Optional so the runner's unit specs construct it positionally without a
     // stub; Nest provides it in production (AgentModule exports it). Phase 15 D.
     @Optional() @Inject(KnowledgeService) private readonly knowledge?: KnowledgeService,
+    // Optional so existing unit specs that build AgentRunnerService directly need
+    // no ChecksService stub. When absent the gate is skipped (fail-open). Phase 30 B2.
+    @Optional() @Inject(ChecksService) private readonly checks?: ChecksService,
+    // Optional — MetricsService wires in production; absent in unit specs. Phase 22 A3.
     @Optional() @Inject(MetricsService) private readonly metrics?: MetricsService,
   ) {}
 
@@ -159,10 +167,63 @@ export class AgentRunnerService implements OnModuleInit {
    *  reap the now-idle session. Status is already `done` (set by the hook), so
    *  the PTY's onExit won't requeue it. */
   complete(taskId: string): void {
-    this.clearRunTimeout(taskId);
     this.endMetricRun(taskId, 'done');
+    this.clearRunTimeout(taskId);
     this.pool.release(taskId);
     this.terminal.killManagedRun(taskId);
+  }
+
+  private endMetricRun(taskId: string, outcome: 'done' | 'abandoned' | 'failed' | 'cancelled'): void {
+    const entry = this.metricRunIds.get(taskId);
+    if (!entry) return;
+    this.metricRunIds.delete(taskId);
+    this.metrics?.recordRunEnd(entry.id, outcome, Date.now() - entry.startedAt);
+  }
+
+  /**
+   * Gate the `done` transition (Phase 30 B2).
+   *
+   * Called by the Stop hook when the agent leaves a PR URL. Skips the gate
+   * and falls straight through to `markDone` when:
+   *  - `config.checks.enabled` is false (default), OR
+   *  - the task has no repo (no cwd to run checks in), OR
+   *  - the resolved check set is empty (no gates configured for that repo).
+   *
+   * Otherwise runs the checks, persists the run, then:
+   *  - **pass** → `markDone(prUrl)` + `complete()` (today's behavior, now earned)
+   *  - **fail** → `markWaiting()` + `complete()` (slot freed, task awaits human/auto-fix)
+   *
+   * The slot is released exactly once in every branch via `complete()`.
+   */
+  async completeWithChecks(taskId: string, prUrl: string): Promise<void> {
+    const task = this.tasks.getTask(taskId);
+    const cfg = this.config.checks;
+
+    const resolved = cfg.enabled ? resolveChecksForRepo(cfg, task.repo ?? null) : [];
+    const repo = task.repo ? this.repos.findByName(task.repo) : undefined;
+
+    if (!cfg.enabled || resolved.length === 0 || !repo || !this.checks) {
+      this.tasks.markDone(taskId, prUrl);
+      this.complete(taskId);
+      return;
+    }
+
+    // Expand `~` in the repo path so execFile can locate it.
+    const cwd = repo.path.startsWith('~/')
+      ? join(homedir(), repo.path.slice(2))
+      : repo.path;
+
+    this.tasks.recordCheckEvent(taskId, 'checks.started');
+    const run = await this.checks.run(taskId, resolved, cwd, 'gate');
+    this.tasks.saveCheckRun(run);
+    this.tasks.recordCheckEvent(taskId, run.passed ? 'checks.passed' : 'checks.failed');
+
+    if (run.passed) {
+      this.tasks.markDone(taskId, prUrl);
+    } else {
+      this.tasks.markWaiting(taskId);
+    }
+    this.complete(taskId);
   }
 
   /**
@@ -188,8 +249,8 @@ export class AgentRunnerService implements OnModuleInit {
   /** User- or timeout-initiated stop: abandon the task and kill its session. The
    *  PTY's onExit then frees the slot. */
   cancel(taskId: string): void {
-    this.clearRunTimeout(taskId);
     this.endMetricRun(taskId, 'cancelled');
+    this.clearRunTimeout(taskId);
     this.pool.abort(taskId);
     try {
       // → abandoned so the scheduler won't immediately re-pick it (unlike a crash,
@@ -207,15 +268,6 @@ export class AgentRunnerService implements OnModuleInit {
   // Stop hook completing it (crash / external kill). Retry it up to maxRetries,
   // then abandon. A task already moved to done/abandoned is left as-is. Always
   // frees the slot.
-  /** Record the metric run end (best-effort — never throws). */
-  private endMetricRun(taskId: string, outcome: 'done' | 'abandoned' | 'failed' | 'cancelled'): void {
-    const entry = this.metricRunIds.get(taskId);
-    if (!entry) return;
-    this.metricRunIds.delete(taskId);
-    const durationMs = Date.now() - entry.startedAt;
-    this.metrics?.recordRunEnd(entry.id, outcome, durationMs);
-  }
-
   private onExit(taskId: string, exitCode: number): void {
     this.clearRunTimeout(taskId);
     let task: Task | undefined;

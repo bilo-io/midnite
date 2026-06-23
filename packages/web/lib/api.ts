@@ -43,8 +43,6 @@ import {
   UsageSummaryResponseSchema,
   type UsageSummaryResponse,
   type UsageGroupBy,
-  OpsSummaryResponseSchema,
-  type OpsSummaryResponse,
   NotificationListResponseSchema,
   type NotificationListResponse,
   type NotificationListQuery,
@@ -1270,16 +1268,6 @@ export async function deleteMedia(id: string): Promise<void> {
 
 export function mediaFileUrl(id: string): string {
   return `${gatewayUrl()}/media/${encodeURIComponent(id)}/file`;
-}
-
-// ---- Ops metrics ----
-
-export async function getOpsMetrics(params?: { from?: string; to?: string }): Promise<OpsSummaryResponse> {
-  const qs = new URLSearchParams();
-  if (params?.from) qs.set('from', params.from);
-  if (params?.to) qs.set('to', params.to);
-  const query = qs.toString() ? `?${qs.toString()}` : '';
-  return fetchJson(`/metrics/ops${query}`, undefined, OpsSummaryResponseSchema);
 }
 
 // ---- LLM usage & cost ----
