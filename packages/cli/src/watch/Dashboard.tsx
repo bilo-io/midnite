@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Box, Text, useApp, useInput } from 'ink';
 import {
   AgentPoolSnapshotSchema,
+  applyTaskEvent,
   TASKS_WS_PATH,
   TaskBoardEventSchema,
   TaskSchema,
@@ -29,29 +30,32 @@ export function Dashboard({ baseUrl }: Props) {
   useEffect(() => {
     let active = true;
 
-    const fetchSnapshots = async (): Promise<void> => {
+    // Tasks are seeded (and re-seeded on a bulk add — see below) on their own so a
+    // `tasks.bulkCreated` event, which carries only ids, can refetch the full board.
+    const fetchTasks = async (): Promise<void> => {
       try {
-        const [tasksRes, poolRes] = await Promise.all([
-          fetch(`${baseUrl}/tasks`),
-          fetch(`${baseUrl}/pool`),
-        ]);
-        if (!active) return;
-        if (tasksRes.ok) {
-          const data = (await tasksRes.json()) as unknown;
-          const parsed = TaskSchema.array().safeParse(data);
-          if (parsed.success && active) setTasks(parsed.data);
-        }
-        if (poolRes.ok) {
-          const data = (await poolRes.json()) as unknown;
-          const parsed = AgentPoolSnapshotSchema.safeParse(data);
-          if (parsed.success && active) setSlots(parsed.data.slots);
-        }
+        const res = await fetch(`${baseUrl}/tasks`);
+        if (!res.ok || !active) return;
+        const parsed = TaskSchema.array().safeParse((await res.json()) as unknown);
+        if (parsed.success && active) setTasks(parsed.data);
       } catch {
         // gateway unreachable — WS state will show disconnected
       }
     };
 
-    void fetchSnapshots();
+    const fetchPool = async (): Promise<void> => {
+      try {
+        const res = await fetch(`${baseUrl}/pool`);
+        if (!res.ok || !active) return;
+        const parsed = AgentPoolSnapshotSchema.safeParse((await res.json()) as unknown);
+        if (parsed.success && active) setSlots(parsed.data.slots);
+      } catch {
+        // gateway unreachable — WS state will show disconnected
+      }
+    };
+
+    void fetchTasks();
+    void fetchPool();
 
     const wsUrl = gatewayWsUrl(baseUrl);
     const handle = openWs<TaskBoardEvent>(wsUrl + TASKS_WS_PATH, {
@@ -69,7 +73,13 @@ export function Dashboard({ baseUrl }: Props) {
       onMessage: (event) => {
         if (!active) return;
         setLastUpdate(new Date());
-        setTasks((prev) => applyBoardEvent(prev, event));
+        // A bulk add carries only ids — refetch the full board; everything else
+        // folds in via the pure shared reducer.
+        if (event.type === 'tasks.bulkCreated') {
+          void fetchTasks();
+          return;
+        }
+        setTasks((prev) => applyTaskEvent(prev, event));
       },
       onError: () => {
         if (active) setConnState('disconnected');
@@ -96,22 +106,4 @@ export function Dashboard({ baseUrl }: Props) {
       </Box>
     </Box>
   );
-}
-
-function applyBoardEvent(prev: Task[] | null, event: TaskBoardEvent): Task[] | null {
-  if (prev === null) return null;
-  switch (event.type) {
-    case 'task.created':
-      return [...prev, event.task];
-    case 'task.updated':
-      return prev.map((t) => (t.id === event.task.id ? event.task : t));
-    case 'task.deleted':
-      return prev.filter((t) => t.id !== event.id);
-    case 'tasks.bulkCreated':
-      // Bulk create only carries ids — a full refetch would be needed for the
-      // full task objects. For now, mark as stale by returning null so the
-      // next WS connection triggers a fresh seed. B2 will handle this properly
-      // with the full board reducer.
-      return null;
-  }
 }
