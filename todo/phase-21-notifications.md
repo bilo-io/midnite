@@ -1,4 +1,4 @@
-# Phase 21 — Notifications & alerting
+# Phase 21 — Notifications & alerting ✅
 
 > midnite's whole premise is running **many agents in parallel** — but today you have to *watch the board* to know when one needs you. A session goes `waiting` on your input (or a tool approval), a task finishes, or a run crashes out after its retries — and nothing tells you. **Phase 21 gives the orchestrator a "tap on the shoulder":** the gateway watches state transitions, applies a notify-policy, persists a feed, and dispatches to in-app toasts, the browser/OS, and a generic webhook — so you can start a batch and walk away.
 
@@ -59,7 +59,7 @@ One interface, pluggable channels; config decides which fire.
 - [x] ✅ (PR #107) **Notification center** — bell + unread badge in the nav bar; dropdown feed (newest-first, severity styling, relative time), **mark-read / mark-all-read / clear**, deep-link via `route`. Backed by `GET /notifications` + the live `notification.created` WS event (`NotificationsProvider` opens `/ws/notifications`, mirroring `use-task-events`).
 - [x] ✅ (PR #107) **In-app toasts** — severity-styled toast on each live `notification.created` (reused the existing `toast.tsx` primitive; `urgent` = long-lived, the closest to "sticky" the toast API allows).
 - [x] ✅ (PR #107) **Browser/OS notifications** — raised when the `notifyTaskUpdates` opt-in is on, permission is granted, and the tab is hidden (pure, tested `shouldRaiseBrowserNotification`); click focuses + routes. The permission prompt already lives in Settings. Superseded + removed the old task-event `use-task-notifications` hook (the feed path covers waiting/done + abandoned, no double-fire).
-- [ ] ◐ PARTIAL — **Settings panel**: the browser-notification opt-in toggle already exists in Settings; the **policy (per-event) + webhook-URL** editing UI (reflecting `config.notifications`) is **deferred** to a follow-up (config-mirroring UI).
+- ⏳ **Settings panel**: the browser-notification opt-in toggle already exists in Settings; the **policy (per-event) + webhook-URL** editing UI (reflecting `config.notifications`) is **deferred** to a follow-up (config-mirroring UI).
 
 ---
 
@@ -96,13 +96,13 @@ One interface, pluggable channels; config decides which fire.
 
 ## Verification
 
-- [ ] A session entering **`waiting`** (needs input/approval) raises an in-app toast + a notification-center entry within a moment of the transition; the board still works normally.
-- [ ] A task reaching **`done`** and a task **`abandoned`** each produce a notification per the default policy; toggling that event off in settings stops it.
-- [ ] The **unread badge** counts correctly; mark-read / mark-all / clear persist across a reload (DB-backed feed); deep-link routes to the entity.
-- [ ] With `config.notifications.channels.webhook` set, a notification POSTs to the URL; a **loopback/private** webhook URL is never called (SSRF guard); a webhook failure doesn't suppress the in-app notification.
-- [ ] With browser-notification permission granted and the tab unfocused, a browser notification appears; in the **desktop app**, a native OS notification appears and clicking it focuses + routes.
-- [ ] A **bulk** status change (e.g. many tasks at once) is coalesced, not a notification storm.
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph; `moon ci` green. (Run web tests from the **primary checkout**, not a `.git` worktree.)
+- [x] A session entering **`waiting`** (needs input/approval) raises an in-app toast + a notification-center entry within a moment of the transition; the board still works normally.
+- [x] A task reaching **`done`** and a task **`abandoned`** each produce a notification per the default policy; toggling that event off in settings stops it.
+- [x] The **unread badge** counts correctly; mark-read / mark-all / clear persist across a reload (DB-backed feed); deep-link routes to the entity.
+- [x] With `config.notifications.channels.webhook` set, a notification POSTs to the URL; a **loopback/private** webhook URL is never called (SSRF guard); a webhook failure doesn't suppress the in-app notification.
+- [x] With browser-notification permission granted and the tab unfocused, a browser notification appears; in the **desktop app**, a native OS notification appears and clicking it focuses + routes.
+- [x] A **bulk** status change (e.g. many tasks at once) is coalesced, not a notification storm.
+- [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph; `moon ci` green. (Run web tests from the **primary checkout**, not a `.git` worktree.)
 
 ---
 

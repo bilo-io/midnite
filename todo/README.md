@@ -41,7 +41,7 @@ A lightweight place to track what's been done and what's outstanding, without le
 - [phase-18-reports-exports.md](phase-18-reports-exports.md) — Reports & exports across the app (tasks, projects, workflow runs) ◻
 - [phase-19-onboarding-wizard.md](phase-19-onboarding-wizard.md) — First-run onboarding & setup wizard ◻
 - [phase-20-global-search.md](phase-20-global-search.md) — Global search (full-text across the app) ✅
-- [phase-21-notifications.md](phase-21-notifications.md) — Notifications & alerting (in-app, browser, webhook) ⚠️ (A–C done — feed + channels + web center; D desktop-native remains)
+- [phase-21-notifications.md](phase-21-notifications.md) — Notifications & alerting (in-app, browser, webhook) ✅
 - [phase-22-fleet-visibility.md](phase-22-fleet-visibility.md) — Fleet visibility: ops metrics & PR lifecycle ◻
 - [phase-23-approvals-autonomy.md](phase-23-approvals-autonomy.md) — Approvals & autonomy policy ◻
 - [phase-24-responsive-mobile-pwa.md](phase-24-responsive-mobile-pwa.md) — Responsive & mobile companion (PWA) ◻

@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 21: notifications & alerting — **Phase 21 COMPLETE**
+
+All four themes shipped across PRs #103 (model + ingestion + feed), #108 (channel dispatch + webhook), #107 (notification center + toasts + browser opt-in), and #110 (desktop native notifications). Done criteria verified; test suite green. One item deferred: per-event policy editing UI in Settings (config-mirroring, not a blocker for the core feature).
+
+- [x] **Theme A (model + ingestion + feed):** `Notification` zod schema + `config.notifications` block in `shared`; `notifications` Drizzle table (migration `0035`); `NotificationsService` subscribes to `TaskEventBus`, applies the policy (waiting=warn/done=info/abandoned=urgent), coalesces same-kind bursts in 1.5s, persists + emits `notification.created` WS event. `GET /notifications` (paged + unread count), `POST /notifications/read`, `DELETE /notifications`. (PR #103)
+- [x] **Theme B (channel dispatch):** `NotificationChannel` interface + `NotificationDispatcher` fans to all enabled channels; `WebChannel` emits the WS event; `WebhookChannel` POSTs to a configured URL with SSRF guard + bounded retry/backoff, never throws. (PR #108)
+- [x] **Theme C (web notification center + toasts + browser opt-in):** Bell + unread badge in nav bar; dropdown feed (mark-read/all/clear, deep-link); in-app toasts on `notification.created`; browser/OS notifications when opt-in on + tab hidden; the old `use-task-notifications` hook removed. ⏳ Per-event policy + webhook-URL editing UI deferred. (PR #107)
+- [x] **Theme D (desktop native notifications):** Electron main-process IPC bridge (`window.midniteDesktop.notify` → `midnite:notify`); click focuses + routes; `chooseNotificationDelivery` helper respects the shared `notifyTaskUpdates` opt-in for both paths. (PR #110)
+- [x] Done criteria: waiting/done/abandoned raise toast + center entry; unread badge + mark-read/all/clear persist; webhook SSRF-guarded; browser + desktop notifications fire; bulk coalesced; `:typecheck`/`:lint`/`:test` green.
+
+---
+
 ## 2026-06-23 — Phase 20: global full-text search — **Phase 20 COMPLETE**
 
 All four themes shipped across PRs #90 (FTS5 index + endpoint), #96 (command palette integration), and #105 (dedicated `/search` page). Done criteria verified against the live test suite (765 gateway, 398 web, 417 shared — all green).
