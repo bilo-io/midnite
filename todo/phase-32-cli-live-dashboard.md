@@ -18,8 +18,8 @@ The scaffold every panel sits in. The CLI currently has **no TUI framework** (de
 - [ ] **Clean teardown:** restore the terminal (leave alt-screen, show cursor) on `q`/`Ctrl-C`/`SIGINT`/uncaught error — never leave the user's terminal wedged. Unsubscribe the WS on unmount.
 
 ### A2. Reusable WS-subscribe helper — **S**
-- [ ] Factor the hand-rolled WS-subscribe currently inline for `workflow watch` (`gatewayWsUrl()` + the `new WebSocket` + subscribe handshake) into **one small reusable helper** in the CLI (e.g. `cli/src/ws.ts`): connect, send the `{type:'subscribe'}` handshake, validate frames against a shared schema, reconnect-with-backoff, and a teardown handle. `watch` and `workflow watch` both consume it.
-- [ ] Keep it **CLI-local**, not in `shared` — `web` already has its own browser `WebSocket` client ([`use-task-events.ts`](../packages/web/hooks/use-task-events.ts)); this is the Node-side equivalent and there's no third consumer (**Decisions §2**).
+- [x] ✅ Factor the hand-rolled WS-subscribe currently inline for `workflow watch` (`gatewayWsUrl()` + the `new WebSocket` + subscribe handshake) into **one small reusable helper** in the CLI (e.g. `cli/src/ws.ts`): connect, send the `{type:'subscribe'}` handshake, validate frames against a shared schema, reconnect-with-backoff, and a teardown handle. `watch` and `workflow watch` both consume it.
+- [x] ✅ Keep it **CLI-local**, not in `shared` — `web` already has its own browser `WebSocket` client ([`use-task-events.ts`](../packages/web/hooks/use-task-events.ts)); this is the Node-side equivalent and there's no third consumer (**Decisions §2**).
 
 ---
 
