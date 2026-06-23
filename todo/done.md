@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 31 B+E: task-status room routing + push-patch activity store (PR #161)
+
+- [x] `statusToRoom(taskStatus)` pure helper: wip/waiting→desk, done/abandoned→lounge, backlog/todo→hidden, undefined→lounge; 7 unit tests
+- [x] `OfficeAgent` gains `taskStatus`, `liveActivity`, `attention` fields; `sessionsToOfficeAgents` threads `task.status` through
+- [x] `office-scene.ts` `renderActors` uses `statusToRoom` — agents walk to the correct room when their task status changes
+- [x] `patchAgent(id, patch)` added to office-store — no full refetch for ephemeral activity events
+- [x] `use-office-agents.ts` wires `useAgentActivityListener`/`useAgentAttentionListener` with 250ms debounce + instant attention patches
+
 ## 2026-06-24 — Phase 28 C: Goal → planned board flow, web (PR #160)
 
 Completed **Phase 28 — Theme C**: the web UI for dependency-aware task breakdown, building on the gateway+CLI from Themes A/B/D (PRs #128/#135/#155). `PlanPanel` now has a **Checklist | Breakdown** tab toggle; the Breakdown tab turns a project goal into a typed, dependency-sequenced board you review and edit before creating.
