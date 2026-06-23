@@ -4,6 +4,24 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 32 A1: `midnite watch` ink dashboard scaffold (PR #149)
+
+Full-screen TUI dashboard command for the CLI. Introduces ink (React for the terminal), the `watch` command with alt-screen + clean teardown, `StatusBar`/`BoardPanel`/`PoolPanel` components seeded from REST and kept live via the tasks WS. `gatewayWsUrl` moved to `ws.ts`. 11 new tests.
+
+- [x] `ink@5.x` + `react@18` added to CLI deps; `"jsx": "react-jsx"` in tsconfig
+- [x] `midnite watch` command: alt-screen, lazy ink import, SIGINT/uncaughtException teardown
+- [x] `watch/` scaffold: `Dashboard`, `StatusBar`, `BoardPanel`, `PoolPanel`
+- [x] `gatewayWsUrl` moved from `workflow.ts` → `ws.ts`; re-exported for backward compat
+- [x] 11 tests in `src/watch/Dashboard.test.tsx` (StatusBar states, BoardPanel, PoolPanel)
+
+## 2026-06-23 — Phase 22 A2 recorder wiring: scheduler/pool/runner → MetricsService (PR #139)
+
+Closed the stale A2 open item. The runner, pool, and scheduler now feed MetricsService so /ops shows server-recorded data.
+
+- [x] `agent-runner.service.ts`: `@Optional` MetricsService; `recordRunStart()` on spawn, `endMetricRun(done/cancelled/abandoned/failed)` at each terminal path
+- [x] `metrics.service.spec.ts`: rewritten to match the shipped API (was against a stale shape)
+- [x] `web/lib/api.ts`: removed duplicate stale `getOpsMetrics` and dead imports from pre-merge conflict
+
 ## 2026-06-23 — Phase 8 D2: proximity nameplates (PR #149)
 
 Agent name + status labels now appear as styled pill nameplates when the player is within 4 tiles; hidden otherwise.
