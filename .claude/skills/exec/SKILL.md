@@ -19,7 +19,7 @@ End-to-end "execute a phase slice" for **midnite**.
 Read every `todo/phase-*.md` (skim `open-decisions.md`/`outstanding.md`). `gh pr list --state open` — anything in flight isn't a fresh candidate. Emit a tight per-phase digest: `#` H1, `##` per phase + status + the real open items.
 
 ## 2 · Choose — STOP for the human
-Pick the 3–4 strongest **unblocked** candidates (favor: doc-flagged "next" slices; small/self-contained/high-value; unblockers). For **each candidate** assign a t-shirt size estimate and show it in brackets after the label:
+Pick the 3–4 strongest **unblocked** candidates (favor: doc-flagged "next" slices; small/self-contained/high-value; unblockers). Assign each a t-shirt size and **include it directly in the option label**: `<Task name> [<size> · <time>]`.
 
 | Size | Time |
 |------|------|
@@ -31,7 +31,20 @@ Pick the 3–4 strongest **unblocked** candidates (favor: doc-flagged "next" sli
 | `[XXL]` | 2 – 5 d |
 | `[XXXL]` | 5 + d |
 
+Example label: `Phase 9 E4: Retro games modal [M · 2-4h]`
+
 Present via **AskUserQuestion**, recommended first. Bias toward `$ARGUMENTS` if given. **Do not implement until they pick.**
+
+## 2.5 · Upfront decisions — STOP for the human
+Before touching code, identify the **3 most consequential design decisions** for the chosen task (data flow, persistence strategy, component shape, API contract, etc.). Present each as a separate **AskUserQuestion**. For every option include:
+- A **dominant-nature tag** in brackets: `[planned]` (matches the phase doc) · `[recommended]` (fits existing patterns) · `[performance]` · `[simplicity]` · `[DX]` · `[future-proof]` · `[minimal]` · `[scope+]` (expands scope) — pick whichever single tag best characterises the option.
+- The **effort size** for that option.
+
+Example option label: `Zustand store [recommended · S]`
+Example option label: `Local component state [simplicity · XS]`
+Example option label: `Server-side with SWR polling [performance · M]`
+
+Skip any decision already unambiguously settled in the phase doc or `open-decisions.md`. **Do not implement until all three are answered.**
 
 ## 3 · Worktree
 ```bash
