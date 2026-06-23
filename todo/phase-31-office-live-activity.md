@@ -47,11 +47,11 @@ Make rooms *mean* something. Today an agent sits at a desk when `status !== 'idl
 The visible payoff. Today the speech bubble is status-only (`···` / `?` / `✓` / `z`). Expand it to the live action, driven by Theme A's `agent.activity`.
 
 ### C1. Live action bubbles — **M**
-- [ ] Expand the status-bubble logic in [`office-scene.ts`](../packages/web/components/office/scenes/office-scene.ts) to render the current `label` from `agent.activity` ("git fetch", "editing file.ts", "running tests") when present, falling back to the status glyph when idle/unknown.
-- [ ] Keep bubbles legible: truncate long labels, and let Theme E's throttling prevent flicker on rapid tool calls.
+- [x] ✅ (PR #163) Expand the status-bubble logic in [`office-scene.ts`](../packages/web/components/office/scenes/office-scene.ts) to render the current `label` from `agent.activity` ("git fetch", "editing file.ts", "running tests") when present, falling back to the status glyph when idle/unknown.
+- [x] ✅ (PR #163) Keep bubbles legible: truncate long labels, and let Theme E's throttling prevent flicker on rapid tool calls.
 
 ### C2. Activity poses — **M**
-- [ ] Distinct sprite poses/animations per `phase`: **working** (typing at desk), **blocked** (raised-hand / `?`), **idle** (existing `zzz` sleep). Drive off the same `agent.activity` phase; reuse the existing 2-frame animation approach in the scene.
+- [x] ✅ (PR #163) Distinct sprite poses/animations per `phase`: **working** (typing at desk), **blocked** (raised-hand / `?`), **idle** (existing `zzz` sleep). Drive off the same `agent.activity` phase; reuse the existing 2-frame animation approach in the scene.
 
 ---
 
@@ -60,10 +60,10 @@ The visible payoff. Today the speech bubble is status-only (`···` / `?` / `�
 When an agent is blocked on *you*, the office should shout — not bury it in a terminal modal.
 
 ### D1. "Needs you" office state — **M**
-- [ ] On `agent.attention`, put the actor into a loud, unmistakable state: a glow/pulse + distinct bubble, and optionally walk it to a "reception"/door spot. Clear it when the agent resumes (next `agent.activity` with `phase: 'running'`).
+- [x] ✅ (PR #163) On `agent.attention`, put the actor into a loud, unmistakable state: a glow/pulse + distinct bubble, and optionally walk it to a "reception"/door spot. Clear it when the agent resumes (next `agent.activity` with `phase: 'running'`).
 
 ### D2. HUD attention badge — **S**
-- [ ] Surface a count/badge in the office HUD ([`office-hud.tsx`](../packages/web/components/office/office-hud.tsx)) — "N agents need you" — clickable to focus/center the nearest waiting agent. Pure state in [`office-store.ts`](../packages/web/lib/office-store.ts) (mirror the existing proximity/`nearBoard` flags).
+- [x] ✅ (PR #163) Surface a count/badge in the office HUD ([`office-hud.tsx`](../packages/web/components/office/office-hud.tsx)) — "N agents need you" — clickable to focus/center the nearest waiting agent. Pure state in [`office-store.ts`](../packages/web/lib/office-store.ts) (mirror the existing proximity/`nearBoard` flags).
 
 ---
 

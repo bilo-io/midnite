@@ -4,6 +4,13 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 31 C+D: live bubbles, activity poses, attention pulse + HUD badge (PR #163)
+
+- [x] C1: speech bubble shows `liveActivity.label` (truncated) for working agents; STATUS_BUBBLE fallback
+- [x] C2: `applyPose()` drives sprite from `liveActivity.phase` — running→2fps typing, blocked→frame 1, idle→frame 0
+- [x] D1: `applyAttention()` starts scale pulse 1.0↔1.18 + orange tint; `clearAttention()` restores; cleaned on destroy
+- [x] D2: HUD shows pulsing `🙋 N agents need you` chip, derived inline from `agents.filter(a => a.attention)`
+
 ## 2026-06-24 — Phase 31 B: task-aware room routing (PR #162)
 
 Office agents now route to the correct room based on task status.
