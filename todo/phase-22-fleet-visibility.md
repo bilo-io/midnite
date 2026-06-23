@@ -24,8 +24,8 @@
 The substrate for the ops surface: record what the fleet does, cheaply. Per-run rows for low-volume run history + in-memory gauges for high-frequency state (Decision §1).
 
 ### A1. Per-run stats table + repository — **S–M**
-- [ ] New low-volume Drizzle table (`agent_run_stats`) in [`schema.ts`](../packages/gateway/src/db/schema.ts) — **one row per agent run**: `id` (UUIDv7), `task_id`, `started_at`, `ended_at` (nullable while live), `duration_ms`, `outcome` (`done | abandoned | failed | cancelled`), `retry_count`, optional `repo`. Forward-only migration `0030_*`. (Net-new — confirm there's no existing run/session record to extend before adding; Decision §6.)
-- [ ] A `MetricsRepository` (Drizzle only): `insertStart`, `recordEnd`, and windowed aggregate reads (`countByDay`, `durationBuckets`, `outcomeCounts`). Accepts a `Db` so the service owns transactions.
+- [x] ✅ (PR #130) New low-volume Drizzle table (`agent_run_stats`) in [`schema.ts`](../packages/gateway/src/db/schema.ts) — **one row per agent run**: `id`, `task_id`, `started_at`, `ended_at` (nullable while live), `duration_ms`, `outcome` (`done | abandoned | failed | cancelled`), `retry_count`, optional `repo`. Forward-only migration `0039`.
+- [x] ✅ (PR #130) A `MetricsRepository` (Drizzle only): `insertStart`, `recordEnd`, `countByDay`, `durationBuckets` (5-bucket histogram), `outcomeCounts`. 11 integration tests.
 
 ### A2. In-memory gauges — **S**
 - [ ] A small rolling-window gauge store in the `metrics` service: **queue depth** (ready `todo` count), **slots free/used** (from [`pool.snapshot()`](../packages/gateway/src/pool/pool.controller.ts)), and **last tick latency** — sampled by the scheduler each `tick()` and by the pool on slot change. No high-volume table; lost on restart by design (Decision §1).
