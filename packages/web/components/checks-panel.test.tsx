@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { CheckRun } from '@midnite/shared';
 
 const getCheckRuns = vi.fn();
@@ -104,7 +103,6 @@ describe('ChecksPanel — re-run button', () => {
   });
 
   it('triggers check and refreshes list on re-run click', async () => {
-    const user = userEvent.setup();
     const newRun = makeRun({ id: 'r2', passed: false });
     getCheckRuns
       .mockResolvedValueOnce({ runs: [] })        // initial fetch
@@ -112,9 +110,9 @@ describe('ChecksPanel — re-run button', () => {
     triggerCheck.mockResolvedValue({ run: newRun });
 
     render(<ChecksPanel taskId="t1" />);
-    await waitFor(() => screen.getByRole('button', { name: /re-run checks/i }));
+    const btn = await waitFor(() => screen.getByRole('button', { name: /re-run checks/i }));
 
-    await user.click(screen.getByRole('button', { name: /re-run checks/i }));
+    fireEvent.click(btn);
 
     await waitFor(() => expect(triggerCheck).toHaveBeenCalledWith('t1'));
     await waitFor(() => expect(screen.getByText('Failed')).toBeInTheDocument());
