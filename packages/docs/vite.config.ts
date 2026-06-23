@@ -1,5 +1,6 @@
 import mdx from '@mdx-js/rollup';
 import react from '@vitejs/plugin-react';
+import rehypeSlug from 'rehype-slug';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm';
 import remarkMdxFrontmatter from 'remark-mdx-frontmatter';
@@ -29,6 +30,11 @@ export default defineConfig({
           remarkFrontmatter,
           [remarkMdxFrontmatter, { name: 'frontmatter' }],
         ],
+        // Stable, text-derived ids on every heading so the on-page TOC (and any
+        // deep link) can anchor to a section. Same plugin runs on the product-doc
+        // (react-markdown) path — see markdown-page.tsx — so both render paths
+        // produce identical slugs.
+        rehypePlugins: [rehypeSlug],
       }),
     },
     react({ include: /\.(jsx|tsx|mdx?)$/ }),
