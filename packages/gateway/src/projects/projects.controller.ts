@@ -24,6 +24,7 @@ import {
   UpdatePlanRequestSchema,
   UpdateProjectRequestSchema,
   isServerRenderedReportFormat,
+  type BreakdownPreviewResponse,
   type CreateFromBreakdownResponse,
   type CreatePlanTasksResponse,
   type DraftPlanResponse,
@@ -101,6 +102,14 @@ export class ProjectsController {
   @Post(':id/draft-plan')
   draftPlan(@Param('id') id: string): Promise<DraftPlanResponse> {
     return this.service.draftPlan(id);
+  }
+
+  // Structured breakdown (Phase 28 Theme A): generate a typed, dependency-aware
+  // task list from the project's description + existing plan. Preview-only —
+  // the client edits and confirms before calling create-from-breakdown.
+  @Post(':id/plan/draft-breakdown')
+  draftBreakdown(@Param('id') id: string): Promise<BreakdownPreviewResponse> {
+    return this.service.draftBreakdown(id);
   }
 
   @Patch(':id/plan')

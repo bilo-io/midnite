@@ -21,15 +21,19 @@ import { Inject } from '@nestjs/common';
 import {
   AddTaskDependencyRequestSchema,
   AddTaskLinkRequestSchema,
+  BreakdownGoalRequestSchema,
   BulkCreateTaskRequestSchema,
+  CreateFromBreakdownRequestSchema,
   ReportFormatSchema,
   SetTaskTagsRequestSchema,
   StatusSchema,
   TaskDependencyError,
   UpdateTaskProjectRequestSchema,
   isServerRenderedReportFormat,
+  type BreakdownPreviewResponse,
   type BulkCreateTaskResponse,
   type CheckRunListResponse,
+  type CreateFromBreakdownResponse,
   type CreateTaskResponse,
   type MidniteConfig,
   type Status,
@@ -37,6 +41,7 @@ import {
   type TaskCounts,
   type TriggerCheckResponse,
 } from '@midnite/shared';
+import { BreakdownService } from '../agent/breakdown.service';
 import { MIDNITE_CONFIG } from '../config.token';
 import { sendMarkdownReport } from '../lib/report-response';
 import { PrStatusService } from './pr-status.service';
@@ -55,6 +60,7 @@ export class TasksController {
     @Inject(TasksService) private readonly service: TasksService,
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
     @Inject(PrStatusService) private readonly prStatus: PrStatusService,
+    @Inject(BreakdownService) private readonly breakdown: BreakdownService,
   ) {}
 
   @Get('counts')
@@ -205,6 +211,30 @@ export class TasksController {
   remove(@Param('id') id: string): { ok: true } {
     this.service.deleteTask(id);
     return { ok: true };
+  }
+
+  // Standalone breakdown (Phase 28 Theme D): generate a structured, dependency-
+  // aware task list from a freeform goal. Preview-only step — the client edits
+  // and confirms, then calls POST /tasks/breakdown/create to materialise the board.
+  @Post('breakdown')
+  async draftBreakdown(@Body() body: unknown): Promise<BreakdownPreviewResponse> {
+    const parsed = BreakdownGoalRequestSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    return this.breakdown.generate({ goal: parsed.data.goal, isProject: false });
+  }
+
+  // Create-from-breakdown (standalone path, Theme D): turn a confirmed/edited
+  // Breakdown into a dependency-wired board without a project. Mirrors
+  // POST /projects/:id/plan/create-from-breakdown but scoped to tasks only.
+  @Post('breakdown/create')
+  createFromBreakdown(@Body() body: unknown): CreateFromBreakdownResponse {
+    const parsed = CreateFromBreakdownRequestSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    return {
+      tasks: this.service.createTasksFromBreakdown(parsed.data.breakdown, {
+        repo: parsed.data.repo,
+      }),
+    };
   }
 
   // Bulk create from a pasted blob (JSON, no attachments). Thin: validate the
