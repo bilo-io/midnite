@@ -28,7 +28,7 @@ The substrate for the ops surface: record what the fleet does, cheaply. Per-run 
 - [x] ✅ (PR #130) A `MetricsRepository` (Drizzle only): `insertStart`, `recordEnd`, `countByDay`, `durationBuckets` (5-bucket histogram), `outcomeCounts`. 11 integration tests.
 
 ### A2. In-memory gauges — **S**
-- [ ] A small rolling-window gauge store in the `metrics` service: **queue depth** (ready `todo` count), **slots free/used** (from [`pool.snapshot()`](../packages/gateway/src/pool/pool.controller.ts)), and **last tick latency** — sampled by the scheduler each `tick()` and by the pool on slot change. No high-volume table; lost on restart by design (Decision §1).
+- [x] ✅ (PR #131) A `GaugeStore` class in `src/metrics/gauge-store.ts`: **queue depth**, **slot state** (used/total), and **last tick latency** — sampled via `recordQueueDepth`, `recordSlotChange`, `recordTickLatency`; a `snapshot()` method returns a defensive copy. No DB, lost on restart by design (Decision §1). 8 unit tests.
 - [ ] The scheduler/pool/runner feed metrics through a **thin recorder injected into them** (they call `metrics.record*`), not the other way around — the `metrics` module never imports the scheduler's internals.
 
 ### A3. `metrics` module + `GET /metrics/ops` — **M**
