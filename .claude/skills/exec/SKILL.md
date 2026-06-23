@@ -19,7 +19,19 @@ End-to-end "execute a phase slice" for **midnite**.
 Read every `todo/phase-*.md` (skim `open-decisions.md`/`outstanding.md`). `gh pr list --state open` — anything in flight isn't a fresh candidate. Emit a tight per-phase digest: `#` H1, `##` per phase + status + the real open items.
 
 ## 2 · Choose — STOP for the human
-Pick the 3–4 strongest **unblocked** candidates (favor: doc-flagged "next" slices; small/self-contained/high-value; unblockers). Present via **AskUserQuestion**, recommended first. Bias toward `$ARGUMENTS` if given. **Do not implement until they pick.**
+Pick the 3–4 strongest **unblocked** candidates (favor: doc-flagged "next" slices; small/self-contained/high-value; unblockers). For **each candidate** assign a t-shirt size estimate and show it in brackets after the label:
+
+| Size | Approx effort |
+|------|---------------|
+| `[XS]` | < 30 min — trivial tweak, one file |
+| `[S]` | 30 min – 2 h — single component / small feature |
+| `[M]` | 2 – 4 h — a few files, one self-contained feature |
+| `[L]` | 4 – 8 h — multiple systems, meaningful complexity |
+| `[XL]` | 1 – 2 d — large feature, cross-package work |
+| `[XXL]` | 2 – 5 d — significant subsystem |
+| `[XXXL]` | 5 + d — major overhaul |
+
+Present via **AskUserQuestion**, recommended first. Bias toward `$ARGUMENTS` if given. **Do not implement until they pick.**
 
 ## 3 · Worktree
 ```bash
@@ -50,6 +62,7 @@ All green before pushing — never push red.
 
 ## 7 · Open the PR (draft) + report it
 - Push branch; `gh pr create --draft --base main`.
+- **PR title:** `<conventional-commit-title> [<size>]` — append the t-shirt size chosen in Stage 2, e.g. `feat(web): add retro games modal [M]`.
 - **PR body:** succinct *why* (not a wall of what) · a **link to the phase doc + section** (anchor = lower-cased heading, spaces→`-`, punctuation stripped) and the phase/item id · **embedded screenshots** for any visual change · the `🤖 Generated with [Claude Code]` trailer. To embed shots: commit the PNGs on the branch under `docs/screenshots/<slice>/` and reference them with **commit-pinned** raw URLs (`https://github.com/<owner>/<repo>/raw/<sha>/docs/screenshots/...`) so they survive a squash-merge + branch delete.
 - **Report in this thread when posted:** the PR URL · a 3–5 **bullet** summary of what was done · the line diff in a ` ```diff ` fenced block (`gh pr diff <n> --patch`, trimmed to the meaningful hunks) · the screenshots again if the change was visual.
 
@@ -60,7 +73,7 @@ Against, in order: fidelity to the phase doc/decisions → `CLAUDE.md` conventio
 `gh pr checks <n> --watch`. On failure: `gh run view <id> --log-failed` → fix in the worktree → re-run the local gate → push → repeat until green. If genuinely stuck (flaky infra, outage, product call), stop and say what's wrong.
 
 ## 10 · Merge & wrap
-- `gh pr ready <n>` → `gh pr merge <n> --squash --delete-branch`.
+- `gh pr ready <n>` → `gh pr merge <n> --squash --delete-branch`. **Always squash — never merge-commit or rebase.**
 - **Move** the done item(s) from the phase file into `done.md` (today's date, per `todo/README.md`) — don't just tick in place. Commit on `main`.
 - Teardown: `git worktree remove .git/worktrees/<slice>` + `git branch -d feature/<slice>` (`-D` if a squash leaves it "unmerged"); confirm with `git worktree list`.
 - Wrap-up (terse markdown): `# 🎉 Merged: <title>` (linked) · `## 📊 Phase status` (every phase: ✅/🔄/⬜ + outstanding count) · `## ✨ This PR` (what landed + link) · `## ⏭️ Next up`.
