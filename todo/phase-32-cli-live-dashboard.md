@@ -27,13 +27,13 @@ The scaffold every panel sits in. The CLI currently has **no TUI framework** (de
 
 The headline panel: the kanban, live, in the terminal.
 
-### B1. Board snapshot + columns — **S–M**
-- [ ] Initial board from `client().listTasks()`; render columns for the [`task.ts`](../packages/shared/src/task.ts) statuses (`backlog` · `todo` · `wip` · `waiting` · `done`; `abandoned` hidden by default) as ink columns, each task a compact card (id short · title · repo · priority).
+### B1. Board snapshot + columns — **S–M** ✅ DONE (PR #149 + #154)
+- [x] ✅ (PR #149/#154) Initial board seeded from `GET /tasks`; columns for backlog/todo/wip/waiting/done; compact task cards: short id · priority arrow · title · `[repo]`.
 
-### B2. Live updates via a board reducer — **M**
-- [ ] Subscribe to `/ws/tasks` (via Theme A's helper) and apply `task.created` / `task.updated` / `task.deleted` / `tasks.bulkCreated` from [`events/task.ts`](../packages/shared/src/events/task.ts) to an in-memory board.
-- [ ] Add a **pure `applyTaskEvent` board reducer in `shared`** (`packages/shared/src/task-board-reducer.ts`, mirroring [`workflow-run-reducer.ts`](../packages/shared/src/workflow-run-reducer.ts)) — `(board, event) => board`. Lives in `shared` because it's contract-shaped state derivation, unit-testable, and reusable (the web board could adopt it later instead of refetch-on-event). **Decisions §3.**
-- [ ] No flicker: ink re-renders from the reduced state; no full refetch per event.
+### B2. Live updates via a board reducer — **M** ✅ DONE (PR #154)
+- [x] ✅ (PR #154) WS subscription via `openWs` helper; `task.created/updated/deleted/bulkCreated` applied live.
+- [x] ✅ (PR #154) `applyTaskEvent` pure reducer in `shared/src/task-board-reducer.ts`; 8 unit tests. `tasks.bulkCreated` → refetch (IDs only).
+- [x] ✅ (PR #154) No flicker — ink re-renders from reduced state; no full refetch per event.
 
 ---
 
@@ -41,9 +41,9 @@ The headline panel: the kanban, live, in the terminal.
 
 What's running *right now*.
 
-### C1. Pool panel — **S–M**
-- [ ] Render the agent pool from `GET /pool` ([`pool.controller.ts`](../packages/gateway/src/pool/pool.controller.ts)): one row per slot — `idle`/`busy`, the `taskId` it's working, and `pid` where present.
-- [ ] Reflect slot changes live (the pool/session state the gateway already emits) so the panel tracks spawns/exits without a manual refresh. If a dedicated slot-change event isn't on the board WS, derive busy/idle from the live board + sessions snapshot refreshed on `task.*` events (note the chosen source in the doc as built).
+### C1. Pool panel — **S–M** ✅ DONE (PR #149)
+- [x] ✅ (PR #149) Pool seeded from `GET /pool`; one row per slot — idle/busy, taskId (8 chars), pid.
+- [x] ✅ (PR #149) Slot state derived from live `task.*` events — `fetchSnapshots()` called on each board event, pool re-seeded. Source noted: REST poll-on-task-event (no dedicated slot WS event needed).
 
 ---
 
