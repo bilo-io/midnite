@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 31 B: task-aware room routing (PR #162)
+
+Office agents now route to the correct room based on task status.
+
+- [x] `lib/office/agents.ts`: `taskStatus?: Status` on `OfficeAgent`; threaded from `sessionsToOfficeAgents`
+- [x] `lib/office/layout.ts`: `statusToRoom(status) → RoomId | null` — wip→work, waiting→board, done→pool, others→null; 8 unit tests
+- [x] `office-scene.ts`: `renderActors` partitions by `statusToRoom(taskStatus)` — wip→desks, waiting→conference chairs, done/idle→lounge
+
 ## 2026-06-24 — Phase 31 B+E: task-status room routing + push-patch activity store (PR #161)
 
 - [x] `statusToRoom(taskStatus)` pure helper: wip/waiting→desk, done/abandoned→lounge, backlog/todo→hidden, undefined→lounge; 7 unit tests
