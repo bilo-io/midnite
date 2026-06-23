@@ -1,4 +1,4 @@
-# Phase 20 — Global search (full-text across the app)
+# Phase 20 — Global search (full-text across the app) ✅
 
 > The app has grown wide — tasks, projects, memory, notes, councils, workflows — but there's **no way to jump to a thing by name**. The ⌘K command palette ([`command-palette.tsx`](../packages/web/components/command-palette.tsx)) is **navigation-only**: it lists enabled pages + settings and filters their labels with a plain `includes()`. Its own comment says it: *"Navigation-only for v1 … the command list is extensible, so content search can slot in later."* Per-page search ([`search-bar.tsx`](../packages/web/components/search-bar.tsx)) only writes `?q=` and filters that page's **already-loaded** list — client-side, single-entity. **Phase 20 adds real global search:** a full-text index over every domain, a ranked `GET /search` endpoint, content search wired into the palette, and a dedicated results page.
 
@@ -96,11 +96,11 @@ The "see everything" surface.
 ## Verification
 
 - [x] With data across types, ⌘K → type a term → **grouped, ranked results** (tasks, projects, memory, …) appear; Enter routes to the entity. Page/nav commands still work instantly. *(Theme C — PR #96.)*
-- [ ] `GET /search?q=foo` returns ranked `SearchResult`s with snippets; `?type=task` filters to one type; counts-by-type are correct.
-- [ ] Creating an entity makes it findable; editing its title updates the match; deleting it removes it from results (write-path maintenance works, no trigger).
-- [ ] A DB with **pre-existing** rows (migration applied to populated data) is fully searchable after **boot backfill**; `POST /search/reindex` rebuilds the index.
-- [ ] The `/search` page deep-links via `?q=`, filters by type, and shows more rows than the palette; the palette's "see all" lands there prefilled.
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph; `moon ci` green. (Run web tests from the **primary checkout**, not a `.git` worktree.)
+- [x] `GET /search?q=foo` returns ranked `SearchResult`s with snippets; `?type=task` filters to one type; counts-by-type are correct.
+- [x] Creating an entity makes it findable; editing its title updates the match; deleting it removes it from results (write-path maintenance works, no trigger).
+- [x] A DB with **pre-existing** rows (migration applied to populated data) is fully searchable after **boot backfill**; `POST /search/reindex` rebuilds the index.
+- [x] The `/search` page deep-links via `?q=`, filters by type, and shows more rows than the palette; the palette's "see all" lands there prefilled.
+- [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph; `moon ci` green. (Run web tests from the **primary checkout**, not a `.git` worktree.)
 
 ---
 

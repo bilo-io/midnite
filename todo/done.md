@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 20: global full-text search — **Phase 20 COMPLETE**
+
+All four themes shipped across PRs #90 (FTS5 index + endpoint), #96 (command palette integration), and #105 (dedicated `/search` page). Done criteria verified against the live test suite (765 gateway, 398 web, 417 shared — all green).
+
+- [x] **Theme A (FTS5 + contract):** `SearchResult` discriminated union in `shared`; a unified `search_index` FTS5 virtual table (migration `0034`); `SearchIndexService` (`upsert`/`remove`/`query` with `bm25()` ranking + `snippet()`); write-path maintenance per all six domains (tasks via `TaskEventBus` subscription; projects/memory/notes/councils/workflows inject `SearchIndexService` directly); boot backfill + `POST /search/reindex` admin route. (PR #90)
+- [x] **Theme B (ranked endpoint):** `GET /search?q=&type=&limit=` — thin `SearchController` → `SearchService`; FTS5-ranked results with `<mark>`-wrapped snippets; grouped `byType` counts; empty/short-query guard. Gateway tests against `:memory:`. (PR #90)
+- [x] **Theme C (command palette):** Debounced, abort-on-keystroke query hits `GET /search`; results rendered grouped by type (Pages · Tasks · Projects · Memory · Notes · Councils · Workflows); keyboard nav + per-group cap with "+N more" → `/search` deep-link; loading + empty states; nav-only remains instant. (PR #96)
+- [x] **Theme D (dedicated `/search` page):** App Router `/search` route reading `?q=` + `?type=` (filter pills, client-side over one response); highlighted snippets via shared `lib/highlight.tsx`; deep-links from palette "+N more" land with query + type prefilled. (PR #105)
+- [x] Done criteria: ranked results + type-filter + counts correct; write-path maintenance (create/edit/delete reflected); boot backfill populates pre-existing data; `/search` deep-links work; `:typecheck`/`:lint`/`:test` green.
+
+---
+
 ## 2026-06-23 — Phase 7 A5: optional REST auth + per-IP rate limiting (PR #117) — **Phase 7 COMPLETE**
 
 The gateway REST API was unauthenticated — fine on loopback, unsafe off-box. Adds opt-in remote-access auth, **off by default** so the local-only experience is unchanged. Shipped on request (A5 had been parked as local-only/out-of-scope). Also reconciled A3's Playwright-smoke bullet (superseded by Phase 10 Theme D's committed flow specs; the CI job is Phase 10 F1) — **closing Phase 7**.
