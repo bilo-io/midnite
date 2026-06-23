@@ -4,6 +4,7 @@ import {
   bearerTokenFromHeader,
   isAuthExemptPath,
   isLoopbackHost,
+  isValidBearer,
   resolveAuthToken,
   safeEqual,
 } from './auth-policy';
@@ -71,5 +72,18 @@ describe('safeEqual', () => {
     expect(safeEqual('token', 'token')).toBe(true);
     expect(safeEqual('token', 'tokeN')).toBe(false);
     expect(safeEqual('token', 'tok')).toBe(false);
+  });
+});
+
+describe('isValidBearer', () => {
+  it('accepts the matching token, including a duplicated header (first wins)', () => {
+    expect(isValidBearer('Bearer s3cret', 's3cret')).toBe(true);
+    expect(isValidBearer(['Bearer s3cret', 'Bearer other'], 's3cret')).toBe(true);
+  });
+
+  it('rejects missing, wrong, or non-bearer headers', () => {
+    expect(isValidBearer(undefined, 's3cret')).toBe(false);
+    expect(isValidBearer('Bearer nope', 's3cret')).toBe(false);
+    expect(isValidBearer('Basic s3cret', 's3cret')).toBe(false);
   });
 });

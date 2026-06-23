@@ -38,10 +38,20 @@ export function resolveAuthToken(
  * hook callbacks (`/hooks/*`), which authenticate with their own per-session
  * secret and are called by parties (in-PTY scripts, external webhooks) that don't
  * carry the bearer token. Everything else is protected when auth is on.
+ *
+ * Case-sensitive on purpose: Fastify route matching is case-sensitive too, so
+ * `/HEALTH` neither matches the liveness route nor this exemption — it just gets
+ * a 401, which is the safe direction (never a bypass). Don't "fix" it to lowercase.
  */
 export function isAuthExemptPath(url: string): boolean {
   const path = url.split('?')[0]!.replace(/\/+$/, '') || '/';
   return path === '/health' || path === '/hooks' || path.startsWith('/hooks/');
+}
+
+/** True when an `Authorization` header carries the expected bearer token. */
+export function isValidBearer(header: string | string[] | undefined, token: string): boolean {
+  const presented = bearerTokenFromHeader(Array.isArray(header) ? header[0] : header);
+  return presented !== null && safeEqual(presented, token);
 }
 
 /** The token from an `Authorization: Bearer <token>` header, or null. */

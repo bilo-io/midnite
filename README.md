@@ -231,8 +231,11 @@ loopback by default**:
   local-only out of the box; this is for the rare case you bind it off-loopback.
   - `auth.tokenEnv` (default `MIDNITE_AUTH_TOKEN`) names the env var holding a
     bearer token — the secret is never inlined into committed config. When that
-    var is set, every REST route requires `Authorization: Bearer <token>` except
-    `/health` (liveness) and `/hooks/*` (they carry their own per-session secret).
+    var is set, every REST route (and the `/uploads/*` attachment files) requires
+    `Authorization: Bearer <token>` except `/health` (liveness) and `/hooks/*`
+    (they carry their own per-session secret). The gateway-served web bundle
+    (`gateway.webDir`) stays public — it's the client shell; the data it loads
+    goes through the guarded API.
   - `auth.requireOnNonLoopback` (default `true`) is **fail-closed**: binding a
     non-loopback `host` with no token resolved refuses to boot. Set `false` to
     bind unauthenticated on purpose.

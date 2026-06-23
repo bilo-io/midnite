@@ -8,8 +8,7 @@ import {
 } from '@nestjs/common';
 import type { MidniteConfig } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
-import { isLoopbackHost } from './lib/auth-policy';
-import { bearerTokenFromHeader, isAuthExemptPath, resolveAuthToken, safeEqual } from './lib/auth-policy';
+import { isAuthExemptPath, isLoopbackHost, isValidBearer, resolveAuthToken } from './lib/auth-policy';
 
 type IncomingRequest = { url?: string; headers: Record<string, string | string[] | undefined> };
 
@@ -48,9 +47,7 @@ export class GatewayAuthGuard implements CanActivate {
     const req = context.switchToHttp().getRequest<IncomingRequest>();
     if (isAuthExemptPath(req.url ?? '/')) return true;
 
-    const header = req.headers['authorization'];
-    const presented = bearerTokenFromHeader(Array.isArray(header) ? header[0] : header);
-    if (!presented || !safeEqual(presented, this.token)) {
+    if (!isValidBearer(req.headers['authorization'], this.token)) {
       throw new UnauthorizedException('missing or invalid bearer token');
     }
     return true;
