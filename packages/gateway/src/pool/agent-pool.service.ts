@@ -60,8 +60,14 @@ export class AgentPoolService {
     return this.slots.flatMap((s) => (s.status === 'busy' && s.taskId ? [s.taskId] : []));
   }
 
-  /** Claim a free slot for a task. Returns its AbortSignal, or null if full. */
+  /** Claim a free slot for a task. Returns its AbortSignal, or null if full.
+   *  Idempotent: if the task already holds a slot, its existing signal is
+   *  returned rather than claiming a second one — a per-task double-acquire
+   *  would otherwise leak a slot forever, since {@link release} and
+   *  {@link slotForTask} only ever address the first slot matching a task. */
   acquire(taskId: string): AbortSignal | null {
+    const existing = this.slotForTask(taskId);
+    if (existing) return existing.abort?.signal ?? null;
     const slot = this.slots.find((s) => s.status === 'idle');
     if (!slot) return null;
     slot.status = 'busy';
