@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import type { Repo, Status, Task } from '@midnite/shared';
+import { withQueryClient } from '@/lib/test-query-wrapper';
 
 const getTasks = vi.fn();
 const getRepos = vi.fn();
@@ -35,7 +36,7 @@ describe('RepoStatusWidget', () => {
   it('renders a row per repo with running / queued / done counts', async () => {
     getTasks.mockResolvedValue([task('web', 'wip'), task('web', 'todo'), task('web', 'todo'), task('web', 'done')]);
     getRepos.mockResolvedValue([repo('web')]);
-    render(<RepoStatusWidget />);
+    render(withQueryClient(<RepoStatusWidget />));
 
     await waitFor(() => expect(screen.getByText('web')).toBeInTheDocument());
     const row = screen.getByText('web').closest('li')!;
@@ -48,7 +49,7 @@ describe('RepoStatusWidget', () => {
   it('shows an Unassigned bucket for tasks without a repo, last', async () => {
     getTasks.mockResolvedValue([task('web', 'wip'), task(null, 'todo')]);
     getRepos.mockResolvedValue([repo('web')]);
-    render(<RepoStatusWidget />);
+    render(withQueryClient(<RepoStatusWidget />));
 
     await waitFor(() => expect(screen.getByText('Unassigned')).toBeInTheDocument());
     const rows = screen.getAllByRole('listitem');
@@ -58,7 +59,7 @@ describe('RepoStatusWidget', () => {
   it('shows an empty hint when no repos are registered and nothing is unassigned', async () => {
     getTasks.mockResolvedValue([]);
     getRepos.mockResolvedValue([]);
-    render(<RepoStatusWidget />);
+    render(withQueryClient(<RepoStatusWidget />));
 
     await waitFor(() => expect(screen.getByText(/No repos registered/)).toBeInTheDocument());
   });
