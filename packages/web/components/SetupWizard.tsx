@@ -157,7 +157,6 @@ function ToolsStep({ onDone }: { onDone: () => void }) {
 
   const refresh = () => getCliStatuses().then(setStatuses).catch(() => {});
 
-  // The two required CLIs for the core workflow.
   const REQUIRED = ['claude', 'gh'] as const;
 
   return (
