@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 9 E3/E4: PlayStation interactable + retro-games menu (PR #143)
+
+Wires the PS5 console in the communal gaming corner as a proximity interactable (E key) and adds the retro-games placeholder modal.
+
+- [x] `lib/office-store.ts` — `nearPlaystation`, `playstationOpen`, `setNearPlaystation`, `openPlaystation`, `closePlaystation`; opening closes all other panels; `reset()` clears both flags
+- [x] `components/office/scenes/office-scene.ts` — `playstationCenter` anchor in `buildKitchen()`, per-frame proximity check, E-key handler, `playstationOpen` added to keyboard-frozen guard
+- [x] `components/office/retro-games-menu.tsx` — 8 retro titles, "coming soon" on selection, own Escape handler, seam for future gameplay
+- [x] `components/office/office-hud.tsx` — "Press E to open the Game Library" proximity prompt + `<RetroGamesMenu>` render
+- [x] `lib/office-store.test.ts` — 4 new tests (7 total, all green)
+
+---
+
 ## 2026-06-23 — Phase 22 Theme B: /ops fleet health dashboard (PR #142)
 
 A dedicated `/ops` route exposing the server-recorded metrics backbone (A1–A3) as an operational surface. Five sections: live slot utilization bar, server-recorded throughput chart, run-duration 5-bucket histogram, outcome rate bars, and 30-day LLM spend trend. Polling every 10 s (pool + ops) / 60 s (spend).
