@@ -22,7 +22,7 @@
 
 The plan model emits a structured, ordered task list — not just prose.
 
-- [ ] **Breakdown schema** in [`@midnite/shared`](../packages/shared/src/) (`breakdown.ts`): `BreakdownTask = { ref: string, title, kind?, priority?, dependsOn: string[] /* local refs */ }` + a `Breakdown = { tasks: BreakdownTask[] }`. `ref`/`dependsOn` use **local keys** (resolved to real task ids on creation, Theme B), so the model can express edges before ids exist. zod + tests.
+- [x] ✅ (PR #128) **Breakdown schema** in [`@midnite/shared`](../packages/shared/src/) (`breakdown.ts`): `BreakdownTask = { ref: string, title, kind?, priority?, dependsOn: string[] /* local refs */ }` + a `Breakdown = { tasks: BreakdownTask[] }`. `ref`/`dependsOn` use **local keys** (resolved to real task ids on creation, Theme B), so the model can express edges before ids exist. Also adds `BreakdownGoalRequestSchema` + `BreakdownPreviewResponseSchema`. zod + tests (10).
 - [ ] **Breakdown LLM step** — a service method (reuse [`LlmService.generateStructured`](../packages/gateway/src/agent/llm/llm.service.ts) + a `record_breakdown` tool schema) that, given a project (name/description/sources/**existing markdown plan**) or a raw goal, returns a `Breakdown`. A new prompt **complements** `PROJECT_PLAN_SYSTEM_PROMPT` (Decision §1 — the markdown plan stays; this is the structured sibling).
 - [ ] **Conservative dependency inference** (Decision §3) — the prompt instructs the model to add a `dependsOn` edge **only for clear blockers** (e.g. "build the API" before "build the client") and leave independent work unordered/parallel; over-serialization is explicitly discouraged. Validate the returned graph is acyclic (reuse Phase 27's cycle check) and prune any bad refs.
 
