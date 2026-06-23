@@ -73,7 +73,8 @@ Against, in order: fidelity to the phase doc/decisions → `CLAUDE.md` conventio
 `gh pr checks <n> --watch`. On failure: `gh run view <id> --log-failed` → fix in the worktree → re-run the local gate → push → repeat until green. If genuinely stuck (flaky infra, outage, product call), stop and say what's wrong.
 
 ## 10 · Merge & wrap
-- `gh pr ready <n>` → `gh pr merge <n> --squash --delete-branch`. **Always squash — never merge-commit or rebase.**
+- If the branch is behind `main`, rebase it first: `git rebase origin/main` in the worktree, then force-push (`git push --force-with-lease`).
+- `gh pr ready <n>` → `gh pr merge <n> --squash --delete-branch`. **Always squash. Only use a merge commit if squash is genuinely impossible (e.g. protected-branch rules outside our control).**
 - **Move** the done item(s) from the phase file into `done.md` (today's date, per `todo/README.md`) — don't just tick in place. Commit on `main`.
 - Teardown: `git worktree remove .git/worktrees/<slice>` + `git branch -d feature/<slice>` (`-D` if a squash leaves it "unmerged"); confirm with `git worktree list`.
 - Wrap-up (terse markdown): `# 🎉 Merged: <title>` (linked) · `## 📊 Phase status` (every phase: ✅/🔄/⬜ + outstanding count) · `## ✨ This PR` (what landed + link) · `## ⏭️ Next up`.
