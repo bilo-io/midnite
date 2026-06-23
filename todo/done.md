@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 10 C2: chart widget stories (PR #148)
+
+Storied the three chart widgets — the half of C2 the note flagged as needing a pinned clock — and established that pinning pattern.
+
+- [x] **`throughput-widget`** — pins `Date.now` with a plain-JS monkeypatch in `beforeEach` (returns a teardown alongside the fetch mock; no `vitest` import leaks into a file Storybook also loads) and places done tasks at exact day offsets, so the "done this week" count asserts deterministically. Default/empty/error.
+- [x] **`usage-widget`** — its bars render from the mocked `/usage/summary` payload (not the wall clock), so no pinning needed: loaded / over-budget banner / no-calls / error.
+- [x] **`system-monitor-widget`** — a client-side random-walk sim with no endpoint; asserts structure (card title, CPU/RAM legend, area-chart `<svg>`), not the random readings.
+- [ ] C2 now only leaves the `market-*` widgets and `boardroom-panel`. CI (`moon ci`, incl. the Storybook browser tests) green.
+
 ## 2026-06-23 — Phase 9 F1–F4: corner office scene (PR #146)
 
 Private corner office scene reachable from the CORNER OFFICE doorway — your own customisable desk with animated items, a blinking laptop cursor, and localStorage persistence.
