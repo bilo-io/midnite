@@ -179,7 +179,8 @@ describe('TasksController — dependency routes', () => {
         throw new TaskDependencyError('unknown-task', 'blocker task ghost not found');
       }),
     } as unknown as TasksService;
-    const controller = new TasksController(service, cfg);
+    const prStatus = { refresh: vi.fn() } as unknown as PrStatusService;
+    const controller = new TasksController(service, cfg, prStatus);
     try {
       await expect(
         controller.create(
@@ -192,5 +193,14 @@ describe('TasksController — dependency routes', () => {
     } finally {
       rmSync(uploadsDir, { recursive: true, force: true });
     }
+  });
+});
+
+describe('TasksController — PR refresh route', () => {
+  it('delegates to PrStatusService.refresh and returns the task', async () => {
+    const { controller, prStatus } = build();
+    const task = await controller.refreshPr('t1');
+    expect(prStatus.refresh).toHaveBeenCalledWith('t1');
+    expect(task).toMatchObject({ id: 't1' });
   });
 });
