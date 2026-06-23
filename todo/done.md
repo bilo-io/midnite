@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 22 A3: MetricsModule + GET /metrics/ops (PR #133)
+
+Completes the ops-metrics spine. `MetricsService` wires `GaugeStore` + `MetricsRepository`; `MetricsController` serves `GET /metrics/ops`; `MetricsModule` is registered in `AppModule`. `OpsSummary`/`MetricsGauges`/etc. zod schemas in shared. Phase 22 Theme A is now fully done.
+
+- [x] `MetricsService` — `record*` + `getOpsSummary()` with 7-day default window
+- [x] `MetricsController` + `MetricsModule`; registered in `AppModule`; 4 controller tests
+- [x] `metrics.ts` in shared — `MetricsGauges`, `OpsSummary`, `OpsQuery` + 8 tests
+
+---
+
 ## 2026-06-23 — Phase 22 A2: GaugeStore — in-memory ops gauges (PR #131)
 
 A plain-class `GaugeStore` that holds the three fast-moving operational signals: queue depth, slot utilization (used/total), and last tick latency. Callers record via `record*`; `snapshot()` returns a defensive copy. The `MetricsService` (A3) will wrap it. Lost on restart by design. 8 unit tests.
