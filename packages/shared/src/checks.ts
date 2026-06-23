@@ -103,12 +103,3 @@ export function resolveChecksForRepo(
   return override ?? checks.gates;
 }
 
-// ── Wire shapes for Phase 30 D surfaces ─────────────────────────────────────
-
-/** Response from `POST /tasks/:id/check` — the triggered run. */
-export const TriggerCheckResponseSchema = z.object({ run: CheckRunSchema });
-export type TriggerCheckResponse = z.infer<typeof TriggerCheckResponseSchema>;
-
-/** Response from `GET /tasks/:id/check-runs` — ordered oldest-first. */
-export const CheckRunListResponseSchema = z.object({ runs: z.array(CheckRunSchema) });
-export type CheckRunListResponse = z.infer<typeof CheckRunListResponseSchema>;
