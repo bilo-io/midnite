@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 18 Theme B: project markdown export (PR #119)
+
+Projects now have a markdown export — title, tasks grouped by status, sources as links, and scoped memories as a Knowledge section — using the same `ExportMenu` + `report-html-export` substrate already proven by the councils export (Phase 7 B).
+
+- [x] **`projects/lib/project-report.ts`** — pure `projectToMarkdown(project, tasks, memories)` serializer: title + export date + description + tasks grouped by status (labels: Backlog/Todo/In progress/Waiting/Done/Abandoned; each row: **title** · kind · `repo`) + sources as Markdown links + scoped memories in a Knowledge section. `projectReportFilename(project)` for the slug. 15 unit tests.
+- [x] **`GET /projects/:id/export?format=md`** — thin controller route (mirrors the councils shape): validates format (rejects `pdf` → 400 client-rendered; unknown format → 400); serves `text/markdown` + `content-disposition: attachment`. 4 controller tests.
+- [x] **`ProjectsService.exportMarkdown(id)`** — gathers `tasks.listTasks(undefined, id)` + `memories.listScoped(id)`, delegates to serializer. Boundary-clean (no repository crossing).
+- [x] **`exportProjectMarkdown(id)`** in `web/lib/api.ts` — typed client matching the councils pattern.
+- [x] **`ExportMenu` in `ProjectModal` header** — shown only for existing projects (`isEdit`); reuses the `ExportMenu` component with md download + pdf-via-print; no new deps.
+
+---
+
 ## 2026-06-23 — Phase 21: notifications & alerting — **Phase 21 COMPLETE**
 
 All four themes shipped across PRs #103 (model + ingestion + feed), #108 (channel dispatch + webhook), #107 (notification center + toasts + browser opt-in), and #110 (desktop native notifications). Done criteria verified; test suite green. One item deferred: per-event policy editing UI in Settings (config-mirroring, not a blocker for the core feature).

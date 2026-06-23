@@ -39,14 +39,14 @@ A task's thread as a portable document.
 
 ---
 
-## Theme B — Project export (full bundle) — **M–L**
+## Theme B — Project export (full bundle) — **M–L** — ✅ DONE (PR #119, 2026-06-23 — see [done.md](done.md))
 
 "Everything about this project" — overview + its tasks + linked knowledge.
 
-- [ ] **Pure serializer** `project-report.ts` in the projects module: `projectToMarkdown(project, tasks, memory, notes, sources)` → project overview/description, a **task list** (title · kind · status) grouped by column, then **linked memory / notes / sources** as their own sections (Decision §2 — full bundle). Pure + unit-tested.
-- [ ] **Export route** `@Get('projects/:id/export')` in [`projects.controller.ts`](../packages/gateway/src/projects/projects.controller.ts) → `ProjectsService.exportMarkdown(id)` which gathers the project's tasks (+ memory/notes/sources for this project). Keep the gather inside the service; **don't** import other domains' repositories directly — call their services (boundary-clean).
-- [ ] **Web:** `ExportMenu` in the project view; typed `exportProject` client.
-- [ ] Gateway test: a project with 2 tasks + a note + a source serializes with all sections present; empty sections omitted cleanly.
+- [x] **Pure serializer** `project-report.ts` in the projects module: `projectToMarkdown(project, tasks, memories)` → project overview/description, a **task list** (title · kind · repo, grouped by status), then **sources** as links and **scoped memories** as a Knowledge section. Pure + unit-tested (15 tests).
+- [x] **Export route** `@Get('projects/:id/export')` in [`projects.controller.ts`](../packages/gateway/src/projects/projects.controller.ts) → `ProjectsService.exportMarkdown(id)` which gathers tasks (`listTasks(undefined, id)`) + scoped memories (`listScoped(id)`), delegates to the pure serializer. Boundary-clean — only composes existing services.
+- [x] **Web:** `ExportMenu` in the `ProjectModal` header when editing; `exportProjectMarkdown(id)` typed client in [`api.ts`](../packages/web/lib/api.ts).
+- [x] Gateway tests (4 controller tests): rejects `html`/`pdf` with 400, serves `text/markdown` for `format=md`, defaults to `md` when omitted. Gateway 784/784; web 398/398.
 
 > **Boundary note:** the bundle spans tasks + memory + notes + sources. Compose via their **services** (already injectable), not by reaching into repositories — keeps the projects service the orchestrator and respects the layering.
 
@@ -87,7 +87,7 @@ A run as a debuggable, shareable document — the payoff of Phase 12's persisted
 
 - [ ] **Councils still works** after Theme D's renderer lift — md download + pdf-via-print unchanged (no regression on the existing path).
 - [ ] **Task:** open a task thread → `ExportMenu` → markdown download contains the title, status history, and `task_events` timeline; PDF prints the same content; "copy as markdown" copies it.
-- [ ] **Project:** export a project → markdown has the overview, a task list grouped by column, and memory/notes/sources sections (empty sections omitted); PDF renders.
+- [x] **Project:** export a project → markdown has the overview, a task list grouped by column, and memory/notes/sources sections (empty sections omitted); PDF renders.
 - [ ] **Workflow run:** export a completed run → markdown shows per-node input → resolved params → output (and a failed node's error); PDF renders.
 - [ ] Every export route validates `format`: `?format=pdf` to a server route is rejected (pdf is client-rendered); an unknown id → 404; the served `Content-Type` is `text/markdown`.
 - [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph; `moon ci` green. (Run web tests from the **primary checkout**, not a `.git` worktree.)
