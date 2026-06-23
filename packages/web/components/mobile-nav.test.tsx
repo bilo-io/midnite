@@ -4,10 +4,14 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { FEATURES } from '@/lib/features';
 import { MobileNav } from './mobile-nav';
 
-// ThemeToggle (rendered inside the More sheet) reads the theme context; stub it
-// so the nav can be tested in isolation.
+// ThemeToggle reads the theme context; NotificationCenter uses useRouter and
+// useNotifications — stub all three so the nav can be tested in isolation.
 vi.mock('@/app/theme/theme-context', () => ({
   useTheme: () => ({ preference: 'system', resolved: 'dark', setPreference: vi.fn() }),
+}));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
+vi.mock('@/components/notifications-provider', () => ({
+  useNotifications: () => ({ feed: [], unread: 0, loading: false, markRead: vi.fn(), markAllRead: vi.fn(), clear: vi.fn() }),
 }));
 
 afterEach(cleanup);

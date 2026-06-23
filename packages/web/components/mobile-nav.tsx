@@ -6,6 +6,8 @@ import { MoreHorizontal, Power, Settings, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Feature } from '@/lib/features';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { NotificationCenter } from '@/components/notification-center';
+import { useNotifications } from '@/components/notifications-provider';
 
 // Phase 24 Theme A2 — the phone-width counterpart to the desktop sidebar
 // (`nav-bar.tsx`). Below `md` the sidebar is hidden and this fixed bottom-tab
@@ -38,6 +40,7 @@ function isActive(pathname: string, href: string): boolean {
 export function MobileNav({ pathname, features, onLock }: MobileNavProps) {
   const [open, setOpen] = useState(false);
   const moreRef = useRef<HTMLButtonElement>(null);
+  const { unread } = useNotifications();
 
   const tabs = features.slice(0, MAX_TABS);
   const overflow = features.slice(MAX_TABS);
@@ -93,6 +96,7 @@ export function MobileNav({ pathname, features, onLock }: MobileNavProps) {
               />
             </div>
             <div className="my-3 h-px bg-border/60" />
+            <NotificationCenter expanded />
             <div className="flex items-center justify-between gap-2">
               <ThemeToggle expanded />
               <button
@@ -129,6 +133,9 @@ export function MobileNav({ pathname, features, onLock }: MobileNavProps) {
         >
           {overflowActive ? <ActiveIndicator /> : null}
           <MoreHorizontal className="h-5 w-5 shrink-0" />
+          {unread > 0 ? (
+            <span aria-hidden className="absolute right-2.5 top-2 h-2 w-2 rounded-full bg-destructive" />
+          ) : null}
           <span className="max-w-full truncate">More</span>
         </button>
       </nav>
