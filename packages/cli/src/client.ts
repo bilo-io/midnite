@@ -5,6 +5,7 @@ import {
   SearchResponseSchema,
   StatusSchema,
   TaskSchema,
+  TerminalTokenResponseSchema,
   TriggerCheckResponseSchema,
   WorkflowRunSchema,
   WorkflowSchema,
@@ -16,6 +17,7 @@ import {
   type SearchResponse,
   type Status,
   type Task,
+  type TerminalTokenResponse,
   type Workflow,
   type WorkflowRun,
   type WorkflowSummary,
@@ -50,6 +52,7 @@ export interface GatewayClient {
   getWorkflowRun(id: string, runId: string): Promise<WorkflowRun>;
   triggerCheck(taskId: string): Promise<CheckRun>;
   getCheckRuns(taskId: string): Promise<CheckRun[]>;
+  getTerminalToken(sessionId: string): Promise<TerminalTokenResponse>;
 }
 
 /** A thin typed client over the gateway REST API. Responses are validated with
@@ -196,6 +199,12 @@ export function createClient(baseUrl: string): GatewayClient {
       return CheckRunListResponseSchema.parse(
         await request(`/tasks/${encodeURIComponent(taskId)}/check-runs`, { method: 'GET' }),
       ).runs;
+    },
+
+    async getTerminalToken(sessionId: string): Promise<TerminalTokenResponse> {
+      return TerminalTokenResponseSchema.parse(
+        await request(`/sessions/${encodeURIComponent(sessionId)}/terminal-token`, { method: 'GET' }),
+      );
     },
   };
 }
