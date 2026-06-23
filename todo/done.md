@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 26 Theme D: on-page table of contents (PR #140)
+
+Landed the deferred on-page nav from Theme D: long docs now get a sticky "On this page" rail so readers can see a page's shape and jump between sections. Closes the last functional gap in Theme D (only the deploy story stays deferred).
+
+- [x] **`TableOfContents`** — a sticky right rail (`xl+` only; hidden where it would crowd the prose) that scans the *rendered* article for `h2/h3[id]`, so MDX (DS docs) and react-markdown (product docs) feed it identically. IntersectionObserver scroll-spy highlights the section in view; links scroll via JS rather than `href="#id"` (the app is a hash router — an anchor hash would be read as a route).
+- [x] **`rehype-slug`** wired into both render paths (MDX via `vite.config.ts`, product markdown via `react-markdown`) → stable, text-derived heading ids shared by the TOC and any deep link; `scroll-mt` on headings clears the sticky header.
+- [x] **Tests** — `table-of-contents.test.tsx` (4: `collectHeadings` extraction, rail render + active marker, click-to-scroll, single-section no-op). `docs:typecheck`/`lint`/`test` (31)/`build` green; boundary guard still green (only `@midnite/ui` imported).
+
 ## 2026-06-23 — Phase 14 Theme E: starter workflow templates (PR #138)
 
 A "Start from" gallery in the New-workflow modal seeds a ready-made graph instead of a blank canvas — the *Starter templates* item of Theme E (autosave already shipped in PR #43; run-history replay remains).

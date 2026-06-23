@@ -52,9 +52,9 @@ Make the project's existing markdown browsable, from one source of truth.
 
 ---
 
-## Theme D — Navigation, search & build seam — **S–M** — ◐ PARTIAL (PR #137, 2026-06-23 — see [done.md](done.md); on-page TOC + deploy deferred)
+## Theme D — Navigation, search & build seam — **S–M** — ◐ PARTIAL (PRs #137 + #140, 2026-06-23 — see [done.md](done.md); deploy deferred)
 
-- [x] ◐ **Navigation** — below `md` the sidebar collapses behind a hamburger into a slide-in drawer (closed on navigation); pins as a column on `md+`. Active-route highlighting (NavLink) as before. ⏳ **on-page nav (TOC) deferred** — not required by the verification line; a follow-on.
+- [x] **Navigation** — below `md` the sidebar collapses behind a hamburger into a slide-in drawer (closed on navigation); pins as a column on `md+`. Active-route highlighting (NavLink) as before. On-page nav (TOC) landed in PR #140: a sticky "On this page" rail on `xl+` lists the current page's h2/h3 with a scroll-spy highlight, anchored by `rehype-slug` ids stamped on both render paths (MDX + react-markdown).
 - [x] **Client-side search** — a static index ([`content/search-index.ts`](../packages/docs/src/content/search-index.ts)) over page titles + markdown headings, filtered by the pure [`search.ts`](../packages/docs/src/content/search.ts); a header `DocSearch` shows ranked hits (title ≫ heading ≫ section) that navigate to the page. No server — the index ships in the bundle. (Product docs get full heading search; the `.mdx` DS pages are indexed by title/section — the MDX plugin strips the `?raw` query, so their source isn't readable without compiling.)
 - [x] **Static build + deploy seam** — `moon run docs:build` emits a static site and `moon ci` builds it (landed with the Theme A scaffold, PR #123). The **deploy story** (GitHub Pages / static host) stays **deferred to a follow-on** (Decision §6).
 
