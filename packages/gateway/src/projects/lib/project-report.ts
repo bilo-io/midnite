@@ -76,7 +76,11 @@ function renderAgentActivitySection(tasks: Task[]): string {
   const active = tasks.filter((t) => t.status === 'wip' || t.status === 'waiting');
   const done = tasks
     .filter((t) => t.status === 'done')
-    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    .sort((a, b) => {
+      const ta = a.updatedAt ?? a.createdAt ?? '';
+      const tb = b.updatedAt ?? b.createdAt ?? '';
+      return tb.localeCompare(ta);
+    })
     .slice(0, 10);
 
   if (active.length === 0 && done.length === 0) return '';
