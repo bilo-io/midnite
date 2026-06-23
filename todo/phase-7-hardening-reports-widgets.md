@@ -23,17 +23,18 @@ The highest-value theme. These are real, verified gaps, not hypotheticals.
 ### A3. Web test coverage — **M** — ◐ PARTIAL (toolchain + seed suites shipped `e3ad2f2`)
 - [x] Web had **0 automated tests** — now Vitest + @testing-library/react + jsdom are wired with a `test` task, so `moon ci` runs web tests too.
 - [x] Seeded the highest-risk pure/hook logic: `use-local-storage` (the double-write bug), `dashboard-widgets` registry, `task-events` pub/sub, plus a `command-palette` render+keyboard suite (15 tests). _(`lib/api.ts`/optimistic-board tests still worth adding.)_
-- [ ] Add a small Playwright smoke suite to CI (the drive-throughs exist ad-hoc; commit a few).
+- [x] **Playwright smoke suite committed** — superseded by Phase 10 Theme D (PR #84): real flow specs for board / office / workflows / councils / dashboard now live under `packages/web/e2e/*.e2e.ts` (+ Theme E1 screenshot capture, PR #111). Wiring them into a dedicated CI job is **Phase 10 F1** (kept out of `moon ci` for now to bound CI minutes).
 
 ### A4. Resilience & data durability — **S–M** — ✅ DONE (recovery audit: PR #99, 2026-06-22 — see [done.md](done.md))
 - [x] WAL was already on; added `synchronous=NORMAL` + `busy_timeout=5000`, and a consistent online **backup** via `POST /admin/backup` (DB snapshot + uploads copy). Restore is a documented manual stop-and-copy; CLI `midnite backup` wrapper deferred.
 - [x] Audit/normalise restart recovery: tasks requeue orphaned `wip`, councils fail stale runs — now **workflow runs** do too (`WorkflowRecoveryService.onModuleInit` fails runs left `running` + their in-flight node-runs, emits `run.failed`). PR #99.
 - [x] Confirm graceful shutdown kills all PTYs: the real gap was that **shutdown hooks were never enabled** — `app.enableShutdownHooks()` now makes `onModuleDestroy` fire on SIGINT/SIGTERM (terminal kills under `pty` / detaches under `tmux`; managed agent-run PTYs are pinned handles in that same teardown, so they're covered). PR #99.
 
-### A5. Optional remote-access auth — **S–M** — ❌ OUT OF SCOPE (decided local-only)
-- [ ] Gateway is loopback-only with per-session hook secrets + terminal tokens, but the **REST API itself is unauthenticated**. Fine for localhost; unsafe the moment someone binds `0.0.0.0` or tunnels it.
-- [ ] Optional bearer token (config / env) enforced by a Nest guard when `host` is non-loopback; basic per-IP rate limiting.
-- **Decision:** is remote access even a goal? If midnite stays strictly local + desktop, this is low priority.
+### A5. Optional remote-access auth — **S–M** — ✅ DONE (PR #117, 2026-06-23 — user-requested override of the local-only decision)
+- [x] **Optional bearer-token auth + per-IP rate limiting** (`gateway.auth`, off by default → local-only experience unchanged). `GatewayAuthGuard` (global) requires `Authorization: Bearer <token>` on every REST route + `/uploads/*` when a token is resolved, exempting `/health` + the self-authenticating `/hooks/*`; `RateLimitGuard` (global, dependency-free per-IP fixed window, `max:0`=off) runs first. Secret is env-named (`tokenEnv`, default `MIDNITE_AUTH_TOKEN`), never inlined.
+- [x] **Fail-closed boot** — binding a non-loopback `host` with no token refuses to start unless `requireOnNonLoopback:false`. Pure policy helpers in `auth/lib/` (loopback detection, token resolution, exempt-path match, constant-time bearer compare); unit-tested + verified end-to-end (401/200, refusal). See [done.md](done.md).
+- ⏳ **Follow-on:** WS streams (board/workflow gateways) aren't token-guarded yet (the terminal WS already uses one-time tokens); wiring the web/CLI clients to send the token for a fully-functional remote UI is also separate.
+- **Original decision (now overridden):** A5 had been parked as local-only/out-of-scope; shipped on request as an opt-in safety net that doesn't change the local-only default.
 
 ### A6. `task.*` WebSocket broadcast — **M** — ✅ DONE (`e2b9b73`)
 - [x] Event-driven board updates: `TaskEventBus` + `TasksGateway` (`/ws/tasks`) publish a `TaskBoardEvent` on every transition; the web `useTaskEvents` hook invalidates the cache. Polling kept as fallback. Also powers notifications (Theme D).

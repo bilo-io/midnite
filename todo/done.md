@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 7 A5: optional REST auth + per-IP rate limiting (PR #117) — **Phase 7 COMPLETE**
+
+The gateway REST API was unauthenticated — fine on loopback, unsafe off-box. Adds opt-in remote-access auth, **off by default** so the local-only experience is unchanged. Shipped on request (A5 had been parked as local-only/out-of-scope). Also reconciled A3's Playwright-smoke bullet (superseded by Phase 10 Theme D's committed flow specs; the CI job is Phase 10 F1) — **closing Phase 7**.
+
+- [x] **`gateway.auth` config** (shared zod, defaulted so existing `midnite.json` validates): `tokenEnv` (env-named bearer secret, never inlined), `requireOnNonLoopback` (fail-closed boot), `rateLimit` (`{windowMs,max}`, `max:0`=off).
+- [x] **`GatewayAuthGuard`** (global) — when a token is resolved, every REST route requires `Authorization: Bearer <token>` except `/health` + the self-authenticating `/hooks/*`; constant-time compare; inert when no token (behaviour-preserving). **`/uploads/*`** guarded via a Fastify `onRequest` hook (static mounts sit outside Nest's APP_GUARD) — caught in self-review. Web export bundle stays public (client shell; data goes through the guarded API).
+- [x] **`RateLimitGuard`** (global, dependency-free per-IP fixed window) runs before auth so floods incl. token brute-force are throttled; `/health` never throttled; expired buckets pruned.
+- [x] **Fail-closed boot** (`assertAuthForHost`) — non-loopback host + no token refuses to start unless `requireOnNonLoopback:false`. Pure policy helpers in [`auth/lib/auth-policy.ts`](../packages/gateway/src/auth/lib/auth-policy.ts) shared by guard + bootstrap.
+- [x] Tests: helpers (loopback/token/exempt/bearer/constant-time), both guards, shared config defaults; verified **end-to-end** (loopback boots auth-off; `0.0.0.0` no-token refuses; `0.0.0.0`+token → 401 without / 200 with bearer, `/health` + `/uploads` enforced correctly). Security second-opinion review (found the `/uploads` gap, fixed). `:typecheck`/`:lint`/`:test` + `moon ci` green; gateway **763 tests**. WS-stream guarding + client token-wiring noted as follow-ons.
+
+---
+
 ## 2026-06-22 — Phase 10 Theme E1: deterministic screenshot capture + fresh-DB boot fix (PR #111)
 
 The Theme E payoff: a Playwright pass that captures preview screenshots of every key page (board, office, workflows, dashboard, councils) in light + dark, so `execute-phase` Stage 7 reviews get real artifacts. Building it surfaced a latent boot bug that had silently broken the whole e2e harness.
