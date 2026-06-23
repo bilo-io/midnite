@@ -82,6 +82,23 @@ describe('BoardPanel', () => {
     expect(lastFrame()).toContain('Build feature');
     expect(lastFrame()).toContain('myrepo');
   });
+
+  it('shows ● indicator on the keyboard-focused task', () => {
+    const task = { id: 'xyz789abc', title: 'Focused task', status: 'todo' as const, priority: 1 };
+    const { lastFrame } = render(
+      <BoardPanel tasks={[task as never]} focusedColIdx={1} focusedTaskId="xyz789abc" />,
+    );
+    expect(lastFrame()).toContain('●');
+    expect(lastFrame()).toContain('Focused task');
+  });
+
+  it('shows ▶ indicator on the log-selected (Tab) task', () => {
+    const task = { id: 'wip001', title: 'Running agent', status: 'wip' as const, priority: 1 };
+    const { lastFrame } = render(
+      <BoardPanel tasks={[task as never]} selectedTaskId="wip001" />,
+    );
+    expect(lastFrame()).toContain('▶');
+  });
 });
 
 describe('PoolPanel', () => {
