@@ -10,6 +10,8 @@ dependsOn:
 tasks:
   build:
     command: 'pnpm exec tsc -b'
+    deps:
+      - 'root:install'
     inputs:
       - 'src/**/*'
       - 'tsconfig.json'
@@ -19,6 +21,8 @@ tasks:
   dev:
     command: 'pnpm exec tsx watch src/index.ts'
     preset: 'server'
+    deps:
+      - 'root:install'
 
   test:
     command: 'pnpm exec vitest run'

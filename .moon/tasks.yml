@@ -10,6 +10,8 @@ fileGroups:
 tasks:
   build:
     command: 'tsc -b'
+    deps:
+      - 'root:install'
     inputs:
       - '@group(sources)'
       - '@group(configs)'

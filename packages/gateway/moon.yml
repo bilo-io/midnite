@@ -12,6 +12,8 @@ tasks:
     # desktop build both expect them beside the compiled output. `script` (not
     # `command`) because moon only allows shell chaining via script.
     script: "pnpm exec tsc -b && node -e \"const fs=require('node:fs');const s='src/terminal/hooks',d='dist/terminal/hooks';fs.mkdirSync(d,{recursive:true});for(const f of fs.readdirSync(s))if(f.endsWith('.cjs'))fs.copyFileSync(s+'/'+f,d+'/'+f)\""
+    deps:
+      - 'root:install'
     inputs:
       - 'src/**/*'
       - 'tsconfig.json'
@@ -21,6 +23,8 @@ tasks:
   dev:
     command: 'pnpm exec tsx watch src/main.ts'
     preset: 'server'
+    deps:
+      - 'root:install'
 
   start:
     command: 'node dist/main.js'

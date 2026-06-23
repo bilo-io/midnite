@@ -16,6 +16,14 @@ workspace:
       - 'lint'
 
 tasks:
+  # install: ensure workspace deps are up to date before build/dev. Runs once at
+  # the workspace root (a pnpm workspace install covers all packages). Skipped in
+  # CI where the workflow already runs `pnpm install --frozen-lockfile` explicitly.
+  install:
+    command: 'pnpm install'
+    options:
+      cache: false
+
   # version-check: assert the lockstep invariant (every package.json shares one
   # MAJOR.MINOR). Pure static check — no build deps, no network — so it runs in
   # `moon ci` (runInCI defaults true) right alongside typecheck/test/build/lint.
