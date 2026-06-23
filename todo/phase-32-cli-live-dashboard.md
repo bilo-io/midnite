@@ -64,10 +64,10 @@ The ambitious panel — sequenced last, and shippable on its own if it proves he
 Navigation + the single mutation we allow (**Decisions §5** — read-only otherwise).
 
 ### E1. Navigation & selection — **S–M**
-- [ ] Move focus between panels (board ↔ pool ↔ logs) and between columns/cards with arrow/`hjkl` keys; a visible focus indicator; a help/footer line of keybindings.
+- [x] ✅ (PR #158) Move focus between panels (board ↔ pool ↔ logs) and between columns/cards with arrow/`hjkl` keys; a visible focus indicator; a help/footer line of keybindings.
 
 ### E2. Move a task's status — **M**
-- [ ] On a focused task, move its status (e.g. `wip → waiting → done`) via `client().moveTask(id, status)` — the **only** mutation in this phase. Optimistic update reconciled by the next `task.updated` event. No destructive actions (no kill/stop/retry — explicitly out of scope).
+- [x] ✅ (PR #158) On a focused task, move its status (e.g. `wip → waiting → done`) via `client().moveTask(id, status)` — the **only** mutation in this phase. Optimistic update reconciled by the next `task.updated` event. No destructive actions (no kill/stop/retry — explicitly out of scope).
 
 ---
 
