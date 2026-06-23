@@ -24,6 +24,8 @@
  * Each room carries its own palette (floor tint + accent) — see lib/office/theme.ts.
  */
 
+import type { Status } from '@midnite/shared';
+
 import { OFFICE_COLS, OFFICE_ROWS } from './dimensions';
 
 export type TilePos = { x: number; y: number };
@@ -298,3 +300,25 @@ export function blockedGrid(): boolean[][] {
     for (let x = POOL.x; x < POOL.x + POOL.w; x++) block(x, y);
   return grid;
 }
+
+// ── Phase 31 B — task-status → room routing ──────────────────────────────────
+
+/**
+ * Map a task's `Status` to the room where its agent should sit (Phase 31 B).
+ *
+ * - `wip`      → `'work'`     (hot desks — the agent is actively running)
+ * - `waiting`  → `'board'`    (board room — waiting on input / blocked)
+ * - `done`     → `'pool'`     (agent pool lounge — run is complete)
+ * - everything else (backlog / todo / abandoned) → `null` (agent not on floor)
+ *
+ * Pure function — no side effects, unit-testable without Phaser.
+ */
+export function statusToRoom(status: Status | undefined): RoomId | null {
+  switch (status) {
+    case 'wip':      return 'work';
+    case 'waiting':  return 'board';
+    case 'done':     return 'pool';
+    default:         return null; // backlog/todo/abandoned → not on floor
+  }
+}
+

@@ -4,7 +4,7 @@
  * `SESSION_STATUS_*` constants, so a status looks identical in both places.
  */
 
-import type { SessionSummary, Task } from '@midnite/shared';
+import type { SessionSummary, Status, Task } from '@midnite/shared';
 import { SESSION_STATUS_HUE, SESSION_STATUS_LABEL } from '@/components/session-card';
 
 export type OfficeStatus = SessionSummary['status']; // 'running' | 'waiting' | 'completed' | 'idle'
@@ -17,6 +17,12 @@ export interface OfficeAgent {
   /** Project the session belongs to. */
   project: string;
   status: OfficeStatus;
+  /**
+   * Task status driving room routing (Phase 31 B). Present when the session
+   * is linked to a task; absent for orphaned sessions (treated as `wip`).
+   * Determines desk/board/lounge placement — see `statusToRoom` in layout.ts.
+   */
+  taskStatus?: Status;
   /** One-liner of what they're up to. */
   activity: string;
   /** The underlying session — used to open the live terminal / transcript. */
@@ -81,6 +87,7 @@ export function sessionsToOfficeAgents(sessions: SessionSummary[], tasks: Task[]
         name: s.title || s.projectDisplay || 'Session',
         project: s.projectDisplay,
         status: s.status,
+        taskStatus: task?.status,
         activity: s.subtitle || task?.title || '—',
         session: s,
       };

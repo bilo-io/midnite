@@ -12,6 +12,7 @@ import {
   POOL,
   ROOMS,
   RUGS,
+  statusToRoom,
   type RoomId,
   type TilePos,
   WALL_ART,
@@ -191,5 +192,39 @@ describe('communal furnishings (Phase 9 E2)', () => {
     expect(ASTRO_TURF.x).toBeGreaterThanOrEqual(COMMUNAL.x);
     expect(ASTRO_TURF.x + ASTRO_TURF.w).toBeLessThanOrEqual(COMMUNAL.x + COMMUNAL.w);
     expect(ASTRO_TURF.y + ASTRO_TURF.h).toBeLessThanOrEqual(COMMUNAL.y + COMMUNAL.h);
+  });
+});
+
+describe('statusToRoom (Phase 31 B)', () => {
+  it('routes wip to the work room (hot desks)', () => {
+    expect(statusToRoom('wip')).toBe('work');
+  });
+
+  it('routes waiting to the board room', () => {
+    expect(statusToRoom('waiting')).toBe('board');
+  });
+
+  it('routes done to the agent pool lounge', () => {
+    expect(statusToRoom('done')).toBe('pool');
+  });
+
+  it('returns null for backlog (not on floor)', () => {
+    expect(statusToRoom('backlog')).toBeNull();
+  });
+
+  it('returns null for todo (not on floor)', () => {
+    expect(statusToRoom('todo')).toBeNull();
+  });
+
+  it('returns null for abandoned (not on floor)', () => {
+    expect(statusToRoom('abandoned')).toBeNull();
+  });
+
+  it('returns null for undefined (no linked task)', () => {
+    expect(statusToRoom(undefined)).toBeNull();
+  });
+
+  it('wip and waiting yield different rooms (status change triggers a walk)', () => {
+    expect(statusToRoom('wip')).not.toBe(statusToRoom('waiting'));
   });
 });
