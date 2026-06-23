@@ -24,7 +24,7 @@ export default function MainLayout({ children }: { children: ReactNode }) {
         <LiveData />
         <CommandPalette />
         <NavBar />
-        <main className="transition-[padding] duration-200 pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0 md:[padding-left:var(--nav-offset)]">
+        <main className="transition-[padding] duration-200 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0 md:[padding-left:var(--nav-offset)]">
           <Suspense fallback={null}>
             <PageReveal>{children}</PageReveal>
           </Suspense>

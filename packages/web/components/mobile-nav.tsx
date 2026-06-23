@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { MoreHorizontal, Power, Settings, type LucideIcon } from 'lucide-react';
+import { Menu, Power, Settings, X, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Feature } from '@/lib/features';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -67,57 +67,69 @@ export function MobileNav({ pathname, features, onLock }: MobileNavProps) {
 
   return (
     <>
-      {open ? (
-        <div className="fixed inset-0 z-30 md:hidden">
+      {/* Backdrop — sits below the nav bar (z-[39]) so it covers page content
+          (composer z-30, headers, etc.) but leaves the tab bar visible. */}
+      <button
+        type="button"
+        aria-label="Close menu"
+        onClick={() => setOpen(false)}
+        className={cn(
+          'fixed inset-0 z-[39] bg-background/70 backdrop-blur-sm md:hidden',
+          'transition-opacity duration-300 motion-reduce:transition-none',
+          open ? 'opacity-100' : 'opacity-0 pointer-events-none',
+        )}
+      />
+
+      {/* Drawer — separate from backdrop so it can sit above the nav bar (z-50)
+          while the backdrop stays below it. Slides up/down via translateY. */}
+      <div
+        id="mobile-nav-more"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menu"
+        aria-hidden={!open}
+        className={cn(
+          'fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-50 max-h-[60dvh] overflow-y-auto rounded-t-2xl border-t border-border/60 bg-card p-3 shadow-2xl md:hidden',
+          'transition-transform duration-300 ease-out motion-reduce:transition-none',
+          open ? 'translate-y-0' : 'translate-y-full pointer-events-none',
+        )}
+      >
+        <div aria-hidden className="mx-auto mb-3 h-1 w-10 rounded-full bg-border" />
+        {/* Settings always lives here so it stays reachable even when every tab slot is taken. */}
+        <div className="grid grid-cols-3 gap-2">
+          {overflow.map((f) => (
+            <DrawerTile key={f.key} href={f.href} label={f.label} Icon={f.Icon} active={isActive(pathname, f.href)} />
+          ))}
+          <DrawerTile
+            href={SETTINGS.href}
+            label={SETTINGS.label}
+            Icon={SETTINGS.Icon}
+            active={isActive(pathname, SETTINGS.href)}
+          />
+        </div>
+        <div className="my-3 h-px bg-border/60" />
+        <NotificationCenter expanded />
+        <div className="flex items-center justify-between gap-2">
+          <ThemeToggle expanded />
           <button
             type="button"
-            aria-label="Close menu"
-            onClick={() => setOpen(false)}
-            className="absolute inset-0 bg-background/70 backdrop-blur-sm"
-          />
-          <div
-            id="mobile-nav-more"
-            role="dialog"
-            aria-modal="true"
-            aria-label="More"
-            className="absolute inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-40 max-h-[60dvh] overflow-y-auto rounded-t-2xl border-t border-border/60 bg-card p-3 shadow-2xl"
+            onClick={() => {
+              setOpen(false);
+              onLock();
+            }}
+            className="flex h-9 items-center gap-2 rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
           >
-            <div aria-hidden className="mx-auto mb-3 h-1 w-10 rounded-full bg-border" />
-            {/* Settings always lives here so it stays reachable on a phone even when every tab slot is taken. */}
-            <div className="grid grid-cols-3 gap-2">
-              {overflow.map((f) => (
-                <DrawerTile key={f.key} href={f.href} label={f.label} Icon={f.Icon} active={isActive(pathname, f.href)} />
-              ))}
-              <DrawerTile
-                href={SETTINGS.href}
-                label={SETTINGS.label}
-                Icon={SETTINGS.Icon}
-                active={isActive(pathname, SETTINGS.href)}
-              />
-            </div>
-            <div className="my-3 h-px bg-border/60" />
-            <NotificationCenter expanded />
-            <div className="flex items-center justify-between gap-2">
-              <ThemeToggle expanded />
-              <button
-                type="button"
-                onClick={() => {
-                  setOpen(false);
-                  onLock();
-                }}
-                className="flex h-9 items-center gap-2 rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
-              >
-                <Power className="h-4 w-4" />
-                Lock
-              </button>
-            </div>
-          </div>
+            <Power className="h-4 w-4" />
+            Lock
+          </button>
         </div>
-      ) : null}
+      </div>
 
+      {/* Nav bar — 4rem tall (up from 3.5rem) with extra bottom padding so icons
+          don't crowd the home indicator on iPhone. */}
       <nav
         aria-label="Mobile navigation"
-        className="fixed inset-x-0 bottom-0 z-40 flex h-[calc(3.5rem+env(safe-area-inset-bottom))] border-t border-border/60 bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 flex h-[calc(4rem+env(safe-area-inset-bottom))] border-t border-border/60 bg-background/95 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden"
       >
         {tabs.map((f) => (
           <TabLink key={f.key} href={f.href} label={f.label} Icon={f.Icon} active={isActive(pathname, f.href)} />
@@ -128,15 +140,18 @@ export function MobileNav({ pathname, features, onLock }: MobileNavProps) {
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
           aria-controls="mobile-nav-more"
-          aria-label="More"
+          aria-label="Menu"
           className={cn(tabClass, overflowActive ? 'text-foreground' : 'text-muted-foreground')}
         >
-          {overflowActive ? <ActiveIndicator /> : null}
-          <MoreHorizontal className="h-5 w-5 shrink-0" />
+          {overflowActive && !open ? <ActiveIndicator /> : null}
+          {open
+            ? <X className="h-5 w-5 shrink-0" />
+            : <Menu className="h-5 w-5 shrink-0" />
+          }
           {unread > 0 ? (
             <span aria-hidden className="absolute right-2.5 top-2 h-2 w-2 rounded-full bg-destructive" />
           ) : null}
-          <span className="max-w-full truncate">More</span>
+          <span className="max-w-full truncate">Menu</span>
         </button>
       </nav>
     </>
