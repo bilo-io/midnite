@@ -15,6 +15,7 @@ export * from './source.js';
 export * from './version.js';
 export * from './release.js';
 export * from './checks.js';
+export * from './breakdown.js';
 export * from './project.js';
 export * from './repo.js';
 export * from './memory.js';
