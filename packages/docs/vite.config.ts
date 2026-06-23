@@ -18,6 +18,11 @@ export default defineConfig({
     {
       enforce: 'pre',
       ...mdx({
+        // Author DS docs in .mdx only. Plain .md is reserved for the repo's real
+        // docs, imported as raw text (content/product-docs.tsx) — so MDX must NOT
+        // claim `.md` (its default), or it would try to compile docs/*.md (full of
+        // bare `<…>`/`{…}`) as JSX and `?raw` would never reach Vite's raw loader.
+        mdExtensions: [],
         providerImportSource: '@mdx-js/react',
         remarkPlugins: [
           remarkGfm,

@@ -50,6 +50,16 @@ describe('buildNav', () => {
     expect(buildNav(routes).map((group) => group.section)).toEqual(['Overview', 'Foundations', 'Components']);
   });
 
+  it('orders the product-doc sections after the design-system ones', () => {
+    const sections = buildNav([
+      { path: '/reference/testing', title: 'Testing plan', section: 'Reference', order: 0 },
+      { path: '/architecture', title: 'Architecture', section: 'Architecture', order: 0 },
+      { path: '/guides/readme', title: 'README', section: 'Guides', order: 0 },
+      { path: '/', title: 'Overview', section: 'Overview', order: 0 },
+    ]).map((group) => group.section);
+    expect(sections).toEqual(['Overview', 'Guides', 'Architecture', 'Reference']);
+  });
+
   it('orders items within a section by `order` then title', () => {
     const components = buildNav(routes).find((group) => group.section === 'Components');
     expect(components?.items.map((item) => item.title)).toEqual(['Button', 'Card']);
@@ -58,8 +68,8 @@ describe('buildNav', () => {
   it('puts an unknown section after the known ones', () => {
     const withExtra = buildNav([
       ...routes,
-      { path: '/guides/x', title: 'X', section: 'Guides', order: 0 },
+      { path: '/tutorials/x', title: 'X', section: 'Tutorials', order: 0 },
     ]);
-    expect(withExtra.at(-1)?.section).toBe('Guides');
+    expect(withExtra.at(-1)?.section).toBe('Tutorials');
   });
 });

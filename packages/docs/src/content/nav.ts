@@ -20,8 +20,20 @@ export type DocRoute = {
 export type NavItem = { path: string; title: string };
 export type NavGroup = { section: string; items: NavItem[] };
 
-/** Section display order in the sidebar; unknown sections trail, alphabetically. */
-export const SECTION_ORDER = ['Overview', 'Foundations', 'Components'] as const;
+/**
+ * Section display order in the sidebar; unknown sections trail, alphabetically.
+ * The design-system sections (Overview · Foundations · Components) lead, then the
+ * product / developer docs (Guides · Architecture · Reference, from the repo's
+ * real markdown — see content/product-docs.tsx).
+ */
+export const SECTION_ORDER = [
+  'Overview',
+  'Foundations',
+  'Components',
+  'Guides',
+  'Architecture',
+  'Reference',
+] as const;
 
 const DEFAULT_SECTION = 'Overview';
 const DEFAULT_ORDER = 100;
