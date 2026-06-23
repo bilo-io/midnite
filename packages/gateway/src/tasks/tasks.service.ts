@@ -8,6 +8,7 @@ import {
   MAX_TASK_TAG_LENGTH,
   parseBulkLines,
   TaskDependencyError,
+  type Breakdown,
   type BulkCreateTaskResponse,
   type BulkLineResult,
   type Status,
@@ -518,6 +519,81 @@ export class TasksService {
     });
 
     return this.emit('task.created', this.getTask(id));
+  }
+
+  // Turn a structured Breakdown (Phase 28) into a real, dependency-wired board.
+  // Each task is created with its explicit title/kind/priority (no AI classify —
+  // the breakdown already carries them), tagged to the optional project/repo, as
+  // `todo`. Local `ref`s are then resolved to created ids and the Phase 27
+  // dependency edges added; a self-reference, an unknown ref, or an edge that
+  // would close a cycle is **pruned (skipped), not fatal** (Decision §3 / Theme
+  // B). One coalesced `tasks.bulkCreated` board event for the whole batch (no
+  // per-task broadcast), mirroring `createBulk`. Deterministic + LLM-free, so it
+  // never breaks on AI being disabled.
+  createTasksFromBreakdown(
+    breakdown: Breakdown,
+    opts: { projectId?: string; repo?: string } = {},
+  ): Task[] {
+    // Validate the batch repo once (an unknown name 400s up front, like create).
+    const repo = this.resolveRepoReference(opts.repo);
+    const now = new Date().toISOString();
+
+    // 1) Create a task per unique ref, collecting ref → created id. A duplicate
+    // ref is dropped (first wins) so later edge resolution stays unambiguous.
+    const idByRef = new Map<string, string>();
+    const order: Array<{ ref: string; dependsOn: string[]; id: string }> = [];
+    for (const bt of breakdown.tasks) {
+      if (idByRef.has(bt.ref)) continue;
+      const id = randomUUID();
+      this.repo.insertTask({
+        id,
+        title: bt.title,
+        kind: bt.kind ?? 'unknown',
+        status: 'todo',
+        priority: clampPriority(bt.priority),
+        prompt: null,
+        repo,
+        agentId: null,
+        sessionId: null,
+        projectId: opts.projectId ?? null,
+        prUrl: null,
+        createdAt: now,
+        updatedAt: now,
+      });
+      this.repo.insertEvent({
+        id: randomUUID(),
+        taskId: id,
+        at: now,
+        kind: 'task.created',
+        data: JSON.stringify({
+          source: 'breakdown',
+          ref: bt.ref,
+          ...(opts.projectId ? { projectId: opts.projectId } : {}),
+        }),
+      });
+      idByRef.set(bt.ref, id);
+      order.push({ ref: bt.ref, dependsOn: bt.dependsOn, id });
+    }
+
+    // 2) Wire the dependency edges. All tasks exist now, so a ref resolves to a
+    // real id; prune a self-edge, an unknown ref, or one that would close a cycle
+    // (the check sees edges added earlier in this loop). `addDependency` is a
+    // no-op on a duplicate pair.
+    for (const { dependsOn, id } of order) {
+      for (const depRef of dependsOn) {
+        const blockerId = idByRef.get(depRef);
+        if (!blockerId || blockerId === id) continue;
+        if (this.wouldCreateCycle(id, blockerId)) continue;
+        this.repo.addDependency(id, blockerId, now);
+      }
+    }
+
+    // 3) One coalesced board signal for the batch (no per-task broadcast).
+    const ids = order.map((o) => o.id);
+    if (ids.length > 0) {
+      this.bus.emit({ type: 'tasks.bulkCreated', at: new Date().toISOString(), taskIds: ids });
+    }
+    return ids.map((id) => this.getTask(id));
   }
 
   // Reassign a task to a project (or clear it with null). The projectId isn't

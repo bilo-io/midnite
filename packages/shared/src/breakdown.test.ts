@@ -5,6 +5,7 @@ import {
   BreakdownPreviewResponseSchema,
   BreakdownSchema,
   BreakdownTaskSchema,
+  CreateFromBreakdownRequestSchema,
 } from './breakdown.js';
 
 describe('BreakdownTaskSchema', () => {
@@ -99,5 +100,23 @@ describe('BreakdownPreviewResponseSchema', () => {
       isFallback: true,
     });
     expect(result.isFallback).toBe(true);
+  });
+});
+
+describe('CreateFromBreakdownRequestSchema', () => {
+  it('accepts a breakdown with an optional repo default', () => {
+    const parsed = CreateFromBreakdownRequestSchema.parse({
+      breakdown: { tasks: [{ ref: 'a', title: 'A' }] },
+      repo: 'midnite',
+    });
+    expect(parsed.repo).toBe('midnite');
+    expect(parsed.breakdown.tasks[0]?.dependsOn).toEqual([]);
+  });
+
+  it('rejects a missing or malformed breakdown', () => {
+    expect(CreateFromBreakdownRequestSchema.safeParse({}).success).toBe(false);
+    expect(CreateFromBreakdownRequestSchema.safeParse({ breakdown: { tasks: 'x' } }).success).toBe(
+      false,
+    );
   });
 });

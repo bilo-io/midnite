@@ -114,3 +114,28 @@ describe('ProjectsController — export', () => {
     expect(service.exportMarkdown).toHaveBeenCalledWith('p1');
   });
 });
+
+describe('ProjectsController — create-from-breakdown (Phase 28 Theme B)', () => {
+  const fakeTask = { id: 't1', title: 'A', status: 'todo', events: [] } as unknown as Project;
+
+  it('rejects a malformed breakdown body (400)', () => {
+    const { controller } = build();
+    expect(() => controller.createFromBreakdown('p1', { breakdown: { tasks: 'nope' } })).toThrow(
+      BadRequestException,
+    );
+    expect(() => controller.createFromBreakdown('p1', {})).toThrow(BadRequestException);
+  });
+
+  it('delegates a valid breakdown (with optional repo) and wraps the tasks', () => {
+    const createTasksFromBreakdown = vi.fn(() => [fakeTask]);
+    const { controller } = build({ createTasksFromBreakdown });
+    const breakdown = { tasks: [{ ref: 'a', title: 'A', dependsOn: [] }] };
+    const res = controller.createFromBreakdown('p1', { breakdown, repo: 'midnite' });
+    expect(res).toEqual({ tasks: [fakeTask] });
+    expect(createTasksFromBreakdown).toHaveBeenCalledWith(
+      'p1',
+      expect.objectContaining({ tasks: [expect.objectContaining({ ref: 'a', title: 'A' })] }),
+      'midnite',
+    );
+  });
+});

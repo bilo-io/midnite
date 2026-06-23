@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { TaskKindSchema } from './task.js';
+import { TaskKindSchema, TaskSchema } from './task.js';
 
 /**
  * One task in a structured breakdown. `ref` is a **local key** (e.g. `"build-api"`)
@@ -49,3 +49,20 @@ export const BreakdownPreviewResponseSchema = z.object({
   isFallback: z.boolean().default(false),
 });
 export type BreakdownPreviewResponse = z.infer<typeof BreakdownPreviewResponseSchema>;
+
+/**
+ * Request body for the create-with-dependencies step (Theme B): a confirmed/edited
+ * `Breakdown` to turn into a real, edge-wired board. The project path takes the
+ * project from the URL; `repo` is an optional batch default applied to each task.
+ */
+export const CreateFromBreakdownRequestSchema = z.object({
+  breakdown: BreakdownSchema,
+  repo: z.string().optional(),
+});
+export type CreateFromBreakdownRequest = z.infer<typeof CreateFromBreakdownRequestSchema>;
+
+/** Response for the create-from-breakdown step — the created, edge-wired tasks. */
+export const CreateFromBreakdownResponseSchema = z.object({
+  tasks: z.array(TaskSchema),
+});
+export type CreateFromBreakdownResponse = z.infer<typeof CreateFromBreakdownResponseSchema>;
