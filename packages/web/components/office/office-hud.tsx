@@ -10,6 +10,7 @@ import { type OfficeAgent } from '@/lib/office/agents';
 import { useOfficeStore } from '@/lib/office-store';
 import { BoardroomPanel } from './boardroom-panel';
 import { LibraryModal } from './library-modal';
+import { RetroGamesMenu } from './retro-games-menu';
 
 /**
  * React overlay for the office: a controls hint, an online count, proximity
@@ -22,17 +23,20 @@ export function OfficeHud() {
   const nearBoard = useOfficeStore((s) => s.nearBoard);
   const nearKitchen = useOfficeStore((s) => s.nearKitchen);
   const nearLibrary = useOfficeStore((s) => s.nearLibrary);
+  const nearPlaystation = useOfficeStore((s) => s.nearPlaystation);
   const onBreak = useOfficeStore((s) => s.onBreak);
   const active = useOfficeStore((s) => s.active);
   const boardOpen = useOfficeStore((s) => s.boardOpen);
   const libraryOpen = useOfficeStore((s) => s.libraryOpen);
+  const playstationOpen = useOfficeStore((s) => s.playstationOpen);
   const close = useOfficeStore((s) => s.close);
   const closeBoard = useOfficeStore((s) => s.closeBoard);
   const closeLibrary = useOfficeStore((s) => s.closeLibrary);
+  const closePlaystation = useOfficeStore((s) => s.closePlaystation);
 
   const nearby = nearbyId ? agents.find((a) => a.id === nearbyId) : undefined;
   const activeAgent = active ? agents.find((a) => a.id === active.id) : undefined;
-  const panelOpen = active !== null || boardOpen || libraryOpen;
+  const panelOpen = active !== null || boardOpen || libraryOpen || playstationOpen;
 
   return (
     <div className="pointer-events-none absolute inset-0 z-20">
@@ -64,6 +68,10 @@ export function OfficeHud() {
         <Prompt>
           Press <Key>E</Key> to browse the <span className="font-semibold">Library</span>
         </Prompt>
+      ) : nearPlaystation ? (
+        <Prompt>
+          Press <Key>E</Key> to open the <span className="font-semibold">Game Library</span>
+        </Prompt>
       ) : nearby ? (
         <Prompt>
           Press <Key>E</Key> to open <span className="font-semibold">{nearby.name}</span>’s session
@@ -79,6 +87,8 @@ export function OfficeHud() {
       {boardOpen ? <BoardroomPanel onClose={closeBoard} /> : null}
 
       {libraryOpen ? <LibraryModal onClose={closeLibrary} /> : null}
+
+      {playstationOpen ? <RetroGamesMenu onClose={closePlaystation} /> : null}
     </div>
   );
 }

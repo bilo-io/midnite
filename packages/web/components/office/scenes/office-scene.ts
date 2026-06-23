@@ -130,10 +130,12 @@ class OfficeScene extends Phaser.Scene {
   private boardCenter = { x: 0, y: 0 };
   private kitchenCenter = { x: 0, y: 0 };
   private libraryCenter = { x: 0, y: 0 };
+  private playstationCenter = { x: 0, y: 0 };
   private lastNearby: string | null = null;
   private nearBoardFlag = false;
   private nearKitchenFlag = false;
   private nearLibraryFlag = false;
+  private nearPlaystationFlag = false;
   /** ☕ shown over the player while on a coffee break. */
   private breakIcon!: Phaser.GameObjects.Text;
   private facing: 'down' | 'up' | 'side' = 'down';
@@ -219,8 +221,8 @@ class OfficeScene extends Phaser.Scene {
     this.unsub = useOfficeStore.subscribe((state, prev) => {
       if (!this.alive) return;
       if (state.agents !== prev.agents) this.renderActors(state.agents);
-      const frozen = state.active !== null || state.boardOpen || state.libraryOpen;
-      const wasFrozen = prev.active !== null || prev.boardOpen || prev.libraryOpen;
+      const frozen = state.active !== null || state.boardOpen || state.libraryOpen || state.playstationOpen;
+      const wasFrozen = prev.active !== null || prev.boardOpen || prev.libraryOpen || prev.playstationOpen;
       if (frozen !== wasFrozen) {
         this.inputEnabled = !frozen;
         const kb = this.input.keyboard;
@@ -300,6 +302,14 @@ class OfficeScene extends Phaser.Scene {
     if (nearLibrary !== this.nearLibraryFlag) {
       this.nearLibraryFlag = nearLibrary;
       useOfficeStore.getState().setNearLibrary(nearLibrary);
+    }
+
+    // PlayStation console proximity.
+    const psDist = (px - this.playstationCenter.x) ** 2 + (py - this.playstationCenter.y) ** 2;
+    const nearPlaystation = psDist <= (PROXIMITY * 1.5) ** 2;
+    if (nearPlaystation !== this.nearPlaystationFlag) {
+      this.nearPlaystationFlag = nearPlaystation;
+      useOfficeStore.getState().setNearPlaystation(nearPlaystation);
     }
 
     // ☕ floats over the player while on a break.
@@ -769,6 +779,10 @@ class OfficeScene extends Phaser.Scene {
       useOfficeStore.getState().openLibrary();
       return;
     }
+    if (this.nearPlaystationFlag) {
+      useOfficeStore.getState().openPlaystation();
+      return;
+    }
     if (this.lastNearby) useOfficeStore.getState().open(this.lastNearby);
   }
 
@@ -891,7 +905,9 @@ class OfficeScene extends Phaser.Scene {
     // armchair facing it, and a low table holding four controllers. Couches are
     // collidable; the L's left arm is rotated upright (its `angle`).
     this.solids.push(this.staticDecor(TV_POS, TEX.tv, 5));
-    this.add.image(center(CONSOLE_POS.x), center(CONSOLE_POS.y), TEX.console).setDepth(5);
+    const console_ = this.add.image(center(CONSOLE_POS.x), center(CONSOLE_POS.y), TEX.console).setDepth(5);
+    // The console is the interactable anchor — player walks up + E opens the retro-games menu.
+    this.playstationCenter = { x: console_.x, y: console_.y + TILE };
     for (const c of COUCHES) {
       const couch = this.staticDecor(c, TEX.couch, 2);
       if (c.angle) couch.setAngle(c.angle).refreshBody();
