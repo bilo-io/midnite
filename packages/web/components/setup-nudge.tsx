@@ -23,7 +23,7 @@ const DISMISS_KEY = 'midnite.setup-nudge.dismissed';
  * and dismissible for the session. Rendered once in the main layout so it covers
  * every primary surface.
  */
-export function SetupNudge() {
+export function SetupNudge({ onOpenWizard }: { onOpenWizard?: () => void } = {}) {
   const pathname = usePathname();
   const [status, setStatus] = useState<SetupStatus | null>(null);
   // Assume dismissed until the session flag is read, so a prior dismiss never
@@ -137,10 +137,20 @@ export function SetupNudge() {
       </ul>
 
       <div className="mt-3 flex justify-end">
-        <Link href={primaryHref} className={buttonVariants({ variant: 'default', size: 'sm' })}>
-          {primary ? `Set up ${primary.label}` : 'Open settings'}
-          <ArrowRight className="ml-1 h-3.5 w-3.5" />
-        </Link>
+        {onOpenWizard ? (
+          <button
+            type="button"
+            onClick={onOpenWizard}
+            className={buttonVariants({ variant: 'default', size: 'sm' })}
+          >
+            Open setup wizard <ArrowRight className="ml-1 h-3.5 w-3.5" />
+          </button>
+        ) : (
+          <Link href={primaryHref} className={buttonVariants({ variant: 'default', size: 'sm' })}>
+            {primary ? `Set up ${primary.label}` : 'Open settings'}
+            <ArrowRight className="ml-1 h-3.5 w-3.5" />
+          </Link>
+        )}
       </div>
     </div>
   );
