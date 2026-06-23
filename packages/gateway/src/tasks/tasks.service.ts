@@ -10,6 +10,7 @@ import {
   TaskDependencyError,
   type BulkCreateTaskResponse,
   type BulkLineResult,
+  type CheckRun,
   type Status,
   type Task,
   type TaskCounts,
@@ -633,6 +634,21 @@ export class TasksService {
       out.push(id);
     }
     return out;
+  }
+
+  // ── Check-run persistence (Phase 30 B2) ────────────────────────────────────
+
+  /** Persist a completed gate/manual/auto-fix check run for a task. */
+  saveCheckRun(run: CheckRun): void {
+    this.repo.insertCheckRun({
+      id: run.id,
+      taskId: run.taskId,
+      trigger: run.trigger,
+      passed: run.passed ? 1 : 0,
+      startedAt: run.startedAt,
+      finishedAt: run.finishedAt,
+      results: JSON.stringify(run.results),
+    });
   }
 
   // Would adding `taskId → dependsOnId` close a cycle? It does iff `dependsOnId`
