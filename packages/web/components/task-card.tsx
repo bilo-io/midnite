@@ -1,6 +1,7 @@
 import { Check } from 'lucide-react';
 import { isAnsweredQuestion, type Task } from '@midnite/shared';
 import { BlockedBadge } from '@/components/blocked-badge';
+import { PrStatusChip } from '@/components/pr-status-chip';
 import { ProjectTag } from '@/components/project-tag';
 import { RepoChip } from '@/components/repo-chip';
 import { SourceIcon } from '@/components/source-icon';
@@ -85,6 +86,7 @@ export function TaskCard({
         {project ? <ProjectTag tag={project.tag} color={project.color} /> : null}
         {task.repo ? <RepoChip repo={task.repo} /> : null}
         {isBlocked ? <BlockedBadge count={blockedBy ?? 0} /> : null}
+        {task.prStatus ? <PrStatusChip status={task.prStatus} /> : null}
       </div>
       <p className="text-sm font-medium leading-snug">{task.title}</p>
       {task.tags.length > 0 ? (

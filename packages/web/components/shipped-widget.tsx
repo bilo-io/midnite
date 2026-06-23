@@ -3,6 +3,7 @@
 import { ExternalLink, GitPullRequest, RefreshCw, Rocket } from 'lucide-react';
 import type { Task } from '@midnite/shared';
 import { getTasks } from '@/lib/api';
+import { PrStatusChip } from '@/components/pr-status-chip';
 import { usePolling } from '@/lib/use-polling';
 import { cn, relativeTime } from '@/lib/utils';
 import { WidgetLoader } from './spinner';
@@ -70,17 +71,23 @@ function ShippedRow({ task }: { task: Task }) {
         )}
       </div>
       {task.prUrl ? (
-        <a
-          href={task.prUrl}
-          target="_blank"
-          rel="noreferrer noopener"
-          className="mt-0.5 inline-flex max-w-full items-center gap-1 text-[11px] text-primary hover:underline"
-          title={task.prUrl}
-        >
-          <GitPullRequest className="h-3 w-3 shrink-0" />
-          <span className="truncate">{prLabel(task.prUrl)}</span>
-          <ExternalLink className="h-2.5 w-2.5 shrink-0 opacity-60" />
-        </a>
+        <div className="mt-0.5 flex items-center gap-1.5">
+          {task.prStatus ? (
+            <PrStatusChip status={task.prStatus} />
+          ) : (
+            <GitPullRequest className="h-3 w-3 shrink-0 text-muted-foreground" />
+          )}
+          <a
+            href={task.prUrl}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="inline-flex min-w-0 items-center gap-1 text-[11px] text-primary hover:underline"
+            title={task.prUrl}
+          >
+            <span className="truncate">{prLabel(task.prUrl)}</span>
+            <ExternalLink className="h-2.5 w-2.5 shrink-0 opacity-60" />
+          </a>
+        </div>
       ) : (
         <span className="mt-0.5 block text-[11px] text-muted-foreground">no PR linked</span>
       )}
