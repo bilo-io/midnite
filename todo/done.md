@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 10 C2: agents + all-projects widget stories (PR #146)
+
+Storied two more multi-endpoint dashboard widgets (Theme C2 interaction tests), following the established `installMockFetch` pattern.
+
+- [x] **`agents-widget`** — two endpoints (`GET /agents` config + `POST /agents/ping`); Default / no-sub-agents+heartbeat-off / `/agents` 500 error. The ping handler is listed before `/agents` so the broader substring match can't swallow it.
+- [x] **`all-projects-widget`** — `GET /projects` + `GET /tasks`, reusing `@/stories/fixtures`; loaded grid / empty / `/projects` 500 error. Stories inherit the `QueryClientProvider` from `.storybook/preview.tsx` (widgets read via `usePolling` → TanStack Query). CI (`moon ci`) green.
+- [ ] C2 still leaves the chart widgets (`throughput`/`usage`/`system-monitor`, needing a pinned clock), `market-*`, and `boardroom-panel`.
+
 ## 2026-06-23 — Phase 26 Theme C: config reference page (PR #145)
 
 Closed Theme C's last deferred item — the `midnite.json` config reference — completing Theme C. Resolved the open hand-author-vs-extract question: the schema's field docs live in `//` comments, not zod `.describe()`, so a schema-extract would emit bare type/default tables and lose the prose. Hand-authored instead.
