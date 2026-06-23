@@ -14,6 +14,9 @@ import {
   X,
 } from 'lucide-react';
 import {
+  AGENT_CLI_HOMEPAGE_URL,
+  AGENT_CLI_LABEL,
+  LLM_PROVIDER_LABEL,
   type LlmProvider,
   LlmProviderSchema,
   type ProvidersResponse,
@@ -29,7 +32,7 @@ import {
 } from '@/lib/app-settings';
 import {
   createRepo,
-  getEnvironment,
+  getCliStatuses,
   getProviders,
   getSetupStatus,
   setActiveProvider,
@@ -75,7 +78,7 @@ function ProviderStep({ onDone }: { onDone: () => void }) {
     setError('');
     try {
       if (key.trim()) {
-        await updateProvider(selected, { key: key.trim() });
+        await updateProvider(selected, { apiKey: key.trim() });
       }
       await setActiveProvider(selected);
       onDone();
@@ -86,8 +89,8 @@ function ProviderStep({ onDone }: { onDone: () => void }) {
     }
   };
 
-  const active = providers?.providers.find((p) => p.id === selected);
-  const hasKey = !!active?.keySet;
+  const active = providers?.providers.find((p) => p.provider === selected);
+  const hasKey = !!active?.hasKey;
 
   return (
     <div className="space-y-4">
@@ -109,7 +112,7 @@ function ProviderStep({ onDone }: { onDone: () => void }) {
             className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           >
             {providers?.providers.map((p) => (
-              <option key={p.id} value={p.id}>{p.label}</option>
+              <option key={p.provider} value={p.provider}>{LLM_PROVIDER_LABEL[p.provider] ?? p.provider}</option>
             ))}
           </select>
         </div>
@@ -146,18 +149,16 @@ function ProviderStep({ onDone }: { onDone: () => void }) {
 // ── step: Tools ────────────────────────────────────────────────────────────────
 
 function ToolsStep({ onDone }: { onDone: () => void }) {
-  const [env, setEnv] = useState<Awaited<ReturnType<typeof getEnvironment>> | null>(null);
+  const [statuses, setStatuses] = useState<Awaited<ReturnType<typeof getCliStatuses>> | null>(null);
 
   useEffect(() => {
-    getEnvironment().then(setEnv).catch(() => {});
+    getCliStatuses().then(setStatuses).catch(() => {});
   }, []);
 
-  const refresh = () => getEnvironment().then(setEnv).catch(() => {});
+  const refresh = () => getCliStatuses().then(setStatuses).catch(() => {});
 
-  const REQUIRED: Array<{ id: string; name: string; href: string }> = [
-    { id: 'claude', name: 'claude (Claude Code)', href: 'https://claude.ai/code' },
-    { id: 'gh', name: 'gh (GitHub CLI)', href: 'https://cli.github.com' },
-  ];
+  // The two required CLIs for the core workflow.
+  const REQUIRED = ['claude', 'gh'] as const;
 
   return (
     <div className="space-y-4">
@@ -169,17 +170,19 @@ function ToolsStep({ onDone }: { onDone: () => void }) {
       </div>
 
       <div className="space-y-2">
-        {REQUIRED.map(({ id, name, href }) => {
-          const os = env?.os;
-          const toolStatus = os ? env?.byOs[os]?.find((t) => t.meta.id === id) : undefined;
-          const ok = toolStatus?.status && !toolStatus.status.missing && toolStatus.status.meetsMin;
+        {REQUIRED.map((id) => {
+          const cliStatus = statuses?.find((s) => s.cli === id);
+          const ok = cliStatus?.installed === true;
+          const label = id === 'gh' ? 'gh (GitHub CLI)' : (AGENT_CLI_LABEL[id as keyof typeof AGENT_CLI_LABEL] ?? id);
+          const href = id === 'gh' ? 'https://cli.github.com' : (AGENT_CLI_HOMEPAGE_URL[id as keyof typeof AGENT_CLI_HOMEPAGE_URL] ?? 'https://claude.ai/code');
           return (
             <div key={id} className="flex items-center gap-3 rounded-lg border border-border/60 px-3 py-2.5">
               <span
                 className="h-2 w-2 shrink-0 rounded-full"
                 style={{ background: ok ? SETUP_DOT.ok : SETUP_DOT.missing }}
               />
-              <span className="flex-1 text-sm font-medium">{name}</span>
+              <span className="flex-1 text-sm font-medium">{label}</span>
+              {cliStatus?.version ? <span className="text-xs text-muted-foreground">{cliStatus.version}</span> : null}
               {!ok ? (
                 <a
                   href={href}

@@ -18,6 +18,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@midnite/shared": "workspace:*",
     "@midnite/ui": "workspace:*",
+    "@tanstack/react-query": "^5.101.0",
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.5.0",
     "@xyflow/react": "^12.3.0",
@@ -40,9 +41,9 @@
     "zustand": "^5.0.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.0",
     "@storybook/addon-a11y": "10.4.3",
     "@storybook/addon-vitest": "10.4.3",
-    "@playwright/test": "^1.61.0",
     "@storybook/nextjs-vite": "^10.4.3",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
