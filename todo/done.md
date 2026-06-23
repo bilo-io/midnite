@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 28 A+D: BreakdownService + `midnite plan` (PR #155)
+
+Added the LLM generation step (Theme A remaining) and the standalone goal→tasks flow (Theme D).
+
+- [x] `BreakdownService` in `AgentModule`: plan-model call → `Breakdown`, prunes bad/cyclic refs, fail-open fallback
+- [x] `BREAKDOWN_SYSTEM_PROMPT` + `STANDALONE_BREAKDOWN_SYSTEM_PROMPT` (conservative dep inference, Decision §3)
+- [x] `POST /projects/:id/plan/draft-breakdown` — project-scoped preview
+- [x] `POST /tasks/breakdown` + `POST /tasks/breakdown/create` — standalone goal → board
+- [x] `midnite plan "<goal>"` CLI command — table preview → confirm → create
+- [x] 6 new unit tests for `pruneBreakdown`
+
 ## 2026-06-23 — Phase 32 B+C: live board reducer + enhanced task cards (PR #154)
 
 Completed the live board panel and pool panel for `midnite watch`. The inline reducer is now shared, bulkCreated properly triggers a refetch, and task cards show id/priority/repo.
