@@ -45,7 +45,7 @@ The engine everything keys off: what a check *is*, and a service that runs a lis
 Wire the runner into the `markDone` seam so completion is verified, and persist every run.
 
 ### B1. `task_check_runs` table + repository — **S–M**
-- [ ] Normalized `task_check_runs` child table (`id`, `task_id`, `trigger`, `passed`, `started_at`, `finished_at`, `results` JSON; indexed by `task_id`) — forward-only migration `0031`, mirroring `task_events`. Repository methods (Drizzle only): `insertRun`, `runsForTask(taskId)`, `latestRunForTask(taskId)`.
+- [x] ✅ Normalized `task_check_runs` child table (`id`, `task_id`, `trigger`, `passed`, `started_at`, `finished_at`, `results` JSON; indexed by `task_id`) — forward-only migration `0037` (PR #125), mirroring `task_events`. Repository methods (Drizzle only): `insertCheckRun`, `checkRunsForTask(taskId)`, `latestCheckRunForTask(taskId)`.
 
 ### B2. Intercept the seam — **M**
 - [ ] Route the Stop-hook completion through a single orchestration method (Decision §2 — recommend it lives in [`AgentRunnerService`](../packages/gateway/src/pool/agent-runner.service.ts), which already owns the slot/session/timeout) instead of the controller calling `markDone` + `complete` directly. The controller stays thin: `runner.completeWithChecks(sessionId, prUrl)`.

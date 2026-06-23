@@ -131,6 +131,32 @@ export const taskDependencies = sqliteTable(
   }),
 );
 
+// Quality-gate run history (Phase 30 B1): one row per `done`-gate run for a
+// task. `results` is a JSON-serialised `CheckResult[]`. No new task status —
+// "verifying"/"failing" is derived from the latest row + task events (B3).
+// Plain intra-domain id reference — no cross-domain FK.
+export const taskCheckRuns = sqliteTable(
+  'task_check_runs',
+  {
+    id: text('id').primaryKey(),
+    taskId: text('task_id').notNull(),
+    /** 'gate' | 'manual' | 'auto-fix' — mirrors shared CheckTrigger. */
+    trigger: text('trigger').notNull(),
+    /** 0 = failed, 1 = passed. */
+    passed: integer('passed').notNull(),
+    startedAt: text('started_at').notNull(),
+    finishedAt: text('finished_at').notNull(),
+    /** JSON-serialised CheckResult[]. */
+    results: text('results').notNull(),
+  },
+  (t) => ({
+    taskIdx: index('task_check_runs_task_idx').on(t.taskId),
+  }),
+);
+
+export type TaskCheckRunRow = typeof taskCheckRuns.$inferSelect;
+export type TaskCheckRunInsert = typeof taskCheckRuns.$inferInsert;
+
 export const projects = sqliteTable('projects', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),

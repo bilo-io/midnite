@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import type { CheckResult } from '@midnite/shared';
 import { createTestDb } from '../test';
 import { TasksRepository } from './tasks.repository';
-import type { TaskInsert } from '../db/schema';
+import type { TaskCheckRunInsert, TaskInsert } from '../db/schema';
 
 function makeRepo() {
   return new TasksRepository(createTestDb().db);
@@ -65,6 +66,105 @@ describe('TasksRepository', () => {
     // Clearing persists an empty set, not null garbage.
     repo.setTags('t1', [], '2026-06-03T00:00:00.000Z');
     expect(repo.hydrate(repo.getTask('t1')!).tags).toEqual([]);
+  });
+});
+
+const passingResult: CheckResult = {
+  name: 'unit',
+  command: 'pnpm test',
+  exitCode: 0,
+  passed: true,
+  durationMs: 120,
+  output: '',
+};
+
+const failingResult: CheckResult = {
+  name: 'lint',
+  command: 'pnpm lint',
+  exitCode: 1,
+  passed: false,
+  durationMs: 50,
+  output: 'error: unused variable',
+};
+
+function makeRun(id: string, overrides: Partial<TaskCheckRunInsert> = {}): TaskCheckRunInsert {
+  return {
+    id,
+    taskId: 't1',
+    trigger: 'gate',
+    passed: 1,
+    startedAt: `2026-06-01T00:0${id.slice(-1)}:00.000Z`,
+    finishedAt: `2026-06-01T00:0${id.slice(-1)}:01.000Z`,
+    results: JSON.stringify([passingResult]),
+    ...overrides,
+  };
+}
+
+describe('TasksRepository — check runs', () => {
+  beforeEach(() => {
+    repo = makeRepo();
+    insert('t1', {});
+  });
+
+  it('insertCheckRun + checkRunsForTask round-trips a run with parsed results', () => {
+    repo.insertCheckRun(makeRun('r1'));
+    const runs = repo.checkRunsForTask('t1');
+    expect(runs).toHaveLength(1);
+    expect(runs[0]).toMatchObject({
+      id: 'r1',
+      taskId: 't1',
+      trigger: 'gate',
+      passed: true,
+      results: [passingResult],
+    });
+  });
+
+  it('checkRunsForTask returns runs ordered oldest-first', () => {
+    repo.insertCheckRun(makeRun('r2', { startedAt: '2026-06-01T00:02:00.000Z' }));
+    repo.insertCheckRun(makeRun('r1', { startedAt: '2026-06-01T00:01:00.000Z' }));
+    const ids = repo.checkRunsForTask('t1').map((r) => r.id);
+    expect(ids).toEqual(['r1', 'r2']);
+  });
+
+  it('latestCheckRunForTask returns the most recent run', () => {
+    repo.insertCheckRun(makeRun('r1', { startedAt: '2026-06-01T00:01:00.000Z' }));
+    repo.insertCheckRun(makeRun('r2', { startedAt: '2026-06-01T00:02:00.000Z' }));
+    expect(repo.latestCheckRunForTask('t1')!.id).toBe('r2');
+  });
+
+  it('latestCheckRunForTask returns null when no runs exist', () => {
+    expect(repo.latestCheckRunForTask('t1')).toBeNull();
+  });
+
+  it('stores passed=false correctly and parses multi-result JSON', () => {
+    repo.insertCheckRun(makeRun('r1', {
+      passed: 0,
+      results: JSON.stringify([passingResult, failingResult]),
+    }));
+    const run = repo.latestCheckRunForTask('t1')!;
+    expect(run.passed).toBe(false);
+    expect(run.results).toHaveLength(2);
+    expect(run.results[1]).toMatchObject({ name: 'lint', passed: false });
+  });
+
+  it('trigger field round-trips all valid values', () => {
+    for (const trigger of ['gate', 'manual', 'auto-fix'] as const) {
+      repo.insertCheckRun({ ...makeRun(`r-${trigger}`), trigger });
+      const run = repo.latestCheckRunForTask('t1')!;
+      expect(run.trigger).toBe(trigger);
+    }
+  });
+
+  it('checkRunsForTask returns [] for a task with no runs', () => {
+    expect(repo.checkRunsForTask('t1')).toEqual([]);
+  });
+
+  it('checkRunsForTask scopes to the given taskId', () => {
+    insert('t2', {});
+    repo.insertCheckRun(makeRun('r1', { taskId: 't1' }));
+    repo.insertCheckRun(makeRun('r2', { taskId: 't2' }));
+    expect(repo.checkRunsForTask('t1').map((r) => r.id)).toEqual(['r1']);
+    expect(repo.checkRunsForTask('t2').map((r) => r.id)).toEqual(['r2']);
   });
 });
 

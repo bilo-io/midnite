@@ -2,6 +2,9 @@ import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, desc, eq, inArray, isNotNull, notInArray, or, sql } from 'drizzle-orm';
 import {
   detectSourceKind,
+  type CheckResult,
+  type CheckRun,
+  type CheckTrigger,
   type PrStatus,
   type Status,
   type Task,
@@ -13,6 +16,7 @@ import { DB_TOKEN, type MidniteDb } from '../db/db.module';
 import {
   prStatus,
   taskAttachments,
+  taskCheckRuns,
   taskDependencies,
   taskEvents,
   taskLinks,
@@ -20,11 +24,32 @@ import {
   type PrStatusInsert,
   type PrStatusRow,
   type TaskAttachmentInsert,
+  type TaskCheckRunInsert,
   type TaskEventInsert,
   type TaskLinkInsert,
   type TaskInsert,
   type TaskRow,
 } from '../db/schema';
+
+function checkRunRowToCheckRun(row: {
+  id: string;
+  taskId: string;
+  trigger: string;
+  passed: number;
+  startedAt: string;
+  finishedAt: string;
+  results: string;
+}): CheckRun {
+  return {
+    id: row.id,
+    taskId: row.taskId,
+    trigger: row.trigger as CheckTrigger,
+    passed: row.passed === 1,
+    startedAt: row.startedAt,
+    finishedAt: row.finishedAt,
+    results: JSON.parse(row.results) as CheckResult[],
+  };
+}
 
 /** Parse the JSON-array `tags` column to a string[]; tolerant of null/legacy/garbage. */
 function parseTags(raw: string | null): string[] {
@@ -405,5 +430,32 @@ export class TasksRepository {
       });
     }
     return links;
+  }
+
+  // ── Check-run history (Phase 30 B1) ────────────────────────────────────────
+
+  insertCheckRun(row: TaskCheckRunInsert): void {
+    this.db.insert(taskCheckRuns).values(row).run();
+  }
+
+  checkRunsForTask(taskId: string): CheckRun[] {
+    return this.db
+      .select()
+      .from(taskCheckRuns)
+      .where(eq(taskCheckRuns.taskId, taskId))
+      .orderBy(asc(taskCheckRuns.startedAt))
+      .all()
+      .map(checkRunRowToCheckRun);
+  }
+
+  latestCheckRunForTask(taskId: string): CheckRun | null {
+    const row = this.db
+      .select()
+      .from(taskCheckRuns)
+      .where(eq(taskCheckRuns.taskId, taskId))
+      .orderBy(desc(taskCheckRuns.startedAt))
+      .limit(1)
+      .all()[0];
+    return row ? checkRunRowToCheckRun(row) : null;
   }
 }
