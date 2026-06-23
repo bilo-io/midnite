@@ -34,14 +34,14 @@ The plan model emits a structured, ordered task list — not just prose.
 
 ---
 
-## Theme C — Goal → planned board flow (web) — **M**
+## Theme C — Goal → planned board flow (web) — **M** — ✅ DONE (PR #160)
 
 Preview the structure before committing — conservative inference is only safe if it's editable (Decision §3).
 
-- [ ] **Breakdown preview** — extend the project plan UI (the existing draft-plan affordance): after generating, show the **structured, dependency-ordered** tasks (title · kind · priority · "blocked by …") in a reviewable list/graph, not raw checkboxes.
-- [ ] **Editable** — let the user prune tasks, fix titles/priorities, and add/remove dependency edges **before** creating; then confirm → `createTasksFromBreakdown`. The board appears already sequenced (Phase 27 chips reflect the blockers).
-- [ ] Keep the **markdown plan** viewable alongside (it remains the readable artifact); the structured breakdown is the actionable one.
-- [ ] Client calls in [`lib/api.ts`](../packages/web/lib/api.ts); component tests (preview renders the graph; edit removes an edge; confirm calls the breakdown create).
+- [x] ✅ (PR #160) **Breakdown preview** — `PlanPanel` gained a **Checklist | Breakdown** tab toggle; the Breakdown tab generates a structured, dependency-ordered preview (`POST /plan/draft-breakdown`) rendered as an editable list (title · kind · priority · "blocked by …" chips), not raw checkboxes.
+- [x] ✅ (PR #160) **Editable** — new `BreakdownEditor`: inline title/kind/priority edits, removable blocker chips + add-blocker picker, prune (strips the task from siblings' `dependsOn`); confirm → `createTasksFromBreakdown` so the board appears already sequenced (Phase 27 chips). Cycles/self/unknown pruned by the gateway on create.
+- [x] ✅ (PR #160) **Markdown plan** stays viewable alongside under the Checklist tab (unchanged); LLM-disabled fallback shows a notice and still allows edit/create.
+- [x] ✅ (PR #160) Client calls `draftProjectBreakdown` / `createTasksFromBreakdown` in [`lib/api.ts`](../packages/web/lib/api.ts); unit tests (editor edit/prune/edge-removal, panel generate→confirm + fallback) + a live-gateway Playwright e2e.
 
 ---
 
