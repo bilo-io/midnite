@@ -74,3 +74,43 @@ describe('ProjectsController — domain errors propagate', () => {
     expect(() => controller.get('p9')).toThrow(NotFoundException);
   });
 });
+
+describe('ProjectsController — export', () => {
+  function fakeReply() {
+    const h = vi.fn().mockReturnThis();
+    const reply = { header: h, send: vi.fn() };
+    return reply as unknown as import('fastify').FastifyReply;
+  }
+
+  it('rejects an unsupported format with 400', () => {
+    const { controller } = build({ exportMarkdown: vi.fn() });
+    const reply = fakeReply();
+    expect(() => controller.exportProject('p1', reply, 'html')).toThrow(BadRequestException);
+  });
+
+  it('rejects a client-rendered format (pdf) with 400', () => {
+    const { controller } = build({ exportMarkdown: vi.fn() });
+    const reply = fakeReply();
+    expect(() => controller.exportProject('p1', reply, 'pdf')).toThrow(BadRequestException);
+  });
+
+  it('serves markdown via reply for format=md', () => {
+    const { controller, service } = build({
+      exportMarkdown: vi.fn(() => ({ filename: 'my-project-2026.md', markdown: '# My Project\n' })),
+    });
+    const reply = fakeReply();
+    controller.exportProject('p1', reply, 'md');
+    expect(service.exportMarkdown).toHaveBeenCalledWith('p1');
+    expect(reply.header).toHaveBeenCalledWith('content-type', expect.stringContaining('text/markdown'));
+    expect(reply.send).toHaveBeenCalledWith('# My Project\n');
+  });
+
+  it('defaults to md when no format supplied', () => {
+    const { controller, service } = build({
+      exportMarkdown: vi.fn(() => ({ filename: 'p.md', markdown: '# P\n' })),
+    });
+    const reply = fakeReply();
+    controller.exportProject('p1', reply);
+    expect(service.exportMarkdown).toHaveBeenCalledWith('p1');
+  });
+});

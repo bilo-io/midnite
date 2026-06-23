@@ -15,6 +15,8 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
+import { ExportMenu } from '@/components/export-menu';
+import { exportProjectMarkdown } from '@/lib/api';
 import {
   MAX_SOURCES_PER_PROJECT,
   MAX_TAG_LENGTH,
@@ -327,9 +329,18 @@ export function ProjectModal({
         >
           <header className="flex items-center justify-between gap-3 border-b border-border/60 px-5 py-3.5">
             <h2 className="text-sm font-semibold">{isEdit ? 'Edit project' : 'New project'}</h2>
-            <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-1">
+              {isEdit && project ? (
+                <ExportMenu
+                  filename={`${(project.name || 'project').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40)}`}
+                  title={project.name}
+                  fetchMarkdown={() => exportProjectMarkdown(project.id)}
+                />
+              ) : null}
+              <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </header>
 
           <div role="tablist" aria-label="Project sections" className="flex items-center gap-1 border-b border-border/60 px-3">
