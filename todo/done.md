@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-23 — Phase 28 Theme B: create-with-dependencies from a Breakdown (PR #135)
+
+The gateway half of structured planning: turn a confirmed `Breakdown` (Theme A's contract, #129) into a real, **dependency-wired** board. The piece a later preview/confirm UI (Theme C) and standalone goal flow (Theme D) both call; fed a `Breakdown` directly, so it's deterministic + fully testable without the LLM.
+
+- [x] **`TasksService.createTasksFromBreakdown(breakdown, { projectId?, repo? })`** — create a task per local `ref` with its **explicit** title/kind/priority (no AI re-classify; the breakdown is already typed), tagged to the optional project/repo, as `todo`; then resolve local refs → created ids and wire the **Phase 27 dependency edges**.
+- [x] **Conservative pruning, never fatal** (Decision §3): a self-reference / unknown ref / cycle-closing edge is skipped (reusing `wouldCreateCycle`); a duplicate `ref` is de-duped (first wins). **One coalesced `tasks.bulkCreated`** event (no per-task broadcast).
+- [x] **Project path:** `ProjectsService.createTasksFromBreakdown` delegates; `POST /projects/:id/plan/create-from-breakdown`. The flat `createTasksFromPlan` path is untouched (Decision §1/§6). Shared: `CreateFromBreakdownRequest`/`Response` zod.
+- [x] **Tests:** gateway `:memory:` (explicit fields applied + project-tagged; blocker edge gates `listReadyTodoTasks`; independent tasks parallel; unknown/self/cycle pruned not fatal; dup de-duped; one coalesced event; empty no-op), controller route validation+delegation, shared `CreateFromBreakdownRequestSchema`.
+
+**Scope notes:** the create step is intentionally **LLM-free** — the doc's "reuse `createFromPrompt` classify/triage" was dropped since the breakdown already carries title/kind, and the "LLM-disabled → flat" fallback belongs to Theme A's *generation* step (still open), not this create mechanism. The core lives in `TasksService` so Theme D's standalone `POST /tasks/breakdown` can reuse it. **Still open:** Theme A's breakdown-LLM step + prompt; Theme C (web preview/edit); Theme D (standalone endpoint + `midnite plan`).
+
 ## 2026-06-23 — Phase 22 A3: MetricsModule + GET /metrics/ops (PR #133)
 
 Completes the ops-metrics spine. `MetricsService` wires `GaugeStore` + `MetricsRepository`; `MetricsController` serves `GET /metrics/ops`; `MetricsModule` is registered in `AppModule`. `OpsSummary`/`MetricsGauges`/etc. zod schemas in shared. Phase 22 Theme A is now fully done.

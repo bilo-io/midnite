@@ -28,13 +28,9 @@ The plan model emits a structured, ordered task list — not just prose.
 
 ---
 
-## Theme B — Create-with-dependencies (gateway) — **M**
+## Theme B — Create-with-dependencies (gateway) — **M** — ✅ DONE (PR #135)
 
-Turn a `Breakdown` into a real, edge-wired board.
-
-- [ ] **`createTasksFromBreakdown`** (projects service for the project path; tasks service for standalone) — create each `BreakdownTask` (reusing `createFromPrompt`/`createBulk` so classify/triage + coalesced events still apply, with the breakdown's `kind`/`priority`/`projectId` applied), **then wire the Phase 27 dependency edges** by resolving local `ref`s → created task ids, added in topological order. One coalesced board event for the batch.
-- [ ] **Keep the flat path** — today's `createTasksFromPlan(titles[])` stays for the markdown-checkbox flow / as the LLM-disabled fallback (Decision §1 + fail-open); the structured path is additive.
-- [ ] Gateway tests (`:memory:`): a breakdown with a chain creates tasks **and** the right edges (no cycles); priorities/kinds applied; a bad/cyclic ref is dropped not fatal; LLM-disabled falls back to flat tasks.
+✅ **Landed 2026-06-23 (PR #135)** — see [`done.md`](done.md). `TasksService.createTasksFromBreakdown(breakdown, { projectId?, repo? })` creates a task per local `ref` with its **explicit** title/kind/priority (deterministic, no AI re-classify — the breakdown already carries them), then resolves refs → ids and wires the Phase 27 edges, **pruning** self/unknown/cycle (via `wouldCreateCycle`), one coalesced `tasks.bulkCreated`. `ProjectsService` delegates; exposed via `POST /projects/:id/plan/create-from-breakdown`; the flat `createTasksFromPlan` path is untouched. **Notes for follow-ups:** the create step is intentionally LLM-free (the doc's "reuse createFromPrompt classify/triage" was dropped since the breakdown is already typed; the "LLM-disabled → flat" fallback belongs to Theme A's generation step, not this create mechanism). The core lives in `TasksService` so the standalone path (Theme D `POST /tasks/breakdown`) can reuse it.
 
 ---
 
