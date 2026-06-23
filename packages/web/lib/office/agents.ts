@@ -4,7 +4,7 @@
  * `SESSION_STATUS_*` constants, so a status looks identical in both places.
  */
 
-import type { SessionSummary, Task } from '@midnite/shared';
+import type { AgentActivityEvent, AgentAttentionEvent, SessionSummary, Status, Task } from '@midnite/shared';
 import { SESSION_STATUS_HUE, SESSION_STATUS_LABEL } from '@/components/session-card';
 
 export type OfficeStatus = SessionSummary['status']; // 'running' | 'waiting' | 'completed' | 'idle'
@@ -21,6 +21,16 @@ export interface OfficeAgent {
   activity: string;
   /** The underlying session — used to open the live terminal / transcript. */
   session: SessionSummary;
+  /**
+   * Status of the linked task — drives room routing (Phase 31 Theme B).
+   * `wip`/`waiting` → work desk; `done`/`abandoned` → lounge; `undefined`
+   * (no linked task) → lounge; `backlog`/`todo` → hidden.
+   */
+  taskStatus: Status | undefined;
+  /** Live activity signal from agent.activity WS events (Phase 31 Theme A/E). */
+  liveActivity?: Pick<AgentActivityEvent, 'phase' | 'tool' | 'label'>;
+  /** Whether the agent is currently blocking on the user (Phase 31 Theme D/E). */
+  attention?: Pick<AgentAttentionEvent, 'reason' | 'summary'>;
 }
 
 /** Parse a `"142 71% 45%"` HSL triplet into 0xRRGGBB for Phaser tints. */
@@ -83,6 +93,7 @@ export function sessionsToOfficeAgents(sessions: SessionSummary[], tasks: Task[]
         status: s.status,
         activity: s.subtitle || task?.title || '—',
         session: s,
+        taskStatus: task?.status,
       };
     });
 }

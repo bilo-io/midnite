@@ -34,6 +34,7 @@ import {
   TV_POS,
   type TilePos,
   WALL_ART,
+  statusToRoom,
 } from '@/lib/office/layout';
 import { assignStableSeats } from '@/lib/office/seats';
 import { buildOfficePalette, ROOM_STYLES, roomSignStyle, type OfficePalette } from '@/lib/office/theme';
@@ -360,18 +361,20 @@ class OfficeScene extends Phaser.Scene {
 
   // ---- agents (actors) ---------------------------------------------------
 
-  /** Place working agents at hot desks, idle agents in the lounge; walk on change. */
+  /** Place agents by task status: wip/waiting → desks, done/idle → lounge, hidden → off-screen. */
   private renderActors(agents: OfficeAgent[]) {
     if (!this.alive) return;
-    const working = agents.filter((a) => a.status !== 'idle').slice(0, DESK_SEATS.length);
-    const idle = agents.filter((a) => a.status === 'idle').slice(0, LOUNGE_SEATS.length);
+    // Phase 31 B: route by task status; backlog/todo are hidden so the floor
+    // stays uncluttered until an agent actually starts work.
+    const desk = agents.filter((a) => statusToRoom(a.taskStatus) === 'desk').slice(0, DESK_SEATS.length);
+    const lounge = agents.filter((a) => statusToRoom(a.taskStatus) === 'lounge').slice(0, LOUNGE_SEATS.length);
     const desired: { agent: OfficeAgent; seat: TilePos; kind: 'desk' | 'lounge' }[] = [
-      ...assignStableSeats(working, DESK_SEATS.length, this.deskByAgent).map((s) => ({
+      ...assignStableSeats(desk, DESK_SEATS.length, this.deskByAgent).map((s) => ({
         agent: s.agent,
         seat: DESK_SEATS[s.seatIndex]!,
         kind: 'desk' as const,
       })),
-      ...assignStableSeats(idle, LOUNGE_SEATS.length, this.loungeByAgent).map((s) => ({
+      ...assignStableSeats(lounge, LOUNGE_SEATS.length, this.loungeByAgent).map((s) => ({
         agent: s.agent,
         seat: LOUNGE_SEATS[s.seatIndex]!,
         kind: 'lounge' as const,

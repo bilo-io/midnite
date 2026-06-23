@@ -298,3 +298,31 @@ export function blockedGrid(): boolean[][] {
     for (let x = POOL.x; x < POOL.x + POOL.w; x++) block(x, y);
   return grid;
 }
+
+
+import type { Status } from '@midnite/shared';
+
+/**
+ * Maps a task's status to whether the agent occupies a work desk or the lounge
+ * (Phase 31 Theme B, Decision §3).
+ *
+ * - `wip` / `waiting` → `'desk'`  — agent is actively working (or blocked, but still at their seat)
+ * - `done` / `abandoned` → `'lounge'`  — task finished; agent relaxes
+ * - `undefined` (no linked task) → `'lounge'`  — treat taskless sessions as idle
+ * - `backlog` / `todo` → `'hidden'`  — not yet started; don't clutter the floor
+ */
+export function statusToRoom(taskStatus: Status | undefined): 'desk' | 'lounge' | 'hidden' {
+  switch (taskStatus) {
+    case 'wip':
+    case 'waiting':
+      return 'desk';
+    case 'done':
+    case 'abandoned':
+      return 'lounge';
+    case 'backlog':
+    case 'todo':
+      return 'hidden';
+    default:
+      return 'lounge'; // undefined / unknown → lounge (idle)
+  }
+}
