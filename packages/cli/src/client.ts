@@ -58,6 +58,8 @@ export interface GatewayClient {
   getWorkflowRun(id: string, runId: string): Promise<WorkflowRun>;
   triggerCheck(taskId: string): Promise<CheckRun>;
   getCheckRuns(taskId: string): Promise<CheckRun[]>;
+  /** A task thread serialized as markdown (the gateway's `taskToMarkdown`). */
+  exportTask(taskId: string): Promise<string>;
   getTerminalToken(sessionId: string): Promise<TerminalTokenResponse>;
   draftBreakdown(goal: string): Promise<BreakdownPreviewResponse>;
   createFromBreakdown(breakdown: Breakdown, repo?: string): Promise<CreateFromBreakdownResponse>;
@@ -66,7 +68,9 @@ export interface GatewayClient {
 /** A thin typed client over the gateway REST API. Responses are validated with
  *  the shared zod schemas, so a contract drift surfaces here, not downstream. */
 export function createClient(baseUrl: string): GatewayClient {
-  async function request(path: string, init: RequestInit): Promise<unknown> {
+  // Fetch with uniform connection-error + non-2xx handling, returning the raw
+  // Response. Callers decode it as JSON (`request`) or text (`exportTask`).
+  async function fetchOk(path: string, init: RequestInit): Promise<Response> {
     let res: Response;
     try {
       res = await fetch(`${baseUrl}${path}`, init);
@@ -85,7 +89,11 @@ export function createClient(baseUrl: string): GatewayClient {
       }
       throw new Error(`gateway responded ${res.status}${detail}`);
     }
-    return res.json();
+    return res;
+  }
+
+  async function request(path: string, init: RequestInit): Promise<unknown> {
+    return (await fetchOk(path, init)).json();
   }
 
   return {
@@ -207,6 +215,14 @@ export function createClient(baseUrl: string): GatewayClient {
       return CheckRunListResponseSchema.parse(
         await request(`/tasks/${encodeURIComponent(taskId)}/check-runs`, { method: 'GET' }),
       ).runs;
+    },
+
+    async exportTask(taskId: string): Promise<string> {
+      // The export route serves `text/markdown`, not JSON — read it as text.
+      const res = await fetchOk(`/tasks/${encodeURIComponent(taskId)}/export?format=md`, {
+        method: 'GET',
+      });
+      return res.text();
     },
 
     async getTerminalToken(sessionId: string): Promise<TerminalTokenResponse> {

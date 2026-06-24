@@ -28,14 +28,15 @@ The client-side renderer is now domain-agnostic so A/B/C just plug in. See [done
 
 ---
 
-## Theme A — Task export — **M**
+## Theme A — Task export — **M** — ✅ DONE (PRs #128, #159, + CLI follow-on)
 
 A task's thread as a portable document.
 
-- [ ] **Pure serializer** `task-report.ts` in the tasks module: `taskToMarkdown(task, events, sources)` → title, kind/status, priority/repo/project, a **status-history / `task_events` timeline**, and linked sources. Pure + unit-tested (mirror [`council-report.test.ts`](../packages/gateway/src/councils/lib/council-report.test.ts)).
-- [ ] **Export route** `@Get('tasks/:id/export')` in [`tasks.controller.ts`](../packages/gateway/src/tasks/tasks.controller.ts): validate `format`, delegate to a `TasksService.exportMarkdown(id)` that loads the task + its events; 404 on unknown id, 400 on a non-server-rendered format.
-- [ ] **Web:** `ExportMenu` in the task **thread modal**; typed `exportTask` client in [`api.ts`](../packages/web/lib/api.ts).
-- [ ] Gateway test (`:memory:`): a task with a few `task_events` serializes to markdown containing the title + timeline; unknown id → 404.
+- [x] **Pure serializer** `task-report.ts` in the tasks module: `taskToMarkdown(task)` (the hydrated `Task` already carries `events` + `links`) → title, kind/status, priority/repo/project, a **`task_events` timeline**, a `## Session summary`, and linked sources. Pure + unit-tested. (PR #128, refined #159)
+- [x] **Export route** `@Get('tasks/:id/export')` in [`tasks.controller.ts`](../packages/gateway/src/tasks/tasks.controller.ts): validates `format`, delegates to `TasksService.exportMarkdown(id)`; 404 on unknown id, 400 on a non-server-rendered format. (PR #128)
+- [x] **Web:** `ExportMenu` in the task **thread modal** ([`task-thread-modal.tsx`](../packages/web/components/task-thread-modal.tsx)); typed `exportTask` client in [`api.ts`](../packages/web/lib/api.ts). (PR #128/#159)
+- [x] Gateway test (`:memory:`): a task with `task_events` serializes to markdown containing the title + timeline; unknown id → 404. (PR #128)
+- [x] **CLI** (decision 6): `midnite task export <id>` writes the markdown to stdout, or a file with `--output` — thin client over the export route, validated client test. (CLI follow-on)
 
 ---
 
@@ -86,7 +87,7 @@ A run as a debuggable, shareable document — the payoff of Phase 12's persisted
 ## Verification
 
 - [ ] **Councils still works** after Theme D's renderer lift — md download + pdf-via-print unchanged (no regression on the existing path).
-- [ ] **Task:** open a task thread → `ExportMenu` → markdown download contains the title, status history, and `task_events` timeline; PDF prints the same content; "copy as markdown" copies it.
+- [x] **Task:** open a task thread → `ExportMenu` → markdown download contains the title, status history, and `task_events` timeline; PDF prints the same content; "copy as markdown" copies it. `midnite task export <id>` emits the same markdown.
 - [x] **Project:** export a project → markdown has the overview, a task list grouped by column, and memory/notes/sources sections (empty sections omitted); PDF renders.
 - [ ] **Workflow run:** export a completed run → markdown shows per-node input → resolved params → output (and a failed node's error); PDF renders.
 - [ ] Every export route validates `format`: `?format=pdf` to a server route is rejected (pdf is client-rendered); an unknown id → 404; the served `Content-Type` is `text/markdown`.
@@ -101,5 +102,5 @@ A run as a debuggable, shareable document — the payoff of Phase 12's persisted
 3. **PDF rendering** *(settled by the existing contract: client-side).* PDF is printed from the server markdown on the client (`printToPDF`/print) — no server-side PDF engine. Phase 18 keeps this; it's why there are no new deps.
 4. **Route placement** *(recommend: per-module).* Each export route lives in its **own** domain module's controller, not a central export module — a central one would have to import across domains and break the dependency graph. The councils route already follows this.
 5. **Project bundle boundary** *(recommend: compose via services).* The projects service gathers tasks/memory/notes/sources through their **services**, not their repositories, to keep the projects module the orchestrator without reaching into other domains' internals.
-6. **CLI export** *(open / recommend: include if cheap).* `midnite task export` / `project export` writing markdown to stdout is a thin, useful add; include if it doesn't expand the slice, else defer to a follow-on.
+6. **CLI export** *(settled: `midnite task export <id>` shipped).* Writes the export-route markdown to stdout, or a file with `--output`. A thin client over the existing route. `project` / `workflow run` CLI exports remain a possible follow-on.
 7. **"Copy as markdown"** *(recommend: include in D).* Cheap, high-use — copying a report into a doc/chat is more common than downloading a file.

@@ -188,3 +188,24 @@ describe('getCheckRuns', () => {
     expect(runs[0]?.trigger).toBe('manual');
   });
 });
+
+describe('exportTask', () => {
+  it('GETs the markdown export route and returns the body as text', async () => {
+    let seenUrl = '';
+    stubFetch((url) => {
+      seenUrl = url;
+      return new Response('# do the thing\n\n*Exported 2026-06-24*\n', {
+        status: 200,
+        headers: { 'content-type': 'text/markdown' },
+      });
+    });
+    const md = await createClient('http://gw').exportTask('t1');
+    expect(seenUrl).toBe('http://gw/tasks/t1/export?format=md');
+    expect(md).toContain('# do the thing');
+  });
+
+  it('surfaces a 404 for an unknown task', async () => {
+    stubFetch(() => new Response(JSON.stringify({ message: 'task t9 not found' }), { status: 404 }));
+    await expect(createClient('http://gw').exportTask('t9')).rejects.toThrow(/task t9 not found/);
+  });
+});
