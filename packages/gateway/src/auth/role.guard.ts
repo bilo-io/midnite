@@ -46,7 +46,11 @@ export class RoleGuard implements CanActivate {
     const req = context.switchToHttp().getRequest<IncomingRequest & { resolvedRole?: TeamRole | null }>();
     const user = req.user;
 
-    if (!user?.userId || !user.teamId) {
+    // Static-token / anonymous path: req.user is not set. Skip role enforcement
+    // so existing single-user installs are unaffected (they have no teamId anyway).
+    if (!user) return true;
+
+    if (!user.userId || !user.teamId) {
       throw new ForbiddenException('insufficient role');
     }
 

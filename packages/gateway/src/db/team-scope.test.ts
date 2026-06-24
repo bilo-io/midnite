@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createTestDb } from '../test';
+import { ProjectsRepository } from '../projects/projects.repository';
 import { TasksRepository } from '../tasks/tasks.repository';
 import { ReposRepository } from '../repos/repos.repository';
 import { WorkflowsRepository } from '../workflows/workflows.repository';
-import type { TaskInsert, RepoInsert, WorkflowInsert } from '../db/schema';
+import type { ProjectInsert, TaskInsert, RepoInsert, WorkflowInsert } from '../db/schema';
 
 // ---- helpers ----------------------------------------------------------------
 
@@ -161,5 +162,49 @@ describe('TeamScope — workflows', () => {
 
   it('getWorkflowRow with scope returns undefined when out of scope', () => {
     expect(wfRepo.getWorkflowRow('wf-b', { userId: 'user-a', teamId: 'team-1' })).toBeUndefined();
+  });
+});
+
+describe('TeamScope — projects', () => {
+  let projRepo: ProjectsRepository;
+
+  function project(id: string, overrides: Partial<ProjectInsert> = {}): ProjectInsert {
+    return {
+      id,
+      name: id,
+      tag: 'code',
+      color: '#fff',
+      createdAt: NOW,
+      updatedAt: NOW,
+      ...overrides,
+    };
+  }
+
+  beforeEach(() => {
+    projRepo = new ProjectsRepository(createTestDb().db);
+    projRepo.insertProject(project('p-own-a', { createdBy: 'user-a', teamId: null }));
+    projRepo.insertProject(project('p-own-b', { createdBy: 'user-b', teamId: 'team-2' }));
+    projRepo.insertProject(project('p-t1', { createdBy: 'user-a', teamId: 'team-1' }));
+    projRepo.insertProject(project('p-legacy', { createdBy: null, teamId: null }));
+  });
+
+  it('no scope → all projects', () => {
+    expect(projRepo.listProjects(undefined).length).toBe(4);
+  });
+
+  it('scoped list excludes cross-team project, includes legacy', () => {
+    const ids = projRepo.listProjects({ userId: 'user-a', teamId: 'team-1' }).map((p) => p.id);
+    expect(ids).toContain('p-own-a');
+    expect(ids).toContain('p-t1');
+    expect(ids).toContain('p-legacy');
+    expect(ids).not.toContain('p-own-b');
+  });
+
+  it('getProject with scope returns undefined for out-of-scope project', () => {
+    expect(projRepo.getProject('p-own-b', { userId: 'user-a', teamId: 'team-1' })).toBeUndefined();
+  });
+
+  it('getProject with scope returns legacy project', () => {
+    expect(projRepo.getProject('p-legacy', { userId: 'user-a', teamId: 'team-1' })?.id).toBe('p-legacy');
   });
 });

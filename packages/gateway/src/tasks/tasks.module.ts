@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AgentModule } from '../agent/agent.module';
+import { AuthModule } from '../auth/auth.module';
 import { ChecksModule } from '../checks/checks.module';
 import { ReposModule } from '../repos/repos.module';
 import { WorkflowsModule } from '../workflows/workflows.module';
@@ -12,7 +13,7 @@ import { TaskEventBus } from './task-event-bus';
 import { TasksGateway } from './tasks.gateway';
 
 @Module({
-  imports: [AgentModule, ChecksModule, ReposModule, WorkflowsModule],
+  imports: [AgentModule, AuthModule, ChecksModule, ReposModule, WorkflowsModule],
   controllers: [TasksController],
   providers: [TasksService, TasksRepository, TaskEventBus, TasksGateway, PrStatusService, AiReviewService],
   exports: [TasksService, TaskEventBus],
