@@ -865,3 +865,41 @@ export type AgentRunStatsInsert = typeof agentRunStats.$inferInsert;
 
 export type WorkflowTemplateRow = typeof workflowTemplates.$inferSelect;
 export type WorkflowTemplateInsert = typeof workflowTemplates.$inferInsert;
+
+// Phase 33: user identity + JWT auth.
+export const users = sqliteTable(
+  'users',
+  {
+    id: text('id').primaryKey(),
+    email: text('email').notNull().unique(),
+    name: text('name').notNull(),
+    passwordHash: text('password_hash').notNull(),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => ({
+    emailIdx: uniqueIndex('users_email_idx').on(t.email),
+  }),
+);
+
+export type UserRow = typeof users.$inferSelect;
+export type UserInsert = typeof users.$inferInsert;
+
+export const refreshTokens = sqliteTable(
+  'refresh_tokens',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id').notNull(),
+    tokenHash: text('token_hash').notNull().unique(),
+    expiresAt: text('expires_at').notNull(),
+    revokedAt: text('revoked_at'),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    userIdx: index('refresh_tokens_user_idx').on(t.userId),
+    tokenIdx: uniqueIndex('refresh_tokens_token_idx').on(t.tokenHash),
+  }),
+);
+
+export type RefreshTokenRow = typeof refreshTokens.$inferSelect;
+export type RefreshTokenInsert = typeof refreshTokens.$inferInsert;

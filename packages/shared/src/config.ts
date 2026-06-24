@@ -110,6 +110,15 @@ export const GatewayAuthConfigSchema = z.object({
       max: z.number().int().nonnegative().default(0),
     })
     .default({}),
+  // JWT-based auth (Phase 33). When `secretEnv` resolves to a non-empty value the
+  // bearer path accepts both static tokens (legacy) and HS256 JWTs. Off by default.
+  jwt: z
+    .object({
+      secretEnv: z.string().default('MIDNITE_JWT_SECRET'),
+      accessTtlSeconds: z.number().int().positive().default(900),
+      refreshTtlDays: z.number().int().positive().default(7),
+    })
+    .default({}),
 });
 
 export const GatewayConfigSchema = z.object({
