@@ -64,3 +64,10 @@ export const CreateInviteRequestSchema = z.object({
   expiresInDays: z.number().int().min(1).max(30).default(7),
 });
 export type CreateInviteRequest = z.infer<typeof CreateInviteRequestSchema>;
+
+/** Scoping token passed from controller → service → repository for read filtering.
+ *  Never carries role — that is resolved separately in write guards. */
+export type TeamScope = {
+  userId: string;
+  teamId: string | null;
+};

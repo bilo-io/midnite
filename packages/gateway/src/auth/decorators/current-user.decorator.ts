@@ -3,6 +3,7 @@ import { createParamDecorator, type ExecutionContext } from '@nestjs/common';
 export interface CurrentUserPayload {
   userId: string;
   email: string;
+  teamId: string | null;
 }
 
 /** Reads the `user` object set by the JWT auth guard. Returns null when the

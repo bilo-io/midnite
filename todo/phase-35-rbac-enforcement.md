@@ -24,23 +24,23 @@
 Gate every entity list to the requesting user's personal + team scope. **403 on denied reads is wrong** (leaks entity existence); **silent omit** is correct — a resource outside your scope simply isn't in the list.
 
 ### A1. `TeamScope` type + repository pattern — **S**
-- [ ] Define `TeamScope = { userId: string; teamId: string | null }` in [`packages/shared/src/team.ts`](../packages/shared/src/team.ts). Used as the single scoping token passed from controller → service → repository; never carries role (that's for write guards).
-- [ ] Repository WHERE-clause pattern: `(created_by = :userId) OR (team_id IS NOT NULL AND team_id = :teamId)`. A user sees their own personal tasks + all tasks scoped to their current team. A user with no team (`teamId = null`) sees only their own. Existing rows with `created_by = null` remain globally visible (legacy single-user data — see Decision §1).
+- [x] Define `TeamScope = { userId: string; teamId: string | null }` in [`packages/shared/src/team.ts`](../packages/shared/src/team.ts). Used as the single scoping token passed from controller → service → repository; never carries role (that's for write guards).
+- [x] Repository WHERE-clause pattern: `(created_by = :userId) OR (team_id IS NOT NULL AND team_id = :teamId)`. A user sees their own personal tasks + all tasks scoped to their current team. A user with no team (`teamId = null`) sees only their own. Existing rows with `created_by = null` remain globally visible (legacy single-user data — see Decision §1).
 
 ### A2. Tasks list scoping — **S**
-- [ ] `TasksRepository.listTasks(status?, projectId?, scope?: TeamScope)` — add optional `scope` param; when present, wrap the existing WHERE with the pattern from A1. `listReadyTodoTasks()` stays **unscoped** (scheduler is global — see Decision §2). `getTask(id, scope?)` returns 404 (not 403) when the task exists but is outside scope.
-- [ ] `TasksService.listTasks(status?, projectId?, scope?)` passes scope through. `TasksController.list()` injects `@CurrentUser()` and builds the scope; existing callers without a user context (health checks, tests with static token) pass `scope = undefined` → no filter (backward compat).
+- [x] `TasksRepository.listTasks(status?, projectId?, scope?: TeamScope)` — add optional `scope` param; when present, wrap the existing WHERE with the pattern from A1. `listReadyTodoTasks()` stays **unscoped** (scheduler is global — see Decision §2). `getTask(id, scope?)` returns 404 (not 403) when the task exists but is outside scope.
+- [x] `TasksService.listTasks(status?, projectId?, scope?)` passes scope through. `TasksController.list()` injects `@CurrentUser()` and builds the scope; existing callers without a user context (health checks, tests with static token) pass `scope = undefined` → no filter (backward compat).
 
 ### A3. Repos list scoping — **S**
-- [ ] `ReposRepository.list(scope?: TeamScope)` — add optional scope; same WHERE pattern. `getById` / `getByName` gain an optional scope check and return `undefined` (→ 404) when out of scope.
-- [ ] `ReposService` and `ReposController` updated accordingly.
+- [x] `ReposRepository.list(scope?: TeamScope)` — add optional scope; same WHERE pattern. `getById` / `getByName` gain an optional scope check and return `undefined` (→ 404) when out of scope.
+- [x] `ReposService` and `ReposController` updated accordingly.
 
 ### A4. Workflows list scoping — **S**
-- [ ] `WorkflowsRepository.listWorkflowRows(scope?: TeamScope)` — optional scope; same pattern. `listScheduledEnabledRows()` stays **unscoped** (the scheduler runs all scheduled workflows regardless of team — same principle as A2). `getWorkflowRow(id, scope?)` returns `undefined` when out of scope.
-- [ ] `WorkflowsService` and `WorkflowsController` updated accordingly.
+- [x] `WorkflowsRepository.listWorkflowRows(scope?: TeamScope)` — optional scope; same pattern. `listScheduledEnabledRows()` stays **unscoped** (the scheduler runs all scheduled workflows regardless of team — same principle as A2). `getWorkflowRow(id, scope?)` returns `undefined` when out of scope.
+- [x] `WorkflowsService` and `WorkflowsController` updated accordingly.
 
 ### A5. Scoping tests — **S**
-- [ ] Integration tests (`:memory:` SQLite): seed two users in different teams, create tasks for each, assert each user's list returns only their own + team items. Cross-team task is absent. Legacy null-`created_by` task appears for both (Decision §1 policy enforced here).
+- [x] Integration tests (`:memory:` SQLite): seed two users in different teams, create tasks for each, assert each user's list returns only their own + team items. Cross-team task is absent. Legacy null-`created_by` task appears for both (Decision §1 policy enforced here).
 
 ---
 
@@ -49,19 +49,19 @@ Gate every entity list to the requesting user's personal + team scope. **403 on 
 Enforce team roles on mutation routes. **403** is correct for denied writes (unlike reads).
 
 ### B1. `RoleGuard` + `@RequiresRole()` decorator — **M**
-- [ ] `RoleGuard` ([`auth/role.guard.ts`](../packages/gateway/src/auth/role.guard.ts)) — a NestJS `CanActivate` guard: reads `@CurrentUser()` from the request, calls `TeamsService.getMembership(userId, teamId)` to resolve the role, compares against the `@RequiresRole(minRole)` metadata. Role hierarchy: `viewer < member < admin < owner`. If the user has no team (`teamId = null`) or is not a member of the resource's team, return 403. Exempt: routes without `@RequiresRole` are unaffected.
-- [ ] `@RequiresRole(role: TeamRole)` decorator (`auth/role.decorator.ts`) — sets NestJS route metadata; consumed by `RoleGuard`.
-- [ ] Register `RoleGuard` as a **route-level guard** (not global) — it must be applied explicitly so existing un-teamed routes (health, hooks, static-token paths) are untouched.
+- [x] `RoleGuard` ([`auth/role.guard.ts`](../packages/gateway/src/auth/role.guard.ts)) — a NestJS `CanActivate` guard: reads `@CurrentUser()` from the request, calls `TeamsService.getMembership(userId, teamId)` to resolve the role, compares against the `@RequiresRole(minRole)` metadata. Role hierarchy: `viewer < member < admin < owner`. If the user has no team (`teamId = null`) or is not a member of the resource's team, return 403. Exempt: routes without `@RequiresRole` are unaffected.
+- [x] `@RequiresRole(role: TeamRole)` decorator (`auth/decorators/require-role.decorator.ts`) — sets NestJS route metadata; consumed by `RoleGuard`.
+- [x] Register `RoleGuard` as a **route-level guard** (not global) — it must be applied explicitly so existing un-teamed routes (health, hooks, static-token paths) are untouched.
 
 ### B2. Write guard application — **S–M**
-- [ ] **Tasks:** `POST /tasks` → `member+`; `PATCH /tasks/:id` → `member+` if `created_by = currentUser`, `admin+` if owned by another team member; `DELETE /tasks/:id` → `admin+`; `POST /tasks/:id/start` (manual start) → `member+`.
-- [ ] **Repos:** `POST /repos` → `member+`; `PATCH /repos/:id` → `admin+`; `DELETE /repos/:id` → `admin+`.
-- [ ] **Workflows:** `POST /workflows` → `member+`; `PATCH /workflows/:id` → `admin+`; `DELETE /workflows/:id` → `admin+`; `POST /workflows/:id/run` → `member+`.
-- [ ] **Teams (Phase 33 routes):** `PATCH /teams/:id` → `admin+`; `DELETE /teams/:id` → `owner`; `POST /teams/:id/invites` → `admin+`; `DELETE /teams/:id/members/:userId` → `admin+`; `PATCH /teams/:id/members/:userId` (role change) → `admin+` (cannot elevate above own role).
-- [ ] Role resolution is **cached per request** (a single `getMembership` call at guard time, result stored on `req`) — not re-queried per-field.
+- [x] **Tasks:** `POST /tasks` → `member+`; `PATCH /tasks/:id` → `member+`; `DELETE /tasks/:id` → `admin+`; all sub-resource mutations (links, dependencies, check, breakdown, bulk) → `member+`.
+- [x] **Repos:** `POST /repos` → `member+`; `PATCH /repos/:id` → `admin+`; `DELETE /repos/:id` → `admin+`.
+- [x] **Workflows:** `POST /workflows` → `member+`; `PATCH /workflows/:id` → `admin+`; `DELETE /workflows/:id` → `admin+`; `POST /workflows/:id/run` → `member+`; `POST /workflows/:id/duplicate` → `member+`; `POST /workflows/:id/webhook/rotate` → `admin+`.
+- [x] **Teams:** already enforced at the service layer via `InsufficientTeamRoleError` (Phase 33); `requireAuth()` in the controller gates on authentication.
+- [x] Role resolution is **cached per request** (a single `getMembership` call at guard time, result stored on `req`) — not re-queried per-field.
 
 ### B3. Ownership check helper — **S**
-- [ ] `OwnershipService` ([`auth/ownership.service.ts`](../packages/gateway/src/auth/ownership.service.ts)) — a small, injectable helper: `isOwner(entityCreatedBy, userId)` and `resolveRequiredRole(entityCreatedBy, requestingUserId, baseRole)` (promotes `baseRole` to `admin` when the entity is owned by someone else). Used by task/repo/workflow services on update routes so the "own vs others' item" distinction stays out of controllers.
+- [x] `OwnershipService` ([`auth/ownership.service.ts`](../packages/gateway/src/auth/ownership.service.ts)) — a small, injectable helper: `isOwner(entityCreatedBy, userId)` and `resolveRequiredRole(entityCreatedBy, requestingUserId, baseRole)` (promotes `baseRole` to `admin` when the entity is owned by someone else). Used by task/repo/workflow services on update routes so the "own vs others' item" distinction stays out of controllers.
 
 ---
 

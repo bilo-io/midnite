@@ -10,6 +10,7 @@ import {
   Param,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 import {
   CreateRepoRequestSchema,
@@ -18,23 +19,29 @@ import {
   type RepoResponse,
 } from '@midnite/shared';
 import { CurrentUser, type CurrentUserPayload } from '../auth/decorators/current-user.decorator';
+import { RoleGuard } from '../auth/role.guard';
+import { RequiresRole } from '../auth/decorators/require-role.decorator';
 import { RepoDoesNotExistError, RepoNameTakenError, ReposService } from './repos.service';
 
 @Controller('repos')
+@UseGuards(RoleGuard)
 export class ReposController {
   constructor(@Inject(ReposService) private readonly service: ReposService) {}
 
   @Get()
-  list(): Repo[] {
-    return this.service.list();
+  list(@CurrentUser() user?: CurrentUserPayload | null): Repo[] {
+    const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
+    return this.service.list(scope);
   }
 
   @Get(':id')
-  get(@Param('id') id: string): Repo {
-    return this.translate(() => this.service.get(id));
+  get(@Param('id') id: string, @CurrentUser() user?: CurrentUserPayload | null): Repo {
+    const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
+    return this.translate(() => this.service.get(id, scope));
   }
 
   @Post()
+  @RequiresRole('member')
   create(
     @Body() body: unknown,
     @CurrentUser() user: CurrentUserPayload | null,
@@ -45,6 +52,7 @@ export class ReposController {
   }
 
   @Patch(':id')
+  @RequiresRole('admin')
   update(@Param('id') id: string, @Body() body: unknown): RepoResponse {
     const parsed = UpdateRepoRequestSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
@@ -52,6 +60,7 @@ export class ReposController {
   }
 
   @Delete(':id')
+  @RequiresRole('admin')
   remove(@Param('id') id: string): { ok: true } {
     this.translate(() => this.service.delete(id));
     return { ok: true };

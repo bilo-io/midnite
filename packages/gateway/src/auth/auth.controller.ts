@@ -1,27 +1,31 @@
-import { BadRequestException, Body, Controller, Get, HttpCode, Optional, Patch, Post, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Optional, Post, UnauthorizedException } from '@nestjs/common';
 import {
   AuthResponseSchema,
   CreateUserRequestSchema,
   LoginRequestSchema,
   RefreshRequestSchema,
-  UpdatePasswordRequestSchema,
-  UpdateUserRequestSchema,
   UserSchema,
 } from '@midnite/shared';
 import { AuditService } from '../audit/audit.service';
 import { UsersService, UserAlreadyExistsError, InvalidCredentialsError } from '../users/users.service';
+import { TeamsService } from '../teams/teams.service';
 import { JwtService, RefreshTokenRevokedError, TokenInvalidError } from './jwt.service';
 import { CurrentUser } from './decorators/current-user.decorator';
 
-type AuthenticatedUser = { userId: string; email: string } | null;
+type AuthenticatedUser = { userId: string; email: string; teamId: string | null } | null;
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly users: UsersService,
     private readonly jwtSvc: JwtService,
+    private readonly teams: TeamsService,
     @Optional() private readonly audit?: AuditService,
   ) {}
+
+  private primaryTeamId(userId: string): string | null {
+    return this.teams.listTeamsForUser(userId)[0]?.id ?? null;
+  }
 
   @Post('register')
   async register(@Body() body: unknown) {
@@ -33,7 +37,8 @@ export class AuthController {
       if (!this.jwtSvc.enabled) {
         return { user: UserSchema.parse(user) };
       }
-      const accessToken = this.jwtSvc.issueAccessToken(user.id, user.email);
+      const teamId = this.primaryTeamId(user.id);
+      const accessToken = this.jwtSvc.issueAccessToken(user.id, user.email, teamId);
       const refreshToken = this.jwtSvc.issueRefreshToken(user.id);
       return AuthResponseSchema.parse({ accessToken, refreshToken, user });
     } catch (err) {
@@ -53,7 +58,8 @@ export class AuthController {
       if (!this.jwtSvc.enabled) {
         return { user: UserSchema.parse(user) };
       }
-      const accessToken = this.jwtSvc.issueAccessToken(user.id, user.email);
+      const teamId = this.primaryTeamId(user.id);
+      const accessToken = this.jwtSvc.issueAccessToken(user.id, user.email, teamId);
       const refreshToken = this.jwtSvc.issueRefreshToken(user.id);
       return AuthResponseSchema.parse({ accessToken, refreshToken, user });
     } catch (err) {
@@ -70,7 +76,8 @@ export class AuthController {
     try {
       const userId = this.jwtSvc.consumeRefreshToken(parsed.data.refreshToken);
       const user = this.users.getUser(userId);
-      const accessToken = this.jwtSvc.issueAccessToken(user.id, user.email);
+      const teamId = this.primaryTeamId(userId);
+      const accessToken = this.jwtSvc.issueAccessToken(user.id, user.email, teamId);
       const refreshToken = this.jwtSvc.issueRefreshToken(user.id);
       return AuthResponseSchema.parse({ accessToken, refreshToken, user });
     } catch (err) {
@@ -95,29 +102,6 @@ export class AuthController {
       return { user: UserSchema.parse(this.users.getUser(currentUser.userId)) };
     } catch (err) {
       if (err instanceof TokenInvalidError) throw new UnauthorizedException('not authenticated');
-      throw err;
-    }
-  }
-
-  @Patch('me')
-  async updateMe(@CurrentUser() currentUser: AuthenticatedUser, @Body() body: unknown) {
-    if (!currentUser?.userId) throw new UnauthorizedException('not authenticated');
-    const parsed = UpdateUserRequestSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.message);
-    const user = await this.users.updateProfile(currentUser.userId, parsed.data.name);
-    return { user: UserSchema.parse(user) };
-  }
-
-  @Patch('me/password')
-  @HttpCode(204)
-  async updatePassword(@CurrentUser() currentUser: AuthenticatedUser, @Body() body: unknown) {
-    if (!currentUser?.userId) throw new UnauthorizedException('not authenticated');
-    const parsed = UpdatePasswordRequestSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.message);
-    try {
-      await this.users.updatePassword(currentUser.userId, parsed.data.currentPassword, parsed.data.newPassword);
-    } catch (err) {
-      if (err instanceof InvalidCredentialsError) throw new BadRequestException('current password is incorrect');
       throw err;
     }
   }

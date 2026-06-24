@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AgentModule } from '../agent/agent.module';
+import { AuthModule } from '../auth/auth.module';
 import { WorkflowsController } from './workflows.controller';
 import { WebhookController } from './webhook.controller';
 import { WorkflowsService } from './workflows.service';
@@ -28,7 +29,7 @@ import { WorkflowRecoveryService } from './workflow-recovery.service';
 import { WorkflowsGateway } from './workflows.gateway';
 
 @Module({
-  imports: [AgentModule, WorkflowCredentialsModule],
+  imports: [AgentModule, AuthModule, WorkflowCredentialsModule],
   controllers: [WorkflowsController, WebhookController],
   providers: [
     WorkflowsService,

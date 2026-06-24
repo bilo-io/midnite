@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger, type OnModuleInit } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
-import type { CreateRepoRequest, MidniteConfig, Repo, UpdateRepoRequest } from '@midnite/shared';
+import type { CreateRepoRequest, MidniteConfig, Repo, TeamScope, UpdateRepoRequest } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
 import type { RepoInsert, RepoRow } from '../db/schema';
 import { collapseTilde, expandTilde } from '../fs/path-tilde';
@@ -41,12 +41,12 @@ export class ReposService implements OnModuleInit {
     }
   }
 
-  list(): Repo[] {
-    return this.repo.list().map(toRepo);
+  list(scope?: TeamScope): Repo[] {
+    return this.repo.list(scope).map(toRepo);
   }
 
-  get(id: string): Repo {
-    const row = this.repo.getById(id);
+  get(id: string, scope?: TeamScope): Repo {
+    const row = this.repo.getById(id, scope);
     if (!row) throw new RepoDoesNotExistError(`repo ${id} not found`);
     return toRepo(row);
   }

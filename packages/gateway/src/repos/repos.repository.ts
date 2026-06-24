@@ -1,18 +1,24 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
+import type { TeamScope } from '@midnite/shared';
 import { DB_TOKEN, type MidniteDb } from '../db/db.module';
 import { repos, type RepoInsert, type RepoRow } from '../db/schema';
+import { teamScopeFilter } from '../db/team-scope';
 
 @Injectable()
 export class ReposRepository {
   constructor(@Inject(DB_TOKEN) private readonly db: MidniteDb) {}
 
-  list(): RepoRow[] {
-    return this.db.select().from(repos).orderBy(asc(repos.name)).all();
+  list(scope?: TeamScope): RepoRow[] {
+    const where = scope ? teamScopeFilter(repos.createdBy, repos.teamId, scope) : undefined;
+    return this.db.select().from(repos).where(where).orderBy(asc(repos.name)).all();
   }
 
-  getById(id: string): RepoRow | undefined {
-    return this.db.select().from(repos).where(eq(repos.id, id)).get();
+  getById(id: string, scope?: TeamScope): RepoRow | undefined {
+    const where = scope
+      ? and(eq(repos.id, id), teamScopeFilter(repos.createdBy, repos.teamId, scope))
+      : eq(repos.id, id);
+    return this.db.select().from(repos).where(where).get();
   }
 
   getByName(name: string): RepoRow | undefined {

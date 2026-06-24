@@ -4,6 +4,19 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 35 A1–A5 + B1–B3 — RBAC scoped queries + write guards (PR #194)
+
+- [x] **A1** — `TeamScope` type in `@midnite/shared`; `teamScopeFilter()` Drizzle helper in `gateway/src/db/team-scope.ts`; `teamId` embedded in JWT at login/register/refresh
+- [x] **A2** — Tasks list/get scoped: `TasksRepository.listTasks/getTask(scope?)`, service + controller wired; `listReadyTodoTasks()` stays global
+- [x] **A3** — Repos list/get scoped: `ReposRepository.list/getById(scope?)`, service + controller wired
+- [x] **A4** — Workflows list/get scoped: `WorkflowsRepository.listWorkflowRows/getWorkflowRow(scope?)`, service + controller wired; `listScheduledEnabledRows()` stays global
+- [x] **A5** — 12 integration tests (`:memory:` SQLite): own-only, team-shared, out-of-scope, and legacy-null visibility patterns across tasks/repos/workflows
+- [x] **B1** — `RoleGuard` (`auth/role.guard.ts`), `@RequiresRole()` decorator, `TeamsService.getMembership()` helper; role cached per request on `req.resolvedRole`; backward compat: no user → guard skips
+- [x] **B2** — Guards applied: tasks (POST/PATCH=`member`, DELETE=`admin`), repos (POST=`member`, PATCH/DELETE=`admin`), workflows (POST/run/duplicate=`member`, PATCH/DELETE/webhook-rotate=`admin`)
+- [x] **B3** — `OwnershipService` (`auth/ownership.service.ts`): `isOwner()` + `resolveRequiredRole()` helpers; exported from `AuthModule`
+
+---
+
 ## 2026-06-24 — Verification sweep: closed Phases 12, 13, 25, 26; flagged 11, 32
 
 Reconciled the verification blocks of six "almost-complete earlier" phases against the actual code + a fresh test run (three read-only verification agents mapped each box to evidence). Doc-only; no source change. Evidence run: `gateway:test` 984/984, `shared:test` 463/463, `web:test` 505/505, `ui:test` 46/46, `docs:test` 31/31 — all green **isolated**. (Full-graph `moon run :test` flakes only on `ui:test`'s storybook-chromium browser provider under parallelism — "Vitest failed to find the current suite" — a runner-infra issue, not a regression. CI also billing-blocked account-wide.)

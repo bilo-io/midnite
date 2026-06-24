@@ -6,6 +6,7 @@ import {
   type SessionTranscript,
   type Status,
   type Task,
+  type TeamScope,
   type TerminalTokenResponse,
   type TranscriptMessage,
 } from '@midnite/shared';
@@ -50,9 +51,9 @@ export class SessionsService {
 
   // One session per task (most-recently-touched first), rather than every raw
   // ~/.claude transcript on disk.
-  async list(): Promise<SessionSummary[]> {
+  async list(scope?: TeamScope): Promise<SessionSummary[]> {
     return this.tasks
-      .listTasks()
+      .listTasks(undefined, undefined, scope)
       .map((t) => this.toSummary(t))
       .sort((a, b) => b.lastActivity - a.lastActivity);
   }

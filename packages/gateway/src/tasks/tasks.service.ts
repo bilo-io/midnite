@@ -21,6 +21,7 @@ import {
   type Status,
   type Task,
   type TaskCounts,
+  type TeamScope,
 } from '@midnite/shared';
 import { TaskClassifier, type ClassifierImage } from '../agent/classifier.service';
 import { PlannerService } from '../agent/planner.service';
@@ -148,8 +149,8 @@ export class TasksService {
     };
   }
 
-  listTasks(status?: Status, projectId?: string): Task[] {
-    return this.repo.listTasks(status, projectId).map((r) => this.repo.hydrate(r));
+  listTasks(status?: Status, projectId?: string, scope?: TeamScope): Task[] {
+    return this.repo.listTasks(status, projectId, scope).map((r) => this.repo.hydrate(r));
   }
 
   /**
@@ -162,8 +163,8 @@ export class TasksService {
     return this.repo.listReadyTodoTasks().map((r) => this.repo.hydrate(r));
   }
 
-  getTask(id: string): Task {
-    const row = this.repo.getTask(id);
+  getTask(id: string, scope?: TeamScope): Task {
+    const row = this.repo.getTask(id, scope);
     if (!row) throw new NotFoundException(`task ${id} not found`);
     return this.repo.hydrate(row);
   }

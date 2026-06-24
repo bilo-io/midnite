@@ -1,7 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, eq, sql } from 'drizzle-orm';
-import type { Project, ProjectSource, SourceKind } from '@midnite/shared';
+import type { Project, ProjectSource, SourceKind, TeamScope } from '@midnite/shared';
 import { DB_TOKEN, type MidniteDb } from '../db/db.module';
+import { teamScopeFilter } from '../db/team-scope';
 import {
   projectSources,
   projects,
@@ -20,12 +21,16 @@ export class ProjectsRepository {
     return this.db.insert(projects).values(row).returning().get();
   }
 
-  getProject(id: string): ProjectRow | undefined {
-    return this.db.select().from(projects).where(eq(projects.id, id)).get();
+  getProject(id: string, scope?: TeamScope): ProjectRow | undefined {
+    const where = scope
+      ? and(eq(projects.id, id), teamScopeFilter(projects.createdBy, projects.teamId, scope))
+      : eq(projects.id, id);
+    return this.db.select().from(projects).where(where).get();
   }
 
-  listProjects(): ProjectRow[] {
-    return this.db.select().from(projects).orderBy(asc(projects.createdAt)).all();
+  listProjects(scope?: TeamScope): ProjectRow[] {
+    const where = scope ? teamScopeFilter(projects.createdBy, projects.teamId, scope) : undefined;
+    return this.db.select().from(projects).where(where).orderBy(asc(projects.createdAt)).all();
   }
 
   updateProject(id: string, patch: Partial<ProjectInsert>): ProjectRow | undefined {

@@ -17,6 +17,7 @@ import {
   type EnhanceDescriptionRequest,
   type Project,
   type Task,
+  type TeamScope,
   type UpdateProjectRequest,
 } from '@midnite/shared';
 import { BreakdownService } from '../agent/breakdown.service';
@@ -71,12 +72,12 @@ export class ProjectsService {
     @Optional() @Inject(SearchIndexService) private readonly searchIndex?: SearchIndexService,
   ) {}
 
-  listProjects(): Project[] {
-    return this.repo.listProjects().map((r) => this.repo.hydrate(r));
+  listProjects(scope?: TeamScope): Project[] {
+    return this.repo.listProjects(scope).map((r) => this.repo.hydrate(r));
   }
 
-  getProject(id: string): Project {
-    const row = this.repo.getProject(id);
+  getProject(id: string, scope?: TeamScope): Project {
+    const row = this.repo.getProject(id, scope);
     if (!row) throw new NotFoundException(`project ${id} not found`);
     return this.repo.hydrate(row);
   }
@@ -89,7 +90,7 @@ export class ProjectsService {
     return this.repo.getProject(projectId)?.workDir ?? undefined;
   }
 
-  async createProject(req: CreateProjectRequest): Promise<Project> {
+  async createProject(req: CreateProjectRequest, userId?: string, teamId?: string | null): Promise<Project> {
     const id = randomUUID();
     const now = new Date().toISOString();
     this.repo.insertProject({
@@ -101,6 +102,8 @@ export class ProjectsService {
       workDir: normalizeWorkDir(req.workDir),
       plan: null,
       planUpdatedAt: null,
+      createdBy: userId ?? null,
+      teamId: teamId ?? null,
       createdAt: now,
       updatedAt: now,
     });

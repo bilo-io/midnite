@@ -10,7 +10,10 @@ import {
   Post,
   Query,
   Res,
+  UseGuards,
 } from '@nestjs/common';
+import { RoleGuard } from '../auth/role.guard';
+import { RequiresRole } from '../auth/decorators/require-role.decorator';
 import { CurrentUser, type CurrentUserPayload } from '../auth/decorators/current-user.decorator';
 import type { FastifyReply } from 'fastify';
 import {
@@ -29,15 +32,18 @@ import {
 import { WorkflowsService } from './workflows.service';
 
 @Controller('workflows')
+@UseGuards(RoleGuard)
 export class WorkflowsController {
   constructor(@Inject(WorkflowsService) private readonly service: WorkflowsService) {}
 
   @Get()
-  list(): WorkflowSummary[] {
-    return this.service.listSummaries();
+  list(@CurrentUser() user?: CurrentUserPayload | null): WorkflowSummary[] {
+    const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
+    return this.service.listSummaries(scope);
   }
 
   @Post()
+  @RequiresRole('member')
   create(
     @Body() body: unknown,
     @CurrentUser() user: CurrentUserPayload | null,
@@ -48,11 +54,13 @@ export class WorkflowsController {
   }
 
   @Get(':id')
-  get(@Param('id') id: string): WorkflowResponse {
-    return { workflow: this.service.getWorkflow(id) };
+  get(@Param('id') id: string, @CurrentUser() user?: CurrentUserPayload | null): WorkflowResponse {
+    const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
+    return { workflow: this.service.getWorkflow(id, scope) };
   }
 
   @Patch(':id')
+  @RequiresRole('admin')
   update(@Param('id') id: string, @Body() body: unknown): WorkflowResponse {
     const parsed = UpdateWorkflowRequestSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
@@ -60,17 +68,20 @@ export class WorkflowsController {
   }
 
   @Delete(':id')
+  @RequiresRole('admin')
   remove(@Param('id') id: string): { ok: true } {
     this.service.delete(id);
     return { ok: true };
   }
 
   @Post(':id/duplicate')
+  @RequiresRole('member')
   duplicate(@Param('id') id: string): WorkflowResponse {
     return { workflow: this.service.duplicate(id) };
   }
 
   @Post(':id/run')
+  @RequiresRole('member')
   run(@Param('id') id: string, @Body() body: unknown): RunResponse {
     const parsed = RunWorkflowRequestSchema.safeParse(body ?? {});
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
@@ -111,6 +122,7 @@ export class WorkflowsController {
   }
 
   @Post(':id/webhook/rotate')
+  @RequiresRole('admin')
   rotateWebhook(@Param('id') id: string): WebhookInfoResponse {
     return this.service.rotateWebhookSecret(id);
   }

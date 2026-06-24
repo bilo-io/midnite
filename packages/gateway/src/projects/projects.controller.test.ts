@@ -54,6 +54,8 @@ describe('ProjectsController — valid input delegates to the service', () => {
     expect(res).toEqual({ project: fakeProject });
     expect(service.createProject).toHaveBeenCalledWith(
       expect.objectContaining({ name: 'Midnite', tag: 'mid', color: '#7c3aed' }),
+      undefined,
+      undefined,
     );
   });
 
