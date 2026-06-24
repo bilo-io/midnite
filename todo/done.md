@@ -104,6 +104,16 @@ All four implementation themes (A–D, PRs #102 #125 #134 #135 #144 #166) were a
 
 ---
 
+## 2026-06-24 — Phase 9 B1: player avatar picker in the corner office (PR #183)
+
+- [x] `playerVariant: number` + `characterPickerOpen: boolean` added to `office-store` (with localStorage persistence)
+- [x] `CharacterPicker` modal: 7 options (human + 6 robot variants Alpha–Zeta with accent-colour swatches)
+- [x] "Avatar" button added to corner-office HUD top bar
+- [x] Both Phaser scenes use `playerCharKey`/`playerWalkAnim` helpers; respond live to store changes
+- [x] Input frozen while picker is open (same freeze pattern as desk-item picker)
+
+---
+
 ## 2026-06-24 — Phase 9 B1: provider-aware agent characters in the office (PR #171)
 
 - [x] `agentCli: z.string().optional()` added to `SessionSummarySchema` in `shared/src/session.ts`
