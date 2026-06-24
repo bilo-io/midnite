@@ -4,15 +4,32 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-06-24 — Phase 33 E1/B4/E2/E3 complete: user profile + team settings UI
+## 2026-06-24 — Tracker reconciliation: ticked confirmed-shipped boxes (Phase 15 A, Phase 22 D)
 
-- [x] `GET /users/me`, `PATCH /users/me`, `PATCH /users/me/password` endpoints in new `users.controller.ts`; `UsersController` registered in `UsersModule`
-- [x] Web API helpers: `updateMe`, `updateMyPassword`, all team methods (listMyTeams, createTeam, getTeam, updateTeam, deleteTeam, setMemberRole, removeMember, createInvite, listInvites, revokeInvite, getInvite, acceptInvite)
-- [x] `/settings/profile` — display name + email read-only, change display name, change password (validates current password)
-- [x] `/settings/team` — lists caller's teams + inline create-team form
-- [x] `/settings/team/[teamId]` — rename (admin+), member role-picker + remove (admin+), invite-link generator, outstanding invite list with revocation, owner-only danger-zone delete
-- [x] `/invite/[token]` — invite acceptance page (redirects to /login if unauthenticated, accepts and redirects to board)
-- [x] Settings sidebar gains "Profile" and "Teams" entries
+Several "open" tracker boxes describe work that's actually shipped — verified against the code, then reconciled. Doc-only; no code change. (Surfaced during a `/exec` sweep where 4 consecutive "open" candidates turned out already-built.)
+
+- [x] **Phase 22 Theme D** — "awaiting review / awaiting merge" board filter: confirmed shipped (`DELIVERY_FILTERS` + `?delivery=` in `tasks-view.tsx`, `deliveryState`/`matchesDelivery` in `lib/pr-delivery.ts`, unit-tested in `pr-delivery.test.ts`). Ticked.
+- [x] **Phase 15 Theme A** (Bulk / paste add) — satisfied end-to-end by **Phase 16** (✅ PR #40) per Phase 16 Decision §5: `POST /tasks/bulk` (`createBulk`), coalesced `tasks.bulkCreated` WS event, CLI `add --bulk` (`cli/src/bulk.ts`), web paste modal. Ticked all 4 boxes with shipped-surface references.
+
+## 2026-06-24 — Phase 34 COMPLETE: bundle baseline closed out (verification)
+
+Final open box in Phase 34 — re-ran the analyzer after Theme B and confirmed `lucide-react` is tree-shaken out of the shared bundle. Doc-only; no code change (analyzer + `optimizePackageImports` already landed in earlier slices).
+
+- [x] Re-ran `moon run web:bundle-report`: first-load shared JS = **104 kB gzipped** (`1106` 46.7 kB + `a0f49a59` 54.2 kB + 3.2 kB other)
+- [x] Confirmed `lucide-react` **absent from the shared first-load bundle**; tree-shaken into per-route chunks (≤23 kB/chunk, 359 kB total spread across all routes) — each page loads only the icons it renders
+- [x] Filled in Decisions §4 baseline numbers (largest chunk: `6676e8bd.js` 1.16 MB parsed, lazy dashboard/recharts/grid — not in first-load)
+- [x] Ticked the line-119 verification box → **Phase 34 fully complete**
+
+## 2026-06-24 — Phase 24 Theme B: touch interactions for the kanban (PR #188)
+
+Makes the board usable by finger and stops the live terminal half-working on touch.
+
+- [x] dnd-kit sensors split into `MouseSensor` (6px, desktop unchanged) + `TouchSensor` (200ms press-and-hold, 8px tolerance) on `board-view` + `sortable-accordions` — a plain swipe scrolls, a held press drags
+- [x] `tap-to-move-menu.tsx`: touch-only ≥44px "move to…" menu on each card (the other columns), running the same `onMove` (→wip spawns, →todo restats); supersedes the hover Start/Stop on mobile; RTL-tested
+- [x] `live-terminal.tsx`: read/scroll-only on touch (`disableStdin`, no cursor blink/input, "Read-only" badge)
+- [x] `fix(site)`: added the missing explicit `vite@6` dep so `site:typecheck` passes (web/ui already declared it)
+
+> Merged on a green local web gate (typecheck/test/lint + site:typecheck); CI is billing-blocked account-wide. Superseded the earlier #169, whose extensive parallel-agent main-repair commits became redundant once equivalent fixes landed on main independently.
 
 ## 2026-06-24 — Phase 10 E3+F3 complete: gallery generator, Storybook GH Pages preview, docs/TESTING.md (PR #186)
 

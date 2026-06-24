@@ -41,13 +41,13 @@ Make the core monitoring surfaces reflow to a phone; gate the canvas-heavy ones 
 
 ---
 
-## Theme B — Touch interactions — **M**
+## Theme B — Touch interactions — **M** — ✅ DONE (PR #188, 2026-06-24 — see [done.md](done.md))
 
 The kanban is the signature surface; make moving a card work by finger, two ways (Decision §3).
 
-- [ ] **Tune drag for touch** — give the board's dnd-kit sensor a touch **activation delay** (or a dedicated drag handle) so a press-and-hold drags while a plain swipe **scrolls**. Apply the same to [`sortable-accordions.tsx`](../packages/web/components/sortable-accordions.tsx).
-- [ ] **Tap-to-move fallback** — on touch, a card offers a "move to…" affordance (pick the card → choose the target column) so a column change never *requires* a successful drag. Both paths call the same move mutation.
-- [ ] **Touch ergonomics** — ≥44px tap targets on interactive controls; modals/sheets sized for a phone; the **xterm live terminal** scoped to **read/scroll** on touch (typing into a PTY from a phone is a non-goal — surface it clearly rather than half-working).
+- [x] **Tune drag for touch** — dnd-kit sensors split into `MouseSensor` (6px distance, desktop unchanged) + `TouchSensor` (200ms press-and-hold, 8px tolerance) on [`board-view.tsx`](../packages/web/components/board-view.tsx) and [`sortable-accordions.tsx`](../packages/web/components/sortable-accordions.tsx), so a plain swipe **scrolls** and only a held press drags.
+- [x] **Tap-to-move fallback** — [`tap-to-move-menu.tsx`](../packages/web/components/tap-to-move-menu.tsx): on touch widths (`useIsMobile`) each card shows a ≥44px "move to…" menu of the other columns; selecting one runs the same `onMove` (→wip spawns, →todo restats). Supersedes the hover-only Start/Stop on mobile. RTL-tested.
+- [x] **Touch ergonomics** — 44px tap target on the tap-to-move affordance; the **xterm live terminal** ([`live-terminal.tsx`](../packages/web/components/live-terminal.tsx)) is read/scroll-only on touch (`disableStdin`, no cursor blink, no input forwarding, a "Read-only" badge). ↪️ broader 44px sweep + phone-sized modals fold into A3's per-surface reflow.
 
 ---
 

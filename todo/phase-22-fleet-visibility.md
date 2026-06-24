@@ -62,7 +62,7 @@ Make the delivery status visible where the work lives.
 - [x] ✅ (PR #132) **PR-status chip** on task cards (state + checks colour: draft/open/merged + passing/failing/pending).
 - [x] ✅ (PR #132) A **delivery panel** in the task **thread modal**: PR state, the checks list, review decision, a link out to the PR, and an on-demand **refresh** button (`POST /tasks/:id/pr/refresh`).
 - [x] ✅ (PR #132) **Upgraded the Shipped widget** to show live PR/CI status beside each link.
-- [ ] **Optional:** an "awaiting review / awaiting merge" board filter (reuse the existing `?tags=`-style URL-backed saved-filter pattern) so you can triage what's blocked on a human.
+- [x] ✅ **Optional (shipped):** an "awaiting review / awaiting merge" board filter — `DELIVERY_FILTERS` on the tasks board ([`tasks-view.tsx`](../packages/web/components/tasks-view.tsx)) backed by the `?delivery=` URL param (reusing the `FilterPills` saved-filter pattern); classification lives in [`lib/pr-delivery.ts`](../packages/web/lib/pr-delivery.ts) (`deliveryState`/`matchesDelivery`, unit-tested in `pr-delivery.test.ts`). Triages open PRs blocked on a human.
 - [x] ✅ (PR #132 + #142) `getOpsMetrics` and PR client calls land in [`lib/api.ts`](../packages/web/lib/api.ts); web tests per Phase 10 conventions.
 
 ---

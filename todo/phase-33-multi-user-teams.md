@@ -64,9 +64,9 @@ Teams let multiple users share a workspace. A team has a slug, roles (owner / ad
 - [x] `GET/DELETE /teams/:id/invites` (admin+): list + revoke outstanding invites.
 
 ### B4. Web team UI — **M** ✅ DONE
-- [x] `app/(main)/settings/team/page.tsx` — lists caller's teams + inline "Create team" form; links to each team's settings.
-- [x] `app/(main)/settings/team/[teamId]/page.tsx` — rename (admin+), member list with role-picker + remove button (admin+), invite-link generator, outstanding invites with revocation, owner-only danger-zone delete.
-- [x] `app/(auth)/invite/[token]/page.tsx` — invite acceptance page: shows role + expiry, redirects to /login?return= if unauthenticated, accepts and redirects to board.
+- [x] `app/(main)/settings/team/page.tsx` — team list + inline create-team form (name + auto-slug); links to team settings.
+- [x] `app/(main)/settings/team/[teamId]/page.tsx` — member list with inline role-picker (admin+), remove-member button, invite-token generator with copy link + revoke; danger-zone delete (owner only). Guarded: only admins/owners see management controls.
+- [x] `app/(auth)/invite/[token]/page.tsx` — invite acceptance page: shows role + expiry unauthenticated; "Accept invitation" button for logged-in users; redirects to `/login?return=...` if not authenticated.
 
 ---
 
@@ -117,14 +117,14 @@ Bind task execution to its owner's context and start recording who does what.
 The settings surface for identity and team management.
 
 ### E1. User profile page — **S** ✅ DONE
-- [x] `app/(main)/settings/profile/page.tsx`: display name + email (read-only); change display name; change password (requires current password, calls `PATCH /users/me/password`); avatar initial/placeholder (no upload in Phase 33 — deferred).
-- [x] `PATCH /users/me` and `PATCH /users/me/password` endpoints in `users.controller.ts`; `UsersController` added to `UsersModule`.
+- [x] `app/(main)/settings/profile/page.tsx`: display name edit + email (read-only) + change password (requires current password, `PATCH /auth/me` + `PATCH /auth/me/password`); avatar deferred.
+- [x] Gateway: `PATCH /auth/me` and `PATCH /auth/me/password` routes wired to `UsersService`.
 
-### E2. Team settings + member management — **S** ✅ DONE
-- [x] Merged into B4 — `app/(main)/settings/team/[teamId]/page.tsx` has rename (admin+), danger-zone delete (owner), member role-picker + remove (admin+), and invite-token generation with outstanding invite list + revocation.
+### E2. Team settings + member management — **S** ✅ DONE (merged into B4)
+- [x] Handled in B4 — team detail page includes rename, danger-zone delete, member management, and invite tokens.
 
-### E3. Invite token acceptance — **S** ✅ DONE
-- [x] `app/(auth)/invite/[token]/page.tsx` from B4 includes the outstanding-invites section with revocation in the team settings page.
+### E3. Invite token acceptance — **S** ✅ DONE (merged into B4)
+- [x] Outstanding invite tokens shown in team detail page with revoke controls. Invite acceptance page at `/invite/[token]`.
 
 ---
 
