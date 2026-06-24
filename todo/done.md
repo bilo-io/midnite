@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 14 B+C: credential vault (B1) + Slack/Email executors (C) (PR #168)
+
+Closes the gap between workflow nodes and external services. Credentials are AES-256-GCM encrypted at rest, decrypted only server-side at execute time, and never returned over the API.
+
+- [x] `shared`: `'credential'` NodeField kind + `credentialType` filter; `slack.message` + `email.send` node type definitions; `HttpRequestParamsSchema.credentialId`; typed API client fns (`listWorkflowCredentials`, `createWorkflowCredential`, `deleteWorkflowCredential`)
+- [x] `gateway`: `SlackMessageExecutor` (Slack Web API `chat.postMessage`); `EmailSendExecutor` (nodemailer SMTP); `HttpRequestExecutor` resolves `credentialId` → injects auth header; `WorkflowCredentialsModule` wired into `WorkflowsModule`
+- [x] `web`: Settings → Credentials page (list / add / delete); `CredentialForm` with per-type fields; `CredentialPicker` in `NodeConfigPanel` for `credential` kind fields; settings sidebar Credentials link
+- [x] `shared` fixture fix: `fixAttempts: 0` added to `taskFixture` + board-reducer stub (pre-existing regression from PR #166)
+- [x] `integration-nodes.spec.ts`: Slack + Email executor specs with mocked fetch/nodemailer
+
+> GitHub Actions billing-blocked (2026-06-24) — gate passed locally; CI pending post-unblock.
+
 ## 2026-06-24 — Phase 31 D: attention state + clickable HUD badge (main a581cbf)
 
 Completes the attention affordance: agents with a pending approval/waiting state pulse orange in the office, and the HUD badge is now clickable.
