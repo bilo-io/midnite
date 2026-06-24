@@ -4,29 +4,35 @@ import {
   BulkCreateTaskResponseSchema,
   CheckRunListResponseSchema,
   CreateFromBreakdownResponseSchema,
+  InstallTemplateRequestSchema,
   RunResponseSchema,
   SearchResponseSchema,
   StatusSchema,
   TaskSchema,
+  TemplateSlotsResponseSchema,
   TerminalTokenResponseSchema,
   TriggerCheckResponseSchema,
   WorkflowRunSchema,
   WorkflowSchema,
   WorkflowSummarySchema,
+  WorkflowTemplatesResponseSchema,
   type Breakdown,
   type BreakdownPreviewResponse,
   type BulkCreateTaskRequest,
   type BulkCreateTaskResponse,
   type CheckRun,
   type CreateFromBreakdownResponse,
+  type InstallTemplateRequest,
   type SearchQuery,
   type SearchResponse,
   type Status,
   type Task,
+  type TemplateSlotsResponse,
   type TerminalTokenResponse,
   type Workflow,
   type WorkflowRun,
   type WorkflowSummary,
+  type WorkflowTemplateSummary,
 } from '@midnite/shared';
 
 /** Batch-wide defaults applied to every task in a create (single or bulk). */
@@ -63,6 +69,9 @@ export interface GatewayClient {
   getTerminalToken(sessionId: string): Promise<TerminalTokenResponse>;
   draftBreakdown(goal: string): Promise<BreakdownPreviewResponse>;
   createFromBreakdown(breakdown: Breakdown, repo?: string): Promise<CreateFromBreakdownResponse>;
+  listTemplates(category?: string): Promise<WorkflowTemplateSummary[]>;
+  getTemplateSlots(idOrSlug: string): Promise<TemplateSlotsResponse>;
+  installTemplate(idOrSlug: string, body: InstallTemplateRequest): Promise<Workflow>;
 }
 
 /** A thin typed client over the gateway REST API. Responses are validated with
@@ -252,6 +261,34 @@ export function createClient(baseUrl: string): GatewayClient {
           body: JSON.stringify({ breakdown: BreakdownSchema.parse(breakdown), repo }),
         }),
       );
+    },
+
+    async listTemplates(category?: string): Promise<WorkflowTemplateSummary[]> {
+      const params = new URLSearchParams({ published: 'true' });
+      if (category) params.set('category', category);
+      return WorkflowTemplatesResponseSchema.parse(
+        await request(`/workflow-templates?${params.toString()}`, { method: 'GET' }),
+      ).templates;
+    },
+
+    async getTemplateSlots(idOrSlug: string): Promise<TemplateSlotsResponse> {
+      return TemplateSlotsResponseSchema.parse(
+        await request(`/workflow-templates/${encodeURIComponent(idOrSlug)}/slots`, {
+          method: 'GET',
+        }),
+      );
+    },
+
+    async installTemplate(idOrSlug: string, body: InstallTemplateRequest): Promise<Workflow> {
+      const res = (await request(
+        `/workflow-templates/${encodeURIComponent(idOrSlug)}/install`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(InstallTemplateRequestSchema.parse(body)),
+        },
+      )) as { workflow: unknown };
+      return WorkflowSchema.parse(res.workflow);
     },
   };
 }
