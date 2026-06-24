@@ -21,14 +21,16 @@
 
 ---
 
-## Theme A — Bulk / paste add — **S–M**
+## Theme A — Bulk / paste add — **S–M** — ✅ DONE (satisfied by Phase 16, PR #40)
 
 Accept a freeform multi-line list in one shot, one task per line.
 
-- [ ] **`POST /tasks/bulk`** in the tasks module: accept `{ lines: string[] }` (or a raw blob split server-side on newlines, trimming blanks); fan each line through the existing classify → triage pipeline in [`tasks.service.ts`](../packages/gateway/src/tasks/tasks.service.ts). Schema in [`shared/src/task.ts`](../packages/shared/src/task.ts) (`BulkCreateTaskRequestSchema` + a result summary). *(A real endpoint over a client-side loop so classification can batch and the WS broadcast emits once — Decision §1.)*
-- [ ] Emit task-board WS events for the batch (one broadcast or a coalesced burst, not N independent refetches) so the board updates cleanly. Reuses the `TaskEventBus`/`TasksGateway` from Phase 7 A6.
-- [ ] **CLI `add --bulk`** ([`cli/src/`](../packages/cli/src/)): read stdin or a `--file`, split lines, call the bulk client. Thin — parse → typed client call → render a per-line summary table.
-- [ ] **Web "paste list" modal**: a textarea (one task per line) that calls the bulk endpoint and shows how many tasks were created + their inferred kind.
+> Promoted to its own focused phase and shipped end-to-end as **[Phase 16 — Bulk / paste add](phase-16-bulk-add.md)** (✅ PR #40). Per Phase 16 Decision §5, "whichever lands first satisfies it" — so this theme is complete. The boxes below map to the shipped surfaces.
+
+- [x] **`POST /tasks/bulk`** — `createBulk` in [`tasks.controller.ts`](../packages/gateway/src/tasks/tasks.controller.ts) → `TasksService.createBulk`, fanning each line through the existing classify → triage pipeline. `BulkCreateTaskRequestSchema`/`BulkCreateTaskResponseSchema` + the pure `parseBulkLines` helper live in [`shared`](../packages/shared/src/bulk.ts) (Decision §1).
+- [x] Coalesced board WS signal — one `tasks.bulkCreated` event (carries the new ids) in [`shared/src/events/task.ts`](../packages/shared/src/events/task.ts), reduced by `task-board-reducer.ts`; the board updates once, not N times.
+- [x] **CLI `add --bulk`** — [`cli/src/bulk.ts`](../packages/cli/src/bulk.ts) (stdin/`--file`, per-line summary), unit-tested in `bulk.test.ts`.
+- [x] **Web "paste list" modal** — bulk mode in [`new-task-modal.tsx`](../packages/web/components/new-task-modal.tsx) (`onBulkCreated` → coalesced refresh in `tasks-view.tsx`).
 
 ---
 
