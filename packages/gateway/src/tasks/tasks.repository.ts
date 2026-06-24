@@ -116,6 +116,15 @@ export class TasksRepository {
       .get();
   }
 
+  incrementFixAttempts(id: string, updatedAt: string): TaskRow | undefined {
+    return this.db
+      .update(tasks)
+      .set({ fixAttempts: sql`${tasks.fixAttempts} + 1`, updatedAt })
+      .where(eq(tasks.id, id))
+      .returning()
+      .get();
+  }
+
   setProject(id: string, projectId: string | null, updatedAt: string): TaskRow | undefined {
     return this.db
       .update(tasks)
@@ -386,6 +395,7 @@ export class TasksRepository {
       status: row.status as Status,
       priority: row.priority,
       retryCount: row.retryCount,
+      fixAttempts: row.fixAttempts,
       prompt: row.prompt ?? undefined,
       repo: row.repo ?? undefined,
       agentId: row.agentId ?? undefined,

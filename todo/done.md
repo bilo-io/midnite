@@ -12,6 +12,13 @@ Closes Phase 8 C2. Each agent's drop-shadow now reflects the tool currently runn
 - [x] `office-scene.ts`: `updateActorContent()` calls `actor.shadow.setFillStyle(color, alpha)` when `liveActivity.phase === 'running'`, resets to `SHADOW_DEFAULT` when idle
 - [x] `todo/phase-8-office-fidelity.md`: C2 marked done, progress line updated
 
+## 2026-06-24 — Phase 31 D: attention state + clickable HUD badge (main a581cbf)
+
+Completes the attention affordance: agents with a pending approval/waiting state pulse orange in the office, and the HUD badge is now clickable.
+
+- [x] `lib/office/agents.ts`: `liveActivity?` + `attention?` fields added to `OfficeAgent` (store, scene, and hook all referenced these but the type was missing)
+- [x] `office-hud.tsx`: "N agents need you" badge is now a `<button>` that calls `setNearby` + `open` for the first attention agent
+
 ## 2026-06-24 — Phase 18 Theme A: CLI task export + doc reconciliation (PR #164)
 
 Closes Phase 18 Theme A. The gateway serializer/route + web `ExportMenu` had already shipped (#128/#159) but the phase doc was never ticked; this lands the deferred CLI consumer (decision 6) and reconciles the doc.
