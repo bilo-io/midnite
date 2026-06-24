@@ -283,12 +283,50 @@ export const workflows = sqliteTable(
     lastFiredAt: text('last_fired_at'),
     // Soft-archive timestamp; null = active. Mirrors tasks.archivedAt.
     archivedAt: text('archived_at'),
+    // The template this workflow was installed from (Phase 36). Nullable — null
+    // for workflows created directly, set on install for record-keeping only.
+    installedFromTemplateId: text('installed_from_template_id'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
   },
   (t) => ({
     enabledIdx: index('workflows_enabled_idx').on(t.enabled),
     triggerTypeIdx: index('workflows_trigger_type_idx').on(t.triggerType),
+  }),
+);
+
+// ── Workflow template marketplace (Phase 36) ────────────────────────────────
+// Stores reusable, shareable workflow definitions. System templates (built-in
+// seeds) have author_id = NULL. Soft-deleted via deleted_at (never hard-deleted).
+export const workflowTemplates = sqliteTable(
+  'workflow_templates',
+  {
+    id: text('id').primaryKey(),
+    slug: text('slug').notNull(),
+    name: text('name').notNull(),
+    description: text('description'),
+    // Category: one of monitoring|notifications|github|scheduling|ai|data.
+    category: text('category').notNull(),
+    // JSON array of tag strings.
+    tags: text('tags').notNull().default('[]'),
+    // JSON array of { key, type, description } credential slot definitions.
+    credentialSlots: text('credential_slots').notNull().default('[]'),
+    // JSON: { trigger: Trigger, nodes: WorkflowNode[], edges: WorkflowEdge[] }
+    definition: text('definition').notNull(),
+    // Optional thumbnail URL or data URI.
+    thumbnail: text('thumbnail'),
+    // Published system templates are visible to all users.
+    published: integer('published').notNull().default(1),
+    // null for system (built-in) templates; user ID for user-created templates.
+    authorId: text('author_id'),
+    deletedAt: text('deleted_at'),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => ({
+    slugIdx: uniqueIndex('workflow_templates_slug_idx').on(t.slug),
+    categoryIdx: index('workflow_templates_category_idx').on(t.category, t.published),
+    authorIdx: index('workflow_templates_author_idx').on(t.authorId),
   }),
 );
 
@@ -795,3 +833,7 @@ export const agentRunStats = sqliteTable(
 
 export type AgentRunStatsRow = typeof agentRunStats.$inferSelect;
 export type AgentRunStatsInsert = typeof agentRunStats.$inferInsert;
+
+
+export type WorkflowTemplateRow = typeof workflowTemplates.$inferSelect;
+export type WorkflowTemplateInsert = typeof workflowTemplates.$inferInsert;

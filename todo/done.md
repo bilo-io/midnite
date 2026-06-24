@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 36 A+B+C (partial) — Workflow Template Marketplace gateway (PR #179)
+
+- [x] Migration 0043: `workflow_templates` table (slug unique, category+published index) + `installed_from_template_id` on `workflows`
+- [x] Shared `workflow-template.ts`: `WorkflowTemplate`, `WorkflowTemplateSummary`, `WorkflowTemplateCredentialSlot`, `CreateTemplateRequest`, `UpdateTemplateRequest`, `InstallTemplateRequest`, `TemplateSlotsResponse` (zod schemas + types)
+- [x] `WorkflowTemplatesRepository`: insert, findById, findBySlug, list (category/published/authorId filter), update, softDelete, hydrate, hydrateSummary
+- [x] `WorkflowTemplatesService`: CRUD, system-template protection, `onModuleInit` idempotent seeding, `getSlots`, `install` (slot:key sentinel resolution)
+- [x] `WorkflowTemplatesController`: full REST surface (`/workflow-templates` CRUD + `/:id/slots` + `/:id/install`)
+- [x] `WorkflowTemplatesModule` registered in `app.module.ts`
+- [x] Three built-in seeds: `notify-on-task-done`, `webhook-relay`, `ai-code-review` (Phase 37B)
+- [x] 15 new tests (repository + service); 933 gateway tests green
+
 ## 2026-06-24 — Phase 37 C+D — Repo.ownerRepo, task.aiReview, AiReviewService, verdict chip (PR #178)
 
 - [x] Migration 0041: `owner_repo TEXT` nullable + unique index on `repos` table
