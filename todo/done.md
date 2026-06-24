@@ -4,6 +4,13 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 24 A3 — board snap-scroll + task row mobile cards (PR #199)
+
+- [x] `board-view.tsx`: CSS snap-scroll container (`max-md:snap-x snap-mandatory`) + `snap-start` columns that fill viewport width on mobile; tab bar with colour-coded column buttons + active indicator; `scrollRef` + `handleScroll` + `scrollToColumn` for JS tracking; desktop layout unchanged
+- [x] `task-row.tsx`: two-line card layout on mobile (`flex-col sm:flex-row`); title on line 1, kind/project/status chips on line 2 via `sm:contents`; selectable rows keep icon anchored left with separate inner two-line layout
+
+---
+
 ## 2026-06-24 — Phase 23 D — autonomy modes + approvals settings panel (PR #198)
 
 - [x] `AutonomyMode` enum + `SAFE_TOOLS` constant + `ApprovalSettings` / `SetModeRequest` Zod schemas added to `@midnite/shared`
