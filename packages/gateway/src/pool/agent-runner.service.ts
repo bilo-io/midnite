@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger, Optional, type OnModuleInit } from '@nestjs
 import { randomUUID } from 'node:crypto';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import type { MidniteConfig, Task } from '@midnite/shared';
+import type { CheckResult, MidniteConfig, Task } from '@midnite/shared';
 import { resolveChecksForRepo } from '@midnite/shared';
 import { KnowledgeService } from '../agent/knowledge.service';
 import { UrlContextService } from '../agent/url-context.service';
@@ -29,6 +29,35 @@ import { appendRepoConventions } from './lib/build-agent-prompt';
  * onExit wiring as a fresh {@link start}; it runs after the pool initialises and
  * before the scheduler's first tick (dependency order).
  */
+/** Max characters of per-check output included in the auto-fix seed prompt. */
+const FIX_OUTPUT_CAP = 800;
+
+/**
+ * Build the seed prompt for an auto-fix re-spawn. Folds in the PR URL and
+ * the truncated per-check failure output so the agent knows exactly what to fix.
+ * Raw output is trimmed to FIX_OUTPUT_CAP to stay within a reasonable prompt
+ * size without losing the most recent (and most relevant) failure detail.
+ */
+function buildFixPrompt(prUrl: string, results: CheckResult[]): string {
+  const failed = results.filter((r) => !r.passed);
+  const lines: string[] = [
+    `The PR you opened has failing checks: ${prUrl}`,
+    'Fix the failures below and update the existing PR.',
+    '',
+  ];
+  for (const r of failed) {
+    lines.push(`## ${r.name} (exit ${r.exitCode ?? 'killed'})`);
+    const raw = r.output.trim();
+    if (raw.length > FIX_OUTPUT_CAP) {
+      lines.push('…' + raw.slice(-FIX_OUTPUT_CAP));
+    } else {
+      lines.push(raw || '(no output)');
+    }
+    lines.push('');
+  }
+  return lines.join('\n').trimEnd();
+}
+
 @Injectable()
 export class AgentRunnerService implements OnModuleInit {
   private readonly logger = new Logger(AgentRunnerService.name);
@@ -220,9 +249,55 @@ export class AgentRunnerService implements OnModuleInit {
 
     if (run.passed) {
       this.tasks.markDone(taskId, prUrl);
-    } else {
-      this.tasks.markWaiting(taskId);
+      this.complete(taskId);
+      return;
     }
+
+    // Gate failed — try auto-fix if enabled and the budget hasn't been exhausted.
+    const autoFix = this.config.checks.autoFix;
+    const task = this.tasks.getTask(taskId);
+    if (autoFix.enabled && task.fixAttempts < autoFix.maxAttempts) {
+      this.tasks.incrementFixAttempts(taskId);
+      this.tasks.recordCheckEvent(taskId, 'checks.fix.started');
+      this.logger.log(
+        `auto-fix attempt ${task.fixAttempts + 1}/${autoFix.maxAttempts} for task ${taskId}`,
+      );
+
+      const fixPrompt = buildFixPrompt(prUrl, run.results);
+
+      // Kill the previous session (the agent has already stopped — Stop hook fired)
+      // then spawn fresh with the fix prompt in the same cwd.
+      this.clearRunTimeout(taskId);
+      this.terminal.killManagedRun(taskId);
+
+      const result = this.terminal.spawnAgentSession(
+        taskId,
+        { prompt: fixPrompt },
+        { onExit: (code) => this.onExit(taskId, code) },
+      );
+
+      if (!result.ok) {
+        this.logger.warn(`auto-fix spawn failed for ${taskId}: ${result.error}`);
+        this.tasks.markWaiting(taskId);
+        this.complete(taskId);
+        return;
+      }
+
+      this.pool.setPid(taskId, result.pid);
+      this.armTimeout(taskId);
+      // Do NOT call complete() — the slot stays held until the fix agent's Stop
+      // hook re-enters completeWithChecks (or onExit handles an unexpected exit).
+      return;
+    }
+
+    // Auto-fix disabled or budget exhausted.
+    if (autoFix.enabled && task.fixAttempts >= autoFix.maxAttempts) {
+      this.tasks.recordCheckEvent(taskId, 'checks.fix.exhausted');
+      this.logger.warn(
+        `auto-fix budget exhausted (${task.fixAttempts}/${autoFix.maxAttempts}) for task ${taskId}`,
+      );
+    }
+    this.tasks.markWaiting(taskId);
     this.complete(taskId);
   }
 

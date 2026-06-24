@@ -331,8 +331,8 @@ describe('AgentRunnerService', () => {
 
   // ── completeWithChecks (Phase 30 B2/B3) ──────────────────────────────────────
 
-  function fakeGateTask(id: string, repo?: string): Task {
-    return { id, title: `title-${id}`, status: 'wip', priority: 1, retryCount: 0, repo, tags: [], dependsOn: [], events: [] } as Task;
+  function fakeGateTask(id: string, repo?: string, fixAttempts = 0): Task {
+    return { id, title: `title-${id}`, status: 'wip', priority: 1, retryCount: 0, fixAttempts, repo, tags: [], dependsOn: [], events: [] } as Task;
   }
 
   function fakeGateTasks(t: Task) {
@@ -340,9 +340,19 @@ describe('AgentRunnerService', () => {
     const markWaiting = vi.fn();
     const saveCheckRun = vi.fn();
     const recordCheckEvent = vi.fn();
-    const getTask = vi.fn().mockReturnValue(t);
-    const service = { markDone, markWaiting, saveCheckRun, recordCheckEvent, getTask, listTasks: () => [] } as unknown as TasksService;
-    return { service, markDone, markWaiting, saveCheckRun, recordCheckEvent };
+    const incrementFixAttempts = vi.fn(() => ({ ...t, fixAttempts: t.fixAttempts + 1 }) as Task);
+    // getTask returns the current task; after incrementFixAttempts it returns updated count
+    let fixCount = t.fixAttempts;
+    const getTask = vi.fn(() => ({ ...t, fixAttempts: fixCount }));
+    incrementFixAttempts.mockImplementation(() => {
+      fixCount += 1;
+      return { ...t, fixAttempts: fixCount } as Task;
+    });
+    const service = {
+      markDone, markWaiting, saveCheckRun, recordCheckEvent, getTask,
+      incrementFixAttempts, listTasks: () => [],
+    } as unknown as TasksService;
+    return { service, markDone, markWaiting, saveCheckRun, recordCheckEvent, incrementFixAttempts, getTask };
   }
 
   function passRun(): CheckRun {
@@ -366,22 +376,28 @@ describe('AgentRunnerService', () => {
     checks: ChecksService | undefined,
     repos: ReposService = noRepos,
     checksEnabled = true,
+    autoFixEnabled = false,
+    autoFixMaxAttempts = 2,
   ) {
     const cfg = parseConfig({
       agent: { pool: 1, runTimeoutMs: 60000 },
       terminal: {},
       gateway: {},
-      checks: checksEnabled ? { enabled: true, gates: [{ name: 'test', command: 'exit 0' }] } : { enabled: false },
+      checks: checksEnabled
+        ? {
+            enabled: true,
+            gates: [{ name: 'test', command: 'exit 0' }],
+            autoFix: { enabled: autoFixEnabled, maxAttempts: autoFixMaxAttempts },
+          }
+        : { enabled: false },
     });
-    const { service, markDone, markWaiting, saveCheckRun, recordCheckEvent } = fakeGateTask(t.id, t.repo)
-      ? fakeGateTasks(t)
-      : fakeGateTasks(t);
+    const { service, markDone, markWaiting, saveCheckRun, recordCheckEvent, incrementFixAttempts } = fakeGateTasks(t);
     const pool = new AgentPoolService(cfg, service);
     // Claim the slot first so complete() can release it
     pool.acquire(t.id);
-    const { terminal, killManagedRun } = fakeTerminal();
+    const { terminal, killManagedRun, spawnAgentSession } = fakeTerminal();
     const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, repos, undefined, checks);
-    return { runner, pool, markDone, markWaiting, saveCheckRun, recordCheckEvent, killManagedRun };
+    return { runner, pool, markDone, markWaiting, saveCheckRun, recordCheckEvent, incrementFixAttempts, killManagedRun, spawnAgentSession };
   }
 
   describe('completeWithChecks', () => {
@@ -438,6 +454,81 @@ describe('AgentRunnerService', () => {
 
       expect(markDone).toHaveBeenCalledWith('t1', 'https://github.com/acme/repo/pull/1');
       expect(saveCheckRun).not.toHaveBeenCalled();
+      expect(pool.slotForTask('t1')).toBeUndefined();
+    });
+  });
+
+  // ── completeWithChecks auto-fix (Phase 30 C) ─────────────────────────────────
+
+  function failRunWithOutput(): CheckRun {
+    return {
+      id: 'cr1', taskId: 't1', trigger: 'gate', passed: false,
+      startedAt: 'a', finishedAt: 'b',
+      results: [{ name: 'test', command: 'npm test', exitCode: 1, passed: false, durationMs: 100, output: 'FAIL: assertion error' }],
+    };
+  }
+
+  describe('completeWithChecks — auto-fix loop', () => {
+    it('auto-fix off → fails gate → markWaiting, no re-spawn', async () => {
+      const t = fakeGateTask('t1', 'myrepo', 0);
+      const { runner, pool, markDone, markWaiting, spawnAgentSession, recordCheckEvent } =
+        makeGateRunner(t, fakeChecks(failRun()), reposWithPath('myrepo', '/tmp/myrepo'), true, false);
+
+      await runner.completeWithChecks('t1', 'https://github.com/acme/repo/pull/1');
+
+      expect(markWaiting).toHaveBeenCalledWith('t1');
+      expect(markDone).not.toHaveBeenCalled();
+      expect(spawnAgentSession).toHaveBeenCalledOnce(); // only the original slot-claim spawn — none from auto-fix
+      expect(recordCheckEvent).not.toHaveBeenCalledWith('t1', 'checks.fix.started');
+      expect(pool.slotForTask('t1')).toBeUndefined();
+    });
+
+    it('auto-fix on + budget available → re-spawns agent with failure output, slot held', async () => {
+      const t = fakeGateTask('t1', 'myrepo', 0);
+      const { runner, pool, markDone, markWaiting, spawnAgentSession, incrementFixAttempts, recordCheckEvent } =
+        makeGateRunner(t, fakeChecks(failRunWithOutput()), reposWithPath('myrepo', '/tmp/myrepo'), true, true, 2);
+
+      await runner.completeWithChecks('t1', 'https://github.com/acme/repo/pull/1');
+
+      expect(incrementFixAttempts).toHaveBeenCalledWith('t1');
+      expect(recordCheckEvent).toHaveBeenCalledWith('t1', 'checks.fix.started');
+      // Second spawn: the fix re-spawn (first was fakeTerminal's initial acquire which never happened here — only completeWithChecks spawns)
+      expect(spawnAgentSession).toHaveBeenCalledOnce();
+      const fixPromptArg = spawnAgentSession.mock.calls[0]![1].prompt as string;
+      expect(fixPromptArg).toContain('failing checks');
+      expect(fixPromptArg).toContain('FAIL: assertion error');
+      expect(markWaiting).not.toHaveBeenCalled();
+      expect(markDone).not.toHaveBeenCalled();
+      // Slot NOT released — fix agent is now running
+      expect(pool.slotForTask('t1')).toBeDefined();
+    });
+
+    it('budget exhausted → markWaiting + checks.fix.exhausted event, slot released', async () => {
+      // fixAttempts already at maxAttempts (2)
+      const t = fakeGateTask('t1', 'myrepo', 2);
+      const { runner, pool, markWaiting, markDone, spawnAgentSession, recordCheckEvent } =
+        makeGateRunner(t, fakeChecks(failRunWithOutput()), reposWithPath('myrepo', '/tmp/myrepo'), true, true, 2);
+
+      await runner.completeWithChecks('t1', 'https://github.com/acme/repo/pull/1');
+
+      expect(recordCheckEvent).toHaveBeenCalledWith('t1', 'checks.fix.exhausted');
+      expect(markWaiting).toHaveBeenCalledWith('t1');
+      expect(markDone).not.toHaveBeenCalled();
+      expect(spawnAgentSession).not.toHaveBeenCalled(); // no re-spawn
+      expect(pool.slotForTask('t1')).toBeUndefined();
+    });
+
+    it('pass after fix → markDone, slot released (gate re-entered via completeWithChecks)', async () => {
+      // fixAttempts = 1 (one fix was already attempted), this time the gate passes
+      const t = fakeGateTask('t1', 'myrepo', 1);
+      const { runner, pool, markDone, markWaiting, recordCheckEvent } =
+        makeGateRunner(t, fakeChecks(passRun()), reposWithPath('myrepo', '/tmp/myrepo'), true, true, 2);
+
+      await runner.completeWithChecks('t1', 'https://github.com/acme/repo/pull/1');
+
+      expect(markDone).toHaveBeenCalledWith('t1', 'https://github.com/acme/repo/pull/1');
+      expect(markWaiting).not.toHaveBeenCalled();
+      expect(recordCheckEvent).toHaveBeenCalledWith('t1', 'checks.passed');
       expect(pool.slotForTask('t1')).toBeUndefined();
     });
   });

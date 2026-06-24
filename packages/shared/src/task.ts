@@ -63,6 +63,8 @@ export const TaskSchema = z.object({
   priority: z.number().int().min(0).max(3).default(1),
   /** How many times an agent run has been auto-retried after an unexpected exit. */
   retryCount: z.number().int().nonnegative().default(0),
+  /** How many times the agent was re-spawned to fix a failing quality gate (Phase 30 C). */
+  fixAttempts: z.number().int().nonnegative().default(0),
   agentId: z.string().optional(),
   sessionId: z.string().optional(),
   projectId: z.string().optional(),
