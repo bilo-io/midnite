@@ -13,6 +13,7 @@ import {
 import type { Workflow } from '@midnite/shared';
 import { NodeConfigPanel } from '@/components/node-config-panel';
 import { NodePalette } from '@/components/node-palette';
+import { RunHistoryPanel } from '@/components/run-history-panel';
 import { RunOutputPanel } from '@/components/run-output-panel';
 import { WorkflowToolbar } from '@/components/workflow-toolbar';
 import { updateWorkflow } from '@/lib/api';
@@ -76,6 +77,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
   const [error, setError] = useState<string | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(true);
   const [configOpen, setConfigOpen] = useState(true);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const runner = useWorkflowRun(workflow.id);
 
   // Reflect live run state (status + failure message) onto the canvas nodes.
@@ -144,6 +146,8 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
             onRun={() => void run()}
             onSave={() => void save()}
             onEditTrigger={editTrigger}
+            onHistory={() => setHistoryOpen((o) => !o)}
+            historyOpen={historyOpen}
             running={runner.running}
             saving={saving}
           />
@@ -181,22 +185,31 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
                 onToggle={() => setPaletteOpen((o) => !o)}
                 label={paletteOpen ? 'Hide node palette' : 'Show node palette'}
               />
-              <PanelToggle
-                side="right"
-                open={configOpen}
-                onToggle={() => setConfigOpen((o) => !o)}
-                label={configOpen ? 'Hide config panel' : 'Show config panel'}
-              />
+              {!historyOpen ? (
+                <PanelToggle
+                  side="right"
+                  open={configOpen}
+                  onToggle={() => setConfigOpen((o) => !o)}
+                  label={configOpen ? 'Hide config panel' : 'Show config panel'}
+                />
+              ) : null}
             </div>
 
-            <div
-              className={cn(
-                'flex h-full shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out motion-reduce:transition-none',
-                configOpen ? 'w-80' : 'w-0',
-              )}
-            >
-              <NodeConfigPanel workflowId={workflow.id} run={runner.run} />
-            </div>
+            {historyOpen ? (
+              <RunHistoryPanel
+                workflowId={workflow.id}
+                onClose={() => setHistoryOpen(false)}
+              />
+            ) : (
+              <div
+                className={cn(
+                  'flex h-full shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out motion-reduce:transition-none',
+                  configOpen ? 'w-80' : 'w-0',
+                )}
+              >
+                <NodeConfigPanel workflowId={workflow.id} run={runner.run} />
+              </div>
+            )}
           </div>
 
           <RunOutputPanel run={runner.run} />

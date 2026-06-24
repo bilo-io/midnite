@@ -39,7 +39,7 @@ afterEach(cleanup);
 beforeEach(() => vi.clearAllMocks());
 
 function task(id: string, over: Partial<Task> = {}): Task {
-  return { id, title: id, status: 'todo', priority: 1, retryCount: 0, tags: [], events: [], ...over };
+  return { id, title: id, status: 'todo', priority: 1, retryCount: 0, fixAttempts: 0, tags: [], events: [], ...over };
 }
 
 function renderModal(task: Task, tasks: Task[]) {
