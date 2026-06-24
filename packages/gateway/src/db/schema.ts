@@ -635,6 +635,34 @@ export type CouncilRunInsert = typeof councilRuns.$inferInsert;
 export type CouncilRunMemberRow = typeof councilRunMembers.$inferSelect;
 export type CouncilRunMemberInsert = typeof councilRunMembers.$inferInsert;
 
+// --- Approval rules (Phase 23) ---
+
+export const approvalRules = sqliteTable(
+  'approval_rules',
+  {
+    id: text('id').primaryKey(),
+    enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
+    /** 'allow' | 'deny' */
+    effect: text('effect').notNull(),
+    /** Tool name to match, or '*' for all tools. */
+    toolName: text('tool_name').notNull(),
+    /** JSON: { commandPrefix?: string[], pathGlob?: string[] } | null */
+    match: text('match'),
+    /** Always 'global' this phase; per-repo scoping is deferred. */
+    scope: text('scope').notNull().default('global'),
+    note: text('note'),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => ({
+    toolIdx: index('approval_rules_tool_idx').on(t.toolName),
+    enabledIdx: index('approval_rules_enabled_idx').on(t.enabled),
+  }),
+);
+
+export type ApprovalRuleRow = typeof approvalRules.$inferSelect;
+export type ApprovalRuleInsert = typeof approvalRules.$inferInsert;
+
 // --- Notes (simple checklist panel on the dashboard) ---
 
 export const notes = sqliteTable(

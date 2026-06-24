@@ -45,3 +45,4 @@ export * from './metrics.js';
 export * from './report.js';
 export * from './usage.js';
 export * from './backup.js';
+export * from './approval-rule.js';
