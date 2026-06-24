@@ -4,6 +4,28 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 10 E2+F1+F2 — Visual regression baselines, e2e CI job, coverage reporting (PR #177)
+
+- [x] `toHaveScreenshot` assertions in `pages.shots.ts`; 10 macOS baselines committed (`e2e/__screenshots__/`); Docker command documented for Linux regeneration
+- [x] `playwright.config.ts`: `snapshotDir`, `snapshotPathTemplate`, `toHaveScreenshot.maxDiffPixelRatio: 0.005`
+- [x] `.github/workflows/e2e.yml`: `e2e` job (flow + visual, `continue-on-error: true`) + `coverage` job; browser cache; screenshot + diff + coverage artifacts
+- [x] `@vitest/coverage-v8` in `web` (20% thresholds) and `gateway` (40% thresholds); `test-coverage` moon tasks in both packages; `lcov` + `json-summary` reporters
+
+---
+
+## 2026-06-24 — Phase 37 Theme A — GitHub executor nodes + credential type (PR #175)
+
+- [x] Added `github` credential type to `WorkflowCredentialDataSchema` (token + optional `enterpriseUrl` for GHE)
+- [x] Added `github.get-pr`, `github.get-diff`, `github.post-review` node type definitions + param schemas in `packages/shared/src/node-types.ts`
+- [x] `GithubGetPrExecutor` — fetches PR metadata via REST (`number`, `title`, `body`, `state`, `author`, `labels`, `headBranch`, `headSha`, `baseBranch`, `additions`, `deletions`, `changedFiles`); github.com vs GHE URL routing
+- [x] `GithubGetDiffExecutor` — fetches raw unified diff; truncates at `maxTokens × 4` chars with `[diff truncated]` marker; returns `{ diff, truncated, estimatedTokens, prUrl }`
+- [x] `GithubPostReviewExecutor` — posts COMMENT/APPROVE/REQUEST_CHANGES review; returns `{ reviewId, htmlUrl, state }`
+- [x] All three executors registered in `workflows.module.ts` via `NODE_EXECUTORS` multi-provider
+- [x] 12 new unit tests in `integration-nodes.spec.ts` (credential errors, URL parse errors, success paths, truncation, API errors)
+- [x] Web credential form: `github` type shown in picker (TYPE_LABELS/TYPE_FIELDS in `credential-form.tsx`)
+
+---
+
 ## 2026-06-24 — Phase 30 verification: quality gates suite green
 
 All four implementation themes (A–D, PRs #102 #125 #134 #135 #144 #166) were already merged. Closed out the verification checklist: gate-hold-on-fail (completeWithChecks integration tests, PR #134), Re-run / `midnite check` path (PR #144), pass-straight-through, no-repo/disabled no-op, auto-fix loop + fixAttempts counter (PR #166), per-check timeout SIGKILL + output truncation (PR #102), single-slot-release invariant. Suite green (906 gateway + 505 web).

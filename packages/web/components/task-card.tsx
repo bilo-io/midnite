@@ -26,6 +26,26 @@ const KIND_HUE_VARS: Record<NonNullable<Task['kind']>, string> = {
   unknown: '--kind-unknown',
 };
 
+const AI_REVIEW_CHIP: Record<
+  'approved' | 'commented' | 'changes-requested',
+  { label: string; className: string }
+> = {
+  approved: { label: 'AI: LGTM', className: 'bg-success/15 text-success' },
+  commented: { label: 'AI: Reviewed', className: 'bg-blue-500/15 text-blue-600 dark:text-blue-400' },
+  'changes-requested': { label: 'AI: Changes', className: 'bg-amber-500/15 text-amber-600 dark:text-amber-400' },
+};
+
+function AiReviewChip({ verdict }: { verdict: 'approved' | 'commented' | 'changes-requested' }) {
+  const { label, className } = AI_REVIEW_CHIP[verdict];
+  return (
+    <span
+      className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${className}`}
+    >
+      {label}
+    </span>
+  );
+}
+
 // Badge shown only for non-Normal priorities (Normal=1 is the unmarked default).
 const PRIORITY_BADGES: Record<number, { label: string; className: string }> = {
   0: { label: 'Low', className: 'bg-muted text-muted-foreground' },
@@ -93,6 +113,7 @@ export function TaskCard({
           </span>
         ) : null}
         {task.prStatus ? <PrStatusChip status={task.prStatus} /> : null}
+        {task.aiReview ? <AiReviewChip verdict={task.aiReview.verdict} /> : null}
       </div>
       <p className="text-sm font-medium leading-snug">{task.title}</p>
       {task.tags.length > 0 ? (
