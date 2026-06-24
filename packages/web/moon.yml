@@ -146,6 +146,21 @@ tasks:
       - 'lib/**/*'
       - 'vitest.config.ts'
 
+  bundle-report:
+    command: 'pnpm exec env ANALYZE=true next build'
+    deps:
+      - 'root:install'
+      - '^:build'
+    options:
+      cache: false
+      runInCI: false
+
+  clean:
+    command: 'rm -rf .next out'
+    options:
+      cache: false
+      runInCI: false
+
   storybook:
     command: 'pnpm exec storybook dev -p 6006'
     preset: 'server'

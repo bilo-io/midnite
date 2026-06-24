@@ -478,7 +478,7 @@ describe('AgentRunnerService', () => {
 
       expect(markWaiting).toHaveBeenCalledWith('t1');
       expect(markDone).not.toHaveBeenCalled();
-      expect(spawnAgentSession).toHaveBeenCalledOnce(); // only the original slot-claim spawn — none from auto-fix
+      expect(spawnAgentSession).not.toHaveBeenCalled(); // auto-fix is off, no re-spawn
       expect(recordCheckEvent).not.toHaveBeenCalledWith('t1', 'checks.fix.started');
       expect(pool.slotForTask('t1')).toBeUndefined();
     });

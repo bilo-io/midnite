@@ -18,7 +18,7 @@ function task(over: Partial<Task> = {}): Task {
     createdAt: '2026-06-20T00:00:00.000Z',
     updatedAt: '2026-06-21T00:00:00.000Z',
     ...over,
-  };
+  } as unknown as Task;
 }
 
 describe('buildTaskReport', () => {

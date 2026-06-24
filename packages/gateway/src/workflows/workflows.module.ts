@@ -18,6 +18,9 @@ import { StorageSetExecutor } from './engine/executors/storage-set.executor';
 import { StorageGetExecutor } from './engine/executors/storage-get.executor';
 import { SlackMessageExecutor } from './engine/executors/slack-message.executor';
 import { EmailSendExecutor } from './engine/executors/email-send.executor';
+import { GithubGetPrExecutor } from './engine/executors/github-get-pr.executor';
+import { GithubGetDiffExecutor } from './engine/executors/github-get-diff.executor';
+import { GithubPostReviewExecutor } from './engine/executors/github-post-review.executor';
 import { WorkflowCredentialsModule } from './credentials/workflow-credentials.module';
 import { WorkflowScheduler } from './scheduler/workflow-scheduler.service';
 import { WorkflowEventBus } from './workflow-event-bus';
@@ -49,6 +52,9 @@ import { WorkflowsGateway } from './workflows.gateway';
     StorageGetExecutor,
     SlackMessageExecutor,
     EmailSendExecutor,
+    GithubGetPrExecutor,
+    GithubGetDiffExecutor,
+    GithubPostReviewExecutor,
     {
       provide: NODE_EXECUTORS,
       useFactory: (...executors: NodeExecutor[]) => executors,
@@ -62,6 +68,9 @@ import { WorkflowsGateway } from './workflows.gateway';
         StorageGetExecutor,
         SlackMessageExecutor,
         EmailSendExecutor,
+        GithubGetPrExecutor,
+        GithubGetDiffExecutor,
+        GithubPostReviewExecutor,
       ],
     },
   ],

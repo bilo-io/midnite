@@ -27,6 +27,7 @@ const TYPE_LABELS: Record<WorkflowCredentialType, string> = {
   'http-header': 'HTTP custom header',
   slack: 'Slack',
   smtp: 'SMTP (email)',
+  github: 'GitHub (PAT)',
 };
 
 export default function CredentialsPage() {
@@ -52,7 +53,7 @@ export default function CredentialsPage() {
   const handleDelete = async (cred: WorkflowCredential) => {
     const ok = await confirm({
       title: 'Delete credential?',
-      message: `"${cred.name}" will be permanently removed. Any workflow node that references it will fail until updated.`,
+      description: `"${cred.name}" will be permanently removed. Any workflow node that references it will fail until updated.`,
       confirmLabel: 'Delete',
       destructive: true,
     });

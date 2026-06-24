@@ -62,6 +62,9 @@ const TILE = OFFICE_TILE;
 const COLS = OFFICE_COLS;
 const ROWS = OFFICE_ROWS;
 const PLAYER_SPEED = 150;
+/** Camera zoom — the player sees a 2/3-sized slice of the world at once; the camera
+ *  follows them through the full 34×22 tile map. */
+const ZOOM = 1.5;
 /** How close (px) the player must be to a desk/board to "reach" it. */
 const PROXIMITY = TILE * 1.6;
 /** How close (px) the player must be for an agent's nameplate to appear. */
@@ -107,6 +110,17 @@ function toolShadowTint(tool: string | undefined): { color: number; alpha: numbe
   return { color, alpha: TOOL_GLOW_ALPHA };
 }
 
+/** Phase 9 B1: brand-aligned accent per agent CLI. Unknown CLIs get gray. */
+const CLI_BADGE_COLOR: Record<string, number> = {
+  claude: 0xe6521a,    // Anthropic orange
+  gemini: 0x4285f4,    // Google blue
+  codex: 0x10a37f,     // OpenAI green
+  opencode: 0x10a37f,  // OpenAI green (opencode wraps codex)
+  aider: 0x7c3aed,     // Purple
+};
+const CLI_BADGE_DEFAULT = 0x6b7280; // gray for unknown
+const CLI_BADGE_RADIUS = 4;
+
 /** A live agent rendered in the room — a robot sprite + its labels/shadow. */
 type Actor = {
   id: string;
@@ -115,6 +129,8 @@ type Actor = {
   bubble: Phaser.GameObjects.Text;
   nameText: Phaser.GameObjects.Text;
   statusText: Phaser.GameObjects.Text;
+  /** Small provider-colored dot (top-right of sprite) — Phase 9 B1. */
+  providerBadge: Phaser.GameObjects.Arc;
   /** Where the agent currently belongs — only desks are interactable. */
   kind: 'desk' | 'lounge';
   /** Target seat centre (px). */
@@ -227,6 +243,12 @@ class OfficeScene extends Phaser.Scene {
       .setDepth(9);
 
     this.buildVignette(worldW, worldH);
+
+    // Camera follow (A2): zoom in so the player navigates through the full map.
+    this.cameras.main.setBounds(0, 0, worldW, worldH);
+    this.cameras.main.setZoom(ZOOM);
+    this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
+    this.cameras.main.fadeIn(200, 0, 0, 0);
 
     this.cursors = this.input.keyboard!.createCursorKeys();
     this.wasd = this.input.keyboard!.addKeys({
@@ -500,6 +522,11 @@ class OfficeScene extends Phaser.Scene {
       .setAlpha(0)
       .setDepth(11);
 
+    const badgeColor = CLI_BADGE_COLOR[agent.agentCli ?? ''] ?? CLI_BADGE_DEFAULT;
+    const providerBadge = this.add
+      .arc(tx + 8, ty - 10, CLI_BADGE_RADIUS, 0, 360, false, badgeColor, 0.9)
+      .setDepth(12);
+
     const actor: Actor = {
       id: agent.id,
       sprite,
@@ -507,6 +534,7 @@ class OfficeScene extends Phaser.Scene {
       bubble,
       nameText,
       statusText,
+      providerBadge,
       kind,
       tx,
       ty,
@@ -694,6 +722,10 @@ class OfficeScene extends Phaser.Scene {
     const glow = toolShadowTint(agent.liveActivity?.phase === 'running' ? agent.liveActivity.tool : undefined);
     actor.shadow.setFillStyle(glow.color, glow.alpha);
 
+    // B1: provider badge — dot color follows the agent CLI (claude/gemini/codex/…).
+    const badgeColor = CLI_BADGE_COLOR[agent.agentCli ?? ''] ?? CLI_BADGE_DEFAULT;
+    actor.providerBadge.setFillStyle(badgeColor, 0.9);
+
     // D1: start/stop the attention pulse tween depending on whether the agent
     // is waiting on the user. The tween loops indefinitely until cleared.
     if (agent.attention) {
@@ -860,6 +892,7 @@ class OfficeScene extends Phaser.Scene {
     actor.nameText.setPosition(x, y - 19);
     actor.statusText.setPosition(x, y - 10);
     actor.bubble.setPosition(x + 12, y - 15);
+    actor.providerBadge.setPosition(x + 8, y - 10);
   }
 
   private destroyActor(actor: Actor) {
@@ -871,6 +904,7 @@ class OfficeScene extends Phaser.Scene {
     actor.bubble.destroy();
     actor.nameText.destroy();
     actor.statusText.destroy();
+    actor.providerBadge.destroy();
   }
 
   // ---- player ------------------------------------------------------------
@@ -989,7 +1023,8 @@ class OfficeScene extends Phaser.Scene {
     if (this.nearDoorFlag) {
       useOfficeStore.getState().setNearDoor(false);
       useOfficeStore.getState().setCurrentScene('corner');
-      this.scene.start('corner-office');
+      this.cameras.main.fadeOut(200, 0, 0, 0);
+      this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('corner-office'));
       return;
     }
     if (this.lastNearby) useOfficeStore.getState().open(this.lastNearby);
@@ -999,8 +1034,8 @@ class OfficeScene extends Phaser.Scene {
     return this.player.body as Phaser.Physics.Arcade.Body;
   }
 
-  private truncate(name: string) {
-    return name.length > 10 ? `${name.slice(0, 9)}…` : name;
+  private truncate(name: string, max = 10) {
+    return name.length > max ? `${name.slice(0, max - 1)}…` : name;
   }
 
   private left = () => this.cursors.left.isDown || this.wasd.left.isDown;
@@ -1270,27 +1305,31 @@ class OfficeScene extends Phaser.Scene {
   }
 
   private buildVignette(worldW: number, worldH: number) {
+    // Viewport size at the current zoom level — vignette is pinned to the camera
+    // (scrollFactor 0) so it always covers the visible area regardless of scroll.
+    const viewW = Math.round(worldW / ZOOM);
+    const viewH = Math.round(worldH / ZOOM);
     const key = 'office-vignette';
     if (!this.textures.exists(key)) {
-      const canvas = this.textures.createCanvas(key, worldW, worldH);
+      const canvas = this.textures.createCanvas(key, viewW, viewH);
       const ctx = canvas?.getContext();
       if (ctx) {
         const grd = ctx.createRadialGradient(
-          worldW / 2,
-          worldH / 2,
-          Math.min(worldW, worldH) * 0.28,
-          worldW / 2,
-          worldH / 2,
-          Math.max(worldW, worldH) * 0.62,
+          viewW / 2,
+          viewH / 2,
+          Math.min(viewW, viewH) * 0.28,
+          viewW / 2,
+          viewH / 2,
+          Math.max(viewW, viewH) * 0.62,
         );
         grd.addColorStop(0, 'rgba(0,0,0,0)');
         grd.addColorStop(1, 'rgba(0,0,0,0.3)');
         ctx.fillStyle = grd;
-        ctx.fillRect(0, 0, worldW, worldH);
+        ctx.fillRect(0, 0, viewW, viewH);
         canvas?.refresh();
       }
     }
-    this.add.image(worldW / 2, worldH / 2, key).setDepth(40);
+    this.add.image(viewW / 2, viewH / 2, key).setDepth(40).setScrollFactor(0);
   }
 }
 

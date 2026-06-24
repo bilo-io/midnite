@@ -281,6 +281,13 @@
       "when": 1782215310768,
       "tag": "0039_agent_run_stats",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "6",
+      "when": 1782300000000,
+      "tag": "0040_fix_attempts",
+      "breakpoints": true
     }
   ]
 }

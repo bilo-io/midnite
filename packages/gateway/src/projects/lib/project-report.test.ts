@@ -33,7 +33,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     createdAt: '2026-01-02T00:00:00Z',
     updatedAt: '2026-01-02T00:00:00Z',
     ...overrides,
-  };
+  } as unknown as Task;
 }
 
 function makeMemory(overrides: Partial<Memory> = {}): Memory {

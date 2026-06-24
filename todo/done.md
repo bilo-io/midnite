@@ -4,6 +4,66 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 30 verification: quality gates suite green
+
+All four implementation themes (A–D, PRs #102 #125 #134 #135 #144 #166) were already merged. Closed out the verification checklist: gate-hold-on-fail (completeWithChecks integration tests, PR #134), Re-run / `midnite check` path (PR #144), pass-straight-through, no-repo/disabled no-op, auto-fix loop + fixAttempts counter (PR #166), per-check timeout SIGKILL + output truncation (PR #102), single-slot-release invariant. Suite green (906 gateway + 505 web).
+
+---
+
+## 2026-06-24 — Phase 9 A2: camera follow + fade transitions for the office (PR #174)
+
+- [x] `ZOOM = 1.5` constant added to `office-scene.ts`
+- [x] `cameras.main.setBounds` + `setZoom(ZOOM)` + `startFollow(player, true, 0.12, 0.12)` wired in `create()`
+- [x] `buildVignette` resized to viewport (`worldW/ZOOM × worldH/ZOOM`) and pinned with `setScrollFactor(0)`
+- [x] Camera fades in on `OfficeScene` start (200ms black); fades out before switch to corner office
+- [x] `CornerOfficeScene`: auto-zoom-to-fill via `this.scale.width/worldW`; fade in on create; fade out before returning to office (both E-key and HUD back button paths)
+- [x] `credential-form.tsx` + `credentials/page.tsx`: added `github` credential type to `TYPE_FIELDS`/`TYPE_LABELS` (new `WorkflowCredentialType` added in shared)
+
+---
+
+## 2026-06-24 — Phase 9 B1: provider-aware agent characters in the office (PR #171)
+
+- [x] `agentCli: z.string().optional()` added to `SessionSummarySchema` in `shared/src/session.ts`
+- [x] `AgentsService` injected into `SessionsService`; `agentCli: this.agents.getAgentCli()` set in `toSummary()`
+- [x] `agentCli?: string` added to `OfficeAgent`; propagated through `sessionsToOfficeAgents()`
+- [x] `CLI_BADGE_COLOR` map + `providerBadge: Phaser.GameObjects.Arc` in `office-scene.ts` — small dot badge on each agent sprite, brand-aligned colours (Anthropic orange / Google blue / OpenAI green / Aider purple / gray fallback)
+- [x] `statusToRoom` room comparison fixed (`'desk'`/`'lounge'` → `'work'`/`'board'`/`'pool'`); `truncate()` now accepts optional max-length
+- [x] 6 `sessions.service.test.ts` tests pass (incl. 2 new `agentCli` coverage tests)
+- [x] Pre-existing `fixAttempts` fixture gaps resolved across gateway + shared
+
+---
+
+## 2026-06-24 — Phase 28 verification: project planning breakdown suite green
+
+All four implementation themes (A–D, PRs #128 #155 #135 #160) were already merged. Closed out the verification checklist: breakdown preview + edit + create confirmed by `PlanPanel`/`BreakdownEditor` unit tests + Playwright e2e (PR #160); ready-gating covered by Phase 27 integration specs; markdown plan regression-free; standalone `POST /tasks/breakdown` + `midnite plan` covered by gateway/CLI specs (PR #155); conservative inference + cycle pruning (`pruneBreakdown` DFS, 6 tests); LLM-disabled fail-open notice; suite green (906 gateway + 505 web).
+
+---
+
+## 2026-06-24 — Phase 18 Theme C: workflow-run export (previously untracked)
+
+Confirmed fully implemented (already shipped alongside Theme D/A/B): `packages/gateway/src/workflows/lib/run-report.ts` (pure serializer + tests), `GET /workflows/:id/runs/:runId/export?format=md` controller route, `exportWorkflowRunMarkdown` typed client in `api.ts`, `ExportMenu` wired in `run-output-panel.tsx`. Phase 18 checklist closed.
+
+---
+
+## 2026-06-24 — Phase 34: bundle analyzer, optimized imports, dynamic code-split
+
+Tooling + performance track — no behaviour or API changes.
+
+- [x] **A1**: `@next/bundle-analyzer` installed + `next.config.mjs` wrapped; `web:bundle-report` moon task added
+- [x] **B1**: `experimental.optimizePackageImports: ['lucide-react', 'recharts', '@midnite/ui']` in `next.config.mjs`
+- [x] **C (partial)**: Dynamic imports for `DashboardGrid` (recharts + react-grid-layout deferred) and `WorkflowEditor` (@xyflow/react deferred); wavesurfer.js left as static (already scoped to the audio view only)
+- [x] **D1**: `.gitignore` — added `.next/`, `out/`, `*.tsbuildinfo`, `.turbo/`
+- [x] **D2**: Root `clean` moon task + `web:clean`; `pnpm.overrides` for `@types/react` in root `package.json`
+- [x] Bug fixes: Drizzle migration journal entry for `0040_fix_attempts`; `node-config-panel.test.tsx` wrapped in `QueryClientProvider`; `ToastProvider` added to Storybook global decorator; optional-chain touch events in `pull-to-refresh.tsx`
+
+---
+
+## 2026-06-24 — Phase 27 verification: task dependencies suite green
+
+All four implementation themes (A–D, PRs #106 #109 #113 #114) were already merged. Closed out the verification checklist: confirmed A→B→C chain ordering, priority-blocked scheduling, cycle/self-ref/delete integrity, abandoned-blocker hold policy, manual-start warning, and CLI `--depends-on` via existing specs. Fixed pre-existing typecheck failures across the graph (`stories/fixtures.ts` missing `fixAttempts`, `test-query-wrapper.tsx` React 19 type mismatch, `breakdown-editor.test.tsx`/`plan-panel.test.tsx` array-index narrowing, `office-scene.ts` truncate arity, credential-form `types[0]!`, `page.tsx` `description` rename) and corrected a wrong `spawnAgentSession` assertion in `agent-runner.service.test.ts`. Result: 906 gateway + 505 web tests pass; typecheck clean across shared/gateway/cli/web.
+
+---
+
 ## 2026-06-24 — Phase 14 E: run-history replay for workflow editor (PR #170)
 
 Adds a run-history picker + step player to the workflow editor. Users can select any past run and step through its node execution order on the canvas (sorted by `startedAt`), driven by the existing `applyRunState` store method. Auto-play at 700ms/step; Prev/Next/First/Last for manual scrubbing; closing clears canvas state.

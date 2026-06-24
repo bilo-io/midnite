@@ -35,3 +35,11 @@ tasks:
       - 'packages/*/package.json'
     options:
       runInCI: true
+
+  clean:
+    command: 'echo "Build outputs cleaned."'
+    deps:
+      - 'web:clean'
+    options:
+      cache: false
+      runInCI: false

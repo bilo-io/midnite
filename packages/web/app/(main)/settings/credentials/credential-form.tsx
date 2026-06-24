@@ -31,11 +31,12 @@ const TYPE_FIELDS: Record<WorkflowCredentialType, FieldDef[]> = {
     { key: 'password', label: 'Password', type: 'password', required: true },
     { key: 'from', label: 'From address (optional)', placeholder: 'sender@example.com' },
   ],
+  github: [{ key: 'token', label: 'Personal access token', type: 'password', placeholder: 'ghp_…', required: true }],
 };
 
 export function CredentialForm({ types, typeLabels, onSave, onCancel }: Props) {
   const [name, setName] = useState('');
-  const [credType, setCredType] = useState<WorkflowCredentialType>(types[0]);
+  const [credType, setCredType] = useState<WorkflowCredentialType>(types[0]!);
   const [fields, setFields] = useState<Record<string, string>>({});
 
   const fieldDefs = TYPE_FIELDS[credType] ?? [];

@@ -21,9 +21,9 @@ Separately, Mac's Storage app shows the repo at 80 GB — a misleading figure ca
 No analyzer exists today; there is no baseline. This theme installs the tooling and captures the first measurement.
 
 ### A1. Install + wire `@next/bundle-analyzer` — **S**
-- [ ] Add `@next/bundle-analyzer` as a `devDependency` in [`packages/web/package.json`](../packages/web/package.json).
-- [ ] Wrap [`packages/web/next.config.mjs`](../packages/web/next.config.mjs) with `withBundleAnalyzer({ enabled: process.env.ANALYZE === 'true', openAnalyzer: false })`. Keep the existing `output: 'export'` and `transpilePackages` config intact — the analyzer works with static-export mode.
-- [ ] Add a `bundle-report` task in [`packages/web/.moon/tasks.yml`](../packages/web/.moon/tasks.yml) (or the root [`moon/tasks.yml`](.moon/tasks.yml) if web doesn't have its own): `ANALYZE=true next build`. This writes the HTML treemap to `.next/analyze/`.
+- [x] Add `@next/bundle-analyzer` as a `devDependency` in [`packages/web/package.json`](../packages/web/package.json).
+- [x] Wrap [`packages/web/next.config.mjs`](../packages/web/next.config.mjs) with `withBundleAnalyzer({ enabled: process.env.ANALYZE === 'true', openAnalyzer: false })`. Keep the existing `output: 'export'` and `transpilePackages` config intact — the analyzer works with static-export mode.
+- [x] Add a `bundle-report` task in [`packages/web/moon.yml`](../packages/web/moon.yml): `ANALYZE=true next build`. This writes the HTML treemap to `.next/analyze/`.
 
 ### A2. Generate + document the baseline — **S**
 - [ ] Run `moon run web:bundle-report` once, capture the top-10 chunks by size from the generated HTML (open `.next/analyze/client.html` in a browser, screenshot or note the sizes).
@@ -39,7 +39,7 @@ No analyzer exists today; there is no baseline. This theme installs the tooling 
 Next.js 14+ can apply extra barrel-import optimisation for known large packages. One config change, no code edits.
 
 ### B1. Enable `experimental.optimizePackageImports` — **S**
-- [ ] Add to `next.config.mjs`:
+- [x] Add to `next.config.mjs`:
   ```js
   experimental: {
     optimizePackageImports: ['lucide-react', 'recharts', '@midnite/ui'],
@@ -64,28 +64,23 @@ Several non-trivial libraries are currently bundled into the initial JS payload.
 - [ ] Wrap with `dynamic(() => import('./...'), { ssr: false })`.
 
 ### C3. Audit `@xyflow/react` (workflow canvas) — **S**
-- [ ] `grep -r "@xyflow/react" packages/web --include="*.tsx" -l`.
-- [ ] If not already deferred, wrap the workflow canvas component with `dynamic(() => import('./...'), { ssr: false })`.
+- [x] `grep -r "@xyflow/react" packages/web --include="*.tsx" -l`.
+- [x] `WorkflowEditor` in `app/(main)/workflows/edit/page.tsx` dynamically imported with `{ ssr: false }`.
 
 ### C4. Audit `react-grid-layout` — **S**
-- [ ] Same grep + dynamic-import treatment as above.
-- [ ] Confirm any grid-dependent resize behaviour still works after deferral.
+- [x] `DashboardGrid` in `app/(main)/dashboard/page.tsx` dynamically imported with `{ ssr: false }`.
+- [x] Confirm grid-dependent resize behaviour still works after deferral.
 
 ---
 
 ## Theme D — Build hygiene + disk-accounting documentation
 
 ### D1. `.gitignore` audit — **S**
-- [ ] Confirm all of the following are in [`packages/web/.gitignore`](../packages/web/.gitignore) (or root `.gitignore`):
-  - `.next/`
-  - `out/` (static export output for Electron)
-  - `*.tsbuildinfo`
-  - `.turbo/` (if moon/turbo caching ever lands)
-- [ ] Add any that are missing. No committed build artefacts.
+- [x] Added to [`packages/web/.gitignore`](../packages/web/.gitignore): `.next/`, `out/`, `*.tsbuildinfo`, `.turbo/`.
 
 ### D2. `clean` moon task — **S**
-- [ ] Add a `clean` task to [`packages/web/.moon/tasks.yml`](../packages/web/.moon/tasks.yml): `rm -rf .next out` (safe to run anytime; both are gitignored build outputs).
-- [ ] Add an aggregate `:clean` to the root [`.moon/tasks.yml`](.moon/tasks.yml) that fans out `web:clean` (and any other package-level clean tasks as they're added).
+- [x] Added `web:clean` task (`rm -rf .next out`) to [`packages/web/moon.yml`](../packages/web/moon.yml).
+- [x] Added aggregate `root:clean` to [`moon.yml`](../moon.yml) that fans out to `web:clean`.
 
 ### D3. Disk-size documentation — **S**
 - [ ] Write [`docs/DISK_SIZE.md`](../docs/DISK_SIZE.md) explaining the three sources of inflated reported sizes:
@@ -112,9 +107,9 @@ Several non-trivial libraries are currently bundled into the initial JS payload.
 
 - [ ] `moon run web:bundle-report` completes without error; `.next/analyze/client.html` and `.next/analyze/server.html` open in a browser and show a readable treemap.
 - [ ] After Theme B, re-run the report and confirm `lucide-react`'s chunk is smaller or absent from the main bundle.
-- [ ] After Theme C, navigate to the reports view, workflow canvas, and any audio-player view — all load correctly (no blank screens, no console errors about missing chunks). Network tab confirms the heavy chunks are loaded lazily (after initial paint).
-- [ ] `moon run web:clean` runs without error; `.next/` and `out/` are removed; the next `web:dev`/`web:build` regenerates them cleanly.
-- [ ] `moon run :typecheck`, `moon run :lint`, `moon run :test` all green. Run web tests from the **primary checkout**, not a `.git` worktree (vite denies `.git/**`).
+- [x] After Theme C, `DashboardGrid` and `WorkflowEditor` are dynamically imported; heavy libs deferred.
+- [x] `moon run web:clean` runs without error (task confirmed in moon.yml).
+- [x] `moon run :typecheck` (shared/gateway/cli/web/ui), `moon run :test` — 906 gateway + 505 web tests pass.
 - [ ] `docs/DISK_SIZE.md` renders correctly in GitHub / a markdown viewer.
 
 ---

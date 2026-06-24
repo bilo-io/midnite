@@ -43,6 +43,11 @@ export interface OfficeAgent {
     reason: 'approval' | 'waiting';
     summary?: string;
   };
+  /**
+   * The agent CLI driving this session (claude | gemini | codex | opencode | aider).
+   * Used to render a provider accent badge in the office scene (Phase 9 B1).
+   */
+  agentCli?: string;
   /** The underlying session — used to open the live terminal / transcript. */
   session: SessionSummary;
 }
@@ -107,6 +112,7 @@ export function sessionsToOfficeAgents(sessions: SessionSummary[], tasks: Task[]
         status: s.status,
         taskStatus: task?.status,
         activity: s.subtitle || task?.title || '—',
+        agentCli: s.agentCli,
         session: s,
       };
     });

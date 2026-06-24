@@ -5,6 +5,7 @@ import type { Decorator, Preview } from '@storybook/nextjs-vite';
 
 import { ThemeProvider } from '../app/theme/theme-context';
 import { THEME_STORAGE_KEY } from '../app/theme/theme-script';
+import { ToastProvider } from '../components/toast';
 import '../app/globals.css';
 
 // Each story gets a fresh QueryClient so state never leaks between tests.
@@ -25,9 +26,11 @@ const withTheme: Decorator = (Story, { globals }) => {
   window.localStorage.setItem(THEME_STORAGE_KEY, theme);
   return (
     <ThemeProvider key={theme}>
-      <div className="min-h-screen bg-background p-6 text-foreground">
-        <Story />
-      </div>
+      <ToastProvider>
+        <div className="min-h-screen bg-background p-6 text-foreground">
+          <Story />
+        </div>
+      </ToastProvider>
     </ThemeProvider>
   );
 };
