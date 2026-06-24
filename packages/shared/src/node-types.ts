@@ -9,7 +9,7 @@ export type NodeCategory = (typeof NODE_CATEGORIES)[number];
 
 // Field descriptors let the web render a node's config form generically,
 // without a bespoke component per node type.
-export const NODE_FIELD_KINDS = ['string', 'text', 'number', 'boolean', 'select', 'json'] as const;
+export const NODE_FIELD_KINDS = ['string', 'text', 'number', 'boolean', 'select', 'json', 'credential'] as const;
 export type NodeFieldKind = (typeof NODE_FIELD_KINDS)[number];
 
 export interface NodeFieldOption {
@@ -32,6 +32,8 @@ export interface NodeField {
    * structural selects (method, provider) or numeric knobs.
    */
   expressionable?: boolean;
+  /** When `kind === 'credential'`, filters the picker to this credential type. */
+  credentialType?: string;
 }
 
 export interface PortSpec {
@@ -70,6 +72,9 @@ export const HttpRequestParamsSchema = z.object({
   headers: z.record(z.string()).default({}),
   body: z.string().optional(),
   timeoutMs: z.number().int().positive().max(60000).default(10000),
+  // When set, the engine resolves this credential server-side and injects the
+  // appropriate auth header — overrides any explicit Authorization in `headers`.
+  credentialId: z.string().optional(),
 });
 
 export const AiClaudeParamsSchema = z.object({
@@ -110,6 +115,26 @@ export const BranchParamsSchema = z.object({
   operator: z.enum(BRANCH_OPERATORS).default('isTruthy'),
   right: z.string().optional(),
 });
+
+// --- Integration node params (Phase 14 Theme C) ---
+
+// slack.message — post a message to a Slack channel via a `slack` credential.
+export const SlackMessageParamsSchema = z.object({
+  credentialId: z.string().min(1),
+  channel: z.string().min(1),
+  text: z.string().min(1),
+});
+export type SlackMessageParams = z.infer<typeof SlackMessageParamsSchema>;
+
+// email.send — send an email via SMTP using a `smtp` credential.
+export const EmailSendParamsSchema = z.object({
+  credentialId: z.string().min(1),
+  to: z.string().min(1),
+  subject: z.string().min(1),
+  text: z.string().optional(),
+  html: z.string().optional(),
+});
+export type EmailSendParams = z.infer<typeof EmailSendParamsSchema>;
 
 // --- Reshape node params (Phase 12 Theme C) ---
 // These three are pure data-flow nodes: they consume the engine's
@@ -275,6 +300,7 @@ export const NODE_TYPE_DEFINITIONS: Record<string, NodeTypeDefinition> = {
       { key: 'url', label: 'URL', kind: 'string', required: true, placeholder: 'https://api.example.com/…', expressionable: true },
       { key: 'headers', label: 'Headers', kind: 'json', help: 'JSON object of header name → value.', expressionable: true },
       { key: 'body', label: 'Body', kind: 'text', placeholder: 'Raw request body', expressionable: true },
+      { key: 'credentialId', label: 'Credential', kind: 'credential', help: 'Optional: inject auth from a saved credential (bearer / basic / header).', credentialType: 'http-bearer' },
     ],
   },
   'ai.claude': {
@@ -453,6 +479,39 @@ export const NODE_TYPE_DEFINITIONS: Record<string, NodeTypeDefinition> = {
         help: 'The value to store. Use {{ }} to pull from upstream nodes.',
         expressionable: true,
       },
+    ],
+  },
+  // --- Integration nodes (Phase 14 Theme C) ---
+  'slack.message': {
+    id: 'slack.message',
+    category: 'action',
+    title: 'Slack Message',
+    description: 'Post a message to a Slack channel.',
+    icon: 'message-square',
+    inputs: MAIN_IN,
+    outputs: MAIN_OUT,
+    paramsSchema: SlackMessageParamsSchema,
+    fields: [
+      { key: 'credentialId', label: 'Slack credential', kind: 'credential', required: true, credentialType: 'slack' },
+      { key: 'channel', label: 'Channel', kind: 'string', required: true, placeholder: '#general or channel ID', expressionable: true },
+      { key: 'text', label: 'Message text', kind: 'text', required: true, expressionable: true },
+    ],
+  },
+  'email.send': {
+    id: 'email.send',
+    category: 'action',
+    title: 'Send Email',
+    description: 'Send an email via SMTP.',
+    icon: 'mail',
+    inputs: MAIN_IN,
+    outputs: MAIN_OUT,
+    paramsSchema: EmailSendParamsSchema,
+    fields: [
+      { key: 'credentialId', label: 'SMTP credential', kind: 'credential', required: true, credentialType: 'smtp' },
+      { key: 'to', label: 'To', kind: 'string', required: true, placeholder: 'recipient@example.com', expressionable: true },
+      { key: 'subject', label: 'Subject', kind: 'string', required: true, expressionable: true },
+      { key: 'text', label: 'Body (plain text)', kind: 'text', expressionable: true },
+      { key: 'html', label: 'Body (HTML)', kind: 'text', expressionable: true },
     ],
   },
   'storage.get': {

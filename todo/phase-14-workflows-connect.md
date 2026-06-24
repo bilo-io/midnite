@@ -39,11 +39,11 @@ What's left on the **live-updates** side — which Phase 12 explicitly leaves ou
 
 A secure home for the secrets that integration nodes need. Gate before Theme C.
 
-### B1. Workflow credential store — **M** ◐ PARTIAL (store + REST landed, PR #81)
+### B1. Workflow credential store — **M** ✅ DONE (PR #168)
 - [x] `workflow_credentials` table + repository (Drizzle migration 0032): `id`, `name`, `type` (`http-bearer`/`http-basic`/`http-header`/`slack`/`smtp`), encrypted `data` blob, timestamps. Reuses `CryptoService` — encrypt on write, decrypt only for server-side resolve, **fail-closed** when `MIDNITE_SECRET_KEY` is absent (same contract as provider keys, see [phase-7](phase-7-hardening-reports-widgets.md) A1).
 - [x] `GET/POST/DELETE /workflow-credentials` (names + types only on read — secret is write-only, **never** returned). Zod schemas in `shared`. `service.resolve(id)` decrypts+validates for executors.
-- [ ] HTTP node uses `credentialId` references for auth (bearer / basic / header) instead of inline plaintext; the engine resolves the credential server-side at execute time. *(follow-on — `WorkflowNode.credentialId` + `service.resolve()` already exist)*
-- [ ] Web: a credentials manager (list / add / delete) and a credential picker in the node config panel. *(follow-on)*
+- [x] HTTP node uses `credentialId` references for auth (bearer / basic / header) instead of inline plaintext; the engine resolves the credential server-side at execute time.
+- [x] Web: a credentials manager (list / add / delete) under Settings → Credentials and a credential picker in the node config panel.
 
 ### B2. OAuth2 start/callback — **M**
 - [ ] `GET /oauth/:provider/start` → provider consent redirect; `GET /oauth/:provider/callback` → exchange code, store tokens as a `workflow_credentials` row, handle refresh. Driven by the existing `workflows.oauth` config block.
@@ -51,14 +51,14 @@ A secure home for the secrets that integration nodes need. Gate before Theme C.
 
 ---
 
-## Theme C — Integration executors — **M**
+## Theme C — Integration executors — **M** ✅ DONE (PR #168)
 
 The payoff. Each is **one `NodeTypeDefinition` + one executor**, consuming Phase 12's templated params and Theme B's credentials.
 
-- [ ] **`slack.message`** — post a message to a channel via a `slack` credential. **S**
-- [ ] **`email.send`** — SMTP first (simplest, broadest), Gmail OAuth as a follow-on once B2 lands. **S/M**
-- [ ] **`google.sheetsAppend`** — append a row to a sheet via a `google-oauth` credential. **M**
-- [ ] Each executor: SSRF/scope guards as appropriate, structured output (so downstream nodes can template off it), and a `:memory:`-SQLite engine test with the network mocked.
+- [x] **`slack.message`** — post a message to a channel via a `slack` credential. **S**
+- [x] **`email.send`** — SMTP first (simplest, broadest), Gmail OAuth as a follow-on once B2 lands. **S/M**
+- [ ] **`google.sheetsAppend`** — append a row to a sheet via a `google-oauth` credential. **M** *(deferred to Theme B2 OAuth follow-on)*
+- [x] Each executor: structured output; `integration-nodes.spec.ts` covers both with mocked fetch/nodemailer.
 
 > Keep this list tight for the first pass — three integrations prove the pattern. Mastodon/Discord/webhook-out/etc. are trivial additions later once A+B+C exist.
 
