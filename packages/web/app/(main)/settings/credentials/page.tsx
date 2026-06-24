@@ -27,6 +27,7 @@ const TYPE_LABELS: Record<WorkflowCredentialType, string> = {
   'http-header': 'HTTP custom header',
   slack: 'Slack',
   smtp: 'SMTP (email)',
+  github: 'GitHub (PAT)',
 };
 
 export default function CredentialsPage() {

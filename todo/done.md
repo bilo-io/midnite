@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 9 A2: camera follow + fade transitions for the office (PR #174)
+
+- [x] `ZOOM = 1.5` constant added to `office-scene.ts`
+- [x] `cameras.main.setBounds` + `setZoom(ZOOM)` + `startFollow(player, true, 0.12, 0.12)` wired in `create()`
+- [x] `buildVignette` resized to viewport (`worldW/ZOOM × worldH/ZOOM`) and pinned with `setScrollFactor(0)`
+- [x] Camera fades in on `OfficeScene` start (200ms black); fades out before switch to corner office
+- [x] `CornerOfficeScene`: auto-zoom-to-fill via `this.scale.width/worldW`; fade in on create; fade out before returning to office (both E-key and HUD back button paths)
+- [x] `credential-form.tsx` + `credentials/page.tsx`: added `github` credential type to `TYPE_FIELDS`/`TYPE_LABELS` (new `WorkflowCredentialType` added in shared)
+
+---
+
 ## 2026-06-24 — Phase 9 B1: provider-aware agent characters in the office (PR #171)
 
 - [x] `agentCli: z.string().optional()` added to `SessionSummarySchema` in `shared/src/session.ts`
