@@ -996,3 +996,42 @@ export const auditLog = sqliteTable(
 
 export type AuditLogRow = typeof auditLog.$inferSelect;
 export type AuditLogInsert = typeof auditLog.$inferInsert;
+
+// --- Approval log (Phase 23 C) ---
+
+export const approvalLog = sqliteTable(
+  'approval_log',
+  {
+    id: text('id').primaryKey(),
+    sessionId: text('session_id').notNull(),
+    /** Null for approvals whose session has no associated task. */
+    taskId: text('task_id'),
+    toolName: text('tool_name').notNull(),
+    summary: text('summary').notNull(),
+    /** allow | allow-session | deny | auto-allow | auto-deny | timeout | expired */
+    resolution: text('resolution').notNull(),
+    /** ID of the policy rule that fired, if any. */
+    ruleId: text('rule_id'),
+    /** user | policy | timeout | system */
+    decidedBy: text('decided_by').notNull(),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    sessionIdx: index('approval_log_session_idx').on(t.sessionId),
+    taskIdx: index('approval_log_task_idx').on(t.taskId),
+    timeIdx: index('approval_log_time_idx').on(t.createdAt),
+  }),
+);
+
+export type ApprovalLogRow = typeof approvalLog.$inferSelect;
+export type ApprovalLogInsert = typeof approvalLog.$inferInsert;
+
+// --- Gateway settings (Phase 23 D — autonomy mode persistence) ---
+
+export const gatewaySettings = sqliteTable('gateway_settings', {
+  key: text('key').primaryKey(),
+  value: text('value').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export type GatewaySettingRow = typeof gatewaySettings.$inferSelect;

@@ -1,32 +1,40 @@
 import { randomUUID } from 'node:crypto';
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import type {
   ApprovalRule,
   ApprovalRuleMatch,
+  AutonomyMode,
   CreateApprovalRule,
   UpdateApprovalRule,
 } from '@midnite/shared';
 import type { ApprovalRuleRow } from '../db/schema';
 import { evaluateRules, type EvaluationVerdict } from './lib/rule-evaluator';
 import { ApprovalsRepository } from './approvals.repository';
+import { GatewaySettingsRepository } from './gateway-settings.repository';
 
-export type AutonomyMode = 'manual' | 'guarded' | 'autonomous';
+const MODE_KEY = 'autonomy_mode';
 
 /** Business logic for approval rules — maps DB rows ↔ shared domain types.
  *  Also owns the autonomy mode gate (Phase 23 A3): `manual` (default) short-
  *  circuits the policy engine so existing behaviour is preserved until the user
- *  opts in via Theme D. */
+ *  opts in via Theme D. Mode is DB-persisted via GatewaySettingsRepository. */
 @Injectable()
-export class ApprovalsService {
-  /** Phase 23 A3: default `manual` preserves today's ask-everything behaviour.
-   *  Theme D will expose a settings panel + config write-path to change this. */
+export class ApprovalsService implements OnModuleInit {
   private mode: AutonomyMode = 'manual';
 
   constructor(
     @Inject(ApprovalsRepository) private readonly repo: ApprovalsRepository,
+    @Inject(GatewaySettingsRepository) private readonly settings: GatewaySettingsRepository,
   ) {}
 
-  // ---- mode gate (Phase 23 A3) ----
+  onModuleInit(): void {
+    const stored = this.settings.get(MODE_KEY);
+    if (stored === 'guarded' || stored === 'autonomous') {
+      this.mode = stored;
+    }
+  }
+
+  // ---- mode gate (Phase 23 A3 + D) ----
 
   getMode(): AutonomyMode {
     return this.mode;
@@ -34,6 +42,7 @@ export class ApprovalsService {
 
   setMode(mode: AutonomyMode): void {
     this.mode = mode;
+    this.settings.set(MODE_KEY, mode);
   }
 
   /** Evaluate durable rules against a tool call.
