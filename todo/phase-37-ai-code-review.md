@@ -71,9 +71,9 @@ Guide the user from "I have a repo" to "GitHub is sending webhooks to my review 
 - [x] `ReposController.update()` accepts `ownerRepo`; `ReposRepository.update()` persists it.
 
 ### C2. "Connect GitHub webhook" UI — **S–M**
-- [ ] On the repo detail/settings page (web), add a **"GitHub webhook"** section: shows `ownerRepo` input (if not set, prompt to enter it); once set, shows a **webhook URL** picker — a dropdown of the user's installed code-review workflows (filtered by `installedFromTemplateId = ai-code-review` or template slug) with their webhook URLs.
-- [ ] Below the picker: a **step-by-step instructions panel** — "Go to GitHub → your-repo → Settings → Webhooks → Add webhook. Paste this URL: `<url>`. Set Content type to `application/json`. Paste this secret: `<secret>`. Select: Pull request events only."
-- [ ] A **"Test connection"** button: sends a synthetic `ping` event to the workflow webhook URL and shows success/failure. (The webhook trigger already handles the GitHub `ping` action gracefully — no-op on `ping`.)
+- [x] Added `ownerRepo` input to repo create/edit forms (Settings → Repos). Shows `Globe` icon and `owner/repo` value in the repo list.
+- [x] Collapsible "GitHub webhook" section in the edit panel: dropdown of webhook-trigger workflows, "Get URL" button calls `rotate` and shows `{ url, token }` with copy buttons, step-by-step GitHub setup instructions.
+- [ ] "Test connection" button — deferred (requires live GitHub webhook round-trip verification; URL is shown in instructions instead).
 
 ### C3. Payload filtering by `ownerRepo` — **S**
 - [ ] In the code review template (B1) and as a general pattern: add a second `logic.if` node immediately after the trigger that checks `{{ $trigger.repository.full_name === 'owner/repo' }}` — the `ownerRepo` value is passed as a node param (`repoFilter: string`, expressionable) so one workflow instance can serve one repo. Document this pattern in the template description.

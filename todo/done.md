@@ -4,6 +4,12 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 37 C2 — GitHub webhook UI on repo settings (PR #180)
+
+- [x] `ownerRepo` input added to repo create and edit forms (Settings → Repos)
+- [x] Globe icon + `owner/repo` display in repo list items
+- [x] Collapsible GitHub webhook section per repo: workflow picker, "Get URL" via `rotate`, URL+secret with copy, step-by-step GitHub setup instructions
+
 ## 2026-06-24 — Phase 36 A+B+C (partial) — Workflow Template Marketplace gateway (PR #179)
 
 - [x] Migration 0043: `workflow_templates` table (slug unique, category+published index) + `installed_from_template_id` on `workflows`
