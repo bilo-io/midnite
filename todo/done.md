@@ -4,6 +4,12 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 30 verification: quality gates suite green
+
+All four implementation themes (A–D, PRs #102 #125 #134 #135 #144 #166) were already merged. Closed out the verification checklist: gate-hold-on-fail (completeWithChecks integration tests, PR #134), Re-run / `midnite check` path (PR #144), pass-straight-through, no-repo/disabled no-op, auto-fix loop + fixAttempts counter (PR #166), per-check timeout SIGKILL + output truncation (PR #102), single-slot-release invariant. Suite green (906 gateway + 505 web).
+
+---
+
 ## 2026-06-24 — Phase 9 B1: provider-aware agent characters in the office (PR #171)
 
 - [x] `agentCli: z.string().optional()` added to `SessionSummarySchema` in `shared/src/session.ts`
