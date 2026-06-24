@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 34 COMPLETE: bundle baseline closed out (verification)
+
+Final open box in Phase 34 — re-ran the analyzer after Theme B and confirmed `lucide-react` is tree-shaken out of the shared bundle. Doc-only; no code change (analyzer + `optimizePackageImports` already landed in earlier slices).
+
+- [x] Re-ran `moon run web:bundle-report`: first-load shared JS = **104 kB gzipped** (`1106` 46.7 kB + `a0f49a59` 54.2 kB + 3.2 kB other)
+- [x] Confirmed `lucide-react` **absent from the shared first-load bundle**; tree-shaken into per-route chunks (≤23 kB/chunk, 359 kB total spread across all routes) — each page loads only the icons it renders
+- [x] Filled in Decisions §4 baseline numbers (largest chunk: `6676e8bd.js` 1.16 MB parsed, lazy dashboard/recharts/grid — not in first-load)
+- [x] Ticked the line-119 verification box → **Phase 34 fully complete**
+
 ## 2026-06-24 — Phase 24 Theme B: touch interactions for the kanban (PR #188)
 
 Makes the board usable by finger and stops the live terminal half-working on touch.
