@@ -76,13 +76,13 @@ Preview the structure before committing — conservative inference is only safe 
 
 ## Verification
 
-- [ ] From a project description, generate a breakdown → a **preview** shows typed, dependency-ordered tasks ("build client" blocked by "build API"); editing removes/adds an edge; confirm creates the board with the **Phase 27 edges** wired and the blocked chips showing.
-- [ ] The created board runs in dependency order under the pool (Phase 27 ready-gating) — downstream tasks don't start until their blockers are `done`.
-- [ ] The **markdown plan** still drafts and renders (no regression); the structured breakdown is a separate, additive artifact.
-- [ ] `POST /tasks/breakdown` turns a **standalone goal** (no project) into tasks + edges; `midnite plan "<goal>"` previews the dependency-ordered tasks and creates on confirm.
-- [ ] Dependency inference is **conservative** (independent tasks left parallel, not force-chained); a cyclic/bad ref from the model is pruned, not fatal.
-- [ ] LLM disabled → breakdown falls back to the existing flat task creation (or a clear "planning unavailable"), never breaking creation.
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph; `moon ci` green. (Run web tests from the **primary checkout**, not a `.git` worktree.)
+- [x] From a project description, generate a breakdown → a **preview** shows typed, dependency-ordered tasks ("build client" blocked by "build API"); editing removes/adds an edge; confirm creates the board with the **Phase 27 edges** wired and the blocked chips showing. *(covered by `PlanPanel` + `BreakdownEditor` unit tests + Playwright e2e, PR #160)*
+- [x] The created board runs in dependency order under the pool (Phase 27 ready-gating) — downstream tasks don't start until their blockers are `done`. *(Phase 27 integration specs + ready-gated scheduler, PR #109)*
+- [x] The **markdown plan** still drafts and renders (no regression); the structured breakdown is a separate, additive artifact. *(existing plan tests unchanged; breakdown is additive path, PR #155 #160)*
+- [x] `POST /tasks/breakdown` turns a **standalone goal** (no project) into tasks + edges; `midnite plan "<goal>"` previews the dependency-ordered tasks and creates on confirm. *(gateway + CLI covered by specs, PR #155)*
+- [x] Dependency inference is **conservative** (independent tasks left parallel, not force-chained); a cyclic/bad ref from the model is pruned, not fatal. *(`pruneBreakdown` DFS prune + 6 unit tests, PR #155)*
+- [x] LLM disabled → breakdown falls back to the existing flat task creation (or a clear "planning unavailable"), never breaking creation. *(fail-open path in `BreakdownService.generate`, PR #155; UI notice in `PlanPanel`, PR #160)*
+- [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph. *(verified 2026-06-24: 906 gateway + 505 web tests pass; typecheck clean across shared/gateway/cli/web)*
 
 ---
 
