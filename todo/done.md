@@ -4,6 +4,13 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 36 E — CLI template commands (commit 80dd11a)
+
+- [x] `midnite template list [--category <c>]` — table of slug/name/category/tags/slots
+- [x] `midnite template install <slug-or-id> [--name ...] [--cred slot=credId ...]` — slot warnings + install, prints workflow ID
+- [x] `GatewayClient.listTemplates` / `getTemplateSlots` / `installTemplate` in `cli/src/client.ts`
+- [x] `templateListRows` + `parseCredFlag` helpers in `cli/src/template.ts` (7 unit tests)
+
 ## 2026-06-24 — Phase 36 D1+D2 — Template marketplace browse + install UI (PR #182)
 
 - [x] `/workflows/templates` page: category filter chips, free-text search, template cards

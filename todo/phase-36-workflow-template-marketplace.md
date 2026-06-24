@@ -104,9 +104,9 @@ Browse, preview, install, and publish templates from the web app.
 
 ### E — CLI template commands — **S**
 
-- [ ] `midnite template list [--category <c>]` ([`cli/src/commands/template.ts`](../packages/cli/src/commands/template.ts)): fetches `GET /workflow-templates`, renders a table (name, category, slug, trigger type). `--category` filters.
-- [ ] `midnite template install <slug-or-id> [--name "My Workflow"] [--cred slot=credId ...]`: fetches the template, maps `--cred` flags to the slot credential map, calls `POST /workflow-templates/:id/install`, prints the new workflow ID. Unresolved slots are listed as warnings.
-- [ ] `midnite template create --from-workflow <workflowId> [--name "Template name"] [--category notifications]`: calls `WorkflowTemplatesService.createFromWorkflow`, prints the new template slug.
+- [x] `midnite template list [--category <c>]` ([`cli/src/template.ts`](../packages/cli/src/template.ts)): fetches `GET /workflow-templates`, renders a table (slug, name, category, tags, credential slots). `--category` filters.
+- [x] `midnite template install <slug-or-id> [--name "My Workflow"] [--cred slot=credId ...]`: fetches slots for warnings, maps `--cred` flags to the slot credential map, calls `POST /workflow-templates/:id/install`, prints the new workflow ID. Unresolved slots are listed as warnings.
+- [ ] `midnite template create --from-workflow <workflowId> [--name "Template name"] [--category notifications]`: calls `WorkflowTemplatesService.createFromWorkflow`, prints the new template slug. (deferred — requires D3 backend)
 
 ---
 
