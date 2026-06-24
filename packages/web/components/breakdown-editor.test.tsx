@@ -34,7 +34,7 @@ describe('BreakdownEditor', () => {
     fireEvent.click(screen.getByLabelText('Remove blocker Build API from Build client'));
 
     expect(onChange).toHaveBeenCalledTimes(1);
-    const next = onChange.mock.calls[0][0] as Breakdown;
+    const next = onChange.mock.calls[0]![0] as Breakdown;
     expect(next.tasks.find((t) => t.ref === 'client')?.dependsOn).toEqual([]);
   });
 
@@ -44,9 +44,9 @@ describe('BreakdownEditor', () => {
 
     fireEvent.click(screen.getByLabelText('Remove Build API'));
 
-    const next = onChange.mock.calls[0][0] as Breakdown;
+    const next = onChange.mock.calls[0]![0] as Breakdown;
     expect(next.tasks.map((t) => t.ref)).toEqual(['client']);
-    expect(next.tasks[0].dependsOn).toEqual([]);
+    expect(next.tasks[0]!.dependsOn).toEqual([]);
   });
 
   it('edits a task title', () => {
@@ -57,7 +57,7 @@ describe('BreakdownEditor', () => {
       target: { value: 'Build the API' },
     });
 
-    const next = onChange.mock.calls[0][0] as Breakdown;
+    const next = onChange.mock.calls[0]![0] as Breakdown;
     expect(next.tasks.find((t) => t.ref === 'api')?.title).toBe('Build the API');
   });
 });

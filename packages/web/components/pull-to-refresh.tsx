@@ -31,7 +31,9 @@ export function PullToRefresh() {
   useEffect(() => {
     const onTouchStart = (e: TouchEvent) => {
       if (window.scrollY > 0) return;
-      startY.current = e.touches[0].clientY;
+      const touch = e.touches[0];
+      if (!touch) return;
+      startY.current = touch.clientY;
     };
 
     const onTouchMove = (e: TouchEvent) => {
@@ -43,7 +45,9 @@ export function PullToRefresh() {
         setPullPx(0);
         return;
       }
-      const dy = e.touches[0].clientY - startY.current;
+      const touch = e.touches[0];
+      if (!touch) return;
+      const dy = touch.clientY - startY.current;
       if (dy <= 0) {
         livePull.current = 0;
         setPullPx(0);

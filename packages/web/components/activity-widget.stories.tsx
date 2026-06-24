@@ -14,6 +14,7 @@ const TASKS: Task[] = [
     status: 'wip',
     priority: 1,
     retryCount: 0,
+    fixAttempts: 0,
     tags: [],
     events: [
       { at: '2026-06-21T09:00:00.000Z', kind: 'agent.started' },
@@ -26,6 +27,7 @@ const TASKS: Task[] = [
     status: 'done',
     priority: 2,
     retryCount: 0,
+    fixAttempts: 0,
     tags: [],
     events: [{ at: '2026-06-21T07:00:00.000Z', kind: 'pr.merged' }],
   },
@@ -71,6 +73,7 @@ export const Empty: Story = {
             status: 'todo',
             priority: 1,
             retryCount: 0,
+            fixAttempts: 0,
             tags: [],
             events: [],
           } satisfies Task,

@@ -969,8 +969,8 @@ class OfficeScene extends Phaser.Scene {
     return this.player.body as Phaser.Physics.Arcade.Body;
   }
 
-  private truncate(name: string) {
-    return name.length > 10 ? `${name.slice(0, 9)}…` : name;
+  private truncate(name: string, max = 10) {
+    return name.length > max ? `${name.slice(0, max - 1)}…` : name;
   }
 
   private left = () => this.cursors.left.isDown || this.wasd.left.isDown;

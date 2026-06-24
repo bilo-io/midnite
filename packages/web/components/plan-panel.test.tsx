@@ -61,7 +61,7 @@ describe('PlanPanel — breakdown tab', () => {
     // Confirm creates the board with the previewed breakdown.
     fireEvent.click(screen.getByRole('button', { name: /Create 2 tasks/ }));
     await waitFor(() => expect(createTasksFromBreakdown).toHaveBeenCalledTimes(1));
-    const [id, breakdown] = createTasksFromBreakdown.mock.calls[0];
+    const [id, breakdown] = createTasksFromBreakdown.mock.calls[0]!;
     expect(id).toBe('p1');
     expect(breakdown.tasks).toHaveLength(2);
   });

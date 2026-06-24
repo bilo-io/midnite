@@ -12,6 +12,7 @@ const baseTask: Task = {
   status: 'done',
   priority: 1,
   retryCount: 0,
+  fixAttempts: 0,
   tags: [],
   events: [],
 };
