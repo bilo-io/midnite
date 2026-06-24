@@ -7,7 +7,7 @@ import { TaskPicker } from './task-picker';
 afterEach(cleanup);
 
 function task(id: string, title: string): Task {
-  return { id, title, status: 'todo', priority: 1, retryCount: 0, tags: [], events: [] };
+  return { id, title, status: 'todo', priority: 1, retryCount: 0, fixAttempts: 0, tags: [], events: [] };
 }
 
 const CANDIDATES: Task[] = [
