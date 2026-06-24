@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { AgentModule } from '../agent/agent.module';
 import { ChecksModule } from '../checks/checks.module';
 import { ReposModule } from '../repos/repos.module';
+import { WorkflowsModule } from '../workflows/workflows.module';
+import { AiReviewService } from './ai-review.service';
 import { PrStatusService } from './pr-status.service';
 import { TasksController } from './tasks.controller';
 import { TasksRepository } from './tasks.repository';
@@ -10,9 +12,9 @@ import { TaskEventBus } from './task-event-bus';
 import { TasksGateway } from './tasks.gateway';
 
 @Module({
-  imports: [AgentModule, ChecksModule, ReposModule],
+  imports: [AgentModule, ChecksModule, ReposModule, WorkflowsModule],
   controllers: [TasksController],
-  providers: [TasksService, TasksRepository, TaskEventBus, TasksGateway, PrStatusService],
+  providers: [TasksService, TasksRepository, TaskEventBus, TasksGateway, PrStatusService, AiReviewService],
   exports: [TasksService, TaskEventBus],
 })
 export class TasksModule {}

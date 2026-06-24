@@ -68,6 +68,7 @@ export class ReposService implements OnModuleInit {
       path: normalizePath(req.path),
       branchPrefix: normalizeConvention(req.branchPrefix),
       prTemplate: normalizeConvention(req.prTemplate),
+      ownerRepo: normalizeConvention(req.ownerRepo),
       createdAt: now,
       updatedAt: now,
     });
@@ -89,6 +90,7 @@ export class ReposService implements OnModuleInit {
     // An empty string is an explicit clear → store null.
     if (req.branchPrefix !== undefined) patch.branchPrefix = normalizeConvention(req.branchPrefix);
     if (req.prTemplate !== undefined) patch.prTemplate = normalizeConvention(req.prTemplate);
+    if (req.ownerRepo !== undefined) patch.ownerRepo = normalizeConvention(req.ownerRepo);
     const row = this.repo.update(id, patch);
     if (!row) throw new RepoDoesNotExistError(`repo ${id} not found`);
     return toRepo(row);
@@ -107,6 +109,7 @@ function toRepo(row: RepoRow): Repo {
     path: row.path,
     branchPrefix: row.branchPrefix ?? undefined,
     prTemplate: row.prTemplate ?? undefined,
+    ownerRepo: row.ownerRepo ?? undefined,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

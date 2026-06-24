@@ -63,6 +63,29 @@ function parseTags(raw: string | null): string[] {
   }
 }
 
+/** Parse the JSON `ai_review` column; returns undefined on null/garbage. */
+function parseAiReview(
+  raw: string | null,
+): { verdict: 'approved' | 'commented' | 'changes-requested'; summary: string; runId: string; reviewedAt: string } | undefined {
+  if (!raw) return undefined;
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (
+      typeof parsed === 'object' &&
+      parsed !== null &&
+      'verdict' in parsed &&
+      'summary' in parsed &&
+      'runId' in parsed &&
+      'reviewedAt' in parsed
+    ) {
+      return parsed as { verdict: 'approved' | 'commented' | 'changes-requested'; summary: string; runId: string; reviewedAt: string };
+    }
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 @Injectable()
 export class TasksRepository {
   constructor(@Inject(DB_TOKEN) private readonly db: MidniteDb) {}
@@ -101,6 +124,23 @@ export class TasksRepository {
     return this.db
       .update(tasks)
       .set({ prUrl, updatedAt })
+      .where(eq(tasks.id, id))
+      .returning()
+      .get();
+  }
+
+  findByPrUrl(prUrl: string): TaskRow | undefined {
+    return this.db.select().from(tasks).where(eq(tasks.prUrl, prUrl)).get();
+  }
+
+  setAiReview(
+    id: string,
+    aiReview: { verdict: string; summary: string; runId: string; reviewedAt: string },
+    updatedAt: string,
+  ): TaskRow | undefined {
+    return this.db
+      .update(tasks)
+      .set({ aiReview: JSON.stringify(aiReview), updatedAt })
       .where(eq(tasks.id, id))
       .returning()
       .get();
@@ -406,6 +446,7 @@ export class TasksRepository {
       tags: parseTags(row.tags),
       dependsOn: this.dependenciesOf(row.id),
       checkRunStatus: this.deriveCheckRunStatus(row.id),
+      aiReview: parseAiReview(row.aiReview),
       archivedAt: row.archivedAt ?? undefined,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
