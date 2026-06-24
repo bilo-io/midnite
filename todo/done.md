@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 34 C1+C2+D3 + Phase 37 C3 + Phase 36 seeds B3 (commits 2adfe88, 95bd37f, 690dc98)
+
+- [x] Phase 36 seeds B3: `github-pr-ready-check`, `daily-digest`, `ai-task-summariser`, `scheduled-task-cleanup` seeds registered — 7 built-in templates total
+- [x] Phase 37 C3: repo-filter `logic.if` node added to ai-code-review template (repoFilter param, empty = allow all)
+- [x] Phase 34 C1: recharts already deferred via DashboardGrid dynamic import (audited + confirmed)
+- [x] Phase 34 C2: wavesurfer already deferred via dynamic import in media-detail-view (audited + confirmed)
+- [x] Phase 34 D3: `docs/DISK_SIZE.md` written (3 sources: .next cache, pnpm hardlinks, APFS snapshots)
+
 ## 2026-06-24 — Phase 36 E — CLI template commands (commit 80dd11a)
 
 - [x] `midnite template list [--category <c>]` — table of slug/name/category/tags/slots

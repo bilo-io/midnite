@@ -55,13 +55,13 @@ Next.js 14+ can apply extra barrel-import optimisation for known large packages.
 Several non-trivial libraries are currently bundled into the initial JS payload. They're all view-specific — the board/reports/workflow/audio views — so they can be deferred with `dynamic()` without affecting First Contentful Paint on the main kanban.
 
 ### C1. Audit + lazify `recharts` — **M**
-- [ ] `grep -r "recharts" packages/web --include="*.tsx" -l` to find all import sites.
-- [ ] Wrap each consuming component's import with `dynamic(() => import('./...'), { ssr: false })` — or extract a thin wrapper component that `dynamic`-imports the chart and use that wrapper at call sites.
-- [ ] Confirm the reports/analytics view still renders correctly after deferral.
+- [x] `grep -r "recharts" packages/web --include="*.tsx" -l` → single import site: `components/market-asset-widget.tsx`.
+- [x] Already deferred: `MarketAssetWidget` is only rendered inside `DashboardGrid`, which is itself `dynamic()`-imported in `app/(main)/dashboard/page.tsx` (C4). No extra wrapping needed — recharts is not in the initial bundle.
+- [x] Confirm: no recharts imports outside the dashboard-grid tree (stories + tests excluded).
 
 ### C2. Audit + lazify `wavesurfer.js` — **S**
-- [ ] `grep -r "wavesurfer" packages/web --include="*.tsx" -l` to find the import site.
-- [ ] Wrap with `dynamic(() => import('./...'), { ssr: false })`.
+- [x] `grep -r "wavesurfer" packages/web --include="*.tsx" -l` → `components/wavesurfer-player.tsx` (the implementation) + `app/(main)/media/[id]/media-detail-view.tsx` (the consumer).
+- [x] Already deferred: `media-detail-view.tsx` already uses `dynamic(() => import('./wavesurfer-player')..., { ssr: false })`. wavesurfer.js is not in the initial bundle.
 
 ### C3. Audit `@xyflow/react` (workflow canvas) — **S**
 - [x] `grep -r "@xyflow/react" packages/web --include="*.tsx" -l`.
@@ -83,7 +83,7 @@ Several non-trivial libraries are currently bundled into the initial JS payload.
 - [x] Added aggregate `root:clean` to [`moon.yml`](../moon.yml) that fans out to `web:clean`.
 
 ### D3. Disk-size documentation — **S**
-- [ ] Write [`docs/DISK_SIZE.md`](../docs/DISK_SIZE.md) explaining the three sources of inflated reported sizes:
+- [x] Write [`docs/DISK_SIZE.md`](../docs/DISK_SIZE.md) explaining the three sources of inflated reported sizes:
   1. **`.next/cache/`** — 1.6 GB of local webpack/SWC transpilation cache. Safe to delete at any time (`moon run web:clean`); regenerated on the next build. Not committed; not shipped to users.
   2. **pnpm hardlinks** — pnpm stores packages once in `~/.pnpm-store` and hardlinks them into every `node_modules`. Finder and `du` count each hardlink as the full file size; the actual unique bytes on disk are a fraction of the reported total. Multiple worktrees multiply the apparent size. Use `pnpm store status` or `pnpm store prune` to manage the store.
   3. **APFS local snapshots** — macOS Time Machine creates local snapshots hourly. System Preferences → Storage counts these against the used-space figure; `du` does not. A repo that `du` reports at 2 GB can appear as 30–80 GB in Storage because of accumulated snapshots. Run `tmutil deletelocalsnapshots /` to reclaim the space (snapshots are re-created automatically).
@@ -110,7 +110,7 @@ Several non-trivial libraries are currently bundled into the initial JS payload.
 - [x] After Theme C, `DashboardGrid` and `WorkflowEditor` are dynamically imported; heavy libs deferred.
 - [x] `moon run web:clean` runs without error (task confirmed in moon.yml).
 - [x] `moon run :typecheck` (shared/gateway/cli/web/ui), `moon run :test` — 906 gateway + 505 web tests pass.
-- [ ] `docs/DISK_SIZE.md` renders correctly in GitHub / a markdown viewer.
+- [x] `docs/DISK_SIZE.md` renders correctly in GitHub / a markdown viewer.
 
 ---
 

@@ -76,8 +76,8 @@ Guide the user from "I have a repo" to "GitHub is sending webhooks to my review 
 - [ ] "Test connection" button — deferred (requires live GitHub webhook round-trip verification; URL is shown in instructions instead).
 
 ### C3. Payload filtering by `ownerRepo` — **S**
-- [ ] In the code review template (B1) and as a general pattern: add a second `logic.if` node immediately after the trigger that checks `{{ $trigger.repository.full_name === 'owner/repo' }}` — the `ownerRepo` value is passed as a node param (`repoFilter: string`, expressionable) so one workflow instance can serve one repo. Document this pattern in the template description.
-- [ ] Alternatively: the "Connect webhook" UI auto-sets this filter param when it generates the webhook URL for a specific repo — the selected `ownerRepo` is injected as the `repoFilter` param on the filter node. Both the manual and guided paths are supported.
+- [x] In the code review template (B1) and as a general pattern: added `logic.if` 'Repo filter' node after the webhook trigger with a `repoFilter: string` param (empty = allow all repos; set to `"owner/repo"` to restrict). Condition: `{{ !$node.repoFilter || $trigger.repository.full_name === $node.repoFilter }}`. Updated template description to document the pattern.
+- [ ] Alternatively: the "Connect webhook" UI auto-sets this filter param when it generates the webhook URL for a specific repo — the selected `ownerRepo` is injected as the `repoFilter` param on the filter node. (deferred)
 
 ---
 
