@@ -11,6 +11,7 @@ import {
   type CreateWorkflowRequest,
   type MidniteConfig,
   type RunTriggerSource,
+  type TeamScope,
   type Trigger,
   type UpdateWorkflowRequest,
   type WebhookInfoResponse,
@@ -46,8 +47,8 @@ export class WorkflowsService {
 
   // --- reads ---
 
-  listSummaries(): WorkflowSummary[] {
-    return this.repo.listWorkflowRows().map((row) => {
+  listSummaries(scope?: TeamScope): WorkflowSummary[] {
+    return this.repo.listWorkflowRows(scope).map((row) => {
       const workflow = this.repo.hydrateWorkflow(row);
       const latest = this.repo.latestRunRow(row.id);
       return {
@@ -68,8 +69,8 @@ export class WorkflowsService {
     });
   }
 
-  getWorkflow(id: string): Workflow {
-    const row = this.repo.getWorkflowRow(id);
+  getWorkflow(id: string, scope?: TeamScope): Workflow {
+    const row = this.repo.getWorkflowRow(id, scope);
     if (!row) throw new NotFoundException(`workflow ${id} not found`);
     return this.repo.hydrateWorkflow(row);
   }

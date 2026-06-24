@@ -33,8 +33,9 @@ export class WorkflowsController {
   constructor(@Inject(WorkflowsService) private readonly service: WorkflowsService) {}
 
   @Get()
-  list(): WorkflowSummary[] {
-    return this.service.listSummaries();
+  list(@CurrentUser() user?: CurrentUserPayload | null): WorkflowSummary[] {
+    const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
+    return this.service.listSummaries(scope);
   }
 
   @Post()
@@ -48,8 +49,9 @@ export class WorkflowsController {
   }
 
   @Get(':id')
-  get(@Param('id') id: string): WorkflowResponse {
-    return { workflow: this.service.getWorkflow(id) };
+  get(@Param('id') id: string, @CurrentUser() user?: CurrentUserPayload | null): WorkflowResponse {
+    const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
+    return { workflow: this.service.getWorkflow(id, scope) };
   }
 
   @Patch(':id')
