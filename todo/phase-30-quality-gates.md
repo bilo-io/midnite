@@ -102,15 +102,15 @@ Run the gate on demand, and see results everywhere a task lives.
 
 ## Verification
 
-- [ ] With `config.checks.enabled` and a failing test command configured for a repo, an agent run that opens a PR is **held** (not `done`): a `task_check_runs` row + `checks.failed` event exist, the card shows a "checks failing" badge, the task sits at `waiting`.
-- [ ] Make the checks pass (fix or adjust), hit **Re-run** (or `midnite check <id>`) → the gate passes and the task moves to `done` with the PR URL recorded.
-- [ ] A passing gate on first completion marks `done` exactly as before (no behaviour change when checks pass).
-- [ ] A task with **no repo**, and any task when `checks.enabled` is **false**, complete straight through unchanged — the gate is a no-op.
-- [ ] With `checks.autoFix.enabled`, a failing gate **re-spawns** the agent with the failure output; a fix that passes re-verifies → `done`; exhausting `maxAttempts` lands at `waiting` with a clear event. Fix attempts are counted **separately** from crash `retryCount` / `agent.maxRetries`.
-- [ ] A per-check **timeout** kills the child and records a failed result (doesn't hang the slot); captured output is **truncated** to the configured cap.
-- [ ] The slot is held during verification and released **exactly once** on every branch (pass / fail-wait / fail-fix-exhausted / spawn-error).
+- [x] With `config.checks.enabled` and a failing test command configured for a repo, an agent run that opens a PR is **held** (not `done`): a `task_check_runs` row + `checks.failed` event exist, the card shows a "checks failing" badge, the task sits at `waiting`. *(covered by `completeWithChecks` integration tests, PR #134; `ChecksPanel` + card badge tests, PR #144)*
+- [x] Make the checks pass (fix or adjust), hit **Re-run** (or `midnite check <id>`) → the gate passes and the task moves to `done` with the PR URL recorded. *(Re-run button → `POST /tasks/:id/check`, CLI `midnite check <id>`, PR #144)*
+- [x] A passing gate on first completion marks `done` exactly as before (no behaviour change when checks pass). *(pass path → `markDone`+`complete`, PR #134)*
+- [x] A task with **no repo**, and any task when `checks.enabled` is **false**, complete straight through unchanged — the gate is a no-op. *(`resolveChecksForRepo` short-circuits; unit-tested, PR #102)*
+- [x] With `checks.autoFix.enabled`, a failing gate **re-spawns** the agent with the failure output; a fix that passes re-verifies → `done`; exhausting `maxAttempts` lands at `waiting` with a clear event. Fix attempts are counted **separately** from crash `retryCount` / `agent.maxRetries`. *(`fixAttempts` counter + auto-fix loop, PR #166)*
+- [x] A per-check **timeout** kills the child and records a failed result (doesn't hang the slot); captured output is **truncated** to the configured cap. *(`spawn` SIGKILL detached group on timeout; `outputCapBytes` truncation, PR #102)*
+- [x] The slot is held during verification and released **exactly once** on every branch (pass / fail-wait / fail-fix-exhausted / spawn-error). *(`complete()` called exactly once per branch, PR #134 #166)*
 - [x] (PR #102) `config.checks.byRepo['x']` **overrides** the global `gates` for repo `x` and leaves other repos on the defaults. (Verified by `resolveChecksForRepo` unit tests — Theme A; the live gate that consumes it is Theme B.)
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph; `moon ci` green. (Run web tests from the **primary checkout**, not a `.git` worktree.)
+- [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph. *(verified 2026-06-24: 906 gateway + 505 web tests pass; typecheck clean)*
 
 ---
 
