@@ -15,9 +15,3 @@ CREATE INDEX `approval_log_session_idx` ON `approval_log` (`session_id`);
 CREATE INDEX `approval_log_task_idx` ON `approval_log` (`task_id`);
 --> statement-breakpoint
 CREATE INDEX `approval_log_time_idx` ON `approval_log` (`created_at`);
---> statement-breakpoint
-CREATE TABLE `gateway_settings` (
-	`key` text PRIMARY KEY NOT NULL,
-	`value` text NOT NULL,
-	`updated_at` text NOT NULL
-);

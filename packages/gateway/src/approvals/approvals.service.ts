@@ -10,28 +10,20 @@ import type {
 import type { ApprovalRuleRow } from '../db/schema';
 import { evaluateRules, type EvaluationVerdict } from './lib/rule-evaluator';
 import { ApprovalsRepository } from './approvals.repository';
-import { GatewaySettingsRepository } from './gateway-settings.repository';
 
-const MODE_KEY = 'autonomy_mode';
-
-/** Business logic for approval rules — maps DB rows ↔ shared domain types.
- *  Also owns the autonomy mode gate (Phase 23 A3): `manual` (default) short-
- *  circuits the policy engine so existing behaviour is preserved until the user
- *  opts in via Theme D. Mode is DB-persisted via GatewaySettingsRepository. */
+/** Business logic for approval rules + autonomy mode.
+ *  Mode is persisted in `approval_settings` (single row) and cached in memory. */
 @Injectable()
 export class ApprovalsService implements OnModuleInit {
   private mode: AutonomyMode = 'manual';
 
   constructor(
     @Inject(ApprovalsRepository) private readonly repo: ApprovalsRepository,
-    @Inject(GatewaySettingsRepository) private readonly settings: GatewaySettingsRepository,
   ) {}
 
   onModuleInit(): void {
-    const stored = this.settings.get(MODE_KEY);
-    if (stored === 'guarded' || stored === 'autonomous') {
-      this.mode = stored;
-    }
+    const row = this.repo.getSettings();
+    if (row) this.mode = row.mode as AutonomyMode;
   }
 
   // ---- mode gate (Phase 23 A3 + D) ----
@@ -42,7 +34,7 @@ export class ApprovalsService implements OnModuleInit {
 
   setMode(mode: AutonomyMode): void {
     this.mode = mode;
-    this.settings.set(MODE_KEY, mode);
+    this.repo.upsertMode(mode, new Date().toISOString());
   }
 
   /** Evaluate durable rules against a tool call.

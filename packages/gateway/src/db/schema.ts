@@ -834,10 +834,12 @@ export const notifications = sqliteTable(
     route: text('route').notNull(),
     readAt: text('read_at'),
     createdAt: text('created_at').notNull(),
+    teamId: text('team_id'),
   },
   (t) => ({
     createdIdx: index('notifications_created_idx').on(t.createdAt),
     readIdx: index('notifications_read_idx').on(t.readAt),
+    teamIdx: index('notification_team_idx').on(t.teamId, t.createdAt),
   }),
 );
 
@@ -1026,12 +1028,12 @@ export const approvalLog = sqliteTable(
 export type ApprovalLogRow = typeof approvalLog.$inferSelect;
 export type ApprovalLogInsert = typeof approvalLog.$inferInsert;
 
-// --- Gateway settings (Phase 23 D — autonomy mode persistence) ---
-
-export const gatewaySettings = sqliteTable('gateway_settings', {
-  key: text('key').primaryKey(),
-  value: text('value').notNull(),
+/** Single-row settings for the approvals policy engine. */
+export const approvalSettings = sqliteTable('approval_settings', {
+  /** Always 'singleton' — this table has exactly one row. */
+  id: text('id').primaryKey().$default(() => 'singleton'),
+  /** 'manual' | 'guarded' | 'autonomous' */
+  mode: text('mode').notNull().default('manual'),
   updatedAt: text('updated_at').notNull(),
 });
-
-export type GatewaySettingRow = typeof gatewaySettings.$inferSelect;
+export type ApprovalSettingsRow = typeof approvalSettings.$inferSelect;

@@ -1,8 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import { RefreshCw } from 'lucide-react';
-import type { AgentPoolSnapshot, OpsSummary, UsageSummaryResponse } from '@midnite/shared';
-import { cn } from '@/lib/utils';
+import type { AgentPoolSnapshot, ApprovalLogEntry, ApprovalLogResponse, OpsSummary, UsageSummaryResponse } from '@midnite/shared';
+import { cn, relativeTime } from '@/lib/utils';
+import { getApprovalLog } from '@/lib/api';
+import { usePolling } from '@/lib/use-polling';
 import { WidgetLoader } from './spinner';
 
 // ── Shared primitives ────────────────────────────────────────────────────────
@@ -268,6 +271,114 @@ export function SpendSection({
 
 // ── Root ops view ─────────────────────────────────────────────────────────────
 
+// ── Decisions section (Phase 23 audit log) ───────────────────────────────────
+
+const RESOLUTION_LABEL: Record<string, string> = {
+  approved: 'Approved',
+  denied: 'Denied',
+  timeout: 'Timeout',
+  error: 'Error',
+};
+
+const DECIDED_BY_LABEL: Record<string, string> = {
+  user: 'User',
+  policy: 'Policy',
+  timeout: 'Timeout',
+  system: 'System',
+};
+
+function DecisionRow({ entry }: { entry: ApprovalLogEntry }) {
+  const approved = entry.resolution === 'approved';
+  return (
+    <tr className="border-b last:border-0">
+      <td className="py-2.5 pr-4 align-top">
+        <span className="font-mono text-xs text-foreground">{entry.toolName}</span>
+        <p className="mt-0.5 max-w-xs truncate text-xs text-muted-foreground">{entry.summary}</p>
+      </td>
+      <td className="py-2.5 pr-4 align-top">
+        <span
+          className={cn(
+            'rounded-full px-2 py-0.5 text-[10px] font-semibold',
+            approved
+              ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+              : 'bg-destructive/10 text-destructive',
+          )}
+        >
+          {RESOLUTION_LABEL[entry.resolution] ?? entry.resolution}
+        </span>
+      </td>
+      <td className="py-2.5 pr-4 align-top text-xs text-muted-foreground">
+        {DECIDED_BY_LABEL[entry.decidedBy] ?? entry.decidedBy}
+      </td>
+      <td className="py-2.5 align-top text-xs text-muted-foreground">{relativeTime(entry.createdAt)}</td>
+    </tr>
+  );
+}
+
+const LOG_PAGE = 50;
+
+function DecisionsSection() {
+  const [offset, setOffset] = useState(0);
+  const { data, loading } = usePolling<ApprovalLogResponse>(
+    () => getApprovalLog({ limit: LOG_PAGE, offset }),
+    30_000,
+  );
+
+  const entries = data?.entries ?? [];
+  const total = data?.total ?? 0;
+
+  return (
+    <SectionCard title="Decisions" loading={loading} empty={!loading && entries.length === 0}>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="border-b text-xs text-muted-foreground">
+              <th className="pb-2 pr-4 font-medium">Tool / summary</th>
+              <th className="pb-2 pr-4 font-medium">Resolution</th>
+              <th className="pb-2 pr-4 font-medium">Decided by</th>
+              <th className="pb-2 font-medium">When</th>
+            </tr>
+          </thead>
+          <tbody>
+            {entries.map((e) => (
+              <DecisionRow key={e.id} entry={e} />
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {total > LOG_PAGE && (
+        <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+          <span>
+            {offset + 1}–{Math.min(offset + LOG_PAGE, total)} of {total}
+          </span>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              disabled={offset === 0}
+              onClick={() => setOffset((o) => Math.max(0, o - LOG_PAGE))}
+              className="rounded px-2 py-1 transition-colors hover:bg-accent disabled:opacity-40"
+            >
+              Prev
+            </button>
+            <button
+              type="button"
+              disabled={offset + LOG_PAGE >= total}
+              onClick={() => setOffset((o) => o + LOG_PAGE)}
+              className="rounded px-2 py-1 transition-colors hover:bg-accent disabled:opacity-40"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
+    </SectionCard>
+  );
+}
+
+// ── Tab switcher ─────────────────────────────────────────────────────────────
+
+type OpsTab = 'metrics' | 'decisions';
+
 export function OpsView({
   pool,
   summary,
@@ -281,26 +392,59 @@ export function OpsView({
   loading: boolean;
   onRefresh: () => void;
 }) {
+  const [tab, setTab] = useState<OpsTab>('metrics');
+
   return (
     <div className="reveal-staged container space-y-6 pb-8 pt-2">
-      <div className="flex items-center justify-end">
-        <button
-          type="button"
-          onClick={onRefresh}
-          aria-label="Refresh ops data"
-          className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-        >
-          <RefreshCw className={cn('h-3 w-3', loading && 'animate-spin')} />
-          Refresh
-        </button>
+      <div className="flex items-center justify-between">
+        <div className="flex gap-1 rounded-lg border p-1 text-sm">
+          <button
+            type="button"
+            onClick={() => setTab('metrics')}
+            className={cn(
+              'rounded-md px-3 py-1 text-xs font-medium transition-colors',
+              tab === 'metrics' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            Metrics
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab('decisions')}
+            className={cn(
+              'rounded-md px-3 py-1 text-xs font-medium transition-colors',
+              tab === 'decisions' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            Decisions
+          </button>
+        </div>
+        {tab === 'metrics' && (
+          <button
+            type="button"
+            onClick={onRefresh}
+            aria-label="Refresh ops data"
+            className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+          >
+            <RefreshCw className={cn('h-3 w-3', loading && 'animate-spin')} />
+            Refresh
+          </button>
+        )}
       </div>
-      <GaugesSection pool={pool} summary={summary} loading={loading} />
-      <div className="grid gap-6 lg:grid-cols-2">
-        <ThroughputSection summary={summary} loading={loading} />
-        <OutcomesSection summary={summary} loading={loading} />
-      </div>
-      <DurationSection summary={summary} loading={loading} />
-      <SpendSection usage={usage} loading={loading} />
+
+      {tab === 'metrics' ? (
+        <>
+          <GaugesSection pool={pool} summary={summary} loading={loading} />
+          <div className="grid gap-6 lg:grid-cols-2">
+            <ThroughputSection summary={summary} loading={loading} />
+            <OutcomesSection summary={summary} loading={loading} />
+          </div>
+          <DurationSection summary={summary} loading={loading} />
+          <SpendSection usage={usage} loading={loading} />
+        </>
+      ) : (
+        <DecisionsSection />
+      )}
     </div>
   );
 }

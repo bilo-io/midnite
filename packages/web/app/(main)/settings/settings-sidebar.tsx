@@ -9,6 +9,7 @@ import {
   KeyRound,
   Lock,
   Palette,
+  ShieldAlert,
   SlidersHorizontal,
   Users,
   UserRound,
@@ -22,14 +23,13 @@ type Category = { href: string; label: string; Icon: LucideIcon };
 const CATEGORIES: Category[] = [
   { href: '/settings', label: 'Appearance', Icon: Palette },
   { href: '/settings/screen-lock', label: 'Screen lock', Icon: Lock },
+  { href: '/settings/security', label: 'Security', Icon: ShieldAlert },
   { href: '/settings/agents', label: 'Agents', Icon: Bot },
   { href: '/settings/repos', label: 'Repos', Icon: FolderGit2 },
   { href: '/settings/credentials', label: 'Credentials', Icon: KeyRound },
   { href: '/settings/system', label: 'System', Icon: SlidersHorizontal },
   { href: '/settings/profile', label: 'Profile', Icon: CircleUser },
-  { href: '/settings/team', label: 'Team', Icon: Users },
   { href: '/settings/user', label: 'User', Icon: UserRound },
-  { href: '/settings/profile', label: 'Profile', Icon: CircleUser },
   { href: '/settings/team', label: 'Teams', Icon: Users },
 ];
 

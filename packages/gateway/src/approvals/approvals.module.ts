@@ -5,7 +5,6 @@ import { ApprovalsGateway } from './approvals.gateway';
 import { ApprovalsLogRepository } from './approvals-log.repository';
 import { ApprovalsRepository } from './approvals.repository';
 import { ApprovalsService } from './approvals.service';
-import { GatewaySettingsRepository } from './gateway-settings.repository';
 
 /** Phase 23: durable tool-approval rules, live inbox, audit log, and autonomy mode.
  *
@@ -16,13 +15,7 @@ import { GatewaySettingsRepository } from './gateway-settings.repository';
 @Module({
   imports: [forwardRef(() => TerminalModule)],
   controllers: [ApprovalsController],
-  providers: [
-    ApprovalsService,
-    ApprovalsRepository,
-    ApprovalsLogRepository,
-    GatewaySettingsRepository,
-    ApprovalsGateway,
-  ],
+  providers: [ApprovalsService, ApprovalsRepository, ApprovalsLogRepository, ApprovalsGateway],
   exports: [ApprovalsService, ApprovalsRepository, ApprovalsLogRepository],
 })
 export class ApprovalsModule {}

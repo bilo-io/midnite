@@ -362,8 +362,22 @@
     {
       "idx": 51,
       "version": "6",
+      "when": 1782900000000,
+      "tag": "0051_notifications_team_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "6",
+      "when": 1782700007000,
+      "tag": "0052_approval_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "6",
       "when": 1782800000000,
-      "tag": "0051_approvals_phase23bcd",
+      "tag": "0053_approvals_phase23bcd",
       "breakpoints": true
     }
   ]

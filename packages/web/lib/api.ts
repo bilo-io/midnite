@@ -183,6 +183,19 @@ import {
   type User,
   type UpdateUserRequest,
   type UpdatePasswordRequest,
+  ApprovalRulesResponseSchema,
+  ApprovalRuleResponseSchema,
+  type ApprovalRulesResponse,
+  type ApprovalRuleResponse,
+  type CreateApprovalRule,
+  type UpdateApprovalRule,
+  PendingApprovalsResponseSchema,
+  type PendingApprovalsResponse,
+  ApprovalLogResponseSchema,
+  type ApprovalLogResponse,
+  ModeResponseSchema,
+  type ModeResponse,
+  type AutonomyMode,
 } from '@midnite/shared';
 import { z } from 'zod';
 
@@ -1577,3 +1590,65 @@ export async function updateMyProfile(req: UpdateUserRequest): Promise<User> {
 export async function updateMyPassword(req: UpdatePasswordRequest): Promise<void> {
   await fetchJson('/auth/me/password', { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(req) });
 }
+
+// ---- Approvals (Phase 23) ----
+
+export async function listApprovalRules(): Promise<ApprovalRulesResponse> {
+  return fetchJson('/approvals/rules', {}, ApprovalRulesResponseSchema);
+}
+
+export async function createApprovalRule(body: CreateApprovalRule): Promise<ApprovalRuleResponse> {
+  return fetchJson(
+    '/approvals/rules',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    ApprovalRuleResponseSchema,
+  );
+}
+
+export async function updateApprovalRule(id: string, body: UpdateApprovalRule): Promise<ApprovalRuleResponse> {
+  return fetchJson(
+    `/approvals/rules/${id}`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    ApprovalRuleResponseSchema,
+  );
+}
+
+export async function deleteApprovalRule(id: string): Promise<void> {
+  await fetchJson(`/approvals/rules/${id}`, { method: 'DELETE' });
+}
+
+export async function listPendingApprovals(): Promise<PendingApprovalsResponse> {
+  return fetchJson('/approvals/pending', {}, PendingApprovalsResponseSchema);
+}
+
+export async function getApprovalLog(opts?: {
+  sessionId?: string;
+  taskId?: string;
+  from?: string;
+  to?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<ApprovalLogResponse> {
+  const params = new URLSearchParams();
+  if (opts?.sessionId) params.set('sessionId', opts.sessionId);
+  if (opts?.taskId) params.set('taskId', opts.taskId);
+  if (opts?.from) params.set('from', opts.from);
+  if (opts?.to) params.set('to', opts.to);
+  if (opts?.limit !== undefined) params.set('limit', String(opts.limit));
+  if (opts?.offset !== undefined) params.set('offset', String(opts.offset));
+  const qs = params.toString();
+  return fetchJson(`/approvals/log${qs ? `?${qs}` : ''}`, {}, ApprovalLogResponseSchema);
+}
+
+export async function getAutonomyMode(): Promise<ModeResponse> {
+  return fetchJson('/approvals/mode', {}, ModeResponseSchema);
+}
+
+export async function setAutonomyMode(mode: AutonomyMode): Promise<ModeResponse> {
+  return fetchJson(
+    '/approvals/mode',
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ mode }) },
+    ModeResponseSchema,
+  );
+}
+
