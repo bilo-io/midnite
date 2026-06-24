@@ -5,7 +5,14 @@ import path from 'node:path';
 
 import { defineConfig, devices } from '@playwright/test';
 
-import { E2E_GATEWAY_PORT, E2E_WEB_PORT, GATEWAY_ORIGIN, WEB_ORIGIN } from './e2e/config';
+import {
+  E2E_GATEWAY_PORT,
+  E2E_WEB_PORT,
+  GATEWAY_ORIGIN,
+  STORYBOOK_ORIGIN,
+  STORYBOOK_PORT,
+  WEB_ORIGIN,
+} from './e2e/config';
 
 // moon runs `pnpm exec playwright test` from this package directory, so cwd is
 // packages/web. Anchor the gateway's config + uploads paths to absolutes off it.
@@ -53,6 +60,7 @@ function freePort(port: number): void {
 if (process.env['TEST_WORKER_INDEX'] === undefined) {
   freePort(E2E_GATEWAY_PORT);
   freePort(E2E_WEB_PORT);
+  freePort(STORYBOOK_PORT);
   // Start from an empty store. (A reused orphan gateway would still hold the old
   // file handle, hence freePort above — together they guarantee a fresh DB.)
   for (const suffix of ['', '-wal', '-shm']) {
@@ -93,16 +101,27 @@ export default defineConfig({
       testMatch: '**/*.e2e.ts',
       use: { ...devices['Desktop Chrome'] },
     },
-    // Deterministic screenshot capture (Theme E1): the `*.shots.ts` specs at a
-    // fixed 1440×900 viewport. The spec itself forces reduced motion (via
-    // page.emulateMedia), pins the clock, and stubs external widgets. Shares the
-    // same webServer — run it on its own with `moon run web:screenshots`.
+    // Deterministic screenshot capture (Theme E1 — page side): the `*.shots.ts`
+    // specs at a fixed 1440×900 viewport. `storybook.shots.ts` is excluded here
+    // so it only runs under the `stories` project (different baseURL).
     {
       name: 'screenshots',
-      testMatch: '**/*.shots.ts',
+      testMatch: /^(?!.*storybook\.shots\.ts$).*\.shots\.ts$/,
       use: {
         ...devices['Desktop Chrome'],
         viewport: { width: 1440, height: 900 },
+      },
+    },
+    // Per-story Storybook screenshots (Theme E1 — story side): connects to the
+    // Storybook dev server (port 6007) and captures every story in light and dark.
+    // Runs together with the `screenshots` project via `moon run web:screenshots`.
+    {
+      name: 'stories',
+      testMatch: /storybook\.shots\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1280, height: 900 },
+        baseURL: STORYBOOK_ORIGIN,
       },
     },
   ],
@@ -146,6 +165,18 @@ export default defineConfig({
       env: {
         NEXT_PUBLIC_GATEWAY_URL: GATEWAY_ORIGIN,
       },
+    },
+    {
+      // Storybook dev server for per-story screenshot capture (Theme E1).
+      // Port 6007 avoids colliding with the default `web:storybook` port (6006).
+      // `reuseExistingServer: !isCI` lets a dev reuse a running Storybook, but CI
+      // always starts fresh. Health-check against `/index.json` (Storybook 7+).
+      command: `pnpm exec storybook dev -p ${STORYBOOK_PORT} --quiet`,
+      url: `${STORYBOOK_ORIGIN}/index.json`,
+      reuseExistingServer: !isCI,
+      timeout: 120_000,
+      stdout: 'pipe',
+      stderr: 'pipe',
     },
   ],
 });
