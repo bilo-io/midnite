@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 14 E: run-history replay for workflow editor (PR #170)
+
+Adds a run-history picker + step player to the workflow editor. Users can select any past run and step through its node execution order on the canvas (sorted by `startedAt`), driven by the existing `applyRunState` store method. Auto-play at 700ms/step; Prev/Next/First/Last for manual scrubbing; closing clears canvas state.
+
+- [x] `web`: `RunHistoryPanel` component (`run-history-panel.tsx`) — run list + lazy full-run fetch + replay player with timeout-chain autoplay (no stale closure on `maxStep`)
+- [x] `web`: `WorkflowToolbar` gains `History` button (toggles panel); `WorkflowEditor` wires `historyOpen` state — shows `RunHistoryPanel` in place of `NodeConfigPanel` when active
+- [x] `web`: 10 unit tests covering loading/empty/error/list/replay/stepping/close/back-to-list/lazy-load
+- [x] Fixes pre-existing `fixAttempts` fixture errors across gateway + web tests (from Phase 30 C fast-forward) and resolves merge-conflict leftover in `office-scene.ts`
+
+---
+
 ## 2026-06-24 — Phase 14 B+C: credential vault (B1) + Slack/Email executors (C) (PR #168)
 
 Closes the gap between workflow nodes and external services. Credentials are AES-256-GCM encrypted at rest, decrypted only server-side at execute time, and never returned over the API.
