@@ -12,7 +12,9 @@ import {
   type TaskAttachment,
   type TaskEvent,
   type TaskLink,
+  type TeamScope,
 } from '@midnite/shared';
+import { teamScopeFilter } from '../db/team-scope';
 import { DB_TOKEN, type MidniteDb } from '../db/db.module';
 import {
   prStatus,
@@ -211,10 +213,11 @@ export class TasksRepository {
     });
   }
 
-  listTasks(status?: Status, projectId?: string): TaskRow[] {
+  listTasks(status?: Status, projectId?: string, scope?: TeamScope): TaskRow[] {
     const where = and(
       status ? eq(tasks.status, status) : undefined,
       projectId ? eq(tasks.projectId, projectId) : undefined,
+      scope ? teamScopeFilter(tasks.createdBy, tasks.teamId, scope) : undefined,
     );
     // Highest priority first, then oldest within a priority — this drives the
     // scheduler's todo selection and the board's within-column order.
@@ -226,8 +229,11 @@ export class TasksRepository {
       .all();
   }
 
-  getTask(id: string): TaskRow | undefined {
-    return this.db.select().from(tasks).where(eq(tasks.id, id)).get();
+  getTask(id: string, scope?: TeamScope): TaskRow | undefined {
+    const where = scope
+      ? and(eq(tasks.id, id), teamScopeFilter(tasks.createdBy, tasks.teamId, scope))
+      : eq(tasks.id, id);
+    return this.db.select().from(tasks).where(where).get();
   }
 
   listEvents(taskId: string): TaskEvent[] {

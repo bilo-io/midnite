@@ -4,11 +4,13 @@ import {
   TriggerSchema,
   WorkflowGraphSchema,
   type NodeRun,
+  type TeamScope,
   type Trigger,
   type Workflow,
   type WorkflowRun,
 } from '@midnite/shared';
 import { DB_TOKEN, type MidniteDb } from '../db/db.module';
+import { teamScopeFilter } from '../db/team-scope';
 import {
   nodeRuns,
   workflowRuns,
@@ -31,12 +33,16 @@ export class WorkflowsRepository {
     return this.db.insert(workflows).values(row).returning().get();
   }
 
-  getWorkflowRow(id: string): WorkflowRow | undefined {
-    return this.db.select().from(workflows).where(eq(workflows.id, id)).get();
+  getWorkflowRow(id: string, scope?: TeamScope): WorkflowRow | undefined {
+    const where = scope
+      ? and(eq(workflows.id, id), teamScopeFilter(workflows.createdBy, workflows.teamId, scope))
+      : eq(workflows.id, id);
+    return this.db.select().from(workflows).where(where).get();
   }
 
-  listWorkflowRows(): WorkflowRow[] {
-    return this.db.select().from(workflows).orderBy(desc(workflows.updatedAt)).all();
+  listWorkflowRows(scope?: TeamScope): WorkflowRow[] {
+    const where = scope ? teamScopeFilter(workflows.createdBy, workflows.teamId, scope) : undefined;
+    return this.db.select().from(workflows).where(where).orderBy(desc(workflows.updatedAt)).all();
   }
 
   listScheduledEnabledRows(): WorkflowRow[] {
