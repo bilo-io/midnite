@@ -95,7 +95,7 @@ export class WorkflowsService {
 
   // --- writes ---
 
-  create(req: CreateWorkflowRequest): Workflow {
+  create(req: CreateWorkflowRequest, createdBy?: string): Workflow {
     const id = randomUUID();
     const now = new Date().toISOString();
     const trigger = req.trigger ?? DEFAULT_TRIGGER;
@@ -125,6 +125,7 @@ export class WorkflowsService {
       lastFiredAt: null,
       createdAt: now,
       updatedAt: now,
+      createdBy: createdBy ?? null,
     });
     const workflow = this.repo.hydrateWorkflow(row);
     this.searchIndex?.upsert(workflowToIndexDoc(workflow));

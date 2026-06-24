@@ -167,6 +167,7 @@ export class WorkflowsRepository {
       installedFromTemplateId: row.installedFromTemplateId ?? undefined,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
+      createdBy: row.createdBy ?? undefined,
     };
   }
 

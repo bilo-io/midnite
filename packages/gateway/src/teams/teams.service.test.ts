@@ -33,8 +33,8 @@ describe('TeamsService', () => {
     const team = svc.createTeam({ name: 'Acme', slug: 'acme' }, 'user-1');
     expect(team.slug).toBe('acme');
     expect(team.members).toHaveLength(1);
-    expect(team.members[0].role).toBe('owner');
-    expect(team.members[0].userId).toBe('user-1');
+    expect(team.members[0]!.role).toBe('owner');
+    expect(team.members[0]!.userId).toBe('user-1');
   });
 
   it('throws TeamSlugTakenError for duplicate slug', () => {
@@ -47,7 +47,7 @@ describe('TeamsService', () => {
     svc.createTeam({ name: 'Team B', slug: 'team-b' }, 'user-2');
     const teams = svc.listTeamsForUser('user-1');
     expect(teams).toHaveLength(1);
-    expect(teams[0].slug).toBe('team-a');
+    expect(teams[0]!.slug).toBe('team-a');
   });
 
   it('throws TeamDoesNotExistError for unknown team', () => {

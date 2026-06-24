@@ -76,6 +76,8 @@ class InMemoryRepo extends TasksRepository {
       archivedAt: row.archivedAt ?? null,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
+      createdBy: row.createdBy ?? null,
+      teamId: row.teamId ?? null,
     };
     this.tasks.push(full);
     return full;

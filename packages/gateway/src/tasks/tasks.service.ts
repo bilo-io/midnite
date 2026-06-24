@@ -69,6 +69,8 @@ export interface CreateTaskInput {
   /** Ids of blocker tasks (Phase 27) — each must exist; the new task can't form a cycle. */
   dependsOn?: string[];
   images: Array<ClassifierImage & { size: number; originalName?: string }>;
+  /** userId of the creating user (Phase 33 C3). Null for legacy static-token path. */
+  createdBy?: string;
 }
 
 @Injectable()
@@ -391,6 +393,7 @@ export class TasksService {
       prUrl: null,
       createdAt: now,
       updatedAt: now,
+      createdBy: input.createdBy ?? null,
     });
 
     for (const dep of dependsOn) {

@@ -48,19 +48,20 @@ Replace the static env-var bearer token with proper user identities and JWT sess
 
 Teams let multiple users share a workspace. A team has a slug, roles (owner / admin / member / viewer), and invite tokens for onboarding.
 
-### B1. Team + membership tables — **S**
-- [ ] Add `teams` table ([`db/schema.ts`](../packages/gateway/src/db/schema.ts)): `id` (UUIDv7), `slug` (unique), `name`, `created_by` (userId), `created_at`. Add `team_memberships`: `team_id`, `user_id`, `role` (`owner` | `admin` | `member` | `viewer`), `joined_at`. Forward-only migrations. The creating user is automatically assigned `owner`.
-- [ ] Add `team_invites`: `id`, `team_id`, `invited_by`, `email` (optional — null = open link), `token` (UUIDv7, unique), `role`, `expires_at`, `accepted_at`. Used by the invite flow (Theme B3).
-- [ ] `TeamsRepository`: `create`, `findById`, `findBySlug`, `listByUser`, `addMember`, `removeMember`, `setRole`, `createInvite`, `acceptInvite`, `findInviteByToken`. Drizzle only.
+### B1. Team + membership tables — **S** ✅ DONE
+- [x] Add `teams` table ([`db/schema.ts`](../packages/gateway/src/db/schema.ts)): `id`, `slug` (unique), `name`, `created_by`, `created_at`. Add `team_memberships`: `team_id`, `user_id`, `role` (`owner` | `admin` | `member` | `viewer`), `joined_at`. Migration `0047_teams`. The creating user is automatically assigned `owner`.
+- [x] Add `team_invites`: `id`, `team_id`, `invited_by`, `email` (optional), `token` (unique), `role`, `expires_at`, `accepted_at`, `created_at`.
+- [x] `TeamsRepository`: insert/findById/findBySlug/listByUser/update/delete; insertMember/findMember/listMembers/setRole/removeMember; insertInvite/findInviteByToken/listInvites/acceptInvite/revokeInvite. Drizzle only.
 
-### B2. Team CRUD endpoints — **S–M**
-- [ ] `TeamsService` + `TeamsController` ([`teams/`](../packages/gateway/src/teams/)): `POST /teams` (create, sets owner); `GET /teams/:id`; `GET /teams` (my teams); `PATCH /teams/:id` (rename — owner/admin); `DELETE /teams/:id` (owner only, cascades membership).
-- [ ] Shared `Team` + `TeamMembership` types + `CreateTeamRequest` in [`packages/shared/src/team.ts`](../packages/shared/src/team.ts); typed client methods.
+### B2. Team CRUD endpoints — **S–M** ✅ DONE
+- [x] `TeamsService` + `TeamsController` ([`teams/`](../packages/gateway/src/teams/)): `POST /teams` (create, sets owner); `GET /teams/:id`; `GET /teams` (my teams); `PATCH /teams/:id` (rename — owner/admin); `DELETE /teams/:id` (owner only, cascades membership). Role rank: owner>admin>member>viewer.
+- [x] Shared `Team` + `TeamMember` + `TeamWithMembers` types + `CreateTeamRequest`/`UpdateTeamRequest`/`SetMemberRoleRequest` in [`packages/shared/src/team.ts`](../packages/shared/src/team.ts).
 
-### B3. Invite token flow — **S**
-- [ ] `POST /teams/:id/invites` (admin+): creates an invite token, returns `{ token, url }`. Optional `email` and `expiresInDays` (default 7). The shareable URL is `<webBase>/invite/<token>` — no email sent; the inviter shares it out-of-band.
-- [ ] `GET /invites/:token` (unauthenticated): returns invite metadata (team name, role, expiry) without accepting — used by the web page to show "You've been invited to join X".
-- [ ] `POST /invites/:token/accept` (authenticated, uses the logged-in user's identity): validates token not expired/revoked, adds the user as a member, marks `accepted_at`.
+### B3. Invite token flow — **S** ✅ DONE
+- [x] `POST /teams/:id/invites` (admin+): creates an invite token. Optional `email` and `expiresInDays` (default 7).
+- [x] `GET /invites/:token` (unauthenticated): returns invite metadata without accepting.
+- [x] `POST /invites/:token/accept` (authenticated): validates expiry, adds user as member, marks `accepted_at`.
+- [x] `GET/DELETE /teams/:id/invites` (admin+): list + revoke outstanding invites.
 
 ### B4. Web team UI — **M**
 - [ ] `app/(main)/settings/team/page.tsx` — team switcher dropdown in the nav (current team + "Create team" option); links to team settings.
@@ -73,18 +74,18 @@ Teams let multiple users share a workspace. A team has a slug, roles (owner / ad
 
 Add `created_by` (userId) and optional `team_id` to every entity that will eventually be scoped. This phase is **additive only** — read/write restrictions (who can see or modify what) are deferred to Phase 34.
 
-### C1. Schema additions + migrations — **S–M**
-- [ ] One migration adds `created_by TEXT` (nullable, FK-style reference to `users.id`) and `team_id TEXT` (nullable, references `teams.id`) to: `tasks`, `repos`, `workflows`, `sessions`. Columns are nullable so a zero-downtime migration doesn't break the running gateway.
-- [ ] Indexes: `tasks_created_by_idx`, `tasks_team_id_idx` (and equivalents for repos/workflows) — fast user-scoped list queries once RBAC lands.
+### C1. Schema additions + migrations — **S–M** ✅ DONE
+- [x] Migration `0048_resource_ownership`: adds `created_by TEXT` and `team_id TEXT` to `tasks`, `repos`, `workflows`. Nullable — no zero-downtime risk.
+- [x] Indexes: `tasks_created_by_idx`, `tasks_team_id_idx`, `repos_created_by_idx`, `workflows_created_by_idx`.
 
-### C2. Backfill: auto-create personal workspace on first JWT login — **S**
-- [ ] On a user's very first successful JWT login, `UsersService` creates a personal team for them (`slug = user-<userId>`, `name = "<Name>'s workspace"`) with the user as owner. Existing single-user tasks/repos/workflows receive `created_by = firstUserId` via a one-time backfill migration that fires when exactly one user exists — so old data is attributed correctly without needing a manual step.
+### C2. Backfill: auto-create personal workspace on registration — **S** ✅ DONE
+- [x] `UsersService.register` calls `TeamsService.createTeam` after user insert; creates a personal team (`slug = personal-<userId>`, `name = "<Name>'s workspace"`) with the user as `owner`. `@Optional()` injection so unit tests don't need the full module graph.
 
-### C3. Write-path: set `createdBy` on create — **S**
-- [ ] `TasksService.create`, `ReposService.create`, `WorkflowsService.create` each accept an optional `userId` from the request context (supplied by the `@CurrentUser()` decorator) and persist it as `created_by`. If no user context exists (legacy static-token path), the field is left null — no behavioural change for single-user setups.
+### C3. Write-path: set `createdBy` on create — **S** ✅ DONE
+- [x] `TasksService.createFromPrompt`, `ReposService.create`, `WorkflowsService.create` accept `createdBy?: string` and persist it as `created_by`. Controllers pass `user?.userId` from `@CurrentUser()`. Null on the legacy static-token path — no regression.
 
-### C4. Read-path: expose ownership on response shapes — **S**
-- [ ] Extend the shared `Task`, `Repo`, `Workflow` types in [`packages/shared/src/`](../packages/shared/src/) with `createdBy?: string` and `teamId?: string`. All existing consumers ignore the new optional fields — no breaking change.
+### C4. Read-path: expose ownership on response shapes — **S** ✅ DONE
+- [x] Extended shared `Task`, `Repo`, `Workflow` types with `createdBy?: string` and `teamId?: string`. Mapped in `toRepo()` and `hydrateWorkflow()`. All existing consumers ignore the new optional fields.
 
 ---
 

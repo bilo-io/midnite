@@ -16,6 +16,8 @@ export const WorkflowSchema = z.object({
   installedFromTemplateId: z.string().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
+  createdBy: z.string().optional(),
+  teamId: z.string().optional(),
 });
 
 // Trimmed shape for list views — no graph payload.

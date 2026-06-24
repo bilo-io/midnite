@@ -11,6 +11,7 @@ import {
   Query,
   Res,
 } from '@nestjs/common';
+import { CurrentUser, type CurrentUserPayload } from '../auth/decorators/current-user.decorator';
 import type { FastifyReply } from 'fastify';
 import {
   REPORT_CONTENT_TYPE,
@@ -37,10 +38,13 @@ export class WorkflowsController {
   }
 
   @Post()
-  create(@Body() body: unknown): WorkflowResponse {
+  create(
+    @Body() body: unknown,
+    @CurrentUser() user: CurrentUserPayload | null,
+  ): WorkflowResponse {
     const parsed = CreateWorkflowRequestSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
-    return { workflow: this.service.create(parsed.data) };
+    return { workflow: this.service.create(parsed.data, user?.userId) };
   }
 
   @Get(':id')

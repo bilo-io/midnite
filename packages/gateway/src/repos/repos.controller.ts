@@ -17,6 +17,7 @@ import {
   type Repo,
   type RepoResponse,
 } from '@midnite/shared';
+import { CurrentUser, type CurrentUserPayload } from '../auth/decorators/current-user.decorator';
 import { RepoDoesNotExistError, RepoNameTakenError, ReposService } from './repos.service';
 
 @Controller('repos')
@@ -34,10 +35,13 @@ export class ReposController {
   }
 
   @Post()
-  create(@Body() body: unknown): RepoResponse {
+  create(
+    @Body() body: unknown,
+    @CurrentUser() user: CurrentUserPayload | null,
+  ): RepoResponse {
     const parsed = CreateRepoRequestSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
-    return { repo: this.translate(() => this.service.create(parsed.data)) };
+    return { repo: this.translate(() => this.service.create(parsed.data, user?.userId)) };
   }
 
   @Patch(':id')

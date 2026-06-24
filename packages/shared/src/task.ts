@@ -95,6 +95,10 @@ export const TaskSchema = z.object({
   updatedAt: z.string().optional(),
   /** ISO timestamp when the task (and thus its session) was archived; absent when active. */
   archivedAt: z.string().optional(),
+  /** userId of the user who created this task; null for tasks created before Phase 33. */
+  createdBy: z.string().optional(),
+  /** teamId this task belongs to; null for personal tasks. */
+  teamId: z.string().optional(),
   events: z.array(TaskEventSchema),
   attachments: z.array(TaskAttachmentSchema).optional(),
   links: z.array(TaskLinkSchema).optional(),

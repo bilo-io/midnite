@@ -40,6 +40,8 @@ export const tasks = sqliteTable(
     archivedAt: text('archived_at'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
+    createdBy: text('created_by'),
+    teamId: text('team_id'),
   },
   (t) => ({
     statusIdx: index('tasks_status_idx').on(t.status),
@@ -197,6 +199,8 @@ export const repos = sqliteTable(
     ownerRepo: text('owner_repo'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
+    createdBy: text('created_by'),
+    teamId: text('team_id'),
   },
   (t) => ({
     nameIdx: uniqueIndex('repos_name_idx').on(t.name),
@@ -288,6 +292,8 @@ export const workflows = sqliteTable(
     installedFromTemplateId: text('installed_from_template_id'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
+    createdBy: text('created_by'),
+    teamId: text('team_id'),
   },
   (t) => ({
     enabledIdx: index('workflows_enabled_idx').on(t.enabled),

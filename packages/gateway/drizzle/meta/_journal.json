@@ -337,6 +337,13 @@
       "when": 1782700002000,
       "tag": "0047_teams",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "6",
+      "when": 1782700003000,
+      "tag": "0048_resource_ownership",
+      "breakpoints": true
     }
   ]
 }

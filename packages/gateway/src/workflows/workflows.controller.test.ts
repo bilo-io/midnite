@@ -27,7 +27,7 @@ function build(overrides: Partial<Record<keyof WorkflowsService, unknown>> = {})
 describe('WorkflowsController — body validation (400)', () => {
   it('rejects a create with a blank name', () => {
     const { controller } = build();
-    expect(() => controller.create({ name: '  ' })).toThrow(BadRequestException);
+    expect(() => controller.create({ name: '  ' }, null)).toThrow(BadRequestException);
   });
 
   it('rejects an update with a non-string name', () => {
@@ -44,8 +44,8 @@ describe('WorkflowsController — body validation (400)', () => {
 describe('WorkflowsController — valid input delegates to the service', () => {
   it('creates with the parsed body', () => {
     const { controller, service } = build();
-    expect(controller.create({ name: 'Flow' })).toEqual({ workflow: fakeWorkflow });
-    expect(service.create).toHaveBeenCalledWith({ name: 'Flow' });
+    expect(controller.create({ name: 'Flow' }, null)).toEqual({ workflow: fakeWorkflow });
+    expect(service.create).toHaveBeenCalledWith({ name: 'Flow' }, undefined);
   });
 
   it('runs with the parsed input (defaulting an empty body)', () => {
