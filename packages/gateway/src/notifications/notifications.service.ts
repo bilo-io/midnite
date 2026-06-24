@@ -18,6 +18,7 @@ import {
   type NotifyDecision,
   type Task,
   type TaskBoardEvent,
+  type TeamScope,
 } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
 import { TaskEventBus } from '../tasks/task-event-bus';
@@ -71,10 +72,10 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
 
   // --- read API (controller) ---
 
-  list(query: NotificationListQuery): NotificationListResponse {
+  list(query: NotificationListQuery, scope?: TeamScope): NotificationListResponse {
     const limit = query.limit ?? NOTIFICATION_LIST_DEFAULT_LIMIT;
-    const rows = this.repo.list(limit, query.offset ?? 0);
-    return { notifications: rows.map((r) => this.repo.hydrate(r)), unread: this.repo.countUnread() };
+    const rows = this.repo.list(limit, query.offset ?? 0, scope);
+    return { notifications: rows.map((r) => this.repo.hydrate(r)), unread: this.repo.countUnread(scope) };
   }
 
   markRead(req: MarkReadRequest): { unread: number } {
@@ -137,6 +138,7 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
       route: '/tasks',
       readAt: null,
       createdAt: new Date().toISOString(),
+      teamId: p.task.teamId ?? null,
     });
     return this.repo.hydrate(row);
   }
