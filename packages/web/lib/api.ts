@@ -52,6 +52,14 @@ import {
   OpsSummarySchema,
   type OpsSummary,
   type OpsQuery,
+  WorkflowTemplateResponseSchema,
+  WorkflowTemplatesResponseSchema,
+  TemplateSlotsResponseSchema,
+  InstallTemplateRequestSchema,
+  type WorkflowTemplate,
+  type WorkflowTemplateSummary,
+  type InstallTemplateRequest,
+  type TemplateSlotsResponse,
 } from '@midnite/shared';
 import {
   AgentCliResponseSchema,
@@ -728,6 +736,44 @@ export async function rotateWorkflowWebhook(id: string): Promise<WebhookInfoResp
     { method: 'POST' },
     WebhookInfoResponseSchema,
   );
+}
+
+// --- Workflow Templates ---
+
+export async function listWorkflowTemplates(filter?: {
+  category?: string;
+  published?: boolean;
+}): Promise<WorkflowTemplateSummary[]> {
+  const params = new URLSearchParams();
+  if (filter?.category) params.set('category', filter.category);
+  if (filter?.published !== undefined) params.set('published', String(filter.published));
+  const qs = params.size > 0 ? `?${params.toString()}` : '';
+  const { templates } = await fetchJson(`/workflow-templates${qs}`, undefined, WorkflowTemplatesResponseSchema);
+  return templates;
+}
+
+export async function getWorkflowTemplate(id: string): Promise<WorkflowTemplate> {
+  const { template } = await fetchJson(
+    `/workflow-templates/${encodeURIComponent(id)}`,
+    undefined,
+    WorkflowTemplateResponseSchema,
+  );
+  return template;
+}
+
+export async function getWorkflowTemplateSlots(id: string): Promise<TemplateSlotsResponse> {
+  return fetchJson(`/workflow-templates/${encodeURIComponent(id)}/slots`, undefined, TemplateSlotsResponseSchema);
+}
+
+export async function installWorkflowTemplate(id: string, body: InstallTemplateRequest): Promise<Workflow> {
+  const parsed = InstallTemplateRequestSchema.safeParse(body);
+  if (!parsed.success) throw new Error(parsed.error.message);
+  const { workflow } = await fetchJson(
+    `/workflow-templates/${encodeURIComponent(id)}/install`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(parsed.data) },
+    WorkflowResponseSchema,
+  );
+  return workflow;
 }
 
 // --- Agents (orchestrator + subagents + heartbeat) ---
