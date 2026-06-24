@@ -29,13 +29,13 @@ The substrate: decide the safe cases automatically, escalate the rest. Extend th
 - [x] `ApprovalRule` shape in [`@midnite/shared`](../packages/shared/src/approval-rule.ts): `{ id, enabled, effect: 'allow'|'deny', toolName (or '*'), match?: { commandPrefix?, pathGlob? }, scope: 'global', note? }`. zod (`CreateApprovalRuleSchema` / `UpdateApprovalRuleSchema`) + 7 tests. (Per-repo scope deferred — Decision §5.)
 - [x] **DB-backed** `approval_rules` table (migration `0044_approval_rules`) + `ApprovalsRepository` (list/listEnabled/listEnabledForTool/get/insert/update/remove; 10 integration tests). `ApprovalsService` + `ApprovalsController` (`GET/POST/PATCH/DELETE /approvals/rules`) + `ApprovalsModule` registered in `AppModule` and exported for downstream slices (A2, B, C).
 
-### A2. Evaluation step in `requestDecision` — **M**
-- [ ] Before broadcasting to humans, evaluate the rules against `tool_name` + `tool_input` → `auto-allow | auto-deny | escalate`. Replaces/wraps the current per-session `allowList` short-circuit (which stays as the runtime `allow-session` cache layered on top of persisted rules).
-- [ ] **Conservative input matching** (Decision §2): `pathGlob` for `Write`/`Edit`/`Read` targets, a `commandPrefix` allow-list for `Bash` (e.g. `git status`, `ls`, `pnpm test`). **Never auto-`allow` a risky tool on a fuzzy match** — an unmatched or ambiguous `Bash`/destructive call **escalates to a human**; auto-`deny` is allowed for explicit deny rules. Pattern matching is advisory for *allow*, authoritative for *escalate*.
-- [ ] **Fail-safe preserved:** the engine only *adds* auto-decisions. `onNoSubscriber` / `onTimeout` / abort semantics are unchanged; a pending escalation with no viewer still falls back per config.
+### A2. Evaluation step in `requestDecision` — **M** — ✅ DONE (2026-06-24, PR #187)
+- [x] Before broadcasting to humans, evaluate the rules against `tool_name` + `tool_input` → `auto-allow | auto-deny | escalate`. The per-session `allowList` short-circuit (runtime `allow-session` cache) stays layered on top.
+- [x] **Conservative input matching** (Decision §2): `pathGlob` for file tools, `commandPrefix` allow-list for `Bash`. Unmatched/ambiguous calls escalate to a human; auto-`deny` allowed for explicit deny rules.
+- [x] **Fail-safe preserved:** engine only *adds* auto-decisions. `onNoSubscriber` / `onTimeout` / abort semantics unchanged.
 
-### A3. Mode gate — **S**
-- [ ] The engine respects the active **autonomy mode** (Theme D): `manual` bypasses all auto-`allow` rules (everything escalates as today); `guarded`/`autonomous` apply rules. Mode is read at evaluation time.
+### A3. Mode gate — **S** — ✅ DONE (2026-06-24, PR #187)
+- [x] The engine respects the active **autonomy mode**: `manual` (default) short-circuits to `escalate` — no behaviour change for existing users; `guarded`/`autonomous` apply rules. Mode read at evaluation time via `ApprovalsService.getMode()`/`setMode()`.
 
 ---
 

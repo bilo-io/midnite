@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 23 A2 complete: Evaluation engine wired into requestDecision
+
+- [x] `evaluateRules()` pure function (`approvals/lib/rule-evaluator.ts`): first-match-wins with `commandPrefix` (startsWith) + `pathGlob` (inline glob, `*` = non-separator, `**` = anything); 14 tests
+- [x] `ApprovalsService.evaluate()` calls `evaluateRules()` and gates on autonomy mode (`manual` always escalates)
+- [x] `ApprovalService.requestDecision()` wires in the policy engine via `@Optional() ApprovalsService` before the human broadcast; `auto-allow` / `auto-deny` return immediately; `escalate` falls through
+- [x] `TerminalModule` imports `ApprovalsModule` so DI is wired; all 958 gateway tests pass
+- [x] PR #187
+
 ## 2026-06-24 — Phase 33 A5–A6 complete: Web auth pages + CLI auth commands
 
 - [x] Next.js API route handlers for login/refresh/logout/register (httpOnly `__midnite_rt` cookie)
