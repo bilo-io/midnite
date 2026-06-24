@@ -11,6 +11,7 @@ import {
   Query,
   Res,
 } from '@nestjs/common';
+import { CurrentUser, type CurrentUserPayload } from '../auth/decorators/current-user.decorator';
 import type { FastifyReply } from 'fastify';
 import {
   AddSourceRequestSchema,
@@ -39,15 +40,19 @@ export class ProjectsController {
   constructor(@Inject(ProjectsService) private readonly service: ProjectsService) {}
 
   @Get()
-  list(): Project[] {
-    return this.service.listProjects();
+  list(@CurrentUser() user?: CurrentUserPayload | null): Project[] {
+    const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
+    return this.service.listProjects(scope);
   }
 
   @Post()
-  async create(@Body() body: unknown): Promise<ProjectResponse> {
+  async create(
+    @Body() body: unknown,
+    @CurrentUser() user?: CurrentUserPayload | null,
+  ): Promise<ProjectResponse> {
     const parsed = CreateProjectRequestSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
-    return { project: await this.service.createProject(parsed.data) };
+    return { project: await this.service.createProject(parsed.data, user?.userId, user?.teamId) };
   }
 
   // Stateless — used by the create modal before the project exists.
@@ -59,8 +64,9 @@ export class ProjectsController {
   }
 
   @Get(':id')
-  get(@Param('id') id: string): Project {
-    return this.service.getProject(id);
+  get(@Param('id') id: string, @CurrentUser() user?: CurrentUserPayload | null): Project {
+    const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
+    return this.service.getProject(id, scope);
   }
 
   @Patch(':id')

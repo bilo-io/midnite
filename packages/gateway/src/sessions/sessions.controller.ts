@@ -4,6 +4,7 @@ import type {
   SessionTranscript,
   TerminalTokenResponse,
 } from '@midnite/shared';
+import { CurrentUser, type CurrentUserPayload } from '../auth/decorators/current-user.decorator';
 import { SessionsService } from './sessions.service';
 
 @Controller('sessions')
@@ -13,8 +14,9 @@ export class SessionsController {
   ) {}
 
   @Get()
-  list(): Promise<SessionSummary[]> {
-    return this.service.list();
+  list(@CurrentUser() user?: CurrentUserPayload | null): Promise<SessionSummary[]> {
+    const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
+    return this.service.list(scope);
   }
 
   @Get(':projectSlug/:id/transcript')

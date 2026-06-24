@@ -177,6 +177,8 @@ export const projects = sqliteTable('projects', {
   planUpdatedAt: text('plan_updated_at'),
   // Soft-archive timestamp; null = active. Mirrors tasks.archivedAt.
   archivedAt: text('archived_at'),
+  createdBy: text('created_by'),
+  teamId: text('team_id'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 });

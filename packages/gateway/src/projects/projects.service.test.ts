@@ -40,6 +40,8 @@ class InMemoryProjectsRepo extends ProjectsRepository {
       plan: row.plan ?? null,
       planUpdatedAt: row.planUpdatedAt ?? null,
       archivedAt: row.archivedAt ?? null,
+      createdBy: row.createdBy ?? null,
+      teamId: row.teamId ?? null,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };
