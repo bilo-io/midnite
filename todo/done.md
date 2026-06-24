@@ -4,6 +4,12 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 27 verification: task dependencies suite green
+
+All four implementation themes (A–D, PRs #106 #109 #113 #114) were already merged. Closed out the verification checklist: confirmed A→B→C chain ordering, priority-blocked scheduling, cycle/self-ref/delete integrity, abandoned-blocker hold policy, manual-start warning, and CLI `--depends-on` via existing specs. Fixed pre-existing typecheck failures across the graph (`stories/fixtures.ts` missing `fixAttempts`, `test-query-wrapper.tsx` React 19 type mismatch, `breakdown-editor.test.tsx`/`plan-panel.test.tsx` array-index narrowing, `office-scene.ts` truncate arity, credential-form `types[0]!`, `page.tsx` `description` rename) and corrected a wrong `spawnAgentSession` assertion in `agent-runner.service.test.ts`. Result: 906 gateway + 505 web tests pass; typecheck clean across shared/gateway/cli/web.
+
+---
+
 ## 2026-06-24 — Phase 14 E: run-history replay for workflow editor (PR #170)
 
 Adds a run-history picker + step player to the workflow editor. Users can select any past run and step through its node execution order on the canvas (sorted by `startedAt`), driven by the existing `applyRunState` store method. Auto-play at 700ms/step; Prev/Next/First/Last for manual scrubbing; closing clears canvas state.

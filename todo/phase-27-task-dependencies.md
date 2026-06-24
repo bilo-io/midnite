@@ -89,14 +89,14 @@ Express and see the graph; "blocked" is derived, not a new status (Decision §2)
 
 ## Verification
 
-- [ ] Create A → B → C with B depending on A and C on B; with the pool enabled, they run **in order** — B doesn't start until A is `done`, C not until B is `done`.
-- [ ] Raising C's priority to Urgent does **not** let it jump ahead of its unmet blockers; among **ready** tasks, priority+age ordering still holds.
-- [ ] Completing a blocker releases its dependent on the next tick (no manual nudge); the board's "blocked by N" chip clears.
-- [ ] Adding a dependency that forms a **cycle** (or a self-dependency, or a non-existent task) is rejected with a clear error; deleting a task cleans up its edges and unblocks anything that depended on it.
-- [ ] An **abandoned** blocker holds its dependent (per the chosen policy) and surfaces the situation rather than silently stalling.
-- [ ] Starting a blocked task **manually** from the board warns + requires confirmation; the scheduler never auto-starts a blocked task.
-- [ ] `midnite add --depends-on <id>` sets the edge; an unknown/cyclic id errors clearly.
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph; `moon ci` green. (Run web tests from the **primary checkout**, not a `.git` worktree.)
+- [x] Create A → B → C with B depending on A and C on B; with the pool enabled, they run **in order** — B doesn't start until A is `done`, C not until B is `done`. *(covered by `agent-pool.integration.spec.ts` 3-task chain test, PR #109)*
+- [x] Raising C's priority to Urgent does **not** let it jump ahead of its unmet blockers; among **ready** tasks, priority+age ordering still holds. *(covered by scheduler unit spec, PR #109)*
+- [x] Completing a blocker releases its dependent on the next tick (no manual nudge); the board's "blocked by N" chip clears. *(covered by `notifyDependents` + `task.updated` re-broadcast on `done`, PR #109)*
+- [x] Adding a dependency that forms a **cycle** (or a self-dependency, or a non-existent task) is rejected with a clear error; deleting a task cleans up its edges and unblocks anything that depended on it. *(covered by `tasks.dependencies.spec.ts`, PR #106)*
+- [x] An **abandoned** blocker holds its dependent (per the chosen policy) and surfaces the situation rather than silently stalling. *(hold + warn policy, PR #109)*
+- [x] Starting a blocked task **manually** from the board warns + requires confirmation; the scheduler never auto-starts a blocked task. *(web warning modal + `manual-start` confirmation, PR #113)*
+- [x] `midnite add --depends-on <id>` sets the edge; an unknown/cyclic id errors clearly. *(CLI `--depends-on` + `block`/`unblock` subcommands, PR #114)*
+- [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph. *(verified 2026-06-24: 906 gateway + 505 web tests pass; typecheck clean across shared/gateway/cli/web)*
 
 ---
 

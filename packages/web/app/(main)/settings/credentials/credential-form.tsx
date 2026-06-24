@@ -35,7 +35,7 @@ const TYPE_FIELDS: Record<WorkflowCredentialType, FieldDef[]> = {
 
 export function CredentialForm({ types, typeLabels, onSave, onCancel }: Props) {
   const [name, setName] = useState('');
-  const [credType, setCredType] = useState<WorkflowCredentialType>(types[0]);
+  const [credType, setCredType] = useState<WorkflowCredentialType>(types[0]!);
   const [fields, setFields] = useState<Record<string, string>>({});
 
   const fieldDefs = TYPE_FIELDS[credType] ?? [];
