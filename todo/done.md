@@ -12,6 +12,37 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 - [x] `CLAUDE.md` "Testing" section updated with layer table and link to `docs/TESTING.md`
 - [x] Phase 10 E3 and F3 marked ✅ DONE
 
+## 2026-06-24 — Phase 23 A2 complete: Evaluation engine wired into requestDecision
+
+- [x] `evaluateRules()` pure function (`approvals/lib/rule-evaluator.ts`): first-match-wins with `commandPrefix` (startsWith) + `pathGlob` (inline glob, `*` = non-separator, `**` = anything); 14 tests
+- [x] `ApprovalsService.evaluate()` calls `evaluateRules()` and gates on autonomy mode (`manual` always escalates)
+- [x] `ApprovalService.requestDecision()` wires in the policy engine via `@Optional() ApprovalsService` before the human broadcast; `auto-allow` / `auto-deny` return immediately; `escalate` falls through
+- [x] `TerminalModule` imports `ApprovalsModule` so DI is wired; all 958 gateway tests pass
+- [x] PR #187
+
+## 2026-06-24 — Phase 33 A5–A6 complete: Web auth pages + CLI auth commands
+
+- [x] Next.js API route handlers for login/refresh/logout/register (httpOnly `__midnite_rt` cookie)
+- [x] `AuthProvider` context: session restore on mount, `jwtEnabled` flag (graceful no-JWT fallback)
+- [x] `useCurrentUser()` hook: redirects to /login when JWT-enabled and unauthenticated
+- [x] `app/(auth)/login` + `/register` pages with Card/Input/Button UI; `NEXT_PUBLIC_REGISTRATION_OPEN` gate
+- [x] `UserNav` component: avatar initials + name + profile/logout dropdown
+- [x] `api.ts` `setAccessToken()`/`getAccessToken()` + automatic `Authorization: Bearer` header
+- [x] CLI `auth-store.ts`: `~/.config/midnite/auth.json` (mode 0600), `resolveToken()` priority chain
+- [x] CLI `login` / `logout` / `whoami` commands; `preAction` hook resolves token before any command
+- [x] `createClient(baseUrl, token?)` injects `Authorization: Bearer` on all gateway requests
+
+## 2026-06-24 — Phase 33 A1–A4 complete: User identity + JWT auth
+
+- [x] `users` table + migration `0045_users`; `refresh_tokens` table + migration `0046_refresh_tokens`
+- [x] `UsersRepository` + `UsersService` (bcrypt 12 rounds, email lowercased, timing-safe compare); 9 unit tests
+- [x] `shared` `User` / `CreateUserRequest` / `LoginRequest` / `AuthResponse` zod schemas in `packages/shared/src/user.ts`
+- [x] `JwtService`: HS256 access tokens (15 min) + hashed refresh tokens (7 day); `RefreshTokensRepository`; 6 unit tests
+- [x] `GatewayAuthConfigSchema` extended with `jwt.secretEnv` / `jwt.accessTtlSeconds` / `jwt.refreshTtlDays`
+- [x] `AuthController`: `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`, `GET /auth/me`
+- [x] `GatewayAuthGuard` upgraded: JWT-first verification, static bearer fallback preserved; `@CurrentUser()` param decorator
+- [x] Phase 33 A1–A4 marked ✅ DONE (WS `?token=` query param deferred to A4 remainder)
+
 ## 2026-06-24 — Phase 23 A1 complete: ApprovalRule model + storage + CRUD API (PR #185)
 
 - [x] `ApprovalRule` zod schema in `@midnite/shared` (`effect: allow|deny`, `toolName`, optional `match: { commandPrefix, pathGlob }`, `scope: global`, `note`); `CreateApprovalRuleSchema` / `UpdateApprovalRuleSchema`; 7 unit tests

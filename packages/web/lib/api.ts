@@ -175,6 +175,18 @@ import { z } from 'zod';
 
 const JSON_HEADERS = { 'content-type': 'application/json' } as const;
 
+let _accessToken: string | null = null;
+
+/** Set the JWT access token used for all authenticated gateway requests. */
+export function setAccessToken(token: string | null): void {
+  _accessToken = token;
+}
+
+/** Get the current access token (for use in direct fetch calls). */
+export function getAccessToken(): string | null {
+  return _accessToken;
+}
+
 export function gatewayUrl(): string {
   if (typeof window === 'undefined') {
     return process.env['NEXT_PUBLIC_GATEWAY_URL'] ?? 'http://localhost:7777';
@@ -199,7 +211,15 @@ async function fetchJson<T>(
   init?: RequestInit,
   schema?: { parse: (value: unknown) => T },
 ): Promise<T> {
-  const res = await fetch(`${gatewayUrl()}${path}`, { cache: 'no-store', ...init });
+  const mergedHeaders: Record<string, string> = {};
+  if (_accessToken) mergedHeaders['authorization'] = `Bearer ${_accessToken}`;
+  const extraHeaders = init?.headers as Record<string, string> | undefined;
+  if (extraHeaders) Object.assign(mergedHeaders, extraHeaders);
+  const res = await fetch(`${gatewayUrl()}${path}`, {
+    cache: 'no-store',
+    ...init,
+    headers: mergedHeaders,
+  });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
     throw new Error(errorMessage(res, text));

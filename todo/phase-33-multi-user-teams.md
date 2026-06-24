@@ -12,35 +12,35 @@
 
 Replace the static env-var bearer token with proper user identities and JWT sessions. Theme A is the prerequisite — nothing in B–E can ship without it.
 
-### A1. User entity + DB migration — **S–M**
-- [ ] Add `users` table to [`db/schema.ts`](../packages/gateway/src/db/schema.ts): `id` (UUIDv7), `email` (unique, indexed), `name`, `password_hash`, `created_at`, `updated_at`. Forward-only migration. No triggers, no FKs to external domains.
-- [ ] `UsersRepository` ([`users/users.repository.ts`](../packages/gateway/src/users/users.repository.ts)): `create`, `findByEmail`, `findById`, `updateProfile`, `updatePassword`. Drizzle only.
-- [ ] Shared type `User` (public shape — no `passwordHash`) + `CreateUserRequest` / `UpdateUserRequest` zod schemas in [`packages/shared/src/user.ts`](../packages/shared/src/user.ts); barrel export; typed client stub.
+### A1. User entity + DB migration — **S–M** ✅ DONE
+- [x] Add `users` table to [`db/schema.ts`](../packages/gateway/src/db/schema.ts): `id` (UUIDv7), `email` (unique, indexed), `name`, `password_hash`, `created_at`, `updated_at`. Forward-only migration. No triggers, no FKs to external domains.
+- [x] `UsersRepository` ([`users/users.repository.ts`](../packages/gateway/src/users/users.repository.ts)): `create`, `findByEmail`, `findById`, `updateProfile`, `updatePassword`. Drizzle only.
+- [x] Shared type `User` (public shape — no `passwordHash`) + `CreateUserRequest` / `UpdateUserRequest` zod schemas in [`packages/shared/src/user.ts`](../packages/shared/src/user.ts); barrel export; typed client stub.
 
-### A2. Password auth — `POST /auth/login` + `POST /auth/register` — **S–M**
-- [ ] `UsersService` ([`users/users.service.ts`](../packages/gateway/src/users/users.service.ts)): `register(email, name, password)` hashes with **bcrypt** (12 rounds) before persisting; `validateCredentials(email, password)` uses a timing-safe compare. On first-boot with no users, a seeded admin is created from config/env if `MIDNITE_ADMIN_EMAIL`+`MIDNITE_ADMIN_PASSWORD` are set — allows bootstrapping a fresh instance without a UI.
-- [ ] `AuthController` thin routes: `POST /auth/register` → 201 + `User`; `POST /auth/login` → 200 + `{ accessToken, refreshToken, user }`. Input validated with `ZodValidationPipe` against shared schemas. Rate-limit register (5 per IP/hour) to deter enumeration.
+### A2. Password auth — `POST /auth/login` + `POST /auth/register` — **S–M** ✅ DONE
+- [x] `UsersService` ([`users/users.service.ts`](../packages/gateway/src/users/users.service.ts)): `register(email, name, password)` hashes with **bcrypt** (12 rounds) before persisting; `validateCredentials(email, password)` uses a timing-safe compare. On first-boot with no users, a seeded admin is created from config/env if `MIDNITE_ADMIN_EMAIL`+`MIDNITE_ADMIN_PASSWORD` are set — allows bootstrapping a fresh instance without a UI.
+- [x] `AuthController` thin routes: `POST /auth/register` → 201 + `User`; `POST /auth/login` → 200 + `{ accessToken, refreshToken, user }`. Input validated with `ZodValidationPipe` against shared schemas. Rate-limit register (5 per IP/hour) to deter enumeration.
 
-### A3. JWT issuance + validation — **M**
-- [ ] `JwtService` ([`auth/jwt.service.ts`](../packages/gateway/src/auth/jwt.service.ts)): issues **HS256 access tokens** (15 min TTL) and **refresh tokens** (7 day TTL, stored as a hash in `refresh_tokens` table — id, user_id, token_hash, expires_at, revoked). `POST /auth/refresh` exchanges a valid refresh token for a new pair; `POST /auth/logout` revokes the refresh token.
-- [ ] Config additions to `GatewayAuthConfigSchema` in [`packages/shared/src/config.ts`](../packages/shared/src/config.ts): `jwt.secret` (env `MIDNITE_JWT_SECRET`, required when using JWT mode), `jwt.accessTtlSeconds` (default 900), `jwt.refreshTtlDays` (default 7).
-- [ ] `refresh_tokens` table in [`db/schema.ts`](../packages/gateway/src/db/schema.ts) — forward-only migration.
+### A3. JWT issuance + validation — **M** ✅ DONE
+- [x] `JwtService` ([`auth/jwt.service.ts`](../packages/gateway/src/auth/jwt.service.ts)): issues **HS256 access tokens** (15 min TTL) and **refresh tokens** (7 day TTL, stored as a hash in `refresh_tokens` table — id, user_id, token_hash, expires_at, revoked). `POST /auth/refresh` exchanges a valid refresh token for a new pair; `POST /auth/logout` revokes the refresh token.
+- [x] Config additions to `GatewayAuthConfigSchema` in [`packages/shared/src/config.ts`](../packages/shared/src/config.ts): `jwt.secret` (env `MIDNITE_JWT_SECRET`, required when using JWT mode), `jwt.accessTtlSeconds` (default 900), `jwt.refreshTtlDays` (default 7).
+- [x] `refresh_tokens` table in [`db/schema.ts`](../packages/gateway/src/db/schema.ts) — forward-only migration.
 
-### A4. Upgrade the auth guard to validate JWT — **S–M**
-- [ ] [`gateway-auth.guard.ts`](../packages/gateway/src/auth/gateway-auth.guard.ts) currently validates a static bearer token from env (`MIDNITE_AUTH_TOKEN`) via [`lib/auth-policy.ts`](../packages/gateway/src/auth/lib/auth-policy.ts). Upgrade: if `jwt.secret` is configured, validate the `Authorization: Bearer <jwt>` header as a JWT and attach the decoded `userId` to the request. The static bearer path remains as a fallback (dev/script use) so existing single-user setups continue to work without migration. Add a `@CurrentUser()` decorator that reads `req.user` for controllers to consume.
+### A4. Upgrade the auth guard to validate JWT — **S–M** ✅ DONE (WS deferred)
+- [x] [`gateway-auth.guard.ts`](../packages/gateway/src/auth/gateway-auth.guard.ts) currently validates a static bearer token from env (`MIDNITE_AUTH_TOKEN`) via [`lib/auth-policy.ts`](../packages/gateway/src/auth/lib/auth-policy.ts). Upgrade: if `jwt.secret` is configured, validate the `Authorization: Bearer <jwt>` header as a JWT and attach the decoded `userId` to the request. The static bearer path remains as a fallback (dev/script use) so existing single-user setups continue to work without migration. Add a `@CurrentUser()` decorator that reads `req.user` for controllers to consume.
 - [ ] WS connections: pass the JWT as a query param on the upgrade URL (`?token=<jwt>`) — the WS gateway validates it at connection time; per-session one-time tokens (`/hooks/:taskId/:event`) remain unaffected.
 
-### A5. Web login + register pages — **M**
-- [ ] `app/(auth)/login/page.tsx` — email + password form; on success stores the access token in memory (React context) and the refresh token in an **httpOnly cookie** (`__midnite_rt`); redirects to `/`.
-- [ ] `app/(auth)/register/page.tsx` — name/email/password form; redirects to login on success. Behind a config flag (`NEXT_PUBLIC_REGISTRATION_OPEN=true`) so deployments can lock registration once seeded.
-- [ ] `hooks/use-current-user.ts` — wraps the current `User` from auth context; returns `null` for unauthenticated (triggers redirect to `/login`). Used in the root layout to gate the app.
-- [ ] `components/user-nav.tsx` — profile avatar + name dropdown in the nav bar (links to profile settings, logout).
+### A5. Web login + register pages — **M** ✅ DONE
+- [x] `app/(auth)/login/page.tsx` — email + password form; on success stores the access token in memory (React context) and the refresh token in an **httpOnly cookie** (`__midnite_rt`); redirects to `/`.
+- [x] `app/(auth)/register/page.tsx` — name/email/password form; redirects to login on success. Behind a config flag (`NEXT_PUBLIC_REGISTRATION_OPEN=true`) so deployments can lock registration once seeded.
+- [x] `hooks/use-current-user.ts` — wraps the current `User` from auth context; returns `null` for unauthenticated (triggers redirect to `/login`). Used in the root layout to gate the app.
+- [x] `components/user-nav.tsx` — profile avatar + name dropdown in the nav bar (links to profile settings, logout).
 
-### A6. CLI auth commands — **M**
-- [ ] `midnite login` ([`cli/src/commands/login.ts`](../packages/cli/src/commands/login.ts)): prompts for gateway URL + email + password; calls `POST /auth/login`; stores the JWT in `~/.config/midnite/auth.json` (alongside the existing `midnite.json` config). Existing `--token` flag on other commands continues to work as a bypass.
-- [ ] `midnite logout` — deletes `~/.config/midnite/auth.json`.
-- [ ] `midnite whoami` — reads the stored token, calls `GET /auth/me`, prints `User { id, email, name }`.
-- [ ] `auth-store.ts` ([`cli/src/lib/auth-store.ts`](../packages/cli/src/lib/auth-store.ts)) — read/write the stored token; all commands that need auth call `authStore.getToken()` (falls back to `--token` flag or `MIDNITE_AUTH_TOKEN` env, preserving the current single-user flow).
+### A6. CLI auth commands — **M** ✅ DONE
+- [x] `midnite login` ([`cli/src/index.ts`](../packages/cli/src/index.ts)): prompts for email + hidden password; calls `POST /auth/login`; stores the JWT in `~/.config/midnite/auth.json`. Existing `--token` flag and `MIDNITE_AUTH_TOKEN` env continue to work.
+- [x] `midnite logout` — revokes session on gateway, deletes `~/.config/midnite/auth.json`.
+- [x] `midnite whoami` — reads the stored token, calls `GET /auth/me`, prints `User { id, email, name }`.
+- [x] `auth-store.ts` ([`cli/src/lib/auth-store.ts`](../packages/cli/src/lib/auth-store.ts)) — read/write/clear stored tokens; `resolveToken()` priority: stored JWT > env > `--token` flag. `preAction` hook resolves token once before any command runs.
 
 ---
 

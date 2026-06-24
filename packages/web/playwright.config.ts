@@ -89,7 +89,16 @@ export default defineConfig({
   retries: isCI ? 1 : 0,
   reporter: isCI ? [['list'], ['html', { open: 'never' }]] : 'list',
   timeout: 60_000,
-  expect: { timeout: 10_000 },
+  expect: {
+    timeout: 10_000,
+    toHaveScreenshot: {
+      // Allow up to 0.5% of pixels to differ (font rendering, subpixel AA).
+      // Baselines are generated on Linux (Docker) so CI always matches exactly;
+      // the ratio guards against a legitimately-different but still-correct render
+      // on a developer's machine when they're not regenerating baselines.
+      maxDiffPixelRatio: 0.005,
+    },
+  },
   use: {
     baseURL: WEB_ORIGIN,
     trace: 'on-first-retry',
@@ -101,12 +110,16 @@ export default defineConfig({
       testMatch: '**/*.e2e.ts',
       use: { ...devices['Desktop Chrome'] },
     },
-    // Deterministic screenshot capture (Theme E1 — page side): the `*.shots.ts`
+    // Deterministic screenshot capture (Theme E1+E2 — page side): the `*.shots.ts`
     // specs at a fixed 1440×900 viewport. `storybook.shots.ts` is excluded here
-    // so it only runs under the `stories` project (different baseURL).
+    // so it only runs under the `stories` project (different baseURL). The spec
+    // writes preview PNGs to e2e/__shots__/ (E1) AND asserts committed baselines
+    // in e2e/__screenshots__/ (E2). Update baselines: `--update-snapshots` via Docker.
     {
       name: 'screenshots',
       testMatch: /^(?!.*storybook\.shots\.ts$).*\.shots\.ts$/,
+      snapshotDir: './e2e/__screenshots__',
+      snapshotPathTemplate: '{snapshotDir}/{arg}{ext}',
       use: {
         ...devices['Desktop Chrome'],
         viewport: { width: 1440, height: 900 },

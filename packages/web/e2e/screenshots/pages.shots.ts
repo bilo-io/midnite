@@ -1,27 +1,32 @@
 import { mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-import { test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 import { SCREENSHOTS_DIR } from '../config';
 import { seedTask } from '../helpers/gateway';
 import { freezeForCapture, SEED_TASKS, SHOT_PAGES } from '../helpers/screenshots';
 
 /**
- * Phase 10 Theme E1 — deterministic screenshot capture.
+ * Phase 10 Theme E1+E2 — deterministic screenshot capture + visual regression.
  *
  * Drives the real app (Next dev → seeded gateway, same webServer as the flow
- * specs) and saves a PNG of every key page in **light and dark**, at the fixed
- * 1440×900 viewport the `screenshots` project pins. Determinism is engineered,
- * not hoped for: stable seed data, a frozen clock (so the world-clock/market
- * widgets don't drift), reduced motion + a hard animation-kill stylesheet, and
- * the external dashboard widgets (news/weather/market) stubbed.
+ * specs) and captures every key page in **light and dark** at 1440×900.
  *
- * These are **preview artifacts**, not `toHaveScreenshot` baselines — there's no
- * pixel assertion here, so the spec never fails on a rendering delta and never
- * commits OS-specific images. The committed visual baseline + diff is Theme E2;
- * uploading these as PR artifacts + a gallery is Theme E3. Run on its own with
- * `moon run web:screenshots`; the PNGs land in `e2e/__shots__/` (gitignored).
+ * Two outputs per page:
+ *  - `page.screenshot()` → `e2e/__shots__/<name>-<theme>.png` (gitignored).
+ *    Preview artifacts for PR review / CI artifact upload (Theme E1/E3).
+ *  - `expect(page).toHaveScreenshot()` → asserts against committed OS-pinned
+ *    baselines in `e2e/__screenshots__/` (Theme E2). Fails on unexpected pixel
+ *    changes; update with `--update-snapshots` (run via Docker for Linux parity,
+ *    so CI on ubuntu-latest always matches exactly).
+ *
+ * Regenerate Linux baselines:
+ *   docker run --rm --ipc=host --platform linux/amd64 \
+ *     -v "$(pwd)":/work -w /work/packages/web \
+ *     mcr.microsoft.com/playwright:v1.61.0-jammy \
+ *     bash -c "npm i -g pnpm@10 && pnpm install --frozen-lockfile && \
+ *       pnpm exec playwright test --project=screenshots --update-snapshots"
  */
 
 const OUT = resolve(process.cwd(), SCREENSHOTS_DIR);
@@ -61,7 +66,12 @@ for (const theme of THEMES) {
       for (const pg of SHOT_PAGES) {
         await page.goto(pg.path);
         await pg.ready(page);
-        await page.screenshot({ path: join(OUT, `${pg.name}-${theme}.png`) });
+        const name = `${pg.name}-${theme}.png`;
+        // E1: write a preview PNG to __shots__/ (gitignored, for artifact upload).
+        await page.screenshot({ path: join(OUT, name) });
+        // E2: assert against the committed OS-pinned baseline; fails on unexpected
+        // pixel changes. Update baselines with --update-snapshots via Docker.
+        await expect(page).toHaveScreenshot(name);
       }
     });
   });

@@ -4,35 +4,40 @@ import {
   Inject,
   Injectable,
   Logger,
+  Optional,
   UnauthorizedException,
 } from '@nestjs/common';
 import type { MidniteConfig } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
 import { isAuthExemptPath, isLoopbackHost, isValidBearer, resolveAuthToken } from './lib/auth-policy';
+import type { JwtService } from './jwt.service';
 
-type IncomingRequest = { url?: string; headers: Record<string, string | string[] | undefined> };
+type IncomingRequest = {
+  url?: string;
+  headers: Record<string, string | string[] | undefined>;
+  user?: { userId: string; email: string };
+};
 
 /**
- * Optional bearer-token auth for the REST API (Phase 7 A5). A global guard, so the
- * API is deny-by-default once a token is configured. Off when no token is resolved
- * (the local-only default) — then every request passes, behaviour-preserving.
+ * Optional bearer-token auth for the REST API (Phase 7 A5 + Phase 33 A4).
  *
- * Exempt: `/health` (liveness) and `/hooks/*` (own per-session secret). WS handlers
- * aren't covered (the terminal WS already uses one-time tokens); guarding the
- * board/workflow WS streams is a follow-on.
+ * Phase 33 upgrade: when JWT auth is enabled (MIDNITE_JWT_SECRET is set) the
+ * guard also accepts HS256 JWTs and attaches req.user = { userId, email }.
+ * The legacy static-bearer path remains as a fallback for dev / scripts.
  */
 @Injectable()
 export class GatewayAuthGuard implements CanActivate {
   private readonly logger = new Logger(GatewayAuthGuard.name);
   private readonly token: string | null;
 
-  constructor(@Inject(MIDNITE_CONFIG) config: MidniteConfig) {
+  constructor(
+    @Inject(MIDNITE_CONFIG) config: MidniteConfig,
+    @Optional() private readonly jwtSvc?: JwtService,
+  ) {
     this.token = resolveAuthToken(config);
     if (this.token) {
       this.logger.log('REST API bearer auth enabled');
     } else if (!isLoopbackHost(config.gateway.host)) {
-      // Reaching here means requireOnNonLoopback was turned off (boot would
-      // otherwise have refused) — leave a breadcrumb that the API is open.
       this.logger.warn(
         `gateway bound to non-loopback host ${config.gateway.host} with no auth token — REST API is unauthenticated`,
       );
@@ -40,16 +45,33 @@ export class GatewayAuthGuard implements CanActivate {
   }
 
   canActivate(context: ExecutionContext): boolean {
-    // Only HTTP is guarded; WS handlers use their own token flow.
     if (context.getType() !== 'http') return true;
-    if (!this.token) return true; // auth disabled
+    if (!this.token && !this.jwtSvc?.enabled) return true;
 
     const req = context.switchToHttp().getRequest<IncomingRequest>();
     if (isAuthExemptPath(req.url ?? '/')) return true;
 
-    if (!isValidBearer(req.headers['authorization'], this.token)) {
-      throw new UnauthorizedException('missing or invalid bearer token');
+    const authHeader = req.headers['authorization'];
+    const bearer = extractBearerToken(authHeader);
+
+    if (bearer && this.jwtSvc?.enabled) {
+      try {
+        const payload = this.jwtSvc.verifyAccessToken(bearer);
+        req.user = { userId: payload.sub, email: payload.email };
+        return true;
+      } catch {
+        // fall through to static-token check
+      }
     }
-    return true;
+
+    if (this.token && isValidBearer(authHeader, this.token)) return true;
+
+    throw new UnauthorizedException('missing or invalid bearer token');
   }
+}
+
+function extractBearerToken(header: string | string[] | undefined): string | null {
+  const value = Array.isArray(header) ? header[0] : header;
+  if (!value || !value.startsWith('Bearer ')) return null;
+  return value.slice(7).trim() || null;
 }
