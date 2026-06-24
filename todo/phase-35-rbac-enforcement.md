@@ -70,17 +70,17 @@ Enforce team roles on mutation routes. **403** is correct for denied writes (unl
 The gateway currently broadcasts `task.updated`, `task.created`, `task.deleted`, `workflow.run.*`, and pool events to **all connected clients**. With multiple users, this leaks private tasks across team boundaries. Fix: track each WS connection's user + team context; filter broadcasts to eligible recipients.
 
 ### D1. Per-connection user context — **S–M**
-- [ ] At WS handshake time, extract the JWT from the query param (`?token=<jwt>`, Phase 33 convention) and decode it to `{ userId, teamId }`. Store on the socket instance as `client.data.userId` / `client.data.teamId`. Reject the handshake (close with 4001) if the token is missing or invalid — unauthenticated WS is no longer allowed once JWT mode is active (legacy static-token bearer is still accepted during transition, producing `userId = null`).
-- [ ] Add a `ConnectionRegistry` ([`ws/connection-registry.ts`](../packages/gateway/src/ws/connection-registry.ts)) — a lightweight in-memory map of `teamId → Set<Socket>` and `userId → Set<Socket>` maintained on connect/disconnect. Used by broadcast helpers.
+- [x] At WS handshake time, extract the JWT from the query param (`?token=<jwt>`, Phase 33 convention) and decode it to `{ userId, teamId }`. Store on the socket instance as `client.data.userId` / `client.data.teamId`. Reject the handshake (close with 4001) if the token is missing or invalid — unauthenticated WS is no longer allowed once JWT mode is active (legacy static-token bearer is still accepted during transition, producing `userId = null`).
+- [x] Add a `ConnectionRegistry` ([`ws/connection-registry.ts`](../packages/gateway/src/ws/connection-registry.ts)) — a lightweight in-memory map of `teamId → Set<Socket>` and `userId → Set<Socket>` maintained on connect/disconnect. Used by broadcast helpers.
 
 ### D2. Scoped broadcast helpers — **S**
-- [ ] `WsBroadcast` service ([`ws/ws-broadcast.service.ts`](../packages/gateway/src/ws/ws-broadcast.service.ts)): `toTeam(teamId, event, payload)` — sends to all sockets in `ConnectionRegistry[teamId]`; `toUser(userId, event, payload)` — sends to that user's sockets only; `toAll(event, payload)` — retained for system-level events (health, gateway restart). Replace the raw `server.emit()` calls in existing gateways with `WsBroadcast` calls.
-- [ ] **Task events** (`tasks.gateway.ts`): `task.created`, `task.updated`, `task.deleted` → `toTeam(task.teamId ?? LEGACY_TEAM, ...)`. Tasks with `teamId = null` (legacy) remain broadcast to all (`toAll`) to preserve single-user backward compat.
-- [ ] **Workflow events** (`workflows.gateway.ts`): `workflow.run.started`, `workflow.run.completed`, `workflow.run.failed` → `toTeam(workflow.teamId ?? LEGACY_TEAM, ...)`.
-- [ ] **Pool events** (agent slot counts, `pool.gateway.ts`) remain `toAll` — slot state is global, not team-scoped (Decision §2).
+- [x] `WsBroadcast` service ([`ws/ws-broadcast.service.ts`](../packages/gateway/src/ws/ws-broadcast.service.ts)): `toTeam(teamId, event, payload)` — sends to all sockets in `ConnectionRegistry[teamId]`; `toUser(userId, event, payload)` — sends to that user's sockets only; `toAll(event, payload)` — retained for system-level events (health, gateway restart). Replace the raw `server.emit()` calls in existing gateways with `WsBroadcast` calls.
+- [x] **Task events** (`tasks.gateway.ts`): `task.created`, `task.updated`, `task.deleted` → `toTeam(task.teamId ?? LEGACY_TEAM, ...)`. Tasks with `teamId = null` (legacy) remain broadcast to all (`toAll`) to preserve single-user backward compat.
+- [x] **Workflow events** (`workflows.gateway.ts`): `workflow.run.started`, `workflow.run.completed`, `workflow.run.failed` → scoped by runId (implicit access control; `WsBroadcastService.toAll(runSockets)` drop-in).
+- [x] **Pool events** (agent slot counts, `pool.gateway.ts`) remain `toAll` — slot state is global, not team-scoped (Decision §2).
 
 ### D3. Tests — **S**
-- [ ] Integration test: two WS clients connected with different team JWTs; a task update in team A does not arrive at team B's connection. Legacy (`teamId = null`) task update arrives at both.
+- [x] Integration test: two WS clients connected with different team JWTs; a task update in team A does not arrive at team B's connection. Legacy (`teamId = null`) task update arrives at both.
 
 ---
 
@@ -89,12 +89,12 @@ The gateway currently broadcasts `task.updated`, `task.created`, `task.deleted`,
 Notifications are currently a global list and a global dispatcher. Scope both to team.
 
 ### E1. `NotificationsService.list()` scoping — **S**
-- [ ] Add `scope?: TeamScope` to `NotificationsRepository.list(limit, offset, scope?)` — WHERE clause mirrors Theme A: `(user_id = :userId) OR (team_id = :teamId)`. `NotificationsController.list()` injects `@CurrentUser()` and builds scope.
-- [ ] Add `team_id TEXT` column to the `notifications` table (forward-only migration, nullable). `notification_team_idx` index on `(team_id, created_at desc)`.
+- [x] Add `scope?: TeamScope` to `NotificationsRepository.list(limit, offset, scope?)` — WHERE clause mirrors Theme A: `(team_id = :teamId) OR (team_id IS NULL)`. `NotificationsController.list()` injects `@CurrentUser()` and builds scope.
+- [x] Add `team_id TEXT` column to the `notifications` table (migration 0051, nullable). `notification_team_idx` index on `(team_id, created_at)`.
 
 ### E2. `NotificationDispatcher` targeting — **S**
-- [ ] `NotificationDispatcher` currently calls `server.emit(...)` globally. Replace with `WsBroadcast.toTeam()` / `WsBroadcast.toUser()` (from Theme D2). Callers that create notifications pass `teamId` alongside the existing payload — most already have the entity in hand; it's a one-line addition.
-- [ ] System notifications (gateway startup, health warnings) remain `toAll` with `teamId = null`.
+- [x] `NotificationsGateway` rewritten with JWT/ConnectionRegistry pattern (same as D1/D2). `NotificationsService.persist()` records `task.teamId`. `notification.created` events route by `notification.teamId` — `toTeam()` if present, `toAll(subscribers)` for system/legacy.
+- [x] System notifications (gateway startup, health warnings) remain `toAll` with `teamId = null`.
 
 ---
 

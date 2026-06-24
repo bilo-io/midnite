@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 35 D1–D3 + E1–E2 — WS scoping + notification team isolation (PR #195)
+
+- [x] **D1** — `ConnectionRegistry` (WeakMap + byTeam/byUser maps) in global `WsModule`; JWT extracted from `?token=<jwt>` at WS handshake; invalid token → close 4001; no-JWT → `{ userId: null, teamId: null }` (legacy compat)
+- [x] **D2** — `WsBroadcastService` (`toTeam`/`toUser`/`toAll`); `TasksGateway` uses `toTeam(task.teamId)` for scoped events, `toAll(subscribers)` for legacy; `WorkflowsGateway` uses `toAll(runSockets)` (runId provides implicit access control)
+- [x] **D3** — 4 new integration tests in `tasks.gateway.test.ts`: scoped delivery, legacy broadcast, 4001 rejection, unauthenticated-client isolation; `workflows.gateway.test.ts` updated to new constructor
+- [x] **E1** — `team_id TEXT` column + `notification_team_idx` added to `notifications` table (migration 0051); `NotificationsRepository.list/countUnread` accept `TeamScope`; `NotificationsController.list()` injects `@CurrentUser()`; `NotificationsService.persist()` records `task.teamId`; `Notification` schema gains optional `teamId`
+- [x] **E2** — `NotificationsGateway` rewritten with JWT/ConnectionRegistry pattern; `notification.created` routes by `notification.teamId` — `toTeam()` for team-scoped, `toAll(subscribers)` for system/legacy
+
+---
+
 ## 2026-06-24 — Phase 35 A1–A5 + B1–B3 — RBAC scoped queries + write guards (PR #194)
 
 - [x] **A1** — `TeamScope` type in `@midnite/shared`; `teamScopeFilter()` Drizzle helper in `gateway/src/db/team-scope.ts`; `teamId` embedded in JWT at login/register/refresh

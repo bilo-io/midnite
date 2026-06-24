@@ -7,7 +7,7 @@ import { Accordion } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/auth-context';
-import { updateMe, updateMyPassword } from '@/lib/api';
+import { updateMyProfile, updateMyPassword } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 function SavedBadge({ visible }: { visible: boolean }) {
@@ -58,7 +58,7 @@ function DisplayNameSection({ user }: { user: User | null }) {
     setSaving(true);
     setError(null);
     try {
-      await updateMe({ name: name.trim() });
+      await updateMyProfile({ name: name.trim() });
       setSaved(true);
       clearTimeout(savedTimer.current);
       savedTimer.current = setTimeout(() => setSaved(false), 1500);
