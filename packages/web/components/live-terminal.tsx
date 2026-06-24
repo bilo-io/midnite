@@ -10,6 +10,7 @@ import type {
   TerminalStatusPhase,
 } from '@midnite/shared';
 import { useTerminalSocket, type TerminalConnectionState } from '@/hooks/use-terminal-socket';
+import { useIsMobile } from '@/hooks/use-media-query';
 import { useTheme } from '@/app/theme/theme-context';
 import { Spinner } from '@/components/spinner';
 import { Button } from '@/components/ui/button';
@@ -79,6 +80,12 @@ export function LiveTerminal({
   const resolvedRef = useRef(resolved);
   resolvedRef.current = resolved;
 
+  // Typing into a live PTY from a phone is a non-goal (Phase 24 Theme B): on touch
+  // the terminal is a read/scroll surface. Snapshot at mount via a ref — the
+  // once-only terminal effect shouldn't re-init on a viewport resize.
+  const isMobile = useIsMobile();
+  const readOnlyRef = useRef(isMobile);
+
   const { connectionState, sendInput, sendResize, sendApproval } = useTerminalSocket({
     attachId,
     enabled: ready,
@@ -122,9 +129,12 @@ export function LiveTerminal({
     const container = containerRef.current;
     if (termRef.current || !container) return;
 
+    const readOnly = readOnlyRef.current;
     const term = new Terminal({
       convertEol: false,
-      cursorBlink: true,
+      // No blinking cursor and no stdin when read-only — output still scrolls.
+      cursorBlink: !readOnly,
+      disableStdin: readOnly,
       fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
       fontSize: 13,
       theme: TERMINAL_THEMES[resolvedRef.current],
@@ -133,11 +143,12 @@ export function LiveTerminal({
     term.loadAddon(fit);
     term.open(container);
     fit.fit();
-    term.focus();
+    if (!readOnly) term.focus();
     termRef.current = term;
     fitRef.current = fit;
 
-    const dataSub = term.onData((d) => sendInputRef.current(d));
+    // Don't forward keystrokes on touch — the surface is read/scroll only.
+    const dataSub = readOnly ? null : term.onData((d) => sendInputRef.current(d));
     sendResizeRef.current(term.cols, term.rows); // seed geometry for attach
     setReady(true);
 
@@ -154,7 +165,7 @@ export function LiveTerminal({
 
     return () => {
       observer.disconnect();
-      dataSub.dispose();
+      dataSub?.dispose();
       term.dispose();
       termRef.current = null;
       fitRef.current = null;
@@ -191,13 +202,18 @@ export function LiveTerminal({
           />
           {exited ? 'Session ended' : STATUS_HINT[connectionState]}
         </span>
+        {isMobile && (
+          <span className="rounded-full bg-muted/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+            Read-only
+          </span>
+        )}
       </div>
       <div className="relative min-h-0 flex-1">
         <div
           ref={containerRef}
           role="group"
           aria-label={ariaLabel ?? 'Terminal'}
-          onClick={() => termRef.current?.focus()}
+          onClick={readOnlyRef.current ? undefined : () => termRef.current?.focus()}
           className="h-full overflow-hidden rounded-lg border border-border/60 p-2"
           style={{ background: TERMINAL_THEMES[resolved].background }}
         />
