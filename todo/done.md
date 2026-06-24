@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 33 E1/B4/E2/E3 complete: user profile + team settings UI
+
+- [x] `GET /users/me`, `PATCH /users/me`, `PATCH /users/me/password` endpoints in new `users.controller.ts`; `UsersController` registered in `UsersModule`
+- [x] Web API helpers: `updateMe`, `updateMyPassword`, all team methods (listMyTeams, createTeam, getTeam, updateTeam, deleteTeam, setMemberRole, removeMember, createInvite, listInvites, revokeInvite, getInvite, acceptInvite)
+- [x] `/settings/profile` — display name + email read-only, change display name, change password (validates current password)
+- [x] `/settings/team` — lists caller's teams + inline create-team form
+- [x] `/settings/team/[teamId]` — rename (admin+), member role-picker + remove (admin+), invite-link generator, outstanding invite list with revocation, owner-only danger-zone delete
+- [x] `/invite/[token]` — invite acceptance page (redirects to /login if unauthenticated, accepts and redirects to board)
+- [x] Settings sidebar gains "Profile" and "Teams" entries
+
 ## 2026-06-24 — Phase 10 E3+F3 complete: gallery generator, Storybook GH Pages preview, docs/TESTING.md (PR #186)
 
 - [x] `packages/web/scripts/generate-gallery.mjs` — gallery generator: walks `e2e/__shots__/`, groups pages vs. stories/component, writes `gallery.html` (dark-themed, relative image refs) + `SCREENSHOTS.md` (markdown manifest)
