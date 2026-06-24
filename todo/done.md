@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 30 C: quality-gate auto-fix loop (PR #166)
+
+Adds the opt-in auto-fix loop to the quality gate: when a gate fails, `checks.autoFix.enabled`, and `fixAttempts < maxAttempts`, the runner increments the counter, records a `checks.fix.started` event, kills the old session, re-spawns with a structured fix prompt, and arms a fresh timeout. Slot stays held so the re-spawned agent's Stop hook naturally re-enters `completeWithChecks`. Budget exhaustion records `checks.fix.exhausted` and falls back to `markWaiting`.
+
+- [x] `packages/gateway/drizzle/0040_fix_attempts.sql`: `ALTER TABLE tasks ADD COLUMN fix_attempts INTEGER NOT NULL DEFAULT 0`
+- [x] `packages/gateway/src/db/schema.ts`: `fixAttempts` column added
+- [x] `packages/shared/src/task.ts`: `fixAttempts` field in `TaskSchema`
+- [x] `packages/gateway/src/tasks/tasks.repository.ts`: `incrementFixAttempts()` + `hydrate()` wired
+- [x] `packages/gateway/src/tasks/tasks.service.ts`: `incrementFixAttempts()` + `checks.fix.started/exhausted` events
+- [x] `packages/gateway/src/pool/agent-runner.service.ts`: auto-fix branch in `completeWithChecks` + `buildFixPrompt()`
+- [x] `packages/gateway/src/pool/agent-runner.service.test.ts`: 4 new tests (off, re-spawn, exhausted, pass-after-fix)
+
 ## 2026-06-24 — Phase 31 D: attention state + clickable HUD badge (main a581cbf)
 
 Completes the attention affordance: agents with a pending approval/waiting state pulse orange in the office, and the HUD badge is now clickable.
