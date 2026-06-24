@@ -126,6 +126,33 @@ export const SlackMessageParamsSchema = z.object({
 });
 export type SlackMessageParams = z.infer<typeof SlackMessageParamsSchema>;
 
+// github.get-pr — fetch pull-request metadata via a `github` credential.
+// `prUrl` is the full HTML URL (e.g. https://github.com/owner/repo/pull/42).
+export const GithubGetPrParamsSchema = z.object({
+  credentialId: z.string().min(1),
+  prUrl: z.string().min(1),
+});
+export type GithubGetPrParams = z.infer<typeof GithubGetPrParamsSchema>;
+
+// github.get-diff — fetch the unified diff for a PR.
+// `maxTokens` controls truncation (default 8 000; 1 token ≈ 4 chars).
+export const GithubGetDiffParamsSchema = z.object({
+  credentialId: z.string().min(1),
+  prUrl: z.string().min(1),
+  maxTokens: z.number().int().positive().default(8000),
+});
+export type GithubGetDiffParams = z.infer<typeof GithubGetDiffParamsSchema>;
+
+// github.post-review — submit a review comment on a PR.
+export const GITHUB_REVIEW_EVENTS = ['COMMENT', 'APPROVE', 'REQUEST_CHANGES'] as const;
+export const GithubPostReviewParamsSchema = z.object({
+  credentialId: z.string().min(1),
+  prUrl: z.string().min(1),
+  body: z.string().min(1),
+  event: z.enum(GITHUB_REVIEW_EVENTS).default('COMMENT'),
+});
+export type GithubPostReviewParams = z.infer<typeof GithubPostReviewParamsSchema>;
+
 // email.send — send an email via SMTP using a `smtp` credential.
 export const EmailSendParamsSchema = z.object({
   credentialId: z.string().min(1),
@@ -539,6 +566,52 @@ export const NODE_TYPE_DEFINITIONS: Record<string, NodeTypeDefinition> = {
         help: 'Returned when the key has never been set. Defaults to null.',
         expressionable: true,
       },
+    ],
+  },
+  // --- GitHub integration nodes (Phase 37 Theme A) ---
+  'github.get-pr': {
+    id: 'github.get-pr',
+    category: 'action',
+    title: 'Get PR',
+    description: 'Fetch pull-request metadata (title, state, author, labels, head/base) from GitHub.',
+    icon: 'git-pull-request',
+    inputs: MAIN_IN,
+    outputs: MAIN_OUT,
+    paramsSchema: GithubGetPrParamsSchema,
+    fields: [
+      { key: 'credentialId', label: 'GitHub credential', kind: 'credential', required: true, credentialType: 'github' },
+      { key: 'prUrl', label: 'PR URL', kind: 'string', required: true, placeholder: 'https://github.com/owner/repo/pull/42', expressionable: true },
+    ],
+  },
+  'github.get-diff': {
+    id: 'github.get-diff',
+    category: 'action',
+    title: 'Get PR Diff',
+    description: 'Fetch the unified diff for a pull request (truncated to maxTokens).',
+    icon: 'git-pull-request',
+    inputs: MAIN_IN,
+    outputs: MAIN_OUT,
+    paramsSchema: GithubGetDiffParamsSchema,
+    fields: [
+      { key: 'credentialId', label: 'GitHub credential', kind: 'credential', required: true, credentialType: 'github' },
+      { key: 'prUrl', label: 'PR URL', kind: 'string', required: true, placeholder: 'https://github.com/owner/repo/pull/42', expressionable: true },
+      { key: 'maxTokens', label: 'Max tokens', kind: 'number', help: 'Diff is truncated at this token estimate (1 token ≈ 4 chars). Default: 8000.' },
+    ],
+  },
+  'github.post-review': {
+    id: 'github.post-review',
+    category: 'action',
+    title: 'Post PR Review',
+    description: 'Submit a review comment (or approval / request changes) on a GitHub pull request.',
+    icon: 'git-pull-request',
+    inputs: MAIN_IN,
+    outputs: MAIN_OUT,
+    paramsSchema: GithubPostReviewParamsSchema,
+    fields: [
+      { key: 'credentialId', label: 'GitHub credential', kind: 'credential', required: true, credentialType: 'github' },
+      { key: 'prUrl', label: 'PR URL', kind: 'string', required: true, placeholder: 'https://github.com/owner/repo/pull/42', expressionable: true },
+      { key: 'body', label: 'Review body', kind: 'text', required: true, expressionable: true },
+      { key: 'event', label: 'Event', kind: 'select', options: [{ value: 'COMMENT', label: 'Comment' }, { value: 'APPROVE', label: 'Approve' }, { value: 'REQUEST_CHANGES', label: 'Request changes' }] },
     ],
   },
 };

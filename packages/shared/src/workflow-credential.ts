@@ -9,6 +9,7 @@ export const WORKFLOW_CREDENTIAL_TYPES = [
   'http-header',
   'slack',
   'smtp',
+  'github',
 ] as const;
 export const WorkflowCredentialTypeSchema = z.enum(WORKFLOW_CREDENTIAL_TYPES);
 export type WorkflowCredentialType = z.infer<typeof WorkflowCredentialTypeSchema>;
@@ -29,6 +30,11 @@ export const WorkflowCredentialDataSchema = z.discriminatedUnion('type', [
     value: z.string().min(1),
   }),
   z.object({ type: z.literal('slack'), token: z.string().min(1) }),
+  z.object({
+    type: z.literal('github'),
+    token: z.string().min(1),
+    enterpriseUrl: z.string().url().optional(),
+  }),
   z.object({
     type: z.literal('smtp'),
     host: z.string().min(1),
