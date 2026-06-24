@@ -4,7 +4,12 @@ import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { getWorkflow } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
-import { WorkflowEditor } from '@/components/workflow-editor';
+import dynamic from 'next/dynamic';
+
+const WorkflowEditor = dynamic(
+  () => import('@/components/workflow-editor').then((m) => m.WorkflowEditor),
+  { ssr: false },
+);
 
 // Static-export-friendly replacement for the old /workflows/[id] dynamic route:
 // the id comes from ?id= and the workflow is fetched client-side.

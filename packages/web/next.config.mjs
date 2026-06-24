@@ -1,3 +1,10 @@
+import BundleAnalyzer from '@next/bundle-analyzer';
+
+const withBundleAnalyzer = BundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+  openAnalyzer: false,
+});
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Static export so the desktop app can serve the UI as files (only the gateway
@@ -9,6 +16,10 @@ const nextConfig = {
   trailingSlash: true,
   transpilePackages: ['@midnite/shared', '@midnite/ui', 'yet-another-react-lightbox'],
   reactStrictMode: true,
+  experimental: {
+    // Extra tree-shaking pass for barrel-file packages.
+    optimizePackageImports: ['lucide-react', 'recharts', '@midnite/ui'],
+  },
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);

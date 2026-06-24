@@ -2,7 +2,12 @@
 
 import type { TaskCounts } from '@midnite/shared';
 import { DashboardAddWidget } from '@/components/dashboard-add-widget';
-import { DashboardGrid } from '@/components/dashboard-grid';
+import dynamic from 'next/dynamic';
+
+const DashboardGrid = dynamic(
+  () => import('@/components/dashboard-grid').then((m) => m.DashboardGrid),
+  { ssr: false },
+);
 import { PageHeader } from '@/components/page-header';
 import { PromptComposer } from '@/components/prompt-composer';
 import { getNotes, getProjects, getRoutineProgress, getRoutines, getTaskCounts, getTasks } from '@/lib/api';

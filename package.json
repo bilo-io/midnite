@@ -15,6 +15,11 @@
     "lint": "moon run :lint",
     "postinstall": "node scripts/fix-node-pty.cjs"
   },
+  "pnpm": {
+    "overrides": {
+      "@types/react": "^19.0.0"
+    }
+  },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
     "@moonrepo/cli": "^1.30.0",
