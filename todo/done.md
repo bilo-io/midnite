@@ -4,6 +4,13 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Tracker reconciliation: ticked confirmed-shipped boxes (Phase 15 A, Phase 22 D)
+
+Several "open" tracker boxes describe work that's actually shipped — verified against the code, then reconciled. Doc-only; no code change. (Surfaced during a `/exec` sweep where 4 consecutive "open" candidates turned out already-built.)
+
+- [x] **Phase 22 Theme D** — "awaiting review / awaiting merge" board filter: confirmed shipped (`DELIVERY_FILTERS` + `?delivery=` in `tasks-view.tsx`, `deliveryState`/`matchesDelivery` in `lib/pr-delivery.ts`, unit-tested in `pr-delivery.test.ts`). Ticked.
+- [x] **Phase 15 Theme A** (Bulk / paste add) — satisfied end-to-end by **Phase 16** (✅ PR #40) per Phase 16 Decision §5: `POST /tasks/bulk` (`createBulk`), coalesced `tasks.bulkCreated` WS event, CLI `add --bulk` (`cli/src/bulk.ts`), web paste modal. Ticked all 4 boxes with shipped-surface references.
+
 ## 2026-06-24 — Phase 34 COMPLETE: bundle baseline closed out (verification)
 
 Final open box in Phase 34 — re-ran the analyzer after Theme B and confirmed `lucide-react` is tree-shaken out of the shared bundle. Doc-only; no code change (analyzer + `optimizePackageImports` already landed in earlier slices).
