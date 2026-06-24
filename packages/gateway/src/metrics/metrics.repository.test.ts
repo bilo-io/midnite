@@ -20,7 +20,6 @@ function run(id: string, overrides: Partial<AgentRunStatsInsert> = {}): AgentRun
     taskId: 't1',
     startedAt: `2026-06-01T00:0${id.slice(-1)}:00.000Z`,
     retryCount: 0,
-    fixAttempts: 0,
     ...overrides,
   };
 }
