@@ -138,7 +138,7 @@ function makeTasksStub() {
         tags: [],
         dependsOn: [],
         events: [],
-      } as Task;
+      } as unknown as Task;
     },
   } as unknown as TasksService;
   return { service, created };

@@ -15,7 +15,7 @@ function t(id: string, status: Task['status'] = 'todo'): Task {
     tags: [],
     dependsOn: [],
     events: [],
-  } as Task;
+  } as unknown as Task;
 }
 
 describe('applyTaskEvent', () => {
