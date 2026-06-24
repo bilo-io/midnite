@@ -116,7 +116,7 @@ Several non-trivial libraries are currently bundled into the initial JS payload.
 ## Verification
 
 - [x] `moon run web:bundle-report` completes without error; `.next/analyze/client.html` and `.next/analyze/server.html` open in a browser and show a readable treemap.
-- [ ] After Theme B, re-run the report and confirm `lucide-react`'s chunk is smaller or absent from the main bundle.
+- [x] After Theme B, re-run the report (2026-06-24) and confirmed `lucide-react` is **absent from the shared first-load bundle**: the 104 kB shared payload is just `1106` (46.7 kB) + `a0f49a59` (54.2 kB) + 3.2 kB other — neither shared chunk contains lucide. With `optimizePackageImports` active, lucide icons are tree-shaken into per-route chunks (≤23 kB in any single chunk; 359 kB total spread across all routes), so no single page pays for icons it doesn't render.
 - [x] After Theme C, `DashboardGrid` and `WorkflowEditor` are dynamically imported; heavy libs deferred.
 - [x] `moon run web:clean` runs without error (task confirmed in moon.yml).
 - [x] `moon run :typecheck` (shared/gateway/cli/web/ui), `moon run :test` — 906 gateway + 505 web tests pass.
@@ -132,10 +132,10 @@ Several non-trivial libraries are currently bundled into the initial JS payload.
 
 3. **CI bundle-size gate (deferred)** — a `bundlewatch` or custom moon task that fails CI on regression is the right follow-up, but requires a baseline first. _Recommend: add the CI gate as Phase 35 Theme A once Theme A2 produces real numbers._
 
-4. **Baseline numbers (fill in after A2)** — record here once `web:bundle-report` runs:
-   - First-load JS total: _TBD_ kB gzipped
-   - Largest chunk: _TBD_ kB (name: _TBD_)
-   - `lucide-react` share pre-B1: _TBD_ kB
-   - `lucide-react` share post-B1: _TBD_ kB
+4. **Baseline numbers** — recorded from `web:bundle-report` (2026-06-24, post-B1 config):
+   - First-load JS total: **104 kB gzipped** (shared by all routes: `1106` 46.7 kB + `a0f49a59` 54.2 kB + 3.2 kB other)
+   - Largest chunk: **1.16 MB parsed** (name: `6676e8bd.js` — dashboard / recharts / react-grid-layout, lazy-loaded, not in first-load)
+   - `lucide-react` share pre-B1: **not A/B-measured** — measuring it would require temporarily reverting `optimizePackageImports` (out of scope for this verification slice; the post-B1 distribution below already confirms the goal — no lucide in the shared bundle)
+   - `lucide-react` share post-B1: **0 kB in the shared first-load bundle** (absent). 359 kB total tree-shaken across per-route chunks (max ≤23 kB in any single chunk), so each page loads only the icons it renders.
 
 5. **Phaser chunk** — Phaser is already loaded via `dynamic(() => import('./office-view-impl'), { ssr: false })` in `office-view.tsx`. Confirm via the analyzer that it lands in its own chunk (not the main bundle). If it's bleeding in, add a further split at the scene-module level. No code change planned unless the baseline reveals a problem.

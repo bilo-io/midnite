@@ -37,17 +37,17 @@ Make the core monitoring surfaces reflow to a phone; gate the canvas-heavy ones 
 - [ ] **Board** ([`board-view.tsx`](../packages/web/components/board-view.tsx)): columns stack / horizontally page on a phone; cards stay legible (Theme B handles moving them).
 - [ ] **Sessions**, **Tasks**, **Dashboard** ([`dashboard-grid.tsx`](../packages/web/components/dashboard-grid.tsx)): single-column reflow; widgets/cards full-width; tables → scrollable cards.
 - [ ] **Notification center** (P21) + **Approvals inbox** (P23): designed to read and act on a phone (these are the "walk away" surfaces — they must work small).
-- [ ] **Desktop-only gates** (Decision §2): the **office** canvas ([`components/office/`](../packages/web/components/office/)) and the **workflow editor** ([`workflow-editor.tsx`](../packages/web/components/workflow-editor.tsx)) show a clean **"best viewed on desktop"** notice on a phone rather than a broken canvas. (A genuine mobile canvas is a later, separate effort.)
+- [x] ✅ **Desktop-only gates** (Decision §2, PR #196): `<DesktopOnly label>` ([`components/desktop-only.tsx`](../packages/web/components/desktop-only.tsx)) wraps the **office** ([`office/page.tsx`](../packages/web/app/(main)/office/page.tsx)) and **workflow editor** ([`workflows/edit/page.tsx`](../packages/web/app/(main)/workflows/edit/page.tsx)); below `lg` it renders a clean "best viewed on desktop" notice (mount-guarded against a static-export flash) instead of a broken canvas. RTL + Playwright shots.
 
 ---
 
-## Theme B — Touch interactions — **M**
+## Theme B — Touch interactions — **M** — ✅ DONE (PR #188, 2026-06-24 — see [done.md](done.md))
 
 The kanban is the signature surface; make moving a card work by finger, two ways (Decision §3).
 
-- [ ] **Tune drag for touch** — give the board's dnd-kit sensor a touch **activation delay** (or a dedicated drag handle) so a press-and-hold drags while a plain swipe **scrolls**. Apply the same to [`sortable-accordions.tsx`](../packages/web/components/sortable-accordions.tsx).
-- [ ] **Tap-to-move fallback** — on touch, a card offers a "move to…" affordance (pick the card → choose the target column) so a column change never *requires* a successful drag. Both paths call the same move mutation.
-- [ ] **Touch ergonomics** — ≥44px tap targets on interactive controls; modals/sheets sized for a phone; the **xterm live terminal** scoped to **read/scroll** on touch (typing into a PTY from a phone is a non-goal — surface it clearly rather than half-working).
+- [x] **Tune drag for touch** — dnd-kit sensors split into `MouseSensor` (6px distance, desktop unchanged) + `TouchSensor` (200ms press-and-hold, 8px tolerance) on [`board-view.tsx`](../packages/web/components/board-view.tsx) and [`sortable-accordions.tsx`](../packages/web/components/sortable-accordions.tsx), so a plain swipe **scrolls** and only a held press drags.
+- [x] **Tap-to-move fallback** — [`tap-to-move-menu.tsx`](../packages/web/components/tap-to-move-menu.tsx): on touch widths (`useIsMobile`) each card shows a ≥44px "move to…" menu of the other columns; selecting one runs the same `onMove` (→wip spawns, →todo restats). Supersedes the hover-only Start/Stop on mobile. RTL-tested.
+- [x] **Touch ergonomics** — 44px tap target on the tap-to-move affordance; the **xterm live terminal** ([`live-terminal.tsx`](../packages/web/components/live-terminal.tsx)) is read/scroll-only on touch (`disableStdin`, no cursor blink, no input forwarding, a "Read-only" badge). ↪️ broader 44px sweep + phone-sized modals fold into A3's per-surface reflow.
 
 ---
 

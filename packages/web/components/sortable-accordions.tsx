@@ -4,7 +4,8 @@ import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import {
   DndContext,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   closestCenter,
   useSensor,
   useSensors,
@@ -121,7 +122,10 @@ export function SortableAccordions({
   };
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    // Mouse keeps the small distance-activation; touch needs a press-and-hold
+    // delay so a plain swipe scrolls instead of grabbing a row (Phase 24 Theme B).
+    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 

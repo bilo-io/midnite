@@ -1,7 +1,5 @@
-import { ProfileSettings } from './profile-settings';
-
-export const metadata = { title: 'Profile — midnite settings' };
+import { AccountView } from './account-view';
 
 export default function SettingsProfilePage() {
-  return <ProfileSettings />;
+  return <AccountView />;
 }

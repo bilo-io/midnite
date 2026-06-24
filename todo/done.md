@@ -4,15 +4,83 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-06-24 — Phase 33 E1/B4/E2/E3 complete: user profile + team settings UI
+## 2026-06-24 — Phase 24 A3 — desktop-only gates for office + workflow editor (PR #196)
 
-- [x] `GET /users/me`, `PATCH /users/me`, `PATCH /users/me/password` endpoints in new `users.controller.ts`; `UsersController` registered in `UsersModule`
-- [x] Web API helpers: `updateMe`, `updateMyPassword`, all team methods (listMyTeams, createTeam, getTeam, updateTeam, deleteTeam, setMemberRole, removeMember, createInvite, listInvites, revokeInvite, getInvite, acceptInvite)
-- [x] `/settings/profile` — display name + email read-only, change display name, change password (validates current password)
-- [x] `/settings/team` — lists caller's teams + inline create-team form
-- [x] `/settings/team/[teamId]` — rename (admin+), member role-picker + remove (admin+), invite-link generator, outstanding invite list with revocation, owner-only danger-zone delete
-- [x] `/invite/[token]` — invite acceptance page (redirects to /login if unauthenticated, accepts and redirects to board)
-- [x] Settings sidebar gains "Profile" and "Teams" entries
+- [x] `<DesktopOnly label>` wrapper (`components/desktop-only.tsx`): branches on `useIsDesktop()`; below `lg` renders a centered "best viewed on desktop" notice, at `lg`+ renders children. Mount guard prevents a static-export flash of the notice on desktop.
+- [x] Gates `office/page.tsx` (Phaser canvas) + `workflows/edit/page.tsx` (node canvas) at the page level (Decision §2).
+- [x] 3 RTL cases (`desktop-only.test.tsx`) + Playwright `desktop-gates.shots.ts` (office desktop=canvas / phone=notice; workflow phone=notice). Full `web:test` 510/510 green; my files typecheck+lint clean. (web:typecheck/lint have pre-existing unrelated failures in Phase 33 team/profile files + Phase 10 gallery script — not touched here.)
+
+## 2026-06-24 — Phase 35 D1–D3 + E1–E2 — WS scoping + notification team isolation (PR #195)
+
+- [x] **D1** — `ConnectionRegistry` (WeakMap + byTeam/byUser maps) in global `WsModule`; JWT extracted from `?token=<jwt>` at WS handshake; invalid token → close 4001; no-JWT → `{ userId: null, teamId: null }` (legacy compat)
+- [x] **D2** — `WsBroadcastService` (`toTeam`/`toUser`/`toAll`); `TasksGateway` uses `toTeam(task.teamId)` for scoped events, `toAll(subscribers)` for legacy; `WorkflowsGateway` uses `toAll(runSockets)` (runId provides implicit access control)
+- [x] **D3** — 4 new integration tests in `tasks.gateway.test.ts`: scoped delivery, legacy broadcast, 4001 rejection, unauthenticated-client isolation; `workflows.gateway.test.ts` updated to new constructor
+- [x] **E1** — `team_id TEXT` column + `notification_team_idx` added to `notifications` table (migration 0051); `NotificationsRepository.list/countUnread` accept `TeamScope`; `NotificationsController.list()` injects `@CurrentUser()`; `NotificationsService.persist()` records `task.teamId`; `Notification` schema gains optional `teamId`
+- [x] **E2** — `NotificationsGateway` rewritten with JWT/ConnectionRegistry pattern; `notification.created` routes by `notification.teamId` — `toTeam()` for team-scoped, `toAll(subscribers)` for system/legacy
+
+---
+
+## 2026-06-24 — Phase 35 A1–A5 + B1–B3 — RBAC scoped queries + write guards (PR #194)
+
+- [x] **A1** — `TeamScope` type in `@midnite/shared`; `teamScopeFilter()` Drizzle helper in `gateway/src/db/team-scope.ts`; `teamId` embedded in JWT at login/register/refresh
+- [x] **A2** — Tasks list/get scoped: `TasksRepository.listTasks/getTask(scope?)`, service + controller wired; `listReadyTodoTasks()` stays global
+- [x] **A3** — Repos list/get scoped: `ReposRepository.list/getById(scope?)`, service + controller wired
+- [x] **A4** — Workflows list/get scoped: `WorkflowsRepository.listWorkflowRows/getWorkflowRow(scope?)`, service + controller wired; `listScheduledEnabledRows()` stays global
+- [x] **A5** — 12 integration tests (`:memory:` SQLite): own-only, team-shared, out-of-scope, and legacy-null visibility patterns across tasks/repos/workflows
+- [x] **B1** — `RoleGuard` (`auth/role.guard.ts`), `@RequiresRole()` decorator, `TeamsService.getMembership()` helper; role cached per request on `req.resolvedRole`; backward compat: no user → guard skips
+- [x] **B2** — Guards applied: tasks (POST/PATCH=`member`, DELETE=`admin`), repos (POST=`member`, PATCH/DELETE=`admin`), workflows (POST/run/duplicate=`member`, PATCH/DELETE/webhook-rotate=`admin`)
+- [x] **B3** — `OwnershipService` (`auth/ownership.service.ts`): `isOwner()` + `resolveRequiredRole()` helpers; exported from `AuthModule`
+
+---
+
+## 2026-06-24 — Verification sweep: closed Phases 12, 13, 25, 26; flagged 11, 32
+
+Reconciled the verification blocks of six "almost-complete earlier" phases against the actual code + a fresh test run (three read-only verification agents mapped each box to evidence). Doc-only; no source change. Evidence run: `gateway:test` 984/984, `shared:test` 463/463, `web:test` 505/505, `ui:test` 46/46, `docs:test` 31/31 — all green **isolated**. (Full-graph `moon run :test` flakes only on `ui:test`'s storybook-chromium browser provider under parallelism — "Vitest failed to find the current suite" — a runner-infra issue, not a regression. CI also billing-blocked account-wide.)
+
+**Closed (verification now test-backed/code-confirmed):**
+- [x] **Phase 12** (workflow data flow & expressions) — `$node` refs, missing-ref errors + optional `?.`, `logic.setData`/`merge`/`data.filter`, `storage` round-trip-across-runs all proven by `workflow-engine.expression.spec.ts` / `reshape-nodes.spec.ts` / `storage-nodes.spec.ts` / `shared/expression.test.ts`. (Only remainder is the ⏳-deferred pinned-sample item.)
+- [x] **Phase 13** (repos first-class) — DB-backed CRUD, config seeding (idempotent/second-boot), repo-picker persist, unknown-repo rejection, CLI `--repo`, cwd precedence — `repos.service.test.ts`, `tasks.service.spec.ts`, `resolve-cwd.test.ts`, `new-task-modal.test.tsx`.
+- [x] **Phase 25** (`@midnite/ui`) — `ui:build` ESM+dts+tokens.css, boundary guard, web shim imports, token-CSS theming, storybook-as-browser-tests (46/46), DS docs, external-import seam (verified via throwaway `node` import of `dist/`).
+- [x] **Phase 26** (`@midnite/docs`) — ui-built shell, live MDX examples + token specimens, real product-docs `?raw` imports, sidebar/search/responsive/no-network, boundary guard; `docs:build` static site + `docs:test` 31/31.
+
+**Flagged (impl complete + unit-tested; boxes are inherently live acceptance, left open):**
+- ◐ **Phase 11** (public site) — all visual acceptance needs a live `site:dev`/Playwright pass; impl traced to `packages/site/` + unit tests. Ticked only the code-confirmed legal-pages box; added a status note.
+- ◐ **Phase 32** (CLI live dashboard) — all TUI acceptance needs a running gateway + interactive terminal; impl in `cli/src/watch/` + `task-board-reducer`/`Dashboard`/`LogPanel` tests. Added a status note.
+
+## 2026-06-24 — Phase 33 B4+E1-E3 — Teams UI + profile/account settings (PR #192)
+
+- [x] **B4** — Teams web UI: `/settings/team` (list + create), `/settings/team/[teamId]` (members, invite links, danger-zone delete), Settings sidebar + user-nav "Team" entry
+- [x] **E1** — User profile page: `/settings/profile` (display name edit, read-only email, change password); `PATCH /auth/me` + `PATCH /auth/me/password` gateway routes
+- [x] **E2** — Team settings merged into B4 (rename, danger zone, member management, invite tokens)
+- [x] **E3** — Invite acceptance `/invite/[token]` (unauthenticated metadata, auth-gated accept with login redirect)
+- [x] Auth context extended: `teams[]`, `activeTeamId`, `setActiveTeam`, `setUser`
+
+## 2026-06-24 — Tracker reconciliation: ticked confirmed-shipped boxes (Phase 15 A, Phase 22 D)
+
+Several "open" tracker boxes describe work that's actually shipped — verified against the code, then reconciled. Doc-only; no code change. (Surfaced during a `/exec` sweep where 4 consecutive "open" candidates turned out already-built.)
+
+- [x] **Phase 22 Theme D** — "awaiting review / awaiting merge" board filter: confirmed shipped (`DELIVERY_FILTERS` + `?delivery=` in `tasks-view.tsx`, `deliveryState`/`matchesDelivery` in `lib/pr-delivery.ts`, unit-tested in `pr-delivery.test.ts`). Ticked.
+- [x] **Phase 15 Theme A** (Bulk / paste add) — satisfied end-to-end by **Phase 16** (✅ PR #40) per Phase 16 Decision §5: `POST /tasks/bulk` (`createBulk`), coalesced `tasks.bulkCreated` WS event, CLI `add --bulk` (`cli/src/bulk.ts`), web paste modal. Ticked all 4 boxes with shipped-surface references.
+
+## 2026-06-24 — Phase 34 COMPLETE: bundle baseline closed out (verification)
+
+Final open box in Phase 34 — re-ran the analyzer after Theme B and confirmed `lucide-react` is tree-shaken out of the shared bundle. Doc-only; no code change (analyzer + `optimizePackageImports` already landed in earlier slices).
+
+- [x] Re-ran `moon run web:bundle-report`: first-load shared JS = **104 kB gzipped** (`1106` 46.7 kB + `a0f49a59` 54.2 kB + 3.2 kB other)
+- [x] Confirmed `lucide-react` **absent from the shared first-load bundle**; tree-shaken into per-route chunks (≤23 kB/chunk, 359 kB total spread across all routes) — each page loads only the icons it renders
+- [x] Filled in Decisions §4 baseline numbers (largest chunk: `6676e8bd.js` 1.16 MB parsed, lazy dashboard/recharts/grid — not in first-load)
+- [x] Ticked the line-119 verification box → **Phase 34 fully complete**
+
+## 2026-06-24 — Phase 24 Theme B: touch interactions for the kanban (PR #188)
+
+Makes the board usable by finger and stops the live terminal half-working on touch.
+
+- [x] dnd-kit sensors split into `MouseSensor` (6px, desktop unchanged) + `TouchSensor` (200ms press-and-hold, 8px tolerance) on `board-view` + `sortable-accordions` — a plain swipe scrolls, a held press drags
+- [x] `tap-to-move-menu.tsx`: touch-only ≥44px "move to…" menu on each card (the other columns), running the same `onMove` (→wip spawns, →todo restats); supersedes the hover Start/Stop on mobile; RTL-tested
+- [x] `live-terminal.tsx`: read/scroll-only on touch (`disableStdin`, no cursor blink/input, "Read-only" badge)
+- [x] `fix(site)`: added the missing explicit `vite@6` dep so `site:typecheck` passes (web/ui already declared it)
+
+> Merged on a green local web gate (typecheck/test/lint + site:typecheck); CI is billing-blocked account-wide. Superseded the earlier #169, whose extensive parallel-agent main-repair commits became redundant once equivalent fixes landed on main independently.
 
 ## 2026-06-24 — Phase 10 E3+F3 complete: gallery generator, Storybook GH Pages preview, docs/TESTING.md (PR #186)
 
