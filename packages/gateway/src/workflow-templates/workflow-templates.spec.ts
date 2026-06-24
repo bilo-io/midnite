@@ -257,8 +257,8 @@ describe('WorkflowTemplatesService', () => {
       name: 'My Workflow',
       trigger: { type: 'webhook', method: 'POST', hasSecret: false },
       nodes: [
-        { id: 'n1', type: 'trigger.webhook', params: {} },
-        { id: 'n2', type: 'slack.message', params: { credentialId: 'cred-slack-1', channel: '#dev', text: 'hello' } },
+        { id: 'n1', type: 'trigger.webhook', params: {}, position: { x: 0, y: 0 } },
+        { id: 'n2', type: 'slack.message', params: { credentialId: 'cred-slack-1', channel: '#dev', text: 'hello' }, position: { x: 0, y: 100 } },
       ],
       edges: [],
     };
