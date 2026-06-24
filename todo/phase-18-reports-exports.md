@@ -57,10 +57,10 @@ A task's thread as a portable document.
 
 A run as a debuggable, shareable document — the payoff of Phase 12's persisted resolved params.
 
-- [ ] **Pure serializer** `run-report.ts` in the workflows module: `runToMarkdown(workflow, run, nodeRuns)` → workflow name + trigger, run status/timing, then **per node: input → resolved params → output** (the [`NodeRun.resolvedParams`](../packages/shared/src/run.ts) field from Phase 12) and any error/log. Pure + unit-tested.
-- [ ] **Export route** `@Get('workflows/:id/runs/:runId/export')` (mirrors the councils route shape) → a `exportRunMarkdown(id, runId)` on the workflows service.
-- [ ] **Web:** `ExportMenu` in the **run-output panel** ([`use-workflow-run.ts`](../packages/web/lib/use-workflow-run.ts) view); typed `exportWorkflowRun` client.
-- [ ] Gateway test: a completed run with 2 node-runs serializes with input/resolved/output per node; a failed node shows its error.
+- [x] **Pure serializer** `run-report.ts` in the workflows module: `runToMarkdown(workflow, run, nodeRuns)` → workflow name + trigger, run status/timing, then **per node: input → resolved params → output** (the [`NodeRun.resolvedParams`](../packages/shared/src/run.ts) field from Phase 12) and any error/log. Pure + unit-tested.
+- [x] **Export route** `@Get('workflows/:id/runs/:runId/export')` (mirrors the councils route shape) → a `exportRunMarkdown(id, runId)` on the workflows service.
+- [x] **Web:** `ExportMenu` in the **run-output panel** ([`use-workflow-run.ts`](../packages/web/lib/use-workflow-run.ts) view); typed `exportWorkflowRun` client.
+- [x] Gateway test: a completed run with 2 node-runs serializes with input/resolved/output per node; a failed node shows its error.
 
 ---
 
@@ -89,9 +89,9 @@ A run as a debuggable, shareable document — the payoff of Phase 12's persisted
 - [ ] **Councils still works** after Theme D's renderer lift — md download + pdf-via-print unchanged (no regression on the existing path).
 - [x] **Task:** open a task thread → `ExportMenu` → markdown download contains the title, status history, and `task_events` timeline; PDF prints the same content; "copy as markdown" copies it. `midnite task export <id>` emits the same markdown.
 - [x] **Project:** export a project → markdown has the overview, a task list grouped by column, and memory/notes/sources sections (empty sections omitted); PDF renders.
-- [ ] **Workflow run:** export a completed run → markdown shows per-node input → resolved params → output (and a failed node's error); PDF renders.
-- [ ] Every export route validates `format`: `?format=pdf` to a server route is rejected (pdf is client-rendered); an unknown id → 404; the served `Content-Type` is `text/markdown`.
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph; `moon ci` green. (Run web tests from the **primary checkout**, not a `.git` worktree.)
+- [x] **Workflow run:** export a completed run → markdown shows per-node input → resolved params → output (and a failed node's error); PDF renders.
+- [x] Every export route validates `format`: `?format=pdf` to a server route is rejected (pdf is client-rendered); an unknown id → 404; the served `Content-Type` is `text/markdown`.
+- [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph.
 
 ---
 

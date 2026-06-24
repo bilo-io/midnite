@@ -4,9 +4,27 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 9 B1: provider-aware agent characters in the office (PR #171)
+
+- [x] `agentCli: z.string().optional()` added to `SessionSummarySchema` in `shared/src/session.ts`
+- [x] `AgentsService` injected into `SessionsService`; `agentCli: this.agents.getAgentCli()` set in `toSummary()`
+- [x] `agentCli?: string` added to `OfficeAgent`; propagated through `sessionsToOfficeAgents()`
+- [x] `CLI_BADGE_COLOR` map + `providerBadge: Phaser.GameObjects.Arc` in `office-scene.ts` — small dot badge on each agent sprite, brand-aligned colours (Anthropic orange / Google blue / OpenAI green / Aider purple / gray fallback)
+- [x] `statusToRoom` room comparison fixed (`'desk'`/`'lounge'` → `'work'`/`'board'`/`'pool'`); `truncate()` now accepts optional max-length
+- [x] 6 `sessions.service.test.ts` tests pass (incl. 2 new `agentCli` coverage tests)
+- [x] Pre-existing `fixAttempts` fixture gaps resolved across gateway + shared
+
+---
+
 ## 2026-06-24 — Phase 28 verification: project planning breakdown suite green
 
 All four implementation themes (A–D, PRs #128 #155 #135 #160) were already merged. Closed out the verification checklist: breakdown preview + edit + create confirmed by `PlanPanel`/`BreakdownEditor` unit tests + Playwright e2e (PR #160); ready-gating covered by Phase 27 integration specs; markdown plan regression-free; standalone `POST /tasks/breakdown` + `midnite plan` covered by gateway/CLI specs (PR #155); conservative inference + cycle pruning (`pruneBreakdown` DFS, 6 tests); LLM-disabled fail-open notice; suite green (906 gateway + 505 web).
+
+---
+
+## 2026-06-24 — Phase 18 Theme C: workflow-run export (previously untracked)
+
+Confirmed fully implemented (already shipped alongside Theme D/A/B): `packages/gateway/src/workflows/lib/run-report.ts` (pure serializer + tests), `GET /workflows/:id/runs/:runId/export?format=md` controller route, `exportWorkflowRunMarkdown` typed client in `api.ts`, `ExportMenu` wired in `run-output-panel.tsx`. Phase 18 checklist closed.
 
 ---
 
