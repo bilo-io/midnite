@@ -86,6 +86,16 @@ export default defineConfig({
     baseURL: WEB_ORIGIN,
     trace: 'on-first-retry',
   },
+  expect: {
+    timeout: 10_000,
+    toHaveScreenshot: {
+      // Allow up to 0.5% of pixels to differ (font rendering, subpixel AA).
+      // Baselines are generated on Linux (Docker) so CI always matches exactly;
+      // the ratio guards against a legitimately-different but still-correct render
+      // on a developer's machine when they're not regenerating baselines.
+      maxDiffPixelRatio: 0.005,
+    },
+  },
   projects: [
     // Flow tests (Theme D): the `*.e2e.ts` specs.
     {
@@ -93,13 +103,16 @@ export default defineConfig({
       testMatch: '**/*.e2e.ts',
       use: { ...devices['Desktop Chrome'] },
     },
-    // Deterministic screenshot capture (Theme E1): the `*.shots.ts` specs at a
-    // fixed 1440×900 viewport. The spec itself forces reduced motion (via
-    // page.emulateMedia), pins the clock, and stubs external widgets. Shares the
-    // same webServer — run it on its own with `moon run web:screenshots`.
+    // Deterministic screenshot capture (Theme E1) + visual regression (Theme E2):
+    // the `*.shots.ts` specs at a fixed 1440×900 viewport. The spec captures
+    // preview PNGs to `e2e/__shots__/` (gitignored, E1) AND asserts against
+    // committed OS-pinned baselines in `e2e/__screenshots__/` (E2). Generate /
+    // update baselines with `--update-snapshots` (run via Docker for Linux parity).
     {
       name: 'screenshots',
       testMatch: '**/*.shots.ts',
+      snapshotDir: './e2e/__screenshots__',
+      snapshotPathTemplate: '{snapshotDir}/{arg}{ext}',
       use: {
         ...devices['Desktop Chrome'],
         viewport: { width: 1440, height: 900 },

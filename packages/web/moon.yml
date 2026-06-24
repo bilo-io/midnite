@@ -109,11 +109,13 @@ tasks:
       - 'playwright.config.ts'
 
   screenshots:
-    # Phase 10 Theme E1 — deterministic per-page screenshot capture. Drives the
+    # Phase 10 Theme E1+E2 — screenshot capture + visual regression. Drives the
     # same Playwright webServer (gateway + Next dev) as `web:e2e` but runs only
-    # the `screenshots` project, writing PNGs to e2e/__shots__/ (gitignored).
-    # Like e2e it's heavy + spawns servers, so it's runInCI:false; CI artifact
-    # upload + a baseline diff are Themes E2/E3.
+    # the `screenshots` project: writes preview PNGs to e2e/__shots__/ (gitignored)
+    # AND asserts against committed baselines in e2e/__screenshots__/ (E2).
+    # Heavy + spawns servers; kept out of moon ci. A dedicated CI job runs this
+    # (Theme F1). To regenerate baselines: run --update-snapshots via Docker (see
+    # comment in pages.shots.ts).
     command: 'pnpm exec playwright test --project=screenshots'
     deps:
       - '^:build'
@@ -126,6 +128,7 @@ tasks:
       - 'lib/**/*'
       - 'e2e/**/*'
       - 'playwright.config.ts'
+      - 'e2e/__screenshots__/**'
 
   storybook:
     command: 'pnpm exec storybook dev -p 6006'
