@@ -330,6 +330,27 @@
       "when": 1782700001000,
       "tag": "0046_refresh_tokens",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "6",
+      "when": 1782700002000,
+      "tag": "0047_teams",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "6",
+      "when": 1782700003000,
+      "tag": "0048_resource_ownership",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "6",
+      "when": 1782700004000,
+      "tag": "0049_audit_log",
+      "breakpoints": true
     }
   ]
 }

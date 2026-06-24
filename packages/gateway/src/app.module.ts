@@ -36,6 +36,8 @@ import { WorkflowCredentialsModule } from './workflows/credentials/workflow-cred
 import { WorkflowTemplatesModule } from './workflow-templates/workflow-templates.module';
 import { TerminalModule } from './terminal/terminal.module';
 import { ApprovalsModule } from './approvals/approvals.module';
+import { AuditModule } from './audit/audit.module';
+import { TeamsModule } from './teams/teams.module';
 
 @Module({
   imports: [
@@ -75,6 +77,8 @@ import { ApprovalsModule } from './approvals/approvals.module';
     WorkflowTemplatesModule,
     TerminalModule,
     ApprovalsModule,
+    TeamsModule,
+    AuditModule,
     AdminModule,
   ],
   controllers: [HealthController],

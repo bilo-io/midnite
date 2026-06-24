@@ -1,8 +1,8 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import type { User } from '@midnite/shared';
-import { setAccessToken } from '@/lib/api';
+import type { Team, User } from '@midnite/shared';
+import { listTeams, setAccessToken } from '@/lib/api';
 
 export interface AuthContextValue {
   user: User | null;
@@ -11,6 +11,14 @@ export interface AuthContextValue {
   isLoading: boolean;
   /** True when the gateway has JWT auth configured (refresh succeeded or 401 — not 503). */
   jwtEnabled: boolean;
+  /** Teams the current user belongs to. Empty until loaded after login. */
+  teams: Team[];
+  /** The ID of the currently active team (context for new creates). */
+  activeTeamId: string | null;
+  /** Switch the active team. */
+  setActiveTeam: (teamId: string | null) => void;
+  /** Update the in-memory user after a profile edit. */
+  setUser: (user: User) => void;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   register: (email: string, name: string, password: string) => Promise<User>;
@@ -23,6 +31,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [accessToken, setToken] = useState<string | null>(null);
   const [isLoading, setLoading] = useState(true);
   const [jwtEnabled, setJwtEnabled] = useState(false);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [activeTeamId, setActiveTeamId] = useState<string | null>(null);
 
   function applyTokens(token: string, u: User) {
     setToken(token);
@@ -34,6 +44,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null);
     setAccessToken(null);
     setUser(null);
+    setTeams([]);
+    setActiveTeamId(null);
+  }
+
+  async function loadTeams() {
+    try {
+      const fetched = await listTeams();
+      setTeams(fetched);
+      if (fetched.length > 0 && fetched[0]) setActiveTeamId(fetched[0].id);
+    } catch {
+      // Non-fatal: teams unavailable (gateway may not have JWT configured)
+    }
   }
 
   // Restore session from the httpOnly cookie on mount.
@@ -45,6 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const data = (await res.json()) as { accessToken: string; user: User };
           applyTokens(data.accessToken, data.user);
           setJwtEnabled(true);
+          await loadTeams();
         } else if (res.status === 401) {
           // Cookie expired / no cookie — JWT is enabled, just not logged in.
           setJwtEnabled(true);
@@ -56,6 +79,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
       }
     })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const setActiveTeam = useCallback((teamId: string | null) => {
+    setActiveTeamId(teamId);
   }, []);
 
   const login = useCallback(async (email: string, password: string): Promise<void> => {
@@ -71,6 +99,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const data = (await res.json()) as { accessToken: string; user: User };
     applyTokens(data.accessToken, data.user);
     setJwtEnabled(true);
+    await loadTeams();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const logout = useCallback(async (): Promise<void> => {
@@ -99,7 +129,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   return (
-    <AuthContext.Provider value={{ user, accessToken, isLoading, jwtEnabled, login, logout, register }}>
+    <AuthContext.Provider
+      value={{ user, accessToken, isLoading, jwtEnabled, teams, activeTeamId, setActiveTeam, setUser, login, logout, register }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -18,6 +18,14 @@ Reconciled the verification blocks of six "almost-complete earlier" phases again
 - ◐ **Phase 11** (public site) — all visual acceptance needs a live `site:dev`/Playwright pass; impl traced to `packages/site/` + unit tests. Ticked only the code-confirmed legal-pages box; added a status note.
 - ◐ **Phase 32** (CLI live dashboard) — all TUI acceptance needs a running gateway + interactive terminal; impl in `cli/src/watch/` + `task-board-reducer`/`Dashboard`/`LogPanel` tests. Added a status note.
 
+## 2026-06-24 — Phase 33 B4+E1-E3 — Teams UI + profile/account settings (PR #192)
+
+- [x] **B4** — Teams web UI: `/settings/team` (list + create), `/settings/team/[teamId]` (members, invite links, danger-zone delete), Settings sidebar + user-nav "Team" entry
+- [x] **E1** — User profile page: `/settings/profile` (display name edit, read-only email, change password); `PATCH /auth/me` + `PATCH /auth/me/password` gateway routes
+- [x] **E2** — Team settings merged into B4 (rename, danger zone, member management, invite tokens)
+- [x] **E3** — Invite acceptance `/invite/[token]` (unauthenticated metadata, auth-gated accept with login redirect)
+- [x] Auth context extended: `teams[]`, `activeTeamId`, `setActiveTeam`, `setUser`
+
 ## 2026-06-24 — Tracker reconciliation: ticked confirmed-shipped boxes (Phase 15 A, Phase 22 D)
 
 Several "open" tracker boxes describe work that's actually shipped — verified against the code, then reconciled. Doc-only; no code change. (Surfaced during a `/exec` sweep where 4 consecutive "open" candidates turned out already-built.)

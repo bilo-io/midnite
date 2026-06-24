@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
 
@@ -87,6 +87,15 @@ export function UserNav({ expanded }: { expanded?: boolean }) {
           >
             <User className="h-3.5 w-3.5" />
             Profile
+          </Link>
+          <Link
+            href="/settings/team"
+            onClick={() => setOpen(false)}
+            role="menuitem"
+            className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent/60 hover:text-foreground"
+          >
+            <Users className="h-3.5 w-3.5" />
+            Team
           </Link>
           <button
             type="button"

@@ -170,6 +170,19 @@ import {
   WorkflowCredentialResponseSchema,
   type WorkflowCredential,
   type CreateWorkflowCredentialRequest,
+  TeamWithMembersSchema,
+  TeamInviteSchema,
+  type Team,
+  type TeamWithMembers,
+  type TeamInvite,
+  type TeamRole,
+  type CreateTeamRequest,
+  type UpdateTeamRequest,
+  type CreateInviteRequest,
+  UserSchema,
+  type User,
+  type UpdateUserRequest,
+  type UpdatePasswordRequest,
 } from '@midnite/shared';
 import { z } from 'zod';
 
@@ -1475,4 +1488,92 @@ export async function createWorkflowCredential(
 /** Permanently delete a credential. Returns 404 if not found. */
 export async function deleteWorkflowCredential(id: string): Promise<void> {
   await fetchJson(`/workflow-credentials/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+// ---- Teams (Phase 33 B) ----
+
+/** List teams the current user belongs to. */
+export async function listTeams(): Promise<Team[]> {
+  return fetchJson<Team[]>('/teams');
+}
+
+/** Get a team with its member list. */
+export async function getTeamWithMembers(id: string): Promise<TeamWithMembers> {
+  return fetchJson(`/teams/${encodeURIComponent(id)}`, undefined, TeamWithMembersSchema);
+}
+
+/** Create a new team; the caller becomes owner. */
+export async function createTeam(req: CreateTeamRequest): Promise<TeamWithMembers> {
+  return fetchJson('/teams', { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(req) }, TeamWithMembersSchema);
+}
+
+/** Rename a team (admin+). */
+export async function updateTeam(id: string, req: UpdateTeamRequest): Promise<TeamWithMembers> {
+  return fetchJson(
+    `/teams/${encodeURIComponent(id)}`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(req) },
+    TeamWithMembersSchema,
+  );
+}
+
+/** Delete a team (owner only). */
+export async function deleteTeam(id: string): Promise<void> {
+  await fetchJson(`/teams/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+/** Set a member's role (admin+). */
+export async function setMemberRole(teamId: string, userId: string, role: TeamRole): Promise<void> {
+  await fetchJson(
+    `/teams/${encodeURIComponent(teamId)}/members/${encodeURIComponent(userId)}/role`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ role }) },
+  );
+}
+
+/** Remove a member from the team. Members may remove themselves; admins can remove others. */
+export async function removeMember(teamId: string, userId: string): Promise<void> {
+  await fetchJson(`/teams/${encodeURIComponent(teamId)}/members/${encodeURIComponent(userId)}`, { method: 'DELETE' });
+}
+
+/** Create an invite token (admin+). */
+export async function createInvite(teamId: string, req: CreateInviteRequest): Promise<TeamInvite> {
+  return fetchJson(
+    `/teams/${encodeURIComponent(teamId)}/invites`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(req) },
+    TeamInviteSchema,
+  );
+}
+
+/** List outstanding invites for a team (admin+). */
+export async function listInvites(teamId: string): Promise<TeamInvite[]> {
+  return fetchJson<TeamInvite[]>(`/teams/${encodeURIComponent(teamId)}/invites`);
+}
+
+/** Revoke an invite (admin+). */
+export async function revokeInvite(teamId: string, inviteId: string): Promise<void> {
+  await fetchJson(`/teams/${encodeURIComponent(teamId)}/invites/${encodeURIComponent(inviteId)}`, { method: 'DELETE' });
+}
+
+/** Fetch invite metadata (no auth required). */
+export async function getInvite(token: string): Promise<TeamInvite> {
+  return fetchJson(`/invites/${encodeURIComponent(token)}`, undefined, TeamInviteSchema);
+}
+
+/** Accept an invite (must be authenticated). */
+export async function acceptInvite(token: string): Promise<void> {
+  await fetchJson(`/invites/${encodeURIComponent(token)}/accept`, { method: 'POST' });
+}
+
+/** Update the current user's profile (display name). */
+export async function updateMyProfile(req: UpdateUserRequest): Promise<User> {
+  const res = await fetchJson(
+    '/auth/me',
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(req) },
+    z.object({ user: UserSchema }),
+  );
+  return res.user;
+}
+
+/** Change the current user's password. currentPassword is verified server-side. */
+export async function updateMyPassword(req: UpdatePasswordRequest): Promise<void> {
+  await fetchJson('/auth/me/password', { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(req) });
 }

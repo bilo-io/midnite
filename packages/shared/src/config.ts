@@ -44,6 +44,11 @@ export const AgentConfigSchema = z.object({
   // scheduler skips a task whose repo is already at this cap and picks the next
   // eligible one instead. Repo-less tasks are never capped.
   maxPerRepo: z.number().int().nonnegative().default(0),
+  // Max concurrent agent slots a single user may occupy at once.
+  // 0 = unlimited (default). When set, the scheduler skips tasks whose owner
+  // is already at this cap; the task retries on the next tick. Tasks without
+  // a createdBy (legacy static-token path) are never capped.
+  perUserMaxSlots: z.number().int().nonnegative().default(0),
 });
 
 export const TerminalConfigSchema = z.object({
