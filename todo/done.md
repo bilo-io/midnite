@@ -4,6 +4,13 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 23 A1 complete: ApprovalRule model + storage + CRUD API (PR #185)
+
+- [x] `ApprovalRule` zod schema in `@midnite/shared` (`effect: allow|deny`, `toolName`, optional `match: { commandPrefix, pathGlob }`, `scope: global`, `note`); `CreateApprovalRuleSchema` / `UpdateApprovalRuleSchema`; 7 unit tests
+- [x] `approval_rules` SQLite table (migration `0044_approval_rules`) + `ApprovalsRepository` (list/listEnabled/listEnabledForTool/get/insert/update/remove); 10 integration tests
+- [x] `ApprovalsService` maps DB rows ↔ domain types; `ApprovalsController` at `GET/POST/PATCH/DELETE /approvals/rules`; `ApprovalsModule` registered in `AppModule`
+- [x] Phase 23 A1 marked ✅ DONE
+
 ## 2026-06-24 — Phase 10 E1 complete: Storybook screenshot capture (PR #184)
 
 - [x] `e2e/screenshots/storybook.shots.ts` — new Playwright spec that discovers all stories via `/index.json`, captures each in light and dark (`?globals=theme:<theme>`), outputs to `e2e/__shots__/stories/<component>/<story>-<theme>.png`

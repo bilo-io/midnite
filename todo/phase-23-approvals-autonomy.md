@@ -25,9 +25,9 @@
 
 The substrate: decide the safe cases automatically, escalate the rest. Extend the existing allow-list check into a real evaluation step.
 
-### A1. Rule model + storage — **S–M**
-- [ ] An `ApprovalRule` shape in [`@midnite/shared`](../packages/shared/src/) (`approval-rule.ts`): `{ id, enabled, effect: 'allow' | 'deny', toolName (or '*'), match?: { commandPrefix?: string[], pathGlob?: string[] }, scope: 'global', note? }`. zod + tests. (Per-repo scope is **deferred** — Decision §5.)
-- [ ] **DB-backed** `approval_rules` table (forward-only migration, next after [`0029`](../packages/gateway/drizzle/)) + a `ApprovalRulesRepository` (Drizzle only). **Seeded** on first boot from `config.terminal.approvals` defaults; thereafter the **DB is authoritative** (the [Phase 13](phase-13-repos-first-class.md) "config seeds, DB owns" pattern). `GET/POST/PATCH/DELETE /approvals/rules` — thin controller, validate against the shared schema.
+### A1. Rule model + storage — **S–M** — ✅ DONE (2026-06-24, PR #185)
+- [x] `ApprovalRule` shape in [`@midnite/shared`](../packages/shared/src/approval-rule.ts): `{ id, enabled, effect: 'allow'|'deny', toolName (or '*'), match?: { commandPrefix?, pathGlob? }, scope: 'global', note? }`. zod (`CreateApprovalRuleSchema` / `UpdateApprovalRuleSchema`) + 7 tests. (Per-repo scope deferred — Decision §5.)
+- [x] **DB-backed** `approval_rules` table (migration `0044_approval_rules`) + `ApprovalsRepository` (list/listEnabled/listEnabledForTool/get/insert/update/remove; 10 integration tests). `ApprovalsService` + `ApprovalsController` (`GET/POST/PATCH/DELETE /approvals/rules`) + `ApprovalsModule` registered in `AppModule` and exported for downstream slices (A2, B, C).
 
 ### A2. Evaluation step in `requestDecision` — **M**
 - [ ] Before broadcasting to humans, evaluate the rules against `tool_name` + `tool_input` → `auto-allow | auto-deny | escalate`. Replaces/wraps the current per-session `allowList` short-circuit (which stays as the runtime `allow-session` cache layered on top of persisted rules).
