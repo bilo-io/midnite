@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 18 Theme A: CLI task export + doc reconciliation (PR #164)
+
+Closes Phase 18 Theme A. The gateway serializer/route + web `ExportMenu` had already shipped (#128/#159) but the phase doc was never ticked; this lands the deferred CLI consumer (decision 6) and reconciles the doc.
+
+- [x] `cli/index.ts`: `midnite task export <id>` — writes the export-route markdown to stdout, or a file with `-o, --output`
+- [x] `cli/client.ts`: `exportTask(id)` reads the `text/markdown` route as raw text (refactored shared fetch into `fetchOk`); +2 client tests (body, 404)
+- [x] `todo/phase-18-reports-exports.md`: Theme A marked done; decision 6 settled
+- [x] Unblocked pre-existing broken `main` (separate commits): stripped stray `=======` conflict markers in `projects.service.test.ts` (broke `gateway:build`); dropped the invalid `'dead'` terminal-phase check in `watch/Dashboard.tsx` (broke `cli:typecheck`)
+
+> Merged on a green local gate (cli/gateway/shared all pass) — GitHub Actions was billing-blocked account-wide, so CI couldn't run.
+
 ## 2026-06-24 — Phase 29: verification complete (all items confirmed passing)
 
 Phase 29 (Releases & Versioning) is now fully ✅:
