@@ -67,6 +67,11 @@ export class CornerOfficeScene extends Phaser.Scene {
     const worldH = ROWS * TILE;
     this.physics.world.setBounds(0, 0, worldW, worldH);
     this.cameras.main.setBackgroundColor(this.palette.background);
+    // Zoom the corner-office to fill the canvas, then centre the camera on the room.
+    const zoom = Math.min(this.scale.width / worldW, this.scale.height / worldH);
+    this.cameras.main.setZoom(zoom);
+    this.cameras.main.centerOn(worldW / 2, worldH / 2);
+    this.cameras.main.fadeIn(200, 0, 0, 0);
 
     this.buildRoom(worldW, worldH);
     this.buildDeskArea();
@@ -102,7 +107,8 @@ export class CornerOfficeScene extends Phaser.Scene {
       }
       // HUD "Back to Office" button sets currentScene to 'office' — honour it.
       if (state.currentScene === 'office' && prev.currentScene === 'corner') {
-        this.scene.start('office');
+        this.cameras.main.fadeOut(200, 0, 0, 0);
+        this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('office'));
       }
     });
     this.renderDeskItems(useOfficeStore.getState().deskItems);
@@ -167,7 +173,8 @@ export class CornerOfficeScene extends Phaser.Scene {
   private exitToOffice() {
     useOfficeStore.getState().setNearDoor(false);
     useOfficeStore.getState().setCurrentScene('office');
-    this.scene.start('office');
+    this.cameras.main.fadeOut(200, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('office'));
   }
 
   // ---- room construction ----------------------------------------------------

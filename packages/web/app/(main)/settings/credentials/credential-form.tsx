@@ -31,6 +31,7 @@ const TYPE_FIELDS: Record<WorkflowCredentialType, FieldDef[]> = {
     { key: 'password', label: 'Password', type: 'password', required: true },
     { key: 'from', label: 'From address (optional)', placeholder: 'sender@example.com' },
   ],
+  github: [{ key: 'token', label: 'Personal access token', type: 'password', placeholder: 'ghp_…', required: true }],
 };
 
 export function CredentialForm({ types, typeLabels, onSave, onCancel }: Props) {

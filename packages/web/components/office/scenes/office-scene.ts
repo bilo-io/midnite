@@ -62,6 +62,9 @@ const TILE = OFFICE_TILE;
 const COLS = OFFICE_COLS;
 const ROWS = OFFICE_ROWS;
 const PLAYER_SPEED = 150;
+/** Camera zoom — the player sees a 2/3-sized slice of the world at once; the camera
+ *  follows them through the full 34×22 tile map. */
+const ZOOM = 1.5;
 /** How close (px) the player must be to a desk/board to "reach" it. */
 const PROXIMITY = TILE * 1.6;
 /** How close (px) the player must be for an agent's nameplate to appear. */
@@ -240,6 +243,12 @@ class OfficeScene extends Phaser.Scene {
       .setDepth(9);
 
     this.buildVignette(worldW, worldH);
+
+    // Camera follow (A2): zoom in so the player navigates through the full map.
+    this.cameras.main.setBounds(0, 0, worldW, worldH);
+    this.cameras.main.setZoom(ZOOM);
+    this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
+    this.cameras.main.fadeIn(200, 0, 0, 0);
 
     this.cursors = this.input.keyboard!.createCursorKeys();
     this.wasd = this.input.keyboard!.addKeys({
@@ -1014,7 +1023,8 @@ class OfficeScene extends Phaser.Scene {
     if (this.nearDoorFlag) {
       useOfficeStore.getState().setNearDoor(false);
       useOfficeStore.getState().setCurrentScene('corner');
-      this.scene.start('corner-office');
+      this.cameras.main.fadeOut(200, 0, 0, 0);
+      this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('corner-office'));
       return;
     }
     if (this.lastNearby) useOfficeStore.getState().open(this.lastNearby);
@@ -1295,27 +1305,31 @@ class OfficeScene extends Phaser.Scene {
   }
 
   private buildVignette(worldW: number, worldH: number) {
+    // Viewport size at the current zoom level — vignette is pinned to the camera
+    // (scrollFactor 0) so it always covers the visible area regardless of scroll.
+    const viewW = Math.round(worldW / ZOOM);
+    const viewH = Math.round(worldH / ZOOM);
     const key = 'office-vignette';
     if (!this.textures.exists(key)) {
-      const canvas = this.textures.createCanvas(key, worldW, worldH);
+      const canvas = this.textures.createCanvas(key, viewW, viewH);
       const ctx = canvas?.getContext();
       if (ctx) {
         const grd = ctx.createRadialGradient(
-          worldW / 2,
-          worldH / 2,
-          Math.min(worldW, worldH) * 0.28,
-          worldW / 2,
-          worldH / 2,
-          Math.max(worldW, worldH) * 0.62,
+          viewW / 2,
+          viewH / 2,
+          Math.min(viewW, viewH) * 0.28,
+          viewW / 2,
+          viewH / 2,
+          Math.max(viewW, viewH) * 0.62,
         );
         grd.addColorStop(0, 'rgba(0,0,0,0)');
         grd.addColorStop(1, 'rgba(0,0,0,0.3)');
         ctx.fillStyle = grd;
-        ctx.fillRect(0, 0, worldW, worldH);
+        ctx.fillRect(0, 0, viewW, viewH);
         canvas?.refresh();
       }
     }
-    this.add.image(worldW / 2, worldH / 2, key).setDepth(40);
+    this.add.image(viewW / 2, viewH / 2, key).setDepth(40).setScrollFactor(0);
   }
 }
 
