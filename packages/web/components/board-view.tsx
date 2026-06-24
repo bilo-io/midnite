@@ -3,7 +3,8 @@
 import {
   DndContext,
   DragOverlay,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useDraggable,
   useDroppable,
   useSensor,
@@ -17,8 +18,10 @@ import { createPortal } from 'react-dom';
 import type { Status, Task } from '@midnite/shared';
 import { AbandonedRow } from '@/components/abandoned-row';
 import { SelectableIcon } from '@/components/selectable-icon';
+import { TapToMoveMenu } from '@/components/tap-to-move-menu';
 import { TaskCard, type ProjectTagInfo } from '@/components/task-card';
-import { type TaskViewProps, groupByStatus } from '@/components/task-columns';
+import { type ColumnDef, type TaskViewProps, groupByStatus } from '@/components/task-columns';
+import { useIsMobile } from '@/hooks/use-media-query';
 import { cn } from '@/lib/utils';
 
 /**
@@ -52,9 +55,17 @@ export function BoardView({
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  // A small activation distance lets a plain click still reach the card's button
-  // (open the modal) while a deliberate drag starts only after the pointer moves.
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+  const isMobile = useIsMobile();
+
+  // Split mouse vs. touch so each gets the right activation (Phase 24 Theme B):
+  // - Mouse: a 6px distance — a plain click still reaches the card button (open
+  //   the modal) while a deliberate drag starts after the pointer moves.
+  // - Touch: a press-and-hold delay so a *plain swipe scrolls* the board and only
+  //   a held press starts a drag. The tap-to-move menu is the guaranteed fallback.
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
+  );
 
   const onDragStart = (event: DragStartEvent) => {
     setActiveId(String(event.active.id));
@@ -96,6 +107,9 @@ export function BoardView({
                 selected={isSelected?.(t.id) ?? false}
                 onToggleSelect={onToggleSelect ? (sk) => onToggleSelect(t.id, sk) : undefined}
                 blockedBy={blockedCounts?.get(t.id)}
+                // On a phone, drag is finicky — offer the tap-to-move fallback.
+                moveColumns={isMobile && onMove ? columns : undefined}
+                onMoveTo={onMove ? (target) => onMove(t.id, target) : undefined}
               />
             ))}
           </Column>
@@ -202,6 +216,8 @@ function DraggableCard({
   selected = false,
   onToggleSelect,
   blockedBy,
+  moveColumns,
+  onMoveTo,
 }: {
   task: Task;
   project?: ProjectTagInfo;
@@ -211,6 +227,9 @@ function DraggableCard({
   selected?: boolean;
   onToggleSelect?: (shiftKey: boolean) => void;
   blockedBy?: number;
+  /** When set (touch widths), render the tap-to-move fallback over these columns. */
+  moveColumns?: ColumnDef[];
+  onMoveTo?: (target: Status) => void;
 }) {
   const { setNodeRef, listeners, attributes, isDragging } = useDraggable({
     id: task.id,
@@ -246,7 +265,11 @@ function DraggableCard({
         </span>
       ) : null}
       <TaskCard task={task} project={project} onSelect={onSelect} blockedBy={blockedBy} />
-      {canStart && onStart ? (
+      {moveColumns && onMoveTo ? (
+        // Touch fallback supersedes the hover-only Start/Stop (a phone has no
+        // hover); moving to wip/todo via the menu runs the same spawn/restatus.
+        <TapToMoveMenu currentStatus={task.status} columns={moveColumns} onMove={onMoveTo} />
+      ) : canStart && onStart ? (
         <CardActionButton
           onClick={onStart}
           label="Start task"
