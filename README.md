@@ -359,6 +359,21 @@ pnpm moon run cli:build         # tsc -b → packages/cli/dist/index.js
 
 Prefer `moon run <project>:<task>` over invoking `pnpm`/`tsc`/`vitest` directly — moon's affected-detection and caching only work through it.
 
+### Visual regression baselines
+
+Playwright's `toHaveScreenshot` baselines live in `packages/web/e2e/__screenshots__/` and are OS-pinned. **Regenerate them on Linux** (so they match the CI `ubuntu-latest` runner) via Docker:
+
+```sh
+cd packages/web
+docker run --rm --ipc=host --platform linux/amd64 \
+  -v "$(pwd)":/work -w /work/packages/web \
+  mcr.microsoft.com/playwright:v1.61.0-jammy \
+  bash -c "npm i -g pnpm@10 && pnpm install --frozen-lockfile && \
+    pnpm exec playwright test --project=screenshots --update-snapshots"
+```
+
+Commit the updated PNGs in the same PR as the UI change. Run `moon run web:screenshots` locally to verify against the committed baselines.
+
 ## Where to go next
 
 - **Designing a change?** Read [`docs/INITIAL_PLAN.md`](docs/INITIAL_PLAN.md) first.

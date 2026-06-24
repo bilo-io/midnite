@@ -115,8 +115,9 @@
 
 ### E2. Visual baseline & diff — **M** — ✅ DONE (PR #177, 2026-06-24)
 - [x] `toHaveScreenshot` assertions added to `pages.shots.ts` — each page capture is pixel-asserted against committed baselines in `e2e/__screenshots__/`; a diff image is emitted on failure.
-- [x] 10 macOS baselines committed (board, dashboard, workflows, councils, office × light/dark). Docker command documented in the spec for regenerating Linux-compatible baselines when CI billing unblocks.
+- [x] 10 **macOS** baselines committed (board, dashboard, workflows, councils, office × light/dark). Docker command documented in spec + README for regenerating Linux-compatible baselines.
 - [x] `playwright.config.ts` extended: `snapshotDir`, `snapshotPathTemplate`, and `toHaveScreenshot.maxDiffPixelRatio: 0.005`.
+- [ ] ⚠️ **TODO: regenerate baselines on Linux once Docker Desktop is installed.** Current baselines are macOS — the CI `e2e` job runs on `ubuntu-latest` and will fail the visual check until Linux baselines replace them. Run the Docker command from README "Visual regression baselines" section (or `packages/web/e2e/screenshots/pages.shots.ts`) and commit the updated PNGs.
 
 ### E3. PR preview artifacts + gallery — **M**
 - [ ] CI uploads the screenshots (and any diffs) as **build artifacts** on every PR, and **deploys/uploads the static Storybook** (`build-storybook` already exists) so reviewers can browse components for the branch.
