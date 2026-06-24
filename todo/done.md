@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 33 A1–A4 complete: User identity + JWT auth
+
+- [x] `users` table + migration `0045_users`; `refresh_tokens` table + migration `0046_refresh_tokens`
+- [x] `UsersRepository` + `UsersService` (bcrypt 12 rounds, email lowercased, timing-safe compare); 9 unit tests
+- [x] `shared` `User` / `CreateUserRequest` / `LoginRequest` / `AuthResponse` zod schemas in `packages/shared/src/user.ts`
+- [x] `JwtService`: HS256 access tokens (15 min) + hashed refresh tokens (7 day); `RefreshTokensRepository`; 6 unit tests
+- [x] `GatewayAuthConfigSchema` extended with `jwt.secretEnv` / `jwt.accessTtlSeconds` / `jwt.refreshTtlDays`
+- [x] `AuthController`: `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`, `GET /auth/me`
+- [x] `GatewayAuthGuard` upgraded: JWT-first verification, static bearer fallback preserved; `@CurrentUser()` param decorator
+- [x] Phase 33 A1–A4 marked ✅ DONE (WS `?token=` query param deferred to A4 remainder)
+
 ## 2026-06-24 — Phase 23 A1 complete: ApprovalRule model + storage + CRUD API (PR #185)
 
 - [x] `ApprovalRule` zod schema in `@midnite/shared` (`effect: allow|deny`, `toolName`, optional `match: { commandPrefix, pathGlob }`, `scope: global`, `note`); `CreateApprovalRuleSchema` / `UpdateApprovalRuleSchema`; 7 unit tests
