@@ -4,6 +4,19 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 34: bundle analyzer, optimized imports, dynamic code-split
+
+Tooling + performance track — no behaviour or API changes.
+
+- [x] **A1**: `@next/bundle-analyzer` installed + `next.config.mjs` wrapped; `web:bundle-report` moon task added
+- [x] **B1**: `experimental.optimizePackageImports: ['lucide-react', 'recharts', '@midnite/ui']` in `next.config.mjs`
+- [x] **C (partial)**: Dynamic imports for `DashboardGrid` (recharts + react-grid-layout deferred) and `WorkflowEditor` (@xyflow/react deferred); wavesurfer.js left as static (already scoped to the audio view only)
+- [x] **D1**: `.gitignore` — added `.next/`, `out/`, `*.tsbuildinfo`, `.turbo/`
+- [x] **D2**: Root `clean` moon task + `web:clean`; `pnpm.overrides` for `@types/react` in root `package.json`
+- [x] Bug fixes: Drizzle migration journal entry for `0040_fix_attempts`; `node-config-panel.test.tsx` wrapped in `QueryClientProvider`; `ToastProvider` added to Storybook global decorator; optional-chain touch events in `pull-to-refresh.tsx`
+
+---
+
 ## 2026-06-24 — Phase 27 verification: task dependencies suite green
 
 All four implementation themes (A–D, PRs #106 #109 #113 #114) were already merged. Closed out the verification checklist: confirmed A→B→C chain ordering, priority-blocked scheduling, cycle/self-ref/delete integrity, abandoned-blocker hold policy, manual-start warning, and CLI `--depends-on` via existing specs. Fixed pre-existing typecheck failures across the graph (`stories/fixtures.ts` missing `fixAttempts`, `test-query-wrapper.tsx` React 19 type mismatch, `breakdown-editor.test.tsx`/`plan-panel.test.tsx` array-index narrowing, `office-scene.ts` truncate arity, credential-form `types[0]!`, `page.tsx` `description` rename) and corrected a wrong `spawnAgentSession` assertion in `agent-runner.service.test.ts`. Result: 906 gateway + 505 web tests pass; typecheck clean across shared/gateway/cli/web.
