@@ -22,6 +22,9 @@ export const tasks = sqliteTable(
     priority: integer('priority').notNull().default(1),
     // Auto-retries consumed after unexpected agent-session exits (crashes).
     retryCount: integer('retry_count').notNull().default(0),
+    // Auto-fix attempts consumed re-spawning the agent to fix a failing gate.
+    // Independent of retryCount — budget exhaustion is attributable per axis.
+    fixAttempts: integer('fix_attempts').notNull().default(0),
     prompt: text('prompt'),
     repo: text('repo'),
     agentId: text('agent_id'),
