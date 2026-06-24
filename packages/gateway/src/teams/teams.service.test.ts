@@ -116,4 +116,54 @@ describe('TeamsService', () => {
     svc.deleteTeam(team.id, 'owner');
     expect(() => svc.getTeam(team.id)).toThrow(TeamDoesNotExistError);
   });
+
+  // --- Role management (Phase 35 B verification) ---
+
+  it('member cannot change another member role', () => {
+    const team = svc.createTeam({ name: 'T', slug: 'roles-1' }, 'owner');
+    const repo = (svc as unknown as { repo: TeamsRepository }).repo;
+    const now = new Date().toISOString();
+    repo.insertMember({ teamId: team.id, userId: 'member-caller', role: 'member', joinedAt: now });
+    repo.insertMember({ teamId: team.id, userId: 'member-target', role: 'member', joinedAt: now });
+    expect(() => svc.setMemberRole(team.id, 'member-target', 'viewer', 'member-caller')).toThrow(
+      InsufficientTeamRoleError,
+    );
+  });
+
+  it('admin can change a member role', () => {
+    const team = svc.createTeam({ name: 'T', slug: 'roles-2' }, 'owner');
+    const repo = (svc as unknown as { repo: TeamsRepository }).repo;
+    const now = new Date().toISOString();
+    repo.insertMember({ teamId: team.id, userId: 'admin-caller', role: 'admin', joinedAt: now });
+    repo.insertMember({ teamId: team.id, userId: 'member-target', role: 'member', joinedAt: now });
+    svc.setMemberRole(team.id, 'member-target', 'viewer', 'admin-caller');
+    expect(svc.getMembership(team.id, 'member-target')).toBe('viewer');
+  });
+
+  it('admin cannot promote a member to owner (beyond own role)', () => {
+    const team = svc.createTeam({ name: 'T', slug: 'roles-3' }, 'owner');
+    const repo = (svc as unknown as { repo: TeamsRepository }).repo;
+    const now = new Date().toISOString();
+    repo.insertMember({ teamId: team.id, userId: 'admin-caller', role: 'admin', joinedAt: now });
+    repo.insertMember({ teamId: team.id, userId: 'member-target', role: 'member', joinedAt: now });
+    expect(() => svc.setMemberRole(team.id, 'member-target', 'owner', 'admin-caller')).toThrow(
+      InsufficientTeamRoleError,
+    );
+  });
+
+  it('owner can promote a member to owner', () => {
+    const team = svc.createTeam({ name: 'T', slug: 'roles-4' }, 'owner');
+    const repo = (svc as unknown as { repo: TeamsRepository }).repo;
+    repo.insertMember({ teamId: team.id, userId: 'member-target', role: 'member', joinedAt: new Date().toISOString() });
+    svc.setMemberRole(team.id, 'member-target', 'owner', 'owner');
+    expect(svc.getMembership(team.id, 'member-target')).toBe('owner');
+  });
+
+  it('owner can demote an admin', () => {
+    const team = svc.createTeam({ name: 'T', slug: 'roles-5' }, 'owner');
+    const repo = (svc as unknown as { repo: TeamsRepository }).repo;
+    repo.insertMember({ teamId: team.id, userId: 'admin-target', role: 'admin', joinedAt: new Date().toISOString() });
+    svc.setMemberRole(team.id, 'admin-target', 'member', 'owner');
+    expect(svc.getMembership(team.id, 'admin-target')).toBe('member');
+  });
 });
