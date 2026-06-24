@@ -25,6 +25,24 @@ export interface OfficeAgent {
   taskStatus?: Status;
   /** One-liner of what they're up to. */
   activity: string;
+  /**
+   * Live activity patch from `agent.activity` WS events (Phase 31 C/D).
+   * Absent until the first event; cleared on idle/stop.
+   */
+  liveActivity?: {
+    phase: 'running' | 'blocked' | 'idle';
+    tool?: string;
+    label?: string;
+  };
+  /**
+   * Set when the agent needs user input (`agent.attention` event, Phase 31 D).
+   * Drives the orange pulse in the scene and the HUD badge.
+   * Cleared when the agent resumes (next activity with phase 'running'/'idle').
+   */
+  attention?: {
+    reason: 'approval' | 'waiting';
+    summary?: string;
+  };
   /** The underlying session — used to open the live terminal / transcript. */
   session: SessionSummary;
 }
