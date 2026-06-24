@@ -255,12 +255,12 @@ export class AgentRunnerService implements OnModuleInit {
 
     // Gate failed — try auto-fix if enabled and the budget hasn't been exhausted.
     const autoFix = this.config.checks.autoFix;
-    const task = this.tasks.getTask(taskId);
-    if (autoFix.enabled && task.fixAttempts < autoFix.maxAttempts) {
+    const taskAfterGate = this.tasks.getTask(taskId);
+    if (autoFix.enabled && taskAfterGate.fixAttempts < autoFix.maxAttempts) {
       this.tasks.incrementFixAttempts(taskId);
       this.tasks.recordCheckEvent(taskId, 'checks.fix.started');
       this.logger.log(
-        `auto-fix attempt ${task.fixAttempts + 1}/${autoFix.maxAttempts} for task ${taskId}`,
+        `auto-fix attempt ${taskAfterGate.fixAttempts + 1}/${autoFix.maxAttempts} for task ${taskId}`,
       );
 
       const fixPrompt = buildFixPrompt(prUrl, run.results);
@@ -291,10 +291,10 @@ export class AgentRunnerService implements OnModuleInit {
     }
 
     // Auto-fix disabled or budget exhausted.
-    if (autoFix.enabled && task.fixAttempts >= autoFix.maxAttempts) {
+    if (autoFix.enabled && taskAfterGate.fixAttempts >= autoFix.maxAttempts) {
       this.tasks.recordCheckEvent(taskId, 'checks.fix.exhausted');
       this.logger.warn(
-        `auto-fix budget exhausted (${task.fixAttempts}/${autoFix.maxAttempts}) for task ${taskId}`,
+        `auto-fix budget exhausted (${taskAfterGate.fixAttempts}/${autoFix.maxAttempts}) for task ${taskId}`,
       );
     }
     this.tasks.markWaiting(taskId);

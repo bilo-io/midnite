@@ -14,7 +14,7 @@ function pr(overrides: Partial<PrStatus> = {}): PrStatus {
 }
 
 function task(prStatus?: PrStatus): Task {
-  return { id: 't', title: 'T', status: 'wip', priority: 1, retryCount: 0, tags: [], events: [], prStatus };
+  return { id: 't', title: 'T', status: 'wip', priority: 1, retryCount: 0, fixAttempts: 0, tags: [], events: [], prStatus };
 }
 
 describe('deliveryState', () => {

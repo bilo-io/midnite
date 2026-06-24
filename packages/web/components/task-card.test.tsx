@@ -11,7 +11,7 @@ const baseTask: Task = {
   title: 'What is a closure?',
   status: 'done',
   priority: 1,
-  retryCount: 0,
+  retryCount: 0, fixAttempts: 0,
   tags: [],
   events: [],
 };
