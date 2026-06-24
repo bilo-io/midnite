@@ -6,6 +6,7 @@ import { ConfirmProvider } from '@/components/confirm-dialog';
 import { PwaRegister } from '@/components/pwa-register';
 import { ToastProvider } from '@/components/toast';
 import { ThemeProvider } from './theme/theme-context';
+import { AuthProvider } from '@/contexts/auth-context';
 import { themeInitScript } from './theme/theme-script';
 
 // Display fonts trialled for the "midnite" wordmark. Each is exposed as its own
@@ -126,9 +127,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="min-h-screen bg-background text-foreground">
         <PwaRegister />
         <ThemeProvider>
-          <ToastProvider>
-            <ConfirmProvider>{children}</ConfirmProvider>
-          </ToastProvider>
+          <AuthProvider>
+            <ToastProvider>
+              <ConfirmProvider>{children}</ConfirmProvider>
+            </ToastProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
