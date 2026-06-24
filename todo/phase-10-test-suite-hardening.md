@@ -119,9 +119,10 @@
 - [x] `playwright.config.ts` extended: `snapshotDir`, `snapshotPathTemplate`, and `toHaveScreenshot.maxDiffPixelRatio: 0.005`.
 - [ ] ⚠️ **TODO: regenerate baselines on Linux once Docker Desktop is installed.** Current baselines are macOS — the CI `e2e` job runs on `ubuntu-latest` and will fail the visual check until Linux baselines replace them. Run the Docker command from README "Visual regression baselines" section (or `packages/web/e2e/screenshots/pages.shots.ts`) and commit the updated PNGs.
 
-### E3. PR preview artifacts + gallery — **M**
-- [ ] CI uploads the screenshots (and any diffs) as **build artifacts** on every PR, and **deploys/uploads the static Storybook** (`build-storybook` already exists) so reviewers can browse components for the branch.
-- [ ] A small **index/gallery** (a generated `screenshots.html` or markdown manifest of captured images, grouped by page/component) so a phase's visual delta is browsable in one place. This is what Stage 7 of `execute-phase` links to. (A hosted Chromatic-style service is an optional upgrade — Decisions §4.)
+### E3. PR preview artifacts + gallery — **M** — ✅ DONE (PR #186, 2026-06-24)
+- [x] `packages/web/scripts/generate-gallery.mjs` — gallery generator (plain ESM, no deps) walks `e2e/__shots__/`, groups pages vs. stories, produces `gallery.html` (dark-themed, relative image refs) and `SCREENSHOTS.md` (markdown manifest grouped by page/component).
+- [x] `.github/workflows/preview.yml` — `gallery` job: captures `web:screenshots`, runs gallery gen, uploads whole `__shots__/` dir as 14-day artifact. `storybook` job: builds Storybook, deploys to `gh-pages` branch under `/pr-<N>/` per PR (or `/main/` on main push), posts a preview URL comment; `cleanup` job removes the subdirectory on PR close. All jobs `continue-on-error: true` — never blocks a merge.
+- ⚠️ **GitHub Pages prerequisite:** the Storybook deploy requires Pages enabled + configured for the `gh-pages` branch. The workflow is in place; activate when ready.
 
 ---
 
@@ -137,8 +138,9 @@
 - [x] `test-coverage` moon tasks added to both packages (`runInCI: false`); CI `coverage` job invokes them with `--force`.
 - [x] Reporters: `text` (CI summary) + `json-summary` + `lcov` → uploaded as artifacts (14 days).
 
-### F3. Docs — **S**
-- [ ] A `docs/TESTING.md` (or a section in the root README): the four layers, how to run each (`moon run :test`, `web:e2e`, `web:test-stories`, screenshot update), where baselines live, and how to add a test at each layer. Update CLAUDE.md "Testing" to point at it.
+### F3. Docs — **S** — ✅ DONE (PR #186, 2026-06-24)
+- [x] `docs/TESTING.md` — all four layers (shared unit, gateway, Storybook, Playwright flows + visual), run commands, baseline update instructions (macOS + Docker/Linux), and a cheatsheet for adding a test at each layer.
+- [x] `CLAUDE.md` "Testing" section updated: summary table with layer → command → scope, link to `docs/TESTING.md`, Storybook-as-tests and `.git/worktrees` gotcha added.
 
 ---
 

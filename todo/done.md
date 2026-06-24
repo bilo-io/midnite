@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 10 E3+F3 complete: gallery generator, Storybook GH Pages preview, docs/TESTING.md (PR #186)
+
+- [x] `packages/web/scripts/generate-gallery.mjs` — gallery generator: walks `e2e/__shots__/`, groups pages vs. stories/component, writes `gallery.html` (dark-themed, relative image refs) + `SCREENSHOTS.md` (markdown manifest)
+- [x] `.github/workflows/preview.yml` — screenshot capture + gallery artifact upload (14 days) + Storybook deploy to `gh-pages` under `/pr-<N>/`; posts preview URL comment; cleanup on PR close; all jobs `continue-on-error: true`
+- [x] `docs/TESTING.md` — four test layers, run commands, baseline update instructions, cheatsheet for adding tests at each layer
+- [x] `CLAUDE.md` "Testing" section updated with layer table and link to `docs/TESTING.md`
+- [x] Phase 10 E3 and F3 marked ✅ DONE
+
 ## 2026-06-24 — Phase 23 A2 complete: Evaluation engine wired into requestDecision
 
 - [x] `evaluateRules()` pure function (`approvals/lib/rule-evaluator.ts`): first-match-wins with `commandPrefix` (startsWith) + `pathGlob` (inline glob, `*` = non-separator, `**` = anything); 14 tests
