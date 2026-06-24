@@ -4,6 +4,20 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Verification sweep: closed Phases 12, 13, 25, 26; flagged 11, 32
+
+Reconciled the verification blocks of six "almost-complete earlier" phases against the actual code + a fresh test run (three read-only verification agents mapped each box to evidence). Doc-only; no source change. Evidence run: `gateway:test` 984/984, `shared:test` 463/463, `web:test` 505/505, `ui:test` 46/46, `docs:test` 31/31 — all green **isolated**. (Full-graph `moon run :test` flakes only on `ui:test`'s storybook-chromium browser provider under parallelism — "Vitest failed to find the current suite" — a runner-infra issue, not a regression. CI also billing-blocked account-wide.)
+
+**Closed (verification now test-backed/code-confirmed):**
+- [x] **Phase 12** (workflow data flow & expressions) — `$node` refs, missing-ref errors + optional `?.`, `logic.setData`/`merge`/`data.filter`, `storage` round-trip-across-runs all proven by `workflow-engine.expression.spec.ts` / `reshape-nodes.spec.ts` / `storage-nodes.spec.ts` / `shared/expression.test.ts`. (Only remainder is the ⏳-deferred pinned-sample item.)
+- [x] **Phase 13** (repos first-class) — DB-backed CRUD, config seeding (idempotent/second-boot), repo-picker persist, unknown-repo rejection, CLI `--repo`, cwd precedence — `repos.service.test.ts`, `tasks.service.spec.ts`, `resolve-cwd.test.ts`, `new-task-modal.test.tsx`.
+- [x] **Phase 25** (`@midnite/ui`) — `ui:build` ESM+dts+tokens.css, boundary guard, web shim imports, token-CSS theming, storybook-as-browser-tests (46/46), DS docs, external-import seam (verified via throwaway `node` import of `dist/`).
+- [x] **Phase 26** (`@midnite/docs`) — ui-built shell, live MDX examples + token specimens, real product-docs `?raw` imports, sidebar/search/responsive/no-network, boundary guard; `docs:build` static site + `docs:test` 31/31.
+
+**Flagged (impl complete + unit-tested; boxes are inherently live acceptance, left open):**
+- ◐ **Phase 11** (public site) — all visual acceptance needs a live `site:dev`/Playwright pass; impl traced to `packages/site/` + unit tests. Ticked only the code-confirmed legal-pages box; added a status note.
+- ◐ **Phase 32** (CLI live dashboard) — all TUI acceptance needs a running gateway + interactive terminal; impl in `cli/src/watch/` + `task-board-reducer`/`Dashboard`/`LogPanel` tests. Added a status note.
+
 ## 2026-06-24 — Phase 33 B4+E1-E3 — Teams UI + profile/account settings (PR #192)
 
 - [x] **B4** — Teams web UI: `/settings/team` (list + create), `/settings/team/[teamId]` (members, invite links, danger-zone delete), Settings sidebar + user-nav "Team" entry

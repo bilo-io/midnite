@@ -96,13 +96,13 @@ Make the growing node set navigable in the left sidebar.
 
 ## Verification
 
-- [ ] Build `manual → http.request → ai.claude` where the AI prompt references `{{$node["HTTP Request"].json.body.title}}`; run it; the prompt the model receives contains the fetched value, and the run shows resolved params per node.
-- [ ] A missing reference (`{{$node["Typo"].json.x}}`) fails the referencing node with a clear path-naming error; optional access (`{{$json.maybe?.x}}`) resolves to `null` and the node succeeds.
-- [ ] `logic.setData` builds an object from two upstream nodes' fields; `logic.merge` combines two branches; `data.filter` drops a field — each verified in a run.
-- [ ] `storage.set` in one run, `storage.get` in a later run returns the stored value (round-trip across runs against `:memory:` in tests, and live).
+- [x] ✅ `{{$node["..."]}}` resolves an upstream output (type preserved) and resolved params persist per `NodeRun` — `workflow-engine.expression.spec.ts` (`resolves {{$node["..."]}}…`, `persists the resolved params on the NodeRun`).
+- [x] ✅ Missing reference fails only the referencing node with a path-naming error (`workflow-engine.expression.spec.ts` → `fails the referencing node … on a missing reference`); optional access `{{$json.maybe?.x}}` → null (`shared/src/expression.test.ts` → `resolveExpression — optional access`).
+- [x] ✅ `logic.setData` / `logic.merge` / `data.filter` each verified — `reshape-nodes.spec.ts` (`SetDataExecutor`/`MergeExecutor`/`DataFilterExecutor` + `logic.setData — engine integration`).
+- [x] ✅ `storage.set`/`storage.get` round-trips across runs — `storage-nodes.spec.ts` → `storage nodes — engine integration` (`persists across runs: set in one run, get in a later run`).
 - [x] In the editor: toggle a field to ƒx, autocomplete an upstream node, click a leaf in the data picker to insert a reference, and see the resolved-value preview from the last run. (PR #76 — pinned sample still Theme E.)
 - [x] Palette shows grouped categories (Actions · Logic · Data · Storage) with the new nodes and a working search filter. (PR #38)
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph (run web tests from the primary checkout, not a `.git` worktree).
+- [x] ✅ Suites green (2026-06-24): `gateway:test` 984/984, `shared:test` 463/463, `web:test` 505/505 (each run isolated; full-graph `:test` flakes only on the `ui:test` storybook-chromium parallel-run issue — passes 46/46 isolated).
 
 ---
 

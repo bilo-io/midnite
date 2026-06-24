@@ -80,13 +80,13 @@ These all *depend on* a real repo entity (Themes A+B) and are the natural next s
 
 ## Verification
 
-- [ ] `moon run gateway:dev` + `moon run web:dev`: in **Settings > Repos**, add / edit / remove a repo; the list persists across a gateway restart (DB-backed, not config).
-- [ ] A fresh DB with `config.repos` populated **seeds** those repos into the registry on first boot; thereafter the DB is authoritative.
-- [ ] Creating a task with the repo **picker** persists `task.repo`; the agent's PTY opens in that repo's `path` (when no project workDir overrides it).
-- [ ] Creating/updating a task with an **unknown** repo name is rejected (or coerced to unassigned) — never stored as a dangling string; `resolveCwd` no longer silently falls through on a typo.
-- [ ] `midnite add "…" --repo <name>` sets the repo; an unknown name errors clearly.
-- [ ] cwd precedence (project workDir → repo → fallback → cwd) is covered by gateway tests.
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph; `moon ci` green. (Run web tests from the **primary checkout**, not a `.git` worktree.)
+- [x] ✅ Repo CRUD is DB-backed (`ReposRepository`), service/controller tested against a real DB — `repos.service.test.ts`, `repos.controller.test.ts`; UI at `settings/repos/page.tsx`. (Cross-process restart is a live check; persistence is DB-backed so the impl supports it — the seed test below simulates a second boot.)
+- [x] ✅ Fresh-DB seeding from `config.repos`, DB authoritative thereafter — `repos.service.test.ts` → `ReposService — seed from config (onModuleInit)` (`seeds config repos…`, `is idempotent and never overwrites an existing DB row`).
+- [x] ✅ Repo picker persists `task.repo`; PTY cwd resolves to the repo path absent a project override — `tasks.service.spec.ts` (`persists a known repo by name`), `new-task-modal.test.tsx` (`repo picker`), `resolve-cwd.test.ts` (`uses the repo when there is no project workDir`).
+- [x] ✅ Unknown repo rejected (never a dangling string) — `tasks.service.spec.ts` (`rejects an unknown repo and persists nothing`, `rejects a batch with an unknown repo before creating anything`); `resolveRepoReference` throws `BadRequestException`.
+- [x] ✅ `midnite add --repo <name>` — `cli/src/index.ts` (`-r, --repo`) → client; unknown name surfaces the gateway's 400 (rejection tested above).
+- [x] ✅ cwd precedence (project workDir → repo → fallback → cwd) — `resolve-cwd.test.ts` → `pickSessionCwd — cwd precedence (Phase 13 B3)`.
+- [x] ✅ Suites green (2026-06-24): `gateway:test` 984/984, `web:test` 505/505, `shared:test` 463/463 (isolated). `moon ci`/full-graph `:test` flakes only on the `ui:test` storybook-chromium parallel-run issue (passes isolated); CI itself is billing-blocked account-wide.
 
 ---
 

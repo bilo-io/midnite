@@ -81,6 +81,8 @@ Navigation + the single mutation we allow (**Decisions §5** — read-only other
 
 ## Verification
 
+> **Status (2026-06-24 reconciliation):** the implementation is **complete and logic-tested** — `midnite watch` (`cli/src/watch/`) is registered (`index.ts`), enters/leaves the alt-screen cleanly (`q`/Ctrl-C + SIGINT/finally restore via `LEAVE_ALT`), renders board + pool panels, applies incremental WS events (no refetch), streams a selected session's logs (base64-decode + ANSI-strip + 100-line cap), and handles keyboard nav + task moves (`PATCH /tasks/:id/status`). Backed by unit tests: `task-board-reducer.test.ts`, `Dashboard.test.tsx`, `LogPanel.test.tsx`. The unticked boxes are **live TUI acceptance** checks requiring a running gateway + an interactive terminal — left open pending a manual smoke run, not because anything is missing.
+
 - `moon run gateway:dev` (with a couple of tasks/sessions running), then `midnite watch` (via `moon run cli:dev -- watch`):
   - [ ] A full-screen dashboard opens; the **board panel** shows columns and live-updates as tasks are added/moved (in the web UI or via `midnite add`/`move`) **without** a manual refresh.
   - [ ] The **pool panel** shows agent slots (idle/busy · task · pid) and tracks spawns/exits.
