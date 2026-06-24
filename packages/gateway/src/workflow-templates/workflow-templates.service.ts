@@ -19,6 +19,10 @@ const SEED_MODULES: (() => Promise<{ default: WorkflowTemplateSeed }>)[] = [
   () => import('./seeds/notify-on-task-done.seed'),
   () => import('./seeds/webhook-relay.seed'),
   () => import('./seeds/ai-code-review.seed'),
+  () => import('./seeds/github-pr-ready-check.seed'),
+  () => import('./seeds/daily-digest.seed'),
+  () => import('./seeds/ai-task-summariser.seed'),
+  () => import('./seeds/scheduled-task-cleanup.seed'),
 ];
 
 export class TemplateNotFoundError extends Error {}
