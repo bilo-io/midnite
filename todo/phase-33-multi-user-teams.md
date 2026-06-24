@@ -63,10 +63,10 @@ Teams let multiple users share a workspace. A team has a slug, roles (owner / ad
 - [x] `POST /invites/:token/accept` (authenticated): validates expiry, adds user as member, marks `accepted_at`.
 - [x] `GET/DELETE /teams/:id/invites` (admin+): list + revoke outstanding invites.
 
-### B4. Web team UI — **M**
-- [ ] `app/(main)/settings/team/page.tsx` — team switcher dropdown in the nav (current team + "Create team" option); links to team settings.
-- [ ] `app/(main)/settings/team/[teamId]/page.tsx` — team name, member list (avatar + name + role chip), invite member (copy-to-clipboard token link), remove member, change role. Guarded: only admins/owners see management controls.
-- [ ] `app/(auth)/invite/[token]/page.tsx` — invite acceptance page: shows team name + inviting user, "Accept invitation" button (calls `/invites/:token/accept`, then redirects to the board). Works for logged-in users; redirects to login+return if not authenticated.
+### B4. Web team UI — **M** ✅ DONE
+- [x] `app/(main)/settings/team/page.tsx` — team list + inline create-team form (name + auto-slug); links to team settings.
+- [x] `app/(main)/settings/team/[teamId]/page.tsx` — member list with inline role-picker (admin+), remove-member button, invite-token generator with copy link + revoke; danger-zone delete (owner only). Guarded: only admins/owners see management controls.
+- [x] `app/(auth)/invite/[token]/page.tsx` — invite acceptance page: shows role + expiry unauthenticated; "Accept invitation" button for logged-in users; redirects to `/login?return=...` if not authenticated.
 
 ---
 
@@ -116,14 +116,15 @@ Bind task execution to its owner's context and start recording who does what.
 
 The settings surface for identity and team management.
 
-### E1. User profile page — **S**
-- [ ] `app/(main)/settings/profile/page.tsx`: display name + email (read-only); change display name; change password (requires current password, calls `PATCH /users/me/password`); avatar initial/placeholder (no upload in Phase 33 — deferred).
+### E1. User profile page — **S** ✅ DONE
+- [x] `app/(main)/settings/profile/page.tsx`: display name edit + email (read-only) + change password (requires current password, `PATCH /auth/me` + `PATCH /auth/me/password`); avatar deferred.
+- [x] Gateway: `PATCH /auth/me` and `PATCH /auth/me/password` routes wired to `UsersService`.
 
-### E2. Team settings + member management — **S**
-- [ ] `app/(main)/settings/team/[teamId]/page.tsx` (B4 is the team page — merge E2 into B4 rather than splitting across two files): rename team (admin+); "Danger zone" delete-team section (owner only, with confirmation dialog); member list with inline role-picker (admin+) and remove-member button (admin+). New invite-token entry: enter optional email label → generate token → "Copy link" button.
+### E2. Team settings + member management — **S** ✅ DONE (merged into B4)
+- [x] Handled in B4 — team detail page includes rename, danger-zone delete, member management, and invite tokens.
 
-### E3. Invite token acceptance — **S**
-- [ ] Handled by `app/(auth)/invite/[token]/page.tsx` from B4 — Theme E adds an explicit "Invitations" section in the team settings page showing outstanding (unexpired) tokens with the ability to revoke them.
+### E3. Invite token acceptance — **S** ✅ DONE (merged into B4)
+- [x] Outstanding invite tokens shown in team detail page with revoke controls. Invite acceptance page at `/invite/[token]`.
 
 ---
 
