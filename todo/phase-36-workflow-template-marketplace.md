@@ -60,7 +60,7 @@ The core user action: turn a template into a runnable workflow.
 - [x] `GET /workflow-templates/:id/slots` — returns `credentialSlots[]` + which are satisfied by the user's existing credentials (credential type match).
 
 ### B2. `POST /workflows/:id/duplicate` — **S**
-- [ ] Quick fork of an existing workflow — no template involved. Clones graph + trigger, remaps all IDs, appends `" (copy)"` to the name, sets `enabled = false`. Returns the new `Workflow`. Useful for iterating on a working workflow without risking the original. No shared type changes needed — returns existing `Workflow` type.
+- [x] Quick fork of an existing workflow — clones graph with fresh node+edge UUIDs, appends `" (copy)"` to name, sets `enabled = false`. Returns existing `Workflow` type.
 
 ### B3. Provenance column — **S**
 - [x] Add `installed_from_template_id TEXT` (nullable) to `workflows` table (migration 0043). `WorkflowsRepository` includes it in the hydrated `Workflow`; shared `Workflow` type gains `installedFromTemplateId?: string`. No enforcement beyond record-keeping in Phase 36.
@@ -101,7 +101,7 @@ Browse, preview, install, and publish templates from the web app.
 - [ ] Action in the workflow editor toolbar (or overflow menu): opens a sheet/dialog: template name (pre-filled from workflow name), description, category picker, tags input, visibility toggle (personal / team). On submit: calls `POST /workflow-templates` with `definition` extracted from the current workflow graph + `credentialSlots` auto-detected (any node with a `credentialId` becomes a slot, user can label and describe each). Returns to the editor with a success toast linking to the new template.
 
 ### D4. "Duplicate" on workflow cards — **S**
-- [ ] Add a "Duplicate" option to the workflow card's overflow menu (existing grid/list/table views at [`workflows-view.tsx`](../packages/web/app/(main)/workflows/workflows-view.tsx)). Calls `POST /workflows/:id/duplicate`, shows a toast "Workflow duplicated — '<name> (copy)' created", and refreshes the list.
+- [x] `onDuplicate` prop on `WorkflowCard` shows a Copy icon on hover (grid + list). `workflows-view.tsx` calls `duplicateWorkflow()` and refreshes the list.
 
 ### E — CLI template commands — **S**
 

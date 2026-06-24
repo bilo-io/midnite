@@ -4,6 +4,13 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 36 B2+D4 — Workflow duplicate endpoint + card button (PR #181)
+
+- [x] `POST /workflows/:id/duplicate` — clones graph with fresh UUIDs, `enabled=false`, name `"(copy)"`
+- [x] `duplicateWorkflow()` in web API lib
+- [x] `onDuplicate` prop on `WorkflowCard` (grid + list layouts) shows Copy icon on hover
+- [x] `workflows-view.tsx` wires duplicate to refresh
+
 ## 2026-06-24 — Phase 37 C2 — GitHub webhook UI on repo settings (PR #180)
 
 - [x] `ownerRepo` input added to repo create and edit forms (Settings → Repos)
