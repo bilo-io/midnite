@@ -54,20 +54,11 @@ The building blocks. Everything in themes B–D depends on these executors exist
 A ready-to-install template that wires A's executors into a complete review flow. Seeds into the Phase 36 template store.
 
 ### B1. Template definition — **S**
-- [ ] New seed file [`workflow-templates/seeds/ai-code-review.seed.ts`](../packages/gateway/src/workflow-templates/seeds/ai-code-review.seed.ts). Template slug: `ai-code-review`. Category: `github`. Tags: `["code-review", "github", "ai"]`.
-- [ ] **Node graph:**
-  1. `trigger.webhook` — receives `push`/`pull_request` events from GitHub.
-  2. `logic.if` — condition `{{ $trigger.action === 'opened' || $trigger.action === 'synchronize' }}` — exits the `false` branch silently (no review on unrelated events).
-  3. `github.get-pr` — `prUrl: "{{ $trigger.pull_request.html_url }}"`, `credentialId: "slot:github-token"`.
-  4. `github.get-diff` — `prUrl: "{{ $trigger.pull_request.html_url }}"`, `maxTokens: 8000`, `credentialId: "slot:github-token"`.
-  5. `ai.claude` — `model: "claude-sonnet-4-6"`, `system: "You are a senior software engineer performing a code review. Be concise, specific, and constructive."`, `prompt: "PR: {{ $3.title }}\nAuthor: {{ $3.author }}\nDescription:\n{{ $3.body }}\n\nDiff:\n{{ $4.diff }}\n\nReview this PR. Start with a one-sentence verdict (LGTM / minor issues / needs changes). Then list specific findings with file references if applicable. End with an overall recommendation."`.
-  6. `github.post-review` — `prUrl: "{{ $trigger.pull_request.html_url }}"`, `body: "{{ $5.text }}"`, `event: "COMMENT"`, `credentialId: "slot:github-token"`.
-- [ ] **Credential slots:** `[{ key: "github-token", type: "github", description: "GitHub Personal Access Token with `pull_requests: write` scope" }]`.
-- [ ] **Thumbnail:** category icon (`github` badge placeholder — no image generation in Phase 37).
-- [ ] Pick up by `WorkflowTemplatesService.onModuleInit()` alongside the Phase 36 built-ins.
+- [x] New seed file [`workflow-templates/seeds/ai-code-review.seed.ts`](../packages/gateway/src/workflow-templates/seeds/ai-code-review.seed.ts). Template slug: `ai-code-review`. Category: `github`. Tags: `["code-review", "github", "ai"]`. 6-node graph: trigger.webhook → logic.if → github.get-pr → github.get-diff → ai.claude → github.post-review. Picked up by `WorkflowTemplatesService.onModuleInit()` in Phase 36.
+- [x] **Credential slots:** `[{ key: "github-token", type: "github", description: "GitHub Personal Access Token with pull_requests:write scope" }]`.
 
 ### B2. System prompt refinement — **S**
-- [ ] The default system prompt (above) is the baseline. Expose `system` and `prompt` as editable in the workflow editor after installation so teams can adapt the review style (strict / lenient, language-specific conventions, security focus). No special handling needed — the `ai.claude` node already makes these fields editable.
+- [x] Default system + prompt are set in the seed. `system` and `prompt` are editable node params in the workflow editor after installation — no special handling needed.
 
 ---
 
