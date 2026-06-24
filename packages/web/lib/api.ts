@@ -674,6 +674,15 @@ export async function deleteWorkflow(id: string): Promise<void> {
   await fetchJson(`/workflows/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
 
+export async function duplicateWorkflow(id: string): Promise<Workflow> {
+  const { workflow } = await fetchJson(
+    `/workflows/${encodeURIComponent(id)}/duplicate`,
+    { method: 'POST' },
+    WorkflowResponseSchema,
+  );
+  return workflow;
+}
+
 export async function runWorkflow(id: string): Promise<WorkflowRun> {
   const { run } = await fetchJson(
     `/workflows/${encodeURIComponent(id)}/run`,

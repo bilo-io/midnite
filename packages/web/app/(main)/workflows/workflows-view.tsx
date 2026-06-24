@@ -12,7 +12,7 @@ import { CollapsibleStatusGroups, type StatusGroup } from '@/components/collapsi
 import { WorkflowCard } from '@/components/workflow-card';
 import { WorkflowsTable, TRIGGER_SECTIONS } from '@/components/workflows-table';
 import { WorkflowCreateModal } from '@/components/workflow-create-modal';
-import { deleteWorkflow, updateWorkflow } from '@/lib/api';
+import { deleteWorkflow, duplicateWorkflow, updateWorkflow } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { useBulkSelection } from '@/lib/use-bulk-selection';
 import { cn } from '@/lib/utils';
@@ -79,6 +79,11 @@ export function WorkflowsView({ initial }: { initial: WorkflowSummary[] }) {
     refresh();
   }, [selectedIds, confirm, clearSelection, refresh]);
 
+  const duplicateOne = useCallback(async (id: string) => {
+    await duplicateWorkflow(id);
+    refresh();
+  }, [refresh]);
+
   const bulkActions = useMemo<BulkAction[]>(() => {
     const actions: BulkAction[] = [];
     const toArchive = selectedWorkflows.filter((w) => !w.archived).map((w) => w.id);
@@ -136,6 +141,7 @@ export function WorkflowsView({ initial }: { initial: WorkflowSummary[] }) {
                   layout="list"
                   selected={isSelected(w.id)}
                   onToggleSelect={() => toggleSelect(w.id)}
+                  onDuplicate={() => void duplicateOne(w.id)}
                 />
               ))}
             </div>
@@ -148,6 +154,7 @@ export function WorkflowsView({ initial }: { initial: WorkflowSummary[] }) {
                   layout="grid"
                   selected={isSelected(w.id)}
                   onToggleSelect={() => toggleSelect(w.id)}
+                  onDuplicate={() => void duplicateOne(w.id)}
                 />
               ))}
             </div>
