@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, History, Loader2, Play } from 'lucide-react';
+import { ArrowLeft, BookmarkPlus, History, Loader2, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { TriggerBadge } from '@/components/trigger-badge';
@@ -14,6 +14,7 @@ export function WorkflowToolbar({
   onSave,
   onEditTrigger,
   onHistory,
+  onSaveAsTemplate,
   historyOpen,
   running,
   saving,
@@ -22,6 +23,7 @@ export function WorkflowToolbar({
   onSave: () => void;
   onEditTrigger: () => void;
   onHistory: () => void;
+  onSaveAsTemplate?: () => void;
   historyOpen: boolean;
   running: boolean;
   saving: boolean;
@@ -67,6 +69,17 @@ export function WorkflowToolbar({
       </button>
 
       <div className="ml-auto flex items-center gap-3">
+        {onSaveAsTemplate ? (
+          <button
+            type="button"
+            onClick={onSaveAsTemplate}
+            aria-label="Save as template"
+            title="Save as template"
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <BookmarkPlus className="h-4 w-4" />
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={onHistory}

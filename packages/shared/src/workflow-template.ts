@@ -107,6 +107,18 @@ export const UpdateTemplateRequestSchema = z
   );
 export type UpdateTemplateRequest = z.infer<typeof UpdateTemplateRequestSchema>;
 
+// ── Create from workflow ──────────────────────────────────────────────────────
+
+export const CreateFromWorkflowRequestSchema = z.object({
+  workflowId: z.string().min(1),
+  name: z.string().trim().min(1).max(120).optional(),
+  description: z.string().max(1000).optional(),
+  category: WorkflowTemplateCategorySchema,
+  tags: z.array(z.string().max(40)).max(10).default([]),
+  published: z.boolean().default(false),
+});
+export type CreateFromWorkflowRequest = z.infer<typeof CreateFromWorkflowRequestSchema>;
+
 // ── Install flow ──────────────────────────────────────────────────────────────
 
 export const InstallTemplateRequestSchema = z.object({

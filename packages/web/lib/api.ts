@@ -56,10 +56,12 @@ import {
   WorkflowTemplatesResponseSchema,
   TemplateSlotsResponseSchema,
   InstallTemplateRequestSchema,
+  CreateFromWorkflowRequestSchema,
   type WorkflowTemplate,
   type WorkflowTemplateSummary,
   type InstallTemplateRequest,
   type TemplateSlotsResponse,
+  type CreateFromWorkflowRequest,
 } from '@midnite/shared';
 import {
   AgentCliResponseSchema,
@@ -774,6 +776,17 @@ export async function installWorkflowTemplate(id: string, body: InstallTemplateR
     WorkflowResponseSchema,
   );
   return workflow;
+}
+
+export async function createWorkflowTemplateFromWorkflow(body: CreateFromWorkflowRequest): Promise<WorkflowTemplate> {
+  const parsed = CreateFromWorkflowRequestSchema.safeParse(body);
+  if (!parsed.success) throw new Error(parsed.error.message);
+  const { template } = await fetchJson(
+    '/workflow-templates/from-workflow',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(parsed.data) },
+    WorkflowTemplateResponseSchema,
+  );
+  return template;
 }
 
 // --- Agents (orchestrator + subagents + heartbeat) ---

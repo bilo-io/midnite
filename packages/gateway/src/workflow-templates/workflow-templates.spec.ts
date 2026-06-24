@@ -250,4 +250,63 @@ describe('WorkflowTemplatesService', () => {
     expect(slots.slots).toHaveLength(1);
     expect(slots.slots[0]!.key).toBe('github-token');
   });
+
+  it('createFromWorkflow creates a template from a workflow with credential slot extraction', () => {
+    const wfWithCred: Workflow = {
+      ...STUB_WORKFLOW,
+      name: 'My Workflow',
+      trigger: { type: 'webhook', method: 'POST', hasSecret: false },
+      nodes: [
+        { id: 'n1', type: 'trigger.webhook', params: {} },
+        { id: 'n2', type: 'slack.message', params: { credentialId: 'cred-slack-1', channel: '#dev', text: 'hello' } },
+      ],
+      edges: [],
+    };
+    const credsSvc = {
+      list: vi.fn().mockReturnValue([
+        { id: 'cred-slack-1', name: 'My Slack', type: 'slack' },
+      ]),
+    } as unknown as WorkflowCredentialsService;
+    const wfSvc = {
+      create: vi.fn().mockReturnValue(STUB_WORKFLOW),
+      getWorkflow: vi.fn().mockReturnValue(wfWithCred),
+      repo: { updateWorkflowRow: vi.fn() },
+    } as unknown as WorkflowsService;
+    const svc = new WorkflowTemplatesService(repo, wfSvc, credsSvc);
+
+    const tpl = svc.createFromWorkflow(
+      { workflowId: 'wf-stub', category: 'notifications', tags: [], published: false },
+      'author-1',
+    );
+
+    expect(tpl.name).toBe('My Workflow');
+    expect(tpl.credentialSlots).toHaveLength(1);
+    expect(tpl.credentialSlots[0]!.key).toBe('slack-0');
+    expect(tpl.credentialSlots[0]!.type).toBe('slack');
+    const def = tpl.definition as { nodes?: Array<Record<string, unknown>> };
+    const n2 = def.nodes?.find((n) => (n['params'] as Record<string, unknown>)['credentialId'] === 'slot:slack-0');
+    expect(n2).toBeDefined();
+  });
+
+  it('createFromWorkflow deduplicates slug on collision', () => {
+    // Pre-seed a slug that would collide.
+    service.createTemplate(
+      { slug: 'my-workflow', name: 'My Workflow', category: 'ai', tags: [], credentialSlots: [], definition: {}, published: false },
+      'author-1',
+    );
+
+    const wfSvc = {
+      create: vi.fn().mockReturnValue(STUB_WORKFLOW),
+      getWorkflow: vi.fn().mockReturnValue({ ...STUB_WORKFLOW, name: 'My Workflow' }),
+      repo: { updateWorkflowRow: vi.fn() },
+    } as unknown as WorkflowsService;
+    const svc = new WorkflowTemplatesService(repo, wfSvc, makeCredentialsService());
+
+    const tpl = svc.createFromWorkflow(
+      { workflowId: 'wf-stub', category: 'ai', tags: [], published: false },
+      'author-2',
+    );
+
+    expect(tpl.slug).toBe('my-workflow-1');
+  });
 });

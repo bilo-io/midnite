@@ -14,6 +14,7 @@ import {
   Query,
 } from '@nestjs/common';
 import {
+  CreateFromWorkflowRequestSchema,
   CreateTemplateRequestSchema,
   InstallTemplateRequestSchema,
   UpdateTemplateRequestSchema,
@@ -58,6 +59,18 @@ export class WorkflowTemplatesController {
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
     try {
       return { template: this.service.createTemplate(parsed.data, 'system') };
+    } catch (err) {
+      if (err instanceof TemplateSlugTakenError) throw new BadRequestException(err.message);
+      throw err;
+    }
+  }
+
+  @Post('from-workflow')
+  createFromWorkflow(@Body() body: unknown): WorkflowTemplateResponse {
+    const parsed = CreateFromWorkflowRequestSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    try {
+      return { template: this.service.createFromWorkflow(parsed.data, 'system') };
     } catch (err) {
       if (err instanceof TemplateSlugTakenError) throw new BadRequestException(err.message);
       throw err;

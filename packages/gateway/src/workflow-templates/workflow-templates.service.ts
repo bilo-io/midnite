@@ -1,6 +1,7 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import type {
+  CreateFromWorkflowRequest,
   CreateTemplateRequest,
   InstallTemplateRequest,
   TemplateSlotsResponse,
@@ -191,5 +192,76 @@ export class WorkflowTemplatesService implements OnModuleInit {
     });
 
     return this.workflows.getWorkflow(workflow.id);
+  }
+
+  /**
+   * Creates a new template from an existing workflow. Nodes with a real
+   * `credentialId` param are replaced with `slot:<type>-<n>` sentinels and
+   * a matching slot entry is added to `credentialSlots`.
+   */
+  createFromWorkflow(req: CreateFromWorkflowRequest, authorId: string): WorkflowTemplate {
+    const workflow = this.workflows.getWorkflow(req.workflowId);
+
+    // Build a credentialId→slot map from all nodes that carry a credentialId.
+    const credById = new Map(this.credentials.list().map((c) => [c.id, c]));
+    const slotByCredId = new Map<string, string>();
+    const credentialSlots: Array<{ key: string; type: string; description?: string }> = [];
+
+    let slotIndex = 0;
+    for (const node of workflow.nodes) {
+      const params = node.params as Record<string, unknown> | undefined;
+      if (!params) continue;
+      const credId = params['credentialId'];
+      if (typeof credId !== 'string' || !credId || credId.startsWith(SLOT_SENTINEL)) continue;
+      if (slotByCredId.has(credId)) continue;
+
+      const cred = credById.get(credId);
+      const type = cred?.type ?? 'unknown';
+      const key = `${type}-${slotIndex++}`;
+      slotByCredId.set(credId, key);
+      credentialSlots.push({
+        key,
+        type,
+        description: cred ? `${cred.name} (${cred.type})` : `Credential ${credId}`,
+      });
+    }
+
+    // Re-write node params to replace real credentialIds with slot sentinels.
+    const exportedNodes = workflow.nodes.map((node) => {
+      const params = node.params as Record<string, unknown> | undefined;
+      if (!params) return node;
+      const credId = params['credentialId'];
+      if (typeof credId !== 'string' || !slotByCredId.has(credId)) return node;
+      return { ...node, params: { ...params, credentialId: `${SLOT_SENTINEL}${slotByCredId.get(credId)}` } };
+    });
+
+    const definition: Record<string, unknown> = {
+      trigger: { ...workflow.trigger },
+      nodes: exportedNodes,
+      edges: workflow.edges,
+    };
+
+    // Derive a slug from the template name (or workflow name), deduplicating if needed.
+    const baseName = req.name ?? workflow.name;
+    const baseSlug = baseName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 70);
+    let slug = baseSlug;
+    let n = 1;
+    while (this.repo.findBySlug(slug)) {
+      slug = `${baseSlug}-${n++}`;
+    }
+
+    return this.createTemplate(
+      {
+        slug,
+        name: baseName,
+        description: req.description,
+        category: req.category,
+        tags: req.tags,
+        credentialSlots,
+        definition,
+        published: req.published,
+      },
+      authorId,
+    );
   }
 }
