@@ -25,13 +25,15 @@ export class ReposController {
   constructor(@Inject(ReposService) private readonly service: ReposService) {}
 
   @Get()
-  list(): Repo[] {
-    return this.service.list();
+  list(@CurrentUser() user?: CurrentUserPayload | null): Repo[] {
+    const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
+    return this.service.list(scope);
   }
 
   @Get(':id')
-  get(@Param('id') id: string): Repo {
-    return this.translate(() => this.service.get(id));
+  get(@Param('id') id: string, @CurrentUser() user?: CurrentUserPayload | null): Repo {
+    const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
+    return this.translate(() => this.service.get(id, scope));
   }
 
   @Post()

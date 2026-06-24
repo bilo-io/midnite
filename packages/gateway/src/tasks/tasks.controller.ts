@@ -73,6 +73,7 @@ export class TasksController {
   list(
     @Query('status') statusRaw?: string,
     @Query('projectId') projectId?: string,
+    @CurrentUser() user?: CurrentUserPayload | null,
   ): Task[] {
     let status: Status | undefined;
     if (statusRaw) {
@@ -82,12 +83,14 @@ export class TasksController {
       }
       status = parsed.data;
     }
-    return this.service.listTasks(status, projectId?.trim() || undefined);
+    const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
+    return this.service.listTasks(status, projectId?.trim() || undefined, scope);
   }
 
   @Get(':id')
-  get(@Param('id') id: string): Task {
-    return this.service.getTask(id);
+  get(@Param('id') id: string, @CurrentUser() user?: CurrentUserPayload | null): Task {
+    const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
+    return this.service.getTask(id, scope);
   }
 
   // Export the task thread as a portable markdown document. `pdf` is rendered
