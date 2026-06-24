@@ -109,12 +109,13 @@ tasks:
       - 'playwright.config.ts'
 
   screenshots:
-    # Phase 10 Theme E1 — deterministic per-page screenshot capture. Drives the
-    # same Playwright webServer (gateway + Next dev) as `web:e2e` but runs only
-    # the `screenshots` project, writing PNGs to e2e/__shots__/ (gitignored).
-    # Like e2e it's heavy + spawns servers, so it's runInCI:false; CI artifact
-    # upload + a baseline diff are Themes E2/E3.
-    command: 'pnpm exec playwright test --project=screenshots'
+    # Phase 10 Theme E1 — deterministic screenshot capture for pages + stories.
+    # Runs two Playwright projects together:
+    #   - `screenshots`: key app pages (1440×900, light+dark), gateway+Next booted
+    #   - `stories`: every Storybook story (1280×900, light+dark), SB dev on :6007
+    # PNGs land in e2e/__shots__/{pages,stories}/ (gitignored). Heavy + spawns
+    # servers, so runInCI:false. CI artifact upload is Theme E3.
+    command: 'pnpm exec playwright test --project=screenshots --project=stories'
     deps:
       - '^:build'
     options:
@@ -124,6 +125,7 @@ tasks:
       - 'components/**/*'
       - 'hooks/**/*'
       - 'lib/**/*'
+      - '.storybook/**/*'
       - 'e2e/**/*'
       - 'playwright.config.ts'
 
