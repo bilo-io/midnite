@@ -2,6 +2,8 @@ import type { IncomingMessage } from 'node:http';
 import { describe, expect, it } from 'vitest';
 import { parseConfig, type MidniteConfig, type WorkflowEvent } from '@midnite/shared';
 import type { WebSocket } from 'ws';
+import { ConnectionRegistry } from '../ws/connection-registry';
+import { WsBroadcastService } from '../ws/ws-broadcast.service';
 import { WorkflowEventBus } from './workflow-event-bus';
 import { WorkflowsGateway } from './workflows.gateway';
 
@@ -34,11 +36,18 @@ function event(runId: string): WorkflowEvent {
   return { type: 'run.started', workflowId: 'wf', runId, at: 'now', triggerSource: 'manual' };
 }
 
+function makeGateway(cfg = CONFIG) {
+  const bus = new WorkflowEventBus();
+  const registry = new ConnectionRegistry();
+  const wsBroadcast = new WsBroadcastService(registry);
+  const gateway = new WorkflowsGateway(cfg, bus, registry, wsBroadcast);
+  gateway.onModuleInit();
+  return { gateway, bus };
+}
+
 describe('WorkflowsGateway', () => {
   it('delivers an event only to clients subscribed to that run', () => {
-    const bus = new WorkflowEventBus();
-    const gateway = new WorkflowsGateway(CONFIG, bus);
-    gateway.onModuleInit();
+    const { gateway, bus } = makeGateway();
 
     const a = fakeClient();
     const b = fakeClient();
@@ -54,9 +63,7 @@ describe('WorkflowsGateway', () => {
   });
 
   it('stops delivering after a client disconnects', () => {
-    const bus = new WorkflowEventBus();
-    const gateway = new WorkflowsGateway(CONFIG, bus);
-    gateway.onModuleInit();
+    const { gateway, bus } = makeGateway();
 
     const a = fakeClient();
     gateway.handleConnection(a.ws, req);
@@ -68,12 +75,9 @@ describe('WorkflowsGateway', () => {
   });
 
   it('rejects a disallowed origin', () => {
-    const bus = new WorkflowEventBus();
-    const gateway = new WorkflowsGateway(
+    const { gateway } = makeGateway(
       parseConfig({ agent: {}, terminal: {}, knowledge: {}, gateway: { allowedOrigins: [] } }),
-      bus,
     );
-    gateway.onModuleInit();
     let closed = false;
     const ws = {
       readyState: 1,
