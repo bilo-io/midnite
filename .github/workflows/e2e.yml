@@ -1,0 +1,119 @@
+name: E2E & Visual
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    # Keep e2e out of the critical path: a failing visual snapshot never blocks
+    # a merge — the `ci` job owns that gate. This job surfaces regressions and
+    # uploads artifacts for review; treat failures as "needs attention", not "blocked".
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install proto
+        run: |
+          curl -fsSL https://moonrepo.dev/install/proto.sh | bash -s -- --yes
+          echo "$HOME/.proto/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.proto/shims" >> "$GITHUB_PATH"
+
+      - name: Install pinned toolchain (node, pnpm, moon)
+        run: proto install
+
+      - name: Install dependencies
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+        run: pnpm install --frozen-lockfile
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('**/package.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+        working-directory: packages/web
+
+      - name: Build upstream packages (shared, ui)
+        run: moon run shared:build ui:build
+
+      - name: Run e2e flow tests
+        run: moon run web:e2e
+        env:
+          CI: 'true'
+
+      - name: Run visual regression (screenshots + baseline diff)
+        run: moon run web:screenshots
+        env:
+          CI: 'true'
+
+      - name: Upload screenshot artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots-${{ github.run_id }}
+          path: |
+            packages/web/e2e/__shots__/
+            packages/web/e2e/__screenshots__/
+            packages/web/playwright-report/
+          retention-days: 14
+
+      - name: Upload diff artifacts on visual failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: visual-diffs-${{ github.run_id }}
+          path: packages/web/test-results/
+          retention-days: 7
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install proto
+        run: |
+          curl -fsSL https://moonrepo.dev/install/proto.sh | bash -s -- --yes
+          echo "$HOME/.proto/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.proto/shims" >> "$GITHUB_PATH"
+
+      - name: Install pinned toolchain (node, pnpm, moon)
+        run: proto install
+
+      - name: Install dependencies
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright chromium (needed for Storybook browser tests)
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Build upstream packages
+        run: moon run shared:build ui:build
+
+      - name: Gateway coverage
+        run: moon run gateway:test-coverage --force
+
+      - name: Web coverage
+        run: moon run web:test-coverage --force
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-${{ github.run_id }}
+          path: |
+            packages/gateway/coverage/
+            packages/web/coverage/
+          retention-days: 14

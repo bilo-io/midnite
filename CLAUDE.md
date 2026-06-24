@@ -285,13 +285,26 @@ Nest module per feature → `controller → service → repository`:
 
 ## Testing
 
-- **Vitest** across all packages
-- File placement: `foo.ts` → `foo.test.ts` alongside
-- Unit-test services with in-memory repository fakes
-- Integration-test the gateway against a real SQLite (`:memory:` in tests)
+> Full guide: [`docs/TESTING.md`](docs/TESTING.md) — layers, run commands, where baselines live, how to add tests.
+
+Four layers, each independently runnable:
+
+| Layer | Command | Scope |
+|-------|---------|-------|
+| Shared unit | `moon run shared:test` | Zod schemas, pure helpers |
+| Gateway | `moon run gateway:test` | Services (fakes), repositories (`:memory:` SQLite), controllers |
+| Web unit + stories | `moon run web:test` | RTL components, hooks, Storybook stories as browser tests |
+| Playwright flows | `moon run web:e2e` | Cross-package flows against a seeded real gateway |
+| All | `moon run :test` | Full suite (what `moon ci` runs) |
+
+- **Vitest** across all packages; file placement: `foo.ts` → `foo.test.ts` alongside
+- Unit-test services with in-memory repository fakes (`vi.fn()` — no `@nestjs/testing`)
+- Integration-test repositories against a real SQLite (use `createTestDb()` from `gateway/src/test/`)
 - Test behaviour, not implementation — no asserting on internal calls when a public outcome would do
 - Snapshot tests only for stable, reviewable output (CLI rendering, WS event shapes)
 - React tests with **@testing-library/react**; query by accessible role/label, not test IDs
+- **Storybook stories run as Vitest browser tests** via `@storybook/addon-vitest` — add a `play` function to assert interactions
+- **Web tests can't run inside `.git/worktrees/<n>/`** (Vite denies `.git/**`) — always run from the primary checkout or a worktree outside `.git/`
 
 ---
 

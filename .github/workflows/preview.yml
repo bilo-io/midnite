@@ -1,0 +1,200 @@
+name: Preview
+
+# Phase 10 Theme E3 — screenshot gallery + Storybook preview per PR.
+#
+# Two jobs run on every PR push and every merge to main:
+#
+#   gallery  — captures the key app pages + all Storybook stories, generates a
+#              browsable gallery.html + SCREENSHOTS.md, and uploads the whole
+#              __shots__ directory as a CI artifact (14-day retention).
+#
+#   storybook — builds the static Storybook site and deploys it to the `gh-pages`
+#               branch under `pr-<N>/` for open PRs (browsable at
+#               https://<owner>.github.io/<repo>/pr-<N>/) or `main/` for pushes
+#               to the main branch.
+#
+# ⚠️  GitHub Pages must be enabled for the repo and configured to deploy from the
+#     `gh-pages` branch before the storybook deploy job takes effect. The job runs
+#     unconditionally but the deploy step silently no-ops if Pages isn't wired up.
+#
+# A third job (`cleanup`) fires when a PR is closed and removes the Storybook
+# preview directory so `gh-pages` doesn't accumulate stale previews.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  # ── gallery ────────────────────────────────────────────────────────────────
+  gallery:
+    name: Screenshots & gallery
+    runs-on: ubuntu-latest
+    # Skip on PR-close events — no new screenshots to capture.
+    if: github.event_name != 'pull_request' || github.event.action != 'closed'
+    # Never block a merge on a screenshot failure.
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install proto
+        run: |
+          curl -fsSL https://moonrepo.dev/install/proto.sh | bash -s -- --yes
+          echo "$HOME/.proto/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.proto/shims" >> "$GITHUB_PATH"
+
+      - name: Install pinned toolchain (node, pnpm, moon)
+        run: proto install
+
+      - name: Install dependencies
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+        run: pnpm install --frozen-lockfile
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('**/package.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
+      - name: Install Playwright chromium
+        run: pnpm exec playwright install --with-deps chromium
+        working-directory: packages/web
+
+      - name: Build upstream packages (shared, ui)
+        run: moon run shared:build ui:build
+
+      - name: Capture screenshots (pages + stories)
+        run: moon run web:screenshots
+        env:
+          CI: 'true'
+        continue-on-error: true
+
+      - name: Generate gallery (HTML + markdown)
+        run: node packages/web/scripts/generate-gallery.mjs
+        continue-on-error: true
+
+      - name: Upload screenshot artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots-${{ github.run_id }}
+          path: packages/web/e2e/__shots__/
+          retention-days: 14
+
+  # ── storybook preview ──────────────────────────────────────────────────────
+  storybook:
+    name: Storybook preview (GH Pages)
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.action != 'closed'
+    # A Pages deploy should never block a merge.
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install proto
+        run: |
+          curl -fsSL https://moonrepo.dev/install/proto.sh | bash -s -- --yes
+          echo "$HOME/.proto/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.proto/shims" >> "$GITHUB_PATH"
+
+      - name: Install pinned toolchain (node, pnpm, moon)
+        run: proto install
+
+      - name: Install dependencies
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Storybook
+        run: moon run web:build-storybook
+
+      - name: Determine deploy directory
+        id: deploy-dir
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "dir=pr-${{ github.event.number }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "dir=main" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: packages/web/storybook-static
+          destination_dir: ${{ steps.deploy-dir.outputs.dir }}
+          # Preserve sibling preview directories (other PRs / main).
+          keep_files: true
+          commit_message: "chore(preview): deploy Storybook for ${{ steps.deploy-dir.outputs.dir }} [${{ github.sha }}]"
+
+      - name: Post preview URL to PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const dir = 'pr-${{ github.event.number }}';
+            const repo = context.repo;
+            const url = `https://${repo.owner}.github.io/${repo.repo}/${dir}/`;
+            const marker = '<!-- storybook-preview -->';
+            const body = `${marker}\n📖 **Storybook preview:** [${url}](${url})\n`;
+
+            // Find an existing bot comment with this marker to update rather than
+            // accumulate a new one on every push.
+            const comments = await github.rest.issues.listComments({
+              ...repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.data.find(
+              (c) => c.user?.type === 'Bot' && c.body?.includes(marker),
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({
+                ...repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                ...repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+  # ── cleanup ────────────────────────────────────────────────────────────────
+  cleanup:
+    name: Remove PR preview on close
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          # Fetch all so we don't accidentally clobber sibling directories.
+          fetch-depth: 1
+
+      - name: Remove PR preview directory
+        run: |
+          DIR="pr-${{ github.event.number }}"
+          if [ -d "$DIR" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git rm -rf "$DIR"
+            git commit -m "chore(preview): remove Storybook preview for PR #${{ github.event.number }}"
+            git push
+            echo "Removed $DIR from gh-pages."
+          else
+            echo "No preview directory $DIR found — nothing to clean up."
+          fi
