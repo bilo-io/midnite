@@ -183,17 +183,21 @@ import {
   type User,
   type UpdateUserRequest,
   type UpdatePasswordRequest,
+  ApprovalSettingsSchema,
+  ApprovalRuleSchema,
   ApprovalRulesResponseSchema,
   ApprovalRuleResponseSchema,
+  PendingApprovalsResponseSchema,
+  ApprovalLogResponseSchema,
+  AutonomyModeSchema,
+  type ApprovalSettings,
+  type ApprovalRule,
   type ApprovalRulesResponse,
   type ApprovalRuleResponse,
   type CreateApprovalRule,
   type UpdateApprovalRule,
-  PendingApprovalsResponseSchema,
   type PendingApprovalsResponse,
-  ApprovalLogResponseSchema,
   type ApprovalLogResponse,
-  ModeResponseSchema,
   type ModeResponse,
   type AutonomyMode,
 } from '@midnite/shared';
@@ -1593,28 +1597,57 @@ export async function updateMyPassword(req: UpdatePasswordRequest): Promise<void
 
 // ---- Approvals (Phase 23) ----
 
-export async function listApprovalRules(): Promise<ApprovalRulesResponse> {
-  return fetchJson('/approvals/rules', {}, ApprovalRulesResponseSchema);
+export async function getApprovalSettings(): Promise<ApprovalSettings> {
+  return fetchJson('/approvals/settings', undefined, ApprovalSettingsSchema);
 }
 
-export async function createApprovalRule(body: CreateApprovalRule): Promise<ApprovalRuleResponse> {
+export async function getAutonomyMode(): Promise<ModeResponse> {
+  const res = await getApprovalSettings();
+  return { mode: res.mode };
+}
+
+export async function setApprovalMode(mode: AutonomyMode): Promise<ApprovalSettings> {
   return fetchJson(
+    '/approvals/mode',
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ mode }) },
+    ApprovalSettingsSchema,
+  );
+}
+
+export async function setAutonomyMode(mode: AutonomyMode): Promise<ModeResponse> {
+  const res = await fetchJson(
+    '/approvals/mode',
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ mode }) },
+    ApprovalSettingsSchema,
+  );
+  return { mode: res.mode };
+}
+
+export async function listApprovalRules(): Promise<ApprovalRule[]> {
+  const res = await fetchJson('/approvals/rules', {}, ApprovalRulesResponseSchema);
+  return res.rules;
+}
+
+export async function createApprovalRule(body: CreateApprovalRule): Promise<ApprovalRule> {
+  const res = await fetchJson(
     '/approvals/rules',
     { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
     ApprovalRuleResponseSchema,
   );
+  return res.rule;
 }
 
-export async function updateApprovalRule(id: string, body: UpdateApprovalRule): Promise<ApprovalRuleResponse> {
-  return fetchJson(
-    `/approvals/rules/${id}`,
+export async function updateApprovalRule(id: string, body: UpdateApprovalRule): Promise<ApprovalRule> {
+  const res = await fetchJson(
+    `/approvals/rules/${encodeURIComponent(id)}`,
     { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(body) },
     ApprovalRuleResponseSchema,
   );
+  return res.rule;
 }
 
 export async function deleteApprovalRule(id: string): Promise<void> {
-  await fetchJson(`/approvals/rules/${id}`, { method: 'DELETE' });
+  await fetchJson(`/approvals/rules/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
 
 export async function listPendingApprovals(): Promise<PendingApprovalsResponse> {
@@ -1639,16 +1672,3 @@ export async function getApprovalLog(opts?: {
   const qs = params.toString();
   return fetchJson(`/approvals/log${qs ? `?${qs}` : ''}`, {}, ApprovalLogResponseSchema);
 }
-
-export async function getAutonomyMode(): Promise<ModeResponse> {
-  return fetchJson('/approvals/mode', {}, ModeResponseSchema);
-}
-
-export async function setAutonomyMode(mode: AutonomyMode): Promise<ModeResponse> {
-  return fetchJson(
-    '/approvals/mode',
-    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ mode }) },
-    ModeResponseSchema,
-  );
-}
-

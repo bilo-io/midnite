@@ -1,11 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import { Inject, Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
-import type {
-  ApprovalRule,
-  ApprovalRuleMatch,
-  AutonomyMode,
-  CreateApprovalRule,
-  UpdateApprovalRule,
+import {
+  SAFE_TOOLS,
+  type ApprovalRule,
+  type ApprovalRuleMatch,
+  type ApprovalSettings,
+  type AutonomyMode,
+  type CreateApprovalRule,
+  type UpdateApprovalRule,
 } from '@midnite/shared';
 import type { ApprovalRuleRow } from '../db/schema';
 import { evaluateRules, type EvaluationVerdict } from './lib/rule-evaluator';
@@ -26,7 +28,7 @@ export class ApprovalsService implements OnModuleInit {
     if (row) this.mode = row.mode as AutonomyMode;
   }
 
-  // ---- mode gate (Phase 23 A3 + D) ----
+  // ---- mode ----
 
   getMode(): AutonomyMode {
     return this.mode;
@@ -37,11 +39,19 @@ export class ApprovalsService implements OnModuleInit {
     this.repo.upsertMode(mode, new Date().toISOString());
   }
 
+  getSettings(): ApprovalSettings {
+    return { mode: this.mode, safeTools: [...SAFE_TOOLS] };
+  }
+
   /** Evaluate durable rules against a tool call.
-   *  Returns `'escalate'` when mode is `'manual'` (no behaviour change for
-   *  existing users) or when no rule matches (fail-safe). */
+   *  `manual` → always escalate (no behaviour change for existing users).
+   *  `guarded` → auto-allow SAFE_TOOLS, then consult rules.
+   *  `autonomous` → rules decide; fail-safe is escalate on no match. */
   evaluate(toolName: string, toolInput: unknown): EvaluationVerdict {
     if (this.mode === 'manual') return 'escalate';
+    if (this.mode === 'guarded' && (SAFE_TOOLS as readonly string[]).includes(toolName)) {
+      return 'auto-allow';
+    }
     const rules = this.repo.listEnabledForTool(toolName);
     return evaluateRules(rules, toolName, toolInput);
   }

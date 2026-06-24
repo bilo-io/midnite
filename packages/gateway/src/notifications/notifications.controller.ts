@@ -4,6 +4,7 @@ import {
   NotificationListQuerySchema,
   type NotificationListResponse,
 } from '@midnite/shared';
+import { CurrentUser, type CurrentUserPayload } from '../auth/decorators/current-user.decorator';
 import { NotificationsService } from './notifications.service';
 
 @Controller('notifications')
@@ -11,10 +12,14 @@ export class NotificationsController {
   constructor(@Inject(NotificationsService) private readonly service: NotificationsService) {}
 
   @Get()
-  list(@Query() query: unknown): NotificationListResponse {
+  list(
+    @Query() query: unknown,
+    @CurrentUser() user?: CurrentUserPayload | null,
+  ): NotificationListResponse {
     const parsed = NotificationListQuerySchema.safeParse(query);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
-    return this.service.list(parsed.data);
+    const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
+    return this.service.list(parsed.data, scope);
   }
 
   @Post('read')

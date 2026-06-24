@@ -288,7 +288,7 @@ const DECIDED_BY_LABEL: Record<string, string> = {
 };
 
 function DecisionRow({ entry }: { entry: ApprovalLogEntry }) {
-  const approved = entry.resolution === 'approved';
+  const approved = entry.resolution === 'allow' || entry.resolution === 'allow-session' || entry.resolution === 'auto-allow';
   return (
     <tr className="border-b last:border-0">
       <td className="py-2.5 pr-4 align-top">

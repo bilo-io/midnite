@@ -1,5 +1,5 @@
 import type { IncomingMessage } from 'node:http';
-import { Inject, Logger, type OnModuleInit } from '@nestjs/common';
+import { Inject, Logger, Optional, type OnModuleInit } from '@nestjs/common';
 import {
   type OnGatewayConnection,
   type OnGatewayDisconnect,
@@ -14,6 +14,9 @@ import {
 } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
 import { isAllowedOrigin } from '../lib/allowed-origin';
+import { JwtService, TokenInvalidError } from '../auth/jwt.service';
+import { ConnectionRegistry } from '../ws/connection-registry';
+import { WsBroadcastService } from '../ws/ws-broadcast.service';
 import { TaskEventBus } from './task-event-bus';
 
 /**
@@ -22,6 +25,11 @@ import { TaskEventBus } from './task-event-bus';
  * Board-wide (no per-task filter): the kanban renders all tasks. Mirrors the
  * workflow/terminal gateways — raw `type`-discriminated JSON on a single path
  * served by the shared Fastify server via the platform-ws adapter.
+ *
+ * Phase 35 D1/D2: extracts JWT from `?token=<jwt>` at handshake time, stores
+ * { userId, teamId } via ConnectionRegistry. Broadcasts are scoped:
+ * task events with a teamId go to that team's connections only; legacy tasks
+ * (teamId = null) and system events (agent.activity) broadcast to all subscribers.
  */
 @WebSocketGateway({ path: TASKS_WS_PATH })
 export class TasksGateway
@@ -33,6 +41,9 @@ export class TasksGateway
   constructor(
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
     @Inject(TaskEventBus) private readonly bus: TaskEventBus,
+    @Inject(ConnectionRegistry) private readonly registry: ConnectionRegistry,
+    @Inject(WsBroadcastService) private readonly wsBroadcast: WsBroadcastService,
+    @Optional() private readonly jwtSvc?: JwtService,
   ) {}
 
   onModuleInit(): void {
@@ -50,11 +61,37 @@ export class TasksGateway
       }
       return;
     }
+
+    const ctx = this.resolveUserContext(client, request);
+    if (ctx === null) return; // already closed with 4001
+
+    this.registry.register(client, ctx);
     client.on('message', (raw: Buffer | ArrayBuffer | Buffer[]) => this.onMessage(client, raw));
   }
 
   handleDisconnect(client: WebSocket): void {
     this.subscribers.delete(client);
+    this.registry.deregister(client);
+  }
+
+  private resolveUserContext(
+    client: WebSocket,
+    request?: IncomingMessage,
+  ): { userId: string | null; teamId: string | null } | null {
+    const token = extractQueryToken(request?.url);
+    if (!token || !this.jwtSvc?.enabled) {
+      return { userId: null, teamId: null };
+    }
+    try {
+      const payload = this.jwtSvc.verifyAccessToken(token);
+      return { userId: payload.sub, teamId: payload.teamId ?? null };
+    } catch (err) {
+      if (err instanceof TokenInvalidError) {
+        try { client.close(4001, 'invalid or expired token'); } catch { /* closing */ }
+        return null;
+      }
+      throw err;
+    }
   }
 
   private onMessage(client: WebSocket, raw: Buffer | ArrayBuffer | Buffer[]): void {
@@ -71,9 +108,30 @@ export class TasksGateway
   private broadcast(event: TaskBoardEvent): void {
     if (this.subscribers.size === 0) return;
     const payload = JSON.stringify(event);
-    for (const ws of this.subscribers) {
-      if (ws.readyState === WebSocket.OPEN) ws.send(payload);
+
+    // Scoped delivery: task events with a teamId go to that team only.
+    // Legacy tasks (null teamId), bulk creates, and session events (agent.activity /
+    // agent.attention) are sent to all subscribers for backward compat.
+    const teamId =
+      (event.type === 'task.created' || event.type === 'task.updated')
+        ? (event.task.teamId ?? null)
+        : null;
+
+    if (teamId) {
+      this.wsBroadcast.toTeam(teamId, payload);
+    } else {
+      this.wsBroadcast.toAll(this.subscribers, payload);
     }
+  }
+}
+
+function extractQueryToken(url: string | undefined): string | null {
+  if (!url) return null;
+  try {
+    const params = new URL(url, 'ws://localhost').searchParams;
+    return params.get('token');
+  } catch {
+    return null;
   }
 }
 

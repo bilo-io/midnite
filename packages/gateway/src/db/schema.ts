@@ -671,6 +671,16 @@ export const approvalRules = sqliteTable(
 export type ApprovalRuleRow = typeof approvalRules.$inferSelect;
 export type ApprovalRuleInsert = typeof approvalRules.$inferInsert;
 
+/** Single-row settings for the approvals policy engine. */
+export const approvalSettings = sqliteTable('approval_settings', {
+  /** Always 'singleton' — this table has exactly one row. */
+  id: text('id').primaryKey().$default(() => 'singleton'),
+  /** 'manual' | 'guarded' | 'autonomous' */
+  mode: text('mode').notNull().default('manual'),
+  updatedAt: text('updated_at').notNull(),
+});
+export type ApprovalSettingsRow = typeof approvalSettings.$inferSelect;
+
 // --- Notes (simple checklist panel on the dashboard) ---
 
 export const notes = sqliteTable(
@@ -1027,13 +1037,3 @@ export const approvalLog = sqliteTable(
 
 export type ApprovalLogRow = typeof approvalLog.$inferSelect;
 export type ApprovalLogInsert = typeof approvalLog.$inferInsert;
-
-/** Single-row settings for the approvals policy engine. */
-export const approvalSettings = sqliteTable('approval_settings', {
-  /** Always 'singleton' — this table has exactly one row. */
-  id: text('id').primaryKey().$default(() => 'singleton'),
-  /** 'manual' | 'guarded' | 'autonomous' */
-  mode: text('mode').notNull().default('manual'),
-  updatedAt: text('updated_at').notNull(),
-});
-export type ApprovalSettingsRow = typeof approvalSettings.$inferSelect;

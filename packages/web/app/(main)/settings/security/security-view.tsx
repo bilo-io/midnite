@@ -223,9 +223,9 @@ export function SecurityView() {
 
   useEffect(() => {
     void (async () => {
-      const [modeRes, rulesRes] = await Promise.all([getAutonomyMode(), listApprovalRules()]);
+      const [modeRes, rules] = await Promise.all([getAutonomyMode(), listApprovalRules()]);
       setModeState(modeRes.mode);
-      setRules(rulesRes.rules);
+      setRules(rules);
       setLoading(false);
     })();
   }, []);
@@ -249,13 +249,13 @@ export function SecurityView() {
   }
 
   async function addRule(body: CreateApprovalRule): Promise<void> {
-    const res = await createApprovalRule(body);
-    setRules((prev) => [...prev, res.rule]);
+    const rule = await createApprovalRule(body);
+    setRules((prev) => [...prev, rule]);
   }
 
   async function toggleRule(id: string, enabled: boolean): Promise<void> {
-    const res = await updateApprovalRule(id, { enabled });
-    setRules((prev) => prev.map((r) => (r.id === id ? res.rule : r)));
+    const rule = await updateApprovalRule(id, { enabled });
+    setRules((prev) => prev.map((r) => (r.id === id ? rule : r)));
   }
 
   async function removeRule(id: string): Promise<void> {

@@ -1,21 +1,18 @@
 import { z } from 'zod';
 
 import { ApprovalDecisionSchema, ApprovalResolutionSchema } from './events/terminal.js';
+import { AutonomyModeSchema } from './approval-rule.js';
+
+export type { AutonomyMode, SetModeRequest } from './approval-rule.js';
 
 // ---- WS path ----
 
 export const APPROVALS_WS_PATH = '/ws/approvals';
 
-// ---- Autonomy mode ----
-
-export const AutonomyModeSchema = z.enum(['manual', 'guarded', 'autonomous']);
-export type AutonomyMode = z.infer<typeof AutonomyModeSchema>;
+// ---- Autonomy mode wire shapes ----
 
 export const ModeResponseSchema = z.object({ mode: AutonomyModeSchema });
 export type ModeResponse = z.infer<typeof ModeResponseSchema>;
-
-export const SetModeRequestSchema = z.object({ mode: AutonomyModeSchema });
-export type SetModeRequest = z.infer<typeof SetModeRequestSchema>;
 
 // ---- Pending approval (live inbox) ----
 

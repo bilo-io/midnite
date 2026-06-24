@@ -13,12 +13,10 @@ import {
 } from '@nestjs/common';
 import {
   CreateApprovalRuleSchema,
-  SetModeRequestSchema,
   UpdateApprovalRuleSchema,
   type ApprovalLogResponse,
   type ApprovalRuleResponse,
   type ApprovalRulesResponse,
-  type ModeResponse,
   type PendingApprovalsResponse,
 } from '@midnite/shared';
 import { ApprovalService } from '../terminal/approval.service';
@@ -32,21 +30,6 @@ export class ApprovalsController {
     @Inject(ApprovalService) private readonly approvalService: ApprovalService,
     @Inject(ApprovalsLogRepository) private readonly logRepo: ApprovalsLogRepository,
   ) {}
-
-  // ---- mode (Theme D) ----
-
-  @Get('mode')
-  getMode(): ModeResponse {
-    return { mode: this.service.getMode() };
-  }
-
-  @Patch('mode')
-  setMode(@Body() body: unknown): ModeResponse {
-    const parsed = SetModeRequestSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.message);
-    this.service.setMode(parsed.data.mode);
-    return { mode: this.service.getMode() };
-  }
 
   // ---- pending (Theme B) ----
 
