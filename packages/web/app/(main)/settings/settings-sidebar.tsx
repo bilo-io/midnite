@@ -10,6 +10,7 @@ import {
   Lock,
   Palette,
   SlidersHorizontal,
+  Users,
   UserRound,
   type LucideIcon,
 } from 'lucide-react';
@@ -27,6 +28,7 @@ const CATEGORIES: Category[] = [
   { href: '/settings/system', label: 'System', Icon: SlidersHorizontal },
   { href: '/settings/user', label: 'User', Icon: UserRound },
   { href: '/settings/profile', label: 'Profile', Icon: CircleUser },
+  { href: '/settings/team', label: 'Teams', Icon: Users },
 ];
 
 /**

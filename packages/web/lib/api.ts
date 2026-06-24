@@ -1498,3 +1498,85 @@ export async function updateMyPassword(data: {
     body: JSON.stringify(data),
   });
 }
+
+// ─── Teams ───────────────────────────────────────────────────────────────────
+
+import type {
+  Team,
+  TeamWithMembers,
+  TeamInvite,
+  TeamRole,
+  CreateTeamRequest,
+  UpdateTeamRequest,
+  CreateInviteRequest,
+} from '@midnite/shared';
+
+export async function listMyTeams(): Promise<Team[]> {
+  return fetchJson<Team[]>('/teams');
+}
+
+export async function createTeam(data: CreateTeamRequest): Promise<Team> {
+  return fetchJson<Team>('/teams', {
+    method: 'POST',
+    headers: JSON_HEADERS,
+    body: JSON.stringify(data),
+  });
+}
+
+export async function getTeam(id: string): Promise<TeamWithMembers> {
+  return fetchJson<TeamWithMembers>(`/teams/${encodeURIComponent(id)}`);
+}
+
+export async function updateTeam(id: string, data: UpdateTeamRequest): Promise<Team> {
+  return fetchJson<Team>(`/teams/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers: JSON_HEADERS,
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteTeam(id: string): Promise<void> {
+  await fetchJson(`/teams/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+export async function setMemberRole(teamId: string, userId: string, role: TeamRole): Promise<void> {
+  await fetchJson(`/teams/${encodeURIComponent(teamId)}/members/${encodeURIComponent(userId)}/role`, {
+    method: 'PATCH',
+    headers: JSON_HEADERS,
+    body: JSON.stringify({ role }),
+  });
+}
+
+export async function removeMember(teamId: string, userId: string): Promise<void> {
+  await fetchJson(
+    `/teams/${encodeURIComponent(teamId)}/members/${encodeURIComponent(userId)}`,
+    { method: 'DELETE' },
+  );
+}
+
+export async function createInvite(teamId: string, data: CreateInviteRequest): Promise<TeamInvite> {
+  return fetchJson<TeamInvite>(`/teams/${encodeURIComponent(teamId)}/invites`, {
+    method: 'POST',
+    headers: JSON_HEADERS,
+    body: JSON.stringify(data),
+  });
+}
+
+export async function listInvites(teamId: string): Promise<TeamInvite[]> {
+  return fetchJson<TeamInvite[]>(`/teams/${encodeURIComponent(teamId)}/invites`);
+}
+
+export async function revokeInvite(teamId: string, inviteId: string): Promise<void> {
+  await fetchJson(
+    `/teams/${encodeURIComponent(teamId)}/invites/${encodeURIComponent(inviteId)}`,
+    { method: 'DELETE' },
+  );
+}
+
+export async function getInvite(token: string): Promise<TeamInvite> {
+  return fetchJson<TeamInvite>(`/invites/${encodeURIComponent(token)}`);
+}
+
+export async function acceptInvite(token: string): Promise<void> {
+  await fetchJson(`/invites/${encodeURIComponent(token)}/accept`, { method: 'POST' });
+}
