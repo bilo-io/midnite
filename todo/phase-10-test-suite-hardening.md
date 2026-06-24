@@ -113,9 +113,11 @@
 - [x] **🐛 Surfaced + fixed a real bug:** the e2e gateway never booted on a *fresh* DB (`no such table: council_runs`) — migration ran in `DbModule.onModuleInit`, but a feature module's `onModuleInit` could fire first. Moved migration to DB-handle build (`DbFactory`), before any lifecycle hook; regression test added. (`web:e2e` is `runInCI:false`, so CI never caught it.) Also stabilised the `terminal.service.spec` `MIDNITE_*` env-dump flake (grep `^MIDNITE_` so a large CI env can't truncate the capture).
 - [ ] **Storybook screenshots** of the storied components (reuse the Theme C browser run — capture per story) so component-level changes show up even without a full page.
 
-### E2. Visual baseline & diff — **M**
-- [ ] Use Playwright's built-in **`toHaveScreenshot`** snapshotting (per-OS baselines committed under `e2e/__screenshots__/`, or a chosen visual service — Decisions §4). A changed pixel fails the visual test and **emits a diff image**; an intended change is accepted by updating the baseline (`--update-snapshots`) in the same PR.
-- [ ] Keep baselines **CI-OS-pinned** (screenshots differ across OSes) — generate/verify on the Linux CI image; document the `--update-snapshots` workflow in the web README.
+### E2. Visual baseline & diff — **M** — ✅ DONE (PR #177, 2026-06-24)
+- [x] `toHaveScreenshot` assertions added to `pages.shots.ts` — each page capture is pixel-asserted against committed baselines in `e2e/__screenshots__/`; a diff image is emitted on failure.
+- [x] 10 **macOS** baselines committed (board, dashboard, workflows, councils, office × light/dark). Docker command documented in spec + README for regenerating Linux-compatible baselines.
+- [x] `playwright.config.ts` extended: `snapshotDir`, `snapshotPathTemplate`, and `toHaveScreenshot.maxDiffPixelRatio: 0.005`.
+- [ ] ⚠️ **TODO: regenerate baselines on Linux once Docker Desktop is installed.** Current baselines are macOS — the CI `e2e` job runs on `ubuntu-latest` and will fail the visual check until Linux baselines replace them. Run the Docker command from README "Visual regression baselines" section (or `packages/web/e2e/screenshots/pages.shots.ts`) and commit the updated PNGs.
 
 ### E3. PR preview artifacts + gallery — **M**
 - [ ] CI uploads the screenshots (and any diffs) as **build artifacts** on every PR, and **deploys/uploads the static Storybook** (`build-storybook` already exists) so reviewers can browse components for the branch.
