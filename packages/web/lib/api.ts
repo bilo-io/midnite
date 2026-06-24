@@ -1476,3 +1476,25 @@ export async function createWorkflowCredential(
 export async function deleteWorkflowCredential(id: string): Promise<void> {
   await fetchJson(`/workflow-credentials/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
+
+// ─── User profile ────────────────────────────────────────────────────────────
+
+export async function updateMe(data: { name?: string }): Promise<import('@midnite/shared').User> {
+  const r = await fetchJson<{ user: import('@midnite/shared').User }>('/users/me', {
+    method: 'PATCH',
+    headers: JSON_HEADERS,
+    body: JSON.stringify(data),
+  });
+  return r.user;
+}
+
+export async function updateMyPassword(data: {
+  currentPassword: string;
+  newPassword: string;
+}): Promise<void> {
+  await fetchJson('/users/me/password', {
+    method: 'PATCH',
+    headers: JSON_HEADERS,
+    body: JSON.stringify(data),
+  });
+}

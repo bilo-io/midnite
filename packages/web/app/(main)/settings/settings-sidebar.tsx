@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Bot,
+  CircleUser,
   FolderGit2,
   KeyRound,
   Lock,
@@ -25,6 +26,7 @@ const CATEGORIES: Category[] = [
   { href: '/settings/credentials', label: 'Credentials', Icon: KeyRound },
   { href: '/settings/system', label: 'System', Icon: SlidersHorizontal },
   { href: '/settings/user', label: 'User', Icon: UserRound },
+  { href: '/settings/profile', label: 'Profile', Icon: CircleUser },
 ];
 
 /**
