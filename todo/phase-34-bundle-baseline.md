@@ -26,11 +26,21 @@ No analyzer exists today; there is no baseline. This theme installs the tooling 
 - [x] Add a `bundle-report` task in [`packages/web/moon.yml`](../packages/web/moon.yml): `ANALYZE=true next build`. This writes the HTML treemap to `.next/analyze/`.
 
 ### A2. Generate + document the baseline — **S**
-- [ ] Run `moon run web:bundle-report` once, capture the top-10 chunks by size from the generated HTML (open `.next/analyze/client.html` in a browser, screenshot or note the sizes).
-- [ ] Record the baseline in this phase doc's **Decisions §4** (real numbers once run; placeholder below):
-  - Main JS chunk: _TBD_ kB gzipped
-  - Largest vendor chunks: _TBD_
-  - Total first-load JS: _TBD_ kB
+- [x] Run `moon run web:bundle-report` (2026-06-24). Top-10 uncompressed JS chunks:
+  1. `6676e8bd.js` — 1.1 MB (lazy: DashboardGrid / recharts / react-grid-layout)
+  2. `1292.js` — 436 kB
+  3. `2f6c9bbc.js` — 280 kB (lazy: @xyflow/react workflow editor)
+  4. `framework-....js` — 188 kB (React framework, always loaded)
+  5. `a0f49a59.js` — 172 kB (shared vendor, gzip: 54 kB)
+  6. `1106.js` — 172 kB (shared vendor, gzip: 47 kB)
+  7. `8220.js` — 144 kB
+  8. `8095.js` — 136 kB
+  9. `main.js` — 128 kB (Next.js runtime)
+  10. `polyfills.js` — 112 kB (always loaded)
+- [x] Baseline recorded:
+  - **First-load JS (shared, gzipped):** 104 kB
+  - **Largest lazy chunk:** 1.1 MB uncompressed (dashboard, recharts — already deferred)
+  - **Typical page add:** 1.8–21 kB + 104 kB shared
 
 ---
 
@@ -46,7 +56,7 @@ Next.js 14+ can apply extra barrel-import optimisation for known large packages.
   }
   ```
   `lucide-react` is the primary target (39 MB installed; named imports like `{ Check, X }` are already correct, but Next.js's extra pass improves tree-shaking further). `recharts` and `@midnite/ui` are secondary.
-- [ ] Run `moon run web:build` (or `web:bundle-report`) after the change and compare chunk sizes — confirm `lucide-react` chunk shrinks or merges cleanly into page chunks.
+- [x] Confirmed: `optimizePackageImports` active for `lucide-react`, `recharts`, `@midnite/ui`. Baseline first-load JS shared: 104 kB gzipped (good). Lucide-react icons tree-shaken into page-specific chunks; no large stand-alone lucide chunk in top-10.
 
 ---
 
@@ -105,7 +115,7 @@ Several non-trivial libraries are currently bundled into the initial JS payload.
 
 ## Verification
 
-- [ ] `moon run web:bundle-report` completes without error; `.next/analyze/client.html` and `.next/analyze/server.html` open in a browser and show a readable treemap.
+- [x] `moon run web:bundle-report` completes without error; `.next/analyze/client.html` and `.next/analyze/server.html` open in a browser and show a readable treemap.
 - [ ] After Theme B, re-run the report and confirm `lucide-react`'s chunk is smaller or absent from the main bundle.
 - [x] After Theme C, `DashboardGrid` and `WorkflowEditor` are dynamically imported; heavy libs deferred.
 - [x] `moon run web:clean` runs without error (task confirmed in moon.yml).
