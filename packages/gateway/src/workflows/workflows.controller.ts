@@ -122,6 +122,7 @@ export class WorkflowsController {
   }
 
   @Post(':id/webhook/rotate')
+  @RequiresRole('admin')
   rotateWebhook(@Param('id') id: string): WebhookInfoResponse {
     return this.service.rotateWebhookSecret(id);
   }

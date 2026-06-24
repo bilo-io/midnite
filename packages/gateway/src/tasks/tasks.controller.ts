@@ -11,8 +11,11 @@ import {
   Query,
   Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import { CurrentUser, type CurrentUserPayload } from '../auth/decorators/current-user.decorator';
+import { RoleGuard } from '../auth/role.guard';
+import { RequiresRole } from '../auth/decorators/require-role.decorator';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { join, resolve, isAbsolute } from 'node:path';
 import { mkdirSync, createWriteStream, unlinkSync, existsSync } from 'node:fs';
@@ -56,6 +59,7 @@ const IMAGE_MIME_ALLOWLIST = new Set([
 ]);
 
 @Controller('tasks')
+@UseGuards(RoleGuard)
 export class TasksController {
   constructor(
     @Inject(TasksService) private readonly service: TasksService,
@@ -115,6 +119,7 @@ export class TasksController {
   }
 
   @Patch(':id/status')
+  @RequiresRole('member')
   updateStatus(
     @Param('id') id: string,
     @Body() body: { status?: string },
@@ -127,6 +132,7 @@ export class TasksController {
   }
 
   @Patch(':id/project')
+  @RequiresRole('member')
   updateProject(@Param('id') id: string, @Body() body: unknown): Task {
     const parsed = UpdateTaskProjectRequestSchema.safeParse(body);
     if (!parsed.success) {
@@ -136,6 +142,7 @@ export class TasksController {
   }
 
   @Patch(':id/tags')
+  @RequiresRole('member')
   updateTags(@Param('id') id: string, @Body() body: unknown): Task {
     const parsed = SetTaskTagsRequestSchema.safeParse(body);
     if (!parsed.success) {
@@ -145,6 +152,7 @@ export class TasksController {
   }
 
   @Post(':id/links')
+  @RequiresRole('member')
   addLink(@Param('id') id: string, @Body() body: unknown): Task {
     const parsed = AddTaskLinkRequestSchema.safeParse(body);
     if (!parsed.success) {
@@ -154,6 +162,7 @@ export class TasksController {
   }
 
   @Delete(':id/links/:linkId')
+  @RequiresRole('member')
   removeLink(@Param('id') id: string, @Param('linkId') linkId: string): Task {
     return this.service.removeLink(id, linkId);
   }
@@ -162,6 +171,7 @@ export class TasksController {
   // the re-hydrated task; a missing task 404s, a task without a parseable PR URL
   // is a no-op. Thin: the service owns the gh-first/REST fetch + persistence.
   @Post(':id/pr/refresh')
+  @RequiresRole('member')
   async refreshPr(@Param('id') id: string): Promise<Task> {
     return this.prStatus.refresh(id);
   }
@@ -169,6 +179,7 @@ export class TasksController {
   // Add a blocker edge. A self-reference / unknown blocker → 400; a cycle → 409.
   // A missing :id task surfaces as the service's 404.
   @Post(':id/dependencies')
+  @RequiresRole('member')
   addDependency(@Param('id') id: string, @Body() body: unknown): Task {
     const parsed = AddTaskDependencyRequestSchema.safeParse(body);
     if (!parsed.success) {
@@ -187,6 +198,7 @@ export class TasksController {
   }
 
   @Delete(':id/dependencies/:dependsOnId')
+  @RequiresRole('member')
   removeDependency(
     @Param('id') id: string,
     @Param('dependsOnId') dependsOnId: string,
@@ -198,6 +210,7 @@ export class TasksController {
   // stub when the gate is disabled / no repo / no checks configured. Thin: the
   // service owns the run/save/event logic (mirrors the gate path in the runner).
   @Post(':id/check')
+  @RequiresRole('member')
   async triggerCheck(@Param('id') id: string): Promise<TriggerCheckResponse> {
     const run = await this.service.runManualCheck(id);
     return { run };
@@ -212,6 +225,7 @@ export class TasksController {
 
   // Permanent delete — only valid once the task is archived (the service enforces).
   @Delete(':id')
+  @RequiresRole('admin')
   remove(@Param('id') id: string): { ok: true } {
     this.service.deleteTask(id);
     return { ok: true };
@@ -221,6 +235,7 @@ export class TasksController {
   // aware task list from a freeform goal. Preview-only step — the client edits
   // and confirms, then calls POST /tasks/breakdown/create to materialise the board.
   @Post('breakdown')
+  @RequiresRole('member')
   async draftBreakdown(@Body() body: unknown): Promise<BreakdownPreviewResponse> {
     const parsed = BreakdownGoalRequestSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
@@ -231,6 +246,7 @@ export class TasksController {
   // Breakdown into a dependency-wired board without a project. Mirrors
   // POST /projects/:id/plan/create-from-breakdown but scoped to tasks only.
   @Post('breakdown/create')
+  @RequiresRole('member')
   createFromBreakdown(@Body() body: unknown): CreateFromBreakdownResponse {
     const parsed = CreateFromBreakdownRequestSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
@@ -245,6 +261,7 @@ export class TasksController {
   // batch body, delegate to the service, which fans each line through the normal
   // create pipeline and coalesces the board broadcast.
   @Post('bulk')
+  @RequiresRole('member')
   async createBulk(@Body() body: unknown): Promise<BulkCreateTaskResponse> {
     const parsed = BulkCreateTaskRequestSchema.safeParse(body);
     if (!parsed.success) {
@@ -261,6 +278,7 @@ export class TasksController {
   }
 
   @Post()
+  @RequiresRole('member')
   async create(
     @Req() req: FastifyRequest,
     @CurrentUser() user: CurrentUserPayload | null,
