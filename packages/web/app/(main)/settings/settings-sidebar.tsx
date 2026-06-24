@@ -9,6 +9,7 @@ import {
   KeyRound,
   Lock,
   Palette,
+  ShieldCheck,
   SlidersHorizontal,
   Users,
   UserRound,
@@ -26,11 +27,10 @@ const CATEGORIES: Category[] = [
   { href: '/settings/repos', label: 'Repos', Icon: FolderGit2 },
   { href: '/settings/credentials', label: 'Credentials', Icon: KeyRound },
   { href: '/settings/system', label: 'System', Icon: SlidersHorizontal },
+  { href: '/settings/approvals', label: 'Approvals', Icon: ShieldCheck },
   { href: '/settings/profile', label: 'Profile', Icon: CircleUser },
   { href: '/settings/team', label: 'Team', Icon: Users },
   { href: '/settings/user', label: 'User', Icon: UserRound },
-  { href: '/settings/profile', label: 'Profile', Icon: CircleUser },
-  { href: '/settings/team', label: 'Teams', Icon: Users },
 ];
 
 /**

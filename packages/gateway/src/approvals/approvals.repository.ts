@@ -1,7 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { asc, eq } from 'drizzle-orm';
 import { DB_TOKEN, type MidniteDb } from '../db/db.module';
-import { approvalRules, type ApprovalRuleInsert, type ApprovalRuleRow } from '../db/schema';
+import {
+  approvalRules,
+  approvalSettings,
+  type ApprovalRuleInsert,
+  type ApprovalRuleRow,
+  type ApprovalSettingsRow,
+} from '../db/schema';
 
 /** Drizzle queries for `approval_rules`. No business rules — all logic lives in the service. */
 @Injectable()
@@ -55,5 +61,18 @@ export class ApprovalsRepository {
   /** Find all enabled rules matching a specific tool name or the wildcard '*'. */
   listEnabledForTool(toolName: string): ApprovalRuleRow[] {
     return this.listEnabled().filter((r) => r.toolName === toolName || r.toolName === '*');
+  }
+
+  getSettings(): ApprovalSettingsRow | undefined {
+    return this.db.select().from(approvalSettings).get();
+  }
+
+  upsertMode(mode: string, updatedAt: string): ApprovalSettingsRow {
+    return this.db
+      .insert(approvalSettings)
+      .values({ id: 'singleton', mode, updatedAt })
+      .onConflictDoUpdate({ target: approvalSettings.id, set: { mode, updatedAt } })
+      .returning()
+      .get();
   }
 }

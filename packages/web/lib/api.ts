@@ -183,6 +183,14 @@ import {
   type User,
   type UpdateUserRequest,
   type UpdatePasswordRequest,
+  ApprovalSettingsSchema,
+  ApprovalRuleSchema,
+  ApprovalRulesResponseSchema,
+  ApprovalRuleResponseSchema,
+  type ApprovalSettings,
+  type ApprovalRule,
+  type CreateApprovalRule,
+  type UpdateApprovalRule,
 } from '@midnite/shared';
 import { z } from 'zod';
 
@@ -1576,4 +1584,45 @@ export async function updateMyProfile(req: UpdateUserRequest): Promise<User> {
 /** Change the current user's password. currentPassword is verified server-side. */
 export async function updateMyPassword(req: UpdatePasswordRequest): Promise<void> {
   await fetchJson('/auth/me/password', { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(req) });
+}
+
+// ---- Approvals settings ----
+
+export async function getApprovalSettings(): Promise<ApprovalSettings> {
+  return fetchJson('/approvals/settings', undefined, ApprovalSettingsSchema);
+}
+
+export async function setApprovalMode(mode: ApprovalSettings['mode']): Promise<ApprovalSettings> {
+  return fetchJson(
+    '/approvals/mode',
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ mode }) },
+    ApprovalSettingsSchema,
+  );
+}
+
+export async function listApprovalRules(): Promise<ApprovalRule[]> {
+  const res = await fetchJson('/approvals/rules', undefined, ApprovalRulesResponseSchema);
+  return res.rules;
+}
+
+export async function createApprovalRule(req: CreateApprovalRule): Promise<ApprovalRule> {
+  const res = await fetchJson(
+    '/approvals/rules',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(req) },
+    ApprovalRuleResponseSchema,
+  );
+  return res.rule;
+}
+
+export async function updateApprovalRule(id: string, req: UpdateApprovalRule): Promise<ApprovalRule> {
+  const res = await fetchJson(
+    `/approvals/rules/${encodeURIComponent(id)}`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(req) },
+    ApprovalRuleResponseSchema,
+  );
+  return res.rule;
+}
+
+export async function deleteApprovalRule(id: string): Promise<void> {
+  await fetchJson(`/approvals/rules/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
