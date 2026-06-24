@@ -48,3 +48,4 @@ export * from './backup.js';
 export * from './approval-rule.js';
 export * from './user.js';
 export * from './team.js';
+export * from './audit.js';

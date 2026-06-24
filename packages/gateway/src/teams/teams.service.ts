@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import type {
   CreateInviteRequest,
   CreateTeamRequest,
@@ -9,6 +9,7 @@ import type {
   UpdateTeamRequest,
 } from '@midnite/shared';
 import { randomUUID } from 'node:crypto';
+import { AuditService } from '../audit/audit.service.js';
 import { TeamsRepository } from './teams.repository.js';
 
 export class TeamDoesNotExistError extends Error {
@@ -66,7 +67,10 @@ function hasRole(actual: TeamRole, required: TeamRole): boolean {
 
 @Injectable()
 export class TeamsService {
-  constructor(private readonly repo: TeamsRepository) {}
+  constructor(
+    private readonly repo: TeamsRepository,
+    @Optional() private readonly audit?: AuditService,
+  ) {}
 
   createTeam(req: CreateTeamRequest, createdBy: string): TeamWithMembers {
     const existing = this.repo.findBySlug(req.slug);
@@ -77,6 +81,9 @@ export class TeamsService {
 
     this.repo.insert({ id, slug: req.slug, name: req.name, createdBy, createdAt: now });
     this.repo.insertMember({ teamId: id, userId: createdBy, role: 'owner', joinedAt: now });
+
+    this.audit?.record({ entityType: 'team', entityId: id, userId: createdBy, action: 'team.created' });
+    this.audit?.record({ entityType: 'team', entityId: id, userId: createdBy, action: 'team.member_added', payload: { memberId: createdBy, role: 'owner' } });
 
     return this.repo.hydrateTeamWithMembers(this.repo.findById(id)!);
   }
@@ -110,6 +117,7 @@ export class TeamsService {
     // Owners can only be changed by another owner.
     if (existing.role === 'owner') this.assertRole(teamId, callerId, 'owner');
     this.repo.setRole(teamId, userId, role);
+    this.audit?.record({ entityType: 'team', entityId: teamId, userId: callerId, action: 'team.member_role_changed', payload: { memberId: userId, role } });
   }
 
   removeMember(teamId: string, userId: string, callerId: string): void {
@@ -119,6 +127,7 @@ export class TeamsService {
     if (!existing) throw new TeamMembershipDoesNotExistError();
     if (existing.role === 'owner') throw new InsufficientTeamRoleError();
     this.repo.removeMember(teamId, userId);
+    this.audit?.record({ entityType: 'team', entityId: teamId, userId: callerId, action: 'team.member_removed', payload: { memberId: userId } });
   }
 
   createInvite(teamId: string, req: CreateInviteRequest, callerId: string): TeamInvite {
@@ -156,6 +165,7 @@ export class TeamsService {
     const existingMember = this.repo.findMember(row.teamId, userId);
     if (!existingMember) {
       this.repo.insertMember({ teamId: row.teamId, userId, role: row.role, joinedAt: now });
+      this.audit?.record({ entityType: 'team', entityId: row.teamId, userId, action: 'team.member_added', payload: { memberId: userId, role: row.role } });
     }
     this.repo.acceptInvite(row.id, now);
   }

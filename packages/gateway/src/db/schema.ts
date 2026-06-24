@@ -969,3 +969,28 @@ export const teamInvites = sqliteTable(
 
 export type TeamInviteRow = typeof teamInvites.$inferSelect;
 export type TeamInviteInsert = typeof teamInvites.$inferInsert;
+
+// ── Audit log (Phase 33 D3) ─────────────────────────────────────────────────
+// Append-only structured history of significant actions. userId is nullable
+// for system-initiated events (bootstrap, scheduled jobs). payload is a JSON
+// blob for action-specific detail (e.g. status transitions).
+export const auditLog = sqliteTable(
+  'audit_log',
+  {
+    id: text('id').primaryKey(),
+    entityType: text('entity_type').notNull(),
+    entityId: text('entity_id').notNull(),
+    userId: text('user_id'),
+    action: text('action').notNull(),
+    payload: text('payload'),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    entityIdx: index('audit_entity_idx').on(t.entityType, t.entityId),
+    userTimeIdx: index('audit_user_time_idx').on(t.userId, t.createdAt),
+    actionIdx: index('audit_action_idx').on(t.action),
+  }),
+);
+
+export type AuditLogRow = typeof auditLog.$inferSelect;
+export type AuditLogInsert = typeof auditLog.$inferInsert;

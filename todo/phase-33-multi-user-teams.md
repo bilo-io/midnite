@@ -97,16 +97,18 @@ Bind task execution to its owner's context and start recording who does what.
 - [ ] `AgentPoolService` ([`pool/agent-pool.service.ts`](../packages/gateway/src/pool/agent-pool.service.ts)) tracks active slot counts per `userId` in addition to the global pool size. New config key: `pool.perUserMaxSlots` (default: same as global `maxSlots`, effectively unlimited until set). The scheduler's tick ([`agent-pool-scheduler.service.ts`](../packages/gateway/src/pool/agent-pool-scheduler.service.ts)) skips a task if the owner's per-user cap is already full — emits a `task.waiting` event (not an error; the task retries next tick).
 - [ ] Config addition to `MidniteConfig` in [`packages/shared/src/config.ts`](../packages/shared/src/config.ts): `pool.perUserMaxSlots?: number`.
 
-### D2. Task execution bound to owner context — **S**
-- [ ] The PTY spawner ([`terminal/spawner/`](../packages/gateway/src/terminal/spawner/)) injects `MIDNITE_USER_ID=<ownerId>` into the spawned Claude Code session's env — so the hook callbacks at `POST /hooks/:taskId/:event` can be validated against the task's `created_by`. No behavioural change for tasks without a `created_by`.
+### D2. Task execution bound to owner context — **S** ✅ DONE
+- [x] `TerminalService.spawnAgentSession` accepts `userId?` in spec; injects `MIDNITE_USER_ID=<ownerId>` into env when set. `AgentRunnerService.start()` and auto-fix path pass `task.createdBy`. No behavioural change for tasks without a `created_by`.
 
-### D3. `audit_log` table — **S**
-- [ ] New table in [`db/schema.ts`](../packages/gateway/src/db/schema.ts): `id` (UUIDv7), `entity_type` (`task` | `repo` | `workflow` | `user` | `team`), `entity_id`, `user_id` (nullable — system actions have no user), `action` (e.g. `task.created`, `task.status_changed`, `user.login`, `team.member_added`), `payload` (JSON, nullable), `created_at`. Indexed on `(entity_type, entity_id)` and `(user_id, created_at)`.
-- [ ] `AuditService` ([`audit/audit.service.ts`](../packages/gateway/src/audit/audit.service.ts)) — a `@Global()` service (like `SearchIndexService`) with a single `record(entry)` method; fire-and-forget (doesn't throw). Injected into domain services.
+### D3. `audit_log` table — **S** ✅ DONE
+- [x] New table in [`db/schema.ts`](../packages/gateway/src/db/schema.ts): `id`, `entity_type`, `entity_id`, `user_id` (nullable), `action`, `payload` (JSON), `created_at`. Indexed on `(entity_type, entity_id)`, `(user_id, created_at)`, and `action`. Migration `0049_audit_log`.
+- [x] `AuditService` ([`audit/audit.service.ts`](../packages/gateway/src/audit/audit.service.ts)) — `@Global()` service; `record()` is fire-and-forget. `AuditRepository.list()` with filter/pagination. `GET /audit` endpoint returns paginated `AuditEntry[]`.
 
-### D4. Key audit events — **S**
-- [ ] Write audit entries on: `task.created`, `task.status_changed` (with `from`/`to` in payload), `task.deleted`; `user.registered`, `user.login`, `user.logout`; `team.created`, `team.member_added`, `team.member_removed`, `team.member_role_changed`; `workflow.run_started`, `workflow.run_completed`.
-- [ ] `GET /audit` (owner/admin only — enforced by role check in the controller): paginated, filterable by `entityType`, `entityId`, `userId`, `action`, date range. Returns `AuditEntry[]` (shared type).
+### D4. Key audit events — **S** ✅ DONE (run_completed deferred to engine)
+- [x] `task.created`, `task.status_changed` (with `from`/`to` payload), `task.deleted` — wired in `TasksService`.
+- [x] `user.registered` — `UsersService.register`; `user.login`, `user.logout` — `AuthController`.
+- [x] `team.created`, `team.member_added`, `team.member_removed`, `team.member_role_changed` — `TeamsService`.
+- [x] `workflow.run_started` — `WorkflowsService.run()`. `workflow.run_completed` deferred (requires engine callback).
 
 ---
 

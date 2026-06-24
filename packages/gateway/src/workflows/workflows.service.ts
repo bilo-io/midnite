@@ -5,6 +5,7 @@ import {
   NotFoundException,
   Optional,
 } from '@nestjs/common';
+import { AuditService } from '../audit/audit.service';
 import { randomBytes, randomUUID } from 'node:crypto';
 import {
   type CreateWorkflowRequest,
@@ -40,6 +41,7 @@ export class WorkflowsService {
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
     // Optional: see NotesService — global index in prod, omitted in unit specs.
     @Optional() @Inject(SearchIndexService) private readonly searchIndex?: SearchIndexService,
+    @Optional() @Inject(AuditService) private readonly audit?: AuditService,
   ) {}
 
   // --- reads ---
@@ -208,7 +210,9 @@ export class WorkflowsService {
   run(id: string, input: unknown, source: RunTriggerSource = 'manual'): WorkflowRun {
     const workflow = this.getWorkflow(id);
     try {
-      return this.engine.startRun(workflow, { triggerSource: source, input });
+      const workflowRun = this.engine.startRun(workflow, { triggerSource: source, input });
+      this.audit?.record({ entityType: 'workflow', entityId: id, action: 'workflow.run_started', payload: { runId: workflowRun.id, source } });
+      return workflowRun;
     } catch (err) {
       throw new BadRequestException(err instanceof Error ? err.message : 'cannot run workflow');
     }

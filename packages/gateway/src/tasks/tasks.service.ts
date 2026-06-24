@@ -24,6 +24,7 @@ import {
 } from '@midnite/shared';
 import { TaskClassifier, type ClassifierImage } from '../agent/classifier.service';
 import { PlannerService } from '../agent/planner.service';
+import { AuditService } from '../audit/audit.service';
 import { ChecksService } from '../checks/checks.service';
 import { MIDNITE_CONFIG } from '../config.token';
 import { mapWithConcurrency } from '../lib/map-with-concurrency';
@@ -85,6 +86,7 @@ export class TasksService {
     // ChecksService is optional — when absent (unit tests, partial installs) the
     // gate is skipped fail-open (same as the runner's @Optional wiring, Phase 30).
     @Optional() @Inject(ChecksService) private readonly checks?: ChecksService,
+    @Optional() @Inject(AuditService) private readonly audit?: AuditService,
   ) {}
 
   // Resolve a task's repo reference against the registry (Phase 13 B2). A blank
@@ -174,6 +176,7 @@ export class TasksService {
 
   updateStatus(id: string, status: Status): Task {
     const now = new Date().toISOString();
+    const before = this.repo.getTask(id);
     const row = this.repo.updateStatus(id, status, now);
     if (!row) throw new NotFoundException(`task ${id} not found`);
     this.repo.insertEvent({
@@ -195,6 +198,13 @@ export class TasksService {
         data: JSON.stringify({ reason: 'abandoned' }),
       });
     }
+    this.audit?.record({
+      entityType: 'task',
+      entityId: id,
+      userId: row.createdBy,
+      action: 'task.status_changed',
+      payload: { from: before?.status, to: status },
+    });
     const updated = this.emit('task.updated', this.getTask(id));
     // A blocker reaching a terminal state changes its dependents' readiness, so
     // refresh their derived "blocked by N" chip promptly (Phase 27 Theme B).
@@ -327,6 +337,7 @@ export class TasksService {
     }
     this.repo.deleteTask(id);
     this.bus.emit({ type: 'task.deleted', at: new Date().toISOString(), id });
+    this.audit?.record({ entityType: 'task', entityId: id, userId: row.createdBy, action: 'task.deleted' });
   }
 
   // `opts.emit: false` suppresses the per-task `task.created` broadcast so a bulk
@@ -439,6 +450,7 @@ export class TasksService {
     }
 
     const task = this.getTask(id);
+    this.audit?.record({ entityType: 'task', entityId: id, userId: input.createdBy, action: 'task.created' });
     if (opts.emit === false) return task;
     return this.emit('task.created', task);
   }

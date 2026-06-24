@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
 import type { User } from '@midnite/shared';
+import { AuditService } from '../audit/audit.service';
 import { TeamsService } from '../teams/teams.service';
 import { UsersRepository } from './users.repository';
 
@@ -36,6 +37,7 @@ export class UsersService {
     private readonly repo: UsersRepository,
     // Optional: absent in unit tests that don't wire the full module graph.
     @Optional() private readonly teams?: TeamsService,
+    @Optional() private readonly audit?: AuditService,
   ) {}
 
   async register(email: string, name: string, password: string): Promise<User> {
@@ -53,6 +55,7 @@ export class UsersService {
       updatedAt: now,
     });
     this.logger.log(`user registered: ${row.id}`);
+    this.audit?.record({ entityType: 'user', entityId: row.id, userId: row.id, action: 'user.registered' });
 
     // Auto-create a personal workspace team for the new user (Phase 33 C2).
     // Slug is `personal-<userId>` — guaranteed unique since user IDs are UUIDs.

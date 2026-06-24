@@ -166,7 +166,7 @@ export class AgentRunnerService implements OnModuleInit {
       this.tasks.startTask(task.id);
       const result = this.terminal.spawnAgentSession(
         task.id,
-        { prompt },
+        { prompt, userId: task.createdBy ?? undefined },
         { onExit: (code) => this.onExit(task.id, code) },
       );
       if (!result.ok) {
@@ -272,7 +272,7 @@ export class AgentRunnerService implements OnModuleInit {
 
       const result = this.terminal.spawnAgentSession(
         taskId,
-        { prompt: fixPrompt },
+        { prompt: fixPrompt, userId: taskAfterGate.createdBy ?? undefined },
         { onExit: (code) => this.onExit(taskId, code) },
       );
 

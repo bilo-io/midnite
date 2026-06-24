@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Post, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Optional, Post, UnauthorizedException } from '@nestjs/common';
 import {
   AuthResponseSchema,
   CreateUserRequestSchema,
@@ -6,6 +6,7 @@ import {
   RefreshRequestSchema,
   UserSchema,
 } from '@midnite/shared';
+import { AuditService } from '../audit/audit.service';
 import { UsersService, UserAlreadyExistsError, InvalidCredentialsError } from '../users/users.service';
 import { JwtService, RefreshTokenRevokedError, TokenInvalidError } from './jwt.service';
 import { CurrentUser } from './decorators/current-user.decorator';
@@ -17,6 +18,7 @@ export class AuthController {
   constructor(
     private readonly users: UsersService,
     private readonly jwtSvc: JwtService,
+    @Optional() private readonly audit?: AuditService,
   ) {}
 
   @Post('register')
@@ -45,6 +47,7 @@ export class AuthController {
     const { email, password } = parsed.data;
     try {
       const user = await this.users.validateCredentials(email, password);
+      this.audit?.record({ entityType: 'user', entityId: user.id, userId: user.id, action: 'user.login' });
       if (!this.jwtSvc.enabled) {
         return { user: UserSchema.parse(user) };
       }
@@ -78,6 +81,7 @@ export class AuthController {
   logout(@CurrentUser() currentUser: AuthenticatedUser) {
     if (currentUser?.userId) {
       this.jwtSvc.revokeAllForUser(currentUser.userId);
+      this.audit?.record({ entityType: 'user', entityId: currentUser.userId, userId: currentUser.userId, action: 'user.logout' });
     }
     return { ok: true };
   }
