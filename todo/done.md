@@ -4,6 +4,13 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 10 E1 complete: Storybook screenshot capture (PR #184)
+
+- [x] `e2e/screenshots/storybook.shots.ts` — new Playwright spec that discovers all stories via `/index.json`, captures each in light and dark (`?globals=theme:<theme>`), outputs to `e2e/__shots__/stories/<component>/<story>-<theme>.png`
+- [x] `playwright.config.ts` — `stories` Playwright project (port 6007, 1280×900); `screenshots` project testMatch narrowed to exclude `storybook.shots.ts`; Storybook dev server added as third `webServer` entry
+- [x] `moon run web:screenshots` now runs `--project=screenshots --project=stories` — one command for both pages and stories
+- [x] Phase 10 E1 marked ✅ DONE
+
 ## 2026-06-24 — Phase 36 D3 + E complete; fix gateway spec (commits 8e2d8df, 5055c54)
 
 - [x] Phase 36 D3: "Save as template" modal in workflow editor (BookmarkPlus toolbar button, SaveAsTemplateModal, POST /from-workflow, navigate to templates on success)
