@@ -1,9 +1,11 @@
-import { BadRequestException, Body, Controller, Get, Optional, Post, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, HttpCode, Optional, Patch, Post, UnauthorizedException } from '@nestjs/common';
 import {
   AuthResponseSchema,
   CreateUserRequestSchema,
   LoginRequestSchema,
   RefreshRequestSchema,
+  UpdatePasswordRequestSchema,
+  UpdateUserRequestSchema,
   UserSchema,
 } from '@midnite/shared';
 import { AuditService } from '../audit/audit.service';
@@ -93,6 +95,29 @@ export class AuthController {
       return { user: UserSchema.parse(this.users.getUser(currentUser.userId)) };
     } catch (err) {
       if (err instanceof TokenInvalidError) throw new UnauthorizedException('not authenticated');
+      throw err;
+    }
+  }
+
+  @Patch('me')
+  async updateMe(@CurrentUser() currentUser: AuthenticatedUser, @Body() body: unknown) {
+    if (!currentUser?.userId) throw new UnauthorizedException('not authenticated');
+    const parsed = UpdateUserRequestSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    const user = await this.users.updateProfile(currentUser.userId, parsed.data.name);
+    return { user: UserSchema.parse(user) };
+  }
+
+  @Patch('me/password')
+  @HttpCode(204)
+  async updatePassword(@CurrentUser() currentUser: AuthenticatedUser, @Body() body: unknown) {
+    if (!currentUser?.userId) throw new UnauthorizedException('not authenticated');
+    const parsed = UpdatePasswordRequestSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    try {
+      await this.users.updatePassword(currentUser.userId, parsed.data.currentPassword, parsed.data.newPassword);
+    } catch (err) {
+      if (err instanceof InvalidCredentialsError) throw new BadRequestException('current password is incorrect');
       throw err;
     }
   }
