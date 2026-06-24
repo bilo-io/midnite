@@ -28,6 +28,7 @@ import {
   workflowListRows,
   type NodeLabel,
 } from './workflow.js';
+import { parseCredFlag, templateListRows } from './template.js';
 import { openWs } from './ws.js';
 
 const program = new Command();
@@ -510,6 +511,71 @@ program
       console.log(`  ${t.id.slice(0, 8)}  [${t.status}]  ${t.title}${suffix}`);
     }
   });
+
+const template = program.command('template').description('Browse and install workflow templates');
+
+template
+  .command('list')
+  .description('List published workflow templates')
+  .option('-c, --category <category>', 'filter by category (monitoring|notifications|github|scheduling|ai|data)')
+  .action(async (opts: { category?: string }) => {
+    const templates = await client().listTemplates(opts.category);
+    if (templates.length === 0) {
+      console.log('no templates');
+      return;
+    }
+    const table = new Table({
+      head: ['Slug', 'Name', 'Category', 'Tags', 'Credential slots'],
+      wordWrap: true,
+    });
+    for (const row of templateListRows(templates)) table.push(row);
+    console.log(table.toString());
+    console.log(`${templates.length} template(s)`);
+  });
+
+template
+  .command('install <slug-or-id>')
+  .description('Install a template as a new workflow')
+  .option('-n, --name <name>', 'override the workflow name')
+  .option(
+    '--cred <slot=credId>',
+    'map a credential slot to a real credential id (repeatable)',
+    collect,
+    [],
+  )
+  .action(
+    async (
+      slugOrId: string,
+      opts: { name?: string; cred: string[] },
+    ) => {
+      const credentialMap: Record<string, string> = {};
+      for (const raw of opts.cred) {
+        const [slot, credId] = parseCredFlag(raw);
+        credentialMap[slot] = credId;
+      }
+
+      const c = client();
+
+      // Warn about unsatisfied slots before installing.
+      try {
+        const { slots } = await c.getTemplateSlots(slugOrId);
+        const unresolved = slots.filter((s) => !credentialMap[s.key] && !s.satisfiedBy);
+        if (unresolved.length > 0) {
+          for (const s of unresolved) {
+            console.warn(`warning: slot "${s.key}" (${s.type}) not mapped — workflow will have an unresolved credential`);
+          }
+        }
+      } catch {
+        // non-fatal: slot check failed, proceed anyway
+      }
+
+      const workflow = await c.installTemplate(slugOrId, {
+        name: opts.name,
+        credentialMap,
+      });
+      console.log(`installed  ${workflow.id}  ${workflow.name}`);
+    },
+  );
 
 program
   .command('serve')

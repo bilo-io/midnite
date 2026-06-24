@@ -74,6 +74,6 @@ import { WorkflowsGateway } from './workflows.gateway';
       ],
     },
   ],
-  exports: [WorkflowsService],
+  exports: [WorkflowsService, WorkflowEventBus],
 })
 export class WorkflowsModule {}

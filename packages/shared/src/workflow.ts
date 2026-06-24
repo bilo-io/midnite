@@ -12,6 +12,8 @@ export const WorkflowSchema = z.object({
   nodes: z.array(WorkflowNodeSchema).default([]),
   edges: z.array(WorkflowEdgeSchema).default([]),
   archived: z.boolean().optional(),
+  /** Phase 36: the template this was installed from, if any. */
+  installedFromTemplateId: z.string().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -32,6 +34,7 @@ export const WorkflowSummarySchema = z.object({
   lastRunAt: z.string().optional(),
   lastRunStatus: RunStatusSchema.optional(),
   archived: z.boolean().optional(),
+  installedFromTemplateId: z.string().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

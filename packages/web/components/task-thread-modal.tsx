@@ -684,6 +684,42 @@ export function TaskThreadModal({ task, projects, tasks, onClose }: Props) {
               </section>
             ) : null}
 
+            {task.aiReview ? (
+              <section>
+                <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  AI Review
+                </h3>
+                <div className="rounded-lg border border-border/60 px-3 py-2 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={[
+                        'inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider',
+                        task.aiReview.verdict === 'approved'
+                          ? 'bg-success/15 text-success'
+                          : task.aiReview.verdict === 'changes-requested'
+                          ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                          : 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
+                      ].join(' ')}
+                    >
+                      {task.aiReview.verdict === 'approved'
+                        ? 'LGTM'
+                        : task.aiReview.verdict === 'changes-requested'
+                        ? 'Changes requested'
+                        : 'Reviewed'}
+                    </span>
+                    <span className="ml-auto text-[11px] text-muted-foreground">
+                      {new Date(task.aiReview.reviewedAt).toLocaleString()}
+                    </span>
+                  </div>
+                  {task.aiReview.summary ? (
+                    <p className="text-xs leading-relaxed text-foreground/80 whitespace-pre-wrap">
+                      {task.aiReview.summary}
+                    </p>
+                  ) : null}
+                </div>
+              </section>
+            ) : null}
+
             <section>
               <ChecksPanel taskId={task.id} />
             </section>

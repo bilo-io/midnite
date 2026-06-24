@@ -47,6 +47,7 @@ import {
   robotVariant,
   TEX,
   walkAnim,
+  type CharKind,
 } from '@/lib/office/textures';
 
 // Phase 9 office: a sprite-based, multi-room floor plan (work · board · library
@@ -284,6 +285,9 @@ class OfficeScene extends Phaser.Scene {
         const kb = this.input.keyboard;
         if (kb) kb.enabled = !frozen;
         if (frozen) this.body().setVelocity(0, 0);
+      }
+      if (state.playerVariant !== prev.playerVariant) {
+        this.player.setTexture(this.playerCharKey(this.facing, 0));
       }
     });
     this.renderActors(useOfficeStore.getState().agents);
@@ -994,12 +998,27 @@ class OfficeScene extends Phaser.Scene {
       this.facing = vy < 0 ? 'up' : 'down';
       this.player.setFlipX(false);
     }
-    this.player.anims.play(walkAnim('human', this.facing), true);
+    this.player.anims.play(this.playerWalkAnim(this.facing), true);
   }
 
   private idlePlayer() {
     this.player.anims.stop();
-    this.player.setTexture(charKey('human', this.facing, 0));
+    this.player.setTexture(this.playerCharKey(this.facing, 0));
+  }
+
+  private playerKindAndVariant(): { kind: CharKind; v: number } {
+    const pv = useOfficeStore.getState().playerVariant;
+    return pv < 0 ? { kind: 'human', v: 0 } : { kind: 'robot', v: pv };
+  }
+
+  private playerCharKey(dir: 'down' | 'up' | 'side', frame: 0 | 1): string {
+    const { kind, v } = this.playerKindAndVariant();
+    return charKey(kind, dir, frame, v);
+  }
+
+  private playerWalkAnim(dir: 'down' | 'up' | 'side'): string {
+    const { kind, v } = this.playerKindAndVariant();
+    return walkAnim(kind, dir, v);
   }
 
   private tryInteract() {
@@ -1288,7 +1307,7 @@ class OfficeScene extends Phaser.Scene {
       .ellipse(sx, sy + TILE * 0.42, TILE * 0.45, TILE * 0.18, 0x000000, 0.25)
       .setDepth(7);
     this.player = this.add
-      .sprite(sx, sy, charKey('human', 'down', 0))
+      .sprite(sx, sy, this.playerCharKey('down', 0))
       .setScale(CHAR_SCALE)
       .setTint(this.palette.player)
       .setDepth(8);

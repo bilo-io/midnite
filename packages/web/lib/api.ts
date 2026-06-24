@@ -52,6 +52,16 @@ import {
   OpsSummarySchema,
   type OpsSummary,
   type OpsQuery,
+  WorkflowTemplateResponseSchema,
+  WorkflowTemplatesResponseSchema,
+  TemplateSlotsResponseSchema,
+  InstallTemplateRequestSchema,
+  CreateFromWorkflowRequestSchema,
+  type WorkflowTemplate,
+  type WorkflowTemplateSummary,
+  type InstallTemplateRequest,
+  type TemplateSlotsResponse,
+  type CreateFromWorkflowRequest,
 } from '@midnite/shared';
 import {
   AgentCliResponseSchema,
@@ -674,6 +684,15 @@ export async function deleteWorkflow(id: string): Promise<void> {
   await fetchJson(`/workflows/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
 
+export async function duplicateWorkflow(id: string): Promise<Workflow> {
+  const { workflow } = await fetchJson(
+    `/workflows/${encodeURIComponent(id)}/duplicate`,
+    { method: 'POST' },
+    WorkflowResponseSchema,
+  );
+  return workflow;
+}
+
 export async function runWorkflow(id: string): Promise<WorkflowRun> {
   const { run } = await fetchJson(
     `/workflows/${encodeURIComponent(id)}/run`,
@@ -719,6 +738,55 @@ export async function rotateWorkflowWebhook(id: string): Promise<WebhookInfoResp
     { method: 'POST' },
     WebhookInfoResponseSchema,
   );
+}
+
+// --- Workflow Templates ---
+
+export async function listWorkflowTemplates(filter?: {
+  category?: string;
+  published?: boolean;
+}): Promise<WorkflowTemplateSummary[]> {
+  const params = new URLSearchParams();
+  if (filter?.category) params.set('category', filter.category);
+  if (filter?.published !== undefined) params.set('published', String(filter.published));
+  const qs = params.size > 0 ? `?${params.toString()}` : '';
+  const { templates } = await fetchJson(`/workflow-templates${qs}`, undefined, WorkflowTemplatesResponseSchema);
+  return templates;
+}
+
+export async function getWorkflowTemplate(id: string): Promise<WorkflowTemplate> {
+  const { template } = await fetchJson(
+    `/workflow-templates/${encodeURIComponent(id)}`,
+    undefined,
+    WorkflowTemplateResponseSchema,
+  );
+  return template;
+}
+
+export async function getWorkflowTemplateSlots(id: string): Promise<TemplateSlotsResponse> {
+  return fetchJson(`/workflow-templates/${encodeURIComponent(id)}/slots`, undefined, TemplateSlotsResponseSchema);
+}
+
+export async function installWorkflowTemplate(id: string, body: InstallTemplateRequest): Promise<Workflow> {
+  const parsed = InstallTemplateRequestSchema.safeParse(body);
+  if (!parsed.success) throw new Error(parsed.error.message);
+  const { workflow } = await fetchJson(
+    `/workflow-templates/${encodeURIComponent(id)}/install`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(parsed.data) },
+    WorkflowResponseSchema,
+  );
+  return workflow;
+}
+
+export async function createWorkflowTemplateFromWorkflow(body: CreateFromWorkflowRequest): Promise<WorkflowTemplate> {
+  const parsed = CreateFromWorkflowRequestSchema.safeParse(body);
+  if (!parsed.success) throw new Error(parsed.error.message);
+  const { template } = await fetchJson(
+    '/workflow-templates/from-workflow',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(parsed.data) },
+    WorkflowTemplateResponseSchema,
+  );
+  return template;
 }
 
 // --- Agents (orchestrator + subagents + heartbeat) ---

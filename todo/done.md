@@ -4,6 +4,110 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 23 A1 complete: ApprovalRule model + storage + CRUD API (PR #185)
+
+- [x] `ApprovalRule` zod schema in `@midnite/shared` (`effect: allow|deny`, `toolName`, optional `match: { commandPrefix, pathGlob }`, `scope: global`, `note`); `CreateApprovalRuleSchema` / `UpdateApprovalRuleSchema`; 7 unit tests
+- [x] `approval_rules` SQLite table (migration `0044_approval_rules`) + `ApprovalsRepository` (list/listEnabled/listEnabledForTool/get/insert/update/remove); 10 integration tests
+- [x] `ApprovalsService` maps DB rows ↔ domain types; `ApprovalsController` at `GET/POST/PATCH/DELETE /approvals/rules`; `ApprovalsModule` registered in `AppModule`
+- [x] Phase 23 A1 marked ✅ DONE
+
+## 2026-06-24 — Phase 10 E1 complete: Storybook screenshot capture (PR #184)
+
+- [x] `e2e/screenshots/storybook.shots.ts` — new Playwright spec that discovers all stories via `/index.json`, captures each in light and dark (`?globals=theme:<theme>`), outputs to `e2e/__shots__/stories/<component>/<story>-<theme>.png`
+- [x] `playwright.config.ts` — `stories` Playwright project (port 6007, 1280×900); `screenshots` project testMatch narrowed to exclude `storybook.shots.ts`; Storybook dev server added as third `webServer` entry
+- [x] `moon run web:screenshots` now runs `--project=screenshots --project=stories` — one command for both pages and stories
+- [x] Phase 10 E1 marked ✅ DONE
+
+## 2026-06-24 — Phase 36 D3 + E complete; fix gateway spec (commits 8e2d8df, 5055c54)
+
+- [x] Phase 36 D3: "Save as template" modal in workflow editor (BookmarkPlus toolbar button, SaveAsTemplateModal, POST /from-workflow, navigate to templates on success)
+- [x] Phase 36 E: `template create --from-workflow` CLI command wired; `template list` and `template install` also complete
+- [x] fix: gateway workflow-templates.spec — add missing `position` fields to createFromWorkflow test nodes
+- [x] Phase 36 C2: all 4 remaining built-in seeds confirmed (github-pr-ready-check, daily-digest, ai-task-summariser, scheduled-task-cleanup)
+
+## 2026-06-24 — Phase 34 C1+C2+D3 + Phase 37 C3 + Phase 36 seeds B3 (commits 2adfe88, 95bd37f, 690dc98)
+
+- [x] Phase 36 seeds B3: `github-pr-ready-check`, `daily-digest`, `ai-task-summariser`, `scheduled-task-cleanup` seeds registered — 7 built-in templates total
+- [x] Phase 37 C3: repo-filter `logic.if` node added to ai-code-review template (repoFilter param, empty = allow all)
+- [x] Phase 34 C1: recharts already deferred via DashboardGrid dynamic import (audited + confirmed)
+- [x] Phase 34 C2: wavesurfer already deferred via dynamic import in media-detail-view (audited + confirmed)
+- [x] Phase 34 D3: `docs/DISK_SIZE.md` written (3 sources: .next cache, pnpm hardlinks, APFS snapshots)
+
+## 2026-06-24 — Phase 36 E — CLI template commands (commit 80dd11a)
+
+- [x] `midnite template list [--category <c>]` — table of slug/name/category/tags/slots
+- [x] `midnite template install <slug-or-id> [--name ...] [--cred slot=credId ...]` — slot warnings + install, prints workflow ID
+- [x] `GatewayClient.listTemplates` / `getTemplateSlots` / `installTemplate` in `cli/src/client.ts`
+- [x] `templateListRows` + `parseCredFlag` helpers in `cli/src/template.ts` (7 unit tests)
+
+## 2026-06-24 — Phase 36 D1+D2 — Template marketplace browse + install UI (PR #182)
+
+- [x] `/workflows/templates` page: category filter chips, free-text search, template cards
+- [x] Install modal: slot requirements via `GET /:id/slots`, per-slot credential dropdowns, `POST /:id/install` + navigate to editor
+- [x] "Templates" link added to Workflows page header
+- [x] Template API functions in `web/lib/api.ts`: `listWorkflowTemplates`, `getWorkflowTemplate`, `getWorkflowTemplateSlots`, `installWorkflowTemplate`
+
+## 2026-06-24 — Phase 36 B2+D4 — Workflow duplicate endpoint + card button (PR #181)
+
+- [x] `POST /workflows/:id/duplicate` — clones graph with fresh UUIDs, `enabled=false`, name `"(copy)"`
+- [x] `duplicateWorkflow()` in web API lib
+- [x] `onDuplicate` prop on `WorkflowCard` (grid + list layouts) shows Copy icon on hover
+- [x] `workflows-view.tsx` wires duplicate to refresh
+
+## 2026-06-24 — Phase 37 C2 — GitHub webhook UI on repo settings (PR #180)
+
+- [x] `ownerRepo` input added to repo create and edit forms (Settings → Repos)
+- [x] Globe icon + `owner/repo` display in repo list items
+- [x] Collapsible GitHub webhook section per repo: workflow picker, "Get URL" via `rotate`, URL+secret with copy, step-by-step GitHub setup instructions
+
+## 2026-06-24 — Phase 36 A+B+C (partial) — Workflow Template Marketplace gateway (PR #179)
+
+- [x] Migration 0043: `workflow_templates` table (slug unique, category+published index) + `installed_from_template_id` on `workflows`
+- [x] Shared `workflow-template.ts`: `WorkflowTemplate`, `WorkflowTemplateSummary`, `WorkflowTemplateCredentialSlot`, `CreateTemplateRequest`, `UpdateTemplateRequest`, `InstallTemplateRequest`, `TemplateSlotsResponse` (zod schemas + types)
+- [x] `WorkflowTemplatesRepository`: insert, findById, findBySlug, list (category/published/authorId filter), update, softDelete, hydrate, hydrateSummary
+- [x] `WorkflowTemplatesService`: CRUD, system-template protection, `onModuleInit` idempotent seeding, `getSlots`, `install` (slot:key sentinel resolution)
+- [x] `WorkflowTemplatesController`: full REST surface (`/workflow-templates` CRUD + `/:id/slots` + `/:id/install`)
+- [x] `WorkflowTemplatesModule` registered in `app.module.ts`
+- [x] Three built-in seeds: `notify-on-task-done`, `webhook-relay`, `ai-code-review` (Phase 37B)
+- [x] 15 new tests (repository + service); 933 gateway tests green
+
+## 2026-06-24 — Phase 37 C+D — Repo.ownerRepo, task.aiReview, AiReviewService, verdict chip (PR #178)
+
+- [x] Migration 0041: `owner_repo TEXT` nullable + unique index on `repos` table
+- [x] Migration 0042: `ai_review TEXT` nullable JSON on `tasks` table
+- [x] Shared `RepoSchema` + `CreateRepoRequestSchema` + `UpdateRepoRequestSchema` gain `ownerRepo?: string` (validated `"owner/repo"` format)
+- [x] Shared `TaskSchema` gains `aiReview?: { verdict, summary, runId, reviewedAt }`
+- [x] `repos.service.ts`: persists `ownerRepo` through create/update/toRepo
+- [x] `tasks.repository.ts`: `parseAiReview` helper, `findByPrUrl`, `setAiReview`, hydrate includes `aiReview`
+- [x] `AiReviewService`: subscribes to `WorkflowEventBus` `run.finished`; finds task by `prUrl`; derives verdict; writes `ai_review`; re-emits `task.updated`
+- [x] `WorkflowsModule` exports `WorkflowEventBus`; `TasksModule` imports `WorkflowsModule`
+- [x] `task-card.tsx`: `AiReviewChip` renders `'AI: LGTM'` / `'AI: Reviewed'` / `'AI: Changes'` alongside prStatus
+- [x] `task-thread-modal.tsx`: "AI Review" section with verdict badge, timestamp, 300-char summary
+
+---
+
+## 2026-06-24 — Phase 10 E2+F1+F2 — Visual regression baselines, e2e CI job, coverage reporting (PR #177)
+
+- [x] `toHaveScreenshot` assertions in `pages.shots.ts`; 10 macOS baselines committed (`e2e/__screenshots__/`); Docker command documented for Linux regeneration
+- [x] `playwright.config.ts`: `snapshotDir`, `snapshotPathTemplate`, `toHaveScreenshot.maxDiffPixelRatio: 0.005`
+- [x] `.github/workflows/e2e.yml`: `e2e` job (flow + visual, `continue-on-error: true`) + `coverage` job; browser cache; screenshot + diff + coverage artifacts
+- [x] `@vitest/coverage-v8` in `web` (20% thresholds) and `gateway` (40% thresholds); `test-coverage` moon tasks in both packages; `lcov` + `json-summary` reporters
+
+---
+
+## 2026-06-24 — Phase 37 Theme A — GitHub executor nodes + credential type (PR #175)
+
+- [x] Added `github` credential type to `WorkflowCredentialDataSchema` (token + optional `enterpriseUrl` for GHE)
+- [x] Added `github.get-pr`, `github.get-diff`, `github.post-review` node type definitions + param schemas in `packages/shared/src/node-types.ts`
+- [x] `GithubGetPrExecutor` — fetches PR metadata via REST (`number`, `title`, `body`, `state`, `author`, `labels`, `headBranch`, `headSha`, `baseBranch`, `additions`, `deletions`, `changedFiles`); github.com vs GHE URL routing
+- [x] `GithubGetDiffExecutor` — fetches raw unified diff; truncates at `maxTokens × 4` chars with `[diff truncated]` marker; returns `{ diff, truncated, estimatedTokens, prUrl }`
+- [x] `GithubPostReviewExecutor` — posts COMMENT/APPROVE/REQUEST_CHANGES review; returns `{ reviewId, htmlUrl, state }`
+- [x] All three executors registered in `workflows.module.ts` via `NODE_EXECUTORS` multi-provider
+- [x] 12 new unit tests in `integration-nodes.spec.ts` (credential errors, URL parse errors, success paths, truncation, API errors)
+- [x] Web credential form: `github` type shown in picker (TYPE_LABELS/TYPE_FIELDS in `credential-form.tsx`)
+
+---
+
 ## 2026-06-24 — Phase 30 verification: quality gates suite green
 
 All four implementation themes (A–D, PRs #102 #125 #134 #135 #144 #166) were already merged. Closed out the verification checklist: gate-hold-on-fail (completeWithChecks integration tests, PR #134), Re-run / `midnite check` path (PR #144), pass-straight-through, no-repo/disabled no-op, auto-fix loop + fixAttempts counter (PR #166), per-check timeout SIGKILL + output truncation (PR #102), single-slot-release invariant. Suite green (906 gateway + 505 web).
@@ -18,6 +122,16 @@ All four implementation themes (A–D, PRs #102 #125 #134 #135 #144 #166) were a
 - [x] Camera fades in on `OfficeScene` start (200ms black); fades out before switch to corner office
 - [x] `CornerOfficeScene`: auto-zoom-to-fill via `this.scale.width/worldW`; fade in on create; fade out before returning to office (both E-key and HUD back button paths)
 - [x] `credential-form.tsx` + `credentials/page.tsx`: added `github` credential type to `TYPE_FIELDS`/`TYPE_LABELS` (new `WorkflowCredentialType` added in shared)
+
+---
+
+## 2026-06-24 — Phase 9 B1: player avatar picker in the corner office (PR #183)
+
+- [x] `playerVariant: number` + `characterPickerOpen: boolean` added to `office-store` (with localStorage persistence)
+- [x] `CharacterPicker` modal: 7 options (human + 6 robot variants Alpha–Zeta with accent-colour swatches)
+- [x] "Avatar" button added to corner-office HUD top bar
+- [x] Both Phaser scenes use `playerCharKey`/`playerWalkAnim` helpers; respond live to store changes
+- [x] Input frozen while picker is open (same freeze pattern as desk-item picker)
 
 ---
 

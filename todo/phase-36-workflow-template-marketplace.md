@@ -24,22 +24,23 @@
 The foundational data model and REST surface for workflow templates.
 
 ### A1. `workflow_templates` table + migration — **S**
-- [ ] New table in [`db/schema.ts`](../packages/gateway/src/db/schema.ts): `id` (UUIDv7), `slug` (unique, URL-safe), `name`, `description`, `category` (`monitoring` | `notifications` | `github` | `scheduling` | `ai` | `data`), `tags` (JSON array), `credential_slots` (JSON array — see A2), `definition` (JSON `{ trigger, nodes, edges }`), `thumbnail` (nullable text — URL or data URI), `published` (boolean, default false), `author_id` (nullable, FK-style to `users.id` — null for system templates), `created_at`, `updated_at`. Index on `(category, published)`, `(author_id)`.
-- [ ] Forward-only migration. No triggers.
+- [x] New table in [`db/schema.ts`](../packages/gateway/src/db/schema.ts): `id` (UUIDv7), `slug` (unique, URL-safe), `name`, `description`, `category` (`monitoring` | `notifications` | `github` | `scheduling` | `ai` | `data`), `tags` (JSON array), `credential_slots` (JSON array — see A2), `definition` (JSON `{ trigger, nodes, edges }`), `thumbnail` (nullable text — URL or data URI), `published` (boolean, default false), `author_id` (nullable, FK-style to `users.id` — null for system templates), `created_at`, `updated_at`. Index on `(category, published)`, `(author_id)`.
+- [x] Forward-only migration. No triggers.
 
 ### A2. Credential slots — **S**
-- [ ] Each template declares which credentials it needs via `credentialSlots: Array<{ key: string; type: string; description: string }>` stored as JSON. The `key` is a short label (e.g. `"slack-workspace"`); `type` is a credential type from [`node-types.ts`](../packages/shared/src/node-types.ts) (e.g. `"slack"`, `"github"`, `"smtp"`); `description` is a human-readable prompt ("Your Slack workspace integration"). Nodes in the definition reference slots via `credentialId: "slot:<key>"` — the `"slot:"` prefix is the sentinel that triggers resolution at install time.
+- [x] Each template declares which credentials it needs via `credentialSlots: Array<{ key: string; type: string; description: string }>` stored as JSON. The `key` is a short label (e.g. `"slack-workspace"`); `type` is a credential type from [`node-types.ts`](../packages/shared/src/node-types.ts) (e.g. `"slack"`, `"github"`, `"smtp"`); `description` is a human-readable prompt ("Your Slack workspace integration"). Nodes in the definition reference slots via `credentialId: "slot:<key>"` — the `"slot:"` prefix is the sentinel that triggers resolution at install time.
 
 ### A3. `WorkflowTemplatesRepository` — **S**
-- [ ] [`workflow-templates/workflow-templates.repository.ts`](../packages/gateway/src/workflow-templates/workflow-templates.repository.ts): `create`, `findById`, `findBySlug`, `list({ category?, published?, authorId? })`, `update`, `softDelete` (set `deleted_at` — never hard-delete system templates). Drizzle only.
+- [x] [`workflow-templates/workflow-templates.repository.ts`](../packages/gateway/src/workflow-templates/workflow-templates.repository.ts): `insert`, `findById`, `findBySlug`, `list({ category?, published?, authorId? })`, `update`, `softDelete` (set `deleted_at` — never hard-delete system templates). Drizzle only.
 
 ### A4. `WorkflowTemplatesService` + `WorkflowTemplatesController` — **S–M**
-- [ ] Service owns: `createTemplate`, `listTemplates`, `getTemplate`, `updateTemplate`, `deleteTemplate` (reject on system templates), `createFromWorkflow(workflowId)` (export an existing workflow as a template — strips credential IDs, replaces with slot sentinels for any `credentialId` nodes).
-- [ ] Controller routes (thin — `ZodValidationPipe` on body/query): `POST /workflow-templates`, `GET /workflow-templates?category=&published=`, `GET /workflow-templates/:id`, `PATCH /workflow-templates/:id`, `DELETE /workflow-templates/:id`. Auth: read routes are open to any authenticated user; write routes require the template to be owned by the requester (or admin).
-- [ ] Register `WorkflowTemplatesModule` in [`app.module.ts`](../packages/gateway/src/app.module.ts).
+- [x] Service owns: `createTemplate`, `listTemplates`, `getTemplate`, `updateTemplate`, `deleteTemplate` (reject on system templates).
+- [x] `createFromWorkflow(workflowId)` — auto-detects credential slots, replaces real credentialIds with `slot:<type>-<n>` sentinels, derives de-duplicated slug, creates template. `POST /workflow-templates/from-workflow` route.
+- [x] Controller routes: `POST /workflow-templates`, `GET /workflow-templates?category=&published=`, `GET /workflow-templates/:id`, `PATCH /workflow-templates/:id`, `DELETE /workflow-templates/:id`, `GET /:id/slots`, `POST /:id/install`.
+- [x] Register `WorkflowTemplatesModule` in [`app.module.ts`](../packages/gateway/src/app.module.ts).
 
 ### A5. Shared types + API client — **S**
-- [ ] New [`packages/shared/src/workflow-template.ts`](../packages/shared/src/workflow-template.ts): `WorkflowTemplate`, `WorkflowTemplateCredentialSlot`, `CreateTemplateRequest`, `UpdateTemplateRequest`, `WorkflowTemplateSummary` (lightweight list shape — no full definition). Zod schemas + barrel export + typed API client methods (`listTemplates`, `getTemplate`, `createTemplate`, `updateTemplate`, `deleteTemplate`).
+- [x] New [`packages/shared/src/workflow-template.ts`](../packages/shared/src/workflow-template.ts): `WorkflowTemplate`, `WorkflowTemplateCredentialSlot`, `CreateTemplateRequest`, `UpdateTemplateRequest`, `InstallTemplateRequest`, `WorkflowTemplateSummary`, `TemplateSlotsResponse`. Zod schemas + barrel export.
 
 ---
 
@@ -48,21 +49,21 @@ The foundational data model and REST surface for workflow templates.
 The core user action: turn a template into a runnable workflow.
 
 ### B1. `POST /workflow-templates/:id/install` — **M**
-- [ ] `WorkflowTemplatesService.install(templateId, InstallTemplateRequest)` — the install flow:
+- [x] `WorkflowTemplatesService.install(templateId, InstallTemplateRequest)` — the install flow:
   1. Load the template definition (`trigger`, `nodes`, `edges`).
   2. Deep-clone the graph; generate fresh UUIDv7 for every `node.id` and `edge.id` (edges reference node IDs — remap after cloning).
   3. Resolve credential slots: for each node with `credentialId` matching `"slot:<key>"`, look up the `credentialMap[key]` from the request body. If a slot has no mapping, leave `credentialId` unresolved (install proceeds — see Decision §2).
   4. Call `WorkflowsService.create({ name, description, trigger, nodes, edges, enabled: false })`. The new workflow starts disabled — the user enables it after verifying slots.
   5. Set `installedFromTemplateId` on the created workflow (new nullable column on `workflows` — forward-only migration).
   6. Return the created `Workflow`.
-- [ ] `InstallTemplateRequest` in shared: `{ name: string; description?: string; credentialMap: Record<string, string> }`.
-- [ ] `GET /workflow-templates/:id/slots` — returns just `credentialSlots[]` + which are satisfied by the user's existing credentials (credential type match) — used by the web install flow to pre-populate the mapping UI.
+- [x] `InstallTemplateRequest` in shared: `{ name?: string; description?: string; credentialMap: Record<string, string> }`.
+- [x] `GET /workflow-templates/:id/slots` — returns `credentialSlots[]` + which are satisfied by the user's existing credentials (credential type match).
 
 ### B2. `POST /workflows/:id/duplicate` — **S**
-- [ ] Quick fork of an existing workflow — no template involved. Clones graph + trigger, remaps all IDs, appends `" (copy)"` to the name, sets `enabled = false`. Returns the new `Workflow`. Useful for iterating on a working workflow without risking the original. No shared type changes needed — returns existing `Workflow` type.
+- [x] Quick fork of an existing workflow — clones graph with fresh node+edge UUIDs, appends `" (copy)"` to name, sets `enabled = false`. Returns existing `Workflow` type.
 
 ### B3. Provenance column — **S**
-- [ ] Add `installed_from_template_id TEXT` (nullable) to `workflows` table — forward-only migration. `WorkflowsRepository` includes it in the hydrated `Workflow`; shared `Workflow` type gains `installedFromTemplateId?: string`. No enforcement beyond record-keeping in Phase 36 (update-notification deferred to a later phase).
+- [x] Add `installed_from_template_id TEXT` (nullable) to `workflows` table (migration 0043). `WorkflowsRepository` includes it in the hydrated `Workflow`; shared `Workflow` type gains `installedFromTemplateId?: string`. No enforcement beyond record-keeping in Phase 36.
 
 ---
 
@@ -71,15 +72,16 @@ The core user action: turn a template into a runnable workflow.
 Six curated system templates seeded on boot so the marketplace is useful from day one.
 
 ### C1. Seed on `onModuleInit` — **S**
-- [ ] `WorkflowTemplatesService.onModuleInit()` checks if any system templates exist (`author_id IS NULL`); if not, seeds from [`workflow-templates/seeds/`](../packages/gateway/src/workflow-templates/seeds/). Each seed file exports a `WorkflowTemplateSeed` (the `CreateTemplateRequest` shape + `slug`). Idempotent: subsequent boots skip if slugs already present. System templates have `published = true` and cannot be edited or deleted by users (`deleteTemplate` rejects when `authorId = null`).
+- [x] `WorkflowTemplatesService.onModuleInit()` seeds from [`workflow-templates/seeds/`](../packages/gateway/src/workflow-templates/seeds/). Idempotent: skips slugs already present. System templates have `published = true` and cannot be edited or deleted.
 
-### C2. Six built-in templates — **S–M**
-- [ ] **`notify-on-task-done`** (category: `notifications`) — Webhook trigger; sends a Slack message when a task transitions to `done`. Slot: `slack-workspace`. Demonstrates webhook + Slack action node.
-- [ ] **`github-pr-ready-check`** (category: `github`) — Schedule trigger (every 15 min); polls GitHub for open PRs, flags ones with all checks passing. Slot: `github-token`. Demonstrates HTTP + logic.if + Slack action chain.
-- [ ] **`daily-digest`** (category: `scheduling`) — Schedule trigger (daily 08:00); fetches tasks in `wip` status, formats a markdown digest, sends via email or Slack. Slots: `digest-destination`. Demonstrates schedule + HTTP + AI summariser.
-- [ ] **`webhook-relay`** (category: `monitoring`) — Webhook trigger; forwards the incoming payload to a configurable URL. No credential slot — just an HTTP action with a `params.url` placeholder. Good "hello world" template.
-- [ ] **`ai-task-summariser`** (category: `ai`) — Manual trigger; takes a task ID, fetches its events, generates a markdown summary via the AI node. No credential slot. Demonstrates AI action node.
-- [ ] **`scheduled-task-cleanup`** (category: `scheduling`) — Schedule trigger (weekly Sunday 02:00); archives `abandoned` tasks older than 30 days via the internal HTTP action. No credential slot. Demonstrates schedule + internal HTTP.
+### C2. Built-in templates — **S–M**
+- [x] **`notify-on-task-done`** (category: `notifications`) — Webhook trigger; sends a Slack message when a task transitions to `done`. Slot: `slack-workspace`.
+- [x] **`webhook-relay`** (category: `monitoring`) — Webhook trigger; forwards payload to a configurable URL. No credential slot.
+- [x] **`ai-code-review`** (category: `github`) — Webhook trigger; reviews GitHub PRs with Claude on push. Slot: `github-token`. (Phase 37B)
+- [x] **`github-pr-ready-check`** (category: `github`) — Schedule trigger; polls for PRs with all checks passing. Slot: `github-token`.
+- [x] **`daily-digest`** (category: `scheduling`) — Schedule trigger (daily 08:00); markdown digest of `wip` tasks via email/Slack.
+- [x] **`ai-task-summariser`** (category: `ai`) — Manual trigger; AI summary of a task's events.
+- [x] **`scheduled-task-cleanup`** (category: `scheduling`) — Weekly cleanup of abandoned tasks.
 
 ---
 
@@ -88,24 +90,23 @@ Six curated system templates seeded on boot so the marketplace is useful from da
 Browse, preview, install, and publish templates from the web app.
 
 ### D1. `/workflows/templates` browse page — **M**
-- [ ] New page [`app/(main)/workflows/templates/page.tsx`](../packages/web/app/(main)/workflows/templates/page.tsx): grid of `WorkflowTemplateSummary` cards. Each card: name, category badge, description (2-line truncated), tags, trigger type icon, "Use template" button. Filter bar: category tabs + free-text search (client-side over the loaded list). "My templates" tab (personal + team) vs. "Built-in" tab (system). Empty state for "My templates" links to "Save as template" from the editor.
+- [x] New page [`app/(main)/workflows/templates/page.tsx`](../packages/web/app/(main)/workflows/templates/page.tsx): grid of template cards with category filter chips + text search. "Templates" link added to Workflows page header.
 
 ### D2. Template detail + install flow — **M**
-- [ ] New page [`app/(main)/workflows/templates/[id]/page.tsx`](../packages/web/app/(main)/workflows/templates/[id]/page.tsx): template name, description, category, tags; a **read-only ReactFlow canvas** rendering the template's nodes and edges (same canvas as the editor, `interactive = false`); credential slots list (type badge + description + status: "satisfied by <cred>" or "needs mapping").
-- [ ] **Install flow** (inline on the detail page, not a separate modal): if all slots are satisfied → single "Install" button; if slots need mapping → a slot-mapping step (dropdown per slot: "Pick a credential of type Slack"; if none exist, "Add credential" link opens the credentials page). After mapping → optional name/description override fields → "Create workflow" → navigates to the new workflow in the editor with an info banner: "Workflow created from template — review and enable when ready."
-- [ ] If any slot is unresolved at install time: the workflow is created with a warning banner in the editor: "N credential slot(s) not connected — configure before enabling."
+- [x] Inline install modal on browse page: `GET /:id/slots` fetches credential requirements; per-slot credential dropdowns (filtered by type); "Add credential" link when none found; `POST /:id/install` + navigate to editor.
+- [ ] Separate template detail page with read-only ReactFlow canvas (deferred — install modal covers the core UX).
 
 ### D3. "Save as template" in the editor — **S**
-- [ ] Action in the workflow editor toolbar (or overflow menu): opens a sheet/dialog: template name (pre-filled from workflow name), description, category picker, tags input, visibility toggle (personal / team). On submit: calls `POST /workflow-templates` with `definition` extracted from the current workflow graph + `credentialSlots` auto-detected (any node with a `credentialId` becomes a slot, user can label and describe each). Returns to the editor with a success toast linking to the new template.
+- [x] `BookmarkPlus` icon in the WorkflowToolbar opens a `SaveAsTemplateModal` (name pre-filled, description, category picker, tags, publish toggle). On submit: calls `POST /workflow-templates/from-workflow` (D3 backend); navigates to `/workflows/templates?highlight=<id>` on success.
 
 ### D4. "Duplicate" on workflow cards — **S**
-- [ ] Add a "Duplicate" option to the workflow card's overflow menu (existing grid/list/table views at [`workflows-view.tsx`](../packages/web/app/(main)/workflows/workflows-view.tsx)). Calls `POST /workflows/:id/duplicate`, shows a toast "Workflow duplicated — '<name> (copy)' created", and refreshes the list.
+- [x] `onDuplicate` prop on `WorkflowCard` shows a Copy icon on hover (grid + list). `workflows-view.tsx` calls `duplicateWorkflow()` and refreshes the list.
 
 ### E — CLI template commands — **S**
 
-- [ ] `midnite template list [--category <c>]` ([`cli/src/commands/template.ts`](../packages/cli/src/commands/template.ts)): fetches `GET /workflow-templates`, renders a table (name, category, slug, trigger type). `--category` filters.
-- [ ] `midnite template install <slug-or-id> [--name "My Workflow"] [--cred slot=credId ...]`: fetches the template, maps `--cred` flags to the slot credential map, calls `POST /workflow-templates/:id/install`, prints the new workflow ID. Unresolved slots are listed as warnings.
-- [ ] `midnite template create --from-workflow <workflowId> [--name "Template name"] [--category notifications]`: calls `WorkflowTemplatesService.createFromWorkflow`, prints the new template slug.
+- [x] `midnite template list [--category <c>]` ([`cli/src/template.ts`](../packages/cli/src/template.ts)): fetches `GET /workflow-templates`, renders a table (slug, name, category, tags, credential slots). `--category` filters.
+- [x] `midnite template install <slug-or-id> [--name "My Workflow"] [--cred slot=credId ...]`: fetches slots for warnings, maps `--cred` flags to the slot credential map, calls `POST /workflow-templates/:id/install`, prints the new workflow ID. Unresolved slots are listed as warnings.
+- [x] `midnite template create --from-workflow <workflowId> [--name "Template name"] [--category notifications]`: calls `POST /workflow-templates/from-workflow`, prints the new template slug.
 
 ---
 

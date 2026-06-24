@@ -33,7 +33,9 @@ import { UsageModule } from './usage/usage.module';
 import { WeatherModule } from './weather/weather.module';
 import { WorkflowsModule } from './workflows/workflows.module';
 import { WorkflowCredentialsModule } from './workflows/credentials/workflow-credentials.module';
+import { WorkflowTemplatesModule } from './workflow-templates/workflow-templates.module';
 import { TerminalModule } from './terminal/terminal.module';
+import { ApprovalsModule } from './approvals/approvals.module';
 
 @Module({
   imports: [
@@ -70,7 +72,9 @@ import { TerminalModule } from './terminal/terminal.module';
     WeatherModule,
     WorkflowsModule,
     WorkflowCredentialsModule,
+    WorkflowTemplatesModule,
     TerminalModule,
+    ApprovalsModule,
     AdminModule,
   ],
   controllers: [HealthController],

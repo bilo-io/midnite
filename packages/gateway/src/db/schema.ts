@@ -34,6 +34,9 @@ export const tasks = sqliteTable(
     // User labels as a JSON array of strings (null/absent = none). App-layer
     // validated; no join table — tags are a small free-form set per task.
     tags: text('tags'),
+    // AI code review result (Phase 37 Theme D). JSON: { verdict, summary, runId, reviewedAt }.
+    // Written by AiReviewService when a code-review workflow run completes on the task's PR.
+    aiReview: text('ai_review'),
     archivedAt: text('archived_at'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
@@ -189,11 +192,15 @@ export const repos = sqliteTable(
     path: text('path').notNull(),
     branchPrefix: text('branch_prefix'),
     prTemplate: text('pr_template'),
+    // GitHub "owner/repo" slug (Phase 37 Theme C). Used to route incoming webhook
+    // events and to display the "Connect GitHub webhook" instructions in the UI.
+    ownerRepo: text('owner_repo'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
   },
   (t) => ({
     nameIdx: uniqueIndex('repos_name_idx').on(t.name),
+    ownerRepoIdx: uniqueIndex('repos_owner_repo_idx').on(t.ownerRepo),
   }),
 );
 
@@ -276,12 +283,50 @@ export const workflows = sqliteTable(
     lastFiredAt: text('last_fired_at'),
     // Soft-archive timestamp; null = active. Mirrors tasks.archivedAt.
     archivedAt: text('archived_at'),
+    // The template this workflow was installed from (Phase 36). Nullable — null
+    // for workflows created directly, set on install for record-keeping only.
+    installedFromTemplateId: text('installed_from_template_id'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
   },
   (t) => ({
     enabledIdx: index('workflows_enabled_idx').on(t.enabled),
     triggerTypeIdx: index('workflows_trigger_type_idx').on(t.triggerType),
+  }),
+);
+
+// ── Workflow template marketplace (Phase 36) ────────────────────────────────
+// Stores reusable, shareable workflow definitions. System templates (built-in
+// seeds) have author_id = NULL. Soft-deleted via deleted_at (never hard-deleted).
+export const workflowTemplates = sqliteTable(
+  'workflow_templates',
+  {
+    id: text('id').primaryKey(),
+    slug: text('slug').notNull(),
+    name: text('name').notNull(),
+    description: text('description'),
+    // Category: one of monitoring|notifications|github|scheduling|ai|data.
+    category: text('category').notNull(),
+    // JSON array of tag strings.
+    tags: text('tags').notNull().default('[]'),
+    // JSON array of { key, type, description } credential slot definitions.
+    credentialSlots: text('credential_slots').notNull().default('[]'),
+    // JSON: { trigger: Trigger, nodes: WorkflowNode[], edges: WorkflowEdge[] }
+    definition: text('definition').notNull(),
+    // Optional thumbnail URL or data URI.
+    thumbnail: text('thumbnail'),
+    // Published system templates are visible to all users.
+    published: integer('published').notNull().default(1),
+    // null for system (built-in) templates; user ID for user-created templates.
+    authorId: text('author_id'),
+    deletedAt: text('deleted_at'),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => ({
+    slugIdx: uniqueIndex('workflow_templates_slug_idx').on(t.slug),
+    categoryIdx: index('workflow_templates_category_idx').on(t.category, t.published),
+    authorIdx: index('workflow_templates_author_idx').on(t.authorId),
   }),
 );
 
@@ -590,6 +635,34 @@ export type CouncilRunInsert = typeof councilRuns.$inferInsert;
 export type CouncilRunMemberRow = typeof councilRunMembers.$inferSelect;
 export type CouncilRunMemberInsert = typeof councilRunMembers.$inferInsert;
 
+// --- Approval rules (Phase 23) ---
+
+export const approvalRules = sqliteTable(
+  'approval_rules',
+  {
+    id: text('id').primaryKey(),
+    enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
+    /** 'allow' | 'deny' */
+    effect: text('effect').notNull(),
+    /** Tool name to match, or '*' for all tools. */
+    toolName: text('tool_name').notNull(),
+    /** JSON: { commandPrefix?: string[], pathGlob?: string[] } | null */
+    match: text('match'),
+    /** Always 'global' this phase; per-repo scoping is deferred. */
+    scope: text('scope').notNull().default('global'),
+    note: text('note'),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => ({
+    toolIdx: index('approval_rules_tool_idx').on(t.toolName),
+    enabledIdx: index('approval_rules_enabled_idx').on(t.enabled),
+  }),
+);
+
+export type ApprovalRuleRow = typeof approvalRules.$inferSelect;
+export type ApprovalRuleInsert = typeof approvalRules.$inferInsert;
+
 // --- Notes (simple checklist panel on the dashboard) ---
 
 export const notes = sqliteTable(
@@ -788,3 +861,45 @@ export const agentRunStats = sqliteTable(
 
 export type AgentRunStatsRow = typeof agentRunStats.$inferSelect;
 export type AgentRunStatsInsert = typeof agentRunStats.$inferInsert;
+
+
+export type WorkflowTemplateRow = typeof workflowTemplates.$inferSelect;
+export type WorkflowTemplateInsert = typeof workflowTemplates.$inferInsert;
+
+// Phase 33: user identity + JWT auth.
+export const users = sqliteTable(
+  'users',
+  {
+    id: text('id').primaryKey(),
+    email: text('email').notNull().unique(),
+    name: text('name').notNull(),
+    passwordHash: text('password_hash').notNull(),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => ({
+    emailIdx: uniqueIndex('users_email_idx').on(t.email),
+  }),
+);
+
+export type UserRow = typeof users.$inferSelect;
+export type UserInsert = typeof users.$inferInsert;
+
+export const refreshTokens = sqliteTable(
+  'refresh_tokens',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id').notNull(),
+    tokenHash: text('token_hash').notNull().unique(),
+    expiresAt: text('expires_at').notNull(),
+    revokedAt: text('revoked_at'),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    userIdx: index('refresh_tokens_user_idx').on(t.userId),
+    tokenIdx: uniqueIndex('refresh_tokens_token_idx').on(t.tokenHash),
+  }),
+);
+
+export type RefreshTokenRow = typeof refreshTokens.$inferSelect;
+export type RefreshTokenInsert = typeof refreshTokens.$inferInsert;

@@ -27,25 +27,25 @@
 The building blocks. Everything in themes B–D depends on these executors existing.
 
 ### A1. `github` credential type — **S**
-- [ ] Add `github` to the credential types in [`packages/shared/src/workflow-credential.ts`](../packages/shared/src/workflow-credential.ts): fields `token` (Personal Access Token or fine-grained token) and optional `enterpriseUrl` (for GitHub Enterprise Server, e.g. `https://github.example.com`). The API base URL resolves to `https://api.github.com` by default or `<enterpriseUrl>/api/v3` when set.
-- [ ] Update the credential type picker in the web credentials UI to show `github` alongside `slack`, `smtp`, etc.
+- [x] Add `github` to the credential types in [`packages/shared/src/workflow-credential.ts`](../packages/shared/src/workflow-credential.ts): fields `token` (Personal Access Token or fine-grained token) and optional `enterpriseUrl` (for GitHub Enterprise Server, e.g. `https://github.example.com`). The API base URL resolves to `https://api.github.com` by default or `<enterpriseUrl>/api/v3` when set.
+- [x] Update the credential type picker in the web credentials UI to show `github` alongside `slack`, `smtp`, etc.
 
 ### A2. `github.get-pr` executor — **S**
-- [ ] New executor [`workflows/executors/github-get-pr.executor.ts`](../packages/gateway/src/workflows/executors/github-get-pr.executor.ts): param `prUrl: string` (expressionable). Parses `owner`, `repo`, `pull_number` from the URL. Calls `GET /repos/{owner}/{repo}/pulls/{pull_number}` with the `github` credential token as `Authorization: Bearer`. Returns `{ title, body, author, state, labels, headSha, baseBranch, headBranch, additions, deletions, changedFiles }`. On failure: throws with the HTTP status + GitHub error message.
-- [ ] Register as node type `github.get-pr` in [`packages/shared/src/node-types.ts`](../packages/shared/src/node-types.ts) with param definitions (expressionable `prUrl`, required `credentialId`).
+- [x] New executor [`workflows/executors/github-get-pr.executor.ts`](../packages/gateway/src/workflows/executors/github-get-pr.executor.ts): param `prUrl: string` (expressionable). Parses `owner`, `repo`, `pull_number` from the URL. Calls `GET /repos/{owner}/{repo}/pulls/{pull_number}` with the `github` credential token as `Authorization: Bearer`. Returns `{ title, body, author, state, labels, headSha, baseBranch, headBranch, additions, deletions, changedFiles }`. On failure: throws with the HTTP status + GitHub error message.
+- [x] Register as node type `github.get-pr` in [`packages/shared/src/node-types.ts`](../packages/shared/src/node-types.ts) with param definitions (expressionable `prUrl`, required `credentialId`).
 
 ### A3. `github.get-diff` executor — **M**
-- [ ] New executor [`workflows/executors/github-get-diff.executor.ts`](../packages/gateway/src/workflows/executors/github-get-diff.executor.ts): params `prUrl: string` (expressionable), `maxTokens: number` (default 8000, configurable per node). Calls `GET /repos/{owner}/{repo}/pulls/{pull_number}` with `Accept: application/vnd.github.v3.diff` to retrieve the raw unified diff.
-- [ ] **Truncation:** estimate token count as `ceil(charCount / 4)`. If the diff exceeds `maxTokens × 4` characters, truncate at that boundary and append `\n\n[diff truncated — showing first ~{maxTokens} tokens of {totalTokens} estimated]`. Truncation is logged at `warn` level with the PR URL and character counts.
-- [ ] Returns `{ diff, truncated: boolean, estimatedTokens: number, prUrl }`.
-- [ ] Register as `github.get-diff` in `node-types.ts`.
+- [x] New executor [`workflows/executors/github-get-diff.executor.ts`](../packages/gateway/src/workflows/executors/github-get-diff.executor.ts): params `prUrl: string` (expressionable), `maxTokens: number` (default 8000, configurable per node). Calls `GET /repos/{owner}/{repo}/pulls/{pull_number}` with `Accept: application/vnd.github.v3.diff` to retrieve the raw unified diff.
+- [x] **Truncation:** estimate token count as `ceil(charCount / 4)`. If the diff exceeds `maxTokens × 4` characters, truncate at that boundary and append `\n\n[diff truncated — showing first ~{maxTokens} tokens of {totalTokens} estimated]`. Truncation is logged at `warn` level with the PR URL and character counts.
+- [x] Returns `{ diff, truncated: boolean, estimatedTokens: number, prUrl }`.
+- [x] Register as `github.get-diff` in `node-types.ts`.
 
 ### A4. `github.post-review` executor — **M**
-- [ ] New executor [`workflows/executors/github-post-review.executor.ts`](../packages/gateway/src/workflows/executors/github-post-review.executor.ts): params `prUrl: string` (expressionable), `body: string` (expressionable — the review comment text), `event: 'COMMENT' | 'APPROVE' | 'REQUEST_CHANGES'` (expressionable, default `'COMMENT'`), `credentialId: string`.
-- [ ] Calls `POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews` with `{ body, event }`. Returns `{ reviewId, htmlUrl, state }`.
-- [ ] **HMAC verification** for incoming webhook payloads is already handled by the trigger layer (existing `webhookSecretHash`) — this executor does not re-verify; it only posts outbound reviews.
-- [ ] Register as `github.post-review` in `node-types.ts`.
-- [ ] **Shared types:** extend `NodeType` union in `node-types.ts` with `'github.get-pr' | 'github.get-diff' | 'github.post-review'`; add param schemas (zod) for each.
+- [x] New executor [`workflows/executors/github-post-review.executor.ts`](../packages/gateway/src/workflows/executors/github-post-review.executor.ts): params `prUrl: string` (expressionable), `body: string` (expressionable — the review comment text), `event: 'COMMENT' | 'APPROVE' | 'REQUEST_CHANGES'` (expressionable, default `'COMMENT'`), `credentialId: string`.
+- [x] Calls `POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews` with `{ body, event }`. Returns `{ reviewId, htmlUrl, state }`.
+- [x] **HMAC verification** for incoming webhook payloads is already handled by the trigger layer (existing `webhookSecretHash`) — this executor does not re-verify; it only posts outbound reviews.
+- [x] Register as `github.post-review` in `node-types.ts`.
+- [x] **Shared types:** extend `NodeType` union in `node-types.ts` with `'github.get-pr' | 'github.get-diff' | 'github.post-review'`; add param schemas (zod) for each.
 
 ---
 
@@ -54,20 +54,11 @@ The building blocks. Everything in themes B–D depends on these executors exist
 A ready-to-install template that wires A's executors into a complete review flow. Seeds into the Phase 36 template store.
 
 ### B1. Template definition — **S**
-- [ ] New seed file [`workflow-templates/seeds/ai-code-review.seed.ts`](../packages/gateway/src/workflow-templates/seeds/ai-code-review.seed.ts). Template slug: `ai-code-review`. Category: `github`. Tags: `["code-review", "github", "ai"]`.
-- [ ] **Node graph:**
-  1. `trigger.webhook` — receives `push`/`pull_request` events from GitHub.
-  2. `logic.if` — condition `{{ $trigger.action === 'opened' || $trigger.action === 'synchronize' }}` — exits the `false` branch silently (no review on unrelated events).
-  3. `github.get-pr` — `prUrl: "{{ $trigger.pull_request.html_url }}"`, `credentialId: "slot:github-token"`.
-  4. `github.get-diff` — `prUrl: "{{ $trigger.pull_request.html_url }}"`, `maxTokens: 8000`, `credentialId: "slot:github-token"`.
-  5. `ai.claude` — `model: "claude-sonnet-4-6"`, `system: "You are a senior software engineer performing a code review. Be concise, specific, and constructive."`, `prompt: "PR: {{ $3.title }}\nAuthor: {{ $3.author }}\nDescription:\n{{ $3.body }}\n\nDiff:\n{{ $4.diff }}\n\nReview this PR. Start with a one-sentence verdict (LGTM / minor issues / needs changes). Then list specific findings with file references if applicable. End with an overall recommendation."`.
-  6. `github.post-review` — `prUrl: "{{ $trigger.pull_request.html_url }}"`, `body: "{{ $5.text }}"`, `event: "COMMENT"`, `credentialId: "slot:github-token"`.
-- [ ] **Credential slots:** `[{ key: "github-token", type: "github", description: "GitHub Personal Access Token with `pull_requests: write` scope" }]`.
-- [ ] **Thumbnail:** category icon (`github` badge placeholder — no image generation in Phase 37).
-- [ ] Pick up by `WorkflowTemplatesService.onModuleInit()` alongside the Phase 36 built-ins.
+- [x] New seed file [`workflow-templates/seeds/ai-code-review.seed.ts`](../packages/gateway/src/workflow-templates/seeds/ai-code-review.seed.ts). Template slug: `ai-code-review`. Category: `github`. Tags: `["code-review", "github", "ai"]`. 6-node graph: trigger.webhook → logic.if → github.get-pr → github.get-diff → ai.claude → github.post-review. Picked up by `WorkflowTemplatesService.onModuleInit()` in Phase 36.
+- [x] **Credential slots:** `[{ key: "github-token", type: "github", description: "GitHub Personal Access Token with pull_requests:write scope" }]`.
 
 ### B2. System prompt refinement — **S**
-- [ ] The default system prompt (above) is the baseline. Expose `system` and `prompt` as editable in the workflow editor after installation so teams can adapt the review style (strict / lenient, language-specific conventions, security focus). No special handling needed — the `ai.claude` node already makes these fields editable.
+- [x] Default system + prompt are set in the seed. `system` and `prompt` are editable node params in the workflow editor after installation — no special handling needed.
 
 ---
 
@@ -76,17 +67,17 @@ A ready-to-install template that wires A's executors into a complete review flow
 Guide the user from "I have a repo" to "GitHub is sending webhooks to my review workflow."
 
 ### C1. `Repo.ownerRepo` field — **S**
-- [ ] Add `owner_repo TEXT` (nullable) to the `repos` table in [`db/schema.ts`](../packages/gateway/src/db/schema.ts) — forward-only migration. Format: `"owner/repo"` (e.g. `"bilo-io/midnite"`). Unique index. Extend the shared `Repo` type in [`packages/shared/src/repo.ts`](../packages/shared/src/repo.ts) with `ownerRepo?: string`; add to `CreateRepoRequest` + `UpdateRepoRequest`.
-- [ ] `ReposController.update()` accepts `ownerRepo`; `ReposRepository.update()` persists it.
+- [x] Add `owner_repo TEXT` (nullable) to the `repos` table in [`db/schema.ts`](../packages/gateway/src/db/schema.ts) — forward-only migration. Format: `"owner/repo"` (e.g. `"bilo-io/midnite"`). Unique index. Extend the shared `Repo` type in [`packages/shared/src/repo.ts`](../packages/shared/src/repo.ts) with `ownerRepo?: string`; add to `CreateRepoRequest` + `UpdateRepoRequest`.
+- [x] `ReposController.update()` accepts `ownerRepo`; `ReposRepository.update()` persists it.
 
 ### C2. "Connect GitHub webhook" UI — **S–M**
-- [ ] On the repo detail/settings page (web), add a **"GitHub webhook"** section: shows `ownerRepo` input (if not set, prompt to enter it); once set, shows a **webhook URL** picker — a dropdown of the user's installed code-review workflows (filtered by `installedFromTemplateId = ai-code-review` or template slug) with their webhook URLs.
-- [ ] Below the picker: a **step-by-step instructions panel** — "Go to GitHub → your-repo → Settings → Webhooks → Add webhook. Paste this URL: `<url>`. Set Content type to `application/json`. Paste this secret: `<secret>`. Select: Pull request events only."
-- [ ] A **"Test connection"** button: sends a synthetic `ping` event to the workflow webhook URL and shows success/failure. (The webhook trigger already handles the GitHub `ping` action gracefully — no-op on `ping`.)
+- [x] Added `ownerRepo` input to repo create/edit forms (Settings → Repos). Shows `Globe` icon and `owner/repo` value in the repo list.
+- [x] Collapsible "GitHub webhook" section in the edit panel: dropdown of webhook-trigger workflows, "Get URL" button calls `rotate` and shows `{ url, token }` with copy buttons, step-by-step GitHub setup instructions.
+- [ ] "Test connection" button — deferred (requires live GitHub webhook round-trip verification; URL is shown in instructions instead).
 
 ### C3. Payload filtering by `ownerRepo` — **S**
-- [ ] In the code review template (B1) and as a general pattern: add a second `logic.if` node immediately after the trigger that checks `{{ $trigger.repository.full_name === 'owner/repo' }}` — the `ownerRepo` value is passed as a node param (`repoFilter: string`, expressionable) so one workflow instance can serve one repo. Document this pattern in the template description.
-- [ ] Alternatively: the "Connect webhook" UI auto-sets this filter param when it generates the webhook URL for a specific repo — the selected `ownerRepo` is injected as the `repoFilter` param on the filter node. Both the manual and guided paths are supported.
+- [x] In the code review template (B1) and as a general pattern: added `logic.if` 'Repo filter' node after the webhook trigger with a `repoFilter: string` param (empty = allow all repos; set to `"owner/repo"` to restrict). Condition: `{{ !$node.repoFilter || $trigger.repository.full_name === $node.repoFilter }}`. Updated template description to document the pattern.
+- [ ] Alternatively: the "Connect webhook" UI auto-sets this filter param when it generates the webhook URL for a specific repo — the selected `ownerRepo` is injected as the `repoFilter` param on the filter node. (deferred)
 
 ---
 
@@ -95,11 +86,11 @@ Guide the user from "I have a repo" to "GitHub is sending webhooks to my review 
 Close the loop: when a code review workflow run completes, the result appears on the task that owns the PR.
 
 ### D1. `task.aiReview` column — **S**
-- [ ] Add `ai_review TEXT` (nullable JSON) to the `tasks` table — forward-only migration. Shape: `{ verdict: 'approved' | 'commented' | 'changes-requested', summary: string, runId: string, reviewedAt: string }`. `verdict` maps from the `github.post-review` `event` param: `APPROVE → approved`, `COMMENT → commented`, `REQUEST_CHANGES → changes-requested`.
-- [ ] Extend shared `Task` type with `aiReview?: { verdict: string; summary: string; runId: string; reviewedAt: string }`. `TasksRepository` includes it in the hydrated task.
+- [x] Add `ai_review TEXT` (nullable JSON) to the `tasks` table — forward-only migration. Shape: `{ verdict: 'approved' | 'commented' | 'changes-requested', summary: string, runId: string, reviewedAt: string }`. `verdict` maps from the `github.post-review` `event` param: `APPROVE → approved`, `COMMENT → commented`, `REQUEST_CHANGES → changes-requested`.
+- [x] Extend shared `Task` type with `aiReview?: { verdict: string; summary: string; runId: string; reviewedAt: string }`. `TasksRepository` includes it in the hydrated task.
 
 ### D2. `AiReviewService` — **S–M**
-- [ ] New service [`tasks/ai-review.service.ts`](../packages/gateway/src/tasks/ai-review.service.ts) — subscribes to `WorkflowRunCompletedEvent` via the existing `WorkflowEventBus`. On each completed run:
+- [x] New service [`tasks/ai-review.service.ts`](../packages/gateway/src/tasks/ai-review.service.ts) — subscribes to `WorkflowRunCompletedEvent` via the existing `WorkflowEventBus`. On each completed run:
   1. Check if the run's workflow has `installedFromTemplateId` matching the code review template slug (or any template in the `github` category — configurable via a service-level check).
   2. Extract the `prUrl` from the run's trigger input (`run.input.pull_request.html_url`).
   3. Find the task whose `prUrl` matches (via `TasksRepository.findByPrUrl(prUrl)`).
@@ -107,11 +98,11 @@ Close the loop: when a code review workflow run completes, the result appears on
   5. Derive `verdict` from `event`; derive `summary` as the first 300 characters of `body`.
   6. Write `ai_review` to the task row via `TasksRepository.setAiReview(taskId, aiReview)`.
   7. Emit `task.updated` (existing event bus) so the board refreshes.
-- [ ] `TasksRepository.findByPrUrl(prUrl)` — new query: `WHERE pr_url = ?` (or the existing `pr_url`/`prUrl` field — check Phase 22 schema for the exact column name).
+- [x] `TasksRepository.findByPrUrl(prUrl)` — new query: `WHERE pr_url = ?` (or the existing `pr_url`/`prUrl` field — check Phase 22 schema for the exact column name).
 
 ### D3. Review surfaces — **S**
-- [ ] **Task card chip:** a small `verdict` chip on the task card (board + list view) when `aiReview` is set — `✅ LGTM`, `💬 Commented`, `⚠️ Changes requested`. Styled with the existing badge component from `@midnite/ui`. Shown alongside the existing "PR: open/merged" chip.
-- [ ] **Task thread section:** an "AI Review" collapsible section in the task detail panel — shows `verdict`, `reviewedAt` timestamp, and the full `summary` text. A "View on GitHub" link opens the review URL (use `runId` to look up the workflow run output and extract `htmlUrl` from the `github.post-review` node result).
+- [x] **Task card chip:** a small `verdict` chip on the task card (board + list view) when `aiReview` is set — `AI: LGTM`, `AI: Reviewed`, `AI: Changes`. Styled with the existing badge component from `@midnite/ui`. Shown alongside the existing "PR: open/merged" chip.
+- [x] **Task thread section:** an "AI Review" collapsible section in the task detail panel — shows `verdict`, `reviewedAt` timestamp, and the full `summary` text.
 - [ ] **Re-review button:** a "Re-review" icon-button in the AI Review section — fires `POST /workflow-templates/ai-code-review/trigger` (or directly triggers the linked workflow run) with the task's `prUrl` injected. Disabled when no code-review workflow is linked to the task's repo.
 
 ---

@@ -26,11 +26,21 @@ No analyzer exists today; there is no baseline. This theme installs the tooling 
 - [x] Add a `bundle-report` task in [`packages/web/moon.yml`](../packages/web/moon.yml): `ANALYZE=true next build`. This writes the HTML treemap to `.next/analyze/`.
 
 ### A2. Generate + document the baseline — **S**
-- [ ] Run `moon run web:bundle-report` once, capture the top-10 chunks by size from the generated HTML (open `.next/analyze/client.html` in a browser, screenshot or note the sizes).
-- [ ] Record the baseline in this phase doc's **Decisions §4** (real numbers once run; placeholder below):
-  - Main JS chunk: _TBD_ kB gzipped
-  - Largest vendor chunks: _TBD_
-  - Total first-load JS: _TBD_ kB
+- [x] Run `moon run web:bundle-report` (2026-06-24). Top-10 uncompressed JS chunks:
+  1. `6676e8bd.js` — 1.1 MB (lazy: DashboardGrid / recharts / react-grid-layout)
+  2. `1292.js` — 436 kB
+  3. `2f6c9bbc.js` — 280 kB (lazy: @xyflow/react workflow editor)
+  4. `framework-....js` — 188 kB (React framework, always loaded)
+  5. `a0f49a59.js` — 172 kB (shared vendor, gzip: 54 kB)
+  6. `1106.js` — 172 kB (shared vendor, gzip: 47 kB)
+  7. `8220.js` — 144 kB
+  8. `8095.js` — 136 kB
+  9. `main.js` — 128 kB (Next.js runtime)
+  10. `polyfills.js` — 112 kB (always loaded)
+- [x] Baseline recorded:
+  - **First-load JS (shared, gzipped):** 104 kB
+  - **Largest lazy chunk:** 1.1 MB uncompressed (dashboard, recharts — already deferred)
+  - **Typical page add:** 1.8–21 kB + 104 kB shared
 
 ---
 
@@ -46,7 +56,7 @@ Next.js 14+ can apply extra barrel-import optimisation for known large packages.
   }
   ```
   `lucide-react` is the primary target (39 MB installed; named imports like `{ Check, X }` are already correct, but Next.js's extra pass improves tree-shaking further). `recharts` and `@midnite/ui` are secondary.
-- [ ] Run `moon run web:build` (or `web:bundle-report`) after the change and compare chunk sizes — confirm `lucide-react` chunk shrinks or merges cleanly into page chunks.
+- [x] Confirmed: `optimizePackageImports` active for `lucide-react`, `recharts`, `@midnite/ui`. Baseline first-load JS shared: 104 kB gzipped (good). Lucide-react icons tree-shaken into page-specific chunks; no large stand-alone lucide chunk in top-10.
 
 ---
 
@@ -55,13 +65,13 @@ Next.js 14+ can apply extra barrel-import optimisation for known large packages.
 Several non-trivial libraries are currently bundled into the initial JS payload. They're all view-specific — the board/reports/workflow/audio views — so they can be deferred with `dynamic()` without affecting First Contentful Paint on the main kanban.
 
 ### C1. Audit + lazify `recharts` — **M**
-- [ ] `grep -r "recharts" packages/web --include="*.tsx" -l` to find all import sites.
-- [ ] Wrap each consuming component's import with `dynamic(() => import('./...'), { ssr: false })` — or extract a thin wrapper component that `dynamic`-imports the chart and use that wrapper at call sites.
-- [ ] Confirm the reports/analytics view still renders correctly after deferral.
+- [x] `grep -r "recharts" packages/web --include="*.tsx" -l` → single import site: `components/market-asset-widget.tsx`.
+- [x] Already deferred: `MarketAssetWidget` is only rendered inside `DashboardGrid`, which is itself `dynamic()`-imported in `app/(main)/dashboard/page.tsx` (C4). No extra wrapping needed — recharts is not in the initial bundle.
+- [x] Confirm: no recharts imports outside the dashboard-grid tree (stories + tests excluded).
 
 ### C2. Audit + lazify `wavesurfer.js` — **S**
-- [ ] `grep -r "wavesurfer" packages/web --include="*.tsx" -l` to find the import site.
-- [ ] Wrap with `dynamic(() => import('./...'), { ssr: false })`.
+- [x] `grep -r "wavesurfer" packages/web --include="*.tsx" -l` → `components/wavesurfer-player.tsx` (the implementation) + `app/(main)/media/[id]/media-detail-view.tsx` (the consumer).
+- [x] Already deferred: `media-detail-view.tsx` already uses `dynamic(() => import('./wavesurfer-player')..., { ssr: false })`. wavesurfer.js is not in the initial bundle.
 
 ### C3. Audit `@xyflow/react` (workflow canvas) — **S**
 - [x] `grep -r "@xyflow/react" packages/web --include="*.tsx" -l`.
@@ -83,7 +93,7 @@ Several non-trivial libraries are currently bundled into the initial JS payload.
 - [x] Added aggregate `root:clean` to [`moon.yml`](../moon.yml) that fans out to `web:clean`.
 
 ### D3. Disk-size documentation — **S**
-- [ ] Write [`docs/DISK_SIZE.md`](../docs/DISK_SIZE.md) explaining the three sources of inflated reported sizes:
+- [x] Write [`docs/DISK_SIZE.md`](../docs/DISK_SIZE.md) explaining the three sources of inflated reported sizes:
   1. **`.next/cache/`** — 1.6 GB of local webpack/SWC transpilation cache. Safe to delete at any time (`moon run web:clean`); regenerated on the next build. Not committed; not shipped to users.
   2. **pnpm hardlinks** — pnpm stores packages once in `~/.pnpm-store` and hardlinks them into every `node_modules`. Finder and `du` count each hardlink as the full file size; the actual unique bytes on disk are a fraction of the reported total. Multiple worktrees multiply the apparent size. Use `pnpm store status` or `pnpm store prune` to manage the store.
   3. **APFS local snapshots** — macOS Time Machine creates local snapshots hourly. System Preferences → Storage counts these against the used-space figure; `du` does not. A repo that `du` reports at 2 GB can appear as 30–80 GB in Storage because of accumulated snapshots. Run `tmutil deletelocalsnapshots /` to reclaim the space (snapshots are re-created automatically).
@@ -105,12 +115,12 @@ Several non-trivial libraries are currently bundled into the initial JS payload.
 
 ## Verification
 
-- [ ] `moon run web:bundle-report` completes without error; `.next/analyze/client.html` and `.next/analyze/server.html` open in a browser and show a readable treemap.
+- [x] `moon run web:bundle-report` completes without error; `.next/analyze/client.html` and `.next/analyze/server.html` open in a browser and show a readable treemap.
 - [ ] After Theme B, re-run the report and confirm `lucide-react`'s chunk is smaller or absent from the main bundle.
 - [x] After Theme C, `DashboardGrid` and `WorkflowEditor` are dynamically imported; heavy libs deferred.
 - [x] `moon run web:clean` runs without error (task confirmed in moon.yml).
 - [x] `moon run :typecheck` (shared/gateway/cli/web/ui), `moon run :test` — 906 gateway + 505 web tests pass.
-- [ ] `docs/DISK_SIZE.md` renders correctly in GitHub / a markdown viewer.
+- [x] `docs/DISK_SIZE.md` renders correctly in GitHub / a markdown viewer.
 
 ---
 

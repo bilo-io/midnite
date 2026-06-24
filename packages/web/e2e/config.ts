@@ -11,6 +11,9 @@
 // playwright.config.ts only ever clears our own orphans.
 export const E2E_WEB_PORT = 3311;
 export const E2E_GATEWAY_PORT = 7811;
+// Separate from the `web:storybook` default (6006) so the story-shots run
+// doesn't collide with a dev Storybook that might already be open.
+export const STORYBOOK_PORT = 6007;
 
 // Use 127.0.0.1, not `localhost`: the gateway binds IPv4 (config default host
 // 127.0.0.1), but on Node ≥18 with verbatim DNS ordering `localhost` can resolve
@@ -18,6 +21,7 @@ export const E2E_GATEWAY_PORT = 7811;
 // port nothing is listening on. Pinning IPv4 keeps every hop consistent.
 export const WEB_ORIGIN = `http://127.0.0.1:${E2E_WEB_PORT}`;
 export const GATEWAY_ORIGIN = `http://127.0.0.1:${E2E_GATEWAY_PORT}`;
+export const STORYBOOK_ORIGIN = `http://127.0.0.1:${STORYBOOK_PORT}`;
 
 // Where the Theme E1 screenshot capture writes its PNGs (relative to this
 // package). Not a Playwright `toHaveScreenshot` baseline dir — these are

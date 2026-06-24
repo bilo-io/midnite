@@ -164,6 +164,7 @@ export class WorkflowsRepository {
       nodes: graph.nodes,
       edges: graph.edges,
       archived: row.archivedAt != null,
+      installedFromTemplateId: row.installedFromTemplateId ?? undefined,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };

@@ -5,6 +5,7 @@ import type { OfficeAgent } from '@/lib/office/agents';
 import { DEFAULT_DESK_ITEMS, parseDeskItems } from '@/lib/office/desk-items';
 
 const LS_CUSTOMISATION_KEY = 'midnite.office.customisation';
+const LS_PLAYER_VARIANT_KEY = 'midnite.office.player-variant';
 
 /** Which view the interaction panel is showing for the selected desk. */
 export type InteractionMode = 'menu' | 'call' | 'message';
@@ -43,6 +44,10 @@ interface OfficeState {
   playstationOpen: boolean;
   /** Whether the corner-office desk-item picker is open. */
   deskPickerOpen: boolean;
+  /** Whether the corner-office character (avatar) picker is open. */
+  characterPickerOpen: boolean;
+  /** Player avatar: -1 = human, 0–5 = robot variant index (persisted). */
+  playerVariant: number;
   /** Personal "on a coffee break" presence flag (mock — local to this session). */
   onBreak: boolean;
   /** Which Phaser scene is active — drives the HUD (back button vs. normal). */
@@ -73,6 +78,9 @@ interface OfficeState {
   closePlaystation(): void;
   openDeskPicker(): void;
   closeDeskPicker(): void;
+  openCharacterPicker(): void;
+  closeCharacterPicker(): void;
+  setPlayerVariant(variant: number): void;
   toggleBreak(): void;
   setCurrentScene(scene: 'office' | 'corner'): void;
   setDeskItems(items: string[]): void;
@@ -83,6 +91,14 @@ interface OfficeState {
 function loadDeskItems(): string[] {
   if (typeof window === 'undefined') return DEFAULT_DESK_ITEMS;
   return parseDeskItems(window.localStorage.getItem(LS_CUSTOMISATION_KEY));
+}
+
+function loadPlayerVariant(): number {
+  if (typeof window === 'undefined') return -1;
+  const raw = window.localStorage.getItem(LS_PLAYER_VARIANT_KEY);
+  if (!raw) return -1;
+  const n = parseInt(raw, 10);
+  return isNaN(n) || n < -1 || n > 5 ? -1 : n;
 }
 
 export const useOfficeStore = create<OfficeState>((set) => ({
@@ -98,9 +114,11 @@ export const useOfficeStore = create<OfficeState>((set) => ({
   libraryOpen: false,
   playstationOpen: false,
   deskPickerOpen: false,
+  characterPickerOpen: false,
   onBreak: false,
   currentScene: 'office',
   deskItems: loadDeskItems(),
+  playerVariant: loadPlayerVariant(),
   setAgents: (agents) => set({ agents }),
   patchAgent: (id, patch) =>
     set((s) => {
@@ -130,8 +148,17 @@ export const useOfficeStore = create<OfficeState>((set) => ({
     set({ playstationOpen: true, active: null, boardOpen: false, libraryOpen: false, deskPickerOpen: false }),
   closePlaystation: () => set({ playstationOpen: false }),
   openDeskPicker: () =>
-    set({ deskPickerOpen: true, active: null, boardOpen: false, libraryOpen: false, playstationOpen: false }),
+    set({ deskPickerOpen: true, characterPickerOpen: false, active: null, boardOpen: false, libraryOpen: false, playstationOpen: false }),
   closeDeskPicker: () => set({ deskPickerOpen: false }),
+  openCharacterPicker: () =>
+    set({ characterPickerOpen: true, deskPickerOpen: false, active: null, boardOpen: false, libraryOpen: false, playstationOpen: false }),
+  closeCharacterPicker: () => set({ characterPickerOpen: false }),
+  setPlayerVariant: (playerVariant) => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(LS_PLAYER_VARIANT_KEY, String(playerVariant));
+    }
+    set({ playerVariant });
+  },
   toggleBreak: () => set((s) => ({ onBreak: !s.onBreak })),
   setCurrentScene: (currentScene) => set({ currentScene }),
   setDeskItems: (deskItems) => {
@@ -154,6 +181,7 @@ export const useOfficeStore = create<OfficeState>((set) => ({
       libraryOpen: false,
       playstationOpen: false,
       deskPickerOpen: false,
+      characterPickerOpen: false,
       currentScene: 'office',
     }),
 }));

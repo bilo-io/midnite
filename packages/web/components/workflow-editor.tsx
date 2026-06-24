@@ -2,26 +2,140 @@
 
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { ReactFlowProvider } from '@xyflow/react';
 import {
+  Loader2,
   PanelLeftClose,
   PanelLeftOpen,
   PanelRightClose,
   PanelRightOpen,
+  X,
   type LucideIcon,
 } from 'lucide-react';
+import { WORKFLOW_TEMPLATE_CATEGORIES, type WorkflowTemplateCategory } from '@midnite/shared';
 import type { Workflow } from '@midnite/shared';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { NodeConfigPanel } from '@/components/node-config-panel';
 import { NodePalette } from '@/components/node-palette';
 import { RunHistoryPanel } from '@/components/run-history-panel';
 import { RunOutputPanel } from '@/components/run-output-panel';
 import { WorkflowToolbar } from '@/components/workflow-toolbar';
-import { updateWorkflow } from '@/lib/api';
+import { createWorkflowTemplateFromWorkflow, updateWorkflow } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { useAutosave } from '@/lib/use-autosave';
 import { useWorkflowRun } from '@/lib/use-workflow-run';
 import { createWorkflowStore, WorkflowStoreContext } from '@/lib/workflow-store';
 import { cn } from '@/lib/utils';
+
+function SaveAsTemplateModal({
+  workflowId,
+  workflowName,
+  onClose,
+  onSaved,
+}: {
+  workflowId: string;
+  workflowName: string;
+  onClose: () => void;
+  onSaved: (templateId: string) => void;
+}) {
+  const [name, setName] = useState(workflowName);
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState<WorkflowTemplateCategory>('monitoring');
+  const [tagsRaw, setTagsRaw] = useState('');
+  const [published, setPublished] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      const tags = tagsRaw
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean);
+      const tpl = await createWorkflowTemplateFromWorkflow({
+        workflowId,
+        name: name.trim() || workflowName,
+        description: description.trim() || undefined,
+        category,
+        tags,
+        published,
+      });
+      onSaved(tpl.id);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to save template');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-md rounded-xl border border-border/60 bg-card p-6 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <h2 className="text-base font-semibold">Save as template</h2>
+          <button type="button" onClick={onClose} className="rounded p-1 hover:bg-muted/60" aria-label="Close">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <label className="text-xs font-medium">Template name</label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={workflowName} />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-medium">Description</label>
+            <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What does this template do?" />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-medium">Category</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value as WorkflowTemplateCategory)}
+              className="w-full rounded-md border border-border/60 bg-background px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+            >
+              {WORKFLOW_TEMPLATE_CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-medium">Tags <span className="text-muted-foreground">(comma-separated)</span></label>
+            <Input value={tagsRaw} onChange={(e) => setTagsRaw(e.target.value)} placeholder="e.g. slack, tasks, daily" />
+          </div>
+
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            <input type="checkbox" checked={published} onChange={(e) => setPublished(e.target.checked)} className="rounded" />
+            Publish (visible to team)
+          </label>
+        </div>
+
+        {error ? <p className="mt-3 text-xs text-destructive">{error}</p> : null}
+
+        <div className="mt-5 flex justify-end gap-2">
+          <Button variant="ghost" size="sm" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button size="sm" onClick={() => void submit()} disabled={saving}>
+            {saving ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
+            Save template
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const WorkflowCanvas = dynamic(() => import('@/components/workflow-canvas'), {
   ssr: false,
@@ -72,12 +186,14 @@ function PanelToggle({
 }
 
 export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
+  const router = useRouter();
   const [store] = useState(() => createWorkflowStore(workflow));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(true);
   const [configOpen, setConfigOpen] = useState(true);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [saveAsTemplateOpen, setSaveAsTemplateOpen] = useState(false);
   const runner = useWorkflowRun(workflow.id);
 
   // Reflect live run state (status + failure message) onto the canvas nodes.
@@ -147,6 +263,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
             onSave={() => void save()}
             onEditTrigger={editTrigger}
             onHistory={() => setHistoryOpen((o) => !o)}
+            onSaveAsTemplate={() => setSaveAsTemplateOpen(true)}
             historyOpen={historyOpen}
             running={runner.running}
             saving={saving}
@@ -215,6 +332,18 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
           <RunOutputPanel run={runner.run} />
         </div>
       </ReactFlowProvider>
+
+      {saveAsTemplateOpen ? (
+        <SaveAsTemplateModal
+          workflowId={workflow.id}
+          workflowName={store.getState().name}
+          onClose={() => setSaveAsTemplateOpen(false)}
+          onSaved={(templateId) => {
+            setSaveAsTemplateOpen(false);
+            router.push(`/workflows/templates?highlight=${templateId}`);
+          }}
+        />
+      ) : null}
     </WorkflowStoreContext.Provider>
   );
 }

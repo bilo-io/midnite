@@ -98,6 +98,18 @@ export const TaskSchema = z.object({
   events: z.array(TaskEventSchema),
   attachments: z.array(TaskAttachmentSchema).optional(),
   links: z.array(TaskLinkSchema).optional(),
+  /**
+   * AI code review result (Phase 37 Theme D). Set by AiReviewService when a
+   * code-review workflow run completes for this task's prUrl. Absent until then.
+   */
+  aiReview: z
+    .object({
+      verdict: z.enum(['approved', 'commented', 'changes-requested']),
+      summary: z.string(),
+      runId: z.string(),
+      reviewedAt: z.string(),
+    })
+    .optional(),
 });
 
 export const AgentSlotSchema = z.object({

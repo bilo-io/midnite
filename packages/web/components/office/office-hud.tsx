@@ -10,6 +10,7 @@ import { getSessionTranscript } from '@/lib/api';
 import { type OfficeAgent } from '@/lib/office/agents';
 import { useOfficeStore } from '@/lib/office-store';
 import { BoardroomPanel } from './boardroom-panel';
+import { CharacterPicker } from './CharacterPicker';
 import { DeskItemPicker } from './desk-item-picker';
 import { LibraryModal } from './library-modal';
 import { RetroGamesMenu } from './retro-games-menu';
@@ -33,12 +34,15 @@ export function OfficeHud() {
   const libraryOpen = useOfficeStore((s) => s.libraryOpen);
   const playstationOpen = useOfficeStore((s) => s.playstationOpen);
   const deskPickerOpen = useOfficeStore((s) => s.deskPickerOpen);
+  const characterPickerOpen = useOfficeStore((s) => s.characterPickerOpen);
   const currentScene = useOfficeStore((s) => s.currentScene);
   const close = useOfficeStore((s) => s.close);
   const closeBoard = useOfficeStore((s) => s.closeBoard);
   const closeLibrary = useOfficeStore((s) => s.closeLibrary);
   const closePlaystation = useOfficeStore((s) => s.closePlaystation);
   const closeDeskPicker = useOfficeStore((s) => s.closeDeskPicker);
+  const openCharacterPicker = useOfficeStore((s) => s.openCharacterPicker);
+  const closeCharacterPicker = useOfficeStore((s) => s.closeCharacterPicker);
 
   const setNearby = useOfficeStore((s) => s.setNearby);
   const openDesk = useOfficeStore((s) => s.open);
@@ -60,17 +64,26 @@ export function OfficeHud() {
 
       <div className="absolute right-3 top-3 flex items-center gap-2">
         {inCorner ? (
-          <button
-            type="button"
-            onClick={() => {
-              // The corner office scene will pick up currentScene='office' via its store sub.
-              useOfficeStore.getState().setCurrentScene('office');
-            }}
-            className="pointer-events-auto flex items-center gap-1.5 rounded-md border border-border/60 bg-background/70 px-2.5 py-1.5 text-[11px] text-muted-foreground backdrop-blur transition-colors hover:bg-muted/60 hover:text-foreground"
-          >
-            <ArrowLeft className="h-3 w-3" />
-            Back to Office
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={openCharacterPicker}
+              className="pointer-events-auto rounded-md border border-border/60 bg-background/70 px-2.5 py-1.5 text-[11px] text-muted-foreground backdrop-blur transition-colors hover:bg-muted/60 hover:text-foreground"
+            >
+              👤 Avatar
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                // The corner office scene will pick up currentScene='office' via its store sub.
+                useOfficeStore.getState().setCurrentScene('office');
+              }}
+              className="pointer-events-auto flex items-center gap-1.5 rounded-md border border-border/60 bg-background/70 px-2.5 py-1.5 text-[11px] text-muted-foreground backdrop-blur transition-colors hover:bg-muted/60 hover:text-foreground"
+            >
+              <ArrowLeft className="h-3 w-3" />
+              Back to Office
+            </button>
+          </>
         ) : (
           <>
             {attentionCount > 0 && firstAttention ? (
@@ -148,6 +161,8 @@ export function OfficeHud() {
       {playstationOpen ? <RetroGamesMenu onClose={closePlaystation} /> : null}
 
       {deskPickerOpen ? <DeskItemPicker onClose={closeDeskPicker} /> : null}
+
+      {characterPickerOpen ? <CharacterPicker onClose={closeCharacterPicker} /> : null}
     </div>
   );
 }
