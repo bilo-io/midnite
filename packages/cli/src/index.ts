@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { readFile, writeFile } from 'node:fs/promises';
+import { clearAuth, readAuth, resolveToken, writeAuth } from './lib/auth-store.js';
 import { Command } from 'commander';
 import Table from 'cli-table3';
 import {
@@ -65,10 +66,20 @@ program
   .name('midnite')
   .description('Multitask coding agents — CLI client for the midnite gateway')
   .version('0.0.0')
-  .option('--gateway <url>', 'gateway base URL (else $MIDNITE_GATEWAY_URL, else http://localhost:7777)');
+  .option('--gateway <url>', 'gateway base URL (else $MIDNITE_GATEWAY_URL, else http://localhost:7777)')
+  .option('--token <token>', 'bearer token (overrides stored JWT and $MIDNITE_AUTH_TOKEN)');
+
+// Resolve auth token once before any command action runs (stored JWT > env > --token flag).
+program.hook('preAction', async () => {
+  const opts = program.opts() as { token?: string };
+  _resolvedToken = await resolveToken(opts.token);
+});
+
+let _resolvedToken: string | undefined;
 
 function client(): ReturnType<typeof createClient> {
-  return createClient(resolveBaseUrl(program.opts().gateway as string | undefined));
+  const opts = program.opts() as { gateway?: string };
+  return createClient(resolveBaseUrl(opts.gateway), _resolvedToken);
 }
 
 program
@@ -576,6 +587,93 @@ template
       console.log(`installed  ${workflow.id}  ${workflow.name}`);
     },
   );
+
+// ---- Auth commands ----
+
+program
+  .command('login')
+  .description('Authenticate with the gateway and store credentials')
+  .option('-u, --url <url>', 'gateway URL (overrides --gateway)')
+  .option('-e, --email <email>', 'skip the email prompt')
+  .option('-p, --password <password>', 'skip the password prompt (not recommended)')
+  .action(
+    async (opts: { url?: string; email?: string; password?: string }) => {
+      const rl = (await import('node:readline')).createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      });
+      const ask = (q: string): Promise<string> =>
+        new Promise((resolve) => rl.question(q, (a) => resolve(a.trim())));
+
+      const email = opts.email ?? (await ask('Email: '));
+      const password =
+        opts.password ??
+        await new Promise<string>((resolve) => {
+          // Hide input if attached to a TTY.
+          if (process.stdin.isTTY) {
+            process.stdout.write('Password: ');
+            process.stdin.setRawMode(true);
+            process.stdin.resume();
+            let buf = '';
+            process.stdin.setEncoding('utf8');
+            const onData = (ch: string): void => {
+              if (ch === '\r' || ch === '\n') {
+                process.stdin.setRawMode(false);
+                process.stdin.pause();
+                process.stdin.removeListener('data', onData);
+                process.stdout.write('\n');
+                resolve(buf);
+              } else if (ch === '') {
+                process.stdin.setRawMode(false);
+                process.exit();
+              } else if (ch === '') {
+                buf = buf.slice(0, -1);
+              } else {
+                buf += ch;
+              }
+            };
+            process.stdin.on('data', onData);
+          } else {
+            rl.question('Password: ', (a) => resolve(a.trim()));
+          }
+        });
+
+      rl.close();
+
+      const baseUrl = opts.url ?? resolveBaseUrl(program.opts().gateway as string | undefined);
+      const c = createClient(baseUrl);
+      const auth = await c.login(email, password);
+      await writeAuth({ accessToken: auth.accessToken, refreshToken: auth.refreshToken });
+      console.log(`logged in as ${auth.user.email} (${auth.user.name})`);
+    },
+  );
+
+program
+  .command('logout')
+  .description('Revoke the stored session and delete local credentials')
+  .action(async () => {
+    const auth = await readAuth();
+    if (auth?.accessToken) {
+      const c = createClient(resolveBaseUrl(program.opts().gateway as string | undefined), auth.accessToken);
+      await c.logout();
+    }
+    await clearAuth();
+    console.log('logged out');
+  });
+
+program
+  .command('whoami')
+  .description('Print the currently authenticated user')
+  .action(async () => {
+    const c = client();
+    try {
+      const user = await c.whoami();
+      console.log(`${user.email}  (${user.name})  id=${user.id}`);
+    } catch {
+      console.error('not authenticated — run `midnite login`');
+      process.exitCode = 1;
+    }
+  });
 
 program
   .command('serve')

@@ -1,4 +1,5 @@
 import {
+  AuthResponseSchema,
   BreakdownPreviewResponseSchema,
   BreakdownSchema,
   BulkCreateTaskResponseSchema,
@@ -12,10 +13,12 @@ import {
   TemplateSlotsResponseSchema,
   TerminalTokenResponseSchema,
   TriggerCheckResponseSchema,
+  UserSchema,
   WorkflowRunSchema,
   WorkflowSchema,
   WorkflowSummarySchema,
   WorkflowTemplatesResponseSchema,
+  type AuthResponse,
   type Breakdown,
   type BreakdownPreviewResponse,
   type BulkCreateTaskRequest,
@@ -29,6 +32,7 @@ import {
   type Task,
   type TemplateSlotsResponse,
   type TerminalTokenResponse,
+  type User,
   type Workflow,
   type WorkflowRun,
   type WorkflowSummary,
@@ -50,6 +54,12 @@ export function resolveBaseUrl(flag?: string): string {
 }
 
 export interface GatewayClient {
+  /** Authenticate and return tokens + user. */
+  login(email: string, password: string): Promise<AuthResponse>;
+  /** Revoke the current session (best-effort; never throws). */
+  logout(): Promise<void>;
+  /** Return the currently authenticated user, or throw on 401. */
+  whoami(): Promise<User>;
   listTasks(status?: string): Promise<Task[]>;
   createTask(prompt: string, defaults?: TaskDefaults): Promise<Task>;
   createBulk(raw: string, defaults?: TaskDefaults): Promise<BulkCreateTaskResponse>;
@@ -76,13 +86,19 @@ export interface GatewayClient {
 
 /** A thin typed client over the gateway REST API. Responses are validated with
  *  the shared zod schemas, so a contract drift surfaces here, not downstream. */
-export function createClient(baseUrl: string): GatewayClient {
+export function createClient(baseUrl: string, token?: string): GatewayClient {
   // Fetch with uniform connection-error + non-2xx handling, returning the raw
   // Response. Callers decode it as JSON (`request`) or text (`exportTask`).
   async function fetchOk(path: string, init: RequestInit): Promise<Response> {
+    // Merge any caller-provided Authorization header, or add the bearer token if set.
+    const callerHeaders = init.headers as Record<string, string> | undefined;
+    const headers: Record<string, string> = {};
+    if (token) headers['authorization'] = `Bearer ${token}`;
+    if (callerHeaders) Object.assign(headers, callerHeaders);
+
     let res: Response;
     try {
-      res = await fetch(`${baseUrl}${path}`, init);
+      res = await fetch(`${baseUrl}${path}`, { ...init, headers });
     } catch (err) {
       throw new Error(
         `cannot reach the midnite gateway at ${baseUrl} — is it running? (${err instanceof Error ? err.message : 'network error'})`,
@@ -106,6 +122,30 @@ export function createClient(baseUrl: string): GatewayClient {
   }
 
   return {
+    async login(email: string, password: string): Promise<AuthResponse> {
+      return AuthResponseSchema.parse(
+        await request('/auth/login', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        }),
+      );
+    },
+
+    async logout(): Promise<void> {
+      try {
+        await fetchOk('/auth/logout', { method: 'POST' });
+      } catch {
+        // best-effort
+      }
+    },
+
+    async whoami(): Promise<User> {
+      return UserSchema.parse(
+        (await request('/auth/me', { method: 'GET' })) as unknown,
+      );
+    },
+
     async listTasks(status?: string): Promise<Task[]> {
       const query = status ? `?status=${encodeURIComponent(status)}` : '';
       return TaskSchema.array().parse(await request(`/tasks${query}`, { method: 'GET' }));
