@@ -49,3 +49,20 @@ export type ApprovalRuleResponse = z.infer<typeof ApprovalRuleResponseSchema>;
 
 export const ApprovalRulesResponseSchema = z.object({ rules: z.array(ApprovalRuleSchema) });
 export type ApprovalRulesResponse = z.infer<typeof ApprovalRulesResponseSchema>;
+
+// ---- Autonomy mode ----
+
+export const AutonomyModeSchema = z.enum(['manual', 'guarded', 'autonomous']);
+export type AutonomyMode = z.infer<typeof AutonomyModeSchema>;
+
+/** Tools auto-approved in `guarded` mode — read-only, no side effects. */
+export const SAFE_TOOLS: readonly string[] = ['Read', 'Grep', 'Glob', 'LS'] as const;
+
+export const ApprovalSettingsSchema = z.object({
+  mode: AutonomyModeSchema,
+  safeTools: z.array(z.string()),
+});
+export type ApprovalSettings = z.infer<typeof ApprovalSettingsSchema>;
+
+export const SetModeRequestSchema = z.object({ mode: AutonomyModeSchema });
+export type SetModeRequest = z.infer<typeof SetModeRequestSchema>;
