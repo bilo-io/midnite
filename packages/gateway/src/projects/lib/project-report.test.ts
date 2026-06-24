@@ -27,12 +27,13 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     status: 'todo',
     priority: 1,
     retryCount: 0,
+    fixAttempts: 0,
     tags: [],
     events: [],
     createdAt: '2026-01-02T00:00:00Z',
     updatedAt: '2026-01-02T00:00:00Z',
     ...overrides,
-  };
+  } as unknown as Task;
 }
 
 function makeMemory(overrides: Partial<Memory> = {}): Memory {

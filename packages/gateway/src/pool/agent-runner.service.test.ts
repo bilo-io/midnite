@@ -28,7 +28,7 @@ function config(pool = 1, terminal: Record<string, unknown> = {}): MidniteConfig
 }
 
 function task(id: string, prompt?: string): Task {
-  return { id, title: `title-${id}`, status: 'todo', priority: 1, retryCount: 0, prompt, tags: [], dependsOn: [], events: [] } as Task;
+  return { id, title: `title-${id}`, status: 'todo', priority: 1, retryCount: 0, fixAttempts: 0, prompt, tags: [], dependsOn: [], events: [] } as unknown as Task;
 }
 
 function fakeTasks(seed: Task[]) {

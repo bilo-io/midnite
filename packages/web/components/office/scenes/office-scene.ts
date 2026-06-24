@@ -107,6 +107,17 @@ function toolShadowTint(tool: string | undefined): { color: number; alpha: numbe
   return { color, alpha: TOOL_GLOW_ALPHA };
 }
 
+/** Phase 9 B1: brand-aligned accent per agent CLI. Unknown CLIs get gray. */
+const CLI_BADGE_COLOR: Record<string, number> = {
+  claude: 0xe6521a,    // Anthropic orange
+  gemini: 0x4285f4,    // Google blue
+  codex: 0x10a37f,     // OpenAI green
+  opencode: 0x10a37f,  // OpenAI green (opencode wraps codex)
+  aider: 0x7c3aed,     // Purple
+};
+const CLI_BADGE_DEFAULT = 0x6b7280; // gray for unknown
+const CLI_BADGE_RADIUS = 4;
+
 /** A live agent rendered in the room — a robot sprite + its labels/shadow. */
 type Actor = {
   id: string;
@@ -115,6 +126,8 @@ type Actor = {
   bubble: Phaser.GameObjects.Text;
   nameText: Phaser.GameObjects.Text;
   statusText: Phaser.GameObjects.Text;
+  /** Small provider-colored dot (top-right of sprite) — Phase 9 B1. */
+  providerBadge: Phaser.GameObjects.Arc;
   /** Where the agent currently belongs — only desks are interactable. */
   kind: 'desk' | 'lounge';
   /** Target seat centre (px). */
@@ -388,57 +401,23 @@ class OfficeScene extends Phaser.Scene {
 
   // ---- agents (actors) ---------------------------------------------------
 
-<<<<<<< HEAD
-  /**
-   * Place agents in their task-status-derived room (Phase 31 B).
-   * - wip     → WORK hot desks
-   * - waiting → BOARD room conference chairs
-   * - done    → AGENT POOL lounge
-   * - backlog/todo/abandoned/no-task → not on floor (hidden)
-   */
-  private renderActors(agents: OfficeAgent[]) {
-    if (!this.alive) return;
-
-    // Partition by task-status room target; fall back to session-status for
-    // agents without a linked task (treat as wip so they appear at desks).
-    const deskAgents = agents
-      .filter((a) => statusToRoom(a.taskStatus ?? 'wip') === 'work')
-      .slice(0, DESK_SEATS.length);
-    const boardAgents = agents
-      .filter((a) => statusToRoom(a.taskStatus) === 'board')
-      .slice(0, TABLE_CHAIRS.length);
-    const loungeAgents = agents
-      .filter((a) => statusToRoom(a.taskStatus) === 'pool' || a.status === 'idle')
-      .slice(0, LOUNGE_SEATS.length);
-
-    const desired: { agent: OfficeAgent; seat: TilePos; kind: 'desk' | 'lounge' }[] = [
-      ...assignStableSeats(deskAgents, DESK_SEATS.length, this.deskByAgent).map((s) => ({
-=======
-  /** Place agents by task status: wip/waiting → desks, done/idle → lounge, hidden → off-screen. */
+  /** Place agents by task status: wip → desks, done/idle → lounge, hidden → off-screen. */
   private renderActors(agents: OfficeAgent[]) {
     if (!this.alive) return;
     // Phase 31 B: route by task status; backlog/todo are hidden so the floor
     // stays uncluttered until an agent actually starts work.
-    const desk = agents.filter((a) => statusToRoom(a.taskStatus) === 'desk').slice(0, DESK_SEATS.length);
-    const lounge = agents.filter((a) => statusToRoom(a.taskStatus) === 'lounge').slice(0, LOUNGE_SEATS.length);
+    const desk = agents.filter((a) => {
+      const r = statusToRoom(a.taskStatus);
+      return r === 'work' || r === 'board';
+    }).slice(0, DESK_SEATS.length);
+    const lounge = agents.filter((a) => statusToRoom(a.taskStatus) === 'pool').slice(0, LOUNGE_SEATS.length);
     const desired: { agent: OfficeAgent; seat: TilePos; kind: 'desk' | 'lounge' }[] = [
       ...assignStableSeats(desk, DESK_SEATS.length, this.deskByAgent).map((s) => ({
->>>>>>> origin/main
         agent: s.agent,
         seat: DESK_SEATS[s.seatIndex]!,
         kind: 'desk' as const,
       })),
-<<<<<<< HEAD
-      // Waiting agents sit at board-room chairs (stable assignment reuses deskByAgent map).
-      ...assignStableSeats(boardAgents, TABLE_CHAIRS.length, this.deskByAgent).map((s) => ({
-        agent: s.agent,
-        seat: TABLE_CHAIRS[s.seatIndex]!,
-        kind: 'desk' as const,
-      })),
-      ...assignStableSeats(loungeAgents, LOUNGE_SEATS.length, this.loungeByAgent).map((s) => ({
-=======
       ...assignStableSeats(lounge, LOUNGE_SEATS.length, this.loungeByAgent).map((s) => ({
->>>>>>> origin/main
         agent: s.agent,
         seat: LOUNGE_SEATS[s.seatIndex]!,
         kind: 'lounge' as const,
@@ -516,6 +495,11 @@ class OfficeScene extends Phaser.Scene {
       .setAlpha(0)
       .setDepth(11);
 
+    const badgeColor = CLI_BADGE_COLOR[agent.agentCli ?? ''] ?? CLI_BADGE_DEFAULT;
+    const providerBadge = this.add
+      .arc(tx + 8, ty - 10, CLI_BADGE_RADIUS, 0, 360, false, badgeColor, 0.9)
+      .setDepth(12);
+
     const actor: Actor = {
       id: agent.id,
       sprite,
@@ -523,6 +507,7 @@ class OfficeScene extends Phaser.Scene {
       bubble,
       nameText,
       statusText,
+      providerBadge,
       kind,
       tx,
       ty,
@@ -710,6 +695,10 @@ class OfficeScene extends Phaser.Scene {
     const glow = toolShadowTint(agent.liveActivity?.phase === 'running' ? agent.liveActivity.tool : undefined);
     actor.shadow.setFillStyle(glow.color, glow.alpha);
 
+    // B1: provider badge — dot color follows the agent CLI (claude/gemini/codex/…).
+    const badgeColor = CLI_BADGE_COLOR[agent.agentCli ?? ''] ?? CLI_BADGE_DEFAULT;
+    actor.providerBadge.setFillStyle(badgeColor, 0.9);
+
     // D1: start/stop the attention pulse tween depending on whether the agent
     // is waiting on the user. The tween loops indefinitely until cleared.
     if (agent.attention) {
@@ -876,6 +865,7 @@ class OfficeScene extends Phaser.Scene {
     actor.nameText.setPosition(x, y - 19);
     actor.statusText.setPosition(x, y - 10);
     actor.bubble.setPosition(x + 12, y - 15);
+    actor.providerBadge.setPosition(x + 8, y - 10);
   }
 
   private destroyActor(actor: Actor) {
@@ -887,6 +877,7 @@ class OfficeScene extends Phaser.Scene {
     actor.bubble.destroy();
     actor.nameText.destroy();
     actor.statusText.destroy();
+    actor.providerBadge.destroy();
   }
 
   // ---- player ------------------------------------------------------------
@@ -1015,8 +1006,8 @@ class OfficeScene extends Phaser.Scene {
     return this.player.body as Phaser.Physics.Arcade.Body;
   }
 
-  private truncate(name: string) {
-    return name.length > 10 ? `${name.slice(0, 9)}…` : name;
+  private truncate(name: string, max = 10) {
+    return name.length > max ? `${name.slice(0, max - 1)}…` : name;
   }
 
   private left = () => this.cursors.left.isDown || this.wasd.left.isDown;

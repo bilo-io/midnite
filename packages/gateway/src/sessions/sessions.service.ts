@@ -9,6 +9,7 @@ import {
   type TerminalTokenResponse,
   type TranscriptMessage,
 } from '@midnite/shared';
+import { AgentsService } from '../agents/agents.service';
 import { TasksService } from '../tasks/tasks.service';
 import { TerminalService } from '../terminal/terminal.service';
 import { loadTranscript } from './sessions.reader';
@@ -31,6 +32,7 @@ export class SessionsService {
   constructor(
     @Inject(TasksService) private readonly tasks: TasksService,
     @Inject(TerminalService) private readonly terminal: TerminalService,
+    @Inject(AgentsService) private readonly agents: AgentsService,
   ) {}
 
   // Mint a short-lived, single-use token the web client presents on the WS
@@ -81,6 +83,7 @@ export class SessionsService {
       contextTokens: deriveContextTokens(task),
       contextLimit: CONTEXT_LIMIT,
       archivedAt: task.archivedAt,
+      agentCli: this.agents.getAgentCli(),
     };
   }
 

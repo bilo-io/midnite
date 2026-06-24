@@ -12,12 +12,13 @@ function task(over: Partial<Task> = {}): Task {
     status: 'wip',
     priority: 2,
     retryCount: 0,
+    fixAttempts: 0,
     tags: [],
     events: [],
     createdAt: '2026-06-20T00:00:00.000Z',
     updatedAt: '2026-06-21T00:00:00.000Z',
     ...over,
-  };
+  } as unknown as Task;
 }
 
 describe('buildTaskReport', () => {

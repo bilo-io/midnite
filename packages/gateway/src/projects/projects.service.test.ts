@@ -133,11 +133,12 @@ function makeTasksStub() {
         status: 'todo',
         priority: 1,
         retryCount: 0,
+        fixAttempts: 0,
         projectId: input.projectId,
         tags: [],
         dependsOn: [],
         events: [],
-      } as Task;
+      } as unknown as Task;
     },
   } as unknown as TasksService;
   return { service, created };

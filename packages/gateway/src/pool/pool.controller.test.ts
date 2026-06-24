@@ -21,7 +21,7 @@ function config(pool = 1): MidniteConfig {
 }
 
 function task(id: string, status: Task['status'] = 'todo'): Task {
-  return { id, title: `title-${id}`, status, priority: 1, retryCount: 0, prompt: 'x', tags: [], dependsOn: [], events: [] } as Task;
+  return { id, title: `title-${id}`, status, priority: 1, retryCount: 0, fixAttempts: 0, prompt: 'x', tags: [], dependsOn: [], events: [] } as unknown as Task;
 }
 
 function fakeTasks(seed: Task[]) {
