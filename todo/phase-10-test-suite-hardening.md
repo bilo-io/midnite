@@ -113,9 +113,10 @@
 - [x] **🐛 Surfaced + fixed a real bug:** the e2e gateway never booted on a *fresh* DB (`no such table: council_runs`) — migration ran in `DbModule.onModuleInit`, but a feature module's `onModuleInit` could fire first. Moved migration to DB-handle build (`DbFactory`), before any lifecycle hook; regression test added. (`web:e2e` is `runInCI:false`, so CI never caught it.) Also stabilised the `terminal.service.spec` `MIDNITE_*` env-dump flake (grep `^MIDNITE_` so a large CI env can't truncate the capture).
 - [ ] **Storybook screenshots** of the storied components (reuse the Theme C browser run — capture per story) so component-level changes show up even without a full page.
 
-### E2. Visual baseline & diff — **M**
-- [ ] Use Playwright's built-in **`toHaveScreenshot`** snapshotting (per-OS baselines committed under `e2e/__screenshots__/`, or a chosen visual service — Decisions §4). A changed pixel fails the visual test and **emits a diff image**; an intended change is accepted by updating the baseline (`--update-snapshots`) in the same PR.
-- [ ] Keep baselines **CI-OS-pinned** (screenshots differ across OSes) — generate/verify on the Linux CI image; document the `--update-snapshots` workflow in the web README.
+### E2. Visual baseline & diff — **M** — ✅ DONE (PR #177, 2026-06-24)
+- [x] `toHaveScreenshot` assertions added to `pages.shots.ts` — each page capture is pixel-asserted against committed baselines in `e2e/__screenshots__/`; a diff image is emitted on failure.
+- [x] 10 macOS baselines committed (board, dashboard, workflows, councils, office × light/dark). Docker command documented in the spec for regenerating Linux-compatible baselines when CI billing unblocks.
+- [x] `playwright.config.ts` extended: `snapshotDir`, `snapshotPathTemplate`, and `toHaveScreenshot.maxDiffPixelRatio: 0.005`.
 
 ### E3. PR preview artifacts + gallery — **M**
 - [ ] CI uploads the screenshots (and any diffs) as **build artifacts** on every PR, and **deploys/uploads the static Storybook** (`build-storybook` already exists) so reviewers can browse components for the branch.
@@ -125,12 +126,15 @@
 
 ## Theme F — CI wiring, coverage & gates
 
-### F1. Slot the new layers into CI — **M**
-- [ ] Storybook tests (C1) run inside `moon run web:test` (so `moon ci` covers them). **Playwright e2e + screenshots** run in a **separate CI job** (own browser install + `web:e2e`/screenshot tasks) so they don't slow the main typecheck/test/build gate. Both must be **affected-aware** where moon allows.
-- [ ] Cache Playwright browsers in CI; install with `playwright install --with-deps` on the e2e job only.
+### F1. Slot the new layers into CI — **M** — ✅ DONE (PR #177, 2026-06-24)
+- [x] New `.github/workflows/e2e.yml`: `e2e` job runs `web:e2e` + `web:screenshots` (Playwright flow + visual regression, `continue-on-error: true`); `coverage` job runs `gateway:test-coverage` + `web:test-coverage`.
+- [x] Playwright browsers cached in CI via `actions/cache@v4` (key: OS + `package.json` hash).
+- [x] Screenshot artifacts uploaded on every run (14 days); diff artifacts uploaded on failure (7 days).
 
-### F2. Coverage reporting & thresholds — **S–M**
-- [ ] Enable Vitest **coverage** (`--coverage`, v8) per package; print a summary in CI. Set **modest initial thresholds** (e.g. shared higher than web) and a "no-regression" ratchet rather than an aspirational 100% — Decisions §5. Don't block PRs on coverage until the baseline is real.
+### F2. Coverage reporting & thresholds — **S–M** — ✅ DONE (PR #177, 2026-06-24)
+- [x] `@vitest/coverage-v8` wired into both `web` (`vitest.config.ts` coverage block, 20% thresholds) and `gateway` (new `vitest.config.ts`, 40% thresholds).
+- [x] `test-coverage` moon tasks added to both packages (`runInCI: false`); CI `coverage` job invokes them with `--force`.
+- [x] Reporters: `text` (CI summary) + `json-summary` + `lcov` → uploaded as artifacts (14 days).
 
 ### F3. Docs — **S**
 - [ ] A `docs/TESTING.md` (or a section in the root README): the four layers, how to run each (`moon run :test`, `web:e2e`, `web:test-stories`, screenshot update), where baselines live, and how to add a test at each layer. Update CLAUDE.md "Testing" to point at it.

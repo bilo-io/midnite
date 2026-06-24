@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 10 E2+F1+F2 — Visual regression baselines, e2e CI job, coverage reporting (PR #177)
+
+- [x] `toHaveScreenshot` assertions in `pages.shots.ts`; 10 macOS baselines committed (`e2e/__screenshots__/`); Docker command documented for Linux regeneration
+- [x] `playwright.config.ts`: `snapshotDir`, `snapshotPathTemplate`, `toHaveScreenshot.maxDiffPixelRatio: 0.005`
+- [x] `.github/workflows/e2e.yml`: `e2e` job (flow + visual, `continue-on-error: true`) + `coverage` job; browser cache; screenshot + diff + coverage artifacts
+- [x] `@vitest/coverage-v8` in `web` (20% thresholds) and `gateway` (40% thresholds); `test-coverage` moon tasks in both packages; `lcov` + `json-summary` reporters
+
+---
+
 ## 2026-06-24 — Phase 37 Theme A — GitHub executor nodes + credential type (PR #175)
 
 - [x] Added `github` credential type to `WorkflowCredentialDataSchema` (token + optional `enterpriseUrl` for GHE)
