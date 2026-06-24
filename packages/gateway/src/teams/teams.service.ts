@@ -180,6 +180,12 @@ export class TeamsService {
     this.repo.revokeInvite(inviteId);
   }
 
+  /** Returns the user's role in the given team, or null if they're not a member. */
+  getMembership(teamId: string, userId: string): TeamRole | null {
+    const m = this.repo.findMember(teamId, userId);
+    return m ? (m.role as TeamRole) : null;
+  }
+
   private assertRole(teamId: string, userId: string, required: TeamRole): void {
     const m = this.repo.findMember(teamId, userId);
     if (!m || !hasRole(m.role as TeamRole, required)) {
