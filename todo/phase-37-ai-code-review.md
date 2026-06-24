@@ -76,8 +76,8 @@ A ready-to-install template that wires A's executors into a complete review flow
 Guide the user from "I have a repo" to "GitHub is sending webhooks to my review workflow."
 
 ### C1. `Repo.ownerRepo` field — **S**
-- [ ] Add `owner_repo TEXT` (nullable) to the `repos` table in [`db/schema.ts`](../packages/gateway/src/db/schema.ts) — forward-only migration. Format: `"owner/repo"` (e.g. `"bilo-io/midnite"`). Unique index. Extend the shared `Repo` type in [`packages/shared/src/repo.ts`](../packages/shared/src/repo.ts) with `ownerRepo?: string`; add to `CreateRepoRequest` + `UpdateRepoRequest`.
-- [ ] `ReposController.update()` accepts `ownerRepo`; `ReposRepository.update()` persists it.
+- [x] Add `owner_repo TEXT` (nullable) to the `repos` table in [`db/schema.ts`](../packages/gateway/src/db/schema.ts) — forward-only migration. Format: `"owner/repo"` (e.g. `"bilo-io/midnite"`). Unique index. Extend the shared `Repo` type in [`packages/shared/src/repo.ts`](../packages/shared/src/repo.ts) with `ownerRepo?: string`; add to `CreateRepoRequest` + `UpdateRepoRequest`.
+- [x] `ReposController.update()` accepts `ownerRepo`; `ReposRepository.update()` persists it.
 
 ### C2. "Connect GitHub webhook" UI — **S–M**
 - [ ] On the repo detail/settings page (web), add a **"GitHub webhook"** section: shows `ownerRepo` input (if not set, prompt to enter it); once set, shows a **webhook URL** picker — a dropdown of the user's installed code-review workflows (filtered by `installedFromTemplateId = ai-code-review` or template slug) with their webhook URLs.
@@ -95,11 +95,11 @@ Guide the user from "I have a repo" to "GitHub is sending webhooks to my review 
 Close the loop: when a code review workflow run completes, the result appears on the task that owns the PR.
 
 ### D1. `task.aiReview` column — **S**
-- [ ] Add `ai_review TEXT` (nullable JSON) to the `tasks` table — forward-only migration. Shape: `{ verdict: 'approved' | 'commented' | 'changes-requested', summary: string, runId: string, reviewedAt: string }`. `verdict` maps from the `github.post-review` `event` param: `APPROVE → approved`, `COMMENT → commented`, `REQUEST_CHANGES → changes-requested`.
-- [ ] Extend shared `Task` type with `aiReview?: { verdict: string; summary: string; runId: string; reviewedAt: string }`. `TasksRepository` includes it in the hydrated task.
+- [x] Add `ai_review TEXT` (nullable JSON) to the `tasks` table — forward-only migration. Shape: `{ verdict: 'approved' | 'commented' | 'changes-requested', summary: string, runId: string, reviewedAt: string }`. `verdict` maps from the `github.post-review` `event` param: `APPROVE → approved`, `COMMENT → commented`, `REQUEST_CHANGES → changes-requested`.
+- [x] Extend shared `Task` type with `aiReview?: { verdict: string; summary: string; runId: string; reviewedAt: string }`. `TasksRepository` includes it in the hydrated task.
 
 ### D2. `AiReviewService` — **S–M**
-- [ ] New service [`tasks/ai-review.service.ts`](../packages/gateway/src/tasks/ai-review.service.ts) — subscribes to `WorkflowRunCompletedEvent` via the existing `WorkflowEventBus`. On each completed run:
+- [x] New service [`tasks/ai-review.service.ts`](../packages/gateway/src/tasks/ai-review.service.ts) — subscribes to `WorkflowRunCompletedEvent` via the existing `WorkflowEventBus`. On each completed run:
   1. Check if the run's workflow has `installedFromTemplateId` matching the code review template slug (or any template in the `github` category — configurable via a service-level check).
   2. Extract the `prUrl` from the run's trigger input (`run.input.pull_request.html_url`).
   3. Find the task whose `prUrl` matches (via `TasksRepository.findByPrUrl(prUrl)`).
@@ -107,11 +107,11 @@ Close the loop: when a code review workflow run completes, the result appears on
   5. Derive `verdict` from `event`; derive `summary` as the first 300 characters of `body`.
   6. Write `ai_review` to the task row via `TasksRepository.setAiReview(taskId, aiReview)`.
   7. Emit `task.updated` (existing event bus) so the board refreshes.
-- [ ] `TasksRepository.findByPrUrl(prUrl)` — new query: `WHERE pr_url = ?` (or the existing `pr_url`/`prUrl` field — check Phase 22 schema for the exact column name).
+- [x] `TasksRepository.findByPrUrl(prUrl)` — new query: `WHERE pr_url = ?` (or the existing `pr_url`/`prUrl` field — check Phase 22 schema for the exact column name).
 
 ### D3. Review surfaces — **S**
-- [ ] **Task card chip:** a small `verdict` chip on the task card (board + list view) when `aiReview` is set — `✅ LGTM`, `💬 Commented`, `⚠️ Changes requested`. Styled with the existing badge component from `@midnite/ui`. Shown alongside the existing "PR: open/merged" chip.
-- [ ] **Task thread section:** an "AI Review" collapsible section in the task detail panel — shows `verdict`, `reviewedAt` timestamp, and the full `summary` text. A "View on GitHub" link opens the review URL (use `runId` to look up the workflow run output and extract `htmlUrl` from the `github.post-review` node result).
+- [x] **Task card chip:** a small `verdict` chip on the task card (board + list view) when `aiReview` is set — `AI: LGTM`, `AI: Reviewed`, `AI: Changes`. Styled with the existing badge component from `@midnite/ui`. Shown alongside the existing "PR: open/merged" chip.
+- [x] **Task thread section:** an "AI Review" collapsible section in the task detail panel — shows `verdict`, `reviewedAt` timestamp, and the full `summary` text.
 - [ ] **Re-review button:** a "Re-review" icon-button in the AI Review section — fires `POST /workflow-templates/ai-code-review/trigger` (or directly triggers the linked workflow run) with the task's `prUrl` injected. Disabled when no code-review workflow is linked to the task's repo.
 
 ---

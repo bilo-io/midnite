@@ -4,6 +4,21 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 37 C+D — Repo.ownerRepo, task.aiReview, AiReviewService, verdict chip (PR #178)
+
+- [x] Migration 0041: `owner_repo TEXT` nullable + unique index on `repos` table
+- [x] Migration 0042: `ai_review TEXT` nullable JSON on `tasks` table
+- [x] Shared `RepoSchema` + `CreateRepoRequestSchema` + `UpdateRepoRequestSchema` gain `ownerRepo?: string` (validated `"owner/repo"` format)
+- [x] Shared `TaskSchema` gains `aiReview?: { verdict, summary, runId, reviewedAt }`
+- [x] `repos.service.ts`: persists `ownerRepo` through create/update/toRepo
+- [x] `tasks.repository.ts`: `parseAiReview` helper, `findByPrUrl`, `setAiReview`, hydrate includes `aiReview`
+- [x] `AiReviewService`: subscribes to `WorkflowEventBus` `run.finished`; finds task by `prUrl`; derives verdict; writes `ai_review`; re-emits `task.updated`
+- [x] `WorkflowsModule` exports `WorkflowEventBus`; `TasksModule` imports `WorkflowsModule`
+- [x] `task-card.tsx`: `AiReviewChip` renders `'AI: LGTM'` / `'AI: Reviewed'` / `'AI: Changes'` alongside prStatus
+- [x] `task-thread-modal.tsx`: "AI Review" section with verdict badge, timestamp, 300-char summary
+
+---
+
 ## 2026-06-24 — Phase 10 E2+F1+F2 — Visual regression baselines, e2e CI job, coverage reporting (PR #177)
 
 - [x] `toHaveScreenshot` assertions in `pages.shots.ts`; 10 macOS baselines committed (`e2e/__screenshots__/`); Docker command documented for Linux regeneration
