@@ -9,6 +9,7 @@ import type {
   TerminalApprovalRequestMessage,
 } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
+import { ApprovalsService } from '../approvals/approvals.service';
 import { hashToken, tokenMatches } from '../lib/token-hash';
 import { HookSecretRepository } from './hook-secret.repository';
 import { summarizeToolCall } from './lib/summarize-tool-call';
@@ -47,6 +48,8 @@ export class ApprovalService {
     // Durable secret store (Phase 17 §C2). Optional so direct construction in
     // specs keeps the pre-existing in-memory-only behaviour; Nest always injects it.
     @Optional() @Inject(HookSecretRepository) private readonly secretStore?: HookSecretRepository,
+    // Policy engine (Phase 23 A2). Optional so terminal specs need no change.
+    @Optional() @Inject(ApprovalsService) private readonly approvalsService?: ApprovalsService,
   ) {}
 
   // ---- per-session secret (authenticates the in-PTY hook callback) ----
@@ -96,6 +99,18 @@ export class ApprovalService {
     // Already approved for the whole session — don't prompt again.
     if (this.allowList.get(sessionId)?.has(toolName)) {
       return { decision: 'allow', reason: 'allowed for this session' };
+    }
+
+    // Policy engine (Phase 23 A2): evaluate durable rules before asking a human.
+    if (this.approvalsService) {
+      const verdict = this.approvalsService.evaluate(toolName, payload.tool_input);
+      if (verdict === 'auto-allow') {
+        return { decision: 'allow', reason: 'allowed by policy rule' };
+      }
+      if (verdict === 'auto-deny') {
+        return { decision: 'deny', reason: 'denied by policy rule' };
+      }
+      // verdict === 'escalate' → fall through to human prompt
     }
 
     // No one is watching — fall back so an unattended session isn't wedged.

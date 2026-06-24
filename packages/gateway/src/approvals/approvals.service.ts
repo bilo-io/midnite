@@ -7,14 +7,43 @@ import type {
   UpdateApprovalRule,
 } from '@midnite/shared';
 import type { ApprovalRuleRow } from '../db/schema';
+import { evaluateRules, type EvaluationVerdict } from './lib/rule-evaluator';
 import { ApprovalsRepository } from './approvals.repository';
 
-/** Business logic for approval rules — maps DB rows ↔ shared domain types. */
+export type AutonomyMode = 'manual' | 'guarded' | 'autonomous';
+
+/** Business logic for approval rules — maps DB rows ↔ shared domain types.
+ *  Also owns the autonomy mode gate (Phase 23 A3): `manual` (default) short-
+ *  circuits the policy engine so existing behaviour is preserved until the user
+ *  opts in via Theme D. */
 @Injectable()
 export class ApprovalsService {
+  /** Phase 23 A3: default `manual` preserves today's ask-everything behaviour.
+   *  Theme D will expose a settings panel + config write-path to change this. */
+  private mode: AutonomyMode = 'manual';
+
   constructor(
     @Inject(ApprovalsRepository) private readonly repo: ApprovalsRepository,
   ) {}
+
+  // ---- mode gate (Phase 23 A3) ----
+
+  getMode(): AutonomyMode {
+    return this.mode;
+  }
+
+  setMode(mode: AutonomyMode): void {
+    this.mode = mode;
+  }
+
+  /** Evaluate durable rules against a tool call.
+   *  Returns `'escalate'` when mode is `'manual'` (no behaviour change for
+   *  existing users) or when no rule matches (fail-safe). */
+  evaluate(toolName: string, toolInput: unknown): EvaluationVerdict {
+    if (this.mode === 'manual') return 'escalate';
+    const rules = this.repo.listEnabledForTool(toolName);
+    return evaluateRules(rules, toolName, toolInput);
+  }
 
   list(): ApprovalRule[] {
     return this.repo.list().map(toRule);
