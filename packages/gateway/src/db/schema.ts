@@ -903,3 +903,63 @@ export const refreshTokens = sqliteTable(
 
 export type RefreshTokenRow = typeof refreshTokens.$inferSelect;
 export type RefreshTokenInsert = typeof refreshTokens.$inferInsert;
+
+// Phase 33 Theme B: Teams & membership.
+export const teams = sqliteTable(
+  'teams',
+  {
+    id: text('id').primaryKey(),
+    slug: text('slug').notNull().unique(),
+    name: text('name').notNull(),
+    createdBy: text('created_by').notNull(),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    slugIdx: uniqueIndex('teams_slug_idx').on(t.slug),
+    createdByIdx: index('teams_created_by_idx').on(t.createdBy),
+  }),
+);
+
+export type TeamRow = typeof teams.$inferSelect;
+export type TeamInsert = typeof teams.$inferInsert;
+
+// Roles: owner > admin > member > viewer
+export const teamMemberships = sqliteTable(
+  'team_memberships',
+  {
+    teamId: text('team_id').notNull(),
+    userId: text('user_id').notNull(),
+    role: text('role').notNull().default('member'),
+    joinedAt: text('joined_at').notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.teamId, t.userId] }),
+    userIdx: index('team_memberships_user_idx').on(t.userId),
+  }),
+);
+
+export type TeamMembershipRow = typeof teamMemberships.$inferSelect;
+export type TeamMembershipInsert = typeof teamMemberships.$inferInsert;
+
+export const teamInvites = sqliteTable(
+  'team_invites',
+  {
+    id: text('id').primaryKey(),
+    teamId: text('team_id').notNull(),
+    invitedBy: text('invited_by').notNull(),
+    // null = open-link invite (any authenticated user can accept)
+    email: text('email'),
+    token: text('token').notNull().unique(),
+    role: text('role').notNull().default('member'),
+    expiresAt: text('expires_at').notNull(),
+    acceptedAt: text('accepted_at'),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    tokenIdx: uniqueIndex('team_invites_token_idx').on(t.token),
+    teamIdx: index('team_invites_team_idx').on(t.teamId),
+  }),
+);
+
+export type TeamInviteRow = typeof teamInvites.$inferSelect;
+export type TeamInviteInsert = typeof teamInvites.$inferInsert;
