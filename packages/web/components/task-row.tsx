@@ -50,56 +50,72 @@ export function TaskRow({
   const interactive = Boolean(onSelect);
   const selectable = Boolean(onToggleSelect);
 
+  // On mobile (< sm): two-line card layout — title on line 1, kind + meta on line 2.
+  // On sm+: single-line row layout as before.
   const body = (
     <>
-      <span
-        className="inline-flex w-20 shrink-0 items-center gap-1.5 rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider"
-        style={{ background: 'hsl(var(--kind-hue) / 0.12)', color: 'hsl(var(--kind-hue))' }}
-      >
-        <span aria-hidden className="h-1.5 w-1.5 rounded-full" style={{ background: 'hsl(var(--kind-hue))' }} />
-        {KIND_LABELS[kind]}
-      </span>
-      <span className="min-w-0 flex-1 truncate text-sm font-medium">{task.title}</span>
-      {task.repo && (
-        <span className="hidden shrink-0 truncate text-xs text-muted-foreground sm:inline">{task.repo}</span>
-      )}
-      {project && <ProjectTag tag={project.tag} color={project.color} className="shrink-0" />}
-      {(blockedBy ?? 0) > 0 ? <BlockedBadge count={blockedBy ?? 0} /> : null}
-      {showStatus && (
+      {/* Line 1: title (always full-width on mobile) */}
+      <span className="min-w-0 truncate text-sm font-medium sm:flex-1">{task.title}</span>
+      {/* Line 2 on mobile / inline chips on sm+: kind + project + status + blocked */}
+      <span className="flex shrink-0 flex-wrap items-center gap-1.5 sm:contents">
         <span
-          className="inline-flex shrink-0 items-center gap-1.5 text-[11px] text-muted-foreground"
-          style={{ ['--st-hue' as string]: `var(${statusHueVar(task.status)})` }}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider"
+          style={{ background: 'hsl(var(--kind-hue) / 0.12)', color: 'hsl(var(--kind-hue))' }}
         >
-          <span aria-hidden className="h-1.5 w-1.5 rounded-full" style={{ background: 'hsl(var(--st-hue))' }} />
-          {statusLabel(task.status)}
+          <span aria-hidden className="h-1.5 w-1.5 rounded-full" style={{ background: 'hsl(var(--kind-hue))' }} />
+          {KIND_LABELS[kind]}
         </span>
-      )}
+        {task.repo && (
+          <span className="hidden shrink-0 truncate text-xs text-muted-foreground sm:inline">{task.repo}</span>
+        )}
+        {project && <ProjectTag tag={project.tag} color={project.color} className="shrink-0" />}
+        {(blockedBy ?? 0) > 0 ? <BlockedBadge count={blockedBy ?? 0} /> : null}
+        {showStatus && (
+          <span
+            className="inline-flex shrink-0 items-center gap-1.5 text-[11px] text-muted-foreground"
+            style={{ ['--st-hue' as string]: `var(${statusHueVar(task.status)})` }}
+          >
+            <span aria-hidden className="h-1.5 w-1.5 rounded-full" style={{ background: 'hsl(var(--st-hue))' }} />
+            {statusLabel(task.status)}
+          </span>
+        )}
+      </span>
     </>
   );
 
-  const className = cn(
-    'flex w-full items-center gap-3 border-b border-border/40 px-3 py-2 text-left last:border-b-0',
+  // Base row: flex-col (two-line card) on mobile, single-line row on sm+.
+  const rowBase = cn(
+    'flex w-full flex-col gap-1 border-b border-border/40 px-3 py-2.5 text-left last:border-b-0',
+    'sm:flex-row sm:items-center sm:gap-3 sm:py-2',
     (interactive || selectable) && 'hover:bg-accent/40',
     selected && 'bg-accent/30',
   );
   const style = { ['--kind-hue' as string]: `var(${KIND_HUE_VARS[kind]})` };
 
   // Selectable rows can't be a single <button> (the SelectableIcon is itself a
-  // button) — split into a select cell plus a clickable body.
+  // button) — split into a select cell plus a clickable body. The outer wrapper
+  // stays flex-row always so the icon anchors left; the inner button carries the
+  // two-line layout so it still collapses to a card on mobile.
   if (selectable) {
+    const outerClass = cn(
+      'flex w-full flex-row items-start gap-3 border-b border-border/40 px-3 py-2.5 last:border-b-0',
+      'sm:items-center sm:py-2',
+      (interactive || selectable) && 'hover:bg-accent/40',
+      selected && 'bg-accent/30',
+    );
+    const innerClass = cn(
+      'flex min-w-0 flex-1 flex-col gap-1 text-left',
+      'sm:flex-row sm:items-center sm:gap-3',
+    );
     return (
-      <div style={style} className={className}>
+      <div style={style} className={outerClass}>
         <SelectableIcon Icon={Square} selected={selected} onToggle={(sk) => onToggleSelect?.(sk)} />
         {interactive ? (
-          <button
-            type="button"
-            onClick={onSelect}
-            className="flex min-w-0 flex-1 items-center gap-3 text-left"
-          >
+          <button type="button" onClick={onSelect} className={innerClass}>
             {body}
           </button>
         ) : (
-          <div className="flex min-w-0 flex-1 items-center gap-3">{body}</div>
+          <div className={innerClass}>{body}</div>
         )}
       </div>
     );
@@ -107,13 +123,13 @@ export function TaskRow({
 
   if (interactive) {
     return (
-      <button type="button" onClick={onSelect} style={style} className={className}>
+      <button type="button" onClick={onSelect} style={style} className={rowBase}>
         {body}
       </button>
     );
   }
   return (
-    <div style={style} className={className}>
+    <div style={style} className={rowBase}>
       {body}
     </div>
   );
