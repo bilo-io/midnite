@@ -11,7 +11,9 @@ function t(id: string, status: Task['status'] = 'todo'): Task {
     status,
     priority: 1,
     retryCount: 0,
+    fixAttempts: 0,
     tags: [],
+    dependsOn: [],
     events: [],
   } as Task;
 }
