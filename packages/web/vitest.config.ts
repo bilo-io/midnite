@@ -14,6 +14,22 @@ const rootDir = fileURLToPath(new URL('.', import.meta.url));
 //                  (`pnpm exec playwright install chromium`; CI installs it too).
 export default defineConfig({
   test: {
+    // Phase 10 F2 — v8 coverage. Run `vitest run --coverage` (or the moon
+    // `web:test:coverage` task) to generate a coverage report. Thresholds are
+    // modest to start; raise them as coverage matures. Only the `unit` project
+    // contributes — browser tests (storybook) are excluded from coverage.
+    coverage: {
+      provider: 'v8',
+      include: ['app/**/*.{ts,tsx}', 'components/**/*.{ts,tsx}', 'hooks/**/*.{ts,tsx}', 'lib/**/*.{ts,tsx}'],
+      exclude: ['**/*.stories.{ts,tsx}', '**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}', '**/node_modules/**'],
+      reporter: ['text', 'json-summary', 'lcov'],
+      thresholds: {
+        lines: 20,
+        functions: 20,
+        branches: 20,
+        statements: 20,
+      },
+    },
     projects: [
       {
         plugins: [react()],

@@ -130,6 +130,22 @@ tasks:
       - 'playwright.config.ts'
       - 'e2e/__screenshots__/**'
 
+  test-coverage:
+    # Phase 10 F2 — run tests with v8 coverage. Only the `unit` project
+    # contributes (browser tests excluded). Prints a text summary and writes
+    # lcov + json-summary to coverage/ for CI artifact upload.
+    command: 'pnpm exec vitest run --coverage --project=unit'
+    deps:
+      - '^:build'
+    options:
+      runInCI: false
+    inputs:
+      - 'app/**/*'
+      - 'components/**/*'
+      - 'hooks/**/*'
+      - 'lib/**/*'
+      - 'vitest.config.ts'
+
   storybook:
     command: 'pnpm exec storybook dev -p 6006'
     preset: 'server'

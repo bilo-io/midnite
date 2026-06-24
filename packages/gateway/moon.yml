@@ -38,6 +38,19 @@ tasks:
     inputs:
       - 'src/**/*'
 
+  test-coverage:
+    # Phase 10 F2 — run tests with v8 coverage. Prints a text summary and writes
+    # lcov + json-summary to coverage/ for CI artifact upload. Runs separately
+    # from `test` to keep the default gate fast.
+    command: 'pnpm exec vitest run --coverage'
+    deps:
+      - '^:build'
+    options:
+      runInCI: false
+    inputs:
+      - 'src/**/*'
+      - 'vitest.config.ts'
+
   typecheck:
     command: 'pnpm exec tsc --noEmit'
     # tsc --noEmit resolves shared via project references but doesn't build it.
