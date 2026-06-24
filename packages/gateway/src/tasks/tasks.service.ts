@@ -246,6 +246,14 @@ export class TasksService {
     return this.emit('task.updated', this.getTask(id));
   }
 
+  /** Increment the auto-fix attempt counter (Phase 30 C). Does not change status. */
+  incrementFixAttempts(id: string): Task {
+    const now = new Date().toISOString();
+    if (!this.repo.getTask(id)) throw new NotFoundException(`task ${id} not found`);
+    this.repo.incrementFixAttempts(id, now);
+    return this.emit('task.updated', this.getTask(id));
+  }
+
   /** Agent blocked on user input (Notification hook): → waiting. Idempotent. */
   markWaiting(id: string): Task {
     const now = new Date().toISOString();
@@ -757,9 +765,18 @@ export class TasksService {
 
   /**
    * Emit a check-lifecycle task event and broadcast `task.updated` (Phase 30 B3).
-   * `kind` is one of `checks.started` / `checks.passed` / `checks.failed`.
+   * `kind` is one of `checks.started` / `checks.passed` / `checks.failed` /
+   * `checks.fix.started` / `checks.fix.exhausted`.
    */
-  recordCheckEvent(taskId: string, kind: 'checks.started' | 'checks.passed' | 'checks.failed'): void {
+  recordCheckEvent(
+    taskId: string,
+    kind:
+      | 'checks.started'
+      | 'checks.passed'
+      | 'checks.failed'
+      | 'checks.fix.started'
+      | 'checks.fix.exhausted',
+  ): void {
     const now = new Date().toISOString();
     this.repo.insertEvent({ id: randomUUID(), taskId, at: now, kind });
     this.emit('task.updated', this.getTask(taskId));

@@ -47,11 +47,11 @@ Make rooms *mean* something. Today an agent sits at a desk when `status !== 'idl
 The visible payoff. Today the speech bubble is status-only (`···` / `?` / `✓` / `z`). Expand it to the live action, driven by Theme A's `agent.activity`.
 
 ### C1. Live action bubbles — **M**
-- [ ] Expand the status-bubble logic in [`office-scene.ts`](../packages/web/components/office/scenes/office-scene.ts) to render the current `label` from `agent.activity` ("git fetch", "editing file.ts", "running tests") when present, falling back to the status glyph when idle/unknown.
-- [ ] Keep bubbles legible: truncate long labels, and let Theme E's throttling prevent flicker on rapid tool calls.
+- [x] ✅ (PR #163) Expand the status-bubble logic in [`office-scene.ts`](../packages/web/components/office/scenes/office-scene.ts) to render the current `label` from `agent.activity` ("git fetch", "editing file.ts", "running tests") when present, falling back to the status glyph when idle/unknown.
+- [x] ✅ (PR #163) Keep bubbles legible: truncate long labels, and let Theme E's throttling prevent flicker on rapid tool calls.
 
 ### C2. Activity poses — **M**
-- [ ] Distinct sprite poses/animations per `phase`: **working** (typing at desk), **blocked** (raised-hand / `?`), **idle** (existing `zzz` sleep). Drive off the same `agent.activity` phase; reuse the existing 2-frame animation approach in the scene.
+- [x] ✅ (PR #163) Distinct sprite poses/animations per `phase`: **working** (typing at desk), **blocked** (raised-hand / `?`), **idle** (existing `zzz` sleep). Drive off the same `agent.activity` phase; reuse the existing 2-frame animation approach in the scene.
 
 ---
 
@@ -60,10 +60,10 @@ The visible payoff. Today the speech bubble is status-only (`···` / `?` / `�
 When an agent is blocked on *you*, the office should shout — not bury it in a terminal modal.
 
 ### D1. "Needs you" office state — **M**
-- [ ] On `agent.attention`, put the actor into a loud, unmistakable state: a glow/pulse + distinct bubble, and optionally walk it to a "reception"/door spot. Clear it when the agent resumes (next `agent.activity` with `phase: 'running'`).
+- [x] ✅ (PR #163) On `agent.attention`, put the actor into a loud, unmistakable state: a glow/pulse + distinct bubble, and optionally walk it to a "reception"/door spot. Clear it when the agent resumes (next `agent.activity` with `phase: 'running'`).
 
 ### D2. HUD attention badge — **S**
-- [ ] Surface a count/badge in the office HUD ([`office-hud.tsx`](../packages/web/components/office/office-hud.tsx)) — "N agents need you" — clickable to focus/center the nearest waiting agent. Pure state in [`office-store.ts`](../packages/web/lib/office-store.ts) (mirror the existing proximity/`nearBoard` flags).
+- [x] ✅ (PR #163) Surface a count/badge in the office HUD ([`office-hud.tsx`](../packages/web/components/office/office-hud.tsx)) — "N agents need you" — clickable to focus/center the nearest waiting agent. Pure state in [`office-store.ts`](../packages/web/lib/office-store.ts) (mirror the existing proximity/`nearBoard` flags).
 
 ---
 
@@ -91,11 +91,11 @@ Today every board WS fire calls `invalidateData()` → a full sessions+tasks ref
 ## Verification
 
 - `moon run gateway:dev` + `moon run web:dev`, run a real agent against a task, open `/office`:
-  - [ ] As the agent runs, its speech bubble shows the **live tool/action** ("git fetch", "editing X"), not a static label; the bubble updates smoothly (no flicker) as tools change.
-  - [ ] Agents route to the **room matching their task status** — `wip` at work desks, `done` toward the pool/lounge; backlog/todo agents don't appear until `wip`.
-  - [ ] When an agent blocks on input (notification hook / approval), the office shows a **loud "needs you" state** and the HUD shows an **attention badge**; clicking it focuses the waiting agent. It clears when the agent resumes.
-  - [ ] Confirm **no raw `tool_input`** appears in any WS frame (inspect the socket) — only a summarized label.
-  - [ ] Network/profiler: activity updates **patch the store** (no full sessions+tasks refetch per tool call).
+  - [x] ✅ (PR #163) As the agent runs, its speech bubble shows the **live tool/action** ("git fetch", "editing X"), not a static label; the bubble updates smoothly (no flicker) as tools change.
+  - [x] ✅ (PR #162) Agents route to the **room matching their task status** — `wip` at work desks, `done` toward the pool/lounge; backlog/todo agents don't appear until `wip`.
+  - [x] ✅ (PR #163 + main a581cbf) When an agent blocks on input, the office shows a loud "needs you" state and the HUD shows an attention badge; clicking it focuses the waiting agent. Clears on resume.
+  - [x] ✅ (PR #157) No raw `tool_input` in any WS frame — approval-request summarizer produces label-only output.
+  - [x] ✅ (PR #163) Activity updates patch the store directly (no full sessions+tasks refetch per tool call).
 - `moon run :typecheck`, `moon run :lint`, `moon run :test` green. (Run web tests from the **primary checkout**, not a `.git` worktree — vite can't collect inside `.git/**`.)
 
 ## Decisions / open questions

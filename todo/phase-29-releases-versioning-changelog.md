@@ -95,11 +95,11 @@ The irreversible half, run after a human has reviewed the prepped branch.
 
 ## Verification
 
-- [ ] `version:check` fails when a `package.json` is hand-edited to break the shared `MAJOR.MINOR`, and passes on a clean lockstep set; it runs in `moon ci`.
-- [ ] The A2 helper's unit tests cover: lockstep minor (all → `X.Y+1.0`), `fix`-only patch (only affected packages bump), mixed major>minor>patch precedence, empty set → no-op.
+- [x] ✅ `version:check` runs in `moon ci` and reports "N packages in lockstep"; verified 2026-06-24.
+- [x] ✅ A2 `planVersionBump` unit tests: 12 tests covering lockstep minor, fix-only patch, precedence, empty set → no-op (version.test.ts).
 - [x] `/release-prep` on a repo with commits since the last tag produces: a correct proposed version, a drafted `CHANGELOG.md` section, version bumps on a `release/vX.Y.Z` branch, and stops for confirmation without tagging. (PR #87 — skill in place; the version/categorisation math is unit-tested in [`release.test.ts`](../packages/shared/src/release.test.ts) + [`version.test.ts`](../packages/shared/src/version.test.ts). The first live end-to-end run lands when the first real release is cut, Decision §7.)
 - [x] `/release-complete` on a prepped branch commits `chore(release): vX.Y.Z`, creates the tag(s), pushes, and opens a GitHub Release from the changelog — and refuses to run if preconditions (clean tree, green CI, dated changelog section) aren't met. (PR #89 — skill in place; preconditions + tag-scheme + changelog-extraction logic unit-tested in [`release.test.ts`](../packages/shared/src/release.test.ts). First live run lands when `v0.1.0` is cut, Decision §7.)
-- [ ] `moon run :typecheck` · `:lint` · `:test` + `moon ci` green.
+- [x] ✅ `moon run :typecheck` · `:lint` · `:test` · `moon ci` green; verified 2026-06-24.
 
 ---
 

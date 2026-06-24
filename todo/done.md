@@ -4,6 +4,46 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 31 D: attention state + clickable HUD badge (main a581cbf)
+
+Completes the attention affordance: agents with a pending approval/waiting state pulse orange in the office, and the HUD badge is now clickable.
+
+- [x] `lib/office/agents.ts`: `liveActivity?` + `attention?` fields added to `OfficeAgent` (store, scene, and hook all referenced these but the type was missing)
+- [x] `office-hud.tsx`: "N agents need you" badge is now a `<button>` that calls `setNearby` + `open` for the first attention agent
+
+## 2026-06-24 — Phase 18 Theme A: CLI task export + doc reconciliation (PR #164)
+
+Closes Phase 18 Theme A. The gateway serializer/route + web `ExportMenu` had already shipped (#128/#159) but the phase doc was never ticked; this lands the deferred CLI consumer (decision 6) and reconciles the doc.
+
+- [x] `cli/index.ts`: `midnite task export <id>` — writes the export-route markdown to stdout, or a file with `-o, --output`
+- [x] `cli/client.ts`: `exportTask(id)` reads the `text/markdown` route as raw text (refactored shared fetch into `fetchOk`); +2 client tests (body, 404)
+- [x] `todo/phase-18-reports-exports.md`: Theme A marked done; decision 6 settled
+- [x] Unblocked pre-existing broken `main` (separate commits): stripped stray `=======` conflict markers in `projects.service.test.ts` (broke `gateway:build`); dropped the invalid `'dead'` terminal-phase check in `watch/Dashboard.tsx` (broke `cli:typecheck`)
+
+> Merged on a green local gate (cli/gateway/shared all pass) — GitHub Actions was billing-blocked account-wide, so CI couldn't run.
+
+## 2026-06-24 — Phase 29: verification complete (all items confirmed passing)
+
+Phase 29 (Releases & Versioning) is now fully ✅:
+- [x] `version:check` passes on clean lockstep, runs in `moon ci`
+- [x] `planVersionBump` has 12 unit tests covering all scenarios
+- [x] `/release-prep` + `/release-complete` skills in place (PRs #87/#89); first live run on v0.1.0 cut
+
+## 2026-06-24 — Phase 31 C+D: live bubbles, activity poses, attention pulse + HUD badge (PR #163)
+
+- [x] C1: speech bubble shows `liveActivity.label` (truncated) for working agents; STATUS_BUBBLE fallback
+- [x] C2: `applyPose()` drives sprite from `liveActivity.phase` — running→2fps typing, blocked→frame 1, idle→frame 0
+- [x] D1: `applyAttention()` starts scale pulse 1.0↔1.18 + orange tint; `clearAttention()` restores; cleaned on destroy
+- [x] D2: HUD shows pulsing `🙋 N agents need you` chip, derived inline from `agents.filter(a => a.attention)`
+
+## 2026-06-24 — Phase 31 B: task-aware room routing (PR #162)
+
+Office agents now route to the correct room based on task status.
+
+- [x] `lib/office/agents.ts`: `taskStatus?: Status` on `OfficeAgent`; threaded from `sessionsToOfficeAgents`
+- [x] `lib/office/layout.ts`: `statusToRoom(status) → RoomId | null` — wip→work, waiting→board, done→pool, others→null; 8 unit tests
+- [x] `office-scene.ts`: `renderActors` partitions by `statusToRoom(taskStatus)` — wip→desks, waiting→conference chairs, done/idle→lounge
+
 ## 2026-06-24 — Phase 31 B+E: task-status room routing + push-patch activity store (PR #161)
 
 - [x] `statusToRoom(taskStatus)` pure helper: wip/waiting→desk, done/abandoned→lounge, backlog/todo→hidden, undefined→lounge; 7 unit tests

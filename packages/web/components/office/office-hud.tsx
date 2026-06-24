@@ -40,8 +40,15 @@ export function OfficeHud() {
   const closePlaystation = useOfficeStore((s) => s.closePlaystation);
   const closeDeskPicker = useOfficeStore((s) => s.closeDeskPicker);
 
+  const setNearby = useOfficeStore((s) => s.setNearby);
+  const openDesk = useOfficeStore((s) => s.open);
+
   const nearby = nearbyId ? agents.find((a) => a.id === nearbyId) : undefined;
   const activeAgent = active ? agents.find((a) => a.id === active.id) : undefined;
+  // D2: inline count + first-attention agent for the clickable badge.
+  const attentionAgents = agents.filter((a) => a.attention);
+  const attentionCount = attentionAgents.length;
+  const firstAttention = attentionAgents[0];
   const panelOpen = active !== null || boardOpen || libraryOpen || playstationOpen || deskPickerOpen;
   const inCorner = currentScene === 'corner';
 
@@ -66,6 +73,19 @@ export function OfficeHud() {
           </button>
         ) : (
           <>
+            {attentionCount > 0 && firstAttention ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setNearby(firstAttention.id);
+                  openDesk(firstAttention.id);
+                }}
+                className="pointer-events-auto animate-pulse rounded-md border border-orange-500/60 bg-orange-500/20 px-2.5 py-1.5 text-[11px] font-medium text-orange-600 backdrop-blur transition-colors hover:bg-orange-500/30 dark:text-orange-400"
+                aria-label={`${attentionCount} agent${attentionCount === 1 ? '' : 's'} need${attentionCount === 1 ? 's' : ''} you — click to open`}
+              >
+                🙋 {attentionCount} agent{attentionCount === 1 ? '' : 's'} need{attentionCount === 1 ? 's' : ''} you
+              </button>
+            ) : null}
             {onBreak ? (
               <span className="rounded-md border border-amber-500/40 bg-amber-500/15 px-2.5 py-1.5 text-[11px] font-medium text-amber-600 backdrop-blur dark:text-amber-400">
                 ☕ On a break

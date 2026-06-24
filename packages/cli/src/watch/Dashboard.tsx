@@ -154,7 +154,7 @@ export function Dashboard({ baseUrl }: Props) {
               if (!active) return;
               if (msg.type === 'output') {
                 setLogLines((prev) => appendLines(prev, msg.data));
-              } else if (msg.type === 'status' && (msg.phase === 'exited' || msg.phase === 'dead')) {
+              } else if (msg.type === 'status' && msg.phase === 'exited') {
                 setLogExited(true);
               }
             },
