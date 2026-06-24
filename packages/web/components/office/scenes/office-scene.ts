@@ -82,6 +82,31 @@ const STATUS_BUBBLE: Record<OfficeStatus, string> = {
 const center = (tile: number) => tile * TILE + TILE / 2;
 const toHex = (n: number) => `#${n.toString(16).padStart(6, '0')}`;
 
+/**
+ * Phase 8 C2: per-tool shadow glow. Maps tool categories to distinct colours so
+ * a glance at the floor tells you what an agent is doing. Falls back to amber for
+ * unrecognised tools (forward-compatible as new tools are added).
+ */
+const TOOL_GLOW: Record<string, number> = {
+  Edit: 0x22c55e,
+  Write: 0x22c55e,
+  MultiEdit: 0x22c55e,
+  Bash: 0xf97316,
+  execute_command: 0xf97316,
+  Read: 0x3b82f6,
+  WebFetch: 0x3b82f6,
+  WebSearch: 0x3b82f6,
+  Agent: 0xa855f7,
+};
+const TOOL_GLOW_ALPHA = 0.65;
+const SHADOW_DEFAULT = { color: 0x000000, alpha: 0.22 };
+
+function toolShadowTint(tool: string | undefined): { color: number; alpha: number } {
+  if (!tool) return SHADOW_DEFAULT;
+  const color = TOOL_GLOW[tool] ?? (tool.startsWith('mcp') ? 0xa855f7 : 0xfbbf24);
+  return { color, alpha: TOOL_GLOW_ALPHA };
+}
+
 /** A live agent rendered in the room — a robot sprite + its labels/shadow. */
 type Actor = {
   id: string;
@@ -679,6 +704,11 @@ class OfficeScene extends Phaser.Scene {
     const bubbleText =
       livLabel && agent.status !== 'idle' ? this.truncate(livLabel, 18) : STATUS_BUBBLE[agent.status];
     actor.bubble.setText(bubbleText).setColor(toHex(tint));
+
+    // C2: per-tool shadow glow — shadow colour shifts to the active tool's
+    // category so a glance at the floor shows what each agent is doing.
+    const glow = toolShadowTint(agent.liveActivity?.phase === 'running' ? agent.liveActivity.tool : undefined);
+    actor.shadow.setFillStyle(glow.color, glow.alpha);
 
     // D1: start/stop the attention pulse tween depending on whether the agent
     // is waiting on the user. The tween loops indefinitely until cleared.

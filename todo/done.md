@@ -16,6 +16,26 @@ Closes the gap between workflow nodes and external services. Credentials are AES
 
 > GitHub Actions billing-blocked (2026-06-24) — gate passed locally; CI pending post-unblock.
 
+## 2026-06-24 — Phase 30 C: quality-gate auto-fix loop (PR #166)
+
+Adds the opt-in auto-fix loop to the quality gate: when a gate fails, `checks.autoFix.enabled`, and `fixAttempts < maxAttempts`, the runner increments the counter, records a `checks.fix.started` event, kills the old session, re-spawns with a structured fix prompt, and arms a fresh timeout. Slot stays held so the re-spawned agent's Stop hook naturally re-enters `completeWithChecks`. Budget exhaustion records `checks.fix.exhausted` and falls back to `markWaiting`.
+
+- [x] `packages/gateway/drizzle/0040_fix_attempts.sql`: `ALTER TABLE tasks ADD COLUMN fix_attempts INTEGER NOT NULL DEFAULT 0`
+- [x] `packages/gateway/src/db/schema.ts`: `fixAttempts` column added
+- [x] `packages/shared/src/task.ts`: `fixAttempts` field in `TaskSchema`
+- [x] `packages/gateway/src/tasks/tasks.repository.ts`: `incrementFixAttempts()` + `hydrate()` wired
+- [x] `packages/gateway/src/tasks/tasks.service.ts`: `incrementFixAttempts()` + `checks.fix.started/exhausted` events
+- [x] `packages/gateway/src/pool/agent-runner.service.ts`: auto-fix branch in `completeWithChecks` + `buildFixPrompt()`
+- [x] `packages/gateway/src/pool/agent-runner.service.test.ts`: 4 new tests (off, re-spawn, exhausted, pass-after-fix)
+
+## 2026-06-24 — Phase 8 C2: per-tool shadow glow for office agents (PR #167)
+
+Closes Phase 8 C2. Each agent's drop-shadow now reflects the tool currently running — green for file edits, orange for shell, blue for reads, purple for orchestration/MCP.
+
+- [x] `office-scene.ts`: `TOOL_GLOW` color map + `toolShadowTint()` helper
+- [x] `office-scene.ts`: `updateActorContent()` calls `actor.shadow.setFillStyle(color, alpha)` when `liveActivity.phase === 'running'`, resets to `SHADOW_DEFAULT` when idle
+- [x] `todo/phase-8-office-fidelity.md`: C2 marked done, progress line updated
+
 ## 2026-06-24 — Phase 31 D: attention state + clickable HUD badge (main a581cbf)
 
 Completes the attention affordance: agents with a pending approval/waiting state pulse orange in the office, and the HUD badge is now clickable.
