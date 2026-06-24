@@ -66,7 +66,12 @@ export class AgentPoolScheduler implements OnModuleInit, OnModuleDestroy {
         const running = this.runningCountsByRepo();
         const next = this.tasks
           .listReadyTodoTasks()
-          .find((t) => !this.pool.slotForTask(t.id) && this.repoHasCapacity(t.repo, running));
+          .find(
+            (t) =>
+              !this.pool.slotForTask(t.id) &&
+              this.repoHasCapacity(t.repo, running) &&
+              this.userHasCapacity(t.createdBy ?? undefined),
+          );
         if (!next) break;
         const started = await this.runner.start(next);
         if (!started) break;
@@ -83,6 +88,15 @@ export class AgentPoolScheduler implements OnModuleInit, OnModuleDestroy {
     const cap = this.config.agent.maxPerRepo;
     if (!repo || cap <= 0) return true;
     return (running.get(repo) ?? 0) < cap;
+  }
+
+  /** Whether a user has capacity for another concurrent agent slot. Tasks without
+   *  a createdBy (legacy static-token path) are never capped. `perUserMaxSlots <= 0`
+   *  means unlimited. */
+  private userHasCapacity(userId: string | undefined): boolean {
+    const cap = this.config.agent.perUserMaxSlots;
+    if (!userId || cap <= 0) return true;
+    return this.pool.busyCountForUser(userId) < cap;
   }
 
   /** Count of busy slots per repo right now (repo-less running tasks omitted). */

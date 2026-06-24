@@ -133,7 +133,7 @@ export class AgentRunnerService implements OnModuleInit {
    *  rewire onExit + timeout, and leave it `wip`. Returns false (caller requeues)
    *  if no slot is free or the session couldn't be reattached. */
   private reattach(task: Task): boolean {
-    if (this.pool.acquire(task.id) === null) return false;
+    if (this.pool.acquire(task.id, task.createdBy ?? undefined) === null) return false;
     const result = this.terminal.reattachAgentSession(task.id, {
       onExit: (code) => this.onExit(task.id, code),
     });
@@ -151,7 +151,7 @@ export class AgentRunnerService implements OnModuleInit {
   /** Claim a slot and spawn an agent session for `task`. Returns false (leaving
    *  the task in `todo`) if no slot was free or the spawn failed. */
   async start(task: Task): Promise<boolean> {
-    if (this.pool.acquire(task.id) === null) return false;
+    if (this.pool.acquire(task.id, task.createdBy ?? undefined) === null) return false;
     try {
       // Fold any linked GitHub issue/PR + URL context into the seed prompt
       // (best-effort, fail-open — never blocks the run). Phase 15 Theme B.

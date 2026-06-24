@@ -9,6 +9,7 @@ interface PoolSlot {
   status: 'idle' | 'busy';
   taskId?: string;
   pid?: number;
+  userId?: string;
   // Per-run cancellation handle, surfaced to the runner so a timeout/cancel can
   // abort cooperative work without reaching into the PTY.
   abort?: AbortController;
@@ -60,18 +61,25 @@ export class AgentPoolService {
     return this.slots.flatMap((s) => (s.status === 'busy' && s.taskId ? [s.taskId] : []));
   }
 
+  /** Count of busy slots owned by a specific user. Used by the scheduler's
+   *  per-user concurrency cap (Phase 33 D1). */
+  busyCountForUser(userId: string): number {
+    return this.slots.filter((s) => s.status === 'busy' && s.userId === userId).length;
+  }
+
   /** Claim a free slot for a task. Returns its AbortSignal, or null if full.
    *  Idempotent: if the task already holds a slot, its existing signal is
    *  returned rather than claiming a second one — a per-task double-acquire
    *  would otherwise leak a slot forever, since {@link release} and
    *  {@link slotForTask} only ever address the first slot matching a task. */
-  acquire(taskId: string): AbortSignal | null {
+  acquire(taskId: string, userId?: string): AbortSignal | null {
     const existing = this.slotForTask(taskId);
     if (existing) return existing.abort?.signal ?? null;
     const slot = this.slots.find((s) => s.status === 'idle');
     if (!slot) return null;
     slot.status = 'busy';
     slot.taskId = taskId;
+    slot.userId = userId;
     slot.abort = new AbortController();
     this.emitSlotGauge();
     return slot.abort.signal;
@@ -94,6 +102,7 @@ export class AgentPoolService {
     slot.status = 'idle';
     slot.taskId = undefined;
     slot.pid = undefined;
+    slot.userId = undefined;
     slot.abort = undefined;
     this.emitSlotGauge();
   }

@@ -93,9 +93,9 @@ Add `created_by` (userId) and optional `team_id` to every entity that will event
 
 Bind task execution to its owner's context and start recording who does what.
 
-### D1. Per-user concurrency cap — **S–M**
-- [ ] `AgentPoolService` ([`pool/agent-pool.service.ts`](../packages/gateway/src/pool/agent-pool.service.ts)) tracks active slot counts per `userId` in addition to the global pool size. New config key: `pool.perUserMaxSlots` (default: same as global `maxSlots`, effectively unlimited until set). The scheduler's tick ([`agent-pool-scheduler.service.ts`](../packages/gateway/src/pool/agent-pool-scheduler.service.ts)) skips a task if the owner's per-user cap is already full — emits a `task.waiting` event (not an error; the task retries next tick).
-- [ ] Config addition to `MidniteConfig` in [`packages/shared/src/config.ts`](../packages/shared/src/config.ts): `pool.perUserMaxSlots?: number`.
+### D1. Per-user concurrency cap — **S–M** ✅ DONE
+- [x] `AgentPoolService` tracks `userId` per slot; `busyCountForUser(userId)` counts occupancy. `acquire(taskId, userId?)` stores the owner on the slot. `AgentRunnerService` passes `task.createdBy` to acquire on start + reattach.
+- [x] Config: `agent.perUserMaxSlots` (default 0 = unlimited) in `AgentConfigSchema`. The scheduler's `tick()` calls `userHasCapacity()` — skips tasks whose owner is at the cap; retries next tick. Tasks without `createdBy` are never capped.
 
 ### D2. Task execution bound to owner context — **S** ✅ DONE
 - [x] `TerminalService.spawnAgentSession` accepts `userId?` in spec; injects `MIDNITE_USER_ID=<ownerId>` into env when set. `AgentRunnerService.start()` and auto-fix path pass `task.createdBy`. No behavioural change for tasks without a `created_by`.
