@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-25 — Phase 35 verification — RBAC integration tests + admin→owner promotion fix (PR #200)
+
+- [x] `auth/role.guard.test.ts` — viewer 403, member ok, admin ok, no-user passthrough, getMembership caching
+- [x] `auth/ownership.service.test.ts` — isOwner (own/other/legacy null), resolveRequiredRole promotion logic
+- [x] `notifications/notifications.repository.test.ts` — team-scoped list + countUnread; cross-team excluded; null teamId = no filter
+- [x] `teams/teams.service.test.ts` — role-management: member 403, admin ok, admin cannot promote to owner, owner can grant/demote
+- [x] Fix `teams.service.ts:setMemberRole` — prevent admin from promoting beyond their own role to owner
+- [x] Fix two pre-existing TS errors in `tasks.gateway.test.ts` from PR #195
+
+---
+
 ## 2026-06-24 — Phase 24 A3 — board snap-scroll + task row mobile cards (PR #199)
 
 - [x] `board-view.tsx`: CSS snap-scroll container (`max-md:snap-x snap-mandatory`) + `snap-start` columns that fill viewport width on mobile; tab bar with colour-coded column buttons + active indicator; `scrollRef` + `handleScroll` + `scrollToColumn` for JS tracking; desktop layout unchanged
