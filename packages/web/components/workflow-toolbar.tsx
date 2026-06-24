@@ -1,23 +1,28 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, Loader2, Play } from 'lucide-react';
+import { ArrowLeft, History, Loader2, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { TriggerBadge } from '@/components/trigger-badge';
 import { describeCron } from '@/lib/cron';
 import { useWorkflowStore } from '@/lib/workflow-store';
+import { cn } from '@/lib/utils';
 
 export function WorkflowToolbar({
   onRun,
   onSave,
   onEditTrigger,
+  onHistory,
+  historyOpen,
   running,
   saving,
 }: {
   onRun: () => void;
   onSave: () => void;
   onEditTrigger: () => void;
+  onHistory: () => void;
+  historyOpen: boolean;
   running: boolean;
   saving: boolean;
 }) {
@@ -62,6 +67,19 @@ export function WorkflowToolbar({
       </button>
 
       <div className="ml-auto flex items-center gap-3">
+        <button
+          type="button"
+          onClick={onHistory}
+          aria-label="Run history"
+          aria-pressed={historyOpen}
+          title="Run history"
+          className={cn(
+            'flex h-8 w-8 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground',
+            historyOpen ? 'border-border bg-muted text-foreground' : 'border-transparent',
+          )}
+        >
+          <History className="h-4 w-4" />
+        </button>
         <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Switch checked={enabled} onCheckedChange={setEnabled} aria-label="Enabled" />
           Enabled

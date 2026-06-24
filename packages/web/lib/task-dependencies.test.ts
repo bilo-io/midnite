@@ -16,6 +16,7 @@ function task(id: string, over: Partial<Task> = {}): Task {
     status: 'todo',
     priority: 1,
     retryCount: 0,
+    fixAttempts: 0,
     tags: [],
     events: [],
     ...over,

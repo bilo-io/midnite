@@ -156,6 +156,10 @@ import {
   type Workflow,
   type WorkflowRun,
   type WorkflowSummary,
+  WorkflowCredentialsResponseSchema,
+  WorkflowCredentialResponseSchema,
+  type WorkflowCredential,
+  type CreateWorkflowCredentialRequest,
 } from '@midnite/shared';
 import { z } from 'zod';
 
@@ -1358,4 +1362,29 @@ export async function getOpsMetrics(params?: OpsQuery): Promise<OpsSummary> {
   if (params?.to) qs.set('to', params.to);
   const query = qs.toString() ? `?${qs.toString()}` : '';
   return fetchJson(`/metrics/ops${query}`, undefined, OpsSummarySchema);
+}
+
+// ---- Workflow credentials (Phase 14 B) ----
+
+/** Name + type list — secret material is never returned. */
+export async function listWorkflowCredentials(): Promise<WorkflowCredential[]> {
+  const r = await fetchJson('/workflow-credentials', undefined, WorkflowCredentialsResponseSchema);
+  return r.credentials;
+}
+
+/** Store a new credential. The secret `data` is encrypted at rest; the response is the public view. */
+export async function createWorkflowCredential(
+  req: CreateWorkflowCredentialRequest,
+): Promise<WorkflowCredential> {
+  const r = await fetchJson(
+    '/workflow-credentials',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(req) },
+    WorkflowCredentialResponseSchema,
+  );
+  return r.credential;
+}
+
+/** Permanently delete a credential. Returns 404 if not found. */
+export async function deleteWorkflowCredential(id: string): Promise<void> {
+  await fetchJson(`/workflow-credentials/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }

@@ -13,6 +13,7 @@ function t(id: string, status: Task['status'] = 'todo'): Task {
     retryCount: 0,
     fixAttempts: 0,
     tags: [],
+    dependsOn: [],
     events: [],
   } as unknown as Task;
 }

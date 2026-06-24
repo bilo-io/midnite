@@ -180,7 +180,7 @@ class InMemoryRepo extends TasksRepository {
       status: row.status as Status,
       priority: row.priority,
       retryCount: row.retryCount,
-      fixAttempts: row.fixAttempts,
+      fixAttempts: row.fixAttempts ?? 0,
       prompt: row.prompt ?? undefined,
       repo: row.repo ?? undefined,
       agentId: row.agentId ?? undefined,

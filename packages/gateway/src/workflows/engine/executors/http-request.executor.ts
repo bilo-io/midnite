@@ -1,7 +1,8 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import { HttpRequestParamsSchema, type HttpRequestParams, type MidniteConfig } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../../../config.token';
 import { isSafeHttpUrl } from '../../../projects/lib/opengraph';
+import { WorkflowCredentialsService } from '../../credentials/workflow-credentials.service';
 import type { NodeExecutor, NodeRunContext } from '../node-executor';
 
 const MAX_RESPONSE_BYTES = 1024 * 1024; // 1 MB cap to avoid memory bombs
@@ -30,7 +31,11 @@ async function readCapped(res: Response, maxBytes: number): Promise<string> {
 export class HttpRequestExecutor implements NodeExecutor {
   readonly typeId = 'http.request';
 
-  constructor(@Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig) {}
+  constructor(
+    @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
+    @Optional() @Inject(WorkflowCredentialsService)
+    private readonly credentials?: WorkflowCredentialsService,
+  ) {}
 
   async execute(ctx: NodeRunContext): Promise<unknown> {
     const params = HttpRequestParamsSchema.parse(ctx.params) as HttpRequestParams;
@@ -44,12 +49,30 @@ export class HttpRequestExecutor implements NodeExecutor {
     ctx.signal.addEventListener('abort', onAbort);
     const timeout = setTimeout(() => controller.abort(), params.timeoutMs);
 
+    // Resolve a saved credential and inject the appropriate auth header, taking
+    // precedence over any explicit Authorization in `headers`.
+    const resolvedHeaders: Record<string, string> = { ...params.headers };
+    if (params.credentialId && this.credentials) {
+      const cred = this.credentials.resolve(params.credentialId);
+      if (!cred) {
+        throw new Error(`credential ${params.credentialId} not found or could not be decrypted`);
+      }
+      if (cred.type === 'http-bearer') {
+        resolvedHeaders['authorization'] = `Bearer ${cred.token}`;
+      } else if (cred.type === 'http-basic') {
+        const encoded = Buffer.from(`${cred.username}:${cred.password}`).toString('base64');
+        resolvedHeaders['authorization'] = `Basic ${encoded}`;
+      } else if (cred.type === 'http-header') {
+        resolvedHeaders[cred.header.toLowerCase()] = cred.value;
+      }
+    }
+
     ctx.log('info', `${params.method} ${params.url}`);
     try {
       const hasBody = params.method !== 'GET' && params.method !== 'DELETE';
       const res = await fetch(params.url, {
         method: params.method,
-        headers: params.headers,
+        headers: resolvedHeaders,
         body: hasBody ? params.body : undefined,
         redirect: 'follow',
         signal: controller.signal,

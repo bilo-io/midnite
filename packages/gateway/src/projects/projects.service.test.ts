@@ -150,7 +150,6 @@ describe('ProjectsService', () => {
     const { service: tasks } = makeTasksStub();
 
     const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub, breakdownStub);
-
     const project = await service.createProject({
       name: 'Atlas',
       tag: 'atlas',
@@ -168,7 +167,6 @@ describe('ProjectsService', () => {
     const { service: tasks } = makeTasksStub();
 
     const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub, breakdownStub);
-
     const project = await service.createProject({ name: 'P', tag: 'p', color: '#000' });
 
     // Seed the repo at the limit directly so addSource rejects before fetching.
@@ -192,7 +190,6 @@ describe('ProjectsService', () => {
     const { service: tasks } = makeTasksStub();
 
     const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub, breakdownStub);
-
     const project = await service.createProject({ name: 'P', tag: 'p', color: '#000' });
 
     for (let i = 0; i < 3; i++) {
@@ -217,7 +214,6 @@ describe('ProjectsService', () => {
     const { service: tasks } = makeTasksStub();
 
     const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub, breakdownStub);
-
     const out = await service.enhanceDescription({ description: '  rough notes  ' });
     expect(out).toBe('rough notes');
   });
@@ -227,7 +223,6 @@ describe('ProjectsService', () => {
     const { service: tasks } = makeTasksStub();
 
     const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub, breakdownStub);
-
     const project = await service.createProject({ name: 'P', tag: 'p', color: '#000' });
 
     const { plan } = await service.draftPlan(project.id);
@@ -240,7 +235,6 @@ describe('ProjectsService', () => {
     const { service: tasks, created } = makeTasksStub();
 
     const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub, breakdownStub);
-
     const project = await service.createProject({ name: 'P', tag: 'p', color: '#000' });
 
     const result = service.createTasksFromPlan(project.id, ['Do A', 'Do B']);
