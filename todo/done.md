@@ -4,6 +4,12 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 28 verification: project planning breakdown suite green
+
+All four implementation themes (A–D, PRs #128 #155 #135 #160) were already merged. Closed out the verification checklist: breakdown preview + edit + create confirmed by `PlanPanel`/`BreakdownEditor` unit tests + Playwright e2e (PR #160); ready-gating covered by Phase 27 integration specs; markdown plan regression-free; standalone `POST /tasks/breakdown` + `midnite plan` covered by gateway/CLI specs (PR #155); conservative inference + cycle pruning (`pruneBreakdown` DFS, 6 tests); LLM-disabled fail-open notice; suite green (906 gateway + 505 web).
+
+---
+
 ## 2026-06-24 — Phase 34: bundle analyzer, optimized imports, dynamic code-split
 
 Tooling + performance track — no behaviour or API changes.
