@@ -4,6 +4,12 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 24 A3 — desktop-only gates for office + workflow editor (PR #196)
+
+- [x] `<DesktopOnly label>` wrapper (`components/desktop-only.tsx`): branches on `useIsDesktop()`; below `lg` renders a centered "best viewed on desktop" notice, at `lg`+ renders children. Mount guard prevents a static-export flash of the notice on desktop.
+- [x] Gates `office/page.tsx` (Phaser canvas) + `workflows/edit/page.tsx` (node canvas) at the page level (Decision §2).
+- [x] 3 RTL cases (`desktop-only.test.tsx`) + Playwright `desktop-gates.shots.ts` (office desktop=canvas / phone=notice; workflow phone=notice). Full `web:test` 510/510 green; my files typecheck+lint clean. (web:typecheck/lint have pre-existing unrelated failures in Phase 33 team/profile files + Phase 10 gallery script — not touched here.)
+
 ## 2026-06-24 — Phase 35 D1–D3 + E1–E2 — WS scoping + notification team isolation (PR #195)
 
 - [x] **D1** — `ConnectionRegistry` (WeakMap + byTeam/byUser maps) in global `WsModule`; JWT extracted from `?token=<jwt>` at WS handshake; invalid token → close 4001; no-JWT → `{ userId: null, teamId: null }` (legacy compat)

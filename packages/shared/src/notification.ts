@@ -34,6 +34,8 @@ export const NotificationSchema = z.object({
   /** ISO timestamp when read, or null while unread. */
   readAt: z.string().nullable(),
   createdAt: z.string(),
+  /** Team this notification belongs to; null = visible to all (system/legacy). */
+  teamId: z.string().nullable().optional(),
 });
 export type Notification = z.infer<typeof NotificationSchema>;
 

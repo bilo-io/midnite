@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, count, desc, inArray, isNull, sql } from 'drizzle-orm';
-import type { Notification } from '@midnite/shared';
+import { and, count, desc, inArray, isNull, or, eq, sql } from 'drizzle-orm';
+import type { Notification, TeamScope } from '@midnite/shared';
 import { DB_TOKEN, type MidniteDb } from '../db/db.module';
 import { notifications, type NotificationInsert, type NotificationRow } from '../db/schema';
 
@@ -12,23 +12,30 @@ export class NotificationsRepository {
     return this.db.insert(notifications).values(row).returning().get();
   }
 
-  /** Page the feed unread-first, then newest-first. */
-  list(limit: number, offset: number): NotificationRow[] {
+  /** Page the feed unread-first, then newest-first, scoped to the caller's team. */
+  list(limit: number, offset: number, scope?: TeamScope): NotificationRow[] {
+    const where = scope?.teamId
+      ? or(eq(notifications.teamId, scope.teamId), isNull(notifications.teamId))
+      : undefined;
     return this.db
       .select()
       .from(notifications)
+      .where(where)
       .orderBy(sql`${notifications.readAt} is null desc`, desc(notifications.createdAt))
       .limit(limit)
       .offset(offset)
       .all();
   }
 
-  countUnread(): number {
+  countUnread(scope?: TeamScope): number {
+    const teamFilter = scope?.teamId
+      ? or(eq(notifications.teamId, scope.teamId), isNull(notifications.teamId))
+      : undefined;
     return (
       this.db
         .select({ n: count() })
         .from(notifications)
-        .where(isNull(notifications.readAt))
+        .where(and(isNull(notifications.readAt), teamFilter))
         .get()?.n ?? 0
     );
   }
@@ -62,6 +69,7 @@ export class NotificationsRepository {
       route: row.route,
       readAt: row.readAt,
       createdAt: row.createdAt,
+      teamId: row.teamId ?? undefined,
     };
   }
 }

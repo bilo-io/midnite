@@ -844,10 +844,12 @@ export const notifications = sqliteTable(
     route: text('route').notNull(),
     readAt: text('read_at'),
     createdAt: text('created_at').notNull(),
+    teamId: text('team_id'),
   },
   (t) => ({
     createdIdx: index('notifications_created_idx').on(t.createdAt),
     readIdx: index('notifications_read_idx').on(t.readAt),
+    teamIdx: index('notification_team_idx').on(t.teamId, t.createdAt),
   }),
 );
 

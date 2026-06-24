@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { getWorkflow } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
+import { DesktopOnly } from '@/components/desktop-only';
 import dynamic from 'next/dynamic';
 
 const WorkflowEditor = dynamic(
@@ -31,8 +32,10 @@ function Editor() {
 
 export default function WorkflowEditPage() {
   return (
-    <Suspense fallback={null}>
-      <Editor />
-    </Suspense>
+    <DesktopOnly label="The workflow editor">
+      <Suspense fallback={null}>
+        <Editor />
+      </Suspense>
+    </DesktopOnly>
   );
 }

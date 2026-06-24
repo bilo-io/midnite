@@ -38,6 +38,7 @@ import { TerminalModule } from './terminal/terminal.module';
 import { ApprovalsModule } from './approvals/approvals.module';
 import { AuditModule } from './audit/audit.module';
 import { TeamsModule } from './teams/teams.module';
+import { WsModule } from './ws/ws.module';
 
 @Module({
   imports: [
@@ -78,6 +79,7 @@ import { TeamsModule } from './teams/teams.module';
     TerminalModule,
     ApprovalsModule,
     TeamsModule,
+    WsModule,
     AuditModule,
     AdminModule,
   ],
