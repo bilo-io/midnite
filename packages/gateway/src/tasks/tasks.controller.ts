@@ -12,6 +12,7 @@ import {
   Req,
   Res,
 } from '@nestjs/common';
+import { CurrentUser, type CurrentUserPayload } from '../auth/decorators/current-user.decorator';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { join, resolve, isAbsolute } from 'node:path';
 import { mkdirSync, createWriteStream, unlinkSync, existsSync } from 'node:fs';
@@ -257,7 +258,10 @@ export class TasksController {
   }
 
   @Post()
-  async create(@Req() req: FastifyRequest): Promise<CreateTaskResponse> {
+  async create(
+    @Req() req: FastifyRequest,
+    @CurrentUser() user: CurrentUserPayload | null,
+  ): Promise<CreateTaskResponse> {
     if (!req.isMultipart()) {
       throw new BadRequestException('expected multipart/form-data');
     }
@@ -344,6 +348,7 @@ export class TasksController {
           size: f.size,
           originalName: f.originalName,
         })),
+        createdBy: user?.userId,
       });
 
       return { task };

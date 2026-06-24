@@ -27,12 +27,12 @@ function build(overrides: Partial<Record<keyof ReposService, unknown>> = {}) {
 describe('ReposController — body validation (400)', () => {
   it('rejects a create with a blank name', () => {
     const { controller } = build();
-    expect(() => controller.create({ name: '  ', path: '~/x' })).toThrow(BadRequestException);
+    expect(() => controller.create({ name: '  ', path: '~/x' }, null)).toThrow(BadRequestException);
   });
 
   it('rejects a create with a blank path', () => {
     const { controller } = build();
-    expect(() => controller.create({ name: 'api', path: '' })).toThrow(BadRequestException);
+    expect(() => controller.create({ name: 'api', path: '' }, null)).toThrow(BadRequestException);
   });
 
   it('rejects an empty update body', () => {
@@ -44,8 +44,8 @@ describe('ReposController — body validation (400)', () => {
 describe('ReposController — valid input delegates to the service', () => {
   it('creates with the parsed request and wraps the repo', () => {
     const { controller, service } = build();
-    expect(controller.create({ name: 'api', path: '~/Dev/api' })).toEqual({ repo: fakeRepo });
-    expect(service.create).toHaveBeenCalledWith({ name: 'api', path: '~/Dev/api' });
+    expect(controller.create({ name: 'api', path: '~/Dev/api' }, null)).toEqual({ repo: fakeRepo });
+    expect(service.create).toHaveBeenCalledWith({ name: 'api', path: '~/Dev/api' }, undefined);
   });
 
   it('lists repos', () => {
@@ -76,7 +76,7 @@ describe('ReposController — domain errors translate to HTTP', () => {
         throw new RepoNameTakenError('a repo named "api" already exists');
       }),
     });
-    expect(() => controller.create({ name: 'api', path: '~/Dev/api' })).toThrow(ConflictException);
+    expect(() => controller.create({ name: 'api', path: '~/Dev/api' }, null)).toThrow(ConflictException);
   });
 
   it('maps RepoDoesNotExistError to 404 on update', () => {

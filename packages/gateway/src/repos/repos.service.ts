@@ -57,7 +57,7 @@ export class ReposService implements OnModuleInit {
     return row ? toRepo(row) : undefined;
   }
 
-  create(req: CreateRepoRequest): Repo {
+  create(req: CreateRepoRequest, createdBy?: string): Repo {
     if (this.repo.getByName(req.name)) {
       throw new RepoNameTakenError(`a repo named "${req.name}" already exists`);
     }
@@ -71,6 +71,7 @@ export class ReposService implements OnModuleInit {
       ownerRepo: normalizeConvention(req.ownerRepo),
       createdAt: now,
       updatedAt: now,
+      createdBy: createdBy ?? null,
     });
     return toRepo(row);
   }
@@ -112,6 +113,7 @@ function toRepo(row: RepoRow): Repo {
     ownerRepo: row.ownerRepo ?? undefined,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
+    createdBy: row.createdBy ?? undefined,
   };
 }
 

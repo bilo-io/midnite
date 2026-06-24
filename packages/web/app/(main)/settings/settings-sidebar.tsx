@@ -4,11 +4,13 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Bot,
+  CircleUser,
   FolderGit2,
   KeyRound,
   Lock,
   Palette,
   SlidersHorizontal,
+  Users,
   UserRound,
   type LucideIcon,
 } from 'lucide-react';
@@ -24,6 +26,8 @@ const CATEGORIES: Category[] = [
   { href: '/settings/repos', label: 'Repos', Icon: FolderGit2 },
   { href: '/settings/credentials', label: 'Credentials', Icon: KeyRound },
   { href: '/settings/system', label: 'System', Icon: SlidersHorizontal },
+  { href: '/settings/profile', label: 'Profile', Icon: CircleUser },
+  { href: '/settings/team', label: 'Team', Icon: Users },
   { href: '/settings/user', label: 'User', Icon: UserRound },
 ];
 

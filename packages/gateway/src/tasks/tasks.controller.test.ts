@@ -195,6 +195,7 @@ describe('TasksController — dependency routes', () => {
             ['prompt', 'do the thing'],
             ['dependsOn', 'ghost'],
           ]),
+          null,
         ),
       ).rejects.toThrow(BadRequestException);
     } finally {

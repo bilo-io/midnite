@@ -40,6 +40,8 @@ export const tasks = sqliteTable(
     archivedAt: text('archived_at'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
+    createdBy: text('created_by'),
+    teamId: text('team_id'),
   },
   (t) => ({
     statusIdx: index('tasks_status_idx').on(t.status),
@@ -197,6 +199,8 @@ export const repos = sqliteTable(
     ownerRepo: text('owner_repo'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
+    createdBy: text('created_by'),
+    teamId: text('team_id'),
   },
   (t) => ({
     nameIdx: uniqueIndex('repos_name_idx').on(t.name),
@@ -288,6 +292,8 @@ export const workflows = sqliteTable(
     installedFromTemplateId: text('installed_from_template_id'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
+    createdBy: text('created_by'),
+    teamId: text('team_id'),
   },
   (t) => ({
     enabledIdx: index('workflows_enabled_idx').on(t.enabled),
@@ -903,3 +909,88 @@ export const refreshTokens = sqliteTable(
 
 export type RefreshTokenRow = typeof refreshTokens.$inferSelect;
 export type RefreshTokenInsert = typeof refreshTokens.$inferInsert;
+
+// Phase 33 Theme B: Teams & membership.
+export const teams = sqliteTable(
+  'teams',
+  {
+    id: text('id').primaryKey(),
+    slug: text('slug').notNull().unique(),
+    name: text('name').notNull(),
+    createdBy: text('created_by').notNull(),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    slugIdx: uniqueIndex('teams_slug_idx').on(t.slug),
+    createdByIdx: index('teams_created_by_idx').on(t.createdBy),
+  }),
+);
+
+export type TeamRow = typeof teams.$inferSelect;
+export type TeamInsert = typeof teams.$inferInsert;
+
+// Roles: owner > admin > member > viewer
+export const teamMemberships = sqliteTable(
+  'team_memberships',
+  {
+    teamId: text('team_id').notNull(),
+    userId: text('user_id').notNull(),
+    role: text('role').notNull().default('member'),
+    joinedAt: text('joined_at').notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.teamId, t.userId] }),
+    userIdx: index('team_memberships_user_idx').on(t.userId),
+  }),
+);
+
+export type TeamMembershipRow = typeof teamMemberships.$inferSelect;
+export type TeamMembershipInsert = typeof teamMemberships.$inferInsert;
+
+export const teamInvites = sqliteTable(
+  'team_invites',
+  {
+    id: text('id').primaryKey(),
+    teamId: text('team_id').notNull(),
+    invitedBy: text('invited_by').notNull(),
+    // null = open-link invite (any authenticated user can accept)
+    email: text('email'),
+    token: text('token').notNull().unique(),
+    role: text('role').notNull().default('member'),
+    expiresAt: text('expires_at').notNull(),
+    acceptedAt: text('accepted_at'),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    tokenIdx: uniqueIndex('team_invites_token_idx').on(t.token),
+    teamIdx: index('team_invites_team_idx').on(t.teamId),
+  }),
+);
+
+export type TeamInviteRow = typeof teamInvites.$inferSelect;
+export type TeamInviteInsert = typeof teamInvites.$inferInsert;
+
+// ── Audit log (Phase 33 D3) ─────────────────────────────────────────────────
+// Append-only structured history of significant actions. userId is nullable
+// for system-initiated events (bootstrap, scheduled jobs). payload is a JSON
+// blob for action-specific detail (e.g. status transitions).
+export const auditLog = sqliteTable(
+  'audit_log',
+  {
+    id: text('id').primaryKey(),
+    entityType: text('entity_type').notNull(),
+    entityId: text('entity_id').notNull(),
+    userId: text('user_id'),
+    action: text('action').notNull(),
+    payload: text('payload'),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    entityIdx: index('audit_entity_idx').on(t.entityType, t.entityId),
+    userTimeIdx: index('audit_user_time_idx').on(t.userId, t.createdAt),
+    actionIdx: index('audit_action_idx').on(t.action),
+  }),
+);
+
+export type AuditLogRow = typeof auditLog.$inferSelect;
+export type AuditLogInsert = typeof auditLog.$inferInsert;

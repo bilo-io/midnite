@@ -48,24 +48,25 @@ Replace the static env-var bearer token with proper user identities and JWT sess
 
 Teams let multiple users share a workspace. A team has a slug, roles (owner / admin / member / viewer), and invite tokens for onboarding.
 
-### B1. Team + membership tables — **S**
-- [ ] Add `teams` table ([`db/schema.ts`](../packages/gateway/src/db/schema.ts)): `id` (UUIDv7), `slug` (unique), `name`, `created_by` (userId), `created_at`. Add `team_memberships`: `team_id`, `user_id`, `role` (`owner` | `admin` | `member` | `viewer`), `joined_at`. Forward-only migrations. The creating user is automatically assigned `owner`.
-- [ ] Add `team_invites`: `id`, `team_id`, `invited_by`, `email` (optional — null = open link), `token` (UUIDv7, unique), `role`, `expires_at`, `accepted_at`. Used by the invite flow (Theme B3).
-- [ ] `TeamsRepository`: `create`, `findById`, `findBySlug`, `listByUser`, `addMember`, `removeMember`, `setRole`, `createInvite`, `acceptInvite`, `findInviteByToken`. Drizzle only.
+### B1. Team + membership tables — **S** ✅ DONE
+- [x] Add `teams` table ([`db/schema.ts`](../packages/gateway/src/db/schema.ts)): `id`, `slug` (unique), `name`, `created_by`, `created_at`. Add `team_memberships`: `team_id`, `user_id`, `role` (`owner` | `admin` | `member` | `viewer`), `joined_at`. Migration `0047_teams`. The creating user is automatically assigned `owner`.
+- [x] Add `team_invites`: `id`, `team_id`, `invited_by`, `email` (optional), `token` (unique), `role`, `expires_at`, `accepted_at`, `created_at`.
+- [x] `TeamsRepository`: insert/findById/findBySlug/listByUser/update/delete; insertMember/findMember/listMembers/setRole/removeMember; insertInvite/findInviteByToken/listInvites/acceptInvite/revokeInvite. Drizzle only.
 
-### B2. Team CRUD endpoints — **S–M**
-- [ ] `TeamsService` + `TeamsController` ([`teams/`](../packages/gateway/src/teams/)): `POST /teams` (create, sets owner); `GET /teams/:id`; `GET /teams` (my teams); `PATCH /teams/:id` (rename — owner/admin); `DELETE /teams/:id` (owner only, cascades membership).
-- [ ] Shared `Team` + `TeamMembership` types + `CreateTeamRequest` in [`packages/shared/src/team.ts`](../packages/shared/src/team.ts); typed client methods.
+### B2. Team CRUD endpoints — **S–M** ✅ DONE
+- [x] `TeamsService` + `TeamsController` ([`teams/`](../packages/gateway/src/teams/)): `POST /teams` (create, sets owner); `GET /teams/:id`; `GET /teams` (my teams); `PATCH /teams/:id` (rename — owner/admin); `DELETE /teams/:id` (owner only, cascades membership). Role rank: owner>admin>member>viewer.
+- [x] Shared `Team` + `TeamMember` + `TeamWithMembers` types + `CreateTeamRequest`/`UpdateTeamRequest`/`SetMemberRoleRequest` in [`packages/shared/src/team.ts`](../packages/shared/src/team.ts).
 
-### B3. Invite token flow — **S**
-- [ ] `POST /teams/:id/invites` (admin+): creates an invite token, returns `{ token, url }`. Optional `email` and `expiresInDays` (default 7). The shareable URL is `<webBase>/invite/<token>` — no email sent; the inviter shares it out-of-band.
-- [ ] `GET /invites/:token` (unauthenticated): returns invite metadata (team name, role, expiry) without accepting — used by the web page to show "You've been invited to join X".
-- [ ] `POST /invites/:token/accept` (authenticated, uses the logged-in user's identity): validates token not expired/revoked, adds the user as a member, marks `accepted_at`.
+### B3. Invite token flow — **S** ✅ DONE
+- [x] `POST /teams/:id/invites` (admin+): creates an invite token. Optional `email` and `expiresInDays` (default 7).
+- [x] `GET /invites/:token` (unauthenticated): returns invite metadata without accepting.
+- [x] `POST /invites/:token/accept` (authenticated): validates expiry, adds user as member, marks `accepted_at`.
+- [x] `GET/DELETE /teams/:id/invites` (admin+): list + revoke outstanding invites.
 
-### B4. Web team UI — **M**
-- [ ] `app/(main)/settings/team/page.tsx` — team switcher dropdown in the nav (current team + "Create team" option); links to team settings.
-- [ ] `app/(main)/settings/team/[teamId]/page.tsx` — team name, member list (avatar + name + role chip), invite member (copy-to-clipboard token link), remove member, change role. Guarded: only admins/owners see management controls.
-- [ ] `app/(auth)/invite/[token]/page.tsx` — invite acceptance page: shows team name + inviting user, "Accept invitation" button (calls `/invites/:token/accept`, then redirects to the board). Works for logged-in users; redirects to login+return if not authenticated.
+### B4. Web team UI — **M** ✅ DONE
+- [x] `app/(main)/settings/team/page.tsx` — team list + inline create-team form (name + auto-slug); links to team settings.
+- [x] `app/(main)/settings/team/[teamId]/page.tsx` — member list with inline role-picker (admin+), remove-member button, invite-token generator with copy link + revoke; danger-zone delete (owner only). Guarded: only admins/owners see management controls.
+- [x] `app/(auth)/invite/[token]/page.tsx` — invite acceptance page: shows role + expiry unauthenticated; "Accept invitation" button for logged-in users; redirects to `/login?return=...` if not authenticated.
 
 ---
 
@@ -73,18 +74,18 @@ Teams let multiple users share a workspace. A team has a slug, roles (owner / ad
 
 Add `created_by` (userId) and optional `team_id` to every entity that will eventually be scoped. This phase is **additive only** — read/write restrictions (who can see or modify what) are deferred to Phase 34.
 
-### C1. Schema additions + migrations — **S–M**
-- [ ] One migration adds `created_by TEXT` (nullable, FK-style reference to `users.id`) and `team_id TEXT` (nullable, references `teams.id`) to: `tasks`, `repos`, `workflows`, `sessions`. Columns are nullable so a zero-downtime migration doesn't break the running gateway.
-- [ ] Indexes: `tasks_created_by_idx`, `tasks_team_id_idx` (and equivalents for repos/workflows) — fast user-scoped list queries once RBAC lands.
+### C1. Schema additions + migrations — **S–M** ✅ DONE
+- [x] Migration `0048_resource_ownership`: adds `created_by TEXT` and `team_id TEXT` to `tasks`, `repos`, `workflows`. Nullable — no zero-downtime risk.
+- [x] Indexes: `tasks_created_by_idx`, `tasks_team_id_idx`, `repos_created_by_idx`, `workflows_created_by_idx`.
 
-### C2. Backfill: auto-create personal workspace on first JWT login — **S**
-- [ ] On a user's very first successful JWT login, `UsersService` creates a personal team for them (`slug = user-<userId>`, `name = "<Name>'s workspace"`) with the user as owner. Existing single-user tasks/repos/workflows receive `created_by = firstUserId` via a one-time backfill migration that fires when exactly one user exists — so old data is attributed correctly without needing a manual step.
+### C2. Backfill: auto-create personal workspace on registration — **S** ✅ DONE
+- [x] `UsersService.register` calls `TeamsService.createTeam` after user insert; creates a personal team (`slug = personal-<userId>`, `name = "<Name>'s workspace"`) with the user as `owner`. `@Optional()` injection so unit tests don't need the full module graph.
 
-### C3. Write-path: set `createdBy` on create — **S**
-- [ ] `TasksService.create`, `ReposService.create`, `WorkflowsService.create` each accept an optional `userId` from the request context (supplied by the `@CurrentUser()` decorator) and persist it as `created_by`. If no user context exists (legacy static-token path), the field is left null — no behavioural change for single-user setups.
+### C3. Write-path: set `createdBy` on create — **S** ✅ DONE
+- [x] `TasksService.createFromPrompt`, `ReposService.create`, `WorkflowsService.create` accept `createdBy?: string` and persist it as `created_by`. Controllers pass `user?.userId` from `@CurrentUser()`. Null on the legacy static-token path — no regression.
 
-### C4. Read-path: expose ownership on response shapes — **S**
-- [ ] Extend the shared `Task`, `Repo`, `Workflow` types in [`packages/shared/src/`](../packages/shared/src/) with `createdBy?: string` and `teamId?: string`. All existing consumers ignore the new optional fields — no breaking change.
+### C4. Read-path: expose ownership on response shapes — **S** ✅ DONE
+- [x] Extended shared `Task`, `Repo`, `Workflow` types with `createdBy?: string` and `teamId?: string`. Mapped in `toRepo()` and `hydrateWorkflow()`. All existing consumers ignore the new optional fields.
 
 ---
 
@@ -92,20 +93,22 @@ Add `created_by` (userId) and optional `team_id` to every entity that will event
 
 Bind task execution to its owner's context and start recording who does what.
 
-### D1. Per-user concurrency cap — **S–M**
-- [ ] `AgentPoolService` ([`pool/agent-pool.service.ts`](../packages/gateway/src/pool/agent-pool.service.ts)) tracks active slot counts per `userId` in addition to the global pool size. New config key: `pool.perUserMaxSlots` (default: same as global `maxSlots`, effectively unlimited until set). The scheduler's tick ([`agent-pool-scheduler.service.ts`](../packages/gateway/src/pool/agent-pool-scheduler.service.ts)) skips a task if the owner's per-user cap is already full — emits a `task.waiting` event (not an error; the task retries next tick).
-- [ ] Config addition to `MidniteConfig` in [`packages/shared/src/config.ts`](../packages/shared/src/config.ts): `pool.perUserMaxSlots?: number`.
+### D1. Per-user concurrency cap — **S–M** ✅ DONE
+- [x] `AgentPoolService` tracks `userId` per slot; `busyCountForUser(userId)` counts occupancy. `acquire(taskId, userId?)` stores the owner on the slot. `AgentRunnerService` passes `task.createdBy` to acquire on start + reattach.
+- [x] Config: `agent.perUserMaxSlots` (default 0 = unlimited) in `AgentConfigSchema`. The scheduler's `tick()` calls `userHasCapacity()` — skips tasks whose owner is at the cap; retries next tick. Tasks without `createdBy` are never capped.
 
-### D2. Task execution bound to owner context — **S**
-- [ ] The PTY spawner ([`terminal/spawner/`](../packages/gateway/src/terminal/spawner/)) injects `MIDNITE_USER_ID=<ownerId>` into the spawned Claude Code session's env — so the hook callbacks at `POST /hooks/:taskId/:event` can be validated against the task's `created_by`. No behavioural change for tasks without a `created_by`.
+### D2. Task execution bound to owner context — **S** ✅ DONE
+- [x] `TerminalService.spawnAgentSession` accepts `userId?` in spec; injects `MIDNITE_USER_ID=<ownerId>` into env when set. `AgentRunnerService.start()` and auto-fix path pass `task.createdBy`. No behavioural change for tasks without a `created_by`.
 
-### D3. `audit_log` table — **S**
-- [ ] New table in [`db/schema.ts`](../packages/gateway/src/db/schema.ts): `id` (UUIDv7), `entity_type` (`task` | `repo` | `workflow` | `user` | `team`), `entity_id`, `user_id` (nullable — system actions have no user), `action` (e.g. `task.created`, `task.status_changed`, `user.login`, `team.member_added`), `payload` (JSON, nullable), `created_at`. Indexed on `(entity_type, entity_id)` and `(user_id, created_at)`.
-- [ ] `AuditService` ([`audit/audit.service.ts`](../packages/gateway/src/audit/audit.service.ts)) — a `@Global()` service (like `SearchIndexService`) with a single `record(entry)` method; fire-and-forget (doesn't throw). Injected into domain services.
+### D3. `audit_log` table — **S** ✅ DONE
+- [x] New table in [`db/schema.ts`](../packages/gateway/src/db/schema.ts): `id`, `entity_type`, `entity_id`, `user_id` (nullable), `action`, `payload` (JSON), `created_at`. Indexed on `(entity_type, entity_id)`, `(user_id, created_at)`, and `action`. Migration `0049_audit_log`.
+- [x] `AuditService` ([`audit/audit.service.ts`](../packages/gateway/src/audit/audit.service.ts)) — `@Global()` service; `record()` is fire-and-forget. `AuditRepository.list()` with filter/pagination. `GET /audit` endpoint returns paginated `AuditEntry[]`.
 
-### D4. Key audit events — **S**
-- [ ] Write audit entries on: `task.created`, `task.status_changed` (with `from`/`to` in payload), `task.deleted`; `user.registered`, `user.login`, `user.logout`; `team.created`, `team.member_added`, `team.member_removed`, `team.member_role_changed`; `workflow.run_started`, `workflow.run_completed`.
-- [ ] `GET /audit` (owner/admin only — enforced by role check in the controller): paginated, filterable by `entityType`, `entityId`, `userId`, `action`, date range. Returns `AuditEntry[]` (shared type).
+### D4. Key audit events — **S** ✅ DONE (run_completed deferred to engine)
+- [x] `task.created`, `task.status_changed` (with `from`/`to` payload), `task.deleted` — wired in `TasksService`.
+- [x] `user.registered` — `UsersService.register`; `user.login`, `user.logout` — `AuthController`.
+- [x] `team.created`, `team.member_added`, `team.member_removed`, `team.member_role_changed` — `TeamsService`.
+- [x] `workflow.run_started` — `WorkflowsService.run()`. `workflow.run_completed` deferred (requires engine callback).
 
 ---
 
@@ -113,14 +116,15 @@ Bind task execution to its owner's context and start recording who does what.
 
 The settings surface for identity and team management.
 
-### E1. User profile page — **S**
-- [ ] `app/(main)/settings/profile/page.tsx`: display name + email (read-only); change display name; change password (requires current password, calls `PATCH /users/me/password`); avatar initial/placeholder (no upload in Phase 33 — deferred).
+### E1. User profile page — **S** ✅ DONE
+- [x] `app/(main)/settings/profile/page.tsx`: display name edit + email (read-only) + change password (requires current password, `PATCH /auth/me` + `PATCH /auth/me/password`); avatar deferred.
+- [x] Gateway: `PATCH /auth/me` and `PATCH /auth/me/password` routes wired to `UsersService`.
 
-### E2. Team settings + member management — **S**
-- [ ] `app/(main)/settings/team/[teamId]/page.tsx` (B4 is the team page — merge E2 into B4 rather than splitting across two files): rename team (admin+); "Danger zone" delete-team section (owner only, with confirmation dialog); member list with inline role-picker (admin+) and remove-member button (admin+). New invite-token entry: enter optional email label → generate token → "Copy link" button.
+### E2. Team settings + member management — **S** ✅ DONE (merged into B4)
+- [x] Handled in B4 — team detail page includes rename, danger-zone delete, member management, and invite tokens.
 
-### E3. Invite token acceptance — **S**
-- [ ] Handled by `app/(auth)/invite/[token]/page.tsx` from B4 — Theme E adds an explicit "Invitations" section in the team settings page showing outstanding (unexpired) tokens with the ability to revoke them.
+### E3. Invite token acceptance — **S** ✅ DONE (merged into B4)
+- [x] Outstanding invite tokens shown in team detail page with revoke controls. Invite acceptance page at `/invite/[token]`.
 
 ---
 

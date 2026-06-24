@@ -69,6 +69,8 @@ export const RepoSchema = z.object({
   ownerRepo: z.string().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
+  createdBy: z.string().optional(),
+  teamId: z.string().optional(),
 });
 
 export const CreateRepoRequestSchema = z.object({

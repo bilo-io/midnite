@@ -310,7 +310,7 @@ export class TerminalService implements OnModuleDestroy {
    */
   spawnAgentSession(
     sessionId: string,
-    spec: { prompt: string },
+    spec: { prompt: string; userId?: string },
     hooks: { onExit: (exitCode: number, signal: number | null) => void },
   ): { ok: true; pid: number } | { ok: false; error: string } {
     if (this.handles.has(sessionId)) {
@@ -325,6 +325,7 @@ export class TerminalService implements OnModuleDestroy {
     const command = AGENT_CLI_COMMAND[this.agents.getAgentCli()];
     const args: string[] = [];
     const env = this.fullEnv();
+    if (spec.userId) env['MIDNITE_USER_ID'] = spec.userId;
     const settingsFile = this.applyHookWiring(sessionId, command, args, env, { lifecycle: true });
     args.push(spec.prompt);
 
