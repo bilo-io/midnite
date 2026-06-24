@@ -4,6 +4,13 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 36 D1+D2 — Template marketplace browse + install UI (PR #182)
+
+- [x] `/workflows/templates` page: category filter chips, free-text search, template cards
+- [x] Install modal: slot requirements via `GET /:id/slots`, per-slot credential dropdowns, `POST /:id/install` + navigate to editor
+- [x] "Templates" link added to Workflows page header
+- [x] Template API functions in `web/lib/api.ts`: `listWorkflowTemplates`, `getWorkflowTemplate`, `getWorkflowTemplateSlots`, `installWorkflowTemplate`
+
 ## 2026-06-24 — Phase 36 B2+D4 — Workflow duplicate endpoint + card button (PR #181)
 
 - [x] `POST /workflows/:id/duplicate` — clones graph with fresh UUIDs, `enabled=false`, name `"(copy)"`

@@ -90,12 +90,11 @@ Six curated system templates seeded on boot so the marketplace is useful from da
 Browse, preview, install, and publish templates from the web app.
 
 ### D1. `/workflows/templates` browse page — **M**
-- [ ] New page [`app/(main)/workflows/templates/page.tsx`](../packages/web/app/(main)/workflows/templates/page.tsx): grid of `WorkflowTemplateSummary` cards. Each card: name, category badge, description (2-line truncated), tags, trigger type icon, "Use template" button. Filter bar: category tabs + free-text search (client-side over the loaded list). "My templates" tab (personal + team) vs. "Built-in" tab (system). Empty state for "My templates" links to "Save as template" from the editor.
+- [x] New page [`app/(main)/workflows/templates/page.tsx`](../packages/web/app/(main)/workflows/templates/page.tsx): grid of template cards with category filter chips + text search. "Templates" link added to Workflows page header.
 
 ### D2. Template detail + install flow — **M**
-- [ ] New page [`app/(main)/workflows/templates/[id]/page.tsx`](../packages/web/app/(main)/workflows/templates/[id]/page.tsx): template name, description, category, tags; a **read-only ReactFlow canvas** rendering the template's nodes and edges (same canvas as the editor, `interactive = false`); credential slots list (type badge + description + status: "satisfied by <cred>" or "needs mapping").
-- [ ] **Install flow** (inline on the detail page, not a separate modal): if all slots are satisfied → single "Install" button; if slots need mapping → a slot-mapping step (dropdown per slot: "Pick a credential of type Slack"; if none exist, "Add credential" link opens the credentials page). After mapping → optional name/description override fields → "Create workflow" → navigates to the new workflow in the editor with an info banner: "Workflow created from template — review and enable when ready."
-- [ ] If any slot is unresolved at install time: the workflow is created with a warning banner in the editor: "N credential slot(s) not connected — configure before enabling."
+- [x] Inline install modal on browse page: `GET /:id/slots` fetches credential requirements; per-slot credential dropdowns (filtered by type); "Add credential" link when none found; `POST /:id/install` + navigate to editor.
+- [ ] Separate template detail page with read-only ReactFlow canvas (deferred — install modal covers the core UX).
 
 ### D3. "Save as template" in the editor — **S**
 - [ ] Action in the workflow editor toolbar (or overflow menu): opens a sheet/dialog: template name (pre-filled from workflow name), description, category picker, tags input, visibility toggle (personal / team). On submit: calls `POST /workflow-templates` with `definition` extracted from the current workflow graph + `credentialSlots` auto-detected (any node with a `credentialId` becomes a slot, user can label and describe each). Returns to the editor with a success toast linking to the new template.
