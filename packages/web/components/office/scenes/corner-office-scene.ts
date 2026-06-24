@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { useOfficeStore } from '@/lib/office-store';
 import { OFFICE_TILE } from '@/lib/office/dimensions';
 import { buildOfficePalette, type OfficePalette } from '@/lib/office/theme';
-import { charKey, ensureOfficeAnims, ensureOfficeTextures, TEX, walkAnim } from '@/lib/office/textures';
+import { charKey, ensureOfficeAnims, ensureOfficeTextures, TEX, walkAnim, type CharKind } from '@/lib/office/textures';
 import { deskItemById } from '@/lib/office/desk-items';
 
 // Corner office: a small private room the player enters from the main floor
@@ -97,9 +97,9 @@ export class CornerOfficeScene extends Phaser.Scene {
     this.unsub = useOfficeStore.subscribe((state, prev) => {
       if (!this.alive) return;
       if (state.deskItems !== prev.deskItems) this.renderDeskItems(state.deskItems);
-      // Keyboard freeze while the desk picker is open.
-      const frozen = state.deskPickerOpen;
-      const wasFrozen = prev.deskPickerOpen;
+      // Keyboard freeze while the desk or character picker is open.
+      const frozen = state.deskPickerOpen || state.characterPickerOpen;
+      const wasFrozen = prev.deskPickerOpen || prev.characterPickerOpen;
       if (frozen !== wasFrozen) {
         this.inputEnabled = !frozen;
         const kb = this.input.keyboard;
@@ -109,6 +109,9 @@ export class CornerOfficeScene extends Phaser.Scene {
       if (state.currentScene === 'office' && prev.currentScene === 'corner') {
         this.cameras.main.fadeOut(200, 0, 0, 0);
         this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('office'));
+      }
+      if (state.playerVariant !== prev.playerVariant) {
+        this.player.setTexture(this.playerCharKey(this.facing, 0));
       }
     });
     this.renderDeskItems(useOfficeStore.getState().deskItems);
@@ -341,9 +344,24 @@ export class CornerOfficeScene extends Phaser.Scene {
 
   // ---- player movement (mirrors main scene) ---------------------------------
 
+  private playerKindAndVariant(): { kind: CharKind; v: number } {
+    const pv = useOfficeStore.getState().playerVariant;
+    return pv < 0 ? { kind: 'human', v: 0 } : { kind: 'robot', v: pv };
+  }
+
+  private playerCharKey(dir: 'down' | 'up' | 'side', frame: 0 | 1): string {
+    const { kind, v } = this.playerKindAndVariant();
+    return charKey(kind, dir, frame, v);
+  }
+
+  private playerWalkAnim(dir: 'down' | 'up' | 'side'): string {
+    const { kind, v } = this.playerKindAndVariant();
+    return walkAnim(kind, dir, v);
+  }
+
   private buildPlayer() {
     this.player = this.physics.add
-      .sprite(center(PLAYER_SPAWN.x), center(PLAYER_SPAWN.y), charKey('human', 'down', 0))
+      .sprite(center(PLAYER_SPAWN.x), center(PLAYER_SPAWN.y), this.playerCharKey('down', 0))
       .setScale(1.3)
       .setDepth(10);
     (this.player.body as Phaser.Physics.Arcade.Body).setCollideWorldBounds(true);
@@ -384,12 +402,12 @@ export class CornerOfficeScene extends Phaser.Scene {
   }
 
   private walkPlayer() {
-    this.player.anims.play(walkAnim('human', this.facing), true);
+    this.player.anims.play(this.playerWalkAnim(this.facing), true);
   }
 
   private idlePlayer() {
     this.player.anims.stop();
-    this.player.setTexture(charKey('human', this.facing, 0));
+    this.player.setTexture(this.playerCharKey(this.facing, 0));
   }
 }
 
