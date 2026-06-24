@@ -14,6 +14,8 @@ export const MAX_REPO_BRANCH_PREFIX_LENGTH = 100;
 /** Max length of a repo's PR-body template — capped so it stays a bounded slice
  *  of the agent prompt. */
 export const MAX_REPO_PR_TEMPLATE_LENGTH = 4000;
+/** Max length of a repo's GitHub owner/repo slug (e.g. "owner/repo"). */
+export const MAX_REPO_OWNER_REPO_LENGTH = 200;
 
 const RepoNameSchema = z
   .string()
@@ -46,6 +48,15 @@ const RepoPrTemplateSchema = z
     `PR template must be ${MAX_REPO_PR_TEMPLATE_LENGTH} characters or fewer`,
   );
 
+const RepoOwnerRepoSchema = z
+  .string()
+  .trim()
+  .max(
+    MAX_REPO_OWNER_REPO_LENGTH,
+    `owner/repo must be ${MAX_REPO_OWNER_REPO_LENGTH} characters or fewer`,
+  )
+  .regex(/^[^/]+\/[^/]+$/, 'must be in "owner/repo" format (e.g. "octocat/hello-world")');
+
 export const RepoSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -54,6 +65,8 @@ export const RepoSchema = z.object({
   branchPrefix: z.string().optional(),
   /** PR-body template the agent should follow when opening a pull request. */
   prTemplate: z.string().optional(),
+  /** GitHub "owner/repo" slug (e.g. "octocat/hello-world") for webhook wiring (Phase 37 Theme C). */
+  ownerRepo: z.string().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -63,6 +76,7 @@ export const CreateRepoRequestSchema = z.object({
   path: RepoPathSchema,
   branchPrefix: RepoBranchPrefixSchema.optional(),
   prTemplate: RepoPrTemplateSchema.optional(),
+  ownerRepo: RepoOwnerRepoSchema.optional(),
 });
 
 // All fields optional, but a patch with none is a no-op the caller almost
@@ -73,13 +87,15 @@ export const UpdateRepoRequestSchema = z
     path: RepoPathSchema.optional(),
     branchPrefix: RepoBranchPrefixSchema.optional(),
     prTemplate: RepoPrTemplateSchema.optional(),
+    ownerRepo: RepoOwnerRepoSchema.optional(),
   })
   .refine(
     (v) =>
       v.name !== undefined ||
       v.path !== undefined ||
       v.branchPrefix !== undefined ||
-      v.prTemplate !== undefined,
+      v.prTemplate !== undefined ||
+      v.ownerRepo !== undefined,
     { message: 'at least one field is required' },
   );
 

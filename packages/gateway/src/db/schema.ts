@@ -34,6 +34,9 @@ export const tasks = sqliteTable(
     // User labels as a JSON array of strings (null/absent = none). App-layer
     // validated; no join table — tags are a small free-form set per task.
     tags: text('tags'),
+    // AI code review result (Phase 37 Theme D). JSON: { verdict, summary, runId, reviewedAt }.
+    // Written by AiReviewService when a code-review workflow run completes on the task's PR.
+    aiReview: text('ai_review'),
     archivedAt: text('archived_at'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
@@ -189,11 +192,15 @@ export const repos = sqliteTable(
     path: text('path').notNull(),
     branchPrefix: text('branch_prefix'),
     prTemplate: text('pr_template'),
+    // GitHub "owner/repo" slug (Phase 37 Theme C). Used to route incoming webhook
+    // events and to display the "Connect GitHub webhook" instructions in the UI.
+    ownerRepo: text('owner_repo'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
   },
   (t) => ({
     nameIdx: uniqueIndex('repos_name_idx').on(t.name),
+    ownerRepoIdx: uniqueIndex('repos_owner_repo_idx').on(t.ownerRepo),
   }),
 );
 

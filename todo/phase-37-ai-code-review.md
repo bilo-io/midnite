@@ -27,25 +27,25 @@
 The building blocks. Everything in themes B–D depends on these executors existing.
 
 ### A1. `github` credential type — **S**
-- [ ] Add `github` to the credential types in [`packages/shared/src/workflow-credential.ts`](../packages/shared/src/workflow-credential.ts): fields `token` (Personal Access Token or fine-grained token) and optional `enterpriseUrl` (for GitHub Enterprise Server, e.g. `https://github.example.com`). The API base URL resolves to `https://api.github.com` by default or `<enterpriseUrl>/api/v3` when set.
-- [ ] Update the credential type picker in the web credentials UI to show `github` alongside `slack`, `smtp`, etc.
+- [x] Add `github` to the credential types in [`packages/shared/src/workflow-credential.ts`](../packages/shared/src/workflow-credential.ts): fields `token` (Personal Access Token or fine-grained token) and optional `enterpriseUrl` (for GitHub Enterprise Server, e.g. `https://github.example.com`). The API base URL resolves to `https://api.github.com` by default or `<enterpriseUrl>/api/v3` when set.
+- [x] Update the credential type picker in the web credentials UI to show `github` alongside `slack`, `smtp`, etc.
 
 ### A2. `github.get-pr` executor — **S**
-- [ ] New executor [`workflows/executors/github-get-pr.executor.ts`](../packages/gateway/src/workflows/executors/github-get-pr.executor.ts): param `prUrl: string` (expressionable). Parses `owner`, `repo`, `pull_number` from the URL. Calls `GET /repos/{owner}/{repo}/pulls/{pull_number}` with the `github` credential token as `Authorization: Bearer`. Returns `{ title, body, author, state, labels, headSha, baseBranch, headBranch, additions, deletions, changedFiles }`. On failure: throws with the HTTP status + GitHub error message.
-- [ ] Register as node type `github.get-pr` in [`packages/shared/src/node-types.ts`](../packages/shared/src/node-types.ts) with param definitions (expressionable `prUrl`, required `credentialId`).
+- [x] New executor [`workflows/executors/github-get-pr.executor.ts`](../packages/gateway/src/workflows/executors/github-get-pr.executor.ts): param `prUrl: string` (expressionable). Parses `owner`, `repo`, `pull_number` from the URL. Calls `GET /repos/{owner}/{repo}/pulls/{pull_number}` with the `github` credential token as `Authorization: Bearer`. Returns `{ title, body, author, state, labels, headSha, baseBranch, headBranch, additions, deletions, changedFiles }`. On failure: throws with the HTTP status + GitHub error message.
+- [x] Register as node type `github.get-pr` in [`packages/shared/src/node-types.ts`](../packages/shared/src/node-types.ts) with param definitions (expressionable `prUrl`, required `credentialId`).
 
 ### A3. `github.get-diff` executor — **M**
-- [ ] New executor [`workflows/executors/github-get-diff.executor.ts`](../packages/gateway/src/workflows/executors/github-get-diff.executor.ts): params `prUrl: string` (expressionable), `maxTokens: number` (default 8000, configurable per node). Calls `GET /repos/{owner}/{repo}/pulls/{pull_number}` with `Accept: application/vnd.github.v3.diff` to retrieve the raw unified diff.
-- [ ] **Truncation:** estimate token count as `ceil(charCount / 4)`. If the diff exceeds `maxTokens × 4` characters, truncate at that boundary and append `\n\n[diff truncated — showing first ~{maxTokens} tokens of {totalTokens} estimated]`. Truncation is logged at `warn` level with the PR URL and character counts.
-- [ ] Returns `{ diff, truncated: boolean, estimatedTokens: number, prUrl }`.
-- [ ] Register as `github.get-diff` in `node-types.ts`.
+- [x] New executor [`workflows/executors/github-get-diff.executor.ts`](../packages/gateway/src/workflows/executors/github-get-diff.executor.ts): params `prUrl: string` (expressionable), `maxTokens: number` (default 8000, configurable per node). Calls `GET /repos/{owner}/{repo}/pulls/{pull_number}` with `Accept: application/vnd.github.v3.diff` to retrieve the raw unified diff.
+- [x] **Truncation:** estimate token count as `ceil(charCount / 4)`. If the diff exceeds `maxTokens × 4` characters, truncate at that boundary and append `\n\n[diff truncated — showing first ~{maxTokens} tokens of {totalTokens} estimated]`. Truncation is logged at `warn` level with the PR URL and character counts.
+- [x] Returns `{ diff, truncated: boolean, estimatedTokens: number, prUrl }`.
+- [x] Register as `github.get-diff` in `node-types.ts`.
 
 ### A4. `github.post-review` executor — **M**
-- [ ] New executor [`workflows/executors/github-post-review.executor.ts`](../packages/gateway/src/workflows/executors/github-post-review.executor.ts): params `prUrl: string` (expressionable), `body: string` (expressionable — the review comment text), `event: 'COMMENT' | 'APPROVE' | 'REQUEST_CHANGES'` (expressionable, default `'COMMENT'`), `credentialId: string`.
-- [ ] Calls `POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews` with `{ body, event }`. Returns `{ reviewId, htmlUrl, state }`.
-- [ ] **HMAC verification** for incoming webhook payloads is already handled by the trigger layer (existing `webhookSecretHash`) — this executor does not re-verify; it only posts outbound reviews.
-- [ ] Register as `github.post-review` in `node-types.ts`.
-- [ ] **Shared types:** extend `NodeType` union in `node-types.ts` with `'github.get-pr' | 'github.get-diff' | 'github.post-review'`; add param schemas (zod) for each.
+- [x] New executor [`workflows/executors/github-post-review.executor.ts`](../packages/gateway/src/workflows/executors/github-post-review.executor.ts): params `prUrl: string` (expressionable), `body: string` (expressionable — the review comment text), `event: 'COMMENT' | 'APPROVE' | 'REQUEST_CHANGES'` (expressionable, default `'COMMENT'`), `credentialId: string`.
+- [x] Calls `POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews` with `{ body, event }`. Returns `{ reviewId, htmlUrl, state }`.
+- [x] **HMAC verification** for incoming webhook payloads is already handled by the trigger layer (existing `webhookSecretHash`) — this executor does not re-verify; it only posts outbound reviews.
+- [x] Register as `github.post-review` in `node-types.ts`.
+- [x] **Shared types:** extend `NodeType` union in `node-types.ts` with `'github.get-pr' | 'github.get-diff' | 'github.post-review'`; add param schemas (zod) for each.
 
 ---
 
