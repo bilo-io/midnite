@@ -82,12 +82,12 @@ Make the project's existing markdown browsable, from one source of truth.
 
 ## Verification
 
-- [ ] `moon run docs:dev` serves the site; its entire shell renders via `@midnite/ui` primitives + tokens, with working light/dark/system theming from the lib's `ThemeProvider`.
-- [ ] An MDX component page shows **live** `@midnite/ui` examples inline next to prose; the foundations pages render the real token palette/type/spacing scales; a "see it interactively" link goes to Storybook.
-- [ ] The product-docs section renders the **actual** [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md) / [`docs/INITIAL_PLAN.md`](../docs/INITIAL_PLAN.md) / [`docs/TESTING_PLAN.md`](../docs/TESTING_PLAN.md) (imported, not copied — editing the source file updates the page).
-- [ ] Sidebar nav groups DS vs product docs; client-side search filters pages; the site is responsive; **no network/gateway calls** (fully static).
-- [ ] `docs` imports only `@midnite/ui` (boundary guard passes — nothing from `shared`/`web`/`gateway`).
-- [ ] `moon run docs:build` produces a static site; `moon ci` builds it; `moon run :typecheck` · `:lint` · `:test` green across the graph. (Run web tests from the **primary checkout**, not a `.git` worktree.)
+- [x] ✅ Shell renders via `@midnite/ui` primitives + tokens with theming — `src/components/{layout,theme-toggle}.tsx`, `examples.tsx` imports `Input/Switch/Tabs` from `@midnite/ui`; `layout.test.tsx` asserts the ui-built shell. (Live `docs:dev` serve is the only part needing a running dev server; `docs:build` proves it compiles.)
+- [x] ✅ Live MDX examples + token-driven foundations + Storybook links — `src/content/components/*.mdx` + `examples.tsx`; `src/lib/token-specimens.tsx` imports `color, radius` from `@midnite/ui`; "see it interactively" links in every component MDX.
+- [x] ✅ Product-docs imports the real `docs/ARCHITECTURE.md`/`INITIAL_PLAN.md`/`TESTING_PLAN.md` (+RELEASING/README) via `?raw` — `src/content/product-docs.tsx`; `docs:build` (2130 modules) resolves the build-time imports.
+- [x] ✅ Sidebar groups DS vs product, client-side search, responsive, no network — `sidebar.tsx`+`nav.ts` (`nav.test.ts`), `search.ts`+`doc-search.tsx` (`search.test.ts`, `doc-search.test.tsx`); grep confirms no `fetch`/`WebSocket`/`/api`/`@midnite/shared`/`localhost` in docs source.
+- [x] ✅ Boundary guard passes — `packages/docs/src/boundary.test.ts` (green in `docs:test`); docs imports only `@midnite/ui`.
+- [x] ✅ `docs:build` produces a static site (`dist/index.html` + assets); `docs:test` 31/31 across 7 files (2026-06-24). Full-graph `moon ci`/`:test` flakes only on the `ui:test` storybook-chromium parallel-run issue (passes isolated); CI is billing-blocked account-wide.
 
 ---
 

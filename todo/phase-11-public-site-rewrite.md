@@ -156,6 +156,8 @@ A scroll/section controller (Theme D) is the single source of truth for "which s
 
 ## Verification
 
+> **Status (2026-06-24 reconciliation):** the implementation is **complete and unit-tested** — every box below traces to present code in `packages/site/` (persistent `PreviewPanel` with spring x/y/width/height + 3 Mac dots + cross-fade; `useTypewriterCycle` hero; `TypedTitle`; 4-mode theme toggle persisting to `midnite.theme` with a no-flash init script; terminal/kanban/session panel modules; download page reusing `lib/downloads.ts`; legal routes + sidebar + footer links), backed by unit tests (`panel-rect`, `panel-sections`, `registry`, `typed-title`, `use-typewriter*`). The unticked boxes are **live visual acceptance** checks requiring a running `site:dev` — left open pending a manual/Playwright pass, not because anything is missing.
+
 - `moon run site:dev`, open the site:
   - [ ] One **persistent panel** travels and **resizes** (width *and* height) smoothly between sections; it always shows the **three Mac dots**; its content swaps per section with a cross-fade.
   - [ ] Hero: app icon + logo present; the centred grid-card-sized panel; the headline **cycles through 3 typed title/subtitle pairs**.
@@ -164,7 +166,7 @@ A scroll/section controller (Theme D) is the single source of truth for "which s
   - [ ] **Theme toggle** works (light/dark/system/time), matches the web app, and persists; no flash on reload.
   - [ ] Some sections show a **typed terminal command**; others show a **web-app-inspired mockup** in the panel.
   - [ ] **Download page**: same platforms/links/behaviour as before, restyled elegantly; theming + particles consistent.
-  - [ ] **Legal**: `/legal/privacy` and `/legal/eula` render placeholder markdown with a **sidebar** of all legal docs; footer links to them.
+  - [x] ✅ **Legal** (code-confirmed): `/legal/privacy` + `/legal/eula` render markdown (`app/legal/{privacy,eula}/page.tsx` via `components/markdown.tsx`); `app/legal/layout.tsx` renders the `LegalSidebar` over the `lib/legal.ts` registry; `components/footer.tsx` links every legal doc.
   - [x] **Reduced motion** (PR #98, 2026-06-22): typing (`use-typewriter`) and the panel FLIP morph degrade via [`lib/reduced-motion.ts`](../packages/site/components/../lib/reduced-motion.ts); per-animation `@media (prefers-reduced-motion: reduce)` rules disable the named keyframes (reveal/gradient-border/panel-glow/caret); and a **global catch-all** in `globals.css` floors every transition + any future animation to ~instant and drops smooth-scroll. Particle drift is moot (field removed, PR #68). Verified against `site:dev` under emulated reduced-motion — the at-rest render is pixel-identical to normal, i.e. fully usable.
 - `moon run site:typecheck`, `moon run :lint`, `moon run :test` green; `moon run site:build` succeeds (static/SSR build clean).
 
