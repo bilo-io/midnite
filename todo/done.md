@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 23 D — autonomy modes + approvals settings panel (PR #198)
+
+- [x] `AutonomyMode` enum + `SAFE_TOOLS` constant + `ApprovalSettings` / `SetModeRequest` Zod schemas added to `@midnite/shared`
+- [x] `approval_settings` singleton table (migration 0052) — mode survives gateway restarts; `ApprovalsService.onModuleInit()` reloads it
+- [x] `ApprovalsRepository`: `getSettings()` + `upsertMode()` backed by SQLite `onConflictDoUpdate`
+- [x] `ApprovalsService.evaluate()` gates on mode: `manual` → escalate, `guarded` → auto-allow SAFE_TOOLS, `autonomous` → rules decide
+- [x] `ApprovalsSettingsController`: `GET /approvals/settings` + `PATCH /approvals/mode`
+- [x] Web `api.ts`: `getApprovalSettings`, `setApprovalMode`, `listApprovalRules`, `createApprovalRule`, `updateApprovalRule`, `deleteApprovalRule`
+- [x] `/settings/approvals` page: mode picker (radio buttons), safe-tools chips (guarded mode only), rules list with add/toggle/delete
+
+---
+
 ## 2026-06-24 — Phase 24 A3 — desktop-only gates for office + workflow editor (PR #196)
 
 - [x] `<DesktopOnly label>` wrapper (`components/desktop-only.tsx`): branches on `useIsDesktop()`; below `lg` renders a centered "best viewed on desktop" notice, at `lg`+ renders children. Mount guard prevents a static-export flash of the notice on desktop.
