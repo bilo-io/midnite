@@ -4,6 +4,13 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 36 D3 + E complete; fix gateway spec (commits 8e2d8df, 5055c54)
+
+- [x] Phase 36 D3: "Save as template" modal in workflow editor (BookmarkPlus toolbar button, SaveAsTemplateModal, POST /from-workflow, navigate to templates on success)
+- [x] Phase 36 E: `template create --from-workflow` CLI command wired; `template list` and `template install` also complete
+- [x] fix: gateway workflow-templates.spec — add missing `position` fields to createFromWorkflow test nodes
+- [x] Phase 36 C2: all 4 remaining built-in seeds confirmed (github-pr-ready-check, daily-digest, ai-task-summariser, scheduled-task-cleanup)
+
 ## 2026-06-24 — Phase 34 C1+C2+D3 + Phase 37 C3 + Phase 36 seeds B3 (commits 2adfe88, 95bd37f, 690dc98)
 
 - [x] Phase 36 seeds B3: `github-pr-ready-check`, `daily-digest`, `ai-task-summariser`, `scheduled-task-cleanup` seeds registered — 7 built-in templates total

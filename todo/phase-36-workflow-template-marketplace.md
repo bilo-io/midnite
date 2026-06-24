@@ -35,7 +35,7 @@ The foundational data model and REST surface for workflow templates.
 
 ### A4. `WorkflowTemplatesService` + `WorkflowTemplatesController` — **S–M**
 - [x] Service owns: `createTemplate`, `listTemplates`, `getTemplate`, `updateTemplate`, `deleteTemplate` (reject on system templates).
-- [ ] `createFromWorkflow(workflowId)` — export existing workflow as template (deferred to D3).
+- [x] `createFromWorkflow(workflowId)` — auto-detects credential slots, replaces real credentialIds with `slot:<type>-<n>` sentinels, derives de-duplicated slug, creates template. `POST /workflow-templates/from-workflow` route.
 - [x] Controller routes: `POST /workflow-templates`, `GET /workflow-templates?category=&published=`, `GET /workflow-templates/:id`, `PATCH /workflow-templates/:id`, `DELETE /workflow-templates/:id`, `GET /:id/slots`, `POST /:id/install`.
 - [x] Register `WorkflowTemplatesModule` in [`app.module.ts`](../packages/gateway/src/app.module.ts).
 
@@ -78,10 +78,10 @@ Six curated system templates seeded on boot so the marketplace is useful from da
 - [x] **`notify-on-task-done`** (category: `notifications`) — Webhook trigger; sends a Slack message when a task transitions to `done`. Slot: `slack-workspace`.
 - [x] **`webhook-relay`** (category: `monitoring`) — Webhook trigger; forwards payload to a configurable URL. No credential slot.
 - [x] **`ai-code-review`** (category: `github`) — Webhook trigger; reviews GitHub PRs with Claude on push. Slot: `github-token`. (Phase 37B)
-- [ ] **`github-pr-ready-check`** (category: `github`) — Schedule trigger; polls for PRs with all checks passing. Slot: `github-token`.
-- [ ] **`daily-digest`** (category: `scheduling`) — Schedule trigger (daily 08:00); markdown digest of `wip` tasks via email/Slack.
-- [ ] **`ai-task-summariser`** (category: `ai`) — Manual trigger; AI summary of a task's events.
-- [ ] **`scheduled-task-cleanup`** (category: `scheduling`) — Weekly cleanup of abandoned tasks.
+- [x] **`github-pr-ready-check`** (category: `github`) — Schedule trigger; polls for PRs with all checks passing. Slot: `github-token`.
+- [x] **`daily-digest`** (category: `scheduling`) — Schedule trigger (daily 08:00); markdown digest of `wip` tasks via email/Slack.
+- [x] **`ai-task-summariser`** (category: `ai`) — Manual trigger; AI summary of a task's events.
+- [x] **`scheduled-task-cleanup`** (category: `scheduling`) — Weekly cleanup of abandoned tasks.
 
 ---
 
@@ -97,7 +97,7 @@ Browse, preview, install, and publish templates from the web app.
 - [ ] Separate template detail page with read-only ReactFlow canvas (deferred — install modal covers the core UX).
 
 ### D3. "Save as template" in the editor — **S**
-- [ ] Action in the workflow editor toolbar (or overflow menu): opens a sheet/dialog: template name (pre-filled from workflow name), description, category picker, tags input, visibility toggle (personal / team). On submit: calls `POST /workflow-templates` with `definition` extracted from the current workflow graph + `credentialSlots` auto-detected (any node with a `credentialId` becomes a slot, user can label and describe each). Returns to the editor with a success toast linking to the new template.
+- [x] `BookmarkPlus` icon in the WorkflowToolbar opens a `SaveAsTemplateModal` (name pre-filled, description, category picker, tags, publish toggle). On submit: calls `POST /workflow-templates/from-workflow` (D3 backend); navigates to `/workflows/templates?highlight=<id>` on success.
 
 ### D4. "Duplicate" on workflow cards — **S**
 - [x] `onDuplicate` prop on `WorkflowCard` shows a Copy icon on hover (grid + list). `workflows-view.tsx` calls `duplicateWorkflow()` and refreshes the list.
@@ -106,7 +106,7 @@ Browse, preview, install, and publish templates from the web app.
 
 - [x] `midnite template list [--category <c>]` ([`cli/src/template.ts`](../packages/cli/src/template.ts)): fetches `GET /workflow-templates`, renders a table (slug, name, category, tags, credential slots). `--category` filters.
 - [x] `midnite template install <slug-or-id> [--name "My Workflow"] [--cred slot=credId ...]`: fetches slots for warnings, maps `--cred` flags to the slot credential map, calls `POST /workflow-templates/:id/install`, prints the new workflow ID. Unresolved slots are listed as warnings.
-- [ ] `midnite template create --from-workflow <workflowId> [--name "Template name"] [--category notifications]`: calls `WorkflowTemplatesService.createFromWorkflow`, prints the new template slug. (deferred — requires D3 backend)
+- [x] `midnite template create --from-workflow <workflowId> [--name "Template name"] [--category notifications]`: calls `POST /workflow-templates/from-workflow`, prints the new template slug.
 
 ---
 
