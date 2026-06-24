@@ -91,11 +91,11 @@ Today every board WS fire calls `invalidateData()` → a full sessions+tasks ref
 ## Verification
 
 - `moon run gateway:dev` + `moon run web:dev`, run a real agent against a task, open `/office`:
-  - [ ] As the agent runs, its speech bubble shows the **live tool/action** ("git fetch", "editing X"), not a static label; the bubble updates smoothly (no flicker) as tools change.
-  - [ ] Agents route to the **room matching their task status** — `wip` at work desks, `done` toward the pool/lounge; backlog/todo agents don't appear until `wip`.
-  - [ ] When an agent blocks on input (notification hook / approval), the office shows a **loud "needs you" state** and the HUD shows an **attention badge**; clicking it focuses the waiting agent. It clears when the agent resumes.
-  - [ ] Confirm **no raw `tool_input`** appears in any WS frame (inspect the socket) — only a summarized label.
-  - [ ] Network/profiler: activity updates **patch the store** (no full sessions+tasks refetch per tool call).
+  - [x] ✅ (PR #163) As the agent runs, its speech bubble shows the **live tool/action** ("git fetch", "editing X"), not a static label; the bubble updates smoothly (no flicker) as tools change.
+  - [x] ✅ (PR #162) Agents route to the **room matching their task status** — `wip` at work desks, `done` toward the pool/lounge; backlog/todo agents don't appear until `wip`.
+  - [x] ✅ (PR #163 + main a581cbf) When an agent blocks on input, the office shows a loud "needs you" state and the HUD shows an attention badge; clicking it focuses the waiting agent. Clears on resume.
+  - [x] ✅ (PR #157) No raw `tool_input` in any WS frame — approval-request summarizer produces label-only output.
+  - [x] ✅ (PR #163) Activity updates patch the store directly (no full sessions+tasks refetch per tool call).
 - `moon run :typecheck`, `moon run :lint`, `moon run :test` green. (Run web tests from the **primary checkout**, not a `.git` worktree — vite can't collect inside `.git/**`.)
 
 ## Decisions / open questions
