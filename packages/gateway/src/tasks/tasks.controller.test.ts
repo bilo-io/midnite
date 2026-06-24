@@ -87,8 +87,8 @@ describe('TasksController — query/body validation (400)', () => {
 describe('TasksController — valid input delegates to the service', () => {
   it('lists by parsed status, trimming a blank projectId to undefined', () => {
     const { controller, service } = build();
-    controller.list('todo', '   ');
-    expect(service.listTasks).toHaveBeenCalledWith('todo', undefined);
+    controller.list('todo', '   ', null);
+    expect(service.listTasks).toHaveBeenCalledWith('todo', undefined, undefined);
   });
 
   it('passes the parsed status through on a valid patch', () => {
