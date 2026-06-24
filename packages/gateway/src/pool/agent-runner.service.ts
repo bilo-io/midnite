@@ -254,8 +254,8 @@ export class AgentRunnerService implements OnModuleInit {
     }
 
     // Gate failed — try auto-fix if enabled and the budget hasn't been exhausted.
+    // (`task` is already loaded above; fixAttempts is unchanged until we bump it.)
     const autoFix = this.config.checks.autoFix;
-    const task = this.tasks.getTask(taskId);
     if (autoFix.enabled && task.fixAttempts < autoFix.maxAttempts) {
       this.tasks.incrementFixAttempts(taskId);
       this.tasks.recordCheckEvent(taskId, 'checks.fix.started');
