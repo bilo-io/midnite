@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { DbModule } from '../db/db.module';
 import { UsersModule } from '../users/users.module';
+import { TeamsModule } from '../teams/teams.module';
 import { AuthController } from './auth.controller';
 import { GatewayAuthGuard } from './gateway-auth.guard';
 import { JwtService } from './jwt.service';
@@ -15,9 +16,11 @@ import { RefreshTokensRepository } from './refresh-tokens.repository';
  * Phase 33: JwtService (HS256 access + refresh tokens), AuthController (register /
  * login / refresh / logout / me). JWT is opt-in via MIDNITE_JWT_SECRET; the static-
  * bearer fallback remains for legacy / script use.
+ * Phase 35: imports TeamsModule so AuthController can embed the user's primary teamId
+ * in the JWT on login/register/refresh.
  */
 @Module({
-  imports: [DbModule, UsersModule],
+  imports: [DbModule, UsersModule, TeamsModule],
   controllers: [AuthController],
   providers: [
     RefreshTokensRepository,

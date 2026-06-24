@@ -15,7 +15,7 @@ import type { JwtService } from './jwt.service';
 type IncomingRequest = {
   url?: string;
   headers: Record<string, string | string[] | undefined>;
-  user?: { userId: string; email: string };
+  user?: { userId: string; email: string; teamId: string | null };
 };
 
 /**
@@ -57,7 +57,7 @@ export class GatewayAuthGuard implements CanActivate {
     if (bearer && this.jwtSvc?.enabled) {
       try {
         const payload = this.jwtSvc.verifyAccessToken(bearer);
-        req.user = { userId: payload.sub, email: payload.email };
+        req.user = { userId: payload.sub, email: payload.email, teamId: payload.teamId ?? null };
         return true;
       } catch {
         // fall through to static-token check

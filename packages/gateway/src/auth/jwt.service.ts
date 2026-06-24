@@ -8,6 +8,7 @@ import { RefreshTokensRepository } from './refresh-tokens.repository';
 export interface AccessTokenPayload {
   sub: string; // userId
   email: string;
+  teamId?: string | null;
 }
 
 export class TokenInvalidError extends Error {
@@ -44,9 +45,11 @@ export class JwtService {
     return this.secret !== null;
   }
 
-  issueAccessToken(userId: string, email: string): string {
+  issueAccessToken(userId: string, email: string, teamId?: string | null): string {
     if (!this.secret) throw new Error('JWT secret not configured');
-    return jwt.sign({ email } as Record<string, unknown>, this.secret, {
+    const claims: Record<string, unknown> = { email };
+    if (teamId !== undefined) claims['teamId'] = teamId;
+    return jwt.sign(claims, this.secret, {
       subject: userId,
       expiresIn: this.config.gateway.auth.jwt.accessTtlSeconds,
       algorithm: 'HS256',
@@ -60,7 +63,12 @@ export class JwtService {
       if (typeof payload.sub !== 'string' || typeof payload['email'] !== 'string') {
         throw new TokenInvalidError();
       }
-      return { sub: payload.sub, email: payload['email'] as string };
+      const teamId = payload['teamId'];
+      return {
+        sub: payload.sub,
+        email: payload['email'] as string,
+        teamId: typeof teamId === 'string' ? teamId : null,
+      };
     } catch {
       throw new TokenInvalidError();
     }
