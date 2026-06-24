@@ -170,6 +170,40 @@ export class WorkflowsService {
     this.searchIndex?.remove('workflow', id);
   }
 
+  duplicate(id: string): Workflow {
+    const src = this.getWorkflow(id);
+    const now = new Date().toISOString();
+    // Remap node IDs so cloned graph has fresh UUIDs.
+    const nodeIdMap = new Map<string, string>(src.nodes.map((n) => [n.id, randomUUID()]));
+    const clonedNodes = src.nodes.map((n) => ({
+      ...n,
+      id: nodeIdMap.get(n.id) ?? randomUUID(),
+    }));
+    const clonedEdges = src.edges.map((e) => ({
+      ...e,
+      id: randomUUID(),
+      source: nodeIdMap.get(e.source) ?? e.source,
+      target: nodeIdMap.get(e.target) ?? e.target,
+    }));
+    const graph: WorkflowGraph = { nodes: clonedNodes, edges: clonedEdges };
+    const row = this.repo.insertWorkflow({
+      id: randomUUID(),
+      name: `${src.name} (copy)`,
+      description: src.description ?? null,
+      enabled: 0,
+      triggerType: src.trigger.type,
+      trigger: JSON.stringify(src.trigger),
+      graph: JSON.stringify(graph),
+      webhookSecretHash: null,
+      lastFiredAt: null,
+      createdAt: now,
+      updatedAt: now,
+    });
+    const workflow = this.repo.hydrateWorkflow(row);
+    this.searchIndex?.upsert(workflowToIndexDoc(workflow));
+    return workflow;
+  }
+
   run(id: string, input: unknown, source: RunTriggerSource = 'manual'): WorkflowRun {
     const workflow = this.getWorkflow(id);
     try {

@@ -115,7 +115,7 @@ describe('WorkflowTemplatesRepository', () => {
     const tpl = repo.hydrate(row);
     expect(tpl.tags).toEqual(['a', 'b']);
     expect(tpl.credentialSlots).toHaveLength(1);
-    expect(tpl.credentialSlots[0].key).toBe('tok');
+    expect(tpl.credentialSlots[0]!.key).toBe('tok');
     expect(tpl.published).toBe(true);
   });
 
@@ -126,7 +126,7 @@ describe('WorkflowTemplatesRepository', () => {
 
     const github = repo.list({ category: 'github' });
     expect(github).toHaveLength(1);
-    expect(github[0].slug).toBe('github-one');
+    expect(github[0]!.slug).toBe('github-one');
   });
 
   it('list filters by published', () => {
@@ -179,7 +179,7 @@ describe('WorkflowTemplatesService', () => {
   it('getTemplate by id and by slug', async () => {
     await service.onModuleInit();
     const list = service.listTemplates();
-    const first = list[0];
+    const first = list[0]!;
     expect(service.getTemplate(first.id).id).toBe(first.id);
     expect(service.getTemplate(first.slug).slug).toBe(first.slug);
   });
@@ -248,6 +248,6 @@ describe('WorkflowTemplatesService', () => {
     const tpl = service.getTemplate('ai-code-review');
     const slots = service.getSlots(tpl.id);
     expect(slots.slots).toHaveLength(1);
-    expect(slots.slots[0].key).toBe('github-token');
+    expect(slots.slots[0]!.key).toBe('github-token');
   });
 });

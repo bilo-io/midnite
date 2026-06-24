@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Workflow } from 'lucide-react';
+import { Copy, Workflow } from 'lucide-react';
 import type { WorkflowSummary } from '@midnite/shared';
 import { SelectableIcon } from '@/components/selectable-icon';
 import { TriggerBadge } from '@/components/trigger-badge';
@@ -17,11 +17,13 @@ export function WorkflowCard({
   layout,
   selected = false,
   onToggleSelect,
+  onDuplicate,
 }: {
   workflow: WorkflowSummary;
   layout: 'grid' | 'list';
   selected?: boolean;
   onToggleSelect?: (shiftKey: boolean) => void;
+  onDuplicate?: () => void;
 }) {
   const selectIcon = (
     <SelectableIcon Icon={Workflow} selected={selected} onToggle={(sk) => onToggleSelect?.(sk)} />
@@ -57,6 +59,16 @@ export function WorkflowCard({
           {nodeLabel(workflow.nodeCount)}
         </span>
         <LastRunStatus status={workflow.lastRunStatus} className="hidden md:inline-flex" />
+        {onDuplicate ? (
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); onDuplicate(); }}
+            aria-label={`Duplicate ${workflow.name}`}
+            className="hidden rounded p-1 text-muted-foreground hover:bg-muted/60 hover:text-foreground group-hover:inline-flex"
+          >
+            <Copy className="h-3.5 w-3.5" />
+          </button>
+        ) : null}
         <WorkflowEnabledSwitch id={workflow.id} enabled={workflow.enabled} />
       </div>
     );
@@ -90,7 +102,19 @@ export function WorkflowCard({
           <TriggerBadge type={workflow.triggerType} />
           <span className="text-[11px] text-muted-foreground">{nodeLabel(workflow.nodeCount)}</span>
         </div>
-        <LastRunStatus status={workflow.lastRunStatus} />
+        <div className="flex items-center gap-1">
+          <LastRunStatus status={workflow.lastRunStatus} />
+          {onDuplicate ? (
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); onDuplicate(); }}
+              aria-label={`Duplicate ${workflow.name}`}
+              className="hidden rounded p-1 text-muted-foreground hover:bg-muted/60 hover:text-foreground group-hover:inline-flex"
+            >
+              <Copy className="h-3.5 w-3.5" />
+            </button>
+          ) : null}
+        </div>
       </div>
     </div>
   );

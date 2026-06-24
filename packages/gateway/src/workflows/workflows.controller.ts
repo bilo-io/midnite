@@ -61,6 +61,11 @@ export class WorkflowsController {
     return { ok: true };
   }
 
+  @Post(':id/duplicate')
+  duplicate(@Param('id') id: string): WorkflowResponse {
+    return { workflow: this.service.duplicate(id) };
+  }
+
   @Post(':id/run')
   run(@Param('id') id: string, @Body() body: unknown): RunResponse {
     const parsed = RunWorkflowRequestSchema.safeParse(body ?? {});
