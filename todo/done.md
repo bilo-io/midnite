@@ -16,6 +16,14 @@ Adds the opt-in auto-fix loop to the quality gate: when a gate fails, `checks.au
 - [x] `packages/gateway/src/pool/agent-runner.service.ts`: auto-fix branch in `completeWithChecks` + `buildFixPrompt()`
 - [x] `packages/gateway/src/pool/agent-runner.service.test.ts`: 4 new tests (off, re-spawn, exhausted, pass-after-fix)
 
+## 2026-06-24 — Phase 8 C2: per-tool shadow glow for office agents (PR #167)
+
+Closes Phase 8 C2. Each agent's drop-shadow now reflects the tool currently running — green for file edits, orange for shell, blue for reads, purple for orchestration/MCP.
+
+- [x] `office-scene.ts`: `TOOL_GLOW` color map + `toolShadowTint()` helper
+- [x] `office-scene.ts`: `updateActorContent()` calls `actor.shadow.setFillStyle(color, alpha)` when `liveActivity.phase === 'running'`, resets to `SHADOW_DEFAULT` when idle
+- [x] `todo/phase-8-office-fidelity.md`: C2 marked done, progress line updated
+
 ## 2026-06-24 — Phase 31 D: attention state + clickable HUD badge (main a581cbf)
 
 Completes the attention affordance: agents with a pending approval/waiting state pulse orange in the office, and the HUD badge is now clickable.
