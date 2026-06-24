@@ -1,14 +1,17 @@
 import type { WorkflowTemplateSeed } from './seed-type';
 
-// Phase 37 Theme B: built-in AI code review template.
-// Trigger: GitHub pull_request webhook (opened or synchronize events).
-// Flow:  trigger.webhook → logic.if (filter action) → github.get-pr → github.get-diff
+// Phase 37 Themes B + C3: built-in AI code review template.
+// Trigger: GitHub pull_request webhook.
+// Flow:  trigger.webhook
+//        → logic.if (repo filter — set repoFilter param to "owner/repo" to restrict to one repo)
+//        → logic.if (action filter — only opened or synchronize)
+//        → github.get-pr → github.get-diff
 //        → ai.claude (structured review) → github.post-review (post comment back)
 const seed: WorkflowTemplateSeed = {
   slug: 'ai-code-review',
   name: 'AI Code Review',
   description:
-    'Automatically reviews GitHub pull requests with Claude. Trigger via a GitHub pull_request webhook — on every push to a PR, fetches the diff, sends it to Claude for a structured review, and posts the result back as a GitHub review comment.',
+    'Automatically reviews GitHub pull requests with Claude. Trigger via a GitHub pull_request webhook — on every push to a PR, fetches the diff, sends it to Claude for a structured review, and posts the result back as a GitHub review comment. Set the "Repo filter" node\'s repoFilter param to "owner/repo" to restrict reviews to a single repository.',
   category: 'github',
   tags: ['code-review', 'github', 'ai'],
   credentialSlots: [
@@ -30,6 +33,18 @@ const seed: WorkflowTemplateSeed = {
       {
         id: 'n2',
         type: 'logic.if',
+        label: 'Repo filter',
+        params: {
+          // Leave repoFilter empty ("") to allow all repos, or set to "owner/repo"
+          // to restrict reviews to a single repository.
+          repoFilter: '',
+          condition:
+            "{{ !$node.repoFilter || $trigger.repository.full_name === $node.repoFilter }}",
+        },
+      },
+      {
+        id: 'n3',
+        type: 'logic.if',
         label: 'Is opened or synchronize?',
         params: {
           condition:
@@ -37,7 +52,7 @@ const seed: WorkflowTemplateSeed = {
         },
       },
       {
-        id: 'n3',
+        id: 'n4',
         type: 'github.get-pr',
         label: 'Fetch PR metadata',
         params: {
@@ -46,7 +61,7 @@ const seed: WorkflowTemplateSeed = {
         },
       },
       {
-        id: 'n4',
+        id: 'n5',
         type: 'github.get-diff',
         label: 'Fetch PR diff',
         params: {
@@ -56,7 +71,7 @@ const seed: WorkflowTemplateSeed = {
         },
       },
       {
-        id: 'n5',
+        id: 'n6',
         type: 'ai.claude',
         label: 'Claude review',
         params: {
@@ -64,16 +79,16 @@ const seed: WorkflowTemplateSeed = {
           system:
             'You are a senior software engineer performing a thorough but constructive code review. Be concise, specific, and actionable. Focus on correctness, security, and maintainability.',
           prompt: [
-            'PR: {{ $n3.title }}',
-            'Author: {{ $n3.author }}',
-            'Base → Head: {{ $n3.baseBranch }} → {{ $n3.headBranch }}',
-            'Changes: +{{ $n3.additions }} −{{ $n3.deletions }} across {{ $n3.changedFiles }} file(s)',
+            'PR: {{ $n4.title }}',
+            'Author: {{ $n4.author }}',
+            'Base → Head: {{ $n4.baseBranch }} → {{ $n4.headBranch }}',
+            'Changes: +{{ $n4.additions }} −{{ $n4.deletions }} across {{ $n4.changedFiles }} file(s)',
             '',
             'Description:',
-            '{{ $n3.body }}',
+            '{{ $n4.body }}',
             '',
             'Diff:',
-            '{{ $n4.diff }}',
+            '{{ $n5.diff }}',
             '',
             'Review this PR. Start with a one-sentence verdict (LGTM / minor issues / needs changes).',
             'Then list specific findings with file/line references where applicable.',
@@ -83,13 +98,13 @@ const seed: WorkflowTemplateSeed = {
         },
       },
       {
-        id: 'n6',
+        id: 'n7',
         type: 'github.post-review',
         label: 'Post review comment',
         params: {
           credentialId: 'slot:github-token',
           prUrl: '{{ $trigger.pull_request.html_url }}',
-          body: '{{ $n5.text }}',
+          body: '{{ $n6.text }}',
           event: 'COMMENT',
         },
       },
@@ -97,9 +112,10 @@ const seed: WorkflowTemplateSeed = {
     edges: [
       { id: 'e1', source: 'n1', target: 'n2' },
       { id: 'e2', source: 'n2', target: 'n3', sourceHandle: 'true' },
-      { id: 'e3', source: 'n3', target: 'n4' },
+      { id: 'e3', source: 'n3', target: 'n4', sourceHandle: 'true' },
       { id: 'e4', source: 'n4', target: 'n5' },
       { id: 'e5', source: 'n5', target: 'n6' },
+      { id: 'e6', source: 'n6', target: 'n7' },
     ],
   },
 };
