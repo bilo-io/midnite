@@ -30,17 +30,17 @@ Replace the static env-var bearer token with proper user identities and JWT sess
 - [x] [`gateway-auth.guard.ts`](../packages/gateway/src/auth/gateway-auth.guard.ts) currently validates a static bearer token from env (`MIDNITE_AUTH_TOKEN`) via [`lib/auth-policy.ts`](../packages/gateway/src/auth/lib/auth-policy.ts). Upgrade: if `jwt.secret` is configured, validate the `Authorization: Bearer <jwt>` header as a JWT and attach the decoded `userId` to the request. The static bearer path remains as a fallback (dev/script use) so existing single-user setups continue to work without migration. Add a `@CurrentUser()` decorator that reads `req.user` for controllers to consume.
 - [ ] WS connections: pass the JWT as a query param on the upgrade URL (`?token=<jwt>`) — the WS gateway validates it at connection time; per-session one-time tokens (`/hooks/:taskId/:event`) remain unaffected.
 
-### A5. Web login + register pages — **M**
-- [ ] `app/(auth)/login/page.tsx` — email + password form; on success stores the access token in memory (React context) and the refresh token in an **httpOnly cookie** (`__midnite_rt`); redirects to `/`.
-- [ ] `app/(auth)/register/page.tsx` — name/email/password form; redirects to login on success. Behind a config flag (`NEXT_PUBLIC_REGISTRATION_OPEN=true`) so deployments can lock registration once seeded.
-- [ ] `hooks/use-current-user.ts` — wraps the current `User` from auth context; returns `null` for unauthenticated (triggers redirect to `/login`). Used in the root layout to gate the app.
-- [ ] `components/user-nav.tsx` — profile avatar + name dropdown in the nav bar (links to profile settings, logout).
+### A5. Web login + register pages — **M** ✅ DONE
+- [x] `app/(auth)/login/page.tsx` — email + password form; on success stores the access token in memory (React context) and the refresh token in an **httpOnly cookie** (`__midnite_rt`); redirects to `/`.
+- [x] `app/(auth)/register/page.tsx` — name/email/password form; redirects to login on success. Behind a config flag (`NEXT_PUBLIC_REGISTRATION_OPEN=true`) so deployments can lock registration once seeded.
+- [x] `hooks/use-current-user.ts` — wraps the current `User` from auth context; returns `null` for unauthenticated (triggers redirect to `/login`). Used in the root layout to gate the app.
+- [x] `components/user-nav.tsx` — profile avatar + name dropdown in the nav bar (links to profile settings, logout).
 
-### A6. CLI auth commands — **M**
-- [ ] `midnite login` ([`cli/src/commands/login.ts`](../packages/cli/src/commands/login.ts)): prompts for gateway URL + email + password; calls `POST /auth/login`; stores the JWT in `~/.config/midnite/auth.json` (alongside the existing `midnite.json` config). Existing `--token` flag on other commands continues to work as a bypass.
-- [ ] `midnite logout` — deletes `~/.config/midnite/auth.json`.
-- [ ] `midnite whoami` — reads the stored token, calls `GET /auth/me`, prints `User { id, email, name }`.
-- [ ] `auth-store.ts` ([`cli/src/lib/auth-store.ts`](../packages/cli/src/lib/auth-store.ts)) — read/write the stored token; all commands that need auth call `authStore.getToken()` (falls back to `--token` flag or `MIDNITE_AUTH_TOKEN` env, preserving the current single-user flow).
+### A6. CLI auth commands — **M** ✅ DONE
+- [x] `midnite login` ([`cli/src/index.ts`](../packages/cli/src/index.ts)): prompts for email + hidden password; calls `POST /auth/login`; stores the JWT in `~/.config/midnite/auth.json`. Existing `--token` flag and `MIDNITE_AUTH_TOKEN` env continue to work.
+- [x] `midnite logout` — revokes session on gateway, deletes `~/.config/midnite/auth.json`.
+- [x] `midnite whoami` — reads the stored token, calls `GET /auth/me`, prints `User { id, email, name }`.
+- [x] `auth-store.ts` ([`cli/src/lib/auth-store.ts`](../packages/cli/src/lib/auth-store.ts)) — read/write/clear stored tokens; `resolveToken()` priority: stored JWT > env > `--token` flag. `preAction` hook resolves token once before any command runs.
 
 ---
 

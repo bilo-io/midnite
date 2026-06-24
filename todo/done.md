@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 33 A5–A6 complete: Web auth pages + CLI auth commands
+
+- [x] Next.js API route handlers for login/refresh/logout/register (httpOnly `__midnite_rt` cookie)
+- [x] `AuthProvider` context: session restore on mount, `jwtEnabled` flag (graceful no-JWT fallback)
+- [x] `useCurrentUser()` hook: redirects to /login when JWT-enabled and unauthenticated
+- [x] `app/(auth)/login` + `/register` pages with Card/Input/Button UI; `NEXT_PUBLIC_REGISTRATION_OPEN` gate
+- [x] `UserNav` component: avatar initials + name + profile/logout dropdown
+- [x] `api.ts` `setAccessToken()`/`getAccessToken()` + automatic `Authorization: Bearer` header
+- [x] CLI `auth-store.ts`: `~/.config/midnite/auth.json` (mode 0600), `resolveToken()` priority chain
+- [x] CLI `login` / `logout` / `whoami` commands; `preAction` hook resolves token before any command
+- [x] `createClient(baseUrl, token?)` injects `Authorization: Bearer` on all gateway requests
+
 ## 2026-06-24 — Phase 33 A1–A4 complete: User identity + JWT auth
 
 - [x] `users` table + migration `0045_users`; `refresh_tokens` table + migration `0046_refresh_tokens`
