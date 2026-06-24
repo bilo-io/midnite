@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 8 C2: per-tool shadow glow for office agents (PR #167)
+
+Closes Phase 8 C2. Each agent's drop-shadow now reflects the tool currently running — green for file edits, orange for shell, blue for reads, purple for orchestration/MCP.
+
+- [x] `office-scene.ts`: `TOOL_GLOW` color map + `toolShadowTint()` helper
+- [x] `office-scene.ts`: `updateActorContent()` calls `actor.shadow.setFillStyle(color, alpha)` when `liveActivity.phase === 'running'`, resets to `SHADOW_DEFAULT` when idle
+- [x] `todo/phase-8-office-fidelity.md`: C2 marked done, progress line updated
+
 ## 2026-06-24 — Phase 18 Theme A: CLI task export + doc reconciliation (PR #164)
 
 Closes Phase 18 Theme A. The gateway serializer/route + web `ExportMenu` had already shipped (#128/#159) but the phase doc was never ticked; this lands the deferred CLI consumer (decision 6) and reconciles the doc.
