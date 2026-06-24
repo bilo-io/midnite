@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-24 — Phase 24 Theme B: touch interactions for the kanban (PR #188)
+
+Makes the board usable by finger and stops the live terminal half-working on touch.
+
+- [x] dnd-kit sensors split into `MouseSensor` (6px, desktop unchanged) + `TouchSensor` (200ms press-and-hold, 8px tolerance) on `board-view` + `sortable-accordions` — a plain swipe scrolls, a held press drags
+- [x] `tap-to-move-menu.tsx`: touch-only ≥44px "move to…" menu on each card (the other columns), running the same `onMove` (→wip spawns, →todo restats); supersedes the hover Start/Stop on mobile; RTL-tested
+- [x] `live-terminal.tsx`: read/scroll-only on touch (`disableStdin`, no cursor blink/input, "Read-only" badge)
+- [x] `fix(site)`: added the missing explicit `vite@6` dep so `site:typecheck` passes (web/ui already declared it)
+
+> Merged on a green local web gate (typecheck/test/lint + site:typecheck); CI is billing-blocked account-wide. Superseded the earlier #169, whose extensive parallel-agent main-repair commits became redundant once equivalent fixes landed on main independently.
+
 ## 2026-06-24 — Phase 10 E3+F3 complete: gallery generator, Storybook GH Pages preview, docs/TESTING.md (PR #186)
 
 - [x] `packages/web/scripts/generate-gallery.mjs` — gallery generator: walks `e2e/__shots__/`, groups pages vs. stories/component, writes `gallery.html` (dark-themed, relative image refs) + `SCREENSHOTS.md` (markdown manifest)
