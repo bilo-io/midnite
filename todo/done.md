@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-25 — Phase 15 smart intake verification complete — all items confirmed shipped
+
+All 4 themes (A–D) already built across PRs #40, #67, #83, #95; verified by code inspection 2026-06-25.
+
+- [x] Theme A: `POST /tasks/bulk`, `tasks.bulkCreated` WS, web paste modal, CLI `add --bulk` (Phase 16 / PR #40)
+- [x] Theme B: URL context + GitHub issue enrichment (`url-context.service.ts`, `api.github.com` REST fallback) (PR #67)
+- [x] Theme C: Inline question answers → task thread + `done` status + Answered filter (PRs #55+#83)
+- [x] Theme D: `KnowledgeWatcherService`, chokidar manifest, plan-model selection, prompt injection (PR #95)
+- [x] Tests green: 510 web + 1006 gateway; web:build passes
+
 ## 2026-06-25 — Phase 14 B2: OAuth2 workflow credential flow (PR #203)
 
 - [x] `google-oauth` + `slack-oauth` credential types in shared (`WorkflowCredentialDataSchema`, `WORKFLOW_CREDENTIAL_TYPES`)

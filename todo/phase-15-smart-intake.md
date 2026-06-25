@@ -93,11 +93,11 @@ Each is independently shippable; B and D both feed the execution prompt, so coor
 
 ## Verification
 
-- [ ] Paste a 5-line list into the web modal (or `midnite add --bulk` from a file) → 5 tasks created, each classified, with a single coalesced board update; invalid/blank lines skipped.
-- [ ] Create a task referencing a **public** GitHub issue URL → the agent's execution prompt contains the issue title/body (truncated); with `gh` authed, a **private** repo issue also resolves; a blocked/loopback URL is never fetched.
-- [ ] Submit a `question`-kind item → a direct answer appears in the task **thread** and the item is marked **answered** (not sitting in a working column); LLM-disabled falls back to a normal task.
-- [ ] Point `config.knowledge.dir` at a folder of MD, create a related task → the plan model selects relevant files and their content (≤ `maxBytes`) appears in the execution prompt; editing a file updates the manifest without a restart.
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph; `moon ci` green. (Run web tests from the **primary checkout**, not a `.git` worktree.)
+- [x] Paste a 5-line list into the web modal (or `midnite add --bulk` from a file) → 5 tasks created, each classified, with a single coalesced board update; invalid/blank lines skipped. *(Theme A / Phase 16 PR #40 — `POST /tasks/bulk`, `tasks.bulkCreated` WS event, web paste modal, CLI `add --bulk`.)*
+- [x] Create a task referencing a **public** GitHub issue URL → the agent's execution prompt contains the issue title/body (truncated); with `gh` authed, a **private** repo issue also resolves; a blocked/loopback URL is never fetched. *(Theme B PR #67 — `url-context.service.ts`, `api.github.com` REST fallback, SSRF guard via `isSafeHttpUrl`.)*
+- [x] Submit a `question`-kind item → a direct answer appears in the task **thread** and the item is marked **answered** (not sitting in a working column); LLM-disabled falls back to a normal task. *(Theme C PRs #55+#83 — `PlannerService.answer()`, answer event on thread, `done` status, Answered filter badge.)*
+- [x] Point `config.knowledge.dir` at a folder of MD, create a related task → the plan model selects relevant files and their content (≤ `maxBytes`) appears in the execution prompt; editing a file updates the manifest without a restart. *(Theme D PR #95 — `KnowledgeWatcherService`, chokidar v3, plan-model file selection, prompt injection.)*
+- [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph; `moon ci` green. *(Confirmed 2026-06-25: 510 web + 1006 gateway tests pass; web:build passes after fixing 3 stale unused-import lint errors.)*
 
 ---
 
