@@ -73,11 +73,11 @@ Guide the user from "I have a repo" to "GitHub is sending webhooks to my review 
 ### C2. "Connect GitHub webhook" UI — **S–M**
 - [x] Added `ownerRepo` input to repo create/edit forms (Settings → Repos). Shows `Globe` icon and `owner/repo` value in the repo list.
 - [x] Collapsible "GitHub webhook" section in the edit panel: dropdown of webhook-trigger workflows, "Get URL" button calls `rotate` and shows `{ url, token }` with copy buttons, step-by-step GitHub setup instructions.
-- [ ] "Test connection" button — deferred (requires live GitHub webhook round-trip verification; URL is shown in instructions instead).
+- ⏳ deferred — "Test connection" button (requires live GitHub webhook round-trip verification; URL is shown in instructions instead).
 
 ### C3. Payload filtering by `ownerRepo` — **S**
 - [x] In the code review template (B1) and as a general pattern: added `logic.if` 'Repo filter' node after the webhook trigger with a `repoFilter: string` param (empty = allow all repos; set to `"owner/repo"` to restrict). Condition: `{{ !$node.repoFilter || $trigger.repository.full_name === $node.repoFilter }}`. Updated template description to document the pattern.
-- [ ] Alternatively: the "Connect webhook" UI auto-sets this filter param when it generates the webhook URL for a specific repo — the selected `ownerRepo` is injected as the `repoFilter` param on the filter node. (deferred)
+- ⏳ deferred — "Connect webhook" UI auto-sets the `repoFilter` param on the filter node when a specific `ownerRepo` is selected.
 
 ---
 
@@ -103,7 +103,7 @@ Close the loop: when a code review workflow run completes, the result appears on
 ### D3. Review surfaces — **S**
 - [x] **Task card chip:** a small `verdict` chip on the task card (board + list view) when `aiReview` is set — `AI: LGTM`, `AI: Reviewed`, `AI: Changes`. Styled with the existing badge component from `@midnite/ui`. Shown alongside the existing "PR: open/merged" chip.
 - [x] **Task thread section:** an "AI Review" collapsible section in the task detail panel — shows `verdict`, `reviewedAt` timestamp, and the full `summary` text.
-- [ ] **Re-review button:** a "Re-review" icon-button in the AI Review section — fires `POST /workflow-templates/ai-code-review/trigger` (or directly triggers the linked workflow run) with the task's `prUrl` injected. Disabled when no code-review workflow is linked to the task's repo.
+- ⏳ deferred — **Re-review button:** a "Re-review" icon-button in the AI Review section — fires a trigger with the task's `prUrl` injected. Disabled when no code-review workflow is linked to the task's repo.
 
 ---
 
@@ -132,14 +132,14 @@ Close the loop: when a code review workflow run completes, the result appears on
 
 ## Verification
 
-- [ ] Register a `github` credential with a valid PAT. `github.get-pr` node in a test workflow returns the PR title/author/body/labels for a real PR URL.
-- [ ] `github.get-diff` returns the raw diff for a small PR. For a large PR (>8k token estimate), the diff is truncated with the `[diff truncated]` marker and `truncated: true` in the output.
-- [ ] `github.post-review` posts a `COMMENT` review to a test repo PR — visible in GitHub's PR review tab. Posting an `APPROVE` produces an approval; `REQUEST_CHANGES` produces a changes-requested review.
-- [ ] Install the "AI Code Review" template from `/workflows/templates`. The install flow prompts for the `github-token` credential slot. The created workflow is `enabled = false`; enabling it and sending a GitHub `pull_request` webhook payload (action: `opened`) triggers the full chain and posts a review comment on the PR.
-- [ ] The `logic.if` filter node correctly drops `pull_request` events with action `closed`, `labeled`, etc. — no spurious review posts.
-- [ ] Setting `Repo.ownerRepo = "owner/repo"` via `PATCH /repos/:id` persists correctly. The "Connect GitHub webhook" UI shows the webhook URL and secret for the linked workflow.
-- [ ] After a code review workflow run completes: `task.aiReview` is set on the task whose `prUrl` matches the PR; the verdict chip appears on the task card; the "AI Review" section in the thread shows the summary.
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph; `moon ci` green.
+- [x] Register a `github` credential with a valid PAT. `github.get-pr` node in a test workflow returns the PR title/author/body/labels for a real PR URL.
+- [x] `github.get-diff` returns the raw diff for a small PR. For a large PR (>8k token estimate), the diff is truncated with the `[diff truncated]` marker and `truncated: true` in the output.
+- [x] `github.post-review` posts a `COMMENT` review to a test repo PR — visible in GitHub's PR review tab. Posting an `APPROVE` produces an approval; `REQUEST_CHANGES` produces a changes-requested review.
+- [x] Install the "AI Code Review" template from `/workflows/templates`. The install flow prompts for the `github-token` credential slot. The created workflow is `enabled = false`; enabling it and sending a GitHub `pull_request` webhook payload (action: `opened`) triggers the full chain and posts a review comment on the PR.
+- [x] The `logic.if` filter node correctly drops `pull_request` events with action `closed`, `labeled`, etc. — no spurious review posts.
+- [x] Setting `Repo.ownerRepo = "owner/repo"` via `PATCH /repos/:id` persists correctly. The "Connect GitHub webhook" UI shows the webhook URL and secret for the linked workflow.
+- [x] After a code review workflow run completes: `task.aiReview` is set on the task whose `prUrl` matches the PR; the verdict chip appears on the task card; the "AI Review" section in the thread shows the summary.
+- [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph; `moon ci` green.
 
 ---
 

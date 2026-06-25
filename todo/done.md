@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-25 — Phases 33, 36, 37 verification complete — all items confirmed shipped
+
+Confirmed all items across Phase 33 (multi-user auth), Phase 36 (workflow template marketplace), and Phase 37 (AI code review) are built. Ticked verification sections; marked 4 deferred items (template detail page, re-review button, test-connection button, webhook auto-filter).
+
+- [x] Phase 33 WS JWT: `tasks.gateway.ts` / `workflows.gateway.ts` / `notifications.gateway.ts` all validate `?token=<jwt>` at upgrade (Phase 35 D1/D2 wired it in)
+- [x] Phase 33 verification section: all 9 items confirmed + ticked
+- [x] Phase 36 verification section: all 10 items confirmed + ticked; template detail page marked ⏳ deferred
+- [x] Phase 37 verification section: all 8 items confirmed + ticked; 3 deferred items marked ⏳
+- [x] Tests green: gateway 1005 passed, web 510 passed, typecheck clean
+
+---
+
 ## 2026-06-25 — Phase 23 C: Approval audit log (PR #202)
 
 Durable record of every tool-use decision (user or automatic) — queryable via `GET /approvals/log` and visible in the Settings → Approvals History section.
