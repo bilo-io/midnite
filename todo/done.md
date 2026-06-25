@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-25 — Phase 14 B2: OAuth2 workflow credential flow (PR #203)
+
+- [x] `google-oauth` + `slack-oauth` credential types in shared (`WorkflowCredentialDataSchema`, `WORKFLOW_CREDENTIAL_TYPES`)
+- [x] `OAuthProviderSchema` + `OAuthStartParamsSchema` in shared for the HTTP contract
+- [x] `GET /oauth/:provider/start` → CSRF-encrypted state + 302 to provider consent
+- [x] `GET /oauth/:provider/callback` → code exchange, store as `workflow_credentials` row, 302 to client with `credential_id`
+- [x] Lazy Google access-token refresh in `WorkflowCredentialsService.resolve()` (now async); all executor call sites updated
+- [x] Web: OAuth type labels + Authorize button in credentials manager; `getOAuthStartUrl()` in `api.ts`
+- [x] 22 new OAuthService tests + 10 updated credential service tests + 17 integration-node tests passing
+
+---
+
 ## 2026-06-25 — Phases 33, 36, 37 verification complete — all items confirmed shipped
 
 Confirmed all items across Phase 33 (multi-user auth), Phase 36 (workflow template marketplace), and Phase 37 (AI code review) are built. Ticked verification sections; marked 4 deferred items (template detail page, re-review button, test-connection button, webhook auto-filter).
