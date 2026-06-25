@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-25 — Phase 24 responsive/mobile verification smoke-run — PR #204
+
+- [x] Playwright shots at 390px: board, tasks, sessions, dashboard — single-column, no horizontal overflow, mobile bottom-tab nav present
+- [x] Playwright shots at 390px: office + workflow editor show "best viewed on desktop" notice (not a broken canvas)
+- [x] Touch drag (dnd-kit `TouchSensor` 200ms) + `TapToMoveMenu` fallback confirmed in code; already shipped in PR #199
+- [x] LAN/loopback doc confirmed in README — gateway not modified, Phase 7 A5 is the deferred non-loopback work
+- [x] All tests green: 510 web + 1006 gateway; fixed 3 stale unused-import lint errors + 1 stale WS mock (`getAccessToken` missing from test mock)
+- [x] Added `e2e/mobile-layout.shots.ts` — 4 overflow assertions at 390px
+
 ## 2026-06-25 — Phases 14 E and 22 verification complete — all items confirmed shipped
 
 Confirmed Phase 14 (workflows-connect) verification criteria and Phase 22 (fleet-visibility) verification criteria are all met by shipped code. Ticked verification sections; marked 2 deferred items (run-timeline, google.sheetsAppend).

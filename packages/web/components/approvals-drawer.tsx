@@ -8,7 +8,6 @@ import {
   ShieldAlert,
   X,
   XCircle,
-  type LucideIcon,
 } from 'lucide-react';
 import {
   APPROVALS_WS_PATH,
