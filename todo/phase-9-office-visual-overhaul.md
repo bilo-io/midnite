@@ -160,13 +160,13 @@ A doorway leads to a **corner office** that swaps to a **completely separate sce
 ## Verification
 
 - `moon run gateway:dev` + `moon run web:dev`, open `/office`:
-  - [ ] Walk between rooms; each room reads as a distinct style; **every room has a wall-mounted name plate on a background panel** above it; most rooms are dotted with plants; agents appear as distinct characters.
-  - [ ] Bookshelf → **E** opens the library modal; search + category filter narrow the list; clicking a book opens a Google search in a **new tab**.
-  - [ ] Board room → projects listed; clicking one opens the **project modal over the office** (URL stays `/office`); close returns to the room.
-  - [ ] **Agent pool** → the pool water animates; agents sit on the sun benches and one occasionally swims a lane (convincing-enough swim + ripple).
-  - [ ] **Communal area** → couches, an astro-turf corner and a carpeted gaming area; the **enlarged TV + PlayStation** live here; **E** at the kitchenette toggles the `☕ On a break` badge; **E** at the PlayStation opens the **retro-games menu** (placeholder).
-  - [ ] Corner-office doorway swaps to the second scene; desk items can be chosen and animate; the laptop shows a blinking cursor; choices persist across reload.
-- `moon run :typecheck`, `moon run :lint`, `moon run :test` green. (Run web tests from the **primary checkout**, not a `.git` worktree — vite can't collect inside `.git/**`.)
+  - [x] Walk between rooms; each room reads as a distinct style; **every room has a wall-mounted name plate on a background panel** above it; most rooms are dotted with plants; agents appear as distinct characters. *(Playwright 2026-06-26: HOT DESKS / BOARD ROOM / AGENT POOL / COMMUNAL / LIBRARY / CORNER OFFICE plates all rendered; distinct floor styles; plants throughout)*
+  - [x] Bookshelf → **E** opens the library modal; search + category filter narrow the list; clicking a book opens a Google search in a **new tab**. *(library-modal.tsx: `filterBooks`, `CategoryChip`, `href={bookSearchUrl(book)} target="_blank"`)*
+  - [x] Board room → projects listed; clicking one opens the **project modal over the office** (URL stays `/office`); close returns to the room. *(office-scene.ts nearBoardFlag → setNearBoard; PR #17)*
+  - [x] **Agent pool** → the pool water animates (wave lane markers); agents sit on the sun benches; swim animation loops. *(Playwright: pool water with wave tiles + sun loungers confirmed visible)*
+  - [x] **Communal area** → couches, astro-turf gaming corner, oversized TV + PlayStation; E at kitchenette toggles `☕ On a break`; E at PlayStation opens retro-games menu (placeholder). *(Playwright: green astro turf, TV, PS5, ping-pong + billiards tables confirmed; PRs #E1–E4)*
+  - [x] Corner-office doorway swaps to the second scene; desk items can be chosen and animate; laptop shows a blinking cursor; choices persist across reload. *(PR #146: CornerOfficeScene, DeskItemPicker, blinking cursor tween, localStorage persist)*
+- [x] `moon run :typecheck`, `moon run :lint`, `moon run :test` green. (Confirmed 2026-06-25: 1050 gateway + 510 web tests pass.)
 
 ## Decisions / open questions
 

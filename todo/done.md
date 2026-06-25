@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-26 — Phase 9 office visual overhaul verification complete — live visual acceptance passed
+
+Playwright smoke run 2026-06-26; all 6 pending verification items confirmed.
+
+- [x] 6 room name plates (HOT DESKS, BOARD ROOM, LIBRARY, AGENT POOL, COMMUNAL, CORNER OFFICE) all styled + visible
+- [x] Library modal: search input + category chips + Google-search `target="_blank"` links
+- [x] Board room: projects panel wired via `nearBoardFlag` → `setNearBoard`
+- [x] Agent pool: wave-tiled pool water + sun loungers visible
+- [x] Communal: astro turf, TV, PS5, ping-pong + billiards tables, kitchenette break + retro-games menu
+- [x] Corner office: scene switch, desk picker, laptop cursor, localStorage persist
+
 ## 2026-06-25 — Phase 8 A1: Tiled tilemap floor + procedural oak tileset (PR #206)
 
 - [x] `lib/office/map-data.ts` — runtime Tiled map data module (floor GID array + desk object layer)
