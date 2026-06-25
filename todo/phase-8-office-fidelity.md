@@ -20,10 +20,11 @@ The headline: swap shapes for real sprites + tiles.
 > zero-licensing. The external **Tiled + LimeZu/Kenney** route (A1) remains open as a
 > later upgrade — the texture keys + scene structure are the seam to swap at.
 
-### A1. Tileset + Tiled map (external-asset upgrade) — **M**
+### A1. Tileset + Tiled map (external-asset upgrade) — **M** ◐ PARTIAL
 - [ ] Drop a pixel-art office tileset into `packages/web/public/office/` — [LimeZu "Modern Office"](https://limezu.itch.io/modernoffice) (cheap commercial license; the standard look) or [Kenney](https://kenney.nl/assets) (CC0). `images: { unoptimized: true }` means static assets under `public/` just work.
-- [ ] Author the floor/walls/furniture in [Tiled](https://www.mapeditor.org/), export `.tmj`; add an **object layer** of desks carrying custom props (`deskId`/`agentSlot`) so slots come from the map, not the hardcoded `DESK_SLOTS`.
-- [ ] In [`office-scene.ts`](../packages/web/components/office/scenes/office-scene.ts), replace the procedural `TileSprite`/`staticImage` build with `this.load` (preload) + `this.make.tilemap` + tileset layers; derive colliders from the wall/furniture layer and desk positions from the object layer.
+- [x] **Object layer** of desks with custom props (`deskId`/`agentSlot`) — `lib/office/map-data.ts` `MAP_DESK_OBJECTS`/`getDeskSeats()`; replaces hardcoded `DESK_SEATS`. (PR #206, 2026-06-25)
+- [x] **Scene refactor** — floor is now `Phaser.Tilemaps.TilemapLayer` built from `buildFloorTileData()` + procedural `ensureOfficeTileset()` (two oak variants; seam for real `.tmj` drop-in later). (PR #206, 2026-06-25)
+- [ ] Swap procedural tileset for the real LimeZu/Kenney PNG once licensed — update `ensureOfficeTileset` to `this.load.image` the PNG key instead of drawing it.
 
 ### A2. Character sprites + walk animations — **M** — ✅ DONE (2026-06-20, procedural)
 - [x] The player & seated-agent `Arc` "blobs" are now character **sprites** ([`textures.ts`](../packages/web/lib/office/textures.ts) `charKey`/`walkAnim`): down/up/side facings with a 2-frame walk cycle. The player animates + flips while walking; agents render seated behind their desks. (Future: smoother multi-frame cycles + a dedicated seated pose come with the A1 asset pack.)

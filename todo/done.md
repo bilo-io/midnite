@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-25 — Phase 8 A1: Tiled tilemap floor + procedural oak tileset (PR #206)
+
+- [x] `lib/office/map-data.ts` — runtime Tiled map data module (floor GID array + desk object layer)
+- [x] `ensureOfficeTileset()` in `textures.ts` — procedural canvas texture with two oak floor tile variants
+- [x] `office-scene.ts` — floor replaced with `TilemapLayer`; desk seats sourced from `getDeskSeats()`
+
+---
+
 ## 2026-06-25 — Phase 11 public site rewrite verification complete — live visual acceptance passed
 
 Playwright smoke run against `site:dev` 2026-06-25; all 6 pending visual-acceptance items confirmed.
