@@ -44,7 +44,7 @@ The headline: swap shapes for real sprites + tiles.
 ### B2. Ambient polish — **S–M** — ◐ partial
 - [x] Soft drop-shadows under characters/desks; a subtle radial vignette at the room edges (`buildVignette`, a generated canvas texture).
 - [x] Day/night floor tint aligned with the `time` theme. ✅ (2026-06-22, PR #112 — see done.md)
-- [ ] Pixel-perfect camera with zoom; a larger scrolling map (camera follows the player) once the Tiled map (A1) lands.
+- [x] Pixel-perfect camera with zoom; a larger scrolling map (camera follows the player) once the Tiled map (A1) lands. *(PR #206: `ZOOM = 1.5`, `cameras.main.setZoom(ZOOM)`, `cameras.main.startFollow(this.player, true, 0.12, 0.12)` — smooth lerped follow across 34×22 tile map)*
 
 ### B3. Fixed-aspect-ratio layout — **S** — ✅ DONE (2026-06-20)
 - [x] The Phaser window has a **fixed aspect ratio**, so the stage box is **full width** with its **height derived from `OFFICE_ASPECT`** ([`lib/office/dimensions.ts`](../packages/web/lib/office/dimensions.ts)) via CSS `aspect-ratio` — canvas + HUD overlay scale together, never distorted. ([`office-view-impl.tsx`](../packages/web/components/office/office-view-impl.tsx) + the loading shell in [`office-view.tsx`](../packages/web/components/office/office-view.tsx).)
