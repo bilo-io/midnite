@@ -24,6 +24,9 @@ export function SessionStatusDot({ status }: { status: SessionStatus }) {
   const hue = SESSION_STATUS_HUE[status];
   return (
     <span
+      // role="img" gives this status dot a name-supporting role; a bare <span> doesn't
+      // support aria-label (axe aria-prohibited-attr).
+      role="img"
       aria-label={SESSION_STATUS_LABEL[status]}
       title={SESSION_STATUS_LABEL[status]}
       className={cn('h-2 w-2 rounded-full shrink-0', status === 'running' && 'animate-pulse')}
