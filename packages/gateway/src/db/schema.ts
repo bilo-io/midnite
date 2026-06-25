@@ -1033,3 +1033,4 @@ export const auditLog = sqliteTable(
 
 export type AuditLogRow = typeof auditLog.$inferSelect;
 export type AuditLogInsert = typeof auditLog.$inferInsert;
+
