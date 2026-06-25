@@ -33,6 +33,8 @@ export const ApprovalResolutionSchema = z.enum([
   'ask',
   'timeout',
   'expired',
+  'auto-allow',
+  'auto-deny',
 ]);
 export type ApprovalResolution = z.infer<typeof ApprovalResolutionSchema>;
 

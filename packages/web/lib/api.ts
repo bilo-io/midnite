@@ -187,10 +187,13 @@ import {
   ApprovalRuleSchema,
   ApprovalRulesResponseSchema,
   ApprovalRuleResponseSchema,
+  PendingApprovalsResponseSchema,
   ApprovalLogResponseSchema,
+  AutonomyModeSchema,
   type ApprovalSettings,
   type ApprovalRule,
-  type ApprovalLogResponse,
+  type ApprovalRulesResponse,
+  type ApprovalRuleResponse,
   type CreateApprovalRule,
   type UpdateApprovalRule,
   CreateServiceTokenRequestSchema,
@@ -199,6 +202,10 @@ import {
   type CreateServiceTokenRequest,
   type CreateServiceTokenResponse,
   type ListServiceTokensResponse,
+  type PendingApprovalsResponse,
+  type ApprovalLogResponse,
+  type ModeResponse,
+  type AutonomyMode,
 } from '@midnite/shared';
 import { z } from 'zod';
 
@@ -1594,18 +1601,32 @@ export async function updateMyPassword(req: UpdatePasswordRequest): Promise<void
   await fetchJson('/auth/me/password', { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(req) });
 }
 
-// ---- Approvals settings ----
+// ---- Approvals (Phase 23) ----
 
 export async function getApprovalSettings(): Promise<ApprovalSettings> {
   return fetchJson('/approvals/settings', undefined, ApprovalSettingsSchema);
 }
 
-export async function setApprovalMode(mode: ApprovalSettings['mode']): Promise<ApprovalSettings> {
+export async function getAutonomyMode(): Promise<ModeResponse> {
+  const res = await getApprovalSettings();
+  return { mode: res.mode };
+}
+
+export async function setApprovalMode(mode: AutonomyMode): Promise<ApprovalSettings> {
   return fetchJson(
     '/approvals/mode',
     { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ mode }) },
     ApprovalSettingsSchema,
   );
+}
+
+export async function setAutonomyMode(mode: AutonomyMode): Promise<ModeResponse> {
+  const res = await fetchJson(
+    '/approvals/mode',
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ mode }) },
+    ApprovalSettingsSchema,
+  );
+  return { mode: res.mode };
 }
 
 export async function listApprovalRules(): Promise<ApprovalRule[]> {
@@ -1633,6 +1654,10 @@ export async function updateApprovalRule(id: string, req: UpdateApprovalRule): P
 
 export async function deleteApprovalRule(id: string): Promise<void> {
   await fetchJson(`/approvals/rules/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+export async function listPendingApprovals(): Promise<PendingApprovalsResponse> {
+  return fetchJson('/approvals/pending', undefined, PendingApprovalsResponseSchema);
 }
 
 export async function listApprovalLog(params?: {

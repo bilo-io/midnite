@@ -158,11 +158,11 @@ function toLogEntry(row: import('../db/schema').ApprovalLogRow) {
   return {
     id: row.id,
     sessionId: row.sessionId,
-    taskId: row.taskId ?? undefined,
+    taskId: row.taskId ?? null,
     toolName: row.toolName,
-    summary: row.summary ?? undefined,
+    summary: row.summary ?? null,
     resolution: row.resolution as ApprovalLogResolution,
-    ruleId: row.ruleId ?? undefined,
+    ruleId: row.ruleId ?? null,
     decidedBy: row.decidedBy as ApprovalDecidedBy,
     createdAt: row.createdAt,
   };
