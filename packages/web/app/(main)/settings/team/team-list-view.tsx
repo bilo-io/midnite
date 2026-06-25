@@ -112,7 +112,7 @@ export function TeamListView() {
         {teams.map((team) => (
           <li key={team.id}>
             <Link
-              href={`/settings/team/${team.id}`}
+              href={`/settings/team/detail?id=${encodeURIComponent(team.id)}`}
               className="flex items-center justify-between px-4 py-3 hover:bg-accent/40 transition-colors"
             >
               <div>
