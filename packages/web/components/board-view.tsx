@@ -145,6 +145,11 @@ export function BoardView({
         <div
           ref={scrollRef}
           onScroll={isMobile ? handleScroll : undefined}
+          // Focusable so keyboard users can scroll the board even when a column has
+          // no focusable cards (axe `scrollable-region-focusable`).
+          tabIndex={0}
+          role="group"
+          aria-label="Task board"
           className="flex min-h-0 flex-1 gap-3 overflow-x-auto pb-1 max-md:snap-x max-md:snap-mandatory max-md:scroll-smooth max-md:gap-0"
         >
           {columns.map((col) => (
@@ -295,7 +300,12 @@ function DraggableCard({
   moveColumns?: ColumnDef[];
   onMoveTo?: (target: Status) => void;
 }) {
-  const { setNodeRef, listeners, attributes, isDragging } = useDraggable({
+  // Only `listeners` (pointer handlers) are spread — NOT `attributes`. dnd-kit's
+  // `attributes` add `role="button"`/`tabIndex`/`aria-roledescription` for keyboard
+  // drag, but the board wires only Mouse+Touch sensors (no KeyboardSensor), so those
+  // semantics are inert and merely nest the card's own button inside an interactive
+  // wrapper (axe `nested-interactive`). Dropping them keeps pointer drag intact.
+  const { setNodeRef, listeners, isDragging } = useDraggable({
     id: task.id,
   });
   const canStart = task.status === 'todo' || task.status === 'backlog';
@@ -306,7 +316,6 @@ function DraggableCard({
     <div
       ref={setNodeRef}
       {...listeners}
-      {...attributes}
       // The floating card follows the cursor via DragOverlay; here we just leave
       // a dimmed placeholder in the source column.
       className={cn(

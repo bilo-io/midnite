@@ -78,12 +78,14 @@
 
 ### C3. Accessibility checks — ◐ PARTIAL (PR #39, 2026-06-21)
 - [x] `@storybook/addon-a11y` (pinned `10.4.3`, matching `addon-vitest`) added to web + registered in [`.storybook/main.ts`](../packages/web/.storybook/main.ts). SB ≥10.3 auto-applies the addon's preview annotations, so **axe-core runs against every story** in `moon run web:test` (and the Storybook a11y panel) — no setup file needed. Enabled at `parameters.a11y.test: 'todo'` (warnings) in [`.storybook/preview.tsx`](../packages/web/.storybook/preview.tsx), per "start as warnings": violations surface without failing CI. `web:test` green (71 stories scanned).
-- [ ] **Promote to `'error'` once clean.** The run surfaces a real backlog (each fixed in a *separate behavioural commit* — out of scope for this infra slice — then flip to `'error'` globally or per-component):
-  - `board-view` — `color-contrast`, `nested-interactive` (clickable card wraps interactive children), `scrollable-region-focusable`
-  - `task-card` / `project-card` / `workflow-card` — `color-contrast`
-  - `session-card` — `aria-prohibited-attr`
-  - `page-header` — `empty-heading`
-  - `markdown-preview` — `label` (GFM task-list checkboxes render unlabeled `<input>`)
+- [x] **Structural backlog cleared + promoted to `'error'` (PR #207, 2026-06-25).** Flipped `parameters.a11y.test` to `'error'`; the 57 structural violations the run surfaced are all fixed, so addon-a11y now fails `web:test` on any structural regression:
+  - `board-view` — `nested-interactive` ×26 (dropped inert dnd-kit `attributes` — no KeyboardSensor wired), `scrollable-region-focusable` (focusable columns container)
+  - `session-card` — `aria-prohibited-attr` ×14 (`role="img"` on the status dot)
+  - `page-header` — `empty-heading` (`aria-label={title}` on the typewriter `<h1>`)
+  - `markdown-preview` — `label` (state `aria-label` on GFM task-list checkboxes)
+  - `memory-modal` / `markdown-editor` — `label` (new `ariaLabel` prop names the textarea)
+  - `expression-editor` — `aria-required-children` (`role="tree"`→`"group"`), `scrollable-region-focusable`
+- [ ] ⏳ **`color-contrast` backlog (deferred — needs a design pass).** ~99 hits rooted in `--muted-foreground` + the `text-muted-foreground/50,60,70` opacity utilities across ~45 components. Disabled via `parameters.a11y.config.rules` in [`.storybook/preview.tsx`](../packages/web/.storybook/preview.tsx) (documented there) so the rest of the suite runs at `'error'`; re-enable the single rule once the token/opacity contrast pass lands.
 
 ---
 

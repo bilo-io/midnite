@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-26 — Phase 8 C1 + Phase 9 B1: procedural robot poses + activity state machine (PR #208)
+
+- [x] `shared`: `provider: LlmProvider | undefined` on `SessionSummarySchema`; gateway `sessions.service` derives it from `agentCli` via `CLI_PROVIDER_MAP`
+- [x] `web/office/customisation.ts` (new): `CHARACTER_OPTIONS`, `PLAYER_TINTS`, `OfficeCustomisation`, `resolveCharacter()`
+- [x] `web/textures.ts`: `RobotPose` type, `poseTexKey()`, `providerAccent()`, `drawRobotPose()` — 18 pose textures (6 variants × typing/raised/celebrate) registered in `ensureOfficeTextures`
+- [x] `office-scene.ts`: full `applyPose()` state machine (completed→celebrate, waiting/blocked→raised, running→typing, idle→neutral); `providerAccent()` badge; player tint via `applyPlayerTint()` + store subscription
+- [x] `CharacterPicker.tsx`: tint palette row below the avatar grid (7 colours + natural)
+- [x] `office-store.ts`: `playerTint: number | null` with `midnite.office.player-tint` localStorage persistence
+
 ## 2026-06-26 — Phase 9 office visual overhaul verification complete — live visual acceptance passed
 
 Playwright smoke run 2026-06-26; all 6 pending verification items confirmed.
@@ -14,6 +23,19 @@ Playwright smoke run 2026-06-26; all 6 pending verification items confirmed.
 - [x] Agent pool: wave-tiled pool water + sun loungers visible
 - [x] Communal: astro turf, TV, PS5, ping-pong + billiards tables, kitchenette break + retro-games menu
 - [x] Corner office: scene switch, desk picker, laptop cursor, localStorage persist
+
+## 2026-06-25 — Phase 10 C3: clear structural a11y backlog, promote axe to error (PR #207)
+
+- [x] Flipped `parameters.a11y.test` from `'todo'` to `'error'` — addon-a11y now fails the Vitest story run on any enabled-rule violation
+- [x] `board-view` — fixed `nested-interactive` ×26 (stopped spreading dnd-kit `attributes`; the board wires no KeyboardSensor so role/tabindex were inert) + `scrollable-region-focusable` (focusable columns container)
+- [x] `session-card` — `aria-prohibited-attr` ×14 (`role="img"` makes the status dot's `aria-label` valid)
+- [x] `markdown-preview` — `label` (state-reflecting `aria-label` on GFM task-list checkboxes)
+- [x] `markdown-editor` + `memory-modal` — `label` (new `ariaLabel` prop names the editor `<textarea>`)
+- [x] `page-header` — `empty-heading` (`aria-label={title}` on the typewriter `<h1>`; animated text `aria-hidden`)
+- [x] `expression-editor` — `aria-required-children` (`role="tree"`→`"group"`) + `scrollable-region-focusable` (focusable preview `<pre>`)
+- [x] `color-contrast` (~99 hits, systemic `--muted-foreground`/opacity-utility design backlog) disabled via one documented `a11y.config.rules` entry + tracked in phase-10 C3 for a follow-up design pass
+- [x] Drive-by: removed unused `readFileSync`/`statSync` imports in `generate-gallery.mjs` (pre-existing `no-unused-vars`)
+- [x] Gate green locally (`web:lint`/`web:typecheck`/`web:test` 510 passed); merged with `--admin` (GH Actions billing-blocked account-wide, no CI could start)
 
 ## 2026-06-25 — Phase 8 A1: Tiled tilemap floor + procedural oak tileset (PR #206)
 

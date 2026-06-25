@@ -4,7 +4,7 @@
  * `SESSION_STATUS_*` constants, so a status looks identical in both places.
  */
 
-import type { SessionSummary, Status, Task } from '@midnite/shared';
+import type { LlmProvider, SessionSummary, Status, Task } from '@midnite/shared';
 import { SESSION_STATUS_HUE, SESSION_STATUS_LABEL } from '@/components/session-card';
 
 export type OfficeStatus = SessionSummary['status']; // 'running' | 'waiting' | 'completed' | 'idle'
@@ -48,6 +48,8 @@ export interface OfficeAgent {
    * Used to render a provider accent badge in the office scene (Phase 9 B1).
    */
   agentCli?: string;
+  /** LLM provider family — drives the badge accent via providerAccent(). */
+  provider?: LlmProvider;
   /** The underlying session — used to open the live terminal / transcript. */
   session: SessionSummary;
 }
@@ -113,6 +115,7 @@ export function sessionsToOfficeAgents(sessions: SessionSummary[], tasks: Task[]
         taskStatus: task?.status,
         activity: s.subtitle || task?.title || '—',
         agentCli: s.agentCli,
+        provider: s.provider,
         session: s,
       };
     });

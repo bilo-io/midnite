@@ -190,6 +190,7 @@ export function MemoryModal({ memory, projects, initialProjectId, onClose, onSav
               minHeight={140}
               defaultMode={memory ? 'preview' : 'edit'}
               label={<span className="text-xs font-medium text-muted-foreground">Content</span>}
+              ariaLabel="Memory content"
             />
 
             <div className="space-y-1.5">

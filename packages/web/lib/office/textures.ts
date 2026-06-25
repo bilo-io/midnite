@@ -13,6 +13,7 @@
  */
 
 import type Phaser from 'phaser';
+import type { LlmProvider } from '@midnite/shared';
 
 import type { PlantVariant } from './layout';
 
@@ -69,6 +70,25 @@ export const CHAR_H = 20;
 export const charKey = (kind: CharKind, dir: Dir, frame: 0 | 1, variant = 0) =>
   `office-${kind}-v${variant}-${dir}-${frame}`;
 export const walkAnim = (kind: CharKind, dir: Dir, variant = 0) => `office-walk-${kind}-v${variant}-${dir}`;
+
+/** Procedural body-pose variants for seated robot agents (Phase 8 C1). */
+export type RobotPose = 'typing' | 'raised' | 'celebrate';
+
+/** Texture key for a robot at a specific body pose. */
+export const poseTexKey = (variant: number, pose: RobotPose) =>
+  `office-robot-v${variant}-pose-${pose}`;
+
+/** Provider-aligned accent colour for the badge dot (Phase 9 B1). Null when unknown. */
+const PROVIDER_ACCENT: Record<LlmProvider, number> = {
+  anthropic: 0xd97757,
+  openai: 0x10a37f,
+  google: 0x4285f4,
+  'openai-compatible': 0xa78bfa,
+};
+
+export function providerAccent(provider: LlmProvider | undefined): number | null {
+  return provider ? (PROVIDER_ACCENT[provider] ?? null) : null;
+}
 
 // Human pixel palette. Drawn mostly light (cloth = white) so a per-sprite tint
 // colours the clothing; dark parts (outline, hair, boots) survive the multiply.
@@ -265,6 +285,77 @@ function drawRobot(g: Phaser.GameObjects.Graphics, dir: Dir, frame: 0 | 1, spec:
     rect(g, 6, 17, 2, 3, R.dark);
     rect(g, 8, 17, 2, 3, R.dark);
   }
+}
+
+/**
+ * Draws a robot at a seated body pose (Phase 8 C1). Shares head/torso/legs
+ * with `drawRobot`; only the arm placement differs per pose.
+ * - `typing`   — arms angled down toward a keyboard
+ * - `raised`   — arms raised above the shoulders (waiting / blocked)
+ * - `celebrate`— arms flung high in a Y-shape (task completed)
+ */
+function drawRobotPose(g: Phaser.GameObjects.Graphics, spec: RobotVariantSpec, pose: RobotPose) {
+  const { antenna, eye, accent, visor, fins } = spec;
+  // Antenna
+  if (antenna === 'rod') {
+    rect(g, 8, 0, 1, 3, R.dark);
+    rect(g, 7, 0, 2, 2, accent);
+  } else if (antenna === 'twin') {
+    rect(g, 6, 0, 1, 3, R.dark);
+    rect(g, 10, 0, 1, 3, R.dark);
+    rect(g, 6, 0, 1, 1, accent);
+    rect(g, 10, 0, 1, 1, accent);
+  } else if (antenna === 'bulb') {
+    rect(g, 8, 1, 1, 2, R.dark);
+    rect(g, 7, 0, 3, 2, accent);
+  } else if (antenna === 'dish') {
+    rect(g, 8, 1, 1, 2, R.dark);
+    rect(g, 6, 0, 5, 1, R.panel);
+    rect(g, 7, 0, 3, 1, accent);
+  } else {
+    rect(g, 5, 2, 6, 1, R.panel);
+    rect(g, 7, 2, 2, 1, accent);
+  }
+  // Head
+  rect(g, 4, 3, 8, 7, R.dark);
+  rect(g, 5, 4, 6, 5, R.metal);
+  if (fins) {
+    rect(g, 3, 5, 1, 3, R.panel);
+    rect(g, 12, 5, 1, 3, R.panel);
+  }
+  rect(g, 4, 6, 1, 2, R.dark);
+  rect(g, 11, 6, 1, 2, R.dark);
+  rect(g, 5, 5, 6, 3, visor);
+  rect(g, 6, 6, 1, 1, eye);
+  rect(g, 9, 6, 1, 1, eye);
+  // Neck
+  rect(g, 7, 10, 2, 1, R.dark);
+  // Torso
+  rect(g, 3, 11, 10, 6, R.dark);
+  rect(g, 4, 12, 8, 4, R.metal);
+  rect(g, 6, 12, 4, 3, R.panel);
+  rect(g, 7, 13, 1, 1, accent);
+  // Pose-specific arms
+  if (pose === 'typing') {
+    // Arms angled forward/down: upper arm + forearm reaching toward keyboard
+    rect(g, 2, 12, 2, 3, R.metal);
+    rect(g, 1, 14, 3, 2, R.metal);
+    rect(g, 12, 12, 2, 3, R.metal);
+    rect(g, 12, 14, 3, 2, R.metal);
+  } else if (pose === 'raised') {
+    // Arms raised upward above the shoulders
+    rect(g, 1, 8, 2, 5, R.metal);
+    rect(g, 13, 8, 2, 5, R.metal);
+  } else {
+    // celebrate: arms flung high in a wide Y
+    rect(g, 0, 8, 3, 5, R.metal);
+    rect(g, 13, 8, 3, 5, R.metal);
+    rect(g, 0, 8, 2, 2, accent);
+    rect(g, 14, 8, 2, 2, accent);
+  }
+  // Legs (standing still — frame 0)
+  rect(g, 5, 17, 2, 3, R.dark);
+  rect(g, 9, 17, 2, 3, R.dark);
 }
 
 /** Generate all office textures once. Safe to call repeatedly. */
@@ -585,6 +676,12 @@ export function ensureOfficeTextures(scene: Phaser.Scene): void {
       );
     });
   });
+  // Pose textures (one per variant per pose — no direction, always facing down).
+  (['typing', 'raised', 'celebrate'] as RobotPose[]).forEach((pose) =>
+    ROBOT_VARIANTS.forEach((spec, v) =>
+      make(poseTexKey(v, pose), CHAR_W, CHAR_H, (g) => drawRobotPose(g, spec, pose)),
+    ),
+  );
 }
 
 // ── Tileset (Phase 8 A1) ─────────────────────────────────────────────────────

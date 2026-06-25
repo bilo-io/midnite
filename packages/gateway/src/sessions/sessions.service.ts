@@ -1,6 +1,8 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
+  CLI_PROVIDER_MAP,
   TERMINAL_WS_PATH,
+  type AgentCli,
   type SessionStatus,
   type SessionSummary,
   type SessionTranscript,
@@ -85,6 +87,11 @@ export class SessionsService {
       contextLimit: CONTEXT_LIMIT,
       archivedAt: task.archivedAt,
       agentCli: this.agents.getAgentCli(),
+      provider: (() => {
+        const cli = this.agents.getAgentCli() as AgentCli | undefined;
+        if (!cli || !(cli in CLI_PROVIDER_MAP)) return undefined;
+        return CLI_PROVIDER_MAP[cli] ?? undefined;
+      })(),
     };
   }
 
