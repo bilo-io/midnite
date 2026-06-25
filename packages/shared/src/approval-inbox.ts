@@ -43,7 +43,7 @@ export const ApprovalLogEntrySchema = z.object({
   sessionId: z.string(),
   taskId: z.string().nullable(),
   toolName: z.string(),
-  summary: z.string(),
+  summary: z.string().nullable(),
   resolution: ApprovalResolutionSchema,
   ruleId: z.string().nullable(),
   decidedBy: ApprovalDecidedBySchema,
@@ -54,8 +54,8 @@ export type ApprovalLogEntry = z.infer<typeof ApprovalLogEntrySchema>;
 export const ApprovalLogResponseSchema = z.object({
   entries: z.array(ApprovalLogEntrySchema),
   total: z.number(),
+  page: z.number(),
   limit: z.number(),
-  offset: z.number(),
 });
 export type ApprovalLogResponse = z.infer<typeof ApprovalLogResponseSchema>;
 

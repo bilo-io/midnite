@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import type { AgentPoolSnapshot, ApprovalLogEntry, ApprovalLogResponse, OpsSummary, UsageSummaryResponse } from '@midnite/shared';
 import { cn, relativeTime } from '@/lib/utils';
-import { getApprovalLog } from '@/lib/api';
+import { listApprovalLog } from '@/lib/api';
 import { usePolling } from '@/lib/use-polling';
 import { WidgetLoader } from './spinner';
 
@@ -318,9 +318,9 @@ function DecisionRow({ entry }: { entry: ApprovalLogEntry }) {
 const LOG_PAGE = 50;
 
 function DecisionsSection() {
-  const [offset, setOffset] = useState(0);
+  const [page, setPage] = useState(1);
   const { data, loading } = usePolling<ApprovalLogResponse>(
-    () => getApprovalLog({ limit: LOG_PAGE, offset }),
+    () => listApprovalLog({ limit: LOG_PAGE, page }),
     30_000,
   );
 
@@ -349,21 +349,21 @@ function DecisionsSection() {
       {total > LOG_PAGE && (
         <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
           <span>
-            {offset + 1}–{Math.min(offset + LOG_PAGE, total)} of {total}
+            {(page - 1) * LOG_PAGE + 1}–{Math.min(page * LOG_PAGE, total)} of {total}
           </span>
           <div className="flex gap-2">
             <button
               type="button"
-              disabled={offset === 0}
-              onClick={() => setOffset((o) => Math.max(0, o - LOG_PAGE))}
+              disabled={page <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
               className="rounded px-2 py-1 transition-colors hover:bg-accent disabled:opacity-40"
             >
               Prev
             </button>
             <button
               type="button"
-              disabled={offset + LOG_PAGE >= total}
-              onClick={() => setOffset((o) => o + LOG_PAGE)}
+              disabled={page * LOG_PAGE >= total}
+              onClick={() => setPage((p) => p + 1)}
               className="rounded px-2 py-1 transition-colors hover:bg-accent disabled:opacity-40"
             >
               Next

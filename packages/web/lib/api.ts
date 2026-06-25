@@ -1624,23 +1624,23 @@ export async function setAutonomyMode(mode: AutonomyMode): Promise<ModeResponse>
 }
 
 export async function listApprovalRules(): Promise<ApprovalRule[]> {
-  const res = await fetchJson('/approvals/rules', {}, ApprovalRulesResponseSchema);
+  const res = await fetchJson('/approvals/rules', undefined, ApprovalRulesResponseSchema);
   return res.rules;
 }
 
-export async function createApprovalRule(body: CreateApprovalRule): Promise<ApprovalRule> {
+export async function createApprovalRule(req: CreateApprovalRule): Promise<ApprovalRule> {
   const res = await fetchJson(
     '/approvals/rules',
-    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(req) },
     ApprovalRuleResponseSchema,
   );
   return res.rule;
 }
 
-export async function updateApprovalRule(id: string, body: UpdateApprovalRule): Promise<ApprovalRule> {
+export async function updateApprovalRule(id: string, req: UpdateApprovalRule): Promise<ApprovalRule> {
   const res = await fetchJson(
     `/approvals/rules/${encodeURIComponent(id)}`,
-    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(req) },
     ApprovalRuleResponseSchema,
   );
   return res.rule;
@@ -1651,24 +1651,22 @@ export async function deleteApprovalRule(id: string): Promise<void> {
 }
 
 export async function listPendingApprovals(): Promise<PendingApprovalsResponse> {
-  return fetchJson('/approvals/pending', {}, PendingApprovalsResponseSchema);
+  return fetchJson('/approvals/pending', undefined, PendingApprovalsResponseSchema);
 }
 
-export async function getApprovalLog(opts?: {
-  sessionId?: string;
-  taskId?: string;
+export async function listApprovalLog(params?: {
+  page?: number;
+  limit?: number;
   from?: string;
   to?: string;
-  limit?: number;
-  offset?: number;
+  taskId?: string;
 }): Promise<ApprovalLogResponse> {
-  const params = new URLSearchParams();
-  if (opts?.sessionId) params.set('sessionId', opts.sessionId);
-  if (opts?.taskId) params.set('taskId', opts.taskId);
-  if (opts?.from) params.set('from', opts.from);
-  if (opts?.to) params.set('to', opts.to);
-  if (opts?.limit !== undefined) params.set('limit', String(opts.limit));
-  if (opts?.offset !== undefined) params.set('offset', String(opts.offset));
-  const qs = params.toString();
-  return fetchJson(`/approvals/log${qs ? `?${qs}` : ''}`, {}, ApprovalLogResponseSchema);
+  const qs = new URLSearchParams();
+  if (params?.page) qs.set('page', String(params.page));
+  if (params?.limit) qs.set('limit', String(params.limit));
+  if (params?.from) qs.set('from', params.from);
+  if (params?.to) qs.set('to', params.to);
+  if (params?.taskId) qs.set('taskId', params.taskId);
+  const query = qs.toString();
+  return fetchJson(`/approvals/log${query ? `?${query}` : ''}`, undefined, ApprovalLogResponseSchema);
 }

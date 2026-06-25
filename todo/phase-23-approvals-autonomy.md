@@ -64,9 +64,9 @@ The durable trust record — especially for what was decided *without* you.
 
 A single high-level knob over the policy, plus the management UI.
 
-- [ ] **Mode** in [`@midnite/shared`](../packages/shared/src/) + `config.terminal.approvals.mode` (default `manual` — **no behaviour change** for existing users until they opt in): `manual` (ask everything, today's behaviour) · `guarded` (auto-approve the safe-default tool set, ask the rest) · `autonomous` (rules decide; escalate only genuinely-risky/unmatched). Modes are **presets that seed/sit over** the Theme-A rules, not a separate engine.
-- [ ] A small **config-write path** for the mode (mirror whatever settings-write mechanism exists; keep it thin + `loadConfig()`-respecting).
-- [ ] **Settings panel** — pick the mode, CRUD rules (Theme A), and view the audit log (Theme C). Make the **safe-default tool set** visible and explained (Decision §6).
+- [x] **Mode** in [`@midnite/shared`](../packages/shared/src/) + `config.terminal.approvals.mode` (default `manual` — **no behaviour change** for existing users until they opt in): `manual` (ask everything, today's behaviour) · `guarded` (auto-approve the safe-default tool set, ask the rest) · `autonomous` (rules decide; escalate only genuinely-risky/unmatched). Modes are **presets that seed/sit over** the Theme-A rules, not a separate engine.
+- [x] A small **config-write path** for the mode (`PATCH /approvals/mode` backed by `approval_settings` singleton DB row, loaded on boot via `onModuleInit`).
+- [x] **Settings panel** — pick the mode, CRUD rules (Theme A), and view the audit log (Theme C). Make the **safe-default tool set** visible and explained (Decision §6). (PR #198)
 
 ---
 

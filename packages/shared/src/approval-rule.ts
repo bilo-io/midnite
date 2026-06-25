@@ -66,3 +66,27 @@ export type ApprovalSettings = z.infer<typeof ApprovalSettingsSchema>;
 
 export const SetModeRequestSchema = z.object({ mode: AutonomyModeSchema });
 export type SetModeRequest = z.infer<typeof SetModeRequestSchema>;
+
+// ---- Audit log ----
+
+/** All possible resolutions that can appear in the approval audit log. */
+export const ApprovalLogResolutionSchema = z.enum([
+  'allow',
+  'allow-session',
+  'deny',
+  'auto-allow',
+  'auto-deny',
+  'timeout',
+  'expired',
+  'ask',
+]);
+export type ApprovalLogResolution = z.infer<typeof ApprovalLogResolutionSchema>;
+
+export const ApprovalLogQuerySchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(50),
+  from: z.string().optional(),
+  to: z.string().optional(),
+  taskId: z.string().optional(),
+});
+export type ApprovalLogQuery = z.infer<typeof ApprovalLogQuerySchema>;

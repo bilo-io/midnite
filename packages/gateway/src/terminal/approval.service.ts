@@ -11,7 +11,6 @@ import type {
 } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
 import { ApprovalsService } from '../approvals/approvals.service';
-import { ApprovalsLogRepository } from '../approvals/approvals-log.repository';
 import { hashToken, tokenMatches } from '../lib/token-hash';
 import { HookSecretRepository } from './hook-secret.repository';
 import { summarizeToolCall } from './lib/summarize-tool-call';
@@ -52,7 +51,6 @@ export class ApprovalService {
     @Optional() @Inject(HookSecretRepository) private readonly secretStore?: HookSecretRepository,
     @Optional() @Inject(ApprovalsService) private readonly approvalsService?: ApprovalsService,
     @Optional() @Inject(ApprovalEventBus) private readonly eventBus?: ApprovalEventBus,
-    @Optional() @Inject(ApprovalsLogRepository) private readonly logRepo?: ApprovalsLogRepository,
   ) {}
 
   // ---- per-session secret ----
@@ -113,21 +111,41 @@ export class ApprovalService {
       return { decision: 'allow', reason: 'allowed for this session' };
     }
 
+    // Policy engine (Phase 23 A2+C): evaluate durable rules before asking a human.
     if (this.approvalsService) {
+      const summary = summarizeToolCall(toolName, payload.tool_input);
       const verdict = this.approvalsService.evaluate(toolName, payload.tool_input);
       if (verdict === 'auto-allow') {
-        this.writeLog(sessionId, taskId ?? null, toolName, summarizeToolCall(toolName, payload.tool_input), 'auto-allow', 'policy');
+        this.approvalsService.logDecision({
+          sessionId,
+          toolName,
+          summary,
+          resolution: 'auto-allow',
+          decidedBy: 'policy',
+        });
         return { decision: 'allow', reason: 'allowed by policy rule' };
       }
       if (verdict === 'auto-deny') {
-        this.writeLog(sessionId, taskId ?? null, toolName, summarizeToolCall(toolName, payload.tool_input), 'auto-deny', 'policy');
+        this.approvalsService.logDecision({
+          sessionId,
+          toolName,
+          summary,
+          resolution: 'auto-deny',
+          decidedBy: 'policy',
+        });
         return { decision: 'deny', reason: 'denied by policy rule' };
       }
     }
 
     if (this.terminal.subscriberCount(sessionId) === 0) {
       const fallback = this.config.terminal.approvals.onNoSubscriber;
-      this.writeLog(sessionId, taskId ?? null, toolName, summarizeToolCall(toolName, payload.tool_input), fallback, 'system');
+      this.approvalsService?.logDecision({
+        sessionId,
+        toolName,
+        summary: summarizeToolCall(toolName, payload.tool_input),
+        resolution: fallback as import('@midnite/shared').ApprovalLogResolution,
+        decidedBy: 'system',
+      });
       return { decision: fallback, reason: 'no viewer connected' };
     }
 
@@ -244,34 +262,15 @@ export class ApprovalService {
 
     this.eventBus?.emit({ type: 'approval.resolved', id: requestId, resolution });
 
-    const decidedBy: 'user' | 'policy' | 'timeout' | 'system' =
-      resolution === 'timeout' ? 'timeout'
-      : resolution === 'expired' ? 'system'
-      : resolution === 'auto-allow' || resolution === 'auto-deny' ? 'policy'
-      : 'user';
-    this.writeLog(entry.sessionId, entry.taskId, entry.toolName, entry.request.summary, resolution, decidedBy);
+    this.approvalsService?.logDecision({
+      sessionId: entry.sessionId,
+      toolName: entry.toolName,
+      summary: entry.request.summary,
+      resolution: resolution as import('@midnite/shared').ApprovalLogResolution,
+      decidedBy: resolutionToDecidedBy(resolution),
+    });
 
     entry.resolve(hookDecision);
-  }
-
-  private writeLog(
-    sessionId: string,
-    taskId: string | null,
-    toolName: string,
-    summary: string,
-    resolution: ApprovalResolution,
-    decidedBy: 'user' | 'policy' | 'timeout' | 'system',
-  ): void {
-    this.logRepo?.insert({
-      sessionId,
-      taskId,
-      toolName,
-      summary,
-      resolution,
-      ruleId: null,
-      decidedBy,
-      createdAt: new Date().toISOString(),
-    });
   }
 
   private toHookDecision(decision: ApprovalDecision): PreToolUseHookDecision {
@@ -281,4 +280,14 @@ export class ApprovalService {
       reason: decision === 'allow-session' ? 'allowed for this session' : 'allowed by user',
     };
   }
+}
+
+function resolutionToDecidedBy(
+  resolution: ApprovalResolution,
+): import('@midnite/shared').ApprovalDecidedBy {
+  if (resolution === 'allow' || resolution === 'allow-session' || resolution === 'deny') {
+    return 'user';
+  }
+  if (resolution === 'timeout') return 'timeout';
+  return 'system'; // expired, ask
 }

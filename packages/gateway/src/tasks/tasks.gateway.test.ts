@@ -191,7 +191,7 @@ describe('TasksGateway — D3: WS scoping', () => {
   it('closes with 4001 when JWT mode is on and token is invalid', () => {
     const jwtBad = {
       enabled: true,
-      verifyAccessToken: () => { throw new TokenInvalidError(); },
+      verifyAccessToken: (_t: string) => { throw new TokenInvalidError(); },
     };
     const { gateway } = makeGateway(jwtBad);
 
@@ -208,7 +208,7 @@ describe('TasksGateway — D3: WS scoping', () => {
   });
 
   it('static-token client (no JWT) receives all events', () => {
-    const { gateway, bus } = makeGateway({ enabled: false, verifyAccessToken: () => { throw new Error('should not be called'); } });
+    const { gateway, bus } = makeGateway({ enabled: false, verifyAccessToken: (_t: string) => ({ sub: '' }) });
 
     const client = fakeClient();
     gateway.handleConnection(client.ws, req); // no token in URL

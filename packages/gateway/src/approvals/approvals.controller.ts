@@ -9,18 +9,15 @@ import {
   Param,
   Patch,
   Post,
-  Query,
 } from '@nestjs/common';
 import {
   CreateApprovalRuleSchema,
   UpdateApprovalRuleSchema,
-  type ApprovalLogResponse,
   type ApprovalRuleResponse,
   type ApprovalRulesResponse,
   type PendingApprovalsResponse,
 } from '@midnite/shared';
 import { ApprovalService } from '../terminal/approval.service';
-import { ApprovalsLogRepository, type LogListOpts } from './approvals-log.repository';
 import { ApprovalsService } from './approvals.service';
 
 @Controller('approvals')
@@ -28,7 +25,6 @@ export class ApprovalsController {
   constructor(
     @Inject(ApprovalsService) private readonly service: ApprovalsService,
     @Inject(ApprovalService) private readonly approvalService: ApprovalService,
-    @Inject(ApprovalsLogRepository) private readonly logRepo: ApprovalsLogRepository,
   ) {}
 
   // ---- pending (Theme B) ----
@@ -36,29 +32,6 @@ export class ApprovalsController {
   @Get('pending')
   listPending(): PendingApprovalsResponse {
     return { pending: this.approvalService.listPending() };
-  }
-
-  // ---- audit log (Theme C) ----
-
-  @Get('log')
-  getLog(
-    @Query('sessionId') sessionId?: string,
-    @Query('taskId') taskId?: string,
-    @Query('from') from?: string,
-    @Query('to') to?: string,
-    @Query('limit') limitStr?: string,
-    @Query('offset') offsetStr?: string,
-  ): ApprovalLogResponse {
-    const opts: LogListOpts = {
-      sessionId,
-      taskId,
-      from,
-      to,
-      limit: limitStr ? parseInt(limitStr, 10) : 50,
-      offset: offsetStr ? parseInt(offsetStr, 10) : 0,
-    };
-    const { entries, total } = this.logRepo.list(opts);
-    return { entries, total, limit: opts.limit ?? 50, offset: opts.offset ?? 0 };
   }
 
   // ---- rules (Theme A) ----

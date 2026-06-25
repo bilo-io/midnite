@@ -681,6 +681,31 @@ export const approvalSettings = sqliteTable('approval_settings', {
 });
 export type ApprovalSettingsRow = typeof approvalSettings.$inferSelect;
 
+/** Durable audit record for every approval decision (user or automatic). */
+export const approvalLog = sqliteTable(
+  'approval_log',
+  {
+    id: text('id').primaryKey(),
+    sessionId: text('session_id').notNull(),
+    taskId: text('task_id'),
+    toolName: text('tool_name').notNull(),
+    summary: text('summary'),
+    /** See ApprovalLogResolutionSchema in @midnite/shared. */
+    resolution: text('resolution').notNull(),
+    ruleId: text('rule_id'),
+    /** 'user' | 'policy' | 'timeout' | 'system' */
+    decidedBy: text('decided_by').notNull(),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    sessionIdx: index('approval_log_session_idx').on(t.sessionId),
+    taskIdx: index('approval_log_task_idx').on(t.taskId),
+    createdAtIdx: index('approval_log_created_at_idx').on(t.createdAt),
+  }),
+);
+export type ApprovalLogRow = typeof approvalLog.$inferSelect;
+export type ApprovalLogInsert = typeof approvalLog.$inferInsert;
+
 // --- Notes (simple checklist panel on the dashboard) ---
 
 export const notes = sqliteTable(
@@ -1009,31 +1034,3 @@ export const auditLog = sqliteTable(
 export type AuditLogRow = typeof auditLog.$inferSelect;
 export type AuditLogInsert = typeof auditLog.$inferInsert;
 
-// --- Approval log (Phase 23 C) ---
-
-export const approvalLog = sqliteTable(
-  'approval_log',
-  {
-    id: text('id').primaryKey(),
-    sessionId: text('session_id').notNull(),
-    /** Null for approvals whose session has no associated task. */
-    taskId: text('task_id'),
-    toolName: text('tool_name').notNull(),
-    summary: text('summary').notNull(),
-    /** allow | allow-session | deny | auto-allow | auto-deny | timeout | expired */
-    resolution: text('resolution').notNull(),
-    /** ID of the policy rule that fired, if any. */
-    ruleId: text('rule_id'),
-    /** user | policy | timeout | system */
-    decidedBy: text('decided_by').notNull(),
-    createdAt: text('created_at').notNull(),
-  },
-  (t) => ({
-    sessionIdx: index('approval_log_session_idx').on(t.sessionId),
-    taskIdx: index('approval_log_task_idx').on(t.taskId),
-    timeIdx: index('approval_log_time_idx').on(t.createdAt),
-  }),
-);
-
-export type ApprovalLogRow = typeof approvalLog.$inferSelect;
-export type ApprovalLogInsert = typeof approvalLog.$inferInsert;
