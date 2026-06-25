@@ -54,9 +54,9 @@ One place to triage everything still needing you, across all running agents.
 
 The durable trust record — especially for what was decided *without* you.
 
-- [ ] A `approval_log` table (forward-only migration) + repository: one row per resolution — `{ id, session_id, task_id?, tool_name, summary, resolution (allow|deny|allow-session|auto-allow|auto-deny|timeout|expired), rule_id?, decided_by ('user'|'policy'|'timeout'|'system'), created_at }`. Written from `settle()` in [`approval.service.ts`](../packages/gateway/src/terminal/approval.service.ts) (and on every auto-decision).
-- [ ] `GET /approvals/log?from=&to=&taskId=` (paged) + zod shape in `shared`.
-- [ ] **Web history view** — a readable log ("what did I auto-approve?"); link each entry to its task/session and the rule that fired. Could surface on the [Phase 22](phase-22-fleet-visibility.md) `/ops` page or its own; reuses the export seam later ([Phase 18](phase-18-reports-exports.md)).
+- [x] A `approval_log` table (forward-only migration) + repository: one row per resolution — `{ id, session_id, task_id?, tool_name, summary, resolution (allow|deny|allow-session|auto-allow|auto-deny|timeout|expired), rule_id?, decided_by ('user'|'policy'|'timeout'|'system'), created_at }`. Written from `settle()` in [`approval.service.ts`](../packages/gateway/src/terminal/approval.service.ts) (and on every auto-decision).
+- [x] `GET /approvals/log?from=&to=&taskId=` (paged) + zod shape in `shared`.
+- [x] **Web history view** — a readable log ("what did I auto-approve?"); link each entry to its task/session and the rule that fired. Could surface on the [Phase 22](phase-22-fleet-visibility.md) `/ops` page or its own; reuses the export seam later ([Phase 18](phase-18-reports-exports.md)).
 
 ---
 

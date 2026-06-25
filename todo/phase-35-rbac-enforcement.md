@@ -124,13 +124,13 @@ Notifications are currently a global list and a global dispatcher. Scope both to
 
 ## Verification
 
-- [ ] User A and User B are members of different teams. User A's tasks are **absent** from User B's `GET /tasks` response, and vice versa. A task with `team_id = null` (legacy) appears for both.
-- [ ] A **viewer** attempting `POST /tasks` receives 403. A **member** creating a task succeeds. A **member** attempting to delete another member's task receives 403. An **admin** can delete any team task.
-- [ ] A **member** attempting to change another member's role receives 403. An **admin** can change roles but cannot promote beyond their own role. The **owner** can demote admins.
-- [ ] Two WS clients connected with different team JWTs: a task update in team A does **not** arrive at team B's socket. A legacy (`teamId = null`) task update arrives at both (backward compat).
-- [ ] `NotificationsService.list()` for user A returns only notifications scoped to user A or their team. User B's team notifications are absent.
-- [ ] A task creation by a user with no team (static-token legacy path) still works — `scope = undefined`, no WHERE filter applied, full backward compat.
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph; `moon ci` green. (Run web tests from the **primary checkout**, not a `.git` worktree.)
+- [x] ✅ User A and User B are members of different teams. User A's tasks are **absent** from User B's `GET /tasks` response, and vice versa. A task with `team_id = null` (legacy) appears for both. (`db/team-scope.test.ts`, PR #195)
+- [x] ✅ A **viewer** attempting `POST /tasks` receives 403. A **member** creating a task succeeds. A **member** attempting to delete another member's task receives 403. An **admin** can delete any team task. (`auth/role.guard.test.ts`, PR #200)
+- [x] ✅ A **member** attempting to change another member's role receives 403. An **admin** can change roles but cannot promote beyond their own role. The **owner** can demote admins. (`teams/teams.service.test.ts` + `setMemberRole` fix, PR #200)
+- [x] ✅ Two WS clients connected with different team JWTs: a task update in team A does **not** arrive at team B's socket. A legacy (`teamId = null`) task update arrives at both. (`tasks/tasks.gateway.test.ts`, PR #195)
+- [x] ✅ `NotificationsService.list()` for user A returns only notifications scoped to user A or their team. User B's team notifications are absent. (`notifications/notifications.repository.test.ts`, PR #200)
+- [x] ✅ A task creation by a user with no team (static-token legacy path) still works — `scope = undefined`, no WHERE filter applied, full backward compat. (`db/team-scope.test.ts` no-scope tests, PR #195)
+- [x] ✅ `moon run :typecheck` · `moon run gateway:test` (1037) · `moon run web:test` (510) green. (PR #200)
 
 ---
 

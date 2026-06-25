@@ -34,9 +34,12 @@ Make the core monitoring surfaces reflow to a phone; gate the canvas-heavy ones 
 - [x] Header/page chrome ([`page-header.tsx`](../packages/web/components/page-header.tsx)) collapses gracefully: the title/actions row wraps instead of overflowing at narrow widths; page content clears the bar via bottom padding (safe-area aware) on mobile and keeps the `--nav-offset` left offset at `md+`.
 
 ### A3. Per-surface reflow (core monitoring) — **M–L**
-- [ ] **Board** ([`board-view.tsx`](../packages/web/components/board-view.tsx)): columns stack / horizontally page on a phone; cards stay legible (Theme B handles moving them).
-- [ ] **Sessions**, **Tasks**, **Dashboard** ([`dashboard-grid.tsx`](../packages/web/components/dashboard-grid.tsx)): single-column reflow; widgets/cards full-width; tables → scrollable cards.
-- [ ] **Notification center** (P21) + **Approvals inbox** (P23): designed to read and act on a phone (these are the "walk away" surfaces — they must work small).
+- [x] ✅ **Board** ([`board-view.tsx`](../packages/web/components/board-view.tsx)): snap-scroll columns + tab bar on mobile (PR #199, 2026-06-24); desktop layout unchanged.
+- [x] ✅ **Task rows** ([`task-row.tsx`](../packages/web/components/task-row.tsx)): two-line card on mobile — title line 1, kind/project/status chips line 2 (PR #199, 2026-06-24).
+- [x] ✅ **Sessions**: `SessionRow` already hides overflow columns (`hidden sm:inline`); grid view already `grid-cols-1 md:grid-cols-2`; already responsive.
+- [x] ✅ **Dashboard** ([`dashboard-grid.tsx`](../packages/web/components/dashboard-grid.tsx)): `react-grid-layout` with `sm: 4` cols + curated `sm` layout already reflowed.
+- [x] ✅ **Notification center** (P21): panel uses `w-[min(22rem,calc(100vw-2rem))]` — already viewport-capped.
+- [x] ✅ **Approvals inbox** (P23): `max-w-lg space-y-8` single-column — already mobile-friendly.
 - [x] ✅ **Desktop-only gates** (Decision §2, PR #196): `<DesktopOnly label>` ([`components/desktop-only.tsx`](../packages/web/components/desktop-only.tsx)) wraps the **office** ([`office/page.tsx`](../packages/web/app/(main)/office/page.tsx)) and **workflow editor** ([`workflows/edit/page.tsx`](../packages/web/app/(main)/workflows/edit/page.tsx)); below `lg` it renders a clean "best viewed on desktop" notice (mount-guarded against a static-export flash) instead of a broken canvas. RTL + Playwright shots.
 
 ---
