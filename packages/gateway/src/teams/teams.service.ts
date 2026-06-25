@@ -114,8 +114,10 @@ export class TeamsService {
     this.assertRole(teamId, callerId, 'admin');
     const existing = this.repo.findMember(teamId, userId);
     if (!existing) throw new TeamMembershipDoesNotExistError();
-    // Owners can only be changed by another owner.
+    // Cannot change an owner's role unless the caller is also an owner.
     if (existing.role === 'owner') this.assertRole(teamId, callerId, 'owner');
+    // Cannot promote someone to a role above your own (only owners can grant owner).
+    if (role === 'owner') this.assertRole(teamId, callerId, 'owner');
     this.repo.setRole(teamId, userId, role);
     this.audit?.record({ entityType: 'team', entityId: teamId, userId: callerId, action: 'team.member_role_changed', payload: { memberId: userId, role } });
   }

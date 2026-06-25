@@ -191,7 +191,7 @@ describe('TasksGateway — D3: WS scoping', () => {
   it('closes with 4001 when JWT mode is on and token is invalid', () => {
     const jwtBad = {
       enabled: true,
-      verifyAccessToken: (_t: string) => { throw new TokenInvalidError(); },
+      verifyAccessToken: (_t: string): { sub: string; teamId?: string | null } => { throw new TokenInvalidError(); },
     };
     const { gateway } = makeGateway(jwtBad);
 
