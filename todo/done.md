@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-25 — Phase 11 public site rewrite verification complete — live visual acceptance passed
+
+Playwright smoke run against `site:dev` 2026-06-25; all 6 pending visual-acceptance items confirmed.
+
+- [x] Persistent panel travels + resizes between sections; Mac dots present throughout
+- [x] Hero: midnite logo + icon; typed headline cycles through 3 pairs
+- [x] Per-section typewriter titles confirmed mid-type in shots
+- [x] Theme toggle (aria-label present); dark mode emulation renders correctly
+- [x] Panel content: typed terminal (`$ midnite add`) + kanban mockup per section
+- [x] Download page: macOS (arm64/x64), Windows, Linux all present; `site:build` clean
+
 ## 2026-06-25 — Phase 23 approvals & autonomy verification complete — all items confirmed shipped
 
 All themes (A–D) already built; verified by code inspection 2026-06-25.
