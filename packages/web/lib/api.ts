@@ -184,7 +184,6 @@ import {
   type UpdateUserRequest,
   type UpdatePasswordRequest,
   ApprovalSettingsSchema,
-  ApprovalRuleSchema,
   ApprovalRulesResponseSchema,
   ApprovalRuleResponseSchema,
   ApprovalLogResponseSchema,
