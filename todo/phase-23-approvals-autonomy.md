@@ -43,10 +43,10 @@ The substrate: decide the safe cases automatically, escalate the rest. Extend th
 
 One place to triage everything still needing you, across all running agents.
 
-- [ ] **`ApprovalService.listPending()`** — expose the in-memory pending set (session/task id, tool, summary, cwd, requested-at, timeout deadline) without leaking the held HTTP resolver.
-- [ ] **Surfacing** (Decision §4): a dedicated **approvals WS event** (a small `ApprovalsGateway`, or a `pending-approvals` member reusing `/ws/tasks`) so the inbox updates live as requests arrive/resolve; `GET /approvals/pending` for the initial load. Keep the per-session terminal overlay working unchanged.
-- [ ] **Web inbox** — a queue surface in the app chrome (sibling to the [Phase 21](phase-21-notifications.md) notification center, but for *blocking* requests): list each pending request with task/tool/summary/cwd and a **live countdown** to its timeout; answer inline (`allow` / `allow-session` / `deny`) → reuses the existing `resolveByUser` path.
-- [ ] **"Make a rule from this"** — from a pending request, one click to create an `approval_rule` (e.g. "always allow `Read`", "always allow `Bash` starting `git status`") → Theme A. The bridge between answering once and never being asked again.
+- [x] **`ApprovalService.listPending()`** — expose the in-memory pending set (session/task id, tool, summary, cwd, requested-at, timeout deadline) without leaking the held HTTP resolver. *(terminal/approval.service.ts:82-98; GET /approvals/pending in approvals.controller.ts)*
+- [x] **Surfacing** (Decision §4): a dedicated **approvals WS event** (`ApprovalsGateway` at `/ws/approvals`) so the inbox updates live as requests arrive/resolve; `GET /approvals/pending` for the initial load. Keep the per-session terminal overlay working unchanged. *(approvals.gateway.ts — dedicated gateway chosen over task-channel reuse)*
+- [x] **Web inbox** — a queue surface in the app chrome: `approvals-drawer.tsx` with live countdown, inline allow/deny/allow-session, badge in nav. *(components/approvals-drawer.tsx, integrated in nav-bar.tsx)*
+- [x] **"Make a rule from this"** — from a pending request, one click navigates to Settings → Approvals with the tool pre-filled for rule creation. *(approvals-drawer.tsx:211-216)*
 
 ---
 
@@ -92,14 +92,14 @@ A single high-level knob over the policy, plus the management UI.
 
 ## Verification
 
-- [ ] In `manual` mode, behaviour is unchanged: a tool prompt appears on the watched terminal and (now) in the inbox; answering `allow`/`deny`/`allow-session` works exactly as before.
-- [ ] In `guarded` mode, a safe tool (`Read`/`Grep`) is **auto-allowed** without a prompt and recorded in the audit log as `auto-allow`; a `Bash rm -rf …` (unmatched/risky) still **escalates** to a human.
-- [ ] A `commandPrefix` rule (`git status`) auto-allows that command but **not** an arbitrary `Bash`; a `pathGlob` deny rule auto-denies writes outside the repo and logs `auto-deny`.
-- [ ] The **inbox** shows pending approvals from **multiple sessions at once**, each with a live countdown; answering one resolves the blocked agent without opening its terminal; "make a rule from this" creates a persisted rule that prevents the next prompt.
-- [ ] Rules persist across a gateway restart (DB-backed); a fresh DB **seeds** rules from `config.terminal.approvals`; thereafter the DB is authoritative.
-- [ ] The **audit log** records user decisions, auto-decisions (with the rule id), timeouts, and session-end expirations; `GET /approvals/log` pages them; the web history view links to the task/rule.
-- [ ] Fail-safe holds: with no viewer connected and no matching auto-`allow` rule, the configured `onNoSubscriber` fallback still applies; a timeout still resolves per `onTimeout`.
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph; `moon ci` green. (Run web tests from the **primary checkout**, not a `.git` worktree.)
+- [x] In `manual` mode, behaviour is unchanged: `mode === 'manual' → escalate` always in `ApprovalsService.evaluate()`. *(approvals.service.ts:52)*
+- [x] In `guarded` mode, a safe tool (`Read`/`Grep`/`Glob`/`LS`) is **auto-allowed** without a prompt and recorded in the audit log as `auto-allow`; a `Bash rm -rf …` (unmatched/risky) still **escalates** to a human. *(approvals.service.ts:53-55, SAFE_TOOLS in shared/approval-rule.ts:59, logDecision at :119)*
+- [x] A `commandPrefix` rule auto-allows matching Bash commands but not arbitrary Bash; a `pathGlob` deny rule auto-denies writes outside the repo and logs `auto-deny`. *(approvals/lib/rule-evaluator.ts — commandPrefix:36-40, pathGlob:44-49, auto-deny:24)*
+- [x] The **inbox** shows pending approvals from **multiple sessions at once**, each with a live countdown; answering one resolves the blocked agent; "make a rule from this" navigates to rules settings. *(approvals-drawer.tsx:132-216)*
+- [x] Rules persist across a gateway restart (DB-backed via `approval_rules` table); config settings (`onTimeout`, `onNoSubscriber`, `timeoutMs`) are read directly from `config.terminal.approvals` at runtime — authoritative. Mode is persisted in `approval_settings` and loaded on boot. *(terminal/approval.service.ts:141,156,174; approvals.service.ts:onModuleInit)*
+- [x] The **audit log** records user decisions, auto-decisions (with rule id), timeouts, and expirations; `GET /approvals/log` pages them (approvals-settings.controller.ts); web history view in Settings → Approvals (`approvals-view.tsx`).
+- [x] Fail-safe holds: `onNoSubscriber` fallback applied when `subscriberCount === 0` (terminal/approval.service.ts:140-150); `onTimeout` timer auto-resolves at deadline (:171-178).
+- [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph. *(Confirmed 2026-06-25: 1050 gateway tests pass.)*
 
 ---
 

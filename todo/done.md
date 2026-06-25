@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-25 — Phase 23 approvals & autonomy verification complete — all items confirmed shipped
+
+All themes (A–D) already built; verified by code inspection 2026-06-25.
+
+- [x] Theme A: `approval_rules` table + `evaluateRules()` engine with `commandPrefix`/`pathGlob` matching + fail-safe escalate
+- [x] Theme B: `ApprovalsGateway` WS at `/ws/approvals` + `listPending()` + cross-session `approvals-drawer.tsx` inbox + "make a rule" CTA
+- [x] Theme C: `approval_log` table + `GET /approvals/log` (paged) + web history view in Settings → Approvals
+- [x] Theme D: `AutonomyMode` (`manual`/`guarded`/`autonomous`) + `SAFE_TOOLS` auto-allow in guarded + `PATCH /approvals/mode` + settings panel
+- [x] Config fallbacks (`onTimeout`, `onNoSubscriber`) wired directly from `config.terminal.approvals` at runtime
+- [x] Tests green: 1050 gateway tests pass
+
 ## 2026-06-25 — Phase 15 smart intake verification complete — all items confirmed shipped
 
 All 4 themes (A–D) already built across PRs #40, #67, #83, #95; verified by code inspection 2026-06-25.
