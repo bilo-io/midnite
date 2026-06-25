@@ -57,7 +57,7 @@ The payoff. Each is **one `NodeTypeDefinition` + one executor**, consuming Phase
 
 - [x] **`slack.message`** — post a message to a channel via a `slack` credential. **S**
 - [x] **`email.send`** — SMTP first (simplest, broadest), Gmail OAuth as a follow-on once B2 lands. **S/M**
-- [ ] **`google.sheetsAppend`** — append a row to a sheet via a `google-oauth` credential. **M** *(deferred to Theme B2 OAuth follow-on)*
+- ⏳ deferred — **`google.sheetsAppend`** (deferred to Theme B2 OAuth follow-on)
 - [x] Each executor: structured output; `integration-nodes.spec.ts` covers both with mocked fetch/nodemailer.
 
 > Keep this list tight for the first pass — three integrations prove the pattern. Mastodon/Discord/webhook-out/etc. are trivial additions later once A+B+C exist.
@@ -86,11 +86,11 @@ Quality-of-life on the canvas; independent of A–D.
 
 ## Done criteria
 
-- [ ] Build `webhook → ai.claude → slack.message` where the Slack text is `{{$node["Claude"].json.text}}`, fire the webhook, and see the AI's answer posted to Slack — proving Phase 12 templating + Theme B credentials + a Theme C integration end-to-end.
-- [ ] A running workflow updates the web run panel **live** from the WS event stream with no REST re-fetch per event; killing the socket falls back to polling.
-- [ ] A credential's secret material is never returned over the API; with `MIDNITE_SECRET_KEY` unset, credential writes are rejected and integration nodes are disabled (fail-closed).
-- [ ] `midnite workflow run <id> --watch` streams per-node status to the terminal.
-- [ ] Invalid `{{expr}}` references fail the node run with a clear message; `:typecheck` / `:lint` / `:test` green across the graph.
+- [x] Build `webhook → ai.claude → slack.message` where the Slack text is `{{$node["Claude"].json.text}}`, fire the webhook, and see the AI's answer posted to Slack — proving Phase 12 templating + Theme B credentials + a Theme C integration end-to-end.
+- [x] A running workflow updates the web run panel **live** from the WS event stream with no REST re-fetch per event; killing the socket falls back to polling.
+- [x] A credential's secret material is never returned over the API; with `MIDNITE_SECRET_KEY` unset, credential writes are rejected and integration nodes are disabled (fail-closed).
+- [x] `midnite workflow run <id> --watch` streams per-node status to the terminal.
+- [x] Invalid `{{expr}}` references fail the node run with a clear message; `:typecheck` / `:lint` / `:test` green across the graph.
 
 ---
 

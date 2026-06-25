@@ -14,6 +14,7 @@ vi.mock('./api', () => ({
   runWorkflow: (...args: unknown[]) => runWorkflow(...args),
   getWorkflowRun: (...args: unknown[]) => getWorkflowRun(...args),
   gatewayWsUrl: () => 'ws://localhost:9999',
+  getAccessToken: () => null,
 }));
 
 // A controllable WebSocket stub: the hook constructs one, we drive its lifecycle.

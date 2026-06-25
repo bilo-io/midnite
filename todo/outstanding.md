@@ -15,7 +15,7 @@ This list was unchecked by design at authoring (2026-06-19); tick items as they 
 | 5 | ✅ Repo guessing in inference — PR #88 | 4 | S | #4 |
 | 6 | ✅ Inline answers for questions — PR #55 | 4 | M | — |
 | 7 | ✅ Knowledge-dir watcher (chokidar) + MD injection — Phase 15 D | 4 | M | — |
-| 8 | Per-repo concurrency caps | 5 | M | #4 |
+| 8 | ✅ Per-repo concurrency caps — `config.agent.maxPerRepo` + scheduler `repoHasCapacity` | 5 | M | #4 |
 | 9 | Per-repo branch naming + PR templates ✅ | 5 | S | #4 |
 | 10 | ✅ `Spawner` interface + tmux (warp/iterm dropped) — Phase 17 A–D | 5 | L | — |
 | 11 | Serve Next.js prod build from gateway (optional) | 3 | S | — |
@@ -102,7 +102,7 @@ This list was unchecked by design at authoring (2026-06-19); tick items as they 
 
 ## 8. Per-repo concurrency caps (Phase 5)
 
-- [ ] **Not started**
+- ✅ **DONE.** `config.agent.maxPerRepo` (zod schema, default 0 = unlimited) + `repoHasCapacity()` in `AgentPoolScheduler.tick()` — filters out a task whose repo is already at the cap before assigning a slot. Shipped alongside `perUserMaxSlots` in Phase 33.
 
 **Goal:** don't run N agents against the same repo at once.
 

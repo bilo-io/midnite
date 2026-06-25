@@ -184,16 +184,24 @@ import {
   type UpdateUserRequest,
   type UpdatePasswordRequest,
   ApprovalSettingsSchema,
-  ApprovalRuleSchema,
   ApprovalRulesResponseSchema,
   ApprovalRuleResponseSchema,
+  PendingApprovalsResponseSchema,
   ApprovalLogResponseSchema,
   type ApprovalSettings,
   type ApprovalRule,
-  type ApprovalLogResponse,
   type CreateApprovalRule,
   type UpdateApprovalRule,
   type OAuthProvider,
+  CreateServiceTokenResponseSchema,
+  ListServiceTokensResponseSchema,
+  type CreateServiceTokenRequest,
+  type CreateServiceTokenResponse,
+  type ListServiceTokensResponse,
+  type PendingApprovalsResponse,
+  type ApprovalLogResponse,
+  type ModeResponse,
+  type AutonomyMode,
 } from '@midnite/shared';
 import { z } from 'zod';
 
@@ -1604,18 +1612,32 @@ export async function updateMyPassword(req: UpdatePasswordRequest): Promise<void
   await fetchJson('/auth/me/password', { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(req) });
 }
 
-// ---- Approvals settings ----
+// ---- Approvals (Phase 23) ----
 
 export async function getApprovalSettings(): Promise<ApprovalSettings> {
   return fetchJson('/approvals/settings', undefined, ApprovalSettingsSchema);
 }
 
-export async function setApprovalMode(mode: ApprovalSettings['mode']): Promise<ApprovalSettings> {
+export async function getAutonomyMode(): Promise<ModeResponse> {
+  const res = await getApprovalSettings();
+  return { mode: res.mode };
+}
+
+export async function setApprovalMode(mode: AutonomyMode): Promise<ApprovalSettings> {
   return fetchJson(
     '/approvals/mode',
     { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ mode }) },
     ApprovalSettingsSchema,
   );
+}
+
+export async function setAutonomyMode(mode: AutonomyMode): Promise<ModeResponse> {
+  const res = await fetchJson(
+    '/approvals/mode',
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ mode }) },
+    ApprovalSettingsSchema,
+  );
+  return { mode: res.mode };
 }
 
 export async function listApprovalRules(): Promise<ApprovalRule[]> {
@@ -1645,6 +1667,10 @@ export async function deleteApprovalRule(id: string): Promise<void> {
   await fetchJson(`/approvals/rules/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
 
+export async function listPendingApprovals(): Promise<PendingApprovalsResponse> {
+  return fetchJson('/approvals/pending', undefined, PendingApprovalsResponseSchema);
+}
+
 export async function listApprovalLog(params?: {
   page?: number;
   limit?: number;
@@ -1660,4 +1686,24 @@ export async function listApprovalLog(params?: {
   if (params?.taskId) qs.set('taskId', params.taskId);
   const query = qs.toString();
   return fetchJson(`/approvals/log${query ? `?${query}` : ''}`, undefined, ApprovalLogResponseSchema);
+}
+
+// ── Service tokens (Phase 38 Theme B) ───────────────────────────────────────
+
+export async function listServiceTokens(): Promise<ListServiceTokensResponse> {
+  return fetchJson('/service-tokens', undefined, ListServiceTokensResponseSchema);
+}
+
+export async function createServiceToken(
+  req: CreateServiceTokenRequest,
+): Promise<CreateServiceTokenResponse> {
+  return fetchJson(
+    '/service-tokens',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(req) },
+    CreateServiceTokenResponseSchema,
+  );
+}
+
+export async function revokeServiceToken(id: string): Promise<void> {
+  await fetchJson(`/service-tokens/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }

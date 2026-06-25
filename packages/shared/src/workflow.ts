@@ -39,6 +39,7 @@ export const WorkflowSummarySchema = z.object({
   installedFromTemplateId: z.string().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
+  teamId: z.string().optional(),
 });
 
 export const CreateWorkflowRequestSchema = z.object({

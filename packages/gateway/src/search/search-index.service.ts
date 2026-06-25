@@ -40,7 +40,7 @@ export class SearchIndexService {
     this.db.transaction((tx) => {
       tx.run(sql`DELETE FROM search_index WHERE type = ${doc.type} AND entity_id = ${doc.entityId}`);
       tx.run(
-        sql`INSERT INTO search_index (type, entity_id, title, body) VALUES (${doc.type}, ${doc.entityId}, ${doc.title}, ${doc.body})`,
+        sql`INSERT INTO search_index (type, entity_id, team_id, title, body) VALUES (${doc.type}, ${doc.entityId}, ${doc.teamId}, ${doc.title}, ${doc.body})`,
       );
     });
   }
@@ -54,7 +54,7 @@ export class SearchIndexService {
           sql`DELETE FROM search_index WHERE type = ${doc.type} AND entity_id = ${doc.entityId}`,
         );
         tx.run(
-          sql`INSERT INTO search_index (type, entity_id, title, body) VALUES (${doc.type}, ${doc.entityId}, ${doc.title}, ${doc.body})`,
+          sql`INSERT INTO search_index (type, entity_id, team_id, title, body) VALUES (${doc.type}, ${doc.entityId}, ${doc.teamId}, ${doc.title}, ${doc.body})`,
         );
       }
     });
@@ -78,9 +78,21 @@ export class SearchIndexService {
    * Run a ranked match. `match` must already be a valid FTS5 expression (see
    * {@link toFtsMatchQuery}). Returns the top `limit` hits ordered by bm25 plus
    * the full match counts per type (across all matches, not just the page).
+   *
+   * `teamId` scopes results: rows with `team_id = teamId` OR `team_id IS NULL`
+   * (personal/legacy entities visible to all). Pass `undefined` to return
+   * everything (legacy unauthenticated path).
    */
-  query(match: string, opts: { type?: SearchType; limit: number }): IndexQueryResult {
+  query(match: string, opts: { type?: SearchType; limit: number; teamId?: string | null }): IndexQueryResult {
     const typeClause = opts.type ? sql` AND type = ${opts.type}` : sql``;
+    // When teamId is explicitly provided (including null for personal-only),
+    // filter to that team + unscoped rows. Legacy/unauthenticated: no filter.
+    const teamClause =
+      opts.teamId !== undefined
+        ? opts.teamId
+          ? sql` AND (team_id IS NULL OR team_id = ${opts.teamId})`
+          : sql` AND team_id IS NULL`
+        : sql``;
     const hits = this.db.all<IndexHit>(sql`
       SELECT type AS type,
              entity_id AS entityId,
@@ -88,14 +100,14 @@ export class SearchIndexService {
              snippet(search_index, -1, '<mark>', '</mark>', '…', 12) AS snippet,
              -bm25(search_index, ${BM25_WEIGHTS}) AS score
       FROM search_index
-      WHERE search_index MATCH ${match}${typeClause}
+      WHERE search_index MATCH ${match}${typeClause}${teamClause}
       ORDER BY bm25(search_index, ${BM25_WEIGHTS})
       LIMIT ${opts.limit}
     `);
     const counts = this.db.all<{ type: SearchType; n: number }>(sql`
       SELECT type AS type, COUNT(*) AS n
       FROM search_index
-      WHERE search_index MATCH ${match}${typeClause}
+      WHERE search_index MATCH ${match}${typeClause}${teamClause}
       GROUP BY type
     `);
     const byType: Partial<Record<SearchType, number>> = {};

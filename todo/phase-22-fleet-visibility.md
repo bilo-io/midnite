@@ -45,7 +45,7 @@ A dedicated operational view — not more scattered dashboard tiles. **Compose**
 - [x] ✅ (PR #142) A new **`/ops`** route under [`app/(main)/`](../packages/web/app/(main)/) (own route, not a dashboard tab — Decision §4): **live** queue depth + slot utilization (gauges + `GET /pool`), **throughput over time**, **run-duration distribution**, **retry/abandon rates**, and the **LLM-spend trend** (reuse `GET /usage/summary`).
 - [x] ✅ (PR #142) Charts read from `getOpsMetrics()` + `usePolling`; empty/no-data and loading states; theme-aware. A nav entry for `/ops` (`ActivitySquare`, default on).
 - [x] ✅ (PR #142) `getPoolSnapshot()` (`GET /pool`) + `getOpsMetrics()` (`GET /metrics/ops`) typed clients added to [`lib/api.ts`](../packages/web/lib/api.ts); 14 component tests.
-- [ ] **Stretch (defer if the slice tightens):** a compact **run-timeline** — a Gantt-style strip of agent runs over time (from `agent_run_stats`) showing parallelism, durations, and outcomes. *(The full timeline is the "ops-weighted" path we didn't pick — keep it a single stretch bullet, not a theme.)*
+- ⏳ deferred — compact **run-timeline** Gantt strip (the "ops-weighted" path; deferred at decision time).
 
 ---
 
@@ -88,13 +88,13 @@ Make the delivery status visible where the work lives.
 
 ## Verification
 
-- [ ] `moon run gateway:dev` + `moon run web:dev`, open **`/ops`**: queue depth + slot utilization update live; throughput, run-duration distribution, and retry/abandon rates render from server-recorded stats; the LLM-spend trend matches `GET /usage/summary`. (Existing dashboard widgets are unchanged.)
-- [ ] Run a task to completion (and one that abandons after retries) → an `agent_run_stats` row records start/end/duration/outcome/retryCount; the ops charts reflect both runs.
-- [ ] A task whose agent opened a PR shows a **status chip** on its card (draft/open/merged + checks colour); the thread's delivery panel lists checks + review decision; **refresh** re-fetches.
-- [ ] With `gh` authed, a **private**-repo PR resolves; without `gh`, a **public** PR resolves via REST; a network failure leaves the last-known status and never breaks the board.
-- [ ] A merged/closed PR stops being polled; the poller only touches tasks with an unmerged PR; the on-demand `POST /tasks/:id/pr/refresh` works.
-- [ ] The Shipped widget shows live PR/CI status, not just a link.
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph; `moon ci` green. (Run web tests from the **primary checkout**, not a `.git` worktree.)
+- [x] `moon run gateway:dev` + `moon run web:dev`, open **`/ops`**: queue depth + slot utilization update live; throughput, run-duration distribution, and retry/abandon rates render from server-recorded stats; the LLM-spend trend matches `GET /usage/summary`. (Existing dashboard widgets are unchanged.)
+- [x] Run a task to completion (and one that abandons after retries) → an `agent_run_stats` row records start/end/duration/outcome/retryCount; the ops charts reflect both runs.
+- [x] A task whose agent opened a PR shows a **status chip** on its card (draft/open/merged + checks colour); the thread's delivery panel lists checks + review decision; **refresh** re-fetches.
+- [x] With `gh` authed, a **private**-repo PR resolves; without `gh`, a **public** PR resolves via REST; a network failure leaves the last-known status and never breaks the board.
+- [x] A merged/closed PR stops being polled; the poller only touches tasks with an unmerged PR; the on-demand `POST /tasks/:id/pr/refresh` works.
+- [x] The Shipped widget shows live PR/CI status, not just a link.
+- [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph; `moon ci` green. (Run web tests from the **primary checkout**, not a `.git` worktree.)
 
 ---
 

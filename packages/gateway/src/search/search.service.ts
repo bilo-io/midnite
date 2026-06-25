@@ -77,7 +77,7 @@ export class SearchService implements OnApplicationBootstrap, OnModuleDestroy {
     this.unsubscribeTasks?.();
   }
 
-  search(query: SearchQuery): SearchResponse {
+  search(query: SearchQuery, scope?: { teamId: string | null }): SearchResponse {
     const q = query.q.trim();
     if (q.length < MIN_SEARCH_QUERY_LENGTH) return EMPTY_SEARCH_RESPONSE;
     const match = toFtsMatchQuery(q);
@@ -86,6 +86,7 @@ export class SearchService implements OnApplicationBootstrap, OnModuleDestroy {
     const { hits, total, byType } = this.index.query(match, {
       type: query.type,
       limit: query.limit ?? DEFAULT_SEARCH_LIMIT,
+      teamId: scope?.teamId,
     });
     return {
       results: hits.map((h) => ({

@@ -15,40 +15,54 @@ import {
   UpdateApprovalRuleSchema,
   type ApprovalRuleResponse,
   type ApprovalRulesResponse,
+  type PendingApprovalsResponse,
 } from '@midnite/shared';
+import { ApprovalService } from '../terminal/approval.service';
 import { ApprovalsService } from './approvals.service';
 
-@Controller('approvals/rules')
+@Controller('approvals')
 export class ApprovalsController {
-  constructor(@Inject(ApprovalsService) private readonly service: ApprovalsService) {}
+  constructor(
+    @Inject(ApprovalsService) private readonly service: ApprovalsService,
+    @Inject(ApprovalService) private readonly approvalService: ApprovalService,
+  ) {}
 
-  @Get()
-  list(): ApprovalRulesResponse {
+  // ---- pending (Theme B) ----
+
+  @Get('pending')
+  listPending(): PendingApprovalsResponse {
+    return { pending: this.approvalService.listPending() };
+  }
+
+  // ---- rules (Theme A) ----
+
+  @Get('rules')
+  listRules(): ApprovalRulesResponse {
     return { rules: this.service.list() };
   }
 
-  @Get(':id')
-  get(@Param('id') id: string): ApprovalRuleResponse {
+  @Get('rules/:id')
+  getRule(@Param('id') id: string): ApprovalRuleResponse {
     return { rule: this.service.get(id) };
   }
 
-  @Post()
-  create(@Body() body: unknown): ApprovalRuleResponse {
+  @Post('rules')
+  createRule(@Body() body: unknown): ApprovalRuleResponse {
     const parsed = CreateApprovalRuleSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
     return { rule: this.service.create(parsed.data) };
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() body: unknown): ApprovalRuleResponse {
+  @Patch('rules/:id')
+  updateRule(@Param('id') id: string, @Body() body: unknown): ApprovalRuleResponse {
     const parsed = UpdateApprovalRuleSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
     return { rule: this.service.update(id, parsed.data) };
   }
 
-  @Delete(':id')
+  @Delete('rules/:id')
   @HttpCode(204)
-  remove(@Param('id') id: string): void {
+  removeRule(@Param('id') id: string): void {
     this.service.remove(id);
   }
 }

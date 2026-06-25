@@ -11,6 +11,7 @@ import type { TasksService } from '../tasks/tasks.service';
 import type { ProjectsService } from '../projects/projects.service';
 import type { ReposService } from '../repos/repos.service';
 import type { AgentsService } from '../agents/agents.service';
+import type { ConnectionRegistry } from '../ws/connection-registry';
 import { TerminalGateway } from './terminal.gateway';
 import { TerminalService } from './terminal.service';
 import type { ApprovalService } from './approval.service';
@@ -41,6 +42,8 @@ const noApprovals = {
   clearSession: () => {},
 } as unknown as ApprovalService;
 
+const noRegistry = { register: () => {}, deregister: () => {} } as unknown as ConnectionRegistry;
+
 describe('TerminalGateway (real WS transport)', () => {
   let service: TerminalService;
   let httpServer: Server;
@@ -49,7 +52,7 @@ describe('TerminalGateway (real WS transport)', () => {
 
   beforeAll(async () => {
     service = new TerminalService(config, noTasks, noProjects, noRepos, noAgents, noApprovals);
-    const gateway = new TerminalGateway(service, noApprovals, config);
+    const gateway = new TerminalGateway(service, noApprovals, config, noRegistry);
     httpServer = createServer();
     wss = new WebSocketServer({ server: httpServer, path: TERMINAL_WS_PATH });
     wss.on('connection', (socket, request) => {

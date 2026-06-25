@@ -16,6 +16,7 @@ describe('index mappers', () => {
     expect(taskToIndexDoc(task)).toEqual({
       type: 'task',
       entityId: 't1',
+      teamId: null,
       title: 'Fix login',
       body: 'OAuth broken',
     });
@@ -48,6 +49,7 @@ describe('index mappers', () => {
     expect(workflowToIndexDoc(workflow)).toEqual({
       type: 'workflow',
       entityId: 'w1',
+      teamId: null,
       title: 'Deploy',
       body: 'ship it',
     });

@@ -42,9 +42,9 @@
 
 ## Follow-ups (next phases)
 
-- [ ] P7 — Live run streaming over the first `WebSocketGateway` (emit `WorkflowEvent`s; swap polling for a WS subscription) → **moved to [Phase 14](phase-14-workflows-connect.md)**
+- [x] P7 — Live run streaming over the first `WebSocketGateway` (emit `WorkflowEvent`s; swap polling for a WS subscription) → **done in [Phase 14](phase-14-workflows-connect.md) Theme A (PR #72)**
 - [x] P8 — Logic nodes (`logic.branch` true/false ports, `logic.setData`/`logic.merge`) + `{{expr}}` templating — **closed by [Phase 12](phase-12-workflow-expressions.md)** (expression engine + reshape nodes; PRs #27/#33/#34)
-- [ ] P9 — Credential vault (AES-256-GCM, `encryptionKeyEnv`) + OAuth2 start/callback; HTTP node moves to credential references → **moved to [Phase 14](phase-14-workflows-connect.md)**
-- [ ] P10 — Integration executors: Slack, Google Docs/Sheets, Email (SMTP → Gmail OAuth) → **moved to [Phase 14](phase-14-workflows-connect.md)**
-- [ ] P11 — Polish: ✅ drag-from-palette · ✅ minimap/zoom · ✅ **autosave (PR #43)** · **remaining:** run-history replay, templates; CLI `workflow` commands → [Phase 14](phase-14-workflows-connect.md) (CLI parity)
+- [x] P9 — Credential vault (AES-256-GCM, `encryptionKeyEnv`) + HTTP node credential references → **done in [Phase 14](phase-14-workflows-connect.md) Theme B1 (PR #168)**; OAuth2 deferred to Phase 14 Theme B2
+- [x] P10 — Integration executors: Slack, Email (SMTP) → **done in [Phase 14](phase-14-workflows-connect.md) Theme C (PR #168)**; Google Sheets deferred to Phase 14 Theme B2 follow-on
+- [x] P11 — Polish: ✅ drag-from-palette · ✅ minimap/zoom · ✅ autosave (PR #43) · ✅ run-history replay (PR #170) · ✅ starter templates (PR #138) · ✅ CLI `workflow` commands — **done in [Phase 14](phase-14-workflows-connect.md) Themes D + E**
 - [x] Map the default `ai.claude` model alias to a model the deployment's credential can access — the node now defaults to the canonical **`sonnet4.6`** (in the adapter's supported list) instead of the retired `sonnet4.7`, which 404'd. The legacy `sonnet4.7`/`opus4.7` aliases stay resolving for old configs. (PR #46)

@@ -1,5 +1,5 @@
 import type { IncomingMessage } from 'node:http';
-import { Inject, Logger } from '@nestjs/common';
+import { Inject, Logger, Optional } from '@nestjs/common';
 import {
   type OnGatewayConnection,
   type OnGatewayDisconnect,
@@ -14,6 +14,8 @@ import {
 } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
 import { isAllowedOrigin } from '../lib/allowed-origin';
+import { JwtService, TokenInvalidError } from '../auth/jwt.service';
+import { ConnectionRegistry } from '../ws/connection-registry';
 import { ApprovalService } from './approval.service';
 import { TerminalService, type TerminalSubscriber } from './terminal.service';
 
@@ -38,6 +40,8 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
     @Inject(TerminalService) private readonly terminal: TerminalService,
     @Inject(ApprovalService) private readonly approvals: ApprovalService,
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
+    @Inject(ConnectionRegistry) private readonly registry: ConnectionRegistry,
+    @Optional() private readonly jwtSvc?: JwtService,
   ) {}
 
   handleConnection(client: WebSocket, request?: IncomingMessage): void {
@@ -55,6 +59,11 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
       return;
     }
 
+    const ctx = this.resolveUserContext(client, request);
+    if (ctx === null) return; // already closed with 4001
+
+    this.registry.register(client, ctx);
+
     const subscriber: TerminalSubscriber = {
       send: (message: ServerTerminalMessage) => {
         if (client.readyState === WebSocket.OPEN) client.send(JSON.stringify(message));
@@ -71,6 +80,27 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
     const state = this.conns.get(client);
     if (state?.sessionId) this.terminal.detach(state.sessionId, state.subscriber);
     this.conns.delete(client);
+    this.registry.deregister(client);
+  }
+
+  private resolveUserContext(
+    client: WebSocket,
+    request?: IncomingMessage,
+  ): { userId: string | null; teamId: string | null } | null {
+    const token = extractQueryToken(request?.url);
+    if (!token || !this.jwtSvc?.enabled) {
+      return { userId: null, teamId: null };
+    }
+    try {
+      const payload = this.jwtSvc.verifyAccessToken(token);
+      return { userId: payload.sub, teamId: payload.teamId ?? null };
+    } catch (err) {
+      if (err instanceof TokenInvalidError) {
+        try { client.close(4001, 'invalid or expired token'); } catch { /* closing */ }
+        return null;
+      }
+      throw err;
+    }
   }
 
   private onMessage(
@@ -133,6 +163,16 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
       // approval-response — a viewer answered a pending tool-approval prompt.
       this.approvals.resolveByUser(state.sessionId, message.requestId, message.decision);
     }
+  }
+}
+
+function extractQueryToken(url: string | undefined): string | null {
+  if (!url) return null;
+  try {
+    const params = new URL(url, 'ws://localhost').searchParams;
+    return params.get('token');
+  } catch {
+    return null;
   }
 }
 

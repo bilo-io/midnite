@@ -39,6 +39,7 @@ import { ApprovalsModule } from './approvals/approvals.module';
 import { AuditModule } from './audit/audit.module';
 import { TeamsModule } from './teams/teams.module';
 import { WsModule } from './ws/ws.module';
+import { ServiceTokensModule } from './service-tokens/service-tokens.module';
 
 @Module({
   imports: [
@@ -82,6 +83,7 @@ import { WsModule } from './ws/ws.module';
     WsModule,
     AuditModule,
     AdminModule,
+    ServiceTokensModule,
   ],
   controllers: [HealthController],
   providers: [],

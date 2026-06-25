@@ -84,13 +84,13 @@ A real installable app, not a stub manifest.
 
 ## Verification
 
-- [ ] At a phone width (e.g. 390px) the board, sessions, tasks, dashboard, the notification center, and the approvals inbox are **usable** — single-column, no horizontal overflow, legible, with a mobile nav (drawer/tabs).
-- [ ] On a touchscreen, a card can be moved between columns **two ways**: a press-and-hold drag (without hijacking scroll) **and** a tap-to-move affordance; a plain swipe scrolls the board.
-- [ ] The office and workflow editor show a clean **"best on desktop"** notice on a phone rather than a broken canvas.
+- [x] At a phone width (e.g. 390px) the board, sessions, tasks, dashboard, the notification center, and the approvals inbox are **usable** — single-column, no horizontal overflow, legible, with a mobile nav (drawer/tabs). *(Playwright shots at 390px: no overflow, bottom-tab bar present — PR #204.)*
+- [x] On a touchscreen, a card can be moved between columns **two ways**: a press-and-hold drag (without hijacking scroll) **and** a tap-to-move affordance; a plain swipe scrolls the board. *(dnd-kit `TouchSensor` 200ms delay + `TapToMoveMenu` — already `[x]` in B3; confirmed in code review — PR #204.)*
+- [x] The office and workflow editor show a clean **"best on desktop"** notice on a phone rather than a broken canvas. *(Playwright shot: `getByText('The office is best viewed on desktop')` / `'The workflow editor is best viewed on desktop'` both pass at 390px — PR #204.)*
 - [x] The app is **installable** (valid manifest with real name/icons/theme colour; "Add to home screen") and launches **standalone**; the shell loads fast via the service worker; the app still requires a live gateway connection (no false offline promise). *(Theme C — PR #101.)*
 - [x] `theme-color` + manifest colours **follow the theme** (not hardcoded white); the dark default reads intentionally installed. *(Theme C — PR #101.)*
-- [ ] Reaching the PWA from an actual phone over the user's LAN/tunnel works because the **gateway is not modified** — and the docs state plainly that exposing it beyond loopback is the separate Phase 7 A5 work.
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green; Storybook/RTL responsive states covered where practical. (Run web tests from the **primary checkout**, not a `.git` worktree.)
+- [x] Reaching the PWA from an actual phone over the user's LAN/tunnel works because the **gateway is not modified** — and the docs state plainly that exposing it beyond loopback is the separate Phase 7 A5 work. *(README line 59 confirmed: "the gateway stays loopback-only, so exposing it beyond 127.0.0.1 is the separate, deferred Phase 7 A5 work" — PR #204.)*
+- [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` green; Storybook/RTL responsive states covered where practical. *(Fixed 3 unused-import lint errors + 1 stale WS mock; 510 web + 1006 gateway tests all pass — PR #204.)*
 
 ---
 
