@@ -13,7 +13,7 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core';
 import { Play, Square } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Status, Task } from '@midnite/shared';
 import { AbandonedRow } from '@/components/abandoned-row';
@@ -25,11 +25,12 @@ import { useIsMobile } from '@/hooks/use-media-query';
 import { cn } from '@/lib/utils';
 
 /**
- * Kanban layout for the Tasks page: one column per visible status, scrolling
- * horizontally. Cards drag between columns; dropping into "In progress" from
- * todo/backlog (or hitting Start) spawns an agent session via `onMove`.
- * Presentational otherwise — filtering, the project lookup and the detail modal
- * are owned by TasksView.
+ * Kanban layout for the Tasks page: one column per visible status. On desktop,
+ * columns scroll horizontally; on mobile (< md), columns snap-scroll one at a
+ * time with a tab bar so you always see the active column clearly.
+ *
+ * Cards drag between columns via dnd-kit; on touch, a tap-to-move fallback menu
+ * supersedes the finicky hold-drag (Phase 24 Theme B).
  */
 export function BoardView({
   tasks,
@@ -80,70 +81,129 @@ export function BoardView({
     }
   };
 
+  // Mobile snap-scroll: track which column is currently visible via scrollLeft.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [activeColIdx, setActiveColIdx] = useState(0);
+
+  function handleScroll() {
+    const el = scrollRef.current;
+    if (!el || el.clientWidth === 0) return;
+    setActiveColIdx(Math.round(el.scrollLeft / el.clientWidth));
+  }
+
+  function scrollToColumn(idx: number) {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ left: idx * el.clientWidth, behavior: 'smooth' });
+  }
+
   return (
-    <DndContext
-      sensors={sensors}
-      onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
-      onDragCancel={() => setActiveId(null)}
-    >
-      <div className="flex min-h-0 flex-1 gap-3 overflow-x-auto pb-1">
-        {columns.map((col) => (
-          <Column
-            key={col.status}
-            status={col.status}
-            label={col.label}
-            hueVar={col.hueVar}
-            count={(grouped.get(col.status) ?? []).length}
-          >
-            {(grouped.get(col.status) ?? []).map((t) => (
-              <DraggableCard
-                key={t.id}
-                task={t}
-                project={t.projectId ? projectsById.get(t.projectId) : undefined}
-                onSelect={() => onSelect(t)}
-                onStart={onMove ? () => onMove(t.id, 'wip') : undefined}
-                onStop={onMove ? () => onMove(t.id, 'todo') : undefined}
-                selected={isSelected?.(t.id) ?? false}
-                onToggleSelect={onToggleSelect ? (sk) => onToggleSelect(t.id, sk) : undefined}
-                blockedBy={blockedCounts?.get(t.id)}
-                // On a phone, drag is finicky — offer the tap-to-move fallback.
-                moveColumns={isMobile && onMove ? columns : undefined}
-                onMoveTo={onMove ? (target) => onMove(t.id, target) : undefined}
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/* Mobile column tab bar — hidden on md+ */}
+      <div className="flex border-b border-border/60 md:hidden">
+        {columns.map((col, idx) => {
+          const count = (grouped.get(col.status) ?? []).length;
+          const active = activeColIdx === idx;
+          return (
+            <button
+              key={col.status}
+              type="button"
+              onClick={() => scrollToColumn(idx)}
+              className={cn(
+                'flex flex-1 items-center justify-center gap-1.5 border-b-2 py-2.5 text-xs font-medium transition-colors',
+                active ? 'text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground',
+              )}
+              style={
+                active
+                  ? { borderColor: `hsl(var(${col.hueVar}))`, color: `hsl(var(${col.hueVar}))` }
+                  : undefined
+              }
+            >
+              <span
+                aria-hidden
+                className="h-1.5 w-1.5 rounded-full"
+                style={{ background: `hsl(var(${col.hueVar}))` }}
               />
-            ))}
-          </Column>
-        ))}
+              {col.label}
+              <span className="rounded-full bg-muted/70 px-1.5 py-px tabular-nums">{count}</span>
+            </button>
+          );
+        })}
       </div>
 
-      {showAbandoned && (
-        <AbandonedRow
-          tasks={grouped.get('abandoned') ?? []}
-          onSelect={onSelect}
-          projectsById={projectsById}
-          blockedCounts={blockedCounts}
-        />
-      )}
-
-      {mounted &&
-        createPortal(
-          <DragOverlay dropAnimation={null}>
-            {activeTask ? (
-              <div className="rotate-2 cursor-grabbing opacity-90 shadow-2xl">
-                <TaskCard
-                  task={activeTask}
-                  project={
-                    activeTask.projectId ? projectsById.get(activeTask.projectId) : undefined
-                  }
-                  onSelect={() => {}}
-                  blockedBy={blockedCounts?.get(activeTask.id)}
+      <DndContext
+        sensors={sensors}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        onDragCancel={() => setActiveId(null)}
+      >
+        {/*
+         * Desktop: flex row with gap + horizontal scroll (unchanged behaviour).
+         * Mobile: snap-scroll — each column fills the viewport width; swipe left/right
+         * to page between columns. No gap between columns on mobile (inner padding used).
+         */}
+        <div
+          ref={scrollRef}
+          onScroll={isMobile ? handleScroll : undefined}
+          className="flex min-h-0 flex-1 gap-3 overflow-x-auto pb-1 max-md:snap-x max-md:snap-mandatory max-md:scroll-smooth max-md:gap-0"
+        >
+          {columns.map((col) => (
+            <Column
+              key={col.status}
+              status={col.status}
+              label={col.label}
+              hueVar={col.hueVar}
+              count={(grouped.get(col.status) ?? []).length}
+            >
+              {(grouped.get(col.status) ?? []).map((t) => (
+                <DraggableCard
+                  key={t.id}
+                  task={t}
+                  project={t.projectId ? projectsById.get(t.projectId) : undefined}
+                  onSelect={() => onSelect(t)}
+                  onStart={onMove ? () => onMove(t.id, 'wip') : undefined}
+                  onStop={onMove ? () => onMove(t.id, 'todo') : undefined}
+                  selected={isSelected?.(t.id) ?? false}
+                  onToggleSelect={onToggleSelect ? (sk) => onToggleSelect(t.id, sk) : undefined}
+                  blockedBy={blockedCounts?.get(t.id)}
+                  // On a phone, drag is finicky — offer the tap-to-move fallback.
+                  moveColumns={isMobile && onMove ? columns : undefined}
+                  onMoveTo={onMove ? (target) => onMove(t.id, target) : undefined}
                 />
-              </div>
-            ) : null}
-          </DragOverlay>,
-          document.body,
+              ))}
+            </Column>
+          ))}
+        </div>
+
+        {showAbandoned && (
+          <AbandonedRow
+            tasks={grouped.get('abandoned') ?? []}
+            onSelect={onSelect}
+            projectsById={projectsById}
+            blockedCounts={blockedCounts}
+          />
         )}
-    </DndContext>
+
+        {mounted &&
+          createPortal(
+            <DragOverlay dropAnimation={null}>
+              {activeTask ? (
+                <div className="rotate-2 cursor-grabbing opacity-90 shadow-2xl">
+                  <TaskCard
+                    task={activeTask}
+                    project={
+                      activeTask.projectId ? projectsById.get(activeTask.projectId) : undefined
+                    }
+                    onSelect={() => {}}
+                    blockedBy={blockedCounts?.get(activeTask.id)}
+                  />
+                </div>
+              ) : null}
+            </DragOverlay>,
+            document.body,
+          )}
+      </DndContext>
+    </div>
   );
 }
 
@@ -165,7 +225,11 @@ function Column({
     <section
       ref={setNodeRef}
       className={cn(
+        // Desktop: flexible columns that grow to fill available space.
         'relative flex h-full min-w-[240px] flex-1 flex-col overflow-hidden rounded-lg border bg-card/60 p-3 backdrop-blur-sm transition-colors',
+        // Mobile: each column is exactly the viewport width (fills the snap container).
+        // No side borders on mobile — the tab bar above provides the column affordance.
+        'max-md:w-full max-md:min-w-0 max-md:shrink-0 max-md:snap-start max-md:rounded-none max-md:border-x-0',
         isOver && 'border-foreground/30 bg-card/90 ring-1 ring-foreground/20',
       )}
       style={{ ['--col-hue' as string]: `var(${hueVar})` }}

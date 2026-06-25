@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { Check, ClipboardCopy, Trash2, UserMinus } from 'lucide-react';
 import type { TeamInvite, TeamRole, TeamWithMembers } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   createInvite,
   deleteTeam,
@@ -16,7 +15,6 @@ import {
   setMemberRole,
 } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
-import { gatewayUrl } from '@/lib/api';
 
 function errMsg(e: unknown): string {
   return e instanceof Error ? e.message : 'Something went wrong';
@@ -123,7 +121,7 @@ export function TeamDetailView({ teamId }: { teamId: string }) {
   };
 
   const inviteUrl = (token: string) =>
-    `${typeof window !== 'undefined' ? window.location.origin : ''}/invite/${token}`;
+    `${typeof window !== 'undefined' ? window.location.origin : ''}/invite?token=${encodeURIComponent(token)}`;
 
   if (loading) return <p className="text-sm text-muted-foreground">Loading…</p>;
   if (error) return <p className="text-sm text-destructive">{error}</p>;

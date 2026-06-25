@@ -46,6 +46,8 @@ export * from './report.js';
 export * from './usage.js';
 export * from './backup.js';
 export * from './approval-rule.js';
+export * from './approval-inbox.js';
 export * from './user.js';
 export * from './team.js';
 export * from './audit.js';
+export * from './service-token.js';

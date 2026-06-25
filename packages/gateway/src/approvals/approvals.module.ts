@@ -1,12 +1,22 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
+import { TerminalModule } from '../terminal/terminal.module';
+import { ApprovalLogRepository } from './approval-log.repository';
 import { ApprovalsController } from './approvals.controller';
 import { ApprovalsSettingsController } from './approvals-settings.controller';
+import { ApprovalsGateway } from './approvals.gateway';
 import { ApprovalsRepository } from './approvals.repository';
 import { ApprovalsService } from './approvals.service';
 
+/** Phase 23: durable tool-approval rules, live inbox, audit log, and autonomy mode.
+ *
+ * forwardRef resolves the TerminalModule ↔ ApprovalsModule cycle:
+ * TerminalModule imports ApprovalsModule (for ApprovalsService in ApprovalService);
+ * ApprovalsModule imports TerminalModule (for ApprovalService/ApprovalEventBus in
+ * ApprovalsController and ApprovalsGateway). */
 @Module({
+  imports: [forwardRef(() => TerminalModule)],
   controllers: [ApprovalsController, ApprovalsSettingsController],
-  providers: [ApprovalsService, ApprovalsRepository],
-  exports: [ApprovalsService, ApprovalsRepository],
+  providers: [ApprovalsService, ApprovalsRepository, ApprovalLogRepository, ApprovalsGateway],
+  exports: [ApprovalsService, ApprovalsRepository, ApprovalLogRepository],
 })
 export class ApprovalsModule {}

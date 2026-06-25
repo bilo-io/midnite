@@ -26,9 +26,9 @@ Replace the static env-var bearer token with proper user identities and JWT sess
 - [x] Config additions to `GatewayAuthConfigSchema` in [`packages/shared/src/config.ts`](../packages/shared/src/config.ts): `jwt.secret` (env `MIDNITE_JWT_SECRET`, required when using JWT mode), `jwt.accessTtlSeconds` (default 900), `jwt.refreshTtlDays` (default 7).
 - [x] `refresh_tokens` table in [`db/schema.ts`](../packages/gateway/src/db/schema.ts) — forward-only migration.
 
-### A4. Upgrade the auth guard to validate JWT — **S–M** ✅ DONE (WS deferred)
+### A4. Upgrade the auth guard to validate JWT — **S–M** ✅ DONE
 - [x] [`gateway-auth.guard.ts`](../packages/gateway/src/auth/gateway-auth.guard.ts) currently validates a static bearer token from env (`MIDNITE_AUTH_TOKEN`) via [`lib/auth-policy.ts`](../packages/gateway/src/auth/lib/auth-policy.ts). Upgrade: if `jwt.secret` is configured, validate the `Authorization: Bearer <jwt>` header as a JWT and attach the decoded `userId` to the request. The static bearer path remains as a fallback (dev/script use) so existing single-user setups continue to work without migration. Add a `@CurrentUser()` decorator that reads `req.user` for controllers to consume.
-- [ ] WS connections: pass the JWT as a query param on the upgrade URL (`?token=<jwt>`) — the WS gateway validates it at connection time; per-session one-time tokens (`/hooks/:taskId/:event`) remain unaffected.
+- [x] WS connections: pass the JWT as a query param on the upgrade URL (`?token=<jwt>`) — the WS gateway validates it at connection time (`tasks.gateway.ts`, `workflows.gateway.ts`, `notifications.gateway.ts`, `terminal.gateway.ts`); per-session one-time tokens (`/hooks/:taskId/:event`) remain unaffected. Web hooks (`use-task-events`, `notifications-provider`, `use-workflow-run`, `use-terminal-socket`) append `?token=` when a JWT is present.
 
 ### A5. Web login + register pages — **M** ✅ DONE
 - [x] `app/(auth)/login/page.tsx` — email + password form; on success stores the access token in memory (React context) and the refresh token in an **httpOnly cookie** (`__midnite_rt`); redirects to `/`.
@@ -157,15 +157,15 @@ The settings surface for identity and team management.
 
 ## Verification
 
-- [ ] `POST /auth/register` creates a user; `POST /auth/login` returns a short-lived JWT + refresh token; a subsequent request with the JWT reaches a guarded endpoint; after `POST /auth/logout` the refresh token is rejected.
-- [ ] The static bearer token (`MIDNITE_AUTH_TOKEN`) still works on a single-user setup with no JWT configured — no regression for existing local users.
-- [ ] `midnite login` stores the JWT; `midnite whoami` prints the user; `midnite logout` clears it. Existing CLI commands (`midnite add`, `midnite list`) pass the stored JWT automatically.
-- [ ] Create a team, invite a second user via the shareable link, accept the invite — second user appears in the member list with the assigned role; owner can remove them or change their role.
-- [ ] A new task created while authenticated has `createdBy` set to the creating user's id; the field is returned in `GET /tasks`. Tasks created before Phase 33 (null `created_by`) are unaffected and still list/run normally.
-- [ ] With `pool.perUserMaxSlots = 1`, a second concurrent task for the same user does **not** start until the first finishes — it waits and starts automatically on the next tick. Other users are unaffected.
-- [ ] Key actions appear in `GET /audit` with the correct `userId`, `action`, and `entityId`: task created, task status changed, user login, team member added.
-- [ ] The web login page redirects to `/` on success and back to `/login` on bad credentials. The team settings page shows the invite link; accepting it via a second browser session adds the user.
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph; `moon ci` green.
+- [x] `POST /auth/register` creates a user; `POST /auth/login` returns a short-lived JWT + refresh token; a subsequent request with the JWT reaches a guarded endpoint; after `POST /auth/logout` the refresh token is rejected.
+- [x] The static bearer token (`MIDNITE_AUTH_TOKEN`) still works on a single-user setup with no JWT configured — no regression for existing local users.
+- [x] `midnite login` stores the JWT; `midnite whoami` prints the user; `midnite logout` clears it. Existing CLI commands (`midnite add`, `midnite list`) pass the stored JWT automatically.
+- [x] Create a team, invite a second user via the shareable link, accept the invite — second user appears in the member list with the assigned role; owner can remove them or change their role.
+- [x] A new task created while authenticated has `createdBy` set to the creating user's id; the field is returned in `GET /tasks`. Tasks created before Phase 33 (null `created_by`) are unaffected and still list/run normally.
+- [x] With `pool.perUserMaxSlots = 1`, a second concurrent task for the same user does **not** start until the first finishes — it waits and starts automatically on the next tick. Other users are unaffected.
+- [x] Key actions appear in `GET /audit` with the correct `userId`, `action`, and `entityId`: task created, task status changed, user login, team member added.
+- [x] The web login page redirects to `/` on success and back to `/login` on bad credentials. The team settings page shows the invite link; accepting it via a second browser session adds the user.
+- [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph; `moon ci` green.
 
 ---
 

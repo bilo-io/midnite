@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
-import type { ApprovalRule, ApprovalSettings, AutonomyMode, CreateApprovalRule } from '@midnite/shared';
+import type { ApprovalLogEntry, ApprovalRule, ApprovalSettings, AutonomyMode, CreateApprovalRule } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   createApprovalRule,
   deleteApprovalRule,
   getApprovalSettings,
+  listApprovalLog,
   listApprovalRules,
   setApprovalMode,
   updateApprovalRule,
@@ -39,10 +40,24 @@ const MODE_OPTIONS: { value: AutonomyMode; label: string; description: string }[
 
 const SAFE_TOOLS = ['Read', 'Grep', 'Glob', 'LS'];
 
+const RESOLUTION_LABELS: Record<string, { label: string; className: string }> = {
+  'allow': { label: 'Allow', className: 'bg-green-500/10 text-green-600 dark:text-green-400' },
+  'allow-session': { label: 'Allow (session)', className: 'bg-green-500/10 text-green-600 dark:text-green-400' },
+  'deny': { label: 'Deny', className: 'bg-destructive/10 text-destructive' },
+  'auto-allow': { label: 'Auto-allow', className: 'bg-blue-500/10 text-blue-600 dark:text-blue-400' },
+  'auto-deny': { label: 'Auto-deny', className: 'bg-orange-500/10 text-orange-600 dark:text-orange-400' },
+  'timeout': { label: 'Timeout', className: 'bg-muted text-muted-foreground' },
+  'expired': { label: 'Expired', className: 'bg-muted text-muted-foreground' },
+};
+
 export function ApprovalsView() {
   const [settings, setSettings] = useState<ApprovalSettings | null>(null);
   const [rules, setRules] = useState<ApprovalRule[]>([]);
+  const [log, setLog] = useState<ApprovalLogEntry[]>([]);
+  const [logPage, setLogPage] = useState(1);
+  const [logTotal, setLogTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [logLoading, setLogLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [modeUpdating, setModeUpdating] = useState(false);
 
@@ -54,11 +69,29 @@ export function ApprovalsView() {
   const [formError, setFormError] = useState<string | null>(null);
   const [formSaving, setFormSaving] = useState(false);
 
+  const LOG_LIMIT = 20;
+
+  const loadLog = async (page: number) => {
+    setLogLoading(true);
+    try {
+      const res = await listApprovalLog({ page, limit: LOG_LIMIT });
+      setLog(res.entries);
+      setLogTotal(res.total);
+      setLogPage(page);
+    } catch {
+      // log errors are non-fatal; main page content already loaded
+    } finally {
+      setLogLoading(false);
+    }
+  };
+
   useEffect(() => {
     Promise.all([getApprovalSettings(), listApprovalRules()])
       .then(([s, r]) => { setSettings(s); setRules(r); })
       .catch((e) => setError(errMsg(e)))
       .finally(() => setLoading(false));
+    void loadLog(1);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSetMode = async (mode: AutonomyMode) => {
@@ -293,6 +326,90 @@ export function ApprovalsView() {
               </li>
             ))}
           </ul>
+        )}
+      </section>
+
+      <div className="border-t border-border" />
+
+      {/* History */}
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-sm font-medium">History</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Every tool-use decision — by you or the policy engine.
+          </p>
+        </div>
+
+        {logLoading && log.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">Loading…</p>
+        ) : log.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">
+            No decisions recorded yet.
+          </p>
+        ) : (
+          <>
+            <ul className="divide-y divide-border rounded-lg border border-border overflow-hidden">
+              {log.map((entry) => {
+                const res = RESOLUTION_LABELS[entry.resolution] ?? {
+                  label: entry.resolution,
+                  className: 'bg-muted text-muted-foreground',
+                };
+                return (
+                  <li key={entry.id} className="flex items-start gap-3 px-4 py-2.5">
+                    <span
+                      className={cn(
+                        'mt-0.5 shrink-0 rounded px-1.5 py-0.5 text-xs font-semibold',
+                        res.className,
+                      )}
+                    >
+                      {res.label}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <span className="font-mono text-sm">{entry.toolName}</span>
+                      {entry.summary && (
+                        <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                          {entry.summary}
+                        </p>
+                      )}
+                    </div>
+                    <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                      {new Date(entry.createdAt).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+
+            {logTotal > LOG_LIMIT && (
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>
+                  {(logPage - 1) * LOG_LIMIT + 1}–
+                  {Math.min(logPage * LOG_LIMIT, logTotal)} of {logTotal}
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    disabled={logPage <= 1 || logLoading}
+                    onClick={() => void loadLog(logPage - 1)}
+                    className="rounded px-2 py-1 hover:bg-accent disabled:opacity-40"
+                  >
+                    ← Prev
+                  </button>
+                  <button
+                    type="button"
+                    disabled={logPage * LOG_LIMIT >= logTotal || logLoading}
+                    onClick={() => void loadLog(logPage + 1)}
+                    className="rounded px-2 py-1 hover:bg-accent disabled:opacity-40"
+                  >
+                    Next →
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </section>
     </div>

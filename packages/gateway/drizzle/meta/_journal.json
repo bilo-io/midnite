@@ -372,6 +372,27 @@
       "when": 1782700007000,
       "tag": "0052_approval_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "6",
+      "when": 1782700008000,
+      "tag": "0053_approval_log",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "6",
+      "when": 1783000000000,
+      "tag": "0054_search_index_team_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "6",
+      "when": 1783000001000,
+      "tag": "0055_service_tokens",
+      "breakpoints": true
     }
   ]
 }

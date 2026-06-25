@@ -4,6 +4,71 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-25 — Phase 24 responsive/mobile verification smoke-run — PR #204
+
+- [x] Playwright shots at 390px: board, tasks, sessions, dashboard — single-column, no horizontal overflow, mobile bottom-tab nav present
+- [x] Playwright shots at 390px: office + workflow editor show "best viewed on desktop" notice (not a broken canvas)
+- [x] Touch drag (dnd-kit `TouchSensor` 200ms) + `TapToMoveMenu` fallback confirmed in code; already shipped in PR #199
+- [x] LAN/loopback doc confirmed in README — gateway not modified, Phase 7 A5 is the deferred non-loopback work
+- [x] All tests green: 510 web + 1006 gateway; fixed 3 stale unused-import lint errors + 1 stale WS mock (`getAccessToken` missing from test mock)
+- [x] Added `e2e/mobile-layout.shots.ts` — 4 overflow assertions at 390px
+
+## 2026-06-25 — Phases 14 E and 22 verification complete — all items confirmed shipped
+
+Confirmed Phase 14 (workflows-connect) verification criteria and Phase 22 (fleet-visibility) verification criteria are all met by shipped code. Ticked verification sections; marked 2 deferred items (run-timeline, google.sheetsAppend).
+
+- [x] Phase 14: webhook→claude→slack end-to-end, live WS run panel, credential secret not returned, CLI `--watch`, invalid expr clear errors
+- [x] Phase 22: /ops live gauges, agent_run_stats rows, PR status chip, gh auth fallback, merged PR stops polling, Shipped widget
+
+---
+
+## 2026-06-25 — Phases 33, 36, 37 verification complete — all items confirmed shipped
+
+Confirmed all items across Phase 33 (multi-user auth), Phase 36 (workflow template marketplace), and Phase 37 (AI code review) are built. Ticked verification sections; marked 4 deferred items (template detail page, re-review button, test-connection button, webhook auto-filter).
+
+- [x] Phase 33 WS JWT: `tasks.gateway.ts` / `workflows.gateway.ts` / `notifications.gateway.ts` all validate `?token=<jwt>` at upgrade (Phase 35 D1/D2 wired it in)
+- [x] Phase 33 verification section: all 9 items confirmed + ticked
+- [x] Phase 36 verification section: all 10 items confirmed + ticked; template detail page marked ⏳ deferred
+- [x] Phase 37 verification section: all 8 items confirmed + ticked; 3 deferred items marked ⏳
+- [x] Tests green: gateway 1005 passed, web 510 passed, typecheck clean
+
+---
+
+## 2026-06-25 — Phase 23 C: Approval audit log (PR #202)
+
+Durable record of every tool-use decision (user or automatic) — queryable via `GET /approvals/log` and visible in the Settings → Approvals History section.
+
+- [x] `approval_log` table (migration 0053) + `ApprovalLogRepository`
+- [x] `ApprovalLogEntry`/`ApprovalLogResponse`/`ApprovalLogQuerySchema` in `shared`
+- [x] `ApprovalsService.logDecision()` + `listLog()` wired into `settle()` and auto-decision path
+- [x] `GET /approvals/log?page=&limit=&from=&to=&taskId=` route
+- [x] `listApprovalLog()` API fn + paginated History section on `/settings/approvals`
+
+---
+
+## 2026-06-25 — Phase 23 B+C+D — approvals inbox, audit log, security settings (PR #201)
+
+- [x] Shared types: `PendingApproval`, `ApprovalLogEntry`, WS event discriminated union, `InboxResolveMessage`
+- [x] Gateway: `approval-event-bus.ts`, `approvals-log.repository.ts`, `approvals.gateway.ts` (WS /ws/approvals)
+- [x] Gateway: `approvals.service.ts` evaluate() with guarded SAFE_TOOLS auto-allow
+- [x] DB migration 0053: `approval_log` table + 3 indexes
+- [x] Web: `approvals-drawer.tsx` — global NavBar live-WS inbox with countdown + optimistic resolution
+- [x] Web: `/ops` Decisions tab — paginated audit log table
+- [x] Web: `/settings/security` — autonomy mode picker + approval rules CRUD
+
+---
+
+## 2026-06-25 — Phase 35 verification — RBAC integration tests + admin→owner promotion fix (PR #200)
+
+- [x] `auth/role.guard.test.ts` — viewer 403, member ok, admin ok, no-user passthrough, getMembership caching
+- [x] `auth/ownership.service.test.ts` — isOwner (own/other/legacy null), resolveRequiredRole promotion logic
+- [x] `notifications/notifications.repository.test.ts` — team-scoped list + countUnread; cross-team excluded; null teamId = no filter
+- [x] `teams/teams.service.test.ts` — role-management: member 403, admin ok, admin cannot promote to owner, owner can grant/demote
+- [x] Fix `teams.service.ts:setMemberRole` — prevent admin from promoting beyond their own role to owner
+- [x] Fix two pre-existing TS errors in `tasks.gateway.test.ts` from PR #195
+
+---
+
 ## 2026-06-24 — Phase 24 A3 — board snap-scroll + task row mobile cards (PR #199)
 
 - [x] `board-view.tsx`: CSS snap-scroll container (`max-md:snap-x snap-mandatory`) + `snap-start` columns that fill viewport width on mobile; tab bar with colour-coded column buttons + active indicator; `scrollRef` + `handleScroll` + `scrollToColumn` for JS tracking; desktop layout unchanged

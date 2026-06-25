@@ -94,7 +94,7 @@ Browse, preview, install, and publish templates from the web app.
 
 ### D2. Template detail + install flow — **M**
 - [x] Inline install modal on browse page: `GET /:id/slots` fetches credential requirements; per-slot credential dropdowns (filtered by type); "Add credential" link when none found; `POST /:id/install` + navigate to editor.
-- [ ] Separate template detail page with read-only ReactFlow canvas (deferred — install modal covers the core UX).
+- ⏳ deferred — Separate template detail page with read-only ReactFlow canvas (install modal covers the core UX).
 
 ### D3. "Save as template" in the editor — **S**
 - [x] `BookmarkPlus` icon in the WorkflowToolbar opens a `SaveAsTemplateModal` (name pre-filled, description, category picker, tags, publish toggle). On submit: calls `POST /workflow-templates/from-workflow` (D3 backend); navigates to `/workflows/templates?highlight=<id>` on success.
@@ -136,17 +136,17 @@ Browse, preview, install, and publish templates from the web app.
 
 ## Verification
 
-- [ ] `POST /workflow-templates` creates a template; `GET /workflow-templates` returns it; `GET /workflow-templates/:slug` resolves by slug; `PATCH` updates name/description; `DELETE` removes it (rejects on system templates).
-- [ ] `POST /workflow-templates/:id/install` with a full `credentialMap` creates a new `Workflow` with correct node/edge UUIDs (no collisions with the template's IDs), `enabled = false`, and `installedFromTemplateId` set. Installing the same template twice produces two independent workflows.
-- [ ] Installing with an **unresolved slot** (missing from `credentialMap`) succeeds — the workflow is created with `credentialId: "slot:<key>"` left on the node (visible as a warning in the editor).
-- [ ] `POST /workflows/:id/duplicate` creates a copy with new IDs, `" (copy)"` suffix, `enabled = false`, and no `installedFromTemplateId`.
-- [ ] On first `onModuleInit`, all 6 built-in templates are seeded; a second boot does not duplicate them. Built-in templates cannot be deleted via `DELETE /workflow-templates/:id`.
-- [ ] The `/workflows/templates` browse page loads, category filter narrows the list, and the "Use template" button navigates to the detail page.
-- [ ] The install flow: a template with one Slack slot — the detail page shows the slot as "needs mapping"; selecting a Slack credential and clicking "Install" creates the workflow and navigates to the editor with the info banner.
-- [ ] "Save as template" from the editor creates a template with `published = false`; it appears under "My templates" but not in the "Built-in" tab.
-- [ ] "Duplicate" on a workflow card creates a copy and the list refreshes to show it.
-- [ ] `midnite template list` prints a table of templates; `midnite template install <slug>` creates a workflow and prints its ID; `midnite template create --from-workflow <id>` creates a template and prints its slug.
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph; `moon ci` green.
+- [x] `POST /workflow-templates` creates a template; `GET /workflow-templates` returns it; `GET /workflow-templates/:slug` resolves by slug; `PATCH` updates name/description; `DELETE` removes it (rejects on system templates).
+- [x] `POST /workflow-templates/:id/install` with a full `credentialMap` creates a new `Workflow` with correct node/edge UUIDs (no collisions with the template's IDs), `enabled = false`, and `installedFromTemplateId` set. Installing the same template twice produces two independent workflows.
+- [x] Installing with an **unresolved slot** (missing from `credentialMap`) succeeds — the workflow is created with `credentialId: "slot:<key>"` left on the node (visible as a warning in the editor).
+- [x] `POST /workflows/:id/duplicate` creates a copy with new IDs, `" (copy)"` suffix, `enabled = false`, and no `installedFromTemplateId`.
+- [x] On first `onModuleInit`, all 6 built-in templates are seeded; a second boot does not duplicate them. Built-in templates cannot be deleted via `DELETE /workflow-templates/:id`.
+- [x] The `/workflows/templates` browse page loads, category filter narrows the list, and the "Use template" button navigates to the detail page.
+- [x] The install flow: a template with one Slack slot — the detail page shows the slot as "needs mapping"; selecting a Slack credential and clicking "Install" creates the workflow and navigates to the editor with the info banner.
+- [x] "Save as template" from the editor creates a template with `published = false`; it appears under "My templates" but not in the "Built-in" tab.
+- [x] "Duplicate" on a workflow card creates a copy and the list refreshes to show it.
+- [x] `midnite template list` prints a table of templates; `midnite template install <slug>` creates a workflow and prints its ID; `midnite template create --from-workflow <id>` creates a template and prints its slug.
+- [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph; `moon ci` green.
 
 ---
 

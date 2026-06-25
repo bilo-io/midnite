@@ -1,12 +1,14 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import type { MidniteConfig } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
 import { AgentsModule } from '../agents/agents.module';
 import { ApprovalsModule } from '../approvals/approvals.module';
+import { AuthModule } from '../auth/auth.module';
 import { ProjectsModule } from '../projects/projects.module';
 import { ReposModule } from '../repos/repos.module';
 import { TasksModule } from '../tasks/tasks.module';
 import { ApprovalController } from './approval.controller';
+import { ApprovalEventBus } from './approval-event-bus';
 import { ApprovalService } from './approval.service';
 import { HookSecretRepository } from './hook-secret.repository';
 import { TerminalController } from './terminal.controller';
@@ -17,10 +19,11 @@ import { TmuxSpawner } from './spawner/tmux-spawner';
 import { SPAWNER, type Spawner } from './spawner/spawner';
 
 @Module({
-  imports: [TasksModule, ProjectsModule, AgentsModule, ReposModule, ApprovalsModule],
+  imports: [TasksModule, ProjectsModule, AgentsModule, ReposModule, forwardRef(() => ApprovalsModule), AuthModule],
   controllers: [ApprovalController, TerminalController],
   providers: [
     TerminalService,
+    ApprovalEventBus,
     ApprovalService,
     HookSecretRepository,
     TerminalGateway,
@@ -34,6 +37,6 @@ import { SPAWNER, type Spawner } from './spawner/spawner';
       inject: [MIDNITE_CONFIG],
     },
   ],
-  exports: [TerminalService, ApprovalService],
+  exports: [TerminalService, ApprovalService, ApprovalEventBus],
 })
 export class TerminalModule {}

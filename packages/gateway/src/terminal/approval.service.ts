@@ -4,6 +4,7 @@ import type {
   ApprovalDecision,
   ApprovalResolution,
   MidniteConfig,
+  PendingApproval,
   PreToolUseHookDecision,
   PreToolUseHookRequest,
   TerminalApprovalRequestMessage,
@@ -14,11 +15,15 @@ import { hashToken, tokenMatches } from '../lib/token-hash';
 import { HookSecretRepository } from './hook-secret.repository';
 import { summarizeToolCall } from './lib/summarize-tool-call';
 import { TerminalService, type TerminalSubscriber } from './terminal.service';
+import { ApprovalEventBus } from './approval-event-bus';
 
-interface PendingApproval {
+interface PendingEntry {
   sessionId: string;
+  taskId: string | null;
   toolName: string;
   request: TerminalApprovalRequestMessage;
+  requestedAt: string;
+  deadlineAt: string | null;
   /** Resolves the blocked hook HTTP request; also detaches the abort listener. */
   resolve: (decision: PreToolUseHookDecision) => void;
   timer: NodeJS.Timeout | null;
@@ -30,34 +35,26 @@ interface PendingApproval {
  * terminal WS: broadcasts an `approval-request`, waits for a viewer's `approval-response`,
  * and resolves the held HTTP request with the decision Claude Code expects.
  *
- * The UI/wire vocabulary (allow / allow-session / deny) is mapped here to Claude's
- * hook vocabulary (allow / deny / ask); fallbacks fail safe.
+ * Phase 23 B: also emits `approval.requested`/`approval.resolved` events on the
+ * ApprovalEventBus so the global inbox WS can fan out to all connected clients.
  */
 @Injectable()
 export class ApprovalService {
   private readonly logger = new Logger(ApprovalService.name);
   private readonly secrets = new Map<string, string>(); // sessionId -> secretHash
-  private readonly pending = new Map<string, PendingApproval>(); // requestId -> pending
+  private readonly pending = new Map<string, PendingEntry>(); // requestId -> pending
   private readonly allowList = new Map<string, Set<string>>(); // sessionId -> allowed toolNames
 
   constructor(
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
-    // TerminalService <-> ApprovalService form a lifecycle/broadcast cycle within
-    // the terminal module; forwardRef breaks the DI ordering.
     @Inject(forwardRef(() => TerminalService)) private readonly terminal: TerminalService,
-    // Durable secret store (Phase 17 §C2). Optional so direct construction in
-    // specs keeps the pre-existing in-memory-only behaviour; Nest always injects it.
     @Optional() @Inject(HookSecretRepository) private readonly secretStore?: HookSecretRepository,
-    // Policy engine (Phase 23 A2). Optional so terminal specs need no change.
     @Optional() @Inject(ApprovalsService) private readonly approvalsService?: ApprovalsService,
+    @Optional() @Inject(ApprovalEventBus) private readonly eventBus?: ApprovalEventBus,
   ) {}
 
-  // ---- per-session secret (authenticates the in-PTY hook callback) ----
+  // ---- per-session secret ----
 
-  /** Mint a long-lived secret for a session's PTY; returns plaintext (stored
-   *  hashed). The hash is also persisted so a durable session reattached after a
-   *  gateway restart can still authenticate its hooks (the in-memory map is gone,
-   *  but the running process keeps the plaintext in its env). */
   mintSecret(sessionId: string): string {
     const secret = randomBytes(24).toString('base64url');
     const hash = hashToken(secret);
@@ -67,8 +64,6 @@ export class ApprovalService {
   }
 
   verifySecret(sessionId: string, token: string): boolean {
-    // Rehydrate from the durable store on a cache miss — after a restart the map
-    // is empty but a reattached session's secret is still on disk.
     let hash = this.secrets.get(sessionId);
     if (!hash) {
       hash = this.secretStore?.find(sessionId);
@@ -78,50 +73,87 @@ export class ApprovalService {
     return tokenMatches(token, hash);
   }
 
-  // Whether this tool call will be auto-approved without blocking on the user.
-  // True when the tool is already on the session allow-list, or when there are
-  // no terminal subscribers (so requestDecision would fall back immediately).
   willAutoApprove(sessionId: string, toolName: string): boolean {
     if (this.allowList.get(sessionId)?.has(toolName)) return true;
     if (this.terminal.subscriberCount(sessionId) === 0) return true;
     return false;
   }
 
-  // ---- the blocking bridge: hook request -> WS prompt -> decision ----
+  // ---- list pending (for REST GET + WS replay) ----
+
+  listPending(sessionId?: string): PendingApproval[] {
+    const entries = sessionId
+      ? [...this.pending.values()].filter((e) => e.sessionId === sessionId)
+      : [...this.pending.values()];
+    return entries.map((e) => ({
+      id: e.request.requestId,
+      sessionId: e.sessionId,
+      taskId: e.taskId,
+      toolName: e.toolName,
+      summary: e.request.summary,
+      cwd: e.request.cwd ?? '',
+      requestedAt: e.requestedAt,
+      deadlineAt: e.deadlineAt,
+    }));
+  }
+
+  // ---- the blocking bridge ----
 
   async requestDecision(
     sessionId: string,
     payload: PreToolUseHookRequest,
     signal: AbortSignal,
+    taskId?: string | null,
   ): Promise<PreToolUseHookDecision> {
     const toolName = payload.tool_name;
 
-    // Already approved for the whole session — don't prompt again.
     if (this.allowList.get(sessionId)?.has(toolName)) {
       return { decision: 'allow', reason: 'allowed for this session' };
     }
 
-    // Policy engine (Phase 23 A2): evaluate durable rules before asking a human.
+    // Policy engine (Phase 23 A2+C): evaluate durable rules before asking a human.
     if (this.approvalsService) {
+      const summary = summarizeToolCall(toolName, payload.tool_input);
       const verdict = this.approvalsService.evaluate(toolName, payload.tool_input);
       if (verdict === 'auto-allow') {
+        this.approvalsService.logDecision({
+          sessionId,
+          toolName,
+          summary,
+          resolution: 'auto-allow',
+          decidedBy: 'policy',
+        });
         return { decision: 'allow', reason: 'allowed by policy rule' };
       }
       if (verdict === 'auto-deny') {
+        this.approvalsService.logDecision({
+          sessionId,
+          toolName,
+          summary,
+          resolution: 'auto-deny',
+          decidedBy: 'policy',
+        });
         return { decision: 'deny', reason: 'denied by policy rule' };
       }
-      // verdict === 'escalate' → fall through to human prompt
     }
 
-    // No one is watching — fall back so an unattended session isn't wedged.
     if (this.terminal.subscriberCount(sessionId) === 0) {
       const fallback = this.config.terminal.approvals.onNoSubscriber;
+      this.approvalsService?.logDecision({
+        sessionId,
+        toolName,
+        summary: summarizeToolCall(toolName, payload.tool_input),
+        resolution: fallback as import('@midnite/shared').ApprovalLogResolution,
+        decidedBy: 'system',
+      });
       return { decision: fallback, reason: 'no viewer connected' };
     }
 
     if (signal.aborted) return { decision: 'ask', reason: 'request aborted' };
 
     const requestId = randomUUID();
+    const now = new Date().toISOString();
+    const deadlineAt = new Date(Date.now() + this.config.terminal.approvals.timeoutMs).toISOString();
     const request: TerminalApprovalRequestMessage = {
       type: 'approval-request',
       requestId,
@@ -146,22 +178,40 @@ export class ApprovalService {
       );
       timer.unref?.();
 
-      this.pending.set(requestId, {
+      const entry: PendingEntry = {
         sessionId,
+        taskId: taskId ?? null,
         toolName,
         request,
+        requestedAt: now,
+        deadlineAt,
         resolve: (decision) => {
           signal.removeEventListener('abort', onAbort);
           resolve(decision);
         },
         timer,
-      });
+      };
+      this.pending.set(requestId, entry);
       this.terminal.broadcastToSession(sessionId, request);
+
+      this.eventBus?.emit({
+        type: 'approval.requested',
+        approval: {
+          id: requestId,
+          sessionId,
+          taskId: taskId ?? null,
+          toolName,
+          summary: request.summary,
+          cwd: request.cwd ?? '',
+          requestedAt: now,
+          deadlineAt,
+        },
+      });
+
       this.logger.log(`approval requested ${requestId} (${toolName}) on session ${sessionId}`);
     });
   }
 
-  /** Resolve from a viewer's WS answer. No-op if the request is stale or foreign. */
   resolveByUser(sessionId: string, requestId: string, decision: ApprovalDecision): void {
     const entry = this.pending.get(requestId);
     if (!entry || entry.sessionId !== sessionId) return;
@@ -176,14 +226,12 @@ export class ApprovalService {
     this.settle(requestId, decision, this.toHookDecision(decision));
   }
 
-  /** Re-send still-pending prompts to a (re)attaching subscriber so the overlay survives a reconnect. */
   replayPending(sessionId: string, subscriber: TerminalSubscriber): void {
     for (const entry of this.pending.values()) {
       if (entry.sessionId === sessionId) subscriber.send(entry.request);
     }
   }
 
-  /** PTY reaped — resolve everything safely (deny) and forget the session. */
   clearSession(sessionId: string): void {
     for (const [requestId, entry] of [...this.pending]) {
       if (entry.sessionId !== sessionId) continue;
@@ -196,7 +244,6 @@ export class ApprovalService {
 
   // ---- internals ----
 
-  /** Remove the pending entry, clear its timer, broadcast the resolution, resolve the HTTP wait. */
   private settle(
     requestId: string,
     resolution: ApprovalResolution,
@@ -206,11 +253,23 @@ export class ApprovalService {
     if (!entry) return;
     this.pending.delete(requestId);
     if (entry.timer) clearTimeout(entry.timer);
+
     this.terminal.broadcastToSession(entry.sessionId, {
       type: 'approval-resolved',
       requestId,
       decision: resolution,
     });
+
+    this.eventBus?.emit({ type: 'approval.resolved', id: requestId, resolution });
+
+    this.approvalsService?.logDecision({
+      sessionId: entry.sessionId,
+      toolName: entry.toolName,
+      summary: entry.request.summary,
+      resolution: resolution as import('@midnite/shared').ApprovalLogResolution,
+      decidedBy: resolutionToDecidedBy(resolution),
+    });
+
     entry.resolve(hookDecision);
   }
 
@@ -221,4 +280,14 @@ export class ApprovalService {
       reason: decision === 'allow-session' ? 'allowed for this session' : 'allowed by user',
     };
   }
+}
+
+function resolutionToDecidedBy(
+  resolution: ApprovalResolution,
+): import('@midnite/shared').ApprovalDecidedBy {
+  if (resolution === 'allow' || resolution === 'allow-session' || resolution === 'deny') {
+    return 'user';
+  }
+  if (resolution === 'timeout') return 'timeout';
+  return 'system'; // expired, ask
 }

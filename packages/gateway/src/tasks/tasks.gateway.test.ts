@@ -208,7 +208,7 @@ describe('TasksGateway — D3: WS scoping', () => {
   });
 
   it('static-token client (no JWT) receives all events', () => {
-    const { gateway, bus } = makeGateway({ enabled: false, verifyAccessToken: () => ({ sub: '' }) });
+    const { gateway, bus } = makeGateway({ enabled: false, verifyAccessToken: (_t: string) => ({ sub: '' }) });
 
     const client = fakeClient();
     gateway.handleConnection(client.ws, req); // no token in URL

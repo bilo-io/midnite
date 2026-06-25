@@ -1,7 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import { Inject, Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, OnModuleInit, Optional } from '@nestjs/common';
 import {
   SAFE_TOOLS,
+  type ApprovalDecidedBy,
+  type ApprovalLogResolution,
   type ApprovalRule,
   type ApprovalRuleMatch,
   type ApprovalSettings,
@@ -11,6 +13,7 @@ import {
 } from '@midnite/shared';
 import type { ApprovalRuleRow } from '../db/schema';
 import { evaluateRules, type EvaluationVerdict } from './lib/rule-evaluator';
+import { ApprovalLogRepository } from './approval-log.repository';
 import { ApprovalsRepository } from './approvals.repository';
 
 /** Business logic for approval rules + autonomy mode.
@@ -21,6 +24,7 @@ export class ApprovalsService implements OnModuleInit {
 
   constructor(
     @Inject(ApprovalsRepository) private readonly repo: ApprovalsRepository,
+    @Optional() @Inject(ApprovalLogRepository) private readonly logRepo?: ApprovalLogRepository,
   ) {}
 
   onModuleInit(): void {
@@ -54,6 +58,38 @@ export class ApprovalsService implements OnModuleInit {
     }
     const rules = this.repo.listEnabledForTool(toolName);
     return evaluateRules(rules, toolName, toolInput);
+  }
+
+  /**
+   * Write a row to the audit log. Called from the terminal approval service after
+   * both user decisions (via settle()) and auto-decisions (via evaluate()).
+   * Uses @Optional() injection so gateway tests without the DB module still compile.
+   */
+  logDecision(params: {
+    sessionId: string;
+    toolName: string;
+    summary?: string;
+    resolution: ApprovalLogResolution;
+    ruleId?: string;
+    decidedBy: ApprovalDecidedBy;
+  }): void {
+    this.logRepo?.insert({
+      id: randomUUID(),
+      sessionId: params.sessionId,
+      toolName: params.toolName,
+      summary: params.summary ?? null,
+      resolution: params.resolution,
+      ruleId: params.ruleId ?? null,
+      decidedBy: params.decidedBy,
+      createdAt: new Date().toISOString(),
+    });
+  }
+
+  /** Get a page of audit log entries. */
+  listLog(params: { page: number; limit: number; from?: string; to?: string; taskId?: string }) {
+    if (!this.logRepo) return { entries: [], total: 0, page: params.page, limit: params.limit };
+    const { entries, total } = this.logRepo.list(params);
+    return { entries: entries.map(toLogEntry), total, page: params.page, limit: params.limit };
   }
 
   list(): ApprovalRule[] {
@@ -115,5 +151,19 @@ function toRule(row: ApprovalRuleRow): ApprovalRule {
     note: row.note ?? undefined,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
+  };
+}
+
+function toLogEntry(row: import('../db/schema').ApprovalLogRow) {
+  return {
+    id: row.id,
+    sessionId: row.sessionId,
+    taskId: row.taskId ?? null,
+    toolName: row.toolName,
+    summary: row.summary ?? null,
+    resolution: row.resolution as ApprovalLogResolution,
+    ruleId: row.ruleId ?? null,
+    decidedBy: row.decidedBy as ApprovalDecidedBy,
+    createdAt: row.createdAt,
   };
 }
