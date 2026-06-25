@@ -68,10 +68,10 @@ describe('WorkflowCredentialsService (key configured)', () => {
     expect(row?.data).not.toContain('ghp_supersecret');
   });
 
-  it('resolve() round-trips the decrypted, validated secret for server-side use', () => {
+  it('resolve() round-trips the decrypted, validated secret for server-side use', async () => {
     const { service } = build();
     const cred = service.create(bearer);
-    expect(service.resolve(cred.id)).toEqual({ type: 'http-bearer', token: 'ghp_supersecret' });
+    expect(await service.resolve(cred.id)).toEqual({ type: 'http-bearer', token: 'ghp_supersecret' });
   });
 
   it('list() exposes names + types only, never secrets', () => {
@@ -84,12 +84,12 @@ describe('WorkflowCredentialsService (key configured)', () => {
     expect(JSON.stringify(list)).not.toContain('xoxb-abc');
   });
 
-  it('remove() deletes the credential', () => {
+  it('remove() deletes the credential', async () => {
     const { service } = build();
     const cred = service.create(bearer);
     service.remove(cred.id);
     expect(service.list()).toHaveLength(0);
-    expect(service.resolve(cred.id)).toBeNull();
+    expect(await service.resolve(cred.id)).toBeNull();
   });
 
   it('remove() rejects an unknown id', () => {
@@ -97,9 +97,9 @@ describe('WorkflowCredentialsService (key configured)', () => {
     expect(() => service.remove('nope')).toThrow(NotFoundException);
   });
 
-  it('resolve() returns null for an unknown id', () => {
+  it('resolve() returns null for an unknown id', async () => {
     const { service } = build();
-    expect(service.resolve('nope')).toBeNull();
+    expect(await service.resolve('nope')).toBeNull();
   });
 });
 
@@ -113,13 +113,13 @@ describe('WorkflowCredentialsService (fail-closed, no key)', () => {
     expect(() => service.create(bearer)).toThrow(BadRequestException);
   });
 
-  it('cannot resolve a credential written under a key once the key is gone', () => {
+  it('cannot resolve a credential written under a key once the key is gone', async () => {
     process.env[SECRET_KEY_ENV] = KEY;
     const { service, db } = build();
     const cred = service.create(bearer);
     delete process.env[SECRET_KEY_ENV];
     // The encrypted row is still there, but without the key it is unusable.
     expect(db.select().from(schema.workflowCredentials).get()?.data).toMatch(/^v1:/);
-    expect(service.resolve(cred.id)).toBeNull();
+    expect(await service.resolve(cred.id)).toBeNull();
   });
 });

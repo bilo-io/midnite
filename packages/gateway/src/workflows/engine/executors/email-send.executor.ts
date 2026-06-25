@@ -17,7 +17,7 @@ export class EmailSendExecutor implements NodeExecutor {
   async execute(ctx: NodeRunContext): Promise<unknown> {
     const params = EmailSendParamsSchema.parse(ctx.params);
 
-    const cred = this.credentials.resolve(params.credentialId);
+    const cred = await this.credentials.resolve(params.credentialId);
     if (!cred) {
       throw new Error(`credential ${params.credentialId} not found or could not be decrypted`);
     }

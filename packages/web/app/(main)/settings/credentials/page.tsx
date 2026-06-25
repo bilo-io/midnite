@@ -28,6 +28,8 @@ const TYPE_LABELS: Record<WorkflowCredentialType, string> = {
   slack: 'Slack',
   smtp: 'SMTP (email)',
   github: 'GitHub (PAT)',
+  'google-oauth': 'Google (OAuth)',
+  'slack-oauth': 'Slack (OAuth)',
 };
 
 export default function CredentialsPage() {

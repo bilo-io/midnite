@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import type { WorkflowCredentialType, CreateWorkflowCredentialRequest } from '@midnite/shared';
+import type { WorkflowCredentialType, CreateWorkflowCredentialRequest, OAuthProvider } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
+import { getOAuthStartUrl } from '@/lib/api';
 
 type Props = {
   types: readonly WorkflowCredentialType[];
@@ -32,6 +33,9 @@ const TYPE_FIELDS: Record<WorkflowCredentialType, FieldDef[]> = {
     { key: 'from', label: 'From address (optional)', placeholder: 'sender@example.com' },
   ],
   github: [{ key: 'token', label: 'Personal access token', type: 'password', placeholder: 'ghp_…', required: true }],
+  // OAuth types have no manual fields — the form renders an "Authorize" button instead.
+  'google-oauth': [],
+  'slack-oauth': [],
 };
 
 export function CredentialForm({ types, typeLabels, onSave, onCancel }: Props) {
@@ -97,8 +101,33 @@ export function CredentialForm({ types, typeLabels, onSave, onCancel }: Props) {
         </div>
       ))}
 
+      {isOAuthType(credType) && (
+        <p className="text-xs text-muted-foreground">
+          Clicking &ldquo;Authorize&rdquo; will redirect you to the provider&apos;s consent page.
+          The credential will be saved automatically on return.
+        </p>
+      )}
+
       <div className="flex gap-2 pt-1">
-        <Button type="submit" size="sm">Save</Button>
+        {isOAuthType(credType) ? (
+          <Button
+            type="button"
+            size="sm"
+            disabled={!name.trim()}
+            onClick={() => {
+              if (!name.trim()) return;
+              window.location.href = getOAuthStartUrl(
+                oauthProvider(credType)!,
+                name.trim(),
+                window.location.href,
+              );
+            }}
+          >
+            Authorize
+          </Button>
+        ) : (
+          <Button type="submit" size="sm">Save</Button>
+        )}
         <Button type="button" variant="ghost" size="sm" onClick={onCancel}>Cancel</Button>
       </div>
     </form>
@@ -131,7 +160,27 @@ function buildData(type: WorkflowCredentialType, f: Record<string, string>): Cre
         from: f['from'] || undefined,
       };
     }
+    case 'github':
+      if (!f['token']) return null;
+      return { type, token: f['token'] };
+    // OAuth types are created via the start/callback flow, not the form.
+    case 'google-oauth':
+    case 'slack-oauth':
+      return null;
     default:
       return null;
   }
+}
+
+const OAUTH_TYPE_MAP: Partial<Record<WorkflowCredentialType, OAuthProvider>> = {
+  'google-oauth': 'google',
+  'slack-oauth': 'slack',
+};
+
+function isOAuthType(t: WorkflowCredentialType): boolean {
+  return t in OAUTH_TYPE_MAP;
+}
+
+function oauthProvider(t: WorkflowCredentialType): OAuthProvider | undefined {
+  return OAUTH_TYPE_MAP[t];
 }
