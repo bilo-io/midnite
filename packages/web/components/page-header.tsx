@@ -124,6 +124,10 @@ export function PageHeader({
         <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
           <div className="min-w-0 flex-1">
             <h1
+              // The title types out character-by-character, so `typedTitle` is empty on
+              // first paint (axe `empty-heading`). aria-label exposes the full title to
+              // AT immediately and stably; the animated text below is decorative.
+              aria-label={title}
               className={cn(
                 'flex items-center gap-2.5 font-semibold tracking-tight transition-all duration-200 motion-reduce:transition-none',
                 size === 'lg' ? (scrolled ? 'text-2xl' : 'text-3xl') : scrolled ? 'text-xl' : 'text-2xl',
@@ -132,7 +136,7 @@ export function PageHeader({
               {Icon && (
                 <Icon className="h-[1em] w-[1em] shrink-0 text-muted-foreground/70" />
               )}
-              <span>
+              <span aria-hidden>
                 {typedTitle}
                 {!titleDone && <Caret />}
               </span>

@@ -684,6 +684,86 @@ export function ensureOfficeTextures(scene: Phaser.Scene): void {
   );
 }
 
+// ── Tileset (Phase 8 A1) ─────────────────────────────────────────────────────
+
+/**
+ * Texture key for the office tileset — a canvas spritesheet with one row of
+ * 32×32 tile variants. GIDs are 1-indexed: FLOOR_A=1, FLOOR_B=2.
+ */
+export const TILESET_KEY = 'office-tileset';
+
+/** Number of tile variants in the tileset (one row of N * 32 wide). */
+const TILE_VARIANTS = 2;
+
+/**
+ * Creates the office tileset canvas texture: two floor tile variants drawn in
+ * code so the visual quality is higher than a flat single-colour TileSprite.
+ *
+ * FLOOR_A — warm oak planks (lighter, horizontal grain).
+ * FLOOR_B — cooler oak planks (darker, seams offset by half a plank).
+ *
+ * When the scene tiles the floor with an alternating A/B checkerboard the seam
+ * lines interleave and read as natural wood-plank seams rather than a repeating
+ * stamp. Safe to call repeatedly (guarded by texture-exists check).
+ */
+export function ensureOfficeTileset(scene: Phaser.Scene): void {
+  if (scene.textures.exists(TILESET_KEY)) return;
+
+  const T = 32;
+  const ct = scene.textures.createCanvas(
+    TILESET_KEY,
+    TILE_VARIANTS * T,
+    T,
+  ) as Phaser.Textures.CanvasTexture;
+  const ctx = ct.getContext();
+
+  // Helper: draw plank seam lines at regular intervals ─────────────────────
+  const drawPlanks = (xOff: number, seams: number[], grainAlpha: number) => {
+    ctx.strokeStyle = `rgba(0,0,0,0.18)`;
+    ctx.lineWidth = 1;
+    for (const y of seams) {
+      ctx.beginPath();
+      ctx.moveTo(xOff, y + 0.5);
+      ctx.lineTo(xOff + T, y + 0.5);
+      ctx.stroke();
+    }
+    // Subtle vertical grain streaks
+    ctx.strokeStyle = `rgba(255,255,255,${grainAlpha})`;
+    ctx.lineWidth = 1;
+    for (let i = 5; i < T; i += 11) {
+      ctx.globalAlpha = grainAlpha * ((i % 22 === 5) ? 1.2 : 0.7);
+      ctx.beginPath();
+      ctx.moveTo(xOff + i, 0);
+      ctx.lineTo(xOff + i, T);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  };
+
+  // Tile GID 1 — FLOOR_A: warm honey oak ──────────────────────────────────
+  ctx.fillStyle = '#c8925a';
+  ctx.fillRect(0, 0, T, T);
+  // Top edge highlight (light bouncing off plank surface)
+  ctx.fillStyle = 'rgba(255,255,255,0.10)';
+  ctx.fillRect(0, 0, T, 2);
+  drawPlanks(0, [7, 15, 23], 0.07);
+  // Slight warm vignette at bottom
+  ctx.fillStyle = 'rgba(0,0,0,0.06)';
+  ctx.fillRect(0, T - 3, T, 3);
+
+  // Tile GID 2 — FLOOR_B: cooler darker oak ────────────────────────────────
+  ctx.fillStyle = '#a07840';
+  ctx.fillRect(T, 0, T, T);
+  ctx.fillStyle = 'rgba(255,255,255,0.07)';
+  ctx.fillRect(T, 0, T, 2);
+  // Seams offset by half a plank (4px shift) → seams interleave with FLOOR_A
+  drawPlanks(T, [3, 11, 19, 27], 0.05);
+  ctx.fillStyle = 'rgba(0,0,0,0.05)';
+  ctx.fillRect(T, T - 3, T, 3);
+
+  ct.refresh();
+}
+
 /** Register the walk-cycle animations once. Safe to call repeatedly. */
 export function ensureOfficeAnims(scene: Phaser.Scene): void {
   const reg = (key: string, kind: CharKind, dir: Dir, variant: number) => {

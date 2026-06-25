@@ -185,7 +185,10 @@ export function ExpressionField({
       {pickerOpen ? (
         <div className="rounded-md border border-border/60 bg-card/40 p-1">
           {tree.length ? (
-            <div className="max-h-44 overflow-y-auto" role="tree" aria-label={`${fieldLabel} data picker`}>
+            // role="group" (not "tree"): the rows are click-to-insert buttons, not a
+            // keyboard-navigable treegrid; "tree" would demand role="treeitem" children
+            // (axe aria-required-children), whereas "group" carries the label without it.
+            <div className="max-h-44 overflow-y-auto" role="group" aria-label={`${fieldLabel} data picker`}>
               {tree.map((entry) => (
                 <TreeRow key={entry.ref} entry={entry} depth={0} onInsert={insertFromTree} />
               ))}
@@ -202,6 +205,9 @@ export function ExpressionField({
         <div className="flex items-start gap-1.5 text-[11px]">
           <span className="mt-px shrink-0 text-muted-foreground">=</span>
           <pre
+            // Focusable so keyboard users can scroll the overflowing preview, which has
+            // no focusable content of its own (axe scrollable-region-focusable).
+            tabIndex={0}
             className={cn(
               'max-h-24 flex-1 overflow-auto whitespace-pre-wrap break-words font-mono',
               preview.ok ? 'text-foreground' : 'text-destructive',

@@ -14,7 +14,6 @@ import {
   CONSOLE_POS,
   COUCHES,
   COUNTER_POS,
-  DESK_SEATS,
   DOOR_POS,
   GAME_TABLE_POS,
   LAYOUT,
@@ -36,18 +35,21 @@ import {
   type TilePos,
   WALL_ART,
 } from '@/lib/office/layout';
+import { buildFloorTileData, getDeskSeats } from '@/lib/office/map-data';
 import { assignStableSeats } from '@/lib/office/seats';
 import { buildOfficePalette, ROOM_STYLES, roomSignStyle, type OfficePalette } from '@/lib/office/theme';
 import {
   agentTint,
   charKey,
   ensureOfficeAnims,
+  ensureOfficeTileset,
   ensureOfficeTextures,
   plantTexture,
   poseTexKey,
   providerAccent,
   robotVariant,
   TEX,
+  TILESET_KEY,
   walkAnim,
   type CharKind,
 } from '@/lib/office/textures';
@@ -158,7 +160,7 @@ class OfficeScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Sprite;
   private playerShadow!: Phaser.GameObjects.Ellipse;
   private highlight!: Phaser.GameObjects.Arc;
-  private floor!: Phaser.GameObjects.TileSprite;
+  private floor!: Phaser.Tilemaps.TilemapLayer;
   /** Day/night floor wash (B2) — a subtle time-of-day colour over the ground, below
    *  furniture/characters; refreshed on a timer + on theme flip. See lib/office/daynight. */
   private dayNight!: Phaser.GameObjects.Rectangle;
@@ -216,11 +218,13 @@ class OfficeScene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, worldW, worldH);
     this.cameras.main.setBackgroundColor(this.palette.background);
 
-    this.floor = this.add
-      .tileSprite(0, 0, worldW, worldH, TEX.floor)
-      .setOrigin(0, 0)
-      .setTint(this.palette.floor)
-      .setDepth(-10);
+    ensureOfficeTileset(this);
+    const floorData = buildFloorTileData();
+    const tileMap = this.make.tilemap({ data: floorData, tileWidth: TILE, tileHeight: TILE });
+    const tileSet = tileMap.addTilesetImage('office-tiles', TILESET_KEY, TILE, TILE, 0, 0);
+    this.floor = tileMap.createLayer(0, tileSet!, 0, 0)!
+      .setDepth(-10)
+      .setTint(this.palette.floor);
 
     this.buildRoomFloors();
     this.buildRugs();
@@ -432,9 +436,10 @@ class OfficeScene extends Phaser.Scene {
 
     // Partition by task-status room target; fall back to session-status for
     // agents without a linked task (treat as wip so they appear at desks).
+    const deskSeats = getDeskSeats();
     const deskAgents = agents
       .filter((a) => statusToRoom(a.taskStatus ?? 'wip') === 'work')
-      .slice(0, DESK_SEATS.length);
+      .slice(0, deskSeats.length);
     const boardAgents = agents
       .filter((a) => statusToRoom(a.taskStatus) === 'board')
       .slice(0, TABLE_CHAIRS.length);
@@ -443,9 +448,9 @@ class OfficeScene extends Phaser.Scene {
       .slice(0, LOUNGE_SEATS.length);
 
     const desired: { agent: OfficeAgent; seat: TilePos; kind: 'desk' | 'lounge' }[] = [
-      ...assignStableSeats(deskAgents, DESK_SEATS.length, this.deskByAgent).map((s) => ({
+      ...assignStableSeats(deskAgents, deskSeats.length, this.deskByAgent).map((s) => ({
         agent: s.agent,
-        seat: DESK_SEATS[s.seatIndex]!,
+        seat: deskSeats[s.seatIndex]!,
         kind: 'desk' as const,
       })),
       // Waiting agents sit at board-room chairs (stable assignment reuses deskByAgent map).
@@ -1135,7 +1140,7 @@ class OfficeScene extends Phaser.Scene {
   private buildDesks() {
     // Clutter on the desk front, varied deterministically by seat index (E3).
     const clutter = [TEX.paperStack, TEX.deskMug, TEX.deskPlantlet];
-    DESK_SEATS.forEach(({ x, y }, i) => {
+    getDeskSeats().forEach(({ x, y }, i) => {
       const cx = center(x);
       const cy = center(y);
       this.add.image(cx, cy + TILE * 0.25, TEX.chair).setDepth(2);
