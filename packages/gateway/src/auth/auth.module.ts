@@ -32,6 +32,9 @@ import { RoleGuard } from './role.guard';
     OwnershipService,
     { provide: APP_GUARD, useClass: RateLimitGuard },
     { provide: APP_GUARD, useClass: GatewayAuthGuard },
+    // Global singleton: RoleGuard is a no-op on routes without @RequiresRole, so
+    // registering it globally is safe and avoids per-module TeamsService resolution.
+    { provide: APP_GUARD, useClass: RoleGuard },
   ],
   exports: [JwtService, RoleGuard, OwnershipService],
 })

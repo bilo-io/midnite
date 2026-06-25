@@ -10,7 +10,6 @@ import {
   Param,
   Patch,
   Post,
-  UseGuards,
 } from '@nestjs/common';
 import {
   CreateRepoRequestSchema,
@@ -19,12 +18,10 @@ import {
   type RepoResponse,
 } from '@midnite/shared';
 import { CurrentUser, type CurrentUserPayload } from '../auth/decorators/current-user.decorator';
-import { RoleGuard } from '../auth/role.guard';
 import { RequiresRole } from '../auth/decorators/require-role.decorator';
 import { RepoDoesNotExistError, RepoNameTakenError, ReposService } from './repos.service';
 
 @Controller('repos')
-@UseGuards(RoleGuard)
 export class ReposController {
   constructor(@Inject(ReposService) private readonly service: ReposService) {}
 

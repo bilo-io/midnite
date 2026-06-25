@@ -11,10 +11,8 @@ import {
   Query,
   Req,
   Res,
-  UseGuards,
 } from '@nestjs/common';
 import { CurrentUser, type CurrentUserPayload } from '../auth/decorators/current-user.decorator';
-import { RoleGuard } from '../auth/role.guard';
 import { RequiresRole } from '../auth/decorators/require-role.decorator';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { join, resolve, isAbsolute } from 'node:path';
@@ -59,7 +57,6 @@ const IMAGE_MIME_ALLOWLIST = new Set([
 ]);
 
 @Controller('tasks')
-@UseGuards(RoleGuard)
 export class TasksController {
   constructor(
     @Inject(TasksService) private readonly service: TasksService,

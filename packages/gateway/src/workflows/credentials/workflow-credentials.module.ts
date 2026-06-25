@@ -1,4 +1,4 @@
-import { Module, OnModuleInit } from '@nestjs/common';
+import { Inject, Module, OnModuleInit } from '@nestjs/common';
 import { WorkflowCredentialsController } from './workflow-credentials.controller';
 import { WorkflowCredentialsRepository } from './workflow-credentials.repository';
 import { WorkflowCredentialsService } from './workflow-credentials.service';
@@ -19,7 +19,9 @@ import { OAuthService } from './oauth.service';
 })
 export class WorkflowCredentialsModule implements OnModuleInit {
   constructor(
+    @Inject(WorkflowCredentialsService)
     private readonly credService: WorkflowCredentialsService,
+    @Inject(OAuthService)
     private readonly oauthService: OAuthService,
   ) {}
 

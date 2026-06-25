@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
+import { CanActivate, ExecutionContext, ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { TeamRole } from '@midnite/shared';
 import { TeamsService } from '../teams/teams.service';
@@ -31,8 +31,8 @@ type IncomingRequest = {
 @Injectable()
 export class RoleGuard implements CanActivate {
   constructor(
-    private readonly reflector: Reflector,
-    private readonly teams: TeamsService,
+    @Inject(Reflector) private readonly reflector: Reflector,
+    @Inject(TeamsService) private readonly teams: TeamsService,
   ) {}
 
   canActivate(context: ExecutionContext): boolean {

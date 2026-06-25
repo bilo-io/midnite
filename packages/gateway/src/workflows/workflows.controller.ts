@@ -10,9 +10,7 @@ import {
   Post,
   Query,
   Res,
-  UseGuards,
 } from '@nestjs/common';
-import { RoleGuard } from '../auth/role.guard';
 import { RequiresRole } from '../auth/decorators/require-role.decorator';
 import { CurrentUser, type CurrentUserPayload } from '../auth/decorators/current-user.decorator';
 import type { FastifyReply } from 'fastify';
@@ -32,7 +30,6 @@ import {
 import { WorkflowsService } from './workflows.service';
 
 @Controller('workflows')
-@UseGuards(RoleGuard)
 export class WorkflowsController {
   constructor(@Inject(WorkflowsService) private readonly service: WorkflowsService) {}
 
