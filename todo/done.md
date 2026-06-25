@@ -4,6 +4,19 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-25 — Phase 10 C3: clear structural a11y backlog, promote axe to error (PR #207)
+
+- [x] Flipped `parameters.a11y.test` from `'todo'` to `'error'` — addon-a11y now fails the Vitest story run on any enabled-rule violation
+- [x] `board-view` — fixed `nested-interactive` ×26 (stopped spreading dnd-kit `attributes`; the board wires no KeyboardSensor so role/tabindex were inert) + `scrollable-region-focusable` (focusable columns container)
+- [x] `session-card` — `aria-prohibited-attr` ×14 (`role="img"` makes the status dot's `aria-label` valid)
+- [x] `markdown-preview` — `label` (state-reflecting `aria-label` on GFM task-list checkboxes)
+- [x] `markdown-editor` + `memory-modal` — `label` (new `ariaLabel` prop names the editor `<textarea>`)
+- [x] `page-header` — `empty-heading` (`aria-label={title}` on the typewriter `<h1>`; animated text `aria-hidden`)
+- [x] `expression-editor` — `aria-required-children` (`role="tree"`→`"group"`) + `scrollable-region-focusable` (focusable preview `<pre>`)
+- [x] `color-contrast` (~99 hits, systemic `--muted-foreground`/opacity-utility design backlog) disabled via one documented `a11y.config.rules` entry + tracked in phase-10 C3 for a follow-up design pass
+- [x] Drive-by: removed unused `readFileSync`/`statSync` imports in `generate-gallery.mjs` (pre-existing `no-unused-vars`)
+- [x] Gate green locally (`web:lint`/`web:typecheck`/`web:test` 510 passed); merged with `--admin` (GH Actions billing-blocked account-wide, no CI could start)
+
 ## 2026-06-25 — Phase 14 B2: OAuth2 workflow credential flow (PR #203)
 
 - [x] `google-oauth` + `slack-oauth` credential types in shared (`WorkflowCredentialDataSchema`, `WORKFLOW_CREDENTIAL_TYPES`)
