@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-25 — Phases 14 E and 22 verification complete — all items confirmed shipped
+
+Confirmed Phase 14 (workflows-connect) verification criteria and Phase 22 (fleet-visibility) verification criteria are all met by shipped code. Ticked verification sections; marked 2 deferred items (run-timeline, google.sheetsAppend).
+
+- [x] Phase 14: webhook→claude→slack end-to-end, live WS run panel, credential secret not returned, CLI `--watch`, invalid expr clear errors
+- [x] Phase 22: /ops live gauges, agent_run_stats rows, PR status chip, gh auth fallback, merged PR stops polling, Shipped widget
+
+---
+
 ## 2026-06-25 — Phases 33, 36, 37 verification complete — all items confirmed shipped
 
 Confirmed all items across Phase 33 (multi-user auth), Phase 36 (workflow template marketplace), and Phase 37 (AI code review) are built. Ticked verification sections; marked 4 deferred items (template detail page, re-review button, test-connection button, webhook auto-filter).
