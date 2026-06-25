@@ -10,6 +10,8 @@ export const WORKFLOW_CREDENTIAL_TYPES = [
   'slack',
   'smtp',
   'github',
+  'google-oauth',
+  'slack-oauth',
 ] as const;
 export const WorkflowCredentialTypeSchema = z.enum(WORKFLOW_CREDENTIAL_TYPES);
 export type WorkflowCredentialType = z.infer<typeof WorkflowCredentialTypeSchema>;
@@ -44,6 +46,20 @@ export const WorkflowCredentialDataSchema = z.discriminatedUnion('type', [
     from: z.string().min(1).optional(),
     secure: z.boolean().optional(),
   }),
+  z.object({
+    type: z.literal('google-oauth'),
+    accessToken: z.string().min(1),
+    refreshToken: z.string().min(1),
+    expiresAt: z.string(),
+    scope: z.string(),
+  }),
+  z.object({
+    type: z.literal('slack-oauth'),
+    accessToken: z.string().min(1),
+    refreshToken: z.string().optional(),
+    teamId: z.string().min(1),
+    scope: z.string(),
+  }),
 ]);
 export type WorkflowCredentialData = z.infer<typeof WorkflowCredentialDataSchema>;
 
@@ -75,3 +91,15 @@ export const WorkflowCredentialsResponseSchema = z.object({
   credentials: z.array(WorkflowCredentialSchema),
 });
 export type WorkflowCredentialsResponse = z.infer<typeof WorkflowCredentialsResponseSchema>;
+
+// OAuth providers supported by the start/callback flow.
+export const OAUTH_PROVIDERS = ['google', 'slack'] as const;
+export const OAuthProviderSchema = z.enum(OAUTH_PROVIDERS);
+export type OAuthProvider = z.infer<typeof OAuthProviderSchema>;
+
+// Query params for GET /oauth/:provider/start.
+export const OAuthStartParamsSchema = z.object({
+  credential_name: z.string().trim().min(1).max(120),
+  redirect_uri: z.string().url(),
+});
+export type OAuthStartParams = z.infer<typeof OAuthStartParamsSchema>;

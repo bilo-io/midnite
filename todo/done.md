@@ -4,7 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-06-25 — Phase 24 responsive/mobile verification smoke-run — PR #204
+## 2026-06-25 — Phase 14 B2: OAuth2 workflow credential flow (PR #203)
+
+- [x] `google-oauth` + `slack-oauth` credential types in shared (`WorkflowCredentialDataSchema`, `WORKFLOW_CREDENTIAL_TYPES`)
+- [x] `OAuthProviderSchema` + `OAuthStartParamsSchema` in shared for the HTTP contract
+- [x] `GET /oauth/:provider/start` → CSRF-encrypted state + 302 to provider consent
+- [x] `GET /oauth/:provider/callback` → code exchange, store as `workflow_credentials` row, 302 to client with `credential_id`
+- [x] Lazy Google access-token refresh in `WorkflowCredentialsService.resolve()` (now async); all executor call sites updated
+- [x] Web: OAuth type labels + Authorize button in credentials manager; `getOAuthStartUrl()` in `api.ts`
+- [x] 22 new OAuthService tests + 10 updated credential service tests + 17 integration-node tests passing
+
+## 2026-06-25 — Phase 24 responsive/mobile verification smoke-run — PR #205
 
 - [x] Playwright shots at 390px: board, tasks, sessions, dashboard — single-column, no horizontal overflow, mobile bottom-tab nav present
 - [x] Playwright shots at 390px: office + workflow editor show "best viewed on desktop" notice (not a broken canvas)

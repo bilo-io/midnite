@@ -192,6 +192,7 @@ import {
   type ApprovalRule,
   type CreateApprovalRule,
   type UpdateApprovalRule,
+  type OAuthProvider,
   CreateServiceTokenResponseSchema,
   ListServiceTokensResponseSchema,
   type CreateServiceTokenRequest,
@@ -1506,6 +1507,21 @@ export async function createWorkflowCredential(
 /** Permanently delete a credential. Returns 404 if not found. */
 export async function deleteWorkflowCredential(id: string): Promise<void> {
   await fetchJson(`/workflow-credentials/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+/**
+ * Build the gateway URL to start an OAuth2 authorization flow for a provider.
+ * Navigate the browser to the returned URL — the gateway issues a redirect to the
+ * provider's consent screen. On success the browser is sent to `redirectUri` with a
+ * `credential_id` query param containing the newly-created credential's id.
+ */
+export function getOAuthStartUrl(
+  provider: OAuthProvider,
+  credentialName: string,
+  redirectUri: string,
+): string {
+  const params = new URLSearchParams({ credential_name: credentialName, redirect_uri: redirectUri });
+  return `${gatewayUrl()}/oauth/${encodeURIComponent(provider)}/start?${params.toString()}`;
 }
 
 // ---- Teams (Phase 33 B) ----

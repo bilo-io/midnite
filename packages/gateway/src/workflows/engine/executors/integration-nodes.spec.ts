@@ -19,7 +19,7 @@ import type { NodeRunContext } from '../node-executor';
 // ---- helpers ---------------------------------------------------------------
 
 function fakeCredentials(data: WorkflowCredentialData | null): WorkflowCredentialsService {
-  return { resolve: (_id: string) => data } as unknown as WorkflowCredentialsService;
+  return { resolve: (_id: string) => Promise.resolve(data) } as unknown as WorkflowCredentialsService;
 }
 
 function makeCtx(params: Record<string, unknown>): NodeRunContext {

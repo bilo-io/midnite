@@ -53,7 +53,7 @@ export class HttpRequestExecutor implements NodeExecutor {
     // precedence over any explicit Authorization in `headers`.
     const resolvedHeaders: Record<string, string> = { ...params.headers };
     if (params.credentialId && this.credentials) {
-      const cred = this.credentials.resolve(params.credentialId);
+      const cred = await this.credentials.resolve(params.credentialId);
       if (!cred) {
         throw new Error(`credential ${params.credentialId} not found or could not be decrypted`);
       }

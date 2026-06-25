@@ -45,9 +45,9 @@ A secure home for the secrets that integration nodes need. Gate before Theme C.
 - [x] HTTP node uses `credentialId` references for auth (bearer / basic / header) instead of inline plaintext; the engine resolves the credential server-side at execute time.
 - [x] Web: a credentials manager (list / add / delete) under Settings → Credentials and a credential picker in the node config panel.
 
-### B2. OAuth2 start/callback — **M**
-- [ ] `GET /oauth/:provider/start` → provider consent redirect; `GET /oauth/:provider/callback` → exchange code, store tokens as a `workflow_credentials` row, handle refresh. Driven by the existing `workflows.oauth` config block.
-- [ ] Token refresh on expiry, transparent to executors.
+### B2. OAuth2 start/callback — **M** ✅ DONE (PR #203)
+- [x] `GET /oauth/:provider/start` → provider consent redirect; `GET /oauth/:provider/callback` → exchange code, store tokens as a `workflow_credentials` row, handle refresh. Driven by the existing `workflows.oauth` config block.
+- [x] Token refresh on expiry, transparent to executors.
 
 ---
 
