@@ -54,6 +54,9 @@ export function MarkdownPreview({ content, className }: { content: string; class
                 type="checkbox"
                 checked={checked}
                 readOnly
+                // GFM task-list items render a bare checkbox; the item text sits in a
+                // sibling node, so the input has no accessible name (axe `label`).
+                aria-label={checked ? 'Completed task' : 'Incomplete task'}
                 className="mr-1.5 h-3.5 w-3.5 translate-y-0.5 accent-foreground"
               />
             ) : null,

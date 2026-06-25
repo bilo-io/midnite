@@ -55,13 +55,24 @@ const preview: Preview = {
     controls: { matchers: { color: /color$/i } },
     // @storybook/addon-a11y runs axe-core against every story during the
     // Vitest browser run (`moon run web:test`) and in the Storybook a11y panel.
-    // 'todo' surfaces violations as warnings without failing the run; 'error'
-    // fails a story on any violation. We start at 'todo' because the current
-    // components carry a known backlog (color-contrast, nested-interactive on
-    // clickable cards, empty-heading, unlabeled markdown task-list checkboxes —
-    // see todo/phase-10 C3). Promote to 'error' (globally, or per-component as
-    // each is cleaned) once that backlog is cleared. See .storybook/main.ts.
-    a11y: { test: 'todo' },
+    // 'error' fails a story on any violation of an enabled rule (Phase 10 C3).
+    //
+    // The structural backlog (nested-interactive, aria-prohibited-attr, label,
+    // empty-heading, scrollable-region-focusable, aria-required-children) is now
+    // cleared, so those rules are enforced across every story.
+    //
+    // `color-contrast` remains a separate, systemic design-token backlog (~99
+    // hits rooted in `--muted-foreground` + the `text-muted-foreground/50,60,70`
+    // opacity utilities). Enforcing it needs a design pass on the token and those
+    // utilities — tracked in todo/phase-10 C3. Until then it's disabled here (not
+    // merely warned) so the rest of the suite runs at 'error'; re-enable this one
+    // rule once the contrast pass lands. See .storybook/main.ts.
+    a11y: {
+      test: 'error',
+      config: {
+        rules: [{ id: 'color-contrast', enabled: false }],
+      },
+    },
   },
 };
 

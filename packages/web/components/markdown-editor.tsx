@@ -13,6 +13,12 @@ type Props = {
   defaultMode?: 'edit' | 'preview';
   /** Extra controls rendered on the left of the mode toggle row. */
   label?: ReactNode;
+  /**
+   * Accessible name for the editor textarea — the visible `label` is an arbitrary
+   * node rendered beside the mode toggle, not associated with the field, so the
+   * textarea needs its own name (axe `label`).
+   */
+  ariaLabel?: string;
 };
 
 /**
@@ -25,6 +31,7 @@ export function MarkdownEditor({
   minHeight = 280,
   defaultMode = 'preview',
   label,
+  ariaLabel = 'Markdown content',
 }: Props) {
   const [mode, setMode] = useState<'edit' | 'preview'>(defaultMode);
 
@@ -58,6 +65,7 @@ export function MarkdownEditor({
         <Textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          aria-label={ariaLabel}
           spellCheck={false}
           className="resize-y font-mono text-xs leading-relaxed"
           style={{ minHeight }}
