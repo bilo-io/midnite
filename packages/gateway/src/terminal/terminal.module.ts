@@ -3,6 +3,7 @@ import type { MidniteConfig } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
 import { AgentsModule } from '../agents/agents.module';
 import { ApprovalsModule } from '../approvals/approvals.module';
+import { AuthModule } from '../auth/auth.module';
 import { ProjectsModule } from '../projects/projects.module';
 import { ReposModule } from '../repos/repos.module';
 import { TasksModule } from '../tasks/tasks.module';
@@ -17,7 +18,7 @@ import { TmuxSpawner } from './spawner/tmux-spawner';
 import { SPAWNER, type Spawner } from './spawner/spawner';
 
 @Module({
-  imports: [TasksModule, ProjectsModule, AgentsModule, ReposModule, ApprovalsModule],
+  imports: [TasksModule, ProjectsModule, AgentsModule, ReposModule, ApprovalsModule, AuthModule],
   controllers: [ApprovalController, TerminalController],
   providers: [
     TerminalService,

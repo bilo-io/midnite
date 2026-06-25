@@ -28,7 +28,7 @@ Replace the static env-var bearer token with proper user identities and JWT sess
 
 ### A4. Upgrade the auth guard to validate JWT — **S–M** ✅ DONE
 - [x] [`gateway-auth.guard.ts`](../packages/gateway/src/auth/gateway-auth.guard.ts) currently validates a static bearer token from env (`MIDNITE_AUTH_TOKEN`) via [`lib/auth-policy.ts`](../packages/gateway/src/auth/lib/auth-policy.ts). Upgrade: if `jwt.secret` is configured, validate the `Authorization: Bearer <jwt>` header as a JWT and attach the decoded `userId` to the request. The static bearer path remains as a fallback (dev/script use) so existing single-user setups continue to work without migration. Add a `@CurrentUser()` decorator that reads `req.user` for controllers to consume.
-- [x] WS connections: pass the JWT as a query param on the upgrade URL (`?token=<jwt>`) — the WS gateway validates it at connection time (`tasks.gateway.ts`, `workflows.gateway.ts`, `notifications.gateway.ts`); per-session one-time tokens (`/hooks/:taskId/:event`) remain unaffected. (Phase 35 D1/D2 wired this in.)
+- [x] WS connections: pass the JWT as a query param on the upgrade URL (`?token=<jwt>`) — the WS gateway validates it at connection time (`tasks.gateway.ts`, `workflows.gateway.ts`, `notifications.gateway.ts`, `terminal.gateway.ts`); per-session one-time tokens (`/hooks/:taskId/:event`) remain unaffected. Web hooks (`use-task-events`, `notifications-provider`, `use-workflow-run`, `use-terminal-socket`) append `?token=` when a JWT is present.
 
 ### A5. Web login + register pages — **M** ✅ DONE
 - [x] `app/(auth)/login/page.tsx` — email + password form; on success stores the access token in memory (React context) and the refresh token in an **httpOnly cookie** (`__midnite_rt`); redirects to `/`.

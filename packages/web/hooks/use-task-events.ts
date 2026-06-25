@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { TASKS_WS_PATH, TaskBoardEventSchema } from '@midnite/shared';
-import { gatewayWsUrl } from '@/lib/api';
+import { gatewayWsUrl, getAccessToken } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { emitTaskEvent } from '@/lib/task-events';
 
@@ -33,7 +33,9 @@ export function useTaskEvents(): void {
     function connect(): void {
       if (closed) return;
       try {
-        ws = new WebSocket(`${gatewayWsUrl()}${TASKS_WS_PATH}`);
+        const token = getAccessToken();
+        const wsUrl = `${gatewayWsUrl()}${TASKS_WS_PATH}${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+        ws = new WebSocket(wsUrl);
       } catch {
         scheduleReconnect();
         return;

@@ -8,7 +8,7 @@ import {
   type TerminalApprovalRequestMessage,
   type TerminalStatusPhase,
 } from '@midnite/shared';
-import { gatewayWsUrl, mintTerminalToken } from '@/lib/api';
+import { gatewayWsUrl, getAccessToken, mintTerminalToken } from '@/lib/api';
 
 export type TerminalConnectionState = 'connecting' | 'open' | 'closed' | 'error';
 
@@ -111,7 +111,9 @@ export function useTerminalSocket({
       }
       if (cancelled) return;
 
-      const ws = new WebSocket(gatewayWsUrl() + TERMINAL_WS_PATH);
+      const jwtToken = getAccessToken();
+      const termWsUrl = `${gatewayWsUrl()}${TERMINAL_WS_PATH}${jwtToken ? `?token=${encodeURIComponent(jwtToken)}` : ''}`;
+      const ws = new WebSocket(termWsUrl);
       ws.binaryType = 'arraybuffer';
       wsRef.current = ws;
 

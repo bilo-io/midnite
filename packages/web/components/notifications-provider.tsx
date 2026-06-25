@@ -15,6 +15,7 @@ import { NOTIFICATIONS_WS_PATH, NotificationEventSchema } from '@midnite/shared'
 import {
   clearNotifications,
   gatewayWsUrl,
+  getAccessToken,
   getNotifications,
   markNotificationsRead,
 } from '@/lib/api';
@@ -293,7 +294,9 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     function connect(): void {
       if (closed) return;
       try {
-        ws = new WebSocket(`${gatewayWsUrl()}${NOTIFICATIONS_WS_PATH}`);
+        const token = getAccessToken();
+        const wsUrl = `${gatewayWsUrl()}${NOTIFICATIONS_WS_PATH}${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+        ws = new WebSocket(wsUrl);
       } catch {
         scheduleReconnect();
         return;

@@ -9,7 +9,7 @@ import {
   type WorkflowEvent,
   type WorkflowRun,
 } from '@midnite/shared';
-import { gatewayWsUrl, getWorkflowRun, runWorkflow } from '@/lib/api';
+import { gatewayWsUrl, getAccessToken, getWorkflowRun, runWorkflow } from '@/lib/api';
 
 export interface UseWorkflowRun {
   run: WorkflowRun | null;
@@ -104,7 +104,9 @@ export function useWorkflowRun(workflowId: string): UseWorkflowRun {
       let opened = false;
       let socket: WebSocket;
       try {
-        socket = new WebSocket(gatewayWsUrl() + WORKFLOW_WS_PATH);
+        const token = getAccessToken();
+        const wsUrl = `${gatewayWsUrl()}${WORKFLOW_WS_PATH}${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+        socket = new WebSocket(wsUrl);
       } catch {
         poll(runId);
         return;
