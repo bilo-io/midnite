@@ -123,7 +123,7 @@ export function TeamDetailView({ teamId }: { teamId: string }) {
   };
 
   const inviteUrl = (token: string) =>
-    `${typeof window !== 'undefined' ? window.location.origin : ''}/invite/${token}`;
+    `${typeof window !== 'undefined' ? window.location.origin : ''}/invite?token=${encodeURIComponent(token)}`;
 
   if (loading) return <p className="text-sm text-muted-foreground">Loading…</p>;
   if (error) return <p className="text-sm text-destructive">{error}</p>;

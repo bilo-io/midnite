@@ -29,7 +29,7 @@ export function InviteAcceptView({ token }: { token: string }) {
 
   const handleAccept = async () => {
     if (!user) {
-      router.push(`/login?return=/invite/${token}`);
+      router.push(`/login?return=/invite?token=${encodeURIComponent(token)}`);
       return;
     }
     setAccepting(true);
