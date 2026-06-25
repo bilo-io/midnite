@@ -4,6 +4,12 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-26 — Phase 32: integration coverage for the live watch dashboard (PR #209)
+
+- [x] New `Dashboard.integration.test.tsx` drives the real `<Dashboard>` through simulated `ink-testing-library` stdin against a mocked gateway (`vi.mock('../ws.js')` + `vi.stubGlobal('fetch')`)
+- [x] Covers the interactive paths the verification had marked "requires a real TTY": keyboard column nav retargeting a move (E1), task-move PATCH + optimistic reconcile (E2), Tab switching the log-panel session subscription (D1), live `task.created` reduction without a refetch (B2)
+- [x] Test-only (no production changes); `cli:test` 89 passed, `cli:typecheck`/`cli:lint` green; merged with `--admin` (GH Actions billing-blocked account-wide)
+
 ## 2026-06-26 — Phase 32 CLI live dashboard verification complete + gateway boot fixes
 
 - [x] All 5 live TUI acceptance checks ticked — `midnite watch` renders board/pool/logs panels, status bar, and help line; alt-screen restored on exit (smoke run 2026-06-26)
