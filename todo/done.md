@@ -4,6 +4,30 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-25 — Phase 23 C: Approval audit log (PR #202)
+
+Durable record of every tool-use decision (user or automatic) — queryable via `GET /approvals/log` and visible in the Settings → Approvals History section.
+
+- [x] `approval_log` table (migration 0053) + `ApprovalLogRepository`
+- [x] `ApprovalLogEntry`/`ApprovalLogResponse`/`ApprovalLogQuerySchema` in `shared`
+- [x] `ApprovalsService.logDecision()` + `listLog()` wired into `settle()` and auto-decision path
+- [x] `GET /approvals/log?page=&limit=&from=&to=&taskId=` route
+- [x] `listApprovalLog()` API fn + paginated History section on `/settings/approvals`
+
+---
+
+## 2026-06-25 — Phase 23 B+C+D — approvals inbox, audit log, security settings (PR #201)
+
+- [x] Shared types: `PendingApproval`, `ApprovalLogEntry`, WS event discriminated union, `InboxResolveMessage`
+- [x] Gateway: `approval-event-bus.ts`, `approvals-log.repository.ts`, `approvals.gateway.ts` (WS /ws/approvals)
+- [x] Gateway: `approvals.service.ts` evaluate() with guarded SAFE_TOOLS auto-allow
+- [x] DB migration 0053: `approval_log` table + 3 indexes
+- [x] Web: `approvals-drawer.tsx` — global NavBar live-WS inbox with countdown + optimistic resolution
+- [x] Web: `/ops` Decisions tab — paginated audit log table
+- [x] Web: `/settings/security` — autonomy mode picker + approval rules CRUD
+
+---
+
 ## 2026-06-25 — Phase 35 verification — RBAC integration tests + admin→owner promotion fix (PR #200)
 
 - [x] `auth/role.guard.test.ts` — viewer 403, member ok, admin ok, no-user passthrough, getMembership caching
