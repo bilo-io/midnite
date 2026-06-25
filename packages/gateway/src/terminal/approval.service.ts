@@ -101,13 +101,28 @@ export class ApprovalService {
       return { decision: 'allow', reason: 'allowed for this session' };
     }
 
-    // Policy engine (Phase 23 A2): evaluate durable rules before asking a human.
+    // Policy engine (Phase 23 A2+C): evaluate durable rules before asking a human.
     if (this.approvalsService) {
+      const summary = summarizeToolCall(toolName, payload.tool_input);
       const verdict = this.approvalsService.evaluate(toolName, payload.tool_input);
       if (verdict === 'auto-allow') {
+        this.approvalsService.logDecision({
+          sessionId,
+          toolName,
+          summary,
+          resolution: 'auto-allow',
+          decidedBy: 'policy',
+        });
         return { decision: 'allow', reason: 'allowed by policy rule' };
       }
       if (verdict === 'auto-deny') {
+        this.approvalsService.logDecision({
+          sessionId,
+          toolName,
+          summary,
+          resolution: 'auto-deny',
+          decidedBy: 'policy',
+        });
         return { decision: 'deny', reason: 'denied by policy rule' };
       }
       // verdict === 'escalate' → fall through to human prompt
@@ -211,6 +226,13 @@ export class ApprovalService {
       requestId,
       decision: resolution,
     });
+    this.approvalsService?.logDecision({
+      sessionId: entry.sessionId,
+      toolName: entry.toolName,
+      summary: entry.request.summary,
+      resolution: resolution as import('@midnite/shared').ApprovalLogResolution,
+      decidedBy: resolutionToDecidedBy(resolution),
+    });
     entry.resolve(hookDecision);
   }
 
@@ -221,4 +243,14 @@ export class ApprovalService {
       reason: decision === 'allow-session' ? 'allowed for this session' : 'allowed by user',
     };
   }
+}
+
+function resolutionToDecidedBy(
+  resolution: ApprovalResolution,
+): import('@midnite/shared').ApprovalDecidedBy {
+  if (resolution === 'allow' || resolution === 'allow-session' || resolution === 'deny') {
+    return 'user';
+  }
+  if (resolution === 'timeout') return 'timeout';
+  return 'system'; // expired, ask
 }

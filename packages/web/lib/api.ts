@@ -187,8 +187,10 @@ import {
   ApprovalRuleSchema,
   ApprovalRulesResponseSchema,
   ApprovalRuleResponseSchema,
+  ApprovalLogResponseSchema,
   type ApprovalSettings,
   type ApprovalRule,
+  type ApprovalLogResponse,
   type CreateApprovalRule,
   type UpdateApprovalRule,
 } from '@midnite/shared';
@@ -1625,4 +1627,21 @@ export async function updateApprovalRule(id: string, req: UpdateApprovalRule): P
 
 export async function deleteApprovalRule(id: string): Promise<void> {
   await fetchJson(`/approvals/rules/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+export async function listApprovalLog(params?: {
+  page?: number;
+  limit?: number;
+  from?: string;
+  to?: string;
+  taskId?: string;
+}): Promise<ApprovalLogResponse> {
+  const qs = new URLSearchParams();
+  if (params?.page) qs.set('page', String(params.page));
+  if (params?.limit) qs.set('limit', String(params.limit));
+  if (params?.from) qs.set('from', params.from);
+  if (params?.to) qs.set('to', params.to);
+  if (params?.taskId) qs.set('taskId', params.taskId);
+  const query = qs.toString();
+  return fetchJson(`/approvals/log${query ? `?${query}` : ''}`, undefined, ApprovalLogResponseSchema);
 }
