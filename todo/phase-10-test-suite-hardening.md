@@ -117,9 +117,9 @@
 
 ### E2. Visual baseline & diff — **M** — ✅ DONE (PR #177, 2026-06-24)
 - [x] `toHaveScreenshot` assertions added to `pages.shots.ts` — each page capture is pixel-asserted against committed baselines in `e2e/__screenshots__/`; a diff image is emitted on failure.
-- [x] 10 **macOS** baselines committed (board, dashboard, workflows, councils, office × light/dark). Docker command documented in spec + README for regenerating Linux-compatible baselines.
+- [x] 10 **Linux (amd64)** baselines committed (board, dashboard, workflows, councils, office × light/dark). Docker command documented in spec + README for regenerating Linux-compatible baselines.
 - [x] `playwright.config.ts` extended: `snapshotDir`, `snapshotPathTemplate`, and `toHaveScreenshot.maxDiffPixelRatio: 0.005`.
-- [ ] ⚠️ **TODO: regenerate baselines on Linux once Docker Desktop is installed.** Current baselines are macOS — the CI `e2e` job runs on `ubuntu-latest` and will fail the visual check until Linux baselines replace them. Run the Docker command from README "Visual regression baselines" section (or `packages/web/e2e/screenshots/pages.shots.ts`) and commit the updated PNGs.
+- [x] **Linux baselines regenerated (2026-06-26, PR #210).** Ran `mcr.microsoft.com/playwright:v1.61.0-jammy` on `linux/amd64` with `build-essential`; 7 of 10 PNGs updated (3 are platform-identical); CI `e2e` job on `ubuntu-latest` will now pass the visual check.
 
 ### E3. PR preview artifacts + gallery — **M** — ✅ DONE (PR #186, 2026-06-24)
 - [x] `packages/web/scripts/generate-gallery.mjs` — gallery generator (plain ESM, no deps) walks `e2e/__shots__/`, groups pages vs. stories, produces `gallery.html` (dark-themed, relative image refs) and `SCREENSHOTS.md` (markdown manifest grouped by page/component).
