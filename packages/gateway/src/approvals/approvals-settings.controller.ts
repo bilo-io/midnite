@@ -1,16 +1,21 @@
-import { BadRequestException, Body, Controller, Get, Inject, Patch, Query } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Inject, Optional, Patch, Query } from '@nestjs/common';
 import {
   ApprovalLogQuerySchema,
   ApprovalLogResponseSchema,
   SetModeRequestSchema,
   type ApprovalLogResponse,
   type ApprovalSettings,
+  type PendingApproval,
 } from '@midnite/shared';
+import { ApprovalService } from '../terminal/approval.service';
 import { ApprovalsService } from './approvals.service';
 
 @Controller('approvals')
 export class ApprovalsSettingsController {
-  constructor(@Inject(ApprovalsService) private readonly service: ApprovalsService) {}
+  constructor(
+    @Inject(ApprovalsService) private readonly service: ApprovalsService,
+    @Optional() @Inject(ApprovalService) private readonly approvalService?: ApprovalService,
+  ) {}
 
   @Get('settings')
   getSettings(): ApprovalSettings {
@@ -23,6 +28,11 @@ export class ApprovalsSettingsController {
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
     this.service.setMode(parsed.data.mode);
     return this.service.getSettings();
+  }
+
+  @Get('pending')
+  getPending(): { pending: PendingApproval[] } {
+    return { pending: this.approvalService?.listPending() ?? [] };
   }
 
   @Get('log')

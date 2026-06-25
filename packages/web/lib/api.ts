@@ -188,11 +188,13 @@ import {
   ApprovalRulesResponseSchema,
   ApprovalRuleResponseSchema,
   ApprovalLogResponseSchema,
+  PendingApprovalsResponseSchema,
   type ApprovalSettings,
   type ApprovalRule,
   type ApprovalLogResponse,
   type CreateApprovalRule,
   type UpdateApprovalRule,
+  type PendingApproval,
 } from '@midnite/shared';
 import { z } from 'zod';
 
@@ -1644,4 +1646,9 @@ export async function listApprovalLog(params?: {
   if (params?.taskId) qs.set('taskId', params.taskId);
   const query = qs.toString();
   return fetchJson(`/approvals/log${query ? `?${query}` : ''}`, undefined, ApprovalLogResponseSchema);
+}
+
+export async function listPendingApprovals(): Promise<PendingApproval[]> {
+  const res = await fetchJson('/approvals/pending', undefined, PendingApprovalsResponseSchema);
+  return res.pending;
 }

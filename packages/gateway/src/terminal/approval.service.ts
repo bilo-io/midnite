@@ -4,6 +4,7 @@ import type {
   ApprovalDecision,
   ApprovalResolution,
   MidniteConfig,
+  PendingApproval,
   PreToolUseHookDecision,
   PreToolUseHookRequest,
   TerminalApprovalRequestMessage,
@@ -12,13 +13,16 @@ import { MIDNITE_CONFIG } from '../config.token';
 import { ApprovalsService } from '../approvals/approvals.service';
 import { hashToken, tokenMatches } from '../lib/token-hash';
 import { HookSecretRepository } from './hook-secret.repository';
+import { ApprovalEventBus } from './approval-event-bus';
 import { summarizeToolCall } from './lib/summarize-tool-call';
 import { TerminalService, type TerminalSubscriber } from './terminal.service';
 
-interface PendingApproval {
+interface PendingEntry {
   sessionId: string;
   toolName: string;
   request: TerminalApprovalRequestMessage;
+  requestedAt: string;
+  deadlineAt: string | null;
   /** Resolves the blocked hook HTTP request; also detaches the abort listener. */
   resolve: (decision: PreToolUseHookDecision) => void;
   timer: NodeJS.Timeout | null;
@@ -37,7 +41,7 @@ interface PendingApproval {
 export class ApprovalService {
   private readonly logger = new Logger(ApprovalService.name);
   private readonly secrets = new Map<string, string>(); // sessionId -> secretHash
-  private readonly pending = new Map<string, PendingApproval>(); // requestId -> pending
+  private readonly pending = new Map<string, PendingEntry>(); // requestId -> pending
   private readonly allowList = new Map<string, Set<string>>(); // sessionId -> allowed toolNames
 
   constructor(
@@ -50,6 +54,8 @@ export class ApprovalService {
     @Optional() @Inject(HookSecretRepository) private readonly secretStore?: HookSecretRepository,
     // Policy engine (Phase 23 A2). Optional so terminal specs need no change.
     @Optional() @Inject(ApprovalsService) private readonly approvalsService?: ApprovalsService,
+    // Cross-session inbox event bus (Phase 23 B). Optional so terminal specs need no change.
+    @Optional() @Inject(ApprovalEventBus) private readonly eventBus?: ApprovalEventBus,
   ) {}
 
   // ---- per-session secret (authenticates the in-PTY hook callback) ----
@@ -161,15 +167,34 @@ export class ApprovalService {
       );
       timer.unref?.();
 
+      const requestedAt = new Date().toISOString();
+      const deadlineAt = new Date(
+        Date.now() + this.config.terminal.approvals.timeoutMs,
+      ).toISOString();
       this.pending.set(requestId, {
         sessionId,
         toolName,
         request,
+        requestedAt,
+        deadlineAt,
         resolve: (decision) => {
           signal.removeEventListener('abort', onAbort);
           resolve(decision);
         },
         timer,
+      });
+      this.eventBus?.emit({
+        type: 'approval.requested',
+        approval: {
+          id: requestId,
+          sessionId,
+          taskId: sessionId,
+          toolName,
+          summary: request.summary,
+          cwd: request.cwd ?? '',
+          requestedAt,
+          deadlineAt,
+        },
       });
       this.terminal.broadcastToSession(sessionId, request);
       this.logger.log(`approval requested ${requestId} (${toolName}) on session ${sessionId}`);
@@ -233,7 +258,22 @@ export class ApprovalService {
       resolution: resolution as import('@midnite/shared').ApprovalLogResolution,
       decidedBy: resolutionToDecidedBy(resolution),
     });
+    this.eventBus?.emit({ type: 'approval.resolved', id: requestId, resolution });
     entry.resolve(hookDecision);
+  }
+
+  /** Expose the in-memory pending set for the cross-session inbox. */
+  listPending(): PendingApproval[] {
+    return [...this.pending.entries()].map(([id, entry]) => ({
+      id,
+      sessionId: entry.sessionId,
+      taskId: entry.sessionId,
+      toolName: entry.toolName,
+      summary: entry.request.summary,
+      cwd: entry.request.cwd ?? '',
+      requestedAt: entry.requestedAt,
+      deadlineAt: entry.deadlineAt,
+    }));
   }
 
   private toHookDecision(decision: ApprovalDecision): PreToolUseHookDecision {
