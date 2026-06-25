@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-26 — Phase 10 E2: Linux visual regression baselines (PR #210)
+
+- [x] Ran `mcr.microsoft.com/playwright:v1.61.0-jammy` on `linux/amd64` with `build-essential` + separate node_modules volume to compile linux/x64 native binaries (better-sqlite3, esbuild, node-pty)
+- [x] 7 of 10 page baselines updated (board-light, councils ×2, dashboard ×2, workflows ×2); 3 are platform-identical; all in `e2e/__screenshots__/`
+- [x] Phase 10 E2 ⚠️ TODO resolved — CI `e2e` job on `ubuntu-latest` will now pass the `toHaveScreenshot` visual check
+
+---
+
 ## 2026-06-26 — Phase 32: integration coverage for the live watch dashboard (PR #209)
 
 - [x] New `Dashboard.integration.test.tsx` drives the real `<Dashboard>` through simulated `ink-testing-library` stdin against a mocked gateway (`vi.mock('../ws.js')` + `vi.stubGlobal('fetch')`)
