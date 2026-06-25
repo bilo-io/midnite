@@ -45,6 +45,8 @@ import {
   ensureOfficeTileset,
   ensureOfficeTextures,
   plantTexture,
+  poseTexKey,
+  providerAccent,
   robotVariant,
   TEX,
   TILESET_KEY,
@@ -292,6 +294,10 @@ class OfficeScene extends Phaser.Scene {
       }
       if (state.playerVariant !== prev.playerVariant) {
         this.player.setTexture(this.playerCharKey(this.facing, 0));
+        this.applyPlayerTint();
+      }
+      if (state.playerTint !== prev.playerTint) {
+        this.applyPlayerTint();
       }
     });
     this.renderActors(useOfficeStore.getState().agents);
@@ -531,7 +537,8 @@ class OfficeScene extends Phaser.Scene {
       .setAlpha(0)
       .setDepth(11);
 
-    const badgeColor = CLI_BADGE_COLOR[agent.agentCli ?? ''] ?? CLI_BADGE_DEFAULT;
+    const badgeColor =
+      providerAccent(agent.provider) ?? CLI_BADGE_COLOR[agent.agentCli ?? ''] ?? CLI_BADGE_DEFAULT;
     const providerBadge = this.add
       .arc(tx + 8, ty - 10, CLI_BADGE_RADIUS, 0, 360, false, badgeColor, 0.9)
       .setDepth(12);
@@ -575,22 +582,29 @@ class OfficeScene extends Phaser.Scene {
   }
 
   /**
-   * C2: set a sprite pose matching the live activity phase.
-   * - `running` → slow typing animation (walk cycle at 2 fps).
-   * - `blocked`  → still frame 1 (standing upright, awaiting input).
-   * - `idle` / unknown → still frame 0 (neutral seated position).
+   * Phase 8 C1 / Phase 9 B1: activity-driven body pose state machine.
+   *
+   * Mapping:
+   * - completed          → celebrate (arms high, Y-shape)
+   * - waiting / blocked  → raised    (arms up — paused, needs input)
+   * - running            → typing    (arms angled toward keyboard)
+   * - idle / default     → neutral frame 0
+   *
+   * All poses are procedural sprites registered by ensureOfficeTextures.
    */
   private applyPose(actor: Actor, agent: OfficeAgent) {
-    const phase = agent.liveActivity?.phase;
-    if (phase === 'running') {
-      // Slow "typing" — reuse the down-facing walk cycle at a fraction of walk speed.
-      actor.sprite.play({ key: walkAnim('robot', 'down', actor.variant), frameRate: 2 }, true);
-    } else if (phase === 'blocked') {
-      actor.sprite.anims.stop();
-      actor.sprite.setTexture(charKey('robot', 'down', 1, actor.variant)).setFlipX(false);
+    const { phase } = agent.liveActivity ?? {};
+    actor.sprite.anims.stop();
+    actor.sprite.setFlipX(false);
+
+    if (agent.status === 'completed') {
+      actor.sprite.setTexture(poseTexKey(actor.variant, 'celebrate'));
+    } else if (phase === 'blocked' || agent.status === 'waiting') {
+      actor.sprite.setTexture(poseTexKey(actor.variant, 'raised'));
+    } else if (phase === 'running') {
+      actor.sprite.setTexture(poseTexKey(actor.variant, 'typing'));
     } else {
-      actor.sprite.anims.stop();
-      actor.sprite.setTexture(charKey('robot', 'down', 0, actor.variant)).setFlipX(false);
+      actor.sprite.setTexture(charKey('robot', 'down', 0, actor.variant));
     }
   }
 
@@ -731,8 +745,9 @@ class OfficeScene extends Phaser.Scene {
     const glow = toolShadowTint(agent.liveActivity?.phase === 'running' ? agent.liveActivity.tool : undefined);
     actor.shadow.setFillStyle(glow.color, glow.alpha);
 
-    // B1: provider badge — dot color follows the agent CLI (claude/gemini/codex/…).
-    const badgeColor = CLI_BADGE_COLOR[agent.agentCli ?? ''] ?? CLI_BADGE_DEFAULT;
+    // B1: provider badge — prefer the typed provider accent; fall back to CLI name.
+    const badgeColor =
+      providerAccent(agent.provider) ?? CLI_BADGE_COLOR[agent.agentCli ?? ''] ?? CLI_BADGE_DEFAULT;
     actor.providerBadge.setFillStyle(badgeColor, 0.9);
 
     // D1: start/stop the attention pulse tween depending on whether the agent
@@ -1009,6 +1024,11 @@ class OfficeScene extends Phaser.Scene {
   private idlePlayer() {
     this.player.anims.stop();
     this.player.setTexture(this.playerCharKey(this.facing, 0));
+  }
+
+  private applyPlayerTint() {
+    const tint = useOfficeStore.getState().playerTint ?? this.palette.player;
+    this.player.setTint(tint);
   }
 
   private playerKindAndVariant(): { kind: CharKind; v: number } {
@@ -1311,10 +1331,11 @@ class OfficeScene extends Phaser.Scene {
     this.playerShadow = this.add
       .ellipse(sx, sy + TILE * 0.42, TILE * 0.45, TILE * 0.18, 0x000000, 0.25)
       .setDepth(7);
+    const initialTint = useOfficeStore.getState().playerTint ?? this.palette.player;
     this.player = this.add
       .sprite(sx, sy, this.playerCharKey('down', 0))
       .setScale(CHAR_SCALE)
-      .setTint(this.palette.player)
+      .setTint(initialTint)
       .setDepth(8);
     this.physics.add.existing(this.player);
     this.body().setSize(10, 7).setOffset(3, 12);

@@ -4,7 +4,7 @@
 
 > Status legend: boxes start unchecked; themes are independent. **Only the rendering layer changes** — the desk-slot model, movement/collision, proximity detection, the Zustand ↔ HUD bridge, and the live-data hook ([`use-office-agents.ts`](../packages/web/components/office/use-office-agents.ts)) all stay as-is.
 
-> **Progress (2026-06-24):** procedural pixel-art + zones + interaction + presence landed — ✅ A2 (human + robot sprites, walk cycle), B1 (theme colours), B3 (fixed-aspect layout), C2 (per-tool shadow glow, PR #167), C3 (grid pathfinding), zones (hot desks / lounge / board room), D1 (Call → live terminal, Messages → transcript), D3 (board-room document viewer); ◐ A3 (rich decor; desk variety left), C1 (status bubbles + idle sleep/game; body anims left), D2 (click-to-walk; nameplates/minimap left). **Open (need external assets / new data / out of scope):** A1 external Tiled/LimeZu pack, B2 camera/scrolling map (day-night ✅ #112), E (multiplayer).
+> **Progress (2026-06-24):** procedural pixel-art + zones + interaction + presence landed — ✅ A2 (human + robot sprites, walk cycle), B1 (theme colours), B3 (fixed-aspect layout), C2 (per-tool shadow glow, PR #167), C3 (grid pathfinding), zones (hot desks / lounge / board room), D1 (Call → live terminal, Messages → transcript), D3 (board-room document viewer); ◐ A3 (rich decor; desk variety left), D2 (click-to-walk; nameplates/minimap left); ✅ C1 (status bubbles + idle sleep/game + body poses, PR #208). **Open (need external assets / new data / out of scope):** A1 external Tiled/LimeZu pack, B2 camera/scrolling map (day-night ✅ #112), E (multiplayer).
 
 ---
 
@@ -55,10 +55,10 @@ The headline: swap shapes for real sprites + tiles.
 
 Make agents *look* like they're doing what their status says.
 
-### C1. Status-driven presence — **M** — ◐ partial (2026-06-20)
+### C1. Status-driven presence — **M** — ✅ DONE (2026-06-26, PR #208)
 - [x] Each agent shows a status **speech bubble** driven off `OfficeAgent.status` — `running` → `···`, `waiting` → `?`, `completed` → `✓` — coloured by the shared status tint (`STATUS_BUBBLE` in [`office-scene.ts`](../packages/web/components/office/scenes/office-scene.ts)).
 - [x] **Idle agents sleep or game** in the lounge: split deterministically by id (`isGamer`) — sleepers show an animated `z`/`zz`/`zzz` (timer-driven, `setActivity`/`tickIdleBubbles`); gamers show `▶` and face the TV.
-- [ ] Richer per-status **body** animations (typing pose, a real celebrate-then-settle) — needs the multi-frame character sheet from A1/A2.
+- [x] Richer per-status **body** animations — procedural pose textures: **typing** (arms angled toward keyboard), **raised** (arms up, blocked/waiting), **celebrate** (Y-shape, completed). Full activity state machine in `applyPose()` — no external asset sheet needed. (PR #208)
 
 ### C2. Activity indicators — **S–M** — ✅ DONE (2026-06-24, PR #167)
 - [x] Per-tool shadow glow: `toolShadowTint()` maps `liveActivity.tool` → semantic color (Edit/Write green, Bash orange, Read blue, Agent/MCP purple, unknown amber). Wired into `updateActorContent()` — `actor.shadow.setFillStyle(color, alpha)` shifts when phase=`running`, resets to neutral when idle. Powered by Phase 31 E's `liveActivity` field.

@@ -6,6 +6,7 @@ import { DEFAULT_DESK_ITEMS, parseDeskItems } from '@/lib/office/desk-items';
 
 const LS_CUSTOMISATION_KEY = 'midnite.office.customisation';
 const LS_PLAYER_VARIANT_KEY = 'midnite.office.player-variant';
+const LS_PLAYER_TINT_KEY = 'midnite.office.player-tint';
 
 /** Which view the interaction panel is showing for the selected desk. */
 export type InteractionMode = 'menu' | 'call' | 'message';
@@ -48,6 +49,8 @@ interface OfficeState {
   characterPickerOpen: boolean;
   /** Player avatar: -1 = human, 0–5 = robot variant index (persisted). */
   playerVariant: number;
+  /** Sprite tint for the player character (null = natural; persisted). */
+  playerTint: number | null;
   /** Personal "on a coffee break" presence flag (mock — local to this session). */
   onBreak: boolean;
   /** Which Phaser scene is active — drives the HUD (back button vs. normal). */
@@ -81,6 +84,7 @@ interface OfficeState {
   openCharacterPicker(): void;
   closeCharacterPicker(): void;
   setPlayerVariant(variant: number): void;
+  setPlayerTint(tint: number | null): void;
   toggleBreak(): void;
   setCurrentScene(scene: 'office' | 'corner'): void;
   setDeskItems(items: string[]): void;
@@ -101,6 +105,14 @@ function loadPlayerVariant(): number {
   return isNaN(n) || n < -1 || n > 5 ? -1 : n;
 }
 
+function loadPlayerTint(): number | null {
+  if (typeof window === 'undefined') return null;
+  const raw = window.localStorage.getItem(LS_PLAYER_TINT_KEY);
+  if (!raw || raw === 'null') return null;
+  const n = parseInt(raw, 10);
+  return isNaN(n) ? null : n;
+}
+
 export const useOfficeStore = create<OfficeState>((set) => ({
   agents: [],
   nearbyId: null,
@@ -119,6 +131,7 @@ export const useOfficeStore = create<OfficeState>((set) => ({
   currentScene: 'office',
   deskItems: loadDeskItems(),
   playerVariant: loadPlayerVariant(),
+  playerTint: loadPlayerTint(),
   setAgents: (agents) => set({ agents }),
   patchAgent: (id, patch) =>
     set((s) => {
@@ -158,6 +171,12 @@ export const useOfficeStore = create<OfficeState>((set) => ({
       window.localStorage.setItem(LS_PLAYER_VARIANT_KEY, String(playerVariant));
     }
     set({ playerVariant });
+  },
+  setPlayerTint: (playerTint) => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(LS_PLAYER_TINT_KEY, playerTint === null ? 'null' : String(playerTint));
+    }
+    set({ playerTint });
   },
   toggleBreak: () => set((s) => ({ onBreak: !s.onBreak })),
   setCurrentScene: (currentScene) => set({ currentScene }),

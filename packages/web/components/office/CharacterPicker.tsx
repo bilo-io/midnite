@@ -2,15 +2,21 @@
 
 import { cn } from '@/lib/utils';
 import { useOfficeStore } from '@/lib/office-store';
+import { PLAYER_TINTS } from '@/lib/office/customisation';
 
-/** Robot variant accent colors (matches ROBOT_VARIANTS in textures.ts). */
+/** Robot variant accent colours — matches ROBOT_VARIANTS in textures.ts. */
 const ROBOT_ACCENTS = ['#34d399', '#f472b6', '#38bdf8', '#fb923c', '#a78bfa', '#2dd4bf'];
-/** Robot variant names (A–F). */
-const ROBOT_NAMES = ['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon', 'Zeta'];
+/** Robot variant display names. */
+const ROBOT_NAMES = ['Rod', 'Twin', 'Bulb', 'Dish', 'Sensor', 'Fins'];
+
+const TINT_CSS = PLAYER_TINTS.map((t) => (t === null ? null : `#${t.toString(16).padStart(6, '0')}`));
+const TINT_LABELS = ['Natural', 'Blue', 'Green', 'Pink', 'Amber', 'Violet', 'Red'];
 
 export function CharacterPicker({ onClose }: { onClose: () => void }) {
   const playerVariant = useOfficeStore((s) => s.playerVariant);
   const setPlayerVariant = useOfficeStore((s) => s.setPlayerVariant);
+  const playerTint = useOfficeStore((s) => s.playerTint);
+  const setPlayerTint = useOfficeStore((s) => s.setPlayerTint);
 
   function pick(v: number) {
     setPlayerVariant(v);
@@ -37,7 +43,8 @@ export function CharacterPicker({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        <div className="grid grid-cols-4 gap-2 p-4">
+        {/* Character grid */}
+        <div className="grid grid-cols-4 gap-2 p-4 pb-2">
           {/* Human option */}
           <button
             type="button"
@@ -80,6 +87,31 @@ export function CharacterPicker({ onClose }: { onClose: () => void }) {
               {ROBOT_NAMES[i]}
             </button>
           ))}
+        </div>
+
+        {/* Tint palette */}
+        <div className="border-t border-border px-4 py-3">
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Colour tint
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {TINT_CSS.map((css, i) => (
+              <button
+                key={i}
+                type="button"
+                title={TINT_LABELS[i]}
+                aria-label={TINT_LABELS[i]}
+                onClick={() => setPlayerTint(PLAYER_TINTS[i] ?? null)}
+                className={cn(
+                  'h-6 w-6 rounded-full border-2 transition-all hover:scale-110',
+                  playerTint === (PLAYER_TINTS[i] ?? null)
+                    ? 'border-primary shadow-sm'
+                    : 'border-transparent',
+                )}
+                style={css ? { background: css } : { background: 'conic-gradient(#e2e8f0, #94a3b8, #e2e8f0)' }}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </div>

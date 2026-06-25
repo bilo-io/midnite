@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { TaskEventSchema } from './task.js';
+import { LlmProviderSchema } from './llm.js';
 
 export const SESSION_STATUSES = ['running', 'waiting', 'completed', 'idle'] as const;
 export const SessionStatusSchema = z.enum(SESSION_STATUSES);
@@ -20,6 +21,8 @@ export const SessionSummarySchema = z.object({
   archivedAt: z.string().optional(),
   /** The agent CLI driving this session (claude | gemini | codex | …). */
   agentCli: z.string().optional(),
+  /** LLM provider backing this session (derived from agentCli). */
+  provider: LlmProviderSchema.optional(),
 });
 export type SessionSummary = z.infer<typeof SessionSummarySchema>;
 
