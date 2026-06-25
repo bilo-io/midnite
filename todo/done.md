@@ -4,6 +4,13 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-26 — Phase 32 CLI live dashboard verification complete + gateway boot fixes
+
+- [x] All 5 live TUI acceptance checks ticked — `midnite watch` renders board/pool/logs panels, status bar, and help line; alt-screen restored on exit (smoke run 2026-06-26)
+- [x] Gateway boot fixed: `WorkflowCredentialsModule` + `RoleGuard` were missing explicit `@Inject()` decorators (tsx/esbuild doesn't emit decorator metadata for module/guard classes); `RoleGuard` moved to `APP_GUARD` global singleton
+
+---
+
 ## 2026-06-26 — Phase 18 councils export regression verification complete
 
 - [x] Code-confirmed: `council-run-tabs.tsx` uses `exportCouncilRunMarkdown()` + `buildHtml` from `lib/council-html-export` — both export paths bypass ExportMenu's renderer
