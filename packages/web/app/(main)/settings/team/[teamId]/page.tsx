@@ -1,20 +1,17 @@
-'use client';
-
-import { use } from 'react';
 import { TeamDetailView } from './team-detail-view';
 
-// generateStaticParams returns [] so next build (output:export) succeeds.
-// Client-side navigation still works; direct-URL access requires the file
-// server to fall back to the app shell (index.html).
+// Returns [] so next build (output:export) succeeds; client-side navigation
+// to /settings/team/[teamId] still works as long as the static file server
+// falls back to the app shell (index.html).
 export async function generateStaticParams() {
   return [];
 }
 
-export default function SettingsTeamDetailPage({
+export default async function SettingsTeamDetailPage({
   params,
 }: {
   params: Promise<{ teamId: string }>;
 }) {
-  const { teamId } = use(params);
+  const { teamId } = await params;
   return <TeamDetailView teamId={teamId} />;
 }
