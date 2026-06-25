@@ -47,6 +47,8 @@ export const ProjectSchema = z.object({
   updatedAt: z.string(),
   sources: z.array(ProjectSourceSchema),
   taskCount: z.number().int().nonnegative().optional(),
+  /** Phase 38: team this project belongs to; null for personal projects. */
+  teamId: z.string().optional(),
 });
 
 export const CreateProjectRequestSchema = z.object({

@@ -1033,3 +1033,30 @@ export const auditLog = sqliteTable(
 
 export type AuditLogRow = typeof auditLog.$inferSelect;
 export type AuditLogInsert = typeof auditLog.$inferInsert;
+
+// ── Service tokens (Phase 38 Theme B) ──────────────────────────────────────
+// Machine-readable API keys for CI/CD pipelines and scripted integrations.
+// token_hash is SHA-256(raw_token); the raw token is returned once at creation
+// and never stored. prefix (first 8 chars) identifies the token in list views.
+export const serviceTokens = sqliteTable(
+  'service_tokens',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    tokenHash: text('token_hash').notNull(),
+    prefix: text('prefix').notNull(),
+    teamId: text('team_id'),
+    createdBy: text('created_by'),
+    lastUsedAt: text('last_used_at'),
+    expiresAt: text('expires_at'),
+    revokedAt: text('revoked_at'),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    hashIdx: uniqueIndex('service_tokens_hash_idx').on(t.tokenHash),
+    teamIdx: index('service_tokens_team_idx').on(t.teamId),
+  }),
+);
+
+export type ServiceTokenRow = typeof serviceTokens.$inferSelect;
+export type ServiceTokenInsert = typeof serviceTokens.$inferInsert;

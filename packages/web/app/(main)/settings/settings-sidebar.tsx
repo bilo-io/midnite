@@ -11,6 +11,7 @@ import {
   Palette,
   ShieldCheck,
   SlidersHorizontal,
+  Ticket,
   Users,
   UserRound,
   type LucideIcon,
@@ -31,6 +32,7 @@ const CATEGORIES: Category[] = [
   { href: '/settings/profile', label: 'Profile', Icon: CircleUser },
   { href: '/settings/team', label: 'Team', Icon: Users },
   { href: '/settings/user', label: 'User', Icon: UserRound },
+  { href: '/settings/api-tokens', label: 'API Tokens', Icon: Ticket },
 ];
 
 /**

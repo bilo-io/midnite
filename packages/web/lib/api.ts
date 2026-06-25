@@ -193,6 +193,12 @@ import {
   type ApprovalLogResponse,
   type CreateApprovalRule,
   type UpdateApprovalRule,
+  CreateServiceTokenRequestSchema,
+  CreateServiceTokenResponseSchema,
+  ListServiceTokensResponseSchema,
+  type CreateServiceTokenRequest,
+  type CreateServiceTokenResponse,
+  type ListServiceTokensResponse,
 } from '@midnite/shared';
 import { z } from 'zod';
 
@@ -1644,4 +1650,24 @@ export async function listApprovalLog(params?: {
   if (params?.taskId) qs.set('taskId', params.taskId);
   const query = qs.toString();
   return fetchJson(`/approvals/log${query ? `?${query}` : ''}`, undefined, ApprovalLogResponseSchema);
+}
+
+// ── Service tokens (Phase 38 Theme B) ───────────────────────────────────────
+
+export async function listServiceTokens(): Promise<ListServiceTokensResponse> {
+  return fetchJson('/service-tokens', undefined, ListServiceTokensResponseSchema);
+}
+
+export async function createServiceToken(
+  req: CreateServiceTokenRequest,
+): Promise<CreateServiceTokenResponse> {
+  return fetchJson(
+    '/service-tokens',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(req) },
+    CreateServiceTokenResponseSchema,
+  );
+}
+
+export async function revokeServiceToken(id: string): Promise<void> {
+  await fetchJson(`/service-tokens/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }

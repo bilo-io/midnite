@@ -49,3 +49,4 @@ export * from './approval-rule.js';
 export * from './user.js';
 export * from './team.js';
 export * from './audit.js';
+export * from './service-token.js';

@@ -11,6 +11,7 @@ import type { MidniteConfig } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
 import { isAuthExemptPath, isLoopbackHost, isValidBearer, resolveAuthToken } from './lib/auth-policy';
 import type { JwtService } from './jwt.service';
+import type { ServiceTokensService } from '../service-tokens/service-tokens.service';
 
 type IncomingRequest = {
   url?: string;
@@ -33,6 +34,7 @@ export class GatewayAuthGuard implements CanActivate {
   constructor(
     @Inject(MIDNITE_CONFIG) config: MidniteConfig,
     @Optional() private readonly jwtSvc?: JwtService,
+    @Optional() private readonly serviceTokens?: ServiceTokensService,
   ) {
     this.token = resolveAuthToken(config);
     if (this.token) {
@@ -60,7 +62,20 @@ export class GatewayAuthGuard implements CanActivate {
         req.user = { userId: payload.sub, email: payload.email, teamId: payload.teamId ?? null };
         return true;
       } catch {
-        // fall through to static-token check
+        // fall through to service-token / static-token check
+      }
+    }
+
+    // Service account tokens: `mnt_<hex>` bearer values issued by /service-tokens.
+    if (bearer && this.serviceTokens) {
+      const st = this.serviceTokens.validate(bearer);
+      if (st) {
+        req.user = {
+          userId: st.createdBy ?? 'service',
+          email: '',
+          teamId: st.teamId ?? null,
+        };
+        return true;
       }
     }
 
