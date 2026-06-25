@@ -86,7 +86,7 @@ A run as a debuggable, shareable document — the payoff of Phase 12's persisted
 
 ## Verification
 
-- [ ] **Councils still works** after Theme D's renderer lift — md download + pdf-via-print unchanged (no regression on the existing path).
+- [x] **Councils still works** after Theme D's renderer lift — md download + pdf-via-print unchanged (no regression on the existing path). *(Code-confirmed 2026-06-26: `council-run-tabs.tsx` uses `fetchMarkdown={() => exportCouncilRunMarkdown(...)}` + `buildHtml` from `lib/council-html-export` — both paths bypass ExportMenu's renderer; no regression)*
 - [x] **Task:** open a task thread → `ExportMenu` → markdown download contains the title, status history, and `task_events` timeline; PDF prints the same content; "copy as markdown" copies it. `midnite task export <id>` emits the same markdown.
 - [x] **Project:** export a project → markdown has the overview, a task list grouped by column, and memory/notes/sources sections (empty sections omitted); PDF renders.
 - [x] **Workflow run:** export a completed run → markdown shows per-node input → resolved params → output (and a failed node's error); PDF renders.

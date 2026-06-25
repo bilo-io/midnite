@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-26 — Phase 18 councils export regression verification complete
+
+- [x] Code-confirmed: `council-run-tabs.tsx` uses `exportCouncilRunMarkdown()` + `buildHtml` from `lib/council-html-export` — both export paths bypass ExportMenu's renderer
+- [x] No regression from Theme D renderer lift; md download + pdf-via-print paths intact
+- [x] All Phase 18 verification items now ticked
+
+---
+
 ## 2026-06-26 — Phase 8 C1 + Phase 9 B1: procedural robot poses + activity state machine (PR #208)
 
 - [x] `shared`: `provider: LlmProvider | undefined` on `SessionSummarySchema`; gateway `sessions.service` derives it from `agentCli` via `CLI_PROVIDER_MAP`
