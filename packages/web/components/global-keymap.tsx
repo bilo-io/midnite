@@ -1,13 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  Lock,
-  Moon,
-  PlusCircle,
-  Sun,
-} from 'lucide-react';
+import { Lock, PlusCircle, Sun } from 'lucide-react';
 import { THEME_STORAGE_KEY } from '@midnite/ui/theme';
 import { useGlobalKeymap } from '@/hooks/use-global-keymap';
 import { useRegisterPaletteCommands } from '@/lib/palette-commands';
