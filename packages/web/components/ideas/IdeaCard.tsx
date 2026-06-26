@@ -10,7 +10,7 @@ export function IdeaCard({ idea }: { idea: Idea }) {
 
   return (
     <div
-      onClick={() => router.push(`/ideas/${idea.id}`)}
+      onClick={() => router.push(`/ideas/view?id=${idea.id}`)}
       className={cn(
         'group flex cursor-pointer flex-col gap-2 rounded-lg border border-border/60 p-4',
         'hover:border-foreground/20 hover:bg-muted/30 transition-colors',

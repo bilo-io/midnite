@@ -20,7 +20,7 @@ export function IdeaList({ ideas }: { ideas: Idea[] }) {
       {ideas.map((idea) => (
         <div
           key={idea.id}
-          onClick={() => router.push(`/ideas/${idea.id}`)}
+          onClick={() => router.push(`/ideas/view?id=${idea.id}`)}
           className="flex cursor-pointer items-start gap-3 px-4 py-3 hover:bg-muted/40 transition-colors"
         >
           <div className="min-w-0 flex-1">
