@@ -23,7 +23,9 @@ Echo the resolved range back in one line before the report.
 
 ## 2 · Gather (read-only) — fan out to subagents
 
-The gathering is independent and read-heavy (raw PR JSON + ~30 phase-doc reads), so once `START`/`END` are resolved **dispatch two read-only subagents in a single message** so they run concurrently. Pass the resolved `START`/`END` into each prompt. Each returns a compact structured digest — keep the raw JSON and file dumps out of this thread; you compose the report from the digests.
+The gathering is independent, so once `START`/`END` are resolved **dispatch two read-only subagents in a single message** so they run concurrently. Pass the resolved `START`/`END` into each prompt. Each returns a compact structured digest — keep the raw JSON and file dumps out of this thread; you compose the report from the digests.
+
+**Context discipline (enforced):** the report's phase-progress data comes from **`todo/_INDEX.md` only** — the pre-computed roll-up `/exec` keeps current. **Never read the individual `todo/phase-*.md` files** (that's the whole point of the index — ~30 reads collapse to one). Sources are: GitHub/`gh` (PRs, status mix), `git log` (commits, file-touch mapping — `--name-only`, never reading the doc bodies), `todo/_INDEX.md` (phase progress + themes), and a date-filtered grep of `todo/done.md` (items shipped in range).
 
 **Subagent A — GitHub / PR data:**
 - **Merged PRs in range** (the spine of the report) — pin the window to SAST with a `+02:00` offset on both bounds so the search brackets the **SAST** day, not the UTC day:
@@ -44,10 +46,10 @@ The gathering is independent and read-heavy (raw PR JSON + ~30 phase-doc reads),
 - If `gh` isn't available/authed, say so and fall back to merge commits via `git log` — don't fail the report.
 - **Return:** the merged-PR rows (`number, title, url, mergedAt, additions, deletions, author, phase`), the status-mix counts, and the phase→PRs aggregation.
 
-**Subagent B — repo doc / phase state:**
-- **Phase progress (whole repo, not just the range):** for each `todo/phase-*.md` count `- [x]`/`✅` vs `- [ ]` (exclude `OUT OF SCOPE`/`deferred`); read the status markers in `todo/README.md` Quick links. Compute done/total + %.
-- **Items shipped in range:** count `done.md` entries whose date falls in `START..END`, grouped by phase.
-- **Return:** one row per phase (`number, title, done, total, %, statusMarker`) plus the per-phase shipped-in-range counts.
+**Subagent B — phase state (index-only, no phase docs):**
+- **Phase progress (whole repo):** read **`todo/_INDEX.md`** — it already carries one row per phase with `Status`, `Done`/`Total`, `%`, and the `🔄 WIP` / `◻ TODO` theme columns. Parse the table; **do not** recompute from `phase-*.md` and **do not** open them.
+- **Items shipped in range:** `grep`/filter `todo/done.md` for entries whose date falls in `START..END`, grouped by phase (date-filtered so the 300KB file stays out of context — return only the counts).
+- **Return:** one row per phase (`number, title, status, done, total, %, wipThemes, todoThemes`) straight from the index, plus the per-phase shipped-in-range counts.
 
 ## 3 · Report — markdown, tables-first
 Emit in this order:
@@ -66,11 +68,12 @@ A one-line **status mix**: `N merged · M open · K closed-unmerged`.
 |-------|-----|------------------|--------------|
 Sum the additions/deletions of the PRs mapped to each phase; `Items → done` = `done.md` entries dated in range for that phase.
 
-`## 📊 Phase progress (overall)` — every phase, with a unicode bar:
-| Phase | Status | Done / total | % | Bar |
-|-------|--------|--------------|---|-----|
-| 25 · UI library | ✅ | 18 / 18 | 100% | `██████████` |
-Bar = 10 cells: `█` × round(%/10), `░` for the rest. Status emoji from the checkbox ratio + README markers: ✅ complete · 🔄 wip · ⬜ not started.
+`## 📊 Phase progress (overall)` — straight from `todo/_INDEX.md` (don't recompute), with a unicode bar + the open-theme columns:
+| Phase | Status | Done / total | % | Bar | 🔄 WIP | ◻ TODO |
+|-------|--------|--------------|---|-----|--------|--------|
+| 25 · UI library | ✅ | 17 / 17 | 100% | `██████████` | — | — |
+| 40 · Ideas pipeline | 🔄 | 15 / 54 | 28% | `███░░░░░░░` | — | C D E F |
+Bar = 10 cells: `█` × round(%/10), `░` for the rest (the index ships a 20-cell bar — halve it or re-derive from %). Status from the index's `Status` column: ✅ complete · 🔄 wip · ⬜ not started. The `🔄 WIP`/`◻ TODO` theme letters come verbatim from the index.
 
 End with a one-line **headline** — e.g. *"5 PRs · +2.3k/−1.0k · Phase 25 closed, Phase 15 advanced; 24/29 phases complete."*
 
