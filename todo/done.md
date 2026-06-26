@@ -11,6 +11,12 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 - [x] `page-header.tsx` + `page.tsx` background divs gain `data-bg-target=""`; `useBackgroundPattern` + `AppearanceEffects` wired to `applyBackground` for live changes
 - [x] 4 new tests for `applyBackground`; init-script eval test asserts `data-bg='grid'` on default load; 557 web tests pass
 
+## 2026-06-26 — Office minimap click-to-warp + agent tooltips (PR #223)
+
+- [x] **Click-to-warp**: clicking the minimap maps the point to office-world coords (pure `minimapToWorld`, inverse of `worldToMinimap`, round-trip unit-tested) and pathfinds the player there via the existing click-to-walk A*, snapping to the nearest walkable tile (clicks on walls/desks still work)
+- [x] **Agent-dot hover tooltip**: hovering near an agent dot shows its name + status
+- [x] `onPointerDown` refactored to a shared `walkTo(x,y)` used by both floor and minimap clicks; tooltip is a minimap-container child. Polish follow-up to the Phase 8 D2 minimap (PR #218). Local gate green (typecheck, my files lint-clean, 555 web tests); merged with CI billing-blocked
+
 ## 2026-06-26 — Phase 8 A3: office desk variety + count = pool capacity (PR #221)
 
 - [x] `lib/office/desks.ts` — pure, unit-tested `generateDeskLayout(capacity)`: packs N desks into the WORK room as an even grid (clamped `[1, MAX_DESKS]`), distinct tiles, `deskScale` eases large→small as capacity grows
