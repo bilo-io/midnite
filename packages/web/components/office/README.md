@@ -49,6 +49,14 @@ the **player** dot, and a rectangle marking the camera's current viewport. Pure 
 container tracking the follow-camera's `worldView` each frame (scaled `1/ZOOM`), with the panel fill
 re-tinting on the light/dark flip.
 
+**Hot desks** (A3): the work room holds **one desk per agent-pool slot** — the desk count equals the
+configured pool capacity (`terminal.maxSessions`, read from the `/pool` snapshot). A pure
+[`lib/office/desks.ts`](../../lib/office/desks.ts) `generateDeskLayout(capacity)` packs that many desks
+into the WORK room as an even grid and scales them to fit (larger when few, smaller when many); the
+scene rebuilds the desks + walkability grid when the live capacity arrives (`office-store` carries
+`deskCapacity`, fetched once in `use-office-agents`). Each desk gets a deterministic **setup**
+(single / dual-monitor / laptop), a per-desk **screen colour**, and 2–3 **clutter** items by seat index.
+
 **Art:** sprites/tiles are **generated procedurally** in [`lib/office/textures.ts`](../../lib/office/textures.ts)
 — a tiled floor, brick walls, desks/monitors, a TV + console, a conference table, a projects
 whiteboard, a counter, bookshelves, a corner-office door, a pool water tile + sun loungers, plus two character kinds: a **human**
