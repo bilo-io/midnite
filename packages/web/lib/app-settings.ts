@@ -162,6 +162,46 @@ export const ACCENT_OPTIONS: { id: AccentId; label: string; h: number; s: number
   { id: 'orange', label: 'Orange', h: 24, s: 85 },
 ];
 
+/**
+ * How much motion the app shows, applied as `data-motion` on <html>:
+ * - `system` (default): honour the OS `prefers-reduced-motion` setting.
+ * - `reduced`: force animations off regardless of the OS.
+ * - `full`: force animations on, overriding an OS reduce preference (opt-in).
+ */
+export type Motion = 'system' | 'reduced' | 'full';
+export const MOTION_DEFAULT: Motion = 'system';
+
+export const MOTION_OPTIONS: { value: Motion; label: string; hint: string }[] = [
+  { value: 'system', label: 'System', hint: 'Follow the OS reduced-motion setting' },
+  { value: 'reduced', label: 'Reduced', hint: 'Minimise animation everywhere' },
+  { value: 'full', label: 'Full', hint: 'Always animate, even if the OS says reduce' },
+];
+
+/**
+ * Individual visual-effect toggles, each gated via a `data-no-*` attribute on
+ * <html> (independent of the motion setting). All on by default.
+ */
+export type VisualEffects = {
+  /** The staggered page-content reveal on route change. */
+  pageReveal: boolean;
+  /** The typewriter reveal of page-header titles. */
+  typewriter: boolean;
+  /** Backdrop blur / frosted-glass surfaces. */
+  glass: boolean;
+};
+
+export const DEFAULT_EFFECTS: VisualEffects = {
+  pageReveal: true,
+  typewriter: true,
+  glass: true,
+};
+
+export const EFFECT_OPTIONS: { key: keyof VisualEffects; label: string; hint: string }[] = [
+  { key: 'pageReveal', label: 'Page reveal', hint: 'Staggered fade-in of page content' },
+  { key: 'typewriter', label: 'Typewriter titles', hint: 'Type page titles out character by character' },
+  { key: 'glass', label: 'Frosted glass', hint: 'Backdrop blur on overlays and panels' },
+];
+
 /** Opacity of the animated gradient at each intensity level. */
 export type BgIntensity = 'subtle' | 'balanced' | 'bold';
 export const BG_INTENSITY_DEFAULT: BgIntensity = 'balanced';
@@ -194,6 +234,10 @@ export type AppSettings = {
   bgIntensity: BgIntensity;
   /** Accent colour retinting primary/ring/accent across the app (`default` = no override). */
   accent: AccentId;
+  /** How much motion the app shows (honour OS / force off / force on). */
+  motion: Motion;
+  /** Per-effect visual toggles (page reveal, typewriter, frosted glass). */
+  effects: VisualEffects;
   /**
    * Desktop notifications when a task needs input (→ waiting) or finishes
    * (→ done). Opt-in: enabling it prompts for the browser's Notification
@@ -214,6 +258,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   backgroundPattern: BACKGROUND_PATTERN_DEFAULT,
   bgIntensity: BG_INTENSITY_DEFAULT,
   accent: ACCENT_DEFAULT,
+  motion: MOTION_DEFAULT,
+  effects: DEFAULT_EFFECTS,
   notifyTaskUpdates: false,
   features: DEFAULT_FEATURE_FLAGS,
 };

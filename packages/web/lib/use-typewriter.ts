@@ -2,18 +2,14 @@
 
 import { useEffect, useState } from 'react';
 
-/** True when the user prefers reduced motion. */
-function prefersReducedMotion(): boolean {
-  return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
-
 /**
  * Reveals `text` one character at a time over a fixed `duration`, so several
  * fields typed in parallel (e.g. a page title + subtitle) finish together
  * regardless of length. Returns the revealed slice and a `done` flag.
  *
- * Honours `prefers-reduced-motion` and disabled state by showing the full text
- * immediately.
+ * `enabled: false` shows the full text immediately. The caller owns the
+ * motion decision (see `useAnimationPrefs`, which resolves the `motion` setting
+ * + OS `prefers-reduced-motion` + the per-effect toggle) and passes it in.
  */
 export function useTypewriter(
   text: string,
@@ -22,7 +18,7 @@ export function useTypewriter(
   const [typed, setTyped] = useState('');
 
   useEffect(() => {
-    if (!enabled || text.length === 0 || prefersReducedMotion()) {
+    if (!enabled || text.length === 0) {
       setTyped(text);
       return;
     }

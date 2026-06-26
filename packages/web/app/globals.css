@@ -265,7 +265,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .bg-animated-gradient {
+    html:not([data-motion='full']) .bg-animated-gradient {
       animation: none;
     }
   }
@@ -276,6 +276,52 @@
   html[data-bg-intensity='subtle']   { --bg-intensity: 0.10; }
   html[data-bg-intensity='balanced'] { --bg-intensity: 0.20; }
   html[data-bg-intensity='bold']     { --bg-intensity: 0.40; }
+}
+
+/*
+ * Phase 39 D — motion controls. `applyMotion()` sets `data-motion` on <html>:
+ *   - `reduced`  → the universal kill rule below forces animation/transition off,
+ *                  regardless of the OS preference.
+ *   - `full`     → re-enables animation even when the OS prefers reduced (the
+ *                  `@media` override below counters the scattered
+ *                  `prefers-reduced-motion` blocks throughout this file).
+ *   - `system`   → no attribute effect; the existing `@media (prefers-reduced-
+ *                  motion: reduce)` blocks honour the OS as before.
+ */
+/* Explicit `reduced` (any OS): a universal reset. `animation-fill-mode: forwards`
+   holds each animation's end frame so elements that start hidden (opacity:0 →
+   1 entrances) still settle visible. The per-effect `@media(reduce)` blocks below
+   stay for the `system` path and are gated `:not([data-motion='full'])` so `full`
+   can override an OS reduce preference. */
+html[data-motion='reduced'] *,
+html[data-motion='reduced'] *::before,
+html[data-motion='reduced'] *::after {
+  animation-duration: 0.001ms !important;
+  animation-delay: 0ms !important;
+  animation-iteration-count: 1 !important;
+  animation-fill-mode: forwards !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+/*
+ * Phase 39 D — per-effect toggles. `applyEffects()` sets a `data-no-*` attribute
+ * on <html> when an effect is disabled; each is independent of the motion knob.
+ * (The typewriter is JS-driven — gated in page-header via the effects setting,
+ * not here.)
+ */
+html[data-no-page-reveal] .page-reveal header ~ *,
+html[data-no-page-reveal] .page-reveal .reveal-staged {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+html[data-no-glass] *,
+html[data-no-glass] *::before,
+html[data-no-glass] *::after {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 @property --gradient-angle {
@@ -359,7 +405,7 @@
     animation-delay: 320ms;
   }
   @media (prefers-reduced-motion: reduce) {
-    .page-reveal header ~ * {
+    html:not([data-motion='full']) .page-reveal header ~ * {
       opacity: 1;
       animation: none;
     }
@@ -394,8 +440,8 @@
     z-index: 10;
   }
   @media (prefers-reduced-motion: reduce) {
-    .reveal-controls,
-    .reveal-content {
+    html:not([data-motion='full']) .reveal-controls,
+    html:not([data-motion='full']) .reveal-content {
       opacity: 1;
       animation: none;
     }
@@ -511,10 +557,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .spinner-breathe,
-  .spinner-jitter::before,
-  .spinner-tumble::before,
-  .spinner-tumble::after {
+  html:not([data-motion='full']) .spinner-breathe,
+  html:not([data-motion='full']) .spinner-jitter::before,
+  html:not([data-motion='full']) .spinner-tumble::before,
+  html:not([data-motion='full']) .spinner-tumble::after {
     animation: none;
   }
 }
@@ -536,7 +582,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pill-shimmer {
+  html:not([data-motion='full']) .pill-shimmer {
     animation: none;
   }
 }
@@ -563,7 +609,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-shake {
+  html:not([data-motion='full']) .animate-shake {
     animation: none;
   }
 }
@@ -603,10 +649,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-error-in {
+  html:not([data-motion='full']) .animate-error-in {
     animation: none;
   }
-  .animate-error-out {
+  html:not([data-motion='full']) .animate-error-out {
     animation-duration: 0.01ms;
   }
 }
@@ -643,14 +689,14 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-dialog-in,
-  .animate-toast-in {
+  html:not([data-motion='full']) .animate-dialog-in,
+  html:not([data-motion='full']) .animate-toast-in {
     animation: none;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cascade-item {
+  html:not([data-motion='full']) .cascade-item {
     animation: none;
     opacity: 1;
   }
@@ -728,8 +774,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .gradient-border:focus-within,
-  .gradient-border:focus-within::after {
+  html:not([data-motion='full']) .gradient-border:focus-within,
+  html:not([data-motion='full']) .gradient-border:focus-within::after {
     animation: none;
   }
 }
@@ -782,7 +828,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .node-running::before {
+  html:not([data-motion='full']) .node-running::before {
     animation: none;
   }
 }
@@ -831,7 +877,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dashboard-panel {
+  html:not([data-motion='full']) .dashboard-panel {
     animation: none;
   }
 }
@@ -869,7 +915,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .drag-handle {
+  html:not([data-motion='full']) .drag-handle {
     transition: none;
   }
 }

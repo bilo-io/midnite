@@ -14,6 +14,7 @@ import {
   Palette,
   Sun,
   Type,
+  Zap,
   type LucideIcon,
 } from 'lucide-react';
 import { Accordion } from '@/components/ui/accordion';
@@ -30,13 +31,19 @@ import {
   BG_INTENSITY_OPTIONS,
   ACCENT_DEFAULT,
   ACCENT_OPTIONS,
+  DEFAULT_EFFECTS,
   DEFAULT_SETTINGS,
+  EFFECT_OPTIONS,
+  MOTION_DEFAULT,
+  MOTION_OPTIONS,
   SETTINGS_STORAGE_KEY,
   type AccentId,
   type AppSettings,
   type BackgroundPattern,
   type BgIntensity,
+  type Motion,
   type NavMode,
+  type VisualEffects,
 } from '@/lib/app-settings';
 import {
   DEFAULT_WORDMARK_FONT,
@@ -78,6 +85,13 @@ export function AppearanceSection() {
 
   const accent = settings.accent ?? ACCENT_DEFAULT;
   const setAccent = (next: AccentId) => setSettings((prev) => ({ ...prev, accent: next }));
+
+  const motion = settings.motion ?? MOTION_DEFAULT;
+  const setMotion = (next: Motion) => setSettings((prev) => ({ ...prev, motion: next }));
+
+  const effects = { ...DEFAULT_EFFECTS, ...(settings.effects ?? {}) };
+  const setEffect = (key: keyof VisualEffects, value: boolean) =>
+    setSettings((prev) => ({ ...prev, effects: { ...DEFAULT_EFFECTS, ...prev.effects, [key]: value } }));
 
   return (
     <div className="space-y-4">
@@ -239,6 +253,45 @@ export function AppearanceSection() {
                 </button>
               );
             })}
+          </div>
+        </div>
+      </Accordion>
+
+      <Accordion title="Motion & effects" icon={<Zap className="h-3.5 w-3.5" />} defaultOpen>
+        <div className="space-y-4 p-5">
+          <SettingRow
+            title="Motion"
+            description="Follow your system's reduced-motion setting, minimise animation, or always animate."
+          >
+            <Segmented
+              ariaLabel="Motion"
+              value={motion}
+              onChange={setMotion}
+              options={MOTION_OPTIONS.map((o) => ({ value: o.value, label: o.label, title: o.hint }))}
+              hydrated={hydrated}
+            />
+          </SettingRow>
+          <p className="text-xs text-muted-foreground">
+            {MOTION_OPTIONS.find((o) => o.value === motion)?.hint}.
+          </p>
+          <div className="space-y-3 border-t border-border/60 pt-4">
+            {EFFECT_OPTIONS.map((opt) => (
+              <label
+                key={opt.key}
+                className="flex items-center justify-between gap-4"
+                title={opt.hint}
+              >
+                <span className="space-y-0.5">
+                  <span className="block text-sm font-medium">{opt.label}</span>
+                  <span className="block text-xs text-muted-foreground">{opt.hint}</span>
+                </span>
+                <Switch
+                  checked={effects[opt.key]}
+                  onCheckedChange={(v) => setEffect(opt.key, v)}
+                  aria-label={opt.label}
+                />
+              </label>
+            ))}
           </div>
         </div>
       </Accordion>

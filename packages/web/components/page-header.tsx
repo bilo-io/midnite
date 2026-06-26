@@ -19,6 +19,7 @@ import {
   Workflow,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAnimationPrefs } from '@/lib/use-animation-prefs';
 import { useBackgroundPattern } from '@/lib/use-background-pattern';
 import { useScrolled } from '@/lib/use-scrolled';
 import { useTypewriter } from '@/lib/use-typewriter';
@@ -84,11 +85,13 @@ export function PageHeader({
 
   // Type the title and subtitle out together. Both run over the same duration so
   // they finish simultaneously regardless of length. Only string descriptions
-  // can be typed; anything richer (ReactNode) renders immediately.
-  const { typed: typedTitle, done: titleDone } = useTypewriter(title);
+  // can be typed; anything richer (ReactNode) renders immediately. The typewriter
+  // is gated by the motion + effects settings (Phase 39 D).
+  const { typewriter } = useAnimationPrefs();
+  const { typed: typedTitle, done: titleDone } = useTypewriter(title, { enabled: typewriter });
   const descriptionIsString = typeof description === 'string';
   const { typed: typedDescription, done: descriptionDone } = useTypewriter(descriptionIsString ? description : '', {
-    enabled: descriptionIsString,
+    enabled: descriptionIsString && typewriter,
   });
 
   return (
