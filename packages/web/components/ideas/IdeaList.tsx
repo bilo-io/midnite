@@ -2,7 +2,6 @@
 
 import { useRouter } from 'next/navigation';
 import type { Idea } from '@midnite/shared';
-import { cn } from '@/lib/utils';
 import { IdeaStatusChip } from './IdeaStatusChip';
 
 export function IdeaList({ ideas }: { ideas: Idea[] }) {

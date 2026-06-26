@@ -1359,8 +1359,10 @@ class OfficeScene extends Phaser.Scene {
   }
 
   private buildVignette(worldW: number, worldH: number) {
-    // Viewport size at the current zoom level — vignette is pinned to the camera
-    // (scrollFactor 0) so it always covers the visible area regardless of scroll.
+    // Viewport size at the current zoom level — the texture is sized in
+    // pre-zoom units (worldW / ZOOM) so the camera's ZOOM scales it back up to
+    // fill the full canvas. The vignette is pinned to the camera (scrollFactor
+    // 0) so it covers the visible area regardless of scroll.
     const viewW = Math.round(worldW / ZOOM);
     const viewH = Math.round(worldH / ZOOM);
     const key = 'office-vignette';
@@ -1383,7 +1385,12 @@ class OfficeScene extends Phaser.Scene {
         canvas?.refresh();
       }
     }
-    this.add.image(viewW / 2, viewH / 2, key).setDepth(40).setScrollFactor(0);
+    // A scrollFactor(0) object is still scaled AND positioned by the camera
+    // zoom: the zoom transform pivots about the screen centre (worldW/2,
+    // worldH/2 in world units). Anchoring there keeps the (centred-on-screen)
+    // texture exactly over the viewport — anchoring at (viewW/2, viewH/2) would
+    // shove it into the upper-left quadrant, leaving a dark, hard-edged slab.
+    this.add.image(worldW / 2, worldH / 2, key).setDepth(40).setScrollFactor(0);
   }
 }
 
