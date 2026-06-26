@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-26 — Phase 41 B+C: command registry, global shortcuts, help overlay
+
+- [x] `PaletteCommandsProvider` + `useRegisterPaletteCommands` + `usePaletteCommands` — React-context command registry
+- [x] `GlobalKeymap`: registers global commands (new task, lock, theme, nav) + mounts `useGlobalKeymap` for `G`-chord nav shortcuts
+- [x] `useGlobalKeymap`: 400 ms chord window, input-focus suppression, ⌘K passthrough
+- [x] `KeyboardShortcutsHelp`: `?` overlay with shortcuts grouped by General/Navigation/Board
+- [x] `CommandPalette`: Recent, Commands, Navigation sections; recent items persisted; `?` button in header
+- [x] `nav-bar.tsx` + `tasks-view.tsx` wired to `midnite:lock-screen` + `midnite:new-task` custom events
+
 ## 2026-06-26 — Phase 40 A+B: Ideas entity, CRUD, WS events, web views (PR #215)
 
 - [x] `ideas` + `idea_messages` DB tables + `projects.idea_id` column (migration 0056); `IdeaRepository`, `IdeaService`, `IdeasGateway` (WS), `IdeaController`, `IdeaModule` in gateway

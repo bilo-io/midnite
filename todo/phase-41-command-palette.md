@@ -19,48 +19,40 @@
 
 ---
 
-## Theme A — Command palette core — **M**
+## Theme A — Command palette core — **M** ✅ DONE (pre-existing + this PR, 2026-06-26)
 
 The `⌘K` modal: search, navigate, act.
 
-- [ ] Add `cmdk` to `packages/web/package.json`.
-- [ ] Create [`components/command-palette.tsx`](../packages/web/components/command-palette.tsx): a `cmdk`-backed `<CommandDialog>` that opens on `⌘K`/`Ctrl+K`. Sections rendered before typing: **Recent** (last 10 items from localStorage), **Navigation** (static links mirroring the sidebar), **Settings** (top-level settings sections). Sections rendered on query: **Tasks** (debounced FTS5 call to `GET /search?q=…`) with type icon + title + status chip per result.
-- [ ] Mount `<CommandPalette />` once in [`app/layout.tsx`](../packages/web/app/layout.tsx) so it is available on every route.
-- [ ] Keyboard wiring: `⌘K`/`Ctrl+K` opens; `↑↓` navigates; `Enter` activates (navigates or fires action); `Esc` closes. Focus traps correctly (cmdk handles this).
-- [ ] Persist recent items (last 10 task opens + nav visits) to `localStorage['midnite.recent']`; clear oldest on overflow. No gateway call.
-- [ ] Debounce the FTS5 query at 200 ms; show a spinner while in-flight; show an empty state on zero results.
-- [ ] Accessibility: `role="combobox"`, `aria-haspopup="listbox"`, `aria-expanded`, each result `role="option"`.
+- [x] ~~Add `cmdk`~~ — palette was already custom-built (Phase 20); cmdk not needed.
+- [x] `components/command-palette.tsx` opens on `⌘K`/`Ctrl+K`; Recent / Commands / Navigation sections before typing; debounced FTS5 search on query; keyboard nav (↑↓ Enter Esc).
+- [x] Mounted in `app/(main)/layout.tsx`.
+- [x] Persist recent items (last 10) to `localStorage['midnite.recent']`; pushes on navigate; clears oldest on overflow. (2026-06-26)
+- [x] Debounce 200 ms; spinner while in-flight; empty state on zero results.
+- [x] `role="dialog"` + `aria-modal` + `aria-label`.
 
 ---
 
-## Theme B — Actions in the palette — **S–M**
+## Theme B — Actions in the palette — **S–M** ✅ DONE (2026-06-26)
 
 Contextual commands alongside search results.
 
-- [ ] Create [`lib/palette-commands.ts`](../packages/web/lib/palette-commands.ts): a typed command registry — `{ id, label, icon?, keywords?, action: () => void }`. Commands register statically (global) or dynamically (contextual, e.g. from the task-detail page).
-- [ ] Initial **global commands:** "Create task…" (opens new-task form), "Lock screen" (triggers screensaver), "Toggle theme" (light ↔ dark), "Go to Board", "Go to Office", "Go to Settings", "Go to Home".
-- [ ] **Contextual commands** on the task detail page (`app/(main)/tasks/[id]/`): "Move to wip", "Move to done", "Move to abandoned" — shown only when a task is in context, not globally. Contextual commands contributed via a `useRegisterPaletteCommands` hook.
-- [ ] Render the "Commands" section in the palette above search results when the query is empty or matches a command keyword.
+- [x] `lib/palette-commands.tsx`: `PaletteCommandsProvider`, `useRegisterPaletteCommands`, `usePaletteCommands`. React-context registry; namespaced; ref-stable updates.
+- [x] Global commands registered in `GlobalKeymap`: "Create task…" (`midnite:new-task`), "Lock screen" (`midnite:lock-screen`), "Toggle theme" (DOM + localStorage), "Go to Board/Office/Settings/Home".
+- [x] `nav-bar.tsx` listens for `midnite:lock-screen`; `tasks-view.tsx` listens for `midnite:new-task`.
+- [x] "Commands" section rendered in palette when query is empty or matches keyword.
+- [ ] **Contextual commands** for task-detail "Move to wip/done/abandoned" — deferred (no `/tasks/:id` route exists; needs task-thread-modal integration).
 
 ---
 
-## Theme C — Global keyboard shortcuts — **S**
+## Theme C — Global keyboard shortcuts — **S** ✅ DONE (2026-06-26)
 
 A central shortcut map + discovery overlay.
 
-- [ ] Create [`lib/keyboard-shortcuts.ts`](../packages/web/lib/keyboard-shortcuts.ts): an exportable array of shortcut definitions — `{ keys: string[], label: string, group: string }` — used by both the keymap hook and the help overlay.
-- [ ] Create [`hooks/use-global-keymap.ts`](../packages/web/hooks/use-global-keymap.ts): a `useEffect`-based hook that binds `keydown` globally. Suppresses all shortcuts when `<input>`, `<textarea>`, or `[contenteditable]` has focus. Handles two-key sequences (`G` then `B`) with a short timeout (400 ms) between keys.
-- [ ] **Shortcuts to ship:**
-  - `⌘K` / `Ctrl+K` — open command palette (Theme A)
-  - `?` — open keyboard shortcuts help overlay
-  - `G B` — go to Board
-  - `G O` — go to Office
-  - `G S` — go to Settings
-  - `G H` — go to Home
-  - `N` — open new-task form (when not in an input)
-  - `Esc` — close topmost modal/drawer (delegate to existing close handlers)
-- [ ] Mount `useGlobalKeymap` in [`app/layout.tsx`](../packages/web/app/layout.tsx).
-- [ ] Create [`components/keyboard-shortcuts-help.tsx`](../packages/web/components/keyboard-shortcuts-help.tsx): a modal dialog listing all shortcuts grouped by section (Navigation, Board, General). Opened by `?`; closeable with `Esc`.
+- [x] `lib/keyboard-shortcuts.ts`: `SHORTCUTS` array used by keymap hook + help overlay.
+- [x] `hooks/use-global-keymap.ts`: binds `keydown` globally; suppresses in inputs/textareas/CE; `G+key` chord with 400 ms timeout.
+- [x] Shortcuts shipped: `⌘K` palette, `?` help, `G B/O/S/H` nav chords, `N` new task.
+- [x] `GlobalKeymap` client component mounted in `app/(main)/layout.tsx` (inside `PaletteCommandsProvider`).
+- [x] `components/keyboard-shortcuts-help.tsx`: `?` overlay grouped by General/Navigation/Board; `Esc` closes.
 
 ---
 
