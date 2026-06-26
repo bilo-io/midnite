@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { CouncilsModule } from '../councils/councils.module';
+import { IdeasModule } from '../ideas/ideas.module';
 import { MemoriesModule } from '../memories/memories.module';
 import { NotesModule } from '../notes/notes.module';
 import { ProjectsModule } from '../projects/projects.module';
@@ -21,6 +22,7 @@ import { SearchService } from './search.service';
     NotesModule,
     CouncilsModule,
     WorkflowsModule,
+    IdeasModule,
   ],
   controllers: [SearchController],
   providers: [SearchService],

@@ -51,3 +51,5 @@ export * from './user.js';
 export * from './team.js';
 export * from './audit.js';
 export * from './service-token.js';
+export * from './idea.js';
+export * from './events/idea.js';

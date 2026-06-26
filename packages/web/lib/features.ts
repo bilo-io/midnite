@@ -18,6 +18,7 @@ import {
   Folder,
   Images,
   LayoutDashboard,
+  Lightbulb,
   ListChecks,
   Workflow,
   type LucideIcon,
@@ -26,6 +27,7 @@ import {
 export type FeatureKey =
   | 'dashboard'
   | 'projects'
+  | 'ideas'
   | 'memory'
   | 'tasks'
   | 'sessions'
@@ -59,6 +61,13 @@ export const FEATURES: Feature[] = [
     label: 'Projects',
     description: 'Organise work into projects and browse the project tree.',
     Icon: Folder,
+  },
+  {
+    key: 'ideas',
+    href: '/ideas',
+    label: 'Ideas',
+    description: 'Capture, refine with AI, and promote ideas into projects.',
+    Icon: Lightbulb,
   },
   {
     key: 'memory',
@@ -118,10 +127,11 @@ export const FEATURES: Feature[] = [
   },
 ];
 
-/** All features start enabled. */
+/** All features start enabled. `ideas` is off by default (opt-in, Phase 40). */
 export const DEFAULT_FEATURE_FLAGS: Record<FeatureKey, boolean> = {
   dashboard: true,
   projects: true,
+  ideas: false,
   memory: true,
   tasks: true,
   sessions: true,
