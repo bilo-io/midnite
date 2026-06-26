@@ -8,32 +8,32 @@
 
 ---
 
-## Theme A — Idea entity + sidenav — **S**
+## Theme A — Idea entity + sidenav — **S** ✅ DONE (PR #215, 2026-06-26)
 
 The data model and the entry point everything else builds on.
 
-- [ ] **`ideas` table** in [`gateway/src/db/schema.ts`](../packages/gateway/src/db/schema.ts): `id` (UUIDv7), `teamId`, `createdBy`, `title`, `body` (markdown), `status` (`'draft' | 'refined' | 'promoted'`), `projectId` (nullable FK → projects), `tags` (JSON array), `createdAt`, `updatedAt`. Forward-only Drizzle migration.
-- [ ] **`idea_messages` table** in the same migration: `id` (UUIDv7), `ideaId` (FK → ideas), `role` (`'user' | 'assistant'`), `content` (text), `createdAt`. Index on `(ideaId, createdAt)`.
-- [ ] **`IdeaStatus`**, **`Idea`**, **`IdeaMessage`** types + zod schemas in [`@midnite/shared`](../packages/shared/src/idea.ts) (new file). `CreateIdeaRequestSchema`, `UpdateIdeaRequestSchema`, `IdeaChatRequestSchema`. Barrel export.
-- [ ] **`IdeaRepository`** ([`ideas.repository.ts`](../packages/gateway/src/ideas/ideas.repository.ts)): `create`, `findById`, `findByTeam` (pageable), `update`, `delete`, `promote` (sets `projectId` + `status`).
-- [ ] **`IdeaService`** ([`ideas.service.ts`](../packages/gateway/src/ideas/ideas.service.ts)): CRUD + scoped list (by `teamId`) + team-ownership guard. Registers/removes from `SearchIndexService` (title + body, type `'idea'`) on write.
-- [ ] **`IdeaController`** ([`ideas.controller.ts`](../packages/gateway/src/ideas/ideas.controller.ts)): `GET /ideas`, `POST /ideas`, `GET /ideas/:id`, `PATCH /ideas/:id`, `DELETE /ideas/:id`. `@RequiresRole('member')` on write routes. Thin — zod-validate body, delegate to service.
-- [ ] **`IdeaModule`** ([`ideas.module.ts`](../packages/gateway/src/ideas/ideas.module.ts)) registered in `AppModule`.
-- [ ] **`💡 Ideas` sidenav entry** in the web sidenav component, above Projects, linking to `/ideas`.
+- [x] **`ideas` table** in [`gateway/src/db/schema.ts`](../packages/gateway/src/db/schema.ts): `id` (UUIDv7), `teamId`, `createdBy`, `title`, `body` (markdown), `status` (`'draft' | 'refined' | 'promoted'`), `projectId` (nullable FK → projects), `tags` (JSON array), `createdAt`, `updatedAt`. Forward-only Drizzle migration.
+- [x] **`idea_messages` table** in the same migration: `id` (UUIDv7), `ideaId` (FK → ideas), `role` (`'user' | 'assistant'`), `content` (text), `createdAt`. Index on `(ideaId, createdAt)`.
+- [x] **`IdeaStatus`**, **`Idea`**, **`IdeaMessage`** types + zod schemas in [`@midnite/shared`](../packages/shared/src/idea.ts) (new file). `CreateIdeaRequestSchema`, `UpdateIdeaRequestSchema`, `IdeaChatRequestSchema`. Barrel export.
+- [x] **`IdeaRepository`** ([`ideas.repository.ts`](../packages/gateway/src/ideas/ideas.repository.ts)): `create`, `findById`, `findByTeam` (pageable), `update`, `delete`, `promote` (sets `projectId` + `status`).
+- [x] **`IdeaService`** ([`ideas.service.ts`](../packages/gateway/src/ideas/ideas.service.ts)): CRUD + scoped list (by `teamId`) + team-ownership guard. Registers/removes from `SearchIndexService` (title + body, type `'idea'`) on write.
+- [x] **`IdeaController`** ([`ideas.controller.ts`](../packages/gateway/src/ideas/ideas.controller.ts)): `GET /ideas`, `POST /ideas`, `GET /ideas/:id`, `PATCH /ideas/:id`, `DELETE /ideas/:id`. `@RequiresRole('member')` on write routes. Thin — zod-validate body, delegate to service.
+- [x] **`IdeaModule`** ([`ideas.module.ts`](../packages/gateway/src/ideas/ideas.module.ts)) registered in `AppModule`.
+- [x] **`💡 Ideas` sidenav entry** in the web sidenav component, above Projects, linking to `/ideas`.
 
 ---
 
-## Theme B — Ideas views (table / list / grid) — **S–M**
+## Theme B — Ideas views (table / list / grid) — **S–M** ✅ DONE (PR #215, 2026-06-26)
 
 The browsable surface for all ideas.
 
-- [ ] **`/ideas` route** ([`packages/web/app/ideas/page.tsx`](../packages/web/app/ideas/page.tsx)): top-level page with view-mode toggle (table / list / grid) persisted to `localStorage`.
-- [ ] **`IdeaTable`** ([`components/ideas/IdeaTable.tsx`](../packages/web/components/ideas/IdeaTable.tsx)): sortable columns (title, status, created, project); status chip (`draft` / `refined` / `promoted`); project tag chip (name + link) when promoted; click row → idea detail.
-- [ ] **`IdeaList`** ([`components/ideas/IdeaList.tsx`](../packages/web/components/ideas/IdeaList.tsx)): compact row — title, excerpt (first 120 chars of body), status, project chip; keyboard navigable.
-- [ ] **`IdeaGrid`** ([`components/ideas/IdeaGrid.tsx`](../packages/web/components/ideas/IdeaGrid.tsx)): card view — title, body excerpt, status badge, project chip; hover shows "Open" / "Chat" shortcuts.
-- [ ] **Filter bar**: status multi-select (`all / draft / refined / promoted`) + debounced text search against global FTS5 (`GET /search?q=...&type=idea`).
-- [ ] **TanStack Query** `useIdeas(filters)` hook; invalidate on `idea.created`, `idea.updated`, `idea.deleted` WS events (subscribe via the existing `useTaskEvents`-pattern WS hook).
-- [ ] **`/ideas/:id` route** ([`packages/web/app/ideas/[id]/page.tsx`](../packages/web/app/ideas/[id]/page.tsx)): idea detail with title, rendered markdown body, status, project chip (if promoted), message history preview, "Open chat" + "Promote" buttons.
+- [x] **`/ideas` route** ([`packages/web/app/ideas/page.tsx`](../packages/web/app/ideas/page.tsx)): top-level page with view-mode toggle (table / list / grid) persisted to `localStorage`.
+- [x] **`IdeaTable`** ([`components/ideas/IdeaTable.tsx`](../packages/web/components/ideas/IdeaTable.tsx)): sortable columns (title, status, created, project); status chip (`draft` / `refined` / `promoted`); project tag chip (name + link) when promoted; click row → idea detail.
+- [x] **`IdeaList`** ([`components/ideas/IdeaList.tsx`](../packages/web/components/ideas/IdeaList.tsx)): compact row — title, excerpt (first 120 chars of body), status, project chip; keyboard navigable.
+- [x] **`IdeaGrid`** ([`components/ideas/IdeaGrid.tsx`](../packages/web/components/ideas/IdeaGrid.tsx)): card view — title, body excerpt, status badge, project chip; hover shows "Open" / "Chat" shortcuts.
+- [x] **Filter bar**: status multi-select (`all / draft / refined / promoted`) + debounced text search against global FTS5 (`GET /search?q=...&type=idea`).
+- [x] **TanStack Query** `useIdeas(filters)` hook; invalidate on `idea.created`, `idea.updated`, `idea.deleted` WS events (subscribe via the existing `useTaskEvents`-pattern WS hook).
+- [x] **`/ideas/:id` route** ([`packages/web/app/ideas/[id]/page.tsx`](../packages/web/app/ideas/[id]/page.tsx)): idea detail with title, rendered markdown body, status, project chip (if promoted), message history preview, "Open chat" + "Promote" buttons.
 
 ---
 

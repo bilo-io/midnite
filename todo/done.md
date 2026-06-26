@@ -4,6 +4,13 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-26 — Phase 40 A+B: Ideas entity, CRUD, WS events, web views (PR #215)
+
+- [x] `ideas` + `idea_messages` DB tables + `projects.idea_id` column (migration 0056); `IdeaRepository`, `IdeaService`, `IdeasGateway` (WS), `IdeaController`, `IdeaModule` in gateway
+- [x] `Idea`/`IdeaMessage`/`IdeaStatus` zod schemas + typed API client methods in `@midnite/shared`
+- [x] `💡 Ideas` sidenav entry; `/ideas` list page (table/list/grid toggle) + `/ideas/:id` detail with inline edit/promote/delete
+- [x] `IdeaTable`, `IdeaList`, `IdeaGrid`, `IdeaCard`, `IdeaStatusChip` components; FTS5 index + search type `'idea'`; `useIdeaEvents` WS hook for live invalidation; feature-flag `ideas: false` (opt-in)
+
 ## 2026-06-26 — Phase 39 D: motion & visual-effects controls (PR #214)
 
 - [x] Motion tri-state (system/reduced/full) in Settings → Appearance via `data-motion` on `<html>`: explicit `reduced` = universal kill rule (`animation-fill-mode: forwards` keeps entrances visible); the 13 legacy `@media(prefers-reduced-motion)` blocks gated `:not([data-motion='full'])` so `system` honours the OS and `full` overrides an OS reduce preference
