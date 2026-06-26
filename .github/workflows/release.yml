@@ -1,7 +1,9 @@
 name: Release
 
-# Push a version tag (e.g. v0.0.0) to build the desktop app on every OS and
-# publish a (draft) GitHub Release with the installers.
+# Push a version tag (e.g. v0.1.0) to build the desktop app on every OS and
+# publish a GitHub Release with the installers to the PUBLIC downloads repo
+# (bilo-io/midnite-app). This repo is private, so its own release assets aren't
+# anonymously downloadable — the public repo is where the download links resolve.
 on:
   push:
     tags:
@@ -77,11 +79,17 @@ jobs:
         with:
           path: artifacts
 
-      # Draft so the artifacts can be reviewed/tested before the download buttons
-      # go live; publish manually from the Releases page once they look good.
-      - name: Create draft release
+      # Publish to the PUBLIC downloads repo so the site's download links resolve
+      # for anonymous visitors. The default GITHUB_TOKEN is scoped to THIS (private)
+      # repo only; cross-repo publishing needs a fine-grained PAT with
+      # Contents:write on bilo-io/midnite-app, stored as the RELEASES_REPO_TOKEN
+      # secret. Published (not draft) so `releases/latest` resolves; the same-named
+      # tag is auto-created in the public repo on its default branch.
+      - name: Publish release to public downloads repo
         uses: softprops/action-gh-release@v2
         with:
-          draft: true
+          repository: bilo-io/midnite-app
+          token: ${{ secrets.RELEASES_REPO_TOKEN }}
+          draft: false
           generate_release_notes: true
           files: artifacts/**/*

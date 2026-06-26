@@ -19,7 +19,7 @@ export type DownloadTarget = {
 };
 
 /** Desktop version; keep in step with the published GitHub release tag. */
-export const DESKTOP_VERSION = '0.0.0';
+export const DESKTOP_VERSION = '0.1.0';
 
 export const PLATFORM_LABELS: Record<Platform, string> = {
   mac: 'macOS',

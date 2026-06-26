@@ -78,8 +78,16 @@ style — `feat`/`fix`/`refactor`/`docs`/`chore`/`test`, package-scoped). Take t
   bumped package, so the repo-wide `v*` tag isn't moved for a one-package fix.
 
 Pushing a `v*` tag triggers [`.github/workflows/release.yml`](../.github/workflows/release.yml),
-which builds the desktop installers on every OS and publishes a **draft** GitHub
-Release with them attached.
+which builds the desktop installers on every OS and publishes a GitHub Release with
+them attached to the **public** companion repo
+[`bilo-io/midnite-app`](https://github.com/bilo-io/midnite-app) — *not* this repo.
+`midnite` is private, so its own release assets aren't anonymously downloadable; the
+public repo is where the site's download links resolve, and it doubles as the public
+issue tracker. Cross-repo publishing uses the **`RELEASES_REPO_TOKEN`** Actions secret
+(a fine-grained PAT with `Contents: write` on `midnite-app`) — the default
+`GITHUB_TOKEN` only reaches this repo. Bump `DESKTOP_VERSION` in
+[`packages/site/lib/downloads.ts`](../packages/site/lib/downloads.ts) to match the tag
+so the asset filenames line up.
 
 ## The two-step flow
 
@@ -108,8 +116,12 @@ Release with them attached.
 2. Finalise — re-run `planVersionBump` to confirm the bumps are applied lockstep;
    move `## [Unreleased]` → the dated `## [X.Y.Z] - YYYY-MM-DD` section.
 3. Commit + tag — `chore(release): vX.Y.Z`, then the tag(s) per the scheme above.
-4. Publish — push the branch + tags, merge the release PR to `main`, and create the
-   GitHub Release from the changelog section (`gh release create`).
+4. Publish — push the branch + tags and merge the release PR to `main`. Pushing the
+   `v*` tag is what publishes the public GitHub Release (installers + notes) to
+   `bilo-io/midnite-app` via `release.yml`; `/release-complete` then overwrites that
+   release's body with the curated changelog section
+   (`gh release edit vX.Y.Z --repo bilo-io/midnite-app`). It never creates a Release
+   in this private repo.
 5. Confirm — print the released version, the tag, the release URL, and re-seed the
    next `## [Unreleased]` stub.
 

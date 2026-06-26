@@ -12,9 +12,12 @@ build progress rather than release notes.
 
 ## [Unreleased]
 
-Heading toward the first tagged release (`0.1.0`). The curated highlights below
-cover what has landed since the initial scaffold; the exact, grouped notes are
-finalised when the release is cut.
+_Nothing yet._
+
+## [0.1.0] - 2026-06-26
+
+The first tagged release. The curated highlights below cover what has landed since
+the initial scaffold.
 
 ### Added
 
@@ -42,6 +45,11 @@ finalised when the release is cut.
 - **`@midnite/ui`** — a reusable, framework-agnostic component library and design
   tokens (with a Storybook catalog), consumed by the web app.
 - **Public site** and a **desktop app** wrapping the web UI.
+- **Public downloads** — each tagged release builds the desktop installers on every
+  OS and publishes them to the public companion repo
+  ([`bilo-io/midnite-app`](https://github.com/bilo-io/midnite-app)), so per-platform
+  builds (macOS arm64/x64 `.dmg`, Windows x64 `.exe`, Linux x64 `.AppImage`) download
+  straight from the site while the source repo stays private.
 
 ## [0.0.0] - 2026-06-18
 
@@ -51,5 +59,6 @@ finalised when the release is cut.
   `site`, and `desktop` packages, the proto + moon toolchain, `moon ci`, and the
   one-way package-boundary graph (`shared` is the contract).
 
-[Unreleased]: https://github.com/bilo-io/midnite/compare/v0.0.0...HEAD
+[Unreleased]: https://github.com/bilo-io/midnite/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/bilo-io/midnite/releases/tag/v0.1.0
 [0.0.0]: https://github.com/bilo-io/midnite/releases/tag/v0.0.0
