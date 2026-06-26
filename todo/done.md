@@ -4,6 +4,10 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-26 — Phase 39 E: Reset to defaults button in Appearance panel (PR #226)
+
+- [x] "Reset to defaults" ghost button (RotateCcw icon) at the top of Settings → Appearance; resets all visual prefs to `DEFAULT_SETTINGS`, resets theme to `system`, and immediately calls `applyAccent`/`applyMotion`/`applyDensity`/`applyEffects` so the UI updates without a reload
+
 ## 2026-06-26 — Phase 39 E: background no-flash + full pre-paint appearance (PR #224)
 
 - [x] `applyBackground(pattern, intensity)` sets `data-bg` + `data-bg-intensity` on `<html>`; `appearanceInitScript` extended to cover background pattern + intensity before first paint — all visual prefs (accent, motion, density, effects, background) now applied before first render

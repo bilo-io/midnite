@@ -67,7 +67,7 @@ Make motion a deliberate choice, not just an OS inheritance.
 
 The connective tissue: one coherent panel, instant feedback, zero flash.
 
-- [x] Backgrounds + accent already render as **live preview swatches/cards** (added by PRs #212/#213). No further rework needed.
+- [x] Backgrounds + accent already render as **live preview swatches/cards** (added by PRs #212/#213). No further rework needed. **"Reset to defaults"** button added (PR #226) — single click restores all appearance prefs instantly.
 - [x] All new prefs (`backgroundPattern`, `bgIntensity`, `accent`, `density`, `motion`) consolidated in `app-settings.ts` with defaults reproducing today's look (done across PRs #212–#220).
 - [x] Pre-paint `appearanceInitScript` extended to also apply background pattern + intensity before first paint; `html[data-bg='x'] [data-bg-target]` CSS mirrors every `.bg-*` class; background divs gain `data-bg-target`; `applyBackground` wired into `AppearanceEffects` + `useBackgroundPattern`.
 
