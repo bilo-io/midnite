@@ -114,10 +114,18 @@ Against, in order: fidelity to the phase doc/decisions → `CLAUDE.md` conventio
 - Teardown: `git worktree remove .git/worktrees/<slice>` + `git branch -d feature/<slice>` (`-D` if a squash leaves it "unmerged"); confirm with `git worktree list`.
 - Wrap-up (terse markdown): `# 🎉 Merged: <title>` (linked) · `## 📊 Phase status` (every phase: ✅/🔄/⬜ + outstanding count) · `## ✨ This PR` (what landed + link) · `## ⏭️ Next up`.
 
-## 11 · Loop hygiene (only when run on `/loop`)
-After wrap-up, check context usage. **≥60% → `/clear`, then re-invoke exactly as launched** (`/loop /exec` or `/exec`, preserving `$ARGUMENTS`). **<60% → continue in-session** from Stage 1 on the next unblocked task.
+## 11 · Compact & loop hygiene
+**Always `/compact` once the wrap-up is posted** — every run, loop or not. Pass instructions so it keeps **only** the durable ledger and drops the rest:
 
-Either way, re-run Stage 2.6 as soon as the next task is chosen so the session title stays current throughout the loop.
+```
+/compact Keep ONLY: for each task tackled this session, its phase/theme id + one-line title and the merged PR link (and its CI/merge status). Drop everything else — file contents, diffs, screenshots, tool output, command logs, intermediate reasoning, scan digests. The retained summary is just a list of "Phase <N> Theme <X>: <title> — <PR url>" lines.
+```
+
+Then:
+- **On `/loop`** → re-invoke exactly as launched (`/loop /exec` or `/exec`, preserving `$ARGUMENTS`) and start again from Stage 1 on the next unblocked task. Re-run Stage 2.6 as soon as the next task is chosen so the session title stays current.
+- **One-shot** → stop after the compaction; the compacted ledger is the final state.
+
+The compacted carry-over is the running record of what this session shipped — task ids + PR links, nothing heavier.
 
 ---
 Autonomous through Stages 3–11 once the user has chosen in Stage 2. Stop only for a real decision: an unresolved design question, a destructive/irreversible step, a plan-level issue from Stage 8, or CI you can't fix.
