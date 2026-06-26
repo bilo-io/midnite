@@ -33,6 +33,7 @@ import { DEFAULT_COLOR, TagColorPicker } from '@/components/tag-color-picker';
 import { SourceListEditor, orderByIds } from '@/components/source-list-editor';
 import { TaskRow } from '@/components/task-row';
 import { PlanDocModal } from '@/components/plan-doc-modal';
+import { PhaseDocsTab } from '@/components/projects/phase-docs/PhaseDocsTab';
 import { TEMPLATES, type Template } from '@/app/(main)/projects/templates';
 import {
   createDocFromTemplate,
@@ -74,7 +75,10 @@ type Props = {
   onSaved: () => void;
 };
 
-type Tab = 'details' | 'sources' | 'plan' | 'tasks';
+type Tab = 'details' | 'sources' | 'plan' | 'tasks' | 'phasedocs';
+
+/** Tab keys aren't all single words — map the ones that need a custom label. */
+const TAB_LABELS: Partial<Record<Tab, string>> = { phasedocs: 'Phase docs' };
 
 export function ProjectModal({
   project,
@@ -201,7 +205,7 @@ export function ProjectModal({
   const taskCount = tasks?.length ?? 0;
   // Planning and Tasks only make sense for an existing project.
   const tabs: Tab[] = isEdit
-    ? ['details', 'sources', 'plan', 'tasks']
+    ? ['details', 'sources', 'plan', 'tasks', 'phasedocs']
     : ['details', 'sources'];
   const tabCounts: Partial<Record<Tab, number>> = {
     sources: sourceCount,
@@ -358,7 +362,7 @@ export function ProjectModal({
                     tab === t ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
                   )}
                 >
-                  {t}
+                  {TAB_LABELS[t] ?? t}
                   {count ? (
                     <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] tabular-nums text-muted-foreground">
                       {count}
@@ -648,6 +652,16 @@ export function ProjectModal({
                     ))}
                   </div>
                 )}
+              </div>
+            ) : null}
+
+            {/* Phase docs (GitHub-backed `.midnite/phases/*.md`) */}
+            {isEdit && current ? (
+              <div
+                role="tabpanel"
+                className={cn('space-y-2', tab === 'phasedocs' ? '' : 'hidden')}
+              >
+                <PhaseDocsTab projectId={current.id} />
               </div>
             ) : null}
 

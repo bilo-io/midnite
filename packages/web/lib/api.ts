@@ -115,6 +115,8 @@ import {
   MemoryResponseSchema,
   PrimaryAgentResponseSchema,
   ProjectResponseSchema,
+  PhaseDocResponseSchema,
+  PhaseDocsResponseSchema,
   ProjectSchema,
   RepoResponseSchema,
   RepoSchema,
@@ -160,6 +162,9 @@ import {
   type ProviderResponse,
   type UpdateProviderCredentialRequest,
   type Project,
+  type PhaseDoc,
+  type CreatePhaseDocRequest,
+  type UpdatePhaseDocRequest,
   type Repo,
   type CreateRepoRequest,
   type UpdateRepoRequest,
@@ -250,6 +255,21 @@ export function gatewayWsUrl(): string {
   return gatewayUrl().replace(/^http/, 'ws');
 }
 
+/**
+ * A failed gateway request. Carries the HTTP `status` so callers can branch on it
+ * (e.g. a 409 phase-doc conflict → "reload and retry"); `message` is the
+ * human-readable gateway error, unchanged from the previous plain-`Error` throw.
+ */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
 // The schema is typed structurally by its `parse` return so T is inferred from the
 // zod OUTPUT type (where `.default()` fields are required), not the input type.
 async function fetchJson<T>(
@@ -268,7 +288,7 @@ async function fetchJson<T>(
   });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    throw new Error(errorMessage(res, text));
+    throw new ApiError(errorMessage(res, text), res.status);
   }
   const body = (await res.json()) as unknown;
   return schema ? schema.parse(body) : (body as T);
@@ -583,6 +603,75 @@ export async function deleteRepo(id: string): Promise<void> {
   await fetchJson(`/repos/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
 
+// --- Phase docs (GitHub-backed `.midnite/phases/*.md`, scoped to a project) ---
+// The GitHub target is the explicitly-picked `repoId`, not stored on the project.
+
+function phaseDocsPath(projectId: string, repoId: string, filename?: string): string {
+  const base = `/projects/${encodeURIComponent(projectId)}/phase-docs`;
+  const file = filename ? `/${encodeURIComponent(filename)}` : '';
+  return `${base}${file}?repoId=${encodeURIComponent(repoId)}`;
+}
+
+export async function listPhaseDocs(projectId: string, repoId: string): Promise<PhaseDoc[]> {
+  const { docs } = await fetchJson(
+    phaseDocsPath(projectId, repoId),
+    undefined,
+    PhaseDocsResponseSchema,
+  );
+  return docs;
+}
+
+export async function getPhaseDoc(
+  projectId: string,
+  repoId: string,
+  filename: string,
+): Promise<PhaseDoc> {
+  const { doc } = await fetchJson(
+    phaseDocsPath(projectId, repoId, filename),
+    undefined,
+    PhaseDocResponseSchema,
+  );
+  return doc;
+}
+
+export async function createPhaseDoc(
+  projectId: string,
+  repoId: string,
+  body: CreatePhaseDocRequest,
+): Promise<PhaseDoc> {
+  const { doc } = await fetchJson(
+    phaseDocsPath(projectId, repoId),
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    PhaseDocResponseSchema,
+  );
+  return doc;
+}
+
+export async function updatePhaseDoc(
+  projectId: string,
+  repoId: string,
+  filename: string,
+  body: UpdatePhaseDocRequest,
+): Promise<PhaseDoc> {
+  const { doc } = await fetchJson(
+    phaseDocsPath(projectId, repoId, filename),
+    { method: 'PUT', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    PhaseDocResponseSchema,
+  );
+  return doc;
+}
+
+export async function deletePhaseDoc(
+  projectId: string,
+  repoId: string,
+  filename: string,
+  sha: string,
+): Promise<void> {
+  await fetchJson(`${phaseDocsPath(projectId, repoId, filename)}&sha=${encodeURIComponent(sha)}`, {
+    method: 'DELETE',
+  });
+}
+
 // --- Memories (markdown knowledge entries, global or project-scoped) ---
 
 export async function getMemories(): Promise<Memory[]> {
@@ -708,7 +797,7 @@ export async function exportProjectMarkdown(id: string): Promise<string> {
   const res = await fetch(`${gatewayUrl()}${path}`, { cache: 'no-store' });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    throw new Error(errorMessage(res, text));
+    throw new ApiError(errorMessage(res, text), res.status);
   }
   return res.text();
 }
@@ -793,7 +882,7 @@ export async function exportWorkflowRunMarkdown(
   const res = await fetch(`${gatewayUrl()}${path}`, { cache: 'no-store' });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    throw new Error(errorMessage(res, text));
+    throw new ApiError(errorMessage(res, text), res.status);
   }
   return res.text();
 }
@@ -1169,7 +1258,7 @@ export async function exportCouncilRunMarkdown(
   const res = await fetch(`${gatewayUrl()}${path}`, { cache: 'no-store' });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    throw new Error(errorMessage(res, text));
+    throw new ApiError(errorMessage(res, text), res.status);
   }
   return res.text();
 }
@@ -1181,7 +1270,7 @@ export async function exportTask(taskId: string): Promise<string> {
   const res = await fetch(`${gatewayUrl()}${path}`, { cache: 'no-store' });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    throw new Error(errorMessage(res, text));
+    throw new ApiError(errorMessage(res, text), res.status);
   }
   return res.text();
 }
