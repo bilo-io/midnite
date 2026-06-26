@@ -13,7 +13,7 @@ class FakePhaseDocsService extends PhaseDocsService {
   readonly calls: Call[] = [];
   next: ((args: string[], body?: Record<string, string>) => string) = () => '{}';
 
-  protected runGh(args: string[], body?: Record<string, string>): Promise<string> {
+  protected override runGh(args: string[], body?: Record<string, string>): Promise<string> {
     this.calls.push({ args, body });
     try {
       return Promise.resolve(this.next(args, body));
@@ -82,7 +82,7 @@ describe('PhaseDocsService', () => {
       `repos/${REPO}/contents/.midnite/phases/auth-revamp.md`,
     ]);
     expect(call.body?.sha).toBeUndefined();
-    expect(Buffer.from(call.body!.content, 'base64').toString('utf8')).toBe('body');
+    expect(Buffer.from(call.body?.content ?? '', 'base64').toString('utf8')).toBe('body');
     expect(doc.name).toBe('auth-revamp.md');
     expect(doc.content).toBe('body');
   });
