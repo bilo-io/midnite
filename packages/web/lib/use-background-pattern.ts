@@ -27,6 +27,7 @@ export function useBackgroundPattern(): string {
 
   useEffect(() => {
     const html = document.documentElement;
+    html.setAttribute('data-bg-pattern', pattern);
     if (pattern === 'gradient') {
       html.setAttribute('data-bg-intensity', intensity);
     } else {
