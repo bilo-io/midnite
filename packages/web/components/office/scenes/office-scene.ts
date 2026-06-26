@@ -25,6 +25,7 @@ import {
   POOL_TABLE,
   READING_CHAIR,
   ROOMS,
+  roomForWall,
   statusToRoom,
   type RoomId,
   RUGS,
@@ -45,7 +46,13 @@ import {
   worldToMinimap,
 } from '@/lib/office/minimap';
 import { assignStableSeats } from '@/lib/office/seats';
-import { buildOfficePalette, ROOM_STYLES, roomSignStyle, type OfficePalette } from '@/lib/office/theme';
+import {
+  buildOfficePalette,
+  ROOM_STYLES,
+  roomSignStyle,
+  wallTint,
+  type OfficePalette,
+} from '@/lib/office/theme';
 import {
   agentTint,
   charKey,
@@ -205,7 +212,9 @@ class OfficeScene extends Phaser.Scene {
   /** Stable seat claims: agent id → desk/lounge seat index, kept until it leaves. */
   private readonly deskByAgent = new Map<string, number>();
   private readonly loungeByAgent = new Map<string, number>();
-  private readonly walls: Phaser.GameObjects.Image[] = [];
+  /** Walls, each tagged with the room it borders so per-room tints (Phase 9 A1)
+   * can be recomputed on a light/dark flip. */
+  private readonly walls: { img: Phaser.GameObjects.Image; roomId: RoomId | null }[] = [];
   private readonly solids: Phaser.GameObjects.GameObject[] = [];
   /** Wall-mounted room name plates (A3) — redrawn on theme flip (fill is theme-driven). */
   private readonly roomSigns: { plate: Phaser.GameObjects.Graphics; id: RoomId; rect: Phaser.Geom.Rectangle }[] = [];
@@ -571,7 +580,7 @@ class OfficeScene extends Phaser.Scene {
     this.palette = palette;
     this.cameras.main.setBackgroundColor(palette.background);
     this.floor.setTint(palette.floor);
-    for (const wall of this.walls) wall.setTint(palette.wall);
+    for (const w of this.walls) w.img.setTint(wallTint(w.roomId, palette));
     // Room name plates: text/border are fixed per-room accents, but the plate fill
     // is theme-driven — redraw it so the signs flip with light/dark.
     for (const sign of this.roomSigns) this.drawSignPlate(sign.plate, sign.id, sign.rect);
@@ -1349,8 +1358,11 @@ class OfficeScene extends Phaser.Scene {
     for (let y = 0; y < ROWS; y++) {
       for (let x = 0; x < COLS; x++) {
         if (LAYOUT[y]![x] !== '#') continue;
-        const wall = this.physics.add.staticImage(center(x), center(y), TEX.wall).setTint(this.palette.wall);
-        this.walls.push(wall);
+        const roomId = roomForWall(x, y);
+        const wall = this.physics.add
+          .staticImage(center(x), center(y), TEX.wall)
+          .setTint(wallTint(roomId, this.palette));
+        this.walls.push({ img: wall, roomId });
         this.solids.push(wall);
       }
     }

@@ -86,6 +86,20 @@ export const ROOMS: readonly OfficeRoom[] = [
   { id: 'corner', label: 'CORNER OFFICE', x: 23, y: 11, w: 10, h: 10, lx: 27.5, ly: 10.8 },
 ];
 
+/**
+ * Which room a wall tile belongs to, for per-room wall tinting (Phase 9 A1) — or
+ * `null` if it borders no room interior. A wall is assigned to the first room
+ * whose interior rect, expanded by one tile, covers it; a wall shared by two
+ * adjacent rooms (the internal dividers) deterministically takes the earlier
+ * room in `ROOMS`. Pure — `office-scene` calls it once per wall in `buildWalls`.
+ */
+export function roomForWall(x: number, y: number): RoomId | null {
+  for (const r of ROOMS) {
+    if (x >= r.x - 1 && x <= r.x + r.w && y >= r.y - 1 && y <= r.y + r.h) return r.id;
+  }
+  return null;
+}
+
 /** Hot desks (WORK), in fill order — two rows of three. */
 export const DESK_SEATS: readonly TilePos[] = [
   { x: 3, y: 2 },

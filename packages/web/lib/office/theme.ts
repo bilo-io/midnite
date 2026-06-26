@@ -65,6 +65,31 @@ export function roomSignStyle(id: RoomId, palette: OfficePalette): RoomSignStyle
   return { fill: palette.background, border: accent, text: accent };
 }
 
+/** Blend two packed `0xRRGGBB` ints by factor `t` ∈ [0,1] (0 → a, 1 → b). Pure. */
+export function blendRgb(a: number, b: number, t: number): number {
+  const k = Math.max(0, Math.min(1, t));
+  const lerp = (ca: number, cb: number) => Math.round(ca + (cb - ca) * k);
+  const r = lerp((a >> 16) & 0xff, (b >> 16) & 0xff);
+  const g = lerp((a >> 8) & 0xff, (b >> 8) & 0xff);
+  const bl = lerp(a & 0xff, b & 0xff);
+  return (r << 16) | (g << 8) | bl;
+}
+
+/** How far each room's walls are nudged toward its accent — subtle, so the
+ * theme-driven base still dominates and light/dark still reads as light/dark. */
+export const WALL_ACCENT_BLEND = 0.22;
+
+/**
+ * Per-room wall tint (Phase 9 A1): the theme wall colour nudged toward the
+ * room's fixed accent so each room's walls read subtly as that space — work
+ * blue, library amber, pool cyan — without abandoning the token-driven base
+ * (which still flips with light/dark). Outer/un-roomed walls keep the base.
+ */
+export function wallTint(roomId: RoomId | null, palette: OfficePalette): number {
+  if (!roomId) return palette.wall;
+  return blendRgb(palette.wall, ROOM_STYLES[roomId].accent, WALL_ACCENT_BLEND);
+}
+
 /** Decorative colours that read well on both themes — kept constant. */
 const DECOR = {
   player: 0x38bdf8,
