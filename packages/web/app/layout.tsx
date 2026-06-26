@@ -8,6 +8,8 @@ import { ToastProvider } from '@/components/toast';
 import { ThemeProvider } from './theme/theme-context';
 import { AuthProvider } from '@/contexts/auth-context';
 import { themeInitScript } from './theme/theme-script';
+import { appearanceInitScript } from '@/lib/apply-appearance';
+import { AppearanceEffects } from '@/components/appearance-effects';
 
 // Display fonts trialled for the "midnite" wordmark. Each is exposed as its own
 // CSS var; the active one is chosen in Settings → Appearance → Logo and applied
@@ -123,9 +125,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" suppressHydrationWarning className={fontVariables}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <script dangerouslySetInnerHTML={{ __html: appearanceInitScript }} />
       </head>
       <body className="min-h-screen bg-background text-foreground">
         <PwaRegister />
+        <AppearanceEffects />
         <ThemeProvider>
           <AuthProvider>
             <ToastProvider>
