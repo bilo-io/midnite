@@ -4,6 +4,12 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-26 — Phase 9 A1: per-room wall tints in the office (PR #230)
+
+- [x] Office walls were tinted with a single theme `palette.wall`, so all six rooms shared identical walls. Each wall is now nudged subtly (22%) toward its room's existing accent (work blue, library amber, pool cyan, …) so each space reads as its own — completing Phase 9 A1's flagged "per-room wall tints a later refinement" (the only non-Tiled-blocked part of A1)
+- [x] Pure, unit-tested helpers: `roomForWall(x,y)` in [`lib/office/layout.ts`](../packages/web/lib/office/layout.ts) (wall tile → room; shared dividers deterministically take the earlier room) + `blendRgb` / `wallTint(roomId, palette)` in [`lib/office/theme.ts`](../packages/web/lib/office/theme.ts). `office-scene` tags each wall with its roomId and recomputes the tint on light/dark flip. Stays theme-aware (base flips; accent fixed)
+- [x] 11 new tests (roomForWall coverage/corners/divider, blendRgb endpoints/midpoint/clamp, wallTint distinct-per-room/theme-flip/blend-match). Local gate green: build ✓ (42/42), typecheck ✓, lint ✓, **570 web tests pass**. Merged with CI billing-blocked. Note: office phases 8/9/31 are otherwise complete — remaining items are deferred (sub-agent data, external Tiled assets, out-of-scope multiplayer)
+
 ## 2026-06-26 — feat(phase-docs): GitHub-backed phase doc editor — Phase 42 Theme C (PR #229)
 
 GitHub-backed `.midnite/phases/*.md` CRUD, surfaced as a "Phase docs" tab in the project modal. The pipeline's first authoring surface for living phase docs (Themes D/E build on it).
