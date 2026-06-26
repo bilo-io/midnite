@@ -1,10 +1,10 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
   HttpCode,
-  NotFoundException,
   Param,
   Patch,
   Post,
@@ -22,7 +22,6 @@ import {
 } from '@midnite/shared';
 import { CurrentUser, type CurrentUserPayload } from '../auth/decorators/current-user.decorator';
 import { RequiresRole } from '../auth/decorators/require-role.decorator';
-import { ZodValidationPipe } from '../lib/zod-validation.pipe';
 import { IdeaService } from './ideas.service';
 
 const DEFAULT_SCOPE = { userId: 'anonymous', teamId: null };
@@ -37,20 +36,24 @@ export class IdeaController {
 
   @Get()
   list(
-    @Query(new ZodValidationPipe(IdeaQuerySchema)) query: { status?: string; q?: string; page?: number; limit?: number },
+    @Query() rawQuery: Record<string, string>,
     @CurrentUser() user?: CurrentUserPayload | null,
   ): IdeasResponse {
-    const { ideas, total } = this.service.listIdeas(toScope(user), query);
+    const parsed = IdeaQuerySchema.safeParse(rawQuery);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    const { ideas, total } = this.service.listIdeas(toScope(user), parsed.data);
     return { ideas, total };
   }
 
   @Post()
   @RequiresRole('member')
   create(
-    @Body(new ZodValidationPipe(CreateIdeaRequestSchema)) body: { title: string; body?: string; tags?: string[] },
+    @Body() rawBody: unknown,
     @CurrentUser() user: CurrentUserPayload,
   ): { idea: Idea } {
-    const idea = this.service.createIdea(body, toScope(user));
+    const parsed = CreateIdeaRequestSchema.safeParse(rawBody);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    const idea = this.service.createIdea(parsed.data, toScope(user));
     return { idea };
   }
 
@@ -67,10 +70,12 @@ export class IdeaController {
   @RequiresRole('member')
   update(
     @Param('id') id: string,
-    @Body(new ZodValidationPipe(UpdateIdeaRequestSchema)) body: { title?: string; body?: string; tags?: string[] },
+    @Body() rawBody: unknown,
     @CurrentUser() user: CurrentUserPayload,
   ): { idea: Idea } {
-    const idea = this.service.updateIdea(id, body, toScope(user));
+    const parsed = UpdateIdeaRequestSchema.safeParse(rawBody);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    const idea = this.service.updateIdea(id, parsed.data, toScope(user));
     return { idea };
   }
 
@@ -97,10 +102,12 @@ export class IdeaController {
   @RequiresRole('member')
   async sendMessage(
     @Param('id') id: string,
-    @Body(new ZodValidationPipe(IdeaChatRequestSchema)) body: { content: string },
+    @Body() rawBody: unknown,
     @CurrentUser() user: CurrentUserPayload,
   ): Promise<IdeaChatResponse> {
-    const userMessage = this.service.addUserMessage(id, body.content, toScope(user));
+    const parsed = IdeaChatRequestSchema.safeParse(rawBody);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    const userMessage = this.service.addUserMessage(id, parsed.data.content, toScope(user));
     // Assistant reply placeholder — Theme C wires the LLM here.
     const assistantMessage = this.service.addAssistantMessage(
       id,

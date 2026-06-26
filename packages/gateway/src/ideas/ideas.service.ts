@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException, ForbiddenException, Optional } from '@nestjs/common';
-import { uuidv7 } from 'uuidv7';
+import { randomUUID } from 'node:crypto';
 import type {
   Idea,
   IdeaMessage,
@@ -27,7 +27,7 @@ export class IdeaService {
   createIdea(req: CreateIdeaRequest, scope: TeamScope): Idea {
     const now = new Date().toISOString();
     const idea = this.repo.create({
-      id: uuidv7(),
+      id: randomUUID(),
       teamId: scope.teamId ?? null,
       createdBy: scope.userId,
       title: req.title,
@@ -90,7 +90,7 @@ export class IdeaService {
   addUserMessage(ideaId: string, content: string, scope: TeamScope): IdeaMessage {
     this.getIdea(ideaId, scope);
     return this.repo.addMessage({
-      id: uuidv7(),
+      id: randomUUID(),
       ideaId,
       role: 'user',
       content,
@@ -100,7 +100,7 @@ export class IdeaService {
 
   addAssistantMessage(ideaId: string, content: string): IdeaMessage {
     return this.repo.addMessage({
-      id: uuidv7(),
+      id: randomUUID(),
       ideaId,
       role: 'assistant',
       content,

@@ -14,10 +14,10 @@ function makeIdea(insert: IdeaInsert): Idea {
     teamId: insert.teamId ?? undefined,
     createdBy: insert.createdBy ?? undefined,
     title: insert.title,
-    body: insert.body,
-    status: insert.status as IdeaStatus,
+    body: insert.body ?? '',
+    status: (insert.status ?? 'draft') as IdeaStatus,
     projectId: insert.projectId ?? null,
-    tags: JSON.parse(insert.tags),
+    tags: JSON.parse(insert.tags ?? '[]'),
     createdAt: insert.createdAt,
     updatedAt: insert.updatedAt,
   };
@@ -130,7 +130,7 @@ describe('IdeaService', () => {
     service.createIdea({ title: 'Theirs' }, OTHER_SCOPE);
     const { ideas } = service.listIdeas(SCOPE);
     expect(ideas).toHaveLength(1);
-    expect(ideas[0].title).toBe('Mine');
+    expect(ideas[0]!.title).toBe('Mine');
   });
 
   it('gets an idea by id', () => {
@@ -167,7 +167,9 @@ describe('IdeaService', () => {
     const created = service.createIdea({ title: 'Delete me' }, SCOPE);
     service.deleteIdea(created.id, SCOPE);
     expect(() => service.getIdea(created.id, SCOPE)).toThrow(NotFoundException);
-    expect(emitted).toHaveBeenCalledWith(expect.objectContaining({ type: 'idea.deleted', id: created.id }));
+    expect(emitted).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'idea.deleted', id: created.id }),
+    );
   });
 
   it('adds and lists messages', () => {
@@ -175,7 +177,7 @@ describe('IdeaService', () => {
     service.addUserMessage(created.id, 'Hello AI', SCOPE);
     const msgs = service.listMessages(created.id, SCOPE);
     expect(msgs).toHaveLength(1);
-    expect(msgs[0].role).toBe('user');
-    expect(msgs[0].content).toBe('Hello AI');
+    expect(msgs[0]!.role).toBe('user');
+    expect(msgs[0]!.content).toBe('Hello AI');
   });
 });

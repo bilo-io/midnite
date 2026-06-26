@@ -97,13 +97,10 @@ export class IdeaRepository {
       .offset(offset)
       .all();
 
-    const [{ value: total }] = this.db
-      .select({ value: count() })
-      .from(ideas)
-      .where(where)
-      .all();
+    const countRows = this.db.select({ value: count() }).from(ideas).where(where).all();
+    const total = countRows[0]?.value ?? 0;
 
-    return { ideas: rows.map(rowToIdea), total: total ?? 0 };
+    return { ideas: rows.map(rowToIdea), total };
   }
 
   update(id: string, data: Partial<IdeaInsert>): Idea | undefined {
