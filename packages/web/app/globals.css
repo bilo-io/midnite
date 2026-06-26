@@ -97,6 +97,33 @@
   }
 }
 
+/*
+ * Phase 39 B — accent personalization. `applyAccent()` (lib/apply-appearance.ts)
+ * sets `--accent-h` / `--accent-s` (bare numbers) + the `data-accent` attribute on
+ * <html>; the lightness is supplied here per theme so text-on-accent contrast holds
+ * in both light and dark. The `default` accent sets no attribute, so today's
+ * near-monochrome primary is unchanged. `@midnite/ui` tokens.css stays the source of
+ * truth — this only overrides the token *values* when an accent is active.
+ */
+@layer base {
+  html[data-accent] {
+    --primary: var(--accent-h) calc(var(--accent-s) * 1%) 42%;
+    --primary-foreground: 0 0% 100%;
+    --ring: var(--accent-h) calc(var(--accent-s) * 1%) 42%;
+    --accent: var(--accent-h) calc(var(--accent-s) * 1%) 92%;
+    --accent-foreground: var(--accent-h) calc(var(--accent-s) * 1%) 25%;
+  }
+  /* Dark theme primary is the lighter surface (dark text on top), so accents sit
+     brighter with a dark foreground — mirroring the default token inversion. */
+  html.dark[data-accent] {
+    --primary: var(--accent-h) calc(var(--accent-s) * 1%) 62%;
+    --primary-foreground: 240 12% 8%;
+    --ring: var(--accent-h) calc(var(--accent-s) * 1%) 62%;
+    --accent: var(--accent-h) calc(var(--accent-s) * 1%) 22%;
+    --accent-foreground: var(--accent-h) calc(var(--accent-s) * 1%) 88%;
+  }
+}
+
 @layer utilities {
   .bg-grid {
     background-image:

@@ -132,6 +132,36 @@ export const BACKGROUND_PATTERN_OPTIONS: { value: BackgroundPattern; label: stri
   { value: 'gradient', label: 'Gradient' },
 ];
 
+/**
+ * The accent colour that retints the primary/ring/accent design tokens at
+ * runtime. Each swatch is a hue + saturation only — the lightness comes from the
+ * active light/dark theme (via the `html[data-accent]` rules in globals.css), so
+ * text-on-accent contrast holds in both themes. `default` applies no override,
+ * reproducing today's near-monochrome primary.
+ */
+export type AccentId =
+  | 'default'
+  | 'blue'
+  | 'violet'
+  | 'emerald'
+  | 'amber'
+  | 'rose'
+  | 'cyan'
+  | 'orange';
+
+export const ACCENT_DEFAULT: AccentId = 'default';
+
+export const ACCENT_OPTIONS: { id: AccentId; label: string; h: number; s: number }[] = [
+  { id: 'default', label: 'Default', h: 240, s: 6 },
+  { id: 'blue', label: 'Blue', h: 217, s: 80 },
+  { id: 'violet', label: 'Violet', h: 263, s: 70 },
+  { id: 'emerald', label: 'Emerald', h: 152, s: 58 },
+  { id: 'amber', label: 'Amber', h: 38, s: 85 },
+  { id: 'rose', label: 'Rose', h: 347, s: 75 },
+  { id: 'cyan', label: 'Cyan', h: 190, s: 72 },
+  { id: 'orange', label: 'Orange', h: 24, s: 85 },
+];
+
 /** Opacity of the animated gradient at each intensity level. */
 export type BgIntensity = 'subtle' | 'balanced' | 'bold';
 export const BG_INTENSITY_DEFAULT: BgIntensity = 'balanced';
@@ -162,6 +192,8 @@ export type AppSettings = {
   backgroundPattern: BackgroundPattern;
   /** Visibility level of the animated-gradient backdrop (only shown when gradient is active). */
   bgIntensity: BgIntensity;
+  /** Accent colour retinting primary/ring/accent across the app (`default` = no override). */
+  accent: AccentId;
   /**
    * Desktop notifications when a task needs input (→ waiting) or finishes
    * (→ done). Opt-in: enabling it prompts for the browser's Notification
@@ -181,6 +213,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   navMode: 'auto',
   backgroundPattern: BACKGROUND_PATTERN_DEFAULT,
   bgIntensity: BG_INTENSITY_DEFAULT,
+  accent: ACCENT_DEFAULT,
   notifyTaskUpdates: false,
   features: DEFAULT_FEATURE_FLAGS,
 };

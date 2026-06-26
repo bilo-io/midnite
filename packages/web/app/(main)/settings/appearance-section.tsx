@@ -10,6 +10,7 @@ import {
   LayoutGrid,
   Moon,
   PanelLeft,
+  Paintbrush,
   Palette,
   Sun,
   Type,
@@ -27,8 +28,11 @@ import {
   BACKGROUND_PATTERN_OPTIONS,
   BG_INTENSITY_DEFAULT,
   BG_INTENSITY_OPTIONS,
+  ACCENT_DEFAULT,
+  ACCENT_OPTIONS,
   DEFAULT_SETTINGS,
   SETTINGS_STORAGE_KEY,
+  type AccentId,
   type AppSettings,
   type BackgroundPattern,
   type BgIntensity,
@@ -71,6 +75,9 @@ export function AppearanceSection() {
   const bgIntensity = settings.bgIntensity ?? BG_INTENSITY_DEFAULT;
   const setBgIntensity = (intensity: BgIntensity) =>
     setSettings((prev) => ({ ...prev, bgIntensity: intensity }));
+
+  const accent = settings.accent ?? ACCENT_DEFAULT;
+  const setAccent = (next: AccentId) => setSettings((prev) => ({ ...prev, accent: next }));
 
   return (
     <div className="space-y-4">
@@ -177,6 +184,62 @@ export function AppearanceSection() {
               />
             </SettingRow>
           )}
+        </div>
+      </Accordion>
+
+      <Accordion title="Accent colour" icon={<Paintbrush className="h-3.5 w-3.5" />} defaultOpen>
+        <div className="space-y-4 p-5">
+          <p className="text-xs text-muted-foreground">
+            Retints buttons, links, and focus rings across the app. Adapts to light and dark.
+          </p>
+          <div
+            role="radiogroup"
+            aria-label="Accent colour"
+            className={cn(
+              'grid grid-cols-4 gap-2 sm:grid-cols-8 transition-opacity',
+              hydrated ? 'opacity-100' : 'opacity-0',
+            )}
+          >
+            {ACCENT_OPTIONS.map((opt) => {
+              const active = hydrated && accent === opt.id;
+              const isDefault = opt.id === 'default';
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => setAccent(opt.id)}
+                  title={opt.label}
+                  className={cn(
+                    'flex flex-col items-center gap-1.5 rounded-lg border p-2 transition-colors',
+                    active
+                      ? 'border-primary ring-1 ring-primary'
+                      : 'border-border/60 hover:border-foreground/20',
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'flex h-7 w-7 items-center justify-center rounded-full',
+                      isDefault && 'border border-border bg-muted',
+                    )}
+                    style={
+                      isDefault
+                        ? undefined
+                        : { background: `hsl(${opt.h} ${opt.s}% 50%)` }
+                    }
+                  >
+                    {active ? (
+                      <Check className={cn('h-4 w-4', isDefault ? 'text-foreground' : 'text-white')} />
+                    ) : null}
+                  </span>
+                  <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
+                    {opt.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </Accordion>
 
