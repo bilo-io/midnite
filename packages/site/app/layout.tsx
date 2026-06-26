@@ -13,6 +13,14 @@ const brand = localFont({
   display: 'swap',
 });
 
+// Display font for the large "midnite" wordmark in the hero (mirrors the app's
+// `--font-cassandra`). Exposed as a CSS var for the `font-cassandra` utility.
+const cassandra = localFont({
+  src: './fonts/cassandra.ttf',
+  variable: '--font-cassandra',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
   metadataBase: new URL('https://midnite.dev'),
   title: 'midnite — Multitask Claude Code',
@@ -47,7 +55,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   // ThemeProvider then keeps it in sync. suppressHydrationWarning because the script
   // mutates <html> before React hydrates. Tokens in globals.css drive both themes.
   return (
-    <html lang="en" suppressHydrationWarning className={brand.variable}>
+    <html lang="en" suppressHydrationWarning className={`${brand.variable} ${cassandra.variable}`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>

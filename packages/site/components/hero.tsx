@@ -21,7 +21,7 @@ export function Hero() {
   return (
     <section
       id="top"
-      className="relative flex min-h-[100svh] flex-col items-center overflow-hidden px-6 pb-16 pt-[11vh] text-center"
+      className="relative flex min-h-[100svh] flex-col items-center overflow-hidden px-6 pb-16 pt-[6vh] text-center"
     >
       {/* Faint engineering grid between the 3D backdrop and the copy. */}
       <div className="bg-grid pointer-events-none absolute inset-0 -z-0 opacity-60" />
@@ -30,19 +30,19 @@ export function Hero() {
         {/* Soft radial scrim: keeps the busy backdrop from sapping text contrast. */}
         <div className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[150%] w-[170%] -translate-x-1/2 -translate-y-1/2 bg-[radial-gradient(ellipse_at_center,hsl(var(--background)/0.78),hsl(var(--background)/0.4)_45%,transparent_70%)]" />
 
-        <div className="mb-4 flex items-center justify-center gap-3">
+        <div className="mb-3 flex items-center justify-center gap-3">
           <Image
             src="/logo.PNG"
             alt="midnite logo"
-            width={44}
-            height={44}
-            className="h-11 w-11 rounded-xl shadow-lg"
+            width={72}
+            height={72}
+            className="h-16 w-16 rounded-2xl shadow-lg sm:h-[72px] sm:w-[72px]"
             priority
           />
-          <span className="font-brand text-2xl tracking-tight">midnite</span>
+          <span className="font-cassandra text-4xl leading-none tracking-tight sm:text-5xl">midnite</span>
         </div>
 
-        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/40 px-3 py-1 text-xs text-muted-foreground backdrop-blur">
+        <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/40 px-3 py-1 text-xs text-muted-foreground backdrop-blur">
           <span className="h-1.5 w-1.5 rounded-full bg-[#10b981] shadow-[0_0_8px_-1px_#10b981]" />
           A task orchestrator for Claude Code
         </div>
@@ -58,13 +58,13 @@ export function Hero() {
             {typing ? <span className="caret align-middle" /> : null}
           </span>
         </h1>
-        <p className="mx-auto mt-5 min-h-[3em] max-w-xl text-pretty text-lg leading-relaxed text-muted-foreground">
+        <p className="mx-auto mt-3 min-h-[2.5em] max-w-xl text-pretty text-lg leading-relaxed text-muted-foreground">
           <span aria-hidden="true">{subtitle}</span>
         </p>
         {/* Stable text for assistive tech / crawlers regardless of the animation. */}
         <span className="sr-only">midnite — multitask Claude Code. {HERO_PAIRS[0]?.subtitle}</span>
 
-        <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+        <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <a href="#cli" className="gradient-border rounded-md">
             <Button size="lg" className="w-full sm:w-auto">
               Get started
