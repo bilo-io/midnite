@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Pencil, Trash2, Rocket } from 'lucide-react';
 import { IdeaStatusChip } from '@/components/ideas/IdeaStatusChip';
 import { getIdea, updateIdea, deleteIdea } from '@/lib/api';
@@ -9,10 +9,9 @@ import { useApiData } from '@/lib/use-api-data';
 import { cn } from '@/lib/utils';
 import type { UpdateIdeaRequest } from '@midnite/shared';
 
-export default function IdeaDetailPage() {
-  const params = useParams<{ id: string }>();
+export default function IdeaDetailView() {
   const router = useRouter();
-  const id = params.id;
+  const id = useSearchParams().get('id') ?? '';
 
   const { data, error } = useApiData(() => getIdea(id), [id]);
   const idea = data?.idea ?? null;

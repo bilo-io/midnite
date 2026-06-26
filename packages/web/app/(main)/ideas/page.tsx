@@ -38,7 +38,7 @@ export default function IdeasPage() {
       const title = window.prompt('Idea title');
       if (!title?.trim()) return;
       const res = await createIdea({ title: title.trim() });
-      router.push(`/ideas/${res.idea.id}`);
+      router.push(`/ideas/view?id=${res.idea.id}`);
     } catch {
       // noop — inline for now; Theme C adds a proper dialog
     } finally {

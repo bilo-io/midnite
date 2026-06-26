@@ -30,7 +30,7 @@ export function IdeaTable({ ideas }: { ideas: Idea[] }) {
           {ideas.map((idea) => (
             <tr
               key={idea.id}
-              onClick={() => router.push(`/ideas/${idea.id}`)}
+              onClick={() => router.push(`/ideas/view?id=${idea.id}`)}
               className={cn(
                 'cursor-pointer border-b border-border/40 last:border-0',
                 'hover:bg-muted/40 transition-colors',
