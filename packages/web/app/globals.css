@@ -278,6 +278,55 @@
   html[data-bg-intensity='bold']     { --bg-intensity: 0.40; }
 }
 
+/*
+ * Phase 39 D — motion controls. `applyMotion()` sets `data-motion` on <html>:
+ *   - `reduced`  → the universal kill rule below forces animation/transition off,
+ *                  regardless of the OS preference.
+ *   - `full`     → re-enables animation even when the OS prefers reduced (the
+ *                  `@media` override below counters the scattered
+ *                  `prefers-reduced-motion` blocks throughout this file).
+ *   - `system`   → no attribute effect; the existing `@media (prefers-reduced-
+ *                  motion: reduce)` blocks honour the OS as before.
+ */
+html[data-motion='reduced'] *,
+html[data-motion='reduced'] *::before,
+html[data-motion='reduced'] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-motion='full'] *,
+  html[data-motion='full'] *::before,
+  html[data-motion='full'] *::after {
+    animation-duration: revert !important;
+    animation-iteration-count: revert !important;
+    transition-duration: revert !important;
+  }
+}
+
+/*
+ * Phase 39 D — per-effect toggles. `applyEffects()` sets a `data-no-*` attribute
+ * on <html> when an effect is disabled; each is independent of the motion knob.
+ * (The typewriter is JS-driven — gated in page-header via the effects setting,
+ * not here.)
+ */
+html[data-no-page-reveal] .page-reveal header ~ *,
+html[data-no-page-reveal] .page-reveal .reveal-staged {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+html[data-no-glass] *,
+html[data-no-glass] *::before,
+html[data-no-glass] *::after {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
 @property --gradient-angle {
   syntax: '<angle>';
   initial-value: 0deg;

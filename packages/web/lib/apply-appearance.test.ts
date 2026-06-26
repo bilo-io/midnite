@@ -1,10 +1,17 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { ACCENT_OPTIONS } from './app-settings';
-import { appearanceInitScript, applyAccent } from './apply-appearance';
+import {
+  appearanceInitScript,
+  applyAccent,
+  applyEffects,
+  applyMotion,
+} from './apply-appearance';
 
 afterEach(() => {
   const html = document.documentElement;
-  html.removeAttribute('data-accent');
+  for (const attr of ['data-accent', 'data-motion', 'data-no-page-reveal', 'data-no-typewriter', 'data-no-glass']) {
+    html.removeAttribute(attr);
+  }
   html.style.removeProperty('--accent-h');
   html.style.removeProperty('--accent-s');
 });
@@ -43,6 +50,36 @@ describe('applyAccent', () => {
   });
 });
 
+describe('applyMotion', () => {
+  it('sets data-motion to the literal preference', () => {
+    applyMotion('reduced');
+    expect(document.documentElement.getAttribute('data-motion')).toBe('reduced');
+    applyMotion('full');
+    expect(document.documentElement.getAttribute('data-motion')).toBe('full');
+    applyMotion('system');
+    expect(document.documentElement.getAttribute('data-motion')).toBe('system');
+  });
+});
+
+describe('applyEffects', () => {
+  it('sets data-no-* attributes only for disabled effects', () => {
+    applyEffects({ pageReveal: false, typewriter: true, glass: false });
+    const html = document.documentElement;
+    expect(html.hasAttribute('data-no-page-reveal')).toBe(true);
+    expect(html.hasAttribute('data-no-typewriter')).toBe(false);
+    expect(html.hasAttribute('data-no-glass')).toBe(true);
+  });
+
+  it('clears attributes when effects are re-enabled', () => {
+    applyEffects({ pageReveal: false, typewriter: false, glass: false });
+    applyEffects({ pageReveal: true, typewriter: true, glass: true });
+    const html = document.documentElement;
+    expect(html.hasAttribute('data-no-page-reveal')).toBe(false);
+    expect(html.hasAttribute('data-no-typewriter')).toBe(false);
+    expect(html.hasAttribute('data-no-glass')).toBe(false);
+  });
+});
+
 describe('appearanceInitScript', () => {
   it('embeds every non-default accent so the pre-paint map stays in sync', () => {
     for (const opt of ACCENT_OPTIONS) {
@@ -52,14 +89,17 @@ describe('appearanceInitScript', () => {
     // Reads from the shared settings key + applies before paint.
     expect(appearanceInitScript).toContain('midnite.settings');
     expect(appearanceInitScript).toContain('data-accent');
+    expect(appearanceInitScript).toContain('data-motion');
+    expect(appearanceInitScript).toContain('data-no-page-reveal');
   });
 
-  it('runs without throwing when applied to the document (no stored accent)', () => {
+  it('runs without throwing and defaults motion to system when nothing is stored', () => {
     expect(() => {
       // eslint-disable-next-line no-eval -- exercising the inline init script body
       eval(appearanceInitScript);
     }).not.toThrow();
-    // No accent stored → no override applied.
+    // No accent stored → no override applied; motion defaults to system.
     expect(document.documentElement.hasAttribute('data-accent')).toBe(false);
+    expect(document.documentElement.getAttribute('data-motion')).toBe('system');
   });
 });
