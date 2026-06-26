@@ -1344,6 +1344,9 @@ class OfficeScene extends Phaser.Scene {
     this.deskObjects.length = 0;
     this.buildDesks();
     this.blocked = blockedGrid(this.deskLayout.seats);
+    // Drop sticky desk claims: a stale seat index could exceed a shrunken desk
+    // count. Clearing lets every agent re-claim a valid seat in the new layout.
+    this.deskByAgent.clear();
     this.renderActors(useOfficeStore.getState().agents);
   }
 
