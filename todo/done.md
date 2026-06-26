@@ -4,6 +4,13 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-26 — Phase 39 A: Background gallery + visible animated gradient (PR #212)
+
+- [x] 9 new pure-CSS `.bg-*` patterns: dots, diagonal-lines, plus-cross, topographic, waves, blueprint, grain, aurora, mesh-gradient (total: 12)
+- [x] Animated gradient reworked to multi-colour conic sweep at 15–40% opacity (was 1–6% invisible)
+- [x] `--bg-intensity` CSS property + `data-bg-intensity` on `<html>`; intensity control inline when gradient selected
+- [x] Appearance panel: live-preview swatch grid replaces 3-item Segmented control
+
 ## 2026-06-26 — Phase 10 C3: Color-contrast WCAG AA pass (PR #211)
 
 - [x] `--muted-foreground` light token raised 46.1% → 38% L (≥4.5:1 on white)
