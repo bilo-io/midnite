@@ -21,10 +21,10 @@ The headline: swap shapes for real sprites + tiles.
 > later upgrade — the texture keys + scene structure are the seam to swap at.
 
 ### A1. Tileset + Tiled map (external-asset upgrade) — **M** ◐ PARTIAL
-- [ ] Drop a pixel-art office tileset into `packages/web/public/office/` — [LimeZu "Modern Office"](https://limezu.itch.io/modernoffice) (cheap commercial license; the standard look) or [Kenney](https://kenney.nl/assets) (CC0). `images: { unoptimized: true }` means static assets under `public/` just work.
+- [x] Drop a pixel-art office tileset into `packages/web/public/office/` — Kenney Tiny Town (CC0): `floor-tiles.png` (64×32), tile 25 = warm wood (FLOOR_A), tile 109 = stone/neutral (FLOOR_B), both 2× upscaled to 32×32. (2026-06-26)
 - [x] **Object layer** of desks with custom props (`deskId`/`agentSlot`) — `lib/office/map-data.ts` `MAP_DESK_OBJECTS`/`getDeskSeats()`; replaces hardcoded `DESK_SEATS`. (PR #206, 2026-06-25)
 - [x] **Scene refactor** — floor is now `Phaser.Tilemaps.TilemapLayer` built from `buildFloorTileData()` + procedural `ensureOfficeTileset()` (two oak variants; seam for real `.tmj` drop-in later). (PR #206, 2026-06-25)
-- [ ] Swap procedural tileset for the real LimeZu/Kenney PNG once licensed — update `ensureOfficeTileset` to `this.load.image` the PNG key instead of drawing it.
+- [x] Swap procedural tileset for Kenney Tiny Town CC0 PNG — loaded via `this.load.image(TILESET_KEY, '/office/floor-tiles.png')` in `preload()`; `ensureOfficeTileset` is a no-op guard. (2026-06-26)
 
 ### A2. Character sprites + walk animations — **M** — ✅ DONE (2026-06-20, procedural)
 - [x] The player & seated-agent `Arc` "blobs" are now character **sprites** ([`textures.ts`](../packages/web/lib/office/textures.ts) `charKey`/`walkAnim`): down/up/side facings with a 2-frame walk cycle. The player animates + flips while walking; agents render seated behind their desks. (Future: smoother multi-frame cycles + a dedicated seated pose come with the A1 asset pack.)

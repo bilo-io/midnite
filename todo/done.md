@@ -4,6 +4,12 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-26 — Phase 8 A1: Kenney CC0 floor tileset
+
+- [x] `packages/web/public/office/floor-tiles.png` (64×32) — Kenney Tiny Town tile 25 (warm wood) = FLOOR_A, tile 109 (stone/neutral) = FLOOR_B, 2× upscaled to 32×32
+- [x] `preload()` in `OfficeScene` loads the PNG via `this.load.image(TILESET_KEY, ...)`
+- [x] `ensureOfficeTileset` replaced by a no-op guard — canvas plank-drawing removed (66 lines)
+
 ## 2026-06-26 — Phase 39 B: accent colour personalization (PR #213)
 
 - [x] Curated 8-swatch accent palette (default + blue/violet/emerald/amber/rose/cyan/orange) in Settings → Appearance, retinting `--primary`/`--ring`/`--accent` across the app at runtime
