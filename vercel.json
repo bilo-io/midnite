@@ -1,0 +1,6 @@
+{
+  "buildCommand": "pnpm --filter @midnite/ui build && pnpm --filter @midnite/docs build",
+  "outputDirectory": "packages/docs/dist",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "framework": null
+}

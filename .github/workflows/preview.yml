@@ -171,6 +171,44 @@ jobs:
               });
             }
 
+  # ── docs site ──────────────────────────────────────────────────────────────
+  docs:
+    name: Docs site (GH Pages)
+    runs-on: ubuntu-latest
+    # Only deploy when landing on main — docs don't need a preview per PR.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # Never block a merge on a docs-deploy failure.
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install proto
+        run: |
+          curl -fsSL https://moonrepo.dev/install/proto.sh | bash -s -- --yes
+          echo "$HOME/.proto/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.proto/shims" >> "$GITHUB_PATH"
+
+      - name: Install pinned toolchain (node, pnpm, moon)
+        run: proto install
+
+      - name: Install dependencies
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+        run: pnpm install --frozen-lockfile
+
+      - name: Build docs (moon resolves ui:build dep automatically)
+        run: moon run docs:build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: packages/docs/dist
+          destination_dir: docs
+          keep_files: true
+          commit_message: "chore(docs): deploy docs site [${{ github.sha }}]"
+
   # ── cleanup ────────────────────────────────────────────────────────────────
   cleanup:
     name: Remove PR preview on close

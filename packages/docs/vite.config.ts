@@ -15,6 +15,10 @@ import { defineConfig } from 'vite';
 // with the design-system tokens. `remark-mdx-frontmatter` turns each page's YAML
 // frontmatter into an `export const frontmatter` the route registry reads.
 export default defineConfig({
+  // Relative base so assets resolve correctly under any deployment subpath
+  // (e.g. GitHub Pages at /midnite/docs/). Hash router handles all navigation;
+  // only the asset URLs need to be subpath-aware.
+  base: './',
   plugins: [
     {
       enforce: 'pre',
