@@ -18,7 +18,7 @@ export const PANEL_SECTIONS: PanelSection[] = [
   { id: 'top', placement: 'hero', content: 'terminal' },
   { id: 'how', placement: 'right', content: 'kanban' },
   { id: 'features', placement: 'left', content: 'session' },
-  { id: 'cli', placement: 'right', content: 'terminal' },
+  { id: 'cli', placement: 'right', content: 'transcript' },
   { id: 'download', placement: 'hidden', content: 'terminal' },
 ];
 
