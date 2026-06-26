@@ -46,6 +46,12 @@ Example option label: `Server-side with SWR polling [performance · M]`
 
 Skip any decision already unambiguously settled in the phase doc or `open-decisions.md`. **Do not implement until all three are answered.**
 
+## 2.6 · Rename session
+Once the task is chosen, immediately set the terminal/session title so Claude Desktop shows what's in flight:
+1. Extract the phase number from the doc filename (`phase-<N>-*.md` → `<N>`).
+2. Extract the task label (the letter or sub-item tag — e.g. `A`, `B`, `C`; fall back to a short slug if no letter exists).
+3. Run: `printf '\033]0;Loop: exec Phase %s - %s\007' "<N>" "<label>"` — this updates the terminal title that Claude Desktop surfaces for the session.
+
 ## 3 · Worktree
 ```bash
 git fetch origin
@@ -94,6 +100,8 @@ Against, in order: fidelity to the phase doc/decisions → `CLAUDE.md` conventio
 
 ## 11 · Loop hygiene (only when run on `/loop`)
 After wrap-up, check context usage. **≥60% → `/clear`, then re-invoke exactly as launched** (`/loop /exec` or `/exec`, preserving `$ARGUMENTS`). **<60% → continue in-session** from Stage 1 on the next unblocked task.
+
+Either way, re-run Stage 2.6 as soon as the next task is chosen so the session title stays current throughout the loop.
 
 ---
 Autonomous through Stages 3–11 once the user has chosen in Stage 2. Stop only for a real decision: an unresolved design question, a destructive/irreversible step, a plan-level issue from Stage 8, or CI you can't fix.
