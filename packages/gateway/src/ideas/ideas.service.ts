@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException, ForbiddenException, Optional } f
 import { randomUUID } from 'node:crypto';
 import type {
   Idea,
+  IdeaChatResponse,
   IdeaMessage,
   IdeaStatus,
   IdeaQuery,
@@ -9,10 +10,18 @@ import type {
   CreateIdeaRequest,
   UpdateIdeaRequest,
 } from '@midnite/shared';
+import { LlmService } from '../agent/llm/llm.service';
+import type { LlmMessage } from '../agent/llm/llm-provider.interface';
 import { SearchIndexService } from '../search/search-index.service';
 import { ideaToIndexDoc } from '../search/lib/index-mappers';
 import { IdeaRepository } from './ideas.repository';
 import { IdeaEventBus } from './idea-event-bus';
+import {
+  ideaChatSystemPrompt,
+  IDEA_CHAT_DISABLED_REPLY,
+  IDEA_CHAT_EMPTY_REPLY,
+  IDEA_CHAT_ERROR_REPLY,
+} from './ideas.prompts';
 
 @Injectable()
 export class IdeaService {
@@ -22,6 +31,7 @@ export class IdeaService {
     private readonly repo: IdeaRepository,
     private readonly bus: IdeaEventBus,
     @Optional() private readonly searchIndex?: SearchIndexService,
+    @Optional() private readonly llm?: LlmService,
   ) {}
 
   createIdea(req: CreateIdeaRequest, scope: TeamScope): Idea {
@@ -106,6 +116,40 @@ export class IdeaService {
       content,
       createdAt: new Date().toISOString(),
     });
+  }
+
+  /**
+   * Append the user's message, generate an assistant reply via the LLM (or a
+   * graceful fallback when no provider is configured), persist it, and return
+   * both. The assistant reply is shaped as a paste-ready refined idea body so the
+   * web "Apply to idea" action can write it back verbatim.
+   */
+  async chat(ideaId: string, content: string, scope: TeamScope): Promise<IdeaChatResponse> {
+    const idea = this.getIdea(ideaId, scope);
+    const userMessage = this.addUserMessage(ideaId, content, scope);
+    const replyText = await this.generateReply(idea);
+    const assistantMessage = this.addAssistantMessage(ideaId, replyText);
+    return { userMessage, assistantMessage };
+  }
+
+  private async generateReply(idea: Idea): Promise<string> {
+    if (!this.llm?.enabled) return IDEA_CHAT_DISABLED_REPLY;
+    // History already includes the just-added user message (addUserMessage ran first).
+    const messages: LlmMessage[] = this.repo
+      .listMessages(idea.id)
+      .map((m) => ({ role: m.role, text: m.content }));
+    try {
+      const res = await this.llm.generateText({
+        system: ideaChatSystemPrompt(idea),
+        messages,
+        maxTokens: 1024,
+        model: this.llm.getPlanModel(),
+      });
+      return res.text.trim() || IDEA_CHAT_EMPTY_REPLY;
+    } catch (err) {
+      this.logger.warn(`idea chat reply failed for ${idea.id}: ${(err as Error).message}`);
+      return IDEA_CHAT_ERROR_REPLY;
+    }
   }
 
   private assertAccess(idea: Idea, scope: TeamScope): void {

@@ -100,19 +100,13 @@ export class IdeaController {
 
   @Post(':id/messages')
   @RequiresRole('member')
-  async sendMessage(
+  sendMessage(
     @Param('id') id: string,
     @Body() rawBody: unknown,
     @CurrentUser() user: CurrentUserPayload,
   ): Promise<IdeaChatResponse> {
     const parsed = IdeaChatRequestSchema.safeParse(rawBody);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
-    const userMessage = this.service.addUserMessage(id, parsed.data.content, toScope(user));
-    // Assistant reply placeholder — Theme C wires the LLM here.
-    const assistantMessage = this.service.addAssistantMessage(
-      id,
-      'Thank you for sharing your idea. Theme C will wire AI replies.',
-    );
-    return { userMessage, assistantMessage };
+    return this.service.chat(id, parsed.data.content, toScope(user));
   }
 }
