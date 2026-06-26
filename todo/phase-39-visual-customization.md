@@ -34,13 +34,13 @@ The headline: more backgrounds, and make the animated one actually animate-visib
 
 ---
 
-## Theme B — Accent colour personalization — **M**
+## Theme B — Accent colour personalization — **M** — ✅ DONE (PR #213, 2026-06-26)
 
 Let people tint the app to their taste, on top of the design tokens.
 
-- [ ] A **curated accent palette** (6–8 hand-picked, contrast-checked hues — *Decision §2, settled*) shown as swatches in Appearance. Selecting one writes `settings.accent` and sets a `--accent-hue` / overrides `--primary`/`--ring`/`--accent` (and the relevant `--primary-foreground`) on `<html>` at runtime.
-- [ ] The override is a **web-side layer** (a small `applyAccent()` that sets CSS custom properties on `document.documentElement`), so [`@midnite/ui` tokens.css](../packages/ui/src/styles/tokens.css) stays the untouched source of truth; only the *override hook* vars are added to the token set if needed.
-- [ ] Works in both light and dark (pick hue; let lightness/saturation track the active theme so contrast holds). Default = the current brand primary (no change unless chosen).
+- [x] A **curated 8-swatch accent palette** (default + blue/violet/emerald/amber/rose/cyan/orange) in Appearance; selecting one writes `settings.accent` and overrides `--primary`/`--ring`/`--accent` (+ foregrounds) on `<html>` at runtime.
+- [x] The override is a **web-side layer** (`applyAccent()` in [`lib/apply-appearance.ts`](../packages/web/lib/apply-appearance.ts) sets `--accent-h`/`--accent-s` + `data-accent`); [`@midnite/ui` tokens.css](../packages/ui/src/styles/tokens.css) stays the untouched source of truth — the theme-aware lightness lives in `html[data-accent]` / `html.dark[data-accent]` rules in `globals.css`.
+- [x] Works in both light and dark (swatch supplies hue+saturation; lightness tracks the theme so contrast holds). `default` = no override (today's primary unchanged). No-flash via a web-side `appearanceInitScript` in the `<head>`.
 
 ---
 
@@ -99,7 +99,7 @@ The connective tissue: one coherent panel, instant feedback, zero flash.
 
 - [x] The Appearance panel offers **≥10 backgrounds** (12 total), each shown as a live-preview swatch; selecting one applies instantly and persists across reload. (PR #212)
 - [x] The animated-gradient background is **clearly visible** at the default intensity (a deliberate moving backdrop), and the intensity control (`subtle`/`balanced`/`bold`) visibly scales it. (PR #212)
-- [ ] Picking a **curated accent** retints primary/ring/accent across the app in both light and dark, with legible contrast, and persists.
+- [x] Picking a **curated accent** retints primary/ring/accent across the app in both light and dark, with legible contrast, and persists. (PR #213)
 - [ ] **Density** (`comfortable`/`compact`) visibly changes spacing/type without breaking the board, office HUD, or settings layouts.
 - [ ] The **motion** setting works: `reduced` freezes all animation even without the OS flag; `full` re-enables it; `system` matches the OS preference. OS `prefers-reduced-motion` is still honored at the `system` default.
 - [ ] **No flash on load:** a hard reload with non-default background/accent/density/motion shows the chosen look immediately (pre-paint), never the default first.

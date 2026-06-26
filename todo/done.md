@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-26 — Phase 39 B: accent colour personalization (PR #213)
+
+- [x] Curated 8-swatch accent palette (default + blue/violet/emerald/amber/rose/cyan/orange) in Settings → Appearance, retinting `--primary`/`--ring`/`--accent` across the app at runtime
+- [x] Accent = hue+saturation only; theme-aware lightness via `html[data-accent]` / `html.dark[data-accent]` rules in `globals.css`, so text-on-accent contrast holds in light + dark
+- [x] `applyAccent()` + `AppearanceEffects` apply it from settings; `default` clears the override (today's monochrome primary unchanged); `@midnite/ui` tokens.css untouched (stays the source of truth)
+- [x] No-flash: web-side `appearanceInitScript` applies the saved accent pre-paint, kept separate from the `@midnite/ui` theme script so the ui leaf stays settings-agnostic
+- [x] Unit tests (applier set/clear/switch + init-script↔options sync); `web:test` 516 passed; typecheck/lint green; merged with `--admin` (GH Actions billing-blocked)
+
 ## 2026-06-26 — Phase 9 B1: pixel-agents real character sprites (CC0/MIT)
 
 - [x] 6 pixel-art character PNG sheets (char-v0..v5, 112×96 each) placed in `packages/web/public/office/`
