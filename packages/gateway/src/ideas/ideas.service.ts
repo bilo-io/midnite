@@ -11,7 +11,6 @@ import type {
   Idea,
   IdeaChatResponse,
   IdeaMessage,
-  IdeaStatus,
   IdeaQuery,
   TeamScope,
   CreateIdeaRequest,
@@ -80,7 +79,7 @@ export class IdeaService {
   }
 
   updateIdea(id: string, req: UpdateIdeaRequest, scope: TeamScope): Idea {
-    const existing = this.getIdea(id, scope);
+    this.getIdea(id, scope); // access check
     const now = new Date().toISOString();
     const updated = this.repo.update(id, {
       ...(req.title !== undefined && { title: req.title }),
@@ -96,7 +95,7 @@ export class IdeaService {
   }
 
   deleteIdea(id: string, scope: TeamScope): void {
-    const existing = this.getIdea(id, scope);
+    this.getIdea(id, scope); // access check
     this.searchIndex?.remove('idea', id);
     this.repo.delete(id);
     this.bus.emit({ type: 'idea.deleted', at: new Date().toISOString(), id });
