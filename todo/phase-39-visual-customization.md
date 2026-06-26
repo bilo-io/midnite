@@ -54,12 +54,12 @@ Tune information density for big monitors vs. laptops.
 
 ---
 
-## Theme D — Motion & visual-effects controls — **S**
+## Theme D — Motion & visual-effects controls — **S** — ✅ DONE (PR #214, 2026-06-26)
 
 Make motion a deliberate choice, not just an OS inheritance.
 
-- [ ] A **motion** setting (`system` default / `reduced` / `full`) written to settings and applied as `data-motion` on `<html>`. CSS gates animations on **both** the OS `prefers-reduced-motion` media query **and** `data-motion` — `reduced` forces-off; `full` opts back in **only** because the user explicitly asked (*Decision §4*).
-- [ ] Fold the Theme A2 background-intensity knob and (optionally) toggles for the heavier effects (page-reveal, typewriter header, glass/blur) under this section.
+- [x] A **motion** setting (`system` / `reduced` / `full`) applied as `data-motion` on `<html>`: explicit `reduced` uses a universal kill rule (with `animation-fill-mode: forwards` for opacity-safety); the 13 legacy `@media (prefers-reduced-motion: reduce)` blocks are gated `:not([data-motion='full'])` so `system` honours the OS while `full` overrides an OS reduce preference (Decision §4).
+- [x] Per-effect toggles — page reveal, typewriter titles, frosted glass — via `data-no-*` attributes (CSS-gated; the JS typewriter via a new `useAnimationPrefs()` hook). All applied pre-paint by `appearanceInitScript` (no flash). The background-intensity knob stays contextual in the Background section (shown only for the gradient).
 
 ---
 
@@ -101,7 +101,7 @@ The connective tissue: one coherent panel, instant feedback, zero flash.
 - [x] The animated-gradient background is **clearly visible** at the default intensity (a deliberate moving backdrop), and the intensity control (`subtle`/`balanced`/`bold`) visibly scales it. (PR #212)
 - [x] Picking a **curated accent** retints primary/ring/accent across the app in both light and dark, with legible contrast, and persists. (PR #213)
 - [ ] **Density** (`comfortable`/`compact`) visibly changes spacing/type without breaking the board, office HUD, or settings layouts.
-- [ ] The **motion** setting works: `reduced` freezes all animation even without the OS flag; `full` re-enables it; `system` matches the OS preference. OS `prefers-reduced-motion` is still honored at the `system` default.
+- [x] The **motion** setting works: `reduced` freezes all animation even without the OS flag; `full` re-enables it; `system` matches the OS preference. OS `prefers-reduced-motion` is still honored at the `system` default. (PR #214)
 - [ ] **No flash on load:** a hard reload with non-default background/accent/density/motion shows the chosen look immediately (pre-paint), never the default first.
 - [ ] Defaults reproduce **today's** appearance for users who change nothing.
 - [ ] `@midnite/ui` stays a leaf (its boundary test passes); tokens.css remains the source of truth (only override-hook vars added).

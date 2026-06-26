@@ -4,6 +4,13 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-26 — Phase 39 D: motion & visual-effects controls (PR #214)
+
+- [x] Motion tri-state (system/reduced/full) in Settings → Appearance via `data-motion` on `<html>`: explicit `reduced` = universal kill rule (`animation-fill-mode: forwards` keeps entrances visible); the 13 legacy `@media(prefers-reduced-motion)` blocks gated `:not([data-motion='full'])` so `system` honours the OS and `full` overrides an OS reduce preference
+- [x] Per-effect toggles (page reveal, typewriter titles, frosted glass) via `data-no-*` attributes; JS-driven typewriter gated by a new `useAnimationPrefs()` hook (`useTypewriter` `enabled` now authoritative)
+- [x] All applied pre-paint by `appearanceInitScript` (no flash); defaults reproduce today's behaviour
+- [x] Tests for applyMotion/applyEffects + init-script; `web:test` 519 passed; typecheck/lint green; merged with `--admin` (GH Actions billing-blocked)
+
 ## 2026-06-26 — Phase 8 A1: Kenney CC0 floor tileset
 
 - [x] `packages/web/public/office/floor-tiles.png` (64×32) — Kenney Tiny Town tile 25 (warm wood) = FLOOR_A, tile 109 (stone/neutral) = FLOOR_B, 2× upscaled to 32×32
