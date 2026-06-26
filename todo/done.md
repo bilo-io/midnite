@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-26 — Phase 41 D: board keyboard navigation (PR #217)
+
+- [x] `lib/board-nav.ts` — pure, unit-tested grid nav: `↓`/`↑` within a column (clamped), `→`/`←` to the nearest non-empty adjacent column preferring the same row
+- [x] `BoardView` holds a single `FocusedCard` id; offset focus ring (distinct from selection ring + dnd indicator), scrolls into view, follows a card as it moves
+- [x] `Enter` opens detail; `D` marks done (confirm only if already done); `A` abandons (always confirms) — via existing `onMove` + `useConfirm`
+- [x] Suppressed in inputs/contenteditable and while a *visible* modal is open (hidden-but-mounted dialogs ignored via client-rect check); `E` (edit) deferred — no dedicated edit form exists, would duplicate `Enter`
+- [x] Unit (`board-nav`), `BoardView` keyboard story `play`, and `keyboard-nav.e2e.ts` (ring, Enter→detail, D→done, A→confirm→abandon); also dropped pre-existing unused imports in `global-keymap.tsx` to green `web:lint`. Local gate green (534 web tests, e2e 3/3); merged with CI billing-blocked (same as #214–#216)
+
 ## 2026-06-26 — Phase 41 B+C: command registry, global shortcuts, help overlay
 
 - [x] `PaletteCommandsProvider` + `useRegisterPaletteCommands` + `usePaletteCommands` — React-context command registry
