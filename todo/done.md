@@ -4,6 +4,19 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-26 — feat(phase-docs): GitHub-backed phase doc editor — Phase 42 Theme C (PR #229)
+
+GitHub-backed `.midnite/phases/*.md` CRUD, surfaced as a "Phase docs" tab in the project modal. The pipeline's first authoring surface for living phase docs (Themes D/E build on it).
+
+**Plan deviations (settled up-front with the human):** the assumed infra didn't exist — so a repo is picked explicitly in the UI (`?repoId=` → `ownerRepo` via `ReposService`, no `project.repoId`), auth is the local **`gh` CLI** (not the credential vault; GitHub failures → `502`), and the UI lives in a **`ProjectModal` tab** (no `/projects/[id]` route). List+editor folded into one `PhaseDocsTab` reusing the toggle-mode `MarkdownEditor`.
+
+- [x] **shared**: `PhaseDoc` type + `Create`/`UpdatePhaseDocRequestSchema` + `phaseDocFilename` slug helper; barrel export
+- [x] **gateway**: `PhaseDocsService` (gh-CLI Contents API — list/get/create/update/delete, base64-over-stdin, stale-SHA→`PhaseDocConflictError`, `protected runGh` seam), `PhaseDocsController` (`/projects/:id/phase-docs` CRUD, repoId→ownerRepo resolution, `../`-traversal guard, domain→HTTP `400/404/409/502`), `PhaseDocsModule`
+- [x] **web**: `ApiError` now carries HTTP `status`; phase-doc client fns; `PhaseDocsTab` (repo picker → list → `MarkdownEditor`; `PUT`/`POST` by SHA; 409 reload-and-retry notice)
+- [x] Tests: `PhaseDocsService` unit (9) + `PhaseDocsController` spec (6) + `PhaseDocsTab` RTL (5) + Playwright screenshot spec — all green locally (`:typecheck`/eslint clean on changed files)
+- [x] Deferred to later themes: "🌱 Seed tasks" button (D), phase-doc↔board sync-back (E)
+- ⚠️ Merged without CI: GitHub Actions billing-blocked account-wide (no job can start); verified via local gate
+
 ## 2026-06-26 — fix(site): widen panel gutter + move CLI transcript into the persistent panel (PR #227)
 
 - [x] **Features section**: widened `SideColumn` gutter on the panel side (`lg:pr/pl-16`, `xl:24`) so heading + cards keep a clear gap from the persistent panel near the centre seam

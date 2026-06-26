@@ -36,19 +36,20 @@ One click from idea to a live project, with a bidirectional link preserved.
 
 ---
 
-## Theme C — Phase doc editor (GitHub-backed) — **M–L**
+## Theme C — Phase doc editor (GitHub-backed) — **M–L** ✅ DONE (PR #229, 2026-06-26)
 
 Phase docs live as real `.md` files in the project's linked repository, under `.midnite/phases/`.
 
-- [ ] **`PhaseDoc`** shared type in [`packages/shared/src/phase-doc.ts`](../packages/shared/src/phase-doc.ts) (new file): `{ name: string, path: string, sha: string, content: string, updatedAt: string }`. `CreatePhaseDocRequestSchema` (`{ name, content }`), `UpdatePhaseDocRequestSchema` (`{ content, sha }`). Barrel export from [`index.ts`](../packages/shared/src/index.ts).
-- [ ] **`PhaseDocsService`** ([`phase-docs.service.ts`](../packages/gateway/src/phase-docs/phase-docs.service.ts)): wraps the GitHub Contents API — `list(ownerRepo, token)` → `GET …/contents/.midnite/phases/`; `get`; `create` (`PUT`, no SHA); `update` (`PUT`, with SHA); `delete` (`DELETE`, with SHA). Resolves the GitHub token from `WorkflowCredentialsService` via the project's linked-repo credential. Throws `NoCredentialError` when no token is configured.
-- [ ] **`PhaseDocsController`** ([`phase-docs.controller.ts`](../packages/gateway/src/phase-docs/phase-docs.controller.ts)): `GET`/`POST /projects/:id/phase-docs`, `GET`/`PUT`/`DELETE /projects/:id/phase-docs/:filename`. Resolves `ownerRepo` from the project's linked repo via `ReposService`; `404` when no linked repo, `403` when no credential.
-- [ ] **`PhaseDocsModule`** registered in [`app.module.ts`](../packages/gateway/src/app.module.ts); imports `ReposModule`, `WorkflowCredentialsModule`. (Note: `PhaseDocsService` is reused by Theme E — keep its write methods callable from another service.)
-- [ ] **"Phase docs" tab** on the project detail page ([`app/projects/[id]/page.tsx`](../packages/web/app/projects/[id]/page.tsx)). Renders a clear empty-state ("Link a repo with a GitHub credential to author phase docs here") when there's no repo/credential — the tab is discoverable, not hidden.
-- [ ] **`PhaseDocList`** ([`components/projects/phase-docs/PhaseDocList.tsx`](../packages/web/components/projects/phase-docs/PhaseDocList.tsx)): file list (name, last updated); "+ New phase doc"; per-item "Edit" / "🌱 Seed tasks" / "Delete".
-- [ ] **`PhaseDocEditor`** ([`components/projects/phase-docs/PhaseDocEditor.tsx`](../packages/web/components/projects/phase-docs/PhaseDocEditor.tsx)): split-pane markdown editor (textarea + rendered preview), save button. `PUT` (with cached SHA) if existing, `POST` if new; optimistic update; on a stale-SHA `409`, surface a "reload and retry" notice (decision 3).
-- [ ] Repo path: `.midnite/phases/<slug>.md`, slug = user name run through kebab-case sanitisation.
-- [ ] Unit tests: `PhaseDocsService` (PUT-with/without-SHA, credential-missing throws); `PhaseDocEditor` RTL (save calls correct verb, 409 shows reload notice).
+> **Plan deviations (settled with the human before building):** the prerequisite infra the original plan assumed didn't exist, so — (1) **project→repo:** no `project.repoId`; the UI picks a repo explicitly and `ownerRepo` is resolved server-side via `ReposService` (`?repoId=`); (2) **GitHub auth:** the local **`gh` CLI** (mirrors `PrStatusService`), not `WorkflowCredentialsService` — so no `403`/`NoCredentialError`, GitHub failures map to `502`; (3) **UI host:** a **"Phase docs" tab inside `ProjectModal`** (no `/projects/[id]` route exists). `PhaseDocList`/`PhaseDocEditor` are folded into one `PhaseDocsTab`; the editor reuses the existing toggle-mode `MarkdownEditor` (not a side-by-side split-pane). The "🌱 Seed tasks" button is Theme D.
+
+- [x] **`PhaseDoc`** shared type in [`packages/shared/src/phase-doc.ts`](../packages/shared/src/phase-doc.ts) + `Create`/`UpdatePhaseDocRequestSchema` + `phaseDocFilename` slug helper; barrel export.
+- [x] **`PhaseDocsService`** ([`phase-docs.service.ts`](../packages/gateway/src/phase-docs/phase-docs.service.ts)): `list`/`get`/`create` (PUT no-SHA)/`update` (PUT w/ SHA)/`delete` (DELETE w/ SHA) over the GitHub Contents API via `gh api` (write body base64-over-stdin). Stale-SHA → `PhaseDocConflictError`; 404 → `PhaseDocNotFoundError`; gh down/unauth → `GithubUnavailableError`. `runGh` is a `protected` test seam.
+- [x] **`PhaseDocsController`** ([`phase-docs.controller.ts`](../packages/gateway/src/phase-docs/phase-docs.controller.ts)): `GET`/`POST /projects/:id/phase-docs`, `GET`/`PUT`/`DELETE /projects/:id/phase-docs/:filename`. Resolves `ownerRepo` from `?repoId=` via `ReposService` (`400` no repoId, `404` no slug); maps domain errors → `409`/`404`/`502`; rejects `../`-traversal filenames.
+- [x] **`PhaseDocsModule`** registered in [`app.module.ts`](../packages/gateway/src/app.module.ts); imports `ProjectsModule`, `ReposModule`. (Exports `PhaseDocsService` for Theme E reuse.)
+- [x] **"Phase docs" tab** in [`ProjectModal`](../packages/web/components/project-modal.tsx) → [`PhaseDocsTab`](../packages/web/components/projects/phase-docs/PhaseDocsTab.tsx): repo picker + empty-states (no eligible repo / no docs).
+- [x] **`PhaseDocsTab`** (folds list + editor): file list with "+ New phase doc" / open / delete; `MarkdownEditor`; `PUT` (cached SHA) vs `POST` (new); stale-SHA `409` → reload-and-retry notice. (`ApiError` now carries HTTP `status`.)
+- [x] Repo path `.midnite/phases/<slug>.md`, slug via `phaseDocFilename` kebab-case sanitisation.
+- [x] Tests: `PhaseDocsService` unit (PUT with/without SHA, base64 body, 404→empty list, conflict/not-found/unavailable mapping) + `PhaseDocsController` spec (repo resolution, filename guard, error mapping) + `PhaseDocsTab` RTL (list, save verb, create, 409 notice) + Playwright screenshot spec.
 
 ---
 
