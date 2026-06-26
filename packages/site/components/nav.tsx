@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { GitBranch } from 'lucide-react';
 
@@ -18,9 +19,16 @@ export function Nav() {
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-border/60 bg-background/70 backdrop-blur-md">
       <nav className="container flex h-14 items-center justify-between">
-        <Link href="#top" className="flex items-center gap-2 font-semibold tracking-tight">
-          <span className="inline-block h-2.5 w-2.5 rounded-full bg-gradient-to-br from-[#8b5cf6] to-[#3b82f6] shadow-[0_0_10px_-1px_#8b5cf6]" />
-          <span className="font-brand">midnite</span>
+        <Link href="#top" className="flex items-center gap-2 tracking-tight">
+          <Image
+            src="/logo.PNG"
+            alt="midnite logo"
+            width={28}
+            height={28}
+            className="h-7 w-7 rounded-lg shadow"
+            priority
+          />
+          <span className="font-cassandra text-xl leading-none">midnite</span>
         </Link>
 
         <div className="hidden items-center gap-7 text-sm text-muted-foreground md:flex">
