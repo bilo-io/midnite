@@ -8,6 +8,7 @@ const config: Config = {
     './lib/**/*.{ts,tsx}',
     './stories/**/*.{ts,tsx}',
     './.storybook/**/*.{ts,tsx}',
+    '../../packages/ui/src/**/*.{ts,tsx}',
   ],
   theme: {
     container: {
