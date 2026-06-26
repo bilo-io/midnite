@@ -265,7 +265,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .bg-animated-gradient {
+    html:not([data-motion='full']) .bg-animated-gradient {
       animation: none;
     }
   }
@@ -288,23 +288,20 @@
  *   - `system`   → no attribute effect; the existing `@media (prefers-reduced-
  *                  motion: reduce)` blocks honour the OS as before.
  */
+/* Explicit `reduced` (any OS): a universal reset. `animation-fill-mode: forwards`
+   holds each animation's end frame so elements that start hidden (opacity:0 →
+   1 entrances) still settle visible. The per-effect `@media(reduce)` blocks below
+   stay for the `system` path and are gated `:not([data-motion='full'])` so `full`
+   can override an OS reduce preference. */
 html[data-motion='reduced'] *,
 html[data-motion='reduced'] *::before,
 html[data-motion='reduced'] *::after {
   animation-duration: 0.001ms !important;
+  animation-delay: 0ms !important;
   animation-iteration-count: 1 !important;
+  animation-fill-mode: forwards !important;
   transition-duration: 0.001ms !important;
   scroll-behavior: auto !important;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html[data-motion='full'] *,
-  html[data-motion='full'] *::before,
-  html[data-motion='full'] *::after {
-    animation-duration: revert !important;
-    animation-iteration-count: revert !important;
-    transition-duration: revert !important;
-  }
 }
 
 /*
@@ -408,7 +405,7 @@ html[data-no-glass] *::after {
     animation-delay: 320ms;
   }
   @media (prefers-reduced-motion: reduce) {
-    .page-reveal header ~ * {
+    html:not([data-motion='full']) .page-reveal header ~ * {
       opacity: 1;
       animation: none;
     }
@@ -443,8 +440,8 @@ html[data-no-glass] *::after {
     z-index: 10;
   }
   @media (prefers-reduced-motion: reduce) {
-    .reveal-controls,
-    .reveal-content {
+    html:not([data-motion='full']) .reveal-controls,
+    html:not([data-motion='full']) .reveal-content {
       opacity: 1;
       animation: none;
     }
@@ -560,10 +557,10 @@ html[data-no-glass] *::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .spinner-breathe,
-  .spinner-jitter::before,
-  .spinner-tumble::before,
-  .spinner-tumble::after {
+  html:not([data-motion='full']) .spinner-breathe,
+  html:not([data-motion='full']) .spinner-jitter::before,
+  html:not([data-motion='full']) .spinner-tumble::before,
+  html:not([data-motion='full']) .spinner-tumble::after {
     animation: none;
   }
 }
@@ -585,7 +582,7 @@ html[data-no-glass] *::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pill-shimmer {
+  html:not([data-motion='full']) .pill-shimmer {
     animation: none;
   }
 }
@@ -612,7 +609,7 @@ html[data-no-glass] *::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-shake {
+  html:not([data-motion='full']) .animate-shake {
     animation: none;
   }
 }
@@ -652,10 +649,10 @@ html[data-no-glass] *::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-error-in {
+  html:not([data-motion='full']) .animate-error-in {
     animation: none;
   }
-  .animate-error-out {
+  html:not([data-motion='full']) .animate-error-out {
     animation-duration: 0.01ms;
   }
 }
@@ -692,14 +689,14 @@ html[data-no-glass] *::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-dialog-in,
-  .animate-toast-in {
+  html:not([data-motion='full']) .animate-dialog-in,
+  html:not([data-motion='full']) .animate-toast-in {
     animation: none;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cascade-item {
+  html:not([data-motion='full']) .cascade-item {
     animation: none;
     opacity: 1;
   }
@@ -777,8 +774,8 @@ html[data-no-glass] *::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .gradient-border:focus-within,
-  .gradient-border:focus-within::after {
+  html:not([data-motion='full']) .gradient-border:focus-within,
+  html:not([data-motion='full']) .gradient-border:focus-within::after {
     animation: none;
   }
 }
@@ -831,7 +828,7 @@ html[data-no-glass] *::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .node-running::before {
+  html:not([data-motion='full']) .node-running::before {
     animation: none;
   }
 }
@@ -880,7 +877,7 @@ html[data-no-glass] *::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dashboard-panel {
+  html:not([data-motion='full']) .dashboard-panel {
     animation: none;
   }
 }
@@ -918,7 +915,7 @@ html[data-no-glass] *::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .drag-handle {
+  html:not([data-motion='full']) .drag-handle {
     transition: none;
   }
 }
