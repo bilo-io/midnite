@@ -40,6 +40,7 @@ import { buildFloorTileData } from '@/lib/office/map-data';
 import {
   minimapLayout,
   minimapRooms,
+  minimapToWorld,
   worldRectToMinimap,
   worldToMinimap,
 } from '@/lib/office/minimap';
@@ -196,6 +197,8 @@ class OfficeScene extends Phaser.Scene {
   private minimapScale = 1;
   private minimapPanelW = 0;
   private minimapPanelH = 0;
+  /** Hover tooltip (agent name + status) shown over a minimap agent dot. */
+  private minimapTooltip?: Phaser.GameObjects.Text;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: Record<'up' | 'down' | 'left' | 'right', Phaser.Input.Keyboard.Key>;
   private readonly actors = new Map<string, Actor>();
@@ -316,6 +319,7 @@ class OfficeScene extends Phaser.Scene {
     this.input.keyboard!.on('keydown-E', this.tryInteract, this);
     this.input.keyboard!.on('keydown-ENTER', this.tryInteract, this);
     this.input.on('pointerdown', this.onPointerDown, this);
+    this.input.on('pointermove', this.onPointerMove, this);
 
     this.alive = true;
 
@@ -480,10 +484,21 @@ class OfficeScene extends Phaser.Scene {
     const container = this.add.container(0, 0).setScale(1 / ZOOM).setDepth(50);
     const stat = this.add.graphics();
     const dyn = this.add.graphics();
-    container.add([stat, dyn]);
+    const tip = this.add
+      .text(0, 0, '', {
+        fontSize: '9px',
+        color: '#f8fafc',
+        backgroundColor: 'rgba(15,23,42,0.92)',
+        padding: { x: 4, y: 2 },
+      })
+      .setOrigin(0.5, 1)
+      .setDepth(1)
+      .setVisible(false);
+    container.add([stat, dyn, tip]);
     this.minimap = container;
     this.minimapStatic = stat;
     this.minimapDynamic = dyn;
+    this.minimapTooltip = tip;
     this.drawMinimapStatic();
   }
 
@@ -1125,7 +1140,16 @@ class OfficeScene extends Phaser.Scene {
   /** Click-to-walk: pathfind the player to the clicked (walkable) tile. */
   private onPointerDown(pointer: Phaser.Input.Pointer) {
     if (!this.alive || !this.inputEnabled) return;
-    const goal = this.nearestOpenTile(this.tileOf(pointer.worldX, pointer.worldY));
+    // A click on the minimap is fast-travel: map it to office-world coords and
+    // walk there (D2 click-to-warp). Otherwise it's a normal floor click.
+    const mm = this.minimapPointAt(pointer);
+    if (mm) this.walkTo(mm.x, mm.y);
+    else this.walkTo(pointer.worldX, pointer.worldY);
+  }
+
+  /** Pathfind the player to a world point, snapping to the nearest walkable tile. */
+  private walkTo(worldX: number, worldY: number) {
+    const goal = this.nearestOpenTile(this.tileOf(worldX, worldY));
     if (!goal) return;
     const start = this.tileOf(this.player.x, this.player.y);
     const tiles = this.findPath(start, goal, false);
@@ -1137,6 +1161,55 @@ class OfficeScene extends Phaser.Scene {
     this.playerPath = pts;
     // Bail out if we don't arrive within ~2× the expected travel time (stuck).
     this.playerPathDeadline = this.time.now + (pts.length * TILE * 2 * 1000) / PLAYER_SPEED + 600;
+  }
+
+  /**
+   * Map a pointer over the minimap to office-world coords, or null if the
+   * pointer isn't on the minimap panel. The minimap container is a normal world
+   * object scaled `1/ZOOM`, so a child-local point `L` is at world
+   * `container + L/ZOOM` → invert to local, then undo the content pad + scale.
+   */
+  private minimapPointAt(pointer: Phaser.Input.Pointer): { x: number; y: number } | null {
+    const mm = this.minimap;
+    if (!mm) return null;
+    const lx = (pointer.worldX - mm.x) * ZOOM;
+    const ly = (pointer.worldY - mm.y) * ZOOM;
+    if (lx < 0 || ly < 0 || lx > this.minimapPanelW || ly > this.minimapPanelH) return null;
+    return minimapToWorld(lx, ly, this.minimapScale, MINIMAP_PAD);
+  }
+
+  /** Show the agent-name/status tooltip when hovering an agent dot on the minimap. */
+  private onPointerMove(pointer: Phaser.Input.Pointer) {
+    const tip = this.minimapTooltip;
+    if (!this.alive || !tip) return;
+    const world = this.minimapPointAt(pointer);
+    if (!world) {
+      tip.setVisible(false);
+      return;
+    }
+    // Nearest actor to the hovered office-world point, within ~1.2 tiles.
+    let nearest: Actor | null = null;
+    let best = (TILE * 1.2) ** 2;
+    for (const actor of this.actors.values()) {
+      const d = (actor.sprite.x - world.x) ** 2 + (actor.sprite.y - world.y) ** 2;
+      if (d <= best) {
+        best = d;
+        nearest = actor;
+      }
+    }
+    if (!nearest) {
+      tip.setVisible(false);
+      return;
+    }
+    const ag = useOfficeStore.getState().agents.find((a) => a.id === nearest!.id);
+    if (!ag) {
+      tip.setVisible(false);
+      return;
+    }
+    tip.setText(`${ag.name} · ${STATUS_LABEL[ag.status]}`);
+    // Position over the dot, in the container's local (screen-px) space.
+    const dot = worldToMinimap(nearest.sprite.x, nearest.sprite.y, this.minimapScale, MINIMAP_PAD);
+    tip.setPosition(dot.x, dot.y - 3).setVisible(true);
   }
 
   private isOpen(x: number, y: number) {

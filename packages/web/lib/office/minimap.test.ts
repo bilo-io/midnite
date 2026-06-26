@@ -5,6 +5,7 @@ import { ROOMS } from './layout';
 import {
   minimapLayout,
   minimapRooms,
+  minimapToWorld,
   worldRectToMinimap,
   worldToMinimap,
 } from './minimap';
@@ -39,6 +40,29 @@ describe('worldToMinimap', () => {
 
   it('origin maps to the pad offset', () => {
     expect(worldToMinimap(0, 0, 0.25, 4)).toEqual({ x: 4, y: 4 });
+  });
+});
+
+describe('minimapToWorld', () => {
+  it('is the inverse of worldToMinimap (round-trips)', () => {
+    const scale = 0.137;
+    const pad = 6;
+    const points: [number, number][] = [
+      [0, 0],
+      [100, 200],
+      [WORLD_W, WORLD_H],
+    ];
+    for (const [wx, wy] of points) {
+      const m = worldToMinimap(wx, wy, scale, pad);
+      const back = minimapToWorld(m.x, m.y, scale, pad);
+      expect(back.x).toBeCloseTo(wx, 6);
+      expect(back.y).toBeCloseTo(wy, 6);
+    }
+  });
+
+  it('undoes the pad offset and scale', () => {
+    expect(minimapToWorld(6, 6, 0.5, 6)).toEqual({ x: 0, y: 0 });
+    expect(minimapToWorld(16, 26, 0.1, 6)).toEqual({ x: 100, y: 200 });
   });
 });
 

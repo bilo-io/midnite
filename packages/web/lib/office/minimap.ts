@@ -61,6 +61,20 @@ export function worldToMinimap(
   return { x: wx * scale + pad, y: wy * scale + pad };
 }
 
+/**
+ * Inverse of {@link worldToMinimap}: map a padded minimap-px point (e.g. a click
+ * inside the minimap panel content) back to a world-px point. Used for
+ * click-to-warp (D2).
+ */
+export function minimapToWorld(
+  mx: number,
+  my: number,
+  scale: number,
+  pad = 0,
+): MinimapPoint {
+  return { x: (mx - pad) / scale, y: (my - pad) / scale };
+}
+
 /** Map a world-px rect (e.g. the camera's `worldView`) into padded minimap px. */
 export function worldRectToMinimap(
   rect: MinimapRect,
