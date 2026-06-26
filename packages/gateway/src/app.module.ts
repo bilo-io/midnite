@@ -72,7 +72,6 @@ import { IdeasModule } from './ideas/ideas.module';
     MetricsModule,
     SessionsModule,
     SetupModule,
-    MetricsModule,
     UsageModule,
     WeatherModule,
     WorkflowsModule,
