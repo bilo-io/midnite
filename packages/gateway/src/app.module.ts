@@ -41,6 +41,7 @@ import { TeamsModule } from './teams/teams.module';
 import { WsModule } from './ws/ws.module';
 import { ServiceTokensModule } from './service-tokens/service-tokens.module';
 import { IdeasModule } from './ideas/ideas.module';
+import { PhaseDocsModule } from './phase-docs/phase-docs.module';
 
 @Module({
   imports: [
@@ -85,6 +86,7 @@ import { IdeasModule } from './ideas/ideas.module';
     AdminModule,
     ServiceTokensModule,
     IdeasModule,
+    PhaseDocsModule,
   ],
   controllers: [HealthController],
   providers: [],
