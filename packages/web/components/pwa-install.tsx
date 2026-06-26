@@ -90,7 +90,7 @@ export function PwaInstall() {
           <Download className="h-4 w-4" />
           Install app
         </button>
-        <p className="text-xs text-muted-foreground/70">
+        <p className="text-xs text-muted-foreground">
           Launches midnite in its own window. It still needs a live gateway connection — this is a
           fast shell, not an offline copy.
         </p>

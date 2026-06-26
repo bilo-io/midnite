@@ -118,7 +118,7 @@ export function BreakdownEditor({ breakdown, onChange }: Props) {
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="text-xs text-muted-foreground">Blocked by:</span>
               {task.dependsOn.length === 0 ? (
-                <span className="text-xs text-muted-foreground/70">nothing</span>
+                <span className="text-xs text-muted-foreground">nothing</span>
               ) : (
                 task.dependsOn.map((d) => (
                   <span

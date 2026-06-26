@@ -264,7 +264,7 @@ function Column({
         </span>
       </div>
       {count === 0 ? (
-        <div className="flex flex-1 items-center justify-center rounded-md border border-dashed border-border/60 text-xs text-muted-foreground/70">
+        <div className="flex flex-1 items-center justify-center rounded-md border border-dashed border-border/60 text-xs text-muted-foreground">
           Nothing here
         </div>
       ) : (

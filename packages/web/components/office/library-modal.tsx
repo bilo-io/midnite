@@ -90,7 +90,7 @@ export function LibraryModal({ onClose }: { onClose: () => void }) {
                       <p className="truncate text-xs text-muted-foreground">
                         {book.author} · {book.category}
                       </p>
-                      <p className="mt-0.5 line-clamp-1 text-[11px] text-muted-foreground/80">{book.blurb}</p>
+                      <p className="mt-0.5 line-clamp-1 text-[11px] text-muted-foreground">{book.blurb}</p>
                     </div>
                     <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
                   </a>

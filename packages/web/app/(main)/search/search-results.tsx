@@ -144,7 +144,7 @@ export function SearchResults() {
             <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               <Icon className="h-3.5 w-3.5" aria-hidden />
               {label}
-              <span className="font-normal text-muted-foreground/70">· {section.hits.length}</span>
+              <span className="font-normal text-muted-foreground">· {section.hits.length}</span>
             </h2>
             <ul className="overflow-hidden rounded-lg border border-border/60">
               {section.hits.map((result) => (

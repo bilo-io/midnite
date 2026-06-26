@@ -85,7 +85,7 @@
   - `markdown-preview` — `label` (state `aria-label` on GFM task-list checkboxes)
   - `memory-modal` / `markdown-editor` — `label` (new `ariaLabel` prop names the textarea)
   - `expression-editor` — `aria-required-children` (`role="tree"`→`"group"`), `scrollable-region-focusable`
-- [ ] ⏳ **`color-contrast` backlog (deferred — needs a design pass).** ~99 hits rooted in `--muted-foreground` + the `text-muted-foreground/50,60,70` opacity utilities across ~45 components. Disabled via `parameters.a11y.config.rules` in [`.storybook/preview.tsx`](../packages/web/.storybook/preview.tsx) (documented there) so the rest of the suite runs at `'error'`; re-enable the single rule once the token/opacity contrast pass lands.
+- [x] **`color-contrast` pass complete (PR #211, 2026-06-26).** `--muted-foreground` light mode raised to 38% L; `--destructive` dark mode raised to 72% 60%; 102 `text-muted-foreground/*` opacity utilities removed across 59 files; `MemoryCard` Global chip text brightened to `hsl(262 83% 72%)`; archived card `opacity-60` → `opacity-80`; axe rule re-enabled globally. All 510 tests pass with `color-contrast` enforced.
 
 ---
 

@@ -148,7 +148,7 @@ function WatchlistEditor({ config, onConfigChange }: Props) {
       )}
 
       {atCap ? (
-        <p className="text-[11px] text-muted-foreground/70">
+        <p className="text-[11px] text-muted-foreground">
           At the {MARKET_WATCHLIST_MAX}-asset limit — remove one to add another.
         </p>
       ) : (

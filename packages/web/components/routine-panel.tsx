@@ -121,12 +121,12 @@ export function RoutinePanel({ routines: initial, progress: initialProgress }: {
                 </div>
                 <div className="flex flex-shrink-0 items-center gap-0.5">
                   <button type="button" onClick={() => setHistoryRoutineId(routine.id)}
-                    className="rounded p-1 text-muted-foreground/50 transition-colors hover:bg-accent hover:text-accent-foreground"
+                    className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
                     aria-label="View history">
                     <BarChart2 className="h-3.5 w-3.5" />
                   </button>
                   <button type="button" onClick={() => setConfigRoutineId(routine.id)}
-                    className="rounded p-1 text-muted-foreground/50 transition-colors hover:bg-accent hover:text-accent-foreground"
+                    className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
                     aria-label="Configure routine">
                     <Settings className="h-3.5 w-3.5" />
                   </button>
@@ -165,7 +165,7 @@ export function RoutinePanel({ routines: initial, progress: initialProgress }: {
                       <div className="mb-2 flex items-center gap-3">
                         <span className={cn(
                           'text-[10px] font-semibold uppercase tracking-widest transition-colors duration-500 flex-shrink-0',
-                          complete ? 'text-emerald-500' : 'text-muted-foreground/60',
+                          complete ? 'text-emerald-500' : 'text-muted-foreground',
                         )}>
                           {group.name}
                         </span>
@@ -180,7 +180,7 @@ export function RoutinePanel({ routines: initial, progress: initialProgress }: {
                             }} />
                           </div>
                         )}
-                        <span className="text-[10px] tabular-nums text-muted-foreground/40 flex-shrink-0">{done}/{total}</span>
+                        <span className="text-[10px] tabular-nums text-muted-foreground flex-shrink-0">{done}/{total}</span>
                       </div>
 
                       {/* Item cards grid */}
@@ -224,7 +224,7 @@ export function RoutinePanel({ routines: initial, progress: initialProgress }: {
                           );
                         })}
                         {group.items.length === 0 && (
-                          <p className="col-span-full py-1 text-xs text-muted-foreground/40">
+                          <p className="col-span-full py-1 text-xs text-muted-foreground">
                             No items — configure to add some.
                           </p>
                         )}

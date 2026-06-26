@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-26 — Phase 10 C3: Color-contrast WCAG AA pass (PR #211)
+
+- [x] `--muted-foreground` light token raised 46.1% → 38% L (≥4.5:1 on white)
+- [x] `--destructive` dark token raised 30.6% → 60% L (≥4.5:1 on dark backgrounds)
+- [x] 102 `text-muted-foreground/*` opacity utilities removed across 59 files
+- [x] `MemoryCard` Global chip text brightened from 66% → 72% L
+- [x] `MemoryCard` archived card `opacity-60` → `opacity-80`
+- [x] axe `color-contrast` rule re-enabled globally in Storybook preview
+- [x] 510/510 Vitest/Storybook browser tests pass
+
 ## 2026-06-26 — Phase 10 E2: Linux visual regression baselines (PR #210)
 
 - [x] Ran `mcr.microsoft.com/playwright:v1.61.0-jammy` on `linux/amd64` with `build-essential` + separate node_modules volume to compile linux/x64 native binaries (better-sqlite3, esbuild, node-pty)

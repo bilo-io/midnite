@@ -78,7 +78,7 @@ export function MarkdownEditor({
           {value.trim() ? (
             <MarkdownPreview content={value} />
           ) : (
-            <p className="text-sm italic text-muted-foreground/60">Nothing to preview yet.</p>
+            <p className="text-sm italic text-muted-foreground">Nothing to preview yet.</p>
           )}
         </div>
       )}

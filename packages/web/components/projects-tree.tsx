@@ -48,7 +48,7 @@ export function ProjectsTree({
 
   const taskBody = (items: Task[]) =>
     items.length === 0 ? (
-      <div className="px-4 py-3 text-xs text-muted-foreground/70">No tasks yet</div>
+      <div className="px-4 py-3 text-xs text-muted-foreground">No tasks yet</div>
     ) : (
       items.map((t) => (
         <TaskRow
@@ -87,7 +87,7 @@ export function ProjectsTree({
               type="button"
               onClick={() => onPlan(p)}
               aria-label={`Plan ${p.name}`}
-              className="rounded p-1.5 text-muted-foreground/70 hover:bg-accent/50 hover:text-foreground"
+              className="rounded p-1.5 text-muted-foreground hover:bg-accent/50 hover:text-foreground"
             >
               <ListChecks className="h-3.5 w-3.5" />
             </button>
@@ -97,7 +97,7 @@ export function ProjectsTree({
               type="button"
               onClick={() => onEdit(p)}
               aria-label={`Edit ${p.name}`}
-              className="rounded p-1.5 text-muted-foreground/70 hover:bg-accent/50 hover:text-foreground"
+              className="rounded p-1.5 text-muted-foreground hover:bg-accent/50 hover:text-foreground"
             >
               <Pencil className="h-3.5 w-3.5" />
             </button>

@@ -75,7 +75,7 @@ export function AgentsWidget() {
               Sub-agents ({cfg.subAgents.length})
             </span>
             {cfg.subAgents.length === 0 ? (
-              <p className="mt-1 text-[11px] text-muted-foreground/60">None configured.</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">None configured.</p>
             ) : (
               <ul className="mt-1 space-y-1">
                 {cfg.subAgents.map((a) => (

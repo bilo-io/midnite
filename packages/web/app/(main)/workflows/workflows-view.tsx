@@ -131,7 +131,7 @@ export function WorkflowsView({ initial }: { initial: WorkflowSummary[] }) {
         count: items.length,
         body:
           items.length === 0 ? (
-            <p className="text-xs text-muted-foreground/60">No {label.toLowerCase()} workflows</p>
+            <p className="text-xs text-muted-foreground">No {label.toLowerCase()} workflows</p>
           ) : layout === 'list' ? (
             <div className="flex flex-col gap-2">
               {items.map((w) => (

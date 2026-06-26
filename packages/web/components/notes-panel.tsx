@@ -169,7 +169,7 @@ export function NotesPanel({ notes: initial }: { notes: Note[] }) {
             'min-w-0 flex-1 bg-transparent text-sm outline-none',
             speech.listening
               ? 'placeholder:text-primary/60 text-muted-foreground italic'
-              : 'placeholder:text-muted-foreground/60',
+              : 'placeholder:text-muted-foreground',
           )}
         />
         {speech.supported && (

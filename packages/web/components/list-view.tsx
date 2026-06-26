@@ -31,7 +31,7 @@ export function ListView({
       count: items.length,
       body:
         items.length === 0 ? (
-          <p className="px-1 text-xs text-muted-foreground/60">Nothing here</p>
+          <p className="px-1 text-xs text-muted-foreground">Nothing here</p>
         ) : (
           <div className="overflow-hidden rounded-lg border bg-card">
             {items.map((t) => (

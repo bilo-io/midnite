@@ -39,7 +39,7 @@ export function WorkflowEnabledSwitch({ id, enabled: initial }: { id: string; en
 
 export function LastRunStatus({ status, className }: { status?: RunStatus; className?: string }) {
   if (!status) {
-    return <span className={cn('text-[11px] text-muted-foreground/50', className)}>Never run</span>;
+    return <span className={cn('text-[11px] text-muted-foreground', className)}>Never run</span>;
   }
   return (
     <span

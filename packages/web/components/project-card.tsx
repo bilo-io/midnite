@@ -133,12 +133,12 @@ export function ProjectCard({ project, layout, onOpen, onPlan, selected = false,
         {project.description ? (
           <p className="line-clamp-2 text-xs text-muted-foreground">{project.description}</p>
         ) : (
-          <p className="text-xs italic text-muted-foreground/60">No description</p>
+          <p className="text-xs italic text-muted-foreground">No description</p>
         )}
       </button>
       <div className="mt-auto flex items-center justify-between gap-2">
         {favicons ?? (
-          <span className="text-xs text-muted-foreground/60">{plural(0, 'source')}</span>
+          <span className="text-xs text-muted-foreground">{plural(0, 'source')}</span>
         )}
         <div className="flex items-center gap-1">
           {exportMenu}

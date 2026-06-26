@@ -134,7 +134,7 @@ export function PageHeader({
               )}
             >
               {Icon && (
-                <Icon className="h-[1em] w-[1em] shrink-0 text-muted-foreground/70" />
+                <Icon className="h-[1em] w-[1em] shrink-0 text-muted-foreground" />
               )}
               <span aria-hidden>
                 {typedTitle}

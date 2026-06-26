@@ -57,14 +57,14 @@ export function EnvironmentAccordion() {
     <Accordion title="Environment" icon={<Wrench className="h-3.5 w-3.5" />} defaultOpen>
       <div className="space-y-4 p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-xs text-muted-foreground/70">
+          <p className="text-xs text-muted-foreground">
             The local toolchain midnite needs, detected on the gateway host.
           </p>
           <Tabs options={TAB_OPTIONS} value={tab} onChange={setTab} ariaLabel="Operating system" />
         </div>
 
         {hostOs && hostOs !== 'other' ? (
-          <p className="text-[11px] text-muted-foreground/60">
+          <p className="text-[11px] text-muted-foreground">
             Detected system: {ENV_OS_LABEL[hostOs]}.
           </p>
         ) : null}
@@ -76,7 +76,7 @@ export function EnvironmentAccordion() {
         ) : (
           <div className="space-y-2.5">
             {!busy && !live ? (
-              <p className="text-[11px] text-muted-foreground/70">
+              <p className="text-[11px] text-muted-foreground">
                 {hostOs && hostOs !== 'other'
                   ? `Detected system is ${ENV_OS_LABEL[hostOs]} — these ${ENV_OS_LABEL[tab]} tools are shown for reference.`
                   : `Shown for reference — couldn't detect the host OS.`}

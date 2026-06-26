@@ -360,7 +360,7 @@ function FinishStep({ onClose }: { onClose: () => void }) {
                   style={{ background: SETUP_DOT[item.state] }}
                 />
                 <span className={done ? 'text-muted-foreground' : 'font-medium'}>{item.label}</span>
-                {item.detail ? <span className="text-muted-foreground/70">— {item.detail}</span> : null}
+                {item.detail ? <span className="text-muted-foreground">— {item.detail}</span> : null}
                 {!done ? (
                   <a href={SETUP_ITEM_HREF[item.id]} className="ml-auto text-primary hover:underline">
                     Fix →

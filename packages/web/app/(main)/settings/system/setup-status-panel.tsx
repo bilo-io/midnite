@@ -64,7 +64,7 @@ export function SetupStatusPanel() {
       defaultOpen
     >
       <div className="space-y-4 p-5">
-        <p className="text-xs text-muted-foreground/70">
+        <p className="text-xs text-muted-foreground">
           Whether this install can run agents — live provider, secret-key, agent-CLI, pool and repo
           state. The same checklist drives the first-run prompt.
         </p>

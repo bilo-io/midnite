@@ -25,7 +25,7 @@ export function TemplateCard({ template, layout, onOpen }: Props) {
           </div>
           <p className="mt-0.5 truncate text-xs text-muted-foreground">{template.description}</p>
         </div>
-        <FileText className="h-4 w-4 shrink-0 text-muted-foreground/60" />
+        <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
       </button>
     );
   }
@@ -38,7 +38,7 @@ export function TemplateCard({ template, layout, onOpen }: Props) {
     >
       <div className="flex items-center justify-between gap-2">
         <ProjectTag tag={template.tag} color={template.color} />
-        <FileText className="h-4 w-4 shrink-0 text-muted-foreground/60" />
+        <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
       </div>
       <span className="line-clamp-1 text-sm font-medium leading-snug">{template.name}</span>
       <p className="line-clamp-2 text-xs text-muted-foreground">{template.description}</p>

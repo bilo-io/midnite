@@ -59,7 +59,7 @@ function StoryMeta({ story }: { story: HackerNewsStory }) {
 
 /** Top-three ranks get the accent colour; the rest stay muted. */
 function rankClass(i: number): string {
-  return i < 3 ? 'text-primary' : 'text-muted-foreground/50';
+  return i < 3 ? 'text-primary' : 'text-muted-foreground';
 }
 
 function HostChip({ host }: { host: string }) {

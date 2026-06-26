@@ -60,7 +60,7 @@ export function SystemSection() {
         defaultOpen
       >
         <div className="p-5">
-          <p className="pb-2 text-xs text-muted-foreground/70">
+          <p className="pb-2 text-xs text-muted-foreground">
             Turn sections of the app on or off. Disabled features are hidden from the sidebar; if
             you open one directly you&apos;ll be prompted to re-enable it here.
           </p>

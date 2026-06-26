@@ -118,7 +118,7 @@ export function MediaView({ items, projects, error }: Props) {
               />
             ) : (
               <div className="flex aspect-video items-center justify-center bg-muted">
-                <ImageIcon className="h-8 w-8 text-muted-foreground/40" aria-hidden />
+                <ImageIcon className="h-8 w-8 text-muted-foreground" aria-hidden />
               </div>
             )}
             <p className="truncate px-2 py-1.5 text-left text-xs text-muted-foreground">{m.title}</p>
@@ -147,7 +147,7 @@ export function MediaView({ items, projects, error }: Props) {
                 />
               ) : (
                 <div className="flex h-full items-center justify-center">
-                  <Video className="h-8 w-8 text-muted-foreground/40" aria-hidden />
+                  <Video className="h-8 w-8 text-muted-foreground" aria-hidden />
                 </div>
               )}
               <div className="absolute inset-0 flex items-center justify-center">
@@ -223,7 +223,7 @@ export function MediaView({ items, projects, error }: Props) {
                   loading="lazy"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-muted-foreground/50">
+                <div className="flex h-full w-full items-center justify-center text-muted-foreground">
                   <Icon className="h-4 w-4" aria-hidden />
                 </div>
               )}

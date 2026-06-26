@@ -115,7 +115,7 @@ export function SetupNudge({ onOpenWizard }: { onOpenWizard?: () => void }) {
                 {item.label}
               </span>
               {!done && item.detail ? (
-                <span className="truncate text-muted-foreground/70">— {item.detail}</span>
+                <span className="truncate text-muted-foreground">— {item.detail}</span>
               ) : null}
             </span>
           );

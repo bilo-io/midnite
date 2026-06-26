@@ -209,7 +209,7 @@ function SortableSourceRow({
         {...listeners}
         disabled={disabled}
         aria-label="Reorder source"
-        className="shrink-0 cursor-grab touch-none rounded text-muted-foreground/50 hover:text-foreground active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-40"
+        className="shrink-0 cursor-grab touch-none rounded text-muted-foreground hover:text-foreground active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-40"
       >
         <GripVertical className="h-4 w-4" />
       </button>

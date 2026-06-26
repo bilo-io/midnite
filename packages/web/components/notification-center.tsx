@@ -197,7 +197,7 @@ export function NotificationCenter({ expanded }: { expanded?: boolean }) {
                           <span className="block truncate text-xs text-muted-foreground">
                             {n.body}
                           </span>
-                          <span className="mt-0.5 block text-[11px] text-muted-foreground/80">
+                          <span className="mt-0.5 block text-[11px] text-muted-foreground">
                             {relativeTime(n.createdAt)}
                           </span>
                         </span>

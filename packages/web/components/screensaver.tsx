@@ -388,7 +388,7 @@ export function Screensaver({
         <div className="font-mono text-3xl font-semibold tabular-nums tracking-tight text-foreground">
           {time}
         </div>
-        <div className="mt-0.5 text-[11px] uppercase tracking-[0.2em] text-muted-foreground/70">
+        <div className="mt-0.5 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
           local time
         </div>
       </div>
@@ -467,7 +467,7 @@ export function Screensaver({
         </div>
       </div>
 
-      <p className="absolute bottom-2 z-10 text-[11px] uppercase tracking-[0.2em] text-muted-foreground/40">
+      <p className="absolute bottom-2 z-10 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
         {requireCode ? 'press any key to unlock' : 'press any key to wake'}
       </p>
 
@@ -527,7 +527,7 @@ function Ring({
           {display}
         </span>
       </div>
-      <span className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground/70">{label}</span>
+      <span className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">{label}</span>
     </div>
   );
 }

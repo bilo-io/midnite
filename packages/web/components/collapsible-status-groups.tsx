@@ -169,7 +169,7 @@ function Group({
           {...attributes}
           {...listeners}
           aria-label="Reorder section"
-          className="-ml-1 cursor-grab touch-none rounded p-1 text-muted-foreground/40 opacity-0 transition-opacity hover:bg-accent/50 hover:text-foreground focus-visible:opacity-100 group-hover/section:opacity-100 active:cursor-grabbing"
+          className="-ml-1 cursor-grab touch-none rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-accent/50 hover:text-foreground focus-visible:opacity-100 group-hover/section:opacity-100 active:cursor-grabbing"
         >
           <GripVertical className="h-4 w-4" />
         </button>
@@ -192,7 +192,7 @@ function Group({
           </span>
           <ChevronDown
             className={cn(
-              'h-4 w-4 shrink-0 text-muted-foreground/60 transition-transform',
+              'h-4 w-4 shrink-0 text-muted-foreground transition-transform',
               collapsed && '-rotate-90',
             )}
           />

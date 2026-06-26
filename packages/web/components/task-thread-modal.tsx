@@ -443,7 +443,7 @@ export function TaskThreadModal({ task, projects, tasks, onClose }: Props) {
                       type="button"
                       onClick={() => removeTag(tag)}
                       aria-label={`Remove tag ${tag}`}
-                      className="text-muted-foreground/60 hover:text-destructive"
+                      className="text-muted-foreground hover:text-destructive"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -469,7 +469,7 @@ export function TaskThreadModal({ task, projects, tasks, onClose }: Props) {
               <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Dependencies
               </h3>
-              <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
+              <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                 Blocked by
               </p>
               {dependsOn.length > 0 ? (
@@ -528,7 +528,7 @@ export function TaskThreadModal({ task, projects, tasks, onClose }: Props) {
               {depError ? <p className="mt-1.5 text-xs text-destructive">{depError}</p> : null}
               {dependents.length > 0 ? (
                 <div className="mt-3">
-                  <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
+                  <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                     Blocks
                   </p>
                   <ul className="space-y-1.5">

@@ -65,7 +65,7 @@ export function EnvToolCard({
         <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
         <span className="text-sm font-medium">{meta.label}</span>
         {meta.minVersion ? (
-          <span className="text-[11px] tabular-nums text-muted-foreground/70">
+          <span className="text-[11px] tabular-nums text-muted-foreground">
             ≥ {meta.minVersion}
           </span>
         ) : null}
@@ -88,7 +88,7 @@ export function EnvToolCard({
             )}
           </span>
         ) : (
-          <span className="text-xs text-muted-foreground/50">—</span>
+          <span className="text-xs text-muted-foreground">—</span>
         )}
 
         <div className="ml-auto flex shrink-0 items-center gap-1.5">
