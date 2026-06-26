@@ -18,11 +18,21 @@ const REPO_NO_SLUG = { id: 'r2', name: 'local' };
 function make(overrides?: {
   service?: Partial<PhaseDocsService>;
   repo?: unknown;
+  breakdown?: unknown;
+  tasks?: unknown;
 }) {
   const service = { list: vi.fn(), get: vi.fn(), ...overrides?.service } as unknown as PhaseDocsService;
   const projects = { getProject: vi.fn() } as never;
   const repos = { get: vi.fn().mockReturnValue(overrides?.repo ?? REPO_WITH_SLUG) } as never;
-  return { controller: new PhaseDocsController(service, projects, repos), service, repos };
+  const breakdown = (overrides?.breakdown ?? { parseDoc: vi.fn() }) as never;
+  const tasks = (overrides?.tasks ?? { createTasksFromBreakdown: vi.fn() }) as never;
+  return {
+    controller: new PhaseDocsController(service, projects, repos, breakdown, tasks),
+    service,
+    repos,
+    breakdown,
+    tasks,
+  };
 }
 
 describe('PhaseDocsController', () => {
@@ -62,5 +72,45 @@ describe('PhaseDocsController', () => {
     const { controller, service } = make({ service: { list: vi.fn().mockResolvedValue(docs) } });
     await expect(controller.list('p1', 'r1')).resolves.toEqual({ docs });
     expect(service.list).toHaveBeenCalledWith('acme/web');
+  });
+
+  it('seed preview fetches the doc and parses it (creates nothing)', async () => {
+    const preview = { breakdown: { tasks: [] }, isFallback: true };
+    const parseDoc = vi.fn().mockResolvedValue(preview);
+    const { controller, service } = make({
+      service: { get: vi.fn().mockResolvedValue({ name: 'a.md', content: '# doc' }) },
+      breakdown: { parseDoc },
+    });
+    await expect(controller.seedPreview('p1', 'a.md', 'r1')).resolves.toEqual(preview);
+    expect(service.get).toHaveBeenCalledWith('acme/web', 'a.md');
+    expect(parseDoc).toHaveBeenCalledWith('# doc');
+  });
+
+  it('seed-tasks creates project-linked tasks tagged with phase-doc + phase-item', () => {
+    const createTasksFromBreakdown = vi.fn().mockReturnValue([{ id: 't1' }]);
+    const { controller, tasks } = make({ tasks: { createTasksFromBreakdown } });
+    const breakdown = {
+      tasks: [
+        { ref: 'a', title: 'A', anchor: 'do-a', dependsOn: [] },
+        { ref: 'b', title: 'B', dependsOn: [] }, // no anchor → only the doc tag
+      ],
+    };
+
+    const res = controller.seedTasks('p1', 'auth.md', { breakdown });
+
+    expect(res).toEqual({ tasks: [{ id: 't1' }] });
+    const opts = createTasksFromBreakdown.mock.calls[0]![1];
+    expect(opts.projectId).toBe('p1');
+    expect(opts.tagsFor(breakdown.tasks[0])).toEqual(['phase-doc:auth.md', 'phase-item:do-a']);
+    expect(opts.tagsFor(breakdown.tasks[1])).toEqual(['phase-doc:auth.md']);
+  });
+
+  it('seed-tasks 400s a traversal filename before touching the breakdown', () => {
+    const createTasksFromBreakdown = vi.fn();
+    const { controller } = make({ tasks: { createTasksFromBreakdown } });
+    expect(() => controller.seedTasks('p1', '../evil.md', { breakdown: { tasks: [] } })).toThrow(
+      BadRequestException,
+    );
+    expect(createTasksFromBreakdown).not.toHaveBeenCalled();
   });
 });

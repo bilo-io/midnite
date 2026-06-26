@@ -1,11 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { ArrowLeft, FileText, Loader2, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { ArrowLeft, FileText, Loader2, Plus, RefreshCw, Sprout, Trash2 } from 'lucide-react';
 import type { PhaseDoc, Repo } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { MarkdownEditor } from '@/components/markdown-editor';
 import { useConfirm } from '@/components/confirm-dialog';
+import { SeedTasksModal } from '@/components/projects/phase-docs/SeedTasksModal';
 import {
   ApiError,
   createPhaseDoc,
@@ -45,6 +46,9 @@ export function PhaseDocsTab({ projectId }: Props) {
   const [conflict, setConflict] = useState(false);
   const [edit, setEdit] = useState<EditState | null>(null);
   const [saving, setSaving] = useState(false);
+  // Filename whose tasks are being seeded (opens SeedTasksModal); notice after.
+  const [seedFilename, setSeedFilename] = useState<string | null>(null);
+  const [seededNotice, setSeededNotice] = useState<string | null>(null);
 
   // Only repos with a GitHub owner/repo slug can host phase docs.
   const eligibleRepos = repos.filter((r) => r.ownerRepo);
@@ -271,6 +275,18 @@ export function PhaseDocsTab({ projectId }: Props) {
                     type="button"
                     variant="ghost"
                     size="icon"
+                    aria-label={`Seed tasks from ${doc.name}`}
+                    onClick={() => {
+                      setSeededNotice(null);
+                      setSeedFilename(doc.name);
+                    }}
+                  >
+                    <Sprout className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
                     aria-label={`Delete ${doc.name}`}
                     onClick={() => void removeDoc(doc)}
                   >
@@ -280,8 +296,27 @@ export function PhaseDocsTab({ projectId }: Props) {
               ))}
             </ul>
           )}
+          {seededNotice ? (
+            <p role="status" className="text-sm text-muted-foreground">
+              {seededNotice}
+            </p>
+          ) : null}
         </div>
       )}
+
+      {seedFilename ? (
+        <SeedTasksModal
+          projectId={projectId}
+          repoId={repoId}
+          filename={seedFilename}
+          onClose={() => setSeedFilename(null)}
+          onSeeded={(count) =>
+            setSeededNotice(
+              `Seeded ${count} task${count === 1 ? '' : 's'} from ${seedFilename} onto the board.`,
+            )
+          }
+        />
+      ) : null}
     </div>
   );
 }

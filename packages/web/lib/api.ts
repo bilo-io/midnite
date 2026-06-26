@@ -792,6 +792,35 @@ export async function createTasksFromBreakdown(
   return tasks;
 }
 
+/**
+ * Preview the tasks a phase doc would seed (Phase 42 Theme D). Parses the `.md`
+ * into a dependency-aware breakdown with anchors — creates nothing.
+ */
+export async function previewPhaseDocSeed(
+  projectId: string,
+  repoId: string,
+  filename: string,
+): Promise<BreakdownPreviewResponse> {
+  const path =
+    `/projects/${encodeURIComponent(projectId)}/phase-docs/${encodeURIComponent(filename)}/seed` +
+    `?repoId=${encodeURIComponent(repoId)}`;
+  return fetchJson(path, { method: 'POST' }, BreakdownPreviewResponseSchema);
+}
+
+/** Create the confirmed seed breakdown as project-linked, anchor-tagged tasks. */
+export async function seedPhaseDocTasks(
+  projectId: string,
+  filename: string,
+  breakdown: Breakdown,
+): Promise<Task[]> {
+  const { tasks } = await fetchJson(
+    `/projects/${encodeURIComponent(projectId)}/phase-docs/${encodeURIComponent(filename)}/seed-tasks`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ breakdown }) },
+    CreateFromBreakdownResponseSchema,
+  );
+  return tasks;
+}
+
 export async function exportProjectMarkdown(id: string): Promise<string> {
   const path = `/projects/${encodeURIComponent(id)}/export?format=md`;
   const res = await fetch(`${gatewayUrl()}${path}`, { cache: 'no-store' });
