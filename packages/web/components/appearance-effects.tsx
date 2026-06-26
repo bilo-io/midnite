@@ -4,6 +4,8 @@ import { useEffect } from 'react';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
   ACCENT_DEFAULT,
+  BACKGROUND_PATTERN_DEFAULT,
+  BG_INTENSITY_DEFAULT,
   DEFAULT_EFFECTS,
   DEFAULT_SETTINGS,
   DENSITY_DEFAULT,
@@ -11,14 +13,19 @@ import {
   SETTINGS_STORAGE_KEY,
   type AppSettings,
 } from '@/lib/app-settings';
-import { applyAccent, applyDensity, applyEffects, applyMotion } from '@/lib/apply-appearance';
+import {
+  applyAccent,
+  applyBackground,
+  applyDensity,
+  applyEffects,
+  applyMotion,
+} from '@/lib/apply-appearance';
 
 /**
- * Applies global appearance preferences (accent colour, motion, density, per-effect
- * toggles) to <html> from the persisted settings, and keeps them in sync as the
- * user changes them (cross-tab too, via the shared localStorage hook). Mounted
- * once at the app root. The pre-paint inline script handles the first paint;
- * this owns later changes.
+ * Applies global appearance preferences to <html> from persisted settings and keeps
+ * them in sync as the user changes them (cross-tab too, via the shared localStorage
+ * hook). Mounted once at the app root. The pre-paint inline script handles the first
+ * paint; this owns later changes.
  */
 export function AppearanceEffects() {
   const [settings] = useLocalStorage<AppSettings>(SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS);
@@ -26,6 +33,8 @@ export function AppearanceEffects() {
   const motion = settings.motion ?? MOTION_DEFAULT;
   const density = settings.density ?? DENSITY_DEFAULT;
   const effects = settings.effects ?? DEFAULT_EFFECTS;
+  const backgroundPattern = settings.backgroundPattern ?? BACKGROUND_PATTERN_DEFAULT;
+  const bgIntensity = settings.bgIntensity ?? BG_INTENSITY_DEFAULT;
 
   useEffect(() => {
     applyAccent(accent);
@@ -38,6 +47,10 @@ export function AppearanceEffects() {
   useEffect(() => {
     applyDensity(density);
   }, [density]);
+
+  useEffect(() => {
+    applyBackground(backgroundPattern, bgIntensity);
+  }, [backgroundPattern, bgIntensity]);
 
   useEffect(() => {
     applyEffects(effects);

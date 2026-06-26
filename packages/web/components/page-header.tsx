@@ -115,6 +115,7 @@ export function PageHeader({
         {showGrid && (
           <div
             aria-hidden
+            data-bg-target=""
             className={cn(
               patternClass,
               'pointer-events-none absolute inset-x-0 -top-8 -z-10 h-40 transition-opacity duration-300 motion-reduce:transition-none',
