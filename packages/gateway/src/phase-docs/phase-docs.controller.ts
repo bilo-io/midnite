@@ -1,6 +1,7 @@
 import {
   BadGatewayException,
   BadRequestException,
+  Body,
   ConflictException,
   Controller,
   Delete,
@@ -21,7 +22,6 @@ import { CurrentUser, type CurrentUserPayload } from '../auth/decorators/current
 import { RequiresRole } from '../auth/decorators/require-role.decorator';
 import { ProjectsService } from '../projects/projects.service';
 import { ReposService } from '../repos/repos.service';
-import { Body } from '@nestjs/common';
 import {
   GithubUnavailableError,
   PhaseDocConflictError,
@@ -33,6 +33,16 @@ const DEFAULT_SCOPE = { userId: 'anonymous', teamId: null };
 
 function toScope(user: CurrentUserPayload | null | undefined) {
   return user ? { userId: user.userId, teamId: user.teamId } : DEFAULT_SCOPE;
+}
+
+/**
+ * Reject anything but a plain `<slug>.md` basename — the filename is interpolated
+ * into the GitHub Contents API path, so a `/` or `..` could escape `.midnite/phases/`.
+ */
+function assertSafeFilename(filename: string): void {
+  if (!/^[A-Za-z0-9._-]+\.md$/.test(filename) || filename.includes('..')) {
+    throw new BadRequestException('invalid phase doc filename');
+  }
 }
 
 /**
@@ -66,6 +76,7 @@ export class PhaseDocsController {
     @Query('repoId') repoId: string | undefined,
     @CurrentUser() user?: CurrentUserPayload | null,
   ): Promise<{ doc: PhaseDoc }> {
+    assertSafeFilename(filename);
     const ownerRepo = this.resolveOwnerRepo(projectId, repoId, user);
     return this.guard(async () => ({ doc: await this.service.get(ownerRepo, filename) }));
   }
@@ -95,6 +106,7 @@ export class PhaseDocsController {
     @Body() rawBody: unknown,
     @CurrentUser() user?: CurrentUserPayload | null,
   ): Promise<{ doc: PhaseDoc }> {
+    assertSafeFilename(filename);
     const ownerRepo = this.resolveOwnerRepo(projectId, repoId, user);
     const parsed = UpdatePhaseDocRequestSchema.safeParse(rawBody);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
@@ -113,6 +125,7 @@ export class PhaseDocsController {
     @Query('sha') sha: string | undefined,
     @CurrentUser() user?: CurrentUserPayload | null,
   ): Promise<void> {
+    assertSafeFilename(filename);
     const ownerRepo = this.resolveOwnerRepo(projectId, repoId, user);
     if (!sha) throw new BadRequestException('sha query param is required to delete a phase doc');
     await this.guard(() => this.service.delete(ownerRepo, filename, sha));
