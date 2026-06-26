@@ -88,7 +88,7 @@ describe('PhaseDocsController', () => {
 
   it('seed-tasks creates project-linked tasks tagged with phase-doc + phase-item', () => {
     const createTasksFromBreakdown = vi.fn().mockReturnValue([{ id: 't1' }]);
-    const { controller, tasks } = make({ tasks: { createTasksFromBreakdown } });
+    const { controller } = make({ tasks: { createTasksFromBreakdown } });
     const breakdown = {
       tasks: [
         { ref: 'a', title: 'A', anchor: 'do-a', dependsOn: [] },
