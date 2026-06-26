@@ -20,7 +20,7 @@ import { CommandPalette } from './command-palette';
 /** Fire the global ⌘K shortcut the component listens for on window. */
 const pressCmdK = () => fireEvent.keyDown(window, { key: 'k', metaKey: true });
 
-const PLACEHOLDER = 'Jump to or search…';
+const PLACEHOLDER = 'Jump to, search, or run a command…';
 
 const result = (over: Partial<SearchResult>): SearchResult => ({
   type: 'task',
@@ -62,8 +62,9 @@ describe('CommandPalette', () => {
     pressCmdK();
 
     expect(screen.getByRole('dialog', { name: 'Command palette' })).toBeInTheDocument();
-    // 10 toggleable features + 3 always-on destinations (Agents, Profile, Settings).
-    expect(screen.getAllByRole('button')).toHaveLength(13);
+    // 10 toggleable features + 3 always-on destinations (Agents, Profile, Settings)
+    // + 1 keyboard-shortcuts (?) button in the palette header.
+    expect(screen.getAllByRole('button')).toHaveLength(14);
     // Empty query never hits the network.
     expect(searchAll).not.toHaveBeenCalled();
   });
@@ -81,9 +82,11 @@ describe('CommandPalette', () => {
     pressCmdK();
     // "kanban" appears only in the Tasks feature description.
     fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), { target: { value: 'kanban' } });
+    // 1 keyboard-shortcuts (?) header button + 1 matching nav button.
     const results = screen.getAllByRole('button');
-    expect(results).toHaveLength(1);
-    expect(results[0]).toHaveTextContent('Tasks');
+    expect(results).toHaveLength(2);
+    // The nav match is the second button (first is the ? header button).
+    expect(results[1]).toHaveTextContent('Tasks');
     await waitFor(() => expect(searchAll).toHaveBeenCalled());
   });
 
@@ -92,7 +95,8 @@ describe('CommandPalette', () => {
     pressCmdK();
     fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), { target: { value: 'zzzznope' } });
     expect(await screen.findByText('No matches.')).toBeInTheDocument();
-    expect(screen.queryAllByRole('button')).toHaveLength(0);
+    // Only the keyboard-shortcuts (?) button remains — no list-item buttons.
+    expect(screen.queryAllByRole('button')).toHaveLength(1);
   });
 
   it('navigates to the top page jump on Enter and closes', () => {

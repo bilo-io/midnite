@@ -104,6 +104,16 @@ export function NavBar() {
     else setScreensaver('locked');
   };
 
+  // Allow the command palette's "Lock screen" command to trigger the screensaver
+  // without needing direct access to this component's state.
+  useEffect(() => {
+    const onLock = () => lock();
+    window.addEventListener('midnite:lock-screen', onLock);
+    return () => window.removeEventListener('midnite:lock-screen', onLock);
+    // lock is stable across renders (no deps change)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings.requirePasscode, passcode]);
+
   const renderLink = ({ href, label, Icon }: NavLink) => {
     const active = pathname === href || (href !== '/' && pathname.startsWith(href));
     return (

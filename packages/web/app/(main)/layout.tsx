@@ -7,6 +7,8 @@ import { FeatureGate } from '@/components/feature-gate';
 import { LiveData } from '@/components/live-data';
 import { NotificationsProvider } from '@/components/notifications-provider';
 import { CommandPalette } from '@/components/command-palette';
+import { GlobalKeymap } from '@/components/global-keymap';
+import { PaletteCommandsProvider } from '@/lib/palette-commands';
 import { PageReveal } from '@/components/page-reveal';
 import { SetupNudge } from '@/components/setup-nudge';
 import { SetupWizardController } from '@/components/SetupWizard';
@@ -21,9 +23,11 @@ export default function MainLayout({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
     <NotificationsProvider>
+    <PaletteCommandsProvider>
       <div className="min-h-screen">
         <LiveData />
         <CommandPalette />
+        <GlobalKeymap />
         <NavBar />
         <PullToRefresh />
         <main className="transition-[padding] duration-200 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0 md:[padding-left:var(--nav-offset)]">
@@ -37,6 +41,7 @@ export default function MainLayout({ children }: { children: ReactNode }) {
         </Suspense>
         <SetupWizardController onOpenWizard={registerOpen} />
       </div>
+    </PaletteCommandsProvider>
     </NotificationsProvider>
     </QueryClientProvider>
   );

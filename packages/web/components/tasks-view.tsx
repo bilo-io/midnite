@@ -135,6 +135,13 @@ export function TasksView({
   // Surface a failed gateway fetch as a toast instead of an inline banner.
   useGatewayErrorToast(error);
 
+  // Allow the command palette's "Create task…" command to open the new-task form.
+  useEffect(() => {
+    const onNew = () => setShowNewTask(true);
+    window.addEventListener('midnite:new-task', onNew);
+    return () => window.removeEventListener('midnite:new-task', onNew);
+  }, []);
+
   // Deep-link target from the session modal's "Go to task": auto-open it once.
   const openId = searchParams.get('open');
   const handledOpenRef = useRef<string | null>(null);
