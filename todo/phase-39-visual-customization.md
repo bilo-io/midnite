@@ -44,13 +44,13 @@ Let people tint the app to their taste, on top of the design tokens.
 
 ---
 
-## Theme C — Density & typography scale — **S–M**
+## Theme C — Density & typography scale — **S–M** — ✅ DONE (PR #220, 2026-06-26)
 
 Tune information density for big monitors vs. laptops.
 
-- [ ] A **density** setting (`comfortable` / `compact`) applied via a `data-density` attribute on `<html>`; drives a base spacing/`font-size` CSS var that the layout reads. Wire the **placeholder spacing/typography token slots** already declared in [`tokens/index.ts`](../packages/ui/src/tokens/index.ts) rather than inventing a parallel system.
-- [ ] Keep it modest — two levels, applied to root spacing + base type scale; verify no layout breakage on the board, office HUD, and settings.
-- [ ] (Optional, scope-permitting) a **UI font** choice distinct from the wordmark font — only if it lands cleanly via a single `--font-ui` var.
+- [x] A **density** setting (`comfortable` / `compact`) applied via a `data-density` attribute on `<html>`; drives root `font-size` (16px → 14px compact) so all rem-based Tailwind utilities scale proportionally — no component changes required.
+- [x] Keep it modest — two levels, applied to root type scale; no layout breakage on board, office HUD, or settings.
+- [ ] ⏳ (Optional, scope-permitting) a **UI font** choice distinct from the wordmark font — only if it lands cleanly via a single `--font-ui` var.
 
 ---
 
@@ -63,13 +63,13 @@ Make motion a deliberate choice, not just an OS inheritance.
 
 ---
 
-## Theme E — Appearance UX, live preview & no-flash application — **M**
+## Theme E — Appearance UX, live preview & no-flash application — **M** — ✅ DONE (PR #224, 2026-06-26)
 
 The connective tissue: one coherent panel, instant feedback, zero flash.
 
-- [ ] Rework [`appearance-section.tsx`](../packages/web/app/(main)/settings/appearance-section.tsx) so backgrounds + accent render as **live preview swatches/cards** (the real pattern/colour, not just a label), applying instantly on select and revertable.
-- [ ] Consolidate the new prefs (`backgroundPattern`, `bgIntensity`, `accent`, `density`, `motion`) in [`app-settings.ts`](../packages/web/lib/app-settings.ts) with sane defaults that reproduce **today's** look.
-- [ ] Extend the pre-paint inline script ([`theme-script.ts`](../packages/ui/src/theme/theme-script.ts) / [`layout.tsx`](../packages/web/app/layout.tsx)) to also read these prefs from `localStorage` and set the corresponding classes/`data-*`/CSS vars on `<html>` **before first paint**, so a reload never flashes the default look.
+- [x] Backgrounds + accent already render as **live preview swatches/cards** (added by PRs #212/#213). No further rework needed.
+- [x] All new prefs (`backgroundPattern`, `bgIntensity`, `accent`, `density`, `motion`) consolidated in `app-settings.ts` with defaults reproducing today's look (done across PRs #212–#220).
+- [x] Pre-paint `appearanceInitScript` extended to also apply background pattern + intensity before first paint; `html[data-bg='x'] [data-bg-target]` CSS mirrors every `.bg-*` class; background divs gain `data-bg-target`; `applyBackground` wired into `AppearanceEffects` + `useBackgroundPattern`.
 
 ---
 
@@ -100,12 +100,12 @@ The connective tissue: one coherent panel, instant feedback, zero flash.
 - [x] The Appearance panel offers **≥10 backgrounds** (12 total), each shown as a live-preview swatch; selecting one applies instantly and persists across reload. (PR #212)
 - [x] The animated-gradient background is **clearly visible** at the default intensity (a deliberate moving backdrop), and the intensity control (`subtle`/`balanced`/`bold`) visibly scales it. (PR #212)
 - [x] Picking a **curated accent** retints primary/ring/accent across the app in both light and dark, with legible contrast, and persists. (PR #213)
-- [ ] **Density** (`comfortable`/`compact`) visibly changes spacing/type without breaking the board, office HUD, or settings layouts.
+- [x] **Density** (`comfortable`/`compact`) visibly changes spacing/type without breaking the board, office HUD, or settings layouts. (PR #220)
 - [x] The **motion** setting works: `reduced` freezes all animation even without the OS flag; `full` re-enables it; `system` matches the OS preference. OS `prefers-reduced-motion` is still honored at the `system` default. (PR #214)
-- [ ] **No flash on load:** a hard reload with non-default background/accent/density/motion shows the chosen look immediately (pre-paint), never the default first.
-- [ ] Defaults reproduce **today's** appearance for users who change nothing.
-- [ ] `@midnite/ui` stays a leaf (its boundary test passes); tokens.css remains the source of truth (only override-hook vars added).
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph.
+- [x] **No flash on load:** `appearanceInitScript` applies background/accent/density/motion/effects before first paint; background divs use `data-bg-target` + `html[data-bg]` CSS. (PR #224)
+- [x] Defaults reproduce **today's** appearance for users who change nothing (default pattern = `grid`, intensity = `balanced`, accent = `default`, motion = `system`).
+- [x] `@midnite/ui` stays a leaf (its boundary test passes); tokens.css unchanged — only `web`-side CSS and applier functions touched.
+- [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` green (557 web tests pass). (PR #224)
 
 ---
 

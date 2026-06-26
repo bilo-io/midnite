@@ -282,6 +282,140 @@
   html[data-bg-intensity='subtle']   { --bg-intensity: 0.10; }
   html[data-bg-intensity='balanced'] { --bg-intensity: 0.20; }
   html[data-bg-intensity='bold']     { --bg-intensity: 0.40; }
+
+  /* Pre-paint background: the appearanceInitScript sets data-bg on <html> before
+     first paint; any element with data-bg-target picks up the pattern here without
+     waiting for React hydration. After hydration the .bg-* class on the same element
+     is equivalent; both rules apply harmlessly. */
+  html[data-bg='grid'] [data-bg-target] {
+    background-image:
+      linear-gradient(to right, hsl(var(--border) / 0.6) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border) / 0.6) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  html[data-bg='honeycomb'] [data-bg-target] {
+    --hex: hsl(var(--border) / 0.6);
+    background-image:
+      radial-gradient(circle at 50% 0, transparent 11px, var(--hex) 12px, transparent 13px),
+      radial-gradient(circle at 0 18px, transparent 11px, var(--hex) 12px, transparent 13px),
+      radial-gradient(circle at 100% 18px, transparent 11px, var(--hex) 12px, transparent 13px);
+    background-size: 48px 36px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  html[data-bg='dots'] [data-bg-target] {
+    background-image: radial-gradient(circle, hsl(var(--foreground) / 0.25) 1px, transparent 1px);
+    background-size: 20px 20px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  html[data-bg='diagonal-lines'] [data-bg-target] {
+    background-image: repeating-linear-gradient(
+      45deg,
+      hsl(var(--border) / 0.7) 0,
+      hsl(var(--border) / 0.7) 1px,
+      transparent 0,
+      transparent 12px
+    );
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  html[data-bg='topographic'] [data-bg-target] {
+    background-image:
+      radial-gradient(ellipse 100% 50% at 30% 40%, transparent 58px, hsl(var(--border) / 0.5) 59px, transparent 60px),
+      radial-gradient(ellipse 80% 40% at 30% 40%, transparent 38px, hsl(var(--border) / 0.4) 39px, transparent 40px),
+      radial-gradient(ellipse 60% 30% at 30% 40%, transparent 18px, hsl(var(--border) / 0.3) 19px, transparent 20px),
+      radial-gradient(ellipse 120% 60% at 70% 65%, transparent 78px, hsl(var(--border) / 0.5) 79px, transparent 80px),
+      radial-gradient(ellipse 90% 45% at 70% 65%, transparent 52px, hsl(var(--border) / 0.4) 53px, transparent 54px),
+      radial-gradient(ellipse 60% 30% at 70% 65%, transparent 26px, hsl(var(--border) / 0.3) 27px, transparent 28px);
+    background-attachment: fixed;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  html[data-bg='aurora'] [data-bg-target] {
+    background-image:
+      radial-gradient(ellipse 80% 40% at 20% 30%, hsl(var(--node-trigger) / 0.14) 0%, transparent 60%),
+      radial-gradient(ellipse 70% 35% at 80% 70%, hsl(var(--node-action) / 0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 30% at 55% 55%, hsl(var(--node-data) / 0.10) 0%, transparent 60%);
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  }
+
+  html[data-bg='plus-cross'] [data-bg-target] {
+    background-image:
+      linear-gradient(to right, transparent 8px, hsl(var(--border) / 0.6) 8px, hsl(var(--border) / 0.6) 10px, transparent 10px),
+      linear-gradient(to bottom, transparent 8px, hsl(var(--border) / 0.6) 8px, hsl(var(--border) / 0.6) 10px, transparent 10px);
+    background-size: 24px 24px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  html[data-bg='waves'] [data-bg-target] {
+    background-image:
+      radial-gradient(ellipse 60% 80% at 0% 50%, transparent 43%, hsl(var(--border) / 0.5) 44%, transparent 45%),
+      radial-gradient(ellipse 60% 80% at 100% 50%, transparent 43%, hsl(var(--border) / 0.5) 44%, transparent 45%);
+    background-size: 64px 48px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  html[data-bg='grain'] [data-bg-target] {
+    background-image:
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        hsl(var(--foreground) / 0.04) 3px,
+        hsl(var(--foreground) / 0.04) 4px
+      ),
+      repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 4px,
+        hsl(var(--foreground) / 0.04) 4px,
+        hsl(var(--foreground) / 0.04) 5px
+      );
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  html[data-bg='blueprint'] [data-bg-target] {
+    background-image:
+      linear-gradient(hsl(217 91% 60% / 0.25) 1px, transparent 1px),
+      linear-gradient(to right, hsl(217 91% 60% / 0.25) 1px, transparent 1px),
+      linear-gradient(hsl(217 91% 60% / 0.10) 1px, transparent 1px),
+      linear-gradient(to right, hsl(217 91% 60% / 0.10) 1px, transparent 1px);
+    background-size: 80px 80px, 80px 80px, 16px 16px, 16px 16px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  html[data-bg='mesh-gradient'] [data-bg-target] {
+    background-image:
+      radial-gradient(at 20% 20%, hsl(var(--node-trigger) / 0.18) 0px, transparent 55%),
+      radial-gradient(at 80% 10%, hsl(var(--node-action) / 0.15) 0px, transparent 55%),
+      radial-gradient(at 5% 55%, hsl(var(--node-logic) / 0.12) 0px, transparent 55%),
+      radial-gradient(at 85% 55%, hsl(var(--node-trigger) / 0.10) 0px, transparent 55%),
+      radial-gradient(at 20% 90%, hsl(var(--node-data) / 0.14) 0px, transparent 55%),
+      radial-gradient(at 80% 85%, hsl(var(--node-action) / 0.12) 0px, transparent 55%);
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  }
+
+  html[data-bg='gradient'] [data-bg-target] {
+    background-image: conic-gradient(
+      from var(--gradient-angle) at 50% 50%,
+      hsl(var(--node-trigger) / var(--bg-intensity, 0.2)),
+      hsl(var(--node-action) / var(--bg-intensity, 0.2)),
+      hsl(var(--node-logic) / var(--bg-intensity, 0.2)),
+      hsl(var(--node-data) / var(--bg-intensity, 0.2)),
+      hsl(var(--node-trigger) / var(--bg-intensity, 0.2))
+    );
+    animation: gradient-border-spin 20s linear infinite;
+    mask-image: radial-gradient(ellipse at center, black 20%, transparent 80%);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html:not([data-motion='full']) [data-bg='gradient'] [data-bg-target] {
+      animation: none;
+    }
+  }
 }
 
 /*

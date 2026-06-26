@@ -1,9 +1,12 @@
 import {
   ACCENT_OPTIONS,
-  BACKGROUND_PATTERN_CLASS,
+  BACKGROUND_PATTERN_DEFAULT,
+  BG_INTENSITY_DEFAULT,
   DEFAULT_EFFECTS,
   SETTINGS_STORAGE_KEY,
   type AccentId,
+  type BackgroundPattern,
+  type BgIntensity,
   type Density,
   type Motion,
   type VisualEffects,
@@ -54,6 +57,23 @@ export function applyDensity(density: Density): void {
 }
 
 /**
+ * Apply the background pattern as `data-bg` on <html>. Any element with
+ * `data-bg-target` picks up the pattern via the `html[data-bg='x'] [data-bg-target]`
+ * CSS rules in globals.css — applied pre-paint so a reload never flashes the
+ * default grid. Also sets `data-bg-intensity` when the animated gradient is active.
+ * The default pattern clears both attributes.
+ */
+export function applyBackground(pattern: BackgroundPattern, intensity: BgIntensity): void {
+  const html = document.documentElement;
+  html.setAttribute('data-bg', pattern ?? BACKGROUND_PATTERN_DEFAULT);
+  if (pattern === 'gradient') {
+    html.setAttribute('data-bg-intensity', intensity ?? BG_INTENSITY_DEFAULT);
+  } else {
+    html.removeAttribute('data-bg-intensity');
+  }
+}
+
+/**
  * Apply the per-effect toggles as `data-no-*` attributes on <html> (set only
  * when an effect is *disabled*). globals.css gates each effect on its attribute.
  */
@@ -71,9 +91,6 @@ const ACCENT_MAP = Object.fromEntries(
   ACCENT_OPTIONS.filter((a) => a.id !== 'default').map((a) => [a.id, [a.h, a.s]]),
 );
 
-// pattern → CSS class map, embedded into the pre-paint script.
-const BG_CLASS_MAP = BACKGROUND_PATTERN_CLASS;
-
 /**
  * Inline, render-blocking script for the document <head>: applies the saved
  * accent, motion, density, effect, AND background prefs BEFORE first paint so a
@@ -83,4 +100,4 @@ const BG_CLASS_MAP = BACKGROUND_PATTERN_CLASS;
  */
 export const appearanceInitScript = `(function(){try{var s=JSON.parse(localStorage.getItem('${SETTINGS_STORAGE_KEY}')||'{}');var h=document.documentElement;var M=${JSON.stringify(
   ACCENT_MAP,
-)};var B=${JSON.stringify(BG_CLASS_MAP)};var v=M[s.accent];if(v){h.style.setProperty('--accent-h',v[0]);h.style.setProperty('--accent-s',v[1]);h.setAttribute('data-accent',s.accent);}h.setAttribute('data-motion',s.motion||'system');if(s.density==='compact')h.setAttribute('data-density','compact');var e=s.effects||{};if(e.pageReveal===false)h.setAttribute('data-no-page-reveal','');if(e.typewriter===false)h.setAttribute('data-no-typewriter','');if(e.glass===false)h.setAttribute('data-no-glass','');var p=s.backgroundPattern;if(p&&B[p]){h.setAttribute('data-bg-pattern',p);if(p==='gradient')h.setAttribute('data-bg-intensity',s.bgIntensity||'balanced');};}catch(e){}})();`;
+)};var v=M[s.accent];if(v){h.style.setProperty('--accent-h',v[0]);h.style.setProperty('--accent-s',v[1]);h.setAttribute('data-accent',s.accent);}h.setAttribute('data-motion',s.motion||'system');if(s.density==='compact')h.setAttribute('data-density','compact');var bg=s.backgroundPattern||'${BACKGROUND_PATTERN_DEFAULT}';h.setAttribute('data-bg',bg);if(bg==='gradient')h.setAttribute('data-bg-intensity',s.bgIntensity||'${BG_INTENSITY_DEFAULT}');var e=s.effects||{};if(e.pageReveal===false)h.setAttribute('data-no-page-reveal','');if(e.typewriter===false)h.setAttribute('data-no-typewriter','');if(e.glass===false)h.setAttribute('data-no-glass','');}catch(e){}})();`;
