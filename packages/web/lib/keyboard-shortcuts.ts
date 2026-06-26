@@ -21,4 +21,6 @@ export const SHORTCUTS: Shortcut[] = [
   { keys: ['↑', '↓'], label: 'Move focus between cards', group: 'Board' },
   { keys: ['←', '→'], label: 'Move focus between columns', group: 'Board' },
   { keys: ['Enter'], label: 'Open focused card', group: 'Board' },
+  { keys: ['D'], label: 'Mark focused card done', group: 'Board' },
+  { keys: ['A'], label: 'Abandon focused card', group: 'Board' },
 ];

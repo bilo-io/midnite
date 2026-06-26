@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import { expect, fn, userEvent, within } from 'storybook/test';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
 import { projectsById, taskFeature, tasks } from '@/stories/fixtures';
 
 import { BoardView } from './board-view';
+import { ConfirmProvider } from './confirm-dialog';
 import { COLUMNS } from './task-columns';
 
 const meta = {
@@ -12,10 +13,13 @@ const meta = {
   parameters: { layout: 'fullscreen' },
   decorators: [
     // The board fills its parent's height; give it a viewport-like frame.
+    // ConfirmProvider backs the keyboard D/A confirm dialogs (Phase 41 Theme D).
     (Story) => (
-      <div className="flex h-[640px] flex-col p-4">
-        <Story />
-      </div>
+      <ConfirmProvider>
+        <div className="flex h-[640px] flex-col p-4">
+          <Story />
+        </div>
+      </ConfirmProvider>
     ),
   ],
   args: { onSelect: fn() },
@@ -36,6 +40,34 @@ export const Populated: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByText(taskFeature.title));
+    await expect(args.onSelect).toHaveBeenCalledOnce();
+  },
+};
+
+/**
+ * Keyboard navigation (Phase 41 Theme D): no ring until the first arrow press,
+ * then arrows walk the grid and Enter opens the focused card's detail.
+ */
+export const KeyboardNavigation: Story = {
+  args: {
+    tasks,
+    columns: COLUMNS,
+    projectsById,
+    showAbandoned: false,
+    onSelect: fn(),
+  },
+  play: async ({ args, canvasElement }) => {
+    // Nothing is focused until the user presses an arrow.
+    expect(canvasElement.querySelectorAll('[data-focused]')).toHaveLength(0);
+
+    // ArrowDown seeds the focus ring onto exactly one card.
+    await userEvent.keyboard('{ArrowDown}');
+    await waitFor(() =>
+      expect(canvasElement.querySelectorAll('[data-focused]')).toHaveLength(1),
+    );
+
+    // Enter opens the focused card's detail modal.
+    await userEvent.keyboard('{Enter}');
     await expect(args.onSelect).toHaveBeenCalledOnce();
   },
 };
