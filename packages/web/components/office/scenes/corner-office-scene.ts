@@ -58,6 +58,14 @@ export class CornerOfficeScene extends Phaser.Scene {
     super('corner-office');
   }
 
+  preload() {
+    const cfg = { frameWidth: 16, frameHeight: 32 };
+    this.load.spritesheet('office-char-v0', '/office/char-v0.png', cfg);
+    for (let i = 1; i <= 5; i++) {
+      this.load.spritesheet(`office-char-v${i}`, `/office/char-v${i}.png`, cfg);
+    }
+  }
+
   create() {
     this.palette = buildOfficePalette();
     ensureOfficeTextures(this);

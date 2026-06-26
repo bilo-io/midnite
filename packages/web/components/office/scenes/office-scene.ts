@@ -74,10 +74,10 @@ const ZOOM = 1.5;
 const PROXIMITY = TILE * 1.6;
 /** How close (px) the player must be for an agent's nameplate to appear. */
 const NAMEPLATE_RANGE = TILE * 4;
-/** Native character sprite (16×20) scaled up for the 32px grid. */
-const CHAR_SCALE = 1.3;
+/** Character sprite scale. Native size is 16×32 (pixel-agents sheet); 1.0 = one tile tall. */
+const CHAR_SCALE = 1.0;
 /** Lift a seated sprite up a touch so it sits behind its desk / on its couch. */
-const SEAT_LIFT = 6;
+const SEAT_LIFT = 4;
 
 /** Status → speech-bubble glyph shown above an agent. */
 const STATUS_BUBBLE: Record<OfficeStatus, string> = {
@@ -205,6 +205,14 @@ class OfficeScene extends Phaser.Scene {
 
   constructor() {
     super('office');
+  }
+
+  preload() {
+    const cfg = { frameWidth: 16, frameHeight: 32 };
+    this.load.spritesheet('office-char-v0', '/office/char-v0.png', cfg);
+    for (let i = 1; i <= 5; i++) {
+      this.load.spritesheet(`office-char-v${i}`, `/office/char-v${i}.png`, cfg);
+    }
   }
 
   create() {
@@ -500,7 +508,7 @@ class OfficeScene extends Phaser.Scene {
       .setScale(CHAR_SCALE)
       .setTint(agentTint(agent.id))
       .setDepth(4);
-    const shadow = this.add.ellipse(tx, ty + 13, 16, 6, 0x000000, 0.22).setDepth(3);
+    const shadow = this.add.ellipse(tx, ty + 16, 16, 6, 0x000000, 0.22).setDepth(3);
     const bubble = this.add
       .text(tx, ty, '', {
         fontFamily: 'monospace',
@@ -1036,7 +1044,7 @@ class OfficeScene extends Phaser.Scene {
     return pv < 0 ? { kind: 'human', v: 0 } : { kind: 'robot', v: pv };
   }
 
-  private playerCharKey(dir: 'down' | 'up' | 'side', frame: 0 | 1): string {
+  private playerCharKey(dir: 'down' | 'up' | 'side', frame: 0 | 1 | 2): string {
     const { kind, v } = this.playerKindAndVariant();
     return charKey(kind, dir, frame, v);
   }

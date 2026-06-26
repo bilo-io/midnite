@@ -60,14 +60,14 @@ export const plantTexture = (variant: PlantVariant): string =>
 export type Dir = 'down' | 'up' | 'side';
 export type CharKind = 'human' | 'robot';
 
-/** Native (unscaled) character sprite size, in px. */
+/** Native (unscaled) character sprite size, in px. Matches the pixel-agents sheet frame. */
 export const CHAR_W = 16;
-export const CHAR_H = 20;
+export const CHAR_H = 32;
 
 // Keys carry a variant segment (`v0`, `v1`, …). The human player is always `v0`;
 // agent robots pick a variant by id (see `robotVariant`) so a deskful of agents
 // are visually distinct, not just tinted.
-export const charKey = (kind: CharKind, dir: Dir, frame: 0 | 1, variant = 0) =>
+export const charKey = (kind: CharKind, dir: Dir, frame: 0 | 1 | 2, variant = 0) =>
   `office-${kind}-v${variant}-${dir}-${frame}`;
 export const walkAnim = (kind: CharKind, dir: Dir, variant = 0) => `office-walk-${kind}-v${variant}-${dir}`;
 
@@ -90,116 +90,25 @@ export function providerAccent(provider: LlmProvider | undefined): number | null
   return provider ? (PROVIDER_ACCENT[provider] ?? null) : null;
 }
 
-// Human pixel palette. Drawn mostly light (cloth = white) so a per-sprite tint
-// colours the clothing; dark parts (outline, hair, boots) survive the multiply.
-const C: Record<string, number> = {
-  ' ': -1,
-  O: 0x1f2430, // outline / eyes
-  H: 0x3a2a1a, // hair
-  S: 0xe7c19b, // skin
-  C: 0xf5f5f5, // cloth (tintable)
-  P: 0x3f4756, // pants
-  B: 0x222733, // boots
-};
+// ── Character sprite sheets (pixel-agents, CC0 / MIT) ────────────────────────
+//
+// Six 112×96 px sheets live in `public/office/char-v{0..5}.png`.
+// Each sheet: 7 frames × 16 px wide = 112 px, 3 rows × 32 px tall = 96 px.
+//   row 0 = DOWN  · row 1 = UP  · row 2 = RIGHT (LEFT = flipX)
+//   cols 0-2 = walk cycle  ·  3-4 = typing  ·  5-6 = reading / raised
+//
+// char-v0 → human player  ·  char-v1..v5 → robot agent variants 0-4.
 
-const HUMAN_TORSO: Record<Dir, string[]> = {
-  down: [
-    '      HHHH      ',
-    '     HHHHHH     ',
-    '    HHSSSSHH    ',
-    '    HSSSSSSH    ',
-    '    HSSSSSSH    ',
-    '    SSOSSOSS    ',
-    '    SSSSSSSS    ',
-    '     SSSSSS     ',
-    '      SSSS      ',
-    '     CCCCCC     ',
-    '    CCCCCCCC    ',
-    '   CCCCCCCCCC   ',
-    '   CC CCCC CC   ',
-    '    CCCCCCCC    ',
-    '    CCCCCCCC    ',
-    '    PPPPPPPP    ',
-  ],
-  up: [
-    '      HHHH      ',
-    '     HHHHHH     ',
-    '    HHHHHHHH    ',
-    '    HHHHHHHH    ',
-    '    HHHHHHHH    ',
-    '    HHHHHHHH    ',
-    '    HHHHHHHH    ',
-    '     SSSSSS     ',
-    '      SSSS      ',
-    '     CCCCCC     ',
-    '    CCCCCCCC    ',
-    '   CCCCCCCCCC   ',
-    '   CC CCCC CC   ',
-    '    CCCCCCCC    ',
-    '    CCCCCCCC    ',
-    '    PPPPPPPP    ',
-  ],
-  side: [
-    '      HHHH      ',
-    '     HHHHHH     ',
-    '    HHSSSSSH    ',
-    '    HSSSSSSS    ',
-    '    HSSSSSSS    ',
-    '    SSSSSOSS    ',
-    '    SSSSSSSS    ',
-    '     SSSSSS     ',
-    '      SSSS      ',
-    '     CCCCCC     ',
-    '    CCCCCCCC    ',
-    '   CCCCCCCCCC   ',
-    '   CCCCCCCC C   ',
-    '    CCCCCCCC    ',
-    '    CCCCCCCC    ',
-    '    PPPPPPPP    ',
-  ],
-};
+/** Sheet frame dimensions. */
+const SHEET_FRAME_W = 16;
+const SHEET_FRAME_H = 32;
+/** Direction → row index within the sheet. */
+const DIR_ROW: Record<Dir, number> = { down: 0, up: 1, side: 2 };
+/** Pose → column within row 0 of the sheet (typing=3, raised/celebrate use reading frames). */
+const POSE_COL: Record<RobotPose, number> = { typing: 3, raised: 5, celebrate: 6 };
 
-const HUMAN_LEGS: Record<0 | 1, string[]> = {
-  0: ['    PPP  PPP    ', '    PPP  PPP    ', '    BBB  BBB    ', '    BBB  BBB    '],
-  1: ['     PPPPPP     ', '     PPPPPP     ', '     BBBBBB     ', '      BBBB      '],
-};
-
-// Robot palette. Chassis is light metal (tintable for per-agent variety); the
-// visor/eye/light are bright accents and the joints stay dark.
-const R = {
-  metal: 0xe2e6ec,
-  dark: 0x2b313c,
-  panel: 0x9aa3b2,
-  visor: 0x10141c,
-  eye: 0x67e8f9,
-  light: 0x34d399,
-  ant: 0xf87171,
-} as const;
-
-/**
- * Per-agent robot variety. Each agent's robot picks one spec by a hash of its id,
- * so a roomful of agents differ in **silhouette** (antenna shape, side fins) and
- * **accent/eye/visor colours** — on top of the per-agent chassis {@link agentTint}.
- * Chassis metal stays light so the tint still reads. This array is the **seam an
- * external character pack swaps in at**: one spec → one sprite sheet, keys unchanged.
- */
-export type RobotAntenna = 'rod' | 'twin' | 'bulb' | 'dish' | 'none';
-export interface RobotVariantSpec {
-  antenna: RobotAntenna;
-  eye: number;
-  accent: number;
-  visor: number;
-  fins: boolean;
-}
-
-export const ROBOT_VARIANTS: readonly RobotVariantSpec[] = [
-  { antenna: 'rod', eye: 0x67e8f9, accent: 0x34d399, visor: 0x10141c, fins: false },
-  { antenna: 'twin', eye: 0xfbbf24, accent: 0xf472b6, visor: 0x10141c, fins: true },
-  { antenna: 'bulb', eye: 0xe879f9, accent: 0x38bdf8, visor: 0x0b1220, fins: false },
-  { antenna: 'dish', eye: 0x4ade80, accent: 0xfb923c, visor: 0x10141c, fins: true },
-  { antenna: 'none', eye: 0xf8fafc, accent: 0xa78bfa, visor: 0x0b1220, fins: false },
-  { antenna: 'twin', eye: 0xf87171, accent: 0x2dd4bf, visor: 0x10141c, fins: true },
-];
+/** Five distinct robot character sheets: char-v1.png through char-v5.png. */
+export const ROBOT_VARIANTS: readonly unknown[] = Array.from({ length: 5 });
 
 /** Deterministic robot design index for an agent id. Uses a different multiplier
  *  to {@link agentTint} so shape and chassis colour aren't perfectly correlated. */
@@ -209,153 +118,52 @@ export function robotVariant(id: string): number {
   return hash % ROBOT_VARIANTS.length;
 }
 
-function drawGrid(g: Phaser.GameObjects.Graphics, rows: string[]) {
-  rows.forEach((row, y) => {
-    for (let x = 0; x < row.length; x++) {
-      const color = C[row[x]!];
-      if (color === undefined || color < 0) continue;
-      g.fillStyle(color, 1).fillRect(x, y, 1, 1);
-    }
-  });
+/**
+ * Sprite sheet key for a given character kind + variant.
+ * human → `office-char-v0` (char-v0.png)
+ * robot vN → `office-char-v{N+1}` (char-v1..v5.png, wrapping via modulo)
+ */
+export function charSheetKey(kind: CharKind, variant: number): string {
+  if (kind === 'human') return 'office-char-v0';
+  return `office-char-v${(variant % 5) + 1}`;
 }
 
 function rect(g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h: number, color: number) {
   g.fillStyle(color, 1).fillRect(x, y, w, h);
 }
 
-/** A boxy robot, 16×20, facing `dir`, walk `frame`, styled by `spec`. */
-function drawRobot(g: Phaser.GameObjects.Graphics, dir: Dir, frame: 0 | 1, spec: RobotVariantSpec) {
-  const { antenna, eye, accent, visor, fins } = spec;
-  // Antenna (silhouette varies by variant)
-  if (antenna === 'rod') {
-    rect(g, 8, 0, 1, 3, R.dark);
-    rect(g, 7, 0, 2, 2, accent);
-  } else if (antenna === 'twin') {
-    rect(g, 6, 0, 1, 3, R.dark);
-    rect(g, 10, 0, 1, 3, R.dark);
-    rect(g, 6, 0, 1, 1, accent);
-    rect(g, 10, 0, 1, 1, accent);
-  } else if (antenna === 'bulb') {
-    rect(g, 8, 1, 1, 2, R.dark);
-    rect(g, 7, 0, 3, 2, accent);
-  } else if (antenna === 'dish') {
-    rect(g, 8, 1, 1, 2, R.dark);
-    rect(g, 6, 0, 5, 1, R.panel);
-    rect(g, 7, 0, 3, 1, accent);
-  } else {
-    // none → a flush sensor bar
-    rect(g, 5, 2, 6, 1, R.panel);
-    rect(g, 7, 2, 2, 1, accent);
-  }
-  // Head (dark outline + metal fill)
-  rect(g, 4, 3, 8, 7, R.dark);
-  rect(g, 5, 4, 6, 5, R.metal);
-  // Side fins (variant) or plain bolts
-  if (fins) {
-    rect(g, 3, 5, 1, 3, R.panel);
-    rect(g, 12, 5, 1, 3, R.panel);
-  }
-  rect(g, 4, 6, 1, 2, R.dark);
-  rect(g, 11, 6, 1, 2, R.dark);
-  // Visor
-  rect(g, 5, 5, 6, 3, visor);
-  // Eyes by facing
-  if (dir === 'down') {
-    rect(g, 6, 6, 1, 1, eye);
-    rect(g, 9, 6, 1, 1, eye);
-  } else if (dir === 'side') {
-    rect(g, 9, 6, 1, 1, eye);
-  }
-  // Neck
-  rect(g, 7, 10, 2, 1, R.dark);
-  // Torso
-  rect(g, 3, 11, 10, 6, R.dark);
-  rect(g, 4, 12, 8, 4, R.metal);
-  // Chest panel + status light (accent)
-  rect(g, 6, 12, 4, 3, R.panel);
-  rect(g, 7, 13, 1, 1, accent);
-  // Arms
-  rect(g, 2, 12, 2, 4, R.metal);
-  rect(g, 12, 12, 2, 4, R.metal);
-  // Legs (frame 0 apart, frame 1 together) + feet
-  if (frame === 0) {
-    rect(g, 5, 17, 2, 3, R.dark);
-    rect(g, 9, 17, 2, 3, R.dark);
-  } else {
-    rect(g, 6, 17, 2, 3, R.dark);
-    rect(g, 8, 17, 2, 3, R.dark);
-  }
+/** Extract one frame from a loaded sprite sheet into a named canvas texture. */
+function extractCharFrame(
+  scene: Phaser.Scene,
+  sheetKey: string,
+  col: number,
+  row: number,
+  destKey: string,
+): void {
+  if (scene.textures.exists(destKey)) return;
+  const src = scene.textures.get(sheetKey).getSourceImage() as HTMLImageElement;
+  const ct = scene.textures.createCanvas(destKey, SHEET_FRAME_W, SHEET_FRAME_H) as Phaser.Textures.CanvasTexture;
+  ct.getContext().drawImage(src, col * SHEET_FRAME_W, row * SHEET_FRAME_H, SHEET_FRAME_W, SHEET_FRAME_H, 0, 0, SHEET_FRAME_W, SHEET_FRAME_H);
+  ct.refresh();
 }
 
-/**
- * Draws a robot at a seated body pose (Phase 8 C1). Shares head/torso/legs
- * with `drawRobot`; only the arm placement differs per pose.
- * - `typing`   — arms angled down toward a keyboard
- * - `raised`   — arms raised above the shoulders (waiting / blocked)
- * - `celebrate`— arms flung high in a Y-shape (task completed)
- */
-function drawRobotPose(g: Phaser.GameObjects.Graphics, spec: RobotVariantSpec, pose: RobotPose) {
-  const { antenna, eye, accent, visor, fins } = spec;
-  // Antenna
-  if (antenna === 'rod') {
-    rect(g, 8, 0, 1, 3, R.dark);
-    rect(g, 7, 0, 2, 2, accent);
-  } else if (antenna === 'twin') {
-    rect(g, 6, 0, 1, 3, R.dark);
-    rect(g, 10, 0, 1, 3, R.dark);
-    rect(g, 6, 0, 1, 1, accent);
-    rect(g, 10, 0, 1, 1, accent);
-  } else if (antenna === 'bulb') {
-    rect(g, 8, 1, 1, 2, R.dark);
-    rect(g, 7, 0, 3, 2, accent);
-  } else if (antenna === 'dish') {
-    rect(g, 8, 1, 1, 2, R.dark);
-    rect(g, 6, 0, 5, 1, R.panel);
-    rect(g, 7, 0, 3, 1, accent);
-  } else {
-    rect(g, 5, 2, 6, 1, R.panel);
-    rect(g, 7, 2, 2, 1, accent);
-  }
-  // Head
-  rect(g, 4, 3, 8, 7, R.dark);
-  rect(g, 5, 4, 6, 5, R.metal);
-  if (fins) {
-    rect(g, 3, 5, 1, 3, R.panel);
-    rect(g, 12, 5, 1, 3, R.panel);
-  }
-  rect(g, 4, 6, 1, 2, R.dark);
-  rect(g, 11, 6, 1, 2, R.dark);
-  rect(g, 5, 5, 6, 3, visor);
-  rect(g, 6, 6, 1, 1, eye);
-  rect(g, 9, 6, 1, 1, eye);
-  // Neck
-  rect(g, 7, 10, 2, 1, R.dark);
-  // Torso
-  rect(g, 3, 11, 10, 6, R.dark);
-  rect(g, 4, 12, 8, 4, R.metal);
-  rect(g, 6, 12, 4, 3, R.panel);
-  rect(g, 7, 13, 1, 1, accent);
-  // Pose-specific arms
-  if (pose === 'typing') {
-    // Arms angled forward/down: upper arm + forearm reaching toward keyboard
-    rect(g, 2, 12, 2, 3, R.metal);
-    rect(g, 1, 14, 3, 2, R.metal);
-    rect(g, 12, 12, 2, 3, R.metal);
-    rect(g, 12, 14, 3, 2, R.metal);
-  } else if (pose === 'raised') {
-    // Arms raised upward above the shoulders
-    rect(g, 1, 8, 2, 5, R.metal);
-    rect(g, 13, 8, 2, 5, R.metal);
-  } else {
-    // celebrate: arms flung high in a wide Y
-    rect(g, 0, 8, 3, 5, R.metal);
-    rect(g, 13, 8, 3, 5, R.metal);
-    rect(g, 0, 8, 2, 2, accent);
-    rect(g, 14, 8, 2, 2, accent);
-  }
-  // Legs (standing still — frame 0)
-  rect(g, 5, 17, 2, 3, R.dark);
-  rect(g, 9, 17, 2, 3, R.dark);
+/** Extract all walk + pose frames from the loaded sprite sheets into named textures. */
+function ensureCharTextures(scene: Phaser.Scene): void {
+  (['down', 'up', 'side'] as Dir[]).forEach((dir) => {
+    ([0, 1, 2] as const).forEach((frame) => {
+      const row = DIR_ROW[dir];
+      extractCharFrame(scene, charSheetKey('human', 0), frame, row, charKey('human', dir, frame, 0));
+      ROBOT_VARIANTS.forEach((_, v) => {
+        extractCharFrame(scene, charSheetKey('robot', v), frame, row, charKey('robot', dir, frame, v));
+      });
+    });
+  });
+  ROBOT_VARIANTS.forEach((_, v) => {
+    const sheet = charSheetKey('robot', v);
+    (['typing', 'raised', 'celebrate'] as RobotPose[]).forEach((pose) => {
+      extractCharFrame(scene, sheet, POSE_COL[pose], DIR_ROW.down, poseTexKey(v, pose));
+    });
+  });
 }
 
 /** Generate all office textures once. Safe to call repeatedly. */
@@ -665,23 +473,8 @@ export function ensureOfficeTextures(scene: Phaser.Scene): void {
     rect(g, 28, 30, 3, 3, 0xfef08a); // ball
   });
 
-  // --- Characters: human (player, v0) + robot (agents, one sheet per variant) ---
-  (['down', 'up', 'side'] as Dir[]).forEach((dir) => {
-    ([0, 1] as const).forEach((frame) => {
-      make(charKey('human', dir, frame), CHAR_W, CHAR_H, (g) =>
-        drawGrid(g, [...HUMAN_TORSO[dir], ...HUMAN_LEGS[frame]]),
-      );
-      ROBOT_VARIANTS.forEach((spec, v) =>
-        make(charKey('robot', dir, frame, v), CHAR_W, CHAR_H, (g) => drawRobot(g, dir, frame, spec)),
-      );
-    });
-  });
-  // Pose textures (one per variant per pose — no direction, always facing down).
-  (['typing', 'raised', 'celebrate'] as RobotPose[]).forEach((pose) =>
-    ROBOT_VARIANTS.forEach((spec, v) =>
-      make(poseTexKey(v, pose), CHAR_W, CHAR_H, (g) => drawRobotPose(g, spec, pose)),
-    ),
-  );
+  // --- Characters: extracted from pixel-agents sprite sheets (preloaded in scene.preload) ---
+  ensureCharTextures(scene);
 }
 
 // ── Tileset (Phase 8 A1) ─────────────────────────────────────────────────────
@@ -770,8 +563,13 @@ export function ensureOfficeAnims(scene: Phaser.Scene): void {
     if (scene.anims.exists(key)) return;
     scene.anims.create({
       key,
-      frames: [{ key: charKey(kind, dir, 0, variant) }, { key: charKey(kind, dir, 1, variant) }],
-      frameRate: 6,
+      frames: [
+        { key: charKey(kind, dir, 0, variant) },
+        { key: charKey(kind, dir, 1, variant) },
+        { key: charKey(kind, dir, 2, variant) },
+        { key: charKey(kind, dir, 1, variant) },
+      ],
+      frameRate: 8,
       repeat: -1,
     });
   };
