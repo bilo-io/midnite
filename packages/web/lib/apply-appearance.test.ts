@@ -3,13 +3,14 @@ import { ACCENT_OPTIONS } from './app-settings';
 import {
   appearanceInitScript,
   applyAccent,
+  applyDensity,
   applyEffects,
   applyMotion,
 } from './apply-appearance';
 
 afterEach(() => {
   const html = document.documentElement;
-  for (const attr of ['data-accent', 'data-motion', 'data-no-page-reveal', 'data-no-typewriter', 'data-no-glass']) {
+  for (const attr of ['data-accent', 'data-motion', 'data-density', 'data-no-page-reveal', 'data-no-typewriter', 'data-no-glass']) {
     html.removeAttribute(attr);
   }
   html.style.removeProperty('--accent-h');
@@ -61,6 +62,19 @@ describe('applyMotion', () => {
   });
 });
 
+describe('applyDensity', () => {
+  it('sets data-density="compact" for compact mode', () => {
+    applyDensity('compact');
+    expect(document.documentElement.getAttribute('data-density')).toBe('compact');
+  });
+
+  it('removes data-density for comfortable (default)', () => {
+    applyDensity('compact');
+    applyDensity('comfortable');
+    expect(document.documentElement.hasAttribute('data-density')).toBe(false);
+  });
+});
+
 describe('applyEffects', () => {
   it('sets data-no-* attributes only for disabled effects', () => {
     applyEffects({ pageReveal: false, typewriter: true, glass: false });
@@ -90,6 +104,7 @@ describe('appearanceInitScript', () => {
     expect(appearanceInitScript).toContain('midnite.settings');
     expect(appearanceInitScript).toContain('data-accent');
     expect(appearanceInitScript).toContain('data-motion');
+    expect(appearanceInitScript).toContain('data-density');
     expect(appearanceInitScript).toContain('data-no-page-reveal');
   });
 

@@ -202,6 +202,19 @@ export const EFFECT_OPTIONS: { key: keyof VisualEffects; label: string; hint: st
   { key: 'glass', label: 'Frosted glass', hint: 'Backdrop blur on overlays and panels' },
 ];
 
+/**
+ * UI density: drives a `data-density` attribute on `<html>` that shrinks the
+ * root font-size (from 16px → 14px), causing all rem-based Tailwind utilities
+ * to scale proportionally. `comfortable` (default) leaves the root unchanged.
+ */
+export type Density = 'comfortable' | 'compact';
+export const DENSITY_DEFAULT: Density = 'comfortable';
+
+export const DENSITY_OPTIONS: { value: Density; label: string; hint: string }[] = [
+  { value: 'comfortable', label: 'Comfortable', hint: 'Default spacing and type scale' },
+  { value: 'compact', label: 'Compact', hint: 'Tighter spacing — fits more on screen' },
+];
+
 /** Opacity of the animated gradient at each intensity level. */
 export type BgIntensity = 'subtle' | 'balanced' | 'bold';
 export const BG_INTENSITY_DEFAULT: BgIntensity = 'balanced';
@@ -236,6 +249,8 @@ export type AppSettings = {
   accent: AccentId;
   /** How much motion the app shows (honour OS / force off / force on). */
   motion: Motion;
+  /** UI density — `comfortable` (default) or `compact` (tighter spacing + type scale). */
+  density: Density;
   /** Per-effect visual toggles (page reveal, typewriter, frosted glass). */
   effects: VisualEffects;
   /**
@@ -259,6 +274,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   bgIntensity: BG_INTENSITY_DEFAULT,
   accent: ACCENT_DEFAULT,
   motion: MOTION_DEFAULT,
+  density: DENSITY_DEFAULT,
   effects: DEFAULT_EFFECTS,
   notifyTaskUpdates: false,
   features: DEFAULT_FEATURE_FLAGS,
