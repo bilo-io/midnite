@@ -5,6 +5,7 @@ import {
   Delete,
   Get,
   HttpCode,
+  Inject,
   Param,
   Patch,
   Post,
@@ -32,7 +33,9 @@ function toScope(user: CurrentUserPayload | null | undefined) {
 
 @Controller('ideas')
 export class IdeaController {
-  constructor(private readonly service: IdeaService) {}
+  // Explicit @Inject: the tsx/esbuild runtime emits no `design:paramtypes`, so
+  // Nest can't infer the token from the type (matches the rest of the gateway).
+  constructor(@Inject(IdeaService) private readonly service: IdeaService) {}
 
   @Get()
   list(

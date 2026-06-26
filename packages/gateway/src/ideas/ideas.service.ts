@@ -1,4 +1,11 @@
-import { Injectable, Logger, NotFoundException, ForbiddenException, Optional } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  ForbiddenException,
+  Optional,
+} from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import type {
   Idea,
@@ -27,11 +34,14 @@ import {
 export class IdeaService {
   private readonly logger = new Logger(IdeaService.name);
 
+  // Explicit @Inject on every param: this runtime (tsx/esbuild) does not emit
+  // `design:paramtypes`, so Nest can't infer injection tokens from the types —
+  // the rest of the gateway follows the same convention.
   constructor(
-    private readonly repo: IdeaRepository,
-    private readonly bus: IdeaEventBus,
-    @Optional() private readonly searchIndex?: SearchIndexService,
-    @Optional() private readonly llm?: LlmService,
+    @Inject(IdeaRepository) private readonly repo: IdeaRepository,
+    @Inject(IdeaEventBus) private readonly bus: IdeaEventBus,
+    @Optional() @Inject(SearchIndexService) private readonly searchIndex?: SearchIndexService,
+    @Optional() @Inject(LlmService) private readonly llm?: LlmService,
   ) {}
 
   createIdea(req: CreateIdeaRequest, scope: TeamScope): Idea {
