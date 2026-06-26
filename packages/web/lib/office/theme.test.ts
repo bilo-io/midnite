@@ -80,9 +80,11 @@ describe('wallTint (Phase 9 A1 per-room wall tints)', () => {
     );
   });
 
-  it('flips with the theme base (the accent stays fixed)', () => {
-    const dark = wallTint('work', palette(0x0b0b12));
-    const light = wallTint('work', palette(0xf4f4f5));
+  it('flips with the theme base wall (the accent stays fixed)', () => {
+    // In production `palette.wall` is theme-driven; vary it to prove the tint
+    // tracks the base while the room accent stays the blend target.
+    const dark = wallTint('work', { ...palette(0x0b0b12), wall: 0x222233 });
+    const light = wallTint('work', { ...palette(0xf4f4f5), wall: 0xcccccc });
     expect(dark).not.toBe(light);
   });
 });
