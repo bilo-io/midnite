@@ -118,18 +118,122 @@
     mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
   }
 
-  /* Slowly drifting aurora gradient. The angle is animated via the
-     @property below so the conic sweep rotates; honours reduced-motion. */
+  /* Fine dot grid — radial dots on a transparent field. */
+  .bg-dots {
+    background-image: radial-gradient(circle, hsl(var(--foreground) / 0.25) 1px, transparent 1px);
+    background-size: 20px 20px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  /* 45° repeating diagonal stripes. */
+  .bg-diagonal-lines {
+    background-image: repeating-linear-gradient(
+      45deg,
+      hsl(var(--border) / 0.7) 0,
+      hsl(var(--border) / 0.7) 1px,
+      transparent 0,
+      transparent 12px
+    );
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  /* Contour-map concentric rings at two focal points. */
+  .bg-topographic {
+    background-image:
+      radial-gradient(ellipse 100% 50% at 30% 40%, transparent 58px, hsl(var(--border) / 0.5) 59px, transparent 60px),
+      radial-gradient(ellipse 80% 40% at 30% 40%, transparent 38px, hsl(var(--border) / 0.4) 39px, transparent 40px),
+      radial-gradient(ellipse 60% 30% at 30% 40%, transparent 18px, hsl(var(--border) / 0.3) 19px, transparent 20px),
+      radial-gradient(ellipse 120% 60% at 70% 65%, transparent 78px, hsl(var(--border) / 0.5) 79px, transparent 80px),
+      radial-gradient(ellipse 90% 45% at 70% 65%, transparent 52px, hsl(var(--border) / 0.4) 53px, transparent 54px),
+      radial-gradient(ellipse 60% 30% at 70% 65%, transparent 26px, hsl(var(--border) / 0.3) 27px, transparent 28px);
+    background-attachment: fixed;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  /* Soft multi-color radial blobs — static aurora wash. */
+  .bg-aurora {
+    background-image:
+      radial-gradient(ellipse 80% 40% at 20% 30%, hsl(var(--node-trigger) / 0.14) 0%, transparent 60%),
+      radial-gradient(ellipse 70% 35% at 80% 70%, hsl(var(--node-action) / 0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 30% at 55% 55%, hsl(var(--node-data) / 0.10) 0%, transparent 60%);
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  }
+
+  /* Plus-sign lattice: two short perpendicular stripes centred per tile. */
+  .bg-plus-cross {
+    background-image:
+      linear-gradient(to right, transparent 8px, hsl(var(--border) / 0.6) 8px, hsl(var(--border) / 0.6) 10px, transparent 10px),
+      linear-gradient(to bottom, transparent 8px, hsl(var(--border) / 0.6) 8px, hsl(var(--border) / 0.6) 10px, transparent 10px);
+    background-size: 24px 24px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  /* Repeating wave arcs using overlapping circle outlines. */
+  .bg-waves {
+    background-image:
+      radial-gradient(ellipse 60% 80% at 0% 50%, transparent 43%, hsl(var(--border) / 0.5) 44%, transparent 45%),
+      radial-gradient(ellipse 60% 80% at 100% 50%, transparent 43%, hsl(var(--border) / 0.5) 44%, transparent 45%);
+    background-size: 64px 48px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  /* Fine crosshatch that reads as subtle grain. */
+  .bg-grain {
+    background-image:
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        hsl(var(--foreground) / 0.04) 3px,
+        hsl(var(--foreground) / 0.04) 4px
+      ),
+      repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 4px,
+        hsl(var(--foreground) / 0.04) 4px,
+        hsl(var(--foreground) / 0.04) 5px
+      );
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  /* Blueprint-style dual-scale grid in blue tones. */
+  .bg-blueprint {
+    background-image:
+      linear-gradient(hsl(217 91% 60% / 0.25) 1px, transparent 1px),
+      linear-gradient(to right, hsl(217 91% 60% / 0.25) 1px, transparent 1px),
+      linear-gradient(hsl(217 91% 60% / 0.10) 1px, transparent 1px),
+      linear-gradient(to right, hsl(217 91% 60% / 0.10) 1px, transparent 1px);
+    background-size: 80px 80px, 80px 80px, 16px 16px, 16px 16px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+
+  /* Mesh gradient — overlapping colour blobs at six anchor points. */
+  .bg-mesh-gradient {
+    background-image:
+      radial-gradient(at 20% 20%, hsl(var(--node-trigger) / 0.18) 0px, transparent 55%),
+      radial-gradient(at 80% 10%, hsl(var(--node-action) / 0.15) 0px, transparent 55%),
+      radial-gradient(at 5% 55%, hsl(var(--node-logic) / 0.12) 0px, transparent 55%),
+      radial-gradient(at 85% 55%, hsl(var(--node-trigger) / 0.10) 0px, transparent 55%),
+      radial-gradient(at 20% 90%, hsl(var(--node-data) / 0.14) 0px, transparent 55%),
+      radial-gradient(at 80% 85%, hsl(var(--node-action) / 0.12) 0px, transparent 55%);
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  }
+
+  /* Slowly drifting multi-colour conic gradient. The angle is animated via the
+     @property below; --bg-intensity controls the opacity of each colour stop so
+     the Intensity control in Appearance can scale it from subtle → bold.
+     Reduced-motion freezes it to its final state. */
   .bg-animated-gradient {
     background-image: conic-gradient(
       from var(--gradient-angle) at 50% 50%,
-      hsl(var(--foreground) / 0.06),
-      hsl(var(--foreground) / 0.01),
-      hsl(var(--foreground) / 0.06),
-      hsl(var(--foreground) / 0.01),
-      hsl(var(--foreground) / 0.06)
+      hsl(var(--node-trigger) / var(--bg-intensity, 0.2)),
+      hsl(var(--node-action) / var(--bg-intensity, 0.2)),
+      hsl(var(--node-logic) / var(--bg-intensity, 0.2)),
+      hsl(var(--node-data) / var(--bg-intensity, 0.2)),
+      hsl(var(--node-trigger) / var(--bg-intensity, 0.2))
     );
-    animation: gradient-border-spin 24s linear infinite;
+    animation: gradient-border-spin 20s linear infinite;
     mask-image: radial-gradient(ellipse at center, black 20%, transparent 80%);
   }
 
@@ -138,12 +242,25 @@
       animation: none;
     }
   }
+
+  /* data-bg-intensity on <html> maps to the --bg-intensity custom property
+     consumed by .bg-animated-gradient. Only shown in Appearance when gradient
+     is the active pattern. */
+  html[data-bg-intensity='subtle']   { --bg-intensity: 0.10; }
+  html[data-bg-intensity='balanced'] { --bg-intensity: 0.20; }
+  html[data-bg-intensity='bold']     { --bg-intensity: 0.40; }
 }
 
 @property --gradient-angle {
   syntax: '<angle>';
   initial-value: 0deg;
   inherits: false;
+}
+
+@property --bg-intensity {
+  syntax: '<number>';
+  initial-value: 0.2;
+  inherits: true;
 }
 
 @keyframes gradient-border-spin {

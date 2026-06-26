@@ -22,12 +22,16 @@ import { Wordmark } from '@/components/wordmark';
 import { useTheme, type ThemePreference } from '@/app/theme/theme-context';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
+  BACKGROUND_PATTERN_CLASS,
   BACKGROUND_PATTERN_DEFAULT,
   BACKGROUND_PATTERN_OPTIONS,
+  BG_INTENSITY_DEFAULT,
+  BG_INTENSITY_OPTIONS,
   DEFAULT_SETTINGS,
   SETTINGS_STORAGE_KEY,
   type AppSettings,
   type BackgroundPattern,
+  type BgIntensity,
   type NavMode,
 } from '@/lib/app-settings';
 import {
@@ -63,6 +67,10 @@ export function AppearanceSection() {
   const backgroundPattern = settings.backgroundPattern ?? BACKGROUND_PATTERN_DEFAULT;
   const setBackgroundPattern = (pattern: BackgroundPattern) =>
     setSettings((prev) => ({ ...prev, backgroundPattern: pattern }));
+
+  const bgIntensity = settings.bgIntensity ?? BG_INTENSITY_DEFAULT;
+  const setBgIntensity = (intensity: BgIntensity) =>
+    setSettings((prev) => ({ ...prev, bgIntensity: intensity }));
 
   return (
     <div className="space-y-4">
@@ -108,19 +116,67 @@ export function AppearanceSection() {
         icon={<LayoutGrid className="h-3.5 w-3.5" />}
         defaultOpen
       >
-        <div className="p-5">
-          <SettingRow
-            title="Backdrop"
-            description="The decorative pattern behind the home screen, screensaver, and dashboard header."
+        <div className="space-y-4 p-5">
+          <p className="text-xs text-muted-foreground">
+            The decorative pattern behind the home screen, screensaver, and dashboard header.
+          </p>
+          <div
+            role="radiogroup"
+            aria-label="Background pattern"
+            className={cn(
+              'grid grid-cols-3 gap-2 sm:grid-cols-4 transition-opacity',
+              hydrated ? 'opacity-100' : 'opacity-0',
+            )}
           >
-            <Segmented
-              ariaLabel="Background pattern"
-              value={backgroundPattern}
-              onChange={setBackgroundPattern}
-              options={BACKGROUND_PATTERN_OPTIONS}
-              hydrated={hydrated}
-            />
-          </SettingRow>
+            {BACKGROUND_PATTERN_OPTIONS.map((opt) => {
+              const active = hydrated && backgroundPattern === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => setBackgroundPattern(opt.value)}
+                  className={cn(
+                    'relative flex h-16 items-end justify-start overflow-hidden rounded-lg border p-2 text-left transition-colors',
+                    active
+                      ? 'border-primary ring-1 ring-primary'
+                      : 'border-border/60 hover:border-foreground/20',
+                  )}
+                >
+                  {/* Live pattern preview — no mask-image so it fills the swatch */}
+                  <div
+                    className={cn('pointer-events-none absolute inset-0', BACKGROUND_PATTERN_CLASS[opt.value])}
+                    style={{ maskImage: 'none', WebkitMaskImage: 'none' }}
+                  />
+                  <span
+                    className={cn(
+                      'relative z-10 rounded px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wider',
+                      active ? 'bg-primary text-primary-foreground' : 'bg-background/70 text-foreground/80',
+                    )}
+                  >
+                    {opt.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Intensity control — only visible when the animated gradient is selected */}
+          {backgroundPattern === 'gradient' && (
+            <SettingRow
+              title="Intensity"
+              description="How visible the animated gradient backdrop is."
+            >
+              <Segmented
+                ariaLabel="Gradient intensity"
+                value={bgIntensity}
+                onChange={setBgIntensity}
+                options={BG_INTENSITY_OPTIONS}
+                hydrated={hydrated}
+              />
+            </SettingRow>
+          )}
         </div>
       </Accordion>
 
