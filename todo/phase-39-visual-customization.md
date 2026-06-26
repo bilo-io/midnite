@@ -23,14 +23,14 @@
 
 The headline: more backgrounds, and make the animated one actually animate-visibly.
 
-### A1. Expand to ≥10 background options — **M**
-- [ ] Add ≥7 new `.bg-*` utilities in [`globals.css`](../packages/web/app/globals.css) alongside the existing three (target set: grid, honeycomb, **dots**, **diagonal lines**, **topographic/contour**, **grain/noise**, **mesh gradient**, **aurora**, **waves**, **blueprint**, **plus/cross**). Pure CSS (gradients/masks), theme-token-driven (`hsl(var(--foreground) / …)`), each with an edge `mask-image` fade like the current ones.
-- [ ] Extend `BackgroundPattern` + `BACKGROUND_PATTERN_OPTIONS` in [`app-settings.ts`](../packages/web/lib/app-settings.ts) and the class map in [`use-background-pattern.ts`](../packages/web/lib/use-background-pattern.ts). Keep `grid` the default (no change for existing users).
+### A1. Expand to ≥10 background options — **M** — ✅ DONE (PR #212, 2026-06-26)
+- [x] Added 9 new `.bg-*` utilities in `globals.css`: dots, diagonal-lines, plus-cross, topographic, waves, blueprint, grain, aurora, mesh-gradient. All pure CSS (gradients/masks), theme-token-driven, with `mask-image` edge fade. Total: 12 patterns.
+- [x] Extended `BackgroundPattern` type + `BACKGROUND_PATTERN_OPTIONS` in `app-settings.ts`; class map stays in `BACKGROUND_PATTERN_CLASS`. Replaced 3-item Segmented control with a 3-col (mobile) / 4-col (sm+) live-preview swatch grid that renders each pattern at full opacity.
 
-### A2. Make the animated gradient obvious + an intensity control — **S–M**
-- [ ] Raise the gradient's visibility (higher opacity stops / accent-tinted hues, not 1–6% foreground) so it reads as a deliberate, moving backdrop — while staying tasteful behind content.
-- [ ] A **background intensity** setting (`subtle` / `balanced` / `bold`) that scales opacity via a `--bg-intensity` CSS var, applied to all patterns (not just the gradient). Default `balanced`.
-- [ ] Reduced-motion still freezes the gradient to a static final state (extend the existing `prefers-reduced-motion` block + the new motion setting from Theme D).
+### A2. Make the animated gradient obvious + an intensity control — **S–M** — ✅ DONE (PR #212, 2026-06-26)
+- [x] Reworked `.bg-animated-gradient` to a multi-colour conic sweep using `--node-trigger / --node-action / --node-logic / --node-data` tokens at 15–40% opacity (was 1–6% foreground-only). Animation slowed to 20s.
+- [x] `--bg-intensity` CSS custom property (`@property`, initial 0.2, inherits); `html[data-bg-intensity]` sets it to 0.10 (subtle) / 0.20 (balanced) / 0.40 (bold). `useBackgroundPattern` applies `data-bg-intensity` to `<html>` when gradient is active.
+- [x] Segmented intensity control (Subtle / Balanced / Bold) appears inline in Appearance only when animated gradient is selected. Reduced-motion block already freezes animation.
 
 ---
 
@@ -97,8 +97,8 @@ The connective tissue: one coherent panel, instant feedback, zero flash.
 
 ## Verification
 
-- [ ] The Appearance panel offers **≥10 backgrounds**, each shown as a live preview; selecting one applies instantly and persists across reload.
-- [ ] The animated-gradient background is **clearly visible** at the default intensity (a deliberate moving backdrop), and the intensity control (`subtle`/`balanced`/`bold`) visibly scales it.
+- [x] The Appearance panel offers **≥10 backgrounds** (12 total), each shown as a live-preview swatch; selecting one applies instantly and persists across reload. (PR #212)
+- [x] The animated-gradient background is **clearly visible** at the default intensity (a deliberate moving backdrop), and the intensity control (`subtle`/`balanced`/`bold`) visibly scales it. (PR #212)
 - [ ] Picking a **curated accent** retints primary/ring/accent across the app in both light and dark, with legible contrast, and persists.
 - [ ] **Density** (`comfortable`/`compact`) visibly changes spacing/type without breaking the board, office HUD, or settings layouts.
 - [ ] The **motion** setting works: `reduced` freezes all animation even without the OS flag; `full` re-enables it; `system` matches the OS preference. OS `prefers-reduced-motion` is still honored at the `system` default.

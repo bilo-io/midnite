@@ -85,7 +85,19 @@ export const NAV_W_EXPANDED = '14rem';
  * The decorative backdrop drawn behind the home screen, screensaver and the
  * dashboard header. Each maps to a self-contained utility class in globals.css.
  */
-export type BackgroundPattern = 'grid' | 'honeycomb' | 'gradient';
+export type BackgroundPattern =
+  | 'grid'
+  | 'honeycomb'
+  | 'gradient'
+  | 'dots'
+  | 'diagonal-lines'
+  | 'topographic'
+  | 'aurora'
+  | 'plus-cross'
+  | 'waves'
+  | 'grain'
+  | 'blueprint'
+  | 'mesh-gradient';
 
 export const BACKGROUND_PATTERN_DEFAULT: BackgroundPattern = 'grid';
 
@@ -94,12 +106,40 @@ export const BACKGROUND_PATTERN_CLASS: Record<BackgroundPattern, string> = {
   grid: 'bg-grid',
   honeycomb: 'bg-honeycomb',
   gradient: 'bg-animated-gradient',
+  dots: 'bg-dots',
+  'diagonal-lines': 'bg-diagonal-lines',
+  topographic: 'bg-topographic',
+  aurora: 'bg-aurora',
+  'plus-cross': 'bg-plus-cross',
+  waves: 'bg-waves',
+  grain: 'bg-grain',
+  blueprint: 'bg-blueprint',
+  'mesh-gradient': 'bg-mesh-gradient',
 };
 
 export const BACKGROUND_PATTERN_OPTIONS: { value: BackgroundPattern; label: string }[] = [
   { value: 'grid', label: 'Grid' },
   { value: 'honeycomb', label: 'Honeycomb' },
-  { value: 'gradient', label: 'Animated gradient' },
+  { value: 'dots', label: 'Dots' },
+  { value: 'diagonal-lines', label: 'Diagonal' },
+  { value: 'plus-cross', label: 'Plus' },
+  { value: 'topographic', label: 'Topographic' },
+  { value: 'waves', label: 'Waves' },
+  { value: 'blueprint', label: 'Blueprint' },
+  { value: 'grain', label: 'Grain' },
+  { value: 'aurora', label: 'Aurora' },
+  { value: 'mesh-gradient', label: 'Mesh' },
+  { value: 'gradient', label: 'Gradient' },
+];
+
+/** Opacity of the animated gradient at each intensity level. */
+export type BgIntensity = 'subtle' | 'balanced' | 'bold';
+export const BG_INTENSITY_DEFAULT: BgIntensity = 'balanced';
+
+export const BG_INTENSITY_OPTIONS: { value: BgIntensity; label: string }[] = [
+  { value: 'subtle', label: 'Subtle' },
+  { value: 'balanced', label: 'Balanced' },
+  { value: 'bold', label: 'Bold' },
 ];
 
 export type AppSettings = {
@@ -120,6 +160,8 @@ export type AppSettings = {
   navMode: NavMode;
   /** Decorative backdrop pattern (home screen, screensaver, dashboard header). */
   backgroundPattern: BackgroundPattern;
+  /** Visibility level of the animated-gradient backdrop (only shown when gradient is active). */
+  bgIntensity: BgIntensity;
   /**
    * Desktop notifications when a task needs input (→ waiting) or finishes
    * (→ done). Opt-in: enabling it prompts for the browser's Notification
@@ -138,6 +180,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   passcodeOnlyWhenLocked: false,
   navMode: 'auto',
   backgroundPattern: BACKGROUND_PATTERN_DEFAULT,
+  bgIntensity: BG_INTENSITY_DEFAULT,
   notifyTaskUpdates: false,
   features: DEFAULT_FEATURE_FLAGS,
 };
