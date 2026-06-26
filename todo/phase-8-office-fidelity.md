@@ -4,7 +4,7 @@
 
 > Status legend: boxes start unchecked; themes are independent. **Only the rendering layer changes** — the desk-slot model, movement/collision, proximity detection, the Zustand ↔ HUD bridge, and the live-data hook ([`use-office-agents.ts`](../packages/web/components/office/use-office-agents.ts)) all stay as-is.
 
-> **Progress (2026-06-24):** procedural pixel-art + zones + interaction + presence landed — ✅ A2 (human + robot sprites, walk cycle), B1 (theme colours), B3 (fixed-aspect layout), C2 (per-tool shadow glow, PR #167), C3 (grid pathfinding), zones (hot desks / lounge / board room), D1 (Call → live terminal, Messages → transcript), D3 (board-room document viewer); ◐ A3 (rich decor; desk variety left), ✅ D2 (click-to-walk, nameplates, minimap — 2026-06-26); ✅ C1 (status bubbles + idle sleep/game + body poses, PR #208). **Open (need external assets / new data / out of scope):** A1 external Tiled/LimeZu pack, B2 camera/scrolling map (day-night ✅ #112), E (multiplayer).
+> **Progress (2026-06-24):** procedural pixel-art + zones + interaction + presence landed — ✅ A2 (human + robot sprites, walk cycle), B1 (theme colours), B3 (fixed-aspect layout), C2 (per-tool shadow glow, PR #167), C3 (grid pathfinding), zones (hot desks / lounge / board room), D1 (Call → live terminal, Messages → transcript), D3 (board-room document viewer); ✅ A3 (rich decor + desk variety/setups + desk count = pool capacity — 2026-06-26), ✅ D2 (click-to-walk, nameplates, minimap — 2026-06-26); ✅ C1 (status bubbles + idle sleep/game + body poses, PR #208). **Open (need external assets / new data / out of scope):** A1 external Tiled/LimeZu pack, B2 camera/scrolling map (day-night ✅ #112), E (multiplayer).
 
 ---
 
@@ -30,9 +30,9 @@ The headline: swap shapes for real sprites + tiles.
 - [x] The player & seated-agent `Arc` "blobs" are now character **sprites** ([`textures.ts`](../packages/web/lib/office/textures.ts) `charKey`/`walkAnim`): down/up/side facings with a 2-frame walk cycle. The player animates + flips while walking; agents render seated behind their desks. (Future: smoother multi-frame cycles + a dedicated seated pose come with the A1 asset pack.)
 - [x] Per-agent variety: deterministic identity tint by agent id (`agentTint`) so desks are distinguishable at a glance; the player has its own tint.
 
-### A3. Furniture & decor — **S** — ◐ partial
+### A3. Furniture & decor — **S** — ✅ DONE (2026-06-26)
 - [x] Desks, monitors, chairs, couches, armchairs, TV, gaming console, conference table, whiteboard, rugs, plants, and a **coffee station** in the lounge corner (all procedural).
-- [ ] Desk variety + more clutter — best with the A1 asset pack.
+- [x] **Desk variety + more clutter** — ✅ (2026-06-26) hot desks are no longer six identical workstations. Each desk gets a deterministic **setup** (single / dual-monitor / laptop — distinct silhouettes), a per-desk **monitor screen colour** (`MONITOR_SCREENS`), and **2–3 clutter** items from an expanded pool (lamp, books, headphones, sticky note + the originals), all by seat index ([`textures.ts`](../packages/web/lib/office/textures.ts) `deskSetup`/`monitorKey`/`DESK_CLUTTER`). Desks are also **a bit larger** (scaled). Additionally the **desk count now equals the configured agent-pool capacity** (`terminal.maxSessions`, read from the `/pool` snapshot): a pure, unit-tested `generateDeskLayout(capacity)` ([`lib/office/desks.ts`](../packages/web/lib/office/desks.ts)) packs N desks into the WORK room as an even grid and scales them to fit (larger when few, smaller when many); the scene rebuilds desks + walkability grid when the live capacity arrives. (Procedural — the A1 asset pack is no longer a blocker.)
 
 ---
 
