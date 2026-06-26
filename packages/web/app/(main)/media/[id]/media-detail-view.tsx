@@ -274,7 +274,7 @@ export function MediaDetailView({ mode, initialType, initial, projects }: Props)
         <div className="min-w-0 flex-1">
           {mode === 'create' && !saved ? (
             <div className="flex flex-col items-center gap-6 rounded-xl border border-dashed border-border/60 p-10 text-center">
-              <TypeIcon className="h-12 w-12 text-muted-foreground/40" aria-hidden />
+              <TypeIcon className="h-12 w-12 text-muted-foreground" aria-hidden />
               <div>
                 <p className="text-sm text-muted-foreground">Fill in the details and add a prompt,</p>
                 <p className="text-sm text-muted-foreground">then click Generate — or save a placeholder.</p>
@@ -418,7 +418,7 @@ function MediaViewer({ media, onLightbox }: { media: Media; onLightbox: () => vo
           />
         ) : (
           <div className="flex aspect-video items-center justify-center bg-muted">
-            <ImageIcon className="h-12 w-12 text-muted-foreground/30" aria-hidden />
+            <ImageIcon className="h-12 w-12 text-muted-foreground" aria-hidden />
           </div>
         )}
       </button>
@@ -436,7 +436,7 @@ function MediaViewer({ media, onLightbox }: { media: Media; onLightbox: () => vo
           />
         ) : (
           <div className="flex aspect-video items-center justify-center bg-muted">
-            <Video className="h-12 w-12 text-muted-foreground/30" aria-hidden />
+            <Video className="h-12 w-12 text-muted-foreground" aria-hidden />
           </div>
         )}
       </div>
@@ -448,7 +448,7 @@ function MediaViewer({ media, onLightbox }: { media: Media; onLightbox: () => vo
     <WaveSurferPlayer src={mediaFileUrl(media.id)} />
   ) : (
     <div className="flex aspect-video items-center justify-center rounded-xl border border-border/60 bg-muted">
-      <Music2 className="h-12 w-12 text-muted-foreground/30" aria-hidden />
+      <Music2 className="h-12 w-12 text-muted-foreground" aria-hidden />
     </div>
   );
 }

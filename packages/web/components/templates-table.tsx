@@ -74,7 +74,7 @@ export function TemplatesTable({ templates, onUpdate, onDelete, expandId }: Prop
                 type="button"
                 onClick={() => onDelete(t.id)}
                 aria-label={`Delete ${t.name}`}
-                className="shrink-0 rounded p-1.5 text-muted-foreground/70 hover:bg-accent/50 hover:text-destructive"
+                className="shrink-0 rounded p-1.5 text-muted-foreground hover:bg-accent/50 hover:text-destructive"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>

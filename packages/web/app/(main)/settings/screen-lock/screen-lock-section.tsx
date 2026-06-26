@@ -115,7 +115,7 @@ export function ScreenLockSection() {
             </span>
           </div>
 
-          <p className="text-xs text-muted-foreground/70">
+          <p className="text-xs text-muted-foreground">
             Default {formatDuration(DEFAULT_SETTINGS.inactivityTimeoutS)} · range{' '}
             {formatDuration(INACTIVITY_MIN_S)}–{formatDuration(INACTIVITY_MAX_S)}.
           </p>
@@ -156,7 +156,7 @@ export function ScreenLockSection() {
               <span className="w-8 text-xs text-muted-foreground tabular-nums">{CYCLE_MAX_S}s</span>
             </div>
 
-            <p className="text-xs text-muted-foreground/70">
+            <p className="text-xs text-muted-foreground">
               Default {CYCLE_DEFAULT_S}s · range {CYCLE_MIN_S}–{CYCLE_MAX_S}s.
             </p>
           </div>

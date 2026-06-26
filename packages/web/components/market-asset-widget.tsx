@@ -137,7 +137,7 @@ function AssetPicker({
         onSelect={(r) => onSelect({ kind: r.kind, symbol: r.symbol, name: r.name })}
       />
       {kind === 'stock' && (
-        <p className="text-[11px] leading-snug text-muted-foreground/70">
+        <p className="text-[11px] leading-snug text-muted-foreground">
           Stocks need a free Twelve Data API key on the gateway.
         </p>
       )}
@@ -187,7 +187,7 @@ function AssetReadout({
           </div>
         ))}
       </dl>
-      <p className="text-center text-[10px] uppercase tracking-wide text-muted-foreground/60">{timeframe} chart</p>
+      <p className="text-center text-[10px] uppercase tracking-wide text-muted-foreground">{timeframe} chart</p>
     </div>
   );
 }

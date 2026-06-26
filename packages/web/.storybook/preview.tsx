@@ -57,21 +57,11 @@ const preview: Preview = {
     // Vitest browser run (`moon run web:test`) and in the Storybook a11y panel.
     // 'error' fails a story on any violation of an enabled rule (Phase 10 C3).
     //
-    // The structural backlog (nested-interactive, aria-prohibited-attr, label,
-    // empty-heading, scrollable-region-focusable, aria-required-children) is now
-    // cleared, so those rules are enforced across every story.
-    //
-    // `color-contrast` remains a separate, systemic design-token backlog (~99
-    // hits rooted in `--muted-foreground` + the `text-muted-foreground/50,60,70`
-    // opacity utilities). Enforcing it needs a design pass on the token and those
-    // utilities — tracked in todo/phase-10 C3. Until then it's disabled here (not
-    // merely warned) so the rest of the suite runs at 'error'; re-enable this one
-    // rule once the contrast pass lands. See .storybook/main.ts.
+    // All structural violations cleared (Phase 10 C3 PR #207). `color-contrast`
+    // now also enforced: --muted-foreground raised to 38% L (≥4.5:1 on white)
+    // and text-muted-foreground/* opacity utilities removed (Phase 10 C3 PR #211).
     a11y: {
       test: 'error',
-      config: {
-        rules: [{ id: 'color-contrast', enabled: false }],
-      },
     },
   },
 };

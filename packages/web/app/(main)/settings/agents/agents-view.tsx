@@ -460,7 +460,7 @@ export function AgentsView() {
             <span className="w-6 text-xs text-muted-foreground tabular-nums">{AGENT_POOL_MAX}</span>
           </div>
 
-          <p className="text-xs text-muted-foreground/70">
+          <p className="text-xs text-muted-foreground">
             Default {DEFAULT_SETTINGS.agentPoolSize} · maximum {AGENT_POOL_MAX}.
           </p>
         </div>
@@ -654,7 +654,7 @@ function SubAgentCard({
           onChange={(e) => onChange({ name: e.target.value })}
           placeholder={`Subagent ${index + 1}`}
           aria-label="Subagent name"
-          className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm font-medium placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-0"
+          className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0"
         />
         <Button
           type="button"
@@ -740,7 +740,7 @@ function MarkdownField({
         style={{ minHeight: markdown ? Math.max(minHeight, 240) : minHeight }}
       />
       {markdown ? (
-        <p className="text-[11px] text-muted-foreground/70">
+        <p className="text-[11px] text-muted-foreground">
           Markdown mode — written as the agent&apos;s prompt document.
         </p>
       ) : null}

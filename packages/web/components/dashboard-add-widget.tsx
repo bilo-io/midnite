@@ -101,7 +101,7 @@ export function DashboardAddWidget() {
             ) : (
               groups.map((group) => (
                 <div key={group.category} className="mb-1 last:mb-0">
-                  <div className="px-2.5 pb-1 pt-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
+                  <div className="px-2.5 pb-1 pt-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                     {group.label}
                   </div>
                   <ul>

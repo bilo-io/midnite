@@ -337,7 +337,7 @@ export default function WorkflowTemplatesPage() {
           <p className="text-sm text-muted-foreground">Loading templates…</p>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-12">
-            <BookOpen className="h-8 w-8 text-muted-foreground/40" />
+            <BookOpen className="h-8 w-8 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">No templates match your filter.</p>
             <Button
               variant="ghost"

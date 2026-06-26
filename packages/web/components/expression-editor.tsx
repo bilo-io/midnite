@@ -265,7 +265,7 @@ function TreeRow({
           title={`Insert ${entry.ref}`}
           className="flex min-w-0 flex-1 items-center gap-1.5 py-1 text-left"
         >
-          <Braces className="h-3 w-3 shrink-0 text-muted-foreground/70" />
+          <Braces className="h-3 w-3 shrink-0 text-muted-foreground" />
           <span className="shrink-0 font-mono text-foreground">{entry.key}</span>
           <span className="truncate text-[10px] text-muted-foreground">{entry.preview}</span>
         </button>

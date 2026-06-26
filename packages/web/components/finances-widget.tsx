@@ -109,7 +109,7 @@ function EntryGroup({ label, entries, total }: { label: string; entries: Finance
         <span className="tabular-nums">{fmt(total)}</span>
       </div>
       {entries.length === 0 ? (
-        <p className="text-xs text-muted-foreground/70">None yet.</p>
+        <p className="text-xs text-muted-foreground">None yet.</p>
       ) : (
         <ul className="space-y-0.5 text-sm">
           {entries.map((e) => (

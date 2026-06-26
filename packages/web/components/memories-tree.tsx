@@ -58,7 +58,7 @@ function MemoryRow({
         ) : null}
       </button>
       {memory.sources.length > 0 ? (
-        <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground/60">
+        <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
           {memory.sources.length} source{memory.sources.length === 1 ? '' : 's'}
         </span>
       ) : null}
@@ -86,7 +86,7 @@ export function MemoriesTree({
 }) {
   const rowsFor = (items: Memory[]) =>
     items.length === 0 ? (
-      <div className="px-4 py-3 text-xs text-muted-foreground/70">No memories</div>
+      <div className="px-4 py-3 text-xs text-muted-foreground">No memories</div>
     ) : (
       items.map((m) => (
         <MemoryRow

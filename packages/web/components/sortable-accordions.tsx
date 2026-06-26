@@ -188,7 +188,7 @@ function Section({
           {...attributes}
           {...listeners}
           aria-label="Reorder section"
-          className="cursor-grab touch-none rounded p-1 text-muted-foreground/60 hover:bg-accent/50 hover:text-foreground active:cursor-grabbing"
+          className="cursor-grab touch-none rounded p-1 text-muted-foreground hover:bg-accent/50 hover:text-foreground active:cursor-grabbing"
         >
           <GripVertical className="h-4 w-4" />
         </button>
@@ -219,7 +219,7 @@ function Section({
             {section.count}
           </span>
           {collapsed && (
-            <span className="ml-1 truncate text-[11px] text-muted-foreground/70">{section.summary}</span>
+            <span className="ml-1 truncate text-[11px] text-muted-foreground">{section.summary}</span>
           )}
         </button>
         {section.actions ? (

@@ -135,7 +135,7 @@ export function RunOutputPanel({ run }: { run: WorkflowRun | null }) {
               <pre className="whitespace-pre-wrap font-mono text-[11px] leading-relaxed">
                 {logs.map((log) => (
                   <div key={log.key} className="flex gap-2">
-                    <span className="shrink-0 text-muted-foreground/60">{log.at.slice(11, 19)}</span>
+                    <span className="shrink-0 text-muted-foreground">{log.at.slice(11, 19)}</span>
                     <span
                       className="shrink-0 font-semibold uppercase"
                       style={{ color: `hsl(var(${LOG_LEVEL_HUE[log.level]}))` }}

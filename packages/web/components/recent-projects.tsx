@@ -117,7 +117,7 @@ export function ProjectCard({ project, tasks, projects, onSelectProject }: Proje
   if (!project) {
     return (
       <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed bg-card/40 p-4 text-center">
-        <FolderKanban className="h-5 w-5 text-muted-foreground/60" />
+        <FolderKanban className="h-5 w-5 text-muted-foreground" />
         <p className="text-xs text-muted-foreground">No project selected</p>
         {picker}
       </div>
@@ -152,7 +152,7 @@ export function ProjectCard({ project, tasks, projects, onSelectProject }: Proje
             {project.description ? (
               <p className="line-clamp-2 text-xs text-muted-foreground">{project.description}</p>
             ) : (
-              <p className="text-xs italic text-muted-foreground/60">No description</p>
+              <p className="text-xs italic text-muted-foreground">No description</p>
             )}
           </div>
           <StatusDonut counts={counts} total={total} />
@@ -169,7 +169,7 @@ export function ProjectCard({ project, tasks, projects, onSelectProject }: Proje
             ))}
           </div>
         ) : (
-          <p className="text-[11px] text-muted-foreground/60">No tasks yet</p>
+          <p className="text-[11px] text-muted-foreground">No tasks yet</p>
         )}
 
         <div className="mt-auto flex items-center justify-between gap-2 border-t border-border/40 pt-2">
@@ -182,7 +182,7 @@ export function ProjectCard({ project, tasks, projects, onSelectProject }: Proje
               ))}
             </div>
           ) : (
-            <span className="text-[11px] text-muted-foreground/60">No sources</span>
+            <span className="text-[11px] text-muted-foreground">No sources</span>
           )}
           <span className="text-[11px] tabular-nums text-muted-foreground">
             Updated {relativeTime(project.updatedAt)}
@@ -247,7 +247,7 @@ export function RecentProjects({ projects, tasks }: { projects: Project[]; tasks
                 <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                   <span className="w-fit"><ProjectTag tag={project.tag} color={project.color} /></span>
                   <span className="line-clamp-1 text-sm font-semibold leading-snug">{project.name}</span>
-                  {project.description ? <p className="line-clamp-2 text-xs text-muted-foreground">{project.description}</p> : <p className="text-xs italic text-muted-foreground/60">No description</p>}
+                  {project.description ? <p className="line-clamp-2 text-xs text-muted-foreground">{project.description}</p> : <p className="text-xs italic text-muted-foreground">No description</p>}
                 </div>
                 <StatusDonut counts={counts} total={total} />
               </div>
@@ -260,13 +260,13 @@ export function RecentProjects({ projects, tasks }: { projects: Project[]; tasks
                     </span>
                   ))}
                 </div>
-              ) : <p className="text-[11px] text-muted-foreground/60">No tasks yet</p>}
+              ) : <p className="text-[11px] text-muted-foreground">No tasks yet</p>}
               <div className="mt-auto flex items-center justify-between gap-2 border-t border-border/40 pt-3">
                 {project.sources.length > 0 ? (
                   <div className="flex items-center -space-x-1">
                     {project.sources.slice(0, 5).map((s) => <span key={s.id} className="flex h-5 w-5 items-center justify-center rounded-full border border-border/60 bg-background"><SourceIcon kind={s.kind} faviconUrl={s.faviconUrl} className="h-3 w-3" /></span>)}
                   </div>
-                ) : <span className="text-[11px] text-muted-foreground/60">No sources</span>}
+                ) : <span className="text-[11px] text-muted-foreground">No sources</span>}
                 <span className="text-[11px] tabular-nums text-muted-foreground">Updated {relativeTime(project.updatedAt)}</span>
               </div>
             </button>

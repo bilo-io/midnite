@@ -304,7 +304,7 @@ export function SessionsView({
           : `${plural(items.length, 'session')} · ${plural(projectCount, 'project')}`,
       body:
         items.length === 0 ? (
-          <div className="px-4 py-3 text-xs text-muted-foreground/70">Nothing here</div>
+          <div className="px-4 py-3 text-xs text-muted-foreground">Nothing here</div>
         ) : (
           items.map((s) => (
             <SessionRow

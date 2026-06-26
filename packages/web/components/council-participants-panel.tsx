@@ -392,7 +392,7 @@ function SortableMember({
           {...listeners}
           disabled={disabled}
           aria-label={`Reorder ${name}`}
-          className="shrink-0 cursor-grab touch-none rounded text-muted-foreground/50 hover:text-foreground active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-40"
+          className="shrink-0 cursor-grab touch-none rounded text-muted-foreground hover:text-foreground active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-40"
         >
           <GripVertical className="h-4 w-4" />
         </button>
@@ -412,7 +412,7 @@ function SortableMember({
           disabled={disabled}
           onChange={(e) => onEdit({ name: e.target.value })}
           placeholder={`Member ${index + 1}`}
-          className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm font-medium placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
+          className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50"
         />
         <Button
           type="button"

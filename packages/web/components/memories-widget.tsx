@@ -67,7 +67,7 @@ function MemoryRow({ memory: m }: { memory: Memory }) {
         </span>
       </div>
       {m.content && <p className="mt-0.5 line-clamp-2 text-[11px] text-muted-foreground">{m.content}</p>}
-      <span className="mt-0.5 block text-[10px] tabular-nums text-muted-foreground/70">
+      <span className="mt-0.5 block text-[10px] tabular-nums text-muted-foreground">
         Updated {relativeTime(m.updatedAt)}
       </span>
     </li>

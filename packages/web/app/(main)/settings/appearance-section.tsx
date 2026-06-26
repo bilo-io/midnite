@@ -97,7 +97,7 @@ export function AppearanceSection() {
               hydrated={hydrated}
             />
           </SettingRow>
-          <p className="text-xs text-muted-foreground/70">
+          <p className="text-xs text-muted-foreground">
             {NAV_MODE_OPTIONS.find((o) => o.value === navMode)?.hint}.
           </p>
         </div>
@@ -147,7 +147,7 @@ function LogoCard() {
     <Accordion title="Logo" icon={<Type className="h-3.5 w-3.5" />} defaultOpen>
       <div className="space-y-4 p-5">
         <div className="flex items-center justify-between gap-4">
-          <p className="text-xs text-muted-foreground/70">
+          <p className="text-xs text-muted-foreground">
             The font the midnite wordmark is set in across the app.
           </p>
           <label className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">

@@ -45,7 +45,7 @@ export function EmptyState({
             aria-hidden
             className="absolute inset-0 -z-10 rounded-2xl bg-foreground/5 blur-xl"
           />
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-border/60 bg-card/70 text-muted-foreground/70 shadow-sm">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-border/60 bg-card/70 text-muted-foreground shadow-sm">
             <Icon className="h-7 w-7" />
           </div>
         </div>

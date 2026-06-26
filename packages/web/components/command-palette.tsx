@@ -326,7 +326,7 @@ export function CommandPalette() {
                             `/search?q=${encodeURIComponent(query.trim())}&type=${section.key}`,
                           )
                         }
-                        className="w-full px-3 py-1.5 pl-10 text-left text-xs text-muted-foreground/80 hover:text-foreground"
+                        className="w-full px-3 py-1.5 pl-10 text-left text-xs text-muted-foreground hover:text-foreground"
                       >
                         +{section.moreCount} more {section.label.toLowerCase()} — see all in Search
                       </button>

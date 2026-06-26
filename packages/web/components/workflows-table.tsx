@@ -98,7 +98,7 @@ export function WorkflowsTable({
       summary,
       body:
         items.length === 0 ? (
-          <div className="px-3 py-3 text-xs text-muted-foreground/70">
+          <div className="px-3 py-3 text-xs text-muted-foreground">
             No {label.toLowerCase()} workflows
           </div>
         ) : (

@@ -89,7 +89,7 @@ export function RetroGamesMenu({ onClose }: { onClose: () => void }) {
                         {game.year} · {game.genre}
                       </p>
                     </div>
-                    <span className="shrink-0 text-[10px] text-muted-foreground/60 opacity-0 transition-opacity group-hover:opacity-100">
+                    <span className="shrink-0 text-[10px] text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
                       PLAY
                     </span>
                   </button>

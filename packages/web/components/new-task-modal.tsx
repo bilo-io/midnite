@@ -343,7 +343,7 @@ export function NewTaskModal({
                             setSelectedBlockerIds((ids) => ids.filter((id) => id !== b.id))
                           }
                           aria-label={`Remove blocker ${b.title}`}
-                          className="shrink-0 text-muted-foreground/60 hover:text-destructive"
+                          className="shrink-0 text-muted-foreground hover:text-destructive"
                           disabled={busy}
                         >
                           <X className="h-3 w-3" />

@@ -20,7 +20,7 @@ type Props = {
 function ScopeChip({ project }: { project?: Project }) {
   if (project) return <ProjectTag tag={project.tag} color={project.color} />;
   return (
-    <span className="inline-flex items-center gap-1 rounded bg-[hsl(262_83%_66%/0.15)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[hsl(262_83%_66%)]">
+    <span className="inline-flex items-center gap-1 rounded bg-[hsl(262_83%_66%/0.15)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[hsl(262_83%_72%)]">
       <Brain className="h-3 w-3" />
       Global
     </span>
@@ -63,7 +63,7 @@ export function MemoryCard({
         className={cn(
           'group flex items-center gap-3 rounded-lg border border-border/60 bg-card/40 p-3 transition-colors hover:border-foreground/20 hover:bg-accent/40',
           selected && 'border-primary/50 bg-accent/30',
-          memory.archived && 'opacity-60',
+          memory.archived && 'opacity-80',
         )}
       >
         {selectIcon}
@@ -77,7 +77,7 @@ export function MemoryCard({
             <p className="mt-0.5 truncate text-xs text-muted-foreground">{excerpt}</p>
           ) : null}
         </button>
-        <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground/60">
+        <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
           {updatedLabel(memory.updatedAt)}
         </span>
       </div>
@@ -89,7 +89,7 @@ export function MemoryCard({
       className={cn(
         'group flex flex-col gap-3 rounded-xl border border-border/60 bg-card/40 p-4 transition-colors hover:border-foreground/20 hover:bg-accent/40',
         selected && 'border-primary/50 bg-accent/30',
-        memory.archived && 'opacity-60',
+        memory.archived && 'opacity-80',
       )}
     >
       <div className="flex items-center justify-between gap-2">
@@ -98,7 +98,7 @@ export function MemoryCard({
           <ScopeChip project={project} />
           {archivedBadge}
         </div>
-        <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground/60">
+        <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
           {updatedLabel(memory.updatedAt)}
         </span>
       </div>

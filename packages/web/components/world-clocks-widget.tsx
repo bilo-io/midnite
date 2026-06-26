@@ -223,7 +223,7 @@ function SortableZoneRow({
         {...attributes}
         {...listeners}
         aria-label={`Reorder ${zone.label}`}
-        className="shrink-0 cursor-grab touch-none text-muted-foreground/30 opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100 active:cursor-grabbing"
+        className="shrink-0 cursor-grab touch-none text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100 active:cursor-grabbing"
       >
         <GripVertical className="h-3.5 w-3.5" />
       </button>

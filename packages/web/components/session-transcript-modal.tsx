@@ -180,7 +180,7 @@ function Message({ msg }: { msg: TranscriptMessage }) {
           ))}
         </div>
       ) : null}
-      <span className="px-1 text-[10px] text-muted-foreground/60">{time}</span>
+      <span className="px-1 text-[10px] text-muted-foreground">{time}</span>
     </div>
   );
 }

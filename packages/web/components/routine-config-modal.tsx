@@ -191,7 +191,7 @@ export function RoutineConfigModal({ routine, onClose, onUpdate, onDelete }: Rou
                   <div key={group.id} className="rounded-lg border border-border/60 bg-background/50">
                     {/* Group header */}
                     <div className="flex items-center gap-2 border-b border-border/40 px-3 py-2">
-                      <GripVertical className="h-4 w-4 flex-shrink-0 text-muted-foreground/40" />
+                      <GripVertical className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
                       {editingGroupId === group.id ? (
                         <input
                           autoFocus
@@ -220,7 +220,7 @@ export function RoutineConfigModal({ routine, onClose, onUpdate, onDelete }: Rou
                           type="button"
                           onClick={() => moveGroup(group.id, -1)}
                           disabled={gi === 0}
-                          className="rounded p-0.5 text-muted-foreground/60 hover:text-foreground disabled:opacity-30"
+                          className="rounded p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30"
                           aria-label="Move up"
                         >
                           <ChevronUp className="h-3.5 w-3.5" />
@@ -229,7 +229,7 @@ export function RoutineConfigModal({ routine, onClose, onUpdate, onDelete }: Rou
                           type="button"
                           onClick={() => moveGroup(group.id, 1)}
                           disabled={gi === sortedGroups.length - 1}
-                          className="rounded p-0.5 text-muted-foreground/60 hover:text-foreground disabled:opacity-30"
+                          className="rounded p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30"
                           aria-label="Move down"
                         >
                           <ChevronDown className="h-3.5 w-3.5" />
@@ -237,7 +237,7 @@ export function RoutineConfigModal({ routine, onClose, onUpdate, onDelete }: Rou
                         <button
                           type="button"
                           onClick={() => handleDeleteGroup(group.id, group.name)}
-                          className="rounded p-0.5 text-muted-foreground/60 hover:text-destructive"
+                          className="rounded p-0.5 text-muted-foreground hover:text-destructive"
                           aria-label="Delete group"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -275,7 +275,7 @@ export function RoutineConfigModal({ routine, onClose, onUpdate, onDelete }: Rou
                           <button
                             type="button"
                             onClick={() => handleDeleteItem(item.id, item.title)}
-                            className="opacity-0 group-hover:opacity-100 text-muted-foreground/60 hover:text-destructive transition-opacity"
+                            className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
                             aria-label="Delete item"
                           >
                             <Trash2 className="h-3 w-3" />
@@ -290,7 +290,7 @@ export function RoutineConfigModal({ routine, onClose, onUpdate, onDelete }: Rou
                         <div className="flex gap-2">
                           <input
                             ref={newItemInputRef}
-                            className="flex-1 rounded border border-input bg-background px-2 py-1 text-sm placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            className="flex-1 rounded border border-input bg-background px-2 py-1 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                             value={newItemTitle}
                             onChange={(e) => setNewItemTitle(e.target.value)}
                             placeholder="Item title…"
@@ -319,7 +319,7 @@ export function RoutineConfigModal({ routine, onClose, onUpdate, onDelete }: Rou
                 {/* Add group */}
                 <div className="flex gap-2">
                   <input
-                    className="flex h-8 flex-1 rounded-md border border-input bg-background px-3 text-sm placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    className="flex h-8 flex-1 rounded-md border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     value={newGroupName}
                     onChange={(e) => setNewGroupName(e.target.value)}
                     placeholder="New group name…"

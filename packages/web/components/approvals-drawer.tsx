@@ -301,7 +301,7 @@ export function ApprovalsDrawer({ expanded }: { expanded?: boolean }) {
             <div className="flex-1 overflow-y-auto p-4">
               {pending.length === 0 ? (
                 <div className="flex h-32 flex-col items-center justify-center gap-2 text-center">
-                  <RefreshCw className="h-6 w-6 text-muted-foreground/40" />
+                  <RefreshCw className="h-6 w-6 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">No pending approvals</p>
                 </div>
               ) : (

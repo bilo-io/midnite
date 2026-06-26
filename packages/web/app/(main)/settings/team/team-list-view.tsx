@@ -103,7 +103,7 @@ export function TeamListView() {
 
       {!loading && teams.length === 0 && (
         <div className="rounded-lg border border-dashed border-border p-8 text-center">
-          <Users className="mx-auto h-8 w-8 text-muted-foreground/50 mb-3" />
+          <Users className="mx-auto h-8 w-8 text-muted-foreground mb-3" />
           <p className="text-sm text-muted-foreground">You're not in any teams yet.</p>
         </div>
       )}
