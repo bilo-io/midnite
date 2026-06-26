@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-26 — Phase 9 B1: pixel-agents real character sprites (CC0/MIT)
+
+- [x] 6 pixel-art character PNG sheets (char-v0..v5, 112×96 each) placed in `packages/web/public/office/`
+- [x] `preload()` added to `OfficeScene` + `CornerOfficeScene` — loads all 6 sheets via `this.load.spritesheet`
+- [x] `ensureCharTextures()` extracts per-direction walk frames (0-2) + pose frames (typing/raised/celebrate) into the existing `charKey`/`poseTexKey` namespace — zero call-site changes in the scene
+- [x] `CHAR_H` 20→32, `charKey` frame type 0|1→0|1|2, 3-frame walk cycle at 8fps
+- [x] `ROBOT_VARIANTS` simplified to 5 entries (5 robot sheets), `CHAR_SCALE` 1.3→1.0, shadow offset +13→+16
+- [x] 510 web tests pass; typecheck green
+
+---
+
 ## 2026-06-26 — Phase 39 A: Background gallery + visible animated gradient (PR #212)
 
 - [x] 9 new pure-CSS `.bg-*` patterns: dots, diagonal-lines, plus-cross, topographic, waves, blueprint, grain, aurora, mesh-gradient (total: 12)
