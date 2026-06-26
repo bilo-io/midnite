@@ -213,6 +213,7 @@ class OfficeScene extends Phaser.Scene {
     for (let i = 1; i <= 5; i++) {
       this.load.spritesheet(`office-char-v${i}`, `/office/char-v${i}.png`, cfg);
     }
+    this.load.image(TILESET_KEY, '/office/floor-tiles.png');
   }
 
   create() {
