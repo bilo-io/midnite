@@ -42,6 +42,13 @@ cancels it). **E** interacts with the nearest desk agent, the board-room whitebo
 coffee machine — there **E** toggles an "on a break" state (a `☕ On a break` badge in the HUD +
 a ☕ over the player). The break flag is local/mock for now (Phase 9 E1).
 
+**Minimap** (Phase 8 D2): a small always-on overview pinned bottom-right shows the whole 34×22 map —
+room outlines (accent-tinted per room), agent dots (status-coloured; **red** when an agent needs you),
+the **player** dot, and a rectangle marking the camera's current viewport. Pure geometry
+(world↔minimap) lives in [`lib/office/minimap.ts`](../../lib/office/minimap.ts); the scene draws it as a
+container tracking the follow-camera's `worldView` each frame (scaled `1/ZOOM`), with the panel fill
+re-tinting on the light/dark flip.
+
 **Art:** sprites/tiles are **generated procedurally** in [`lib/office/textures.ts`](../../lib/office/textures.ts)
 — a tiled floor, brick walls, desks/monitors, a TV + console, a conference table, a projects
 whiteboard, a counter, bookshelves, a corner-office door, a pool water tile + sun loungers, plus two character kinds: a **human**

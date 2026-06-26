@@ -36,6 +36,12 @@ import {
   WALL_ART,
 } from '@/lib/office/layout';
 import { buildFloorTileData, getDeskSeats } from '@/lib/office/map-data';
+import {
+  minimapLayout,
+  minimapRooms,
+  worldRectToMinimap,
+  worldToMinimap,
+} from '@/lib/office/minimap';
 import { assignStableSeats } from '@/lib/office/seats';
 import { buildOfficePalette, ROOM_STYLES, roomSignStyle, type OfficePalette } from '@/lib/office/theme';
 import {
@@ -70,6 +76,16 @@ const PLAYER_SPEED = 150;
 /** Camera zoom — the player sees a 2/3-sized slice of the world at once; the camera
  *  follows them through the full 34×22 tile map. */
 const ZOOM = 1.5;
+/** Minimap (D2): a small bottom-right overview of the whole map. Sizes are in
+ *  the fixed 1088×704 internal-canvas space (Scale.FIT scales it to fit). */
+const MINIMAP_MAX_W = 150;
+const MINIMAP_MAX_H = 100;
+/** Padding between the minimap content and its panel edge. */
+const MINIMAP_PAD = 6;
+/** Gap between the minimap panel and the canvas edge. */
+const MINIMAP_MARGIN = 12;
+/** Attention dot colour on the minimap (red) — overrides the status tint. */
+const MINIMAP_ATTENTION = 0xf87171;
 /** How close (px) the player must be to a desk/board to "reach" it. */
 const PROXIMITY = TILE * 1.6;
 /** How close (px) the player must be for an agent's nameplate to appear. */
@@ -166,6 +182,14 @@ class OfficeScene extends Phaser.Scene {
   private dayNight!: Phaser.GameObjects.Rectangle;
   /** Pool water (TileSprite) — scrolled each frame for a gentle shimmer (G2). */
   private water?: Phaser.GameObjects.TileSprite;
+  /** Bottom-right minimap (D2): pinned container holding the static panel/rooms
+   *  layer + a per-frame dynamic layer (player/agent dots + camera viewport). */
+  private minimap?: Phaser.GameObjects.Container;
+  private minimapStatic?: Phaser.GameObjects.Graphics;
+  private minimapDynamic?: Phaser.GameObjects.Graphics;
+  private minimapScale = 1;
+  private minimapPanelW = 0;
+  private minimapPanelH = 0;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: Record<'up' | 'down' | 'left' | 'right', Phaser.Input.Keyboard.Key>;
   private readonly actors = new Map<string, Actor>();
@@ -265,6 +289,8 @@ class OfficeScene extends Phaser.Scene {
     this.cameras.main.setZoom(ZOOM);
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
     this.cameras.main.fadeIn(200, 0, 0, 0);
+
+    this.buildMinimap();
 
     this.cursors = this.input.keyboard!.createCursorKeys();
     this.wasd = this.input.keyboard!.addKeys({
@@ -412,6 +438,99 @@ class OfficeScene extends Phaser.Scene {
     // ☕ floats over the player while on a break.
     this.breakIcon.setPosition(this.player.x + 11, this.player.y - 16);
     this.breakIcon.setVisible(useOfficeStore.getState().onBreak);
+
+    this.updateMinimap();
+  }
+
+  // ---- minimap (D2) ------------------------------------------------------
+
+  /**
+   * Build the bottom-right minimap: a container holding a static panel +
+   * room-outline layer and a dynamic dots/viewport layer redrawn each frame.
+   *
+   * The main camera follows the player at `ZOOM`, so rather than fight the
+   * scroll-dependent zoom pivot of a `scrollFactor(0)` object, the container is
+   * a normal world object **re-anchored each frame** to the camera's live
+   * `worldView` bottom-right (see `updateMinimap`) and scaled `1/ZOOM` so the
+   * camera magnification renders its screen-px children at their authored size.
+   */
+  private buildMinimap() {
+    const { width, height, scale } = minimapLayout(MINIMAP_MAX_W, MINIMAP_MAX_H);
+    this.minimapScale = scale;
+    this.minimapPanelW = width + MINIMAP_PAD * 2;
+    this.minimapPanelH = height + MINIMAP_PAD * 2;
+
+    const container = this.add.container(0, 0).setScale(1 / ZOOM).setDepth(50);
+    const stat = this.add.graphics();
+    const dyn = this.add.graphics();
+    container.add([stat, dyn]);
+    this.minimap = container;
+    this.minimapStatic = stat;
+    this.minimapDynamic = dyn;
+    this.drawMinimapStatic();
+  }
+
+  /** Draw the static panel + room outlines; re-run on theme flip (fill follows theme). */
+  private drawMinimapStatic() {
+    const g = this.minimapStatic;
+    if (!g) return;
+    const panelW = this.minimapPanelW;
+    const panelH = this.minimapPanelH;
+    g.clear();
+    g.fillStyle(this.palette.background, 0.82);
+    g.fillRoundedRect(0, 0, panelW, panelH, 5);
+    g.lineStyle(1, this.palette.text, 0.35);
+    g.strokeRoundedRect(0, 0, panelW, panelH, 5);
+    for (const { id, rect } of minimapRooms(this.minimapScale, MINIMAP_PAD)) {
+      const accent = ROOM_STYLES[id].accent;
+      g.fillStyle(accent, 0.18);
+      g.fillRect(rect.x, rect.y, rect.w, rect.h);
+      g.lineStyle(1, accent, 0.7);
+      g.strokeRect(rect.x, rect.y, rect.w, rect.h);
+    }
+  }
+
+  /** Redraw the live minimap layer: camera viewport rect + agent/player dots. */
+  private updateMinimap() {
+    const g = this.minimapDynamic;
+    const view = this.cameras.main.worldView;
+    if (!g || !this.minimap) return;
+    // Re-anchor the panel to the camera's bottom-right each frame (in world
+    // units: a screen-px gap/size is `/ZOOM` world units under the zoom).
+    this.minimap.setPosition(
+      view.right - (MINIMAP_MARGIN + this.minimapPanelW) / ZOOM,
+      view.bottom - (MINIMAP_MARGIN + this.minimapPanelH) / ZOOM,
+    );
+    g.clear();
+    const s = this.minimapScale;
+    // Camera viewport — the slice of the map currently on screen.
+    const vr = worldRectToMinimap(
+      { x: view.x, y: view.y, w: view.width, h: view.height },
+      s,
+      MINIMAP_PAD,
+    );
+    g.lineStyle(1, this.palette.text, 0.9);
+    g.strokeRect(vr.x, vr.y, vr.w, vr.h);
+    // Agent dots, coloured by status (attention overrides to red).
+    const agents = useOfficeStore.getState().agents;
+    const byId = new Map(agents.map((a) => [a.id, a] as const));
+    for (const actor of this.actors.values()) {
+      const p = worldToMinimap(actor.sprite.x, actor.sprite.y, s, MINIMAP_PAD);
+      const ag = byId.get(actor.id);
+      const color = ag?.attention
+        ? MINIMAP_ATTENTION
+        : ag
+          ? STATUS_TINT[ag.status]
+          : 0x94a3b8;
+      g.fillStyle(color, 1);
+      g.fillCircle(p.x, p.y, 2);
+    }
+    // Player dot on top — brighter + ringed so it stands out.
+    const pp = worldToMinimap(this.player.x, this.player.y, s, MINIMAP_PAD);
+    g.fillStyle(this.palette.highlight, 1);
+    g.fillCircle(pp.x, pp.y, 2.6);
+    g.lineStyle(1, 0xffffff, 0.9);
+    g.strokeCircle(pp.x, pp.y, 2.6);
   }
 
   /** Re-tint the theme-driven objects when the app's light/dark theme flips. */
@@ -426,6 +545,8 @@ class OfficeScene extends Phaser.Scene {
     for (const sign of this.roomSigns) this.drawSignPlate(sign.plate, sign.id, sign.rect);
     for (const actor of this.actors.values()) actor.nameText.setColor(toHex(palette.text));
     this.highlight.setStrokeStyle(2, palette.highlight, 0.9);
+    // Minimap panel fill + border are theme-driven — redraw on the flip.
+    this.drawMinimapStatic();
     // The time theme flips light/dark on the same 08:00/18:00 boundary the day/night
     // wash crosses — re-tint it here so floor base + wash stay in sync on the flip.
     this.refreshDayNight();
