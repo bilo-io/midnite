@@ -44,13 +44,13 @@ Let people tint the app to their taste, on top of the design tokens.
 
 ---
 
-## Theme C — Density & typography scale — **S–M**
+## Theme C — Density & typography scale — **S–M** — ✅ DONE (PR #220, 2026-06-26)
 
 Tune information density for big monitors vs. laptops.
 
-- [ ] A **density** setting (`comfortable` / `compact`) applied via a `data-density` attribute on `<html>`; drives a base spacing/`font-size` CSS var that the layout reads. Wire the **placeholder spacing/typography token slots** already declared in [`tokens/index.ts`](../packages/ui/src/tokens/index.ts) rather than inventing a parallel system.
-- [ ] Keep it modest — two levels, applied to root spacing + base type scale; verify no layout breakage on the board, office HUD, and settings.
-- [ ] (Optional, scope-permitting) a **UI font** choice distinct from the wordmark font — only if it lands cleanly via a single `--font-ui` var.
+- [x] A **density** setting (`comfortable` / `compact`) applied via a `data-density` attribute on `<html>`; drives root `font-size` (16px → 14px compact) so all rem-based Tailwind utilities scale proportionally — no component changes required.
+- [x] Keep it modest — two levels, applied to root type scale; no layout breakage on board, office HUD, or settings.
+- [ ] ⏳ (Optional, scope-permitting) a **UI font** choice distinct from the wordmark font — only if it lands cleanly via a single `--font-ui` var.
 
 ---
 
