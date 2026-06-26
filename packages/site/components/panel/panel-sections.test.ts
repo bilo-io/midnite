@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { PANEL_SECTIONS, PANEL_SECTION_IDS, getPanelSection } from './panel-sections';
 
-const CONTENT_KEYS = ['terminal', 'kanban', 'session'];
+const CONTENT_KEYS = ['terminal', 'transcript', 'kanban', 'session'];
 
 describe('panel sections', () => {
   it('has unique ids and known content keys', () => {

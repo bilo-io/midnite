@@ -74,9 +74,11 @@ export function SideColumn({
         // mobile/tablet: a centred readable column (panel stacks inline).
         'mx-auto max-w-3xl',
         // desktop: half the viewport, hugged to `side`, so the fixed panel in the
-        // other half never overlaps it.
+        // other half never overlaps it. The generous inner padding on the panel side
+        // keeps a clear gutter between the content and the panel (which sits near the
+        // centre seam) — it widens further on xl, where there's room to spare.
         'lg:mx-0 lg:w-1/2 lg:max-w-none',
-        side === 'left' ? 'lg:mr-auto lg:pr-10' : 'lg:ml-auto lg:pl-10',
+        side === 'left' ? 'lg:mr-auto lg:pr-16 xl:pr-24' : 'lg:ml-auto lg:pl-16 xl:pl-24',
         className,
       )}
     >
