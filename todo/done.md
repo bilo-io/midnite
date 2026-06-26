@@ -4,6 +4,13 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-26 — Phase 39 E: background no-flash + full pre-paint appearance (PR #224)
+
+- [x] `applyBackground(pattern, intensity)` sets `data-bg` + `data-bg-intensity` on `<html>`; `appearanceInitScript` extended to cover background pattern + intensity before first paint — all visual prefs (accent, motion, density, effects, background) now applied before first render
+- [x] `globals.css`: `html[data-bg='x'] [data-bg-target]` CSS rules (12 patterns) so the correct background shows before React hydrates
+- [x] `page-header.tsx` + `page.tsx` background divs gain `data-bg-target=""`; `useBackgroundPattern` + `AppearanceEffects` wired to `applyBackground` for live changes
+- [x] 4 new tests for `applyBackground`; init-script eval test asserts `data-bg='grid'` on default load; 557 web tests pass
+
 ## 2026-06-26 — Phase 8 A3: office desk variety + count = pool capacity (PR #221)
 
 - [x] `lib/office/desks.ts` — pure, unit-tested `generateDeskLayout(capacity)`: packs N desks into the WORK room as an even grid (clamped `[1, MAX_DESKS]`), distinct tiles, `deskScale` eases large→small as capacity grows
