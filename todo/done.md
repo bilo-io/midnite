@@ -4,6 +4,12 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-26 — fix(site): widen panel gutter + move CLI transcript into the persistent panel (PR #227)
+
+- [x] **Features section**: widened `SideColumn` gutter on the panel side (`lg:pr/pl-16`, `xl:24`) so heading + cards keep a clear gap from the persistent panel near the centre seam
+- [x] **CLI section**: ported the full terminal transcript into a new `transcript` panel-content module; persistent panel carries it when the CLI section is active; inline mobile panel mirrors it via `<InlinePanel content="transcript">`; bespoke redundant inline terminal card removed
+- [x] `moon run site:typecheck site:lint site:test` green (19 tests pass)
+
 ## 2026-06-26 — fix(web): repair /ideas/[id] static-export build (PR #228)
 
 - [x] **Broken `main` build fixed**: PR #215 (Phase 40 Ideas) added `app/(main)/ideas/[id]/page.tsx` — the repo's only file-based dynamic route — which `output: 'export'` can't prerender for an arbitrary runtime id, so `next build` (and the `@midnite/desktop` static export) failed with "missing generateStaticParams()". The billing-blocked `ci` job (exits ~4s) never caught it
