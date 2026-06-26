@@ -4,6 +4,20 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-26 — Phase 8 A3: office desk variety + count = pool capacity (PR #221)
+
+- [x] `lib/office/desks.ts` — pure, unit-tested `generateDeskLayout(capacity)`: packs N desks into the WORK room as an even grid (clamped `[1, MAX_DESKS]`), distinct tiles, `deskScale` eases large→small as capacity grows
+- [x] **Desk count = agent-pool capacity** (`terminal.maxSessions`, read from the `/pool` snapshot, held as `deskCapacity` in the office store, fetched once in `use-office-agents`); the scene rebuilds desks + walkability grid when it arrives (clears sticky seat claims to avoid stale indices on shrink)
+- [x] **Per-desk variety** by seat index: setup (single / dual-monitor / laptop), monitor screen colour (`MONITOR_SCREENS`/`monitorKey`), 2–3 clutter items from an expanded pool (lamp, books, headphones, sticky + originals); desks scaled a bit larger
+- [x] `blockedGrid()` takes the dynamic seats; `renderActors` seats agents on them. Completes Phase 8 A3 (procedural — the A1 asset pack is no longer a blocker). Local gate green (typecheck, lint 0 errors, 551 web tests); merged with CI billing-blocked (same as #214–#220)
+
+## 2026-06-26 — Phase 39 C: density setting (PR #220)
+
+- [x] `comfortable` / `compact` density toggle in Settings → Appearance → Motion & effects
+- [x] `compact` sets `data-density="compact"` on `<html>`, reducing root font-size 16px → 14px; all rem-based Tailwind utilities scale proportionally — zero component changes
+- [x] Applied pre-paint via `appearanceInitScript` (no reload flash); wired to live changes via `AppearanceEffects`
+- [x] 2 new tests for `applyDensity` in `apply-appearance.test.ts`; 544 web tests pass
+
 ## 2026-06-26 — Phase 8 D2: office minimap (PR #218)
 
 - [x] `lib/office/minimap.ts` — pure, unit-tested geometry (world↔minimap↔padded space): `minimapLayout` (aspect-preserving fit), `worldToMinimap`/`worldRectToMinimap`, `minimapRooms` (8 tests)
