@@ -11,6 +11,7 @@ import {
   PLAYER_SPAWN,
   POOL,
   ROOMS,
+  roomForWall,
   RUGS,
   statusToRoom,
   type RoomId,
@@ -192,6 +193,36 @@ describe('communal furnishings (Phase 9 E2)', () => {
     expect(ASTRO_TURF.x).toBeGreaterThanOrEqual(COMMUNAL.x);
     expect(ASTRO_TURF.x + ASTRO_TURF.w).toBeLessThanOrEqual(COMMUNAL.x + COMMUNAL.w);
     expect(ASTRO_TURF.y + ASTRO_TURF.h).toBeLessThanOrEqual(COMMUNAL.y + COMMUNAL.h);
+  });
+});
+
+describe('roomForWall (Phase 9 A1 per-room wall tints)', () => {
+  const isWall = (x: number, y: number) =>
+    y >= 0 && y < OFFICE_ROWS && x >= 0 && x < OFFICE_COLS && LAYOUT[y]![x] === '#';
+
+  it('assigns every wall tile to some room (no un-tinted gaps in this plan)', () => {
+    for (let y = 0; y < OFFICE_ROWS; y++) {
+      for (let x = 0; x < OFFICE_COLS; x++) {
+        if (isWall(x, y)) expect(roomForWall(x, y), `wall ${x},${y} has a room`).not.toBeNull();
+      }
+    }
+  });
+
+  it('tags a top-left corner wall as the work room and a far-right wall as the library', () => {
+    expect(roomForWall(0, 0)).toBe('work');
+    expect(roomForWall(OFFICE_COLS - 1, 1)).toBe('library');
+  });
+
+  it('gives a wall bordering only the pool the pool room', () => {
+    // x=0 column beside the pool interior (pool: x 1–11, y 11–20).
+    expect(roomForWall(0, 15)).toBe('pool');
+  });
+
+  it('resolves a shared internal divider deterministically to the earlier room', () => {
+    // Col 12, row 2 is a wall on the work|board divider; both expanded rects
+    // cover it, so the earlier room (work) wins.
+    expect(isWall(12, 2)).toBe(true);
+    expect(roomForWall(12, 2)).toBe('work');
   });
 });
 
