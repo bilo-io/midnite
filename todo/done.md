@@ -4,6 +4,13 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-26 — Phase 8 D2: office minimap (PR #218)
+
+- [x] `lib/office/minimap.ts` — pure, unit-tested geometry (world↔minimap↔padded space): `minimapLayout` (aspect-preserving fit), `worldToMinimap`/`worldRectToMinimap`, `minimapRooms` (8 tests)
+- [x] Always-on minimap pinned bottom-right of the `/office` canvas: per-room accent-tinted outlines, agent dots (status-coloured; **red** on attention), player dot, and a rectangle tracking the follow-camera's current viewport
+- [x] Drawn in `office-scene.ts` as a container that **tracks `cameras.main.worldView` each frame** (scaled `1/ZOOM`) rather than a `scrollFactor(0)` object — robust under the scrolling/zoomed follow-camera; panel fill re-tints on light/dark flip
+- [x] Completes Phase 8 D2 (was deferred "until the map grows" — unblocked by the larger scrolling map + camera-follow, PR #206/#174). Local gate green (typecheck, lint 0 errors, 533 web tests); merged with CI billing-blocked (same as #214–#217)
+
 ## 2026-06-26 — Phase 41 D: board keyboard navigation (PR #217)
 
 - [x] `lib/board-nav.ts` — pure, unit-tested grid nav: `↓`/`↑` within a column (clamped), `→`/`←` to the nearest non-empty adjacent column preferring the same row
