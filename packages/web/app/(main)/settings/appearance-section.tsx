@@ -12,6 +12,7 @@ import {
   PanelLeft,
   Paintbrush,
   Palette,
+  RotateCcw,
   Sun,
   Type,
   Zap,
@@ -53,6 +54,12 @@ import {
   WORDMARK_FONTS,
   WORDMARK_FONT_STORAGE_KEY,
 } from '@/lib/wordmark-fonts';
+import {
+  applyAccent,
+  applyDensity,
+  applyEffects,
+  applyMotion,
+} from '@/lib/apply-appearance';
 import { cn } from '@/lib/utils';
 
 const THEME_OPTIONS: { value: ThemePreference; label: string; Icon: LucideIcon }[] = [
@@ -99,8 +106,28 @@ export function AppearanceSection() {
   const setEffect = (key: keyof VisualEffects, value: boolean) =>
     setSettings((prev) => ({ ...prev, effects: { ...DEFAULT_EFFECTS, ...prev.effects, [key]: value } }));
 
+  const handleReset = () => {
+    setSettings(DEFAULT_SETTINGS);
+    setPreference('system');
+    applyAccent(DEFAULT_SETTINGS.accent);
+    applyMotion(DEFAULT_SETTINGS.motion);
+    applyDensity(DEFAULT_SETTINGS.density);
+    applyEffects(DEFAULT_SETTINGS.effects);
+  };
+
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-end">
+        <button
+          type="button"
+          onClick={handleReset}
+          className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        >
+          <RotateCcw className="h-3 w-3" />
+          Reset to defaults
+        </button>
+      </div>
+
       <Accordion title="Theme" icon={<Palette className="h-3.5 w-3.5" />} defaultOpen>
         <div className="p-5">
           <SettingRow
@@ -310,7 +337,7 @@ export function AppearanceSection() {
                 </span>
                 <Switch
                   checked={effects[opt.key]}
-                  onCheckedChange={(v) => setEffect(opt.key, v)}
+                  onCheckedChange={(v: boolean) => setEffect(opt.key, v)}
                   aria-label={opt.label}
                 />
               </label>

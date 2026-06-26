@@ -93,10 +93,10 @@ const ACCENT_MAP = Object.fromEntries(
 
 /**
  * Inline, render-blocking script for the document <head>: applies the saved
- * accent + motion + effect prefs BEFORE first paint so a reload never flashes
- * the default look. Web's companion to `@midnite/ui`'s theme init script (kept
- * separate so the ui leaf stays ignorant of web's settings shape). Inject via a
- * raw <script> tag.
+ * accent, motion, density, effect, AND background prefs BEFORE first paint so a
+ * reload never flashes the default look. Web's companion to `@midnite/ui`'s
+ * theme init script (kept separate so the ui leaf stays ignorant of web's
+ * settings shape). Inject via a raw <script> tag.
  */
 export const appearanceInitScript = `(function(){try{var s=JSON.parse(localStorage.getItem('${SETTINGS_STORAGE_KEY}')||'{}');var h=document.documentElement;var M=${JSON.stringify(
   ACCENT_MAP,
