@@ -13,6 +13,12 @@
        hues, .dark overrides) come from @midnite/ui/styles, imported above. */
     --nav-offset: 3.5rem;
   }
+
+  /* Density: compact reduces the root font-size so all rem-based Tailwind
+     utilities scale proportionally — no component changes required. */
+  html[data-density='compact'] {
+    font-size: 14px;
+  }
 }
 
 /* React Flow (@xyflow) theming — map its chrome onto midnite's design tokens. */

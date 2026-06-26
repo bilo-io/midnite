@@ -33,6 +33,8 @@ import {
   ACCENT_OPTIONS,
   DEFAULT_EFFECTS,
   DEFAULT_SETTINGS,
+  DENSITY_DEFAULT,
+  DENSITY_OPTIONS,
   EFFECT_OPTIONS,
   MOTION_DEFAULT,
   MOTION_OPTIONS,
@@ -41,6 +43,7 @@ import {
   type AppSettings,
   type BackgroundPattern,
   type BgIntensity,
+  type Density,
   type Motion,
   type NavMode,
   type VisualEffects,
@@ -88,6 +91,9 @@ export function AppearanceSection() {
 
   const motion = settings.motion ?? MOTION_DEFAULT;
   const setMotion = (next: Motion) => setSettings((prev) => ({ ...prev, motion: next }));
+
+  const density = settings.density ?? DENSITY_DEFAULT;
+  const setDensity = (next: Density) => setSettings((prev) => ({ ...prev, density: next }));
 
   const effects = { ...DEFAULT_EFFECTS, ...(settings.effects ?? {}) };
   const setEffect = (key: keyof VisualEffects, value: boolean) =>
@@ -260,20 +266,37 @@ export function AppearanceSection() {
       <Accordion title="Motion & effects" icon={<Zap className="h-3.5 w-3.5" />} defaultOpen>
         <div className="space-y-4 p-5">
           <SettingRow
-            title="Motion"
-            description="Follow your system's reduced-motion setting, minimise animation, or always animate."
+            title="Density"
+            description="Comfortable uses the default spacing; compact fits more on screen."
           >
             <Segmented
-              ariaLabel="Motion"
-              value={motion}
-              onChange={setMotion}
-              options={MOTION_OPTIONS.map((o) => ({ value: o.value, label: o.label, title: o.hint }))}
+              ariaLabel="Density"
+              value={density}
+              onChange={setDensity}
+              options={DENSITY_OPTIONS.map((o) => ({ value: o.value, label: o.label, title: o.hint }))}
               hydrated={hydrated}
             />
           </SettingRow>
           <p className="text-xs text-muted-foreground">
-            {MOTION_OPTIONS.find((o) => o.value === motion)?.hint}.
+            {DENSITY_OPTIONS.find((o) => o.value === density)?.hint}.
           </p>
+          <div className="border-t border-border/60 pt-4">
+            <SettingRow
+              title="Motion"
+              description="Follow your system's reduced-motion setting, minimise animation, or always animate."
+            >
+              <Segmented
+                ariaLabel="Motion"
+                value={motion}
+                onChange={setMotion}
+                options={MOTION_OPTIONS.map((o) => ({ value: o.value, label: o.label, title: o.hint }))}
+                hydrated={hydrated}
+              />
+            </SettingRow>
+            <p className="mt-4 text-xs text-muted-foreground">
+              {MOTION_OPTIONS.find((o) => o.value === motion)?.hint}.
+            </p>
+          </div>
           <div className="space-y-3 border-t border-border/60 pt-4">
             {EFFECT_OPTIONS.map((opt) => (
               <label

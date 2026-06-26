@@ -1,8 +1,10 @@
 import {
   ACCENT_OPTIONS,
   DEFAULT_EFFECTS,
+  DENSITY_DEFAULT,
   SETTINGS_STORAGE_KEY,
   type AccentId,
+  type Density,
   type Motion,
   type VisualEffects,
 } from './app-settings';
@@ -37,6 +39,21 @@ export function applyMotion(motion: Motion): void {
 }
 
 /**
+ * Apply the density preference as `data-density` on <html>. `compact` reduces
+ * the root font-size to 14px (via the globals.css rule), shrinking all
+ * rem-based Tailwind utilities proportionally. `comfortable` clears the
+ * attribute so the default 16px root size applies.
+ */
+export function applyDensity(density: Density): void {
+  const html = document.documentElement;
+  if (density === 'compact') {
+    html.setAttribute('data-density', 'compact');
+  } else {
+    html.removeAttribute('data-density');
+  }
+}
+
+/**
  * Apply the per-effect toggles as `data-no-*` attributes on <html> (set only
  * when an effect is *disabled*). globals.css gates each effect on its attribute.
  */
@@ -63,4 +80,4 @@ const ACCENT_MAP = Object.fromEntries(
  */
 export const appearanceInitScript = `(function(){try{var s=JSON.parse(localStorage.getItem('${SETTINGS_STORAGE_KEY}')||'{}');var h=document.documentElement;var M=${JSON.stringify(
   ACCENT_MAP,
-)};var v=M[s.accent];if(v){h.style.setProperty('--accent-h',v[0]);h.style.setProperty('--accent-s',v[1]);h.setAttribute('data-accent',s.accent);}h.setAttribute('data-motion',s.motion||'system');var e=s.effects||{};if(e.pageReveal===false)h.setAttribute('data-no-page-reveal','');if(e.typewriter===false)h.setAttribute('data-no-typewriter','');if(e.glass===false)h.setAttribute('data-no-glass','');}catch(e){}})();`;
+)};var v=M[s.accent];if(v){h.style.setProperty('--accent-h',v[0]);h.style.setProperty('--accent-s',v[1]);h.setAttribute('data-accent',s.accent);}h.setAttribute('data-motion',s.motion||'system');if(s.density==='compact')h.setAttribute('data-density','compact');var e=s.effects||{};if(e.pageReveal===false)h.setAttribute('data-no-page-reveal','');if(e.typewriter===false)h.setAttribute('data-no-typewriter','');if(e.glass===false)h.setAttribute('data-no-glass','');}catch(e){}})();`;
