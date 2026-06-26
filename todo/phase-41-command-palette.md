@@ -56,17 +56,17 @@ A central shortcut map + discovery overlay.
 
 ---
 
-## Theme D — Board keyboard navigation — **S**
+## Theme D — Board keyboard navigation — **S** ✅ DONE (2026-06-26)
 
 Arrow-key card focus + action keys on the kanban.
 
-- [ ] Add a `FocusedCard` state (id + column) to the board component ([`app/(main)/board/`](../packages/web/app/(main)/board/)). Render a visible focus ring on the focused card.
-- [ ] `↓`/`↑` — move focus to the next/previous card within the same column. `→`/`←` — move focus to the nearest card in the adjacent column (same row where possible, else last card).
-- [ ] `Enter` — open the focused card's detail drawer/page.
-- [ ] `E` — open the focused card's edit form.
-- [ ] `D` — mark focused card done (requires confirmation if already in done).
-- [ ] `A` — abandon focused card (shows a confirm dialog before firing).
-- [ ] All board shortcuts suppressed when any `<input>`/`<textarea>` has focus (same rule as Theme C).
+- [x] Add a `FocusedCard` state (id) to `board-view.tsx`; render a visible focus ring (offset ring, distinct from selection + dnd). Focus derives its column from the live grouping so it follows a card as it moves.
+- [x] `↓`/`↑` — move focus to the next/previous card within the same column. `→`/`←` — move focus to the nearest non-empty adjacent column (same row where possible, else last card). Nav math is a pure, unit-tested helper ([`lib/board-nav.ts`](../packages/web/lib/board-nav.ts)).
+- [x] `Enter` — open the focused card's detail (`TaskThreadModal`).
+- [ ] ⏳ `E` — open the focused card's edit form. **Deferred:** no dedicated edit form exists (the detail modal is the edit surface, and `E` would duplicate `Enter`); revisit when a standalone edit form lands. Not in the phase's verification criteria.
+- [x] `D` — mark focused card done; confirms only if the card is already in done (the literal doc rule), else immediate.
+- [x] `A` — abandon focused card (always shows a confirm dialog before firing).
+- [x] All board shortcuts suppressed when an `<input>`/`<textarea>`/`<select>`/`[contenteditable]` has focus, and while any modal (`[role="dialog"]`) is open.
 
 ---
 

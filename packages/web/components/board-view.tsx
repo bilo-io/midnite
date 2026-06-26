@@ -13,16 +13,40 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core';
 import { Play, Square } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Status, Task } from '@midnite/shared';
 import { AbandonedRow } from '@/components/abandoned-row';
+import { useConfirm } from '@/components/confirm-dialog';
 import { SelectableIcon } from '@/components/selectable-icon';
 import { TapToMoveMenu } from '@/components/tap-to-move-menu';
 import { TaskCard, type ProjectTagInfo } from '@/components/task-card';
 import { type ColumnDef, type TaskViewProps, groupByStatus } from '@/components/task-columns';
+import { arrowDir, nextFocusId, type FocusGrid } from '@/lib/board-nav';
 import { useIsMobile } from '@/hooks/use-media-query';
 import { cn } from '@/lib/utils';
+
+/** True when focus sits in an editable element — board shortcuts are suppressed then. */
+function inEditableElement(): boolean {
+  const el = document.activeElement as HTMLElement | null;
+  if (!el) return false;
+  const tag = el.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+  return el.contentEditable === 'true';
+}
+
+/**
+ * True when a *visible* modal is open, so its own focus trap / keys own the
+ * keyboard. Some dialogs (the mobile nav menu) stay mounted but hidden — those
+ * have no client rects, so a presence check alone would wrongly suppress the
+ * board on desktop. Gate on actual visibility instead.
+ */
+function visibleModalOpen(): boolean {
+  for (const d of document.querySelectorAll<HTMLElement>('[role="dialog"]')) {
+    if (d.getClientRects().length > 0) return true;
+  }
+  return false;
+}
 
 /**
  * Kanban layout for the Tasks page: one column per visible status. On desktop,
@@ -70,6 +94,9 @@ export function BoardView({
 
   const onDragStart = (event: DragStartEvent) => {
     setActiveId(String(event.active.id));
+    // A pointer drag takes over — drop the keyboard focus ring so it doesn't
+    // linger on a card the user is no longer driving with the keyboard.
+    clearFocus();
   };
 
   const onDragEnd = (event: DragEndEvent) => {
@@ -96,6 +123,88 @@ export function BoardView({
     if (!el) return;
     el.scrollTo({ left: idx * el.clientWidth, behavior: 'smooth' });
   }
+
+  // --- Keyboard navigation (Phase 41 Theme D) ---
+  // A single focused card (id only; its column is derived from the live grouping
+  // so a focused card stays focused as it moves). Arrow keys walk the visible grid;
+  // Enter opens detail; D marks done; A abandons. All suppressed inside inputs or
+  // while a modal/dialog is open (its own focus trap owns the keys then).
+  const confirm = useConfirm();
+  const [focusedId, setFocusedId] = useState<string | null>(null);
+
+  // The visible grid, in render order, rebuilt each render from the same grouping
+  // the columns use — so navigation always matches what's on screen.
+  const grid: FocusGrid = columns.map((col) => (grouped.get(col.status) ?? []).map((t) => t.id));
+
+  // Keep a ref to the latest grid + handlers so the keydown effect can stay
+  // subscribed once without re-binding on every task/grouping change.
+  const navRef = useRef({ grid, focusedId, tasks, onSelect, onMove, confirm });
+  navRef.current = { grid, focusedId, tasks, onSelect, onMove, confirm };
+
+  useEffect(() => {
+    const onKey = async (e: KeyboardEvent) => {
+      // Don't fight inputs or a modal's own focus-trapped keys.
+      if (inEditableElement()) return;
+      if (visibleModalOpen()) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+      const { grid, focusedId, tasks, onSelect, onMove, confirm } = navRef.current;
+
+      const dir = arrowDir(e.key);
+      if (dir) {
+        const next = nextFocusId(grid, focusedId, dir);
+        if (next) {
+          e.preventDefault();
+          setFocusedId(next);
+        }
+        return;
+      }
+
+      // The action keys below all target the focused card.
+      const task = focusedId ? tasks.find((t) => t.id === focusedId) : undefined;
+      if (!task) return;
+
+      switch (e.key) {
+        case 'Enter':
+          e.preventDefault();
+          onSelect(task);
+          break;
+        case 'd':
+        case 'D': {
+          e.preventDefault();
+          // A normal move to done is immediate; re-confirming an already-done card
+          // guards the odd no-op the phase doc calls out.
+          if (task.status === 'done') {
+            const ok = await confirm({
+              title: 'Mark this task done again?',
+              description: 'It is already in Done.',
+              confirmLabel: 'Mark done',
+              destructive: false,
+            });
+            if (!ok) return;
+          }
+          onMove?.(task.id, 'done');
+          break;
+        }
+        case 'a':
+        case 'A': {
+          e.preventDefault();
+          const ok = await confirm({
+            title: 'Abandon this task?',
+            description: 'It moves to Abandoned and its session (if any) is archived.',
+            confirmLabel: 'Abandon',
+          });
+          if (ok) onMove?.(task.id, 'abandoned');
+          break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  const clearFocus = useCallback(() => setFocusedId(null), []);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -171,6 +280,7 @@ export function BoardView({
                   selected={isSelected?.(t.id) ?? false}
                   onToggleSelect={onToggleSelect ? (sk) => onToggleSelect(t.id, sk) : undefined}
                   blockedBy={blockedCounts?.get(t.id)}
+                  focused={t.id === focusedId}
                   // On a phone, drag is finicky — offer the tap-to-move fallback.
                   moveColumns={isMobile && onMove ? columns : undefined}
                   onMoveTo={onMove ? (target) => onMove(t.id, target) : undefined}
@@ -285,6 +395,7 @@ function DraggableCard({
   selected = false,
   onToggleSelect,
   blockedBy,
+  focused = false,
   moveColumns,
   onMoveTo,
 }: {
@@ -296,6 +407,8 @@ function DraggableCard({
   selected?: boolean;
   onToggleSelect?: (shiftKey: boolean) => void;
   blockedBy?: number;
+  /** The keyboard-navigation focus ring (Phase 41 Theme D). */
+  focused?: boolean;
   /** When set (touch widths), render the tap-to-move fallback over these columns. */
   moveColumns?: ColumnDef[];
   onMoveTo?: (target: Status) => void;
@@ -312,16 +425,30 @@ function DraggableCard({
   // A running task (its session is live) can be stopped: interrupt the agent and
   // send the task back to todo. Mirrors the Start affordance on idle cards.
   const canStop = task.status === 'wip' || task.status === 'waiting';
+
+  // Bring the keyboard-focused card into view as focus walks the board.
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (focused) rootRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [focused]);
+
   return (
     <div
-      ref={setNodeRef}
+      ref={(node) => {
+        setNodeRef(node);
+        rootRef.current = node;
+      }}
       {...listeners}
+      data-focused={focused || undefined}
       // The floating card follows the cursor via DragOverlay; here we just leave
       // a dimmed placeholder in the source column.
       className={cn(
         'group relative touch-none rounded-md',
         isDragging && 'opacity-40',
         selected && 'ring-2 ring-primary',
+        // Keyboard focus ring — an offset outline, distinct from the selection
+        // ring (above) and the dnd drag indicator so the three never read alike.
+        focused && 'outline-none ring-2 ring-ring ring-offset-2 ring-offset-background',
       )}
     >
       {onToggleSelect ? (
