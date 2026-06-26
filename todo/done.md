@@ -4,6 +4,12 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-26 — fix(web): repair /ideas/[id] static-export build (PR #228)
+
+- [x] **Broken `main` build fixed**: PR #215 (Phase 40 Ideas) added `app/(main)/ideas/[id]/page.tsx` — the repo's only file-based dynamic route — which `output: 'export'` can't prerender for an arbitrary runtime id, so `next build` (and the `@midnite/desktop` static export) failed with "missing generateStaticParams()". The billing-blocked `ci` job (exits ~4s) never caught it
+- [x] Adopted the existing static-export convention (`/media/view`, `/councils/view`, `/settings/team`): deleted the `[id]/page.tsx` route, kept `idea-detail-view.tsx` co-located under `[id]/`, switched it from `useParams`→`useSearchParams`, added a Suspense-wrapped `ideas/view/page.tsx`, and repointed the four `/ideas/${id}` links to `/ideas/view?id=${id}`
+- [x] Local gate green: `web:build` ✓ (42/42 static pages), typecheck ✓, lint ✓ (pre-existing warnings only), 559 web tests pass. Merged with CI billing-blocked. **Unblocks Phase 34 Decision §3 — the bundle-size CI gate (next slice; Phase 34 A1/A2 baseline already done)**
+
 ## 2026-06-26 — Phase 39 E: Reset to defaults button in Appearance panel (PR #226)
 
 - [x] "Reset to defaults" ghost button (RotateCcw icon) at the top of Settings → Appearance; resets all visual prefs to `DEFAULT_SETTINGS`, resets theme to `system`, and immediately calls `applyAccent`/`applyMotion`/`applyDensity`/`applyEffects` so the UI updates without a reload
