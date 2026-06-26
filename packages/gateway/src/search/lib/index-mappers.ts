@@ -1,5 +1,6 @@
 import type {
   Council,
+  Idea,
   Memory,
   Note,
   Project,
@@ -65,6 +66,10 @@ export function workflowToIndexDoc(w: Pick<Workflow, 'id' | 'name' | 'descriptio
   return { type: 'workflow', entityId: w.id, teamId: w.teamId ?? null, title: w.name, body: clip(w.description ?? '') };
 }
 
+export function ideaToIndexDoc(i: Pick<Idea, 'id' | 'title' | 'body' | 'teamId'>): IndexDoc {
+  return { type: 'idea', entityId: i.id, teamId: i.teamId ?? null, title: i.title, body: clip(i.body) };
+}
+
 /** Where the client should navigate to open a result of the given type. */
 export function routeFor(type: SearchType, id: string): string {
   switch (type) {
@@ -81,5 +86,7 @@ export function routeFor(type: SearchType, id: string): string {
       return `/councils/${id}`;
     case 'workflow':
       return `/workflows/edit?id=${encodeURIComponent(id)}`;
+    case 'idea':
+      return `/ideas/${id}`;
   }
 }

@@ -7,6 +7,7 @@ import {
   BrainCircuit,
   CirclePile,
   Folder,
+  Lightbulb,
   ListChecks,
   LoaderCircle,
   StickyNote,
@@ -33,6 +34,7 @@ const TYPE_META: Record<SearchType, { label: string; Icon: LucideIcon }> = {
   note: { label: 'Notes', Icon: StickyNote },
   council: { label: 'Councils', Icon: CirclePile },
   workflow: { label: 'Workflows', Icon: Workflow },
+  idea: { label: 'Ideas', Icon: Lightbulb },
 };
 
 type FetchStatus = 'idle' | 'loading' | 'done' | 'error';

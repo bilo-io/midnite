@@ -40,6 +40,7 @@ import { AuditModule } from './audit/audit.module';
 import { TeamsModule } from './teams/teams.module';
 import { WsModule } from './ws/ws.module';
 import { ServiceTokensModule } from './service-tokens/service-tokens.module';
+import { IdeasModule } from './ideas/ideas.module';
 
 @Module({
   imports: [
@@ -84,6 +85,7 @@ import { ServiceTokensModule } from './service-tokens/service-tokens.module';
     AuditModule,
     AdminModule,
     ServiceTokensModule,
+    IdeasModule,
   ],
   controllers: [HealthController],
   providers: [],
