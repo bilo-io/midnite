@@ -42,10 +42,17 @@ export const TEX = {
   wallArt: 'office-wall-art',
   rug: 'office-rug',
   astroTurf: 'office-astro-turf',
-  // Desk clutter (E3) — small items scattered on the hot desks for life.
+  // Desk setup variants (A3) — distinct silhouettes per hot desk.
+  monitorDual: 'office-monitor-dual',
+  laptop: 'office-laptop',
+  // Desk clutter (E3 + A3) — small items scattered on the hot desks for life.
   paperStack: 'office-paper-stack',
   deskMug: 'office-desk-mug',
   deskPlantlet: 'office-desk-plantlet',
+  deskLamp: 'office-desk-lamp',
+  deskBooks: 'office-desk-books',
+  deskHeadphones: 'office-desk-headphones',
+  deskSticky: 'office-desk-sticky',
   // Communal games corner (E3).
   poolTable: 'office-pool-table',
   pingPong: 'office-ping-pong',
@@ -56,6 +63,38 @@ export const TEX = {
 /** Texture key for a plant species/size (Phase 9 B2). */
 export const plantTexture = (variant: PlantVariant): string =>
   variant === 'palm' ? TEX.plantPalm : variant === 'succulent' ? TEX.plantSucculent : TEX.plant;
+
+/**
+ * Monitor screen-colour variants (A3): each desk's screen glows a different
+ * hue so a deskful of agents reads as individual workstations. `[screen, glow]`.
+ */
+export const MONITOR_SCREENS: readonly [number, number][] = [
+  [0x1e3a5f, 0x38bdf8], // blue
+  [0x1f3d2e, 0x4ade80], // green
+  [0x3d2f1e, 0xfbbf24], // amber
+  [0x2f1e3d, 0xc084fc], // violet
+  [0x3d1e2a, 0xfb7185], // rose
+];
+
+/** Texture key for the single-monitor screen variant at index `i`. */
+export const monitorKey = (i: number): string => `office-monitor-${i % MONITOR_SCREENS.length}`;
+
+/** Desk setup variants, picked deterministically per seat index (A3). */
+export type DeskSetup = 'single' | 'dual' | 'laptop';
+export const DESK_SETUPS: readonly DeskSetup[] = ['single', 'dual', 'single', 'laptop'];
+export const deskSetup = (seatIndex: number): DeskSetup =>
+  DESK_SETUPS[seatIndex % DESK_SETUPS.length]!;
+
+/** The expanded desk-clutter pool (A3) — varied deterministically per desk. */
+export const DESK_CLUTTER: readonly string[] = [
+  TEX.paperStack,
+  TEX.deskMug,
+  TEX.deskPlantlet,
+  TEX.deskLamp,
+  TEX.deskBooks,
+  TEX.deskHeadphones,
+  TEX.deskSticky,
+];
 
 export type Dir = 'down' | 'up' | 'side';
 export type CharKind = 'human' | 'robot';
@@ -231,9 +270,59 @@ export function ensureOfficeTextures(scene: Phaser.Scene): void {
     rect(g, 2, 2, 14, 2, 0x38bdf8);
     rect(g, 7, 12, 4, 2, 0x334155);
   });
+  // Per-desk monitor screen-colour variants (A3).
+  MONITOR_SCREENS.forEach(([screen, glow], i) => {
+    make(monitorKey(i), 18, 14, (g) => {
+      rect(g, 0, 0, 18, 12, 0x0f172a);
+      rect(g, 2, 2, 14, 8, screen);
+      rect(g, 2, 2, 14, 2, glow);
+      rect(g, 7, 12, 4, 2, 0x334155);
+    });
+  });
+  // Dual-monitor rig (A3) — a wider two-screen silhouette.
+  make(TEX.monitorDual, 30, 14, (g) => {
+    rect(g, 0, 0, 14, 12, 0x0f172a);
+    rect(g, 2, 2, 10, 8, 0x1e3a5f);
+    rect(g, 2, 2, 10, 2, 0x38bdf8);
+    rect(g, 16, 0, 14, 12, 0x0f172a);
+    rect(g, 18, 2, 10, 8, 0x1f3d2e);
+    rect(g, 18, 2, 10, 2, 0x4ade80);
+    rect(g, 13, 12, 4, 2, 0x334155);
+  });
+  // Laptop (A3) — open clamshell, smaller than a monitor.
+  make(TEX.laptop, 16, 12, (g) => {
+    rect(g, 2, 0, 12, 9, 0x1f2937); // lid
+    rect(g, 3, 1, 10, 7, 0x1e3a5f); // screen
+    rect(g, 3, 1, 10, 2, 0x38bdf8); // glow
+    rect(g, 0, 9, 16, 3, 0x9ca3af); // keyboard deck
+  });
   make(TEX.chair, 16, 12, (g) => {
     rect(g, 2, 0, 12, 3, 0x475569);
     rect(g, 1, 4, 14, 6, 0x334155);
+  });
+  // Expanded desk clutter (A3): lamp, books, headphones, sticky note.
+  make(TEX.deskLamp, 8, 12, (g) => {
+    rect(g, 2, 10, 4, 2, 0x334155); // base
+    rect(g, 3, 4, 1, 6, 0x475569); // stem
+    rect(g, 3, 1, 4, 4, 0xfde68a); // shade (lit)
+    rect(g, 4, 4, 2, 1, 0xfffbeb); // glow
+  });
+  make(TEX.deskBooks, 10, 9, (g) => {
+    rect(g, 0, 6, 10, 3, 0xb91c1c); // bottom book
+    rect(g, 1, 3, 8, 3, 0x1d4ed8); // middle book
+    rect(g, 0, 0, 9, 3, 0x047857); // top book
+  });
+  make(TEX.deskHeadphones, 10, 10, (g) => {
+    rect(g, 1, 1, 8, 2, 0x111827); // headband
+    rect(g, 0, 2, 2, 6, 0x1f2937); // ear cup L
+    rect(g, 8, 2, 2, 6, 0x1f2937); // ear cup R
+    rect(g, 0, 3, 2, 4, 0x374151); // pad L
+    rect(g, 8, 3, 2, 4, 0x374151); // pad R
+  });
+  make(TEX.deskSticky, 8, 8, (g) => {
+    rect(g, 0, 0, 8, 8, 0xfacc15); // note
+    rect(g, 1, 2, 6, 1, 0xa16207); // scribble
+    rect(g, 1, 4, 5, 1, 0xa16207);
   });
 
   // --- Lounge ---

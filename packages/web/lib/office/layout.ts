@@ -279,14 +279,14 @@ export const LAYOUT_OK = LAYOUT.length === OFFICE_ROWS && LAYOUT.every((r) => r.
  * the start/goal seat as a special case so an agent leaves its couch and steps
  * onto its desk, but never walks *through* another piece of furniture en route.
  */
-export function blockedGrid(): boolean[][] {
+export function blockedGrid(deskSeats: readonly TilePos[] = DESK_SEATS): boolean[][] {
   const grid = LAYOUT.map((row) => Array.from(row, (c) => c === '#'));
   const block = (x: number, y: number) => {
     const xx = Math.round(x);
     const yy = Math.round(y);
     if (grid[yy] && xx >= 0 && xx < grid[yy]!.length) grid[yy]![xx] = true;
   };
-  for (const s of DESK_SEATS) block(s.x, s.y);
+  for (const s of deskSeats) block(s.x, s.y);
   for (const s of LOUNGE_SEATS) block(s.x, s.y); // sun loungers — agents sit, don't path through
   block(TV_POS.x, TV_POS.y);
   block(CONSOLE_POS.x, CONSOLE_POS.y);

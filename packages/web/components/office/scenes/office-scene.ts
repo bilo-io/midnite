@@ -35,7 +35,8 @@ import {
   type TilePos,
   WALL_ART,
 } from '@/lib/office/layout';
-import { buildFloorTileData, getDeskSeats } from '@/lib/office/map-data';
+import { generateDeskLayout, type DeskLayout } from '@/lib/office/desks';
+import { buildFloorTileData } from '@/lib/office/map-data';
 import {
   minimapLayout,
   minimapRooms,
@@ -47,9 +48,12 @@ import { buildOfficePalette, ROOM_STYLES, roomSignStyle, type OfficePalette } fr
 import {
   agentTint,
   charKey,
+  DESK_CLUTTER,
+  deskSetup,
   ensureOfficeAnims,
   ensureOfficeTileset,
   ensureOfficeTextures,
+  monitorKey,
   plantTexture,
   poseTexKey,
   providerAccent,
@@ -86,6 +90,8 @@ const MINIMAP_PAD = 6;
 const MINIMAP_MARGIN = 12;
 /** Attention dot colour on the minimap (red) — overrides the status tint. */
 const MINIMAP_ATTENTION = 0xf87171;
+/** Hot-desk count before the live pool capacity arrives (config default; A3). */
+const DEFAULT_DESK_CAPACITY = 16;
 /** How close (px) the player must be to a desk/board to "reach" it. */
 const PROXIMITY = TILE * 1.6;
 /** How close (px) the player must be for an agent's nameplate to appear. */
@@ -202,6 +208,11 @@ class OfficeScene extends Phaser.Scene {
   private readonly roomSigns: { plate: Phaser.GameObjects.Graphics; id: RoomId; rect: Phaser.Geom.Rectangle }[] = [];
   /** Pathfinding walkability grid (true = blocked); seats handled specially. */
   private blocked: boolean[][] = [];
+  /** Hot-desk layout (A3) — desk count = pool capacity; rebuilt when it changes. */
+  private deskCapacity = DEFAULT_DESK_CAPACITY;
+  private deskLayout: DeskLayout = generateDeskLayout(DEFAULT_DESK_CAPACITY);
+  /** Every desk display object (chair/desk/screen/clutter) — tracked for rebuild. */
+  private readonly deskObjects: Phaser.GameObjects.GameObject[] = [];
   private boardCenter = { x: 0, y: 0 };
   private kitchenCenter = { x: 0, y: 0 };
   private libraryCenter = { x: 0, y: 0 };
@@ -242,7 +253,9 @@ class OfficeScene extends Phaser.Scene {
 
   create() {
     this.palette = buildOfficePalette();
-    this.blocked = blockedGrid();
+    this.deskCapacity = useOfficeStore.getState().deskCapacity ?? this.deskCapacity;
+    this.deskLayout = generateDeskLayout(this.deskCapacity);
+    this.blocked = blockedGrid(this.deskLayout.seats);
     ensureOfficeTextures(this);
     ensureOfficeAnims(this);
 
@@ -318,6 +331,10 @@ class OfficeScene extends Phaser.Scene {
 
     this.unsub = useOfficeStore.subscribe((state, prev) => {
       if (!this.alive) return;
+      // Desk count follows the live pool capacity (A3) — rebuild on change.
+      if (state.deskCapacity != null && state.deskCapacity !== prev.deskCapacity) {
+        this.rebuildDesks(state.deskCapacity);
+      }
       if (state.agents !== prev.agents) this.renderActors(state.agents);
       const frozen = state.active !== null || state.boardOpen || state.libraryOpen || state.playstationOpen;
       const wasFrozen = prev.active !== null || prev.boardOpen || prev.libraryOpen || prev.playstationOpen;
@@ -566,7 +583,7 @@ class OfficeScene extends Phaser.Scene {
 
     // Partition by task-status room target; fall back to session-status for
     // agents without a linked task (treat as wip so they appear at desks).
-    const deskSeats = getDeskSeats();
+    const deskSeats = this.deskLayout.seats;
     const deskAgents = agents
       .filter((a) => statusToRoom(a.taskStatus ?? 'wip') === 'work')
       .slice(0, deskSeats.length);
@@ -1266,22 +1283,68 @@ class OfficeScene extends Phaser.Scene {
     }
   }
 
-  /** Hot desks (work zone). Furniture always shows; agents sit on top when assigned. */
+  /**
+   * Hot desks (work zone, A3). One desk per pool slot (`deskLayout`, sized to
+   * fit), each with a deterministic **setup** (single / dual-monitor / laptop),
+   * a per-desk **screen colour**, and 2–3 **clutter** items from the expanded
+   * pool. Furniture always shows; agents sit on top when assigned. Every object
+   * is tracked in `deskObjects` so `rebuildDesks` can tear it down.
+   */
   private buildDesks() {
-    // Clutter on the desk front, varied deterministically by seat index (E3).
-    const clutter = [TEX.paperStack, TEX.deskMug, TEX.deskPlantlet];
-    getDeskSeats().forEach(({ x, y }, i) => {
+    const s = this.deskLayout.deskScale;
+    this.deskLayout.seats.forEach(({ x, y }, i) => {
       const cx = center(x);
       const cy = center(y);
-      this.add.image(cx, cy + TILE * 0.25, TEX.chair).setDepth(2);
+      const track = <T extends Phaser.GameObjects.GameObject>(o: T): T => {
+        this.deskObjects.push(o);
+        return o;
+      };
+      track(this.add.image(cx, cy + TILE * 0.25, TEX.chair).setDepth(2).setScale(s));
       const desk = this.physics.add.staticImage(cx, cy + TILE * 0.3, TEX.desk).setDepth(6);
+      desk.setScale(s).refreshBody();
       this.solids.push(desk);
-      this.add.image(cx, cy + TILE * 0.18, TEX.monitor).setDepth(7);
-      // A couple of items flanking the monitor on the desk's front edge.
+      track(desk);
+
+      // Setup variant — distinct silhouette per desk.
+      const setup = deskSetup(i);
+      if (setup === 'dual') {
+        track(this.add.image(cx, cy + TILE * 0.18, TEX.monitorDual).setDepth(7).setScale(s));
+      } else if (setup === 'laptop') {
+        track(this.add.image(cx, cy + TILE * 0.22, TEX.laptop).setDepth(7).setScale(s));
+      } else {
+        track(this.add.image(cx, cy + TILE * 0.18, monitorKey(i)).setDepth(7).setScale(s));
+      }
+
+      // 2–3 clutter items from the expanded pool, flanking the workstation.
       const surfaceY = cy + TILE * 0.42;
-      this.add.image(cx - 15, surfaceY, clutter[i % clutter.length]!).setDepth(8);
-      this.add.image(cx + 15, surfaceY, clutter[(i + 1) % clutter.length]!).setDepth(8);
+      const dx = 15 * s;
+      track(this.add.image(cx - dx, surfaceY, DESK_CLUTTER[i % DESK_CLUTTER.length]!).setDepth(8).setScale(s));
+      track(this.add.image(cx + dx, surfaceY, DESK_CLUTTER[(i + 2) % DESK_CLUTTER.length]!).setDepth(8).setScale(s));
+      // A third item on every other desk, behind the screen, for variety.
+      if (i % 2 === 0) {
+        track(this.add.image(cx + dx * 0.4, cy + TILE * 0.05, DESK_CLUTTER[(i + 4) % DESK_CLUTTER.length]!).setDepth(7).setScale(s * 0.9));
+      }
     });
+  }
+
+  /**
+   * Rebuild the hot desks for a new pool capacity (A3) — fired when the live
+   * `/pool` snapshot arrives. Tears down the old desk objects (and their static
+   * bodies), recomputes the layout + walkability grid, and re-seats agents.
+   */
+  private rebuildDesks(capacity: number) {
+    if (!this.alive || capacity === this.deskCapacity) return;
+    this.deskCapacity = capacity;
+    this.deskLayout = generateDeskLayout(capacity);
+    for (const obj of this.deskObjects) {
+      const si = this.solids.indexOf(obj);
+      if (si >= 0) this.solids.splice(si, 1);
+      obj.destroy();
+    }
+    this.deskObjects.length = 0;
+    this.buildDesks();
+    this.blocked = blockedGrid(this.deskLayout.seats);
+    this.renderActors(useOfficeStore.getState().agents);
   }
 
   /**

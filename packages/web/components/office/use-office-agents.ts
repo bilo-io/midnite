@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import type { AgentActivityEvent, AgentAttentionEvent } from '@midnite/shared';
-import { getSessions, getTasks } from '@/lib/api';
+import { getPoolSnapshot, getSessions, getTasks } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
 import { useOfficeStore } from '@/lib/office-store';
 import { sessionsToOfficeAgents } from '@/lib/office/agents';
@@ -25,6 +25,7 @@ export function useOfficeAgents(): { error: string | null } {
   const { data, error } = useApiData(() => Promise.all([getSessions(), getTasks()]));
   const setAgents = useOfficeStore((s) => s.setAgents);
   const patchAgent = useOfficeStore((s) => s.patchAgent);
+  const setDeskCapacity = useOfficeStore((s) => s.setDeskCapacity);
 
   // Per-session debounce timers for activity events — kept in a ref so they
   // don't re-create the handler on each render.
@@ -35,6 +36,22 @@ export function useOfficeAgents(): { error: string | null } {
     const [sessions, tasks] = data;
     setAgents(sessionsToOfficeAgents(sessions, tasks));
   }, [data, setAgents]);
+
+  // Hot-desk count follows the agent-pool capacity (A3). Config-static, so fetch
+  // once; on failure the scene keeps its default desk count.
+  useEffect(() => {
+    let cancelled = false;
+    getPoolSnapshot()
+      .then((snapshot) => {
+        if (!cancelled) setDeskCapacity(snapshot.capacity);
+      })
+      .catch(() => {
+        /* leave deskCapacity null — the scene falls back to its default */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [setDeskCapacity]);
 
   // Debounced activity patch: latest-wins within the debounce window.
   const onActivity = useCallback(

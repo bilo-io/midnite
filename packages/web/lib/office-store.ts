@@ -23,6 +23,8 @@ export type InteractionMode = 'menu' | 'call' | 'message';
 interface OfficeState {
   /** Live desk/lounge occupants, in assignment order. */
   agents: OfficeAgent[];
+  /** Agent-pool capacity (= number of hot desks, A3); null until `/pool` resolves. */
+  deskCapacity: number | null;
   /** Desk/agent id the player is standing next to (working agents only), or null. */
   nearbyId: string | null;
   /** Whether the player is standing at the board room's documents board. */
@@ -58,6 +60,7 @@ interface OfficeState {
   /** Item ids currently placed on the corner-office desk (persisted to localStorage). */
   deskItems: string[];
   setAgents(agents: OfficeAgent[]): void;
+  setDeskCapacity(capacity: number): void;
   /**
    * Patch a single agent's live-activity fields without replacing the whole array
    * (Phase 31 Theme E). Used for `agent.activity` / `agent.attention` events so
@@ -115,6 +118,7 @@ function loadPlayerTint(): number | null {
 
 export const useOfficeStore = create<OfficeState>((set) => ({
   agents: [],
+  deskCapacity: null,
   nearbyId: null,
   nearBoard: false,
   nearKitchen: false,
@@ -133,6 +137,7 @@ export const useOfficeStore = create<OfficeState>((set) => ({
   playerVariant: loadPlayerVariant(),
   playerTint: loadPlayerTint(),
   setAgents: (agents) => set({ agents }),
+  setDeskCapacity: (capacity) => set({ deskCapacity: capacity }),
   patchAgent: (id, patch) =>
     set((s) => {
       const idx = s.agents.findIndex((a) => a.id === id);
