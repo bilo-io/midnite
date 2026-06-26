@@ -70,6 +70,34 @@
   }
 }
 
+/*
+ * Section pagination — each landing section snaps into place as you scroll, so the
+ * page reads as a sequence of full panels. The document root is the scroller, so
+ * the snap container lives on <html>. The persistent preview panel + typed titles
+ * (Theme C/D) track these same sections via IntersectionObserver and are unaffected.
+ *
+ * `proximity` (not `mandatory`): snapping engages when a scroll settles near a
+ * section boundary, but never traps you inside a section taller than the viewport
+ * (e.g. the 5-step "how" column on a short screen) — you can still read it freely.
+ * `scroll-padding-top` offsets the fixed nav (h-14 = 3.5rem) so a snapped section's
+ * top clears it. Gated to `no-preference` so reduced-motion users keep plain
+ * scrolling (the catch-all below also forces `scroll-behavior: auto`).
+ */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+    scroll-snap-type: y proximity;
+    scroll-padding-top: 3.5rem;
+  }
+  #top,
+  #how,
+  #features,
+  #cli,
+  #download {
+    scroll-snap-align: start;
+  }
+}
+
 @layer utilities {
   /* Faint engineering grid, masked to a soft vignette. Used behind hero + sections. */
   .bg-grid {
