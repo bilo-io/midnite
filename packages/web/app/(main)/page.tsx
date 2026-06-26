@@ -204,6 +204,7 @@ export default function HomePage() {
 
   return (
     <div
+      data-bg-target=""
       className={`${patternClass} relative flex min-h-[100dvh] flex-col items-center justify-center px-6 text-center`}
     >
       <Clock now={now} />

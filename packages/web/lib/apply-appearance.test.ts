@@ -3,6 +3,7 @@ import { ACCENT_OPTIONS } from './app-settings';
 import {
   appearanceInitScript,
   applyAccent,
+  applyBackground,
   applyDensity,
   applyEffects,
   applyMotion,
@@ -10,7 +11,7 @@ import {
 
 afterEach(() => {
   const html = document.documentElement;
-  for (const attr of ['data-accent', 'data-motion', 'data-density', 'data-no-page-reveal', 'data-no-typewriter', 'data-no-glass']) {
+  for (const attr of ['data-accent', 'data-motion', 'data-density', 'data-bg', 'data-bg-intensity', 'data-no-page-reveal', 'data-no-typewriter', 'data-no-glass']) {
     html.removeAttribute(attr);
   }
   html.style.removeProperty('--accent-h');
@@ -75,6 +76,33 @@ describe('applyDensity', () => {
   });
 });
 
+describe('applyBackground', () => {
+  it('sets data-bg to the pattern name', () => {
+    applyBackground('honeycomb', 'balanced');
+    expect(document.documentElement.getAttribute('data-bg')).toBe('honeycomb');
+    expect(document.documentElement.hasAttribute('data-bg-intensity')).toBe(false);
+  });
+
+  it('sets data-bg-intensity only for the animated gradient', () => {
+    applyBackground('gradient', 'bold');
+    expect(document.documentElement.getAttribute('data-bg')).toBe('gradient');
+    expect(document.documentElement.getAttribute('data-bg-intensity')).toBe('bold');
+  });
+
+  it('clears data-bg-intensity when switching away from gradient', () => {
+    applyBackground('gradient', 'subtle');
+    applyBackground('dots', 'balanced');
+    expect(document.documentElement.getAttribute('data-bg')).toBe('dots');
+    expect(document.documentElement.hasAttribute('data-bg-intensity')).toBe(false);
+  });
+
+  it('switches cleanly between two non-gradient patterns', () => {
+    applyBackground('grid', 'balanced');
+    applyBackground('blueprint', 'balanced');
+    expect(document.documentElement.getAttribute('data-bg')).toBe('blueprint');
+  });
+});
+
 describe('applyEffects', () => {
   it('sets data-no-* attributes only for disabled effects', () => {
     applyEffects({ pageReveal: false, typewriter: true, glass: false });
@@ -105,6 +133,7 @@ describe('appearanceInitScript', () => {
     expect(appearanceInitScript).toContain('data-accent');
     expect(appearanceInitScript).toContain('data-motion');
     expect(appearanceInitScript).toContain('data-density');
+    expect(appearanceInitScript).toContain('data-bg');
     expect(appearanceInitScript).toContain('data-no-page-reveal');
   });
 
@@ -113,8 +142,9 @@ describe('appearanceInitScript', () => {
       // eslint-disable-next-line no-eval -- exercising the inline init script body
       eval(appearanceInitScript);
     }).not.toThrow();
-    // No accent stored → no override applied; motion defaults to system.
+    // No accent stored → no override applied; motion defaults to system; bg defaults to grid.
     expect(document.documentElement.hasAttribute('data-accent')).toBe(false);
     expect(document.documentElement.getAttribute('data-motion')).toBe('system');
+    expect(document.documentElement.getAttribute('data-bg')).toBe('grid');
   });
 });
