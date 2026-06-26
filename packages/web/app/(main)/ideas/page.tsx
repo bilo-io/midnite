@@ -11,7 +11,7 @@ import { IdeaGrid } from '@/components/ideas/IdeaGrid';
 import { listIdeas, createIdea } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
 import { useIdeaEvents } from '@/hooks/use-idea-events';
-import { useLocalStorage } from '@/hooks/use-local-storage';
+import { useLocalStorage } from '@/lib/use-local-storage';
 import { cn } from '@/lib/utils';
 
 type ViewMode = 'table' | 'list' | 'grid';

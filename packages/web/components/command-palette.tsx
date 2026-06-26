@@ -7,6 +7,7 @@ import {
   BrainCircuit,
   CirclePile,
   Folder,
+  Lightbulb,
   ListChecks,
   LoaderCircle,
   Search,
@@ -42,7 +43,7 @@ const ALWAYS_ON: Command[] = [
   { href: '/settings', label: 'Settings', Icon: Settings },
 ];
 
-/** How the six searchable domains render: group heading + a row icon. */
+/** How each searchable domain renders: group heading + a row icon. */
 const TYPE_META: Record<SearchType, { label: string; Icon: LucideIcon }> = {
   task: { label: 'Tasks', Icon: ListChecks },
   project: { label: 'Projects', Icon: Folder },
@@ -50,6 +51,7 @@ const TYPE_META: Record<SearchType, { label: string; Icon: LucideIcon }> = {
   note: { label: 'Notes', Icon: StickyNote },
   council: { label: 'Councils', Icon: CirclePile },
   workflow: { label: 'Workflows', Icon: Workflow },
+  idea: { label: 'Ideas', Icon: Lightbulb },
 };
 
 /** Per-type row cap inside the palette — more than this and we show a "+N more". */

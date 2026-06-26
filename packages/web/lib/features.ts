@@ -63,13 +63,6 @@ export const FEATURES: Feature[] = [
     Icon: Folder,
   },
   {
-    key: 'ideas',
-    href: '/ideas',
-    label: 'Ideas',
-    description: 'Capture, refine with AI, and promote ideas into projects.',
-    Icon: Lightbulb,
-  },
-  {
     key: 'memory',
     href: '/memory',
     label: 'Memory',
@@ -103,6 +96,13 @@ export const FEATURES: Feature[] = [
     label: 'Workflows',
     description: 'Build and run multi-step agent workflows.',
     Icon: Workflow,
+  },
+  {
+    key: 'ideas',
+    href: '/ideas',
+    label: 'Ideas',
+    description: 'Capture, refine with AI, and promote ideas into projects.',
+    Icon: Lightbulb,
   },
   {
     key: 'councils',
