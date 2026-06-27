@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { FileText, Folder, LayoutGrid, List, ListTree, Plus } from 'lucide-react';
 import type { Memory, Project, Task } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
@@ -200,7 +200,21 @@ export function ProjectsView({
   const modalOpen = creating || editProject !== null;
 
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const q = (searchParams.get('q') ?? '').trim().toLowerCase();
+
+  // Deep-link: `/projects?open=<id>` opens that project's modal (e.g. a promoted
+  // idea's project chip links here). Wait for the project list to load before
+  // matching, then strip the param so closing the modal sticks.
+  const openId = searchParams.get('open');
+  useEffect(() => {
+    if (!openId) return;
+    const match = initial.find((p) => p.id === openId);
+    if (!match) return;
+    setEditProject(match);
+    router.replace(pathname);
+  }, [openId, initial, router, pathname]);
   const filtered = q
     ? initial.filter((p) =>
         [p.name, p.tag, p.description ?? ''].some((f) => f.toLowerCase().includes(q)),
