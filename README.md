@@ -4,6 +4,8 @@
 
 Drop in a freeform list, let midnite classify each item, queue them, and run them in parallel across N agent slots. Interact via CLI or browser kanban. Everything is mediated by a single long-running **gateway** daemon.
 
+For a high-level tour of what midnite can do, see [`docs/FEATURES.md`](docs/FEATURES.md).
+
 ```
           ┌──────────────────────────────────────────┐
           │              GATEWAY (daemon)             │
