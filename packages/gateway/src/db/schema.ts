@@ -181,6 +181,10 @@ export const projects = sqliteTable('projects', {
   teamId: text('team_id'),
   /** Phase 40: nullable back-link to the idea this project was promoted from. */
   ideaId: text('idea_id'),
+  /** Phase 40 Theme G: phase-doc sync-back toggle (0=off, 1/null=on). */
+  phaseDocSync: integer('phase_doc_sync'),
+  /** Phase 40 Theme G: repo (registry id) whose phase docs receive sync-back ticks. */
+  phaseDocSyncRepoId: text('phase_doc_sync_repo_id'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 });

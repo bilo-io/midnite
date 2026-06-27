@@ -137,6 +137,9 @@ export class ProjectsRepository {
       sources: this.listSources(row.id).map((s) => this.toSource(s)),
       taskCount: this.countTasks(row.id),
       ideaId: row.ideaId ?? undefined,
+      // null = unset (defaults on); 0 = off, 1 = on.
+      phaseDocSync: row.phaseDocSync == null ? undefined : row.phaseDocSync === 1,
+      phaseDocSyncRepoId: row.phaseDocSyncRepoId ?? undefined,
     };
   }
 
