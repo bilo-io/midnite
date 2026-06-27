@@ -54,17 +54,19 @@ The heart of the feature: an AI conversation that seeds and refines an idea.
 
 ---
 
-## Theme D — Promote idea → project — **S–M**
+## Theme D — Promote idea → project — **S–M** ✅ DONE (PR #234, 2026-06-27)
 
 One click from idea to a live project, with a bidirectional link preserved.
 
-- [ ] **`Project.ideaId`** (nullable) column in [`gateway/src/db/schema.ts`](../packages/gateway/src/db/schema.ts) (additive migration). Exposed in the `Project` shared type + `project.ts` zod schema.
-- [ ] **`POST /ideas/:id/promote`** in `IdeaController`: accepts `{ name: string, repoId?: string }` (zod-validated), creates a `Project` via `ProjectsService.create(...)` with `ideaId` set, updates `idea.projectId = newProject.id` and `idea.status = 'promoted'`, emits `idea.updated` WS event, returns `{ idea, project }`. `@RequiresRole('member')`.
-- [ ] **`PromoteModal`** ([`components/ideas/PromoteModal.tsx`](../packages/web/components/ideas/PromoteModal.tsx)): project name field (prefilled from idea title), optional repo picker (existing `RepoSelector`), confirm button. Opens from "Promote to project" in idea detail + idea card overflow menu.
-- [ ] **Project chip on idea card/detail**: once promoted, idea card and detail show a `<ProjectChip>` (project name + link to `/projects/:id`). Status reads `promoted`.
-- [ ] **"Created from idea 💡" badge on project**: project detail header shows an `IdeaSourceBadge` linking back to `/ideas/:id` when `project.ideaId` is set.
-- [ ] Idea persists at `/ideas/:id` after promotion — it is **not deleted or archived**; status is `'promoted'` and the project chip is the navigational link.
-- [ ] Unit tests: `IdeaService.promote` creates project + updates idea; UI: `PromoteModal` submits correct payload, chips render on both sides.
+> **Decision (settled with the human):** no repo picker on promote — a project can span **multiple** repos, so there's no `project.repoId` (per Themes C/E, repos are per-request). The promote payload is just `{ name }`; repos are wired per-task/phase-doc afterwards.
+
+- [x] **`Project.ideaId`** — column already existed in schema; now persisted by `createProject` (additive `ideaId` on `CreateProjectRequest`) and surfaced via `hydrate`. Exposed on the `Project` shared type + zod schema.
+- [x] **`POST /ideas/:id/promote`** in `IdeaController`: accepts `{ name }` (`PromoteIdeaRequest`), creates a `Project` via `ProjectsService.createProject(...)` with `ideaId` set, updates `idea.projectId` + `idea.status = 'promoted'`, emits `idea.updated`, returns `{ idea, project }`. `@RequiresRole('member')`; `ConflictException` if already promoted.
+- [x] **`PromoteModal`** ([`components/ideas/PromoteModal.tsx`](../packages/web/components/ideas/PromoteModal.tsx)): project name field (prefilled from idea title), confirm → routes to the new project. Opens from "Promote to project" on idea detail.
+- [x] **Project chip on idea detail**: once promoted, shows a `<ProjectChip>` (project name + link via the `/projects?open=<id>` deep-link). Status reads `promoted`.
+- [x] **"Created from idea 💡" badge on project**: `IdeaSourceBadge` in the `ProjectModal` Details tab, back-linking to the idea when `project.ideaId` is set.
+- [x] Idea persists after promotion — **not deleted or archived**; status `'promoted'`, fully editable, the chip is the navigational bridge.
+- [x] Tests: `IdeaService.promote` unit (links, defaults, conflict, scope); `PromoteModal` RTL (prefill, payload, route, blank guard); `ideas-promote.e2e.ts` flow + screenshots.
 
 ---
 
