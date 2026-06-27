@@ -27,8 +27,8 @@ describe('SearchResultSchema', () => {
     expect(SearchResultSchema.safeParse({ ...valid, type: 'widget' }).success).toBe(false);
   });
 
-  it('covers exactly the six searchable domains', () => {
-    expect([...SEARCH_TYPES]).toEqual(['task', 'project', 'memory', 'note', 'council', 'workflow']);
+  it('covers exactly the seven searchable domains', () => {
+    expect([...SEARCH_TYPES]).toEqual(['task', 'project', 'memory', 'note', 'council', 'workflow', 'idea']);
   });
 });
 

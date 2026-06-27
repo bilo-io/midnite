@@ -1,27 +1,46 @@
-import { Injectable, Logger, NotFoundException, ForbiddenException, Optional } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  ForbiddenException,
+  Optional,
+} from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import type {
   Idea,
+  IdeaChatResponse,
   IdeaMessage,
-  IdeaStatus,
   IdeaQuery,
   TeamScope,
   CreateIdeaRequest,
   UpdateIdeaRequest,
 } from '@midnite/shared';
+import { LlmService } from '../agent/llm/llm.service';
+import type { LlmMessage } from '../agent/llm/llm-provider.interface';
 import { SearchIndexService } from '../search/search-index.service';
 import { ideaToIndexDoc } from '../search/lib/index-mappers';
 import { IdeaRepository } from './ideas.repository';
 import { IdeaEventBus } from './idea-event-bus';
+import {
+  ideaChatSystemPrompt,
+  IDEA_CHAT_DISABLED_REPLY,
+  IDEA_CHAT_EMPTY_REPLY,
+  IDEA_CHAT_ERROR_REPLY,
+} from './ideas.prompts';
 
 @Injectable()
 export class IdeaService {
   private readonly logger = new Logger(IdeaService.name);
 
+  // Explicit @Inject on every param: this runtime (tsx/esbuild) does not emit
+  // `design:paramtypes`, so Nest can't infer injection tokens from the types —
+  // the rest of the gateway follows the same convention.
   constructor(
-    private readonly repo: IdeaRepository,
-    private readonly bus: IdeaEventBus,
-    @Optional() private readonly searchIndex?: SearchIndexService,
+    @Inject(IdeaRepository) private readonly repo: IdeaRepository,
+    @Inject(IdeaEventBus) private readonly bus: IdeaEventBus,
+    @Optional() @Inject(SearchIndexService) private readonly searchIndex?: SearchIndexService,
+    @Optional() @Inject(LlmService) private readonly llm?: LlmService,
   ) {}
 
   createIdea(req: CreateIdeaRequest, scope: TeamScope): Idea {
@@ -60,7 +79,7 @@ export class IdeaService {
   }
 
   updateIdea(id: string, req: UpdateIdeaRequest, scope: TeamScope): Idea {
-    const existing = this.getIdea(id, scope);
+    this.getIdea(id, scope); // access check
     const now = new Date().toISOString();
     const updated = this.repo.update(id, {
       ...(req.title !== undefined && { title: req.title }),
@@ -76,7 +95,7 @@ export class IdeaService {
   }
 
   deleteIdea(id: string, scope: TeamScope): void {
-    const existing = this.getIdea(id, scope);
+    this.getIdea(id, scope); // access check
     this.searchIndex?.remove('idea', id);
     this.repo.delete(id);
     this.bus.emit({ type: 'idea.deleted', at: new Date().toISOString(), id });
@@ -106,6 +125,40 @@ export class IdeaService {
       content,
       createdAt: new Date().toISOString(),
     });
+  }
+
+  /**
+   * Append the user's message, generate an assistant reply via the LLM (or a
+   * graceful fallback when no provider is configured), persist it, and return
+   * both. The assistant reply is shaped as a paste-ready refined idea body so the
+   * web "Apply to idea" action can write it back verbatim.
+   */
+  async chat(ideaId: string, content: string, scope: TeamScope): Promise<IdeaChatResponse> {
+    const idea = this.getIdea(ideaId, scope);
+    const userMessage = this.addUserMessage(ideaId, content, scope);
+    const replyText = await this.generateReply(idea);
+    const assistantMessage = this.addAssistantMessage(ideaId, replyText);
+    return { userMessage, assistantMessage };
+  }
+
+  private async generateReply(idea: Idea): Promise<string> {
+    if (!this.llm?.enabled) return IDEA_CHAT_DISABLED_REPLY;
+    // History already includes the just-added user message (addUserMessage ran first).
+    const messages: LlmMessage[] = this.repo
+      .listMessages(idea.id)
+      .map((m) => ({ role: m.role, text: m.content }));
+    try {
+      const res = await this.llm.generateText({
+        system: ideaChatSystemPrompt(idea),
+        messages,
+        maxTokens: 1024,
+        model: this.llm.getPlanModel(),
+      });
+      return res.text.trim() || IDEA_CHAT_EMPTY_REPLY;
+    } catch (err) {
+      this.logger.warn(`idea chat reply failed for ${idea.id}: ${(err as Error).message}`);
+      return IDEA_CHAT_ERROR_REPLY;
+    }
   }
 
   private assertAccess(idea: Idea, scope: TeamScope): void {

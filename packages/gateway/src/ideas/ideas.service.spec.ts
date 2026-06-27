@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import type { Idea, IdeaMessage, IdeaStatus, TeamScope } from '@midnite/shared';
 import type { IdeaInsert, IdeaMessageInsert } from '../db/schema';
+import type { LlmService } from '../agent/llm/llm.service';
 import { IdeaRepository } from './ideas.repository';
 import { IdeaEventBus } from './idea-event-bus';
 import { IdeaService } from './ideas.service';
@@ -179,5 +180,54 @@ describe('IdeaService', () => {
     expect(msgs).toHaveLength(1);
     expect(msgs[0]!.role).toBe('user');
     expect(msgs[0]!.content).toBe('Hello AI');
+  });
+
+  describe('chat', () => {
+    it('falls back to the disabled reply when no LLM is configured', async () => {
+      const created = service.createIdea({ title: 'No LLM' }, SCOPE);
+      const { userMessage, assistantMessage } = await service.chat(created.id, 'Refine it', SCOPE);
+      expect(userMessage.role).toBe('user');
+      expect(userMessage.content).toBe('Refine it');
+      expect(assistantMessage.role).toBe('assistant');
+      expect(assistantMessage.content).toContain('AI is not configured');
+      // Both messages persisted, in order.
+      const msgs = service.listMessages(created.id, SCOPE);
+      expect(msgs.map((m) => m.role)).toEqual(['user', 'assistant']);
+    });
+
+    it('uses the LLM reply and forwards system prompt + full history when enabled', async () => {
+      const generateText = vi.fn().mockResolvedValue({ text: '  A refined idea body  ', model: 'm' });
+      const llm = {
+        enabled: true,
+        getPlanModel: () => 'plan-model',
+        generateText,
+      } as unknown as LlmService;
+      service = new IdeaService(repo, bus, undefined, llm);
+
+      const created = service.createIdea({ title: 'With LLM', body: 'seed' }, SCOPE);
+      const { assistantMessage } = await service.chat(created.id, 'make it sharper', SCOPE);
+
+      expect(assistantMessage.content).toBe('A refined idea body'); // trimmed
+      expect(generateText).toHaveBeenCalledTimes(1);
+      const req = generateText.mock.calls[0]![0];
+      expect(req.model).toBe('plan-model');
+      expect(req.system).toContain('product-idea refiner');
+      expect(req.system).toContain('seed'); // current body folded into the prompt
+      // History passed to the model includes the just-added user message.
+      expect(req.messages).toEqual([{ role: 'user', text: 'make it sharper' }]);
+    });
+
+    it('returns a graceful reply when the provider throws (never propagates)', async () => {
+      const llm = {
+        enabled: true,
+        getPlanModel: () => 'plan-model',
+        generateText: vi.fn().mockRejectedValue(new Error('boom')),
+      } as unknown as LlmService;
+      service = new IdeaService(repo, bus, undefined, llm);
+
+      const created = service.createIdea({ title: 'Flaky LLM' }, SCOPE);
+      const { assistantMessage } = await service.chat(created.id, 'hi', SCOPE);
+      expect(assistantMessage.content).toContain('couldn’t generate a reply');
+    });
   });
 });

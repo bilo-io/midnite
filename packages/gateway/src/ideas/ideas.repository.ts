@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, count, desc, eq, like, or, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, like, or } from 'drizzle-orm';
 import type { Idea, IdeaMessage, IdeaStatus, TeamScope } from '@midnite/shared';
 import { DB_TOKEN, type MidniteDb } from '../db/db.module';
 import { teamScopeFilter } from '../db/team-scope';

@@ -35,12 +35,12 @@ export default function IdeasPage() {
   const handleCreate = useCallback(async () => {
     setCreating(true);
     try {
-      const title = window.prompt('Idea title');
-      if (!title?.trim()) return;
-      const res = await createIdea({ title: title.trim() });
-      router.push(`/ideas/view?id=${res.idea.id}`);
+      // No blank-page create form: spin up an empty draft and drop straight into
+      // the chat composer (?chat=open), where the idea is fleshed out by talking.
+      const res = await createIdea({ title: 'Untitled idea' });
+      router.push(`/ideas/view?id=${res.idea.id}&chat=open`);
     } catch {
-      // noop — inline for now; Theme C adds a proper dialog
+      // noop — surfaced by the list's error state on next load
     } finally {
       setCreating(false);
     }

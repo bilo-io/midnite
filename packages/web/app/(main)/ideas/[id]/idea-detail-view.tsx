@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Pencil, Trash2, Rocket } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2, Rocket, Sparkles } from 'lucide-react';
 import { IdeaStatusChip } from '@/components/ideas/IdeaStatusChip';
+import { IdeaChatDrawer } from '@/components/ideas/IdeaChatDrawer';
 import { getIdea, updateIdea, deleteIdea } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
 import { cn } from '@/lib/utils';
@@ -11,10 +12,24 @@ import type { UpdateIdeaRequest } from '@midnite/shared';
 
 export default function IdeaDetailView() {
   const router = useRouter();
-  const id = useSearchParams().get('id') ?? '';
+  const searchParams = useSearchParams();
+  const id = searchParams.get('id') ?? '';
 
-  const { data, error } = useApiData(() => getIdea(id), [id]);
+  const { data, error, refresh } = useApiData(() => getIdea(id), [id]);
   const idea = data?.idea ?? null;
+
+  // Drawer open-state lives in the URL (?chat=open) so "+ New idea" can deep-link
+  // straight into the composer and the back button closes it.
+  const [chatOpen, setChatOpen] = useState(false);
+  useEffect(() => {
+    setChatOpen(searchParams.get('chat') === 'open');
+  }, [searchParams]);
+  const openChat = useCallback(() => {
+    router.replace(`/ideas/view?id=${id}&chat=open`);
+  }, [router, id]);
+  const closeChat = useCallback(() => {
+    router.replace(`/ideas/view?id=${id}`);
+  }, [router, id]);
 
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState('');
@@ -145,6 +160,13 @@ export default function IdeaDetailView() {
         ) : (
           <>
             <button
+              onClick={openChat}
+              className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted/40 transition-colors"
+            >
+              <Sparkles className="h-4 w-4" />
+              Open chat
+            </button>
+            <button
               onClick={startEdit}
               className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted/40 transition-colors"
             >
@@ -177,6 +199,13 @@ export default function IdeaDetailView() {
           <> · Updated {new Date(idea.updatedAt).toLocaleString()}</>
         )}
       </p>
+
+      <IdeaChatDrawer
+        idea={idea}
+        open={chatOpen}
+        onClose={closeChat}
+        onApplied={() => refresh()}
+      />
     </div>
   );
 }
