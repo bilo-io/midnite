@@ -65,7 +65,7 @@
 | [39 · Visual customization](phase-39-visual-customization.md) | 🔄 WIP | 24/25 | `███████████████████░` | 96% | — | — ¹ |
 | [40 · Ideas pipeline](phase-40-ideas-pipeline.md) | 🔄 WIP | 15/54 | `██████░░░░░░░░░░░░░░░` | 28% | — | C D E F |
 | [41 · Command palette](phase-41-command-palette.md) | 🔄 WIP | 21/33 | `█████████████░░░░░░░` | 64% | — | — ² |
-| [42 · Ideas pipeline complete](phase-42-ideas-pipeline-complete.md) | 🔄 WIP | 8/46 | `███░░░░░░░░░░░░░░░░░░` | 17% | A | B D E |
+| [42 · Ideas pipeline complete](phase-42-ideas-pipeline-complete.md) | 🔄 WIP | 8/46 | `███░░░░░░░░░░░░░░░░░░` | 17% | D | B E |
 
 **Headline:** the original 0–38 roadmap is **100% complete**; only 39–42 remain.
 
