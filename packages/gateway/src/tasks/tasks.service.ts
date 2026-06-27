@@ -14,6 +14,7 @@ import {
   type AgentActivityEvent,
   type AgentAttentionEvent,
   type Breakdown,
+  type BreakdownTask,
   type BulkCreateTaskResponse,
   type BulkLineResult,
   type CheckRun,
@@ -585,7 +586,12 @@ export class TasksService {
   // never breaks on AI being disabled.
   createTasksFromBreakdown(
     breakdown: Breakdown,
-    opts: { projectId?: string; repo?: string } = {},
+    opts: {
+      projectId?: string;
+      repo?: string;
+      /** Per-task tags to stamp on each created task (Phase 42 Theme D seeding). */
+      tagsFor?: (task: BreakdownTask) => string[];
+    } = {},
   ): Task[] {
     // Validate the batch repo once (an unknown name 400s up front, like create).
     const repo = this.resolveRepoReference(opts.repo);
@@ -624,6 +630,10 @@ export class TasksService {
           ...(opts.projectId ? { projectId: opts.projectId } : {}),
         }),
       });
+      const tags = opts.tagsFor?.(bt);
+      if (tags && tags.length > 0) {
+        this.repo.setTags(id, normalizeTags(tags), now);
+      }
       idByRef.set(bt.ref, id);
       order.push({ ref: bt.ref, dependsOn: bt.dependsOn, id });
     }

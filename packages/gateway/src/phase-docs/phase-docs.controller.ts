@@ -14,14 +14,20 @@ import {
   Query,
 } from '@nestjs/common';
 import {
+  CreateFromBreakdownRequestSchema,
   CreatePhaseDocRequestSchema,
   UpdatePhaseDocRequestSchema,
+  type BreakdownPreviewResponse,
+  type BreakdownTask,
+  type CreateFromBreakdownResponse,
   type PhaseDoc,
 } from '@midnite/shared';
 import { CurrentUser, type CurrentUserPayload } from '../auth/decorators/current-user.decorator';
 import { RequiresRole } from '../auth/decorators/require-role.decorator';
+import { BreakdownService } from '../agent/breakdown.service';
 import { ProjectsService } from '../projects/projects.service';
 import { ReposService } from '../repos/repos.service';
+import { TasksService } from '../tasks/tasks.service';
 import {
   GithubUnavailableError,
   PhaseDocConflictError,
@@ -57,6 +63,8 @@ export class PhaseDocsController {
     private readonly service: PhaseDocsService,
     private readonly projects: ProjectsService,
     private readonly repos: ReposService,
+    private readonly breakdown: BreakdownService,
+    private readonly tasks: TasksService,
   ) {}
 
   @Get()
@@ -129,6 +137,52 @@ export class PhaseDocsController {
     const ownerRepo = this.resolveOwnerRepo(projectId, repoId, user);
     if (!sha) throw new BadRequestException('sha query param is required to delete a phase doc');
     await this.guard(() => this.service.delete(ownerRepo, filename, sha));
+  }
+
+  /**
+   * Preview the tasks a phase doc would seed (Theme D). Fetches the doc and parses
+   * it into a dependency-aware breakdown with stable anchors — **creates nothing**;
+   * the client edits and confirms via {@link seedTasks}.
+   */
+  @Post(':filename/seed')
+  @RequiresRole('member')
+  async seedPreview(
+    @Param('id') projectId: string,
+    @Param('filename') filename: string,
+    @Query('repoId') repoId: string | undefined,
+    @CurrentUser() user?: CurrentUserPayload | null,
+  ): Promise<BreakdownPreviewResponse> {
+    assertSafeFilename(filename);
+    const ownerRepo = this.resolveOwnerRepo(projectId, repoId, user);
+    const doc = await this.guard(() => this.service.get(ownerRepo, filename));
+    return this.breakdown.parseDoc(doc.content);
+  }
+
+  /**
+   * Create the (edited) breakdown as project-linked, edge-wired tasks, tagging each
+   * with `phase-doc:<filename>` + `phase-item:<anchor>` so Theme E can sync ticks
+   * back to the `.md`.
+   */
+  @Post(':filename/seed-tasks')
+  @RequiresRole('member')
+  seedTasks(
+    @Param('id') projectId: string,
+    @Param('filename') filename: string,
+    @Body() rawBody: unknown,
+    @CurrentUser() user?: CurrentUserPayload | null,
+  ): CreateFromBreakdownResponse {
+    assertSafeFilename(filename);
+    // Validate the project is real / in scope (404s otherwise) — no repo needed here.
+    this.projects.getProject(projectId, toScope(user));
+    const parsed = CreateFromBreakdownRequestSchema.safeParse(rawBody);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    const tasks = this.tasks.createTasksFromBreakdown(parsed.data.breakdown, {
+      projectId,
+      repo: parsed.data.repo,
+      tagsFor: (task: BreakdownTask) =>
+        task.anchor ? [`phase-doc:${filename}`, `phase-item:${task.anchor}`] : [`phase-doc:${filename}`],
+    });
+    return { tasks };
   }
 
   /**

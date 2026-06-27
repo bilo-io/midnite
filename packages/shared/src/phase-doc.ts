@@ -56,3 +56,22 @@ export function phaseDocFilename(name: string): string {
     .replace(/^-+|-+$/g, '');
   return `${slug || 'phase-doc'}.md`;
 }
+
+/**
+ * Stable anchor slug for a phase-doc checkbox line (Theme D seeding ↔ Theme E
+ * sync-back). Strips the leading `- [ ]`/`- [x]` marker and markdown emphasis,
+ * lower-cases, collapses non-alphanumerics to single hyphens, and truncates so a
+ * tag stays a sane length. Computed identically at seed time and at sync time so a
+ * task's `phase-item:<anchor>` tag re-matches its line even after edits elsewhere.
+ */
+export function phaseItemAnchor(lineText: string): string {
+  return lineText
+    .replace(/^\s*[-*]\s*\[[ xX]\]\s*/, '') // drop the checkbox marker
+    .replace(/[*_`~]/g, '') // drop markdown emphasis
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80)
+    .replace(/-+$/g, '');
+}

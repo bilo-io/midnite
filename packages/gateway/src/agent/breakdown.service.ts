@@ -1,12 +1,21 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 
-import { BreakdownSchema, type Breakdown, type BreakdownPreviewResponse } from '@midnite/shared';
+import {
+  BreakdownSchema,
+  phaseItemAnchor,
+  type Breakdown,
+  type BreakdownPreviewResponse,
+} from '@midnite/shared';
 
 import { LlmService } from './llm/llm.service';
 import {
   BREAKDOWN_SYSTEM_PROMPT,
+  PHASE_DOC_PARSE_SYSTEM_PROMPT,
   STANDALONE_BREAKDOWN_SYSTEM_PROMPT,
 } from '../projects/projects.prompts';
+
+/** Matches a GitHub-style checkbox line; captures the trailing text. */
+const CHECKBOX_RE = /^\s*[-*]\s*\[[ xX]\]\s+(.+?)\s*$/;
 
 // JSON Schema for the `record_breakdown` tool the model calls to return its
 // structured output. Mirrors `BreakdownSchema` so both sides stay in sync.
@@ -49,6 +58,28 @@ const RECORD_BREAKDOWN_SCHEMA = {
     },
   },
   required: ['tasks'],
+};
+
+// Phase-doc variant of the record schema: same shape plus an optional `anchor`
+// the model fills with the source checkbox text so seeded tasks can sync back.
+const RECORD_PHASE_DOC_SCHEMA = {
+  ...RECORD_BREAKDOWN_SCHEMA,
+  properties: {
+    tasks: {
+      ...RECORD_BREAKDOWN_SCHEMA.properties.tasks,
+      items: {
+        ...RECORD_BREAKDOWN_SCHEMA.properties.tasks.items,
+        properties: {
+          ...RECORD_BREAKDOWN_SCHEMA.properties.tasks.items.properties,
+          anchor: {
+            type: 'string',
+            description:
+              'For a task taken from a checkbox line, the exact line text (without the "- [ ]" marker). Omit for tasks implied from prose.',
+          },
+        },
+      },
+    },
+  },
 };
 
 export interface BreakdownInput {
@@ -113,6 +144,89 @@ export class BreakdownService {
       return { breakdown: fallback(input.goal), isFallback: true };
     }
   }
+
+  /**
+   * Parse a midnite-style phase doc into a task breakdown (Phase 42 Theme D). Each
+   * task carries a stable `anchor` so the seeder can tag it `phase-item:<anchor>`
+   * and Theme E can tick the matching `.md` checkbox.
+   *
+   * Fails open: the deterministic checkbox parse is always computed and is the
+   * authoritative anchor source; when the LLM is enabled it enriches kind/priority/
+   * dependency edges, but anchors are always reconciled back to real doc lines so
+   * sync-back never chases a paraphrased anchor.
+   */
+  async parseDoc(content: string): Promise<BreakdownPreviewResponse> {
+    const items = extractCheckboxItems(content);
+    const deterministic: Breakdown = {
+      tasks: items.map((it) => ({ ref: it.anchor, title: it.title, anchor: it.anchor, dependsOn: [] })),
+    };
+
+    if (!this.llm.enabled || items.length === 0) {
+      return { breakdown: pruneBreakdown(deterministic), isFallback: true };
+    }
+
+    try {
+      const { data } = await this.llm.generateStructured(
+        {
+          model: this.llm.getPlanModel(),
+          maxTokens: 2048,
+          system: PHASE_DOC_PARSE_SYSTEM_PROMPT,
+          schema: RECORD_PHASE_DOC_SCHEMA,
+          schemaName: 'record_breakdown',
+          schemaDescription: 'Record the structured task breakdown extracted from the phase doc.',
+          messages: [{ role: 'user', text: content }],
+        },
+        'planner',
+      );
+
+      const parsed = BreakdownSchema.safeParse(data);
+      if (!parsed.success) {
+        this.logger.warn(
+          `phase-doc parse schema mismatch (${parsed.error.message}); using deterministic parse`,
+        );
+        return { breakdown: pruneBreakdown(deterministic), isFallback: true };
+      }
+      const reconciled = reconcileAnchors(parsed.data, new Set(items.map((it) => it.anchor)));
+      return { breakdown: pruneBreakdown(reconciled), isFallback: false };
+    } catch (err) {
+      this.logger.warn(
+        `phase-doc parse failed (${err instanceof Error ? err.message : 'unknown'}); using deterministic parse`,
+      );
+      return { breakdown: pruneBreakdown(deterministic), isFallback: true };
+    }
+  }
+}
+
+/** Extract `- [ ]`/`- [x]` lines as `{ anchor, title }`, deduped by anchor (first wins). */
+export function extractCheckboxItems(content: string): Array<{ anchor: string; title: string }> {
+  const seen = new Set<string>();
+  const items: Array<{ anchor: string; title: string }> = [];
+  for (const line of content.split('\n')) {
+    const match = CHECKBOX_RE.exec(line);
+    if (!match) continue;
+    const title = match[1]!.replace(/[*_`~]/g, '').trim();
+    const anchor = phaseItemAnchor(line);
+    if (!anchor || seen.has(anchor)) continue;
+    seen.add(anchor);
+    items.push({ anchor, title });
+  }
+  return items;
+}
+
+/**
+ * Reconcile an LLM breakdown's anchors against the doc's real checkbox anchors:
+ * keep an `anchor` only when it (or the slug of the model's `anchor`/`title`)
+ * matches a real line — otherwise drop it so Theme E never tries to tick a line
+ * that doesn't exist. Tasks implied from prose simply carry no anchor.
+ */
+function reconcileAnchors(breakdown: Breakdown, known: Set<string>): Breakdown {
+  return {
+    tasks: breakdown.tasks.map((t) => {
+      const candidates = [t.anchor, t.anchor && phaseItemAnchor(t.anchor), phaseItemAnchor(t.title)];
+      const anchor = candidates.find((c): c is string => !!c && known.has(c));
+      return { ...t, anchor };
+    }),
+  };
 }
 
 /**

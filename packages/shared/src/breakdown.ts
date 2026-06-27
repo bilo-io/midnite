@@ -19,6 +19,12 @@ export const BreakdownTaskSchema = z.object({
   priority: z.number().int().min(0).max(3).optional(),
   /** Local refs of tasks that must complete before this one can start. */
   dependsOn: z.array(z.string()).default([]),
+  /**
+   * Stable slug of the source line this task came from (Phase 42 Theme D phase-doc
+   * seeding). Carried so the seeder can tag the task `phase-item:<anchor>` and
+   * Theme E can match it back to the `.md` checkbox. Absent for non-doc breakdowns.
+   */
+  anchor: z.string().optional(),
 });
 export type BreakdownTask = z.infer<typeof BreakdownTaskSchema>;
 
