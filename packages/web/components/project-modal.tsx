@@ -47,10 +47,12 @@ import {
   createProject,
   deleteProject,
   enhanceProjectDescription,
+  getRepos,
   removeProjectSource,
   reorderProjectSources,
   updateProject,
 } from '@/lib/api';
+import type { Repo } from '@midnite/shared';
 import { useConfirm } from '@/components/confirm-dialog';
 import { cn } from '@/lib/utils';
 
@@ -99,6 +101,10 @@ export function ProjectModal({
   const [tag, setTag] = useState(project?.tag ?? '');
   const [color, setColor] = useState(project?.color ?? DEFAULT_COLOR);
   const [workDir, setWorkDir] = useState(project?.workDir ?? '');
+  // Phase 40 Theme G: phase-doc sync-back settings (default on; one target repo).
+  const [phaseDocSync, setPhaseDocSync] = useState(project?.phaseDocSync !== false);
+  const [phaseDocSyncRepoId, setPhaseDocSyncRepoId] = useState(project?.phaseDocSyncRepoId ?? '');
+  const [repos, setRepos] = useState<Repo[]>([]);
   const [picking, setPicking] = useState(false);
   // Create mode stages URLs client-side; edit mode mutates the live project.
   const [staged, setStaged] = useState<string[]>([]);
@@ -120,6 +126,14 @@ export function ProjectModal({
 
   useEffect(() => {
     if (project) setDocs(loadPlanDocs(project.id));
+  }, [project]);
+
+  // Repos for the phase-doc sync target picker (only repos with a GitHub slug qualify).
+  useEffect(() => {
+    if (!project) return;
+    getRepos()
+      .then(setRepos)
+      .catch(() => setRepos([]));
   }, [project]);
 
   useEffect(() => {
@@ -278,6 +292,8 @@ export function ProjectModal({
           tag: tag.trim(),
           color,
           workDir: workDir.trim(),
+          phaseDocSync,
+          phaseDocSyncRepoId,
         });
       } else {
         await createProject({
@@ -528,6 +544,42 @@ export function ProjectModal({
                 </button>
                 <p className="text-[11px] text-muted-foreground">
                   Knowledge entries scoped to this project, injected into agent prompts.
+                </p>
+              </div>
+            ) : null}
+
+            {/* Phase 40 Theme G: phase-doc ↔ board sync-back */}
+            {isEdit ? (
+              <div className="space-y-1.5">
+                <span className="text-xs font-medium text-muted-foreground">Phase doc sync</span>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={phaseDocSync}
+                    onChange={(e) => setPhaseDocSync(e.target.checked)}
+                    className="h-4 w-4 rounded border-input"
+                  />
+                  <span>Tick phase-doc checkboxes as seeded tasks complete</span>
+                </label>
+                <select
+                  aria-label="Phase doc sync repo"
+                  className={inputClass}
+                  value={phaseDocSyncRepoId}
+                  disabled={!phaseDocSync}
+                  onChange={(e) => setPhaseDocSyncRepoId(e.target.value)}
+                >
+                  <option value="">Select a repo…</option>
+                  {repos
+                    .filter((r) => r.ownerRepo)
+                    .map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.name} ({r.ownerRepo})
+                      </option>
+                    ))}
+                </select>
+                <p className="text-[11px] text-muted-foreground">
+                  When a seeded task reaches <em>Done</em>, its checkbox is ticked in this
+                  repo&apos;s <code>.midnite/phases/*.md</code> (and un-ticked if reopened).
                 </p>
               </div>
             ) : null}

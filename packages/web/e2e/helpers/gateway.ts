@@ -53,6 +53,20 @@ export async function seedProject(name: string, description: string): Promise<Se
   return { id: project.id, name: project.name };
 }
 
+/** Register a repo with a GitHub `owner/repo` slug (so it qualifies as a phase-doc sync target). */
+export async function seedRepo(name: string, ownerRepo: string): Promise<{ id: string; name: string }> {
+  const res = await fetch(`${GATEWAY_ORIGIN}/repos`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name, path: `/tmp/${name}`, ownerRepo }),
+  });
+  if (!res.ok) {
+    throw new Error(`seedRepo failed (${res.status}): ${await res.text().catch(() => '')}`);
+  }
+  const { repo } = (await res.json()) as { repo: { id: string; name: string } };
+  return { id: repo.id, name: repo.name };
+}
+
 /** An idea created over the gateway REST API. */
 export type SeededIdea = { id: string; title: string };
 

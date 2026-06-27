@@ -51,6 +51,13 @@ export const ProjectSchema = z.object({
   teamId: z.string().optional(),
   /** Phase 40: idea this project was promoted from; null if not idea-originated. */
   ideaId: z.string().nullable().optional(),
+  /**
+   * Phase 40 Theme G: phase-doc ↔ board sync-back. When enabled (default on) and a
+   * sync repo is set, completing a seeded task ticks its checkbox in the repo `.md`.
+   */
+  phaseDocSync: z.boolean().optional(),
+  /** Repo (registry id) whose `.midnite/phases/*.md` receive sync-back ticks; null = unset. */
+  phaseDocSyncRepoId: z.string().nullable().optional(),
 });
 
 export const CreateProjectRequestSchema = z.object({
@@ -72,6 +79,10 @@ export const UpdateProjectRequestSchema = z.object({
   // Empty string clears the configured directory.
   workDir: WorkDirSchema.optional(),
   archived: z.boolean().optional(),
+  /** Phase 40 Theme G: toggle phase-doc sync-back for this project. */
+  phaseDocSync: z.boolean().optional(),
+  // Empty string clears the sync repo.
+  phaseDocSyncRepoId: z.string().optional(),
 });
 
 export const AddSourceRequestSchema = z.object({
