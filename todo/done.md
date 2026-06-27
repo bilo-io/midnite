@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-27 — feat: phase-doc ↔ board sync-back — Phase 40 Theme G (PR #236) — **Phase 40 COMPLETE**
+
+The closing loop of the Ideas pipeline: as seeded tasks reach `done`, their checkboxes tick themselves in the GitHub `.md`. With this, **Phase 40 is 100% complete** (51/51).
+
+- [x] **gateway**: `PhaseDocSyncService` subscribes to `TaskEventBus` (mirrors `SearchService`; `tasks.service` untouched) — idempotently ticks/un-ticks the matching checkbox in the project's sync repo; per-doc debounced serial queue + bounded 409 refetch-retry; best-effort (never blocks a transition). Pure `setChecklistItem` helper (exact + prefix-fuzzy anchor match)
+- [x] **shared/gateway**: `Project.phaseDocSync` (toggle, default on) + `phaseDocSyncRepoId` (sync target) + migration 0057; repository hydrate + `updateProject` wiring
+- [x] **web**: ProjectModal Details-tab section (toggle + sync-repo picker); `seedRepo` e2e helper + screenshot spec
+- [x] **Decision**: per-project sync repo (not a per-task tag); docs in another repo log a warn + skip. Auth is the local `gh` CLI, so the toggle is a plain project flag (default on)
+- [x] **Drive-by**: removed an unused `describe` import in `PromoteModal.test.tsx` that was failing `web:build` lint (slipped past #234 — its gate ran vitest, not next build)
+- [x] Tests: `PhaseDocSyncService` (10) + `checklist` (7); local gate green (typecheck/web:build ✓, shared/gateway/web ✓); merged with CI billing-blocked
+
 ## 2026-06-27 — feat: promote idea → project — Phase 40 Theme D (PR #234)
 
 One click from an idea to a live project, with a bidirectional link both ways. The idea stays a living document (not archived).

@@ -6,7 +6,7 @@
 
 > Effort tags: **S** small · **M** medium · **L** large. Themes ordered **A → B → C → D → E → F → G**.
 
-> **Canonical doc (consolidated 2026-06-27).** This is the single source of truth for the Ideas pipeline — it subsumes the former `phase-42-ideas-pipeline-complete.md`, which was a parallel restatement of the same work. Theme C (chat composer UI) landed in PR #232, Theme E (phase-doc editor) in PR #229, Theme F (task seeder) in PR #233; Theme G (sync-back) is folded in from the old Phase 42 Theme E. Outstanding: **D** (promote idea → project) and **G** (sync-back).
+> **Canonical doc (consolidated 2026-06-27).** This is the single source of truth for the Ideas pipeline — it subsumes the former `phase-42-ideas-pipeline-complete.md`, which was a parallel restatement of the same work. Theme C (chat composer UI) landed in PR #232, Theme D (promote) in PR #234, Theme E (phase-doc editor) in PR #229, Theme F (task seeder) in PR #233, Theme G (sync-back, folded in from the old Phase 42 Theme E) in PR #236. **All themes complete.**
 
 ---
 
@@ -99,18 +99,20 @@ Parse a phase doc into a curated, project-linked task board slice — and tag ea
 
 ---
 
-## Theme G — Phase-doc ↔ board sync-back — **M–L** *(open)*
+## Theme G — Phase-doc ↔ board sync-back — **M–L** ✅ DONE (PR #236, 2026-06-27)
 
 The closing loop: as seeded tasks complete, their checkboxes tick themselves in the GitHub `.md` — midnite running its own `todo/` workflow on itself. *(Folded in from the former Phase 42 Theme E.)*
 
-- [ ] **`PhaseDocSyncService`** ([`phase-doc-sync.service.ts`](../packages/gateway/src/phase-docs/phase-doc-sync.service.ts)): subscribes to `TaskEventBus` in `onApplicationBootstrap` (mirroring `SearchService` — `tasks.service` is **not** touched). On a transition it inspects the task's tags for `phase-doc:<filename>` + `phase-item:<anchor>`; absent → ignored.
-- [ ] **Tick on done / un-tick on reopen** (symmetric): a task entering `done` flips its line `- [ ]` → `- [x]`; leaving `done` flips it back. The doc always reflects live board state.
-- [ ] **Line resolution**: match `phase-item:<anchor>` against each line's recomputed `phaseItemAnchor` — exact first, fuzzy fallback; unmatched task logs `warn` + skips (no guessing-writes).
-- [ ] **Idempotent writes**: if the target line already holds the desired state, skip the `PUT` (no empty commits).
-- [ ] **Per-doc serialized queue + 409 retry + debounce**: writes to a given `.md` run one-at-a-time through an in-memory per-doc mutex; a stale-SHA `409` triggers a bounded refetch-and-retry; rapid completions per doc coalesce into one commit.
-- [ ] **Resilience**: best-effort — any failure (no credential, repo unreachable, unmatched line) logs `warn` once and **never blocks the task transition**.
-- [ ] **Sync toggle**: a project-level `phaseDocSync` flag, auto-on when the project has a linked repo + GitHub credential, switchable off in project settings.
-- [ ] Unit tests: `PhaseDocSyncService` with fakes — done ticks the right line; reopen un-ticks; already-correct skips the PUT; unmatched anchor logs + skips; concurrent completions serialize; disabled flag short-circuits.
+> **Decision (settled with the human):** repo resolution is a **per-project sync repo** (`phaseDocSyncRepoId`), not a tag on the task — sync writes ticks to that one repo. Tradeoff: a doc seeded from a *different* repo than the configured one logs a `warn` and skips. Auth is the local `gh` CLI (no credential vault), so the toggle is a plain project flag (default on) rather than "auto-on with credential".
+
+- [x] **`PhaseDocSyncService`** ([`phase-doc-sync.service.ts`](../packages/gateway/src/phase-docs/phase-doc-sync.service.ts)): subscribes to `TaskEventBus` in `onApplicationBootstrap` (mirroring `SearchService` — `tasks.service` is **not** touched). Inspects `task.updated` tags for `phase-doc:<filename>` + `phase-item:<anchor>`; absent → ignored.
+- [x] **Tick on done / un-tick on reopen** (symmetric) — driven by idempotent reconciliation (desired = `status === 'done'`), so no previous-status tracking is needed.
+- [x] **Line resolution**: `setChecklistItem` matches `phase-item:<anchor>` against each line's recomputed `phaseItemAnchor` — exact first, prefix-fuzzy fallback (80-char truncation); unmatched logs `warn` + skips.
+- [x] **Idempotent writes**: if the target line already holds the desired state, the `PUT` is skipped (no empty commits).
+- [x] **Per-doc serialized queue + 409 retry + debounce**: a per-doc promise chain serializes writes; a stale-SHA `409` triggers a bounded refetch-and-retry; rapid completions per doc coalesce (debounce) into one commit.
+- [x] **Resilience**: best-effort — any failure (repo unreachable, gh down, unmatched line) logs `warn` once and **never blocks the task transition**.
+- [x] **Sync toggle**: project-level `phaseDocSync` (default on) + `phaseDocSyncRepoId` target, set in the `ProjectModal` Details tab. Disabled or no-repo → short-circuit.
+- [x] Unit tests: `PhaseDocSyncService` (10 — done ticks, reopen un-ticks, idempotent skip, unmatched skip, disabled/no-repo short-circuit, untagged ignore, burst coalesces, 409 retry, read-failure swallowed) + `checklist` helper (7).
 
 ---
 
