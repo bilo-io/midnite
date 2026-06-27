@@ -15,11 +15,13 @@ import {
   CreateIdeaRequestSchema,
   IdeaChatRequestSchema,
   IdeaQuerySchema,
+  PromoteIdeaRequestSchema,
   UpdateIdeaRequestSchema,
   type Idea,
   type IdeaChatResponse,
   type IdeaMessage,
   type IdeasResponse,
+  type PromoteIdeaResponse,
 } from '@midnite/shared';
 import { CurrentUser, type CurrentUserPayload } from '../auth/decorators/current-user.decorator';
 import { RequiresRole } from '../auth/decorators/require-role.decorator';
@@ -99,6 +101,18 @@ export class IdeaController {
   ): { messages: IdeaMessage[] } {
     const messages = this.service.listMessages(id, toScope(user));
     return { messages };
+  }
+
+  @Post(':id/promote')
+  @RequiresRole('member')
+  promote(
+    @Param('id') id: string,
+    @Body() rawBody: unknown,
+    @CurrentUser() user: CurrentUserPayload,
+  ): Promise<PromoteIdeaResponse> {
+    const parsed = PromoteIdeaRequestSchema.safeParse(rawBody);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    return this.service.promote(id, parsed.data, toScope(user));
   }
 
   @Post(':id/messages')
