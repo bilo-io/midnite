@@ -4,6 +4,31 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-27 — docs: consolidate Phase 42 into Phase 40 (Ideas pipeline)
+
+Phase 42 ("Ideas pipeline complete") was a parallel restatement of Phase 40's outstanding work. Merged the two into a single canonical [`phase-40-ideas-pipeline.md`](phase-40-ideas-pipeline.md) and **deleted** `phase-42-ideas-pipeline-complete.md` + its `_INDEX.md` row.
+
+- [x] Folded Phase 42's unique elevation layer (sync-back) into Phase 40 as **Theme G**; mapped 42-A→40-C, 42-C→40-E, 42-D→40-F
+- [x] Marked Phase 40 Themes C/E/F done with their PR refs; `_INDEX.md` Phase 40 row → `36/51` (71%), open themes **D** + **G**
+
+## 2026-06-27 — feat(phase-docs): seed tasks from a phase doc — Phase 40 Theme F (PR #233)
+
+Turn a `.midnite/phases/*.md` into a curated, project-linked task slice, anchor-tagged so a later sync-back (Theme G) can tick boxes when tasks complete.
+
+- [x] **gateway**: `BreakdownService.parseDoc` (LLM + deterministic checkbox fallback, stable anchors) + `PHASE_DOC_PARSE_SYSTEM_PROMPT`; `POST .../seed` (preview) + `.../seed-tasks` (create, tagged `phase-doc:`/`phase-item:`); additive `tagsFor` on `createTasksFromBreakdown`
+- [x] **shared**: `phaseItemAnchor` helper + `anchor` on `BreakdownTask`
+- [x] **web**: `SeedTasksModal` (reuses Phase 28 `BreakdownEditor`) + "🌱 Seed tasks" in `PhaseDocsTab`
+- [x] Tests: `breakdown.service.spec` (6) + `phase-docs.controller.spec` (9) + `phase-doc.test` + `SeedTasksModal` RTL. Local gate green (typecheck ✓, web 112 files ✓); merged with CI billing-blocked
+
+## 2026-06-27 — feat(web): idea chat composer drawer — Phase 40 Theme C (PR #232)
+
+The conversational surface that seeds/refines an idea (chat backend shipped in #215; this is the UI + LLM wiring).
+
+- [x] **gateway**: `IDEA_COMPOSER_SYSTEM_PROMPT` + `IdeaService.chat` over `LlmService`; fails open to a deterministic "AI is not configured" reply
+- [x] **web**: `IdeaChatDrawer` (thread + live "Refined body preview", `⌘↵` send, "Apply to idea" → `draft→refined`), "+ New idea" deep-links into the composer (`?chat=open`), "Open chat" restores history; `useIdeaMessages` hook
+- [x] Rebased onto main's static-export ideas routing (`/ideas/view?id=`); dropped the branch's redundant parallel route fix
+- [x] Tests: `IdeaChatDrawer` RTL + `ideas-chat.e2e.ts` (2 flows, screenshots). Also fixed a pre-existing main failure: `search.test.ts` now asserts `idea` as the 7th search domain. Merged with CI billing-blocked
+
 ## 2026-06-26 — Phase 9 A1: per-room wall tints in the office (PR #230)
 
 - [x] Office walls were tinted with a single theme `palette.wall`, so all six rooms shared identical walls. Each wall is now nudged subtly (22%) toward its room's existing accent (work blue, library amber, pool cyan, …) so each space reads as its own — completing Phase 9 A1's flagged "per-room wall tints a later refinement" (the only non-Tiled-blocked part of A1)

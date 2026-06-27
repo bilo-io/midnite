@@ -4,7 +4,9 @@
 
 > **Scope guardrails (CLAUDE.md).** `shared` is the contract — new `Idea`, `IdeaMessage`, `PhaseDoc` types and their zod schemas go in `@midnite/shared`; `web` and `cli` stay pure HTTP/WS clients. The ideas feature uses the **existing LLM infrastructure** (`LlmService.chat`) rather than a new AI service. Phase doc file I/O goes through the **GitHub Contents API** using the credential vault already built in Phase 14 — no filesystem cloning. The `BreakdownService.parseDoc` extension is **additive** (the existing generate path is untouched). Cross-domain FTS5 registration follows the established `SearchIndexService` pattern (Phase 20). Every DB table change gets a forward-only Drizzle migration. **Out of scope:** idea versioning / diffs, one idea → multiple projects, offline fallback when no repo/credential is linked, local-clone git writes.
 
-> Effort tags: **S** small · **M** medium · **L** large. Themes ordered **A → B → C → D → E → F**. Every box starts unchecked.
+> Effort tags: **S** small · **M** medium · **L** large. Themes ordered **A → B → C → D → E → F → G**.
+
+> **Canonical doc (consolidated 2026-06-27).** This is the single source of truth for the Ideas pipeline — it subsumes the former `phase-42-ideas-pipeline-complete.md`, which was a parallel restatement of the same work. Theme C (chat composer UI) landed in PR #232, Theme E (phase-doc editor) in PR #229, Theme F (task seeder) in PR #233; Theme G (sync-back) is folded in from the old Phase 42 Theme E. Outstanding: **D** (promote idea → project) and **G** (sync-back).
 
 ---
 
@@ -37,18 +39,18 @@ The browsable surface for all ideas.
 
 ---
 
-## Theme C — AI chat composer — **M**
+## Theme C — AI chat composer — **M** ✅ DONE (backend PR #215; UI PR #232, 2026-06-27)
 
 The heart of the feature: an AI conversation that seeds and refines an idea.
 
-- [ ] **`POST /ideas/:id/messages`** in `IdeaController`: accepts `IdeaChatRequestSchema` (`{ content: string }`), appends the user message to `idea_messages`, calls `LlmService.chat(history, IDEA_COMPOSER_SYSTEM_PROMPT)`, saves the assistant reply, returns `{ userMessage, assistantMessage }`.
-- [ ] **`GET /ideas/:id/messages`** — returns full `IdeaMessage[]` for the idea, ordered by `createdAt`.
-- [ ] **`IDEA_COMPOSER_SYSTEM_PROMPT`** in [`ideas.prompts.ts`](../packages/gateway/src/ideas/ideas.prompts.ts): instructs the model to act as a product thinking partner — help clarify, expand, and structure the idea, asking focused questions and proposing structure. Does *not* auto-create anything.
-- [ ] **`IdeaChatDrawer`** ([`components/ideas/IdeaChatDrawer.tsx`](../packages/web/components/ideas/IdeaChatDrawer.tsx)): slides over the idea detail. Left panel: chat thread (user/assistant bubbles, streaming via SSE or WS); right panel: live idea body preview. Send on `⌘Enter`.
-- [ ] **"Apply to idea"** button in the drawer — writes the assistant's last refined body back to `idea.body` via `PATCH /ideas/:id`; status advances to `'refined'`.
-- [ ] **New idea flow**: "+ New idea" button → `POST /ideas` (creates draft with empty body) → immediately opens `IdeaChatDrawer`. No blank-page create form.
-- [ ] **Modify existing idea**: "Open chat" button on idea detail re-opens `IdeaChatDrawer` with full history restored from `GET /ideas/:id/messages`.
-- [ ] Unit tests: `IdeaService` chat append + message history; `IdeaChatDrawer` RTL (renders thread, calls API on send, "Apply" patches body).
+- [x] **`POST /ideas/:id/messages`** in `IdeaController`: appends the user message, calls the LLM (`IdeaService.chat` → `LlmService`) with `IDEA_COMPOSER_SYSTEM_PROMPT`, saves the assistant reply, returns `{ userMessage, assistantMessage }`. Fails open to a deterministic "AI is not configured" reply when no provider is set.
+- [x] **`GET /ideas/:id/messages`** — returns full `IdeaMessage[]` for the idea, ordered by `createdAt`.
+- [x] **`IDEA_COMPOSER_SYSTEM_PROMPT`** in [`ideas.prompts.ts`](../packages/gateway/src/ideas/ideas.prompts.ts): product thinking-partner that clarifies/expands/structures the idea; does *not* auto-create anything.
+- [x] **`IdeaChatDrawer`** ([`components/ideas/IdeaChatDrawer.tsx`](../packages/web/components/ideas/IdeaChatDrawer.tsx)): slides over the idea detail. Left = chat thread (user/assistant bubbles); right = live "Refined body preview". Send on `⌘Enter`.
+- [x] **"Apply to idea"** button — writes the assistant's last reply back to `idea.body` via `PATCH /ideas/:id`; status advances `draft → refined`.
+- [x] **New idea flow**: "+ New idea" → `POST /ideas` (empty draft) → deep-links straight into `IdeaChatDrawer` (`?chat=open`). No blank-page create form.
+- [x] **Modify existing idea**: "Open chat" re-opens `IdeaChatDrawer` with full history restored from `GET /ideas/:id/messages`.
+- [x] Unit tests: `IdeaService` chat append + message history; `IdeaChatDrawer` RTL; Playwright e2e flow (`ideas-chat.e2e.ts`).
 
 ---
 
@@ -66,31 +68,47 @@ One click from idea to a live project, with a bidirectional link preserved.
 
 ---
 
-## Theme E — Phase doc editor (GitHub-backed) — **M–L**
+## Theme E — Phase doc editor (GitHub-backed) — **M–L** ✅ DONE (PR #229, 2026-06-26)
 
-Phase docs live as real `.md` files in the project's linked repository.
+Phase docs live as real `.md` files in the project's linked repository, under `.midnite/phases/`.
 
-- [ ] **`PhaseDoc`** shared type in [`@midnite/shared`](../packages/shared/src/phase-doc.ts): `{ name: string, path: string, sha: string, content: string, updatedAt: string }`. `CreatePhaseDocRequestSchema` (`{ name, content }`), `UpdatePhaseDocRequestSchema` (`{ content, sha }`). Barrel export.
-- [ ] **`PhaseDocsService`** ([`phase-docs.service.ts`](../packages/gateway/src/phase-docs/phase-docs.service.ts)): wraps the GitHub Contents API. Methods: `list(ownerRepo, token)` → `GET /repos/:o/:r/contents/.midnite/phases/`; `get(...)` → single file; `create(...)` → `PUT` with no SHA (new file); `update(...)` → `PUT` with SHA; `delete(...)` → `DELETE` with SHA. Resolves the GitHub token from `WorkflowCredentialsService` using the project's linked repo credential. Throws a `NoCredentialError` if no token is configured.
-- [ ] **`PhaseDocsController`** ([`phase-docs.controller.ts`](../packages/gateway/src/phase-docs/phase-docs.controller.ts)): `GET /projects/:id/phase-docs`, `POST /projects/:id/phase-docs`, `GET /projects/:id/phase-docs/:filename`, `PUT /projects/:id/phase-docs/:filename`, `DELETE /projects/:id/phase-docs/:filename`. Resolves `ownerRepo` from the project's linked repo via `ReposService`. Returns `404` if project has no linked repo or `403` if no GitHub credential.
-- [ ] **`PhaseDocsModule`** registered in `AppModule`; imports `ReposModule`, `WorkflowCredentialsModule`.
-- [ ] **"Phase docs" tab** on the project detail page ([`packages/web/app/projects/[id]/page.tsx`](../packages/web/app/projects/[id]/page.tsx) or its tab component). Only rendered when the project has a linked repo. Shows a "No repo or credential configured" empty state otherwise.
-- [ ] **`PhaseDocList`** ([`components/projects/phase-docs/PhaseDocList.tsx`](../packages/web/components/projects/phase-docs/PhaseDocList.tsx)): file list (name, last updated from SHA/GitHub); "+ New phase doc" button; per-item "Edit" / "Seed tasks" / "Delete" actions.
-- [ ] **`PhaseDocEditor`** ([`components/projects/phase-docs/PhaseDocEditor.tsx`](../packages/web/components/projects/phase-docs/PhaseDocEditor.tsx)): split-pane markdown editor (textarea left, rendered preview right) with a save button. On save: `PUT` if existing (passes SHA), `POST` if new. Optimistic update on success.
-- [ ] File path in repo: `.midnite/phases/<slug>.md` where `slug` is the user-supplied name run through `kebab-case` sanitisation.
+> **Plan deviations (settled with the human before building):** the prerequisite infra the original plan assumed didn't exist, so — (1) **project→repo:** no `project.repoId`; the UI picks a repo explicitly and `ownerRepo` is resolved server-side via `ReposService` (`?repoId=`); (2) **GitHub auth:** the local **`gh` CLI** (mirrors `PrStatusService`), not `WorkflowCredentialsService` — GitHub failures map to `502`; (3) **UI host:** a **"Phase docs" tab inside `ProjectModal`** (no `/projects/[id]` route exists). `PhaseDocList`/`PhaseDocEditor` are folded into one `PhaseDocsTab` reusing the toggle-mode `MarkdownEditor` (not a split-pane).
+
+- [x] **`PhaseDoc`** shared type in [`@midnite/shared`](../packages/shared/src/phase-doc.ts) + `Create`/`UpdatePhaseDocRequestSchema` + `phaseDocFilename` slug helper; barrel export.
+- [x] **`PhaseDocsService`** ([`phase-docs.service.ts`](../packages/gateway/src/phase-docs/phase-docs.service.ts)): `list`/`get`/`create` (PUT no-SHA)/`update` (PUT w/ SHA)/`delete` over the GitHub Contents API via `gh api`. Stale-SHA → `PhaseDocConflictError`; 404 → `PhaseDocNotFoundError`; gh down/unauth → `GithubUnavailableError`.
+- [x] **`PhaseDocsController`** ([`phase-docs.controller.ts`](../packages/gateway/src/phase-docs/phase-docs.controller.ts)): `GET`/`POST /projects/:id/phase-docs`, `GET`/`PUT`/`DELETE /projects/:id/phase-docs/:filename`. Resolves `ownerRepo` from `?repoId=`; maps domain errors → `409`/`404`/`502`; rejects `../`-traversal filenames.
+- [x] **`PhaseDocsModule`** registered in `AppModule`; imports `ProjectsModule`, `ReposModule`.
+- [x] **"Phase docs" tab** in [`ProjectModal`](../packages/web/components/project-modal.tsx) → [`PhaseDocsTab`](../packages/web/components/projects/phase-docs/PhaseDocsTab.tsx): repo picker + empty-states; file list with "+ New phase doc" / open / delete; `MarkdownEditor`; stale-SHA `409` → reload-and-retry notice.
+- [x] Repo path `.midnite/phases/<slug>.md`, slug via `phaseDocFilename` kebab-case sanitisation.
+- [x] Tests: `PhaseDocsService` unit + `PhaseDocsController` spec + `PhaseDocsTab` RTL + Playwright screenshot spec.
 
 ---
 
-## Theme F — Phase doc → task seeder — **M**
+## Theme F — Phase doc → task seeder — **M** ✅ DONE (PR #233, 2026-06-27)
 
-Parse a phase doc and turn its items into a project-linked task board slice.
+Parse a phase doc into a curated, project-linked task board slice — and tag each task so Theme G can find its line again.
 
-- [ ] **`BreakdownService.parseDoc(content: string)`** in [`breakdown.service.ts`](../packages/gateway/src/agent/breakdown.service.ts) (additive method): sends the phase doc markdown to `LlmService.generateStructured` with a `PHASE_DOC_PARSE_SYSTEM_PROMPT` that instructs extraction of `- [ ]` items, implied tasks from headings/prose, kind, priority, and dependency edges where explicit. Returns `Breakdown` (existing Phase 28 type). Fails open to a deterministic `- [ ]` parse if LLM is disabled.
-- [ ] **`PHASE_DOC_PARSE_SYSTEM_PROMPT`** in [`breakdown.prompts.ts`](../packages/gateway/src/agent/breakdown.prompts.ts) (or a new `phase-docs.prompts.ts`): instructs the model to extract tasks from midnite-style phase docs (checkboxes, `S/M/L` effort tags, theme headings) and emit a `Breakdown`.
-- [ ] **`POST /projects/:id/phase-docs/:filename/seed`** in `PhaseDocsController`: fetches file content, calls `BreakdownService.parseDoc`, returns `BreakdownPreviewResponse` (existing shared type). Does **not** create tasks itself — preview only.
-- [ ] **`SeedTasksModal`** ([`components/projects/phase-docs/SeedTasksModal.tsx`](../packages/web/components/projects/phase-docs/SeedTasksModal.tsx)): reuses the `BreakdownEditor` from Phase 28 (edit/remove tasks + blocker chips) to let the user curate the extracted list before committing. Confirm → `POST /tasks/bulk` creating tasks linked to the project. Tasks include a `tags` entry of the form `phase-doc:<filename>` for traceability.
-- [ ] **"🌱 Seed tasks" button** per phase doc in `PhaseDocList` and `PhaseDocEditor`; opens `SeedTasksModal`.
-- [ ] Unit tests: `BreakdownService.parseDoc` (parses checkbox items + headings; LLM-disabled deterministic fallback); `SeedTasksModal` RTL (renders extracted list, confirm calls bulk create).
+- [x] **`BreakdownService.parseDoc(content)`** ([`breakdown.service.ts`](../packages/gateway/src/agent/breakdown.service.ts), additive): LLM-assisted extraction (`PHASE_DOC_PARSE_SYSTEM_PROMPT`) of `- [ ]` items / heading-implied tasks, kind, priority, dependency edges → the existing Phase 28 `Breakdown`. **Fails open** to a deterministic checkbox parse when the LLM is disabled; both paths compute the same stable `anchor`.
+- [x] **`PHASE_DOC_PARSE_SYSTEM_PROMPT`** in [`projects.prompts.ts`](../packages/gateway/src/projects/projects.prompts.ts): extract tasks from midnite-style docs (checkboxes, `S/M/L` tags, theme headings) → `Breakdown`.
+- [x] **`phaseItemAnchor(line)`** in [`phase-doc.ts`](../packages/shared/src/phase-doc.ts) + `anchor` on `BreakdownTask` — stable slug computed identically at seed time and sync time (enables Theme G).
+- [x] **`POST .../phase-docs/:filename/seed`** (preview only, creates nothing) + **`POST .../seed-tasks`** in `PhaseDocsController`: creates project-linked, edge-wired tasks tagged `phase-doc:<filename>` + `phase-item:<anchor>` (via an additive optional `tagsFor` callback on `createTasksFromBreakdown`).
+- [x] **`SeedTasksModal`** ([`components/projects/phase-docs/SeedTasksModal.tsx`](../packages/web/components/projects/phase-docs/SeedTasksModal.tsx)): reuses Phase 28's `BreakdownEditor` to curate the extracted list; "🌱 Seed tasks" entry in `PhaseDocsTab`.
+- [x] Unit tests: `breakdown.service.spec` (LLM + deterministic fallback, stable anchors); `phase-docs.controller.spec` (seed preview + seed-tasks, filename guard); `SeedTasksModal` RTL.
+
+---
+
+## Theme G — Phase-doc ↔ board sync-back — **M–L** *(open)*
+
+The closing loop: as seeded tasks complete, their checkboxes tick themselves in the GitHub `.md` — midnite running its own `todo/` workflow on itself. *(Folded in from the former Phase 42 Theme E.)*
+
+- [ ] **`PhaseDocSyncService`** ([`phase-doc-sync.service.ts`](../packages/gateway/src/phase-docs/phase-doc-sync.service.ts)): subscribes to `TaskEventBus` in `onApplicationBootstrap` (mirroring `SearchService` — `tasks.service` is **not** touched). On a transition it inspects the task's tags for `phase-doc:<filename>` + `phase-item:<anchor>`; absent → ignored.
+- [ ] **Tick on done / un-tick on reopen** (symmetric): a task entering `done` flips its line `- [ ]` → `- [x]`; leaving `done` flips it back. The doc always reflects live board state.
+- [ ] **Line resolution**: match `phase-item:<anchor>` against each line's recomputed `phaseItemAnchor` — exact first, fuzzy fallback; unmatched task logs `warn` + skips (no guessing-writes).
+- [ ] **Idempotent writes**: if the target line already holds the desired state, skip the `PUT` (no empty commits).
+- [ ] **Per-doc serialized queue + 409 retry + debounce**: writes to a given `.md` run one-at-a-time through an in-memory per-doc mutex; a stale-SHA `409` triggers a bounded refetch-and-retry; rapid completions per doc coalesce into one commit.
+- [ ] **Resilience**: best-effort — any failure (no credential, repo unreachable, unmatched line) logs `warn` once and **never blocks the task transition**.
+- [ ] **Sync toggle**: a project-level `phaseDocSync` flag, auto-on when the project has a linked repo + GitHub credential, switchable off in project settings.
+- [ ] Unit tests: `PhaseDocSyncService` with fakes — done ticks the right line; reopen un-ticks; already-correct skips the PUT; unmatched anchor logs + skips; concurrent completions serialize; disabled flag short-circuits.
 
 ---
 

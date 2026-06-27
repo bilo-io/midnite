@@ -63,11 +63,10 @@
 | [37 · AI code review](phase-37-ai-code-review.md) | ✅ COMPLETE | 35/35 | `████████████████████` | 100% | — | — |
 | [38 · Search scoping + service tokens](phase-38-search-scoping-service-tokens.md) | ✅ COMPLETE | 28/28 | `████████████████████` | 100% | — | — |
 | [39 · Visual customization](phase-39-visual-customization.md) | 🔄 WIP | 24/25 | `███████████████████░` | 96% | — | — ¹ |
-| [40 · Ideas pipeline](phase-40-ideas-pipeline.md) | 🔄 WIP | 15/54 | `██████░░░░░░░░░░░░░░░` | 28% | — | C D E F |
+| [40 · Ideas pipeline](phase-40-ideas-pipeline.md) | 🔄 WIP | 36/51 | `██████████████░░░░░░` | 71% | — | D G |
 | [41 · Command palette](phase-41-command-palette.md) | 🔄 WIP | 21/33 | `█████████████░░░░░░░` | 64% | — | — ² |
-| [42 · Ideas pipeline complete](phase-42-ideas-pipeline-complete.md) | 🔄 WIP | 8/46 | `███░░░░░░░░░░░░░░░░░░` | 17% | D | B E |
 
-**Headline:** the original 0–38 roadmap is **100% complete**; only 39–42 remain.
+**Headline:** the original 0–38 roadmap is **100% complete**; only 39–41 remain. (Phase 42 was a parallel restatement of Phase 40 — its unique work, the sync-back layer, is folded into Phase 40 as Theme G and the doc was removed on 2026-06-27.)
 
 ¹ Phase 39 — themes A–E all landed; the only open box is an `⏳` optional UI-font item in Theme C. No pickable theme.
 ² Phase 41 — themes A–D all landed; remaining open boxes are the verification checklist + 2 `⏳` deferred items. No pickable theme.
@@ -80,17 +79,11 @@ so you can pick from this file without opening the phase doc first.
 ### [Phase 40 — Ideas pipeline](phase-40-ideas-pipeline.md)
 - ✅ **A** — Idea entity + sidenav
 - ✅ **B** — Ideas views (table / list / grid)
-- ◻ **C** — AI chat composer
+- ✅ **C** — AI chat composer (backend #215, UI #232)
 - ◻ **D** — Promote idea → project
-- ◻ **E** — Phase doc editor (GitHub-backed)
-- ◻ **F** — Phase doc → task seeder
-
-### [Phase 42 — Ideas pipeline complete](phase-42-ideas-pipeline-complete.md)
-- ◻ **A** — Chat composer UI
-- ◻ **B** — Promote idea → project
-- ✅ **C** — Phase doc editor (GitHub-backed)
-- ◻ **D** — Phase doc → task seeder
-- ◻ **E** — Phase-doc ↔ board sync-back
+- ✅ **E** — Phase doc editor (GitHub-backed) (#229)
+- ✅ **F** — Phase doc → task seeder (#233)
+- ◻ **G** — Phase-doc ↔ board sync-back *(folded in from former Phase 42 Theme E)*
 
 ## Maintenance
 
