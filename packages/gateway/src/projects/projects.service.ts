@@ -104,6 +104,7 @@ export class ProjectsService {
       planUpdatedAt: null,
       createdBy: userId ?? null,
       teamId: teamId ?? null,
+      ideaId: req.ideaId ?? null,
       createdAt: now,
       updatedAt: now,
     });

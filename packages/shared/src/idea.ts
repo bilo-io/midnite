@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { ProjectSchema } from './project';
+
 export const IdeaStatusSchema = z.enum(['draft', 'refined', 'promoted']);
 export type IdeaStatus = z.infer<typeof IdeaStatusSchema>;
 
@@ -58,6 +60,23 @@ export type IdeaChatResponse = z.infer<typeof IdeaChatResponseSchema>;
 
 export const IdeaResponseSchema = z.object({ idea: IdeaSchema });
 export type IdeaResponse = z.infer<typeof IdeaResponseSchema>;
+
+/**
+ * Promote an idea to a project. Just a name (prefilled from the idea title on the
+ * client) — repos aren't linked here: a project can span multiple repos, so the
+ * repo is chosen per-request elsewhere (tasks, phase docs) rather than stored on
+ * the project. The created project carries `ideaId` as the bidirectional link.
+ */
+export const PromoteIdeaRequestSchema = z.object({
+  name: z.string().trim().min(1, 'name is required').max(120),
+});
+export type PromoteIdeaRequest = z.infer<typeof PromoteIdeaRequestSchema>;
+
+export const PromoteIdeaResponseSchema = z.object({
+  idea: IdeaSchema,
+  project: ProjectSchema,
+});
+export type PromoteIdeaResponse = z.infer<typeof PromoteIdeaResponseSchema>;
 
 export const IdeasResponseSchema = z.object({
   ideas: z.array(IdeaSchema),

@@ -66,6 +66,7 @@ import {
   IdeasResponseSchema,
   IdeaMessagesResponseSchema,
   IdeaChatResponseSchema,
+  PromoteIdeaResponseSchema,
   type Idea,
   type IdeaMessage,
   type IdeaResponse,
@@ -76,6 +77,8 @@ import {
   type UpdateIdeaRequest,
   type IdeaChatRequest,
   type IdeaQuery,
+  type PromoteIdeaRequest,
+  type PromoteIdeaResponse,
 } from '@midnite/shared';
 import {
   AgentCliResponseSchema,
@@ -514,6 +517,10 @@ export async function deleteSession(id: string): Promise<void> {
 
 export async function getProjects(): Promise<Project[]> {
   return fetchJson('/projects', undefined, z.array(ProjectSchema));
+}
+
+export async function getProject(id: string): Promise<Project> {
+  return fetchJson(`/projects/${encodeURIComponent(id)}`, undefined, ProjectSchema);
 }
 
 // Lists subdirectories of `path` on the gateway host (home dir when omitted).
@@ -1892,6 +1899,17 @@ export async function sendIdeaMessage(
     `/ideas/${encodeURIComponent(ideaId)}/messages`,
     { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(req) },
     IdeaChatResponseSchema,
+  );
+}
+
+export async function promoteIdeaToProject(
+  ideaId: string,
+  req: PromoteIdeaRequest,
+): Promise<PromoteIdeaResponse> {
+  return fetchJson(
+    `/ideas/${encodeURIComponent(ideaId)}/promote`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(req) },
+    PromoteIdeaResponseSchema,
   );
 }
 

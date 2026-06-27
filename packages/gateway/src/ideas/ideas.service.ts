@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   Inject,
   Injectable,
   Logger,
@@ -14,14 +15,20 @@ import type {
   IdeaQuery,
   TeamScope,
   CreateIdeaRequest,
+  PromoteIdeaRequest,
+  PromoteIdeaResponse,
   UpdateIdeaRequest,
 } from '@midnite/shared';
 import { LlmService } from '../agent/llm/llm.service';
 import type { LlmMessage } from '../agent/llm/llm-provider.interface';
+import { ProjectsService } from '../projects/projects.service';
 import { SearchIndexService } from '../search/search-index.service';
 import { ideaToIndexDoc } from '../search/lib/index-mappers';
 import { IdeaRepository } from './ideas.repository';
 import { IdeaEventBus } from './idea-event-bus';
+
+/** Project colour given to a project created by promoting an idea (matches the web default). */
+const PROMOTED_PROJECT_COLOR = '#6366f1';
 import {
   ideaChatSystemPrompt,
   IDEA_CHAT_DISABLED_REPLY,
@@ -39,6 +46,7 @@ export class IdeaService {
   constructor(
     @Inject(IdeaRepository) private readonly repo: IdeaRepository,
     @Inject(IdeaEventBus) private readonly bus: IdeaEventBus,
+    @Inject(ProjectsService) private readonly projects: ProjectsService,
     @Optional() @Inject(SearchIndexService) private readonly searchIndex?: SearchIndexService,
     @Optional() @Inject(LlmService) private readonly llm?: LlmService,
   ) {}
@@ -92,6 +100,40 @@ export class IdeaService {
     this.searchIndex?.upsert(ideaToIndexDoc(updated));
     this.bus.emit({ type: 'idea.updated', at: now, idea: updated });
     return updated;
+  }
+
+  /**
+   * Promote an idea to a project: create a project linked back via `ideaId`, then
+   * stamp the idea with `projectId` + `status: 'promoted'`. The idea is **not**
+   * archived — it stays fully editable, with the project chip as the bridge. No
+   * repo is linked here (a project can span many repos; repo is per-request).
+   */
+  async promote(id: string, req: PromoteIdeaRequest, scope: TeamScope): Promise<PromoteIdeaResponse> {
+    const idea = this.getIdea(id, scope); // access check
+    if (idea.projectId) {
+      throw new ConflictException(`Idea ${id} is already promoted to project ${idea.projectId}`);
+    }
+    const project = await this.projects.createProject(
+      {
+        name: req.name,
+        description: idea.body || undefined,
+        tag: idea.tags[0] ?? 'idea',
+        color: PROMOTED_PROJECT_COLOR,
+        ideaId: id,
+      },
+      scope.userId,
+      scope.teamId ?? null,
+    );
+    const now = new Date().toISOString();
+    const updated = this.repo.update(id, {
+      projectId: project.id,
+      status: 'promoted',
+      updatedAt: now,
+    });
+    if (!updated) throw new NotFoundException(`Idea ${id} not found after promote`);
+    this.searchIndex?.upsert(ideaToIndexDoc(updated));
+    this.bus.emit({ type: 'idea.updated', at: now, idea: updated });
+    return { idea: updated, project };
   }
 
   deleteIdea(id: string, scope: TeamScope): void {

@@ -60,6 +60,8 @@ export const CreateProjectRequestSchema = z.object({
   color: HexColorSchema,
   workDir: WorkDirSchema.optional(),
   sources: z.array(z.string().url()).max(MAX_SOURCES_PER_PROJECT).optional(),
+  /** Phase 40: set when the project is created by promoting an idea. */
+  ideaId: z.string().optional(),
 });
 
 export const UpdateProjectRequestSchema = z.object({

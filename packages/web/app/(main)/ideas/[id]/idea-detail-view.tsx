@@ -5,6 +5,8 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Pencil, Trash2, Rocket, Sparkles } from 'lucide-react';
 import { IdeaStatusChip } from '@/components/ideas/IdeaStatusChip';
 import { IdeaChatDrawer } from '@/components/ideas/IdeaChatDrawer';
+import { PromoteModal } from '@/components/ideas/PromoteModal';
+import { ProjectChip } from '@/components/ideas/ProjectChip';
 import { getIdea, updateIdea, deleteIdea } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
 import { cn } from '@/lib/utils';
@@ -57,10 +59,7 @@ export default function IdeaDetailView() {
     }
   }, [idea, title, body]);
 
-  const promote = useCallback(async () => {
-    if (!idea) return;
-    await updateIdea(idea.id, { status: 'promoted' });
-  }, [idea]);
+  const [promoteOpen, setPromoteOpen] = useState(false);
 
   const remove = useCallback(async () => {
     if (!idea) return;
@@ -106,7 +105,10 @@ export default function IdeaDetailView() {
         ) : (
           <h1 className="text-xl font-semibold">{idea.title}</h1>
         )}
-        <IdeaStatusChip status={idea.status} />
+        <div className="flex items-center gap-2">
+          {idea.projectId && <ProjectChip projectId={idea.projectId} />}
+          <IdeaStatusChip status={idea.status} />
+        </div>
       </div>
 
       {idea.tags.length > 0 && (
@@ -175,7 +177,7 @@ export default function IdeaDetailView() {
             </button>
             {idea.status !== 'promoted' && (
               <button
-                onClick={promote}
+                onClick={() => setPromoteOpen(true)}
                 className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted/40 transition-colors"
               >
                 <Rocket className="h-4 w-4" />
@@ -205,6 +207,13 @@ export default function IdeaDetailView() {
         open={chatOpen}
         onClose={closeChat}
         onApplied={() => refresh()}
+      />
+
+      <PromoteModal
+        idea={idea}
+        open={promoteOpen}
+        onClose={() => setPromoteOpen(false)}
+        onPromoted={() => refresh()}
       />
     </div>
   );

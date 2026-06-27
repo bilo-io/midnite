@@ -136,6 +136,7 @@ export class ProjectsRepository {
       updatedAt: row.updatedAt,
       sources: this.listSources(row.id).map((s) => this.toSource(s)),
       taskCount: this.countTasks(row.id),
+      ideaId: row.ideaId ?? undefined,
     };
   }
 

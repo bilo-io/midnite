@@ -34,6 +34,7 @@ import { SourceListEditor, orderByIds } from '@/components/source-list-editor';
 import { TaskRow } from '@/components/task-row';
 import { PlanDocModal } from '@/components/plan-doc-modal';
 import { PhaseDocsTab } from '@/components/projects/phase-docs/PhaseDocsTab';
+import { IdeaSourceBadge } from '@/components/projects/IdeaSourceBadge';
 import { TEMPLATES, type Template } from '@/app/(main)/projects/templates';
 import {
   createDocFromTemplate,
@@ -379,6 +380,11 @@ export function ProjectModal({
           <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
             {/* Details */}
             <div role="tabpanel" className={cn('space-y-5', tab === 'details' ? '' : 'hidden')}>
+            {project?.ideaId && (
+              <div>
+                <IdeaSourceBadge ideaId={project.ideaId} />
+              </div>
+            )}
             {/* Name */}
             <div className="space-y-1.5">
               <label htmlFor="project-name" className="text-xs font-medium text-muted-foreground">

@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-27 — feat: promote idea → project — Phase 40 Theme D (PR #234)
+
+One click from an idea to a live project, with a bidirectional link both ways. The idea stays a living document (not archived).
+
+- [x] **shared**: `PromoteIdeaRequest` (`{ name }`) / `PromoteIdeaResponse` (`{ idea, project }`); `ideaId` on `CreateProjectRequest`
+- [x] **gateway**: `IdeaService.promote` (creates project linked via `ideaId`, flips idea → `promoted`, emits `idea.updated`, `ConflictException` if already promoted); `POST /ideas/:id/promote` (member); `createProject` persists `ideaId`, `hydrate` surfaces it
+- [x] **web**: `PromoteModal` (name only) on idea detail; `ProjectChip` on the idea, `IdeaSourceBadge` in the project modal; `/projects?open=<id>` deep-link; `promoteIdeaToProject` + `getProject` client fns
+- [x] **Decision**: no repo on promote — a project can span multiple repos, so no `project.repoId`; repo stays per-request (per Themes C/E)
+- [x] Tests: `IdeaService.promote` unit (4), `PromoteModal` RTL (4), `ideas-promote.e2e.ts` flow + screenshots. Local gate green; merged with CI billing-blocked
+
 ## 2026-06-27 — docs: consolidate Phase 42 into Phase 40 (Ideas pipeline)
 
 Phase 42 ("Ideas pipeline complete") was a parallel restatement of Phase 40's outstanding work. Merged the two into a single canonical [`phase-40-ideas-pipeline.md`](phase-40-ideas-pipeline.md) and **deleted** `phase-42-ideas-pipeline-complete.md` + its `_INDEX.md` row.

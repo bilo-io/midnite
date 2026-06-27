@@ -1,11 +1,32 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
-import type { Idea, IdeaMessage, IdeaStatus, TeamScope } from '@midnite/shared';
+import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import type { CreateProjectRequest, Idea, IdeaMessage, IdeaStatus, Project, TeamScope } from '@midnite/shared';
 import type { IdeaInsert, IdeaMessageInsert } from '../db/schema';
 import type { LlmService } from '../agent/llm/llm.service';
+import type { ProjectsService } from '../projects/projects.service';
 import { IdeaRepository } from './ideas.repository';
 import { IdeaEventBus } from './idea-event-bus';
 import { IdeaService } from './ideas.service';
+
+/** Minimal fake ProjectsService — `createProject` echoes a project carrying the request's ideaId. */
+function makeFakeProjects(): ProjectsService {
+  return {
+    createProject: vi.fn(
+      async (req: CreateProjectRequest, userId?: string, teamId?: string | null): Promise<Project> => ({
+        id: 'project-1',
+        name: req.name,
+        description: req.description,
+        tag: req.tag,
+        color: req.color,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+        sources: [],
+        teamId: teamId ?? undefined,
+        ideaId: req.ideaId ?? null,
+      }),
+    ),
+  } as unknown as ProjectsService;
+}
 
 // ── In-memory stub ────────────────────────────────────────────────────────────
 
@@ -77,6 +98,7 @@ class InMemoryIdeaRepo extends IdeaRepository {
       ...(data.body !== undefined && { body: data.body }),
       ...(data.status !== undefined && { status: data.status as IdeaStatus }),
       ...(data.tags !== undefined && { tags: JSON.parse(data.tags) }),
+      ...(data.projectId !== undefined && { projectId: data.projectId }),
       updatedAt: data.updatedAt ?? existing.updatedAt,
     };
     this.store.set(id, updated);
@@ -110,11 +132,13 @@ describe('IdeaService', () => {
   let service: IdeaService;
   let repo: InMemoryIdeaRepo;
   let bus: IdeaEventBus;
+  let projects: ProjectsService;
 
   beforeEach(() => {
     repo = new InMemoryIdeaRepo();
     bus = new IdeaEventBus();
-    service = new IdeaService(repo, bus);
+    projects = makeFakeProjects();
+    service = new IdeaService(repo, bus, projects);
   });
 
   it('creates an idea and emits idea.created', () => {
@@ -202,7 +226,7 @@ describe('IdeaService', () => {
         getPlanModel: () => 'plan-model',
         generateText,
       } as unknown as LlmService;
-      service = new IdeaService(repo, bus, undefined, llm);
+      service = new IdeaService(repo, bus, projects, undefined, llm);
 
       const created = service.createIdea({ title: 'With LLM', body: 'seed' }, SCOPE);
       const { assistantMessage } = await service.chat(created.id, 'make it sharper', SCOPE);
@@ -223,11 +247,58 @@ describe('IdeaService', () => {
         getPlanModel: () => 'plan-model',
         generateText: vi.fn().mockRejectedValue(new Error('boom')),
       } as unknown as LlmService;
-      service = new IdeaService(repo, bus, undefined, llm);
+      service = new IdeaService(repo, bus, projects, undefined, llm);
 
       const created = service.createIdea({ title: 'Flaky LLM' }, SCOPE);
       const { assistantMessage } = await service.chat(created.id, 'hi', SCOPE);
       expect(assistantMessage.content).toContain('couldn’t generate a reply');
+    });
+  });
+
+  describe('promote', () => {
+    it('creates a project linked back via ideaId and flips the idea to promoted', async () => {
+      const emitted = vi.spyOn(bus, 'emit');
+      const created = service.createIdea({ title: 'Ship it', body: 'the plan', tags: ['growth'] }, SCOPE);
+
+      const { idea, project } = await service.promote(created.id, { name: 'Ship it project' }, SCOPE);
+
+      // Project carries the back-link + sensible defaults derived from the idea.
+      expect(project.ideaId).toBe(created.id);
+      expect(project.name).toBe('Ship it project');
+      expect(project.tag).toBe('growth'); // first idea tag
+      expect(project.description).toBe('the plan');
+      // Idea is now promoted and points at the project — not archived.
+      expect(idea.status).toBe('promoted');
+      expect(idea.projectId).toBe(project.id);
+      expect(emitted).toHaveBeenCalledWith(expect.objectContaining({ type: 'idea.updated' }));
+      // createProject called with the team scope.
+      expect(projects.createProject).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'Ship it project', ideaId: created.id }),
+        SCOPE.userId,
+        SCOPE.teamId,
+      );
+    });
+
+    it('defaults the project tag to "idea" when the idea has no tags', async () => {
+      const created = service.createIdea({ title: 'Untagged' }, SCOPE);
+      const { project } = await service.promote(created.id, { name: 'P' }, SCOPE);
+      expect(project.tag).toBe('idea');
+    });
+
+    it('throws ConflictException when the idea is already promoted', async () => {
+      const created = service.createIdea({ title: 'Twice' }, SCOPE);
+      await service.promote(created.id, { name: 'First' }, SCOPE);
+      await expect(service.promote(created.id, { name: 'Second' }, SCOPE)).rejects.toThrow(
+        ConflictException,
+      );
+    });
+
+    it('enforces scope access before promoting', async () => {
+      const created = service.createIdea({ title: 'Private' }, SCOPE);
+      await expect(service.promote(created.id, { name: 'Nope' }, OTHER_SCOPE)).rejects.toThrow(
+        ForbiddenException,
+      );
+      expect(projects.createProject).not.toHaveBeenCalled();
     });
   });
 });
