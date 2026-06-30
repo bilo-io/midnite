@@ -34,14 +34,21 @@ allowed); explicit `@Inject` tokens since the e2e gateway runs under `tsx`.)*
 
 ---
 
-## Theme B — Signed delivery engine off the event bus — **M**
+## Theme B — Signed delivery engine off the event bus — **M** ✅ DONE (PR #249, 2026-06-30)
 
 Events become signed, retried, recorded HTTP deliveries.
 
-- [ ] Extract the safe-delivery core (SSRF guard + bounded fetch/retry/backoff) from [`webhook.channel.ts`](../packages/gateway/src/notifications/channels/webhook.channel.ts) into a shared gateway lib (e.g. `lib/safe-webhook-delivery.ts`); Phase 21's channel keeps using it (behaviour-preserving).
-- [ ] `WebhooksService` subscribes to `TaskEventBus` (`onModuleInit`/`onModuleDestroy`), resolves the team's enabled endpoints whose `eventFilter` matches the event, and dispatches a delivery per endpoint. **Best-effort — never blocks or throws into the transition.**
-- [ ] **HMAC-SHA256 signature** over the raw body with the per-endpoint secret, sent as `X-Midnite-Signature` + an `X-Midnite-Timestamp` (replay-window guard); document the verification recipe. Secret decrypted via `CryptoService` at send time.
-- [ ] Record every attempt in a `webhook_deliveries` table (`webhookId`, `event`, rendered `payload`, `status`, `responseCode`, `attempts`, `error`, `createdAt`) — the data Theme D surfaces.
+> **Subscriber lives in a dedicated `WebhookDeliveryService`** (not `WebhooksService`) so
+> CRUD and the bus-driven delivery path stay separate. **Body before Theme C:** all providers
+> get the canonical generic JSON event (`{ event, at, task }`); Theme C branches Slack/Discord
+> off it. **`task.deleted` is deferred** — its event carries only an `id` (no team/status), so it
+> can't be team-scoped without enriching the event; `task.created` + `task.updated` are fully
+> supported. `dispatch()` is public so Theme D's send-test/redeliver reuse the exact signed path.
+
+- [x] Extract the safe-delivery core (SSRF guard + bounded fetch/retry/backoff) from [`webhook.channel.ts`](../packages/gateway/src/notifications/channels/webhook.channel.ts) into [`lib/safe-webhook-delivery.ts`](../packages/gateway/src/lib/safe-webhook-delivery.ts) (returns a structured `{ ok, responseCode, attempts, error }`); Phase 21's channel delegates to it (behaviour-preserving, its specs pass).
+- [x] `WebhookDeliveryService` subscribes to `TaskEventBus` (`onModuleInit`/`onModuleDestroy`), resolves the team's enabled endpoints whose `eventFilter` matches the event, and dispatches a delivery per endpoint. **Best-effort — fire-and-forget, never blocks or throws into the transition.**
+- [x] **HMAC-SHA256 signature** over `${timestamp}.${body}` with the per-endpoint secret, sent as `X-Midnite-Signature` (`sha256=…`) + `X-Midnite-Timestamp`; verification recipe documented in [`webhooks/lib/sign.ts`](../packages/gateway/src/webhooks/lib/sign.ts). Secret decrypted via `CryptoService` at send time (plaintext fallback when crypto is off).
+- [x] Record every attempt in a `webhook_deliveries` table (`webhookId`, `teamId`, `event`, rendered `payload`, `status`, `responseCode`, `attempts`, `error`, `createdAt`) — the data Theme D surfaces.
 
 ---
 

@@ -77,3 +77,35 @@ export type WebhookResponse = z.infer<typeof WebhookResponseSchema>;
 
 export const ListWebhooksResponseSchema = z.object({ webhooks: z.array(WebhookSchema) });
 export type ListWebhooksResponse = z.infer<typeof ListWebhooksResponseSchema>;
+
+/** Outcome of a single delivery attempt-set (Theme B records these; D surfaces them). */
+export const WEBHOOK_DELIVERY_STATUSES = ['success', 'failed'] as const;
+export const WebhookDeliveryStatusSchema = z.enum(WEBHOOK_DELIVERY_STATUSES);
+export type WebhookDeliveryStatus = z.infer<typeof WebhookDeliveryStatusSchema>;
+
+/**
+ * A recorded delivery: which event fired the endpoint, the rendered body that
+ * was POSTed (persisted so a redeliver in Theme D is a faithful replay), and the
+ * HTTP outcome. The signing secret is never stored here.
+ */
+export const WebhookDeliverySchema = z.object({
+  id: z.string(),
+  webhookId: z.string(),
+  event: WebhookEventSchema,
+  status: WebhookDeliveryStatusSchema,
+  /** Final HTTP status code, or null when the request never got a response. */
+  responseCode: z.number().nullable(),
+  /** How many attempts were made (1–MAX_ATTEMPTS). */
+  attempts: z.number(),
+  /** Last error message when failed; null on success. */
+  error: z.string().nullable(),
+  /** The exact request body sent — enables a faithful redeliver. */
+  payload: z.string(),
+  createdAt: z.string(),
+});
+export type WebhookDelivery = z.infer<typeof WebhookDeliverySchema>;
+
+export const ListWebhookDeliveriesResponseSchema = z.object({
+  deliveries: z.array(WebhookDeliverySchema),
+});
+export type ListWebhookDeliveriesResponse = z.infer<typeof ListWebhookDeliveriesResponseSchema>;
