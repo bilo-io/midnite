@@ -955,6 +955,19 @@ export const refreshTokens = sqliteTable(
 export type RefreshTokenRow = typeof refreshTokens.$inferSelect;
 export type RefreshTokenInsert = typeof refreshTokens.$inferInsert;
 
+// Phase 43 Theme B: server-synced user preferences. One row per user (userId PK),
+// holding the JSON-encoded `UserPreferences` blob from `shared`. Kept off the
+// auth-critical `users` row; no FK (cross-domain FKs are avoided per CLAUDE.md).
+export const userPreferences = sqliteTable('user_preferences', {
+  userId: text('user_id').primaryKey(),
+  /** JSON-encoded `UserPreferences` (the synced blob). */
+  data: text('data').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export type UserPreferencesRow = typeof userPreferences.$inferSelect;
+export type UserPreferencesInsert = typeof userPreferences.$inferInsert;
+
 // Phase 33 Theme B: Teams & membership.
 export const teams = sqliteTable(
   'teams',

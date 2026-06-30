@@ -43,6 +43,7 @@ import { WsModule } from './ws/ws.module';
 import { ServiceTokensModule } from './service-tokens/service-tokens.module';
 import { IdeasModule } from './ideas/ideas.module';
 import { PhaseDocsModule } from './phase-docs/phase-docs.module';
+import { PreferencesModule } from './preferences/preferences.module';
 
 @Module({
   imports: [
@@ -89,6 +90,7 @@ import { PhaseDocsModule } from './phase-docs/phase-docs.module';
     ServiceTokensModule,
     IdeasModule,
     PhaseDocsModule,
+    PreferencesModule,
   ],
   controllers: [HealthController],
   providers: [],
