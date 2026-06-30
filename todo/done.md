@@ -17,6 +17,16 @@ The last open box in Phase 39: a curated **Interface font** picker in Appearance
 
 ---
 
+## 2026-06-30 — test: verify & close Phase 41 (Command palette) — **Phase 41 COMPLETE**
+
+Walked every Phase 41 verification criterion against the shipped code (themes A–D were built across PRs landing 2026-06-26) and signed off the checklist. Added the e2e coverage the criteria lacked, then flipped the phase to ✅ DONE.
+
+- [x] **web/e2e**: new [`command-palette.e2e.ts`](../packages/web/e2e/command-palette.e2e.ts) — always-on Commands/Navigation sections, the "Toggle theme" global command flipping the `.dark` class, the `?` help overlay grouped by section + `Esc` close, the `G O`/`G S` nav chords, and `N` opening the new-task form. Complements the pre-existing `search-palette.e2e.ts` (⌘K search → route) and `keyboard-nav.e2e.ts` (board arrows / Enter / D / A / suppression)
+- [x] **Verified in code**: 200 ms debounce (`DEBOUNCE_MS`), recent capped at 10 (`RECENT_MAX`) with dedupe-prepend, palette `role=dialog`/`aria-modal`, global-shortcut suppression in editable elements (`inEditableElement`), board suppression on editable focus **and** a visible `[role="dialog"]`
+- [x] **Deviation noted (in scope)**: the criterion's "status chip" on results is dropped — `SearchResult` carries no status and the phase is web-only (no gateway schema change), so the matched-term snippet stands in
+- [ ] ⏳ **Deferred (unchanged)**: contextual task-detail "Move to wip/done/abandoned" commands (×2 boxes — no `/tasks/:id` route; registry exists, nothing registers them) and the `E` edit-form board shortcut (would duplicate `Enter`). Out of this verification's scope
+- [x] Local gate green (typecheck/lint/test); new spec passes 5/5 against the seeded e2e gateway
+
 ## 2026-06-27 — feat: phase-doc ↔ board sync-back — Phase 40 Theme G (PR #236) — **Phase 40 COMPLETE**
 
 The closing loop of the Ideas pipeline: as seeded tasks reach `done`, their checkboxes tick themselves in the GitHub `.md`. With this, **Phase 40 is 100% complete** (51/51).

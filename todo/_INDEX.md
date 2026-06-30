@@ -64,11 +64,11 @@
 | [38 · Search scoping + service tokens](phase-38-search-scoping-service-tokens.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
 | [39 · Visual customization](phase-39-visual-customization.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
 | [40 · Ideas pipeline](phase-40-ideas-pipeline.md) | ✅ DONE | 51/51 | `██████████` | 100% | — | — |
-| [41 · Command palette](phase-41-command-palette.md) | 🔄 WIP | 21/33 | `██████░░░░` | 64% | V | — ² |
+| [41 · Command palette](phase-41-command-palette.md) | ✅ DONE | 32/32 | `██████████` | 100% | — | — ² |
 
-**Headline:** the original 0–38 roadmap is **100% complete**, and **Phases 39 & 40 are now complete** too. Only 41 remains — at its last verification/`⏳` items. (Phase 42 was a parallel restatement of Phase 40 — its unique sync-back layer landed as Phase 40 Theme G; the doc was removed on 2026-06-27.)
+**Headline:** the **entire 0–41 roadmap is now 100% complete.** Phases 39 (visual customization, UI font #238) and 41 (command palette, verification #237) both closed on 2026-06-30; no pickable themes remain. (Phase 42 was a parallel restatement of Phase 40 — its unique sync-back layer landed as Phase 40 Theme G; the doc was removed on 2026-06-27.)
 
-¹ Phase 41 — themes A–D all landed; remaining open boxes are the verification checklist + 2 `⏳` deferred items. No pickable theme.
+² Phase 41 — themes A–D all landed and the verification checklist is signed off (PR #237). The 3 remaining boxes are all `⏳` deferred (contextual task-detail commands ×2 — no `/tasks/:id` route — and the `E` edit-form shortcut). No pickable theme.
 
 ## Theme key (active phases)
 

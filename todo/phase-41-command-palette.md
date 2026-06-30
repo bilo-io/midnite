@@ -87,18 +87,24 @@ Arrow-key card focus + action keys on the kanban.
 
 ## Verification
 
-- [ ] `⌘K`/`Ctrl+K` opens the palette from any page; typing queries `GET /search` with a 200 ms debounce; results show type icon + title + status chip; selecting a task result navigates to its detail.
-- [ ] "Recent" section shows up to 10 most-recently visited tasks/pages before any query; selecting one navigates and bumps it to the top of recent.
-- [ ] "Navigation" and "Settings" sections appear without typing and navigate or open the relevant page/section.
-- [ ] "Create task…" action opens the new-task form; "Lock screen" triggers the screensaver; "Toggle theme" flips light/dark.
-- [ ] Contextual "Move to wip/done/abandoned" appears on the task detail page and transitions the task correctly; it does **not** appear on other pages.
-- [ ] `?` opens the keyboard shortcuts help overlay showing all shortcuts grouped by section; `Esc` closes it.
-- [ ] `G B`/`G O`/`G S`/`G H` navigate to the correct pages; `N` opens the new-task form when no input is focused; `Esc` closes the topmost open modal.
-- [ ] All global shortcuts are suppressed when `<input>`/`<textarea>`/`[contenteditable]` has focus.
-- [ ] On the board, arrow keys move the visible focus ring between cards; `Enter` opens the detail; `D` and `A` prompt and transition correctly.
-- [ ] Board shortcuts are suppressed when any input on the board is focused.
-- [ ] `@midnite/ui` boundary test passes (no new imports from the leaf package needed for this phase).
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph.
+> **Verified & closed (PR #237, 2026-06-30).** Walked every criterion against the
+> shipped code; coverage gaps filled by a new [`e2e/command-palette.e2e.ts`](../packages/web/e2e/command-palette.e2e.ts)
+> (palette sections, Toggle-theme command, `?` overlay, `G`-chord nav, `N`), alongside
+> the pre-existing `search-palette.e2e.ts` (⌘K search → route) and `keyboard-nav.e2e.ts`
+> (board arrows / Enter / D / A / suppression).
+
+- [x] `⌘K`/`Ctrl+K` opens the palette from any page; typing queries `GET /search` with a 200 ms debounce (`DEBOUNCE_MS`); results show type icon + title; selecting a task result navigates to its detail. *(No **status chip**: the `SearchResult` contract carries no status and the phase is web-only — no gateway schema change — so the matched-term snippet stands in for it.)*
+- [x] "Recent" section shows up to 10 most-recently visited tasks/pages (`RECENT_MAX = 10`) before any query; selecting one navigates and bumps it to the top of recent (`pushRecent` dedupes + prepends).
+- [x] "Navigation" and "Settings" sections appear without typing and navigate or open the relevant page/section. *(Settings surfaces as always-on entries — Agents/Profile/Settings — inside the Navigation section.)*
+- [x] "Create task…" action opens the new-task form; "Lock screen" triggers the screensaver; "Toggle theme" flips light/dark (DOM class + `midnite.theme`).
+- [ ] ⏳ Contextual "Move to wip/done/abandoned" on the task detail page — **deferred** (same reason as Theme B's open item: no `/tasks/:id` route; the registry exists via `useRegisterPaletteCommands` but nothing registers them yet). Revisit with task-thread-modal integration.
+- [x] `?` opens the keyboard shortcuts help overlay showing all shortcuts grouped by section (General/Navigation/Board); `Esc` closes it.
+- [x] `G B`/`G O`/`G S`/`G H` navigate to the correct pages; `N` opens the new-task form when no input is focused; `Esc` closes the topmost open modal.
+- [x] All global shortcuts are suppressed when `<input>`/`<textarea>`/`[contenteditable]` has focus (`inEditableElement`). *(`⌘K` deliberately still fires inside inputs — decision #3 / browser-search convention.)*
+- [x] On the board, arrow keys move the visible focus ring between cards; `Enter` opens the detail; `D` and `A` prompt and transition correctly.
+- [x] Board shortcuts are suppressed when any input on the board is focused (and while a visible `[role="dialog"]` is open).
+- [x] `@midnite/ui` boundary test passes (no new imports from the leaf package needed for this phase).
+- [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph.
 
 ---
 
