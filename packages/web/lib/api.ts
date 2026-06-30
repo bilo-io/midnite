@@ -224,6 +224,9 @@ import {
   type ApprovalLogResponse,
   type ModeResponse,
   type AutonomyMode,
+  PreferencesResponseSchema,
+  type PreferencesResponse,
+  type UserPreferences,
 } from '@midnite/shared';
 import { z } from 'zod';
 
@@ -334,6 +337,20 @@ export async function getTaskCounts(): Promise<TaskCounts> {
 
 export async function getTasks(): Promise<Task[]> {
   return fetchJson('/tasks', undefined, z.array(TaskSchema));
+}
+
+/** Current user's synced preferences (Phase 43). Authed-only — 401 when signed out. */
+export async function getPreferences(signal?: AbortSignal): Promise<PreferencesResponse> {
+  return fetchJson('/users/me/preferences', { signal }, PreferencesResponseSchema);
+}
+
+/** Replace the current user's preferences (full-object PUT). */
+export async function putPreferences(prefs: UserPreferences): Promise<PreferencesResponse> {
+  return fetchJson(
+    '/users/me/preferences',
+    { method: 'PUT', headers: JSON_HEADERS, body: JSON.stringify(prefs) },
+    PreferencesResponseSchema,
+  );
 }
 
 export async function createTask(form: FormData): Promise<CreateTaskResponse> {
