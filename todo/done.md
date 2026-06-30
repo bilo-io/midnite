@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-30 — feat: signed webhook delivery engine — Phase 44 Theme B (PR #247)
+
+Outbound endpoints now actually fire. Task transitions become signed, retried, recorded HTTP deliveries — the heart of Phase 44.
+
+- [x] **gateway**: extracted the SSRF-guarded retry/backoff core into [`lib/safe-webhook-delivery.ts`](../packages/gateway/src/lib/safe-webhook-delivery.ts) (`deliverWebhook` → `{ ok, responseCode, attempts, error }`); Phase 21's `webhook.channel.ts` now delegates to it (behaviour-preserving, its dispatcher specs pass).
+- [x] **gateway**: `WebhookDeliveryService` subscribes to `TaskEventBus`, resolves the task's team's enabled endpoints whose `eventFilter` matches (`eventMatches` — `statuses` narrows `task.updated`), and dispatches one delivery per endpoint. Fire-and-forget — never blocks or throws into the transition.
+- [x] **gateway**: HMAC-SHA256 signature over `${timestamp}.${body}` → `X-Midnite-Signature: sha256=…` + `X-Midnite-Timestamp`; recipe + `verifySignature` in [`webhooks/lib/sign.ts`](../packages/gateway/src/webhooks/lib/sign.ts). Secret decrypted via `CryptoService` (plaintext fallback when crypto off).
+- [x] **gateway/shared**: `webhook_deliveries` table (migration `0060`) + `WebhookDeliveriesRepository` (insert / listByWebhook / findById); `WebhookDelivery` contract in `shared`. Generic canonical JSON body for all providers (Theme C branches Slack/Discord later); `dispatch()` is public so Theme D's send-test/redeliver reuse the signed path.
+- [x] **Deferred**: `task.deleted` carries only an id (no team/status) so it can't be team-scoped yet — `task.created`/`task.updated` fully supported.
+- [x] Tests: safe-delivery (4 — SSRF reject, 2xx, retry-budget, transient-recover), sign (3), delivery engine (matcher + signed dispatch + record + bus fan-out + skip disabled/filtered/un-scopable; 8), deliveries repo (3). Gateway typecheck green; shared + gateway suites pass (one unrelated flaky tmux spawner spec, passes in isolation).
+
 ## 2026-06-30 — feat: full task detail page — Phase 42 Theme A (PR #246)
 
 Every task now has a shareable, refresh-safe URL. The modal's body was extracted into a reusable `<TaskDetail>` so the modal and the new full page render identical detail UI.
