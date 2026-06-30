@@ -5,6 +5,7 @@ import type { WorkflowRun, WorkflowSummary, WorkflowTemplateSummary } from '@mid
 afterEach(cleanup);
 
 const listWorkflowRuns = vi.fn();
+const getWorkflowRun = vi.fn();
 const installWorkflowTemplate = vi.fn();
 vi.mock('@/lib/api', () => ({
   getWorkflow: vi.fn(),
@@ -12,6 +13,7 @@ vi.mock('@/lib/api', () => ({
   updateWorkflow: vi.fn(),
   createWorkflow: vi.fn(),
   listWorkflowRuns: (...a: unknown[]) => listWorkflowRuns(...a),
+  getWorkflowRun: (...a: unknown[]) => getWorkflowRun(...a),
   installWorkflowTemplate: (...a: unknown[]) => installWorkflowTemplate(...a),
 }));
 vi.mock('@/lib/data-refresh', () => ({ invalidateData: vi.fn() }));
@@ -95,7 +97,9 @@ describe('SchedulesView', () => {
         { id: 'nr', runId: 'r1', nodeId: 'n2', nodeType: 'task.create', status: 'succeeded', output: { id: 't-9', title: 'Standup task' }, logs: [] },
       ],
     };
-    listWorkflowRuns.mockResolvedValue([run]);
+    // The list endpoint omits nodeRuns; the detail fetch carries the task.create output.
+    listWorkflowRuns.mockResolvedValue([{ ...run, nodeRuns: [] }]);
+    getWorkflowRun.mockResolvedValue(run);
     renderView([sched({})]);
     expect(listWorkflowRuns).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'History' }));

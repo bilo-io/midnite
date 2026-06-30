@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowUpRight, Loader2 } from 'lucide-react';
 import type { WorkflowRun } from '@midnite/shared';
-import { listWorkflowRuns } from '@/lib/api';
+import { getWorkflowRun, listWorkflowRuns } from '@/lib/api';
 import { formatRun } from '@/lib/cron';
 import { createdTaskFromRun } from '@/lib/schedule-runs';
 import { cn } from '@/lib/utils';
@@ -17,9 +17,15 @@ const RUN_STATUS_HUE: Record<WorkflowRun['status'], string> = {
   canceled: '--status-abandoned',
 };
 
+// Cap the inline list so a long-running schedule's history stays scannable — and
+// so re-fetching each shown run's detail is a handful of calls, not hundreds.
+const SHOWN = 8;
+
 // Phase 45 D — a focused per-schedule run list. Unlike the canvas RunHistoryPanel
 // (which replays node states onto the ReactFlow editor), this just answers "did my
 // schedule fire, and what task did it open?" — each run links to the task it created.
+// The list endpoint hydrates runs shallow (no nodeRuns), so the shown runs are
+// re-fetched in detail to read the task.create output that carries the task link.
 export function ScheduleRunHistory({ workflowId, timezone }: { workflowId: string; timezone: string }) {
   const [runs, setRuns] = useState<WorkflowRun[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -27,8 +33,14 @@ export function ScheduleRunHistory({ workflowId, timezone }: { workflowId: strin
   useEffect(() => {
     let cancelled = false;
     listWorkflowRuns(workflowId)
-      .then((r) => {
-        if (!cancelled) setRuns(r);
+      .then(async (list) => {
+        const recent = [...list].sort((a, b) => b.startedAt.localeCompare(a.startedAt)).slice(0, SHOWN);
+        // Hydrate the shown runs (parallel) so the created-task link resolves;
+        // fall back to the shallow run if a detail fetch fails.
+        const detailed = await Promise.all(
+          recent.map((r) => getWorkflowRun(workflowId, r.id).catch(() => r)),
+        );
+        if (!cancelled) setRuns(detailed);
       })
       .catch((e) => {
         if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load runs');
@@ -50,12 +62,9 @@ export function ScheduleRunHistory({ workflowId, timezone }: { workflowId: strin
     return <p className="text-[11px] text-muted-foreground">No runs yet — “Run now” or wait for the next fire.</p>;
   }
 
-  // Newest first; cap the inline list so a long-running schedule's history stays scannable.
-  const recent = [...runs].sort((a, b) => b.startedAt.localeCompare(a.startedAt)).slice(0, 8);
-
   return (
     <ul className="space-y-1" aria-label="Run history">
-      {recent.map((run) => {
+      {runs.map((run) => {
         const task = createdTaskFromRun(run);
         return (
           <li key={run.id} className="flex items-center gap-2 text-[11px]">
