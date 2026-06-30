@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-30 — feat: Schedules facade view — Phase 45 Theme C
+
+Recurring tasks become first-class — a dedicated **Schedules** surface over the `[trigger.schedule] → [task.create]` workflow shape, no node canvas required. Builds on the Theme A `task.create` action (#241) and Theme B recurrence presets (#243).
+
+- [x] **web**: `/schedules` page + sidenav entry (`schedules` feature in `lib/features.ts`, `CalendarClock`); lists schedule-triggered `task.create` workflows, sorted most-frequent first
+- [x] **web**: per-row cadence (`describeCron`), next run + last-fired/status, **Enabled** toggle (`updateWorkflow`), **Run now** (`runWorkflow`), Edit, and open-in-builder link
+- [x] **web**: inline create/edit dialog (`schedule-form-dialog.tsx`) — name + recurrence + task prompt + project/repo/priority; builds & persists a standard 2-node workflow, round-trips on edit (Decision §3)
+- [x] **web**: reusable `RecurrenceFields` (preset picker + raw-cron + next-3-runs), extracted from the node-config panel; `formatRun` moved into `lib/cron.ts`; `lib/schedules.ts` holds the pure filter/build/decode glue
+- [x] **shared/gateway**: expose schedule `timezone` on `WorkflowSummary` so next-run is computed correctly client-side (Decision §2 — client filter, no marker)
+- [x] **tests**: `lib/schedules.test.ts` (7), `schedule-form-dialog.test.tsx` (3), `schedules-view.test.tsx` (4), `schedules.shots.ts` Playwright capture; command-palette surface count bumped
 ## 2026-06-30 — feat: full task detail page — Phase 42 Theme A (PR #246)
 
 Every task now has a shareable, refresh-safe URL. The modal's body was extracted into a reusable `<TaskDetail>` so the modal and the new full page render identical detail UI.

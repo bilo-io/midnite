@@ -138,6 +138,22 @@ export function cronIntervalSeconds(expr: string): number {
   return 86400; // daily
 }
 
+/** Format a fire time for display in the given timezone (falls back to ISO on bad tz). */
+export function formatRun(d: Date, timezone: string): string {
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      timeZone: timezone || 'UTC',
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(d);
+  } catch {
+    return d.toISOString();
+  }
+}
+
 /** A short cadence label for a cron, e.g. "Every 5 minutes", "Every 6 hours", "Every day". */
 export function describeFrequency(expr: string): string {
   const s = cronIntervalSeconds(expr);

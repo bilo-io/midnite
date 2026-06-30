@@ -68,7 +68,7 @@
 | [42 · Task detail routing](phase-42-task-detail-routing.md) | 🔄 WIP | 4/11 | `████░░░░░░` | 36% | — | B C |
 | [43 · Preference sync](phase-43-server-side-preference-sync.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
 | [44 · Outbound webhooks](phase-44-outbound-webhooks.md) | 🔄 WIP | 3/20 | `██░░░░░░░░` | 15% | B | C D |
-| [45 · Recurring/scheduled tasks](phase-45-recurring-scheduled-tasks.md) | 🔄 WIP | 7/15 | `█████░░░░░` | 47% | C | D |
+| [45 · Recurring/scheduled tasks](phase-45-recurring-scheduled-tasks.md) | 🔄 WIP | 10/15 | `███████░░░` | 67% | — | D |
 | [46 · Inbound integrations](phase-46-inbound-integrations.md) | ◻ TODO | 0/? | `░░░░░░░░░░` | 0% | — | A B C D |
 | [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | 🔄 WIP | 0/? | `░░░░░░░░░░` | 0% | A | B C D E F |
 
@@ -116,7 +116,7 @@ so you can pick from this file without opening the phase doc first.
 *(Workflow-backed: a recurring task is a `[trigger.schedule] → [task.create]` workflow — reuses the workflow scheduler/runs/run-history.)*
 - ✅ **A** — `task.create` workflow action/executor (the missing link) (#241) **[M]**
 - ✅ **B** — Recurrence presets (+ raw-cron escape hatch) on the schedule trigger (#243) **[S–M]**
-- ◻ **C** — Dedicated "Schedules" facade view (list/create/edit/run-now) **[M]**
+- ✅ **C** — Dedicated "Schedules" facade view (list/create/edit/run-now) (#247) **[M]**
 - ◻ **D** — Run-history surfacing + "Daily standup" starter preset **[S]**
 
 ### [Phase 47 — CLI power-user pass](phase-47-cli-power-user-pass.md)
