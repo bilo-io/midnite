@@ -95,7 +95,9 @@
     @apply bg-background text-foreground;
   }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    /* `--font-ui` is set by the Appearance "Interface font" setting (Phase 39 C);
+       when unset it falls through to the platform default sans stack. */
+    font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif);
     background-image:
       radial-gradient(circle at top, hsl(var(--foreground) / 0.04), transparent 60%),
       radial-gradient(circle at 20% 110%, hsl(var(--foreground) / 0.03), transparent 50%);

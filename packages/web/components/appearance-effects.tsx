@@ -11,6 +11,7 @@ import {
   DENSITY_DEFAULT,
   MOTION_DEFAULT,
   SETTINGS_STORAGE_KEY,
+  UI_FONT_DEFAULT,
   type AppSettings,
 } from '@/lib/app-settings';
 import {
@@ -19,6 +20,7 @@ import {
   applyDensity,
   applyEffects,
   applyMotion,
+  applyUiFont,
 } from '@/lib/apply-appearance';
 
 /**
@@ -32,6 +34,7 @@ export function AppearanceEffects() {
   const accent = settings.accent ?? ACCENT_DEFAULT;
   const motion = settings.motion ?? MOTION_DEFAULT;
   const density = settings.density ?? DENSITY_DEFAULT;
+  const uiFont = settings.uiFont ?? UI_FONT_DEFAULT;
   const effects = settings.effects ?? DEFAULT_EFFECTS;
   const backgroundPattern = settings.backgroundPattern ?? BACKGROUND_PATTERN_DEFAULT;
   const bgIntensity = settings.bgIntensity ?? BG_INTENSITY_DEFAULT;
@@ -47,6 +50,10 @@ export function AppearanceEffects() {
   useEffect(() => {
     applyDensity(density);
   }, [density]);
+
+  useEffect(() => {
+    applyUiFont(uiFont);
+  }, [uiFont]);
 
   useEffect(() => {
     applyBackground(backgroundPattern, bgIntensity);

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { ACCENT_OPTIONS } from './app-settings';
+import { ACCENT_OPTIONS, UI_FONT_STACK } from './app-settings';
 import {
   appearanceInitScript,
   applyAccent,
@@ -7,15 +7,17 @@ import {
   applyDensity,
   applyEffects,
   applyMotion,
+  applyUiFont,
 } from './apply-appearance';
 
 afterEach(() => {
   const html = document.documentElement;
-  for (const attr of ['data-accent', 'data-motion', 'data-density', 'data-bg', 'data-bg-intensity', 'data-no-page-reveal', 'data-no-typewriter', 'data-no-glass']) {
+  for (const attr of ['data-accent', 'data-motion', 'data-density', 'data-ui-font', 'data-bg', 'data-bg-intensity', 'data-no-page-reveal', 'data-no-typewriter', 'data-no-glass']) {
     html.removeAttribute(attr);
   }
   html.style.removeProperty('--accent-h');
   html.style.removeProperty('--accent-s');
+  html.style.removeProperty('--font-ui');
 });
 
 describe('applyAccent', () => {
@@ -76,6 +78,37 @@ describe('applyDensity', () => {
   });
 });
 
+describe('applyUiFont', () => {
+  it('sets --font-ui + data-ui-font for a non-system font', () => {
+    applyUiFont('serif');
+    const html = document.documentElement;
+    expect(html.getAttribute('data-ui-font')).toBe('serif');
+    expect(html.style.getPropertyValue('--font-ui')).toBe(UI_FONT_STACK.serif);
+  });
+
+  it('clears the override for the system font (default)', () => {
+    applyUiFont('mono');
+    applyUiFont('system');
+    const html = document.documentElement;
+    expect(html.hasAttribute('data-ui-font')).toBe(false);
+    expect(html.style.getPropertyValue('--font-ui')).toBe('');
+  });
+
+  it('clears the override for an unknown font id', () => {
+    applyUiFont('grotesk');
+    applyUiFont('nope' as never);
+    expect(document.documentElement.hasAttribute('data-ui-font')).toBe(false);
+    expect(document.documentElement.style.getPropertyValue('--font-ui')).toBe('');
+  });
+
+  it('switches cleanly between two fonts', () => {
+    applyUiFont('serif');
+    applyUiFont('mono');
+    expect(document.documentElement.getAttribute('data-ui-font')).toBe('mono');
+    expect(document.documentElement.style.getPropertyValue('--font-ui')).toBe(UI_FONT_STACK.mono);
+  });
+});
+
 describe('applyBackground', () => {
   it('sets data-bg to the pattern name', () => {
     applyBackground('honeycomb', 'balanced');
@@ -133,8 +166,26 @@ describe('appearanceInitScript', () => {
     expect(appearanceInitScript).toContain('data-accent');
     expect(appearanceInitScript).toContain('data-motion');
     expect(appearanceInitScript).toContain('data-density');
+    expect(appearanceInitScript).toContain('data-ui-font');
+    expect(appearanceInitScript).toContain('--font-ui');
     expect(appearanceInitScript).toContain('data-bg');
     expect(appearanceInitScript).toContain('data-no-page-reveal');
+  });
+
+  it('embeds the UI-font stacks so the pre-paint map stays in sync', () => {
+    for (const [id, stack] of Object.entries(UI_FONT_STACK)) {
+      expect(appearanceInitScript).toContain(JSON.stringify(id));
+      expect(appearanceInitScript).toContain(JSON.stringify(stack));
+    }
+  });
+
+  it('applies a stored non-system UI font before paint', () => {
+    localStorage.setItem('midnite.settings', JSON.stringify({ uiFont: 'serif' }));
+    // eslint-disable-next-line no-eval -- exercising the inline init script body
+    eval(appearanceInitScript);
+    expect(document.documentElement.getAttribute('data-ui-font')).toBe('serif');
+    expect(document.documentElement.style.getPropertyValue('--font-ui')).toBe(UI_FONT_STACK.serif);
+    localStorage.clear();
   });
 
   it('runs without throwing and defaults motion to system when nothing is stored', () => {
@@ -146,5 +197,7 @@ describe('appearanceInitScript', () => {
     expect(document.documentElement.hasAttribute('data-accent')).toBe(false);
     expect(document.documentElement.getAttribute('data-motion')).toBe('system');
     expect(document.documentElement.getAttribute('data-bg')).toBe('grid');
+    // No uiFont stored → no override applied.
+    expect(document.documentElement.hasAttribute('data-ui-font')).toBe(false);
   });
 });

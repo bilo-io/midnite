@@ -40,6 +40,8 @@ import {
   MOTION_DEFAULT,
   MOTION_OPTIONS,
   SETTINGS_STORAGE_KEY,
+  UI_FONT_DEFAULT,
+  UI_FONT_OPTIONS,
   type AccentId,
   type AppSettings,
   type BackgroundPattern,
@@ -47,6 +49,7 @@ import {
   type Density,
   type Motion,
   type NavMode,
+  type UiFont,
   type VisualEffects,
 } from '@/lib/app-settings';
 import {
@@ -59,6 +62,7 @@ import {
   applyDensity,
   applyEffects,
   applyMotion,
+  applyUiFont,
 } from '@/lib/apply-appearance';
 import { cn } from '@/lib/utils';
 
@@ -102,6 +106,9 @@ export function AppearanceSection() {
   const density = settings.density ?? DENSITY_DEFAULT;
   const setDensity = (next: Density) => setSettings((prev) => ({ ...prev, density: next }));
 
+  const uiFont = settings.uiFont ?? UI_FONT_DEFAULT;
+  const setUiFont = (next: UiFont) => setSettings((prev) => ({ ...prev, uiFont: next }));
+
   const effects = { ...DEFAULT_EFFECTS, ...(settings.effects ?? {}) };
   const setEffect = (key: keyof VisualEffects, value: boolean) =>
     setSettings((prev) => ({ ...prev, effects: { ...DEFAULT_EFFECTS, ...prev.effects, [key]: value } }));
@@ -112,6 +119,7 @@ export function AppearanceSection() {
     applyAccent(DEFAULT_SETTINGS.accent);
     applyMotion(DEFAULT_SETTINGS.motion);
     applyDensity(DEFAULT_SETTINGS.density);
+    applyUiFont(DEFAULT_SETTINGS.uiFont);
     applyEffects(DEFAULT_SETTINGS.effects);
   };
 
@@ -142,6 +150,26 @@ export function AppearanceSection() {
               hydrated={hydrated}
             />
           </SettingRow>
+          <div className="mt-4 border-t border-border/60 pt-4">
+            <SettingRow
+              title="Interface font"
+              description="The font used for body text across the app. System fonts only — no download, applies instantly. Code, terminals, and the wordmark keep their own type."
+            >
+              <Segmented
+                ariaLabel="Interface font"
+                value={uiFont}
+                onChange={setUiFont}
+                options={UI_FONT_OPTIONS.map((o) => ({ value: o.value, label: o.label, title: o.hint }))}
+                hydrated={hydrated}
+              />
+            </SettingRow>
+            <p
+              className="mt-3 rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-sm"
+              style={{ fontFamily: 'var(--font-ui, inherit)' }}
+            >
+              The quick brown fox jumps over the lazy dog — 0123456789
+            </p>
+          </div>
         </div>
       </Accordion>
 
