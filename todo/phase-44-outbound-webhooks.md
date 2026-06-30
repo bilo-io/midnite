@@ -62,7 +62,7 @@ Shape the event into what each receiver expects.
 
 ---
 
-## Theme D — Deliveries log + test + redeliver — **S** ✅ DONE (PR #250, 2026-06-30)
+## Theme D — Deliveries log + test + redeliver — **S** ✅ DONE (PR #251, 2026-06-30)
 
 Make webhooks debuggable, not a black box.
 

@@ -110,7 +110,7 @@ so you can pick from this file without opening the phase doc first.
 - ✅ **A** — Webhook endpoint entity + CRUD + Settings → Integrations UI (team-scoped) (PR #245) **[M]**
 - ✅ **B** — Signed delivery engine off the `TaskEventBus` (HMAC, reused SSRF/retry core, deliveries log) (PR #249) **[M]**
 - ◻ **C** — Provider formatting: Slack / Discord / generic JSON (Linear deferred) **[S–M]**
-- ✅ **D** — Deliveries log UI + "Send test event" + redeliver (PR #250) **[S]**
+- ✅ **D** — Deliveries log UI + "Send test event" + redeliver (PR #251) **[S]**
 
 ### [Phase 45 — Recurring & scheduled tasks](phase-45-recurring-scheduled-tasks.md)
 *(Workflow-backed: a recurring task is a `[trigger.schedule] → [task.create]` workflow — reuses the workflow scheduler/runs/run-history.)*

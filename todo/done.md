@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-06-30 — feat: webhook deliveries log + test + redeliver — Phase 44 Theme D (PR #250)
+## 2026-06-30 — feat: webhook deliveries log + test + redeliver — Phase 44 Theme D (PR #251)
 
 Outbound webhooks are no longer a black box — you can see every attempt, fire a test, and replay a failure. Completes the observability layer on Theme B's delivery engine.
 
