@@ -65,7 +65,7 @@
 | [39 · Visual customization](phase-39-visual-customization.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
 | [40 · Ideas pipeline](phase-40-ideas-pipeline.md) | ✅ DONE | 51/51 | `██████████` | 100% | — | — |
 | [41 · Command palette](phase-41-command-palette.md) | ✅ DONE | 32/32 | `██████████` | 100% | — | — ² |
-| [42 · Task detail routing](phase-42-task-detail-routing.md) | 🔄 WIP | 0/11 | `░░░░░░░░░░` | 0% | A | B C |
+| [42 · Task detail routing](phase-42-task-detail-routing.md) | 🔄 WIP | 4/11 | `████░░░░░░` | 36% | — | B C |
 | [43 · Preference sync](phase-43-server-side-preference-sync.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
 | [44 · Outbound webhooks](phase-44-outbound-webhooks.md) | 🔄 WIP | 3/20 | `██░░░░░░░░` | 15% | — | B C D |
 | [45 · Recurring/scheduled tasks](phase-45-recurring-scheduled-tasks.md) | 🔄 WIP | 7/15 | `█████░░░░░` | 47% | C | D |
@@ -89,8 +89,8 @@ so you can pick from this file without opening the phase doc first.
 - ✅ **G** — Phase-doc ↔ board sync-back (#236) *(folded in from former Phase 42 Theme E)*
 
 ### [Phase 42 — Task detail routing & contextual commands](phase-42-task-detail-routing.md)
-- ◻ **A** — `/tasks/:id` full detail page (extract `<TaskDetail>`, deep-linkable) **[M]**
-- ◻ **B** — Intercepting-route modal (modal on click / full page on direct link) + nav migration **[M–L]**
+- ✅ **A** — full detail page (extract `<TaskDetail>`, deep-linkable) — shipped at `/tasks/view?id=` (PR #246) **[M]**
+- ◻ **B** — Intercepting-route modal (modal on click / full page on direct link) + nav migration **[M–L]** — ⚠️ **needs rethink**: `output: 'export'` is on (no server runtime), so Next intercepting/parallel routes can't work as the doc describes; the click→modal UX must be done client-side (e.g. a `?task=:id` query param that opens the modal, falling through to the `/tasks/view` page on hard nav)
 - ◻ **C** — Contextual "Move to…" palette commands (closes Phase 41's 2 deferred boxes) **[S]**
 
 ### [Phase 43 — Server-side preference sync](phase-43-server-side-preference-sync.md)
