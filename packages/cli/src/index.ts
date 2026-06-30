@@ -39,6 +39,7 @@ import {
   success,
 } from './lib/palette.js';
 import { wasReported, withSpinner } from './lib/spinner.js';
+import { isJsonMode, printJson, printJsonError, setJsonMode } from './lib/output.js';
 import {
   canPrompt,
   confirmPrompt,
@@ -86,14 +87,18 @@ program
   .description('Multitask coding agents — CLI client for the midnite gateway')
   .version(getVersion())
   .option('--gateway <url>', 'gateway base URL (else $MIDNITE_GATEWAY_URL, else http://localhost:7777)')
-  .option('--token <token>', 'bearer token (overrides stored JWT and $MIDNITE_AUTH_TOKEN)');
+  .option('--token <token>', 'bearer token (overrides stored JWT and $MIDNITE_AUTH_TOKEN)')
+  .option('--json', 'machine-readable JSON output (forces colour/spinner/chrome off; errors → stderr)');
 
 // Brand the help output (and the bare-invoke help below) with the entry banner.
 program.addHelpText('beforeAll', () => `${banner()}\n`);
 
 // Resolve auth token once before any command action runs (stored JWT > env > --token flag).
 program.hook('preAction', async () => {
-  const opts = program.opts() as { token?: string };
+  const opts = program.opts() as { token?: string; json?: boolean };
+  // Set JSON mode first: it flips NO_COLOR, which the shared `isInteractive()`
+  // gate reads to silence colour / spinners / logo for the rest of the run.
+  setJsonMode(Boolean(opts.json));
   _resolvedToken = await resolveToken(opts.token);
 });
 
@@ -138,14 +143,18 @@ program
           throw new Error('no bulk input — pass --file <path> or pipe a list to stdin');
         }
         const res = await withSpinner('Creating tasks…', () => client().createBulk(raw, defaults));
+        // Partial batches succeed; only an all-failed batch exits non-zero.
+        process.exitCode = bulkExitCode(res.counts);
+        if (isJsonMode()) {
+          printJson(res);
+          return;
+        }
         if (res.results.length > 0) {
           const table = new Table({ head: ['Line', 'Kind', 'Result'], wordWrap: true });
           for (const row of bulkResultRows(res)) table.push(row);
           console.log(table.toString());
         }
         console.log(bulkSummaryLine(res.counts));
-        // Partial batches succeed; only an all-failed batch exits non-zero.
-        process.exitCode = bulkExitCode(res.counts);
         return;
       }
 
@@ -158,13 +167,14 @@ program
         if (!opts.project) defaults.projectId = await optionalTextPrompt('Project id');
       }
       if (opts.dependsOn.length > 0) defaults.dependsOn = opts.dependsOn;
-      await withSpinner('Adding task…', () => client().createTask(prompt, defaults), {
-        succeed: (t) => {
-          const blockers = t.dependsOn ?? [];
-          const suffix = blockers.length > 0 ? `  (blocked by: ${blockers.join(', ')})` : '';
-          return `added ${t.id}  [${colourStatus(t.status)}]  ${t.title}${suffix}`;
-        },
-      });
+      const created = await withSpinner('Adding task…', () => client().createTask(prompt, defaults));
+      if (isJsonMode()) {
+        printJson(created);
+        return;
+      }
+      const blockers = created.dependsOn ?? [];
+      const suffix = blockers.length > 0 ? `  (blocked by: ${blockers.join(', ')})` : '';
+      console.log(`added ${created.id}  [${colourStatus(created.status)}]  ${created.title}${suffix}`);
     },
   );
 
@@ -175,6 +185,10 @@ program
   .action(async (opts: { status?: string }) => {
     const status = opts.status ? parseStatus(opts.status) : undefined;
     const tasks = await withSpinner('Loading tasks…', () => client().listTasks(status));
+    if (isJsonMode()) {
+      printJson(tasks);
+      return;
+    }
     if (tasks.length === 0) {
       console.log('no tasks');
       return;
@@ -194,9 +208,12 @@ program
     const c = client();
     const resolvedId = id ?? (await pickTask(await c.listTasks(), 'Move which task?'));
     const resolvedStatus = status ? parseStatus(status) : await selectStatus();
-    await withSpinner('Moving task…', () => c.moveTask(resolvedId, resolvedStatus), {
-      succeed: (task) => `moved ${task.id} → ${colourStatus(task.status)}`,
-    });
+    const task = await withSpinner('Moving task…', () => c.moveTask(resolvedId, resolvedStatus));
+    if (isJsonMode()) {
+      printJson(task);
+      return;
+    }
+    console.log(`moved ${task.id} → ${colourStatus(task.status)}`);
   });
 
 program
@@ -206,12 +223,13 @@ program
   .action(async (id: string | undefined, opts: { on: string }) => {
     const c = client();
     const resolvedId = id ?? (await pickTask(await c.listTasks(), 'Block which task?'));
-    await withSpinner('Adding blocker…', () => c.addDependency(resolvedId, opts.on), {
-      succeed: (task) => {
-        const blockers = task.dependsOn ?? [];
-        return `blocked ${task.id} on ${opts.on}  (now depends on: ${blockers.join(', ') || 'none'})`;
-      },
-    });
+    const task = await withSpinner('Adding blocker…', () => c.addDependency(resolvedId, opts.on));
+    if (isJsonMode()) {
+      printJson(task);
+      return;
+    }
+    const blockers = task.dependsOn ?? [];
+    console.log(`blocked ${task.id} on ${opts.on}  (now depends on: ${blockers.join(', ') || 'none'})`);
   });
 
 program
@@ -221,12 +239,13 @@ program
   .action(async (id: string | undefined, opts: { on: string }) => {
     const c = client();
     const resolvedId = id ?? (await pickTask(await c.listTasks(), 'Unblock which task?'));
-    await withSpinner('Removing blocker…', () => c.removeDependency(resolvedId, opts.on), {
-      succeed: (task) => {
-        const blockers = task.dependsOn ?? [];
-        return `unblocked ${task.id} from ${opts.on}  (now depends on: ${blockers.join(', ') || 'none'})`;
-      },
-    });
+    const task = await withSpinner('Removing blocker…', () => c.removeDependency(resolvedId, opts.on));
+    if (isJsonMode()) {
+      printJson(task);
+      return;
+    }
+    const blockers = task.dependsOn ?? [];
+    console.log(`unblocked ${task.id} from ${opts.on}  (now depends on: ${blockers.join(', ') || 'none'})`);
   });
 
 // Run the quality gate for a task on demand and render per-check pass/fail.
@@ -236,6 +255,13 @@ program
   .description('Run quality-gate checks for a task and report pass/fail per check')
   .action(async (id: string) => {
     const run = await withSpinner('Running checks…', () => client().triggerCheck(id));
+
+    if (isJsonMode()) {
+      // A failed gate is a valid result, not an error — emit the run and reflect
+      // pass/fail in the exit code so scripts can branch without parsing.
+      printJson(run);
+      process.exit(run.passed ? 0 : 1);
+    }
 
     if (run.results.length === 0) {
       const mark = run.passed ? success('✓') : paintError('✗');
@@ -306,6 +332,10 @@ program
       q.limit = n;
     }
     const res = await withSpinner('Searching…', () => client().search(q));
+    if (isJsonMode()) {
+      printJson(res);
+      return;
+    }
     if (res.results.length > 0) {
       const table = new Table({ head: ['Type', 'ID', 'Title', 'Match'], wordWrap: true });
       for (const row of searchResultRows(res)) table.push(row);
@@ -414,6 +444,10 @@ workflow
   .description('List workflows (name, enabled, trigger, last run)')
   .action(async () => {
     const summaries = await withSpinner('Loading workflows…', () => client().listWorkflows());
+    if (isJsonMode()) {
+      printJson(summaries);
+      return;
+    }
     if (summaries.length === 0) {
       console.log('no workflows');
       return;
@@ -433,6 +467,11 @@ workflow
   .action(async (id: string, opts: { watch?: boolean }) => {
     const c = client();
     const run = await withSpinner('Starting run…', () => c.runWorkflow(id));
+    if (isJsonMode()) {
+      // Streaming per-node lines would pollute stdout — emit the started run object.
+      printJson(run);
+      return;
+    }
     if (!opts.watch) {
       console.log(`run ${run.id}  [${run.status}]`);
       return;
@@ -447,6 +486,10 @@ workflow
   .description('Recent run history for a workflow')
   .action(async (id: string) => {
     const runs = await withSpinner('Loading runs…', () => client().listWorkflowRuns(id));
+    if (isJsonMode()) {
+      printJson(runs);
+      return;
+    }
     if (runs.length === 0) {
       console.log('no runs');
       return;
@@ -571,6 +614,10 @@ template
     const templates = await withSpinner('Loading templates…', () =>
       client().listTemplates(opts.category),
     );
+    if (isJsonMode()) {
+      printJson(templates);
+      return;
+    }
     if (templates.length === 0) {
       console.log('no templates');
       return;
@@ -676,9 +723,14 @@ program
     const c = client();
     try {
       const user = await c.whoami();
+      if (isJsonMode()) {
+        printJson(user);
+        return;
+      }
       console.log(`${user.email}  (${user.name})  id=${user.id}`);
-    } catch {
-      console.error('not authenticated — run `midnite login`');
+    } catch (err) {
+      if (isJsonMode()) printJsonError(err instanceof Error ? err : 'not authenticated — run `midnite login`');
+      else console.error('not authenticated — run `midnite login`');
       process.exitCode = 1;
     }
   });
@@ -704,7 +756,13 @@ if (process.argv.length <= 2) {
 }
 
 program.parseAsync(process.argv).catch((err) => {
-  // A failed spinner already printed the message; don't print it twice.
-  if (!wasReported(err)) console.error(err instanceof Error ? err.message : err);
+  // Under --json, errors go to stderr as `{ "error": "…" }` so stdout stays clean
+  // (spinners don't print in json mode, so there's nothing already reported).
+  if (isJsonMode()) {
+    printJsonError(err);
+  } else if (!wasReported(err)) {
+    // A failed spinner already printed the message; don't print it twice.
+    console.error(err instanceof Error ? err.message : err);
+  }
   process.exit(1);
 });
