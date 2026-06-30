@@ -1,8 +1,13 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import type {
+  Status,
+  Task,
   Webhook,
   WebhookCreateRequest,
+  WebhookDelivery,
+  WebhookDeliveryStatus,
+  WebhookEvent,
   WebhookEventFilter,
   WebhookProvider,
   WebhookUpdateRequest,
@@ -10,8 +15,17 @@ import type {
 import { CryptoService } from '../crypto/crypto.service';
 import { isSafeHttpUrl } from '../projects/lib/opengraph';
 import { TeamsService } from '../teams/teams.service';
-import type { WebhookRow } from '../db/schema';
+import type { WebhookDeliveryRow, WebhookRow } from '../db/schema';
+import { WebhookDeliveriesRepository } from './webhook-deliveries.repository';
+import { WebhookDeliveryService, type WebhookPayload } from './webhook-delivery.service';
 import { WebhooksRepository } from './webhooks.repository';
+
+export class WebhookDeliveryDoesNotExistError extends Error {
+  constructor(id: string) {
+    super(`webhook delivery ${id} not found`);
+    this.name = 'WebhookDeliveryDoesNotExistError';
+  }
+}
 
 export class WebhookDoesNotExistError extends Error {
   constructor(id: string) {
@@ -47,6 +61,12 @@ export class WebhooksService {
     // tokens because the e2e gateway runs under `tsx` (no emitted param metadata).
     @Optional() @Inject(CryptoService) private readonly crypto?: CryptoService,
     @Optional() @Inject(TeamsService) private readonly teams?: TeamsService,
+    @Optional()
+    @Inject(WebhookDeliveriesRepository)
+    private readonly deliveriesRepo?: WebhookDeliveriesRepository,
+    @Optional()
+    @Inject(WebhookDeliveryService)
+    private readonly deliveryService?: WebhookDeliveryService,
   ) {}
 
   /** Team-scoped list (any member); secrets never included. */
@@ -126,7 +146,102 @@ export class WebhooksService {
     return { webhook: this.hydrate(row), secret };
   }
 
+  // ── deliveries (Theme D) ────────────────────────────────────────────────────
+
+  /** Recent delivery attempts for an endpoint (any team member). */
+  listDeliveries(
+    id: string,
+    teamId: string | null | undefined,
+    userId: string | null | undefined,
+  ): WebhookDelivery[] {
+    void userId; // viewing is open to any member; scope is by team only
+    this.getScoped(id, teamId);
+    return (this.deliveriesRepo?.listByWebhook(id) ?? []).map((r) => this.hydrateDelivery(r));
+  }
+
+  /** Fire a synthetic `task.updated` at the endpoint to confirm wiring (team-admin). */
+  async sendTest(
+    id: string,
+    teamId: string | null | undefined,
+    userId: string | null | undefined,
+  ): Promise<WebhookDelivery> {
+    this.assertAdmin(teamId, userId);
+    const row = this.getScoped(id, teamId);
+    if (!this.deliveryService || !this.deliveriesRepo) {
+      throw new Error('delivery service not available');
+    }
+    const payload: WebhookPayload = {
+      event: 'task.updated',
+      at: new Date().toISOString(),
+      task: this.syntheticTask(teamId),
+    };
+    const deliveryId = await this.deliveryService.dispatch(row, 'task.updated', payload);
+    return this.requireDelivery(deliveryId);
+  }
+
+  /** Re-fire a recorded delivery's stored payload — faithful replay (team-admin). */
+  async redeliver(
+    id: string,
+    deliveryId: string,
+    teamId: string | null | undefined,
+    userId: string | null | undefined,
+  ): Promise<WebhookDelivery> {
+    this.assertAdmin(teamId, userId);
+    const row = this.getScoped(id, teamId);
+    if (!this.deliveryService || !this.deliveriesRepo) {
+      throw new Error('delivery service not available');
+    }
+    const original = this.deliveriesRepo.findById(deliveryId);
+    if (!original || original.webhookId !== id) {
+      throw new WebhookDeliveryDoesNotExistError(deliveryId);
+    }
+    const newId = await this.deliveryService.dispatchBody(
+      row,
+      original.event as WebhookEvent,
+      original.payload,
+    );
+    return this.requireDelivery(newId);
+  }
+
   // ── internals ─────────────────────────────────────────────────────────────
+
+  private requireDelivery(deliveryId: string): WebhookDelivery {
+    const row = this.deliveriesRepo?.findById(deliveryId);
+    if (!row) throw new WebhookDeliveryDoesNotExistError(deliveryId);
+    return this.hydrateDelivery(row);
+  }
+
+  /** A clearly-synthetic task for the "send test" payload. */
+  private syntheticTask(teamId: string | null | undefined): Task {
+    const now = new Date().toISOString();
+    return {
+      id: `test-${randomUUID()}`,
+      title: 'midnite test event',
+      status: 'wip' as Status,
+      priority: 1,
+      retryCount: 0,
+      fixAttempts: 0,
+      tags: ['test'],
+      events: [],
+      createdAt: now,
+      updatedAt: now,
+      ...(teamId ? { teamId } : {}),
+    };
+  }
+
+  private hydrateDelivery(row: WebhookDeliveryRow): WebhookDelivery {
+    return {
+      id: row.id,
+      webhookId: row.webhookId,
+      event: row.event as WebhookEvent,
+      status: row.status as WebhookDeliveryStatus,
+      responseCode: row.responseCode ?? null,
+      attempts: row.attempts,
+      error: row.error ?? null,
+      payload: row.payload,
+      createdAt: row.createdAt,
+    };
+  }
 
   /** Resolve an endpoint within the caller's team scope, or 404. */
   private getScoped(id: string, teamId: string | null | undefined): WebhookRow {
