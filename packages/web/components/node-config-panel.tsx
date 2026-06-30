@@ -27,6 +27,7 @@ import {
   cronToPreset,
   presetToCron,
   nextRuns,
+  formatRun,
   DAY_LABELS,
   type RecurrenceKind,
   type RecurrencePreset,
@@ -381,20 +382,6 @@ const RECURRENCE_OPTIONS: SelectOption<string>[] = [
 
 const DAY_OPTIONS: SelectOption<string>[] = DAY_LABELS.map((label, i) => ({ value: String(i), label }));
 
-function formatRun(d: Date, timezone: string): string {
-  try {
-    return new Intl.DateTimeFormat(undefined, {
-      timeZone: timezone || 'UTC',
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(d);
-  } catch {
-    return d.toISOString();
-  }
-}
 
 function ScheduleFields({ trigger }: { trigger: ScheduleTrigger }) {
   const setTrigger = useWorkflowStore((s) => s.setTrigger);

@@ -56,8 +56,8 @@ describe('buildScheduleGraph', () => {
     };
     const graph = buildScheduleGraph(wf, values, makeIds());
     expect(graph.nodes).toHaveLength(2);
-    expect(graph.nodes[0].id).toBe('trig');
-    const task = graph.nodes[1];
+    expect(graph.nodes[0]!.id).toBe('trig');
+    const task = graph.nodes[1]!;
     expect(task.type).toBe('task.create');
     expect(task.params).toEqual({ prompt: 'Daily standup', repo: 'midnite', priority: 2 });
     expect(graph.edges).toHaveLength(1);
@@ -66,7 +66,7 @@ describe('buildScheduleGraph', () => {
 
   it('omits priority when it is the Normal default', () => {
     const graph = buildScheduleGraph({ nodes: [] }, { ...DEFAULT_SCHEDULE_FORM, prompt: 'x' }, makeIds());
-    expect(graph.nodes[1].params).toEqual({ prompt: 'x' });
+    expect(graph.nodes[1]!.params).toEqual({ prompt: 'x' });
   });
 
   it('preserves an existing task.create node id and position on edit', () => {
@@ -77,7 +77,7 @@ describe('buildScheduleGraph', () => {
       ],
     };
     const graph = buildScheduleGraph(wf, { ...DEFAULT_SCHEDULE_FORM, prompt: 'new' }, makeIds());
-    const task = graph.nodes[1];
+    const task = graph.nodes[1]!;
     expect(task.id).toBe('task');
     expect(task.position).toEqual({ x: 500, y: 200 });
     expect(task.params).toEqual({ prompt: 'new' });
