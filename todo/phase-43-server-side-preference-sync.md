@@ -70,7 +70,7 @@ typed client methods move to Theme B/C where the endpoints land.)*
 
 ---
 
-## Theme B — Gateway persistence + API — **M** ✅ DONE (PR #241, 2026-06-30)
+## Theme B — Gateway persistence + API — **M** ✅ DONE (PR #242, 2026-06-30)
 
 Store the blob per user; expose authed read/write. *(Decisions settled at pickup:
 **dedicated `preferences/` module** (not folded onto `users`); **blind last-write-wins**
