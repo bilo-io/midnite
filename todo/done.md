@@ -13,7 +13,7 @@ The server side of preference sync: a per-user store + authed read/write, consum
 - [x] **Decisions (settled at pickup)**: dedicated module (not folded onto `users`); blind last-write-wins (no optimistic 409); re-validate stored blob on read
 - [x] Tests: `PreferencesService` unit (4) + `PreferencesRepository` `:memory:` integration (3) + `PreferencesController` authed/unauth/bad-body (5). Local gate: gateway typecheck ✓, gateway 1124 tests ✓, my files lint-clean (8 pre-existing main lint errors untouched)
 
-## 2026-06-30 — feat: task.create workflow action — Phase 45 Theme A (PR #242)
+## 2026-06-30 — feat: task.create workflow action — Phase 45 Theme A (PR #241)
 
 The keystone of recurring/scheduled tasks: a workflow action that enqueues a board task, so a `[trigger.schedule] → [task.create]` workflow auto-creates tasks on a cadence.
 
