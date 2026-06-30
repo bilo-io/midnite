@@ -4,6 +4,19 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-30 — feat: interface-font setting — Phase 39 Theme C (PR #238) — **Phase 39 COMPLETE**
+
+The last open box in Phase 39: a curated **Interface font** picker in Appearance, completing the personalization surface (39 → 25/25).
+
+- [x] **web**: `UiFont` type + `UI_FONT_STACK` (system-font stacks) + `UI_FONT_OPTIONS` in `app-settings.ts`; `uiFont` field + default (`system`)
+- [x] **web**: `applyUiFont()` sets `--font-ui` + `data-ui-font` on `<html>`; `appearanceInitScript` extended to seed it pre-paint (no flash); wired into `AppearanceEffects` + reset-to-defaults
+- [x] **web**: body `font-family` in `globals.css` falls through `var(--font-ui, <platform stack>)`; code/terminal (`font-mono`) + wordmark (`font-brand`) unaffected via the Tailwind cascade
+- [x] **web**: "Interface font" Segmented control (System/Grotesk/Humanist/Serif/Mono) + live preview line in the Theme accordion
+- [x] **tests**: `applyUiFont` + init-script unit coverage (21 apply-appearance tests); full web suite green (593)
+- [x] **Decision**: system-font stacks only (no web fonts) — applies instantly, lands via one `--font-ui` var; body-wide with mono/brand exempt; client-only (localStorage)
+
+---
+
 ## 2026-06-27 — feat: phase-doc ↔ board sync-back — Phase 40 Theme G (PR #236) — **Phase 40 COMPLETE**
 
 The closing loop of the Ideas pipeline: as seeded tasks reach `done`, their checkboxes tick themselves in the GitHub `.md`. With this, **Phase 40 is 100% complete** (51/51).
