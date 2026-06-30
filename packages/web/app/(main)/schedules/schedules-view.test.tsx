@@ -1,14 +1,20 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { WorkflowSummary } from '@midnite/shared';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { WorkflowRun, WorkflowSummary, WorkflowTemplateSummary } from '@midnite/shared';
 
 afterEach(cleanup);
 
+const listWorkflowRuns = vi.fn();
+const getWorkflowRun = vi.fn();
+const installWorkflowTemplate = vi.fn();
 vi.mock('@/lib/api', () => ({
   getWorkflow: vi.fn(),
   runWorkflow: vi.fn(),
   updateWorkflow: vi.fn(),
   createWorkflow: vi.fn(),
+  listWorkflowRuns: (...a: unknown[]) => listWorkflowRuns(...a),
+  getWorkflowRun: (...a: unknown[]) => getWorkflowRun(...a),
+  installWorkflowTemplate: (...a: unknown[]) => installWorkflowTemplate(...a),
 }));
 vi.mock('@/lib/data-refresh', () => ({ invalidateData: vi.fn() }));
 
@@ -29,19 +35,34 @@ const sched = (over: Partial<WorkflowSummary>): WorkflowSummary => ({
   ...over,
 });
 
-const renderView = (initial: WorkflowSummary[]) =>
+const preset = (): WorkflowTemplateSummary => ({
+  id: 'tpl1',
+  slug: 'daily-standup',
+  name: 'Daily standup',
+  description: 'Opens a standup task every weekday.',
+  category: 'scheduling',
+  tags: ['recurring-task'],
+  credentialSlots: [],
+  published: true,
+  authorId: null,
+  createdAt: '',
+  updatedAt: '',
+});
+
+const renderView = (
+  initial: WorkflowSummary[],
+  templates: WorkflowTemplateSummary[] = [],
+) =>
   render(
     <ToastProvider>
-      <SchedulesView initial={initial} projects={[]} repos={[]} />
+      <SchedulesView initial={initial} projects={[]} repos={[]} templates={templates} />
     </ToastProvider>,
   );
 
 describe('SchedulesView', () => {
   it('shows the empty state when there are no schedule+task.create workflows', () => {
     renderView([
-      // A schedule without a task.create action is not a "schedule" in the facade.
       sched({ id: 'x', steps: [{ type: 'trigger.schedule' }, { type: 'ai.claude' }] }),
-      // A task.create workflow on a manual trigger is excluded too.
       sched({ id: 'y', triggerType: 'manual' }),
     ]);
     expect(screen.getByText('No schedules yet')).toBeInTheDocument();
@@ -63,5 +84,36 @@ describe('SchedulesView', () => {
   it('marks a disabled schedule as paused', () => {
     renderView([sched({ enabled: false })]);
     expect(screen.getByText('Paused')).toBeInTheDocument();
+  });
+
+  it('expands run history on demand, linking each run to its created task', async () => {
+    const run: WorkflowRun = {
+      id: 'r1',
+      workflowId: 'w1',
+      status: 'succeeded',
+      triggerSource: 'schedule',
+      startedAt: '2026-06-30T09:00:00Z',
+      nodeRuns: [
+        { id: 'nr', runId: 'r1', nodeId: 'n2', nodeType: 'task.create', status: 'succeeded', output: { id: 't-9', title: 'Standup task' }, logs: [] },
+      ],
+    };
+    // The list endpoint omits nodeRuns; the detail fetch carries the task.create output.
+    listWorkflowRuns.mockResolvedValue([{ ...run, nodeRuns: [] }]);
+    getWorkflowRun.mockResolvedValue(run);
+    renderView([sched({})]);
+    expect(listWorkflowRuns).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'History' }));
+    const link = await screen.findByRole('link', { name: /Standup task/ });
+    expect(link).toHaveAttribute('href', '/tasks/view?id=t-9');
+  });
+
+  it('offers a preset only when a recurring-task scheduling template exists', () => {
+    renderView([sched({})], [preset()]);
+    expect(screen.getByRole('button', { name: 'New from preset' })).toBeInTheDocument();
+  });
+
+  it('hides the preset button when no presets are available', () => {
+    renderView([sched({})], []);
+    expect(screen.queryByRole('button', { name: 'New from preset' })).toBeNull();
   });
 });

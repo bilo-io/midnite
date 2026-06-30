@@ -54,12 +54,12 @@ Recurring tasks feel first-class, no canvas required.
 
 ---
 
-## Theme D — Run history + the standup preset — **S**
+## Theme D — Run history + the standup preset — **S** — ✅ DONE (PR #250, 2026-06-30)
 
 Close the loop and ship the headline example.
 
-- [ ] Surface the existing run history from a schedule's detail (reuse `GET /workflows/:id/runs` + [`run-history-panel.tsx`](../packages/web/components/run-history-panel.tsx)); each run links to the **task it created** (from the `task.create` node output) — so "did my standup fire and what did it open?" is one click.
-- [ ] Ship a **"Daily standup" starter** as a Phase 36 workflow template (a pre-built `[schedule: weekdays 09:00] → [task.create: "Daily standup — …"]`), surfaced as a one-click **"New from preset"** in the Schedules view. (A weekly-cleanup preset is a nice-to-have second.)
+- [x] Surface run history from a schedule's row — an inline "History" disclosure lists recent runs (status + time); each run links to the **task it created** (read from the `task.create` node's run output). Deviation: built a focused `ScheduleRunHistory` list rather than reusing the canvas-coupled `run-history-panel.tsx` (which replays node state onto the ReactFlow editor); the list endpoint hydrates runs shallow, so shown runs are re-fetched in detail to resolve the link.
+- [x] Shipped a **"Daily standup" starter** as a Phase 36 system template seed (`[schedule: weekdays 09:00] → [task.create]`, tagged `recurring-task`), surfaced as a **"New from preset"** menu in the Schedules view (filtered to task-creating scheduling templates). *(✅ DONE — PR #250, 2026-06-30)*
 
 ---
 
