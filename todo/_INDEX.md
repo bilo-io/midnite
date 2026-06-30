@@ -66,7 +66,7 @@
 | [40 · Ideas pipeline](phase-40-ideas-pipeline.md) | ✅ DONE | 51/51 | `██████████` | 100% | — | — |
 | [41 · Command palette](phase-41-command-palette.md) | ✅ DONE | 32/32 | `██████████` | 100% | — | — ² |
 | [42 · Task detail routing](phase-42-task-detail-routing.md) | ◻ TODO | 0/11 | `░░░░░░░░░░` | 0% | — | A B C |
-| [43 · Preference sync](phase-43-server-side-preference-sync.md) | ◻ TODO | 0/? | `░░░░░░░░░░` | 0% | — | A B C |
+| [43 · Preference sync](phase-43-server-side-preference-sync.md) | 🔄 WIP | 0/? | `░░░░░░░░░░` | 0% | A | B C |
 | [44 · Outbound webhooks](phase-44-outbound-webhooks.md) | ◻ TODO | 0/16 | `░░░░░░░░░░` | 0% | — | A B C D |
 | [45 · Recurring/scheduled tasks](phase-45-recurring-scheduled-tasks.md) | 🔄 WIP | 0/15 | `░░░░░░░░░░` | 0% | A | B C D |
 
