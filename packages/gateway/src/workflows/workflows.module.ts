@@ -22,6 +22,7 @@ import { EmailSendExecutor } from './engine/executors/email-send.executor';
 import { GithubGetPrExecutor } from './engine/executors/github-get-pr.executor';
 import { GithubGetDiffExecutor } from './engine/executors/github-get-diff.executor';
 import { GithubPostReviewExecutor } from './engine/executors/github-post-review.executor';
+import { TaskCreateExecutor } from './engine/executors/task-create.executor';
 import { WorkflowCredentialsModule } from './credentials/workflow-credentials.module';
 import { WorkflowScheduler } from './scheduler/workflow-scheduler.service';
 import { WorkflowEventBus } from './workflow-event-bus';
@@ -56,6 +57,7 @@ import { WorkflowsGateway } from './workflows.gateway';
     GithubGetPrExecutor,
     GithubGetDiffExecutor,
     GithubPostReviewExecutor,
+    TaskCreateExecutor,
     {
       provide: NODE_EXECUTORS,
       useFactory: (...executors: NodeExecutor[]) => executors,
@@ -72,6 +74,7 @@ import { WorkflowsGateway } from './workflows.gateway';
         GithubGetPrExecutor,
         GithubGetDiffExecutor,
         GithubPostReviewExecutor,
+        TaskCreateExecutor,
       ],
     },
   ],

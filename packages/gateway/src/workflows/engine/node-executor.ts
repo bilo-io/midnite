@@ -9,6 +9,10 @@ export interface NodeRunContext {
   // The id of the workflow this run belongs to — used by persistence-backed nodes
   // (storage.*) to scope their reads/writes per workflow.
   workflowId: string;
+  // The workflow owner's user id (or null for an unowned/legacy workflow) — lets a
+  // node like `task.create` attribute what it creates to the schedule's owner so
+  // team scoping holds.
+  workflowCreatedBy: string | null;
   input: unknown;
   params: Record<string, unknown>;
   signal: AbortSignal;
