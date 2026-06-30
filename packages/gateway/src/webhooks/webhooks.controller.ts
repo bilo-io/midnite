@@ -14,13 +14,16 @@ import {
 import {
   WebhookCreateRequestSchema,
   WebhookUpdateRequestSchema,
+  type ListWebhookDeliveriesResponse,
   type ListWebhooksResponse,
+  type WebhookDeliveryResponse,
   type WebhookResponse,
   type WebhookSecretResponse,
 } from '@midnite/shared';
 import { CurrentUser, type CurrentUserPayload } from '../auth/decorators/current-user.decorator';
 import {
   UnsafeWebhookUrlError,
+  WebhookDeliveryDoesNotExistError,
   WebhookDoesNotExistError,
   WebhookForbiddenError,
   WebhooksService,
@@ -76,15 +79,65 @@ export class WebhooksController {
     );
   }
 
+  // ── deliveries (Theme D) ────────────────────────────────────────────────────
+
+  @Get(':id/deliveries')
+  deliveries(
+    @CurrentUser() user: CurrentUserPayload | null,
+    @Param('id') id: string,
+  ): ListWebhookDeliveriesResponse {
+    return {
+      deliveries: this.run(() =>
+        this.webhooks.listDeliveries(id, user?.teamId ?? null, user?.userId ?? null),
+      ),
+    };
+  }
+
+  @Post(':id/test')
+  async sendTest(
+    @CurrentUser() user: CurrentUserPayload | null,
+    @Param('id') id: string,
+  ): Promise<WebhookDeliveryResponse> {
+    const delivery = await this.runAsync(() =>
+      this.webhooks.sendTest(id, user?.teamId ?? null, user?.userId ?? null),
+    );
+    return { delivery };
+  }
+
+  @Post(':id/deliveries/:deliveryId/redeliver')
+  async redeliver(
+    @CurrentUser() user: CurrentUserPayload | null,
+    @Param('id') id: string,
+    @Param('deliveryId') deliveryId: string,
+  ): Promise<WebhookDeliveryResponse> {
+    const delivery = await this.runAsync(() =>
+      this.webhooks.redeliver(id, deliveryId, user?.teamId ?? null, user?.userId ?? null),
+    );
+    return { delivery };
+  }
+
   /** Map domain errors to HTTP. */
   private run<T>(fn: () => T): T {
     try {
       return fn();
     } catch (err) {
-      if (err instanceof WebhookForbiddenError) throw new ForbiddenException(err.message);
-      if (err instanceof WebhookDoesNotExistError) throw new NotFoundException(err.message);
-      if (err instanceof UnsafeWebhookUrlError) throw new BadRequestException(err.message);
-      throw err;
+      throw this.toHttp(err);
     }
+  }
+
+  private async runAsync<T>(fn: () => Promise<T>): Promise<T> {
+    try {
+      return await fn();
+    } catch (err) {
+      throw this.toHttp(err);
+    }
+  }
+
+  private toHttp(err: unknown): unknown {
+    if (err instanceof WebhookForbiddenError) return new ForbiddenException(err.message);
+    if (err instanceof WebhookDoesNotExistError) return new NotFoundException(err.message);
+    if (err instanceof WebhookDeliveryDoesNotExistError) return new NotFoundException(err.message);
+    if (err instanceof UnsafeWebhookUrlError) return new BadRequestException(err.message);
+    return err;
   }
 }

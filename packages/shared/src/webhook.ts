@@ -109,3 +109,7 @@ export const ListWebhookDeliveriesResponseSchema = z.object({
   deliveries: z.array(WebhookDeliverySchema),
 });
 export type ListWebhookDeliveriesResponse = z.infer<typeof ListWebhookDeliveriesResponseSchema>;
+
+/** Single-delivery response — returned by "send test" + "redeliver" (Theme D). */
+export const WebhookDeliveryResponseSchema = z.object({ delivery: WebhookDeliverySchema });
+export type WebhookDeliveryResponse = z.infer<typeof WebhookDeliveryResponseSchema>;

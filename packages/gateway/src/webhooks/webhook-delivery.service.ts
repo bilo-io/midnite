@@ -92,12 +92,20 @@ export class WebhookDeliveryService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Sign + POST the body to one endpoint, then record the attempt. Public so
-   * Theme D's "send test" / "redeliver" can reuse the exact signed-delivery path.
+   * Sign + POST a JSON-serialized payload to one endpoint, then record the
+   * attempt. Public so Theme D's "send test" can reuse the exact signed path.
    * Returns the recorded delivery id.
    */
   async dispatch(webhook: WebhookRow, event: WebhookEvent, payload: unknown): Promise<string> {
-    const body = JSON.stringify(payload);
+    return this.dispatchBody(webhook, event, JSON.stringify(payload));
+  }
+
+  /**
+   * Sign + POST an already-serialized body — used by redeliver (Theme D) so a
+   * replay re-sends the *exact* stored bytes, not a re-stringified object that
+   * could differ in key order/whitespace. Records the attempt; returns its id.
+   */
+  async dispatchBody(webhook: WebhookRow, event: WebhookEvent, body: string): Promise<string> {
     const timestamp = new Date().toISOString();
     const secret = this.crypto?.decrypt(webhook.secret) ?? webhook.secret;
     const signature = signPayload(secret, body, timestamp);
