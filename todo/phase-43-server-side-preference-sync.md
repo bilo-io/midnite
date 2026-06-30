@@ -70,29 +70,31 @@ typed client methods move to Theme B/C where the endpoints land.)*
 
 ---
 
-## Theme B — Gateway persistence + API — **M**
+## Theme B — Gateway persistence + API — **M** ✅ DONE (PR #242, 2026-06-30)
 
-Store the blob per user; expose authed read/write.
+Store the blob per user; expose authed read/write. *(Decisions settled at pickup:
+**dedicated `preferences/` module** (not folded onto `users`); **blind last-write-wins**
+with a server-stamped `updatedAt` (no optimistic-concurrency 409); **re-validate the
+stored blob on read** so a corrupt/old-shape row degrades to defaults. Migrations live
+in `packages/gateway/drizzle/`, not `src/db/migrations/`.)*
 
-- [ ] Drizzle schema: a **dedicated `user_preferences` table** — `userId` (PK,
+- [x] Drizzle schema: a **dedicated `user_preferences` table** — `userId` (PK,
       text), `data` (text/JSON), `updatedAt` (text) — in
       [`db/schema.ts`](../packages/gateway/src/db/schema.ts). Keeps the synced blob
-      off the auth-critical `users` row. Forward-only migration under
-      [`db/migrations/`](../packages/gateway/src/db/migrations/).
-- [ ] `PreferencesRepository` (Drizzle only) — `get(userId)`, `upsert(userId, data, updatedAt)`.
-- [ ] `PreferencesService` — owns the merge/validation logic: parse incoming blob
-      against `UserPreferencesSchema`, **full-object replace** (the client always
-      holds the complete prefs), stamp `updatedAt`, persist. Reads return defaults
-      (`DEFAULT_USER_PREFERENCES`) when the user has no row yet.
-- [ ] Routes on the existing users controller (or a thin `preferences` module):
-      `GET /users/me/preferences` + `PUT /users/me/preferences`, both behind
-      `@CurrentUser()` (401 when unauthenticated), body parsed via a
-      `ZodValidationPipe` against the shared schema.
-- [ ] IDs/UUIDs + transaction boundaries per `CLAUDE.md` (service owns the txn; repo
-      takes a `Db`).
-- [ ] Tests: `PreferencesService` unit (fakes — defaults-on-empty, replace, bad
-      blob → 400), `PreferencesRepository` integration against `:memory:` SQLite,
-      controller spec for the authed/unauthed split.
+      off the auth-critical `users` row. Forward-only migration `0058_user_preferences`.
+- [x] `PreferencesRepository` (Drizzle only) — `find(userId)`, `upsert(userId, data, updatedAt)`
+      (insert-or-replace via `onConflictDoUpdate`).
+- [x] `PreferencesService` — parses the incoming blob against `UserPreferencesSchema`
+      (**full-object replace**), stamps `updatedAt`, persists; reads return
+      `DEFAULT_USER_PREFERENCES` when the user has no row, and re-validate a stored blob
+      (corrupt → defaults).
+- [x] New `preferences/` Nest module: `GET /users/me/preferences` + `PUT /users/me/preferences`,
+      both behind `@CurrentUser()` (401 when unauthenticated), body validated against the
+      shared `PutPreferencesRequestSchema` (400 on a bad blob). Registered in `AppModule`.
+- [x] No surrogate id (one row per user, `userId` PK); repo takes the `Db` handle per `CLAUDE.md`.
+- [x] Tests: `PreferencesService` unit (defaults-on-empty, re-validate, corrupt→defaults, save
+      canonicalises + stamps), `PreferencesRepository` integration against `:memory:` SQLite
+      (find / upsert / replace), controller spec for the authed/unauthed + bad-body split.
 
 ---
 
