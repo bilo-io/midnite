@@ -32,6 +32,14 @@ import {
 import { parseCredFlag, templateListRows } from './template.js';
 import { banner, getVersion } from './lib/brand.js';
 import {
+  colourKind,
+  colourPriority,
+  colourStatus,
+  error as paintError,
+  success,
+} from './lib/palette.js';
+import { wasReported, withSpinner } from './lib/spinner.js';
+import {
   canPrompt,
   confirmPrompt,
   optionalTextPrompt,
@@ -129,7 +137,7 @@ program
         if (!raw.trim()) {
           throw new Error('no bulk input — pass --file <path> or pipe a list to stdin');
         }
-        const res = await client().createBulk(raw, defaults);
+        const res = await withSpinner('Creating tasks…', () => client().createBulk(raw, defaults));
         if (res.results.length > 0) {
           const table = new Table({ head: ['Line', 'Kind', 'Result'], wordWrap: true });
           for (const row of bulkResultRows(res)) table.push(row);
@@ -150,10 +158,13 @@ program
         if (!opts.project) defaults.projectId = await optionalTextPrompt('Project id');
       }
       if (opts.dependsOn.length > 0) defaults.dependsOn = opts.dependsOn;
-      const task = await client().createTask(prompt, defaults);
-      const blockers = task.dependsOn ?? [];
-      const suffix = blockers.length > 0 ? `  (blocked by: ${blockers.join(', ')})` : '';
-      console.log(`added ${task.id}  [${task.status}]  ${task.title}${suffix}`);
+      await withSpinner('Adding task…', () => client().createTask(prompt, defaults), {
+        succeed: (t) => {
+          const blockers = t.dependsOn ?? [];
+          const suffix = blockers.length > 0 ? `  (blocked by: ${blockers.join(', ')})` : '';
+          return `added ${t.id}  [${colourStatus(t.status)}]  ${t.title}${suffix}`;
+        },
+      });
     },
   );
 
@@ -163,7 +174,7 @@ program
   .option('-s, --status <status>', 'filter by status')
   .action(async (opts: { status?: string }) => {
     const status = opts.status ? parseStatus(opts.status) : undefined;
-    const tasks = await client().listTasks(status);
+    const tasks = await withSpinner('Loading tasks…', () => client().listTasks(status));
     if (tasks.length === 0) {
       console.log('no tasks');
       return;
@@ -171,7 +182,8 @@ program
     const idW = Math.max(...tasks.map((t) => t.id.length), 2);
     const stW = Math.max(...tasks.map((t) => t.status.length), 6);
     for (const t of tasks) {
-      console.log(`${t.id.padEnd(idW)}  ${t.status.padEnd(stW)}  ${t.title}`);
+      // Pad the plain status first, then colour, so column alignment is preserved.
+      console.log(`${t.id.padEnd(idW)}  ${colourStatus(t.status.padEnd(stW), t.status)}  ${t.title}`);
     }
   });
 
@@ -182,8 +194,9 @@ program
     const c = client();
     const resolvedId = id ?? (await pickTask(await c.listTasks(), 'Move which task?'));
     const resolvedStatus = status ? parseStatus(status) : await selectStatus();
-    const task = await c.moveTask(resolvedId, resolvedStatus);
-    console.log(`moved ${task.id} → ${task.status}`);
+    await withSpinner('Moving task…', () => c.moveTask(resolvedId, resolvedStatus), {
+      succeed: (task) => `moved ${task.id} → ${colourStatus(task.status)}`,
+    });
   });
 
 program
@@ -193,9 +206,12 @@ program
   .action(async (id: string | undefined, opts: { on: string }) => {
     const c = client();
     const resolvedId = id ?? (await pickTask(await c.listTasks(), 'Block which task?'));
-    const task = await c.addDependency(resolvedId, opts.on);
-    const blockers = task.dependsOn ?? [];
-    console.log(`blocked ${task.id} on ${opts.on}  (now depends on: ${blockers.join(', ') || 'none'})`);
+    await withSpinner('Adding blocker…', () => c.addDependency(resolvedId, opts.on), {
+      succeed: (task) => {
+        const blockers = task.dependsOn ?? [];
+        return `blocked ${task.id} on ${opts.on}  (now depends on: ${blockers.join(', ') || 'none'})`;
+      },
+    });
   });
 
 program
@@ -205,9 +221,12 @@ program
   .action(async (id: string | undefined, opts: { on: string }) => {
     const c = client();
     const resolvedId = id ?? (await pickTask(await c.listTasks(), 'Unblock which task?'));
-    const task = await c.removeDependency(resolvedId, opts.on);
-    const blockers = task.dependsOn ?? [];
-    console.log(`unblocked ${task.id} from ${opts.on}  (now depends on: ${blockers.join(', ') || 'none'})`);
+    await withSpinner('Removing blocker…', () => c.removeDependency(resolvedId, opts.on), {
+      succeed: (task) => {
+        const blockers = task.dependsOn ?? [];
+        return `unblocked ${task.id} from ${opts.on}  (now depends on: ${blockers.join(', ') || 'none'})`;
+      },
+    });
   });
 
 // Run the quality gate for a task on demand and render per-check pass/fail.
@@ -216,10 +235,11 @@ program
   .command('check <id>')
   .description('Run quality-gate checks for a task and report pass/fail per check')
   .action(async (id: string) => {
-    const run = await client().triggerCheck(id);
+    const run = await withSpinner('Running checks…', () => client().triggerCheck(id));
 
     if (run.results.length === 0) {
-      console.log(`${run.passed ? '✓' : '✗'} ${id}  (no checks configured — gate skipped)`);
+      const mark = run.passed ? success('✓') : paintError('✗');
+      console.log(`${mark} ${id}  (no checks configured — gate skipped)`);
       process.exit(0);
     }
 
@@ -231,7 +251,7 @@ program
     for (const r of run.results) {
       table.push([
         r.name,
-        r.passed ? '✓ pass' : '✗ fail',
+        r.passed ? success('✓ pass') : paintError('✗ fail'),
         r.durationMs < 1000 ? `${r.durationMs}ms` : `${(r.durationMs / 1000).toFixed(1)}s`,
         r.exitCode !== null ? String(r.exitCode) : '—',
       ]);
@@ -246,11 +266,11 @@ program
           console.log(r.output.trimEnd());
         }
       }
-      console.error(`\nchecks failed (${failed.length}/${run.results.length})`);
+      console.error(paintError(`\nchecks failed (${failed.length}/${run.results.length})`));
       process.exit(1);
     }
 
-    console.log(`\nchecks passed (${run.results.length}/${run.results.length})`);
+    console.log(success(`\nchecks passed (${run.results.length}/${run.results.length})`));
   });
 
 // Task-scoped operations that don't fit the flat verbs (add/list/move/…).
@@ -261,7 +281,7 @@ task
   .description('Export a task thread as markdown (to stdout, or a file with --output)')
   .option('-o, --output <path>', 'write the markdown to a file instead of stdout')
   .action(async (id: string, opts: { output?: string }) => {
-    const markdown = await client().exportTask(id);
+    const markdown = await withSpinner('Exporting task…', () => client().exportTask(id));
     if (opts.output) {
       await writeFile(opts.output, markdown, 'utf8');
       console.log(`exported ${id} → ${opts.output}`);
@@ -285,7 +305,7 @@ program
       }
       q.limit = n;
     }
-    const res = await client().search(q);
+    const res = await withSpinner('Searching…', () => client().search(q));
     if (res.results.length > 0) {
       const table = new Table({ head: ['Type', 'ID', 'Title', 'Match'], wordWrap: true });
       for (const row of searchResultRows(res)) table.push(row);
@@ -393,7 +413,7 @@ workflow
   .command('list')
   .description('List workflows (name, enabled, trigger, last run)')
   .action(async () => {
-    const summaries = await client().listWorkflows();
+    const summaries = await withSpinner('Loading workflows…', () => client().listWorkflows());
     if (summaries.length === 0) {
       console.log('no workflows');
       return;
@@ -412,7 +432,7 @@ workflow
   .option('-w, --watch', 'stream per-node status until the run finishes')
   .action(async (id: string, opts: { watch?: boolean }) => {
     const c = client();
-    const run = await c.runWorkflow(id);
+    const run = await withSpinner('Starting run…', () => c.runWorkflow(id));
     if (!opts.watch) {
       console.log(`run ${run.id}  [${run.status}]`);
       return;
@@ -426,7 +446,7 @@ workflow
   .command('runs <id>')
   .description('Recent run history for a workflow')
   .action(async (id: string) => {
-    const runs = await client().listWorkflowRuns(id);
+    const runs = await withSpinner('Loading runs…', () => client().listWorkflowRuns(id));
     if (runs.length === 0) {
       console.log('no runs');
       return;
@@ -494,7 +514,7 @@ program
   .option('-y, --yes', 'skip the confirmation prompt and create tasks immediately')
   .action(async (goal: string, opts: { repo?: string; yes?: boolean }) => {
     const c = client();
-    const { breakdown, isFallback } = await c.draftBreakdown(goal);
+    const { breakdown, isFallback } = await withSpinner('Planning…', () => c.draftBreakdown(goal));
 
     if (isFallback) {
       console.log('(planning unavailable — showing flat task)');
@@ -514,8 +534,8 @@ program
       table.push([
         t.ref,
         t.title,
-        t.kind ?? '',
-        String(t.priority ?? 1),
+        t.kind ? colourKind(t.kind) : '',
+        colourPriority(t.priority ?? 1),
         t.dependsOn.join(', ') || '—',
       ]);
     }
@@ -530,12 +550,14 @@ program
       return;
     }
 
-    const { tasks } = await c.createFromBreakdown(breakdown, opts.repo);
+    const { tasks } = await withSpinner('Creating tasks…', () =>
+      c.createFromBreakdown(breakdown, opts.repo),
+    );
     console.log(`created ${tasks.length} task(s)`);
     for (const t of tasks) {
       const blockers = t.dependsOn ?? [];
       const suffix = blockers.length > 0 ? `  (depends on: ${blockers.join(', ')})` : '';
-      console.log(`  ${t.id.slice(0, 8)}  [${t.status}]  ${t.title}${suffix}`);
+      console.log(`  ${t.id.slice(0, 8)}  [${colourStatus(t.status)}]  ${t.title}${suffix}`);
     }
   });
 
@@ -546,7 +568,9 @@ template
   .description('List published workflow templates')
   .option('-c, --category <category>', 'filter by category (monitoring|notifications|github|scheduling|ai|data)')
   .action(async (opts: { category?: string }) => {
-    const templates = await client().listTemplates(opts.category);
+    const templates = await withSpinner('Loading templates…', () =>
+      client().listTemplates(opts.category),
+    );
     if (templates.length === 0) {
       console.log('no templates');
       return;
@@ -602,11 +626,11 @@ template
         // non-fatal: slot check failed, proceed anyway
       }
 
-      const workflow = await c.installTemplate(slugOrId, {
-        name: opts.name,
-        credentialMap,
-      });
-      console.log(`installed  ${workflow.id}  ${workflow.name}`);
+      await withSpinner(
+        'Installing template…',
+        () => c.installTemplate(slugOrId, { name: opts.name, credentialMap }),
+        { succeed: (workflow) => `installed  ${workflow.id}  ${workflow.name}` },
+      );
     },
   );
 
@@ -626,7 +650,7 @@ program
 
       const baseUrl = opts.url ?? resolveBaseUrl(program.opts().gateway as string | undefined);
       const c = createClient(baseUrl);
-      const auth = await c.login(email, password);
+      const auth = await withSpinner('Signing in…', () => c.login(email, password));
       await writeAuth({ accessToken: auth.accessToken, refreshToken: auth.refreshToken });
       console.log(`logged in as ${auth.user.email} (${auth.user.name})`);
     },
@@ -680,6 +704,7 @@ if (process.argv.length <= 2) {
 }
 
 program.parseAsync(process.argv).catch((err) => {
-  console.error(err instanceof Error ? err.message : err);
+  // A failed spinner already printed the message; don't print it twice.
+  if (!wasReported(err)) console.error(err instanceof Error ? err.message : err);
   process.exit(1);
 });

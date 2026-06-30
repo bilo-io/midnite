@@ -1,5 +1,7 @@
 import { SearchTypeSchema, type SearchResponse, type SearchType } from '@midnite/shared';
 
+import { dim, heading } from './lib/palette.js';
+
 /** Validate a `--type` flag against the searchable domains. */
 export function parseSearchType(raw: string): SearchType {
   const parsed = SearchTypeSchema.safeParse(raw);
@@ -18,7 +20,7 @@ export function plainSnippet(snippet: string): string {
 
 /** Table rows for `midnite search` output. */
 export function searchResultRows(res: SearchResponse): string[][] {
-  return res.results.map((r) => [r.type, r.id, r.title, plainSnippet(r.snippet)]);
+  return res.results.map((r) => [dim(r.type), r.id, heading(r.title), plainSnippet(r.snippet)]);
 }
 
 /** One-line summary: total matches, the per-type breakdown, and any truncation. */
