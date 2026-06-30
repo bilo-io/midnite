@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-30 — feat: task.create workflow action — Phase 45 Theme A (PR #241)
+
+The keystone of recurring/scheduled tasks: a workflow action that enqueues a board task, so a `[trigger.schedule] → [task.create]` workflow auto-creates tasks on a cadence.
+
+- [x] **shared**: `task.create` `NODE_TYPE_DEFINITION` + `TaskCreateParamsSchema` (prompt/repo/projectId/priority; prompt expression-enabled) — node palette picks it up automatically
+- [x] **gateway**: `TaskCreateExecutor` enqueues via `TasksService.createFromPrompt`, returns the created `Task` as node output
+- [x] **gateway**: reaches the task store through a narrow `TASK_CREATOR` port (interface token) bound by a `@Global` module that resolves `TasksService` lazily via `ModuleRef` — avoids the `Tasks ↔ Workflows` module cycle without `forwardRef`
+- [x] **gateway**: `workflowCreatedBy` threaded into `NodeRunContext` so the created task inherits the workflow owner (team scoping derives from `createdBy`)
+- [x] **tests**: executor unit spec (maps params, inherits owner, rejects empty prompt) + ctx-literal updates; gateway 146 files + shared 469 green
+- [x] **Decision**: `TASK_CREATOR` interface token over `forwardRef`; created task inherits the workflow's owner
+
 ## 2026-06-30 — feat: UserPreferences sync contract — Phase 43 Theme A (PR #240)
 
 The shared contract for server-side preference sync: the synced subset of the UI prefs, defined once in `shared` so the gateway (Theme B) and web (Theme C) agree.
