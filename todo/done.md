@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-30 — feat: webhook provider formatting — Phase 44 Theme C (PR #252)
+
+Slack and Discord endpoints now receive a message they can actually render, while `generic` keeps the canonical signed JSON. Last build theme of Phase 44 — A–D all shipped.
+
+- [x] **gateway**: [`webhooks/formatters/format.ts`](../packages/gateway/src/webhooks/formatters/format.ts) — `formatWebhookBody(provider, payload)` → Slack `{ text }` / Discord `{ content }` terse summaries (`summarize`: title + status transition + kind + repo), generic the canonical `{ event, at, task }` verbatim. `WebhookPayload` moved here as its home.
+- [x] **gateway**: wired into `WebhookDeliveryService.dispatch` (so both the bus fan-out and Theme D's send-test format by the endpoint's provider); `redeliver` still replays the stored body unchanged. HMAC signature (Theme B) covers whatever string the formatter emits.
+- [x] **Deferred**: absolute `/tasks/:id` deep link in the message — there's no web base-URL config yet; a follow-up. Linear remains out of scope (Decision §4).
+- [x] Tests: `formatters/format` (6 — summarize variants, Slack/Discord wrappers, generic-verbatim) + a delivery-engine wiring test (slack endpoint → `{ text }`). Gateway typecheck green; webhooks suite 45 pass.
+- [x] **Phase 44 status**: themes A (#245), B (#249), C (#252), D (#251) all landed; only the phase's Verification checklist sign-off remains.
+
 ## 2026-06-30 — feat: webhook deliveries log + test + redeliver — Phase 44 Theme D (PR #251)
 
 Outbound webhooks are no longer a black box — you can see every attempt, fire a test, and replay a failure. Completes the observability layer on Theme B's delivery engine.
