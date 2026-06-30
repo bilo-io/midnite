@@ -65,10 +65,11 @@
 | [39 · Visual customization](phase-39-visual-customization.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
 | [40 · Ideas pipeline](phase-40-ideas-pipeline.md) | ✅ DONE | 51/51 | `██████████` | 100% | — | — |
 | [41 · Command palette](phase-41-command-palette.md) | ✅ DONE | 32/32 | `██████████` | 100% | — | — ² |
+| [42 · Task detail routing](phase-42-task-detail-routing.md) | ◻ TODO | 0/11 | `░░░░░░░░░░` | 0% | — | A B C |
 
-**Headline:** the **entire 0–41 roadmap is now 100% complete.** Phases 39 (visual customization, UI font #238) and 41 (command palette, verification #237) both closed on 2026-06-30; no pickable themes remain. (Phase 42 was a parallel restatement of Phase 40 — its unique sync-back layer landed as Phase 40 Theme G; the doc was removed on 2026-06-27.)
+**Headline:** the original **0–41 roadmap is 100% complete** (Phases 39 & 41 closed 2026-06-30). **Phase 42 (task detail routing & contextual commands)** is freshly planned and open — themes A B C are all pickable. (An *earlier* Phase 42 was a parallel restatement of Phase 40, folded into Phase 40 Theme G and removed 2026-06-27; this is a new, unrelated Phase 42.)
 
-² Phase 41 — themes A–D all landed and the verification checklist is signed off (PR #237). The 3 remaining boxes are all `⏳` deferred (contextual task-detail commands ×2 — no `/tasks/:id` route — and the `E` edit-form shortcut). No pickable theme.
+² Phase 41 — themes A–D all landed and the verification checklist is signed off (PR #237). The 3 remaining boxes are all `⏳` deferred (contextual task-detail commands ×2 + the `E` edit-form shortcut). The 2 contextual-command boxes are now **un-deferred and folded into Phase 42 Theme C** (they needed the `/tasks/:id` route Phase 42 adds).
 
 ## Theme key (active phases)
 
@@ -83,6 +84,11 @@ so you can pick from this file without opening the phase doc first.
 - ✅ **E** — Phase doc editor (GitHub-backed) (#229)
 - ✅ **F** — Phase doc → task seeder (#233)
 - ✅ **G** — Phase-doc ↔ board sync-back (#236) *(folded in from former Phase 42 Theme E)*
+
+### [Phase 42 — Task detail routing & contextual commands](phase-42-task-detail-routing.md)
+- ◻ **A** — `/tasks/:id` full detail page (extract `<TaskDetail>`, deep-linkable) **[M]**
+- ◻ **B** — Intercepting-route modal (modal on click / full page on direct link) + nav migration **[M–L]**
+- ◻ **C** — Contextual "Move to…" palette commands (closes Phase 41's 2 deferred boxes) **[S]**
 
 ## Maintenance
 
