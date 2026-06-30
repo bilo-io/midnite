@@ -62,13 +62,20 @@ Shape the event into what each receiver expects.
 
 ---
 
-## Theme D — Deliveries log + test + redeliver — **S**
+## Theme D — Deliveries log + test + redeliver — **S** ✅ DONE (PR #250, 2026-06-30)
 
 Make webhooks debuggable, not a black box.
 
-- [ ] **web:** a per-endpoint **deliveries log** (recent attempts: event, status, response code, timestamp) in the Integrations page.
-- [ ] **"Send test event"** — POSTs a synthetic `task.updated` to the endpoint so a user can confirm wiring + see the formatted payload land, without waiting for a real transition.
-- [ ] **Redeliver** a failed delivery — re-fire the stored payload (faithful replay) via the same signed-delivery path; record the new attempt.
+> Backend: `GET /webhooks/:id/deliveries` (any member), `POST :id/test` + `POST
+> :id/deliveries/:deliveryId/redeliver` (team-admin) on `WebhooksService`,
+> reusing Theme B's `WebhookDeliveryService`. Redeliver replays the *stored body*
+> via a new `dispatchBody(webhook, event, body)` so the replay is byte-faithful
+> (Decision §6). The deliveries log is an expandable per-row panel on the existing
+> Settings → Integrations table (no new route).
+
+- [x] **web:** a per-endpoint **deliveries log** (expandable row: status, event, response code, timestamp) in the Integrations page; lazy-loaded on expand.
+- [x] **"Send test event"** — `POST :id/test` fires a synthetic `task.updated` (a clearly-marked test task) through the signed path; the row shows ✓/✗ and auto-opens the log.
+- [x] **Redeliver** — `POST :id/deliveries/:deliveryId/redeliver` re-fires the stored payload (faithful replay) via `dispatchBody`, recording a new attempt.
 
 ---
 
