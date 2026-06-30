@@ -968,6 +968,31 @@ export const userPreferences = sqliteTable('user_preferences', {
 export type UserPreferencesRow = typeof userPreferences.$inferSelect;
 export type UserPreferencesInsert = typeof userPreferences.$inferInsert;
 
+// Phase 44 Theme A: outbound webhook integrations. Per-team endpoints; `secret`
+// is the HMAC signing key, encrypted at rest (CryptoService); `eventFilter` is
+// the JSON-encoded `WebhookEventFilter`. No cross-domain FK (per CLAUDE.md).
+export const webhooks = sqliteTable(
+  'webhooks',
+  {
+    id: text('id').primaryKey(),
+    teamId: text('team_id'),
+    createdBy: text('created_by'),
+    url: text('url').notNull(),
+    provider: text('provider').notNull(),
+    eventFilter: text('event_filter').notNull(),
+    secret: text('secret').notNull(),
+    enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => ({
+    teamIdx: index('webhooks_team_idx').on(t.teamId),
+  }),
+);
+
+export type WebhookRow = typeof webhooks.$inferSelect;
+export type WebhookInsert = typeof webhooks.$inferInsert;
+
 // Phase 33 Theme B: Teams & membership.
 export const teams = sqliteTable(
   'teams',

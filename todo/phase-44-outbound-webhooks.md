@@ -20,13 +20,17 @@
 
 ---
 
-## Theme A — Webhook endpoint entity + CRUD + Settings UI — **M**
+## Theme A — Webhook endpoint entity + CRUD + Settings UI — **M** ✅ DONE (PR #245, 2026-06-30)
 
-A team can register and manage several outbound endpoints.
+A team can register and manage several outbound endpoints. *(Decisions settled at pickup:
+**structured `{ events, statuses? }` event filter**; reveal-once secret **plus a rotate-secret
+action**; **write-time URL rejection** via the existing `isSafeHttpUrl` guard. Built as a
+dedicated `webhooks/` module; RBAC via `TeamsService.getMembership` (single-user implicitly
+allowed); explicit `@Inject` tokens since the e2e gateway runs under `tsx`.)*
 
-- [ ] **shared:** `Webhook` / `WebhookCreate` / `WebhookUpdate` zod schemas + a `WebhookProvider` enum (`slack` | `discord` | `generic`) and a `WebhookEventFilter` (which task events / status transitions fire it) in [`shared/src/webhook.ts`](../packages/shared/src/); expose typed client methods in the API client.
-- [ ] **gateway:** `webhooks` Drizzle table (`id` UUIDv7, `teamId`, `createdBy`, `url`, `provider`, `eventFilter` JSON, `secret` encrypted-at-rest, `enabled`, `createdAt`, `updatedAt`) + forward-only migration. `WebhooksRepository` (team-scoped reads via `teamScopeFilter`) → `WebhooksService` (validation: safe-URL check at write time, secret generation/encryption) → `WebhooksController` (`GET`/`POST`/`PATCH`/`DELETE /webhooks`, `ZodValidationPipe`). Managing endpoints requires the team-admin role (Phase 35); the signing secret is **revealed once** on create.
-- [ ] **web:** a **Settings → Integrations** page — list endpoints (provider badge, target host, enabled toggle, event filter), add/edit/delete, reveal-once secret, per-endpoint enable switch.
+- [x] **shared:** `Webhook` / `WebhookCreateRequest` / `WebhookUpdateRequest` zod schemas + a `WebhookProvider` enum (`slack` | `discord` | `generic`) and a `WebhookEventFilter` (`{ events, statuses? }`) in [`shared/src/webhook.ts`](../packages/shared/src/webhook.ts) + the reveal-once `WebhookSecretResponse`; typed client methods in `web/lib/api.ts`.
+- [x] **gateway:** `webhooks` Drizzle table (`id`, `teamId`, `createdBy`, `url`, `provider`, `eventFilter` JSON, `secret` encrypted-at-rest, `enabled`, timestamps) + migration `0059`. `WebhooksRepository` (team-scoped) → `WebhooksService` (write-time `isSafeHttpUrl` guard, secret generation + `CryptoService` encryption, RBAC, re-validate eventFilter on read) → `WebhooksController` (`GET`/`POST`/`PATCH`/`DELETE /webhooks` + `POST :id/rotate`). Managing requires team-admin; the signing secret is **revealed once** on create + rotate.
+- [x] **web:** a **Settings → Integrations** page — list endpoints (provider badge, target host, enabled toggle, event summary), add (provider/events/status filter), delete, rotate-secret, reveal-once secret modal, per-endpoint enable switch; sidebar entry.
 
 ---
 

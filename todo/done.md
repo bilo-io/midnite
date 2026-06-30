@@ -14,6 +14,26 @@ Recurring tasks become first-class — a dedicated **Schedules** surface over th
 - [x] **web**: reusable `RecurrenceFields` (preset picker + raw-cron + next-3-runs), extracted from the node-config panel; `formatRun` moved into `lib/cron.ts`; `lib/schedules.ts` holds the pure filter/build/decode glue
 - [x] **shared/gateway**: expose schedule `timezone` on `WorkflowSummary` so next-run is computed correctly client-side (Decision §2 — client filter, no marker)
 - [x] **tests**: `lib/schedules.test.ts` (7), `schedule-form-dialog.test.tsx` (3), `schedules-view.test.tsx` (4), `schedules.shots.ts` Playwright capture; command-palette surface count bumped
+## 2026-06-30 — feat: full task detail page — Phase 42 Theme A (PR #246)
+
+Every task now has a shareable, refresh-safe URL. The modal's body was extracted into a reusable `<TaskDetail>` so the modal and the new full page render identical detail UI.
+
+- [x] **web**: extracted [`components/task-detail.tsx`](../packages/web/components/task-detail.tsx) (`<TaskDetail task projects tasks onClose variant />`) from the modal body; [`task-thread-modal.tsx`](../packages/web/components/task-thread-modal.tsx) is now a thin overlay shell around it (Escape-to-close + chrome). Behaviour-preserving — the modal's existing specs pass unchanged.
+- [x] **web**: new full page at `app/(main)/tasks/view/page.tsx` + `[id]/task-detail-view.tsx` — fetches `getTask(id)` + `getProjects()` + sibling `getTasks()` in parallel (Decision §6), renders `<TaskDetail variant="page">`, sets `document.title`, back-to-`/tasks` affordance, and an inline "Task not found." (no hard 404).
+- [x] **web**: added `getTask(id)` to [`lib/api.ts`](../packages/web/lib/api.ts) over the existing `GET /tasks/:id` — no new gateway endpoint (web-only phase).
+- [x] **Route deviation (documented in the phase doc)**: shipped at `/tasks/view?id=`, not `/tasks/[id]` — `output: 'export'` can't prerender runtime ids, so this mirrors the established `/ideas/view`, `/councils/view`, `/media/view` pattern. **Flagged for Theme B**: Next intercepting/parallel routes won't work under static export; the click→modal UX needs a client-side approach.
+- [x] Tests: RTL `task-detail-view` (3 — renders by id, inline not-found, no-id), preserved modal specs, new `task-detail.e2e.ts` (3 — direct-link full page + refresh, back affordance, unknown-id not-found). Local gate green (web typecheck + lint + 608 unit tests + e2e).
+
+## 2026-06-30 — feat: outbound webhook endpoints (entity + CRUD + UI) — Phase 44 Theme A (PR #245)
+
+The foundation of the outbound-integrations surface: a team can register/manage several webhook endpoints. Delivery engine (B), formatting (C), and the deliveries log (D) are the remaining themes.
+
+- [x] **shared**: [`webhook.ts`](../packages/shared/src/webhook.ts) — `Webhook` / `WebhookCreateRequest` / `WebhookUpdateRequest`, `WebhookProvider` (slack/discord/generic), structured `WebhookEventFilter` (`{ events, statuses? }`), reveal-once `WebhookSecretResponse`. Client methods in `web/lib/api.ts`
+- [x] **gateway**: `webhooks` table (migration `0059`) + dedicated `webhooks/` module — repository (team-scoped) → service (write-time `isSafeHttpUrl` guard, secret gen + `CryptoService` encryption, re-validate-on-read, RBAC via `TeamsService.getMembership`, single-user implicitly allowed) → controller (`GET`/`POST`/`PATCH`/`DELETE /webhooks` + `POST :id/rotate`; admin-manages, member-views; secret revealed once)
+- [x] **web**: Settings → Integrations page (list, add modal with provider/events/status filter, enable toggle, rotate-secret, delete, reveal-once modal) + sidebar entry
+- [x] **Decisions (settled at pickup)**: structured event filter; reveal-once **+ rotate**; write-time URL rejection
+- [x] **Drive-by fix**: explicit `@Inject` tokens — the e2e gateway runs under `tsx` (no emitted constructor-param metadata), so type-based DI silently yielded `undefined` (a 500). Same fix applied to the Phase 43 `preferences/` module, which had the identical latent bug
+- [x] Tests: shared schema (7), gateway service/repository/controller (19), web RTL Integrations (3); Integrations page screenshots. Local gate green (typecheck 13/13, lint clean, gateway + web suites pass)
 
 ## 2026-06-30 — feat: web preference-sync layer — Phase 43 Theme C — **Phase 43 COMPLETE**
 
