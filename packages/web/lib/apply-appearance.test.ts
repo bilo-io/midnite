@@ -181,7 +181,6 @@ describe('appearanceInitScript', () => {
 
   it('applies a stored non-system UI font before paint', () => {
     localStorage.setItem('midnite.settings', JSON.stringify({ uiFont: 'serif' }));
-    // eslint-disable-next-line no-eval -- exercising the inline init script body
     eval(appearanceInitScript);
     expect(document.documentElement.getAttribute('data-ui-font')).toBe('serif');
     expect(document.documentElement.style.getPropertyValue('--font-ui')).toBe(UI_FONT_STACK.serif);
@@ -190,7 +189,6 @@ describe('appearanceInitScript', () => {
 
   it('runs without throwing and defaults motion to system when nothing is stored', () => {
     expect(() => {
-      // eslint-disable-next-line no-eval -- exercising the inline init script body
       eval(appearanceInitScript);
     }).not.toThrow();
     // No accent stored → no override applied; motion defaults to system; bg defaults to grid.
