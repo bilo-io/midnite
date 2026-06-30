@@ -54,3 +54,4 @@ export * from './service-token.js';
 export * from './idea.js';
 export * from './events/idea.js';
 export * from './phase-doc.js';
+export * from './preferences.js';

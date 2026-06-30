@@ -44,26 +44,29 @@
 
 ---
 
-## Theme A — Preferences contract in `shared` — **S–M**
+## Theme A — Preferences contract in `shared` — **S–M** ✅ DONE (PR #240, 2026-06-30)
 
-The shape both sides agree on, defined once.
+The shape both sides agree on, defined once. *(Decisions settled at pickup: web's
+`AppSettings` is refactored to `Omit<UserPreferences, 'theme' | 'features'> &
+{ device-only }`, re-exporting the synced-field types from `shared`; `theme` **is**
+in the synced contract but keeps its separate `midnite.theme` store; passcode /
+notify / agent-pool stay device-local. No `MidniteClient` in `shared` exists, so the
+typed client methods move to Theme B/C where the endpoints land.)*
 
-- [ ] Add [`packages/shared/src/preferences.ts`](../packages/shared/src/preferences.ts):
-      a `UserPreferencesSchema` (zod) covering the **synced subset** — appearance
-      (background / accent / density / motion / font), theme, nav mode, feature
-      toggles, inactivity + cycle timers — plus a `DEFAULT_USER_PREFERENCES` object
-      and `UserPreferences` type. Every field `.optional()` or defaulted so a
-      partial/forward-compatible blob still parses.
-- [ ] Export from the package index; add request/response schemas
-      (`GetPreferencesResponse`, `PutPreferencesRequest` = the full object) so the
-      wire contract is typed end-to-end.
-- [ ] Refactor [`app-settings.ts`](../packages/web/lib/app-settings.ts) so the
+- [x] Add [`packages/shared/src/preferences.ts`](../packages/shared/src/preferences.ts):
+      a `UserPreferencesSchema` (zod) covering the **synced subset** — theme, appearance
+      (background / bg-intensity / accent / motion / density / font / effects), nav mode,
+      inactivity + cycle timers, feature toggles — plus a schema-derived
+      `DEFAULT_USER_PREFERENCES` and the `UserPreferences` type. Every field defaulted so a
+      partial/forward-compatible blob still parses; unknown keys are stripped.
+- [x] Export from the package index; add `PreferencesResponseSchema` (`{ preferences, updatedAt }`)
+      + `PutPreferencesRequestSchema` (the full object) so the wire contract is typed end-to-end.
+- [x] Refactor [`app-settings.ts`](../packages/web/lib/app-settings.ts) so the
       synced slice **references the shared schema** as the source of truth
-      (device-only bits — e.g. the Phase 41 recent-items list — stay web-local and
-      are *not* part of `UserPreferencesSchema`). No behavioural change to any
-      individual setting.
-- [ ] Shared unit tests: schema parses a full + partial blob, defaults round-trip,
-      unknown keys are dropped (not rejected).
+      (device-only bits stay web-local and are *not* part of `UserPreferencesSchema`).
+      No behavioural change to any individual setting; existing import sites untouched (re-export).
+- [x] Shared unit tests: schema parses a full + partial blob, defaults round-trip,
+      unknown keys are dropped (not rejected), nested effects fill, response accepts null `updatedAt`.
 
 ---
 
