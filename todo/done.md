@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-30 — feat: recurrence presets on the schedule trigger — Phase 45 Theme B (PR #243)
+
+A friendly preset layer over the workflow schedule trigger so a recurring task's cadence is pickable without cron syntax.
+
+- [x] **web/lib/cron.ts**: `RecurrencePreset` model + `presetToCron`/`cronToPreset` (round-trippable) + `nextRuns()` via `croner` (added to `packages/web` deps)
+- [x] **ScheduleFields**: Repeats picker (daily/weekdays/weekly+day/monthly+dom + time), raw-cron escape hatch (non-preset → Custom), `describeCron` summary, "next 3 runs" preview
+- [x] **tests**: `cron.test.ts` (compile/reverse/round-trip/nextRuns) + `node-config-panel.test.tsx` (renders preset+summary+next-runs; time edit recompiles; custom cron stays raw); full web suite 605 green
+- [x] **Decision**: croner in web (accurate next-runs) · compiler co-located in `web/lib/cron.ts` (only web consumes it)
+
 ## 2026-06-30 — feat: gateway preferences store + API — Phase 43 Theme B (PR #242)
 
 The server side of preference sync: a per-user store + authed read/write, consuming the Theme A contract.

@@ -34,13 +34,13 @@ The keystone: let a workflow enqueue a board task.
 
 ---
 
-## Theme B — Recurrence presets on the schedule trigger — **S–M**
+## Theme B — Recurrence presets on the schedule trigger — **S–M** — ✅ DONE (PR #243, 2026-06-30)
 
 Make the cadence pickable without knowing cron syntax.
 
-- [ ] A small **preset → cron compiler** (in `shared`, unit-tested): "Every day at HH:MM", "Every weekday at HH:MM", "Weekly on `<day>` at HH:MM", "Monthly on day N", with a timezone — each compiling to a `croner`-valid cron string.
-- [ ] Extend `ScheduleFields` ([`node-config-panel.tsx`](../packages/web/components/node-config-panel.tsx)): a preset picker (daily/weekdays/weekly/monthly + time + timezone) that writes the compiled cron, **plus the existing raw-cron field as an escape hatch** for power users, with the `describeCron()` preview and a **"next 3 runs"** readout (via `croner`).
-- [ ] Round-trip safely: a cron that doesn't map to a preset shows as "Custom" with the raw field — editing presets never silently clobbers a hand-written expression.
+- [x] A **preset → cron compiler** + reverse-map, unit-tested. Lives in [`web/lib/cron.ts`](../packages/web/lib/cron.ts) (co-located with `describeCron`; only web consumes it, the gateway already has croner): `RecurrencePreset` (daily / weekdays / weekly+day / monthly+dom, each with a time) ↔ a 5-field cron via `presetToCron`/`cronToPreset`.
+- [x] Extend `ScheduleFields` ([`node-config-panel.tsx`](../packages/web/components/node-config-panel.tsx)): a **Repeats** preset picker (daily/weekdays/weekly/monthly + time + day) writing the compiled cron, **plus the raw-cron field as an escape hatch**, the `describeCron()` preview, and a **"next 3 runs"** readout via `croner` (`nextRuns()`; croner added to web deps).
+- [x] Round-trip safe: a cron that doesn't map to a preset shows as **Custom** with the raw field — editing presets never clobbers a hand-written expression. *(✅ DONE — PR #243, 2026-06-30)*
 
 ---
 
