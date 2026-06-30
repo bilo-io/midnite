@@ -69,7 +69,7 @@
 **Headline:** the original 0–38 roadmap is **100% complete**, and **Phases 40 & 41 are now complete** too. Only 39 remains — at its last `⏳`/optional item, no pickable theme. (Phase 42 was a parallel restatement of Phase 40 — its unique sync-back layer landed as Phase 40 Theme G; the doc was removed on 2026-06-27.)
 
 ¹ Phase 39 — themes A–E all landed; the only open box is an `⏳` optional UI-font item in Theme C. No pickable theme.
-² Phase 41 — themes A–D all landed and the verification checklist is signed off (PR #TBD). The 3 remaining boxes are all `⏳` deferred (contextual task-detail commands ×2 — no `/tasks/:id` route — and the `E` edit-form shortcut). No pickable theme.
+² Phase 41 — themes A–D all landed and the verification checklist is signed off (PR #237). The 3 remaining boxes are all `⏳` deferred (contextual task-detail commands ×2 — no `/tasks/:id` route — and the `E` edit-form shortcut). No pickable theme.
 
 ## Theme key (active phases)
 

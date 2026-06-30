@@ -87,7 +87,7 @@ Arrow-key card focus + action keys on the kanban.
 
 ## Verification
 
-> **Verified & closed (PR #TBD, 2026-06-30).** Walked every criterion against the
+> **Verified & closed (PR #237, 2026-06-30).** Walked every criterion against the
 > shipped code; coverage gaps filled by a new [`e2e/command-palette.e2e.ts`](../packages/web/e2e/command-palette.e2e.ts)
 > (palette sections, Toggle-theme command, `?` overlay, `G`-chord nav, `N`), alongside
 > the pre-existing `search-palette.e2e.ts` (⌘K search → route) and `keyboard-nav.e2e.ts`
