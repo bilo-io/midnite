@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-30 — feat: contextual "Move to…" palette commands — Phase 42 Theme C (PR #254)
+
+Closes Phase 41's 2 deferred boxes. ⌘K now carries per-task status moves whenever a task detail surface is open.
+
+- [x] **web**: `useTaskPaletteCommands(task, tasks)` (`hooks/`) registers **Move to in progress / Mark done / Move to waiting / Abandon** under the `task-detail` namespace via `useRegisterPaletteCommands`; unregisters on unmount, skips the current status, confirms Abandon + a blocked-start (Phase 27 unmet blockers)
+- [x] **web**: extracted `lib/task-transitions.moveTask` (+ `spawnsSession`/`stopsSession`) — the canonical start/stop/updateStatus selection, now shared by the board's `onMove` (refactored to delegate) and the new hook, so the rule lives in one place
+- [x] **web**: consumed the hook from `<TaskDetail>`, so it fires for both the modal and the `/tasks/view` full page; the `E` edit shortcut stays deferred
+- [x] **tests**: `task-transitions.test.ts` (8), `use-task-palette-commands.test.tsx` (6), `task-palette-commands.e2e.ts` (2 — appear+transition on the detail page, vanish elsewhere)
 ## 2026-06-30 — feat: CLI interactive prompts (inquirer) — Phase 47 Theme D (PR #253)
 
 The CLI's hand-rolled `readline`/raw-mode interactivity is replaced with `@inquirer/prompts`, and the common commands gain guided flows.

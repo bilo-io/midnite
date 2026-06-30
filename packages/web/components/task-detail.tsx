@@ -41,6 +41,7 @@ import {
 } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { dependentsOf, unmetBlockerCount } from '@/lib/task-dependencies';
+import { useTaskPaletteCommands } from '@/hooks/use-task-palette-commands';
 
 const STATUS_HUE_VAR: Record<Status, string> = {
   backlog: '--status-backlog',
@@ -111,6 +112,10 @@ export function TaskDetail({ task, projects, tasks, onClose, variant = 'modal' }
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '')
       .slice(0, 60) || 'task';
+
+  // Contextual ⌘K "Move to…" commands, live only while this detail surface is
+  // mounted (modal or full page) — Phase 42 C.
+  useTaskPaletteCommands(task, tasks);
 
   const router = useRouter();
   const confirm = useConfirm();

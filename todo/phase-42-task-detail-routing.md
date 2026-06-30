@@ -48,13 +48,13 @@ Click a card → modal overlay (you stay on the board); direct link / refresh / 
 
 ---
 
-## Theme C — Contextual "Move to" palette commands — **S**
+## Theme C — Contextual "Move to" palette commands — **S** — ✅ DONE (PR #254, 2026-06-30)
 
 Populate Phase 41's unused registry with per-task actions, scoped to when a task is open.
 
-- [ ] Add **`useTaskPaletteCommands(task, onMove)`** (new hook): registers namespace `task-detail` with **"Move to wip", "Mark done", "Move to waiting", "Abandon"** via `useRegisterPaletteCommands`, unregistering when no task is in context. Each command calls `onMove(task.id, status)` — reusing the existing start/stop session logic, no duplication.
-- [ ] Consume the hook from `<TaskDetail>` (so it fires for both the modal and the full page) — commands appear in `⌘K` only while a task is open and vanish on close.
-- [ ] These complete the 2 deferred Phase 41 boxes (contextual task-detail "Move to" commands). The `E` edit-form shortcut **stays deferred** (the detail surface *is* the edit surface; `E` would duplicate opening it).
+- [x] Added **`useTaskPaletteCommands(task, tasks)`** (new hook): registers namespace `task-detail` with **"Move to in progress", "Mark done", "Move to waiting", "Abandon"** via `useRegisterPaletteCommands`, unregistering on unmount and skipping the task's current status. Each command routes through the shared **`lib/task-transitions.moveTask`** — the start/stop/updateStatus selection extracted from `tasks-view`'s `onMove` (which now delegates to it too, so no duplication). Signature took `tasks` (not `onMove`) so the hook is self-contained and can confirm a blocked start.
+- [x] Consume the hook from `<TaskDetail>` (so it fires for both the modal and the full page) — commands appear in `⌘K` only while a task is open and vanish on close. Abandon + blocked-start confirm, matching the detail surface and board.
+- [x] These complete the 2 deferred Phase 41 boxes (contextual task-detail "Move to" commands). The `E` edit-form shortcut **stays deferred** (the detail surface *is* the edit surface; `E` would duplicate opening it). *(✅ DONE — PR #254, 2026-06-30)*
 
 ---
 
