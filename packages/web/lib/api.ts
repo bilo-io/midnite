@@ -403,6 +403,11 @@ export async function putPreferences(prefs: UserPreferences): Promise<Preference
   );
 }
 
+/** Single task by id (`GET /tasks/:id`); throws on a 404 for an unknown id. */
+export async function getTask(id: string, signal?: AbortSignal): Promise<Task> {
+  return fetchJson(`/tasks/${encodeURIComponent(id)}`, { signal }, TaskSchema);
+}
+
 export async function createTask(form: FormData): Promise<CreateTaskResponse> {
   return fetchJson(
     '/tasks',
