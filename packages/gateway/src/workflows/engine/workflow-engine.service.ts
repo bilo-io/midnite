@@ -306,6 +306,7 @@ export class WorkflowEngine {
       try {
         const output = await executor.execute({
           workflowId: workflow.id,
+          workflowCreatedBy: workflow.createdBy ?? null,
           input,
           params: resolvedParams,
           signal,

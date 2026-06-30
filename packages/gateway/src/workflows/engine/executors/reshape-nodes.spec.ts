@@ -19,7 +19,7 @@ import { DataFilterExecutor } from './data-filter.executor';
 // setData composes with Theme B's resolve-before-execute.
 
 function ctx(input: unknown, params: Record<string, unknown>): NodeRunContext {
-  return { workflowId: 'w1', input, params, signal: new AbortController().signal, log: () => {} };
+  return { workflowId: 'w1', workflowCreatedBy: null, input, params, signal: new AbortController().signal, log: () => {} };
 }
 
 describe('SetDataExecutor', () => {

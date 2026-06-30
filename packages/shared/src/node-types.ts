@@ -210,6 +210,17 @@ export const StorageGetParamsSchema = z.object({
   defaultValue: z.unknown(),
 });
 
+// task.create — enqueue a midnite board task (e.g. a recurring task fired by a
+// schedule trigger). `prompt` is expression-enabled so a scheduled task can
+// interpolate run context; `priority` is the 0–3 scheduling band (defaults Normal).
+export const TaskCreateParamsSchema = z.object({
+  prompt: z.string().min(1),
+  repo: z.string().optional(),
+  projectId: z.string().optional(),
+  priority: z.number().int().min(0).max(3).optional(),
+});
+export type TaskCreateParams = z.infer<typeof TaskCreateParamsSchema>;
+
 export type HttpRequestParams = z.infer<typeof HttpRequestParamsSchema>;
 export type AiClaudeParams = z.infer<typeof AiClaudeParamsSchema>;
 export type BranchParams = z.infer<typeof BranchParamsSchema>;
@@ -351,6 +362,22 @@ export const NODE_TYPE_DEFINITIONS: Record<string, NodeTypeDefinition> = {
       { key: 'system', label: 'System prompt', kind: 'text', expressionable: true },
       { key: 'prompt', label: 'Prompt', kind: 'text', required: true, expressionable: true },
       { key: 'maxTokens', label: 'Max tokens', kind: 'number' },
+    ],
+  },
+  'task.create': {
+    id: 'task.create',
+    category: 'action',
+    title: 'Create task',
+    description: 'Create a midnite board task — e.g. enqueue a recurring task on a schedule.',
+    icon: 'list-plus',
+    inputs: MAIN_IN,
+    outputs: MAIN_OUT,
+    paramsSchema: TaskCreateParamsSchema,
+    fields: [
+      { key: 'prompt', label: 'Task prompt', kind: 'text', required: true, expressionable: true, placeholder: 'What should the agent do?' },
+      { key: 'repo', label: 'Repo', kind: 'string', expressionable: true, help: 'Optional: a registered repo name.' },
+      { key: 'projectId', label: 'Project', kind: 'string', help: 'Optional: project id to file the task under.' },
+      { key: 'priority', label: 'Priority', kind: 'number', help: '0–3 (higher runs first); defaults to Normal (1).' },
     ],
   },
   'logic.branch': {

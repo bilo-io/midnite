@@ -27,7 +27,7 @@ function makeDb(): BetterSQLite3Database<typeof schema> {
 }
 
 function ctx(workflowId: string, params: Record<string, unknown>): NodeRunContext {
-  return { workflowId, input: {}, params, signal: new AbortController().signal, log: () => {} };
+  return { workflowId, workflowCreatedBy: null, input: {}, params, signal: new AbortController().signal, log: () => {} };
 }
 
 describe('storage.set / storage.get executors', () => {

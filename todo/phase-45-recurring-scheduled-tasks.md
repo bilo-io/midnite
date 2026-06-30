@@ -23,14 +23,14 @@
 
 ---
 
-## Theme A — `task.create` workflow action — **M**
+## Theme A — `task.create` workflow action — **M** — ✅ DONE (PR #241, 2026-06-30)
 
 The keystone: let a workflow enqueue a board task.
 
-- [ ] **shared:** add a `task.create` entry to `NODE_TYPE_DEFINITIONS` ([`node-types.ts`](../packages/shared/src/node-types.ts)) with a zod param schema — `prompt` (expression-enabled, so `{{…}}`/date interpolation works), `repo?`, `projectId?`, `priority?` — plus the editor field metadata the config panel renders.
-- [ ] **gateway:** new `task-create.executor.ts` ([`workflows/engine/executors/`](../packages/gateway/src/workflows/engine/executors/)) implementing `NodeExecutor` (`typeId = 'task.create'`), injecting `TasksService`; `execute(ctx)` resolves params, calls `createFromPrompt(input, { emit: true })`, returns the created `Task` as node output (so downstream nodes — e.g. a Slack notice — can reference `{{ $node.task.id }}`).
-- [ ] **gateway:** register the executor in [`workflows.module.ts`](../packages/gateway/src/workflows/workflows.module.ts) providers + the `NODE_EXECUTORS` inject list; ensure `TasksModule` is importable without a circular dep (mirror how other cross-service executors resolve their deps).
-- [ ] Validation: a `task.create` node respects `repo` registry validation (reuse `createFromPrompt`'s existing checks); no `dependsOn` for scheduled creation (a recurring task starts ready).
+- [x] **shared:** add a `task.create` entry to `NODE_TYPE_DEFINITIONS` ([`node-types.ts`](../packages/shared/src/node-types.ts)) with a zod param schema — `prompt` (expression-enabled, so `{{…}}`/date interpolation works), `repo?`, `projectId?`, `priority?` — plus the editor field metadata the config panel renders.
+- [x] **gateway:** new `task-create.executor.ts` ([`workflows/engine/executors/`](../packages/gateway/src/workflows/engine/executors/)) implementing `NodeExecutor` (`typeId = 'task.create'`); `execute(ctx)` resolves params, creates the task, returns it as node output. Reaches the task store via a narrow **`TASK_CREATOR` port** ([`tasks/task-creator.ts`](../packages/gateway/src/tasks/task-creator.ts)) bound to `TasksService` by a `@Global` module that resolves it lazily via `ModuleRef` — **avoids the `Tasks ↔ Workflows` module cycle** (TasksModule already imports WorkflowsModule), so no `forwardRef`.
+- [x] **gateway:** register the executor in [`workflows.module.ts`](../packages/gateway/src/workflows/workflows.module.ts) providers + the `NODE_EXECUTORS` inject list.
+- [x] **Ownership:** `workflowCreatedBy` threaded into `NodeRunContext` so the created task inherits the workflow owner (team scoping derives from `createdBy`). No `dependsOn` for scheduled creation (a recurring task starts ready); `repo` validation reuses `createFromPrompt`. *(✅ DONE — PR #241, 2026-06-30)*
 
 ---
 
