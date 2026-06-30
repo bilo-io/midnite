@@ -9,8 +9,8 @@
 
 ## Legend
 
-- **Status** — `✅ COMPLETE` · `🔄 WIP` · `◻ TODO`
-- **Progress** — 20-cell bar, filled ∝ done/total; the `%` column is the exact figure.
+- **Status** — `✅ DONE` · `🔄 WIP` · `◻ TODO`
+- **Progress** — 10-cell bar, filled ∝ done/total; the `%` column is the exact figure.
 - **Theme columns** — phases are sliced into lettered **themes** (`A`, `B`, `C`, …).
   Each letter appears in exactly one of:
   - **🔄 WIP** — a theme an `/exec` loop has **claimed** and is building right now
@@ -23,48 +23,48 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [0 · Scaffold](phase-0-scaffold.md) | ✅ COMPLETE | 10/10 | `████████████████████` | 100% | — | — |
-| [1 · Board by hand](phase-1-board.md) | ✅ COMPLETE | 16/16 | `████████████████████` | 100% | — | — |
-| [2 · Agents](phase-2-agents.md) | ✅ COMPLETE | 10/10 | `████████████████████` | 100% | — | — |
-| [3 · Browser](phase-3-browser.md) | ✅ COMPLETE | 10/10 | `████████████████████` | 100% | — | — |
-| [4 · Inference](phase-4-inference.md) | ✅ COMPLETE | 11/11 | `████████████████████` | 100% | — | — |
-| [5 · Polish](phase-5-polish.md) | ✅ COMPLETE | 9/9 | `████████████████████` | 100% | — | — |
-| [6 · Workflows MVP](phase-6-workflows-mvp.md) | ✅ COMPLETE | 30/30 | `████████████████████` | 100% | — | — |
-| [7 · Hardening/reports](phase-7-hardening-reports-widgets.md) | ✅ COMPLETE | 31/31 | `████████████████████` | 100% | — | — |
-| [8 · Office fidelity](phase-8-office-fidelity.md) | ✅ COMPLETE | 26/26 | `████████████████████` | 100% | — | — |
-| [9 · Office overhaul](phase-9-office-visual-overhaul.md) | ✅ COMPLETE | 43/43 | `████████████████████` | 100% | — | — |
-| [10 · Test hardening](phase-10-test-suite-hardening.md) | ✅ COMPLETE | 48/48 | `████████████████████` | 100% | — | — |
-| [11 · Public site](phase-11-public-site-rewrite.md) | ✅ COMPLETE | 42/42 | `████████████████████` | 100% | — | — |
-| [12 · Workflow expressions](phase-12-workflow-expressions.md) | ✅ COMPLETE | 33/33 | `████████████████████` | 100% | — | — |
-| [13 · Repos first-class](phase-13-repos-first-class.md) | ✅ COMPLETE | 16/16 | `████████████████████` | 100% | — | — |
-| [14 · Workflows pt2](phase-14-workflows-connect.md) | ✅ COMPLETE | 23/23 | `████████████████████` | 100% | — | — |
-| [15 · Smart intake](phase-15-smart-intake.md) | ✅ COMPLETE | 21/21 | `████████████████████` | 100% | — | — |
-| [16 · Bulk add](phase-16-bulk-add.md) | ✅ COMPLETE | 17/17 | `████████████████████` | 100% | — | — |
-| [17 · Spawner/tmux](phase-17-spawner-tmux.md) | ✅ COMPLETE | 22/22 | `████████████████████` | 100% | — | — |
-| [18 · Reports/exports](phase-18-reports-exports.md) | ✅ COMPLETE | 22/22 | `████████████████████` | 100% | — | — |
-| [19 · Onboarding wizard](phase-19-onboarding-wizard.md) | ✅ COMPLETE | 19/19 | `████████████████████` | 100% | — | — |
-| [20 · Global search](phase-20-global-search.md) | ✅ COMPLETE | 23/23 | `████████████████████` | 100% | — | — |
-| [21 · Notifications](phase-21-notifications.md) | ✅ COMPLETE | 23/23 | `████████████████████` | 100% | — | — |
-| [22 · Fleet visibility](phase-22-fleet-visibility.md) | ✅ COMPLETE | 21/21 | `████████████████████` | 100% | — | — |
-| [23 · Approvals/autonomy](phase-23-approvals-autonomy.md) | ✅ COMPLETE | 23/23 | `████████████████████` | 100% | — | — |
-| [24 · Responsive/PWA](phase-24-responsive-mobile-pwa.md) | ✅ COMPLETE | 22/22 | `████████████████████` | 100% | — | — |
-| [25 · @midnite/ui](phase-25-ui-library.md) | ✅ COMPLETE | 17/17 | `████████████████████` | 100% | — | — |
-| [26 · Docs app](phase-26-docs-app.md) | ✅ COMPLETE | 19/19 | `████████████████████` | 100% | — | — |
-| [27 · Task dependencies](phase-27-task-dependencies.md) | ✅ COMPLETE | 22/22 | `████████████████████` | 100% | — | — |
-| [28 · Project planning](phase-28-project-planning-breakdown.md) | ✅ COMPLETE | 18/18 | `████████████████████` | 100% | — | — |
-| [29 · Releases/versioning](phase-29-releases-versioning-changelog.md) | ✅ COMPLETE | 14/14 | `████████████████████` | 100% | — | — |
-| [30 · Quality gates](phase-30-quality-gates.md) | ✅ COMPLETE | 25/25 | `████████████████████` | 100% | — | — |
-| [31 · Office live-activity](phase-31-office-live-activity.md) | ✅ COMPLETE | 22/22 | `████████████████████` | 100% | — | — |
-| [32 · CLI live dashboard](phase-32-cli-live-dashboard.md) | ✅ COMPLETE | 19/19 | `████████████████████` | 100% | — | — |
-| [33 · Multi-user teams](phase-33-multi-user-teams.md) | ✅ COMPLETE | 55/55 | `████████████████████` | 100% | — | — |
-| [34 · Bundle baseline](phase-34-bundle-baseline.md) | ✅ COMPLETE | 23/23 | `████████████████████` | 100% | — | — |
-| [35 · RBAC enforcement](phase-35-rbac-enforcement.md) | ✅ COMPLETE | 34/34 | `████████████████████` | 100% | — | — |
-| [36 · Template marketplace](phase-36-workflow-template-marketplace.md) | ✅ COMPLETE | 40/40 | `████████████████████` | 100% | — | — |
-| [37 · AI code review](phase-37-ai-code-review.md) | ✅ COMPLETE | 35/35 | `████████████████████` | 100% | — | — |
-| [38 · Search scoping + service tokens](phase-38-search-scoping-service-tokens.md) | ✅ COMPLETE | 28/28 | `████████████████████` | 100% | — | — |
-| [39 · Visual customization](phase-39-visual-customization.md) | 🔄 WIP | 24/25 | `███████████████████░` | 96% | — | — ¹ |
-| [40 · Ideas pipeline](phase-40-ideas-pipeline.md) | ✅ COMPLETE | 51/51 | `████████████████████` | 100% | — | — |
-| [41 · Command palette](phase-41-command-palette.md) | 🔄 WIP | 21/33 | `█████████████░░░░░░░` | 64% | — | — ² |
+| [0 · Scaffold](phase-0-scaffold.md) | ✅ DONE | 10/10 | `██████████` | 100% | — | — |
+| [1 · Board by hand](phase-1-board.md) | ✅ DONE | 16/16 | `██████████` | 100% | — | — |
+| [2 · Agents](phase-2-agents.md) | ✅ DONE | 10/10 | `██████████` | 100% | — | — |
+| [3 · Browser](phase-3-browser.md) | ✅ DONE | 10/10 | `██████████` | 100% | — | — |
+| [4 · Inference](phase-4-inference.md) | ✅ DONE | 11/11 | `██████████` | 100% | — | — |
+| [5 · Polish](phase-5-polish.md) | ✅ DONE | 9/9 | `██████████` | 100% | — | — |
+| [6 · Workflows MVP](phase-6-workflows-mvp.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
+| [7 · Hardening/reports](phase-7-hardening-reports-widgets.md) | ✅ DONE | 31/31 | `██████████` | 100% | — | — |
+| [8 · Office fidelity](phase-8-office-fidelity.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
+| [9 · Office overhaul](phase-9-office-visual-overhaul.md) | ✅ DONE | 43/43 | `██████████` | 100% | — | — |
+| [10 · Test hardening](phase-10-test-suite-hardening.md) | ✅ DONE | 48/48 | `██████████` | 100% | — | — |
+| [11 · Public site](phase-11-public-site-rewrite.md) | ✅ DONE | 42/42 | `██████████` | 100% | — | — |
+| [12 · Workflow expressions](phase-12-workflow-expressions.md) | ✅ DONE | 33/33 | `██████████` | 100% | — | — |
+| [13 · Repos first-class](phase-13-repos-first-class.md) | ✅ DONE | 16/16 | `██████████` | 100% | — | — |
+| [14 · Workflows pt2](phase-14-workflows-connect.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
+| [15 · Smart intake](phase-15-smart-intake.md) | ✅ DONE | 21/21 | `██████████` | 100% | — | — |
+| [16 · Bulk add](phase-16-bulk-add.md) | ✅ DONE | 17/17 | `██████████` | 100% | — | — |
+| [17 · Spawner/tmux](phase-17-spawner-tmux.md) | ✅ DONE | 22/22 | `██████████` | 100% | — | — |
+| [18 · Reports/exports](phase-18-reports-exports.md) | ✅ DONE | 22/22 | `██████████` | 100% | — | — |
+| [19 · Onboarding wizard](phase-19-onboarding-wizard.md) | ✅ DONE | 19/19 | `██████████` | 100% | — | — |
+| [20 · Global search](phase-20-global-search.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
+| [21 · Notifications](phase-21-notifications.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
+| [22 · Fleet visibility](phase-22-fleet-visibility.md) | ✅ DONE | 21/21 | `██████████` | 100% | — | — |
+| [23 · Approvals/autonomy](phase-23-approvals-autonomy.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
+| [24 · Responsive/PWA](phase-24-responsive-mobile-pwa.md) | ✅ DONE | 22/22 | `██████████` | 100% | — | — |
+| [25 · @midnite/ui](phase-25-ui-library.md) | ✅ DONE | 17/17 | `██████████` | 100% | — | — |
+| [26 · Docs app](phase-26-docs-app.md) | ✅ DONE | 19/19 | `██████████` | 100% | — | — |
+| [27 · Task dependencies](phase-27-task-dependencies.md) | ✅ DONE | 22/22 | `██████████` | 100% | — | — |
+| [28 · Project planning](phase-28-project-planning-breakdown.md) | ✅ DONE | 18/18 | `██████████` | 100% | — | — |
+| [29 · Releases/versioning](phase-29-releases-versioning-changelog.md) | ✅ DONE | 14/14 | `██████████` | 100% | — | — |
+| [30 · Quality gates](phase-30-quality-gates.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
+| [31 · Office live-activity](phase-31-office-live-activity.md) | ✅ DONE | 22/22 | `██████████` | 100% | — | — |
+| [32 · CLI live dashboard](phase-32-cli-live-dashboard.md) | ✅ DONE | 19/19 | `██████████` | 100% | — | — |
+| [33 · Multi-user teams](phase-33-multi-user-teams.md) | ✅ DONE | 55/55 | `██████████` | 100% | — | — |
+| [34 · Bundle baseline](phase-34-bundle-baseline.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
+| [35 · RBAC enforcement](phase-35-rbac-enforcement.md) | ✅ DONE | 34/34 | `██████████` | 100% | — | — |
+| [36 · Template marketplace](phase-36-workflow-template-marketplace.md) | ✅ DONE | 40/40 | `██████████` | 100% | — | — |
+| [37 · AI code review](phase-37-ai-code-review.md) | ✅ DONE | 35/35 | `██████████` | 100% | — | — |
+| [38 · Search scoping + service tokens](phase-38-search-scoping-service-tokens.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
+| [39 · Visual customization](phase-39-visual-customization.md) | 🔄 WIP | 24/25 | `█████████░` | 96% | — | — ¹ |
+| [40 · Ideas pipeline](phase-40-ideas-pipeline.md) | ✅ DONE | 51/51 | `██████████` | 100% | — | — |
+| [41 · Command palette](phase-41-command-palette.md) | 🔄 WIP | 21/33 | `██████░░░░` | 64% | — | — ² |
 
 **Headline:** the original 0–38 roadmap is **100% complete**, and **Phase 40 (Ideas pipeline) is now complete** too. Only 39 & 41 remain — both at their last `⏳`/optional items, no pickable themes. (Phase 42 was a parallel restatement of Phase 40 — its unique sync-back layer landed as Phase 40 Theme G; the doc was removed on 2026-06-27.)
 
@@ -94,5 +94,5 @@ so you can pick from this file without opening the phase doc first.
    `/exec` loops see the claim and skip it.
 2. **On merge** (in the branch, before the PR merges): drop the theme letter(s)
    out of `🔄 WIP`, bump the `Done`/`Progress`/`%` cells, and flip the row's
-   **Status** to `✅ COMPLETE` once every theme is done. The phase doc + `done.md`
+   **Status** to `✅ DONE` once every theme is done. The phase doc + `done.md`
    move in the same branch, so merging auto-updates docs and this index together.
