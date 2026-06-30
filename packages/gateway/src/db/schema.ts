@@ -993,6 +993,35 @@ export const webhooks = sqliteTable(
 export type WebhookRow = typeof webhooks.$inferSelect;
 export type WebhookInsert = typeof webhooks.$inferInsert;
 
+/**
+ * Recorded outbound deliveries (Phase 44 Theme B). One row per (event, endpoint)
+ * dispatch. `teamId` is denormalized from the endpoint so the deliveries log
+ * (Theme D) can be team-scoped without a join. `payload` is the exact body sent,
+ * persisted for a faithful redeliver.
+ */
+export const webhookDeliveries = sqliteTable(
+  'webhook_deliveries',
+  {
+    id: text('id').primaryKey(),
+    webhookId: text('webhook_id').notNull(),
+    teamId: text('team_id'),
+    event: text('event').notNull(),
+    status: text('status').notNull(),
+    responseCode: integer('response_code'),
+    attempts: integer('attempts').notNull().default(0),
+    error: text('error'),
+    payload: text('payload').notNull(),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    webhookIdx: index('webhook_deliveries_webhook_idx').on(t.webhookId),
+    teamIdx: index('webhook_deliveries_team_idx').on(t.teamId),
+  }),
+);
+
+export type WebhookDeliveryRow = typeof webhookDeliveries.$inferSelect;
+export type WebhookDeliveryInsert = typeof webhookDeliveries.$inferInsert;
+
 // Phase 33 Theme B: Teams & membership.
 export const teams = sqliteTable(
   'teams',
