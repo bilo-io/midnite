@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-30 — feat: gateway preferences store + API — Phase 43 Theme B (PR #241)
+
+The server side of preference sync: a per-user store + authed read/write, consuming the Theme A contract.
+
+- [x] **gateway**: new `user_preferences` table (`userId` PK + JSON `data` + `updatedAt`; no FK, off the auth row) + forward-only migration `0058_user_preferences`
+- [x] **gateway**: dedicated `preferences/` Nest module — `PreferencesRepository` (`find` / `upsert` via `onConflictDoUpdate`) → `PreferencesService` (defaults-on-empty, full-object replace + server-stamped `updatedAt`, re-validate-on-read → corrupt degrades to defaults) → `PreferencesController` `GET`/`PUT /users/me/preferences` behind `@CurrentUser()` (401 unauth, 400 bad body); registered in `AppModule`
+- [x] **Decisions (settled at pickup)**: dedicated module (not folded onto `users`); blind last-write-wins (no optimistic 409); re-validate stored blob on read
+- [x] Tests: `PreferencesService` unit (4) + `PreferencesRepository` `:memory:` integration (3) + `PreferencesController` authed/unauth/bad-body (5). Local gate: gateway typecheck ✓, gateway 1124 tests ✓, my files lint-clean (8 pre-existing main lint errors untouched)
+
 ## 2026-06-30 — feat: task.create workflow action — Phase 45 Theme A (PR #241)
 
 The keystone of recurring/scheduled tasks: a workflow action that enqueues a board task, so a `[trigger.schedule] → [task.create]` workflow auto-creates tasks on a cadence.
