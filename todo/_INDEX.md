@@ -68,9 +68,9 @@
 | [42 · Task detail routing](phase-42-task-detail-routing.md) | 🔄 WIP | 4/11 | `████░░░░░░` | 36% | — | B C |
 | [43 · Preference sync](phase-43-server-side-preference-sync.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
 | [44 · Outbound webhooks](phase-44-outbound-webhooks.md) | 🔄 WIP | 13/20 | `███████░░░` | 65% | — | — |
-| [45 · Recurring/scheduled tasks](phase-45-recurring-scheduled-tasks.md) | 🔄 WIP | 10/15 | `███████░░░` | 67% | D | — |
+| [45 · Recurring/scheduled tasks](phase-45-recurring-scheduled-tasks.md) | ✅ DONE | 15/15 | `██████████` | 100% | — | — |
 | [46 · Inbound integrations](phase-46-inbound-integrations.md) | ◻ TODO | 0/? | `░░░░░░░░░░` | 0% | — | A B C D |
-| [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | 🔄 WIP | 3/26 | `█░░░░░░░░░` | 12% | — | B C D E F |
+| [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | 🔄 WIP | 3/26 | `█░░░░░░░░░` | 12% | B C | D E F |
 
 **Headline:** the original **0–41 roadmap is 100% complete** (Phases 39 & 41 closed 2026-06-30). **Phases 42 (task detail routing), 43 (server-side preference sync), 44 (outbound webhooks & integrations), and 45 (recurring/scheduled tasks)** are freshly planned and open — all their themes are pickable. (An *earlier* Phase 42 was a parallel restatement of Phase 40, folded into Phase 40 Theme G and removed 2026-06-27; the current 42 & 43 are new, unrelated phases — two brainstorm sessions ran concurrently, so the preference-sync plan took the next free number, 43.)
 
@@ -117,7 +117,7 @@ so you can pick from this file without opening the phase doc first.
 - ✅ **A** — `task.create` workflow action/executor (the missing link) (#241) **[M]**
 - ✅ **B** — Recurrence presets (+ raw-cron escape hatch) on the schedule trigger (#243) **[S–M]**
 - ✅ **C** — Dedicated "Schedules" facade view (list/create/edit/run-now) (#247) **[M]**
-- ◻ **D** — Run-history surfacing + "Daily standup" starter preset **[S]**
+- ✅ **D** — Run-history surfacing + "Daily standup" starter preset (#250) **[S]**
 
 ### [Phase 47 — CLI power-user pass](phase-47-cli-power-user-pass.md)
 *(Thin-CLI rule: no gateway changes — presentation helpers + client-side loops only. chalk/ora aren't installed today; this phase makes CLAUDE.md's claim true.)*

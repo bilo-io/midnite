@@ -4,33 +4,39 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   CalendarClock,
+  ChevronDown,
+  ChevronRight,
   Loader2,
   Pencil,
   Play,
   PencilRuler,
   Plus,
 } from 'lucide-react';
-import type { Project, Repo, WorkflowSummary } from '@midnite/shared';
+import type { Project, Repo, WorkflowSummary, WorkflowTemplateSummary } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/empty-state';
 import { useToast } from '@/components/toast';
 import { ScheduleFormDialog } from '@/components/schedule-form-dialog';
+import { SchedulePresetMenu } from '@/components/schedule-preset-menu';
+import { ScheduleRunHistory } from '@/components/schedule-run-history';
 import { getWorkflow, runWorkflow, updateWorkflow } from '@/lib/api';
 import { cronIntervalSeconds, describeCron, formatRun, nextRuns } from '@/lib/cron';
 import { invalidateData } from '@/lib/data-refresh';
 import { isScheduleWorkflow } from '@/lib/schedules';
+import { schedulePresetTemplates } from '@/lib/schedule-runs';
 import { cn } from '@/lib/utils';
 
 type Props = {
   initial: WorkflowSummary[];
   projects: Project[];
   repos: Repo[];
+  templates: WorkflowTemplateSummary[];
 };
 
 // The full workflow being edited (fetched on demand), or 'new' for a fresh create.
 type Editing = { kind: 'new' } | { kind: 'edit'; id: string } | null;
 
-export function SchedulesView({ initial, projects, repos }: Props) {
+export function SchedulesView({ initial, projects, repos, templates }: Props) {
   const toast = useToast();
   const [editing, setEditing] = useState<Editing>(null);
   const [editWorkflow, setEditWorkflow] = useState<Awaited<ReturnType<typeof getWorkflow>> | null>(null);
@@ -46,6 +52,8 @@ export function SchedulesView({ initial, projects, repos }: Props) {
         .sort((a, b) => cronIntervalSeconds(a.cron ?? '') - cronIntervalSeconds(b.cron ?? '')),
     [initial],
   );
+
+  const presets = useMemo(() => schedulePresetTemplates(templates), [templates]);
 
   const openEdit = async (id: string) => {
     setBusyId(id);
@@ -96,10 +104,13 @@ export function SchedulesView({ initial, projects, repos }: Props) {
         <p className="text-xs tabular-nums text-muted-foreground">
           {schedules.length} schedule{schedules.length === 1 ? '' : 's'}
         </p>
-        <Button type="button" size="sm" onClick={() => setEditing({ kind: 'new' })}>
-          <Plus className="h-4 w-4" />
-          New schedule
-        </Button>
+        <div className="flex items-center gap-2">
+          <SchedulePresetMenu presets={presets} onInstalled={invalidateData} />
+          <Button type="button" size="sm" onClick={() => setEditing({ kind: 'new' })}>
+            <Plus className="h-4 w-4" />
+            New schedule
+          </Button>
+        </div>
       </div>
 
       <div className="reveal-content">
@@ -159,9 +170,11 @@ function ScheduleRow({
   const cron = s.cron ?? '';
   const tz = s.timezone ?? 'UTC';
   const next = nextRuns(cron, tz, 1)[0];
+  const [showHistory, setShowHistory] = useState(false);
 
   return (
-    <li className="flex flex-col gap-3 rounded-lg border border-border/60 bg-card/40 p-4 sm:flex-row sm:items-center sm:justify-between">
+    <li className="flex flex-col gap-3 rounded-lg border border-border/60 bg-card/40 p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0 space-y-1">
         <div className="flex items-center gap-2">
           <span className="truncate text-sm font-medium">{s.name}</span>
@@ -175,16 +188,27 @@ function ScheduleRow({
           {describeCron(cron)}
           {next ? <span className="text-muted-foreground/70"> · next {formatRun(next, tz)}</span> : null}
         </p>
-        <p className="text-[11px] text-muted-foreground/70">
-          {s.lastRunAt ? (
-            <>
-              Last fired {formatRun(new Date(s.lastRunAt), tz)}
-              {s.lastRunStatus ? ` · ${s.lastRunStatus}` : ''}
-            </>
-          ) : (
-            'Never fired yet'
-          )}
-        </p>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+          <p className="text-[11px] text-muted-foreground/70">
+            {s.lastRunAt ? (
+              <>
+                Last fired {formatRun(new Date(s.lastRunAt), tz)}
+                {s.lastRunStatus ? ` · ${s.lastRunStatus}` : ''}
+              </>
+            ) : (
+              'Never fired yet'
+            )}
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowHistory((v) => !v)}
+            aria-expanded={showHistory}
+            className="inline-flex items-center gap-0.5 text-[11px] text-muted-foreground/70 transition-colors hover:text-foreground"
+          >
+            {showHistory ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+            History
+          </button>
+        </div>
       </div>
 
       <div className="flex shrink-0 items-center gap-1.5">
@@ -217,6 +241,13 @@ function ScheduleRow({
           <PencilRuler className="h-4 w-4" />
         </Link>
       </div>
+      </div>
+
+      {showHistory ? (
+        <div className="border-t border-border/40 pt-3">
+          <ScheduleRunHistory workflowId={s.id} timezone={tz} />
+        </div>
+      ) : null}
     </li>
   );
 }
