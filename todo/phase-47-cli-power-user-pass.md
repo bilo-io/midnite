@@ -55,20 +55,9 @@
 
 ---
 
-## Theme A — Brand chrome + ANSI logo — **S–M**
+## Theme A — Brand chrome + ANSI logo — ✅ DONE (PR #248, 2026-06-30)
 
-A recognisable midnite mark and banner, shown at the right moments.
-
-- [ ] **`cli/src/lib/brand.ts`** — a hand-crafted **ANSI half-block** rendering of the
-      quadrant-circle logo (static string art — **no runtime PNG decoding**), in brand colours,
-      plus a one-line wordmark/tagline (`midnite · multitask orchestrator`) and the package
-      version. Export `logo()`, `banner()`, and an `isInteractive()` gate (TTY + `NO_COLOR` +
-      `--json` aware) that every colour/spinner/logo call routes through.
-- [ ] Show the banner on **bare `midnite`** (no subcommand → help + logo), on the **root
-      `--help`** header, and as the **`watch` splash** (mount it in the ink dashboard's first
-      frame / a brief intro panel). Never on every command — sparingly, at entry points.
-- [ ] Degrade cleanly: monochrome (or suppressed) when not a TTY, when `NO_COLOR` is set, or when
-      `--json` is active — the art is decorative, never required to read output.
+A recognisable midnite mark and banner, shown at the right moments. *(See [`done.md`](done.md).)*
 
 ---
 

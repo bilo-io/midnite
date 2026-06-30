@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-30 — feat: CLI brand chrome + ANSI logo banner — Phase 47 Theme A (PR #248)
+
+The CLI gets its brand: a split-circle ANSI mark rendered as pure geometry (no image decode), an entry banner, and the central `isInteractive()` gate the rest of Phase 47 (colour/spinners/`--json`) will hook into. Also fixes the stale hardcoded `--version`.
+
+- [x] **cli**: `src/lib/brand.ts` — `logoLines()` (split-circle block art, deterministic geometry), `banner()`, `accent()`, `isInteractive()` (TTY + `NO_COLOR`), `getVersion()` (reads `package.json`), `BRAND_ACCENT`
+- [x] **cli**: banner shown on bare `midnite` (no-args → branded help) and the `--help` header (`addHelpText('beforeAll')`); `.version()` now reads the real version
+- [x] **cli**: compact logo header added to the `watch` ink dashboard (intro panel)
+- [x] **cli**: degrades to plain ASCII art when piped / non-TTY / `NO_COLOR` (colour escapes gated); `--json` off-switch deferred to Theme E per plan
+- [x] **tests**: `src/lib/brand.test.ts` (11) — geometry/size, the interactivity gate, colour-vs-plain output, version read
+
 ## 2026-06-30 — feat: Schedules facade view — Phase 45 Theme C
 
 Recurring tasks become first-class — a dedicated **Schedules** surface over the `[trigger.schedule] → [task.create]` workflow shape, no node canvas required. Builds on the Theme A `task.create` action (#241) and Theme B recurrence presets (#243).

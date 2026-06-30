@@ -70,7 +70,7 @@
 | [44 · Outbound webhooks](phase-44-outbound-webhooks.md) | 🔄 WIP | 3/20 | `██░░░░░░░░` | 15% | B | C D |
 | [45 · Recurring/scheduled tasks](phase-45-recurring-scheduled-tasks.md) | 🔄 WIP | 10/15 | `███████░░░` | 67% | — | D |
 | [46 · Inbound integrations](phase-46-inbound-integrations.md) | ◻ TODO | 0/? | `░░░░░░░░░░` | 0% | — | A B C D |
-| [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | 🔄 WIP | 0/? | `░░░░░░░░░░` | 0% | A | B C D E F |
+| [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | 🔄 WIP | 3/26 | `█░░░░░░░░░` | 12% | — | B C D E F |
 
 **Headline:** the original **0–41 roadmap is 100% complete** (Phases 39 & 41 closed 2026-06-30). **Phases 42 (task detail routing), 43 (server-side preference sync), 44 (outbound webhooks & integrations), and 45 (recurring/scheduled tasks)** are freshly planned and open — all their themes are pickable. (An *earlier* Phase 42 was a parallel restatement of Phase 40, folded into Phase 40 Theme G and removed 2026-06-27; the current 42 & 43 are new, unrelated phases — two brainstorm sessions ran concurrently, so the preference-sync plan took the next free number, 43.)
 
@@ -121,7 +121,7 @@ so you can pick from this file without opening the phase doc first.
 
 ### [Phase 47 — CLI power-user pass](phase-47-cli-power-user-pass.md)
 *(Thin-CLI rule: no gateway changes — presentation helpers + client-side loops only. chalk/ora aren't installed today; this phase makes CLAUDE.md's claim true.)*
-- ◻ **A** — Brand chrome + ANSI logo (bare invoke / help / `watch` splash; `NO_COLOR`/pipe/`--json` aware) **[S–M]**
+- ✅ **A** — Brand chrome + ANSI logo (bare invoke / help / `watch` splash; `NO_COLOR`/pipe aware) (PR #248) **[S–M]**
 - ◻ **B** — Colour vocabulary (chalk palette mirroring `@midnite/ui` status/kind/priority hues, applied across every renderer) **[M]**
 - ◻ **C** — Spinners & progress (ora wrapper on every async client call) **[S–M]**
 - ◻ **D** — Interactive prompts (`@inquirer/prompts` replaces hand-rolled `readline`/TTY; guided `add`, fuzzy task-pick for `move`/`block`) **[M]**
