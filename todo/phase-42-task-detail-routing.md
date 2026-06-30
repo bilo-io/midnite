@@ -18,14 +18,22 @@
 
 ---
 
-## Theme A — `/tasks/:id` detail page — **M**
+## Theme A — full task detail page — ✅ DONE (PR #246, 2026-06-30)
 
 A real, shareable, refresh-safe URL for a single task.
 
-- [ ] Extract `TaskThreadModal`'s inner body into a reusable **`<TaskDetail task projects tasks />`** component (the modal becomes a thin shell: overlay chrome + `<TaskDetail>` + `onClose`). Behaviour-preserving — the modal's existing specs must still pass.
-- [ ] Add **`app/(main)/tasks/[id]/page.tsx`** + a `task-detail-view.tsx` client view that fetches the task via `getTask(id)` (and the `projects` / sibling `tasks` it needs) with `useApiData`, renders `<TaskDetail>` full-page, and shows loading + **inline not-found** (mirror `idea-detail-view`), not a hard 404.
-- [ ] Page chrome: a back affordance to `/tasks`, the task title in the document `<title>`, and the same status/transition controls the modal offers (reusing `<TaskDetail>` means this is free).
-- [ ] Confirm `getTask(id)` exists in [`lib/api.ts`](../packages/web/lib/api.ts); if only the list is fetched today, add the thin client method against the existing `GET /tasks/:id` (Decision §3) — **no new endpoint**.
+> **Route shipped at `/tasks/view?id=`, not `/tasks/[id]`.** The app builds with
+> `output: 'export'` (no server runtime), which cannot prerender arbitrary runtime
+> ids — every other detail surface (`/ideas/view`, `/councils/view`, `/media/view`)
+> uses the same query-param pattern, and the doc's "mirror the ideas precedent" *is*
+> that pattern. A true `[id]` segment would 404 on direct-link/refresh, which is
+> exactly what Theme A must avoid. The `app/(main)/tasks/[id]/` dir holds the
+> reusable `task-detail-view.tsx` (matching the ideas/councils/media convention).
+
+- [x] Extract `TaskThreadModal`'s inner body into a reusable **`<TaskDetail task projects tasks variant />`** component (the modal is now a thin shell: overlay chrome + `<TaskDetail>` + `onClose`). Behaviour-preserving — the modal's existing specs pass unchanged.
+- [x] Add **`app/(main)/tasks/view/page.tsx`** + a `[id]/task-detail-view.tsx` client view that fetches `getTask(id)` + `getProjects()` + sibling `getTasks()` in parallel (Decision §6) with `useApiData`, renders `<TaskDetail variant="page">`, and shows loading + **inline not-found** (mirror `idea-detail-view`), not a hard 404.
+- [x] Page chrome: a back affordance to `/tasks`, the task title in `document.title`, and the same status/transition controls the modal offers (free via `<TaskDetail>`).
+- [x] Added `getTask(id)` to [`lib/api.ts`](../packages/web/lib/api.ts) against the existing `GET /tasks/:id` (Decision §3) — no new endpoint.
 
 ---
 
