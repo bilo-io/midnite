@@ -70,7 +70,7 @@
 | [44 · Outbound webhooks](phase-44-outbound-webhooks.md) | 🔄 WIP | 13/20 | `███████░░░` | 65% | — | — |
 | [45 · Recurring/scheduled tasks](phase-45-recurring-scheduled-tasks.md) | ✅ DONE | 15/15 | `██████████` | 100% | — | — |
 | [46 · Inbound integrations](phase-46-inbound-integrations.md) | ◻ TODO | 0/? | `░░░░░░░░░░` | 0% | — | A B C D |
-| [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | 🔄 WIP | 7/26 | `███░░░░░░░` | 27% | B C E | F |
+| [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | 🔄 WIP | 13/26 | `█████░░░░░` | 50% | E | F |
 
 **Headline:** the original **0–41 roadmap is 100% complete** (Phases 39 & 41 closed 2026-06-30). **Phases 42 (task detail routing), 43 (server-side preference sync), 44 (outbound webhooks & integrations), and 45 (recurring/scheduled tasks)** are freshly planned and open — all their themes are pickable. (An *earlier* Phase 42 was a parallel restatement of Phase 40, folded into Phase 40 Theme G and removed 2026-06-27; the current 42 & 43 are new, unrelated phases — two brainstorm sessions ran concurrently, so the preference-sync plan took the next free number, 43.)
 
@@ -122,8 +122,8 @@ so you can pick from this file without opening the phase doc first.
 ### [Phase 47 — CLI power-user pass](phase-47-cli-power-user-pass.md)
 *(Thin-CLI rule: no gateway changes — presentation helpers + client-side loops only. chalk/ora aren't installed today; this phase makes CLAUDE.md's claim true.)*
 - ✅ **A** — Brand chrome + ANSI logo (bare invoke / help / `watch` splash; `NO_COLOR`/pipe aware) (PR #248) **[S–M]**
-- ◻ **B** — Colour vocabulary (chalk palette mirroring `@midnite/ui` status/kind/priority hues, applied across every renderer) **[M]**
-- ◻ **C** — Spinners & progress (ora wrapper on every async client call) **[S–M]**
+- ✅ **B** — Colour vocabulary (chalk palette mirroring `@midnite/ui` status/kind/priority hues, applied across every renderer) (PR #255) **[M]**
+- ✅ **C** — Spinners & progress (ora wrapper on every async client call) (PR #255) **[S–M]**
 - ✅ **D** — Interactive prompts (`@inquirer/prompts` replaces hand-rolled `readline`/TTY; guided `add`, fuzzy task-pick for `move`/`block`) (PR #253) **[M]**
 - ◻ **E** — Machine output: global `--json` for the read surface (chrome forced off; errors → stderr) **[S–M]**
 - ◻ **F** — Shell completions (`completion <bash|zsh|fish>`) + bulk-by-filter `move`/`prioritise` (client-side loop) **[M]**

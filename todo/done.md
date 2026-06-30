@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-30 — feat: CLI colour vocabulary + ora spinners — Phase 47 Themes B + C (PR #255)
+
+The CLI's everywhere-pass: a status/kind/priority colour vocabulary mirroring the web's `@midnite/ui` hues, plus an ora spinner on every async client call. chalk + ora added (they weren't installed). All chrome gated by the shared `isInteractive()` so piped / `NO_COLOR` output stays plain — existing snapshot tests run non-TTY and were untouched.
+
+- [x] **cli (B)**: `lib/palette.ts` — `colourStatus`/`colourKind`/`colourPriority`/`colourBool` (hues echoing `tokens.css`: wip→orange, done→green, bug→red, …) + generic `success`/`error`/`warn`/`dim`/`heading`; gated by `isInteractive()`
+- [x] **cli (B)**: colour applied across every renderer — `list`/`move`/`block`/`unblock`/`check` (inline) + `bulk.ts`/`search.ts`/`workflow.ts` row-builders; cli-table3's ANSI-aware width keeps coloured cells aligned
+- [x] **cli (C)**: `lib/spinner.ts` — `withSpinner(text, fn, { succeed })`; succeed message doubles as the mutation confirmation (plain `console.log` when piped); failures show `✗` + message, marked so the top-level handler doesn't reprint
+- [x] **cli (C)**: spinners wrap every async call site — `add`/bulk, `search`, `runWorkflow`, `plan` (LLM breakdown), `createFromBreakdown`, `installTemplate`, `login`, `check`, `exportTask`, list/runs/templates/workflows
+- [x] **tests**: `lib/palette.test.ts` (8) + `lib/spinner.test.ts` (11) — interactive-vs-piped gating, unknown-value passthrough, priority levels, succeed-prints-when-piped, error-reported marking
+- ⏳ `n/total` progress for multi-item bulk ops → carried into **Theme F** (no bulk-by-filter op exists yet; `withSpinner` is the foundation)
+
 ## 2026-06-30 — feat: contextual "Move to…" palette commands — Phase 42 Theme C (PR #254)
 
 Closes Phase 41's 2 deferred boxes. ⌘K now carries per-task status moves whenever a task detail surface is open.
