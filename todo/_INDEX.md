@@ -69,6 +69,7 @@
 | [43 · Preference sync](phase-43-server-side-preference-sync.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
 | [44 · Outbound webhooks](phase-44-outbound-webhooks.md) | 🔄 WIP | 3/20 | `██░░░░░░░░` | 15% | — | B C D |
 | [45 · Recurring/scheduled tasks](phase-45-recurring-scheduled-tasks.md) | 🔄 WIP | 7/15 | `█████░░░░░` | 47% | C | D |
+| [46 · Inbound integrations](phase-46-inbound-integrations.md) | ◻ TODO | 0/? | `░░░░░░░░░░` | 0% | — | A B C D |
 
 **Headline:** the original **0–41 roadmap is 100% complete** (Phases 39 & 41 closed 2026-06-30). **Phases 42 (task detail routing), 43 (server-side preference sync), 44 (outbound webhooks & integrations), and 45 (recurring/scheduled tasks)** are freshly planned and open — all their themes are pickable. (An *earlier* Phase 42 was a parallel restatement of Phase 40, folded into Phase 40 Theme G and removed 2026-06-27; the current 42 & 43 are new, unrelated phases — two brainstorm sessions ran concurrently, so the preference-sync plan took the next free number, 43.)
 
@@ -97,6 +98,12 @@ so you can pick from this file without opening the phase doc first.
 - ✅ **A** — `UserPreferencesSchema` contract in `shared` (synced subset of `AppSettings`) (PR #240) **[S–M]**
 - ✅ **B** — Gateway `user_preferences` table + `GET`/`PUT /users/me/preferences` (authed) (PR #242) **[M]**
 - ✅ **C** — Web sync layer (hydrate-on-login, debounced write-through, LWW; localStorage-only when signed out) (PR #244) **[M]**
+
+### [Phase 46 — Inbound integrations (external events → tasks)](phase-46-inbound-integrations.md)
+- ◻ **A** — Inbound source entity + contract + Settings → Integrations (Inbound) UI **[M]**
+- ◻ **B** — Provider-aware signed receiver (`POST /integrations/inbound/:id`) + dedup + `createFromPrompt` **[M]**
+- ◻ **C** — Provider adapters: GitHub / Linear / generic (verify + payload→task) **[M]**
+- ◻ **D** — Inbound deliveries log + origin URL as a task `Source` **[S]**
 
 ### [Phase 44 — Outbound webhooks & integrations](phase-44-outbound-webhooks.md)
 - ✅ **A** — Webhook endpoint entity + CRUD + Settings → Integrations UI (team-scoped) (PR #245) **[M]**
