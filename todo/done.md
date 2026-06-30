@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-30 — feat: CLI interactive prompts (inquirer) — Phase 47 Theme D (PR #253)
+
+The CLI's hand-rolled `readline`/raw-mode interactivity is replaced with `@inquirer/prompts`, and the common commands gain guided flows.
+
+- [x] **cli**: added `@inquirer/prompts`; `cli/src/lib/prompts.ts` centralises helpers behind a `canPrompt()` (both-TTY) gate — required-value prompts throw `NonInteractiveError` instead of hanging (Decision §5; `NO_COLOR` doesn't gate prompts).
+- [x] **cli**: `plan` confirm → `confirm`; `login` email/password → `input`/`password` (drops the raw-mode TTY handler); behaviour-preserving, `--yes`/`--password`/`--email` still skip.
+- [x] **cli**: `midnite add` with no positional → guided flow (task text → repo → priority → project); the positional path is unchanged. Depends-on stays on `-d`.
+- [x] **cli**: `move`/`block`/`unblock` accept an omitted id → fuzzy `search` over `listTasks()`; `move` also `select`s a status. `template install` prompts unresolved cred slots (`-y/--yes` or non-TTY skip).
+- [x] Tests: `lib/prompts.test.ts` (3 — the non-TTY gate: `canPrompt` false, `confirmPrompt` fallback, required prompts throw). CLI typecheck + lint green; suite 103 pass.
+
 ## 2026-06-30 — feat: webhook provider formatting — Phase 44 Theme C (PR #252)
 
 Slack and Discord endpoints now receive a message they can actually render, while `generic` keeps the canonical signed JSON. Last build theme of Phase 44 — A–D all shipped.

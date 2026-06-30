@@ -95,22 +95,16 @@ Every async call shows it's working, then resolves to a clear success/fail.
 
 ---
 
-## Theme D — Interactive prompts (inquirer) — **M**
+## Theme D — Interactive prompts (inquirer) — **M** ✅ DONE (PR #253, 2026-06-30)
 
 Replace the hand-rolled interactivity; add guided flows.
 
-- [ ] Add **`@inquirer/prompts`**; **replace** `plan`'s `node:readline` confirm and `login`'s
-      raw-mode password with `confirm` / `password` prompts (same behaviour, less hand-rolled
-      TTY code).
-- [ ] **`midnite add`** with no prompt → a guided flow: prompt for the task text, then
-      repo / priority / project / depends-on (each optional, sensible defaults). Passing the
-      prompt positionally keeps the current non-interactive path unchanged.
-- [ ] **Fuzzy task-pick** for `move` / `block` / `unblock` when the id is omitted: a `search`
-      (autocomplete) prompt over `listTasks()` — pick a task by typing its title instead of
-      copying a UUID. Falls back to a plain list (or errors asking for an id) when non-TTY.
-- [ ] **`template install`** with missing `--cred` slots → prompt for each slot
-      (reuse [`getTemplateSlots`](../packages/cli/src/client.ts)). `--yes` / explicit flags skip
-      all prompts (CI-safe).
+> [`cli/src/lib/prompts.ts`](../packages/cli/src/lib/prompts.ts) centralises the prompts behind a `canPrompt()` (both-TTY) gate — a required-value prompt throws `NonInteractiveError` rather than hanging on a dead stdin (Decision §5; `NO_COLOR` does *not* gate prompts). Theme E will fold `--json` into the same off-switch. Depends-on in the guided `add` stays on the `-d` flag (UUID entry by hand is worse than the flag).
+
+- [x] Added **`@inquirer/prompts`**; replaced `plan`'s `node:readline` confirm and `login`'s raw-mode password with `confirm` / `password` prompts (behaviour-preserving, far less hand-rolled TTY code).
+- [x] **`midnite add`** with no positional → a guided flow: task text, then repo / priority / project (each optional). Passing the prompt positionally keeps the non-interactive path unchanged.
+- [x] **Fuzzy task-pick** (`@inquirer/prompts` `search`) for `move` / `block` / `unblock` when the id is omitted — autocomplete over `listTasks()` by title; `move` also offers a status `select`. Non-TTY → `NonInteractiveError` asking for the id.
+- [x] **`template install`** with missing `--cred` slots → prompts for each unresolved slot; `-y/--yes` (new) or non-TTY skip the prompts (warn + proceed), CI-safe.
 
 ---
 

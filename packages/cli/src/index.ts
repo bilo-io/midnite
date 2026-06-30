@@ -31,6 +31,16 @@ import {
 } from './workflow.js';
 import { parseCredFlag, templateListRows } from './template.js';
 import { banner, getVersion } from './lib/brand.js';
+import {
+  canPrompt,
+  confirmPrompt,
+  optionalTextPrompt,
+  passwordPrompt,
+  pickTask,
+  selectPriority,
+  selectStatus,
+  textPrompt,
+} from './lib/prompts.js';
 import { openWs } from './ws.js';
 
 const program = new Command();
@@ -131,8 +141,13 @@ program
         return;
       }
 
+      // No positional prompt → a guided flow (Theme D). Non-interactive stdin makes
+      // `textPrompt` throw NonInteractiveError, preserving the "prompt required" guard.
       if (!prompt) {
-        throw new Error('a task prompt is required — pass one, or use --bulk with --file/stdin');
+        prompt = await textPrompt('Task', { required: true });
+        if (!opts.repo) defaults.repo = await optionalTextPrompt('Repo');
+        if (opts.priority === undefined) defaults.priority = await selectPriority();
+        if (!opts.project) defaults.projectId = await optionalTextPrompt('Project id');
       }
       if (opts.dependsOn.length > 0) defaults.dependsOn = opts.dependsOn;
       const task = await client().createTask(prompt, defaults);
@@ -161,29 +176,36 @@ program
   });
 
 program
-  .command('move <id> <status>')
-  .description('Move a task to a new status')
-  .action(async (id: string, status: string) => {
-    const task = await client().moveTask(id, parseStatus(status));
+  .command('move [id] [status]')
+  .description('Move a task to a new status (omit the id for a fuzzy task-pick)')
+  .action(async (id: string | undefined, status: string | undefined) => {
+    const c = client();
+    const resolvedId = id ?? (await pickTask(await c.listTasks(), 'Move which task?'));
+    const resolvedStatus = status ? parseStatus(status) : await selectStatus();
+    const task = await c.moveTask(resolvedId, resolvedStatus);
     console.log(`moved ${task.id} → ${task.status}`);
   });
 
 program
-  .command('block <id>')
-  .description('Add a blocker edge: <id> depends on (waits for) the --on task')
+  .command('block [id]')
+  .description('Add a blocker edge: <id> depends on (waits for) the --on task (omit id to pick)')
   .requiredOption('--on <blockerId>', 'the blocker task that must finish first')
-  .action(async (id: string, opts: { on: string }) => {
-    const task = await client().addDependency(id, opts.on);
+  .action(async (id: string | undefined, opts: { on: string }) => {
+    const c = client();
+    const resolvedId = id ?? (await pickTask(await c.listTasks(), 'Block which task?'));
+    const task = await c.addDependency(resolvedId, opts.on);
     const blockers = task.dependsOn ?? [];
     console.log(`blocked ${task.id} on ${opts.on}  (now depends on: ${blockers.join(', ') || 'none'})`);
   });
 
 program
-  .command('unblock <id>')
-  .description('Remove a blocker edge: <id> no longer depends on the --on task')
+  .command('unblock [id]')
+  .description('Remove a blocker edge: <id> no longer depends on the --on task (omit id to pick)')
   .requiredOption('--on <blockerId>', 'the blocker task to drop')
-  .action(async (id: string, opts: { on: string }) => {
-    const task = await client().removeDependency(id, opts.on);
+  .action(async (id: string | undefined, opts: { on: string }) => {
+    const c = client();
+    const resolvedId = id ?? (await pickTask(await c.listTasks(), 'Unblock which task?'));
+    const task = await c.removeDependency(resolvedId, opts.on);
     const blockers = task.dependsOn ?? [];
     console.log(`unblocked ${task.id} from ${opts.on}  (now depends on: ${blockers.join(', ') || 'none'})`);
   });
@@ -500,18 +522,8 @@ program
     console.log(table.toString());
     console.log(`${breakdown.tasks.length} task(s) proposed`);
 
-    // Confirm before creating.
-    let confirmed = opts.yes ?? false;
-    if (!confirmed) {
-      const readline = await import('node:readline');
-      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-      confirmed = await new Promise<boolean>((resolve) => {
-        rl.question('Create these tasks? [y/N] ', (answer) => {
-          rl.close();
-          resolve(answer.trim().toLowerCase() === 'y');
-        });
-      });
-    }
+    // Confirm before creating (inquirer; `--yes` skips, non-TTY defaults to no).
+    const confirmed = (opts.yes ?? false) || (await confirmPrompt('Create these tasks?'));
 
     if (!confirmed) {
       console.log('aborted');
@@ -558,10 +570,11 @@ template
     collect,
     [],
   )
+  .option('-y, --yes', 'skip interactive slot prompts (CI-safe)')
   .action(
     async (
       slugOrId: string,
-      opts: { name?: string; cred: string[] },
+      opts: { name?: string; cred: string[]; yes?: boolean },
     ) => {
       const credentialMap: Record<string, string> = {};
       for (const raw of opts.cred) {
@@ -571,12 +584,17 @@ template
 
       const c = client();
 
-      // Warn about unsatisfied slots before installing.
+      // Resolve unsatisfied slots: prompt for each when interactive (Theme D),
+      // otherwise warn and proceed (CI / --yes leave them unresolved).
       try {
         const { slots } = await c.getTemplateSlots(slugOrId);
         const unresolved = slots.filter((s) => !credentialMap[s.key] && !s.satisfiedBy);
-        if (unresolved.length > 0) {
-          for (const s of unresolved) {
+        for (const s of unresolved) {
+          if (!opts.yes && canPrompt()) {
+            const credId = await optionalTextPrompt(`Credential id for slot "${s.key}" (${s.type})`);
+            if (credId) credentialMap[s.key] = credId;
+            else console.warn(`warning: slot "${s.key}" left unmapped — workflow will have an unresolved credential`);
+          } else {
             console.warn(`warning: slot "${s.key}" (${s.type}) not mapped — workflow will have an unresolved credential`);
           }
         }
@@ -602,47 +620,9 @@ program
   .option('-p, --password <password>', 'skip the password prompt (not recommended)')
   .action(
     async (opts: { url?: string; email?: string; password?: string }) => {
-      const rl = (await import('node:readline')).createInterface({
-        input: process.stdin,
-        output: process.stdout,
-      });
-      const ask = (q: string): Promise<string> =>
-        new Promise((resolve) => rl.question(q, (a) => resolve(a.trim())));
-
-      const email = opts.email ?? (await ask('Email: '));
-      const password =
-        opts.password ??
-        await new Promise<string>((resolve) => {
-          // Hide input if attached to a TTY.
-          if (process.stdin.isTTY) {
-            process.stdout.write('Password: ');
-            process.stdin.setRawMode(true);
-            process.stdin.resume();
-            let buf = '';
-            process.stdin.setEncoding('utf8');
-            const onData = (ch: string): void => {
-              if (ch === '\r' || ch === '\n') {
-                process.stdin.setRawMode(false);
-                process.stdin.pause();
-                process.stdin.removeListener('data', onData);
-                process.stdout.write('\n');
-                resolve(buf);
-              } else if (ch === '') {
-                process.stdin.setRawMode(false);
-                process.exit();
-              } else if (ch === '') {
-                buf = buf.slice(0, -1);
-              } else {
-                buf += ch;
-              }
-            };
-            process.stdin.on('data', onData);
-          } else {
-            rl.question('Password: ', (a) => resolve(a.trim()));
-          }
-        });
-
-      rl.close();
+      // inquirer prompts (Theme D) replace the hand-rolled readline + raw-mode TTY.
+      const email = opts.email ?? (await textPrompt('Email', { required: true }));
+      const password = opts.password ?? (await passwordPrompt());
 
       const baseUrl = opts.url ?? resolveBaseUrl(program.opts().gateway as string | undefined);
       const c = createClient(baseUrl);
