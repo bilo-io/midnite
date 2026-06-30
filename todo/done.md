@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-30 — feat: schedule run-history + Daily standup preset — Phase 45 Theme D — **Phase 45 COMPLETE**
+
+Closes Phase 45. The Schedules facade now answers "did my schedule fire, and what did it open?" and ships a one-click headline starter.
+
+- [x] **web**: `ScheduleRunHistory` — an inline "History" disclosure on each schedule row lists recent runs (status + time), each linking to the board task it created (read from the `task.create` node's run output). The list endpoint hydrates runs shallow, so the shown runs are re-fetched in detail (`getWorkflowRun`) to resolve the link
+- [x] **web**: `SchedulePresetMenu` ("New from preset") installs task-creating scheduling starters; `lib/schedule-runs.ts` holds the pure `createdTaskFromRun` + `schedulePresetTemplates` glue (filtered to scheduling templates tagged `recurring-task`)
+- [x] **gateway**: `daily-standup` system template seed (`[schedule: weekdays 09:00] → [task.create]`, tagged `recurring-task`) — Decision §7 (a Phase 36 template, not hardcoded)
+- [x] **Deviation**: built a focused run list rather than reusing the canvas-coupled `run-history-panel.tsx` (which replays node state onto the ReactFlow editor) — the facade has no canvas
+- [x] **tests**: `schedule-runs.test.ts` (6), `daily-standup.seed.test.ts` (2), `schedules-view.test.tsx` extended (history expand→task link, preset show/hide); `schedule-runs.shots.ts` Playwright capture
+
 ## 2026-06-30 — feat: signed webhook delivery engine — Phase 44 Theme B (PR #249)
 
 Outbound endpoints now actually fire. Task transitions become signed, retried, recorded HTTP deliveries — the heart of Phase 44.
