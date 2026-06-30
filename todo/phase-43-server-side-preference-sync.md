@@ -1,10 +1,10 @@
-# Phase 42 — Server-Side Preference Sync
+# Phase 43 — Server-Side Preference Sync
 
 > Today every personal preference midnite knows about — the Phase 39 appearance
 > set (background, accent, density, motion, font), the theme, the side-nav mode,
 > the feature toggles, and the screensaver/cycle timers — lives only in the
 > browser's `localStorage`. Open midnite on a second machine (or a fresh profile)
-> and you start from defaults; clear site data and your setup is gone. **Phase 42
+> and you start from defaults; clear site data and your setup is gone. **Phase 43
 > floats those preferences up to the gateway, keyed per user**, so a signed-in
 > account carries its look-and-feel between devices. It's the natural follow-on
 > to Phase 33 (accounts + `/users/me` + JWT auth) and Phase 39 (the prefs
