@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-30 — feat: UserPreferences sync contract — Phase 43 Theme A (PR #240)
+
+The shared contract for server-side preference sync: the synced subset of the UI prefs, defined once in `shared` so the gateway (Theme B) and web (Theme C) agree.
+
+- [x] **shared**: [`preferences.ts`](../packages/shared/src/preferences.ts) — `UserPreferencesSchema` (theme, appearance: background/bg-intensity/accent/motion/density/uiFont/effects, navMode, inactivity/cycle timers, feature toggles) with per-field `.default()`s; schema-derived `DEFAULT_USER_PREFERENCES`; `PutPreferencesRequestSchema` (full-object replace) + `PreferencesResponseSchema` (`{ preferences, updatedAt }`). Unknown keys stripped, partial blobs fill defaults (forward-compatible). Exported from the package index
+- [x] **web**: refactored `AppSettings` to `Omit<UserPreferences, 'theme' | 'features'> & { features: Record<FeatureKey,boolean>; …device-only }` — `DEFAULT_SETTINGS` now derives the synced defaults from `DEFAULT_USER_PREFERENCES`; the synced-field types (`NavMode`/`BackgroundPattern`/`AccentId`/…) are re-exported from `@midnite/shared`, so existing `@/lib/app-settings` import sites are untouched
+- [x] **Decisions (settled at pickup)**: `theme` is in the synced contract but keeps its own `midnite.theme` store (sync layer reconciles in Theme C); passcode prefs + notify toggle + agent-pool size stay device-local; no `MidniteClient` in `shared`, so typed client methods move to Theme B/C
+- [x] Tests: 10 shared unit tests (parse empty→defaults, partial overlay, nested-effect fill, unknown-key strip, full round-trip, enum reject, loose feature map, response null/ISO `updatedAt`). Local gate green (typecheck 13/13, shared+web lint 0 errors, shared 479 + web 593 tests)
+
 ## 2026-06-30 — feat: interface-font setting — Phase 39 Theme C (PR #238) — **Phase 39 COMPLETE**
 
 The last open box in Phase 39: a curated **Interface font** picker in Appearance, completing the personalization surface (39 → 25/25).

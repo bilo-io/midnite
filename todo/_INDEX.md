@@ -66,7 +66,7 @@
 | [40 · Ideas pipeline](phase-40-ideas-pipeline.md) | ✅ DONE | 51/51 | `██████████` | 100% | — | — |
 | [41 · Command palette](phase-41-command-palette.md) | ✅ DONE | 32/32 | `██████████` | 100% | — | — ² |
 | [42 · Task detail routing](phase-42-task-detail-routing.md) | ◻ TODO | 0/11 | `░░░░░░░░░░` | 0% | — | A B C |
-| [43 · Preference sync](phase-43-server-side-preference-sync.md) | 🔄 WIP | 0/? | `░░░░░░░░░░` | 0% | A | B C |
+| [43 · Preference sync](phase-43-server-side-preference-sync.md) | 🔄 WIP | 4/24 | `██░░░░░░░░` | 17% | — | B C |
 | [44 · Outbound webhooks](phase-44-outbound-webhooks.md) | ◻ TODO | 0/16 | `░░░░░░░░░░` | 0% | — | A B C D |
 | [45 · Recurring/scheduled tasks](phase-45-recurring-scheduled-tasks.md) | 🔄 WIP | 0/15 | `░░░░░░░░░░` | 0% | A | B C D |
 
@@ -94,7 +94,7 @@ so you can pick from this file without opening the phase doc first.
 - ◻ **C** — Contextual "Move to…" palette commands (closes Phase 41's 2 deferred boxes) **[S]**
 
 ### [Phase 43 — Server-side preference sync](phase-43-server-side-preference-sync.md)
-- ◻ **A** — `UserPreferencesSchema` contract in `shared` (synced subset of `AppSettings`) **[S–M]**
+- ✅ **A** — `UserPreferencesSchema` contract in `shared` (synced subset of `AppSettings`) (PR #240) **[S–M]**
 - ◻ **B** — Gateway `user_preferences` table + `GET`/`PUT /users/me/preferences` (authed) **[M]**
 - ◻ **C** — Web sync layer (hydrate-on-login, debounced write-through, LWW; localStorage-only when signed out) **[M]**
 
