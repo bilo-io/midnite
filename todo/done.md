@@ -13,6 +13,15 @@ Closes Phase 45. The Schedules facade now answers "did my schedule fire, and wha
 - [x] **gateway**: `daily-standup` system template seed (`[schedule: weekdays 09:00] → [task.create]`, tagged `recurring-task`) — Decision §7 (a Phase 36 template, not hardcoded)
 - [x] **Deviation**: built a focused run list rather than reusing the canvas-coupled `run-history-panel.tsx` (which replays node state onto the ReactFlow editor) — the facade has no canvas
 - [x] **tests**: `schedule-runs.test.ts` (6), `daily-standup.seed.test.ts` (2), `schedules-view.test.tsx` extended (history expand→task link, preset show/hide); `schedule-runs.shots.ts` Playwright capture
+## 2026-06-30 — feat: webhook deliveries log + test + redeliver — Phase 44 Theme D (PR #251)
+
+Outbound webhooks are no longer a black box — you can see every attempt, fire a test, and replay a failure. Completes the observability layer on Theme B's delivery engine.
+
+- [x] **gateway**: `WebhooksService.listDeliveries` (any member) + `sendTest` / `redeliver` (team-admin), reusing Theme B's `WebhookDeliveryService`. Added `dispatchBody(webhook, event, body)` so redeliver replays the *stored* bytes faithfully (Decision §6). Routes: `GET /webhooks/:id/deliveries`, `POST :id/test`, `POST :id/deliveries/:deliveryId/redeliver`.
+- [x] **shared**: `WebhookDeliveryResponse` contract + `listWebhookDeliveries` / `sendWebhookTest` / `redeliverWebhook` client methods.
+- [x] **web**: Settings → Integrations gains a per-endpoint **expandable deliveries log** (status / event / response code / time, lazy-loaded), a **Send test** button (synthetic `task.updated`, shows ✓/✗ + auto-opens the log), and a **Redeliver** action per attempt.
+- [x] Tests: gateway `webhooks.deliveries.service` (5 — list scope, synthetic test dispatch, faithful redeliver, 404s), web RTL (2 — expand log + send-test result). Gateway + web typecheck green; webhooks suite 38, integrations 5. (Live screenshot skipped — the e2e/storybook harness was SIGKILL'd under parallel-agent load; UI is covered by RTL.)
+- [x] **Drive-by repo repair (separate commit to main)**: removed git admin files (`HEAD`/`index`/`gitdir`/`commondir`/`logs`/`ORIG_HEAD`) a parallel agent had `git add -A`'d into the repo root — the tracked `HEAD` pinned a feature branch, poisoning every fresh worktree.
 
 ## 2026-06-30 — feat: signed webhook delivery engine — Phase 44 Theme B (PR #249)
 

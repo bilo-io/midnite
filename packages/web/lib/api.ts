@@ -228,12 +228,16 @@ import {
   type PreferencesResponse,
   type UserPreferences,
   ListWebhooksResponseSchema,
+  ListWebhookDeliveriesResponseSchema,
   WebhookResponseSchema,
   WebhookSecretResponseSchema,
+  WebhookDeliveryResponseSchema,
   type ListWebhooksResponse,
+  type ListWebhookDeliveriesResponse,
   type WebhookCreateRequest,
   type WebhookResponse,
   type WebhookSecretResponse,
+  type WebhookDeliveryResponse,
   type WebhookUpdateRequest,
 } from '@midnite/shared';
 import { z } from 'zod';
@@ -386,6 +390,36 @@ export async function rotateWebhookSecret(id: string): Promise<WebhookSecretResp
     `/webhooks/${encodeURIComponent(id)}/rotate`,
     { method: 'POST', headers: JSON_HEADERS },
     WebhookSecretResponseSchema,
+  );
+}
+
+/** Recent delivery attempts for one endpoint (Phase 44 Theme D). Any team member. */
+export async function listWebhookDeliveries(id: string): Promise<ListWebhookDeliveriesResponse> {
+  return fetchJson(
+    `/webhooks/${encodeURIComponent(id)}/deliveries`,
+    undefined,
+    ListWebhookDeliveriesResponseSchema,
+  );
+}
+
+/** Fire a synthetic `task.updated` at the endpoint to confirm wiring (team-admin). */
+export async function sendWebhookTest(id: string): Promise<WebhookDeliveryResponse> {
+  return fetchJson(
+    `/webhooks/${encodeURIComponent(id)}/test`,
+    { method: 'POST', headers: JSON_HEADERS },
+    WebhookDeliveryResponseSchema,
+  );
+}
+
+/** Re-fire a recorded delivery's stored payload (faithful replay; team-admin). */
+export async function redeliverWebhook(
+  id: string,
+  deliveryId: string,
+): Promise<WebhookDeliveryResponse> {
+  return fetchJson(
+    `/webhooks/${encodeURIComponent(id)}/deliveries/${encodeURIComponent(deliveryId)}/redeliver`,
+    { method: 'POST', headers: JSON_HEADERS },
+    WebhookDeliveryResponseSchema,
   );
 }
 

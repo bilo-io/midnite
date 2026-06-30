@@ -1,25 +1,115 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import {
   STATUSES,
   WEBHOOK_EVENTS,
   WEBHOOK_PROVIDERS,
   type Status,
   type Webhook,
+  type WebhookDelivery,
   type WebhookEvent,
   type WebhookProvider,
 } from '@midnite/shared';
 import {
   createWebhook,
   deleteWebhook,
+  listWebhookDeliveries,
   listWebhooks,
+  redeliverWebhook,
   rotateWebhookSecret,
+  sendWebhookTest,
   updateWebhook,
 } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+
+function fmtTime(iso: string): string {
+  const ms = Date.parse(iso);
+  if (Number.isNaN(ms)) return iso;
+  try {
+    return new Date(ms).toLocaleString();
+  } catch {
+    return iso;
+  }
+}
+
+// ── Deliveries panel ──────────────────────────────────────────────────────────
+
+function DeliveriesPanel({ webhookId }: { webhookId: string }) {
+  const [deliveries, setDeliveries] = useState<WebhookDelivery[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [redelivering, setRedelivering] = useState<string | null>(null);
+
+  const load = () =>
+    listWebhookDeliveries(webhookId)
+      .then((res) => setDeliveries(res.deliveries))
+      .catch((e) => setError(errMsg(e)));
+
+  useEffect(() => {
+    void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load is stable for this id
+  }, [webhookId]);
+
+  const handleRedeliver = async (deliveryId: string) => {
+    setRedelivering(deliveryId);
+    try {
+      await redeliverWebhook(webhookId, deliveryId);
+      await load();
+    } catch (e) {
+      setError(errMsg(e));
+    } finally {
+      setRedelivering(null);
+    }
+  };
+
+  if (error) return <p className="px-4 py-3 text-xs text-destructive">{error}</p>;
+  if (!deliveries) return <p className="px-4 py-3 text-xs text-muted-foreground">Loading deliveries…</p>;
+  if (deliveries.length === 0)
+    return (
+      <p className="px-4 py-3 text-xs text-muted-foreground">
+        No deliveries yet. Move a matching task — or hit “Send test”.
+      </p>
+    );
+
+  return (
+    <table className="w-full text-xs">
+      <tbody className="divide-y divide-border/60">
+        {deliveries.map((d) => (
+          <tr key={d.id}>
+            <td className="px-4 py-2">
+              <span
+                className={`inline-block rounded px-1.5 py-0.5 font-medium ${
+                  d.status === 'success'
+                    ? 'bg-success/15 text-success'
+                    : 'bg-destructive/15 text-destructive'
+                }`}
+              >
+                {d.status}
+              </span>
+            </td>
+            <td className="px-4 py-2 text-muted-foreground">{d.event.replace('task.', '')}</td>
+            <td className="px-4 py-2 font-mono text-muted-foreground">
+              {d.responseCode ?? (d.error ? 'err' : '—')}
+            </td>
+            <td className="px-4 py-2 text-muted-foreground">{fmtTime(d.createdAt)}</td>
+            <td className="px-4 py-2 text-right">
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={redelivering === d.id}
+                onClick={() => void handleRedeliver(d.id)}
+              >
+                {redelivering === d.id ? 'Redelivering…' : 'Redeliver'}
+              </Button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
 
 function errMsg(e: unknown): string {
   return e instanceof Error ? e.message : 'Something went wrong';
@@ -212,6 +302,8 @@ export function IntegrationsView() {
   const [showCreate, setShowCreate] = useState(false);
   const [revealedSecret, setRevealedSecret] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [testNote, setTestNote] = useState<{ id: string; ok: boolean } | null>(null);
 
   useEffect(() => {
     listWebhooks()
@@ -262,6 +354,22 @@ export function IntegrationsView() {
     }
   };
 
+  const handleSendTest = async (id: string) => {
+    setBusy(id);
+    setTestNote(null);
+    try {
+      const res = await sendWebhookTest(id);
+      setTestNote({ id, ok: res.delivery.status === 'success' });
+      setExpanded(id); // reveal the deliveries log so the test shows up
+    } catch (e) {
+      setError(errMsg(e));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const toggleExpanded = (id: string) => setExpanded((prev) => (prev === id ? null : id));
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -300,42 +408,74 @@ export function IntegrationsView() {
             </thead>
             <tbody className="divide-y divide-border">
               {webhooks.map((w) => (
-                <tr key={w.id}>
-                  <td className="px-4 py-3">
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
-                      {PROVIDER_LABEL[w.provider]}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{hostOf(w.url)}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{eventsSummary(w)}</td>
-                  <td className="px-4 py-3">
-                    <Switch
-                      checked={w.enabled}
-                      disabled={busy === w.id}
-                      onCheckedChange={() => void handleToggle(w)}
-                      aria-label={`Toggle ${hostOf(w.url)}`}
-                    />
-                  </td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={busy === w.id}
-                      onClick={() => void handleRotate(w.id)}
-                    >
-                      Rotate secret
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:text-destructive"
-                      disabled={busy === w.id}
-                      onClick={() => void handleDelete(w.id)}
-                    >
-                      Delete
-                    </Button>
-                  </td>
-                </tr>
+                <Fragment key={w.id}>
+                  <tr>
+                    <td className="px-4 py-3">
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
+                        {PROVIDER_LABEL[w.provider]}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{hostOf(w.url)}</td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">{eventsSummary(w)}</td>
+                    <td className="px-4 py-3">
+                      <Switch
+                        checked={w.enabled}
+                        disabled={busy === w.id}
+                        onCheckedChange={() => void handleToggle(w)}
+                        aria-label={`Toggle ${hostOf(w.url)}`}
+                      />
+                    </td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      {testNote?.id === w.id && (
+                        <span
+                          className={`mr-2 text-xs ${testNote.ok ? 'text-success' : 'text-destructive'}`}
+                        >
+                          {testNote.ok ? '✓ test sent' : '✗ test failed'}
+                        </span>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={busy === w.id}
+                        onClick={() => void handleSendTest(w.id)}
+                      >
+                        Send test
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleExpanded(w.id)}
+                        aria-expanded={expanded === w.id}
+                      >
+                        {expanded === w.id ? 'Hide log' : 'Deliveries'}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={busy === w.id}
+                        onClick={() => void handleRotate(w.id)}
+                      >
+                        Rotate secret
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        disabled={busy === w.id}
+                        onClick={() => void handleDelete(w.id)}
+                      >
+                        Delete
+                      </Button>
+                    </td>
+                  </tr>
+                  {expanded === w.id && (
+                    <tr>
+                      <td colSpan={5} className="bg-muted/30 p-0">
+                        <DeliveriesPanel webhookId={w.id} />
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
               ))}
             </tbody>
           </table>
