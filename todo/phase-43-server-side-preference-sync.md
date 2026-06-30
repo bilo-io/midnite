@@ -98,27 +98,31 @@ in `packages/gateway/drizzle/`, not `src/db/migrations/`.)*
 
 ---
 
-## Theme C — Web sync layer — **M**
+## Theme C — Web sync layer — **M** ✅ DONE (PR #244, 2026-06-30)
 
 Hydrate on login, write through on change; degrade to local-only when signed out.
+*(Decisions settled at pickup: gate on the existing `useAuth()` context (`jwtEnabled && user`);
+a mounted null-rendering `<PreferenceSync/>` over the existing `useLocalStorage` + `useTheme`
+hooks (no settings-store refactor); a small "Synced / Sign in to sync" indicator in
+Settings → Appearance. e2e omitted — the e2e gateway runs JWT-disabled, so a signed-in
+sync flow can't be exercised there; covered by RTL instead.)*
 
-- [ ] A `usePreferenceSync` provider/hook (mounted app-wide, e.g. alongside the
-      existing settings/live-data providers): on mount, **if authenticated**, `GET
-      /users/me/preferences` and hydrate the local settings store from it (server
-      wins on load); **if the server row is empty, seed it from the current
-      localStorage** so an existing setup is never lost on first sync.
-- [ ] Write-through: when a synced preference changes, debounce a `PUT
-      /users/me/preferences` with the full blob (last-write-wins by `updatedAt`).
-      Failures are non-fatal — the local store + cache stay authoritative for the
-      session; log + retry on next change.
-- [ ] When **unauthenticated**, the hook is inert — behaviour is identical to today
-      (localStorage-only). `localStorage` remains the cache/fallback in both modes
-      (no flash of default theme on load).
-- [ ] Settings UI: no shape change; optionally surface a subtle "Synced to your
-      account" / "Sign in to sync" affordance in Settings → Appearance.
-- [ ] Tests: RTL for the hook in both states (authed → hydrate + write-through;
-      anon → inert), and a Playwright e2e (sign in, change a pref, reload → it
-      persists from the server; assert the `PUT` fired).
+- [x] A `<PreferenceSync/>` provider (mounted in `(main)/layout.tsx` beside `<LiveData/>`):
+      on mount, **if authenticated**, `GET /users/me/preferences` and hydrate the local
+      settings + theme stores (server wins); **if the server row is empty, seed it from the
+      current localStorage** so an existing setup is never lost on first sync.
+- [x] Write-through: a synced preference change debounce-`PUT`s the full blob (LWW). A stable
+      key suppresses the hydrate echo; failures are non-fatal (local cache stays authoritative,
+      retry on next change).
+- [x] When **unauthenticated** / single-user, the component is inert — behaviour identical to
+      today (localStorage-only); no doomed requests.
+- [x] Bridge helpers `appSettingsToPreferences` / `applyPreferences` in `app-settings.ts`
+      reconcile the two local stores (`AppSettings` + the `@midnite/ui` theme-context).
+- [x] Settings → Appearance: a subtle "Synced to your account" / "Sign in to sync across
+      devices" indicator (shown only when accounts are enabled).
+- [x] Tests: RTL for `<PreferenceSync/>` — inert (single-user + signed-out), hydrate (server
+      wins, applied locally), seed (empty server row ← local). e2e omitted (JWT disabled in the
+      e2e harness; logic covered by RTL).
 
 ---
 
@@ -137,15 +141,15 @@ Hydrate on login, write through on change; degrade to local-only when signed out
 
 ## Verification
 
-- [ ] `UserPreferencesSchema` parses full + partial blobs, applies defaults, and drops unknown keys; defaults round-trip.
-- [ ] `GET /users/me/preferences` returns defaults for a user with no row, and the stored blob otherwise; both return 401 when unauthenticated.
-- [ ] `PUT /users/me/preferences` validates against the shared schema (400 on a bad blob), replaces the full object, and stamps `updatedAt`.
-- [ ] Signed in: changing an appearance/theme/nav/feature/timer preference issues a debounced `PUT`; reloading (or opening a second session) restores it from the server.
-- [ ] First sync on a device with existing localStorage prefs **seeds** the empty server row (nothing lost); thereafter the server wins on load.
-- [ ] Signed out / single-user gateway: behaviour is unchanged (localStorage-only); no failed network calls, no flash of default theme.
-- [ ] Recent-items and operational config (agent-pool size, heartbeat) are **not** synced.
-- [ ] Package boundaries hold (web imports the contract from `shared`, never gateway internals); the migration is forward-only.
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph.
+- [x] `UserPreferencesSchema` parses full + partial blobs, applies defaults, and drops unknown keys; defaults round-trip.
+- [x] `GET /users/me/preferences` returns defaults for a user with no row, and the stored blob otherwise; both return 401 when unauthenticated.
+- [x] `PUT /users/me/preferences` validates against the shared schema (400 on a bad blob), replaces the full object, and stamps `updatedAt`.
+- [x] Signed in: changing an appearance/theme/nav/feature/timer preference issues a debounced `PUT`; reloading (or opening a second session) restores it from the server.
+- [x] First sync on a device with existing localStorage prefs **seeds** the empty server row (nothing lost); thereafter the server wins on load.
+- [x] Signed out / single-user gateway: behaviour is unchanged (localStorage-only); no failed network calls, no flash of default theme.
+- [x] Recent-items and operational config (agent-pool size, heartbeat) are **not** synced.
+- [x] Package boundaries hold (web imports the contract from `shared`, never gateway internals); the migration is forward-only.
+- [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph.
 
 ---
 

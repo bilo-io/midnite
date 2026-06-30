@@ -316,3 +316,52 @@ export const DEFAULT_PROFILE: Profile = {
 };
 
 export const PROFILE_STORAGE_KEY = 'midnite.profile';
+
+// ── Bridge to the synced `UserPreferences` contract (Phase 43) ──────────────────
+// The synced blob spans two local stores: `AppSettings` (this module's
+// localStorage) and the theme (the `@midnite/ui` theme-context's own key). These
+// helpers project between `AppSettings` + theme and the shared `UserPreferences`.
+
+/** Project the local settings + current theme into the synced `UserPreferences`. */
+export function appSettingsToPreferences(
+  settings: AppSettings,
+  theme: UserPreferences['theme'],
+): UserPreferences {
+  return {
+    theme,
+    navMode: settings.navMode,
+    backgroundPattern: settings.backgroundPattern,
+    bgIntensity: settings.bgIntensity,
+    accent: settings.accent,
+    motion: settings.motion,
+    density: settings.density,
+    uiFont: settings.uiFont,
+    effects: settings.effects,
+    inactivityTimeoutS: settings.inactivityTimeoutS,
+    cycleDurationS: settings.cycleDurationS,
+    features: settings.features,
+  };
+}
+
+/** Apply incoming synced preferences onto the local settings store + theme. */
+export function applyPreferences(
+  prefs: UserPreferences,
+  setSettings: (next: AppSettings | ((prev: AppSettings) => AppSettings)) => void,
+  setTheme: (theme: UserPreferences['theme']) => void,
+): void {
+  setSettings((prev) => ({
+    ...prev,
+    navMode: prefs.navMode,
+    backgroundPattern: prefs.backgroundPattern,
+    bgIntensity: prefs.bgIntensity,
+    accent: prefs.accent,
+    motion: prefs.motion,
+    density: prefs.density,
+    uiFont: prefs.uiFont,
+    effects: prefs.effects,
+    inactivityTimeoutS: prefs.inactivityTimeoutS,
+    cycleDurationS: prefs.cycleDurationS,
+    features: { ...prev.features, ...prefs.features } as AppSettings['features'],
+  }));
+  setTheme(prefs.theme);
+}
