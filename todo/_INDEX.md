@@ -68,7 +68,7 @@
 | [42 · Task detail routing](phase-42-task-detail-routing.md) | 🔄 WIP | 0/11 | `░░░░░░░░░░` | 0% | A | B C |
 | [43 · Preference sync](phase-43-server-side-preference-sync.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
 | [44 · Outbound webhooks](phase-44-outbound-webhooks.md) | ◻ TODO | 0/16 | `░░░░░░░░░░` | 0% | — | A B C D |
-| [45 · Recurring/scheduled tasks](phase-45-recurring-scheduled-tasks.md) | 🔄 WIP | 7/15 | `█████░░░░░` | 47% | C | D |
+| [45 · Recurring/scheduled tasks](phase-45-recurring-scheduled-tasks.md) | 🔄 WIP | 10/15 | `███████░░░` | 67% | — | D |
 
 **Headline:** the original **0–41 roadmap is 100% complete** (Phases 39 & 41 closed 2026-06-30). **Phases 42 (task detail routing), 43 (server-side preference sync), 44 (outbound webhooks & integrations), and 45 (recurring/scheduled tasks)** are freshly planned and open — all their themes are pickable. (An *earlier* Phase 42 was a parallel restatement of Phase 40, folded into Phase 40 Theme G and removed 2026-06-27; the current 42 & 43 are new, unrelated phases — two brainstorm sessions ran concurrently, so the preference-sync plan took the next free number, 43.)
 
@@ -108,7 +108,7 @@ so you can pick from this file without opening the phase doc first.
 *(Workflow-backed: a recurring task is a `[trigger.schedule] → [task.create]` workflow — reuses the workflow scheduler/runs/run-history.)*
 - ✅ **A** — `task.create` workflow action/executor (the missing link) (#241) **[M]**
 - ✅ **B** — Recurrence presets (+ raw-cron escape hatch) on the schedule trigger (#243) **[S–M]**
-- ◻ **C** — Dedicated "Schedules" facade view (list/create/edit/run-now) **[M]**
+- ✅ **C** — Dedicated "Schedules" facade view (list/create/edit/run-now) (#247) **[M]**
 - ◻ **D** — Run-history surfacing + "Daily standup" starter preset **[S]**
 
 ## Maintenance
