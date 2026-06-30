@@ -215,6 +215,38 @@ export const DENSITY_OPTIONS: { value: Density; label: string; hint: string }[] 
   { value: 'compact', label: 'Compact', hint: 'Tighter spacing — fits more on screen' },
 ];
 
+/**
+ * The interface font applied to body text app-wide via a `--font-ui` CSS custom
+ * property on `<html>` (consumed by the body `font-family` in globals.css). Each
+ * option is a **system-font stack** — no web fonts are downloaded, so the choice
+ * applies instantly with no load-flash. `system` (default) sets no override,
+ * leaving the platform default sans stack untouched. Code/terminal (`font-mono`)
+ * and the wordmark (`font-brand`) keep their own families via the Tailwind
+ * utility cascade, so they're unaffected by this setting.
+ */
+export type UiFont = 'system' | 'grotesk' | 'humanist' | 'serif' | 'mono';
+export const UI_FONT_DEFAULT: UiFont = 'system';
+
+/**
+ * Font-family stacks for the non-`system` UI fonts. System fonts only — each
+ * family is broadly available on at least one major platform and degrades
+ * gracefully to the generic family. `system` is absent here: it clears the var.
+ */
+export const UI_FONT_STACK: Record<Exclude<UiFont, 'system'>, string> = {
+  grotesk: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+  humanist: "Optima, Candara, 'Segoe UI', 'Trebuchet MS', sans-serif",
+  serif: "Georgia, Cambria, 'Times New Roman', Times, serif",
+  mono: "ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace",
+};
+
+export const UI_FONT_OPTIONS: { value: UiFont; label: string; hint: string }[] = [
+  { value: 'system', label: 'System', hint: 'Your platform default sans-serif' },
+  { value: 'grotesk', label: 'Grotesk', hint: 'Clean neo-grotesque sans' },
+  { value: 'humanist', label: 'Humanist', hint: 'Warmer humanist sans' },
+  { value: 'serif', label: 'Serif', hint: 'Classic serif' },
+  { value: 'mono', label: 'Mono', hint: 'Monospaced' },
+];
+
 /** Opacity of the animated gradient at each intensity level. */
 export type BgIntensity = 'subtle' | 'balanced' | 'bold';
 export const BG_INTENSITY_DEFAULT: BgIntensity = 'balanced';
@@ -251,6 +283,8 @@ export type AppSettings = {
   motion: Motion;
   /** UI density — `comfortable` (default) or `compact` (tighter spacing + type scale). */
   density: Density;
+  /** Interface font for body text (`system` default; others are system-font stacks). */
+  uiFont: UiFont;
   /** Per-effect visual toggles (page reveal, typewriter, frosted glass). */
   effects: VisualEffects;
   /**
@@ -275,6 +309,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   accent: ACCENT_DEFAULT,
   motion: MOTION_DEFAULT,
   density: DENSITY_DEFAULT,
+  uiFont: UI_FONT_DEFAULT,
   effects: DEFAULT_EFFECTS,
   notifyTaskUpdates: false,
   features: DEFAULT_FEATURE_FLAGS,

@@ -62,13 +62,12 @@
 | [36 · Template marketplace](phase-36-workflow-template-marketplace.md) | ✅ DONE | 40/40 | `██████████` | 100% | — | — |
 | [37 · AI code review](phase-37-ai-code-review.md) | ✅ DONE | 35/35 | `██████████` | 100% | — | — |
 | [38 · Search scoping + service tokens](phase-38-search-scoping-service-tokens.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
-| [39 · Visual customization](phase-39-visual-customization.md) | 🔄 WIP | 24/25 | `█████████░` | 96% | C | — ¹ |
+| [39 · Visual customization](phase-39-visual-customization.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
 | [40 · Ideas pipeline](phase-40-ideas-pipeline.md) | ✅ DONE | 51/51 | `██████████` | 100% | — | — |
 | [41 · Command palette](phase-41-command-palette.md) | ✅ DONE | 32/32 | `██████████` | 100% | — | — ² |
 
-**Headline:** the original 0–38 roadmap is **100% complete**, and **Phases 40 & 41 are now complete** too. Only 39 remains — at its last `⏳`/optional item, no pickable theme. (Phase 42 was a parallel restatement of Phase 40 — its unique sync-back layer landed as Phase 40 Theme G; the doc was removed on 2026-06-27.)
+**Headline:** the **entire 0–41 roadmap is now 100% complete.** Phases 39 (visual customization, UI font #238) and 41 (command palette, verification #237) both closed on 2026-06-30; no pickable themes remain. (Phase 42 was a parallel restatement of Phase 40 — its unique sync-back layer landed as Phase 40 Theme G; the doc was removed on 2026-06-27.)
 
-¹ Phase 39 — themes A–E all landed; the only open box is an `⏳` optional UI-font item in Theme C. No pickable theme.
 ² Phase 41 — themes A–D all landed and the verification checklist is signed off (PR #237). The 3 remaining boxes are all `⏳` deferred (contextual task-detail commands ×2 — no `/tasks/:id` route — and the `E` edit-form shortcut). No pickable theme.
 
 ## Theme key (active phases)

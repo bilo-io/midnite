@@ -4,11 +4,13 @@ import {
   BG_INTENSITY_DEFAULT,
   DEFAULT_EFFECTS,
   SETTINGS_STORAGE_KEY,
+  UI_FONT_STACK,
   type AccentId,
   type BackgroundPattern,
   type BgIntensity,
   type Density,
   type Motion,
+  type UiFont,
   type VisualEffects,
 } from './app-settings';
 
@@ -74,6 +76,25 @@ export function applyBackground(pattern: BackgroundPattern, intensity: BgIntensi
 }
 
 /**
+ * Apply the interface font by setting the `--font-ui` CSS custom property (the
+ * body `font-family` in globals.css falls through to the platform stack when it's
+ * unset) and a `data-ui-font` attribute on <html>. `system` clears both, so the
+ * default platform sans stack applies — reproducing today's look exactly. Stacks
+ * are system fonts only, so the change is instant with no download/flash.
+ */
+export function applyUiFont(font: UiFont): void {
+  const html = document.documentElement;
+  const stack = UI_FONT_STACK[font as Exclude<UiFont, 'system'>];
+  if (!stack) {
+    html.style.removeProperty('--font-ui');
+    html.removeAttribute('data-ui-font');
+    return;
+  }
+  html.style.setProperty('--font-ui', stack);
+  html.setAttribute('data-ui-font', font);
+}
+
+/**
  * Apply the per-effect toggles as `data-no-*` attributes on <html> (set only
  * when an effect is *disabled*). globals.css gates each effect on its attribute.
  */
@@ -100,4 +121,6 @@ const ACCENT_MAP = Object.fromEntries(
  */
 export const appearanceInitScript = `(function(){try{var s=JSON.parse(localStorage.getItem('${SETTINGS_STORAGE_KEY}')||'{}');var h=document.documentElement;var M=${JSON.stringify(
   ACCENT_MAP,
-)};var v=M[s.accent];if(v){h.style.setProperty('--accent-h',v[0]);h.style.setProperty('--accent-s',v[1]);h.setAttribute('data-accent',s.accent);}h.setAttribute('data-motion',s.motion||'system');if(s.density==='compact')h.setAttribute('data-density','compact');var bg=s.backgroundPattern||'${BACKGROUND_PATTERN_DEFAULT}';h.setAttribute('data-bg',bg);if(bg==='gradient')h.setAttribute('data-bg-intensity',s.bgIntensity||'${BG_INTENSITY_DEFAULT}');var e=s.effects||{};if(e.pageReveal===false)h.setAttribute('data-no-page-reveal','');if(e.typewriter===false)h.setAttribute('data-no-typewriter','');if(e.glass===false)h.setAttribute('data-no-glass','');}catch(e){}})();`;
+)};var v=M[s.accent];if(v){h.style.setProperty('--accent-h',v[0]);h.style.setProperty('--accent-s',v[1]);h.setAttribute('data-accent',s.accent);}h.setAttribute('data-motion',s.motion||'system');if(s.density==='compact')h.setAttribute('data-density','compact');var F=${JSON.stringify(
+  UI_FONT_STACK,
+)};var f=F[s.uiFont];if(f){h.style.setProperty('--font-ui',f);h.setAttribute('data-ui-font',s.uiFont);}var bg=s.backgroundPattern||'${BACKGROUND_PATTERN_DEFAULT}';h.setAttribute('data-bg',bg);if(bg==='gradient')h.setAttribute('data-bg-intensity',s.bgIntensity||'${BG_INTENSITY_DEFAULT}');var e=s.effects||{};if(e.pageReveal===false)h.setAttribute('data-no-page-reveal','');if(e.typewriter===false)h.setAttribute('data-no-typewriter','');if(e.glass===false)h.setAttribute('data-no-glass','');}catch(e){}})();`;

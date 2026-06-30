@@ -44,13 +44,13 @@ Let people tint the app to their taste, on top of the design tokens.
 
 ---
 
-## Theme C — Density & typography scale — **S–M** — ✅ DONE (PR #220, 2026-06-26)
+## Theme C — Density & typography scale — **S–M** — ✅ DONE (PR #220, 2026-06-26; UI font #238, 2026-06-30)
 
 Tune information density for big monitors vs. laptops.
 
 - [x] A **density** setting (`comfortable` / `compact`) applied via a `data-density` attribute on `<html>`; drives root `font-size` (16px → 14px compact) so all rem-based Tailwind utilities scale proportionally — no component changes required.
 - [x] Keep it modest — two levels, applied to root type scale; no layout breakage on board, office HUD, or settings.
-- [ ] ⏳ (Optional, scope-permitting) a **UI font** choice distinct from the wordmark font — only if it lands cleanly via a single `--font-ui` var.
+- [x] (Optional) a **UI font** choice distinct from the wordmark font — landed cleanly via a single `--font-ui` var. An "Interface font" control in Appearance offers System (default) + Grotesk/Humanist/Serif/Mono **system-font stacks** (no web fonts → no download, no flash). `applyUiFont()` sets `--font-ui` + `data-ui-font` on `<html>`; the body `font-family` falls through to the platform stack when unset; code/terminal (`font-mono`) and the wordmark (`font-brand`) keep their own families via the Tailwind cascade. Seeded pre-paint by `appearanceInitScript`; client-only; reset-to-defaults clears it. (#238)
 
 ---
 
