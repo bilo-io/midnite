@@ -66,13 +66,12 @@ describe('WebhookDeliveryService', () => {
   let webhooks: { list: ReturnType<typeof vi.fn> };
   let deliveries: { insert: ReturnType<typeof vi.fn> };
   let service: WebhookDeliveryService;
-  let fetchSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     bus = new TaskEventBus();
     webhooks = { list: vi.fn().mockReturnValue([webhookRow()]) };
     deliveries = { insert: vi.fn((row) => ({ ...row })) };
-    fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(okResponse);
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(okResponse);
     // crypto omitted → secret used as-is (plaintext path).
     service = new WebhookDeliveryService(bus, webhooks as never, deliveries as never);
   });
@@ -87,23 +86,23 @@ describe('WebhookDeliveryService', () => {
     const payload = { event: 'task.updated', at: '2026-06-30T12:00:00.000Z', task: task() };
     await service.dispatch(wh, 'task.updated', payload);
 
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
-    const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+    const fetchMock = vi.mocked(globalThis.fetch);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const init = fetchMock.mock.calls[0]![1]!;
     const headers = init.headers as Record<string, string>;
-    const sig = headers['x-midnite-signature'];
-    const ts = headers['x-midnite-timestamp'];
-    expect(verifySignature('whsec_test', init.body as string, ts, sig)).toBe(true);
+    const body = init.body as string;
+    expect(verifySignature('whsec_test', body, headers['x-midnite-timestamp']!, headers['x-midnite-signature']!)).toBe(true);
 
     expect(deliveries.insert).toHaveBeenCalledTimes(1);
-    const row = deliveries.insert.mock.calls[0][0];
+    const row = deliveries.insert.mock.calls[0]![0];
     expect(row).toMatchObject({ webhookId: 'w1', event: 'task.updated', status: 'success', responseCode: 200 });
-    expect(row.payload).toBe(init.body);
+    expect(row.payload).toBe(body);
   });
 
   it('records a failed delivery on a non-2xx', async () => {
-    fetchSpy.mockResolvedValue({ ok: false, status: 502 } as Response);
+    vi.mocked(globalThis.fetch).mockResolvedValue({ ok: false, status: 502 } as Response);
     await service.dispatch(webhookRow(), 'task.updated', { event: 'task.updated', at: 'x', task: task() });
-    expect(deliveries.insert.mock.calls[0][0]).toMatchObject({ status: 'failed', responseCode: 502 });
+    expect(deliveries.insert.mock.calls[0]![0]).toMatchObject({ status: 'failed', responseCode: 502 });
   });
 
   it('fans a matching task.updated out to the team endpoints', async () => {
@@ -122,7 +121,7 @@ describe('WebhookDeliveryService', () => {
     service.onModuleInit();
     bus.emit({ type: 'task.updated', at: 'x', task: task({ status: 'wip' }) }); // not 'done'
     await flush();
-    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(vi.mocked(globalThis.fetch)).not.toHaveBeenCalled();
     expect(deliveries.insert).not.toHaveBeenCalled();
   });
 
