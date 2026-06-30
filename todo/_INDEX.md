@@ -67,8 +67,9 @@
 | [41 · Command palette](phase-41-command-palette.md) | ✅ DONE | 32/32 | `██████████` | 100% | — | — ² |
 | [42 · Task detail routing](phase-42-task-detail-routing.md) | ◻ TODO | 0/11 | `░░░░░░░░░░` | 0% | — | A B C |
 | [43 · Preference sync](phase-43-server-side-preference-sync.md) | ◻ TODO | 0/? | `░░░░░░░░░░` | 0% | — | A B C |
+| [44 · Outbound webhooks](phase-44-outbound-webhooks.md) | ◻ TODO | 0/16 | `░░░░░░░░░░` | 0% | — | A B C D |
 
-**Headline:** the original **0–41 roadmap is 100% complete** (Phases 39 & 41 closed 2026-06-30). **Phases 42 (task detail routing & contextual commands)** and **43 (server-side preference sync)** are freshly planned and open — all their themes are pickable. (An *earlier* Phase 42 was a parallel restatement of Phase 40, folded into Phase 40 Theme G and removed 2026-06-27; the current 42 & 43 are new, unrelated phases — two brainstorm sessions ran concurrently, so the preference-sync plan took the next free number, 43.)
+**Headline:** the original **0–41 roadmap is 100% complete** (Phases 39 & 41 closed 2026-06-30). **Phases 42 (task detail routing), 43 (server-side preference sync), and 44 (outbound webhooks & integrations)** are freshly planned and open — all their themes are pickable. (An *earlier* Phase 42 was a parallel restatement of Phase 40, folded into Phase 40 Theme G and removed 2026-06-27; the current 42 & 43 are new, unrelated phases — two brainstorm sessions ran concurrently, so the preference-sync plan took the next free number, 43.)
 
 ² Phase 41 — themes A–D all landed and the verification checklist is signed off (PR #237). The 3 remaining boxes are all `⏳` deferred (contextual task-detail commands ×2 + the `E` edit-form shortcut). The 2 contextual-command boxes are now **un-deferred and folded into Phase 42 Theme C** (they needed the `/tasks/:id` route Phase 42 adds).
 
@@ -95,6 +96,12 @@ so you can pick from this file without opening the phase doc first.
 - ◻ **A** — `UserPreferencesSchema` contract in `shared` (synced subset of `AppSettings`) **[S–M]**
 - ◻ **B** — Gateway `user_preferences` table + `GET`/`PUT /users/me/preferences` (authed) **[M]**
 - ◻ **C** — Web sync layer (hydrate-on-login, debounced write-through, LWW; localStorage-only when signed out) **[M]**
+
+### [Phase 44 — Outbound webhooks & integrations](phase-44-outbound-webhooks.md)
+- ◻ **A** — Webhook endpoint entity + CRUD + Settings → Integrations UI (team-scoped) **[M]**
+- ◻ **B** — Signed delivery engine off the `TaskEventBus` (HMAC, reused SSRF/retry core, deliveries log) **[M]**
+- ◻ **C** — Provider formatting: Slack / Discord / generic JSON (Linear deferred) **[S–M]**
+- ◻ **D** — Deliveries log UI + "Send test event" + redeliver **[S]**
 
 ## Maintenance
 
