@@ -30,6 +30,7 @@ import {
   type NodeLabel,
 } from './workflow.js';
 import { parseCredFlag, templateListRows } from './template.js';
+import { banner, getVersion } from './lib/brand.js';
 import { openWs } from './ws.js';
 
 const program = new Command();
@@ -65,9 +66,12 @@ async function readStdin(): Promise<string> {
 program
   .name('midnite')
   .description('Multitask coding agents — CLI client for the midnite gateway')
-  .version('0.0.0')
+  .version(getVersion())
   .option('--gateway <url>', 'gateway base URL (else $MIDNITE_GATEWAY_URL, else http://localhost:7777)')
   .option('--token <token>', 'bearer token (overrides stored JWT and $MIDNITE_AUTH_TOKEN)');
+
+// Brand the help output (and the bare-invoke help below) with the entry banner.
+program.addHelpText('beforeAll', () => `${banner()}\n`);
 
 // Resolve auth token once before any command action runs (stored JWT > env > --token flag).
 program.hook('preAction', async () => {
@@ -687,6 +691,13 @@ program
     const mod = (await import(spec)) as { startGateway: () => Promise<unknown> };
     await mod.startGateway();
   });
+
+// Bare `midnite` (no subcommand) → show the branded help instead of commander's
+// "missing command" error.
+if (process.argv.length <= 2) {
+  program.outputHelp();
+  process.exit(0);
+}
 
 program.parseAsync(process.argv).catch((err) => {
   console.error(err instanceof Error ? err.message : err);
