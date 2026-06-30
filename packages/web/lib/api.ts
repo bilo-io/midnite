@@ -227,6 +227,14 @@ import {
   PreferencesResponseSchema,
   type PreferencesResponse,
   type UserPreferences,
+  ListWebhooksResponseSchema,
+  WebhookResponseSchema,
+  WebhookSecretResponseSchema,
+  type ListWebhooksResponse,
+  type WebhookCreateRequest,
+  type WebhookResponse,
+  type WebhookSecretResponse,
+  type WebhookUpdateRequest,
 } from '@midnite/shared';
 import { z } from 'zod';
 
@@ -337,6 +345,48 @@ export async function getTaskCounts(): Promise<TaskCounts> {
 
 export async function getTasks(): Promise<Task[]> {
   return fetchJson('/tasks', undefined, z.array(TaskSchema));
+}
+
+// ── Outbound webhooks (Phase 44) ────────────────────────────────────────────────
+
+/** List the team's webhook endpoints (secrets never included). */
+export async function listWebhooks(): Promise<ListWebhooksResponse> {
+  return fetchJson('/webhooks', undefined, ListWebhooksResponseSchema);
+}
+
+/** Create an endpoint — the response carries the signing secret exactly once. */
+export async function createWebhook(body: WebhookCreateRequest): Promise<WebhookSecretResponse> {
+  return fetchJson(
+    '/webhooks',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    WebhookSecretResponseSchema,
+  );
+}
+
+/** Update an endpoint (url / provider / event filter / enabled). */
+export async function updateWebhook(
+  id: string,
+  body: WebhookUpdateRequest,
+): Promise<WebhookResponse> {
+  return fetchJson(
+    `/webhooks/${encodeURIComponent(id)}`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    WebhookResponseSchema,
+  );
+}
+
+/** Delete an endpoint. */
+export async function deleteWebhook(id: string): Promise<void> {
+  await fetchJson(`/webhooks/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+/** Rotate the signing secret — the new secret is returned exactly once. */
+export async function rotateWebhookSecret(id: string): Promise<WebhookSecretResponse> {
+  return fetchJson(
+    `/webhooks/${encodeURIComponent(id)}/rotate`,
+    { method: 'POST', headers: JSON_HEADERS },
+    WebhookSecretResponseSchema,
+  );
 }
 
 /** Current user's synced preferences (Phase 43). Authed-only — 401 when signed out. */

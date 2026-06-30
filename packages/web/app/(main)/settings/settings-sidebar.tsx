@@ -15,6 +15,7 @@ import {
   Ticket,
   Users,
   UserRound,
+  Webhook,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -33,6 +34,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/settings/agents', label: 'Agents', Icon: Bot },
       { href: '/settings/repos', label: 'Repos', Icon: FolderGit2 },
+      { href: '/settings/integrations', label: 'Integrations', Icon: Webhook },
       { href: '/settings/system', label: 'System', Icon: SlidersHorizontal },
     ],
   },

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   DEFAULT_USER_PREFERENCES,
   UserPreferencesSchema,
@@ -19,7 +19,7 @@ import { PreferencesRepository } from './preferences.repository';
 export class PreferencesService {
   private readonly logger = new Logger(PreferencesService.name);
 
-  constructor(private readonly repo: PreferencesRepository) {}
+  constructor(@Inject(PreferencesRepository) private readonly repo: PreferencesRepository) {}
 
   /** The user's preferences (defaults when they've never saved). */
   get(userId: string): PreferencesResponse {
