@@ -98,7 +98,7 @@ in `packages/gateway/drizzle/`, not `src/db/migrations/`.)*
 
 ---
 
-## Theme C — Web sync layer — **M** ✅ DONE (PR #243, 2026-06-30)
+## Theme C — Web sync layer — **M** ✅ DONE (PR #244, 2026-06-30)
 
 Hydrate on login, write through on change; degrade to local-only when signed out.
 *(Decisions settled at pickup: gate on the existing `useAuth()` context (`jwtEnabled && user`);

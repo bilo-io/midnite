@@ -96,7 +96,7 @@ so you can pick from this file without opening the phase doc first.
 ### [Phase 43 — Server-side preference sync](phase-43-server-side-preference-sync.md)
 - ✅ **A** — `UserPreferencesSchema` contract in `shared` (synced subset of `AppSettings`) (PR #240) **[S–M]**
 - ✅ **B** — Gateway `user_preferences` table + `GET`/`PUT /users/me/preferences` (authed) (PR #242) **[M]**
-- ✅ **C** — Web sync layer (hydrate-on-login, debounced write-through, LWW; localStorage-only when signed out) (PR #243) **[M]**
+- ✅ **C** — Web sync layer (hydrate-on-login, debounced write-through, LWW; localStorage-only when signed out) (PR #244) **[M]**
 
 ### [Phase 44 — Outbound webhooks & integrations](phase-44-outbound-webhooks.md)
 - ◻ **A** — Webhook endpoint entity + CRUD + Settings → Integrations UI (team-scoped) **[M]**

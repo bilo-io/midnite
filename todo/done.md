@@ -13,7 +13,7 @@ The client half of preference sync, closing Phase 43: a signed-in account's look
 - [x] **web**: Settings → Appearance "Synced to your account" / "Sign in to sync across devices" indicator (shown only when accounts are enabled)
 - [x] **Decisions (settled at pickup)**: `useAuth()` gate; mounted component over existing hooks (no settings-store refactor); the indicator
 - [x] Tests: RTL `<PreferenceSync/>` (inert single-user + signed-out, hydrate server-wins, seed empty-row). **e2e omitted** — the e2e gateway runs JWT-disabled so a signed-in sync flow can't be exercised there; logic covered by RTL. Local gate green (typecheck 13/13, web lint clean, web tests pass)
-- [x] **Phase 43 is 100% complete** (A #240 · B #242 · C #243)
+- [x] **Phase 43 is 100% complete** (A #240 · B #242 · C #244)
 
 ## 2026-06-30 — feat: recurrence presets on the schedule trigger — Phase 45 Theme B (PR #243)
 
