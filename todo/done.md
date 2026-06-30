@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-30 — feat: web preference-sync layer — Phase 43 Theme C — **Phase 43 COMPLETE**
+
+The client half of preference sync, closing Phase 43: a signed-in account's look-and-feel now follows it across devices.
+
+- [x] **web**: `<PreferenceSync/>` (mounted in `(main)/layout.tsx` beside `<LiveData/>`) — gated on `useAuth()` (`jwtEnabled && user`); on login `GET /users/me/preferences`, hydrate local settings + theme (server wins), **seed server-from-localStorage when the row is empty**; debounce-`PUT` local changes (LWW), with a stable serialized key suppressing the hydrate echo. Inert (no requests) when signed out / single-user
+- [x] **web**: `getPreferences` / `putPreferences` in `lib/api.ts`; bridge helpers `appSettingsToPreferences` / `applyPreferences` in `app-settings.ts` reconciling the two local stores (`AppSettings` + the `@midnite/ui` theme-context)
+- [x] **web**: Settings → Appearance "Synced to your account" / "Sign in to sync across devices" indicator (shown only when accounts are enabled)
+- [x] **Decisions (settled at pickup)**: `useAuth()` gate; mounted component over existing hooks (no settings-store refactor); the indicator
+- [x] Tests: RTL `<PreferenceSync/>` (inert single-user + signed-out, hydrate server-wins, seed empty-row). **e2e omitted** — the e2e gateway runs JWT-disabled so a signed-in sync flow can't be exercised there; logic covered by RTL. Local gate green (typecheck 13/13, web lint clean, web tests pass)
+- [x] **Phase 43 is 100% complete** (A #240 · B #242 · C #243)
+
 ## 2026-06-30 — feat: recurrence presets on the schedule trigger — Phase 45 Theme B (PR #243)
 
 A friendly preset layer over the workflow schedule trigger so a recurring task's cadence is pickable without cron syntax.
