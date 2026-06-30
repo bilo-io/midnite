@@ -83,7 +83,7 @@ describe('WebhookDeliveryService', () => {
 
   it('dispatch() signs the body and records a success delivery', async () => {
     const wh = webhookRow();
-    const payload = { event: 'task.updated', at: '2026-06-30T12:00:00.000Z', task: task() };
+    const payload = { event: 'task.updated' as const, at: '2026-06-30T12:00:00.000Z', task: task() };
     await service.dispatch(wh, 'task.updated', payload);
 
     const fetchMock = vi.mocked(globalThis.fetch);
@@ -101,8 +101,18 @@ describe('WebhookDeliveryService', () => {
 
   it('records a failed delivery on a non-2xx', async () => {
     vi.mocked(globalThis.fetch).mockResolvedValue({ ok: false, status: 502 } as Response);
-    await service.dispatch(webhookRow(), 'task.updated', { event: 'task.updated', at: 'x', task: task() });
+    await service.dispatch(webhookRow(), 'task.updated', { event: 'task.updated' as const, at: 'x', task: task() });
     expect(deliveries.insert.mock.calls[0]![0]).toMatchObject({ status: 'failed', responseCode: 502 });
+  });
+
+  it('formats the body for the endpoint provider (Theme C)', async () => {
+    await service.dispatch(webhookRow({ provider: 'slack' }), 'task.updated', {
+      event: 'task.updated' as const,
+      at: 'x',
+      task: task({ title: 'Hello', status: 'done' }),
+    });
+    const init = vi.mocked(globalThis.fetch).mock.calls[0]![1]!;
+    expect(JSON.parse(init.body as string)).toEqual({ text: 'Hello → Done' });
   });
 
   it('fans a matching task.updated out to the team endpoints', async () => {

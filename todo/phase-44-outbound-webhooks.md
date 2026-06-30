@@ -52,13 +52,15 @@ Events become signed, retried, recorded HTTP deliveries.
 
 ---
 
-## Theme C — Provider formatting (Slack / Discord / generic) — **S–M**
+## Theme C — Provider formatting (Slack / Discord / generic) — **S–M** ✅ DONE (PR #252, 2026-06-30)
 
 Shape the event into what each receiver expects.
 
-- [ ] A small formatter per provider mapping a `TaskBoardEvent` → request body: **Slack** incoming-webhook (`{ text }` / Block Kit), **Discord** (`{ content }` / embed), **generic** (the raw signed JSON event — the canonical contract). Provider is chosen on the endpoint; the formatter is selected at dispatch.
-- [ ] Keep messages terse + useful (task title, status transition, project, a deep link to `/tasks/:id` — dovetails with Phase 42). Generic stays a stable, documented JSON shape so custom receivers can rely on it.
-- [ ] **Linear is explicitly out of scope** (Decision §4) — it needs a stored API token + issue mapping, not an incoming webhook; a later phase.
+> [`webhooks/formatters/format.ts`](../packages/gateway/src/webhooks/formatters/format.ts) — `formatWebhookBody(provider, payload)` selects the body at dispatch in `WebhookDeliveryService.dispatch` (covers both the bus path and Theme D's send-test); redeliver still replays the stored body unchanged. **Deep link deferred**: there's no web base-URL config yet, so messages carry title + status + kind + repo but no absolute `/tasks/:id` URL — a follow-up once a public base URL is configurable.
+
+- [x] A small formatter per provider mapping the event → request body: **Slack** (`{ text }`), **Discord** (`{ content }`), **generic** (the raw signed JSON event — the canonical contract). Provider is chosen on the endpoint; the formatter is selected at dispatch.
+- [x] Messages are terse + useful (task title, status transition, kind, repo). Generic stays the stable, documented JSON shape custom receivers rely on. *(Absolute `/tasks/:id` deep link deferred — needs a web base-URL config.)*
+- [x] **Linear is explicitly out of scope** (Decision §4) — it needs a stored API token + issue mapping, not an incoming webhook; a later phase.
 
 ---
 
