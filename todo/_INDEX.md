@@ -68,8 +68,9 @@
 | [42 · Task detail routing](phase-42-task-detail-routing.md) | 🔄 WIP | 4/11 | `████░░░░░░` | 36% | — | B C |
 | [43 · Preference sync](phase-43-server-side-preference-sync.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
 | [44 · Outbound webhooks](phase-44-outbound-webhooks.md) | 🔄 WIP | 7/20 | `████░░░░░░` | 35% | — | C D |
-| [45 · Recurring/scheduled tasks](phase-45-recurring-scheduled-tasks.md) | 🔄 WIP | 7/15 | `█████░░░░░` | 47% | C | D |
+| [45 · Recurring/scheduled tasks](phase-45-recurring-scheduled-tasks.md) | 🔄 WIP | 10/15 | `███████░░░` | 67% | — | D |
 | [46 · Inbound integrations](phase-46-inbound-integrations.md) | ◻ TODO | 0/? | `░░░░░░░░░░` | 0% | — | A B C D |
+| [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | 🔄 WIP | 3/26 | `█░░░░░░░░░` | 12% | — | B C D E F |
 
 **Headline:** the original **0–41 roadmap is 100% complete** (Phases 39 & 41 closed 2026-06-30). **Phases 42 (task detail routing), 43 (server-side preference sync), 44 (outbound webhooks & integrations), and 45 (recurring/scheduled tasks)** are freshly planned and open — all their themes are pickable. (An *earlier* Phase 42 was a parallel restatement of Phase 40, folded into Phase 40 Theme G and removed 2026-06-27; the current 42 & 43 are new, unrelated phases — two brainstorm sessions ran concurrently, so the preference-sync plan took the next free number, 43.)
 
@@ -107,7 +108,7 @@ so you can pick from this file without opening the phase doc first.
 
 ### [Phase 44 — Outbound webhooks & integrations](phase-44-outbound-webhooks.md)
 - ✅ **A** — Webhook endpoint entity + CRUD + Settings → Integrations UI (team-scoped) (PR #245) **[M]**
-- ✅ **B** — Signed delivery engine off the `TaskEventBus` (HMAC, reused SSRF/retry core, deliveries log) (PR #247) **[M]**
+- ✅ **B** — Signed delivery engine off the `TaskEventBus` (HMAC, reused SSRF/retry core, deliveries log) (PR #249) **[M]**
 - ◻ **C** — Provider formatting: Slack / Discord / generic JSON (Linear deferred) **[S–M]**
 - ◻ **D** — Deliveries log UI + "Send test event" + redeliver **[S]**
 
@@ -115,8 +116,17 @@ so you can pick from this file without opening the phase doc first.
 *(Workflow-backed: a recurring task is a `[trigger.schedule] → [task.create]` workflow — reuses the workflow scheduler/runs/run-history.)*
 - ✅ **A** — `task.create` workflow action/executor (the missing link) (#241) **[M]**
 - ✅ **B** — Recurrence presets (+ raw-cron escape hatch) on the schedule trigger (#243) **[S–M]**
-- ◻ **C** — Dedicated "Schedules" facade view (list/create/edit/run-now) **[M]**
+- ✅ **C** — Dedicated "Schedules" facade view (list/create/edit/run-now) (#247) **[M]**
 - ◻ **D** — Run-history surfacing + "Daily standup" starter preset **[S]**
+
+### [Phase 47 — CLI power-user pass](phase-47-cli-power-user-pass.md)
+*(Thin-CLI rule: no gateway changes — presentation helpers + client-side loops only. chalk/ora aren't installed today; this phase makes CLAUDE.md's claim true.)*
+- ✅ **A** — Brand chrome + ANSI logo (bare invoke / help / `watch` splash; `NO_COLOR`/pipe aware) (PR #248) **[S–M]**
+- ◻ **B** — Colour vocabulary (chalk palette mirroring `@midnite/ui` status/kind/priority hues, applied across every renderer) **[M]**
+- ◻ **C** — Spinners & progress (ora wrapper on every async client call) **[S–M]**
+- ◻ **D** — Interactive prompts (`@inquirer/prompts` replaces hand-rolled `readline`/TTY; guided `add`, fuzzy task-pick for `move`/`block`) **[M]**
+- ◻ **E** — Machine output: global `--json` for the read surface (chrome forced off; errors → stderr) **[S–M]**
+- ◻ **F** — Shell completions (`completion <bash|zsh|fish>`) + bulk-by-filter `move`/`prioritise` (client-side loop) **[M]**
 
 ## Maintenance
 

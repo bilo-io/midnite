@@ -49,7 +49,7 @@ The scan is read-heavy — **every** `todo/phase-*.md` (a couple of dozen files)
 ## 🔁 Stage 3 — Hone in (a few back-and-forths)
 
 1. Take the user's pick (or their custom/combined idea) and **go deeper**: sketch the themes it would contain, surface trade-offs, name the risky/unknown bits, and propose what's in vs. out of scope.
-2. Keep it conversational and **iterate over a few rounds** — each round, refine the shape and re-offer choices via AskUserQuestion (e.g. "which themes are in scope?", "how far do we take X?"). **Every round, keep the "suggest your own / add to this" door open** — never force a choice from only your options.
+2. Keep it conversational and **iterate over a few rounds**, asking **5–7 follow-up questions** in total to pin down the shape — scale toward 5 for a small/simple phase and toward 7 for a complex one or a meaty multi-theme brainstorm. Each round, refine the shape and re-offer choices via AskUserQuestion (e.g. "which themes are in scope?", "how far do we take X?"). **Every round, keep the "suggest your own / add to this" door open** — never force a choice from only your options.
 3. Pull in concrete repo detail to keep proposals honest — themes must reference real modules, not hand-waving. For a quick check, grep/read inline; when grounding a direction needs more than a glance, **dispatch a focused read-only subagent** (e.g. `Explore`) to research that area and return just the honest detail (real module names, boundaries, existing patterns) rather than reading swathes of code in this thread. Flag anything that would violate `CLAUDE.md` boundaries and adjust.
 4. Converge when the scope, themes, and the big open decisions are clear enough to write down. Don't over-iterate — a few solid rounds, then move on.
 

@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-06-30 — feat: signed webhook delivery engine — Phase 44 Theme B (PR #247)
+## 2026-06-30 — feat: signed webhook delivery engine — Phase 44 Theme B (PR #249)
 
 Outbound endpoints now actually fire. Task transitions become signed, retried, recorded HTTP deliveries — the heart of Phase 44.
 
@@ -14,6 +14,27 @@ Outbound endpoints now actually fire. Task transitions become signed, retried, r
 - [x] **gateway/shared**: `webhook_deliveries` table (migration `0060`) + `WebhookDeliveriesRepository` (insert / listByWebhook / findById); `WebhookDelivery` contract in `shared`. Generic canonical JSON body for all providers (Theme C branches Slack/Discord later); `dispatch()` is public so Theme D's send-test/redeliver reuse the signed path.
 - [x] **Deferred**: `task.deleted` carries only an id (no team/status) so it can't be team-scoped yet — `task.created`/`task.updated` fully supported.
 - [x] Tests: safe-delivery (4 — SSRF reject, 2xx, retry-budget, transient-recover), sign (3), delivery engine (matcher + signed dispatch + record + bus fan-out + skip disabled/filtered/un-scopable; 8), deliveries repo (3). Gateway typecheck green; shared + gateway suites pass (one unrelated flaky tmux spawner spec, passes in isolation).
+
+## 2026-06-30 — feat: CLI brand chrome + ANSI logo banner — Phase 47 Theme A (PR #248)
+
+The CLI gets its brand: a split-circle ANSI mark rendered as pure geometry (no image decode), an entry banner, and the central `isInteractive()` gate the rest of Phase 47 (colour/spinners/`--json`) will hook into. Also fixes the stale hardcoded `--version`.
+
+- [x] **cli**: `src/lib/brand.ts` — `logoLines()` (split-circle block art, deterministic geometry), `banner()`, `accent()`, `isInteractive()` (TTY + `NO_COLOR`), `getVersion()` (reads `package.json`), `BRAND_ACCENT`
+- [x] **cli**: banner shown on bare `midnite` (no-args → branded help) and the `--help` header (`addHelpText('beforeAll')`); `.version()` now reads the real version
+- [x] **cli**: compact logo header added to the `watch` ink dashboard (intro panel)
+- [x] **cli**: degrades to plain ASCII art when piped / non-TTY / `NO_COLOR` (colour escapes gated); `--json` off-switch deferred to Theme E per plan
+- [x] **tests**: `src/lib/brand.test.ts` (11) — geometry/size, the interactivity gate, colour-vs-plain output, version read
+
+## 2026-06-30 — feat: Schedules facade view — Phase 45 Theme C
+
+Recurring tasks become first-class — a dedicated **Schedules** surface over the `[trigger.schedule] → [task.create]` workflow shape, no node canvas required. Builds on the Theme A `task.create` action (#241) and Theme B recurrence presets (#243).
+
+- [x] **web**: `/schedules` page + sidenav entry (`schedules` feature in `lib/features.ts`, `CalendarClock`); lists schedule-triggered `task.create` workflows, sorted most-frequent first
+- [x] **web**: per-row cadence (`describeCron`), next run + last-fired/status, **Enabled** toggle (`updateWorkflow`), **Run now** (`runWorkflow`), Edit, and open-in-builder link
+- [x] **web**: inline create/edit dialog (`schedule-form-dialog.tsx`) — name + recurrence + task prompt + project/repo/priority; builds & persists a standard 2-node workflow, round-trips on edit (Decision §3)
+- [x] **web**: reusable `RecurrenceFields` (preset picker + raw-cron + next-3-runs), extracted from the node-config panel; `formatRun` moved into `lib/cron.ts`; `lib/schedules.ts` holds the pure filter/build/decode glue
+- [x] **shared/gateway**: expose schedule `timezone` on `WorkflowSummary` so next-run is computed correctly client-side (Decision §2 — client filter, no marker)
+- [x] **tests**: `lib/schedules.test.ts` (7), `schedule-form-dialog.test.tsx` (3), `schedules-view.test.tsx` (4), `schedules.shots.ts` Playwright capture; command-palette surface count bumped
 
 ## 2026-06-30 — feat: full task detail page — Phase 42 Theme A (PR #246)
 

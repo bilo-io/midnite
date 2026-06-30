@@ -34,7 +34,7 @@ allowed); explicit `@Inject` tokens since the e2e gateway runs under `tsx`.)*
 
 ---
 
-## Theme B — Signed delivery engine off the event bus — **M** ✅ DONE (PR #247, 2026-06-30)
+## Theme B — Signed delivery engine off the event bus — **M** ✅ DONE (PR #249, 2026-06-30)
 
 Events become signed, retried, recorded HTTP deliveries.
 

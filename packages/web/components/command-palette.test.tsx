@@ -62,9 +62,9 @@ describe('CommandPalette', () => {
     pressCmdK();
 
     expect(screen.getByRole('dialog', { name: 'Command palette' })).toBeInTheDocument();
-    // 10 toggleable features + 3 always-on destinations (Agents, Profile, Settings)
-    // + 1 keyboard-shortcuts (?) button in the palette header.
-    expect(screen.getAllByRole('button')).toHaveLength(14);
+    // 11 toggleable features (ideas off by default) + 3 always-on destinations
+    // (Agents, Profile, Settings) + 1 keyboard-shortcuts (?) button in the header.
+    expect(screen.getAllByRole('button')).toHaveLength(15);
     // Empty query never hits the network.
     expect(searchAll).not.toHaveBeenCalled();
   });

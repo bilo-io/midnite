@@ -36,7 +36,7 @@ Example label: `Phase 9 E4: Retro games modal [M · 2-4h]`
 Present via **AskUserQuestion**, recommended first. Bias toward `$ARGUMENTS` if given. **Do not implement until they pick.**
 
 ## 2.5 · Upfront decisions — STOP for the human
-Before touching code, identify the **3 most consequential design decisions** for the chosen task (data flow, persistence strategy, component shape, API contract, etc.). Present each as a separate **AskUserQuestion**. For every option include:
+Before touching code, identify the **5–7 most consequential design decisions** for the chosen task (data flow, persistence strategy, component shape, API contract, etc.) — scale the count toward 5 for a simple task and toward 7 for a complex one or one with a meaty phase theme. Present each as a separate **AskUserQuestion**. For every option include:
 - A **dominant-nature tag** in brackets: `[planned]` (matches the phase doc) · `[recommended]` (fits existing patterns) · `[performance]` · `[simplicity]` · `[DX]` · `[future-proof]` · `[minimal]` · `[scope+]` (expands scope) — pick whichever single tag best characterises the option.
 - The **effort size** for that option.
 
@@ -44,7 +44,7 @@ Example option label: `Zustand store [recommended · S]`
 Example option label: `Local component state [simplicity · XS]`
 Example option label: `Server-side with SWR polling [performance · M]`
 
-Skip any decision already unambiguously settled in the phase doc or `open-decisions.md`. **Do not implement until all three are answered.**
+Skip any decision already unambiguously settled in the phase doc or `open-decisions.md`. **Do not implement until all of them are answered.**
 
 ## 2.6 · Rename session
 Once the task is chosen, immediately set the terminal/session title so Claude Desktop shows what's in flight:

@@ -44,13 +44,13 @@ Make the cadence pickable without knowing cron syntax.
 
 ---
 
-## Theme C — Dedicated "Schedules" view (facade) — **M**
+## Theme C — Dedicated "Schedules" view (facade) — **M** — ✅ DONE (PR #247, 2026-06-30)
 
 Recurring tasks feel first-class, no canvas required.
 
-- [ ] A **Schedules** sidenav entry + page ([`app/(main)/schedules/`](../packages/web/app/(main)/)) listing the workflows that are `trigger.type === 'schedule'` **and** contain a `task.create` action — filtered from `WorkflowSummary` (`cron` + `steps`), no new marker needed. Optionally add a server-side `?triggerType=schedule` filter to `GET /workflows` for cleanliness (Decision §2).
-- [ ] Each row: human cadence (`describeCron`), **next run**, **last fired** + last run status, target project/repo/priority, an **enable** toggle (flips the workflow's `enabled`), and **"Run now"** (fires `engine.startRun(..., { triggerSource: 'manual' })`).
-- [ ] **"New schedule"** quick-create: a focused form (label + recurrence preset + task prompt + project/repo/priority) that builds and persists the standard `[trigger.schedule] → [task.create]` workflow under the hood — so it's editable here *and* openable in the full ReactFlow builder. Editing a schedule round-trips through the same form.
+- [x] A **Schedules** sidenav entry + page ([`app/(main)/schedules/`](../packages/web/app/(main)/schedules/)) listing the workflows that are `trigger.type === 'schedule'` **and** contain a `task.create` action — filtered client-side from `WorkflowSummary` (`steps` + `triggerType`), no new marker needed (Decision §2; `WorkflowSummary` gained `timezone` so next-run is computed correctly).
+- [x] Each row: human cadence (`describeCron`), **next run**, **last fired** + last run status, an **enable** toggle (flips the workflow's `enabled`), and **"Run now"** (`runWorkflow`), plus Edit + open-in-builder.
+- [x] **"New schedule"** quick-create: a focused inline dialog (name + recurrence preset + task prompt + project/repo/priority) that builds and persists the standard `[trigger.schedule] → [task.create]` workflow under the hood — editable here *and* openable in the full ReactFlow builder. Editing round-trips through the same form via a reusable `RecurrenceFields`. *(✅ DONE — PR #247, 2026-06-30)*
 
 ---
 
