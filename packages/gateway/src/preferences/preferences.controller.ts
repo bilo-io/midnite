@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Put,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -13,7 +14,8 @@ import { PreferencesService } from './preferences.service';
 /** Authed read/write of the current user's synced preferences (Phase 43). */
 @Controller('users/me/preferences')
 export class PreferencesController {
-  constructor(private readonly preferences: PreferencesService) {}
+  // Explicit token: the e2e gateway runs under `tsx` (no emitted param metadata).
+  constructor(@Inject(PreferencesService) private readonly preferences: PreferencesService) {}
 
   @Get()
   get(@CurrentUser() currentUser: CurrentUserPayload | null) {

@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-06-30 — feat: outbound webhook endpoints (entity + CRUD + UI) — Phase 44 Theme A (PR #245)
+
+The foundation of the outbound-integrations surface: a team can register/manage several webhook endpoints. Delivery engine (B), formatting (C), and the deliveries log (D) are the remaining themes.
+
+- [x] **shared**: [`webhook.ts`](../packages/shared/src/webhook.ts) — `Webhook` / `WebhookCreateRequest` / `WebhookUpdateRequest`, `WebhookProvider` (slack/discord/generic), structured `WebhookEventFilter` (`{ events, statuses? }`), reveal-once `WebhookSecretResponse`. Client methods in `web/lib/api.ts`
+- [x] **gateway**: `webhooks` table (migration `0059`) + dedicated `webhooks/` module — repository (team-scoped) → service (write-time `isSafeHttpUrl` guard, secret gen + `CryptoService` encryption, re-validate-on-read, RBAC via `TeamsService.getMembership`, single-user implicitly allowed) → controller (`GET`/`POST`/`PATCH`/`DELETE /webhooks` + `POST :id/rotate`; admin-manages, member-views; secret revealed once)
+- [x] **web**: Settings → Integrations page (list, add modal with provider/events/status filter, enable toggle, rotate-secret, delete, reveal-once modal) + sidebar entry
+- [x] **Decisions (settled at pickup)**: structured event filter; reveal-once **+ rotate**; write-time URL rejection
+- [x] **Drive-by fix**: explicit `@Inject` tokens — the e2e gateway runs under `tsx` (no emitted constructor-param metadata), so type-based DI silently yielded `undefined` (a 500). Same fix applied to the Phase 43 `preferences/` module, which had the identical latent bug
+- [x] Tests: shared schema (7), gateway service/repository/controller (19), web RTL Integrations (3); Integrations page screenshots. Local gate green (typecheck 13/13, lint clean, gateway + web suites pass)
+
 ## 2026-06-30 — feat: web preference-sync layer — Phase 43 Theme C — **Phase 43 COMPLETE**
 
 The client half of preference sync, closing Phase 43: a signed-in account's look-and-feel now follows it across devices.

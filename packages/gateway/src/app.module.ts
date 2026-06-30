@@ -44,6 +44,7 @@ import { ServiceTokensModule } from './service-tokens/service-tokens.module';
 import { IdeasModule } from './ideas/ideas.module';
 import { PhaseDocsModule } from './phase-docs/phase-docs.module';
 import { PreferencesModule } from './preferences/preferences.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
 
 @Module({
   imports: [
@@ -91,6 +92,7 @@ import { PreferencesModule } from './preferences/preferences.module';
     IdeasModule,
     PhaseDocsModule,
     PreferencesModule,
+    WebhooksModule,
   ],
   controllers: [HealthController],
   providers: [],

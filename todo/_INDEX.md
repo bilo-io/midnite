@@ -67,7 +67,7 @@
 | [41 · Command palette](phase-41-command-palette.md) | ✅ DONE | 32/32 | `██████████` | 100% | — | — ² |
 | [42 · Task detail routing](phase-42-task-detail-routing.md) | 🔄 WIP | 0/11 | `░░░░░░░░░░` | 0% | A | B C |
 | [43 · Preference sync](phase-43-server-side-preference-sync.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
-| [44 · Outbound webhooks](phase-44-outbound-webhooks.md) | 🔄 WIP | 0/16 | `░░░░░░░░░░` | 0% | A | B C D |
+| [44 · Outbound webhooks](phase-44-outbound-webhooks.md) | 🔄 WIP | 3/20 | `██░░░░░░░░` | 15% | — | B C D |
 | [45 · Recurring/scheduled tasks](phase-45-recurring-scheduled-tasks.md) | 🔄 WIP | 7/15 | `█████░░░░░` | 47% | C | D |
 
 **Headline:** the original **0–41 roadmap is 100% complete** (Phases 39 & 41 closed 2026-06-30). **Phases 42 (task detail routing), 43 (server-side preference sync), 44 (outbound webhooks & integrations), and 45 (recurring/scheduled tasks)** are freshly planned and open — all their themes are pickable. (An *earlier* Phase 42 was a parallel restatement of Phase 40, folded into Phase 40 Theme G and removed 2026-06-27; the current 42 & 43 are new, unrelated phases — two brainstorm sessions ran concurrently, so the preference-sync plan took the next free number, 43.)
@@ -99,7 +99,7 @@ so you can pick from this file without opening the phase doc first.
 - ✅ **C** — Web sync layer (hydrate-on-login, debounced write-through, LWW; localStorage-only when signed out) (PR #244) **[M]**
 
 ### [Phase 44 — Outbound webhooks & integrations](phase-44-outbound-webhooks.md)
-- ◻ **A** — Webhook endpoint entity + CRUD + Settings → Integrations UI (team-scoped) **[M]**
+- ✅ **A** — Webhook endpoint entity + CRUD + Settings → Integrations UI (team-scoped) (PR #245) **[M]**
 - ◻ **B** — Signed delivery engine off the `TaskEventBus` (HMAC, reused SSRF/retry core, deliveries log) **[M]**
 - ◻ **C** — Provider formatting: Slack / Discord / generic JSON (Linear deferred) **[S–M]**
 - ◻ **D** — Deliveries log UI + "Send test event" + redeliver **[S]**
