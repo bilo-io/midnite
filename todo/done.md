@@ -12,6 +12,15 @@ Closes Phase 41's 2 deferred boxes. ⌘K now carries per-task status moves whene
 - [x] **web**: extracted `lib/task-transitions.moveTask` (+ `spawnsSession`/`stopsSession`) — the canonical start/stop/updateStatus selection, now shared by the board's `onMove` (refactored to delegate) and the new hook, so the rule lives in one place
 - [x] **web**: consumed the hook from `<TaskDetail>`, so it fires for both the modal and the `/tasks/view` full page; the `E` edit shortcut stays deferred
 - [x] **tests**: `task-transitions.test.ts` (8), `use-task-palette-commands.test.tsx` (6), `task-palette-commands.e2e.ts` (2 — appear+transition on the detail page, vanish elsewhere)
+## 2026-06-30 — feat: CLI interactive prompts (inquirer) — Phase 47 Theme D (PR #253)
+
+The CLI's hand-rolled `readline`/raw-mode interactivity is replaced with `@inquirer/prompts`, and the common commands gain guided flows.
+
+- [x] **cli**: added `@inquirer/prompts`; `cli/src/lib/prompts.ts` centralises helpers behind a `canPrompt()` (both-TTY) gate — required-value prompts throw `NonInteractiveError` instead of hanging (Decision §5; `NO_COLOR` doesn't gate prompts).
+- [x] **cli**: `plan` confirm → `confirm`; `login` email/password → `input`/`password` (drops the raw-mode TTY handler); behaviour-preserving, `--yes`/`--password`/`--email` still skip.
+- [x] **cli**: `midnite add` with no positional → guided flow (task text → repo → priority → project); the positional path is unchanged. Depends-on stays on `-d`.
+- [x] **cli**: `move`/`block`/`unblock` accept an omitted id → fuzzy `search` over `listTasks()`; `move` also `select`s a status. `template install` prompts unresolved cred slots (`-y/--yes` or non-TTY skip).
+- [x] Tests: `lib/prompts.test.ts` (3 — the non-TTY gate: `canPrompt` false, `confirmPrompt` fallback, required prompts throw). CLI typecheck + lint green; suite 103 pass.
 
 ## 2026-06-30 — feat: webhook provider formatting — Phase 44 Theme C (PR #252)
 
