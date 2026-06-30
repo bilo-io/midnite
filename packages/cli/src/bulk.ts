@@ -1,5 +1,7 @@
 import type { BulkCreateTaskResponse } from '@midnite/shared';
 
+import { colourKind, colourStatus, error } from './lib/palette.js';
+
 type BulkCounts = BulkCreateTaskResponse['counts'];
 
 /** Truncate a prompt for the summary table so a long line doesn't wrap the cell. */
@@ -26,7 +28,7 @@ export function bulkSummaryLine(counts: BulkCounts): string {
 export function bulkResultRows(res: BulkCreateTaskResponse): string[][] {
   return res.results.map((r) => [
     truncate(r.line),
-    r.error ? '—' : (r.kind ?? '—'),
-    r.error ? `error: ${r.error}` : (r.status ?? '—'),
+    r.error || !r.kind ? '—' : colourKind(r.kind),
+    r.error ? error(`error: ${r.error}`) : r.status ? colourStatus(r.status) : '—',
   ]);
 }

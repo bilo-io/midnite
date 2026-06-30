@@ -6,9 +6,19 @@ import type {
   WorkflowSummary,
 } from '@midnite/shared';
 
+import { colourBool, dim, error, success, warn } from './lib/palette.js';
+
 export { gatewayWsUrl } from './ws.js';
 
 const DASH = '—';
+
+/** Colour a workflow/run status: succeeded→green, failed→red, running→yellow, else dim. */
+function colourRunStatus(status: string): string {
+  if (status === 'succeeded') return success(status);
+  if (status === 'failed') return error(status);
+  if (status === 'running') return warn(status);
+  return dim(status);
+}
 
 /** Locale-free ISO → `YYYY-MM-DD HH:MM` so table output is stable across machines. */
 function formatTime(iso: string): string {
@@ -25,7 +35,8 @@ export function triggerLabel(s: Pick<WorkflowSummary, 'triggerType' | 'cron'>): 
 export function lastRunLabel(s: Pick<WorkflowSummary, 'lastRunStatus' | 'lastRunAt'>): string {
   if (!s.lastRunStatus && !s.lastRunAt) return DASH;
   const when = s.lastRunAt ? formatTime(s.lastRunAt) : '';
-  return [s.lastRunStatus ?? DASH, when].filter(Boolean).join(' · ');
+  const status = s.lastRunStatus ? colourRunStatus(s.lastRunStatus) : DASH;
+  return [status, when].filter(Boolean).join(' · ');
 }
 
 /** Table rows for `workflow list`: id → name → enabled → trigger → steps → last run. */
@@ -33,7 +44,7 @@ export function workflowListRows(summaries: WorkflowSummary[]): string[][] {
   return summaries.map((s) => [
     s.id,
     s.name,
-    s.enabled ? 'yes' : 'no',
+    colourBool(s.enabled),
     triggerLabel(s),
     String(s.nodeCount),
     lastRunLabel(s),
@@ -44,7 +55,7 @@ export function workflowListRows(summaries: WorkflowSummary[]): string[][] {
 export function runListRows(runs: WorkflowRun[]): string[][] {
   return runs.map((r) => [
     r.id,
-    r.status,
+    colourRunStatus(r.status),
     r.triggerSource,
     formatTime(r.startedAt),
     r.finishedAt ? formatTime(r.finishedAt) : DASH,
@@ -61,18 +72,18 @@ export function nodeLabelOf(workflow: Workflow): NodeLabel {
 }
 
 function runMark(status: WorkflowRun['status']): string {
-  return status === 'succeeded' ? '✓' : '✗';
+  return status === 'succeeded' ? success('✓') : error('✗');
 }
 
 function nodeMark(status: NodeRunStatus): string {
   switch (status) {
     case 'succeeded':
-      return '✓';
+      return success('✓');
     case 'failed':
-      return '✗';
+      return error('✗');
     case 'running':
     case 'skipped':
-      return '·';
+      return dim('·');
     default:
       return ' ';
   }
