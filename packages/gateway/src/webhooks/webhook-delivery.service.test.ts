@@ -105,6 +105,16 @@ describe('WebhookDeliveryService', () => {
     expect(deliveries.insert.mock.calls[0]![0]).toMatchObject({ status: 'failed', responseCode: 502 });
   });
 
+  it('formats the body for the endpoint provider (Theme C)', async () => {
+    await service.dispatch(webhookRow({ provider: 'slack' }), 'task.updated', {
+      event: 'task.updated',
+      at: 'x',
+      task: task({ title: 'Hello', status: 'done' }),
+    });
+    const init = vi.mocked(globalThis.fetch).mock.calls[0]![1]!;
+    expect(JSON.parse(init.body as string)).toEqual({ text: 'Hello → Done' });
+  });
+
   it('fans a matching task.updated out to the team endpoints', async () => {
     service.onModuleInit();
     bus.emit({ type: 'task.updated', at: '2026-06-30T12:00:00.000Z', task: task({ status: 'done' }) });

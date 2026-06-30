@@ -13,14 +13,18 @@ import type {
   TaskBoardEvent,
   WebhookEvent,
   WebhookEventFilter,
+  WebhookProvider,
 } from '@midnite/shared';
 import { CryptoService } from '../crypto/crypto.service';
 import { deliverWebhook } from '../lib/safe-webhook-delivery';
 import { TaskEventBus } from '../tasks/task-event-bus';
 import type { WebhookRow } from '../db/schema';
 import { WebhookDeliveriesRepository } from './webhook-deliveries.repository';
+import { formatWebhookBody, type WebhookPayload } from './formatters/format';
 import { SIGNATURE_HEADER, TIMESTAMP_HEADER, signPayload } from './lib/sign';
 import { WebhooksRepository } from './webhooks.repository';
+
+export type { WebhookPayload };
 
 /**
  * Decide whether an endpoint's filter fires for a given event. `statuses` only
@@ -39,8 +43,6 @@ export function eventMatches(
   return true;
 }
 
-/** The canonical generic JSON body (Theme C will branch Slack/Discord off this). */
-export type WebhookPayload = { event: WebhookEvent; at: string; task: Task };
 
 /**
  * Phase 44 Theme B — signed delivery engine. Subscribes to the {@link TaskEventBus}
@@ -96,8 +98,9 @@ export class WebhookDeliveryService implements OnModuleInit, OnModuleDestroy {
    * attempt. Public so Theme D's "send test" can reuse the exact signed path.
    * Returns the recorded delivery id.
    */
-  async dispatch(webhook: WebhookRow, event: WebhookEvent, payload: unknown): Promise<string> {
-    return this.dispatchBody(webhook, event, JSON.stringify(payload));
+  async dispatch(webhook: WebhookRow, event: WebhookEvent, payload: WebhookPayload): Promise<string> {
+    const body = formatWebhookBody(webhook.provider as WebhookProvider, payload);
+    return this.dispatchBody(webhook, event, body);
   }
 
   /**
