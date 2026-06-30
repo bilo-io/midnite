@@ -64,7 +64,7 @@
 | [38 · Search scoping + service tokens](phase-38-search-scoping-service-tokens.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
 | [39 · Visual customization](phase-39-visual-customization.md) | 🔄 WIP | 24/25 | `█████████░` | 96% | — | — ¹ |
 | [40 · Ideas pipeline](phase-40-ideas-pipeline.md) | ✅ DONE | 51/51 | `██████████` | 100% | — | — |
-| [41 · Command palette](phase-41-command-palette.md) | 🔄 WIP | 21/33 | `██████░░░░` | 64% | — | — ² |
+| [41 · Command palette](phase-41-command-palette.md) | 🔄 WIP | 21/33 | `██████░░░░` | 64% | V | — ² |
 
 **Headline:** the original 0–38 roadmap is **100% complete**, and **Phase 40 (Ideas pipeline) is now complete** too. Only 39 & 41 remain — both at their last `⏳`/optional items, no pickable themes. (Phase 42 was a parallel restatement of Phase 40 — its unique sync-back layer landed as Phase 40 Theme G; the doc was removed on 2026-06-27.)
 
