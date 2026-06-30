@@ -34,4 +34,10 @@ describe('office library (Phase 9 C)', () => {
     expect(url).toContain(encodeURIComponent('Clean Code Robert C. Martin'));
     expect(url).not.toContain(' ');
   });
+
+  it('links directly to an entry with an explicit url', () => {
+    const article = BOOKS.find((b) => b.id === 'inspired-summary')!;
+    expect(article.url).toBeDefined();
+    expect(bookSearchUrl(article)).toBe(article.url);
+  });
 });
