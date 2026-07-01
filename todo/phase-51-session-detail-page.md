@@ -133,15 +133,16 @@ Everything about *what this session is working and asking for*.
 
 ---
 
-## Theme E — Right panel: session info & stats — **S-M**
+## Theme E — Right panel: session info & stats — **S-M** — ✅ DONE (PR #268, 2026-07-01)
 
 The instrument readout — honest about what's real.
 
-- [ ] Provider / `agentCli`, **uptime** (from `createdAt`), **last activity**, status, `cwd`, **retry count**,
-      archived state — the fields that genuinely exist.
-- [ ] **Context window** shown as `contextTokens/contextLimit` **labeled an estimate** (a tooltip noting it's
-      approximate) — no fabricated precision (Decision §4).
-- [ ] A compact, scannable definition-list layout; degrades gracefully for fields a given session lacks.
+- [x] Provider / `agentCli`, **uptime** (session lifespan — frozen at end for an ended session), **last activity**,
+      status, `cwd`, **retry count** (shown when > 0), archived state — the fields that genuinely exist.
+- [x] **Context window** shown as `contextTokens/contextLimit` **labeled an estimate** (an EST chip + `(est.)` +
+      tooltip) as a bar — no fabricated precision (Decision §4); only rendered when both fields exist.
+- [x] A compact, scannable `<dl>` definition-list (`SessionInfoPanel`); degrades gracefully — rows a session
+      lacks are omitted entirely.
 
 ---
 
