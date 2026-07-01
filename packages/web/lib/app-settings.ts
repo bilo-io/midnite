@@ -275,6 +275,11 @@ export type AppSettings = Omit<UserPreferences, 'theme' | 'features'> & {
    * permission. Works in the browser and the Electron desktop app.
    */
   notifyTaskUpdates: boolean;
+  /**
+   * Autosave interval (seconds) for editors like the Slides deck editor. `0`
+   * disables autosave — the Save button is then the only way to persist.
+   */
+  editorAutosaveSeconds: number;
 };
 
 // The synced-field defaults come from the shared contract (single source of
@@ -289,9 +294,18 @@ export const DEFAULT_SETTINGS: AppSettings = {
   requirePasscode: false,
   passcodeOnlyWhenLocked: false,
   notifyTaskUpdates: false,
+  editorAutosaveSeconds: 30,
 };
 
 export const SETTINGS_STORAGE_KEY = 'midnite.settings';
+
+/** Selectable autosave intervals (seconds) for the editor settings. `0` = off. */
+export const EDITOR_AUTOSAVE_OPTIONS: ReadonlyArray<{ value: number; label: string }> = [
+  { value: 0, label: 'Off' },
+  { value: 10, label: 'Every 10s' },
+  { value: 30, label: 'Every 30s' },
+  { value: 60, label: 'Every 60s' },
+];
 
 /** Length of the screensaver passcode, in digits. */
 export const PASSCODE_LENGTH = 4;
