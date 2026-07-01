@@ -15,6 +15,9 @@ out/
 *.sqlite
 *.sqlite-journal
 
+# Local gateway data dir (SQLite DB, WAL, uploads, ad-hoc backups) — never committed
+.midnite/
+
 .env
 .env.*
 !.env.example

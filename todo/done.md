@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-02 — feat: session detail entry points — Phase 51 Theme F — **Phase 51 COMPLETE** (PR #269)
+
+Made the session cockpit reachable everywhere a session appears — the last theme, closing Phase 51.
+
+- [x] Sessions list: every card/row (grid/list/table) gets an explicit "Open session page" `<Link>` anchor → `/sessions/view?id=` (cmd/middle-click opens a new tab), alongside the existing quick-view modal; selection controls stopPropagation
+- [x] Task page: the Session button now deep-links straight to the cockpit (`/sessions/view?id={task.id}`) instead of the list's auto-open modal
+- [x] Office: both interaction modals (live terminal + ended transcript) gain an "Open page" action — shown even under `disableNavigation` (the office's intended way out to the detail page)
+- [x] Deep links already resolve standalone (Theme B container); RTL for the card link across all 3 variants + a sessions-list screenshot
+- [x] **Phase 51 verification checklist signed off** — all acceptance criteria met by themes A–F; `web:test` 704 green, typecheck + lint clean
+
+---
+
 ## 2026-07-01 — feat: session info panel (right rail) — Phase 51 Theme E (PR #268)
 
 The cockpit's right-rail instrument readout — the fields that genuinely exist, honest about what's real (Decision §4). No fabricated precision, no empty scaffolding.

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
-import { Archive, ArchiveRestore, ListTodo, X } from 'lucide-react';
+import { Archive, ArchiveRestore, ArrowUpRight, ListTodo, X } from 'lucide-react';
 import type { SessionSummary } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { SessionStatusDot } from '@/components/session-card';
@@ -36,6 +36,14 @@ export function SessionTerminalModal({
     if (!session.linkedTaskId) return;
     onClose();
     router.push(`/tasks?open=${encodeURIComponent(session.linkedTaskId)}`);
+  };
+
+  // Open the full session cockpit (Phase 51 F). Shown even under
+  // `disableNavigation` — it's the office's intended entry point *out* to the
+  // detail page (that flag only hides the in-app task deep-link).
+  const goToSessionPage = () => {
+    onClose();
+    router.push(`/sessions/view?id=${encodeURIComponent(session.id)}`);
   };
 
   useEffect(() => {
@@ -88,6 +96,10 @@ export function SessionTerminalModal({
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-1.5">
+              <Button type="button" variant="secondary" size="sm" onClick={goToSessionPage}>
+                <ArrowUpRight className="h-3.5 w-3.5" />
+                Open page
+              </Button>
               {session.linkedTaskId && !disableNavigation ? (
                 <Button type="button" variant="secondary" size="sm" onClick={goToTask}>
                   <ListTodo className="h-3.5 w-3.5" />
