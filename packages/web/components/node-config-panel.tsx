@@ -22,7 +22,16 @@ import { listWorkflowCredentials, rotateWorkflowWebhook } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
 import { aiModelOptions, LLM_PROVIDER_ICON_KEY } from '@/lib/ai-node';
 import { buildExpressionContext } from '@/lib/expression-editor';
-import { describeCron } from '@/lib/cron';
+import {
+  describeCron,
+  cronToPreset,
+  presetToCron,
+  nextRuns,
+  formatRun,
+  DAY_LABELS,
+  type RecurrenceKind,
+  type RecurrencePreset,
+} from '@/lib/cron';
 import { useWorkflowStore, type AppNode } from '@/lib/workflow-store';
 import { useConfirm } from '@/components/confirm-dialog';
 import { cn } from '@/lib/utils';
@@ -363,20 +372,109 @@ function NodeFields({ node, run }: { node: AppNode; run: WorkflowRun | null }) {
   );
 }
 
+const RECURRENCE_OPTIONS: SelectOption<string>[] = [
+  { value: 'daily', label: 'Every day' },
+  { value: 'weekdays', label: 'Weekdays (Mon–Fri)' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'monthly', label: 'Monthly' },
+  { value: 'custom', label: 'Custom (cron)' },
+];
+
+const DAY_OPTIONS: SelectOption<string>[] = DAY_LABELS.map((label, i) => ({ value: String(i), label }));
+
+
 function ScheduleFields({ trigger }: { trigger: ScheduleTrigger }) {
   const setTrigger = useWorkflowStore((s) => s.setTrigger);
+  const preset = cronToPreset(trigger.cron);
+  const mode: RecurrenceKind | 'custom' = preset?.kind ?? 'custom';
+  const time = preset && 'time' in preset ? preset.time : '09:00';
+  const weeklyDay = preset?.kind === 'weekly' ? preset.day : 1;
+  const monthlyDom = preset?.kind === 'monthly' ? preset.dom : 1;
+  const runs = nextRuns(trigger.cron, trigger.timezone, 3);
+
+  const setCron = (cron: string) => setTrigger({ ...trigger, cron });
+  const apply = (p: RecurrencePreset) => setCron(presetToCron(p));
+
+  const onMode = (next: string) => {
+    switch (next) {
+      case 'daily':
+        return apply({ kind: 'daily', time });
+      case 'weekdays':
+        return apply({ kind: 'weekdays', time });
+      case 'weekly':
+        return apply({ kind: 'weekly', day: weeklyDay, time });
+      case 'monthly':
+        return apply({ kind: 'monthly', dom: monthlyDom, time });
+      // 'custom' — keep the current expression; the raw field below is the editor.
+    }
+  };
+
+  const onTime = (t: string) => {
+    const next = t || '09:00';
+    if (mode === 'daily') apply({ kind: 'daily', time: next });
+    else if (mode === 'weekdays') apply({ kind: 'weekdays', time: next });
+    else if (mode === 'weekly') apply({ kind: 'weekly', day: weeklyDay, time: next });
+    else if (mode === 'monthly') apply({ kind: 'monthly', dom: monthlyDom, time: next });
+  };
+
   return (
     <div className="space-y-3">
+      <div className="space-y-1">
+        <label className="text-xs font-medium text-muted-foreground">Repeats</label>
+        <StyledSelect options={RECURRENCE_OPTIONS} value={mode} onChange={onMode} aria-label="Recurrence" />
+      </div>
+
+      {mode !== 'custom' ? (
+        <div className="flex gap-2">
+          {mode === 'weekly' ? (
+            <div className="flex-1 space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Day</label>
+              <StyledSelect
+                options={DAY_OPTIONS}
+                value={String(weeklyDay)}
+                onChange={(v) => apply({ kind: 'weekly', day: Number(v), time })}
+                aria-label="Day of week"
+              />
+            </div>
+          ) : null}
+          {mode === 'monthly' ? (
+            <div className="flex-1 space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Day of month</label>
+              <input
+                type="number"
+                min={1}
+                max={31}
+                className={inputClass}
+                value={monthlyDom}
+                onChange={(e) => apply({ kind: 'monthly', dom: Math.min(31, Math.max(1, Number(e.target.value) || 1)), time })}
+                aria-label="Day of month"
+              />
+            </div>
+          ) : null}
+          <div className="flex-1 space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Time</label>
+            <input
+              type="time"
+              className={inputClass}
+              value={time}
+              onChange={(e) => onTime(e.target.value)}
+              aria-label="Time"
+            />
+          </div>
+        </div>
+      ) : null}
+
       <div className="space-y-1">
         <label className="text-xs font-medium text-muted-foreground">Cron expression</label>
         <input
           className={cn(inputClass, 'font-mono')}
           value={trigger.cron}
-          onChange={(e) => setTrigger({ ...trigger, cron: e.target.value })}
+          onChange={(e) => setCron(e.target.value)}
           placeholder="0 9 * * *"
         />
         <p className="text-[11px] text-muted-foreground">{describeCron(trigger.cron)}</p>
       </div>
+
       <div className="space-y-1">
         <label className="text-xs font-medium text-muted-foreground">Timezone</label>
         <input
@@ -386,6 +484,21 @@ function ScheduleFields({ trigger }: { trigger: ScheduleTrigger }) {
           placeholder="UTC"
         />
       </div>
+
+      {runs.length > 0 ? (
+        <div className="space-y-1">
+          <p className="text-[11px] font-medium text-muted-foreground">Next runs</p>
+          <ul className="space-y-0.5">
+            {runs.map((d, i) => (
+              <li key={i} className="font-mono text-[11px] text-muted-foreground">
+                {formatRun(d, trigger.timezone)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <p className="text-[11px] text-destructive">Invalid cron — no upcoming runs.</p>
+      )}
     </div>
   );
 }

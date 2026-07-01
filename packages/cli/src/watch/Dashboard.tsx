@@ -14,6 +14,7 @@ import {
   type TaskBoardEvent,
 } from '@midnite/shared';
 import { gatewayWsUrl, openWs } from '../ws.js';
+import { BRAND_ACCENT, getVersion, logoLines } from '../lib/brand.js';
 import { StatusBar, type ConnectionState } from './StatusBar.js';
 import { BoardPanel } from './BoardPanel.js';
 import { PoolPanel } from './PoolPanel.js';
@@ -240,6 +241,17 @@ export function Dashboard({ baseUrl }: Props) {
 
   return (
     <Box flexDirection="column">
+      <Box marginBottom={1}>
+        <Box flexDirection="column" marginRight={1}>
+          {logoLines(4).map((line, i) => (
+            <Text key={i} color={BRAND_ACCENT}>{line}</Text>
+          ))}
+        </Box>
+        <Box flexDirection="column" justifyContent="center">
+          <Text bold color={BRAND_ACCENT}>midnite</Text>
+          <Text dimColor>live dashboard · v{getVersion()}</Text>
+        </Box>
+      </Box>
       <StatusBar baseUrl={baseUrl} connState={connState} lastUpdate={lastUpdate} />
       <Box flexDirection="row" flexGrow={1} gap={1}>
         <Box flexDirection="column" flexGrow={2}>

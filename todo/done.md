@@ -4,6 +4,225 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-01 — feat: inbound signed receiver + provider adapters — Phase 46 Themes B+C (PR #261)
+
+The heart of inbound integrations: a signed external event (GitHub/Linear/generic) becomes a board task.
+
+- [x] **gateway**: `POST /integrations/inbound/:id` (`InboundReceiverService` + controller) — raw-body HMAC verify → event-filter gate (empty=all) → dedup by `(sourceId, externalId)` on prior *created* deliveries → `createFromPrompt` (repo/project from source defaults, origin URL attached via `addLink`) → recorded delivery. Best-effort: created/skipped-duplicate/rejected/ignored/failed all recorded; only 401 (bad sig) / 404 (unknown/disabled) throw
+- [x] **gateway**: provider adapters (`adapters/`) — github (`X-Hub-Signature-256`, `issues/pull_request.opened`), linear (`Linear-Signature`, `Issue.create`), generic (`X-Midnite-Signature` + timestamp, mirrors Phase 44 outbound); each `verify`/`eventKey`/`externalId`/`toTask`
+- [x] **gateway**: raw body via Nest `{ rawBody: true }` (the flagged risk); receiver auth-exempted by method+shape (`isPublicInboundReceiver`) so the team-admin management routes sharing the prefix stay authed; rate-limiting still applies
+- [x] **gateway (fix)**: `encryptSecret` gates on `crypto.isEnabled()` — always encrypts with a key present (fail-closed preserved), raw only in keyless dev; also fixes a latent webhooks throw in keyless mode
+- [x] **tests**: verify-signature (6), adapters (7), receiver service (7), auth-policy exemption (2), managed-secret keyless; `inbound-receiver.e2e.ts` (real gateway — signed→created, tampered→401, redelivery→skipped-duplicate) exercises the raw-body path end-to-end. Gateway 165 files green
+- [x] **Decisions**: scoped raw body; dedup delivery-header→payload-id fallback; post-create addLink for the Source; 2xx for handled outcomes, 401/404 for errors
+## 2026-07-01 — feat: Slides deck contract + DB + CRUD module — Phase 48 Themes A+B (PR #260)
+
+The foundation + spine for the net-new Slides surface. Built A and B as one slice (contract+DB alone has no runtime consumer).
+
+- [x] **shared** (`slide.ts`): `Slide`/`DeckTheme`/`DeckContent`/`Deck`/create/update/`DeckSummary` zod schemas + a pure `deriveDeckFormat` helper (single format vs. `mixed`; empty deck → `md`); re-exported. Empty decks allowed (`DeckContentSchema.slides` defaults `[]`).
+- [x] **shared**: `deck` added to `SEARCH_TYPES` + `deckToIndexDoc` mapper + `routeFor` (`/slides/view?id=`); `deck` audit entity + `deck.created/updated/deleted` actions.
+- [x] **gateway** (`slides/`): `slides` table (metadata columns + JSON `content`, workflows-style split) + forward-only migration `0062`; `SlidesRepository` (team-scoped) → `SlidesService` (derives `slideCount`/`format` on write, validates content, search-indexes + audits) → `SlidesController` (CRUD, writes `RequiresRole('member')`); registered in `AppModule`.
+- [x] **web**: `deck` entry (Presentation icon) added to the exhaustive `Record<SearchType>` maps in search-results + command palette (compile-required; no new UI yet).
+- [x] **tests**: shared schema units; gateway migration-smoke + CRUD repo (team-scope), service (derivation/empty/404/search+audit), controller (validation, scope). `shared` 497 · `gateway` 1213 · `web` 655 green.
+
+## 2026-07-01 — feat: inbound integrations entity + Settings UI — Phase 46 Theme A (PR #259)
+
+The foundation of inbound integrations (external events → tasks): a team-scoped source entity + management surface. The signed receiver + provider adapters + deliveries log are Themes B–D.
+
+- [x] **shared**: `inbound.ts` — `InboundProvider` (github/linear/generic), flat `InboundEventFilter { events: string[] }` (empty = accept all) + curated `INBOUND_PROVIDER_EVENTS` catalog, `InboundSource`/create/update, reveal-once `InboundSecretResponse`, `InboundDelivery` shapes (for B/D)
+- [x] **gateway**: `integrations/inbound/` module — `inbound_sources` + `inbound_deliveries` tables + migration `0061`; repository → service (secret gen/encrypt, reveal-once, rotate, team-scope, RBAC) → controller (`GET/POST/PATCH/DELETE /integrations/inbound` + `:id/rotate`); registered in `AppModule`
+- [x] **gateway (shared base, per decision)**: extracted `integrations/lib/managed-secret.ts` (secret gen/encrypt/decrypt + team-admin RBAC + team-scope) and refactored Phase 44's webhooks service onto it — the secret+access core now lives in one place (webhooks specs pass unedited)
+- [x] **web**: `lib/api.ts` inbound client methods + a second **Inbound sources** section on Settings → Integrations (provider, receiver URL, event picker, default repo/project, enable toggle, rotate, delete, reveal-once modal)
+- [x] **tests**: gateway `managed-secret` (4), `inbound-sources.service` (7), `inbound-sources.repository` real-SQLite (3); web `inbound-sources-section` RTL (4) + fixed the outbound view test; shared 50 files. Integrations screenshots captured
+- [x] **Decisions**: flat `string[]` events (empty=all) + curated catalog; both tables migrated now; shared CRUD/secret base extracted (webhooks refactored onto it)
+## 2026-07-01 — docs: Phase 44 verification sign-off — **Phase 44 COMPLETE**
+
+Audited the shipped outbound-webhooks surface (Themes A–D, PRs #245/#249/#252/#251) against the phase's 7-item acceptance list. Every behavioural criterion is backed by an existing green test — no coverage gap surfaced, so no new tests were needed; the sign-off is a doc-only close-out.
+
+- [x] Mapped all 7 verification criteria to specific passing tests (schemas, service RBAC/secret, delivery filter/fan-out, sign/format, safe-delivery retry+SSRF, deliveries log/test/redeliver, Phase 21 channel delegation, web RTL) — recorded inline in the phase doc
+- [x] Ran the gate: `gateway:test` (1177) + `shared:test` + `web:test` (651) green; `web:typecheck` clean; Phase 44 files (`webhooks/`, `shared/webhook.ts`, `integrations-view`) carry no lint errors
+- [x] Noted pre-existing **unrelated** full-graph debt untouched by this branch (`gateway:lint` unused-imports/control-regex in Phases 14/23/35/36/38 files; `web:build` office `phaser` default-export warnings) — repo-wide, not Phase 44 regressions
+- [x] Flipped Phase 44 → **COMPLETE** (20/20) in `_INDEX.md`; ticked the Verification section
+
+## 2026-07-01 — feat: CLI shell completions + bulk-by-filter ops — Phase 47 Theme F — **Phase 47 COMPLETE**
+
+The power-user staples, closing Phase 47 (the CLI UX-coherence pass).
+
+- [x] **cli**: `midnite completion <bash|zsh|fish>` (`completions.ts`) — static completion scripts generated from commander's command tree (top commands + one level of subcommands + global flags), so they never drift; print-and-source, no daemon/eval
+- [x] **cli**: bulk-by-filter `move` + new `prioritise` (`bulk-ops.ts`) — `--status/--repo/--project` resolve the set via `listTasks`, loop the per-task client method with a progress spinner, confirm unless `--yes`, per-item summary table; exits non-zero only if every item failed. Single `prioritise <id> <level>` too; `--json` emits the results array
+- [x] **shared/gateway**: added the missing priority-update path (agreed at pickup — none existed): `SetTaskPriorityRequestSchema`, `PATCH /tasks/:id/priority` (controller→`service.setPriority`→repo, emits `task.priority.changed`), `client.setPriority`
+- [x] **tests**: `bulk-ops.test.ts` (6), `completions.test.ts` (5), gateway `tasks.service.spec` +2 (setPriority band + emit; throws unknown). CLI 16 files + gateway 159 files green; `completion` smoke-tested
+- [x] Phase 47 verification checklist signed off (A–F all shipped)
+
+## 2026-07-01 — feat: CLI global --json machine-readable output — Phase 47 Theme E (PR #256)
+
+Makes the CLI scriptable — every read command and the create/update writes can emit clean JSON.
+
+- [x] **cli**: global `--json` flag on the root program; `lib/output.ts` holds the mode flag + `printJson`/`printJsonError`. Set in the `preAction` hook, where it also flips `NO_COLOR` so the shared `isInteractive()` gate silences colour, palette, ora spinners, and the logo on one switch
+- [x] **cli**: read surface covered — `list`, `search`, `whoami`, `workflow list`/`runs`, `template list`, `check` (run results; pass/fail → exit code) — each `printJson`s its typed payload instead of a table
+- [x] **cli**: writes emit their object under `--json` — `add` (incl. `--bulk`), `move`, `block`, `unblock`, `workflow run` (block/unblock beyond the doc for a consistent mutate surface)
+- [x] **cli**: errors under `--json` → stderr as `{ "error": "…" }` with a non-zero exit (global handler + `whoami`), keeping stdout clean
+- [x] Tests: `lib/output.test.ts` (6 — flag toggle, NO_COLOR side-effect, pretty stdout, `{error}` stderr). CLI gate green (typecheck, lint, 14 files); error path smoke-tested end-to-end
+## 2026-06-30 — feat: CLI colour vocabulary + ora spinners — Phase 47 Themes B + C (PR #255)
+
+The CLI's everywhere-pass: a status/kind/priority colour vocabulary mirroring the web's `@midnite/ui` hues, plus an ora spinner on every async client call. chalk + ora added (they weren't installed). All chrome gated by the shared `isInteractive()` so piped / `NO_COLOR` output stays plain — existing snapshot tests run non-TTY and were untouched.
+
+- [x] **cli (B)**: `lib/palette.ts` — `colourStatus`/`colourKind`/`colourPriority`/`colourBool` (hues echoing `tokens.css`: wip→orange, done→green, bug→red, …) + generic `success`/`error`/`warn`/`dim`/`heading`; gated by `isInteractive()`
+- [x] **cli (B)**: colour applied across every renderer — `list`/`move`/`block`/`unblock`/`check` (inline) + `bulk.ts`/`search.ts`/`workflow.ts` row-builders; cli-table3's ANSI-aware width keeps coloured cells aligned
+- [x] **cli (C)**: `lib/spinner.ts` — `withSpinner(text, fn, { succeed })`; succeed message doubles as the mutation confirmation (plain `console.log` when piped); failures show `✗` + message, marked so the top-level handler doesn't reprint
+- [x] **cli (C)**: spinners wrap every async call site — `add`/bulk, `search`, `runWorkflow`, `plan` (LLM breakdown), `createFromBreakdown`, `installTemplate`, `login`, `check`, `exportTask`, list/runs/templates/workflows
+- [x] **tests**: `lib/palette.test.ts` (8) + `lib/spinner.test.ts` (11) — interactive-vs-piped gating, unknown-value passthrough, priority levels, succeed-prints-when-piped, error-reported marking
+- ⏳ `n/total` progress for multi-item bulk ops → carried into **Theme F** (no bulk-by-filter op exists yet; `withSpinner` is the foundation)
+
+## 2026-06-30 — feat: contextual "Move to…" palette commands — Phase 42 Theme C (PR #254)
+
+Closes Phase 41's 2 deferred boxes. ⌘K now carries per-task status moves whenever a task detail surface is open.
+
+- [x] **web**: `useTaskPaletteCommands(task, tasks)` (`hooks/`) registers **Move to in progress / Mark done / Move to waiting / Abandon** under the `task-detail` namespace via `useRegisterPaletteCommands`; unregisters on unmount, skips the current status, confirms Abandon + a blocked-start (Phase 27 unmet blockers)
+- [x] **web**: extracted `lib/task-transitions.moveTask` (+ `spawnsSession`/`stopsSession`) — the canonical start/stop/updateStatus selection, now shared by the board's `onMove` (refactored to delegate) and the new hook, so the rule lives in one place
+- [x] **web**: consumed the hook from `<TaskDetail>`, so it fires for both the modal and the `/tasks/view` full page; the `E` edit shortcut stays deferred
+- [x] **tests**: `task-transitions.test.ts` (8), `use-task-palette-commands.test.tsx` (6), `task-palette-commands.e2e.ts` (2 — appear+transition on the detail page, vanish elsewhere)
+## 2026-06-30 — feat: CLI interactive prompts (inquirer) — Phase 47 Theme D (PR #253)
+
+The CLI's hand-rolled `readline`/raw-mode interactivity is replaced with `@inquirer/prompts`, and the common commands gain guided flows.
+
+- [x] **cli**: added `@inquirer/prompts`; `cli/src/lib/prompts.ts` centralises helpers behind a `canPrompt()` (both-TTY) gate — required-value prompts throw `NonInteractiveError` instead of hanging (Decision §5; `NO_COLOR` doesn't gate prompts).
+- [x] **cli**: `plan` confirm → `confirm`; `login` email/password → `input`/`password` (drops the raw-mode TTY handler); behaviour-preserving, `--yes`/`--password`/`--email` still skip.
+- [x] **cli**: `midnite add` with no positional → guided flow (task text → repo → priority → project); the positional path is unchanged. Depends-on stays on `-d`.
+- [x] **cli**: `move`/`block`/`unblock` accept an omitted id → fuzzy `search` over `listTasks()`; `move` also `select`s a status. `template install` prompts unresolved cred slots (`-y/--yes` or non-TTY skip).
+- [x] Tests: `lib/prompts.test.ts` (3 — the non-TTY gate: `canPrompt` false, `confirmPrompt` fallback, required prompts throw). CLI typecheck + lint green; suite 103 pass.
+
+## 2026-06-30 — feat: webhook provider formatting — Phase 44 Theme C (PR #252)
+
+Slack and Discord endpoints now receive a message they can actually render, while `generic` keeps the canonical signed JSON. Last build theme of Phase 44 — A–D all shipped.
+
+- [x] **gateway**: [`webhooks/formatters/format.ts`](../packages/gateway/src/webhooks/formatters/format.ts) — `formatWebhookBody(provider, payload)` → Slack `{ text }` / Discord `{ content }` terse summaries (`summarize`: title + status transition + kind + repo), generic the canonical `{ event, at, task }` verbatim. `WebhookPayload` moved here as its home.
+- [x] **gateway**: wired into `WebhookDeliveryService.dispatch` (so both the bus fan-out and Theme D's send-test format by the endpoint's provider); `redeliver` still replays the stored body unchanged. HMAC signature (Theme B) covers whatever string the formatter emits.
+- [x] **Deferred**: absolute `/tasks/:id` deep link in the message — there's no web base-URL config yet; a follow-up. Linear remains out of scope (Decision §4).
+- [x] Tests: `formatters/format` (6 — summarize variants, Slack/Discord wrappers, generic-verbatim) + a delivery-engine wiring test (slack endpoint → `{ text }`). Gateway typecheck green; webhooks suite 45 pass.
+- [x] **Phase 44 status**: themes A (#245), B (#249), C (#252), D (#251) all landed; only the phase's Verification checklist sign-off remains.
+
+## 2026-06-30 — feat: schedule run-history + Daily standup preset — Phase 45 Theme D — **Phase 45 COMPLETE**
+
+Closes Phase 45. The Schedules facade now answers "did my schedule fire, and what did it open?" and ships a one-click headline starter.
+
+- [x] **web**: `ScheduleRunHistory` — an inline "History" disclosure on each schedule row lists recent runs (status + time), each linking to the board task it created (read from the `task.create` node's run output). The list endpoint hydrates runs shallow, so the shown runs are re-fetched in detail (`getWorkflowRun`) to resolve the link
+- [x] **web**: `SchedulePresetMenu` ("New from preset") installs task-creating scheduling starters; `lib/schedule-runs.ts` holds the pure `createdTaskFromRun` + `schedulePresetTemplates` glue (filtered to scheduling templates tagged `recurring-task`)
+- [x] **gateway**: `daily-standup` system template seed (`[schedule: weekdays 09:00] → [task.create]`, tagged `recurring-task`) — Decision §7 (a Phase 36 template, not hardcoded)
+- [x] **Deviation**: built a focused run list rather than reusing the canvas-coupled `run-history-panel.tsx` (which replays node state onto the ReactFlow editor) — the facade has no canvas
+- [x] **tests**: `schedule-runs.test.ts` (6), `daily-standup.seed.test.ts` (2), `schedules-view.test.tsx` extended (history expand→task link, preset show/hide); `schedule-runs.shots.ts` Playwright capture
+
+## 2026-06-30 — feat: webhook deliveries log + test + redeliver — Phase 44 Theme D (PR #251)
+
+Outbound webhooks are no longer a black box — you can see every attempt, fire a test, and replay a failure. Completes the observability layer on Theme B's delivery engine.
+
+- [x] **gateway**: `WebhooksService.listDeliveries` (any member) + `sendTest` / `redeliver` (team-admin), reusing Theme B's `WebhookDeliveryService`. Added `dispatchBody(webhook, event, body)` so redeliver replays the *stored* bytes faithfully (Decision §6). Routes: `GET /webhooks/:id/deliveries`, `POST :id/test`, `POST :id/deliveries/:deliveryId/redeliver`.
+- [x] **shared**: `WebhookDeliveryResponse` contract + `listWebhookDeliveries` / `sendWebhookTest` / `redeliverWebhook` client methods.
+- [x] **web**: Settings → Integrations gains a per-endpoint **expandable deliveries log** (status / event / response code / time, lazy-loaded), a **Send test** button (synthetic `task.updated`, shows ✓/✗ + auto-opens the log), and a **Redeliver** action per attempt.
+- [x] Tests: gateway `webhooks.deliveries.service` (5 — list scope, synthetic test dispatch, faithful redeliver, 404s), web RTL (2 — expand log + send-test result). Gateway + web typecheck green; webhooks suite 38, integrations 5. (Live screenshot skipped — the e2e/storybook harness was SIGKILL'd under parallel-agent load; UI is covered by RTL.)
+- [x] **Drive-by repo repair (separate commit to main)**: removed git admin files (`HEAD`/`index`/`gitdir`/`commondir`/`logs`/`ORIG_HEAD`) a parallel agent had `git add -A`'d into the repo root — the tracked `HEAD` pinned a feature branch, poisoning every fresh worktree.
+
+## 2026-06-30 — feat: signed webhook delivery engine — Phase 44 Theme B (PR #249)
+
+Outbound endpoints now actually fire. Task transitions become signed, retried, recorded HTTP deliveries — the heart of Phase 44.
+
+- [x] **gateway**: extracted the SSRF-guarded retry/backoff core into [`lib/safe-webhook-delivery.ts`](../packages/gateway/src/lib/safe-webhook-delivery.ts) (`deliverWebhook` → `{ ok, responseCode, attempts, error }`); Phase 21's `webhook.channel.ts` now delegates to it (behaviour-preserving, its dispatcher specs pass).
+- [x] **gateway**: `WebhookDeliveryService` subscribes to `TaskEventBus`, resolves the task's team's enabled endpoints whose `eventFilter` matches (`eventMatches` — `statuses` narrows `task.updated`), and dispatches one delivery per endpoint. Fire-and-forget — never blocks or throws into the transition.
+- [x] **gateway**: HMAC-SHA256 signature over `${timestamp}.${body}` → `X-Midnite-Signature: sha256=…` + `X-Midnite-Timestamp`; recipe + `verifySignature` in [`webhooks/lib/sign.ts`](../packages/gateway/src/webhooks/lib/sign.ts). Secret decrypted via `CryptoService` (plaintext fallback when crypto off).
+- [x] **gateway/shared**: `webhook_deliveries` table (migration `0060`) + `WebhookDeliveriesRepository` (insert / listByWebhook / findById); `WebhookDelivery` contract in `shared`. Generic canonical JSON body for all providers (Theme C branches Slack/Discord later); `dispatch()` is public so Theme D's send-test/redeliver reuse the signed path.
+- [x] **Deferred**: `task.deleted` carries only an id (no team/status) so it can't be team-scoped yet — `task.created`/`task.updated` fully supported.
+- [x] Tests: safe-delivery (4 — SSRF reject, 2xx, retry-budget, transient-recover), sign (3), delivery engine (matcher + signed dispatch + record + bus fan-out + skip disabled/filtered/un-scopable; 8), deliveries repo (3). Gateway typecheck green; shared + gateway suites pass (one unrelated flaky tmux spawner spec, passes in isolation).
+
+## 2026-06-30 — feat: CLI brand chrome + ANSI logo banner — Phase 47 Theme A (PR #248)
+
+The CLI gets its brand: a split-circle ANSI mark rendered as pure geometry (no image decode), an entry banner, and the central `isInteractive()` gate the rest of Phase 47 (colour/spinners/`--json`) will hook into. Also fixes the stale hardcoded `--version`.
+
+- [x] **cli**: `src/lib/brand.ts` — `logoLines()` (split-circle block art, deterministic geometry), `banner()`, `accent()`, `isInteractive()` (TTY + `NO_COLOR`), `getVersion()` (reads `package.json`), `BRAND_ACCENT`
+- [x] **cli**: banner shown on bare `midnite` (no-args → branded help) and the `--help` header (`addHelpText('beforeAll')`); `.version()` now reads the real version
+- [x] **cli**: compact logo header added to the `watch` ink dashboard (intro panel)
+- [x] **cli**: degrades to plain ASCII art when piped / non-TTY / `NO_COLOR` (colour escapes gated); `--json` off-switch deferred to Theme E per plan
+- [x] **tests**: `src/lib/brand.test.ts` (11) — geometry/size, the interactivity gate, colour-vs-plain output, version read
+
+## 2026-06-30 — feat: Schedules facade view — Phase 45 Theme C
+
+Recurring tasks become first-class — a dedicated **Schedules** surface over the `[trigger.schedule] → [task.create]` workflow shape, no node canvas required. Builds on the Theme A `task.create` action (#241) and Theme B recurrence presets (#243).
+
+- [x] **web**: `/schedules` page + sidenav entry (`schedules` feature in `lib/features.ts`, `CalendarClock`); lists schedule-triggered `task.create` workflows, sorted most-frequent first
+- [x] **web**: per-row cadence (`describeCron`), next run + last-fired/status, **Enabled** toggle (`updateWorkflow`), **Run now** (`runWorkflow`), Edit, and open-in-builder link
+- [x] **web**: inline create/edit dialog (`schedule-form-dialog.tsx`) — name + recurrence + task prompt + project/repo/priority; builds & persists a standard 2-node workflow, round-trips on edit (Decision §3)
+- [x] **web**: reusable `RecurrenceFields` (preset picker + raw-cron + next-3-runs), extracted from the node-config panel; `formatRun` moved into `lib/cron.ts`; `lib/schedules.ts` holds the pure filter/build/decode glue
+- [x] **shared/gateway**: expose schedule `timezone` on `WorkflowSummary` so next-run is computed correctly client-side (Decision §2 — client filter, no marker)
+- [x] **tests**: `lib/schedules.test.ts` (7), `schedule-form-dialog.test.tsx` (3), `schedules-view.test.tsx` (4), `schedules.shots.ts` Playwright capture; command-palette surface count bumped
+
+## 2026-06-30 — feat: full task detail page — Phase 42 Theme A (PR #246)
+
+Every task now has a shareable, refresh-safe URL. The modal's body was extracted into a reusable `<TaskDetail>` so the modal and the new full page render identical detail UI.
+
+- [x] **web**: extracted [`components/task-detail.tsx`](../packages/web/components/task-detail.tsx) (`<TaskDetail task projects tasks onClose variant />`) from the modal body; [`task-thread-modal.tsx`](../packages/web/components/task-thread-modal.tsx) is now a thin overlay shell around it (Escape-to-close + chrome). Behaviour-preserving — the modal's existing specs pass unchanged.
+- [x] **web**: new full page at `app/(main)/tasks/view/page.tsx` + `[id]/task-detail-view.tsx` — fetches `getTask(id)` + `getProjects()` + sibling `getTasks()` in parallel (Decision §6), renders `<TaskDetail variant="page">`, sets `document.title`, back-to-`/tasks` affordance, and an inline "Task not found." (no hard 404).
+- [x] **web**: added `getTask(id)` to [`lib/api.ts`](../packages/web/lib/api.ts) over the existing `GET /tasks/:id` — no new gateway endpoint (web-only phase).
+- [x] **Route deviation (documented in the phase doc)**: shipped at `/tasks/view?id=`, not `/tasks/[id]` — `output: 'export'` can't prerender runtime ids, so this mirrors the established `/ideas/view`, `/councils/view`, `/media/view` pattern. **Flagged for Theme B**: Next intercepting/parallel routes won't work under static export; the click→modal UX needs a client-side approach.
+- [x] Tests: RTL `task-detail-view` (3 — renders by id, inline not-found, no-id), preserved modal specs, new `task-detail.e2e.ts` (3 — direct-link full page + refresh, back affordance, unknown-id not-found). Local gate green (web typecheck + lint + 608 unit tests + e2e).
+
+## 2026-06-30 — feat: outbound webhook endpoints (entity + CRUD + UI) — Phase 44 Theme A (PR #245)
+
+The foundation of the outbound-integrations surface: a team can register/manage several webhook endpoints. Delivery engine (B), formatting (C), and the deliveries log (D) are the remaining themes.
+
+- [x] **shared**: [`webhook.ts`](../packages/shared/src/webhook.ts) — `Webhook` / `WebhookCreateRequest` / `WebhookUpdateRequest`, `WebhookProvider` (slack/discord/generic), structured `WebhookEventFilter` (`{ events, statuses? }`), reveal-once `WebhookSecretResponse`. Client methods in `web/lib/api.ts`
+- [x] **gateway**: `webhooks` table (migration `0059`) + dedicated `webhooks/` module — repository (team-scoped) → service (write-time `isSafeHttpUrl` guard, secret gen + `CryptoService` encryption, re-validate-on-read, RBAC via `TeamsService.getMembership`, single-user implicitly allowed) → controller (`GET`/`POST`/`PATCH`/`DELETE /webhooks` + `POST :id/rotate`; admin-manages, member-views; secret revealed once)
+- [x] **web**: Settings → Integrations page (list, add modal with provider/events/status filter, enable toggle, rotate-secret, delete, reveal-once modal) + sidebar entry
+- [x] **Decisions (settled at pickup)**: structured event filter; reveal-once **+ rotate**; write-time URL rejection
+- [x] **Drive-by fix**: explicit `@Inject` tokens — the e2e gateway runs under `tsx` (no emitted constructor-param metadata), so type-based DI silently yielded `undefined` (a 500). Same fix applied to the Phase 43 `preferences/` module, which had the identical latent bug
+- [x] Tests: shared schema (7), gateway service/repository/controller (19), web RTL Integrations (3); Integrations page screenshots. Local gate green (typecheck 13/13, lint clean, gateway + web suites pass)
+
+## 2026-06-30 — feat: web preference-sync layer — Phase 43 Theme C — **Phase 43 COMPLETE**
+
+The client half of preference sync, closing Phase 43: a signed-in account's look-and-feel now follows it across devices.
+
+- [x] **web**: `<PreferenceSync/>` (mounted in `(main)/layout.tsx` beside `<LiveData/>`) — gated on `useAuth()` (`jwtEnabled && user`); on login `GET /users/me/preferences`, hydrate local settings + theme (server wins), **seed server-from-localStorage when the row is empty**; debounce-`PUT` local changes (LWW), with a stable serialized key suppressing the hydrate echo. Inert (no requests) when signed out / single-user
+- [x] **web**: `getPreferences` / `putPreferences` in `lib/api.ts`; bridge helpers `appSettingsToPreferences` / `applyPreferences` in `app-settings.ts` reconciling the two local stores (`AppSettings` + the `@midnite/ui` theme-context)
+- [x] **web**: Settings → Appearance "Synced to your account" / "Sign in to sync across devices" indicator (shown only when accounts are enabled)
+- [x] **Decisions (settled at pickup)**: `useAuth()` gate; mounted component over existing hooks (no settings-store refactor); the indicator
+- [x] Tests: RTL `<PreferenceSync/>` (inert single-user + signed-out, hydrate server-wins, seed empty-row). **e2e omitted** — the e2e gateway runs JWT-disabled so a signed-in sync flow can't be exercised there; logic covered by RTL. Local gate green (typecheck 13/13, web lint clean, web tests pass)
+- [x] **Phase 43 is 100% complete** (A #240 · B #242 · C #244)
+
+## 2026-06-30 — feat: recurrence presets on the schedule trigger — Phase 45 Theme B (PR #243)
+
+A friendly preset layer over the workflow schedule trigger so a recurring task's cadence is pickable without cron syntax.
+
+- [x] **web/lib/cron.ts**: `RecurrencePreset` model + `presetToCron`/`cronToPreset` (round-trippable) + `nextRuns()` via `croner` (added to `packages/web` deps)
+- [x] **ScheduleFields**: Repeats picker (daily/weekdays/weekly+day/monthly+dom + time), raw-cron escape hatch (non-preset → Custom), `describeCron` summary, "next 3 runs" preview
+- [x] **tests**: `cron.test.ts` (compile/reverse/round-trip/nextRuns) + `node-config-panel.test.tsx` (renders preset+summary+next-runs; time edit recompiles; custom cron stays raw); full web suite 605 green
+- [x] **Decision**: croner in web (accurate next-runs) · compiler co-located in `web/lib/cron.ts` (only web consumes it)
+
+## 2026-06-30 — feat: gateway preferences store + API — Phase 43 Theme B (PR #242)
+
+The server side of preference sync: a per-user store + authed read/write, consuming the Theme A contract.
+
+- [x] **gateway**: new `user_preferences` table (`userId` PK + JSON `data` + `updatedAt`; no FK, off the auth row) + forward-only migration `0058_user_preferences`
+- [x] **gateway**: dedicated `preferences/` Nest module — `PreferencesRepository` (`find` / `upsert` via `onConflictDoUpdate`) → `PreferencesService` (defaults-on-empty, full-object replace + server-stamped `updatedAt`, re-validate-on-read → corrupt degrades to defaults) → `PreferencesController` `GET`/`PUT /users/me/preferences` behind `@CurrentUser()` (401 unauth, 400 bad body); registered in `AppModule`
+- [x] **Decisions (settled at pickup)**: dedicated module (not folded onto `users`); blind last-write-wins (no optimistic 409); re-validate stored blob on read
+- [x] Tests: `PreferencesService` unit (4) + `PreferencesRepository` `:memory:` integration (3) + `PreferencesController` authed/unauth/bad-body (5). Local gate: gateway typecheck ✓, gateway 1124 tests ✓, my files lint-clean (8 pre-existing main lint errors untouched)
+
+## 2026-06-30 — feat: task.create workflow action — Phase 45 Theme A (PR #241)
+
+The keystone of recurring/scheduled tasks: a workflow action that enqueues a board task, so a `[trigger.schedule] → [task.create]` workflow auto-creates tasks on a cadence.
+
+- [x] **shared**: `task.create` `NODE_TYPE_DEFINITION` + `TaskCreateParamsSchema` (prompt/repo/projectId/priority; prompt expression-enabled) — node palette picks it up automatically
+- [x] **gateway**: `TaskCreateExecutor` enqueues via `TasksService.createFromPrompt`, returns the created `Task` as node output
+- [x] **gateway**: reaches the task store through a narrow `TASK_CREATOR` port (interface token) bound by a `@Global` module that resolves `TasksService` lazily via `ModuleRef` — avoids the `Tasks ↔ Workflows` module cycle without `forwardRef`
+- [x] **gateway**: `workflowCreatedBy` threaded into `NodeRunContext` so the created task inherits the workflow owner (team scoping derives from `createdBy`)
+- [x] **tests**: executor unit spec (maps params, inherits owner, rejects empty prompt) + ctx-literal updates; gateway 146 files + shared 469 green
+- [x] **Decision**: `TASK_CREATOR` interface token over `forwardRef`; created task inherits the workflow's owner
+
+## 2026-06-30 — feat: UserPreferences sync contract — Phase 43 Theme A (PR #240)
+
+The shared contract for server-side preference sync: the synced subset of the UI prefs, defined once in `shared` so the gateway (Theme B) and web (Theme C) agree.
+
+- [x] **shared**: [`preferences.ts`](../packages/shared/src/preferences.ts) — `UserPreferencesSchema` (theme, appearance: background/bg-intensity/accent/motion/density/uiFont/effects, navMode, inactivity/cycle timers, feature toggles) with per-field `.default()`s; schema-derived `DEFAULT_USER_PREFERENCES`; `PutPreferencesRequestSchema` (full-object replace) + `PreferencesResponseSchema` (`{ preferences, updatedAt }`). Unknown keys stripped, partial blobs fill defaults (forward-compatible). Exported from the package index
+- [x] **web**: refactored `AppSettings` to `Omit<UserPreferences, 'theme' | 'features'> & { features: Record<FeatureKey,boolean>; …device-only }` — `DEFAULT_SETTINGS` now derives the synced defaults from `DEFAULT_USER_PREFERENCES`; the synced-field types (`NavMode`/`BackgroundPattern`/`AccentId`/…) are re-exported from `@midnite/shared`, so existing `@/lib/app-settings` import sites are untouched
+- [x] **Decisions (settled at pickup)**: `theme` is in the synced contract but keeps its own `midnite.theme` store (sync layer reconciles in Theme C); passcode prefs + notify toggle + agent-pool size stay device-local; no `MidniteClient` in `shared`, so typed client methods move to Theme B/C
+- [x] Tests: 10 shared unit tests (parse empty→defaults, partial overlay, nested-effect fill, unknown-key strip, full round-trip, enum reject, loose feature map, response null/ISO `updatedAt`). Local gate green (typecheck 13/13, shared+web lint 0 errors, shared 479 + web 593 tests)
+
 ## 2026-06-30 — feat: interface-font setting — Phase 39 Theme C (PR #238) — **Phase 39 COMPLETE**
 
 The last open box in Phase 39: a curated **Interface font** picker in Appearance, completing the personalization surface (39 → 25/25).

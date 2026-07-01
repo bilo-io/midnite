@@ -185,6 +185,15 @@ export class TasksRepository {
       .get();
   }
 
+  setPriority(id: string, priority: number, updatedAt: string): TaskRow | undefined {
+    return this.db
+      .update(tasks)
+      .set({ priority, updatedAt })
+      .where(eq(tasks.id, id))
+      .returning()
+      .get();
+  }
+
   setArchived(id: string, archivedAt: string | null, updatedAt: string): TaskRow | undefined {
     return this.db
       .update(tasks)

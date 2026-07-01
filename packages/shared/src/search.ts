@@ -18,6 +18,7 @@ export const SEARCH_TYPES = [
   'council',
   'workflow',
   'idea',
+  'deck',
 ] as const;
 
 export const SearchTypeSchema = z.enum(SEARCH_TYPES);

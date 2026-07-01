@@ -9,6 +9,7 @@ import { EnvironmentModule } from './environment/environment.module';
 import { FsModule } from './fs/fs.module';
 import { HealthController } from './health/health.controller';
 import { TasksModule } from './tasks/tasks.module';
+import { TaskCreatorModule } from './tasks/task-creator.module';
 import { AgentModule } from './agent/agent.module';
 import { AgentsModule } from './agents/agents.module';
 import { CouncilsModule } from './councils/councils.module';
@@ -41,7 +42,11 @@ import { TeamsModule } from './teams/teams.module';
 import { WsModule } from './ws/ws.module';
 import { ServiceTokensModule } from './service-tokens/service-tokens.module';
 import { IdeasModule } from './ideas/ideas.module';
+import { SlidesModule } from './slides/slides.module';
 import { PhaseDocsModule } from './phase-docs/phase-docs.module';
+import { PreferencesModule } from './preferences/preferences.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
+import { InboundModule } from './integrations/inbound/inbound.module';
 
 @Module({
   imports: [
@@ -66,6 +71,7 @@ import { PhaseDocsModule } from './phase-docs/phase-docs.module';
     SearchIndexModule,
     SearchModule,
     TasksModule,
+    TaskCreatorModule,
     PoolModule,
     ProjectsModule,
     ProvidersModule,
@@ -86,7 +92,11 @@ import { PhaseDocsModule } from './phase-docs/phase-docs.module';
     AdminModule,
     ServiceTokensModule,
     IdeasModule,
+    SlidesModule,
     PhaseDocsModule,
+    PreferencesModule,
+    WebhooksModule,
+    InboundModule,
   ],
   controllers: [HealthController],
   providers: [],

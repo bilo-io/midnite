@@ -1,10 +1,41 @@
 /**
- * Client-side settings & profile, persisted to localStorage for now. These will
- * eventually be backed by the gateway config (`midnite.json`) and a user record,
- * but the shapes here are the source of truth the UI reads from.
+ * Client-side settings & profile, persisted to localStorage. The **synced
+ * subset** (theme, appearance, nav, timers, feature toggles) is defined once in
+ * `@midnite/shared` as `UserPreferences` (Phase 43) — the contract the gateway
+ * stores and syncs per user — and re-exported here so the rest of the web app
+ * keeps importing these types from `@/lib/app-settings`. `AppSettings` is that
+ * synced shape **minus `theme`** (which keeps its own `localStorage` store via the
+ * `@midnite/ui` theme-context) plus the device-only/operational settings that
+ * never sync (agent-pool size, screensaver passcode, the notification toggle).
  */
 
+import {
+  DEFAULT_USER_PREFERENCES,
+  type AccentId,
+  type BackgroundPattern,
+  type BgIntensity,
+  type Density,
+  type Motion,
+  type NavMode,
+  type UiFont,
+  type UserPreferences,
+  type VisualEffects,
+} from '@midnite/shared';
+
 import { DEFAULT_FEATURE_FLAGS, type FeatureKey } from './features';
+
+// Re-export the synced-field types so existing `@/lib/app-settings` import sites
+// keep working unchanged — `@midnite/shared` is now their source of truth.
+export type {
+  AccentId,
+  BackgroundPattern,
+  BgIntensity,
+  Density,
+  Motion,
+  NavMode,
+  UiFont,
+  VisualEffects,
+};
 
 export const AGENT_POOL_MIN = 1;
 export const AGENT_POOL_DEFAULT = 4;
@@ -75,8 +106,6 @@ export function formatHeartbeatInterval(hours: number): string {
  * - `expanded`: locked open with labels; page content shifts to make room.
  * - `collapsed`: locked as the icon bar, no hover-expand.
  */
-export type NavMode = 'auto' | 'expanded' | 'collapsed';
-
 /** Side-nav widths, shared by the nav component and the `--nav-offset` CSS var. */
 export const NAV_W_COLLAPSED = '3.5rem';
 export const NAV_W_EXPANDED = '14rem';
@@ -85,20 +114,6 @@ export const NAV_W_EXPANDED = '14rem';
  * The decorative backdrop drawn behind the home screen, screensaver and the
  * dashboard header. Each maps to a self-contained utility class in globals.css.
  */
-export type BackgroundPattern =
-  | 'grid'
-  | 'honeycomb'
-  | 'gradient'
-  | 'dots'
-  | 'diagonal-lines'
-  | 'topographic'
-  | 'aurora'
-  | 'plus-cross'
-  | 'waves'
-  | 'grain'
-  | 'blueprint'
-  | 'mesh-gradient';
-
 export const BACKGROUND_PATTERN_DEFAULT: BackgroundPattern = 'grid';
 
 /** Pattern → CSS utility class drawn at each background site. */
@@ -139,16 +154,6 @@ export const BACKGROUND_PATTERN_OPTIONS: { value: BackgroundPattern; label: stri
  * text-on-accent contrast holds in both themes. `default` applies no override,
  * reproducing today's near-monochrome primary.
  */
-export type AccentId =
-  | 'default'
-  | 'blue'
-  | 'violet'
-  | 'emerald'
-  | 'amber'
-  | 'rose'
-  | 'cyan'
-  | 'orange';
-
 export const ACCENT_DEFAULT: AccentId = 'default';
 
 export const ACCENT_OPTIONS: { id: AccentId; label: string; h: number; s: number }[] = [
@@ -168,7 +173,6 @@ export const ACCENT_OPTIONS: { id: AccentId; label: string; h: number; s: number
  * - `reduced`: force animations off regardless of the OS.
  * - `full`: force animations on, overriding an OS reduce preference (opt-in).
  */
-export type Motion = 'system' | 'reduced' | 'full';
 export const MOTION_DEFAULT: Motion = 'system';
 
 export const MOTION_OPTIONS: { value: Motion; label: string; hint: string }[] = [
@@ -181,15 +185,6 @@ export const MOTION_OPTIONS: { value: Motion; label: string; hint: string }[] = 
  * Individual visual-effect toggles, each gated via a `data-no-*` attribute on
  * <html> (independent of the motion setting). All on by default.
  */
-export type VisualEffects = {
-  /** The staggered page-content reveal on route change. */
-  pageReveal: boolean;
-  /** The typewriter reveal of page-header titles. */
-  typewriter: boolean;
-  /** Backdrop blur / frosted-glass surfaces. */
-  glass: boolean;
-};
-
 export const DEFAULT_EFFECTS: VisualEffects = {
   pageReveal: true,
   typewriter: true,
@@ -207,7 +202,6 @@ export const EFFECT_OPTIONS: { key: keyof VisualEffects; label: string; hint: st
  * root font-size (from 16px → 14px), causing all rem-based Tailwind utilities
  * to scale proportionally. `comfortable` (default) leaves the root unchanged.
  */
-export type Density = 'comfortable' | 'compact';
 export const DENSITY_DEFAULT: Density = 'comfortable';
 
 export const DENSITY_OPTIONS: { value: Density; label: string; hint: string }[] = [
@@ -224,7 +218,6 @@ export const DENSITY_OPTIONS: { value: Density; label: string; hint: string }[] 
  * and the wordmark (`font-brand`) keep their own families via the Tailwind
  * utility cascade, so they're unaffected by this setting.
  */
-export type UiFont = 'system' | 'grotesk' | 'humanist' | 'serif' | 'mono';
 export const UI_FONT_DEFAULT: UiFont = 'system';
 
 /**
@@ -248,7 +241,6 @@ export const UI_FONT_OPTIONS: { value: UiFont; label: string; hint: string }[] =
 ];
 
 /** Opacity of the animated gradient at each intensity level. */
-export type BgIntensity = 'subtle' | 'balanced' | 'bold';
 export const BG_INTENSITY_DEFAULT: BgIntensity = 'balanced';
 
 export const BG_INTENSITY_OPTIONS: { value: BgIntensity; label: string }[] = [
@@ -257,13 +249,19 @@ export const BG_INTENSITY_OPTIONS: { value: BgIntensity; label: string }[] = [
   { value: 'bold', label: 'Bold' },
 ];
 
-export type AppSettings = {
+/**
+ * The full client settings blob persisted under `midnite.settings`. It's the
+ * synced `UserPreferences` (Phase 43) **minus `theme`** — which keeps its own
+ * `localStorage` store (`midnite.theme`) via the `@midnite/ui` theme-context —
+ * plus the **device-local / operational** settings that never sync.
+ */
+export type AppSettings = Omit<UserPreferences, 'theme' | 'features'> & {
+  /** Which optional features (and their nav items) are enabled. */
+  features: Record<FeatureKey, boolean>;
+
+  // ── Device-local / operational — never synced (Phase 43) ──────────────────────
   /** Number of agent sessions allowed to run in parallel. */
   agentPoolSize: number;
-  /** Seconds of inactivity before the screensaver opens. */
-  inactivityTimeoutS: number;
-  /** Seconds a cycling phrase is shown before the next is typed (screensaver + home). */
-  cycleDurationS: number;
   /** Require a passcode to wake the screensaver. */
   requirePasscode: boolean;
   /**
@@ -271,48 +269,26 @@ export type AppSettings = {
    * the lock button — the idle screensaver wakes without one.
    */
   passcodeOnlyWhenLocked: boolean;
-  /** Collapse/expand/lock behaviour of the side navigation. */
-  navMode: NavMode;
-  /** Decorative backdrop pattern (home screen, screensaver, dashboard header). */
-  backgroundPattern: BackgroundPattern;
-  /** Visibility level of the animated-gradient backdrop (only shown when gradient is active). */
-  bgIntensity: BgIntensity;
-  /** Accent colour retinting primary/ring/accent across the app (`default` = no override). */
-  accent: AccentId;
-  /** How much motion the app shows (honour OS / force off / force on). */
-  motion: Motion;
-  /** UI density — `comfortable` (default) or `compact` (tighter spacing + type scale). */
-  density: Density;
-  /** Interface font for body text (`system` default; others are system-font stacks). */
-  uiFont: UiFont;
-  /** Per-effect visual toggles (page reveal, typewriter, frosted glass). */
-  effects: VisualEffects;
   /**
    * Desktop notifications when a task needs input (→ waiting) or finishes
    * (→ done). Opt-in: enabling it prompts for the browser's Notification
    * permission. Works in the browser and the Electron desktop app.
    */
   notifyTaskUpdates: boolean;
-  /** Which optional features (and their nav items) are enabled. */
-  features: Record<FeatureKey, boolean>;
 };
 
+// The synced-field defaults come from the shared contract (single source of
+// truth); `theme` is dropped (it lives in the theme-context store) and `features`
+// is replaced with the web app's typed default flags.
+const { theme: _theme, features: _features, ...SYNCED_DEFAULTS } = DEFAULT_USER_PREFERENCES;
+
 export const DEFAULT_SETTINGS: AppSettings = {
+  ...SYNCED_DEFAULTS,
+  features: DEFAULT_FEATURE_FLAGS,
   agentPoolSize: AGENT_POOL_DEFAULT,
-  inactivityTimeoutS: INACTIVITY_DEFAULT_S,
-  cycleDurationS: CYCLE_DEFAULT_S,
   requirePasscode: false,
   passcodeOnlyWhenLocked: false,
-  navMode: 'auto',
-  backgroundPattern: BACKGROUND_PATTERN_DEFAULT,
-  bgIntensity: BG_INTENSITY_DEFAULT,
-  accent: ACCENT_DEFAULT,
-  motion: MOTION_DEFAULT,
-  density: DENSITY_DEFAULT,
-  uiFont: UI_FONT_DEFAULT,
-  effects: DEFAULT_EFFECTS,
   notifyTaskUpdates: false,
-  features: DEFAULT_FEATURE_FLAGS,
 };
 
 export const SETTINGS_STORAGE_KEY = 'midnite.settings';
@@ -340,3 +316,52 @@ export const DEFAULT_PROFILE: Profile = {
 };
 
 export const PROFILE_STORAGE_KEY = 'midnite.profile';
+
+// ── Bridge to the synced `UserPreferences` contract (Phase 43) ──────────────────
+// The synced blob spans two local stores: `AppSettings` (this module's
+// localStorage) and the theme (the `@midnite/ui` theme-context's own key). These
+// helpers project between `AppSettings` + theme and the shared `UserPreferences`.
+
+/** Project the local settings + current theme into the synced `UserPreferences`. */
+export function appSettingsToPreferences(
+  settings: AppSettings,
+  theme: UserPreferences['theme'],
+): UserPreferences {
+  return {
+    theme,
+    navMode: settings.navMode,
+    backgroundPattern: settings.backgroundPattern,
+    bgIntensity: settings.bgIntensity,
+    accent: settings.accent,
+    motion: settings.motion,
+    density: settings.density,
+    uiFont: settings.uiFont,
+    effects: settings.effects,
+    inactivityTimeoutS: settings.inactivityTimeoutS,
+    cycleDurationS: settings.cycleDurationS,
+    features: settings.features,
+  };
+}
+
+/** Apply incoming synced preferences onto the local settings store + theme. */
+export function applyPreferences(
+  prefs: UserPreferences,
+  setSettings: (next: AppSettings | ((prev: AppSettings) => AppSettings)) => void,
+  setTheme: (theme: UserPreferences['theme']) => void,
+): void {
+  setSettings((prev) => ({
+    ...prev,
+    navMode: prefs.navMode,
+    backgroundPattern: prefs.backgroundPattern,
+    bgIntensity: prefs.bgIntensity,
+    accent: prefs.accent,
+    motion: prefs.motion,
+    density: prefs.density,
+    uiFont: prefs.uiFont,
+    effects: prefs.effects,
+    inactivityTimeoutS: prefs.inactivityTimeoutS,
+    cycleDurationS: prefs.cycleDurationS,
+    features: { ...prev.features, ...prefs.features } as AppSettings['features'],
+  }));
+  setTheme(prefs.theme);
+}

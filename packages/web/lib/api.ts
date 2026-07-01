@@ -224,6 +224,29 @@ import {
   type ApprovalLogResponse,
   type ModeResponse,
   type AutonomyMode,
+  PreferencesResponseSchema,
+  type PreferencesResponse,
+  type UserPreferences,
+  ListWebhooksResponseSchema,
+  ListWebhookDeliveriesResponseSchema,
+  WebhookResponseSchema,
+  WebhookSecretResponseSchema,
+  WebhookDeliveryResponseSchema,
+  type ListWebhooksResponse,
+  type ListWebhookDeliveriesResponse,
+  type WebhookCreateRequest,
+  type WebhookResponse,
+  type WebhookSecretResponse,
+  type WebhookDeliveryResponse,
+  type WebhookUpdateRequest,
+  ListInboundSourcesResponseSchema,
+  InboundSourceResponseSchema,
+  InboundSecretResponseSchema,
+  type ListInboundSourcesResponse,
+  type InboundSourceResponse,
+  type InboundSecretResponse,
+  type InboundSourceCreateRequest,
+  type InboundSourceUpdateRequest,
 } from '@midnite/shared';
 import { z } from 'zod';
 
@@ -334,6 +357,141 @@ export async function getTaskCounts(): Promise<TaskCounts> {
 
 export async function getTasks(): Promise<Task[]> {
   return fetchJson('/tasks', undefined, z.array(TaskSchema));
+}
+
+// ── Outbound webhooks (Phase 44) ────────────────────────────────────────────────
+
+/** List the team's webhook endpoints (secrets never included). */
+export async function listWebhooks(): Promise<ListWebhooksResponse> {
+  return fetchJson('/webhooks', undefined, ListWebhooksResponseSchema);
+}
+
+/** Create an endpoint — the response carries the signing secret exactly once. */
+export async function createWebhook(body: WebhookCreateRequest): Promise<WebhookSecretResponse> {
+  return fetchJson(
+    '/webhooks',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    WebhookSecretResponseSchema,
+  );
+}
+
+/** Update an endpoint (url / provider / event filter / enabled). */
+export async function updateWebhook(
+  id: string,
+  body: WebhookUpdateRequest,
+): Promise<WebhookResponse> {
+  return fetchJson(
+    `/webhooks/${encodeURIComponent(id)}`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    WebhookResponseSchema,
+  );
+}
+
+/** Delete an endpoint. */
+export async function deleteWebhook(id: string): Promise<void> {
+  await fetchJson(`/webhooks/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+/** Rotate the signing secret — the new secret is returned exactly once. */
+export async function rotateWebhookSecret(id: string): Promise<WebhookSecretResponse> {
+  return fetchJson(
+    `/webhooks/${encodeURIComponent(id)}/rotate`,
+    { method: 'POST', headers: JSON_HEADERS },
+    WebhookSecretResponseSchema,
+  );
+}
+
+/** Recent delivery attempts for one endpoint (Phase 44 Theme D). Any team member. */
+export async function listWebhookDeliveries(id: string): Promise<ListWebhookDeliveriesResponse> {
+  return fetchJson(
+    `/webhooks/${encodeURIComponent(id)}/deliveries`,
+    undefined,
+    ListWebhookDeliveriesResponseSchema,
+  );
+}
+
+/** Fire a synthetic `task.updated` at the endpoint to confirm wiring (team-admin). */
+export async function sendWebhookTest(id: string): Promise<WebhookDeliveryResponse> {
+  return fetchJson(
+    `/webhooks/${encodeURIComponent(id)}/test`,
+    { method: 'POST', headers: JSON_HEADERS },
+    WebhookDeliveryResponseSchema,
+  );
+}
+
+/** Re-fire a recorded delivery's stored payload (faithful replay; team-admin). */
+export async function redeliverWebhook(
+  id: string,
+  deliveryId: string,
+): Promise<WebhookDeliveryResponse> {
+  return fetchJson(
+    `/webhooks/${encodeURIComponent(id)}/deliveries/${encodeURIComponent(deliveryId)}/redeliver`,
+    { method: 'POST', headers: JSON_HEADERS },
+    WebhookDeliveryResponseSchema,
+  );
+}
+
+// --- Inbound integrations (Phase 46) ---
+
+/** List the team's inbound sources (secrets never included). */
+export async function listInboundSources(): Promise<ListInboundSourcesResponse> {
+  return fetchJson('/integrations/inbound', undefined, ListInboundSourcesResponseSchema);
+}
+
+/** Create an inbound source — the response carries the signing secret exactly once. */
+export async function createInboundSource(
+  body: InboundSourceCreateRequest,
+): Promise<InboundSecretResponse> {
+  return fetchJson(
+    '/integrations/inbound',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    InboundSecretResponseSchema,
+  );
+}
+
+/** Update an inbound source (provider / event filter / default routing / enabled). */
+export async function updateInboundSource(
+  id: string,
+  body: InboundSourceUpdateRequest,
+): Promise<InboundSourceResponse> {
+  return fetchJson(
+    `/integrations/inbound/${encodeURIComponent(id)}`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    InboundSourceResponseSchema,
+  );
+}
+
+/** Delete an inbound source. */
+export async function deleteInboundSource(id: string): Promise<void> {
+  await fetchJson(`/integrations/inbound/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+/** Rotate the signing secret — the new secret is returned exactly once. */
+export async function rotateInboundSecret(id: string): Promise<InboundSecretResponse> {
+  return fetchJson(
+    `/integrations/inbound/${encodeURIComponent(id)}/rotate`,
+    { method: 'POST', headers: JSON_HEADERS },
+    InboundSecretResponseSchema,
+  );
+}
+
+/** Current user's synced preferences (Phase 43). Authed-only — 401 when signed out. */
+export async function getPreferences(signal?: AbortSignal): Promise<PreferencesResponse> {
+  return fetchJson('/users/me/preferences', { signal }, PreferencesResponseSchema);
+}
+
+/** Replace the current user's preferences (full-object PUT). */
+export async function putPreferences(prefs: UserPreferences): Promise<PreferencesResponse> {
+  return fetchJson(
+    '/users/me/preferences',
+    { method: 'PUT', headers: JSON_HEADERS, body: JSON.stringify(prefs) },
+    PreferencesResponseSchema,
+  );
+}
+
+/** Single task by id (`GET /tasks/:id`); throws on a 404 for an unknown id. */
+export async function getTask(id: string, signal?: AbortSignal): Promise<Task> {
+  return fetchJson(`/tasks/${encodeURIComponent(id)}`, { signal }, TaskSchema);
 }
 
 export async function createTask(form: FormData): Promise<CreateTaskResponse> {

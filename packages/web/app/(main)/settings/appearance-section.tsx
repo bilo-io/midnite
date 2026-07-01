@@ -5,6 +5,8 @@ import Image from 'next/image';
 import {
   Check,
   Clock,
+  Cloud,
+  CloudOff,
   Download,
   Laptop,
   LayoutGrid,
@@ -23,6 +25,7 @@ import { PwaInstall } from '@/components/pwa-install';
 import { Switch } from '@/components/ui/switch';
 import { Wordmark } from '@/components/wordmark';
 import { useTheme, type ThemePreference } from '@/app/theme/theme-context';
+import { useAuth } from '@/contexts/auth-context';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
   BACKGROUND_PATTERN_CLASS,
@@ -81,6 +84,7 @@ const NAV_MODE_OPTIONS: { value: NavMode; label: string; hint: string }[] = [
 
 export function AppearanceSection() {
   const { preference, setPreference } = useTheme();
+  const { user, jwtEnabled } = useAuth();
   const [settings, setSettings, hydrated] = useLocalStorage<AppSettings>(
     SETTINGS_STORAGE_KEY,
     DEFAULT_SETTINGS,
@@ -125,7 +129,23 @@ export function AppearanceSection() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-between gap-2">
+        {/* Sync status (Phase 43): only meaningful when accounts are enabled. */}
+        {jwtEnabled ? (
+          user ? (
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Cloud className="h-3 w-3" />
+              Synced to your account
+            </span>
+          ) : (
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <CloudOff className="h-3 w-3" />
+              Sign in to sync across devices
+            </span>
+          )
+        ) : (
+          <span />
+        )}
         <button
           type="button"
           onClick={handleReset}

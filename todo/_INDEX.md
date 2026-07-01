@@ -65,10 +65,17 @@
 | [39 · Visual customization](phase-39-visual-customization.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
 | [40 · Ideas pipeline](phase-40-ideas-pipeline.md) | ✅ DONE | 51/51 | `██████████` | 100% | — | — |
 | [41 · Command palette](phase-41-command-palette.md) | ✅ DONE | 32/32 | `██████████` | 100% | — | — ² |
+| [42 · Task detail routing](phase-42-task-detail-routing.md) | 🔄 WIP | 7/11 | `██████░░░░` | 64% | B | — |
+| [43 · Preference sync](phase-43-server-side-preference-sync.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
+| [44 · Outbound webhooks](phase-44-outbound-webhooks.md) | ✅ DONE | 20/20 | `██████████` | 100% | — | — |
+| [45 · Recurring/scheduled tasks](phase-45-recurring-scheduled-tasks.md) | ✅ DONE | 15/15 | `██████████` | 100% | — | — |
+| [46 · Inbound integrations](phase-46-inbound-integrations.md) | 🔄 WIP | 10/20 | `█████░░░░░` | 50% | D | — |
+| [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
+| [48 · Slides](phase-48-slides.md) | 🔄 WIP | 6/26 | `██░░░░░░░░` | 23% | C D E | F |
 
-**Headline:** the **entire 0–41 roadmap is now 100% complete.** Phases 39 (visual customization, UI font #238) and 41 (command palette, verification #237) both closed on 2026-06-30; no pickable themes remain. (Phase 42 was a parallel restatement of Phase 40 — its unique sync-back layer landed as Phase 40 Theme G; the doc was removed on 2026-06-27.)
+**Headline:** the original **0–41 roadmap is 100% complete** (Phases 39 & 41 closed 2026-06-30). **Phases 43, 44 (outbound webhooks & integrations), 45, and 47 are complete**; **Phase 42 (task detail routing, Theme B in flight)** and **Phase 46 (inbound integrations, Theme A in flight)** are the open frontier. (An *earlier* Phase 42 was a parallel restatement of Phase 40, folded into Phase 40 Theme G and removed 2026-06-27; the current 42 & 43 are new, unrelated phases — two brainstorm sessions ran concurrently, so the preference-sync plan took the next free number, 43.)
 
-² Phase 41 — themes A–D all landed and the verification checklist is signed off (PR #237). The 3 remaining boxes are all `⏳` deferred (contextual task-detail commands ×2 — no `/tasks/:id` route — and the `E` edit-form shortcut). No pickable theme.
+² Phase 41 — themes A–D all landed and the verification checklist is signed off (PR #237). The 3 remaining boxes are all `⏳` deferred (contextual task-detail commands ×2 + the `E` edit-form shortcut). The 2 contextual-command boxes are now **un-deferred and folded into Phase 42 Theme C** (they needed the `/tasks/:id` route Phase 42 adds).
 
 ## Theme key (active phases)
 
@@ -83,6 +90,53 @@ so you can pick from this file without opening the phase doc first.
 - ✅ **E** — Phase doc editor (GitHub-backed) (#229)
 - ✅ **F** — Phase doc → task seeder (#233)
 - ✅ **G** — Phase-doc ↔ board sync-back (#236) *(folded in from former Phase 42 Theme E)*
+
+### [Phase 42 — Task detail routing & contextual commands](phase-42-task-detail-routing.md)
+- ✅ **A** — full detail page (extract `<TaskDetail>`, deep-linkable) — shipped at `/tasks/view?id=` (PR #246) **[M]**
+- ◻ **B** — Intercepting-route modal (modal on click / full page on direct link) + nav migration **[M–L]** — ⚠️ **needs rethink**: `output: 'export'` is on (no server runtime), so Next intercepting/parallel routes can't work as the doc describes; the click→modal UX must be done client-side (e.g. a `?task=:id` query param that opens the modal, falling through to the `/tasks/view` page on hard nav)
+- ✅ **C** — Contextual "Move to…" palette commands (closes Phase 41's 2 deferred boxes) (#254) **[S]**
+
+### [Phase 43 — Server-side preference sync](phase-43-server-side-preference-sync.md)
+- ✅ **A** — `UserPreferencesSchema` contract in `shared` (synced subset of `AppSettings`) (PR #240) **[S–M]**
+- ✅ **B** — Gateway `user_preferences` table + `GET`/`PUT /users/me/preferences` (authed) (PR #242) **[M]**
+- ✅ **C** — Web sync layer (hydrate-on-login, debounced write-through, LWW; localStorage-only when signed out) (PR #244) **[M]**
+
+### [Phase 46 — Inbound integrations (external events → tasks)](phase-46-inbound-integrations.md)
+- ✅ **A** — Inbound source entity + contract + Settings → Integrations (Inbound) UI (#259) **[M]**
+- ✅ **B** — Provider-aware signed receiver (`POST /integrations/inbound/:id`) + dedup + `createFromPrompt` (#261) **[M]**
+- ✅ **C** — Provider adapters: GitHub / Linear / generic (verify + payload→task) (#261) **[M]**
+- ◻ **D** — Inbound deliveries log + origin URL as a task `Source` **[S]**
+
+### [Phase 44 — Outbound webhooks & integrations](phase-44-outbound-webhooks.md)
+- ✅ **A** — Webhook endpoint entity + CRUD + Settings → Integrations UI (team-scoped) (PR #245) **[M]**
+- ✅ **B** — Signed delivery engine off the `TaskEventBus` (HMAC, reused SSRF/retry core, deliveries log) (PR #249) **[M]**
+- ✅ **C** — Provider formatting: Slack / Discord / generic JSON (Linear deferred) (PR #252) **[S–M]** — *all themes A–D shipped + Verification checklist signed off (PR #258, 2026-07-01) → phase COMPLETE.*
+- ✅ **D** — Deliveries log UI + "Send test event" + redeliver (PR #251) **[S]**
+
+### [Phase 45 — Recurring & scheduled tasks](phase-45-recurring-scheduled-tasks.md)
+*(Workflow-backed: a recurring task is a `[trigger.schedule] → [task.create]` workflow — reuses the workflow scheduler/runs/run-history.)*
+- ✅ **A** — `task.create` workflow action/executor (the missing link) (#241) **[M]**
+- ✅ **B** — Recurrence presets (+ raw-cron escape hatch) on the schedule trigger (#243) **[S–M]**
+- ✅ **C** — Dedicated "Schedules" facade view (list/create/edit/run-now) (#247) **[M]**
+- ✅ **D** — Run-history surfacing + "Daily standup" starter preset (#250) **[S]**
+
+### [Phase 47 — CLI power-user pass](phase-47-cli-power-user-pass.md)
+*(Thin-CLI rule: no gateway changes — presentation helpers + client-side loops only. chalk/ora aren't installed today; this phase makes CLAUDE.md's claim true.)*
+- ✅ **A** — Brand chrome + ANSI logo (bare invoke / help / `watch` splash; `NO_COLOR`/pipe aware) (PR #248) **[S–M]**
+- ✅ **B** — Colour vocabulary (chalk palette mirroring `@midnite/ui` status/kind/priority hues, applied across every renderer) (PR #255) **[M]**
+- ✅ **C** — Spinners & progress (ora wrapper on every async client call) (PR #255) **[S–M]**
+- ✅ **D** — Interactive prompts (`@inquirer/prompts` replaces hand-rolled `readline`/TTY; guided `add`, fuzzy task-pick for `move`/`block`) (PR #253) **[M]**
+- ✅ **E** — Machine output: global `--json` for the read surface (chrome forced off; errors → stderr) (#256) **[S–M]**
+- ✅ **F** — Shell completions (`completion <bash|zsh|fish>`) + bulk-by-filter `move`/`prioritise` (client-side loop) (#257) **[M]**
+
+### [Phase 48 — Slides (reveal.js decks)](phase-48-slides.md)
+*(Net-new domain beside tasks/workflows/councils. Persistence mirrors workflows: metadata columns + a JSON `content` blob; web stays static-export, `?id=` routes; reveal.js is client-only.)*
+- ✅ **A** — Deck contract (`shared/slide.ts`) + `slides` table + migration `0062` (PR #260) **[S-M]**
+- ✅ **B** — Gateway CRUD module (team-scoped repo→service→controller, `member` writes, search+audit) (PR #260) **[M]**
+- ◻ **C** — Typed API client + web data layer (`useDecks`/`useDeck` + mutations) **[S]**
+- ◻ **D** — Sidenav entry + list/grid view **[M]**
+- ◻ **E** — Editor + live reveal.js preview (Markdown/HTML per slide, theme inherit + override) **[L]**
+- ◻ **F** — Present mode + PDF/HTML export **[M]**
 
 ## Maintenance
 

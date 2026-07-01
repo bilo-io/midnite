@@ -414,6 +414,36 @@ export const workflowCredentials = sqliteTable('workflow_credentials', {
   updatedAt: text('updated_at').notNull(),
 });
 
+// ── Slides (reveal.js decks, Phase 48) ──────────────────────────────────────
+// Mirrors the workflows persistence split: denormalized metadata columns
+// (name, slideCount, format) for the cheap list endpoint + a single JSON
+// `content` text column for the deck body (slides array + theme override).
+// No normalized per-slide rows — editing/reordering is a whole-deck write.
+export const slides = sqliteTable(
+  'slides',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    description: text('description'),
+    // Derived from content on every write: number of slides.
+    slideCount: integer('slide_count').notNull().default(0),
+    // Derived from content: 'md' | 'html' | 'mixed'.
+    format: text('format').notNull().default('md'),
+    // JSON: { slides: Slide[], theme?: DeckTheme }
+    content: text('content').notNull(),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+    createdBy: text('created_by'),
+    teamId: text('team_id'),
+  },
+  (t) => ({
+    updatedAtIdx: index('slides_updated_at_idx').on(t.updatedAt),
+  }),
+);
+
+export type SlideDeckRow = typeof slides.$inferSelect;
+export type SlideDeckInsert = typeof slides.$inferInsert;
+
 // --- Agents (single primary orchestrator + subagents + heartbeat audit) ---
 
 // Singleton: exactly one row, id = 'primary'. Heartbeat scheduling bookkeeping
@@ -954,6 +984,133 @@ export const refreshTokens = sqliteTable(
 
 export type RefreshTokenRow = typeof refreshTokens.$inferSelect;
 export type RefreshTokenInsert = typeof refreshTokens.$inferInsert;
+
+// Phase 43 Theme B: server-synced user preferences. One row per user (userId PK),
+// holding the JSON-encoded `UserPreferences` blob from `shared`. Kept off the
+// auth-critical `users` row; no FK (cross-domain FKs are avoided per CLAUDE.md).
+export const userPreferences = sqliteTable('user_preferences', {
+  userId: text('user_id').primaryKey(),
+  /** JSON-encoded `UserPreferences` (the synced blob). */
+  data: text('data').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export type UserPreferencesRow = typeof userPreferences.$inferSelect;
+export type UserPreferencesInsert = typeof userPreferences.$inferInsert;
+
+// Phase 44 Theme A: outbound webhook integrations. Per-team endpoints; `secret`
+// is the HMAC signing key, encrypted at rest (CryptoService); `eventFilter` is
+// the JSON-encoded `WebhookEventFilter`. No cross-domain FK (per CLAUDE.md).
+export const webhooks = sqliteTable(
+  'webhooks',
+  {
+    id: text('id').primaryKey(),
+    teamId: text('team_id'),
+    createdBy: text('created_by'),
+    url: text('url').notNull(),
+    provider: text('provider').notNull(),
+    eventFilter: text('event_filter').notNull(),
+    secret: text('secret').notNull(),
+    enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => ({
+    teamIdx: index('webhooks_team_idx').on(t.teamId),
+  }),
+);
+
+export type WebhookRow = typeof webhooks.$inferSelect;
+export type WebhookInsert = typeof webhooks.$inferInsert;
+
+/**
+ * Recorded outbound deliveries (Phase 44 Theme B). One row per (event, endpoint)
+ * dispatch. `teamId` is denormalized from the endpoint so the deliveries log
+ * (Theme D) can be team-scoped without a join. `payload` is the exact body sent,
+ * persisted for a faithful redeliver.
+ */
+export const webhookDeliveries = sqliteTable(
+  'webhook_deliveries',
+  {
+    id: text('id').primaryKey(),
+    webhookId: text('webhook_id').notNull(),
+    teamId: text('team_id'),
+    event: text('event').notNull(),
+    status: text('status').notNull(),
+    responseCode: integer('response_code'),
+    attempts: integer('attempts').notNull().default(0),
+    error: text('error'),
+    payload: text('payload').notNull(),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    webhookIdx: index('webhook_deliveries_webhook_idx').on(t.webhookId),
+    teamIdx: index('webhook_deliveries_team_idx').on(t.teamId),
+  }),
+);
+
+export type WebhookDeliveryRow = typeof webhookDeliveries.$inferSelect;
+export type WebhookDeliveryInsert = typeof webhookDeliveries.$inferInsert;
+
+/**
+ * Inbound integration sources (Phase 46). A team registers external systems
+ * (GitHub / Linear / a generic signed sender) that may open tasks; the signed
+ * receiver (Theme B) verifies against the per-source `secret` (encrypted at rest)
+ * and maps the payload to a task via `createFromPrompt`, seeded by the optional
+ * default repo/project. Mirrors the `webhooks` (outbound) table.
+ */
+export const inboundSources = sqliteTable(
+  'inbound_sources',
+  {
+    id: text('id').primaryKey(),
+    teamId: text('team_id'),
+    createdBy: text('created_by'),
+    provider: text('provider').notNull(),
+    eventFilter: text('event_filter').notNull(),
+    secret: text('secret').notNull(),
+    defaultRepo: text('default_repo'),
+    defaultProjectId: text('default_project_id'),
+    enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => ({
+    teamIdx: index('inbound_sources_team_idx').on(t.teamId),
+  }),
+);
+
+export type InboundSourceRow = typeof inboundSources.$inferSelect;
+export type InboundSourceInsert = typeof inboundSources.$inferInsert;
+
+/**
+ * Recorded inbound deliveries (Phase 46 Theme B/D). One row per received event.
+ * `result` is `created` / `skipped-duplicate` / `rejected` / `ignored` / `failed`;
+ * `externalId` is the provider's delivery/item id for dedup; `taskId` backlinks the
+ * created task. `teamId` is denormalized from the source so the log is team-scoped
+ * without a join.
+ */
+export const inboundDeliveries = sqliteTable(
+  'inbound_deliveries',
+  {
+    id: text('id').primaryKey(),
+    sourceId: text('source_id').notNull(),
+    teamId: text('team_id'),
+    provider: text('provider').notNull(),
+    event: text('event'),
+    externalId: text('external_id'),
+    result: text('result').notNull(),
+    taskId: text('task_id'),
+    error: text('error'),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    sourceIdx: index('inbound_deliveries_source_idx').on(t.sourceId),
+    teamIdx: index('inbound_deliveries_team_idx').on(t.teamId),
+  }),
+);
+
+export type InboundDeliveryRow = typeof inboundDeliveries.$inferSelect;
+export type InboundDeliveryInsert = typeof inboundDeliveries.$inferInsert;
 
 // Phase 33 Theme B: Teams & membership.
 export const teams = sqliteTable(

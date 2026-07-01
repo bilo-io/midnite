@@ -4,8 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { ChevronDown, Columns3, List, ListTree, Plus, type LucideIcon } from 'lucide-react';
 import { isAnsweredQuestion, type Project, type Repo, type Status, type Task } from '@midnite/shared';
-import { deleteTask, startTask, stopTask, updateTaskStatus } from '@/lib/api';
+import { deleteTask, updateTaskStatus } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
+import { moveTask, spawnsSession } from '@/lib/task-transitions';
 import {
   blockedCounts as computeBlockedCounts,
   unmetBlockerCount,
@@ -177,15 +178,10 @@ export function TasksView({
       const current = localTasks.find((t) => t.id === taskId);
       if (!current || current.status === target) return;
       const prevStatus = current.status;
-      const spawnsSession =
-        target === 'wip' && (prevStatus === 'todo' || prevStatus === 'backlog');
-      const stopsSession =
-        (prevStatus === 'wip' || prevStatus === 'waiting') &&
-        (target === 'todo' || target === 'backlog');
       // Manually starting a task whose blockers aren't done is a human override
       // (Phase 27) — warn + confirm before the optimistic restatus so a decline
       // leaves the board untouched.
-      if (spawnsSession) {
+      if (spawnsSession(prevStatus, target)) {
         const tasksById = new Map(localTasks.map((t) => [t.id, t] as const));
         const unmet = unmetBlockerCount(current, tasksById);
         if (unmet > 0) {
@@ -201,9 +197,7 @@ export function TasksView({
         prev.map((t) => (t.id === taskId ? { ...t, status: target } : t)),
       );
       try {
-        if (spawnsSession) await startTask(taskId);
-        else if (stopsSession) await stopTask(taskId, target as 'todo' | 'backlog');
-        else await updateTaskStatus(taskId, target);
+        await moveTask(prevStatus, target, taskId);
         invalidateData();
       } catch (e) {
         setLocalTasks((prev) =>

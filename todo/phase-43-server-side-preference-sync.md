@@ -1,0 +1,181 @@
+# Phase 43 — Server-Side Preference Sync
+
+> Today every personal preference midnite knows about — the Phase 39 appearance
+> set (background, accent, density, motion, font), the theme, the side-nav mode,
+> the feature toggles, and the screensaver/cycle timers — lives only in the
+> browser's `localStorage`. Open midnite on a second machine (or a fresh profile)
+> and you start from defaults; clear site data and your setup is gone. **Phase 43
+> floats those preferences up to the gateway, keyed per user**, so a signed-in
+> account carries its look-and-feel between devices. It's the natural follow-on
+> to Phase 33 (accounts + `/users/me` + JWT auth) and Phase 39 (the prefs
+> themselves).
+
+> **Scope guardrails (CLAUDE.md).** Auth is **optional** in midnite — the gateway
+> runs single-user/local (no user record, JWT off) *or* multi-user (JWT on). Sync
+> therefore engages **only when authenticated**; unauthenticated/local stays
+> exactly as it is today (localStorage-only), and `localStorage` remains the cache
+> + offline store in both modes. The synced contract lives in **`shared`** (the
+> "shared is the contract" rule); the gateway follows the standard
+> controller→service→repository layering with a forward-only Drizzle migration; the
+> web app consumes the typed client, never gateway internals. No new untyped JSON
+> over the wire. This phase does **not** change what any preference *does* — only
+> where it's persisted.
+
+> Effort tags: **S** small · **M** medium · **L** large.
+
+---
+
+## Current state (what exists to build on)
+
+- **Accounts + current-user API** — Phase 33 shipped JWT auth (gated on
+  `MIDNITE_JWT_SECRET`), the [`users`](../packages/gateway/src/db/schema.ts) table,
+  and [`users.controller.ts`](../packages/gateway/src/users/users.controller.ts)
+  with `GET /users/me` + `PATCH /users/me` behind the `@CurrentUser()` decorator.
+  The natural mount point for preferences.
+- **The preferences themselves** — [`packages/web/lib/app-settings.ts`](../packages/web/lib/app-settings.ts)
+  defines `AppSettings` (appearance, nav mode, feature flags, inactivity/cycle
+  timers) persisted under `localStorage['midnite.settings']`; theme lives under
+  `localStorage['midnite.theme']` via [`@midnite/ui` theme-script](../packages/ui/src/theme/theme-script.ts).
+  Its own header already calls out that these "will eventually be backed by … a
+  user record" — this phase makes that true.
+- **Typed API client** — [`packages/shared/src/api.ts`](../packages/shared/src/api.ts)
+  `MidniteClient`, the single place web talks to the gateway.
+- **No `user_preferences` table, no preferences column** on `users` yet — net-new.
+
+---
+
+## Theme A — Preferences contract in `shared` — **S–M** ✅ DONE (PR #240, 2026-06-30)
+
+The shape both sides agree on, defined once. *(Decisions settled at pickup: web's
+`AppSettings` is refactored to `Omit<UserPreferences, 'theme' | 'features'> &
+{ device-only }`, re-exporting the synced-field types from `shared`; `theme` **is**
+in the synced contract but keeps its separate `midnite.theme` store; passcode /
+notify / agent-pool stay device-local. No `MidniteClient` in `shared` exists, so the
+typed client methods move to Theme B/C where the endpoints land.)*
+
+- [x] Add [`packages/shared/src/preferences.ts`](../packages/shared/src/preferences.ts):
+      a `UserPreferencesSchema` (zod) covering the **synced subset** — theme, appearance
+      (background / bg-intensity / accent / motion / density / font / effects), nav mode,
+      inactivity + cycle timers, feature toggles — plus a schema-derived
+      `DEFAULT_USER_PREFERENCES` and the `UserPreferences` type. Every field defaulted so a
+      partial/forward-compatible blob still parses; unknown keys are stripped.
+- [x] Export from the package index; add `PreferencesResponseSchema` (`{ preferences, updatedAt }`)
+      + `PutPreferencesRequestSchema` (the full object) so the wire contract is typed end-to-end.
+- [x] Refactor [`app-settings.ts`](../packages/web/lib/app-settings.ts) so the
+      synced slice **references the shared schema** as the source of truth
+      (device-only bits stay web-local and are *not* part of `UserPreferencesSchema`).
+      No behavioural change to any individual setting; existing import sites untouched (re-export).
+- [x] Shared unit tests: schema parses a full + partial blob, defaults round-trip,
+      unknown keys are dropped (not rejected), nested effects fill, response accepts null `updatedAt`.
+
+---
+
+## Theme B — Gateway persistence + API — **M** ✅ DONE (PR #242, 2026-06-30)
+
+Store the blob per user; expose authed read/write. *(Decisions settled at pickup:
+**dedicated `preferences/` module** (not folded onto `users`); **blind last-write-wins**
+with a server-stamped `updatedAt` (no optimistic-concurrency 409); **re-validate the
+stored blob on read** so a corrupt/old-shape row degrades to defaults. Migrations live
+in `packages/gateway/drizzle/`, not `src/db/migrations/`.)*
+
+- [x] Drizzle schema: a **dedicated `user_preferences` table** — `userId` (PK,
+      text), `data` (text/JSON), `updatedAt` (text) — in
+      [`db/schema.ts`](../packages/gateway/src/db/schema.ts). Keeps the synced blob
+      off the auth-critical `users` row. Forward-only migration `0058_user_preferences`.
+- [x] `PreferencesRepository` (Drizzle only) — `find(userId)`, `upsert(userId, data, updatedAt)`
+      (insert-or-replace via `onConflictDoUpdate`).
+- [x] `PreferencesService` — parses the incoming blob against `UserPreferencesSchema`
+      (**full-object replace**), stamps `updatedAt`, persists; reads return
+      `DEFAULT_USER_PREFERENCES` when the user has no row, and re-validate a stored blob
+      (corrupt → defaults).
+- [x] New `preferences/` Nest module: `GET /users/me/preferences` + `PUT /users/me/preferences`,
+      both behind `@CurrentUser()` (401 when unauthenticated), body validated against the
+      shared `PutPreferencesRequestSchema` (400 on a bad blob). Registered in `AppModule`.
+- [x] No surrogate id (one row per user, `userId` PK); repo takes the `Db` handle per `CLAUDE.md`.
+- [x] Tests: `PreferencesService` unit (defaults-on-empty, re-validate, corrupt→defaults, save
+      canonicalises + stamps), `PreferencesRepository` integration against `:memory:` SQLite
+      (find / upsert / replace), controller spec for the authed/unauthed + bad-body split.
+
+---
+
+## Theme C — Web sync layer — **M** ✅ DONE (PR #244, 2026-06-30)
+
+Hydrate on login, write through on change; degrade to local-only when signed out.
+*(Decisions settled at pickup: gate on the existing `useAuth()` context (`jwtEnabled && user`);
+a mounted null-rendering `<PreferenceSync/>` over the existing `useLocalStorage` + `useTheme`
+hooks (no settings-store refactor); a small "Synced / Sign in to sync" indicator in
+Settings → Appearance. e2e omitted — the e2e gateway runs JWT-disabled, so a signed-in
+sync flow can't be exercised there; covered by RTL instead.)*
+
+- [x] A `<PreferenceSync/>` provider (mounted in `(main)/layout.tsx` beside `<LiveData/>`):
+      on mount, **if authenticated**, `GET /users/me/preferences` and hydrate the local
+      settings + theme stores (server wins); **if the server row is empty, seed it from the
+      current localStorage** so an existing setup is never lost on first sync.
+- [x] Write-through: a synced preference change debounce-`PUT`s the full blob (LWW). A stable
+      key suppresses the hydrate echo; failures are non-fatal (local cache stays authoritative,
+      retry on next change).
+- [x] When **unauthenticated** / single-user, the component is inert — behaviour identical to
+      today (localStorage-only); no doomed requests.
+- [x] Bridge helpers `appSettingsToPreferences` / `applyPreferences` in `app-settings.ts`
+      reconcile the two local stores (`AppSettings` + the `@midnite/ui` theme-context).
+- [x] Settings → Appearance: a subtle "Synced to your account" / "Sign in to sync across
+      devices" indicator (shown only when accounts are enabled).
+- [x] Tests: RTL for `<PreferenceSync/>` — inert (single-user + signed-out), hydrate (server
+      wins, applied locally), seed (empty server row ← local). e2e omitted (JWT disabled in the
+      e2e harness; logic covered by RTL).
+
+---
+
+## Files this phase touches (map)
+
+- **New:** [`packages/shared/src/preferences.ts`](../packages/shared/src/preferences.ts) — the `UserPreferences` contract + defaults + wire schemas
+- **Edit:** [`packages/shared/src/index.ts`](../packages/shared/src/index.ts) — export the new contract
+- **Edit:** [`packages/shared/src/api.ts`](../packages/shared/src/api.ts) — `getPreferences` / `putPreferences` client methods
+- **New:** `packages/gateway/src/preferences/` — `preferences.repository.ts`, `preferences.service.ts` (+ routes on [`users.controller.ts`](../packages/gateway/src/users/users.controller.ts) or a thin `preferences.controller.ts` / `preferences.module.ts`)
+- **Edit:** [`packages/gateway/src/db/schema.ts`](../packages/gateway/src/db/schema.ts) — `user_preferences` table (+ a new forward-only migration under [`db/migrations/`](../packages/gateway/src/db/migrations/))
+- **New:** `packages/web/components/preference-sync.tsx` (or a hook under [`packages/web/hooks/`](../packages/web/hooks/)) — the sync provider
+- **Edit:** [`packages/web/lib/app-settings.ts`](../packages/web/lib/app-settings.ts) — reference the shared synced-subset schema; keep device-only bits local
+- **No change to** what any individual preference controls — only its persistence.
+
+---
+
+## Verification
+
+- [x] `UserPreferencesSchema` parses full + partial blobs, applies defaults, and drops unknown keys; defaults round-trip.
+- [x] `GET /users/me/preferences` returns defaults for a user with no row, and the stored blob otherwise; both return 401 when unauthenticated.
+- [x] `PUT /users/me/preferences` validates against the shared schema (400 on a bad blob), replaces the full object, and stamps `updatedAt`.
+- [x] Signed in: changing an appearance/theme/nav/feature/timer preference issues a debounced `PUT`; reloading (or opening a second session) restores it from the server.
+- [x] First sync on a device with existing localStorage prefs **seeds** the empty server row (nothing lost); thereafter the server wins on load.
+- [x] Signed out / single-user gateway: behaviour is unchanged (localStorage-only); no failed network calls, no flash of default theme.
+- [x] Recent-items and operational config (agent-pool size, heartbeat) are **not** synced.
+- [x] Package boundaries hold (web imports the contract from `shared`, never gateway internals); the migration is forward-only.
+- [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph.
+
+---
+
+## Decisions / open questions
+
+1. **Storage shape** *(settled: dedicated `user_preferences` table).* A `userId`-PK
+   table holding a JSON `data` blob + `updatedAt`, rather than a column on `users`
+   or normalized key-value rows. Keeps the blob off the auth row, gives clean
+   last-write-wins, and is trivial to extend as the synced set grows.
+2. **Synced set** *(settled: appearance + theme + nav + features + timers).*
+   Personal UI preferences sync. **Recent items stay device-local** (high-churn,
+   device-flavoured) and **operational config** (agent-pool size, heartbeat cadence)
+   stays gateway/`midnite.json` territory — neither belongs in a per-user prefs blob.
+3. **Live cross-device propagation** *(settled: deferred).* v1 is load-on-login +
+   debounced write-through; a second open device picks changes up on its next
+   load/refresh, not instantly. A `preferences.updated` WS event is a clean future
+   stretch (mirrors the existing task/workflow gateways) but isn't needed for the
+   core win and would push the phase toward **L**.
+4. **First-run seeding / conflict** *(recommended: seed-when-empty, else server wins).*
+   On first authenticated load, if the server has no row, seed it from the current
+   localStorage so an existing setup survives. If a row exists, the server is the
+   source of truth on load (then refreshes the local cache). Last-write-wins by
+   `updatedAt` settles concurrent edits across devices.
+5. **PUT semantics** *(recommended: full-object replace).* The client always holds
+   the complete prefs blob, so a full `PUT` (validated against the shared schema) is
+   simpler than a partial-merge `PATCH` and makes LWW unambiguous.
+6. **localStorage keys** *(recommended: keep as-is).* `midnite.settings` /
+   `midnite.theme` stay as the local cache (no rename) so there's zero migration on
+   the client and no theme flash on load.

@@ -64,6 +64,7 @@ export interface GatewayClient {
   createTask(prompt: string, defaults?: TaskDefaults): Promise<Task>;
   createBulk(raw: string, defaults?: TaskDefaults): Promise<BulkCreateTaskResponse>;
   moveTask(id: string, status: Status): Promise<Task>;
+  setPriority(id: string, priority: number): Promise<Task>;
   addDependency(id: string, dependsOnId: string): Promise<Task>;
   removeDependency(id: string, dependsOnId: string): Promise<Task>;
   search(query: SearchQuery): Promise<SearchResponse>;
@@ -186,6 +187,16 @@ export function createClient(baseUrl: string, token?: string): GatewayClient {
           method: 'PATCH',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ status }),
+        }),
+      );
+    },
+
+    async setPriority(id: string, priority: number): Promise<Task> {
+      return TaskSchema.parse(
+        await request(`/tasks/${encodeURIComponent(id)}/priority`, {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ priority }),
         }),
       );
     },

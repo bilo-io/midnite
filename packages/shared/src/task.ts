@@ -160,6 +160,11 @@ export const SetTaskTagsRequestSchema = z.object({
   tags: z.array(z.string()),
 });
 
+/** Body for `PATCH /tasks/:id/priority` — set the scheduling priority band (0–3). */
+export const SetTaskPriorityRequestSchema = z.object({
+  priority: z.number().int().min(0).max(3),
+});
+
 export const CreateTaskResponseSchema = z.object({
   task: TaskSchema,
 });
@@ -182,6 +187,7 @@ export type CreateTaskRequest = z.infer<typeof CreateTaskRequestSchema>;
 export type AddTaskDependencyRequest = z.infer<typeof AddTaskDependencyRequestSchema>;
 export type UpdateTaskProjectRequest = z.infer<typeof UpdateTaskProjectRequestSchema>;
 export type SetTaskTagsRequest = z.infer<typeof SetTaskTagsRequestSchema>;
+export type SetTaskPriorityRequest = z.infer<typeof SetTaskPriorityRequestSchema>;
 export type CreateTaskResponse = z.infer<typeof CreateTaskResponseSchema>;
 export type ClassifiedTask = z.infer<typeof ClassifiedTaskSchema>;
 

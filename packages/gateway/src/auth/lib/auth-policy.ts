@@ -48,6 +48,22 @@ export function isAuthExemptPath(url: string): boolean {
   return path === '/health' || path === '/hooks' || path.startsWith('/hooks/');
 }
 
+/**
+ * The Phase 46 inbound receiver — `POST /integrations/inbound/:id` — is
+ * unauthenticated by session; the provider HMAC signature is the gate. It must be
+ * distinguished by **method + shape** from the team-admin management routes that
+ * share the `/integrations/inbound` prefix: create is `POST /integrations/inbound`
+ * (no id), rotate is `POST /integrations/inbound/:id/rotate`, and update/delete are
+ * PATCH/DELETE — none of which match this exact one-segment POST. Rate-limiting
+ * still applies (this stays out of `isAuthExemptPath`), which is desirable for a
+ * public endpoint.
+ */
+export function isPublicInboundReceiver(method: string | undefined, url: string): boolean {
+  if ((method ?? '').toUpperCase() !== 'POST') return false;
+  const path = url.split('?')[0]!.replace(/\/+$/, '') || '/';
+  return /^\/integrations\/inbound\/[^/]+$/.test(path);
+}
+
 /** True when an `Authorization` header carries the expected bearer token. */
 export function isValidBearer(header: string | string[] | undefined, token: string): boolean {
   const presented = bearerTokenFromHeader(Array.isArray(header) ? header[0] : header);
