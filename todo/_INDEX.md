@@ -69,7 +69,7 @@
 | [43 · Preference sync](phase-43-server-side-preference-sync.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
 | [44 · Outbound webhooks](phase-44-outbound-webhooks.md) | ✅ DONE | 20/20 | `██████████` | 100% | — | — |
 | [45 · Recurring/scheduled tasks](phase-45-recurring-scheduled-tasks.md) | ✅ DONE | 15/15 | `██████████` | 100% | — | — |
-| [46 · Inbound integrations](phase-46-inbound-integrations.md) | 🔄 WIP | 3/20 | `██░░░░░░░░` | 15% | — | B C D |
+| [46 · Inbound integrations](phase-46-inbound-integrations.md) | 🔄 WIP | 3/20 | `██░░░░░░░░` | 15% | B C | D |
 | [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [48 · Slides](phase-48-slides.md) | 🔄 WIP | 6/26 | `██░░░░░░░░` | 23% | — | C D E F |
 
