@@ -6,8 +6,15 @@ afterEach(cleanup);
 beforeEach(() => localStorage.clear());
 
 // The view is presentational; only the media-query hook needs stubbing so the
-// desktop (rail) path renders deterministically.
+// desktop (rail) path renders deterministically. The terminal region is its own
+// unit (session-terminal-region.test.tsx) — stub it so this test stays about the
+// cockpit shell (rails, header, links) and doesn't pull in the WS terminal / API.
 vi.mock('@/hooks/use-media-query', () => ({ useIsMobile: () => false }));
+vi.mock('@/components/session-terminal-region', () => ({
+  SessionTerminalRegion: ({ session }: { session: { status: string } }) => (
+    <div data-testid="terminal-region">terminal:{session.status}</div>
+  ),
+}));
 
 import { SessionDetailView } from './session-detail-view';
 
@@ -29,19 +36,18 @@ const task = { id: 't1', title: 'Fix login flow', projectId: 'p1' } as Task;
 const project = { id: 'p1', name: 'Acme app' } as Project;
 
 describe('SessionDetailView', () => {
-  it('renders the session title, status, and the C/D/E placeholder regions', () => {
+  it('renders the session title, status, the terminal region, and the D/E rail regions', () => {
     render(<SessionDetailView session={session} task={task} project={project} />);
     expect(screen.getByRole('heading', { name: 'Fix login flow' })).toBeInTheDocument();
     expect(screen.getByText('running')).toBeInTheDocument();
-    expect(screen.getByText(/Interactive terminal/)).toBeInTheDocument();
+    expect(screen.getByTestId('terminal-region')).toHaveTextContent('terminal:running');
     expect(screen.getByText('Approvals & context')).toBeInTheDocument();
     expect(screen.getByText('Session info')).toBeInTheDocument();
   });
 
-  it('shows the ended affordance for a completed session', () => {
+  it('shows the ended status chip for a completed session', () => {
     render(<SessionDetailView session={{ ...session, status: 'completed' }} task={null} project={null} />);
     expect(screen.getByText('ended')).toBeInTheDocument();
-    expect(screen.getByText(/Read-only transcript/)).toBeInTheDocument();
   });
 
   it('links the task and project when present', () => {

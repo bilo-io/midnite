@@ -102,19 +102,20 @@ The frame: a static-export route with a big center and two persistent rails.
 
 ---
 
-## Theme C — Terminal: live interactive + ended transcript — **M**
+## Theme C — Terminal: live interactive + ended transcript — **M** — ✅ DONE (PR #265, 2026-07-01)
 
 The centerpiece — and the one real fork.
 
-- [ ] **Live sessions** (`running`/`waiting`): the **full interactive** `SessionTerminal` (WS read/write,
+- [x] **Live sessions** (`running`/`waiting`/`idle`): the **full interactive** `SessionTerminal` (WS read/write,
       resize/fit, inline approval prompts) sized large in the center region — reuse
       [`session-terminal.tsx`](../packages/web/components/session-terminal.tsx) as-is (desktop read/write,
-      touch read-only per its existing behavior).
-- [ ] **Ended sessions** (`completed`/archived): a **read-only transcript scrollback** rendered from
+      touch read-only per its existing behavior). (Idle counts as live — still attachable.)
+- [x] **Ended sessions** (`completed`/archived): a **read-only transcript scrollback** rendered from
       `getSessionTranscript` — the ring buffer is ephemeral, so there's no live socket to attach
       (Decision §2). A clear **live vs. ended** affordance (a badge/header state) so it's never ambiguous.
-- [ ] Terminal chrome shows connection status (`connecting`/`open`/`closed`/`error`) for live, and an
-      "ended · {when}" state for history.
+      Extracted `SessionTranscriptBody` so the modal + ended view share one renderer.
+- [x] Terminal chrome shows connection status (live: reused `SessionTerminal`'s existing status chrome) and an
+      "ended · read-only" badge for history.
 
 ---
 
