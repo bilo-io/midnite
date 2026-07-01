@@ -69,7 +69,7 @@
 | [43 · Preference sync](phase-43-server-side-preference-sync.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
 | [44 · Outbound webhooks](phase-44-outbound-webhooks.md) | ✅ DONE | 20/20 | `██████████` | 100% | — | — |
 | [45 · Recurring/scheduled tasks](phase-45-recurring-scheduled-tasks.md) | ✅ DONE | 15/15 | `██████████` | 100% | — | — |
-| [46 · Inbound integrations](phase-46-inbound-integrations.md) | 🔄 WIP | 3/20 | `██░░░░░░░░` | 15% | B C | D |
+| [46 · Inbound integrations](phase-46-inbound-integrations.md) | 🔄 WIP | 10/20 | `█████░░░░░` | 50% | — | D |
 | [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [48 · Slides](phase-48-slides.md) | 🔄 WIP | 0/? | `░░░░░░░░░░` | 0% | A B | C D E F |
 
@@ -103,8 +103,8 @@ so you can pick from this file without opening the phase doc first.
 
 ### [Phase 46 — Inbound integrations (external events → tasks)](phase-46-inbound-integrations.md)
 - ✅ **A** — Inbound source entity + contract + Settings → Integrations (Inbound) UI (#259) **[M]**
-- ◻ **B** — Provider-aware signed receiver (`POST /integrations/inbound/:id`) + dedup + `createFromPrompt` **[M]**
-- ◻ **C** — Provider adapters: GitHub / Linear / generic (verify + payload→task) **[M]**
+- ✅ **B** — Provider-aware signed receiver (`POST /integrations/inbound/:id`) + dedup + `createFromPrompt` (#261) **[M]**
+- ✅ **C** — Provider adapters: GitHub / Linear / generic (verify + payload→task) (#261) **[M]**
 - ◻ **D** — Inbound deliveries log + origin URL as a task `Source` **[S]**
 
 ### [Phase 44 — Outbound webhooks & integrations](phase-44-outbound-webhooks.md)
