@@ -128,6 +128,7 @@ import {
   SessionDetailSchema,
   SessionTranscriptSchema,
   SubAgentResponseSchema,
+  PrDiffSchema,
   TaskCountsSchema,
   TaskSchema,
   TerminalTokenResponseSchema,
@@ -161,6 +162,7 @@ import {
   type HeartbeatRun,
   type LlmProvider,
   type Memory,
+  type PrDiff,
   type PrimaryAgent,
   type ProvidersResponse,
   type ProviderResponse,
@@ -627,6 +629,15 @@ export async function refreshPrStatus(id: string): Promise<Task> {
     { method: 'POST' },
     TaskSchema,
   );
+}
+
+/**
+ * Fetch the structured diff for a task's GitHub PR (Phase 52 Theme A). The
+ * gateway fails open: a 404 means no PR / unknown task, a 503 means the fetch
+ * failed (render a retry banner + "Open on GitHub"). Backs the review viewer.
+ */
+export async function getPrDiff(id: string, signal?: AbortSignal): Promise<PrDiff> {
+  return fetchJson(`/tasks/${encodeURIComponent(id)}/pr/diff`, { signal }, PrDiffSchema);
 }
 
 /**
