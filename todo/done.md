@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-01 — docs: Phase 44 verification sign-off — **Phase 44 COMPLETE**
+
+Audited the shipped outbound-webhooks surface (Themes A–D, PRs #245/#249/#252/#251) against the phase's 7-item acceptance list. Every behavioural criterion is backed by an existing green test — no coverage gap surfaced, so no new tests were needed; the sign-off is a doc-only close-out.
+
+- [x] Mapped all 7 verification criteria to specific passing tests (schemas, service RBAC/secret, delivery filter/fan-out, sign/format, safe-delivery retry+SSRF, deliveries log/test/redeliver, Phase 21 channel delegation, web RTL) — recorded inline in the phase doc
+- [x] Ran the gate: `gateway:test` (1177) + `shared:test` + `web:test` (651) green; `web:typecheck` clean; Phase 44 files (`webhooks/`, `shared/webhook.ts`, `integrations-view`) carry no lint errors
+- [x] Noted pre-existing **unrelated** full-graph debt untouched by this branch (`gateway:lint` unused-imports/control-regex in Phases 14/23/35/36/38 files; `web:build` office `phaser` default-export warnings) — repo-wide, not Phase 44 regressions
+- [x] Flipped Phase 44 → **COMPLETE** (20/20) in `_INDEX.md`; ticked the Verification section
+
 ## 2026-07-01 — feat: CLI shell completions + bulk-by-filter ops — Phase 47 Theme F — **Phase 47 COMPLETE**
 
 The power-user staples, closing Phase 47 (the CLI UX-coherence pass).
