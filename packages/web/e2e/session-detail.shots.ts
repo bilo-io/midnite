@@ -41,6 +41,8 @@ test('session detail — cockpit with a live terminal', async ({ page }) => {
   // Theme C: a running session forks to the live terminal, badged "live".
   await expect(page.getByText('Terminal', { exact: true })).toBeVisible();
   await expect(page.getByText('live', { exact: true })).toBeVisible();
+  // Theme E: the right-rail info readout renders its real fields.
+  await expect(page.getByText('Last activity')).toBeVisible();
   await page.screenshot({ path: join(OUT, 'session-detail-live.png') });
 });
 
