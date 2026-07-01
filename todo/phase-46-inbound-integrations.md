@@ -79,40 +79,40 @@ A team registers and manages the external systems that may open tasks.
 
 ---
 
-## Theme B — Provider-aware receiver + task creation — **M**
+## Theme B — Provider-aware receiver + task creation — **M** — ✅ DONE (PR #261, 2026-07-01)
 
 Signed external events become board tasks.
 
-- [ ] `InboundReceiverController` — `POST /integrations/inbound/:id` reads the **raw body**,
+- [x] `InboundReceiverController` — `POST /integrations/inbound/:id` reads the **raw body**,
       resolves the source (404 if unknown/disabled), and **verifies the provider signature**
       (HMAC over the raw bytes with the decrypted per-source secret; `timingSafeEqual`). A bad
       signature → `401`, recorded as a rejected delivery; no task. **No session auth** — the
       signature is the gate.
-- [ ] On a verified, filter-matching event: the provider adapter (Theme C) maps the payload →
+- [x] On a verified, filter-matching event: the provider adapter (Theme C) maps the payload →
       a `CreateTaskInput`, and the service calls
       [`createFromPrompt`](../packages/gateway/src/tasks/tasks.service.ts) (lands in `todo`,
       classified/planned; the source's `defaultRepo`/`defaultProjectId` seed it unless the
       payload implies otherwise). The origin issue/PR URL is attached as a task `Source`.
-- [ ] **Idempotent / dedup:** persist the external delivery/item id per source; a redelivery
+- [x] **Idempotent / dedup:** persist the external delivery/item id per source; a redelivery
       or duplicate event is a no-op (recorded as `skipped-duplicate`, no second task).
-- [ ] **Best-effort:** parsing/creation failures are caught, logged, and recorded as a failed
+- [x] **Best-effort:** parsing/creation failures are caught, logged, and recorded as a failed
       delivery — they never throw out of the request (the sender gets a `2xx`/`4xx`, never a
       partial side effect).
 
 ---
 
-## Theme C — Provider adapters (GitHub / Linear / generic) — **M**
+## Theme C — Provider adapters (GitHub / Linear / generic) — **M** — ✅ DONE (PR #261, 2026-07-01)
 
 Turn each provider's payload into a normalized task.
 
-- [ ] A small adapter per provider: **GitHub** (`X-Hub-Signature-256` HMAC; `issues`/
+- [x] A small adapter per provider: **GitHub** (`X-Hub-Signature-256` HMAC; `issues`/
       `pull_request` `opened` → title + body + html_url), **Linear** (`Linear-Signature`
       HMAC; `Issue` `create` → title + description + url), **generic** (the documented signed
       JSON contract — `X-Midnite-Signature`, matching Phase 44's outbound scheme — so any sender
       can integrate). Each exposes `verify(rawBody, headers, secret)` + `toTask(payload, source)`.
-- [ ] The event filter gates which provider events create a task; a non-matching event is a
+- [x] The event filter gates which provider events create a task; a non-matching event is a
       recorded no-op. Document each provider's webhook setup (URL + secret + which events).
-- [ ] Keep the mapped prompt terse + useful (title as the task prompt, body truncated, the
+- [x] Keep the mapped prompt terse + useful (title as the task prompt, body truncated, the
       source link attached). Generic stays a **stable, documented** shape.
 
 ---

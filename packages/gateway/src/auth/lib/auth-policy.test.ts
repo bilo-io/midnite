@@ -4,6 +4,7 @@ import {
   bearerTokenFromHeader,
   isAuthExemptPath,
   isLoopbackHost,
+  isPublicInboundReceiver,
   isValidBearer,
   resolveAuthToken,
   safeEqual,
@@ -72,6 +73,21 @@ describe('safeEqual', () => {
     expect(safeEqual('token', 'token')).toBe(true);
     expect(safeEqual('token', 'tokeN')).toBe(false);
     expect(safeEqual('token', 'tok')).toBe(false);
+  });
+});
+
+describe('isPublicInboundReceiver', () => {
+  it('exempts only POST to a one-segment /integrations/inbound/:id', () => {
+    expect(isPublicInboundReceiver('POST', '/integrations/inbound/abc123')).toBe(true);
+    expect(isPublicInboundReceiver('post', '/integrations/inbound/abc123?x=1')).toBe(true);
+  });
+
+  it('does NOT exempt the team-admin management routes sharing the prefix', () => {
+    expect(isPublicInboundReceiver('POST', '/integrations/inbound')).toBe(false); // create
+    expect(isPublicInboundReceiver('POST', '/integrations/inbound/abc/rotate')).toBe(false); // rotate
+    expect(isPublicInboundReceiver('PATCH', '/integrations/inbound/abc')).toBe(false); // update
+    expect(isPublicInboundReceiver('DELETE', '/integrations/inbound/abc')).toBe(false); // delete
+    expect(isPublicInboundReceiver('GET', '/integrations/inbound')).toBe(false); // list
   });
 });
 

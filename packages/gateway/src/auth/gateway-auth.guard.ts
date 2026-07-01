@@ -9,12 +9,19 @@ import {
 } from '@nestjs/common';
 import type { MidniteConfig } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
-import { isAuthExemptPath, isLoopbackHost, isValidBearer, resolveAuthToken } from './lib/auth-policy';
+import {
+  isAuthExemptPath,
+  isLoopbackHost,
+  isPublicInboundReceiver,
+  isValidBearer,
+  resolveAuthToken,
+} from './lib/auth-policy';
 import type { JwtService } from './jwt.service';
 import type { ServiceTokensService } from '../service-tokens/service-tokens.service';
 
 type IncomingRequest = {
   url?: string;
+  method?: string;
   headers: Record<string, string | string[] | undefined>;
   user?: { userId: string; email: string; teamId: string | null };
 };
@@ -52,6 +59,8 @@ export class GatewayAuthGuard implements CanActivate {
 
     const req = context.switchToHttp().getRequest<IncomingRequest>();
     if (isAuthExemptPath(req.url ?? '/')) return true;
+    // The inbound receiver authenticates by provider HMAC, not a session bearer.
+    if (isPublicInboundReceiver(req.method, req.url ?? '/')) return true;
 
     const authHeader = req.headers['authorization'];
     const bearer = extractBearerToken(authHeader);

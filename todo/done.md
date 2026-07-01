@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-01 — feat: inbound signed receiver + provider adapters — Phase 46 Themes B+C (PR #261)
+
+The heart of inbound integrations: a signed external event (GitHub/Linear/generic) becomes a board task.
+
+- [x] **gateway**: `POST /integrations/inbound/:id` (`InboundReceiverService` + controller) — raw-body HMAC verify → event-filter gate (empty=all) → dedup by `(sourceId, externalId)` on prior *created* deliveries → `createFromPrompt` (repo/project from source defaults, origin URL attached via `addLink`) → recorded delivery. Best-effort: created/skipped-duplicate/rejected/ignored/failed all recorded; only 401 (bad sig) / 404 (unknown/disabled) throw
+- [x] **gateway**: provider adapters (`adapters/`) — github (`X-Hub-Signature-256`, `issues/pull_request.opened`), linear (`Linear-Signature`, `Issue.create`), generic (`X-Midnite-Signature` + timestamp, mirrors Phase 44 outbound); each `verify`/`eventKey`/`externalId`/`toTask`
+- [x] **gateway**: raw body via Nest `{ rawBody: true }` (the flagged risk); receiver auth-exempted by method+shape (`isPublicInboundReceiver`) so the team-admin management routes sharing the prefix stay authed; rate-limiting still applies
+- [x] **gateway (fix)**: `encryptSecret` gates on `crypto.isEnabled()` — always encrypts with a key present (fail-closed preserved), raw only in keyless dev; also fixes a latent webhooks throw in keyless mode
+- [x] **tests**: verify-signature (6), adapters (7), receiver service (7), auth-policy exemption (2), managed-secret keyless; `inbound-receiver.e2e.ts` (real gateway — signed→created, tampered→401, redelivery→skipped-duplicate) exercises the raw-body path end-to-end. Gateway 165 files green
+- [x] **Decisions**: scoped raw body; dedup delivery-header→payload-id fallback; post-create addLink for the Source; 2xx for handled outcomes, 401/404 for errors
 ## 2026-07-01 — feat: Slides deck contract + DB + CRUD module — Phase 48 Themes A+B (PR #260)
 
 The foundation + spine for the net-new Slides surface. Built A and B as one slice (contract+DB alone has no runtime consumer).

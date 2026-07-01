@@ -15,9 +15,15 @@ export function generateSecret(prefix: string): string {
   return prefix + randomBytes(24).toString('hex');
 }
 
-/** Encrypt a raw secret when crypto is wired; pass through otherwise (unit/dev). */
+/**
+ * Encrypt a raw secret when encryption is **active** (a key is configured); store
+ * it raw only when crypto is absent or keyless (encryption off by design in dev).
+ * Gating on `isEnabled()` keeps the fail-closed guarantee — with a key present we
+ * always encrypt (never silently persist plaintext) — while letting a keyless dev
+ * / e2e gateway still create sources.
+ */
 export function encryptSecret(crypto: CryptoService | undefined, raw: string): string {
-  return crypto ? crypto.encrypt(raw) : raw;
+  return crypto && crypto.isEnabled() ? crypto.encrypt(raw) : raw;
 }
 
 /**

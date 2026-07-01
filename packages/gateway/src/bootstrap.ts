@@ -103,6 +103,11 @@ export async function startGateway(): Promise<NestFastifyApplication> {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     adapter,
+    // Capture the raw request body so the inbound receiver's HMAC (Phase 46 B)
+    // covers exactly the bytes the sender signed — a re-serialized body would
+    // break signatures. Nest exposes it as `req.rawBody` (a Buffer); every route's
+    // parsed body is unchanged.
+    { rawBody: true },
   );
 
   // The gateway can spawn PTYs, so don't reflect arbitrary origins — only

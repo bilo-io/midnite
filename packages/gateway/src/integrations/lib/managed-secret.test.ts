@@ -22,10 +22,20 @@ describe('encrypt/decrypt passthrough', () => {
     expect(decryptSecret(undefined, 'raw')).toBe('raw');
   });
 
-  it('delegates to the crypto service when present', () => {
-    const crypto = { encrypt: vi.fn().mockReturnValue('enc'), decrypt: vi.fn().mockReturnValue('dec') };
+  it('delegates to the crypto service when a key is active', () => {
+    const crypto = {
+      isEnabled: () => true,
+      encrypt: vi.fn().mockReturnValue('enc'),
+      decrypt: vi.fn().mockReturnValue('dec'),
+    };
     expect(encryptSecret(crypto as never, 'raw')).toBe('enc');
     expect(decryptSecret(crypto as never, 'enc')).toBe('dec');
+  });
+
+  it('stores raw (no encrypt) when crypto is present but keyless', () => {
+    const crypto = { isEnabled: () => false, encrypt: vi.fn(), decrypt: vi.fn() };
+    expect(encryptSecret(crypto as never, 'raw')).toBe('raw');
+    expect(crypto.encrypt).not.toHaveBeenCalled();
   });
 });
 
