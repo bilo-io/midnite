@@ -1,11 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { Layers, Trash2 } from 'lucide-react';
+import { Layers, Play, Trash2 } from 'lucide-react';
 import type { DeckSummary } from '@midnite/shared';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { FormatBadge } from '@/components/slides/format-badge';
-import { relativeTime } from '@/lib/utils';
+import { cn, relativeTime } from '@/lib/utils';
 
 type Props = {
   deck: DeckSummary;
@@ -25,16 +25,29 @@ export function DeckCard({ deck, onDelete }: Props) {
             {deck.name}
           </Link>
         </div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          aria-label={`Delete ${deck.name}`}
-          onClick={() => onDelete(deck)}
-          className="h-7 w-7 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-0.5">
+          <Link
+            href={`/slides/present?id=${deck.id}`}
+            aria-label={`Present ${deck.name}`}
+            title="Present"
+            className={cn(
+              buttonVariants({ variant: 'ghost', size: 'icon' }),
+              'h-7 w-7 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100',
+            )}
+          >
+            <Play className="h-4 w-4" />
+          </Link>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label={`Delete ${deck.name}`}
+            onClick={() => onDelete(deck)}
+            className="h-7 w-7 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
       {deck.description ? (
         <Link href={`/slides/view?id=${deck.id}`} className="block">

@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Check, Loader2 } from 'lucide-react';
+import { ArrowLeft, Check, Loader2, Play } from 'lucide-react';
 import type { Deck, DeckContent, DeckTheme, Slide, SlideFormat } from '@midnite/shared';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { useToast } from '@/components/toast';
 import { SlideList } from '@/components/slides/slide-list';
 import { RevealPreview } from '@/components/slides/reveal-preview';
@@ -167,6 +167,15 @@ export function DeckEditor({ initial }: Props) {
         </div>
         <div className="flex items-center gap-3">
           <SaveStatus dirty={dirty} saving={saving} saved={snapshot !== null} />
+          {deckId ? (
+            <Link
+              href={`/slides/present?id=${deckId}`}
+              className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
+            >
+              <Play className="h-4 w-4" />
+              Present
+            </Link>
+          ) : null}
           <Button type="button" size="sm" disabled={!canSave} onClick={() => void save()}>
             Save
           </Button>

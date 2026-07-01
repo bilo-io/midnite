@@ -1,11 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { Trash2 } from 'lucide-react';
+import { Play, Trash2 } from 'lucide-react';
 import type { DeckSummary } from '@midnite/shared';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { FormatBadge } from '@/components/slides/format-badge';
-import { relativeTime } from '@/lib/utils';
+import { cn, relativeTime } from '@/lib/utils';
 
 type Props = {
   decks: DeckSummary[];
@@ -44,16 +44,29 @@ export function DeckTable({ decks, onDelete }: Props) {
                 {relativeTime(deck.updatedAt)}
               </td>
               <td className="px-3 py-2 text-right">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  aria-label={`Delete ${deck.name}`}
-                  onClick={() => onDelete(deck)}
-                  className="h-7 w-7 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center justify-end gap-0.5">
+                  <Link
+                    href={`/slides/present?id=${deck.id}`}
+                    aria-label={`Present ${deck.name}`}
+                    title="Present"
+                    className={cn(
+                      buttonVariants({ variant: 'ghost', size: 'icon' }),
+                      'h-7 w-7 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100',
+                    )}
+                  >
+                    <Play className="h-4 w-4" />
+                  </Link>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Delete ${deck.name}`}
+                    onClick={() => onDelete(deck)}
+                    className="h-7 w-7 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </td>
             </tr>
           ))}

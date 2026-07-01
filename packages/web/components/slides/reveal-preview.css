@@ -8,6 +8,12 @@
   color: hsl(var(--foreground));
 }
 
+/* Present mode fills its container (the fullscreen page) instead of the 16:9 box. */
+.reveal-preview.reveal-present {
+  aspect-ratio: auto;
+  height: 100%;
+}
+
 .reveal-preview .reveal {
   position: absolute;
   inset: 0;
