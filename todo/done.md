@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-01 — feat: session info panel (right rail) — Phase 51 Theme E (PR #268)
+
+The cockpit's right-rail instrument readout — the fields that genuinely exist, honest about what's real (Decision §4). No fabricated precision, no empty scaffolding.
+
+- [x] `SessionInfoPanel` — compact `<dl>`: status, provider (human label), agent CLI, uptime, last activity, cwd, retries, archived
+- [x] Uptime = session lifespan, frozen at the end for an ended session (createdAt → archivedAt/lastActivity); live measures to now
+- [x] Context window as a labeled bar, explicitly tagged an estimate (EST chip + `(est.)` + tooltip); only when both token fields exist
+- [x] Graceful degradation — rows a session lacks are omitted entirely; static relativeTime + duration/token formatters (no timers)
+- [x] RTL unit (real fields, estimate labeling, omitted rows, retries>0 gate, frozen ended lifespan) + shell test stubs the panel; live cockpit screenshot asserts the readout
+
+---
+
 ## 2026-07-01 — feat: session cockpit left panel — Phase 51 Theme D (PR #266)
 
 The left rail of the session detail page: what the session is working + asking for.

@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import type { Project, SessionDetail, Task } from '@midnite/shared';
 import { PageHeader } from '@/components/page-header';
+import { SessionInfoPanel } from '@/components/session-info-panel';
 import { SessionTerminalRegion } from '@/components/session-terminal-region';
 import { getProject, getSession, getTask } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
@@ -159,9 +160,7 @@ export function SessionDetailView({
             onToggle={() => setRightOpen(!rightOpen)}
             title="Session info"
           >
-            <Placeholder theme="E">
-              Provider, uptime, last activity, cwd, retries, and the (estimated) context window land here.
-            </Placeholder>
+            <SessionInfoPanel session={session} />
           </Rail>
         </div>
       </div>
@@ -239,14 +238,5 @@ function RailToggle({ side, open, onClick }: { side: 'left' | 'right'; open: boo
     >
       <Icon className="h-4 w-4" />
     </button>
-  );
-}
-
-function Placeholder({ theme, children }: { theme: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-md border border-dashed border-border/50 p-3 text-xs text-muted-foreground">
-      <span className="font-medium text-foreground/70">Theme {theme} · </span>
-      {children}
-    </div>
   );
 }

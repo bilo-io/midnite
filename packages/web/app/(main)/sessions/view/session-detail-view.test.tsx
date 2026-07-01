@@ -16,6 +16,11 @@ vi.mock('@/components/session-terminal-region', () => ({
     <div data-testid="terminal-region">terminal:{session.status}</div>
   ),
 }));
+// The right-rail readout is its own unit (session-info-panel.test.tsx) — stub it
+// so its Status/etc. rows don't collide with the header's status chip here.
+vi.mock('@/components/session-info-panel', () => ({
+  SessionInfoPanel: () => <div data-testid="info-panel">info panel</div>,
+}));
 // The left panel (Theme D) owns its own WS + fetch; stub it here so this stays a
 // deterministic shell test (the panel has its own spec).
 vi.mock('./session-left-panel', () => ({
