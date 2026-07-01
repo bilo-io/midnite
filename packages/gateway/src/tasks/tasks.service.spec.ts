@@ -115,6 +115,14 @@ class InMemoryRepo extends TasksRepository {
     return task;
   }
 
+  override setPriority(id: string, priority: number, updatedAt: string): TaskRow | undefined {
+    const task = this.tasks.find((t) => t.id === id);
+    if (!task) return undefined;
+    task.priority = priority;
+    task.updatedAt = updatedAt;
+    return task;
+  }
+
   override setArchived(id: string, archivedAt: string | null, updatedAt: string): TaskRow | undefined {
     const task = this.tasks.find((t) => t.id === id);
     if (!task) return undefined;
@@ -365,6 +373,21 @@ describe('TasksService', () => {
     expect(updated.status).toBe('wip');
     expect(repo.events.some((e) => e.kind === 'status.changed')).toBe(true);
     expect(updated.archivedAt).toBeUndefined();
+  });
+
+  it('setPriority changes the band and emits task.priority.changed', () => {
+    const repo = new InMemoryRepo();
+    seed(repo, ['todo']);
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus(), stubRepos, stubConfig);
+    const updated = service.setPriority('t0', 3);
+    expect(updated.priority).toBe(3);
+    expect(repo.events.some((e) => e.kind === 'task.priority.changed')).toBe(true);
+  });
+
+  it('setPriority throws for an unknown task', () => {
+    const repo = new InMemoryRepo();
+    const service = new TasksService(repo, new StubClassifier(), stubPlanner, new TaskEventBus(), stubRepos, stubConfig);
+    expect(() => service.setPriority('nope', 2)).toThrow();
   });
 
   it('abandoning a task auto-archives it and emits task.archived', () => {
