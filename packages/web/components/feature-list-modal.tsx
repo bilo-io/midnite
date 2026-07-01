@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { createPortal } from 'react-dom';
 import { Inbox, ListChecks, Loader2, Send, Trash2, X } from 'lucide-react';
 import type { Status } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
@@ -49,6 +50,14 @@ export function FeatureListModal({
   const [busy, setBusy] = React.useState<Status | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const confirm = useConfirm();
+
+  // The overlay is `fixed inset-0`, but the composer that owns this modal lives
+  // inside a `fixed … bottom-0` bar — so rendering inline would trap the overlay
+  // in that bar's box (it lands at the bottom, cut off). Portal to <body> so the
+  // `fixed` positioning resolves against the viewport and centres like every
+  // other modal. `document.body` only exists on the client, hence the guard.
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
 
   const discard = async () => {
     const ok = await confirm({
@@ -108,7 +117,9 @@ export function FeatureListModal({
     }
   };
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <>
       <div
         className="fixed inset-0 z-50 bg-background/40 backdrop-blur-md"
@@ -244,7 +255,8 @@ export function FeatureListModal({
           ) : null}
         </div>
       </div>
-    </>
+    </>,
+    document.body,
   );
 }
 
