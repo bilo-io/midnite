@@ -9,12 +9,14 @@ const createInboundSource = vi.fn();
 const deleteInboundSource = vi.fn();
 const rotateInboundSecret = vi.fn();
 const updateInboundSource = vi.fn();
+const listInboundDeliveries = vi.fn();
 vi.mock('@/lib/api', () => ({
   listInboundSources: (...a: unknown[]) => listInboundSources(...a),
   createInboundSource: (...a: unknown[]) => createInboundSource(...a),
   deleteInboundSource: (...a: unknown[]) => deleteInboundSource(...a),
   rotateInboundSecret: (...a: unknown[]) => rotateInboundSecret(...a),
   updateInboundSource: (...a: unknown[]) => updateInboundSource(...a),
+  listInboundDeliveries: (...a: unknown[]) => listInboundDeliveries(...a),
   gatewayUrl: () => 'http://gw.test',
 }));
 
@@ -72,5 +74,37 @@ describe('InboundSourcesSection', () => {
     expect(screen.getByDisplayValue('insec_abc')).toBeInTheDocument();
     expect(screen.getByDisplayValue('http://gw.test/integrations/inbound/new1')).toBeInTheDocument();
     await waitFor(() => expect(createInboundSource).toHaveBeenCalled());
+  });
+
+  it('expands a source to lazy-load its deliveries log', async () => {
+    listInboundSources.mockResolvedValue({ sources: [source({})] });
+    listInboundDeliveries.mockResolvedValue({
+      deliveries: [
+        {
+          id: 'd1',
+          sourceId: 's1',
+          provider: 'github',
+          event: 'issues.opened',
+          externalId: 'ext-1',
+          result: 'created',
+          taskId: 't9',
+          error: null,
+          createdAt: '2026-07-01T00:00:00Z',
+        },
+      ],
+    });
+    render(<InboundSourcesSection />);
+    await screen.findByText('github');
+
+    // Not fetched until expanded.
+    expect(listInboundDeliveries).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Deliveries' }));
+
+    expect(await screen.findByText('created')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'view task' })).toHaveAttribute(
+      'href',
+      '/tasks/view?id=t9',
+    );
+    await waitFor(() => expect(listInboundDeliveries).toHaveBeenCalledWith('s1'));
   });
 });

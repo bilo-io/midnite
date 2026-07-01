@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { InboundSourceRow } from '../../db/schema';
+import type { InboundDeliveryRow, InboundSourceRow } from '../../db/schema';
+import { InboundDeliveriesRepository } from './inbound-deliveries.repository';
 import { InboundSourcesRepository } from './inbound-sources.repository';
 import {
   InboundSourceDoesNotExistError,
@@ -31,8 +32,16 @@ class FakeRepo {
   }
 }
 
+class FakeDeliveriesRepo {
+  rows: InboundDeliveryRow[] = [];
+  listBySource(sourceId: string): InboundDeliveryRow[] {
+    return this.rows.filter((r) => r.sourceId === sourceId);
+  }
+}
+
 function makeService(teams?: { getMembership: (t: string, u: string) => string | null }) {
   const repo = new FakeRepo();
+  const deliveries = new FakeDeliveriesRepo();
   // Default to a permissive admin stub so the team-scoping tests aren't gated by
   // RBAC; the dedicated RBAC test passes its own stub.
   const teamsStub = teams ?? { getMembership: () => 'admin' };
@@ -40,8 +49,9 @@ function makeService(teams?: { getMembership: (t: string, u: string) => string |
     repo as unknown as InboundSourcesRepository,
     undefined, // no crypto → secret stored raw (test)
     teamsStub as never,
+    deliveries as unknown as InboundDeliveriesRepository,
   );
-  return { repo, service };
+  return { repo, deliveries, service };
 }
 
 describe('InboundSourcesService', () => {
@@ -116,5 +126,43 @@ describe('InboundSourcesService', () => {
     expect(() =>
       service.create('team-a', 'u1', { provider: 'github', eventFilter: { events: [] }, enabled: true }),
     ).not.toThrow();
+  });
+
+  describe('listDeliveries (Theme D)', () => {
+    const delivery = (over: Partial<InboundDeliveryRow>): InboundDeliveryRow => ({
+      id: 'd1',
+      sourceId: 's1',
+      provider: 'github',
+      event: 'issues.opened',
+      externalId: 'ext-1',
+      result: 'created',
+      taskId: 't1',
+      error: null,
+      createdAt: '2026-07-01T00:00:00.000Z',
+      ...over,
+    });
+
+    it('returns the source deliveries hydrated to the wire shape (any member)', () => {
+      const { service, deliveries } = ctx;
+      const { source } = service.create('team-a', 'u1', {
+        provider: 'github',
+        eventFilter: { events: [] },
+        enabled: true,
+      });
+      deliveries.rows.push(delivery({ sourceId: source.id, result: 'rejected', taskId: null, error: 'bad sig' }));
+      const rows = service.listDeliveries(source.id, 'team-a');
+      expect(rows).toHaveLength(1);
+      expect(rows[0]!).toMatchObject({ result: 'rejected', taskId: null, error: 'bad sig' });
+    });
+
+    it('404s a source outside the caller team scope', () => {
+      const { service } = ctx;
+      const { source } = service.create('team-a', 'u1', {
+        provider: 'github',
+        eventFilter: { events: [] },
+        enabled: true,
+      });
+      expect(() => service.listDeliveries(source.id, 'team-b')).toThrow(InboundSourceDoesNotExistError);
+    });
   });
 });
