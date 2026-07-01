@@ -5,7 +5,9 @@
 > work and writes back to it (see [Maintenance](#maintenance)). Only open an
 > individual `phase-N-*.md` once you've chosen a candidate phase here.
 >
-> Generated from the 2026-06-26 git report; kept current by `/exec` as themes land.
+> Ordered **newest-first (descending)** — highest phase number at the top.
+> Generated from the 2026-06-26 git report + a 2026-07-01 full theme-key rebuild;
+> kept current by `/exec` as themes land.
 
 ## Legend
 
@@ -18,126 +20,440 @@
   - **◻ TODO** — themes with open, non-deferred work, free to pick.
   - Themes not listed in either column are **done** (or the phase predates the
     theme convention). `⏳`/`❌` deferred/out-of-scope themes are **not** listed as TODO.
+- The **[Theme key](#theme-key-all-phases--status-per-theme)** below lists **every
+  phase's themes** with a per-theme status icon + one-liner, so you can get context
+  without opening the phase doc.
 
 ## Phases
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [0 · Scaffold](phase-0-scaffold.md) | ✅ DONE | 10/10 | `██████████` | 100% | — | — |
-| [1 · Board by hand](phase-1-board.md) | ✅ DONE | 16/16 | `██████████` | 100% | — | — |
-| [2 · Agents](phase-2-agents.md) | ✅ DONE | 10/10 | `██████████` | 100% | — | — |
-| [3 · Browser](phase-3-browser.md) | ✅ DONE | 10/10 | `██████████` | 100% | — | — |
-| [4 · Inference](phase-4-inference.md) | ✅ DONE | 11/11 | `██████████` | 100% | — | — |
-| [5 · Polish](phase-5-polish.md) | ✅ DONE | 9/9 | `██████████` | 100% | — | — |
-| [6 · Workflows MVP](phase-6-workflows-mvp.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
-| [7 · Hardening/reports](phase-7-hardening-reports-widgets.md) | ✅ DONE | 31/31 | `██████████` | 100% | — | — |
-| [8 · Office fidelity](phase-8-office-fidelity.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
-| [9 · Office overhaul](phase-9-office-visual-overhaul.md) | ✅ DONE | 43/43 | `██████████` | 100% | — | — |
-| [10 · Test hardening](phase-10-test-suite-hardening.md) | ✅ DONE | 48/48 | `██████████` | 100% | — | — |
-| [11 · Public site](phase-11-public-site-rewrite.md) | ✅ DONE | 42/42 | `██████████` | 100% | — | — |
-| [12 · Workflow expressions](phase-12-workflow-expressions.md) | ✅ DONE | 33/33 | `██████████` | 100% | — | — |
-| [13 · Repos first-class](phase-13-repos-first-class.md) | ✅ DONE | 16/16 | `██████████` | 100% | — | — |
-| [14 · Workflows pt2](phase-14-workflows-connect.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
-| [15 · Smart intake](phase-15-smart-intake.md) | ✅ DONE | 21/21 | `██████████` | 100% | — | — |
-| [16 · Bulk add](phase-16-bulk-add.md) | ✅ DONE | 17/17 | `██████████` | 100% | — | — |
-| [17 · Spawner/tmux](phase-17-spawner-tmux.md) | ✅ DONE | 22/22 | `██████████` | 100% | — | — |
-| [18 · Reports/exports](phase-18-reports-exports.md) | ✅ DONE | 22/22 | `██████████` | 100% | — | — |
-| [19 · Onboarding wizard](phase-19-onboarding-wizard.md) | ✅ DONE | 19/19 | `██████████` | 100% | — | — |
-| [20 · Global search](phase-20-global-search.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
-| [21 · Notifications](phase-21-notifications.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
-| [22 · Fleet visibility](phase-22-fleet-visibility.md) | ✅ DONE | 21/21 | `██████████` | 100% | — | — |
-| [23 · Approvals/autonomy](phase-23-approvals-autonomy.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
-| [24 · Responsive/PWA](phase-24-responsive-mobile-pwa.md) | ✅ DONE | 22/22 | `██████████` | 100% | — | — |
-| [25 · @midnite/ui](phase-25-ui-library.md) | ✅ DONE | 17/17 | `██████████` | 100% | — | — |
-| [26 · Docs app](phase-26-docs-app.md) | ✅ DONE | 19/19 | `██████████` | 100% | — | — |
-| [27 · Task dependencies](phase-27-task-dependencies.md) | ✅ DONE | 22/22 | `██████████` | 100% | — | — |
-| [28 · Project planning](phase-28-project-planning-breakdown.md) | ✅ DONE | 18/18 | `██████████` | 100% | — | — |
-| [29 · Releases/versioning](phase-29-releases-versioning-changelog.md) | ✅ DONE | 14/14 | `██████████` | 100% | — | — |
-| [30 · Quality gates](phase-30-quality-gates.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
-| [31 · Office live-activity](phase-31-office-live-activity.md) | ✅ DONE | 22/22 | `██████████` | 100% | — | — |
-| [32 · CLI live dashboard](phase-32-cli-live-dashboard.md) | ✅ DONE | 19/19 | `██████████` | 100% | — | — |
-| [33 · Multi-user teams](phase-33-multi-user-teams.md) | ✅ DONE | 55/55 | `██████████` | 100% | — | — |
-| [34 · Bundle baseline](phase-34-bundle-baseline.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
-| [35 · RBAC enforcement](phase-35-rbac-enforcement.md) | ✅ DONE | 34/34 | `██████████` | 100% | — | — |
-| [36 · Template marketplace](phase-36-workflow-template-marketplace.md) | ✅ DONE | 40/40 | `██████████` | 100% | — | — |
-| [37 · AI code review](phase-37-ai-code-review.md) | ✅ DONE | 35/35 | `██████████` | 100% | — | — |
-| [38 · Search scoping + service tokens](phase-38-search-scoping-service-tokens.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
-| [39 · Visual customization](phase-39-visual-customization.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
-| [40 · Ideas pipeline](phase-40-ideas-pipeline.md) | ✅ DONE | 51/51 | `██████████` | 100% | — | — |
-| [41 · Command palette](phase-41-command-palette.md) | ✅ DONE | 32/32 | `██████████` | 100% | — | — ² |
-| [42 · Task detail routing](phase-42-task-detail-routing.md) | 🔄 WIP | 7/11 | `██████░░░░` | 64% | B | — |
-| [43 · Preference sync](phase-43-server-side-preference-sync.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
-| [44 · Outbound webhooks](phase-44-outbound-webhooks.md) | ✅ DONE | 20/20 | `██████████` | 100% | — | — |
-| [45 · Recurring/scheduled tasks](phase-45-recurring-scheduled-tasks.md) | ✅ DONE | 15/15 | `██████████` | 100% | — | — |
-| [46 · Inbound integrations](phase-46-inbound-integrations.md) | ✅ DONE | 20/20 | `██████████` | 100% | — | — |
-| [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
-| [48 · Slides](phase-48-slides.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
+| [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | ◻ TODO | 0/26 | `░░░░░░░░░░` | 0% | — | A B C D E F |
+| [53 · Task lifecycle resilience](phase-53-task-lifecycle-resilience.md) | ◻ TODO | 0/22 | `░░░░░░░░░░` | 0% | — | A B C D E |
+| [52 · In-app diff & PR review](phase-52-in-app-diff-review.md) | ◻ TODO | 0/25 | `░░░░░░░░░░` | 0% | — | A B C D E |
 | [51 · Session detail page](phase-51-session-detail-page.md) | 🔄 WIP | 16/27 | `██████░░░░` | 59% | — | F |
+| [50 · Autonomy guardrails](phase-50-autonomy-guardrails.md) | ◻ TODO | 0/29 | `░░░░░░░░░░` | 0% | — | A B C D E F |
+| [49 · Data portability](phase-49-data-portability.md) | ◻ TODO | 0/27 | `░░░░░░░░░░` | 0% | — | A B C D E F |
+| [48 · Slides](phase-48-slides.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
+| [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
+| [46 · Inbound integrations](phase-46-inbound-integrations.md) | ✅ DONE | 20/20 | `██████████` | 100% | — | — |
+| [45 · Recurring/scheduled tasks](phase-45-recurring-scheduled-tasks.md) | ✅ DONE | 15/15 | `██████████` | 100% | — | — |
+| [44 · Outbound webhooks](phase-44-outbound-webhooks.md) | ✅ DONE | 20/20 | `██████████` | 100% | — | — |
+| [43 · Preference sync](phase-43-server-side-preference-sync.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
+| [42 · Task detail routing](phase-42-task-detail-routing.md) | 🔄 WIP | 7/11 | `██████░░░░` | 64% | B | — |
+| [41 · Command palette](phase-41-command-palette.md) | ✅ DONE | 32/32 | `██████████` | 100% | — | — ² |
+| [40 · Ideas pipeline](phase-40-ideas-pipeline.md) | ✅ DONE | 51/51 | `██████████` | 100% | — | — |
+| [39 · Visual customization](phase-39-visual-customization.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
+| [38 · Search scoping + service tokens](phase-38-search-scoping-service-tokens.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
+| [37 · AI code review](phase-37-ai-code-review.md) | ✅ DONE | 35/35 | `██████████` | 100% | — | — |
+| [36 · Template marketplace](phase-36-workflow-template-marketplace.md) | ✅ DONE | 40/40 | `██████████` | 100% | — | — |
+| [35 · RBAC enforcement](phase-35-rbac-enforcement.md) | ✅ DONE | 34/34 | `██████████` | 100% | — | — |
+| [34 · Bundle baseline](phase-34-bundle-baseline.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
+| [33 · Multi-user teams](phase-33-multi-user-teams.md) | ✅ DONE | 55/55 | `██████████` | 100% | — | — |
+| [32 · CLI live dashboard](phase-32-cli-live-dashboard.md) | ✅ DONE | 19/19 | `██████████` | 100% | — | — |
+| [31 · Office live-activity](phase-31-office-live-activity.md) | ✅ DONE | 22/22 | `██████████` | 100% | — | — |
+| [30 · Quality gates](phase-30-quality-gates.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
+| [29 · Releases/versioning](phase-29-releases-versioning-changelog.md) | ✅ DONE | 14/14 | `██████████` | 100% | — | — |
+| [28 · Project planning](phase-28-project-planning-breakdown.md) | ✅ DONE | 18/18 | `██████████` | 100% | — | — |
+| [27 · Task dependencies](phase-27-task-dependencies.md) | ✅ DONE | 22/22 | `██████████` | 100% | — | — |
+| [26 · Docs app](phase-26-docs-app.md) | ✅ DONE | 19/19 | `██████████` | 100% | — | — |
+| [25 · @midnite/ui](phase-25-ui-library.md) | ✅ DONE | 17/17 | `██████████` | 100% | — | — |
+| [24 · Responsive/PWA](phase-24-responsive-mobile-pwa.md) | ✅ DONE | 22/22 | `██████████` | 100% | — | — |
+| [23 · Approvals/autonomy](phase-23-approvals-autonomy.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
+| [22 · Fleet visibility](phase-22-fleet-visibility.md) | ✅ DONE | 21/21 | `██████████` | 100% | — | — |
+| [21 · Notifications](phase-21-notifications.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
+| [20 · Global search](phase-20-global-search.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
+| [19 · Onboarding wizard](phase-19-onboarding-wizard.md) | ✅ DONE | 19/19 | `██████████` | 100% | — | — |
+| [18 · Reports/exports](phase-18-reports-exports.md) | ✅ DONE | 22/22 | `██████████` | 100% | — | — |
+| [17 · Spawner/tmux](phase-17-spawner-tmux.md) | ✅ DONE | 22/22 | `██████████` | 100% | — | — |
+| [16 · Bulk add](phase-16-bulk-add.md) | ✅ DONE | 17/17 | `██████████` | 100% | — | — |
+| [15 · Smart intake](phase-15-smart-intake.md) | ✅ DONE | 21/21 | `██████████` | 100% | — | — |
+| [14 · Workflows pt2](phase-14-workflows-connect.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
+| [13 · Repos first-class](phase-13-repos-first-class.md) | ✅ DONE | 16/16 | `██████████` | 100% | — | — |
+| [12 · Workflow expressions](phase-12-workflow-expressions.md) | ✅ DONE | 33/33 | `██████████` | 100% | — | — |
+| [11 · Public site](phase-11-public-site-rewrite.md) | ✅ DONE | 42/42 | `██████████` | 100% | — | — |
+| [10 · Test hardening](phase-10-test-suite-hardening.md) | ✅ DONE | 48/48 | `██████████` | 100% | — | — |
+| [9 · Office overhaul](phase-9-office-visual-overhaul.md) | ✅ DONE | 43/43 | `██████████` | 100% | — | — |
+| [8 · Office fidelity](phase-8-office-fidelity.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
+| [7 · Hardening/reports](phase-7-hardening-reports-widgets.md) | ✅ DONE | 31/31 | `██████████` | 100% | — | — |
+| [6 · Workflows MVP](phase-6-workflows-mvp.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
+| [5 · Polish](phase-5-polish.md) | ✅ DONE | 9/9 | `██████████` | 100% | — | — |
+| [4 · Inference](phase-4-inference.md) | ✅ DONE | 11/11 | `██████████` | 100% | — | — |
+| [3 · Browser](phase-3-browser.md) | ✅ DONE | 10/10 | `██████████` | 100% | — | — |
+| [2 · Agents](phase-2-agents.md) | ✅ DONE | 10/10 | `██████████` | 100% | — | — |
+| [1 · Board by hand](phase-1-board.md) | ✅ DONE | 16/16 | `██████████` | 100% | — | — |
+| [0 · Scaffold](phase-0-scaffold.md) | ✅ DONE | 10/10 | `██████████` | 100% | — | — |
 
-**Headline:** the original **0–41 roadmap is 100% complete** (Phases 39 & 41 closed 2026-06-30). **Phases 43, 44 (outbound webhooks & integrations), 45, and 47 are complete**; **Phase 42 (task detail routing, Theme B in flight)** and **Phase 46 (inbound integrations, Theme A in flight)** are the open frontier. (An *earlier* Phase 42 was a parallel restatement of Phase 40, folded into Phase 40 Theme G and removed 2026-06-27; the current 42 & 43 are new, unrelated phases — two brainstorm sessions ran concurrently, so the preference-sync plan took the next free number, 43.)
+**Headline:** the original **0–48 roadmap is effectively complete** — the only lingering
+box is **Phase 42 Theme B** (intercepting-route modal, blocked on a static-export rethink).
+The **live frontier** is **Phase 51** (session detail — Theme E in flight, F to go) plus a
+newly-planned resilience/review trio — **52** (in-app PR review), **53** (task-lifecycle
+resilience), **54** (runtime/process resilience) — and the two unstarted plans
+**49** (data portability) and **50** (autonomy guardrails). (An *earlier* Phase 42 was a
+parallel restatement of Phase 40, folded into Phase 40 Theme G and removed 2026-06-27; the
+current 42 & 43 are new, unrelated phases — two brainstorm sessions ran concurrently, so the
+preference-sync plan took the next free number, 43.)
 
-² Phase 41 — themes A–D all landed and the verification checklist is signed off (PR #237). The 3 remaining boxes are all `⏳` deferred (contextual task-detail commands ×2 + the `E` edit-form shortcut). The 2 contextual-command boxes are now **un-deferred and folded into Phase 42 Theme C** (they needed the `/tasks/:id` route Phase 42 adds).
+² Phase 41 — themes A–D all landed and the verification checklist is signed off (PR #237). The
+3 remaining boxes are all `⏳` deferred (contextual task-detail commands ×2 + the `E` edit-form
+shortcut). The 2 contextual-command boxes are now **un-deferred and folded into Phase 42 Theme C**
+(they needed the `/tasks/:id` route Phase 42 adds).
 
-## Theme key (active phases)
+## Theme key (all phases — status per theme)
 
-What the letters mean for the phases that still have open or in-flight themes —
-so you can pick from this file without opening the phase doc first.
+Every phase's lettered themes with a status icon + one-liner, so you can gauge scope and pick
+work without opening the phase doc. Status: `✅` done · `🔄` WIP (claimed) · `◻` TODO · `◐`
+partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
+
+### [Phase 54 — Runtime & process resilience](phase-54-runtime-process-resilience.md)
+*(Hardens the gateway process itself: boot → run → shutdown. Watchdog rides the single tick; one shared `pause`/`resume` (reused by Phase 50's kill switch); preserves boot recovery + the pty/tmux Spawner split.)*
+- ◻ **A** — Boot preflight + config validation + fail-fast (`strictBoot`)
+- ◻ **B** — Readiness/liveness health endpoints (`/health/ready` vs `/live`)
+- ◻ **C** — Live watchdog: slot-leak + session-health auto-heal + pty liveness probe
+- ◻ **D** — Scheduler resilience: readiness gate + backoff + first-class pause/resume
+- ◻ **E** — Graceful shutdown: drain in-flight agents + WAL checkpoint/close
+- ◻ **F** — Runtime health in web + CLI (`midnite doctor`)
+
+### [Phase 53 — Task lifecycle resilience](phase-53-task-lifecycle-resilience.md)
+*(Additive layer over the existing lifecycle — no state-machine refactor; escalation reuses `waiting` + a typed reason. Complements Phase 50.)*
+- ◻ **A** — Failure taxonomy + `task_failures` records (`classifyFailure`)
+- ◻ **B** — Retry backoff (exponential + jitter) + class-aware retry
+- ◻ **C** — Stuck-state watchdogs (wip-inactivity, aged-todo, waiting-too-long)
+- ◻ **D** — Escalate-to-human (needs-attention via `waiting` + `waitReason`) + nudges
+- ◻ **E** — Board "needs attention" + failures/health view + CLI doctor
+
+### [Phase 52 — In-app diff & PR review](phase-52-in-app-diff-review.md)
+*(Extends tasks — no new domain. Reuses the workflow GitHub plumbing, `pr-status` fetch strategy, Phase 37 AI review. A→B→C is the critical path.)*
+- ◻ **A** — Diff API: expose the PR diff to the web (structured)
+- ◻ **B** — Diff viewer: file tree + split/unified + syntax highlight
+- ◻ **C** — Review actions: inline comment + approve/request-changes + in-app merge
+- ◻ **D** — Comment persistence (drafts) + Phase 37 AI review inline
+- ◻ **E** — Embed in task detail + deep-linkable `?tab=review` route
+
+### [Phase 51 — Session detail page](phase-51-session-detail-page.md)
+- ✅ **A** — Session detail contract + API enrichment
+- ✅ **B** — Detail page shell, routing, collapsible layout
+- ✅ **C** — Terminal (live interactive + ended transcript)
+- ✅ **D** — Left panel (approvals + task/project context)
+- ✅ **E** — Right panel (session info & stats)
+- ◻ **F** — Sessions list upgrade + entry points
+
+### [Phase 50 — Autonomy guardrails & blast radius](phase-50-autonomy-guardrails.md)
+- ◻ **A** — Kill switch & global pause (scheduling gate)
+- ◻ **B** — Spend & rate caps that block (scheduling gate)
+- ◻ **C** — Destructive-action limits (act-path gate)
+- ◻ **D** — Audit completeness + RBAC gap closure
+- ◻ **E** — Safety control panel (web)
+- ◻ **F** — CLI safety commands
+
+### [Phase 49 — Data portability](phase-49-data-portability.md)
+- ◻ **A** — Archive contract + schema-version stamp
+- ◻ **B** — Bulk export service
+- ◻ **C** — Atomic import service
+- ◻ **D** — CLI export/import commands
+- ◻ **E** — Web Settings → Data page
+- ◻ **F** — Scheduled auto-backup
+
+### [Phase 48 — Slides (reveal.js decks)](phase-48-slides.md)
+*(Net-new domain; persistence mirrors workflows; web static-export `?id=`; reveal.js client-only.)*
+- ✅ **A** — Deck contract + `slides` table + migration
+- ✅ **B** — Gateway CRUD module (team-scoped)
+- ✅ **C** — Typed API client + web data layer
+- ✅ **D** — Sidenav entry + list/grid view
+- ✅ **E** — Editor + live reveal.js preview
+- ✅ **F** — Present mode + PDF/HTML export
+
+### [Phase 47 — CLI power-user pass](phase-47-cli-power-user-pass.md)
+*(Thin-CLI: presentation + client-side loops only, no gateway changes.)*
+- ✅ **A** — Brand chrome + ANSI logo
+- ✅ **B** — Colour vocabulary (chalk palette)
+- ✅ **C** — Spinners & progress (ora)
+- ✅ **D** — Interactive prompts (inquirer)
+- ✅ **E** — Machine output (global `--json`)
+- ✅ **F** — Shell completions + bulk-by-filter ops
+
+### [Phase 46 — Inbound integrations](phase-46-inbound-integrations.md)
+- ✅ **A** — Inbound source entity + contract + Settings UI
+- ✅ **B** — Provider-aware signed receiver → task creation
+- ✅ **C** — Provider adapters (GitHub / Linear / generic)
+- ✅ **D** — Deliveries log + source backlink
+
+### [Phase 45 — Recurring & scheduled tasks](phase-45-recurring-scheduled-tasks.md)
+*(Workflow-backed: `[trigger.schedule] → [task.create]`.)*
+- ✅ **A** — `task.create` workflow action/executor
+- ✅ **B** — Recurrence presets (+ raw-cron escape hatch)
+- ✅ **C** — Schedules facade view
+- ✅ **D** — Run-history + "Daily standup" preset
+
+### [Phase 44 — Outbound webhooks & integrations](phase-44-outbound-webhooks.md)
+- ✅ **A** — Webhook endpoint entity + CRUD + Settings UI
+- ✅ **B** — Signed delivery engine off the event bus
+- ✅ **C** — Provider formatting (Slack / Discord / generic)
+- ✅ **D** — Deliveries log UI + "send test" + redeliver
+
+### [Phase 43 — Server-side preference sync](phase-43-server-side-preference-sync.md)
+- ✅ **A** — `UserPreferences` contract in `shared`
+- ✅ **B** — Gateway persistence + authed read/write
+- ✅ **C** — Web sync layer (hydrate + write-through, LWW)
+
+### [Phase 42 — Task detail routing & contextual commands](phase-42-task-detail-routing.md)
+- ✅ **A** — Full detail page (`/tasks/view?id=`)
+- 🔄 **B** — Intercepting-route modal + nav migration — ⚠️ **needs rethink**: `output: 'export'` blocks Next intercepting routes; do client-side (`?task=` param → modal, hard-nav falls to the page)
+- ✅ **C** — Contextual "Move to…" palette commands
+
+### [Phase 41 — Command palette & keyboard navigation](phase-41-command-palette.md)
+- ✅ **A** — ⌘K palette core (search + recents)
+- ◐ **B** — Palette actions (2 contextual cmds deferred → folded into Phase 42 C)
+- ✅ **C** — Global keyboard shortcuts + help overlay
+- ✅ **D** — Board arrow-key navigation (E edit-shortcut ⏳ deferred)
 
 ### [Phase 40 — Ideas pipeline](phase-40-ideas-pipeline.md)
 - ✅ **A** — Idea entity + sidenav
 - ✅ **B** — Ideas views (table / list / grid)
-- ✅ **C** — AI chat composer (backend #215, UI #232)
-- ✅ **D** — Promote idea → project (#234)
-- ✅ **E** — Phase doc editor (GitHub-backed) (#229)
-- ✅ **F** — Phase doc → task seeder (#233)
-- ✅ **G** — Phase-doc ↔ board sync-back (#236) *(folded in from former Phase 42 Theme E)*
+- ✅ **C** — AI chat composer
+- ✅ **D** — Promote idea → project
+- ✅ **E** — Phase doc editor (GitHub-backed)
+- ✅ **F** — Phase doc → task seeder
+- ✅ **G** — Phase-doc ↔ board sync-back
 
-### [Phase 42 — Task detail routing & contextual commands](phase-42-task-detail-routing.md)
-- ✅ **A** — full detail page (extract `<TaskDetail>`, deep-linkable) — shipped at `/tasks/view?id=` (PR #246) **[M]**
-- ◻ **B** — Intercepting-route modal (modal on click / full page on direct link) + nav migration **[M–L]** — ⚠️ **needs rethink**: `output: 'export'` is on (no server runtime), so Next intercepting/parallel routes can't work as the doc describes; the click→modal UX must be done client-side (e.g. a `?task=:id` query param that opens the modal, falling through to the `/tasks/view` page on hard nav)
-- ✅ **C** — Contextual "Move to…" palette commands (closes Phase 41's 2 deferred boxes) (#254) **[S]**
+### [Phase 39 — Visual customization](phase-39-visual-customization.md)
+- ✅ **A** — Background gallery + animated gradient
+- ✅ **B** — Accent-colour personalization
+- ✅ **C** — Density & typography scale
+- ✅ **D** — Motion & visual-effects controls
+- ✅ **E** — Live preview + no-flash application
 
-### [Phase 43 — Server-side preference sync](phase-43-server-side-preference-sync.md)
-- ✅ **A** — `UserPreferencesSchema` contract in `shared` (synced subset of `AppSettings`) (PR #240) **[S–M]**
-- ✅ **B** — Gateway `user_preferences` table + `GET`/`PUT /users/me/preferences` (authed) (PR #242) **[M]**
-- ✅ **C** — Web sync layer (hydrate-on-login, debounced write-through, LWW; localStorage-only when signed out) (PR #244) **[M]**
+### [Phase 38 — Search scoping + service tokens](phase-38-search-scoping-service-tokens.md)
+- ✅ **A** — FTS5 search index scoped by team
+- ✅ **B** — Service-account tokens (machine auth + expiry)
 
-### [Phase 46 — Inbound integrations (external events → tasks)](phase-46-inbound-integrations.md)
-- ✅ **A** — Inbound source entity + contract + Settings → Integrations (Inbound) UI (#259) **[M]**
-- ✅ **B** — Provider-aware signed receiver (`POST /integrations/inbound/:id`) + dedup + `createFromPrompt` (#261) **[M]**
-- ✅ **C** — Provider adapters: GitHub / Linear / generic (verify + payload→task) (#261) **[M]**
-- ✅ **D** — Inbound deliveries log + origin URL as a task `Source` (#262) **[S]** → phase COMPLETE
+### [Phase 37 — AI code review integration](phase-37-ai-code-review.md)
+- ✅ **A** — GitHub executor nodes + credential type
+- ✅ **B** — Built-in "AI Code Review" workflow template
+- ◐ **C** — Repo ↔ GitHub webhook wiring (partial defer)
+- ◐ **D** — Task PR review surfacing (re-review deferred)
 
-### [Phase 44 — Outbound webhooks & integrations](phase-44-outbound-webhooks.md)
-- ✅ **A** — Webhook endpoint entity + CRUD + Settings → Integrations UI (team-scoped) (PR #245) **[M]**
-- ✅ **B** — Signed delivery engine off the `TaskEventBus` (HMAC, reused SSRF/retry core, deliveries log) (PR #249) **[M]**
-- ✅ **C** — Provider formatting: Slack / Discord / generic JSON (Linear deferred) (PR #252) **[S–M]** — *all themes A–D shipped + Verification checklist signed off (PR #258, 2026-07-01) → phase COMPLETE.*
-- ✅ **D** — Deliveries log UI + "Send test event" + redeliver (PR #251) **[S]**
+### [Phase 36 — Workflow template marketplace](phase-36-workflow-template-marketplace.md)
+- ✅ **A** — Template entity + CRUD
+- ✅ **B** — Install & fork from templates
+- ✅ **C** — Built-in template library (seeded on boot)
+- ◐ **D** — Web marketplace UI (detail page deferred)
+- ✅ **E** — CLI template commands
 
-### [Phase 45 — Recurring & scheduled tasks](phase-45-recurring-scheduled-tasks.md)
-*(Workflow-backed: a recurring task is a `[trigger.schedule] → [task.create]` workflow — reuses the workflow scheduler/runs/run-history.)*
-- ✅ **A** — `task.create` workflow action/executor (the missing link) (#241) **[M]**
-- ✅ **B** — Recurrence presets (+ raw-cron escape hatch) on the schedule trigger (#243) **[S–M]**
-- ✅ **C** — Dedicated "Schedules" facade view (list/create/edit/run-now) (#247) **[M]**
-- ✅ **D** — Run-history surfacing + "Daily standup" starter preset (#250) **[S]**
+### [Phase 35 — RBAC enforcement](phase-35-rbac-enforcement.md)
+- ✅ **A** — Scoped list queries (team/user)
+- ✅ **B** — Role-based write guards (decorator)
+- ✅ **D** — WebSocket event scoping by team
+- ✅ **E** — Notification scoping to team
 
-### [Phase 47 — CLI power-user pass](phase-47-cli-power-user-pass.md)
-*(Thin-CLI rule: no gateway changes — presentation helpers + client-side loops only. chalk/ora aren't installed today; this phase makes CLAUDE.md's claim true.)*
-- ✅ **A** — Brand chrome + ANSI logo (bare invoke / help / `watch` splash; `NO_COLOR`/pipe aware) (PR #248) **[S–M]**
-- ✅ **B** — Colour vocabulary (chalk palette mirroring `@midnite/ui` status/kind/priority hues, applied across every renderer) (PR #255) **[M]**
-- ✅ **C** — Spinners & progress (ora wrapper on every async client call) (PR #255) **[S–M]**
-- ✅ **D** — Interactive prompts (`@inquirer/prompts` replaces hand-rolled `readline`/TTY; guided `add`, fuzzy task-pick for `move`/`block`) (PR #253) **[M]**
-- ✅ **E** — Machine output: global `--json` for the read surface (chrome forced off; errors → stderr) (#256) **[S–M]**
-- ✅ **F** — Shell completions (`completion <bash|zsh|fish>`) + bulk-by-filter `move`/`prioritise` (client-side loop) (#257) **[M]**
+### [Phase 34 — Bundle baseline & web performance](phase-34-bundle-baseline.md)
+- ✅ **A** — Bundle analyzer + baseline report
+- ✅ **B** — `optimizePackageImports` quick wins
+- ✅ **C** — Dynamic imports for view-heavy libs
+- ✅ **D** — Build hygiene + disk-accounting docs
 
-### [Phase 48 — Slides (reveal.js decks)](phase-48-slides.md)
-*(Net-new domain beside tasks/workflows/councils. Persistence mirrors workflows: metadata columns + a JSON `content` blob; web stays static-export, `?id=` routes; reveal.js is client-only.)*
-- ✅ **A** — Deck contract (`shared/slide.ts`) + `slides` table + migration `0062` (PR #260) **[S-M]**
-- ✅ **B** — Gateway CRUD module (team-scoped repo→service→controller, `member` writes, search+audit) (PR #260) **[M]**
-- ✅ **C** — Typed API client + web data layer (api.ts + `useApiData`/`invalidateData`) (PR #263) **[S]**
-- ✅ **D** — Sidenav entry + list/grid view (grid/table, format badge, empty state, delete) (PR #263) **[M]**
-- ✅ **E** — Editor + live reveal.js preview (Markdown/HTML per slide, @dnd-kit reorder, theme override, save+autosave) (PR #263) **[L]**
-- ✅ **F** — Present mode + PDF/HTML export (fullscreen present, reveal print-pdf, standalone HTML) (PR #267) **[M]** — *Phase 48 COMPLETE*
+### [Phase 33 — Multi-user & teams](phase-33-multi-user-teams.md)
+- ✅ **A** — User identity + JWT auth
+- ✅ **B** — Teams + membership + invites
+- ✅ **C** — Resource ownership columns
+- ✅ **D** — Agent isolation + audit log
+- ✅ **E** — Admin + profile UI
+
+### [Phase 32 — CLI live dashboard (`midnite watch`)](phase-32-cli-live-dashboard.md)
+- ✅ **A** — TUI foundation (ink + WS seam)
+- ✅ **B** — Live board panel (kanban columns)
+- ✅ **C** — Agent slots / pool panel
+- ✅ **D** — Live logs panel (session streaming)
+- ✅ **E** — Keyboard nav + task moves
+
+### [Phase 31 — Office live-activity layer](phase-31-office-live-activity.md)
+- ✅ **A** — Live activity event backbone
+- ✅ **B** — Task-aware room routing by status
+- ✅ **C** — Tool-level bubbles + activity poses
+- ✅ **D** — Attention/approval surfacing
+- ✅ **E** — Push-patch over refetch + throttling
+
+### [Phase 30 — Quality gates: verified completion](phase-30-quality-gates.md)
+- ✅ **A** — Check runner + config schema
+- ✅ **B** — Gate the done transition (persist results)
+- ✅ **C** — Auto-fix loop (dedicated budget)
+- ✅ **D** — Web + CLI check surfaces
+
+### [Phase 29 — Releases, versioning & changelog](phase-29-releases-versioning-changelog.md)
+- ✅ **A** — Lockstep versioning + version-sync tool
+- ✅ **B** — Root `CHANGELOG.md`
+- ✅ **C** — `/release-prep` skill
+- ✅ **D** — `/release-complete` skill
+
+### [Phase 28 — Project planning & structured breakdown](phase-28-project-planning-breakdown.md)
+- ✅ **A** — Structured breakdown model + LLM generation
+- ✅ **B** — Create tasks with dependencies from breakdown
+- ✅ **C** — Goal → planned board (editable preview)
+- ✅ **D** — Standalone breakdown + CLI goal planning
+
+### [Phase 27 — Task dependencies & dependency-aware scheduling](phase-27-task-dependencies.md)
+- ✅ **A** — Dependency model + blocker graph + integrity
+- ✅ **B** — Dependency-aware scheduling (ready-gating)
+- ✅ **C** — Dependencies in web UI (blocked chips)
+- ✅ **D** — CLI coverage + e2e tests
+
+### [Phase 26 — Docs app (`@midnite/docs`)](phase-26-docs-app.md)
+- ✅ **A** — Docs app scaffold consuming `@midnite/ui`
+- ✅ **B** — Design-system documentation
+- ✅ **C** — Product & developer docs
+- ◐ **D** — Navigation, search & build seam
+
+### [Phase 25 — @midnite/ui library](phase-25-ui-library.md)
+- ✅ **A** — Package scaffold + Vite build
+- ✅ **B** — Tokens + theming foundation
+- ✅ **C** — Migrate primitives + stories
+- ✅ **D** — Storybook catalog + docs seam
+
+### [Phase 24 — Responsive & mobile PWA](phase-24-responsive-mobile-pwa.md)
+- ✅ **A** — Responsive layout + navigation
+- ✅ **B** — Touch interactions + tap-to-move
+- ✅ **C** — PWA installability (manifest + SW)
+
+### [Phase 23 — Approvals & autonomy](phase-23-approvals-autonomy.md)
+- ✅ **A** — Policy engine + rule storage
+- ✅ **B** — Cross-session approvals inbox
+- ✅ **C** — Approval audit log
+- ✅ **D** — Autonomy modes + settings
+
+### [Phase 22 — Fleet visibility](phase-22-fleet-visibility.md)
+- ✅ **A** — Runtime metrics recording
+- ✅ **B** — Ops dashboard surface
+- ✅ **C** — PR status model + refresh
+- ✅ **D** — PR/git surface + delivery panel
+
+### [Phase 21 — Notifications & alerting](phase-21-notifications.md)
+- ✅ **A** — Notification model + persisted feed
+- ✅ **B** — Channel dispatch interface
+- ✅ **C** — Web notification center + toasts
+- ✅ **D** — Desktop native notifications
+
+### [Phase 20 — Global search](phase-20-global-search.md)
+- ✅ **A** — FTS5 index + contract + maintenance
+- ✅ **B** — Search endpoint (ranking + snippets)
+- ✅ **C** — Command palette integration
+- ✅ **D** — Dedicated search page
+
+### [Phase 19 — Onboarding & setup wizard](phase-19-onboarding-wizard.md)
+- ✅ **A** — Setup-readiness model + endpoint
+- ✅ **B** — Guided wizard UI
+- ✅ **C** — First-run detection + soft gating
+- ✅ **D** — Ongoing status panel
+
+### [Phase 18 — Reports & exports](phase-18-reports-exports.md)
+- ✅ **A** — Task export with timeline
+- ✅ **B** — Project export (tasks + knowledge)
+- ✅ **C** — Workflow-run export (resolved params)
+- ✅ **D** — Generalized renderer for all domains
+
+### [Phase 17 — Spawner & tmux sessions](phase-17-spawner-tmux.md)
+- ✅ **A** — Extract `Spawner` interface
+- ✅ **B** — TmuxSpawner (durable sessions + reattach)
+- ✅ **C** — Backend selection + survive-restart
+- ✅ **D** — Spawner contract tests + tmux in CI
+
+### [Phase 16 — Bulk / paste add](phase-16-bulk-add.md)
+- ✅ **A** — Bulk create API (coalesced board update)
+- ✅ **B** — CLI `add --bulk` (stdin / file)
+- ✅ **C** — Web paste-list modal (preview + results)
+
+### [Phase 15 — Smart intake & inference](phase-15-smart-intake.md)
+- ✅ **A** — Bulk paste add (API + CLI + web)
+- ✅ **B** — URL / GitHub-context inference
+- ✅ **C** — Inline answers for question-type items
+- ✅ **D** — Knowledge-files watcher + injection
+
+### [Phase 14 — Workflows pt.2: make them connect](phase-14-workflows-connect.md)
+- ✅ **A** — Live run streaming
+- ✅ **B** — Credential vault + OAuth2
+- ✅ **C** — Integration executors (Slack / email / Sheets)
+- ✅ **D** — CLI parity (list / run / history)
+- ✅ **E** — Editor polish (autosave / replay / templates)
+
+### [Phase 13 — Repos as first-class entity](phase-13-repos-first-class.md)
+- ✅ **A** — Repo registry (DB-backed CRUD)
+- ✅ **B** — Selectable + validated repo refs on tasks
+
+### [Phase 12 — Workflow data flow & expressions](phase-12-workflow-expressions.md)
+- ✅ **A** — Expression engine (safe resolver + typed context)
+- ✅ **B** — Engine integration (resolve params pre-execute)
+- ✅ **C** — Reshape + storage nodes
+- ✅ **D** — n8n-style expression editor + autocomplete
+- ◐ **E** — Run-history debugging (inline resolved-value preview)
+- ✅ **F** — Palette grouping + new-node surfacing
+
+### [Phase 11 — Public site rewrite](phase-11-public-site-rewrite.md)
+- ✅ **A** — Multi-theme, favicon, layout shell + nav
+- ⏳ **B** — Cursor particle field (removed → backdrop)
+- ✅ **C** — Persistent preview panel (Mac chrome)
+- ✅ **D** — Scroll-driven sections + typewriter titles
+- ✅ **E** — Epic hero (cycling typed titles)
+- ✅ **F** — Panel content (terminal + webapp mockups)
+- ✅ **G** — Download page restyle + platform detect
+- ✅ **H** — Legal pages (sidebar sub-layout + markdown)
+
+### [Phase 10 — Test suite hardening & visual previews](phase-10-test-suite-hardening.md)
+- ✅ **A** — Shared unit coverage for contract schemas
+- ✅ **B** — Gateway test depth (controller + integration)
+- ✅ **C** — Component tests (Storybook + a11y)
+- ✅ **D** — Flow tests (Playwright)
+- ✅ **E** — Screenshot previews + visual baselines
+- ✅ **F** — CI wiring + coverage gates
+
+### [Phase 9 — Office visual overhaul](phase-9-office-visual-overhaul.md)
+- ✅ **A** — Multi-room layout + theme-aware palette
+- ✅ **B** — Distinct agent characters + props
+- ✅ **C** — Bookshelf modal (searchable library)
+- ✅ **D** — Board room projects list
+- ✅ **E** — Communal area (coffee, TV, gaming)
+- ✅ **F** — Corner office (customisable desk)
+- ✅ **G** — Agent pool (lounging + swimming)
+
+### [Phase 8 — Office fidelity & presence](phase-8-office-fidelity.md)
+- ◐ **A** — Procedural pixel art + walk animations + tileset
+- ✅ **B** — Theme-aware colours + fixed-aspect scrolling map
+- ✅ **C** — Status bubbles + idle anims + pathfinding
+- ✅ **D** — Call/message wiring + click-to-walk + minimap
+- ❌ **E** — Multiplayer presence (out of scope)
+
+### [Phase 7 — Hardening, reports & widgets](phase-7-hardening-reports-widgets.md)
+- ✅ **A** — Encrypt API keys + LLM usage accounting + web test toolchain
+- ✅ **B** — Export framework + councils report + print-to-PDF
+- ✅ **C** — Cost / recent-PRs / quick-capture / per-repo status widgets
+- ✅ **D** — Command palette + notifications + tags/saved-filters
+- ✅ **A6** — Task WebSocket broadcast (event-driven board)
+
+### [Phase 6 — Workflows (MVP)](phase-6-workflows-mvp.md)
+*(no lettered themes — predates the convention)*
+- ✅ Graph types + node registry + execution engine + persistence; React Flow editor + palette; manual/schedule/webhook triggers, HTTP + Claude nodes.
+
+### [Phase 5 — Polish](phase-5-polish.md)
+*(no lettered themes — predates the convention)*
+- ✅ Pluggable spawner (pty/tmux); priorities, retries, per-repo concurrency caps; per-repo branch/PR conventions + CI + test suites.
+
+### [Phase 4 — Inference](phase-4-inference.md)
+*(no lettered themes — predates the convention)*
+- ✅ Plan/act split, classification, bulk intake, repo guessing; knowledge-base watcher + prompt injection. ⏳ Embeddings/RAG deferred.
+
+### [Phase 3 — Browser](phase-3-browser.md)
+*(no lettered themes — predates the convention)*
+- ✅ TanStack Query + WS-synced kanban (drag-drop); xterm.js 2-way terminal + static transcripts.
+
+### [Phase 2 — Agents](phase-2-agents.md)
+*(no lettered themes — predates the convention)*
+- ✅ Agent pool (idle/busy slots + tick scheduler); PTY spawner + live stdout ring buffer; Claude Code lifecycle/stop hooks.
+
+### [Phase 1 — Board by hand](phase-1-board.md)
+*(no lettered themes — predates the convention)*
+- ✅ SQLite task/event store + REST + WS; CLI `add`/`list`/`move`/`serve`; live board + terminal streaming.
+
+### [Phase 0 — Scaffold](phase-0-scaffold.md)
+*(no lettered themes — predates the convention)*
+- ✅ Monorepo (moon + proto) + package skeletons; builds / lints / tests green across the graph.
 
 ## Maintenance
 
@@ -150,3 +466,5 @@ so you can pick from this file without opening the phase doc first.
    out of `🔄 WIP`, bump the `Done`/`Progress`/`%` cells, and flip the row's
    **Status** to `✅ DONE` once every theme is done. The phase doc + `done.md`
    move in the same branch, so merging auto-updates docs and this index together.
+3. **Keep the [Theme key](#theme-key-all-phases--status-per-theme) in sync** — when a
+   theme lands, flip its `◻`/`🔄` to `✅` there too (it mirrors the per-theme status).
