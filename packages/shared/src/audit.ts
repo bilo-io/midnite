@@ -6,6 +6,7 @@ export const AuditEntityTypeSchema = z.enum([
   'workflow',
   'user',
   'team',
+  'deck',
 ]);
 
 export const AuditActionSchema = z.enum([
@@ -21,6 +22,9 @@ export const AuditActionSchema = z.enum([
   'team.member_role_changed',
   'workflow.run_started',
   'workflow.run_completed',
+  'deck.created',
+  'deck.updated',
+  'deck.deleted',
 ]);
 
 export const AuditEntrySchema = z.object({
