@@ -176,7 +176,7 @@ const IDLE_WORDS = [
   'let’s build',
   'let’s gooo',
   'let’s vibe',
-  'let’s fucking go!',
+  'let’s f**king go!',
   'ready to rumble',
   'craving chaos',
   'bored already',
