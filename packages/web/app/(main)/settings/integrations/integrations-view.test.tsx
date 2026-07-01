@@ -19,6 +19,10 @@ vi.mock('@/lib/api', () => ({
   listWebhookDeliveries: (id: string) => listWebhookDeliveries(id),
   sendWebhookTest: (id: string) => sendWebhookTest(id),
   redeliverWebhook: (id: string, d: string) => redeliverWebhook(id, d),
+  // Phase 46: the view now embeds <InboundSourcesSection/>, which fetches on mount.
+  // Stub the inbound surface so these outbound-focused tests render cleanly.
+  listInboundSources: () => Promise.resolve({ sources: [] }),
+  gatewayUrl: () => 'http://gw.test',
 }));
 
 import { IntegrationsView } from './integrations-view';

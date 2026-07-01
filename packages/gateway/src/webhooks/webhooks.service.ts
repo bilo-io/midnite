@@ -1,4 +1,4 @@
-import { randomBytes, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import type {
   Status,
@@ -15,6 +15,12 @@ import type {
 import { CryptoService } from '../crypto/crypto.service';
 import { isSafeHttpUrl } from '../projects/lib/opengraph';
 import { TeamsService } from '../teams/teams.service';
+import {
+  assertTeamAdmin,
+  encryptSecret,
+  generateSecret,
+  isInTeamScope,
+} from '../integrations/lib/managed-secret';
 import type { WebhookDeliveryRow, WebhookRow } from '../db/schema';
 import { WebhookDeliveriesRepository } from './webhook-deliveries.repository';
 import { WebhookDeliveryService, type WebhookPayload } from './webhook-delivery.service';
@@ -246,7 +252,7 @@ export class WebhooksService {
   /** Resolve an endpoint within the caller's team scope, or 404. */
   private getScoped(id: string, teamId: string | null | undefined): WebhookRow {
     const row = this.repo.findById(id);
-    if (!row || (row.teamId ?? null) !== (teamId ?? null)) {
+    if (!row || !isInTeamScope(row.teamId, teamId)) {
       throw new WebhookDoesNotExistError(id);
     }
     return row;
@@ -257,17 +263,15 @@ export class WebhooksService {
    * (single-user / JWT off) the local operator is implicitly privileged.
    */
   private assertAdmin(teamId: string | null | undefined, userId: string | null | undefined): void {
-    if (!teamId) return;
-    const role = this.teams?.getMembership(teamId, userId ?? '') ?? null;
-    if (role !== 'admin' && role !== 'owner') throw new WebhookForbiddenError();
+    assertTeamAdmin(this.teams, teamId, userId, () => new WebhookForbiddenError());
   }
 
   private generateSecret(): string {
-    return SECRET_PREFIX + randomBytes(24).toString('hex');
+    return generateSecret(SECRET_PREFIX);
   }
 
   private encryptSecret(raw: string): string {
-    return this.crypto ? this.crypto.encrypt(raw) : raw;
+    return encryptSecret(this.crypto, raw);
   }
 
   private hydrate(row: WebhookRow): Webhook {

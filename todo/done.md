@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-01 — feat: inbound integrations entity + Settings UI — Phase 46 Theme A (PR #259)
+
+The foundation of inbound integrations (external events → tasks): a team-scoped source entity + management surface. The signed receiver + provider adapters + deliveries log are Themes B–D.
+
+- [x] **shared**: `inbound.ts` — `InboundProvider` (github/linear/generic), flat `InboundEventFilter { events: string[] }` (empty = accept all) + curated `INBOUND_PROVIDER_EVENTS` catalog, `InboundSource`/create/update, reveal-once `InboundSecretResponse`, `InboundDelivery` shapes (for B/D)
+- [x] **gateway**: `integrations/inbound/` module — `inbound_sources` + `inbound_deliveries` tables + migration `0061`; repository → service (secret gen/encrypt, reveal-once, rotate, team-scope, RBAC) → controller (`GET/POST/PATCH/DELETE /integrations/inbound` + `:id/rotate`); registered in `AppModule`
+- [x] **gateway (shared base, per decision)**: extracted `integrations/lib/managed-secret.ts` (secret gen/encrypt/decrypt + team-admin RBAC + team-scope) and refactored Phase 44's webhooks service onto it — the secret+access core now lives in one place (webhooks specs pass unedited)
+- [x] **web**: `lib/api.ts` inbound client methods + a second **Inbound sources** section on Settings → Integrations (provider, receiver URL, event picker, default repo/project, enable toggle, rotate, delete, reveal-once modal)
+- [x] **tests**: gateway `managed-secret` (4), `inbound-sources.service` (7), `inbound-sources.repository` real-SQLite (3); web `inbound-sources-section` RTL (4) + fixed the outbound view test; shared 50 files. Integrations screenshots captured
+- [x] **Decisions**: flat `string[]` events (empty=all) + curated catalog; both tables migrated now; shared CRUD/secret base extracted (webhooks refactored onto it)
 ## 2026-07-01 — docs: Phase 44 verification sign-off — **Phase 44 COMPLETE**
 
 Audited the shipped outbound-webhooks surface (Themes A–D, PRs #245/#249/#252/#251) against the phase's 7-item acceptance list. Every behavioural criterion is backed by an existing green test — no coverage gap surfaced, so no new tests were needed; the sign-off is a doc-only close-out.

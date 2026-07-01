@@ -1022,6 +1022,66 @@ export const webhookDeliveries = sqliteTable(
 export type WebhookDeliveryRow = typeof webhookDeliveries.$inferSelect;
 export type WebhookDeliveryInsert = typeof webhookDeliveries.$inferInsert;
 
+/**
+ * Inbound integration sources (Phase 46). A team registers external systems
+ * (GitHub / Linear / a generic signed sender) that may open tasks; the signed
+ * receiver (Theme B) verifies against the per-source `secret` (encrypted at rest)
+ * and maps the payload to a task via `createFromPrompt`, seeded by the optional
+ * default repo/project. Mirrors the `webhooks` (outbound) table.
+ */
+export const inboundSources = sqliteTable(
+  'inbound_sources',
+  {
+    id: text('id').primaryKey(),
+    teamId: text('team_id'),
+    createdBy: text('created_by'),
+    provider: text('provider').notNull(),
+    eventFilter: text('event_filter').notNull(),
+    secret: text('secret').notNull(),
+    defaultRepo: text('default_repo'),
+    defaultProjectId: text('default_project_id'),
+    enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => ({
+    teamIdx: index('inbound_sources_team_idx').on(t.teamId),
+  }),
+);
+
+export type InboundSourceRow = typeof inboundSources.$inferSelect;
+export type InboundSourceInsert = typeof inboundSources.$inferInsert;
+
+/**
+ * Recorded inbound deliveries (Phase 46 Theme B/D). One row per received event.
+ * `result` is `created` / `skipped-duplicate` / `rejected` / `ignored` / `failed`;
+ * `externalId` is the provider's delivery/item id for dedup; `taskId` backlinks the
+ * created task. `teamId` is denormalized from the source so the log is team-scoped
+ * without a join.
+ */
+export const inboundDeliveries = sqliteTable(
+  'inbound_deliveries',
+  {
+    id: text('id').primaryKey(),
+    sourceId: text('source_id').notNull(),
+    teamId: text('team_id'),
+    provider: text('provider').notNull(),
+    event: text('event'),
+    externalId: text('external_id'),
+    result: text('result').notNull(),
+    taskId: text('task_id'),
+    error: text('error'),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    sourceIdx: index('inbound_deliveries_source_idx').on(t.sourceId),
+    teamIdx: index('inbound_deliveries_team_idx').on(t.teamId),
+  }),
+);
+
+export type InboundDeliveryRow = typeof inboundDeliveries.$inferSelect;
+export type InboundDeliveryInsert = typeof inboundDeliveries.$inferInsert;
+
 // Phase 33 Theme B: Teams & membership.
 export const teams = sqliteTable(
   'teams',

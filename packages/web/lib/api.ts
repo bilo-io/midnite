@@ -239,6 +239,14 @@ import {
   type WebhookSecretResponse,
   type WebhookDeliveryResponse,
   type WebhookUpdateRequest,
+  ListInboundSourcesResponseSchema,
+  InboundSourceResponseSchema,
+  InboundSecretResponseSchema,
+  type ListInboundSourcesResponse,
+  type InboundSourceResponse,
+  type InboundSecretResponse,
+  type InboundSourceCreateRequest,
+  type InboundSourceUpdateRequest,
 } from '@midnite/shared';
 import { z } from 'zod';
 
@@ -420,6 +428,50 @@ export async function redeliverWebhook(
     `/webhooks/${encodeURIComponent(id)}/deliveries/${encodeURIComponent(deliveryId)}/redeliver`,
     { method: 'POST', headers: JSON_HEADERS },
     WebhookDeliveryResponseSchema,
+  );
+}
+
+// --- Inbound integrations (Phase 46) ---
+
+/** List the team's inbound sources (secrets never included). */
+export async function listInboundSources(): Promise<ListInboundSourcesResponse> {
+  return fetchJson('/integrations/inbound', undefined, ListInboundSourcesResponseSchema);
+}
+
+/** Create an inbound source — the response carries the signing secret exactly once. */
+export async function createInboundSource(
+  body: InboundSourceCreateRequest,
+): Promise<InboundSecretResponse> {
+  return fetchJson(
+    '/integrations/inbound',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    InboundSecretResponseSchema,
+  );
+}
+
+/** Update an inbound source (provider / event filter / default routing / enabled). */
+export async function updateInboundSource(
+  id: string,
+  body: InboundSourceUpdateRequest,
+): Promise<InboundSourceResponse> {
+  return fetchJson(
+    `/integrations/inbound/${encodeURIComponent(id)}`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    InboundSourceResponseSchema,
+  );
+}
+
+/** Delete an inbound source. */
+export async function deleteInboundSource(id: string): Promise<void> {
+  await fetchJson(`/integrations/inbound/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+/** Rotate the signing secret — the new secret is returned exactly once. */
+export async function rotateInboundSecret(id: string): Promise<InboundSecretResponse> {
+  return fetchJson(
+    `/integrations/inbound/${encodeURIComponent(id)}/rotate`,
+    { method: 'POST', headers: JSON_HEADERS },
+    InboundSecretResponseSchema,
   );
 }
 

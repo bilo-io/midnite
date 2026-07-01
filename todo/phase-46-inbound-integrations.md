@@ -59,30 +59,23 @@
 
 ---
 
-## Theme A — Inbound source entity + contract + Settings UI — **M**
+## Theme A — Inbound source entity + contract + Settings UI — **M** — ✅ DONE (PR #259, 2026-07-01)
 
 A team registers and manages the external systems that may open tasks.
 
-- [ ] **shared:** `InboundSource` / `InboundSourceCreateRequest` / `InboundSourceUpdateRequest`
-      zod schemas + an `InboundProvider` enum (`github` | `linear` | `generic`) and an
-      `InboundEventFilter` (which provider events create a task — e.g. GitHub
-      `issues.opened` / `pull_request.opened`, Linear `Issue` create) in
-      [`shared/src/inbound.ts`](../packages/shared/src/); reveal-once `InboundSecretResponse`;
-      typed client methods in `web/lib/api.ts`.
-- [ ] **gateway:** `inbound_sources` Drizzle table (`id` UUIDv7, `teamId`, `createdBy`,
-      `provider`, `secret` encrypted-at-rest, `eventFilter` JSON, `defaultRepo`,
-      `defaultProjectId`, `enabled`, timestamps) + forward-only migration.
-      `InboundSourcesRepository` (team-scoped) → `InboundSourcesService` (secret generation +
-      encryption, RBAC, re-validate `eventFilter` on read) → `InboundSourcesController`
-      (`GET`/`POST`/`PATCH`/`DELETE /integrations/inbound` + `POST :id/rotate`). Managing
-      requires team-admin; the signing secret is **revealed once** (you paste it into the
-      sender's webhook config). Explicit `@Inject` tokens (the gateway runs under `tsx` — no
-      emitted param metadata).
-- [ ] **web:** an **Inbound** section on the existing Settings → Integrations page
-      ([`app/(main)/settings/integrations/`](../packages/web/app/(main)/settings/integrations/))
-      — list sources (provider badge, the receiver URL to register `…/integrations/inbound/:id`,
-      enabled toggle, event filter, default repo/project), add/edit/delete, reveal-once secret,
-      rotate.
+- [x] **shared:** [`inbound.ts`](../packages/shared/src/inbound.ts) — `InboundSource`/create/update
+      schemas, `InboundProvider` (github|linear|generic), a flat `InboundEventFilter { events: string[] }`
+      (empty = accept all) + a curated `INBOUND_PROVIDER_EVENTS` catalog, reveal-once
+      `InboundSecretResponse`, and the `InboundDelivery` shapes (for B/D); typed client methods in `web/lib/api.ts`.
+- [x] **gateway:** `inbound_sources` + `inbound_deliveries` tables + migration `0061`.
+      `InboundSourcesRepository` (team-scoped) → `InboundSourcesService` (secret gen/encrypt, reveal-once,
+      rotate, team-scope, RBAC) → `InboundSourcesController` (`GET`/`POST`/`PATCH`/`DELETE /integrations/inbound`
+      + `POST :id/rotate`); registered in `AppModule`; explicit `@Inject` tokens. **Shared base extracted**
+      (`integrations/lib/managed-secret.ts`: secret + team-admin RBAC + team-scope) and Phase 44's webhooks
+      service refactored onto it.
+- [x] **web:** an **Inbound sources** section on Settings → Integrations — list (provider, receiver URL,
+      event filter, default repo/project, enable toggle), add (provider + event picker + defaults),
+      reveal-once secret modal, rotate, delete. *(✅ DONE — PR #259, 2026-07-01)*
 
 ---
 

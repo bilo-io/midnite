@@ -45,6 +45,7 @@ import { IdeasModule } from './ideas/ideas.module';
 import { PhaseDocsModule } from './phase-docs/phase-docs.module';
 import { PreferencesModule } from './preferences/preferences.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
+import { InboundModule } from './integrations/inbound/inbound.module';
 
 @Module({
   imports: [
@@ -93,6 +94,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     PhaseDocsModule,
     PreferencesModule,
     WebhooksModule,
+    InboundModule,
   ],
   controllers: [HealthController],
   providers: [],

@@ -24,6 +24,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { InboundSourcesSection } from './inbound-sources-section';
 
 function fmtTime(iso: string): string {
   const ms = Date.parse(iso);
@@ -488,6 +489,8 @@ export function IntegrationsView() {
       {revealedSecret && (
         <SecretModal secret={revealedSecret} onClose={() => setRevealedSecret(null)} />
       )}
+
+      <InboundSourcesSection />
     </div>
   );
 }
