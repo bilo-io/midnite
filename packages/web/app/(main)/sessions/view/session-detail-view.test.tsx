@@ -10,10 +10,17 @@ beforeEach(() => localStorage.clear());
 // unit (session-terminal-region.test.tsx) — stub it so this test stays about the
 // cockpit shell (rails, header, links) and doesn't pull in the WS terminal / API.
 vi.mock('@/hooks/use-media-query', () => ({ useIsMobile: () => false }));
+// The terminal region (Theme C) is its own unit — stub it so this stays about the shell.
 vi.mock('@/components/session-terminal-region', () => ({
   SessionTerminalRegion: ({ session }: { session: { status: string } }) => (
     <div data-testid="terminal-region">terminal:{session.status}</div>
   ),
+}));
+// The left panel (Theme D) owns its own WS + fetch; stub it here so this stays a
+// deterministic shell test (the panel has its own spec).
+vi.mock('./session-left-panel', () => ({
+  SessionLeftPanel: ({ task }: { task: { id: string; title: string } | null }) =>
+    task ? <a href={`/tasks/view?id=${task.id}`}>{task.title}</a> : <div>left-panel</div>,
 }));
 
 import { SessionDetailView } from './session-detail-view';
@@ -50,10 +57,11 @@ describe('SessionDetailView', () => {
     expect(screen.getByText('ended')).toBeInTheDocument();
   });
 
-  it('links the task and project when present', () => {
+  it('mounts the left panel with the task (approvals + context live there)', () => {
     render(<SessionDetailView session={session} task={task} project={project} />);
+    // Task/project links now render inside SessionLeftPanel (its own spec); the
+    // shell just wires the task through to it.
     expect(screen.getByRole('link', { name: 'Fix login flow' })).toHaveAttribute('href', '/tasks/view?id=t1');
-    expect(screen.getByText('Project: Acme app')).toBeInTheDocument();
   });
 
   it('collapses a rail to a slim toggle and re-expands it (persisted state)', () => {

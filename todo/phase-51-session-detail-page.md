@@ -119,17 +119,18 @@ The centerpiece — and the one real fork.
 
 ---
 
-## Theme D — Left panel: approvals + task/project context — **M**
+## Theme D — Left panel: approvals + task/project context — **M** — ✅ DONE (PR #266, 2026-07-01)
 
-Everything about *what this session is working and asking for*.
+Everything about *what this session is working and asking for*. *(The drawer's WS
+subscription was extracted into a shared `useApprovalsSocket` hook — the drawer now
+consumes it too, so there's no duplicated socket logic.)*
 
-- [ ] **Approvals feed** for the session: **live pending** (reuse the [`approvals-drawer.tsx`](../packages/web/components/approvals-drawer.tsx)
-      WS subscription, filtered to this `sessionId`) + **historical decisions** (the new `approval_log`
-      `sessionId` filter) — tool, summary, resolution, who decided.
-- [ ] **Task metadata**: status, priority, prompt, retries, timestamps — with a link to
-      `/tasks/view?id={linkedTaskId}`.
-- [ ] **Project metadata**: name, repo/branch (when `task.projectId` is set) — with a link to the project.
-      Absent gracefully when the session has no project.
+- [x] **Approvals feed** for the session: **live pending** (shared `useApprovalsSocket` hook,
+      filtered to this `sessionId`; allow / allow-session / deny inline) + **historical decisions**
+      (the `approval_log` `sessionId` filter) — tool, summary, resolution.
+- [x] **Task metadata**: status, priority, retries, created — with a link to `/tasks/view?id={linkedTaskId}`.
+- [x] **Project metadata**: name + workDir, with a link to the project. Absent gracefully when the
+      session has no project. *(Project has no repo/branch field; surfaced `workDir` instead.)*
 
 ---
 
