@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-02 — feat: PR diff API — structured diff endpoint — Phase 52 Theme A (PR #270)
+
+The diff API that unblocks the in-app review loop: an agent's PR diff, fetchable by task id, as a structured payload the web can render as a file tree + hunks without re-parsing a blob.
+
+- [x] `tasks/lib/github-diff` — one shared impl: `fetchGithubPrDiff` (REST+token → `gh pr diff` → anonymous REST, **fail-open**) + `parseUnifiedDiff` (raw git diff → `PrDiffFile[]` with path/status/±counts/binary/hunks; **byte budget** drops whole files past the cap and reports them via `truncated`+`hiddenFiles` — no silent truncation; first file always kept).
+- [x] `PrDiffService` resolves `task.prUrl` → structured `PrDiff`; `GET /tasks/:id/pr/diff` (thin, read-only). 404 unknown/no-PR, **503 fail-open** on fetch failure (web renders a retry banner).
+- [x] `github.get-diff` executor delegates its fetch to the shared lib (workflow credential as Bearer token) — behaviour-preserving; kept as a `lib` (not a DI service) to avoid the `TasksModule ↔ WorkflowsModule` cycle.
+- [x] shared `PrDiff`/`PrDiffFile`/`PrDiffHunk`/`PrDiffLine` zod schemas + `getPrDiff` web client. Tests: fetch ladder, parser (all file kinds + byte-budget + phantom-line fix), service fail-open, schema. `:typecheck` green; gateway 1255 / web 699 tests green.
+
+---
+
 ## 2026-07-02 — feat: session detail entry points — Phase 51 Theme F — **Phase 51 COMPLETE** (PR #269)
 
 Made the session cockpit reachable everywhere a session appears — the last theme, closing Phase 51.
