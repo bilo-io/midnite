@@ -71,7 +71,7 @@
 | [45 · Recurring/scheduled tasks](phase-45-recurring-scheduled-tasks.md) | ✅ DONE | 15/15 | `██████████` | 100% | — | — |
 | [46 · Inbound integrations](phase-46-inbound-integrations.md) | ✅ DONE | 20/20 | `██████████` | 100% | — | — |
 | [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
-| [48 · Slides](phase-48-slides.md) | 🔄 WIP | 15/26 | `██████░░░░` | 58% | F | — |
+| [48 · Slides](phase-48-slides.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [51 · Session detail page](phase-51-session-detail-page.md) | 🔄 WIP | 10/27 | `████░░░░░░` | 37% | D | E F |
 
 **Headline:** the original **0–41 roadmap is 100% complete** (Phases 39 & 41 closed 2026-06-30). **Phases 43, 44 (outbound webhooks & integrations), 45, and 47 are complete**; **Phase 42 (task detail routing, Theme B in flight)** and **Phase 46 (inbound integrations, Theme A in flight)** are the open frontier. (An *earlier* Phase 42 was a parallel restatement of Phase 40, folded into Phase 40 Theme G and removed 2026-06-27; the current 42 & 43 are new, unrelated phases — two brainstorm sessions ran concurrently, so the preference-sync plan took the next free number, 43.)
@@ -137,7 +137,7 @@ so you can pick from this file without opening the phase doc first.
 - ✅ **C** — Typed API client + web data layer (api.ts + `useApiData`/`invalidateData`) (PR #263) **[S]**
 - ✅ **D** — Sidenav entry + list/grid view (grid/table, format badge, empty state, delete) (PR #263) **[M]**
 - ✅ **E** — Editor + live reveal.js preview (Markdown/HTML per slide, @dnd-kit reorder, theme override, save+autosave) (PR #263) **[L]**
-- ◻ **F** — Present mode + PDF/HTML export **[M]**
+- ✅ **F** — Present mode + PDF/HTML export (fullscreen present, reveal print-pdf, standalone HTML) (PR #267) **[M]** — *Phase 48 COMPLETE*
 
 ## Maintenance
 
