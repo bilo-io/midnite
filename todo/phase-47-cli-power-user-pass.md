@@ -107,20 +107,21 @@ Make the CLI scriptable.
 
 ---
 
-## Theme F — Shell completions + bulk-by-filter ops — **M**
+## Theme F — Shell completions + bulk-by-filter ops — **M** — ✅ DONE (PR #257, 2026-07-01)
 
 The power-user staples.
 
-- [ ] **`midnite completion <bash|zsh|fish>`** — emit a static completion script for the named
-      shell (commander's command/flag tree; documented install snippet in the README). No daemon,
-      no eval-at-runtime — print-and-source.
-- [ ] **Bulk-by-filter** `move` / `prioritise`: e.g. `midnite move --status wip done` or
-      `midnite prioritise --status todo 3` — resolve the set via `listTasks(status)` client-side,
-      then **loop** the existing `moveTask` / (priority via task update) per id with a progress
-      spinner (Theme C). **No gateway change.** A confirmation prompt (Theme D) guards a
-      multi-task mutation unless `--yes`.
-- [ ] Per-item **summary table** at the end (id, title, ✓/✗, error) — partial failures are
-      reported, not swallowed (client-side loop means no atomicity; see Decision §4).
+- [x] **`midnite completion <bash|zsh|fish>`** — emits a static completion script generated from
+      commander's command tree (`completions.ts`), so it never drifts from the CLI. Print-and-source,
+      no daemon, no eval-at-runtime.
+- [x] **Bulk-by-filter** `move` + new `prioritise`: `--status/--repo/--project` resolve the set via
+      `listTasks` client-side, then **loop** the per-task client method (`moveTask` / `setPriority`)
+      with a progress spinner + a confirm (unless `--yes`). Single `prioritise <id> <level>` too.
+- [x] Per-item **summary table** at the end (id, title, ✓/✗, error) — partial failures reported, not
+      swallowed; exits non-zero only if every item failed.
+- [x] **Gateway addition (agreed at pickup — no priority-update route existed):** shared
+      `SetTaskPriorityRequestSchema`, `PATCH /tasks/:id/priority` (→ `service.setPriority`, emits
+      `task.priority.changed`), `client.setPriority`. *(✅ DONE — PR #257, 2026-07-01)*
 
 ---
 
@@ -147,24 +148,24 @@ The power-user staples.
 
 ## Verification
 
-- [ ] Bare `midnite` (and `midnite --help`) show the ANSI logo + wordmark + version; the logo also
+- [x] Bare `midnite` (and `midnite --help`) show the ANSI logo + wordmark + version; the logo also
       heads the `watch` dashboard. The logo/colour vanish under `NO_COLOR`, when piped, and under
       `--json`.
-- [ ] `list`, `search`, `check`, `workflow list`, `template list` render with the status/kind/
+- [x] `list`, `search`, `check`, `workflow list`, `template list` render with the status/kind/
       priority colour vocabulary, and the colours match the board's semantics (wip orange, done
       green, bug red, …).
-- [ ] Every async command shows an ora spinner that resolves to a clear success/fail line; a
+- [x] Every async command shows an ora spinner that resolves to a clear success/fail line; a
       gateway error surfaces as a failed spinner with the human-readable message (non-zero exit).
-- [ ] `midnite add` (no args) walks an inquirer flow; `move`/`block` with no id offer a fuzzy
+- [x] `midnite add` (no args) walks an inquirer flow; `move`/`block` with no id offer a fuzzy
       task-pick; `plan` and `login` use inquirer prompts; `--yes`/explicit flags skip all prompts
       (CI path unchanged).
-- [ ] `midnite list --json` (and `search`/`whoami`/`workflow`/`template`/`check`) print only valid
+- [x] `midnite list --json` (and `search`/`whoami`/`workflow`/`template`/`check`) print only valid
       JSON to stdout (no colour/spinner/logo); errors under `--json` go to stderr as
       `{ "error": … }` with a non-zero exit. `midnite add --json` prints the created task.
-- [ ] `midnite completion zsh` (and bash/fish) emit a sourceable completion script;
+- [x] `midnite completion zsh` (and bash/fish) emit a sourceable completion script;
       `midnite move --status wip done` resolves the set, confirms (unless `--yes`), moves each with
       progress, and prints a per-item summary including any failures.
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green; CLI unit tests cover the
+- [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` green; CLI unit tests cover the
       palette mapping, the `isInteractive()` gate, the `--json` branch (snapshot the JSON shape),
       and the bulk-filter summary; non-TTY behaviour asserted (no ANSI in piped output).
 
