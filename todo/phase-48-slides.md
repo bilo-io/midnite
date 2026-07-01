@@ -113,53 +113,53 @@ The `slides/` module: team-scoped, RBAC-gated, searchable. *(All writes gated
 
 ---
 
-## Theme C — Typed API client + web data layer — **S**
+## Theme C — Typed API client + web data layer — **S** — ✅ DONE (PR #263, 2026-07-01)
 
 Wire web to the gateway through `shared` contracts — no ad-hoc fetches.
 
-- [ ] **web:** `listDecks()` / `getDeck(id)` / `createDeck(body)` / `updateDeck(id, body)` /
+- [x] **web:** `listDecks()` / `getDeck(id)` / `createDeck(body)` / `updateDeck(id, body)` /
       `deleteDeck(id)` in [`web/lib/api.ts`](../packages/web/lib/api.ts) (`fetchJson` + the deck
       response schemas from `shared`).
-- [ ] TanStack Query hooks (`useDecks`, `useDeck(id)`, and create/update/delete mutations that
-      invalidate the list) alongside the existing feature hooks — the pattern the list, editor,
-      and present views all consume.
+- [x] Consumed via the existing `useApiData` + `invalidateData` convention (the codebase has no
+      per-feature hook files) rather than bespoke `useDecks` hooks — the list, editor, and view all
+      use it. *(Decision: match the codebase pattern.)*
 
 ---
 
-## Theme D — Sidenav entry + list/grid view — **M**
+## Theme D — Sidenav entry + list/grid view — **M** — ✅ DONE (PR #263, 2026-07-01)
 
 The entry point: see your decks, jump to one, or start a new one.
 
-- [ ] **web:** add `'slides'` to the `FeatureKey` union + a `Feature` object (`href: '/slides'`,
+- [x] **web:** add `'slides'` to the `FeatureKey` union + a `Feature` object (`href: '/slides'`,
       `Presentation` icon from lucide-react, description) in
       [`web/lib/features.ts`](../packages/web/lib/features.ts) — nav renders it automatically.
-- [ ] `app/(main)/slides/page.tsx` — the list surface via the list endpoint: **grid ↔ table**
+- [x] `app/(main)/slides/page.tsx` — the list surface via the list endpoint: **grid ↔ table**
       toggle; each deck shows name, description, **slide count**, an **md / html / mixed format
       badge**, and updated-time; row/card actions (open, delete). An **empty state** with a
       prominent "New deck" affordance linking to `/slides/new`.
-- [ ] Delete confirmation; live refresh via the Query cache (invalidate on create/delete). No
+- [x] Delete confirmation; live refresh via the Query cache (invalidate on create/delete). No
       deck body is fetched here — the summary endpoint is enough.
 
 ---
 
-## Theme E — Editor + live reveal.js preview — **L**
+## Theme E — Editor + live reveal.js preview — **L** — ✅ DONE (PR #263, 2026-07-01)
 
 The heart: author a deck and watch it render.
 
-- [ ] `app/(main)/slides/new/page.tsx` (create) and `app/(main)/slides/view/page.tsx`
+- [x] `app/(main)/slides/new/page.tsx` (create) and `app/(main)/slides/view/page.tsx`
       (edit, reads `?id=` via `useSearchParams`) — both mount the same client-only editor.
       `/slides/new` creates on first save, then routes to `…/view?id=`.
-- [ ] **Editor:** a slide list (add / delete / **reorder** via drag), and per selected slide a
-      **format toggle (Markdown | HTML)** + a content textarea/code editor; deck name +
-      description fields. Save through the `updateDeck` / `createDeck` mutations.
-- [ ] **Live preview:** reveal.js loaded **client-only** (`'use client'` + dynamic import,
-      `ssr: false`; add `reveal.js` to `transpilePackages` if its ESM needs it) rendering the
-      current deck — Markdown slides via reveal's markdown plugin, HTML slides as fragments
-      (**sanitize HTML** before render). Preview updates as you edit.
-- [ ] **Theme inheritance + per-deck override:** by default the reveal root consumes the app's
-      live CSS vars (`--background` / `--foreground` / `--accent`) so the deck matches the active
-      light/dark theme; a small **override panel** (accent / background / foreground) writes HSL
-      overrides into `content.theme`, layered over the inherited vars.
+- [x] **Editor:** a slide list (add / delete / **reorder** via @dnd-kit drag), and per selected
+      slide a **format toggle (Markdown | HTML)** + a content textarea + speaker-notes field; deck
+      name + description fields. Save through the `updateDeck` / `createDeck` mutations. *(Save:
+      button disabled-when-clean **plus** configurable autosave via a new Settings → Editor
+      section.)*
+- [x] **Live preview:** reveal.js loaded **client-only** (dynamic import in an effect, never SSR'd;
+      `reveal.js` added to `transpilePackages`) rendering the current deck — Markdown via reveal's
+      markdown plugin, HTML slides **DOMPurify-sanitized** before render. Preview updates as you edit.
+- [x] **Theme inheritance + per-deck override:** the reveal root consumes the app's live CSS vars
+      (`--background` / `--foreground` / `--accent`) by default; an **override panel** (accent /
+      background / foreground) writes HSL overrides into `content.theme`, layered over inherited vars.
 
 ---
 
