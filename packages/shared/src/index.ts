@@ -6,6 +6,7 @@ export * from './setup.js';
 export * from './llm.js';
 export * from './council.js';
 export * from './task.js';
+export * from './task-failure.js';
 export * from './bulk.js';
 export * from './agent-pool.js';
 export * from './session.js';
