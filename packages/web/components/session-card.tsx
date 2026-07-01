@@ -1,4 +1,5 @@
-import { BotMessageSquare } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowUpRight, BotMessageSquare } from 'lucide-react';
 import type { SessionStatus, SessionSummary } from '@midnite/shared';
 import { ContextRing } from '@/components/context-ring';
 import { ProjectTag } from '@/components/project-tag';
@@ -57,6 +58,26 @@ function SessionSelect({ selected, onToggleSelect }: SelectProps) {
   return <SelectableIcon Icon={BotMessageSquare} selected={selected ?? false} onToggle={(sk) => onToggleSelect?.(sk)} />;
 }
 
+/**
+ * Explicit link into the session cockpit (Phase 51 F). A real anchor — so
+ * cmd/middle-click opens the detail page in a new tab — sitting alongside the
+ * card's quick-view modal. `stopPropagation` keeps a click here from also firing
+ * the card's modal onClick.
+ */
+function OpenDetailLink({ sessionId }: { sessionId: string }) {
+  return (
+    <Link
+      href={`/sessions/view?id=${sessionId}`}
+      onClick={(e) => e.stopPropagation()}
+      aria-label="Open session page"
+      title="Open session page"
+      className="shrink-0 rounded-md p-1.5 text-muted-foreground/70 transition-colors hover:bg-accent hover:text-foreground"
+    >
+      <ArrowUpRight className="h-4 w-4" />
+    </Link>
+  );
+}
+
 /** A session as a flat table row, used inside the Sessions table accordions. */
 export function SessionRow({
   session,
@@ -98,6 +119,7 @@ export function SessionRow({
           {relativeTime(session.lastActivity)}
         </span>
       </button>
+      <OpenDetailLink sessionId={session.id} />
     </div>
   );
 }
@@ -134,6 +156,7 @@ export function SessionCard({ session, layout, onClick, selected = false, onTogg
             <p>{relativeTime(session.lastActivity)}</p>
           </div>
         </button>
+        <OpenDetailLink sessionId={session.id} />
       </div>
     );
   }
@@ -151,13 +174,12 @@ export function SessionCard({ session, layout, onClick, selected = false, onTogg
         <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           {SESSION_STATUS_LABEL[session.status]}
         </span>
-        {session.contextTokens != null && session.contextLimit != null ? (
-          <ContextRing
-            tokens={session.contextTokens}
-            limit={session.contextLimit}
-            className="ml-auto"
-          />
-        ) : null}
+        <div className="ml-auto flex items-center gap-1.5">
+          {session.contextTokens != null && session.contextLimit != null ? (
+            <ContextRing tokens={session.contextTokens} limit={session.contextLimit} />
+          ) : null}
+          <OpenDetailLink sessionId={session.id} />
+        </div>
       </div>
       <button type="button" onClick={onClick} className="flex flex-1 flex-col gap-2 text-left">
         <p className="text-sm font-medium leading-snug line-clamp-2">{session.title}</p>

@@ -224,10 +224,10 @@ export function TaskDetail({ task, projects, tasks, onClose, variant = 'modal' }
     }
   };
 
-  // session.id === task.id; deep-link into the sessions board, which auto-opens it.
+  // session.id === task.id; deep-link straight into the session cockpit (Phase 51 F).
   const goToSession = () => {
     onClose();
-    router.push(`/sessions?open=${encodeURIComponent(task.id)}`);
+    router.push(`/sessions/view?id=${encodeURIComponent(task.id)}`);
   };
 
   // Manual kickoff: spawn an agent session now (todo/backlog → wip). The gateway
