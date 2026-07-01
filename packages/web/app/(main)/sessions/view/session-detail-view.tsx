@@ -13,6 +13,7 @@ import { useApiData } from '@/lib/use-api-data';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import { useIsMobile } from '@/hooks/use-media-query';
 import { cn } from '@/lib/utils';
+import { SessionLeftPanel } from './session-left-panel';
 
 /**
  * Container (Phase 51 B): reads `?id=`, fetches the session + its linked task +
@@ -143,20 +144,7 @@ export function SessionDetailView({
             onToggle={() => setLeftOpen(!leftOpen)}
             title="Approvals & context"
           >
-            <Placeholder theme="D">
-              The session&apos;s live approvals and its task / project context land here.
-            </Placeholder>
-            {task ? (
-              <p className="mt-3 text-xs text-muted-foreground">
-                Task:{' '}
-                <Link href={`/tasks/view?id=${task.id}`} className="text-foreground hover:underline">
-                  {task.title}
-                </Link>
-              </p>
-            ) : null}
-            {project ? (
-              <p className="mt-1 text-xs text-muted-foreground">Project: {project.name}</p>
-            ) : null}
+            <SessionLeftPanel session={session} task={task} project={project} />
           </Rail>
 
           {/* Center — the terminal: live WS terminal or ended transcript (Theme C). */}

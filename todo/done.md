@@ -16,6 +16,17 @@ The cockpit's right-rail instrument readout — the fields that genuinely exist,
 
 ---
 
+## 2026-07-01 — feat: session cockpit left panel — Phase 51 Theme D (PR #266)
+
+The left rail of the session detail page: what the session is working + asking for.
+
+- [x] Extracted `useApprovalsSocket` hook from `ApprovalsDrawer` (shared `/ws/approvals` connect/reconnect/decide); drawer refactored to consume it (behavior-preserving, no duplicated socket logic).
+- [x] `SessionLeftPanel`: session-scoped **live pending approvals** (allow / allow-session / deny inline) + **decision history** (`listApprovalLog({ sessionId, limit: 25 })`) + **task context** (status/priority/retries/created + link) + **project context** (name/workDir + link, absent gracefully).
+- [x] `listApprovalLog` client gains `sessionId` (backend query schema + repo filter already landed in Theme A).
+- [x] Tests: `session-left-panel.test.tsx` (scoped log query, session-filtered pending + decide, history, task/project links + graceful omit); detail-view shell test stubs the panel. `web:test` 665 green; typecheck + lint clean.
+
+---
+
 ## 2026-07-01 — feat: Slides present mode + PDF/HTML export — Phase 48 Theme F — **Phase 48 COMPLETE** (PR #267)
 
 The payoff that closes Phase 48: show a deck fullscreen and take it with you.
@@ -26,6 +37,8 @@ The payoff that closes Phase 48: show a deck fullscreen and take it with you.
 - [x] **web**: Present affordances from the editor top bar (when saved) + a Present action on each deck card / table row.
 - [x] **tests**: unit (`deck-export`: standalone HTML builder, slug, theme resolution), RTL (present toolbar + HTML export + print-pdf hides toolbar), Playwright present→export flow (reveal renders fullscreen, HTML download fires).
 - [x] **Decisions**: reuse RevealPreview via a `mode` prop · HTML export = reveal from CDN + slides/theme inlined · PDF = reveal print-pdf via `?print-pdf` reload · entry points from editor + list.
+
+---
 
 ## 2026-07-01 — feat: session terminal region (live + ended) — Phase 51 Theme C (PR #265)
 
