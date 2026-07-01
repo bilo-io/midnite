@@ -52,6 +52,34 @@ describe('SessionsService.mintTerminalToken', () => {
   });
 });
 
+describe('SessionsService.getDetail', () => {
+  const task: Task = {
+    id: 't1',
+    title: 'Fix login',
+    status: 'wip',
+    priority: 0,
+    retryCount: 2,
+    createdAt: '2026-07-01T00:00:00.000Z',
+    updatedAt: '2026-07-01T01:00:00.000Z',
+    events: [],
+  } as unknown as Task;
+
+  it('returns the summary plus createdAt/retryCount and flags the context estimate', () => {
+    const svc = makeService({ tasks: [task] });
+    const detail = svc.getDetail('t1');
+    expect(detail.id).toBe('t1');
+    expect(detail.linkedTaskId).toBe('t1');
+    expect(detail.createdAt).toBe('2026-07-01T00:00:00.000Z');
+    expect(detail.retryCount).toBe(2);
+    expect(detail.contextEstimate).toBe(true);
+  });
+
+  it('throws NotFound for an unknown id', () => {
+    const svc = makeService({ tasks: [task] });
+    expect(() => svc.getDetail('nope')).toThrow(NotFoundException);
+  });
+});
+
 describe('SessionsService.list agentCli', () => {
   const baseTask: Task = {
     id: 't1',
