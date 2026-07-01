@@ -1992,6 +1992,7 @@ export async function listApprovalLog(params?: {
   from?: string;
   to?: string;
   taskId?: string;
+  sessionId?: string;
 }): Promise<ApprovalLogResponse> {
   const qs = new URLSearchParams();
   if (params?.page) qs.set('page', String(params.page));
@@ -1999,6 +2000,7 @@ export async function listApprovalLog(params?: {
   if (params?.from) qs.set('from', params.from);
   if (params?.to) qs.set('to', params.to);
   if (params?.taskId) qs.set('taskId', params.taskId);
+  if (params?.sessionId) qs.set('sessionId', params.sessionId);
   const query = qs.toString();
   return fetchJson(`/approvals/log${query ? `?${query}` : ''}`, undefined, ApprovalLogResponseSchema);
 }

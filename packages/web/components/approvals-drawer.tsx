@@ -9,13 +9,9 @@ import {
   X,
   XCircle,
 } from 'lucide-react';
-import {
-  APPROVALS_WS_PATH,
-  ApprovalsWsEventSchema,
-  type PendingApproval,
-} from '@midnite/shared';
+import { type PendingApproval } from '@midnite/shared';
 import { cn, relativeTime } from '@/lib/utils';
-import { gatewayWsUrl } from '@/lib/api';
+import { useApprovalsSocket } from '@/hooks/use-approvals-socket';
 
 // ---- countdown helpers ----
 
@@ -123,64 +119,8 @@ function PendingRow({
  */
 export function ApprovalsDrawer({ expanded }: { expanded?: boolean }) {
   const [open, setOpen] = useState(false);
-  const [pending, setPending] = useState<PendingApproval[]>([]);
-  const [deciding, setDeciding] = useState<Set<string>>(new Set());
-  const wsRef = useRef<WebSocket | null>(null);
+  const { pending, deciding, decide } = useApprovalsSocket();
   const rootRef = useRef<HTMLDivElement>(null);
-
-  // ---- WS connection ----
-  useEffect(() => {
-    let closed = false;
-    let attempt = 0;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-
-    function schedule(): void {
-      if (closed) return;
-      const delay = Math.min(30_000, 500 * 2 ** attempt);
-      attempt += 1;
-      timer = setTimeout(connect, delay);
-    }
-
-    function connect(): void {
-      if (closed) return;
-      try {
-        const ws = new WebSocket(`${gatewayWsUrl()}${APPROVALS_WS_PATH}`);
-        wsRef.current = ws;
-        ws.onopen = () => { attempt = 0; };
-        ws.onmessage = (ev) => {
-          try {
-            const parsed = ApprovalsWsEventSchema.safeParse(JSON.parse(String(ev.data)));
-            if (!parsed.success) return;
-            if (parsed.data.type === 'approval.requested') {
-              const a = parsed.data.approval;
-              setPending((prev) => {
-                if (prev.find((x) => x.id === a.id)) return prev;
-                return [a, ...prev];
-              });
-            } else if (parsed.data.type === 'approval.resolved') {
-              const { id } = parsed.data;
-              setPending((prev) => prev.filter((x) => x.id !== id));
-              setDeciding((prev) => { const s = new Set(prev); s.delete(id); return s; });
-            }
-          } catch {
-            // ignore malformed frames
-          }
-        };
-        ws.onclose = () => { wsRef.current = null; schedule(); };
-        ws.onerror = () => { ws.close(); };
-      } catch {
-        schedule();
-      }
-    }
-
-    connect();
-    return () => {
-      closed = true;
-      clearTimeout(timer);
-      wsRef.current?.close();
-      wsRef.current = null;
-    };
-  }, []);
 
   // Close on outside click + Escape.
   useEffect(() => {
