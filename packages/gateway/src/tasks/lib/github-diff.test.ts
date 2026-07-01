@@ -105,6 +105,15 @@ describe('parseUnifiedDiff — structure', () => {
     expect(truncated).toBe(false);
   });
 
+  it('does not emit a phantom trailing context line from the block newline', () => {
+    // Block ends with a newline → split('\n') yields a trailing '' that must not
+    // be counted as a context line (would inflate counts + line numbers).
+    const raw = 'diff --git a/f.ts b/f.ts\n--- a/f.ts\n+++ b/f.ts\n@@ -1,2 +1,2 @@\n a\n-b\n+c\n';
+    const hunk = parseUnifiedDiff(raw).files[0]!.hunks[0]!;
+    expect(hunk.lines).toHaveLength(3); // context ' a', del '-b', add '+c' — no 4th
+    expect(hunk.lines.map((l) => l.kind)).toEqual(['context', 'del', 'add']);
+  });
+
   it('classifies added, removed and renamed files', () => {
     const raw = [
       'diff --git a/new.ts b/new.ts',

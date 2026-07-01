@@ -213,6 +213,10 @@ function parseFileBlock(block: string): PrDiffFile {
     }
     if (!current) continue; // preamble between header and first hunk
     if (line.startsWith('\\')) continue; // "\ No newline at end of file"
+    // A truly empty string is the trailing-newline artifact of `split('\n')`, not
+    // a diff line — a real blank context line is a single space (' '). Skip it so
+    // it doesn't inflate the line counters.
+    if (line === '') continue;
 
     const marker = line[0];
     const content = line.slice(1);
@@ -225,7 +229,7 @@ function parseFileBlock(block: string): PrDiffFile {
       oldLine++;
       deletions++;
     } else {
-      // context line (' ' prefix, or a genuinely blank line at a block edge)
+      // context line: ' ' prefix (content is the rest, '' for a blank line).
       const ctx: PrDiffLine = { kind: 'context', content, oldLine, newLine };
       current.lines.push(ctx);
       oldLine++;
