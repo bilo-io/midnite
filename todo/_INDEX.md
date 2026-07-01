@@ -67,7 +67,7 @@
 | [41 · Command palette](phase-41-command-palette.md) | ✅ DONE | 32/32 | `██████████` | 100% | — | — ² |
 | [42 · Task detail routing](phase-42-task-detail-routing.md) | 🔄 WIP | 7/11 | `██████░░░░` | 64% | B | — |
 | [43 · Preference sync](phase-43-server-side-preference-sync.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
-| [44 · Outbound webhooks](phase-44-outbound-webhooks.md) | 🔄 WIP | 13/20 | `███████░░░` | 65% | — | — |
+| [44 · Outbound webhooks](phase-44-outbound-webhooks.md) | 🔄 WIP | 13/20 | `███████░░░` | 65% | V | — |
 | [45 · Recurring/scheduled tasks](phase-45-recurring-scheduled-tasks.md) | ✅ DONE | 15/15 | `██████████` | 100% | — | — |
 | [46 · Inbound integrations](phase-46-inbound-integrations.md) | 🔄 WIP | 0/? | `░░░░░░░░░░` | 0% | A | B C D |
 | [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
