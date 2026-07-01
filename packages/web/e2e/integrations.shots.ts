@@ -41,3 +41,14 @@ test('Integrations page — empty state and add-endpoint modal', async ({ page }
   await expect(page.getByText('Add webhook endpoint')).toBeVisible();
   await page.screenshot({ path: join(OUT, 'integrations-create-modal.png') });
 });
+
+test('Integrations page — inbound sources section + add-source modal (Phase 46 A)', async ({ page }) => {
+  await page.goto('/settings/integrations');
+  await expect(page.getByRole('heading', { name: 'Inbound sources' })).toBeVisible();
+  await expect(page.getByText(/No inbound sources yet/)).toBeVisible();
+  await page.screenshot({ path: join(OUT, 'integrations-inbound-empty.png') });
+
+  await page.getByRole('button', { name: 'Add source' }).click();
+  await expect(page.getByText('Add inbound source')).toBeVisible();
+  await page.screenshot({ path: join(OUT, 'integrations-inbound-modal.png') });
+});
