@@ -122,8 +122,8 @@ so you can pick from this file without opening the phase doc first.
 ### [Phase 47 — CLI power-user pass](phase-47-cli-power-user-pass.md)
 *(Thin-CLI rule: no gateway changes — presentation helpers + client-side loops only. chalk/ora aren't installed today; this phase makes CLAUDE.md's claim true.)*
 - ✅ **A** — Brand chrome + ANSI logo (bare invoke / help / `watch` splash; `NO_COLOR`/pipe aware) (PR #248) **[S–M]**
-- ◻ **B** — Colour vocabulary (chalk palette mirroring `@midnite/ui` status/kind/priority hues, applied across every renderer) **[M]**
-- ◻ **C** — Spinners & progress (ora wrapper on every async client call) **[S–M]**
+- ✅ **B** — Colour vocabulary (chalk palette mirroring `@midnite/ui` status/kind/priority hues, applied across every renderer) (PR #255) **[M]**
+- ✅ **C** — Spinners & progress (ora wrapper on every async client call) (PR #255) **[S–M]**
 - ✅ **D** — Interactive prompts (`@inquirer/prompts` replaces hand-rolled `readline`/TTY; guided `add`, fuzzy task-pick for `move`/`block`) (PR #253) **[M]**
 - ✅ **E** — Machine output: global `--json` for the read surface (chrome forced off; errors → stderr) (#256) **[S–M]**
 - ◻ **F** — Shell completions (`completion <bash|zsh|fish>`) + bulk-by-filter `move`/`prioritise` (client-side loop) **[M]**

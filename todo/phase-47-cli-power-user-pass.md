@@ -61,37 +61,17 @@ A recognisable midnite mark and banner, shown at the right moments. *(See [`done
 
 ---
 
-## Theme B — Colour vocabulary — **M**
+## Theme B — Colour vocabulary — **M** ✅ DONE (PR #255, 2026-06-30)
 
-One terminal palette, mirroring the web, applied across every renderer.
-
-- [ ] **`cli/src/lib/palette.ts`** — chalk-based helpers mapping the domain vocabulary to colour:
-      task **status** (`todo`/`wip`/`waiting`/`done`/`abandoned`/`backlog`), **kind**
-      (`bug`/`feature`/`question`/`chore`), and **priority** (0–3) — chosen to echo the
-      [`@midnite/ui` hues](../packages/ui/src/styles/tokens.css) (wip→orange, done→green,
-      bug→red, …). Plus generic accents: success/error/warn/dim/heading.
-- [ ] Apply across **every** table/list renderer — [`index.ts`](../packages/cli/src/index.ts)
-      (`list`, `move`), [`bulk.ts`](../packages/cli/src/), [`search.ts`](../packages/cli/src/),
-      [`workflow.ts`](../packages/cli/src/), [`template.ts`](../packages/cli/src/),
-      `check` — so a status/kind/result reads the same colour everywhere (and matches the board).
-- [ ] All colour routes through the `isInteractive()` gate — auto-off when piped / `NO_COLOR` /
-      `--json`. (chalk already self-detects TTY; the gate makes `--json` and our policy explicit.)
+One terminal palette, mirroring the web, applied across every renderer. *(See [`done.md`](done.md).)*
 
 ---
 
-## Theme C — Spinners & progress — **S–M**
+## Theme C — Spinners & progress — **S–M** ✅ DONE (PR #255, 2026-06-30)
 
-Every async call shows it's working, then resolves to a clear success/fail.
+Every async call shows it's working, then resolves to a clear success/fail. *(See [`done.md`](done.md).)*
 
-- [ ] **`cli/src/lib/spinner.ts`** — a thin ora wrapper: `withSpinner(text, fn)` that starts a
-      spinner, runs the async work, and lands on `succeed`/`fail` with a tidy message (reusing the
-      Theme B accents). No-ops to a plain log line when non-TTY / `--json`.
-- [ ] Wrap every `GatewayClient` call site that can take a beat — `login`, `add`/`createBulk`,
-      `search`, `runWorkflow`, `plan` (the LLM breakdown), `installTemplate`, `check`,
-      `exportTask`. Errors land as a failed spinner with the client's human-readable message
-      (the client already throws `gateway URL + reason`).
-- [ ] For multi-item work (bulk ops, Theme F) show progress (`n/total`) rather than one
-      indefinite spinner.
+> The `n/total` progress for multi-item bulk ops carries into **Theme F** (bulk-by-filter `move`/`prioritise`) — no multi-item op exists yet; `withSpinner` is the foundation F builds on.
 
 ---
 
