@@ -676,6 +676,21 @@ export class TasksService {
     return this.emit('task.updated', this.getTask(id));
   }
 
+  // Set the scheduling priority band (0–3). Re-broadcasts so the board re-ranks.
+  setPriority(id: string, priority: number): Task {
+    const now = new Date().toISOString();
+    const row = this.repo.setPriority(id, priority, now);
+    if (!row) throw new NotFoundException(`task ${id} not found`);
+    this.repo.insertEvent({
+      id: randomUUID(),
+      taskId: id,
+      at: now,
+      kind: 'task.priority.changed',
+      data: JSON.stringify({ priority }),
+    });
+    return this.emit('task.updated', this.getTask(id));
+  }
+
   // Replace a task's tag set (normalised: trimmed, de-duped, length/count-capped).
   setTags(id: string, tags: string[]): Task {
     const now = new Date().toISOString();

@@ -27,6 +27,7 @@ import {
   BulkCreateTaskRequestSchema,
   CreateFromBreakdownRequestSchema,
   ReportFormatSchema,
+  SetTaskPriorityRequestSchema,
   SetTaskTagsRequestSchema,
   StatusSchema,
   TaskDependencyError,
@@ -146,6 +147,16 @@ export class TasksController {
       throw new BadRequestException(parsed.error.message);
     }
     return this.service.setTags(id, parsed.data.tags);
+  }
+
+  @Patch(':id/priority')
+  @RequiresRole('member')
+  updatePriority(@Param('id') id: string, @Body() body: unknown): Task {
+    const parsed = SetTaskPriorityRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.message);
+    }
+    return this.service.setPriority(id, parsed.data.priority);
   }
 
   @Post(':id/links')

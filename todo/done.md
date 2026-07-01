@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-01 — feat: CLI shell completions + bulk-by-filter ops — Phase 47 Theme F — **Phase 47 COMPLETE**
+
+The power-user staples, closing Phase 47 (the CLI UX-coherence pass).
+
+- [x] **cli**: `midnite completion <bash|zsh|fish>` (`completions.ts`) — static completion scripts generated from commander's command tree (top commands + one level of subcommands + global flags), so they never drift; print-and-source, no daemon/eval
+- [x] **cli**: bulk-by-filter `move` + new `prioritise` (`bulk-ops.ts`) — `--status/--repo/--project` resolve the set via `listTasks`, loop the per-task client method with a progress spinner, confirm unless `--yes`, per-item summary table; exits non-zero only if every item failed. Single `prioritise <id> <level>` too; `--json` emits the results array
+- [x] **shared/gateway**: added the missing priority-update path (agreed at pickup — none existed): `SetTaskPriorityRequestSchema`, `PATCH /tasks/:id/priority` (controller→`service.setPriority`→repo, emits `task.priority.changed`), `client.setPriority`
+- [x] **tests**: `bulk-ops.test.ts` (6), `completions.test.ts` (5), gateway `tasks.service.spec` +2 (setPriority band + emit; throws unknown). CLI 16 files + gateway 159 files green; `completion` smoke-tested
+- [x] Phase 47 verification checklist signed off (A–F all shipped)
+
 ## 2026-07-01 — feat: CLI global --json machine-readable output — Phase 47 Theme E (PR #256)
 
 Makes the CLI scriptable — every read command and the create/update writes can emit clean JSON.

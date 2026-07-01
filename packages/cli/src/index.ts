@@ -12,6 +12,16 @@ import {
   type WorkflowRun,
 } from '@midnite/shared';
 import { bulkExitCode, bulkResultRows, bulkSummaryLine } from './bulk.js';
+import {
+  bulkOpExitCode,
+  bulkOpResultRows,
+  bulkOpSummaryLine,
+  filterTasks,
+  hasFilter,
+  type BulkFilter,
+  type BulkOpResult,
+} from './bulk-ops.js';
+import { SHELLS, generateCompletion, isShell } from './completions.js';
 import { parseSearchType, searchResultRows, searchSummaryLine } from './search.js';
 import {
   createClient,
@@ -73,6 +83,76 @@ function parseDefaults(opts: { repo?: string; project?: string; priority?: strin
 function collect(value: string, prev: string[]): string[] {
   return [...prev, value];
 }
+
+/** Parse a 0–3 priority band, throwing a friendly error otherwise. */
+function parsePriority(value: string): number {
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 0 || n > 3) {
+    throw new Error(`invalid priority "${value}" — expected 0 (Low), 1 (Normal), 2 (High), or 3 (Urgent)`);
+  }
+  return n;
+}
+
+/** Build a bulk selection filter from the shared `--status/--repo/--project` flags. */
+function parseFilter(opts: { status?: string; repo?: string; project?: string }): BulkFilter {
+  return {
+    status: opts.status ? parseStatus(opts.status) : undefined,
+    repo: opts.repo,
+    project: opts.project,
+  };
+}
+
+/**
+ * Resolve a filtered task set, confirm the mutation, then apply `mutate` per task
+ * with a progress spinner — printing a per-item summary table (or JSON) at the end.
+ * Client-side loop: partial failures are reported, not swallowed (no atomicity).
+ */
+async function runBulkOp(
+  c: GatewayClient,
+  filter: BulkFilter,
+  verb: string,
+  targetLabel: string,
+  yes: boolean,
+  mutate: (id: string) => Promise<unknown>,
+): Promise<void> {
+  const targets = filterTasks(await c.listTasks(filter.status), filter);
+  if (targets.length === 0) {
+    if (isJsonMode()) printJson([]);
+    else console.log('no matching tasks');
+    return;
+  }
+  if (!isJsonMode() && !yes) {
+    const ok = await confirmPrompt(`${verb} ${targets.length} task(s) → ${targetLabel}?`);
+    if (!ok) {
+      console.log('aborted');
+      return;
+    }
+  }
+  const results: BulkOpResult[] = [];
+  for (const [i, task] of targets.entries()) {
+    try {
+      await withSpinner(`${verb} ${i + 1}/${targets.length}…`, () => mutate(task.id));
+      results.push({ id: task.id, title: task.title, ok: true });
+    } catch (e) {
+      results.push({ id: task.id, title: task.title, ok: false, error: e instanceof Error ? e.message : String(e) });
+    }
+  }
+  process.exitCode = bulkOpExitCode(results);
+  if (isJsonMode()) {
+    printJson(results);
+    return;
+  }
+  const table = new Table({ head: ['ID', 'Title', 'OK', 'Error'], wordWrap: true });
+  for (const row of bulkOpResultRows(results)) table.push(row);
+  console.log(table.toString());
+  console.log(bulkOpSummaryLine(results));
+}
+
+const BULK_FILTER_OPTS = {
+  status: '-s, --status <status>',
+  repo: '-r, --repo <repo>',
+  project: '--project <id>',
+} as const;
 
 /** Read all of stdin (for `add --bulk` without `--file`). Empty when attached to a TTY. */
 async function readStdin(): Promise<string> {
@@ -203,18 +283,74 @@ program
 
 program
   .command('move [id] [status]')
-  .description('Move a task to a new status (omit the id for a fuzzy task-pick)')
-  .action(async (id: string | undefined, status: string | undefined) => {
-    const c = client();
-    const resolvedId = id ?? (await pickTask(await c.listTasks(), 'Move which task?'));
-    const resolvedStatus = status ? parseStatus(status) : await selectStatus();
-    const task = await withSpinner('Moving task…', () => c.moveTask(resolvedId, resolvedStatus));
-    if (isJsonMode()) {
-      printJson(task);
-      return;
-    }
-    console.log(`moved ${task.id} → ${colourStatus(task.status)}`);
-  });
+  .description('Move a task to a new status (omit the id for a fuzzy pick; use --status/--repo/--project to bulk-move a set)')
+  .option(BULK_FILTER_OPTS.status, 'bulk: only move tasks in this status')
+  .option(BULK_FILTER_OPTS.repo, 'bulk: only move tasks in this repo')
+  .option(BULK_FILTER_OPTS.project, 'bulk: only move tasks in this project')
+  .option('-y, --yes', 'skip the confirmation prompt (bulk)')
+  .action(
+    async (
+      id: string | undefined,
+      status: string | undefined,
+      opts: { status?: string; repo?: string; project?: string; yes?: boolean },
+    ) => {
+      const c = client();
+      const filter = parseFilter(opts);
+      if (hasFilter(filter)) {
+        // Bulk mode: the first positional is the TARGET status (id is meaningless).
+        const target = parseStatus(id ?? status ?? '');
+        await runBulkOp(c, filter, 'move', colourStatus(target), Boolean(opts.yes), (taskId) =>
+          c.moveTask(taskId, target),
+        );
+        return;
+      }
+      const resolvedId = id ?? (await pickTask(await c.listTasks(), 'Move which task?'));
+      const resolvedStatus = status ? parseStatus(status) : await selectStatus();
+      const task = await withSpinner('Moving task…', () => c.moveTask(resolvedId, resolvedStatus));
+      if (isJsonMode()) {
+        printJson(task);
+        return;
+      }
+      console.log(`moved ${task.id} → ${colourStatus(task.status)}`);
+    },
+  );
+
+program
+  .command('prioritise [id] [level]')
+  .alias('prioritize')
+  .description('Set a task’s priority 0–3 (use --status/--repo/--project to bulk-set a set)')
+  .option(BULK_FILTER_OPTS.status, 'bulk: only re-prioritise tasks in this status')
+  .option(BULK_FILTER_OPTS.repo, 'bulk: only re-prioritise tasks in this repo')
+  .option('--project <id>', 'bulk: only re-prioritise tasks in this project')
+  .option('-y, --yes', 'skip the confirmation prompt (bulk)')
+  .action(
+    async (
+      id: string | undefined,
+      level: string | undefined,
+      opts: { status?: string; repo?: string; project?: string; yes?: boolean },
+    ) => {
+      const c = client();
+      const filter = parseFilter(opts);
+      if (hasFilter(filter)) {
+        // Bulk mode: the first positional is the TARGET priority (id is meaningless).
+        const target = parsePriority(id ?? level ?? '');
+        await runBulkOp(c, filter, 'prioritise', `P${target}`, Boolean(opts.yes), (taskId) =>
+          c.setPriority(taskId, target),
+        );
+        return;
+      }
+      if (!id || level === undefined) {
+        throw new Error('usage: midnite prioritise <id> <level> — or use --status/--repo/--project for bulk');
+      }
+      const target = parsePriority(level);
+      const task = await withSpinner('Setting priority…', () => c.setPriority(id, target));
+      if (isJsonMode()) {
+        printJson(task);
+        return;
+      }
+      console.log(`prioritised ${task.id} → ${colourPriority(task.priority)}`);
+    },
+  );
 
 program
   .command('block [id]')
@@ -733,6 +869,17 @@ program
       else console.error('not authenticated — run `midnite login`');
       process.exitCode = 1;
     }
+  });
+
+program
+  .command('completion <shell>')
+  .description(`Print a shell completion script (${SHELLS.join(' | ')}) — source it to enable tab-completion`)
+  .action((shell: string) => {
+    if (!isShell(shell)) {
+      throw new Error(`unsupported shell "${shell}" — expected one of: ${SHELLS.join(', ')}`);
+    }
+    // Plain script to stdout (print-and-source); no chrome, so it's pipe-safe.
+    process.stdout.write(generateCompletion(program, shell));
   });
 
 program
