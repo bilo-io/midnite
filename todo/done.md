@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-01 — feat: session cockpit left panel — Phase 51 Theme D (PR #266)
+
+The left rail of the session detail page: what the session is working + asking for.
+
+- [x] Extracted `useApprovalsSocket` hook from `ApprovalsDrawer` (shared `/ws/approvals` connect/reconnect/decide); drawer refactored to consume it (behavior-preserving, no duplicated socket logic).
+- [x] `SessionLeftPanel`: session-scoped **live pending approvals** (allow / allow-session / deny inline) + **decision history** (`listApprovalLog({ sessionId, limit: 25 })`) + **task context** (status/priority/retries/created + link) + **project context** (name/workDir + link, absent gracefully).
+- [x] `listApprovalLog` client gains `sessionId` (backend query schema + repo filter already landed in Theme A).
+- [x] Tests: `session-left-panel.test.tsx` (scoped log query, session-filtered pending + decide, history, task/project links + graceful omit); detail-view shell test stubs the panel. `web:test` 665 green; typecheck + lint clean.
+
 ## 2026-07-01 — feat: session detail contract + cockpit shell — Phase 51 Themes A+B (PR #264)
 
 The data + frame for a deep-linkable session detail page. Terminal (C), panel contents (D/E), and entry points (F) slot into the scaffolded regions next.
