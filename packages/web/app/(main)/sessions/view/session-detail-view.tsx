@@ -240,12 +240,3 @@ function RailToggle({ side, open, onClick }: { side: 'left' | 'right'; open: boo
     </button>
   );
 }
-
-function Placeholder({ theme, children }: { theme: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-md border border-dashed border-border/50 p-3 text-xs text-muted-foreground">
-      <span className="font-medium text-foreground/70">Theme {theme} · </span>
-      {children}
-    </div>
-  );
-}
