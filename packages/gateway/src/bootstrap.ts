@@ -55,24 +55,6 @@ export async function startGateway(): Promise<NestFastifyApplication> {
   const uploadsDir = resolveDir(config.gateway.uploadsDir);
   mkdirSync(uploadsDir, { recursive: true });
 
-  // Keep the raw JSON bytes on the inbound-receiver route so its HMAC covers
-  // exactly what the sender signed (Phase 46 B). A re-serialized body would break
-  // signatures. This replaces the default JSON parser but preserves its output
-  // (same `JSON.parse`), and only stashes `rawBody` for the receiver path — every
-  // other route is byte-for-byte unaffected.
-  adapter.getInstance().addContentTypeParser(
-    'application/json',
-    { parseAs: 'string' },
-    (req: { url?: string; rawBody?: string }, body: string, done: (err: Error | null, parsed?: unknown) => void) => {
-      if ((req.url ?? '').startsWith('/integrations/inbound/')) req.rawBody = body;
-      try {
-        done(null, body.length ? JSON.parse(body) : {});
-      } catch (err) {
-        done(err as Error, undefined);
-      }
-    },
-  );
-
   await adapter.register(multipart as never, {
     limits: {
       fileSize: 8 * 1024 * 1024, // 8 MB
@@ -121,6 +103,11 @@ export async function startGateway(): Promise<NestFastifyApplication> {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     adapter,
+    // Capture the raw request body so the inbound receiver's HMAC (Phase 46 B)
+    // covers exactly the bytes the sender signed — a re-serialized body would
+    // break signatures. Nest exposes it as `req.rawBody` (a Buffer); every route's
+    // parsed body is unchanged.
+    { rawBody: true },
   );
 
   // The gateway can spawn PTYs, so don't reflect arbitrary origins — only

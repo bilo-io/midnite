@@ -19,10 +19,11 @@ export class InboundReceiverController {
   @Post(':id')
   async receive(
     @Param('id') id: string,
-    @Req() request: FastifyRequest & { rawBody?: string },
+    @Req() request: FastifyRequest & { rawBody?: Buffer | string },
   ): Promise<{ result: string; taskId?: string }> {
+    const raw = request.rawBody;
     const req: InboundRequest = {
-      rawBody: request.rawBody ?? '',
+      rawBody: typeof raw === 'string' ? raw : (raw?.toString('utf8') ?? ''),
       headers: request.headers as Record<string, string | undefined>,
       parsed: request.body,
     };

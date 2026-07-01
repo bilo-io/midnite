@@ -28,7 +28,7 @@ function makeRepo() {
   return { list: vi.fn(), findById: vi.fn(), insert: vi.fn(), update: vi.fn(), remove: vi.fn() };
 }
 
-const crypto = { encrypt: (s: string) => `enc:${s}` } as never;
+const crypto = { isEnabled: () => true, encrypt: (s: string) => `enc:${s}` } as never;
 // team-1 admin u1; member u2.
 const teams = { getMembership: (_t: string, u: string) => (u === 'u1' ? 'admin' : 'member') } as never;
 
