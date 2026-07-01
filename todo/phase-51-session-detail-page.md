@@ -70,34 +70,34 @@
 
 ---
 
-## Theme A — Session detail contract + API enrichment — **S-M**
+## Theme A — Session detail contract + API enrichment — **S-M** — ✅ DONE (PR #264, 2026-07-01)
 
 Give the page a first-class shape and the two small endpoints it needs.
 
-- [ ] **shared:** a `SessionDetailSchema` extending `SessionSummary` with the page's fields —
+- [x] **shared:** a `SessionDetailSchema` extending `SessionSummary` with the page's fields —
       `createdAt` (uptime source), `retryCount`, `cwd`, and a `contextEstimate` flag making the
       placeholder nature explicit. Re-export from [`index.ts`](../packages/shared/src/index.ts).
-- [ ] **gateway:** a lean `GET /sessions/:id` returning `SessionDetail` (today the web does
+- [x] **gateway:** a lean `GET /sessions/:id` returning `SessionDetail` (today the web does
       `getSessions().find(...)`); thread `retryCount`/`createdAt`/`cwd` from the linked task/transcript
       in [`sessions.service.ts`](../packages/gateway/src/sessions/sessions.service.ts).
-- [ ] **gateway + web:** **expose the `sessionId` filter** the `approval_log` repo already supports —
+- [x] **gateway + web:** **expose the `sessionId` filter** the `approval_log` repo already supports —
       add it to the `GET /approvals/log` query + `listApprovalLog({ sessionId })` in
       [`web/lib/api.ts`](../packages/web/lib/api.ts). No new table; a query param + passthrough.
 
 ---
 
-## Theme B — Detail page shell, routing & collapsible layout — **M**
+## Theme B — Detail page shell, routing & collapsible layout — **M** — ✅ DONE (PR #264, 2026-07-01)
 
 The frame: a static-export route with a big center and two persistent rails.
 
-- [ ] `app/(main)/sessions/view/page.tsx` — reads `?id=` via `useSearchParams`, fetches
+- [x] `app/(main)/sessions/view/page.tsx` — reads `?id=` via `useSearchParams`, fetches
       `session` + `task` + `project` in parallel through `useApiData`. **No `[id]` segment** (static export).
-- [ ] The three-region shell (mirror the council layout): sticky `PageHeader` (session title/status),
+- [x] The three-region shell (mirror the council layout): sticky `PageHeader` (session title/status),
       `flex flex-col lg:flex-row lg:items-start`, the terminal as `min-w-0 flex-1` center, a **left** and a
       **right** panel that each **collapse to a slim rail**.
-- [ ] **Persist panel open/closed state** via `useLocalStorage` (distinct keys, e.g. `session.leftOpen`,
+- [x] **Persist panel open/closed state** via `useLocalStorage` (distinct keys, e.g. `session.leftOpen`,
       `session.rightOpen`) — closed stays closed across reloads (Decision §3).
-- [ ] **Responsive:** on `useIsMobile` the panels become **drawers** (toggled from the header), not rails;
+- [x] **Responsive:** on `useIsMobile` the panels become **drawers** (toggled from the header), not rails;
       the terminal takes the full width. Cutoffs from the media-query hooks only.
 
 ---

@@ -1,16 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import {
   INBOUND_PROVIDER_EVENTS,
   INBOUND_PROVIDERS,
+  type InboundDelivery,
   type InboundProvider,
+  type InboundResult,
   type InboundSource,
 } from '@midnite/shared';
 import {
   createInboundSource,
   deleteInboundSource,
   gatewayUrl,
+  listInboundDeliveries,
   listInboundSources,
   rotateInboundSecret,
   updateInboundSource,
@@ -27,6 +30,15 @@ function inbErr(e: unknown): string {
 function receiverUrl(id: string): string {
   return `${gatewayUrl().replace(/\/$/, '')}/integrations/inbound/${id}`;
 }
+
+/** Colour each delivery outcome so the log scans at a glance. */
+const RESULT_STYLE: Record<InboundResult, string> = {
+  created: 'text-emerald-500',
+  'skipped-duplicate': 'text-amber-500',
+  rejected: 'text-destructive',
+  ignored: 'text-muted-foreground',
+  failed: 'text-destructive',
+};
 
 // ── Reveal-once secret modal ────────────────────────────────────────────────────
 
@@ -199,12 +211,69 @@ function AddInboundSourceModal({
 
 // ── Section ─────────────────────────────────────────────────────────────────────
 
+/** Lazy-loaded per-source deliveries log (Theme D), rendered in an expanded row. */
+function DeliveriesLog({ sourceId }: { sourceId: string }) {
+  const [rows, setRows] = useState<InboundDelivery[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let live = true;
+    listInboundDeliveries(sourceId)
+      .then((res) => live && setRows(res.deliveries))
+      .catch((e) => live && setError(inbErr(e)));
+    return () => {
+      live = false;
+    };
+  }, [sourceId]);
+
+  if (error) return <p className="p-3 text-sm text-destructive">{error}</p>;
+  if (rows === null) return <p className="p-3 text-sm text-muted-foreground">Loading deliveries…</p>;
+  if (rows.length === 0)
+    return <p className="p-3 text-sm text-muted-foreground">No deliveries received yet.</p>;
+
+  return (
+    <table className="w-full text-xs">
+      <thead>
+        <tr className="text-left text-muted-foreground">
+          <th className="px-3 py-2">Result</th>
+          <th className="px-3 py-2">Event</th>
+          <th className="px-3 py-2">Task</th>
+          <th className="px-3 py-2">When</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((d) => (
+          <tr key={d.id} className="border-t border-border/40">
+            <td className={`px-3 py-2 font-medium ${RESULT_STYLE[d.result]}`}>{d.result}</td>
+            <td className="px-3 py-2 text-muted-foreground">{d.event ?? '—'}</td>
+            <td className="px-3 py-2">
+              {d.taskId ? (
+                <a className="text-primary hover:underline" href={`/tasks/view?id=${encodeURIComponent(d.taskId)}`}>
+                  view task
+                </a>
+              ) : d.error ? (
+                <span className="text-destructive" title={d.error}>
+                  {d.error.length > 40 ? `${d.error.slice(0, 40)}…` : d.error}
+                </span>
+              ) : (
+                '—'
+              )}
+            </td>
+            <td className="px-3 py-2 text-muted-foreground">{new Date(d.createdAt).toLocaleString()}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
 export function InboundSourcesSection() {
   const [sources, setSources] = useState<InboundSource[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [reveal, setReveal] = useState<{ secret: string; url: string } | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   const load = () =>
     listInboundSources()
@@ -293,35 +362,52 @@ export function InboundSourcesSection() {
             </thead>
             <tbody>
               {sources.map((s) => (
-                <tr key={s.id} className="border-b border-border/50 last:border-0">
-                  <td className="p-3 font-medium">{s.provider}</td>
-                  <td className="p-3 font-mono text-xs text-muted-foreground">{receiverUrl(s.id)}</td>
-                  <td className="p-3 text-xs">
-                    {s.eventFilter.events.length ? s.eventFilter.events.join(', ') : 'all events'}
-                  </td>
-                  <td className="p-3 text-xs text-muted-foreground">
-                    {s.defaultRepo || s.defaultProjectId
-                      ? [s.defaultRepo, s.defaultProjectId].filter(Boolean).join(' · ')
-                      : '—'}
-                  </td>
-                  <td className="p-3">
-                    <Switch checked={s.enabled} disabled={busy === s.id} onCheckedChange={() => void handleToggle(s)} />
-                  </td>
-                  <td className="p-3 text-right">
-                    <Button variant="ghost" size="sm" disabled={busy === s.id} onClick={() => void handleRotate(s.id)}>
-                      Rotate secret
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:text-destructive"
-                      disabled={busy === s.id}
-                      onClick={() => void handleDelete(s.id)}
-                    >
-                      Delete
-                    </Button>
-                  </td>
-                </tr>
+                <Fragment key={s.id}>
+                  <tr className="border-b border-border/50 last:border-0">
+                    <td className="p-3 font-medium">{s.provider}</td>
+                    <td className="p-3 font-mono text-xs text-muted-foreground">{receiverUrl(s.id)}</td>
+                    <td className="p-3 text-xs">
+                      {s.eventFilter.events.length ? s.eventFilter.events.join(', ') : 'all events'}
+                    </td>
+                    <td className="p-3 text-xs text-muted-foreground">
+                      {s.defaultRepo || s.defaultProjectId
+                        ? [s.defaultRepo, s.defaultProjectId].filter(Boolean).join(' · ')
+                        : '—'}
+                    </td>
+                    <td className="p-3">
+                      <Switch checked={s.enabled} disabled={busy === s.id} onCheckedChange={() => void handleToggle(s)} />
+                    </td>
+                    <td className="p-3 text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-expanded={expanded === s.id}
+                        onClick={() => setExpanded((cur) => (cur === s.id ? null : s.id))}
+                      >
+                        {expanded === s.id ? 'Hide deliveries' : 'Deliveries'}
+                      </Button>
+                      <Button variant="ghost" size="sm" disabled={busy === s.id} onClick={() => void handleRotate(s.id)}>
+                        Rotate secret
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        disabled={busy === s.id}
+                        onClick={() => void handleDelete(s.id)}
+                      >
+                        Delete
+                      </Button>
+                    </td>
+                  </tr>
+                  {expanded === s.id && (
+                    <tr className="border-b border-border/50 bg-muted/30 last:border-0">
+                      <td colSpan={6} className="p-0">
+                        <DeliveriesLog sourceId={s.id} />
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
               ))}
             </tbody>
           </table>

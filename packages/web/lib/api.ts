@@ -125,6 +125,7 @@ import {
   RepoSchema,
   RunResponseSchema,
   SessionSummarySchema,
+  SessionDetailSchema,
   SessionTranscriptSchema,
   SubAgentResponseSchema,
   TaskCountsSchema,
@@ -172,6 +173,7 @@ import {
   type CreateRepoRequest,
   type UpdateRepoRequest,
   type SessionSummary,
+  type SessionDetail,
   type SessionTranscript,
   type AgentPingResponse,
   type Status,
@@ -240,9 +242,11 @@ import {
   type WebhookDeliveryResponse,
   type WebhookUpdateRequest,
   ListInboundSourcesResponseSchema,
+  ListInboundDeliveriesResponseSchema,
   InboundSourceResponseSchema,
   InboundSecretResponseSchema,
   type ListInboundSourcesResponse,
+  type ListInboundDeliveriesResponse,
   type InboundSourceResponse,
   type InboundSecretResponse,
   type InboundSourceCreateRequest,
@@ -472,6 +476,15 @@ export async function deleteInboundSource(id: string): Promise<void> {
   await fetchJson(`/integrations/inbound/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
 
+/** Recent received events for one source (Theme D deliveries log). */
+export async function listInboundDeliveries(id: string): Promise<ListInboundDeliveriesResponse> {
+  return fetchJson(
+    `/integrations/inbound/${encodeURIComponent(id)}/deliveries`,
+    undefined,
+    ListInboundDeliveriesResponseSchema,
+  );
+}
+
 /** Rotate the signing secret — the new secret is returned exactly once. */
 export async function rotateInboundSecret(id: string): Promise<InboundSecretResponse> {
   return fetchJson(
@@ -640,6 +653,11 @@ export async function getCheckRuns(taskId: string): Promise<CheckRunListResponse
 
 export async function getSessions(): Promise<SessionSummary[]> {
   return fetchJson('/sessions', undefined, z.array(SessionSummarySchema));
+}
+
+/** One session's detail (`GET /sessions/:id`); throws on a 404 for an unknown id. */
+export async function getSession(id: string, signal?: AbortSignal): Promise<SessionDetail> {
+  return fetchJson(`/sessions/${encodeURIComponent(id)}`, { signal }, SessionDetailSchema);
 }
 
 export async function getSessionTranscript(

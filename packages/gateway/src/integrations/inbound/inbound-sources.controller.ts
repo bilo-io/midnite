@@ -16,6 +16,7 @@ import {
   InboundSourceUpdateRequestSchema,
   type InboundSecretResponse,
   type InboundSourceResponse,
+  type ListInboundDeliveriesResponse,
   type ListInboundSourcesResponse,
 } from '@midnite/shared';
 import { CurrentUser, type CurrentUserPayload } from '../../auth/decorators/current-user.decorator';
@@ -33,6 +34,14 @@ export class InboundSourcesController {
   @Get()
   list(@CurrentUser() user: CurrentUserPayload | null): ListInboundSourcesResponse {
     return { sources: this.sources.list(user?.teamId ?? null) };
+  }
+
+  @Get(':id/deliveries')
+  listDeliveries(
+    @CurrentUser() user: CurrentUserPayload | null,
+    @Param('id') id: string,
+  ): ListInboundDeliveriesResponse {
+    return { deliveries: this.run(() => this.sources.listDeliveries(id, user?.teamId ?? null)) };
   }
 
   @Post()
