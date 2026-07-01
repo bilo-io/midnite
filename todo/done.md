@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-01 — feat: session detail contract + cockpit shell — Phase 51 Themes A+B (PR #264)
+
+The data + frame for a deep-linkable session detail page. Terminal (C), panel contents (D/E), and entry points (F) slot into the scaffolded regions next.
+
+- [x] **shared**: `SessionDetailSchema` (summary + createdAt/retryCount/cwd/contextEstimate) + `SessionDetailResponse`; `sessionId` added to `ApprovalLogQuerySchema`
+- [x] **gateway**: lean `GET /sessions/:id` (`SessionsService.getDetail` — dedicated synthesis, threads createdAt/retryCount, flags contextEstimate, 404s unknown); exposed the `approval_log` `sessionId` filter through service + repo (the wired `ApprovalLogRepository`, not the unused plural one)
+- [x] **web**: `getSession` / approval-log `sessionId` clients; `/sessions/view?id=` static-export route (Suspense + useSearchParams, no `[id]` segment) + `session-detail-view.tsx` — three-region cockpit mirroring the council layout: sticky header (title/status), flex-1 center, two independently collapsible `localStorage`-persisted rails (mobile → drawers). Center + rails are clearly-marked C/D/E placeholders; header links task/project
+- [x] **tests**: gateway `getDetail` (2) + approval-log `sessionId` repo (2); web `session-detail-view` RTL (4); `session-detail.shots.ts` capture. Typecheck (8), gateway 169 files, web 125 files green
+- [x] **Decisions**: dedicated getDetail; 404 + inline not-found; placeholder scaffolds (C/D/E fill later); localStorage panel state; static-export `?id=` route
+
 ## 2026-07-01 — feat: inbound signed receiver + provider adapters — Phase 46 Themes B+C (PR #261)
 
 The heart of inbound integrations: a signed external event (GitHub/Linear/generic) becomes a board task.
