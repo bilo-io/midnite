@@ -98,8 +98,12 @@ export function DeckEditor({ initial }: Props) {
 
   // A ref-guarded save so the autosave timer always sees the latest closure.
   const saveRef = useRef<() => Promise<void>>(async () => {});
+  // Synchronous in-flight guard: `saving` state is async, so a Save click racing
+  // the autosave timer could otherwise both pass the check and double-create.
+  const savingRef = useRef(false);
   const save = useCallback(async () => {
-    if (!name.trim() || saving) return;
+    if (!name.trim() || savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
     const body = {
       name: name.trim(),
@@ -120,9 +124,10 @@ export function DeckEditor({ initial }: Props) {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to save deck');
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
-  }, [name, description, content, deckId, saving, router, toast]);
+  }, [name, description, content, deckId, router, toast]);
   saveRef.current = save;
 
   // Debounced autosave: fire `autosaveSeconds` after the last edit while dirty.
