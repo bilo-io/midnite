@@ -88,19 +88,22 @@ Replace the hand-rolled interactivity; add guided flows.
 
 ---
 
-## Theme E — Machine output (`--json`) — **S–M**
+## Theme E — Machine output (`--json`) — **S–M** — ✅ DONE (PR #256, 2026-07-01)
 
 Make the CLI scriptable.
 
-- [ ] A **global `--json`** flag on the root program. When set: every read command emits the raw
-      validated payload as JSON to stdout (one object/array, nothing else) and **all chrome is
-      forced off** (no colour, no spinner, no logo, no table).
-- [ ] Cover the read surface: `list`, `search`, `whoami`, `workflow list` / `workflow runs`,
-      `template list`, `check` (the run results). Each already holds a typed object from the
-      client — `--json` just `JSON.stringify`s it instead of rendering a table.
-- [ ] Write commands (`add`, `move`, `run`) under `--json` print the created/updated object
-      (e.g. the new task) so a script can capture the id. Errors under `--json` go to **stderr**
-      as `{ "error": "…" }` with a non-zero exit, keeping stdout clean.
+- [x] A **global `--json`** flag on the root program. When set: every read command emits the raw
+      validated payload as pretty JSON to stdout (one value, nothing else) and **all chrome is
+      forced off** — enabling `--json` sets `NO_COLOR`, which the shared `isInteractive()` gate reads,
+      so colour, palette, ora spinners, and the logo all go silent on one switch (tables skipped in
+      the json branch). Wired in the root `preAction` hook via `lib/output.ts`.
+- [x] Cover the read surface: `list`, `search`, `whoami`, `workflow list` / `workflow runs`,
+      `template list`, `check` (run results; pass/fail → exit code). Each already holds a typed object
+      from the client — `--json` `printJson`s it instead of rendering a table.
+- [x] Write commands under `--json` print the created/updated object so a script can capture the id —
+      `add` (incl. `--bulk`), `move`, `block`, `unblock`, `workflow run` (block/unblock added beyond
+      the doc for a consistent mutate surface). Errors under `--json` go to **stderr** as
+      `{ "error": "…" }` with a non-zero exit, keeping stdout clean. *(✅ DONE — PR #256, 2026-07-01)*
 
 ---
 

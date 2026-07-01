@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-01 — feat: CLI global --json machine-readable output — Phase 47 Theme E (PR #256)
+
+Makes the CLI scriptable — every read command and the create/update writes can emit clean JSON.
+
+- [x] **cli**: global `--json` flag on the root program; `lib/output.ts` holds the mode flag + `printJson`/`printJsonError`. Set in the `preAction` hook, where it also flips `NO_COLOR` so the shared `isInteractive()` gate silences colour, palette, ora spinners, and the logo on one switch
+- [x] **cli**: read surface covered — `list`, `search`, `whoami`, `workflow list`/`runs`, `template list`, `check` (run results; pass/fail → exit code) — each `printJson`s its typed payload instead of a table
+- [x] **cli**: writes emit their object under `--json` — `add` (incl. `--bulk`), `move`, `block`, `unblock`, `workflow run` (block/unblock beyond the doc for a consistent mutate surface)
+- [x] **cli**: errors under `--json` → stderr as `{ "error": "…" }` with a non-zero exit (global handler + `whoami`), keeping stdout clean
+- [x] Tests: `lib/output.test.ts` (6 — flag toggle, NO_COLOR side-effect, pretty stdout, `{error}` stderr). CLI gate green (typecheck, lint, 14 files); error path smoke-tested end-to-end
 ## 2026-06-30 — feat: CLI colour vocabulary + ora spinners — Phase 47 Themes B + C (PR #255)
 
 The CLI's everywhere-pass: a status/kind/priority colour vocabulary mirroring the web's `@midnite/ui` hues, plus an ora spinner on every async client call. chalk + ora added (they weren't installed). All chrome gated by the shared `isInteractive()` so piped / `NO_COLOR` output stays plain — existing snapshot tests run non-TTY and were untouched.
