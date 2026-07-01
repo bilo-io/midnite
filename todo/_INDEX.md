@@ -71,7 +71,7 @@
 | [45 · Recurring/scheduled tasks](phase-45-recurring-scheduled-tasks.md) | ✅ DONE | 15/15 | `██████████` | 100% | — | — |
 | [46 · Inbound integrations](phase-46-inbound-integrations.md) | 🔄 WIP | 10/20 | `█████░░░░░` | 50% | — | D |
 | [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
-| [48 · Slides](phase-48-slides.md) | 🔄 WIP | 0/? | `░░░░░░░░░░` | 0% | A B | C D E F |
+| [48 · Slides](phase-48-slides.md) | 🔄 WIP | 6/26 | `██░░░░░░░░` | 23% | — | C D E F |
 
 **Headline:** the original **0–41 roadmap is 100% complete** (Phases 39 & 41 closed 2026-06-30). **Phases 43, 44 (outbound webhooks & integrations), 45, and 47 are complete**; **Phase 42 (task detail routing, Theme B in flight)** and **Phase 46 (inbound integrations, Theme A in flight)** are the open frontier. (An *earlier* Phase 42 was a parallel restatement of Phase 40, folded into Phase 40 Theme G and removed 2026-06-27; the current 42 & 43 are new, unrelated phases — two brainstorm sessions ran concurrently, so the preference-sync plan took the next free number, 43.)
 
@@ -128,6 +128,15 @@ so you can pick from this file without opening the phase doc first.
 - ✅ **D** — Interactive prompts (`@inquirer/prompts` replaces hand-rolled `readline`/TTY; guided `add`, fuzzy task-pick for `move`/`block`) (PR #253) **[M]**
 - ✅ **E** — Machine output: global `--json` for the read surface (chrome forced off; errors → stderr) (#256) **[S–M]**
 - ✅ **F** — Shell completions (`completion <bash|zsh|fish>`) + bulk-by-filter `move`/`prioritise` (client-side loop) (#257) **[M]**
+
+### [Phase 48 — Slides (reveal.js decks)](phase-48-slides.md)
+*(Net-new domain beside tasks/workflows/councils. Persistence mirrors workflows: metadata columns + a JSON `content` blob; web stays static-export, `?id=` routes; reveal.js is client-only.)*
+- ✅ **A** — Deck contract (`shared/slide.ts`) + `slides` table + migration `0062` (PR #260) **[S-M]**
+- ✅ **B** — Gateway CRUD module (team-scoped repo→service→controller, `member` writes, search+audit) (PR #260) **[M]**
+- ◻ **C** — Typed API client + web data layer (`useDecks`/`useDeck` + mutations) **[S]**
+- ◻ **D** — Sidenav entry + list/grid view **[M]**
+- ◻ **E** — Editor + live reveal.js preview (Markdown/HTML per slide, theme inherit + override) **[L]**
+- ◻ **F** — Present mode + PDF/HTML export **[M]**
 
 ## Maintenance
 

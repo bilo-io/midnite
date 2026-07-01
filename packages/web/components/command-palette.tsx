@@ -11,6 +11,7 @@ import {
   Lightbulb,
   ListChecks,
   LoaderCircle,
+  Presentation,
   Search,
   Settings,
   StickyNote,
@@ -82,6 +83,7 @@ const TYPE_META: Record<SearchType, { label: string; Icon: LucideIcon }> = {
   council: { label: 'Councils', Icon: CirclePile },
   workflow: { label: 'Workflows', Icon: Workflow },
   idea: { label: 'Ideas', Icon: Lightbulb },
+  deck: { label: 'Slides', Icon: Presentation },
 };
 
 const GROUP_CAP = 5;

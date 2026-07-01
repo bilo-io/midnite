@@ -31,6 +31,7 @@ export * from './task-board-reducer.js';
 export * from './workflow.js';
 export * from './workflow-credential.js';
 export * from './workflow-template.js';
+export * from './slide.js';
 export * from './events/workflow.js';
 export * from './events/terminal.js';
 export * from './events/hooks.js';

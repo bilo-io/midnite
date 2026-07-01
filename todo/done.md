@@ -14,6 +14,15 @@ The heart of inbound integrations: a signed external event (GitHub/Linear/generi
 - [x] **gateway (fix)**: `encryptSecret` gates on `crypto.isEnabled()` — always encrypts with a key present (fail-closed preserved), raw only in keyless dev; also fixes a latent webhooks throw in keyless mode
 - [x] **tests**: verify-signature (6), adapters (7), receiver service (7), auth-policy exemption (2), managed-secret keyless; `inbound-receiver.e2e.ts` (real gateway — signed→created, tampered→401, redelivery→skipped-duplicate) exercises the raw-body path end-to-end. Gateway 165 files green
 - [x] **Decisions**: scoped raw body; dedup delivery-header→payload-id fallback; post-create addLink for the Source; 2xx for handled outcomes, 401/404 for errors
+## 2026-07-01 — feat: Slides deck contract + DB + CRUD module — Phase 48 Themes A+B (PR #260)
+
+The foundation + spine for the net-new Slides surface. Built A and B as one slice (contract+DB alone has no runtime consumer).
+
+- [x] **shared** (`slide.ts`): `Slide`/`DeckTheme`/`DeckContent`/`Deck`/create/update/`DeckSummary` zod schemas + a pure `deriveDeckFormat` helper (single format vs. `mixed`; empty deck → `md`); re-exported. Empty decks allowed (`DeckContentSchema.slides` defaults `[]`).
+- [x] **shared**: `deck` added to `SEARCH_TYPES` + `deckToIndexDoc` mapper + `routeFor` (`/slides/view?id=`); `deck` audit entity + `deck.created/updated/deleted` actions.
+- [x] **gateway** (`slides/`): `slides` table (metadata columns + JSON `content`, workflows-style split) + forward-only migration `0062`; `SlidesRepository` (team-scoped) → `SlidesService` (derives `slideCount`/`format` on write, validates content, search-indexes + audits) → `SlidesController` (CRUD, writes `RequiresRole('member')`); registered in `AppModule`.
+- [x] **web**: `deck` entry (Presentation icon) added to the exhaustive `Record<SearchType>` maps in search-results + command palette (compile-required; no new UI yet).
+- [x] **tests**: shared schema units; gateway migration-smoke + CRUD repo (team-scope), service (derivation/empty/404/search+audit), controller (validation, scope). `shared` 497 · `gateway` 1213 · `web` 655 green.
 
 ## 2026-07-01 — feat: inbound integrations entity + Settings UI — Phase 46 Theme A (PR #259)
 

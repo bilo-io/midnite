@@ -1,5 +1,6 @@
 import type {
   Council,
+  Deck,
   Idea,
   Memory,
   Note,
@@ -70,6 +71,10 @@ export function ideaToIndexDoc(i: Pick<Idea, 'id' | 'title' | 'body' | 'teamId'>
   return { type: 'idea', entityId: i.id, teamId: i.teamId ?? null, title: i.title, body: clip(i.body) };
 }
 
+export function deckToIndexDoc(d: Pick<Deck, 'id' | 'name' | 'description' | 'teamId'>): IndexDoc {
+  return { type: 'deck', entityId: d.id, teamId: d.teamId ?? null, title: d.name, body: clip(d.description ?? '') };
+}
+
 /** Where the client should navigate to open a result of the given type. */
 export function routeFor(type: SearchType, id: string): string {
   switch (type) {
@@ -88,5 +93,7 @@ export function routeFor(type: SearchType, id: string): string {
       return `/workflows/edit?id=${encodeURIComponent(id)}`;
     case 'idea':
       return `/ideas/${id}`;
+    case 'deck':
+      return `/slides/view?id=${encodeURIComponent(id)}`;
   }
 }
