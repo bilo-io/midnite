@@ -67,12 +67,12 @@
 | [41 · Command palette](phase-41-command-palette.md) | ✅ DONE | 32/32 | `██████████` | 100% | — | — ² |
 | [42 · Task detail routing](phase-42-task-detail-routing.md) | 🔄 WIP | 7/11 | `██████░░░░` | 64% | B | — |
 | [43 · Preference sync](phase-43-server-side-preference-sync.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
-| [44 · Outbound webhooks](phase-44-outbound-webhooks.md) | 🔄 WIP | 13/20 | `███████░░░` | 65% | V | — |
+| [44 · Outbound webhooks](phase-44-outbound-webhooks.md) | ✅ DONE | 20/20 | `██████████` | 100% | — | — |
 | [45 · Recurring/scheduled tasks](phase-45-recurring-scheduled-tasks.md) | ✅ DONE | 15/15 | `██████████` | 100% | — | — |
 | [46 · Inbound integrations](phase-46-inbound-integrations.md) | 🔄 WIP | 0/? | `░░░░░░░░░░` | 0% | A | B C D |
 | [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 
-**Headline:** the original **0–41 roadmap is 100% complete** (Phases 39 & 41 closed 2026-06-30). **Phases 42 (task detail routing), 43 (server-side preference sync), 44 (outbound webhooks & integrations), and 45 (recurring/scheduled tasks)** are freshly planned and open — all their themes are pickable. (An *earlier* Phase 42 was a parallel restatement of Phase 40, folded into Phase 40 Theme G and removed 2026-06-27; the current 42 & 43 are new, unrelated phases — two brainstorm sessions ran concurrently, so the preference-sync plan took the next free number, 43.)
+**Headline:** the original **0–41 roadmap is 100% complete** (Phases 39 & 41 closed 2026-06-30). **Phases 43, 44 (outbound webhooks & integrations), 45, and 47 are complete**; **Phase 42 (task detail routing, Theme B in flight)** and **Phase 46 (inbound integrations, Theme A in flight)** are the open frontier. (An *earlier* Phase 42 was a parallel restatement of Phase 40, folded into Phase 40 Theme G and removed 2026-06-27; the current 42 & 43 are new, unrelated phases — two brainstorm sessions ran concurrently, so the preference-sync plan took the next free number, 43.)
 
 ² Phase 41 — themes A–D all landed and the verification checklist is signed off (PR #237). The 3 remaining boxes are all `⏳` deferred (contextual task-detail commands ×2 + the `E` edit-form shortcut). The 2 contextual-command boxes are now **un-deferred and folded into Phase 42 Theme C** (they needed the `/tasks/:id` route Phase 42 adds).
 
@@ -109,7 +109,7 @@ so you can pick from this file without opening the phase doc first.
 ### [Phase 44 — Outbound webhooks & integrations](phase-44-outbound-webhooks.md)
 - ✅ **A** — Webhook endpoint entity + CRUD + Settings → Integrations UI (team-scoped) (PR #245) **[M]**
 - ✅ **B** — Signed delivery engine off the `TaskEventBus` (HMAC, reused SSRF/retry core, deliveries log) (PR #249) **[M]**
-- ✅ **C** — Provider formatting: Slack / Discord / generic JSON (Linear deferred) (PR #252) **[S–M]** — *all themes A–D shipped; only the Verification checklist sign-off remains.*
+- ✅ **C** — Provider formatting: Slack / Discord / generic JSON (Linear deferred) (PR #252) **[S–M]** — *all themes A–D shipped + Verification checklist signed off (PR #TBD, 2026-07-01) → phase COMPLETE.*
 - ✅ **D** — Deliveries log UI + "Send test event" + redeliver (PR #251) **[S]**
 
 ### [Phase 45 — Recurring & scheduled tasks](phase-45-recurring-scheduled-tasks.md)

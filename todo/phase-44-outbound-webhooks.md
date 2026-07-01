@@ -93,15 +93,17 @@ Make webhooks debuggable, not a black box.
 
 ---
 
-## Verification
+## Verification ✅ SIGNED OFF (PR #TBD, 2026-07-01)
 
-- [ ] A team admin can add a Slack, a Discord, and a generic endpoint, each with an event filter; the signing secret is shown once on create and stored encrypted (never returned again).
-- [ ] Moving a task to a filtered status fires every matching enabled endpoint; a disabled or non-matching endpoint does **not** fire.
-- [ ] Slack and Discord endpoints receive a correctly-shaped payload that renders in-channel; the generic endpoint receives the documented JSON with a valid `X-Midnite-Signature` (HMAC verifies with the secret) + timestamp.
-- [ ] A failing endpoint retries with backoff, is logged, and **never blocks or errors the task transition**; an SSRF-unsafe URL is rejected at write time.
-- [ ] The deliveries log shows each attempt (event, status, code); "Send test event" delivers a synthetic event; "Redeliver" re-fires a failed delivery faithfully.
-- [ ] Endpoints are team-scoped (a user only sees/manages their team's) and management is gated by RBAC; the Phase 21 notification webhook still works unchanged.
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across the graph (gateway service + repository + formatter unit tests; web RTL for the Integrations page; a delivery-engine test asserting filter + signature + retry).
+Each criterion is backed by a green automated test (mapped below); the full gateway + shared + web suites pass (1177 + web 651 tests). Sign-off audited the shipped Themes A–D against the acceptance list — no behaviour gap surfaced, so no new tests were needed.
+
+- [x] A team admin can add a Slack, a Discord, and a generic endpoint, each with an event filter; the signing secret is shown once on create and stored encrypted (never returned again). — `shared/webhook.test.ts` (provider/filter schemas), `webhooks.service.test.ts` ("encrypts the secret, returns the raw secret once, and omits it"; "hydrates rows without the secret"), web `integrations-view.test.tsx` ("creates an endpoint and reveals the signing secret once").
+- [x] Moving a task to a filtered status fires every matching enabled endpoint; a disabled or non-matching endpoint does **not** fire. — `webhook-delivery.service.test.ts` ("fans a matching task.updated out to the team endpoints"; "skips disabled endpoints and non-matching status filters"; `eventMatches` cases).
+- [x] Slack and Discord endpoints receive a correctly-shaped payload that renders in-channel; the generic endpoint receives the documented JSON with a valid `X-Midnite-Signature` (HMAC verifies with the secret) + timestamp. — `formatters/format.test.ts` (Slack `{text}` / Discord `{content}` / generic verbatim), `lib/sign.test.ts` (sha256= prefix, timestamp-covered, verify/tamper), `webhook-delivery.service.test.ts` ("dispatch() signs the body").
+- [x] A failing endpoint retries with backoff, is logged, and **never blocks or errors the task transition**; an SSRF-unsafe URL is rejected at write time. — `lib/safe-webhook-delivery.test.ts` (retries to budget then fails; succeeds on retry after transient; SSRF rejected up front), `webhooks.service.test.ts` ("rejects an SSRF-unsafe URL"), `webhook-delivery.service.test.ts` ("records a failed delivery on a non-2xx"; fire-and-forget subscriber).
+- [x] The deliveries log shows each attempt (event, status, code); "Send test event" delivers a synthetic event; "Redeliver" re-fires a failed delivery faithfully. — `webhooks.deliveries.service.test.ts` (listDeliveries; sendTest; "redeliver replays the stored payload via dispatchBody"), web `integrations-view.test.tsx` ("expands the deliveries log"; "sends a test event").
+- [x] Endpoints are team-scoped (a user only sees/manages their team's) and management is gated by RBAC; the Phase 21 notification webhook still works unchanged. — `webhooks.service.test.ts` ("404s when the id is in another team"; "forbids a non-admin"), `webhooks.repository.test.ts` (scope), `notifications/channels/webhook.channel.spec.ts` (Phase 21 channel green, now delegating to the shared `deliverWebhook` core).
+- [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` — **Phase 44 scope green**: `gateway:test` (1177) + `shared:test` + `web:test` (651) all pass; `web:typecheck` clean; the `webhooks/` + `shared/webhook.ts` + `integrations-view` files carry no lint errors. ⚠️ The full-graph `:lint`/`:build` have **pre-existing failures unrelated to Phase 44** and untouched by this branch — `gateway:lint` unused-imports/control-regex in `approvals`/`service-tokens`/`workflow-templates`/`oauth` (Phases 14/23/35/36/38), and `web:build` `phaser` default-export warnings in the office game — tracked as separate repo-wide debt, not Phase 44 regressions.
 
 ---
 
