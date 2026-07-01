@@ -132,6 +132,7 @@ describe('InboundSourcesService', () => {
     const delivery = (over: Partial<InboundDeliveryRow>): InboundDeliveryRow => ({
       id: 'd1',
       sourceId: 's1',
+      teamId: null,
       provider: 'github',
       event: 'issues.opened',
       externalId: 'ext-1',
