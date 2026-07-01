@@ -163,18 +163,20 @@ The heart: author a deck and watch it render.
 
 ---
 
-## Theme F — Present mode + export — **M**
+## Theme F — Present mode + export — **M** — ✅ DONE (PR #267, 2026-07-01)
 
 Show it fullscreen; take it with you.
 
-- [ ] `app/(main)/slides/present/page.tsx` — reads `?id=`, renders the deck **fullscreen** with
-      reveal's controls + keyboard navigation (arrows, `f` fullscreen, `esc` overview), theme
-      applied. A "Present" affordance links here from the editor and the list.
-- [ ] **Export PDF:** client-side via reveal's **print-pdf** path (present route honors a
-      `?print-pdf` query → reveal print stylesheet → browser print-to-PDF) — no server rendering,
-      fits static export + the desktop app.
-- [ ] **Export HTML:** serialize the deck to a **standalone, self-contained reveal HTML file**
-      (inlined slides + theme vars) offered as a download — opens anywhere, no midnite needed.
+- [x] `app/(main)/slides/present/page.tsx` — reads `?id=`, renders the deck **fullscreen** (via a
+      `mode: 'present'` prop on the existing `RevealPreview`) with reveal's controls + keyboard
+      navigation (arrows, `f` fullscreen, `esc` overview), theme applied. A "Present" affordance
+      links here from the editor top bar **and** each deck card / table row.
+- [x] **Export PDF:** client-side via reveal's **print-pdf** path (present route honors a
+      `?print-pdf` query → reveal's bundled print stylesheet → browser Save-as-PDF) — no server
+      rendering, fits static export + the desktop app.
+- [x] **Export HTML:** serialize the deck to a **standalone, self-contained reveal HTML file**
+      (inlined slides + resolved theme colours; reveal.js from a pinned CDN) offered as a
+      download — opens anywhere, no midnite needed.
 
 ---
 

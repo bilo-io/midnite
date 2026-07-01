@@ -54,4 +54,34 @@ test.describe('Slides', () => {
     await page.goto('/slides');
     await expect(page.getByRole('link', { name, exact: true })).toBeVisible();
   });
+
+  test('presents a deck fullscreen and offers exports', async ({ page }) => {
+    const name = `Present deck ${Date.now()}`;
+    const deck = await seedDeck(name, {
+      slides: [
+        { id: 's1', format: 'md', content: '# Present me\n\nreveal.js fullscreen.' },
+        { id: 's2', format: 'md', content: '## Slide two' },
+      ],
+    });
+
+    await page.goto(`/slides/present?id=${deck.id}`);
+
+    // reveal renders the first slide fullscreen (its markdown becomes a heading).
+    await expect(page.getByRole('heading', { name: 'Present me' })).toBeVisible();
+    // The present toolbar exposes exit + both export affordances.
+    await expect(page.getByRole('button', { name: 'Export PDF' })).toBeAttached();
+    await expect(page.getByRole('button', { name: 'Export HTML' })).toBeAttached();
+    // trailingSlash is on, so Link renders /slides/view/?id=…
+    await expect(page.getByRole('link', { name: 'Exit present mode' })).toHaveAttribute(
+      'href',
+      new RegExp(`/slides/view/?\\?id=${deck.id}`),
+    );
+
+    // Standalone HTML export downloads a self-contained file.
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('button', { name: 'Export HTML' }).click(),
+    ]);
+    expect(download.suggestedFilename()).toMatch(/\.html$/);
+  });
 });
