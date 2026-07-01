@@ -14,6 +14,14 @@ The foundation of inbound integrations (external events → tasks): a team-scope
 - [x] **web**: `lib/api.ts` inbound client methods + a second **Inbound sources** section on Settings → Integrations (provider, receiver URL, event picker, default repo/project, enable toggle, rotate, delete, reveal-once modal)
 - [x] **tests**: gateway `managed-secret` (4), `inbound-sources.service` (7), `inbound-sources.repository` real-SQLite (3); web `inbound-sources-section` RTL (4) + fixed the outbound view test; shared 50 files. Integrations screenshots captured
 - [x] **Decisions**: flat `string[]` events (empty=all) + curated catalog; both tables migrated now; shared CRUD/secret base extracted (webhooks refactored onto it)
+## 2026-07-01 — docs: Phase 44 verification sign-off — **Phase 44 COMPLETE**
+
+Audited the shipped outbound-webhooks surface (Themes A–D, PRs #245/#249/#252/#251) against the phase's 7-item acceptance list. Every behavioural criterion is backed by an existing green test — no coverage gap surfaced, so no new tests were needed; the sign-off is a doc-only close-out.
+
+- [x] Mapped all 7 verification criteria to specific passing tests (schemas, service RBAC/secret, delivery filter/fan-out, sign/format, safe-delivery retry+SSRF, deliveries log/test/redeliver, Phase 21 channel delegation, web RTL) — recorded inline in the phase doc
+- [x] Ran the gate: `gateway:test` (1177) + `shared:test` + `web:test` (651) green; `web:typecheck` clean; Phase 44 files (`webhooks/`, `shared/webhook.ts`, `integrations-view`) carry no lint errors
+- [x] Noted pre-existing **unrelated** full-graph debt untouched by this branch (`gateway:lint` unused-imports/control-regex in Phases 14/23/35/36/38 files; `web:build` office `phaser` default-export warnings) — repo-wide, not Phase 44 regressions
+- [x] Flipped Phase 44 → **COMPLETE** (20/20) in `_INDEX.md`; ticked the Verification section
 
 ## 2026-07-01 — feat: CLI shell completions + bulk-by-filter ops — Phase 47 Theme F — **Phase 47 COMPLETE**
 
