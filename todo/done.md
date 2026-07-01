@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-01 — feat: Slides present mode + PDF/HTML export — Phase 48 Theme F — **Phase 48 COMPLETE** (PR #267)
+
+The payoff that closes Phase 48: show a deck fullscreen and take it with you.
+
+- [x] **web**: `/slides/present?id=` fullscreen deck via a new `mode: 'embedded' | 'present'` prop on `RevealPreview` (present = `embedded:false`, global keyboard nav: arrows / `f` / `esc`), theme applied; `fixed inset-0` covers the app chrome. Auto-hiding toolbar (Exit / Export PDF / Export HTML).
+- [x] **web**: PDF export via reveal's **print-pdf** path — Export PDF reloads the present route with `?print-pdf` (reveal's bundled print stylesheet, already in `reveal.css`) → auto `window.print()` → browser Save-as-PDF. No server, fits static export.
+- [x] **web**: standalone **HTML export** (`lib/deck-export.ts`) — a self-contained reveal document with slides + resolved theme colours inlined and reveal.js from a **pinned CDN**; `downloadDeckHtml` builds it (DOMPurify-sanitized) and triggers a Blob download. Opens anywhere.
+- [x] **web**: Present affordances from the editor top bar (when saved) + a Present action on each deck card / table row.
+- [x] **tests**: unit (`deck-export`: standalone HTML builder, slug, theme resolution), RTL (present toolbar + HTML export + print-pdf hides toolbar), Playwright present→export flow (reveal renders fullscreen, HTML download fires).
+- [x] **Decisions**: reuse RevealPreview via a `mode` prop · HTML export = reveal from CDN + slides/theme inlined · PDF = reveal print-pdf via `?print-pdf` reload · entry points from editor + list.
+
 ## 2026-07-01 — feat: Slides web surface — data layer, list, editor + reveal.js preview — Phase 48 Themes C+D+E (PR #263)
 
 Slides becomes a usable authoring surface on top of the A+B backend (#260): browse, create, author (md/html), and preview live.
