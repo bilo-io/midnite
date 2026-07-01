@@ -119,7 +119,7 @@ function PendingRow({
  */
 export function ApprovalsDrawer({ expanded }: { expanded?: boolean }) {
   const [open, setOpen] = useState(false);
-  const { pending, deciding, decide } = useApprovalsSocket();
+  const { pending, decide } = useApprovalsSocket();
   const rootRef = useRef<HTMLDivElement>(null);
 
   // Close on outside click + Escape.
@@ -136,17 +136,6 @@ export function ApprovalsDrawer({ expanded }: { expanded?: boolean }) {
       window.removeEventListener('keydown', onKey);
     };
   }, [open]);
-
-  function decide(id: string, sessionId: string, decision: 'allow' | 'deny' | 'allow_session'): void {
-    if (deciding.has(id)) return;
-    const ws = wsRef.current;
-    if (!ws || ws.readyState !== WebSocket.OPEN) return;
-    setDeciding((prev) => new Set(prev).add(id));
-    ws.send(JSON.stringify({ type: 'inbox.resolve', requestId: id, sessionId, decision }));
-    // Optimistically remove; WS approval.resolved event will confirm + clean up any race.
-    setPending((prev) => prev.filter((x) => x.id !== id));
-    setDeciding((prev) => { const s = new Set(prev); s.delete(id); return s; });
-  }
 
   function makeRule(approval: PendingApproval): void {
     // Navigate to Security settings with a pre-fill query — the user finishes rule creation there.
