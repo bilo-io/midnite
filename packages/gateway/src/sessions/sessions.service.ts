@@ -3,6 +3,7 @@ import {
   CLI_PROVIDER_MAP,
   TERMINAL_WS_PATH,
   type AgentCli,
+  type SessionDetail,
   type SessionStatus,
   type SessionSummary,
   type SessionTranscript,
@@ -58,6 +59,23 @@ export class SessionsService {
       .listTasks(undefined, undefined, scope)
       .map((t) => this.toSummary(t))
       .sort((a, b) => b.lastActivity - a.lastActivity);
+  }
+
+  /**
+   * One session's detail (Phase 51 A) — the summary plus the cockpit's extra
+   * fields threaded from the linked task. 404s an unknown id. `cwd` is best-effort
+   * (task-backed sessions have none until a transcript is loaded); `contextEstimate`
+   * is always true — the token figures are hash-seeded, not measured (Decision §4).
+   */
+  getDetail(id: string, scope?: TeamScope): SessionDetail {
+    const task = this.tasks.listTasks(undefined, undefined, scope).find((t) => t.id === id);
+    if (!task) throw new NotFoundException(`session ${id} not found`);
+    return {
+      ...this.toSummary(task),
+      createdAt: task.createdAt,
+      retryCount: task.retryCount,
+      contextEstimate: true,
+    };
   }
 
   async transcript(projectSlug: string, sessionId: string): Promise<SessionTranscript> {

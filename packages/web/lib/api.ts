@@ -125,6 +125,7 @@ import {
   RepoSchema,
   RunResponseSchema,
   SessionSummarySchema,
+  SessionDetailSchema,
   SessionTranscriptSchema,
   SubAgentResponseSchema,
   TaskCountsSchema,
@@ -172,6 +173,7 @@ import {
   type CreateRepoRequest,
   type UpdateRepoRequest,
   type SessionSummary,
+  type SessionDetail,
   type SessionTranscript,
   type AgentPingResponse,
   type Status,
@@ -634,6 +636,11 @@ export async function getCheckRuns(taskId: string): Promise<CheckRunListResponse
 
 export async function getSessions(): Promise<SessionSummary[]> {
   return fetchJson('/sessions', undefined, z.array(SessionSummarySchema));
+}
+
+/** One session's detail (`GET /sessions/:id`); throws on a 404 for an unknown id. */
+export async function getSession(id: string, signal?: AbortSignal): Promise<SessionDetail> {
+  return fetchJson(`/sessions/${encodeURIComponent(id)}`, { signal }, SessionDetailSchema);
 }
 
 export async function getSessionTranscript(

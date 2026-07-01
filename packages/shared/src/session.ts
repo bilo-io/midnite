@@ -26,6 +26,27 @@ export const SessionSummarySchema = z.object({
 });
 export type SessionSummary = z.infer<typeof SessionSummarySchema>;
 
+/**
+ * The session detail page's shape (Phase 51 A) — a `SessionSummary` plus the few
+ * extra fields the cockpit shows, threaded from the linked task/transcript in the
+ * service. `contextEstimate` flags that `contextTokens`/`contextLimit` are a
+ * hash-seeded approximation, not a real token count (Decision §4).
+ */
+export const SessionDetailSchema = SessionSummarySchema.extend({
+  /** ISO timestamp the underlying task was created — the uptime source. */
+  createdAt: z.string().optional(),
+  /** Retry count of the linked task. */
+  retryCount: z.number().int().nonnegative().optional(),
+  /** Working directory (from the transcript), when known. */
+  cwd: z.string().optional(),
+  /** True when `contextTokens`/`contextLimit` are an estimate, not measured. */
+  contextEstimate: z.boolean().optional(),
+});
+export type SessionDetail = z.infer<typeof SessionDetailSchema>;
+
+export const SessionDetailResponseSchema = z.object({ session: SessionDetailSchema });
+export type SessionDetailResponse = z.infer<typeof SessionDetailResponseSchema>;
+
 export const TranscriptToolCallSchema = z.object({
   name: z.string(),
   summary: z.string(),

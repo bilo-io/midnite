@@ -1,5 +1,6 @@
 import { Controller, Delete, Get, Inject, Param, Post } from '@nestjs/common';
 import type {
+  SessionDetail,
   SessionSummary,
   SessionTranscript,
   TerminalTokenResponse,
@@ -17,6 +18,15 @@ export class SessionsController {
   list(@CurrentUser() user?: CurrentUserPayload | null): Promise<SessionSummary[]> {
     const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
     return this.service.list(scope);
+  }
+
+  @Get(':id')
+  getOne(
+    @Param('id') id: string,
+    @CurrentUser() user?: CurrentUserPayload | null,
+  ): SessionDetail {
+    const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
+    return this.service.getDetail(id, scope);
   }
 
   @Get(':projectSlug/:id/transcript')
