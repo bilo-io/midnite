@@ -66,11 +66,13 @@
 
 ---
 
-## Theme A — Deck contract + DB + migration — **S-M**
+## Theme A — Deck contract + DB + migration — **S-M** ✅ DONE (PR #260, 2026-07-01)
 
-Define the entity once, in `shared`, and persist it.
+Define the entity once, in `shared`, and persist it. *(Built with Theme B in one slice.
+`deriveDeckFormat` lives in `shared` so service + tests share it; empty decks allowed —
+`DeckContentSchema.slides` defaults to `[]`. Migration `0062` hand-trimmed to the new table.)*
 
-- [ ] **shared:** [`shared/src/slide.ts`](../packages/shared/src/) — `SlideSchema`
+- [x] **shared:** [`shared/src/slide.ts`](../packages/shared/src/) — `SlideSchema`
       (`{ id, format: 'md' | 'html', content: string, notes?: string }`), `DeckThemeSchema`
       (optional `{ background?, foreground?, accent? }` HSL-triplet overrides), `DeckContentSchema`
       (`{ slides: Slide[], theme?: DeckTheme }`), `DeckSchema` (`id`, `name`, `description?`,
@@ -79,7 +81,7 @@ Define the entity once, in `shared`, and persist it.
       `content`), `UpdateDeckRequestSchema` (partial: name/description/content), `DeckSummarySchema`
       (list-optimized: id, name, description?, slideCount, format, updatedAt). Re-export from
       [`shared/src/index.ts`](../packages/shared/src/index.ts).
-- [ ] **gateway:** `slides` Drizzle table in [`db/schema.ts`](../packages/gateway/src/db/schema.ts)
+- [x] **gateway:** `slides` Drizzle table in [`db/schema.ts`](../packages/gateway/src/db/schema.ts)
       — `id` (text PK, `randomUUID`), `name`, `description`, `slideCount` (integer, derived),
       `format` (text: `md`/`html`/`mixed`, derived), `content` (text JSON), `createdAt`,
       `updatedAt`, `createdBy`, `teamId`; an `updatedAt` index for the list. Forward-only
@@ -88,24 +90,25 @@ Define the entity once, in `shared`, and persist it.
 
 ---
 
-## Theme B — Gateway CRUD module — **M**
+## Theme B — Gateway CRUD module — **M** ✅ DONE (PR #260, 2026-07-01)
 
-The `slides/` module: team-scoped, RBAC-gated, searchable.
+The `slides/` module: team-scoped, RBAC-gated, searchable. *(All writes gated
+`RequiresRole('member')` per the doc — not workflows' admin-for-update.)*
 
-- [ ] `slides/slides.repository.ts` — team-scoped Drizzle wrapper (`insertDeck`, `getDeckRow`,
+- [x] `slides/slides.repository.ts` — team-scoped Drizzle wrapper (`insertDeck`, `getDeckRow`,
       `listDeckRows` ordered by `desc(updatedAt)`, `updateDeck`, `deleteDeck`) using
       `teamScopeFilter(slides.createdBy, slides.teamId, scope)`.
-- [ ] `slides/slides.service.ts` — business logic: `randomUUID` id, **derive `slideCount` +
+- [x] `slides/slides.service.ts` — business logic: `randomUUID` id, **derive `slideCount` +
       `format`** from `content` on every create/update (`format` = the single per-slide format,
       or `mixed` when slides differ), validate `content` against `DeckContentSchema`, own
       timestamps. Inject `@Optional()` `SearchIndexService` (index deck `name` → title,
       `description` → body) and `@Optional()` `AuditService`. Explicit `@Inject` tokens (gateway
       runs under `tsx` — no emitted param metadata).
-- [ ] `slides/slides.controller.ts` — `@Controller('slides')`: `GET /slides` (summaries, team-scoped),
+- [x] `slides/slides.controller.ts` — `@Controller('slides')`: `GET /slides` (summaries, team-scoped),
       `GET /slides/:id`, `POST /slides` (`RequiresRole('member')`, `CreateDeckRequestSchema`),
       `PATCH /slides/:id` (`RequiresRole('member')`, `UpdateDeckRequestSchema`), `DELETE /slides/:id`
       (`RequiresRole('member')`). Thin: zod-parse → service → typed response.
-- [ ] `slides/slides.module.ts` — register providers + controller; import into
+- [x] `slides/slides.module.ts` — register providers + controller; import into
       [`app.module.ts`](../packages/gateway/src/app.module.ts).
 
 ---
