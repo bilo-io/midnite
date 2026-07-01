@@ -21,6 +21,7 @@ import {
   LayoutDashboard,
   Lightbulb,
   ListChecks,
+  Presentation,
   Workflow,
   type LucideIcon,
 } from 'lucide-react';
@@ -36,6 +37,7 @@ export type FeatureKey =
   | 'workflows'
   | 'schedules'
   | 'councils'
+  | 'slides'
   | 'media'
   | 'ops';
 
@@ -121,6 +123,13 @@ export const FEATURES: Feature[] = [
     Icon: CirclePile,
   },
   {
+    key: 'slides',
+    href: '/slides',
+    label: 'Slides',
+    description: 'Author and present reveal.js decks in Markdown or HTML — themed to match your app.',
+    Icon: Presentation,
+  },
+  {
     key: 'media',
     href: '/media',
     label: 'Media',
@@ -148,6 +157,7 @@ export const DEFAULT_FEATURE_FLAGS: Record<FeatureKey, boolean> = {
   workflows: true,
   schedules: true,
   councils: true,
+  slides: true,
   media: true,
   ops: true,
 };
