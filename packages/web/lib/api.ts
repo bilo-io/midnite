@@ -242,9 +242,11 @@ import {
   type WebhookDeliveryResponse,
   type WebhookUpdateRequest,
   ListInboundSourcesResponseSchema,
+  ListInboundDeliveriesResponseSchema,
   InboundSourceResponseSchema,
   InboundSecretResponseSchema,
   type ListInboundSourcesResponse,
+  type ListInboundDeliveriesResponse,
   type InboundSourceResponse,
   type InboundSecretResponse,
   type InboundSourceCreateRequest,
@@ -466,6 +468,15 @@ export async function updateInboundSource(
 /** Delete an inbound source. */
 export async function deleteInboundSource(id: string): Promise<void> {
   await fetchJson(`/integrations/inbound/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+/** Recent received events for one source (Theme D deliveries log). */
+export async function listInboundDeliveries(id: string): Promise<ListInboundDeliveriesResponse> {
+  return fetchJson(
+    `/integrations/inbound/${encodeURIComponent(id)}/deliveries`,
+    undefined,
+    ListInboundDeliveriesResponseSchema,
+  );
 }
 
 /** Rotate the signing secret — the new secret is returned exactly once. */

@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import type {
+  InboundDelivery,
+  InboundResult,
   InboundSource,
   InboundSourceCreateRequest,
   InboundEventFilter,
@@ -9,13 +11,14 @@ import type {
 } from '@midnite/shared';
 import { CryptoService } from '../../crypto/crypto.service';
 import { TeamsService } from '../../teams/teams.service';
-import type { InboundSourceRow } from '../../db/schema';
+import type { InboundDeliveryRow, InboundSourceRow } from '../../db/schema';
 import {
   assertTeamAdmin,
   encryptSecret,
   generateSecret,
   isInTeamScope,
 } from '../lib/managed-secret';
+import { InboundDeliveriesRepository } from './inbound-deliveries.repository';
 import { InboundSourcesRepository } from './inbound-sources.repository';
 
 export class InboundSourceDoesNotExistError extends Error {
@@ -45,11 +48,22 @@ export class InboundSourcesService {
     // tokens because the e2e gateway runs under `tsx` (no emitted param metadata).
     @Optional() @Inject(CryptoService) private readonly crypto?: CryptoService,
     @Optional() @Inject(TeamsService) private readonly teams?: TeamsService,
+    // Optional so source-only unit specs need no edit; wired in the module.
+    @Optional()
+    @Inject(InboundDeliveriesRepository)
+    private readonly deliveries?: InboundDeliveriesRepository,
   ) {}
 
   /** Team-scoped list (any member); secrets never included. */
   list(teamId: string | null | undefined): InboundSource[] {
     return this.repo.list(teamId ?? null).map((r) => this.hydrate(r));
+  }
+
+  /** Recent deliveries for one source (any team member). 404 if the source is
+   *  unknown or outside the caller's team scope. */
+  listDeliveries(id: string, teamId: string | null | undefined): InboundDelivery[] {
+    this.getScoped(id, teamId);
+    return (this.deliveries?.listBySource(id) ?? []).map((r) => this.hydrateDelivery(r));
   }
 
   /** Create a source (team-admin). Returns the row + the raw secret (ONCE). */
@@ -151,6 +165,20 @@ export class InboundSourcesService {
       enabled: row.enabled,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
+    };
+  }
+
+  private hydrateDelivery(row: InboundDeliveryRow): InboundDelivery {
+    return {
+      id: row.id,
+      sourceId: row.sourceId,
+      provider: row.provider as InboundProvider,
+      event: row.event ?? null,
+      externalId: row.externalId ?? null,
+      result: row.result as InboundResult,
+      taskId: row.taskId ?? null,
+      error: row.error ?? null,
+      createdAt: row.createdAt,
     };
   }
 }

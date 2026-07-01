@@ -69,7 +69,7 @@
 | [43 · Preference sync](phase-43-server-side-preference-sync.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
 | [44 · Outbound webhooks](phase-44-outbound-webhooks.md) | ✅ DONE | 20/20 | `██████████` | 100% | — | — |
 | [45 · Recurring/scheduled tasks](phase-45-recurring-scheduled-tasks.md) | ✅ DONE | 15/15 | `██████████` | 100% | — | — |
-| [46 · Inbound integrations](phase-46-inbound-integrations.md) | 🔄 WIP | 10/20 | `█████░░░░░` | 50% | D | — |
+| [46 · Inbound integrations](phase-46-inbound-integrations.md) | ✅ DONE | 20/20 | `██████████` | 100% | — | — |
 | [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [48 · Slides](phase-48-slides.md) | 🔄 WIP | 6/26 | `██░░░░░░░░` | 23% | C D E | F |
 | [51 · Session detail page](phase-51-session-detail-page.md) | 🔄 WIP | 7/27 | `███░░░░░░░` | 26% | — | C D E F |
@@ -106,7 +106,7 @@ so you can pick from this file without opening the phase doc first.
 - ✅ **A** — Inbound source entity + contract + Settings → Integrations (Inbound) UI (#259) **[M]**
 - ✅ **B** — Provider-aware signed receiver (`POST /integrations/inbound/:id`) + dedup + `createFromPrompt` (#261) **[M]**
 - ✅ **C** — Provider adapters: GitHub / Linear / generic (verify + payload→task) (#261) **[M]**
-- ◻ **D** — Inbound deliveries log + origin URL as a task `Source` **[S]**
+- ✅ **D** — Inbound deliveries log + origin URL as a task `Source` (#262) **[S]** → phase COMPLETE
 
 ### [Phase 44 — Outbound webhooks & integrations](phase-44-outbound-webhooks.md)
 - ✅ **A** — Webhook endpoint entity + CRUD + Settings → Integrations UI (team-scoped) (PR #245) **[M]**
