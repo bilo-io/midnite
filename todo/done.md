@@ -4,6 +4,20 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-01 — feat: Slides web surface — data layer, list, editor + reveal.js preview — Phase 48 Themes C+D+E (PR #263)
+
+Slides becomes a usable authoring surface on top of the A+B backend (#260): browse, create, author (md/html), and preview live.
+
+- [x] **web (C)**: `listDecks/getDeck/createDeck/updateDeck/deleteDeck` in `web/lib/api.ts`, consumed via the existing `useApiData` + `invalidateData` convention (no bespoke hooks — matches the codebase)
+- [x] **web (D)**: `Slides` nav entry (`Presentation` icon) + `/slides` list — grid/table toggle, deck cards + table rows with an **md/html/mixed** badge + slide count, empty state, delete-with-confirm
+- [x] **web (E)**: `/slides/new` + `/slides/view?id=` (static-export `?id=` routing, no `[id]`); editor with **@dnd-kit** slide reorder, per-slide **Markdown⇄HTML** toggle, content + speaker-notes, deck name/description
+- [x] **web (E)**: client-only **reveal.js** live preview (dynamic import, never SSR'd; `reveal.js` in `transpilePackages`), **DOMPurify**-sanitized HTML slides, `.slides` populated imperatively so React never fights reveal's DOM
+- [x] **web (E)**: per-deck **theme override** panel (accent/background/foreground HSL) layered over inherited app vars via CSS custom properties
+- [x] **web (E)**: **both** save modes — Save button disabled-when-clean **and** debounced autosave, interval configurable in a new **Settings → Editor** section (`editorAutosaveSeconds`, device-local)
+- [x] **deps**: `reveal.js` + `dompurify` added to `web`; `moon run web:build` succeeds (static export)
+- [x] **tests**: unit (`deck-content` helpers), RTL (SlidesView, DeckEditor), Playwright create→edit flow + `seedDeck` helper; command-palette button-count bumped for the new feature
+- [x] **Decisions**: reveal.js live preview · DOMPurify for HTML · @dnd-kit drag · save-button+autosave (dedicated Settings → Editor) · api.ts+useApiData · theme override included
+
 ## 2026-07-01 — feat: inbound signed receiver + provider adapters — Phase 46 Themes B+C (PR #261)
 
 The heart of inbound integrations: a signed external event (GitHub/Linear/generic) becomes a board task.
