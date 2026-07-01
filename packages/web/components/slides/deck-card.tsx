@@ -5,7 +5,7 @@ import { Layers, Trash2 } from 'lucide-react';
 import type { DeckSummary } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { FormatBadge } from '@/components/slides/format-badge';
-import { cn, relativeTime } from '@/lib/utils';
+import { relativeTime } from '@/lib/utils';
 
 type Props = {
   deck: DeckSummary;
@@ -42,7 +42,7 @@ export function DeckCard({ deck, onDelete }: Props) {
         </Link>
       ) : null}
       <div className="mt-auto flex items-center justify-between gap-2 text-xs text-muted-foreground">
-        <span className={cn('inline-flex items-center gap-1')}>
+        <span className="inline-flex items-center gap-1">
           <Layers className="h-3.5 w-3.5" />
           {deck.slideCount} slide{deck.slideCount === 1 ? '' : 's'}
         </span>

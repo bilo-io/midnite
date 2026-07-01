@@ -41,7 +41,8 @@ test.describe('Slides', () => {
     await save.click();
 
     // First save creates the deck and swaps to its stable editor URL.
-    await expect(page).toHaveURL(/\/slides\/view\?id=/);
+    // (trailingSlash is on, so the route normalises to /slides/view/?id=…)
+    await expect(page).toHaveURL(/\/slides\/view\/?\?id=/);
     await expect(page.getByText('Saved')).toBeVisible();
 
     // Add a second slide.
