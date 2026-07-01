@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import { Archive, ArchiveRestore, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Archive, ArchiveRestore, ArrowUpRight, X } from 'lucide-react';
 import type { SessionSummary, SessionTranscript } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { SessionStatusDot } from '@/components/session-card';
@@ -27,6 +28,14 @@ export function SessionTranscriptModal({
   onArchiveToggle,
   onDelete,
 }: Props) {
+  const router = useRouter();
+
+  // Open the full session cockpit (Phase 51 F). session.id === task.id.
+  const goToSessionPage = () => {
+    onClose();
+    router.push(`/sessions/view?id=${encodeURIComponent(session.id)}`);
+  };
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -66,6 +75,10 @@ export function SessionTranscriptModal({
                 ) : null}
               </p>
             </div>
+            <Button type="button" variant="secondary" size="sm" onClick={goToSessionPage} className="shrink-0">
+              <ArrowUpRight className="h-3.5 w-3.5" />
+              Open page
+            </Button>
             {onArchiveToggle ? (
               <Button
                 type="button"

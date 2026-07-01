@@ -31,7 +31,7 @@
 | [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | ◻ TODO | 0/26 | `░░░░░░░░░░` | 0% | — | A B C D E F |
 | [53 · Task lifecycle resilience](phase-53-task-lifecycle-resilience.md) | ◻ TODO | 0/22 | `░░░░░░░░░░` | 0% | — | A B C D E |
 | [52 · In-app diff & PR review](phase-52-in-app-diff-review.md) | 🔄 WIP | 0/25 | `░░░░░░░░░░` | 0% | A | B C D E |
-| [51 · Session detail page](phase-51-session-detail-page.md) | 🔄 WIP | 16/27 | `██████░░░░` | 59% | F | — |
+| [51 · Session detail page](phase-51-session-detail-page.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [50 · Autonomy guardrails](phase-50-autonomy-guardrails.md) | ◻ TODO | 0/29 | `░░░░░░░░░░` | 0% | — | A B C D E F |
 | [49 · Data portability](phase-49-data-portability.md) | ◻ TODO | 0/27 | `░░░░░░░░░░` | 0% | — | A B C D E F |
 | [48 · Slides](phase-48-slides.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
@@ -136,7 +136,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **C** — Terminal (live interactive + ended transcript)
 - ✅ **D** — Left panel (approvals + task/project context)
 - ✅ **E** — Right panel (session info & stats)
-- 🔄 **F** — Sessions list upgrade + entry points
+- ✅ **F** — Sessions list upgrade + entry points
 
 ### [Phase 50 — Autonomy guardrails & blast radius](phase-50-autonomy-guardrails.md)
 - ◻ **A** — Kill switch & global pause (scheduling gate)

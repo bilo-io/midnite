@@ -55,3 +55,13 @@ test('session detail — ended session shows the read-only transcript', async ({
   await expect(page.getByText(/ended · read-only/)).toBeVisible();
   await page.screenshot({ path: join(OUT, 'session-detail-ended.png') });
 });
+
+test('sessions list — each card links into the cockpit (Theme F)', async ({ page }) => {
+  await seedTask('Wire the entry points', 'wip');
+  await page.goto('/sessions');
+
+  await expect(page.getByText('Wire the entry points').first()).toBeVisible();
+  // Theme F: every card/row exposes an explicit "Open session page" link.
+  await expect(page.getByRole('link', { name: 'Open session page' }).first()).toBeVisible();
+  await page.screenshot({ path: join(OUT, 'sessions-list-open-links.png') });
+});
