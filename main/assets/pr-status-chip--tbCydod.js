@@ -1,0 +1,11 @@
+import{h as s,n as t,f as d,b as i,a as p}from"./iframe-CMCZONSf.js";import{G as u}from"./git-merge-DVewJ73e.js";/**
+ * @license lucide-react v1.17.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */const m=[["circle",{cx:"12",cy:"12",r:"10",key:"1mglay"}]],l=s("circle",m);/**
+ * @license lucide-react v1.17.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */const x=[["circle",{cx:"18",cy:"18",r:"3",key:"1xkwt0"}],["circle",{cx:"6",cy:"6",r:"3",key:"1lh9wr"}],["path",{d:"M13 6h3a2 2 0 0 1 2 2v7",key:"1yeb86"}],["line",{x1:"6",x2:"6",y1:"9",y2:"21",key:"rroup"}]],g=s("git-pull-request",x);function h({status:e,className:r}){const{icon:n,label:c,colour:o}=y(e);return t.jsxs("span",{className:d("inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium",o,r),title:c,"aria-label":c,children:[n,t.jsx("span",{children:e.number})]})}function y(e){const r=b[e.state],n=e.checks!=="none"?` · CI ${e.checks}`:"",c=`PR #${e.number} — ${r}${n}`;if(e.state==="merged")return{icon:t.jsx(u,{className:"h-3 w-3"}),label:c,colour:"bg-purple-500/15 text-purple-600 dark:text-purple-400"};if(e.state==="closed")return{icon:t.jsx(i,{className:"h-3 w-3"}),label:c,colour:"bg-muted text-muted-foreground"};if(e.state==="draft")return{icon:t.jsx(l,{className:"h-3 w-3"}),label:c,colour:"bg-muted text-muted-foreground"};const o=f[e.checks],a=k[e.checks];return{icon:t.jsx(a,{className:"h-3 w-3"}),label:c,colour:o}}const b={open:"Open",draft:"Draft",merged:"Merged",closed:"Closed"},f={passing:"bg-green-500/15 text-green-700 dark:text-green-400",failing:"bg-destructive/15 text-destructive",pending:"bg-yellow-500/15 text-yellow-700 dark:text-yellow-400",none:"bg-blue-500/15 text-blue-700 dark:text-blue-400"},k={passing:p,failing:i,pending:l,none:g};h.__docgenInfo={description:"Compact one-glyph chip summarising a PR's state + CI checks.",methods:[],displayName:"PrStatusChip",props:{status:{required:!0,tsType:{name:"PrStatus"},description:""},className:{required:!1,tsType:{name:"string"},description:""}}};export{g as G,h as P};
