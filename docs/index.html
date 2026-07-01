@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="The @midnite/ui design system and midnite developer docs." />
+    <title>midnite · design system & docs</title>
+    <!--
+      No-flash theme init. Mirrors @midnite/ui/theme's `themeInitScript` (storage
+      key 'midnite.theme'); runs before React so the stored light/dark preference
+      is applied before first paint. Kept inline (rather than imported) so the
+      docs app stays a plain static HTML entry.
+    -->
+    <script>
+      (function () {
+        try {
+          var k = 'midnite.theme';
+          var s = localStorage.getItem(k);
+          var p = s === 'light' || s === 'dark' || s === 'time' ? s : 'system';
+          var r;
+          if (p === 'system') {
+            r = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          } else if (p === 'time') {
+            var h = new Date().getHours();
+            r = h >= 8 && h < 18 ? 'light' : 'dark';
+          } else {
+            r = p;
+          }
+          var c = document.documentElement.classList;
+          if (r === 'dark') c.add('dark');
+          else c.remove('dark');
+          document.documentElement.style.colorScheme = r;
+        } catch (e) {}
+      })();
+    </script>
+    <script type="module" crossorigin src="./assets/index-BCi7l_sP.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CKFoVt7_.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
