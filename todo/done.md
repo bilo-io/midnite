@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-01 — feat: inbound deliveries log — Phase 46 Theme D — **Phase 46 COMPLETE** (PR #262)
+
+The observability that closes Phase 46 — surfacing the delivery records B/C already write.
+
+- [x] **gateway**: `GET /integrations/inbound/:id/deliveries` (team-scoped, any member) → `InboundSourcesService.listDeliveries` — resolves the source in team scope (404 otherwise), reuses the `inbound_deliveries` repo (`listBySource`) landed in B. No new table/migration.
+- [x] **web**: `listInboundDeliveries` client + an expandable per-source deliveries log in the Inbound section (colour-coded result, event, created-task link / error, timestamp), lazy-loaded on expand.
+- [x] Origin-URL-as-`Source` backlink confirmed already shipped in B (receiver `tasks.addLink`).
+- [x] **tests**: service spec (scoped hydration + 404 out-of-scope), web RTL (lazy-load on expand + `view task` link). `gateway` 1235 · `web` 656 green.
+
 ## 2026-07-01 — feat: inbound signed receiver + provider adapters — Phase 46 Themes B+C (PR #261)
 
 The heart of inbound integrations: a signed external event (GitHub/Linear/generic) becomes a board task.
