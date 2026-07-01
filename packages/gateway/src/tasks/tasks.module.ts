@@ -5,6 +5,7 @@ import { ChecksModule } from '../checks/checks.module';
 import { ReposModule } from '../repos/repos.module';
 import { WorkflowsModule } from '../workflows/workflows.module';
 import { AiReviewService } from './ai-review.service';
+import { PrDiffService } from './pr-diff.service';
 import { PrStatusService } from './pr-status.service';
 import { TasksController } from './tasks.controller';
 import { TasksRepository } from './tasks.repository';
@@ -15,7 +16,15 @@ import { TasksGateway } from './tasks.gateway';
 @Module({
   imports: [AgentModule, AuthModule, ChecksModule, ReposModule, WorkflowsModule],
   controllers: [TasksController],
-  providers: [TasksService, TasksRepository, TaskEventBus, TasksGateway, PrStatusService, AiReviewService],
+  providers: [
+    TasksService,
+    TasksRepository,
+    TaskEventBus,
+    TasksGateway,
+    PrStatusService,
+    PrDiffService,
+    AiReviewService,
+  ],
   exports: [TasksService, TaskEventBus],
 })
 export class TasksModule {}

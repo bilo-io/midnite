@@ -39,6 +39,7 @@ import {
   type CreateFromBreakdownResponse,
   type CreateTaskResponse,
   type MidniteConfig,
+  type PrDiff,
   type Status,
   type Task,
   type TaskCounts,
@@ -47,6 +48,7 @@ import {
 import { BreakdownService } from '../agent/breakdown.service';
 import { MIDNITE_CONFIG } from '../config.token';
 import { sendMarkdownReport } from '../lib/report-response';
+import { PrDiffService } from './pr-diff.service';
 import { PrStatusService } from './pr-status.service';
 import { TasksService } from './tasks.service';
 
@@ -63,6 +65,7 @@ export class TasksController {
     @Inject(TasksService) private readonly service: TasksService,
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
     @Inject(PrStatusService) private readonly prStatus: PrStatusService,
+    @Inject(PrDiffService) private readonly prDiff: PrDiffService,
     @Inject(BreakdownService) private readonly breakdown: BreakdownService,
   ) {}
 
@@ -182,6 +185,14 @@ export class TasksController {
   @RequiresRole('member')
   async refreshPr(@Param('id') id: string): Promise<Task> {
     return this.prStatus.refresh(id);
+  }
+
+  // Structured diff for the task's GitHub PR (Phase 52 Theme A). Read-only, so no
+  // RBAC beyond the ambient guard (mirrors `GET :id`). A missing task / no-PR 404s;
+  // a fetch failure fails open as a 503 (the web shows a retry banner), never 500.
+  @Get(':id/pr/diff')
+  async prDiffForTask(@Param('id') id: string): Promise<PrDiff> {
+    return this.prDiff.getDiffForTask(id);
   }
 
   // Add a blocker edge. A self-reference / unknown blocker → 400; a cycle → 409.
