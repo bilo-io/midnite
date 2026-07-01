@@ -15,6 +15,17 @@ The payoff that closes Phase 48: show a deck fullscreen and take it with you.
 - [x] **tests**: unit (`deck-export`: standalone HTML builder, slug, theme resolution), RTL (present toolbar + HTML export + print-pdf hides toolbar), Playwright present→export flow (reveal renders fullscreen, HTML download fires).
 - [x] **Decisions**: reuse RevealPreview via a `mode` prop · HTML export = reveal from CDN + slides/theme inlined · PDF = reveal print-pdf via `?print-pdf` reload · entry points from editor + list.
 
+## 2026-07-01 — feat: session terminal region (live + ended) — Phase 51 Theme C (PR #265)
+
+The cockpit centerpiece — the one real fork. A live session gets the interactive WS terminal; an ended (completed/archived) session gets a read-only transcript, since the ring buffer is ephemeral. A live/ended badge disambiguates.
+
+- [x] `SessionTerminalRegion` — forks on lifecycle: `running`/`waiting`/`idle` → interactive `SessionTerminal`; `completed`/archived → read-only transcript
+- [x] Extracted `SessionTranscriptBody` from the transcript modal so the modal + ended view share one renderer (behavior-preserving)
+- [x] Wired the region into the cockpit shell, replacing the Theme-C placeholder
+- [x] RTL unit for the region (live/ended/archived fork, idle-as-live, transcript fetch) + shell test stubs the region; screenshots for both forks
+
+---
+
 ## 2026-07-01 — feat: Slides web surface — data layer, list, editor + reveal.js preview — Phase 48 Themes C+D+E (PR #263)
 
 Slides becomes a usable authoring surface on top of the A+B backend (#260): browse, create, author (md/html), and preview live.

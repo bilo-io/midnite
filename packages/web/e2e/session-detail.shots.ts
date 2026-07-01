@@ -7,8 +7,9 @@ import { SCREENSHOTS_DIR } from './config';
 import { seedTask } from './helpers/gateway';
 
 /**
- * Phase 51 B — the session detail cockpit shell: a large center region (terminal
- * lands in Theme C) flanked by two collapsible rails. A session is a 1:1 view over
+ * Phase 51 B/C — the session detail cockpit: a large center terminal region
+ * (Theme C: live interactive terminal for a running session, read-only transcript
+ * for an ended one) flanked by two collapsible rails. A session is a 1:1 view over
  * its task, so seeding a task gives us a session id to open.
  */
 const OUT = resolve(process.cwd(), SCREENSHOTS_DIR);
@@ -30,13 +31,25 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('session detail — cockpit shell with two rails', async ({ page }) => {
+test('session detail — cockpit with a live terminal', async ({ page }) => {
   const task = await seedTask('Wire up the session detail page', 'wip');
   await page.goto(`/sessions/view?id=${task.id}`);
 
   await expect(page.getByRole('heading', { name: 'Wire up the session detail page' })).toBeVisible();
   await expect(page.getByText('Approvals & context')).toBeVisible();
   await expect(page.getByText('Session info')).toBeVisible();
-  await expect(page.getByText(/Interactive terminal/)).toBeVisible();
-  await page.screenshot({ path: join(OUT, 'session-detail-shell.png') });
+  // Theme C: a running session forks to the live terminal, badged "live".
+  await expect(page.getByText('Terminal', { exact: true })).toBeVisible();
+  await expect(page.getByText('live', { exact: true })).toBeVisible();
+  await page.screenshot({ path: join(OUT, 'session-detail-live.png') });
+});
+
+test('session detail — ended session shows the read-only transcript', async ({ page }) => {
+  const task = await seedTask('Ship the transcript view', 'done');
+  await page.goto(`/sessions/view?id=${task.id}`);
+
+  await expect(page.getByRole('heading', { name: 'Ship the transcript view' })).toBeVisible();
+  // Theme C: a completed session forks to the read-only transcript, badged ended.
+  await expect(page.getByText(/ended · read-only/)).toBeVisible();
+  await page.screenshot({ path: join(OUT, 'session-detail-ended.png') });
 });
