@@ -93,7 +93,7 @@ Make webhooks debuggable, not a black box.
 
 ---
 
-## Verification ✅ SIGNED OFF (PR #TBD, 2026-07-01)
+## Verification ✅ SIGNED OFF (PR #258, 2026-07-01)
 
 Each criterion is backed by a green automated test (mapped below); the full gateway + shared + web suites pass (1177 + web 651 tests). Sign-off audited the shipped Themes A–D against the acceptance list — no behaviour gap surfaced, so no new tests were needed.
 

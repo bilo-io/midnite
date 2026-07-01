@@ -109,7 +109,7 @@ so you can pick from this file without opening the phase doc first.
 ### [Phase 44 — Outbound webhooks & integrations](phase-44-outbound-webhooks.md)
 - ✅ **A** — Webhook endpoint entity + CRUD + Settings → Integrations UI (team-scoped) (PR #245) **[M]**
 - ✅ **B** — Signed delivery engine off the `TaskEventBus` (HMAC, reused SSRF/retry core, deliveries log) (PR #249) **[M]**
-- ✅ **C** — Provider formatting: Slack / Discord / generic JSON (Linear deferred) (PR #252) **[S–M]** — *all themes A–D shipped + Verification checklist signed off (PR #TBD, 2026-07-01) → phase COMPLETE.*
+- ✅ **C** — Provider formatting: Slack / Discord / generic JSON (Linear deferred) (PR #252) **[S–M]** — *all themes A–D shipped + Verification checklist signed off (PR #258, 2026-07-01) → phase COMPLETE.*
 - ✅ **D** — Deliveries log UI + "Send test event" + redeliver (PR #251) **[S]**
 
 ### [Phase 45 — Recurring & scheduled tasks](phase-45-recurring-scheduled-tasks.md)
