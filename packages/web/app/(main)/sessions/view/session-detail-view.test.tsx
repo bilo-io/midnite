@@ -15,6 +15,11 @@ vi.mock('@/components/session-terminal-region', () => ({
     <div data-testid="terminal-region">terminal:{session.status}</div>
   ),
 }));
+// The right-rail readout is its own unit (session-info-panel.test.tsx) — stub it
+// so its Status/etc. rows don't collide with the header's status chip here.
+vi.mock('@/components/session-info-panel', () => ({
+  SessionInfoPanel: () => <div data-testid="info-panel">info panel</div>,
+}));
 
 import { SessionDetailView } from './session-detail-view';
 

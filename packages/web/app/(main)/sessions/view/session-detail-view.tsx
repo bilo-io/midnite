@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import type { Project, SessionDetail, Task } from '@midnite/shared';
 import { PageHeader } from '@/components/page-header';
+import { SessionInfoPanel } from '@/components/session-info-panel';
 import { SessionTerminalRegion } from '@/components/session-terminal-region';
 import { getProject, getSession, getTask } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
@@ -171,9 +172,7 @@ export function SessionDetailView({
             onToggle={() => setRightOpen(!rightOpen)}
             title="Session info"
           >
-            <Placeholder theme="E">
-              Provider, uptime, last activity, cwd, retries, and the (estimated) context window land here.
-            </Placeholder>
+            <SessionInfoPanel session={session} />
           </Rail>
         </div>
       </div>
