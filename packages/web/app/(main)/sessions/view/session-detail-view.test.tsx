@@ -8,6 +8,12 @@ beforeEach(() => localStorage.clear());
 // The view is presentational; only the media-query hook needs stubbing so the
 // desktop (rail) path renders deterministically.
 vi.mock('@/hooks/use-media-query', () => ({ useIsMobile: () => false }));
+// The left panel (Theme D) owns its own WS + fetch; stub it here so this stays a
+// deterministic shell test (the panel has its own spec).
+vi.mock('./session-left-panel', () => ({
+  SessionLeftPanel: ({ task }: { task: { id: string; title: string } | null }) =>
+    task ? <a href={`/tasks/view?id=${task.id}`}>{task.title}</a> : <div>left-panel</div>,
+}));
 
 import { SessionDetailView } from './session-detail-view';
 
@@ -44,10 +50,11 @@ describe('SessionDetailView', () => {
     expect(screen.getByText(/Read-only transcript/)).toBeInTheDocument();
   });
 
-  it('links the task and project when present', () => {
+  it('mounts the left panel with the task (approvals + context live there)', () => {
     render(<SessionDetailView session={session} task={task} project={project} />);
+    // Task/project links now render inside SessionLeftPanel (its own spec); the
+    // shell just wires the task through to it.
     expect(screen.getByRole('link', { name: 'Fix login flow' })).toHaveAttribute('href', '/tasks/view?id=t1');
-    expect(screen.getByText('Project: Acme app')).toBeInTheDocument();
   });
 
   it('collapses a rail to a slim toggle and re-expands it (persisted state)', () => {

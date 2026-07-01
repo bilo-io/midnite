@@ -1,8 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import type { PendingApproval, Project, SessionDetail, Task } from '@midnite/shared';
+import { withQueryClient } from '@/lib/test-query-wrapper';
 
 afterEach(cleanup);
+
+const renderPanel = (ui: ReactElement) => render(withQueryClient(ui));
 
 const decide = vi.fn();
 let pending: PendingApproval[] = [];
@@ -48,7 +52,7 @@ beforeEach(() => {
 
 describe('SessionLeftPanel', () => {
   it('queries the approval log scoped to this session', async () => {
-    render(<SessionLeftPanel session={session} task={null} project={null} />);
+    renderPanel(<SessionLeftPanel session={session} task={null} project={null} />);
     await waitFor(() =>
       expect(listApprovalLog).toHaveBeenCalledWith({ sessionId: 'sess-1', limit: 25 }),
     );
@@ -56,7 +60,7 @@ describe('SessionLeftPanel', () => {
 
   it('shows only this session’s live pending approvals and decides on click', async () => {
     pending = [pendingApproval({}), pendingApproval({ id: 'a2', sessionId: 'other', toolName: 'Write' })];
-    render(<SessionLeftPanel session={session} task={null} project={null} />);
+    renderPanel(<SessionLeftPanel session={session} task={null} project={null} />);
 
     expect(screen.getByText('Bash')).toBeInTheDocument();
     expect(screen.queryByText('Write')).not.toBeInTheDocument(); // other session filtered out
@@ -84,18 +88,18 @@ describe('SessionLeftPanel', () => {
       page: 1,
       limit: 25,
     });
-    render(<SessionLeftPanel session={session} task={null} project={null} />);
+    renderPanel(<SessionLeftPanel session={session} task={null} project={null} />);
     expect(await screen.findByText('Edit')).toBeInTheDocument();
     expect(screen.getByText('allow')).toBeInTheDocument();
   });
 
   it('renders task + project context with links, and omits project when absent', async () => {
-    const { rerender } = render(<SessionLeftPanel session={session} task={task} project={project} />);
+    const { rerender } = renderPanel(<SessionLeftPanel session={session} task={task} project={project} />);
     expect(screen.getByRole('link', { name: 'Fix bug' })).toHaveAttribute('href', '/tasks/view?id=t1');
     expect(screen.getByText('wip')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Web' })).toHaveAttribute('href', '/projects/p1');
 
-    rerender(<SessionLeftPanel session={session} task={task} project={null} />);
+    rerender(withQueryClient(<SessionLeftPanel session={session} task={task} project={null} />));
     expect(screen.queryByText('Project')).not.toBeInTheDocument();
   });
 });
