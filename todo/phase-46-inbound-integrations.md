@@ -117,17 +117,19 @@ Turn each provider's payload into a normalized task.
 
 ---
 
-## Theme D — Inbound deliveries log + source backlink — **S**
+## Theme D — Inbound deliveries log + source backlink — **S** ✅ DONE (PR #262, 2026-07-01)
 
-Make inbound debuggable, not a black box.
+Make inbound debuggable, not a black box. *(The table + backlink shipped with B/C;
+this theme added the read endpoint + the log UI.)*
 
-- [ ] Record every received event in an `inbound_deliveries` table (`sourceId`, `provider`,
+- [x] Record every received event in an `inbound_deliveries` table (`sourceId`, `provider`,
       `event`, `externalId`, `result` (`created` / `skipped-duplicate` / `rejected` /
-      `ignored`), `taskId?`, `error?`, `createdAt`).
-- [ ] **web:** a per-source deliveries log (recent events: provider, event, result, created-task
-      link, timestamp) in the Integrations → Inbound section.
-- [ ] The created task surfaces its origin: the issue/PR URL as a `Source` (reusing the existing
-      sources UI on the task card / thread) — so "where did this task come from?" is one click.
+      `ignored`), `taskId?`, `error?`, `createdAt`). *(Table + write-path landed in B.)*
+- [x] **web:** a per-source deliveries log (recent events: provider, event, result, created-task
+      link, timestamp) in the Integrations → Inbound section — expandable per-source row, lazy-loaded
+      via `GET /integrations/inbound/:id/deliveries` (team-scoped, any member).
+- [x] The created task surfaces its origin: the issue/PR URL as a `Source` — done in B
+      (`tasks.addLink(task.id, mapped.sourceUrl, …)` in the receiver).
 
 ---
 
