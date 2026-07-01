@@ -86,7 +86,7 @@ export class ApprovalsService implements OnModuleInit {
   }
 
   /** Get a page of audit log entries. */
-  listLog(params: { page: number; limit: number; from?: string; to?: string; taskId?: string }) {
+  listLog(params: { page: number; limit: number; from?: string; to?: string; taskId?: string; sessionId?: string }) {
     if (!this.logRepo) return { entries: [], total: 0, page: params.page, limit: params.limit };
     const { entries, total } = this.logRepo.list(params);
     return { entries: entries.map(toLogEntry), total, page: params.page, limit: params.limit };

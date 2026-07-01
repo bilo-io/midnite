@@ -10,6 +10,7 @@ export type ApprovalLogListParams = {
   from?: string;
   to?: string;
   taskId?: string;
+  sessionId?: string;
 };
 
 @Injectable()
@@ -21,13 +22,14 @@ export class ApprovalLogRepository {
   }
 
   list(params: ApprovalLogListParams): { entries: ApprovalLogRow[]; total: number } {
-    const { page, limit, from, to, taskId } = params;
+    const { page, limit, from, to, taskId, sessionId } = params;
     const offset = (page - 1) * limit;
 
     const conditions = [];
     if (from) conditions.push(gte(approvalLog.createdAt, from));
     if (to) conditions.push(lte(approvalLog.createdAt, to));
     if (taskId) conditions.push(eq(approvalLog.taskId, taskId));
+    if (sessionId) conditions.push(eq(approvalLog.sessionId, sessionId));
 
     const where = conditions.length > 0 ? and(...conditions) : undefined;
 

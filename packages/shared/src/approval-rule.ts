@@ -88,5 +88,7 @@ export const ApprovalLogQuerySchema = z.object({
   from: z.string().optional(),
   to: z.string().optional(),
   taskId: z.string().optional(),
+  /** Filter to one session's decisions (Phase 51 D). */
+  sessionId: z.string().optional(),
 });
 export type ApprovalLogQuery = z.infer<typeof ApprovalLogQuerySchema>;
