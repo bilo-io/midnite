@@ -147,15 +147,16 @@ The instrument readout — honest about what's real.
 
 ---
 
-## Theme F — Sessions list upgrade + entry points — **S-M**
+## Theme F — Sessions list upgrade + entry points — **S-M** — ✅ DONE (PR #269, 2026-07-02)
 
 Make the cockpit reachable from everywhere a session appears.
 
-- [ ] Every card/row in [`sessions-view.tsx`](../packages/web/app/(main)/sessions/sessions-view.tsx) links to
-      `/sessions/view?id={id}` (the list becomes a real index into the detail pages).
-- [ ] Add an **"Open session"** entry point from the **task page** (when a task has a live/recent session) and
-      from the **office** (clicking an agent → its session detail).
-- [ ] Ensure deep links resolve directly (a bookmarked `/sessions/view?id=` loads standalone, fetching its own data).
+- [x] Every card/row in [`sessions-view.tsx`](../packages/web/app/(main)/sessions/sessions-view.tsx) exposes an
+      explicit "Open session page" `<Link>` → `/sessions/view?id={id}` (a real anchor: cmd/middle-click opens a
+      new tab), alongside the existing quick-view modal — the list becomes a real index into the detail pages.
+- [x] "Open session" entry points from the **task page** (the Session button now deep-links to the cockpit) and
+      from the **office** (both interaction modals gain an "Open page" action, shown even under `disableNavigation`).
+- [x] Deep links resolve directly (a bookmarked `/sessions/view?id=` loads standalone — Theme B's container).
 
 ---
 
@@ -184,22 +185,22 @@ Make the cockpit reachable from everywhere a session appears.
 
 ## Verification
 
-- [ ] `/sessions/view?id=<live session>` opens a page with a **large interactive terminal** (type into it,
+- [x] `/sessions/view?id=<live session>` opens a page with a **large interactive terminal** (type into it,
       approve a tool inline), a left panel, and a right panel; a bookmarked deep link loads standalone.
-- [ ] An **ended/archived** session opens the same page with a **read-only transcript scrollback** (no live
+- [x] An **ended/archived** session opens the same page with a **read-only transcript scrollback** (no live
       socket) and a clear ended-state affordance; stats show final values.
-- [ ] Left/right panels **collapse to rails independently** and their open/closed state **persists across a
+- [x] Left/right panels **collapse to rails independently** and their open/closed state **persists across a
       reload**; on mobile they become **drawers** and the terminal goes full-width.
-- [ ] Left panel shows the session's **pending approvals live** (a new PreToolUse request appears without a
+- [x] Left panel shows the session's **pending approvals live** (a new PreToolUse request appears without a
       reload) **and** its historical decisions (via the `sessionId` log filter); task + project metadata link to
       `/tasks/view?id=` and the project.
-- [ ] Right panel shows provider/agentCli, uptime, last activity, status, cwd, retries; **context window is
+- [x] Right panel shows provider/agentCli, uptime, last activity, status, cwd, retries; **context window is
       labeled an estimate**, not presented as an exact token count.
-- [ ] Every `/sessions` card/row links into the detail page; the task page + office expose an "Open session"
+- [x] Every `/sessions` card/row links into the detail page; the task page + office expose an "Open session"
       entry point; a session with no project degrades gracefully.
-- [ ] The existing embedded terminals (office, sessions list) and the approvals drawer **still work unchanged**
+- [x] The existing embedded terminals (office, sessions list) and the approvals drawer **still work unchanged**
       (reused, not forked).
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green (shared schema unit; gateway
+- [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` green (shared schema unit; gateway
       `GET /sessions/:id` + approval-log `sessionId`-filter tests; web RTL/story for the detail view, panel
       collapse persistence, and the live-vs-ended switch; **web tests run from the primary checkout, not a
       `.git` worktree**).
