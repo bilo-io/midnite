@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import type { Project, SessionDetail, Task } from '@midnite/shared';
 import { PageHeader } from '@/components/page-header';
+import { SessionTerminalRegion } from '@/components/session-terminal-region';
 import { getProject, getSession, getTask } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
 import { useLocalStorage } from '@/lib/use-local-storage';
@@ -145,18 +146,9 @@ export function SessionDetailView({
             <SessionLeftPanel session={session} task={task} project={project} />
           </Rail>
 
-          {/* Center — the terminal (Theme C: live WS vs. ended transcript). */}
+          {/* Center — the terminal: live WS terminal or ended transcript (Theme C). */}
           <div className="min-w-0 flex-1">
-            <div className="flex min-h-[24rem] items-center justify-center rounded-lg border border-dashed border-border/60 bg-card/30 p-10 text-center">
-              <div className="max-w-sm space-y-1">
-                <p className="text-sm font-medium text-foreground">
-                  {ended ? 'Read-only transcript' : 'Interactive terminal'}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  The {ended ? 'ended-session transcript' : 'live terminal'} renders here — Theme C.
-                </p>
-              </div>
-            </div>
+            <SessionTerminalRegion session={session} />
           </div>
 
           {/* Right rail — session info & stats (Theme E). */}

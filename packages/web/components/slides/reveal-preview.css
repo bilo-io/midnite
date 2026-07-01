@@ -1,0 +1,43 @@
+/* Embedded reveal.js preview: constrain the deck to a 16:9 box and bind reveal's
+ * colours to the app (or per-deck override) theme vars rather than a reveal theme. */
+.reveal-preview {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  /* Deck surface colours come from the inherited / overridden theme tokens. */
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+.reveal-preview .reveal {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+  font-size: clamp(16px, 2.4vw, 32px);
+}
+
+.reveal-preview .reveal,
+.reveal-preview .reveal .slides,
+.reveal-preview .reveal .slides section {
+  color: hsl(var(--foreground));
+}
+
+.reveal-preview .reveal h1,
+.reveal-preview .reveal h2,
+.reveal-preview .reveal h3 {
+  color: hsl(var(--foreground));
+  text-transform: none;
+}
+
+.reveal-preview .reveal a {
+  color: hsl(var(--accent));
+}
+
+/* Keep reveal's controls/progress subtle inside the small preview. */
+.reveal-preview .reveal .controls {
+  color: hsl(var(--accent));
+}
+.reveal-preview .reveal .progress {
+  color: hsl(var(--accent));
+  height: 3px;
+}
