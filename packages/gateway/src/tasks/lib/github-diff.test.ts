@@ -23,7 +23,7 @@ describe('fetchGithubPrDiff — fetch ladder', () => {
 
     expect(out).toBe('diff --git a/x b/x\n');
     expect(execFileImpl).not.toHaveBeenCalled();
-    const [, init] = fetchImpl.mock.calls[0];
+    const [, init] = fetchImpl.mock.calls[0]!;
     expect((init.headers as Record<string, string>).authorization).toBe('Bearer ghp_test');
   });
 
