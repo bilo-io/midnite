@@ -1,0 +1,77 @@
+/*
+ * Re-skin react-diff-view to the midnite design tokens. The library's stylesheet
+ * is entirely `--diff-*` custom-property driven, so we only remap those variables
+ * (scoped to `.pr-diff-viewer`) rather than fighting its rules — theme-aware for
+ * both light and dark via the app's HSL token vars.
+ */
+.pr-diff-viewer {
+  --diff-background-color: transparent;
+  --diff-text-color: hsl(var(--foreground));
+  --diff-font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  --diff-selection-background-color: hsl(var(--primary) / 0.25);
+
+  --diff-gutter-insert-background-color: hsl(var(--success) / 0.16);
+  --diff-gutter-delete-background-color: hsl(var(--destructive) / 0.18);
+  --diff-code-insert-background-color: hsl(var(--success) / 0.09);
+  --diff-code-delete-background-color: hsl(var(--destructive) / 0.1);
+  --diff-code-insert-edit-background-color: hsl(var(--success) / 0.3);
+  --diff-code-delete-edit-background-color: hsl(var(--destructive) / 0.32);
+  --diff-gutter-selected-background-color: hsl(var(--primary) / 0.14);
+  --diff-code-selected-background-color: hsl(var(--primary) / 0.1);
+  --diff-omit-gutter-line-color: hsl(var(--destructive));
+}
+
+.pr-diff-viewer .diff {
+  font-size: 12px;
+}
+
+.pr-diff-viewer .diff-gutter {
+  color: hsl(var(--muted-foreground));
+}
+
+/* Prism token colours — a compact palette tuned to read on light and dark. */
+.pr-diff-viewer .token.comment,
+.pr-diff-viewer .token.prolog,
+.pr-diff-viewer .token.doctype,
+.pr-diff-viewer .token.cdata {
+  color: hsl(var(--muted-foreground));
+  font-style: italic;
+}
+.pr-diff-viewer .token.punctuation {
+  color: hsl(var(--foreground) / 0.7);
+}
+.pr-diff-viewer .token.keyword,
+.pr-diff-viewer .token.rule,
+.pr-diff-viewer .token.important,
+.pr-diff-viewer .token.atrule {
+  color: hsl(280 60% 62%);
+}
+.pr-diff-viewer .token.tag,
+.pr-diff-viewer .token.deleted,
+.pr-diff-viewer .token.selector,
+.pr-diff-viewer .token.symbol {
+  color: hsl(350 70% 60%);
+}
+.pr-diff-viewer .token.string,
+.pr-diff-viewer .token.char,
+.pr-diff-viewer .token.attr-value,
+.pr-diff-viewer .token.inserted {
+  color: hsl(140 45% 48%);
+}
+.pr-diff-viewer .token.function,
+.pr-diff-viewer .token.class-name {
+  color: hsl(210 70% 58%);
+}
+.pr-diff-viewer .token.number,
+.pr-diff-viewer .token.boolean,
+.pr-diff-viewer .token.constant {
+  color: hsl(30 80% 55%);
+}
+.pr-diff-viewer .token.property,
+.pr-diff-viewer .token.attr-name,
+.pr-diff-viewer .token.variable {
+  color: hsl(190 60% 50%);
+}
+.pr-diff-viewer .token.operator {
+  color: hsl(var(--foreground) / 0.8);
+}

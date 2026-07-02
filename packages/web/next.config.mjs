@@ -14,7 +14,14 @@ const nextConfig = {
   images: { unoptimized: true },
   // Emit dir/index.html so paths resolve when served as static files.
   trailingSlash: true,
-  transpilePackages: ['@midnite/shared', '@midnite/ui', 'yet-another-react-lightbox', 'reveal.js'],
+  transpilePackages: [
+    '@midnite/shared',
+    '@midnite/ui',
+    'yet-another-react-lightbox',
+    'reveal.js',
+    'react-diff-view',
+    'refractor',
+  ],
   reactStrictMode: true,
   experimental: {
     // Extra tree-shaking pass for barrel-file packages.
