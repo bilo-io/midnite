@@ -228,7 +228,7 @@ export function RecentProjects({ projects, tasks }: { projects: Project[]; tasks
 
   return (
     <section className="space-y-3">
-      <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Recent projects</h2>
+      <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Project</h2>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {recent.map((project) => {
           const counts = statusCounts(countsByProject.get(project.id) ?? new Map());
