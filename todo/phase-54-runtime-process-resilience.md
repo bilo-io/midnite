@@ -63,33 +63,33 @@
 
 ---
 
-## Theme A — Boot preflight + config validation + fail-fast — **M**
+## Theme A — Boot preflight + config validation + fail-fast — **M** — ✅ DONE (PR #275, 2026-07-02)
 
 Boot either healthy or loudly broken — never silently degraded.
 
-- [ ] **shared:** a `PreflightCheck` / `PreflightReport` schema (`name`, `status` `ok`|`warn`|`fail`, `detail`,
-      `remedy`) and a `strict` config flag (`gateway.strictBoot`, default false).
-- [ ] **gateway:** a `PreflightService` run in bootstrap that validates + reports: **config** parsed (a parse
-      failure is a **loud warn**, or `fail` under `strict` — no more silent defaults), **DB** dir writable +
-      migrations applied, **`MIDNITE_SECRET_KEY`** present (when secrets/non-loopback need it), the **agent CLI**
-      (`claude`) + **`gh`** on PATH, **node-pty/tmux** availability for the configured `terminal.mode`, configured
-      **repo paths** resolvable.
-- [ ] **Severity model:** hard failures (DB unwritable, agent CLI missing when `poolEnabled`) **fail fast** with an
-      actionable message; soft gaps (`gh` missing, key unset on loopback) **warn**. `strictBoot` escalates warns to
-      failures. The report feeds the readiness endpoint (Theme B) + `midnite doctor` (Theme F).
+- [x] **shared:** `PreflightCheck` / `PreflightReport` (+ `Readiness`/`Liveness`) schemas (`name`, `status`
+      `ok`|`warn`|`fail`, `detail`, `remedy`) + `worstStatus()` + a `gateway.strictBoot` flag (default false).
+- [x] **gateway:** a `PreflightService` run in bootstrap (Nest service, explicit call after the module graph is up,
+      before `listen()`) validates + reports: **config** parsed (parse failure → **warn**, `fail` under strict),
+      **DB** writable + migrations applied, **`MIDNITE_SECRET_KEY`** presence, the **agent CLI** (`claude`) + **`gh`**
+      on PATH, **node-pty/tmux** availability for `terminal.mode`, configured **repo paths** resolvable. All checks
+      live in one shared `HealthService` (reused by Theme B, and later the C watchdog).
+- [x] **Severity model:** hard failures (DB unwritable, agent CLI / spawner missing when `poolEnabled`) → **log the
+      report + `process.exit(1)`**; soft gaps (`gh` missing, key unset, missing repo paths) **warn**. `strictBoot`
+      escalates warns to failures. Fail-open: a probe that throws degrades to a result, never crashes the check.
 
 ---
 
-## Theme B — Readiness / liveness health endpoints — **S-M**
+## Theme B — Readiness / liveness health endpoints — **S-M** — ✅ DONE (PR #275, 2026-07-02)
 
 Tell orchestrators + monitors the truth about "ready".
 
-- [ ] **gateway:** split health into **liveness** (`GET /health/live` — process is up, cheap) and **readiness**
-      (`GET /health/ready` — DB writable + migrations applied + pool initialized + scheduler running-or-intended +
-      spawner available), returning **structured per-check JSON** (reuse the `PreflightCheck` shape). Keep
-      `GET /health` as a **liveness alias** (backwards-compatible), auth/rate-limit exempt as today.
-- [ ] Readiness reflects **live degradation** (DB went away, spawner backend unavailable), not just boot state —
-      it reads the same checks the watchdog + scheduler gate use.
+- [x] **gateway:** split health into **liveness** (`GET /health/live` — process up, cheap, no DB) and **readiness**
+      (`GET /health/ready` — DB reachable + pool initialized + scheduler running-or-intended + spawner available),
+      returning **structured per-check JSON** (the `PreflightCheck` shape) with **200 ready / 503 not-ready**. Kept
+      `GET /health` as a **liveness alias** (backwards-compatible); all `/health/*` auth + rate-limit exempt.
+- [x] Readiness **re-evaluates the cheap checks live each request** (DB ping, spawner, pool, scheduler), so it
+      reflects post-boot degradation — it reads the same `HealthService` checks the watchdog + scheduler gate will use.
 
 ---
 
