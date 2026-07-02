@@ -129,16 +129,19 @@ Draft locally; see the AI's take where it matters.
 
 ---
 
-## Theme E — Embed in task detail + standalone route — **M**
+## Theme E — Embed in task detail + standalone route — **M** — ✅ DONE (PR #278, 2026-07-02)
 
 Make review one click from the task.
 
-- [ ] **web:** expand the existing "GitHub PR" section in [`task-detail.tsx`](../packages/web/components/task-detail.tsx)
-      into a **Review** panel/tab that mounts the diff viewer + actions when the task has a `prUrl`.
-- [ ] A **deep-linkable** route — `/tasks/view?id=…&tab=review` (static-export query-string, no `[id]` segment) —
-      so a review is bookmarkable and linkable from the board, the session detail (Phase 51), and notifications.
-- [ ] Loading/empty/error states: no PR yet, diff still fetching, fetch failed (fail-open banner with a retry +
-      an "Open on GitHub" escape hatch).
+- [x] **web:** the full task page ([`task-detail.tsx`](../packages/web/components/task-detail.tsx), `variant='page'`)
+      gains a **Details | Review** tab strip when the task has a `prUrl`; the Review tab mounts the diff viewer inline
+      via a new `PrReviewPanel` (extracted from `PrDiffModal` — the board modal and the tab share it). The board's
+      task modal keeps its full-screen "View diff" modal + gains a "Review page" deep-link (Stage-2.5 decision).
+- [x] A **deep-linkable** `/tasks/view?id=…&tab=review` (static-export query-string) — **bidirectional**: the param
+      selects the tab on load and switching tabs `router.replace`s it (bookmarkable/shareable); the page widens to
+      `max-w-5xl` for the diff. Reachable from the board via the task modal's Review-page link.
+- [x] Loading/empty/error states in `PrReviewPanel`: diff fetching (spinner), fetch failed (**fail-open** banner +
+      retry + "Open on GitHub"). A PR-less task simply shows no Review tab (details only).
 
 ---
 
