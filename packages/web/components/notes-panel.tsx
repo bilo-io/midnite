@@ -111,14 +111,18 @@ export function NotesPanel({ notes: initial }: { notes: Note[] }) {
 
             {/* Text / edit input */}
             {editingId === note.id ? (
-              <input
+              <textarea
                 autoFocus
-                className="min-w-0 flex-1 bg-transparent text-sm outline-none"
+                rows={2}
+                className="min-w-0 flex-1 resize-none bg-transparent text-sm leading-snug outline-none"
                 value={editingText}
                 onChange={(e) => setEditingText(e.target.value)}
                 onBlur={() => commitEdit(note.id)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') commitEdit(note.id);
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    commitEdit(note.id);
+                  }
                   if (e.key === 'Escape') setEditingId(null);
                 }}
               />
