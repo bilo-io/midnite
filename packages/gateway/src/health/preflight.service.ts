@@ -17,7 +17,7 @@ export class PreflightService {
 
   constructor(
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
-    private readonly health: HealthService,
+    @Inject(HealthService) private readonly health: HealthService,
   ) {}
 
   /** Build the boot report + apply the strict-boot verdict (no logging/exit). */

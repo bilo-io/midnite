@@ -34,9 +34,9 @@ export class HealthService {
 
   constructor(
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
-    private readonly dbFactory: DbFactory,
-    @Optional() private readonly pool?: AgentPoolService,
-    @Optional() private readonly scheduler?: AgentPoolScheduler,
+    @Inject(DbFactory) private readonly dbFactory: DbFactory,
+    @Optional() @Inject(AgentPoolService) private readonly pool?: AgentPoolService,
+    @Optional() @Inject(AgentPoolScheduler) private readonly scheduler?: AgentPoolScheduler,
   ) {}
 
   /** Checks run once at boot (preflight): config, DB, secrets, CLIs, spawner, repos. */
