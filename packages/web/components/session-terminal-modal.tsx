@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { SessionStatusDot } from '@/components/session-card';
 import { SessionTerminal } from '@/components/session-terminal';
 import { DeleteConfirmButton } from '@/components/delete-confirm-button';
+import { taskModalHref } from '@/lib/task-route';
 
 type Props = {
   session: SessionSummary;
@@ -31,11 +32,11 @@ export function SessionTerminalModal({
 }: Props) {
   const router = useRouter();
 
-  // session.id === task.id; deep-link into the tasks board, which auto-opens it.
+  // Deep-link into the tasks board, which opens the task as a modal (Phase 42 B).
   const goToTask = () => {
     if (!session.linkedTaskId) return;
     onClose();
-    router.push(`/tasks?open=${encodeURIComponent(session.linkedTaskId)}`);
+    router.push(taskModalHref(session.linkedTaskId));
   };
 
   // Open the full session cockpit (Phase 51 F). Shown even under
