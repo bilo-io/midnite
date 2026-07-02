@@ -1,12 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { AlertTriangle, ExternalLink, Loader2, X } from 'lucide-react';
-import type { PrDiff } from '@midnite/shared';
-import { getPrDiff } from '@/lib/api';
+import { ExternalLink, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { PrDiffViewer } from './pr-diff-viewer';
+import { PrReviewPanel } from './pr-review-panel';
 
 type Props = {
   taskId: string;
@@ -14,43 +12,12 @@ type Props = {
   onClose: () => void;
 };
 
-type State =
-  | { phase: 'loading' }
-  | { phase: 'error'; message: string }
-  | { phase: 'ready'; diff: PrDiff };
-
-function errMsg(e: unknown): string {
-  return e instanceof Error ? e.message : 'Failed to load the diff';
-}
-
 /**
- * Full-screen modal that fetches a task's PR diff and renders the review viewer.
- * Fail-open like the PR poller: a fetch/auth failure shows a banner with a retry
- * + an "Open on GitHub" escape hatch, never a broken view.
+ * Full-screen modal wrapper around {@link PrReviewPanel} for the board's quick
+ * "View diff" peek (the task-detail Review tab embeds the panel inline instead).
+ * Fail-open states live in the panel.
  */
 export function PrDiffModal({ taskId, prUrl, onClose }: Props) {
-  const [state, setState] = useState<State>({ phase: 'loading' });
-
-  const load = useCallback(
-    (signal?: AbortSignal) => {
-      setState({ phase: 'loading' });
-      getPrDiff(taskId, signal)
-        .then((diff) => {
-          if (!signal?.aborted) setState({ phase: 'ready', diff });
-        })
-        .catch((e: unknown) => {
-          if (!signal?.aborted) setState({ phase: 'error', message: errMsg(e) });
-        });
-    },
-    [taskId],
-  );
-
-  useEffect(() => {
-    const ctrl = new AbortController();
-    load(ctrl.signal);
-    return () => ctrl.abort();
-  }, [load]);
-
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -85,33 +52,9 @@ export function PrDiffModal({ taskId, prUrl, onClose }: Props) {
             </Button>
           </header>
 
-          {state.phase === 'loading' ? (
-            <div className="flex flex-1 items-center justify-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" /> Loading diff…
-            </div>
-          ) : state.phase === 'error' ? (
-            <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-              <AlertTriangle className="h-6 w-6 text-amber-500" />
-              <p className="text-sm text-muted-foreground">Couldn&apos;t load the diff: {state.message}</p>
-              <div className="flex items-center gap-2">
-                <Button type="button" variant="secondary" size="sm" onClick={() => load()}>
-                  Retry
-                </Button>
-                <a
-                  href={prUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs hover:bg-muted"
-                >
-                  Open on GitHub <ExternalLink className="h-3 w-3" />
-                </a>
-              </div>
-            </div>
-          ) : (
-            <div className="min-h-0 flex-1">
-              <PrDiffViewer diff={state.diff} />
-            </div>
-          )}
+          <div className="min-h-0 flex-1">
+            <PrReviewPanel taskId={taskId} prUrl={prUrl} />
+          </div>
         </div>
       </div>
     </>,
