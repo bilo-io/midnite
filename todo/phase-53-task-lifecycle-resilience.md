@@ -64,19 +64,20 @@
 
 ---
 
-## Theme A — Failure taxonomy + failure records — **M**
+## Theme A — Failure taxonomy + failure records — **M** — ✅ DONE (PR #271, 2026-07-02)
 
 Name every failure and remember it. Unblocks backoff, watchdogs, escalation, and the UI.
 
-- [ ] **shared:** a `FailureClassSchema` enum — `crash` | `timeout` | `no-pr` | `gate-failed` | `tool-denied` |
-      `inactivity` | `retries-exhausted` | `unknown` — with a `retryable` mapping; a `TaskFailureSchema`
-      (`taskId`, `class`, `detail`, `exitCode?`, `lastOutput?` snippet, `retryIndex`, `at`); a typed `WaitReason`.
-- [ ] **gateway:** a `task_failures` table (forward-only migration) + a `TaskFailuresRepository`; record a typed
-      failure at **every** failure site — `onExit` (`crash`), timeout `cancel` (`timeout`), gate-fail (`gate-failed`),
-      a denied blast-radius tool (`tool-denied`, ties to Phase 50). Emit a companion `task_events` `agent.failed`
-      `{ class, detail }` so the thread stays readable.
-- [ ] Classification is **one place** — a small `classifyFailure(...)` helper the runner calls — so a new failure
-      mode adds one enum arm, not scattered `if`s.
+- [x] **shared:** a `FailureClassSchema` enum — `crash` | `timeout` | `no-pr` | `gate-failed` | `tool-denied` |
+      `inactivity` | `retries-exhausted` | `unknown` — with a `FAILURE_RETRYABLE` mapping (crash+timeout+inactivity);
+      a `TaskFailureSchema` (`taskId`, `class`, `detail`, `exitCode?`, `lastOutput?` snippet, `retryIndex`, `at`); a
+      typed `WaitReason`.
+- [x] **gateway:** a `task_failures` table (migration `0063`) + a `TaskFailuresRepository`; record a typed failure
+      at the existing sites — `onExit` (`crash`), run-timeout (`timeout`), gate-fail (`gate-failed`) — with a
+      best-effort `lastOutput` tail. Emit a companion `task_events` `agent.failed` `{ class, detail }`. (`tool-denied`
+      is a defined enum arm, wired when Phase 50's blast-radius lands.)
+- [x] Classification is **one place** — a pure `classifyFailure(site)` helper the runner calls — so a new failure
+      mode adds one `case`, not scattered `if`s. Recording is **purely additive** (no task-state change).
 
 ---
 

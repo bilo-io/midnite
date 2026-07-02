@@ -13,6 +13,24 @@ The gateway's **boot half**: boot healthy-or-loudly-broken (no more silent-degra
 - [x] **`PreflightService.run()`** — invoked from `bootstrap` after the module graph is up, before `listen()`; logs an actionable report and `process.exit(1)` on a hard fail (or, under `strictBoot`, any warning). Soft gaps just warn and boot continues.
 - [x] **`/health/live`** (cheap liveness) + **`/health/ready`** (live re-eval → 200/503 with failing checks); `/health` kept as a liveness alias; all `/health/*` auth + rate-limit exempt (extended `isAuthExemptPath`).
 - [x] Tests: shared schema units; gateway `health.service`/`preflight.service`/`health.controller`/`probes` specs + crypto secret-key + auth-policy exemption. Boot regression via the e2e gateway (preflight logs its report + boot proceeds). shared 505 green; gateway 1282 green (one pre-existing flaky tmux spec). Theme F (web status view + `midnite doctor`) deferred.
+## 2026-07-02 — feat: kill switch & global pause — Phase 50 Theme A (PR #274)
+
+The pause half of the safety story, turned from recorded into **enforced**: an emergency stop that actually halts scheduling and survives a restart.
+
+- [x] shared `guardrails.ts`: `GuardrailSettings` (global + per-repo/team pause id-sets + actor/time), `PauseScope`, `PauseRequest`, `EmergencyStopRequest`, a `guardrails.updated` WS event + `isTaskPaused` helper; `guardrail` audit entity + verbs.
+- [x] gateway: pause state DB-backed on the `approval_settings` singleton (migration `0064`, **survives restart**). `ApprovalsService` gains `getGuardrails/setPause/emergencyStop/isTaskPaused/isGloballyPaused` (emits `guardrails.updated`, audits); admin-gated `GuardrailsController` (`GET /guardrails`, `POST /guardrails/pause|emergency-stop`).
+- [x] enforcement: `AgentPoolScheduler.tick()` short-circuits on a global pause + filters the ready-set for scoped pauses; **emergency-stop aborts in-flight** agents event-driven (pool subscribes to `guardrails.updated {emergencyStop}` → `runner.stop → todo`, requeued not abandoned; keeps approvals free of a pool dependency).
+- [x] web: board **paused banner** (Resume) + a compact **pause / emergency-stop** toolbar control, tracking the WS event live (`useGuardrails`).
+- [x] Two-tier pause (soft) vs emergency-stop (aborts) per Stage-2.5; scope = global+repo+team; full Safety panel = Theme E, CLI = Theme F. Tests: gateway service+scheduler (13), shared (7)+WS fixture, web RTL (6)+story. `:typecheck` green; gateway 1274/1275 (1 pre-existing tmux-contract flake), web 732 green.
+
+## 2026-07-02 — feat: failure taxonomy + task_failures records — Phase 53 Theme A (PR #271)
+
+The foundation for lifecycle resilience: name every failure and remember it, so backoff (B), watchdogs (C), escalation (D), and the health UI (E) can reason about *why* a task failed. Purely additive — recording changes no task state.
+
+- [x] **shared**: `FailureClass` enum + `FAILURE_RETRYABLE` map (crash+timeout+inactivity retry; rest escalate) + `TaskFailure` record shape + typed `WaitReason`
+- [x] **gateway**: `task_failures` table (migration 0063) + `TaskFailuresRepository`; pure `classifyFailure(site)` helper; `TasksService.recordFailure` writes a typed row + `agent.failed` event
+- [x] **gateway**: runner records at each existing site — crash (onExit), timeout (run-timeout), gate-failed — with a best-effort `lastOutput` tail from the session ring buffer
+- [x] Tests: shared taxonomy units, `classifyFailure` pure test, `task_failures` repo round-trip, runner crash+gate-failed recording, `recordFailure` additive-contract (records without changing status)
 
 ---
 
@@ -24,6 +42,7 @@ The review centerpiece: a client-only, syntax-highlighted diff viewer reachable 
 - [x] **react-diff-view@3 ↔ refractor@4 shim**: tokenize expects v3's array-returning `highlight`; v4 wraps tokens in a hast `Root`, so we adapt via `.children`. Added `react-diff-view`/`refractor` to `transpilePackages`; diff CSS re-skinned to the design tokens (theme-aware, both light/dark).
 - [x] "View diff" button wired into `task-detail.tsx` PR section (deep-link `?tab=review` route + inline embed deferred to Theme E; file rail hidden `< md` for now).
 - [x] Tests: `diff-model` unit (line-kind mapping, diffType, tree nesting/sort, DOM-safe key) + `pr-diff-viewer` RTL (unified default + split persist, expand/collapse-all lazy mount, truncation banner, tree/list toggle) + a 3-state Storybook story (browser test). `:typecheck`/`:lint`/`:test` green.
+
 
 ---
 

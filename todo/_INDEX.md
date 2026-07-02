@@ -29,10 +29,10 @@
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
 | [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | 🔄 WIP | 5/26 | `██░░░░░░░░` | 19% | — | C D E F |
-| [53 · Task lifecycle resilience](phase-53-task-lifecycle-resilience.md) | 🔄 WIP | 0/22 | `░░░░░░░░░░` | 0% | A | B C D E |
+| [53 · Task lifecycle resilience](phase-53-task-lifecycle-resilience.md) | 🔄 WIP | 3/22 | `█░░░░░░░░░` | 14% | — | B C D E |
 | [52 · In-app diff & PR review](phase-52-in-app-diff-review.md) | 🔄 WIP | 7/25 | `███░░░░░░░` | 28% | — | C D E |
 | [51 · Session detail page](phase-51-session-detail-page.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
-| [50 · Autonomy guardrails](phase-50-autonomy-guardrails.md) | ◻ TODO | 0/29 | `░░░░░░░░░░` | 0% | — | A B C D E F |
+| [50 · Autonomy guardrails](phase-50-autonomy-guardrails.md) | 🔄 WIP | 4/29 | `█░░░░░░░░░` | 14% | — | B C D E F |
 | [49 · Data portability](phase-49-data-portability.md) | ◻ TODO | 0/27 | `░░░░░░░░░░` | 0% | — | A B C D E F |
 | [48 · Slides](phase-48-slides.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
@@ -117,7 +117,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 
 ### [Phase 53 — Task lifecycle resilience](phase-53-task-lifecycle-resilience.md)
 *(Additive layer over the existing lifecycle — no state-machine refactor; escalation reuses `waiting` + a typed reason. Complements Phase 50.)*
-- 🔄 **A** — Failure taxonomy + `task_failures` records (`classifyFailure`)
+- ✅ **A** — Failure taxonomy + `task_failures` records (`classifyFailure`)
 - ◻ **B** — Retry backoff (exponential + jitter) + class-aware retry
 - ◻ **C** — Stuck-state watchdogs (wip-inactivity, aged-todo, waiting-too-long)
 - ◻ **D** — Escalate-to-human (needs-attention via `waiting` + `waitReason`) + nudges
@@ -140,7 +140,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **F** — Sessions list upgrade + entry points
 
 ### [Phase 50 — Autonomy guardrails & blast radius](phase-50-autonomy-guardrails.md)
-- ◻ **A** — Kill switch & global pause (scheduling gate)
+- ✅ **A** — Kill switch & global pause (scheduling gate)
 - ◻ **B** — Spend & rate caps that block (scheduling gate)
 - ◻ **C** — Destructive-action limits (act-path gate)
 - ◻ **D** — Audit completeness + RBAC gap closure

@@ -6,6 +6,7 @@ import type { PlannerService } from '../agent/planner.service';
 import type { ReposService } from '../repos/repos.service';
 import { createTestDb, type TestDbHandle } from '../test/db';
 import { TasksRepository } from './tasks.repository';
+import { TaskFailuresRepository } from './task-failures.repository';
 import { TasksService } from './tasks.service';
 import { TaskEventBus } from './task-event-bus';
 
@@ -33,7 +34,7 @@ describe('TasksService.createTasksFromBreakdown (Phase 28 Theme B)', () => {
     handle = createTestDb();
     repo = new TasksRepository(handle.db);
     bus = new TaskEventBus();
-    service = new TasksService(repo, new StubClassifier(), stubPlanner, bus, stubRepos, stubConfig);
+    service = new TasksService(repo, new TaskFailuresRepository(handle.db), new StubClassifier(), stubPlanner, bus, stubRepos, stubConfig);
   });
 
   afterEach(() => handle.close());

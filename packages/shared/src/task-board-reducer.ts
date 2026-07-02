@@ -32,7 +32,9 @@ export function applyTaskEvent(tasks: Task[], event: TaskBoardEvent): Task[] | n
 
     case 'agent.activity':
     case 'agent.attention':
-      // Ephemeral signal — no board state change, no refetch needed.
+    case 'guardrails.updated':
+      // Ephemeral signal — no task-list change (the paused banner reads guardrail
+      // state separately), no refetch needed.
       return tasks;
   }
 }

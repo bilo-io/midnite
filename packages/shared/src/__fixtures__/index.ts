@@ -219,6 +219,13 @@ export const taskBoardEventFixtures: TaskBoardEvent[] = [
   { type: 'tasks.bulkCreated', at: TS, taskIds: [taskFixture.id] },
   { type: 'agent.activity', at: TS, sessionId: 'sess-1', phase: 'running', tool: 'Bash', label: 'Run: npm test' },
   { type: 'agent.attention', at: TS, sessionId: 'sess-1', reason: 'approval', summary: 'Bash: rm -rf /tmp' },
+  {
+    type: 'guardrails.updated',
+    at: TS,
+    guardrails: { pausedGlobal: true, pausedRepos: [], pausedTeams: [], pausedBy: 'admin', pausedAt: TS },
+    emergencyStop: true,
+    scope: { kind: 'global' },
+  },
 ];
 
 export const workflowEventFixtures: WorkflowEvent[] = [

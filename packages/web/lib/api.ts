@@ -129,6 +129,7 @@ import {
   SessionTranscriptSchema,
   SubAgentResponseSchema,
   PrDiffSchema,
+  GuardrailsResponseSchema,
   TaskCountsSchema,
   TaskSchema,
   TerminalTokenResponseSchema,
@@ -163,6 +164,8 @@ import {
   type LlmProvider,
   type Memory,
   type PrDiff,
+  type GuardrailSettings,
+  type PauseScope,
   type PrimaryAgent,
   type ProvidersResponse,
   type ProviderResponse,
@@ -638,6 +641,43 @@ export async function refreshPrStatus(id: string): Promise<Task> {
  */
 export async function getPrDiff(id: string, signal?: AbortSignal): Promise<PrDiff> {
   return fetchJson(`/tasks/${encodeURIComponent(id)}/pr/diff`, { signal }, PrDiffSchema);
+}
+
+// --- Guardrails: kill switch & pause (Phase 50 A) ---
+
+/** Current guardrail (pause) state. Open to any authenticated client (the board
+ *  shows a paused banner to everyone); changing it is admin-only. */
+export async function getGuardrails(signal?: AbortSignal): Promise<GuardrailSettings> {
+  const res = await fetchJson('/guardrails', { signal }, GuardrailsResponseSchema);
+  return res.guardrails;
+}
+
+/** Pause or resume a scope (soft — running agents finish). Admin-only. */
+export async function pauseGuardrails(scope: PauseScope, paused: boolean): Promise<GuardrailSettings> {
+  const res = await fetchJson(
+    '/guardrails/pause',
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ scope, paused }),
+    },
+    GuardrailsResponseSchema,
+  );
+  return res.guardrails;
+}
+
+/** Emergency stop: pause a scope AND abort its in-flight agents (requeued). Admin-only. */
+export async function emergencyStopGuardrails(scope: PauseScope): Promise<GuardrailSettings> {
+  const res = await fetchJson(
+    '/guardrails/emergency-stop',
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ scope }),
+    },
+    GuardrailsResponseSchema,
+  );
+  return res.guardrails;
 }
 
 /**

@@ -6,9 +6,11 @@ import {
   type OnModuleDestroy,
   type OnModuleInit,
 } from '@nestjs/common';
-import type { MidniteConfig } from '@midnite/shared';
+import type { MidniteConfig, PauseScope } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
 import { MetricsService } from '../metrics/metrics.service';
+import { ApprovalsService } from '../approvals/approvals.service';
+import { TaskEventBus } from '../tasks/task-event-bus';
 import { TasksService } from '../tasks/tasks.service';
 import { AgentPoolService } from './agent-pool.service';
 import { AgentRunnerService } from './agent-runner.service';
@@ -31,9 +33,20 @@ export class AgentPoolScheduler implements OnModuleInit, OnModuleDestroy {
     @Inject(AgentPoolService) private readonly pool: AgentPoolService,
     @Inject(AgentRunnerService) private readonly runner: AgentRunnerService,
     @Optional() @Inject(MetricsService) private readonly metrics?: MetricsService,
+    @Optional() @Inject(ApprovalsService) private readonly approvals?: ApprovalsService,
+    @Optional() @Inject(TaskEventBus) private readonly bus?: TaskEventBus,
   ) {}
 
   onModuleInit(): void {
+    // React to an emergency stop regardless of poolEnabled (a disabled pool has
+    // nothing to abort, so it's a harmless no-op then). The pool owns the abort so
+    // ApprovalsService (which emits the event) needn't depend on the pool.
+    this.bus?.subscribe((event) => {
+      if (event.type === 'guardrails.updated' && event.emergencyStop) {
+        this.abortInFlight(event.scope);
+      }
+    });
+
     if (!this.config.agent.poolEnabled) {
       this.logger.log('agent pool disabled — scheduler not started');
       return;
@@ -42,6 +55,33 @@ export class AgentPoolScheduler implements OnModuleInit, OnModuleDestroy {
     this.timer = setInterval(() => void this.tick(), tickMs);
     this.timer.unref?.();
     this.logger.log(`agent pool scheduler started (tick=${tickMs}ms, pool=${this.pool.capacity()})`);
+  }
+
+  /** Abort every in-flight agent whose task falls in the emergency-stopped scope,
+   *  returning each to `todo` (not abandoned) so it re-runs once resumed. */
+  private abortInFlight(scope: PauseScope | undefined): void {
+    const target: PauseScope = scope ?? { kind: 'global' };
+    let aborted = 0;
+    for (const taskId of this.pool.busyTaskIds()) {
+      let inScope = target.kind === 'global';
+      if (!inScope && target.kind !== 'global') {
+        const task = this.safeGetTask(taskId);
+        inScope =
+          target.kind === 'repo' ? task?.repo === target.id : task?.teamId === target.id;
+      }
+      if (!inScope) continue;
+      this.runner.stop(taskId, 'todo');
+      aborted++;
+    }
+    if (aborted > 0) this.logger.warn(`emergency stop (${target.kind}): aborted ${aborted} in-flight agent(s)`);
+  }
+
+  private safeGetTask(taskId: string): { repo?: string | null; teamId?: string | null } | undefined {
+    try {
+      return this.tasks.getTask(taskId);
+    } catch {
+      return undefined;
+    }
   }
 
   onModuleDestroy(): void {
@@ -66,6 +106,9 @@ export class AgentPoolScheduler implements OnModuleInit, OnModuleDestroy {
     this.running = true;
     const tickStart = Date.now();
     try {
+      // Phase 50 A: a global pause halts all scheduling; scoped pauses filter the
+      // ready-set below. Fail-safe — paused ⇒ spawn nothing.
+      if (this.approvals?.isGloballyPaused()) return;
       // Record queue depth before assigning — "how many tasks were waiting".
       this.metrics?.recordQueueDepth(this.tasks.listReadyTodoTasks().length);
       while (this.pool.freeSlotCount() > 0) {
@@ -75,6 +118,7 @@ export class AgentPoolScheduler implements OnModuleInit, OnModuleDestroy {
           .find(
             (t) =>
               !this.pool.slotForTask(t.id) &&
+              !this.approvals?.isTaskPaused(t) &&
               this.repoHasCapacity(t.repo, running) &&
               this.userHasCapacity(t.createdBy ?? undefined),
           );

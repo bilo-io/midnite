@@ -1,5 +1,6 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { AgentModule } from '../agent/agent.module';
+import { ApprovalsModule } from '../approvals/approvals.module';
 import { ChecksModule } from '../checks/checks.module';
 import { ReposModule } from '../repos/repos.module';
 import { TasksModule } from '../tasks/tasks.module';
@@ -11,7 +12,14 @@ import { LifecycleHookController } from './lifecycle-hook.controller';
 import { PoolController } from './pool.controller';
 
 @Module({
-  imports: [AgentModule, ChecksModule, ReposModule, TasksModule, TerminalModule],
+  imports: [
+    AgentModule,
+    ChecksModule,
+    ReposModule,
+    TasksModule,
+    TerminalModule,
+    forwardRef(() => ApprovalsModule),
+  ],
   controllers: [PoolController, LifecycleHookController],
   providers: [AgentPoolService, AgentRunnerService, AgentPoolScheduler],
   exports: [AgentPoolService, AgentRunnerService, AgentPoolScheduler],
