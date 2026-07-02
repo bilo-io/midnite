@@ -73,6 +73,7 @@ class InMemoryRepo extends TasksRepository {
       priority: row.priority ?? 1,
       retryCount: row.retryCount ?? 0,
       fixAttempts: row.fixAttempts ?? 0,
+      nextRetryAt: row.nextRetryAt ?? null,
       prompt: row.prompt ?? null,
       repo: row.repo ?? null,
       agentId: row.agentId ?? null,
@@ -99,10 +100,23 @@ class InMemoryRepo extends TasksRepository {
     return task;
   }
 
-  override incrementRetry(id: string, updatedAt: string): TaskRow | undefined {
+  override incrementRetry(
+    id: string,
+    updatedAt: string,
+    nextRetryAt: string | null,
+  ): TaskRow | undefined {
     const task = this.tasks.find((t) => t.id === id);
     if (!task) return undefined;
     task.retryCount += 1;
+    task.nextRetryAt = nextRetryAt;
+    task.updatedAt = updatedAt;
+    return task;
+  }
+
+  override clearNextRetry(id: string, updatedAt: string): TaskRow | undefined {
+    const task = this.tasks.find((t) => t.id === id);
+    if (!task) return undefined;
+    task.nextRetryAt = null;
     task.updatedAt = updatedAt;
     return task;
   }

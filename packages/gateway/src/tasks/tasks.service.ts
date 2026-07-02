@@ -167,7 +167,10 @@ export class TasksService {
    * tasks, so a blocked high-priority task can't jump its blocker.
    */
   listReadyTodoTasks(): Task[] {
-    return this.repo.listReadyTodoTasks().map((r) => this.repo.hydrate(r));
+    // `now` gates backed-off retries (Phase 53 B): a todo task whose nextRetryAt
+    // is still in the future is skipped until its backoff window elapses.
+    const now = new Date().toISOString();
+    return this.repo.listReadyTodoTasks(now).map((r) => this.repo.hydrate(r));
   }
 
   getTask(id: string, scope?: TeamScope): Task {
@@ -242,17 +245,20 @@ export class TasksService {
     if (!this.repo.getTask(id)) throw new NotFoundException(`task ${id} not found`);
     this.repo.updateStatus(id, target, now);
     this.repo.setSession(id, null, now);
+    // A human-returned task is eligible now — drop any pending backoff (Phase 53 B).
+    this.repo.clearNextRetry(id, now);
     this.repo.insertEvent({ id: randomUUID(), taskId: id, at: now, kind: 'agent.requeued' });
     return this.emit('task.updated', this.getTask(id));
   }
 
   /** Crash retry: bump the retry counter, then → todo (clearing the session).
    *  Distinct from {@link requeue} (a transient/restart return that doesn't
-   *  count against the retry budget). */
-  retry(id: string): Task {
+   *  count against the retry budget). `nextRetryAt` (Phase 53 B) is the ISO time
+   *  before which the scheduler must not re-pick the task; null = eligible now. */
+  retry(id: string, nextRetryAt: string | null = null): Task {
     const now = new Date().toISOString();
     if (!this.repo.getTask(id)) throw new NotFoundException(`task ${id} not found`);
-    this.repo.incrementRetry(id, now);
+    this.repo.incrementRetry(id, now, nextRetryAt);
     this.repo.updateStatus(id, 'todo', now);
     this.repo.setSession(id, null, now);
     const retryCount = this.repo.getTask(id)?.retryCount ?? 0;
@@ -261,7 +267,7 @@ export class TasksService {
       taskId: id,
       at: now,
       kind: 'agent.retried',
-      data: JSON.stringify({ retryCount }),
+      data: JSON.stringify({ retryCount, nextRetryAt }),
     });
     return this.emit('task.updated', this.getTask(id));
   }

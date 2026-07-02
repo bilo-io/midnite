@@ -2,8 +2,8 @@ import { Inject, Injectable, Logger, Optional, type OnModuleInit } from '@nestjs
 import { randomUUID } from 'node:crypto';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import type { CheckResult, MidniteConfig, Task } from '@midnite/shared';
-import { resolveChecksForRepo } from '@midnite/shared';
+import type { CheckResult, FailureClass, MidniteConfig, Task } from '@midnite/shared';
+import { isRetryableFailure, resolveChecksForRepo } from '@midnite/shared';
 import { KnowledgeService } from '../agent/knowledge.service';
 import { UrlContextService } from '../agent/url-context.service';
 import { ChecksService } from '../checks/checks.service';
@@ -15,6 +15,7 @@ import { TerminalService } from '../terminal/terminal.service';
 import { AgentPoolService } from './agent-pool.service';
 import { appendRepoConventions } from './lib/build-agent-prompt';
 import { classifyFailure } from './lib/classify-failure';
+import { computeBackoffMs } from './lib/retry-backoff';
 
 /**
  * Drives a single task through an autonomous agent run: claim a slot, move the
@@ -346,9 +347,9 @@ export class AgentRunnerService implements OnModuleInit {
   }
 
   // The PTY exited. If the task is still wip/waiting the agent died without the
-  // Stop hook completing it (crash / external kill). Retry it up to maxRetries,
-  // then abandon. A task already moved to done/abandoned is left as-is. Always
-  // frees the slot.
+  // Stop hook completing it (crash / external kill). Record + classify the
+  // failure, then retry-with-backoff (retryable classes) or abandon. A task
+  // already moved to done/abandoned is left as-is. Always frees the slot.
   private onExit(taskId: string, exitCode: number): void {
     this.clearRunTimeout(taskId);
     let task: Task | undefined;
@@ -358,49 +359,87 @@ export class AgentRunnerService implements OnModuleInit {
       task = undefined;
     }
     if (task && (task.status === 'wip' || task.status === 'waiting')) {
-      const max = this.config.agent.maxRetries;
-      const retries = task.retryCount ?? 0;
-      // Phase 53 A — record the crash before the (unchanged) retry/abandon decision.
+      const classified = classifyFailure({ site: 'exit', exitCode });
       this.tasks.recordFailure(taskId, {
-        ...classifyFailure({ site: 'exit', exitCode }),
+        ...classified,
         lastOutput: this.snapshotOutput(taskId),
       });
-      if (retries >= max) {
-        this.logger.warn(
-          `agent session ${taskId} exited (code ${exitCode}) while ${task.status} — exhausted ${retries}/${max} retries, abandoning`,
-        );
-        this.endMetricRun(taskId, 'abandoned');
-        try {
-          this.tasks.updateStatus(taskId, 'abandoned');
-        } catch (err) {
-          this.logger.warn(
-            `failed to abandon ${taskId}: ${err instanceof Error ? err.message : 'unknown'}`,
-          );
-        }
-      } else {
-        this.logger.warn(
-          `agent session ${taskId} exited (code ${exitCode}) while ${task.status} — retry ${retries + 1}/${max}`,
-        );
-        this.endMetricRun(taskId, 'failed');
-        this.safeRetry(taskId);
-      }
+      this.resolveFailedRun(taskId, task, classified.class, `exited (code ${exitCode})`);
     }
     this.pool.release(taskId);
   }
 
+  /**
+   * Phase 53 B — the single place a failed run decides retry-with-backoff vs.
+   * abandon, shared by {@link onExit} (session already dead) and {@link onTimeout}
+   * (session still alive — caller tears it down after). Retryable classes
+   * (`crash`/`timeout`/`inactivity`) re-queue with an exponential-backoff
+   * `nextRetryAt` until the budget is exhausted; non-retryable classes abandon
+   * immediately (Theme D will later escalate these to a needs-attention `waiting`
+   * instead). Sets the terminal/retry status **before** any session kill, so an
+   * onExit fired by that kill sees a non-`wip`/`waiting` task and no-ops.
+   */
+  private resolveFailedRun(taskId: string, task: Task, cls: FailureClass, what: string): void {
+    const max = this.config.agent.maxRetries;
+    const retries = task.retryCount ?? 0;
+    if (isRetryableFailure(cls) && retries < max) {
+      const nextRetryAt = this.computeNextRetryAt(retries);
+      this.logger.warn(
+        `agent session ${taskId} ${what} while ${task.status} — retry ${retries + 1}/${max}` +
+          (nextRetryAt ? ` after backoff (${nextRetryAt})` : ''),
+      );
+      this.endMetricRun(taskId, 'failed');
+      this.safeRetry(taskId, nextRetryAt);
+      return;
+    }
+    const why = isRetryableFailure(cls)
+      ? `exhausted ${retries}/${max} retries`
+      : `non-retryable (${cls})`;
+    this.logger.warn(`agent session ${taskId} ${what} while ${task.status} — ${why}, abandoning`);
+    this.endMetricRun(taskId, 'abandoned');
+    this.safeAbandon(taskId);
+  }
+
+  /** Exponential-backoff `nextRetryAt` for the given (pre-increment) retry index,
+   *  or null when backoff is disabled (`retryBackoffBaseMs = 0`) → eligible now. */
+  private computeNextRetryAt(retryIndex: number): string | null {
+    const ms = computeBackoffMs(retryIndex, this.config.agent);
+    return ms > 0 ? new Date(Date.now() + ms).toISOString() : null;
+  }
+
   private armTimeout(taskId: string): void {
-    const ms = this.config.agent.runTimeoutMs;
-    const timer = setTimeout(() => {
-      this.logger.warn(`agent run ${taskId} exceeded ${ms}ms — cancelling`);
-      // Phase 53 A — record the timeout before the (unchanged) cancel→abandon.
-      this.tasks.recordFailure(taskId, {
-        ...classifyFailure({ site: 'timeout', timeoutMs: ms }),
-        lastOutput: this.snapshotOutput(taskId),
-      });
-      this.cancel(taskId);
-    }, ms);
+    const timer = setTimeout(() => this.onTimeout(taskId), this.config.agent.runTimeoutMs);
     timer.unref?.();
     this.timers.set(taskId, timer);
+  }
+
+  /**
+   * The per-run timer fired. Record the `timeout` failure, then — because timeout
+   * is a retryable class (Phase 53 B) — retry-with-backoff or abandon via the
+   * shared decision path, and finally tear down the still-live session (its onExit
+   * no-ops since the status is already set). Replaces the old straight-to-abandon
+   * `cancel()`; explicit user cancel still uses {@link cancel}.
+   */
+  private onTimeout(taskId: string): void {
+    const ms = this.config.agent.runTimeoutMs;
+    this.logger.warn(`agent run ${taskId} exceeded ${ms}ms`);
+    this.clearRunTimeout(taskId);
+    let task: Task | undefined;
+    try {
+      task = this.tasks.getTask(taskId);
+    } catch {
+      task = undefined;
+    }
+    if (task && (task.status === 'wip' || task.status === 'waiting')) {
+      const classified = classifyFailure({ site: 'timeout', timeoutMs: ms });
+      this.tasks.recordFailure(taskId, {
+        ...classified,
+        lastOutput: this.snapshotOutput(taskId),
+      });
+      this.resolveFailedRun(taskId, task, classified.class, `exceeded the ${ms}ms timeout`);
+    }
+    this.pool.abort(taskId);
+    this.terminal.killManagedRun(taskId);
   }
 
   /**
@@ -437,12 +476,22 @@ export class AgentRunnerService implements OnModuleInit {
     }
   }
 
-  private safeRetry(taskId: string): void {
+  private safeRetry(taskId: string, nextRetryAt: string | null): void {
     try {
-      this.tasks.retry(taskId);
+      this.tasks.retry(taskId, nextRetryAt);
     } catch (err) {
       this.logger.warn(
         `failed to retry ${taskId}: ${err instanceof Error ? err.message : 'unknown'}`,
+      );
+    }
+  }
+
+  private safeAbandon(taskId: string): void {
+    try {
+      this.tasks.updateStatus(taskId, 'abandoned');
+    } catch (err) {
+      this.logger.warn(
+        `failed to abandon ${taskId}: ${err instanceof Error ? err.message : 'unknown'}`,
       );
     }
   }

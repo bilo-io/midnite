@@ -149,10 +149,23 @@ export class TasksRepository {
   }
 
   // Bump the retry counter (used when an agent session crashes and is re-queued).
-  incrementRetry(id: string, updatedAt: string): TaskRow | undefined {
+  // `nextRetryAt` gates when the scheduler may re-pick the task (Phase 53 B) —
+  // null means eligible immediately (backoff disabled or not applicable).
+  incrementRetry(id: string, updatedAt: string, nextRetryAt: string | null): TaskRow | undefined {
     return this.db
       .update(tasks)
-      .set({ retryCount: sql`${tasks.retryCount} + 1`, updatedAt })
+      .set({ retryCount: sql`${tasks.retryCount} + 1`, nextRetryAt, updatedAt })
+      .where(eq(tasks.id, id))
+      .returning()
+      .get();
+  }
+
+  // Clear a pending backoff gate (Phase 53 B) — used on a manual requeue so a
+  // human-returned task is immediately eligible regardless of any prior backoff.
+  clearNextRetry(id: string, updatedAt: string): TaskRow | undefined {
+    return this.db
+      .update(tasks)
+      .set({ nextRetryAt: null, updatedAt })
       .where(eq(tasks.id, id))
       .returning()
       .get();
@@ -353,18 +366,21 @@ export class TasksRepository {
   }
 
   /**
-   * `todo` tasks that are *ready* — every blocker is `done` (or has none) —
+   * `todo` tasks that are *ready* — every blocker is `done` (or has none) **and**
+   * any retry-backoff window has elapsed (`next_retry_at <= now`, or null) —
    * keeping the scheduler's `desc(priority), asc(createdAt)` ordering. Readiness
    * is evaluated in SQL (a correlated `NOT EXISTS` over unmet blockers) so the
-   * tick stays cheap at scale. Backs the Theme B scheduler.
+   * tick stays cheap at scale. `now` is passed by the service (it owns the clock);
+   * ISO timestamps compare lexicographically. Backs the Phase 27 B / 53 B scheduler.
    */
-  listReadyTodoTasks(): TaskRow[] {
+  listReadyTodoTasks(now: string): TaskRow[] {
     return this.db
       .select()
       .from(tasks)
       .where(
         and(
           eq(tasks.status, 'todo'),
+          sql`(${tasks.nextRetryAt} IS NULL OR ${tasks.nextRetryAt} <= ${now})`,
           sql`NOT EXISTS (
             SELECT 1 FROM task_dependencies d
             JOIN tasks b ON b.id = d.depends_on_task_id
@@ -451,6 +467,7 @@ export class TasksRepository {
       priority: row.priority,
       retryCount: row.retryCount,
       fixAttempts: row.fixAttempts,
+      nextRetryAt: row.nextRetryAt ?? undefined,
       prompt: row.prompt ?? undefined,
       repo: row.repo ?? undefined,
       agentId: row.agentId ?? undefined,
