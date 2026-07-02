@@ -22,6 +22,6 @@ import { PoolController } from './pool.controller';
   ],
   controllers: [PoolController, LifecycleHookController],
   providers: [AgentPoolService, AgentRunnerService, AgentPoolScheduler],
-  exports: [AgentPoolService, AgentRunnerService],
+  exports: [AgentPoolService, AgentRunnerService, AgentPoolScheduler],
 })
 export class PoolModule {}

@@ -13,6 +13,16 @@ Retries stop firing instantly and blindly: they now back off exponentially and o
 - [x] class-aware: retry gated on `isRetryableFailure` — `crash`/`timeout` retry with backoff, a non-retryable exit **abandons immediately** (Theme D will escalate). A **run timeout now routes through backoff-retry** instead of straight-to-abandoned; the still-live session is torn down and its `onExit` no-ops on the transitioned task. A manual requeue clears any pending backoff.
 - [x] Tests: pure backoff math (`retry-backoff.test.ts`), runner specs (backoff on crash, timeout→retry + teardown, timeout-exhausted→abandon, instant-retry with base=0), repository ready-set backoff gating. `:typecheck` green; gateway 1284, web 732 green. (`gateway:lint` red only on pre-existing unrelated debt.)
 
+## 2026-07-02 — feat: boot preflight + readiness/liveness health — Phase 54 Themes A + B (PR #275)
+
+The gateway's **boot half**: boot healthy-or-loudly-broken (no more silent-degrade), and `/health` tells the truth about "ready" instead of always `{ok:true}`.
+
+- [x] **shared:** `PreflightCheck` / `PreflightReport` / `Readiness` / `Liveness` zod schemas + `worstStatus()`; `gateway.strictBoot` flag (default false — behaviour-preserving).
+- [x] **`HealthService`** — one check registry (config parse, DB writable+migrated, `MIDNITE_SECRET_KEY`, `claude`/`gh` on PATH, pty/tmux spawner, repo paths, pool, scheduler). Fail-open; hard-fail vs warn severity. Reused by preflight + readiness (+ the Phase 54 C watchdog later). `secretKeyPresence()` added to `crypto.service`; PATH/dir probes in `health/lib/probes.ts`.
+- [x] **`PreflightService.run()`** — invoked from `bootstrap` after the module graph is up, before `listen()`; logs an actionable report and `process.exit(1)` on a hard fail (or, under `strictBoot`, any warning). Soft gaps just warn and boot continues.
+- [x] **`/health/live`** (cheap liveness) + **`/health/ready`** (live re-eval → 200/503 with failing checks); `/health` kept as a liveness alias; all `/health/*` auth + rate-limit exempt (extended `isAuthExemptPath`).
+- [x] Tests: shared schema units; gateway `health.service`/`preflight.service`/`health.controller`/`probes` specs + crypto secret-key + auth-policy exemption. Boot regression via the e2e gateway (preflight logs its report + boot proceeds). shared 505 green; gateway 1282 green (one pre-existing flaky tmux spec). Theme F (web status view + `midnite doctor`) deferred.
+
 ## 2026-07-02 — feat: kill switch & global pause — Phase 50 Theme A (PR #274)
 
 The pause half of the safety story, turned from recorded into **enforced**: an emergency stop that actually halts scheduling and survives a restart.

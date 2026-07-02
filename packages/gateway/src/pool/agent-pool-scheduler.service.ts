@@ -88,6 +88,12 @@ export class AgentPoolScheduler implements OnModuleInit, OnModuleDestroy {
     if (this.timer) clearInterval(this.timer);
   }
 
+  /** Whether the tick loop is currently scheduled. Used by the readiness check
+   *  (Phase 54 B): when the pool is enabled the scheduler should be running. */
+  isRunning(): boolean {
+    return this.timer !== undefined;
+  }
+
   // Fill every free slot with the oldest unassigned *ready* `todo` task, skipping
   // any whose repo is already at the per-repo concurrency cap. "Ready" = every
   // dependency blocker is `done` (Phase 27 Theme B) — a blocked task (incl. one

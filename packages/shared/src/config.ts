@@ -143,6 +143,14 @@ export const GatewayConfigSchema = z.object({
   uploadsDir: z.string().default('./.midnite/uploads'),
   dbPath: z.string().default('./.midnite/midnite.db'),
   /**
+   * Boot preflight strictness (Phase 54 A). Off by default (behaviour-preserving:
+   * soft gaps only warn and the gateway still boots). When true, any `warn` from
+   * the boot preflight is escalated to a hard failure — the process logs the
+   * report and exits non-zero rather than starting in a degraded state. Turn on
+   * for production so a misconfigured deploy fails loudly instead of half-working.
+   */
+  strictBoot: z.boolean().default(false),
+  /**
    * Path to the web app's static export (`packages/web/out`, from `next build`
    * with `output: 'export'`). When set and the directory has an `index.html`,
    * the gateway serves the UI at `/` so a single process serves both the API and

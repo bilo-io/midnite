@@ -5,6 +5,7 @@ import {
   SECRET_KEY_ENV,
   SecretEncryptionUnavailableError,
   isEncrypted,
+  secretKeyPresence,
 } from './crypto.service';
 
 const HEX_KEY = randomBytes(32).toString('hex');
@@ -20,6 +21,15 @@ describe('CryptoService', () => {
   afterEach(() => {
     if (original === undefined) delete process.env[SECRET_KEY_ENV];
     else process.env[SECRET_KEY_ENV] = original;
+  });
+
+  describe('secretKeyPresence (Phase 54 preflight)', () => {
+    it('reports valid for hex + base64 keys, unset when absent, invalid when malformed', () => {
+      expect(secretKeyPresence({ [SECRET_KEY_ENV]: HEX_KEY }).state).toBe('valid');
+      expect(secretKeyPresence({ [SECRET_KEY_ENV]: B64_KEY }).state).toBe('valid');
+      expect(secretKeyPresence({}).state).toBe('unset');
+      expect(secretKeyPresence({ [SECRET_KEY_ENV]: 'nope' }).state).toBe('invalid');
+    });
   });
 
   describe('with a key configured', () => {
