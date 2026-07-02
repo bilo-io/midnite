@@ -13,6 +13,7 @@ export * from './session.js';
 export * from './color.js';
 export * from './fs.js';
 export * from './source.js';
+export * from './pr-diff.js';
 export * from './version.js';
 export * from './release.js';
 export * from './checks.js';

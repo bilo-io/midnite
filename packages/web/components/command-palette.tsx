@@ -34,6 +34,7 @@ import { FEATURES, isFeatureEnabled } from '@/lib/features';
 import { AppSettings, DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY } from '@/lib/app-settings';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import { usePaletteCommands, type PaletteCommand } from '@/lib/palette-commands';
+import { taskModalHref } from '@/lib/task-route';
 import { KeyboardShortcutsHelp } from '@/components/keyboard-shortcuts-help';
 import { cn } from '@/lib/utils';
 
@@ -261,7 +262,13 @@ export function CommandPalette() {
       out.push({
         key: type,
         label: TYPE_META[type].label,
-        items: shown.map((result) => ({ kind: 'result', route: result.route, result })),
+        // A task hit routes to the in-app modal (`?task=`, Phase 42 B) rather
+        // than the bare `/tasks` board the gateway emits for the type.
+        items: shown.map((result) => ({
+          kind: 'result',
+          route: result.type === 'task' ? taskModalHref(result.id) : result.route,
+          result,
+        })),
         moreCount: Math.max(0, total - shown.length),
       });
     }

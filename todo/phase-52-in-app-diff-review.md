@@ -60,19 +60,19 @@
 
 ---
 
-## Theme A — Diff API: expose the PR diff to the web — **M**
+## Theme A — Diff API: expose the PR diff to the web — **M** — ✅ DONE (PR #270, 2026-07-02)
 
 Make the agent's diff fetchable by a task id.
 
-- [ ] **gateway:** a reusable `PrDiffService` wrapping the diff-fetch logic (lift it out of
-      `github-get-diff.executor.ts` so the executor and the service share one implementation) — resolve
-      `task.prUrl` → `parseGithubPr` → `repo.ownerRepo`, fetch the unified diff via **REST + `gh`/anonymous
-      fallback** (mirror `pr-status.service`). **Fail-open.**
-- [ ] `GET /tasks/:id/pr/diff` (thin controller) → a **structured** response, not a raw blob: parsed into
+- [x] **gateway:** a reusable diff-fetch + parse (`tasks/lib/github-diff`) shared by the executor and a
+      `PrDiffService` — resolve `task.prUrl` → `parseGithubPr`, fetch the unified diff via **REST + token → `gh`
+      → anonymous REST** (mirror `pr-status.service`). **Fail-open.** (Kept as a `lib` helper, not a DI service the
+      executor injects, because `TasksModule` already imports `WorkflowsModule` — direct injection would cycle.)
+- [x] `GET /tasks/:id/pr/diff` (thin controller) → a **structured** response, not a raw blob: parsed into
       files (path, status add/mod/del/rename, `additions`/`deletions`) + hunks; a `truncated` flag + hidden-file
-      count when the diff exceeds the cap (**no silent truncation** — Decision §6).
-- [ ] **shared:** `PrDiffSchema` / `PrDiffFileSchema` / `PrDiffHunkSchema`; typed client method in
-      [`web/lib/api.ts`](../packages/web/lib/api.ts). Reuse `pr_status` for the metadata (state/checks/mergeable).
+      count when the diff exceeds the byte budget (**no silent truncation** — Decision §6). 404 no-PR, 503 fail-open.
+- [x] **shared:** `PrDiffSchema` / `PrDiffFileSchema` / `PrDiffHunkSchema` / `PrDiffLineSchema`; typed `getPrDiff`
+      client method in [`web/lib/api.ts`](../packages/web/lib/api.ts).
 
 ---
 
