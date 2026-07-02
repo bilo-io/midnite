@@ -92,18 +92,25 @@ An emergency stop that actually stops, and survives a restart.
 
 ---
 
-## Theme B — Spend & rate caps that block (scheduling gate) — **M-L**
+## Theme B — Spend & rate caps that block (scheduling gate) — **M-L** — ✅ DONE (PR #277, 2026-07-02)
 
-Promote budgets from advisory to enforced.
+Promote budgets from advisory to enforced. **Enforced globally** (Stage-2.5 decision): `llm_usage` carries no
+repo/team cost attribution, so per-scope *spend* caps aren't computable without new plumbing — deferred; the rate
+cap is likewise global for now.
 
-- [ ] **shared/config:** hard caps distinct from the existing soft `warnAtRatio` — `usage.hardDailyCapUsd` /
-      `hardMonthlyCapUsd` and spawn-rate limits (`agent.maxSpawnsPerHour`, per `global`/repo/team). Zod-validated.
-- [ ] **gateway:** `UsageService.checkBudget(scope)` (reads today's/this-month's spend vs. the hard cap) and a
-      spawn-rate counter (in-memory sliding window, persisted-count fallback on restart).
-- [ ] **enforce at the scheduler:** `tick()` skips a spawn when over the hard budget or the spawn-rate limit —
-      the task stays `todo`, re-evaluated next tick (mirrors the existing soft-cap skip; no new status).
-- [ ] **surface the reason:** a blocked spawn emits a notification + a board chip ("held: over budget" /
-      "held: rate-limited") so it isn't a silent no-op.
+- [x] **shared/config:** hard caps distinct from the existing soft `warnAtRatio` — `usage.hardDailyCapUsd` /
+      `hardMonthlyCapUsd` and a spawn-rate limit (`agent.maxSpawnsPerHour`). Zod-validated. A `BudgetStatus`
+      contract + a derived `Task.heldReason` (`over-budget` | `rate-limited`) + an `agent.held` notification kind.
+- [x] **gateway:** `UsageService.checkBudget()` (today's/this-month's spend vs. the hard cap — inert with no
+      query when no cap is set) and a spawn-rate counter (in-memory sliding 1h window; resets on restart — a
+      throttle, not a durable ledger, per Stage-2.5).
+- [x] **enforce at the scheduler:** `tick()` holds a spawn when over the hard budget (all ready tasks) or the
+      spawn-rate window is full (the remaining ready tasks) — the task stays `todo`, re-evaluated next tick
+      (mirrors the soft-cap skip; no new status).
+- [x] **surface the reason:** a derived `Task.heldReason` (a leaf `HeldTasksRegistry` the scheduler replaces each
+      tick, attached on read — never persisted) drives an amber board chip ("Held: over budget" / "Held:
+      rate-limited"); a `task.updated` broadcast fires on each held-state edge, plus one edge-triggered
+      `agent.held` notification per cap-type breach.
 
 ---
 

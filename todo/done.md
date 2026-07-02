@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-02 — feat: enforce hard spend & spawn-rate caps at the scheduler — Phase 50 Theme B (PR #277)
+
+Budgets promoted from advisory to **enforced**: the agent-pool scheduler blocks new spawns when a hard daily/monthly spend cap is exceeded or the per-hour spawn-rate window is full. A blocked task stays `todo` (no new status) and re-evaluates each tick. Enforced **globally** (Stage-2.5: `llm_usage` has no repo/team cost attribution — per-scope caps deferred).
+
+- [x] **shared:** `usage.hardDailyCapUsd`/`hardMonthlyCapUsd` + `agent.maxSpawnsPerHour` config (all off by default = pre-Phase-50 behaviour); `BudgetStatus`/`BudgetPeriodStatus` contract; derived `Task.heldReason` (`over-budget` | `rate-limited`) + `TASK_HELD_REASON_LABEL`; `agent.held` notification kind.
+- [x] **gateway:** `UsageService.checkBudget()` (today's/this-month's spend vs. the hard cap; inert with no query when unset); an in-memory sliding 1h spawn-rate window in the scheduler; `tick()` holds ready tasks on an over-budget (all) / rate-full (remaining) breach; a leaf `HeldTasksRegistry` (scheduler replaces each tick, `TasksService` attaches `heldReason` on read — never persisted); edge `task.updated` broadcast + one edge-triggered `NotificationsService.notifyGuardrailHeld` alert per cap-type.
+- [x] **web:** an amber "Held: …" chip on the task card + a Storybook story.
+- [x] Tests: shared config/schema units; gateway `checkBudget` + scheduler caps (over-budget/rate/clear-edge/edge-notify) + `HeldTasksRegistry` + `withHeld` + `notifyGuardrailHeld`; web RTL + story `play`. shared + gateway (1319) + web (738) green. (gateway:lint is red on pre-existing `main` breakage in unrelated files — not this diff.)
+
 ## 2026-07-02 — feat: boot preflight + readiness/liveness health — Phase 54 Themes A + B (PR #275)
 
 The gateway's **boot half**: boot healthy-or-loudly-broken (no more silent-degrade), and `/health` tells the truth about "ready" instead of always `{ok:true}`.
