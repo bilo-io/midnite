@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-02 — feat: boot preflight + readiness/liveness health — Phase 54 Themes A + B (PR #275)
+
+The gateway's **boot half**: boot healthy-or-loudly-broken (no more silent-degrade), and `/health` tells the truth about "ready" instead of always `{ok:true}`.
+
+- [x] **shared:** `PreflightCheck` / `PreflightReport` / `Readiness` / `Liveness` zod schemas + `worstStatus()`; `gateway.strictBoot` flag (default false — behaviour-preserving).
+- [x] **`HealthService`** — one check registry (config parse, DB writable+migrated, `MIDNITE_SECRET_KEY`, `claude`/`gh` on PATH, pty/tmux spawner, repo paths, pool, scheduler). Fail-open; hard-fail vs warn severity. Reused by preflight + readiness (+ the Phase 54 C watchdog later). `secretKeyPresence()` added to `crypto.service`; PATH/dir probes in `health/lib/probes.ts`.
+- [x] **`PreflightService.run()`** — invoked from `bootstrap` after the module graph is up, before `listen()`; logs an actionable report and `process.exit(1)` on a hard fail (or, under `strictBoot`, any warning). Soft gaps just warn and boot continues.
+- [x] **`/health/live`** (cheap liveness) + **`/health/ready`** (live re-eval → 200/503 with failing checks); `/health` kept as a liveness alias; all `/health/*` auth + rate-limit exempt (extended `isAuthExemptPath`).
+- [x] Tests: shared schema units; gateway `health.service`/`preflight.service`/`health.controller`/`probes` specs + crypto secret-key + auth-policy exemption. Boot regression via the e2e gateway (preflight logs its report + boot proceeds). shared 505 green; gateway 1282 green (one pre-existing flaky tmux spec). Theme F (web status view + `midnite doctor`) deferred.
+
+---
+
 ## 2026-07-02 — feat: in-app PR diff viewer — Phase 52 Theme B (PR #273)
 
 The review centerpiece: a client-only, syntax-highlighted diff viewer reachable from a task's PR section via a **"View diff" → full-screen modal**, rendering the Theme A structured `PrDiff` with no re-parse.
