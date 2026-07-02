@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Ban, Check, ExternalLink, Play, Plus, RefreshCw, SquareTerminal, X } from 'lucide-react';
+import { Ban, Check, ExternalLink, GitCompare, Play, Plus, RefreshCw, SquareTerminal, X } from 'lucide-react';
 import { ChecksPanel } from '@/components/checks-panel';
+import { PrDiffModal } from '@/components/pr-review/pr-diff-modal';
 import {
   ANSWER_EVENT_KIND,
   SOURCE_KIND_LABEL,
@@ -133,6 +134,7 @@ export function TaskDetail({ task, projects, tasks, onClose, variant = 'modal' }
   const [depError, setDepError] = useState<string | null>(null);
   const [prStatus, setPrStatus] = useState(task.prStatus);
   const [prRefreshing, setPrRefreshing] = useState(false);
+  const [showDiff, setShowDiff] = useState(false);
 
   const refreshPr = async () => {
     setPrRefreshing(true);
@@ -679,15 +681,25 @@ export function TaskDetail({ task, projects, tasks, onClose, variant = 'modal' }
                   {prStatus.reviewDecision.replace(/_/g, ' ')}
                 </span>
               ) : null}
+              <button
+                type="button"
+                onClick={() => setShowDiff(true)}
+                className="ml-auto flex items-center gap-1 text-xs text-primary hover:underline"
+              >
+                <GitCompare className="h-3 w-3" /> View diff
+              </button>
               <a
                 href={task.prUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="ml-auto flex items-center gap-1 text-xs text-primary hover:underline"
+                className="flex items-center gap-1 text-xs text-primary hover:underline"
               >
                 Open PR <ExternalLink className="h-3 w-3" />
               </a>
             </div>
+            {showDiff ? (
+              <PrDiffModal taskId={task.id} prUrl={task.prUrl} onClose={() => setShowDiff(false)} />
+            ) : null}
           </section>
         ) : null}
 

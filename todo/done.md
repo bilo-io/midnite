@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-02 — feat: in-app PR diff viewer — Phase 52 Theme B (PR #273)
+
+The review centerpiece: a client-only, syntax-highlighted diff viewer reachable from a task's PR section via a **"View diff" → full-screen modal**, rendering the Theme A structured `PrDiff` with no re-parse.
+
+- [x] `components/pr-review/` viewer set: `diff-model` (pure `PrDiff` → react-diff-view hunk/change map + a nested file-tree builder), `diff-highlight` (refractor tokenize, path→language, fail-soft), `diff-file` (collapsible file, **lazy hunk mount + lazy tokenize**), `diff-file-tree` (**tree ⇄ flat-list** toggle, jump-to-file, hidden-file count), `pr-diff-viewer` (toolbar: file/± totals, **split ⇄ unified** persisted via `useLocalStorage`, expand/collapse-all, truncation banner), `pr-diff-modal` (self-fetches `getPrDiff`, **fail-open** with retry + "Open on GitHub").
+- [x] **react-diff-view@3 ↔ refractor@4 shim**: tokenize expects v3's array-returning `highlight`; v4 wraps tokens in a hast `Root`, so we adapt via `.children`. Added `react-diff-view`/`refractor` to `transpilePackages`; diff CSS re-skinned to the design tokens (theme-aware, both light/dark).
+- [x] "View diff" button wired into `task-detail.tsx` PR section (deep-link `?tab=review` route + inline embed deferred to Theme E; file rail hidden `< md` for now).
+- [x] Tests: `diff-model` unit (line-kind mapping, diffType, tree nesting/sort, DOM-safe key) + `pr-diff-viewer` RTL (unified default + split persist, expand/collapse-all lazy mount, truncation banner, tree/list toggle) + a 3-state Storybook story (browser test). `:typecheck`/`:lint`/`:test` green.
+
+---
+
 ## 2026-07-02 — feat: URL-driven task modal (`?task=`) — Phase 42 Theme B — **Phase 42 COMPLETE** (PR #272)
 
 Closed the last open box of Phase 42. The task detail modal was pure local state — no URL, no browser-back, not shareable. The doc's intercepting-route plan doesn't work under `output: 'export'` (no server runtime), so the modal-vs-page split is done client-side with a `?task=<id>` query param.
