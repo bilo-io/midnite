@@ -8,6 +8,7 @@ import { AiReviewService } from './ai-review.service';
 import { PrDiffService } from './pr-diff.service';
 import { PrStatusService } from './pr-status.service';
 import { TasksController } from './tasks.controller';
+import { TaskFailuresRepository } from './task-failures.repository';
 import { TasksRepository } from './tasks.repository';
 import { TasksService } from './tasks.service';
 import { TaskEventBus } from './task-event-bus';
@@ -19,6 +20,7 @@ import { TasksGateway } from './tasks.gateway';
   providers: [
     TasksService,
     TasksRepository,
+    TaskFailuresRepository,
     TaskEventBus,
     TasksGateway,
     PrStatusService,

@@ -52,6 +52,7 @@ function fakeTasks(seed: Task[]) {
     if (!t) throw new Error('not found');
     return t;
   });
+  const recordFailure = vi.fn();
   const service = {
     listTasks: () => [...byId.values()],
     startTask,
@@ -59,8 +60,9 @@ function fakeTasks(seed: Task[]) {
     retry,
     updateStatus,
     getTask,
+    recordFailure,
   } as unknown as TasksService;
-  return { service, startTask, requeue, retry, updateStatus, byId };
+  return { service, startTask, requeue, retry, updateStatus, recordFailure, byId };
 }
 
 function fakeTerminal(opts?: { durable?: boolean; live?: string[]; reattachOk?: boolean }) {
@@ -92,6 +94,7 @@ function fakeTerminal(opts?: { durable?: boolean; live?: string[]; reattachOk?: 
     discardSession,
     isDurable: () => opts?.durable ?? false,
     liveSessionIds: () => opts?.live ?? [],
+    readOutput: () => '',
   } as unknown as TerminalService;
   return {
     terminal,
@@ -183,6 +186,22 @@ describe('AgentRunnerService', () => {
 
     expect(retry).toHaveBeenCalledWith('t1');
     expect(pool.freeSlotCount()).toBe(1);
+  });
+
+  it('records a typed crash failure on an unexpected exit (Phase 53 A)', async () => {
+    const cfg = config();
+    const { service, recordFailure } = fakeTasks([task('t1', 'x')]);
+    const pool = new AgentPoolService(cfg, service);
+    const { terminal, fireExit } = fakeTerminal();
+    const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, noRepos);
+
+    await runner.start(task('t1', 'x'));
+    fireExit(139); // segfault-ish
+
+    expect(recordFailure).toHaveBeenCalledWith(
+      't1',
+      expect.objectContaining({ class: 'crash', exitCode: 139 }),
+    );
   });
 
   it('abandons (does not retry) once the retry cap is exhausted', async () => {
@@ -348,11 +367,12 @@ describe('AgentRunnerService', () => {
       fixCount += 1;
       return { ...t, fixAttempts: fixCount } as Task;
     });
+    const recordFailure = vi.fn();
     const service = {
       markDone, markWaiting, saveCheckRun, recordCheckEvent, getTask,
-      incrementFixAttempts, listTasks: () => [],
+      incrementFixAttempts, recordFailure, listTasks: () => [],
     } as unknown as TasksService;
-    return { service, markDone, markWaiting, saveCheckRun, recordCheckEvent, incrementFixAttempts, getTask };
+    return { service, markDone, markWaiting, saveCheckRun, recordCheckEvent, incrementFixAttempts, getTask, recordFailure };
   }
 
   function passRun(): CheckRun {
@@ -391,13 +411,13 @@ describe('AgentRunnerService', () => {
           }
         : { enabled: false },
     });
-    const { service, markDone, markWaiting, saveCheckRun, recordCheckEvent, incrementFixAttempts } = fakeGateTasks(t);
+    const { service, markDone, markWaiting, saveCheckRun, recordCheckEvent, incrementFixAttempts, recordFailure } = fakeGateTasks(t);
     const pool = new AgentPoolService(cfg, service);
     // Claim the slot first so complete() can release it
     pool.acquire(t.id);
     const { terminal, killManagedRun, spawnAgentSession } = fakeTerminal();
     const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, repos, undefined, checks);
-    return { runner, pool, markDone, markWaiting, saveCheckRun, recordCheckEvent, incrementFixAttempts, killManagedRun, spawnAgentSession };
+    return { runner, pool, markDone, markWaiting, saveCheckRun, recordCheckEvent, incrementFixAttempts, killManagedRun, spawnAgentSession, recordFailure };
   }
 
   describe('completeWithChecks', () => {
@@ -421,13 +441,15 @@ describe('AgentRunnerService', () => {
       const t = fakeGateTask('t1', 'myrepo');
       const checks = fakeChecks(failRun());
       const repos = reposWithPath('myrepo', '/tmp/myrepo');
-      const { runner, pool, markDone, markWaiting, recordCheckEvent } = makeGateRunner(t, checks, repos);
+      const { runner, pool, markDone, markWaiting, recordCheckEvent, recordFailure } = makeGateRunner(t, checks, repos);
 
       await runner.completeWithChecks('t1', 'https://github.com/acme/repo/pull/1');
 
       expect(markWaiting).toHaveBeenCalledWith('t1');
       expect(markDone).not.toHaveBeenCalled();
       expect(recordCheckEvent).toHaveBeenCalledWith('t1', 'checks.failed');
+      // Phase 53 A — a gate failure is recorded as a typed gate-failed failure.
+      expect(recordFailure).toHaveBeenCalledWith('t1', expect.objectContaining({ class: 'gate-failed' }));
       expect(pool.slotForTask('t1')).toBeUndefined();
     });
 

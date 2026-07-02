@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-02 — feat: failure taxonomy + task_failures records — Phase 53 Theme A (PR #271)
+
+The foundation for lifecycle resilience: name every failure and remember it, so backoff (B), watchdogs (C), escalation (D), and the health UI (E) can reason about *why* a task failed. Purely additive — recording changes no task state.
+
+- [x] **shared**: `FailureClass` enum + `FAILURE_RETRYABLE` map (crash+timeout+inactivity retry; rest escalate) + `TaskFailure` record shape + typed `WaitReason`
+- [x] **gateway**: `task_failures` table (migration 0063) + `TaskFailuresRepository`; pure `classifyFailure(site)` helper; `TasksService.recordFailure` writes a typed row + `agent.failed` event
+- [x] **gateway**: runner records at each existing site — crash (onExit), timeout (run-timeout), gate-failed — with a best-effort `lastOutput` tail from the session ring buffer
+- [x] Tests: shared taxonomy units, `classifyFailure` pure test, `task_failures` repo round-trip, runner crash+gate-failed recording, `recordFailure` additive-contract (records without changing status)
+
+---
+
 ## 2026-07-02 — feat: in-app PR diff viewer — Phase 52 Theme B (PR #273)
 
 The review centerpiece: a client-only, syntax-highlighted diff viewer reachable from a task's PR section via a **"View diff" → full-screen modal**, rendering the Theme A structured `PrDiff` with no re-parse.
@@ -12,6 +23,7 @@ The review centerpiece: a client-only, syntax-highlighted diff viewer reachable 
 - [x] **react-diff-view@3 ↔ refractor@4 shim**: tokenize expects v3's array-returning `highlight`; v4 wraps tokens in a hast `Root`, so we adapt via `.children`. Added `react-diff-view`/`refractor` to `transpilePackages`; diff CSS re-skinned to the design tokens (theme-aware, both light/dark).
 - [x] "View diff" button wired into `task-detail.tsx` PR section (deep-link `?tab=review` route + inline embed deferred to Theme E; file rail hidden `< md` for now).
 - [x] Tests: `diff-model` unit (line-kind mapping, diffType, tree nesting/sort, DOM-safe key) + `pr-diff-viewer` RTL (unified default + split persist, expand/collapse-all lazy mount, truncation banner, tree/list toggle) + a 3-state Storybook story (browser test). `:typecheck`/`:lint`/`:test` green.
+
 
 ---
 
