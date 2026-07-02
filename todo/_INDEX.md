@@ -30,7 +30,7 @@
 |-------|--------|------|----------|---|--------|--------|
 | [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | ◻ TODO | 0/26 | `░░░░░░░░░░` | 0% | — | A B C D E F |
 | [53 · Task lifecycle resilience](phase-53-task-lifecycle-resilience.md) | 🔄 WIP | 0/22 | `░░░░░░░░░░` | 0% | A | B C D E |
-| [52 · In-app diff & PR review](phase-52-in-app-diff-review.md) | 🔄 WIP | 3/25 | `█░░░░░░░░░` | 12% | B | C D E |
+| [52 · In-app diff & PR review](phase-52-in-app-diff-review.md) | 🔄 WIP | 7/25 | `███░░░░░░░` | 28% | — | C D E |
 | [51 · Session detail page](phase-51-session-detail-page.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [50 · Autonomy guardrails](phase-50-autonomy-guardrails.md) | ◻ TODO | 0/29 | `░░░░░░░░░░` | 0% | — | A B C D E F |
 | [49 · Data portability](phase-49-data-portability.md) | ◻ TODO | 0/27 | `░░░░░░░░░░` | 0% | — | A B C D E F |
@@ -125,7 +125,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 ### [Phase 52 — In-app diff & PR review](phase-52-in-app-diff-review.md)
 *(Extends tasks — no new domain. Reuses the workflow GitHub plumbing, `pr-status` fetch strategy, Phase 37 AI review. A→B→C is the critical path.)*
 - ✅ **A** — Diff API: expose the PR diff to the web (structured)
-- ◻ **B** — Diff viewer: file tree + split/unified + syntax highlight
+- ✅ **B** — Diff viewer: file tree + split/unified + syntax highlight
 - ◻ **C** — Review actions: inline comment + approve/request-changes + in-app merge
 - ◻ **D** — Comment persistence (drafts) + Phase 37 AI review inline
 - ◻ **E** — Embed in task detail + deep-linkable `?tab=review` route

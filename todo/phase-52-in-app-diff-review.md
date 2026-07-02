@@ -76,17 +76,23 @@ Make the agent's diff fetchable by a task id.
 
 ---
 
-## Theme B — Diff viewer: file tree + split/unified + highlight — **L**
+## Theme B — Diff viewer: file tree + split/unified + highlight — **L** — ✅ DONE (PR #TBD, 2026-07-02)
 
 The centerpiece — a real review viewer.
 
-- [ ] **web:** a client-only diff viewer (Decision §3: `react-diff-view` + a Prism/refractor highlighter, added to
-      web deps + `transpilePackages` if needed) rendering the parsed unified diff.
-- [ ] A **file-tree sidebar**: per-file add/del counts, viewed/collapsed state, jump-to-file, a "N files hidden
-      (truncated)" affordance when the diff is capped.
-- [ ] A **split ⇄ unified** toggle (persisted via `useLocalStorage`) with **syntax highlighting** per file language.
-- [ ] **Big-diff ergonomics:** lazy-render per file (don't mount every hunk at once); large/binary/generated files
-      collapse by default. Responsive — the file tree becomes a drawer on mobile (`useIsMobile`).
+- [x] **web:** a client-only diff viewer (Decision §3: `react-diff-view` + refractor highlighter, added to web deps
+      + `transpilePackages`) rendering the structured `PrDiff` (mapped onto react-diff-view's model — no re-parse).
+      A **refractor v4 → react-diff-view@3 shim** (`.children`) bridges the tokenize API mismatch; highlighting is
+      **fail-soft** (unsupported language / tokenize error → plain text).
+- [x] A **file rail** toggling between a **nested directory tree** and a **flat list** (Stage-2.5 decision): per-file
+      add/del counts, jump-to-file (scroll-into-view), and a "N files hidden (truncated)" affordance when capped.
+- [x] A **split ⇄ unified** toggle (persisted via `useLocalStorage`, default unified) with **refractor syntax
+      highlighting** per file language + an **expand-all / collapse-all** control.
+- [x] **Big-diff ergonomics:** collapse-by-default with **lazy hunk mount + lazy tokenize** (nothing renders until a
+      file is expanded); binary files show a placeholder. Surfaced via a **"View diff" → full-screen modal** off the
+      task-detail PR section (self-fetches `getPrDiff`, **fail-open** with retry + "Open on GitHub"). *(The file rail
+      is hidden on `< md` for now — the diff is prioritised on narrow screens; the responsive drawer + inline task
+      embed land with Theme E.)*
 
 ---
 

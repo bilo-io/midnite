@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { PrDiff } from '@midnite/shared';
 import { PrDiffViewer } from './pr-diff-viewer';
+import { fileKey } from './diff-model';
 
 function makeDiff(overrides: Partial<PrDiff> = {}): PrDiff {
   return {
@@ -78,17 +79,26 @@ describe('PrDiffViewer', () => {
 
   it('expands all files then collapses them', () => {
     render(<PrDiffViewer diff={makeDiff()} />);
+    // Assert on each file section's expanded state (syntax highlighting fragments
+    // the inner code across token spans, so matching on line text is brittle). The
+    // section's header button is scoped by the file's DOM id to avoid the identically
+    // named file-tree buttons.
+    const expanded = (path: string): string | null => {
+      const el = document.getElementById(fileKey({ path } as PrDiff['files'][number]));
+      if (!el) throw new Error(`no section for ${path}`);
+      return within(el).getAllByRole('button')[0]!.getAttribute('aria-expanded');
+    };
 
-    // Only the first file is open initially, so its deleted line is visible…
-    expect(screen.getByText('return null;')).toBeTruthy();
-    // …and the second file's content is not yet mounted.
-    expect(screen.queryByText('# Hello')).toBeNull();
+    // Only the first file is open initially.
+    expect(expanded('src/app/page.tsx')).toBe('true');
+    expect(expanded('README.md')).toBe('false');
 
     fireEvent.click(screen.getByRole('button', { name: /expand all/i }));
-    expect(screen.getByText('# Hello')).toBeTruthy();
+    expect(expanded('README.md')).toBe('true');
 
     fireEvent.click(screen.getByRole('button', { name: /collapse all/i }));
-    expect(screen.queryByText('# Hello')).toBeNull();
+    expect(expanded('src/app/page.tsx')).toBe('false');
+    expect(expanded('README.md')).toBe('false');
   });
 
   it('surfaces hidden files when the diff is truncated', () => {
