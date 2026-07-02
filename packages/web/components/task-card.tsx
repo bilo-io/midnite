@@ -1,5 +1,5 @@
-import { Check, ShieldAlert } from 'lucide-react';
-import { isAnsweredQuestion, type Task } from '@midnite/shared';
+import { Check, PauseCircle, ShieldAlert } from 'lucide-react';
+import { isAnsweredQuestion, TASK_HELD_REASON_LABEL, type Task } from '@midnite/shared';
 import { BlockedBadge } from '@/components/blocked-badge';
 import { PrStatusChip } from '@/components/pr-status-chip';
 import { ProjectTag } from '@/components/project-tag';
@@ -106,6 +106,17 @@ export function TaskCard({
         {project ? <ProjectTag tag={project.tag} color={project.color} /> : null}
         {task.repo ? <RepoChip repo={task.repo} /> : null}
         {isBlocked ? <BlockedBadge count={blockedBy ?? 0} /> : null}
+        {task.heldReason ? (
+          // Phase 50 B — the scheduler is holding this ready task because a hard
+          // budget/rate cap is blocking spawns (derived, not a status change).
+          <span
+            title="Held: the scheduler won't start an agent until the cap clears"
+            className="inline-flex items-center gap-1 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-amber-600 dark:text-amber-400"
+          >
+            <PauseCircle aria-hidden className="h-3 w-3" />
+            Held: {TASK_HELD_REASON_LABEL[task.heldReason]}
+          </span>
+        ) : null}
         {task.checkRunStatus === 'failing' ? (
           <span className="inline-flex items-center gap-1 rounded bg-destructive/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-destructive">
             <ShieldAlert aria-hidden className="h-3 w-3" />

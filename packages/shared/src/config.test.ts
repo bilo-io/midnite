@@ -28,6 +28,37 @@ describe('agent pool config defaults', () => {
     expect(config.agent.waitingHoldsSlot).toBe(false);
     expect(config.agent.schedulerTickMs).toBe(2000);
   });
+
+  it('defaults the spawn-rate cap off (unlimited) and accepts an override (Phase 50 B)', () => {
+    expect(parseConfig({ agent: {}, terminal: {}, gateway: {} }).agent.maxSpawnsPerHour).toBe(0);
+    const capped = parseConfig({ agent: { maxSpawnsPerHour: 10 }, terminal: {}, gateway: {} });
+    expect(capped.agent.maxSpawnsPerHour).toBe(10);
+  });
+});
+
+describe('usage hard spend caps (Phase 50 B)', () => {
+  it('are absent by default (feature off)', () => {
+    const { usage } = parseConfig({ agent: {}, terminal: {}, gateway: {} });
+    expect(usage.hardDailyCapUsd).toBeUndefined();
+    expect(usage.hardMonthlyCapUsd).toBeUndefined();
+  });
+
+  it('accepts positive hard caps', () => {
+    const { usage } = parseConfig({
+      agent: {},
+      terminal: {},
+      gateway: {},
+      usage: { hardDailyCapUsd: 25, hardMonthlyCapUsd: 500 },
+    });
+    expect(usage.hardDailyCapUsd).toBe(25);
+    expect(usage.hardMonthlyCapUsd).toBe(500);
+  });
+
+  it('rejects a non-positive hard cap', () => {
+    expect(() =>
+      parseConfig({ agent: {}, terminal: {}, gateway: {}, usage: { hardDailyCapUsd: 0 } }),
+    ).toThrow();
+  });
 });
 
 describe('gateway.auth defaults (Phase 7 A5)', () => {

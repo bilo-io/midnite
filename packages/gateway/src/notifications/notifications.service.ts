@@ -9,6 +9,7 @@ import { randomUUID } from 'node:crypto';
 import {
   NOTIFICATION_LIST_DEFAULT_LIMIT,
   notifyForTask,
+  TASK_HELD_REASON_LABEL,
   type MarkReadRequest,
   type MidniteConfig,
   type Notification,
@@ -18,6 +19,7 @@ import {
   type NotifyDecision,
   type Task,
   type TaskBoardEvent,
+  type TaskHeldReason,
   type TeamScope,
 } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
@@ -36,6 +38,9 @@ const PLURAL_TITLE: Record<NotificationKind, string> = {
   'task.waiting': 'tasks need your input',
   'task.done': 'tasks finished',
   'task.abandoned': 'tasks abandoned',
+  // `agent.held` is emitted directly (not via the coalescing task-event path), so
+  // this plural label is unused — present only to keep the map exhaustive.
+  'agent.held': 'spawns held',
 };
 
 type Pending = { decision: NotifyDecision; task: Task; count: number; timer: NodeJS.Timeout };
@@ -76,6 +81,38 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
     const limit = query.limit ?? NOTIFICATION_LIST_DEFAULT_LIMIT;
     const rows = this.repo.list(limit, query.offset ?? 0, scope);
     return { notifications: rows.map((r) => this.repo.hydrate(r)), unread: this.repo.countUnread(scope) };
+  }
+
+  /**
+   * Phase 50 Theme B — persist + dispatch a system-level "spawns held" alert
+   * when the scheduler blocks agent spawns on a hard budget/rate cap. Unlike the
+   * task-transition path this is *not* coalesced here: the scheduler owns the
+   * edge-dedup (one alert per cap-type breach, re-armed after it clears), so this
+   * fires exactly when told to. Best-effort — a dispatch failure is logged, never
+   * thrown, so it can't wedge a scheduler tick. Respects `notifications.enabled`.
+   */
+  async notifyGuardrailHeld(reason: TaskHeldReason, heldCount: number): Promise<void> {
+    if (!this.config.notifications.enabled) return;
+    const label = TASK_HELD_REASON_LABEL[reason];
+    const noun = heldCount === 1 ? 'task' : 'tasks';
+    try {
+      const row = this.repo.insert({
+        id: randomUUID(),
+        kind: 'agent.held',
+        severity: 'warn',
+        title: `Agent spawns held — ${label}`,
+        body: `${heldCount} ${noun} held: ${label}. New agents won't start until the cap clears.`,
+        entityType: 'guardrail',
+        entityId: reason,
+        route: '/tasks',
+        readAt: null,
+        createdAt: new Date().toISOString(),
+        teamId: null, // hard caps are enforced globally (no per-scope attribution)
+      });
+      await this.dispatcher.dispatch(this.repo.hydrate(row));
+    } catch (err) {
+      this.logger.warn(`failed to dispatch agent.held notification: ${String(err)}`);
+    }
   }
 
   markRead(req: MarkReadRequest): { unread: number } {

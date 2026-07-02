@@ -4,6 +4,8 @@ import {
   LLM_FEATURE_DEFAULT,
   LlmFeatureSchema,
   LlmProviderSchema,
+  type BudgetPeriodStatus,
+  type BudgetStatus,
   type LlmFeature,
   type LlmProvider,
   type MidniteConfig,
@@ -92,6 +94,34 @@ export class UsageService {
       warnings: this.budgetWarnings(rows),
       costIsEstimate: true,
     };
+  }
+
+  /**
+   * Phase 50 Theme B — the *hard-cap* enforcement view, read by the agent-pool
+   * scheduler each tick to decide whether to block spawns. Distinct from the soft
+   * {@link budgetWarnings}: this drives a real block, not a warning. Computed from
+   * live spend over the current UTC day / month (same window basis as the soft
+   * warnings). Returns `over: false` with null periods when no hard cap is set —
+   * so the whole feature is inert (and cheap: no query) until a cap is configured.
+   */
+  checkBudget(): BudgetStatus {
+    const { hardDailyCapUsd, hardMonthlyCapUsd } = this.config.usage;
+    if (!hardDailyCapUsd && !hardMonthlyCapUsd) {
+      return { over: false, daily: null, monthly: null };
+    }
+    const today = dayOf(new Date().toISOString());
+    const month = today.slice(0, 7); // YYYY-MM
+    // One query for the whole month covers both the month and (by filter) the day.
+    const rows = this.repo.listInRange(`${month}-01T00:00:00.000Z`);
+    const monthSpent = sumCost(rows);
+    const daySpent = sumCost(rows.filter((r) => dayOf(r.at) === today));
+    const period = (capUsd: number | undefined, spentUsd: number): BudgetPeriodStatus | null =>
+      capUsd
+        ? { capUsd, spentUsd: round6(spentUsd), exceeded: spentUsd >= capUsd }
+        : null;
+    const daily = period(hardDailyCapUsd, daySpent);
+    const monthly = period(hardMonthlyCapUsd, monthSpent);
+    return { over: Boolean(daily?.exceeded) || Boolean(monthly?.exceeded), daily, monthly };
   }
 
   /**

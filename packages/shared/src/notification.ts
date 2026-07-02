@@ -12,8 +12,15 @@ export const NOTIFICATION_SEVERITIES = ['info', 'warn', 'urgent'] as const;
 export const NotificationSeveritySchema = z.enum(NOTIFICATION_SEVERITIES);
 export type NotificationSeverity = z.infer<typeof NotificationSeveritySchema>;
 
-/** What produced a notification — drives copy/icon and lets clients group. */
-export const NOTIFICATION_KINDS = ['task.waiting', 'task.done', 'task.abandoned'] as const;
+/** What produced a notification — drives copy/icon and lets clients group.
+ *  `agent.held` (Phase 50 Theme B) fires when the scheduler blocks spawns on a
+ *  hard budget/rate cap — a system-level guardrail alert, not a task transition. */
+export const NOTIFICATION_KINDS = [
+  'task.waiting',
+  'task.done',
+  'task.abandoned',
+  'agent.held',
+] as const;
 export const NotificationKindSchema = z.enum(NOTIFICATION_KINDS);
 export type NotificationKind = z.infer<typeof NotificationKindSchema>;
 
