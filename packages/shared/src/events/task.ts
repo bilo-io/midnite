@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { TaskSchema } from '../task.js';
+import { GuardrailSettingsSchema, PauseScopeSchema } from '../guardrails.js';
 
 // Live task-board events published over the gateway WebSocket. The gateway emits
 // one on every task state transition (create / update / delete) so clients get
@@ -41,6 +42,19 @@ export const AgentAttentionEventSchema = z.object({
 });
 export type AgentAttentionEvent = z.infer<typeof AgentAttentionEventSchema>;
 
+// Phase 50 A — the guardrail (pause/kill) state changed. Broadcast to every board
+// so it can show/clear a paused banner. `emergencyStop` marks an update that also
+// aborted in-flight agents (the pool reacts to this on the same event); the board
+// ignores it and just renders from `guardrails`.
+export const GuardrailsUpdatedEventSchema = z.object({
+  type: z.literal('guardrails.updated'),
+  at: z.string(),
+  guardrails: GuardrailSettingsSchema,
+  emergencyStop: z.boolean().optional(),
+  scope: PauseScopeSchema.optional(),
+});
+export type GuardrailsUpdatedEvent = z.infer<typeof GuardrailsUpdatedEventSchema>;
+
 export const TaskBoardEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('task.created'), at: z.string(), task: TaskSchema }),
   z.object({ type: z.literal('task.updated'), at: z.string(), task: TaskSchema }),
@@ -48,6 +62,7 @@ export const TaskBoardEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('tasks.bulkCreated'), at: z.string(), taskIds: z.array(z.string()) }),
   AgentActivityEventSchema,
   AgentAttentionEventSchema,
+  GuardrailsUpdatedEventSchema,
 ]);
 export type TaskBoardEvent = z.infer<typeof TaskBoardEventSchema>;
 

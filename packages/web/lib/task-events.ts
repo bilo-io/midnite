@@ -1,7 +1,12 @@
 'use client';
 
 import { useEffect } from 'react';
-import type { AgentActivityEvent, AgentAttentionEvent, TaskBoardEvent } from '@midnite/shared';
+import type {
+  AgentActivityEvent,
+  AgentAttentionEvent,
+  GuardrailsUpdatedEvent,
+  TaskBoardEvent,
+} from '@midnite/shared';
 
 /**
  * Client-side fan-out for parsed task-board events. The single live WS hook
@@ -57,6 +62,22 @@ export function useAgentAttentionListener(handler: (event: AgentAttentionEvent) 
   useEffect(() => {
     const listener = (event: TaskBoardEvent): void => {
       if (event.type === 'agent.attention') handler(event);
+    };
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
+    };
+  }, [handler]);
+}
+
+/**
+ * Subscribe to `guardrails.updated` events (Phase 50 A) — the kill-switch/pause
+ * state changed. `handler` must be stable.
+ */
+export function useGuardrailsListener(handler: (event: GuardrailsUpdatedEvent) => void): void {
+  useEffect(() => {
+    const listener = (event: TaskBoardEvent): void => {
+      if (event.type === 'guardrails.updated') handler(event);
     };
     listeners.add(listener);
     return () => {

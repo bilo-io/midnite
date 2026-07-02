@@ -7,6 +7,7 @@ export const AuditEntityTypeSchema = z.enum([
   'user',
   'team',
   'deck',
+  'guardrail',
 ]);
 
 export const AuditActionSchema = z.enum([
@@ -25,6 +26,9 @@ export const AuditActionSchema = z.enum([
   'deck.created',
   'deck.updated',
   'deck.deleted',
+  'guardrail.paused',
+  'guardrail.resumed',
+  'guardrail.emergency_stopped',
 ]);
 
 export const AuditEntrySchema = z.object({

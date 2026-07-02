@@ -75,4 +75,23 @@ export class ApprovalsRepository {
       .returning()
       .get();
   }
+
+  /** Persist the Phase 50 pause columns on the singleton row (preserving `mode`). */
+  upsertGuardrails(
+    patch: {
+      pausedGlobal: boolean;
+      pausedRepos: string;
+      pausedTeams: string;
+      pausedBy: string | null;
+      pausedAt: string | null;
+    },
+    updatedAt: string,
+  ): ApprovalSettingsRow {
+    return this.db
+      .insert(approvalSettings)
+      .values({ id: 'singleton', updatedAt, ...patch })
+      .onConflictDoUpdate({ target: approvalSettings.id, set: { updatedAt, ...patch } })
+      .returning()
+      .get();
+  }
 }
