@@ -81,16 +81,20 @@ Name every failure and remember it. Unblocks backoff, watchdogs, escalation, and
 
 ---
 
-## Theme B — Retry backoff + class-aware retry — **M**
+## Theme B — Retry backoff + class-aware retry — **M** — ✅ DONE (PR #277, 2026-07-02)
 
 Retry the things worth retrying, and give them room to breathe.
 
-- [ ] **Exponential backoff + jitter** between retries (config: `agent.retryBackoffBaseMs`, `maxBackoffMs`).
-      Persist a `nextRetryAt` (on the task or a retry record); `listReadyTodoTasks()` / the tick **skips a task until
-      its `nextRetryAt` elapses** — so a crash-looping task doesn't hammer the pool.
-- [ ] **Class-aware:** only `retryable` classes (crash, inactivity, transient) auto-retry; `gate-failed`,
-      `tool-denied`, and `no-pr` **don't blindly re-run identically** — they escalate (Theme D) instead.
-- [ ] Each retry records its attempt + class in `task_failures`, so "failed 3× — all timeouts" is a queryable fact.
+- [x] **Exponential backoff + jitter** between retries (config: `agent.retryBackoffBaseMs`, `maxBackoffMs`).
+      Persist a `nextRetryAt` (new `tasks.next_retry_at` column, migration 0065); `listReadyTodoTasks(now)` **skips a
+      task until its `nextRetryAt` elapses** (SQL-gated) — so a crash-looping task doesn't hammer the pool. Full
+      jitter (`random(0, min(base·2^n, cap))`); `base=0` disables backoff (instant retry = pre-Phase-53 behaviour).
+- [x] **Class-aware:** retry is gated on `isRetryableFailure` — `crash`/`timeout` auto-retry with backoff; a
+      non-retryable exit **abandons immediately** rather than re-running identically (Theme D will later escalate
+      these to needs-attention). A run timeout now routes through the same backoff-retry path instead of straight to
+      `abandoned`.
+- [x] Each retry records its attempt + class in `task_failures` (via the Theme A `recordFailure` at each site), so
+      "failed 3× — all timeouts" is a queryable fact; the `agent.retried` event now carries `nextRetryAt`.
 
 ---
 
