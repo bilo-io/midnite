@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-02 — feat: failure taxonomy + task_failures records — Phase 53 Theme A (PR #271)
+
+The foundation for lifecycle resilience: name every failure and remember it, so backoff (B), watchdogs (C), escalation (D), and the health UI (E) can reason about *why* a task failed. Purely additive — recording changes no task state.
+
+- [x] **shared**: `FailureClass` enum + `FAILURE_RETRYABLE` map (crash+timeout+inactivity retry; rest escalate) + `TaskFailure` record shape + typed `WaitReason`
+- [x] **gateway**: `task_failures` table (migration 0063) + `TaskFailuresRepository`; pure `classifyFailure(site)` helper; `TasksService.recordFailure` writes a typed row + `agent.failed` event
+- [x] **gateway**: runner records at each existing site — crash (onExit), timeout (run-timeout), gate-failed — with a best-effort `lastOutput` tail from the session ring buffer
+- [x] Tests: shared taxonomy units, `classifyFailure` pure test, `task_failures` repo round-trip, runner crash+gate-failed recording, `recordFailure` additive-contract (records without changing status)
+
+---
+
 ## 2026-07-02 — feat: session detail entry points — Phase 51 Theme F — **Phase 51 COMPLETE** (PR #269)
 
 Made the session cockpit reachable everywhere a session appears — the last theme, closing Phase 51.
