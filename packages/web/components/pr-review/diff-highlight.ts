@@ -11,6 +11,15 @@ import { tokenize, type HunkData, type HunkTokens } from 'react-diff-view';
 refractor.register(tsx);
 refractor.register(jsx);
 
+// react-diff-view@3's `tokenize` targets refractor@3's `highlight`, which returned
+// the token nodes as a bare array. refractor@4 wraps them in a hast `Root` object,
+// so we adapt by handing tokenize just the `.children` — otherwise it throws trying
+// to iterate the root (see the version note in phase-52 Decision §3). The shape no
+// longer matches refractor@4's `highlight` signature, so tokenize takes it via cast.
+const refractorAdapter = {
+  highlight: (value: string, language: string) => refractor.highlight(value, language).children,
+};
+
 // Map a file path to a Prism language id. Returns null when we have no highlighter
 // for it — the caller then renders the file without syntax tokens (never an error).
 const EXTENSION_LANGUAGE: Record<string, string> = {
@@ -69,7 +78,12 @@ export function languageForPath(path: string): string | null {
 export function tokenizeHunks(hunks: HunkData[], language: string | null): HunkTokens | null {
   if (!language) return null;
   try {
-    return tokenize(hunks, { highlight: true, refractor, language });
+    return tokenize(hunks, {
+      highlight: true,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- v4→v3 highlight shim (see refractorAdapter above)
+      refractor: refractorAdapter as any,
+      language,
+    });
   } catch {
     return null;
   }
