@@ -7,7 +7,7 @@ import { CryptoModule } from './crypto/crypto.module';
 import { DbModule } from './db/db.module';
 import { EnvironmentModule } from './environment/environment.module';
 import { FsModule } from './fs/fs.module';
-import { HealthController } from './health/health.controller';
+import { HealthModule } from './health/health.module';
 import { TasksModule } from './tasks/tasks.module';
 import { TaskCreatorModule } from './tasks/task-creator.module';
 import { AgentModule } from './agent/agent.module';
@@ -57,6 +57,7 @@ import { InboundModule } from './integrations/inbound/inbound.module';
     DbModule,
     EnvironmentModule,
     FsModule,
+    HealthModule,
     AgentModule,
     AgentsModule,
     CouncilsModule,
@@ -98,7 +99,7 @@ import { InboundModule } from './integrations/inbound/inbound.module';
     WebhooksModule,
     InboundModule,
   ],
-  controllers: [HealthController],
+  controllers: [],
   providers: [],
 })
 export class AppModule {}

@@ -93,6 +93,6 @@ function findMigrationsDir(): string {
       useFactory: (factory: DbFactory) => factory.sqlite,
     },
   ],
-  exports: [DB_TOKEN, SQLITE_TOKEN],
+  exports: [DB_TOKEN, SQLITE_TOKEN, DbFactory],
 })
 export class DbModule {}

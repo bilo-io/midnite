@@ -10,6 +10,7 @@ import fastifyStatic from '@fastify/static';
 import { mkdirSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
 import { AppModule } from './app.module';
+import { PreflightService } from './health/preflight.service';
 import { isLoopbackHost, isValidBearer, resolveAuthToken } from './auth/lib/auth-policy';
 import { isAllowedOrigin } from './lib/allowed-origin';
 import { loadConfigFromDisk } from './lib/load-config';
@@ -124,6 +125,12 @@ export async function startGateway(): Promise<NestFastifyApplication> {
   // under `tmux`) and the schedulers' timer cleanup never fire on a normal exit,
   // orphaning live PTYs. (Phase 7 A4.)
   app.enableShutdownHooks();
+
+  // Boot preflight (Phase 54 A): validate the process can actually run before it
+  // binds. Runs after the module graph is up (so it has DI + a migrated DB) but
+  // before listen(); a hard failure (or any warning under gateway.strictBoot)
+  // logs an actionable report and exits non-zero rather than serving degraded.
+  await app.get(PreflightService).run();
 
   const { port, host } = config.gateway;
   await app.listen(port, host);
