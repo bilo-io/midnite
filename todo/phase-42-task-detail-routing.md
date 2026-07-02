@@ -37,14 +37,22 @@ A real, shareable, refresh-safe URL for a single task.
 
 ---
 
-## Theme B — Intercepting-route modal + navigation migration — **M–L**
+## Theme B — Intercepting-route modal + navigation migration — **M–L** — ✅ DONE (PR #272, 2026-07-02)
 
 Click a card → modal overlay (you stay on the board); direct link / refresh / share → the Theme-A full page.
 
-- [ ] Add a parallel **`@modal` slot** under `app/(main)/` with a `default.tsx` (renders nothing) and an **intercepting route** `@modal/(.)tasks/[id]/page.tsx` that renders `<TaskDetail>` inside the modal overlay. Hard navigation falls through to `tasks/[id]/page.tsx` (Theme A). (Decision §1 settles the exact slot/intercept layout.)
-- [ ] Migrate every task-open entry point to **`router.push('/tasks/:id')`**: board/list/table `onSelect` ([`tasks-view.tsx`](../packages/web/components/tasks-view.tsx)), the command palette's task-result `route` ([`command-palette.tsx`](../packages/web/components/command-palette.tsx)), and the board `Enter` key.
-- [ ] Replace the legacy `?open={taskId}` `useEffect` with a **client redirect** `/tasks?open=:id` → `/tasks/:id` so existing links/bookmarks keep working for one release (Decision §4); remove the local `selected`-state open path once nav drives the modal.
-- [ ] Closing the modal returns to the prior route (browser back / `router.back()`); the board's scroll/filter state survives the round-trip.
+> **Done client-side, not with intercepting routes.** `output: 'export'` has no
+> server runtime, so Next parallel/intercepting routes (`@modal`) aren't available.
+> Per the index rethink, the modal-vs-page split rides a **`?task=<id>` query param**
+> on `/tasks`: the modal is *derived from the URL* (not local state), so the browser
+> back button + close both pop it and refresh/share re-opens it. `/tasks/view?id=`
+> (Theme A) stays the shareable full page — the hard-nav / share target. Href helpers
+> live in [`lib/task-route.ts`](../packages/web/lib/task-route.ts).
+
+- [x] ~~`@modal` intercepting slot~~ — **not viable under static export.** Instead: a **`?task=<id>` param** on `/tasks` renders `<TaskThreadModal>` over the board; the modal is derived from `useSearchParams`, so it's refresh/share-safe and the board stays mounted behind it. (Supersedes Decision §1.)
+- [x] Migrated every task-open entry point to **`router.push` of `?task=`** ([`lib/task-route.ts`](../packages/web/lib/task-route.ts) `taskModalHref`): board/list/table `onSelect` + board `Enter` ([`tasks-view.tsx`](../packages/web/components/tasks-view.tsx)), the command palette's task-result route ([`command-palette.tsx`](../packages/web/components/command-palette.tsx)), and the 3 cross-page producers (session terminal, recent-projects, boardroom).
+- [x] Replaced the legacy `?open={taskId}` open-and-strip `useEffect` with a **client redirect** `/tasks?open=:id` → `/tasks?task=:id` (Decision §4); the local `selected`-state open path is gone (nav drives the modal).
+- [x] Closing the modal calls `router.back()` (browser back also closes it, since the modal is URL-derived); the board's scroll/filter state survives the round-trip. A direct-load close strips the param instead of leaving the app.
 
 ---
 
