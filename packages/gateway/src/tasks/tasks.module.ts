@@ -7,6 +7,7 @@ import { WorkflowsModule } from '../workflows/workflows.module';
 import { AiReviewService } from './ai-review.service';
 import { PrStatusService } from './pr-status.service';
 import { TasksController } from './tasks.controller';
+import { TaskFailuresRepository } from './task-failures.repository';
 import { TasksRepository } from './tasks.repository';
 import { TasksService } from './tasks.service';
 import { TaskEventBus } from './task-event-bus';
@@ -15,7 +16,15 @@ import { TasksGateway } from './tasks.gateway';
 @Module({
   imports: [AgentModule, AuthModule, ChecksModule, ReposModule, WorkflowsModule],
   controllers: [TasksController],
-  providers: [TasksService, TasksRepository, TaskEventBus, TasksGateway, PrStatusService, AiReviewService],
+  providers: [
+    TasksService,
+    TasksRepository,
+    TaskFailuresRepository,
+    TaskEventBus,
+    TasksGateway,
+    PrStatusService,
+    AiReviewService,
+  ],
   exports: [TasksService, TaskEventBus],
 })
 export class TasksModule {}

@@ -9,6 +9,7 @@ import { TaskClassifier } from '../agent/classifier.service';
 import { PlannerService } from '../agent/planner.service';
 import type { UrlContextService } from '../agent/url-context.service';
 import { TasksRepository } from '../tasks/tasks.repository';
+import { TaskFailuresRepository } from '../tasks/task-failures.repository';
 import { TasksService } from '../tasks/tasks.service';
 import { TaskEventBus } from '../tasks/task-event-bus';
 import type { ReposService } from '../repos/repos.service';
@@ -112,7 +113,7 @@ function makeHarness(agent: Record<string, unknown> = {}): Harness {
   const classifier = {} as TaskClassifier;
   const planner = {} as PlannerService;
   const repos = { findByName: () => undefined } as unknown as ReposService;
-  const tasks = new TasksService(repo, classifier, planner, bus, repos, config);
+  const tasks = new TasksService(repo, new TaskFailuresRepository(db), classifier, planner, bus, repos, config);
 
   const terminal = makeFakeTerminal();
   const pool = new AgentPoolService(config, tasks);

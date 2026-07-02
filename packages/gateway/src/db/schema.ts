@@ -165,6 +165,40 @@ export const taskCheckRuns = sqliteTable(
 export type TaskCheckRunRow = typeof taskCheckRuns.$inferSelect;
 export type TaskCheckRunInsert = typeof taskCheckRuns.$inferInsert;
 
+/**
+ * Phase 53 Theme A — one row per task-run failure, so backoff/watchdogs/health
+ * can reason about *why* a task failed instead of collapsing into `abandoned`.
+ * `class` is a shared FailureClass; `retry_index` is the task's retryCount at the
+ * moment of failure. Recorded additively — writing a row changes no task state.
+ */
+export const taskFailures = sqliteTable(
+  'task_failures',
+  {
+    id: text('id').primaryKey(),
+    taskId: text('task_id').notNull(),
+    /** Shared FailureClass enum value. */
+    class: text('class').notNull(),
+    /** Short human-readable reason. */
+    detail: text('detail').notNull(),
+    /** Process exit code for a crash; null otherwise. */
+    exitCode: integer('exit_code'),
+    /** Best-effort trailing session output snippet; null when unavailable. */
+    lastOutput: text('last_output'),
+    /** The task's retryCount when this failure occurred. */
+    retryIndex: integer('retry_index').notNull(),
+    /** teamId of the failed task; null for personal tasks. */
+    teamId: text('team_id'),
+    at: text('at').notNull(),
+  },
+  (t) => ({
+    taskIdx: index('task_failures_task_idx').on(t.taskId),
+    classIdx: index('task_failures_class_idx').on(t.class),
+  }),
+);
+
+export type TaskFailureRow = typeof taskFailures.$inferSelect;
+export type TaskFailureInsert = typeof taskFailures.$inferInsert;
+
 export const projects = sqliteTable('projects', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),

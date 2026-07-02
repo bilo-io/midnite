@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -18,10 +18,12 @@ import {
   type BulkCreateTaskResponse,
   type BulkLineResult,
   type CheckRun,
+  type FailureClass,
   type MidniteConfig,
   type Status,
   type Task,
   type TaskCounts,
+  type TaskFailure,
   type TeamScope,
 } from '@midnite/shared';
 import { TaskClassifier, type ClassifierImage } from '../agent/classifier.service';
@@ -32,6 +34,7 @@ import { MIDNITE_CONFIG } from '../config.token';
 import { mapWithConcurrency } from '../lib/map-with-concurrency';
 import { ReposService } from '../repos/repos.service';
 import { buildTaskReport, taskReportFilename } from './lib/task-report';
+import { TaskFailuresRepository } from './task-failures.repository';
 import { TasksRepository } from './tasks.repository';
 import { TaskEventBus } from './task-event-bus';
 
@@ -78,8 +81,11 @@ export interface CreateTaskInput {
 
 @Injectable()
 export class TasksService {
+  private readonly logger = new Logger(TasksService.name);
+
   constructor(
     @Inject(TasksRepository) private readonly repo: TasksRepository,
+    @Inject(TaskFailuresRepository) private readonly failures: TaskFailuresRepository,
     @Inject(TaskClassifier) private readonly classifier: TaskClassifier,
     @Inject(PlannerService) private readonly planner: PlannerService,
     @Inject(TaskEventBus) private readonly bus: TaskEventBus,
@@ -821,6 +827,52 @@ export class TasksService {
     const now = new Date().toISOString();
     this.repo.insertEvent({ id: randomUUID(), taskId, at: now, kind });
     this.emit('task.updated', this.getTask(taskId));
+  }
+
+  /**
+   * Phase 53 Theme A — record a typed failure for a task run + a companion
+   * `agent.failed` event so the thread stays readable. Purely additive: it writes
+   * a `task_failures` row and never changes task state (the caller's existing
+   * retry/abandon/waiting transition is untouched). Best-effort and fail-open —
+   * a recording error must never break the failure path, so it swallows + logs.
+   */
+  recordFailure(
+    taskId: string,
+    failure: { class: FailureClass; detail: string; exitCode?: number; lastOutput?: string | null },
+  ): void {
+    try {
+      const now = new Date().toISOString();
+      const task = this.repo.getTask(taskId);
+      if (!task) return;
+      this.failures.insert({
+        id: randomUUID(),
+        taskId,
+        class: failure.class,
+        detail: failure.detail,
+        exitCode: failure.exitCode ?? null,
+        lastOutput: failure.lastOutput ?? null,
+        retryIndex: task.retryCount ?? 0,
+        teamId: task.teamId ?? null,
+        at: now,
+      });
+      this.repo.insertEvent({
+        id: randomUUID(),
+        taskId,
+        at: now,
+        kind: 'agent.failed',
+        data: JSON.stringify({ class: failure.class, detail: failure.detail }),
+      });
+      this.emit('task.updated', this.getTask(taskId));
+    } catch (err) {
+      this.logger.warn(
+        `recordFailure: failed to record ${failure.class} for ${taskId}: ${err instanceof Error ? err.message : 'unknown'}`,
+      );
+    }
+  }
+
+  /** A task's recorded failure history (oldest-first) — for the health view (E). */
+  listFailures(taskId: string): TaskFailure[] {
+    return this.failures.listByTask(taskId);
   }
 
   // ── Manual check trigger (Phase 30 D) ────────────────────────────────────

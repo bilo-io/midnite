@@ -14,6 +14,7 @@ import { TasksService } from '../tasks/tasks.service';
 import { TerminalService } from '../terminal/terminal.service';
 import { AgentPoolService } from './agent-pool.service';
 import { appendRepoConventions } from './lib/build-agent-prompt';
+import { classifyFailure } from './lib/classify-failure';
 
 /**
  * Drives a single task through an autonomous agent run: claim a slot, move the
@@ -297,6 +298,11 @@ export class AgentRunnerService implements OnModuleInit {
         `auto-fix budget exhausted (${taskAfterGate.fixAttempts}/${autoFix.maxAttempts}) for task ${taskId}`,
       );
     }
+    // Phase 53 A — record the gate failure; markWaiting behaviour is unchanged.
+    this.tasks.recordFailure(taskId, {
+      ...classifyFailure({ site: 'gate' }),
+      lastOutput: this.snapshotOutput(taskId),
+    });
     this.tasks.markWaiting(taskId);
     this.complete(taskId);
   }
@@ -354,6 +360,11 @@ export class AgentRunnerService implements OnModuleInit {
     if (task && (task.status === 'wip' || task.status === 'waiting')) {
       const max = this.config.agent.maxRetries;
       const retries = task.retryCount ?? 0;
+      // Phase 53 A — record the crash before the (unchanged) retry/abandon decision.
+      this.tasks.recordFailure(taskId, {
+        ...classifyFailure({ site: 'exit', exitCode }),
+        lastOutput: this.snapshotOutput(taskId),
+      });
       if (retries >= max) {
         this.logger.warn(
           `agent session ${taskId} exited (code ${exitCode}) while ${task.status} — exhausted ${retries}/${max} retries, abandoning`,
@@ -381,10 +392,31 @@ export class AgentRunnerService implements OnModuleInit {
     const ms = this.config.agent.runTimeoutMs;
     const timer = setTimeout(() => {
       this.logger.warn(`agent run ${taskId} exceeded ${ms}ms — cancelling`);
+      // Phase 53 A — record the timeout before the (unchanged) cancel→abandon.
+      this.tasks.recordFailure(taskId, {
+        ...classifyFailure({ site: 'timeout', timeoutMs: ms }),
+        lastOutput: this.snapshotOutput(taskId),
+      });
       this.cancel(taskId);
     }, ms);
     timer.unref?.();
     this.timers.set(taskId, timer);
+  }
+
+  /**
+   * Best-effort trailing snippet of a session's output for a failure record
+   * (Phase 53 A). Reads the terminal ring buffer if the handle is still alive;
+   * returns null when gone or empty. Capped so we never store a huge blob.
+   */
+  private snapshotOutput(taskId: string): string | null {
+    try {
+      const out = this.terminal.readOutput(taskId);
+      if (!out) return null;
+      const MAX = 2000;
+      return out.length > MAX ? out.slice(-MAX) : out;
+    } catch {
+      return null;
+    }
   }
 
   private clearRunTimeout(taskId: string): void {
