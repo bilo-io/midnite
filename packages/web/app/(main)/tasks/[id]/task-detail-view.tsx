@@ -18,7 +18,17 @@ import { useApiData } from '@/lib/use-api-data';
  */
 export function TaskDetailView() {
   const router = useRouter();
-  const id = useSearchParams().get('id') ?? '';
+  const searchParams = useSearchParams();
+  const id = searchParams.get('id') ?? '';
+  const tab: 'details' | 'review' = searchParams.get('tab') === 'review' ? 'review' : 'details';
+  // Keep the URL in step with the active tab so a review is bookmarkable/shareable
+  // at the tab it was left on (Phase 52 E). `replace` avoids stacking history.
+  const setTab = (next: 'details' | 'review') => {
+    const qs = new URLSearchParams(searchParams.toString());
+    if (next === 'review') qs.set('tab', 'review');
+    else qs.delete('tab');
+    router.replace(`/tasks/view?${qs.toString()}`);
+  };
   const { data, loading, error } = useApiData(
     () => (id ? Promise.all([getTask(id), getProjects(), getTasks()]) : Promise.resolve(null)),
     [id],
@@ -68,8 +78,11 @@ export function TaskDetailView() {
     );
   }
 
+  // The Review tab hosts the full diff viewer — give it room to breathe.
+  const wide = tab === 'review' && !!task.prUrl;
+
   return (
-    <div className="container max-w-3xl py-6 pb-12">
+    <div className={`container py-6 pb-12 ${wide ? 'max-w-5xl' : 'max-w-3xl'}`}>
       {back}
       <div className="flex flex-col overflow-hidden rounded-xl border border-border bg-card">
         <TaskDetail
@@ -78,6 +91,8 @@ export function TaskDetailView() {
           tasks={tasks}
           onClose={() => router.push('/tasks')}
           variant="page"
+          tab={tab}
+          onTabChange={setTab}
         />
       </div>
     </div>

@@ -238,7 +238,7 @@ function SortableZoneRow({
       ) : (
         <>
           <span className="min-w-0 flex-1 truncate text-sm font-medium">{zone.label}</span>
-          <span className="flex shrink-0 items-center gap-2">
+          <span className="flex h-9 shrink-0 items-center gap-2">
             <span className="text-sm tabular-nums text-muted-foreground">{timeIn(now, zone.tz)}</span>
             <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
               {offsetLabel(now, zone.tz)}
