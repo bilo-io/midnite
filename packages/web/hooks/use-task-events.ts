@@ -54,7 +54,9 @@ export function useTaskEvents(): void {
           // invalidateData() here avoids a full sessions+tasks refetch on every
           // tool call, which can be several times per second.
           const isEphemeral =
-            parsed.data.type === 'agent.activity' || parsed.data.type === 'agent.attention';
+            parsed.data.type === 'agent.activity' ||
+            parsed.data.type === 'agent.attention' ||
+            parsed.data.type === 'guardrails.updated';
           if (!isEphemeral) invalidateData();
           emitTaskEvent(parsed.data);
         } catch {

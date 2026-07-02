@@ -18,6 +18,8 @@ import { useGatewayErrorToast } from '@/lib/use-gateway-error-toast';
 import { Button } from '@/components/ui/button';
 import { BoardView } from '@/components/board-view';
 import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-action-bar';
+import { GuardrailsBanner, GuardrailsControl } from '@/components/guardrails-control';
+import { useGuardrails } from '@/hooks/use-guardrails';
 import { useConfirm } from '@/components/confirm-dialog';
 import { FilterPills, type FilterOption } from '@/components/filter-pills';
 import { ListView } from '@/components/list-view';
@@ -128,6 +130,7 @@ export function TasksView({
     setLocalTasks(tasks);
   }, [tasks]);
   const [showNewTask, setShowNewTask] = useState(false);
+  const { guardrails, setLocal: setGuardrails } = useGuardrails();
   const toast = useToast();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -418,6 +421,7 @@ export function TasksView({
           <FilterPills options={DELIVERY_FILTERS} paramKey={DELIVERY_PARAM} hideAll />
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          <GuardrailsControl guardrails={guardrails} onChange={setGuardrails} />
           <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
             {VIEW_OPTIONS.map(({ value, label, Icon }) => (
               <Button
@@ -445,6 +449,8 @@ export function TasksView({
           </Button>
         </div>
       </div>
+
+      <GuardrailsBanner guardrails={guardrails} onChange={setGuardrails} />
 
       <BulkActionBar
         count={selectedCount}

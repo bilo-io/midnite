@@ -449,6 +449,13 @@
       "when": 1782949711243,
       "tag": "0063_task_failures",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "6",
+      "when": 1782955567282,
+      "tag": "0064_guardrail_pause",
+      "breakpoints": true
     }
   ]
 }

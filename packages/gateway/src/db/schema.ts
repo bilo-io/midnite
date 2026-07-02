@@ -741,13 +741,23 @@ export const approvalRules = sqliteTable(
 export type ApprovalRuleRow = typeof approvalRules.$inferSelect;
 export type ApprovalRuleInsert = typeof approvalRules.$inferInsert;
 
-/** Single-row settings for the approvals policy engine. */
+/** Single-row settings for the approvals policy engine (+ Phase 50 pause state). */
 export const approvalSettings = sqliteTable('approval_settings', {
   /** Always 'singleton' — this table has exactly one row. */
   id: text('id').primaryKey().$default(() => 'singleton'),
   /** 'manual' | 'guarded' | 'autonomous' */
   mode: text('mode').notNull().default('manual'),
   updatedAt: text('updated_at').notNull(),
+  // --- Phase 50 A: kill switch & global pause (DB-backed so it survives a restart) ---
+  /** Global kill switch. 0 = running, 1 = paused everywhere. */
+  pausedGlobal: integer('paused_global', { mode: 'boolean' }).notNull().default(false),
+  /** JSON string[] of paused repo refs (task.repo). */
+  pausedRepos: text('paused_repos').notNull().default('[]'),
+  /** JSON string[] of paused team ids (task.teamId). */
+  pausedTeams: text('paused_teams').notNull().default('[]'),
+  /** Who last changed pause state, and when (ISO). */
+  pausedBy: text('paused_by'),
+  pausedAt: text('paused_at'),
 });
 export type ApprovalSettingsRow = typeof approvalSettings.$inferSelect;
 

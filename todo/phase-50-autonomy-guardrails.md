@@ -72,21 +72,23 @@
 
 ---
 
-## Theme A — Kill switch & global pause (scheduling gate) — **M**
+## Theme A — Kill switch & global pause (scheduling gate) — **M** — ✅ DONE (PR #274, 2026-07-02)
 
 An emergency stop that actually stops, and survives a restart.
 
-- [ ] **shared:** extend the safety contract — a `GuardrailSettings` shape (adds to `approval_settings`)
-      with `paused: boolean` + `pauseScope` (`global` | per-repo ids | per-team ids) + `pausedBy`/`pausedAt`;
-      an `EmergencyStopRequest`. Zod in [`shared/src/`](../packages/shared/src/), re-exported.
-- [ ] **gateway (approvals module):** persist pause state in the `approval_settings` singleton (forward-only
-      migration adding columns) so it's **DB-backed, not config** — an emergency stop can't require a reload.
-      `ApprovalsService.isPaused(scope)`.
-- [ ] **enforce at the scheduler:** `AgentPoolScheduler.tick()` checks `isPaused()` **before** assigning any
-      slot (global short-circuits; scoped filters the ready-set). A paused system spawns nothing.
-- [ ] **emergency stop:** an endpoint that sets `paused=true` **and** aborts in-flight agents
-      (`AgentRunnerService.stop/cancel` across active slots). WS-broadcast a `guardrails.updated` event so the
-      board shows a paused banner; resume clears it.
+- [x] **shared:** the safety contract — `GuardrailSettings` (`pausedGlobal` + `pausedRepos`/`pausedTeams` id sets
+      + `pausedBy`/`pausedAt`), `PauseScope` (`global`|`repo`|`team`), `PauseRequest`, `EmergencyStopRequest`, a
+      `guardrails.updated` WS event + `isTaskPaused` helper. Zod in [`shared/src/guardrails.ts`](../packages/shared/src/guardrails.ts).
+- [x] **gateway (approvals module):** pause state persisted on the `approval_settings` singleton (migration `0064`)
+      so it's **DB-backed, not config** — survives a restart. `ApprovalsService.getGuardrails / setPause /
+      emergencyStop / isTaskPaused / isGloballyPaused`; admin-gated + audited `GuardrailsController`.
+- [x] **enforce at the scheduler:** `AgentPoolScheduler.tick()` short-circuits on a global pause and filters the
+      ready-set via `isTaskPaused` for scoped (repo/team) pauses. A paused system spawns nothing.
+- [x] **emergency stop:** `POST /guardrails/emergency-stop` sets pause **and** broadcasts `guardrails.updated
+      { emergencyStop }`; the pool reacts by aborting matching in-flight agents (`runner.stop → todo`, requeued not
+      abandoned — Decision §A; event-driven so approvals needn't depend on the pool). Web shows a paused banner +
+      pause/emergency-stop control; resume clears it. *(Two-tier pause-vs-stop per Stage-2.5; full Safety panel = E,
+      CLI = F.)*
 
 ---
 
