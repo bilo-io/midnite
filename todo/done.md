@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-02 — feat: embed PR review + ?tab=review route — Phase 52 Theme E (PR #278)
+
+Makes the in-app diff viewer reachable from a task, not just a modal.
+
+- [x] Full task page (`/tasks/view?id=`) gains a **Details | Review** tab strip when the task has a `prUrl`; Review mounts the diff viewer inline. Board modal keeps its full-screen "View diff" + gains a "Review page" deep-link.
+- [x] **Deep-linkable** `?tab=review` — bidirectional (param selects the tab on load; switching tabs `router.replace`s it); page widens to `max-w-5xl` for the diff.
+- [x] Extracted `PrReviewPanel` (fetch + fail-open loading/error/ready states) from `PrDiffModal` so the modal and the tab share one implementation.
+- [x] Tests: `PrReviewPanel` states + page tab routing (deep-link, width, `router.replace` sync). Web-only; `web:typecheck`/`web:lint` clean, 735 web tests green.
+
 ## 2026-07-02 — feat: kill switch & global pause — Phase 50 Theme A (PR #274)
 
 The pause half of the safety story, turned from recorded into **enforced**: an emergency stop that actually halts scheduling and survives a restart.
