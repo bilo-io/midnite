@@ -92,7 +92,7 @@ An emergency stop that actually stops, and survives a restart.
 
 ---
 
-## Theme B — Spend & rate caps that block (scheduling gate) — **M-L** — ✅ DONE (PR #277, 2026-07-02)
+## Theme B — Spend & rate caps that block (scheduling gate) — **M-L** — ✅ DONE (PR #279, 2026-07-02)
 
 Promote budgets from advisory to enforced. **Enforced globally** (Stage-2.5 decision): `llm_usage` carries no
 repo/team cost attribution, so per-scope *spend* caps aren't computable without new plumbing — deferred; the rate

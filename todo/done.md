@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-02 — feat: enforce hard spend & spawn-rate caps at the scheduler — Phase 50 Theme B (PR #277)
+## 2026-07-02 — feat: enforce hard spend & spawn-rate caps at the scheduler — Phase 50 Theme B (PR #279)
 
 Budgets promoted from advisory to **enforced**: the agent-pool scheduler blocks new spawns when a hard daily/monthly spend cap is exceeded or the per-hour spawn-rate window is full. A blocked task stays `todo` (no new status) and re-evaluates each tick. Enforced **globally** (Stage-2.5: `llm_usage` has no repo/team cost attribution — per-scope caps deferred).
 
