@@ -36,7 +36,7 @@ describe('TaskFailuresRepository', () => {
       retryIndex: 0,
     });
     // nullable columns surface as undefined (exitCode) / null (lastOutput) per schema
-    expect(rows[0].teamId).toBeUndefined();
+    expect(rows[0]!.teamId).toBeUndefined();
   });
 
   it('returns failures oldest-first and scoped to the task', () => {
