@@ -1,4 +1,5 @@
 export * from './config.js';
+export * from './preflight.js';
 export * from './agent.js';
 export * from './agents.js';
 export * from './environment.js';

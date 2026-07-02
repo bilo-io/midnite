@@ -60,6 +60,26 @@ function loadKey(env: NodeJS.ProcessEnv = process.env): Buffer | null {
 }
 
 /**
+ * Presence + validity of the encryption key, for boot preflight (Phase 54 A).
+ * Reuses {@link loadKey}'s canonical rules so the check never drifts from what
+ * encryption actually accepts. `unset` — no key (encryption disabled, a soft
+ * gap); `valid` — a well-formed 32-byte key; `invalid` — set but malformed
+ * (a real misconfiguration).
+ */
+export function secretKeyPresence(
+  env: NodeJS.ProcessEnv = process.env,
+): { state: 'unset' | 'valid' | 'invalid'; detail: string } {
+  try {
+    const key = loadKey(env);
+    return key
+      ? { state: 'valid', detail: `${SECRET_KEY_ENV} is set (32-byte key)` }
+      : { state: 'unset', detail: `${SECRET_KEY_ENV} is not set — secret encryption disabled` };
+  } catch (err) {
+    return { state: 'invalid', detail: err instanceof Error ? err.message : `${SECRET_KEY_ENV} is malformed` };
+  }
+}
+
+/**
  * Provider-agnostic secret cipher. Injected into repositories that persist
  * secrets. Reads the env key lazily on each call so a key added/rotated at
  * runtime (or in a test) takes effect without a restart.
