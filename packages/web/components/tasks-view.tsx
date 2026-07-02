@@ -7,6 +7,7 @@ import { isAnsweredQuestion, type Project, type Repo, type Status, type Task } f
 import { deleteTask, updateTaskStatus } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { moveTask, spawnsSession } from '@/lib/task-transitions';
+import { TASK_MODAL_PARAM, TASK_MODAL_LEGACY_PARAM } from '@/lib/task-route';
 import {
   blockedCounts as computeBlockedCounts,
   unmetBlockerCount,
@@ -126,7 +127,6 @@ export function TasksView({
   useEffect(() => {
     setLocalTasks(tasks);
   }, [tasks]);
-  const [selected, setSelected] = useState<Task | null>(null);
   const [showNewTask, setShowNewTask] = useState(false);
   const toast = useToast();
   const searchParams = useSearchParams();
@@ -143,21 +143,49 @@ export function TasksView({
     return () => window.removeEventListener('midnite:new-task', onNew);
   }, []);
 
-  // Deep-link target from the session modal's "Go to task": auto-open it once.
-  const openId = searchParams.get('open');
-  const handledOpenRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (!openId || handledOpenRef.current === openId) return;
-    const match = tasks.find((t) => t.id === openId);
-    if (!match) return;
-    handledOpenRef.current = openId;
-    setSelected(match);
-    // Strip the param so a manual close + refresh doesn't reopen it.
+  // Phase 42 B: the task detail modal is URL-driven (`?task=<id>`), so a card
+  // click is a real navigation — the browser back button (or the modal's close)
+  // pops it, and a refresh/share re-opens it. `selected` is derived from the
+  // param, not local state, so it stays in sync once the board list loads.
+  const openId = searchParams.get(TASK_MODAL_PARAM);
+  const selected = openId ? localTasks.find((t) => t.id === openId) ?? null : null;
+  // Track whether the modal was opened by an in-app push (vs. a direct load /
+  // legacy redirect): on close we `router.back()` for a push so history unwinds
+  // cleanly, but strip the param for a direct load so we don't leave the app.
+  const openedViaPushRef = useRef(false);
+
+  const openTask = useCallback(
+    (task: Task) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set(TASK_MODAL_PARAM, task.id);
+      openedViaPushRef.current = true;
+      router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [router, pathname, searchParams],
+  );
+
+  const closeTask = useCallback(() => {
+    if (openedViaPushRef.current) {
+      openedViaPushRef.current = false;
+      router.back();
+      return;
+    }
     const params = new URLSearchParams(searchParams.toString());
-    params.delete('open');
+    params.delete(TASK_MODAL_PARAM);
     const qs = params.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-  }, [openId, tasks, router, pathname, searchParams]);
+  }, [router, pathname, searchParams]);
+
+  // Legacy `?open=<id>` (older links / notifications) → canonical `?task=<id>`.
+  // Kept for one release so existing bookmarks keep working.
+  const legacyOpenId = searchParams.get(TASK_MODAL_LEGACY_PARAM);
+  useEffect(() => {
+    if (!legacyOpenId) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete(TASK_MODAL_LEGACY_PARAM);
+    params.set(TASK_MODAL_PARAM, legacyOpenId);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [legacyOpenId, router, pathname, searchParams]);
 
   const confirm = useConfirm();
 
@@ -371,7 +399,7 @@ export function TasksView({
     tasks: filteredTasks,
     columns: visibleColumns,
     projectsById,
-    onSelect: setSelected,
+    onSelect: openTask,
     showAbandoned: showAllStatuses,
     onMove,
     isSelected,
@@ -444,7 +472,7 @@ export function TasksView({
           task={selected}
           projects={projects}
           tasks={localTasks}
-          onClose={() => setSelected(null)}
+          onClose={closeTask}
         />
       ) : null}
 

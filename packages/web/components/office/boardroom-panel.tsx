@@ -10,6 +10,7 @@ import { ProjectTag } from '@/components/project-tag';
 import { ProjectModal } from '@/components/project-modal';
 import { Spinner } from '@/components/spinner';
 import { getMemories, getProjects, getTasks } from '@/lib/api';
+import { taskModalHref } from '@/lib/task-route';
 import { invalidateData } from '@/lib/data-refresh';
 import { useApiData } from '@/lib/use-api-data';
 import { boardroomProjects } from '@/lib/office/projects';
@@ -105,7 +106,7 @@ export function BoardroomPanel({ onClose }: { onClose: () => void }) {
               project={selected}
               tasks={tasks.filter((t) => t.projectId === selected.id)}
               memories={memories}
-              onSelectTask={(task) => router.push(`/tasks?open=${task.id}`)}
+              onSelectTask={(task) => router.push(taskModalHref(task.id))}
               onClose={() => setSelected(null)}
               onSaved={invalidateData}
             />,

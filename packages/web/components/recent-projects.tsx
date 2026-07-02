@@ -10,6 +10,7 @@ import { ProjectTag } from '@/components/project-tag';
 import { SourceIcon } from '@/components/source-icon';
 import { StatusDonut, statusCounts } from '@/components/status-donut';
 import { cn } from '@/lib/utils';
+import { taskModalHref } from '@/lib/task-route';
 
 export const RECENT_LIMIT = 3;
 
@@ -194,7 +195,7 @@ export function ProjectCard({ project, tasks, projects, onSelectProject }: Proje
         <ProjectModal
           project={project}
           tasks={projectTasks}
-          onSelectTask={(task) => router.push(`/tasks?open=${task.id}`)}
+          onSelectTask={(task) => router.push(taskModalHref(task.id))}
           onClose={() => setOpen(false)}
           onSaved={() => invalidateData()}
         />
@@ -274,7 +275,7 @@ export function RecentProjects({ projects, tasks }: { projects: Project[]; tasks
         })}
       </div>
       {editProject && (
-        <ProjectModal project={editProject} tasks={tasks.filter((t) => t.projectId === editProject.id)} onSelectTask={(task) => router.push(`/tasks?open=${task.id}`)} onClose={() => setEditProject(null)} onSaved={() => invalidateData()} />
+        <ProjectModal project={editProject} tasks={tasks.filter((t) => t.projectId === editProject.id)} onSelectTask={(task) => router.push(taskModalHref(task.id))} onClose={() => setEditProject(null)} onSaved={() => invalidateData()} />
       )}
     </section>
   );
