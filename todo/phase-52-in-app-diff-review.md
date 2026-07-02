@@ -76,7 +76,7 @@ Make the agent's diff fetchable by a task id.
 
 ---
 
-## Theme B — Diff viewer: file tree + split/unified + highlight — **L** — ✅ DONE (PR #TBD, 2026-07-02)
+## Theme B — Diff viewer: file tree + split/unified + highlight — **L** — ✅ DONE (PR #273, 2026-07-02)
 
 The centerpiece — a real review viewer.
 

@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-02 — feat: in-app PR diff viewer — Phase 52 Theme B (PR #TBD)
+## 2026-07-02 — feat: in-app PR diff viewer — Phase 52 Theme B (PR #273)
 
 The review centerpiece: a client-only, syntax-highlighted diff viewer reachable from a task's PR section via a **"View diff" → full-screen modal**, rendering the Theme A structured `PrDiff` with no re-parse.
 
@@ -12,6 +12,20 @@ The review centerpiece: a client-only, syntax-highlighted diff viewer reachable 
 - [x] **react-diff-view@3 ↔ refractor@4 shim**: tokenize expects v3's array-returning `highlight`; v4 wraps tokens in a hast `Root`, so we adapt via `.children`. Added `react-diff-view`/`refractor` to `transpilePackages`; diff CSS re-skinned to the design tokens (theme-aware, both light/dark).
 - [x] "View diff" button wired into `task-detail.tsx` PR section (deep-link `?tab=review` route + inline embed deferred to Theme E; file rail hidden `< md` for now).
 - [x] Tests: `diff-model` unit (line-kind mapping, diffType, tree nesting/sort, DOM-safe key) + `pr-diff-viewer` RTL (unified default + split persist, expand/collapse-all lazy mount, truncation banner, tree/list toggle) + a 3-state Storybook story (browser test). `:typecheck`/`:lint`/`:test` green.
+
+---
+
+## 2026-07-02 — feat: URL-driven task modal (`?task=`) — Phase 42 Theme B — **Phase 42 COMPLETE** (PR #272)
+
+Closed the last open box of Phase 42. The task detail modal was pure local state — no URL, no browser-back, not shareable. The doc's intercepting-route plan doesn't work under `output: 'export'` (no server runtime), so the modal-vs-page split is done client-side with a `?task=<id>` query param.
+
+- [x] `?task=<id>` on `/tasks` drives the modal, **derived from `useSearchParams`** (not local state) — the browser back button + the modal close both pop it, and refresh/share re-opens it. `/tasks/view?id=` (Theme A) stays the shareable full page.
+- [x] Every task-open entry point pushes `?task=` via new `lib/task-route.ts` (`taskModalHref`): board/list/table `onSelect` + board `Enter`, the command-palette task result, and the 3 cross-page producers (session terminal, recent-projects ×2, boardroom).
+- [x] Open pushes the URL, close calls `router.back()` so board scroll/filter survive (existing filters preserved behind the modal); a direct-load close strips the param instead of leaving the app.
+- [x] Legacy `/tasks?open=:id` client-redirects to `?task=:id` for one release (old links/bookmarks keep working); the local `selected`-state open path is gone.
+- [x] Web-only — no gateway/schema/endpoint changes. Tests: `lib/task-route.test.ts` (helpers) + `e2e/task-modal.e2e.ts` (card→modal, close→board, legacy redirect, refresh-safe — 4 passed); web unit 708 green, `web:typecheck`/`web:lint` clean.
+
+---
 
 ## 2026-07-02 — feat: PR diff API — structured diff endpoint — Phase 52 Theme A (PR #270)
 

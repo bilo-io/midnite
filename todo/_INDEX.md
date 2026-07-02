@@ -40,7 +40,7 @@
 | [45 · Recurring/scheduled tasks](phase-45-recurring-scheduled-tasks.md) | ✅ DONE | 15/15 | `██████████` | 100% | — | — |
 | [44 · Outbound webhooks](phase-44-outbound-webhooks.md) | ✅ DONE | 20/20 | `██████████` | 100% | — | — |
 | [43 · Preference sync](phase-43-server-side-preference-sync.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
-| [42 · Task detail routing](phase-42-task-detail-routing.md) | 🔄 WIP | 7/11 | `██████░░░░` | 64% | B | — |
+| [42 · Task detail routing](phase-42-task-detail-routing.md) | ✅ DONE | 11/11 | `██████████` | 100% | — | — |
 | [41 · Command palette](phase-41-command-palette.md) | ✅ DONE | 32/32 | `██████████` | 100% | — | — ² |
 | [40 · Ideas pipeline](phase-40-ideas-pipeline.md) | ✅ DONE | 51/51 | `██████████` | 100% | — | — |
 | [39 · Visual customization](phase-39-visual-customization.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
@@ -84,8 +84,9 @@
 | [1 · Board by hand](phase-1-board.md) | ✅ DONE | 16/16 | `██████████` | 100% | — | — |
 | [0 · Scaffold](phase-0-scaffold.md) | ✅ DONE | 10/10 | `██████████` | 100% | — | — |
 
-**Headline:** the original **0–48 roadmap is effectively complete** — the only lingering
-box is **Phase 42 Theme B** (intercepting-route modal, blocked on a static-export rethink).
+**Headline:** the original **0–48 roadmap is complete** — Phase 42 closed out with
+**Theme B** (task modal via a `?task=` param, the static-export-friendly replacement
+for intercepting routes — PR #272, 2026-07-02).
 The **live frontier** is **Phase 51** (session detail — Theme E in flight, F to go) plus a
 newly-planned resilience/review trio — **52** (in-app PR review), **53** (task-lifecycle
 resilience), **54** (runtime/process resilience) — and the two unstarted plans
@@ -198,7 +199,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 
 ### [Phase 42 — Task detail routing & contextual commands](phase-42-task-detail-routing.md)
 - ✅ **A** — Full detail page (`/tasks/view?id=`)
-- 🔄 **B** — Intercepting-route modal + nav migration — ⚠️ **needs rethink**: `output: 'export'` blocks Next intercepting routes; do client-side (`?task=` param → modal, hard-nav falls to the page)
+- ✅ **B** — Modal via `?task=` param (client-side; intercepting routes N/A under `output: 'export'`) + nav migration (PR #272)
 - ✅ **C** — Contextual "Move to…" palette commands
 
 ### [Phase 41 — Command palette & keyboard navigation](phase-41-command-palette.md)
