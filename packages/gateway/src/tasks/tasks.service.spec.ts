@@ -9,6 +9,7 @@ import type {
   TaskInsert,
   TaskRow,
 } from '../db/schema';
+import { HeldTasksRegistry } from './held-tasks.registry';
 import { TasksRepository } from './tasks.repository';
 import { TaskFailuresRepository } from './task-failures.repository';
 import { TasksService } from './tasks.service';
@@ -262,6 +263,29 @@ describe('TasksService', () => {
     expect(task.title).toBe('add a CSV export to the reports page');
     expect(task.events.map((e) => e.kind)).toContain('task.created');
     expect(repo.tasks).toHaveLength(1);
+  });
+
+  it('attaches the scheduler-held reason to a todo task on read (Phase 50 B), only while todo', async () => {
+    const repo = new InMemoryRepo();
+    const held = new HeldTasksRegistry();
+    const service = new TasksService(
+      repo, stubFailures, new StubClassifier(), stubPlanner, new TaskEventBus(), stubRepos, stubConfig,
+      undefined, undefined, held,
+    );
+    const task = await service.createFromPrompt({ prompt: 'held work', images: [] });
+
+    // Not held yet.
+    expect(service.getTask(task.id).heldReason).toBeUndefined();
+
+    // Scheduler marks it held → surfaced on read + in the list.
+    held.replace(new Map([[task.id, 'over-budget']]));
+    expect(service.getTask(task.id).heldReason).toBe('over-budget');
+    expect(service.listTasks().find((t) => t.id === task.id)?.heldReason).toBe('over-budget');
+
+    // Once it leaves todo (spawned), the derived reason is not attached even if a
+    // stale registry entry lingers until the next reconcile.
+    service.updateStatus(task.id, 'wip');
+    expect(service.getTask(task.id).heldReason).toBeUndefined();
   });
 
   it('createFromPrompt honours an explicit status (e.g. backlog)', async () => {

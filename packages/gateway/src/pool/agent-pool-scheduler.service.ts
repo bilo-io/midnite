@@ -6,14 +6,24 @@ import {
   type OnModuleDestroy,
   type OnModuleInit,
 } from '@nestjs/common';
-import type { MidniteConfig, PauseScope } from '@midnite/shared';
+import type { MidniteConfig, PauseScope, Task, TaskHeldReason } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
 import { MetricsService } from '../metrics/metrics.service';
 import { ApprovalsService } from '../approvals/approvals.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { HeldTasksRegistry } from '../tasks/held-tasks.registry';
 import { TaskEventBus } from '../tasks/task-event-bus';
 import { TasksService } from '../tasks/tasks.service';
+import { UsageService } from '../usage/usage.service';
 import { AgentPoolService } from './agent-pool.service';
 import { AgentRunnerService } from './agent-runner.service';
+
+/** Rolling window over which {@link AgentPoolScheduler} counts spawns for the
+ *  per-hour rate cap. In-memory (resets on restart) — a throttle, not a ledger. */
+const SPAWN_RATE_WINDOW_MS = 3_600_000;
+
+/** Fixed order for the held cap-types, so the notification edge-check is stable. */
+const HELD_REASONS: readonly TaskHeldReason[] = ['over-budget', 'rate-limited'];
 
 /**
  * A single gateway-owned tick loop (never parallel) that assigns ready `todo`
@@ -26,6 +36,12 @@ export class AgentPoolScheduler implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(AgentPoolScheduler.name);
   private timer: ReturnType<typeof setInterval> | undefined;
   private running = false;
+  /** Timestamps (ms) of recent spawns for the rolling per-hour rate cap. */
+  private spawnTimes: number[] = [];
+  /** The held set as of the previous tick — for change detection (WS + notify edges). */
+  private prevHeld = new Map<string, TaskHeldReason>();
+  /** Cap-types currently blocking — a notification fires only on the not-blocking→blocking edge. */
+  private activeHeldCaps = new Set<TaskHeldReason>();
 
   constructor(
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
@@ -35,6 +51,12 @@ export class AgentPoolScheduler implements OnModuleInit, OnModuleDestroy {
     @Optional() @Inject(MetricsService) private readonly metrics?: MetricsService,
     @Optional() @Inject(ApprovalsService) private readonly approvals?: ApprovalsService,
     @Optional() @Inject(TaskEventBus) private readonly bus?: TaskEventBus,
+    // Phase 50 Theme B — hard spend/rate caps. All optional so existing scheduler
+    // specs (which construct this by hand) keep compiling; the feature is inert
+    // when a dep is absent or its cap is unset (defaults = pre-Phase-50 behavior).
+    @Optional() @Inject(UsageService) private readonly usage?: UsageService,
+    @Optional() @Inject(HeldTasksRegistry) private readonly held?: HeldTasksRegistry,
+    @Optional() @Inject(NotificationsService) private readonly notifications?: NotificationsService,
   ) {}
 
   onModuleInit(): void {
@@ -105,31 +127,105 @@ export class AgentPoolScheduler implements OnModuleInit, OnModuleDestroy {
     if (this.running) return;
     this.running = true;
     const tickStart = Date.now();
+    // Tasks the scheduler is holding this tick because a hard cap blocks them
+    // (Phase 50 B). Reconciled at the end so a cleared hold broadcasts too.
+    const held = new Map<string, TaskHeldReason>();
     try {
       // Phase 50 A: a global pause halts all scheduling; scoped pauses filter the
-      // ready-set below. Fail-safe — paused ⇒ spawn nothing.
+      // ready-set below. Fail-safe — paused ⇒ spawn nothing. (A paused system
+      // isn't "held by a cap" — leave the held set empty so it reconciles clear.)
       if (this.approvals?.isGloballyPaused()) return;
       // Record queue depth before assigning — "how many tasks were waiting".
       this.metrics?.recordQueueDepth(this.tasks.listReadyTodoTasks().length);
+
+      // Phase 50 B: a hard spend cap blocks ALL spawns this tick — every
+      // schedulable ready task is held "over-budget" (evaluated globally).
+      const overBudget = Boolean(this.usage?.checkBudget().over);
+      if (overBudget) {
+        for (const t of this.schedulableReady()) held.set(t.id, 'over-budget');
+        return;
+      }
+
       while (this.pool.freeSlotCount() > 0) {
         const running = this.runningCountsByRepo();
-        const next = this.tasks
+        const eligible = this.tasks
           .listReadyTodoTasks()
-          .find(
+          .filter(
             (t) =>
               !this.pool.slotForTask(t.id) &&
               !this.approvals?.isTaskPaused(t) &&
               this.repoHasCapacity(t.repo, running) &&
-              this.userHasCapacity(t.createdBy ?? undefined),
+              this.userHasCapacity(t.createdBy ?? undefined) &&
+              !held.has(t.id),
           );
+        const next = eligible[0];
         if (!next) break;
+        // Phase 50 B: per-hour spawn cap — hold the remaining eligible tasks and
+        // stop once the rolling window is full (recovers as the window rolls).
+        if (this.spawnRateFull()) {
+          for (const t of eligible) held.set(t.id, 'rate-limited');
+          break;
+        }
         const started = await this.runner.start(next);
         if (!started) break;
+        this.recordSpawn();
       }
     } finally {
+      this.reconcileHeld(held);
       this.metrics?.recordTickLatency(Date.now() - tickStart);
       this.running = false;
     }
+  }
+
+  /** Ready `todo` tasks the scheduler would consider spawning (unassigned + not
+   *  scope-paused). Used to mark the whole set held when a global cap blocks. */
+  private schedulableReady(): Task[] {
+    return this.tasks
+      .listReadyTodoTasks()
+      .filter((t) => !this.pool.slotForTask(t.id) && !this.approvals?.isTaskPaused(t));
+  }
+
+  /** Record a spawn against the rolling per-hour window (Phase 50 B). */
+  private recordSpawn(): void {
+    this.spawnTimes.push(Date.now());
+  }
+
+  /** Whether the per-hour spawn window is full. `maxSpawnsPerHour <= 0` = unlimited.
+   *  Prunes aged-out entries as a side effect so the window stays bounded. */
+  private spawnRateFull(): boolean {
+    const cap = this.config.agent.maxSpawnsPerHour;
+    if (cap <= 0) return false;
+    const cutoff = Date.now() - SPAWN_RATE_WINDOW_MS;
+    this.spawnTimes = this.spawnTimes.filter((t) => t > cutoff);
+    return this.spawnTimes.length >= cap;
+  }
+
+  /** Publish the tick's held set (Phase 50 B): update the registry, broadcast
+   *  `task.updated` for every task whose held state changed (so the board's chip
+   *  refreshes), and fire one edge-triggered notification per newly-blocking cap.
+   *  Never throws — a surfacing failure must not wedge the tick. */
+  private reconcileHeld(held: Map<string, TaskHeldReason>): void {
+    this.held?.replace(held);
+    // Broadcast the tasks whose held reason was added, removed, or changed.
+    const changed = new Set<string>([...held.keys(), ...this.prevHeld.keys()]);
+    for (const id of changed) {
+      if (held.get(id) === this.prevHeld.get(id)) continue;
+      try {
+        this.bus?.emit({ type: 'task.updated', at: new Date().toISOString(), task: this.tasks.getTask(id) });
+      } catch {
+        // Task vanished (deleted) between the tick and the broadcast — ignore.
+      }
+    }
+    // One notification per cap-type on its not-blocking→blocking transition.
+    const capsNow = new Set(held.values());
+    for (const cap of HELD_REASONS) {
+      if (capsNow.has(cap) && !this.activeHeldCaps.has(cap)) {
+        const count = [...held.values()].filter((r) => r === cap).length;
+        void this.notifications?.notifyGuardrailHeld(cap, count);
+      }
+    }
+    this.activeHeldCaps = capsNow;
+    this.prevHeld = held;
   }
 
   /** Whether another agent may start on `repo` without exceeding the cap. A

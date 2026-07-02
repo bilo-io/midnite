@@ -117,7 +117,11 @@ export type UsageSummaryResponse = z.infer<typeof UsageSummaryResponseSchema>;
 
 // ── Config ───────────────────────────────────────────────────
 // Optional soft budgets. When set, the summary endpoint flags spend near/over
-// them. TRACK + SOFT-WARN only — these never block calls (phase-7 decision).
+// them. Soft budgets TRACK + SOFT-WARN only (phase-7 decision). The `hard*Cap`
+// variants (Phase 50 Theme B) are distinct: when a hard cap is exceeded, the
+// agent-pool scheduler *blocks* new spawns (the task stays `todo`, re-checked
+// next tick) — enforcement, not just a warning. Hard caps are evaluated
+// globally (llm_usage carries no repo/team cost attribution today — Decision).
 export const UsageConfigSchema = z.object({
   /** Soft daily budget in USD; omit to disable the daily warning. */
   dailyBudgetUsd: z.number().positive().optional(),
@@ -125,5 +129,32 @@ export const UsageConfigSchema = z.object({
   monthlyBudgetUsd: z.number().positive().optional(),
   /** Fraction of a budget (0–1) at which to start warning. Default 0.8 (80%). */
   warnAtRatio: z.number().min(0).max(1).default(0.8),
+  /** Hard daily spend cap in USD; when today's spend meets/exceeds it the
+   *  scheduler blocks new agent spawns. Omit to disable (no hard daily block). */
+  hardDailyCapUsd: z.number().positive().optional(),
+  /** Hard monthly spend cap in USD; same enforcement over the calendar month. */
+  hardMonthlyCapUsd: z.number().positive().optional(),
 });
 export type UsageConfig = z.infer<typeof UsageConfigSchema>;
+
+/**
+ * Live enforcement view of the hard spend caps (Phase 50 Theme B), computed by
+ * the gateway's `UsageService.checkBudget()` from today's / this-month's spend.
+ * `over` is true when either period cap is met/exceeded — the scheduler blocks
+ * spawns while it is. Each period is null when its cap is unset (feature off).
+ */
+export const BudgetPeriodStatusSchema = z.object({
+  capUsd: z.number().positive(),
+  spentUsd: z.number().nonnegative(),
+  /** True once spend ≥ cap. */
+  exceeded: z.boolean(),
+});
+export type BudgetPeriodStatus = z.infer<typeof BudgetPeriodStatusSchema>;
+
+export const BudgetStatusSchema = z.object({
+  /** True when any configured hard cap is met/exceeded (⇒ block spawns). */
+  over: z.boolean(),
+  daily: BudgetPeriodStatusSchema.nullable(),
+  monthly: BudgetPeriodStatusSchema.nullable(),
+});
+export type BudgetStatus = z.infer<typeof BudgetStatusSchema>;

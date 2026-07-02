@@ -5,6 +5,7 @@ import { ChecksModule } from '../checks/checks.module';
 import { ReposModule } from '../repos/repos.module';
 import { WorkflowsModule } from '../workflows/workflows.module';
 import { AiReviewService } from './ai-review.service';
+import { HeldTasksRegistry } from './held-tasks.registry';
 import { PrDiffService } from './pr-diff.service';
 import { PrStatusService } from './pr-status.service';
 import { TasksController } from './tasks.controller';
@@ -26,7 +27,8 @@ import { TasksGateway } from './tasks.gateway';
     PrStatusService,
     PrDiffService,
     AiReviewService,
+    HeldTasksRegistry,
   ],
-  exports: [TasksService, TaskEventBus],
+  exports: [TasksService, TaskEventBus, HeldTasksRegistry],
 })
 export class TasksModule {}

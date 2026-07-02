@@ -79,3 +79,22 @@ export const WithRepo: Story = {
     await expect(canvas.getByText('acme/api')).toBeInTheDocument();
   },
 };
+
+/** Phase 50 B — a ready `todo` task the scheduler is holding because the hard
+ *  daily/monthly spend cap is exceeded. New agents won't spawn until it clears. */
+export const HeldOverBudget: Story = {
+  args: { task: { ...taskFeature, status: 'todo', heldReason: 'over-budget' }, project: projectTagInfo },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText('Held: over budget')).toBeInTheDocument();
+  },
+};
+
+/** Phase 50 B — held because the per-hour spawn-rate cap is full. */
+export const HeldRateLimited: Story = {
+  args: { task: { ...taskFeature, status: 'todo', heldReason: 'rate-limited' } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText('Held: rate-limited')).toBeInTheDocument();
+  },
+};
