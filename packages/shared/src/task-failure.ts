@@ -140,3 +140,62 @@ export const ResolveTaskRequestSchema = z
     path: ['prompt'],
   });
 export type ResolveTaskRequest = z.infer<typeof ResolveTaskRequestSchema>;
+
+/**
+ * Phase 53 Theme E — query for the recent-failures list (`GET /tasks/failures`).
+ * `class` narrows to one failure class; `limit` caps the rows (newest-first).
+ */
+export const TaskFailuresQuerySchema = z.object({
+  class: FailureClassSchema.optional(),
+  limit: z.coerce.number().int().positive().max(200).default(50),
+});
+export type TaskFailuresQuery = z.infer<typeof TaskFailuresQuerySchema>;
+
+export const TaskFailuresResponseSchema = z.object({
+  failures: z.array(TaskFailureSchema),
+});
+export type TaskFailuresResponse = z.infer<typeof TaskFailuresResponseSchema>;
+
+/**
+ * A lightweight task reference for the doctor report (Phase 53 Theme E) — enough
+ * to render a row + link, without embedding the full `Task` (which would create a
+ * shared import cycle). `sinceMs` is the duration that qualified the task for its
+ * bucket: idle time (`stuckWip`), age (`agedTodo`), or time-in-waiting
+ * (`waitingTooLong`); 0 for `needsAttention` (not time-gated).
+ */
+export const DoctorTaskRefSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  status: z.string(),
+  repo: z.string().optional(),
+  waitReason: WaitReasonSchema.optional(),
+  retryCount: z.number().int().nonnegative(),
+  sinceMs: z.number().int().nonnegative(),
+});
+export type DoctorTaskRef = z.infer<typeof DoctorTaskRefSchema>;
+
+/**
+ * Phase 53 Theme E — the operator's "what's wedged?" report (`GET /tasks/doctor`),
+ * powering the web health view and `midnite tasks doctor`. All lists are derived,
+ * nothing new is stored. `failureCountsByClass` counts the recent-failures window.
+ */
+export const TasksDoctorReportSchema = z.object({
+  generatedAt: z.string(),
+  /** `waiting` tasks with a failure `waitReason` (escalated, awaiting a human). */
+  needsAttention: z.array(DoctorTaskRefSchema),
+  /** `wip` tasks whose live session has been silent past `thresholds.wipSilentMs`. */
+  stuckWip: z.array(DoctorTaskRefSchema),
+  /** `todo` tasks older than `thresholds.agedTodoMs` (ready but never picked up). */
+  agedTodo: z.array(DoctorTaskRefSchema),
+  /** needs-attention `waiting` tasks parked longer than `thresholds.waitingTooLongMs`. */
+  waitingTooLong: z.array(DoctorTaskRefSchema),
+  /** Counts over the recent-failures window, keyed by failure class (partial). */
+  failureCountsByClass: z.record(z.string(), z.number().int().nonnegative()),
+  recentFailures: z.array(TaskFailureSchema),
+  thresholds: z.object({
+    wipSilentMs: z.number().int().nonnegative(),
+    agedTodoMs: z.number().int().nonnegative(),
+    waitingTooLongMs: z.number().int().nonnegative(),
+  }),
+});
+export type TasksDoctorReport = z.infer<typeof TasksDoctorReportSchema>;

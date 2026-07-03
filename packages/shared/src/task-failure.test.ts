@@ -5,7 +5,9 @@ import {
   FAILURE_RETRYABLE,
   FailureClassSchema,
   ResolveTaskRequestSchema,
+  TaskFailuresQuerySchema,
   TaskFailureSchema,
+  TasksDoctorReportSchema,
   WAIT_REASONS,
   WAIT_REASON_LABEL,
   WaitReasonSchema,
@@ -101,5 +103,31 @@ describe('ResolveTaskRequestSchema (Phase 53 D)', () => {
 
   it('rejects an unknown action', () => {
     expect(ResolveTaskRequestSchema.safeParse({ action: 'nuke' }).success).toBe(false);
+  });
+});
+
+describe('failures query + doctor report (Phase 53 E)', () => {
+  it('coerces + caps the failures query limit and defaults it', () => {
+    expect(TaskFailuresQuerySchema.parse({}).limit).toBe(50);
+    expect(TaskFailuresQuerySchema.parse({ limit: '25' }).limit).toBe(25); // query strings coerce
+    expect(TaskFailuresQuerySchema.safeParse({ limit: 999 }).success).toBe(false); // > max 200
+    expect(TaskFailuresQuerySchema.safeParse({ class: 'nope' }).success).toBe(false);
+  });
+
+  it('validates a doctor report shape', () => {
+    const r = TasksDoctorReportSchema.parse({
+      generatedAt: '2026-07-03T12:00:00.000Z',
+      needsAttention: [
+        { id: 't1', title: 'x', status: 'waiting', waitReason: 'agent-failed', retryCount: 3, sinceMs: 0 },
+      ],
+      stuckWip: [],
+      agedTodo: [],
+      waitingTooLong: [],
+      failureCountsByClass: { crash: 2 },
+      recentFailures: [],
+      thresholds: { wipSilentMs: 900000, agedTodoMs: 86400000, waitingTooLongMs: 86400000 },
+    });
+    expect(r.needsAttention[0]!.waitReason).toBe('agent-failed');
+    expect(r.failureCountsByClass.crash).toBe(2);
   });
 });
