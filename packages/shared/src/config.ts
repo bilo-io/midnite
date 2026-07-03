@@ -97,6 +97,18 @@ export const AgentConfigSchema = z.object({
       tickMs: z.number().int().positive().default(300000),
     })
     .default({}),
+  // Phase 54 D — when the scheduler's readiness gate finds a dependency down (DB
+  // unreachable), it skips the tick and backs off exponentially instead of
+  // hammering + log-spamming: the Nth consecutive unready tick waits
+  // `min(baseMs * 2^(N-1), maxMs)` before probing again, recovering immediately on
+  // the first success. Only engages when the DB is actually down — with a healthy
+  // DB the gate never fires, so this is behaviour-preserving.
+  readinessBackoff: z
+    .object({
+      baseMs: z.number().int().positive().default(1000),
+      maxMs: z.number().int().positive().default(30000),
+    })
+    .default({}),
 });
 
 export const TerminalConfigSchema = z.object({
