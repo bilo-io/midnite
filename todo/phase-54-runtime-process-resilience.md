@@ -114,17 +114,22 @@ Notice — and fix — a pool that's quietly wedging. The core of the #1 half.
 
 ---
 
-## Theme D — Scheduler resilience: readiness gate + backoff + pause — **M**
+## Theme D — Scheduler resilience: readiness gate + backoff + pause — **M** — ✅ DONE (PR #285, 2026-07-03)
 
 Don't tick into a dead database; stop cleanly when asked.
 
-- [ ] **Readiness gate:** the tick checks readiness (DB reachable, pool healthy) **before** doing work; when a
-      dependency is down it **skips with exponential backoff** instead of hammering + log-spamming.
-- [ ] **Clean pause/resume:** a first-class `pause()`/`resume()` on the scheduler (distinct from `onModuleDestroy`
-      clearing the timer) — the **shared mechanism** graceful shutdown (Theme E) uses to stop accepting new work,
-      and which **Phase 50's kill switch** can reuse.
-- [ ] A tick that throws is contained (already reentrancy-guarded) and now records a health signal that readiness
-      (Theme B) reflects.
+- [x] **Readiness gate:** the tick probes `HealthService.dbReachable()` (cheap `SELECT 1`, fail-open) **before**
+      doing work; when the DB is down it **skips with exponential backoff** (`min(baseMs·2^n, maxMs)`, config
+      `agent.readinessBackoff.*`) instead of hammering + log-spamming — logs once per re-probe, recovers on the
+      first success. Fail-open: no `HealthService` wired ⇒ no gate (pre-Phase-54-D behaviour).
+- [x] **Clean pause/resume:** a first-class `pause()`/`resume()`/`isPaused()` — the interval keeps firing (resume
+      is instant, `isRunning()` stays true), distinct from `onModuleDestroy` clearing the timer and from Phase 50's
+      business `isGloballyPaused` (the tick short-circuits on **either**). The **shared mechanism** graceful
+      shutdown (Theme E) will drain with; reusable by the kill switch. *(Kept alongside Phase 50's pause rather than
+      refactoring it — Stage-2.5.)*
+- [x] A tick that skips for unreadiness / is paused records a health signal `/health/ready` reflects
+      (`checkScheduler` → `warn` when paused or backing off). Wired via a `PoolModule ⇄ HealthModule` forwardRef
+      (`@Optional` both ways; DI graph verified to resolve).
 
 ---
 

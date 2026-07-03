@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-03 — feat: scheduler resilience — readiness gate + backoff + pause — Phase 54 Theme D (PR #PLACEHOLDER)
+
+Harden the run half of the scheduler lifecycle: don't tick into a dead DB, and stop cleanly when asked.
+
+- [x] shared: `agent.readinessBackoff.{baseMs,maxMs}` (1s/30s) — exponential-backoff knobs; only engage when the DB is actually down, so behaviour-preserving.
+- [x] gateway: the tick probes `HealthService.dbReachable()` (cheap `SELECT 1`, fail-open) before working; DB down → skip + exponential backoff (`min(base·2^n, cap)`), one log per re-probe, instant recovery. Fail-open: no HealthService ⇒ no gate.
+- [x] gateway: first-class `pause()`/`resume()`/`isPaused()` — timer keeps firing (resume instant, `isRunning()` stays true), distinct from teardown and from Phase 50's business `isGloballyPaused` (tick short-circuits on either). The mechanism graceful shutdown (Theme E) will drain with; reusable by the kill switch.
+- [x] gateway: `/health/ready` reflects the degraded states (`checkScheduler` → warn when paused / backing off). Wired via a `PoolModule ⇄ HealthModule` forwardRef (`@Optional` both ways; full DI graph verified to resolve).
+- [x] Tests: scheduler pause/resume + readiness-gate skip/backoff/recover + window-growth; `HealthService.dbReachable` + paused/backoff readiness; shared config defaults. shared 530, gateway 1378, web 743, cli 132 green; `:typecheck` clean.
+
 ## 2026-07-03 — feat: escalate-to-human + waiting nudges — Phase 53 Theme D (PR #283)
 
 A failed run becomes visible work, not a silent tombstone. Builds on the Theme A taxonomy + Theme B backoff.
