@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { CheckResult, FailureClass, MidniteConfig, Task, WaitReason } from '@midnite/shared';
-import { isRetryableFailure, resolveChecksForRepo } from '@midnite/shared';
+import { isNeedsAttention, isRetryableFailure, resolveChecksForRepo } from '@midnite/shared';
 import { KnowledgeService } from '../agent/knowledge.service';
 import { UrlContextService } from '../agent/url-context.service';
 import { ChecksService } from '../checks/checks.service';
@@ -349,8 +349,16 @@ export class AgentRunnerService implements OnModuleInit {
 
   // The PTY exited. If the task is still wip/waiting the agent died without the
   // Stop hook completing it (crash / external kill). Record + classify the
-  // failure, then retry-with-backoff (retryable classes) or abandon. A task
-  // already moved to done/abandoned is left as-is. Always frees the slot.
+  // failure, then retry-with-backoff (retryable classes) or escalate/abandon. A
+  // task already moved to done/abandoned is left as-is. Always frees the slot.
+  //
+  // A task in `waiting` with a **needs-attention** waitReason (Phase 53 D) has
+  // already been failure-handled and its session intentionally reaped — this
+  // onExit is that reap (onTimeout / gate-fail `complete()` both kill after
+  // transitioning to waiting), NOT a fresh crash. Re-processing it would write a
+  // duplicate failure record and clobber the waitReason, so we skip it. A plain
+  // `needs-input` waiting task keeps a genuinely-live PTY, so a real exit there
+  // is still an unexpected death worth reacting to.
   private onExit(taskId: string, exitCode: number): void {
     this.clearRunTimeout(taskId);
     let task: Task | undefined;
@@ -359,7 +367,10 @@ export class AgentRunnerService implements OnModuleInit {
     } catch {
       task = undefined;
     }
-    if (task && (task.status === 'wip' || task.status === 'waiting')) {
+    const live =
+      task?.status === 'wip' ||
+      (task?.status === 'waiting' && !isNeedsAttention(task.waitReason));
+    if (task && live) {
       const classified = classifyFailure({ site: 'exit', exitCode });
       this.tasks.recordFailure(taskId, {
         ...classified,

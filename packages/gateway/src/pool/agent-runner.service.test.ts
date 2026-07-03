@@ -328,6 +328,38 @@ describe('AgentRunnerService', () => {
     }
   });
 
+  it('does not double-handle when the timeout-escalate kill re-fires onExit (Phase 53 D)', async () => {
+    vi.useFakeTimers();
+    try {
+      const cfg = parseConfig({
+        agent: { pool: 1, runTimeoutMs: 60000, retryBackoffBaseMs: 0, escalateOnFailure: true },
+        terminal: {},
+        gateway: {},
+      });
+      const exhausted = { ...task('t1', 'x'), retryCount: 3 } as Task;
+      const { service, escalate, recordFailure } = fakeTasks([exhausted]);
+      const pool = new AgentPoolService(cfg, service);
+      const { terminal, fireExit } = fakeTerminal();
+      const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, noRepos);
+
+      await runner.start(exhausted);
+      await vi.advanceTimersByTimeAsync(60_000); // timeout, retries spent → escalate, status→waiting
+
+      // timeout is a retryable class, so an exhausted budget escalates as
+      // 'retries-exhausted' (the generic exhaustion reason), not 'timed-out'.
+      expect(escalate).toHaveBeenCalledTimes(1);
+      expect(escalate).toHaveBeenCalledWith('t1', 'retries-exhausted');
+
+      // Simulate the killManagedRun's deferred exit: the task is now waiting with a
+      // needs-attention reason, so onExit must NOT re-record or re-escalate.
+      fireExit(1);
+      expect(escalate).toHaveBeenCalledTimes(1);
+      expect(recordFailure).toHaveBeenCalledTimes(1); // the timeout only — no duplicate crash
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('abandons the task and kills the session on cancel', async () => {
     const cfg = config();
     const { service, updateStatus } = fakeTasks([task('t1', 'x')]);

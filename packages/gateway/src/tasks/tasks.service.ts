@@ -341,6 +341,9 @@ export class TasksService {
     if (!row) throw new NotFoundException(`task ${id} not found`);
     this.repo.updateStatus(id, 'waiting', now);
     this.repo.setWaitReason(id, waitReason, now);
+    // The session is dead (the runner released the slot around this call), so
+    // clear the binding — it reads as idle and boot recovery won't try to reattach.
+    this.repo.setSession(id, null, now);
     this.repo.insertEvent({
       id: randomUUID(),
       taskId: id,
