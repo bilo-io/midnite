@@ -2,6 +2,7 @@ import { Module, forwardRef } from '@nestjs/common';
 import { AgentModule } from '../agent/agent.module';
 import { ApprovalsModule } from '../approvals/approvals.module';
 import { ChecksModule } from '../checks/checks.module';
+import { HealthModule } from '../health/health.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { ReposModule } from '../repos/repos.module';
 import { TasksModule } from '../tasks/tasks.module';
@@ -27,6 +28,9 @@ import { WaitingNudgeService } from './waiting-nudge.service';
     UsageModule,
     NotificationsModule,
     forwardRef(() => ApprovalsModule),
+    // Phase 54 D — the scheduler's readiness gate reads HealthService.dbReachable();
+    // HealthModule imports PoolModule for its readiness checks, so forwardRef both.
+    forwardRef(() => HealthModule),
   ],
   controllers: [PoolController, LifecycleHookController],
   providers: [

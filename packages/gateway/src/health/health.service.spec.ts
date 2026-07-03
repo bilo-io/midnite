@@ -149,7 +149,41 @@ describe('HealthService.readiness', () => {
   });
 
   it('is ready when the pool is enabled and the scheduler is running', async () => {
-    const r = await svc(config({ poolEnabled: true }), okSqlite, { isRunning: () => true }).readiness();
+    const r = await svc(config({ poolEnabled: true }), okSqlite, {
+      isRunning: () => true,
+      isPaused: () => false,
+      isBackingOff: () => false,
+    }).readiness();
     expect(r.ready).toBe(true);
+  });
+
+  it('warns (still ready) when the scheduler is paused (Phase 54 D)', async () => {
+    const r = await svc(config({ poolEnabled: true }), okSqlite, {
+      isRunning: () => true,
+      isPaused: () => true,
+      isBackingOff: () => false,
+    }).readiness();
+    expect(byName(r.checks, 'scheduler').status).toBe('warn');
+    expect(r.ready).toBe(true); // a warn isn't a fail
+  });
+
+  it('warns when the scheduler is backing off an unready DB (Phase 54 D)', async () => {
+    const r = await svc(config({ poolEnabled: true }), okSqlite, {
+      isRunning: () => true,
+      isPaused: () => false,
+      isBackingOff: () => true,
+    }).readiness();
+    expect(byName(r.checks, 'scheduler').status).toBe('warn');
+  });
+});
+
+describe('HealthService.dbReachable (Phase 54 D)', () => {
+  it('returns true when SELECT 1 succeeds', () => {
+    expect(svc(config()).dbReachable()).toBe(true);
+  });
+
+  it('returns false (fail-open) when the handle throws', () => {
+    const throwing = { get sqlite() { throw new Error('locked'); } };
+    expect(svc(config(), throwing).dbReachable()).toBe(false);
   });
 });

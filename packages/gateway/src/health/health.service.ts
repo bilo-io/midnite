@@ -58,6 +58,20 @@ export class HealthService {
   }
 
   /**
+   * Cheap boolean DB-reachability probe (Phase 54 D) — a `SELECT 1` against the
+   * memoized handle, fail-open (any throw ⇒ false). Used by the scheduler's
+   * readiness gate each tick, so it stays light (no table introspection).
+   */
+  dbReachable(): boolean {
+    try {
+      this.dbFactory.sqlite.prepare('SELECT 1').get();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Readiness — can the gateway serve *now*? Re-evaluates the cheap live checks
    * each call (DB reachable, spawner available, pool up, scheduler running when
    * intended), so it reflects post-boot degradation, not a stale snapshot.
@@ -226,13 +240,27 @@ export class HealthService {
     if (!this.scheduler) {
       return { name: 'scheduler', status: 'warn', detail: 'scheduler service is not available' };
     }
-    return this.scheduler.isRunning()
-      ? { name: 'scheduler', status: 'ok', detail: 'scheduler tick loop is running' }
-      : {
-          name: 'scheduler',
-          status: 'fail',
-          detail: 'agent.poolEnabled is true but the scheduler tick loop is not running',
-          remedy: 'check the gateway logs for a scheduler start failure',
-        };
+    if (!this.scheduler.isRunning()) {
+      return {
+        name: 'scheduler',
+        status: 'fail',
+        detail: 'agent.poolEnabled is true but the scheduler tick loop is not running',
+        remedy: 'check the gateway logs for a scheduler start failure',
+      };
+    }
+    // Running, but reflect Phase 54 D degraded states as a warn so readiness shows
+    // the truth: paused (lifecycle stop / drain) or backing off a DB outage.
+    if (this.scheduler.isPaused()) {
+      return { name: 'scheduler', status: 'warn', detail: 'scheduler is paused (not accepting new work)' };
+    }
+    if (this.scheduler.isBackingOff()) {
+      return {
+        name: 'scheduler',
+        status: 'warn',
+        detail: 'scheduler is backing off — a dependency (database) is unavailable',
+        remedy: 'check database reachability; the scheduler resumes automatically when it recovers',
+      };
+    }
+    return { name: 'scheduler', status: 'ok', detail: 'scheduler tick loop is running' };
   }
 }
