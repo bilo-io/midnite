@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-03 — feat: runtime health in web + CLI doctor — Phase 54 Theme F (PR #289)
+
+Makes gateway process health visible instead of guessed — surfaces the Phase 54 A/B preflight + readiness in the Ops page and a `midnite doctor` command.
+
+- [x] **gateway:** `GET /health/preflight` — the full boot check set re-run live (config/DB/secret-key/claude+gh/spawner/repo-paths + strictBoot verdict), 200 pass / 503 fail, auth-exempt like the other `/health/*`.
+- [x] **web:** a "Runtime health" panel on the Ops page — readiness badge, uptime, spawner mode, and the live preflight checks (per-check status + remedy). A 503-tolerant fetch renders a degraded gateway's report rather than throwing.
+- [x] **cli:** `midnite doctor` — preflight + readiness pass/warn/fail table, respects global `--json`, exits non-zero when anything fails (scriptable health gate). Pure `doctorRows`/`doctorExitCode` helpers.
+- [x] **Fixed** a latent `HealthService`↔`AgentPoolScheduler` ES-module import cycle (Phase 54 D readiness gate + A/B `isRunning`): the Nest side was forwardRef'd but HealthService's eager `@Inject` TDZ-crashed the gateway at boot depending on import order — forwardRef'd both sides. last-shutdown-clean deferred to Theme E.
+- [x] Tests: controller 200/503, `RuntimeHealthPanel` RTL (ready/not-ready/unreachable), `doctor` rows + exit code, screenshot spec. gateway 1388, web 746, cli 149 green.
+
+---
 ## 2026-07-03 — feat: graceful shutdown drain + clean-shutdown marker — Phase 54 Theme E (PR #288)
 
 Die on purpose, not by surprise: on SIGTERM the gateway drains in-flight agents instead of abandoning them, and records whether the stop was clean.
