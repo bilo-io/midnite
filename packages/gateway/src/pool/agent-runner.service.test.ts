@@ -106,6 +106,9 @@ function fakeTerminal(opts?: { durable?: boolean; live?: string[]; reattachOk?: 
     isDurable: () => opts?.durable ?? false,
     liveSessionIds: () => opts?.live ?? [],
     readOutput: () => '',
+    // No live handle in these fakes → reconcileUnhealthy takes the explicit-release
+    // path (onExit won't fire), so the slot frees synchronously.
+    agentRunHealth: () => null,
   } as unknown as TerminalService;
   return {
     terminal,
@@ -690,6 +693,75 @@ describe('AgentRunnerService', () => {
       expect(markDone).toHaveBeenCalledWith('t1', 'https://github.com/acme/repo/pull/1');
       expect(markWaiting).not.toHaveBeenCalled();
       expect(recordCheckEvent).toHaveBeenCalledWith('t1', 'checks.passed');
+      expect(pool.slotForTask('t1')).toBeUndefined();
+    });
+  });
+
+  describe('watchdog reconcile (Phase 54 C)', () => {
+    it('reconcileUnhealthy retries a wip run below the retry cap, then frees the slot', () => {
+      const cfg = config(); // maxRetries default 3
+      const { service, recordFailure, retry, byId } = fakeTasks([task('t1')]);
+      byId.get('t1')!.status = 'wip';
+      const pool = new AgentPoolService(cfg, service);
+      pool.acquire('t1');
+      const { terminal, killManagedRun } = fakeTerminal();
+      const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, noRepos);
+
+      runner.reconcileUnhealthy('t1', { class: 'crash', detail: 'lost' });
+
+      expect(recordFailure).toHaveBeenCalledWith('t1', expect.objectContaining({ class: 'crash' }));
+      // backoff disabled in the test config → nextRetryAt null; status → todo, so a
+      // later onExit just releases.
+      expect(retry).toHaveBeenCalledWith('t1', null);
+      expect(killManagedRun).toHaveBeenCalledWith('t1');
+      expect(pool.slotForTask('t1')).toBeUndefined();
+    });
+
+    it('reconcileUnhealthy abandons once the retry cap is hit', () => {
+      const cfg = config(); // maxRetries 3
+      const { service, updateStatus, byId } = fakeTasks([task('t1')]);
+      const t = byId.get('t1')!;
+      t.status = 'wip';
+      t.retryCount = 3;
+      const pool = new AgentPoolService(cfg, service);
+      pool.acquire('t1');
+      const { terminal } = fakeTerminal();
+      const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, noRepos);
+
+      runner.reconcileUnhealthy('t1', { class: 'inactivity', detail: 'silent' });
+
+      expect(updateStatus).toHaveBeenCalledWith('t1', 'abandoned');
+      expect(pool.slotForTask('t1')).toBeUndefined();
+    });
+
+    it('reconcileUnhealthy on an already-terminal task only frees the slot (no failure recorded)', () => {
+      const cfg = config();
+      const { service, recordFailure, byId } = fakeTasks([task('t1')]);
+      byId.get('t1')!.status = 'done';
+      const pool = new AgentPoolService(cfg, service);
+      pool.acquire('t1');
+      const { terminal, killManagedRun } = fakeTerminal();
+      const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, noRepos);
+
+      runner.reconcileUnhealthy('t1', { class: 'crash', detail: 'lost' });
+
+      expect(recordFailure).not.toHaveBeenCalled();
+      expect(killManagedRun).toHaveBeenCalledWith('t1');
+      expect(pool.slotForTask('t1')).toBeUndefined();
+    });
+
+    it('reclaimOrphanedSlot frees the slot + reaps the session without recording a failure', () => {
+      const cfg = config();
+      const { service, recordFailure } = fakeTasks([task('t1')]);
+      const pool = new AgentPoolService(cfg, service);
+      pool.acquire('t1');
+      const { terminal, killManagedRun } = fakeTerminal();
+      const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, noRepos);
+
+      runner.reclaimOrphanedSlot('t1');
+
+      expect(recordFailure).not.toHaveBeenCalled();
+      expect(killManagedRun).toHaveBeenCalledWith('t1');
       expect(pool.slotForTask('t1')).toBeUndefined();
     });
   });

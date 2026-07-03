@@ -13,6 +13,17 @@ A failed run becomes visible work, not a silent tombstone. Builds on the Theme A
 - [x] gateway: `WaitingNudgeService` — a dedicated interval (not the scheduler; makes no scheduling decisions, fail-open) that fires escalating Phase 21 `task.needs-attention` reminders for a task stuck past `afterHours`, repeating every `repeatHours` up to `maxReminders`. `afterHours=0` disables (default).
 - [x] gateway/clients: `POST /tasks/:id/resolve` → requeue / re-plan (fresh prompt) / abandon (`resolveNeedsAttention`), plus typed `resolveTask` in web + cli. (Board/CLI surfaces = Theme E.)
 - [x] Tests: shared (wait reasons, needs-attention, resolve schema); gateway service (escalate/resolve/clear), runner (escalate-vs-abandon by flag), nudge service (threshold/repeat/cap/needs-input-skip/disabled), integration (escalate on exhausted). shared 529, gateway 1349, web 743, cli 132 green; `:typecheck` clean.
+## 2026-07-03 — feat: live pool watchdog — slot-leak + session-health auto-heal — Phase 54 Theme C (PR #280)
+
+The run-half of runtime resilience: a leaked/orphaned agent slot no longer wedges the pool until a restart, and a hung pty is caught before the 30-min timeout.
+
+- [x] `PoolWatchdogService.sweep()` rides the scheduler tick (never a second scheduler), fail-open, config-driven (`agent.watchdog.enabled`) — runs first in the tick so a fully-busy wedged pool heals even under a global pause.
+- [x] Detections + auto-heal: **orphaned** slot (task gone/terminal/not-running) → `reclaimOrphanedSlot`; **lost/dead** session (no live process → onExit can't fire) → reconcile as crash; **hung** pty (silent past the heartbeat) → reconcile as inactivity. Classified via the Phase 53 taxonomy (`lost`→crash, `inactivity`).
+- [x] Reconcile **mirrors stop/cancel** (state-first, then kill) and frees the slot exactly once — explicit release only when no live session exists; a live (hung) kill lets its onExit release, so a same-tick re-pick can't lose its new slot.
+- [x] `isSessionAlive(sessionId)` added to the **Spawner interface**: pty tracks its spawned handles + pid-alive (`isPidAlive`), tmux checks the pane isn't dead. `TerminalService.agentRunHealth()` adds a no-output heartbeat (`lastDataAt`). Reclaim ON by default; the stricter inactivity probe (`agent.watchdog.inactivityMs`, pty-only) is opt-in so quiet-but-live agents aren't killed.
+- [x] Tests: `pool-watchdog.service` (orphan/dead/hung/healthy/disabled/fail-open), `classify-failure` (lost+inactivity), runner `reconcileUnhealthy`/`reclaimOrphanedSlot`, `isPidAlive`. shared 517, gateway 1324 green.
+
+---
 
 ## 2026-07-03 — feat: audit completeness + RBAC gaps on the safety surface — Phase 50 Theme D (PR #281)
 

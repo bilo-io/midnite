@@ -138,6 +138,17 @@ export class TmuxSpawner implements Spawner {
     this.tmux(['kill-session', '-t', sessionName(sessionId)]);
   }
 
+  /** Phase 54 C: is the tmux session for `sessionId` present and its pane not dead?
+   *  `undefined` when tmux is unavailable (unknown → treated as alive upstream). */
+  isSessionAlive(sessionId: string): boolean | undefined {
+    if (!this.isAvailable()) return undefined;
+    const name = sessionName(sessionId);
+    if (this.tmux(['has-session', '-t', name]).status !== 0) return false;
+    const res = this.tmux(['display-message', '-p', '-t', name, '#{pane_dead}|#{pane_dead_status}']);
+    if (res.status !== 0) return false;
+    return !parsePaneStatus(res.stdout?.toString() ?? '').dead;
+  }
+
   // ---- internals ----
 
   /** Wire a node-pty `tmux attach` stream + exit poll into a SpawnHandle. */

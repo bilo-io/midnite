@@ -71,6 +71,13 @@ export interface Spawner {
    * reap a session whose owning task is gone/finished after a restart.
    */
   killSession?(sessionId: string): void;
+  /**
+   * Whether the process backing `sessionId` is still alive (Phase 54 C watchdog).
+   * `pty` tracks its spawned handles and checks the pid; `tmux` checks the pane is
+   * not dead. Returns `undefined` when the backend can't tell (no tracked session)
+   * — the caller treats "don't know" as alive (fail-open, never a false kill).
+   */
+  isSessionAlive?(sessionId: string): boolean | undefined;
 }
 
 /** Nest DI token for the configured Spawner. */

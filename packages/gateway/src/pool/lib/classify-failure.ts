@@ -9,7 +9,11 @@ import type { FailureClass, WaitReason } from '@midnite/shared';
 export type FailureSite =
   | { site: 'exit'; exitCode: number }
   | { site: 'timeout'; timeoutMs: number }
-  | { site: 'gate' };
+  | { site: 'gate' }
+  // Phase 54 C — the watchdog reclaimed an in-flight run: the session was lost
+  // (no live process, so onExit never fired) or went silent past the heartbeat.
+  | { site: 'lost' }
+  | { site: 'inactivity'; idleMs: number };
 
 export type ClassifiedFailure = {
   class: FailureClass;
@@ -34,6 +38,16 @@ export function classifyFailure(input: FailureSite): ClassifiedFailure {
       return {
         class: 'gate-failed',
         detail: 'quality gate failed with no auto-fix remaining',
+      };
+    case 'lost':
+      return {
+        class: 'crash',
+        detail: 'agent session was lost (no live process) — reclaimed by the watchdog',
+      };
+    case 'inactivity':
+      return {
+        class: 'inactivity',
+        detail: `agent went silent for ${Math.round(input.idleMs / 60_000)}m — reclaimed by the watchdog`,
       };
   }
 }
