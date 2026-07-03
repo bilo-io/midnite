@@ -76,6 +76,26 @@ describe('TaskCard — held chip (Phase 50 B)', () => {
   });
 });
 
+describe('TaskCard — needs-attention chip (Phase 53 E)', () => {
+  it('shows the failure reason + retry count for an escalated waiting task', () => {
+    render(
+      <TaskCard task={{ ...baseTask, status: 'waiting', waitReason: 'retries-exhausted', retryCount: 3 }} />,
+    );
+    expect(screen.getByText(/Retries exhausted/)).toBeInTheDocument();
+    expect(screen.getByText(/3×/)).toBeInTheDocument();
+  });
+
+  it('omits the chip for a plain needs-input wait (not a failure escalation)', () => {
+    render(<TaskCard task={{ ...baseTask, status: 'waiting', waitReason: 'needs-input' }} />);
+    expect(screen.queryByText(/Needs input/)).toBeNull();
+  });
+
+  it('omits the chip when there is no wait reason', () => {
+    render(<TaskCard task={{ ...baseTask, status: 'waiting' }} />);
+    expect(screen.queryByText(/Retries exhausted|Agent failed|Timed out|Gate failed/)).toBeNull();
+  });
+});
+
 describe('TaskCard — checks failing badge', () => {
   it('shows a "Checks failing" badge when checkRunStatus is failing', () => {
     render(<TaskCard task={{ ...baseTask, status: 'wip', checkRunStatus: 'failing' }} />);

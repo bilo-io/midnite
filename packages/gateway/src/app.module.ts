@@ -5,9 +5,11 @@ import { ConfigModule } from './config.module';
 import { ChecksModule } from './checks/checks.module';
 import { CryptoModule } from './crypto/crypto.module';
 import { DbModule } from './db/db.module';
+import { RuntimeMetaModule } from './runtime/runtime-meta.module';
 import { EnvironmentModule } from './environment/environment.module';
 import { FsModule } from './fs/fs.module';
 import { HealthModule } from './health/health.module';
+import { TaskHealthModule } from './tasks/task-health.module';
 import { TasksModule } from './tasks/tasks.module';
 import { TaskCreatorModule } from './tasks/task-creator.module';
 import { AgentModule } from './agent/agent.module';
@@ -55,6 +57,7 @@ import { InboundModule } from './integrations/inbound/inbound.module';
     ChecksModule,
     CryptoModule,
     DbModule,
+    RuntimeMetaModule,
     EnvironmentModule,
     FsModule,
     HealthModule,
@@ -72,6 +75,7 @@ import { InboundModule } from './integrations/inbound/inbound.module';
     SearchIndexModule,
     SearchModule,
     TasksModule,
+    TaskHealthModule,
     TaskCreatorModule,
     PoolModule,
     ProjectsModule,

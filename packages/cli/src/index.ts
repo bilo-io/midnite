@@ -4,9 +4,14 @@ import { clearAuth, readAuth, resolveToken, writeAuth } from './lib/auth-store.j
 import { Command } from 'commander';
 import Table from 'cli-table3';
 import {
+  FAILURE_CLASS_LABEL,
+  RESOLVE_TASK_ACTIONS,
+  WAIT_REASON_LABEL,
   WORKFLOW_WS_PATH,
   applyWorkflowEvent,
   isRunTerminal,
+  type FailureClass,
+  type ResolveTaskAction,
   type SearchQuery,
   type WorkflowEvent,
   type WorkflowRun,
@@ -327,6 +332,83 @@ program
       console.log(`moved ${task.id} → ${colourStatus(task.status)}`);
     },
   );
+
+// ── Phase 53 E — task health / failures / needs-attention resolution ─────────
+
+program
+  .command('failures')
+  .description('Recent task-run failures across tasks (Phase 53)')
+  .option('-c, --class <class>', 'filter to one failure class (crash, timeout, gate-failed, …)')
+  .option('-n, --limit <n>', 'max rows (default 50)', (v) => Number.parseInt(v, 10))
+  .action(async (opts: { class?: string; limit?: number }) => {
+    const failures = await withSpinner('Loading failures…', () =>
+      client().listRecentFailures({ class: opts.class as FailureClass | undefined, limit: opts.limit }),
+    );
+    if (isJsonMode()) {
+      printJson(failures);
+      return;
+    }
+    if (failures.length === 0) {
+      console.log('no recorded failures');
+      return;
+    }
+    const table = new Table({ head: ['when', 'task', 'class', 'try', 'detail'] });
+    for (const f of failures) {
+      table.push([
+        f.at,
+        f.taskId,
+        FAILURE_CLASS_LABEL[f.class],
+        String(f.retryIndex),
+        f.detail.length > 60 ? `${f.detail.slice(0, 57)}…` : f.detail,
+      ]);
+    }
+    console.log(table.toString());
+  });
+
+program
+  .command('triage')
+  .description("Task-health report — what's wedged: needs-attention, stuck, aged, waiting-too-long (Phase 53)")
+  .action(async () => {
+    const report = await withSpinner('Running triage…', () => client().tasksDoctor());
+    if (isJsonMode()) {
+      printJson(report);
+      return;
+    }
+    const section = (label: string, rows: typeof report.needsAttention, withSince = false) => {
+      console.log(`\n${label} (${rows.length})`);
+      for (const r of rows) {
+        const reason = r.waitReason ? ` [${WAIT_REASON_LABEL[r.waitReason]}]` : '';
+        const since = withSince ? ` — ${Math.round(r.sinceMs / 60_000)}m` : '';
+        console.log(`  ${r.id}  ${r.title}${reason}${since}`);
+      }
+    };
+    section('Needs attention', report.needsAttention);
+    section('Waiting too long', report.waitingTooLong, true);
+    section('Stuck (silent) wip', report.stuckWip, true);
+    section('Aged todo', report.agedTodo, true);
+    const counts = Object.entries(report.failureCountsByClass);
+    console.log(`\nRecent failures by class (${report.recentFailures.length} total)`);
+    if (counts.length === 0) console.log('  none');
+    else for (const [cls, n] of counts) console.log(`  ${cls}: ${n}`);
+  });
+
+program
+  .command('resolve <id> <action>')
+  .description(`Resolve a needs-attention task — action: ${RESOLVE_TASK_ACTIONS.join(' | ')} (Phase 53)`)
+  .option('-p, --prompt <text>', 'new prompt (required for replan)')
+  .action(async (id: string, action: string, opts: { prompt?: string }) => {
+    if (!RESOLVE_TASK_ACTIONS.includes(action as ResolveTaskAction)) {
+      throw new Error(`invalid action "${action}" — expected: ${RESOLVE_TASK_ACTIONS.join(', ')}`);
+    }
+    const task = await withSpinner('Resolving…', () =>
+      client().resolveTask(id, action as ResolveTaskAction, opts.prompt),
+    );
+    if (isJsonMode()) {
+      printJson(task);
+      return;
+    }
+    console.log(`resolved ${task.id} (${action}) → ${colourStatus(task.status)}`);
+  });
 
 program
   .command('prioritise [id] [level]')

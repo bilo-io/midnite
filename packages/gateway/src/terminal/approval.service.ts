@@ -114,26 +114,30 @@ export class ApprovalService {
     // Policy engine (Phase 23 A2+C): evaluate durable rules before asking a human.
     if (this.approvalsService) {
       const summary = summarizeToolCall(toolName, payload.tool_input);
-      const verdict = this.approvalsService.evaluate(toolName, payload.tool_input);
-      if (verdict === 'auto-allow') {
+      const decision = this.approvalsService.evaluate(toolName, payload.tool_input);
+      if (decision.verdict === 'auto-allow') {
         this.approvalsService.logDecision({
           sessionId,
           toolName,
           summary,
           resolution: 'auto-allow',
           decidedBy: 'policy',
+          ruleId: decision.ruleId,
         });
         return { decision: 'allow', reason: 'allowed by policy rule' };
       }
-      if (verdict === 'auto-deny') {
+      if (decision.verdict === 'auto-deny') {
         this.approvalsService.logDecision({
           sessionId,
           toolName,
           summary,
           resolution: 'auto-deny',
           decidedBy: 'policy',
+          ruleId: decision.ruleId,
         });
-        return { decision: 'deny', reason: 'denied by policy rule' };
+        // A blast-radius guard (Phase 50 C) carries a specific reason; a plain
+        // deny rule falls back to the generic message.
+        return { decision: 'deny', reason: decision.reason ?? 'denied by policy rule' };
       }
     }
 

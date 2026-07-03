@@ -1,11 +1,12 @@
 'use client';
 
-import { getOpsMetrics, getPoolSnapshot, getUsageSummary } from '@/lib/api';
+import { fetchTasksDoctor, getOpsMetrics, getPoolSnapshot, getUsageSummary } from '@/lib/api';
 import { usePolling } from '@/lib/use-polling';
 import { useGatewayErrorToast } from '@/lib/use-gateway-error-toast';
 import { PageHeader } from '@/components/page-header';
 import { OpsView } from '@/components/ops-view';
 import { RuntimeHealthPanel } from '@/components/runtime-health-panel';
+import { TaskHealthPanel } from '@/components/task-health-panel';
 
 const POLL_MS = 10_000;
 const SPEND_REFRESH_MS = 60_000;
@@ -30,8 +31,13 @@ export default function OpsPage() {
     () => getUsageSummary({ from: windowFrom(), groupBy: 'day' }),
     SPEND_REFRESH_MS,
   );
+  // Phase 53 E — task-health "what's wedged?" report.
+  const { data: doctor, error: doctorErr, refresh: refreshDoctor } = usePolling(
+    () => fetchTasksDoctor(),
+    POLL_MS,
+  );
 
-  useGatewayErrorToast(poolErr ?? summaryErr ?? usageErr);
+  useGatewayErrorToast(poolErr ?? summaryErr ?? usageErr ?? doctorErr);
 
   const loading = poolLoading || summaryLoading || usageLoading;
 
@@ -39,6 +45,7 @@ export default function OpsPage() {
     refreshPool();
     refreshSummary();
     refreshUsage();
+    refreshDoctor();
   }
 
   return (
@@ -55,6 +62,9 @@ export default function OpsPage() {
         loading={loading}
         onRefresh={refresh}
       />
+      <div className="mt-4">
+        <TaskHealthPanel report={doctor} />
+      </div>
       <div className="container pb-8">
         <RuntimeHealthPanel />
       </div>

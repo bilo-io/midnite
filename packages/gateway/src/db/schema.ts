@@ -1329,3 +1329,20 @@ export const schemaMeta = sqliteTable('schema_meta', {
   updatedAt: text('updated_at').notNull(),
 });
 export type SchemaMetaRow = typeof schemaMeta.$inferSelect;
+
+/**
+ * Runtime lifecycle marker (Phase 54 E). One row: was the *previous* stop graceful?
+ * Boot stamps `clean=false` + `startedAt`; the graceful-shutdown drain flips
+ * `clean=true` + `shutdownAt`. So on the next boot a still-`false` value means the
+ * last process died without draining (crash / hard kill). Surfaced by Theme F.
+ */
+export const runtimeMeta = sqliteTable('runtime_meta', {
+  id: text('id').primaryKey().$default(() => 'singleton'),
+  /** Whether the last shutdown drained cleanly (0/1). */
+  clean: integer('clean', { mode: 'boolean' }).notNull(),
+  /** ISO time this process started (stamped on boot). */
+  startedAt: text('started_at').notNull(),
+  /** ISO time of the last graceful drain; null until one happens. */
+  shutdownAt: text('shutdown_at'),
+});
+export type RuntimeMetaRow = typeof runtimeMeta.$inferSelect;

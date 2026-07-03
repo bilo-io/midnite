@@ -28,11 +28,11 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | 🔄 WIP | 14/26 | `█████░░░░░` | 54% | — | E |
-| [53 · Task lifecycle resilience](phase-53-task-lifecycle-resilience.md) | 🔄 WIP | 9/22 | `████░░░░░░` | 41% | E | C |
-| [52 · In-app diff & PR review](phase-52-in-app-diff-review.md) | 🔄 WIP | 10/25 | `████░░░░░░` | 40% | — | C D |
+| [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
+| [53 · Task lifecycle resilience](phase-53-task-lifecycle-resilience.md) | 🔄 WIP | 12/22 | `██████░░░░` | 55% | — | C |
+| [52 · In-app diff & PR review](phase-52-in-app-diff-review.md) | 🔄 WIP | 10/25 | `████░░░░░░` | 40% | C | D |
 | [51 · Session detail page](phase-51-session-detail-page.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
-| [50 · Autonomy guardrails](phase-50-autonomy-guardrails.md) | 🔄 WIP | 13/29 | `████░░░░░░` | 45% | C | E |
+| [50 · Autonomy guardrails](phase-50-autonomy-guardrails.md) | 🔄 WIP | 17/29 | `██████░░░░` | 59% | — | E |
 | [49 · Data portability](phase-49-data-portability.md) | 🔄 WIP | 3/27 | `█░░░░░░░░░` | 11% | — | B C D E F |
 | [48 · Slides](phase-48-slides.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
@@ -112,7 +112,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **B** — Readiness/liveness health endpoints (`/health/ready` vs `/live`) (PR #275)
 - ✅ **C** — Live watchdog: slot-leak + session-health auto-heal + pty liveness probe (PR #280)
 - ✅ **D** — Scheduler resilience: readiness gate + backoff + first-class pause/resume
-- ◻ **E** — Graceful shutdown: drain in-flight agents + WAL checkpoint/close
+- ✅ **E** — Graceful shutdown: drain in-flight agents + WAL checkpoint/close (PR #288)
 - ✅ **F** — Runtime health in web + CLI (`midnite doctor`) (PR #289)
 
 ### [Phase 53 — Task lifecycle resilience](phase-53-task-lifecycle-resilience.md)
@@ -121,7 +121,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **B** — Retry backoff (exponential + jitter) + class-aware retry
 - ◻ **C** — Stuck-state watchdogs (wip-inactivity, aged-todo, waiting-too-long)
 - ✅ **D** — Escalate-to-human (needs-attention via `waiting` + `waitReason`) + nudges
-- ◻ **E** — Board "needs attention" + failures/health view + CLI doctor
+- ✅ **E** — Board "needs attention" + failures/health view + CLI doctor
 
 ### [Phase 52 — In-app diff & PR review](phase-52-in-app-diff-review.md)
 *(Extends tasks — no new domain. Reuses the workflow GitHub plumbing, `pr-status` fetch strategy, Phase 37 AI review. A→B→C is the critical path.)*
@@ -142,7 +142,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 ### [Phase 50 — Autonomy guardrails & blast radius](phase-50-autonomy-guardrails.md)
 - ✅ **A** — Kill switch & global pause (scheduling gate)
 - ✅ **B** — Spend & rate caps that block (scheduling gate)
-- ◻ **C** — Destructive-action limits (act-path gate)
+- ✅ **C** — Destructive-action limits (act-path gate) (PR #287)
 - ✅ **D** — Audit completeness + RBAC gap closure
 - ◻ **E** — Safety control panel (web)
 - ✅ **F** — CLI safety commands
