@@ -109,6 +109,20 @@ export const AgentConfigSchema = z.object({
       maxMs: z.number().int().positive().default(30000),
     })
     .default({}),
+  // Phase 53 E — display thresholds for the "what's wedged?" doctor report
+  // (`GET /tasks/doctor`, the web health view + `midnite tasks doctor`). Purely
+  // presentational: what counts as a *stuck* `wip` (silent past N min), an *aged*
+  // `todo` (waiting to start past N h), or a needs-attention task parked *too
+  // long* in `waiting` (past N h). No enforcement — just what the operator sees.
+  doctor: z
+    .object({
+      wipSilentMinutes: z.number().nonnegative().default(15),
+      agedTodoHours: z.number().nonnegative().default(24),
+      waitingTooLongHours: z.number().nonnegative().default(24),
+      /** Rows in the recent-failures window the report summarises. */
+      recentFailuresLimit: z.number().int().positive().max(500).default(100),
+    })
+    .default({}),
 });
 
 export const TerminalConfigSchema = z.object({

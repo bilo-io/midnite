@@ -4,6 +4,7 @@ import { useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { Ban, Check, ExternalLink, GitCompare, Play, Plus, RefreshCw, SquareTerminal, X } from 'lucide-react';
 import { ChecksPanel } from '@/components/checks-panel';
+import { TaskFailureHistory } from '@/components/task-failure-history';
 import { PrDiffModal } from '@/components/pr-review/pr-diff-modal';
 import { PrReviewPanel } from '@/components/pr-review/pr-review-panel';
 import {
@@ -824,6 +825,11 @@ export function TaskDetail({ task, projects, tasks, onClose, variant = 'modal', 
         <section>
           <ChecksPanel taskId={task.id} />
         </section>
+
+        {task.retryCount > 0 || task.waitReason ? (
+          // Phase 53 E — structured failure history for a task that has failed.
+          <TaskFailureHistory taskId={task.id} />
+        ) : null}
 
         <section>
           <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">

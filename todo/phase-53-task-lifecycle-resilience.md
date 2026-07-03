@@ -135,18 +135,22 @@ Fail loudly: a failed task becomes visible work, not a silent tombstone.
 
 ---
 
-## Theme E — Board "needs attention" + failures/health view + CLI — **L**
+## Theme E — Board "needs attention" + failures/health view + CLI — **L** — ✅ DONE (PR #286, 2026-07-03)
 
 Make resilience something you can see.
 
-- [ ] **Board:** a **"Needs attention"** grouping/filter (derived: `waiting` tasks with a failure `waitReason`) +
-      a **failure-reason chip** on the task card (class + retry count); the task detail shows the `task_failures`
-      history (what failed, when, exit code, last-output snippet) + retry timeline.
-- [ ] **Failures / health view:** recent failures by class, retry timelines, a **stuck-task list** (wip-silent,
-      aged-todo) and a **waiting-too-long list** — the operator's "what's wedged?" page.
-- [ ] **CLI:** `midnite tasks doctor` (stuck/waiting/failing summary), `midnite tasks failures [--class …]`, and a
-      resolve helper (requeue/abandon) — respects global `--json`. Typed client methods in
-      [`web/lib/api.ts`](../packages/web/lib/api.ts) + [`cli/src/client.ts`](../packages/cli/src/client.ts).
+- [x] **Board:** a **failure-reason chip** on the task card (`waitReason` label + retry count, shown only for a
+      failure-escalated `waiting`, not a plain `needs-input`); the task detail shows the `task_failures` **history**
+      (class, exit code, last-output snippet), fetched lazily. *(The board-level "needs attention" grouping/filter
+      proper is folded into the card chip + the Ops health panel below rather than a separate board toggle — the
+      derivation is `isNeedsAttention(waitReason)`; a dedicated board filter control is a small follow-up.)*
+- [x] **Failures / health view:** a **TaskHealthPanel** on the Ops page — recent failures by class + the operator's
+      "what's wedged?" buckets: **needs-attention**, **waiting-too-long**, **stuck-wip** (live-session heartbeat),
+      **aged-todo** — each row links to the task. Backed by `GET /tasks/doctor` + `GET /tasks/failures`.
+- [x] **CLI:** `midnite failures [--class …]`, `midnite triage` (needs-attention/stuck/aged/waiting + failure-class
+      summary), and `midnite resolve <id> <requeue|replan|abandon>` — all respect global `--json`. Typed client
+      methods in [`web/lib/api.ts`](../packages/web/lib/api.ts) + [`cli/src/client.ts`](../packages/cli/src/client.ts).
+      *(Named `triage`, not `doctor`, so Phase 54 F's runtime `midnite doctor` doesn't collide.)*
 
 ---
 
