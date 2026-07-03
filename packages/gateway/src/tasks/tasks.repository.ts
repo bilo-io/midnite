@@ -13,6 +13,7 @@ import {
   type TaskEvent,
   type TaskLink,
   type TeamScope,
+  type WaitReason,
 } from '@midnite/shared';
 import { teamScopeFilter } from '../db/team-scope';
 import { DB_TOKEN, type MidniteDb } from '../db/db.module';
@@ -166,6 +167,27 @@ export class TasksRepository {
     return this.db
       .update(tasks)
       .set({ nextRetryAt: null, updatedAt })
+      .where(eq(tasks.id, id))
+      .returning()
+      .get();
+  }
+
+  // Set (or clear, with null) the typed reason a task is parked in `waiting`
+  // (Phase 53 D). Set on the transition into `waiting`, cleared on any exit.
+  setWaitReason(id: string, waitReason: WaitReason | null, updatedAt: string): TaskRow | undefined {
+    return this.db
+      .update(tasks)
+      .set({ waitReason, updatedAt })
+      .where(eq(tasks.id, id))
+      .returning()
+      .get();
+  }
+
+  // Update just the prompt (Phase 53 D re-plan). No status change.
+  setPrompt(id: string, prompt: string, updatedAt: string): TaskRow | undefined {
+    return this.db
+      .update(tasks)
+      .set({ prompt, updatedAt })
       .where(eq(tasks.id, id))
       .returning()
       .get();
@@ -468,6 +490,7 @@ export class TasksRepository {
       retryCount: row.retryCount,
       fixAttempts: row.fixAttempts,
       nextRetryAt: row.nextRetryAt ?? undefined,
+      waitReason: (row.waitReason as WaitReason | null) ?? undefined,
       prompt: row.prompt ?? undefined,
       repo: row.repo ?? undefined,
       agentId: row.agentId ?? undefined,

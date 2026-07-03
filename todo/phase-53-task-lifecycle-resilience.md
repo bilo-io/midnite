@@ -114,20 +114,23 @@ Notice the tasks that quietly stopped moving. The biggest gap.
 
 ---
 
-## Theme D — Escalate-to-human + waiting nudges — **M**
+## Theme D — Escalate-to-human + waiting nudges — **M** — ✅ DONE (PR #283, 2026-07-03)
 
 Fail loudly: a failed task becomes visible work, not a silent tombstone.
 
-- [ ] **Escalation model:** on a **non-retryable** failure or **exhausted** retries, route to a **needs-attention**
+- [x] **Escalation model:** on a **non-retryable** failure or **exhausted** retries, route to a **needs-attention**
       state — **reuse `waiting`** with a typed `waitReason` (`agent-failed` / `timed-out` / `retries-exhausted` /
       `gate-failed`) + the linked `task_failures` record — **instead of silent `abandoned`** (Decision §1).
-      `abandoned` remains the **explicit** human give-up terminal.
-- [ ] **Waiting nudges:** a task in `waiting` beyond N hours fires a **Phase 21 notification** (escalating
-      reminders; config `agent.waitingNudge.*`), so "needs input" doesn't rot. A configurable max before it's
-      surfaced as critically stuck.
-- [ ] **Resolution actions:** a human (or CLI) resolves a needs-attention task → **requeue** (`→ todo`, clears the
+      `abandoned` remains the **explicit** human give-up terminal. Behind `agent.escalateOnFailure` (default on;
+      off restores the pre-Phase-53 straight-to-abandoned path). Reason mapping lives beside `classifyFailure`.
+- [x] **Waiting nudges:** a task in `waiting` beyond N hours fires a **Phase 21 notification** (escalating
+      reminders; config `agent.waitingNudge.*`), so "needs input" doesn't rot. A configurable max
+      (`maxReminders`) before it stops. A **dedicated `WaitingNudgeService` interval** (not the scheduler — no
+      scheduling decisions), fail-open; `afterHours = 0` disables it (default = behaviour-preserving).
+- [x] **Resolution actions:** a human (or CLI) resolves a needs-attention task → **requeue** (`→ todo`, clears the
       wait), **re-plan** (requeue with a fresh prompt — human-triggered; auto-re-plan is out of scope, Decision §5),
-      or **abandon** (explicit terminal). Slot-safe: a failure-escalated `waiting` task's session is already dead,
+      or **abandon** (explicit terminal) via `POST /tasks/:id/resolve` + typed web/CLI client methods. Slot-safe: a
+      failure-escalated `waiting` task's session is already dead,
       so no slot is held (Decision §7).
 
 ---

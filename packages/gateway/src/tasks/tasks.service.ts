@@ -20,11 +20,13 @@ import {
   type CheckRun,
   type FailureClass,
   type MidniteConfig,
+  type ResolveTaskAction,
   type Status,
   type Task,
   type TaskCounts,
   type TaskFailure,
   type TeamScope,
+  type WaitReason,
 } from '@midnite/shared';
 import { TaskClassifier, type ClassifierImage } from '../agent/classifier.service';
 import { PlannerService } from '../agent/planner.service';
@@ -204,6 +206,9 @@ export class TasksService {
     const before = this.repo.getTask(id);
     const row = this.repo.updateStatus(id, status, now);
     if (!row) throw new NotFoundException(`task ${id} not found`);
+    // Leaving `waiting` clears its reason (Phase 53 D) — e.g. a manual board move
+    // out of a needs-attention state.
+    if (status !== 'waiting' && row.waitReason) this.repo.setWaitReason(id, null, now);
     this.repo.insertEvent({
       id: randomUUID(),
       taskId: id,
@@ -250,8 +255,10 @@ export class TasksService {
     this.repo.setSession(id, id, now);
     // The backoff gate is spent once the task actually starts (Phase 53 B): clear
     // it so a stale future nextRetryAt can never linger onto a later todo state
-    // (e.g. a re-open path that doesn't route through requeue()).
+    // (e.g. a re-open path that doesn't route through requeue()). Likewise clear
+    // any stale wait reason (Phase 53 D).
     this.repo.clearNextRetry(id, now);
+    this.repo.setWaitReason(id, null, now);
     this.repo.insertEvent({ id: randomUUID(), taskId: id, at: now, kind: 'agent.started' });
     return this.emit('task.updated', this.getTask(id));
   }
@@ -263,8 +270,10 @@ export class TasksService {
     if (!this.repo.getTask(id)) throw new NotFoundException(`task ${id} not found`);
     this.repo.updateStatus(id, target, now);
     this.repo.setSession(id, null, now);
-    // A human-returned task is eligible now — drop any pending backoff (Phase 53 B).
+    // A human-returned task is eligible now — drop any pending backoff (Phase 53 B)
+    // and clear the needs-attention wait reason (Phase 53 D).
     this.repo.clearNextRetry(id, now);
+    this.repo.setWaitReason(id, null, now);
     this.repo.insertEvent({ id: randomUUID(), taskId: id, at: now, kind: 'agent.requeued' });
     return this.emit('task.updated', this.getTask(id));
   }
@@ -279,6 +288,7 @@ export class TasksService {
     this.repo.incrementRetry(id, now, nextRetryAt);
     this.repo.updateStatus(id, 'todo', now);
     this.repo.setSession(id, null, now);
+    this.repo.setWaitReason(id, null, now); // → todo carries no wait reason (Phase 53 D)
     const retryCount = this.repo.getTask(id)?.retryCount ?? 0;
     this.repo.insertEvent({
       id: randomUUID(),
@@ -298,15 +308,72 @@ export class TasksService {
     return this.emit('task.updated', this.getTask(id));
   }
 
-  /** Agent blocked on user input (Notification hook): → waiting. Idempotent. */
-  markWaiting(id: string): Task {
+  /** Agent blocked on user input (Notification hook): → waiting. Carries a typed
+   *  `waitReason` (Phase 53 D; defaults to `needs-input`, the live-input block).
+   *  Idempotent on both status and reason. */
+  markWaiting(id: string, waitReason: WaitReason = 'needs-input'): Task {
     const now = new Date().toISOString();
     const row = this.repo.getTask(id);
     if (!row) throw new NotFoundException(`task ${id} not found`);
-    if (row.status === 'waiting') return this.getTask(id);
+    if (row.status === 'waiting' && row.waitReason === waitReason) return this.getTask(id);
     this.repo.updateStatus(id, 'waiting', now);
-    this.repo.insertEvent({ id: randomUUID(), taskId: id, at: now, kind: 'agent.waiting' });
+    this.repo.setWaitReason(id, waitReason, now);
+    this.repo.insertEvent({
+      id: randomUUID(),
+      taskId: id,
+      at: now,
+      kind: 'agent.waiting',
+      data: JSON.stringify({ waitReason }),
+    });
     return this.emit('task.updated', this.getTask(id));
+  }
+
+  /**
+   * Escalate a failed run to a needs-attention `waiting` state (Phase 53 D) —
+   * instead of silently `abandoned`. The session is already dead (slot released
+   * by the runner), so no slot is held; a human then requeues/re-plans/abandons
+   * via {@link resolveNeedsAttention}. Records an `agent.escalated` event for the
+   * timeline; the failure detail already lives in `task_failures` (Theme A).
+   */
+  escalate(id: string, waitReason: WaitReason): Task {
+    const now = new Date().toISOString();
+    const row = this.repo.getTask(id);
+    if (!row) throw new NotFoundException(`task ${id} not found`);
+    this.repo.updateStatus(id, 'waiting', now);
+    this.repo.setWaitReason(id, waitReason, now);
+    // The session is dead (the runner released the slot around this call), so
+    // clear the binding — it reads as idle and boot recovery won't try to reattach.
+    this.repo.setSession(id, null, now);
+    this.repo.insertEvent({
+      id: randomUUID(),
+      taskId: id,
+      at: now,
+      kind: 'agent.escalated',
+      data: JSON.stringify({ waitReason }),
+    });
+    return this.emit('task.updated', this.getTask(id));
+  }
+
+  /**
+   * Resolve a needs-attention task (Phase 53 D) — the human's un-wait path:
+   *  - `requeue` → back to `todo` as-is (clears the wait + any backoff),
+   *  - `replan`  → overwrite the prompt, then requeue (human re-plan; auto-re-plan
+   *                is out of scope — Decision §5),
+   *  - `abandon` → the explicit give-up terminal.
+   */
+  resolveNeedsAttention(id: string, action: ResolveTaskAction, prompt?: string): Task {
+    const row = this.repo.getTask(id);
+    if (!row) throw new NotFoundException(`task ${id} not found`);
+    if (action === 'abandon') return this.updateStatus(id, 'abandoned');
+    if (action === 'replan') {
+      const next = prompt?.trim();
+      if (!next) throw new BadRequestException('replan requires a prompt');
+      const now = new Date().toISOString();
+      this.repo.setPrompt(id, next, now);
+      this.repo.insertEvent({ id: randomUUID(), taskId: id, at: now, kind: 'task.replanned' });
+    }
+    // requeue() clears the session, the backoff gate, and (below) the wait reason.
+    return this.requeue(id);
   }
 
   /** Agent finished (Stop hook): → done, optionally recording a PR URL. Idempotent. */
@@ -316,6 +383,7 @@ export class TasksService {
     if (!row) throw new NotFoundException(`task ${id} not found`);
     if (row.status === 'done') return this.getTask(id);
     this.repo.updateStatus(id, 'done', now);
+    if (row.waitReason) this.repo.setWaitReason(id, null, now); // Phase 53 D
     if (prUrl) this.repo.setPrUrl(id, prUrl, now);
     this.repo.insertEvent({
       id: randomUUID(),

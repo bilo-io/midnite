@@ -13,6 +13,7 @@ import { AgentRunnerService } from './agent-runner.service';
 import { PoolWatchdogService } from './pool-watchdog.service';
 import { LifecycleHookController } from './lifecycle-hook.controller';
 import { PoolController } from './pool.controller';
+import { WaitingNudgeService } from './waiting-nudge.service';
 
 @Module({
   imports: [
@@ -28,7 +29,13 @@ import { PoolController } from './pool.controller';
     forwardRef(() => ApprovalsModule),
   ],
   controllers: [PoolController, LifecycleHookController],
-  providers: [AgentPoolService, AgentRunnerService, PoolWatchdogService, AgentPoolScheduler],
+  providers: [
+    AgentPoolService,
+    AgentRunnerService,
+    PoolWatchdogService,
+    AgentPoolScheduler,
+    WaitingNudgeService,
+  ],
   exports: [AgentPoolService, AgentRunnerService, AgentPoolScheduler],
 })
 export class PoolModule {}
