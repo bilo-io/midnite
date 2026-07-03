@@ -114,7 +114,7 @@ cap is likewise global for now.
 
 ---
 
-## Theme C — Destructive-action limits (act-path gate) — **L** — ✅ DONE (PR #286, 2026-07-03)
+## Theme C — Destructive-action limits (act-path gate) — **L** — ✅ DONE (PR #287, 2026-07-03)
 
 Deny the genuinely dangerous, mid-run — the heart of blast-radius.
 

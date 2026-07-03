@@ -142,7 +142,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 ### [Phase 50 — Autonomy guardrails & blast radius](phase-50-autonomy-guardrails.md)
 - ✅ **A** — Kill switch & global pause (scheduling gate)
 - ✅ **B** — Spend & rate caps that block (scheduling gate)
-- ✅ **C** — Destructive-action limits (act-path gate) (PR #286)
+- ✅ **C** — Destructive-action limits (act-path gate) (PR #287)
 - ✅ **D** — Audit completeness + RBAC gap closure
 - ◻ **E** — Safety control panel (web)
 - ✅ **F** — CLI safety commands

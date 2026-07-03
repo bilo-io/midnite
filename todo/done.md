@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-03 — feat: destructive-action blast-radius limits + spawn-env scrub — Phase 50 Theme C (PR #286)
+## 2026-07-03 — feat: destructive-action blast-radius limits + spawn-env scrub — Phase 50 Theme C (PR #287)
 
 The act-path enforcement floor — deny the genuinely dangerous mid-run, and stop leaking the gateway's secrets into agent sessions. The last enforcement gap of Phase 50.
 
