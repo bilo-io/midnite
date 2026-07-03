@@ -181,6 +181,7 @@ import {
   type SessionDetail,
   type SessionTranscript,
   type AgentPingResponse,
+  type ResolveTaskAction,
   type Status,
   type SubAgent,
   type Task,
@@ -563,6 +564,20 @@ export async function stopTask(id: string, to: 'todo' | 'backlog' = 'todo'): Pro
   return fetchJson(
     `/tasks/${encodeURIComponent(id)}/stop?to=${to}`,
     { method: 'POST' },
+    TaskSchema,
+  );
+}
+
+/** Resolve a needs-attention task (Phase 53 D): requeue (→todo), re-plan (requeue
+ *  with a fresh prompt), or abandon (explicit terminal). */
+export async function resolveTask(
+  id: string,
+  action: ResolveTaskAction,
+  prompt?: string,
+): Promise<Task> {
+  return fetchJson(
+    `/tasks/${encodeURIComponent(id)}/resolve`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ action, prompt }) },
     TaskSchema,
   );
 }
