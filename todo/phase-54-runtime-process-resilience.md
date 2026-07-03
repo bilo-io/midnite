@@ -133,19 +133,21 @@ Don't tick into a dead database; stop cleanly when asked.
 
 ---
 
-## Theme E — Graceful shutdown: drain in-flight agents — **M-L**
+## Theme E — Graceful shutdown: drain in-flight agents — **M-L** — ✅ DONE (PR #288, 2026-07-03)
 
 Die on purpose, not by surprise. Where the #1 and #7 halves fuse.
 
-- [ ] Implement the missing shutdown on `AgentRunnerService` (`onModuleDestroy` / `OnApplicationShutdown`): **(1)**
-      `scheduler.pause()` — stop accepting new work; **(2)** wait up to a **grace window** (`gateway.shutdownGraceMs`,
-      config) for running agents to reach a terminal/`waiting` state; **(3)** for the rest, **requeue (pty)** or
-      **detach (tmux)**, clear timeouts, free slots, persist state; **(4)** **WAL-checkpoint + `sqlite.close()`**
-      after in-flight writes flush.
-- [ ] **Ordering:** this drain must run **before** `TerminalService.onModuleDestroy` kills/detaches PTYs, so tasks
-      are moved to a clean state first (Nest destroy order / an explicit orchestration hook — verify + pin it).
-- [ ] Record a **"clean shutdown" marker** so the next boot (and Theme F) can report whether the last stop was
-      graceful or a crash.
+- [x] `AgentRunnerService.onModuleDestroy`: **(1)** `scheduler.pause()` (via a runner⇄scheduler forwardRef) — stop
+      accepting new work; **(2)** wait up to the **grace window** (`gateway.shutdownGraceMs`, default 10s, `0` =
+      immediate) polling the pool for running agents to finish; **(3)** for the rest, **requeue (pty)** — their
+      sessions die with the process — or **leave (tmux)** to detach + reattach on boot, clearing run timers either
+      way; **(4)** DB **WAL-checkpoint + `sqlite.close()`** in `DbFactory.onModuleDestroy`. Fail-open.
+- [x] **Ordering pinned:** the runner injects `TerminalService` + (global) `Db`, so Nest destroys it **before**
+      them (dependents first) — the drain runs before `TerminalService.onModuleDestroy` kills/detaches PTYs and
+      before `DbFactory` closes (which, being `@Global`, runs last). Verified via a full-graph `NestFactory.create`.
+- [x] **Clean-shutdown marker:** a `runtime_meta` singleton (migration `0068`) + `RuntimeMetaService` — boot stamps
+      `clean=false`, the drain flips `clean=true`; a still-`false` value at the next boot means the last process
+      crashed. `previousShutdownClean()` feeds Theme F.
 
 ---
 

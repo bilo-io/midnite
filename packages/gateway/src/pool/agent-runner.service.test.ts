@@ -765,4 +765,76 @@ describe('AgentRunnerService', () => {
       expect(pool.slotForTask('t1')).toBeUndefined();
     });
   });
+
+  // ── Phase 54 E — graceful shutdown drain ──────────────────────────────────
+  describe('onModuleDestroy — graceful drain', () => {
+    function drainCfg(terminal: Record<string, unknown> = {}): MidniteConfig {
+      // grace 0 → drain immediately (no poll wait) so the spec is fast + deterministic.
+      return parseConfig({
+        agent: { pool: 1, runTimeoutMs: 60000 },
+        terminal,
+        gateway: { shutdownGraceMs: 0 },
+      });
+    }
+
+    it('pauses the scheduler, requeues in-flight pty runs, and marks a clean shutdown', async () => {
+      const cfg = drainCfg();
+      const { service, requeue } = fakeTasks([task('t1', 'x')]);
+      const pool = new AgentPoolService(cfg, service);
+      const { terminal } = fakeTerminal(); // pty (isDurable=false)
+      const pause = vi.fn();
+      const markCleanShutdown = vi.fn();
+      const runner = new AgentRunnerService(
+        cfg, pool, service, terminal, noUrlContext, noRepos,
+        undefined, undefined, undefined,
+        { pause } as never,
+        { markCleanShutdown } as never,
+      );
+
+      await runner.start(task('t1', 'x')); // wip, slot busy
+      await runner.onModuleDestroy();
+
+      expect(pause).toHaveBeenCalledTimes(1);
+      expect(requeue).toHaveBeenCalledWith('t1'); // pty session dies → requeue
+      expect(markCleanShutdown).toHaveBeenCalledTimes(1);
+    });
+
+    it('leaves durable (tmux) in-flight runs to detach + reattach (no requeue)', async () => {
+      const cfg = drainCfg();
+      const { service, requeue } = fakeTasks([task('t1', 'x')]);
+      const pool = new AgentPoolService(cfg, service);
+      const { terminal } = fakeTerminal({ durable: true });
+      const markCleanShutdown = vi.fn();
+      const runner = new AgentRunnerService(
+        cfg, pool, service, terminal, noUrlContext, noRepos,
+        undefined, undefined, undefined,
+        { pause: vi.fn() } as never,
+        { markCleanShutdown } as never,
+      );
+
+      await runner.start(task('t1', 'x'));
+      await runner.onModuleDestroy();
+
+      expect(requeue).not.toHaveBeenCalled(); // tmux survives → left as-is
+      expect(markCleanShutdown).toHaveBeenCalledTimes(1);
+    });
+
+    it('marks clean and does nothing to requeue when the pool is idle', async () => {
+      const cfg = drainCfg();
+      const { service, requeue } = fakeTasks([]);
+      const pool = new AgentPoolService(cfg, service);
+      const { terminal } = fakeTerminal();
+      const markCleanShutdown = vi.fn();
+      const runner = new AgentRunnerService(
+        cfg, pool, service, terminal, noUrlContext, noRepos,
+        undefined, undefined, undefined,
+        { pause: vi.fn() } as never,
+        { markCleanShutdown } as never,
+      );
+
+      await runner.onModuleDestroy();
+      expect(requeue).not.toHaveBeenCalled();
+      expect(markCleanShutdown).toHaveBeenCalledTimes(1);
+    });
+  });
 });

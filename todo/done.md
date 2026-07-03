@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-03 — feat: graceful shutdown drain + clean-shutdown marker — Phase 54 Theme E (PR #288)
+
+Die on purpose, not by surprise: on SIGTERM the gateway drains in-flight agents instead of abandoning them, and records whether the stop was clean.
+
+- [x] shared: `gateway.shutdownGraceMs` (default 10s; 0 = drain immediately).
+- [x] gateway: `AgentRunnerService.onModuleDestroy` → `scheduler.pause()` (runner⇄scheduler forwardRef) → poll up to the grace window for in-flight agents to finish → requeue stragglers (pty, sessions die) or leave them (tmux, detach + reattach on boot), clearing run timers → mark clean. Runs before TerminalService kills PTYs and before the DB closes (Nest destroys dependents first); fail-open.
+- [x] gateway: `runtime_meta` singleton (migration `0068`) + `@Global` `RuntimeMetaService` — boot stamps `clean=false`, drain flips `clean=true`; a still-false value next boot = the last process crashed. `previousShutdownClean()` for Theme F.
+- [x] gateway: `DbFactory.onModuleDestroy` WAL-checkpoint(TRUNCATE) + `sqlite.close()`, running last so a graceful stop flushes everything.
+- [x] Tests: drain (pty requeue / tmux leave / idle-pool), runtime-meta (first boot / clean / crash detection), config default; full-graph DI smoke (runner⇄scheduler forwardRef resolves). shared 542, gateway 1424 (1 pre-existing flaky tmux), web 749, cli 144; `:typecheck` clean.
+
 ## 2026-07-03 — feat: destructive-action blast-radius limits + spawn-env scrub — Phase 50 Theme C (PR #287)
 
 The act-path enforcement floor — deny the genuinely dangerous mid-run, and stop leaking the gateway's secrets into agent sessions. The last enforcement gap of Phase 50.

@@ -219,6 +219,14 @@ export const GatewayConfigSchema = z.object({
    */
   strictBoot: z.boolean().default(false),
   /**
+   * Graceful-shutdown drain window (Phase 54 E). On SIGTERM/SIGINT the scheduler
+   * pauses (no new spawns) and the gateway waits up to this many ms for in-flight
+   * agents to reach a terminal/`waiting` state before requeueing (`pty`) or leaving
+   * them to detach + reattach (`tmux`), then WAL-checkpoints + closes the DB. `0`
+   * drains immediately (no wait).
+   */
+  shutdownGraceMs: z.number().int().nonnegative().default(10000),
+  /**
    * Path to the web app's static export (`packages/web/out`, from `next build`
    * with `output: 'export'`). When set and the directory has an `index.html`,
    * the gateway serves the UI at `/` so a single process serves both the API and

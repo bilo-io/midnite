@@ -95,6 +95,13 @@ describe('usage hard spend caps (Phase 50 B)', () => {
   });
 });
 
+describe('gateway.shutdownGraceMs (Phase 54 E)', () => {
+  it('defaults to 10s and accepts an override (0 = drain immediately)', () => {
+    expect(parseConfig({ agent: {}, terminal: {}, gateway: {} }).gateway.shutdownGraceMs).toBe(10000);
+    expect(parseConfig({ agent: {}, terminal: {}, gateway: { shutdownGraceMs: 0 } }).gateway.shutdownGraceMs).toBe(0);
+  });
+});
+
 describe('gateway.auth defaults (Phase 7 A5)', () => {
   it('is off by default — env-named token, fail-closed on non-loopback, no rate limit', () => {
     const config = parseConfig({ agent: {}, terminal: {}, gateway: {} });

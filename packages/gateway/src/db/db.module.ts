@@ -1,5 +1,5 @@
 import { Global, Module } from '@nestjs/common';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger, type OnModuleDestroy } from '@nestjs/common';
 import Database from 'better-sqlite3';
 import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
@@ -17,12 +17,31 @@ export const SQLITE_TOKEN = Symbol('MIDNITE_SQLITE');
 export type MidniteDb = BetterSQLite3Database<typeof schema>;
 
 @Injectable()
-export class DbFactory {
+export class DbFactory implements OnModuleDestroy {
+  private readonly logger = new Logger(DbFactory.name);
   // Built once and memoized: DB_TOKEN and SQLITE_TOKEN must share the *same*
   // connection, so the factory must not open the file twice.
   private built?: { db: MidniteDb; sqlite: Database.Database };
 
   constructor(@Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig) {}
+
+  /**
+   * Phase 54 E — graceful DB close. DbModule is `@Global` (imported by everyone),
+   * so Nest destroys it **last**: this runs after the drain's writes flush and the
+   * terminal teardown. WAL-checkpoint (TRUNCATE, so the -wal file is folded back
+   * into the main DB) then close the handle. Fail-open — a close error on the way
+   * out must never throw. WAL + `synchronous=NORMAL` already prevent *corruption*
+   * on a hard kill; this makes a *graceful* stop lose nothing.
+   */
+  onModuleDestroy(): void {
+    if (!this.built) return;
+    try {
+      this.built.sqlite.pragma('wal_checkpoint(TRUNCATE)');
+      this.built.sqlite.close();
+    } catch (err) {
+      this.logger.warn(`db close failed: ${err instanceof Error ? err.message : 'unknown'}`);
+    }
+  }
 
   private get(): { db: MidniteDb; sqlite: Database.Database } {
     if (this.built) return this.built;
