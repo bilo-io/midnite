@@ -70,15 +70,19 @@ export class ProjectsController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() body: unknown): ProjectResponse {
+  update(
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @CurrentUser() user?: CurrentUserPayload | null,
+  ): ProjectResponse {
     const parsed = UpdateProjectRequestSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
-    return { project: this.service.updateProject(id, parsed.data) };
+    return { project: this.service.updateProject(id, parsed.data, user?.userId ?? null) };
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string): { ok: true } {
-    this.service.deleteProject(id);
+  remove(@Param('id') id: string, @CurrentUser() user?: CurrentUserPayload | null): { ok: true } {
+    this.service.deleteProject(id, user?.userId ?? null);
     return { ok: true };
   }
 

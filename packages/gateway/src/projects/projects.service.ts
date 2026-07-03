@@ -21,6 +21,7 @@ import {
   type UpdateProjectRequest,
 } from '@midnite/shared';
 import { BreakdownService } from '../agent/breakdown.service';
+import { AuditService } from '../audit/audit.service';
 import { LlmService } from '../agent/llm/llm.service';
 import { collapseTilde, expandTilde } from '../fs/path-tilde';
 import { MemoriesService } from '../memories/memories.service';
@@ -70,6 +71,8 @@ export class ProjectsService {
     @Inject(BreakdownService) private readonly breakdown: BreakdownService,
     // Optional: see NotesService — global index in prod, omitted in unit specs.
     @Optional() @Inject(SearchIndexService) private readonly searchIndex?: SearchIndexService,
+    // Phase 50 D — audit project mutations. Optional so unit specs are unaffected.
+    @Optional() @Inject(AuditService) private readonly audit?: AuditService,
   ) {}
 
   listProjects(scope?: TeamScope): Project[] {
@@ -116,11 +119,18 @@ export class ProjectsService {
 
     const project = this.getProject(id);
     this.searchIndex?.upsert(projectToIndexDoc(project));
+    this.audit?.record({
+      entityType: 'project',
+      entityId: id,
+      userId: userId ?? null,
+      action: 'project.created',
+      payload: { name: project.name, tag: project.tag },
+    });
     return project;
   }
 
-  updateProject(id: string, req: UpdateProjectRequest): Project {
-    this.assertExists(id);
+  updateProject(id: string, req: UpdateProjectRequest, actor: string | null = null): Project {
+    const before = this.getProject(id); // throws NotFound if unknown
     const now = new Date().toISOString();
     const patch: Partial<{
       name: string;
@@ -148,13 +158,30 @@ export class ProjectsService {
     this.repo.updateProject(id, patch);
     const project = this.getProject(id);
     this.searchIndex?.upsert(projectToIndexDoc(project));
+    this.audit?.record({
+      entityType: 'project',
+      entityId: id,
+      userId: actor,
+      action: 'project.updated',
+      payload: {
+        before: { name: before.name, tag: before.tag, archived: before.archived ?? false },
+        after: { name: project.name, tag: project.tag, archived: project.archived ?? false },
+      },
+    });
     return project;
   }
 
-  deleteProject(id: string): void {
-    this.assertExists(id);
+  deleteProject(id: string, actor: string | null = null): void {
+    const before = this.getProject(id); // throws NotFound if unknown
     this.repo.deleteProject(id);
     this.searchIndex?.remove('project', id);
+    this.audit?.record({
+      entityType: 'project',
+      entityId: id,
+      userId: actor,
+      action: 'project.deleted',
+      payload: { name: before.name },
+    });
   }
 
   async addSource(projectId: string, url: string): Promise<Project> {

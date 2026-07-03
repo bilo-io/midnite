@@ -17,9 +17,16 @@ import {
   type ApprovalRulesResponse,
   type PendingApprovalsResponse,
 } from '@midnite/shared';
+import { CurrentUser, type CurrentUserPayload } from '../auth/decorators/current-user.decorator';
+import { RequiresRole } from '../auth/decorators/require-role.decorator';
 import { ApprovalService } from '../terminal/approval.service';
 import { ApprovalsService } from './approvals.service';
 
+/**
+ * Approval rules are blast-radius controls (allow/deny a tool). Reading them is
+ * open (the Settings page shows the policy); **editing** is an admin action
+ * (Phase 50 D) and audited — the actor is threaded from the JWT.
+ */
 @Controller('approvals')
 export class ApprovalsController {
   constructor(
@@ -47,22 +54,29 @@ export class ApprovalsController {
   }
 
   @Post('rules')
-  createRule(@Body() body: unknown): ApprovalRuleResponse {
+  @RequiresRole('admin')
+  createRule(@Body() body: unknown, @CurrentUser() user?: CurrentUserPayload | null): ApprovalRuleResponse {
     const parsed = CreateApprovalRuleSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
-    return { rule: this.service.create(parsed.data) };
+    return { rule: this.service.create(parsed.data, user?.userId ?? null) };
   }
 
   @Patch('rules/:id')
-  updateRule(@Param('id') id: string, @Body() body: unknown): ApprovalRuleResponse {
+  @RequiresRole('admin')
+  updateRule(
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @CurrentUser() user?: CurrentUserPayload | null,
+  ): ApprovalRuleResponse {
     const parsed = UpdateApprovalRuleSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
-    return { rule: this.service.update(id, parsed.data) };
+    return { rule: this.service.update(id, parsed.data, user?.userId ?? null) };
   }
 
   @Delete('rules/:id')
+  @RequiresRole('admin')
   @HttpCode(204)
-  removeRule(@Param('id') id: string): void {
-    this.service.remove(id);
+  removeRule(@Param('id') id: string, @CurrentUser() user?: CurrentUserPayload | null): void {
+    this.service.remove(id, user?.userId ?? null);
   }
 }

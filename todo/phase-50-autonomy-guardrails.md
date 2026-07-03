@@ -133,17 +133,20 @@ Deny the genuinely dangerous, mid-run — the heart of blast-radius.
 
 ---
 
-## Theme D — Audit completeness + RBAC gaps — **M**
+## Theme D — Audit completeness + RBAC gaps — **M** — ✅ DONE (PR #281, 2026-07-03)
 
 Make every unattended action and every guardrail change accountable.
 
-- [ ] **close audit gaps:** call `AuditService.record()` on approval-rule CRUD, guardrail changes
-      (pause/kill/cap/protected-action edits), and repo/project mutations; cross-link (or mirror) act-path
-      `approval_log` decisions into the audit trail so "what did agents do + what did we allow/deny" is one query.
-- [ ] **RBAC-gate the safety surface:** add `@RequiresRole('admin')` to `ApprovalsController` (rules + mode) and
-      the new pause/kill/caps endpoints — editing guardrails is an admin action, not any-member.
-- [ ] **audit record hygiene:** consistent `action` verbs + a `payload` diff (before/after for setting changes),
-      so the feed (Theme E) is readable.
+- [x] **close audit gaps:** `AuditService.record()` on approval-rule CRUD, guardrail mode changes, and repo +
+      project mutations; every act-path `approval_log` decision is **mirrored** into the audit trail
+      (`approval.decided`, entityId = sessionId) so "what did agents do + what did we allow/deny" is one query.
+      (Pause/kill were already audited in Theme A; hard-cap edits are config-only in Theme B — no endpoint to audit.)
+- [x] **RBAC-gate the safety surface:** `@RequiresRole('admin')` on `ApprovalsController` rule create/update/delete
+      + the autonomy-mode PATCH. (Pause/kill endpoints were already admin-gated in Theme A.) Reads stay open (the
+      Settings page shows the policy); static-token / single-user installs are unaffected (RoleGuard skips with no
+      `req.user`).
+- [x] **audit record hygiene:** distinct entity types (`approval_rule`, `project`) + consistent verbs + a
+      before/after `payload` diff for rule/mode/repo/project updates, so the Theme E feed is readable.
 
 ---
 
