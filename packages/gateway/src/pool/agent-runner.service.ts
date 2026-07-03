@@ -14,7 +14,7 @@ import { TasksService } from '../tasks/tasks.service';
 import { TerminalService } from '../terminal/terminal.service';
 import { AgentPoolService } from './agent-pool.service';
 import { appendRepoConventions } from './lib/build-agent-prompt';
-import { classifyFailure } from './lib/classify-failure';
+import { classifyFailure, type ClassifiedFailure } from './lib/classify-failure';
 import { computeBackoffMs } from './lib/retry-backoff';
 
 /**
@@ -370,14 +370,62 @@ export class AgentRunnerService implements OnModuleInit {
   }
 
   /**
+   * Phase 54 C watchdog: an in-flight run was detected unhealthy (session lost /
+   * pid dead / silent past the heartbeat) but the normal {@link onExit} path
+   * hasn't fired. Reconcile it like a crash — record the classified failure, then
+   * retry-or-abandon (shared decision, with Phase 53 B backoff) — and only THEN
+   * kill any lingering session + free the slot. Setting the task's next state
+   * *before* the kill means the kill's onExit sees a non-running task and merely
+   * releases (no double-record), exactly as {@link stop}/{@link cancel} rely on.
+   */
+  reconcileUnhealthy(taskId: string, classified: ClassifiedFailure): void {
+    this.clearRunTimeout(taskId);
+    let task: Task | undefined;
+    try {
+      task = this.tasks.getTask(taskId);
+    } catch {
+      task = undefined;
+    }
+    if (task && (task.status === 'wip' || task.status === 'waiting')) {
+      this.tasks.recordFailure(taskId, {
+        ...classified,
+        lastOutput: this.snapshotOutput(taskId),
+      });
+      this.resolveFailedRun(taskId, task, classified.class, `reclaimed by watchdog (${classified.class})`);
+    }
+    // Free the slot exactly once. If a live session still exists (the hung case),
+    // killing it fires onExit — which releases the slot (the task is already
+    // non-running, so onExit's guard skips re-processing), exactly as cancel()
+    // relies on. Releasing here too would free a *new* run's slot if the scheduler
+    // re-picked the task in the same tick. When there's no live session (lost /
+    // dead pid) onExit will never fire, so we must release the leaked slot here.
+    const health = this.terminal.agentRunHealth(taskId);
+    this.terminal.killManagedRun(taskId);
+    if (health === null || !health.live) this.pool.release(taskId);
+  }
+
+  /**
+   * Phase 54 C watchdog: a slot is busy but its task is gone or already terminal
+   * (`done`/`abandoned`) — the run resolved (or the task was deleted) yet the slot
+   * leaked. Clear the timeout, reap any lingering session, free the slot. No
+   * failure is recorded — nothing failed; this only reclaims the leaked slot.
+   */
+  reclaimOrphanedSlot(taskId: string): void {
+    this.clearRunTimeout(taskId);
+    this.endMetricRun(taskId, 'cancelled');
+    this.terminal.killManagedRun(taskId);
+    this.pool.release(taskId);
+  }
+
+  /**
    * Phase 53 B — the single place a failed run decides retry-with-backoff vs.
-   * abandon, shared by {@link onExit} (session already dead) and {@link onTimeout}
-   * (session still alive — caller tears it down after). Retryable classes
-   * (`crash`/`timeout`/`inactivity`) re-queue with an exponential-backoff
-   * `nextRetryAt` until the budget is exhausted; non-retryable classes abandon
-   * immediately (Theme D will later escalate these to a needs-attention `waiting`
-   * instead). Sets the terminal/retry status **before** any session kill, so an
-   * onExit fired by that kill sees a non-`wip`/`waiting` task and no-ops.
+   * abandon, shared by {@link onExit} (session already dead), {@link onTimeout}
+   * (session still alive — caller tears it down after), and the Phase 54 C
+   * watchdog. Retryable classes (`crash`/`timeout`/`inactivity`) re-queue with an
+   * exponential-backoff `nextRetryAt` until the budget is exhausted; non-retryable
+   * classes abandon immediately. Sets the terminal/retry status **before** any
+   * session kill, so an onExit fired by that kill sees a non-`wip`/`waiting` task
+   * and no-ops.
    */
   private resolveFailedRun(taskId: string, task: Task, cls: FailureClass, what: string): void {
     const max = this.config.agent.maxRetries;

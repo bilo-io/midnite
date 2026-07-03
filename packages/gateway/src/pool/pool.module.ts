@@ -10,6 +10,7 @@ import { UsageModule } from '../usage/usage.module';
 import { AgentPoolScheduler } from './agent-pool-scheduler.service';
 import { AgentPoolService } from './agent-pool.service';
 import { AgentRunnerService } from './agent-runner.service';
+import { PoolWatchdogService } from './pool-watchdog.service';
 import { LifecycleHookController } from './lifecycle-hook.controller';
 import { PoolController } from './pool.controller';
 
@@ -27,7 +28,7 @@ import { PoolController } from './pool.controller';
     forwardRef(() => ApprovalsModule),
   ],
   controllers: [PoolController, LifecycleHookController],
-  providers: [AgentPoolService, AgentRunnerService, AgentPoolScheduler],
+  providers: [AgentPoolService, AgentRunnerService, PoolWatchdogService, AgentPoolScheduler],
   exports: [AgentPoolService, AgentRunnerService, AgentPoolScheduler],
 })
 export class PoolModule {}

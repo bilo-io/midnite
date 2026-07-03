@@ -24,4 +24,18 @@ describe('classifyFailure', () => {
     expect(f.class).toBe('gate-failed');
     expect(isRetryableFailure(f.class)).toBe(false);
   });
+
+  it('maps a watchdog-lost session to a retryable crash', () => {
+    const f = classifyFailure({ site: 'lost' });
+    expect(f.class).toBe('crash');
+    expect(f.detail).toContain('watchdog');
+    expect(isRetryableFailure(f.class)).toBe(true);
+  });
+
+  it('maps a watchdog inactivity reclaim to a retryable inactivity with minutes', () => {
+    const f = classifyFailure({ site: 'inactivity', idleMs: 600_000 });
+    expect(f.class).toBe('inactivity');
+    expect(f.detail).toContain('10m');
+    expect(isRetryableFailure(f.class)).toBe(true);
+  });
 });
