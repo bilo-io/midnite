@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-03 — feat: scheduler resilience — readiness gate + backoff + pause — Phase 54 Theme D (PR #PLACEHOLDER)
+## 2026-07-03 — feat: scheduler resilience — readiness gate + backoff + pause — Phase 54 Theme D (PR #285)
 
 Harden the run half of the scheduler lifecycle: don't tick into a dead DB, and stop cleanly when asked.
 
