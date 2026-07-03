@@ -330,6 +330,34 @@ export const PrStatusConfigSchema = z.object({
   pollConcurrency: z.number().int().positive().default(4),
 });
 
+// Autonomy guardrails — the safety domain's config half (Phase 50). Pause/kill
+// + spend/rate caps live in the DB (survive a restart); this is the policy that
+// belongs in config: the always-on blast-radius floor + the spawn-env scrub.
+export const BlastRadiusConfigSchema = z.object({
+  // The built-in destructive-action deny floor (Phase 50 C). ENABLED by default:
+  // it only bites in `guarded`/`autonomous` mode (an unattended agent) — `manual`
+  // still escalates every tool to a human. A match is a hard `auto-deny` that
+  // overrides the mode (mode can relax escalation, never a hard-denied action).
+  enabled: z.boolean().default(true),
+  // Branches an agent may not push to directly (matched in a `git push` command).
+  protectedBranches: z.array(z.string()).default(['main', 'master']),
+  // Globs for secret/credential files an agent may not read or write (matched
+  // against file-tool paths + file references inside a Bash command).
+  protectedPathGlobs: z
+    .array(z.string())
+    .default(['**/.env', '**/.env.*', '**/*.pem', '**/id_rsa*', '**/*.key', '**/credentials*']),
+});
+
+export const GuardrailsConfigSchema = z.object({
+  blastRadius: BlastRadiusConfigSchema.default({}),
+  // Strip the gateway's OWN secrets (MIDNITE_SECRET_KEY / auth token / JWT secret /
+  // workflows key) from a spawned agent's env so a compromised agent can't read
+  // them. OFF by default — preserves today's full-env spawn (Phase 50 C, opt-in).
+  // The agent keeps its own provider auth (ANTHROPIC_API_KEY etc) and the MIDNITE_*
+  // hook wiring, both re-injected after the scrub.
+  scrubSpawnEnv: z.boolean().default(false),
+});
+
 export const MidniteConfigSchema = z.object({
   agent: AgentConfigSchema,
   terminal: TerminalConfigSchema,
@@ -350,9 +378,14 @@ export const MidniteConfigSchema = z.object({
   // Live PR-status polling (Phase 22 Theme C). Optional (defaulted) so existing
   // midnite.json files keep validating.
   prStatus: PrStatusConfigSchema.default({}),
+  // Autonomy guardrails: blast-radius deny floor + spawn-env scrub (Phase 50).
+  // Optional (defaulted) so existing midnite.json files keep validating.
+  guardrails: GuardrailsConfigSchema.default({}),
 });
 
 export type MidniteConfig = z.infer<typeof MidniteConfigSchema>;
+export type GuardrailsConfig = z.infer<typeof GuardrailsConfigSchema>;
+export type BlastRadiusConfig = z.infer<typeof BlastRadiusConfigSchema>;
 export type KnowledgeConfig = z.infer<typeof KnowledgeConfigSchema>;
 export type NotificationsConfig = z.infer<typeof NotificationsConfigSchema>;
 export type RepoConfig = z.infer<typeof RepoConfigSchema>;

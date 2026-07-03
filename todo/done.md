@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-03 — feat: destructive-action blast-radius limits + spawn-env scrub — Phase 50 Theme C (PR #287)
+
+The act-path enforcement floor — deny the genuinely dangerous mid-run, and stop leaking the gateway's secrets into agent sessions. The last enforcement gap of Phase 50.
+
+- [x] **shared:** `guardrails` config — `blastRadius.{enabled (default on), protectedBranches [main,master], protectedPathGlobs [.env/keys/creds]}` + `scrubSpawnEnv` (opt-in, default off). `GuardrailsConfig`/`BlastRadiusConfig` types.
+- [x] **gateway:** a pure `approvals/lib/blast-radius.ts` detector — force-push (`--force`/`-f`/`--force-with-lease`), protected-branch push (incl. `HEAD:main` refspecs), recursive force delete (`rm -rf` + variants), secret/credential-file access (file-tool paths **and** file refs in a Bash command, glob-matched). Code-defined (not a deletable rule row). `ApprovalsService.evaluate()` now returns `{ verdict, ruleId?, reason? }`; the floor is checked **first** in `guarded`/`autonomous` so a match `auto-deny`s and **overrides the mode** — `manual` untouched (a human already reviews). The reason flows to the agent + the `approval_log`/audit (`approval.decided`) trail.
+- [x] **gateway:** opt-in `spawnAgentSession` env scrub (`scrubGatewaySecrets`) strips the gateway's **own** secrets (MIDNITE_SECRET_KEY + configured auth-token/JWT/workflows-key names), **preserving the agent's provider auth** + the MIDNITE_* hook wiring. `globMatch` exported for shared path matching; a slash-prefixed fallback lets `**/.env` match root-level files.
+- [x] Tests: blast-radius detector (force/protected-branch/rm/secret-file + disabled + custom lists), evaluate override (autonomous/guarded deny, manual escalate, disabled/no-config inert), env-scrub (strips gateway secrets, keeps ANTHROPIC_API_KEY, custom env name), shared config defaults. shared + gateway (1407) green; `:typecheck` clean. Deferred (Stage-2.5): per-repo protected overrides + `--allowedTools`.
+
 ## 2026-07-03 — feat: needs-attention board chip + task-health view + CLI — Phase 53 Theme E (PR #286)
 
 Make lifecycle resilience visible: surface the failures + escalations Themes A/B/D record.
@@ -13,6 +22,7 @@ Make lifecycle resilience visible: surface the failures + escalations Themes A/B
 - [x] web: TaskCard failure-reason chip (waitReason + retry count, only for failure-escalated waiting); Ops-page `TaskHealthPanel` (the "what's wedged?" buckets + failure counts, rows link to tasks); task-detail structured failure-history section (class/exit/last-output), fetched lazily; `fetchTaskFailures`/`fetchRecentFailures`/`fetchTasksDoctor` client methods.
 - [x] cli: `midnite failures [--class]`, `midnite triage` (what's-wedged summary), `midnite resolve <id> <requeue|replan|abandon>` (all `--json`-aware); typed client methods. `triage` avoids colliding with Phase 54 F's runtime `midnite doctor`.
 - [x] Tests: shared (query/report schemas), gateway (`TasksDoctorService` buckets/thresholds/no-terminal), web RTL (card chip + health panel). shared 530, gateway 1386 (1 pre-existing flaky tmux), web 749, cli 144; `:typecheck` clean. Board-filter control + live screenshots deferred (chip + Ops panel cover visibility; RTL covers render).
+
 ## 2026-07-03 — feat: data-portability archive contract + schema-version stamp — Phase 49 Theme A (PR #282)
 
 The foundation for full-store backup/restore: a versioned, self-describing archive contract + a runtime schema version to gate cross-instance import.

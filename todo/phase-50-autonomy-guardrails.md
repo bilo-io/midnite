@@ -114,22 +114,25 @@ cap is likewise global for now.
 
 ---
 
-## Theme C — Destructive-action limits (act-path gate) — **L**
+## Theme C — Destructive-action limits (act-path gate) — **L** — ✅ DONE (PR #287, 2026-07-03)
 
 Deny the genuinely dangerous, mid-run — the heart of blast-radius.
 
-- [ ] **built-in blast-radius ruleset:** a curated set of **default `deny` rules** layered under the existing
-      `approval_rules` `match` shape — force-push (`git push --force`), protected-branch writes (`main`/`master`
-      push/commit), mass deletes (`rm -rf`, bulk file deletion), and secret/credential-file access
-      (`pathGlob` over `.env`, key files, the vault). Extend `approvals.evaluate()` so a blast-radius match
-      returns `auto-deny` (or `escalate` for a "confirm" tier) with a reason.
-- [ ] **denials override mode:** blast-radius `deny` applies **even in `autonomous` mode** (mode can relax
-      escalation, never a hard-denied action). Configurable protected branches + protected globs per repo.
-- [ ] **scrub the spawn env:** `TerminalService.spawnAgentSession()` passes a **scrubbed** env (strip
-      `MIDNITE_SECRET_KEY`, provider API keys, unrelated host secrets — keep the `MIDNITE_*` hook wiring) and,
-      where supported, an `allowedTools` scoping flag. This is the one behavior-changing spawn edit — gate it
-      behind a config default that preserves today's env for opt-out.
-- [ ] every blast-radius decision is logged (`approval_log` + audited via Theme D) with the matched rule.
+- [x] **built-in blast-radius ruleset:** a **code-defined, config-driven** detector (`approvals/lib/blast-radius.ts`,
+      not deletable `approval_rules` rows — Stage-2.5) — force-push (`git push --force`/`-f`/`--force-with-lease`),
+      protected-branch push (`main`/`master`, incl. `HEAD:main` refspecs), recursive force delete (`rm -rf` + flag
+      variants), and secret/credential-file access (file-tool paths **and** file refs inside a Bash command, glob-matched
+      over `.env`/keys/creds). `ApprovalsService.evaluate()` now returns `{ verdict, ruleId?, reason? }`; a blast-radius
+      match is `auto-deny` with a reason.
+- [x] **denials override mode:** the floor is checked **first** in `guarded`/`autonomous` so a hard-deny overrides the
+      mode (an `autonomous` agent can't force-push). **`manual` is untouched** (a human reviews every call — Stage-2.5).
+      Enabled by default; protected branches + globs are **global** config (`guardrails.blastRadius.*`; per-repo overrides deferred).
+- [x] **scrub the spawn env:** `spawnAgentSession()` strips the gateway's **own** secrets (`MIDNITE_SECRET_KEY` + the
+      configured auth-token/JWT/workflows-key env names) via `scrubGatewaySecrets`, **preserving the agent's provider
+      auth** (`ANTHROPIC_API_KEY` etc — a broad strip would break the agent) + the `MIDNITE_*` hook wiring (re-injected
+      after). Behind `guardrails.scrubSpawnEnv` (**default off** → preserves today's env). The `--allowedTools` flag is deferred.
+- [x] every blast-radius decision is logged (`approval_log` with the matched `ruleId` + audited via the Theme D
+      `approval.decided` mirror); the reason is surfaced to the agent as the denial message.
 
 ---
 
