@@ -1315,3 +1315,17 @@ export const ideaMessages = sqliteTable(
 
 export type IdeaMessageRow = typeof ideaMessages.$inferSelect;
 export type IdeaMessageInsert = typeof ideaMessages.$inferInsert;
+
+// --- Schema version stamp (Phase 49 A) ---
+
+/** Single-row record of the applied migration index, written on every boot from
+ *  the drizzle journal's highest entry. Data portability (export/import) reads it
+ *  to stamp archives and gauge cross-instance schema compatibility. */
+export const schemaMeta = sqliteTable('schema_meta', {
+  /** Always 'singleton' — this table has exactly one row. */
+  id: text('id').primaryKey().$default(() => 'singleton'),
+  /** The journal's highest applied migration idx at last boot. */
+  schemaVersion: integer('schema_version').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+export type SchemaMetaRow = typeof schemaMeta.$inferSelect;

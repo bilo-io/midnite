@@ -13,7 +13,15 @@ Make lifecycle resilience visible: surface the failures + escalations Themes A/B
 - [x] web: TaskCard failure-reason chip (waitReason + retry count, only for failure-escalated waiting); Ops-page `TaskHealthPanel` (the "what's wedged?" buckets + failure counts, rows link to tasks); task-detail structured failure-history section (class/exit/last-output), fetched lazily; `fetchTaskFailures`/`fetchRecentFailures`/`fetchTasksDoctor` client methods.
 - [x] cli: `midnite failures [--class]`, `midnite triage` (what's-wedged summary), `midnite resolve <id> <requeue|replan|abandon>` (all `--json`-aware); typed client methods. `triage` avoids colliding with Phase 54 F's runtime `midnite doctor`.
 - [x] Tests: shared (query/report schemas), gateway (`TasksDoctorService` buckets/thresholds/no-terminal), web RTL (card chip + health panel). shared 530, gateway 1386 (1 pre-existing flaky tmux), web 749, cli 144; `:typecheck` clean. Board-filter control + live screenshots deferred (chip + Ops panel cover visibility; RTL covers render).
+## 2026-07-03 — feat: data-portability archive contract + schema-version stamp — Phase 49 Theme A (PR #282)
 
+The foundation for full-store backup/restore: a versioned, self-describing archive contract + a runtime schema version to gate cross-instance import.
+
+- [x] shared `portability.ts`: `ArchiveManifestSchema` (schemaVersion/appVersion/createdAt/domains/secretsMode), `domainPayloadSchema<T>()` envelope factory, `ExportOptionsSchema`, `ImportPreviewSchema` (counts + conflicts + compat + importable), `ImportOptionsSchema` (replace/merge, dryRun, passphrase), + pure `compareSchemaVersion` (ok/older-archive/newer-archive) & `isImportable`.
+- [x] gateway `schema_meta` singleton table (migration `0067`), stamped on boot in `DbFactory` (after `migrate`) from the drizzle journal's highest idx via `db/schema-version.ts` (`readJournalVersion`/`stampSchemaVersion`/`getSchemaVersion`, fail-soft `-1`). Internal helper only — Theme B/C consume it.
+- [x] Container decided: zip w/ `manifest.json` + `domains/*.json` (documented in the contract header). Tests: shared 7 (verdict + defaults + manifest/envelope validation), gateway 6 (journal read, boot stamp, idempotent, fail-soft). `:typecheck` green; gateway 1333/1334 (1 pre-existing tmux-contract flake).
+
+---
 ## 2026-07-03 — feat: guardrails safety commands + kill switch (CLI) — Phase 50 Theme F (PR #284)
 
 Hit the brakes from a shell — the operability half of Phase 50 for when the UI is the thing that's down.

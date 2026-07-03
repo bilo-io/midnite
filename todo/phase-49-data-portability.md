@@ -70,21 +70,25 @@
 
 ---
 
-## Theme A — Archive contract + schema-version stamp — **S-M**
+## Theme A — Archive contract + schema-version stamp — **S-M** — ✅ DONE (PR #282, 2026-07-03)
 
 Define the portable archive once, and give import something to validate against.
 
-- [ ] **shared:** [`shared/src/portability.ts`](../packages/shared/src/) — `ArchiveManifestSchema`
-      (`{ schemaVersion: number, appVersion: string, createdAt: string, domains: string[], secretsMode: 'excluded' | 'passphrase' }`),
-      a per-domain `DomainPayloadSchema<T>` envelope, `ExportOptionsSchema`
-      (`includeSecrets`, `passphrase?`), `ImportPreviewSchema` (per-domain counts + conflicts +
-      version-compat verdict), `ImportOptionsSchema` (`mode: 'replace' | 'merge'`, `dryRun`,
-      `passphrase?`). Re-export from [`index.ts`](../packages/shared/src/index.ts).
-- [ ] **gateway:** a runtime **schema version** source — a `schema_meta` singleton table set on boot
-      to the journal's highest applied migration idx (read once in `DbFactory`/`db.module`), exposed
-      via a small helper. Forward-only migration to add the table.
-- [ ] Decide + document the archive container: a **zip** with `manifest.json` at the root + one
-      JSON file per domain (`domains/tasks.json`, `domains/workflows.json`, …). Inspectable, streamable.
+- [x] **shared:** [`shared/src/portability.ts`](../packages/shared/src/portability.ts) — `ArchiveManifestSchema`
+      (`schemaVersion`/`appVersion`/`createdAt`/`domains`/`secretsMode` `excluded`|`passphrase`), a
+      `domainPayloadSchema<T>()` envelope factory (per-domain records validated on both ends),
+      `ExportOptionsSchema` (`includeSecrets`, `passphrase?`), `ImportPreviewSchema` (per-domain counts +
+      conflicts + `compat` verdict + `importable`), `ImportOptionsSchema` (`mode: 'replace'|'merge'`, `dryRun`,
+      `passphrase?`), plus a **pure `compareSchemaVersion`** (`ok`/`older-archive`/`newer-archive`) +
+      `isImportable`. Re-exported from `index.ts`.
+- [x] **gateway:** a runtime **schema version** — a `schema_meta` singleton table stamped on boot (in
+      `DbFactory`, after `migrate`) to the drizzle journal's highest applied migration idx via
+      `db/schema-version.ts` (`readJournalVersion`/`stampSchemaVersion`/`getSchemaVersion`), fail-soft (`-1`
+      when the journal is unreadable). Migration `0067_schema_meta`. **Internal helper only** — Theme B/C's
+      export/import consume it (no public endpoint this slice, per Stage-2.5).
+- [x] **Container (decided):** a **zip** with `manifest.json` at the root + one JSON file per domain
+      (`domains/tasks.json`, `domains/workflows.json`, …) — inspectable, streamable. Documented in the
+      `portability.ts` header; B produces it, C reads it.
 
 ---
 

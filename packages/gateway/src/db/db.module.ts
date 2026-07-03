@@ -8,6 +8,7 @@ import { dirname, isAbsolute, join, resolve } from 'node:path';
 import type { MidniteConfig } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
 import * as schema from './schema';
+import { stampSchemaVersion } from './schema-version';
 
 export const DB_TOKEN = Symbol('MIDNITE_DB');
 /** The raw better-sqlite3 handle, for low-level ops (online backup) Drizzle doesn't expose. */
@@ -46,7 +47,11 @@ export class DbFactory {
     // hook order; on a *fresh* DB — every Playwright e2e run — they only exist
     // if migration is tied to handle construction like this. (Otherwise a feature
     // module's onModuleInit can run before DbModule's and crash the boot.)
-    migrate(db, { migrationsFolder: findMigrationsDir() });
+    const migrationsDir = findMigrationsDir();
+    migrate(db, { migrationsFolder: migrationsDir });
+    // Phase 49 A: stamp the applied schema version (journal's highest idx) so data
+    // portability can version + compatibility-check archives. Fail-soft.
+    stampSchemaVersion(db, migrationsDir, new Date().toISOString());
     this.built = { db, sqlite };
     return this.built;
   }
