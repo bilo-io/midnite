@@ -32,7 +32,7 @@
 | [53 · Task lifecycle resilience](phase-53-task-lifecycle-resilience.md) | 🔄 WIP | 3/22 | `█░░░░░░░░░` | 14% | B | C D E |
 | [52 · In-app diff & PR review](phase-52-in-app-diff-review.md) | 🔄 WIP | 10/25 | `████░░░░░░` | 40% | — | C D |
 | [51 · Session detail page](phase-51-session-detail-page.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
-| [50 · Autonomy guardrails](phase-50-autonomy-guardrails.md) | 🔄 WIP | 8/29 | `███░░░░░░░` | 28% | — | C D E F |
+| [50 · Autonomy guardrails](phase-50-autonomy-guardrails.md) | 🔄 WIP | 8/29 | `███░░░░░░░` | 28% | D | C E F |
 | [49 · Data portability](phase-49-data-portability.md) | ◻ TODO | 0/27 | `░░░░░░░░░░` | 0% | — | A B C D E F |
 | [48 · Slides](phase-48-slides.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
