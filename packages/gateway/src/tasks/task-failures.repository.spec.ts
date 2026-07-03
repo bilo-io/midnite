@@ -48,4 +48,32 @@ describe('TaskFailuresRepository', () => {
     expect(t1.map((f) => f.id)).toEqual(['a', 'b']);
     expect(repo.listByTask('t2').map((f) => f.id)).toEqual(['c']);
   });
+
+  describe('listRecent (Phase 53 E)', () => {
+    beforeEach(() => {
+      repo.insert({ id: 'a', taskId: 't1', class: 'crash', detail: '1', retryIndex: 0, at: '2026-07-02T00:00:01Z' });
+      repo.insert({ id: 'b', taskId: 't2', class: 'timeout', detail: '2', retryIndex: 0, at: '2026-07-02T00:00:02Z' });
+      repo.insert({ id: 'c', taskId: 't1', class: 'crash', detail: '3', retryIndex: 1, at: '2026-07-02T00:00:03Z' });
+    });
+
+    it('returns recent failures newest-first, respecting the limit', () => {
+      expect(repo.listRecent({ limit: 2 }).map((f) => f.id)).toEqual(['c', 'b']);
+    });
+
+    it('filters by class', () => {
+      expect(repo.listRecent({ class: 'crash', limit: 10 }).map((f) => f.id)).toEqual(['c', 'a']);
+    });
+
+    it('scopes to the given visible task ids (failures inherit task visibility)', () => {
+      expect(repo.listRecent({ taskIds: ['t1'], limit: 10 }).map((f) => f.id)).toEqual(['c', 'a']);
+    });
+
+    it('returns nothing for an empty visible-task set (no accidental leak)', () => {
+      expect(repo.listRecent({ taskIds: [], limit: 10 })).toEqual([]);
+    });
+
+    it('undefined taskIds = unscoped (local/single-user path)', () => {
+      expect(repo.listRecent({ limit: 10 })).toHaveLength(3);
+    });
+  });
 });

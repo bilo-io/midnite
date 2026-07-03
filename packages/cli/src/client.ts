@@ -11,7 +11,9 @@ import {
   RunResponseSchema,
   SearchResponseSchema,
   StatusSchema,
+  TaskFailuresResponseSchema,
   TaskSchema,
+  TasksDoctorReportSchema,
   TemplateSlotsResponseSchema,
   TerminalTokenResponseSchema,
   TriggerCheckResponseSchema,
@@ -35,7 +37,10 @@ import {
   type SearchQuery,
   type SearchResponse,
   type Status,
+  type FailureClass,
   type Task,
+  type TaskFailure,
+  type TasksDoctorReport,
   type TemplateSlotsResponse,
   type TerminalTokenResponse,
   type User,
@@ -71,6 +76,8 @@ export interface GatewayClient {
   createBulk(raw: string, defaults?: TaskDefaults): Promise<BulkCreateTaskResponse>;
   moveTask(id: string, status: Status): Promise<Task>;
   resolveTask(id: string, action: ResolveTaskAction, prompt?: string): Promise<Task>;
+  listRecentFailures(opts?: { class?: FailureClass; limit?: number }): Promise<TaskFailure[]>;
+  tasksDoctor(): Promise<TasksDoctorReport>;
   setPriority(id: string, priority: number): Promise<Task>;
   addDependency(id: string, dependsOnId: string): Promise<Task>;
   removeDependency(id: string, dependsOnId: string): Promise<Task>;
@@ -216,6 +223,22 @@ export function createClient(baseUrl: string, token?: string): GatewayClient {
           body: JSON.stringify({ action, prompt }),
         }),
       );
+    },
+
+    /** Recent failures across tasks (Phase 53 E), newest-first. */
+    async listRecentFailures(opts?: { class?: FailureClass; limit?: number }): Promise<TaskFailure[]> {
+      const qs = new URLSearchParams();
+      if (opts?.class) qs.set('class', opts.class);
+      if (opts?.limit != null) qs.set('limit', String(opts.limit));
+      const q = qs.toString();
+      return TaskFailuresResponseSchema.parse(
+        await request(`/tasks/failures${q ? `?${q}` : ''}`, { method: 'GET' }),
+      ).failures;
+    },
+
+    /** The task-health "what's wedged?" report (Phase 53 E). */
+    async tasksDoctor(): Promise<TasksDoctorReport> {
+      return TasksDoctorReportSchema.parse(await request('/tasks/doctor', { method: 'GET' }));
     },
 
     async setPriority(id: string, priority: number): Promise<Task> {
