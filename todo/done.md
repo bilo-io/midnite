@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-03 — feat: escalate-to-human + waiting nudges — Phase 53 Theme D (PR #PLACEHOLDER)
+## 2026-07-03 — feat: escalate-to-human + waiting nudges — Phase 53 Theme D (PR #283)
 
 A failed run becomes visible work, not a silent tombstone. Builds on the Theme A taxonomy + Theme B backoff.
 

@@ -114,7 +114,7 @@ Notice the tasks that quietly stopped moving. The biggest gap.
 
 ---
 
-## Theme D — Escalate-to-human + waiting nudges — **M** — ✅ DONE (PR #281, 2026-07-03)
+## Theme D — Escalate-to-human + waiting nudges — **M** — ✅ DONE (PR #283, 2026-07-03)
 
 Fail loudly: a failed task becomes visible work, not a silent tombstone.
 
