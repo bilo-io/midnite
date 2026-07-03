@@ -6,6 +6,8 @@ import {
   type ApprovalLogResponse,
   type ApprovalSettings,
 } from '@midnite/shared';
+import { CurrentUser, type CurrentUserPayload } from '../auth/decorators/current-user.decorator';
+import { RequiresRole } from '../auth/decorators/require-role.decorator';
 import { ApprovalsService } from './approvals.service';
 
 @Controller('approvals')
@@ -17,11 +19,14 @@ export class ApprovalsSettingsController {
     return this.service.getSettings();
   }
 
+  // The autonomy policy mode is a guardrail — changing it is an admin action
+  // (Phase 50 D) and audited with a from→to diff.
   @Patch('mode')
-  setMode(@Body() body: unknown): ApprovalSettings {
+  @RequiresRole('admin')
+  setMode(@Body() body: unknown, @CurrentUser() user?: CurrentUserPayload | null): ApprovalSettings {
     const parsed = SetModeRequestSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
-    this.service.setMode(parsed.data.mode);
+    this.service.setMode(parsed.data.mode, user?.userId ?? null);
     return this.service.getSettings();
   }
 

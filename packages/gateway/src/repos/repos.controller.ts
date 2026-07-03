@@ -50,16 +50,20 @@ export class ReposController {
 
   @Patch(':id')
   @RequiresRole('admin')
-  update(@Param('id') id: string, @Body() body: unknown): RepoResponse {
+  update(
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @CurrentUser() user?: CurrentUserPayload | null,
+  ): RepoResponse {
     const parsed = UpdateRepoRequestSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
-    return { repo: this.translate(() => this.service.update(id, parsed.data)) };
+    return { repo: this.translate(() => this.service.update(id, parsed.data, user?.userId ?? null)) };
   }
 
   @Delete(':id')
   @RequiresRole('admin')
-  remove(@Param('id') id: string): { ok: true } {
-    this.translate(() => this.service.delete(id));
+  remove(@Param('id') id: string, @CurrentUser() user?: CurrentUserPayload | null): { ok: true } {
+    this.translate(() => this.service.delete(id, user?.userId ?? null));
     return { ok: true };
   }
 

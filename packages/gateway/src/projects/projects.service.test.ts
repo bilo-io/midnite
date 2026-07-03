@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { Task } from '@midnite/shared';
 import type {
   ProjectInsert,
@@ -248,5 +248,23 @@ describe('ProjectsService', () => {
       { projectId: project.id, title: 'Do A' },
       { projectId: project.id, title: 'Do B' },
     ]);
+  });
+
+  it('audits create / update / delete with the actor (Phase 50 D)', async () => {
+    const repo = new InMemoryProjectsRepo();
+    const { service: tasks } = makeTasksStub();
+    const audit = { record: vi.fn() } as unknown as import('../audit/audit.service').AuditService;
+    const service = new ProjectsService(repo, disabledLlm, tasks, memoriesStub, breakdownStub, undefined, audit);
+
+    const project = await service.createProject({ name: 'Atlas', tag: 'atlas', color: '#7c3aed' }, 'user-1');
+    service.updateProject(project.id, { name: 'Atlas 2' }, 'user-2');
+    service.deleteProject(project.id, 'user-3');
+
+    const calls = (audit.record as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0]);
+    expect(calls.map((c) => c.action)).toEqual(['project.created', 'project.updated', 'project.deleted']);
+    expect(calls[0].userId).toBe('user-1');
+    expect(calls[1].payload.before.name).toBe('Atlas');
+    expect(calls[1].payload.after.name).toBe('Atlas 2');
+    expect(calls[2].userId).toBe('user-3');
   });
 });

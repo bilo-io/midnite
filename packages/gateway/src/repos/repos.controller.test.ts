@@ -56,7 +56,7 @@ describe('ReposController — valid input delegates to the service', () => {
   it('returns { ok: true } after delete', () => {
     const { controller, service } = build();
     expect(controller.remove('r1')).toEqual({ ok: true });
-    expect(service.delete).toHaveBeenCalledWith('r1');
+    expect(service.delete).toHaveBeenCalledWith('r1', null);
   });
 });
 

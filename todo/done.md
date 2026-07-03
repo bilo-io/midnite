@@ -13,6 +13,18 @@ The run-half of runtime resilience: a leaked/orphaned agent slot no longer wedge
 - [x] Reconcile **mirrors stop/cancel** (state-first, then kill) and frees the slot exactly once — explicit release only when no live session exists; a live (hung) kill lets its onExit release, so a same-tick re-pick can't lose its new slot.
 - [x] `isSessionAlive(sessionId)` added to the **Spawner interface**: pty tracks its spawned handles + pid-alive (`isPidAlive`), tmux checks the pane isn't dead. `TerminalService.agentRunHealth()` adds a no-output heartbeat (`lastDataAt`). Reclaim ON by default; the stricter inactivity probe (`agent.watchdog.inactivityMs`, pty-only) is opt-in so quiet-but-live agents aren't killed.
 - [x] Tests: `pool-watchdog.service` (orphan/dead/hung/healthy/disabled/fail-open), `classify-failure` (lost+inactivity), runner `reconcileUnhealthy`/`reclaimOrphanedSlot`, `isPidAlive`. shared 517, gateway 1324 green.
+
+---
+
+## 2026-07-03 — feat: audit completeness + RBAC gaps on the safety surface — Phase 50 Theme D (PR #281)
+
+Every guardrail change and unattended action is now accountable — the accountability half of Phase 50.
+
+- [x] **RBAC:** `@RequiresRole('admin')` on `ApprovalsController` rule create/update/delete + the autonomy-mode PATCH (editing blast-radius policy is admin-only; pause/kill were already gated in Theme A). Reads stay open; static-token/single-user installs unaffected (RoleGuard skips with no `req.user`).
+- [x] **Audit:** approval-rule CRUD (before/after), policy-mode change (from→to, no-op skipped), and repo + project mutations (create/update/delete, actor threaded from the JWT). Every act-path decision is **mirrored** from `approval_log` into the audit trail (`approval.decided`, entityId = sessionId) — one query for "what did agents do + what did we allow/deny".
+- [x] **shared:** new audit entity types (`approval_rule`, `project`) + actions (`guardrail.mode_changed`, `approval_rule.*`, `approval.decided`, `repo.*`, `project.*`).
+- [x] Tests: shared enum; gateway approvals audit (rule CRUD before/after, mode diff + no-op skip, decision mirror), repos + projects create/update/delete audit; controller-delete assertions updated for the threaded actor. shared + gateway (1326) green; `:typecheck` clean. (gateway:lint red only on pre-existing `main` breakage in unrelated files.)
+
 ## 2026-07-02 — feat: retry backoff + class-aware retry — Phase 53 Theme B (PR #277)
 
 Retries stop firing instantly and blindly: they now back off exponentially and only re-run failures worth re-running. Builds on the Theme A taxonomy.

@@ -62,7 +62,7 @@ describe('ProjectsController — valid input delegates to the service', () => {
   it('returns { ok: true } after delete', () => {
     const { controller, service } = build();
     expect(controller.remove('p1')).toEqual({ ok: true });
-    expect(service.deleteProject).toHaveBeenCalledWith('p1');
+    expect(service.deleteProject).toHaveBeenCalledWith('p1', null);
   });
 });
 
