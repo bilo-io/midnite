@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-03 — feat: Settings → Safety control panel — Phase 50 Theme E (PR #289) · **Phase 50 COMPLETE** 🎉
+## 2026-07-03 — feat: Settings → Safety control panel — Phase 50 Theme E (PR #290) · **Phase 50 COMPLETE** 🎉
 
 One place to see and steer every guardrail — the operability capstone that closes Phase 50 (kill switch, spend/rate caps, blast-radius, audit/RBAC, CLI all now surfaced in one web page).
 
