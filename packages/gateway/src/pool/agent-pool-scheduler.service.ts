@@ -1,4 +1,5 @@
 import {
+  forwardRef,
   Inject,
   Injectable,
   Logger,
@@ -8,6 +9,7 @@ import {
 } from '@nestjs/common';
 import type { MidniteConfig, PauseScope, Task, TaskHeldReason } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
+import { HealthService } from '../health/health.service';
 import { MetricsService } from '../metrics/metrics.service';
 import { ApprovalsService } from '../approvals/approvals.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -37,6 +39,14 @@ export class AgentPoolScheduler implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(AgentPoolScheduler.name);
   private timer: ReturnType<typeof setInterval> | undefined;
   private running = false;
+  /** Phase 54 D — lifecycle pause (graceful shutdown / reusable by the kill
+   *  switch). Distinct from teardown (which clears the timer) and from Phase 50's
+   *  business `isGloballyPaused`: the timer keeps firing so resume() is instant. */
+  private paused = false;
+  /** Consecutive ticks the readiness gate has failed (DB down) — drives backoff. */
+  private unreadyStreak = 0;
+  /** Epoch ms before which the tick skips entirely while backing off. */
+  private backoffUntil = 0;
   /** Timestamps (ms) of recent spawns for the rolling per-hour rate cap. */
   private spawnTimes: number[] = [];
   /** The held set as of the previous tick — for change detection (WS + notify edges). */
@@ -61,6 +71,12 @@ export class AgentPoolScheduler implements OnModuleInit, OnModuleDestroy {
     // Last + optional so existing positional-construction specs are unaffected;
     // Nest provides it in production (PoolModule). Phase 54 C.
     @Optional() @Inject(PoolWatchdogService) private readonly watchdog?: PoolWatchdogService,
+    // Phase 54 D — the readiness gate's DB probe. forwardRef because HealthService
+    // injects this scheduler (readiness reads the scheduler's state); @Optional so
+    // it degrades to no-gate (behaviour-preserving) when absent (unit specs).
+    @Optional()
+    @Inject(forwardRef(() => HealthService))
+    private readonly health?: HealthService,
   ) {}
 
   onModuleInit(): void {
@@ -120,6 +136,37 @@ export class AgentPoolScheduler implements OnModuleInit, OnModuleDestroy {
     return this.timer !== undefined;
   }
 
+  /**
+   * Phase 54 D — stop accepting new work without tearing down the loop. The
+   * interval keeps firing (so {@link resume} is instant and {@link isRunning}
+   * stays true), but {@link tick} short-circuits before scheduling. The shared
+   * mechanism graceful shutdown (Theme E) uses to drain; distinct from Phase 50's
+   * business `isGloballyPaused` (both independently gate the tick). Idempotent.
+   */
+  pause(): void {
+    if (this.paused) return;
+    this.paused = true;
+    this.logger.log('scheduler paused — not accepting new work');
+  }
+
+  /** Resume scheduling after a {@link pause}. Idempotent. */
+  resume(): void {
+    if (!this.paused) return;
+    this.paused = false;
+    this.logger.log('scheduler resumed');
+  }
+
+  /** Whether the scheduler is lifecycle-paused (Phase 54 D). */
+  isPaused(): boolean {
+    return this.paused;
+  }
+
+  /** Whether the scheduler is currently backing off an unready dependency
+   *  (DB down) — reflected in `/health/ready` (Phase 54 D). */
+  isBackingOff(): boolean {
+    return this.backoffUntil > Date.now();
+  }
+
   // Fill every free slot with the oldest unassigned *ready* `todo` task, skipping
   // any whose repo is already at the per-repo concurrency cap. "Ready" = every
   // dependency blocker is `done` (Phase 27 Theme B) — a blocked task (incl. one
@@ -135,9 +182,20 @@ export class AgentPoolScheduler implements OnModuleInit, OnModuleDestroy {
     // (Phase 50 B). Reconciled at the end so a cleared hold broadcasts too.
     const held = new Map<string, TaskHeldReason>();
     try {
+      // Phase 54 D: while backing off an unready dependency, skip the whole tick
+      // (no DB probe, no watchdog, no log) until the backoff window elapses.
+      if (tickStart < this.backoffUntil) return;
+      // Readiness gate: don't tick into a dead database — skip + back off
+      // exponentially instead of hammering. Fail-open: when HealthService isn't
+      // wired (unit specs) the gate is a no-op (pre-Phase-54-D behaviour).
+      if (this.health && !this.health.dbReachable()) {
+        this.enterReadinessBackoff();
+        return;
+      }
+      this.clearReadinessBackoff();
       // Phase 54 C: reconcile leaked slots first, so a wedged (fully-busy but
       // orphaned) pool is healed even when nothing new can be scheduled — and
-      // even under a global pause. Fail-open: never let it abort the tick.
+      // even under a pause. Fail-open: never let it abort the tick.
       try {
         this.watchdog?.sweep();
       } catch (err) {
@@ -145,6 +203,9 @@ export class AgentPoolScheduler implements OnModuleInit, OnModuleDestroy {
           `watchdog sweep failed: ${err instanceof Error ? err.message : 'unknown'}`,
         );
       }
+      // Phase 54 D: lifecycle pause (graceful shutdown / kill switch) — heal via
+      // the watchdog above, but accept no new work while paused.
+      if (this.paused) return;
       // Phase 50 A: a global pause halts all scheduling; scoped pauses filter the
       // ready-set below. Fail-safe — paused ⇒ spawn nothing. (A paused system
       // isn't "held by a cap" — leave the held set empty so it reconciles clear.)
@@ -257,6 +318,29 @@ export class AgentPoolScheduler implements OnModuleInit, OnModuleDestroy {
     const cap = this.config.agent.perUserMaxSlots;
     if (!userId || cap <= 0) return true;
     return this.pool.busyCountForUser(userId) < cap;
+  }
+
+  /** Phase 54 D — the readiness gate failed (DB down): grow the exponential
+   *  backoff window and set `backoffUntil`. Logs once per re-probe (the
+   *  `backoffUntil` skip suppresses intermediate ticks), so no log-spam. */
+  private enterReadinessBackoff(): void {
+    this.unreadyStreak += 1;
+    const { baseMs, maxMs } = this.config.agent.readinessBackoff;
+    const waitMs = Math.min(baseMs * 2 ** (this.unreadyStreak - 1), maxMs);
+    this.backoffUntil = Date.now() + waitMs;
+    this.logger.warn(
+      `scheduler readiness gate: database unreachable — backing off ${waitMs}ms (attempt ${this.unreadyStreak})`,
+    );
+  }
+
+  /** Readiness recovered (or was never lost): clear the backoff. Logs once on
+   *  the down→up edge. */
+  private clearReadinessBackoff(): void {
+    if (this.unreadyStreak > 0) {
+      this.logger.log(`scheduler readiness recovered after ${this.unreadyStreak} attempt(s) — resuming`);
+    }
+    this.unreadyStreak = 0;
+    this.backoffUntil = 0;
   }
 
   /** Count of busy slots per repo right now (repo-less running tasks omitted). */

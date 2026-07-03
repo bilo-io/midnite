@@ -159,6 +159,108 @@ describe('AgentPoolScheduler.tick', () => {
     expect(runner.start).toHaveBeenCalledTimes(3);
   });
 
+  // --- Phase 54 D: scheduler resilience ---
+
+  type Health = { dbReachable: () => boolean };
+  function schedulerWithHealth(
+    cfg: MidniteConfig,
+    service: TasksService,
+    pool: AgentPoolService,
+    runner: AgentRunnerService,
+    health?: Health,
+  ): AgentPoolScheduler {
+    // health is the 12th (last) constructor param, after the optional deps.
+    return new AgentPoolScheduler(
+      cfg, service, pool, runner,
+      undefined, undefined, undefined, undefined, undefined, undefined, undefined,
+      health as never,
+    );
+  }
+
+  it('pause() stops new work without tearing down; resume() restores it (Phase 54 D)', async () => {
+    const cfg = config(4);
+    const { service, markStarted } = fakeTasks(['t1', 't2']);
+    const pool = new AgentPoolService(cfg, service);
+    const runner = fakeRunner(pool, markStarted);
+    const scheduler = new AgentPoolScheduler(cfg, service, pool, runner);
+
+    scheduler.pause();
+    expect(scheduler.isPaused()).toBe(true);
+    await scheduler.tick();
+    expect(runner.start).not.toHaveBeenCalled(); // paused → no spawns
+
+    scheduler.resume();
+    expect(scheduler.isPaused()).toBe(false);
+    await scheduler.tick();
+    expect(startedIds(runner).sort()).toEqual(['t1', 't2']);
+  });
+
+  it('readiness gate skips + backs off when the DB is unreachable, then recovers (Phase 54 D)', async () => {
+    vi.useFakeTimers();
+    try {
+      const cfg = parseConfig({
+        agent: { pool: 4, poolEnabled: true, readinessBackoff: { baseMs: 1000, maxMs: 30000 } },
+        terminal: {},
+        gateway: {},
+      });
+      const { service, markStarted } = fakeTasks(['t1']);
+      const pool = new AgentPoolService(cfg, service);
+      const runner = fakeRunner(pool, markStarted);
+      let dbUp = false;
+      const scheduler = schedulerWithHealth(cfg, service, pool, runner, { dbReachable: () => dbUp });
+
+      // DB down → tick schedules nothing and enters backoff.
+      await scheduler.tick();
+      expect(runner.start).not.toHaveBeenCalled();
+      expect(scheduler.isBackingOff()).toBe(true);
+
+      // Still within the backoff window → skipped entirely (no re-probe yet).
+      dbUp = true;
+      await vi.advanceTimersByTimeAsync(500);
+      await scheduler.tick();
+      expect(runner.start).not.toHaveBeenCalled();
+
+      // Window elapsed → re-probe succeeds → scheduling resumes.
+      await vi.advanceTimersByTimeAsync(600);
+      await scheduler.tick();
+      expect(scheduler.isBackingOff()).toBe(false);
+      expect(startedIds(runner)).toEqual(['t1']);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('readiness backoff window grows on each consecutive failure (Phase 54 D)', async () => {
+    vi.useFakeTimers();
+    try {
+      const cfg = parseConfig({
+        agent: { pool: 1, poolEnabled: true, readinessBackoff: { baseMs: 1000, maxMs: 30000 } },
+        terminal: {},
+        gateway: {},
+      });
+      const { service, markStarted } = fakeTasks(['t1']);
+      const pool = new AgentPoolService(cfg, service);
+      const runner = fakeRunner(pool, markStarted);
+      const scheduler = schedulerWithHealth(cfg, service, pool, runner, { dbReachable: () => false });
+
+      // 1st failure → ~1000ms window: cleared after 1100ms.
+      await scheduler.tick();
+      await vi.advanceTimersByTimeAsync(1100);
+      expect(scheduler.isBackingOff()).toBe(false);
+
+      // 2nd consecutive failure → ~2000ms window: still backing off at +1100, not at +2100.
+      await scheduler.tick();
+      await vi.advanceTimersByTimeAsync(1100);
+      expect(scheduler.isBackingOff()).toBe(true);
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(scheduler.isBackingOff()).toBe(false);
+
+      expect(runner.start).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('guards against re-entrant ticks', async () => {
     const cfg = config(4);
     const { service, markStarted } = fakeTasks(['t1', 't2']);
