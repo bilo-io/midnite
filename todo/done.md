@@ -12,6 +12,26 @@ Hit the brakes from a shell — the operability half of Phase 50 for when the UI
 - [x] **gateway:** `GET /guardrails` now returns a read-only `caps` block (config-sourced mode + hard/soft spend caps + spawns-per-hour) so `status` reads the whole picture in one call — the web Safety panel (Theme E) reuses it. `GuardrailCaps` zod contract in `shared`.
 - [x] Tests: cli helper units (scope parse incl. both-flags error, pause-state line, caps rows set/unset/unlimited, denial filter+limit, row projection) + gateway controller caps (configured + all-unset). cli (144) + gateway (1358) green; `:typecheck` clean; cli/shared lint clean (gateway:lint red only on pre-existing unrelated debt).
 
+## 2026-07-03 — feat: scheduler resilience — readiness gate + backoff + pause — Phase 54 Theme D (PR #285)
+
+Harden the run half of the scheduler lifecycle: don't tick into a dead DB, and stop cleanly when asked.
+
+- [x] shared: `agent.readinessBackoff.{baseMs,maxMs}` (1s/30s) — exponential-backoff knobs; only engage when the DB is actually down, so behaviour-preserving.
+- [x] gateway: the tick probes `HealthService.dbReachable()` (cheap `SELECT 1`, fail-open) before working; DB down → skip + exponential backoff (`min(base·2^n, cap)`), one log per re-probe, instant recovery. Fail-open: no HealthService ⇒ no gate.
+- [x] gateway: first-class `pause()`/`resume()`/`isPaused()` — timer keeps firing (resume instant, `isRunning()` stays true), distinct from teardown and from Phase 50's business `isGloballyPaused` (tick short-circuits on either). The mechanism graceful shutdown (Theme E) will drain with; reusable by the kill switch.
+- [x] gateway: `/health/ready` reflects the degraded states (`checkScheduler` → warn when paused / backing off). Wired via a `PoolModule ⇄ HealthModule` forwardRef (`@Optional` both ways; full DI graph verified to resolve).
+- [x] Tests: scheduler pause/resume + readiness-gate skip/backoff/recover + window-growth; `HealthService.dbReachable` + paused/backoff readiness; shared config defaults. shared 530, gateway 1378, web 743, cli 132 green; `:typecheck` clean.
+
+## 2026-07-03 — feat: escalate-to-human + waiting nudges — Phase 53 Theme D (PR #283)
+
+A failed run becomes visible work, not a silent tombstone. Builds on the Theme A taxonomy + Theme B backoff.
+
+- [x] shared: `Task.waitReason` (typed reason a task is parked in `waiting`); `agent.escalateOnFailure` (default on) + `agent.waitingNudge.{afterHours,repeatHours,maxReminders,tickMs}` config; `task.needs-attention` notification kind; `WAIT_REASON_LABEL` / `isNeedsAttention` / `ResolveTaskRequest`+`ResolveTaskAction`.
+- [x] gateway: a non-retryable/retry-exhausted failure now **escalates to `waiting` + a typed `waitReason`** (via `TasksService.escalate`) instead of silently `abandoned` — gated by `escalateOnFailure`; gate-fails park as `gate-failed`. Class→reason mapping beside `classifyFailure`. `tasks.wait_reason` column (migration `0066`), set on the transition in, cleared on every exit from waiting (requeue/retry/start/done/leave).
+- [x] gateway: `WaitingNudgeService` — a dedicated interval (not the scheduler; makes no scheduling decisions, fail-open) that fires escalating Phase 21 `task.needs-attention` reminders for a task stuck past `afterHours`, repeating every `repeatHours` up to `maxReminders`. `afterHours=0` disables (default).
+- [x] gateway/clients: `POST /tasks/:id/resolve` → requeue / re-plan (fresh prompt) / abandon (`resolveNeedsAttention`), plus typed `resolveTask` in web + cli. (Board/CLI surfaces = Theme E.)
+- [x] Tests: shared (wait reasons, needs-attention, resolve schema); gateway service (escalate/resolve/clear), runner (escalate-vs-abandon by flag), nudge service (threshold/repeat/cap/needs-input-skip/disabled), integration (escalate on exhausted). shared 529, gateway 1349, web 743, cli 132 green; `:typecheck` clean.
+
 ## 2026-07-03 — feat: live pool watchdog — slot-leak + session-health auto-heal — Phase 54 Theme C (PR #280)
 
 The run-half of runtime resilience: a leaked/orphaned agent slot no longer wedges the pool until a restart, and a hung pty is caught before the 30-min timeout.

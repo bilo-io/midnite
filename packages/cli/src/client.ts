@@ -31,6 +31,7 @@ import {
   type GuardrailsResponse,
   type InstallTemplateRequest,
   type PauseScope,
+  type ResolveTaskAction,
   type SearchQuery,
   type SearchResponse,
   type Status,
@@ -69,6 +70,7 @@ export interface GatewayClient {
   createTask(prompt: string, defaults?: TaskDefaults): Promise<Task>;
   createBulk(raw: string, defaults?: TaskDefaults): Promise<BulkCreateTaskResponse>;
   moveTask(id: string, status: Status): Promise<Task>;
+  resolveTask(id: string, action: ResolveTaskAction, prompt?: string): Promise<Task>;
   setPriority(id: string, priority: number): Promise<Task>;
   addDependency(id: string, dependsOnId: string): Promise<Task>;
   removeDependency(id: string, dependsOnId: string): Promise<Task>;
@@ -201,6 +203,17 @@ export function createClient(baseUrl: string, token?: string): GatewayClient {
           method: 'PATCH',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ status }),
+        }),
+      );
+    },
+
+    /** Resolve a needs-attention task (Phase 53 D): requeue / replan / abandon. */
+    async resolveTask(id: string, action: ResolveTaskAction, prompt?: string): Promise<Task> {
+      return TaskSchema.parse(
+        await request(`/tasks/${encodeURIComponent(id)}/resolve`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ action, prompt }),
         }),
       );
     },

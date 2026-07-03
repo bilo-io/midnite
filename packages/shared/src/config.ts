@@ -78,6 +78,37 @@ export const AgentConfigSchema = z.object({
   // spawn ages out. In-memory sliding window — resets on restart (a throttle,
   // not a durable ledger).
   maxSpawnsPerHour: z.number().int().nonnegative().default(0),
+  // Phase 53 D — when true (default), a non-retryable or retry-exhausted failure
+  // escalates the task to a needs-attention `waiting` state (with a typed
+  // `waitReason`) instead of silently `abandoned`; a human then requeues/re-plans/
+  // abandons it. Set false to restore the pre-Phase-53 straight-to-abandoned path.
+  escalateOnFailure: z.boolean().default(true),
+  // Phase 53 D — escalating reminders for a task stuck in a needs-attention
+  // `waiting` state. `afterHours = 0` disables nudges entirely (no reminders).
+  waitingNudge: z
+    .object({
+      // Hours in `waiting` before the first reminder fires. 0 = nudges off.
+      afterHours: z.number().nonnegative().default(0),
+      // Hours between subsequent reminders once the first has fired.
+      repeatHours: z.number().positive().default(24),
+      // Max reminders per task before it stops nudging (still visible on the board).
+      maxReminders: z.number().int().positive().default(3),
+      // How often the nudge loop wakes to re-evaluate waiting durations.
+      tickMs: z.number().int().positive().default(300000),
+    })
+    .default({}),
+  // Phase 54 D — when the scheduler's readiness gate finds a dependency down (DB
+  // unreachable), it skips the tick and backs off exponentially instead of
+  // hammering + log-spamming: the Nth consecutive unready tick waits
+  // `min(baseMs * 2^(N-1), maxMs)` before probing again, recovering immediately on
+  // the first success. Only engages when the DB is actually down — with a healthy
+  // DB the gate never fires, so this is behaviour-preserving.
+  readinessBackoff: z
+    .object({
+      baseMs: z.number().int().positive().default(1000),
+      maxMs: z.number().int().positive().default(30000),
+    })
+    .default({}),
 });
 
 export const TerminalConfigSchema = z.object({

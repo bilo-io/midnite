@@ -2,8 +2,8 @@ import { Inject, Injectable, Logger, Optional, type OnModuleInit } from '@nestjs
 import { randomUUID } from 'node:crypto';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import type { CheckResult, FailureClass, MidniteConfig, Task } from '@midnite/shared';
-import { isRetryableFailure, resolveChecksForRepo } from '@midnite/shared';
+import type { CheckResult, FailureClass, MidniteConfig, Task, WaitReason } from '@midnite/shared';
+import { isNeedsAttention, isRetryableFailure, resolveChecksForRepo } from '@midnite/shared';
 import { KnowledgeService } from '../agent/knowledge.service';
 import { UrlContextService } from '../agent/url-context.service';
 import { ChecksService } from '../checks/checks.service';
@@ -14,7 +14,7 @@ import { TasksService } from '../tasks/tasks.service';
 import { TerminalService } from '../terminal/terminal.service';
 import { AgentPoolService } from './agent-pool.service';
 import { appendRepoConventions } from './lib/build-agent-prompt';
-import { classifyFailure, type ClassifiedFailure } from './lib/classify-failure';
+import { classifyFailure, waitReasonForFailure, type ClassifiedFailure } from './lib/classify-failure';
 import { computeBackoffMs } from './lib/retry-backoff';
 
 /**
@@ -280,7 +280,7 @@ export class AgentRunnerService implements OnModuleInit {
 
       if (!result.ok) {
         this.logger.warn(`auto-fix spawn failed for ${taskId}: ${result.error}`);
-        this.tasks.markWaiting(taskId);
+        this.tasks.markWaiting(taskId, 'gate-failed');
         this.complete(taskId);
         return;
       }
@@ -299,12 +299,13 @@ export class AgentRunnerService implements OnModuleInit {
         `auto-fix budget exhausted (${taskAfterGate.fixAttempts}/${autoFix.maxAttempts}) for task ${taskId}`,
       );
     }
-    // Phase 53 A — record the gate failure; markWaiting behaviour is unchanged.
+    // Phase 53 A — record the gate failure; Phase 53 D — park it as a
+    // needs-attention `gate-failed` wait rather than an untyped waiting.
     this.tasks.recordFailure(taskId, {
       ...classifyFailure({ site: 'gate' }),
       lastOutput: this.snapshotOutput(taskId),
     });
-    this.tasks.markWaiting(taskId);
+    this.tasks.markWaiting(taskId, 'gate-failed');
     this.complete(taskId);
   }
 
@@ -348,8 +349,16 @@ export class AgentRunnerService implements OnModuleInit {
 
   // The PTY exited. If the task is still wip/waiting the agent died without the
   // Stop hook completing it (crash / external kill). Record + classify the
-  // failure, then retry-with-backoff (retryable classes) or abandon. A task
-  // already moved to done/abandoned is left as-is. Always frees the slot.
+  // failure, then retry-with-backoff (retryable classes) or escalate/abandon. A
+  // task already moved to done/abandoned is left as-is. Always frees the slot.
+  //
+  // A task in `waiting` with a **needs-attention** waitReason (Phase 53 D) has
+  // already been failure-handled and its session intentionally reaped — this
+  // onExit is that reap (onTimeout / gate-fail `complete()` both kill after
+  // transitioning to waiting), NOT a fresh crash. Re-processing it would write a
+  // duplicate failure record and clobber the waitReason, so we skip it. A plain
+  // `needs-input` waiting task keeps a genuinely-live PTY, so a real exit there
+  // is still an unexpected death worth reacting to.
   private onExit(taskId: string, exitCode: number): void {
     this.clearRunTimeout(taskId);
     let task: Task | undefined;
@@ -358,7 +367,10 @@ export class AgentRunnerService implements OnModuleInit {
     } catch {
       task = undefined;
     }
-    if (task && (task.status === 'wip' || task.status === 'waiting')) {
+    const live =
+      task?.status === 'wip' ||
+      (task?.status === 'waiting' && !isNeedsAttention(task.waitReason));
+    if (task && live) {
       const classified = classifyFailure({ site: 'exit', exitCode });
       this.tasks.recordFailure(taskId, {
         ...classified,
@@ -373,10 +385,11 @@ export class AgentRunnerService implements OnModuleInit {
    * Phase 54 C watchdog: an in-flight run was detected unhealthy (session lost /
    * pid dead / silent past the heartbeat) but the normal {@link onExit} path
    * hasn't fired. Reconcile it like a crash — record the classified failure, then
-   * retry-or-abandon (shared decision, with Phase 53 B backoff) — and only THEN
-   * kill any lingering session + free the slot. Setting the task's next state
-   * *before* the kill means the kill's onExit sees a non-running task and merely
-   * releases (no double-record), exactly as {@link stop}/{@link cancel} rely on.
+   * retry-or-escalate (shared decision, with Phase 53 B backoff / D escalation) —
+   * and only THEN kill any lingering session + free the slot. Setting the task's
+   * next state *before* the kill means the kill's onExit sees a non-running task
+   * and merely releases (no double-record), exactly as {@link stop}/{@link cancel}
+   * rely on.
    */
   reconcileUnhealthy(taskId: string, classified: ClassifiedFailure): void {
     this.clearRunTimeout(taskId);
@@ -418,19 +431,23 @@ export class AgentRunnerService implements OnModuleInit {
   }
 
   /**
-   * Phase 53 B — the single place a failed run decides retry-with-backoff vs.
-   * abandon, shared by {@link onExit} (session already dead), {@link onTimeout}
-   * (session still alive — caller tears it down after), and the Phase 54 C
-   * watchdog. Retryable classes (`crash`/`timeout`/`inactivity`) re-queue with an
-   * exponential-backoff `nextRetryAt` until the budget is exhausted; non-retryable
-   * classes abandon immediately. Sets the terminal/retry status **before** any
-   * session kill, so an onExit fired by that kill sees a non-`wip`/`waiting` task
-   * and no-ops.
+   * Phase 53 B/D — the single place a failed run decides its fate, shared by
+   * {@link onExit} (session already dead), {@link onTimeout} (session still alive
+   * — caller tears it down after), and the Phase 54 C watchdog
+   * ({@link reconcileUnhealthy}). Retryable classes (`crash`/`timeout`/
+   * `inactivity`) re-queue with an exponential-backoff `nextRetryAt` until the
+   * budget is exhausted; once exhausted (or the class is non-retryable) the run is
+   * **escalated to a needs-attention `waiting`** state with a typed reason
+   * (Theme D) — never silently `abandoned` — unless `escalateOnFailure` is off,
+   * which restores the pre-Phase-53 straight-to-abandoned path. Sets the
+   * terminal/retry status **before** any session kill, so an onExit fired by that
+   * kill sees a non-running task and no-ops.
    */
   private resolveFailedRun(taskId: string, task: Task, cls: FailureClass, what: string): void {
     const max = this.config.agent.maxRetries;
     const retries = task.retryCount ?? 0;
-    if (isRetryableFailure(cls) && retries < max) {
+    const retryable = isRetryableFailure(cls);
+    if (retryable && retries < max) {
       const nextRetryAt = this.computeNextRetryAt(retries);
       this.logger.warn(
         `agent session ${taskId} ${what} while ${task.status} — retry ${retries + 1}/${max}` +
@@ -440,9 +457,16 @@ export class AgentRunnerService implements OnModuleInit {
       this.safeRetry(taskId, nextRetryAt);
       return;
     }
-    const why = isRetryableFailure(cls)
-      ? `exhausted ${retries}/${max} retries`
-      : `non-retryable (${cls})`;
+    const why = retryable ? `exhausted ${retries}/${max} retries` : `non-retryable (${cls})`;
+    if (this.config.agent.escalateOnFailure) {
+      const waitReason = waitReasonForFailure(cls, retryable);
+      this.logger.warn(
+        `agent session ${taskId} ${what} while ${task.status} — ${why}, escalating (${waitReason})`,
+      );
+      this.endMetricRun(taskId, 'abandoned');
+      this.safeEscalate(taskId, waitReason);
+      return;
+    }
     this.logger.warn(`agent session ${taskId} ${what} while ${task.status} — ${why}, abandoning`);
     this.endMetricRun(taskId, 'abandoned');
     this.safeAbandon(taskId);
@@ -546,6 +570,16 @@ export class AgentRunnerService implements OnModuleInit {
     } catch (err) {
       this.logger.warn(
         `failed to abandon ${taskId}: ${err instanceof Error ? err.message : 'unknown'}`,
+      );
+    }
+  }
+
+  private safeEscalate(taskId: string, waitReason: WaitReason): void {
+    try {
+      this.tasks.escalate(taskId, waitReason);
+    } catch (err) {
+      this.logger.warn(
+        `failed to escalate ${taskId}: ${err instanceof Error ? err.message : 'unknown'}`,
       );
     }
   }

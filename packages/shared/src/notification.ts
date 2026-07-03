@@ -20,6 +20,10 @@ export const NOTIFICATION_KINDS = [
   'task.done',
   'task.abandoned',
   'agent.held',
+  // Phase 53 Theme D — a task escalated to needs-attention that has sat in
+  // `waiting` past the nudge threshold; an escalating reminder, distinct from the
+  // routine `task.waiting` transition alert.
+  'task.needs-attention',
 ] as const;
 export const NotificationKindSchema = z.enum(NOTIFICATION_KINDS);
 export type NotificationKind = z.infer<typeof NotificationKindSchema>;
