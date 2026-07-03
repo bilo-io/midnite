@@ -5,6 +5,7 @@ import { usePolling } from '@/lib/use-polling';
 import { useGatewayErrorToast } from '@/lib/use-gateway-error-toast';
 import { PageHeader } from '@/components/page-header';
 import { OpsView } from '@/components/ops-view';
+import { RuntimeHealthPanel } from '@/components/runtime-health-panel';
 
 const POLL_MS = 10_000;
 const SPEND_REFRESH_MS = 60_000;
@@ -54,6 +55,9 @@ export default function OpsPage() {
         loading={loading}
         onRefresh={refresh}
       />
+      <div className="container pb-8">
+        <RuntimeHealthPanel />
+      </div>
     </>
   );
 }

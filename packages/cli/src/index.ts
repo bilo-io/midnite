@@ -48,13 +48,18 @@ import {
   type NodeLabel,
 } from './workflow.js';
 import { parseCredFlag, templateListRows } from './template.js';
+import { doctorExitCode, doctorRows } from './doctor.js';
+import type { PreflightStatus } from '@midnite/shared';
 import { banner, getVersion } from './lib/brand.js';
 import {
   colourKind,
   colourPriority,
   colourStatus,
+  dim,
   error as paintError,
+  heading,
   success,
+  warn,
 } from './lib/palette.js';
 import { wasReported, withSpinner } from './lib/spinner.js';
 import { isJsonMode, printJson, printJsonError, setJsonMode } from './lib/output.js';
@@ -441,6 +446,49 @@ program
     }
 
     console.log(success(`\nchecks passed (${run.results.length}/${run.results.length})`));
+  });
+
+program
+  .command('doctor')
+  .description('Check gateway runtime health — boot preflight + live readiness')
+  .action(async () => {
+    const c = client();
+    const [preflight, readiness] = await withSpinner('Checking gateway health…', () =>
+      Promise.all([c.getPreflight(), c.getReadiness()]),
+    );
+    const code = doctorExitCode(preflight, readiness);
+
+    if (isJsonMode()) {
+      // A failing check is a valid result, not an error — emit the reports and
+      // reflect health in the exit code so scripts can gate without parsing.
+      printJson({ preflight, readiness, healthy: code === 0 });
+      process.exit(code);
+    }
+
+    const paintStatus = (s: PreflightStatus): string =>
+      s === 'ok' ? success('✓ ok') : s === 'warn' ? warn('⚠ warn') : paintError('✗ fail');
+
+    const table = new Table({
+      head: ['Section', 'Check', 'Status', 'Detail'],
+      wordWrap: true,
+      colWidths: [12, 16, 9, 46],
+    });
+    for (const r of doctorRows(preflight, readiness)) {
+      table.push([r.section, r.name, paintStatus(r.status), r.detail]);
+    }
+    console.log(table.toString());
+
+    const issues = doctorRows(preflight, readiness).filter((r) => r.status !== 'ok' && r.remedy);
+    if (issues.length > 0) {
+      console.log(`\n${heading('Remedies')}`);
+      for (const r of issues) console.log(`  ${warn('→')} ${r.name}: ${r.remedy}`);
+    }
+
+    const uptime = `${Math.floor(readiness.uptimeMs / 60_000)}m uptime`;
+    console.log(
+      `\n${code === 0 ? success('✓ gateway healthy') : paintError('✗ gateway has failing checks')}  ${dim(`(${uptime})`)}`,
+    );
+    process.exit(code);
   });
 
 // Task-scoped operations that don't fit the flat verbs (add/list/move/…).

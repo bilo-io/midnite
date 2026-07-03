@@ -8,6 +8,8 @@ import {
   CreateFromBreakdownResponseSchema,
   GuardrailsResponseSchema,
   InstallTemplateRequestSchema,
+  PreflightReportSchema,
+  ReadinessSchema,
   RunResponseSchema,
   SearchResponseSchema,
   StatusSchema,
@@ -31,6 +33,8 @@ import {
   type GuardrailsResponse,
   type InstallTemplateRequest,
   type PauseScope,
+  type PreflightReport,
+  type Readiness,
   type ResolveTaskAction,
   type SearchQuery,
   type SearchResponse,
@@ -99,6 +103,10 @@ export interface GatewayClient {
   /** Recent act-path approval decisions (for `guardrails status` denials). The
    *  server applies its own defaults, so only the paging knobs are accepted. */
   getApprovalLog(query?: { limit?: number; page?: number }): Promise<ApprovalLogResponse>;
+  /** Live readiness (`GET /health/ready`, Phase 54) — 200 ready / 503 not-ready, both parsed. */
+  getReadiness(): Promise<Readiness>;
+  /** Boot preflight re-run live (`GET /health/preflight`, Phase 54 F) — 200 pass / 503 fail, both parsed. */
+  getPreflight(): Promise<PreflightReport>;
 }
 
 /** A thin typed client over the gateway REST API. Responses are validated with
@@ -136,6 +144,24 @@ export function createClient(baseUrl: string, token?: string): GatewayClient {
 
   async function request(path: string, init: RequestInit): Promise<unknown> {
     return (await fetchOk(path, init)).json();
+  }
+
+  // Health reports (Phase 54) return **503 with a valid body** when unhealthy;
+  // parse the body on 200 or 503, only treating other statuses / connection
+  // errors as failures. Mirrors fetchOk's connection-error message.
+  async function requestHealth(path: string): Promise<unknown> {
+    let res: Response;
+    try {
+      const headers: Record<string, string> = {};
+      if (token) headers['authorization'] = `Bearer ${token}`;
+      res = await fetch(`${baseUrl}${path}`, { headers });
+    } catch (err) {
+      throw new Error(
+        `cannot reach the midnite gateway at ${baseUrl} — is it running? (${err instanceof Error ? err.message : 'network error'})`,
+      );
+    }
+    if (!res.ok && res.status !== 503) throw new Error(`gateway responded ${res.status}`);
+    return res.json();
   }
 
   return {
@@ -399,6 +425,14 @@ export function createClient(baseUrl: string, token?: string): GatewayClient {
       if (query?.page !== undefined) qs.set('page', String(query.page));
       const suffix = qs.toString() ? `?${qs.toString()}` : '';
       return ApprovalLogResponseSchema.parse(await request(`/approvals/log${suffix}`, { method: 'GET' }));
+    },
+
+    async getReadiness(): Promise<Readiness> {
+      return ReadinessSchema.parse(await requestHealth('/health/ready'));
+    },
+
+    async getPreflight(): Promise<PreflightReport> {
+      return PreflightReportSchema.parse(await requestHealth('/health/preflight'));
     },
   };
 }
