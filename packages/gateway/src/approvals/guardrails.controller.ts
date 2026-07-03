@@ -2,10 +2,13 @@ import { BadRequestException, Body, Controller, Get, Inject, Post } from '@nestj
 import {
   EmergencyStopRequestSchema,
   PauseRequestSchema,
+  type GuardrailCaps,
   type GuardrailsResponse,
+  type MidniteConfig,
 } from '@midnite/shared';
 import { CurrentUser, type CurrentUserPayload } from '../auth/decorators/current-user.decorator';
 import { RequiresRole } from '../auth/decorators/require-role.decorator';
+import { MIDNITE_CONFIG } from '../config.token';
 import { ApprovalsService } from './approvals.service';
 
 /**
@@ -16,11 +19,29 @@ import { ApprovalsService } from './approvals.service';
  */
 @Controller('guardrails')
 export class GuardrailsController {
-  constructor(@Inject(ApprovalsService) private readonly service: ApprovalsService) {}
+  constructor(
+    @Inject(ApprovalsService) private readonly service: ApprovalsService,
+    @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
+  ) {}
 
   @Get()
   get(): GuardrailsResponse {
-    return { guardrails: this.service.getGuardrails() };
+    return { guardrails: this.service.getGuardrails(), caps: this.caps() };
+  }
+
+  // Phase 50 F — the configured safety caps + mode, read-only, so `guardrails
+  // status` (CLI) and the Safety panel (Theme E) see the whole picture in one
+  // read. Sourced from config + the DB-backed autonomy mode.
+  private caps(): GuardrailCaps {
+    const { usage, agent } = this.config;
+    return {
+      mode: this.service.getMode(),
+      hardDailyCapUsd: usage.hardDailyCapUsd ?? null,
+      hardMonthlyCapUsd: usage.hardMonthlyCapUsd ?? null,
+      softDailyBudgetUsd: usage.dailyBudgetUsd ?? null,
+      softMonthlyBudgetUsd: usage.monthlyBudgetUsd ?? null,
+      maxSpawnsPerHour: agent.maxSpawnsPerHour,
+    };
   }
 
   @Post('pause')

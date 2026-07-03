@@ -45,7 +45,32 @@ export const EmergencyStopRequestSchema = z.object({
 });
 export type EmergencyStopRequest = z.infer<typeof EmergencyStopRequestSchema>;
 
-export const GuardrailsResponseSchema = z.object({ guardrails: GuardrailSettingsSchema });
+/**
+ * A read-only view of the configured safety caps + policy mode, surfaced
+ * alongside the pause state so an operator (CLI `guardrails status`, the web
+ * Safety panel) sees the whole picture in one read. Sourced from `MidniteConfig`
+ * + the DB-backed autonomy mode — not editable through this endpoint. A cap of
+ * `null` means "unset" (that limit is off). `maxSpawnsPerHour: 0` = unlimited.
+ */
+export const GuardrailCapsSchema = z.object({
+  /** Autonomy policy mode (`approval_settings.mode`). */
+  mode: z.enum(['manual', 'guarded', 'autonomous']),
+  /** Hard spend caps that BLOCK spawns (Phase 50 B); null = unset. */
+  hardDailyCapUsd: z.number().nullable(),
+  hardMonthlyCapUsd: z.number().nullable(),
+  /** Soft budgets that only warn (Phase 7); null = unset. */
+  softDailyBudgetUsd: z.number().nullable(),
+  softMonthlyBudgetUsd: z.number().nullable(),
+  /** Rolling per-hour spawn cap (Phase 50 B); 0 = unlimited. */
+  maxSpawnsPerHour: z.number().int().nonnegative(),
+});
+export type GuardrailCaps = z.infer<typeof GuardrailCapsSchema>;
+
+export const GuardrailsResponseSchema = z.object({
+  guardrails: GuardrailSettingsSchema,
+  /** Configured caps + mode (read-only). Optional so older gateways still validate. */
+  caps: GuardrailCapsSchema.optional(),
+});
 export type GuardrailsResponse = z.infer<typeof GuardrailsResponseSchema>;
 
 /** True when the given task's scope is paused (global short-circuits). */

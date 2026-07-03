@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-03 — feat: guardrails safety commands + kill switch (CLI) — Phase 50 Theme F (PR #284)
+
+Hit the brakes from a shell — the operability half of Phase 50 for when the UI is the thing that's down.
+
+- [x] **CLI:** `midnite guardrails status` (autonomy mode + pause state + configured caps + last 10 act-path denials, respects `--json`); `midnite guardrails pause|resume [--repo <name> | --team <id>]` (default global, mutually-exclusive scope flags); `midnite kill [--repo|--team] [--yes]` (emergency stop = pause + abort in-flight/requeue) — interactive confirm at a TTY, **refuses without `--yes` in `--json`/non-TTY**. Pure render/parse helpers in `cli/src/guardrails.ts`; `GatewayClient` gains `getGuardrails`/`setPause`/`emergencyStop`/`getApprovalLog`.
+- [x] **gateway:** `GET /guardrails` now returns a read-only `caps` block (config-sourced mode + hard/soft spend caps + spawns-per-hour) so `status` reads the whole picture in one call — the web Safety panel (Theme E) reuses it. `GuardrailCaps` zod contract in `shared`.
+- [x] Tests: cli helper units (scope parse incl. both-flags error, pause-state line, caps rows set/unset/unlimited, denial filter+limit, row projection) + gateway controller caps (configured + all-unset). cli (144) + gateway (1358) green; `:typecheck` clean; cli/shared lint clean (gateway:lint red only on pre-existing unrelated debt).
+
 ## 2026-07-03 — feat: scheduler resilience — readiness gate + backoff + pause — Phase 54 Theme D (PR #285)
 
 Harden the run half of the scheduler lifecycle: don't tick into a dead DB, and stop cleanly when asked.
@@ -23,6 +31,7 @@ A failed run becomes visible work, not a silent tombstone. Builds on the Theme A
 - [x] gateway: `WaitingNudgeService` — a dedicated interval (not the scheduler; makes no scheduling decisions, fail-open) that fires escalating Phase 21 `task.needs-attention` reminders for a task stuck past `afterHours`, repeating every `repeatHours` up to `maxReminders`. `afterHours=0` disables (default).
 - [x] gateway/clients: `POST /tasks/:id/resolve` → requeue / re-plan (fresh prompt) / abandon (`resolveNeedsAttention`), plus typed `resolveTask` in web + cli. (Board/CLI surfaces = Theme E.)
 - [x] Tests: shared (wait reasons, needs-attention, resolve schema); gateway service (escalate/resolve/clear), runner (escalate-vs-abandon by flag), nudge service (threshold/repeat/cap/needs-input-skip/disabled), integration (escalate on exhausted). shared 529, gateway 1349, web 743, cli 132 green; `:typecheck` clean.
+
 ## 2026-07-03 — feat: live pool watchdog — slot-leak + session-health auto-heal — Phase 54 Theme C (PR #280)
 
 The run-half of runtime resilience: a leaked/orphaned agent slot no longer wedges the pool until a restart, and a hung pty is caught before the 30-min timeout.
