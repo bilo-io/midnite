@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-03 — feat: audit completeness + RBAC gaps on the safety surface — Phase 50 Theme D (PR #280)
+
+Every guardrail change and unattended action is now accountable — the accountability half of Phase 50.
+
+- [x] **RBAC:** `@RequiresRole('admin')` on `ApprovalsController` rule create/update/delete + the autonomy-mode PATCH (editing blast-radius policy is admin-only; pause/kill were already gated in Theme A). Reads stay open; static-token/single-user installs unaffected (RoleGuard skips with no `req.user`).
+- [x] **Audit:** approval-rule CRUD (before/after), policy-mode change (from→to, no-op skipped), and repo + project mutations (create/update/delete, actor threaded from the JWT). Every act-path decision is **mirrored** from `approval_log` into the audit trail (`approval.decided`, entityId = sessionId) — one query for "what did agents do + what did we allow/deny".
+- [x] **shared:** new audit entity types (`approval_rule`, `project`) + actions (`guardrail.mode_changed`, `approval_rule.*`, `approval.decided`, `repo.*`, `project.*`).
+- [x] Tests: shared enum; gateway approvals audit (rule CRUD before/after, mode diff + no-op skip, decision mirror), repos + projects create/update/delete audit; controller-delete assertions updated for the threaded actor. shared + gateway (1326) green; `:typecheck` clean. (gateway:lint red only on pre-existing `main` breakage in unrelated files.)
+
 ## 2026-07-02 — feat: enforce hard spend & spawn-rate caps at the scheduler — Phase 50 Theme B (PR #279)
 
 Budgets promoted from advisory to **enforced**: the agent-pool scheduler blocks new spawns when a hard daily/monthly spend cap is exceeded or the per-hour spawn-rate window is full. A blocked task stays `todo` (no new status) and re-evaluates each tick. Enforced **globally** (Stage-2.5: `llm_usage` has no repo/team cost attribution — per-scope caps deferred).
