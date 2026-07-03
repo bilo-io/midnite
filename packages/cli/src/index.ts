@@ -22,6 +22,14 @@ import {
   type BulkOpResult,
 } from './bulk-ops.js';
 import { SHELLS, generateCompletion, isShell } from './completions.js';
+import {
+  capsRows,
+  denialRows,
+  parsePauseScope,
+  pauseStateLine,
+  recentDenials,
+  scopeLabel,
+} from './guardrails.js';
 import { parseSearchType, searchResultRows, searchSummaryLine } from './search.js';
 import {
   createClient,
@@ -880,6 +888,100 @@ program
     }
     // Plain script to stdout (print-and-source); no chrome, so it's pipe-safe.
     process.stdout.write(generateCompletion(program, shell));
+  });
+
+// ---- guardrails / kill switch (Phase 50 F) ----
+
+const guardrails = program.command('guardrails').description('Inspect & control the safety guardrails');
+
+guardrails
+  .command('status')
+  .description('Show the autonomy mode, pause state, configured caps, and recent denials')
+  .action(async () => {
+    const c = client();
+    const [res, log] = await withSpinner('Reading guardrails…', () =>
+      Promise.all([c.getGuardrails(), c.getApprovalLog({ limit: 50 }).catch(() => ({ entries: [], total: 0, page: 1, limit: 50 }))]),
+    );
+    const denials = recentDenials(log.entries, 10);
+    if (isJsonMode()) {
+      printJson({ guardrails: res.guardrails, caps: res.caps ?? null, recentDenials: denials });
+      return;
+    }
+    console.log(pauseStateLine(res.guardrails));
+    if (res.caps) {
+      const table = new Table({ head: ['Setting', 'Value'], wordWrap: true });
+      for (const row of capsRows(res.caps)) table.push(row);
+      console.log(table.toString());
+    }
+    if (denials.length > 0) {
+      console.log(success(`\nRecent denials (${denials.length}):`));
+      const table = new Table({ head: ['When', 'Tool', 'Resolution', 'By', 'Session'], wordWrap: true });
+      for (const row of denialRows(denials)) table.push(row);
+      console.log(table.toString());
+    } else {
+      console.log('\nNo recent denials.');
+    }
+  });
+
+guardrails
+  .command('pause')
+  .description('Pause scheduling (default: global). Scope to one repo/team with a flag.')
+  .option('--repo <name>', 'pause only this repo')
+  .option('--team <id>', 'pause only this team')
+  .action(async (opts: { repo?: string; team?: string }) => {
+    const scope = parsePauseScope(opts);
+    const res = await withSpinner(`Pausing ${scopeLabel(scope)}…`, () => client().setPause(scope, true));
+    if (isJsonMode()) {
+      printJson(res);
+      return;
+    }
+    console.log(success(`Paused ${scopeLabel(scope)}.`));
+    console.log(pauseStateLine(res.guardrails));
+  });
+
+guardrails
+  .command('resume')
+  .description('Resume scheduling for a scope (default: global)')
+  .option('--repo <name>', 'resume only this repo')
+  .option('--team <id>', 'resume only this team')
+  .action(async (opts: { repo?: string; team?: string }) => {
+    const scope = parsePauseScope(opts);
+    const res = await withSpinner(`Resuming ${scopeLabel(scope)}…`, () => client().setPause(scope, false));
+    if (isJsonMode()) {
+      printJson(res);
+      return;
+    }
+    console.log(success(`Resumed ${scopeLabel(scope)}.`));
+    console.log(pauseStateLine(res.guardrails));
+  });
+
+program
+  .command('kill')
+  .description('EMERGENCY STOP: pause everything (or a scope) AND abort in-flight agents (requeued)')
+  .option('--repo <name>', 'stop only this repo')
+  .option('--team <id>', 'stop only this team')
+  .option('-y, --yes', 'skip the confirmation prompt')
+  .action(async (opts: { repo?: string; team?: string; yes?: boolean }) => {
+    const scope = parsePauseScope(opts);
+    if (!opts.yes) {
+      // Interactive confirm at a TTY; refuse in --json / non-interactive so a
+      // script can't emergency-stop the fleet by accident.
+      if (isJsonMode() || !canPrompt()) {
+        throw new Error('refusing to emergency-stop without confirmation — pass --yes');
+      }
+      const ok = await confirmPrompt(`Emergency-stop ${scopeLabel(scope)}? This aborts in-flight agents.`);
+      if (!ok) {
+        console.log('Aborted — nothing stopped.');
+        return;
+      }
+    }
+    const res = await withSpinner(`Emergency-stopping ${scopeLabel(scope)}…`, () => client().emergencyStop(scope));
+    if (isJsonMode()) {
+      printJson(res);
+      return;
+    }
+    console.log(paintError(`Emergency stop applied ${scopeLabel(scope)} — in-flight agents aborted (requeued).`));
+    console.log(pauseStateLine(res.guardrails));
   });
 
 program

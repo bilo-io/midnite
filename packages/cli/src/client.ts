@@ -1,10 +1,12 @@
 import {
+  ApprovalLogResponseSchema,
   AuthResponseSchema,
   BreakdownPreviewResponseSchema,
   BreakdownSchema,
   BulkCreateTaskResponseSchema,
   CheckRunListResponseSchema,
   CreateFromBreakdownResponseSchema,
+  GuardrailsResponseSchema,
   InstallTemplateRequestSchema,
   RunResponseSchema,
   SearchResponseSchema,
@@ -18,6 +20,7 @@ import {
   WorkflowSchema,
   WorkflowSummarySchema,
   WorkflowTemplatesResponseSchema,
+  type ApprovalLogResponse,
   type AuthResponse,
   type Breakdown,
   type BreakdownPreviewResponse,
@@ -25,7 +28,9 @@ import {
   type BulkCreateTaskResponse,
   type CheckRun,
   type CreateFromBreakdownResponse,
+  type GuardrailsResponse,
   type InstallTemplateRequest,
+  type PauseScope,
   type SearchQuery,
   type SearchResponse,
   type Status,
@@ -83,6 +88,15 @@ export interface GatewayClient {
   listTemplates(category?: string): Promise<WorkflowTemplateSummary[]>;
   getTemplateSlots(idOrSlug: string): Promise<TemplateSlotsResponse>;
   installTemplate(idOrSlug: string, body: InstallTemplateRequest): Promise<Workflow>;
+  /** Read the guardrail pause state + configured caps/mode (Phase 50 F). */
+  getGuardrails(): Promise<GuardrailsResponse>;
+  /** Pause (`paused:true`) or resume (`false`) a scope. Admin-gated server-side. */
+  setPause(scope: PauseScope, paused: boolean): Promise<GuardrailsResponse>;
+  /** Emergency stop: pause a scope AND abort its in-flight agents (requeued). */
+  emergencyStop(scope: PauseScope): Promise<GuardrailsResponse>;
+  /** Recent act-path approval decisions (for `guardrails status` denials). The
+   *  server applies its own defaults, so only the paging knobs are accepted. */
+  getApprovalLog(query?: { limit?: number; page?: number }): Promise<ApprovalLogResponse>;
 }
 
 /** A thin typed client over the gateway REST API. Responses are validated with
@@ -340,6 +354,38 @@ export function createClient(baseUrl: string, token?: string): GatewayClient {
         },
       )) as { workflow: unknown };
       return WorkflowSchema.parse(res.workflow);
+    },
+
+    async getGuardrails(): Promise<GuardrailsResponse> {
+      return GuardrailsResponseSchema.parse(await request('/guardrails', { method: 'GET' }));
+    },
+
+    async setPause(scope: PauseScope, paused: boolean): Promise<GuardrailsResponse> {
+      return GuardrailsResponseSchema.parse(
+        await request('/guardrails/pause', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ scope, paused }),
+        }),
+      );
+    },
+
+    async emergencyStop(scope: PauseScope): Promise<GuardrailsResponse> {
+      return GuardrailsResponseSchema.parse(
+        await request('/guardrails/emergency-stop', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ scope }),
+        }),
+      );
+    },
+
+    async getApprovalLog(query?: { limit?: number; page?: number }): Promise<ApprovalLogResponse> {
+      const qs = new URLSearchParams();
+      if (query?.limit !== undefined) qs.set('limit', String(query.limit));
+      if (query?.page !== undefined) qs.set('page', String(query.page));
+      const suffix = qs.toString() ? `?${qs.toString()}` : '';
+      return ApprovalLogResponseSchema.parse(await request(`/approvals/log${suffix}`, { method: 'GET' }));
     },
   };
 }
