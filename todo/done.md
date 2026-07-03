@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-03 — feat: guardrails safety commands + kill switch (CLI) — Phase 50 Theme F (PR #282)
+## 2026-07-03 — feat: guardrails safety commands + kill switch (CLI) — Phase 50 Theme F (PR #284)
 
 Hit the brakes from a shell — the operability half of Phase 50 for when the UI is the thing that's down.
 

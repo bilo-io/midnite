@@ -165,7 +165,7 @@ One place to see and steer the guardrails.
 
 ---
 
-## Theme F — CLI safety commands — **S** — ✅ DONE (PR #282, 2026-07-03)
+## Theme F — CLI safety commands — **S** — ✅ DONE (PR #284, 2026-07-03)
 
 Hit the brakes from a shell — for when the UI is the thing that's down.
 
