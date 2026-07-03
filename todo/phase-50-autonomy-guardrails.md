@@ -133,7 +133,7 @@ Deny the genuinely dangerous, mid-run — the heart of blast-radius.
 
 ---
 
-## Theme D — Audit completeness + RBAC gaps — **M** — ✅ DONE (PR #280, 2026-07-03)
+## Theme D — Audit completeness + RBAC gaps — **M** — ✅ DONE (PR #281, 2026-07-03)
 
 Make every unattended action and every guardrail change accountable.
 

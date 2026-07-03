@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-03 — feat: audit completeness + RBAC gaps on the safety surface — Phase 50 Theme D (PR #280)
+## 2026-07-03 — feat: audit completeness + RBAC gaps on the safety surface — Phase 50 Theme D (PR #281)
 
 Every guardrail change and unattended action is now accountable — the accountability half of Phase 50.
 
