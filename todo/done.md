@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-03 — feat: graceful shutdown drain + clean-shutdown marker — Phase 54 Theme E (PR #PLACEHOLDER)
+## 2026-07-03 — feat: graceful shutdown drain + clean-shutdown marker — Phase 54 Theme E (PR #288)
 
 Die on purpose, not by surprise: on SIGTERM the gateway drains in-flight agents instead of abandoning them, and records whether the stop was clean.
 

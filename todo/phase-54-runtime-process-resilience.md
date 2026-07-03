@@ -133,7 +133,7 @@ Don't tick into a dead database; stop cleanly when asked.
 
 ---
 
-## Theme E — Graceful shutdown: drain in-flight agents — **M-L** — ✅ DONE (PR #287, 2026-07-03)
+## Theme E — Graceful shutdown: drain in-flight agents — **M-L** — ✅ DONE (PR #288, 2026-07-03)
 
 Die on purpose, not by surprise. Where the #1 and #7 halves fuse.
 
