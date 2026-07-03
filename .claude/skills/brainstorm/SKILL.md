@@ -64,19 +64,23 @@ The scan is read-heavy — **every** `todo/phase-*.md` (a couple of dozen files)
 1. Write `todo/phase-N-<slug>.md`, matching the house style (see Stage 1 context): `# Phase N — Title`, framing blockquotes (build-on + scope guardrails + an effort-tag legend), **Themes** with `- [ ]` checklist items and S/M/L tags, a **Files this phase touches** map (link real paths with markdown links), a **Verification** checklist, and **Decisions / open questions** capturing what came up in the brainstorm (with your recommendations; mark any the user already settled as resolved).
 2. Use clickable markdown links for file/section references (relative paths), per this repo's convention.
 3. **Do not** mark anything done, and **do not** touch `done.md` (nothing's built yet). Don't start implementing — this command only produces the plan.
+4. **Register the phase in [`todo/_INDEX.md`](../../../todo/_INDEX.md) — required.** The index is the roll-up `/exec` scans to pick work; a phase that isn't in it is invisible (and `/exec` has no row to bump when a theme later lands). Add both:
+   - A **new row at the TOP of the `## Phases` table** (the table is newest-first — highest phase number first): `| [N · Title](phase-N-<slug>.md) | ◻ TODO | 0/<total> | \`░░░░░░░░░░\` | 0% | — | <all theme letters> |`, where `<total>` is the count of `- [ ]` items you just wrote and **every** theme letter goes in the `◻ TODO` column (nothing WIP or done yet).
+   - A **new section at the TOP of the `## Theme key`** list: `### [Phase N — Title](phase-N-<slug>.md)`, an optional one-line italic framing, then one `- ◻ **X** — <one-liner>` per theme (mirroring the checklist).
+   - If the new phase changes the "live frontier" summary, update the **Headline** paragraph too.
 
 ## ✅ Stage 6 — Commit to main & clean up
 
 The new plan is a doc-only change and belongs in the **source of truth**, so commit it to `main` automatically (no PR needed — this matches how the other phase docs land; CLAUDE.md allows committing trivial doc changes straight to `main`).
 
-1. **Land it on `main`.** Ensure you're committing against `main` (if the session is on a feature branch/worktree, switch to or target the primary checkout's `main`). Stage **only the new doc by explicit path** — `git add todo/phase-N-<slug>.md` — never `git add -A`/`.` (it can sweep unrelated or worktree-admin files). Commit with a conventional message ending in the required trailer:
+1. **Land it on `main`.** Ensure you're committing against `main` (if the session is on a feature branch/worktree, switch to or target the primary checkout's `main`). Stage **both tracker files by explicit path** — `git add todo/phase-N-<slug>.md todo/_INDEX.md` (the new doc **and** its index row/theme-key entry from Stage 5.4) — never `git add -A`/`.` (it can sweep unrelated or worktree-admin files). Commit with a conventional message ending in the required trailer:
    ```
-   docs: add phase-N <slug> plan
+   docs: add phase-N <slug> plan (+ index row)
 
    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
    ```
-   Then `git push origin main`.
-2. **Clean up before continuing.** Remove any scratch/intermediate files the brainstorm created, and confirm a clean state with `git status` — the working tree should be clean and the new doc present on `main` (and pushed). If anything unexpected is staged or dirty, stop and show the user rather than committing it.
+   Then `git push origin main`. (If the push races another loop's `_INDEX.md` edit: `git pull --rebase origin main`, reconcile the table, re-push.)
+2. **Clean up before continuing.** Remove any scratch/intermediate files the brainstorm created, and confirm a clean state with `git status` — the working tree should be clean, and both the new doc **and** its `_INDEX.md` row present on `main` (and pushed). If anything unexpected is staged or dirty, stop and show the user rather than committing it.
 3. Tell the user the file path + the commit/push result, give a 2–3 line recap, and suggest that `/exec` is how they'd later pick up a slice of it.
 
 ---

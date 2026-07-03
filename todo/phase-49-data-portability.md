@@ -84,7 +84,7 @@ Define the portable archive once, and give import something to validate against.
 - [x] **gateway:** a runtime **schema version** — a `schema_meta` singleton table stamped on boot (in
       `DbFactory`, after `migrate`) to the drizzle journal's highest applied migration idx via
       `db/schema-version.ts` (`readJournalVersion`/`stampSchemaVersion`/`getSchemaVersion`), fail-soft (`-1`
-      when the journal is unreadable). Migration `0066_schema_meta`. **Internal helper only** — Theme B/C's
+      when the journal is unreadable). Migration `0067_schema_meta`. **Internal helper only** — Theme B/C's
       export/import consume it (no public endpoint this slice, per Stage-2.5).
 - [x] **Container (decided):** a **zip** with `manifest.json` at the root + one JSON file per domain
       (`domains/tasks.json`, `domains/workflows.json`, …) — inspectable, streamable. Documented in the

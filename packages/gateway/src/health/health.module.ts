@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { PoolModule } from '../pool/pool.module';
 import { HealthController } from './health.controller';
 import { HealthService } from './health.service';
@@ -12,7 +12,7 @@ import { PreflightService } from './preflight.service';
  * exported so the Phase 54 C watchdog can reuse the same checks.
  */
 @Module({
-  imports: [PoolModule],
+  imports: [forwardRef(() => PoolModule)],
   controllers: [HealthController],
   providers: [HealthService, PreflightService],
   exports: [HealthService, PreflightService],

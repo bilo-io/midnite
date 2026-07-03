@@ -34,6 +34,17 @@ describe('agent pool config defaults', () => {
     const capped = parseConfig({ agent: { maxSpawnsPerHour: 10 }, terminal: {}, gateway: {} });
     expect(capped.agent.maxSpawnsPerHour).toBe(10);
   });
+
+  it('defaults readiness backoff to 1s..30s and accepts overrides (Phase 54 D)', () => {
+    const { readinessBackoff } = parseConfig({ agent: {}, terminal: {}, gateway: {} }).agent;
+    expect(readinessBackoff).toEqual({ baseMs: 1000, maxMs: 30000 });
+    const custom = parseConfig({
+      agent: { readinessBackoff: { baseMs: 500, maxMs: 5000 } },
+      terminal: {},
+      gateway: {},
+    });
+    expect(custom.agent.readinessBackoff).toEqual({ baseMs: 500, maxMs: 5000 });
+  });
 });
 
 describe('usage hard spend caps (Phase 50 B)', () => {
