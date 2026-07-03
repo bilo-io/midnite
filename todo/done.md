@@ -13,6 +13,15 @@ Every guardrail change and unattended action is now accountable — the accounta
 - [x] **shared:** new audit entity types (`approval_rule`, `project`) + actions (`guardrail.mode_changed`, `approval_rule.*`, `approval.decided`, `repo.*`, `project.*`).
 - [x] Tests: shared enum; gateway approvals audit (rule CRUD before/after, mode diff + no-op skip, decision mirror), repos + projects create/update/delete audit; controller-delete assertions updated for the threaded actor. shared + gateway (1326) green; `:typecheck` clean. (gateway:lint red only on pre-existing `main` breakage in unrelated files.)
 
+## 2026-07-02 — feat: retry backoff + class-aware retry — Phase 53 Theme B (PR #277)
+
+Retries stop firing instantly and blindly: they now back off exponentially and only re-run failures worth re-running. Builds on the Theme A taxonomy.
+
+- [x] shared: `tasks.nextRetryAt` (nullable) on the task contract + `agent.retryBackoffBaseMs` (10s default) / `agent.maxBackoffMs` (5min) config. `base=0` = instant retry (pre-Phase-53 behaviour preserved).
+- [x] gateway: exponential backoff + **full jitter** (`random(0, min(base·2^retryIndex, cap))`) in a pure `computeBackoffMs` helper; a retryable failure re-queues with a persisted `nextRetryAt`, and `listReadyTodoTasks(now)` SQL-skips a `todo` task until its window elapses. Migration `0065` adds `tasks.next_retry_at`.
+- [x] class-aware: retry gated on `isRetryableFailure` — `crash`/`timeout` retry with backoff, a non-retryable exit **abandons immediately** (Theme D will escalate). A **run timeout now routes through backoff-retry** instead of straight-to-abandoned; the still-live session is torn down and its `onExit` no-ops on the transitioned task. A manual requeue clears any pending backoff.
+- [x] Tests: pure backoff math (`retry-backoff.test.ts`), runner specs (backoff on crash, timeout→retry + teardown, timeout-exhausted→abandon, instant-retry with base=0), repository ready-set backoff gating. `:typecheck` green; gateway 1284, web 732 green. (`gateway:lint` red only on pre-existing unrelated debt.)
+
 ## 2026-07-02 — feat: enforce hard spend & spawn-rate caps at the scheduler — Phase 50 Theme B (PR #279)
 
 Budgets promoted from advisory to **enforced**: the agent-pool scheduler blocks new spawns when a hard daily/monthly spend cap is exceeded or the per-hour spawn-rate window is full. A blocked task stays `todo` (no new status) and re-evaluates each tick. Enforced **globally** (Stage-2.5: `llm_usage` has no repo/team cost attribution — per-scope caps deferred).

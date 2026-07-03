@@ -83,6 +83,12 @@ export const TaskSchema = z.object({
   retryCount: z.number().int().nonnegative().default(0),
   /** How many times the agent was re-spawned to fix a failing quality gate (Phase 30 C). */
   fixAttempts: z.number().int().nonnegative().default(0),
+  /**
+   * Earliest ISO time a backed-off retry may be re-picked (Phase 53 B). Set when a
+   * retryable failure re-queues the task; the scheduler's ready-set skips a `todo`
+   * task until this elapses. Absent/null = eligible immediately.
+   */
+  nextRetryAt: z.string().nullable().optional(),
   agentId: z.string().optional(),
   sessionId: z.string().optional(),
   projectId: z.string().optional(),
