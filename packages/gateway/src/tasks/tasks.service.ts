@@ -33,6 +33,7 @@ import { ChecksService } from '../checks/checks.service';
 import { MIDNITE_CONFIG } from '../config.token';
 import { mapWithConcurrency } from '../lib/map-with-concurrency';
 import { ReposService } from '../repos/repos.service';
+import { HeldTasksRegistry } from './held-tasks.registry';
 import { buildTaskReport, taskReportFilename } from './lib/task-report';
 import { TaskFailuresRepository } from './task-failures.repository';
 import { TasksRepository } from './tasks.repository';
@@ -95,7 +96,20 @@ export class TasksService {
     // gate is skipped fail-open (same as the runner's @Optional wiring, Phase 30).
     @Optional() @Inject(ChecksService) private readonly checks?: ChecksService,
     @Optional() @Inject(AuditService) private readonly audit?: AuditService,
+    // Phase 50 Theme B — the scheduler's transient "held by a hard cap" state.
+    // Optional so unit specs that construct the service by hand keep working; a
+    // held task's derived `heldReason` is attached on read (never persisted).
+    @Optional() @Inject(HeldTasksRegistry) private readonly heldTasks?: HeldTasksRegistry,
   ) {}
+
+  // Attach the scheduler's derived `heldReason` (Phase 50 Theme B) to a hydrated
+  // task. Only ready `todo` tasks are ever held; a stale entry for a task that
+  // has since moved on is ignored by the status guard.
+  private withHeld(task: Task): Task {
+    if (task.status !== 'todo') return task;
+    const reason = this.heldTasks?.get(task.id);
+    return reason ? { ...task, heldReason: reason } : task;
+  }
 
   // Resolve a task's repo reference against the registry (Phase 13 B2). A blank
   // value means "unassigned" (null). A non-empty name must match a registered
@@ -157,7 +171,7 @@ export class TasksService {
   }
 
   listTasks(status?: Status, projectId?: string, scope?: TeamScope): Task[] {
-    return this.repo.listTasks(status, projectId, scope).map((r) => this.repo.hydrate(r));
+    return this.repo.listTasks(status, projectId, scope).map((r) => this.withHeld(this.repo.hydrate(r)));
   }
 
   /**
@@ -176,7 +190,7 @@ export class TasksService {
   getTask(id: string, scope?: TeamScope): Task {
     const row = this.repo.getTask(id, scope);
     if (!row) throw new NotFoundException(`task ${id} not found`);
-    return this.repo.hydrate(row);
+    return this.withHeld(this.repo.hydrate(row));
   }
 
   /** Serialize a task thread (+ its events/links) as a downloadable markdown report. */

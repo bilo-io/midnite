@@ -59,6 +59,23 @@ describe('TaskCard — blocked badge', () => {
   });
 });
 
+describe('TaskCard — held chip (Phase 50 B)', () => {
+  it('shows "Held: over budget" when the scheduler holds the task on the spend cap', () => {
+    render(<TaskCard task={{ ...baseTask, status: 'todo', heldReason: 'over-budget' }} />);
+    expect(screen.getByText('Held: over budget')).toBeInTheDocument();
+  });
+
+  it('shows "Held: rate-limited" when held on the spawn-rate cap', () => {
+    render(<TaskCard task={{ ...baseTask, status: 'todo', heldReason: 'rate-limited' }} />);
+    expect(screen.getByText('Held: rate-limited')).toBeInTheDocument();
+  });
+
+  it('omits the chip when the task is not held', () => {
+    render(<TaskCard task={{ ...baseTask, status: 'todo' }} />);
+    expect(screen.queryByText(/^Held:/)).toBeNull();
+  });
+});
+
 describe('TaskCard — checks failing badge', () => {
   it('shows a "Checks failing" badge when checkRunStatus is failing', () => {
     render(<TaskCard task={{ ...baseTask, status: 'wip', checkRunStatus: 'failing' }} />);

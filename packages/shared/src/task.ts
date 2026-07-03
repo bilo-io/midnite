@@ -22,6 +22,24 @@ export const TASK_KINDS = [
 export const StatusSchema = z.enum(STATUSES);
 export const TaskKindSchema = z.enum(TASK_KINDS);
 
+/**
+ * Why the scheduler is *holding* a ready `todo` task instead of spawning it
+ * (Phase 50 Theme B). `over-budget` = a hard spend cap is exceeded;
+ * `rate-limited` = the spawns-per-hour window is full. Purely **derived** from
+ * the scheduler's in-memory guardrail state (never persisted, no new status) —
+ * a held task stays `todo` and re-evaluates every tick. Drives the board's
+ * "held" chip; absent when the task is spawnable.
+ */
+export const TASK_HELD_REASONS = ['over-budget', 'rate-limited'] as const;
+export const TaskHeldReasonSchema = z.enum(TASK_HELD_REASONS);
+export type TaskHeldReason = z.infer<typeof TaskHeldReasonSchema>;
+
+/** Human copy for a held reason — shared by the board chip + notification. */
+export const TASK_HELD_REASON_LABEL: Record<TaskHeldReason, string> = {
+  'over-budget': 'over budget',
+  'rate-limited': 'rate-limited',
+};
+
 export const TaskEventSchema = z.object({
   at: z.string(),
   kind: z.string(),
@@ -97,6 +115,12 @@ export const TaskSchema = z.object({
    * when it failed (and the task isn't yet `done`). Computed — not stored.
    */
   checkRunStatus: CheckRunStatusSchema.optional(),
+  /**
+   * Why the scheduler is holding this ready `todo` task rather than spawning it
+   * (Phase 50 Theme B) — a hard budget/rate cap is blocking. Derived from the
+   * scheduler's in-memory guardrail state, not stored; absent when spawnable.
+   */
+  heldReason: TaskHeldReasonSchema.optional(),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
   /** ISO timestamp when the task (and thus its session) was archived; absent when active. */

@@ -13,6 +13,26 @@ Retries stop firing instantly and blindly: they now back off exponentially and o
 - [x] class-aware: retry gated on `isRetryableFailure` — `crash`/`timeout` retry with backoff, a non-retryable exit **abandons immediately** (Theme D will escalate). A **run timeout now routes through backoff-retry** instead of straight-to-abandoned; the still-live session is torn down and its `onExit` no-ops on the transitioned task. A manual requeue clears any pending backoff.
 - [x] Tests: pure backoff math (`retry-backoff.test.ts`), runner specs (backoff on crash, timeout→retry + teardown, timeout-exhausted→abandon, instant-retry with base=0), repository ready-set backoff gating. `:typecheck` green; gateway 1284, web 732 green. (`gateway:lint` red only on pre-existing unrelated debt.)
 
+## 2026-07-02 — feat: enforce hard spend & spawn-rate caps at the scheduler — Phase 50 Theme B (PR #279)
+
+Budgets promoted from advisory to **enforced**: the agent-pool scheduler blocks new spawns when a hard daily/monthly spend cap is exceeded or the per-hour spawn-rate window is full. A blocked task stays `todo` (no new status) and re-evaluates each tick. Enforced **globally** (Stage-2.5: `llm_usage` has no repo/team cost attribution — per-scope caps deferred).
+
+- [x] **shared:** `usage.hardDailyCapUsd`/`hardMonthlyCapUsd` + `agent.maxSpawnsPerHour` config (all off by default = pre-Phase-50 behaviour); `BudgetStatus`/`BudgetPeriodStatus` contract; derived `Task.heldReason` (`over-budget` | `rate-limited`) + `TASK_HELD_REASON_LABEL`; `agent.held` notification kind.
+- [x] **gateway:** `UsageService.checkBudget()` (today's/this-month's spend vs. the hard cap; inert with no query when unset); an in-memory sliding 1h spawn-rate window in the scheduler; `tick()` holds ready tasks on an over-budget (all) / rate-full (remaining) breach; a leaf `HeldTasksRegistry` (scheduler replaces each tick, `TasksService` attaches `heldReason` on read — never persisted); edge `task.updated` broadcast + one edge-triggered `NotificationsService.notifyGuardrailHeld` alert per cap-type.
+- [x] **web:** an amber "Held: …" chip on the task card + a Storybook story.
+- [x] Tests: shared config/schema units; gateway `checkBudget` + scheduler caps (over-budget/rate/clear-edge/edge-notify) + `HeldTasksRegistry` + `withHeld` + `notifyGuardrailHeld`; web RTL + story `play`. shared + gateway (1319) + web (738) green. (gateway:lint is red on pre-existing `main` breakage in unrelated files — not this diff.)
+
+## 2026-07-02 — feat: embed PR review + ?tab=review route — Phase 52 Theme E (PR #278)
+
+Makes the in-app diff viewer reachable from a task, not just a modal.
+
+- [x] Full task page (`/tasks/view?id=`) gains a **Details | Review** tab strip when the task has a `prUrl`; Review mounts the diff viewer inline. Board modal keeps its full-screen "View diff" + gains a "Review page" deep-link.
+- [x] **Deep-linkable** `?tab=review` — bidirectional (param selects the tab on load; switching tabs `router.replace`s it); page widens to `max-w-5xl` for the diff.
+- [x] Extracted `PrReviewPanel` (fetch + fail-open loading/error/ready states) from `PrDiffModal` so the modal and the tab share one implementation.
+- [x] Tests: `PrReviewPanel` states + page tab routing (deep-link, width, `router.replace` sync). Web-only; `web:typecheck`/`web:lint` clean, 735 web tests green.
+
+---
+
 ## 2026-07-02 — feat: boot preflight + readiness/liveness health — Phase 54 Themes A + B (PR #275)
 
 The gateway's **boot half**: boot healthy-or-loudly-broken (no more silent-degrade), and `/health` tells the truth about "ready" instead of always `{ok:true}`.
