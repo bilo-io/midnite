@@ -33,7 +33,7 @@ export class GuardrailsController {
   // status` (CLI) and the Safety panel (Theme E) see the whole picture in one
   // read. Sourced from config + the DB-backed autonomy mode.
   private caps(): GuardrailCaps {
-    const { usage, agent } = this.config;
+    const { usage, agent, guardrails } = this.config;
     return {
       mode: this.service.getMode(),
       hardDailyCapUsd: usage.hardDailyCapUsd ?? null,
@@ -41,6 +41,10 @@ export class GuardrailsController {
       softDailyBudgetUsd: usage.dailyBudgetUsd ?? null,
       softMonthlyBudgetUsd: usage.monthlyBudgetUsd ?? null,
       maxSpawnsPerHour: agent.maxSpawnsPerHour,
+      blastRadiusEnabled: guardrails.blastRadius.enabled,
+      protectedBranches: guardrails.blastRadius.protectedBranches,
+      protectedPathGlobs: guardrails.blastRadius.protectedPathGlobs,
+      scrubSpawnEnv: guardrails.scrubSpawnEnv,
     };
   }
 

@@ -167,6 +167,7 @@ import {
   type Memory,
   type PrDiff,
   type GuardrailSettings,
+  type GuardrailCaps,
   type PauseScope,
   type PrimaryAgent,
   type ProvidersResponse,
@@ -702,6 +703,13 @@ export async function getPrDiff(id: string, signal?: AbortSignal): Promise<PrDif
 export async function getGuardrails(signal?: AbortSignal): Promise<GuardrailSettings> {
   const res = await fetchJson('/guardrails', { signal }, GuardrailsResponseSchema);
   return res.guardrails;
+}
+
+/** The configured safety caps + policy mode + protected-actions (read-only,
+ *  Phase 50 F/E). Null when an older gateway doesn't return the caps block. */
+export async function getGuardrailCaps(signal?: AbortSignal): Promise<GuardrailCaps | null> {
+  const res = await fetchJson('/guardrails', { signal }, GuardrailsResponseSchema);
+  return res.caps ?? null;
 }
 
 /** Pause or resume a scope (soft — running agents finish). Admin-only. */
