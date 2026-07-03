@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { Liveness, Readiness } from '@midnite/shared';
+import type { Liveness, PreflightReport, Readiness } from '@midnite/shared';
 import { HealthController } from './health.controller';
 import type { HealthService } from './health.service';
+import type { PreflightService } from './preflight.service';
 
-function controller(health: Partial<HealthService>) {
-  return new HealthController(health as HealthService);
+function controller(health: Partial<HealthService>, preflight: Partial<PreflightService> = {}) {
+  return new HealthController(health as HealthService, preflight as PreflightService);
 }
 
 describe('HealthController', () => {
@@ -34,6 +35,25 @@ describe('HealthController', () => {
     };
     const status = vi.fn();
     await controller({ readiness: async () => report }).ready({ status } as never);
+    expect(status).toHaveBeenCalledWith(503);
+  });
+
+  it('/health/preflight returns 200 with the report when it passes', async () => {
+    const report: PreflightReport = { ok: true, worst: 'warn', checks: [] };
+    const status = vi.fn();
+    const res = await controller({}, { report: async () => report }).preflightReport({ status } as never);
+    expect(res).toEqual(report);
+    expect(status).not.toHaveBeenCalled();
+  });
+
+  it('/health/preflight sets 503 when the report fails', async () => {
+    const report: PreflightReport = {
+      ok: false,
+      worst: 'fail',
+      checks: [{ name: 'database', status: 'fail', detail: 'unwritable' }],
+    };
+    const status = vi.fn();
+    await controller({}, { report: async () => report }).preflightReport({ status } as never);
     expect(status).toHaveBeenCalledWith(503);
   });
 });

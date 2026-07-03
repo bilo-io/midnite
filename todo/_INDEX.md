@@ -28,12 +28,12 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | 🔄 WIP | 14/26 | `█████░░░░░` | 54% | F | — |
+| [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [53 · Task lifecycle resilience](phase-53-task-lifecycle-resilience.md) | 🔄 WIP | 12/22 | `██████░░░░` | 55% | — | C |
 | [52 · In-app diff & PR review](phase-52-in-app-diff-review.md) | 🔄 WIP | 10/25 | `████░░░░░░` | 40% | C | D |
 | [51 · Session detail page](phase-51-session-detail-page.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [50 · Autonomy guardrails](phase-50-autonomy-guardrails.md) | ✅ DONE | 29/29 | `██████████` | 100% | — | — |
-| [49 · Data portability](phase-49-data-portability.md) | 🔄 WIP | 3/27 | `█░░░░░░░░░` | 11% | — | B C D E F |
+| [49 · Data portability](phase-49-data-portability.md) | 🔄 WIP | 3/27 | `█░░░░░░░░░` | 11% | B | C D E F |
 | [48 · Slides](phase-48-slides.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [46 · Inbound integrations](phase-46-inbound-integrations.md) | ✅ DONE | 20/20 | `██████████` | 100% | — | — |
@@ -112,8 +112,8 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **B** — Readiness/liveness health endpoints (`/health/ready` vs `/live`) (PR #275)
 - ✅ **C** — Live watchdog: slot-leak + session-health auto-heal + pty liveness probe (PR #280)
 - ✅ **D** — Scheduler resilience: readiness gate + backoff + first-class pause/resume
-- ✅ **E** — Graceful shutdown: drain in-flight agents + WAL checkpoint/close
-- ◻ **F** — Runtime health in web + CLI (`midnite doctor`)
+- ✅ **E** — Graceful shutdown: drain in-flight agents + WAL checkpoint/close (PR #288)
+- ✅ **F** — Runtime health in web + CLI (`midnite doctor`) (PR #289)
 
 ### [Phase 53 — Task lifecycle resilience](phase-53-task-lifecycle-resilience.md)
 *(Additive layer over the existing lifecycle — no state-machine refactor; escalation reuses `waiting` + a typed reason. Complements Phase 50.)*
