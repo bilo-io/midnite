@@ -92,21 +92,25 @@ Define the portable archive once, and give import something to validate against.
 
 ---
 
-## Theme B — Bulk export service — **M-L**
+## Theme B — Bulk export service — **M-L** — ✅ DONE (PR #289, 2026-07-03)
 
 Get the whole store out, as a portable archive.
 
-- [ ] `portability/portability.module.ts` + `portability.service.ts` — a read-across orchestrator
-      that pulls each **portable** domain via its existing service/repository (read-only; no domain
-      code changes), assembles the archive, and stamps the manifest (schema version, app version,
-      timestamp, included domains, secrets mode). **Derived/volatile tables are skipped** (rebuilt on
-      import). Explicit `@Inject` tokens (gateway runs under `tsx`).
-- [ ] `portability.controller.ts` — `GET /portability/export` (`RequiresRole('admin')`), **streams**
-      the archive (never buffers the whole store in memory). `ExportOptions` from query/body.
-- [ ] **Secrets, opt-in:** default **excludes** all secret-bearing columns (integrations export
-      disabled-pending-config). With `includeSecrets` + a `passphrase`, decrypt each secret via
-      `CryptoService` and **re-encrypt under a scrypt-derived key** from the passphrase, written into
-      the archive as `v1p:<…>` (a distinct, passphrase-wrapped marker). The passphrase is never stored.
+- [x] `portability/portability.module.ts` + `portability.service.ts` — a read-across orchestrator
+      composing each portable domain's **service** (unscoped read; no domain code changes), assembling
+      the archive and stamping the manifest (schema version via `schema_meta`, clamped nonnegative; app
+      version; timestamp; included domains; secrets mode). Derived/volatile tables skipped. Explicit
+      `@Inject` tokens. Hydrated domain objects carry their children (Task→events/links/deps,
+      Project→sources, Idea→messages), so those ride along.
+- [x] `portability.controller.ts` — `GET /portability/export` (`RequiresRole('admin')`), **buffers +
+      sends** a zip (`manifest.json` + `domains/<name>.json` via `lib/archive.ts` / fflate,
+      deterministic). `ExportOptions` (`domains` allowlist) from query. *(Streaming deferred — a single
+      store is small; Stage-2.5.)*
+- [x] **Secrets:** default `secretsMode: 'excluded'`; this slice ships the secret-free **work** domains
+      (tasks, projects, repos, memories, notes, routines, media, councils, ideas, approvalRules,
+      workflows). ◐ `includeSecrets` + the scrypt passphrase re-wrap is **deferred** to the follow-on
+      secrets slice; ◐ **`users`/`teams` deferred** to land with Theme C's restore (faithful export needs
+      raw rows incl. `passwordHash`, whose handling pairs with import ordering + the secrets decision).
 
 ---
 
