@@ -25,6 +25,7 @@ import {
   type Task,
   type TaskCounts,
   type TaskFailure,
+  type TaskFailuresQuery,
   type TeamScope,
   type WaitReason,
 } from '@midnite/shared';
@@ -965,6 +966,16 @@ export class TasksService {
   /** A task's recorded failure history (oldest-first) — for the health view (E). */
   listFailures(taskId: string): TaskFailure[] {
     return this.failures.listByTask(taskId);
+  }
+
+  /** Recent failures across tasks (Phase 53 E), newest-first, team-scoped —
+   *  backs `GET /tasks/failures`, the health view, and `midnite tasks failures`. */
+  listRecentFailures(query: TaskFailuresQuery, scope?: TeamScope): TaskFailure[] {
+    return this.failures.listRecent({
+      teamId: scope?.teamId ?? undefined,
+      class: query.class,
+      limit: query.limit,
+    });
   }
 
   // ── Manual check trigger (Phase 30 D) ────────────────────────────────────

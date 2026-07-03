@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { asc, eq } from 'drizzle-orm';
-import type { TaskFailure } from '@midnite/shared';
+import { and, asc, desc, eq, type SQL } from 'drizzle-orm';
+import type { FailureClass, TaskFailure } from '@midnite/shared';
 import { DB_TOKEN, type MidniteDb } from '../db/db.module';
 import { taskFailures, type TaskFailureInsert, type TaskFailureRow } from '../db/schema';
 
@@ -23,6 +23,27 @@ export class TaskFailuresRepository {
       .from(taskFailures)
       .where(eq(taskFailures.taskId, taskId))
       .orderBy(asc(taskFailures.at))
+      .all()
+      .map(toTaskFailure);
+  }
+
+  /**
+   * Recent failures across tasks, newest-first (Phase 53 E) — for the health view
+   * + `midnite tasks failures`. Optionally narrowed to one `class` and scoped to a
+   * `teamId` (undefined ⇒ no team filter: the local/single-user path). `teamId` is
+   * the tenant boundary here; `task_failures` has no `createdBy`, so per-user
+   * isolation within a team isn't enforced for this read-only ops view.
+   */
+  listRecent(opts: { teamId?: string; class?: FailureClass; limit: number }): TaskFailure[] {
+    const conds: SQL[] = [];
+    if (opts.teamId !== undefined) conds.push(eq(taskFailures.teamId, opts.teamId));
+    if (opts.class) conds.push(eq(taskFailures.class, opts.class));
+    return this.db
+      .select()
+      .from(taskFailures)
+      .where(conds.length ? and(...conds) : undefined)
+      .orderBy(desc(taskFailures.at))
+      .limit(opts.limit)
       .all()
       .map(toTaskFailure);
   }

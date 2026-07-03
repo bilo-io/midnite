@@ -28,6 +28,7 @@ import {
   CreateFromBreakdownRequestSchema,
   ReportFormatSchema,
   ResolveTaskRequestSchema,
+  TaskFailuresQuerySchema,
   SetTaskPriorityRequestSchema,
   SetTaskTagsRequestSchema,
   StatusSchema,
@@ -44,6 +45,7 @@ import {
   type Status,
   type Task,
   type TaskCounts,
+  type TaskFailuresResponse,
   type TriggerCheckResponse,
 } from '@midnite/shared';
 import { BreakdownService } from '../agent/breakdown.service';
@@ -91,6 +93,29 @@ export class TasksController {
     }
     const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
     return this.service.listTasks(status, projectId?.trim() || undefined, scope);
+  }
+
+  /** Recent failures across tasks (Phase 53 E). Static route — declared before
+   *  `:id` so it isn't shadowed by the param route. */
+  @Get('failures')
+  listRecentFailures(
+    @Query() query: unknown,
+    @CurrentUser() user?: CurrentUserPayload | null,
+  ): TaskFailuresResponse {
+    const parsed = TaskFailuresQuerySchema.safeParse(query ?? {});
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
+    return { failures: this.service.listRecentFailures(parsed.data, scope) };
+  }
+
+  @Get(':id/failures')
+  listTaskFailures(
+    @Param('id') id: string,
+    @CurrentUser() user?: CurrentUserPayload | null,
+  ): TaskFailuresResponse {
+    const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
+    this.service.getTask(id, scope); // 404s if the task isn't visible in scope
+    return { failures: this.service.listFailures(id) };
   }
 
   @Get(':id')
