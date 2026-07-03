@@ -149,15 +149,20 @@ Die on purpose, not by surprise. Where the #1 and #7 halves fuse.
 
 ---
 
-## Theme F — Runtime health in UI + CLI — **M**
+## Theme F — Runtime health in UI + CLI — **M** — ✅ DONE (PR #289, 2026-07-03)
 
 Make process health visible, not guessed.
 
-- [ ] **web:** a runtime/status view — slots used/free, degraded readiness checks, spawner mode, uptime, and the
-      **last-shutdown-clean** flag — reading `/health/ready` + the preflight report.
-- [ ] **cli:** `midnite doctor` — runs the preflight + readiness checks against a running gateway and prints a
-      pass/warn/fail table (respects global `--json`); a great first-response tool when something's off.
-- [ ] Typed client methods in [`web/lib/api.ts`](../packages/web/lib/api.ts) + [`cli/src/client.ts`](../packages/cli/src/client.ts).
+- [x] **web:** a **Runtime health** panel on the Ops page — readiness badge, uptime, spawner mode, and the live
+      preflight checks (per-check status + remedy) — reading `/health/ready` + the new `/health/preflight`. (The
+      **last-shutdown-clean** flag is deferred to Theme E, which writes the marker.)
+- [x] **cli:** `midnite doctor` — runs the preflight + readiness checks against a running gateway and prints a
+      pass/warn/fail table (respects global `--json`); **exits non-zero when anything fails** so it's a scriptable
+      health gate.
+- [x] Added `GET /health/preflight` (full boot set re-run live, 200/503) + typed client methods in
+      [`web/lib/api.ts`](../packages/web/lib/api.ts) + [`cli/src/client.ts`](../packages/cli/src/client.ts). Also
+      fixed a latent `HealthService`↔`AgentPoolScheduler` ES-module import cycle (forwardRef both sides) that
+      TDZ-crashed the gateway at boot.
 
 ---
 
