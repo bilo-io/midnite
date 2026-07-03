@@ -1,13 +1,14 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MidniteConfig, RepoConfig } from '@midnite/shared';
+import type { AuditService } from '../audit/audit.service';
 import { createTestDb } from '../test';
 import { ReposRepository } from './repos.repository';
 import { RepoDoesNotExistError, RepoNameTakenError, ReposService } from './repos.service';
 
-function build(configRepos: RepoConfig[] = []) {
+function build(configRepos: RepoConfig[] = [], audit?: AuditService) {
   const { db } = createTestDb();
   const config = { repos: configRepos } as unknown as MidniteConfig;
-  return new ReposService(new ReposRepository(db), config);
+  return new ReposService(new ReposRepository(db), config, audit);
 }
 
 describe('ReposService — CRUD', () => {
@@ -27,6 +28,21 @@ describe('ReposService — CRUD', () => {
   it('rejects a duplicate name with RepoNameTakenError', () => {
     service.create({ name: 'api', path: '~/Dev/api' });
     expect(() => service.create({ name: 'api', path: '~/Dev/other' })).toThrow(RepoNameTakenError);
+  });
+
+  it('audits create / update / delete with the actor (Phase 50 D)', () => {
+    const audit = { record: vi.fn() } as unknown as AuditService;
+    const svc = build([], audit);
+    const repo = svc.create({ name: 'api', path: '~/Dev/api' }, 'user-1');
+    svc.update(repo.id, { name: 'core' }, 'user-2');
+    svc.delete(repo.id, 'user-3');
+
+    const actions = (audit.record as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0].action);
+    expect(actions).toEqual(['repo.created', 'repo.updated', 'repo.deleted']);
+    const updateCall = (audit.record as ReturnType<typeof vi.fn>).mock.calls[1]![0];
+    expect(updateCall.userId).toBe('user-2');
+    expect(updateCall.payload.before.name).toBe('api');
+    expect(updateCall.payload.after.name).toBe('core');
   });
 
   it('persists branchPrefix and prTemplate conventions', () => {

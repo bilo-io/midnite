@@ -12,6 +12,17 @@ The foundation for full-store backup/restore: a versioned, self-describing archi
 - [x] gateway `schema_meta` singleton table (migration `0066`), stamped on boot in `DbFactory` (after `migrate`) from the drizzle journal's highest idx via `db/schema-version.ts` (`readJournalVersion`/`stampSchemaVersion`/`getSchemaVersion`, fail-soft `-1`). Internal helper only — Theme B/C consume it.
 - [x] Container decided: zip w/ `manifest.json` + `domains/*.json` (documented in the contract header). Tests: shared 7 (verdict + defaults + manifest/envelope validation), gateway 6 (journal read, boot stamp, idempotent, fail-soft). `:typecheck` green; gateway 1333/1334 (1 pre-existing tmux-contract flake).
 
+---
+
+## 2026-07-03 — feat: audit completeness + RBAC gaps on the safety surface — Phase 50 Theme D (PR #281)
+
+Every guardrail change and unattended action is now accountable — the accountability half of Phase 50.
+
+- [x] **RBAC:** `@RequiresRole('admin')` on `ApprovalsController` rule create/update/delete + the autonomy-mode PATCH (editing blast-radius policy is admin-only; pause/kill were already gated in Theme A). Reads stay open; static-token/single-user installs unaffected (RoleGuard skips with no `req.user`).
+- [x] **Audit:** approval-rule CRUD (before/after), policy-mode change (from→to, no-op skipped), and repo + project mutations (create/update/delete, actor threaded from the JWT). Every act-path decision is **mirrored** from `approval_log` into the audit trail (`approval.decided`, entityId = sessionId) — one query for "what did agents do + what did we allow/deny".
+- [x] **shared:** new audit entity types (`approval_rule`, `project`) + actions (`guardrail.mode_changed`, `approval_rule.*`, `approval.decided`, `repo.*`, `project.*`).
+- [x] Tests: shared enum; gateway approvals audit (rule CRUD before/after, mode diff + no-op skip, decision mirror), repos + projects create/update/delete audit; controller-delete assertions updated for the threaded actor. shared + gateway (1326) green; `:typecheck` clean. (gateway:lint red only on pre-existing `main` breakage in unrelated files.)
+
 ## 2026-07-02 — feat: retry backoff + class-aware retry — Phase 53 Theme B (PR #277)
 
 Retries stop firing instantly and blindly: they now back off exponentially and only re-run failures worth re-running. Builds on the Theme A taxonomy.

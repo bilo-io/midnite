@@ -57,9 +57,20 @@ export class ApprovalsService implements OnModuleInit {
     return this.mode;
   }
 
-  setMode(mode: AutonomyMode): void {
+  setMode(mode: AutonomyMode, actor: string | null = null): void {
+    const from = this.mode;
     this.mode = mode;
     this.repo.upsertMode(mode, new Date().toISOString());
+    // Phase 50 D — a policy-mode change is a guardrail edit; audit with a diff.
+    if (from !== mode) {
+      this.audit?.record({
+        entityType: 'guardrail',
+        entityId: 'mode',
+        userId: actor,
+        action: 'guardrail.mode_changed',
+        payload: { from, to: mode },
+      });
+    }
   }
 
   getSettings(): ApprovalSettings {
@@ -198,6 +209,7 @@ export class ApprovalsService implements OnModuleInit {
     resolution: ApprovalLogResolution;
     ruleId?: string;
     decidedBy: ApprovalDecidedBy;
+    taskId?: string;
   }): void {
     this.logRepo?.insert({
       id: randomUUID(),
@@ -208,6 +220,24 @@ export class ApprovalsService implements OnModuleInit {
       ruleId: params.ruleId ?? null,
       decidedBy: params.decidedBy,
       createdAt: new Date().toISOString(),
+    });
+    // Phase 50 D — mirror every act-path decision into the audit trail so the
+    // safety feed answers "what did agents do + what did we allow/deny" in one
+    // query (approval_log stays the full per-tool record). System action — the
+    // decision is the agent/policy's, not a user's (userId null).
+    this.audit?.record({
+      entityType: 'guardrail',
+      entityId: params.sessionId,
+      userId: null,
+      action: 'approval.decided',
+      payload: {
+        toolName: params.toolName,
+        resolution: params.resolution,
+        decidedBy: params.decidedBy,
+        ruleId: params.ruleId ?? null,
+        taskId: params.taskId ?? null,
+        summary: params.summary ?? null,
+      },
     });
   }
 
@@ -228,7 +258,7 @@ export class ApprovalsService implements OnModuleInit {
     return toRule(row);
   }
 
-  create(req: CreateApprovalRule): ApprovalRule {
+  create(req: CreateApprovalRule, actor: string | null = null): ApprovalRule {
     const now = new Date().toISOString();
     const row = this.repo.insert({
       id: randomUUID(),
@@ -241,10 +271,20 @@ export class ApprovalsService implements OnModuleInit {
       createdAt: now,
       updatedAt: now,
     });
-    return toRule(row);
+    const rule = toRule(row);
+    // Phase 50 D — a deny/allow rule is a blast-radius control; editing it is audited.
+    this.audit?.record({
+      entityType: 'approval_rule',
+      entityId: rule.id,
+      userId: actor,
+      action: 'approval_rule.created',
+      payload: { rule },
+    });
+    return rule;
   }
 
-  update(id: string, req: UpdateApprovalRule): ApprovalRule {
+  update(id: string, req: UpdateApprovalRule, actor: string | null = null): ApprovalRule {
+    const before = this.get(id); // throws NotFound if unknown — capture the pre-state for the diff
     const now = new Date().toISOString();
     const patch: Record<string, unknown> = { updatedAt: now };
     if (req.enabled !== undefined) patch.enabled = req.enabled;
@@ -256,13 +296,29 @@ export class ApprovalsService implements OnModuleInit {
 
     const row = this.repo.update(id, patch as Parameters<ApprovalsRepository['update']>[1]);
     if (!row) throw new NotFoundException(`approval rule ${id} does not exist`);
-    return toRule(row);
+    const after = toRule(row);
+    this.audit?.record({
+      entityType: 'approval_rule',
+      entityId: id,
+      userId: actor,
+      action: 'approval_rule.updated',
+      payload: { before, after },
+    });
+    return after;
   }
 
-  remove(id: string): void {
-    if (!this.repo.remove(id)) {
+  remove(id: string, actor: string | null = null): void {
+    const before = this.repo.get(id);
+    if (!before || !this.repo.remove(id)) {
       throw new NotFoundException(`approval rule ${id} does not exist`);
     }
+    this.audit?.record({
+      entityType: 'approval_rule',
+      entityId: id,
+      userId: actor,
+      action: 'approval_rule.deleted',
+      payload: { rule: toRule(before) },
+    });
   }
 }
 
