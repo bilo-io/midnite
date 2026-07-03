@@ -30,9 +30,9 @@
 |-------|--------|------|----------|---|--------|--------|
 | [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | 🔄 WIP | 8/26 | `███░░░░░░░` | 31% | — | D E F |
 | [53 · Task lifecycle resilience](phase-53-task-lifecycle-resilience.md) | 🔄 WIP | 3/22 | `█░░░░░░░░░` | 14% | B | C D E |
-| [52 · In-app diff & PR review](phase-52-in-app-diff-review.md) | 🔄 WIP | 7/25 | `███░░░░░░░` | 28% | E | C D |
+| [52 · In-app diff & PR review](phase-52-in-app-diff-review.md) | 🔄 WIP | 10/25 | `████░░░░░░` | 40% | — | C D |
 | [51 · Session detail page](phase-51-session-detail-page.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
-| [50 · Autonomy guardrails](phase-50-autonomy-guardrails.md) | 🔄 WIP | 4/29 | `█░░░░░░░░░` | 14% | B | C D E F |
+| [50 · Autonomy guardrails](phase-50-autonomy-guardrails.md) | 🔄 WIP | 8/29 | `███░░░░░░░` | 28% | D | C E F |
 | [49 · Data portability](phase-49-data-portability.md) | ◻ TODO | 0/27 | `░░░░░░░░░░` | 0% | — | A B C D E F |
 | [48 · Slides](phase-48-slides.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
@@ -129,7 +129,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **B** — Diff viewer: file tree + split/unified + syntax highlight
 - ◻ **C** — Review actions: inline comment + approve/request-changes + in-app merge
 - ◻ **D** — Comment persistence (drafts) + Phase 37 AI review inline
-- ◻ **E** — Embed in task detail + deep-linkable `?tab=review` route
+- ✅ **E** — Embed in task detail + deep-linkable `?tab=review` route
 
 ### [Phase 51 — Session detail page](phase-51-session-detail-page.md)
 - ✅ **A** — Session detail contract + API enrichment
@@ -141,7 +141,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 
 ### [Phase 50 — Autonomy guardrails & blast radius](phase-50-autonomy-guardrails.md)
 - ✅ **A** — Kill switch & global pause (scheduling gate)
-- ◻ **B** — Spend & rate caps that block (scheduling gate)
+- ✅ **B** — Spend & rate caps that block (scheduling gate)
 - ◻ **C** — Destructive-action limits (act-path gate)
 - ◻ **D** — Audit completeness + RBAC gap closure
 - ◻ **E** — Safety control panel (web)

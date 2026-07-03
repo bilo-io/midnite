@@ -66,6 +66,12 @@ export const AgentConfigSchema = z.object({
       inactivityMs: z.number().int().nonnegative().default(0),
     })
     .default({}),
+  // Max agent spawns permitted in any rolling 1-hour window (Phase 50 Theme B).
+  // 0 = unlimited (default). Enforced globally: when the window is full the
+  // scheduler blocks further spawns ("held: rate-limited") until the oldest
+  // spawn ages out. In-memory sliding window — resets on restart (a throttle,
+  // not a durable ledger).
+  maxSpawnsPerHour: z.number().int().nonnegative().default(0),
 });
 
 export const TerminalConfigSchema = z.object({

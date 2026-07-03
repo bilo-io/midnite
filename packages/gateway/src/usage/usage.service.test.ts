@@ -112,3 +112,41 @@ describe('UsageService', () => {
     expect(service.summary({ groupBy: 'day' }).warnings).toHaveLength(0);
   });
 });
+
+describe('UsageService.checkBudget (Phase 50 B — hard caps)', () => {
+  it('is inert (not over, null periods) when no hard cap is set', () => {
+    const { service } = makeService({ warnAtRatio: 0.8 }, [{ estCostUsd: 9999, at: `${today}T09:00:00.000Z` }]);
+    expect(service.checkBudget()).toEqual({ over: false, daily: null, monthly: null });
+  });
+
+  it('flags over when today spend meets/exceeds the hard daily cap', () => {
+    const { service } = makeService({ warnAtRatio: 0.8, hardDailyCapUsd: 10 }, [
+      { estCostUsd: 6, at: `${today}T08:00:00.000Z` },
+      { estCostUsd: 5, at: `${today}T09:00:00.000Z` },
+    ]);
+    const status = service.checkBudget();
+    expect(status.over).toBe(true);
+    expect(status.daily).toEqual({ capUsd: 10, spentUsd: 11, exceeded: true });
+    expect(status.monthly).toBeNull();
+  });
+
+  it('is under the cap when today spend is below it', () => {
+    const { service } = makeService({ warnAtRatio: 0.8, hardDailyCapUsd: 10 }, [
+      { estCostUsd: 4, at: `${today}T08:00:00.000Z` },
+    ]);
+    const status = service.checkBudget();
+    expect(status.over).toBe(false);
+    expect(status.daily?.exceeded).toBe(false);
+  });
+
+  it('enforces the monthly cap over the whole calendar month', () => {
+    const month = today.slice(0, 7);
+    const { service } = makeService({ warnAtRatio: 0.8, hardMonthlyCapUsd: 100 }, [
+      { estCostUsd: 60, at: `${month}-02T09:00:00.000Z` },
+      { estCostUsd: 50, at: `${today}T09:00:00.000Z` },
+    ]);
+    const status = service.checkBudget();
+    expect(status.over).toBe(true);
+    expect(status.monthly?.spentUsd).toBe(110);
+  });
+});

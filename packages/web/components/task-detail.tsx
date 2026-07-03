@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { Ban, Check, ExternalLink, GitCompare, Play, Plus, RefreshCw, SquareTerminal, X } from 'lucide-react';
 import { ChecksPanel } from '@/components/checks-panel';
 import { PrDiffModal } from '@/components/pr-review/pr-diff-modal';
+import { PrReviewPanel } from '@/components/pr-review/pr-review-panel';
 import {
   ANSWER_EVENT_KIND,
   SOURCE_KIND_LABEL,
@@ -94,14 +95,55 @@ type Props = {
    * full page scrolls itself and provides its own back affordance.
    */
   variant?: 'modal' | 'page';
+  /**
+   * Which detail section is active (Phase 52 E). Only meaningful on the full page
+   * for a task with a `prUrl`, where a Details|Review tab strip appears; `review`
+   * mounts the diff viewer inline. Defaults to `details`.
+   */
+  tab?: 'details' | 'review';
+  /** Called when the user switches tabs — the page syncs it to `?tab=`. */
+  onTabChange?: (tab: 'details' | 'review') => void;
 };
+
+function TabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={[
+        '-mb-px border-b-2 px-3 py-2 text-sm font-medium transition-colors',
+        active
+          ? 'border-primary text-foreground'
+          : 'border-transparent text-muted-foreground hover:text-foreground',
+      ].join(' ')}
+    >
+      {children}
+    </button>
+  );
+}
 
 /**
  * The shared task-detail surface — header (status + transition controls) plus the
  * scrollable body. Consumed by `TaskThreadModal` (overlay chrome) and the
  * `/tasks/:id` full page (Phase 42). Extracted from the modal body; behaviour-preserving.
  */
-export function TaskDetail({ task, projects, tasks, onClose, variant = 'modal' }: Props) {
+export function TaskDetail({ task, projects, tasks, onClose, variant = 'modal', tab, onTabChange }: Props) {
+  // Phase 52 E: a Details|Review tab strip on the full page for a task with a PR.
+  // The board modal keeps its "View diff" full-screen modal instead (narrow overlay).
+  const showTabs = variant === 'page' && !!task.prUrl;
+  const activeTab: 'details' | 'review' = showTabs && tab === 'review' ? 'review' : 'details';
+  const selectTab = (next: 'details' | 'review') => onTabChange?.(next);
+
   const kind = task.kind ?? 'unknown';
   const statusHue = STATUS_HUE_VAR[task.status];
   const images = task.attachments?.filter((a) => a.mime.startsWith('image/')) ?? [];
@@ -425,6 +467,22 @@ export function TaskDetail({ task, projects, tasks, onClose, variant = 'modal' }
         </div>
       </header>
 
+      {showTabs ? (
+        <div className="flex gap-1 border-b border-border/60 px-5" role="tablist" aria-label="Task detail sections">
+          <TabButton active={activeTab === 'details'} onClick={() => selectTab('details')}>
+            Details
+          </TabButton>
+          <TabButton active={activeTab === 'review'} onClick={() => selectTab('review')}>
+            Review
+          </TabButton>
+        </div>
+      ) : null}
+
+      {activeTab === 'review' && task.prUrl ? (
+        <div className="flex min-h-[60vh] flex-col">
+          <PrReviewPanel taskId={task.id} prUrl={task.prUrl} />
+        </div>
+      ) : (
       <div
         className={
           variant === 'modal'
@@ -681,13 +739,37 @@ export function TaskDetail({ task, projects, tasks, onClose, variant = 'modal' }
                   {prStatus.reviewDecision.replace(/_/g, ' ')}
                 </span>
               ) : null}
-              <button
-                type="button"
-                onClick={() => setShowDiff(true)}
-                className="ml-auto flex items-center gap-1 text-xs text-primary hover:underline"
-              >
-                <GitCompare className="h-3 w-3" /> View diff
-              </button>
+              {variant === 'page' ? (
+                // On the page the diff lives in the Review tab — deep-link to it.
+                <button
+                  type="button"
+                  onClick={() => selectTab('review')}
+                  className="ml-auto flex items-center gap-1 text-xs text-primary hover:underline"
+                >
+                  <GitCompare className="h-3 w-3" /> Review
+                </button>
+              ) : (
+                // In the board modal, open the full-screen diff, plus a deep-link
+                // to the full Review page (the board entry point).
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setShowDiff(true)}
+                    className="ml-auto flex items-center gap-1 text-xs text-primary hover:underline"
+                  >
+                    <GitCompare className="h-3 w-3" /> View diff
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      router.push(`/tasks/view?id=${encodeURIComponent(task.id)}&tab=review`)
+                    }
+                    className="flex items-center gap-1 text-xs text-primary hover:underline"
+                  >
+                    Review page <ExternalLink className="h-3 w-3" />
+                  </button>
+                </>
+              )}
               <a
                 href={task.prUrl}
                 target="_blank"
@@ -750,6 +832,7 @@ export function TaskDetail({ task, projects, tasks, onClose, variant = 'modal' }
           <Timeline events={task.events} />
         </section>
       </div>
+      )}
     </>
   );
 }

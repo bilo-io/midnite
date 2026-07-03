@@ -13,6 +13,23 @@ The run-half of runtime resilience: a leaked/orphaned agent slot no longer wedge
 - [x] Reconcile **mirrors stop/cancel** (state-first, then kill) and frees the slot exactly once — explicit release only when no live session exists; a live (hung) kill lets its onExit release, so a same-tick re-pick can't lose its new slot.
 - [x] `isSessionAlive(sessionId)` added to the **Spawner interface**: pty tracks its spawned handles + pid-alive (`isPidAlive`), tmux checks the pane isn't dead. `TerminalService.agentRunHealth()` adds a no-output heartbeat (`lastDataAt`). Reclaim ON by default; the stricter inactivity probe (`agent.watchdog.inactivityMs`, pty-only) is opt-in so quiet-but-live agents aren't killed.
 - [x] Tests: `pool-watchdog.service` (orphan/dead/hung/healthy/disabled/fail-open), `classify-failure` (lost+inactivity), runner `reconcileUnhealthy`/`reclaimOrphanedSlot`, `isPidAlive`. shared 517, gateway 1324 green.
+## 2026-07-02 — feat: enforce hard spend & spawn-rate caps at the scheduler — Phase 50 Theme B (PR #279)
+
+Budgets promoted from advisory to **enforced**: the agent-pool scheduler blocks new spawns when a hard daily/monthly spend cap is exceeded or the per-hour spawn-rate window is full. A blocked task stays `todo` (no new status) and re-evaluates each tick. Enforced **globally** (Stage-2.5: `llm_usage` has no repo/team cost attribution — per-scope caps deferred).
+
+- [x] **shared:** `usage.hardDailyCapUsd`/`hardMonthlyCapUsd` + `agent.maxSpawnsPerHour` config (all off by default = pre-Phase-50 behaviour); `BudgetStatus`/`BudgetPeriodStatus` contract; derived `Task.heldReason` (`over-budget` | `rate-limited`) + `TASK_HELD_REASON_LABEL`; `agent.held` notification kind.
+- [x] **gateway:** `UsageService.checkBudget()` (today's/this-month's spend vs. the hard cap; inert with no query when unset); an in-memory sliding 1h spawn-rate window in the scheduler; `tick()` holds ready tasks on an over-budget (all) / rate-full (remaining) breach; a leaf `HeldTasksRegistry` (scheduler replaces each tick, `TasksService` attaches `heldReason` on read — never persisted); edge `task.updated` broadcast + one edge-triggered `NotificationsService.notifyGuardrailHeld` alert per cap-type.
+- [x] **web:** an amber "Held: …" chip on the task card + a Storybook story.
+- [x] Tests: shared config/schema units; gateway `checkBudget` + scheduler caps (over-budget/rate/clear-edge/edge-notify) + `HeldTasksRegistry` + `withHeld` + `notifyGuardrailHeld`; web RTL + story `play`. shared + gateway (1319) + web (738) green. (gateway:lint is red on pre-existing `main` breakage in unrelated files — not this diff.)
+
+## 2026-07-02 — feat: embed PR review + ?tab=review route — Phase 52 Theme E (PR #278)
+
+Makes the in-app diff viewer reachable from a task, not just a modal.
+
+- [x] Full task page (`/tasks/view?id=`) gains a **Details | Review** tab strip when the task has a `prUrl`; Review mounts the diff viewer inline. Board modal keeps its full-screen "View diff" + gains a "Review page" deep-link.
+- [x] **Deep-linkable** `?tab=review` — bidirectional (param selects the tab on load; switching tabs `router.replace`s it); page widens to `max-w-5xl` for the diff.
+- [x] Extracted `PrReviewPanel` (fetch + fail-open loading/error/ready states) from `PrDiffModal` so the modal and the tab share one implementation.
+- [x] Tests: `PrReviewPanel` states + page tab routing (deep-link, width, `router.replace` sync). Web-only; `web:typecheck`/`web:lint` clean, 735 web tests green.
 
 ---
 
@@ -25,6 +42,7 @@ The gateway's **boot half**: boot healthy-or-loudly-broken (no more silent-degra
 - [x] **`PreflightService.run()`** — invoked from `bootstrap` after the module graph is up, before `listen()`; logs an actionable report and `process.exit(1)` on a hard fail (or, under `strictBoot`, any warning). Soft gaps just warn and boot continues.
 - [x] **`/health/live`** (cheap liveness) + **`/health/ready`** (live re-eval → 200/503 with failing checks); `/health` kept as a liveness alias; all `/health/*` auth + rate-limit exempt (extended `isAuthExemptPath`).
 - [x] Tests: shared schema units; gateway `health.service`/`preflight.service`/`health.controller`/`probes` specs + crypto secret-key + auth-policy exemption. Boot regression via the e2e gateway (preflight logs its report + boot proceeds). shared 505 green; gateway 1282 green (one pre-existing flaky tmux spec). Theme F (web status view + `midnite doctor`) deferred.
+
 ## 2026-07-02 — feat: kill switch & global pause — Phase 50 Theme A (PR #274)
 
 The pause half of the safety story, turned from recorded into **enforced**: an emergency stop that actually halts scheduling and survives a restart.

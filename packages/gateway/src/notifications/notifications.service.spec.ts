@@ -125,6 +125,25 @@ describe('NotificationsService', () => {
     expect(h.svc.list({}).notifications).toHaveLength(0);
   });
 
+  it('notifyGuardrailHeld persists + emits a warn "agent.held" alert (Phase 50 B)', async () => {
+    const h = makeHarness();
+    await h.svc.notifyGuardrailHeld('over-budget', 3);
+
+    expect(h.events).toHaveLength(1);
+    expect(h.events[0]).toMatchObject({
+      type: 'notification.created',
+      notification: { kind: 'agent.held', severity: 'warn', entity: { type: 'guardrail', id: 'over-budget' }, route: '/tasks' },
+    });
+    expect(h.events[0]!.notification.body).toContain('3 tasks held: over budget');
+    expect(h.svc.list({}).unread).toBe(1);
+  });
+
+  it('notifyGuardrailHeld is a no-op when notifications are disabled', async () => {
+    const h = makeHarness({ enabled: false });
+    await h.svc.notifyGuardrailHeld('rate-limited', 1);
+    expect(h.events).toHaveLength(0);
+  });
+
   it('stops ingesting after destroy', async () => {
     const h = makeHarness();
     h.svc.onModuleDestroy();
