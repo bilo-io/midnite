@@ -440,6 +440,12 @@ export class AgentRunnerService implements OnModuleInit {
     }
     this.pool.abort(taskId);
     this.terminal.killManagedRun(taskId);
+    // Release here rather than leaning on the kill's onExit: if the session
+    // handle is already gone (tmux reap / same-tick death) killManagedRun no-ops
+    // and no onExit fires, so relying on it alone would leak the slot. release is
+    // idempotent (no-op once the slot is idle/reassigned), so the later onExit —
+    // if it does fire — safely finds nothing to free.
+    this.pool.release(taskId);
   }
 
   /**

@@ -234,6 +234,10 @@ export class TasksService {
     if (!this.repo.getTask(id)) throw new NotFoundException(`task ${id} not found`);
     this.repo.updateStatus(id, 'wip', now);
     this.repo.setSession(id, id, now);
+    // The backoff gate is spent once the task actually starts (Phase 53 B): clear
+    // it so a stale future nextRetryAt can never linger onto a later todo state
+    // (e.g. a re-open path that doesn't route through requeue()).
+    this.repo.clearNextRetry(id, now);
     this.repo.insertEvent({ id: randomUUID(), taskId: id, at: now, kind: 'agent.started' });
     return this.emit('task.updated', this.getTask(id));
   }
