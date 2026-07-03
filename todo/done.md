@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-03 — feat: escalate-to-human + waiting nudges — Phase 53 Theme D (PR #PLACEHOLDER)
+
+A failed run becomes visible work, not a silent tombstone. Builds on the Theme A taxonomy + Theme B backoff.
+
+- [x] shared: `Task.waitReason` (typed reason a task is parked in `waiting`); `agent.escalateOnFailure` (default on) + `agent.waitingNudge.{afterHours,repeatHours,maxReminders,tickMs}` config; `task.needs-attention` notification kind; `WAIT_REASON_LABEL` / `isNeedsAttention` / `ResolveTaskRequest`+`ResolveTaskAction`.
+- [x] gateway: a non-retryable/retry-exhausted failure now **escalates to `waiting` + a typed `waitReason`** (via `TasksService.escalate`) instead of silently `abandoned` — gated by `escalateOnFailure`; gate-fails park as `gate-failed`. Class→reason mapping beside `classifyFailure`. `tasks.wait_reason` column (migration `0066`), set on the transition in, cleared on every exit from waiting (requeue/retry/start/done/leave).
+- [x] gateway: `WaitingNudgeService` — a dedicated interval (not the scheduler; makes no scheduling decisions, fail-open) that fires escalating Phase 21 `task.needs-attention` reminders for a task stuck past `afterHours`, repeating every `repeatHours` up to `maxReminders`. `afterHours=0` disables (default).
+- [x] gateway/clients: `POST /tasks/:id/resolve` → requeue / re-plan (fresh prompt) / abandon (`resolveNeedsAttention`), plus typed `resolveTask` in web + cli. (Board/CLI surfaces = Theme E.)
+- [x] Tests: shared (wait reasons, needs-attention, resolve schema); gateway service (escalate/resolve/clear), runner (escalate-vs-abandon by flag), nudge service (threshold/repeat/cap/needs-input-skip/disabled), integration (escalate on exhausted). shared 529, gateway 1349, web 743, cli 132 green; `:typecheck` clean.
+
 ## 2026-07-03 — feat: audit completeness + RBAC gaps on the safety surface — Phase 50 Theme D (PR #281)
 
 Every guardrail change and unattended action is now accountable — the accountability half of Phase 50.

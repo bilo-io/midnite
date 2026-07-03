@@ -29,7 +29,7 @@
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
 | [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | 🔄 WIP | 5/26 | `██░░░░░░░░` | 19% | C | D E F |
-| [53 · Task lifecycle resilience](phase-53-task-lifecycle-resilience.md) | 🔄 WIP | 6/22 | `███░░░░░░░` | 27% | D | C E |
+| [53 · Task lifecycle resilience](phase-53-task-lifecycle-resilience.md) | 🔄 WIP | 9/22 | `████░░░░░░` | 41% | — | C E |
 | [52 · In-app diff & PR review](phase-52-in-app-diff-review.md) | 🔄 WIP | 10/25 | `████░░░░░░` | 40% | — | C D |
 | [51 · Session detail page](phase-51-session-detail-page.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [50 · Autonomy guardrails](phase-50-autonomy-guardrails.md) | 🔄 WIP | 11/29 | `████░░░░░░` | 38% | — | C E F |
@@ -120,7 +120,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **A** — Failure taxonomy + `task_failures` records (`classifyFailure`)
 - ✅ **B** — Retry backoff (exponential + jitter) + class-aware retry
 - ◻ **C** — Stuck-state watchdogs (wip-inactivity, aged-todo, waiting-too-long)
-- ◻ **D** — Escalate-to-human (needs-attention via `waiting` + `waitReason`) + nudges
+- ✅ **D** — Escalate-to-human (needs-attention via `waiting` + `waitReason`) + nudges
 - ◻ **E** — Board "needs attention" + failures/health view + CLI doctor
 
 ### [Phase 52 — In-app diff & PR review](phase-52-in-app-diff-review.md)
