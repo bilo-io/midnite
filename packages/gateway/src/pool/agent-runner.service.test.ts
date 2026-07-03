@@ -21,7 +21,10 @@ function reposWith(repo: Partial<Repo> & { name: string }): ReposService {
 
 function config(pool = 1, terminal: Record<string, unknown> = {}): MidniteConfig {
   return parseConfig({
-    agent: { pool, runTimeoutMs: 60000 },
+    // retryBackoffBaseMs: 0 → instant retry (pre-Phase-53 behaviour), so these
+    // specs stay deterministic; backoff is covered in retry-backoff.test.ts and
+    // the dedicated backoff spec below.
+    agent: { pool, runTimeoutMs: 60000, retryBackoffBaseMs: 0 },
     terminal,
     gateway: {},
   });
@@ -39,7 +42,7 @@ function fakeTasks(seed: Task[]) {
   const requeue = vi.fn((id: string, target: 'todo' | 'backlog' = 'todo') => {
     byId.get(id)!.status = target;
   });
-  const retry = vi.fn((id: string) => {
+  const retry = vi.fn((id: string, _nextRetryAt: string | null = null) => {
     const t = byId.get(id)!;
     t.retryCount = (t.retryCount ?? 0) + 1;
     t.status = 'todo';
@@ -187,7 +190,8 @@ describe('AgentRunnerService', () => {
     await runner.start(task('t1', 'x')); // task is now wip
     fireExit(1); // PTY died unexpectedly
 
-    expect(retry).toHaveBeenCalledWith('t1');
+    // Backoff disabled in the test config → nextRetryAt is null (instant retry).
+    expect(retry).toHaveBeenCalledWith('t1', null);
     expect(pool.freeSlotCount()).toBe(1);
   });
 
@@ -222,6 +226,79 @@ describe('AgentRunnerService', () => {
     expect(retry).not.toHaveBeenCalled();
     expect(updateStatus).toHaveBeenCalledWith('t1', 'abandoned');
     expect(pool.freeSlotCount()).toBe(1);
+  });
+
+  it('passes an exponential-backoff nextRetryAt on a retryable crash (Phase 53 B)', async () => {
+    const cfg = parseConfig({
+      agent: { pool: 1, runTimeoutMs: 60000, retryBackoffBaseMs: 10_000, maxBackoffMs: 300_000 },
+      terminal: {},
+      gateway: {},
+    });
+    const { service, retry } = fakeTasks([task('t1', 'x')]);
+    const pool = new AgentPoolService(cfg, service);
+    const { terminal, fireExit } = fakeTerminal();
+    const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, noRepos);
+
+    const before = Date.now();
+    await runner.start(task('t1', 'x'));
+    fireExit(1);
+
+    expect(retry).toHaveBeenCalledTimes(1);
+    const [id, nextRetryAt] = retry.mock.calls[0]!;
+    expect(id).toBe('t1');
+    // Backoff enabled → a future ISO time, at most base+cap out (10s here) ahead.
+    expect(typeof nextRetryAt).toBe('string');
+    const at = Date.parse(nextRetryAt as string);
+    expect(at).toBeGreaterThanOrEqual(before);
+    expect(at).toBeLessThanOrEqual(before + 10_000 + 1000);
+  });
+
+  it('routes a run timeout through retry-with-backoff, not straight to abandon (Phase 53 B)', async () => {
+    vi.useFakeTimers();
+    try {
+      const cfg = config(1); // runTimeoutMs 60000, backoff disabled
+      const { service, retry, updateStatus, recordFailure } = fakeTasks([task('t1', 'x')]);
+      const pool = new AgentPoolService(cfg, service);
+      const { terminal, killManagedRun, fireExit } = fakeTerminal();
+      const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, noRepos);
+
+      await runner.start(task('t1', 'x')); // wip, timer armed
+      await vi.advanceTimersByTimeAsync(60_000); // the run timer fires
+
+      expect(recordFailure).toHaveBeenCalledWith(
+        't1',
+        expect.objectContaining({ class: 'timeout' }),
+      );
+      expect(retry).toHaveBeenCalledWith('t1', null); // retryable → re-queued, not abandoned
+      expect(updateStatus).not.toHaveBeenCalledWith('t1', 'abandoned');
+      expect(killManagedRun).toHaveBeenCalledWith('t1'); // still-live session torn down
+
+      // The kill's later exit sees a non-wip task (already todo) → no double action.
+      fireExit(1);
+      expect(retry).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('abandons on a run timeout once the retry budget is exhausted (Phase 53 B)', async () => {
+    vi.useFakeTimers();
+    try {
+      const cfg = config(1);
+      const exhausted = { ...task('t1', 'x'), retryCount: 3 } as Task;
+      const { service, retry, updateStatus } = fakeTasks([exhausted]);
+      const pool = new AgentPoolService(cfg, service);
+      const { terminal } = fakeTerminal();
+      const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, noRepos);
+
+      await runner.start(exhausted);
+      await vi.advanceTimersByTimeAsync(60_000);
+
+      expect(retry).not.toHaveBeenCalled();
+      expect(updateStatus).toHaveBeenCalledWith('t1', 'abandoned');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('abandons the task and kills the session on cancel', async () => {
@@ -571,7 +648,9 @@ describe('AgentRunnerService', () => {
       runner.reconcileUnhealthy('t1', { class: 'crash', detail: 'lost' });
 
       expect(recordFailure).toHaveBeenCalledWith('t1', expect.objectContaining({ class: 'crash' }));
-      expect(retry).toHaveBeenCalledWith('t1'); // status → todo, so onExit later just releases
+      // backoff disabled in the test config → nextRetryAt null; status → todo, so a
+      // later onExit just releases.
+      expect(retry).toHaveBeenCalledWith('t1', null);
       expect(killManagedRun).toHaveBeenCalledWith('t1');
       expect(pool.slotForTask('t1')).toBeUndefined();
     });

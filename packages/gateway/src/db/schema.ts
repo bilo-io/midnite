@@ -25,6 +25,9 @@ export const tasks = sqliteTable(
     // Auto-fix attempts consumed re-spawning the agent to fix a failing gate.
     // Independent of retryCount — budget exhaustion is attributable per axis.
     fixAttempts: integer('fix_attempts').notNull().default(0),
+    // Earliest time a backed-off retry may be re-picked (Phase 53 B). Null =
+    // eligible now; the scheduler's ready-set skips a todo task until this elapses.
+    nextRetryAt: text('next_retry_at'),
     prompt: text('prompt'),
     repo: text('repo'),
     agentId: text('agent_id'),

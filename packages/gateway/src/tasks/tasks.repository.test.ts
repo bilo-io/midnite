@@ -50,9 +50,9 @@ describe('TasksRepository', () => {
 
   it('incrementRetry bumps the counter by one', () => {
     insert('t1', {});
-    repo.incrementRetry('t1', '2026-06-02T00:00:00.000Z');
+    repo.incrementRetry('t1', '2026-06-02T00:00:00.000Z', null);
     expect(repo.getTask('t1')!.retryCount).toBe(1);
-    repo.incrementRetry('t1', '2026-06-03T00:00:00.000Z');
+    repo.incrementRetry('t1', '2026-06-03T00:00:00.000Z', null);
     expect(repo.getTask('t1')!.retryCount).toBe(2);
   });
 

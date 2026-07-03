@@ -39,6 +39,12 @@ export const AgentConfigSchema = z.object({
   // How many times a task is auto-retried after an agent session exits
   // unexpectedly (crash) before it's abandoned. 0 = never retry crashes.
   maxRetries: z.number().int().nonnegative().default(3),
+  // Exponential backoff between retryable failures (crash/timeout) — Phase 53 B.
+  // The Nth retry waits a random 0..min(base * 2^N, max) ms ("full jitter") before
+  // the scheduler re-picks it, so a crash-looping task can't hammer the pool.
+  // `retryBackoffBaseMs = 0` disables backoff (retries are instant, as before Phase 53).
+  retryBackoffBaseMs: z.number().int().nonnegative().default(10000),
+  maxBackoffMs: z.number().int().positive().default(300000),
   // Max concurrent agents running on the same repo (keyed by `task.repo`).
   // 0 = unlimited. Guards against N agents racing on one working tree: the
   // scheduler skips a task whose repo is already at this cap and picks the next

@@ -130,18 +130,31 @@ describe('Task dependencies (Phase 27 Theme A)', () => {
       const b = await make('dependent');
       service.addDependency(b.id, a.id);
       // A is todo (not done) → B is not ready; A itself has no blocker → ready.
-      expect(repo.listReadyTodoTasks().map((t) => t.id).sort()).toEqual([a.id].sort());
+      expect(repo.listReadyTodoTasks('2999-01-01T00:00:00.000Z').map((t) => t.id).sort()).toEqual([a.id].sort());
       setStatus(a.id, 'done');
-      expect(repo.listReadyTodoTasks().map((t) => t.id)).toContain(b.id);
+      expect(repo.listReadyTodoTasks('2999-01-01T00:00:00.000Z').map((t) => t.id)).toContain(b.id);
     });
 
     it('keeps priority-desc, age-asc ordering among ready tasks', async () => {
       const first = await make('older normal'); // priority 1 (default)
       const second = await service.createFromPrompt({ prompt: 'newer urgent', priority: 3, images: [] });
-      const ready = repo.listReadyTodoTasks().map((t) => t.id);
+      const ready = repo.listReadyTodoTasks('2999-01-01T00:00:00.000Z').map((t) => t.id);
       // Both ready (no blockers); urgent sorts ahead despite being created later.
       expect(ready[0]).toBe(second.id);
       expect(ready).toContain(first.id);
+    });
+
+    it('excludes a todo whose backoff window has not elapsed, includes it once it has (Phase 53 B)', async () => {
+      const t = await make('flaky');
+      const future = '2999-01-01T00:00:00.000Z';
+      // A retry set a future nextRetryAt → not ready while now < nextRetryAt.
+      repo.incrementRetry(t.id, future, future);
+      expect(repo.listReadyTodoTasks('2026-07-02T00:00:00.000Z').map((x) => x.id)).not.toContain(t.id);
+      // At/after the backoff time it's ready again.
+      expect(repo.listReadyTodoTasks(future).map((x) => x.id)).toContain(t.id);
+      // Clearing the backoff (manual requeue) makes it immediately eligible.
+      repo.clearNextRetry(t.id, '2026-07-02T00:00:00.000Z');
+      expect(repo.listReadyTodoTasks('2026-07-02T00:00:00.000Z').map((x) => x.id)).toContain(t.id);
     });
   });
 });
