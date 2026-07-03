@@ -432,8 +432,15 @@ export class AgentRunnerService implements OnModuleInit {
         this.safeRetry(taskId);
       }
     }
+    // Free the slot exactly once. If a live session still exists (the hung case),
+    // killing it fires onExit — which releases the slot (the task is already
+    // non-running, so onExit's guard skips re-processing), exactly as cancel()
+    // relies on. Releasing here too would free a *new* run's slot if the scheduler
+    // re-picked the task in the same tick. When there's no live session (lost /
+    // dead pid) onExit will never fire, so we must release the leaked slot here.
+    const health = this.terminal.agentRunHealth(taskId);
     this.terminal.killManagedRun(taskId);
-    this.pool.release(taskId);
+    if (health === null || !health.live) this.pool.release(taskId);
   }
 
   /**

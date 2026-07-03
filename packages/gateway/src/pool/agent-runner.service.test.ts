@@ -95,6 +95,9 @@ function fakeTerminal(opts?: { durable?: boolean; live?: string[]; reattachOk?: 
     isDurable: () => opts?.durable ?? false,
     liveSessionIds: () => opts?.live ?? [],
     readOutput: () => '',
+    // No live handle in these fakes → reconcileUnhealthy takes the explicit-release
+    // path (onExit won't fire), so the slot frees synchronously.
+    agentRunHealth: () => null,
   } as unknown as TerminalService;
   return {
     terminal,
