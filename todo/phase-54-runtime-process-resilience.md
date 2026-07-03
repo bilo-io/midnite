@@ -93,19 +93,24 @@ Tell orchestrators + monitors the truth about "ready".
 
 ---
 
-## Theme C — Live watchdog: slot-leak + session health (auto-heal) — **L**
+## Theme C — Live watchdog: slot-leak + session health (auto-heal) — **L** — ✅ DONE (PR #280, 2026-07-03)
 
 Notice — and fix — a pool that's quietly wedging. The core of the #1 half.
 
-- [ ] A **watchdog pass** (folded into the scheduler tick or a dedicated interval — **never a second scheduler**),
-      fail-open, config-driven, that reconciles the in-memory pool against reality each cycle.
-- [ ] **Detections + auto-heal:** an **orphaned slot** (busy, but its task is missing / already terminal) → reclaim
-      + release; a **dead-but-unreleased session** (slot busy, spawner reports not-live) → run the `onExit`-equivalent
-      reconcile; a **silent/hung pty** → treat as dead. Auto-healed reclaims **classify** the cause via the
-      **Phase 53 failure taxonomy** (`inactivity`/`crash`) and requeue-or-escalate rather than silently dropping.
-- [ ] **pty liveness probe:** add a pid-alive check + a **no-output heartbeat** (last-activity window) to the pty
-      spawner path so a hung session is caught **before** the 30-min timeout — matching tmux's `pane_dead` poll.
-      Emit slot/health metrics.
+- [x] A **watchdog pass** — `PoolWatchdogService.sweep()` **folded into the scheduler tick** (never a second scheduler),
+      fail-open (per-slot try/catch + a guarded call site), config-driven (`agent.watchdog.enabled`), reconciling the
+      in-memory slots against reality each cycle. Runs first in the tick (before the pause check) so a fully-busy
+      wedged pool is healed even under a global pause.
+- [x] **Detections + auto-heal:** an **orphaned slot** (task missing / terminal / no longer running) → reclaim +
+      release (`reclaimOrphanedSlot`); a **lost/dead session** (no live process → `onExit` will never fire) → reconcile
+      as a crash; a **silent/hung pty** → reconcile as inactivity. Reconcile **mirrors stop/cancel** (state-first, then
+      kill; frees the slot exactly once) and **classifies** via the **Phase 53 taxonomy** (`crash`/`inactivity`),
+      retry-or-escalating through the runner.
+- [x] **pty liveness probe:** `isSessionAlive(sessionId)` added to the **Spawner interface** — pty tracks its spawned
+      handles + a pid-alive check, tmux checks the pane isn't dead. `TerminalService.agentRunHealth()` adds a
+      **no-output heartbeat** (`lastDataAt`); the inactivity probe (`agent.watchdog.inactivityMs`, opt-in, pty-only)
+      catches a hung session **before** the 30-min timeout. Reclaim ON by default; inactivity probe opt-in so a
+      quiet-but-live agent isn't killed.
 
 ---
 
