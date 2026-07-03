@@ -60,6 +60,30 @@ export function scrubSecretEnv(env: Record<string, string>): Record<string, stri
   return out;
 }
 
+// The names of the gateway's OWN secret env vars (Phase 50 C). Config-driven so
+// a non-default env-var name (`gateway.auth.tokenEnv` etc) is still covered.
+// Deliberately narrow: it strips only midnite's own secrets, NOT the agent's
+// provider auth (ANTHROPIC_API_KEY etc) — the agent still needs to run.
+export function gatewaySecretEnvNames(config: MidniteConfig): string[] {
+  return [
+    'MIDNITE_SECRET_KEY',
+    config.gateway.auth.tokenEnv,
+    config.gateway.auth.jwt.secretEnv,
+    config.workflows.encryptionKeyEnv,
+  ];
+}
+
+/** Remove the gateway's own secrets from a spawned agent's env (Phase 50 C,
+ *  opt-in via `guardrails.scrubSpawnEnv`). Mutates + returns `env`. The MIDNITE_*
+ *  hook wiring is injected AFTER this, so it's unaffected. */
+export function scrubGatewaySecrets(
+  env: Record<string, string>,
+  config: MidniteConfig,
+): Record<string, string> {
+  for (const name of gatewaySecretEnvNames(config)) delete env[name];
+  return env;
+}
+
 /** Single-quote a path for safe interpolation into a shell command line. */
 function shellQuote(path: string): string {
   return `'${path.replace(/'/g, `'\\''`)}'`;
@@ -331,6 +355,10 @@ export class TerminalService implements OnModuleDestroy {
     const command = AGENT_CLI_COMMAND[this.agents.getAgentCli()];
     const args: string[] = [];
     const env = this.fullEnv();
+    // Phase 50 C (opt-in): strip the gateway's own secrets before the agent runs,
+    // so a compromised agent can't read them. Done BEFORE applyHookWiring, which
+    // re-injects the per-session MIDNITE_* hook vars the agent legitimately needs.
+    if (this.config.guardrails.scrubSpawnEnv) scrubGatewaySecrets(env, this.config);
     if (spec.userId) env['MIDNITE_USER_ID'] = spec.userId;
     const settingsFile = this.applyHookWiring(sessionId, command, args, env, { lifecycle: true });
     args.push(spec.prompt);

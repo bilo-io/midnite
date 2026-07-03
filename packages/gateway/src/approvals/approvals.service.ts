@@ -11,15 +11,27 @@ import {
   type AutonomyMode,
   type CreateApprovalRule,
   type GuardrailSettings,
+  type MidniteConfig,
   type PauseScope,
   type UpdateApprovalRule,
 } from '@midnite/shared';
 import type { ApprovalRuleRow } from '../db/schema';
 import { AuditService } from '../audit/audit.service';
+import { MIDNITE_CONFIG } from '../config.token';
 import { TaskEventBus } from '../tasks/task-event-bus';
+import { evaluateBlastRadius } from './lib/blast-radius';
 import { evaluateRules, type EvaluationVerdict } from './lib/rule-evaluator';
 import { ApprovalLogRepository } from './approval-log.repository';
 import { ApprovalsRepository } from './approvals.repository';
+
+/** The outcome of {@link ApprovalsService.evaluate}: the verdict plus, when a
+ *  rule/blast-radius guard produced it, the matched id + a human reason (logged
+ *  + shown to the agent as the denial reason). */
+export interface EvaluationDecision {
+  verdict: EvaluationVerdict;
+  ruleId?: string;
+  reason?: string;
+}
 
 const DEFAULT_GUARDRAILS: GuardrailSettings = {
   pausedGlobal: false,
@@ -41,6 +53,9 @@ export class ApprovalsService implements OnModuleInit {
     @Optional() @Inject(ApprovalLogRepository) private readonly logRepo?: ApprovalLogRepository,
     @Optional() @Inject(TaskEventBus) private readonly bus?: TaskEventBus,
     @Optional() @Inject(AuditService) private readonly audit?: AuditService,
+    // Phase 50 C — the blast-radius floor reads its config here. Optional so unit
+    // specs that construct the service by hand still compile; absent ⇒ no floor.
+    @Optional() @Inject(MIDNITE_CONFIG) private readonly config?: MidniteConfig,
   ) {}
 
   onModuleInit(): void {
@@ -186,15 +201,27 @@ export class ApprovalsService implements OnModuleInit {
 
   /** Evaluate durable rules against a tool call.
    *  `manual` → always escalate (no behaviour change for existing users).
-   *  `guarded` → auto-allow SAFE_TOOLS, then consult rules.
-   *  `autonomous` → rules decide; fail-safe is escalate on no match. */
-  evaluate(toolName: string, toolInput: unknown): EvaluationVerdict {
-    if (this.mode === 'manual') return 'escalate';
+   *  `guarded` → blast-radius floor, then auto-allow SAFE_TOOLS, then rules.
+   *  `autonomous` → blast-radius floor, then rules decide (fail-safe: escalate).
+   *
+   *  Phase 50 C: the built-in blast-radius floor is consulted FIRST in the
+   *  unattended modes, so a hard-denied action (force-push, protected-branch
+   *  push, `rm -rf`, secret-file access) overrides the mode — `autonomous` can
+   *  relax escalation but never an outright deny. `manual` is untouched: a human
+   *  is already reviewing every call, so nothing is pre-empted there. */
+  evaluate(toolName: string, toolInput: unknown): EvaluationDecision {
+    if (this.mode === 'manual') return { verdict: 'escalate' };
+
+    const blast = this.config
+      ? evaluateBlastRadius(toolName, toolInput, this.config.guardrails.blastRadius)
+      : null;
+    if (blast) return { verdict: 'auto-deny', ruleId: blast.ruleId, reason: blast.reason };
+
     if (this.mode === 'guarded' && (SAFE_TOOLS as readonly string[]).includes(toolName)) {
-      return 'auto-allow';
+      return { verdict: 'auto-allow' };
     }
     const rules = this.repo.listEnabledForTool(toolName);
-    return evaluateRules(rules, toolName, toolInput);
+    return { verdict: evaluateRules(rules, toolName, toolInput) };
   }
 
   /**
