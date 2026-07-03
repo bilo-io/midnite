@@ -52,7 +52,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     title: 'Security',
     items: [
-      { href: '/settings/approvals', label: 'Approvals', Icon: ShieldCheck },
+      { href: '/settings/safety', label: 'Safety', Icon: ShieldCheck },
       { href: '/settings/credentials', label: 'Credentials', Icon: KeyRound },
       { href: '/settings/screen-lock', label: 'Screen lock', Icon: Lock },
       { href: '/settings/security', label: 'Security', Icon: ShieldAlert },
