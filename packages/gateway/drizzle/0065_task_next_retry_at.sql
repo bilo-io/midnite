@@ -1,0 +1,1 @@
+ALTER TABLE `tasks` ADD `next_retry_at` text;
