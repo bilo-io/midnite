@@ -26,6 +26,7 @@ const entry = (over: Partial<ApprovalLogEntry>): ApprovalLogEntry => ({
   toolName: 'Bash',
   summary: null,
   resolution: 'auto-deny',
+  ruleId: null,
   decidedBy: 'policy',
   createdAt: '2026-07-03T10:00:00.000Z',
   ...over,
@@ -94,7 +95,7 @@ describe('recentDenials', () => {
       entry({ id: '1', resolution: 'auto-deny' }),
       entry({ id: '2', resolution: 'auto-allow' }),
       entry({ id: '3', resolution: 'deny' }),
-      entry({ id: '4', resolution: 'escalate' }),
+      entry({ id: '4', resolution: 'ask' }),
     ];
     const out = recentDenials(entries, 10);
     expect(out.map((e) => e.id)).toEqual(['1', '3']);
