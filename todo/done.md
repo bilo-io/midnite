@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-03 — feat: data-portability archive contract + schema-version stamp — Phase 49 Theme A (PR #280)
+
+The foundation for full-store backup/restore: a versioned, self-describing archive contract + a runtime schema version to gate cross-instance import.
+
+- [x] shared `portability.ts`: `ArchiveManifestSchema` (schemaVersion/appVersion/createdAt/domains/secretsMode), `domainPayloadSchema<T>()` envelope factory, `ExportOptionsSchema`, `ImportPreviewSchema` (counts + conflicts + compat + importable), `ImportOptionsSchema` (replace/merge, dryRun, passphrase), + pure `compareSchemaVersion` (ok/older-archive/newer-archive) & `isImportable`.
+- [x] gateway `schema_meta` singleton table (migration `0066`), stamped on boot in `DbFactory` (after `migrate`) from the drizzle journal's highest idx via `db/schema-version.ts` (`readJournalVersion`/`stampSchemaVersion`/`getSchemaVersion`, fail-soft `-1`). Internal helper only — Theme B/C consume it.
+- [x] Container decided: zip w/ `manifest.json` + `domains/*.json` (documented in the contract header). Tests: shared 7 (verdict + defaults + manifest/envelope validation), gateway 6 (journal read, boot stamp, idempotent, fail-soft). `:typecheck` green; gateway 1333/1334 (1 pre-existing tmux-contract flake).
+
 ## 2026-07-02 — feat: retry backoff + class-aware retry — Phase 53 Theme B (PR #277)
 
 Retries stop firing instantly and blindly: they now back off exponentially and only re-run failures worth re-running. Builds on the Theme A taxonomy.
