@@ -27,6 +27,7 @@ import {
   BulkCreateTaskRequestSchema,
   CreateFromBreakdownRequestSchema,
   ReportFormatSchema,
+  ResolveTaskRequestSchema,
   SetTaskPriorityRequestSchema,
   SetTaskTagsRequestSchema,
   StatusSchema,
@@ -130,6 +131,17 @@ export class TasksController {
       throw new BadRequestException(`invalid status`);
     }
     return this.service.updateStatus(id, parsed.data);
+  }
+
+  /** Resolve a needs-attention task (Phase 53 D): requeue / re-plan / abandon. */
+  @Post(':id/resolve')
+  @RequiresRole('member')
+  resolve(@Param('id') id: string, @Body() body: unknown): Task {
+    const parsed = ResolveTaskRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.message);
+    }
+    return this.service.resolveNeedsAttention(id, parsed.data.action, parsed.data.prompt);
   }
 
   @Patch(':id/project')

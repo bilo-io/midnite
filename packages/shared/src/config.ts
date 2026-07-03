@@ -55,12 +55,48 @@ export const AgentConfigSchema = z.object({
   // is already at this cap; the task retries on the next tick. Tasks without
   // a createdBy (legacy static-token path) are never capped.
   perUserMaxSlots: z.number().int().nonnegative().default(0),
+  // Live pool watchdog (Phase 54 C): a fail-open pass on the scheduler tick that
+  // reconciles the in-memory slots against reality — reclaiming orphaned slots
+  // (task gone/terminal) and dead sessions (spawner reports not-alive), so a
+  // leaked slot can't silently wedge the pool until a restart.
+  watchdog: z
+    .object({
+      // On by default: the reclaim path only ever heals already-broken state
+      // (orphaned/dead slots), so it's safe. Set false to disable entirely.
+      enabled: z.boolean().default(true),
+      // No-output heartbeat: if a `wip` agent session emits nothing for this many
+      // ms it's treated as hung and reconciled (classified `inactivity`) before the
+      // 30-min run timeout. 0 = OFF (default) — a healthy agent can legitimately be
+      // silent for minutes, so this stricter probe is opt-in. pty backend only
+      // (tmux has its own pane-dead poll).
+      inactivityMs: z.number().int().nonnegative().default(0),
+    })
+    .default({}),
   // Max agent spawns permitted in any rolling 1-hour window (Phase 50 Theme B).
   // 0 = unlimited (default). Enforced globally: when the window is full the
   // scheduler blocks further spawns ("held: rate-limited") until the oldest
   // spawn ages out. In-memory sliding window — resets on restart (a throttle,
   // not a durable ledger).
   maxSpawnsPerHour: z.number().int().nonnegative().default(0),
+  // Phase 53 D — when true (default), a non-retryable or retry-exhausted failure
+  // escalates the task to a needs-attention `waiting` state (with a typed
+  // `waitReason`) instead of silently `abandoned`; a human then requeues/re-plans/
+  // abandons it. Set false to restore the pre-Phase-53 straight-to-abandoned path.
+  escalateOnFailure: z.boolean().default(true),
+  // Phase 53 D — escalating reminders for a task stuck in a needs-attention
+  // `waiting` state. `afterHours = 0` disables nudges entirely (no reminders).
+  waitingNudge: z
+    .object({
+      // Hours in `waiting` before the first reminder fires. 0 = nudges off.
+      afterHours: z.number().nonnegative().default(0),
+      // Hours between subsequent reminders once the first has fired.
+      repeatHours: z.number().positive().default(24),
+      // Max reminders per task before it stops nudging (still visible on the board).
+      maxReminders: z.number().int().positive().default(3),
+      // How often the nudge loop wakes to re-evaluate waiting durations.
+      tickMs: z.number().int().positive().default(300000),
+    })
+    .default({}),
 });
 
 export const TerminalConfigSchema = z.object({

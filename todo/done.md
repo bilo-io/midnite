@@ -4,13 +4,34 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-03 — feat: data-portability archive contract + schema-version stamp — Phase 49 Theme A (PR #280)
+## 2026-07-03 — feat: data-portability archive contract + schema-version stamp — Phase 49 Theme A (PR #282)
 
 The foundation for full-store backup/restore: a versioned, self-describing archive contract + a runtime schema version to gate cross-instance import.
 
 - [x] shared `portability.ts`: `ArchiveManifestSchema` (schemaVersion/appVersion/createdAt/domains/secretsMode), `domainPayloadSchema<T>()` envelope factory, `ExportOptionsSchema`, `ImportPreviewSchema` (counts + conflicts + compat + importable), `ImportOptionsSchema` (replace/merge, dryRun, passphrase), + pure `compareSchemaVersion` (ok/older-archive/newer-archive) & `isImportable`.
 - [x] gateway `schema_meta` singleton table (migration `0066`), stamped on boot in `DbFactory` (after `migrate`) from the drizzle journal's highest idx via `db/schema-version.ts` (`readJournalVersion`/`stampSchemaVersion`/`getSchemaVersion`, fail-soft `-1`). Internal helper only — Theme B/C consume it.
 - [x] Container decided: zip w/ `manifest.json` + `domains/*.json` (documented in the contract header). Tests: shared 7 (verdict + defaults + manifest/envelope validation), gateway 6 (journal read, boot stamp, idempotent, fail-soft). `:typecheck` green; gateway 1333/1334 (1 pre-existing tmux-contract flake).
+
+---
+
+## 2026-07-03 — feat: escalate-to-human + waiting nudges — Phase 53 Theme D (PR #283)
+
+A failed run becomes visible work, not a silent tombstone. Builds on the Theme A taxonomy + Theme B backoff.
+
+- [x] shared: `Task.waitReason` (typed reason a task is parked in `waiting`); `agent.escalateOnFailure` (default on) + `agent.waitingNudge.{afterHours,repeatHours,maxReminders,tickMs}` config; `task.needs-attention` notification kind; `WAIT_REASON_LABEL` / `isNeedsAttention` / `ResolveTaskRequest`+`ResolveTaskAction`.
+- [x] gateway: a non-retryable/retry-exhausted failure now **escalates to `waiting` + a typed `waitReason`** (via `TasksService.escalate`) instead of silently `abandoned` — gated by `escalateOnFailure`; gate-fails park as `gate-failed`. Class→reason mapping beside `classifyFailure`. `tasks.wait_reason` column (migration `0066`), set on the transition in, cleared on every exit from waiting (requeue/retry/start/done/leave).
+- [x] gateway: `WaitingNudgeService` — a dedicated interval (not the scheduler; makes no scheduling decisions, fail-open) that fires escalating Phase 21 `task.needs-attention` reminders for a task stuck past `afterHours`, repeating every `repeatHours` up to `maxReminders`. `afterHours=0` disables (default).
+- [x] gateway/clients: `POST /tasks/:id/resolve` → requeue / re-plan (fresh prompt) / abandon (`resolveNeedsAttention`), plus typed `resolveTask` in web + cli. (Board/CLI surfaces = Theme E.)
+- [x] Tests: shared (wait reasons, needs-attention, resolve schema); gateway service (escalate/resolve/clear), runner (escalate-vs-abandon by flag), nudge service (threshold/repeat/cap/needs-input-skip/disabled), integration (escalate on exhausted). shared 529, gateway 1349, web 743, cli 132 green; `:typecheck` clean.
+## 2026-07-03 — feat: live pool watchdog — slot-leak + session-health auto-heal — Phase 54 Theme C (PR #280)
+
+The run-half of runtime resilience: a leaked/orphaned agent slot no longer wedges the pool until a restart, and a hung pty is caught before the 30-min timeout.
+
+- [x] `PoolWatchdogService.sweep()` rides the scheduler tick (never a second scheduler), fail-open, config-driven (`agent.watchdog.enabled`) — runs first in the tick so a fully-busy wedged pool heals even under a global pause.
+- [x] Detections + auto-heal: **orphaned** slot (task gone/terminal/not-running) → `reclaimOrphanedSlot`; **lost/dead** session (no live process → onExit can't fire) → reconcile as crash; **hung** pty (silent past the heartbeat) → reconcile as inactivity. Classified via the Phase 53 taxonomy (`lost`→crash, `inactivity`).
+- [x] Reconcile **mirrors stop/cancel** (state-first, then kill) and frees the slot exactly once — explicit release only when no live session exists; a live (hung) kill lets its onExit release, so a same-tick re-pick can't lose its new slot.
+- [x] `isSessionAlive(sessionId)` added to the **Spawner interface**: pty tracks its spawned handles + pid-alive (`isPidAlive`), tmux checks the pane isn't dead. `TerminalService.agentRunHealth()` adds a no-output heartbeat (`lastDataAt`). Reclaim ON by default; the stricter inactivity probe (`agent.watchdog.inactivityMs`, pty-only) is opt-in so quiet-but-live agents aren't killed.
+- [x] Tests: `pool-watchdog.service` (orphan/dead/hung/healthy/disabled/fail-open), `classify-failure` (lost+inactivity), runner `reconcileUnhealthy`/`reclaimOrphanedSlot`, `isPidAlive`. shared 517, gateway 1324 green.
 
 ---
 

@@ -10,7 +10,9 @@ import {
   NOTIFICATION_LIST_DEFAULT_LIMIT,
   notifyForTask,
   TASK_HELD_REASON_LABEL,
+  WAIT_REASON_LABEL,
   type MarkReadRequest,
+  type WaitReason,
   type MidniteConfig,
   type Notification,
   type NotificationKind,
@@ -41,6 +43,9 @@ const PLURAL_TITLE: Record<NotificationKind, string> = {
   // `agent.held` is emitted directly (not via the coalescing task-event path), so
   // this plural label is unused — present only to keep the map exhaustive.
   'agent.held': 'spawns held',
+  // `task.needs-attention` is emitted directly by the waiting-nudge service
+  // (Phase 53 D), not via the coalescing task-event path — plural label unused.
+  'task.needs-attention': 'tasks need attention',
 };
 
 type Pending = { decision: NotifyDecision; task: Task; count: number; timer: NodeJS.Timeout };
@@ -112,6 +117,41 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
       await this.dispatcher.dispatch(this.repo.hydrate(row));
     } catch (err) {
       this.logger.warn(`failed to dispatch agent.held notification: ${String(err)}`);
+    }
+  }
+
+  /**
+   * Phase 53 D — an escalating reminder that a task has sat in a needs-attention
+   * `waiting` state past the nudge threshold. Emitted directly by the waiting-nudge
+   * loop (not the coalescing task-event path), which owns the per-task cadence +
+   * reminder cap, so this fires exactly when told. Best-effort; respects
+   * `notifications.enabled`. `reminderIndex` is 0-based (0 = first reminder).
+   */
+  async notifyNeedsAttention(
+    task: Task,
+    waitReason: WaitReason,
+    reminderIndex: number,
+  ): Promise<void> {
+    if (!this.config.notifications.enabled) return;
+    const label = WAIT_REASON_LABEL[waitReason];
+    const nth = reminderIndex > 0 ? ` (reminder ${reminderIndex + 1})` : '';
+    try {
+      const row = this.repo.insert({
+        id: randomUUID(),
+        kind: 'task.needs-attention',
+        severity: 'warn',
+        title: `Needs attention — ${label}`,
+        body: `"${task.title}" is waiting for you: ${label}.${nth}`,
+        entityType: 'task',
+        entityId: task.id,
+        route: '/tasks',
+        readAt: null,
+        createdAt: new Date().toISOString(),
+        teamId: task.teamId ?? null,
+      });
+      await this.dispatcher.dispatch(this.repo.hydrate(row));
+    } catch (err) {
+      this.logger.warn(`failed to dispatch task.needs-attention notification: ${String(err)}`);
     }
   }
 

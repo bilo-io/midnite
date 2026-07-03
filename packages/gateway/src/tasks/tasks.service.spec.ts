@@ -75,6 +75,7 @@ class InMemoryRepo extends TasksRepository {
       retryCount: row.retryCount ?? 0,
       fixAttempts: row.fixAttempts ?? 0,
       nextRetryAt: row.nextRetryAt ?? null,
+      waitReason: row.waitReason ?? null,
       prompt: row.prompt ?? null,
       repo: row.repo ?? null,
       agentId: row.agentId ?? null,
@@ -110,6 +111,26 @@ class InMemoryRepo extends TasksRepository {
     if (!task) return undefined;
     task.retryCount += 1;
     task.nextRetryAt = nextRetryAt;
+    task.updatedAt = updatedAt;
+    return task;
+  }
+
+  override setWaitReason(
+    id: string,
+    waitReason: TaskRow['waitReason'],
+    updatedAt: string,
+  ): TaskRow | undefined {
+    const task = this.tasks.find((t) => t.id === id);
+    if (!task) return undefined;
+    task.waitReason = waitReason;
+    task.updatedAt = updatedAt;
+    return task;
+  }
+
+  override setPrompt(id: string, prompt: string, updatedAt: string): TaskRow | undefined {
+    const task = this.tasks.find((t) => t.id === id);
+    if (!task) return undefined;
+    task.prompt = prompt;
     task.updatedAt = updatedAt;
     return task;
   }
@@ -221,6 +242,7 @@ class InMemoryRepo extends TasksRepository {
       sessionId: row.sessionId ?? undefined,
       projectId: row.projectId ?? undefined,
       prUrl: row.prUrl ?? undefined,
+      waitReason: (row.waitReason as Task['waitReason']) ?? undefined,
       tags: [],
       dependsOn: [],
       archivedAt: row.archivedAt ?? undefined,
@@ -688,5 +710,77 @@ describe('TasksService.createBulk', () => {
     const service = new TasksService(repo, stubFailures, new StubClassifier(), stubPlanner, new TaskEventBus(), stubRepos, stubConfig);
 
     await expect(service.createBulk({ raw: '# only a comment\n\n' })).rejects.toThrow(/no task lines/);
+  });
+
+  // --- Phase 53 D: escalate-to-human + resolution ---
+  describe('needs-attention escalation & resolution', () => {
+    const build = () => {
+      const repo = new InMemoryRepo();
+      const service = new TasksService(repo, stubFailures, new StubClassifier(), stubPlanner, new TaskEventBus(), stubRepos, stubConfig);
+      return { repo, service };
+    };
+    const make = async (service: TasksService) =>
+      service.createFromPrompt({ prompt: 'do the thing', images: [] });
+
+    it('escalate parks the task in waiting with a typed reason (not abandoned)', async () => {
+      const { service } = build();
+      const t = await make(service);
+      const out = service.escalate(t.id, 'retries-exhausted');
+      expect(out.status).toBe('waiting');
+      expect(out.waitReason).toBe('retries-exhausted');
+    });
+
+    it('markWaiting defaults to needs-input; a needs-input wait is not needs-attention', async () => {
+      const { service } = build();
+      const t = await make(service);
+      const out = service.markWaiting(t.id);
+      expect(out.status).toBe('waiting');
+      expect(out.waitReason).toBe('needs-input');
+    });
+
+    it('resolve→requeue returns the task to todo and clears the wait reason', async () => {
+      const { service } = build();
+      const t = await make(service);
+      service.escalate(t.id, 'agent-failed');
+      const out = service.resolveNeedsAttention(t.id, 'requeue');
+      expect(out.status).toBe('todo');
+      expect(out.waitReason ?? null).toBeNull();
+    });
+
+    it('resolve→replan overwrites the prompt and requeues', async () => {
+      const { service } = build();
+      const t = await make(service);
+      service.escalate(t.id, 'gate-failed');
+      const out = service.resolveNeedsAttention(t.id, 'replan', 'try a different approach');
+      expect(out.status).toBe('todo');
+      expect(out.prompt).toBe('try a different approach');
+      expect(out.waitReason ?? null).toBeNull();
+    });
+
+    it('resolve→replan without a prompt is rejected', async () => {
+      const { service } = build();
+      const t = await make(service);
+      service.escalate(t.id, 'gate-failed');
+      expect(() => service.resolveNeedsAttention(t.id, 'replan')).toThrow(/replan requires a prompt/);
+    });
+
+    it('resolve→abandon is the explicit terminal (archived)', async () => {
+      const { repo, service } = build();
+      const t = await make(service);
+      service.escalate(t.id, 'timed-out');
+      const out = service.resolveNeedsAttention(t.id, 'abandon');
+      expect(out.status).toBe('abandoned');
+      expect(repo.getTask(t.id)!.archivedAt).toBeTruthy();
+      expect(out.waitReason ?? null).toBeNull();
+    });
+
+    it('starting a task clears any stale wait reason', async () => {
+      const { service } = build();
+      const t = await make(service);
+      service.escalate(t.id, 'agent-failed');
+      const out = service.startTask(t.id);
+      expect(out.status).toBe('wip');
+      expect(out.waitReason ?? null).toBeNull();
+    });
   });
 });

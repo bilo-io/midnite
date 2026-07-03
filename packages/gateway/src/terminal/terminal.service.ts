@@ -134,6 +134,10 @@ interface PtyHandle {
   /** Pinned PTYs (managed one-shot runs) survive subscriber detach — they live
    *  until the process exits or the owner kills them. */
   pinned: boolean;
+  /** When the handle was registered (spawn/reattach) — the activity baseline. */
+  startedAt: number;
+  /** Last time the process emitted output — the no-output heartbeat (Phase 54 C). */
+  lastDataAt: number;
 }
 
 const TOKEN_TTL_MS = 60_000;
@@ -261,6 +265,8 @@ export class TerminalService implements OnModuleDestroy {
       disposables: [],
       settingsFile: null,
       pinned: true,
+      startedAt: Date.now(),
+      lastDataAt: Date.now(),
     };
     this.handles.set(attachId, handle);
 
@@ -390,6 +396,25 @@ export class TerminalService implements OnModuleDestroy {
   }
 
   /**
+   * Health of a managed agent run for the Phase 54 C watchdog. `null` when no
+   * handle is registered (the session is gone — a leaked slot). Otherwise:
+   *  - `live`: the spawner says the process is alive. An `undefined` answer from
+   *    the backend (can't tell) is treated as **alive** — fail-open, never a
+   *    false kill.
+   *  - `idleMs`: ms since the session last emitted output (the no-output
+   *    heartbeat), measured from spawn if it has emitted nothing yet.
+   */
+  agentRunHealth(sessionId: string): { live: boolean; idleMs: number } | null {
+    const handle = this.handles.get(sessionId);
+    if (!handle) return null;
+    const alive = this.spawner.isSessionAlive?.(sessionId);
+    return {
+      live: alive !== false, // undefined (unknown) ⇒ assume alive
+      idleMs: Date.now() - handle.lastDataAt,
+    };
+  }
+
+  /**
    * Register a *pinned* handle (agent session) with the standard onData/onExit
    * streaming wiring. Shared by spawn and reattach so both behave identically
    * once the stream is live.
@@ -412,6 +437,8 @@ export class TerminalService implements OnModuleDestroy {
       disposables: [],
       settingsFile,
       pinned: true,
+      startedAt: Date.now(),
+      lastDataAt: Date.now(),
     };
     this.handles.set(sessionId, handle);
 
@@ -655,6 +682,8 @@ export class TerminalService implements OnModuleDestroy {
       disposables: [],
       settingsFile: spec.settingsFile ?? null,
       pinned: false,
+      startedAt: Date.now(),
+      lastDataAt: Date.now(),
     };
     this.handles.set(sessionId, handle);
 
@@ -890,6 +919,7 @@ export class TerminalService implements OnModuleDestroy {
   }
 
   private pushRing(handle: PtyHandle, frame: OutputFrame): void {
+    handle.lastDataAt = Date.now(); // no-output heartbeat baseline (Phase 54 C)
     handle.ring.push(frame);
     handle.ringBytes = trimRingByBytes(
       handle.ring,

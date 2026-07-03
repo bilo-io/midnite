@@ -28,11 +28,11 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | 🔄 WIP | 5/26 | `██░░░░░░░░` | 19% | C | D E F |
-| [53 · Task lifecycle resilience](phase-53-task-lifecycle-resilience.md) | 🔄 WIP | 6/22 | `███░░░░░░░` | 27% | D | C E |
+| [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | 🔄 WIP | 8/26 | `███░░░░░░░` | 31% | — | D E F |
+| [53 · Task lifecycle resilience](phase-53-task-lifecycle-resilience.md) | 🔄 WIP | 9/22 | `████░░░░░░` | 41% | — | C E |
 | [52 · In-app diff & PR review](phase-52-in-app-diff-review.md) | 🔄 WIP | 10/25 | `████░░░░░░` | 40% | — | C D |
 | [51 · Session detail page](phase-51-session-detail-page.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
-| [50 · Autonomy guardrails](phase-50-autonomy-guardrails.md) | 🔄 WIP | 11/29 | `████░░░░░░` | 38% | — | C E F |
+| [50 · Autonomy guardrails](phase-50-autonomy-guardrails.md) | 🔄 WIP | 11/29 | `████░░░░░░` | 38% | F | C E |
 | [49 · Data portability](phase-49-data-portability.md) | 🔄 WIP | 3/27 | `█░░░░░░░░░` | 11% | — | B C D E F |
 | [48 · Slides](phase-48-slides.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
@@ -110,7 +110,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 *(Hardens the gateway process itself: boot → run → shutdown. Watchdog rides the single tick; one shared `pause`/`resume` (reused by Phase 50's kill switch); preserves boot recovery + the pty/tmux Spawner split.)*
 - ✅ **A** — Boot preflight + config validation + fail-fast (`strictBoot`) (PR #275)
 - ✅ **B** — Readiness/liveness health endpoints (`/health/ready` vs `/live`) (PR #275)
-- ◻ **C** — Live watchdog: slot-leak + session-health auto-heal + pty liveness probe
+- ✅ **C** — Live watchdog: slot-leak + session-health auto-heal + pty liveness probe (PR #280)
 - ◻ **D** — Scheduler resilience: readiness gate + backoff + first-class pause/resume
 - ◻ **E** — Graceful shutdown: drain in-flight agents + WAL checkpoint/close
 - ◻ **F** — Runtime health in web + CLI (`midnite doctor`)
@@ -120,7 +120,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **A** — Failure taxonomy + `task_failures` records (`classifyFailure`)
 - ✅ **B** — Retry backoff (exponential + jitter) + class-aware retry
 - ◻ **C** — Stuck-state watchdogs (wip-inactivity, aged-todo, waiting-too-long)
-- ◻ **D** — Escalate-to-human (needs-attention via `waiting` + `waitReason`) + nudges
+- ✅ **D** — Escalate-to-human (needs-attention via `waiting` + `waitReason`) + nudges
 - ◻ **E** — Board "needs attention" + failures/health view + CLI doctor
 
 ### [Phase 52 — In-app diff & PR review](phase-52-in-app-diff-review.md)

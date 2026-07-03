@@ -1,4 +1,4 @@
-import type { FailureClass } from '@midnite/shared';
+import type { FailureClass, WaitReason } from '@midnite/shared';
 
 /**
  * Phase 53 Theme A — the single place failures get a class. The runner calls this
@@ -9,7 +9,11 @@ import type { FailureClass } from '@midnite/shared';
 export type FailureSite =
   | { site: 'exit'; exitCode: number }
   | { site: 'timeout'; timeoutMs: number }
-  | { site: 'gate' };
+  | { site: 'gate' }
+  // Phase 54 C — the watchdog reclaimed an in-flight run: the session was lost
+  // (no live process, so onExit never fired) or went silent past the heartbeat.
+  | { site: 'lost' }
+  | { site: 'inactivity'; idleMs: number };
 
 export type ClassifiedFailure = {
   class: FailureClass;
@@ -35,5 +39,37 @@ export function classifyFailure(input: FailureSite): ClassifiedFailure {
         class: 'gate-failed',
         detail: 'quality gate failed with no auto-fix remaining',
       };
+    case 'lost':
+      return {
+        class: 'crash',
+        detail: 'agent session was lost (no live process) — reclaimed by the watchdog',
+      };
+    case 'inactivity':
+      return {
+        class: 'inactivity',
+        detail: `agent went silent for ${Math.round(input.idleMs / 60_000)}m — reclaimed by the watchdog`,
+      };
+  }
+}
+
+/**
+ * Phase 53 D — map a terminal failure to the `waitReason` it escalates under.
+ * `retryable` here means the class *could* retry but its budget is spent (so the
+ * reason is the generic `retries-exhausted`); a non-retryable class carries a
+ * class-specific reason instead. Kept beside {@link classifyFailure} so the class
+ * → reason mapping lives in one place.
+ */
+export function waitReasonForFailure(cls: FailureClass, retryable: boolean): WaitReason {
+  if (retryable) return 'retries-exhausted';
+  switch (cls) {
+    case 'gate-failed':
+      return 'gate-failed';
+    case 'no-pr':
+      return 'no-pr';
+    case 'timeout':
+    case 'inactivity':
+      return 'timed-out';
+    default:
+      return 'agent-failed'; // crash, tool-denied, unknown
   }
 }

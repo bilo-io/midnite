@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "98f83290-6207-4e06-a84e-99d0bc0d50ee",
-  "prevId": "8a6c16d3-6ec5-46eb-bd0c-4b37602556eb",
+  "id": "9d319d94-b10a-4c0c-9664-1ff2b5681cbc",
+  "prevId": "98f83290-6207-4e06-a84e-99d0bc0d50ee",
   "tables": {
     "agent_run_stats": {
       "name": "agent_run_stats",
@@ -2775,6 +2775,37 @@
         "created_at": {
           "name": "created_at",
           "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "schema_meta": {
+      "name": "schema_meta",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "schema_version": {
+          "name": "schema_version",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false

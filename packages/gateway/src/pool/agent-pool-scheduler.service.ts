@@ -17,6 +17,7 @@ import { TasksService } from '../tasks/tasks.service';
 import { UsageService } from '../usage/usage.service';
 import { AgentPoolService } from './agent-pool.service';
 import { AgentRunnerService } from './agent-runner.service';
+import { PoolWatchdogService } from './pool-watchdog.service';
 
 /** Rolling window over which {@link AgentPoolScheduler} counts spawns for the
  *  per-hour rate cap. In-memory (resets on restart) — a throttle, not a ledger. */
@@ -57,6 +58,9 @@ export class AgentPoolScheduler implements OnModuleInit, OnModuleDestroy {
     @Optional() @Inject(UsageService) private readonly usage?: UsageService,
     @Optional() @Inject(HeldTasksRegistry) private readonly held?: HeldTasksRegistry,
     @Optional() @Inject(NotificationsService) private readonly notifications?: NotificationsService,
+    // Last + optional so existing positional-construction specs are unaffected;
+    // Nest provides it in production (PoolModule). Phase 54 C.
+    @Optional() @Inject(PoolWatchdogService) private readonly watchdog?: PoolWatchdogService,
   ) {}
 
   onModuleInit(): void {
@@ -131,6 +135,16 @@ export class AgentPoolScheduler implements OnModuleInit, OnModuleDestroy {
     // (Phase 50 B). Reconciled at the end so a cleared hold broadcasts too.
     const held = new Map<string, TaskHeldReason>();
     try {
+      // Phase 54 C: reconcile leaked slots first, so a wedged (fully-busy but
+      // orphaned) pool is healed even when nothing new can be scheduled — and
+      // even under a global pause. Fail-open: never let it abort the tick.
+      try {
+        this.watchdog?.sweep();
+      } catch (err) {
+        this.logger.warn(
+          `watchdog sweep failed: ${err instanceof Error ? err.message : 'unknown'}`,
+        );
+      }
       // Phase 50 A: a global pause halts all scheduling; scoped pauses filter the
       // ready-set below. Fail-safe — paused ⇒ spawn nothing. (A paused system
       // isn't "held by a cap" — leave the held set empty so it reconciles clear.)

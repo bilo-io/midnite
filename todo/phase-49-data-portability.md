@@ -70,7 +70,7 @@
 
 ---
 
-## Theme A — Archive contract + schema-version stamp — **S-M** — ✅ DONE (PR #280, 2026-07-03)
+## Theme A — Archive contract + schema-version stamp — **S-M** — ✅ DONE (PR #282, 2026-07-03)
 
 Define the portable archive once, and give import something to validate against.
 

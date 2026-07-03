@@ -23,8 +23,10 @@ function config(pool = 1, terminal: Record<string, unknown> = {}): MidniteConfig
   return parseConfig({
     // retryBackoffBaseMs: 0 → instant retry (pre-Phase-53 behaviour), so these
     // specs stay deterministic; backoff is covered in retry-backoff.test.ts and
-    // the dedicated backoff spec below.
-    agent: { pool, runTimeoutMs: 60000, retryBackoffBaseMs: 0 },
+    // the dedicated backoff spec below. escalateOnFailure: false keeps the
+    // exhausted-failure path on the classic straight-to-abandoned behaviour these
+    // specs assert; the escalate path (default on) has its own spec below.
+    agent: { pool, runTimeoutMs: 60000, retryBackoffBaseMs: 0, escalateOnFailure: false },
     terminal,
     gateway: {},
   });
@@ -50,6 +52,11 @@ function fakeTasks(seed: Task[]) {
   const updateStatus = vi.fn((id: string, status: string) => {
     byId.get(id)!.status = status as Task['status'];
   });
+  const escalate = vi.fn((id: string, waitReason: string) => {
+    const t = byId.get(id)!;
+    t.status = 'waiting';
+    t.waitReason = waitReason as Task['waitReason'];
+  });
   const getTask = vi.fn((id: string) => {
     const t = byId.get(id);
     if (!t) throw new Error('not found');
@@ -62,10 +69,11 @@ function fakeTasks(seed: Task[]) {
     requeue,
     retry,
     updateStatus,
+    escalate,
     getTask,
     recordFailure,
   } as unknown as TasksService;
-  return { service, startTask, requeue, retry, updateStatus, recordFailure, byId };
+  return { service, startTask, requeue, retry, updateStatus, escalate, recordFailure, byId };
 }
 
 function fakeTerminal(opts?: { durable?: boolean; live?: string[]; reattachOk?: boolean }) {
@@ -98,6 +106,9 @@ function fakeTerminal(opts?: { durable?: boolean; live?: string[]; reattachOk?: 
     isDurable: () => opts?.durable ?? false,
     liveSessionIds: () => opts?.live ?? [],
     readOutput: () => '',
+    // No live handle in these fakes → reconcileUnhealthy takes the explicit-release
+    // path (onExit won't fire), so the slot frees synchronously.
+    agentRunHealth: () => null,
   } as unknown as TerminalService;
   return {
     terminal,
@@ -225,6 +236,28 @@ describe('AgentRunnerService', () => {
     expect(pool.freeSlotCount()).toBe(1);
   });
 
+  it('escalates to needs-attention (not abandoned) on exhausted retries when escalateOnFailure is on (Phase 53 D)', async () => {
+    const cfg = parseConfig({
+      agent: { pool: 1, runTimeoutMs: 60000, retryBackoffBaseMs: 0, escalateOnFailure: true },
+      terminal: {},
+      gateway: {},
+    });
+    const exhausted = { ...task('t1', 'x'), retryCount: 3 } as Task;
+    const { service, retry, updateStatus, escalate } = fakeTasks([exhausted]);
+    const pool = new AgentPoolService(cfg, service);
+    const { terminal, fireExit } = fakeTerminal();
+    const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, noRepos);
+
+    await runner.start(exhausted);
+    fireExit(1);
+
+    // A spent budget escalates rather than silently abandoning.
+    expect(retry).not.toHaveBeenCalled();
+    expect(updateStatus).not.toHaveBeenCalledWith('t1', 'abandoned');
+    expect(escalate).toHaveBeenCalledWith('t1', 'retries-exhausted');
+    expect(pool.freeSlotCount()).toBe(1);
+  });
+
   it('passes an exponential-backoff nextRetryAt on a retryable crash (Phase 53 B)', async () => {
     const cfg = parseConfig({
       agent: { pool: 1, runTimeoutMs: 60000, retryBackoffBaseMs: 10_000, maxBackoffMs: 300_000 },
@@ -293,6 +326,38 @@ describe('AgentRunnerService', () => {
 
       expect(retry).not.toHaveBeenCalled();
       expect(updateStatus).toHaveBeenCalledWith('t1', 'abandoned');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not double-handle when the timeout-escalate kill re-fires onExit (Phase 53 D)', async () => {
+    vi.useFakeTimers();
+    try {
+      const cfg = parseConfig({
+        agent: { pool: 1, runTimeoutMs: 60000, retryBackoffBaseMs: 0, escalateOnFailure: true },
+        terminal: {},
+        gateway: {},
+      });
+      const exhausted = { ...task('t1', 'x'), retryCount: 3 } as Task;
+      const { service, escalate, recordFailure } = fakeTasks([exhausted]);
+      const pool = new AgentPoolService(cfg, service);
+      const { terminal, fireExit } = fakeTerminal();
+      const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, noRepos);
+
+      await runner.start(exhausted);
+      await vi.advanceTimersByTimeAsync(60_000); // timeout, retries spent → escalate, status→waiting
+
+      // timeout is a retryable class, so an exhausted budget escalates as
+      // 'retries-exhausted' (the generic exhaustion reason), not 'timed-out'.
+      expect(escalate).toHaveBeenCalledTimes(1);
+      expect(escalate).toHaveBeenCalledWith('t1', 'retries-exhausted');
+
+      // Simulate the killManagedRun's deferred exit: the task is now waiting with a
+      // needs-attention reason, so onExit must NOT re-record or re-escalate.
+      fireExit(1);
+      expect(escalate).toHaveBeenCalledTimes(1);
+      expect(recordFailure).toHaveBeenCalledTimes(1); // the timeout only — no duplicate crash
     } finally {
       vi.useRealTimers();
     }
@@ -522,7 +587,7 @@ describe('AgentRunnerService', () => {
 
       await runner.completeWithChecks('t1', 'https://github.com/acme/repo/pull/1');
 
-      expect(markWaiting).toHaveBeenCalledWith('t1');
+      expect(markWaiting).toHaveBeenCalledWith('t1', 'gate-failed');
       expect(markDone).not.toHaveBeenCalled();
       expect(recordCheckEvent).toHaveBeenCalledWith('t1', 'checks.failed');
       // Phase 53 A — a gate failure is recorded as a typed gate-failed failure.
@@ -575,7 +640,7 @@ describe('AgentRunnerService', () => {
 
       await runner.completeWithChecks('t1', 'https://github.com/acme/repo/pull/1');
 
-      expect(markWaiting).toHaveBeenCalledWith('t1');
+      expect(markWaiting).toHaveBeenCalledWith('t1', 'gate-failed');
       expect(markDone).not.toHaveBeenCalled();
       expect(spawnAgentSession).not.toHaveBeenCalled(); // auto-fix is off, no re-spawn
       expect(recordCheckEvent).not.toHaveBeenCalledWith('t1', 'checks.fix.started');
@@ -611,7 +676,7 @@ describe('AgentRunnerService', () => {
       await runner.completeWithChecks('t1', 'https://github.com/acme/repo/pull/1');
 
       expect(recordCheckEvent).toHaveBeenCalledWith('t1', 'checks.fix.exhausted');
-      expect(markWaiting).toHaveBeenCalledWith('t1');
+      expect(markWaiting).toHaveBeenCalledWith('t1', 'gate-failed');
       expect(markDone).not.toHaveBeenCalled();
       expect(spawnAgentSession).not.toHaveBeenCalled(); // no re-spawn
       expect(pool.slotForTask('t1')).toBeUndefined();
@@ -628,6 +693,75 @@ describe('AgentRunnerService', () => {
       expect(markDone).toHaveBeenCalledWith('t1', 'https://github.com/acme/repo/pull/1');
       expect(markWaiting).not.toHaveBeenCalled();
       expect(recordCheckEvent).toHaveBeenCalledWith('t1', 'checks.passed');
+      expect(pool.slotForTask('t1')).toBeUndefined();
+    });
+  });
+
+  describe('watchdog reconcile (Phase 54 C)', () => {
+    it('reconcileUnhealthy retries a wip run below the retry cap, then frees the slot', () => {
+      const cfg = config(); // maxRetries default 3
+      const { service, recordFailure, retry, byId } = fakeTasks([task('t1')]);
+      byId.get('t1')!.status = 'wip';
+      const pool = new AgentPoolService(cfg, service);
+      pool.acquire('t1');
+      const { terminal, killManagedRun } = fakeTerminal();
+      const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, noRepos);
+
+      runner.reconcileUnhealthy('t1', { class: 'crash', detail: 'lost' });
+
+      expect(recordFailure).toHaveBeenCalledWith('t1', expect.objectContaining({ class: 'crash' }));
+      // backoff disabled in the test config → nextRetryAt null; status → todo, so a
+      // later onExit just releases.
+      expect(retry).toHaveBeenCalledWith('t1', null);
+      expect(killManagedRun).toHaveBeenCalledWith('t1');
+      expect(pool.slotForTask('t1')).toBeUndefined();
+    });
+
+    it('reconcileUnhealthy abandons once the retry cap is hit', () => {
+      const cfg = config(); // maxRetries 3
+      const { service, updateStatus, byId } = fakeTasks([task('t1')]);
+      const t = byId.get('t1')!;
+      t.status = 'wip';
+      t.retryCount = 3;
+      const pool = new AgentPoolService(cfg, service);
+      pool.acquire('t1');
+      const { terminal } = fakeTerminal();
+      const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, noRepos);
+
+      runner.reconcileUnhealthy('t1', { class: 'inactivity', detail: 'silent' });
+
+      expect(updateStatus).toHaveBeenCalledWith('t1', 'abandoned');
+      expect(pool.slotForTask('t1')).toBeUndefined();
+    });
+
+    it('reconcileUnhealthy on an already-terminal task only frees the slot (no failure recorded)', () => {
+      const cfg = config();
+      const { service, recordFailure, byId } = fakeTasks([task('t1')]);
+      byId.get('t1')!.status = 'done';
+      const pool = new AgentPoolService(cfg, service);
+      pool.acquire('t1');
+      const { terminal, killManagedRun } = fakeTerminal();
+      const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, noRepos);
+
+      runner.reconcileUnhealthy('t1', { class: 'crash', detail: 'lost' });
+
+      expect(recordFailure).not.toHaveBeenCalled();
+      expect(killManagedRun).toHaveBeenCalledWith('t1');
+      expect(pool.slotForTask('t1')).toBeUndefined();
+    });
+
+    it('reclaimOrphanedSlot frees the slot + reaps the session without recording a failure', () => {
+      const cfg = config();
+      const { service, recordFailure } = fakeTasks([task('t1')]);
+      const pool = new AgentPoolService(cfg, service);
+      pool.acquire('t1');
+      const { terminal, killManagedRun } = fakeTerminal();
+      const runner = new AgentRunnerService(cfg, pool, service, terminal, noUrlContext, noRepos);
+
+      runner.reclaimOrphanedSlot('t1');
+
+      expect(recordFailure).not.toHaveBeenCalled();
+      expect(killManagedRun).toHaveBeenCalledWith('t1');
       expect(pool.slotForTask('t1')).toBeUndefined();
     });
   });
