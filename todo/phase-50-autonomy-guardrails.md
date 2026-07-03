@@ -165,14 +165,19 @@ One place to see and steer the guardrails.
 
 ---
 
-## Theme F — CLI safety commands — **S**
+## Theme F — CLI safety commands — **S** — ✅ DONE (PR #282, 2026-07-03)
 
 Hit the brakes from a shell — for when the UI is the thing that's down.
 
-- [ ] `midnite guardrails status` (mode, pause state, caps, recent denials — respects global `--json`),
-      `midnite guardrails pause [--scope …] / resume`, and `midnite kill` (emergency stop; requires `--yes`).
-- [ ] Extend the `GatewayClient` ([`cli/src/client.ts`](../packages/cli/src/client.ts)) with the guardrail
-      endpoints; thin commander commands per the house pattern.
+- [x] `midnite guardrails status` (mode, pause state, configured caps, last 10 act-path denials — respects global
+      `--json`), `midnite guardrails pause|resume [--repo <name> | --team <id>]` (default global), and
+      `midnite kill [--repo|--team] [--yes]` (emergency stop; interactive confirm at a TTY, **refuses without
+      `--yes` in `--json`/non-TTY**).
+- [x] Extended the `GatewayClient` ([`cli/src/client.ts`](../packages/cli/src/client.ts)) with
+      `getGuardrails` / `setPause` / `emergencyStop` / `getApprovalLog`; thin commander commands per the house
+      pattern (pure render/parse helpers in `cli/src/guardrails.ts`). **gateway:** `GET /guardrails` now returns a
+      read-only `caps` block (config-sourced mode + hard/soft spend caps + spawns-per-hour) so `status` reads the
+      whole picture in one call — the web Safety panel (Theme E) reuses it. `GuardrailCaps` zod contract in `shared`.
 
 ---
 
