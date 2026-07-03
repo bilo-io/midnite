@@ -968,14 +968,16 @@ export class TasksService {
     return this.failures.listByTask(taskId);
   }
 
-  /** Recent failures across tasks (Phase 53 E), newest-first, team-scoped —
-   *  backs `GET /tasks/failures`, the health view, and `midnite tasks failures`. */
+  /** Recent failures across tasks (Phase 53 E), newest-first — backs
+   *  `GET /tasks/failures`, the health view, and `midnite failures`. Scoped to the
+   *  tasks the caller can see (failures inherit task visibility): with a `scope`,
+   *  the failure list is restricted to that scope's visible task ids; without one
+   *  (local/single-user), all failures are returned. */
   listRecentFailures(query: TaskFailuresQuery, scope?: TeamScope): TaskFailure[] {
-    return this.failures.listRecent({
-      teamId: scope?.teamId ?? undefined,
-      class: query.class,
-      limit: query.limit,
-    });
+    const taskIds = scope
+      ? this.repo.listTasks(undefined, undefined, scope).map((t) => t.id)
+      : undefined;
+    return this.failures.listRecent({ taskIds, class: query.class, limit: query.limit });
   }
 
   // ── Manual check trigger (Phase 30 D) ────────────────────────────────────

@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, desc, eq, type SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, type SQL } from 'drizzle-orm';
 import type { FailureClass, TaskFailure } from '@midnite/shared';
 import { DB_TOKEN, type MidniteDb } from '../db/db.module';
 import { taskFailures, type TaskFailureInsert, type TaskFailureRow } from '../db/schema';
@@ -29,14 +29,20 @@ export class TaskFailuresRepository {
 
   /**
    * Recent failures across tasks, newest-first (Phase 53 E) — for the health view
-   * + `midnite tasks failures`. Optionally narrowed to one `class` and scoped to a
-   * `teamId` (undefined ⇒ no team filter: the local/single-user path). `teamId` is
-   * the tenant boundary here; `task_failures` has no `createdBy`, so per-user
-   * isolation within a team isn't enforced for this read-only ops view.
+   * + `midnite failures`. Optionally narrowed to one `class`.
+   *
+   * Visibility is scoped by `taskIds` — **the set of tasks the caller can see**
+   * (the service passes `TasksService.listTasks(scope)` ids), so failure
+   * visibility exactly matches task visibility. `task_failures` has no `createdBy`
+   * of its own, so scoping by team id alone would both leak (an authed user with
+   * no team) and under-report (a user's own personal-task failures) — the task-id
+   * set avoids both. `taskIds` undefined ⇒ no scope (the local/single-user path);
+   * an **empty** array ⇒ no visible tasks ⇒ no rows.
    */
-  listRecent(opts: { teamId?: string; class?: FailureClass; limit: number }): TaskFailure[] {
+  listRecent(opts: { taskIds?: string[]; class?: FailureClass; limit: number }): TaskFailure[] {
+    if (opts.taskIds && opts.taskIds.length === 0) return [];
     const conds: SQL[] = [];
-    if (opts.teamId !== undefined) conds.push(eq(taskFailures.teamId, opts.teamId));
+    if (opts.taskIds) conds.push(inArray(taskFailures.taskId, opts.taskIds));
     if (opts.class) conds.push(eq(taskFailures.class, opts.class));
     return this.db
       .select()
