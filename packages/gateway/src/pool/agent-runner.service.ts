@@ -14,7 +14,7 @@ import { TasksService } from '../tasks/tasks.service';
 import { TerminalService } from '../terminal/terminal.service';
 import { AgentPoolService } from './agent-pool.service';
 import { appendRepoConventions } from './lib/build-agent-prompt';
-import { classifyFailure } from './lib/classify-failure';
+import { classifyFailure, type ClassifiedFailure } from './lib/classify-failure';
 
 /**
  * Drives a single task through an autonomous agent run: claim a slot, move the
@@ -385,6 +385,67 @@ export class AgentRunnerService implements OnModuleInit {
         this.safeRetry(taskId);
       }
     }
+    this.pool.release(taskId);
+  }
+
+  /**
+   * Phase 54 C watchdog: an in-flight run was detected unhealthy (session lost /
+   * pid dead / silent past the heartbeat) but the normal {@link onExit} path
+   * hasn't fired. Reconcile it like a crash — record the classified failure, then
+   * retry-or-abandon — and only THEN kill any lingering session + free the slot.
+   * Setting the task's next state *before* the kill means the kill's onExit sees
+   * a non-running task and merely releases (no double-record), exactly as
+   * {@link stop}/{@link cancel} rely on.
+   */
+  reconcileUnhealthy(taskId: string, classified: ClassifiedFailure): void {
+    this.clearRunTimeout(taskId);
+    let task: Task | undefined;
+    try {
+      task = this.tasks.getTask(taskId);
+    } catch {
+      task = undefined;
+    }
+    if (task && (task.status === 'wip' || task.status === 'waiting')) {
+      this.tasks.recordFailure(taskId, {
+        ...classified,
+        lastOutput: this.snapshotOutput(taskId),
+      });
+      const max = this.config.agent.maxRetries;
+      const retries = task.retryCount ?? 0;
+      if (retries >= max) {
+        this.logger.warn(
+          `watchdog: task ${taskId} unhealthy (${classified.class}) — exhausted ${retries}/${max} retries, abandoning`,
+        );
+        this.endMetricRun(taskId, 'abandoned');
+        try {
+          this.tasks.updateStatus(taskId, 'abandoned');
+        } catch (err) {
+          this.logger.warn(
+            `watchdog: failed to abandon ${taskId}: ${err instanceof Error ? err.message : 'unknown'}`,
+          );
+        }
+      } else {
+        this.logger.warn(
+          `watchdog: task ${taskId} unhealthy (${classified.class}) — retry ${retries + 1}/${max}`,
+        );
+        this.endMetricRun(taskId, 'failed');
+        this.safeRetry(taskId);
+      }
+    }
+    this.terminal.killManagedRun(taskId);
+    this.pool.release(taskId);
+  }
+
+  /**
+   * Phase 54 C watchdog: a slot is busy but its task is gone or already terminal
+   * (`done`/`abandoned`) — the run resolved (or the task was deleted) yet the slot
+   * leaked. Clear the timeout, reap any lingering session, free the slot. No
+   * failure is recorded — nothing failed; this only reclaims the leaked slot.
+   */
+  reclaimOrphanedSlot(taskId: string): void {
+    this.clearRunTimeout(taskId);
+    this.endMetricRun(taskId, 'cancelled');
+    this.terminal.killManagedRun(taskId);
     this.pool.release(taskId);
   }
 

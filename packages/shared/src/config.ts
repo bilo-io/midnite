@@ -49,6 +49,23 @@ export const AgentConfigSchema = z.object({
   // is already at this cap; the task retries on the next tick. Tasks without
   // a createdBy (legacy static-token path) are never capped.
   perUserMaxSlots: z.number().int().nonnegative().default(0),
+  // Live pool watchdog (Phase 54 C): a fail-open pass on the scheduler tick that
+  // reconciles the in-memory slots against reality — reclaiming orphaned slots
+  // (task gone/terminal) and dead sessions (spawner reports not-alive), so a
+  // leaked slot can't silently wedge the pool until a restart.
+  watchdog: z
+    .object({
+      // On by default: the reclaim path only ever heals already-broken state
+      // (orphaned/dead slots), so it's safe. Set false to disable entirely.
+      enabled: z.boolean().default(true),
+      // No-output heartbeat: if a `wip` agent session emits nothing for this many
+      // ms it's treated as hung and reconciled (classified `inactivity`) before the
+      // 30-min run timeout. 0 = OFF (default) — a healthy agent can legitimately be
+      // silent for minutes, so this stricter probe is opt-in. pty backend only
+      // (tmux has its own pane-dead poll).
+      inactivityMs: z.number().int().nonnegative().default(0),
+    })
+    .default({}),
 });
 
 export const TerminalConfigSchema = z.object({

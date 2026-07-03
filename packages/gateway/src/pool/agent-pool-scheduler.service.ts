@@ -14,6 +14,7 @@ import { TaskEventBus } from '../tasks/task-event-bus';
 import { TasksService } from '../tasks/tasks.service';
 import { AgentPoolService } from './agent-pool.service';
 import { AgentRunnerService } from './agent-runner.service';
+import { PoolWatchdogService } from './pool-watchdog.service';
 
 /**
  * A single gateway-owned tick loop (never parallel) that assigns ready `todo`
@@ -35,6 +36,9 @@ export class AgentPoolScheduler implements OnModuleInit, OnModuleDestroy {
     @Optional() @Inject(MetricsService) private readonly metrics?: MetricsService,
     @Optional() @Inject(ApprovalsService) private readonly approvals?: ApprovalsService,
     @Optional() @Inject(TaskEventBus) private readonly bus?: TaskEventBus,
+    // Last + optional so existing positional-construction specs are unaffected;
+    // Nest provides it in production (PoolModule). Phase 54 C.
+    @Optional() @Inject(PoolWatchdogService) private readonly watchdog?: PoolWatchdogService,
   ) {}
 
   onModuleInit(): void {
@@ -106,6 +110,16 @@ export class AgentPoolScheduler implements OnModuleInit, OnModuleDestroy {
     this.running = true;
     const tickStart = Date.now();
     try {
+      // Phase 54 C: reconcile leaked slots first, so a wedged (fully-busy but
+      // orphaned) pool is healed even when nothing new can be scheduled — and
+      // even under a global pause. Fail-open: never let it abort the tick.
+      try {
+        this.watchdog?.sweep();
+      } catch (err) {
+        this.logger.warn(
+          `watchdog sweep failed: ${err instanceof Error ? err.message : 'unknown'}`,
+        );
+      }
       // Phase 50 A: a global pause halts all scheduling; scoped pauses filter the
       // ready-set below. Fail-safe — paused ⇒ spawn nothing.
       if (this.approvals?.isGloballyPaused()) return;
