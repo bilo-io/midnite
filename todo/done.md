@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-03 — feat: needs-attention board chip + task-health view + CLI — Phase 53 Theme E (PR #286)
+
+Make lifecycle resilience visible: surface the failures + escalations Themes A/B/D record.
+
+- [x] shared: `TaskFailuresQuery`/`Response`, `DoctorTaskRef`, `TasksDoctorReport` contracts + `agent.doctor` display thresholds (wip-silent 15m / aged-todo 24h / waiting-too-long 24h / recent-failures 100).
+- [x] gateway: `GET /tasks/:id/failures` (history) + `GET /tasks/failures?class&limit` (recent, team-scoped) on TasksController; `GET /tasks/doctor` → `TasksDoctorService` deriving needs-attention / waiting-too-long / stuck-wip (live-session heartbeat) / aged-todo buckets + recent-failure counts, read-only, 0-threshold disables a bucket. In its own `TaskHealthModule` (imports Tasks + Terminal) so `tasks` doesn't depend on `terminal` (cycle).
+- [x] web: TaskCard failure-reason chip (waitReason + retry count, only for failure-escalated waiting); Ops-page `TaskHealthPanel` (the "what's wedged?" buckets + failure counts, rows link to tasks); task-detail structured failure-history section (class/exit/last-output), fetched lazily; `fetchTaskFailures`/`fetchRecentFailures`/`fetchTasksDoctor` client methods.
+- [x] cli: `midnite failures [--class]`, `midnite triage` (what's-wedged summary), `midnite resolve <id> <requeue|replan|abandon>` (all `--json`-aware); typed client methods. `triage` avoids colliding with Phase 54 F's runtime `midnite doctor`.
+- [x] Tests: shared (query/report schemas), gateway (`TasksDoctorService` buckets/thresholds/no-terminal), web RTL (card chip + health panel). shared 530, gateway 1386 (1 pre-existing flaky tmux), web 749, cli 144; `:typecheck` clean. Board-filter control + live screenshots deferred (chip + Ops panel cover visibility; RTL covers render).
+
 ## 2026-07-03 — feat: guardrails safety commands + kill switch (CLI) — Phase 50 Theme F (PR #284)
 
 Hit the brakes from a shell — the operability half of Phase 50 for when the UI is the thing that's down.
