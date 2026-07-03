@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | 🔄 WIP | 11/26 | `████░░░░░░` | 42% | E F | — |
+| [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | 🔄 WIP | 14/26 | `█████░░░░░` | 54% | F | — |
 | [53 · Task lifecycle resilience](phase-53-task-lifecycle-resilience.md) | 🔄 WIP | 12/22 | `██████░░░░` | 55% | — | C |
 | [52 · In-app diff & PR review](phase-52-in-app-diff-review.md) | 🔄 WIP | 10/25 | `████░░░░░░` | 40% | C | D |
 | [51 · Session detail page](phase-51-session-detail-page.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
@@ -112,7 +112,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **B** — Readiness/liveness health endpoints (`/health/ready` vs `/live`) (PR #275)
 - ✅ **C** — Live watchdog: slot-leak + session-health auto-heal + pty liveness probe (PR #280)
 - ✅ **D** — Scheduler resilience: readiness gate + backoff + first-class pause/resume
-- ◻ **E** — Graceful shutdown: drain in-flight agents + WAL checkpoint/close
+- ✅ **E** — Graceful shutdown: drain in-flight agents + WAL checkpoint/close
 - ◻ **F** — Runtime health in web + CLI (`midnite doctor`)
 
 ### [Phase 53 — Task lifecycle resilience](phase-53-task-lifecycle-resilience.md)
