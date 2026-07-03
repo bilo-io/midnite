@@ -1,5 +1,11 @@
-import { Check, PauseCircle, ShieldAlert } from 'lucide-react';
-import { isAnsweredQuestion, TASK_HELD_REASON_LABEL, type Task } from '@midnite/shared';
+import { AlertTriangle, Check, PauseCircle, ShieldAlert } from 'lucide-react';
+import {
+  isAnsweredQuestion,
+  isNeedsAttention,
+  TASK_HELD_REASON_LABEL,
+  WAIT_REASON_LABEL,
+  type Task,
+} from '@midnite/shared';
 import { BlockedBadge } from '@/components/blocked-badge';
 import { PrStatusChip } from '@/components/pr-status-chip';
 import { ProjectTag } from '@/components/project-tag';
@@ -115,6 +121,18 @@ export function TaskCard({
           >
             <PauseCircle aria-hidden className="h-3 w-3" />
             Held: {TASK_HELD_REASON_LABEL[task.heldReason]}
+          </span>
+        ) : null}
+        {isNeedsAttention(task.waitReason) ? (
+          // Phase 53 E — a failure escalated this task to a needs-attention
+          // `waiting` state (retries exhausted / non-retryable / gate-failed).
+          <span
+            title="Needs attention — a failure parked this task; requeue, re-plan, or abandon it"
+            className="inline-flex items-center gap-1 rounded bg-destructive/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-destructive"
+          >
+            <AlertTriangle aria-hidden className="h-3 w-3" />
+            {WAIT_REASON_LABEL[task.waitReason!]}
+            {task.retryCount > 0 ? ` · ${task.retryCount}×` : ''}
           </span>
         ) : null}
         {task.checkRunStatus === 'failing' ? (

@@ -131,7 +131,9 @@ import {
   PrDiffSchema,
   GuardrailsResponseSchema,
   TaskCountsSchema,
+  TaskFailuresResponseSchema,
   TaskSchema,
+  TasksDoctorReportSchema,
   TerminalTokenResponseSchema,
   WebhookInfoResponseSchema,
   WorkflowResponseSchema,
@@ -181,11 +183,14 @@ import {
   type SessionDetail,
   type SessionTranscript,
   type AgentPingResponse,
+  type FailureClass,
   type ResolveTaskAction,
   type Status,
   type SubAgent,
   type Task,
   type TaskCounts,
+  type TaskFailure,
+  type TasksDoctorReport,
   type TerminalTokenResponse,
   type UpdatePrimaryAgentRequest,
   type UpdateMemoryRequest,
@@ -580,6 +585,38 @@ export async function resolveTask(
     { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ action, prompt }) },
     TaskSchema,
   );
+}
+
+/** A task's failure history, oldest-first (Phase 53 E). */
+export async function fetchTaskFailures(id: string): Promise<TaskFailure[]> {
+  const { failures } = await fetchJson(
+    `/tasks/${encodeURIComponent(id)}/failures`,
+    undefined,
+    TaskFailuresResponseSchema,
+  );
+  return failures;
+}
+
+/** Recent failures across tasks, newest-first (Phase 53 E). */
+export async function fetchRecentFailures(opts?: {
+  class?: FailureClass;
+  limit?: number;
+}): Promise<TaskFailure[]> {
+  const qs = new URLSearchParams();
+  if (opts?.class) qs.set('class', opts.class);
+  if (opts?.limit != null) qs.set('limit', String(opts.limit));
+  const q = qs.toString();
+  const { failures } = await fetchJson(
+    `/tasks/failures${q ? `?${q}` : ''}`,
+    undefined,
+    TaskFailuresResponseSchema,
+  );
+  return failures;
+}
+
+/** The task-health "what's wedged?" report (Phase 53 E). */
+export async function fetchTasksDoctor(): Promise<TasksDoctorReport> {
+  return fetchJson('/tasks/doctor', undefined, TasksDoctorReportSchema);
 }
 
 export async function updateTaskProject(
