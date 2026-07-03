@@ -149,7 +149,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 
 ### [Phase 49 — Data portability](phase-49-data-portability.md)
 - ✅ **A** — Archive contract + schema-version stamp
-- ✅ **B** — Bulk export service (PR #289; secrets + users/teams deferred)
+- ✅ **B** — Bulk export service (PR #291; secrets + users/teams deferred)
 - ◻ **C** — Atomic import service
 - ◻ **D** — CLI export/import commands
 - ◻ **E** — Web Settings → Data page

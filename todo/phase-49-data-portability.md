@@ -92,7 +92,7 @@ Define the portable archive once, and give import something to validate against.
 
 ---
 
-## Theme B — Bulk export service — **M-L** — ✅ DONE (PR #289, 2026-07-03)
+## Theme B — Bulk export service — **M-L** — ✅ DONE (PR #291, 2026-07-03)
 
 Get the whole store out, as a portable archive.
 

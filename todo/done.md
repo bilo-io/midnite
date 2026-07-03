@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-03 — feat: bulk export service — portable archive — Phase 49 Theme B (PR #PLACEHOLDER)
+## 2026-07-03 — feat: bulk export service — portable archive — Phase 49 Theme B (PR #291)
 
 Get the whole store out as a versioned, portable zip. Builds on the 49 A contract.
 
