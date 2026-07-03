@@ -4,8 +4,12 @@ import {
   FAILURE_CLASS_LABEL,
   FAILURE_RETRYABLE,
   FailureClassSchema,
+  ResolveTaskRequestSchema,
   TaskFailureSchema,
+  WAIT_REASONS,
+  WAIT_REASON_LABEL,
   WaitReasonSchema,
+  isNeedsAttention,
   isRetryableFailure,
 } from './task-failure.js';
 
@@ -63,5 +67,39 @@ describe('failure taxonomy', () => {
     expect(FailureClassSchema.safeParse('kaboom').success).toBe(false);
     expect(WaitReasonSchema.safeParse('agent-failed').success).toBe(true);
     expect(WaitReasonSchema.safeParse('whatever').success).toBe(false);
+  });
+});
+
+describe('wait reasons & needs-attention (Phase 53 D)', () => {
+  it('labels every wait reason', () => {
+    for (const r of WAIT_REASONS) expect(WAIT_REASON_LABEL[r]).toBeTruthy();
+  });
+
+  it('treats every failure reason as needs-attention except needs-input', () => {
+    expect(isNeedsAttention('needs-input')).toBe(false);
+    expect(isNeedsAttention(null)).toBe(false);
+    expect(isNeedsAttention(undefined)).toBe(false);
+    expect(isNeedsAttention('agent-failed')).toBe(true);
+    expect(isNeedsAttention('timed-out')).toBe(true);
+    expect(isNeedsAttention('gate-failed')).toBe(true);
+    expect(isNeedsAttention('retries-exhausted')).toBe(true);
+    expect(isNeedsAttention('no-pr')).toBe(true);
+  });
+});
+
+describe('ResolveTaskRequestSchema (Phase 53 D)', () => {
+  it('accepts requeue/abandon without a prompt', () => {
+    expect(ResolveTaskRequestSchema.safeParse({ action: 'requeue' }).success).toBe(true);
+    expect(ResolveTaskRequestSchema.safeParse({ action: 'abandon' }).success).toBe(true);
+  });
+
+  it('requires a non-empty prompt for replan', () => {
+    expect(ResolveTaskRequestSchema.safeParse({ action: 'replan' }).success).toBe(false);
+    expect(ResolveTaskRequestSchema.safeParse({ action: 'replan', prompt: '   ' }).success).toBe(false);
+    expect(ResolveTaskRequestSchema.safeParse({ action: 'replan', prompt: 'redo it' }).success).toBe(true);
+  });
+
+  it('rejects an unknown action', () => {
+    expect(ResolveTaskRequestSchema.safeParse({ action: 'nuke' }).success).toBe(false);
   });
 });

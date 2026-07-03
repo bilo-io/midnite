@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { CheckRunStatusSchema } from './checks.js';
 import { PrStatusSchema, SOURCE_KINDS } from './source.js';
+import { WaitReasonSchema } from './task-failure.js';
 
 export const STATUSES = [
   'backlog',
@@ -89,6 +90,13 @@ export const TaskSchema = z.object({
    * task until this elapses. Absent/null = eligible immediately.
    */
   nextRetryAt: z.string().nullable().optional(),
+  /**
+   * Why the task is parked in `waiting` (Phase 53 D). `needs-input` = the agent
+   * blocked on live user input; any other reason = a failure escalated it to a
+   * **needs-attention** state (never silently `abandoned`). Set on the transition
+   * into `waiting`, cleared on any exit from it. Absent when not waiting.
+   */
+  waitReason: WaitReasonSchema.nullable().optional(),
   agentId: z.string().optional(),
   sessionId: z.string().optional(),
   projectId: z.string().optional(),

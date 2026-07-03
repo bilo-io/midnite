@@ -101,3 +101,42 @@ export const WAIT_REASONS = [
 
 export const WaitReasonSchema = z.enum(WAIT_REASONS);
 export type WaitReason = z.infer<typeof WaitReasonSchema>;
+
+/** Human labels for wait reasons (board chips, notifications, CLI). */
+export const WAIT_REASON_LABEL: Record<WaitReason, string> = {
+  'needs-input': 'Needs input',
+  'no-pr': 'No PR opened',
+  'agent-failed': 'Agent failed',
+  'timed-out': 'Timed out',
+  'gate-failed': 'Gate failed',
+  'retries-exhausted': 'Retries exhausted',
+};
+
+/**
+ * Whether a `waiting` task's reason means "a failure escalated this to a human"
+ * (Phase 53 D) rather than the agent blocking on live user input (`needs-input`).
+ * The board derives its "needs attention" grouping from this; the nudge service
+ * only reminds on these.
+ */
+export function isNeedsAttention(reason: WaitReason | null | undefined): boolean {
+  return reason != null && reason !== 'needs-input';
+}
+
+/** How a human resolves a needs-attention task (Phase 53 D). `replan` requeues
+ *  with a fresh prompt; `requeue` re-runs as-is; `abandon` is the explicit
+ *  give-up terminal. */
+export const RESOLVE_TASK_ACTIONS = ['requeue', 'replan', 'abandon'] as const;
+export const ResolveTaskActionSchema = z.enum(RESOLVE_TASK_ACTIONS);
+export type ResolveTaskAction = z.infer<typeof ResolveTaskActionSchema>;
+
+export const ResolveTaskRequestSchema = z
+  .object({
+    action: ResolveTaskActionSchema,
+    /** New prompt for a `replan`; required for `replan`, ignored otherwise. */
+    prompt: z.string().trim().min(1).max(20_000).optional(),
+  })
+  .refine((v) => v.action !== 'replan' || !!v.prompt, {
+    message: 'replan requires a prompt',
+    path: ['prompt'],
+  });
+export type ResolveTaskRequest = z.infer<typeof ResolveTaskRequestSchema>;
