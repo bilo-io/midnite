@@ -28,6 +28,9 @@ export const tasks = sqliteTable(
     // Earliest time a backed-off retry may be re-picked (Phase 53 B). Null =
     // eligible now; the scheduler's ready-set skips a todo task until this elapses.
     nextRetryAt: text('next_retry_at'),
+    // Why the task is parked in `waiting` (Phase 53 D). A failure reason (anything
+    // but `needs-input`) marks it needs-attention; null when not waiting.
+    waitReason: text('wait_reason'),
     prompt: text('prompt'),
     repo: text('repo'),
     agentId: text('agent_id'),

@@ -313,8 +313,8 @@ describe('agent pool — crash handling on PTY exit', () => {
     if (last?.type === 'task.updated') expect(last.task.status).toBe('todo');
   });
 
-  it('abandons a crashed task once retries are exhausted (maxRetries=0)', async () => {
-    const h = makeHarness({ pool: 1, maxRetries: 0 });
+  it('abandons a crashed task once retries are exhausted (maxRetries=0, escalateOnFailure off)', async () => {
+    const h = makeHarness({ pool: 1, maxRetries: 0, escalateOnFailure: false });
     h.seedTask('a');
     await h.scheduler.tick();
 
@@ -322,6 +322,20 @@ describe('agent pool — crash handling on PTY exit', () => {
 
     expect(status(h, 'a')).toBe('abandoned');
     expect(h.repo.getTask('a')!.archivedAt).toBeTruthy();
+    expect(h.pool.freeSlotCount()).toBe(1);
+  });
+
+  it('escalates a crashed task to needs-attention once retries are exhausted (default, Phase 53 D)', async () => {
+    const h = makeHarness({ pool: 1, maxRetries: 0 }); // escalateOnFailure defaults on
+    h.seedTask('a');
+    await h.scheduler.tick();
+
+    h.terminal.fireExit('a', 1);
+
+    // Escalated to a needs-attention waiting state — not silently abandoned.
+    expect(status(h, 'a')).toBe('waiting');
+    expect(h.repo.getTask('a')!.waitReason).toBe('retries-exhausted');
+    expect(h.repo.getTask('a')!.archivedAt).toBeFalsy();
     expect(h.pool.freeSlotCount()).toBe(1);
   });
 

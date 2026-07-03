@@ -1,0 +1,1 @@
+ALTER TABLE `tasks` ADD `wait_reason` text;
