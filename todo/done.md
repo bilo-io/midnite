@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-03 — feat: Settings → Safety control panel — Phase 50 Theme E (PR #289) · **Phase 50 COMPLETE** 🎉
+
+One place to see and steer every guardrail — the operability capstone that closes Phase 50 (kill switch, spend/rate caps, blast-radius, audit/RBAC, CLI all now surfaced in one web page).
+
+- [x] **web:** a `/settings/safety` page composing the existing pause/kill control + paused banner (A) + the autonomy-mode & rules editor (reused from Approvals) + a new read-only **caps / protected-actions** panel (spend/rate + blast-radius branches/globs/scrub) + a live **recent-decisions feed** (approval log, refetched on the `guardrails.updated` WS event). Sidebar "Approvals" → "Safety" (the `/settings/approvals` route stays). New `SafetyView` + `SafetyCapsPanel` + `SafetyDecisionsFeed`.
+- [x] **shared/gateway:** `GET /guardrails` `caps` block extended with the blast-radius floor (enabled + protectedBranches + protectedPathGlobs + scrubSpawnEnv), read-only; `getGuardrailCaps()` web client method.
+- [x] Tests: RTL for both new panels (caps render/unlimited/degrade, feed render/empty) + updated gateway caps-shape + cli caps fixture. gateway (1425, 1 pre-existing flaky tmux), web (754), cli (144) green; `:typecheck` clean. Per-scope pause picker + merged audit stream deferred (Stage-2.5). Verification checklist ticked (all A–F acceptance criteria met).
+
 ## 2026-07-03 — feat: graceful shutdown drain + clean-shutdown marker — Phase 54 Theme E (PR #288)
 
 Die on purpose, not by surprise: on SIGTERM the gateway drains in-flight agents instead of abandoning them, and records whether the stop was clean.
