@@ -1,7 +1,8 @@
-import { Inject, Injectable, Logger, type OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional, type OnModuleInit } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import type { CreateRepoRequest, MidniteConfig, Repo, TeamScope, UpdateRepoRequest } from '@midnite/shared';
+import { AuditService } from '../audit/audit.service';
 import { MIDNITE_CONFIG } from '../config.token';
 import type { RepoInsert, RepoRow } from '../db/schema';
 import { collapseTilde, expandTilde } from '../fs/path-tilde';
@@ -19,6 +20,9 @@ export class ReposService implements OnModuleInit {
   constructor(
     @Inject(ReposRepository) private readonly repo: ReposRepository,
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
+    // Phase 50 D — audit repo mutations. Optional so unit specs constructing the
+    // service by hand (and installs without the audit module) are unaffected.
+    @Optional() @Inject(AuditService) private readonly audit?: AuditService,
   ) {}
 
   // Seed the registry from `config.repos` on boot, insert-if-absent by name.
@@ -73,10 +77,18 @@ export class ReposService implements OnModuleInit {
       updatedAt: now,
       createdBy: createdBy ?? null,
     });
-    return toRepo(row);
+    const repo = toRepo(row);
+    this.audit?.record({
+      entityType: 'repo',
+      entityId: repo.id,
+      userId: createdBy ?? null,
+      action: 'repo.created',
+      payload: { name: repo.name, path: repo.path },
+    });
+    return repo;
   }
 
-  update(id: string, req: UpdateRepoRequest): Repo {
+  update(id: string, req: UpdateRepoRequest, actor: string | null = null): Repo {
     const existing = this.repo.getById(id);
     if (!existing) throw new RepoDoesNotExistError(`repo ${id} not found`);
     if (req.name !== undefined && req.name !== existing.name) {
@@ -94,12 +106,28 @@ export class ReposService implements OnModuleInit {
     if (req.ownerRepo !== undefined) patch.ownerRepo = normalizeConvention(req.ownerRepo);
     const row = this.repo.update(id, patch);
     if (!row) throw new RepoDoesNotExistError(`repo ${id} not found`);
-    return toRepo(row);
+    const updated = toRepo(row);
+    this.audit?.record({
+      entityType: 'repo',
+      entityId: id,
+      userId: actor,
+      action: 'repo.updated',
+      payload: { before: toRepo(existing), after: updated },
+    });
+    return updated;
   }
 
-  delete(id: string): void {
-    if (!this.repo.getById(id)) throw new RepoDoesNotExistError(`repo ${id} not found`);
+  delete(id: string, actor: string | null = null): void {
+    const existing = this.repo.getById(id);
+    if (!existing) throw new RepoDoesNotExistError(`repo ${id} not found`);
     this.repo.delete(id);
+    this.audit?.record({
+      entityType: 'repo',
+      entityId: id,
+      userId: actor,
+      action: 'repo.deleted',
+      payload: { name: existing.name },
+    });
   }
 }
 

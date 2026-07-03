@@ -3,11 +3,13 @@ import { z } from 'zod';
 export const AuditEntityTypeSchema = z.enum([
   'task',
   'repo',
+  'project',
   'workflow',
   'user',
   'team',
   'deck',
   'guardrail',
+  'approval_rule',
 ]);
 
 export const AuditActionSchema = z.enum([
@@ -29,6 +31,21 @@ export const AuditActionSchema = z.enum([
   'guardrail.paused',
   'guardrail.resumed',
   'guardrail.emergency_stopped',
+  // Phase 50 Theme D — close the audit gaps around the safety surface + blast radius.
+  'guardrail.mode_changed',
+  'approval_rule.created',
+  'approval_rule.updated',
+  'approval_rule.deleted',
+  // Act-path decisions mirrored from approval_log so "what did agents do + what did
+  // we allow/deny" is one query. entityId = sessionId; payload carries the resolution.
+  'approval.decided',
+  // Repo + project mutations (previously unaudited).
+  'repo.created',
+  'repo.updated',
+  'repo.deleted',
+  'project.created',
+  'project.updated',
+  'project.deleted',
 ]);
 
 export const AuditEntrySchema = z.object({
