@@ -99,16 +99,20 @@ Replay what a client missed; when you can't, tell it to resync. The core guarant
 
 ---
 
-## Theme C — Per-client backpressure + heartbeat — **M**
+## Theme C — Per-client backpressure + heartbeat — **M** — ✅ DONE (PR #311, 2026-07-05)
 
 Protect the gateway from slow clients; detect dead ones fast.
 
-- [ ] **Bounded per-client queue** in `ReliableBroadcastService`: buffer outbound events per socket up to a limit;
-      on **overflow**, **drop the client to resync** — close with a dedicated code (e.g. `4014`) so it reconnects
-      and full-resyncs — rather than blocking the broadcast or firing out-of-order. Preserves per-client ordering.
-- [ ] **Heartbeat:** server ping every ~30s; a client that misses **2 pongs** is considered dead and closed
-      (frees the slot). Client detects a missed pong and **proactively reconnects** (with its `lastSeq`).
-- [ ] Metrics: per-channel subscriber count, dropped-to-resync count, ring-hit vs. resync-required ratio.
+- [x] **Backpressure** in the send chokepoint (`WsBroadcastService.trySend`): a socket whose outbound buffer
+      exceeds `ws.maxBufferedBytes` (default 1MB) is **dropped to resync** — closed with **4014** so it reconnects
+      and full-resyncs — rather than blocking the broadcast or buffering unboundedly. (Uses the `ws` lib's own
+      outbound buffer as the signal; ordering preserved since we never reorder, only drop.)
+- [x] **Heartbeat:** a single `HeartbeatService` pings every live socket (`ConnectionRegistry.getAll()`) every
+      `ws.heartbeatMs` (30s); a socket that misses `ws.maxMissedPongs` (2) consecutive pongs is `terminate()`d,
+      freeing the slot. **No client change:** browsers auto-answer protocol pings, and the existing onclose backoff
+      reconnects when the server closes a dead/backpressured socket. (Resume-with-`lastSeq` on reconnect is Theme B.)
+- [x] Metrics: `WsMetricsService` — per-channel subscriber count (reported by the tasks/ideas/workflows gateways),
+      dropped-to-resync + dead-clients-reaped counters, ring-hit vs. resync-required (0 until Theme B). `GET /ws/metrics`.
 
 ---
 
