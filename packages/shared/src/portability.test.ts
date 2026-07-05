@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   ArchiveManifestSchema,
+  BackupSummarySchema,
   ExportOptionsSchema,
   ImportOptionsSchema,
   compareSchemaVersion,
@@ -53,5 +54,32 @@ describe('ArchiveManifest + domain payload', () => {
     const taskEnvelope = domainPayloadSchema(z.object({ id: z.string() }));
     expect(taskEnvelope.parse({ domain: 'tasks', count: 1, records: [{ id: 't1' }] }).count).toBe(1);
     expect(taskEnvelope.safeParse({ domain: 'tasks', count: 1, records: [{ id: 42 }] }).success).toBe(false);
+  });
+});
+
+describe('BackupSummary (Phase 49 D)', () => {
+  it('extends the manifest with per-domain counts', () => {
+    const s = BackupSummarySchema.parse({
+      schemaVersion: 68,
+      appVersion: '0.1.0',
+      createdAt: '2026-07-05T00:00:00.000Z',
+      domains: ['tasks', 'notes'],
+      secretsMode: 'excluded',
+      counts: { tasks: 3, notes: 0 },
+    });
+    expect(s.counts.tasks).toBe(3);
+  });
+
+  it('rejects a non-numeric count', () => {
+    expect(
+      BackupSummarySchema.safeParse({
+        schemaVersion: 1,
+        appVersion: '0.1.0',
+        createdAt: 'x',
+        domains: [],
+        secretsMode: 'excluded',
+        counts: { tasks: 'lots' },
+      }).success,
+    ).toBe(false);
   });
 });

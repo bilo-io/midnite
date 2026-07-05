@@ -33,7 +33,7 @@
 | [52 · In-app diff & PR review](phase-52-in-app-diff-review.md) | 🔄 WIP | 14/25 | `██████░░░░` | 56% | D | — |
 | [51 · Session detail page](phase-51-session-detail-page.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [50 · Autonomy guardrails](phase-50-autonomy-guardrails.md) | ✅ DONE | 29/29 | `██████████` | 100% | — | — |
-| [49 · Data portability](phase-49-data-portability.md) | 🔄 WIP | 6/27 | `██░░░░░░░░` | 22% | C | D E F |
+| [49 · Data portability](phase-49-data-portability.md) | 🔄 WIP | 8/27 | `███░░░░░░░` | 30% | C | E F |
 | [48 · Slides](phase-48-slides.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [46 · Inbound integrations](phase-46-inbound-integrations.md) | ✅ DONE | 20/20 | `██████████` | 100% | — | — |
@@ -151,7 +151,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **A** — Archive contract + schema-version stamp
 - ✅ **B** — Bulk export service (PR #291; secrets + users/teams deferred)
 - ◻ **C** — Atomic import service
-- ◻ **D** — CLI export/import commands
+- ◐ **D** — CLI export/import commands (export done PR #294; import → Theme C)
 - ◻ **E** — Web Settings → Data page
 - ◻ **F** — Scheduled auto-backup
 

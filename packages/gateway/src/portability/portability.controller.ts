@@ -26,10 +26,15 @@ export class PortabilityController {
     });
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
 
-    const { archive, filename } = this.service.export(parsed.data);
+    const { archive, filename, summary } = this.service.export(parsed.data);
     void reply
       .header('content-type', 'application/zip')
       .header('content-disposition', `attachment; filename="${filename}"`)
+      // Per-domain summary (Phase 49 D) so a client can report what it downloaded
+      // without unzipping. Single-line JSON — header-safe. Exposed via CORS so a
+      // browser download (Theme E) can read it too.
+      .header('x-midnite-backup-manifest', JSON.stringify(summary))
+      .header('access-control-expose-headers', 'x-midnite-backup-manifest, content-disposition')
       .send(archive);
   }
 }

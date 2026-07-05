@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import type { ArchiveManifest, DomainPayload, ExportOptions } from '@midnite/shared';
+import type { ArchiveManifest, BackupSummary, DomainPayload, ExportOptions } from '@midnite/shared';
 import { version as appVersion } from '../../package.json';
 import { ApprovalsService } from '../approvals/approvals.service';
 import { CouncilsService } from '../councils/councils.service';
@@ -71,8 +71,13 @@ export class PortabilityService {
     ];
   }
 
-  /** Build the archive (zip Buffer) + the manifest it carries. */
-  export(options: ExportOptions): { manifest: ArchiveManifest; archive: Buffer; filename: string } {
+  /** Build the archive (zip Buffer) + the manifest it carries + a per-domain
+   *  count summary (surfaced by the controller in a response header, Phase 49 D). */
+  export(options: ExportOptions): {
+    archive: Buffer;
+    filename: string;
+    summary: BackupSummary;
+  } {
     const requested = options.domains && options.domains.length > 0 ? new Set(options.domains) : null;
     const sources = this.sources().filter((s) => !requested || requested.has(s.name));
 
@@ -95,9 +100,10 @@ export class PortabilityService {
 
     const archive = packArchive(manifest, payloads);
     const filename = `midnite-backup-${manifest.createdAt.replace(/[:.]/g, '-')}.zip`;
+    const counts = Object.fromEntries(payloads.map((p) => [p.domain, p.count]));
     this.logger.log(
       `exported archive: ${payloads.length} domains, ${payloads.reduce((n, p) => n + p.count, 0)} records, ${archive.length} bytes`,
     );
-    return { manifest, archive, filename };
+    return { archive, filename, summary: { ...manifest, counts } };
   }
 }

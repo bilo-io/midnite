@@ -27,6 +27,17 @@ export const ArchiveManifestSchema = z.object({
 export type ArchiveManifest = z.infer<typeof ArchiveManifestSchema>;
 
 /**
+ * A compact export summary (Phase 49 D): the manifest plus per-domain record
+ * counts. The export endpoint returns it in the `X-Midnite-Backup-Manifest`
+ * response header so a client (CLI/web) can print a per-domain summary without
+ * unzipping the archive.
+ */
+export const BackupSummarySchema = ArchiveManifestSchema.extend({
+  counts: z.record(z.number().int().nonnegative()),
+});
+export type BackupSummary = z.infer<typeof BackupSummarySchema>;
+
+/**
  * Envelope for one domain's exported rows (`domains/<name>.json`). Generic over the
  * row shape so each domain validates its own records on both ends. `count` is a
  * self-check against `records.length`.

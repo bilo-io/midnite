@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-05 — feat: CLI backup export — `midnite export` — Phase 49 Theme D (PR #294)
+
+Backup from a shell. The export half of Theme D; import lands with Theme C.
+
+- [x] shared: `BackupSummary` (the archive manifest + per-domain counts) — returned in the export response header so a client reports what it downloaded without unzipping.
+- [x] gateway: `PortabilityService.export()` now returns a `BackupSummary`; the controller sets `X-Midnite-Backup-Manifest` (single-line JSON) + CORS-exposes it (+ content-disposition) for the web download (Theme E).
+- [x] cli: `exportArchive(opts)` client method (binary fetch → server filename + parsed summary + body stream); `midnite export [--output] [--domains]` **streams** the archive to disk (Readable.fromWeb → writeStream) and prints a per-domain summary (`--json` aware).
+- [x] ◐ Deferred: `--include-secrets`/`--passphrase` (secrets slice) and `midnite import` (blocked on Theme C's import endpoint).
+- [x] Tests: shared `BackupSummary` schema, gateway service counts, cli `exportArchive` (allowlist query + filename/summary header parse + fallback filename + body stream). shared 550, gateway 1445 (1 pre-existing flaky tmux), cli 151; `:typecheck` + lint clean. CI billing-blocked account-wide — gated on the local suite.
+
 ## 2026-07-05 — feat: proactive aged-todo flag — stuck-state watchdogs close-out — Phase 53 Theme C (PR #293) · **Phase 53 COMPLETE** 🎉
 
 Closes Phase 53's last theme. The four stuck-state detections were already delivered across the phase set — this filled the one honest gap (aged-todo was pull-only).
