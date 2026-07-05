@@ -156,7 +156,7 @@ Backup/restore from a shell — the natural home for scripting + cron.
 
 ---
 
-## Theme E — Web Settings → Data page — **M** — ◐ PARTIAL (download half: PR #295, 2026-07-05)
+## Theme E — Web Settings → Data page — **M** — ◐ PARTIAL (download half: PR #296, 2026-07-05)
 
 Point-and-click backup/restore with a safety net.
 

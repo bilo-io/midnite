@@ -152,7 +152,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **B** — Bulk export service (PR #291; secrets + users/teams deferred)
 - ◻ **C** — Atomic import service
 - ◐ **D** — CLI export/import commands (export done PR #294; import → Theme C)
-- ◐ **E** — Web Settings → Data page (download half shipped PR #295; restore pending import C)
+- ◐ **E** — Web Settings → Data page (download half shipped PR #296; restore pending import C)
 - ◻ **F** — Scheduled auto-backup
 
 ### [Phase 48 — Slides (reveal.js decks)](phase-48-slides.md)

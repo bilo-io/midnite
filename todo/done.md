@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-05 — feat: Settings → Data page (download backup) — Phase 49 Theme E ◐ (PR #295)
+## 2026-07-05 — feat: Settings → Data page (download backup) — Phase 49 Theme E ◐ (PR #296)
 
 The point-and-click backup half of the Data page. Restore/upload deferred until import (Theme C) merges.
 
