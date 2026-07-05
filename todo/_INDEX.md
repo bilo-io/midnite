@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 8/26 | `███░░░░░░░` | 31% | B D | C |
+| [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 10/26 | `████░░░░░░` | 38% | B | C |
 | [56 · Realtime / WS reliability](phase-56-realtime-ws-reliability.md) | 🔄 WIP | 5/26 | `██░░░░░░░░` | 19% | B | C D E |
 | [55 · Projects detail page](phase-55-projects-detail-page.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
 | [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
@@ -114,7 +114,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **A** — Seed + benchmark harness (evidence first) (PR #308)
 - ◻ **B** — Kill the task-hydration N+1
 - ◻ **C** — Lean list DTOs + pagination
-- ◻ **D** — DB indexes on hot paths
+- ✅ **D** — DB indexes on hot paths: projects(createdBy,teamId) + workflows(teamId) close the teamScopeFilter full-scans (PR #314)
 - ✅ **E** — Refetch / cache tuning (coalesce refetches + staleTime; granular deferred to P56 — PR #307)
 - ◐ **F** — List virtualization (board + run-history + approval-log done; grouped accordions deferred) (PR #310)
 

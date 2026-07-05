@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-05 — perf: index team-scope hot paths — Phase 57 Theme D (PR #314)
+
+`teamScopeFilter` (`createdBy = ? OR createdBy IS NULL OR teamId = ?`) backed `listProjects`/`listWorkflows`/scoped `listTasks`; projects + workflows had no matching index, so EXPLAIN QUERY PLAN showed a full `SCAN`.
+
+- [x] Migration 0070 adds the **missing** OR-arm indexes: `projects(created_by)` + `projects(team_id)` (projects had zero indexes) and `workflows(team_id)` (createdBy was already indexed in 0048 — teamId was the missing arm). Both `listProjects` and `listWorkflows` go `SCAN` → `MULTI-INDEX OR` (index SEARCH on every arm).
+- [x] `tasks` was already covered by 0048 (both arms indexed) — no new index; its scope indexes are now also *declared* in `schema.ts` (`tasks_created_by_idx`/`tasks_team_id_idx`, `workflows_created_by_idx`) to reconcile long-standing schema/DB drift. 0070 is **hand-trimmed** to just the 3 genuinely-missing indexes (re-emitting the 0048 ones errors "index already exists").
+- [x] The doc's `tasks(teamId,status)`/`(status,projectId)` composites gave **no** EXPLAIN win over the existing `tasks_status_priority_idx` → not added (over-indexing = write cost; measured-wins-only).
+- [x] Committed `bench/scope-index-plans.spec.ts` (4 assertions) pins the query plans to index SEARCH so a future schema change that drops a scope index fails CI. gateway 1496 tests green; typecheck/lint clean.
+
+---
+
 ## 2026-07-05 — feat: terminal WS resume + resync-required — Phase 56 Theme F (PR #311)
 
 Fold the one WS channel that already worked (the terminal, with its own seq + ring) onto Phase 56 A's sequenced-stream vocabulary, and close its silent-partial-replay gap.
