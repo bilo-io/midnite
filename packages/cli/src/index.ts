@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 import { readFile, writeFile } from 'node:fs/promises';
+import { createWriteStream } from 'node:fs';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 import { clearAuth, readAuth, resolveToken, writeAuth } from './lib/auth-store.js';
 import { Command } from 'commander';
 import Table from 'cli-table3';
@@ -408,6 +411,34 @@ program
       return;
     }
     console.log(`resolved ${task.id} (${action}) → ${colourStatus(task.status)}`);
+  });
+
+// ── Phase 49 D — data portability: full-store backup export ──────────────────
+program
+  .command('export')
+  .description('Download a full-store backup archive (admin) — Phase 49')
+  .option('-o, --output <file>', 'write the archive here (default: the server-named file in cwd)')
+  .option('--domains <list>', 'comma-separated domain allowlist (default: all portable domains)')
+  .action(async (opts: { output?: string; domains?: string }) => {
+    const domains = opts.domains
+      ? opts.domains.split(',').map((d) => d.trim()).filter(Boolean)
+      : undefined;
+    const { filename, summary, body } = await withSpinner('Exporting…', () =>
+      client().exportArchive({ domains }),
+    );
+    const outPath = opts.output ?? filename;
+    // Stream the response body straight to disk (no full in-memory copy).
+    await pipeline(Readable.fromWeb(body), createWriteStream(outPath));
+    if (isJsonMode()) {
+      printJson({ file: outPath, summary });
+      return;
+    }
+    console.log(`wrote ${outPath}`);
+    if (summary) {
+      const total = Object.values(summary.counts).reduce((n, c) => n + c, 0);
+      console.log(`${summary.domains.length} domains, ${total} records (schema v${summary.schemaVersion}, secrets: ${summary.secretsMode})`);
+      for (const d of summary.domains) console.log(`  ${d}: ${summary.counts[d] ?? 0}`);
+    }
   });
 
 program
