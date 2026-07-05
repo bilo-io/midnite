@@ -30,7 +30,7 @@
 |-------|--------|------|----------|---|--------|--------|
 | [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [53 · Task lifecycle resilience](phase-53-task-lifecycle-resilience.md) | ✅ DONE | 22/22 | `██████████` | 100% | — | — |
-| [52 · In-app diff & PR review](phase-52-in-app-diff-review.md) | 🔄 WIP | 14/25 | `██████░░░░` | 56% | — | D |
+| [52 · In-app diff & PR review](phase-52-in-app-diff-review.md) | 🔄 WIP | 14/25 | `██████░░░░` | 56% | D | — |
 | [51 · Session detail page](phase-51-session-detail-page.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [50 · Autonomy guardrails](phase-50-autonomy-guardrails.md) | ✅ DONE | 29/29 | `██████████` | 100% | — | — |
 | [49 · Data portability](phase-49-data-portability.md) | 🔄 WIP | 6/27 | `██░░░░░░░░` | 22% | C | D E F |
