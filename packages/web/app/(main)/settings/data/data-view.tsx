@@ -1,14 +1,82 @@
 'use client';
 
-import { useState } from 'react';
-import { Database, Download, Lock } from 'lucide-react';
-import { PORTABLE_DOMAINS, type BackupSummary } from '@midnite/shared';
-import { downloadBackup } from '@/lib/api';
+import { useEffect, useState } from 'react';
+import { CalendarClock, Database, Download, Lock } from 'lucide-react';
+import { PORTABLE_DOMAINS, type BackupStatus, type BackupSummary } from '@midnite/shared';
+import { downloadBackup, getBackupStatus } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/toast';
 
 function errMsg(e: unknown): string {
   return e instanceof Error ? e.message : 'Backup failed';
+}
+
+function fmtBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
+  return `${(n / 1024 / 1024).toFixed(1)} MB`;
+}
+
+/** Phase 49 F — read-only auto-backup status (scheduler is config-driven). */
+function AutoBackupPanel() {
+  const [status, setStatus] = useState<BackupStatus | null>(null);
+  const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
+
+  useEffect(() => {
+    let alive = true;
+    getBackupStatus()
+      .then((s) => {
+        if (!alive) return;
+        setStatus(s);
+        setState('ready');
+      })
+      .catch(() => alive && setState('error'));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  if (state === 'loading') return <p className="text-sm text-muted-foreground">Loading auto-backup status…</p>;
+  if (state === 'error' || !status) {
+    return <p className="text-sm text-muted-foreground">Couldn’t load auto-backup status.</p>;
+  }
+
+  if (!status.enabled) {
+    return (
+      <p className="text-xs text-muted-foreground">
+        Scheduled auto-backup is <span className="font-medium">off</span>. Enable it by setting{' '}
+        <code className="font-mono">backup.enabled</code> in <code className="font-mono">midnite.json</code>.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="rounded-md border border-border bg-muted/30 p-3 text-xs">
+        <p className="flex items-center gap-1.5 font-medium">
+          <CalendarClock className="h-3.5 w-3.5" />
+          Every {status.intervalHours}h → <code className="font-mono">{status.destinationDir}</code> (keep{' '}
+          {status.retention})
+        </p>
+        <p className="mt-1 text-muted-foreground">
+          Last: {status.lastRunAt ? new Date(status.lastRunAt).toLocaleString() : 'never'}
+          {status.nextRunAt ? ` · next ~${new Date(status.nextRunAt).toLocaleString()}` : ''}
+        </p>
+      </div>
+      {status.recent.length > 0 ? (
+        <ul className="divide-y divide-border/60">
+          {status.recent.map((a) => (
+            <li key={a.filename} className="flex items-center gap-2 py-1 text-xs">
+              <span className="truncate font-mono">{a.filename}</span>
+              <span className="ml-auto shrink-0 text-muted-foreground">{fmtBytes(a.sizeBytes)}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-xs text-muted-foreground">No archives written yet.</p>
+      )}
+    </div>
+  );
 }
 
 /** Save a Blob to disk under `filename` (the export-menu download pattern). */
@@ -93,6 +161,17 @@ export function DataView() {
             records across {summary.domains.length} domains.
           </p>
         ) : null}
+      </section>
+
+      {/* Scheduled auto-backup status (Phase 49 F) */}
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-sm font-medium">Scheduled auto-backup</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Automatic timestamped backups on an interval, pruned to a retention count.
+          </p>
+        </div>
+        <AutoBackupPanel />
       </section>
 
       {/* Restore — lands with the import service (Theme C) */}

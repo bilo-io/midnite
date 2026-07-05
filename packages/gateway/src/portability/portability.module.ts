@@ -5,11 +5,13 @@ import { IdeasModule } from '../ideas/ideas.module';
 import { MediaModule } from '../media/media.module';
 import { MemoriesModule } from '../memories/memories.module';
 import { NotesModule } from '../notes/notes.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { ProjectsModule } from '../projects/projects.module';
 import { ReposModule } from '../repos/repos.module';
 import { RoutinesModule } from '../routines/routines.module';
 import { TasksModule } from '../tasks/tasks.module';
 import { WorkflowsModule } from '../workflows/workflows.module';
+import { BackupSchedulerService } from './backup-scheduler.service';
 import { PortabilityController } from './portability.controller';
 import { PortabilityService } from './portability.service';
 
@@ -31,8 +33,10 @@ import { PortabilityService } from './portability.service';
     IdeasModule,
     ApprovalsModule,
     WorkflowsModule,
+    // Phase 49 F — the backup scheduler notifies on failure.
+    NotificationsModule,
   ],
   controllers: [PortabilityController],
-  providers: [PortabilityService],
+  providers: [PortabilityService, BackupSchedulerService],
 })
 export class PortabilityModule {}

@@ -57,6 +57,30 @@ export const PORTABLE_DOMAINS: ReadonlyArray<{ name: string; label: string }> = 
   { name: 'workflows', label: 'Workflows' },
 ];
 
+/** One archive file on disk (Phase 49 F auto-backup status). */
+export const BackupArchiveInfoSchema = z.object({
+  filename: z.string(),
+  sizeBytes: z.number().int().nonnegative(),
+  createdAt: z.string(),
+});
+export type BackupArchiveInfo = z.infer<typeof BackupArchiveInfoSchema>;
+
+/**
+ * Scheduled auto-backup status (Phase 49 F), read by the Settings → Data page.
+ * `lastRunAt` is the newest archive's timestamp (the filesystem is the ledger),
+ * `nextRunAt` = lastRunAt + intervalHours (null when disabled or never run).
+ */
+export const BackupStatusSchema = z.object({
+  enabled: z.boolean(),
+  intervalHours: z.number(),
+  destinationDir: z.string(),
+  retention: z.number().int(),
+  lastRunAt: z.string().nullable(),
+  nextRunAt: z.string().nullable(),
+  recent: z.array(BackupArchiveInfoSchema),
+});
+export type BackupStatus = z.infer<typeof BackupStatusSchema>;
+
 /**
  * Envelope for one domain's exported rows (`domains/<name>.json`). Generic over the
  * row shape so each domain validates its own records on both ends. `count` is a

@@ -1,7 +1,8 @@
 import { BadRequestException, Controller, Get, Query, Res } from '@nestjs/common';
 import type { FastifyReply } from 'fastify';
-import { ExportOptionsSchema } from '@midnite/shared';
+import { ExportOptionsSchema, type BackupStatus } from '@midnite/shared';
 import { RequiresRole } from '../auth/decorators/require-role.decorator';
+import { BackupSchedulerService } from './backup-scheduler.service';
 import { PortabilityService } from './portability.service';
 
 /**
@@ -11,7 +12,18 @@ import { PortabilityService } from './portability.service';
  */
 @Controller('portability')
 export class PortabilityController {
-  constructor(private readonly service: PortabilityService) {}
+  constructor(
+    private readonly service: PortabilityService,
+    private readonly backups: BackupSchedulerService,
+  ) {}
+
+  /** Phase 49 F — scheduled auto-backup status for the Settings → Data page
+   *  (enabled/interval/dir/retention + last/next run + recent archives). */
+  @Get('backup/status')
+  @RequiresRole('admin')
+  backupStatus(): Promise<BackupStatus> {
+    return this.backups.status();
+  }
 
   @Get('export')
   @RequiresRole('admin')

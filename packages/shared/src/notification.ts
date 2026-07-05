@@ -24,6 +24,9 @@ export const NOTIFICATION_KINDS = [
   // `waiting` past the nudge threshold; an escalating reminder, distinct from the
   // routine `task.waiting` transition alert.
   'task.needs-attention',
+  // Phase 49 F — a scheduled auto-backup run failed (fail-open: logged + this
+  // alert, never crashes the tick).
+  'backup.failed',
 ] as const;
 export const NotificationKindSchema = z.enum(NOTIFICATION_KINDS);
 export type NotificationKind = z.infer<typeof NotificationKindSchema>;

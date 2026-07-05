@@ -1,9 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { BackupSummary } from '@midnite/shared';
+import type { BackupStatus, BackupSummary } from '@midnite/shared';
 
 const downloadBackup = vi.fn();
-vi.mock('@/lib/api', () => ({ downloadBackup: () => downloadBackup() }));
+const getBackupStatus = vi.fn();
+vi.mock('@/lib/api', () => ({
+  downloadBackup: () => downloadBackup(),
+  getBackupStatus: () => getBackupStatus(),
+}));
 const toast = { success: vi.fn(), error: vi.fn() };
 vi.mock('@/components/toast', () => ({ useToast: () => toast }));
 
@@ -15,6 +19,16 @@ beforeEach(() => {
   // jsdom lacks these — stub so saveBlob doesn't throw.
   URL.createObjectURL = vi.fn(() => 'blob:x');
   URL.revokeObjectURL = vi.fn();
+  // Default: auto-backup off (the AutoBackupPanel fetches on mount).
+  getBackupStatus.mockResolvedValue({
+    enabled: false,
+    intervalHours: 24,
+    destinationDir: './.midnite/backups',
+    retention: 7,
+    lastRunAt: null,
+    nextRunAt: null,
+    recent: [],
+  } satisfies BackupStatus);
 });
 
 const summary: BackupSummary = {
@@ -54,5 +68,29 @@ describe('DataView (Phase 49 E)', () => {
     render(<DataView />);
     fireEvent.click(screen.getByRole('button', { name: /Download backup/ }));
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith('403 admin only'));
+  });
+});
+
+describe('DataView — auto-backup status (Phase 49 F)', () => {
+  it('shows the off state + how to enable when auto-backup is disabled', async () => {
+    render(<DataView />); // default mock → disabled
+    await waitFor(() => expect(screen.getByText(/Scheduled auto-backup is/)).toBeInTheDocument());
+    expect(screen.getByText('backup.enabled')).toBeInTheDocument();
+  });
+
+  it('renders interval + recent archives when enabled', async () => {
+    getBackupStatus.mockResolvedValue({
+      enabled: true,
+      intervalHours: 6,
+      destinationDir: '/srv/backups',
+      retention: 5,
+      lastRunAt: '2026-07-05T00:00:00.000Z',
+      nextRunAt: '2026-07-05T06:00:00.000Z',
+      recent: [{ filename: 'midnite-backup-x.zip', sizeBytes: 2048, createdAt: '2026-07-05T00:00:00.000Z' }],
+    } satisfies BackupStatus);
+    render(<DataView />);
+    await waitFor(() => expect(screen.getByText('midnite-backup-x.zip')).toBeInTheDocument());
+    expect(screen.getByText(/\/srv\/backups/)).toBeInTheDocument();
+    expect(screen.getByText('2 KB')).toBeInTheDocument();
   });
 });
