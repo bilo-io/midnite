@@ -5,6 +5,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import type { ApprovalLogEntry, ApprovalRule, ApprovalSettings, AutonomyMode, CreateApprovalRule } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { VirtualList } from '@/components/ui/virtual-list';
 import {
   createApprovalRule,
   deleteApprovalRule,
@@ -348,14 +349,18 @@ export function ApprovalsView() {
           </p>
         ) : (
           <>
-            <ul className="divide-y divide-border rounded-lg border border-border overflow-hidden">
-              {log.map((entry) => {
+            <VirtualList
+              items={log}
+              rowKey={(entry) => entry.id}
+              estimateRow={52}
+              className="max-h-[60vh] rounded-lg border border-border"
+              renderRow={(entry) => {
                 const res = RESOLUTION_LABELS[entry.resolution] ?? {
                   label: entry.resolution,
                   className: 'bg-muted text-muted-foreground',
                 };
                 return (
-                  <li key={entry.id} className="flex items-start gap-3 px-4 py-2.5">
+                  <div className="flex items-start gap-3 border-b border-border px-4 py-2.5 last:border-b-0">
                     <span
                       className={cn(
                         'mt-0.5 shrink-0 rounded px-1.5 py-0.5 text-xs font-semibold',
@@ -378,10 +383,10 @@ export function ApprovalsView() {
                         minute: '2-digit',
                       })}
                     </span>
-                  </li>
+                  </div>
                 );
-              })}
-            </ul>
+              }}
+            />
 
             {logTotal > LOG_LIMIT && (
               <div className="flex items-center justify-between text-xs text-muted-foreground">

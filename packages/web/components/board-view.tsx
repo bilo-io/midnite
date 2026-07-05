@@ -17,6 +17,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Status, Task } from '@midnite/shared';
 import { AbandonedRow } from '@/components/abandoned-row';
+import { VirtualList } from '@/components/ui/virtual-list';
 import { useConfirm } from '@/components/confirm-dialog';
 import { SelectableIcon } from '@/components/selectable-icon';
 import { TapToMoveMenu } from '@/components/tap-to-move-menu';
@@ -269,23 +270,29 @@ export function BoardView({
               hueVar={col.hueVar}
               count={(grouped.get(col.status) ?? []).length}
             >
-              {(grouped.get(col.status) ?? []).map((t) => (
-                <DraggableCard
-                  key={t.id}
-                  task={t}
-                  project={t.projectId ? projectsById.get(t.projectId) : undefined}
-                  onSelect={() => onSelect(t)}
-                  onStart={onMove ? () => onMove(t.id, 'wip') : undefined}
-                  onStop={onMove ? () => onMove(t.id, 'todo') : undefined}
-                  selected={isSelected?.(t.id) ?? false}
-                  onToggleSelect={onToggleSelect ? (sk) => onToggleSelect(t.id, sk) : undefined}
-                  blockedBy={blockedCounts?.get(t.id)}
-                  focused={t.id === focusedId}
-                  // On a phone, drag is finicky — offer the tap-to-move fallback.
-                  moveColumns={isMobile && onMove ? columns : undefined}
-                  onMoveTo={onMove ? (target) => onMove(t.id, target) : undefined}
-                />
-              ))}
+              <VirtualList
+                items={grouped.get(col.status) ?? []}
+                rowKey={(t) => t.id}
+                gap={8}
+                estimateRow={92}
+                className="-m-1.5 min-h-0 flex-1 p-1.5"
+                renderRow={(t) => (
+                  <DraggableCard
+                    task={t}
+                    project={t.projectId ? projectsById.get(t.projectId) : undefined}
+                    onSelect={() => onSelect(t)}
+                    onStart={onMove ? () => onMove(t.id, 'wip') : undefined}
+                    onStop={onMove ? () => onMove(t.id, 'todo') : undefined}
+                    selected={isSelected?.(t.id) ?? false}
+                    onToggleSelect={onToggleSelect ? (sk) => onToggleSelect(t.id, sk) : undefined}
+                    blockedBy={blockedCounts?.get(t.id)}
+                    focused={t.id === focusedId}
+                    // On a phone, drag is finicky — offer the tap-to-move fallback.
+                    moveColumns={isMobile && onMove ? columns : undefined}
+                    onMoveTo={onMove ? (target) => onMove(t.id, target) : undefined}
+                  />
+                )}
+              />
             </Column>
           ))}
         </div>
@@ -378,9 +385,9 @@ function Column({
           Nothing here
         </div>
       ) : (
-        <div className="-m-1.5 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-1.5">
-          {children}
-        </div>
+        // The card list (VirtualList) brings its own scroll container so it can be
+        // the virtualizer's scroll element (Phase 57 F).
+        children
       )}
     </section>
   );

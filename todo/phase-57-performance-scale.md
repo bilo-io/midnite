@@ -144,16 +144,22 @@ Stop reloading the whole board on every event.
 
 ---
 
-## Theme F — List virtualization — **M**
+## Theme F — List virtualization — **M** — ◐ PARTIAL (PR #310, 2026-07-05)
 
 Keep the DOM bounded no matter the count.
 
-- [ ] Add `@tanstack/react-virtual` (headless, composes with the existing TanStack stack + dnd-kit) and **windowed
+- [x] Add `@tanstack/react-virtual` (headless, composes with the existing TanStack stack + dnd-kit) and **windowed
       rendering** for the board columns in [`board-view.tsx`](../packages/web/components/board-view.tsx) — only
-      visible cards mount; drag-and-drop still works across a virtualized column.
-- [ ] Virtualize the other long lists: sessions, workflows, projects, **workflow run history**, the **approval
-      log**. Bounded DOM = smooth scroll + flat memory regardless of row count.
-- [ ] Verify with the web benchmark: mounted-node count stays ~constant as the seeded dataset grows.
+      visible cards mount; drag-and-drop still works (board is free-drag: `useDraggable` + per-**column**
+      `useDroppable`, so the drop target is the always-mounted column and only card rendering is windowed). Reusable
+      headless [`<VirtualList>`](../packages/web/components/ui/virtual-list.tsx) (threshold + `measureElement`).
+- [◐] Virtualize the other long lists: **workflow run history** ✅ + **approval log** ✅ done. sessions / workflows /
+      projects **⏳ deferred** — they render as status-grouped accordions in *page scroll*, so windowing would add a
+      fixed-height inner scrollbar per section (a UX regression) for lists that are already status-chunked and
+      usually under the 50-row threshold (VirtualList no-ops there anyway). Revisit if a single section grows huge.
+- [x] Verify with the web benchmark: mounted-node count stays ~constant as the dataset grows — a Playwright
+      node-count e2e ([`board-virtualization.e2e.ts`](../packages/web/e2e/board-virtualization.e2e.ts)) seeds 60 cards
+      and asserts mounted nodes stay far below the total.
 
 ---
 
