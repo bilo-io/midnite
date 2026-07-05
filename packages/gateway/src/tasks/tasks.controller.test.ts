@@ -9,6 +9,7 @@ import type { FastifyReply } from 'fastify';
 import { parseConfig, TaskDependencyError, type MidniteConfig, type Task } from '@midnite/shared';
 import type { BreakdownService } from '../agent/breakdown.service';
 import type { PrDiffService } from './pr-diff.service';
+import type { PrReviewService } from './pr-review.service';
 import type { PrStatusService } from './pr-status.service';
 import type { TasksService } from './tasks.service';
 import { TasksController } from './tasks.controller';
@@ -20,6 +21,11 @@ const breakdownStub = {
 const prDiffStub = {
   getDiffForTask: vi.fn(),
 } as unknown as PrDiffService;
+
+const prReviewStub = {
+  submitReview: vi.fn(),
+  mergePr: vi.fn(),
+} as unknown as PrReviewService;
 
 const config: MidniteConfig = parseConfig({ agent: {}, terminal: {}, gateway: {} });
 
@@ -55,7 +61,7 @@ function build(overrides: Partial<Record<keyof TasksService, unknown>> = {}) {
   } as unknown as TasksService;
   const prStatus = { refresh: vi.fn(async () => fakeTask) } as unknown as PrStatusService;
   return {
-    controller: new TasksController(service, config, prStatus, prDiffStub, breakdownStub),
+    controller: new TasksController(service, config, prStatus, prDiffStub, prReviewStub, breakdownStub),
     service,
     prStatus,
   };
@@ -196,7 +202,7 @@ describe('TasksController — dependency routes', () => {
       }),
     } as unknown as TasksService;
     const prStatus = { refresh: vi.fn() } as unknown as PrStatusService;
-    const controller = new TasksController(service, cfg, prStatus, prDiffStub, breakdownStub);
+    const controller = new TasksController(service, cfg, prStatus, prDiffStub, prReviewStub, breakdownStub);
     try {
       await expect(
         controller.create(

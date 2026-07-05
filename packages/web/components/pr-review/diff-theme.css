@@ -29,6 +29,14 @@
   color: hsl(var(--muted-foreground));
 }
 
+/* In review mode, gutters are click-to-comment — hint it + highlight on hover. */
+.pr-diff-viewer .diff-reviewable .diff-gutter {
+  cursor: pointer;
+}
+.pr-diff-viewer .diff-reviewable .diff-gutter:hover {
+  background-color: hsl(var(--primary) / 0.18);
+}
+
 /* Prism token colours — a compact palette tuned to read on light and dark. */
 .pr-diff-viewer .token.comment,
 .pr-diff-viewer .token.prolog,

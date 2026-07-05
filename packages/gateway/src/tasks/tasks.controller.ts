@@ -22,6 +22,8 @@ import { pipeline } from 'node:stream/promises';
 import { Inject } from '@nestjs/common';
 import {
   AddTaskDependencyRequestSchema,
+  PrReviewSubmissionSchema,
+  PrMergeRequestSchema,
   AddTaskLinkRequestSchema,
   BreakdownGoalRequestSchema,
   BulkCreateTaskRequestSchema,
@@ -52,6 +54,7 @@ import { BreakdownService } from '../agent/breakdown.service';
 import { MIDNITE_CONFIG } from '../config.token';
 import { sendMarkdownReport } from '../lib/report-response';
 import { PrDiffService } from './pr-diff.service';
+import { PrReviewService } from './pr-review.service';
 import { PrStatusService } from './pr-status.service';
 import { TasksService } from './tasks.service';
 
@@ -69,6 +72,7 @@ export class TasksController {
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
     @Inject(PrStatusService) private readonly prStatus: PrStatusService,
     @Inject(PrDiffService) private readonly prDiff: PrDiffService,
+    @Inject(PrReviewService) private readonly prReview: PrReviewService,
     @Inject(BreakdownService) private readonly breakdown: BreakdownService,
   ) {}
 
@@ -230,6 +234,37 @@ export class TasksController {
   @Get(':id/pr/diff')
   async prDiffForTask(@Param('id') id: string): Promise<PrDiff> {
     return this.prDiff.getDiffForTask(id);
+  }
+
+  // Submit a review (approve / request-changes / comment + optional inline
+  // comments) on the task's PR (Phase 52 Theme C). Member+; audited. A GitHub
+  // refusal surfaces as a 502 (the service maps it), a no-PR task 404s. Returns
+  // the re-hydrated task with a refreshed pr_status (reviewDecision).
+  @Post(':id/pr/review')
+  @RequiresRole('member')
+  async submitPrReview(
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @CurrentUser() user?: CurrentUserPayload | null,
+  ): Promise<Task> {
+    const parsed = PrReviewSubmissionSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    return this.prReview.submitReview(id, parsed.data, user?.userId ?? null);
+  }
+
+  // Merge the task's PR (Phase 52 Theme C). Member+; audited. Honors mergeability
+  // + branch protection (a refusal surfaces as a 502, never forced). Returns the
+  // re-hydrated task with a refreshed pr_status (merged state).
+  @Post(':id/pr/merge')
+  @RequiresRole('member')
+  async mergePr(
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @CurrentUser() user?: CurrentUserPayload | null,
+  ): Promise<Task> {
+    const parsed = PrMergeRequestSchema.safeParse(body ?? {});
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    return this.prReview.mergePr(id, parsed.data.method, user?.userId ?? null);
   }
 
   // Add a blocker edge. A self-reference / unknown blocker → 400; a cycle → 409.

@@ -3,6 +3,7 @@ import { expect, userEvent, within } from 'storybook/test';
 import type { PrDiff } from '@midnite/shared';
 
 import { PrDiffViewer } from './pr-diff-viewer';
+import { ConfirmProvider } from '@/components/confirm-dialog';
 
 const DIFF: PrDiff = {
   prUrl: 'https://github.com/midnite/midnite/pull/271',
@@ -137,5 +138,25 @@ export const SplitExpanded: Story = {
 export const Truncated: Story = {
   args: {
     diff: { ...DIFF, truncated: true, hiddenFileCount: 12, hiddenFiles: Array.from({ length: 12 }, (_, i) => `big/file-${i}.ts`) },
+  },
+};
+
+/**
+ * Review mode (Phase 52 Theme C): passing a `taskId` turns the viewer into a
+ * write-back surface — a review action bar (approve / request-changes / comment +
+ * merge) and click-a-gutter inline comments. The play fn opens the inline composer.
+ */
+export const WithReviewActions: Story = {
+  args: { diff: DIFF, taskId: 'demo-task' },
+  decorators: [
+    (Story) => (
+      <ConfirmProvider>
+        <Story />
+      </ConfirmProvider>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const gutter = canvasElement.querySelector('.diff-gutter');
+    if (gutter) await userEvent.click(gutter);
   },
 };

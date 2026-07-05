@@ -30,7 +30,7 @@
 |-------|--------|------|----------|---|--------|--------|
 | [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [53 · Task lifecycle resilience](phase-53-task-lifecycle-resilience.md) | 🔄 WIP | 12/22 | `██████░░░░` | 55% | C | — |
-| [52 · In-app diff & PR review](phase-52-in-app-diff-review.md) | 🔄 WIP | 10/25 | `████░░░░░░` | 40% | C | D |
+| [52 · In-app diff & PR review](phase-52-in-app-diff-review.md) | 🔄 WIP | 14/25 | `██████░░░░` | 56% | — | D |
 | [51 · Session detail page](phase-51-session-detail-page.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [50 · Autonomy guardrails](phase-50-autonomy-guardrails.md) | ✅ DONE | 29/29 | `██████████` | 100% | — | — |
 | [49 · Data portability](phase-49-data-portability.md) | 🔄 WIP | 6/27 | `██░░░░░░░░` | 22% | — | C D E F |
@@ -127,7 +127,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 *(Extends tasks — no new domain. Reuses the workflow GitHub plumbing, `pr-status` fetch strategy, Phase 37 AI review. A→B→C is the critical path.)*
 - ✅ **A** — Diff API: expose the PR diff to the web (structured)
 - ✅ **B** — Diff viewer: file tree + split/unified + syntax highlight
-- ◻ **C** — Review actions: inline comment + approve/request-changes + in-app merge
+- ✅ **C** — Review actions: inline comment + approve/request-changes + in-app merge (PR #292)
 - ◻ **D** — Comment persistence (drafts) + Phase 37 AI review inline
 - ✅ **E** — Embed in task detail + deep-linkable `?tab=review` route
 

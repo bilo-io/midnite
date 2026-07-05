@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-05 — feat: in-app PR review actions (comment/approve/merge) — Phase 52 Theme C (PR #292)
+
+Closes the review loop: review + merge a task's PR from inside midnite, no context switch to GitHub.
+
+- [x] shared `pr-review.ts`: `PrReviewComment` (path/line/side/body), `PrReviewSubmission` (event + body + comments, refined so request-changes/comment need a body or a comment), `PrMergeRequest` (method, squash default), `toGithubReviewEvent`. `task.pr_reviewed`/`task.pr_merged` audit actions.
+- [x] gateway `tasks/lib/github-review.ts`: `submitGithubReview` (`gh api …/reviews` with mapped event + inline comments) + `mergeGithubPr` (`gh pr merge --<method>`), **gh-primary → workflow-credential REST-token fallback**, surfaces the GitHub message. `PrReviewService` resolves the task PR, delegates, refreshes `pr_status`, audits; a refusal → 502. `POST /tasks/:id/pr/review` + `/pr/merge` (member-gated).
+- [x] web: a review action bar (approve/request-changes/comment + body + Submit) + merge control (method select + confirm) + a click-a-gutter **inline comment composer** (react-diff-view widgets), all on the diff surface (modal + Theme E Review tab via shared `PrReviewPanel`); refreshes the board on success. Typed `submitPrReview`/`mergePr` client.
+- [x] Tests: shared 6 (submission refine, comment/merge defaults, event map), gateway lib 7 (gh args + body + token fallback + refusal) + service 5 (404/delegate/refresh/audit/502) + controller stubs, web actions RTL 4. `:typecheck`/lint clean; shared+gateway (1409) + web (752) green modulo 2 pre-existing flakes (metrics, tmux-contract).
+
+---
+
 ## 2026-07-03 — feat: bulk export service — portable archive — Phase 49 Theme B (PR #291)
 
 Get the whole store out as a versioned, portable zip. Builds on the 49 A contract.
@@ -12,6 +23,8 @@ Get the whole store out as a versioned, portable zip. Builds on the 49 A contrac
 - [x] `GET /portability/export` (admin-gated) buffers + sends a zip — `manifest.json` + `domains/<name>.json` (`lib/archive.ts` via fflate, deterministic mtime). Manifest stamped with schemaVersion (`schema_meta`, clamped nonnegative), appVersion, timestamp, domains, `secretsMode`. `ExportOptions.domains` allowlist supported.
 - [x] This slice = the secret-free **work** domains: tasks, projects, repos, memories, notes, routines, media, councils, ideas, approvalRules, workflows (full defs via listSummaries→getWorkflow). ◐ `includeSecrets`/passphrase re-wrap deferred to the secrets slice; ◐ users/teams deferred to land with Theme C's restore (raw rows incl. passwordHash pair with import ordering). Streaming deferred (buffer; store is small).
 - [x] Tests: archive pack/unpack round-trip (+ deterministic bytes, missing-file rejection), export orchestrator (all domains, counts, allowlist, hydrated workflows/ideas) on a `:memory:` DB; full-graph DI smoke. gateway 1432 green (2 pre-existing flaky tmux under load, pass in isolation); `:typecheck` + lint clean.
+
+---
 
 ## 2026-07-03 — feat: Settings → Safety control panel — Phase 50 Theme E (PR #290) · **Phase 50 COMPLETE** 🎉
 

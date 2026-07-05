@@ -3,9 +3,26 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import type { PrDiff } from '@midnite/shared';
 
 const getPrDiff = vi.fn();
-vi.mock('@/lib/api', () => ({ getPrDiff: (...a: unknown[]) => getPrDiff(...a) }));
+vi.mock('@/lib/api', () => ({
+  getPrDiff: (...a: unknown[]) => getPrDiff(...a),
+  submitPrReview: vi.fn(),
+  mergePr: vi.fn(),
+}));
 
 import { PrReviewPanel } from './pr-review-panel';
+import { ConfirmProvider } from '@/components/confirm-dialog';
+import { ToastProvider } from '@/components/toast';
+
+// The panel now mounts the review viewer, whose action bar uses toast/confirm.
+function panel(props: { taskId: string; prUrl: string }) {
+  return (
+    <ToastProvider>
+      <ConfirmProvider>
+        <PrReviewPanel {...props} />
+      </ConfirmProvider>
+    </ToastProvider>
+  );
+}
 
 const diff: PrDiff = {
   prUrl: 'https://github.com/org/repo/pull/9',
@@ -42,7 +59,7 @@ afterEach(cleanup);
 describe('PrReviewPanel', () => {
   it('shows a loading state then the diff viewer', async () => {
     getPrDiff.mockResolvedValueOnce(diff);
-    render(<PrReviewPanel taskId="t1" prUrl={diff.prUrl} />);
+    render(panel({ taskId: "t1", prUrl: diff.prUrl }));
     expect(screen.getByText(/loading diff/i)).toBeTruthy();
     await waitFor(() => expect(screen.getAllByText("a.ts").length).toBeGreaterThan(0));
     expect(getPrDiff).toHaveBeenCalledWith('t1', expect.anything());
@@ -50,7 +67,7 @@ describe('PrReviewPanel', () => {
 
   it('fails open with a retry + Open-on-GitHub escape hatch', async () => {
     getPrDiff.mockRejectedValueOnce(new Error('403 forbidden'));
-    render(<PrReviewPanel taskId="t1" prUrl={diff.prUrl} />);
+    render(panel({ taskId: "t1", prUrl: diff.prUrl }));
     await waitFor(() => expect(screen.getByText(/couldn.t load the diff: 403 forbidden/i)).toBeTruthy());
     expect(screen.getByRole('link', { name: /open on github/i }).getAttribute('href')).toBe(diff.prUrl);
 
