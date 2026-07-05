@@ -12,8 +12,8 @@ End-to-end "execute a phase slice" for **midnite**.
 ## Respect
 - `CLAUDE.md` = conventions (package boundaries, gateway layering, commit style, pre-push gate). Re-read the relevant bits before coding.
 - `todo/` = tracker: **`_INDEX.md` (the roll-up you scan first — phase status, progress, `🔄 WIP`/`◻ TODO` themes)**, `phase-N-*.md` (open checklist per phase), `done.md` (append-only, newest first), `open-decisions.md`, `outstanding.md`; rules in `todo/README.md`. Markers: `- [ ]` open · `- [x]`/`✅` done · `◐ PARTIAL` · `⏳ deferred` · `❌ OUT OF SCOPE`. Never pick `deferred`/`OUT OF SCOPE` unless told. `_INDEX.md` is the source of truth for what's claimed/in-flight — keep it current (Stages 2.7 + 10).
-- Parallel work → git worktrees under `.git/worktrees/<branch>/`; keep the primary checkout (`/Users/nova/Dev/midnite`) as home base.
-- **Web tests can't run inside a `.git/worktrees` worktree** (vite denies `.git/**`) — run `moon run web:test` from the primary checkout.
+- Parallel work → git worktrees in the repo-root **`.worktrees/<branch>/`** dir (git-ignored; **never** under `.git/` — that path gets pruned by parallel `git worktree` runs and Vite denies `.git/**`); keep the primary checkout (`/Users/nova/Dev/midnite`) as home base.
+- **`.worktrees/` is outside `.git/`, so `moon run web:test` (and the full `moon run :test`) run fine inside the worktree** — no need to hop back to the primary checkout for web tests.
 
 ## 1 · Scan
 Read **[`todo/_INDEX.md`](../../../todo/_INDEX.md)** — the roll-up of every phase's status, progress, and which themes are `🔄 WIP` / `◻ TODO`. **Do not** read every `phase-*.md`; that's what the index replaces (saves context). Only open the individual `phase-N-*.md` for the **candidate phases** you're about to propose, to read the open theme detail. Skim `open-decisions.md`/`outstanding.md` if relevant. `gh pr list --state open` + the index's `🔄 WIP` column — anything in flight or already claimed isn't a fresh candidate. Emit a tight digest of the few candidate phases + their real open themes.
@@ -68,8 +68,8 @@ The claim must land on `main` **before** Stage 3 so the worktree branches from a
 ## 3 · Worktree
 ```bash
 git fetch origin                                    # picks up the WIP claim from 2.7
-git worktree add .git/worktrees/<slice> -b feature/<slice> origin/main
-cd .git/worktrees/<slice> && pnpm install
+git worktree add .worktrees/<slice> -b feature/<slice> origin/main
+cd .worktrees/<slice> && pnpm install
 ```
 Track sub-tasks with TodoWrite.
 
@@ -88,7 +88,7 @@ Capture **before/after with Playwright** against the running app (`moon run web:
 
 ## 6 · Pre-push gate
 ```bash
-moon run :typecheck && moon run :lint && moon run :test   # web:test from the primary checkout (gotcha above)
+moon run :typecheck && moon run :lint && moon run :test   # runs in-worktree — .worktrees/ is outside .git, so web:test works here
 ```
 All green before pushing — never push red.
 
@@ -132,8 +132,8 @@ Against, in order: fidelity to the phase doc/decisions → `CLAUDE.md` conventio
   If it names a phase, add that row (Status / counts / bar / theme letters, from its phase doc) directly on `main` and push — an unregistered phase is invisible to the next `/exec` and reads as stale on every surface.
 - **Teardown + report freed space — every merge.** Measure the worktree's on-disk size *before* removing it, tear down the worktree + branch, then report the reclaimed space:
   ```bash
-  freed=$(du -sk .git/worktrees/<slice> 2>/dev/null | cut -f1)   # KB, before removal
-  git worktree remove .git/worktrees/<slice>                     # add --force if it balks over git admin-file noise
+  freed=$(du -sk .worktrees/<slice> 2>/dev/null | cut -f1)       # KB, before removal
+  git worktree remove .worktrees/<slice>                         # add --force if it balks over untracked/admin-file noise
   git branch -D feature/<slice>                                  # -d normally; -D since a squash leaves it "unmerged"
   git worktree prune && git worktree list                        # confirm it's gone
   echo "freed ~$(( freed / 1024 )) MB"
