@@ -1,4 +1,8 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createClient, parseStatus, resolveBaseUrl } from './client.js';
 
 const TASK = {
@@ -252,56 +256,87 @@ describe('exportArchive (Phase 49 D)', () => {
   });
 });
 
-describe('previewImport / importArchive (Phase 49 D)', () => {
-  const PREVIEW = {
-    manifest: {
-      schemaVersion: 68,
-      appVersion: '0.1.0',
-      createdAt: '2026-07-05T00:00:00.000Z',
-      domains: ['tasks'],
-      secretsMode: 'excluded' as const,
-    },
-    domainCounts: { tasks: 3 },
+describe('import (Phase 49 D)', () => {
+  const manifest = {
+    schemaVersion: 68,
+    appVersion: '0.1.0',
+    createdAt: '2026-07-05T00:00:00.000Z',
+    domains: ['tasks'],
+    secretsMode: 'excluded' as const,
+  };
+  const preview = {
+    manifest,
+    domainCounts: { tasks: 2 },
     conflicts: { tasks: ['t1'] },
     compat: 'ok' as const,
     importable: true,
   };
-  const RESULT = { ok: true, mode: 'merge' as const, inserted: { tasks: 2 }, skipped: { tasks: 1 }, reindexed: true };
+  let seq = 0;
+  let archivePath = '';
 
-  it('previewImport POSTs the archive as multipart and validates the preview', async () => {
-    let seenUrl = '';
+  beforeEach(() => {
+    // openAsBlob needs a real file on disk — write a tiny zip-magic stub.
+    archivePath = join(tmpdir(), `midnite-import-test-${process.pid}-${seq++}.zip`);
+    writeFileSync(archivePath, Buffer.from([0x50, 0x4b, 0x03, 0x04]));
+  });
+  afterEach(() => rmSync(archivePath, { force: true }));
+
+  it('previewImport POSTs the archive as multipart and validates the ImportPreview', async () => {
+    let url = '';
     let method = '';
-    let form: FormData | undefined;
-    stubFetch((url, init) => {
-      seenUrl = url;
+    let body: unknown;
+    stubFetch((u, init) => {
+      url = u;
       method = init?.method ?? '';
-      form = init?.body as FormData;
-      return new Response(JSON.stringify(PREVIEW), { status: 200 });
+      body = init?.body;
+      return new Response(JSON.stringify(preview), { status: 200 });
     });
-    const preview = await createClient('http://gw').previewImport(Buffer.from('PKzip'), 'backup.zip');
-    expect(seenUrl).toBe('http://gw/portability/import/preview');
+    const got = await createClient('http://gw').previewImport(archivePath);
+    expect(url).toBe('http://gw/portability/import/preview');
     expect(method).toBe('POST');
-    expect(form?.get('archive')).toBeInstanceOf(Blob);
-    expect(preview.domainCounts.tasks).toBe(3);
-    expect(preview.importable).toBe(true);
+    expect(body).toBeInstanceOf(FormData);
+    expect((body as FormData).has('archive')).toBe(true);
+    expect(got.domainCounts.tasks).toBe(2);
+    expect(got.compat).toBe('ok');
   });
 
-  it('importArchive sends the mode field and validates the result', async () => {
+  it('importArchive threads mode + passphrase into the form and returns the ImportResult', async () => {
     let form: FormData | undefined;
-    stubFetch((_url, init) => {
+    stubFetch((_u, init) => {
       form = init?.body as FormData;
-      return new Response(JSON.stringify(RESULT), { status: 200 });
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          mode: 'replace',
+          inserted: { tasks: 2 },
+          skipped: {},
+          reindexed: true,
+        }),
+        { status: 200 },
+      );
     });
-    const result = await createClient('http://gw').importArchive(Buffer.from('PK'), { mode: 'merge' }, 'backup.zip');
-    expect(form?.get('mode')).toBe('merge');
-    expect(result.inserted.tasks).toBe(2);
-    expect(result.skipped.tasks).toBe(1);
+    const res = await createClient('http://gw').importArchive(archivePath, {
+      mode: 'replace',
+      passphrase: 'hunter2',
+    });
+    expect(form?.get('mode')).toBe('replace');
+    expect(form?.get('passphrase')).toBe('hunter2');
+    expect(form?.has('archive')).toBe(true);
+    expect(res.mode).toBe('replace');
+    expect(res.inserted.tasks).toBe(2);
   });
 
-  it('propagates a gateway error (e.g. a rejected newer-than-us archive)', async () => {
-    stubFetch(() => new Response(JSON.stringify({ message: 'archive schema is newer-archive' }), { status: 422 }));
-    await expect(
-      createClient('http://gw').previewImport(Buffer.from('PK'), 'backup.zip'),
-    ).rejects.toThrow(/newer-archive/);
+  it('omits the passphrase field when none is given', async () => {
+    let form: FormData | undefined;
+    stubFetch((_u, init) => {
+      form = init?.body as FormData;
+      return new Response(
+        JSON.stringify({ ok: true, mode: 'merge', inserted: {}, skipped: {}, reindexed: true }),
+        { status: 200 },
+      );
+    });
+    await createClient('http://gw').importArchive(archivePath, { mode: 'merge' });
+    expect(form?.has('passphrase')).toBe(false);
+    expect(form?.get('mode')).toBe('merge');
   });
 });

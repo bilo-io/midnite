@@ -1,15 +1,18 @@
+import { openAsBlob } from 'node:fs';
+import { basename } from 'node:path';
+
 import {
   ApprovalLogResponseSchema,
   AuthResponseSchema,
   BackupSummarySchema,
+  ImportPreviewSchema,
+  ImportResultSchema,
   BreakdownPreviewResponseSchema,
   BreakdownSchema,
   BulkCreateTaskResponseSchema,
   CheckRunListResponseSchema,
   CreateFromBreakdownResponseSchema,
   GuardrailsResponseSchema,
-  ImportPreviewSchema,
-  ImportResultSchema,
   InstallTemplateRequestSchema,
   PreflightReportSchema,
   ReadinessSchema,
@@ -36,6 +39,7 @@ import {
   type CheckRun,
   type CreateFromBreakdownResponse,
   type GuardrailsResponse,
+  type ImportOptions,
   type ImportPreview,
   type ImportResult,
   type InstallTemplateRequest,
@@ -96,13 +100,15 @@ export interface GatewayClient {
     summary: BackupSummary | null;
     body: ReadableStream<Uint8Array>;
   }>;
-  /** Dry-run a restore (Phase 49 D): per-domain counts, id conflicts, version verdict — no write. */
-  previewImport(archive: Buffer, filename: string): Promise<ImportPreview>;
-  /** Restore an archive (Phase 49 D): `replace` = wipe-then-restore, `merge` = insert new ids only. */
+  /** Dry-run a restore (Phase 49 D): per-domain counts, id conflicts, and the
+   *  schema-version verdict — makes no changes. Streams the archive as multipart. */
+  previewImport(file: string): Promise<ImportPreview>;
+  /** Restore an archive into this instance (Phase 49 D). `merge` inserts new ids
+   *  only; `replace` overwrites conflicting ids. `passphrase` unwraps a
+   *  secrets-bearing archive. Returns the per-domain outcome. */
   importArchive(
-    archive: Buffer,
-    opts: { mode: 'replace' | 'merge' },
-    filename: string,
+    file: string,
+    opts: { mode: ImportOptions['mode']; passphrase?: string },
   ): Promise<ImportResult>;
   setPriority(id: string, priority: number): Promise<Task>;
   addDependency(id: string, dependsOnId: string): Promise<Task>;
@@ -314,18 +320,23 @@ export function createClient(baseUrl: string, token?: string): GatewayClient {
       return { filename, summary, body: res.body };
     },
 
-    async previewImport(archive: Buffer, filename: string) {
+    async previewImport(file: string): Promise<ImportPreview> {
       const form = new FormData();
-      form.set('archive', new Blob([new Uint8Array(archive)]), filename);
+      // openAsBlob is file-backed → undici streams the archive without loading it all.
+      form.set('archive', await openAsBlob(file), basename(file));
       return ImportPreviewSchema.parse(
         await request('/portability/import/preview', { method: 'POST', body: form }),
       );
     },
 
-    async importArchive(archive: Buffer, opts: { mode: 'replace' | 'merge' }, filename: string) {
+    async importArchive(
+      file: string,
+      opts: { mode: ImportOptions['mode']; passphrase?: string },
+    ): Promise<ImportResult> {
       const form = new FormData();
-      form.set('archive', new Blob([new Uint8Array(archive)]), filename);
+      form.set('archive', await openAsBlob(file), basename(file));
       form.set('mode', opts.mode);
+      if (opts.passphrase) form.set('passphrase', opts.passphrase);
       return ImportResultSchema.parse(
         await request('/portability/import', { method: 'POST', body: form }),
       );

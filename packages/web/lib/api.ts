@@ -136,6 +136,8 @@ import {
   PrReviewDraftSchema,
   PrReviewDraftsResponseSchema,
   GuardrailsResponseSchema,
+  WsSettingsResponseSchema,
+  type WsRingSize,
   TaskCountsSchema,
   TaskFailuresResponseSchema,
   TaskSchema,
@@ -808,6 +810,22 @@ export async function mergePr(id: string, method: PrMergeMethod = 'squash'): Pro
 export async function getGuardrails(signal?: AbortSignal): Promise<GuardrailSettings> {
   const res = await fetchJson('/guardrails', { signal }, GuardrailsResponseSchema);
   return res.guardrails;
+}
+
+/** Phase 56 A — the live realtime event-ring size (open read). */
+export async function getWsSettings(signal?: AbortSignal): Promise<number> {
+  const res = await fetchJson('/ws/settings', { signal }, WsSettingsResponseSchema);
+  return res.settings.ringSize;
+}
+
+/** Retune the event-ring size (admin). Returns the applied size. */
+export async function updateWsSettings(ringSize: WsRingSize): Promise<number> {
+  const res = await fetchJson(
+    '/ws/settings',
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ ringSize }) },
+    WsSettingsResponseSchema,
+  );
+  return res.settings.ringSize;
 }
 
 /** The configured safety caps + policy mode + protected-actions (read-only,

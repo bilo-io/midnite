@@ -141,7 +141,7 @@ The greenfield heart: restore an archive safely, all-or-nothing.
 
 ---
 
-## Theme D — CLI export/import commands — **S-M** — ✅ DONE (export PR #294; import PR #303, 2026-07-05)
+## Theme D — CLI export/import commands — **S-M** — ✅ DONE (export PR #294, import PR #304, 2026-07-05)
 
 Backup/restore from a shell — the natural home for scripting + cron.
 
@@ -151,10 +151,9 @@ Backup/restore from a shell — the natural home for scripting + cron.
 - [x] `midnite export` — `--output <file>` (default = the server's content-disposition name), `--domains`;
       **streams** the archive to disk and prints a per-domain summary from the `X-Midnite-Backup-Manifest`
       response header (respects global `--json`). ◐ `--include-secrets`/`--passphrase` land with the secrets slice.
-- [x] `midnite import <file>` (`--mode merge|replace`/`--dry-run`/`--yes`) — always previews first (per-domain
-      counts + id conflicts + version verdict), **hard-blocks a newer-than-us archive** (no `--force`), then
-      confirms before the write (`--yes` skips; `--dry-run` previews only). `previewImport`/`importArchive` on
-      `GatewayClient` (multipart to the Theme C endpoints). (`--passphrase` lands with the secrets slice.)
+- [x] `midnite import <file>` (`--mode` merge/replace · `--dry-run` · `--passphrase` · `--yes`) — always
+      previews first (counts + id conflicts + schema verdict), refuses a newer-schema archive, confirms a
+      destructive replace unless `--yes`; streams the upload via `openAsBlob`. (PR #304, 2026-07-05)
 
 ---
 

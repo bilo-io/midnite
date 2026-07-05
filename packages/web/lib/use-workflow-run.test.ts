@@ -39,8 +39,10 @@ class FakeWebSocket {
   open() {
     this.onopen?.();
   }
+  seq = 0;
   emit(event: WorkflowEvent) {
-    this.onmessage?.({ data: JSON.stringify(event) });
+    // Phase 56 A: the gateway wraps events in a sequenced envelope on the wire.
+    this.onmessage?.({ data: JSON.stringify({ seq: ++this.seq, ts: 0, event }) });
   }
   emitRaw(data: string) {
     this.onmessage?.({ data });

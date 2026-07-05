@@ -249,6 +249,15 @@ export const OAuthClientConfigSchema = z.object({
   scopes: z.array(z.string()).default([]),
 });
 
+// Phase 56 A — realtime WebSocket reliability. The gateway keeps a bounded event
+// ring per scoped channel (tasks/ideas per team, workflows per run) so a briefly
+// disconnected client can resume without silently missing events (Theme B). This
+// is the boot default; admins can retune it live (Settings → runtime-only).
+export const WsConfigSchema = z.object({
+  // Events retained per scoped channel. Larger = longer resume window, more memory.
+  ringSize: z.number().int().positive().default(512),
+});
+
 export const WorkflowsConfigSchema = z.object({
   // Feature flag — workflows is greenfield, so it ships off by default.
   enabled: z.boolean().default(false),
@@ -415,6 +424,9 @@ export const MidniteConfigSchema = z.object({
   // Scheduled auto-backup (Phase 49 F). Off by default. Optional (defaulted) so
   // existing midnite.json files keep validating.
   backup: BackupConfigSchema.default({}),
+  // Realtime WS reliability (Phase 56). Optional (defaulted) so existing
+  // midnite.json files keep validating.
+  ws: WsConfigSchema.default({}),
 });
 
 export type MidniteConfig = z.infer<typeof MidniteConfigSchema>;

@@ -29,7 +29,7 @@
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
 | [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 0/26 | `░░░░░░░░░░` | 0% | A | B C D E F |
-| [56 · Realtime / WS reliability](phase-56-realtime-ws-reliability.md) | 🔄 WIP | 0/26 | `░░░░░░░░░░` | 0% | A | B C D E F |
+| [56 · Realtime / WS reliability](phase-56-realtime-ws-reliability.md) | 🔄 WIP | 3/26 | `█░░░░░░░░░` | 12% | — | B C D E F |
 | [55 · Projects detail page](phase-55-projects-detail-page.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
 | [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [53 · Task lifecycle resilience](phase-53-task-lifecycle-resilience.md) | ✅ DONE | 22/22 | `██████████` | 100% | — | — |
@@ -120,7 +120,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 
 ### [Phase 56 — Realtime / WS reliability](phase-56-realtime-ws-reliability.md)
 *(No new domain — a shared reliability layer under the existing WS gateways, lifting the terminal WS's proven seq+ring+resume onto every board channel so clients never silently drift. In-memory ring; restart forces resync.)*
-- 🔄 **A** — Sequenced event contracts + server event ring
+- ✅ **A** — Sequenced event contracts + server event ring (PR #305)
 - ◻ **B** — Resume protocol + gap-detection (the core guarantee)
 - ◻ **C** — Per-client backpressure + heartbeat
 - ◻ **D** — Shared reliable client subscription hook
@@ -179,7 +179,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **A** — Archive contract + schema-version stamp
 - ✅ **B** — Bulk export service (PR #291; secrets + users/teams deferred)
 - ✅ **C** — Atomic import service (version-gated, replace/merge, in-process reindex) (PR #298)
-- ✅ **D** — CLI export/import commands (export PR #294; `midnite import` preview→confirm PR #303)
+- ✅ **D** — CLI export/import commands (export PR #294; import PR #304)
 - ✅ **E** — Web Settings → Data page (download PR #296; restore preview→confirm PR #303; also fixed a DI bug that 500'd export)
 - ✅ **F** — Scheduled auto-backup (PR #299)
 

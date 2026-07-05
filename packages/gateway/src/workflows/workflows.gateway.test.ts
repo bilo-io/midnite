@@ -1,9 +1,10 @@
 import type { IncomingMessage } from 'node:http';
 import { describe, expect, it } from 'vitest';
-import { parseConfig, type MidniteConfig, type WorkflowEvent } from '@midnite/shared';
+import { parseConfig, type MidniteConfig, type SequencedEnvelope, type WorkflowEvent } from '@midnite/shared';
 import type { WebSocket } from 'ws';
 import { ConnectionRegistry } from '../ws/connection-registry';
 import { WsBroadcastService } from '../ws/ws-broadcast.service';
+import { ReliableBroadcastService } from '../ws/reliable-broadcast.service';
 import { WorkflowEventBus } from './workflow-event-bus';
 import { WorkflowsGateway } from './workflows.gateway';
 
@@ -18,7 +19,8 @@ function fakeClient() {
       if (event === 'message') onMessage = cb;
     },
     send(payload: string) {
-      sent.push(JSON.parse(payload) as WorkflowEvent);
+      // Phase 56 A: unwrap the sequenced envelope.
+      sent.push((JSON.parse(payload) as SequencedEnvelope<WorkflowEvent>).event);
     },
   };
   return {
@@ -40,7 +42,8 @@ function makeGateway(cfg = CONFIG) {
   const bus = new WorkflowEventBus();
   const registry = new ConnectionRegistry();
   const wsBroadcast = new WsBroadcastService(registry);
-  const gateway = new WorkflowsGateway(cfg, bus, registry, wsBroadcast);
+  const reliable = new ReliableBroadcastService(wsBroadcast, cfg);
+  const gateway = new WorkflowsGateway(cfg, bus, registry, reliable);
   gateway.onModuleInit();
   return { gateway, bus };
 }
