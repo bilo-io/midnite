@@ -251,3 +251,57 @@ describe('exportArchive (Phase 49 D)', () => {
     expect(got).toBeNull(); // no manifest header → null summary
   });
 });
+
+describe('previewImport / importArchive (Phase 49 D)', () => {
+  const PREVIEW = {
+    manifest: {
+      schemaVersion: 68,
+      appVersion: '0.1.0',
+      createdAt: '2026-07-05T00:00:00.000Z',
+      domains: ['tasks'],
+      secretsMode: 'excluded' as const,
+    },
+    domainCounts: { tasks: 3 },
+    conflicts: { tasks: ['t1'] },
+    compat: 'ok' as const,
+    importable: true,
+  };
+  const RESULT = { ok: true, mode: 'merge' as const, inserted: { tasks: 2 }, skipped: { tasks: 1 }, reindexed: true };
+
+  it('previewImport POSTs the archive as multipart and validates the preview', async () => {
+    let seenUrl = '';
+    let method = '';
+    let form: FormData | undefined;
+    stubFetch((url, init) => {
+      seenUrl = url;
+      method = init?.method ?? '';
+      form = init?.body as FormData;
+      return new Response(JSON.stringify(PREVIEW), { status: 200 });
+    });
+    const preview = await createClient('http://gw').previewImport(Buffer.from('PKzip'), 'backup.zip');
+    expect(seenUrl).toBe('http://gw/portability/import/preview');
+    expect(method).toBe('POST');
+    expect(form?.get('archive')).toBeInstanceOf(Blob);
+    expect(preview.domainCounts.tasks).toBe(3);
+    expect(preview.importable).toBe(true);
+  });
+
+  it('importArchive sends the mode field and validates the result', async () => {
+    let form: FormData | undefined;
+    stubFetch((_url, init) => {
+      form = init?.body as FormData;
+      return new Response(JSON.stringify(RESULT), { status: 200 });
+    });
+    const result = await createClient('http://gw').importArchive(Buffer.from('PK'), { mode: 'merge' }, 'backup.zip');
+    expect(form?.get('mode')).toBe('merge');
+    expect(result.inserted.tasks).toBe(2);
+    expect(result.skipped.tasks).toBe(1);
+  });
+
+  it('propagates a gateway error (e.g. a rejected newer-than-us archive)', async () => {
+    stubFetch(() => new Response(JSON.stringify({ message: 'archive schema is newer-archive' }), { status: 422 }));
+    await expect(
+      createClient('http://gw').previewImport(Buffer.from('PK'), 'backup.zip'),
+    ).rejects.toThrow(/newer-archive/);
+  });
+});
