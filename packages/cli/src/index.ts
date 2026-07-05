@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { readFile, writeFile } from 'node:fs/promises';
 import { createWriteStream } from 'node:fs';
+import { basename } from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { clearAuth, readAuth, resolveToken, writeAuth } from './lib/auth-store.js';
@@ -438,6 +439,90 @@ program
       const total = Object.values(summary.counts).reduce((n, c) => n + c, 0);
       console.log(`${summary.domains.length} domains, ${total} records (schema v${summary.schemaVersion}, secrets: ${summary.secretsMode})`);
       for (const d of summary.domains) console.log(`  ${d}: ${summary.counts[d] ?? 0}`);
+    }
+  });
+
+// ── Phase 49 D — data portability: restore a full-store backup archive ────────
+program
+  .command('import <file>')
+  .description('Restore a full-store backup archive (admin) — previews then confirms — Phase 49')
+  .option('--mode <mode>', 'merge (insert new ids) | replace (wipe-then-restore)', 'merge')
+  .option('--dry-run', 'preview only — report what a restore would do, write nothing')
+  .option('-y, --yes', 'skip the confirmation prompt (for scripting/cron)')
+  .action(async (file: string, opts: { mode?: string; dryRun?: boolean; yes?: boolean }) => {
+    const mode = opts.mode === 'replace' ? 'replace' : 'merge';
+    if (opts.mode && opts.mode !== 'merge' && opts.mode !== 'replace') {
+      throw new Error(`--mode must be "merge" or "replace" (got "${opts.mode}")`);
+    }
+    const archive = await readFile(file);
+    const name = basename(file);
+    const c = client();
+
+    // Always dry-run first: report counts + conflicts + the version verdict.
+    const preview = await withSpinner('Previewing…', () => c.previewImport(archive, name));
+    const totalRecords = Object.values(preview.domainCounts).reduce((n, v) => n + v, 0);
+    const totalConflicts = Object.values(preview.conflicts).reduce((n, ids) => n + ids.length, 0);
+
+    // Hard version gate: refuse a newer-than-us archive outright (no --force).
+    if (!preview.importable) {
+      if (isJsonMode()) {
+        printJson({ ...preview, imported: false, reason: 'version-incompatible' });
+      } else {
+        console.error(
+          `refusing to import: archive schema is ${preview.compat} (v${preview.manifest.schemaVersion}) — newer than this instance understands. Upgrade midnite, then retry.`,
+        );
+      }
+      process.exitCode = 1;
+      return;
+    }
+
+    if (isJsonMode() && opts.dryRun) {
+      printJson({ ...preview, mode, dryRun: true });
+      return;
+    }
+    if (!isJsonMode()) {
+      console.log(
+        `${Object.keys(preview.domainCounts).length} domains, ${totalRecords} records (schema v${preview.manifest.schemaVersion}, ${preview.compat})`,
+      );
+      for (const d of preview.manifest.domains) {
+        const n = preview.domainCounts[d] ?? 0;
+        const conflicts = preview.conflicts[d]?.length ?? 0;
+        console.log(`  ${d}: ${n}${conflicts ? ` (${conflicts} existing id${conflicts === 1 ? '' : 's'})` : ''}`);
+      }
+      console.log(
+        `mode: ${mode}${mode === 'replace' ? ' — replace WIPES the listed domains before restoring' : ' — merge inserts new ids, keeps existing'}`,
+      );
+    }
+    if (opts.dryRun) {
+      if (!isJsonMode()) console.log('dry-run — nothing written.');
+      return;
+    }
+
+    // Confirm the destructive write unless --yes (or non-interactive, where the
+    // prompt would hang — there we require --yes to proceed).
+    if (!opts.yes) {
+      if (!canPrompt()) {
+        throw new Error('refusing to import without confirmation — pass --yes to import non-interactively');
+      }
+      const ok = await confirmPrompt(
+        `Restore ${totalRecords} records into this store with mode "${mode}"${totalConflicts ? ` (${totalConflicts} id conflict${totalConflicts === 1 ? '' : 's'})` : ''}?`,
+      );
+      if (!ok) {
+        console.log('aborted — nothing written.');
+        return;
+      }
+    }
+
+    const result = await withSpinner('Restoring…', () => c.importArchive(archive, { mode }, name));
+    if (isJsonMode()) {
+      printJson(result);
+      return;
+    }
+    const inserted = Object.values(result.inserted).reduce((n, v) => n + v, 0);
+    const skipped = Object.values(result.skipped).reduce((n, v) => n + v, 0);
+    console.log(`restored (${result.mode}): ${inserted} inserted, ${skipped} skipped${result.reindexed ? '' : ' — search reindex warned'}`);
+    for (const d of Object.keys(result.inserted)) {
+      console.log(`  ${d}: ${result.inserted[d] ?? 0} inserted${result.skipped[d] ? `, ${result.skipped[d]} skipped` : ''}`);
     }
   });
 

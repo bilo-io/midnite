@@ -8,6 +8,8 @@ import {
   CheckRunListResponseSchema,
   CreateFromBreakdownResponseSchema,
   GuardrailsResponseSchema,
+  ImportPreviewSchema,
+  ImportResultSchema,
   InstallTemplateRequestSchema,
   PreflightReportSchema,
   ReadinessSchema,
@@ -34,6 +36,8 @@ import {
   type CheckRun,
   type CreateFromBreakdownResponse,
   type GuardrailsResponse,
+  type ImportPreview,
+  type ImportResult,
   type InstallTemplateRequest,
   type PauseScope,
   type PreflightReport,
@@ -92,6 +96,14 @@ export interface GatewayClient {
     summary: BackupSummary | null;
     body: ReadableStream<Uint8Array>;
   }>;
+  /** Dry-run a restore (Phase 49 D): per-domain counts, id conflicts, version verdict — no write. */
+  previewImport(archive: Buffer, filename: string): Promise<ImportPreview>;
+  /** Restore an archive (Phase 49 D): `replace` = wipe-then-restore, `merge` = insert new ids only. */
+  importArchive(
+    archive: Buffer,
+    opts: { mode: 'replace' | 'merge' },
+    filename: string,
+  ): Promise<ImportResult>;
   setPriority(id: string, priority: number): Promise<Task>;
   addDependency(id: string, dependsOnId: string): Promise<Task>;
   removeDependency(id: string, dependsOnId: string): Promise<Task>;
@@ -300,6 +312,23 @@ export function createClient(baseUrl: string, token?: string): GatewayClient {
         if (parsed.success) summary = parsed.data;
       }
       return { filename, summary, body: res.body };
+    },
+
+    async previewImport(archive: Buffer, filename: string) {
+      const form = new FormData();
+      form.set('archive', new Blob([new Uint8Array(archive)]), filename);
+      return ImportPreviewSchema.parse(
+        await request('/portability/import/preview', { method: 'POST', body: form }),
+      );
+    },
+
+    async importArchive(archive: Buffer, opts: { mode: 'replace' | 'merge' }, filename: string) {
+      const form = new FormData();
+      form.set('archive', new Blob([new Uint8Array(archive)]), filename);
+      form.set('mode', opts.mode);
+      return ImportResultSchema.parse(
+        await request('/portability/import', { method: 'POST', body: form }),
+      );
     },
 
     async setPriority(id: string, priority: number): Promise<Task> {
