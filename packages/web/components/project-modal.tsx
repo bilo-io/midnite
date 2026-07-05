@@ -82,6 +82,8 @@ export function ProjectModal({
   const [color, setColor] = useState(project?.color ?? DEFAULT_COLOR);
   const [workDir, setWorkDir] = useState(project?.workDir ?? '');
   const [picking, setPicking] = useState(false);
+  // The plan panel's nested doc editor owns Escape while open (see guard below).
+  const [planDocOpen, setPlanDocOpen] = useState(false);
   // Create mode stages URLs client-side; edit mode mutates the live project.
   const [staged, setStaged] = useState<string[]>([]);
   const [current, setCurrent] = useState<Project | null>(project);
@@ -93,12 +95,12 @@ export function ProjectModal({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      // While the folder picker is open it owns Escape (and closes itself).
-      if (e.key === 'Escape' && !picking) onClose();
+      // While a nested layer is open it owns Escape (and closes itself).
+      if (e.key === 'Escape' && !picking && !planDocOpen) onClose();
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [onClose, picking]);
+  }, [onClose, picking, planDocOpen]);
 
   const sourceCount = isEdit ? current?.sources.length ?? 0 : staged.length;
   const taskCount = tasks?.length ?? 0;
@@ -376,7 +378,7 @@ export function ProjectModal({
             {/* Plan (edit only) */}
             {isEdit && current ? (
               <div role="tabpanel" className={cn(tab === 'plan' ? '' : 'hidden')}>
-                <ProjectPlanPanel project={current} templates={templates} />
+                <ProjectPlanPanel project={current} templates={templates} onDocOpenChange={setPlanDocOpen} />
               </div>
             ) : null}
 

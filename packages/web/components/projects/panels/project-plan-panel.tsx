@@ -15,6 +15,9 @@ import { cn } from '@/lib/utils';
 type Props = {
   project: Project;
   templates?: Template[];
+  /** Notify a host (the modal) when the nested doc editor opens/closes, so it can
+   *  yield Escape to it. The detail page doesn't need this. */
+  onDocOpenChange?: (open: boolean) => void;
 };
 
 /**
@@ -22,7 +25,7 @@ type Props = {
  * id. Extracted from the modal so the modal + detail page render the same list +
  * template picker + doc editor.
  */
-export function ProjectPlanPanel({ project, templates = TEMPLATES }: Props) {
+export function ProjectPlanPanel({ project, templates = TEMPLATES, onDocOpenChange }: Props) {
   const confirm = useConfirm();
   const [docs, setDocs] = useState<PlanDoc[]>([]);
   const [openDocId, setOpenDocId] = useState<string | null>(null);
@@ -32,6 +35,9 @@ export function ProjectPlanPanel({ project, templates = TEMPLATES }: Props) {
   const addMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => setDocs(loadPlanDocs(project.id)), [project.id]);
+
+  // Let a host modal know when the nested doc editor owns Escape.
+  useEffect(() => onDocOpenChange?.(openDocId !== null), [openDocId, onDocOpenChange]);
 
   const placeAddMenu = useCallback(() => {
     const el = addRef.current;
