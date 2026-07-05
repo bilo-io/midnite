@@ -141,7 +141,7 @@ The greenfield heart: restore an archive safely, all-or-nothing.
 
 ---
 
-## Theme D — CLI export/import commands — **S-M** — ◐ EXPORT DONE (PR #293, 2026-07-05; import → Theme C)
+## Theme D — CLI export/import commands — **S-M** — ◐ EXPORT DONE (PR #294, 2026-07-05; import → Theme C)
 
 Backup/restore from a shell — the natural home for scripting + cron.
 

@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-05 — feat: CLI backup export — `midnite export` — Phase 49 Theme D (PR #PLACEHOLDER)
+## 2026-07-05 — feat: CLI backup export — `midnite export` — Phase 49 Theme D (PR #294)
 
 Backup from a shell. The export half of Theme D; import lands with Theme C.
 

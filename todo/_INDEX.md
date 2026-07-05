@@ -151,7 +151,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **A** — Archive contract + schema-version stamp
 - ✅ **B** — Bulk export service (PR #291; secrets + users/teams deferred)
 - ◻ **C** — Atomic import service
-- ◐ **D** — CLI export/import commands (export done PR #293; import → Theme C)
+- ◐ **D** — CLI export/import commands (export done PR #294; import → Theme C)
 - ◻ **E** — Web Settings → Data page
 - ◻ **F** — Scheduled auto-backup
 
