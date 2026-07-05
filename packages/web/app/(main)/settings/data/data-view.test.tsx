@@ -1,12 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { BackupStatus, BackupSummary } from '@midnite/shared';
+import type { BackupStatus, BackupSummary, ImportPreview, ImportResult } from '@midnite/shared';
 
 const downloadBackup = vi.fn();
 const getBackupStatus = vi.fn();
+const previewImport = vi.fn();
+const importArchive = vi.fn();
 vi.mock('@/lib/api', () => ({
   downloadBackup: () => downloadBackup(),
   getBackupStatus: () => getBackupStatus(),
+  previewImport: (file: File) => previewImport(file),
+  importArchive: (file: File, opts: unknown) => importArchive(file, opts),
 }));
 const toast = { success: vi.fn(), error: vi.fn() };
 vi.mock('@/components/toast', () => ({ useToast: () => toast }));
@@ -41,14 +45,17 @@ const summary: BackupSummary = {
 };
 
 describe('DataView (Phase 49 E)', () => {
-  it('lists the included domains + a secrets-excluded note, restore disabled', () => {
+  it('lists the included domains + a secrets-excluded note, restore section present', () => {
     render(<DataView />);
     expect(screen.getByText('Included in a backup')).toBeInTheDocument();
     expect(screen.getByText('Tasks')).toBeInTheDocument();
     expect(screen.getByText('Workflows')).toBeInTheDocument();
     expect(screen.getByText(/Secrets .* are excluded/)).toBeInTheDocument();
-    // Restore section is present but disabled (import lands with Theme C).
-    expect(screen.getByRole('button', { name: /Restore/ })).toBeDisabled();
+    // Restore section is present; the file picker gates everything else.
+    expect(screen.getByText('Restore from a backup')).toBeInTheDocument();
+    expect(screen.getByLabelText('Choose a backup archive')).toBeInTheDocument();
+    // No Restore button until an archive is picked + previewed.
+    expect(screen.queryByRole('button', { name: /^Restore \(/ })).not.toBeInTheDocument();
   });
 
   it('downloads a backup and surfaces the per-domain summary', async () => {
@@ -68,6 +75,89 @@ describe('DataView (Phase 49 E)', () => {
     render(<DataView />);
     fireEvent.click(screen.getByRole('button', { name: /Download backup/ }));
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith('403 admin only'));
+  });
+});
+
+const makePreview = (over: Partial<ImportPreview> = {}): ImportPreview => ({
+  manifest: {
+    schemaVersion: 67,
+    appVersion: '1.2.0',
+    createdAt: '2026-07-05T00:00:00.000Z',
+    domains: ['tasks'],
+    secretsMode: 'excluded',
+  },
+  domainCounts: { tasks: 12 },
+  conflicts: { tasks: ['t1', 't2'] },
+  compat: 'ok',
+  importable: true,
+  ...over,
+});
+
+function pickArchive(): void {
+  const input = screen.getByLabelText('Choose a backup archive') as HTMLInputElement;
+  const file = new File(['zip'], 'backup.zip', { type: 'application/zip' });
+  fireEvent.change(input, { target: { files: [file] } });
+}
+
+describe('DataView — restore (Phase 49 E)', () => {
+  it('auto-previews on file select and enables a merge restore', async () => {
+    previewImport.mockResolvedValue(makePreview());
+    render(<DataView />);
+    pickArchive();
+
+    await waitFor(() => expect(previewImport).toHaveBeenCalledOnce());
+    // Preview card: schema verdict + conflict tally.
+    expect(await screen.findByText(/schema v67 · 12 records · 2 id conflict/)).toBeInTheDocument();
+    // merge is the default → Restore is enabled immediately.
+    expect(screen.getByRole('button', { name: /Restore \(merge\)/ })).toBeEnabled();
+  });
+
+  it('gates a destructive replace behind typing "replace"', async () => {
+    previewImport.mockResolvedValue(makePreview());
+    render(<DataView />);
+    pickArchive();
+    await screen.findByRole('button', { name: /Restore \(merge\)/ });
+
+    fireEvent.click(screen.getByRole('radio', { name: /Replace/ }));
+    const btn = screen.getByRole('button', { name: /Restore \(replace\)/ });
+    expect(btn).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText('Type replace to confirm'), { target: { value: 'replace' } });
+    expect(btn).toBeEnabled();
+  });
+
+  it('restores and shows a per-domain summary', async () => {
+    previewImport.mockResolvedValue(makePreview());
+    importArchive.mockResolvedValue({
+      ok: true,
+      mode: 'merge',
+      inserted: { tasks: 10 },
+      skipped: { tasks: 2 },
+      reindexed: true,
+    } satisfies ImportResult);
+    render(<DataView />);
+    pickArchive();
+    fireEvent.click(await screen.findByRole('button', { name: /Restore \(merge\)/ }));
+
+    await waitFor(() => expect(importArchive).toHaveBeenCalledWith(expect.any(File), { mode: 'merge' }));
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith(expect.stringContaining('Restored 10')));
+    expect(screen.getByText(/Restored \(merge\) — 10 inserted, 2 skipped/)).toBeInTheDocument();
+  });
+
+  it('refuses a newer-schema archive and offers no restore button', async () => {
+    previewImport.mockResolvedValue(makePreview({ compat: 'newer-archive', importable: false }));
+    render(<DataView />);
+    pickArchive();
+
+    expect(await screen.findByText(/newer midnite schema/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Restore \(/ })).not.toBeInTheDocument();
+  });
+
+  it('surfaces a preview failure inline', async () => {
+    previewImport.mockRejectedValue(new Error('403 admin only'));
+    render(<DataView />);
+    pickArchive();
+    expect(await screen.findByText('403 admin only')).toBeInTheDocument();
   });
 });
 

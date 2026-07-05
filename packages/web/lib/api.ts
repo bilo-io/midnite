@@ -285,6 +285,10 @@ import {
   type BackupSummary,
   BackupStatusSchema,
   type BackupStatus,
+  ImportPreviewSchema,
+  type ImportPreview,
+  ImportResultSchema,
+  type ImportResult,
 } from '@midnite/shared';
 import { z } from 'zod';
 
@@ -1744,6 +1748,42 @@ export async function downloadBackup(
 /** Phase 49 F — scheduled auto-backup status (admin-gated) for the Data page. */
 export async function getBackupStatus(signal?: AbortSignal): Promise<BackupStatus> {
   return fetchJson('/portability/backup/status', { signal }, BackupStatusSchema);
+}
+
+/** POST a browser File to a multipart portability endpoint, validating the JSON
+ *  reply. A bare fetch (not fetchJson) so we set the auth header without forcing
+ *  a JSON content-type — the browser adds the multipart boundary itself. */
+async function postArchive<T>(
+  path: string,
+  file: File,
+  fields: Record<string, string>,
+  schema: { parse: (v: unknown) => T },
+): Promise<T> {
+  const form = new FormData();
+  form.set('archive', file, file.name);
+  for (const [k, v] of Object.entries(fields)) form.set(k, v);
+  const headers: Record<string, string> = {};
+  if (_accessToken) headers['authorization'] = `Bearer ${_accessToken}`;
+  const res = await fetch(`${gatewayUrl()}${path}`, { method: 'POST', body: form, headers });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new ApiError(errorMessage(res, text), res.status);
+  }
+  return schema.parse(await res.json());
+}
+
+/** Phase 49 E — dry-run a restore: per-domain counts, id conflicts, schema verdict. */
+export async function previewImport(file: File): Promise<ImportPreview> {
+  return postArchive('/portability/import/preview', file, {}, ImportPreviewSchema);
+}
+
+/** Phase 49 E — restore an archive. `merge` inserts new ids only; `replace`
+ *  wipes then restores. Returns the per-domain outcome. */
+export async function importArchive(
+  file: File,
+  opts: { mode: ImportResult['mode'] },
+): Promise<ImportResult> {
+  return postArchive('/portability/import', file, { mode: opts.mode }, ImportResultSchema);
 }
 
 /** Fetch a task thread as markdown (the gateway's `taskToMarkdown`). Backs the
