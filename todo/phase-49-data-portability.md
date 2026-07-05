@@ -171,7 +171,7 @@ Point-and-click backup/restore with a safety net.
 
 ---
 
-## Theme F — Scheduled auto-backup — **M** — ✅ DONE (PR #298, 2026-07-05)
+## Theme F — Scheduled auto-backup — **M** — ✅ DONE (PR #299, 2026-07-05)
 
 Backups that happen without anyone remembering to run them.
 

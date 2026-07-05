@@ -161,7 +161,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ◻ **C** — Atomic import service
 - ◐ **D** — CLI export/import commands (export done PR #294; import → Theme C)
 - ◐ **E** — Web Settings → Data page (download half shipped PR #296; restore pending import C)
-- ✅ **F** — Scheduled auto-backup (PR #298)
+- ✅ **F** — Scheduled auto-backup (PR #299)
 
 ### [Phase 48 — Slides (reveal.js decks)](phase-48-slides.md)
 *(Net-new domain; persistence mirrors workflows; web static-export `?id=`; reveal.js client-only.)*

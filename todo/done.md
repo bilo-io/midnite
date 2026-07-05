@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-05 — feat: scheduled auto-backup + Data-page status — Phase 49 Theme F (PR #298)
+## 2026-07-05 — feat: scheduled auto-backup + Data-page status — Phase 49 Theme F (PR #299)
 
 Backups that happen without anyone remembering to run them. Builds on the merged export (B).
 
