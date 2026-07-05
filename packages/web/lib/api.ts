@@ -166,6 +166,8 @@ import {
   type LlmProvider,
   type Memory,
   type PrDiff,
+  type PrReviewSubmission,
+  type PrMergeMethod,
   type GuardrailSettings,
   type PauseScope,
   type PrimaryAgent,
@@ -693,6 +695,27 @@ export async function refreshPrStatus(id: string): Promise<Task> {
  */
 export async function getPrDiff(id: string, signal?: AbortSignal): Promise<PrDiff> {
   return fetchJson(`/tasks/${encodeURIComponent(id)}/pr/diff`, { signal }, PrDiffSchema);
+}
+
+/** Submit a review (approve / request-changes / comment + inline comments) on a
+ *  task's PR (Phase 52 Theme C). Returns the re-hydrated task with a refreshed PR
+ *  status. A GitHub refusal surfaces as an ApiError with the API message. */
+export async function submitPrReview(id: string, submission: PrReviewSubmission): Promise<Task> {
+  return fetchJson(
+    `/tasks/${encodeURIComponent(id)}/pr/review`,
+    { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(submission) },
+    TaskSchema,
+  );
+}
+
+/** Merge a task's PR with the given method (default squash). Honors branch
+ *  protection — a refusal surfaces as an ApiError. Returns the re-hydrated task. */
+export async function mergePr(id: string, method: PrMergeMethod = 'squash'): Promise<Task> {
+  return fetchJson(
+    `/tasks/${encodeURIComponent(id)}/pr/merge`,
+    { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ method }) },
+    TaskSchema,
+  );
 }
 
 // --- Guardrails: kill switch & pause (Phase 50 A) ---
