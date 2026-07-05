@@ -28,6 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
+| [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | ◻ TODO | 0/25 | `░░░░░░░░░░` | 0% | — | A B C D E F |
 | [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 11/26 | `████░░░░░░` | 42% | D | C |
 | [56 · Realtime / WS reliability](phase-56-realtime-ws-reliability.md) | 🔄 WIP | 8/26 | `███░░░░░░░` | 31% | B | D E |
 | [55 · Projects detail page](phase-55-projects-detail-page.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
@@ -108,6 +109,15 @@ shortcut). The 2 contextual-command boxes are now **un-deferred and folded into 
 Every phase's lettered themes with a status icon + one-liner, so you can gauge scope and pick
 work without opening the phase doc. Status: `✅` done · `🔄` WIP (claimed) · `◻` TODO · `◐`
 partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
+
+### [Phase 58 — Dependency graph & milestone roadmap](phase-58-dependency-graph-roadmap.md)
+*(Make the plan visible: surface Phase 27's dependency edges as a DAG + a milestone roadmap. Server-authoritative graph API; React Flow + dagre view; milestone data model + assignment. No new scheduling semantics — read/visualize what's modeled.)*
+- ◻ **A** — Graph API (server-authoritative)
+- ◻ **B** — Dependency DAG view (React Flow + dagre)
+- ◻ **C** — Project progress overlay
+- ◻ **D** — Milestone data model
+- ◻ **E** — Roadmap view + milestone assignment
+- ◻ **F** — Entry points + breakdown tie-in
 
 ### [Phase 57 — Performance & scale](phase-57-performance-scale.md)
 *(No new domain — perf work across existing layers: batch loads + indexes in repositories, lean summary DTOs + pagination as shared contracts, cache tuning + virtualization on the web. Evidence-driven via a seed + benchmark harness.)*
