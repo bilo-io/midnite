@@ -252,6 +252,12 @@ class InMemoryRepo extends TasksRepository {
       attachments: this.listAttachments(row.id),
     };
   }
+
+  // The batched path (Phase 57 B) is contractually `rows.map(hydrate)`; the fake
+  // has no real db, so mirror that directly rather than hitting the SQL loaders.
+  override hydrateMany(rows: TaskRow[]): Task[] {
+    return rows.map((r) => this.hydrate(r));
+  }
 }
 
 function seed(repo: InMemoryRepo, statuses: Status[]) {

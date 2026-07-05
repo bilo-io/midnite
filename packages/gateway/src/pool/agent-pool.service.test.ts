@@ -15,6 +15,13 @@ function fakeTasks(initial: FakeTask[]) {
   });
   const service = {
     listTasks: (status?: string) => tasks.filter((t) => !status || t.status === status),
+    // Pool's snapshot now sizes the queue via getCounts() (Phase 57 B), not by hydrating todos.
+    getCounts: () => ({
+      backlog: tasks.filter((t) => t.status === 'backlog').length,
+      todo: tasks.filter((t) => t.status === 'todo').length,
+      inProgress: tasks.filter((t) => t.status === 'wip' || t.status === 'waiting').length,
+      done: tasks.filter((t) => t.status === 'done').length,
+    }),
     requeue,
   } as unknown as TasksService;
   return { service, requeue, current: () => tasks };

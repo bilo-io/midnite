@@ -48,9 +48,13 @@ export class WorkflowsService {
   // --- reads ---
 
   listSummaries(scope?: TeamScope): WorkflowSummary[] {
-    return this.repo.listWorkflowRows(scope).map((row) => {
+    const rows = this.repo.listWorkflowRows(scope);
+    // Batch the latest-run lookup (Phase 57 B) — one query for the whole page
+    // instead of a `latestRunRow` per workflow (the N+1 the harness tracks).
+    const latestByWorkflow = this.repo.latestRunRowsByWorkflowIds(rows.map((r) => r.id));
+    return rows.map((row) => {
       const workflow = this.repo.hydrateWorkflow(row);
-      const latest = this.repo.latestRunRow(row.id);
+      const latest = latestByWorkflow.get(row.id);
       return {
         id: workflow.id,
         name: workflow.name,

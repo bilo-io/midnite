@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-05 — feat: batch task hydration, kill the list N+1 — Phase 57 Theme B (PR #312)
+
+The board's biggest scale cliff: `GET /tasks` hydrated every task with 6 extra queries (6N per board). Now batched.
+
+- [x] `TasksRepository.hydrateMany(rows)` — one query per relation over the page (`WHERE taskId IN (…)`, chunked at 500 under SQLite's bound-param ceiling), grouped in memory, assembled via a shared `assembleTask()` so it's byte-identical to `rows.map(hydrate)`. Single-row `hydrate()` kept for detail. **Measured: 400-task list 2401→7 queries.**
+- [x] `listTasks` + scheduler `listReadyTodoTasks` use `hydrateMany`; `AgentPoolService.snapshot()` sizes the queue via `getCounts()` COUNT(*), never hydrate-to-count.
+- [x] `workflows.listSummaries` batches `latestRunRow` into one grouped query (**400 workflows 401→2 queries**).
+- [x] Gateway bench budgets tightened from the N+1 baseline to a constant-per-page ceiling; parity + chunk-boundary tests added. All 1492 gateway tests green.
+- [x] `fix(web)`: dropped an unused `cn` import (from PR #303) that was failing `web:build` on `main`.
+
+---
+
 ## 2026-07-05 — feat: terminal WS resume + resync-required — Phase 56 Theme F (PR #311)
 
 Fold the one WS channel that already worked (the terminal, with its own seq + ring) onto Phase 56 A's sequenced-stream vocabulary, and close its silent-partial-replay gap.

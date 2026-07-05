@@ -83,7 +83,8 @@ Give every board event an identity and remember the recent ones.
       ring on the way out. Config: ring size + retention (`ws.ringSize`).
 
 ---
- Resume protocol + gap-detection — **L**
+
+## Theme B — Resume protocol + gap-detection — **L**
 
 Replay what a client missed; when you can't, tell it to resync. The core guarantee.
 

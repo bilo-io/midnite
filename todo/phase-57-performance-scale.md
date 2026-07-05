@@ -82,19 +82,20 @@ Measure before you optimize; guard against regressions forever.
 
 ---
 
-## Theme B — Kill the task-hydration N+1 — **L**
+## Theme B — Kill the task-hydration N+1 — **L** — ✅ DONE (PR #312, 2026-07-05)
 
 The single biggest win: stop firing 6 queries per task.
 
-- [ ] Add `hydrateMany(rows)` to [`tasks.repository.ts`](../packages/gateway/src/tasks/tasks.repository.ts):
+- [x] Added `hydrateMany(rows)` to [`tasks.repository.ts`](../packages/gateway/src/tasks/tasks.repository.ts):
       **set-based batch loads** — one query per relation over the whole page (`WHERE taskId IN (…)` for events,
-      links, attachments, prStatus, deps, checkRuns), grouped in memory. Keep single-row `hydrate()` for detail.
-      Result: a list of N tasks = **~7 queries total**, not `6N`.
-- [ ] Fix the needless callers: [`sessions.service.ts`](../packages/gateway/src/sessions/sessions.service.ts)
-      `list()` derives `SessionSummary` **without** full hydration; `AgentPoolService.snapshot()` +
-      status badges use **`COUNT(*)`** (cached, invalidated on mutation), never hydrate-to-count; search reindex
-      batches.
-- [ ] Batch the workflow `listSummaries` `latestRunRow` N+1 into one grouped query (latest run per workflow).
+      links, attachments, prStatus, deps, checkRuns), chunked at 500 (SQLite bound-param ceiling) and grouped in
+      memory; assembled through a shared `assembleTask()` so it's byte-identical to `hydrate()`. Kept single-row
+      `hydrate()` for detail. **Measured: a list of 400 tasks = 7 queries, not 2401** (6N).
+- [x] Fixed the needless caller: `AgentPoolService.snapshot()` sizes the queue via `getCounts()` **`COUNT(*)`**,
+      never hydrate-to-count. (`sessions.service.list()` inherits `hydrateMany` via `listTasks()`; a dedicated
+      no-hydration `SessionSummary` query is Theme C's DTO work.)
+- [x] Batched the workflow `listSummaries` `latestRunRow` N+1 into one grouped query (latest run per workflow).
+      **Measured: 400 workflows = 2 queries, not 401.**
 
 ---
 
