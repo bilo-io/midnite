@@ -12,8 +12,10 @@ import {
   WAIT_REASON_LABEL,
   WORKFLOW_WS_PATH,
   applyWorkflowEvent,
+  isImportable,
   isRunTerminal,
   type FailureClass,
+  type ImportPreview,
   type ResolveTaskAction,
   type SearchQuery,
   type WorkflowEvent,
@@ -440,6 +442,90 @@ program
       for (const d of summary.domains) console.log(`  ${d}: ${summary.counts[d] ?? 0}`);
     }
   });
+
+// ── Phase 49 D — data portability: restore a backup archive ──────────────────
+/** Print a dry-run summary: schema verdict, per-domain counts, id conflicts. */
+function renderImportPreview(preview: ImportPreview, mode: string): void {
+  const total = Object.values(preview.domainCounts).reduce((n, c) => n + c, 0);
+  const conflictTotal = Object.values(preview.conflicts).reduce((n, ids) => n + ids.length, 0);
+  console.log(
+    `archive: schema v${preview.manifest.schemaVersion} (${preview.compat}), secrets: ${preview.manifest.secretsMode}`,
+  );
+  console.log(
+    `${Object.keys(preview.domainCounts).length} domains, ${total} records, ${conflictTotal} id conflict(s) — mode: ${mode}`,
+  );
+  for (const d of Object.keys(preview.domainCounts).sort()) {
+    const conf = preview.conflicts[d]?.length ?? 0;
+    console.log(`  ${d}: ${preview.domainCounts[d] ?? 0}${conf ? ` (${conf} conflict${conf === 1 ? '' : 's'})` : ''}`);
+  }
+}
+
+program
+  .command('import <file>')
+  .description('Restore a full-store backup archive (admin) — Phase 49')
+  .option('--mode <mode>', 'replace (wipe + restore) or merge (insert new ids only)', 'merge')
+  .option('--dry-run', 'preview what a restore would do; make no changes')
+  .option('--passphrase <phrase>', 'unwrap secrets from a passphrase-mode archive')
+  .option('-y, --yes', 'skip the confirmation prompt for a destructive replace')
+  .action(
+    async (
+      file: string,
+      opts: { mode: string; dryRun?: boolean; passphrase?: string; yes?: boolean },
+    ) => {
+      if (opts.mode !== 'merge' && opts.mode !== 'replace') {
+        throw new Error(`--mode must be "merge" or "replace" (got "${opts.mode}")`);
+      }
+      const mode = opts.mode;
+      const c = client();
+
+      // Preview first — always for --dry-run, and as the pre-flight for a real import.
+      const preview = await withSpinner('Inspecting archive…', () => c.previewImport(file));
+
+      // Version gate: an archive from a newer schema is refused outright (no override).
+      if (!isImportable(preview.compat)) {
+        throw new Error(
+          `archive schema v${preview.manifest.schemaVersion} is newer than this instance — upgrade midnite before importing`,
+        );
+      }
+
+      if (opts.dryRun) {
+        if (isJsonMode()) printJson(preview);
+        else renderImportPreview(preview, mode);
+        return;
+      }
+
+      // Show the impact, then confirm a destructive replace unless --yes.
+      if (!isJsonMode()) renderImportPreview(preview, mode);
+      if (mode === 'replace' && !opts.yes) {
+        const total = Object.values(preview.domainCounts).reduce((n, x) => n + x, 0);
+        const ok = await confirmPrompt(
+          `Replace mode wipes existing data and restores ${total} record(s). Proceed?`,
+        );
+        if (!ok) {
+          console.log('aborted');
+          return;
+        }
+      }
+
+      const result = await withSpinner('Restoring…', () =>
+        c.importArchive(file, { mode, passphrase: opts.passphrase }),
+      );
+      if (isJsonMode()) {
+        printJson(result);
+        return;
+      }
+      const inserted = Object.values(result.inserted).reduce((n, x) => n + x, 0);
+      const skipped = Object.values(result.skipped).reduce((n, x) => n + x, 0);
+      console.log(`restored (${result.mode}): ${inserted} inserted, ${skipped} skipped`);
+      for (const d of Object.keys(result.inserted).sort()) {
+        const sk = result.skipped[d] ?? 0;
+        console.log(`  ${d}: +${result.inserted[d] ?? 0}${sk ? ` (${sk} skipped)` : ''}`);
+      }
+      if (!result.reindexed) {
+        console.log('note: search reindex warned — run "search reindex" if search looks stale');
+      }
+    },
+  );
 
 program
   .command('prioritise [id] [level]')
