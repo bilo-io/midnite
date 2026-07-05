@@ -42,10 +42,11 @@ export function useIdeaEvents(): void {
       };
       ws.onmessage = (ev) => {
         try {
-          // Phase 56 A: unwrap the sequenced envelope; skip already-applied seqs.
+          // Phase 56 A: unwrap the sequenced envelope. Record the seq (groundwork
+          // for Theme B's resume) but don't dedup on it — team + all scopes carry
+          // independent seq lines on one socket; per-channel dedup is Theme B.
           const parsed = SequencedIdeaEventSchema.safeParse(JSON.parse(String(ev.data)));
           if (!parsed.success) return;
-          if (parsed.data.seq <= lastSeqRef.current) return;
           lastSeqRef.current = parsed.data.seq;
           invalidateData();
         } catch {

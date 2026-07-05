@@ -51,13 +51,15 @@ export function useTaskEvents(): void {
       ws.onmessage = (ev) => {
         // Validate defensively so a malformed frame can't trigger refetch churn.
         try {
-          // Phase 56 A: frames arrive wrapped in a sequenced envelope. Unwrap it,
-          // drop anything at/below the last applied seq (idempotent replay), then
-          // act on the inner event.
+          // Phase 56 A: frames arrive wrapped in a sequenced envelope — unwrap it.
+          // We record the latest seq (groundwork for Theme B's resume) but do NOT
+          // dedup on it here: one /ws/tasks socket multiplexes two independent seq
+          // lines (team-scoped task events + the all-scoped activity/bulk stream),
+          // so a single global watermark can't tell them apart. Per-channel dedup
+          // arrives with the resume protocol in Theme B.
           const parsed = SequencedTaskBoardEventSchema.safeParse(JSON.parse(String(ev.data)));
           if (!parsed.success) return;
           const { seq, event } = parsed.data;
-          if (seq <= lastSeqRef.current) return;
           lastSeqRef.current = seq;
           // Activity / attention events are ephemeral (agent state, not board state)
           // — consumers patch the office store directly (Theme E). Skipping
