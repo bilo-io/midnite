@@ -18,6 +18,10 @@ class FakeRepo extends WorkflowsRepository {
   override latestRunRow(): WorkflowRunRow | undefined {
     return undefined;
   }
+  // listSummaries now batches the latest-run lookup (Phase 57 B); no runs seeded here.
+  override latestRunRowsByWorkflowIds(): Map<string, WorkflowRunRow> {
+    return new Map();
+  }
 }
 
 function makeService(workflows: Workflow[]): WorkflowsService {

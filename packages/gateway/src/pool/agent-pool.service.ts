@@ -118,7 +118,8 @@ export class AgentPoolService {
       slots,
       capacity: this.slots.length,
       busy: slots.filter((s) => s.status === 'busy').length,
-      queuedTodo: this.tasks.listTasks('todo').length,
+      // COUNT(*) via getCounts() — never hydrate every todo task just to size the queue (Phase 57 B).
+      queuedTodo: this.tasks.getCounts().todo,
     };
   }
 }
