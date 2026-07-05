@@ -76,6 +76,9 @@ export function globMatch(pattern: string, str: string): boolean {
         .replace(/[.+^${}()|[\]\\]/g, '\\$&') // escape regex specials
         .replace(/\*\*/g, '\x00') // placeholder for **
         .replace(/\*/g, '[^/]*') // * = non-slash segment
+        // NUL is an intentional internal sentinel for `**` (can't appear in a
+        // real glob/path), so matching it in the regex is deliberate, not a bug.
+        // eslint-disable-next-line no-control-regex
         .replace(/\x00/g, '.*') + // ** = anything
       '$',
   );

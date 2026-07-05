@@ -1,5 +1,5 @@
 import { verifyLinear } from '../lib/verify-signature';
-import { asRecord, header, type InboundAdapter, type InboundRequest, type MappedTask } from './types';
+import { asRecord, header, type InboundAdapter, type MappedTask } from './types';
 
 /**
  * Linear webhooks. Signature: `Linear-Signature: <hex over body>` (no prefix).
