@@ -29,7 +29,7 @@
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
 | [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 8/26 | `███░░░░░░░` | 31% | B | C D |
-| [56 · Realtime / WS reliability](phase-56-realtime-ws-reliability.md) | 🔄 WIP | 3/26 | `█░░░░░░░░░` | 12% | B | C D E |
+| [56 · Realtime / WS reliability](phase-56-realtime-ws-reliability.md) | 🔄 WIP | 6/26 | `██░░░░░░░░` | 23% | — | C D E |
 | [55 · Projects detail page](phase-55-projects-detail-page.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
 | [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [53 · Task lifecycle resilience](phase-53-task-lifecycle-resilience.md) | ✅ DONE | 22/22 | `██████████` | 100% | — | — |
@@ -121,7 +121,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 ### [Phase 56 — Realtime / WS reliability](phase-56-realtime-ws-reliability.md)
 *(No new domain — a shared reliability layer under the existing WS gateways, lifting the terminal WS's proven seq+ring+resume onto every board channel so clients never silently drift. In-memory ring; restart forces resync.)*
 - ✅ **A** — Sequenced event contracts + server event ring (PR #305)
-- ◻ **B** — Resume protocol + gap-detection (the core guarantee)
+- ✅ **B** — Resume protocol + gap-detection (the core guarantee — PR #313)
 - ◻ **C** — Per-client backpressure + heartbeat
 - ◻ **D** — Shared reliable client subscription hook
 - ◻ **E** — Apply across cockpits + connection-status UI

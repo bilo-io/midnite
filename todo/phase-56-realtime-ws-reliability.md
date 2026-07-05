@@ -83,18 +83,22 @@ Give every board event an identity and remember the recent ones.
       ring on the way out. Config: ring size + retention (`ws.ringSize`).
 
 ---
- Resume protocol + gap-detection — **L**
+## Theme B — Resume protocol + gap-detection — **L** — ✅ DONE (PR #313, 2026-07-05)
 
 Replay what a client missed; when you can't, tell it to resync. The core guarantee.
 
-- [ ] **Protocol:** subscribe carries `{ type: 'subscribe' | 'resume', lastSeq? }`. On **resume**, the gateway
-      replays ring events with `seq > lastSeq`, then streams live; a **fresh subscribe** returns the current seq
-      **watermark** so the client anchors.
-- [ ] **Gap-detection:** if `lastSeq` is older than the ring's oldest retained seq (the gap exceeds the buffer),
-      the gateway emits **`{ type: 'resync-required' }`** → the client does a **full refetch** (invalidate) rather
-      than applying a partial, drift-prone stream. No silent gaps.
-- [ ] **Client dedup:** track `lastSeq` per channel and drop already-applied events (mirrors the terminal's
-      `lastSeqRef`), so replay + live overlap is idempotent.
+- [x] **Protocol:** subscribe carries `{ type: 'subscribe' | 'resume', cursor? }`. On **resume**, the gateway
+      replays ring events with `seq > lastSeq` per line, then streams live; a **fresh subscribe** returns a
+      `watermark` frame (current seq per line) so the client anchors. `ReliableBroadcastService.handleSubscription`
+      owns it; wired into the tasks/ideas/workflows gateways. Because one socket can carry >1 seq line (tasks =
+      team line + all-scoped activity line), the envelope gained a `ch` line-key and the cursor is **per `ch`**.
+- [x] **Gap-detection:** `resume(ringKey, lastSeq)` emits **`{ type: 'resync-required', ch }`** when `lastSeq` is
+      older than the ring's oldest retained seq **or** ahead of the watermark (gateway restart → seq reset) → the
+      client does a **full refetch** (invalidate) rather than a drift-prone partial stream. No silent gaps. Each
+      gateway derives the lines a socket may replay from its **team/run scope**, so a client can't replay another scope.
+- [x] **Client dedup:** a shared `ResumeTracker` tracks `lastSeq` per `ch` and drops already-applied events, so
+      replay + live overlap is idempotent. Adopted by the tasks + ideas hooks (invalidate model) and the
+      workflow-run hook (reducer model → `resync-required` routes to its existing REST reconcile).
 
 ---
 
