@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import {
   TriggerSchema,
   WorkflowGraphSchema,
@@ -22,6 +22,9 @@ import {
   type WorkflowRunInsert,
   type WorkflowRunRow,
 } from '../db/schema';
+
+/** Max workflow ids per `IN (…)` batch — under SQLite's bound-parameter ceiling. */
+const RUN_ID_CHUNK = 500;
 
 @Injectable()
 export class WorkflowsRepository {
@@ -107,6 +110,28 @@ export class WorkflowsRepository {
       .orderBy(desc(workflowRuns.startedAt))
       .limit(1)
       .get();
+  }
+
+  /**
+   * Latest run per workflow for a page of ids — the batched form of
+   * {@link latestRunRow} that kills the `listSummaries` N+1 (Phase 57 B). One
+   * query over all ids ordered `startedAt` ascending; the last row seen per
+   * workflow is its newest (last-wins), matching `latestRunRow`'s `desc … limit 1`.
+   */
+  latestRunRowsByWorkflowIds(ids: string[]): Map<string, WorkflowRunRow> {
+    const map = new Map<string, WorkflowRunRow>();
+    // Chunk under SQLite's bound-parameter ceiling (see ID_CHUNK in tasks.repository).
+    for (let i = 0; i < ids.length; i += RUN_ID_CHUNK) {
+      const batch = ids.slice(i, i + RUN_ID_CHUNK);
+      const rows = this.db
+        .select()
+        .from(workflowRuns)
+        .where(inArray(workflowRuns.workflowId, batch))
+        .orderBy(asc(workflowRuns.startedAt))
+        .all();
+      for (const r of rows) map.set(r.workflowId, r);
+    }
+    return map;
   }
 
   /** All runs still marked `running` across every workflow — orphaned after a
