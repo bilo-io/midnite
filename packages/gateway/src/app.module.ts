@@ -23,6 +23,7 @@ import { NewsModule } from './news/news.module';
 import { NotesModule } from './notes/notes.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PoolModule } from './pool/pool.module';
+import { PortabilityModule } from './portability/portability.module';
 import { ProjectsModule } from './projects/projects.module';
 import { ProvidersModule } from './providers/providers.module';
 import { ReposModule } from './repos/repos.module';
@@ -78,6 +79,7 @@ import { InboundModule } from './integrations/inbound/inbound.module';
     TaskHealthModule,
     TaskCreatorModule,
     PoolModule,
+    PortabilityModule,
     ProjectsModule,
     ProvidersModule,
     ReposModule,

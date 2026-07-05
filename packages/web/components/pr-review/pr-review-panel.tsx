@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { AlertTriangle, ExternalLink, Loader2 } from 'lucide-react';
 import type { PrDiff } from '@midnite/shared';
 import { getPrDiff } from '@/lib/api';
+import { invalidateData } from '@/lib/data-refresh';
 import { Button } from '@/components/ui/button';
 import { PrDiffViewer } from './pr-diff-viewer';
 
@@ -80,5 +81,16 @@ export function PrReviewPanel({ taskId, prUrl }: Props) {
     );
   }
 
-  return <PrDiffViewer diff={state.diff} />;
+  return (
+    <PrDiffViewer
+      diff={state.diff}
+      taskId={taskId}
+      onActionComplete={() => {
+        // A submitted review / merge changes pr_status + task state — refresh the
+        // board and any open task views. Re-fetch the diff too (merge may close it).
+        invalidateData();
+        load();
+      }}
+    />
+  );
 }

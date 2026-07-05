@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { ChevronRight, FileCode2 } from 'lucide-react';
-import { Diff, Hunk, type ViewType } from 'react-diff-view';
+import { Diff, Hunk, type EventMap, type ViewType } from 'react-diff-view';
 import { cn } from '@/lib/utils';
 import { languageForPath, tokenizeHunks } from './diff-highlight';
 import type { MappedDiffFile } from './diff-model';
@@ -20,13 +20,17 @@ type Props = {
   viewType: ViewType;
   /** Start expanded (hunks mounted). Collapsed files defer mounting their hunks. */
   defaultOpen?: boolean;
+  /** Review mode (Phase 52 C): inline-comment widgets keyed by change key + a
+   *  gutter click handler to open a composer. Absent = read-only viewer. */
+  widgets?: Record<string, ReactNode>;
+  gutterEvents?: EventMap;
 };
 
 /**
  * One file in the diff — a collapsible section whose hunks (and syntax
  * tokenization) mount only once expanded, so a large diff stays cheap.
  */
-export function DiffFile({ mapped, viewType, defaultOpen = false }: Props) {
+export function DiffFile({ mapped, viewType, defaultOpen = false, widgets, gutterEvents }: Props) {
   const { file, diffType, hunks, key } = mapped;
   const [open, setOpen] = useState(defaultOpen);
 
@@ -77,8 +81,15 @@ export function DiffFile({ mapped, viewType, defaultOpen = false }: Props) {
             No textual changes (mode or metadata only).
           </p>
         ) : (
-          <div className="overflow-x-auto text-xs">
-            <Diff viewType={viewType} diffType={diffType} hunks={hunks} tokens={tokens}>
+          <div className={cn('overflow-x-auto text-xs', gutterEvents && 'diff-reviewable')}>
+            <Diff
+              viewType={viewType}
+              diffType={diffType}
+              hunks={hunks}
+              tokens={tokens}
+              widgets={widgets}
+              gutterEvents={gutterEvents}
+            >
               {(hs) => hs.map((hunk) => <Hunk key={hunk.content} hunk={hunk} />)}
             </Diff>
           </div>
