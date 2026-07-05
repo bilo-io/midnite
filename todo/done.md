@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-05 — feat: project detail page — cockpit, rails, nav — Phase 55 Themes A+C+D · **Phase 55 COMPLETE** 🎉 (PR #301)
+
+Editing a project moves from a modal to a full, shareable `/projects/view?id=` page that reuses the Theme-B panels, so the modal + page can never drift.
+
+- [x] **A — shell:** static-export `?id=` route (Suspense + client fetch) rendering a two-rail cockpit cloned from the session layout — center tabs (Details/Plan/Tasks/Phase docs, driven by `?tab=`) flanked by two independently collapsible rails whose state persists via `useLocalStorage` (`midnite.project.leftOpen`/`rightOpen`) and become drawers on mobile; inline **Project not found** + back link for a bad/deleted id.
+- [x] **C — rails:** left = task counts by status (non-zero buckets) + total/done + quick actions (Export, Archive/Unarchive via `updateProject({archived})`, Delete → back to list); right = the reused Sources editor + an Activity list of most-recently-updated tasks. All derived from data already fetched — no fabricated metrics, no new endpoint.
+- [x] **D — nav & modal-vs-page rule:** projects-list cards + tree navigate to the page; legacy `?open=` redirects here; modal reserved for New + the office board room; fixed the dead `/projects/:id` link in the session left panel. Shared `projectPageHref` helper.
+- [x] Tests: RTL (view shell/tabs/rail-persist/not-found, stats breakdown + archive/unarchive, activity ordering) + a 6-flow Playwright spec (direct link, ?tab reload, rail collapse, back, not-found, card→page, ?open redirect). `web:typecheck`/`web:lint` clean; web 785 green.
+- Deferred: committed `toHaveScreenshot` baselines (needs the Docker snapshot env) — light/dark preview shots captured + embedded in the PR instead.
+
+---
+
 ## 2026-07-05 — feat: extract project aspect panels (shared by modal + page) — Phase 55 Theme B (PR #300)
 
 Groundwork for the projects detail page: the modal's five tab bodies become standalone, layout-agnostic panels so the modal and the upcoming `/projects/view` page render the identical surfaces and can never drift.

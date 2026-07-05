@@ -69,23 +69,23 @@
 
 ---
 
-## Theme A — Detail page shell, routing & collapsible layout — **M**
+## Theme A — Detail page shell, routing & collapsible layout — **M** — ✅ DONE (PR #301, 2026-07-05)
 
 The frame: a static-export route with a center tab area and two persistent rails.
 
-- [ ] `app/(main)/projects/view/page.tsx` — reads `?id=` via `useSearchParams`, fetches the project
+- [x] `app/(main)/projects/view/page.tsx` — reads `?id=` via `useSearchParams`, fetches the project
       through `useApiData(getProject)`. **No `[id]` segment** (static export). Inline **loading** and
       **not-found** states.
-- [ ] `project-detail-view.tsx` — the three-region shell mirroring the session cockpit: sticky
+- [x] `project-detail-view.tsx` — the three-region shell mirroring the session cockpit: sticky
       `PageHeader` (project name + tag/color dot + `archived` badge + back-to-`/projects` + rail toggles),
       `flex flex-col lg:flex-row lg:items-start`, a `min-w-0 flex-1` **center** holding the tab bar +
       active panel, and **left**/**right** rails that each collapse to a slim rail.
-- [ ] **Center tab bar** driven by the [`@midnite/ui` tabs](../packages/ui/src/components/tabs.tsx)
+- [x] **Center tab bar** driven by the [`@midnite/ui` tabs](../packages/ui/src/components/tabs.tsx)
       primitive — **Details · Plan · Tasks · Phase Docs** (Sources moves to the right rail, Decision §3);
       active tab reflected in the URL (`&tab=`) so a tab is deep-linkable and survives reload.
-- [ ] **Persist rail open/closed state** via `useLocalStorage` (distinct keys `midnite.project.leftOpen`,
+- [x] **Persist rail open/closed state** via `useLocalStorage` (distinct keys `midnite.project.leftOpen`,
       `midnite.project.rightOpen`) — closed stays closed across reloads (Decision §4).
-- [ ] **Responsive:** on `useIsMobile` the rails become **drawers** (toggled from the header), the tab
+- [x] **Responsive:** on `useIsMobile` the rails become **drawers** (toggled from the header), the tab
       content takes full width. Cutoffs from the media-query hooks only.
 
 ---
@@ -109,38 +109,38 @@ Make the modal and the page render the *same* panels so they can never drift.
 
 ---
 
-## Theme C — Rail content: stats & actions (left) · sources & activity (right) — **S-M**
+## Theme C — Rail content: stats & actions (left) · sources & activity (right) — **S-M** — ✅ DONE (PR #301, 2026-07-05)
 
 The instruments and context around the tabbed content — honest about what's real.
 
-- [ ] **Left rail — stats + quick actions** (`project-stats-panel.tsx`): **task counts by status**
+- [x] **Left rail — stats + quick actions** (`project-stats-panel.tsx`): **task counts by status**
       (todo/wip/done/… from the project's tasks) + total `taskCount`, source count, and **quick actions**
       — **Export markdown** (`exportProjectMarkdown`), **Archive/Unarchive** (`updateProject`), **Delete**
       (`deleteProject`, with confirm). Degrades gracefully — rows/actions a project lacks are omitted.
-- [ ] **Right rail — sources + activity** (`project-info-panel.tsx`): the **Sources** panel (reused from
+- [x] **Right rail — sources + activity** (`project-info-panel.tsx`): the **Sources** panel (reused from
       Theme B, add/remove/reorder inline) + an **activity readout** (`createdAt`, `updatedAt`,
       `planUpdatedAt`) as a compact `<dl>` + a **project-memory** link + **team**/**idea origin** metadata
       (`teamId`/`ideaId`) shown only when present.
-- [ ] Both rails collapse independently (Theme A) and stay honest — **no cost/token metrics fabricated**;
+- [x] Both rails collapse independently (Theme A) and stay honest — **no cost/token metrics fabricated**;
       surface only fields that exist today (Decision §5).
 
 ---
 
-## Theme D — Navigation wiring & the modal-vs-page rule — **S**
+## Theme D — Navigation wiring & the modal-vs-page rule — **S** — ✅ DONE (PR #301, 2026-07-05)
 
 Enforce "modal in context, page in general," and make the cockpit reachable everywhere a project appears.
 
-- [ ] **Projects-list cards navigate to the page** — in [`projects-view.tsx`](../packages/web/app/(main)/projects/projects-view.tsx),
+- [x] **Projects-list cards navigate to the page** — in [`projects-view.tsx`](../packages/web/app/(main)/projects/projects-view.tsx),
       a card click becomes a real `<Link>` → `/projects/view?id={id}` (cmd/middle-click opens a new tab);
       **edit** still available as an explicit action, but the default click routes to the cockpit.
-- [ ] **Modal reserved for New + office** — the **"New project"** flow keeps the modal (creation stays a
+- [x] **Modal reserved for New + office** — the **"New project"** flow keeps the modal (creation stays a
       modal per the seed), and the **office board room** keeps its in-context modal **unchanged**. The
       `?open=<id>` deep-link on `/projects` can now redirect to `/projects/view?id=` (a project is a page,
       not a list-overlay) — Decision §6.
-- [ ] **Fix the dead link** — [`session-left-panel.tsx`](../packages/web/app/(main)/sessions/view/session-left-panel.tsx)
+- [x] **Fix the dead link** — [`session-left-panel.tsx`](../packages/web/app/(main)/sessions/view/session-left-panel.tsx)
       `/projects/{id}` → `/projects/view?id=`; audit any other project deep-links (task page project chip,
       search results) and point them at the page.
-- [ ] Deep links resolve directly — a bookmarked `/projects/view?id=` loads standalone (Theme A's container).
+- [x] Deep links resolve directly — a bookmarked `/projects/view?id=` loads standalone (Theme A's container).
 
 ---
 
@@ -167,27 +167,27 @@ Enforce "modal in context, page in general," and make the cockpit reachable ever
 
 ## Verification
 
-- [ ] `/projects/view?id=<project>` opens a page with a `PageHeader`, a **center tab bar**
+- [x] `/projects/view?id=<project>` opens a page with a `PageHeader`, a **center tab bar**
       (Details/Plan/Tasks/Phase-Docs), and **two rails**; a bookmarked deep link loads standalone; an
       unknown id shows an inline not-found.
-- [ ] **Every aspect is fully usable on the page** at parity with the modal — edit description (incl. AI
+- [x] **Every aspect is fully usable on the page** at parity with the modal — edit description (incl. AI
       enhance), tag/color, workDir; add/remove/**reorder** sources; draft/edit plan and **seed tasks**;
       edit phase-doc sync; click a task row through to the task page.
-- [ ] **Left/right rails collapse independently** and their open/closed state **persists across a reload**;
+- [x] **Left/right rails collapse independently** and their open/closed state **persists across a reload**;
       on mobile they become **drawers** and the tab content goes full-width; the active tab is reflected in
       the URL and survives reload.
-- [ ] Left rail shows **task counts by status** + quick actions (**export**, **archive/unarchive**,
+- [x] Left rail shows **task counts by status** + quick actions (**export**, **archive/unarchive**,
       **delete-with-confirm**); right rail shows **sources**, the **activity timeline**, project-memory link,
       and team/idea metadata **only when present** — nothing fabricated.
-- [ ] **Modal-vs-page rule holds:** projects-list cards **navigate to the page**; the **office board room**
+- [x] **Modal-vs-page rule holds:** projects-list cards **navigate to the page**; the **office board room**
       still opens the **modal** (unchanged); **"New project"** still opens the **modal**; the session
       left-panel project link now resolves to `/projects/view?id=`.
-- [ ] The **modal still works unchanged** for every aspect (it renders the same extracted panels) — its
+- [x] The **modal still works unchanged** for every aspect (it renders the same extracted panels) — its
       existing stories/tests stay green.
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green (web RTL/story for the detail view,
+- [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` green (web RTL/story for the detail view,
       rail-collapse persistence, tab routing, and each extracted panel; modal parity regression; **web tests
       run from the primary checkout, not a `.git` worktree** — use `Dev/midnite-wt/` for web work).
-- [ ] Screenshots (light/dark) of the new page captured for the visual baselines.
+- [x] Screenshots (light/dark) of the new page captured for the visual baselines.
 
 ---
 
