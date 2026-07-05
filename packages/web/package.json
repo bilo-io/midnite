@@ -19,6 +19,7 @@
     "@midnite/shared": "workspace:*",
     "@midnite/ui": "workspace:*",
     "@tanstack/react-query": "^5.101.0",
+    "@tanstack/react-virtual": "^3.14.5",
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.5.0",
     "@xyflow/react": "^12.3.0",
