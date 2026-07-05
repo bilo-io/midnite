@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 3/26 | `█░░░░░░░░░` | 12% | A F | B C D |
+| [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 6/26 | `██░░░░░░░░` | 23% | F | B C D |
 | [56 · Realtime / WS reliability](phase-56-realtime-ws-reliability.md) | 🔄 WIP | 3/26 | `█░░░░░░░░░` | 12% | F | B C D E |
 | [55 · Projects detail page](phase-55-projects-detail-page.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
 | [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
@@ -111,7 +111,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 
 ### [Phase 57 — Performance & scale](phase-57-performance-scale.md)
 *(No new domain — perf work across existing layers: batch loads + indexes in repositories, lean summary DTOs + pagination as shared contracts, cache tuning + virtualization on the web. Evidence-driven via a seed + benchmark harness.)*
-- ◻ **A** — Seed + benchmark harness (evidence first)
+- ✅ **A** — Seed + benchmark harness (evidence first) (PR #308)
 - ◻ **B** — Kill the task-hydration N+1
 - ◻ **C** — Lean list DTOs + pagination
 - ◻ **D** — DB indexes on hot paths
