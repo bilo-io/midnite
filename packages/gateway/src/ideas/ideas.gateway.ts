@@ -16,7 +16,7 @@ import { MIDNITE_CONFIG } from '../config.token';
 import { isAllowedOrigin } from '../lib/allowed-origin';
 import { JwtService, TokenInvalidError } from '../auth/jwt.service';
 import { ConnectionRegistry } from '../ws/connection-registry';
-import { WsBroadcastService } from '../ws/ws-broadcast.service';
+import { ReliableBroadcastService } from '../ws/reliable-broadcast.service';
 import { IdeaEventBus } from './idea-event-bus';
 
 @WebSocketGateway({ path: IDEAS_WS_PATH })
@@ -30,7 +30,7 @@ export class IdeasGateway
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
     @Inject(IdeaEventBus) private readonly bus: IdeaEventBus,
     @Inject(ConnectionRegistry) private readonly registry: ConnectionRegistry,
-    @Inject(WsBroadcastService) private readonly wsBroadcast: WsBroadcastService,
+    @Inject(ReliableBroadcastService) private readonly reliable: ReliableBroadcastService,
     @Optional() private readonly jwtSvc?: JwtService,
   ) {}
 
@@ -82,15 +82,15 @@ export class IdeasGateway
 
   private broadcast(event: IdeaEvent): void {
     if (this.subscribers.size === 0) return;
-    const payload = JSON.stringify(event);
     const teamId =
       (event.type === 'idea.created' || event.type === 'idea.updated')
         ? (event.idea.teamId ?? null)
         : null;
+    // Phase 56 A: stamp seq + ring before delegating the send.
     if (teamId) {
-      this.wsBroadcast.toTeam(teamId, payload);
+      this.reliable.toTeam(`ideas:team:${teamId}`, teamId, event);
     } else {
-      this.wsBroadcast.toAll(this.subscribers, payload);
+      this.reliable.toAll('ideas:all', this.subscribers, event);
     }
   }
 }

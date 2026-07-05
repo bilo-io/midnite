@@ -16,7 +16,7 @@ import { MIDNITE_CONFIG } from '../config.token';
 import { isAllowedOrigin } from '../lib/allowed-origin';
 import { JwtService, TokenInvalidError } from '../auth/jwt.service';
 import { ConnectionRegistry } from '../ws/connection-registry';
-import { WsBroadcastService } from '../ws/ws-broadcast.service';
+import { ReliableBroadcastService } from '../ws/reliable-broadcast.service';
 import { TaskEventBus } from './task-event-bus';
 
 /**
@@ -42,7 +42,7 @@ export class TasksGateway
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
     @Inject(TaskEventBus) private readonly bus: TaskEventBus,
     @Inject(ConnectionRegistry) private readonly registry: ConnectionRegistry,
-    @Inject(WsBroadcastService) private readonly wsBroadcast: WsBroadcastService,
+    @Inject(ReliableBroadcastService) private readonly reliable: ReliableBroadcastService,
     @Optional() private readonly jwtSvc?: JwtService,
   ) {}
 
@@ -107,7 +107,6 @@ export class TasksGateway
 
   private broadcast(event: TaskBoardEvent): void {
     if (this.subscribers.size === 0) return;
-    const payload = JSON.stringify(event);
 
     // Scoped delivery: task events with a teamId go to that team only.
     // Legacy tasks (null teamId), bulk creates, and session events (agent.activity /
@@ -117,10 +116,12 @@ export class TasksGateway
         ? (event.task.teamId ?? null)
         : null;
 
+    // Phase 56 A: ReliableBroadcastService stamps a per-channel seq + rings the
+    // event before delegating the send. One ring per (channel, scope).
     if (teamId) {
-      this.wsBroadcast.toTeam(teamId, payload);
+      this.reliable.toTeam(`tasks:team:${teamId}`, teamId, event);
     } else {
-      this.wsBroadcast.toAll(this.subscribers, payload);
+      this.reliable.toAll('tasks:all', this.subscribers, event);
     }
   }
 }

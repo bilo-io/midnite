@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   WORKFLOW_WS_PATH,
+  SequencedWorkflowEventSchema,
   applyWorkflowEvent,
   isRunTerminal,
   type NodeRunStatus,
@@ -122,9 +123,14 @@ export function useWorkflowRun(workflowId: string): UseWorkflowRun {
         void refresh(runId, true);
       };
       socket.onmessage = (ev) => {
+        // Phase 56 A: events arrive wrapped in a sequenced envelope — unwrap `.event`.
         let event: WorkflowEvent;
         try {
-          event = JSON.parse(typeof ev.data === 'string' ? ev.data : '') as WorkflowEvent;
+          const parsed = SequencedWorkflowEventSchema.safeParse(
+            JSON.parse(typeof ev.data === 'string' ? ev.data : ''),
+          );
+          if (!parsed.success) return;
+          event = parsed.data.event;
         } catch {
           return;
         }

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { TaskSchema } from '../task.js';
 import { GuardrailSettingsSchema, PauseScopeSchema } from '../guardrails.js';
+import { sequencedEnvelope, type SequencedEnvelope } from './envelope.js';
 
 // Live task-board events published over the gateway WebSocket. The gateway emits
 // one on every task state transition (create / update / delete) so clients get
@@ -65,6 +66,11 @@ export const TaskBoardEventSchema = z.discriminatedUnion('type', [
   GuardrailsUpdatedEventSchema,
 ]);
 export type TaskBoardEvent = z.infer<typeof TaskBoardEventSchema>;
+
+// Phase 56 A — the wire shape on `/ws/tasks`: the board event wrapped with a
+// monotonic per-channel `seq` + `ts`. Clients unwrap `.event` and track `.seq`.
+export const SequencedTaskBoardEventSchema = sequencedEnvelope(TaskBoardEventSchema);
+export type SequencedTaskBoardEvent = SequencedEnvelope<TaskBoardEvent>;
 
 // Client → gateway message on the task WS: subscribe to the board's live events.
 // Board-wide (no per-task filter) — the kanban renders every task, so one channel
