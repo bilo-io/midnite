@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
-import { IDEAS_WS_PATH, IdeaEventSchema } from '@midnite/shared';
+import { useEffect, useRef } from 'react';
+import { IDEAS_WS_PATH, SequencedIdeaEventSchema } from '@midnite/shared';
 import { gatewayWsUrl, getAccessToken } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 
@@ -11,6 +11,8 @@ import { invalidateData } from '@/lib/data-refresh';
  * Mount once alongside other live-data hooks.
  */
 export function useIdeaEvents(): void {
+  // Phase 56 A: track the last applied seq (drops idempotent replays; used by Theme B).
+  const lastSeqRef = useRef(0);
   useEffect(() => {
     let ws: WebSocket | null = null;
     let closed = false;
@@ -40,8 +42,12 @@ export function useIdeaEvents(): void {
       };
       ws.onmessage = (ev) => {
         try {
-          const parsed = IdeaEventSchema.safeParse(JSON.parse(String(ev.data)));
-          if (parsed.success) invalidateData();
+          // Phase 56 A: unwrap the sequenced envelope; skip already-applied seqs.
+          const parsed = SequencedIdeaEventSchema.safeParse(JSON.parse(String(ev.data)));
+          if (!parsed.success) return;
+          if (parsed.data.seq <= lastSeqRef.current) return;
+          lastSeqRef.current = parsed.data.seq;
+          invalidateData();
         } catch {
           // ignore unparseable frames
         }

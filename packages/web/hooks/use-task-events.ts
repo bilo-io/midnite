@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
-import { TASKS_WS_PATH, TaskBoardEventSchema } from '@midnite/shared';
+import { useEffect, useRef } from 'react';
+import { TASKS_WS_PATH, SequencedTaskBoardEventSchema } from '@midnite/shared';
 import { gatewayWsUrl, getAccessToken } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { emitTaskEvent } from '@/lib/task-events';
@@ -17,6 +17,10 @@ import { emitTaskEvent } from '@/lib/task-events';
  * same coarse model the rest of the app uses. Mount once (see `LiveData`).
  */
 export function useTaskEvents(): void {
+  // Phase 56 A: the highest seq applied on this channel. Tracked now (the resume
+  // protocol in Theme B will send it on reconnect); used here to drop already-
+  // applied frames so a future replay+live overlap is idempotent.
+  const lastSeqRef = useRef(0);
   useEffect(() => {
     let ws: WebSocket | null = null;
     let closed = false;
@@ -47,18 +51,24 @@ export function useTaskEvents(): void {
       ws.onmessage = (ev) => {
         // Validate defensively so a malformed frame can't trigger refetch churn.
         try {
-          const parsed = TaskBoardEventSchema.safeParse(JSON.parse(String(ev.data)));
+          // Phase 56 A: frames arrive wrapped in a sequenced envelope. Unwrap it,
+          // drop anything at/below the last applied seq (idempotent replay), then
+          // act on the inner event.
+          const parsed = SequencedTaskBoardEventSchema.safeParse(JSON.parse(String(ev.data)));
           if (!parsed.success) return;
+          const { seq, event } = parsed.data;
+          if (seq <= lastSeqRef.current) return;
+          lastSeqRef.current = seq;
           // Activity / attention events are ephemeral (agent state, not board state)
           // — consumers patch the office store directly (Theme E). Skipping
           // invalidateData() here avoids a full sessions+tasks refetch on every
           // tool call, which can be several times per second.
           const isEphemeral =
-            parsed.data.type === 'agent.activity' ||
-            parsed.data.type === 'agent.attention' ||
-            parsed.data.type === 'guardrails.updated';
+            event.type === 'agent.activity' ||
+            event.type === 'agent.attention' ||
+            event.type === 'guardrails.updated';
           if (!isEphemeral) invalidateData();
-          emitTaskEvent(parsed.data);
+          emitTaskEvent(event);
         } catch {
           // ignore unparseable frames
         }
