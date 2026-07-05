@@ -4,7 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-05 — feat: project detail page — cockpit, rails, nav — Phase 55 Themes A+C+D · **Phase 55 COMPLETE** 🎉 (PR #301)
+## 2026-07-05 — feat: perf seed + benchmark harness (evidence first) — Phase 57 Theme A (PR #303)
+
+The measurement backbone for the perf phase — every later theme reports before/after here, and CI budgets stop regressions.
+
+- [x] `test/seed-large.ts`: deterministic mulberry32 seed (fixed seed ⇒ comparable runs), configurable size (`BENCH_SIZE`, modest default so the suite stays fast), realistic per-task depth (events/links/deps/prStatus/checkRuns) + workflows with runs.
+- [x] `test/db.ts` `createCountingDb()`: a better-sqlite3 `verbose` hook counting every executed statement (driver-level, so raw + drizzle queries both count) — exact query counts, not guesses.
+- [x] `bench/hot-paths.spec.ts` (gateway): prints + budget-asserts query count for the hot paths — **400 tasks → 2401 queries** (the 6N task-hydration N+1) + workflow summaries N+1. Deterministic query-count budgets; wall-time printed only (too noisy to gate). Baseline budgets document the status quo; Theme B tightens them.
+- [x] `components/board-render.bench.spec.tsx` (web): renders the board with a seeded set, asserts mounted-card count (**200/200** — the un-virtualized DOM baseline; Theme F bounds it). Both run in the normal `moon` test suite (no separate CI job); explicit generous timeouts so jsdom render load can't flake them.
+- [x] No optimization this slice — measurement + guard only. shared/ui built; gateway + web bench specs green; typecheck/lint clean (one pre-existing bcrypt-under-load flake in users.service, passes in isolation, unrelated).
 
 Editing a project moves from a modal to a full, shareable `/projects/view?id=` page that reuses the Theme-B panels, so the modal + page can never drift.
 
