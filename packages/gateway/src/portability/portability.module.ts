@@ -8,9 +8,11 @@ import { NotesModule } from '../notes/notes.module';
 import { ProjectsModule } from '../projects/projects.module';
 import { ReposModule } from '../repos/repos.module';
 import { RoutinesModule } from '../routines/routines.module';
+import { SearchModule } from '../search/search.module';
 import { TasksModule } from '../tasks/tasks.module';
 import { WorkflowsModule } from '../workflows/workflows.module';
 import { PortabilityController } from './portability.controller';
+import { PortabilityImportService } from './portability-import.service';
 import { PortabilityService } from './portability.service';
 
 /**
@@ -31,8 +33,9 @@ import { PortabilityService } from './portability.service';
     IdeasModule,
     ApprovalsModule,
     WorkflowsModule,
+    SearchModule,
   ],
   controllers: [PortabilityController],
-  providers: [PortabilityService],
+  providers: [PortabilityService, PortabilityImportService],
 })
 export class PortabilityModule {}

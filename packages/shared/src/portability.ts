@@ -80,6 +80,19 @@ export const ImportOptionsSchema = z.object({
 });
 export type ImportOptions = z.infer<typeof ImportOptionsSchema>;
 
+/** Outcome of a completed restore (Theme C): per-domain rows inserted/skipped. */
+export const ImportResultSchema = z.object({
+  ok: z.boolean(),
+  mode: z.enum(['replace', 'merge']),
+  /** Rows actually inserted per domain. */
+  inserted: z.record(z.number().int().nonnegative()),
+  /** Rows skipped per domain (merge: id already present; replace: 0). */
+  skipped: z.record(z.number().int().nonnegative()).default({}),
+  /** True when the post-restore search reindex succeeded (fail-open: false ⇒ reindex warned). */
+  reindexed: z.boolean().default(false),
+});
+export type ImportResult = z.infer<typeof ImportResultSchema>;
+
 /**
  * Compare an archive's schema version to the importing instance's. `ok` = same
  * shape (safe). `older-archive` = archive predates the target (forward-migratable,

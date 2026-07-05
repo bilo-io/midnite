@@ -26,5 +26,8 @@ import { SearchService } from './search.service';
   ],
   controllers: [SearchController],
   providers: [SearchService],
+  // Exported so the Phase 49 C import service can rebuild the index in-process
+  // after a restore (the search index is derived, never carried in the archive).
+  exports: [SearchService],
 })
 export class SearchModule {}
