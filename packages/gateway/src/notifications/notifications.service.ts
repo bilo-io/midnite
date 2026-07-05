@@ -121,6 +121,36 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
+   * Phase 53 C — proactively flag an aged `todo` (ready/blocked but never picked
+   * up) past the threshold, so "stuck in the queue" is a *push*, not just a pull
+   * on the doctor/health view. Reuses the `task.needs-attention` kind (this todo
+   * needs a human). Emitted by the waiting-nudge loop, which owns the cadence +
+   * cap. Best-effort; respects `notifications.enabled`.
+   */
+  async notifyStuckTodo(task: Task, hoursStuck: number, reminderIndex: number): Promise<void> {
+    if (!this.config.notifications.enabled) return;
+    const nth = reminderIndex > 0 ? ` (reminder ${reminderIndex + 1})` : '';
+    try {
+      const row = this.repo.insert({
+        id: randomUUID(),
+        kind: 'task.needs-attention',
+        severity: 'warn',
+        title: 'Task stuck in the queue',
+        body: `"${task.title}" has been waiting to start for ~${hoursStuck}h.${nth}`,
+        entityType: 'task',
+        entityId: task.id,
+        route: '/tasks',
+        readAt: null,
+        createdAt: new Date().toISOString(),
+        teamId: task.teamId ?? null,
+      });
+      await this.dispatcher.dispatch(this.repo.hydrate(row));
+    } catch (err) {
+      this.logger.warn(`failed to dispatch stuck-todo notification: ${String(err)}`);
+    }
+  }
+
+  /**
    * Phase 53 D — an escalating reminder that a task has sat in a needs-attention
    * `waiting` state past the nudge threshold. Emitted directly by the waiting-nudge
    * loop (not the coalescing task-event path), which owns the per-task cadence +
