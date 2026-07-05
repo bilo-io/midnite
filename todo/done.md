@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-05 — feat: scheduled auto-backup + Data-page status — Phase 49 Theme F (PR #298)
+
+Backups that happen without anyone remembering to run them. Builds on the merged export (B).
+
+- [x] **shared:** `backup` config block (`enabled` default off / `intervalHours` / `destinationDir` / `retention` / `tickMs` — behaviour-preserving); `BackupStatus` + `BackupArchiveInfo` contracts; `backup.failed` notification kind.
+- [x] **gateway:** `BackupSchedulerService` — a single fail-open interval loop (mirrors the PR-status poller; no second scheduler) writes a timestamped archive via the merged export service every `intervalHours`, then prunes to `retention` (only `midnite-backup-*.zip` — never unrelated files). **Filesystem is the ledger** (due = newest archive's mtime older than the interval) → survives a restart, no DB. A failed run logs `warn` + `NotificationsService.notifyBackupFailed`, never crashes the tick. `GET /portability/backup/status` (admin-gated).
+- [x] **web:** an auto-backup status panel on `/settings/data` (enabled, interval, last/next run, recent archives) + `getBackupStatus()` client.
+- [x] Tests: gateway scheduler (first-run/skip-recent/due-when-stale/prune-keeps-newest-+-spares-unrelated/fail-open/disabled/status) on a real temp dir; shared config defaults + validation; web RTL (off state + enabled panel). shared 554, gateway 1465 (1 pre-existing flaky tmux), web 768 green; `:typecheck` + my-files lint clean.
+- Deferred: `includeSecrets`/passphrase (export secret-free until the secrets slice).
+
 ## 2026-07-05 — feat: persisted review drafts + AI-review inline — Phase 52 Theme D · **Phase 52 COMPLETE** 🎉 (PR #297)
 
 Finishes the in-app review phase: inline comments persist across reloads, and the AI verdict shows where you review.
