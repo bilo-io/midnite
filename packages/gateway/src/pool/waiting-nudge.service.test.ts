@@ -30,12 +30,29 @@ function waitingTask(id: string, waitReason: WaitReason | undefined, updatedAt: 
   } as Task;
 }
 
+function todoTask(id: string, createdAt: string): Task {
+  return {
+    id,
+    title: `title-${id}`,
+    status: 'todo',
+    priority: 1,
+    retryCount: 0,
+    fixAttempts: 0,
+    tags: [],
+    dependsOn: [],
+    events: [],
+    createdAt,
+  } as Task;
+}
+
 function harness(tasks: Task[]) {
-  const listTasks = vi.fn((_status?: string) => tasks);
+  // Status-aware like the real repo: `listTasks(status)` filters by status.
+  const listTasks = vi.fn((status?: string) => (status ? tasks.filter((t) => t.status === status) : tasks));
   const tasksService = { listTasks } as unknown as TasksService;
   const notifyNeedsAttention = vi.fn(async () => {});
-  const notifications = { notifyNeedsAttention } as unknown as NotificationsService;
-  return { tasksService, notifications, notifyNeedsAttention, listTasks };
+  const notifyStuckTodo = vi.fn(async () => {});
+  const notifications = { notifyNeedsAttention, notifyStuckTodo } as unknown as NotificationsService;
+  return { tasksService, notifications, notifyNeedsAttention, notifyStuckTodo, listTasks };
 }
 
 const T0 = Date.parse('2026-07-03T00:00:00.000Z');
@@ -94,5 +111,52 @@ describe('WaitingNudgeService', () => {
     const svc = new WaitingNudgeService(config({ afterHours: 0 }), tasksService, notifications);
     await svc.tick(T0 + 100 * HOUR);
     expect(notifyNeedsAttention).not.toHaveBeenCalled();
+  });
+});
+
+describe('WaitingNudgeService — aged-todo flag (Phase 53 C)', () => {
+  it('does not flag aged todos by default (agedTodoHours = 0)', async () => {
+    const t = todoTask('t', new Date(T0).toISOString());
+    const { tasksService, notifications, notifyStuckTodo } = harness([t]);
+    const svc = new WaitingNudgeService(config(), tasksService, notifications); // afterHours:2, agedTodoHours:0
+    await svc.tick(T0 + 100 * HOUR);
+    expect(notifyStuckTodo).not.toHaveBeenCalled();
+  });
+
+  it('flags a todo only once it has aged past agedTodoHours (measured from createdAt)', async () => {
+    const t = todoTask('t', new Date(T0).toISOString());
+    const { tasksService, notifications, notifyStuckTodo } = harness([t]);
+    const svc = new WaitingNudgeService(config({ afterHours: 0, agedTodoHours: 6 }), tasksService, notifications);
+
+    await svc.tick(T0 + 3 * HOUR); // under 6h
+    expect(notifyStuckTodo).not.toHaveBeenCalled();
+
+    await svc.tick(T0 + 6 * HOUR); // at the threshold → first flag (~6h, reminder 0)
+    expect(notifyStuckTodo).toHaveBeenCalledTimes(1);
+    expect(notifyStuckTodo).toHaveBeenCalledWith(t, 6, 0);
+  });
+
+  it('repeats after repeatHours and caps at maxReminders', async () => {
+    const t = todoTask('t', new Date(T0).toISOString());
+    const { tasksService, notifications, notifyStuckTodo } = harness([t]);
+    const svc = new WaitingNudgeService(
+      config({ afterHours: 0, agedTodoHours: 6, repeatHours: 24, maxReminders: 2 }),
+      tasksService,
+      notifications,
+    );
+    await svc.tick(T0 + 6 * HOUR); // #1
+    await svc.tick(T0 + 7 * HOUR); // <24h since #1 → no repeat
+    expect(notifyStuckTodo).toHaveBeenCalledTimes(1);
+    await svc.tick(T0 + 30 * HOUR); // >24h → #2
+    await svc.tick(T0 + 60 * HOUR); // capped → no #3
+    expect(notifyStuckTodo).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not treat a waiting task as an aged todo (status-scoped)', async () => {
+    const w = waitingTask('w', 'agent-failed', new Date(T0).toISOString());
+    const { tasksService, notifications, notifyStuckTodo } = harness([w]);
+    const svc = new WaitingNudgeService(config({ afterHours: 0, agedTodoHours: 6 }), tasksService, notifications);
+    await svc.tick(T0 + 100 * HOUR);
+    expect(notifyStuckTodo).not.toHaveBeenCalled();
   });
 });

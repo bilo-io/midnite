@@ -29,11 +29,11 @@
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
 | [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
-| [53 · Task lifecycle resilience](phase-53-task-lifecycle-resilience.md) | 🔄 WIP | 12/22 | `██████░░░░` | 55% | C | — |
-| [52 · In-app diff & PR review](phase-52-in-app-diff-review.md) | 🔄 WIP | 14/25 | `██████░░░░` | 56% | — | D |
+| [53 · Task lifecycle resilience](phase-53-task-lifecycle-resilience.md) | ✅ DONE | 22/22 | `██████████` | 100% | — | — |
+| [52 · In-app diff & PR review](phase-52-in-app-diff-review.md) | 🔄 WIP | 14/25 | `██████░░░░` | 56% | D | — |
 | [51 · Session detail page](phase-51-session-detail-page.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [50 · Autonomy guardrails](phase-50-autonomy-guardrails.md) | ✅ DONE | 29/29 | `██████████` | 100% | — | — |
-| [49 · Data portability](phase-49-data-portability.md) | 🔄 WIP | 8/27 | `███░░░░░░░` | 30% | — | C E F |
+| [49 · Data portability](phase-49-data-portability.md) | 🔄 WIP | 8/27 | `███░░░░░░░` | 30% | C | E F |
 | [48 · Slides](phase-48-slides.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [46 · Inbound integrations](phase-46-inbound-integrations.md) | ✅ DONE | 20/20 | `██████████` | 100% | — | — |
@@ -119,7 +119,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 *(Additive layer over the existing lifecycle — no state-machine refactor; escalation reuses `waiting` + a typed reason. Complements Phase 50.)*
 - ✅ **A** — Failure taxonomy + `task_failures` records (`classifyFailure`)
 - ✅ **B** — Retry backoff (exponential + jitter) + class-aware retry
-- ◻ **C** — Stuck-state watchdogs (wip-inactivity, aged-todo, waiting-too-long)
+- ✅ **C** — Stuck-state watchdogs (wip-inactivity, aged-todo, waiting-too-long) (PR #293)
 - ✅ **D** — Escalate-to-human (needs-attention via `waiting` + `waitReason`) + nudges
 - ✅ **E** — Board "needs attention" + failures/health view + CLI doctor
 
