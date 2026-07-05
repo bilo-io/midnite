@@ -15,6 +15,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-05 — feat: WS backpressure + heartbeat + metrics — Phase 56 Theme C (PR #315)
+
+Harden the realtime transport: protect the gateway from slow clients, reap dead ones fast.
+
+- [x] **Backpressure** in `WsBroadcastService.trySend`: a socket whose `bufferedAmount` exceeds `ws.maxBufferedBytes` (default 1MB) is dropped-to-resync (close **4014**) instead of blocking the broadcast or buffering unboundedly. Uses the ws lib's own outbound buffer as the signal.
+- [x] **Heartbeat:** one `HeartbeatService` pings every live socket (new `ConnectionRegistry.getAll()`) every `ws.heartbeatMs` (30s); a socket missing `ws.maxMissedPongs` (2) consecutive pongs is `terminate()`d. No client change — browsers auto-pong at the protocol level; the existing onclose backoff reconnects when the server closes a socket (resume-with-lastSeq is Theme B).
+- [x] **Metrics:** `WsMetricsService` (dropped-to-resync, dead-clients-reaped, ring hits/resync = 0 until B) + per-channel subscriber counts reported by the tasks/ideas/workflows gateways; `GET /ws/metrics` (open) + typed `getWsMetrics` client. Config: `ws.maxBufferedBytes`/`heartbeatMs`/`maxMissedPongs`.
+- [x] Tests: backpressure drop/skip units, heartbeat unit (ping/reap/pong-reset) + a real-socket integration (autoPong:false client terminated), metrics service + controller. shared 558, gateway 1499 (2 pre-existing flakes: tmux + a bcrypt-under-load timeout, both pass isolated), web 799 green.
+
+---
+
 ## 2026-07-05 — feat: batch task hydration, kill the list N+1 — Phase 57 Theme B (PR #312)
 
 The board's biggest scale cliff: `GET /tasks` hydrated every task with 6 extra queries (6N per board). Now batched.

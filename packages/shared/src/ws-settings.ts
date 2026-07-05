@@ -27,3 +27,29 @@ export const UpdateWsSettingsRequestSchema = z.object({
   ringSize: z.union([z.literal(256), z.literal(512), z.literal(1024)]),
 });
 export type UpdateWsSettingsRequest = z.infer<typeof UpdateWsSettingsRequestSchema>;
+
+/**
+ * Phase 56 C — realtime transport health (read-only). Live counters that show
+ * how the reliability layer is behaving: how many clients connect, how often a
+ * slow client was dropped-to-resync (backpressure), how many dead sockets the
+ * heartbeat reaped, and the ring-hit vs. resync-required ratio (0 until Theme B
+ * lands the resume protocol).
+ */
+export const WsMetricsSchema = z.object({
+  /** Total live WS connections across all channels. */
+  connections: z.number().int().nonnegative(),
+  /** Live subscriber count per channel (tasks / ideas / workflows). */
+  subscribersByChannel: z.record(z.string(), z.number().int().nonnegative()),
+  /** Sockets closed (4014) because their outbound buffer overflowed. */
+  droppedToResync: z.number().int().nonnegative(),
+  /** Sockets terminated by the heartbeat after missing too many pongs. */
+  deadClientsReaped: z.number().int().nonnegative(),
+  /** Resume replays served from the ring (Theme B; 0 until then). */
+  ringHits: z.number().int().nonnegative(),
+  /** Resumes that overflowed the ring → forced a full resync (Theme B; 0 until then). */
+  resyncRequired: z.number().int().nonnegative(),
+});
+export type WsMetrics = z.infer<typeof WsMetricsSchema>;
+
+export const WsMetricsResponseSchema = z.object({ metrics: WsMetricsSchema });
+export type WsMetricsResponse = z.infer<typeof WsMetricsResponseSchema>;
