@@ -1,6 +1,31 @@
 import { describe, expect, it } from 'vitest';
 import { parseConfig } from './config.js';
 
+describe('backup config (Phase 49 F)', () => {
+  it('ships auto-backup OFF by default with sane knobs', () => {
+    const { backup } = parseConfig({ agent: {}, terminal: {}, gateway: {} });
+    expect(backup.enabled).toBe(false);
+    expect(backup.intervalHours).toBe(24);
+    expect(backup.retention).toBe(7);
+    expect(backup.destinationDir).toContain('backups');
+  });
+
+  it('honours explicit overrides', () => {
+    const { backup } = parseConfig({
+      agent: {},
+      terminal: {},
+      gateway: {},
+      backup: { enabled: true, intervalHours: 6, destinationDir: '/backups', retention: 30 },
+    });
+    expect(backup).toMatchObject({ enabled: true, intervalHours: 6, destinationDir: '/backups', retention: 30 });
+  });
+
+  it('rejects a non-positive retention / interval', () => {
+    expect(() => parseConfig({ agent: {}, terminal: {}, gateway: {}, backup: { retention: 0 } })).toThrow();
+    expect(() => parseConfig({ agent: {}, terminal: {}, gateway: {}, backup: { intervalHours: 0 } })).toThrow();
+  });
+});
+
 describe('guardrails config (Phase 50 C)', () => {
   it('enables the blast-radius floor by default with sane protected lists', () => {
     const { guardrails } = parseConfig({ agent: {}, terminal: {}, gateway: {} });

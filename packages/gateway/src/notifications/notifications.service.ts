@@ -46,6 +46,9 @@ const PLURAL_TITLE: Record<NotificationKind, string> = {
   // `task.needs-attention` is emitted directly by the waiting-nudge service
   // (Phase 53 D), not via the coalescing task-event path — plural label unused.
   'task.needs-attention': 'tasks need attention',
+  // `backup.failed` is emitted directly by the backup scheduler (Phase 49 F), not
+  // via the coalescing task-event path — plural label unused.
+  'backup.failed': 'backups failed',
 };
 
 type Pending = { decision: NotifyDecision; task: Task; count: number; timer: NodeJS.Timeout };
@@ -117,6 +120,33 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
       await this.dispatcher.dispatch(this.repo.hydrate(row));
     } catch (err) {
       this.logger.warn(`failed to dispatch agent.held notification: ${String(err)}`);
+    }
+  }
+
+  /**
+   * Phase 49 F — a scheduled auto-backup run failed. Emitted directly by the
+   * backup scheduler (fail-open) so a silent-ish disk/export failure surfaces.
+   * Best-effort; respects `notifications.enabled`.
+   */
+  async notifyBackupFailed(reason: string): Promise<void> {
+    if (!this.config.notifications.enabled) return;
+    try {
+      const row = this.repo.insert({
+        id: randomUUID(),
+        kind: 'backup.failed',
+        severity: 'urgent',
+        title: 'Scheduled backup failed',
+        body: `The auto-backup could not complete: ${reason}. Check the destination directory + disk space.`,
+        entityType: 'guardrail',
+        entityId: 'backup',
+        route: '/settings/data',
+        readAt: null,
+        createdAt: new Date().toISOString(),
+        teamId: null,
+      });
+      await this.dispatcher.dispatch(this.repo.hydrate(row));
+    } catch (err) {
+      this.logger.warn(`failed to dispatch backup.failed notification: ${String(err)}`);
     }
   }
 

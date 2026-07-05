@@ -171,17 +171,21 @@ Point-and-click backup/restore with a safety net.
 
 ---
 
-## Theme F — Scheduled auto-backup — **M**
+## Theme F — Scheduled auto-backup — **M** — ✅ DONE (PR #299, 2026-07-05)
 
 Backups that happen without anyone remembering to run them.
 
-- [ ] Extend the [`config`](../packages/shared/src/config/) zod schema with an optional `backup`
-      block (`enabled`, `intervalHours`, `destinationDir`, `retention` count, `includeSecrets` +
-      `passphrase` source). Documented in the README + `midnite.json` schema.
-- [ ] A scheduled job (on the gateway scheduler / recurring-task seam) writes a **timestamped archive**
-      to `destinationDir` on the interval, then **prunes** to the retention count. Failures are logged
-      (`warn`) and surfaced as a notification — never crash the tick.
-- [ ] The Data page shows the auto-backup status (last run, next run, recent archives) when configured.
+- [x] Extended the [`config`](../packages/shared/src/config.ts) zod schema with an optional `backup`
+      block (`enabled` (default off), `intervalHours`, `destinationDir`, `retention`, `tickMs`). *(No
+      `includeSecrets`/`passphrase` yet — the export is secret-free until the secrets slice; the archive is
+      always secret-free, so the auto-backup is too.)*
+- [x] `BackupSchedulerService` — a single fail-open interval loop (mirrors the PR-status poller; no second
+      scheduler) writes a timestamped archive via the merged export service every `intervalHours`, then **prunes**
+      to `retention` (only `midnite-backup-*.zip`, never unrelated files). The **filesystem is the ledger** (due =
+      newest archive's mtime older than the interval) so it survives a restart with no DB. A failed run logs `warn`
+      **and** fires a `backup.failed` notification — never crashes the tick.
+- [x] The Data page (`/settings/data`) shows the auto-backup status (enabled, interval, last/next run, recent
+      archives) via `GET /portability/backup/status` (admin-gated).
 
 ---
 

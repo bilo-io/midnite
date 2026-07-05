@@ -34,7 +34,7 @@
 | [52 · In-app diff & PR review](phase-52-in-app-diff-review.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
 | [51 · Session detail page](phase-51-session-detail-page.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [50 · Autonomy guardrails](phase-50-autonomy-guardrails.md) | ✅ DONE | 29/29 | `██████████` | 100% | — | — |
-| [49 · Data portability](phase-49-data-portability.md) | 🔄 WIP | 14/27 | `█████░░░░░` | 52% | F | D E |
+| [49 · Data portability](phase-49-data-portability.md) | 🔄 WIP | 17/27 | `██████░░░░` | 63% | — | D E |
 | [48 · Slides](phase-48-slides.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [46 · Inbound integrations](phase-46-inbound-integrations.md) | ✅ DONE | 20/20 | `██████████` | 100% | — | — |
@@ -161,7 +161,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **C** — Atomic import service (version-gated, replace/merge, in-process reindex) (PR #298)
 - ◐ **D** — CLI export/import commands (export done PR #294; import now available via C)
 - ◐ **E** — Web Settings → Data page (download half shipped PR #296; restore now available via C)
-- ◻ **F** — Scheduled auto-backup
+- ✅ **F** — Scheduled auto-backup (PR #299)
 
 ### [Phase 48 — Slides (reveal.js decks)](phase-48-slides.md)
 *(Net-new domain; persistence mirrors workflows; web static-export `?id=`; reveal.js client-only.)*

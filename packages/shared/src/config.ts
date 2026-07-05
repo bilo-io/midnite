@@ -343,6 +343,24 @@ export const PrStatusConfigSchema = z.object({
   pollConcurrency: z.number().int().positive().default(4),
 });
 
+// Scheduled auto-backup (Phase 49 F). A single gateway-owned loop writes a
+// timestamped full-store archive to `destinationDir` every `intervalHours`, then
+// prunes to `retention`. OFF by default (behaviour-preserving); fail-open — a
+// failed run logs + notifies, never crashes the tick. Secrets are excluded (the
+// export is secret-free until the secrets slice), so no passphrase field yet.
+export const BackupConfigSchema = z.object({
+  enabled: z.boolean().default(false),
+  // Hours between auto-backups (measured from the newest existing archive).
+  intervalHours: z.number().positive().default(24),
+  // Where archives are written. `~` and relative paths are resolved by the gateway.
+  destinationDir: z.string().default('./.midnite/backups'),
+  // How many archives to keep; older ones are pruned after each run. Must be ≥1.
+  retention: z.number().int().positive().default(7),
+  // How often the loop wakes to check whether a backup is due (coarse vs the
+  // interval — a little slop is fine). Default 1h.
+  tickMs: z.number().int().positive().default(3600000),
+});
+
 // Autonomy guardrails — the safety domain's config half (Phase 50). Pause/kill
 // + spend/rate caps live in the DB (survive a restart); this is the policy that
 // belongs in config: the always-on blast-radius floor + the spawn-env scrub.
@@ -394,10 +412,14 @@ export const MidniteConfigSchema = z.object({
   // Autonomy guardrails: blast-radius deny floor + spawn-env scrub (Phase 50).
   // Optional (defaulted) so existing midnite.json files keep validating.
   guardrails: GuardrailsConfigSchema.default({}),
+  // Scheduled auto-backup (Phase 49 F). Off by default. Optional (defaulted) so
+  // existing midnite.json files keep validating.
+  backup: BackupConfigSchema.default({}),
 });
 
 export type MidniteConfig = z.infer<typeof MidniteConfigSchema>;
 export type GuardrailsConfig = z.infer<typeof GuardrailsConfigSchema>;
+export type BackupConfig = z.infer<typeof BackupConfigSchema>;
 export type BlastRadiusConfig = z.infer<typeof BlastRadiusConfigSchema>;
 export type KnowledgeConfig = z.infer<typeof KnowledgeConfigSchema>;
 export type NotificationsConfig = z.infer<typeof NotificationsConfigSchema>;
