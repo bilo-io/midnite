@@ -28,6 +28,8 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
+| [57 · Performance & scale](phase-57-performance-scale.md) | ◻ TODO | 0/26 | `░░░░░░░░░░` | 0% | — | A B C D E F |
+| [56 · Realtime / WS reliability](phase-56-realtime-ws-reliability.md) | 🔄 WIP | 0/26 | `░░░░░░░░░░` | 0% | A | B C D E F |
 | [55 · Projects detail page](phase-55-projects-detail-page.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
 | [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [53 · Task lifecycle resilience](phase-53-task-lifecycle-resilience.md) | ✅ DONE | 22/22 | `██████████` | 100% | — | — |
@@ -106,6 +108,24 @@ shortcut). The 2 contextual-command boxes are now **un-deferred and folded into 
 Every phase's lettered themes with a status icon + one-liner, so you can gauge scope and pick
 work without opening the phase doc. Status: `✅` done · `🔄` WIP (claimed) · `◻` TODO · `◐`
 partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
+
+### [Phase 57 — Performance & scale](phase-57-performance-scale.md)
+*(No new domain — perf work across existing layers: batch loads + indexes in repositories, lean summary DTOs + pagination as shared contracts, cache tuning + virtualization on the web. Evidence-driven via a seed + benchmark harness.)*
+- ◻ **A** — Seed + benchmark harness (evidence first)
+- ◻ **B** — Kill the task-hydration N+1
+- ◻ **C** — Lean list DTOs + pagination
+- ◻ **D** — DB indexes on hot paths
+- ◻ **E** — Refetch / cache tuning
+- ◻ **F** — List virtualization
+
+### [Phase 56 — Realtime / WS reliability](phase-56-realtime-ws-reliability.md)
+*(No new domain — a shared reliability layer under the existing WS gateways, lifting the terminal WS's proven seq+ring+resume onto every board channel so clients never silently drift. In-memory ring; restart forces resync.)*
+- 🔄 **A** — Sequenced event contracts + server event ring
+- ◻ **B** — Resume protocol + gap-detection (the core guarantee)
+- ◻ **C** — Per-client backpressure + heartbeat
+- ◻ **D** — Shared reliable client subscription hook
+- ◻ **E** — Apply across cockpits + connection-status UI
+- ◻ **F** — Terminal WS alignment (opportunistic)
 
 ### [Phase 55 — Projects detail page](phase-55-projects-detail-page.md)
 *(Entirely web — no gateway/API changes; every project endpoint already exists. A `/projects/view?id=` cockpit cloning the session-detail layout; the modal stays for in-context use + creating.)*
