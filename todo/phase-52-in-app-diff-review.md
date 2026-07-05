@@ -96,21 +96,22 @@ The centerpiece — a real review viewer.
 
 ---
 
-## Theme C — Review actions: comment + approve/request-changes + merge — **L**
+## Theme C — Review actions: comment + approve/request-changes + merge — **L** — ✅ DONE (PR #290, 2026-07-05)
 
 Write back to GitHub, from inside midnite.
 
-- [ ] **Inline comment composer** anchored to a diff line (path + line + side); comments start as **drafts**
-      (Theme D) and are submitted as one batched review.
-- [ ] **Submit a review** — approve / request-changes / comment (+ a body) — via the existing
-      `github-post-review` executor, **extended to carry inline comments** (`comments: [{ path, line, body }]`)
-      and the review event. Refresh `pr_status` (`reviewDecision`) after.
-- [ ] **Merge** — a new `POST /tasks/:id/pr/merge` → GitHub REST `PUT /pulls/{n}/merge` (method
-      merge/squash/rebase, default from repo/config); respects mergeability + branch protection (surface the
-      server's refusal, don't force). Refresh status after; reflect the merged state on the board.
-- [ ] **Auth + guardrails:** write actions use the team-scoped workflow credentials (Decision §2), are
-      **RBAC-gated** (`RequiresRole('member')`+), and **audited** ([`AuditService`](../packages/gateway/src/audit/audit.service.ts)) —
-      a merge is a consequential autonomous-adjacent action.
+- [x] **Inline comment composer** anchored to a diff line (path + line + side) via react-diff-view gutter-click +
+      widgets; comments accumulate in the viewer and submit as **one batched review** (draft *persistence* across
+      reloads is Theme D).
+- [x] **Submit a review** — approve / request-changes / comment (+ body + inline `comments`) — `POST /tasks/:id/pr/review`
+      → `PrReviewService` → `tasks/lib/github-review` (`gh api …/reviews` primary, workflow-credential REST token
+      fallback — Stage-2.5). Refreshes `pr_status` (`reviewDecision`) after.
+- [x] **Merge** — `POST /tasks/:id/pr/merge` → `gh pr merge --<method>` (squash default, method-selectable);
+      respects mergeability + branch protection (a refusal surfaces as a **502** with the API message, never forced).
+      Refreshes status; the board reflects the merged state.
+- [x] **Auth + guardrails:** `gh`-primary (token fallback); both endpoints **RBAC-gated** (`RequiresRole('member')`)
+      + **audited** (`task.pr_reviewed` / `task.pr_merged`). Web: a review action bar + inline composer on the diff
+      surface (both the modal + the Theme E Review tab, via the shared `PrReviewPanel`).
 
 ---
 

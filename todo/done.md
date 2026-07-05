@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-05 — feat: in-app PR review actions (comment/approve/merge) — Phase 52 Theme C (PR #290)
+
+Closes the review loop: review + merge a task's PR from inside midnite, no context switch to GitHub.
+
+- [x] shared `pr-review.ts`: `PrReviewComment` (path/line/side/body), `PrReviewSubmission` (event + body + comments, refined so request-changes/comment need a body or a comment), `PrMergeRequest` (method, squash default), `toGithubReviewEvent`. `task.pr_reviewed`/`task.pr_merged` audit actions.
+- [x] gateway `tasks/lib/github-review.ts`: `submitGithubReview` (`gh api …/reviews` with mapped event + inline comments) + `mergeGithubPr` (`gh pr merge --<method>`), **gh-primary → workflow-credential REST-token fallback**, surfaces the GitHub message. `PrReviewService` resolves the task PR, delegates, refreshes `pr_status`, audits; a refusal → 502. `POST /tasks/:id/pr/review` + `/pr/merge` (member-gated).
+- [x] web: a review action bar (approve/request-changes/comment + body + Submit) + merge control (method select + confirm) + a click-a-gutter **inline comment composer** (react-diff-view widgets), all on the diff surface (modal + Theme E Review tab via shared `PrReviewPanel`); refreshes the board on success. Typed `submitPrReview`/`mergePr` client.
+- [x] Tests: shared 6 (submission refine, comment/merge defaults, event map), gateway lib 7 (gh args + body + token fallback + refusal) + service 5 (404/delegate/refresh/audit/502) + controller stubs, web actions RTL 4. `:typecheck`/lint clean; shared+gateway (1409) + web (752) green modulo 2 pre-existing flakes (metrics, tmux-contract).
+
 ## 2026-07-03 — feat: needs-attention board chip + task-health view + CLI — Phase 53 Theme E (PR #286)
 
 Make lifecycle resilience visible: surface the failures + escalations Themes A/B/D record.
