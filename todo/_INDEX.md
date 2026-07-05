@@ -28,6 +28,8 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
+| [60 · Fable-Analysis](phase-60-fable-analysis.md) | ◻ TODO | 0/63 | `░░░░░░░░░░` | 0% | — | A B C D E F G H I J K L M |
+| [59 · Chat to board](phase-59-chat-to-board.md) | ◻ TODO | 0/26 | `░░░░░░░░░░` | 0% | — | A B C D E F |
 | [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | ◻ TODO | 0/25 | `░░░░░░░░░░` | 0% | — | A B C D E F |
 | [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 13/26 | `█████░░░░░` | 50% | C | — |
 | [56 · Realtime / WS reliability](phase-56-realtime-ws-reliability.md) | 🔄 WIP | 8/26 | `███░░░░░░░` | 31% | B D | E |
@@ -109,6 +111,31 @@ shortcut). The 2 contextual-command boxes are now **un-deferred and folded into 
 Every phase's lettered themes with a status icon + one-liner, so you can gauge scope and pick
 work without opening the phase doc. Status: `✅` done · `🔄` WIP (claimed) · `◻` TODO · `◐`
 partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
+
+### [Phase 60 — Fable-Analysis](phase-60-fable-analysis.md)
+*Repo-wide audit → ranked findings reports (analysis-only, bar security quick-wins + safe dep bumps). Direction-preserving. M runs last.*
+- ◻ **A** — Auth, transport & headers audit (rate-limit posture, CORS, token lifecycle)
+- ◻ **B** — Secrets, signatures & crypto paths audit
+- ◻ **C** — Input validation & injection sweep (zod coverage, FTS/path-traversal/SSRF/zip-slip)
+- ◻ **D** — Dependency & supply-chain audit (+ safe bumps)
+- ◻ **E** — State-machine, scheduler & concurrency correctness
+- ◻ **F** — Data integrity & boundary-condition bugs
+- ◻ **G** — Error handling & failure-path correctness
+- ◻ **H** — Consistency & flow sweep (loading/empty/error, dead ends)
+- ◻ **I** — Accessibility & keyboard navigation
+- ◻ **J** — Mobile & responsive polish
+- ◻ **K** — CLI robustness & coverage (+ tests for untested clusters)
+- ◻ **L** — Docs site, public site & @midnite/ui test gap
+- ◻ **M** — Cross-cutting synthesis & remediation backlog (runs last)
+
+### [Phase 59 — Chat to board](phase-59-chat-to-board.md)
+*Natural-language command bar in the Cmd-K palette; deterministic-first, local-model-preferred; composes existing task services.*
+- ◻ **A** — Intent contract + deterministic parser + LLM fallback
+- ◻ **B** — Execute intents by composing existing services
+- ◻ **C** — Status-query answerer (read-only)
+- ◻ **D** — Inference routing: deterministic-first, local-preferred
+- ◻ **E** — Palette command-bar UI
+- ◻ **F** — Safety: preview, confirm, undo, audit
 
 ### [Phase 58 — Dependency graph & milestone roadmap](phase-58-dependency-graph-roadmap.md)
 *(Make the plan visible: surface Phase 27's dependency edges as a DAG + a milestone roadmap. Server-authoritative graph API; React Flow + dagre view; milestone data model + assignment. No new scheduling semantics — read/visualize what's modeled.)*
