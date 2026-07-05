@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [55 · Projects detail page](phase-55-projects-detail-page.md) | ◻ TODO | 0/23 | `░░░░░░░░░░` | 0% | — | A B C D |
+| [55 · Projects detail page](phase-55-projects-detail-page.md) | 🔄 WIP | 0/23 | `░░░░░░░░░░` | 0% | A B C D | — |
 | [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [53 · Task lifecycle resilience](phase-53-task-lifecycle-resilience.md) | ✅ DONE | 22/22 | `██████████` | 100% | — | — |
 | [52 · In-app diff & PR review](phase-52-in-app-diff-review.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
