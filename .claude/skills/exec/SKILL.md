@@ -36,7 +36,7 @@ Example label: `Phase 9 E4: Retro games modal [M · 2-4h]`
 Present via **AskUserQuestion**, recommended first. Bias toward `$ARGUMENTS` if given. **Do not implement until they pick.**
 
 ## 2.5 · Upfront decisions — STOP for the human
-Before touching code, identify the **5–7 most consequential design decisions** for the chosen task (data flow, persistence strategy, component shape, API contract, etc.) — scale the count toward 5 for a simple task and toward 7 for a complex one or one with a meaty phase theme. Present each as a separate **AskUserQuestion**. For every option include:
+Before touching code, identify the **most consequential design decisions** for the chosen task (data flow, persistence strategy, component shape, API contract, etc.) and present each as a separate **AskUserQuestion**. **Always ask 5 or more — 5 is a hard floor, never fewer.** Use 5 for a simple task and scale up (7, or more) for a complex one or a meaty phase theme. For every option include:
 - A **dominant-nature tag** in brackets: `[planned]` (matches the phase doc) · `[recommended]` (fits existing patterns) · `[performance]` · `[simplicity]` · `[DX]` · `[future-proof]` · `[minimal]` · `[scope+]` (expands scope) — pick whichever single tag best characterises the option.
 - The **effort size** for that option.
 
@@ -44,7 +44,7 @@ Example option label: `Zustand store [recommended · S]`
 Example option label: `Local component state [simplicity · XS]`
 Example option label: `Server-side with SWR polling [performance · M]`
 
-Skip any decision already unambiguously settled in the phase doc or `open-decisions.md`. **Do not implement until all of them are answered.**
+Skip any decision already unambiguously settled in the phase doc or `open-decisions.md` — but **never drop below the 5-question floor**: if skipping the settled ones leaves you with fewer than 5, surface the next-most-useful choices (edge-case handling, test strategy, naming / API shape, error states, rollout) until you have at least 5. **Do not implement until all of them are answered.**
 
 ## 2.6 · Rename session
 Once the task is chosen, immediately set the terminal/session title so Claude Desktop shows what's in flight:
@@ -114,8 +114,26 @@ Against, in order: fidelity to the phase doc/decisions → `CLAUDE.md` conventio
   - Commit these on the branch (`docs(todo): ...`) so the squash-merge lands docs + index + code together.
 - If the branch is behind `main`, rebase it first: `git rebase origin/main` in the worktree, then force-push (`git push --force-with-lease`). If the tracker files conflict with another loop's merge, take both sides (keep every `done.md` entry; reconcile the `_INDEX.md` cells) — see the parallel-agent conflict gotchas in memory.
 - `gh pr ready <n>` → `gh pr merge <n> --squash --delete-branch`. **Always squash. Only use a merge commit if squash is genuinely impossible (e.g. protected-branch rules outside our control).** The merge now carries the doc + index updates — no separate `main` commit needed for trackers.
-- Teardown: `git worktree remove .git/worktrees/<slice>` + `git branch -d feature/<slice>` (`-D` if a squash leaves it "unmerged"); confirm with `git worktree list`.
-- Wrap-up (terse markdown): `# 🎉 Merged: <title>` (linked) · `## 📊 Phase status` (every phase: ✅/🔄/⬜ + outstanding count) · `## ✨ This PR` (what landed + link) · `## ⏭️ Next up`.
+- **Post-merge `_INDEX.md` sync on `main` — MANDATORY every merge, never skip.** The squash carried your in-branch `_INDEX.md` edit, but a parallel loop's merge can land between and leave it stale. Back in the primary checkout, refresh `main` and verify the index reflects reality:
+  ```bash
+  git checkout main && git pull origin main
+  ```
+  Re-read **[`todo/_INDEX.md`](../../../todo/_INDEX.md)** and confirm this phase's row (**Status** / `🔄 WIP` theme letters / `Done` / `%` / the 10-cell progress bar) and its `## Theme key` line **actually reflect the just-merged work**. If a race dropped, clobbered, or under-counted it, fix `_INDEX.md` **directly on `main`** and push:
+  ```bash
+  git add todo/_INDEX.md
+  git commit -m "docs(todo): sync _INDEX.md after PR #<n>"
+  git push origin main    # if it races: git pull --rebase origin main && re-push
+  ```
+- **Teardown + report freed space — every merge.** Measure the worktree's on-disk size *before* removing it, tear down the worktree + branch, then report the reclaimed space:
+  ```bash
+  freed=$(du -sk .git/worktrees/<slice> 2>/dev/null | cut -f1)   # KB, before removal
+  git worktree remove .git/worktrees/<slice>                     # add --force if it balks over git admin-file noise
+  git branch -D feature/<slice>                                  # -d normally; -D since a squash leaves it "unmerged"
+  git worktree prune && git worktree list                        # confirm it's gone
+  echo "freed ~$(( freed / 1024 )) MB"
+  ```
+  Surface the freed figure (e.g. `🧹 Reclaimed ~430 MB`) in the wrap-up below.
+- Wrap-up (terse markdown): `# 🎉 Merged: <title>` (linked) · `## 📊 Phase status` (every phase: ✅/🔄/⬜ + outstanding count) · `## ✨ This PR` (what landed + link) · `🧹 Cleanup` (worktree + branch removed, `~<N> MB` freed from Stage 10 teardown) · `## ⏭️ Next up`.
 
 ## 11 · Compact & loop hygiene
 **Always `/compact` once the wrap-up is posted** — every run, loop or not. Pass instructions so it keeps **only** the durable ledger and drops the rest:
