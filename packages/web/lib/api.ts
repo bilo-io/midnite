@@ -279,6 +279,8 @@ import {
   type DeckSummary,
   type CreateDeckRequest,
   type UpdateDeckRequest,
+  BackupSummarySchema,
+  type BackupSummary,
 } from '@midnite/shared';
 import { z } from 'zod';
 
@@ -1687,6 +1689,36 @@ export async function exportCouncilRunMarkdown(
     throw new ApiError(errorMessage(res, text), res.status);
   }
   return res.text();
+}
+
+/**
+ * Phase 49 E — download a full-store backup archive (admin-gated). Fetches the
+ * zip WITH the bearer token (a plain link wouldn't carry it), and reads the
+ * per-domain summary from the `x-midnite-backup-manifest` header (exposed via
+ * CORS by the export endpoint) so the caller can report what it downloaded
+ * without unzipping. Returns the blob + resolved filename + summary.
+ */
+export async function downloadBackup(
+  domains?: string[],
+): Promise<{ blob: Blob; filename: string; summary: BackupSummary | null }> {
+  const qs = domains && domains.length > 0 ? `?domains=${encodeURIComponent(domains.join(','))}` : '';
+  const headers: Record<string, string> = {};
+  if (_accessToken) headers['authorization'] = `Bearer ${_accessToken}`;
+  const res = await fetch(`${gatewayUrl()}/portability/export${qs}`, { cache: 'no-store', headers });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new ApiError(errorMessage(res, text), res.status);
+  }
+  const blob = await res.blob();
+  const disposition = res.headers.get('content-disposition') ?? '';
+  const filename = /filename="?([^"]+)"?/.exec(disposition)?.[1] ?? 'midnite-backup.zip';
+  let summary: BackupSummary | null = null;
+  const rawSummary = res.headers.get('x-midnite-backup-manifest');
+  if (rawSummary) {
+    const parsed = BackupSummarySchema.safeParse(JSON.parse(rawSummary));
+    if (parsed.success) summary = parsed.data;
+  }
+  return { blob, filename, summary };
 }
 
 /** Fetch a task thread as markdown (the gateway's `taskToMarkdown`). Backs the

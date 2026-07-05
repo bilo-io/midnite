@@ -28,12 +28,13 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
+| [55 · Projects detail page](phase-55-projects-detail-page.md) | ◻ TODO | 0/23 | `░░░░░░░░░░` | 0% | — | A B C D |
 | [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
-| [53 · Task lifecycle resilience](phase-53-task-lifecycle-resilience.md) | 🔄 WIP | 12/22 | `██████░░░░` | 55% | C | — |
+| [53 · Task lifecycle resilience](phase-53-task-lifecycle-resilience.md) | ✅ DONE | 22/22 | `██████████` | 100% | — | — |
 | [52 · In-app diff & PR review](phase-52-in-app-diff-review.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
 | [51 · Session detail page](phase-51-session-detail-page.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [50 · Autonomy guardrails](phase-50-autonomy-guardrails.md) | ✅ DONE | 29/29 | `██████████` | 100% | — | — |
-| [49 · Data portability](phase-49-data-portability.md) | 🔄 WIP | 6/27 | `██░░░░░░░░` | 22% | C | D E F |
+| [49 · Data portability](phase-49-data-portability.md) | 🔄 WIP | 9/27 | `███░░░░░░░` | 33% | C | F |
 | [48 · Slides](phase-48-slides.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [46 · Inbound integrations](phase-46-inbound-integrations.md) | ✅ DONE | 20/20 | `██████████` | 100% | — | — |
@@ -106,6 +107,13 @@ Every phase's lettered themes with a status icon + one-liner, so you can gauge s
 work without opening the phase doc. Status: `✅` done · `🔄` WIP (claimed) · `◻` TODO · `◐`
 partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 
+### [Phase 55 — Projects detail page](phase-55-projects-detail-page.md)
+*(Entirely web — no gateway/API changes; every project endpoint already exists. A `/projects/view?id=` cockpit cloning the session-detail layout; the modal stays for in-context use + creating.)*
+- ◻ **A** — Detail page shell, routing & collapsible two-rail layout
+- ◻ **B** — Extract the aspect panels (shared by modal + page)
+- ◻ **C** — Rail content: stats & actions (left) · sources & activity (right)
+- ◻ **D** — Navigation wiring & the modal-vs-page rule
+
 ### [Phase 54 — Runtime & process resilience](phase-54-runtime-process-resilience.md)
 *(Hardens the gateway process itself: boot → run → shutdown. Watchdog rides the single tick; one shared `pause`/`resume` (reused by Phase 50's kill switch); preserves boot recovery + the pty/tmux Spawner split.)*
 - ✅ **A** — Boot preflight + config validation + fail-fast (`strictBoot`) (PR #275)
@@ -119,7 +127,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 *(Additive layer over the existing lifecycle — no state-machine refactor; escalation reuses `waiting` + a typed reason. Complements Phase 50.)*
 - ✅ **A** — Failure taxonomy + `task_failures` records (`classifyFailure`)
 - ✅ **B** — Retry backoff (exponential + jitter) + class-aware retry
-- ◻ **C** — Stuck-state watchdogs (wip-inactivity, aged-todo, waiting-too-long)
+- ✅ **C** — Stuck-state watchdogs (wip-inactivity, aged-todo, waiting-too-long) (PR #293)
 - ✅ **D** — Escalate-to-human (needs-attention via `waiting` + `waitReason`) + nudges
 - ✅ **E** — Board "needs attention" + failures/health view + CLI doctor
 
@@ -151,8 +159,8 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **A** — Archive contract + schema-version stamp
 - ✅ **B** — Bulk export service (PR #291; secrets + users/teams deferred)
 - ◻ **C** — Atomic import service
-- ◻ **D** — CLI export/import commands
-- ◻ **E** — Web Settings → Data page
+- ◐ **D** — CLI export/import commands (export done PR #294; import → Theme C)
+- ◐ **E** — Web Settings → Data page (download half shipped PR #296; restore pending import C)
 - ◻ **F** — Scheduled auto-backup
 
 ### [Phase 48 — Slides (reveal.js decks)](phase-48-slides.md)

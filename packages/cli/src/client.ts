@@ -1,6 +1,7 @@
 import {
   ApprovalLogResponseSchema,
   AuthResponseSchema,
+  BackupSummarySchema,
   BreakdownPreviewResponseSchema,
   BreakdownSchema,
   BulkCreateTaskResponseSchema,
@@ -36,6 +37,7 @@ import {
   type InstallTemplateRequest,
   type PauseScope,
   type PreflightReport,
+  type BackupSummary,
   type Readiness,
   type ResolveTaskAction,
   type SearchQuery,
@@ -82,6 +84,14 @@ export interface GatewayClient {
   resolveTask(id: string, action: ResolveTaskAction, prompt?: string): Promise<Task>;
   listRecentFailures(opts?: { class?: FailureClass; limit?: number }): Promise<TaskFailure[]>;
   tasksDoctor(): Promise<TasksDoctorReport>;
+  /** Download a full-store backup archive (Phase 49 D). Returns the server-named
+   *  filename, the per-domain summary (from the response header), and the archive
+   *  body as a stream to pipe to disk. */
+  exportArchive(opts?: { domains?: string[] }): Promise<{
+    filename: string;
+    summary: BackupSummary | null;
+    body: ReadableStream<Uint8Array>;
+  }>;
   setPriority(id: string, priority: number): Promise<Task>;
   addDependency(id: string, dependsOnId: string): Promise<Task>;
   removeDependency(id: string, dependsOnId: string): Promise<Task>;
@@ -121,6 +131,12 @@ export interface GatewayClient {
 export function createClient(baseUrl: string, token?: string): GatewayClient {
   // Fetch with uniform connection-error + non-2xx handling, returning the raw
   // Response. Callers decode it as JSON (`request`) or text (`exportTask`).
+  /** Pull `filename="…"` out of a content-disposition header, if present. */
+  function filenameFromDisposition(disposition: string | null): string | undefined {
+    const m = disposition?.match(/filename="?([^"]+)"?/i);
+    return m?.[1];
+  }
+
   async function fetchOk(path: string, init: RequestInit): Promise<Response> {
     // Merge any caller-provided Authorization header, or add the bearer token if set.
     const callerHeaders = init.headers as Record<string, string> | undefined;
@@ -265,6 +281,25 @@ export function createClient(baseUrl: string, token?: string): GatewayClient {
     /** The task-health "what's wedged?" report (Phase 53 E). */
     async tasksDoctor(): Promise<TasksDoctorReport> {
       return TasksDoctorReportSchema.parse(await request('/tasks/doctor', { method: 'GET' }));
+    },
+
+    /** Download a full-store backup archive (Phase 49 D). */
+    async exportArchive(opts?: { domains?: string[] }) {
+      const qs = opts?.domains?.length
+        ? `?domains=${encodeURIComponent(opts.domains.join(','))}`
+        : '';
+      const res = await fetchOk(`/portability/export${qs}`, { method: 'GET' });
+      if (!res.body) throw new Error('export response had no body');
+      const filename =
+        filenameFromDisposition(res.headers.get('content-disposition')) ??
+        `midnite-backup-${new Date().toISOString().replace(/[:.]/g, '-')}.zip`;
+      let summary: BackupSummary | null = null;
+      const rawSummary = res.headers.get('x-midnite-backup-manifest');
+      if (rawSummary) {
+        const parsed = BackupSummarySchema.safeParse(JSON.parse(rawSummary));
+        if (parsed.success) summary = parsed.data;
+      }
+      return { filename, summary, body: res.body };
     },
 
     async setPriority(id: string, priority: number): Promise<Task> {

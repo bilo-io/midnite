@@ -95,6 +95,11 @@ export const AgentConfigSchema = z.object({
       maxReminders: z.number().int().positive().default(3),
       // How often the nudge loop wakes to re-evaluate waiting durations.
       tickMs: z.number().int().positive().default(300000),
+      // Phase 53 C — also proactively flag an aged `todo` (ready/blocked but never
+      // started) that's been sitting this many hours since creation, so it's a
+      // *push* not just a pull on the doctor/health view. 0 = off (default →
+      // behaviour-preserving). Reuses repeatHours / maxReminders / tickMs.
+      agedTodoHours: z.number().nonnegative().default(0),
     })
     .default({}),
   // Phase 54 D — when the scheduler's readiness gate finds a dependency down (DB
