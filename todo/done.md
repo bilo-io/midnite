@@ -4,6 +4,19 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-05 — feat: shared reliable WS subscription hook — Phase 56 Theme D (PR #316)
+
+One resilient subscription hook replacing four ad-hoc socket implementations.
+
+- [x] `useReliableSubscription(channel, handlers, enabled?)` — transport-only: connect, exponential-backoff reconnect, per-channel decode, `lastSeq` tracking, `send`. Cache strategy stays with the caller (`onEvent`), so the hook is generic.
+- [x] Migrated **use-task-events**, **use-idea-events**, **use-approvals-socket** onto it via stable per-channel configs. Board channels unwrap the 56 A `SequencedEnvelope`; approvals decodes its snapshot events (no seq), connects tokenless, uses `send` for `decide`.
+- [x] **Resume-safe:** still sends plain `{type:'subscribe'}` — the `resume`/`resync-required` handling pairs with Theme B's server protocol (not merged; sending `resume` now would break against today's gateways). `lastSeq` already tracked → one-line flip once B lands.
+- [x] Per-event-type cache strategy in each `onEvent` (board→invalidate, ephemeral→skip, workflow node→reducer patch); `refetchOnWindowFocus` fallback already on (57 E).
+- Intentional exception: **use-workflow-run** stays bespoke — imperative start→subscribe→poll-fallback→terminal lifecycle doesn't fit the declarative hook (would lose its REST poll fallback); already consumes the 56 A envelope.
+- [x] Tests: `useReliableSubscription` unit (connect/subscribe/decode/send/enabled/onOpen) + existing task/idea/approvals consumers green. web 804, lint clean.
+
+---
+
 ## 2026-07-05 — perf: index team-scope hot paths — Phase 57 Theme D (PR #314)
 
 `teamScopeFilter` (`createdBy = ? OR createdBy IS NULL OR teamId = ?`) backed `listProjects`/`listWorkflows`/scoped `listTasks`; projects + workflows had no matching index, so EXPLAIN QUERY PLAN showed a full `SCAN`.
