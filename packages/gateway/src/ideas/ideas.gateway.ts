@@ -17,6 +17,7 @@ import { isAllowedOrigin } from '../lib/allowed-origin';
 import { JwtService, TokenInvalidError } from '../auth/jwt.service';
 import { ConnectionRegistry } from '../ws/connection-registry';
 import { ReliableBroadcastService } from '../ws/reliable-broadcast.service';
+import { WsMetricsService } from '../ws/ws-metrics.service';
 import { IdeaEventBus } from './idea-event-bus';
 
 @WebSocketGateway({ path: IDEAS_WS_PATH })
@@ -32,7 +33,12 @@ export class IdeasGateway
     @Inject(ConnectionRegistry) private readonly registry: ConnectionRegistry,
     @Inject(ReliableBroadcastService) private readonly reliable: ReliableBroadcastService,
     @Optional() private readonly jwtSvc?: JwtService,
+    @Optional() @Inject(WsMetricsService) private readonly metrics?: WsMetricsService,
   ) {}
+
+  private reportSubscribers(): void {
+    this.metrics?.setSubscribers('ideas', this.subscribers.size);
+  }
 
   onModuleInit(): void {
     this.bus.subscribe((event) => this.broadcast(event));
@@ -71,6 +77,7 @@ export class IdeasGateway
       try { parsed = JSON.parse(toText(raw)); } catch { return; }
       if (IdeaSubscribeMessageSchema.safeParse(parsed).success) {
         this.subscribers.add(client);
+        this.reportSubscribers();
       }
     });
   }
@@ -78,6 +85,7 @@ export class IdeasGateway
   handleDisconnect(client: WebSocket): void {
     this.subscribers.delete(client);
     this.registry.deregister(client);
+    this.reportSubscribers();
   }
 
   private broadcast(event: IdeaEvent): void {

@@ -17,6 +17,7 @@ import { isAllowedOrigin } from '../lib/allowed-origin';
 import { JwtService, TokenInvalidError } from '../auth/jwt.service';
 import { ConnectionRegistry } from '../ws/connection-registry';
 import { ReliableBroadcastService } from '../ws/reliable-broadcast.service';
+import { WsMetricsService } from '../ws/ws-metrics.service';
 import { TaskEventBus } from './task-event-bus';
 
 /**
@@ -44,7 +45,12 @@ export class TasksGateway
     @Inject(ConnectionRegistry) private readonly registry: ConnectionRegistry,
     @Inject(ReliableBroadcastService) private readonly reliable: ReliableBroadcastService,
     @Optional() private readonly jwtSvc?: JwtService,
+    @Optional() @Inject(WsMetricsService) private readonly metrics?: WsMetricsService,
   ) {}
+
+  private reportSubscribers(): void {
+    this.metrics?.setSubscribers('tasks', this.subscribers.size);
+  }
 
   onModuleInit(): void {
     this.bus.subscribe((event) => this.broadcast(event));
@@ -72,6 +78,7 @@ export class TasksGateway
   handleDisconnect(client: WebSocket): void {
     this.subscribers.delete(client);
     this.registry.deregister(client);
+    this.reportSubscribers();
   }
 
   private resolveUserContext(
@@ -103,6 +110,7 @@ export class TasksGateway
     }
     if (!TaskSubscribeMessageSchema.safeParse(parsed).success) return;
     this.subscribers.add(client);
+    this.reportSubscribers();
   }
 
   private broadcast(event: TaskBoardEvent): void {
