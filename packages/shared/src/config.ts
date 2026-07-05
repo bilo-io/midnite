@@ -256,6 +256,14 @@ export const OAuthClientConfigSchema = z.object({
 export const WsConfigSchema = z.object({
   // Events retained per scoped channel. Larger = longer resume window, more memory.
   ringSize: z.number().int().positive().default(512),
+  // Phase 56 C — per-client backpressure: if a socket's outbound buffer exceeds
+  // this, it's dropped-to-resync (closed with 4014) rather than blocking the
+  // broadcast or buffering unboundedly.
+  maxBufferedBytes: z.number().int().positive().default(1_048_576),
+  // Heartbeat: ping every `heartbeatMs`; a socket that misses `maxMissedPongs`
+  // consecutive pongs is considered dead and terminated (frees the slot).
+  heartbeatMs: z.number().int().positive().default(30_000),
+  maxMissedPongs: z.number().int().positive().default(2),
 });
 
 export const WorkflowsConfigSchema = z.object({
