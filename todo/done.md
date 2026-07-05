@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-05 — feat: persisted review drafts + AI-review inline — Phase 52 Theme D · **Phase 52 COMPLETE** 🎉 (PR #TBD)
+
+Finishes the in-app review phase: inline comments persist across reloads, and the AI verdict shows where you review.
+
+- [x] gateway `pr_review_comments` table (migration `0069`) + `PrReviewCommentsRepository`; **per-author** drafts. The review submit **sources comments from the stored drafts** (not the client) and flips them to `submitted`. CRUD endpoints (`GET/POST/PATCH/DELETE /tasks/:id/pr/review/comments`, member-gated, author-owned; 403 on another's, 400 editing a submitted).
+- [x] `PrDiffService` includes the task's `ai_review` (verdict + summary) on the `PrDiff` payload; the client submit drops its `comments` arg (server-sourced).
+- [x] web: drafts persist immediately per add/edit/delete, render as inline diff widgets re-anchored via a `(side,line)→change-key` index, edit/delete inline; an **AI-review banner** (verdict-coloured) atop the diff. Typed draft client methods.
+- [x] Tests: shared draft schemas (7), gateway repo (6) + service drafts/submit-from-drafts/ownership/empty-guard (+existing), web AI-banner + updated actions/panel (18 pr-review). `:typecheck`/lint clean; shared+gateway (1453, 1 pre-existing tmux flake) + web 763 green.
+
 ## 2026-07-05 — feat: in-app PR review actions (comment/approve/merge) — Phase 52 Theme C (PR #292)
 
 Closes the review loop: review + merge a task's PR from inside midnite, no context switch to GitHub.
