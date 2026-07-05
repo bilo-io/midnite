@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [55 · Projects detail page](phase-55-projects-detail-page.md) | 🔄 WIP | 0/23 | `░░░░░░░░░░` | 0% | A B C D | — |
+| [55 · Projects detail page](phase-55-projects-detail-page.md) | 🔄 WIP | 3/23 | `█░░░░░░░░░` | 13% | A C D | — |
 | [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [53 · Task lifecycle resilience](phase-53-task-lifecycle-resilience.md) | ✅ DONE | 22/22 | `██████████` | 100% | — | — |
 | [52 · In-app diff & PR review](phase-52-in-app-diff-review.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
@@ -110,7 +110,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 ### [Phase 55 — Projects detail page](phase-55-projects-detail-page.md)
 *(Entirely web — no gateway/API changes; every project endpoint already exists. A `/projects/view?id=` cockpit cloning the session-detail layout; the modal stays for in-context use + creating.)*
 - ◻ **A** — Detail page shell, routing & collapsible two-rail layout
-- ◻ **B** — Extract the aspect panels (shared by modal + page)
+- ✅ **B** — Extract the aspect panels (shared by modal + page) (PR #300)
 - ◻ **C** — Rail content: stats & actions (left) · sources & activity (right)
 - ◻ **D** — Navigation wiring & the modal-vs-page rule
 

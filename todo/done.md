@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-05 — feat: extract project aspect panels (shared by modal + page) — Phase 55 Theme B (PR #300)
+
+Groundwork for the projects detail page: the modal's five tab bodies become standalone, layout-agnostic panels so the modal and the upcoming `/projects/view` page render the identical surfaces and can never drift.
+
+- [x] Five panels under `components/projects/panels/`: `project-details-panel` (edit-only, **self-saving** — owns its draft state + Save button, AI enhance, folder picker, memory link, phase-doc sync), `project-sources-panel` (live add/remove/reorder), `project-plan-panel` (client-side plan docs + template picker + `PlanDocModal`), `project-tasks-panel` + `project-phasedocs-panel` (thin wrappers). None assume a modal or page container.
+- [x] `project-modal` now delegates every **edit-mode** tab to a panel; **create mode** keeps its staged inline form (no project to mutate yet) + footer Create. Only user-visible delta: edit-mode Save moved into the Details panel, so the edit footer is Delete · Close. All three `project-modal` stories stay green (dialog/title/tab parity).
+- [x] Escape regression fix: the modal used to guard Escape on its own `openDocId` (now inside the plan panel) — added an `onDocOpenChange` callback so the modal yields Escape to a nested `PlanDocModal`.
+- [x] Tests: new RTL units for details (save flow + memory link), sources (add→bubble), tasks (list + empty). Gate green — `web:typecheck` ✓, `web:test` 773 ✓, `web:lint` 0 errors.
+
+---
+
 ## 2026-07-05 — feat: atomic archive import service — Phase 49 Theme C (PR #298)
 
 The restore half of data portability: read Theme B's export zip back into the store, all-or-nothing.

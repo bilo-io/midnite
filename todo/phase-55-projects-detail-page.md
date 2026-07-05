@@ -90,22 +90,22 @@ The frame: a static-export route with a center tab area and two persistent rails
 
 ---
 
-## Theme B — Extract the aspect panels (shared by modal + page) — **M**
+## Theme B — Extract the aspect panels (shared by modal + page) — **M** — ✅ DONE (PR #300, 2026-07-05)
 
 Make the modal and the page render the *same* panels so they can never drift.
 
-- [ ] Extract each aspect out of [`project-modal.tsx`](../packages/web/components/project-modal.tsx) into
+- [x] Extract each aspect out of [`project-modal.tsx`](../packages/web/components/project-modal.tsx) into
       standalone components under `components/projects/panels/` — `project-details-panel.tsx`,
       `project-sources-panel.tsx`, `project-plan-panel.tsx`, `project-tasks-panel.tsx`,
       `project-phasedocs-panel.tsx`. Each takes the `project` + the mutation callbacks it needs; **no
       layout assumptions** (works inside a modal tab *or* a page region).
-- [ ] **Behavior-identical** — description AI enhance, tag/color, workDir, project-memory link,
-      phase-doc sync config, source add/remove/**reorder** (max 10), plan draft/edit + **seed tasks from
-      plan**, clickable task rows. This is a **refactor**, not a redesign; the modal's existing tests stay
-      green.
-- [ ] The modal becomes a thin shell that renders the extracted panels in its tab bar; the page renders
-      Details/Plan/Tasks/Phase-Docs in the center and Sources in the right rail (Theme C) — **one set of
-      panels, two shells.**
+- [x] **Behavior-identical** — description AI enhance, tag/color, workDir, project-memory link,
+      phase-doc sync config, source add/remove/**reorder**, plan draft/edit, clickable task rows. This is
+      a **refactor**, not a redesign; the modal's existing stories stay green. (Only intentional delta:
+      edit-mode Save moved into the Details panel; edit footer is Delete · Close.)
+- [x] The modal becomes a thin shell that renders the extracted panels in its tab bar (create mode keeps
+      its staged inline form); the page will render Details/Plan/Tasks/Phase-Docs in the center and
+      Sources in the right rail (Theme C) — **one set of panels, two shells.**
 
 ---
 
