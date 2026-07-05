@@ -4,6 +4,19 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-05 — feat: CLI + web restore — **Phase 49 COMPLETE** 🎉 — Themes D+E (PR #303)
+
+The restore half users actually touch — a shell command and a point-and-click flow — both on Theme C's import service. Closes out data portability.
+
+- [x] **cli:** `midnite import <file>` — `previewImport`/`importArchive` on `GatewayClient` (multipart to the C endpoints). Always previews first (per-domain counts + id conflicts + version verdict), **hard-blocks a newer-than-us archive** (no `--force`), then confirms before the write (`--yes` skips; `--dry-run` previews only; `--mode merge|replace`, default merge).
+- [x] **web:** Restore panel on `/settings/data` — choose archive → auto dry-run preview → **merge** (default, non-destructive) or **replace** (typed `replace` confirm) → **staged progress** → result summary. Newer archives hard-blocked, mirroring the CLI.
+- [x] **fix(gateway):** `PortabilityController` used reflected constructor types, but the module has an import cycle (the F backup scheduler pulls in `PortabilityService`) — so Nest injected `undefined` for `service` and **`GET /portability/export` 500'd at runtime** (unit tests instantiate by hand, so they never caught it). Switched to explicit `@Inject` tokens. Every real backup download was broken on `main`; the new e2e caught it.
+- [x] **fix(gateway):** portability controller spec ctor arity (the F merge added a 3rd dep; the C spec still passed 2 → `gateway:build` was red on `main`).
+- [x] Tests: CLI client unit (preview/import multipart + rejected-newer archive); web RTL (preview→merge summary, replace typed-confirm gate, newer-archive hard-block, preview-failure toast); **Playwright e2e** driving export→upload→preview→restore against a real gateway. shared 58 / cli 18 / web 151 files green; gateway 1476/1477 (1 pre-existing flaky tmux, passes on retry).
+- Deferred (unchanged): `--include-secrets`/passphrase, users/teams round-trip, older-archive migrate-then-restore — await the secrets + users slices.
+
+---
+
 ## 2026-07-05 — feat: extract project aspect panels (shared by modal + page) — Phase 55 Theme B (PR #300)
 
 Groundwork for the projects detail page: the modal's five tab bodies become standalone, layout-agnostic panels so the modal and the upcoming `/projects/view` page render the identical surfaces and can never drift.
