@@ -7,10 +7,10 @@ import {
   applyWorkflowEvent,
   isRunTerminal,
   type NodeRunStatus,
-  type WorkflowEvent,
   type WorkflowRun,
 } from '@midnite/shared';
 import { gatewayWsUrl, getAccessToken, getWorkflowRun, runWorkflow } from '@/lib/api';
+import { ResumeTracker } from '@/lib/resume-cursor';
 
 export interface UseWorkflowRun {
   run: WorkflowRun | null;
@@ -104,6 +104,13 @@ export function useWorkflowRun(workflowId: string): UseWorkflowRun {
     (runId: string) => {
       let opened = false;
       let socket: WebSocket;
+      // Phase 56 B: dedup replay+live overlap by (ch, seq). This hook keeps its
+      // own REST backfill/poll reliability, so resume() mostly anchors + dedups;
+      // a `resync-required` routes to the existing REST reconcile below.
+      const tracker = new ResumeTracker((raw) => {
+        const r = SequencedWorkflowEventSchema.safeParse(raw);
+        return r.success ? r.data : null;
+      });
       try {
         const token = getAccessToken();
         const wsUrl = `${gatewayWsUrl()}${WORKFLOW_WS_PATH}${token ? `?token=${encodeURIComponent(token)}` : ''}`;
@@ -115,7 +122,7 @@ export function useWorkflowRun(workflowId: string): UseWorkflowRun {
       ws.current = socket;
       socket.onopen = () => {
         opened = true;
-        socket.send(JSON.stringify({ type: 'subscribe', runId }));
+        socket.send(JSON.stringify(tracker.subscribeMessage({ runId })));
         // The run starts server-side before this handshake completes, so the trigger
         // node's events (and, for a trigger-only/instant run, the terminal event) fire
         // before we subscribe and there's no replay. Backfill once on connect to catch
@@ -123,17 +130,20 @@ export function useWorkflowRun(workflowId: string): UseWorkflowRun {
         void refresh(runId, true);
       };
       socket.onmessage = (ev) => {
-        // Phase 56 A: events arrive wrapped in a sequenced envelope — unwrap `.event`.
-        let event: WorkflowEvent;
+        let raw: unknown;
         try {
-          const parsed = SequencedWorkflowEventSchema.safeParse(
-            JSON.parse(typeof ev.data === 'string' ? ev.data : ''),
-          );
-          if (!parsed.success) return;
-          event = parsed.data.event;
+          raw = JSON.parse(typeof ev.data === 'string' ? ev.data : '');
         } catch {
           return;
         }
+        const decision = tracker.accept(raw);
+        // A gap too big to replay → reconcile authoritatively over REST.
+        if (decision.kind === 'resync') {
+          void refresh(runId);
+          return;
+        }
+        if (decision.kind !== 'event') return; // watermark / duplicate / ignore
+        const { event } = decision;
         if (event.runId !== runId || !mounted.current) return;
 
         // Apply incrementally — node transitions and outputs land without re-fetching.

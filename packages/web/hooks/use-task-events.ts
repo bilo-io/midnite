@@ -5,6 +5,7 @@ import { TASKS_WS_PATH, SequencedTaskBoardEventSchema } from '@midnite/shared';
 import { gatewayWsUrl, getAccessToken } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { emitTaskEvent } from '@/lib/task-events';
+import { ResumeTracker } from '@/lib/resume-cursor';
 
 /**
  * Subscribe to the gateway's live task-board WebSocket. On any task event
@@ -15,13 +16,23 @@ import { emitTaskEvent } from '@/lib/task-events';
  *
  * Payload-agnostic by design: we don't patch caches, we just invalidate — the
  * same coarse model the rest of the app uses. Mount once (see `LiveData`).
+ *
+ * Phase 56 B: a {@link ResumeTracker} tracks the per-channel `lastSeq`, so on
+ * reconnect we `resume` (the gateway replays what we missed from its ring) and
+ * dedup replay+live overlap; on a gap too big to replay the gateway sends
+ * `resync-required` and we full-refetch.
  */
 export function useTaskEvents(): void {
-  // Phase 56 A: the highest seq applied on this channel. Tracked now (the resume
-  // protocol in Theme B will send it on reconnect); used here to drop already-
-  // applied frames so a future replay+live overlap is idempotent.
-  const lastSeqRef = useRef(0);
+  // Persists across reconnects (component lifetime) so `resume` carries the real
+  // cursor. Recreated only on remount — a fresh mount is a fresh `subscribe`.
+  const trackerRef = useRef(
+    new ResumeTracker((raw) => {
+      const r = SequencedTaskBoardEventSchema.safeParse(raw);
+      return r.success ? r.data : null;
+    }),
+  );
   useEffect(() => {
+    const tracker = trackerRef.current;
     let ws: WebSocket | null = null;
     let closed = false;
     let attempt = 0;
@@ -46,34 +57,34 @@ export function useTaskEvents(): void {
       }
       ws.onopen = () => {
         attempt = 0;
-        ws?.send(JSON.stringify({ type: 'subscribe' }));
+        // Fresh mount → `subscribe`; reconnect with a known cursor → `resume`.
+        ws?.send(JSON.stringify(tracker.subscribeMessage()));
       };
       ws.onmessage = (ev) => {
         // Validate defensively so a malformed frame can't trigger refetch churn.
+        let raw: unknown;
         try {
-          // Phase 56 A: frames arrive wrapped in a sequenced envelope — unwrap it.
-          // We record the latest seq (groundwork for Theme B's resume) but do NOT
-          // dedup on it here: one /ws/tasks socket multiplexes two independent seq
-          // lines (team-scoped task events + the all-scoped activity/bulk stream),
-          // so a single global watermark can't tell them apart. Per-channel dedup
-          // arrives with the resume protocol in Theme B.
-          const parsed = SequencedTaskBoardEventSchema.safeParse(JSON.parse(String(ev.data)));
-          if (!parsed.success) return;
-          const { seq, event } = parsed.data;
-          lastSeqRef.current = seq;
-          // Activity / attention events are ephemeral (agent state, not board state)
-          // — consumers patch the office store directly (Theme E). Skipping
-          // invalidateData() here avoids a full sessions+tasks refetch on every
-          // tool call, which can be several times per second.
-          const isEphemeral =
-            event.type === 'agent.activity' ||
-            event.type === 'agent.attention' ||
-            event.type === 'guardrails.updated';
-          if (!isEphemeral) invalidateData();
-          emitTaskEvent(event);
+          raw = JSON.parse(String(ev.data));
         } catch {
-          // ignore unparseable frames
+          return; // ignore unparseable frames
         }
+        const decision = tracker.accept(raw);
+        if (decision.kind === 'resync') {
+          // Gap too big to replay → full refetch rather than a drift-prone stream.
+          invalidateData();
+          return;
+        }
+        if (decision.kind !== 'event') return; // watermark / duplicate / ignore
+        const { event } = decision;
+        // Activity / attention events are ephemeral (agent state, not board state)
+        // — consumers patch the office store directly. Skipping invalidateData()
+        // here avoids a full sessions+tasks refetch on every tool call.
+        const isEphemeral =
+          event.type === 'agent.activity' ||
+          event.type === 'agent.attention' ||
+          event.type === 'guardrails.updated';
+        if (!isEphemeral) invalidateData();
+        emitTaskEvent(event);
       };
       ws.onclose = () => {
         ws = null;
