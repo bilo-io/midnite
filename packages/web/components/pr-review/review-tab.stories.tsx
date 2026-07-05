@@ -15,6 +15,7 @@ const DIFF: PrDiff = {
   hiddenFileCount: 0,
   hiddenFiles: [],
   fetchedAt: '2026-07-02T10:00:00Z',
+    aiReview: null,
   files: [
     {
       path: 'packages/web/components/task-detail.tsx',

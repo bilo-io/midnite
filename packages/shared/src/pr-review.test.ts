@@ -1,31 +1,49 @@
 import { describe, expect, it } from 'vitest';
 import {
+  CreatePrReviewDraftSchema,
   PrMergeRequestSchema,
   PrReviewCommentSchema,
+  PrReviewDraftSchema,
   PrReviewSubmissionSchema,
+  UpdatePrReviewDraftSchema,
   toGithubReviewEvent,
 } from './pr-review.js';
 
 describe('PrReviewSubmissionSchema', () => {
-  it('allows a bare approve (no body/comments)', () => {
+  it('accepts event + optional body (comments are server-sourced from drafts now)', () => {
     expect(PrReviewSubmissionSchema.safeParse({ event: 'approve' }).success).toBe(true);
+    // A bare comment/request-changes is valid at the wire — the SERVER enforces the
+    // empty-review guard against the persisted draft set (Phase 52 D).
+    expect(PrReviewSubmissionSchema.safeParse({ event: 'comment' }).success).toBe(true);
+    expect(PrReviewSubmissionSchema.parse({ event: 'approve' }).comments).toEqual([]);
+  });
+});
+
+describe('draft schemas (Phase 52 D)', () => {
+  it('CreatePrReviewDraft defaults side to RIGHT + requires body/line', () => {
+    expect(CreatePrReviewDraftSchema.parse({ path: 'a.ts', line: 3, body: 'nit' }).side).toBe('RIGHT');
+    expect(CreatePrReviewDraftSchema.safeParse({ path: 'a.ts', line: 0, body: 'x' }).success).toBe(false);
+    expect(CreatePrReviewDraftSchema.safeParse({ path: 'a.ts', line: 3, body: '' }).success).toBe(false);
   });
 
-  it('requires a body or comments for request-changes / comment', () => {
-    expect(PrReviewSubmissionSchema.safeParse({ event: 'comment' }).success).toBe(false);
-    expect(PrReviewSubmissionSchema.safeParse({ event: 'request-changes', body: 'fix it' }).success).toBe(true);
-    expect(
-      PrReviewSubmissionSchema.safeParse({
-        event: 'comment',
-        comments: [{ path: 'a.ts', line: 3, body: 'nit' }],
-      }).success,
-    ).toBe(true);
+  it('UpdatePrReviewDraft requires a non-empty body', () => {
+    expect(UpdatePrReviewDraftSchema.safeParse({ body: '' }).success).toBe(false);
+    expect(UpdatePrReviewDraftSchema.parse({ body: 'edited' }).body).toBe('edited');
   });
 
-  it('defaults comments to [] and treats blank body as empty', () => {
-    const parsed = PrReviewSubmissionSchema.parse({ event: 'approve' });
-    expect(parsed.comments).toEqual([]);
-    expect(PrReviewSubmissionSchema.safeParse({ event: 'comment', body: '   ' }).success).toBe(false);
+  it('PrReviewDraft round-trips a submitted comment', () => {
+    const draft = {
+      id: 'c1',
+      taskId: 't1',
+      path: 'a.ts',
+      line: 3,
+      side: 'RIGHT' as const,
+      body: 'nit',
+      author: 'u1',
+      state: 'submitted' as const,
+      createdAt: '2026-07-05T00:00:00Z',
+    };
+    expect(PrReviewDraftSchema.parse(draft)).toEqual(draft);
   });
 });
 

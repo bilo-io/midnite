@@ -7,6 +7,10 @@ vi.mock('@/lib/api', () => ({
   getPrDiff: (...a: unknown[]) => getPrDiff(...a),
   submitPrReview: vi.fn(),
   mergePr: vi.fn(),
+  listPrDrafts: vi.fn(async () => []),
+  createPrDraft: vi.fn(),
+  updatePrDraft: vi.fn(),
+  deletePrDraft: vi.fn(),
 }));
 
 import { PrReviewPanel } from './pr-review-panel';
@@ -32,6 +36,7 @@ const diff: PrDiff = {
   hiddenFileCount: 0,
   hiddenFiles: [],
   fetchedAt: '2026-07-02T10:00:00Z',
+    aiReview: null,
   files: [
     {
       path: 'a.ts',

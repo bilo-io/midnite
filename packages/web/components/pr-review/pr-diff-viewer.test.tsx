@@ -13,6 +13,7 @@ function makeDiff(overrides: Partial<PrDiff> = {}): PrDiff {
     hiddenFileCount: 0,
     hiddenFiles: [],
     fetchedAt: '2026-07-02T10:00:00Z',
+    aiReview: null,
     files: [
       {
         path: 'src/app/page.tsx',
@@ -99,6 +100,18 @@ describe('PrDiffViewer', () => {
     fireEvent.click(screen.getByRole('button', { name: /collapse all/i }));
     expect(expanded('src/app/page.tsx')).toBe('false');
     expect(expanded('README.md')).toBe('false');
+  });
+
+  it('renders the AI-review banner from diff.aiReview (Phase 52 D)', () => {
+    render(
+      <PrDiffViewer
+        diff={makeDiff({
+          aiReview: { verdict: 'changes-requested', summary: 'Memoise the tokenize call.', reviewedAt: '2026-07-05T00:00:00Z' },
+        })}
+      />,
+    );
+    expect(screen.getByText(/changes requested/i)).toBeTruthy();
+    expect(screen.getByText(/memoise the tokenize call/i)).toBeTruthy();
   });
 
   it('surfaces hidden files when the diff is truncated', () => {

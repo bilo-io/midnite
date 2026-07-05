@@ -133,6 +133,8 @@ import {
   SessionTranscriptSchema,
   SubAgentResponseSchema,
   PrDiffSchema,
+  PrReviewDraftSchema,
+  PrReviewDraftsResponseSchema,
   GuardrailsResponseSchema,
   TaskCountsSchema,
   TaskFailuresResponseSchema,
@@ -171,6 +173,8 @@ import {
   type Memory,
   type PrDiff,
   type PrReviewSubmission,
+  type PrReviewDraft,
+  type CreatePrReviewDraft,
   type PrMergeMethod,
   type GuardrailSettings,
   type GuardrailCaps,
@@ -732,15 +736,51 @@ export async function getPrDiff(id: string, signal?: AbortSignal): Promise<PrDif
   return fetchJson(`/tasks/${encodeURIComponent(id)}/pr/diff`, { signal }, PrDiffSchema);
 }
 
-/** Submit a review (approve / request-changes / comment + inline comments) on a
- *  task's PR (Phase 52 Theme C). Returns the re-hydrated task with a refreshed PR
- *  status. A GitHub refusal surfaces as an ApiError with the API message. */
-export async function submitPrReview(id: string, submission: PrReviewSubmission): Promise<Task> {
+/** Submit a review (approve / request-changes / comment). Inline comments are
+ *  sourced from the task's persisted drafts server-side (Phase 52 D), so only the
+ *  event + optional body are sent. Returns the re-hydrated task. */
+export async function submitPrReview(
+  id: string,
+  submission: Pick<PrReviewSubmission, 'event' | 'body'>,
+): Promise<Task> {
   return fetchJson(
     `/tasks/${encodeURIComponent(id)}/pr/review`,
     { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(submission) },
     TaskSchema,
   );
+}
+
+// --- Inline review comment drafts (Phase 52 D) ---
+
+export async function listPrDrafts(id: string, signal?: AbortSignal): Promise<PrReviewDraft[]> {
+  const res = await fetchJson(
+    `/tasks/${encodeURIComponent(id)}/pr/review/comments`,
+    { signal },
+    PrReviewDraftsResponseSchema,
+  );
+  return res.drafts;
+}
+
+export async function createPrDraft(id: string, draft: CreatePrReviewDraft): Promise<PrReviewDraft> {
+  return fetchJson(
+    `/tasks/${encodeURIComponent(id)}/pr/review/comments`,
+    { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(draft) },
+    PrReviewDraftSchema,
+  );
+}
+
+export async function updatePrDraft(id: string, commentId: string, body: string): Promise<PrReviewDraft> {
+  return fetchJson(
+    `/tasks/${encodeURIComponent(id)}/pr/review/comments/${encodeURIComponent(commentId)}`,
+    { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ body }) },
+    PrReviewDraftSchema,
+  );
+}
+
+export async function deletePrDraft(id: string, commentId: string): Promise<void> {
+  await fetchJson(`/tasks/${encodeURIComponent(id)}/pr/review/comments/${encodeURIComponent(commentId)}`, {
+    method: 'DELETE',
+  });
 }
 
 /** Merge a task's PR with the given method (default squash). Honors branch

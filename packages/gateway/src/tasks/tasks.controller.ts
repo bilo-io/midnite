@@ -5,6 +5,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   Param,
   Patch,
   Post,
@@ -24,6 +25,10 @@ import {
   AddTaskDependencyRequestSchema,
   PrReviewSubmissionSchema,
   PrMergeRequestSchema,
+  CreatePrReviewDraftSchema,
+  UpdatePrReviewDraftSchema,
+  type PrReviewDraft,
+  type PrReviewDraftsResponse,
   AddTaskLinkRequestSchema,
   BreakdownGoalRequestSchema,
   BulkCreateTaskRequestSchema,
@@ -249,7 +254,52 @@ export class TasksController {
   ): Promise<Task> {
     const parsed = PrReviewSubmissionSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
-    return this.prReview.submitReview(id, parsed.data, user?.userId ?? null);
+    return this.prReview.submitReview(id, parsed.data, user?.userId ?? 'local');
+  }
+
+  // Inline review comment drafts (Phase 52 D). Per-author, persist immediately so
+  // a review-in-progress survives a reload; batched into the review on submit.
+  @Get(':id/pr/review/comments')
+  @RequiresRole('member')
+  listPrDrafts(
+    @Param('id') id: string,
+    @CurrentUser() user?: CurrentUserPayload | null,
+  ): PrReviewDraftsResponse {
+    return { drafts: this.prReview.listDrafts(id, user?.userId ?? 'local') };
+  }
+
+  @Post(':id/pr/review/comments')
+  @RequiresRole('member')
+  createPrDraft(
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @CurrentUser() user?: CurrentUserPayload | null,
+  ): PrReviewDraft {
+    const parsed = CreatePrReviewDraftSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    return this.prReview.createDraft(id, parsed.data, user?.userId ?? 'local');
+  }
+
+  @Patch(':id/pr/review/comments/:commentId')
+  @RequiresRole('member')
+  updatePrDraft(
+    @Param('commentId') commentId: string,
+    @Body() body: unknown,
+    @CurrentUser() user?: CurrentUserPayload | null,
+  ): PrReviewDraft {
+    const parsed = UpdatePrReviewDraftSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    return this.prReview.updateDraft(commentId, parsed.data.body, user?.userId ?? 'local');
+  }
+
+  @Delete(':id/pr/review/comments/:commentId')
+  @RequiresRole('member')
+  @HttpCode(204)
+  deletePrDraft(
+    @Param('commentId') commentId: string,
+    @CurrentUser() user?: CurrentUserPayload | null,
+  ): void {
+    this.prReview.deleteDraft(commentId, user?.userId ?? 'local');
   }
 
   // Merge the task's PR (Phase 52 Theme C). Member+; audited. Honors mergeability
