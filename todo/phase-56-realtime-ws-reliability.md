@@ -116,19 +116,23 @@ Protect the gateway from slow clients; detect dead ones fast.
 
 ---
 
-## Theme D — Shared reliable client subscription hook — **M**
+## Theme D — Shared reliable client subscription hook — **M** — ✅ DONE (PR #316, 2026-07-05)
 
 One resilient subscription, not four ad-hoc ones.
 
-- [ ] **web:** a `useReliableSubscription(channel)` hook consolidating [`use-task-events.ts`](../packages/web/hooks/use-task-events.ts),
-      [`use-idea-events.ts`](../packages/web/hooks/use-idea-events.ts), the workflow + approvals sockets: tracks
-      `lastSeq`, sends `resume` on reconnect, applies replayed events, honors `resync-required` (full invalidate),
-      exponential backoff, and heartbeat/pong handling.
-- [ ] **Per-event-type cache strategy** (not blanket invalidate): `task.*` → invalidate board queries;
-      `workflow node.*` → patch that run/node; `agent.activity`/`attention` → ephemeral store (no refetch);
-      `guardrails.updated` → patch guardrail state. Cuts needless refetch storms.
-- [ ] Re-enable a **fallback**: `refetchOnWindowFocus` (or a per-query last-sync watermark) so a long-backgrounded
-      tab self-heals even if the socket never noticed.
+- [x] **web:** `useReliableSubscription(channel, handlers, enabled?)` — transport-only (connect, exponential-backoff
+      reconnect, per-channel decode, `lastSeq` tracking, `send`). Migrated [`use-task-events.ts`](../packages/web/hooks/use-task-events.ts),
+      [`use-idea-events.ts`](../packages/web/hooks/use-idea-events.ts), and [`use-approvals-socket.ts`](../packages/web/hooks/use-approvals-socket.ts)
+      onto it. **Resume-safe:** still sends plain `{type:'subscribe'}` — the `resume`/`resync-required` handling
+      pairs with **Theme B's** server protocol (not merged; sending `resume` now would break against today's
+      gateways), so it's a one-line flip once B lands; `lastSeq` is already tracked. ⏳ **use-workflow-run** stays
+      bespoke — its imperative start→subscribe→poll-fallback→terminal-cleanup lifecycle doesn't fit the declarative
+      hook (folding it in would lose its REST poll fallback); it already consumes the 56 A envelope.
+- [x] **Per-event-type cache strategy** — lives in each channel's `onEvent` (the hook is transport-only): `task.*`
+      → invalidate board; `agent.activity`/`attention`/`guardrails.updated` → skip (ephemeral, own consumers);
+      workflow `node.*` → patched in `use-workflow-run`'s reducer.
+- [x] **Fallback** already in place: `refetchOnWindowFocus: true` + `staleTime: 5s` in `query-client` (Phase 57 E),
+      so a long-backgrounded tab self-heals on refocus.
 
 ---
 
