@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   Bot,
   CircleUser,
+  Database,
   FileEdit,
   FolderGit2,
   KeyRound,
@@ -34,6 +35,7 @@ const NAV_GROUPS: NavGroup[] = [
     title: 'Workspace',
     items: [
       { href: '/settings/agents', label: 'Agents', Icon: Bot },
+      { href: '/settings/data', label: 'Data', Icon: Database },
       { href: '/settings/editor', label: 'Editor', Icon: FileEdit },
       { href: '/settings/repos', label: 'Repos', Icon: FolderGit2 },
       { href: '/settings/integrations', label: 'Integrations', Icon: Webhook },

@@ -38,6 +38,26 @@ export const BackupSummarySchema = ArchiveManifestSchema.extend({
 export type BackupSummary = z.infer<typeof BackupSummarySchema>;
 
 /**
+ * The portable domains a backup currently carries + a human label, for a
+ * display-only "what's included" summary (Phase 49 E). Mirrors the export
+ * service's `sources()` — the secret-free *work* domains this slice ships;
+ * `users`/`teams` + secret-bearing domains join with the import/secrets slices.
+ */
+export const PORTABLE_DOMAINS: ReadonlyArray<{ name: string; label: string }> = [
+  { name: 'tasks', label: 'Tasks' },
+  { name: 'projects', label: 'Projects' },
+  { name: 'repos', label: 'Repos' },
+  { name: 'memories', label: 'Memories' },
+  { name: 'notes', label: 'Notes' },
+  { name: 'routines', label: 'Routines' },
+  { name: 'media', label: 'Media' },
+  { name: 'councils', label: 'Councils' },
+  { name: 'ideas', label: 'Ideas' },
+  { name: 'approvalRules', label: 'Approval rules' },
+  { name: 'workflows', label: 'Workflows' },
+];
+
+/**
  * Envelope for one domain's exported rows (`domains/<name>.json`). Generic over the
  * row shape so each domain validates its own records on both ends. `count` is a
  * self-check against `records.length`.
