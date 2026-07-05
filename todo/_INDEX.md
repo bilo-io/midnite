@@ -116,7 +116,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ◻ **C** — Lean list DTOs + pagination
 - ◻ **D** — DB indexes on hot paths
 - ✅ **E** — Refetch / cache tuning (coalesce refetches + staleTime; granular deferred to P56 — PR #307)
-- ◐ **F** — List virtualization (board + run-history + approval-log done; grouped accordions deferred) (PR #307)
+- ◐ **F** — List virtualization (board + run-history + approval-log done; grouped accordions deferred) (PR #310)
 
 ### [Phase 56 — Realtime / WS reliability](phase-56-realtime-ws-reliability.md)
 *(No new domain — a shared reliability layer under the existing WS gateways, lifting the terminal WS's proven seq+ring+resume onto every board channel so clients never silently drift. In-memory ring; restart forces resync.)*

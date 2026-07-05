@@ -144,7 +144,7 @@ Stop reloading the whole board on every event.
 
 ---
 
-## Theme F — List virtualization — **M** — ◐ PARTIAL (PR #307, 2026-07-05)
+## Theme F — List virtualization — **M** — ◐ PARTIAL (PR #310, 2026-07-05)
 
 Keep the DOM bounded no matter the count.
 

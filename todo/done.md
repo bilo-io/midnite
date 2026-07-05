@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-05 — feat: list virtualization — board + long feeds — Phase 57 Theme F ◐ (PR #307)
+## 2026-07-05 — feat: list virtualization — board + long feeds — Phase 57 Theme F ◐ (PR #310)
 
 Keep the DOM bounded no matter the row count, via `@tanstack/react-virtual`.
 
