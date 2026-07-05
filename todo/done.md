@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-03 — feat: bulk export service — portable archive — Phase 49 Theme B (PR #291)
+
+Get the whole store out as a versioned, portable zip. Builds on the 49 A contract.
+
+- [x] gateway `portability/` module: a read-across orchestrator composing each portable domain's **service** unscoped (admin = whole store; never another module's repo). Hydrated domain objects carry their children (Task→events/links/deps, Project→sources, Idea→messages), so those ride along free.
+- [x] `GET /portability/export` (admin-gated) buffers + sends a zip — `manifest.json` + `domains/<name>.json` (`lib/archive.ts` via fflate, deterministic mtime). Manifest stamped with schemaVersion (`schema_meta`, clamped nonnegative), appVersion, timestamp, domains, `secretsMode`. `ExportOptions.domains` allowlist supported.
+- [x] This slice = the secret-free **work** domains: tasks, projects, repos, memories, notes, routines, media, councils, ideas, approvalRules, workflows (full defs via listSummaries→getWorkflow). ◐ `includeSecrets`/passphrase re-wrap deferred to the secrets slice; ◐ users/teams deferred to land with Theme C's restore (raw rows incl. passwordHash pair with import ordering). Streaming deferred (buffer; store is small).
+- [x] Tests: archive pack/unpack round-trip (+ deterministic bytes, missing-file rejection), export orchestrator (all domains, counts, allowlist, hydrated workflows/ideas) on a `:memory:` DB; full-graph DI smoke. gateway 1432 green (2 pre-existing flaky tmux under load, pass in isolation); `:typecheck` + lint clean.
+
 ## 2026-07-03 — feat: Settings → Safety control panel — Phase 50 Theme E (PR #290) · **Phase 50 COMPLETE** 🎉
 
 One place to see and steer every guardrail — the operability capstone that closes Phase 50 (kill switch, spend/rate caps, blast-radius, audit/RBAC, CLI all now surfaced in one web page).
