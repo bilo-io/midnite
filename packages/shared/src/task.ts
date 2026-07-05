@@ -154,6 +154,84 @@ export const TaskSchema = z.object({
     .optional(),
 });
 
+/**
+ * Phase 57 C — the lean board-card DTO. `GET /tasks` returns these instead of the
+ * full {@link Task} (which carries the whole event thread + every attachment/link
+ * — ~5–25 KB/task, 1–2.5 MB/board). A summary keeps exactly what a board card
+ * renders and drops the rest:
+ * - **no** `events` (the biggest payload); `answered` is precomputed server-side
+ *   in its place (what `isAnsweredQuestion` derived from the thread).
+ * - **no** `prompt`/`agentId`/`sessionId`/`fixAttempts`/scope metadata.
+ * - `attachments` is trimmed to the **first image only** (the card's thumbnail),
+ *   `links` capped at the six the card shows — same shapes, fewer rows.
+ * - `dependsOn` kept (ids only — the board computes its "blocked by N" chip from
+ *   the loaded set), plus the derived `prStatus`/`checkRunStatus`/`heldReason`.
+ * The full {@link Task} stays the **detail** shape (`GET /tasks/:id`).
+ */
+export const TaskSummarySchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  kind: TaskKindSchema.optional(),
+  status: StatusSchema,
+  priority: z.number().int().min(0).max(3).default(1),
+  retryCount: z.number().int().nonnegative().default(0),
+  repo: z.string().optional(),
+  projectId: z.string().optional(),
+  tags: z.array(z.string()).default([]),
+  prStatus: PrStatusSchema.optional(),
+  checkRunStatus: CheckRunStatusSchema.optional(),
+  heldReason: TaskHeldReasonSchema.optional(),
+  waitReason: WaitReasonSchema.nullable().optional(),
+  /** Blocker ids (Phase 27) — kept so the board derives its "blocked by N" chip. */
+  dependsOn: z.array(z.string()).optional(),
+  /** First image attachment only (the card thumbnail); other attachments dropped. */
+  attachments: z.array(TaskAttachmentSchema).optional(),
+  /** Up to the six links the card renders as source icons. */
+  links: z.array(TaskLinkSchema).optional(),
+  /** AI review verdict + summary (Phase 37) — small, kept for the card's chip. */
+  aiReview: z
+    .object({
+      verdict: z.enum(['approved', 'commented', 'changes-requested']),
+      summary: z.string(),
+      runId: z.string(),
+      reviewedAt: z.string(),
+    })
+    .optional(),
+  /** Server-derived (Phase 57 C): a `question` task with an inline answer event —
+   *  precomputed here so the card needn't carry the whole event thread. */
+  answered: z.boolean().default(false),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+});
+export type TaskSummary = z.infer<typeof TaskSummarySchema>;
+
+/**
+ * A page of list results (Phase 57 C). Generic over the item shape so every big
+ * list endpoint can share one contract: `{ items, total }` where `total` is the
+ * full filtered count (not the page length). Offset pagination via `page`/`limit`
+ * query params; omitting them returns everything (the board loads all columns).
+ * (Ideas keeps its pre-existing `{ ideas, total }` shape — not migrated here.)
+ */
+export function pagedSchema<T extends z.ZodTypeAny>(item: T) {
+  return z.object({
+    items: z.array(item),
+    total: z.number().int().nonnegative(),
+  });
+}
+export type Paged<T> = { items: T[]; total: number };
+
+export const TasksPageSchema = pagedSchema(TaskSummarySchema);
+export type TasksPage = z.infer<typeof TasksPageSchema>;
+
+/** Query params for `GET /tasks` (Phase 57 C). `page`/`limit` optional — absent = all. */
+export const TaskListQuerySchema = z.object({
+  status: StatusSchema.optional(),
+  projectId: z.string().optional(),
+  page: z.coerce.number().int().positive().optional(),
+  limit: z.coerce.number().int().positive().max(200).optional(),
+});
+export type TaskListQuery = z.infer<typeof TaskListQuerySchema>;
+
 export const AgentSlotSchema = z.object({
   id: z.string(),
   status: z.enum(['idle', 'busy']),

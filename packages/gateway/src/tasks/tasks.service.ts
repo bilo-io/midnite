@@ -23,6 +23,7 @@ import {
   type ResolveTaskAction,
   type Status,
   type Task,
+  type TaskSummary,
   type TaskCounts,
   type TaskFailure,
   type TaskFailuresQuery,
@@ -175,6 +176,31 @@ export class TasksService {
 
   listTasks(status?: Status, projectId?: string, scope?: TeamScope): Task[] {
     return this.repo.hydrateMany(this.repo.listTasks(status, projectId, scope)).map((t) => this.withHeld(t));
+  }
+
+  /**
+   * Lean, paginated board list (Phase 57 C) — `TaskSummary` pages instead of the
+   * full `Task[]`. `page`/`limit` are optional (omitted = every matching task, the
+   * board's all-columns load); `total` is the full filtered count. Applies the
+   * same derived `heldReason` as {@link listTasks}.
+   */
+  listTaskSummaries(
+    status?: Status,
+    projectId?: string,
+    scope?: TeamScope,
+    opts?: { page?: number; limit?: number },
+  ): { items: TaskSummary[]; total: number } {
+    const { rows, total } = this.repo.listTaskPage(status, projectId, scope, opts);
+    const items = this.repo.summariseMany(rows).map((t) => this.withHeldSummary(t));
+    return { items, total };
+  }
+
+  // Held-reason for the lean summary — mirrors `withHeld` (only ready `todo`
+  // tasks are ever held; the scheduler's derived state, never persisted).
+  private withHeldSummary(task: TaskSummary): TaskSummary {
+    if (task.status !== 'todo') return task;
+    const reason = this.heldTasks?.get(task.id);
+    return reason ? { ...task, heldReason: reason } : task;
   }
 
   /**

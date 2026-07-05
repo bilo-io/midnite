@@ -54,6 +54,7 @@ function build(overrides: Partial<Record<keyof TasksService, unknown>> = {}) {
     removeLink: vi.fn(() => fakeTask),
     addDependency: vi.fn(() => fakeTask),
     removeDependency: vi.fn(() => fakeTask),
+    listTaskSummaries: vi.fn(() => ({ items: [], total: 0 })),
     deleteTask: vi.fn(),
     createBulk: vi.fn(async () => ({ results: [], counts: { created: 0, skipped: 0, failed: 0 } })),
     exportMarkdown: vi.fn(() => ({ filename: 'x-2026-06-21.md', markdown: '# x' })),
@@ -70,7 +71,7 @@ function build(overrides: Partial<Record<keyof TasksService, unknown>> = {}) {
 describe('TasksController — query/body validation (400)', () => {
   it('rejects an unknown status query', () => {
     const { controller } = build();
-    expect(() => controller.list('bogus')).toThrow(BadRequestException);
+    expect(() => controller.list({ status: 'bogus' })).toThrow(BadRequestException);
   });
 
   it('rejects an invalid status patch', () => {
@@ -100,10 +101,13 @@ describe('TasksController — query/body validation (400)', () => {
 });
 
 describe('TasksController — valid input delegates to the service', () => {
-  it('lists by parsed status, trimming a blank projectId to undefined', () => {
+  it('lists by parsed status, trimming a blank projectId to undefined, as a summary page', () => {
     const { controller, service } = build();
-    controller.list('todo', '   ', null);
-    expect(service.listTasks).toHaveBeenCalledWith('todo', undefined, undefined);
+    controller.list({ status: 'todo', projectId: '   ' }, null);
+    expect(service.listTaskSummaries).toHaveBeenCalledWith('todo', undefined, undefined, {
+      page: undefined,
+      limit: undefined,
+    });
   });
 
   it('passes the parsed status through on a valid patch', () => {
