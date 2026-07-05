@@ -28,6 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
+| [55 · Projects detail page](phase-55-projects-detail-page.md) | ◻ TODO | 0/23 | `░░░░░░░░░░` | 0% | — | A B C D |
 | [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [53 · Task lifecycle resilience](phase-53-task-lifecycle-resilience.md) | ✅ DONE | 22/22 | `██████████` | 100% | — | — |
 | [52 · In-app diff & PR review](phase-52-in-app-diff-review.md) | 🔄 WIP | 14/25 | `██████░░░░` | 56% | D | — |
@@ -105,6 +106,13 @@ shortcut). The 2 contextual-command boxes are now **un-deferred and folded into 
 Every phase's lettered themes with a status icon + one-liner, so you can gauge scope and pick
 work without opening the phase doc. Status: `✅` done · `🔄` WIP (claimed) · `◻` TODO · `◐`
 partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
+
+### [Phase 55 — Projects detail page](phase-55-projects-detail-page.md)
+*(Entirely web — no gateway/API changes; every project endpoint already exists. A `/projects/view?id=` cockpit cloning the session-detail layout; the modal stays for in-context use + creating.)*
+- ◻ **A** — Detail page shell, routing & collapsible two-rail layout
+- ◻ **B** — Extract the aspect panels (shared by modal + page)
+- ◻ **C** — Rail content: stats & actions (left) · sources & activity (right)
+- ◻ **D** — Navigation wiring & the modal-vs-page rule
 
 ### [Phase 54 — Runtime & process resilience](phase-54-runtime-process-resilience.md)
 *(Hardens the gateway process itself: boot → run → shutdown. Watchdog rides the single tick; one shared `pause`/`resume` (reused by Phase 50's kill switch); preserves boot recovery + the pty/tmux Spawner split.)*
