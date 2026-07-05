@@ -14,6 +14,20 @@ Backups that happen without anyone remembering to run them. Builds on the merged
 - [x] Tests: gateway scheduler (first-run/skip-recent/due-when-stale/prune-keeps-newest-+-spares-unrelated/fail-open/disabled/status) on a real temp dir; shared config defaults + validation; web RTL (off state + enabled panel). shared 554, gateway 1465 (1 pre-existing flaky tmux), web 768 green; `:typecheck` + my-files lint clean.
 - Deferred: `includeSecrets`/passphrase (export secret-free until the secrets slice).
 
+---
+
+## 2026-07-05 — feat: atomic archive import service — Phase 49 Theme C (PR #298)
+
+The restore half of data portability: read Theme B's export zip back into the store, all-or-nothing.
+
+- [x] Reads via B's `unpackArchive` (validates manifest + envelopes); **version gate** (`compareSchemaVersion`/`isImportable`) refuses a newer-than-us archive, imports ok/older; malformed archives rejected. (migrate-then-restore for older deferred.)
+- [x] **Atomic restore** in one `db.transaction()` in dependency order via a generic de-hydration mapper (`import-mappers.ts` — reflects each Drizzle table's real columns, JSON-encodes object columns, booleans→0/1, auto-drops derived fields like prStatus/checkRunStatus/archived/taskCount). Per-domain child wiring (task events/links/deps, project+memory sources, routine groups→items, council members) + two transforms (workflow nodes/edges→graph+triggerType; archived→archivedAt). `replace` wipes imported tables then inserts; `merge` skips existing ids.
+- [x] `POST /portability/import/preview` (counts + id conflicts + verdict, no write) + `POST /portability/import` (multipart zip), both admin-gated. Post-restore in-process `SearchService.reindex()` (fail-open). `ImportResult` contract in shared; SearchModule exports SearchService.
+- [x] users/teams import ⏳ deferred with B (B doesn't export them yet); auth/session + volatile tables never touched.
+- [x] Tests: round-trip service spec (JSON/boolean/children/cross-ref/workflow-graph/archived fidelity + replace-wipe + merge-skip + version gate + malformed + preview) + controller multipart spec. shared 548, gateway 1457 green (1 pre-existing flaky tmux).
+
+---
+
 ## 2026-07-05 — feat: persisted review drafts + AI-review inline — Phase 52 Theme D · **Phase 52 COMPLETE** 🎉 (PR #297)
 
 Finishes the in-app review phase: inline comments persist across reloads, and the AI verdict shows where you review.
