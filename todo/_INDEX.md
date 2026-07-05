@@ -128,7 +128,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **A** — Diff API: expose the PR diff to the web (structured)
 - ✅ **B** — Diff viewer: file tree + split/unified + syntax highlight
 - ✅ **C** — Review actions: inline comment + approve/request-changes + in-app merge (PR #292)
-- ✅ **D** — Comment persistence (drafts) + Phase 37 AI review inline (PR #TBD)
+- ✅ **D** — Comment persistence (drafts) + Phase 37 AI review inline (PR #297)
 - ✅ **E** — Embed in task detail + deep-linkable `?tab=review` route
 
 ### [Phase 51 — Session detail page](phase-51-session-detail-page.md)

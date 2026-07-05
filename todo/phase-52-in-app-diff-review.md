@@ -115,7 +115,7 @@ Write back to GitHub, from inside midnite.
 
 ---
 
-## Theme D — Comment persistence + AI review inline — **M** — ✅ DONE (PR #TBD, 2026-07-05)
+## Theme D — Comment persistence + AI review inline — **M** — ✅ DONE (PR #297, 2026-07-05)
 
 Draft locally; see the AI's take where it matters.
 

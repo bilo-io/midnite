@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-05 — feat: persisted review drafts + AI-review inline — Phase 52 Theme D · **Phase 52 COMPLETE** 🎉 (PR #TBD)
+## 2026-07-05 — feat: persisted review drafts + AI-review inline — Phase 52 Theme D · **Phase 52 COMPLETE** 🎉 (PR #297)
 
 Finishes the in-app review phase: inline comments persist across reloads, and the AI verdict shows where you review.
 
