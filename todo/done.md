@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-05 — feat: coalesce board refetches + tune query cache — Phase 57 Theme E (PR #307)
+
+Kills the board's refetch storm: every task WS event used to trigger an immediate global `invalidateQueries()` → a full `GET /tasks` reload, so a burst of N events meant N board reloads.
+
+- [x] **Coalesced `invalidateData()`** — leading + trailing debounce (~300ms) in `web/lib/data-refresh.ts`: first event refetches immediately (single mutations stay instant), further events in the window coalesce into one trailing refetch → N events ≈ 2 refetches, not N.
+- [x] **Query cache tuning** (`web/lib/query-client.ts`) — `staleTime` 0→5s so incidental remounts/focus coalesce; `refetchOnWindowFocus` off→on as a safety net for events missed while a tab was backgrounded (can't storm — gated by staleTime). WS stays the freshness signal.
+- [x] **Granular per-channel invalidation deferred to Phase 56** — `useApiData`'s opaque `useId()` query keys make per-key invalidation infeasible without a refactor that would fork Phase 56's in-flight per-event-type cache strategy; this slice only bounds how often the existing global invalidation fires.
+- [x] **Verified via Playwright** (`web/e2e/refetch-coalescing.e2e.ts`) against the real gateway + WS: 8 concurrent task events → ≤3 `GET /tasks` refetches. Local gate green: web typecheck + lint (0 errors) + 788 unit/story tests. CI billing-blocked account-wide → gated on the local suite + the e2e run.
+
 ## 2026-07-05 — feat: sequenced event contracts + server event ring — Phase 56 Theme A (PR #305)
 
 The foundation for reliable board WebSockets: give every event an identity + remember the recent ones, generalizing the terminal WS's proven seq+ring to the tasks/ideas/workflows channels. (Resume/gap-detection is Theme B.)
