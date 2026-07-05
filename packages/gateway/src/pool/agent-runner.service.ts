@@ -1,4 +1,12 @@
-import { Inject, Injectable, Logger, Optional, type OnModuleInit } from '@nestjs/common';
+import {
+  forwardRef,
+  Inject,
+  Injectable,
+  Logger,
+  Optional,
+  type OnModuleDestroy,
+  type OnModuleInit,
+} from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -12,6 +20,8 @@ import { MetricsService } from '../metrics/metrics.service';
 import { ReposService } from '../repos/repos.service';
 import { TasksService } from '../tasks/tasks.service';
 import { TerminalService } from '../terminal/terminal.service';
+import { RuntimeMetaService } from '../runtime/runtime-meta.service';
+import { AgentPoolScheduler } from './agent-pool-scheduler.service';
 import { AgentPoolService } from './agent-pool.service';
 import { appendRepoConventions } from './lib/build-agent-prompt';
 import { classifyFailure, waitReasonForFailure, type ClassifiedFailure } from './lib/classify-failure';
@@ -61,7 +71,7 @@ function buildFixPrompt(prUrl: string, results: CheckResult[]): string {
 }
 
 @Injectable()
-export class AgentRunnerService implements OnModuleInit {
+export class AgentRunnerService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(AgentRunnerService.name);
   private readonly timers = new Map<string, NodeJS.Timeout>();
 
@@ -80,7 +90,59 @@ export class AgentRunnerService implements OnModuleInit {
     @Optional() @Inject(ChecksService) private readonly checks?: ChecksService,
     // Optional — MetricsService wires in production; absent in unit specs. Phase 22 A3.
     @Optional() @Inject(MetricsService) private readonly metrics?: MetricsService,
+    // Phase 54 E — graceful shutdown drain. forwardRef because the scheduler
+    // injects this runner (the cycle is resolved lazily); @Optional so unit specs
+    // that build the runner positionally still work (drain then skips the pause).
+    @Optional()
+    @Inject(forwardRef(() => AgentPoolScheduler))
+    private readonly scheduler?: AgentPoolScheduler,
+    @Optional() @Inject(RuntimeMetaService) private readonly runtimeMeta?: RuntimeMetaService,
   ) {}
+
+  /**
+   * Phase 54 E — graceful shutdown drain. AgentRunner injects TerminalService +
+   * (global) Db, so Nest destroys it **before** them (dependents first): this runs
+   * before `TerminalService.onModuleDestroy` kills/detaches PTYs and before
+   * `DbFactory.onModuleDestroy` checkpoints + closes the DB. It: (1) pauses the
+   * scheduler so no new work starts; (2) waits up to `gateway.shutdownGraceMs` for
+   * in-flight agents to finish naturally; (3) requeues the stragglers on `pty`
+   * (their sessions die with the process) or leaves them on `tmux` (detached +
+   * reattached on the next boot); (4) marks a clean shutdown. Fail-open.
+   */
+  async onModuleDestroy(): Promise<void> {
+    try {
+      this.scheduler?.pause();
+      await this.drainInFlight();
+    } catch (err) {
+      this.logger.warn(`graceful drain failed: ${err instanceof Error ? err.message : 'unknown'}`);
+    }
+    // Marked even if the drain hit an error — the process is stopping on purpose,
+    // which is what "clean" records (vs a crash that never reaches this hook).
+    this.runtimeMeta?.markCleanShutdown();
+  }
+
+  private async drainInFlight(): Promise<void> {
+    const graceMs = this.config.gateway?.shutdownGraceMs ?? 0;
+    const deadline = Date.now() + graceMs;
+    const pollMs = Math.min(250, Math.max(1, graceMs));
+    // Let near-done agents reach a terminal/`waiting` state on their own.
+    while (this.pool.busyTaskIds().length > 0 && Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, pollMs));
+    }
+    const remaining = this.pool.busyTaskIds();
+    if (remaining.length === 0) return;
+    // Clear our run timers either way so a timeout can't fire mid-exit.
+    for (const id of remaining) this.clearRunTimeout(id);
+    if (this.terminal.isDurable()) {
+      // tmux: the sessions outlive the process — TerminalService detaches them and
+      // boot recovery reattaches, so leave the task state as-is (still wip/waiting).
+      this.logger.log(`graceful shutdown: leaving ${remaining.length} durable run(s) to detach + reattach`);
+    } else {
+      // pty: the sessions die with the process — requeue so a restart re-runs them.
+      for (const id of remaining) this.safeRequeue(id);
+      this.logger.log(`graceful shutdown: requeued ${remaining.length} in-flight pty run(s) → todo`);
+    }
+  }
 
   /** Per-task metric run tracking — id + wall-clock start for duration. */
   private readonly metricRunIds = new Map<string, { id: string; startedAt: number }>();

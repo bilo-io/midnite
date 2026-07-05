@@ -79,6 +79,10 @@ import {
   type IdeaQuery,
   type PromoteIdeaRequest,
   type PromoteIdeaResponse,
+  ReadinessSchema,
+  PreflightReportSchema,
+  type Readiness,
+  type PreflightReport,
 } from '@midnite/shared';
 import {
   AgentCliResponseSchema,
@@ -169,6 +173,7 @@ import {
   type PrReviewSubmission,
   type PrMergeMethod,
   type GuardrailSettings,
+  type GuardrailCaps,
   type PauseScope,
   type PrimaryAgent,
   type ProvidersResponse,
@@ -372,6 +377,36 @@ export async function pingAgent(): Promise<AgentPingResponse> {
 /** Liveness probe for the gateway (`GET /health` → `{ ok: true }`). */
 export async function getHealth(signal?: AbortSignal): Promise<{ ok: boolean }> {
   return fetchJson('/health', { signal }, z.object({ ok: z.boolean() }));
+}
+
+/**
+ * Fetch a health report that returns **503 with a valid body** when unhealthy
+ * (readiness / preflight, Phase 54). A 200 or 503 both carry the report and are
+ * parsed; anything else (500, network) throws like a normal request.
+ */
+async function fetchHealthReport<T>(
+  path: string,
+  schema: { parse: (v: unknown) => T },
+  signal?: AbortSignal,
+): Promise<T> {
+  const headers: Record<string, string> = {};
+  if (_accessToken) headers['authorization'] = `Bearer ${_accessToken}`;
+  const res = await fetch(`${gatewayUrl()}${path}`, { cache: 'no-store', signal, headers });
+  if (!res.ok && res.status !== 503) {
+    const text = await res.text().catch(() => '');
+    throw new ApiError(errorMessage(res, text), res.status);
+  }
+  return schema.parse((await res.json()) as unknown);
+}
+
+/** Readiness (`GET /health/ready`, Phase 54 B) — live DB/pool/scheduler/spawner checks. */
+export async function getReadiness(signal?: AbortSignal): Promise<Readiness> {
+  return fetchHealthReport('/health/ready', ReadinessSchema, signal);
+}
+
+/** Boot preflight, re-run live (`GET /health/preflight`, Phase 54 F) — the full check set. */
+export async function getPreflight(signal?: AbortSignal): Promise<PreflightReport> {
+  return fetchHealthReport('/health/preflight', PreflightReportSchema, signal);
 }
 
 export async function getTaskCounts(): Promise<TaskCounts> {
@@ -725,6 +760,13 @@ export async function mergePr(id: string, method: PrMergeMethod = 'squash'): Pro
 export async function getGuardrails(signal?: AbortSignal): Promise<GuardrailSettings> {
   const res = await fetchJson('/guardrails', { signal }, GuardrailsResponseSchema);
   return res.guardrails;
+}
+
+/** The configured safety caps + policy mode + protected-actions (read-only,
+ *  Phase 50 F/E). Null when an older gateway doesn't return the caps block. */
+export async function getGuardrailCaps(signal?: AbortSignal): Promise<GuardrailCaps | null> {
+  const res = await fetchJson('/guardrails', { signal }, GuardrailsResponseSchema);
+  return res.caps ?? null;
 }
 
 /** Pause or resume a scope (soft — running agents finish). Admin-only. */

@@ -75,6 +75,10 @@ describe('capsRows', () => {
     softDailyBudgetUsd: null,
     softMonthlyBudgetUsd: 500,
     maxSpawnsPerHour: 10,
+    blastRadiusEnabled: true,
+    protectedBranches: ['main', 'master'],
+    protectedPathGlobs: ['**/.env'],
+    scrubSpawnEnv: false,
   };
   it('renders set/unset caps and the mode + rate', () => {
     const flat = capsRows(caps).map((r) => r.join(' '));

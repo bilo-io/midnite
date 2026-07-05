@@ -63,6 +63,13 @@ export const GuardrailCapsSchema = z.object({
   softMonthlyBudgetUsd: z.number().nullable(),
   /** Rolling per-hour spawn cap (Phase 50 B); 0 = unlimited. */
   maxSpawnsPerHour: z.number().int().nonnegative(),
+  /** The destructive-action blast-radius floor (Phase 50 C), config-driven +
+   *  read-only here — the Safety panel shows what's protected. */
+  blastRadiusEnabled: z.boolean(),
+  protectedBranches: z.array(z.string()),
+  protectedPathGlobs: z.array(z.string()),
+  /** Whether spawned agents get the gateway's secrets scrubbed (Phase 50 C). */
+  scrubSpawnEnv: z.boolean(),
 });
 export type GuardrailCaps = z.infer<typeof GuardrailCapsSchema>;
 

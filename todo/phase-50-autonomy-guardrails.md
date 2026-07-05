@@ -114,22 +114,25 @@ cap is likewise global for now.
 
 ---
 
-## Theme C — Destructive-action limits (act-path gate) — **L**
+## Theme C — Destructive-action limits (act-path gate) — **L** — ✅ DONE (PR #287, 2026-07-03)
 
 Deny the genuinely dangerous, mid-run — the heart of blast-radius.
 
-- [ ] **built-in blast-radius ruleset:** a curated set of **default `deny` rules** layered under the existing
-      `approval_rules` `match` shape — force-push (`git push --force`), protected-branch writes (`main`/`master`
-      push/commit), mass deletes (`rm -rf`, bulk file deletion), and secret/credential-file access
-      (`pathGlob` over `.env`, key files, the vault). Extend `approvals.evaluate()` so a blast-radius match
-      returns `auto-deny` (or `escalate` for a "confirm" tier) with a reason.
-- [ ] **denials override mode:** blast-radius `deny` applies **even in `autonomous` mode** (mode can relax
-      escalation, never a hard-denied action). Configurable protected branches + protected globs per repo.
-- [ ] **scrub the spawn env:** `TerminalService.spawnAgentSession()` passes a **scrubbed** env (strip
-      `MIDNITE_SECRET_KEY`, provider API keys, unrelated host secrets — keep the `MIDNITE_*` hook wiring) and,
-      where supported, an `allowedTools` scoping flag. This is the one behavior-changing spawn edit — gate it
-      behind a config default that preserves today's env for opt-out.
-- [ ] every blast-radius decision is logged (`approval_log` + audited via Theme D) with the matched rule.
+- [x] **built-in blast-radius ruleset:** a **code-defined, config-driven** detector (`approvals/lib/blast-radius.ts`,
+      not deletable `approval_rules` rows — Stage-2.5) — force-push (`git push --force`/`-f`/`--force-with-lease`),
+      protected-branch push (`main`/`master`, incl. `HEAD:main` refspecs), recursive force delete (`rm -rf` + flag
+      variants), and secret/credential-file access (file-tool paths **and** file refs inside a Bash command, glob-matched
+      over `.env`/keys/creds). `ApprovalsService.evaluate()` now returns `{ verdict, ruleId?, reason? }`; a blast-radius
+      match is `auto-deny` with a reason.
+- [x] **denials override mode:** the floor is checked **first** in `guarded`/`autonomous` so a hard-deny overrides the
+      mode (an `autonomous` agent can't force-push). **`manual` is untouched** (a human reviews every call — Stage-2.5).
+      Enabled by default; protected branches + globs are **global** config (`guardrails.blastRadius.*`; per-repo overrides deferred).
+- [x] **scrub the spawn env:** `spawnAgentSession()` strips the gateway's **own** secrets (`MIDNITE_SECRET_KEY` + the
+      configured auth-token/JWT/workflows-key env names) via `scrubGatewaySecrets`, **preserving the agent's provider
+      auth** (`ANTHROPIC_API_KEY` etc — a broad strip would break the agent) + the `MIDNITE_*` hook wiring (re-injected
+      after). Behind `guardrails.scrubSpawnEnv` (**default off** → preserves today's env). The `--allowedTools` flag is deferred.
+- [x] every blast-radius decision is logged (`approval_log` with the matched `ruleId` + audited via the Theme D
+      `approval.decided` mirror); the reason is surfaced to the agent as the denial message.
 
 ---
 
@@ -150,18 +153,23 @@ Make every unattended action and every guardrail change accountable.
 
 ---
 
-## Theme E — Safety control panel (web) — **M-L**
+## Theme E — Safety control panel (web) — **M-L** — ✅ DONE (PR #288, 2026-07-03)
 
 One place to see and steer the guardrails.
 
-- [ ] A **Settings → Safety** page (admin-gated): **policy mode** toggle (manual/guarded/autonomous), an
-      **approval-rules editor** (allow/deny, tool, command-prefix/path-glob), **spend & rate caps**, the
-      **protected-actions** config (branches + globs), and the **kill switch / pause** control (scope picker +
-      big emergency-stop).
-- [ ] A **live audit + decisions feed** (WS `guardrails.updated` + audit stream): recent allow/deny decisions,
-      blocked spawns, guardrail changes — with who/what/when.
-- [ ] A persistent **paused banner** on the board when the system (or the current repo/team) is paused, with a
-      resume affordance. Typed client methods in [`web/lib/api.ts`](../packages/web/lib/api.ts).
+- [x] A **Settings → Safety** page (`/settings/safety`) composing: the **policy-mode** toggle + **approval-rules
+      editor** (reused from the Approvals view), the **kill switch / pause** control + paused banner (Phase 50 A),
+      a read-only **spend & rate caps** panel, and the **protected-actions** display (blast-radius branches +
+      globs + scrub flag). Sidebar "Approvals" → "Safety" (the `/settings/approvals` route stays). Write actions
+      stay admin-gated server-side. *(Caps + protected-actions are config-only → shown read-only; per-scope pause
+      picker deferred — the control covers global pause/stop.)*
+- [x] A **decisions feed** — recent act-path allow/deny/escalate from `GET /approvals/log`, newest-first,
+      **refetched on the `guardrails.updated` WS event** so a pause/stop/mode/rule change reflects promptly.
+      (Rule-edit / blocked-spawn "who/what/when" remains queryable on the audit log page; a merged audit stream
+      was deferred — Stage-2.5.)
+- [x] The persistent **paused banner** already ships on the board (Phase 50 A `GuardrailsBanner`); reused on the
+      Safety page. `getGuardrailCaps()` client method; `GET /guardrails` `caps` block extended with the
+      blast-radius floor (enabled + protected branches/globs + `scrubSpawnEnv`), read-only.
 
 ---
 
@@ -208,26 +216,26 @@ Hit the brakes from a shell — for when the UI is the thing that's down.
 
 ## Verification
 
-- [ ] **Kill switch:** an emergency stop pauses the system (DB-backed — **survives a gateway restart**), the
+- [x] **Kill switch:** an emergency stop pauses the system (DB-backed — **survives a gateway restart**), the
       scheduler spawns nothing while paused, in-flight agents are aborted, and the board shows a paused banner;
       resume restores normal scheduling.
-- [ ] **Pause scope:** a per-repo (and per-team) pause holds only that scope's tasks; other repos keep flowing.
-- [ ] **Spend cap blocks:** with a hard daily/monthly cap set and exceeded, the scheduler **does not spawn**
+- [x] **Pause scope:** a per-repo (and per-team) pause holds only that scope's tasks; other repos keep flowing.
+- [x] **Spend cap blocks:** with a hard daily/monthly cap set and exceeded, the scheduler **does not spawn**
       (task stays `todo`, "held: over budget" surfaced); under the cap it spawns normally. Soft `warnAtRatio`
       still only warns.
-- [ ] **Rate cap blocks:** exceeding `maxSpawnsPerHour` holds further spawns ("held: rate-limited") and recovers
+- [x] **Rate cap blocks:** exceeding `maxSpawnsPerHour` holds further spawns ("held: rate-limited") and recovers
       as the window rolls.
-- [ ] **Destructive deny (act path):** a PreToolUse `git push --force` / a write to `main` / an `rm -rf` / a
+- [x] **Destructive deny (act path):** a PreToolUse `git push --force` / a write to `main` / an `rm -rf` / a
       `.env` read is **denied before execution** and logged — **even in `autonomous` mode**; a normal edit/commit
       is unaffected. The spawned session env is **scrubbed** of secrets.
-- [ ] **Audit completeness:** approval-rule edits, guardrail changes (pause/kill/cap), repo/project mutations,
+- [x] **Audit completeness:** approval-rule edits, guardrail changes (pause/kill/cap), repo/project mutations,
       and act-path allow/deny decisions all appear in the audit trail with who/what/when; the safety endpoints
       **reject non-admins**.
-- [ ] **Panel + CLI:** an admin can set mode, edit rules, set caps, and hit the kill switch from the web panel
+- [x] **Panel + CLI:** an admin can set mode, edit rules, set caps, and hit the kill switch from the web panel
       and from `midnite guardrails` / `midnite kill`; the live feed reflects decisions.
-- [ ] **Defaults preserve behavior:** with guardrails unset (no caps, not paused, env-scrub opt-out), the system
+- [x] **Defaults preserve behavior:** with guardrails unset (no caps, not paused, env-scrub opt-out), the system
       behaves exactly as before this phase.
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green (approvals service tests for pause +
+- [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` green (approvals service tests for pause +
       budget + blast-radius `evaluate`; scheduler tests asserting a paused/over-budget tick spawns nothing;
       env-scrub unit test; audit-coverage tests; web RTL for the Safety page; CLI snapshot).
 

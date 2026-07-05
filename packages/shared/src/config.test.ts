@@ -1,6 +1,29 @@
 import { describe, expect, it } from 'vitest';
 import { parseConfig } from './config.js';
 
+describe('guardrails config (Phase 50 C)', () => {
+  it('enables the blast-radius floor by default with sane protected lists', () => {
+    const { guardrails } = parseConfig({ agent: {}, terminal: {}, gateway: {} });
+    expect(guardrails.blastRadius.enabled).toBe(true);
+    expect(guardrails.blastRadius.protectedBranches).toEqual(['main', 'master']);
+    expect(guardrails.blastRadius.protectedPathGlobs).toContain('**/.env');
+    // The spawn-env scrub is opt-in (preserves today's full-env spawn).
+    expect(guardrails.scrubSpawnEnv).toBe(false);
+  });
+
+  it('honours explicit overrides', () => {
+    const { guardrails } = parseConfig({
+      agent: {},
+      terminal: {},
+      gateway: {},
+      guardrails: { blastRadius: { enabled: false, protectedBranches: ['release'] }, scrubSpawnEnv: true },
+    });
+    expect(guardrails.blastRadius.enabled).toBe(false);
+    expect(guardrails.blastRadius.protectedBranches).toEqual(['release']);
+    expect(guardrails.scrubSpawnEnv).toBe(true);
+  });
+});
+
 describe('agent pool config defaults', () => {
   it('ships the pool scheduler off by default with sane cadence', () => {
     const config = parseConfig({
@@ -69,6 +92,13 @@ describe('usage hard spend caps (Phase 50 B)', () => {
     expect(() =>
       parseConfig({ agent: {}, terminal: {}, gateway: {}, usage: { hardDailyCapUsd: 0 } }),
     ).toThrow();
+  });
+});
+
+describe('gateway.shutdownGraceMs (Phase 54 E)', () => {
+  it('defaults to 10s and accepts an override (0 = drain immediately)', () => {
+    expect(parseConfig({ agent: {}, terminal: {}, gateway: {} }).gateway.shutdownGraceMs).toBe(10000);
+    expect(parseConfig({ agent: {}, terminal: {}, gateway: { shutdownGraceMs: 0 } }).gateway.shutdownGraceMs).toBe(0);
   });
 });
 

@@ -66,9 +66,10 @@ function extractFilePath(toolInput: unknown): string | null {
 
 /**
  * Minimal glob matcher: `*` matches any non-separator chars, `**` matches
- * anything (including `/`). No dependency on external packages.
+ * anything (including `/`). No dependency on external packages. Exported so the
+ * blast-radius detector (Phase 50 C) matches protected paths the same way.
  */
-function globMatch(pattern: string, str: string): boolean {
+export function globMatch(pattern: string, str: string): boolean {
   const re = new RegExp(
     '^' +
       pattern

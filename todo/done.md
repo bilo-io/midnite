@@ -13,6 +13,46 @@ Closes the review loop: review + merge a task's PR from inside midnite, no conte
 - [x] web: a review action bar (approve/request-changes/comment + body + Submit) + merge control (method select + confirm) + a click-a-gutter **inline comment composer** (react-diff-view widgets), all on the diff surface (modal + Theme E Review tab via shared `PrReviewPanel`); refreshes the board on success. Typed `submitPrReview`/`mergePr` client.
 - [x] Tests: shared 6 (submission refine, comment/merge defaults, event map), gateway lib 7 (gh args + body + token fallback + refusal) + service 5 (404/delegate/refresh/audit/502) + controller stubs, web actions RTL 4. `:typecheck`/lint clean; shared+gateway (1409) + web (752) green modulo 2 pre-existing flakes (metrics, tmux-contract).
 
+---
+
+## 2026-07-03 — feat: Settings → Safety control panel — Phase 50 Theme E (PR #290) · **Phase 50 COMPLETE** 🎉
+
+One place to see and steer every guardrail — the operability capstone that closes Phase 50 (kill switch, spend/rate caps, blast-radius, audit/RBAC, CLI all now surfaced in one web page).
+
+- [x] **web:** a `/settings/safety` page composing the existing pause/kill control + paused banner (A) + the autonomy-mode & rules editor (reused from Approvals) + a new read-only **caps / protected-actions** panel (spend/rate + blast-radius branches/globs/scrub) + a live **recent-decisions feed** (approval log, refetched on the `guardrails.updated` WS event). Sidebar "Approvals" → "Safety" (the `/settings/approvals` route stays). New `SafetyView` + `SafetyCapsPanel` + `SafetyDecisionsFeed`.
+- [x] **shared/gateway:** `GET /guardrails` `caps` block extended with the blast-radius floor (enabled + protectedBranches + protectedPathGlobs + scrubSpawnEnv), read-only; `getGuardrailCaps()` web client method.
+- [x] Tests: RTL for both new panels (caps render/unlimited/degrade, feed render/empty) + updated gateway caps-shape + cli caps fixture. gateway (1425, 1 pre-existing flaky tmux), web (754), cli (144) green; `:typecheck` clean. Per-scope pause picker + merged audit stream deferred (Stage-2.5). Verification checklist ticked (all A–F acceptance criteria met).
+
+## 2026-07-03 — feat: runtime health in web + CLI doctor — Phase 54 Theme F (PR #289)
+
+Makes gateway process health visible instead of guessed — surfaces the Phase 54 A/B preflight + readiness in the Ops page and a `midnite doctor` command.
+
+- [x] **gateway:** `GET /health/preflight` — the full boot check set re-run live (config/DB/secret-key/claude+gh/spawner/repo-paths + strictBoot verdict), 200 pass / 503 fail, auth-exempt like the other `/health/*`.
+- [x] **web:** a "Runtime health" panel on the Ops page — readiness badge, uptime, spawner mode, and the live preflight checks (per-check status + remedy). A 503-tolerant fetch renders a degraded gateway's report rather than throwing.
+- [x] **cli:** `midnite doctor` — preflight + readiness pass/warn/fail table, respects global `--json`, exits non-zero when anything fails (scriptable health gate). Pure `doctorRows`/`doctorExitCode` helpers.
+- [x] **Fixed** a latent `HealthService`↔`AgentPoolScheduler` ES-module import cycle (Phase 54 D readiness gate + A/B `isRunning`): the Nest side was forwardRef'd but HealthService's eager `@Inject` TDZ-crashed the gateway at boot depending on import order — forwardRef'd both sides. last-shutdown-clean deferred to Theme E.
+- [x] Tests: controller 200/503, `RuntimeHealthPanel` RTL (ready/not-ready/unreachable), `doctor` rows + exit code, screenshot spec. gateway 1388, web 746, cli 149 green.
+
+---
+## 2026-07-03 — feat: graceful shutdown drain + clean-shutdown marker — Phase 54 Theme E (PR #288)
+
+Die on purpose, not by surprise: on SIGTERM the gateway drains in-flight agents instead of abandoning them, and records whether the stop was clean.
+
+- [x] shared: `gateway.shutdownGraceMs` (default 10s; 0 = drain immediately).
+- [x] gateway: `AgentRunnerService.onModuleDestroy` → `scheduler.pause()` (runner⇄scheduler forwardRef) → poll up to the grace window for in-flight agents to finish → requeue stragglers (pty, sessions die) or leave them (tmux, detach + reattach on boot), clearing run timers → mark clean. Runs before TerminalService kills PTYs and before the DB closes (Nest destroys dependents first); fail-open.
+- [x] gateway: `runtime_meta` singleton (migration `0068`) + `@Global` `RuntimeMetaService` — boot stamps `clean=false`, drain flips `clean=true`; a still-false value next boot = the last process crashed. `previousShutdownClean()` for Theme F.
+- [x] gateway: `DbFactory.onModuleDestroy` WAL-checkpoint(TRUNCATE) + `sqlite.close()`, running last so a graceful stop flushes everything.
+- [x] Tests: drain (pty requeue / tmux leave / idle-pool), runtime-meta (first boot / clean / crash detection), config default; full-graph DI smoke (runner⇄scheduler forwardRef resolves). shared 542, gateway 1424 (1 pre-existing flaky tmux), web 749, cli 144; `:typecheck` clean.
+
+## 2026-07-03 — feat: destructive-action blast-radius limits + spawn-env scrub — Phase 50 Theme C (PR #287)
+
+The act-path enforcement floor — deny the genuinely dangerous mid-run, and stop leaking the gateway's secrets into agent sessions. The last enforcement gap of Phase 50.
+
+- [x] **shared:** `guardrails` config — `blastRadius.{enabled (default on), protectedBranches [main,master], protectedPathGlobs [.env/keys/creds]}` + `scrubSpawnEnv` (opt-in, default off). `GuardrailsConfig`/`BlastRadiusConfig` types.
+- [x] **gateway:** a pure `approvals/lib/blast-radius.ts` detector — force-push (`--force`/`-f`/`--force-with-lease`), protected-branch push (incl. `HEAD:main` refspecs), recursive force delete (`rm -rf` + variants), secret/credential-file access (file-tool paths **and** file refs in a Bash command, glob-matched). Code-defined (not a deletable rule row). `ApprovalsService.evaluate()` now returns `{ verdict, ruleId?, reason? }`; the floor is checked **first** in `guarded`/`autonomous` so a match `auto-deny`s and **overrides the mode** — `manual` untouched (a human already reviews). The reason flows to the agent + the `approval_log`/audit (`approval.decided`) trail.
+- [x] **gateway:** opt-in `spawnAgentSession` env scrub (`scrubGatewaySecrets`) strips the gateway's **own** secrets (MIDNITE_SECRET_KEY + configured auth-token/JWT/workflows-key names), **preserving the agent's provider auth** + the MIDNITE_* hook wiring. `globMatch` exported for shared path matching; a slash-prefixed fallback lets `**/.env` match root-level files.
+- [x] Tests: blast-radius detector (force/protected-branch/rm/secret-file + disabled + custom lists), evaluate override (autonomous/guarded deny, manual escalate, disabled/no-config inert), env-scrub (strips gateway secrets, keeps ANTHROPIC_API_KEY, custom env name), shared config defaults. shared + gateway (1407) green; `:typecheck` clean. Deferred (Stage-2.5): per-repo protected overrides + `--allowedTools`.
+
 ## 2026-07-03 — feat: needs-attention board chip + task-health view + CLI — Phase 53 Theme E (PR #286)
 
 Make lifecycle resilience visible: surface the failures + escalations Themes A/B/D record.
@@ -22,6 +62,7 @@ Make lifecycle resilience visible: surface the failures + escalations Themes A/B
 - [x] web: TaskCard failure-reason chip (waitReason + retry count, only for failure-escalated waiting); Ops-page `TaskHealthPanel` (the "what's wedged?" buckets + failure counts, rows link to tasks); task-detail structured failure-history section (class/exit/last-output), fetched lazily; `fetchTaskFailures`/`fetchRecentFailures`/`fetchTasksDoctor` client methods.
 - [x] cli: `midnite failures [--class]`, `midnite triage` (what's-wedged summary), `midnite resolve <id> <requeue|replan|abandon>` (all `--json`-aware); typed client methods. `triage` avoids colliding with Phase 54 F's runtime `midnite doctor`.
 - [x] Tests: shared (query/report schemas), gateway (`TasksDoctorService` buckets/thresholds/no-terminal), web RTL (card chip + health panel). shared 530, gateway 1386 (1 pre-existing flaky tmux), web 749, cli 144; `:typecheck` clean. Board-filter control + live screenshots deferred (chip + Ops panel cover visibility; RTL covers render).
+
 ## 2026-07-03 — feat: data-portability archive contract + schema-version stamp — Phase 49 Theme A (PR #282)
 
 The foundation for full-store backup/restore: a versioned, self-describing archive contract + a runtime schema version to gate cross-instance import.
