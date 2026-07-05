@@ -174,7 +174,7 @@ export class TasksService {
   }
 
   listTasks(status?: Status, projectId?: string, scope?: TeamScope): Task[] {
-    return this.repo.listTasks(status, projectId, scope).map((r) => this.withHeld(this.repo.hydrate(r)));
+    return this.repo.hydrateMany(this.repo.listTasks(status, projectId, scope)).map((t) => this.withHeld(t));
   }
 
   /**
@@ -187,7 +187,7 @@ export class TasksService {
     // `now` gates backed-off retries (Phase 53 B): a todo task whose nextRetryAt
     // is still in the future is skipped until its backoff window elapses.
     const now = new Date().toISOString();
-    return this.repo.listReadyTodoTasks(now).map((r) => this.repo.hydrate(r));
+    return this.repo.hydrateMany(this.repo.listReadyTodoTasks(now));
   }
 
   getTask(id: string, scope?: TeamScope): Task {
