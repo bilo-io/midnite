@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { FileText, Folder, LayoutGrid, List, ListTree, Plus } from 'lucide-react';
 import type { Memory, Project, Task } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ import { TemplateModal } from '@/components/template-modal';
 import { TemplatesTable } from '@/components/templates-table';
 import { deleteProject, updateProject } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
+import { projectPageHref } from '@/lib/project-route';
 import { useBulkSelection } from '@/lib/use-bulk-selection';
 import { TEMPLATES, createBlankTemplate, type Template } from './templates';
 import { cn } from '@/lib/utils';
@@ -45,7 +46,6 @@ export function ProjectsView({
   const [view, setView] = useState<View>('grid');
   const [tab, setTab] = useState<Tab>('projects');
   const [creating, setCreating] = useState(false);
-  const [editProject, setEditProject] = useState<Project | null>(null);
   const [planProject, setPlanProject] = useState<Project | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [templates, setTemplates] = useState<Template[]>(TEMPLATES);
@@ -192,29 +192,21 @@ export function ProjectsView({
     return actions;
   }, [selectedProjects, setArchivedFor, deleteSelection]);
 
-  const closeModal = useCallback(() => {
-    setCreating(false);
-    setEditProject(null);
-  }, []);
-
-  const modalOpen = creating || editProject !== null;
+  const closeModal = useCallback(() => setCreating(false), []);
 
   const searchParams = useSearchParams();
   const router = useRouter();
-  const pathname = usePathname();
   const q = (searchParams.get('q') ?? '').trim().toLowerCase();
 
-  // Deep-link: `/projects?open=<id>` opens that project's modal (e.g. a promoted
-  // idea's project chip links here). Wait for the project list to load before
-  // matching, then strip the param so closing the modal sticks.
+  const openProject = useCallback((p: Project) => router.push(projectPageHref(p.id)), [router]);
+
+  // Deep-link: the legacy `/projects?open=<id>` (promoted-idea chips, old links)
+  // now redirects to the standalone detail page (Phase 55 D). The page fetches by
+  // id, so no need to wait for the list or match here.
   const openId = searchParams.get('open');
   useEffect(() => {
-    if (!openId) return;
-    const match = initial.find((p) => p.id === openId);
-    if (!match) return;
-    setEditProject(match);
-    router.replace(pathname);
-  }, [openId, initial, router, pathname]);
+    if (openId) router.replace(projectPageHref(openId));
+  }, [openId, router]);
   const filtered = q
     ? initial.filter((p) =>
         [p.name, p.tag, p.description ?? ''].some((f) => f.toLowerCase().includes(q)),
@@ -366,7 +358,7 @@ export function ProjectsView({
           <ProjectsTree
             projects={filtered}
             tasks={tasks}
-            onEdit={setEditProject}
+            onEdit={openProject}
             onPlan={setPlanProject}
             onSelectTask={setSelectedTask}
             isSelected={isSelected}
@@ -379,7 +371,7 @@ export function ProjectsView({
                 key={p.id}
                 project={p}
                 layout="list"
-                onOpen={() => setEditProject(p)}
+                onOpen={() => openProject(p)}
                 onPlan={() => setPlanProject(p)}
                 selected={isSelected(p.id)}
                 onToggleSelect={() => toggleSelect(p.id)}
@@ -393,7 +385,7 @@ export function ProjectsView({
                 key={p.id}
                 project={p}
                 layout="grid"
-                onOpen={() => setEditProject(p)}
+                onOpen={() => openProject(p)}
                 onPlan={() => setPlanProject(p)}
                 selected={isSelected(p.id)}
                 onToggleSelect={() => toggleSelect(p.id)}
@@ -403,16 +395,13 @@ export function ProjectsView({
         )}
       </div>
 
-      {modalOpen ? (
+      {/* The modal is reserved for New (create); editing an existing project lives
+          on its detail page (Phase 55 D). */}
+      {creating ? (
         <ProjectModal
-          project={creating ? null : editProject}
-          tasks={editProject ? tasks.filter((t) => t.projectId === editProject.id) : []}
+          project={null}
           memories={memories}
           templates={templates}
-          onSelectTask={(task) => {
-            closeModal();
-            setSelectedTask(task);
-          }}
           onClose={closeModal}
           onSaved={refresh}
         />

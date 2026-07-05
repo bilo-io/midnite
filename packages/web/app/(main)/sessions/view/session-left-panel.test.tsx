@@ -97,7 +97,7 @@ describe('SessionLeftPanel', () => {
     const { rerender } = renderPanel(<SessionLeftPanel session={session} task={task} project={project} />);
     expect(screen.getByRole('link', { name: 'Fix bug' })).toHaveAttribute('href', '/tasks/view?id=t1');
     expect(screen.getByText('wip')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Web' })).toHaveAttribute('href', '/projects/p1');
+    expect(screen.getByRole('link', { name: 'Web' })).toHaveAttribute('href', '/projects/view?id=p1');
 
     rerender(withQueryClient(<SessionLeftPanel session={session} task={task} project={null} />));
     expect(screen.queryByText('Project')).not.toBeInTheDocument();

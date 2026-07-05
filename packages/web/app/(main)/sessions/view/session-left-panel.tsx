@@ -6,6 +6,7 @@ import type { ApprovalLogEntry, Project, SessionDetail, Task } from '@midnite/sh
 import { listApprovalLog } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
 import { useApprovalsSocket } from '@/hooks/use-approvals-socket';
+import { projectPageHref } from '@/lib/project-route';
 import { relativeTime } from '@/lib/utils';
 
 const PRIORITY_LABEL = ['low', 'normal', 'high', 'urgent'] as const;
@@ -158,7 +159,7 @@ export function SessionLeftPanel({
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Project
           </h3>
-          <Link href={`/projects/${project.id}`} className="text-foreground hover:underline">
+          <Link href={projectPageHref(project.id)} className="text-foreground hover:underline">
             {project.name}
           </Link>
           {project.workDir ? (
