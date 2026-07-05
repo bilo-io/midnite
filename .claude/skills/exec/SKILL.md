@@ -124,6 +124,12 @@ Against, in order: fidelity to the phase doc/decisions → `CLAUDE.md` conventio
   git commit -m "docs(todo): sync _INDEX.md after PR #<n>"
   git push origin main    # if it races: git pull --rebase origin main && re-push
   ```
+  Then run the **whole-index drift guard** — it catches any `phase-*.md` (yours *or* one a `/brainstorm` run left unregistered) that has no `## Phases` row. It must print nothing:
+  ```bash
+  for f in todo/phase-*.md; do n=${f#todo/phase-}; n=${n%%-*}; \
+    grep -qE "^\| \[$n ·" todo/_INDEX.md || echo "DRIFT: phase $n absent from _INDEX.md"; done
+  ```
+  If it names a phase, add that row (Status / counts / bar / theme letters, from its phase doc) directly on `main` and push — an unregistered phase is invisible to the next `/exec` and reads as stale on every surface.
 - **Teardown + report freed space — every merge.** Measure the worktree's on-disk size *before* removing it, tear down the worktree + branch, then report the reclaimed space:
   ```bash
   freed=$(du -sk .git/worktrees/<slice> 2>/dev/null | cut -f1)   # KB, before removal
