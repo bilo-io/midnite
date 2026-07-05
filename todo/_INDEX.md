@@ -28,6 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
+| [61 · Fable-Observability](phase-61-fable-observability.md) | ◻ TODO | 0/36 | `░░░░░░░░░░` | 0% | — | A B C D E F G H I |
 | [60 · Fable-Analysis](phase-60-fable-analysis.md) | ◻ TODO | 0/63 | `░░░░░░░░░░` | 0% | — | A B C D E F G H I J K L M |
 | [59 · Chat to board](phase-59-chat-to-board.md) | ◻ TODO | 0/26 | `░░░░░░░░░░` | 0% | — | A B C D E F |
 | [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | ◻ TODO | 0/25 | `░░░░░░░░░░` | 0% | — | A B C D E F |
@@ -111,6 +112,18 @@ shortcut). The 2 contextual-command boxes are now **un-deferred and folded into 
 Every phase's lettered themes with a status icon + one-liner, so you can gauge scope and pick
 work without opening the phase doc. Status: `✅` done · `🔄` WIP (claimed) · `◻` TODO · `◐`
 partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
+
+### [Phase 61 — Fable-Observability](phase-61-fable-observability.md)
+*Deepen the existing metrics/usage seam: real session tokens (honestly labeled), cost attribution, cycle time, rollups + retention, live Ops. Fable series #2.*
+- ◻ **A** — Real session-token harvesting (transcript/Stop-hook probe, replace the hash-seeded placeholder)
+- ◻ **B** — Cost attribution: session_usage table + groupBy task/repo/project + real budget numbers
+- ◻ **C** — Cycle-time as a first-class metric (todo→wip→done from task_events)
+- ◻ **D** — Gauge history that survives restarts (sampler + gauge_samples)
+- ◻ **E** — Rollups + retention (hourly/daily rollups; prune metrics raws only, never task_events)
+- ◻ **F** — Live metrics channel on the P56 reliable WS (poll fallback)
+- ◻ **G** — Ops page deepening (cost/cycle-time/fleet-trend charts, run timeline)
+- ◻ **H** — Widgets + session/project cockpit integration
+- ◻ **I** — CLI (`usage --by`, `ops`) + metrics-model docs
 
 ### [Phase 60 — Fable-Analysis](phase-60-fable-analysis.md)
 *Repo-wide audit → ranked findings reports (analysis-only, bar security quick-wins + safe dep bumps). Direction-preserving. M runs last.*
