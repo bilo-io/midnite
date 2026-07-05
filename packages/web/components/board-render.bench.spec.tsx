@@ -7,10 +7,11 @@ import { ConfirmProvider } from './confirm-dialog';
 
 /**
  * Phase 57 A — web render benchmark (evidence backbone). Renders the board with a
- * seeded task set and counts **mounted card nodes** — the deterministic metric
- * that proves the "every card is in the DOM, no virtualization" baseline. Theme F
- * (virtualization) tightens this budget to a bounded constant; here we document
- * that today the mounted count grows 1:1 with the dataset.
+ * seeded task set and counts **mounted card nodes**. Theme F virtualized the
+ * board, so the mounted count is now **bounded** (windowed), not 1:1 with the
+ * dataset — this asserts that bound. (jsdom has no viewport height, so the exact
+ * windowed count isn't meaningful here; the nonzero-but-bounded proof against a
+ * real browser lives in `e2e/board-virtualization.e2e.ts`.)
  */
 const SIZE = Number(process.env['BENCH_SIZE']) || 200;
 
@@ -35,7 +36,7 @@ function task(i: number, status: Status): Task {
 afterEach(cleanup);
 
 describe(`Phase 57 A — web board render benchmark (n=${SIZE})`, () => {
-  it('mounts one card per task — documents the un-virtualized DOM baseline', () => {
+  it('bounds mounted cards below the dataset size (windowed board)', () => {
     const tasks = Array.from({ length: SIZE }, (_, i) => task(i, 'todo'));
     render(
       <ConfirmProvider>
@@ -58,9 +59,10 @@ describe(`Phase 57 A — web board render benchmark (n=${SIZE})`, () => {
     // eslint-disable-next-line no-console -- benchmark output is the point
     console.log(`[bench] board mounted cards: ${cards.length} of ${SIZE} tasks`);
 
-    // Baseline: unbounded — every task mounts a card. Theme F bounds this to a
-    // small windowed constant and flips this assertion.
-    expect(cards.length).toBe(SIZE);
+    // Theme F: the board is windowed — the mounted card count is bounded well
+    // below the dataset size (the whole point). Exact count is layout-dependent
+    // and not meaningful in jsdom; the real-browser proof is the e2e.
+    expect(cards.length).toBeLessThan(SIZE);
     // Generous timeout: rendering N cards in jsdom is slow under parallel suite
     // load (well past the 5s default), so budget it explicitly to avoid a flake.
   }, 30_000);
