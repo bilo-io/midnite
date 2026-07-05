@@ -47,3 +47,32 @@ export function createTestDb(): TestDbHandle {
   migrate(db, { migrationsFolder: migrationsFolder() });
   return { db, sqlite, close: () => sqlite.close() };
 }
+
+/** A {@link TestDbHandle} that counts executed SQL statements — the Phase 57
+ *  benchmark backbone. `verbose` fires once per statement better-sqlite3 runs
+ *  (driver-level, so it catches raw `sqlite.prepare` and drizzle queries alike),
+ *  giving an exact query count for a hot path ("6001 queries" is a real number,
+ *  not a guess). `resetQueryCount()` zeroes the counter around the measured
+ *  section; migrations run before counting starts so schema setup isn't counted. */
+export interface CountingDbHandle extends TestDbHandle {
+  /** Statements executed since the last {@link CountingDbHandle.resetQueryCount}. */
+  queryCount(): number;
+  resetQueryCount(): void;
+}
+
+export function createCountingDb(): CountingDbHandle {
+  let count = 0;
+  const sqlite = new Database(':memory:', { verbose: () => void count++ });
+  sqlite.pragma('foreign_keys = ON');
+  const db = drizzle(sqlite, { schema });
+  migrate(db, { migrationsFolder: migrationsFolder() });
+  return {
+    db,
+    sqlite,
+    close: () => sqlite.close(),
+    queryCount: () => count,
+    resetQueryCount: () => {
+      count = 0;
+    },
+  };
+}
