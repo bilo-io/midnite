@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import type { Memory, Project, Task } from '@midnite/shared';
 import { PageHeader } from '@/components/page-header';
+import { ConnectionStatus } from '@/components/connection-status';
 import { Tabs, type TabOption } from '@midnite/ui';
 import { ProjectDetailsPanel } from '@/components/projects/panels/project-details-panel';
 import { ProjectPlanPanel } from '@/components/projects/panels/project-plan-panel';
@@ -132,6 +133,7 @@ export function ProjectDetailView({
         description={project.tag ? `#${project.tag}` : undefined}
         actions={
           <div className="flex items-center gap-2">
+            <ConnectionStatus variant="compact" />
             {isMobile ? (
               <>
                 <RailToggle side="left" open={leftOpen} onClick={() => setLeftOpen(!leftOpen)} />
