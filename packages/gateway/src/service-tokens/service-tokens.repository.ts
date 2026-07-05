@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq, sql } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import { DB_TOKEN, type MidniteDb } from '../db/db.module';
-import { serviceTokens, type ServiceTokenInsert, type ServiceTokenRow } from '../db/schema';
+import { type ServiceTokenInsert, type ServiceTokenRow } from '../db/schema';
 
 @Injectable()
 export class ServiceTokensRepository {

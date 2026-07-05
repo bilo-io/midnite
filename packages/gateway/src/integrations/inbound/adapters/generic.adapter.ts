@@ -1,5 +1,5 @@
 import { verifyGeneric } from '../lib/verify-signature';
-import { asRecord, header, type InboundAdapter, type InboundRequest, type MappedTask } from './types';
+import { asRecord, header, type InboundAdapter, type MappedTask } from './types';
 
 /**
  * The generic, documented contract for any custom sender. Signature mirrors Phase

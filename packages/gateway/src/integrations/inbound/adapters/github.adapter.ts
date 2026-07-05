@@ -1,5 +1,5 @@
 import { verifyGithub } from '../lib/verify-signature';
-import { asRecord, header, type InboundAdapter, type InboundRequest, type MappedTask } from './types';
+import { asRecord, header, type InboundAdapter, type MappedTask } from './types';
 
 /**
  * GitHub webhooks. Signature: `X-Hub-Signature-256: sha256=<hex over body>`.

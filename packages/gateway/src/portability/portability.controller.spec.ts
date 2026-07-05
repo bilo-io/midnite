@@ -3,7 +3,6 @@ import type { ImportPreview, ImportResult } from '@midnite/shared';
 import { PortabilityController } from './portability.controller';
 import type { PortabilityService } from './portability.service';
 import type { PortabilityImportService } from './portability-import.service';
-import type { BackupSchedulerService } from './backup-scheduler.service';
 
 /** A fake Fastify multipart request: `isMultipart()` + an async `parts()` iterator. */
 function multipartReq(parts: Array<Record<string, unknown>>) {
@@ -23,11 +22,9 @@ const filePart = (fieldname: string, buf: Buffer) => ({
 const fieldPart = (fieldname: string, value: string) => ({ type: 'field', fieldname, value });
 
 function controller(imp: Partial<PortabilityImportService>) {
-  return new PortabilityController(
-    {} as PortabilityService,
-    imp as PortabilityImportService,
-    {} as BackupSchedulerService,
-  );
+  // 3rd dep (BackupSchedulerService, Phase 49 F) is unused by these import/preview
+  // tests — a bare stub keeps the constructor satisfied.
+  return new PortabilityController({} as PortabilityService, imp as PortabilityImportService, {} as never);
 }
 
 describe('PortabilityController import', () => {
