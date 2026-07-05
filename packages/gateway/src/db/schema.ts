@@ -1346,3 +1346,33 @@ export const runtimeMeta = sqliteTable('runtime_meta', {
   shutdownAt: text('shutdown_at'),
 });
 export type RuntimeMetaRow = typeof runtimeMeta.$inferSelect;
+
+// --- PR review comment drafts (Phase 52 D) ---
+
+/** Persisted inline review comments for a task's PR. A `draft` survives a reload
+ *  and is editable; on review submit the batch posts to GitHub and flips to
+ *  `submitted`. Per-author; plain intra-domain task id (no cross-domain FK). */
+export const prReviewComments = sqliteTable(
+  'pr_review_comments',
+  {
+    id: text('id').primaryKey(),
+    taskId: text('task_id').notNull(),
+    path: text('path').notNull(),
+    line: integer('line').notNull(),
+    /** 'LEFT' (old file) | 'RIGHT' (new file). */
+    side: text('side').notNull(),
+    body: text('body').notNull(),
+    /** Author id (JWT user, or 'local' for the static-token/single-user path). */
+    author: text('author').notNull(),
+    /** 'draft' | 'submitted'. */
+    state: text('state').notNull().default('draft'),
+    /** GitHub review-comment id once submitted; null while draft. */
+    githubCommentId: text('github_comment_id'),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    taskAuthorIdx: index('pr_review_comments_task_author_idx').on(t.taskId, t.author, t.state),
+  }),
+);
+export type PrReviewCommentRow = typeof prReviewComments.$inferSelect;
+export type PrReviewCommentInsert = typeof prReviewComments.$inferInsert;

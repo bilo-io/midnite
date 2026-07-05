@@ -13,6 +13,11 @@ const DIFF: PrDiff = {
   hiddenFileCount: 0,
   hiddenFiles: [],
   fetchedAt: '2026-07-02T10:00:00Z',
+  aiReview: {
+    verdict: 'changes-requested',
+    summary: 'The viewer looks solid, but the tokenize call should be memoised — it re-runs on every keystroke in the composer.',
+    reviewedAt: '2026-07-02T09:55:00Z',
+  },
   files: [
     {
       path: 'packages/web/components/pr-review/pr-diff-viewer.tsx',

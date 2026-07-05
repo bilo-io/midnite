@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-05 — feat: persisted review drafts + AI-review inline — Phase 52 Theme D · **Phase 52 COMPLETE** 🎉 (PR #297)
+
+Finishes the in-app review phase: inline comments persist across reloads, and the AI verdict shows where you review.
+
+- [x] gateway `pr_review_comments` table (migration `0069`) + `PrReviewCommentsRepository`; **per-author** drafts. The review submit **sources comments from the stored drafts** (not the client) and flips them to `submitted`. CRUD endpoints (`GET/POST/PATCH/DELETE /tasks/:id/pr/review/comments`, member-gated, author-owned; 403 on another's, 400 editing a submitted).
+- [x] `PrDiffService` includes the task's `ai_review` (verdict + summary) on the `PrDiff` payload; the client submit drops its `comments` arg (server-sourced).
+- [x] web: drafts persist immediately per add/edit/delete, render as inline diff widgets re-anchored via a `(side,line)→change-key` index, edit/delete inline; an **AI-review banner** (verdict-coloured) atop the diff. Typed draft client methods.
+- [x] Tests: shared draft schemas (7), gateway repo (6) + service drafts/submit-from-drafts/ownership/empty-guard (+existing), web AI-banner + updated actions/panel (18 pr-review). `:typecheck`/lint clean; shared+gateway (1453, 1 pre-existing tmux flake) + web 763 green.
+
+---
+
 ## 2026-07-05 — feat: Settings → Data page (download backup) — Phase 49 Theme E ◐ (PR #296)
 
 The point-and-click backup half of the Data page. Restore/upload deferred until import (Theme C) merges.
@@ -30,6 +41,9 @@ Closes Phase 53's last theme. The four stuck-state detections were already deliv
 - [x] **Coverage (verified):** (1) wip-inactivity + (2) lost-timer/dead-session reconcile = Phase 54 C `PoolWatchdogService.sweep()` (`agent.watchdog.*`); (3) waiting-too-long escalating nudges = 53 D `WaitingNudgeService`; (4) aged-todo surfaced in 53 E doctor/health/board.
 - [x] **New (the gap):** aged-todo was **pull-only** (visible only if you open the doctor). Added a **proactive push** — `agent.waitingNudge.agedTodoHours` (0 = off, default → behaviour-preserving); `WaitingNudgeService.flagAgedTodos` scans `todo` tasks aged past the threshold (from `createdAt`) and fires a one-shot, deduped, capped `task.needs-attention` via new `NotificationsService.notifyStuckTodo` (same cadence/cap/repeat as waiting nudges, fail-open). The loop now runs if EITHER signal is enabled.
 - [x] Tests: nudge spec extended (aged-todo fires past threshold / repeat+cap / status-scoped / default-off), status-aware `listTasks` fake. gateway (1431, 1 pre-existing flaky tmux) + shared green; `:typecheck` clean; my files lint-clean (11 pre-existing gateway:lint errors unrelated). No new watchdog scaffolding — reused the single-tick discipline (54 C sweep + 53 D nudge loop).
+
+---
+
 ## 2026-07-05 — feat: in-app PR review actions (comment/approve/merge) — Phase 52 Theme C (PR #292)
 
 Closes the review loop: review + merge a task's PR from inside midnite, no context switch to GitHub.

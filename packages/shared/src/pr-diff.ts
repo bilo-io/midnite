@@ -64,5 +64,15 @@ export const PrDiffSchema = z.object({
   hiddenFiles: z.array(z.string()),
   /** ISO timestamp of the fetch. */
   fetchedAt: z.string(),
+  /** Phase 52 D: the task's Phase 37 AI-review verdict + summary, surfaced as a
+   *  review-level banner on the diff. Null when the task has no AI review yet. */
+  aiReview: z
+    .object({
+      verdict: z.enum(['approved', 'commented', 'changes-requested']),
+      summary: z.string(),
+      reviewedAt: z.string(),
+    })
+    .nullable()
+    .default(null),
 });
 export type PrDiff = z.infer<typeof PrDiffSchema>;

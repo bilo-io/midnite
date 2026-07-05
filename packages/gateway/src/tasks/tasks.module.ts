@@ -9,6 +9,7 @@ import { AiReviewService } from './ai-review.service';
 import { HeldTasksRegistry } from './held-tasks.registry';
 import { PrDiffService } from './pr-diff.service';
 import { PrReviewService } from './pr-review.service';
+import { PrReviewCommentsRepository } from './pr-review-comments.repository';
 import { PrStatusService } from './pr-status.service';
 import { TasksController } from './tasks.controller';
 import { TaskFailuresRepository } from './task-failures.repository';
@@ -29,6 +30,7 @@ import { TasksGateway } from './tasks.gateway';
     PrStatusService,
     PrDiffService,
     PrReviewService,
+    PrReviewCommentsRepository,
     AiReviewService,
     HeldTasksRegistry,
   ],

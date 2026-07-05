@@ -115,18 +115,21 @@ Write back to GitHub, from inside midnite.
 
 ---
 
-## Theme D — Comment persistence + AI review inline — **M**
+## Theme D — Comment persistence + AI review inline — **M** — ✅ DONE (PR #297, 2026-07-05)
 
 Draft locally; see the AI's take where it matters.
 
-- [ ] **gateway:** a `pr_review_comments` table (`id`, `taskId`, `path`, `line`, `side`, `body`, `author`,
-      `state` `draft`|`submitted`, `githubCommentId?`, `createdAt`) — draft comments persist before submission so a
-      review-in-progress survives a reload; on submit they batch into the GitHub review and flip to `submitted`.
-- [ ] **web:** the draft comments render as inline widgets on the diff (edit/delete while `draft`); a
-      review-summary bar shows pending count + the submit control.
-- [ ] **AI review inline:** surface Phase 37's `ai_review` on the diff — a review-level banner (verdict + summary),
-      and line-anchored findings **if** the workflow emits them; otherwise the banner. Reuse `ai-review.service`
-      output, no re-run.
+- [x] **gateway:** a `pr_review_comments` table (`id`/`taskId`/`path`/`line`/`side`/`body`/`author`/`state`
+      `draft`|`submitted`/`githubCommentId?`/`createdAt`, migration `0069`) + `PrReviewCommentsRepository`. Drafts are
+      **per-author** and persist before submission (survive a reload); the review submit now **sources its comments
+      from the stored drafts** (Decision §D) and flips them to `submitted`. CRUD endpoints (`GET/POST/PATCH/DELETE
+      /tasks/:id/pr/review/comments`, member-gated, author-owned).
+- [x] **web:** drafts render as inline diff widgets (persist immediately per mutation; **edit + delete** while
+      `draft`), re-anchored from `(path,line,side)` to react-diff-view change-keys; the action bar shows the pending
+      count + submit. Typed `listPrDrafts`/`createPrDraft`/`updatePrDraft`/`deletePrDraft` client.
+- [x] **AI review inline:** the task's `ai_review` (verdict + summary) rides the `PrDiff` payload and renders as a
+      **review-level banner** atop the diff (verdict-coloured). Line-anchored findings deferred until the workflow
+      emits structured findings (Stage-2.5 — `ai_review` stores no per-line data today).
 
 ---
 

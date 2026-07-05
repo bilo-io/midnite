@@ -1,5 +1,8 @@
+import { randomUUID } from 'node:crypto';
 import {
   BadGatewayException,
+  BadRequestException,
+  ForbiddenException,
   Inject,
   Injectable,
   Logger,
@@ -8,13 +11,17 @@ import {
 } from '@nestjs/common';
 import {
   parseGithubPr,
+  type CreatePrReviewDraft,
   type PrMergeMethod,
+  type PrReviewComment,
+  type PrReviewDraft,
   type PrReviewSubmission,
   type Task,
 } from '@midnite/shared';
 import { AuditService } from '../audit/audit.service';
 import { WorkflowCredentialsService } from '../workflows/credentials/workflow-credentials.service';
 import { mergeGithubPr, submitGithubReview, type GhRunner } from './lib/github-review';
+import { PrReviewCommentsRepository, toDraft } from './pr-review-comments.repository';
 import { PrStatusService } from './pr-status.service';
 import { TasksRepository } from './tasks.repository';
 
@@ -33,27 +40,92 @@ export class PrReviewService {
   constructor(
     @Inject(TasksRepository) private readonly repo: TasksRepository,
     @Inject(PrStatusService) private readonly prStatus: PrStatusService,
+    @Inject(PrReviewCommentsRepository) private readonly drafts: PrReviewCommentsRepository,
     @Optional() @Inject(WorkflowCredentialsService) private readonly credentials?: WorkflowCredentialsService,
     @Optional() @Inject(AuditService) private readonly audit?: AuditService,
   ) {}
 
-  async submitReview(taskId: string, submission: PrReviewSubmission, actor: string | null): Promise<Task> {
+  // ---- inline comment drafts (Phase 52 D) — per-author, survive a reload ----
+
+  listDrafts(taskId: string, author: string): PrReviewDraft[] {
+    return this.drafts.listDrafts(taskId, author).map(toDraft);
+  }
+
+  createDraft(taskId: string, req: CreatePrReviewDraft, author: string): PrReviewDraft {
+    this.requirePrUrl(taskId); // 404 if the task has no PR
+    return toDraft(
+      this.drafts.insert({
+        id: randomUUID(),
+        taskId,
+        path: req.path,
+        line: req.line,
+        side: req.side,
+        body: req.body,
+        author,
+        state: 'draft',
+        createdAt: new Date().toISOString(),
+      }),
+    );
+  }
+
+  updateDraft(id: string, body: string, author: string): PrReviewDraft {
+    const row = this.ownDraft(id, author);
+    if (row.state !== 'draft') throw new BadRequestException('a submitted comment cannot be edited');
+    const updated = this.drafts.updateBody(id, body);
+    if (!updated) throw new NotFoundException(`review comment ${id} not found`);
+    return toDraft(updated);
+  }
+
+  deleteDraft(id: string, author: string): void {
+    const row = this.ownDraft(id, author);
+    if (row.state !== 'draft') throw new BadRequestException('a submitted comment cannot be deleted');
+    this.drafts.remove(id);
+  }
+
+  /** Fetch a comment, asserting the caller authored it (404 hides others'). */
+  private ownDraft(id: string, author: string) {
+    const row = this.drafts.get(id);
+    if (!row) throw new NotFoundException(`review comment ${id} not found`);
+    if (row.author !== author) throw new ForbiddenException('not your review comment');
+    return row;
+  }
+
+  async submitReview(
+    taskId: string,
+    submission: PrReviewSubmission,
+    author: string,
+  ): Promise<Task> {
     const prUrl = this.requirePrUrl(taskId);
+    // Inline comments are sourced from the author's persisted drafts (Decision §D).
+    const draftRows = this.drafts.listDrafts(taskId, author);
+    const comments: PrReviewComment[] = draftRows.map((d) => ({
+      path: d.path,
+      line: d.line,
+      side: d.side === 'LEFT' ? 'LEFT' : 'RIGHT',
+      body: d.body,
+    }));
+    // The real "empty review" guard (the client schema can't see the draft set).
+    if (submission.event !== 'approve' && (submission.body?.trim().length ?? 0) === 0 && comments.length === 0) {
+      throw new BadRequestException('a comment or request-changes review needs a body or at least one inline comment');
+    }
     try {
-      const result = await submitGithubReview(prUrl, submission, {
-        runGh: this.runGh,
-        getToken: () => this.githubToken(),
-      });
+      const result = await submitGithubReview(
+        prUrl,
+        { event: submission.event, body: submission.body, comments },
+        { runGh: this.runGh, getToken: () => this.githubToken() },
+      );
       this.logger.log(`review (${submission.event}) submitted on ${prUrl}${result.htmlUrl ? ` → ${result.htmlUrl}` : ''}`);
     } catch (err) {
       throw this.toGatewayError('submit review', err);
     }
+    // Flip the batched drafts to `submitted` (kept for history).
+    this.drafts.markSubmitted(draftRows.map((d) => d.id));
     this.audit?.record({
       entityType: 'task',
       entityId: taskId,
-      userId: actor,
+      userId: author,
       action: 'task.pr_reviewed',
-      payload: { event: submission.event, comments: submission.comments.length },
+      payload: { event: submission.event, comments: comments.length },
     });
     return this.prStatus.refresh(taskId);
   }
