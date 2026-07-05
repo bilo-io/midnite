@@ -98,7 +98,7 @@ Retry the things worth retrying, and give them room to breathe.
 
 ---
 
-## Theme C — Stuck-state watchdogs — **L** — ✅ DONE (PR #292, 2026-07-05)
+## Theme C — Stuck-state watchdogs — **L** — ✅ DONE (PR #293, 2026-07-05)
 
 Notice the tasks that quietly stopped moving. The biggest gap. *(Delivered across the phase set — see the
 cross-refs below; this close-out filled the last gap, the proactive aged-todo flag.)*

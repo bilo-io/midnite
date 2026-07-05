@@ -119,7 +119,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 *(Additive layer over the existing lifecycle — no state-machine refactor; escalation reuses `waiting` + a typed reason. Complements Phase 50.)*
 - ✅ **A** — Failure taxonomy + `task_failures` records (`classifyFailure`)
 - ✅ **B** — Retry backoff (exponential + jitter) + class-aware retry
-- ✅ **C** — Stuck-state watchdogs (wip-inactivity, aged-todo, waiting-too-long) (PR #292)
+- ✅ **C** — Stuck-state watchdogs (wip-inactivity, aged-todo, waiting-too-long) (PR #293)
 - ✅ **D** — Escalate-to-human (needs-attention via `waiting` + `waitReason`) + nudges
 - ✅ **E** — Board "needs attention" + failures/health view + CLI doctor
 

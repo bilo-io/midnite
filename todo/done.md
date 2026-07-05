@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-05 — feat: proactive aged-todo flag — stuck-state watchdogs close-out — Phase 53 Theme C (PR #292) · **Phase 53 COMPLETE** 🎉
+## 2026-07-05 — feat: proactive aged-todo flag — stuck-state watchdogs close-out — Phase 53 Theme C (PR #293) · **Phase 53 COMPLETE** 🎉
 
 Closes Phase 53's last theme. The four stuck-state detections were already delivered across the phase set — this filled the one honest gap (aged-todo was pull-only).
 
