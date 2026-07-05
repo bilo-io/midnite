@@ -1,4 +1,4 @@
-import { Inject, Injectable, Optional } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Optional } from '@nestjs/common';
 import { dirname } from 'node:path';
 import type {
   MidniteConfig,
@@ -36,7 +36,12 @@ export class HealthService {
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
     @Inject(DbFactory) private readonly dbFactory: DbFactory,
     @Optional() @Inject(AgentPoolService) private readonly pool?: AgentPoolService,
-    @Optional() @Inject(AgentPoolScheduler) private readonly scheduler?: AgentPoolScheduler,
+    // forwardRef: the scheduler injects HealthService (readiness gate, Phase 54 D)
+    // and HealthService injects the scheduler (isRunning/paused/backing-off) — a
+    // cycle. Without the thunk the `@Inject(AgentPoolScheduler)` is evaluated during
+    // module load and TDZ-crashes ("Cannot access 'AgentPoolScheduler' before
+    // initialization") depending on import order. The thunk defers that access.
+    @Optional() @Inject(forwardRef(() => AgentPoolScheduler)) private readonly scheduler?: AgentPoolScheduler,
   ) {}
 
   /** Checks run once at boot (preflight): config, DB, secrets, CLIs, spawner, repos. */

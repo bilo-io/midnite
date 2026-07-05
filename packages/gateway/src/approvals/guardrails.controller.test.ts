@@ -36,6 +36,11 @@ describe('GuardrailsController.get — caps block (Phase 50 F)', () => {
       softDailyBudgetUsd: null,
       softMonthlyBudgetUsd: 500,
       maxSpawnsPerHour: 10,
+      // Phase 50 E — blast-radius floor surfaced read-only (defaults on).
+      blastRadiusEnabled: true,
+      protectedBranches: ['main', 'master'],
+      protectedPathGlobs: ['**/.env', '**/.env.*', '**/*.pem', '**/id_rsa*', '**/*.key', '**/credentials*'],
+      scrubSpawnEnv: false,
     });
   });
 
