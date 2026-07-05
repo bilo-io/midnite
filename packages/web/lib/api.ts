@@ -281,6 +281,8 @@ import {
   type UpdateDeckRequest,
   BackupSummarySchema,
   type BackupSummary,
+  BackupStatusSchema,
+  type BackupStatus,
 } from '@midnite/shared';
 import { z } from 'zod';
 
@@ -1719,6 +1721,11 @@ export async function downloadBackup(
     if (parsed.success) summary = parsed.data;
   }
   return { blob, filename, summary };
+}
+
+/** Phase 49 F — scheduled auto-backup status (admin-gated) for the Data page. */
+export async function getBackupStatus(signal?: AbortSignal): Promise<BackupStatus> {
+  return fetchJson('/portability/backup/status', { signal }, BackupStatusSchema);
 }
 
 /** Fetch a task thread as markdown (the gateway's `taskToMarkdown`). Backs the
