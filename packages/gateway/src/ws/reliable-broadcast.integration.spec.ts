@@ -51,7 +51,10 @@ function collect(count: number): Promise<Array<SequencedEnvelope<TaskBoardEvent>
     const timer = setTimeout(() => reject(new Error(`only got ${frames.length}/${count} frames`)), 4000);
     client.on('open', () => client.send(JSON.stringify({ type: 'subscribe' })));
     client.on('message', (raw) => {
-      frames.push(JSON.parse(String(raw)) as SequencedEnvelope<TaskBoardEvent>);
+      const frame = JSON.parse(String(raw)) as SequencedEnvelope<TaskBoardEvent> & { type?: string };
+      // Phase 56 B: a fresh subscribe first gets a `watermark` control frame — skip it.
+      if (frame.type === 'watermark' || frame.type === 'resync-required') return;
+      frames.push(frame);
       if (frames.length === count) {
         clearTimeout(timer);
         client.close();
@@ -69,7 +72,9 @@ it('delivers sequenced envelopes in order over a real socket', async () => {
   const frames: Array<SequencedEnvelope<TaskBoardEvent>> = [];
   const got = new Promise<void>((resolve) => {
     client.on('message', (raw) => {
-      frames.push(JSON.parse(String(raw)) as SequencedEnvelope<TaskBoardEvent>);
+      const frame = JSON.parse(String(raw)) as SequencedEnvelope<TaskBoardEvent> & { type?: string };
+      if (frame.type === 'watermark' || frame.type === 'resync-required') return; // skip control frame
+      frames.push(frame);
       if (frames.length === 2) resolve();
     });
   });

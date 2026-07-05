@@ -101,8 +101,16 @@ export class TasksGateway
     } catch {
       return;
     }
-    if (!TaskSubscribeMessageSchema.safeParse(parsed).success) return;
+    const result = TaskSubscribeMessageSchema.safeParse(parsed);
+    if (!result.success) return;
+    // Start live delivery before replay so an event fired mid-replay is still
+    // sent (the client dedups by (ch, seq), so overlap is idempotent).
     this.subscribers.add(client);
+    // Phase 56 B: this socket may carry two seq lines — the all-scoped line and,
+    // for an authed client, its own team line. Only ever replay those.
+    const teamId = this.registry.getContext(client)?.teamId ?? null;
+    const allowedKeys = ['tasks:all', ...(teamId ? [`tasks:team:${teamId}`] : [])];
+    this.reliable.handleSubscription(client, allowedKeys, result.data);
   }
 
   private broadcast(event: TaskBoardEvent): void {

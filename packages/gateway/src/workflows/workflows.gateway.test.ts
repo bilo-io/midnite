@@ -19,8 +19,11 @@ function fakeClient() {
       if (event === 'message') onMessage = cb;
     },
     send(payload: string) {
+      const frame = JSON.parse(payload) as { type?: string };
+      // Phase 56 B: a fresh subscribe first gets a `watermark` control frame — skip it.
+      if (frame.type === 'watermark' || frame.type === 'resync-required') return;
       // Phase 56 A: unwrap the sequenced envelope.
-      sent.push((JSON.parse(payload) as SequencedEnvelope<WorkflowEvent>).event);
+      sent.push((frame as unknown as SequencedEnvelope<WorkflowEvent>).event);
     },
   };
   return {
