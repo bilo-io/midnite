@@ -4,6 +4,13 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-05 — feat: proactive aged-todo flag — stuck-state watchdogs close-out — Phase 53 Theme C (PR #293) · **Phase 53 COMPLETE** 🎉
+
+Closes Phase 53's last theme. The four stuck-state detections were already delivered across the phase set — this filled the one honest gap (aged-todo was pull-only).
+
+- [x] **Coverage (verified):** (1) wip-inactivity + (2) lost-timer/dead-session reconcile = Phase 54 C `PoolWatchdogService.sweep()` (`agent.watchdog.*`); (3) waiting-too-long escalating nudges = 53 D `WaitingNudgeService`; (4) aged-todo surfaced in 53 E doctor/health/board.
+- [x] **New (the gap):** aged-todo was **pull-only** (visible only if you open the doctor). Added a **proactive push** — `agent.waitingNudge.agedTodoHours` (0 = off, default → behaviour-preserving); `WaitingNudgeService.flagAgedTodos` scans `todo` tasks aged past the threshold (from `createdAt`) and fires a one-shot, deduped, capped `task.needs-attention` via new `NotificationsService.notifyStuckTodo` (same cadence/cap/repeat as waiting nudges, fail-open). The loop now runs if EITHER signal is enabled.
+- [x] Tests: nudge spec extended (aged-todo fires past threshold / repeat+cap / status-scoped / default-off), status-aware `listTasks` fake. gateway (1431, 1 pre-existing flaky tmux) + shared green; `:typecheck` clean; my files lint-clean (11 pre-existing gateway:lint errors unrelated). No new watchdog scaffolding — reused the single-tick discipline (54 C sweep + 53 D nudge loop).
 ## 2026-07-05 — feat: in-app PR review actions (comment/approve/merge) — Phase 52 Theme C (PR #292)
 
 Closes the review loop: review + merge a task's PR from inside midnite, no context switch to GitHub.
