@@ -290,7 +290,7 @@ describe('OAuthService.refreshGoogleToken', () => {
   });
 
   it('refreshes an expired google token and updates the credential', async () => {
-    const { oauthService, credService } = build();
+    const { credService } = build();
 
     // Create the initial credential directly.
     const cred = credService.create({
@@ -327,7 +327,7 @@ describe('OAuthService.refreshGoogleToken', () => {
   });
 
   it('returns stale token when refresh fails (fail-open on stale vs fail-closed on no token)', async () => {
-    const { oauthService, credService } = build();
+    const { credService } = build();
     const cred = credService.create({
       name: 'Google Sheets',
       data: {
