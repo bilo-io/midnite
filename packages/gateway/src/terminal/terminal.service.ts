@@ -140,6 +140,7 @@ export function resolveHookScriptPath(filename: string): string {
 
 interface OutputFrame {
   seq: number;
+  ts: number; // epoch ms the frame was emitted (SequencedEnvelope timestamp)
   data: string; // base64
   bytes: number; // decoded byte length, for ring accounting
 }
@@ -296,13 +297,9 @@ export class TerminalService implements OnModuleDestroy {
 
     handle.disposables.push(
       proc.onData((chunk) => {
-        const frame: OutputFrame = {
-          seq: handle.seq++,
-          data: Buffer.from(chunk, 'utf8').toString('base64'),
-          bytes: Buffer.byteLength(chunk, 'utf8'),
-        };
+        const frame = this.makeFrame(handle, chunk);
         this.pushRing(handle, frame);
-        this.broadcast(handle, { type: 'output', data: frame.data, seq: frame.seq });
+        this.broadcast(handle, this.outputMessage(frame));
         hooks.onData(chunk);
       }),
     );
@@ -472,13 +469,9 @@ export class TerminalService implements OnModuleDestroy {
 
     handle.disposables.push(
       proc.onData((chunk) => {
-        const frame: OutputFrame = {
-          seq: handle.seq++,
-          data: Buffer.from(chunk, 'utf8').toString('base64'),
-          bytes: Buffer.byteLength(chunk, 'utf8'),
-        };
+        const frame = this.makeFrame(handle, chunk);
         this.pushRing(handle, frame);
-        this.broadcast(handle, { type: 'output', data: frame.data, seq: frame.seq });
+        this.broadcast(handle, this.outputMessage(frame));
       }),
     );
     handle.disposables.push(
@@ -542,8 +535,20 @@ export class TerminalService implements OnModuleDestroy {
 
   // ---- lifecycle ----
 
-  /** Attach a subscriber to the session's PTY, spawning one on demand. */
-  attach(sessionId: string, subscriber: TerminalSubscriber, geom: TerminalGeometry): void {
+  /**
+   * Attach a subscriber to the session's PTY, spawning one on demand. On a
+   * reconnect the caller passes `lastSeq` (the highest output `seq` the client
+   * already rendered, Phase 56 F): if the scrollback ring rolled past it — a
+   * disconnect longer than the buffer holds — we answer `resync-required` so the
+   * client clears + re-renders from the fresh ring, rather than delivering a
+   * drift-prone partial replay. `lastSeq` omitted = a fresh attach.
+   */
+  attach(
+    sessionId: string,
+    subscriber: TerminalSubscriber,
+    geom: TerminalGeometry,
+    lastSeq?: number,
+  ): void {
     const existing = this.handles.get(sessionId);
     if (existing) {
       if (existing.disposeTimer) {
@@ -557,8 +562,19 @@ export class TerminalService implements OnModuleDestroy {
         pid: existing.proc.pid,
         command: existing.command,
       });
+      // Gap detection: on a resume, if the oldest retained frame is newer than
+      // the frame *after* the client's last (ring[0].seq > lastSeq + 1), frames
+      // it never saw were evicted — tell it to resync instead of silently
+      // replaying a partial stream. The full-ring replay that follows re-renders
+      // it fresh (the client drops its lastSeq on resync-required).
+      const oldest = existing.ring[0];
+      if (lastSeq !== undefined && oldest && oldest.seq > lastSeq + 1) {
+        subscriber.send({ type: 'resync-required', reason: 'ring-overflow', fromSeq: lastSeq });
+      }
+      // Replay the full ring (behavior-preserving); the client dedups by its
+      // lastSeq, or renders all of it fresh after a resync-required.
       for (const frame of existing.ring) {
-        subscriber.send({ type: 'output', data: frame.data, seq: frame.seq });
+        subscriber.send(this.outputMessage(frame));
       }
       // Re-surface any approval prompt still pending, so a reconnecting viewer
       // doesn't lose the overlay.
@@ -717,13 +733,9 @@ export class TerminalService implements OnModuleDestroy {
 
     handle.disposables.push(
       proc.onData((chunk) => {
-        const frame: OutputFrame = {
-          seq: handle.seq++,
-          data: Buffer.from(chunk, 'utf8').toString('base64'),
-          bytes: Buffer.byteLength(chunk, 'utf8'),
-        };
+        const frame = this.makeFrame(handle, chunk);
         this.pushRing(handle, frame);
-        this.broadcast(handle, { type: 'output', data: frame.data, seq: frame.seq });
+        this.broadcast(handle, this.outputMessage(frame));
       }),
     );
     handle.disposables.push(
@@ -944,6 +956,23 @@ export class TerminalService implements OnModuleDestroy {
     // expandTilde is a no-op on the already-absolute gateway cwd, so applying it
     // uniformly to whichever candidate won preserves the prior per-branch calls.
     return expandTilde(chosen, homedir());
+  }
+
+  /** Build a sequenced output frame from a raw PTY chunk (allocates the next
+   *  monotonic `seq` + stamps `ts` — the SequencedEnvelope identity, Phase 56 F). */
+  private makeFrame(handle: PtyHandle, chunk: string): OutputFrame {
+    return {
+      seq: handle.seq++,
+      ts: Date.now(),
+      data: Buffer.from(chunk, 'utf8').toString('base64'),
+      bytes: Buffer.byteLength(chunk, 'utf8'),
+    };
+  }
+
+  /** The wire `output` message for a frame — carries `seq` + `ts` so the terminal
+   *  speaks the board channels' sequenced-stream vocabulary. */
+  private outputMessage(frame: OutputFrame): ServerTerminalMessage {
+    return { type: 'output', seq: frame.seq, ts: frame.ts, data: frame.data };
   }
 
   private pushRing(handle: PtyHandle, frame: OutputFrame): void {

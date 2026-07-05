@@ -100,6 +100,11 @@ export function LiveTerminal({
       setPhase(p);
       if (cmd) setCommand(cmd);
     },
+    onResync: () => {
+      // Ring rolled past us during a long disconnect — wipe the screen + scrollback
+      // so the gateway's fresh ring replay renders cleanly (no duplicated tail).
+      termRef.current?.reset();
+    },
     onApprovalRequest: approvals
       ? (req) =>
           setPending((prev) =>
