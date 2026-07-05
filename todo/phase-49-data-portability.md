@@ -141,7 +141,7 @@ The greenfield heart: restore an archive safely, all-or-nothing.
 
 ---
 
-## Theme D — CLI export/import commands — **S-M** — ◐ EXPORT DONE (PR #294, 2026-07-05; import → Theme C)
+## Theme D — CLI export/import commands — **S-M** — ✅ DONE (export PR #294, import PR #304, 2026-07-05)
 
 Backup/restore from a shell — the natural home for scripting + cron.
 
@@ -151,8 +151,9 @@ Backup/restore from a shell — the natural home for scripting + cron.
 - [x] `midnite export` — `--output <file>` (default = the server's content-disposition name), `--domains`;
       **streams** the archive to disk and prints a per-domain summary from the `X-Midnite-Backup-Manifest`
       response header (respects global `--json`). ◐ `--include-secrets`/`--passphrase` land with the secrets slice.
-- [ ] ⏳ `midnite import <file>` (`--mode`/`--dry-run`/`--passphrase`/`--yes`) — **blocked on Theme C** (no
-      import endpoint yet); lands with C.
+- [x] `midnite import <file>` (`--mode` merge/replace · `--dry-run` · `--passphrase` · `--yes`) — always
+      previews first (counts + id conflicts + schema verdict), refuses a newer-schema archive, confirms a
+      destructive replace unless `--yes`; streams the upload via `openAsBlob`. (PR #304, 2026-07-05)
 
 ---
 

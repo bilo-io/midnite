@@ -1,4 +1,8 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createClient, parseStatus, resolveBaseUrl } from './client.js';
 
 const TASK = {
@@ -249,5 +253,90 @@ describe('exportArchive (Phase 49 D)', () => {
     const { filename, summary: got } = await createClient('http://gw').exportArchive();
     expect(filename).toMatch(/^midnite-backup-.*\.zip$/);
     expect(got).toBeNull(); // no manifest header → null summary
+  });
+});
+
+describe('import (Phase 49 D)', () => {
+  const manifest = {
+    schemaVersion: 68,
+    appVersion: '0.1.0',
+    createdAt: '2026-07-05T00:00:00.000Z',
+    domains: ['tasks'],
+    secretsMode: 'excluded' as const,
+  };
+  const preview = {
+    manifest,
+    domainCounts: { tasks: 2 },
+    conflicts: { tasks: ['t1'] },
+    compat: 'ok' as const,
+    importable: true,
+  };
+  let seq = 0;
+  let archivePath = '';
+
+  beforeEach(() => {
+    // openAsBlob needs a real file on disk — write a tiny zip-magic stub.
+    archivePath = join(tmpdir(), `midnite-import-test-${process.pid}-${seq++}.zip`);
+    writeFileSync(archivePath, Buffer.from([0x50, 0x4b, 0x03, 0x04]));
+  });
+  afterEach(() => rmSync(archivePath, { force: true }));
+
+  it('previewImport POSTs the archive as multipart and validates the ImportPreview', async () => {
+    let url = '';
+    let method = '';
+    let body: unknown;
+    stubFetch((u, init) => {
+      url = u;
+      method = init?.method ?? '';
+      body = init?.body;
+      return new Response(JSON.stringify(preview), { status: 200 });
+    });
+    const got = await createClient('http://gw').previewImport(archivePath);
+    expect(url).toBe('http://gw/portability/import/preview');
+    expect(method).toBe('POST');
+    expect(body).toBeInstanceOf(FormData);
+    expect((body as FormData).has('archive')).toBe(true);
+    expect(got.domainCounts.tasks).toBe(2);
+    expect(got.compat).toBe('ok');
+  });
+
+  it('importArchive threads mode + passphrase into the form and returns the ImportResult', async () => {
+    let form: FormData | undefined;
+    stubFetch((_u, init) => {
+      form = init?.body as FormData;
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          mode: 'replace',
+          inserted: { tasks: 2 },
+          skipped: {},
+          reindexed: true,
+        }),
+        { status: 200 },
+      );
+    });
+    const res = await createClient('http://gw').importArchive(archivePath, {
+      mode: 'replace',
+      passphrase: 'hunter2',
+    });
+    expect(form?.get('mode')).toBe('replace');
+    expect(form?.get('passphrase')).toBe('hunter2');
+    expect(form?.has('archive')).toBe(true);
+    expect(res.mode).toBe('replace');
+    expect(res.inserted.tasks).toBe(2);
+  });
+
+  it('omits the passphrase field when none is given', async () => {
+    let form: FormData | undefined;
+    stubFetch((_u, init) => {
+      form = init?.body as FormData;
+      return new Response(
+        JSON.stringify({ ok: true, mode: 'merge', inserted: {}, skipped: {}, reindexed: true }),
+        { status: 200 },
+      );
+    });
+    await createClient('http://gw').importArchive(archivePath, { mode: 'merge' });
+    expect(form?.has('passphrase')).toBe(false);
+    expect(form?.get('mode')).toBe('merge');
   });
 });
