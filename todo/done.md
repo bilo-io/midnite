@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-05 — feat: list virtualization — board + long feeds — Phase 57 Theme F ◐ (PR #307)
+
+Keep the DOM bounded no matter the row count, via `@tanstack/react-virtual`.
+
+- [x] Reusable headless `<VirtualList>` (`components/ui/virtual-list.tsx`): windowed rendering with per-row `measureElement` (variable heights) + a threshold (50) below which it renders plain — no overhead/inner-scroll for short lists.
+- [x] **Board columns** virtualized through it. The board is free-drag (`useDraggable` + per-**column** `useDroppable`, no SortableContext/intra-column reorder), so the drop target is the always-mounted column and only card *rendering* is windowed — dnd stays intact.
+- [x] **Workflow run history** + **approval log** feeds virtualized.
+- [◐] sessions / workflows / projects grouped-accordion lists **⏳ deferred** — they render in page scroll, so windowing would add a fixed-height inner scrollbar per status section (UX regression) for lists already status-chunked + usually under threshold. Documented in the phase doc.
+- [x] Verify: a Playwright node-count e2e (`board-virtualization.e2e.ts`) seeds 60 cards and asserts mounted nodes stay far below the total. VirtualList RTL (threshold/plain branch). web 795 green; my files lint-clean (`cn`-unused error is pre-existing in data-view.tsx from the Phase 49 E merge).
+
+---
+
 ## 2026-07-05 — feat: perf seed + benchmark harness (evidence first) — Phase 57 Theme A (PR #308)
 
 The measurement backbone for the perf phase — every later theme reports before/after here, and CI budgets stop regressions.
