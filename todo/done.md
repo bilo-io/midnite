@@ -13,6 +13,15 @@ Kills the board's refetch storm: every task WS event used to trigger an immediat
 - [x] **Granular per-channel invalidation deferred to Phase 56** — `useApiData`'s opaque `useId()` query keys make per-key invalidation infeasible without a refactor that would fork Phase 56's in-flight per-event-type cache strategy; this slice only bounds how often the existing global invalidation fires.
 - [x] **Verified via Playwright** (`web/e2e/refetch-coalescing.e2e.ts`) against the real gateway + WS: 8 concurrent task events → ≤3 `GET /tasks` refetches. Local gate green: web typecheck + lint (0 errors) + 788 unit/story tests. CI billing-blocked account-wide → gated on the local suite + the e2e run.
 
+## 2026-07-05 — feat: web restore + fix export DI bug — **Phase 49 COMPLETE** 🎉 — Theme E (PR #303)
+
+The point-and-click restore flow (Theme E's remaining half) + a runtime fix for a backup export that was silently broken on `main`. With CLI import (Theme D, PR #304) landing in parallel, this closes out data portability. *(CLI import was shipped by #304, not here.)*
+
+- [x] **web:** Restore panel on `/settings/data` — choose archive → auto dry-run preview (per-domain counts + id conflicts + version verdict) → **merge** (default, non-destructive) or **replace** (typed `replace` confirm) → **staged progress** → result summary. A newer-than-us archive is hard-blocked. `previewImport`/`importArchive` clients in `web/lib/api.ts`.
+- [x] **fix(gateway):** `PortabilityController` used reflected constructor types, but the module has an import cycle (the F backup scheduler pulls in `PortabilityService`) — so Nest injected `undefined` for `service` and **`GET /portability/export` 500'd at runtime** (unit tests instantiate by hand, so they never caught it). Switched to explicit `@Inject` tokens. Every real backup download was broken on `main`; the new e2e caught it.
+- [x] Tests: web RTL (preview→merge summary, replace typed-confirm gate, newer-archive hard-block, preview-failure toast); **Playwright e2e** driving export→upload→preview→restore against a real gateway. web 151 files green; gateway 1477/1477.
+- Deferred (unchanged): `--include-secrets`/passphrase, users/teams round-trip, older-archive migrate-then-restore — await the secrets + users slices.
+
 ## 2026-07-05 — feat: sequenced event contracts + server event ring — Phase 56 Theme A (PR #305)
 
 The foundation for reliable board WebSockets: give every event an identity + remember the recent ones, generalizing the terminal WS's proven seq+ring to the tasks/ideas/workflows channels. (Resume/gap-detection is Theme B.)
@@ -32,6 +41,8 @@ Completes Theme D (the restore half; export shipped in PR #294). `midnite import
 - [x] `GatewayClient.previewImport` / `importArchive` — multipart upload streamed via `openAsBlob` (file-backed Blob, no full in-memory copy) against `POST /portability/import{,/preview}`.
 - [x] `midnite import <file>` command — `--mode merge|replace`, `--dry-run`, `--passphrase`, `--yes`; always previews first (per-domain counts + id conflicts + schema-version verdict), refuses a newer-schema archive outright, confirms a destructive `replace` unless `--yes`; respects global `--json`.
 - [x] Client unit tests (preview posts multipart + validates `ImportPreview`; import threads `mode`/`passphrase`, validates `ImportResult`).
+
+---
 
 ## 2026-07-05 — feat: project detail page — cockpit, rails, nav — Phase 55 Themes A+C+D · **Phase 55 COMPLETE** 🎉 (PR #301)
 

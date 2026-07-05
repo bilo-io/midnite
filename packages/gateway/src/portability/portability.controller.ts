@@ -1,4 +1,4 @@
-import { BadRequestException, Controller, Get, Post, Query, Req, Res } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Inject, Post, Query, Req, Res } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import {
   ExportOptionsSchema,
@@ -19,10 +19,14 @@ import { PortabilityService } from './portability.service';
  */
 @Controller('portability')
 export class PortabilityController {
+  // Explicit @Inject tokens (not reflected constructor types): the portability
+  // module has an import cycle (the backup scheduler pulls PortabilityService
+  // back in), which left `design:paramtypes` undefined for `service` and made
+  // Nest inject `undefined` — the export route then crashed on `this.service`.
   constructor(
-    private readonly service: PortabilityService,
-    private readonly importService: PortabilityImportService,
-    private readonly backups: BackupSchedulerService,
+    @Inject(PortabilityService) private readonly service: PortabilityService,
+    @Inject(PortabilityImportService) private readonly importService: PortabilityImportService,
+    @Inject(BackupSchedulerService) private readonly backups: BackupSchedulerService,
   ) {}
 
   /** Phase 49 F — scheduled auto-backup status for the Settings → Data page
