@@ -114,30 +114,30 @@ Get the whole store out, as a portable archive.
 
 ---
 
-## Theme C — Atomic import service — **L**
+## Theme C — Atomic import service — **L** — ✅ DONE (PR #298, 2026-07-05)
 
 The greenfield heart: restore an archive safely, all-or-nothing.
 
-- [ ] **Version gate:** parse the manifest, compare `schemaVersion` to the running instance's:
-      **equal** → restore directly; **archive older** → offer *migrate-then-restore* (apply pending
-      migrations first); **archive newer** → **refuse** (can't downgrade schema). Malformed/oversized
-      archives rejected up front.
-- [ ] **Dry-run preview:** `POST /portability/import/preview` (`ImportPreview`) — per-domain counts,
-      id conflicts against existing data, secret-mode + passphrase check, version verdict — **without
-      writing**. The web + CLI show this before any commit.
-- [ ] **Atomic restore:** `POST /portability/import` (`RequiresRole('admin')`) — validate app-layer
-      referential integrity, then a **single `db.transaction()`** inserting in dependency order
-      (`users` → `teams` → `team_memberships` → `user_preferences` → `repos` → `projects` → `tasks` →
-      `task_events`/links/deps → `workflows` → runs → `councils` → … → `ideas`/`media`/`notes`/
-      `routines`/`approvals`). **`mode: 'replace'`** (wipe-then-restore — the primary backup/restore
-      path); `merge` (upsert, skip existing ids) is a secondary mode.
-- [ ] **Post-restore:** rebuild the FTS5 index via the existing `POST /search/reindex` path (the
-      `search_index` is **not** carried in the archive). Secrets: if the archive carries
-      passphrase-wrapped secrets and a passphrase is supplied, decrypt + **re-encrypt under the target
-      instance's key**; otherwise integrations import disabled until reconfigured.
-- [ ] **Users & sessions:** restore `users` **including `passwordHash`** (bcrypt is instance-independent,
-      so logins survive a move); **skip** `refresh_tokens`/`hook_secrets`/`service_tokens` (session/
-      per-instance — re-login / re-issue).
+- [x] **Version gate:** parse the manifest (via B's `unpackArchive`, which validates it + the per-domain
+      envelopes), compare `schemaVersion` to the running instance's (`compareSchemaVersion`/`isImportable`):
+      **equal/older** → import; **newer** → **refuse** (`BadRequest`). Malformed archives rejected up front.
+      (*migrate-then-restore* for older archives deferred — a migration-runner feature; older imports as-is.)
+- [x] **Dry-run preview:** `POST /portability/import/preview` (`ImportPreview`) — per-domain counts, id
+      conflicts against existing data, version verdict — **without writing**. (Secret-mode/passphrase check
+      lands with the secrets slice.)
+- [x] **Atomic restore:** `POST /portability/import` (`RequiresRole('admin')`, multipart) — a **single
+      `db.transaction()`** inserting in dependency order via a generic de-hydration mapper
+      (`import-mappers.ts`): repos → projects(+sources) → memories(+sources) → tasks(+events/links/deps) →
+      notes → routines(+groups→items) → media → councils(+members) → ideas → approvalRules → workflows.
+      **`mode: 'replace'`** (wipe imported tables then insert — primary backup/restore); `merge` (skip
+      existing ids) secondary. (`users`/`teams` — see below.)
+- [x] **Post-restore:** rebuild the FTS5 index **in-process** (`SearchService.reindex()`, fail-open) — the
+      `search_index` is **not** carried in the archive. (Passphrase-wrapped secrets round-trip lands with the
+      secrets slice; this slice is secret-free like B.)
+- [x] **Users & sessions:** ⏳ **deferred with B** — Theme B doesn't export `users`/`teams` yet (its comment
+      defers their faithful export incl. `passwordHash` to land *with* import ordering), so there's nothing to
+      restore for them this slice. The mapper's dependency order already leads with repos→projects; users/teams
+      slot in ahead once B exports them. `refresh_tokens`/`hook_secrets`/`service_tokens` stay never-imported.
 
 ---
 
