@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-05 — feat: terminal WS resume + resync-required — Phase 56 Theme F (PR #311)
+
+Fold the one WS channel that already worked (the terminal, with its own seq + ring) onto Phase 56 A's sequenced-stream vocabulary, and close its silent-partial-replay gap.
+
+- [x] **shared:** terminal `output` frames now carry the `SequencedEnvelope` identity (`seq` + `ts`) — flattened alongside the `type` tag, since this socket multiplexes sequenced output with un-sequenced control messages (status/error/approval) in one discriminated union. New client `resume` message (carries `lastSeq`, mirrors the board subscribe/resume split) + server `resync-required` (`reason` + `fromSeq`).
+- [x] **gateway:** `TerminalService.attach(…, lastSeq?)` — on a resume, if the scrollback ring rolled past the client (`oldest retained seq > lastSeq + 1`), send `resync-required` before replaying, instead of a drift-prone partial stream. No-gap resume stays behavior-preserving (full-ring replay + client dedup). Output frames stamped via a shared `makeFrame`/`outputMessage` helper. Gateway routes `resume` → `attach` with `lastSeq`.
+- [x] **web:** `use-terminal-socket` sends `resume` (with `lastSeq`) on reconnect, `attach` fresh; unwraps the enveloped output; on `resync-required` calls a new `onResync` (wired in `live-terminal` to `term.reset()`) + drops `lastSeq` so the fresh ring re-renders cleanly.
+- [x] Tests: gateway service (envelope seq+ts, no-gap resume replays w/o resync, ring-overflow resume → resync-required with reason/fromSeq) + web hook unit (attach-vs-resume, envelope unwrap, resync clears + resets). shared 558, gateway 1489, web 156 files green.
+- Deferred to later Phase 56 themes: the board channels' own resume protocol (B), the shared client hook (D), connection-status UI (E) — F only aligns the already-working terminal.
+
+---
+
 ## 2026-07-05 — feat: list virtualization — board + long feeds — Phase 57 Theme F ◐ (PR #310)
 
 Keep the DOM bounded no matter the row count, via `@tanstack/react-virtual`.
@@ -27,6 +39,7 @@ The measurement backbone for the perf phase — every later theme reports before
 - [x] No optimization this slice — measurement + guard only. shared/ui built; gateway + web bench specs green; typecheck/lint clean (one pre-existing bcrypt-under-load flake in users.service, passes in isolation, unrelated).
 
 ---
+
 ## 2026-07-05 — feat: coalesce board refetches + tune query cache — Phase 57 Theme E (PR #307)
 
 Kills the board's refetch storm: every task WS event used to trigger an immediate global `invalidateQueries()` → a full `GET /tasks` reload, so a burst of N events meant N board reloads.

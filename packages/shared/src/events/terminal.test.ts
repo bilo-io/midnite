@@ -70,9 +70,17 @@ describe('ClientTerminalMessageSchema', () => {
 
 describe('ServerTerminalMessageSchema', () => {
   it('round-trips output / status / error', () => {
+    // Output carries the SequencedEnvelope identity (seq + ts, Phase 56 F).
     expect(
-      ServerTerminalMessageSchema.parse({ type: 'output', data: 'aGk=', seq: 3 }),
-    ).toEqual({ type: 'output', data: 'aGk=', seq: 3 });
+      ServerTerminalMessageSchema.parse({ type: 'output', data: 'aGk=', seq: 3, ts: 1_700_000_000_000 }),
+    ).toEqual({ type: 'output', data: 'aGk=', seq: 3, ts: 1_700_000_000_000 });
+    expect(
+      ServerTerminalMessageSchema.parse({
+        type: 'resync-required',
+        reason: 'ring-overflow',
+        fromSeq: 2,
+      }),
+    ).toEqual({ type: 'resync-required', reason: 'ring-overflow', fromSeq: 2 });
     expect(
       ServerTerminalMessageSchema.parse({ type: 'status', phase: 'ready', pid: 42 }),
     ).toEqual({ type: 'status', phase: 'ready', pid: 42 });

@@ -218,6 +218,59 @@ describe('TerminalService', () => {
     expect(replayed.type).toBe('output');
   });
 
+  it('stamps output frames with a monotonic seq + a ts (sequenced envelope, Phase 56 F)', async () => {
+    service = makeService({ command: 'cat' });
+    const c = makeCollector();
+    service.attach('env1', c.sub, { cols: 80, rows: 24 });
+    await c.waitFor((m) => m.type === 'status' && m.phase === 'ready');
+    service.write('env1', Buffer.from('hi\n', 'utf8').toString('base64'));
+    const out = await c.waitFor((m) => m.type === 'output' && decode(m.data).includes('hi'));
+    expect(out.type).toBe('output');
+    if (out.type === 'output') {
+      expect(out.seq).toBeGreaterThanOrEqual(0);
+      expect(out.ts).toBeGreaterThan(0); // envelope timestamp, epoch ms
+    }
+  });
+
+  it('replays the ring without a resync when a resuming client is still within it', async () => {
+    service = makeService({ command: 'cat' }); // default (large) ring
+    const a = makeCollector();
+    service.attach('nogap1', a.sub, { cols: 80, rows: 24 });
+    await a.waitFor((m) => m.type === 'status' && m.phase === 'ready');
+    service.write('nogap1', Buffer.from('hi\n', 'utf8').toString('base64'));
+    await a.waitFor((m) => m.type === 'output' && decode(m.data).includes('hi'));
+
+    // A client that saw up to seq 0 resumes; the ring still holds seq 0, so there's
+    // no gap — replay the ring (client dedups), never a resync-required.
+    const b = makeCollector();
+    service.attach('nogap1', b.sub, { cols: 80, rows: 24 }, 0);
+    await b.waitFor((m) => m.type === 'status' && m.phase === 'reattached');
+    await b.waitFor((m) => m.type === 'output');
+    expect(b.messages.some((m) => m.type === 'resync-required')).toBe(false);
+  });
+
+  it('tells a resuming client to resync when the ring rolled past its lastSeq', async () => {
+    // A tiny scrollback ring guarantees the early frames are evicted, so a client
+    // resuming from seq 0 finds the oldest retained frame well past seq 1.
+    service = makeService({ command: 'cat', scrollbackBytes: 8 });
+    const a = makeCollector();
+    service.attach('gap1', a.sub, { cols: 80, rows: 24 });
+    await a.waitFor((m) => m.type === 'status' && m.phase === 'ready');
+    for (const line of ['one\n', 'two\n', 'three\n', 'four\n', 'five\n', 'six\n']) {
+      service.write('gap1', Buffer.from(line, 'utf8').toString('base64'));
+      await a.waitFor((m) => m.type === 'output' && decode(m.data).includes(line.trim()));
+    }
+
+    const b = makeCollector();
+    service.attach('gap1', b.sub, { cols: 80, rows: 24 }, 0);
+    const resync = await b.waitFor((m) => m.type === 'resync-required');
+    expect(resync.type).toBe('resync-required');
+    if (resync.type === 'resync-required') {
+      expect(resync.reason).toBe('ring-overflow');
+      expect(resync.fromSeq).toBe(0);
+    }
+  });
+
   it('emits an exited status and drops the handle when the process exits', async () => {
     service = makeService({ command: 'sh', args: ['-c', 'exit 7'] });
     const c = makeCollector();

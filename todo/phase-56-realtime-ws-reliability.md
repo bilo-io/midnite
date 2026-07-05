@@ -141,14 +141,17 @@ Make every live surface resilient, and make the connection legible.
 
 ---
 
-## Theme F — Terminal WS alignment (opportunistic) — **S**
+## Theme F — Terminal WS alignment (opportunistic) — **S** — ✅ DONE (PR #311, 2026-07-05)
 
 Fold the one channel that already works onto the shared vocabulary.
 
-- [ ] Align the terminal's seq/replay with the shared `resume`/`resync-required` vocabulary where cheap (it already
-      has `seq` + a ring) — mainly so the client hook + status UI are uniform.
-- [ ] Cover its one edge case: when the **ring rolled past** the client's `lastSeq` (buffer overflowed during a long
-      disconnect), send **`resync-required`** (re-fetch the transcript) instead of a silent partial replay.
+- [x] Aligned the terminal's seq/replay with the shared vocabulary: output frames now carry the
+      `SequencedEnvelope` identity (`seq` + `ts`, flattened with the `type` tag since this socket multiplexes
+      sequenced output with un-sequenced control messages), and a new `resume` client message carries `lastSeq`
+      (mirrors the board channels' subscribe/resume split).
+- [x] Covered the edge case: on a `resume`, if the ring rolled past the client's `lastSeq` (oldest retained
+      seq > lastSeq + 1), the gateway sends **`resync-required`** (`reason` + `fromSeq`) instead of a silent
+      partial replay; the client clears its screen, drops its `lastSeq`, and re-renders from the fresh ring.
 
 ---
 
