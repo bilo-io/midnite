@@ -67,24 +67,23 @@
 
 ---
 
-## Theme A — Sequenced event contracts + server event ring — **M-L**
+## Theme A — Sequenced event contracts + server event ring — **M-L** — ✅ DONE (PR #305, 2026-07-05)
 
 Give every board event an identity and remember the recent ones.
 
-- [ ] **shared:** add a `seq: number` (monotonic per channel) + `ts: number` (ms, for ordering) to the
+- [x] **shared:** add a `seq: number` (monotonic per channel) + `ts: number` (ms, for ordering) to the
       board-event envelope in [`events/task.ts`](../packages/shared/src/events/task.ts),
       [`idea.ts`](../packages/shared/src/events/idea.ts), [`workflow.ts`](../packages/shared/src/events/workflow.ts)
       — a shared `SequencedEnvelope` wrapper; the discriminated `type` unions are unchanged.
-- [ ] **gateway:** a **bounded event ring per scoped channel** in a new `ReliableBroadcastService`
+- [x] **gateway:** a **bounded event ring per scoped channel** in a new `ReliableBroadcastService`
       (wrapping [`ws-broadcast.service.ts`](../packages/gateway/src/ws/ws-broadcast.service.ts)) — keyed by
       channel + scope (tasks/ideas per **team**, workflows per **run**), holding the last N events with their
       seq. Monotonic seq allocation lives here.
-- [ ] Publishers are **unchanged** — `TaskEventBus.emit` still fires; the gateway stamps seq + appends to the
+- [x] Publishers are **unchanged** — `TaskEventBus.emit` still fires; the gateway stamps seq + appends to the
       ring on the way out. Config: ring size + retention (`ws.ringSize`).
 
 ---
-
-## Theme B — Resume protocol + gap-detection — **L**
+ Resume protocol + gap-detection — **L**
 
 Replay what a client missed; when you can't, tell it to resync. The core guarantee.
 

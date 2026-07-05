@@ -16,7 +16,7 @@ import { MIDNITE_CONFIG } from '../config.token';
 import { isAllowedOrigin } from '../lib/allowed-origin';
 import { JwtService, TokenInvalidError } from '../auth/jwt.service';
 import { ConnectionRegistry } from '../ws/connection-registry';
-import { WsBroadcastService } from '../ws/ws-broadcast.service';
+import { ReliableBroadcastService } from '../ws/reliable-broadcast.service';
 import { WorkflowEventBus } from './workflow-event-bus';
 
 /**
@@ -42,7 +42,7 @@ export class WorkflowsGateway
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
     @Inject(WorkflowEventBus) private readonly bus: WorkflowEventBus,
     @Inject(ConnectionRegistry) private readonly registry: ConnectionRegistry,
-    @Inject(WsBroadcastService) private readonly wsBroadcast: WsBroadcastService,
+    @Inject(ReliableBroadcastService) private readonly reliable: ReliableBroadcastService,
     @Optional() private readonly jwtSvc?: JwtService,
   ) {}
 
@@ -115,8 +115,8 @@ export class WorkflowsGateway
   private broadcast(event: WorkflowEvent): void {
     const sockets = this.byRun.get(event.runId);
     if (!sockets) return;
-    const payload = JSON.stringify(event);
-    this.wsBroadcast.toAll(sockets, payload);
+    // Phase 56 A: ring is per runId; stamp seq + retain before delegating.
+    this.reliable.toAll(`workflows:run:${event.runId}`, sockets, event);
   }
 }
 

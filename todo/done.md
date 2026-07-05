@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-05 — feat: perf seed + benchmark harness (evidence first) — Phase 57 Theme A (PR #303)
+## 2026-07-05 — feat: perf seed + benchmark harness (evidence first) — Phase 57 Theme A (PR #308)
 
 The measurement backbone for the perf phase — every later theme reports before/after here, and CI budgets stop regressions.
 
@@ -13,6 +13,44 @@ The measurement backbone for the perf phase — every later theme reports before
 - [x] `bench/hot-paths.spec.ts` (gateway): prints + budget-asserts query count for the hot paths — **400 tasks → 2401 queries** (the 6N task-hydration N+1) + workflow summaries N+1. Deterministic query-count budgets; wall-time printed only (too noisy to gate). Baseline budgets document the status quo; Theme B tightens them.
 - [x] `components/board-render.bench.spec.tsx` (web): renders the board with a seeded set, asserts mounted-card count (**200/200** — the un-virtualized DOM baseline; Theme F bounds it). Both run in the normal `moon` test suite (no separate CI job); explicit generous timeouts so jsdom render load can't flake them.
 - [x] No optimization this slice — measurement + guard only. shared/ui built; gateway + web bench specs green; typecheck/lint clean (one pre-existing bcrypt-under-load flake in users.service, passes in isolation, unrelated).
+
+---
+
+## 2026-07-05 — feat: web restore + fix export DI bug — **Phase 49 COMPLETE** 🎉 — Theme E (PR #303)
+
+The point-and-click restore flow (Theme E's remaining half) + a runtime fix for a backup export that was silently broken on `main`. With CLI import (Theme D, PR #304) landing in parallel, this closes out data portability. *(CLI import was shipped by #304, not here.)*
+
+- [x] **web:** Restore panel on `/settings/data` — choose archive → auto dry-run preview (per-domain counts + id conflicts + version verdict) → **merge** (default, non-destructive) or **replace** (typed `replace` confirm) → **staged progress** → result summary. A newer-than-us archive is hard-blocked. `previewImport`/`importArchive` clients in `web/lib/api.ts`.
+- [x] **fix(gateway):** `PortabilityController` used reflected constructor types, but the module has an import cycle (the F backup scheduler pulls in `PortabilityService`) — so Nest injected `undefined` for `service` and **`GET /portability/export` 500'd at runtime** (unit tests instantiate by hand, so they never caught it). Switched to explicit `@Inject` tokens. Every real backup download was broken on `main`; the new e2e caught it.
+- [x] Tests: web RTL (preview→merge summary, replace typed-confirm gate, newer-archive hard-block, preview-failure toast); **Playwright e2e** driving export→upload→preview→restore against a real gateway. web 151 files green; gateway 1477/1477.
+- Deferred (unchanged): `--include-secrets`/passphrase, users/teams round-trip, older-archive migrate-then-restore — await the secrets + users slices.
+
+---
+
+
+## 2026-07-05 — feat: sequenced event contracts + server event ring — Phase 56 Theme A (PR #305)
+
+The foundation for reliable board WebSockets: give every event an identity + remember the recent ones, generalizing the terminal WS's proven seq+ring to the tasks/ideas/workflows channels. (Resume/gap-detection is Theme B.)
+
+- [x] **shared:** a `SequencedEnvelope` wrapper `{ seq, ts, event }` around the task/idea/workflow discriminated unions (unions unchanged); a `ws.ringSize` config block (default 512); runtime `WsSettings` contracts (`WS_RING_SIZES` 256/512/1024).
+- [x] **gateway:** `ReliableBroadcastService` wraps `WsBroadcastService` — allocates a monotonic **per-scoped-channel** seq (tasks/ideas per team, workflows per run), keeps a bounded ring of recent events (`since`/`watermark` for Theme B), then delegates the send. The three board gateways route `toTeam`/`toAll` through it; publishers unchanged. In-memory (restart → resync, dovetails with Phase 54).
+- [x] **gateway:** `GET /ws/settings` (open) + `PATCH /ws/settings` (admin) to read/retune ring size live (in-memory; resets to config default on restart).
+- [x] **web:** task/idea/workflow event consumers unwrap `.event` + record `lastSeq` (groundwork; no dedup yet — one socket multiplexes two seq lines, so per-channel dedup is Theme B); a Settings → System → Realtime select tunes the buffer live.
+- [x] Tests: shared envelope round-trip; gateway ring unit (monotonic seq + per-scope isolation + eviction + since/watermark + resize) + a **real-socket integration spec** + settings controller; web Realtime RTL. shared 558, gateway 1486 (1 pre-existing flaky tmux), web 788 green.
+
+---
+
+## 2026-07-05 — feat(cli): `midnite import` — restore a backup archive — Phase 49 Theme D (PR #304)
+
+Completes Theme D (the restore half; export shipped in PR #294). `midnite import <file>` now closes the CLI backup/restore loop against the Theme C import endpoints.
+
+- [x] `GatewayClient.previewImport` / `importArchive` — multipart upload streamed via `openAsBlob` (file-backed Blob, no full in-memory copy) against `POST /portability/import{,/preview}`.
+- [x] `midnite import <file>` command — `--mode merge|replace`, `--dry-run`, `--passphrase`, `--yes`; always previews first (per-domain counts + id conflicts + schema-version verdict), refuses a newer-schema archive outright, confirms a destructive `replace` unless `--yes`; respects global `--json`.
+- [x] Client unit tests (preview posts multipart + validates `ImportPreview`; import threads `mode`/`passphrase`, validates `ImportResult`).
+
+---
+
+## 2026-07-05 — feat: project detail page — cockpit, rails, nav — Phase 55 Themes A+C+D · **Phase 55 COMPLETE** 🎉 (PR #301)
 
 Editing a project moves from a modal to a full, shareable `/projects/view?id=` page that reuses the Theme-B panels, so the modal + page can never drift.
 

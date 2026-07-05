@@ -141,7 +141,7 @@ The greenfield heart: restore an archive safely, all-or-nothing.
 
 ---
 
-## Theme D — CLI export/import commands — **S-M** — ◐ EXPORT DONE (PR #294, 2026-07-05; import → Theme C)
+## Theme D — CLI export/import commands — **S-M** — ✅ DONE (export PR #294, import PR #304, 2026-07-05)
 
 Backup/restore from a shell — the natural home for scripting + cron.
 
@@ -151,12 +151,13 @@ Backup/restore from a shell — the natural home for scripting + cron.
 - [x] `midnite export` — `--output <file>` (default = the server's content-disposition name), `--domains`;
       **streams** the archive to disk and prints a per-domain summary from the `X-Midnite-Backup-Manifest`
       response header (respects global `--json`). ◐ `--include-secrets`/`--passphrase` land with the secrets slice.
-- [ ] ⏳ `midnite import <file>` (`--mode`/`--dry-run`/`--passphrase`/`--yes`) — **blocked on Theme C** (no
-      import endpoint yet); lands with C.
+- [x] `midnite import <file>` (`--mode` merge/replace · `--dry-run` · `--passphrase` · `--yes`) — always
+      previews first (counts + id conflicts + schema verdict), refuses a newer-schema archive, confirms a
+      destructive replace unless `--yes`; streams the upload via `openAsBlob`. (PR #304, 2026-07-05)
 
 ---
 
-## Theme E — Web Settings → Data page — **M** — ◐ PARTIAL (download half: PR #296, 2026-07-05)
+## Theme E — Web Settings → Data page — **M** — ✅ DONE (download PR #296; restore PR #303, 2026-07-05)
 
 Point-and-click backup/restore with a safety net.
 
@@ -165,9 +166,10 @@ Point-and-click backup/restore with a safety net.
       (static domain list + live record counts read from the `x-midnite-backup-manifest` response header). Sidebar
       "Data" under Workspace. *(The secrets toggle/passphrase is omitted — the export is secret-free until the
       secrets slice; a note says so.)*
-- [ ] **Restore**: upload an archive → **dry-run preview** → confirm `replace` → progress → summary. **Deferred
-      until import (Theme C) merges** — the section ships **disabled** with a "available once import ships" note;
-      wire it to the C endpoints in a follow-up. Typed client methods in [`web/lib/api.ts`](../packages/web/lib/api.ts).
+- [x] **Restore**: upload an archive → **dry-run preview** (per-domain counts + id conflicts + version verdict) →
+      pick **merge** (default, non-destructive) or **replace** (typed confirm) → **staged progress** → result
+      summary. A newer-than-us archive is hard-blocked. `previewImport`/`importArchive` in
+      [`web/lib/api.ts`](../packages/web/lib/api.ts); Playwright e2e drives export→upload→preview→restore.
 
 ---
 
@@ -214,9 +216,10 @@ Backups that happen without anyone remembering to run them.
 
 ## Verification
 
-- [ ] `GET /portability/export` (admin) streams a valid archive: a `manifest.json` (schema version,
+- [x] `GET /portability/export` (admin) streams a valid archive: a `manifest.json` (schema version,
       app version, timestamp, domains, `secretsMode`) + one JSON payload per portable domain; derived
-      tables (`search_index`, `pr_status`, `market_cache`) are **absent**.
+      tables (`search_index`, `pr_status`, `market_cache`) are **absent**. *(Now proven end-to-end by the
+      Phase 49 E restore e2e — which also surfaced + fixed a DI bug that had this route 500ing at runtime.)*
 - [ ] **Round-trip on a fresh instance:** export from instance A, `import --mode replace` into an empty
       instance B → tasks, projects, workflows, councils, memories, notes, routines, ideas, media, teams,
       users all match A; the board, workflow editor, and search (after reindex) work; **users can log in**
@@ -227,12 +230,12 @@ Backups that happen without anyone remembering to run them.
       cleanly (no partial write).
 - [ ] **Version gate:** an archive from a **newer** schema is **refused**; an **older** archive offers
       migrate-then-restore; an **equal** archive restores directly. A malformed/truncated archive is rejected.
-- [ ] **Atomicity:** a mid-restore failure (bad ref, constraint) rolls back the **entire** transaction —
-      the instance is left untouched, never half-restored.
-- [ ] **Dry-run** preview (web + CLI `--dry-run`) reports per-domain counts, id conflicts, and the version
-      verdict **without writing**; a `replace` restore requires explicit confirmation (`--yes` / a UI confirm).
-- [ ] **Scheduled auto-backup** (when configured) writes timestamped archives to `destinationDir` on the
-      interval and prunes to the retention count; a failure logs + notifies, never crashes the tick.
+- [x] **Atomicity:** a mid-restore failure (bad ref, constraint) rolls back the **entire** transaction —
+      the instance is left untouched, never half-restored. *(Theme C — single `db.transaction()`.)*
+- [x] **Dry-run** preview (web + CLI `--dry-run`) reports per-domain counts, id conflicts, and the version
+      verdict **without writing**; a `replace` restore requires explicit confirmation (`--yes` / a typed UI confirm).
+- [x] **Scheduled auto-backup** (when configured) writes timestamped archives to `destinationDir` on the
+      interval and prunes to the retention count; a failure logs + notifies, never crashes the tick. *(Theme F.)*
 - [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green (shared schema units; gateway
       export/import service tests incl. version gate + atomic rollback + secret re-wrap on `:memory:` DBs;
       a round-trip integration test; CLI snapshot; web RTL for the Data page).

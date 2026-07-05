@@ -28,15 +28,15 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 3/26 | `█░░░░░░░░░` | 12% | — | B C D E F |
-| [56 · Realtime / WS reliability](phase-56-realtime-ws-reliability.md) | 🔄 WIP | 0/26 | `░░░░░░░░░░` | 0% | A | B C D E F |
+| [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 3/26 | `█░░░░░░░░░` | 12% | E | B C D F |
+| [56 · Realtime / WS reliability](phase-56-realtime-ws-reliability.md) | 🔄 WIP | 3/26 | `█░░░░░░░░░` | 12% | — | B C D E F |
 | [55 · Projects detail page](phase-55-projects-detail-page.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
 | [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [53 · Task lifecycle resilience](phase-53-task-lifecycle-resilience.md) | ✅ DONE | 22/22 | `██████████` | 100% | — | — |
 | [52 · In-app diff & PR review](phase-52-in-app-diff-review.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
 | [51 · Session detail page](phase-51-session-detail-page.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [50 · Autonomy guardrails](phase-50-autonomy-guardrails.md) | ✅ DONE | 29/29 | `██████████` | 100% | — | — |
-| [49 · Data portability](phase-49-data-portability.md) | 🔄 WIP | 17/27 | `██████░░░░` | 63% | D E | — |
+| [49 · Data portability](phase-49-data-portability.md) | ✅ DONE | 23/27 | `█████████░` | 85% | — | — |
 | [48 · Slides](phase-48-slides.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [46 · Inbound integrations](phase-46-inbound-integrations.md) | ✅ DONE | 20/20 | `██████████` | 100% | — | — |
@@ -111,7 +111,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 
 ### [Phase 57 — Performance & scale](phase-57-performance-scale.md)
 *(No new domain — perf work across existing layers: batch loads + indexes in repositories, lean summary DTOs + pagination as shared contracts, cache tuning + virtualization on the web. Evidence-driven via a seed + benchmark harness.)*
-- ✅ **A** — Seed + benchmark harness (evidence first) (PR #303)
+- ✅ **A** — Seed + benchmark harness (evidence first) (PR #308)
 - ◻ **B** — Kill the task-hydration N+1
 - ◻ **C** — Lean list DTOs + pagination
 - ◻ **D** — DB indexes on hot paths
@@ -120,7 +120,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 
 ### [Phase 56 — Realtime / WS reliability](phase-56-realtime-ws-reliability.md)
 *(No new domain — a shared reliability layer under the existing WS gateways, lifting the terminal WS's proven seq+ring+resume onto every board channel so clients never silently drift. In-memory ring; restart forces resync.)*
-- 🔄 **A** — Sequenced event contracts + server event ring
+- ✅ **A** — Sequenced event contracts + server event ring (PR #305)
 - ◻ **B** — Resume protocol + gap-detection (the core guarantee)
 - ◻ **C** — Per-client backpressure + heartbeat
 - ◻ **D** — Shared reliable client subscription hook
@@ -179,8 +179,8 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **A** — Archive contract + schema-version stamp
 - ✅ **B** — Bulk export service (PR #291; secrets + users/teams deferred)
 - ✅ **C** — Atomic import service (version-gated, replace/merge, in-process reindex) (PR #298)
-- ◐ **D** — CLI export/import commands (export done PR #294; import now available via C)
-- ◐ **E** — Web Settings → Data page (download half shipped PR #296; restore now available via C)
+- ✅ **D** — CLI export/import commands (export PR #294; import PR #304)
+- ✅ **E** — Web Settings → Data page (download PR #296; restore preview→confirm PR #303; also fixed a DI bug that 500'd export)
 - ✅ **F** — Scheduled auto-backup (PR #299)
 
 ### [Phase 48 — Slides (reveal.js decks)](phase-48-slides.md)

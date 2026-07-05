@@ -1,10 +1,11 @@
 import type { IncomingMessage } from 'node:http';
 import { describe, expect, it } from 'vitest';
-import { parseConfig, type MidniteConfig, type TaskBoardEvent } from '@midnite/shared';
+import { parseConfig, type MidniteConfig, type SequencedEnvelope, type TaskBoardEvent } from '@midnite/shared';
 import type { WebSocket } from 'ws';
 import { TokenInvalidError } from '../auth/jwt.service';
 import { ConnectionRegistry } from '../ws/connection-registry';
 import { WsBroadcastService } from '../ws/ws-broadcast.service';
+import { ReliableBroadcastService } from '../ws/reliable-broadcast.service';
 import { TaskEventBus } from './task-event-bus';
 import { TasksGateway } from './tasks.gateway';
 
@@ -20,7 +21,8 @@ function fakeClient() {
       if (event === 'message') onMessage = cb;
     },
     send(payload: string) {
-      sent.push(JSON.parse(payload) as TaskBoardEvent);
+      // Phase 56 A: the wire is now the sequenced envelope — unwrap `.event`.
+      sent.push((JSON.parse(payload) as SequencedEnvelope<TaskBoardEvent>).event);
     },
     close() {},
   };
@@ -40,11 +42,12 @@ function makeGateway(jwtSvc?: { enabled: boolean; verifyAccessToken: (t: string)
   const bus = new TaskEventBus();
   const registry = new ConnectionRegistry();
   const wsBroadcast = new WsBroadcastService(registry);
+  const reliable = new ReliableBroadcastService(wsBroadcast, CONFIG);
   const gateway = new TasksGateway(
     CONFIG,
     bus,
     registry,
-    wsBroadcast,
+    reliable,
     jwtSvc as never,
   );
   gateway.onModuleInit();
@@ -115,12 +118,14 @@ describe('TasksGateway', () => {
   it('rejects a disallowed origin', () => {
     const bus = new TaskEventBus();
     const registry = new ConnectionRegistry();
+    const rejectConfig = parseConfig({ agent: {}, terminal: {}, knowledge: {}, gateway: { allowedOrigins: [] } });
     const wsBroadcast = new WsBroadcastService(registry);
+    const reliable = new ReliableBroadcastService(wsBroadcast, rejectConfig);
     const gateway = new TasksGateway(
-      parseConfig({ agent: {}, terminal: {}, knowledge: {}, gateway: { allowedOrigins: [] } }),
+      rejectConfig,
       bus,
       registry,
-      wsBroadcast,
+      reliable,
     );
     gateway.onModuleInit();
     let closed = false;

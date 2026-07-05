@@ -61,7 +61,7 @@
 
 ---
 
-## Theme A — Seed + benchmark harness (evidence first) — **M** — ✅ DONE (PR #303, 2026-07-05)
+## Theme A — Seed + benchmark harness (evidence first) — **M** — ✅ DONE (PR #308, 2026-07-05)
 
 Measure before you optimize; guard against regressions forever.
 

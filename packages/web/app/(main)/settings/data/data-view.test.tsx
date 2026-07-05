@@ -1,12 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { BackupStatus, BackupSummary } from '@midnite/shared';
+import type { BackupStatus, BackupSummary, ImportPreview, ImportResult } from '@midnite/shared';
 
 const downloadBackup = vi.fn();
 const getBackupStatus = vi.fn();
+const previewImport = vi.fn();
+const importArchive = vi.fn();
 vi.mock('@/lib/api', () => ({
   downloadBackup: () => downloadBackup(),
   getBackupStatus: () => getBackupStatus(),
+  previewImport: (f: File) => previewImport(f),
+  importArchive: (f: File, mode: string) => importArchive(f, mode),
 }));
 const toast = { success: vi.fn(), error: vi.fn() };
 vi.mock('@/components/toast', () => ({ useToast: () => toast }));
@@ -40,15 +44,36 @@ const summary: BackupSummary = {
   counts: { tasks: 12, projects: 3 },
 };
 
+const importPreview: ImportPreview = {
+  manifest: {
+    schemaVersion: 67,
+    appVersion: '1.2.0',
+    createdAt: '2026-07-05T00:00:00.000Z',
+    domains: ['tasks', 'projects'],
+    secretsMode: 'excluded',
+  },
+  domainCounts: { tasks: 12, projects: 3 },
+  conflicts: { tasks: ['t1', 't2'] },
+  compat: 'ok',
+  importable: true,
+};
+
+/** Select a file on the hidden archive input, triggering the auto-preview. */
+function chooseArchive(): void {
+  const input = screen.getByLabelText('Choose backup archive') as HTMLInputElement;
+  const file = new File(['PKzip'], 'backup.zip', { type: 'application/zip' });
+  fireEvent.change(input, { target: { files: [file] } });
+}
+
 describe('DataView (Phase 49 E)', () => {
-  it('lists the included domains + a secrets-excluded note, restore disabled', () => {
+  it('lists the included domains + a secrets-excluded note, restore ready', () => {
     render(<DataView />);
     expect(screen.getByText('Included in a backup')).toBeInTheDocument();
     expect(screen.getByText('Tasks')).toBeInTheDocument();
     expect(screen.getByText('Workflows')).toBeInTheDocument();
     expect(screen.getByText(/Secrets .* are excluded/)).toBeInTheDocument();
-    // Restore section is present but disabled (import lands with Theme C).
-    expect(screen.getByRole('button', { name: /Restore/ })).toBeDisabled();
+    // Restore section ships enabled now that import (Theme C) is available.
+    expect(screen.getByRole('button', { name: /Choose archive/ })).toBeEnabled();
   });
 
   it('downloads a backup and surfaces the per-domain summary', async () => {
@@ -92,5 +117,69 @@ describe('DataView — auto-backup status (Phase 49 F)', () => {
     await waitFor(() => expect(screen.getByText('midnite-backup-x.zip')).toBeInTheDocument());
     expect(screen.getByText(/\/srv\/backups/)).toBeInTheDocument();
     expect(screen.getByText('2 KB')).toBeInTheDocument();
+  });
+});
+
+describe('DataView — restore (Phase 49 E)', () => {
+  it('previews on file select, then merges (default) and shows the summary', async () => {
+    previewImport.mockResolvedValue(importPreview);
+    importArchive.mockResolvedValue({
+      ok: true,
+      mode: 'merge',
+      inserted: { tasks: 10, projects: 3 },
+      skipped: { tasks: 2 },
+      reindexed: true,
+    } satisfies ImportResult);
+    render(<DataView />);
+
+    chooseArchive();
+    await waitFor(() => expect(previewImport).toHaveBeenCalledOnce());
+    // Preview surfaces the version verdict + per-domain counts.
+    expect(await screen.findByText(/schema v67/)).toBeInTheDocument();
+    expect(screen.getByText(/2 existing/)).toBeInTheDocument(); // conflicts for tasks
+
+    // Merge is the default → Restore is enabled immediately.
+    const restore = screen.getByRole('button', { name: /Restore \(merge\)/ });
+    expect(restore).toBeEnabled();
+    fireEvent.click(restore);
+
+    await waitFor(() => expect(importArchive).toHaveBeenCalledWith(expect.any(File), 'merge'));
+    expect(await screen.findByText(/13 inserted, 2 skipped/)).toBeInTheDocument();
+  });
+
+  it('gates replace behind a typed confirmation', async () => {
+    previewImport.mockResolvedValue(importPreview);
+    render(<DataView />);
+    chooseArchive();
+    await screen.findByText(/schema v67/);
+
+    // Switch to replace → Restore disabled until the confirm word is typed.
+    fireEvent.click(screen.getByRole('radio', { name: /Replace/ }));
+    const restore = screen.getByRole('button', { name: /Restore \(replace\)/ });
+    expect(restore).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText(/Type .* to confirm/), { target: { value: 'replace' } });
+    expect(restore).toBeEnabled();
+  });
+
+  it('hard-blocks a newer-than-us archive with no restore path', async () => {
+    previewImport.mockResolvedValue({
+      ...importPreview,
+      compat: 'newer-archive',
+      importable: false,
+    } satisfies ImportPreview);
+    render(<DataView />);
+    chooseArchive();
+
+    expect(await screen.findByText(/newer midnite/)).toBeInTheDocument();
+    // No restore button is offered for an un-importable archive.
+    expect(screen.queryByRole('button', { name: /^Restore/ })).not.toBeInTheDocument();
+  });
+
+  it('surfaces a preview failure via a toast', async () => {
+    previewImport.mockRejectedValue(new Error('403 admin only'));
+    render(<DataView />);
+    chooseArchive();
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('403 admin only'));
   });
 });

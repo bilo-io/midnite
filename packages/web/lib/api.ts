@@ -136,6 +136,8 @@ import {
   PrReviewDraftSchema,
   PrReviewDraftsResponseSchema,
   GuardrailsResponseSchema,
+  WsSettingsResponseSchema,
+  type WsRingSize,
   TaskCountsSchema,
   TaskFailuresResponseSchema,
   TaskSchema,
@@ -283,6 +285,10 @@ import {
   type BackupSummary,
   BackupStatusSchema,
   type BackupStatus,
+  ImportPreviewSchema,
+  type ImportPreview,
+  ImportResultSchema,
+  type ImportResult,
 } from '@midnite/shared';
 import { z } from 'zod';
 
@@ -804,6 +810,22 @@ export async function mergePr(id: string, method: PrMergeMethod = 'squash'): Pro
 export async function getGuardrails(signal?: AbortSignal): Promise<GuardrailSettings> {
   const res = await fetchJson('/guardrails', { signal }, GuardrailsResponseSchema);
   return res.guardrails;
+}
+
+/** Phase 56 A — the live realtime event-ring size (open read). */
+export async function getWsSettings(signal?: AbortSignal): Promise<number> {
+  const res = await fetchJson('/ws/settings', { signal }, WsSettingsResponseSchema);
+  return res.settings.ringSize;
+}
+
+/** Retune the event-ring size (admin). Returns the applied size. */
+export async function updateWsSettings(ringSize: WsRingSize): Promise<number> {
+  const res = await fetchJson(
+    '/ws/settings',
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ ringSize }) },
+    WsSettingsResponseSchema,
+  );
+  return res.settings.ringSize;
 }
 
 /** The configured safety caps + policy mode + protected-actions (read-only,
@@ -1726,6 +1748,31 @@ export async function downloadBackup(
 /** Phase 49 F — scheduled auto-backup status (admin-gated) for the Data page. */
 export async function getBackupStatus(signal?: AbortSignal): Promise<BackupStatus> {
   return fetchJson('/portability/backup/status', { signal }, BackupStatusSchema);
+}
+
+/**
+ * Phase 49 E — dry-run a restore (admin-gated): upload the archive to
+ * `POST /portability/import/preview` and get per-domain counts, id conflicts,
+ * and the schema-version verdict back — no write. Multipart so the zip rides as
+ * a file part (fetchJson lets the browser set the multipart boundary).
+ */
+export async function previewImport(file: File): Promise<ImportPreview> {
+  const form = new FormData();
+  form.set('archive', file, file.name);
+  return fetchJson('/portability/import/preview', { method: 'POST', body: form }, ImportPreviewSchema);
+}
+
+/**
+ * Phase 49 E — restore an archive (admin-gated): `merge` inserts new ids and
+ * keeps existing, `replace` wipes the imported domains first. All-or-nothing on
+ * the server (a single transaction) — the result reports rows inserted/skipped
+ * per domain + whether the search reindex succeeded.
+ */
+export async function importArchive(file: File, mode: 'merge' | 'replace'): Promise<ImportResult> {
+  const form = new FormData();
+  form.set('archive', file, file.name);
+  form.set('mode', mode);
+  return fetchJson('/portability/import', { method: 'POST', body: form }, ImportResultSchema);
 }
 
 /** Fetch a task thread as markdown (the gateway's `taskToMarkdown`). Backs the

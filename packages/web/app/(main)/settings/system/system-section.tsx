@@ -8,6 +8,7 @@ import { useLocalStorage } from '@/lib/use-local-storage';
 import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY, type AppSettings } from '@/lib/app-settings';
 import { cn } from '@/lib/utils';
 import { EnvironmentAccordion } from './environment-accordion';
+import { RealtimeAccordion } from './realtime-accordion';
 import { SetupStatusPanel } from './setup-status-panel';
 
 // Feature rows that begin a new group — their top divider is drawn a touch more
@@ -125,6 +126,8 @@ export function SystemSection() {
           </div>
         </div>
       </Accordion>
+
+      <RealtimeAccordion />
     </div>
   );
 }
