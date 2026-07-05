@@ -133,6 +133,8 @@ import {
   SessionTranscriptSchema,
   SubAgentResponseSchema,
   PrDiffSchema,
+  PrReviewDraftSchema,
+  PrReviewDraftsResponseSchema,
   GuardrailsResponseSchema,
   TaskCountsSchema,
   TaskFailuresResponseSchema,
@@ -171,6 +173,8 @@ import {
   type Memory,
   type PrDiff,
   type PrReviewSubmission,
+  type PrReviewDraft,
+  type CreatePrReviewDraft,
   type PrMergeMethod,
   type GuardrailSettings,
   type GuardrailCaps,
@@ -275,6 +279,8 @@ import {
   type DeckSummary,
   type CreateDeckRequest,
   type UpdateDeckRequest,
+  BackupSummarySchema,
+  type BackupSummary,
 } from '@midnite/shared';
 import { z } from 'zod';
 
@@ -732,15 +738,51 @@ export async function getPrDiff(id: string, signal?: AbortSignal): Promise<PrDif
   return fetchJson(`/tasks/${encodeURIComponent(id)}/pr/diff`, { signal }, PrDiffSchema);
 }
 
-/** Submit a review (approve / request-changes / comment + inline comments) on a
- *  task's PR (Phase 52 Theme C). Returns the re-hydrated task with a refreshed PR
- *  status. A GitHub refusal surfaces as an ApiError with the API message. */
-export async function submitPrReview(id: string, submission: PrReviewSubmission): Promise<Task> {
+/** Submit a review (approve / request-changes / comment). Inline comments are
+ *  sourced from the task's persisted drafts server-side (Phase 52 D), so only the
+ *  event + optional body are sent. Returns the re-hydrated task. */
+export async function submitPrReview(
+  id: string,
+  submission: Pick<PrReviewSubmission, 'event' | 'body'>,
+): Promise<Task> {
   return fetchJson(
     `/tasks/${encodeURIComponent(id)}/pr/review`,
     { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(submission) },
     TaskSchema,
   );
+}
+
+// --- Inline review comment drafts (Phase 52 D) ---
+
+export async function listPrDrafts(id: string, signal?: AbortSignal): Promise<PrReviewDraft[]> {
+  const res = await fetchJson(
+    `/tasks/${encodeURIComponent(id)}/pr/review/comments`,
+    { signal },
+    PrReviewDraftsResponseSchema,
+  );
+  return res.drafts;
+}
+
+export async function createPrDraft(id: string, draft: CreatePrReviewDraft): Promise<PrReviewDraft> {
+  return fetchJson(
+    `/tasks/${encodeURIComponent(id)}/pr/review/comments`,
+    { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(draft) },
+    PrReviewDraftSchema,
+  );
+}
+
+export async function updatePrDraft(id: string, commentId: string, body: string): Promise<PrReviewDraft> {
+  return fetchJson(
+    `/tasks/${encodeURIComponent(id)}/pr/review/comments/${encodeURIComponent(commentId)}`,
+    { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ body }) },
+    PrReviewDraftSchema,
+  );
+}
+
+export async function deletePrDraft(id: string, commentId: string): Promise<void> {
+  await fetchJson(`/tasks/${encodeURIComponent(id)}/pr/review/comments/${encodeURIComponent(commentId)}`, {
+    method: 'DELETE',
+  });
 }
 
 /** Merge a task's PR with the given method (default squash). Honors branch
@@ -1647,6 +1689,36 @@ export async function exportCouncilRunMarkdown(
     throw new ApiError(errorMessage(res, text), res.status);
   }
   return res.text();
+}
+
+/**
+ * Phase 49 E — download a full-store backup archive (admin-gated). Fetches the
+ * zip WITH the bearer token (a plain link wouldn't carry it), and reads the
+ * per-domain summary from the `x-midnite-backup-manifest` header (exposed via
+ * CORS by the export endpoint) so the caller can report what it downloaded
+ * without unzipping. Returns the blob + resolved filename + summary.
+ */
+export async function downloadBackup(
+  domains?: string[],
+): Promise<{ blob: Blob; filename: string; summary: BackupSummary | null }> {
+  const qs = domains && domains.length > 0 ? `?domains=${encodeURIComponent(domains.join(','))}` : '';
+  const headers: Record<string, string> = {};
+  if (_accessToken) headers['authorization'] = `Bearer ${_accessToken}`;
+  const res = await fetch(`${gatewayUrl()}/portability/export${qs}`, { cache: 'no-store', headers });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new ApiError(errorMessage(res, text), res.status);
+  }
+  const blob = await res.blob();
+  const disposition = res.headers.get('content-disposition') ?? '';
+  const filename = /filename="?([^"]+)"?/.exec(disposition)?.[1] ?? 'midnite-backup.zip';
+  let summary: BackupSummary | null = null;
+  const rawSummary = res.headers.get('x-midnite-backup-manifest');
+  if (rawSummary) {
+    const parsed = BackupSummarySchema.safeParse(JSON.parse(rawSummary));
+    if (parsed.success) summary = parsed.data;
+  }
+  return { blob, filename, summary };
 }
 
 /** Fetch a task thread as markdown (the gateway's `taskToMarkdown`). Backs the

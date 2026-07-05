@@ -16,6 +16,46 @@ The restore half of data portability: read Theme B's export zip back into the st
 
 ---
 
+## 2026-07-05 — feat: persisted review drafts + AI-review inline — Phase 52 Theme D · **Phase 52 COMPLETE** 🎉 (PR #297)
+
+Finishes the in-app review phase: inline comments persist across reloads, and the AI verdict shows where you review.
+
+- [x] gateway `pr_review_comments` table (migration `0069`) + `PrReviewCommentsRepository`; **per-author** drafts. The review submit **sources comments from the stored drafts** (not the client) and flips them to `submitted`. CRUD endpoints (`GET/POST/PATCH/DELETE /tasks/:id/pr/review/comments`, member-gated, author-owned; 403 on another's, 400 editing a submitted).
+- [x] `PrDiffService` includes the task's `ai_review` (verdict + summary) on the `PrDiff` payload; the client submit drops its `comments` arg (server-sourced).
+- [x] web: drafts persist immediately per add/edit/delete, render as inline diff widgets re-anchored via a `(side,line)→change-key` index, edit/delete inline; an **AI-review banner** (verdict-coloured) atop the diff. Typed draft client methods.
+- [x] Tests: shared draft schemas (7), gateway repo (6) + service drafts/submit-from-drafts/ownership/empty-guard (+existing), web AI-banner + updated actions/panel (18 pr-review). `:typecheck`/lint clean; shared+gateway (1453, 1 pre-existing tmux flake) + web 763 green.
+
+---
+
+## 2026-07-05 — feat: Settings → Data page (download backup) — Phase 49 Theme E ◐ (PR #296)
+
+The point-and-click backup half of the Data page. Restore/upload deferred until import (Theme C) merges.
+
+- [x] **web:** `/settings/data` — a **Download backup** button fetches `GET /portability/export` **with the bearer token** (a plain link wouldn't carry it), saves the zip via a blob anchor, and reads the `x-midnite-backup-manifest` header (CORS-exposed by the export endpoint) to show per-domain record counts + schema version. Static "what's included" domain list, a secrets-excluded note, and a **disabled Restore section** ("available once import ships"). Sidebar "Data" under Workspace.
+- [x] **shared:** `PORTABLE_DOMAINS` display const (mirrors the export `sources()`). **web api:** `downloadBackup()` → `{ blob, filename, summary }`.
+- [x] Tests: `DataView` RTL (domain list + secrets note + disabled restore; download → per-domain summary render; failure → toast). web 765 green; `:typecheck` clean; web/shared lint clean (6 pre-existing web warnings unrelated).
+- Deferred: restore/upload UI (needs import C, in flight) + the secrets toggle/passphrase (export is secret-free until the secrets slice).
+
+## 2026-07-05 — feat: CLI backup export — `midnite export` — Phase 49 Theme D (PR #294)
+
+Backup from a shell. The export half of Theme D; import lands with Theme C.
+
+- [x] shared: `BackupSummary` (the archive manifest + per-domain counts) — returned in the export response header so a client reports what it downloaded without unzipping.
+- [x] gateway: `PortabilityService.export()` now returns a `BackupSummary`; the controller sets `X-Midnite-Backup-Manifest` (single-line JSON) + CORS-exposes it (+ content-disposition) for the web download (Theme E).
+- [x] cli: `exportArchive(opts)` client method (binary fetch → server filename + parsed summary + body stream); `midnite export [--output] [--domains]` **streams** the archive to disk (Readable.fromWeb → writeStream) and prints a per-domain summary (`--json` aware).
+- [x] ◐ Deferred: `--include-secrets`/`--passphrase` (secrets slice) and `midnite import` (blocked on Theme C's import endpoint).
+- [x] Tests: shared `BackupSummary` schema, gateway service counts, cli `exportArchive` (allowlist query + filename/summary header parse + fallback filename + body stream). shared 550, gateway 1445 (1 pre-existing flaky tmux), cli 151; `:typecheck` + lint clean. CI billing-blocked account-wide — gated on the local suite.
+
+## 2026-07-05 — feat: proactive aged-todo flag — stuck-state watchdogs close-out — Phase 53 Theme C (PR #293) · **Phase 53 COMPLETE** 🎉
+
+Closes Phase 53's last theme. The four stuck-state detections were already delivered across the phase set — this filled the one honest gap (aged-todo was pull-only).
+
+- [x] **Coverage (verified):** (1) wip-inactivity + (2) lost-timer/dead-session reconcile = Phase 54 C `PoolWatchdogService.sweep()` (`agent.watchdog.*`); (3) waiting-too-long escalating nudges = 53 D `WaitingNudgeService`; (4) aged-todo surfaced in 53 E doctor/health/board.
+- [x] **New (the gap):** aged-todo was **pull-only** (visible only if you open the doctor). Added a **proactive push** — `agent.waitingNudge.agedTodoHours` (0 = off, default → behaviour-preserving); `WaitingNudgeService.flagAgedTodos` scans `todo` tasks aged past the threshold (from `createdAt`) and fires a one-shot, deduped, capped `task.needs-attention` via new `NotificationsService.notifyStuckTodo` (same cadence/cap/repeat as waiting nudges, fail-open). The loop now runs if EITHER signal is enabled.
+- [x] Tests: nudge spec extended (aged-todo fires past threshold / repeat+cap / status-scoped / default-off), status-aware `listTasks` fake. gateway (1431, 1 pre-existing flaky tmux) + shared green; `:typecheck` clean; my files lint-clean (11 pre-existing gateway:lint errors unrelated). No new watchdog scaffolding — reused the single-tick discipline (54 C sweep + 53 D nudge loop).
+
+---
+
 ## 2026-07-05 — feat: in-app PR review actions (comment/approve/merge) — Phase 52 Theme C (PR #292)
 
 Closes the review loop: review + merge a task's PR from inside midnite, no context switch to GitHub.

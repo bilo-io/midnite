@@ -1,11 +1,12 @@
 'use client';
 
-import { useMemo, useState, type ReactNode } from 'react';
-import { Columns2, Rows2, UnfoldVertical, FoldVertical, X } from 'lucide-react';
-import { getChangeKey, type ChangeData, type EventMap, type ViewType } from 'react-diff-view';
-import type { PrDiff, PrReviewComment, Task } from '@midnite/shared';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Check, Columns2, MessageSquare, Rows2, UnfoldVertical, FoldVertical, X, XCircle } from 'lucide-react';
+import { getChangeKey, type ChangeData, type EventMap, type HunkData, type ViewType } from 'react-diff-view';
+import type { PrDiff, PrReviewDraft, Task } from '@midnite/shared';
 import { cn } from '@/lib/utils';
 import { useLocalStorage } from '@/lib/use-local-storage';
+import { createPrDraft, deletePrDraft, listPrDrafts, updatePrDraft } from '@/lib/api';
 import { DiffFile } from './diff-file';
 import { DiffFileTree } from './diff-file-tree';
 import { mapDiffFiles } from './diff-model';
@@ -21,13 +22,10 @@ const VIEW_TYPE_KEY = 'midnite:pr-diff-view-type';
 
 type ExpandState = 'initial' | 'all' | 'none';
 
-/** A pending inline comment plus the diff change-key it anchors to. */
-type DraftComment = PrReviewComment & { changeKey: string };
-
 type Props = {
   diff: PrDiff;
-  /** When set, the viewer is a review surface: gutter-click adds inline comments
-   *  and a review/merge action bar renders (Phase 52 C). Absent = read-only. */
+  /** When set, the viewer is a review surface: gutter-click adds persisted inline
+   *  comments and a review/merge action bar renders (Phase 52 C/D). Absent = read-only. */
   taskId?: string;
   /** Called with the re-hydrated task after a review/merge succeeds. */
   onActionComplete?: (task: Task) => void;
@@ -35,8 +33,6 @@ type Props = {
 
 /** Where a clicked change anchors a GitHub review comment (line + side). */
 function anchorFor(change: ChangeData, side: DiffSide | undefined): { line: number; side: 'LEFT' | 'RIGHT' } | null {
-  // LEFT = old file (deletions), RIGHT = new file (additions/context). Unified
-  // view has no `side`, so derive from the change kind (comment the new version).
   const onLeft = side === 'old' || (side === undefined && change.type === 'delete');
   const line = onLeft
     ? (change as { oldLineNumber?: number; lineNumber?: number }).oldLineNumber ??
@@ -47,23 +43,48 @@ function anchorFor(change: ChangeData, side: DiffSide | undefined): { line: numb
   return { line, side: onLeft ? 'LEFT' : 'RIGHT' };
 }
 
+/** Map a file's changes to `SIDE:line` → change-key, so a persisted draft (which
+ *  stores only path/line/side) can be re-anchored to its react-diff-view widget. */
+function keyIndex(hunks: HunkData[]): Map<string, string> {
+  const idx = new Map<string, string>();
+  for (const hunk of hunks) {
+    for (const change of hunk.changes) {
+      const key = getChangeKey(change);
+      const c = change as { oldLineNumber?: number; newLineNumber?: number; lineNumber?: number; type: string };
+      if (c.type === 'delete') idx.set(`LEFT:${c.lineNumber}`, key);
+      else if (c.type === 'insert') idx.set(`RIGHT:${c.lineNumber}`, key);
+      else {
+        if (typeof c.oldLineNumber === 'number') idx.set(`LEFT:${c.oldLineNumber}`, key);
+        if (typeof c.newLineNumber === 'number') idx.set(`RIGHT:${c.newLineNumber}`, key);
+      }
+    }
+  }
+  return idx;
+}
+
 /**
- * The in-app PR diff review surface (Phase 52 Theme B): a file-tree/list rail +
- * a syntax-highlighted split/unified diff. Files collapse by default and mount
- * their hunks lazily, so a large diff stays responsive; truncated diffs surface
- * the hidden-file count rather than silently cutting (Decision §6).
+ * The in-app PR diff review surface (Phase 52). A file-tree/list rail + a
+ * syntax-highlighted split/unified diff; in review mode (`taskId`) a gutter-click
+ * inline-comment composer (persisted drafts, Theme D) + a review/merge action bar,
+ * with the Phase 37 AI-review verdict surfaced as a banner.
  */
 export function PrDiffViewer({ diff, taskId, onActionComplete }: Props) {
   const [viewType, setViewType] = useLocalStorage<ViewType>(VIEW_TYPE_KEY, 'unified');
   const [expand, setExpand] = useState<ExpandState>('initial');
-  // Bump to remount files when "expand/collapse all" flips their default open state.
   const [expandSignal, setExpandSignal] = useState(0);
 
   const reviewable = !!taskId;
-  // Inline review comments (Phase 52 C), keyed per file path; drafts live here
-  // until the review is submitted (draft *persistence* across reloads is Theme D).
-  const [drafts, setDrafts] = useState<Record<string, DraftComment[]>>({});
+  const [drafts, setDrafts] = useState<PrReviewDraft[]>([]);
   const [composer, setComposer] = useState<{ path: string; changeKey: string; line: number; side: 'LEFT' | 'RIGHT' } | null>(null);
+  const [editing, setEditing] = useState<string | null>(null);
+
+  const loadDrafts = useCallback(() => {
+    if (!taskId) return;
+    listPrDrafts(taskId)
+      .then(setDrafts)
+      .catch(() => undefined); // fail-soft: no drafts shown if the fetch fails
+  }, [taskId]);
+  useEffect(() => loadDrafts(), [loadDrafts]);
 
   const mapped = useMemo(() => mapDiffFiles(diff.files), [diff.files]);
 
@@ -71,13 +92,8 @@ export function PrDiffViewer({ diff, taskId, onActionComplete }: Props) {
     setExpand(next);
     setExpandSignal((n) => n + 1);
   };
-
   const isOpen = (index: number): boolean =>
     expand === 'all' ? true : expand === 'none' ? false : index === 0;
-
-  const allComments: PrReviewComment[] = Object.values(drafts)
-    .flat()
-    .map(({ path, line, side, body }) => ({ path, line, side, body }));
 
   const openComposer = (path: string) => (change: ChangeData, side: DiffSide | undefined) => {
     const anchor = anchorFor(change, side);
@@ -85,56 +101,73 @@ export function PrDiffViewer({ diff, taskId, onActionComplete }: Props) {
     setComposer({ path, changeKey: getChangeKey(change), line: anchor.line, side: anchor.side });
   };
 
-  const addDraft = (body: string) => {
-    if (!composer || !body.trim()) return;
-    const draft: DraftComment = {
+  const addDraft = async (body: string) => {
+    if (!taskId || !composer || !body.trim()) return;
+    const created = await createPrDraft(taskId, {
       path: composer.path,
       line: composer.line,
       side: composer.side,
       body: body.trim(),
-      changeKey: composer.changeKey,
-    };
-    setDrafts((prev) => ({ ...prev, [composer.path]: [...(prev[composer.path] ?? []), draft] }));
+    });
+    setDrafts((prev) => [...prev, created]);
     setComposer(null);
   };
 
-  const removeDraft = (path: string, index: number) =>
-    setDrafts((prev) => ({ ...prev, [path]: (prev[path] ?? []).filter((_, i) => i !== index) }));
+  const removeDraft = async (id: string) => {
+    if (!taskId) return;
+    await deletePrDraft(taskId, id);
+    setDrafts((prev) => prev.filter((d) => d.id !== id));
+  };
 
-  // react-diff-view widgets for one file: a card per anchored change key listing
-  // its saved drafts, plus the open composer when it targets this file.
-  const widgetsFor = (path: string): Record<string, ReactNode> => {
+  const saveEdit = async (id: string, body: string) => {
+    if (!taskId || !body.trim()) return;
+    const updated = await updatePrDraft(taskId, id, body.trim());
+    setDrafts((prev) => prev.map((d) => (d.id === id ? updated : d)));
+    setEditing(null);
+  };
+
+  // Widgets for one file: a card per anchored line listing its drafts (edit/delete)
+  // + the open composer. Server drafts re-anchor to change-keys via the file's index.
+  const widgetsFor = (path: string, hunks: HunkData[]): Record<string, ReactNode> => {
     if (!reviewable) return {};
+    const idx = keyIndex(hunks);
     const widgets: Record<string, ReactNode> = {};
-    const byKey = new Map<string, { draft: DraftComment; index: number }[]>();
-    (drafts[path] ?? []).forEach((draft, index) => {
-      const list = byKey.get(draft.changeKey) ?? [];
-      list.push({ draft, index });
-      byKey.set(draft.changeKey, list);
-    });
+    const byKey = new Map<string, PrReviewDraft[]>();
+    for (const d of drafts) {
+      if (d.path !== path) continue;
+      const key = idx.get(`${d.side}:${d.line}`);
+      if (!key) continue; // the anchored line isn't in the (possibly truncated) hunks
+      byKey.set(key, [...(byKey.get(key) ?? []), d]);
+    }
     for (const [changeKey, list] of byKey) {
       widgets[changeKey] = (
-        <div className="space-y-1 border-y border-border/60 bg-muted/30 px-3 py-2">
-          {list.map(({ draft, index }) => (
-            <div key={index} className="flex items-start gap-2 text-xs">
-              <span className="min-w-0 flex-1 whitespace-pre-wrap">{draft.body}</span>
-              <button
-                type="button"
-                aria-label="Remove comment"
-                onClick={() => removeDraft(path, index)}
-                className="shrink-0 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          ))}
+        <div className="space-y-1.5 border-y border-border/60 bg-muted/30 px-3 py-2">
+          {list.map((d) =>
+            editing === d.id ? (
+              <InlineComposer key={d.id} initial={d.body} onAdd={(b) => void saveEdit(d.id, b)} onCancel={() => setEditing(null)} />
+            ) : (
+              <div key={d.id} className="flex items-start gap-2 text-xs">
+                <MessageSquare className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
+                <span className="min-w-0 flex-1 whitespace-pre-wrap">{d.body}</span>
+                <button type="button" onClick={() => setEditing(d.id)} className="shrink-0 text-muted-foreground hover:text-foreground">
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  aria-label="Delete comment"
+                  onClick={() => void removeDraft(d.id)}
+                  className="shrink-0 text-muted-foreground hover:text-destructive-foreground"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ),
+          )}
         </div>
       );
     }
-    if (composer?.path === path) {
-      widgets[composer.changeKey] = (
-        <InlineComposer onAdd={addDraft} onCancel={() => setComposer(null)} existing={widgets[composer.changeKey]} />
-      );
+    if (composer?.path === path && !widgets[composer.changeKey]) {
+      widgets[composer.changeKey] = <InlineComposer onAdd={(b) => void addDraft(b)} onCancel={() => setComposer(null)} />;
     }
     return widgets;
   };
@@ -193,6 +226,8 @@ export function PrDiffViewer({ diff, taskId, onActionComplete }: Props) {
         </div>
       </div>
 
+      {diff.aiReview ? <AiReviewBanner review={diff.aiReview} /> : null}
+
       {diff.truncated ? (
         <div className="border-b border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-[11px] text-amber-700 dark:text-amber-300">
           Diff truncated to fit — {diff.hiddenFileCount} file
@@ -201,7 +236,6 @@ export function PrDiffViewer({ diff, taskId, onActionComplete }: Props) {
       ) : null}
 
       <div className="flex min-h-0 flex-1">
-        {/* File rail — a drawer/hidden on narrow screens; the diff is the priority there. */}
         <aside className="hidden w-64 shrink-0 border-r border-border/60 md:block">
           <DiffFileTree files={diff.files} hiddenFiles={diff.hiddenFiles} onJump={() => undefined} />
         </aside>
@@ -217,7 +251,7 @@ export function PrDiffViewer({ diff, taskId, onActionComplete }: Props) {
                   mapped={m}
                   viewType={viewType}
                   defaultOpen={isOpen(i)}
-                  widgets={widgetsFor(m.file.path)}
+                  widgets={widgetsFor(m.file.path, m.hunks)}
                   gutterEvents={gutterEventsFor(m.file.path)}
                 />
               ))}
@@ -229,11 +263,35 @@ export function PrDiffViewer({ diff, taskId, onActionComplete }: Props) {
       {reviewable && taskId ? (
         <PrReviewActions
           taskId={taskId}
-          comments={allComments}
-          onClearComments={() => setDrafts({})}
+          comments={drafts.map(({ path, line, side, body }) => ({ path, line, side, body }))}
+          onClearComments={loadDrafts}
           onDone={(task) => onActionComplete?.(task)}
         />
       ) : null}
+    </div>
+  );
+}
+
+const AI_VERDICT: Record<'approved' | 'commented' | 'changes-requested', { label: string; cls: string; Icon: typeof Check }> = {
+  approved: { label: 'AI: LGTM', cls: 'border-success/40 bg-success/10 text-success', Icon: Check },
+  'changes-requested': {
+    label: 'AI: changes requested',
+    cls: 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300',
+    Icon: XCircle,
+  },
+  commented: { label: 'AI: reviewed', cls: 'border-blue-500/40 bg-blue-500/10 text-blue-700 dark:text-blue-300', Icon: MessageSquare },
+};
+
+/** Phase 52 D — the task's Phase 37 AI-review verdict + summary, atop the diff. */
+function AiReviewBanner({ review }: { review: NonNullable<PrDiff['aiReview']> }) {
+  const { label, cls, Icon } = AI_VERDICT[review.verdict];
+  return (
+    <div className={cn('flex items-start gap-2 border-b px-3 py-2 text-xs', cls)}>
+      <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+      <div className="min-w-0 flex-1">
+        <span className="font-semibold">{label}</span>
+        {review.summary ? <p className="mt-0.5 whitespace-pre-wrap text-foreground/80">{review.summary}</p> : null}
+      </div>
     </div>
   );
 }
@@ -242,16 +300,15 @@ export function PrDiffViewer({ diff, taskId, onActionComplete }: Props) {
 function InlineComposer({
   onAdd,
   onCancel,
-  existing,
+  initial = '',
 }: {
   onAdd: (body: string) => void;
   onCancel: () => void;
-  existing?: ReactNode;
+  initial?: string;
 }) {
-  const [body, setBody] = useState('');
+  const [body, setBody] = useState(initial);
   return (
     <div className="border-y border-border/60 bg-muted/30 px-3 py-2">
-      {existing}
       <textarea
         autoFocus
         value={body}
@@ -261,11 +318,7 @@ function InlineComposer({
         className="w-full resize-y rounded-md border border-border bg-background px-2 py-1.5 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
       />
       <div className="mt-1 flex justify-end gap-1.5">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
-        >
+        <button type="button" onClick={onCancel} className="rounded px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground">
           Cancel
         </button>
         <button
@@ -274,7 +327,7 @@ function InlineComposer({
           disabled={!body.trim()}
           className="rounded bg-primary px-2 py-1 text-[11px] font-medium text-primary-foreground disabled:opacity-50"
         >
-          Add comment
+          Save comment
         </button>
       </div>
     </div>

@@ -42,7 +42,7 @@ describe('PrReviewActions', () => {
     fireEvent.click(screen.getByRole('button', { name: /^approve$/i }));
     fireEvent.click(screen.getByRole('button', { name: /submit review/i }));
     await waitFor(() =>
-      expect(submitPrReview).toHaveBeenCalledWith('t1', { event: 'approve', body: undefined, comments: [] }),
+      expect(submitPrReview).toHaveBeenCalledWith('t1', { event: 'approve', body: undefined }),
     );
     await waitFor(() => expect(onDone).toHaveBeenCalledWith(task));
   });
@@ -54,7 +54,8 @@ describe('PrReviewActions', () => {
     fireEvent.change(screen.getByPlaceholderText(/leave a review comment/i), { target: { value: 'looks off' } });
     fireEvent.click(screen.getByRole('button', { name: /submit review/i }));
     await waitFor(() =>
-      expect(submitPrReview).toHaveBeenCalledWith('t1', { event: 'comment', body: 'looks off', comments }),
+      // Comments are server-sourced from drafts now — submit sends only event + body.
+      expect(submitPrReview).toHaveBeenCalledWith('t1', { event: 'comment', body: 'looks off' }),
     );
     await waitFor(() => expect(onClear).toHaveBeenCalled());
     expect(screen.getByText(/1 inline comment pending/i)).toBeTruthy();

@@ -98,19 +98,24 @@ Retry the things worth retrying, and give them room to breathe.
 
 ---
 
-## Theme C — Stuck-state watchdogs — **L**
+## Theme C — Stuck-state watchdogs — **L** — ✅ DONE (PR #293, 2026-07-05)
 
-Notice the tasks that quietly stopped moving. The biggest gap.
+Notice the tasks that quietly stopped moving. The biggest gap. *(Delivered across the phase set — see the
+cross-refs below; this close-out filled the last gap, the proactive aged-todo flag.)*
 
-- [ ] A **watchdog pass** (a dedicated interval, or folded into the existing scheduler tick — never a second
-      scheduler) evaluating **time-in-status** against config thresholds, fail-open.
-- [ ] Detections + actions: (1) **`wip` inactivity** — no session output for N min (a per-session `lastActivityAt`
-      heartbeat off the terminal stream) ⇒ classify `inactivity`, cancel + retry-or-escalate; (2) **`wip` past
-      timeout with a lost timer** (belt-and-suspenders after a crash/reattach) ⇒ reconcile; (3) **`waiting` too
-      long** ⇒ nudge then escalate (Theme D); (4) **aged `todo`** (ready but never picked up, or blocked by an
-      `abandoned` blocker) beyond N ⇒ flag for attention.
-- [ ] Thresholds in [`config`](../packages/shared/src/config/) (`agent.watchdog.*`), all opt-out-able (`0` = off =
-      today's behavior).
+- [x] A **watchdog pass** on the existing scheduler tick (never a second scheduler), fail-open — the Phase 54 C
+      `PoolWatchdogService.sweep()` (`agent.watchdog.*`) evaluates busy-slot health each tick; the Phase 53 D/C
+      nudge loop (`WaitingNudgeService`, a dedicated fail-open interval) evaluates time-in-status for waiting +
+      todo tasks.
+- [x] Detections + actions: **(1) `wip` inactivity** — no session output past `agent.watchdog.inactivityMs` ⇒
+      `reconcileUnhealthy(inactivity)` (54 C); **(2) `wip` lost/dead session** (belt-and-suspenders after a
+      crash/reattach) ⇒ `reconcileUnhealthy(lost)` + orphaned-slot reclaim (54 C); **(3) `waiting` too long** ⇒
+      escalating Phase 21 nudges (53 D); **(4) aged `todo`** past the threshold ⇒ **proactive `task.needs-attention`
+      push** (`WaitingNudgeService.flagAgedTodos` → `notifyStuckTodo`, this PR) *and* surfaced in the 53 E
+      doctor/health view + board.
+- [x] Thresholds in [`config`](../packages/shared/src/config.ts) — `agent.watchdog.{enabled,inactivityMs}` (54 C),
+      `agent.waitingNudge.{afterHours,agedTodoHours,repeatHours,maxReminders}` (53 D + this PR), `agent.doctor.*`
+      (53 E) — **all opt-out-able (`0` = off = today's behavior)**.
 
 ---
 
@@ -179,23 +184,23 @@ Make resilience something you can see.
 
 ## Verification
 
-- [ ] A **crashing** task retries with **exponential backoff** (visible `nextRetryAt`, not an instant re-queue),
+- [x] A **crashing** task retries with **exponential backoff** (visible `nextRetryAt`, not an instant re-queue),
       and each attempt is recorded with its **class** in `task_failures`; a `gate-failed`/`tool-denied` failure
       **does not** blindly auto-retry.
-- [ ] On **exhausted retries** or a **non-retryable** failure, the task escalates to a **visible needs-attention
+- [x] On **exhausted retries** or a **non-retryable** failure, the task escalates to a **visible needs-attention
       state** (`waiting` + `waitReason` + a failure record) — **never silently `abandoned`**; `abandoned` only via
       explicit give-up.
-- [ ] A **`wip` session that goes silent** (no output for the configured window) is detected, classified
+- [x] A **`wip` session that goes silent** (no output for the configured window) is detected, classified
       `inactivity`, and cancelled + retried/escalated; an **aged `todo`** and a **`wip` with a lost timer** are
       likewise caught.
-- [ ] A task stuck in **`waiting`** past the threshold fires an escalating **notification nudge**; a human/CLI can
+- [x] A task stuck in **`waiting`** past the threshold fires an escalating **notification nudge**; a human/CLI can
       **requeue / re-plan / abandon** it, and requeue clears the wait.
-- [ ] The board shows a **"Needs attention"** grouping + a **failure-reason chip**; the task detail shows the
+- [x] The board shows a **"Needs attention"** grouping + a **failure-reason chip**; the task detail shows the
       failure history + retry timeline; the **failures/health view** lists recent failures by class, stuck tasks,
       and waiting-too-long tasks; `midnite tasks doctor`/`failures` report the same.
-- [ ] **Defaults preserve behavior:** with watchdog/backoff/nudge thresholds unset (`0`), the lifecycle behaves as
+- [x] **Defaults preserve behavior:** with watchdog/backoff/nudge thresholds unset (`0`), the lifecycle behaves as
       before this phase; **boot recovery** and the pty/tmux paths still work unchanged.
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green (shared taxonomy units; gateway
+- [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` green (shared taxonomy units; gateway
       classify/record + backoff-skip + watchdog-detection + escalate-vs-abandon tests with fakes; a boot-recovery
       regression; web RTL for the needs-attention board + failure history; CLI snapshot).
 

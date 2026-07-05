@@ -38,11 +38,15 @@ describe('PortabilityService.export (Phase 49 B)', () => {
 
   it('produces a secret-free archive over all work domains, stamping the manifest', () => {
     const { svc } = build(handle.db);
-    const { manifest, archive } = svc.export({ includeSecrets: false });
+    const { summary: manifest, archive } = svc.export({ includeSecrets: false });
 
     expect(manifest.secretsMode).toBe('excluded');
     // Clamped nonnegative (the test DB isn't schema-meta-stamped → -1 → 0).
     expect(manifest.schemaVersion).toBeGreaterThanOrEqual(0);
+    // Per-domain counts summary (Phase 49 D) — matches the payload records.
+    expect(manifest.counts.tasks).toBe(2);
+    expect(manifest.counts.workflows).toBe(1);
+    expect(manifest.counts.memories).toBe(0);
     expect(manifest.domains).toEqual([
       'tasks', 'projects', 'repos', 'memories', 'notes',
       'routines', 'media', 'councils', 'ideas', 'approvalRules', 'workflows',
@@ -60,7 +64,7 @@ describe('PortabilityService.export (Phase 49 B)', () => {
 
   it('honours a domains allowlist', () => {
     const { svc } = build(handle.db);
-    const { manifest } = svc.export({ domains: ['tasks', 'notes'], includeSecrets: false });
+    const { summary: manifest } = svc.export({ domains: ['tasks', 'notes'], includeSecrets: false });
     expect(manifest.domains).toEqual(['tasks', 'notes']);
   });
 });

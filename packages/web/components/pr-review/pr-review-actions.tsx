@@ -48,7 +48,8 @@ export function PrReviewActions({ taskId, comments, onClearComments, onDone }: P
   const submit = async () => {
     setBusy('review');
     try {
-      const task = await submitPrReview(taskId, { event, body: body.trim() || undefined, comments });
+      // Inline comments are the task's persisted drafts (server-sourced) — send only event + body.
+      const task = await submitPrReview(taskId, { event, body: body.trim() || undefined });
       toast.success(
         event === 'approve' ? 'PR approved' : event === 'request-changes' ? 'Changes requested' : 'Review submitted',
       );

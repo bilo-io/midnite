@@ -81,6 +81,12 @@ The new plan is a doc-only change and belongs in the **source of truth**, so com
    ```
    Then `git push origin main`. (If the push races another loop's `_INDEX.md` edit: `git pull --rebase origin main`, reconcile the table, re-push.)
 2. **Clean up before continuing.** Remove any scratch/intermediate files the brainstorm created, and confirm a clean state with `git status` — the working tree should be clean, and both the new doc **and** its `_INDEX.md` row present on `main` (and pushed). If anything unexpected is staged or dirty, stop and show the user rather than committing it.
+3. **Drift guard — run before you report done.** Prove the new phase actually reached the index (Stage 5.4 is easy to skip; a doc with no row is invisible to `/exec` and renders as stale everywhere). This one-liner flags any `phase-*.md` with no `## Phases` row — it must print nothing:
+   ```bash
+   for f in todo/phase-*.md; do n=${f#todo/phase-}; n=${n%%-*}; \
+     grep -qE "^\| \[$n ·" todo/_INDEX.md || echo "DRIFT: phase $n absent from _INDEX.md"; done
+   ```
+   If it names your phase (or any other), add the missing row + theme-key entry (Stage 5.4) and re-commit before finishing.
 3. Tell the user the file path + the commit/push result, give a 2–3 line recap, and suggest that `/exec` is how they'd later pick up a slice of it.
 
 ---
