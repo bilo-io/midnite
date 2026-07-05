@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-05 — feat: sequenced event contracts + server event ring — Phase 56 Theme A (PR #305)
+
+The foundation for reliable board WebSockets: give every event an identity + remember the recent ones, generalizing the terminal WS's proven seq+ring to the tasks/ideas/workflows channels. (Resume/gap-detection is Theme B.)
+
+- [x] **shared:** a `SequencedEnvelope` wrapper `{ seq, ts, event }` around the task/idea/workflow discriminated unions (unions unchanged); a `ws.ringSize` config block (default 512); runtime `WsSettings` contracts (`WS_RING_SIZES` 256/512/1024).
+- [x] **gateway:** `ReliableBroadcastService` wraps `WsBroadcastService` — allocates a monotonic **per-scoped-channel** seq (tasks/ideas per team, workflows per run), keeps a bounded ring of recent events (`since`/`watermark` for Theme B), then delegates the send. The three board gateways route `toTeam`/`toAll` through it; publishers unchanged. In-memory (restart → resync, dovetails with Phase 54).
+- [x] **gateway:** `GET /ws/settings` (open) + `PATCH /ws/settings` (admin) to read/retune ring size live (in-memory; resets to config default on restart).
+- [x] **web:** task/idea/workflow event consumers unwrap `.event` + record `lastSeq` (groundwork; no dedup yet — one socket multiplexes two seq lines, so per-channel dedup is Theme B); a Settings → System → Realtime select tunes the buffer live.
+- [x] Tests: shared envelope round-trip; gateway ring unit (monotonic seq + per-scope isolation + eviction + since/watermark + resize) + a **real-socket integration spec** + settings controller; web Realtime RTL. shared 558, gateway 1486 (1 pre-existing flaky tmux), web 788 green.
+
+---
+
 ## 2026-07-05 — feat: project detail page — cockpit, rails, nav — Phase 55 Themes A+C+D · **Phase 55 COMPLETE** 🎉 (PR #301)
 
 Editing a project moves from a modal to a full, shareable `/projects/view?id=` page that reuses the Theme-B panels, so the modal + page can never drift.
