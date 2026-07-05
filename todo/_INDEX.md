@@ -127,7 +127,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 *(Extends tasks — no new domain. Reuses the workflow GitHub plumbing, `pr-status` fetch strategy, Phase 37 AI review. A→B→C is the critical path.)*
 - ✅ **A** — Diff API: expose the PR diff to the web (structured)
 - ✅ **B** — Diff viewer: file tree + split/unified + syntax highlight
-- ✅ **C** — Review actions: inline comment + approve/request-changes + in-app merge (PR #290)
+- ✅ **C** — Review actions: inline comment + approve/request-changes + in-app merge (PR #292)
 - ◻ **D** — Comment persistence (drafts) + Phase 37 AI review inline
 - ✅ **E** — Embed in task detail + deep-linkable `?tab=review` route
 

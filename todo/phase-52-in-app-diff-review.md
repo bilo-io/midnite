@@ -96,7 +96,7 @@ The centerpiece — a real review viewer.
 
 ---
 
-## Theme C — Review actions: comment + approve/request-changes + merge — **L** — ✅ DONE (PR #290, 2026-07-05)
+## Theme C — Review actions: comment + approve/request-changes + merge — **L** — ✅ DONE (PR #292, 2026-07-05)
 
 Write back to GitHub, from inside midnite.
 

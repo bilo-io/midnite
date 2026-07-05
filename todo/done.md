@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-05 — feat: in-app PR review actions (comment/approve/merge) — Phase 52 Theme C (PR #290)
+## 2026-07-05 — feat: in-app PR review actions (comment/approve/merge) — Phase 52 Theme C (PR #292)
 
 Closes the review loop: review + merge a task's PR from inside midnite, no context switch to GitHub.
 
