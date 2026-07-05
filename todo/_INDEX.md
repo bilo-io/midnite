@@ -122,7 +122,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 *(No new domain — a shared reliability layer under the existing WS gateways, lifting the terminal WS's proven seq+ring+resume onto every board channel so clients never silently drift. In-memory ring; restart forces resync.)*
 - ✅ **A** — Sequenced event contracts + server event ring (PR #305)
 - ◻ **B** — Resume protocol + gap-detection (the core guarantee)
-- ✅ **C** — Per-client backpressure + heartbeat + metrics (PR #311)
+- ✅ **C** — Per-client backpressure + heartbeat + metrics (PR #315)
 - ◻ **D** — Shared reliable client subscription hook
 - ◻ **E** — Apply across cockpits + connection-status UI
 - ✅ **F** — Terminal WS alignment: seq+ts envelope on output, `resume`/`resync-required` on ring overflow (PR #311)

@@ -99,7 +99,7 @@ Replay what a client missed; when you can't, tell it to resync. The core guarant
 
 ---
 
-## Theme C — Per-client backpressure + heartbeat — **M** — ✅ DONE (PR #311, 2026-07-05)
+## Theme C — Per-client backpressure + heartbeat — **M** — ✅ DONE (PR #315, 2026-07-05)
 
 Protect the gateway from slow clients; detect dead ones fast.
 

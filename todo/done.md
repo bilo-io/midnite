@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-05 — feat: WS backpressure + heartbeat + metrics — Phase 56 Theme C (PR #311)
+## 2026-07-05 — feat: WS backpressure + heartbeat + metrics — Phase 56 Theme C (PR #315)
 
 Harden the realtime transport: protect the gateway from slow clients, reap dead ones fast.
 
