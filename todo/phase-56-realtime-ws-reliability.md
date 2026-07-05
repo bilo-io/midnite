@@ -136,17 +136,19 @@ One resilient subscription, not four ad-hoc ones.
 
 ---
 
-## Theme E — Apply across cockpits + connection-status UI — **M**
+## Theme E — Apply across cockpits + connection-status UI — **M** — ✅ DONE (PR #317, 2026-07-06)
 
 Make every live surface resilient, and make the connection legible.
 
-- [ ] Wire `useReliableSubscription` into the **board**, the **office**, and the cockpit views — **session detail
-      (P51)**, **project detail (P55)**, **in-app diff review (P52)** — so their live panels resume/resync instead
-      of drifting.
-- [ ] A shared **connection-status indicator** (`live` / `reconnecting` / `stale — refreshing`) surfaced in the app
-      chrome + on cockpit panels, driven by the hook's state, so users know when data may be behind.
-- [ ] A brief **"reconnected — resynced"** affordance after a `resync-required` full refetch, so a sudden board
-      refresh isn't mysterious.
+- [x] The **board / office / cockpits** already resume via the Theme D hook (`useTaskEvents` / `useIdeaEvents` /
+      the approvals socket all ride `useReliableSubscription`); Theme E surfaces that hook's transport state rather
+      than re-wiring subscriptions. (The **in-app diff review** cockpit is REST-polling — no WS — so no indicator.)
+- [x] A shared **connection-status indicator** driven by a Zustand connection store the hook reports into
+      (`live` / `reconnecting` / `stale`, **worst-of** across channels) — full (dot + label) in the sidebar footer,
+      compact pip on the session + project cockpit headers. `stale` is a reconnect-count heuristic until Theme B's
+      `resync-required`.
+- [x] A **`<ConnectionToaster>`** (mounted once in the chrome) fires a "Reconnected" toast when the app recovers
+      from a drop, so a sudden refresh isn't mysterious. (Wording upgrades to "reconnected — resynced" with Theme B.)
 
 ---
 
