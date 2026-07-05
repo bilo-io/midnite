@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-05 — feat(cli): `midnite import` — restore a backup archive — Phase 49 Theme D (PR #304)
+
+Completes Theme D (the restore half; export shipped in PR #294). `midnite import <file>` now closes the CLI backup/restore loop against the Theme C import endpoints.
+
+- [x] `GatewayClient.previewImport` / `importArchive` — multipart upload streamed via `openAsBlob` (file-backed Blob, no full in-memory copy) against `POST /portability/import{,/preview}`.
+- [x] `midnite import <file>` command — `--mode merge|replace`, `--dry-run`, `--passphrase`, `--yes`; always previews first (per-domain counts + id conflicts + schema-version verdict), refuses a newer-schema archive outright, confirms a destructive `replace` unless `--yes`; respects global `--json`.
+- [x] Client unit tests (preview posts multipart + validates `ImportPreview`; import threads `mode`/`passphrase`, validates `ImportResult`).
+
 ## 2026-07-05 — feat: project detail page — cockpit, rails, nav — Phase 55 Themes A+C+D · **Phase 55 COMPLETE** 🎉 (PR #301)
 
 Editing a project moves from a modal to a full, shareable `/projects/view?id=` page that reuses the Theme-B panels, so the modal + page can never drift.
