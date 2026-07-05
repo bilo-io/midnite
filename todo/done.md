@@ -16,6 +16,30 @@ Fold the one WS channel that already worked (the terminal, with its own seq + ri
 
 ---
 
+## 2026-07-05 — feat: list virtualization — board + long feeds — Phase 57 Theme F ◐ (PR #310)
+
+Keep the DOM bounded no matter the row count, via `@tanstack/react-virtual`.
+
+- [x] Reusable headless `<VirtualList>` (`components/ui/virtual-list.tsx`): windowed rendering with per-row `measureElement` (variable heights) + a threshold (50) below which it renders plain — no overhead/inner-scroll for short lists.
+- [x] **Board columns** virtualized through it. The board is free-drag (`useDraggable` + per-**column** `useDroppable`, no SortableContext/intra-column reorder), so the drop target is the always-mounted column and only card *rendering* is windowed — dnd stays intact.
+- [x] **Workflow run history** + **approval log** feeds virtualized.
+- [◐] sessions / workflows / projects grouped-accordion lists **⏳ deferred** — they render in page scroll, so windowing would add a fixed-height inner scrollbar per status section (UX regression) for lists already status-chunked + usually under threshold. Documented in the phase doc.
+- [x] Verify: a Playwright node-count e2e (`board-virtualization.e2e.ts`) seeds 60 cards and asserts mounted nodes stay far below the total. VirtualList RTL (threshold/plain branch). web 795 green; my files lint-clean (`cn`-unused error is pre-existing in data-view.tsx from the Phase 49 E merge).
+
+---
+
+## 2026-07-05 — feat: perf seed + benchmark harness (evidence first) — Phase 57 Theme A (PR #308)
+
+The measurement backbone for the perf phase — every later theme reports before/after here, and CI budgets stop regressions.
+
+- [x] `test/seed-large.ts`: deterministic mulberry32 seed (fixed seed ⇒ comparable runs), configurable size (`BENCH_SIZE`, modest default so the suite stays fast), realistic per-task depth (events/links/deps/prStatus/checkRuns) + workflows with runs.
+- [x] `test/db.ts` `createCountingDb()`: a better-sqlite3 `verbose` hook counting every executed statement (driver-level, so raw + drizzle queries both count) — exact query counts, not guesses.
+- [x] `bench/hot-paths.spec.ts` (gateway): prints + budget-asserts query count for the hot paths — **400 tasks → 2401 queries** (the 6N task-hydration N+1) + workflow summaries N+1. Deterministic query-count budgets; wall-time printed only (too noisy to gate). Baseline budgets document the status quo; Theme B tightens them.
+- [x] `components/board-render.bench.spec.tsx` (web): renders the board with a seeded set, asserts mounted-card count (**200/200** — the un-virtualized DOM baseline; Theme F bounds it). Both run in the normal `moon` test suite (no separate CI job); explicit generous timeouts so jsdom render load can't flake them.
+- [x] No optimization this slice — measurement + guard only. shared/ui built; gateway + web bench specs green; typecheck/lint clean (one pre-existing bcrypt-under-load flake in users.service, passes in isolation, unrelated).
+
+---
+
 ## 2026-07-05 — feat: coalesce board refetches + tune query cache — Phase 57 Theme E (PR #307)
 
 Kills the board's refetch storm: every task WS event used to trigger an immediate global `invalidateQueries()` → a full `GET /tasks` reload, so a burst of N events meant N board reloads.

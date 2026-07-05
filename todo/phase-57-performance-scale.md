@@ -61,19 +61,24 @@
 
 ---
 
-## Theme A — Seed + benchmark harness (evidence first) — **M**
+## Theme A — Seed + benchmark harness (evidence first) — **M** — ✅ DONE (PR #308, 2026-07-05)
 
 Measure before you optimize; guard against regressions forever.
 
-- [ ] A **repeatable large-dataset seed** (config'd size, e.g. 10k+ tasks with realistic event/link/dep depth,
-      hundreds of sessions, many workflows + runs) usable by benchmarks + manual profiling — deterministic (fixed
-      seed) so runs are comparable.
-- [ ] A **gateway benchmark** capturing **query count + wall-time** for the hot paths (`listTasks`, sessions list,
-      `snapshot`, workflow summaries, search) — query counting via a Drizzle/better-sqlite3 hook so "6001 queries"
-      is a **printed number**, not a guess.
-- [ ] A **web benchmark** for render/interaction cost on the seeded board (mounted card count, re-render count on
-      an event, list scroll). Wire both into CI as **perf budgets** (fail if query count / payload size / render
-      count regress past a threshold). Every later theme reports its before/after here.
+- [x] A **repeatable large-dataset seed** ([`test/seed-large.ts`](../packages/gateway/src/test/seed-large.ts)) —
+      a deterministic mulberry32 PRNG (fixed seed ⇒ comparable runs), configurable size (modest default so the
+      suite stays fast; `BENCH_SIZE=10000` for the full profile), realistic event/link/dep/prStatus/checkRun depth
+      per task + workflows with runs.
+- [x] A **gateway benchmark** ([`bench/hot-paths.spec.ts`](../packages/gateway/src/bench/hot-paths.spec.ts)):
+      exact **query count** via a better-sqlite3 `verbose` hook (`createCountingDb`) + wall-time — it **prints the
+      real numbers** (400 tasks → **2401 queries**, i.e. the 6N N+1; workflow summaries → N+1) and **budget-asserts
+      the query count** (deterministic; wall-time printed only). Baseline budgets document today's N+1 and fail if
+      it regresses; Theme B tightens them.
+- [x] A **web benchmark** ([`components/board-render.bench.spec.tsx`](../packages/web/components/board-render.bench.spec.tsx)):
+      renders the board with a seeded set and asserts **mounted-card count** (200/200 today — the un-virtualized
+      baseline; Theme F bounds it). Both run in the normal `moon` test suite as perf budgets (no separate CI job).
+      Every later theme reports its before/after here. (Sessions/snapshot/search benches ride the same harness as
+      Theme B lands them.)
 
 ---
 
@@ -139,16 +144,22 @@ Stop reloading the whole board on every event.
 
 ---
 
-## Theme F — List virtualization — **M**
+## Theme F — List virtualization — **M** — ◐ PARTIAL (PR #310, 2026-07-05)
 
 Keep the DOM bounded no matter the count.
 
-- [ ] Add `@tanstack/react-virtual` (headless, composes with the existing TanStack stack + dnd-kit) and **windowed
+- [x] Add `@tanstack/react-virtual` (headless, composes with the existing TanStack stack + dnd-kit) and **windowed
       rendering** for the board columns in [`board-view.tsx`](../packages/web/components/board-view.tsx) — only
-      visible cards mount; drag-and-drop still works across a virtualized column.
-- [ ] Virtualize the other long lists: sessions, workflows, projects, **workflow run history**, the **approval
-      log**. Bounded DOM = smooth scroll + flat memory regardless of row count.
-- [ ] Verify with the web benchmark: mounted-node count stays ~constant as the seeded dataset grows.
+      visible cards mount; drag-and-drop still works (board is free-drag: `useDraggable` + per-**column**
+      `useDroppable`, so the drop target is the always-mounted column and only card rendering is windowed). Reusable
+      headless [`<VirtualList>`](../packages/web/components/ui/virtual-list.tsx) (threshold + `measureElement`).
+- [◐] Virtualize the other long lists: **workflow run history** ✅ + **approval log** ✅ done. sessions / workflows /
+      projects **⏳ deferred** — they render as status-grouped accordions in *page scroll*, so windowing would add a
+      fixed-height inner scrollbar per section (a UX regression) for lists that are already status-chunked and
+      usually under the 50-row threshold (VirtualList no-ops there anyway). Revisit if a single section grows huge.
+- [x] Verify with the web benchmark: mounted-node count stays ~constant as the dataset grows — a Playwright
+      node-count e2e ([`board-virtualization.e2e.ts`](../packages/web/e2e/board-virtualization.e2e.ts)) seeds 60 cards
+      and asserts mounted nodes stay far below the total.
 
 ---
 

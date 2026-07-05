@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import type { NodeRun, WorkflowRun } from '@midnite/shared';
 import { getWorkflowRun, listWorkflowRuns } from '@/lib/api';
+import { VirtualList } from '@/components/ui/virtual-list';
 import { useWorkflowStore } from '@/lib/workflow-store';
 import { cn } from '@/lib/utils';
 
@@ -151,10 +152,13 @@ function RunList({
     );
   }
   return (
-    <div className="flex-1 overflow-y-auto">
-      {runs.map((run) => (
+    <VirtualList
+      items={runs}
+      rowKey={(run) => run.id}
+      estimateRow={41}
+      className="flex-1"
+      renderRow={(run) => (
         <button
-          key={run.id}
           type="button"
           onClick={() => onSelect(run)}
           className="flex w-full items-center gap-2 border-b border-border/30 px-4 py-2.5 text-left text-xs transition-colors hover:bg-muted/40"
@@ -173,8 +177,8 @@ function RunList({
             })}
           </span>
         </button>
-      ))}
-    </div>
+      )}
+    />
   );
 }
 
