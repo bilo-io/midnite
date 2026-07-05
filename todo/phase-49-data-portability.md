@@ -156,16 +156,18 @@ Backup/restore from a shell — the natural home for scripting + cron.
 
 ---
 
-## Theme E — Web Settings → Data page — **M**
+## Theme E — Web Settings → Data page — **M** — ◐ PARTIAL (download half: PR #296, 2026-07-05)
 
 Point-and-click backup/restore with a safety net.
 
-- [ ] A **Settings → Data** page (admin-gated): **Download backup** (a secrets toggle → passphrase
-      prompt when enabled) hitting `GET /portability/export`; a per-domain summary of what's included.
-- [ ] **Restore**: upload an archive → **dry-run preview** (per-domain counts, conflicts, version
-      verdict, replace-vs-merge choice, passphrase field when the archive carries secrets) → an explicit
-      **confirm** for `replace` → progress feedback → success/failure summary. Typed client methods in
-      [`web/lib/api.ts`](../packages/web/lib/api.ts).
+- [x] A **Settings → Data** page (admin-gated): **Download backup** hitting `GET /portability/export` (authed
+      fetch → blob save; the bearer token wouldn't ride a plain link) with a per-domain summary of what's included
+      (static domain list + live record counts read from the `x-midnite-backup-manifest` response header). Sidebar
+      "Data" under Workspace. *(The secrets toggle/passphrase is omitted — the export is secret-free until the
+      secrets slice; a note says so.)*
+- [ ] **Restore**: upload an archive → **dry-run preview** → confirm `replace` → progress → summary. **Deferred
+      until import (Theme C) merges** — the section ships **disabled** with a "available once import ships" note;
+      wire it to the C endpoints in a follow-up. Typed client methods in [`web/lib/api.ts`](../packages/web/lib/api.ts).
 
 ---
 

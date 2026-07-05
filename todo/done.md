@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-05 — feat: Settings → Data page (download backup) — Phase 49 Theme E ◐ (PR #296)
+
+The point-and-click backup half of the Data page. Restore/upload deferred until import (Theme C) merges.
+
+- [x] **web:** `/settings/data` — a **Download backup** button fetches `GET /portability/export` **with the bearer token** (a plain link wouldn't carry it), saves the zip via a blob anchor, and reads the `x-midnite-backup-manifest` header (CORS-exposed by the export endpoint) to show per-domain record counts + schema version. Static "what's included" domain list, a secrets-excluded note, and a **disabled Restore section** ("available once import ships"). Sidebar "Data" under Workspace.
+- [x] **shared:** `PORTABLE_DOMAINS` display const (mirrors the export `sources()`). **web api:** `downloadBackup()` → `{ blob, filename, summary }`.
+- [x] Tests: `DataView` RTL (domain list + secrets note + disabled restore; download → per-domain summary render; failure → toast). web 765 green; `:typecheck` clean; web/shared lint clean (6 pre-existing web warnings unrelated).
+- Deferred: restore/upload UI (needs import C, in flight) + the secrets toggle/passphrase (export is secret-free until the secrets slice).
+
 ## 2026-07-05 — feat: CLI backup export — `midnite export` — Phase 49 Theme D (PR #294)
 
 Backup from a shell. The export half of Theme D; import lands with Theme C.
