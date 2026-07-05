@@ -125,17 +125,22 @@ Close the full-scan gaps.
 
 ---
 
-## Theme E — Refetch / cache tuning — **M**
+## Theme E — Refetch / cache tuning — **M** — ✅ DONE (PR #307, 2026-07-05)
 
 Stop reloading the whole board on every event.
 
-- [ ] Replace the blanket `invalidateData()` → `invalidateQueries()` with **granular invalidation**: invalidate
-      (or **patch from the event payload**) only the affected query key. **Coordinate with Phase 56's per-event-type
-      cache strategy** — `task.*` patches/invalidates the task list, `agent.activity` stays ephemeral, etc. — rather
-      than forking a second cache layer.
-- [ ] A sensible `staleTime` (a few seconds) so rapid event bursts coalesce instead of triggering a refetch each;
-      keep the WS as the freshness signal.
-- [ ] Verify with the web benchmark: **N task events no longer trigger N full board refetches**.
+- [x] **Coalesce** the blanket `invalidateData()` → `invalidateQueries()` with a **leading + trailing debounce**
+      (~300ms, [`data-refresh.ts`](../packages/web/lib/data-refresh.ts)): the first event in a quiet period refetches
+      immediately (single mutations stay instant), further events in the window coalesce into one trailing refetch —
+      so N rapid events cost ~2 refetches, not N. **Granular per-channel / per-key invalidation is deferred to Phase
+      56's per-event-type cache strategy** — `useApiData` keys every query by an opaque `useId()`, so true per-key
+      invalidation needs a keying refactor that would fork Phase 56's (in-flight) cache work; this slice bounds *how
+      often* the existing global invalidation fires instead.
+- [x] A sensible `staleTime` (5s, [`query-client.ts`](../packages/web/lib/query-client.ts)) so rapid event bursts +
+      incidental remounts coalesce instead of refetching each; WS stays the freshness signal. `refetchOnWindowFocus`
+      flipped on as a safety net for events missed while backgrounded (can't storm — gated by staleTime).
+- [x] Verified with a **Playwright** flow ([`refetch-coalescing.e2e.ts`](../packages/web/e2e/refetch-coalescing.e2e.ts))
+      against the real gateway + WS: **8** concurrent task events produce **≤3** `GET /tasks` refetches, not 8.
 
 ---
 

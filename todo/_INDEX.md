@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 3/26 | `█░░░░░░░░░` | 12% | E | B C D F |
+| [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 6/26 | `██░░░░░░░░` | 23% | — | B C D F |
 | [56 · Realtime / WS reliability](phase-56-realtime-ws-reliability.md) | 🔄 WIP | 3/26 | `█░░░░░░░░░` | 12% | — | B C D E F |
 | [55 · Projects detail page](phase-55-projects-detail-page.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
 | [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
@@ -115,7 +115,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ◻ **B** — Kill the task-hydration N+1
 - ◻ **C** — Lean list DTOs + pagination
 - ◻ **D** — DB indexes on hot paths
-- ◻ **E** — Refetch / cache tuning
+- ✅ **E** — Refetch / cache tuning (coalesce refetches + staleTime; granular deferred to P56 — PR #307)
 - ◻ **F** — List virtualization
 
 ### [Phase 56 — Realtime / WS reliability](phase-56-realtime-ws-reliability.md)

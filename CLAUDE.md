@@ -111,16 +111,17 @@ midnite is built around running agents in parallel, and worktrees keep those bra
 ```bash
 # from ~/Dev/midnite (the primary checkout, usually kept on `main`):
 git fetch origin
-git worktree add .git/worktrees/<branch-name> -b feature/<branch-name> origin/main
-cd .git/worktrees/<branch-name>
+git worktree add .worktrees/<branch-name> -b feature/<branch-name> origin/main
+cd .worktrees/<branch-name>
 pnpm install                        # link deps inside the worktree
 ```
 
 Conventions:
 
 - Keep the primary checkout (`~/Dev/midnite`) on `main` as your home base when you're using worktrees.
-- One worktree per branch, nested under the repo's git dir: `.git/worktrees/<branch-name>/`. (`.git` is already ignored, so worktrees never show up as untracked files or pollute the workspace — consistent with our other projects.)
-- When the PR merges (or is abandoned), tear the worktree down with `git worktree remove .git/worktrees/<branch-name>` followed by `git branch -d feature/<branch-name>` (use `-D` if abandoned).
+- One worktree per branch, in the repo-root **`.worktrees/`** dir: `.worktrees/<branch-name>/`. `.worktrees/` is git-ignored (see `.gitignore`), so worktrees never show up as untracked files or pollute the workspace. **Do not** nest worktrees under `.git/` — that path is pruned by parallel `git worktree` runs and Vite denies `.git/**` (breaking `web:test`); `.worktrees/` avoids both.
+- Because `.worktrees/` sits **outside** `.git/`, Vite no longer denies it — `moon run web:test` (and the full `moon run :test`) run fine **inside** the worktree; no need to hop back to the primary checkout for web tests.
+- When the PR merges (or is abandoned), tear the worktree down with `git worktree remove .worktrees/<branch-name>` followed by `git branch -d feature/<branch-name>` (use `-D` if abandoned).
 - Each worktree has its own `node_modules` (pnpm symlinks under the hood are fine). Don't try to share by copying.
 
 ### Pre-push Checks
@@ -304,7 +305,7 @@ Four layers, each independently runnable:
 - Snapshot tests only for stable, reviewable output (CLI rendering, WS event shapes)
 - React tests with **@testing-library/react**; query by accessible role/label, not test IDs
 - **Storybook stories run as Vitest browser tests** via `@storybook/addon-vitest` — add a `play` function to assert interactions
-- **Web tests can't run inside `.git/worktrees/<n>/`** (Vite denies `.git/**`) — always run from the primary checkout or a worktree outside `.git/`
+- **Web tests need a worktree outside `.git/`** — Vite denies `.git/**`, so `web:test` can't collect inside the old `.git/worktrees/<n>/` layout. Worktrees now live in the repo-root **`.worktrees/`** dir (outside `.git/`), so `web:test` runs fine inside them; the primary checkout also works.
 
 ---
 

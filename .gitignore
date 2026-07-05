@@ -38,6 +38,9 @@ yarn-error.log*
 storybook-static/
 *storybook.log
 
+# Git worktrees: parallel-agent checkouts live in the repo-root .worktrees/ dir (never committed)
+.worktrees/
+
 # Claude Code: machine-local settings + agent worktrees (never committed)
 .claude/settings.local.json
 .claude/worktrees/

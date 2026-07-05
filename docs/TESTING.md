@@ -84,7 +84,7 @@ The `web:test` task runs two Vitest projects:
 - **`unit`** — jsdom, the existing RTL/hook specs.
 - **`storybook`** — headless Chromium, all stories.
 
-> **Gotcha:** web tests cannot run from inside a `.git/worktrees/<n>` directory (Vite denies `.git/**`). Always run `web:test` from the primary checkout or from a worktree created outside `.git/`.
+> **Gotcha:** web tests cannot run from inside a `.git/worktrees/<n>` directory (Vite denies `.git/**`). Worktrees now live in the repo-root `.worktrees/` dir (outside `.git/`), so `web:test` runs fine inside them; the primary checkout works too.
 
 **Accessibility:** `@storybook/addon-a11y` runs axe-core against every story. Currently set to `parameters.a11y.test: 'todo'` (warnings only). Violations are tracked in [phase-10-test-suite-hardening.md](../todo/phase-10-test-suite-hardening.md) Theme C3.
 
