@@ -48,6 +48,24 @@ export const TerminalAttachMessageSchema = z.object({
   rows: dimension,
 });
 
+/**
+ * Reconnect to an existing PTY carrying the last output `seq` the client
+ * rendered (Phase 56 F — aligns the terminal with the board channels'
+ * `subscribe`/`resume` vocabulary). The gateway replays ring frames the client
+ * missed; if the ring rolled past `lastSeq` (a long disconnect overflowed the
+ * scrollback buffer), it answers `resync-required` instead of a silent partial
+ * replay. A fresh connection still uses `attach`.
+ */
+export const TerminalResumeMessageSchema = z.object({
+  type: z.literal('resume'),
+  sessionId: z.string().min(1),
+  token: z.string().min(1),
+  cols: dimension,
+  rows: dimension,
+  /** The highest output `seq` the client has already rendered. */
+  lastSeq: z.number().int().nonnegative(),
+});
+
 export const TerminalInputMessageSchema = z.object({
   type: z.literal('input'),
   data: z.string(), // base64 keystrokes
@@ -68,6 +86,7 @@ export const TerminalApprovalResponseMessageSchema = z.object({
 
 export const ClientTerminalMessageSchema = z.discriminatedUnion('type', [
   TerminalAttachMessageSchema,
+  TerminalResumeMessageSchema,
   TerminalInputMessageSchema,
   TerminalResizeMessageSchema,
   TerminalApprovalResponseMessageSchema,
@@ -93,10 +112,40 @@ export const TERMINAL_ERROR_CODES = [
 ] as const;
 export const TerminalErrorCodeSchema = z.enum(TERMINAL_ERROR_CODES);
 
+/**
+ * A PTY output frame. Carries the `SequencedEnvelope` identity (`seq` + `ts`,
+ * Phase 56 A) so the terminal shares the board channels' sequenced-stream
+ * vocabulary — flattened alongside the `type` tag rather than nested under
+ * `event`, because this socket multiplexes sequenced output with un-sequenced
+ * control messages (status/error/approval) in one discriminated union. `seq` is
+ * monotonic per PTY; the client tracks the highest it rendered to dedup replays
+ * and to `resume`.
+ */
 export const TerminalOutputMessageSchema = z.object({
   type: z.literal('output'),
-  data: z.string(), // base64 pty output chunk
   seq: z.number().int().nonnegative(),
+  /** Epoch ms when the gateway emitted the frame (envelope timestamp). */
+  ts: z.number().int().nonnegative(),
+  data: z.string(), // base64 pty output chunk
+});
+
+/** Why the gateway told a resuming client to resync (Phase 56 F). */
+export const TERMINAL_RESYNC_REASONS = ['ring-overflow'] as const;
+export const TerminalResyncReasonSchema = z.enum(TERMINAL_RESYNC_REASONS);
+
+/**
+ * The gateway can't replay a continuous stream from the client's `lastSeq` — the
+ * scrollback ring rolled past it during a long disconnect. The client clears its
+ * screen, drops its `lastSeq`, and re-renders from the fresh ring the gateway
+ * replays next (the PTY ring *is* the recoverable transcript). Mirrors the board
+ * channels' `resync-required` (Theme B) rather than delivering a drift-prone
+ * partial replay.
+ */
+export const TerminalResyncRequiredMessageSchema = z.object({
+  type: z.literal('resync-required'),
+  reason: TerminalResyncReasonSchema,
+  /** The stale `seq` the client resumed from (for logs + connection-status UI). */
+  fromSeq: z.number().int().nonnegative(),
 });
 
 export const TerminalStatusMessageSchema = z.object({
@@ -135,6 +184,7 @@ export const TerminalApprovalResolvedMessageSchema = z.object({
 
 export const ServerTerminalMessageSchema = z.discriminatedUnion('type', [
   TerminalOutputMessageSchema,
+  TerminalResyncRequiredMessageSchema,
   TerminalStatusMessageSchema,
   TerminalErrorMessageSchema,
   TerminalApprovalRequestMessageSchema,
@@ -175,6 +225,7 @@ export type PreToolUseHookDecision = z.infer<typeof PreToolUseHookDecisionSchema
 // ---- inferred types ----
 
 export type TerminalAttachMessage = z.infer<typeof TerminalAttachMessageSchema>;
+export type TerminalResumeMessage = z.infer<typeof TerminalResumeMessageSchema>;
 export type TerminalInputMessage = z.infer<typeof TerminalInputMessageSchema>;
 export type TerminalResizeMessage = z.infer<typeof TerminalResizeMessageSchema>;
 export type TerminalApprovalResponseMessage = z.infer<
@@ -183,6 +234,10 @@ export type TerminalApprovalResponseMessage = z.infer<
 export type ClientTerminalMessage = z.infer<typeof ClientTerminalMessageSchema>;
 
 export type TerminalOutputMessage = z.infer<typeof TerminalOutputMessageSchema>;
+export type TerminalResyncReason = z.infer<typeof TerminalResyncReasonSchema>;
+export type TerminalResyncRequiredMessage = z.infer<
+  typeof TerminalResyncRequiredMessageSchema
+>;
 export type TerminalStatusMessage = z.infer<typeof TerminalStatusMessageSchema>;
 export type TerminalErrorMessage = z.infer<typeof TerminalErrorMessageSchema>;
 export type TerminalApprovalRequestMessage = z.infer<

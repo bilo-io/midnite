@@ -239,13 +239,15 @@ export const workflowEventFixtures: WorkflowEvent[] = [
 
 export const clientTerminalMessageFixtures: ClientTerminalMessage[] = [
   { type: 'attach', sessionId: 'session-1', token: 'tok', cols: 80, rows: 24 },
+  { type: 'resume', sessionId: 'session-1', token: 'tok', cols: 80, rows: 24, lastSeq: 12 },
   { type: 'input', data: 'bHM=' },
   { type: 'resize', cols: 100, rows: 40 },
   { type: 'approval-response', requestId: 'req-1', decision: 'allow' },
 ];
 
 export const serverTerminalMessageFixtures: ServerTerminalMessage[] = [
-  { type: 'output', data: 'b3V0', seq: 0 },
+  { type: 'output', data: 'b3V0', seq: 0, ts: 1_700_000_000_000 },
+  { type: 'resync-required', reason: 'ring-overflow', fromSeq: 5 },
   { type: 'status', phase: 'ready' },
   { type: 'error', code: 'internal', message: 'oops' },
   {
