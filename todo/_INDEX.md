@@ -29,7 +29,7 @@
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
 | [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | ◻ TODO | 0/25 | `░░░░░░░░░░` | 0% | — | A B C D E F |
-| [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 11/26 | `████░░░░░░` | 42% | D | C |
+| [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 13/26 | `█████░░░░░` | 50% | — | C |
 | [56 · Realtime / WS reliability](phase-56-realtime-ws-reliability.md) | 🔄 WIP | 8/26 | `███░░░░░░░` | 31% | B | D E |
 | [55 · Projects detail page](phase-55-projects-detail-page.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
 | [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
@@ -124,7 +124,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **A** — Seed + benchmark harness (evidence first) (PR #308)
 - ✅ **B** — Kill the task-hydration N+1 (batched `hydrateMany`: 400-task list 2401→7 queries; workflow summaries 401→2 — PR #312)
 - ◻ **C** — Lean list DTOs + pagination
-- ◻ **D** — DB indexes on hot paths
+- ✅ **D** — DB indexes on hot paths: projects(createdBy,teamId) + workflows(teamId) close the teamScopeFilter full-scans (PR #314)
 - ✅ **E** — Refetch / cache tuning (coalesce refetches + staleTime; granular deferred to P56 — PR #307)
 - ◐ **F** — List virtualization (board + run-history + approval-log done; grouped accordions deferred) (PR #310)
 

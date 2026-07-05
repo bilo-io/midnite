@@ -55,6 +55,10 @@ export const tasks = sqliteTable(
     archivedIdx: index('tasks_archived_idx').on(t.archivedAt),
     // Backs the scheduler's "highest-priority, oldest-first" todo selection.
     statusPriorityIdx: index('tasks_status_priority_idx').on(t.status, t.priority),
+    // Both teamScopeFilter OR-arms are already indexed (migration 0048); declared
+    // here to reconcile the schema with the DB (Phase 57 D) — no new migration.
+    createdByIdx: index('tasks_created_by_idx').on(t.createdBy),
+    teamIdx: index('tasks_team_id_idx').on(t.teamId),
   }),
 );
 
@@ -227,7 +231,13 @@ export const projects = sqliteTable('projects', {
   phaseDocSyncRepoId: text('phase_doc_sync_repo_id'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
-});
+}, (t) => ({
+  // Phase 57 D — listProjects filters only on teamScopeFilter (`createdBy = ?
+  // OR createdBy IS NULL OR teamId = ?`) and had no index → full table scan.
+  // Index both OR arms so SQLite can search instead.
+  createdByIdx: index('projects_created_by_idx').on(t.createdBy),
+  teamIdx: index('projects_team_idx').on(t.teamId),
+}));
 
 // Repo registry: named checkouts the orchestrator runs agents against. The DB
 // is the runtime source of truth; `config.repos` seeds it on first boot. A task
@@ -346,6 +356,12 @@ export const workflows = sqliteTable(
   (t) => ({
     enabledIdx: index('workflows_enabled_idx').on(t.enabled),
     triggerTypeIdx: index('workflows_trigger_type_idx').on(t.triggerType),
+    // Phase 57 D — teamScopeFilter is `createdBy = ? OR createdBy IS NULL OR
+    // teamId = ?`; createdBy was indexed (0048) but teamId was not, so the OR
+    // still scanned. `createdByIdx` reconciles the schema with 0048 (no new
+    // migration); `teamIdx` is the missing arm this slice adds.
+    createdByIdx: index('workflows_created_by_idx').on(t.createdBy),
+    teamIdx: index('workflows_team_idx').on(t.teamId),
   }),
 );
 
