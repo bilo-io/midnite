@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { ChatInferencePath, ChatIntent, ChatIntentSource } from '@midnite/shared';
 import { ChatCommandService, describeIntent, isMutating } from './chat-command.service';
 import type { ChatIntentService } from './chat-intent.service';
