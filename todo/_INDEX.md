@@ -28,6 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
+| [62 · Fable-Digest](phase-62-fable-digest.md) | ◻ TODO | 0/33 | `░░░░░░░░░░` | 0% | — | A B C D E F G H |
 | [61 · Fable-Observability](phase-61-fable-observability.md) | ◻ TODO | 0/36 | `░░░░░░░░░░` | 0% | — | A B C D E F G H I |
 | [60 · Fable-Analysis](phase-60-fable-analysis.md) | ◻ TODO | 0/63 | `░░░░░░░░░░` | 0% | — | A B C D E F G H I J K L M |
 | [59 · Chat to board](phase-59-chat-to-board.md) | ◻ TODO | 0/26 | `░░░░░░░░░░` | 0% | — | A B C D E F |
@@ -112,6 +113,17 @@ shortcut). The 2 contextual-command boxes are now **un-deferred and folded into 
 Every phase's lettered themes with a status icon + one-liner, so you can gauge scope and pick
 work without opening the phase doc. Status: `✅` done · `🔄` WIP (claimed) · `◻` TODO · `◐`
 partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
+
+### [Phase 62 — Fable-Digest](phase-62-fable-digest.md)
+*Retrospectives per task + fleet digests, workflow-first: a task-event trigger + retro/digest nodes + seeded pipelines; gateway stores primitives. Fable series #3.*
+- ◻ **A** — Retro contract + deterministic skeleton + task_retros storage (auto on terminal, zero LLM)
+- ◻ **B** — Task-event workflow trigger (workflows fire on task.done/abandoned/needs-attention)
+- ◻ **C** — Node executors: generate-retro / list-completed-tasks / build-digest / notify
+- ◻ **D** — Retro pipeline template (task-event → retro → notify-on-notable)
+- ◻ **E** — Digest pipeline template (upgrade daily-digest.seed → real structured digest → Slack + in-app)
+- ◻ **F** — Retro surfaces (task detail section, P18 markdown export)
+- ◻ **G** — Digest surfaces (feed/page, dashboard widget, searchable)
+- ◻ **H** — Transcript slicing helper, CLI (retro/digest), config + cost docs
 
 ### [Phase 61 — Fable-Observability](phase-61-fable-observability.md)
 *Deepen the existing metrics/usage seam: real session tokens (honestly labeled), cost attribution, cycle time, rollups + retention, live Ops. Fable series #2.*
