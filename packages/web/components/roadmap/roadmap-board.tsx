@@ -271,7 +271,7 @@ export function RoadmapBoard({ projectId, project, onSelectTask }: Props) {
  * recomputing each affected lane's done/total. Returns `null` if the task is
  * already in the target lane (no-op).
  */
-function moveTaskLocal(view: RoadmapView, taskId: string, target: string | null): RoadmapView | null {
+export function moveTaskLocal(view: RoadmapView, taskId: string, target: string | null): RoadmapView | null {
   const currentMilestone = view.milestones.find((m) => m.tasks.some((t) => t.id === taskId));
   const currentLaneId = currentMilestone?.id ?? null;
   if (currentLaneId === target) return null;
