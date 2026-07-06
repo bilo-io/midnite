@@ -41,4 +41,31 @@ test.describe('Project roadmap', () => {
     await page.getByLabel('New milestone name').press('Enter');
     await expect(page.getByRole('heading', { name: 'Beta milestone' })).toBeVisible();
   });
+
+  // Phase 58 F — the "View in graph" lane action deep-links to the DAG filtered to
+  // the milestone; the graph shows a clearable milestone-filter chip.
+  test('View in graph deep-links the dependency DAG to the milestone', async ({ page }) => {
+    await page.goto(`/projects/view?id=${projectId}&tab=roadmap`);
+    await page.getByRole('button', { name: 'Alpha milestone options' }).click();
+    await page.getByRole('button', { name: 'View in graph' }).click();
+    await expect(page).toHaveURL(/\/tasks\/graph\?.*milestoneId=/);
+    await expect(page.getByRole('button', { name: /Clear milestone filter/ })).toBeVisible();
+  });
+
+  // Phase 58 F — the "Generate tasks…" lane action seeds the milestone from a goal.
+  // The e2e gateway runs the LLM off, so the breakdown falls back to a single task
+  // whose title is the goal text — deterministic to assert.
+  test('Generate tasks seeds the milestone from a goal', async ({ page }) => {
+    await page.goto(`/projects/view?id=${projectId}&tab=roadmap`);
+    await page.getByRole('button', { name: 'Alpha milestone options' }).click();
+    await page.getByRole('button', { name: 'Generate tasks…' }).click();
+
+    const goal = 'E2E generated milestone task';
+    await page.getByLabel(/Describe what this milestone/).fill(goal);
+    await page.getByRole('button', { name: 'Draft tasks' }).click();
+    await page.getByRole('button', { name: /Create \d+ task/ }).click();
+
+    // The created task lands in the Alpha lane (modal closes, board refetches).
+    await expect(page.getByText(goal)).toBeVisible();
+  });
 });
