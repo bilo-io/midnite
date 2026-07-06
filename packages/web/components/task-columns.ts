@@ -1,4 +1,4 @@
-import type { Status, Task } from '@midnite/shared';
+import type { Status, TaskSummary } from '@midnite/shared';
 import type { ProjectTagInfo } from '@/components/task-card';
 
 export type ColumnDef = { status: Status; label: string; hueVar: string };
@@ -6,11 +6,11 @@ export type ColumnDef = { status: Status; label: string; hueVar: string };
 /** Shared props for the Board and Table renderers under TasksView. */
 export type TaskViewProps = {
   /** Already project-filtered; includes abandoned tasks. */
-  tasks: Task[];
+  tasks: TaskSummary[];
   /** Visible status columns/sections (after the status filter). */
   columns: ColumnDef[];
   projectsById: Map<string, ProjectTagInfo>;
-  onSelect: (task: Task) => void;
+  onSelect: (task: TaskSummary) => void;
   /** Whether to render the tucked-away "Abandoned" section (true when no status filter is active). */
   showAbandoned: boolean;
   /** Move a task to a new status (board drag-and-drop / Start button). A move to
@@ -25,8 +25,8 @@ export type TaskViewProps = {
 };
 
 /** Group tasks by status into a lookup. */
-export function groupByStatus(tasks: Task[]): Map<Status, Task[]> {
-  const grouped = new Map<Status, Task[]>();
+export function groupByStatus(tasks: TaskSummary[]): Map<Status, TaskSummary[]> {
+  const grouped = new Map<Status, TaskSummary[]>();
   for (const t of tasks) {
     const list = grouped.get(t.status) ?? [];
     list.push(t);
@@ -36,7 +36,7 @@ export function groupByStatus(tasks: Task[]): Map<Status, Task[]> {
 }
 
 /** Count of distinct projects represented among a set of tasks. */
-export function distinctProjectCount(tasks: Task[]): number {
+export function distinctProjectCount(tasks: TaskSummary[]): number {
   const ids = new Set<string>();
   for (const t of tasks) if (t.projectId) ids.add(t.projectId);
   return ids.size;

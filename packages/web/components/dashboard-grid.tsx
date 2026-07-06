@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { ResponsiveGridLayout, useContainerWidth } from 'react-grid-layout';
 import type { Layout, LayoutItem, ResponsiveLayouts } from 'react-grid-layout';
-import type { Note, Project, Routine, RoutineProgress, Task, TaskCounts } from '@midnite/shared';
+import type { Note, Project, Routine, RoutineProgress, TaskSummary, TaskCounts } from '@midnite/shared';
 import {
   DASHBOARD_WIDGETS,
   DEFAULT_WIDGETS,
@@ -163,7 +163,7 @@ function reconcile(base: ResponsiveLayouts, renderedKeys: string[]): ResponsiveL
 interface DashboardGridProps {
   counts: TaskCounts;
   projects: Project[];
-  tasks: Task[];
+  tasks: TaskSummary[];
   notes: Note[];
   routines: Routine[];
   todayProgress: RoutineProgress[];

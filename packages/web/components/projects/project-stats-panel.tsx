@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Archive, ArchiveRestore, Loader2, Trash2 } from 'lucide-react';
-import type { Project, Status, Task } from '@midnite/shared';
+import type { Project, Status, TaskSummary } from '@midnite/shared';
 import { ExportMenu } from '@/components/export-menu';
 import { Button } from '@/components/ui/button';
 import { useConfirm } from '@/components/confirm-dialog';
@@ -12,7 +12,7 @@ import { deleteProject, exportProjectMarkdown, updateProject } from '@/lib/api';
 type Props = {
   project: Project;
   /** The project's tasks (already filtered) — drives the status breakdown. */
-  tasks: Task[];
+  tasks: TaskSummary[];
   /** Re-hydrate the project after archive/unarchive. */
   onSaved: () => void;
   /** Navigate away after the project is deleted. */

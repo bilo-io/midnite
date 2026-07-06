@@ -16,6 +16,7 @@ import {
   type Project,
   type Status,
   type Task,
+  type TaskSummary,
   type TaskEvent,
   type TaskLink,
 } from '@midnite/shared';
@@ -84,7 +85,7 @@ type Props = {
   task: Task;
   projects: Project[];
   /** The full board list — resolves blockers/dependents and feeds the add-blocker picker (Phase 27). */
-  tasks: Task[];
+  tasks: TaskSummary[];
   /**
    * Leave the detail surface. The modal closes itself; the full page navigates
    * back to `/tasks`. Also fired after a start/abandon/delete completes.

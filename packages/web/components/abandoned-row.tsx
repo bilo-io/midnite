@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import type { Task } from '@midnite/shared';
+import type { TaskSummary } from '@midnite/shared';
 import { TaskCard, type ProjectTagInfo } from '@/components/task-card';
 import { TaskRow } from '@/components/task-row';
 
@@ -17,8 +17,8 @@ export function AbandonedRow({
   layout = 'board',
   blockedCounts,
 }: {
-  tasks: Task[];
-  onSelect?: (task: Task) => void;
+  tasks: TaskSummary[];
+  onSelect?: (task: TaskSummary) => void;
   projectsById?: Map<string, ProjectTagInfo>;
   layout?: 'board' | 'list' | 'table';
   /** id → unmet blocker count (Phase 27), threaded down to each card/row. */
@@ -26,7 +26,7 @@ export function AbandonedRow({
 }) {
   const [open, setOpen] = useState(false);
   if (tasks.length === 0) return null;
-  const projectFor = (t: Task) => (t.projectId ? projectsById?.get(t.projectId) : undefined);
+  const projectFor = (t: TaskSummary) => (t.projectId ? projectsById?.get(t.projectId) : undefined);
   return (
     <section className="shrink-0 rounded-lg border bg-card">
       <button

@@ -1,14 +1,14 @@
 'use client';
 
 import { useEffect } from 'react';
-import type { Project, Task } from '@midnite/shared';
+import type { Project, Task, TaskSummary } from '@midnite/shared';
 import { TaskDetail } from '@/components/task-detail';
 
 type Props = {
   task: Task;
   projects: Project[];
   /** The full board list — resolves blockers/dependents and feeds the add-blocker picker (Phase 27). */
-  tasks: Task[];
+  tasks: TaskSummary[];
   onClose: () => void;
 };
 

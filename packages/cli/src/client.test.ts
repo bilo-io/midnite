@@ -39,16 +39,27 @@ describe('parseStatus', () => {
 });
 
 describe('createClient', () => {
-  it('listTasks builds the status query and validates the response', async () => {
+  it('listTasks builds the status query and validates the paged summary response', async () => {
     let seenUrl = '';
     stubFetch((url) => {
       seenUrl = url;
-      return new Response(JSON.stringify([TASK]), { status: 200 });
+      return new Response(JSON.stringify({ items: [TASK], total: 1 }), { status: 200 });
     });
-    const tasks = await createClient('http://gw').listTasks('todo');
+    const { tasks, total } = await createClient('http://gw').listTasks('todo');
     expect(seenUrl).toBe('http://gw/tasks?status=todo');
     expect(tasks).toHaveLength(1);
     expect(tasks[0]!.id).toBe('t1');
+    expect(total).toBe(1);
+  });
+
+  it('listTasks threads page/limit into the query', async () => {
+    let seenUrl = '';
+    stubFetch((url) => {
+      seenUrl = url;
+      return new Response(JSON.stringify({ items: [], total: 0 }), { status: 200 });
+    });
+    await createClient('http://gw').listTasks('todo', { page: 2, limit: 50 });
+    expect(seenUrl).toBe('http://gw/tasks?status=todo&page=2&limit=50');
   });
 
   it('createTask posts multipart and unwraps { task }', async () => {

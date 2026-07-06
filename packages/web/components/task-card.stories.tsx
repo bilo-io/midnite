@@ -50,7 +50,8 @@ export const Question: Story = {
 
 /** A question answered inline at intake — resolved to Done with an "Answered" badge. */
 export const AnsweredQuestion: Story = {
-  args: { task: taskAnsweredQuestion },
+  // The card reads the server-derived `answered` summary field (Phase 57 C).
+  args: { task: { ...taskAnsweredQuestion, answered: true } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText('Answered')).toBeInTheDocument();

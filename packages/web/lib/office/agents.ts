@@ -4,7 +4,7 @@
  * `SESSION_STATUS_*` constants, so a status looks identical in both places.
  */
 
-import type { LlmProvider, SessionSummary, Status, Task } from '@midnite/shared';
+import type { LlmProvider, SessionSummary, Status, TaskSummary } from '@midnite/shared';
 import { SESSION_STATUS_HUE, SESSION_STATUS_LABEL } from '@/components/session-card';
 
 export type OfficeStatus = SessionSummary['status']; // 'running' | 'waiting' | 'completed' | 'idle'
@@ -99,7 +99,7 @@ export const STATUS_LABEL = SESSION_STATUS_LABEL;
  * desk assignment is stable across refetches. Activity falls back to the linked
  * task's title when the session has no subtitle.
  */
-export function sessionsToOfficeAgents(sessions: SessionSummary[], tasks: Task[]): OfficeAgent[] {
+export function sessionsToOfficeAgents(sessions: SessionSummary[], tasks: TaskSummary[]): OfficeAgent[] {
   const taskById = new Map(tasks.map((t) => [t.id, t]));
   return sessions
     .filter((s) => !s.archivedAt)

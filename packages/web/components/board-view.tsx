@@ -15,7 +15,7 @@ import {
 import { Play, Square } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import type { Status, Task } from '@midnite/shared';
+import type { Status, TaskSummary } from '@midnite/shared';
 import { AbandonedRow } from '@/components/abandoned-row';
 import { VirtualList } from '@/components/ui/virtual-list';
 import { useConfirm } from '@/components/confirm-dialog';
@@ -406,7 +406,7 @@ function DraggableCard({
   moveColumns,
   onMoveTo,
 }: {
-  task: Task;
+  task: TaskSummary;
   project?: ProjectTagInfo;
   onSelect: () => void;
   onStart?: () => void;

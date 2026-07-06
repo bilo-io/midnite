@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, desc, eq, inArray, isNotNull, notInArray, or, sql } from 'drizzle-orm';
 import {
+  ANSWER_EVENT_KIND,
   detectSourceKind,
   type CheckResult,
   type CheckRun,
@@ -11,7 +12,9 @@ import {
   type Task,
   type TaskAttachment,
   type TaskEvent,
+  type TaskActivityEntry,
   type TaskLink,
+  type TaskSummary,
   type TeamScope,
   type WaitReason,
 } from '@midnite/shared';
@@ -344,6 +347,63 @@ export class TasksRepository {
       .all();
   }
 
+  /**
+   * A page of task rows + the full filtered `total` (Phase 57 C). Same filter +
+   * `desc(priority), asc(createdAt)` ordering as {@link listTasks}; when `limit`
+   * is given it applies `LIMIT/OFFSET` (offset pagination, 1-indexed `page`),
+   * otherwise returns every matching row (the board loads all columns). `total`
+   * is a separate `COUNT(*)` over the same filter so a paged caller knows the set
+   * size without over-fetching.
+   */
+  listTaskPage(
+    status?: Status,
+    projectId?: string,
+    scope?: TeamScope,
+    opts?: { page?: number; limit?: number },
+  ): { rows: TaskRow[]; total: number } {
+    const where = and(
+      status ? eq(tasks.status, status) : undefined,
+      projectId ? eq(tasks.projectId, projectId) : undefined,
+      scope ? teamScopeFilter(tasks.createdBy, tasks.teamId, scope) : undefined,
+    );
+    const total = Number(
+      this.db.select({ count: sql<number>`COUNT(*)` }).from(tasks).where(where).get()?.count ?? 0,
+    );
+    const ordered = this.db
+      .select()
+      .from(tasks)
+      .where(where)
+      .orderBy(desc(tasks.priority), asc(tasks.createdAt));
+    const rows =
+      opts?.limit != null
+        ? ordered.limit(opts.limit).offset(((opts.page ?? 1) - 1) * opts.limit).all()
+        : ordered.all();
+    return { rows, total };
+  }
+
+  /**
+   * The most recent task events across the (team-scoped) set (Phase 57 C) — one
+   * indexed `ORDER BY at DESC LIMIT` join instead of the dashboard hydrating
+   * every task's full event thread client-side. Returns lean `{taskId, title,
+   * kind, at}` rows for the activity feed.
+   */
+  recentActivity(scope: TeamScope | undefined, limit: number): TaskActivityEntry[] {
+    const where = scope ? teamScopeFilter(tasks.createdBy, tasks.teamId, scope) : undefined;
+    return this.db
+      .select({
+        taskId: taskEvents.taskId,
+        title: tasks.title,
+        kind: taskEvents.kind,
+        at: taskEvents.at,
+      })
+      .from(taskEvents)
+      .innerJoin(tasks, eq(taskEvents.taskId, tasks.id))
+      .where(where)
+      .orderBy(desc(taskEvents.at))
+      .limit(limit)
+      .all();
+  }
+
   getTask(id: string, scope?: TeamScope): TaskRow | undefined {
     const where = scope
       ? and(eq(tasks.id, id), teamScopeFilter(tasks.createdBy, tasks.teamId, scope))
@@ -606,6 +666,69 @@ export class TasksRepository {
         links: this.legacyLinkFallback(row, linksByTask.get(row.id) ?? []),
       }),
     );
+  }
+
+  /**
+   * Batched **summary** hydration for a page of rows (Phase 57 C) — the lean board
+   * DTO. Loads only what a board card renders: the badge relations (prStatus,
+   * checkRunStatus, blocker ids) + the first image attachment + up to six links,
+   * and precomputes `answered` from a single answer-event lookup. Deliberately
+   * skips the full event thread + prompt (the payload the summary exists to shed).
+   * Same batched-query shape as {@link hydrateMany} (~5 queries/page, not per row).
+   */
+  summariseMany(rows: TaskRow[]): TaskSummary[] {
+    if (rows.length === 0) return [];
+    const ids = rows.map((r) => r.id);
+    const prByTask = this.prStatusByTaskIds(ids);
+    const depsByTask = this.dependenciesByTaskIds(ids);
+    const checkByTask = this.checkRunStatusByTaskIds(ids);
+    const attByTask = this.attachmentsByTaskIds(ids);
+    const linksByTask = this.linksByTaskIds(ids);
+    const answeredIds = this.answeredTaskIds(ids);
+    return rows.map((row) => {
+      const attachments = attByTask.get(row.id) ?? [];
+      const firstImage = attachments.find((a) => a.mime.startsWith('image/'));
+      return {
+        id: row.id,
+        title: row.title,
+        kind: row.kind as Task['kind'],
+        status: row.status as Status,
+        priority: row.priority,
+        retryCount: row.retryCount,
+        repo: row.repo ?? undefined,
+        projectId: row.projectId ?? undefined,
+        tags: parseTags(row.tags),
+        prUrl: row.prUrl ?? undefined,
+        prStatus: this.toPrStatus(prByTask.get(row.id)),
+        checkRunStatus: checkByTask.get(row.id),
+        waitReason: (row.waitReason as WaitReason | null) ?? undefined,
+        dependsOn: depsByTask.get(row.id) ?? [],
+        // First image only (the card thumbnail); other attachments are dropped.
+        attachments: firstImage ? [firstImage] : [],
+        // Only the six links the card renders as source icons.
+        links: this.legacyLinkFallback(row, linksByTask.get(row.id) ?? []).slice(0, 6),
+        aiReview: parseAiReview(row.aiReview),
+        // A `question` with an inline answer event (was isAnsweredQuestion) —
+        // precomputed so the summary needn't carry the event thread.
+        answered: row.kind === 'question' && answeredIds.has(row.id),
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
+      };
+    });
+  }
+
+  /** Ids (of the given set) that have at least one `answer` event — one query. */
+  private answeredTaskIds(ids: string[]): Set<string> {
+    const answered = new Set<string>();
+    for (const batch of chunkIds(ids)) {
+      const rows = this.db
+        .selectDistinct({ taskId: taskEvents.taskId })
+        .from(taskEvents)
+        .where(and(inArray(taskEvents.taskId, batch), eq(taskEvents.kind, ANSWER_EVENT_KIND)))
+        .all();
+      for (const r of rows) answered.add(r.taskId);
+    }
+    return answered;
   }
 
   // Assemble a `Task` from its row + already-loaded relations. The single point

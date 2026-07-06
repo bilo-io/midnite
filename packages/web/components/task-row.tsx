@@ -1,5 +1,5 @@
 import { Square } from 'lucide-react';
-import type { Task } from '@midnite/shared';
+import type { TaskSummary } from '@midnite/shared';
 import { BlockedBadge } from '@/components/blocked-badge';
 import { ProjectTag } from '@/components/project-tag';
 import { SelectableIcon } from '@/components/selectable-icon';
@@ -7,14 +7,14 @@ import type { ProjectTagInfo } from '@/components/task-card';
 import { statusLabel, statusHueVar } from '@/components/task-columns';
 import { cn } from '@/lib/utils';
 
-const KIND_LABELS: Record<NonNullable<Task['kind']>, string> = {
+const KIND_LABELS: Record<NonNullable<TaskSummary['kind']>, string> = {
   bug: 'Bug',
   feature: 'Feature',
   question: 'Question',
   chore: 'Chore',
   unknown: 'Task',
 };
-const KIND_HUE_VARS: Record<NonNullable<Task['kind']>, string> = {
+const KIND_HUE_VARS: Record<NonNullable<TaskSummary['kind']>, string> = {
   bug: '--kind-bug',
   feature: '--kind-feature',
   question: '--kind-question',
@@ -37,7 +37,7 @@ export function TaskRow({
   onToggleSelect,
   blockedBy,
 }: {
-  task: Task;
+  task: TaskSummary;
   project?: ProjectTagInfo;
   onSelect?: () => void;
   showStatus?: boolean;

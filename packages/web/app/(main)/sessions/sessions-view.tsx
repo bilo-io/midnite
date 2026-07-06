@@ -9,7 +9,7 @@ import {
   type SessionStatus,
   type SessionSummary,
   type SessionTranscript,
-  type Task,
+  type TaskSummary,
 } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { FilterPills, type FilterOption } from '@/components/filter-pills';
@@ -61,7 +61,7 @@ export function SessionsView({
   projects,
 }: {
   initial: SessionSummary[];
-  tasks: Task[];
+  tasks: TaskSummary[];
   projects: Project[];
 }) {
   const [view, setView] = useState<View>('list');

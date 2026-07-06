@@ -99,18 +99,23 @@ The single biggest win: stop firing 6 queries per task.
 
 ---
 
-## Theme C — Lean list DTOs + pagination — **L**
+## Theme C — Lean list DTOs + pagination — **L** — ◐ PARTIAL (DTO + /tasks pagination: PR #319, 2026-07-06)
 
 Send less, in pages.
 
-- [ ] **shared:** a `TaskSummary` DTO (board-card fields — id, title, status, priority, repo, tags, prStatus
-      badge, checkRun status, dependsOn count, updatedAt) **without** full event/attachment/link history; the full
-      `Task` stays the **detail** shape. Mirrors the existing Session/Workflow/Deck summary split.
-- [ ] `GET /tasks` returns `TaskSummary` pages; the detail (`GET /tasks/:id`) returns the full `Task`. Board cards
-      + task detail consume the right shape.
-- [ ] **Cursor (keyset) pagination** on the big list endpoints (`tasks`, `sessions`, `workflows`, `projects`,
-      `repos`) — a composite cursor over the existing `desc(priority), asc(createdAt)` ordering (stable under
-      inserts); a shared `Paged<T>` response schema. The board/lists request pages (infinite scroll / paged UI).
+- [x] **shared:** a `TaskSummary` DTO (board-card fields — id, title, status, priority, repo, tags, prStatus/prUrl,
+      checkRun status, dependsOn ids, first-image attachment, ≤6 links, aiReview verdict, server-derived `answered`,
+      updatedAt) **without** the full event thread / prompt; the full `Task` stays the **detail** shape (structural
+      supertype — a `Task` is assignable to a `TaskSummary`). Mirrors the Session/Workflow/Deck summary split. Cut
+      the ~1–2.5 MB board payload (all events/attachments) to the lean card fields.
+- [x] `GET /tasks` returns a `TaskSummary` **page** (`{ items, total }`); the detail (`GET /tasks/:id`) still
+      returns the full `Task`. Board cards + all list/dashboard/office consumers migrated to the summary (web + CLI
+      in lockstep); the dashboard activity feed moved to a new lean `GET /tasks/activity` (one indexed query,
+      replacing the hydrate-every-task's-events anti-pattern).
+- [◐] **Offset** pagination on `GET /tasks` (`page`/`limit`, omitted = all — the board loads its now-lean set) +
+      a generic shared `Paged<T>` = `{ items, total }`. **Deferred:** keyset/cursor pagination (offset chosen for
+      parity with the existing ideas template + the column-grouped board) and pagination of the other list
+      endpoints (`sessions`/`workflows`/`projects`/`repos`) — a follow-up slice.
 
 ---
 

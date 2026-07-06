@@ -21,6 +21,7 @@ import {
   StatusSchema,
   TaskFailuresResponseSchema,
   TaskSchema,
+  TasksPageSchema,
   TasksDoctorReportSchema,
   TemplateSlotsResponseSchema,
   TerminalTokenResponseSchema,
@@ -53,6 +54,7 @@ import {
   type Status,
   type FailureClass,
   type Task,
+  type TaskSummary,
   type TaskFailure,
   type TasksDoctorReport,
   type TemplateSlotsResponse,
@@ -85,7 +87,11 @@ export interface GatewayClient {
   logout(): Promise<void>;
   /** Return the currently authenticated user, or throw on 401. */
   whoami(): Promise<User>;
-  listTasks(status?: string): Promise<Task[]>;
+  /** Lean, paginated board list (Phase 57 C) — `TaskSummary` page + total. */
+  listTasks(
+    status?: string,
+    opts?: { page?: number; limit?: number },
+  ): Promise<{ tasks: TaskSummary[]; total: number }>;
   createTask(prompt: string, defaults?: TaskDefaults): Promise<Task>;
   createBulk(raw: string, defaults?: TaskDefaults): Promise<BulkCreateTaskResponse>;
   moveTask(id: string, status: Status): Promise<Task>;
@@ -230,9 +236,14 @@ export function createClient(baseUrl: string, token?: string): GatewayClient {
       );
     },
 
-    async listTasks(status?: string): Promise<Task[]> {
-      const query = status ? `?status=${encodeURIComponent(status)}` : '';
-      return TaskSchema.array().parse(await request(`/tasks${query}`, { method: 'GET' }));
+    async listTasks(status?: string, opts?: { page?: number; limit?: number }) {
+      const qs = new URLSearchParams();
+      if (status) qs.set('status', status);
+      if (opts?.page) qs.set('page', String(opts.page));
+      if (opts?.limit) qs.set('limit', String(opts.limit));
+      const suffix = qs.toString() ? `?${qs}` : '';
+      const page = TasksPageSchema.parse(await request(`/tasks${suffix}`, { method: 'GET' }));
+      return { tasks: page.items, total: page.total };
     },
 
     async createTask(prompt: string, defaults?: TaskDefaults): Promise<Task> {

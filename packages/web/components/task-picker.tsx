@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import type { Task } from '@midnite/shared';
+import type { TaskSummary } from '@midnite/shared';
 import { cn } from '@/lib/utils';
 
 const INPUT_CLASS =
@@ -23,8 +23,8 @@ export function TaskPicker({
   placeholder,
   label,
 }: {
-  candidates: Task[];
-  onPick: (task: Task) => void;
+  candidates: TaskSummary[];
+  onPick: (task: TaskSummary) => void;
   disabled?: boolean;
   placeholder?: string;
   label?: string;
@@ -51,7 +51,7 @@ export function TaskPicker({
     MAX_MATCHES,
   );
 
-  const pick = (task: Task) => {
+  const pick = (task: TaskSummary) => {
     onPick(task);
     setQuery('');
     setOpen(false);

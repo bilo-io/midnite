@@ -1,4 +1,4 @@
-import type { PrStatus, Task } from '@midnite/shared';
+import type { PrStatus, TaskSummary } from '@midnite/shared';
 
 /**
  * Delivery states a board filter can triage by — the two points where an open
@@ -25,7 +25,7 @@ export function deliveryState(pr: PrStatus | undefined): DeliveryState | null {
 }
 
 /** True when the task's PR matches at least one of the selected delivery states. */
-export function matchesDelivery(task: Task, selected: ReadonlySet<string>): boolean {
+export function matchesDelivery(task: TaskSummary, selected: ReadonlySet<string>): boolean {
   if (selected.size === 0) return true;
   const state = deliveryState(task.prStatus);
   return state !== null && selected.has(state);

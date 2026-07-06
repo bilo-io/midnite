@@ -39,6 +39,7 @@ import {
   SetTaskPriorityRequestSchema,
   SetTaskTagsRequestSchema,
   StatusSchema,
+  TaskListQuerySchema,
   TaskDependencyError,
   UpdateTaskProjectRequestSchema,
   isServerRenderedReportFormat,
@@ -51,7 +52,9 @@ import {
   type PrDiff,
   type Status,
   type Task,
+  type TaskActivityEntry,
   type TaskCounts,
+  type TasksPage,
   type TaskGraphResponse,
   type TaskFailuresResponse,
   type TriggerCheckResponse,
@@ -98,22 +101,27 @@ export class TasksController {
     return { graph: this.service.buildGraph(projectId?.trim() || undefined, scope) };
   }
 
+  /**
+   * Board list (Phase 57 C) — returns lean `TaskSummary` **pages** (`{ items,
+   * total }`), not the full `Task[]`. `page`/`limit` are optional; omitted =
+   * every matching task (the board loads all columns). The full task shape stays
+   * on the detail route (`GET /tasks/:id`).
+   */
   @Get()
   list(
-    @Query('status') statusRaw?: string,
-    @Query('projectId') projectId?: string,
+    @Query() rawQuery: Record<string, string>,
     @CurrentUser() user?: CurrentUserPayload | null,
-  ): Task[] {
-    let status: Status | undefined;
-    if (statusRaw) {
-      const parsed = StatusSchema.safeParse(statusRaw);
-      if (!parsed.success) {
-        throw new BadRequestException(`invalid status: ${statusRaw}`);
-      }
-      status = parsed.data;
+  ): TasksPage {
+    const parsed = TaskListQuerySchema.safeParse(rawQuery);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.issues[0]?.message ?? 'invalid task query');
     }
+    const { status, projectId, page, limit } = parsed.data;
     const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
-    return this.service.listTasks(status, projectId?.trim() || undefined, scope);
+    return this.service.listTaskSummaries(status, projectId?.trim() || undefined, scope, {
+      page,
+      limit,
+    });
   }
 
   /** Recent failures across tasks (Phase 53 E). Static route — declared before
@@ -127,6 +135,18 @@ export class TasksController {
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
     const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
     return { failures: this.service.listRecentFailures(parsed.data, scope) };
+  }
+
+  /** Recent cross-task activity feed (Phase 57 C). Static route before `:id`.
+   *  Replaces the dashboard hydrating every task's events client-side. */
+  @Get('activity')
+  activity(
+    @Query('limit') limitRaw?: string,
+    @CurrentUser() user?: CurrentUserPayload | null,
+  ): TaskActivityEntry[] {
+    const limit = limitRaw ? Number(limitRaw) : undefined;
+    const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
+    return this.service.recentActivity(scope, Number.isFinite(limit) ? limit : undefined);
   }
 
   @Get(':id/failures')

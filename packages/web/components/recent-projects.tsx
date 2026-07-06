@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronsUpDown, FolderKanban } from 'lucide-react';
-import type { Project, Status, Task } from '@midnite/shared';
+import type { Project, Status, TaskSummary } from '@midnite/shared';
 import { ProjectModal } from '@/components/project-modal';
 import { invalidateData } from '@/lib/data-refresh';
 import { ProjectTag } from '@/components/project-tag';
@@ -25,7 +25,7 @@ function relativeTime(iso: string): string {
 interface ProjectCardProps {
   /** The project to show. Undefined → render the empty "choose a project" state. */
   project?: Project;
-  tasks: Task[];
+  tasks: TaskSummary[];
   // Configurable-card mode (dashboard): supply the full project list + a setter to
   // enable the per-card project picker.
   projects?: Project[];
@@ -204,7 +204,7 @@ export function ProjectCard({ project, tasks, projects, onSelectProject }: Proje
   );
 }
 
-export function RecentProjects({ projects, tasks }: { projects: Project[]; tasks: Task[] }) {
+export function RecentProjects({ projects, tasks }: { projects: Project[]; tasks: TaskSummary[] }) {
   const router = useRouter();
   const [editProject, setEditProject] = useState<Project | null>(null);
 

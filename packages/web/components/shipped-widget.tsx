@@ -1,7 +1,7 @@
 'use client';
 
 import { ExternalLink, GitPullRequest, RefreshCw, Rocket } from 'lucide-react';
-import type { Task } from '@midnite/shared';
+import type { TaskSummary } from '@midnite/shared';
 import { getTasks } from '@/lib/api';
 import { PrStatusChip } from '@/components/pr-status-chip';
 import { usePolling } from '@/lib/use-polling';
@@ -13,7 +13,7 @@ const REFRESH_MS = 30_000;
 const MAX_ROWS = 8;
 
 /** Most-recently-completed first; falls back to created order when updatedAt is absent. */
-function shippedSortKey(t: Task): string {
+function shippedSortKey(t: TaskSummary): string {
   return t.updatedAt ?? t.createdAt ?? '';
 }
 
@@ -58,7 +58,7 @@ export function ShippedWidget() {
   );
 }
 
-function ShippedRow({ task }: { task: Task }) {
+function ShippedRow({ task }: { task: TaskSummary }) {
   const when = task.updatedAt ?? task.createdAt;
   return (
     <li className="px-4 py-2">
@@ -95,7 +95,6 @@ function ShippedRow({ task }: { task: Task }) {
   );
 }
 
-/** Compact PR label: "owner/repo#123" from a GitHub PR URL, else the bare URL. */
 function prLabel(url: string): string {
   const m = url.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
   return m ? `${m[1]}/${m[2]}#${m[3]}` : url.replace(/^https?:\/\//, '');

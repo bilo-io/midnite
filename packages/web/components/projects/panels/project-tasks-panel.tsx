@@ -1,12 +1,12 @@
 'use client';
 
-import type { Task } from '@midnite/shared';
+import type { TaskSummary } from '@midnite/shared';
 import { TaskRow } from '@/components/task-row';
 
 type Props = {
-  tasks: Task[];
+  tasks: TaskSummary[];
   /** Open a task; rows are static when omitted. */
-  onSelectTask?: (task: Task) => void;
+  onSelectTask?: (task: TaskSummary) => void;
 };
 
 /**

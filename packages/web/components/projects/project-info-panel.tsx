@@ -1,17 +1,17 @@
 'use client';
 
-import type { Project, Task } from '@midnite/shared';
+import type { Project, TaskSummary } from '@midnite/shared';
 import { ProjectSourcesPanel } from '@/components/projects/panels/project-sources-panel';
 import { statusLabel, statusHueVar } from '@/components/task-columns';
 import { relativeTime } from '@/lib/utils';
 
 type Props = {
   project: Project;
-  tasks: Task[];
+  tasks: TaskSummary[];
   /** Re-hydrate the project after a source add/remove/reorder. */
   onChange: (project: Project) => void;
   /** Open a task from the activity list (navigates to the task page on the page shell). */
-  onSelectTask?: (task: Task) => void;
+  onSelectTask?: (task: TaskSummary) => void;
 };
 
 /** How many recent tasks the activity section surfaces. */
@@ -64,6 +64,6 @@ export function ProjectInfoPanel({ project, tasks, onChange, onSelectTask }: Pro
 }
 
 /** Best-available timestamp for ordering/relative-time (updatedAt ?? createdAt). */
-function tsOf(t: Task): string {
+function tsOf(t: TaskSummary): string {
   return t.updatedAt ?? t.createdAt ?? '';
 }
