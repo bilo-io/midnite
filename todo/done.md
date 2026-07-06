@@ -13,6 +13,16 @@ Phase 58 D shipped the milestone model + `GET /projects/:id/roadmap`; Theme E re
 - [x] **inline milestone CRUD**: "+ Add milestone" affordance, inline rename on the lane header, delete via a lane menu (confirm; tasks fall back to the backlog, not deleted).
 - [x] **task-detail milestone picker** ([`task-milestone-picker.tsx`](../packages/web/components/task-milestone-picker.tsx)): the second assignment surface. Live over the Phase 56 reliable task channel.
 - [x] Tests: `moveTaskLocal` unit (cross-lane move + recount, backlog↔milestone, no-op, unknown) + `roadmap.e2e.ts` (lanes/backlog/`1/2 · 50%` progress + create-milestone) + light/dark shots. `:typecheck`/`:lint`/`web:test` (839) green.
+## 2026-07-06 — feat: execute chat-to-board intents — Phase 59 Theme B (PR #323)
+
+The execution seam: turn a parsed `ChatIntent` (Theme A) into board changes by composing the services that already validate — no new mutation path.
+
+- [x] **gateway:** `ChatCommandService` maps each intent → an existing call (createTask→`createFromPrompt`, bulk→`createBulk`, breakdown→`BreakdownService` + `createTasksFromBreakdown`, priority/status→task update, assign→`setProject`/new `setRepo`, dependency→`addDependency`). Team scope + RBAC + cycle-check inherited.
+- [x] **gateway:** task-ref resolution (id-exact → unique title match; zero/ambiguous → spoken failure, never a guess); domain errors (unknown repo, cycle) degrade to a `ChatCommandResult` summary, not a 500. `inferencePath` set from the parse source (grammar→deterministic, llm→local/provider).
+- [x] **gateway:** `POST /chat/command` (execute, `member`) + `POST /chat/preview` (parse + describe, no write, `viewer`); `tasks.service.setRepo` (mirrors `setProject`, repo-registry validated).
+- [x] **shared/web:** `ChatCommandRequest`/`ChatCommandResponse`/`ChatPreviewResponse` contracts + `runChatCommand`/`previewChatCommand` client methods.
+- [x] Tests: gateway 17 service (every intent path, ref resolution, ambiguity, milestone-deferred, cycle degradation, inference-path) + 4 controller + 2 `setRepo`; shared request/response round-trips.
+- ⏳ Deferred by design: milestone assignment (Theme integrates with 58 D), query answering (Theme C), confirm-gate + undo (Theme F), palette UI (Theme E).
 
 ---
 
