@@ -43,15 +43,30 @@ export class ResumeTracker<E> {
     return { type: 'resume', cursor: Object.fromEntries(this.cursor), ...extra };
   }
 
-  /** Classify an incoming raw WS message and advance the cursor. */
+  /**
+   * Classify an incoming raw WS message and advance the cursor. `raw` may be a
+   * JSON string (the shared subscription hook) or an already-parsed object (the
+   * workflow hook / unit tests) — control frames are matched against the parsed
+   * form, while `parseEvent` receives the original `raw` (channel decoders parse
+   * their own wire shape).
+   */
   accept(raw: unknown): ResumeDecision<E> {
-    const watermark = WatermarkMessageSchema.safeParse(raw);
+    let obj: unknown = raw;
+    if (typeof raw === 'string') {
+      try {
+        obj = JSON.parse(raw);
+      } catch {
+        return { kind: 'ignore' };
+      }
+    }
+
+    const watermark = WatermarkMessageSchema.safeParse(obj);
     if (watermark.success) {
       for (const [ch, seq] of Object.entries(watermark.data.cursor)) this.cursor.set(ch, seq);
       return { kind: 'watermark' };
     }
 
-    const resync = ResyncRequiredMessageSchema.safeParse(raw);
+    const resync = ResyncRequiredMessageSchema.safeParse(obj);
     if (resync.success) {
       // Re-anchor the gapped line to 0 so future live events re-establish it (a
       // gateway restart resets seq, so the old high-water mark is meaningless).

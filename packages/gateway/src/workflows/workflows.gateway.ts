@@ -17,6 +17,7 @@ import { isAllowedOrigin } from '../lib/allowed-origin';
 import { JwtService, TokenInvalidError } from '../auth/jwt.service';
 import { ConnectionRegistry } from '../ws/connection-registry';
 import { ReliableBroadcastService } from '../ws/reliable-broadcast.service';
+import { WsMetricsService } from '../ws/ws-metrics.service';
 import { WorkflowEventBus } from './workflow-event-bus';
 
 /**
@@ -44,7 +45,14 @@ export class WorkflowsGateway
     @Inject(ConnectionRegistry) private readonly registry: ConnectionRegistry,
     @Inject(ReliableBroadcastService) private readonly reliable: ReliableBroadcastService,
     @Optional() private readonly jwtSvc?: JwtService,
+    @Optional() @Inject(WsMetricsService) private readonly metrics?: WsMetricsService,
   ) {}
+
+  private reportSubscribers(): void {
+    let total = 0;
+    for (const sockets of this.byRun.values()) total += sockets.size;
+    this.metrics?.setSubscribers('workflows', total);
+  }
 
   onModuleInit(): void {
     this.bus.subscribe((event) => this.broadcast(event));
@@ -72,6 +80,7 @@ export class WorkflowsGateway
   handleDisconnect(client: WebSocket): void {
     for (const sockets of this.byRun.values()) sockets.delete(client);
     this.registry.deregister(client);
+    this.reportSubscribers();
   }
 
   private resolveUserContext(
@@ -112,6 +121,7 @@ export class WorkflowsGateway
     sockets.add(client);
     // Phase 56 B: a workflow socket carries exactly one seq line — this run's ring.
     this.reliable.handleSubscription(client, [`workflows:run:${runId}`], result.data);
+    this.reportSubscribers();
   }
 
   private broadcast(event: WorkflowEvent): void {

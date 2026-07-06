@@ -55,6 +55,77 @@ function checkRunRowToCheckRun(row: {
   };
 }
 
+/**
+ * Max id count per `WHERE taskId IN (…)` batch. SQLite caps bound parameters
+ * (`SQLITE_MAX_VARIABLE_NUMBER`, historically 999), so `hydrateMany` chunks the
+ * id list under this ceiling and merges — safe for an unpaginated board until
+ * Phase 57 C's keyset pagination lands. Each task's id lands in exactly one
+ * chunk, so per-task relation ordering is preserved.
+ */
+const ID_CHUNK = 500;
+
+/** Split `ids` into consecutive batches of at most {@link ID_CHUNK}. */
+function chunkIds(ids: readonly string[]): string[][] {
+  const out: string[][] = [];
+  for (let i = 0; i < ids.length; i += ID_CHUNK) out.push(ids.slice(i, i + ID_CHUNK));
+  return out;
+}
+
+/** Append `value` to the list at `key`, creating it on first use. */
+function pushGroup<V>(map: Map<string, V[]>, key: string, value: V): void {
+  const arr = map.get(key);
+  if (arr) arr.push(value);
+  else map.set(key, [value]);
+}
+
+// Pure row→shape mappers, shared by the single-row (`hydrate`) and batched
+// (`hydrateMany`) paths so the two produce byte-identical relations.
+function toTaskEvent(r: { at: string; kind: string; data: string | null }): TaskEvent {
+  return {
+    at: r.at,
+    kind: r.kind,
+    data: r.data ? (JSON.parse(r.data) as Record<string, unknown>) : undefined,
+  };
+}
+
+function toTaskAttachment(r: {
+  id: string;
+  taskId: string;
+  path: string;
+  mime: string;
+  size: number;
+  originalName: string | null;
+  createdAt: string;
+}): TaskAttachment {
+  return {
+    id: r.id,
+    taskId: r.taskId,
+    path: r.path,
+    mime: r.mime,
+    size: r.size,
+    originalName: r.originalName ?? undefined,
+    createdAt: r.createdAt,
+  };
+}
+
+function toTaskLink(r: {
+  id: string;
+  taskId: string;
+  url: string;
+  kind: string;
+  label: string | null;
+  createdAt: string;
+}): TaskLink {
+  return {
+    id: r.id,
+    taskId: r.taskId,
+    url: r.url,
+    kind: r.kind as TaskLink['kind'],
+    label: r.label ?? undefined,
+    createdAt: r.createdAt,
+  };
+}
+
 /** Parse the JSON-array `tags` column to a string[]; tolerant of null/legacy/garbage. */
 function parseTags(raw: string | null): string[] {
   if (!raw) return [];
@@ -287,11 +358,7 @@ export class TasksRepository {
       .where(eq(taskEvents.taskId, taskId))
       .orderBy(asc(taskEvents.at))
       .all();
-    return rows.map((r) => ({
-      at: r.at,
-      kind: r.kind,
-      data: r.data ? (JSON.parse(r.data) as Record<string, unknown>) : undefined,
-    }));
+    return rows.map(toTaskEvent);
   }
 
   listAttachments(taskId: string): TaskAttachment[] {
@@ -301,15 +368,7 @@ export class TasksRepository {
       .where(eq(taskAttachments.taskId, taskId))
       .orderBy(asc(taskAttachments.createdAt))
       .all();
-    return rows.map((r) => ({
-      id: r.id,
-      taskId: r.taskId,
-      path: r.path,
-      mime: r.mime,
-      size: r.size,
-      originalName: r.originalName ?? undefined,
-      createdAt: r.createdAt,
-    }));
+    return rows.map(toTaskAttachment);
   }
 
   insertLink(row: TaskLinkInsert): void {
@@ -323,14 +382,7 @@ export class TasksRepository {
       .where(eq(taskLinks.taskId, taskId))
       .orderBy(asc(taskLinks.createdAt))
       .all();
-    return rows.map((r) => ({
-      id: r.id,
-      taskId: r.taskId,
-      url: r.url,
-      kind: r.kind as TaskLink['kind'],
-      label: r.label ?? undefined,
-      createdAt: r.createdAt,
-    }));
+    return rows.map(toTaskLink);
   }
 
   getLink(taskId: string, linkId: string): TaskLink | undefined {
@@ -481,6 +533,60 @@ export class TasksRepository {
   }
 
   hydrate(row: TaskRow): Task {
+    return this.assembleTask(row, {
+      prStatus: this.getPrStatusRow(row.id),
+      dependsOn: this.dependenciesOf(row.id),
+      checkRunStatus: this.deriveCheckRunStatus(row.id),
+      events: this.listEvents(row.id),
+      attachments: this.listAttachments(row.id),
+      links: this.resolveLinks(row),
+    });
+  }
+
+  /**
+   * Batched hydration for a page of rows — the N+1 fix (Phase 57 B). Instead of
+   * `rows.map(hydrate)` firing 6 queries/row (`6N`), it issues **one query per
+   * relation** over the whole page (`WHERE taskId IN (…)`, chunked under
+   * {@link ID_CHUNK}), groups the results in memory, and assembles each `Task`
+   * through the same {@link assembleTask} the single-row path uses — so the
+   * output is identical, only the query count changes (`~6` total, not `6N`).
+   * Keep {@link hydrate} for single-row detail lookups.
+   */
+  hydrateMany(rows: TaskRow[]): Task[] {
+    if (rows.length === 0) return [];
+    const ids = rows.map((r) => r.id);
+    const prByTask = this.prStatusByTaskIds(ids);
+    const depsByTask = this.dependenciesByTaskIds(ids);
+    const checkByTask = this.checkRunStatusByTaskIds(ids);
+    const eventsByTask = this.eventsByTaskIds(ids);
+    const attByTask = this.attachmentsByTaskIds(ids);
+    const linksByTask = this.linksByTaskIds(ids);
+    return rows.map((row) =>
+      this.assembleTask(row, {
+        prStatus: prByTask.get(row.id),
+        dependsOn: depsByTask.get(row.id) ?? [],
+        checkRunStatus: checkByTask.get(row.id),
+        events: eventsByTask.get(row.id) ?? [],
+        attachments: attByTask.get(row.id) ?? [],
+        links: this.legacyLinkFallback(row, linksByTask.get(row.id) ?? []),
+      }),
+    );
+  }
+
+  // Assemble a `Task` from its row + already-loaded relations. The single point
+  // of truth for the shape, shared by `hydrate` (per-row loads) and
+  // `hydrateMany` (batched loads) so they can never drift.
+  private assembleTask(
+    row: TaskRow,
+    rel: {
+      prStatus: PrStatusRow | undefined;
+      dependsOn: string[];
+      checkRunStatus: CheckRunStatus | undefined;
+      events: TaskEvent[];
+      attachments: TaskAttachment[];
+      links: TaskLink[];
+    },
+  ): Task {
     return {
       id: row.id,
       title: row.title,
@@ -497,18 +603,109 @@ export class TasksRepository {
       sessionId: row.sessionId ?? undefined,
       projectId: row.projectId ?? undefined,
       prUrl: row.prUrl ?? undefined,
-      prStatus: this.toPrStatus(this.getPrStatusRow(row.id)),
+      prStatus: this.toPrStatus(rel.prStatus),
       tags: parseTags(row.tags),
-      dependsOn: this.dependenciesOf(row.id),
-      checkRunStatus: this.deriveCheckRunStatus(row.id),
+      dependsOn: rel.dependsOn,
+      checkRunStatus: rel.checkRunStatus,
       aiReview: parseAiReview(row.aiReview),
       archivedAt: row.archivedAt ?? undefined,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
-      events: this.listEvents(row.id),
-      attachments: this.listAttachments(row.id),
-      links: this.resolveLinks(row),
+      events: rel.events,
+      attachments: rel.attachments,
+      links: rel.links,
     };
+  }
+
+  // ── Batched relation loaders (one query/relation over a page of ids) ────────
+
+  /** Latest-known PR status keyed by taskId (≤1 row/task). */
+  private prStatusByTaskIds(ids: string[]): Map<string, PrStatusRow> {
+    const map = new Map<string, PrStatusRow>();
+    for (const batch of chunkIds(ids)) {
+      for (const r of this.db.select().from(prStatus).where(inArray(prStatus.taskId, batch)).all()) {
+        map.set(r.taskId, r);
+      }
+    }
+    return map;
+  }
+
+  /** Blocker ids (`dependsOn`) keyed by taskId. */
+  private dependenciesByTaskIds(ids: string[]): Map<string, string[]> {
+    const map = new Map<string, string[]>();
+    for (const batch of chunkIds(ids)) {
+      const rows = this.db
+        .select({ taskId: taskDependencies.taskId, dependsOn: taskDependencies.dependsOnTaskId })
+        .from(taskDependencies)
+        .where(inArray(taskDependencies.taskId, batch))
+        .all();
+      for (const r of rows) pushGroup(map, r.taskId, r.dependsOn);
+    }
+    return map;
+  }
+
+  /**
+   * Derived check-run status keyed by taskId — the *latest* run's pass/fail.
+   * Ordered `startedAt` ascending so the last row seen per task is the newest
+   * (last-wins), matching {@link latestCheckRunForTask}'s `desc … limit 1`.
+   */
+  private checkRunStatusByTaskIds(ids: string[]): Map<string, CheckRunStatus> {
+    const map = new Map<string, CheckRunStatus>();
+    for (const batch of chunkIds(ids)) {
+      const rows = this.db
+        .select({ taskId: taskCheckRuns.taskId, passed: taskCheckRuns.passed })
+        .from(taskCheckRuns)
+        .where(inArray(taskCheckRuns.taskId, batch))
+        .orderBy(asc(taskCheckRuns.startedAt))
+        .all();
+      for (const r of rows) map.set(r.taskId, r.passed ? 'passed' : 'failing');
+    }
+    return map;
+  }
+
+  /** Event threads keyed by taskId, each ordered `at` ascending. */
+  private eventsByTaskIds(ids: string[]): Map<string, TaskEvent[]> {
+    const map = new Map<string, TaskEvent[]>();
+    for (const batch of chunkIds(ids)) {
+      const rows = this.db
+        .select()
+        .from(taskEvents)
+        .where(inArray(taskEvents.taskId, batch))
+        .orderBy(asc(taskEvents.at))
+        .all();
+      for (const r of rows) pushGroup(map, r.taskId, toTaskEvent(r));
+    }
+    return map;
+  }
+
+  /** Attachments keyed by taskId, each ordered `createdAt` ascending. */
+  private attachmentsByTaskIds(ids: string[]): Map<string, TaskAttachment[]> {
+    const map = new Map<string, TaskAttachment[]>();
+    for (const batch of chunkIds(ids)) {
+      const rows = this.db
+        .select()
+        .from(taskAttachments)
+        .where(inArray(taskAttachments.taskId, batch))
+        .orderBy(asc(taskAttachments.createdAt))
+        .all();
+      for (const r of rows) pushGroup(map, r.taskId, toTaskAttachment(r));
+    }
+    return map;
+  }
+
+  /** Links keyed by taskId, each ordered `createdAt` ascending (legacy fallback applied per-row in `hydrateMany`). */
+  private linksByTaskIds(ids: string[]): Map<string, TaskLink[]> {
+    const map = new Map<string, TaskLink[]>();
+    for (const batch of chunkIds(ids)) {
+      const rows = this.db
+        .select()
+        .from(taskLinks)
+        .where(inArray(taskLinks.taskId, batch))
+        .orderBy(asc(taskLinks.createdAt))
+        .all();
+      for (const r of rows) pushGroup(map, r.taskId, toTaskLink(r));
+    }
+    return map;
   }
 
   private deriveCheckRunStatus(taskId: string): CheckRunStatus | undefined {
@@ -533,15 +730,22 @@ export class TasksRepository {
 
   // Surface a legacy single prUrl as a link until it's migrated to task_links.
   private resolveLinks(row: TaskRow): TaskLink[] {
-    const links = this.listLinks(row.id);
+    return this.legacyLinkFallback(row, this.listLinks(row.id));
+  }
+
+  // Shared by hydrate/hydrateMany: if a task has no task_links rows but carries a
+  // legacy `prUrl`, synthesise a single link for it.
+  private legacyLinkFallback(row: TaskRow, links: TaskLink[]): TaskLink[] {
     if (links.length === 0 && row.prUrl) {
-      links.push({
-        id: `legacy-${row.id}`,
-        taskId: row.id,
-        url: row.prUrl,
-        kind: detectSourceKind(row.prUrl),
-        createdAt: row.createdAt,
-      });
+      return [
+        {
+          id: `legacy-${row.id}`,
+          taskId: row.id,
+          url: row.prUrl,
+          kind: detectSourceKind(row.prUrl),
+          createdAt: row.createdAt,
+        },
+      ];
     }
     return links;
   }

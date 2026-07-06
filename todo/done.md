@@ -13,6 +13,67 @@ Closes the reliability loop Phase 56 A opened: a client that drops for a second 
 - [x] **web:** shared `ResumeTracker` — reconnect → `resume` with the per-`ch` cursor; dedup replay+live overlap by `(ch, seq)`; `resync-required` → full refetch. Adopted by the tasks + ideas board hooks (invalidate) and the workflow-run hook (reducer → resync routes to its REST reconcile).
 - [x] Tests: gateway resume/gap/watermark/scoping unit (9) + client dedup unit (9); existing WS gateway tests updated to skip the new watermark frame. Full local gate green (shared 59 files, gateway 1498 tests, web 158 files; typecheck + lint 0-errors). CI billing-blocked → gated on the local suite.
 
+---
+
+## 2026-07-05 — feat: shared reliable WS subscription hook — Phase 56 Theme D (PR #316)
+
+One resilient subscription hook replacing four ad-hoc socket implementations.
+
+- [x] `useReliableSubscription(channel, handlers, enabled?)` — transport-only: connect, exponential-backoff reconnect, per-channel decode, `lastSeq` tracking, `send`. Cache strategy stays with the caller (`onEvent`), so the hook is generic.
+- [x] Migrated **use-task-events**, **use-idea-events**, **use-approvals-socket** onto it via stable per-channel configs. Board channels unwrap the 56 A `SequencedEnvelope`; approvals decodes its snapshot events (no seq), connects tokenless, uses `send` for `decide`.
+- [x] **Resume-safe:** still sends plain `{type:'subscribe'}` — the `resume`/`resync-required` handling pairs with Theme B's server protocol (not merged; sending `resume` now would break against today's gateways). `lastSeq` already tracked → one-line flip once B lands.
+- [x] Per-event-type cache strategy in each `onEvent` (board→invalidate, ephemeral→skip, workflow node→reducer patch); `refetchOnWindowFocus` fallback already on (57 E).
+- Intentional exception: **use-workflow-run** stays bespoke — imperative start→subscribe→poll-fallback→terminal lifecycle doesn't fit the declarative hook (would lose its REST poll fallback); already consumes the 56 A envelope.
+- [x] Tests: `useReliableSubscription` unit (connect/subscribe/decode/send/enabled/onOpen) + existing task/idea/approvals consumers green. web 804, lint clean.
+
+---
+
+## 2026-07-05 — perf: index team-scope hot paths — Phase 57 Theme D (PR #314)
+
+`teamScopeFilter` (`createdBy = ? OR createdBy IS NULL OR teamId = ?`) backed `listProjects`/`listWorkflows`/scoped `listTasks`; projects + workflows had no matching index, so EXPLAIN QUERY PLAN showed a full `SCAN`.
+
+- [x] Migration 0070 adds the **missing** OR-arm indexes: `projects(created_by)` + `projects(team_id)` (projects had zero indexes) and `workflows(team_id)` (createdBy was already indexed in 0048 — teamId was the missing arm). Both `listProjects` and `listWorkflows` go `SCAN` → `MULTI-INDEX OR` (index SEARCH on every arm).
+- [x] `tasks` was already covered by 0048 (both arms indexed) — no new index; its scope indexes are now also *declared* in `schema.ts` (`tasks_created_by_idx`/`tasks_team_id_idx`, `workflows_created_by_idx`) to reconcile long-standing schema/DB drift. 0070 is **hand-trimmed** to just the 3 genuinely-missing indexes (re-emitting the 0048 ones errors "index already exists").
+- [x] The doc's `tasks(teamId,status)`/`(status,projectId)` composites gave **no** EXPLAIN win over the existing `tasks_status_priority_idx` → not added (over-indexing = write cost; measured-wins-only).
+- [x] Committed `bench/scope-index-plans.spec.ts` (4 assertions) pins the query plans to index SEARCH so a future schema change that drops a scope index fails CI. gateway 1496 tests green; typecheck/lint clean.
+
+---
+
+## 2026-07-05 — feat: WS backpressure + heartbeat + metrics — Phase 56 Theme C (PR #315)
+
+Harden the realtime transport: protect the gateway from slow clients, reap dead ones fast.
+
+- [x] **Backpressure** in `WsBroadcastService.trySend`: a socket whose `bufferedAmount` exceeds `ws.maxBufferedBytes` (default 1MB) is dropped-to-resync (close **4014**) instead of blocking the broadcast or buffering unboundedly. Uses the ws lib's own outbound buffer as the signal.
+- [x] **Heartbeat:** one `HeartbeatService` pings every live socket (new `ConnectionRegistry.getAll()`) every `ws.heartbeatMs` (30s); a socket missing `ws.maxMissedPongs` (2) consecutive pongs is `terminate()`d. No client change — browsers auto-pong at the protocol level; the existing onclose backoff reconnects when the server closes a socket (resume-with-lastSeq is Theme B).
+- [x] **Metrics:** `WsMetricsService` (dropped-to-resync, dead-clients-reaped, ring hits/resync = 0 until B) + per-channel subscriber counts reported by the tasks/ideas/workflows gateways; `GET /ws/metrics` (open) + typed `getWsMetrics` client. Config: `ws.maxBufferedBytes`/`heartbeatMs`/`maxMissedPongs`.
+- [x] Tests: backpressure drop/skip units, heartbeat unit (ping/reap/pong-reset) + a real-socket integration (autoPong:false client terminated), metrics service + controller. shared 558, gateway 1499 (2 pre-existing flakes: tmux + a bcrypt-under-load timeout, both pass isolated), web 799 green.
+
+---
+
+## 2026-07-05 — feat: batch task hydration, kill the list N+1 — Phase 57 Theme B (PR #312)
+
+The board's biggest scale cliff: `GET /tasks` hydrated every task with 6 extra queries (6N per board). Now batched.
+
+- [x] `TasksRepository.hydrateMany(rows)` — one query per relation over the page (`WHERE taskId IN (…)`, chunked at 500 under SQLite's bound-param ceiling), grouped in memory, assembled via a shared `assembleTask()` so it's byte-identical to `rows.map(hydrate)`. Single-row `hydrate()` kept for detail. **Measured: 400-task list 2401→7 queries.**
+- [x] `listTasks` + scheduler `listReadyTodoTasks` use `hydrateMany`; `AgentPoolService.snapshot()` sizes the queue via `getCounts()` COUNT(*), never hydrate-to-count.
+- [x] `workflows.listSummaries` batches `latestRunRow` into one grouped query (**400 workflows 401→2 queries**).
+- [x] Gateway bench budgets tightened from the N+1 baseline to a constant-per-page ceiling; parity + chunk-boundary tests added. All 1492 gateway tests green.
+- [x] `fix(web)`: dropped an unused `cn` import (from PR #303) that was failing `web:build` on `main`.
+
+---
+
+## 2026-07-05 — feat: terminal WS resume + resync-required — Phase 56 Theme F (PR #311)
+
+Fold the one WS channel that already worked (the terminal, with its own seq + ring) onto Phase 56 A's sequenced-stream vocabulary, and close its silent-partial-replay gap.
+
+- [x] **shared:** terminal `output` frames now carry the `SequencedEnvelope` identity (`seq` + `ts`) — flattened alongside the `type` tag, since this socket multiplexes sequenced output with un-sequenced control messages (status/error/approval) in one discriminated union. New client `resume` message (carries `lastSeq`, mirrors the board subscribe/resume split) + server `resync-required` (`reason` + `fromSeq`).
+- [x] **gateway:** `TerminalService.attach(…, lastSeq?)` — on a resume, if the scrollback ring rolled past the client (`oldest retained seq > lastSeq + 1`), send `resync-required` before replaying, instead of a drift-prone partial stream. No-gap resume stays behavior-preserving (full-ring replay + client dedup). Output frames stamped via a shared `makeFrame`/`outputMessage` helper. Gateway routes `resume` → `attach` with `lastSeq`.
+- [x] **web:** `use-terminal-socket` sends `resume` (with `lastSeq`) on reconnect, `attach` fresh; unwraps the enveloped output; on `resync-required` calls a new `onResync` (wired in `live-terminal` to `term.reset()`) + drops `lastSeq` so the fresh ring re-renders cleanly.
+- [x] Tests: gateway service (envelope seq+ts, no-gap resume replays w/o resync, ring-overflow resume → resync-required with reason/fromSeq) + web hook unit (attach-vs-resume, envelope unwrap, resync clears + resets). shared 558, gateway 1489, web 156 files green.
+- Deferred to later Phase 56 themes: the board channels' own resume protocol (B), the shared client hook (D), connection-status UI (E) — F only aligns the already-working terminal.
+
+---
+
 ## 2026-07-05 — feat: list virtualization — board + long feeds — Phase 57 Theme F ◐ (PR #310)
 
 Keep the DOM bounded no matter the row count, via `@tanstack/react-virtual`.
@@ -36,6 +97,7 @@ The measurement backbone for the perf phase — every later theme reports before
 - [x] No optimization this slice — measurement + guard only. shared/ui built; gateway + web bench specs green; typecheck/lint clean (one pre-existing bcrypt-under-load flake in users.service, passes in isolation, unrelated).
 
 ---
+
 ## 2026-07-05 — feat: coalesce board refetches + tune query cache — Phase 57 Theme E (PR #307)
 
 Kills the board's refetch storm: every task WS event used to trigger an immediate global `invalidateQueries()` → a full `GET /tasks` reload, so a burst of N events meant N board reloads.

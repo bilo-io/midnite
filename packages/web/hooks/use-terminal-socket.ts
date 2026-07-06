@@ -20,6 +20,10 @@ type Args = {
   /** Raw PTY bytes for the terminal to render. */
   onOutput: (bytes: Uint8Array) => void;
   onStatus?: (phase: TerminalStatusPhase, command?: string) => void;
+  /** The gateway couldn't replay a continuous stream from our last seq (the
+   *  scrollback ring rolled past it during a long disconnect) — clear the screen;
+   *  the fresh ring replay that follows re-renders the recoverable transcript. */
+  onResync?: () => void;
   /** The agent is requesting approval for a tool call. */
   onApprovalRequest?: (request: TerminalApprovalRequestMessage) => void;
   /** A pending approval was resolved (answered, auto-allowed, or timed out). */
@@ -57,6 +61,7 @@ export function useTerminalSocket({
   enabled,
   onOutput,
   onStatus,
+  onResync,
   onApprovalRequest,
   onApprovalResolved,
   initialGeometry,
@@ -75,6 +80,8 @@ export function useTerminalSocket({
   onOutputRef.current = onOutput;
   const onStatusRef = useRef(onStatus);
   onStatusRef.current = onStatus;
+  const onResyncRef = useRef(onResync);
+  onResyncRef.current = onResync;
   const onApprovalRequestRef = useRef(onApprovalRequest);
   onApprovalRequestRef.current = onApprovalRequest;
   const onApprovalResolvedRef = useRef(onApprovalResolved);
@@ -121,7 +128,17 @@ export function useTerminalSocket({
         attempt = 0;
         setConnectionState('open');
         const { cols, rows } = geomRef.current;
-        ws.send(JSON.stringify({ type: 'attach', sessionId: attachId, token, cols, rows }));
+        // A reconnect (we've already rendered frames) resumes with our lastSeq so
+        // the gateway can replay just what we missed — or tell us to resync if the
+        // ring rolled past it. A fresh connection attaches.
+        const lastSeq = lastSeqRef.current;
+        ws.send(
+          JSON.stringify(
+            lastSeq >= 0
+              ? { type: 'resume', sessionId: attachId, token, cols, rows, lastSeq }
+              : { type: 'attach', sessionId: attachId, token, cols, rows },
+          ),
+        );
       };
 
       ws.onmessage = (ev: MessageEvent) => {
@@ -143,6 +160,11 @@ export function useTerminalSocket({
           if (message.seq <= lastSeqRef.current) return;
           lastSeqRef.current = message.seq;
           onOutputRef.current(base64ToBytes(message.data));
+        } else if (message.type === 'resync-required') {
+          // The ring rolled past our position — drop our seq and clear the screen;
+          // the full ring replay that follows re-renders us fresh.
+          lastSeqRef.current = -1;
+          onResyncRef.current?.();
         } else if (message.type === 'status') {
           // A freshly-spawned PTY restarts seq at 0; a reattach keeps the old PTY's.
           if (message.phase === 'ready') lastSeqRef.current = -1;

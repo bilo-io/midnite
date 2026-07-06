@@ -137,7 +137,9 @@ import {
   PrReviewDraftsResponseSchema,
   GuardrailsResponseSchema,
   WsSettingsResponseSchema,
+  WsMetricsResponseSchema,
   type WsRingSize,
+  type WsMetrics,
   TaskCountsSchema,
   TaskFailuresResponseSchema,
   TaskSchema,
@@ -826,6 +828,12 @@ export async function updateWsSettings(ringSize: WsRingSize): Promise<number> {
     WsSettingsResponseSchema,
   );
   return res.settings.ringSize;
+}
+
+/** Phase 56 C — realtime transport health counters (open read; drives the future connection-status UI). */
+export async function getWsMetrics(signal?: AbortSignal): Promise<WsMetrics> {
+  const res = await fetchJson('/ws/metrics', { signal }, WsMetricsResponseSchema);
+  return res.metrics;
 }
 
 /** The configured safety caps + policy mode + protected-actions (read-only,

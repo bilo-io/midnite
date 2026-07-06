@@ -127,7 +127,9 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
     const message = result.data;
 
-    if (message.type === 'attach') {
+    // `attach` = a fresh connection; `resume` = a reconnect carrying the last
+    // rendered `seq` so the service can detect a ring-overflow gap (Phase 56 F).
+    if (message.type === 'attach' || message.type === 'resume') {
       if (state.sessionId) return; // already bound to a PTY on this socket
       if (!this.terminal.verifyToken(message.sessionId, message.token)) {
         state.subscriber.send({
@@ -139,10 +141,12 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
         return;
       }
       state.sessionId = message.sessionId;
-      this.terminal.attach(message.sessionId, state.subscriber, {
-        cols: message.cols,
-        rows: message.rows,
-      });
+      this.terminal.attach(
+        message.sessionId,
+        state.subscriber,
+        { cols: message.cols, rows: message.rows },
+        message.type === 'resume' ? message.lastSeq : undefined,
+      );
       return;
     }
 

@@ -82,19 +82,20 @@ Measure before you optimize; guard against regressions forever.
 
 ---
 
-## Theme B — Kill the task-hydration N+1 — **L**
+## Theme B — Kill the task-hydration N+1 — **L** — ✅ DONE (PR #312, 2026-07-05)
 
 The single biggest win: stop firing 6 queries per task.
 
-- [ ] Add `hydrateMany(rows)` to [`tasks.repository.ts`](../packages/gateway/src/tasks/tasks.repository.ts):
+- [x] Added `hydrateMany(rows)` to [`tasks.repository.ts`](../packages/gateway/src/tasks/tasks.repository.ts):
       **set-based batch loads** — one query per relation over the whole page (`WHERE taskId IN (…)` for events,
-      links, attachments, prStatus, deps, checkRuns), grouped in memory. Keep single-row `hydrate()` for detail.
-      Result: a list of N tasks = **~7 queries total**, not `6N`.
-- [ ] Fix the needless callers: [`sessions.service.ts`](../packages/gateway/src/sessions/sessions.service.ts)
-      `list()` derives `SessionSummary` **without** full hydration; `AgentPoolService.snapshot()` +
-      status badges use **`COUNT(*)`** (cached, invalidated on mutation), never hydrate-to-count; search reindex
-      batches.
-- [ ] Batch the workflow `listSummaries` `latestRunRow` N+1 into one grouped query (latest run per workflow).
+      links, attachments, prStatus, deps, checkRuns), chunked at 500 (SQLite bound-param ceiling) and grouped in
+      memory; assembled through a shared `assembleTask()` so it's byte-identical to `hydrate()`. Kept single-row
+      `hydrate()` for detail. **Measured: a list of 400 tasks = 7 queries, not 2401** (6N).
+- [x] Fixed the needless caller: `AgentPoolService.snapshot()` sizes the queue via `getCounts()` **`COUNT(*)`**,
+      never hydrate-to-count. (`sessions.service.list()` inherits `hydrateMany` via `listTasks()`; a dedicated
+      no-hydration `SessionSummary` query is Theme C's DTO work.)
+- [x] Batched the workflow `listSummaries` `latestRunRow` N+1 into one grouped query (latest run per workflow).
+      **Measured: 400 workflows = 2 queries, not 401.**
 
 ---
 
@@ -113,15 +114,19 @@ Send less, in pages.
 
 ---
 
-## Theme D — DB indexes on hot paths — **S-M**
+## Theme D — DB indexes on hot paths — **S-M** — ✅ DONE (PR #314, 2026-07-05)
 
 Close the full-scan gaps.
 
-- [ ] Forward-only migration adding: `tasks(teamId)` (or composite `(teamId, status)` for the common scoped-board
-      query), `tasks(status, projectId)`, `projects(teamId)`, `workflows(teamId)` — the paths `teamScopeFilter`
-      hits today with no index.
-- [ ] Verify each with the Theme A harness (query timing / `EXPLAIN QUERY PLAN` before vs. after) — add only
-      indexes with a **measured** win; don't over-index (write cost).
+- [x] Forward-only migration (0070) adding the **missing** `teamScopeFilter` OR-arm indexes: `projects(createdBy)`
+      + `projects(teamId)` (projects had no indexes → full SCAN) and `workflows(teamId)` (createdBy was already
+      indexed in 0048; teamId was the missing arm). `tasks` was already covered by 0048 (both arms) — its scope
+      indexes are now also *declared* in `schema.ts` to reconcile long-standing schema/DB drift (no new migration;
+      0070 is hand-trimmed to just the 3 genuinely-missing indexes). The doc's `tasks(teamId,status)`/`(status,
+      projectId)` composites gave **no** EXPLAIN win over the existing status indexes → not added (write cost).
+- [x] Verified via `EXPLAIN QUERY PLAN` before/after: `listProjects` + `listWorkflows` went `SCAN` → `MULTI-INDEX
+      OR` (index SEARCH on every arm); a committed regression spec (`bench/scope-index-plans.spec.ts`) pins the
+      plans so a future index drop fails CI.
 
 ---
 

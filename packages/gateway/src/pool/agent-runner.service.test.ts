@@ -65,6 +65,16 @@ function fakeTasks(seed: Task[]) {
   const recordFailure = vi.fn();
   const service = {
     listTasks: () => [...byId.values()],
+    // Pool snapshot sizes the queue via getCounts() (Phase 57 B).
+    getCounts: () => {
+      const all = [...byId.values()];
+      return {
+        backlog: all.filter((t) => t.status === 'backlog').length,
+        todo: all.filter((t) => t.status === 'todo').length,
+        inProgress: all.filter((t) => t.status === 'wip' || t.status === 'waiting').length,
+        done: all.filter((t) => t.status === 'done').length,
+      };
+    },
     startTask,
     requeue,
     retry,
