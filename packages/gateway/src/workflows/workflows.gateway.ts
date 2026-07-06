@@ -119,6 +119,8 @@ export class WorkflowsGateway
       this.byRun.set(runId, sockets);
     }
     sockets.add(client);
+    // Phase 56 B: a workflow socket carries exactly one seq line — this run's ring.
+    this.reliable.handleSubscription(client, [`workflows:run:${runId}`], result.data);
     this.reportSubscribers();
   }
 

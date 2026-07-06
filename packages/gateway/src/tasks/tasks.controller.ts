@@ -55,6 +55,7 @@ import {
   type TaskActivityEntry,
   type TaskCounts,
   type TasksPage,
+  type TaskGraphResponse,
   type TaskFailuresResponse,
   type TriggerCheckResponse,
 } from '@midnite/shared';
@@ -87,6 +88,17 @@ export class TasksController {
   @Get('counts')
   counts(): TaskCounts {
     return this.service.getCounts();
+  }
+
+  // Phase 58 A — the dependency graph (nodes + edges, ready/blocked computed with
+  // the scheduler's readiness logic). Static route, declared before `@Get(':id')`.
+  @Get('graph')
+  graph(
+    @Query('projectId') projectId?: string,
+    @CurrentUser() user?: CurrentUserPayload | null,
+  ): TaskGraphResponse {
+    const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
+    return { graph: this.service.buildGraph(projectId?.trim() || undefined, scope) };
   }
 
   /**

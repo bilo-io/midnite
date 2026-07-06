@@ -17,6 +17,53 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-06 — feat: dependency graph API — GET /tasks/graph — Phase 58 Theme A (PR #318)
+
+Expose the Phase 27 dependency structure as server-authoritative data, so the DAG/roadmap views (58 B/E) render from truth.
+
+- [x] **shared:** `TaskGraphSchema` — nodes `{ id, title, status, priority, ready, unmetBlockerCount, projectId?, milestoneId?, foreign? }` + edges `{ from, to }` (dependent→blocker) + `{ truncated, totalCount }`; `TASK_GRAPH_NODE_CAP=500`.
+- [x] **gateway:** `TasksService.buildGraph` over new batch repo queries (`tasksByIds` + `dependencyEdges`, no N+1). Nodes = in-scope tasks (team, optional `?projectId=`); `ready`/`unmetBlockerCount` match the scheduler (`ready` = todo with all blockers done; false for non-todo). Cross-project blockers under `?projectId=` pulled in as flagged `foreign` nodes. Bounded 500 → `truncated`+`totalCount`, no silent drop. Thin `GET /tasks/graph` (team-scoped, before `:id`).
+- [x] **web:** typed `getTaskGraph(projectId?)` client.
+- [x] Tests: service (nodes/edges, ready+unmet flip, non-todo ready=false, foreign cross-project node) on a real :memory: DB; controller (scope + projectId passthrough); shared schema round-trip. shared/gateway 1514/web 813 green, lint clean.
+- Note: `milestoneId` in the node schema is forward-looking (Theme D); always absent for now.
+
+---
+
+## 2026-07-05 — feat: WS resume protocol + gap-detection — Phase 56 Theme B (PR #313)
+
+Closes the reliability loop Phase 56 A opened: a client that drops for a second used to silently lose every board event in that window. Now it replays what it missed, or resyncs when it can't.
+
+- [x] **shared:** `ch` (ring-channel/line key) on the sequenced envelope — a socket that multiplexes >1 seq line (tasks = team line + all-scoped activity line) tracks lastSeq **per line**. New control frames: `subscribe|resume` + `cursor`, `watermark` (fresh-subscribe anchor), `resync-required` (gap).
+- [x] **gateway:** `ReliableBroadcastService.resume(ringKey,lastSeq)→{events,resyncRequired}` (replay after cursor; resync on a gap beyond the ring **or** a seq-reset from a restart) + `handleSubscription()`; wired into the tasks/ideas/workflows gateways. Each derives the lines a socket may replay from its **team/run scope** (a crafted cursor can't replay another scope). Envelopes stamp `ch`.
+- [x] **web:** shared `ResumeTracker` — reconnect → `resume` with the per-`ch` cursor; dedup replay+live overlap by `(ch, seq)`; `resync-required` → full refetch. Adopted by the tasks + ideas board hooks (invalidate) and the workflow-run hook (reducer → resync routes to its REST reconcile).
+- [x] Tests: gateway resume/gap/watermark/scoping unit (9) + client dedup unit (9); existing WS gateway tests updated to skip the new watermark frame. Full local gate green (shared 59 files, gateway 1498 tests, web 158 files; typecheck + lint 0-errors). CI billing-blocked → gated on the local suite.
+
+---
+
+## 2026-07-06 — feat: connection-status indicator across the app — Phase 56 Theme E (PR #317)
+
+Make the live connection legible: show when data may be behind, reassure on recovery.
+
+- [x] Zustand **connection store** — `useReliableSubscription` reports each channel's transport state (live/reconnecting/stale) into it; the UI reads the **worst-of** across channels. `stale` is a reconnect-count heuristic (≥3 attempts) until Theme B's `resync-required`.
+- [x] **`<ConnectionStatus>`** — full (dot + label) in the sidebar footer; compact labelled pip on the session + project cockpit headers. Board/office/cockpits already resume via the Theme D hook — E surfaces its state, no new subscriptions (diff-review is REST-polling, no indicator).
+- [x] **`<ConnectionToaster>`** (once in the chrome) toasts "Reconnected" on recovery from a drop.
+- [x] Tests: connection-store (worst-of + set/clear), indicator (states + compact), recovery toast. web 813, lint clean. Screenshot: sidebar live pip.
+
+---
+
+## 2026-07-05 — feat: shared reliable WS subscription hook — Phase 56 Theme D (PR #316)
+
+One resilient subscription hook replacing four ad-hoc socket implementations.
+
+- [x] `useReliableSubscription(channel, handlers, enabled?)` — transport-only: connect, exponential-backoff reconnect, per-channel decode, `lastSeq` tracking, `send`. Cache strategy stays with the caller (`onEvent`), so the hook is generic.
+- [x] Migrated **use-task-events**, **use-idea-events**, **use-approvals-socket** onto it via stable per-channel configs. Board channels unwrap the 56 A `SequencedEnvelope`; approvals decodes its snapshot events (no seq), connects tokenless, uses `send` for `decide`.
+- [x] **Resume-safe:** still sends plain `{type:'subscribe'}` — the `resume`/`resync-required` handling pairs with Theme B's server protocol (not merged; sending `resume` now would break against today's gateways). `lastSeq` already tracked → one-line flip once B lands.
+- [x] Per-event-type cache strategy in each `onEvent` (board→invalidate, ephemeral→skip, workflow node→reducer patch); `refetchOnWindowFocus` fallback already on (57 E).
+- Intentional exception: **use-workflow-run** stays bespoke — imperative start→subscribe→poll-fallback→terminal lifecycle doesn't fit the declarative hook (would lose its REST poll fallback); already consumes the 56 A envelope.
+- [x] Tests: `useReliableSubscription` unit (connect/subscribe/decode/send/enabled/onOpen) + existing task/idea/approvals consumers green. web 804, lint clean.
+
+---
+
 ## 2026-07-05 — perf: index team-scope hot paths — Phase 57 Theme D (PR #314)
 
 `teamScopeFilter` (`createdBy = ? OR createdBy IS NULL OR teamId = ?`) backed `listProjects`/`listWorkflows`/scoped `listTasks`; projects + workflows had no matching index, so EXPLAIN QUERY PLAN showed a full `SCAN`.

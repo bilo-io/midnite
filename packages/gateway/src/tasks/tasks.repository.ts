@@ -411,6 +411,41 @@ export class TasksRepository {
     return this.db.select().from(tasks).where(where).get();
   }
 
+  /**
+   * Task rows for an explicit id set (team-scoped), chunked under the SQLite bound-
+   * parameter cap. Used by the dependency graph (Phase 58 A) to pull in blocker
+   * rows that fall outside a `?projectId=` filter.
+   */
+  tasksByIds(ids: string[], scope?: TeamScope): TaskRow[] {
+    if (ids.length === 0) return [];
+    const rows: TaskRow[] = [];
+    for (const batch of chunkIds(ids)) {
+      const where = scope
+        ? and(inArray(tasks.id, batch), teamScopeFilter(tasks.createdBy, tasks.teamId, scope))
+        : inArray(tasks.id, batch);
+      rows.push(...this.db.select().from(tasks).where(where).all());
+    }
+    return rows;
+  }
+
+  /**
+   * Blocker edges (`from` dependent → `to` its blocker) for a set of dependent
+   * task ids. Phase 58 A graph builder; chunked over the id cap.
+   */
+  dependencyEdges(taskIds: string[]): Array<{ from: string; to: string }> {
+    if (taskIds.length === 0) return [];
+    const edges: Array<{ from: string; to: string }> = [];
+    for (const batch of chunkIds(taskIds)) {
+      const rows = this.db
+        .select({ from: taskDependencies.taskId, to: taskDependencies.dependsOnTaskId })
+        .from(taskDependencies)
+        .where(inArray(taskDependencies.taskId, batch))
+        .all();
+      edges.push(...rows);
+    }
+    return edges;
+  }
+
   listEvents(taskId: string): TaskEvent[] {
     const rows = this.db
       .select()

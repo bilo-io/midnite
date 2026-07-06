@@ -31,6 +31,7 @@ import { ApprovalsDrawer } from '@/components/approvals-drawer';
 import { Screensaver } from '@/components/screensaver';
 import { PasscodeSetupDialog } from '@/components/passcode-pad';
 import { Wordmark } from '@/components/wordmark';
+import { ConnectionStatus, ConnectionToaster } from '@/components/connection-status';
 import { MobileNav } from '@/components/mobile-nav';
 
 type NavLink = {
@@ -232,6 +233,11 @@ export function NavBar() {
               <Tooltip>Lock</Tooltip>
             )}
           </button>
+          {/* Phase 56 E — live-connection indicator + the single recovery-toast owner. */}
+          <div className={cn('mt-1 flex', expandedView ? 'px-2.5' : 'justify-center')}>
+            <ConnectionStatus variant={expandedView ? 'full' : 'compact'} />
+          </div>
+          <ConnectionToaster />
         </div>
       </aside>
 

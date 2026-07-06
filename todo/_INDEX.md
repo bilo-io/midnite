@@ -28,9 +28,13 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | ◻ TODO | 0/25 | `░░░░░░░░░░` | 0% | — | A B C D E F |
+| [62 · Fable-Digest](phase-62-fable-digest.md) | ◻ TODO | 0/33 | `░░░░░░░░░░` | 0% | — | A B C D E F G H |
+| [61 · Fable-Observability](phase-61-fable-observability.md) | ◻ TODO | 0/36 | `░░░░░░░░░░` | 0% | — | A B C D E F G H I |
+| [60 · Fable-Analysis](phase-60-fable-analysis.md) | ◻ TODO | 0/63 | `░░░░░░░░░░` | 0% | — | A B C D E F G H I J K L M |
+| [59 · Chat to board](phase-59-chat-to-board.md) | ◻ TODO | 0/26 | `░░░░░░░░░░` | 0% | — | A B C D E F |
+| [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | 🔄 WIP | 3/25 | `█░░░░░░░░░` | 12% | — | B C D E F |
 | [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 15/26 | `██████░░░░` | 58% | — | — |
-| [56 · Realtime / WS reliability](phase-56-realtime-ws-reliability.md) | 🔄 WIP | 8/26 | `███░░░░░░░` | 31% | B D | E |
+| [56 · Realtime / WS reliability](phase-56-realtime-ws-reliability.md) | ✅ DONE | 17/26 | `███████░░░` | 65% | — | — |
 | [55 · Projects detail page](phase-55-projects-detail-page.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
 | [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [53 · Task lifecycle resilience](phase-53-task-lifecycle-resilience.md) | ✅ DONE | 22/22 | `██████████` | 100% | — | — |
@@ -110,9 +114,57 @@ Every phase's lettered themes with a status icon + one-liner, so you can gauge s
 work without opening the phase doc. Status: `✅` done · `🔄` WIP (claimed) · `◻` TODO · `◐`
 partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 
+### [Phase 62 — Fable-Digest](phase-62-fable-digest.md)
+*Retrospectives per task + fleet digests, workflow-first: a task-event trigger + retro/digest nodes + seeded pipelines; gateway stores primitives. Fable series #3.*
+- ◻ **A** — Retro contract + deterministic skeleton + task_retros storage (auto on terminal, zero LLM)
+- ◻ **B** — Task-event workflow trigger (workflows fire on task.done/abandoned/needs-attention)
+- ◻ **C** — Node executors: generate-retro / list-completed-tasks / build-digest / notify
+- ◻ **D** — Retro pipeline template (task-event → retro → notify-on-notable)
+- ◻ **E** — Digest pipeline template (upgrade daily-digest.seed → real structured digest → Slack + in-app)
+- ◻ **F** — Retro surfaces (task detail section, P18 markdown export)
+- ◻ **G** — Digest surfaces (feed/page, dashboard widget, searchable)
+- ◻ **H** — Transcript slicing helper, CLI (retro/digest), config + cost docs
+
+### [Phase 61 — Fable-Observability](phase-61-fable-observability.md)
+*Deepen the existing metrics/usage seam: real session tokens (honestly labeled), cost attribution, cycle time, rollups + retention, live Ops. Fable series #2.*
+- ◻ **A** — Real session-token harvesting (transcript/Stop-hook probe, replace the hash-seeded placeholder)
+- ◻ **B** — Cost attribution: session_usage table + groupBy task/repo/project + real budget numbers
+- ◻ **C** — Cycle-time as a first-class metric (todo→wip→done from task_events)
+- ◻ **D** — Gauge history that survives restarts (sampler + gauge_samples)
+- ◻ **E** — Rollups + retention (hourly/daily rollups; prune metrics raws only, never task_events)
+- ◻ **F** — Live metrics channel on the P56 reliable WS (poll fallback)
+- ◻ **G** — Ops page deepening (cost/cycle-time/fleet-trend charts, run timeline)
+- ◻ **H** — Widgets + session/project cockpit integration
+- ◻ **I** — CLI (`usage --by`, `ops`) + metrics-model docs
+
+### [Phase 60 — Fable-Analysis](phase-60-fable-analysis.md)
+*Repo-wide audit → ranked findings reports (analysis-only, bar security quick-wins + safe dep bumps). Direction-preserving. M runs last.*
+- ◻ **A** — Auth, transport & headers audit (rate-limit posture, CORS, token lifecycle)
+- ◻ **B** — Secrets, signatures & crypto paths audit
+- ◻ **C** — Input validation & injection sweep (zod coverage, FTS/path-traversal/SSRF/zip-slip)
+- ◻ **D** — Dependency & supply-chain audit (+ safe bumps)
+- ◻ **E** — State-machine, scheduler & concurrency correctness
+- ◻ **F** — Data integrity & boundary-condition bugs
+- ◻ **G** — Error handling & failure-path correctness
+- ◻ **H** — Consistency & flow sweep (loading/empty/error, dead ends)
+- ◻ **I** — Accessibility & keyboard navigation
+- ◻ **J** — Mobile & responsive polish
+- ◻ **K** — CLI robustness & coverage (+ tests for untested clusters)
+- ◻ **L** — Docs site, public site & @midnite/ui test gap
+- ◻ **M** — Cross-cutting synthesis & remediation backlog (runs last)
+
+### [Phase 59 — Chat to board](phase-59-chat-to-board.md)
+*Natural-language command bar in the Cmd-K palette; deterministic-first, local-model-preferred; composes existing task services.*
+- ◻ **A** — Intent contract + deterministic parser + LLM fallback
+- ◻ **B** — Execute intents by composing existing services
+- ◻ **C** — Status-query answerer (read-only)
+- ◻ **D** — Inference routing: deterministic-first, local-preferred
+- ◻ **E** — Palette command-bar UI
+- ◻ **F** — Safety: preview, confirm, undo, audit
+
 ### [Phase 58 — Dependency graph & milestone roadmap](phase-58-dependency-graph-roadmap.md)
 *(Make the plan visible: surface Phase 27's dependency edges as a DAG + a milestone roadmap. Server-authoritative graph API; React Flow + dagre view; milestone data model + assignment. No new scheduling semantics — read/visualize what's modeled.)*
-- ◻ **A** — Graph API (server-authoritative)
+- ✅ **A** — Graph API (server-authoritative): GET /tasks/graph, ready/unmet + foreign nodes, bounded (PR #318)
 - ◻ **B** — Dependency DAG view (React Flow + dagre)
 - ◻ **C** — Project progress overlay
 - ◻ **D** — Milestone data model
@@ -131,10 +183,10 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 ### [Phase 56 — Realtime / WS reliability](phase-56-realtime-ws-reliability.md)
 *(No new domain — a shared reliability layer under the existing WS gateways, lifting the terminal WS's proven seq+ring+resume onto every board channel so clients never silently drift. In-memory ring; restart forces resync.)*
 - ✅ **A** — Sequenced event contracts + server event ring (PR #305)
-- ◻ **B** — Resume protocol + gap-detection (the core guarantee)
+- ✅ **B** — Resume protocol + gap-detection (the core guarantee — PR #313)
 - ✅ **C** — Per-client backpressure + heartbeat + metrics (PR #315)
-- ◻ **D** — Shared reliable client subscription hook
-- ◻ **E** — Apply across cockpits + connection-status UI
+- ✅ **D** — Shared reliable client subscription hook (tasks/ideas/approvals; resume via #313; workflow-run bespoke) (PR #316)
+- ✅ **E** — Apply across cockpits + connection-status UI (worst-of indicator + recovery toast; resync via #313) (PR #317)
 - ✅ **F** — Terminal WS alignment: seq+ts envelope on output, `resume`/`resync-required` on ring overflow (PR #311)
 
 ### [Phase 55 — Projects detail page](phase-55-projects-detail-page.md)

@@ -83,19 +83,22 @@ Give every board event an identity and remember the recent ones.
       ring on the way out. Config: ring size + retention (`ws.ringSize`).
 
 ---
-
-## Theme B — Resume protocol + gap-detection — **L**
+## Theme B — Resume protocol + gap-detection — **L** — ✅ DONE (PR #313, 2026-07-05)
 
 Replay what a client missed; when you can't, tell it to resync. The core guarantee.
 
-- [ ] **Protocol:** subscribe carries `{ type: 'subscribe' | 'resume', lastSeq? }`. On **resume**, the gateway
-      replays ring events with `seq > lastSeq`, then streams live; a **fresh subscribe** returns the current seq
-      **watermark** so the client anchors.
-- [ ] **Gap-detection:** if `lastSeq` is older than the ring's oldest retained seq (the gap exceeds the buffer),
-      the gateway emits **`{ type: 'resync-required' }`** → the client does a **full refetch** (invalidate) rather
-      than applying a partial, drift-prone stream. No silent gaps.
-- [ ] **Client dedup:** track `lastSeq` per channel and drop already-applied events (mirrors the terminal's
-      `lastSeqRef`), so replay + live overlap is idempotent.
+- [x] **Protocol:** subscribe carries `{ type: 'subscribe' | 'resume', cursor? }`. On **resume**, the gateway
+      replays ring events with `seq > lastSeq` per line, then streams live; a **fresh subscribe** returns a
+      `watermark` frame (current seq per line) so the client anchors. `ReliableBroadcastService.handleSubscription`
+      owns it; wired into the tasks/ideas/workflows gateways. Because one socket can carry >1 seq line (tasks =
+      team line + all-scoped activity line), the envelope gained a `ch` line-key and the cursor is **per `ch`**.
+- [x] **Gap-detection:** `resume(ringKey, lastSeq)` emits **`{ type: 'resync-required', ch }`** when `lastSeq` is
+      older than the ring's oldest retained seq **or** ahead of the watermark (gateway restart → seq reset) → the
+      client does a **full refetch** (invalidate) rather than a drift-prone partial stream. No silent gaps. Each
+      gateway derives the lines a socket may replay from its **team/run scope**, so a client can't replay another scope.
+- [x] **Client dedup:** a shared `ResumeTracker` tracks `lastSeq` per `ch` and drops already-applied events, so
+      replay + live overlap is idempotent. Adopted by the tasks + ideas hooks (invalidate model) and the
+      workflow-run hook (reducer model → `resync-required` routes to its existing REST reconcile).
 
 ---
 
@@ -116,33 +119,39 @@ Protect the gateway from slow clients; detect dead ones fast.
 
 ---
 
-## Theme D — Shared reliable client subscription hook — **M**
+## Theme D — Shared reliable client subscription hook — **M** — ✅ DONE (PR #316, 2026-07-05)
 
 One resilient subscription, not four ad-hoc ones.
 
-- [ ] **web:** a `useReliableSubscription(channel)` hook consolidating [`use-task-events.ts`](../packages/web/hooks/use-task-events.ts),
-      [`use-idea-events.ts`](../packages/web/hooks/use-idea-events.ts), the workflow + approvals sockets: tracks
-      `lastSeq`, sends `resume` on reconnect, applies replayed events, honors `resync-required` (full invalidate),
-      exponential backoff, and heartbeat/pong handling.
-- [ ] **Per-event-type cache strategy** (not blanket invalidate): `task.*` → invalidate board queries;
-      `workflow node.*` → patch that run/node; `agent.activity`/`attention` → ephemeral store (no refetch);
-      `guardrails.updated` → patch guardrail state. Cuts needless refetch storms.
-- [ ] Re-enable a **fallback**: `refetchOnWindowFocus` (or a per-query last-sync watermark) so a long-backgrounded
-      tab self-heals even if the socket never noticed.
+- [x] **web:** `useReliableSubscription(channel, handlers, enabled?)` — transport-only (connect, exponential-backoff
+      reconnect, per-channel decode, `lastSeq` tracking, `send`). Migrated [`use-task-events.ts`](../packages/web/hooks/use-task-events.ts),
+      [`use-idea-events.ts`](../packages/web/hooks/use-idea-events.ts), and [`use-approvals-socket.ts`](../packages/web/hooks/use-approvals-socket.ts)
+      onto it. **Resume-safe:** still sends plain `{type:'subscribe'}` — the `resume`/`resync-required` handling
+      pairs with **Theme B's** server protocol (not merged; sending `resume` now would break against today's
+      gateways), so it's a one-line flip once B lands; `lastSeq` is already tracked. ⏳ **use-workflow-run** stays
+      bespoke — its imperative start→subscribe→poll-fallback→terminal-cleanup lifecycle doesn't fit the declarative
+      hook (folding it in would lose its REST poll fallback); it already consumes the 56 A envelope.
+- [x] **Per-event-type cache strategy** — lives in each channel's `onEvent` (the hook is transport-only): `task.*`
+      → invalidate board; `agent.activity`/`attention`/`guardrails.updated` → skip (ephemeral, own consumers);
+      workflow `node.*` → patched in `use-workflow-run`'s reducer.
+- [x] **Fallback** already in place: `refetchOnWindowFocus: true` + `staleTime: 5s` in `query-client` (Phase 57 E),
+      so a long-backgrounded tab self-heals on refocus.
 
 ---
 
-## Theme E — Apply across cockpits + connection-status UI — **M**
+## Theme E — Apply across cockpits + connection-status UI — **M** — ✅ DONE (PR #317, 2026-07-06)
 
 Make every live surface resilient, and make the connection legible.
 
-- [ ] Wire `useReliableSubscription` into the **board**, the **office**, and the cockpit views — **session detail
-      (P51)**, **project detail (P55)**, **in-app diff review (P52)** — so their live panels resume/resync instead
-      of drifting.
-- [ ] A shared **connection-status indicator** (`live` / `reconnecting` / `stale — refreshing`) surfaced in the app
-      chrome + on cockpit panels, driven by the hook's state, so users know when data may be behind.
-- [ ] A brief **"reconnected — resynced"** affordance after a `resync-required` full refetch, so a sudden board
-      refresh isn't mysterious.
+- [x] The **board / office / cockpits** already resume via the Theme D hook (`useTaskEvents` / `useIdeaEvents` /
+      the approvals socket all ride `useReliableSubscription`); Theme E surfaces that hook's transport state rather
+      than re-wiring subscriptions. (The **in-app diff review** cockpit is REST-polling — no WS — so no indicator.)
+- [x] A shared **connection-status indicator** driven by a Zustand connection store the hook reports into
+      (`live` / `reconnecting` / `stale`, **worst-of** across channels) — full (dot + label) in the sidebar footer,
+      compact pip on the session + project cockpit headers. `stale` is a reconnect-count heuristic until Theme B's
+      `resync-required`.
+- [x] A **`<ConnectionToaster>`** (mounted once in the chrome) fires a "Reconnected" toast when the app recovers
+      from a drop, so a sudden refresh isn't mysterious. (Wording upgrades to "reconnected — resynced" with Theme B.)
 
 ---
 

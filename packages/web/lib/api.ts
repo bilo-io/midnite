@@ -142,6 +142,8 @@ import {
   type WsMetrics,
   TaskCountsSchema,
   TaskFailuresResponseSchema,
+  TaskGraphResponseSchema,
+  type TaskGraph,
   TaskSchema,
   TasksPageSchema,
   TaskActivityResponseSchema,
@@ -460,6 +462,14 @@ export async function listTaskSummaries(query?: TaskListQuery): Promise<{ items:
   if (query?.limit) qs.set('limit', String(query.limit));
   const suffix = qs.toString() ? `?${qs}` : '';
   return fetchJson(`/tasks${suffix}`, undefined, TasksPageSchema);
+}
+
+/** Phase 58 A — the dependency graph (optionally scoped to one project). Bounded;
+ *  check `graph.truncated` / `graph.totalCount` before assuming it's complete. */
+export async function getTaskGraph(projectId?: string, signal?: AbortSignal): Promise<TaskGraph> {
+  const qs = projectId ? `?projectId=${encodeURIComponent(projectId)}` : '';
+  const res = await fetchJson(`/tasks/graph${qs}`, { signal }, TaskGraphResponseSchema);
+  return res.graph;
 }
 
 // ── Outbound webhooks (Phase 44) ────────────────────────────────────────────────

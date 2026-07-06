@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { WorkflowRunSchema } from '../run.js';
-import { sequencedEnvelope, type SequencedEnvelope } from './envelope.js';
+import { sequencedEnvelope, SubscribeOrResumeSchema, type SequencedEnvelope } from './envelope.js';
 
 // Live workflow-run events published over the gateway WebSocket. Defined now so the
 // realtime-streaming phase is a drop-in; the MVP polls run state instead of emitting these.
@@ -59,10 +59,9 @@ export const SequencedWorkflowEventSchema = sequencedEnvelope(WorkflowEventSchem
 export type SequencedWorkflowEvent = SequencedEnvelope<WorkflowEvent>;
 
 // Client → gateway message on the workflow WS: subscribe to a run's live events.
-export const WorkflowSubscribeMessageSchema = z.object({
-  type: z.literal('subscribe'),
-  runId: z.string(),
-});
+// Phase 56 B: `subscribe` (fresh) or `resume` (reconnect + cursor); `runId` names
+// the run whose ring to anchor/replay.
+export const WorkflowSubscribeMessageSchema = SubscribeOrResumeSchema.extend({ runId: z.string() });
 export type WorkflowSubscribeMessage = z.infer<typeof WorkflowSubscribeMessageSchema>;
 
 export const WORKFLOW_WS_PATH = '/ws/workflows';

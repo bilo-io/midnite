@@ -21,8 +21,12 @@ function fakeClient() {
       if (event === 'message') onMessage = cb;
     },
     send(payload: string) {
-      // Phase 56 A: the wire is now the sequenced envelope — unwrap `.event`.
-      sent.push((JSON.parse(payload) as SequencedEnvelope<TaskBoardEvent>).event);
+      const frame = JSON.parse(payload) as { type?: string };
+      // Phase 56 B: a fresh subscribe also gets a `watermark` control frame (and a
+      // gap gets `resync-required`). These aren't events — collect events only.
+      if (frame.type === 'watermark' || frame.type === 'resync-required') return;
+      // Phase 56 A: the event wire is the sequenced envelope — unwrap `.event`.
+      sent.push((frame as unknown as SequencedEnvelope<TaskBoardEvent>).event);
     },
     close() {},
   };
