@@ -120,17 +120,18 @@ Near-zero cost by default; never a surprise bill.
 
 ---
 
-## Theme E — Palette command-bar UI — **M-L**
+## Theme E — Palette command-bar UI — **M-L** — ✅ DONE (PR #334, 2026-07-06)
 
 Type what you want, where you already type.
 
-- [ ] Fold chat-to-board into the **command palette** via `useRegisterPaletteCommands` — a "Chat with board" mode
-      (or a leading `>`/natural-language line) using the **composer** input pattern; **no new FAB**. A small **chat
-      icon in the nav** opens the same, for discoverability.
-- [ ] **One-shot** interaction with a **light last-result context** — a follow-up like "now make those high
-      priority" resolves against the previous command's affected ids (not a full conversation history).
-- [ ] Render the parsed intent + result inline (created/updated tasks link into the board); live board refresh via
-      the existing WS (ties to Phase 56). Static-export friendly (client-only).
+- [x] Fold chat-to-board into the **command palette** — a leading `>` switches the ⌘K input into a "Chat with board"
+      mode (`useChatCommand` hook + presentational `<ChatBar>`); **no new FAB**. A **chat icon in the nav** opens it
+      pre-seeded (`midnite:open-chat`), for discoverability. Search is skipped in chat mode.
+- [x] **One-shot** interaction with a **light last-result context** — a follow-up ("make those p1") expands
+      client-side (`expandFollowup`) to one command per the previous command's affected id (not full conversation
+      history).
+- [x] Render the parsed intent + result inline (cost line + low-confidence warning); confirm gate + inline Undo
+      (Theme F); live board refresh via the existing `invalidateData()`. Static-export friendly (client-only).
 
 ---
 

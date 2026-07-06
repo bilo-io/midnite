@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-06 — feat: chat-to-board command bar in the Cmd-K palette — Phase 59 Theme E (PR #334)
+
+Closes Phase 59 Theme E. The natural-language bar surfaces where people already type — the ⌘K palette — over the A/B/D/F backend seam.
+
+- [x] **web:** a leading `>` switches the command palette into chat mode (`useChatCommand` hook + presentational `<ChatBar>`); nav chat icon opens it pre-seeded (`midnite:open-chat`). No new FAB. Preview → confirm (Theme F seatbelt) → execute → inline Undo, with cost line + low-confidence warning.
+- [x] **web:** light last-result context — a follow-up ("make those p1") expands client-side (`expandFollowup`) to one command per prior affected id. Board refresh via `invalidateData()`.
+- [x] **fix:** undo-of-create now archives-then-deletes (`deleteTask` guards against deleting live rows), caught by the new e2e.
+- [x] Tests: RTL (hook/ChatBar/follow-up/palette) + Playwright e2e (`>` add → confirm → result → undo). `:typecheck`/`:lint`/`:test` green (web 868, gateway 1609, shared 582, cli 155; `ui:test` flake passes isolated).
+
+---
+
 ## 2026-07-06 — feat: chat-to-board safety (preview/confirm/undo/audit) — Phase 59 Theme F (PR #333)
 
 Closes Phase 59 Theme F. The NL command bar's seatbelt: never silently write, always reversible, always audited — backend primitives over the A/B/D spine (the UI that surfaces them is Theme E).

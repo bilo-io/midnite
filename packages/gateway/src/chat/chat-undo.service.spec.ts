@@ -28,6 +28,7 @@ function build(logRow: ChatCommandRow | undefined, taskOverrides: Partial<TasksS
     insert: vi.fn(),
   } as unknown as ChatCommandsRepository;
   const tasks = {
+    archive: vi.fn(),
     deleteTask: vi.fn(),
     setPriority: vi.fn(),
     updateStatus: vi.fn(),
@@ -44,6 +45,7 @@ describe('ChatUndoService', () => {
   it('replays a delete revert, marks the command undone, and audits it', () => {
     const { svc, log, tasks, audit } = build(row());
     const result = svc.undo('tok1', { userId: 'u1', teamId: 'team1' });
+    expect(tasks.archive).toHaveBeenCalledWith('new1'); // archive-then-delete
     expect(tasks.deleteTask).toHaveBeenCalledWith('new1');
     expect(log.markUndone).toHaveBeenCalledWith('tok1', expect.any(String));
     expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'chat.undo' }));

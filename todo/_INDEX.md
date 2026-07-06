@@ -33,7 +33,7 @@
 | [62 · Fable-Digest](phase-62-fable-digest.md) | ◻ TODO | 0/33 | `░░░░░░░░░░` | 0% | — | A B C D E F G H |
 | [61 · Fable-Observability](phase-61-fable-observability.md) | ◻ TODO | 0/36 | `░░░░░░░░░░` | 0% | — | A B C D E F G H I |
 | [60 · Fable-Analysis](phase-60-fable-analysis.md) | ◻ TODO | 0/63 | `░░░░░░░░░░` | 0% | — | A B C D E F G H I J K L M |
-| [59 · Chat to board](phase-59-chat-to-board.md) | 🔄 WIP | 12/26 | `█████░░░░░` | 46% | C E | — |
+| [59 · Chat to board](phase-59-chat-to-board.md) | 🔄 WIP | 15/26 | `██████░░░░` | 57% | C | — |
 | [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | 🔄 WIP | 14/25 | `██████░░░░` | 56% | F | — |
 | [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 15/26 | `██████░░░░` | 58% | — | — |
 | [56 · Realtime / WS reliability](phase-56-realtime-ws-reliability.md) | ✅ DONE | 17/26 | `███████░░░` | 65% | — | — |
@@ -181,7 +181,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **B** — Execute intents by composing existing services (PR #323)
 - ◻ **C** — Status-query answerer (read-only)
 - ✅ **D** — Inference routing: deterministic-first, local-preferred (PR #332)
-- ◻ **E** — Palette command-bar UI
+- ✅ **E** — Palette command-bar UI (PR #334)
 - ✅ **F** — Safety: preview, confirm, undo, audit (PR #333)
 
 ### [Phase 58 — Dependency graph & milestone roadmap](phase-58-dependency-graph-roadmap.md)

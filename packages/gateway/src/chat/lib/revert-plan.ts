@@ -20,6 +20,9 @@ export type RevertOp =
 export function applyRevert(tasks: TasksService, op: RevertOp): void {
   switch (op.kind) {
     case 'delete':
+      // Undo of a create = remove the task. `deleteTask` guards against deleting
+      // live work (requires an archived row), so archive first, then hard-delete.
+      tasks.archive(op.taskId);
       tasks.deleteTask(op.taskId);
       return;
     case 'restorePriority':
