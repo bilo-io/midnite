@@ -884,6 +884,23 @@ export class TasksService {
     return this.emit('task.updated', this.getTask(id));
   }
 
+  // Assign (or clear) a task's repo. Validates the name against the registry
+  // (mirrors createFromPrompt); a blank/undefined name clears it. Re-broadcasts.
+  setRepo(id: string, repo: string | undefined | null): Task {
+    const resolved = this.resolveRepoReference(repo ?? undefined);
+    const now = new Date().toISOString();
+    const row = this.repo.setRepo(id, resolved, now);
+    if (!row) throw new NotFoundException(`task ${id} not found`);
+    this.repo.insertEvent({
+      id: randomUUID(),
+      taskId: id,
+      at: now,
+      kind: 'task.repo.changed',
+      data: JSON.stringify({ repo: resolved }),
+    });
+    return this.emit('task.updated', this.getTask(id));
+  }
+
   // Set the scheduling priority band (0–3). Re-broadcasts so the board re-ranks.
   setPriority(id: string, priority: number): Task {
     const now = new Date().toISOString();

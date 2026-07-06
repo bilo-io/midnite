@@ -285,6 +285,15 @@ export class TasksRepository {
       .get();
   }
 
+  setRepo(id: string, repo: string | null, updatedAt: string): TaskRow | undefined {
+    return this.db
+      .update(tasks)
+      .set({ repo, updatedAt })
+      .where(eq(tasks.id, id))
+      .returning()
+      .get();
+  }
+
   setTags(id: string, tags: string[], updatedAt: string): TaskRow | undefined {
     return this.db
       .update(tasks)

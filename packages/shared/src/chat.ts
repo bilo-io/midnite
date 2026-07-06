@@ -208,3 +208,37 @@ export const ChatCommandResultSchema = z.object({
   inferencePath: ChatInferencePathSchema,
 });
 export type ChatCommandResult = z.infer<typeof ChatCommandResultSchema>;
+
+/**
+ * Phase 59 B — request body for `POST /chat/command` (parse → execute) and
+ * `POST /chat/preview` (parse → describe, no write). One free-text field; the
+ * gateway parses it via the Theme A intent spine.
+ */
+export const ChatCommandRequestSchema = z.object({
+  text: z.string().min(1).max(2000),
+});
+export type ChatCommandRequest = z.infer<typeof ChatCommandRequestSchema>;
+
+/**
+ * `POST /chat/command` response: the parse (source/confidence, for the cost line
+ * + a low-confidence warning) plus what executing it did.
+ */
+export const ChatCommandResponseSchema = z.object({
+  parse: ChatIntentParseSchema,
+  result: ChatCommandResultSchema,
+});
+export type ChatCommandResponse = z.infer<typeof ChatCommandResponseSchema>;
+
+/**
+ * `POST /chat/preview` response: the parse + a human description of what *would*
+ * happen, and whether it mutates. No write occurs — the seatbelt (confirm-before-
+ * write) is wired in Theme F; preview is the read-only half available now.
+ */
+export const ChatPreviewResponseSchema = z.object({
+  parse: ChatIntentParseSchema,
+  /** Human-readable description of the parsed intent ("Create 1 task on `api`"). */
+  description: z.string(),
+  /** True when executing this intent would change board state (vs. a read-only query). */
+  willMutate: z.boolean(),
+});
+export type ChatPreviewResponse = z.infer<typeof ChatPreviewResponseSchema>;

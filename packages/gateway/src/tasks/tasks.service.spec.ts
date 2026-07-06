@@ -175,6 +175,14 @@ class InMemoryRepo extends TasksRepository {
     return task;
   }
 
+  override setRepo(id: string, repo: string | null, updatedAt: string): TaskRow | undefined {
+    const task = this.tasks.find((t) => t.id === id);
+    if (!task) return undefined;
+    task.repo = repo;
+    task.updatedAt = updatedAt;
+    return task;
+  }
+
   override deleteTask(id: string): void {
     const idx = this.tasks.findIndex((t) => t.id === id);
     if (idx >= 0) this.tasks.splice(idx, 1);
@@ -462,6 +470,24 @@ describe('TasksService', () => {
     const repo = new InMemoryRepo();
     const service = new TasksService(repo, stubFailures, new StubClassifier(), stubPlanner, new TaskEventBus(), stubRepos, stubConfig);
     expect(() => service.setPriority('nope', 2)).toThrow();
+  });
+
+  it('setRepo assigns a known repo and emits task.repo.changed (Phase 59 B)', () => {
+    const repo = new InMemoryRepo();
+    seed(repo, ['todo']);
+    const service = new TasksService(repo, stubFailures, new StubClassifier(), stubPlanner, new TaskEventBus(), reposWith('api'), stubConfig);
+    const updated = service.setRepo('t0', 'api');
+    expect(updated.repo).toBe('api');
+    expect(repo.events.some((e) => e.kind === 'task.repo.changed')).toBe(true);
+  });
+
+  it('setRepo rejects an unknown repo and clears on blank', () => {
+    const repo = new InMemoryRepo();
+    seed(repo, ['todo']);
+    const service = new TasksService(repo, stubFailures, new StubClassifier(), stubPlanner, new TaskEventBus(), reposWith('api'), stubConfig);
+    expect(() => service.setRepo('t0', 'ghost')).toThrow();
+    const cleared = service.setRepo('t0', null);
+    expect(cleared.repo).toBeFalsy();
   });
 
   it('abandoning a task auto-archives it and emits task.archived', () => {

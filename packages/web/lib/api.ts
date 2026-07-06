@@ -298,6 +298,10 @@ import {
   type ImportPreview,
   ImportResultSchema,
   type ImportResult,
+  ChatCommandResponseSchema,
+  type ChatCommandResponse,
+  ChatPreviewResponseSchema,
+  type ChatPreviewResponse,
 } from '@midnite/shared';
 import { z } from 'zod';
 
@@ -470,6 +474,26 @@ export async function getTaskGraph(projectId?: string, signal?: AbortSignal): Pr
   const qs = projectId ? `?projectId=${encodeURIComponent(projectId)}` : '';
   const res = await fetchJson(`/tasks/graph${qs}`, { signal }, TaskGraphResponseSchema);
   return res.graph;
+}
+
+// ── Chat to board (Phase 59) ────────────────────────────────────────────────────
+
+/** Parse a natural-language command and describe what it would do (no write). */
+export async function previewChatCommand(text: string, signal?: AbortSignal): Promise<ChatPreviewResponse> {
+  return fetchJson(
+    '/chat/preview',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ text }), signal },
+    ChatPreviewResponseSchema,
+  );
+}
+
+/** Parse and execute a natural-language board command. */
+export async function runChatCommand(text: string, signal?: AbortSignal): Promise<ChatCommandResponse> {
+  return fetchJson(
+    '/chat/command',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ text }), signal },
+    ChatCommandResponseSchema,
+  );
 }
 
 // ── Outbound webhooks (Phase 44) ────────────────────────────────────────────────
