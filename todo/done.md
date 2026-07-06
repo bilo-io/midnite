@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-06 — feat: chat-to-board safety (preview/confirm/undo/audit) — Phase 59 Theme F (PR #333)
+
+Closes Phase 59 Theme F. The NL command bar's seatbelt: never silently write, always reversible, always audited — backend primitives over the A/B/D spine (the UI that surfaces them is Theme E).
+
+- [x] **gateway:** server-enforced confirm gate — a mutating `POST /chat/command` only writes with `confirm: true`; otherwise `confirmation: 'confirm'` and nothing changes. Read-only queries run immediately.
+- [x] **gateway:** undo — every write logs an inverse revert plan to a new `chat_commands` table (migration `0073`); `undoToken` → `POST /chat/undo` replays it through existing `TasksService` mutators (delete / restore-prior / removeDependency), one-shot + team-scoped. No new mutation path.
+- [x] **gateway:** `chat.command` + `chat.undo` audited via the Phase 50 `AuditService`.
+- [x] **shared:** `confirmation` on preview + result; `confirm` on the request; `ChatUndoRequest/Response`; web api client (`runChatCommand(text, confirm)` + `undoChatCommand`).
+- [x] Tests: shared contracts; gateway confirm-gate + revert-capture + undo-replay + guards + audit; `chat_commands` repository integration. `:typecheck`/`:lint`/`:test` green (gateway 1609, shared 582, web 848, cli 155; `ui:test` flake passes isolated).
+
+---
+
 ## 2026-07-06 — feat: chat intent routing (deterministic→local→paid→refuse) — Phase 59 Theme D (PR #332)
 
 Closes Phase 59 Theme D. Formalizes the fuzzy-path routing policy over the Theme A/B spine so the chat bar is near-zero cost by default and never a surprise bill. The resolved inference path now rides on the parse envelope as the single source of truth.

@@ -134,17 +134,20 @@ Type what you want, where you already type.
 
 ---
 
-## Theme F — Safety: preview, confirm, undo, audit — **S-M**
+## Theme F — Safety: preview, confirm, undo, audit — **S-M** — ✅ DONE (PR #333, 2026-07-06)
 
 An NL bar that mutates the board needs a seatbelt.
 
-- [ ] **Preview + confirm** for mutating intents: show the parsed intent ("create 3 tasks on `api`, p1") and require
-      a confirm before writing — **never silently** bulk-create/delete. Read-only queries run immediately.
-- [ ] **Undo** the last command (reuse task delete / status-revert via the `undo token` in `ChatCommandResult`),
-      surfaced right after execution.
-- [ ] **Audit** the command + its effect via the Phase 50 `AuditService` (who ran what NL command, what it changed);
-      destructive intents (bulk delete) get an extra confirm. Ambiguous/low-confidence parses ask to clarify rather
-      than guess.
+- [x] **Preview + confirm** for mutating intents: `preview` + `command` carry a `confirmation` level, and a mutating
+      `POST /chat/command` only writes when `confirm: true` (server-enforced) — otherwise it returns
+      `confirmation: 'confirm'` and nothing changes; **never silently** mutates. Read-only queries run immediately.
+- [x] **Undo** the last command: every write logs an inverse **revert plan** to the `chat_commands` table; the
+      `undoToken` in `ChatCommandResult` reverts it via `POST /chat/undo`, replaying ops through the existing
+      `TasksService` mutators (delete / restore-prior / removeDependency) — **no new mutation path**. One-shot,
+      team-scoped, best-effort.
+- [x] **Audit** the command + its effect via the Phase 50 `AuditService` (`chat.command` + `chat.undo` — who ran what
+      NL command, what it changed). (Low-confidence parses already ask to clarify via the Theme A/D `unknown` path; a
+      dedicated destructive-intent extra-confirm is deferred until a delete-type intent exists.)
 
 ---
 
