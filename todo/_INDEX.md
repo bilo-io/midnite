@@ -28,6 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
+| [63 · Office 3D](phase-63-office-3d.md) | ◻ TODO | 0/28 | `░░░░░░░░░░` | 0% | — | A B C D E F G |
 | [62 · Fable-Digest](phase-62-fable-digest.md) | ◻ TODO | 0/33 | `░░░░░░░░░░` | 0% | — | A B C D E F G H |
 | [61 · Fable-Observability](phase-61-fable-observability.md) | ◻ TODO | 0/36 | `░░░░░░░░░░` | 0% | — | A B C D E F G H I |
 | [60 · Fable-Analysis](phase-60-fable-analysis.md) | ◻ TODO | 0/63 | `░░░░░░░░░░` | 0% | — | A B C D E F G H I J K L M |
@@ -92,13 +93,11 @@
 | [1 · Board by hand](phase-1-board.md) | ✅ DONE | 16/16 | `██████████` | 100% | — | — |
 | [0 · Scaffold](phase-0-scaffold.md) | ✅ DONE | 10/10 | `██████████` | 100% | — | — |
 
-**Headline:** the original **0–48 roadmap is complete** — Phase 42 closed out with
-**Theme B** (task modal via a `?task=` param, the static-export-friendly replacement
-for intercepting routes — PR #272, 2026-07-02).
-The **live frontier** is **Phase 51** (session detail — Theme E in flight, F to go) plus a
-newly-planned resilience/review trio — **52** (in-app PR review), **53** (task-lifecycle
-resilience), **54** (runtime/process resilience) — and the two unstarted plans
-**49** (data portability) and **50** (autonomy guardrails). (An *earlier* Phase 42 was a
+**Headline:** phases **0–56 are complete**. The **live frontier** is **57** (performance &
+scale — C/F remainders), **58** (dependency graph & roadmap — Theme F to go), and **59**
+(chat to board — Theme C claimed WIP). Freshly planned and unstarted: the **Fable trio 60–62**
+(analysis / observability / digest) and **63** (Office 3D — first-person three.js office,
+planned 2026-07-06). (An *earlier* Phase 42 was a
 parallel restatement of Phase 40, folded into Phase 40 Theme G and removed 2026-06-27; the
 current 42 & 43 are new, unrelated phases — two brainstorm sessions ran concurrently, so the
 preference-sync plan took the next free number, 43.)
@@ -113,6 +112,16 @@ shortcut). The 2 contextual-command boxes are now **un-deferred and folded into 
 Every phase's lettered themes with a status icon + one-liner, so you can gauge scope and pick
 work without opening the phase doc. Status: `✅` done · `🔄` WIP (claimed) · `◻` TODO · `◐`
 partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
+
+### [Phase 63 — Office 3D](phase-63-office-3d.md)
+*The office rebuilt in first-person three.js (r3f + drei): same rooms/data, same Zustand store contract so every existing React panel is reused untouched; 2D/3D tabs on /office; arcade sub-scene with one playable Breakout. Pure packages/web; 2D office behavior-preserving.*
+- ◻ **A** — World foundation: r3f stage, procedural low-poly world from layout.ts, room-chunk frustum culling, day/night lighting
+- ◻ **B** — First-person rig: pointer-lock + WASD, grid AABB collision, footstep head-bob (reduced-motion aware)
+- ◻ **C** — Agents & interactions: proximity → existing store fields → existing modals; low-poly avatars + billboards + P31 tool bubbles; minimap
+- ◻ **D** — Arcade sub-scene: cabinet room, playable Breakout w/ power-ups on a CanvasTexture screen, stub cabinets → existing menu
+- ◻ **E** — Corner office + pickers in 3D, ambient parity touches
+- ◻ **F** — Tabs & routing: ?view=2d|3d + P43 preference sync, lazy engine isolation
+- ◻ **G** — Perf budget + unit/store-contract/Playwright tests
 
 ### [Phase 62 — Fable-Digest](phase-62-fable-digest.md)
 *Retrospectives per task + fleet digests, workflow-first: a task-event trigger + retro/digest nodes + seeded pipelines; gateway stores primitives. Fable series #3.*
