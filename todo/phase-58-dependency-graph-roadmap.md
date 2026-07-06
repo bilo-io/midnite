@@ -57,17 +57,18 @@
 
 ---
 
-## Theme A — Graph API (server-authoritative) — **M**
+## Theme A — Graph API (server-authoritative) — **M** — ✅ DONE (PR #318, 2026-07-06)
 
 Expose the dependency graph as data, computed from the source of truth.
 
-- [ ] **shared:** `TaskGraphSchema` — `{ nodes: [{ id, title, status, priority, ready: boolean, unmetBlockerCount,
-      projectId?, milestoneId? }], edges: [{ from: taskId, to: dependsOnTaskId }] }`. Zod, re-exported.
-- [ ] **gateway:** `GET /tasks/graph` (optional `?projectId=`) — a thin controller → service that builds the graph
-      from the `task_dependencies` edges + tasks, computing **ready/blocked with the existing readiness logic**
-      (`listReadyTodoTasks`/`unmetBlockerCount`) so a node's state matches exactly what the scheduler sees. Team-scoped.
-- [ ] Client method in [`web/lib/api.ts`](../packages/web/lib/api.ts); returns a bounded graph (respect scale — cap +
-      flag if a project's graph is huge, no silent truncation).
+- [x] **shared:** `TaskGraphSchema` — `{ nodes: [{ id, title, status, priority, ready, unmetBlockerCount,
+      projectId?, milestoneId?, foreign? }], edges: [{ from, to }] }` + `{ truncated, totalCount }`, `TASK_GRAPH_NODE_CAP`. Zod, re-exported.
+- [x] **gateway:** `GET /tasks/graph` (optional `?projectId=`) — thin controller → `TasksService.buildGraph` (over
+      batch `tasksByIds`/`dependencyEdges`, no N+1), computing **ready/unmetBlockerCount with the scheduler's
+      definition** (`ready` = a `todo` task whose every blocker is `done`; false for non-todo). Team-scoped. A
+      cross-project blocker under `?projectId=` is pulled in as a flagged `foreign` node.
+- [x] Client method `getTaskGraph(projectId?)` in [`web/lib/api.ts`](../packages/web/lib/api.ts); bounded at 500
+      nodes → `truncated` + `totalCount` (no silent truncation).
 
 ---
 

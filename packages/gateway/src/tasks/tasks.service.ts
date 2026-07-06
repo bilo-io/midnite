@@ -26,6 +26,9 @@ import {
   type TaskCounts,
   type TaskFailure,
   type TaskFailuresQuery,
+  type TaskGraph,
+  type TaskGraphNode,
+  TASK_GRAPH_NODE_CAP,
   type TeamScope,
   type WaitReason,
 } from '@midnite/shared';
@@ -188,6 +191,79 @@ export class TasksService {
     // is still in the future is skipped until its backoff window elapses.
     const now = new Date().toISOString();
     return this.repo.hydrateMany(this.repo.listReadyTodoTasks(now));
+  }
+
+  /**
+   * Phase 58 A — the dependency graph as server-authoritative data. Nodes are the
+   * in-scope tasks (team, optional `projectId`), plus any blockers pulled in from
+   * outside a `projectId` filter (flagged `foreign`) so the dependency stays
+   * visible. `ready`/`unmetBlockerCount` use the scheduler's definition (a `todo`
+   * task whose every blocker is `done`), so a node's state matches the board.
+   * Bounded at {@link TASK_GRAPH_NODE_CAP}; beyond it, `truncated` + `totalCount`.
+   */
+  buildGraph(projectId: string | undefined, scope?: TeamScope): TaskGraph {
+    // listTasks orders by priority desc, createdAt asc — so a truncated slice keeps
+    // the highest-priority/oldest tasks (the ones that matter most).
+    const rows = this.repo.listTasks(undefined, projectId, scope);
+    const totalCount = rows.length;
+    const truncated = totalCount > TASK_GRAPH_NODE_CAP;
+    const inScope = truncated ? rows.slice(0, TASK_GRAPH_NODE_CAP) : rows;
+    const inScopeIds = new Set(inScope.map((r) => r.id));
+
+    const edges = this.repo.dependencyEdges(inScope.map((r) => r.id));
+
+    // Blockers outside the node set (e.g. a cross-project blocker under ?projectId).
+    const foreignIds = [...new Set(edges.map((e) => e.to).filter((id) => !inScopeIds.has(id)))];
+    const foreignRows = this.repo.tasksByIds(foreignIds, scope);
+    const foreignRowIds = new Set(foreignRows.map((r) => r.id));
+
+    // Status lookup (in-scope + fetched foreign) for unmet-blocker counting.
+    const statusById = new Map<string, Status>();
+    for (const r of [...inScope, ...foreignRows]) statusById.set(r.id, r.status as Status);
+
+    // Blockers per in-scope dependent.
+    const blockersByTask = new Map<string, string[]>();
+    for (const e of edges) {
+      const list = blockersByTask.get(e.from);
+      if (list) list.push(e.to);
+      else blockersByTask.set(e.from, [e.to]);
+    }
+
+    const nodeIds = new Set([...inScopeIds, ...foreignRowIds]);
+
+    const inScopeNode = (r: (typeof inScope)[number]): TaskGraphNode => {
+      const blockers = blockersByTask.get(r.id) ?? [];
+      const unmetBlockerCount = blockers.filter((b) => statusById.get(b) !== 'done').length;
+      return {
+        id: r.id,
+        title: r.title,
+        status: r.status as Status,
+        priority: r.priority,
+        ready: r.status === 'todo' && unmetBlockerCount === 0,
+        unmetBlockerCount,
+        projectId: r.projectId ?? undefined,
+      };
+    };
+    // Foreign nodes are context-only — their own blockers aren't expanded, so we
+    // don't assert their readiness.
+    const foreignNode = (r: (typeof foreignRows)[number]): TaskGraphNode => ({
+      id: r.id,
+      title: r.title,
+      status: r.status as Status,
+      priority: r.priority,
+      ready: false,
+      unmetBlockerCount: 0,
+      projectId: r.projectId ?? undefined,
+      foreign: true,
+    });
+
+    return {
+      nodes: [...inScope.map(inScopeNode), ...foreignRows.map(foreignNode)],
+      // Every edge's `from` is in-scope; keep those whose `to` resolved to a node.
+      edges: edges.filter((e) => nodeIds.has(e.to)).map((e) => ({ from: e.from, to: e.to })),
+      truncated,
+      totalCount,
+    };
   }
 
   getTask(id: string, scope?: TeamScope): Task {

@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-06 — feat: dependency graph API — GET /tasks/graph — Phase 58 Theme A (PR #318)
+
+Expose the Phase 27 dependency structure as server-authoritative data, so the DAG/roadmap views (58 B/E) render from truth.
+
+- [x] **shared:** `TaskGraphSchema` — nodes `{ id, title, status, priority, ready, unmetBlockerCount, projectId?, milestoneId?, foreign? }` + edges `{ from, to }` (dependent→blocker) + `{ truncated, totalCount }`; `TASK_GRAPH_NODE_CAP=500`.
+- [x] **gateway:** `TasksService.buildGraph` over new batch repo queries (`tasksByIds` + `dependencyEdges`, no N+1). Nodes = in-scope tasks (team, optional `?projectId=`); `ready`/`unmetBlockerCount` match the scheduler (`ready` = todo with all blockers done; false for non-todo). Cross-project blockers under `?projectId=` pulled in as flagged `foreign` nodes. Bounded 500 → `truncated`+`totalCount`, no silent drop. Thin `GET /tasks/graph` (team-scoped, before `:id`).
+- [x] **web:** typed `getTaskGraph(projectId?)` client.
+- [x] Tests: service (nodes/edges, ready+unmet flip, non-todo ready=false, foreign cross-project node) on a real :memory: DB; controller (scope + projectId passthrough); shared schema round-trip. shared/gateway 1514/web 813 green, lint clean.
+- Note: `milestoneId` in the node schema is forward-looking (Theme D); always absent for now.
+
+---
+
 ## 2026-07-05 — feat: WS resume protocol + gap-detection — Phase 56 Theme B (PR #313)
 
 Closes the reliability loop Phase 56 A opened: a client that drops for a second used to silently lose every board event in that window. Now it replays what it missed, or resyncs when it can't.
