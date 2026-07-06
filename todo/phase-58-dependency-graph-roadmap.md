@@ -72,18 +72,21 @@ Expose the dependency graph as data, computed from the source of truth.
 
 ---
 
-## Theme B — Dependency DAG view (React Flow + dagre) — **L**
+## Theme B — Dependency DAG view (React Flow + dagre) — **L** — ✅ DONE (PR #324, 2026-07-06)
 
 The missing shape: see what blocks what.
 
-- [ ] **web:** reuse **`@xyflow/react` read-only** (nodes non-draggable, no connect handles; keep pan/zoom + minimap
-      + controls) and add an **auto-layout pass** via **`dagre`** (`@dagrejs/dagre`) computing top-down x/y from the
-      edge set — the one net-new piece (the workflow editor persists manual positions; the DAG has none).
-- [ ] A **custom node**: status color (todo/wip/waiting/done, blocked derived), title, ready/blocked + priority
-      chips; edges styled to surface **unmet blockers / the critical path**. Click a node → deep-link to the task
-      detail / session cockpit (Phase 51).
-- [ ] A new **static-export** view (`/tasks/graph` query-string route, client-only like the cockpits); empty/loading/
-      large-graph states; responsive (pan/zoom desktop, a sensible mobile fallback).
+- [x] **web:** reuse **`@xyflow/react` read-only** (nodes non-draggable, no connect handles; keep pan/zoom + minimap
+      + controls) and add an **auto-layout pass** via **`dagre`** (`@dagrejs/dagre`) computing **left-to-right** x/y
+      from the edge set — the one net-new piece (the workflow editor persists manual positions; the DAG has none).
+      ([`task-graph-layout.ts`](../packages/web/lib/task-graph-layout.ts))
+- [x] A **custom node** ([`task-graph-node.tsx`](../packages/web/components/task-graph/task-graph-node.tsx)): status
+      color (todo/wip/waiting/done, blocked derived), title, ready/blocked + priority chips; edges styled to surface
+      **unmet blockers** (dashed + animated while the blocker isn't `done`). Click a node → opens the shared `?task=`
+      modal **in place** (stays on the graph, per Phase 42).
+- [x] A new **static-export** view (`/tasks/graph` query-string route, client-only like the cockpits) with a
+      **project-scope picker**; empty/loading/large-graph (truncated banner → narrow by project) states; live over
+      the Phase 56 reliable task channel; responsive (pan/zoom everywhere, minimap hidden on mobile).
 
 ---
 
@@ -191,8 +194,11 @@ Make both views reachable, and seed roadmaps from what agents already produce.
 
 ## Decisions / open questions
 
-1. **Reuse `@xyflow/react` read-only + add `dagre` auto-layout** *(settled).* The renderer is already in the repo
-   (workflow editor); the only net-new frontend piece is auto-layout, since dependency tasks have no manual positions.
+1. **Reuse `@xyflow/react` read-only + add `dagre` auto-layout, laid out left-to-right** *(settled; Theme B built it
+   LR, not top-down).* The renderer is already in the repo (workflow editor); the only net-new frontend piece is
+   auto-layout, since dependency tasks have no manual positions. **Direction is `rankdir: 'LR'`**: a task's blockers
+   sit to its left, so reading left→right follows completion order and every dependency arrow points rightward (wide
+   graphs and long titles read better than a top-down stack).
 2. **New `GET /tasks/graph`, server-authoritative readiness** *(settled).* Compute ready/blocked from the existing
    scheduler logic so the graph can't drift; a dedicated endpoint is scale-safe under Phase 57's summary/pagination
    shift (client-side assembly from the full task list stops being reliable).
