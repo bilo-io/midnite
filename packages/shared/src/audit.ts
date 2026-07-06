@@ -8,6 +8,7 @@ export const AuditEntityTypeSchema = z.enum([
   'user',
   'team',
   'deck',
+  'milestone',
   'guardrail',
   'approval_rule',
 ]);
@@ -30,6 +31,10 @@ export const AuditActionSchema = z.enum([
   'deck.created',
   'deck.updated',
   'deck.deleted',
+  // Phase 58 D — roadmap milestone lifecycle.
+  'milestone.created',
+  'milestone.updated',
+  'milestone.deleted',
   'guardrail.paused',
   'guardrail.resumed',
   'guardrail.emergency_stopped',

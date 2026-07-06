@@ -100,6 +100,9 @@ export const TaskSchema = z.object({
   agentId: z.string().optional(),
   sessionId: z.string().optional(),
   projectId: z.string().optional(),
+  /** Phase 58 D — the project milestone this task is assigned to (at most one);
+   *  absent = unassigned (roadmap backlog). Cleared when its milestone is deleted. */
+  milestoneId: z.string().optional(),
   prUrl: z.string().optional(),
   /**
    * Live status of the task's GitHub PR (Phase 22 Theme C), resolved by the
@@ -177,6 +180,8 @@ export const TaskSummarySchema = z.object({
   retryCount: z.number().int().nonnegative().default(0),
   repo: z.string().optional(),
   projectId: z.string().optional(),
+  /** Phase 58 D — milestone assignment (kept lean so the roadmap groups cards). */
+  milestoneId: z.string().optional(),
   tags: z.array(z.string()).default([]),
   prUrl: z.string().optional(),
   prStatus: PrStatusSchema.optional(),
