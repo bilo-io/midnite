@@ -33,29 +33,37 @@ export function ProjectProgressBar({ project, done, total, hideLabel, className 
 
   if (c.total === 0) return null;
 
+  const track = (
+    <div
+      className="h-1.5 w-full overflow-hidden rounded-full bg-muted"
+      role="progressbar"
+      aria-valuenow={c.pct}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label={`${c.pct}% complete (${c.done} of ${c.total} tasks done)`}
+    >
+      <div
+        className="h-full rounded-full transition-[width]"
+        style={{ width: `${c.pct}%`, backgroundColor: `hsl(var(${statusHueVar('done')}))` }}
+      />
+    </div>
+  );
+
+  // Bar-only: put the caller's className (often display utilities like
+  // `hidden md:flex`) on a plain wrapper so it isn't fighting a `flex-col` root.
+  if (hideLabel) {
+    return <div className={cn('items-center', className)}>{track}</div>;
+  }
+
   return (
     <div className={cn('flex flex-col gap-1', className)}>
-      {hideLabel ? null : (
-        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-          <span>Progress</span>
-          <span className="tabular-nums">
-            {c.done}/{c.total} · {c.pct}%
-          </span>
-        </div>
-      )}
-      <div
-        className="h-1.5 w-full overflow-hidden rounded-full bg-muted"
-        role="progressbar"
-        aria-valuenow={c.pct}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-label={`${c.pct}% complete (${c.done} of ${c.total} tasks done)`}
-      >
-        <div
-          className="h-full rounded-full transition-[width]"
-          style={{ width: `${c.pct}%`, backgroundColor: `hsl(var(${statusHueVar('done')}))` }}
-        />
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+        <span>Progress</span>
+        <span className="tabular-nums">
+          {c.done}/{c.total} · {c.pct}%
+        </span>
       </div>
+      {track}
     </div>
   );
 }
