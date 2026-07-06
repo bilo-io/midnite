@@ -1,8 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { ChevronDown, Columns3, List, ListTree, Plus, type LucideIcon } from 'lucide-react';
+import { ChevronDown, Columns3, List, ListTree, Plus, Workflow, type LucideIcon } from 'lucide-react';
 import { type Project, type Repo, type Status, type Task, type TaskSummary } from '@midnite/shared';
 import { deleteTask, getTask, updateTaskStatus } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
@@ -16,6 +17,7 @@ import { DELIVERY_STATES, matchesDelivery } from '@/lib/pr-delivery';
 import { useBulkSelection } from '@/lib/use-bulk-selection';
 import { useGatewayErrorToast } from '@/lib/use-gateway-error-toast';
 import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@midnite/ui';
 import { BoardView } from '@/components/board-view';
 import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-action-bar';
 import { GuardrailsBanner, GuardrailsControl } from '@/components/guardrails-control';
@@ -457,6 +459,15 @@ export function TasksView({
               </Button>
             ))}
           </div>
+          {/* Phase 58 B — the dependency DAG (read-only) for the current scope. */}
+          <Link
+            href="/tasks/graph"
+            aria-label="View dependency graph"
+            className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'h-8 gap-1.5')}
+          >
+            <Workflow className="h-3.5 w-3.5" />
+            Graph
+          </Link>
           <Button
             type="button"
             size="sm"

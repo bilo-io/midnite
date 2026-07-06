@@ -4,6 +4,19 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-06 — feat: dependency DAG view — /tasks/graph — Phase 58 Theme B (PR #324)
+
+Phase 58 A exposed the dependency graph as data (`GET /tasks/graph`); this Theme B renders it. The structure Phase 27 modelled (blocker edges, derived `dependsOn`, the scheduler ready-set) was invisible — only a "blocked by N" badge. Now there's a read-only DAG you can see.
+
+- [x] **web layout** ([`task-graph-layout.ts`](../packages/web/lib/task-graph-layout.ts)): pure `@dagrejs/dagre` auto-layout, **left-to-right** (`rankdir: 'LR'`) — blockers rank upstream (left) of dependents so reading left→right follows completion order; every arrow points rightward. Centre→top-left position conversion; dangling edges (endpoint capped out) dropped. Unit-tested (ranking, edge direction, animate-while-unmet, capped-edge drop).
+- [x] **custom node** ([`task-graph-node.tsx`](../packages/web/components/task-graph/task-graph-node.tsx)): status colour from the shared board hue vars, title, ready / blocked-by-N / priority / "other project" chips; invisible read-only Handles. Edges dashed + animated while the blocker isn't `done`.
+- [x] **view** ([`task-graph-view.tsx`](../packages/web/components/task-graph/task-graph-view.tsx)) + **route** ([`app/(main)/tasks/graph/page.tsx`](<../packages/web/app/(main)/tasks/graph/page.tsx>)): read-only `@xyflow/react` (no drag/connect, keep pan/zoom + controls + minimap), fit-view, **project-scope picker** (`?projectId=`), truncated-graph banner past the 500-node cap, empty/loading states, minimap hidden on mobile. Live over the Phase 56 reliable task channel. Node click opens the shared `?task=` modal **in place**.
+- [x] **entry point**: a **Graph** button on the board toolbar ([`tasks-view.tsx`](../packages/web/components/tasks-view.tsx)).
+- [x] Tests: layout unit + a `TaskGraphNode` Storybook story (ready/blocked/foreign chips) + a `task-graph.e2e.ts` flow (seeds a blocker edge → DAG renders, node-click opens the modal, board Graph link navigates) + light/dark preview shots. `:typecheck` · `:lint` · `web:test` (830) green.
+- Decision change: the phase doc specced **top-down**; built **left-to-right** at the user's request (doc + decision #1 updated).
+
+---
+
 ## 2026-07-06 — feat: roadmap milestone data model — Phase 58 Theme D (PR #322)
 
 The minimal, project-scoped plan structure the roadmap (Theme E) will render. Milestones group a project's tasks into an ordered lane; progress is computed (done/total), never stored. Named "milestone", not "phase".
@@ -36,6 +49,7 @@ Projects showed a bare task count; now each surface carries a **completion bar**
 - [x] **tests:** shared `projectCompletion` cases; gateway repo status-counts (single/batched/empty); web `ProjectProgressBar` stories (aria/label/no-tasks) + a `projects-progress.shots.ts` preview capture.
 - ⏳ Deferred (needs Theme B): the DAG-filter-by-project + project-picker-on-graph half — no graph view exists to filter yet.
 
+---
 ## 2026-07-06 — perf: lean TaskSummary DTO + paged /tasks + activity feed — Phase 57 Theme C ◐ (PR #319)
 
 `GET /tasks` returned the **full** hydrated `Task[]` (whole event thread + every attachment/link — ~1–2.5 MB/board). Now it returns lean `TaskSummary` pages, cutting the board payload to the card fields.

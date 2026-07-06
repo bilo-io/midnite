@@ -31,6 +31,21 @@ export async function seedTask(prompt: string, status: Status = 'todo'): Promise
   return { id: task.id, title: task.title, status: task.status };
 }
 
+/**
+ * Add a blocker edge via `POST /tasks/:id/dependencies` — `taskId` depends on
+ * (is blocked by) `dependsOnId`. Used to seed a dependency DAG for the graph view.
+ */
+export async function seedDependency(taskId: string, dependsOnId: string): Promise<void> {
+  const res = await fetch(`${GATEWAY_ORIGIN}/tasks/${taskId}/dependencies`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ dependsOnId }),
+  });
+  if (!res.ok) {
+    throw new Error(`seedDependency failed (${res.status}): ${await res.text().catch(() => '')}`);
+  }
+}
+
 /** A project created over the gateway REST API. */
 export type SeededProject = { id: string; name: string };
 
