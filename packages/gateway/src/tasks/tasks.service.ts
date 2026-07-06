@@ -275,6 +275,7 @@ export class TasksService {
         ready: r.status === 'todo' && unmetBlockerCount === 0,
         unmetBlockerCount,
         projectId: r.projectId ?? undefined,
+        milestoneId: r.milestoneId ?? undefined,
       };
     };
     // Foreign nodes are context-only — their own blockers aren't expanded, so we
@@ -287,6 +288,7 @@ export class TasksService {
       ready: false,
       unmetBlockerCount: 0,
       projectId: r.projectId ?? undefined,
+      milestoneId: r.milestoneId ?? undefined,
       foreign: true,
     });
 
@@ -882,6 +884,37 @@ export class TasksService {
       data: JSON.stringify({ projectId }),
     });
     return this.emit('task.updated', this.getTask(id));
+  }
+
+  /**
+   * Phase 58 D — assign (or unassign, with null) this task's roadmap milestone.
+   * Caller (MilestonesService) validates milestone existence + same-project scope;
+   * this owns the task-side write + event + board re-broadcast.
+   */
+  setMilestone(id: string, milestoneId: string | null, scope?: TeamScope): Task {
+    this.getTask(id, scope); // 404 if missing / out of scope
+    const now = new Date().toISOString();
+    const row = this.repo.setMilestone(id, milestoneId, now);
+    if (!row) throw new NotFoundException(`task ${id} not found`);
+    this.repo.insertEvent({
+      id: randomUUID(),
+      taskId: id,
+      at: now,
+      kind: 'task.milestone.changed',
+      data: JSON.stringify({ milestoneId }),
+    });
+    return this.emit('task.updated', this.getTask(id));
+  }
+
+  /**
+   * Phase 58 D — clear a deleted milestone off every task it held, re-broadcasting
+   * each so boards drop the assignment. Returns the affected task ids.
+   */
+  clearMilestone(milestoneId: string): string[] {
+    const now = new Date().toISOString();
+    const ids = this.repo.clearMilestone(milestoneId, now);
+    for (const id of ids) this.emit('task.updated', this.getTask(id));
+    return ids;
   }
 
   // Set the scheduling priority band (0–3). Re-broadcasts so the board re-ranks.

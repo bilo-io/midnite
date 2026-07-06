@@ -3,6 +3,7 @@ import type {
   Deck,
   Idea,
   Memory,
+  Milestone,
   Note,
   Project,
   SearchType,
@@ -75,6 +76,12 @@ export function deckToIndexDoc(d: Pick<Deck, 'id' | 'name' | 'description' | 'te
   return { type: 'deck', entityId: d.id, teamId: d.teamId ?? null, title: d.name, body: clip(d.description ?? '') };
 }
 
+export function milestoneToIndexDoc(
+  m: Pick<Milestone, 'id' | 'name' | 'description' | 'teamId'>,
+): IndexDoc {
+  return { type: 'milestone', entityId: m.id, teamId: m.teamId ?? null, title: m.name, body: clip(m.description ?? '') };
+}
+
 /** Where the client should navigate to open a result of the given type. */
 export function routeFor(type: SearchType, id: string): string {
   switch (type) {
@@ -95,5 +102,9 @@ export function routeFor(type: SearchType, id: string): string {
       return `/ideas/${id}`;
     case 'deck':
       return `/slides/view?id=${encodeURIComponent(id)}`;
+    case 'milestone':
+      // Milestones live under a project roadmap (Theme E). Until that route
+      // lands, route to the projects surface (parity with task/project).
+      return '/projects';
   }
 }
