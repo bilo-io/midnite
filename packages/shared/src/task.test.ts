@@ -9,7 +9,10 @@ import {
   StatusSchema,
   TaskDependencyError,
   TaskKindSchema,
+  TaskListQuerySchema,
   TaskSchema,
+  TaskSummarySchema,
+  TasksPageSchema,
   UpdateTaskProjectRequestSchema,
   isAnsweredQuestion,
 } from './task.js';
@@ -107,6 +110,35 @@ describe('SetTaskTagsRequestSchema', () => {
   it('round-trips an array of tags (clamping is enforced in the service)', () => {
     const tags = ['a', 'b'.repeat(MAX_TASK_TAG_LENGTH)];
     expect(SetTaskTagsRequestSchema.parse({ tags }).tags).toEqual(tags);
+  });
+});
+
+describe('TaskSummary + Paged (Phase 57 C)', () => {
+  it('parses a lean summary and a full Task is assignable to it', () => {
+    const summary = TaskSummarySchema.parse({
+      id: 't1',
+      title: 'lean',
+      status: 'todo',
+      priority: 2,
+      retryCount: 0,
+      tags: ['a'],
+      dependsOn: ['blk'],
+      answered: true,
+    });
+    expect(summary.priority).toBe(2);
+    expect(summary.answered).toBe(true);
+    // A full Task (with events etc.) is a structural supertype — assignable to a summary.
+    const full = TaskSchema.parse({ id: 't2', title: 'full', status: 'todo', events: [] });
+    const asSummary = TaskSummarySchema.parse(full); // no throw — extra keys stripped
+    expect(asSummary.id).toBe('t2');
+  });
+
+  it('TasksPage wraps items + total; TaskListQuery coerces page/limit', () => {
+    const page = TasksPageSchema.parse({ items: [], total: 7 });
+    expect(page.total).toBe(7);
+    const q = TaskListQuerySchema.parse({ status: 'todo', page: '2', limit: '50' });
+    expect(q).toMatchObject({ status: 'todo', page: 2, limit: 50 });
+    expect(() => TaskListQuerySchema.parse({ limit: '999' })).toThrow(); // max 200
   });
 });
 
