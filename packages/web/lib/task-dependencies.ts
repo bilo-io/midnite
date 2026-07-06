@@ -1,4 +1,4 @@
-import type { Task } from '@midnite/shared';
+import type { TaskSummary } from '@midnite/shared';
 
 /**
  * Pure helpers over the shared {@link Task} for the dependency UI (Phase 27 C).
@@ -11,22 +11,22 @@ import type { Task } from '@midnite/shared';
  */
 
 /** A blocker satisfies its dependency only when it is `done` (a missing blocker is unmet). */
-export function isBlockerSatisfied(blocker: Task | undefined): boolean {
+export function isBlockerSatisfied(blocker: TaskSummary | undefined): boolean {
   return blocker?.status === 'done';
 }
 
 /** The subset of `task.dependsOn` whose resolved task is missing or not `done`. */
-export function unmetBlockerIds(task: Task, tasksById: Map<string, Task>): string[] {
+export function unmetBlockerIds(task: TaskSummary, tasksById: Map<string, TaskSummary>): string[] {
   return (task.dependsOn ?? []).filter((id) => !isBlockerSatisfied(tasksById.get(id)));
 }
 
 /** How many of a task's blockers are still unmet. */
-export function unmetBlockerCount(task: Task, tasksById: Map<string, Task>): number {
+export function unmetBlockerCount(task: TaskSummary, tasksById: Map<string, TaskSummary>): number {
   return unmetBlockerIds(task, tasksById).length;
 }
 
 /** id → unmet-blocker count for every task (builds the lookup once internally). */
-export function blockedCounts(tasks: Task[]): Map<string, number> {
+export function blockedCounts(tasks: TaskSummary[]): Map<string, number> {
   const tasksById = new Map(tasks.map((t) => [t.id, t] as const));
   const counts = new Map<string, number>();
   for (const t of tasks) counts.set(t.id, unmetBlockerCount(t, tasksById));
@@ -34,6 +34,6 @@ export function blockedCounts(tasks: Task[]): Map<string, number> {
 }
 
 /** Tasks whose `dependsOn` includes `taskId` (i.e. the tasks this one blocks). */
-export function dependentsOf(taskId: string, tasks: Task[]): Task[] {
+export function dependentsOf(taskId: string, tasks: TaskSummary[]): TaskSummary[] {
   return tasks.filter((t) => (t.dependsOn ?? []).includes(taskId));
 }

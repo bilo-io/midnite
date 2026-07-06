@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FileText, Folder, LayoutGrid, List, ListTree, Plus } from 'lucide-react';
-import type { Memory, Project, Task } from '@midnite/shared';
+import type { Memory, Project, Task, TaskSummary } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-action-bar';
 import { EmptyState } from '@/components/empty-state';
@@ -16,7 +16,7 @@ import { TaskThreadModal } from '@/components/task-thread-modal';
 import { TemplateCard } from '@/components/template-card';
 import { TemplateModal } from '@/components/template-modal';
 import { TemplatesTable } from '@/components/templates-table';
-import { deleteProject, updateProject } from '@/lib/api';
+import { deleteProject, getTask, updateProject } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { projectPageHref } from '@/lib/project-route';
 import { useBulkSelection } from '@/lib/use-bulk-selection';
@@ -40,14 +40,34 @@ export function ProjectsView({
   memories = [],
 }: {
   initial: Project[];
-  tasks: Task[];
+  tasks: TaskSummary[];
   memories?: Memory[];
 }) {
   const [view, setView] = useState<View>('grid');
   const [tab, setTab] = useState<Tab>('projects');
   const [creating, setCreating] = useState(false);
   const [planProject, setPlanProject] = useState<Project | null>(null);
+  // The task list is now a lean TaskSummary[] (Phase 57 C), so the detail modal —
+  // which needs the full Task (events/prompt) — fetches it by id when opened.
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  useEffect(() => {
+    if (!selectedTaskId) {
+      setSelectedTask(null);
+      return;
+    }
+    let cancelled = false;
+    getTask(selectedTaskId)
+      .then((t) => {
+        if (!cancelled) setSelectedTask(t);
+      })
+      .catch(() => {
+        if (!cancelled) setSelectedTaskId(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedTaskId]);
   const [templates, setTemplates] = useState<Template[]>(TEMPLATES);
   const [openTemplateId, setOpenTemplateId] = useState<string | null>(null);
   const [expandTemplateId, setExpandTemplateId] = useState<string | null>(null);
@@ -360,7 +380,7 @@ export function ProjectsView({
             tasks={tasks}
             onEdit={openProject}
             onPlan={setPlanProject}
-            onSelectTask={setSelectedTask}
+            onSelectTask={(t) => setSelectedTaskId(t.id)}
             isSelected={isSelected}
             onToggleSelect={(id, sk) => toggleSelect(id, sk, filtered.map((x) => x.id))}
           />
@@ -420,7 +440,7 @@ export function ProjectsView({
           task={selectedTask}
           projects={initial}
           tasks={tasks}
-          onClose={() => setSelectedTask(null)}
+          onClose={() => setSelectedTaskId(null)}
         />
       ) : null}
 

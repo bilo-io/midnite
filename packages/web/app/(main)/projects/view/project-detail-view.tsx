@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react';
-import type { Memory, Project, Task } from '@midnite/shared';
+import type { Memory, Project, TaskSummary } from '@midnite/shared';
 import { PageHeader } from '@/components/page-header';
 import { Tabs, type TabOption } from '@midnite/ui';
 import { ProjectDetailsPanel } from '@/components/projects/panels/project-details-panel';
@@ -99,7 +99,7 @@ export function ProjectDetailView({
   onChanged,
 }: {
   project: Project;
-  tasks: Task[];
+  tasks: TaskSummary[];
   memories?: Memory[];
   onChanged: () => void;
 }) {
@@ -117,7 +117,7 @@ export function ProjectDetailView({
     router.replace(`/projects/view?${params.toString()}`);
   };
 
-  const openTask = (task: Task) => router.push(taskPageHref(task.id));
+  const openTask = (task: TaskSummary) => router.push(taskPageHref(task.id));
   // Source edits + archive/save re-fetch the whole page (project + tasks + list).
   const reload = () => {
     onChanged();

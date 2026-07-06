@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { CircleDot, Pause, PlayCircle, XCircle, type LucideIcon } from 'lucide-react';
-import type { Status, Task } from '@midnite/shared';
+import type { Status, Task, TaskSummary } from '@midnite/shared';
 
 import { useConfirm } from '@/components/confirm-dialog';
 import { useToast } from '@/components/toast';
@@ -31,7 +31,7 @@ const MOVE_COMMANDS: MoveCommand[] = [
  * blocked-start exactly as the detail surface and board do. `tasks` is the full
  * board list — needed to count unmet blockers for the start confirmation.
  */
-export function useTaskPaletteCommands(task: Task, tasks: Task[]): void {
+export function useTaskPaletteCommands(task: Task, tasks: TaskSummary[]): void {
   const confirm = useConfirm();
   const toast = useToast();
 

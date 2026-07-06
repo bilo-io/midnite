@@ -178,6 +178,7 @@ export const TaskSummarySchema = z.object({
   repo: z.string().optional(),
   projectId: z.string().optional(),
   tags: z.array(z.string()).default([]),
+  prUrl: z.string().optional(),
   prStatus: PrStatusSchema.optional(),
   checkRunStatus: CheckRunStatusSchema.optional(),
   heldReason: TaskHeldReasonSchema.optional(),

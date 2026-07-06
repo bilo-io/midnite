@@ -10,6 +10,7 @@ import {
   type Repo,
   type Status,
   type Task,
+  type TaskSummary,
 } from '@midnite/shared';
 import { createBulk, createTask } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -26,7 +27,7 @@ type Props = {
   /** Registered repos for the picker; empty hides it (Phase 13 B1). */
   repos: Repo[];
   /** Existing tasks, candidates for the single-mode "Blocked by" picker (Phase 27). */
-  tasks?: Task[];
+  tasks?: TaskSummary[];
   defaultStatus?: Status;
   onCreated: (task: Task) => void;
   /** Called after a bulk batch lands, so the parent can refresh the board. */
@@ -70,7 +71,7 @@ export function NewTaskModal({
     [tasks, selectedBlockerIds],
   );
   const selectedBlockers = useMemo(
-    () => selectedBlockerIds.map((id) => tasks.find((t) => t.id === id)).filter((t): t is Task => Boolean(t)),
+    () => selectedBlockerIds.map((id) => tasks.find((t) => t.id === id)).filter((t): t is TaskSummary => Boolean(t)),
     [selectedBlockerIds, tasks],
   );
 

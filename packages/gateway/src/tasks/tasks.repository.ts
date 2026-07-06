@@ -663,6 +663,7 @@ export class TasksRepository {
         repo: row.repo ?? undefined,
         projectId: row.projectId ?? undefined,
         tags: parseTags(row.tags),
+        prUrl: row.prUrl ?? undefined,
         prStatus: this.toPrStatus(prByTask.get(row.id)),
         checkRunStatus: checkByTask.get(row.id),
         waitReason: (row.waitReason as WaitReason | null) ?? undefined,

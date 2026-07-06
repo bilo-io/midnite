@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { ChevronDown, Columns3, List, ListTree, Plus, type LucideIcon } from 'lucide-react';
-import { isAnsweredQuestion, type Project, type Repo, type Status, type Task } from '@midnite/shared';
-import { deleteTask, updateTaskStatus } from '@/lib/api';
+import { type Project, type Repo, type Status, type Task, type TaskSummary } from '@midnite/shared';
+import { deleteTask, getTask, updateTaskStatus } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { moveTask, spawnsSession } from '@/lib/task-transitions';
 import { TASK_MODAL_PARAM, TASK_MODAL_LEGACY_PARAM } from '@/lib/task-route';
@@ -116,12 +116,12 @@ export function TasksView({
   projects,
   repos,
 }: {
-  tasks: Task[];
+  tasks: TaskSummary[];
   error: string | null;
   projects: Project[];
   repos: Repo[];
 }) {
-  const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
+  const [localTasks, setLocalTasks] = useState<TaskSummary[]>(tasks);
   // The page fetches tasks client-side, so the first render passes an empty
   // array (data still loading) and only later the real list. useState seeds
   // localTasks once, so without this sync the board would stay empty after the
@@ -151,14 +151,33 @@ export function TasksView({
   // pops it, and a refresh/share re-opens it. `selected` is derived from the
   // param, not local state, so it stays in sync once the board list loads.
   const openId = searchParams.get(TASK_MODAL_PARAM);
-  const selected = openId ? localTasks.find((t) => t.id === openId) ?? null : null;
+  // The board list is a lean TaskSummary[] (Phase 57 C); the detail modal needs
+  // the full Task (events/prompt), so fetch it by id when the `?task=` param is set.
+  const [selected, setSelected] = useState<Task | null>(null);
+  useEffect(() => {
+    if (!openId) {
+      setSelected(null);
+      return;
+    }
+    let cancelled = false;
+    getTask(openId)
+      .then((t) => {
+        if (!cancelled) setSelected(t);
+      })
+      .catch(() => {
+        if (!cancelled) setSelected(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [openId]);
   // Track whether the modal was opened by an in-app push (vs. a direct load /
   // legacy redirect): on close we `router.back()` for a push so history unwinds
   // cleanly, but strip the param for a direct load so we don't leave the app.
   const openedViaPushRef = useRef(false);
 
   const openTask = useCallback(
-    (task: Task) => {
+    (task: TaskSummary) => {
       const params = new URLSearchParams(searchParams.toString());
       params.set(TASK_MODAL_PARAM, task.id);
       openedViaPushRef.current = true;
@@ -368,7 +387,7 @@ export function TasksView({
 
   const q = (searchParams.get('q') ?? '').trim().toLowerCase();
   const filteredTasks = localTasks
-    .filter((t) => !answeredOnly || isAnsweredQuestion(t))
+    .filter((t) => !answeredOnly || (t.answered ?? false))
     .filter((t) => {
       if (activeProjects.size === 0) return true;
       if (t.projectId !== undefined && activeProjects.has(t.projectId)) return true;

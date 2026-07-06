@@ -15,7 +15,7 @@ import {
   detectSourceKind,
   type Memory,
   type Project,
-  type Task,
+  type TaskSummary,
 } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -42,13 +42,13 @@ type Props = {
   /** Edit an existing project, or create a new one when null. */
   project: Project | null;
   /** Tasks belonging to this project (edit mode only) — shown under the Tasks tab. */
-  tasks?: Task[];
+  tasks?: TaskSummary[];
   /** All memories — used to surface a link to this project's scoped memory. */
   memories?: Memory[];
   /** The template library, surfaced under the Plan tab. Defaults to the built-ins. */
   templates?: Template[];
   /** Optional: open a task from the Tasks tab. Rows are static when omitted. */
-  onSelectTask?: (task: Task) => void;
+  onSelectTask?: (task: TaskSummary) => void;
   onClose: () => void;
   onSaved: () => void;
 };

@@ -1,7 +1,7 @@
 'use client';
 
 import { Folder, ListChecks, Pencil } from 'lucide-react';
-import type { Project, Task } from '@midnite/shared';
+import type { Project, TaskSummary } from '@midnite/shared';
 import { ProjectStatusBadge } from '@/components/project-status-badge';
 import { ProjectTag } from '@/components/project-tag';
 import { SelectableIcon } from '@/components/selectable-icon';
@@ -27,15 +27,15 @@ export function ProjectsTree({
   onToggleSelect,
 }: {
   projects: Project[];
-  tasks: Task[];
+  tasks: TaskSummary[];
   onEdit?: (project: Project) => void;
   onPlan?: (project: Project) => void;
-  onSelectTask?: (task: Task) => void;
+  onSelectTask?: (task: TaskSummary) => void;
   isSelected?: (id: string) => boolean;
   onToggleSelect?: (id: string, shiftKey: boolean) => void;
 }) {
-  const tasksByProject = new Map<string, Task[]>();
-  const unassigned: Task[] = [];
+  const tasksByProject = new Map<string, TaskSummary[]>();
+  const unassigned: TaskSummary[] = [];
   for (const t of tasks) {
     if (t.projectId) {
       const list = tasksByProject.get(t.projectId) ?? [];
@@ -46,7 +46,7 @@ export function ProjectsTree({
     }
   }
 
-  const taskBody = (items: Task[]) =>
+  const taskBody = (items: TaskSummary[]) =>
     items.length === 0 ? (
       <div className="px-4 py-3 text-xs text-muted-foreground">No tasks yet</div>
     ) : (

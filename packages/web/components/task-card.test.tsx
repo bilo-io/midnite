@@ -16,23 +16,21 @@ const baseTask: Task = {
   events: [],
 };
 
-const answerEvent = { at: '2026-06-22T00:00:00Z', kind: 'answer', data: { text: 'A closure is …' } };
-
 describe('TaskCard — answered affordance', () => {
   it('shows an Answered badge for a question resolved inline', () => {
-    render(<TaskCard task={{ ...baseTask, kind: 'question', events: [answerEvent] }} />);
+    render(<TaskCard task={{ ...baseTask, kind: 'question', answered: true }} />);
     expect(screen.getByText('Answered')).toBeInTheDocument();
     // The kind identity is still shown alongside.
     expect(screen.getByText('Question')).toBeInTheDocument();
   });
 
   it('omits the badge for an ordinary completed task', () => {
-    render(<TaskCard task={{ ...baseTask, kind: 'feature', events: [] }} />);
+    render(<TaskCard task={{ ...baseTask, kind: 'feature', answered: false }} />);
     expect(screen.queryByText('Answered')).toBeNull();
   });
 
   it('omits the badge for a question that has no answer event', () => {
-    render(<TaskCard task={{ ...baseTask, kind: 'question', events: [{ at: '', kind: 'task.created' }] }} />);
+    render(<TaskCard task={{ ...baseTask, kind: 'question', answered: false }} />);
     expect(screen.queryByText('Answered')).toBeNull();
   });
 });
