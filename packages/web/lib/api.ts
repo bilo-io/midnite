@@ -469,11 +469,19 @@ export async function listTaskSummaries(query?: TaskListQuery): Promise<{ items:
   return fetchJson(`/tasks${suffix}`, undefined, TasksPageSchema);
 }
 
-/** Phase 58 A — the dependency graph (optionally scoped to one project). Bounded;
- *  check `graph.truncated` / `graph.totalCount` before assuming it's complete. */
-export async function getTaskGraph(projectId?: string, signal?: AbortSignal): Promise<TaskGraph> {
-  const qs = projectId ? `?projectId=${encodeURIComponent(projectId)}` : '';
-  const res = await fetchJson(`/tasks/graph${qs}`, { signal }, TaskGraphResponseSchema);
+/** Phase 58 A — the dependency graph (optionally scoped to one project, and — Phase
+ *  58 F — one milestone within it). Bounded; check `graph.truncated` /
+ *  `graph.totalCount` before assuming it's complete. */
+export async function getTaskGraph(
+  projectId?: string,
+  milestoneId?: string,
+  signal?: AbortSignal,
+): Promise<TaskGraph> {
+  const params = new URLSearchParams();
+  if (projectId) params.set('projectId', projectId);
+  if (milestoneId) params.set('milestoneId', milestoneId);
+  const qs = params.toString();
+  const res = await fetchJson(`/tasks/graph${qs ? `?${qs}` : ''}`, { signal }, TaskGraphResponseSchema);
   return res.graph;
 }
 
@@ -1330,18 +1338,36 @@ export async function draftProjectBreakdown(id: string): Promise<BreakdownPrevie
   );
 }
 
-/** Turn a confirmed/edited breakdown into the project's dependency-wired board. */
+/** Turn a confirmed/edited breakdown into the project's dependency-wired board.
+ *  Phase 58 F — pass `milestoneId` to assign every created task to that milestone. */
 export async function createTasksFromBreakdown(
   id: string,
   breakdown: Breakdown,
-  repo?: string,
+  opts: { repo?: string; milestoneId?: string } = {},
 ): Promise<Task[]> {
   const { tasks } = await fetchJson(
     `/projects/${encodeURIComponent(id)}/plan/create-from-breakdown`,
-    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ breakdown, repo }) },
+    {
+      method: 'POST',
+      headers: JSON_HEADERS,
+      body: JSON.stringify({ breakdown, repo: opts.repo, milestoneId: opts.milestoneId }),
+    },
     CreateFromBreakdownResponseSchema,
   );
   return tasks;
+}
+
+/** Phase 58 F — draft a dependency-aware breakdown from a freeform goal (standalone
+ *  path, `POST /tasks/breakdown`). Preview-only; the client curates then creates. */
+export async function draftBreakdownFromGoal(
+  goal: string,
+  projectId?: string,
+): Promise<BreakdownPreviewResponse> {
+  return fetchJson(
+    `/tasks/breakdown`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ goal, projectId }) },
+    BreakdownPreviewResponseSchema,
+  );
 }
 
 /**

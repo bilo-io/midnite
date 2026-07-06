@@ -291,9 +291,17 @@ export class ProjectsService {
   // mechanism (ref resolution, Phase 27 edges, cycle pruning, coalesced event)
   // lives in `TasksService`; this just scopes it to the project. The flat
   // `createTasksFromPlan` path stays for the markdown-checkbox / LLM-off flow.
-  createTasksFromBreakdown(projectId: string, breakdown: Breakdown, repo?: string): Task[] {
+  createTasksFromBreakdown(projectId: string, breakdown: Breakdown, repo?: string, milestoneId?: string): Task[] {
     this.assertExists(projectId);
-    return this.tasks.createTasksFromBreakdown(breakdown, { projectId, repo });
+    // Phase 58 F — seeding a milestone: the milestone must belong to this project
+    // (repo-level check, no milestones-module dep).
+    if (milestoneId) {
+      const owner = this.repo.milestoneProjectId(milestoneId);
+      if (owner !== projectId) {
+        throw new BadRequestException(`milestone ${milestoneId} does not belong to project ${projectId}`);
+      }
+    }
+    return this.tasks.createTasksFromBreakdown(breakdown, { projectId, repo, milestoneId });
   }
 
   private async generatePlan(project: Project): Promise<string> {

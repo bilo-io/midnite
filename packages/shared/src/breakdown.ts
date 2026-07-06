@@ -64,6 +64,9 @@ export type BreakdownPreviewResponse = z.infer<typeof BreakdownPreviewResponseSc
 export const CreateFromBreakdownRequestSchema = z.object({
   breakdown: BreakdownSchema,
   repo: z.string().optional(),
+  /** Phase 58 F — assign every created task to this milestone (project path only;
+   *  validated same-project server-side). Seeds a milestone's tasks from a goal. */
+  milestoneId: z.string().optional(),
 });
 export type CreateFromBreakdownRequest = z.infer<typeof CreateFromBreakdownRequestSchema>;
 

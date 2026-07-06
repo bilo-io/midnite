@@ -22,6 +22,7 @@ import { teamScopeFilter } from '../db/team-scope';
 import { DB_TOKEN, type MidniteDb } from '../db/db.module';
 import {
   prStatus,
+  roadmapMilestones,
   taskAttachments,
   taskCheckRuns,
   taskDependencies,
@@ -718,6 +719,7 @@ export class TasksRepository {
     const attByTask = this.attachmentsByTaskIds(ids);
     const linksByTask = this.linksByTaskIds(ids);
     const answeredIds = this.answeredTaskIds(ids);
+    const milestoneNames = this.milestoneNamesFor(rows);
     return rows.map((row) => {
       const attachments = attByTask.get(row.id) ?? [];
       const firstImage = attachments.find((a) => a.mime.startsWith('image/'));
@@ -731,6 +733,7 @@ export class TasksRepository {
         repo: row.repo ?? undefined,
         projectId: row.projectId ?? undefined,
         milestoneId: row.milestoneId ?? undefined,
+        milestoneName: row.milestoneId ? milestoneNames.get(row.milestoneId) : undefined,
         tags: parseTags(row.tags),
         prUrl: row.prUrl ?? undefined,
         prStatus: this.toPrStatus(prByTask.get(row.id)),
@@ -749,6 +752,24 @@ export class TasksRepository {
         updatedAt: row.updatedAt,
       };
     });
+  }
+
+  /**
+   * Phase 58 F — id→name for the milestones referenced by a page of rows, in one
+   * query. A repo-level join (not the milestones module) so tasks stays free of a
+   * milestones→tasks module cycle. Empty when no row carries a milestoneId.
+   */
+  milestoneNamesFor(rows: TaskRow[]): Map<string, string> {
+    const milestoneIds = [...new Set(rows.map((r) => r.milestoneId).filter((id): id is string => !!id))];
+    const out = new Map<string, string>();
+    if (milestoneIds.length === 0) return out;
+    const found = this.db
+      .select({ id: roadmapMilestones.id, name: roadmapMilestones.name })
+      .from(roadmapMilestones)
+      .where(inArray(roadmapMilestones.id, milestoneIds))
+      .all();
+    for (const m of found) out.set(m.id, m.name);
+    return out;
   }
 
   /** Ids (of the given set) that have at least one `answer` event — one query. */

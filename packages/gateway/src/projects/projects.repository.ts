@@ -6,6 +6,7 @@ import { teamScopeFilter } from '../db/team-scope';
 import {
   projectSources,
   projects,
+  roadmapMilestones,
   tasks,
   type ProjectInsert,
   type ProjectRow,
@@ -26,6 +27,19 @@ export class ProjectsRepository {
       ? and(eq(projects.id, id), teamScopeFilter(projects.createdBy, projects.teamId, scope))
       : eq(projects.id, id);
     return this.db.select().from(projects).where(where).get();
+  }
+
+  /**
+   * Phase 58 F — the project a milestone belongs to (or undefined if unknown), for
+   * the breakdown-seed same-project check. A repo-level read of the milestones
+   * table so the service needn't depend on the milestones module (avoids a cycle).
+   */
+  milestoneProjectId(milestoneId: string): string | undefined {
+    return this.db
+      .select({ projectId: roadmapMilestones.projectId })
+      .from(roadmapMilestones)
+      .where(eq(roadmapMilestones.id, milestoneId))
+      .get()?.projectId;
   }
 
   listProjects(scope?: TeamScope): ProjectRow[] {

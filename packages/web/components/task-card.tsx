@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, PauseCircle, ShieldAlert } from 'lucide-react';
+import { AlertTriangle, Check, Milestone, PauseCircle, ShieldAlert } from 'lucide-react';
 import {
   isNeedsAttention,
   TASK_HELD_REASON_LABEL,
@@ -144,6 +144,15 @@ export function TaskCard({
         {task.aiReview ? <AiReviewChip verdict={task.aiReview.verdict} /> : null}
       </div>
       <p className="text-sm font-medium leading-snug">{task.title}</p>
+      {task.milestoneName ? (
+        // Phase 58 F — the assigned milestone (name joined onto TaskSummary).
+        <div className="mt-1.5">
+          <span className="inline-flex max-w-full items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+            <Milestone className="h-3 w-3 shrink-0" aria-hidden />
+            <span className="truncate">{task.milestoneName}</span>
+          </span>
+        </div>
+      ) : null}
       {task.tags.length > 0 ? (
         <div className="mt-1.5 flex flex-wrap gap-1">
           {task.tags.map((t) => (

@@ -146,7 +146,12 @@ export class ProjectsController {
     const parsed = CreateFromBreakdownRequestSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
     return {
-      tasks: this.service.createTasksFromBreakdown(id, parsed.data.breakdown, parsed.data.repo),
+      tasks: this.service.createTasksFromBreakdown(
+        id,
+        parsed.data.breakdown,
+        parsed.data.repo,
+        parsed.data.milestoneId,
+      ),
     };
   }
 

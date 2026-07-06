@@ -22,14 +22,20 @@ function makeController(buildGraph = vi.fn(() => emptyGraph)) {
 describe('TasksController.graph (Phase 58 A)', () => {
   it('passes projectId + the caller’s team scope to the service and wraps the result', () => {
     const { controller, buildGraph } = makeController();
-    const res = controller.graph('proj-A', { userId: 'u1', email: 'u1@example.com', teamId: 't1' });
-    expect(buildGraph).toHaveBeenCalledWith('proj-A', { userId: 'u1', teamId: 't1' });
+    const res = controller.graph('proj-A', undefined, { userId: 'u1', email: 'u1@example.com', teamId: 't1' });
+    expect(buildGraph).toHaveBeenCalledWith('proj-A', { userId: 'u1', teamId: 't1' }, undefined);
     expect(res).toEqual({ graph: emptyGraph });
   });
 
   it('trims an empty projectId to undefined and tolerates no user (scope undefined)', () => {
     const { controller, buildGraph } = makeController();
-    controller.graph('  ', null);
-    expect(buildGraph).toHaveBeenCalledWith(undefined, undefined);
+    controller.graph('  ', '  ', null);
+    expect(buildGraph).toHaveBeenCalledWith(undefined, undefined, undefined);
+  });
+
+  it('passes a milestoneId filter through to the service', () => {
+    const { controller, buildGraph } = makeController();
+    controller.graph('proj-A', 'ms-1', { userId: 'u1', email: 'u1@example.com', teamId: 't1' });
+    expect(buildGraph).toHaveBeenCalledWith('proj-A', { userId: 'u1', teamId: 't1' }, 'ms-1');
   });
 });

@@ -182,6 +182,9 @@ export const TaskSummarySchema = z.object({
   projectId: z.string().optional(),
   /** Phase 58 D — milestone assignment (kept lean so the roadmap groups cards). */
   milestoneId: z.string().optional(),
+  /** Phase 58 F — the assigned milestone's name, joined server-side so the card
+   *  can show a milestone chip without a separate milestones fetch. */
+  milestoneName: z.string().optional(),
   tags: z.array(z.string()).default([]),
   prUrl: z.string().optional(),
   prStatus: PrStatusSchema.optional(),

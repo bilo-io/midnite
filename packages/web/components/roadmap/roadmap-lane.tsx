@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { GripVertical, MoreVertical, Pencil, Sparkles, Trash2, Workflow } from 'lucide-react';
 import type { TaskSummary } from '@midnite/shared';
 import { ProjectProgressBar } from '@/components/project-progress';
 import { TaskCard, type ProjectTagInfo } from '@/components/task-card';
@@ -31,6 +31,10 @@ type Props = {
   onSelectTask: (task: TaskSummary) => void;
   onRename?: (id: string, name: string) => void;
   onDelete?: (id: string) => void;
+  /** Phase 58 F — open the goal→breakdown seeder for this milestone. */
+  onGenerate?: (id: string) => void;
+  /** Phase 58 F — deep-link to the dependency graph filtered to this milestone. */
+  onViewInGraph?: (id: string) => void;
 };
 
 /**
@@ -39,7 +43,16 @@ type Props = {
  * task cards (drag-to-assign). The backlog lane is fixed (no grip, no CRUD) but
  * still a drop target so a task can be unassigned by dragging it there.
  */
-export function RoadmapLane({ lane, isBacklog, project, onSelectTask, onRename, onDelete }: Props) {
+export function RoadmapLane({
+  lane,
+  isBacklog,
+  project,
+  onSelectTask,
+  onRename,
+  onDelete,
+  onGenerate,
+  onViewInGraph,
+}: Props) {
   const sortable = useSortable({
     id: lane.id,
     data: { type: 'lane' },
@@ -126,7 +139,7 @@ export function RoadmapLane({ lane, isBacklog, project, onSelectTask, onRename, 
             {menuOpen ? (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} aria-hidden />
-                <div className="absolute right-0 z-20 mt-1 w-36 rounded-md border border-border bg-popover p-1 shadow-md">
+                <div className="absolute right-0 z-20 mt-1 w-44 rounded-md border border-border bg-popover p-1 shadow-md">
                   <button
                     type="button"
                     onClick={() => {
@@ -137,6 +150,30 @@ export function RoadmapLane({ lane, isBacklog, project, onSelectTask, onRename, 
                   >
                     <Pencil className="h-3.5 w-3.5" /> Rename
                   </button>
+                  {onGenerate ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        onGenerate(lane.id);
+                      }}
+                      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-accent"
+                    >
+                      <Sparkles className="h-3.5 w-3.5" /> Generate tasks…
+                    </button>
+                  ) : null}
+                  {onViewInGraph ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        onViewInGraph(lane.id);
+                      }}
+                      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-accent"
+                    >
+                      <Workflow className="h-3.5 w-3.5" /> View in graph
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     onClick={() => {
