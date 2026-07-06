@@ -1,6 +1,5 @@
 import type {
   Council,
-  Deck,
   Idea,
   Memory,
   Milestone,
@@ -72,10 +71,6 @@ export function ideaToIndexDoc(i: Pick<Idea, 'id' | 'title' | 'body' | 'teamId'>
   return { type: 'idea', entityId: i.id, teamId: i.teamId ?? null, title: i.title, body: clip(i.body) };
 }
 
-export function deckToIndexDoc(d: Pick<Deck, 'id' | 'name' | 'description' | 'teamId'>): IndexDoc {
-  return { type: 'deck', entityId: d.id, teamId: d.teamId ?? null, title: d.name, body: clip(d.description ?? '') };
-}
-
 export function milestoneToIndexDoc(
   m: Pick<Milestone, 'id' | 'name' | 'description' | 'teamId'>,
 ): IndexDoc {
@@ -100,8 +95,6 @@ export function routeFor(type: SearchType, id: string): string {
       return `/workflows/edit?id=${encodeURIComponent(id)}`;
     case 'idea':
       return `/ideas/${id}`;
-    case 'deck':
-      return `/slides/view?id=${encodeURIComponent(id)}`;
     case 'milestone':
       // Milestones live under a project roadmap (Theme E). Until that route
       // lands, route to the projects surface (parity with task/project).

@@ -133,20 +133,3 @@ export async function seedIdea(title: string, body?: string): Promise<SeededIdea
   const { idea } = (await res.json()) as { idea: { id: string; title: string } };
   return { id: idea.id, title: idea.title };
 }
-
-/** A slide deck created over the gateway REST API. */
-export type SeededDeck = { id: string; name: string };
-
-/** Create a deck via `POST /slides` (JSON, as the web client does). */
-export async function seedDeck(name: string, content?: unknown): Promise<SeededDeck> {
-  const res = await fetch(`${GATEWAY_ORIGIN}/slides`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ name, ...(content ? { content } : {}) }),
-  });
-  if (!res.ok) {
-    throw new Error(`seedDeck failed (${res.status}): ${await res.text().catch(() => '')}`);
-  }
-  const { deck } = (await res.json()) as { deck: { id: string; name: string } };
-  return { id: deck.id, name: deck.name };
-}

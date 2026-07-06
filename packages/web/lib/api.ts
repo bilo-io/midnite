@@ -291,12 +291,6 @@ import {
   type InboundSecretResponse,
   type InboundSourceCreateRequest,
   type InboundSourceUpdateRequest,
-  DeckSummarySchema,
-  DeckResponseSchema,
-  type Deck,
-  type DeckSummary,
-  type CreateDeckRequest,
-  type UpdateDeckRequest,
   BackupSummarySchema,
   type BackupSummary,
   BackupStatusSchema,
@@ -2532,42 +2526,3 @@ export async function promoteIdeaToProject(
 }
 
 export type { Idea, IdeaMessage, IdeaResponse, IdeasResponse, IdeaChatResponse };
-
-// --- Slides (Phase 48) -------------------------------------------------------
-
-export async function listDecks(signal?: AbortSignal): Promise<DeckSummary[]> {
-  return fetchJson('/slides', { signal }, z.array(DeckSummarySchema));
-}
-
-export async function getDeck(id: string, signal?: AbortSignal): Promise<Deck> {
-  const { deck } = await fetchJson(
-    `/slides/${encodeURIComponent(id)}`,
-    { signal },
-    DeckResponseSchema,
-  );
-  return deck;
-}
-
-export async function createDeck(body: CreateDeckRequest): Promise<Deck> {
-  const { deck } = await fetchJson(
-    '/slides',
-    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
-    DeckResponseSchema,
-  );
-  return deck;
-}
-
-export async function updateDeck(id: string, body: UpdateDeckRequest): Promise<Deck> {
-  const { deck } = await fetchJson(
-    `/slides/${encodeURIComponent(id)}`,
-    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(body) },
-    DeckResponseSchema,
-  );
-  return deck;
-}
-
-export async function deleteDeck(id: string): Promise<void> {
-  await fetchJson(`/slides/${encodeURIComponent(id)}`, { method: 'DELETE' });
-}
-
-export type { Deck, DeckSummary, CreateDeckRequest, UpdateDeckRequest };

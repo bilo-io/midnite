@@ -1,0 +1,361 @@
+/* Presenter styling for the Slides feature.
+ *
+ * Ported structurally from the standalone slides demo, but re-keyed to midnite's
+ * HSL design tokens (no demo palette/fonts). Everything is scoped under
+ * `.slides-scope` because the demo uses very generic class names (.title, .step,
+ * .steps, .caret, …) that would otherwise collide with global app styles. The
+ * presenter root carries `slides-scope deck`. */
+
+.slides-scope {
+  --s-text: hsl(var(--foreground));
+  --s-muted: hsl(var(--muted-foreground));
+  --s-faint: hsl(var(--muted-foreground) / 0.6);
+  --s-accent: hsl(var(--primary));
+  --s-accent-2: hsl(var(--primary));
+  --s-accent-soft: hsl(var(--primary) / 0.15);
+  --s-glow: hsl(var(--primary) / 0.5);
+  --s-border: hsl(var(--border));
+  --s-surface: hsl(var(--foreground) / 0.04);
+  --s-surface-hover: hsl(var(--accent));
+  --s-chip-bg: hsl(var(--primary) / 0.14);
+  --s-chip-border: hsl(var(--primary) / 0.32);
+  --s-kw-bg: hsl(var(--foreground) / 0.06);
+  --s-kw-border: hsl(var(--border));
+  --s-dot: hsl(var(--muted-foreground) / 0.4);
+  --s-dot-seen: hsl(var(--muted-foreground) / 0.6);
+  --s-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --s-title-font: var(--font-ui, ui-sans-serif, system-ui, sans-serif);
+  --s-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.slides-scope .deck {
+  position: relative;
+}
+
+.slides-scope .stage {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: default;
+  background: hsl(var(--background));
+}
+
+.slides-scope .slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.slides-scope .slide-inner {
+  width: 100%;
+  max-width: 1400px;
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+  padding: 0 clamp(2.5rem, 8vw, 7rem) 0 clamp(5rem, 13vw, 13rem);
+}
+
+.slides-scope .title {
+  flex: 0 0 auto; /* pinned header — the steps scroll beneath it */
+  font-family: var(--s-title-font);
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.015em;
+  font-size: clamp(2.6rem, 6.4vw, 4.8rem);
+  color: var(--s-text);
+  margin-bottom: 1.9rem;
+  min-height: 1.04em;
+  animation: slideTitleIn 0.55s var(--s-ease) both;
+}
+@keyframes slideTitleIn {
+  from { opacity: 0; transform: translateY(-22px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.slides-scope .caret {
+  display: inline-block;
+  width: 0.06em;
+  min-width: 2px;
+  height: 0.92em;
+  margin-left: 0.06em;
+  background: var(--s-accent);
+  vertical-align: -0.06em;
+  animation: slideCaretBlink 1s step-end infinite;
+}
+@keyframes slideCaretBlink {
+  0%, 50% { opacity: 1; }
+  50.01%, 100% { opacity: 0; }
+}
+
+.slides-scope .steps {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  padding: 4px 2px 2.5rem 0.65rem;
+  scroll-padding-block: 10px 2.6rem;
+}
+.slides-scope .steps::-webkit-scrollbar { display: none; }
+.slides-scope .steps.overflowing {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 32px), transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 32px), transparent 100%);
+}
+.slides-scope .steps.compact { gap: 1rem; }
+.slides-scope .steps.compact .step { font-size: clamp(1.05rem, 1.75vw, 1.42rem); }
+.slides-scope .steps.dense { gap: 0.82rem; }
+.slides-scope .steps.dense .step { font-size: clamp(1rem, 1.5vw, 1.24rem); line-height: 1.45; }
+
+.slides-scope .step {
+  font-size: clamp(1.15rem, 2.1vw, 1.7rem);
+  line-height: 1.5;
+  color: var(--s-muted);
+  padding-left: 1.5rem;
+  position: relative;
+  opacity: 0;
+  transition: opacity 0.4s var(--s-ease);
+}
+.slides-scope .step::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.72em;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--s-accent);
+  transform: translateY(-50%);
+}
+.slides-scope .step.in { opacity: 1; }
+.slides-scope .step.typing { opacity: 1; transition: none; }
+
+.slides-scope .slide.cover .slide-inner { text-align: center; padding: 0 8vw; }
+.slides-scope .slide.cover .title { font-size: clamp(3.2rem, 8.8vw, 6.6rem); margin-bottom: 1.6rem; }
+.slides-scope .slide.cover .steps { align-items: center; }
+.slides-scope .slide.cover .step { padding-left: 0; }
+.slides-scope .slide.cover .step::before { display: none; }
+.slides-scope .lede {
+  font-style: italic;
+  font-size: clamp(1.25rem, 2.6vw, 1.9rem);
+  line-height: 1.45;
+  color: var(--s-muted);
+  max-width: 34ch;
+  display: inline-block;
+}
+
+/* Inline chips + links */
+.slides-scope code.cmd,
+.slides-scope a.cmd,
+.slides-scope code.kw {
+  font-family: var(--s-mono);
+  font-size: 0.86em;
+  padding: 0.12em 0.5em;
+  border-radius: 7px;
+  white-space: nowrap;
+}
+.slides-scope code.cmd,
+.slides-scope a.cmd { color: var(--s-accent-2); background: var(--s-chip-bg); border: 1px solid var(--s-chip-border); }
+.slides-scope code.kw { color: var(--s-text); background: var(--s-kw-bg); border: 1px solid var(--s-kw-border); }
+.slides-scope a.cmd {
+  text-decoration: underline;
+  text-decoration-color: var(--s-chip-border);
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1.5px;
+  cursor: pointer;
+  transition: background-color 0.2s var(--s-ease), border-color 0.2s var(--s-ease);
+}
+.slides-scope a.cmd:hover { background: var(--s-accent-soft); border-color: var(--s-accent); text-decoration-color: var(--s-accent); }
+.slides-scope a.link {
+  color: var(--s-accent-2);
+  text-decoration: underline;
+  text-decoration-color: var(--s-chip-border);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
+  cursor: pointer;
+  transition: color 0.2s var(--s-ease), text-decoration-color 0.2s var(--s-ease);
+}
+.slides-scope a.link::after { content: '\2197'; font-size: 0.78em; margin-left: 0.1em; opacity: 0.7; }
+.slides-scope a.link:hover { color: var(--s-accent); text-decoration-color: var(--s-accent); }
+
+/* ---- Pagination rail (windowed, animated dot tracks) ---- */
+.slides-scope .rail {
+  position: fixed;
+  left: clamp(1.5rem, 2.6vw, 2.4rem);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 20;
+}
+.slides-scope .dtrack { display: flex; align-items: center; }
+.slides-scope .dtrack.v { flex-direction: column; }
+.slides-scope .dtrack.h { flex-direction: row; }
+.slides-scope .dclip { position: relative; flex: 0 0 auto; overflow: visible; }
+.slides-scope .dtrack.windowed.v .dclip { clip-path: inset(0 -100vw 0 0); }
+.slides-scope .dtrack.windowed.h .dclip { clip-path: inset(-40px 0 -40px 0); }
+.slides-scope .dinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  will-change: transform;
+  transition: transform 0.5s var(--s-ease);
+}
+.slides-scope .dtrack.v .dinner { flex-direction: column; }
+.slides-scope .dtrack.h .dinner { flex-direction: row; width: max-content; }
+.slides-scope .dslot { position: relative; display: grid; place-items: center; flex: 0 0 auto; }
+.slides-scope .ddot {
+  position: relative;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--s-dot);
+  flex: 0 0 auto;
+  cursor: pointer;
+  transition: background-color 0.35s var(--s-ease), border-color 0.35s var(--s-ease),
+    transform 0.35s var(--s-ease), box-shadow 0.35s var(--s-ease), opacity 0.35s var(--s-ease);
+}
+.slides-scope .ddot::after { content: ''; position: absolute; inset: -8px; border-radius: 50%; }
+.slides-scope .ddot.sec.seen { background: var(--s-dot-seen); }
+.slides-scope .ddot.sec.active { background: var(--s-accent); transform: scale(1.35); box-shadow: 0 0 14px 2px var(--s-glow); }
+.slides-scope .ddot.sec:hover { background: var(--s-accent-2); }
+.slides-scope .ddot.sub { background: transparent; border: 1.5px solid var(--s-dot-seen); }
+.slides-scope .ddot.sub:hover { border-color: var(--s-accent-2); }
+.slides-scope .ddot.sub.filled { background: var(--s-accent); border-color: var(--s-accent); transform: scale(1.15); }
+.slides-scope .dchev {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  padding: 2px;
+  border: none;
+  background: none;
+  color: var(--s-faint);
+  cursor: pointer;
+  font-family: var(--s-mono);
+  font-size: 0.6rem;
+  line-height: 1;
+  transition: color 0.25s var(--s-ease), opacity 0.25s var(--s-ease);
+}
+.slides-scope .dtrack.v .dchev { margin: 1px 0; }
+.slides-scope .dtrack.h .dchev { margin: 0 1px; }
+.slides-scope .dchev:hover:not(:disabled) { color: var(--s-accent); }
+.slides-scope .dchev:disabled { opacity: 0.28; cursor: default; }
+.slides-scope .dchev .dcount { min-width: 0.62rem; text-align: center; letter-spacing: -0.02em; }
+.slides-scope .dchev svg { display: block; }
+.slides-scope .subrail {
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  margin-left: 0.85rem;
+  transform: translateY(-50%);
+  white-space: nowrap;
+}
+
+/* Chrome: hint + counter */
+.slides-scope .hint {
+  position: fixed;
+  bottom: clamp(1.2rem, 2.5vw, 2rem);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.8rem;
+  color: var(--s-muted);
+  letter-spacing: 0.02em;
+  opacity: 0.75;
+  z-index: 20;
+  transition: opacity 0.6s var(--s-ease);
+  pointer-events: none;
+  text-align: center;
+}
+.slides-scope .hint.gone { opacity: 0; }
+.slides-scope .hint kbd {
+  font-family: var(--s-mono);
+  font-size: 0.78em;
+  padding: 0.15em 0.45em;
+  border-radius: 5px;
+  background: var(--s-kw-bg);
+  border: 1px solid var(--s-kw-border);
+}
+.slides-scope .deck-progress {
+  position: fixed;
+  bottom: clamp(1.2rem, 2.5vw, 2rem);
+  right: clamp(1.5rem, 2.6vw, 2.4rem);
+  font-family: var(--s-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  color: var(--s-faint);
+  z-index: 20;
+}
+
+/* Fenced code blocks + tables (deck steps) */
+.slides-scope .md-code-wrap {
+  font-family: var(--s-mono);
+  font-size: 0.82em;
+  margin: 0.6em 0;
+  border: 1px solid var(--s-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--s-kw-bg);
+}
+.slides-scope .md-code-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.4em 0.8em;
+  border-bottom: 1px solid var(--s-border);
+}
+.slides-scope .md-code-lang {
+  font-size: 0.8em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--s-faint);
+}
+.slides-scope .md-copy {
+  margin-left: auto;
+  font-family: inherit;
+  font-size: 0.82em;
+  color: var(--s-muted);
+  background: transparent;
+  border: 1px solid var(--s-border);
+  border-radius: 6px;
+  padding: 0.15em 0.6em;
+  cursor: pointer;
+  transition: color 0.2s var(--s-ease), border-color 0.2s var(--s-ease), background-color 0.2s var(--s-ease);
+}
+.slides-scope .md-copy:hover { color: var(--s-accent); border-color: var(--s-accent); background: var(--s-accent-soft); }
+.slides-scope .md-copy.copied { color: var(--s-accent); border-color: var(--s-accent); }
+.slides-scope .md-code {
+  line-height: 1.55;
+  color: var(--s-text);
+  padding: 0.85em 1em;
+  overflow-x: auto;
+  white-space: pre;
+}
+.slides-scope .md-code code { font-family: inherit; background: none; border: none; padding: 0; white-space: pre; }
+.slides-scope .tok-com { color: var(--s-faint); font-style: italic; }
+.slides-scope .tok-str { color: var(--s-accent-2); }
+.slides-scope .tok-kw { color: var(--s-accent); font-weight: 600; }
+.slides-scope .tok-num { color: var(--s-text); }
+.slides-scope .md-table-wrap { overflow-x: auto; margin: 0.6em 0; }
+.slides-scope .md-table { border-collapse: collapse; font-size: 0.9em; width: max-content; max-width: 100%; }
+.slides-scope .md-table th,
+.slides-scope .md-table td { border: 1px solid var(--s-border); padding: 0.4em 0.75em; text-align: left; vertical-align: top; }
+.slides-scope .md-table th { color: var(--s-text); font-weight: 600; background: var(--s-surface); }
+.slides-scope .md-table td { color: var(--s-muted); }
+
+.slides-scope .step:has(.md-code),
+.slides-scope .step:has(.md-table-wrap) { padding-left: 0; }
+.slides-scope .step:has(.md-code)::before,
+.slides-scope .step:has(.md-table-wrap)::before { display: none; }
+.slides-scope .step .md-code-wrap { font-size: 0.5em; }
+.slides-scope .step .md-table { font-size: 0.6em; }
+
+@media (prefers-reduced-motion: reduce) {
+  .slides-scope .title,
+  .slides-scope .step { transition-duration: 0.2s; }
+  .slides-scope .caret { animation: none; }
+}

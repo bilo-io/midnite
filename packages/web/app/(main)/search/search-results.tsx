@@ -11,7 +11,6 @@ import {
   ListChecks,
   LoaderCircle,
   Milestone,
-  Presentation,
   StickyNote,
   Workflow,
   type LucideIcon,
@@ -37,7 +36,6 @@ const TYPE_META: Record<SearchType, { label: string; Icon: LucideIcon }> = {
   council: { label: 'Councils', Icon: CirclePile },
   workflow: { label: 'Workflows', Icon: Workflow },
   idea: { label: 'Ideas', Icon: Lightbulb },
-  deck: { label: 'Slides', Icon: Presentation },
   milestone: { label: 'Milestones', Icon: Milestone },
 };
 

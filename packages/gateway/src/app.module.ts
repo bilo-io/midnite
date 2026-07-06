@@ -47,7 +47,6 @@ import { TeamsModule } from './teams/teams.module';
 import { WsModule } from './ws/ws.module';
 import { ServiceTokensModule } from './service-tokens/service-tokens.module';
 import { IdeasModule } from './ideas/ideas.module';
-import { SlidesModule } from './slides/slides.module';
 import { PhaseDocsModule } from './phase-docs/phase-docs.module';
 import { PreferencesModule } from './preferences/preferences.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
@@ -103,7 +102,6 @@ import { InboundModule } from './integrations/inbound/inbound.module';
     AdminModule,
     ServiceTokensModule,
     IdeasModule,
-    SlidesModule,
     PhaseDocsModule,
     PreferencesModule,
     WebhooksModule,

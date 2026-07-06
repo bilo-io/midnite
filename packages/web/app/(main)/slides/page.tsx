@@ -1,21 +1,19 @@
 'use client';
 
-import { listDecks } from '@/lib/api';
-import { useApiData } from '@/lib/use-api-data';
 import { PageHeader } from '@/components/page-header';
 import { SlidesView } from './slides-view';
 
 export default function SlidesPage() {
-  const { data, error } = useApiData((signal) => listDecks(signal));
-
   return (
     <>
       <PageHeader
         title="Slides"
         icon="Presentation"
-        description="Author and present reveal.js decks — Markdown or HTML, themed to match your app."
+        description="Paste Markdown to build a deck, then present it with typewriter reveals — stored in this browser."
       />
-      <SlidesView decks={data ?? []} error={error} />
+      <div className="container space-y-6 pb-8 pt-2">
+        <SlidesView />
+      </div>
     </>
   );
 }
