@@ -28,6 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
+| [64 · Office presence](phase-64-office-presence.md) | ◻ TODO | 0/30 | `░░░░░░░░░░` | 0% | — | A B C D E F G H |
 | [63 · Office 3D](phase-63-office-3d.md) | ◻ TODO | 0/28 | `░░░░░░░░░░` | 0% | — | A B C D E F G |
 | [62 · Fable-Digest](phase-62-fable-digest.md) | ◻ TODO | 0/33 | `░░░░░░░░░░` | 0% | — | A B C D E F G H |
 | [61 · Fable-Observability](phase-61-fable-observability.md) | ◻ TODO | 0/36 | `░░░░░░░░░░` | 0% | — | A B C D E F G H I |
@@ -96,8 +97,9 @@
 **Headline:** phases **0–56 are complete**. The **live frontier** is **57** (performance &
 scale — C/F remainders), **58** (dependency graph & roadmap — Theme F to go), and **59**
 (chat to board — Theme C claimed WIP). Freshly planned and unstarted: the **Fable trio 60–62**
-(analysis / observability / digest) and **63** (Office 3D — first-person three.js office,
-planned 2026-07-06). (An *earlier* Phase 42 was a
+(analysis / observability / digest) and the office pair **63** (Office 3D — first-person
+three.js office) + **64** (multiplayer office presence — Theme D blocked on 63), both planned
+2026-07-06. (An *earlier* Phase 42 was a
 parallel restatement of Phase 40, folded into Phase 40 Theme G and removed 2026-06-27; the
 current 42 & 43 are new, unrelated phases — two brainstorm sessions ran concurrently, so the
 preference-sync plan took the next free number, 43.)
@@ -112,6 +114,17 @@ shortcut). The 2 contextual-command boxes are now **un-deferred and folded into 
 Every phase's lettered themes with a status icon + one-liner, so you can gauge scope and pick
 work without opening the phase doc. Status: `✅` done · `🔄` WIP (claimed) · `◻` TODO · `◐`
 partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
+
+### [Phase 64 — Office multiplayer presence](phase-64-office-presence.md)
+*Teammates as live avatars in the office (2D + 3D): a /ws/presence channel (last-known-state, no ring, zero DB), hybrid guest/JWT identity, emote wheel + locate, ghost mode, nav pill + dashboard widget; proximity chat as stretch. Theme D blocked on Phase 63 A–C.*
+- ◻ **A** — Presence contract + gateway service (typed frames, tick-coalesced team fan-out, snapshot-on-join)
+- ◻ **B** — Client presence store + throttled position sampler + guest identity + interpolation
+- ◻ **C** — 2D renderer: remote humans as Actors, minimap dots, scene scoping (solo-preserving)
+- ◻ **D** — 3D renderer: r3f presence avatars + billboards (⛔ blocked on Phase 63 A–C)
+- ◻ **E** — Emote wheel, teammates roster, locate/walk-to
+- ◻ **F** — Nav pill, dashboard widget, server-enforced ghost mode
+- ◻ **G** — Proximity chat bubbles (stretch — ephemeral, never persisted)
+- ◻ **H** — Gateway/contract/interp tests + two-context Playwright smoke
 
 ### [Phase 63 — Office 3D](phase-63-office-3d.md)
 *The office rebuilt in first-person three.js (r3f + drei): same rooms/data, same Zustand store contract so every existing React panel is reused untouched; 2D/3D tabs on /office; arcade sub-scene with one playable Breakout. Pure packages/web; 2D office behavior-preserving.*
