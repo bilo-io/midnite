@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-06 — feat: roadmap lane view + milestone assignment — Phase 58 Theme E (PR #326)
+
+Phase 58 D shipped the milestone model + `GET /projects/:id/roadmap`; Theme E renders it. A project's plan as lanes with progress, and two ways to put a task on it. Pure web — the contract + client methods already existed.
+
+- [x] **roadmap lanes** ([`roadmap-board.tsx`](../packages/web/components/roadmap/roadmap-board.tsx) + [`roadmap-lane.tsx`](../packages/web/components/roadmap/roadmap-lane.tsx)): milestones as ordered horizontal columns, each with a done/total `ProjectProgressBar` (reused from Theme C) + its task cards, plus a fixed **backlog** lane for unassigned tasks. Lives on the project cockpit as a `?tab=roadmap` tab (Phase 55).
+- [x] **drag-to-assign / reorder**: drag a task card between lanes → `PATCH /tasks/:id/milestone`; drag a lane's header grip → `reorderMilestones`. Both **optimistic with rollback** (a pure `moveTaskLocal` reducer recomputes lane counts). `@dnd-kit/core` + `/sortable`, reusing the board's patterns.
+- [x] **inline milestone CRUD**: "+ Add milestone" affordance, inline rename on the lane header, delete via a lane menu (confirm; tasks fall back to the backlog, not deleted).
+- [x] **task-detail milestone picker** ([`task-milestone-picker.tsx`](../packages/web/components/task-milestone-picker.tsx)): the second assignment surface. Live over the Phase 56 reliable task channel.
+- [x] Tests: `moveTaskLocal` unit (cross-lane move + recount, backlog↔milestone, no-op, unknown) + `roadmap.e2e.ts` (lanes/backlog/`1/2 · 50%` progress + create-milestone) + light/dark shots. `:typecheck`/`:lint`/`web:test` (839) green.
 ## 2026-07-06 — feat: execute chat-to-board intents — Phase 59 Theme B (PR #323)
 
 The execution seam: turn a parsed `ChatIntent` (Theme A) into board changes by composing the services that already validate — no new mutation path.
