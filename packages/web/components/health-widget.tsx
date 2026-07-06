@@ -91,12 +91,21 @@ function StatusRow({
   detail: string;
   active?: boolean;
 }) {
+  // Halo colour tracks the dot: green (up), red (fault), muted (unknown).
+  const glow =
+    ok === null
+      ? 'hsl(var(--muted-foreground) / 0.4)'
+      : ok
+        ? 'rgb(16 185 129 / 0.7)'
+        : 'hsl(var(--destructive) / 0.7)';
+
   return (
     <div className="flex items-center gap-2.5">
       <span
         aria-hidden
+        style={{ ['--glow-color' as string]: glow }}
         className={cn(
-          'h-2.5 w-2.5 shrink-0 rounded-full',
+          'status-dot-glow h-2.5 w-2.5 shrink-0 rounded-full',
           ok === null ? 'bg-muted-foreground/40' : ok ? 'bg-emerald-500' : 'bg-destructive',
         )}
       />

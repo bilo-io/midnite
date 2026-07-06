@@ -72,7 +72,7 @@ export function NotesPanel({ notes: initial }: { notes: Note[] }) {
       {/* Header */}
       <div className="flex shrink-0 items-center justify-between border-b border-border/40 px-5 py-3">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold">Notes</span>
+          <span className="text-sm font-semibold">Action items</span>
           {completedCount > 0 && (
             <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
               {completedCount} done

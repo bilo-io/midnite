@@ -177,9 +177,11 @@ function WeatherReadout({ data, units, compact }: { data: WeatherResponse; units
 
   return (
     <div className="flex h-full flex-col items-center justify-center gap-2 p-4 text-center">
-      <Icon className="h-10 w-10 text-muted-foreground" aria-hidden />
+      <span className="flex items-center gap-2 text-muted-foreground">
+        <Icon className="h-8 w-8" aria-hidden />
+        <span className="text-base font-medium">{label}</span>
+      </span>
       <span className="text-4xl font-semibold tabular-nums leading-none">{temp(data.current.temperatureC, units)}</span>
-      <span className="text-sm text-muted-foreground">{label}</span>
       <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
         {range}
         <span aria-hidden>·</span>

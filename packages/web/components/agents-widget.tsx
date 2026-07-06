@@ -77,11 +77,18 @@ export function AgentsWidget() {
             {cfg.subAgents.length === 0 ? (
               <p className="mt-1 text-[11px] text-muted-foreground">None configured.</p>
             ) : (
-              <ul className="mt-1 space-y-1">
+              <ul className="mt-1.5 space-y-2">
                 {cfg.subAgents.map((a) => (
-                  <li key={a.id} className="flex items-center justify-between gap-2 text-[11px]">
-                    <span className="truncate font-medium">{a.name || 'Unnamed'}</span>
-                    {a.role && <span className="shrink-0 truncate text-muted-foreground">{a.role}</span>}
+                  <li key={a.id} className="space-y-0.5">
+                    <span className="block truncate text-[11px] font-medium">{a.name || 'Unnamed'}</span>
+                    {a.role && (
+                      <span
+                        className="block text-[11px] leading-snug text-muted-foreground line-clamp-2"
+                        title={a.role}
+                      >
+                        {a.role}
+                      </span>
+                    )}
                   </li>
                 ))}
               </ul>
