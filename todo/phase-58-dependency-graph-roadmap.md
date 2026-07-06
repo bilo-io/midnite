@@ -100,19 +100,21 @@ A roadmap-ish read without any new data.
 
 ---
 
-## Theme D — Milestone data model — **M**
+## Theme D — Milestone data model — **M** — ✅ DONE (PR #322, 2026-07-06)
 
 A real, minimal plan structure in the product.
 
-- [ ] **shared:** `MilestoneSchema` (`id`, `projectId`, `name`, `description?`, `position`, `targetDate?`, timestamps,
+- [x] **shared:** `MilestoneSchema` (`id`, `projectId`, `name`, `description?`, `position`, `targetDate?`, timestamps,
       `createdBy?`, `teamId?`) + create/update/reorder requests + an assignment shape. **Named "milestone," not
       "phase"** (avoid the `todo/` overload).
-- [ ] **gateway:** `roadmap_milestones` table (forward-only migration) + a nullable `task.milestoneId` column;
-      `MilestonesRepository` (team-scoped) → `MilestonesService` (CRUD, reorder by `position`, assign/unassign a task,
-      validate project + team scope) → `MilestonesController` (`GET`/`POST`/`PATCH`/`DELETE /projects/:id/milestones`
-      + `PATCH /tasks/:id/milestone`). **Progress is computed** (done/total per milestone), never stored.
-- [ ] A milestone graph/rollup endpoint (`GET /projects/:id/roadmap` → milestones ordered + per-milestone task
-      counts/completion + the tasks) feeding Theme E.
+- [x] **gateway:** `roadmap_milestones` table (forward-only migration `0071`) + a nullable `task.milestoneId` column;
+      `MilestonesRepository` (team-scoped) → `MilestonesService` (CRUD, reorder by full ordered id list, assign/unassign a
+      task with strict same-project validation, delete-unassigns tasks) → `MilestonesController`
+      (`GET`/`POST`/`PATCH`/`DELETE /projects/:id/milestones` + `POST …/reorder` + `PATCH /tasks/:id/milestone`).
+      **Progress is computed** (done/total per milestone), never stored. Writes gated to `member+`; milestones FTS-indexed;
+      `milestoneId` surfaced on the task DTO + dependency-graph nodes.
+- [x] A milestone graph/rollup endpoint (`GET /projects/:id/roadmap` → milestones ordered + per-milestone task
+      counts/completion + the tasks as lean `TaskSummary` projections + an unassigned backlog) feeding Theme E.
 
 ---
 
