@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-06 — feat: per-project completion bar on the dependency graph — Phase 58 Theme C (PR #327)
+
+Closes Phase 58 Theme C (was ◐). The completion bar landed on project surfaces in PR #320; the graph half was deferred until Theme B's DAG existed. Now that the graph + its project picker ship (PR #324), scoping the graph to a project shows that project's completion in the toolbar.
+
+- [x] **web:** when `/tasks/graph?projectId=` is set, the toolbar shows the selected `Project`'s completion via the shared `ProjectProgressBar` (`done/total · %`) — sourced from server-computed `taskStatusCounts` (Theme C, PR #320), so it reflects the whole project and matches the project cards + detail stats panel. Hidden for "All projects". Reuse-only — no new API or component.
+- [x] Tests: extended `task-graph.e2e.ts` (unscoped → no indicator; scoped to a 1-done-of-2 project → `1/2 · 50%`). `:typecheck`/`:lint`/`web:test` (839) green.
+
+---
+
 ## 2026-07-06 — feat: roadmap lane view + milestone assignment — Phase 58 Theme E (PR #326)
 
 Phase 58 D shipped the milestone model + `GET /projects/:id/roadmap`; Theme E renders it. A project's plan as lanes with progress, and two ways to put a task on it. Pure web — the contract + client methods already existed.
