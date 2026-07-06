@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { isHexColor } from './color.js';
 import { SOURCE_KINDS } from './source.js';
-import { TaskSchema } from './task.js';
+import { StatusSchema, TaskSchema } from './task.js';
 
 export const MAX_SOURCES_PER_PROJECT = 10;
 export const MAX_TAG_LENGTH = 12;
@@ -17,6 +17,13 @@ const TagSchema = z
   .trim()
   .min(1, 'tag is required')
   .max(MAX_TAG_LENGTH, `tag must be ${MAX_TAG_LENGTH} characters or fewer`);
+
+/**
+ * Phase 58 Theme C: per-status task counts for a project — computed server-side
+ * (never stored), so the completion overlay can't drift from the board. A partial
+ * map: statuses with zero tasks are omitted.
+ */
+export const TaskStatusCountsSchema = z.record(StatusSchema, z.number().int().nonnegative());
 
 export const ProjectSourceSchema = z.object({
   id: z.string(),
@@ -47,6 +54,11 @@ export const ProjectSchema = z.object({
   updatedAt: z.string(),
   sources: z.array(ProjectSourceSchema),
   taskCount: z.number().int().nonnegative().optional(),
+  /**
+   * Phase 58 Theme C: per-status task counts (computed, not stored). Drives the
+   * per-project completion overlay on project surfaces. Absent → no tasks known.
+   */
+  taskStatusCounts: TaskStatusCountsSchema.optional(),
   /** Phase 38: team this project belongs to; null for personal projects. */
   teamId: z.string().optional(),
   /** Phase 40: idea this project was promoted from; null if not idea-originated. */
@@ -132,6 +144,28 @@ export function missingProjectRequirements(project: Project): ProjectRequirement
   return missing;
 }
 
+/**
+ * Phase 58 Theme C: a project's completion, derived from its per-status counts.
+ * `total` counts **every** assigned task (abandoned included — a project isn't
+ * 100% if work was abandoned); `done` is the terminal `done` count. When
+ * `taskStatusCounts` is absent we fall back to `taskCount` for the total (with
+ * `done` unknown → 0), so surfaces that only have the count still render safely.
+ */
+export type ProjectCompletion = { done: number; total: number; pct: number };
+
+export function projectCompletion(
+  project: Pick<Project, 'taskStatusCounts' | 'taskCount'>,
+): ProjectCompletion {
+  const counts = project.taskStatusCounts;
+  const total = counts
+    ? Object.values(counts).reduce<number>((sum, n) => sum + (n ?? 0), 0)
+    : (project.taskCount ?? 0);
+  const done = counts?.done ?? 0;
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  return { done, total, pct };
+}
+
+export type TaskStatusCounts = z.infer<typeof TaskStatusCountsSchema>;
 export type ProjectSource = z.infer<typeof ProjectSourceSchema>;
 export type Project = z.infer<typeof ProjectSchema>;
 export type CreateProjectRequest = z.infer<typeof CreateProjectRequestSchema>;
