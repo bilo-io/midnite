@@ -34,7 +34,7 @@ For a high-level tour of what midnite can do, see [`docs/FEATURES.md`](docs/FEAT
 
 ## Quick start
 
-Requires [proto](https://moonrepo.dev/proto) to manage the toolchain versions pinned in [`.prototools`](.prototools) (Node 22.11.0, pnpm 9.15.0).
+Requires [proto](https://moonrepo.dev/proto) to manage the toolchain versions pinned in [`.prototools`](.prototools) (Node 22.12.0, pnpm 9.15.0).
 
 ```sh
 proto use                       # install pinned node + pnpm
@@ -46,6 +46,14 @@ pnpm moon run gateway:dev       # Nest gateway on http://localhost:7777
 pnpm moon run web:dev           # Next.js kanban on http://localhost:3000
 pnpm moon run cli:build && node packages/cli/dist/index.js --help
 ```
+
+**After pulling `main`**, re-sync the toolchain + deps and rebuild in one line:
+
+```sh
+proto use && pnpm install && pnpm moon run :build
+```
+
+There is **no separate migration step** — the gateway applies Drizzle migrations automatically on boot ([`db.module.ts`](packages/gateway/src/db/db.module.ts)), so a fresh or newly-migrated schema is created the first time you run `pnpm moon run gateway:dev`.
 
 Sanity check the gateway:
 
