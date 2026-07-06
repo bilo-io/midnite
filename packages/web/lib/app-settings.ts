@@ -108,7 +108,7 @@ export function formatHeartbeatInterval(hours: number): string {
  */
 /** Side-nav widths, shared by the nav component and the `--nav-offset` CSS var. */
 export const NAV_W_COLLAPSED = '3.5rem';
-export const NAV_W_EXPANDED = '14rem';
+export const NAV_W_EXPANDED = '16rem';
 
 /**
  * The decorative backdrop drawn behind the home screen, screensaver and the

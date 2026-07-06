@@ -75,8 +75,10 @@ export function ThemeToggle({ expanded }: { expanded?: boolean }) {
         <div
           role="menu"
           className={cn(
-            'absolute z-50 min-w-[10rem] rounded-md border bg-card text-card-foreground p-1 shadow-md',
-            expanded ? 'bottom-full left-0 mb-1' : 'bottom-0 left-full ml-2',
+            'absolute z-50 rounded-md border bg-card text-card-foreground p-1 shadow-md',
+            // Expanded: the dropup spans the sidenav's full width; collapsed: a
+            // fixed-width flyout to the right of the icon rail.
+            expanded ? 'bottom-full left-0 mb-1 w-full' : 'bottom-0 left-full ml-2 min-w-[10rem]',
           )}
         >
           {OPTIONS.map(({ value, label, Icon }) => {

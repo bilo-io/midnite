@@ -2128,6 +2128,11 @@ export async function clearNotifications(): Promise<void> {
   await fetchJson('/notifications', { method: 'DELETE' });
 }
 
+/** Dismiss a single notification (`DELETE /notifications/:id`). */
+export async function dismissNotification(id: string): Promise<void> {
+  await fetchJson(`/notifications/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
 // ---- Agent pool ----
 
 /** Live slot snapshot from `GET /pool`. */

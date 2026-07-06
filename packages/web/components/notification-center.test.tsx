@@ -11,6 +11,7 @@ vi.mock('next/navigation', () => ({
 // Drive the component off a controllable provider mock rather than a live socket.
 const markRead = vi.fn();
 const markAllRead = vi.fn();
+const dismiss = vi.fn();
 const clear = vi.fn();
 let notificationsState: {
   feed: Notification[];
@@ -18,7 +19,7 @@ let notificationsState: {
   loading: boolean;
 };
 vi.mock('@/components/notifications-provider', () => ({
-  useNotifications: () => ({ ...notificationsState, markRead, markAllRead, clear }),
+  useNotifications: () => ({ ...notificationsState, markRead, markAllRead, dismiss, clear }),
 }));
 
 import { NotificationCenter } from './notification-center';
@@ -59,6 +60,7 @@ describe('NotificationCenter', () => {
     push.mockReset();
     markRead.mockReset();
     markAllRead.mockReset();
+    dismiss.mockReset();
     clear.mockReset();
   });
 
@@ -120,6 +122,16 @@ describe('NotificationCenter', () => {
     fireEvent.click(screen.getByRole('button', { name: /Notifications/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Clear notifications' }));
     expect(clear).toHaveBeenCalledOnce();
+  });
+
+  it('dismisses a single notification via its per-row button', () => {
+    render(<NotificationCenter />);
+    fireEvent.click(screen.getByRole('button', { name: /Notifications/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss notification: Agent needs your input' }));
+    expect(dismiss).toHaveBeenCalledWith('a');
+    // Dismiss is independent of opening/marking-read the entry.
+    expect(push).not.toHaveBeenCalled();
+    expect(markRead).not.toHaveBeenCalled();
   });
 
   it('routes to a notification and marks it read on click', () => {
