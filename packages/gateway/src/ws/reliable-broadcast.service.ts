@@ -1,11 +1,27 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { WebSocket } from 'ws';
-import type { MidniteConfig, SequencedEnvelope } from '@midnite/shared';
+import type {
+  MidniteConfig,
+  ResyncRequiredMessage,
+  SequencedEnvelope,
+  WatermarkMessage,
+} from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
 import { WsBroadcastService } from './ws-broadcast.service';
 
 /** One retained event in a channel's ring. */
 type RingEntry = { seq: number; ts: number; payload: string };
+
+/** Outcome of a resume against one channel line (Phase 56 B). */
+type ResumeResult = {
+  /** Ring events with `seq > lastSeq`, in order — the frames to replay. */
+  events: RingEntry[];
+  /** The gap exceeds the buffer (or seq reset) → the client must full-refetch. */
+  resyncRequired: boolean;
+};
+
+/** Client → gateway subscribe/resume message (channel-agnostic core). */
+type SubscribeMessage = { type: 'subscribe' | 'resume'; cursor?: Record<string, number> };
 
 /**
  * Phase 56 A — reliable broadcast: wraps {@link WsBroadcastService} to give every
@@ -73,11 +89,79 @@ export class ReliableBroadcastService {
     return this.seqByKey.get(ringKey) ?? 0;
   }
 
+  /**
+   * Phase 56 B — resolve a client's resume against one channel line. The ring
+   * retains seqs `[oldest .. watermark]`; the client is at `lastSeq`:
+   *  - `lastSeq === watermark` → already current, nothing to send.
+   *  - `lastSeq > watermark` → client is ahead of us, i.e. the gateway restarted
+   *    and seq reset → resync (its cursor is meaningless now).
+   *  - the next needed seq (`lastSeq + 1`) is older than the oldest retained →
+   *    the gap exceeds the buffer → resync.
+   *  - otherwise → replay the retained events after `lastSeq`.
+   */
+  resume(ringKey: string, lastSeq: number): ResumeResult {
+    const watermark = this.watermark(ringKey);
+    if (lastSeq === watermark) return { events: [], resyncRequired: false };
+    if (lastSeq > watermark) return { events: [], resyncRequired: true };
+    const ring = this.ringByKey.get(ringKey) ?? [];
+    const oldest = ring.length > 0 ? ring[0]!.seq : watermark + 1;
+    if (lastSeq + 1 < oldest) return { events: [], resyncRequired: true };
+    return { events: ring.filter((e) => e.seq > lastSeq), resyncRequired: false };
+  }
+
+  /**
+   * Phase 56 B — handle a client's subscribe/resume on one socket against the
+   * set of ring lines it's entitled to (`allowedKeys`; the gateway derives them
+   * from the socket's team/run scope, so a client can't replay another scope).
+   *
+   *  - **subscribe** (fresh): send a {@link WatermarkMessage} anchoring the
+   *    client's cursor to the current per-line watermark — it just did a REST
+   *    fetch, so it wants live-from-now, not a full ring replay.
+   *  - **resume**: per line, replay the retained events after the client's
+   *    cursor, or send a {@link ResyncRequiredMessage} when the gap is too big.
+   *
+   * The caller adds the socket to its live subscriber set **before** calling
+   * this, so a live event during replay is delivered too — the client dedups by
+   * `(ch, seq)`, making replay + live overlap idempotent.
+   */
+  handleSubscription(socket: WebSocket, allowedKeys: string[], msg: SubscribeMessage): void {
+    if (msg.type === 'subscribe') {
+      const cursor: Record<string, number> = {};
+      for (const key of allowedKeys) cursor[key] = this.watermark(key);
+      this.sendOne(socket, { type: 'watermark', cursor } satisfies WatermarkMessage);
+      return;
+    }
+    for (const key of allowedKeys) {
+      const { events, resyncRequired } = this.resume(key, msg.cursor?.[key] ?? 0);
+      if (resyncRequired) {
+        this.sendOne(socket, { type: 'resync-required', ch: key } satisfies ResyncRequiredMessage);
+        continue;
+      }
+      for (const entry of events) this.sendRaw(socket, entry.payload);
+    }
+  }
+
+  /** Send a control frame to one socket (best-effort — ignore a closing socket). */
+  private sendOne(socket: WebSocket, message: WatermarkMessage | ResyncRequiredMessage): void {
+    this.sendRaw(socket, JSON.stringify(message));
+  }
+
+  private sendRaw(socket: WebSocket, payload: string): void {
+    if (socket.readyState !== WebSocket.OPEN) return;
+    try {
+      socket.send(payload);
+    } catch {
+      // socket closing between the readyState check and the write — drop it.
+    }
+  }
+
   private stamp(ringKey: string, event: unknown): { seq: number; payload: string } {
     const seq = (this.seqByKey.get(ringKey) ?? 0) + 1;
     this.seqByKey.set(ringKey, seq);
     const ts = Date.now();
-    const envelope: SequencedEnvelope<unknown> = { seq, ts, event };
+    // `ch` lets a client that multiplexes >1 seq line on one socket (the tasks
+    // socket carries a team line + an all line) track lastSeq per line.
+    const envelope: SequencedEnvelope<unknown> = { seq, ts, ch: ringKey, event };
     const payload = JSON.stringify(envelope);
 
     const ring = this.ringByKey.get(ringKey) ?? [];

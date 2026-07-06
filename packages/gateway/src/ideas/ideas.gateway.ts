@@ -75,10 +75,14 @@ export class IdeasGateway
     client.on('message', (raw: Buffer | ArrayBuffer | Buffer[]) => {
       let parsed: unknown;
       try { parsed = JSON.parse(toText(raw)); } catch { return; }
-      if (IdeaSubscribeMessageSchema.safeParse(parsed).success) {
-        this.subscribers.add(client);
-        this.reportSubscribers();
-      }
+      const result = IdeaSubscribeMessageSchema.safeParse(parsed);
+      if (!result.success) return;
+      this.subscribers.add(client);
+      // Phase 56 B: same two-line shape as tasks — the all line + the client's team line.
+      const teamId = this.registry.getContext(client)?.teamId ?? null;
+      const allowedKeys = ['ideas:all', ...(teamId ? [`ideas:team:${teamId}`] : [])];
+      this.reliable.handleSubscription(client, allowedKeys, result.data);
+      this.reportSubscribers();
     });
   }
 

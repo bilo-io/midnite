@@ -10,15 +10,20 @@ const IDEAS_CHANNEL: ReliableChannel<IdeaEvent> = {
   subscribe: () => ({ type: 'subscribe' }),
   decode: (raw) => {
     const parsed = SequencedIdeaEventSchema.safeParse(JSON.parse(raw));
-    return parsed.success ? { seq: parsed.data.seq, event: parsed.data.event } : null;
+    return parsed.success
+      ? { seq: parsed.data.seq, ch: parsed.data.ch, event: parsed.data.event }
+      : null;
   },
 };
 
 /**
- * Subscribe to the gateway's live idea WebSocket (Phase 56 D). Invalidates the
- * query cache on every idea.created / updated / deleted. Mount once alongside the
- * other live-data hooks.
+ * Subscribe to the gateway's live idea WebSocket (Phase 56 D; Phase 56 B resume).
+ * Invalidates the query cache on every idea.created / updated / deleted, and on a
+ * too-big gap (resync). Mount once alongside the other live-data hooks.
  */
 export function useIdeaEvents(): void {
-  useReliableSubscription(IDEAS_CHANNEL, { onEvent: () => invalidateData() });
+  useReliableSubscription(IDEAS_CHANNEL, {
+    onEvent: () => invalidateData(),
+    onResync: () => invalidateData(),
+  });
 }

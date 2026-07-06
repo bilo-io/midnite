@@ -12,16 +12,19 @@ const TASKS_CHANNEL: ReliableChannel<TaskBoardEvent> = {
   subscribe: () => ({ type: 'subscribe' }),
   decode: (raw) => {
     const parsed = SequencedTaskBoardEventSchema.safeParse(JSON.parse(raw));
-    return parsed.success ? { seq: parsed.data.seq, event: parsed.data.event } : null;
+    return parsed.success
+      ? { seq: parsed.data.seq, ch: parsed.data.ch, event: parsed.data.event }
+      : null;
   },
 };
 
 /**
  * Subscribe to the gateway's live task-board WebSocket (Phase 56 D — now over the
- * shared reliable subscription). Per-event-type cache strategy lives here (the
- * hook is transport-only): board-state events invalidate; ephemeral agent /
- * guardrail events are handled by their own consumers (office store), so we skip
- * the refetch to avoid a storm on high-frequency tool activity.
+ * shared reliable subscription; Phase 56 B — resume + gap-detection). Per-event-type
+ * cache strategy lives here (the hook is transport-only): board-state events
+ * invalidate; ephemeral agent / guardrail events are handled by their own consumers
+ * (office store), so we skip the refetch to avoid a storm on high-frequency tool
+ * activity. A too-big gap (resync) → a full refetch.
  */
 export function useTaskEvents(): void {
   useReliableSubscription(TASKS_CHANNEL, {
@@ -33,5 +36,6 @@ export function useTaskEvents(): void {
       if (!isEphemeral) invalidateData();
       emitTaskEvent(event);
     },
+    onResync: () => invalidateData(),
   });
 }

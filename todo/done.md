@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-05 — feat: WS resume protocol + gap-detection — Phase 56 Theme B (PR #313)
+
+Closes the reliability loop Phase 56 A opened: a client that drops for a second used to silently lose every board event in that window. Now it replays what it missed, or resyncs when it can't.
+
+- [x] **shared:** `ch` (ring-channel/line key) on the sequenced envelope — a socket that multiplexes >1 seq line (tasks = team line + all-scoped activity line) tracks lastSeq **per line**. New control frames: `subscribe|resume` + `cursor`, `watermark` (fresh-subscribe anchor), `resync-required` (gap).
+- [x] **gateway:** `ReliableBroadcastService.resume(ringKey,lastSeq)→{events,resyncRequired}` (replay after cursor; resync on a gap beyond the ring **or** a seq-reset from a restart) + `handleSubscription()`; wired into the tasks/ideas/workflows gateways. Each derives the lines a socket may replay from its **team/run scope** (a crafted cursor can't replay another scope). Envelopes stamp `ch`.
+- [x] **web:** shared `ResumeTracker` — reconnect → `resume` with the per-`ch` cursor; dedup replay+live overlap by `(ch, seq)`; `resync-required` → full refetch. Adopted by the tasks + ideas board hooks (invalidate) and the workflow-run hook (reducer → resync routes to its REST reconcile).
+- [x] Tests: gateway resume/gap/watermark/scoping unit (9) + client dedup unit (9); existing WS gateway tests updated to skip the new watermark frame. Full local gate green (shared 59 files, gateway 1498 tests, web 158 files; typecheck + lint 0-errors). CI billing-blocked → gated on the local suite.
+
+---
+
 ## 2026-07-06 — feat: connection-status indicator across the app — Phase 56 Theme E (PR #317)
 
 Make the live connection legible: show when data may be behind, reassure on recovery.
