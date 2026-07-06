@@ -82,7 +82,7 @@ export function SessionTerminalModal({
           role="dialog"
           aria-modal="true"
           aria-label={`${session.title} terminal`}
-          className="pointer-events-auto flex h-[80vh] max-h-[80vh] w-full max-w-4xl flex-col rounded-xl border border-border bg-card shadow-2xl"
+          className="pointer-events-auto flex h-[80vh] max-h-[80vh] w-full max-w-6xl flex-col rounded-xl border border-border bg-card shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
           <header className="flex items-center gap-3 border-b border-border/60 px-5 py-3.5">

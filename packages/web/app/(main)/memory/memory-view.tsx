@@ -179,7 +179,7 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
           <p className="shrink-0 text-xs tabular-nums text-muted-foreground">
             {filtered.length} memor{filtered.length === 1 ? 'y' : 'ies'}
           </p>
-          <FilterPills options={scopeOptions} paramKey="scope" allLabel="All" />
+          <FilterPills options={scopeOptions} paramKey="scope" allLabel="All scopes" />
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
