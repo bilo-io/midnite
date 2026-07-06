@@ -4,6 +4,19 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-06 — perf: lean TaskSummary DTO + paged /tasks + activity feed — Phase 57 Theme C ◐ (PR #319)
+
+`GET /tasks` returned the **full** hydrated `Task[]` (whole event thread + every attachment/link — ~1–2.5 MB/board). Now it returns lean `TaskSummary` pages, cutting the board payload to the card fields.
+
+- [x] **shared:** `TaskSummary` (card fields + first-image attachment, ≤6 links, aiReview verdict, blocker ids, server-derived `answered`; drops events/prompt) — a structural **supertype** of `Task` (so full tasks stay assignable). Generic `Paged<T>` = `{items,total}` + `TaskListQuery` (offset page/limit). Ideas' `{ideas,total}` left as-is.
+- [x] **gateway:** `summariseMany` (lean batched hydration, ~5 queries/page, no event thread) + `listTaskPage` (LIMIT/OFFSET + COUNT total); `GET /tasks` → `TasksPage`; `getTask(:id)` still full. New `GET /tasks/activity` (one indexed `task_events ORDER BY at DESC` join) replaces the dashboard hydrating every task's events client-side.
+- [x] **web:** `getTasks()` → `TaskSummary[]` + `listTaskSummaries()`/`getTaskActivity()`; migrated the board, all list/dashboard/office consumers + their helpers to `TaskSummary` (detail surfaces keep the full `Task`, fetching by id on modal-open); activity widget reads the new feed; throughput bases completion on `updatedAt`; shipped-widget PR link preserved (restored `prUrl` to the summary).
+- [x] **cli:** `listTasks(status?, {page,limit})` → `{tasks: TaskSummary[], total}`; `midnite list --page/--limit` + a `showing N of total` line; `filterTasks`/`pickTask` widened.
+- [x] Tests: shared (summary/Paged/query round-trip + Task-assignable-to-summary), gateway (summary sheds events / first-image / ≤6 links / answered / pagination tiling + total / activity feed), CLI client (paged + page/limit), web stories updated for the paged + activity shapes. shared 59 / gateway 210 / cli 18 / web 799 files green; lint clean.
+- [◐] Deferred: keyset/cursor pagination (offset chosen — parity with ideas + the column-grouped board) and pagination of the other list endpoints (sessions/workflows/projects/repos) — a follow-up slice.
+
+---
+
 ## 2026-07-05 — perf: index team-scope hot paths — Phase 57 Theme D (PR #314)
 
 `teamScopeFilter` (`createdBy = ? OR createdBy IS NULL OR teamId = ?`) backed `listProjects`/`listWorkflows`/scoped `listTasks`; projects + workflows had no matching index, so EXPLAIN QUERY PLAN showed a full `SCAN`.
