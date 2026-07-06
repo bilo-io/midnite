@@ -329,10 +329,10 @@ export function SessionsView({
   return (
     <div className="space-y-4">
       <div className="reveal-controls flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-          <p className="shrink-0 text-xs tabular-nums text-muted-foreground">{plural(sessions.length, 'session')}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="mr-1 shrink-0 text-xs tabular-nums text-muted-foreground">{plural(sessions.length, 'session')}</p>
           {projects.length > 0 ? <ProjectMultiSelect options={projectFilters} /> : null}
-          <FilterPills options={SESSION_FILTERS} />
+          <FilterPills options={SESSION_FILTERS} allLabel="All statuses" />
           <FilterPills
             options={[{ value: '1', label: 'Archived', hue: '215 14% 47%' }]}
             paramKey="archived"

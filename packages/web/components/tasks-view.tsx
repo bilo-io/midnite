@@ -434,12 +434,14 @@ export function TasksView({
   return (
     <div className="reveal-staged container flex min-h-0 flex-1 flex-col gap-4 pb-4 pt-2">
       <div className="reveal-controls flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+        <div className="flex flex-wrap items-center gap-2">
           {projects.length > 0 && <ProjectMultiSelect options={projectFilters} />}
-          <FilterPills options={STATUS_FILTERS} paramKey="status" />
-          {tagFilters.length > 0 && <FilterPills options={tagFilters} paramKey="tags" />}
-          <FilterPills options={ANSWERED_FILTERS} paramKey={ANSWERED_PARAM} hideAll />
-          <FilterPills options={DELIVERY_FILTERS} paramKey={DELIVERY_PARAM} hideAll />
+          <FilterPills options={STATUS_FILTERS} paramKey="status" allLabel="All statuses" />
+          {tagFilters.length > 0 && (
+            <FilterPills options={tagFilters} paramKey="tags" allLabel="All tags" />
+          )}
+          <FilterPills options={ANSWERED_FILTERS} paramKey={ANSWERED_PARAM} hideAll placeholder="Answered" />
+          <FilterPills options={DELIVERY_FILTERS} paramKey={DELIVERY_PARAM} hideAll placeholder="Delivery" />
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <GuardrailsControl guardrails={guardrails} onChange={setGuardrails} />

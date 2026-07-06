@@ -29,12 +29,12 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** No query param set — the "All" pill is active. */
+/** No query param set — the trigger shows the "All" label. */
 export const NoneSelected: Story = {
   args: { options: statusOptions },
 };
 
-/** `/tasks?status=todo,wip` — two status pills lit with their column hues. */
+/** `/tasks?status=todo,wip` — two statuses selected; the trigger summarises them. */
 export const SomeSelected: Story = {
   args: { options: statusOptions },
   parameters: {
@@ -42,7 +42,7 @@ export const SomeSelected: Story = {
   },
 };
 
-/** Project pills carry raw hex colors instead of status hues. */
+/** Options can carry raw hex colors instead of status hues (e.g. projects). */
 export const ProjectColors: Story = {
   args: { options: projectOptions, paramKey: 'project', allLabel: 'All projects' },
   parameters: {
