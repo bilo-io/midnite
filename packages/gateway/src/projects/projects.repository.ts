@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, eq, sql } from 'drizzle-orm';
-import type { Project, ProjectSource, SourceKind, TeamScope } from '@midnite/shared';
+import { and, asc, eq, inArray, sql } from 'drizzle-orm';
+import type { Project, ProjectSource, SourceKind, Status, TaskStatusCounts, TeamScope } from '@midnite/shared';
 import { DB_TOKEN, type MidniteDb } from '../db/db.module';
 import { teamScopeFilter } from '../db/team-scope';
 import {
@@ -112,16 +112,45 @@ export class ProjectsRepository {
     return Number(row?.c ?? 0);
   }
 
-  countTasks(projectId: string): number {
-    const row = this.db
-      .select({ c: sql<number>`COUNT(*)` })
+  /** Per-status task counts for one project (Phase 58 C). */
+  statusCountsForProject(projectId: string): TaskStatusCounts {
+    const rows = this.db
+      .select({ status: tasks.status, c: sql<number>`COUNT(*)` })
       .from(tasks)
       .where(eq(tasks.projectId, projectId))
-      .get();
-    return Number(row?.c ?? 0);
+      .groupBy(tasks.status)
+      .all();
+    const counts: TaskStatusCounts = {};
+    for (const r of rows) counts[r.status as Status] = Number(r.c);
+    return counts;
   }
 
-  hydrate(row: ProjectRow): Project {
+  /**
+   * Batched per-status task counts for many projects in one grouped query
+   * (Phase 58 C) — avoids an N+1 across the project list. Projects with no tasks
+   * are absent from the map (callers default to `{}`).
+   */
+  statusCountsForProjects(projectIds: string[]): Map<string, TaskStatusCounts> {
+    const map = new Map<string, TaskStatusCounts>();
+    if (projectIds.length === 0) return map;
+    const rows = this.db
+      .select({ projectId: tasks.projectId, status: tasks.status, c: sql<number>`COUNT(*)` })
+      .from(tasks)
+      .where(inArray(tasks.projectId, projectIds))
+      .groupBy(tasks.projectId, tasks.status)
+      .all();
+    for (const r of rows) {
+      if (!r.projectId) continue;
+      const counts = map.get(r.projectId) ?? {};
+      counts[r.status as Status] = Number(r.c);
+      map.set(r.projectId, counts);
+    }
+    return map;
+  }
+
+  hydrate(row: ProjectRow, statusCounts?: TaskStatusCounts): Project {
+    const counts = statusCounts ?? this.statusCountsForProject(row.id);
+    const taskCount = Object.values(counts).reduce<number>((sum, n) => sum + (n ?? 0), 0);
     return {
       id: row.id,
       name: row.name,
@@ -135,7 +164,8 @@ export class ProjectsRepository {
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       sources: this.listSources(row.id).map((s) => this.toSource(s)),
-      taskCount: this.countTasks(row.id),
+      taskCount,
+      taskStatusCounts: counts,
       ideaId: row.ideaId ?? undefined,
       // null = unset (defaults on); 0 = off, 1 = on.
       phaseDocSync: row.phaseDocSync == null ? undefined : row.phaseDocSync === 1,
