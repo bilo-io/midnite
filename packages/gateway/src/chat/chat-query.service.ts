@@ -1,7 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   CHAT_QUERY_TASK_CAP,
-  type ChatInferencePath,
   type ChatQueryAnswer,
   type ChatTaskRef,
   type QueryIntent,

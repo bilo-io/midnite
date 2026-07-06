@@ -121,6 +121,7 @@ export const QueryIntentSchema = z.object({
   text: z.string().min(1),
   read: QueryReadSchema.optional(),
 });
+export type QueryIntent = z.infer<typeof QueryIntentSchema>;
 
 /**
  * The input couldn't be mapped to a concrete intent. Carries the raw text + a
