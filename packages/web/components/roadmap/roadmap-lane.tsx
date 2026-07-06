@@ -5,7 +5,7 @@ import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, MoreVertical, Pencil, Trash2 } from 'lucide-react';
-import type { RoadmapMilestone, TaskSummary } from '@midnite/shared';
+import type { TaskSummary } from '@midnite/shared';
 import { ProjectProgressBar } from '@/components/project-progress';
 import { TaskCard, type ProjectTagInfo } from '@/components/task-card';
 import { Input } from '@/components/ui/input';
