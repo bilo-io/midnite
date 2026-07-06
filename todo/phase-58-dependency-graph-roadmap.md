@@ -121,17 +121,20 @@ A real, minimal plan structure in the product.
 
 ---
 
-## Theme E — Roadmap view + milestone assignment — **L**
+## Theme E — Roadmap view + milestone assignment — **L** — ✅ DONE (PR #326, 2026-07-06)
 
 The plan, as lanes with progress.
 
-- [ ] **web:** a **roadmap lane view** — milestones as ordered lanes/columns, each with a **progress bar**
-      (done/total) + its tasks; per-milestone and per-project rollups. Reuse the board's card + dnd patterns where
-      sensible.
-- [ ] **Assign a task to a milestone** — from the task detail (a milestone picker) and by **dragging** a task into a
-      lane on the roadmap; reorder milestones (drag lanes). Unassigned tasks live in a "backlog" lane.
-- [ ] A **static-export** route (`/projects/view?id=…&tab=roadmap` or a dedicated `/roadmap?projectId=`),
-      deep-linkable; empty state ("no milestones yet — add one / generate from a breakdown").
+- [x] **web:** a **roadmap lane view** ([`roadmap-board.tsx`](../packages/web/components/roadmap/roadmap-board.tsx) +
+      [`roadmap-lane.tsx`](../packages/web/components/roadmap/roadmap-lane.tsx)) — milestones as ordered horizontal
+      columns, each with a **progress bar** (done/total, reusing Theme C's `ProjectProgressBar`) + its tasks, plus a
+      fixed **backlog** lane. Reuses the board's card + `@dnd-kit` patterns.
+- [x] **Assign a task to a milestone** — from the task detail (a milestone picker,
+      [`task-milestone-picker.tsx`](../packages/web/components/task-milestone-picker.tsx)) and by **dragging** a task
+      into a lane; reorder milestones by dragging the lane header grip. Optimistic with rollback. Inline milestone
+      CRUD (add / rename / delete). Live over the Phase 56 reliable task channel.
+- [x] Lives on the **static-export** project cockpit as a deep-linkable `?tab=roadmap` tab (Phase 55); empty state
+      ("no milestones yet — add one to group this project's tasks into a plan").
 
 ---
 
