@@ -15,6 +15,17 @@ Closes the reliability loop Phase 56 A opened: a client that drops for a second 
 
 ---
 
+## 2026-07-06 — feat: connection-status indicator across the app — Phase 56 Theme E (PR #317)
+
+Make the live connection legible: show when data may be behind, reassure on recovery.
+
+- [x] Zustand **connection store** — `useReliableSubscription` reports each channel's transport state (live/reconnecting/stale) into it; the UI reads the **worst-of** across channels. `stale` is a reconnect-count heuristic (≥3 attempts) until Theme B's `resync-required`.
+- [x] **`<ConnectionStatus>`** — full (dot + label) in the sidebar footer; compact labelled pip on the session + project cockpit headers. Board/office/cockpits already resume via the Theme D hook — E surfaces its state, no new subscriptions (diff-review is REST-polling, no indicator).
+- [x] **`<ConnectionToaster>`** (once in the chrome) toasts "Reconnected" on recovery from a drop.
+- [x] Tests: connection-store (worst-of + set/clear), indicator (states + compact), recovery toast. web 813, lint clean. Screenshot: sidebar live pip.
+
+---
+
 ## 2026-07-05 — feat: shared reliable WS subscription hook — Phase 56 Theme D (PR #316)
 
 One resilient subscription hook replacing four ad-hoc socket implementations.

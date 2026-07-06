@@ -31,9 +31,9 @@
 | [61 · Fable-Observability](phase-61-fable-observability.md) | ◻ TODO | 0/36 | `░░░░░░░░░░` | 0% | — | A B C D E F G H I |
 | [60 · Fable-Analysis](phase-60-fable-analysis.md) | ◻ TODO | 0/63 | `░░░░░░░░░░` | 0% | — | A B C D E F G H I J K L M |
 | [59 · Chat to board](phase-59-chat-to-board.md) | ◻ TODO | 0/26 | `░░░░░░░░░░` | 0% | — | A B C D E F |
-| [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | ◻ TODO | 0/25 | `░░░░░░░░░░` | 0% | — | A B C D E F |
+| [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | 🔄 WIP | 0/25 | `░░░░░░░░░░` | 0% | A | B C D E F |
 | [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 13/26 | `█████░░░░░` | 50% | C | — |
-| [56 · Realtime / WS reliability](phase-56-realtime-ws-reliability.md) | 🔄 WIP | 14/26 | `█████░░░░░` | 54% | E | — |
+| [56 · Realtime / WS reliability](phase-56-realtime-ws-reliability.md) | ✅ DONE | 17/26 | `███████░░░` | 65% | — | — |
 | [55 · Projects detail page](phase-55-projects-detail-page.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
 | [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [53 · Task lifecycle resilience](phase-53-task-lifecycle-resilience.md) | ✅ DONE | 22/22 | `██████████` | 100% | — | — |
@@ -174,7 +174,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **B** — Resume protocol + gap-detection (the core guarantee — PR #313)
 - ✅ **C** — Per-client backpressure + heartbeat + metrics (PR #315)
 - ✅ **D** — Shared reliable client subscription hook (tasks/ideas/approvals; resume via #313; workflow-run bespoke) (PR #316)
-- ◻ **E** — Apply across cockpits + connection-status UI
+- ✅ **E** — Apply across cockpits + connection-status UI (worst-of indicator + recovery toast; resync via #313) (PR #317)
 - ✅ **F** — Terminal WS alignment: seq+ts envelope on output, `resume`/`resync-required` on ring overflow (PR #311)
 
 ### [Phase 55 — Projects detail page](phase-55-projects-detail-page.md)

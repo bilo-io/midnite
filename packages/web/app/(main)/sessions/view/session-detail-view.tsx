@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import type { Project, SessionDetail, Task } from '@midnite/shared';
 import { PageHeader } from '@/components/page-header';
+import { ConnectionStatus } from '@/components/connection-status';
 import { SessionInfoPanel } from '@/components/session-info-panel';
 import { SessionTerminalRegion } from '@/components/session-terminal-region';
 import { getProject, getSession, getTask } from '@/lib/api';
@@ -107,6 +108,7 @@ export function SessionDetailView({
         description={session.subtitle || undefined}
         actions={
           <div className="flex items-center gap-2">
+            <ConnectionStatus variant="compact" />
             <span
               className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium"
               style={{

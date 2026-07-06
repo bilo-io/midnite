@@ -3,6 +3,11 @@
 import { useEffect, useRef } from 'react';
 import { gatewayWsUrl, getAccessToken } from '@/lib/api';
 import { ResumeTracker } from '@/lib/resume-cursor';
+import { useConnectionStore } from '@/lib/connection-store';
+
+// Phase 56 E — after this many failed reconnect attempts (~several seconds down)
+// a channel flips from `reconnecting` to `stale`: data is likely behind.
+const STALE_AFTER_ATTEMPTS = 3;
 
 /**
  * Phase 56 D — a channel's transport contract for {@link useReliableSubscription}.
@@ -66,6 +71,9 @@ export function useReliableSubscription<T>(
     let closed = false;
     let attempt = 0;
     let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
+    // Phase 56 E — report this channel's transport state to the global store
+    // (actions are stable, so read them once here).
+    const { setChannelStatus, clearChannel } = useConnectionStore.getState();
 
     // Resumable if the channel sends a subscribe message. The tracker persists
     // across reconnects within this effect run (so `resume` carries the real
@@ -82,6 +90,7 @@ export function useReliableSubscription<T>(
 
     const scheduleReconnect = () => {
       if (closed) return;
+      setChannelStatus(channel.path, attempt >= STALE_AFTER_ATTEMPTS ? 'stale' : 'reconnecting');
       const delay = Math.min(30_000, 500 * 2 ** attempt);
       attempt += 1;
       reconnectTimer = setTimeout(connect, delay);
@@ -106,6 +115,7 @@ export function useReliableSubscription<T>(
       wsRef.current = ws;
       ws.onopen = () => {
         attempt = 0;
+        setChannelStatus(channel.path, 'live');
         if (resumable) {
           // `subscribe` on a fresh cursor, `resume` (+ cursor) after a drop. The
           // channel's own `type` is owned by the protocol — keep only its extras.
@@ -161,6 +171,7 @@ export function useReliableSubscription<T>(
         // already closing
       }
       wsRef.current = null;
+      clearChannel(channel.path);
     };
   }, [channel, enabled]);
 
