@@ -20,6 +20,7 @@ import { useIsMobile } from '@/hooks/use-media-query';
 import { layoutTaskGraph } from '@/lib/task-graph-layout';
 import { TASK_MODAL_PARAM } from '@/lib/task-route';
 import { StyledSelect } from '@/components/ui/styled-select';
+import { ProjectProgressBar } from '@/components/project-progress';
 import { TaskThreadModal } from '@/components/task-thread-modal';
 import { TaskGraphNode } from '@/components/task-graph/task-graph-node';
 
@@ -61,6 +62,13 @@ export function TaskGraphView({ tasks, projects }: Props) {
       ...projects.map((p) => ({ value: p.id, label: p.name })),
     ],
     [projects],
+  );
+
+  // Phase 58 C — when scoped to a project, show its completion (done/total tasks,
+  // server-computed via Theme C) next to the picker; hidden for "All projects".
+  const selectedProject = useMemo(
+    () => (projectId ? projects.find((p) => p.id === projectId) : undefined),
+    [projectId, projects],
   );
 
   const setProject = useCallback(
@@ -129,6 +137,9 @@ export function TaskGraphView({ tasks, projects }: Props) {
             {graph.nodes.length} task{graph.nodes.length === 1 ? '' : 's'} · {edges.length} dependenc
             {edges.length === 1 ? 'y' : 'ies'}
           </span>
+        ) : null}
+        {selectedProject ? (
+          <ProjectProgressBar project={selectedProject} className="ml-auto w-44" />
         ) : null}
       </div>
 
