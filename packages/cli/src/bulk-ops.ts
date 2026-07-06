@@ -1,4 +1,4 @@
-import type { Status, Task } from '@midnite/shared';
+import type { Status, TaskSummary } from '@midnite/shared';
 
 // Phase 47 F — client-side bulk-by-filter ops. The CLI stays thin: it resolves a
 // task set with `listTasks` + these pure filters, then loops the existing per-task
@@ -17,7 +17,7 @@ export function hasFilter(f: BulkFilter): boolean {
 }
 
 /** Narrow `tasks` to those matching every set filter field (case-sensitive match). */
-export function filterTasks(tasks: Task[], f: BulkFilter): Task[] {
+export function filterTasks(tasks: TaskSummary[], f: BulkFilter): TaskSummary[] {
   return tasks.filter(
     (t) =>
       (f.status === undefined || t.status === f.status) &&

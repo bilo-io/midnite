@@ -28,7 +28,7 @@ describe('prompts — non-interactive gate', () => {
     await expect(textPrompt('Email', { required: true })).rejects.toBeInstanceOf(NonInteractiveError);
     await expect(selectStatus()).rejects.toBeInstanceOf(NonInteractiveError);
     await expect(
-      pickTask([{ id: 't1', title: 'x', status: 'todo', priority: 1, retryCount: 0, fixAttempts: 0, tags: [], events: [] }]),
+      pickTask([{ id: 't1', title: 'x', status: 'todo', priority: 1, retryCount: 0, tags: [] }]),
     ).rejects.toBeInstanceOf(NonInteractiveError);
   });
 });

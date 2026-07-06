@@ -1,5 +1,5 @@
 import { checkbox, confirm, input, password, search, select } from '@inquirer/prompts';
-import { STATUSES, type Status, type Task } from '@midnite/shared';
+import { STATUSES, type Status, type TaskSummary } from '@midnite/shared';
 
 /**
  * Interactive-prompt helpers (Phase 47 Theme D). All guided flows funnel through
@@ -61,7 +61,7 @@ export async function optionalTextPrompt(message: string): Promise<string | unde
 }
 
 /** Fuzzy task picker over the supplied tasks; returns the chosen task id. */
-export async function pickTask(tasks: Task[], message = 'Pick a task'): Promise<string> {
+export async function pickTask(tasks: TaskSummary[], message = 'Pick a task'): Promise<string> {
   requireTty('a task id is required (non-interactive — pass the id)');
   if (tasks.length === 0) throw new Error('no tasks to choose from');
   return search<string>({
@@ -77,7 +77,7 @@ export async function pickTask(tasks: Task[], message = 'Pick a task'): Promise<
 }
 
 /** Multi-select task picker (e.g. choosing blockers); returns chosen ids. */
-export async function pickTasks(tasks: Task[], message: string): Promise<string[]> {
+export async function pickTasks(tasks: TaskSummary[], message: string): Promise<string[]> {
   requireTty('task ids are required (non-interactive)');
   if (tasks.length === 0) return [];
   return checkbox<string>({

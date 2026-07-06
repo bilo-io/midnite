@@ -138,7 +138,7 @@ async function runBulkOp(
   yes: boolean,
   mutate: (id: string) => Promise<unknown>,
 ): Promise<void> {
-  const targets = filterTasks(await c.listTasks(filter.status), filter);
+  const targets = filterTasks((await c.listTasks(filter.status)).tasks, filter);
   if (targets.length === 0) {
     if (isJsonMode()) printJson([]);
     else console.log('no matching tasks');
@@ -283,13 +283,19 @@ program
 
 program
   .command('list')
-  .description('List tasks')
+  .description('List tasks (lean summaries; --page/--limit to paginate)')
   .option('-s, --status <status>', 'filter by status')
-  .action(async (opts: { status?: string }) => {
+  .option('--page <n>', 'page number (1-indexed; use with --limit)')
+  .option('--limit <n>', 'page size (max 200)')
+  .action(async (opts: { status?: string; page?: string; limit?: string }) => {
     const status = opts.status ? parseStatus(opts.status) : undefined;
-    const tasks = await withSpinner('Loading tasks…', () => client().listTasks(status));
+    const page = opts.page ? Number(opts.page) : undefined;
+    const limit = opts.limit ? Number(opts.limit) : undefined;
+    const { tasks, total } = await withSpinner('Loading tasks…', () =>
+      client().listTasks(status, { page, limit }),
+    );
     if (isJsonMode()) {
-      printJson(tasks);
+      printJson({ tasks, total });
       return;
     }
     if (tasks.length === 0) {
@@ -302,6 +308,7 @@ program
       // Pad the plain status first, then colour, so column alignment is preserved.
       console.log(`${t.id.padEnd(idW)}  ${colourStatus(t.status.padEnd(stW), t.status)}  ${t.title}`);
     }
+    if (tasks.length < total) console.log(dim(`showing ${tasks.length} of ${total}`));
   });
 
 program
@@ -327,7 +334,7 @@ program
         );
         return;
       }
-      const resolvedId = id ?? (await pickTask(await c.listTasks(), 'Move which task?'));
+      const resolvedId = id ?? (await pickTask((await c.listTasks()).tasks, 'Move which task?'));
       const resolvedStatus = status ? parseStatus(status) : await selectStatus();
       const task = await withSpinner('Moving task…', () => c.moveTask(resolvedId, resolvedStatus));
       if (isJsonMode()) {
@@ -570,7 +577,7 @@ program
   .requiredOption('--on <blockerId>', 'the blocker task that must finish first')
   .action(async (id: string | undefined, opts: { on: string }) => {
     const c = client();
-    const resolvedId = id ?? (await pickTask(await c.listTasks(), 'Block which task?'));
+    const resolvedId = id ?? (await pickTask((await c.listTasks()).tasks, 'Block which task?'));
     const task = await withSpinner('Adding blocker…', () => c.addDependency(resolvedId, opts.on));
     if (isJsonMode()) {
       printJson(task);
@@ -586,7 +593,7 @@ program
   .requiredOption('--on <blockerId>', 'the blocker task to drop')
   .action(async (id: string | undefined, opts: { on: string }) => {
     const c = client();
-    const resolvedId = id ?? (await pickTask(await c.listTasks(), 'Unblock which task?'));
+    const resolvedId = id ?? (await pickTask((await c.listTasks()).tasks, 'Unblock which task?'));
     const task = await withSpinner('Removing blocker…', () => c.removeDependency(resolvedId, opts.on));
     if (isJsonMode()) {
       printJson(task);
