@@ -29,7 +29,7 @@ export const Default: Story = {
   beforeEach: () =>
     installMockFetch([
       { match: '/projects', json: [project, projectMinimal] },
-      { match: '/tasks', json: tasks },
+      { match: '/tasks', json: { items: tasks, total: tasks.length } },
       { match: '/memories', json: { memories: [] } },
     ]),
   play: async ({ canvasElement }) => {
@@ -46,7 +46,7 @@ export const Empty: Story = {
   beforeEach: () =>
     installMockFetch([
       { match: '/projects', json: [] },
-      { match: '/tasks', json: [] },
+      { match: '/tasks', json: { items: [], total: 0 } },
       { match: '/memories', json: { memories: [] } },
     ]),
   play: async ({ canvasElement }) => {
@@ -60,7 +60,7 @@ export const Error: Story = {
   beforeEach: () =>
     installMockFetch([
       { match: '/projects', status: 500 },
-      { match: '/tasks', json: [] },
+      { match: '/tasks', json: { items: [], total: 0 } },
       { match: '/memories', json: { memories: [] } },
     ]),
   play: async ({ canvasElement }) => {

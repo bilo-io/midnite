@@ -1,34 +1,17 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import type { Task } from '@midnite/shared';
+import type { TaskActivityEntry } from '@midnite/shared';
 import { expect, within } from 'storybook/test';
 
 import { installMockFetch } from '@/stories/mock-fetch';
 
 import { ActivityWidget } from './activity-widget';
 
-// The widget flattens each task's `events` into a feed, newest first.
-const TASKS: Task[] = [
-  {
-    id: 't1',
-    title: 'Wire up the scheduler tick metric',
-    status: 'wip',
-    priority: 1,
-    retryCount: 0, fixAttempts: 0,
-    tags: [],
-    events: [
-      { at: '2026-06-21T09:00:00.000Z', kind: 'agent.started' },
-      { at: '2026-06-21T08:30:00.000Z', kind: 'task.created' },
-    ],
-  },
-  {
-    id: 't2',
-    title: 'Review the repo registry migration',
-    status: 'done',
-    priority: 2,
-    retryCount: 0, fixAttempts: 0,
-    tags: [],
-    events: [{ at: '2026-06-21T07:00:00.000Z', kind: 'pr.merged' }],
-  },
+// Phase 57 C: the widget reads GET /tasks/activity (recent events, newest first)
+// rather than hydrating every task's event thread. The feed rows are lean.
+const ACTIVITY: TaskActivityEntry[] = [
+  { taskId: 't1', title: 'Wire up the scheduler tick metric', kind: 'agent.started', at: '2026-06-21T09:00:00.000Z' },
+  { taskId: 't1', title: 'Wire up the scheduler tick metric', kind: 'task.created', at: '2026-06-21T08:30:00.000Z' },
+  { taskId: 't2', title: 'Review the repo registry migration', kind: 'pr.merged', at: '2026-06-21T07:00:00.000Z' },
 ];
 
 const meta = {
@@ -46,9 +29,9 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Task events flattened into a newest-first feed. */
+/** Recent events rendered newest-first, kinds humanized. */
 export const Default: Story = {
-  beforeEach: () => installMockFetch([{ match: '/tasks', json: TASKS }]),
+  beforeEach: () => installMockFetch([{ match: '/tasks/activity', json: ACTIVITY }]),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     // Kind is humanized (`agent.started` → `Agent started`).
@@ -58,34 +41,18 @@ export const Default: Story = {
   },
 };
 
-/** Tasks exist but none have events → the empty-state message. */
+/** No recent events → the empty-state message. */
 export const Empty: Story = {
-  beforeEach: () =>
-    installMockFetch([
-      {
-        match: '/tasks',
-        json: [
-          {
-            id: 't0',
-            title: 'Untouched task',
-            status: 'todo',
-            priority: 1,
-            retryCount: 0, fixAttempts: 0,
-            tags: [],
-            events: [],
-          } satisfies Task,
-        ],
-      },
-    ]),
+  beforeEach: () => installMockFetch([{ match: '/tasks/activity', json: [] }]),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('No activity yet.')).toBeInTheDocument();
   },
 };
 
-/** Gateway tasks endpoint fails → the error fallback. */
+/** Gateway activity endpoint fails → the error fallback. */
 export const Error: Story = {
-  beforeEach: () => installMockFetch([{ match: '/tasks', status: 500 }]),
+  beforeEach: () => installMockFetch([{ match: '/tasks/activity', status: 500 }]),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('Couldn’t load activity.')).toBeInTheDocument();

@@ -61,7 +61,7 @@ type Story = StoryObj<typeof meta>;
 
 /** Completed work loaded from the gateway, newest first, with PR labels. */
 export const Default: Story = {
-  beforeEach: () => installMockFetch([{ match: '/tasks', json: TASKS }]),
+  beforeEach: () => installMockFetch([{ match: '/tasks', json: { items: TASKS, total: TASKS.length } }]),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText(TASKS[0]!.title)).toBeInTheDocument();
@@ -78,17 +78,19 @@ export const Empty: Story = {
     installMockFetch([
       {
         match: '/tasks',
-        json: [
-          {
-            id: 't0',
-            title: 'Still in progress',
-            status: 'wip',
-            priority: 1,
-            retryCount: 0, fixAttempts: 0,
-            tags: [],
-            events: [],
-          } satisfies Task,
-        ],
+        json: {
+          items: [
+            {
+              id: 't0',
+              title: 'Still in progress',
+              status: 'wip',
+              priority: 1,
+              retryCount: 0,
+              tags: [],
+            },
+          ],
+          total: 1,
+        },
       },
     ]),
   play: async ({ canvasElement }) => {

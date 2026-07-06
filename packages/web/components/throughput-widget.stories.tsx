@@ -50,7 +50,7 @@ type Story = StoryObj<typeof meta>;
 
 /** Done tasks bucketed by day; the headline counts the last 7 days. */
 export const Default: Story = {
-  beforeEach: () => pinNow([{ match: '/tasks', json: TASKS }]),
+  beforeEach: () => pinNow([{ match: '/tasks', json: { items: TASKS, total: TASKS.length } }]),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('done this week')).toBeInTheDocument();
@@ -61,7 +61,7 @@ export const Default: Story = {
 
 /** No tasks → a zero headline (the chart still renders its flat baseline). */
 export const Empty: Story = {
-  beforeEach: () => pinNow([{ match: '/tasks', json: [] }]),
+  beforeEach: () => pinNow([{ match: '/tasks', json: { items: [], total: 0 } }]),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('done this week')).toBeInTheDocument();
