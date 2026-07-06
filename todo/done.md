@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-06 — feat: per-project completion overlay — Phase 58 Theme C ◐ (PR #320)
+
+Projects showed a bare task count; now each surface carries a **completion bar** (done / total tasks, %). Reuse-only — no new data model.
+
+- [x] **shared:** `taskStatusCounts` (per-status map, computed not stored) on `Project` + a `projectCompletion()` helper (done / **all tasks incl. abandoned**, rounded %).
+- [x] **gateway:** a single batched `GROUP BY (projectId, status)` hydrates the project list (no per-project N+1; `taskCount` derived from the map); `statusCountsForProject`/`statusCountsForProjects` on the repo.
+- [x] **web:** a reusable `ProjectProgressBar` (thin "done"-hue bar + `N/M · P%` label) on project cards (list + grid), the Phase 55 detail stats panel, and the dashboard project widgets; renders nothing for a 0-task project.
+- [x] **tests:** shared `projectCompletion` cases; gateway repo status-counts (single/batched/empty); web `ProjectProgressBar` stories (aria/label/no-tasks) + a `projects-progress.shots.ts` preview capture.
+- ⏳ Deferred (needs Theme B): the DAG-filter-by-project + project-picker-on-graph half — no graph view exists to filter yet.
+
 ## 2026-07-06 — perf: lean TaskSummary DTO + paged /tasks + activity feed — Phase 57 Theme C ◐ (PR #319)
 
 `GET /tasks` returned the **full** hydrated `Task[]` (whole event thread + every attachment/link — ~1–2.5 MB/board). Now it returns lean `TaskSummary` pages, cutting the board payload to the card fields.
