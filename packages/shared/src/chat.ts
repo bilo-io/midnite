@@ -200,6 +200,15 @@ export const ChatIntentParseSchema = z.object({
 export type ChatIntentParse = z.infer<typeof ChatIntentParseSchema>;
 
 /**
+ * Phase 59 F — the confirmation level for a parsed intent. `none` runs immediately
+ * (read-only queries, `unknown`); `confirm` must be confirmed before it writes
+ * (every mutating intent) — the NL bar never silently mutates the board.
+ */
+export const CHAT_CONFIRMATIONS = ['none', 'confirm'] as const;
+export const ChatConfirmationSchema = z.enum(CHAT_CONFIRMATIONS);
+export type ChatConfirmation = z.infer<typeof ChatConfirmationSchema>;
+
+/**
  * The outcome of executing a command (produced by Theme B). Defined now so the
  * executor, undo (Theme F) and cost-transparency (Theme D) layers share a stable
  * contract; Theme A produces {@link ChatIntentParse}, not results.
@@ -213,16 +222,27 @@ export const ChatCommandResultSchema = z.object({
   undoToken: z.string().optional(),
   /** How the intent was resolved, for the cost line. */
   inferencePath: ChatInferencePathSchema,
+  /**
+   * Phase 59 F — the seatbelt. `none` means the command ran (read-only, or a
+   * mutating command confirmed with `confirm: true`). `confirm` means it was
+   * **not executed**: a mutating intent needs an explicit confirm — resend with
+   * `confirm: true` (`affectedIds` empty, no `undoToken`; `summary` describes what
+   * *would* happen).
+   */
+  confirmation: ChatConfirmationSchema,
 });
 export type ChatCommandResult = z.infer<typeof ChatCommandResultSchema>;
 
 /**
  * Phase 59 B — request body for `POST /chat/command` (parse → execute) and
  * `POST /chat/preview` (parse → describe, no write). One free-text field; the
- * gateway parses it via the Theme A intent spine.
+ * gateway parses it via the Theme A intent spine. `confirm` (Phase 59 F) is the
+ * seatbelt: a mutating command only writes when `confirm` is `true` — otherwise
+ * the response comes back `confirmation: 'confirm'` and nothing changed.
  */
 export const ChatCommandRequestSchema = z.object({
   text: z.string().min(1).max(2000),
+  confirm: z.boolean().optional(),
 });
 export type ChatCommandRequest = z.infer<typeof ChatCommandRequestSchema>;
 
@@ -238,8 +258,8 @@ export type ChatCommandResponse = z.infer<typeof ChatCommandResponseSchema>;
 
 /**
  * `POST /chat/preview` response: the parse + a human description of what *would*
- * happen, and whether it mutates. No write occurs — the seatbelt (confirm-before-
- * write) is wired in Theme F; preview is the read-only half available now.
+ * happen, whether it mutates, and its {@link ChatConfirmation} level (Phase 59 F)
+ * so the UI knows to gate a confirm before executing. No write occurs.
  */
 export const ChatPreviewResponseSchema = z.object({
   parse: ChatIntentParseSchema,
@@ -247,5 +267,23 @@ export const ChatPreviewResponseSchema = z.object({
   description: z.string(),
   /** True when executing this intent would change board state (vs. a read-only query). */
   willMutate: z.boolean(),
+  /** The confirm level: `confirm` for mutating intents, `none` for read-only. */
+  confirmation: ChatConfirmationSchema,
 });
 export type ChatPreviewResponse = z.infer<typeof ChatPreviewResponseSchema>;
+
+/** Phase 59 F — request body for `POST /chat/undo`: the token from a prior command result. */
+export const ChatUndoRequestSchema = z.object({
+  undoToken: z.string().min(1),
+});
+export type ChatUndoRequest = z.infer<typeof ChatUndoRequestSchema>;
+
+/**
+ * `POST /chat/undo` response: a {@link ChatCommandResult} describing the revert
+ * (`summary` "Reverted …", `affectedIds` = the tasks restored/deleted). Undo is
+ * itself not undoable, so `undoToken` is absent; `confirmation` is always `none`.
+ */
+export const ChatUndoResponseSchema = z.object({
+  result: ChatCommandResultSchema,
+});
+export type ChatUndoResponse = z.infer<typeof ChatUndoResponseSchema>;

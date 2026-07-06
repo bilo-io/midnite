@@ -303,6 +303,8 @@ import {
   type ChatCommandResponse,
   ChatPreviewResponseSchema,
   type ChatPreviewResponse,
+  ChatUndoResponseSchema,
+  type ChatUndoResponse,
 } from '@midnite/shared';
 import { z } from 'zod';
 
@@ -488,12 +490,29 @@ export async function previewChatCommand(text: string, signal?: AbortSignal): Pr
   );
 }
 
-/** Parse and execute a natural-language board command. */
-export async function runChatCommand(text: string, signal?: AbortSignal): Promise<ChatCommandResponse> {
+/**
+ * Parse and execute a natural-language board command. A mutating command only
+ * writes when `confirm` is true; otherwise the result comes back
+ * `confirmation: 'confirm'` and nothing changed (Phase 59 F seatbelt).
+ */
+export async function runChatCommand(
+  text: string,
+  confirm = false,
+  signal?: AbortSignal,
+): Promise<ChatCommandResponse> {
   return fetchJson(
     '/chat/command',
-    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ text }), signal },
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ text, confirm }), signal },
     ChatCommandResponseSchema,
+  );
+}
+
+/** Undo a previously executed chat command by its undo token (Phase 59 F). */
+export async function undoChatCommand(undoToken: string, signal?: AbortSignal): Promise<ChatUndoResponse> {
+  return fetchJson(
+    '/chat/undo',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ undoToken }), signal },
+    ChatUndoResponseSchema,
   );
 }
 
