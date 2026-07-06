@@ -49,6 +49,9 @@ export const AuditActionSchema = z.enum([
   'project.created',
   'project.updated',
   'project.deleted',
+  // Phase 59 F — chat-to-board: who ran what NL command + what it changed, and undos.
+  'chat.command',
+  'chat.undo',
 ]);
 
 export const AuditEntrySchema = z.object({
