@@ -13,6 +13,7 @@ import { TaskHealthModule } from './tasks/task-health.module';
 import { TasksModule } from './tasks/tasks.module';
 import { TaskCreatorModule } from './tasks/task-creator.module';
 import { AgentModule } from './agent/agent.module';
+import { ChatModule } from './chat/chat.module';
 import { AgentsModule } from './agents/agents.module';
 import { CouncilsModule } from './councils/councils.module';
 import { MediaModule } from './media/media.module';
@@ -25,6 +26,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { PoolModule } from './pool/pool.module';
 import { PortabilityModule } from './portability/portability.module';
 import { ProjectsModule } from './projects/projects.module';
+import { MilestonesModule } from './milestones/milestones.module';
 import { ProvidersModule } from './providers/providers.module';
 import { ReposModule } from './repos/repos.module';
 import { RoutinesModule } from './routines/routines.module';
@@ -64,6 +66,7 @@ import { InboundModule } from './integrations/inbound/inbound.module';
     HealthModule,
     AgentModule,
     AgentsModule,
+    ChatModule,
     CouncilsModule,
     MarketModule,
     MediaModule,
@@ -81,6 +84,7 @@ import { InboundModule } from './integrations/inbound/inbound.module';
     PoolModule,
     PortabilityModule,
     ProjectsModule,
+    MilestonesModule,
     ProvidersModule,
     ReposModule,
     MetricsModule,

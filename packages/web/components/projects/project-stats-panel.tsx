@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Archive, ArchiveRestore, Loader2, Trash2 } from 'lucide-react';
 import type { Project, Status, TaskSummary } from '@midnite/shared';
 import { ExportMenu } from '@/components/export-menu';
+import { ProjectProgressBar } from '@/components/project-progress';
 import { Button } from '@/components/ui/button';
 import { useConfirm } from '@/components/confirm-dialog';
 import { ALL_COLUMNS, statusLabel, statusHueVar } from '@/components/task-columns';
@@ -72,6 +73,7 @@ export function ProjectStatsPanel({ project, tasks, onSaved, onDeleted }: Props)
             ) : null}
           </span>
         </div>
+        <ProjectProgressBar done={done} total={tasks.length} hideLabel />
         {counts.length === 0 ? (
           <p className="text-[11px] text-muted-foreground">No tasks assigned to this project yet.</p>
         ) : (

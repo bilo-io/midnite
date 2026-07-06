@@ -76,7 +76,10 @@ export class ProjectsService {
   ) {}
 
   listProjects(scope?: TeamScope): Project[] {
-    return this.repo.listProjects(scope).map((r) => this.repo.hydrate(r));
+    const rows = this.repo.listProjects(scope);
+    // One batched grouped query for the whole list (Phase 58 C) — no per-project N+1.
+    const counts = this.repo.statusCountsForProjects(rows.map((r) => r.id));
+    return rows.map((r) => this.repo.hydrate(r, counts.get(r.id) ?? {}));
   }
 
   getProject(id: string, scope?: TeamScope): Project {

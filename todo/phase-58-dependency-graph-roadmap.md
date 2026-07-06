@@ -90,30 +90,34 @@ The missing shape: see what blocks what.
 
 ---
 
-## Theme C — Project progress overlay — **S-M**
+## Theme C — Project progress overlay — **S-M** — ◐ PARTIAL (PR #320, 2026-07-06)
 
 A roadmap-ish read without any new data.
 
-- [ ] Filter/group the DAG by **project** (the `?projectId` graph) and show **per-project completion %** (done /
-      total tasks) — reuses projects + tasks, **no new model**. A project picker on the graph view.
-- [ ] Surface the same per-project progress where projects already appear (list + the Phase 55 project detail) — a
-      cheap "how far along" without waiting on the milestone model.
+- [ ] ⏳ Filter/group the DAG by **project** (the `?projectId` graph) and show **per-project completion %** (done /
+      total tasks) — reuses projects + tasks, **no new model**. A project picker on the graph view. *(Deferred until
+      Theme B's DAG view exists — there's no graph view to filter yet.)*
+- [x] Surface the same per-project progress where projects already appear (list + the Phase 55 project detail) — a
+      cheap "how far along" without waiting on the milestone model. *(PR #320: server-computed `taskStatusCounts` +
+      `projectCompletion` + a `ProjectProgressBar` on project cards, the detail stats panel, and dashboard widgets.)*
 
 ---
 
-## Theme D — Milestone data model — **M**
+## Theme D — Milestone data model — **M** — ✅ DONE (PR #322, 2026-07-06)
 
 A real, minimal plan structure in the product.
 
-- [ ] **shared:** `MilestoneSchema` (`id`, `projectId`, `name`, `description?`, `position`, `targetDate?`, timestamps,
+- [x] **shared:** `MilestoneSchema` (`id`, `projectId`, `name`, `description?`, `position`, `targetDate?`, timestamps,
       `createdBy?`, `teamId?`) + create/update/reorder requests + an assignment shape. **Named "milestone," not
       "phase"** (avoid the `todo/` overload).
-- [ ] **gateway:** `roadmap_milestones` table (forward-only migration) + a nullable `task.milestoneId` column;
-      `MilestonesRepository` (team-scoped) → `MilestonesService` (CRUD, reorder by `position`, assign/unassign a task,
-      validate project + team scope) → `MilestonesController` (`GET`/`POST`/`PATCH`/`DELETE /projects/:id/milestones`
-      + `PATCH /tasks/:id/milestone`). **Progress is computed** (done/total per milestone), never stored.
-- [ ] A milestone graph/rollup endpoint (`GET /projects/:id/roadmap` → milestones ordered + per-milestone task
-      counts/completion + the tasks) feeding Theme E.
+- [x] **gateway:** `roadmap_milestones` table (forward-only migration `0071`) + a nullable `task.milestoneId` column;
+      `MilestonesRepository` (team-scoped) → `MilestonesService` (CRUD, reorder by full ordered id list, assign/unassign a
+      task with strict same-project validation, delete-unassigns tasks) → `MilestonesController`
+      (`GET`/`POST`/`PATCH`/`DELETE /projects/:id/milestones` + `POST …/reorder` + `PATCH /tasks/:id/milestone`).
+      **Progress is computed** (done/total per milestone), never stored. Writes gated to `member+`; milestones FTS-indexed;
+      `milestoneId` surfaced on the task DTO + dependency-graph nodes.
+- [x] A milestone graph/rollup endpoint (`GET /projects/:id/roadmap` → milestones ordered + per-milestone task
+      counts/completion + the tasks as lean `TaskSummary` projections + an unassigned backlog) feeding Theme E.
 
 ---
 

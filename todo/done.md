@@ -17,6 +17,39 @@ Phase 58 A exposed the dependency graph as data (`GET /tasks/graph`); this Theme
 
 ---
 
+## 2026-07-06 — feat: roadmap milestone data model — Phase 58 Theme D (PR #322)
+
+The minimal, project-scoped plan structure the roadmap (Theme E) will render. Milestones group a project's tasks into an ordered lane; progress is computed (done/total), never stored. Named "milestone", not "phase".
+
+- [x] **shared:** `MilestoneSchema` + create/update/reorder/assign requests + `RoadmapView` (per-milestone computed progress + unassigned backlog); `milestoneId` on `Task`/`TaskSummary`; a `milestone` global-search type; `milestone.*` audit taxonomy.
+- [x] **gateway:** `roadmap_milestones` table + `task.milestone_id` column (forward-only migration `0071`); `MilestonesController → Service → Repository` — team-scoped CRUD, full-order reorder, `GET /projects/:id/roadmap`. Assignment via `PATCH /tasks/:id/milestone` with strict same-project validation; deleting a milestone unassigns its tasks (not deletes). `milestoneId` surfaced on the task DTO + dependency-graph nodes; write-path FTS indexing. Writes gated to `member+`. One-directional milestones→tasks/projects deps (no module cycle).
+- [x] **web:** typed client methods (`listMilestones`, `getRoadmap`, create/update/delete/reorder, `assignTaskMilestone`).
+- [x] Tests: shared schema units + gateway repository (real SQLite) / service (fakes) / controller specs. `:typecheck`/`:lint` green.
+
+---
+
+## 2026-07-06 — feat: chat-to-board intent contract + parser + LLM fallback — Phase 59 Theme A (PR #321)
+
+The spine of chat-to-board: a typed intent contract shared by a deterministic grammar parser (zero inference) and an LLM fallback, so downstream themes (execute / query / UI / safety) build on one source-agnostic shape.
+
+- [x] **shared:** `ChatIntentSchema` — a discriminated union over `createTask` / `bulkCreate` / `breakdown` / `setPriority` / `setStatus` / `assign` / `addDependency` / `query` + a first-class `unknown`; the `{ intent, source, confidence }` parse envelope; and `ChatCommandResult` (summary, affectedIds, `undoToken?`, `inferencePath` + labels). Executor deferred to Theme B.
+- [x] **gateway:** `lib/intent-grammar.ts` — a tolerant, order-flexible grammar (`add "title" p1 repo:api`, `move X to wip`, `set X p2`, `assign X repo:api`, `depend A on B`, `breakdown <goal>`, `show blocked`, `todo count`, …) → typed intent or `null`; enum-validated `kind:`/`status:` flags never leak into titles; word-based priority intentionally falls to the LLM.
+- [x] **gateway:** `ChatIntentService` — grammar-first, then `LlmService.generateStructured` against the same contract (flat superset schema → `cleanNulls` → union); degrades to a low-confidence `unknown` when the provider is off/invalid/failing. Grammar hits confidence 1, concrete LLM 0.75, unknown low. New `chat` `llm_usage` feature tag; `ChatModule` registered in `AppModule`.
+- [x] Tests: shared 11 (variants, refinements, envelope, result), gateway 20 grammar + 6 service (deterministic zero-call, LLM fallback + `chat` tag, invalid/failure/unconfigured degradation). `:typecheck`/`:lint` green.
+
+---
+
+## 2026-07-06 — feat: per-project completion overlay — Phase 58 Theme C ◐ (PR #320)
+
+Projects showed a bare task count; now each surface carries a **completion bar** (done / total tasks, %). Reuse-only — no new data model.
+
+- [x] **shared:** `taskStatusCounts` (per-status map, computed not stored) on `Project` + a `projectCompletion()` helper (done / **all tasks incl. abandoned**, rounded %).
+- [x] **gateway:** a single batched `GROUP BY (projectId, status)` hydrates the project list (no per-project N+1; `taskCount` derived from the map); `statusCountsForProject`/`statusCountsForProjects` on the repo.
+- [x] **web:** a reusable `ProjectProgressBar` (thin "done"-hue bar + `N/M · P%` label) on project cards (list + grid), the Phase 55 detail stats panel, and the dashboard project widgets; renders nothing for a 0-task project.
+- [x] **tests:** shared `projectCompletion` cases; gateway repo status-counts (single/batched/empty); web `ProjectProgressBar` stories (aria/label/no-tasks) + a `projects-progress.shots.ts` preview capture.
+- ⏳ Deferred (needs Theme B): the DAG-filter-by-project + project-picker-on-graph half — no graph view exists to filter yet.
+
+---
 ## 2026-07-06 — perf: lean TaskSummary DTO + paged /tasks + activity feed — Phase 57 Theme C ◐ (PR #319)
 
 `GET /tasks` returned the **full** hydrated `Task[]` (whole event thread + every attachment/link — ~1–2.5 MB/board). Now it returns lean `TaskSummary` pages, cutting the board payload to the card fields.

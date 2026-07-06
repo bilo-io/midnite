@@ -36,6 +36,9 @@ export const tasks = sqliteTable(
     agentId: text('agent_id'),
     sessionId: text('session_id'),
     projectId: text('project_id'),
+    // Phase 58 D — project milestone this task is assigned to (at most one). Null
+    // = unassigned (roadmap backlog). Plain intra-domain id ref, no cross-domain FK.
+    milestoneId: text('milestone_id'),
     prUrl: text('pr_url'),
     // User labels as a JSON array of strings (null/absent = none). App-layer
     // validated; no join table — tags are a small free-form set per task.
@@ -55,6 +58,8 @@ export const tasks = sqliteTable(
     archivedIdx: index('tasks_archived_idx').on(t.archivedAt),
     // Backs the scheduler's "highest-priority, oldest-first" todo selection.
     statusPriorityIdx: index('tasks_status_priority_idx').on(t.status, t.priority),
+    // Phase 58 D — roadmap groups tasks by milestone; index the lookup.
+    milestoneIdx: index('tasks_milestone_idx').on(t.milestoneId),
     // Both teamScopeFilter OR-arms are already indexed (migration 0048); declared
     // here to reconcile the schema with the DB (Phase 57 D) — no new migration.
     createdByIdx: index('tasks_created_by_idx').on(t.createdBy),
@@ -238,6 +243,36 @@ export const projects = sqliteTable('projects', {
   createdByIdx: index('projects_created_by_idx').on(t.createdBy),
   teamIdx: index('projects_team_idx').on(t.teamId),
 }));
+
+// Roadmap milestones (Phase 58 D): a minimal, project-scoped plan structure. A
+// task references a milestone by id (tasks.milestoneId); progress (done/total) is
+// computed, never stored. Named "milestone", not "phase" (the todo/ overload).
+// Plain intra-domain id reference to a project — no cross-domain FK.
+export const roadmapMilestones = sqliteTable(
+  'roadmap_milestones',
+  {
+    id: text('id').primaryKey(),
+    projectId: text('project_id').notNull(),
+    name: text('name').notNull(),
+    description: text('description'),
+    // Ascending display order within the project; drives the roadmap lane order.
+    position: integer('position').notNull().default(0),
+    // Optional ISO target date (informational in v1; no date-scheduling).
+    targetDate: text('target_date'),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+    createdBy: text('created_by'),
+    teamId: text('team_id'),
+  },
+  (t) => ({
+    projectIdx: index('roadmap_milestones_project_idx').on(t.projectId, t.position),
+    createdByIdx: index('roadmap_milestones_created_by_idx').on(t.createdBy),
+    teamIdx: index('roadmap_milestones_team_idx').on(t.teamId),
+  }),
+);
+
+export type RoadmapMilestoneRow = typeof roadmapMilestones.$inferSelect;
+export type RoadmapMilestoneInsert = typeof roadmapMilestones.$inferInsert;
 
 // Repo registry: named checkouts the orchestrator runs agents against. The DB
 // is the runtime source of truth; `config.repos` seeds it on first boot. A task
