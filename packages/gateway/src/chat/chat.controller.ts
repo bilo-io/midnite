@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Post } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Inject, Post } from '@nestjs/common';
 import {
   ChatCommandRequestSchema,
   ChatUndoRequestSchema,
@@ -22,8 +22,8 @@ import { ChatUndoService } from './chat-undo.service';
 @Controller('chat')
 export class ChatController {
   constructor(
-    private readonly service: ChatCommandService,
-    private readonly undoService: ChatUndoService,
+    @Inject(ChatCommandService) private readonly service: ChatCommandService,
+    @Inject(ChatUndoService) private readonly undoService: ChatUndoService,
   ) {}
 
   @Post('preview')
