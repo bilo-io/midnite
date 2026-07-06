@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-06 — feat: chat intent routing (deterministic→local→paid→refuse) — Phase 59 Theme D (PR #332)
+
+Closes Phase 59 Theme D. Formalizes the fuzzy-path routing policy over the Theme A/B spine so the chat bar is near-zero cost by default and never a surprise bill. The resolved inference path now rides on the parse envelope as the single source of truth.
+
+- [x] **gateway:** `ChatIntentService.parse` routing — grammar (no AI) → configured local `openai-compatible` (preferred, zero cost) → active paid provider → refuse-with-guidance. Paid calls gated on the Phase 50 hard budget cap (`UsageService.checkBudget()`, fail-soft); free local calls bypass it.
+- [x] **gateway:** `LlmService.generateStructuredVia(provider, …)` + `isProviderEnabled(provider)` — mirror `generateTextVia`, no new provider code.
+- [x] **shared:** `chat.preferLocal` config (default true); `ChatInferencePath` moved onto `ChatIntentParse` as the single source of truth (`ChatCommandService` consumes it instead of re-deriving from the active provider).
+- [x] Tests: rewritten `chat-intent.service.spec` (all 4 routing branches + local-preferred + cap-fail-soft + free-local-bypass + degrade); `llm.service.test` (`generateStructuredVia`/`isProviderEnabled`); shared contract + config-default units. `:typecheck`/`:lint`/`:test` green (gateway 1594; `ui:test` flake passes isolated).
+
+---
+
 ## 2026-07-06 — feat: per-project completion bar on the dependency graph — Phase 58 Theme C (PR #327)
 
 Closes Phase 58 Theme C (was ◐). The completion bar landed on project surfaces in PR #320; the graph half was deferred until Theme B's DAG existed. Now that the graph + its project picker ship (PR #324), scoping the graph to a project shows that project's completion in the toolbar.
