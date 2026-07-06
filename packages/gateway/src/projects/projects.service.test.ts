@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { Task } from '@midnite/shared';
+import type { Task, TaskStatusCounts } from '@midnite/shared';
 import type {
   ProjectInsert,
   ProjectRow,
@@ -120,8 +120,18 @@ class InMemoryProjectsRepo extends ProjectsRepository {
     });
   }
 
-  override countTasks(projectId: string): number {
-    return this.taskCounts.get(projectId) ?? 0;
+  override statusCountsForProject(projectId: string): TaskStatusCounts {
+    const n = this.taskCounts.get(projectId) ?? 0;
+    return n > 0 ? { todo: n } : {};
+  }
+
+  override statusCountsForProjects(projectIds: string[]): Map<string, TaskStatusCounts> {
+    const map = new Map<string, TaskStatusCounts>();
+    for (const id of projectIds) {
+      const counts = this.statusCountsForProject(id);
+      if (Object.keys(counts).length > 0) map.set(id, counts);
+    }
+    return map;
   }
 }
 

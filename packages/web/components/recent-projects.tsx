@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ChevronsUpDown, FolderKanban } from 'lucide-react';
 import type { Project, Status, TaskSummary } from '@midnite/shared';
 import { ProjectModal } from '@/components/project-modal';
+import { ProjectProgressBar } from '@/components/project-progress';
 import { invalidateData } from '@/lib/data-refresh';
 import { ProjectTag } from '@/components/project-tag';
 import { SourceIcon } from '@/components/source-icon';
@@ -102,6 +103,7 @@ export function ProjectCard({ project, tasks, projects, onSelectProject }: Proje
 
   const counts = statusCounts(countsMap);
   const total = counts.reduce((sum, c) => sum + c.count, 0);
+  const doneCount = counts.find((c) => c.status === 'done')?.count ?? 0;
   const legend = counts.filter((c) => c.count > 0);
 
   const picker =
@@ -173,6 +175,8 @@ export function ProjectCard({ project, tasks, projects, onSelectProject }: Proje
           <p className="text-[11px] text-muted-foreground">No tasks yet</p>
         )}
 
+        <ProjectProgressBar done={doneCount} total={total} hideLabel />
+
         <div className="mt-auto flex items-center justify-between gap-2 border-t border-border/40 pt-2">
           {project.sources.length > 0 ? (
             <div className="flex items-center -space-x-1">
@@ -233,6 +237,7 @@ export function RecentProjects({ projects, tasks }: { projects: Project[]; tasks
         {recent.map((project) => {
           const counts = statusCounts(countsByProject.get(project.id) ?? new Map());
           const total = counts.reduce((sum, c) => sum + c.count, 0);
+          const doneCount = counts.find((c) => c.status === 'done')?.count ?? 0;
           const legend = counts.filter((c) => c.count > 0);
           return (
             <button
@@ -262,6 +267,7 @@ export function RecentProjects({ projects, tasks }: { projects: Project[]; tasks
                   ))}
                 </div>
               ) : <p className="text-[11px] text-muted-foreground">No tasks yet</p>}
+              <ProjectProgressBar done={doneCount} total={total} hideLabel />
               <div className="mt-auto flex items-center justify-between gap-2 border-t border-border/40 pt-3">
                 {project.sources.length > 0 ? (
                   <div className="flex items-center -space-x-1">

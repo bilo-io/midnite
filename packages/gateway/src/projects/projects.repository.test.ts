@@ -58,6 +58,43 @@ describe('ProjectsRepository', () => {
     expect(project.sources).toHaveLength(1);
     expect(project.sources[0]!.kind).toBe('youtube');
     expect(project.taskCount).toBe(1);
+    expect(project.taskStatusCounts).toEqual({ todo: 1 });
+  });
+
+  it('computes per-status counts, batched and single (Phase 58 C)', () => {
+    const { db, repo } = ctx;
+    for (const id of ['p1', 'p2']) {
+      repo.insertProject({ id, name: id, tag: id, color: '#000000', createdAt: now, updatedAt: now });
+    }
+    const seed = (id: string, projectId: string, status: string) =>
+      db
+        .insert(tasks)
+        .values({ id, title: id, kind: 'unknown', status, projectId, createdAt: now, updatedAt: now })
+        .run();
+    // p1: 2 done, 1 wip, 1 abandoned → done 2 / total 4 = 50%
+    seed('a1', 'p1', 'done');
+    seed('a2', 'p1', 'done');
+    seed('a3', 'p1', 'wip');
+    seed('a4', 'p1', 'abandoned');
+    // p2: 1 todo
+    seed('b1', 'p2', 'todo');
+
+    expect(repo.statusCountsForProject('p1')).toEqual({ done: 2, wip: 1, abandoned: 1 });
+
+    const batched = repo.statusCountsForProjects(['p1', 'p2']);
+    expect(batched.get('p1')).toEqual({ done: 2, wip: 1, abandoned: 1 });
+    expect(batched.get('p2')).toEqual({ todo: 1 });
+
+    // A project with no tasks is absent from the batch and hydrates to an empty map.
+    repo.insertProject({ id: 'p3', name: 'p3', tag: 'p3', color: '#000000', createdAt: now, updatedAt: now });
+    expect(repo.statusCountsForProjects(['p1', 'p2', 'p3']).get('p3')).toBeUndefined();
+    const p3 = repo.hydrate(repo.getProject('p3')!);
+    expect(p3.taskCount).toBe(0);
+    expect(p3.taskStatusCounts).toEqual({});
+  });
+
+  it('statusCountsForProjects is empty for no ids', () => {
+    expect(ctx.repo.statusCountsForProjects([]).size).toBe(0);
   });
 
   it('deleting a project removes sources and unlinks its tasks', () => {

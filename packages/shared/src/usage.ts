@@ -19,6 +19,7 @@ export const LLM_FEATURES = [
   'agent', // agents/heartbeat runs
   'council', // council member/synthesis runs
   'workflow', // workflow `ai.*` nodes
+  'chat', // chat-to-board NL command parsing (Phase 59)
   'unknown', // untagged / default
 ] as const;
 export const LlmFeatureSchema = z.enum(LLM_FEATURES);
@@ -32,6 +33,7 @@ export const LLM_FEATURE_LABEL: Record<LlmFeature, string> = {
   agent: 'Agents',
   council: 'Councils',
   workflow: 'Workflows',
+  chat: 'Chat to board',
   unknown: 'Other',
 };
 

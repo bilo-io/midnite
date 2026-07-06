@@ -4,6 +4,7 @@ import { Folder, ListChecks } from 'lucide-react';
 import type { Project } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { ExportMenu } from '@/components/export-menu';
+import { ProjectProgressBar } from '@/components/project-progress';
 import { ProjectStatusBadge } from '@/components/project-status-badge';
 import { ProjectTag } from '@/components/project-tag';
 import { SelectableIcon } from '@/components/selectable-icon';
@@ -100,6 +101,7 @@ export function ProjectCard({ project, layout, onOpen, onPlan, selected = false,
           ) : null}
         </button>
         {favicons}
+        <ProjectProgressBar project={project} hideLabel className="hidden w-24 shrink-0 md:flex" />
         <span className="hidden shrink-0 text-xs tabular-nums text-muted-foreground sm:block">
           {plural(tasks, 'task')}
         </span>
@@ -136,6 +138,7 @@ export function ProjectCard({ project, layout, onOpen, onPlan, selected = false,
           <p className="text-xs italic text-muted-foreground">No description</p>
         )}
       </button>
+      <ProjectProgressBar project={project} />
       <div className="mt-auto flex items-center justify-between gap-2">
         {favicons ?? (
           <span className="text-xs text-muted-foreground">{plural(0, 'source')}</span>

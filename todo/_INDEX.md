@@ -31,8 +31,8 @@
 | [62 · Fable-Digest](phase-62-fable-digest.md) | ◻ TODO | 0/33 | `░░░░░░░░░░` | 0% | — | A B C D E F G H |
 | [61 · Fable-Observability](phase-61-fable-observability.md) | ◻ TODO | 0/36 | `░░░░░░░░░░` | 0% | — | A B C D E F G H I |
 | [60 · Fable-Analysis](phase-60-fable-analysis.md) | ◻ TODO | 0/63 | `░░░░░░░░░░` | 0% | — | A B C D E F G H I J K L M |
-| [59 · Chat to board](phase-59-chat-to-board.md) | 🔄 WIP | 0/26 | `░░░░░░░░░░` | 0% | A | B C D E F |
-| [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | 🔄 WIP | 3/25 | `█░░░░░░░░░` | 12% | C D | B E F |
+| [59 · Chat to board](phase-59-chat-to-board.md) | 🔄 WIP | 3/26 | `█░░░░░░░░░` | 12% | B | C D E F |
+| [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | 🔄 WIP | 4/25 | `██░░░░░░░░` | 16% | B D | C E F |
 | [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 15/26 | `██████░░░░` | 58% | — | — |
 | [56 · Realtime / WS reliability](phase-56-realtime-ws-reliability.md) | ✅ DONE | 17/26 | `███████░░░` | 65% | — | — |
 | [55 · Projects detail page](phase-55-projects-detail-page.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
@@ -155,7 +155,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 
 ### [Phase 59 — Chat to board](phase-59-chat-to-board.md)
 *Natural-language command bar in the Cmd-K palette; deterministic-first, local-model-preferred; composes existing task services.*
-- ◻ **A** — Intent contract + deterministic parser + LLM fallback
+- ✅ **A** — Intent contract + deterministic parser + LLM fallback (PR #321)
 - ◻ **B** — Execute intents by composing existing services
 - ◻ **C** — Status-query answerer (read-only)
 - ◻ **D** — Inference routing: deterministic-first, local-preferred
@@ -166,7 +166,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 *(Make the plan visible: surface Phase 27's dependency edges as a DAG + a milestone roadmap. Server-authoritative graph API; React Flow + dagre view; milestone data model + assignment. No new scheduling semantics — read/visualize what's modeled.)*
 - ✅ **A** — Graph API (server-authoritative): GET /tasks/graph, ready/unmet + foreign nodes, bounded (PR #318)
 - ◻ **B** — Dependency DAG view (React Flow + dagre)
-- ◻ **C** — Project progress overlay
+- ◐ **C** — Project progress overlay (per-project completion bar on project surfaces landed — PR #320; the DAG-filter/project-picker half deferred until Theme B's graph view exists)
 - ◻ **D** — Milestone data model
 - ◻ **E** — Roadmap view + milestone assignment
 - ◻ **F** — Entry points + breakdown tie-in
