@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { TaskSchema } from '../task.js';
 import { GuardrailSettingsSchema, PauseScopeSchema } from '../guardrails.js';
-import { sequencedEnvelope, type SequencedEnvelope } from './envelope.js';
+import { sequencedEnvelope, SubscribeOrResumeSchema, type SequencedEnvelope } from './envelope.js';
 
 // Live task-board events published over the gateway WebSocket. The gateway emits
 // one on every task state transition (create / update / delete) so clients get
@@ -75,7 +75,9 @@ export type SequencedTaskBoardEvent = SequencedEnvelope<TaskBoardEvent>;
 // Client → gateway message on the task WS: subscribe to the board's live events.
 // Board-wide (no per-task filter) — the kanban renders every task, so one channel
 // is simpler than the workflow gateway's per-run subscriptions.
-export const TaskSubscribeMessageSchema = z.object({ type: z.literal('subscribe') });
+// Phase 56 B: `subscribe` (fresh) or `resume` (reconnect, carrying a `cursor` of
+// per-channel lastSeq so the gateway replays what the socket missed).
+export const TaskSubscribeMessageSchema = SubscribeOrResumeSchema;
 export type TaskSubscribeMessage = z.infer<typeof TaskSubscribeMessageSchema>;
 
 export const TASKS_WS_PATH = '/ws/tasks';

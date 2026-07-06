@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { gatewayWsUrl, getAccessToken } from '@/lib/api';
+import { ResumeTracker } from '@/lib/resume-cursor';
 import { useConnectionStore } from '@/lib/connection-store';
 
 // Phase 56 E — after this many failed reconnect attempts (~several seconds down)
@@ -11,22 +12,34 @@ const STALE_AFTER_ATTEMPTS = 3;
 /**
  * Phase 56 D — a channel's transport contract for {@link useReliableSubscription}.
  * Each channel decodes its own wire frames (board channels unwrap the Phase 56 A
- * `SequencedEnvelope` + surface `seq`; approvals decodes its snapshot events with
- * no seq), and supplies its subscribe message (none for approvals).
+ * `SequencedEnvelope` + surface `seq`/`ch`; approvals decodes its snapshot events
+ * with no seq), and supplies its subscribe message (none for approvals).
  */
 export type ReliableChannel<T> = {
   /** WS path, e.g. `/ws/tasks`. */
   path: string;
-  /** Subscribe message sent on (re)connect, or null if the channel needs none. */
+  /**
+   * Subscribe message sent on connect, or null if the channel needs none
+   * (approvals). A non-null result also marks the channel **resumable**: the
+   * hook drives the Phase 56 B resume protocol (per-`ch` cursor, replay, resync)
+   * and, on reconnect, upgrades this to a `resume` frame carrying the cursor —
+   * so a channel only needs to return its static extras here (e.g. `{}`).
+   */
   subscribe: () => unknown | null;
-  /** Decode one raw frame → `{ seq?, event }`, or null to drop it. */
-  decode: (raw: string) => { seq?: number; event: T } | null;
+  /** Decode one raw frame → `{ seq?, ch?, event }`, or null to drop it. */
+  decode: (raw: string) => { seq?: number; ch?: string; event: T } | null;
   /** Append `?token=` (default true). Approvals connects tokenless today. */
   auth?: boolean;
 };
 
 export type ReliableHandlers<T> = {
   onEvent: (event: T) => void;
+  /**
+   * Phase 56 B — the server couldn't replay the gap (buffer overrun or a gateway
+   * restart), so the client must full-refetch rather than apply a partial stream.
+   * Resumable channels pass this (e.g. `invalidateData`).
+   */
+  onResync?: () => void;
   /** Called on each open with a `send` fn (e.g. to backfill or subscribe-with-args). */
   onOpen?: (send: (msg: unknown) => void) => void;
 };
@@ -34,9 +47,11 @@ export type ReliableHandlers<T> = {
 /**
  * Phase 56 D — one resilient WS subscription for every board channel, replacing
  * the four ad-hoc socket hooks. Handles: connect + exponential-backoff reconnect,
- * envelope decode, `lastSeq` tracking (the resume send lands with Theme B's
- * server protocol — today we still send a plain `subscribe`, which is safe), and
- * a `send` for channels that talk back (approvals `decide`).
+ * envelope decode, and (Phase 56 B) the **resume protocol** — on reconnect it
+ * sends `resume` with a per-`ch` cursor so the gateway replays what the socket
+ * missed, dedups replay+live overlap by `(ch, seq)`, and calls `onResync` when
+ * the gap is too big. Snapshot channels (approvals: `subscribe() === null`) skip
+ * all of that and just decode → `onEvent` as before.
  *
  * Cache strategy stays with the caller: `onEvent` routes per event type (the hook
  * is transport-only). `enabled: false` disconnects (e.g. a finished workflow run).
@@ -50,7 +65,6 @@ export function useReliableSubscription<T>(
   // Keep handlers current without re-opening the socket on every render.
   const handlersRef = useRef(handlers);
   handlersRef.current = handlers;
-  const lastSeqRef = useRef(0);
 
   useEffect(() => {
     if (!enabled) return;
@@ -60,6 +74,19 @@ export function useReliableSubscription<T>(
     // Phase 56 E — report this channel's transport state to the global store
     // (actions are stable, so read them once here).
     const { setChannelStatus, clearChannel } = useConnectionStore.getState();
+
+    // Resumable if the channel sends a subscribe message. The tracker persists
+    // across reconnects within this effect run (so `resume` carries the real
+    // cursor); a remount / channel change starts fresh.
+    const resumable = channel.subscribe() != null;
+    const tracker = new ResumeTracker<T>((raw) => {
+      try {
+        const d = channel.decode(String(raw));
+        return d && typeof d.seq === 'number' ? { seq: d.seq, ch: d.ch, event: d.event } : null;
+      } catch {
+        return null;
+      }
+    });
 
     const scheduleReconnect = () => {
       if (closed) return;
@@ -89,22 +116,37 @@ export function useReliableSubscription<T>(
       ws.onopen = () => {
         attempt = 0;
         setChannelStatus(channel.path, 'live');
-        const sub = channel.subscribe();
-        if (sub != null) send(sub);
+        if (resumable) {
+          // `subscribe` on a fresh cursor, `resume` (+ cursor) after a drop. The
+          // channel's own `type` is owned by the protocol — keep only its extras.
+          const base = (channel.subscribe() ?? {}) as Record<string, unknown>;
+          const { type: _ignored, ...extra } = base;
+          send(tracker.subscribeMessage(extra));
+        } else {
+          const sub = channel.subscribe();
+          if (sub != null) send(sub);
+        }
         handlersRef.current.onOpen?.(send);
       };
       ws.onmessage = (ev) => {
-        try {
-          const decoded = channel.decode(String(ev.data));
-          if (!decoded) return;
-          // Track the latest seq (groundwork for Theme B resume). No dedup here:
-          // a socket can multiplex independent seq lines (team + all scope), so a
-          // single global watermark can't tell them apart — that's Theme B's job.
-          if (typeof decoded.seq === 'number') lastSeqRef.current = decoded.seq;
-          handlersRef.current.onEvent(decoded.event);
-        } catch {
-          // ignore malformed frames
+        const text = String(ev.data);
+        if (!resumable) {
+          // Snapshot channel — no seq/resume; decode straight through.
+          try {
+            const decoded = channel.decode(text);
+            if (decoded) handlersRef.current.onEvent(decoded.event);
+          } catch {
+            // ignore malformed frames
+          }
+          return;
         }
+        const decision = tracker.accept(text);
+        if (decision.kind === 'resync') {
+          handlersRef.current.onResync?.();
+          return;
+        }
+        if (decision.kind === 'event') handlersRef.current.onEvent(decision.event);
+        // watermark / duplicate / ignore → nothing
       };
       ws.onclose = () => {
         wsRef.current = null;
