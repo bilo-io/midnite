@@ -41,6 +41,8 @@ describe('loadConfigFromFile', () => {
     const config = loadConfigFromFile(p);
     expect(config.agent.pool).toBe(4);
     expect(config.terminal.mode).toBe('pty');
+    // Phase 59 D — chat-to-board prefers a local model by default (never a surprise bill).
+    expect(config.chat.preferLocal).toBe(true);
   });
 
   it('throws on unparseable JSON', () => {

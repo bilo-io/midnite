@@ -60,12 +60,23 @@ describe('ChatIntentParseSchema', () => {
       intent: { type: 'createTask', title: 'fix login' },
       source: 'grammar',
       confidence: 1,
+      inferencePath: 'deterministic',
     };
     expect(ChatIntentParseSchema.parse(parse)).toEqual(parse);
   });
 
   it('rejects a confidence outside 0–1', () => {
-    const parse = { intent: { type: 'unknown', text: 'x' }, source: 'llm', confidence: 1.2 };
+    const parse = {
+      intent: { type: 'unknown', text: 'x' },
+      source: 'llm',
+      confidence: 1.2,
+      inferencePath: 'provider',
+    };
+    expect(ChatIntentParseSchema.safeParse(parse).success).toBe(false);
+  });
+
+  it('requires the resolved inference path (Theme D cost line)', () => {
+    const parse = { intent: { type: 'unknown', text: 'x' }, source: 'llm', confidence: 0.3 };
     expect(ChatIntentParseSchema.safeParse(parse).success).toBe(false);
   });
 });
@@ -102,7 +113,12 @@ describe('Chat command request/response (Phase 59 B)', () => {
 
   it('round-trips a command response (parse + result)', () => {
     const res = {
-      parse: { intent: { type: 'createTask', title: 'x' }, source: 'grammar', confidence: 1 },
+      parse: {
+        intent: { type: 'createTask', title: 'x' },
+        source: 'grammar',
+        confidence: 1,
+        inferencePath: 'deterministic',
+      },
       result: { summary: 'Created task “x”.', affectedIds: ['t1'], inferencePath: 'deterministic' },
     };
     expect(ChatCommandResponseSchema.parse(res)).toEqual(res);
@@ -110,7 +126,12 @@ describe('Chat command request/response (Phase 59 B)', () => {
 
   it('round-trips a preview response', () => {
     const res = {
-      parse: { intent: { type: 'query', text: 'show blocked' }, source: 'grammar', confidence: 1 },
+      parse: {
+        intent: { type: 'query', text: 'show blocked' },
+        source: 'grammar',
+        confidence: 1,
+        inferencePath: 'deterministic',
+      },
       description: 'Answer: show blocked',
       willMutate: false,
     };

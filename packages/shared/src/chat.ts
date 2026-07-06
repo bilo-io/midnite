@@ -165,18 +165,6 @@ export const ChatIntentSourceSchema = z.enum(CHAT_INTENT_SOURCES);
 export type ChatIntentSource = z.infer<typeof ChatIntentSourceSchema>;
 
 /**
- * The parse result: the intent plus how it was produced. `source: 'grammar'`
- * means zero inference (confidence 1). `confidence` is 0–1; a low-confidence
- * parse should be confirmed / clarified rather than executed silently (Theme F).
- */
-export const ChatIntentParseSchema = z.object({
-  intent: ChatIntentSchema,
-  source: ChatIntentSourceSchema,
-  confidence: z.number().min(0).max(1),
-});
-export type ChatIntentParse = z.infer<typeof ChatIntentParseSchema>;
-
-/**
  * How the command was ultimately resolved, for the "what did this cost" line
  * (Theme D): `deterministic` = parsed by the grammar, no AI; `local` = a local
  * `openai-compatible` model (zero API cost); `provider` = the active paid provider.
@@ -191,6 +179,25 @@ export const CHAT_INFERENCE_PATH_LABEL: Record<ChatInferencePath, string> = {
   local: 'via local model',
   provider: 'via provider',
 };
+
+/**
+ * The parse result: the intent plus how it was produced. `source: 'grammar'`
+ * means zero inference (confidence 1). `confidence` is 0–1; a low-confidence
+ * parse should be confirmed / clarified rather than executed silently (Theme F).
+ *
+ * `inferencePath` is the **resolved** routing outcome (Theme D) — decided at parse
+ * time, since the router knows which provider it actually used (a local override
+ * may differ from the active one). It's the single source of truth for the cost
+ * line: `deterministic` for a grammar hit, `local`/`provider` for the LLM path,
+ * and `deterministic` again for a refuse-with-guidance `unknown` (no AI was spent).
+ */
+export const ChatIntentParseSchema = z.object({
+  intent: ChatIntentSchema,
+  source: ChatIntentSourceSchema,
+  confidence: z.number().min(0).max(1),
+  inferencePath: ChatInferencePathSchema,
+});
+export type ChatIntentParse = z.infer<typeof ChatIntentParseSchema>;
 
 /**
  * The outcome of executing a command (produced by Theme B). Defined now so the

@@ -1,11 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ChatIntent, ChatIntentSource } from '@midnite/shared';
+import type { ChatInferencePath, ChatIntent, ChatIntentSource } from '@midnite/shared';
 import { ChatCommandService, describeIntent, isMutating } from './chat-command.service';
 import type { ChatIntentService } from './chat-intent.service';
 import type { TasksService } from '../tasks/tasks.service';
 import type { BreakdownService } from '../agent/breakdown.service';
 import type { ProjectsService } from '../projects/projects.service';
-import type { LlmService } from '../agent/llm/llm.service';
 
 const TASKS = [
   { id: 't1', title: 'Fix login bug' },
@@ -15,13 +14,20 @@ const TASKS = [
 const PROJECTS = [{ id: 'p1', name: 'Core' }];
 
 function build(overrides: {
-  parse?: { intent: ChatIntent; source?: ChatIntentSource };
+  parse?: { intent: ChatIntent; source?: ChatIntentSource; inferencePath?: ChatInferencePath };
   tasks?: Partial<TasksService>;
   breakdown?: Partial<BreakdownService>;
-  activeProvider?: string;
 }) {
+  const src: ChatIntentSource = overrides.parse?.source ?? 'grammar';
+  // The router (ChatIntentService, tested in its own spec) resolves inferencePath;
+  // the executor just consumes it. Default to the natural pairing for the source.
   const parseResult = overrides.parse
-    ? { intent: overrides.parse.intent, source: overrides.parse.source ?? 'grammar', confidence: 1 }
+    ? {
+        intent: overrides.parse.intent,
+        source: src,
+        confidence: src === 'grammar' ? 1 : 0.75,
+        inferencePath: overrides.parse.inferencePath ?? (src === 'llm' ? 'provider' : 'deterministic'),
+      }
     : undefined;
   const intents = { parse: vi.fn().mockResolvedValue(parseResult) } as unknown as ChatIntentService;
   const tasks = {
@@ -41,9 +47,8 @@ function build(overrides: {
     ...overrides.breakdown,
   } as unknown as BreakdownService;
   const projects = { listProjects: vi.fn().mockReturnValue(PROJECTS) } as unknown as ProjectsService;
-  const llm = { activeProvider: overrides.activeProvider ?? 'anthropic' } as unknown as LlmService;
   return {
-    svc: new ChatCommandService(intents, tasks, breakdown, projects, llm),
+    svc: new ChatCommandService(intents, tasks, breakdown, projects),
     tasks,
     breakdown,
   };
@@ -168,14 +173,15 @@ describe('ChatCommandService.execute', () => {
     expect(result.summary).toBe('unclear');
   });
 
-  it('maps the inference path: llm + openai-compatible → local, else provider', async () => {
+  it('propagates the router-resolved inference path onto the result', async () => {
     const local = build({
-      parse: { intent: { type: 'createTask', title: 'x' }, source: 'llm' },
-      activeProvider: 'openai-compatible',
+      parse: { intent: { type: 'createTask', title: 'x' }, source: 'llm', inferencePath: 'local' },
     });
     expect((await local.svc.execute('make a task')).result.inferencePath).toBe('local');
 
-    const paid = build({ parse: { intent: { type: 'createTask', title: 'x' }, source: 'llm' }, activeProvider: 'anthropic' });
+    const paid = build({
+      parse: { intent: { type: 'createTask', title: 'x' }, source: 'llm', inferencePath: 'provider' },
+    });
     expect((await paid.svc.execute('make a task')).result.inferencePath).toBe('provider');
   });
 });

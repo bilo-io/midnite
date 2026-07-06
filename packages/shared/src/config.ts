@@ -406,6 +406,19 @@ export const GuardrailsConfigSchema = z.object({
   scrubSpawnEnv: z.boolean().default(false),
 });
 
+// Phase 59 — chat-to-board (natural-language command bar). The deterministic
+// grammar always runs for free; this only tunes the *fuzzy* (LLM) fallback's
+// routing (Theme D). Optional (defaulted) so existing midnite.json files keep
+// validating.
+export const ChatConfigSchema = z.object({
+  // When a command can't be parsed deterministically, prefer a configured local
+  // `openai-compatible` provider (Ollama/LM Studio/vLLM → zero API cost) over the
+  // active paid provider. On by default so free-form chat never surprises with a
+  // bill when a local model is available; the active provider is still the
+  // fallback when no local one is configured.
+  preferLocal: z.boolean().default(true),
+});
+
 export const MidniteConfigSchema = z.object({
   agent: AgentConfigSchema,
   terminal: TerminalConfigSchema,
@@ -435,6 +448,9 @@ export const MidniteConfigSchema = z.object({
   // Realtime WS reliability (Phase 56). Optional (defaulted) so existing
   // midnite.json files keep validating.
   ws: WsConfigSchema.default({}),
+  // Chat-to-board command bar (Phase 59). Optional (defaulted) so existing
+  // midnite.json files keep validating.
+  chat: ChatConfigSchema.default({}),
 });
 
 export type MidniteConfig = z.infer<typeof MidniteConfigSchema>;
