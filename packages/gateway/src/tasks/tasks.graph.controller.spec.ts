@@ -22,7 +22,7 @@ function makeController(buildGraph = vi.fn(() => emptyGraph)) {
 describe('TasksController.graph (Phase 58 A)', () => {
   it('passes projectId + the caller’s team scope to the service and wraps the result', () => {
     const { controller, buildGraph } = makeController();
-    const res = controller.graph('proj-A', { userId: 'u1', teamId: 't1' });
+    const res = controller.graph('proj-A', { userId: 'u1', email: 'u1@example.com', teamId: 't1' });
     expect(buildGraph).toHaveBeenCalledWith('proj-A', { userId: 'u1', teamId: 't1' });
     expect(res).toEqual({ graph: emptyGraph });
   });
