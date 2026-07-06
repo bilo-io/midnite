@@ -12,6 +12,7 @@ import {
   LoaderCircle,
   Trash2,
   TriangleAlert,
+  X,
   type LucideIcon,
 } from 'lucide-react';
 import type { Notification, NotificationSeverity } from '@midnite/shared';
@@ -42,7 +43,7 @@ const DONE_ICON: LucideIcon = CircleCheck;
  */
 export function NotificationCenter({ expanded }: { expanded?: boolean }) {
   const router = useRouter();
-  const { feed, unread, loading, markRead, markAllRead, clear } = useNotifications();
+  const { feed, unread, loading, markRead, markAllRead, clear, dismiss } = useNotifications();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -115,14 +116,19 @@ export function NotificationCenter({ expanded }: { expanded?: boolean }) {
       ) : null}
 
       {open ? (
-        // The bell lives at the bottom-left of the sidebar, so the panel opens
-        // upward and to the right — into open canvas — not down-and-left off-screen.
+        // The bell lives at the bottom of the sidebar, so the panel opens upward.
+        // Expanded: it stays within the sidenav's bounds (full nav width), like the
+        // approvals trigger. Collapsed (icon rail): it widens into open canvas since
+        // the rail itself is too narrow to read in.
         <div
           role="menu"
           aria-label="Notifications"
-          className="absolute bottom-full left-0 z-50 mb-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border bg-popover shadow-2xl"
+          className={cn(
+            'absolute bottom-full left-0 z-50 mb-2 overflow-hidden rounded-xl border border-border bg-popover shadow-2xl',
+            expanded ? 'w-full' : 'w-[min(22rem,calc(100vw-2rem))]',
+          )}
         >
-          <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-2">
+          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b border-border/60 px-3 py-2">
             <p className="text-sm font-semibold">Notifications</p>
             <div className="flex items-center gap-1">
               <button
@@ -130,7 +136,7 @@ export function NotificationCenter({ expanded }: { expanded?: boolean }) {
                 onClick={markAllRead}
                 disabled={unread === 0}
                 aria-label="Mark all read"
-                className="flex items-center gap-1 rounded-md px-1.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+                className="flex items-center gap-1 whitespace-nowrap rounded-md px-1.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
               >
                 <CheckCheck className="h-3.5 w-3.5" />
                 Mark all read
@@ -140,7 +146,7 @@ export function NotificationCenter({ expanded }: { expanded?: boolean }) {
                 onClick={clear}
                 disabled={feed.length === 0}
                 aria-label="Clear notifications"
-                className="flex items-center gap-1 rounded-md px-1.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+                className="flex items-center gap-1 whitespace-nowrap rounded-md px-1.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 Clear
@@ -166,12 +172,12 @@ export function NotificationCenter({ expanded }: { expanded?: boolean }) {
                   const RowIcon = n.kind === 'task.done' ? DONE_ICON : meta.Icon;
                   const unreadRow = n.readAt === null;
                   return (
-                    <li key={n.id}>
+                    <li key={n.id} className="group/row relative">
                       <button
                         type="button"
                         onClick={() => openEntry(n)}
                         className={cn(
-                          'flex w-full items-start gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-accent/60',
+                          'flex w-full items-start gap-2.5 px-3 py-2.5 pr-9 text-left transition-colors hover:bg-accent/60',
                           unreadRow && 'bg-accent/30',
                         )}
                       >
@@ -201,6 +207,16 @@ export function NotificationCenter({ expanded }: { expanded?: boolean }) {
                             {relativeTime(n.createdAt)}
                           </span>
                         </span>
+                      </button>
+                      {/* Per-row dismiss — sits outside the row button (no nested
+                          buttons); revealed on hover/focus of the row. */}
+                      <button
+                        type="button"
+                        onClick={() => dismiss(n.id)}
+                        aria-label={`Dismiss notification: ${n.title}`}
+                        className="absolute right-1.5 top-1.5 rounded-md p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover/row:opacity-100"
+                      >
+                        <X className="h-3.5 w-3.5" />
                       </button>
                     </li>
                   );

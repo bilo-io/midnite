@@ -54,6 +54,11 @@ export class NotificationsRepository {
     this.db.update(notifications).set({ readAt: at }).where(isNull(notifications.readAt)).run();
   }
 
+  /** Delete a single notification by id; no-op if it doesn't exist. */
+  remove(id: string): void {
+    this.db.delete(notifications).where(eq(notifications.id, id)).run();
+  }
+
   clear(): void {
     this.db.delete(notifications).run();
   }

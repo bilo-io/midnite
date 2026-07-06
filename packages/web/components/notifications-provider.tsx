@@ -14,6 +14,7 @@ import type { Notification, NotificationSeverity } from '@midnite/shared';
 import { NOTIFICATIONS_WS_PATH, NotificationEventSchema } from '@midnite/shared';
 import {
   clearNotifications,
+  dismissNotification,
   gatewayWsUrl,
   getAccessToken,
   getNotifications,
@@ -42,6 +43,8 @@ export type NotificationsAction =
   /** Mark a set of ids read locally (mirrors the server's mark-read). */
   | { type: 'markRead'; ids: string[] }
   | { type: 'markAllRead' }
+  /** Drop a single entry from the feed (per-notification dismiss). */
+  | { type: 'dismiss'; id: string }
   | { type: 'clear' };
 
 export const initialNotificationsState: NotificationsState = { feed: [], unread: 0 };
@@ -78,6 +81,10 @@ export function notificationsReducer(
       const feed = state.feed.map((n) => (n.readAt === null ? { ...n, readAt: now } : n));
       return { feed, unread: 0 };
     }
+    case 'dismiss': {
+      const feed = state.feed.filter((n) => n.id !== action.id);
+      return { feed, unread: feed.filter((n) => n.readAt === null).length };
+    }
     case 'clear':
       return { feed: [], unread: 0 };
     default:
@@ -94,6 +101,8 @@ export type NotificationsApi = {
   loading: boolean;
   markRead: (ids: string[]) => void;
   markAllRead: () => void;
+  /** Remove a single notification from the feed (and the server). */
+  dismiss: (id: string) => void;
   clear: () => void;
 };
 
@@ -359,6 +368,14 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     void markNotificationsRead({ all: true }).catch(() => {});
   }, []);
 
+  const dismiss = useCallback((id: string) => {
+    dispatch({ type: 'dismiss', id });
+    void dismissNotification(id).catch(() => {
+      // Optimistic removal stands even if the server delete fails; the next
+      // fetch reconciles.
+    });
+  }, []);
+
   const clear = useCallback(() => {
     dispatch({ type: 'clear' });
     void clearNotifications().catch(() => {});
@@ -371,9 +388,10 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       loading: loadingRef.current,
       markRead,
       markAllRead,
+      dismiss,
       clear,
     }),
-    [state.feed, state.unread, markRead, markAllRead, clear],
+    [state.feed, state.unread, markRead, markAllRead, dismiss, clear],
   );
 
   return <NotificationsContext.Provider value={api}>{children}</NotificationsContext.Provider>;
