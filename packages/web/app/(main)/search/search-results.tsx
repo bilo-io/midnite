@@ -10,6 +10,7 @@ import {
   Lightbulb,
   ListChecks,
   LoaderCircle,
+  Milestone,
   Presentation,
   StickyNote,
   Workflow,
@@ -37,6 +38,7 @@ const TYPE_META: Record<SearchType, { label: string; Icon: LucideIcon }> = {
   workflow: { label: 'Workflows', Icon: Workflow },
   idea: { label: 'Ideas', Icon: Lightbulb },
   deck: { label: 'Slides', Icon: Presentation },
+  milestone: { label: 'Milestones', Icon: Milestone },
 };
 
 type FetchStatus = 'idle' | 'loading' | 'done' | 'error';
