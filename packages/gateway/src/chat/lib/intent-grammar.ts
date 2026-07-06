@@ -59,7 +59,8 @@ function tokenize(input: string): string[] {
   return tokens;
 }
 
-function resolveStatus(word: string): Status | undefined {
+function resolveStatus(word: string | undefined): Status | undefined {
+  if (!word) return undefined;
   const w = word.toLowerCase();
   if (STATUS_SET.has(w)) return w as Status;
   return STATUS_ALIASES[w];
@@ -168,7 +169,7 @@ export function parseIntentGrammar(input: string): ChatIntent | null {
     }
     return {
       type: 'createTask',
-      title: titles[0],
+      title: titles[0]!,
       ...(flags.priority !== undefined ? { priority: flags.priority } : {}),
       ...(flags.repo ? { repo: flags.repo } : {}),
       ...(flags.project ? { project: flags.project } : {}),
@@ -186,7 +187,7 @@ export function parseIntentGrammar(input: string): ChatIntent | null {
       const trailing = resolveStatus(toMatch[2]);
       if (trailing) {
         status = trailing;
-        taskPart = toMatch[1];
+        taskPart = toMatch[1] ?? '';
       }
     } else if (status) {
       // "move <task> wip" — status came from a flag; whole rest is the task.
@@ -221,8 +222,8 @@ export function parseIntentGrammar(input: string): ChatIntent | null {
     // `depend <task> on <other>` / `block <task> on <other>`
     const onMatch = rest.match(/^(.*?)\s+on\s+(.*)$/i);
     if (!onMatch) return null;
-    const task = stripLeadingNoise(onMatch[1]).trim();
-    const dependsOn = stripLeadingNoise(onMatch[2]).trim();
+    const task = stripLeadingNoise(onMatch[1] ?? '').trim();
+    const dependsOn = stripLeadingNoise(onMatch[2] ?? '').trim();
     if (!task || !dependsOn) return null;
     return { type: 'addDependency', task, dependsOn };
   }
