@@ -4,6 +4,7 @@ import { useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { Ban, Check, ExternalLink, GitCompare, Play, Plus, RefreshCw, SquareTerminal, X } from 'lucide-react';
 import { ChecksPanel } from '@/components/checks-panel';
+import { TaskMilestonePicker } from '@/components/task-milestone-picker';
 import { TaskFailureHistory } from '@/components/task-failure-history';
 import { PrDiffModal } from '@/components/pr-review/pr-diff-modal';
 import { PrReviewPanel } from '@/components/pr-review/pr-review-panel';
@@ -533,6 +534,12 @@ export function TaskDetail({ task, projects, tasks, onClose, variant = 'modal', 
               aria-label="Add a tag"
             />
           </div>
+        </section>
+        <section>
+          <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            Milestone
+          </h3>
+          <TaskMilestonePicker taskId={task.id} projectId={projectId} currentMilestoneId={task.milestoneId} />
         </section>
         <section>
           <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
