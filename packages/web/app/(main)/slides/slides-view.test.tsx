@@ -1,57 +1,43 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { DeckSummary } from '@midnite/shared';
-
-afterEach(cleanup);
-
-const deleteDeck = vi.fn();
-vi.mock('@/lib/api', () => ({ deleteDeck: (...a: unknown[]) => deleteDeck(...a) }));
-vi.mock('@/lib/data-refresh', () => ({ invalidateData: vi.fn() }));
-
+import { beforeEach, describe, expect, it } from 'vitest';
+import { render, screen } from '@testing-library/react';
 import { ToastProvider } from '@/components/toast';
 import { ConfirmProvider } from '@/components/confirm-dialog';
+import { createDeck } from '@/lib/slides/store';
 import { SlidesView } from './slides-view';
 
-const deck = (over: Partial<DeckSummary> = {}): DeckSummary => ({
-  id: 'd1',
-  name: 'Kickoff',
-  description: 'Q3 plan',
-  slideCount: 3,
-  format: 'md',
-  updatedAt: '2026-07-01T00:00:00Z',
-  ...over,
-});
-
-const renderView = (decks: DeckSummary[]) =>
+function renderView() {
   render(
     <ToastProvider>
       <ConfirmProvider>
-        <SlidesView decks={decks} />
+        <SlidesView />
       </ConfirmProvider>
     </ToastProvider>,
   );
+}
+
+beforeEach(() => {
+  window.localStorage.clear();
+});
 
 describe('SlidesView', () => {
-  it('shows the empty state with a New deck action', () => {
-    renderView([]);
-    expect(screen.getByText('No decks yet')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /New deck/i })).toHaveAttribute('href', '/slides/new');
+  it('renders decks from localStorage with a New deck action', async () => {
+    createDeck({ markdown: '# Quarterly review\n\n## Numbers\n\n- up', title: 'Quarterly review' });
+
+    renderView();
+
+    // hydrates from localStorage on mount
+    expect(await screen.findByText('Quarterly review')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /new deck/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /grid view/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /list view/i })).toBeInTheDocument();
   });
 
-  it('renders decks with a format badge and slide count', () => {
-    renderView([deck({ name: 'Kickoff', slideCount: 3, format: 'mixed' })]);
-    expect(screen.getByRole('link', { name: 'Kickoff' })).toBeInTheDocument();
-    expect(screen.getByText('Mixed')).toBeInTheDocument();
-    expect(screen.getByText(/3 slides/)).toBeInTheDocument();
-  });
+  it('shows the empty state when there are no decks', async () => {
+    // Seed then clear so the store is initialized-but-empty (won't re-seed).
+    window.localStorage.setItem('midnite.slides.decks', '[]');
 
-  it('confirms then deletes a deck', async () => {
-    deleteDeck.mockResolvedValue(undefined);
-    renderView([deck({ id: 'd9', name: 'Toss me' })]);
-    fireEvent.click(screen.getByRole('button', { name: 'Delete Toss me' }));
-    // Confirm dialog appears — click its Delete button.
-    const confirmBtn = await screen.findByRole('button', { name: 'Delete' });
-    fireEvent.click(confirmBtn);
-    await waitFor(() => expect(deleteDeck).toHaveBeenCalledWith('d9'));
+    renderView();
+
+    expect(await screen.findByText(/no decks yet/i)).toBeInTheDocument();
   });
 });

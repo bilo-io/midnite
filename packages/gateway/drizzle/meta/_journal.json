@@ -505,6 +505,13 @@
       "when": 1783333051462,
       "tag": "0071_phase58d_milestones",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "6",
+      "when": 1783360222035,
+      "tag": "0072_drop_slides",
+      "breakpoints": true
     }
   ]
 }

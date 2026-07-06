@@ -505,36 +505,6 @@ export const workflowCredentials = sqliteTable('workflow_credentials', {
   updatedAt: text('updated_at').notNull(),
 });
 
-// ── Slides (reveal.js decks, Phase 48) ──────────────────────────────────────
-// Mirrors the workflows persistence split: denormalized metadata columns
-// (name, slideCount, format) for the cheap list endpoint + a single JSON
-// `content` text column for the deck body (slides array + theme override).
-// No normalized per-slide rows — editing/reordering is a whole-deck write.
-export const slides = sqliteTable(
-  'slides',
-  {
-    id: text('id').primaryKey(),
-    name: text('name').notNull(),
-    description: text('description'),
-    // Derived from content on every write: number of slides.
-    slideCount: integer('slide_count').notNull().default(0),
-    // Derived from content: 'md' | 'html' | 'mixed'.
-    format: text('format').notNull().default('md'),
-    // JSON: { slides: Slide[], theme?: DeckTheme }
-    content: text('content').notNull(),
-    createdAt: text('created_at').notNull(),
-    updatedAt: text('updated_at').notNull(),
-    createdBy: text('created_by'),
-    teamId: text('team_id'),
-  },
-  (t) => ({
-    updatedAtIdx: index('slides_updated_at_idx').on(t.updatedAt),
-  }),
-);
-
-export type SlideDeckRow = typeof slides.$inferSelect;
-export type SlideDeckInsert = typeof slides.$inferInsert;
-
 // --- Agents (single primary orchestrator + subagents + heartbeat audit) ---
 
 // Singleton: exactly one row, id = 'primary'. Heartbeat scheduling bookkeeping
