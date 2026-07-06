@@ -144,6 +144,13 @@ import {
   TaskFailuresResponseSchema,
   TaskGraphResponseSchema,
   type TaskGraph,
+  MilestoneSchema,
+  MilestoneResponseSchema,
+  RoadmapResponseSchema,
+  type Milestone,
+  type RoadmapView,
+  type CreateMilestoneRequest,
+  type UpdateMilestoneRequest,
   TaskSchema,
   TasksPageSchema,
   TaskActivityResponseSchema,
@@ -493,6 +500,63 @@ export async function runChatCommand(text: string, signal?: AbortSignal): Promis
     '/chat/command',
     { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ text }), signal },
     ChatCommandResponseSchema,
+  );
+}
+
+// ── Roadmap milestones (Phase 58 D) ─────────────────────────────────────────
+
+/** A project's milestones, ordered by position. */
+export async function listMilestones(projectId: string): Promise<Milestone[]> {
+  return fetchJson(`/projects/${encodeURIComponent(projectId)}/milestones`, undefined, z.array(MilestoneSchema));
+}
+
+/** The project roadmap — milestones (with computed progress + tasks) + backlog. */
+export async function getRoadmap(projectId: string, signal?: AbortSignal): Promise<RoadmapView> {
+  const res = await fetchJson(
+    `/projects/${encodeURIComponent(projectId)}/roadmap`,
+    { signal },
+    RoadmapResponseSchema,
+  );
+  return res.roadmap;
+}
+
+export async function createMilestone(projectId: string, body: CreateMilestoneRequest): Promise<Milestone> {
+  const res = await fetchJson(
+    `/projects/${encodeURIComponent(projectId)}/milestones`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    MilestoneResponseSchema,
+  );
+  return res.milestone;
+}
+
+export async function updateMilestone(id: string, body: UpdateMilestoneRequest): Promise<Milestone> {
+  const res = await fetchJson(
+    `/milestones/${encodeURIComponent(id)}`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(body) },
+    MilestoneResponseSchema,
+  );
+  return res.milestone;
+}
+
+export async function deleteMilestone(id: string): Promise<void> {
+  await fetchJson(`/milestones/${encodeURIComponent(id)}`, { method: 'DELETE' }, z.object({ ok: z.literal(true) }));
+}
+
+/** Reorder a project's milestones — pass every current milestone id exactly once. */
+export async function reorderMilestones(projectId: string, milestoneIds: string[]): Promise<Milestone[]> {
+  return fetchJson(
+    `/projects/${encodeURIComponent(projectId)}/milestones/reorder`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ milestoneIds }) },
+    z.array(MilestoneSchema),
+  );
+}
+
+/** Assign (or unassign, with null) a task to a milestone. */
+export async function assignTaskMilestone(taskId: string, milestoneId: string | null): Promise<Task> {
+  return fetchJson(
+    `/tasks/${encodeURIComponent(taskId)}/milestone`,
+    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ milestoneId }) },
+    TaskSchema,
   );
 }
 

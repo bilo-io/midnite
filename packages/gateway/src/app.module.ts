@@ -26,6 +26,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { PoolModule } from './pool/pool.module';
 import { PortabilityModule } from './portability/portability.module';
 import { ProjectsModule } from './projects/projects.module';
+import { MilestonesModule } from './milestones/milestones.module';
 import { ProvidersModule } from './providers/providers.module';
 import { ReposModule } from './repos/repos.module';
 import { RoutinesModule } from './routines/routines.module';
@@ -83,6 +84,7 @@ import { InboundModule } from './integrations/inbound/inbound.module';
     PoolModule,
     PortabilityModule,
     ProjectsModule,
+    MilestonesModule,
     ProvidersModule,
     ReposModule,
     MetricsModule,

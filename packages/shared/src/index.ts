@@ -10,6 +10,7 @@ export * from './task.js';
 export * from './task-graph.js';
 export * from './chat.js';
 export * from './task-failure.js';
+export * from './milestone.js';
 export * from './bulk.js';
 export * from './agent-pool.js';
 export * from './session.js';
