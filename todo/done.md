@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-06 — feat: chat-to-board intent contract + parser + LLM fallback — Phase 59 Theme A (PR #321)
+
+The spine of chat-to-board: a typed intent contract shared by a deterministic grammar parser (zero inference) and an LLM fallback, so downstream themes (execute / query / UI / safety) build on one source-agnostic shape.
+
+- [x] **shared:** `ChatIntentSchema` — a discriminated union over `createTask` / `bulkCreate` / `breakdown` / `setPriority` / `setStatus` / `assign` / `addDependency` / `query` + a first-class `unknown`; the `{ intent, source, confidence }` parse envelope; and `ChatCommandResult` (summary, affectedIds, `undoToken?`, `inferencePath` + labels). Executor deferred to Theme B.
+- [x] **gateway:** `lib/intent-grammar.ts` — a tolerant, order-flexible grammar (`add "title" p1 repo:api`, `move X to wip`, `set X p2`, `assign X repo:api`, `depend A on B`, `breakdown <goal>`, `show blocked`, `todo count`, …) → typed intent or `null`; enum-validated `kind:`/`status:` flags never leak into titles; word-based priority intentionally falls to the LLM.
+- [x] **gateway:** `ChatIntentService` — grammar-first, then `LlmService.generateStructured` against the same contract (flat superset schema → `cleanNulls` → union); degrades to a low-confidence `unknown` when the provider is off/invalid/failing. Grammar hits confidence 1, concrete LLM 0.75, unknown low. New `chat` `llm_usage` feature tag; `ChatModule` registered in `AppModule`.
+- [x] Tests: shared 11 (variants, refinements, envelope, result), gateway 20 grammar + 6 service (deterministic zero-call, LLM fallback + `chat` tag, invalid/failure/unconfigured degradation). `:typecheck`/`:lint` green.
+
+---
+
 ## 2026-07-06 — perf: lean TaskSummary DTO + paged /tasks + activity feed — Phase 57 Theme C ◐ (PR #319)
 
 `GET /tasks` returned the **full** hydrated `Task[]` (whole event thread + every attachment/link — ~1–2.5 MB/board). Now it returns lean `TaskSummary` pages, cutting the board payload to the card fields.

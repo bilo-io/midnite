@@ -55,19 +55,21 @@
 
 ---
 
-## Theme A — Intent contract + deterministic parser + LLM fallback — **M**
+## Theme A — Intent contract + deterministic parser + LLM fallback — **M** — ✅ DONE (PR #321, 2026-07-06)
 
 Turn a sentence into a typed intent — cheaply.
 
-- [ ] **shared:** a `ChatIntentSchema` **discriminated union** — `createTask`, `bulkCreate`, `breakdown`,
-      `setPriority`, `setStatus`/`move`, `assign` (repo/project/milestone), `addDependency`, `query` — each with
-      its typed args; plus a `ChatCommandResult` (what happened, affected ids, an undo token). Zod, re-exported.
-- [ ] **gateway (deterministic first):** a mini-grammar parser for unambiguous commands — verbs + a quoted title +
-      flags (`p0..p3`, `repo:`, `project:`, `status:`, `@milestone`) → a `ChatIntent` with **no LLM call**. Handles
-      the common cases (add / move / set-priority / show-filter) outright.
-- [ ] **gateway (LLM fallback):** when the grammar can't fully parse, call `LlmService.generateStructured()` against
-      the same `ChatIntentSchema` (structured output) — source-agnostic result. A tiny board summary is passed as
-      context only when the intent needs it (keep the prompt small).
+- [x] **shared:** a `ChatIntentSchema` **discriminated union** — `createTask`, `bulkCreate`, `breakdown`,
+      `setPriority`, `setStatus`/`move`, `assign` (repo/project/milestone), `addDependency`, `query` + a first-class
+      `unknown` variant — each with its typed args; a `{ intent, source, confidence }` parse envelope; plus a
+      `ChatCommandResult` (summary, affected ids, undo token, inference path). Zod, re-exported.
+- [x] **gateway (deterministic first):** a mini-grammar parser for unambiguous commands — verbs + a quoted title +
+      flags (`p0..p3`, `repo:`, `project:`, `status:`, `@milestone`, `kind:`) in any order → a `ChatIntent` with
+      **no LLM call**. Covers add / bulk-add / move / set-priority / assign / depend / breakdown / show-filter.
+- [x] **gateway (LLM fallback):** when the grammar can't fully parse, `ChatIntentService` calls
+      `LlmService.generateStructured()` against the same contract (flat superset schema → cleanNulls → union),
+      source-agnostic; degrades to a low-confidence `unknown` when the provider is off/invalid/failing. Tagged with
+      a distinct `chat` `llm_usage` feature for cost visibility.
 
 ---
 
