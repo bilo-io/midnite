@@ -103,19 +103,20 @@ Ask the board questions.
 
 ---
 
-## Theme D — Inference routing: deterministic-first, local-preferred — **S-M**
+## Theme D — Inference routing: deterministic-first, local-preferred — **S-M** — ✅ DONE (PR #332, 2026-07-06)
 
 Near-zero cost by default; never a surprise bill.
 
-- [ ] The routing policy: **(1)** try the grammar (no LLM); **(2)** if fuzzy, prefer a **configured local provider**
+- [x] The routing policy: **(1)** try the grammar (no LLM); **(2)** if fuzzy, prefer a **configured local provider**
       (`openai-compatible` / opencode); **(3)** else the active paid provider; **(4)** else **refuse with guidance**
-      ("configure a local model or an API key to use free-form chat"). Reuses `LlmService` provider selection — **no
-      new provider code**.
-- [ ] A config knob for the preference (`chat.preferLocal`, default true) + a distinct `feature` tag on the
-      `llm_usage` record so chat spend is visible; respect Phase 50 budget caps (a capped chat call fails soft with a
-      clear message).
-- [ ] Surface the path used in the result ("parsed locally — no AI used" / "via local model" / "via <provider>") so
-      cost is transparent.
+      ("configure a local model or an API key to use free-form chat"). Reuses `LlmService` provider selection (new
+      `generateStructuredVia` + `isProviderEnabled`, mirroring `generateTextVia`) — **no new provider code**.
+- [x] A config knob for the preference (`chat.preferLocal`, default true) + the distinct `chat` `feature` tag on the
+      `llm_usage` record (Theme A) so chat spend is visible; respect Phase 50 budget caps via
+      `UsageService.checkBudget()` (a capped **paid** chat call fails soft with a clear message; a free local call
+      bypasses the cap).
+- [x] Surface the path used on the **parse envelope** (`ChatIntentParse.inferencePath`, single source of truth) so
+      preview + command report "parsed locally — no AI used" / "via local model" / "via provider" consistently.
 
 ---
 

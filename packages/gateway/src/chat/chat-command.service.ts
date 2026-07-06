@@ -4,13 +4,11 @@ import {
   type ChatInferencePath,
   type ChatIntent,
   type ChatIntentParse,
-  type ChatIntentSource,
   type ChatPreviewResponse,
   type TeamScope,
 } from '@midnite/shared';
 
 import { BreakdownService } from '../agent/breakdown.service';
-import { LlmService } from '../agent/llm/llm.service';
 import { ProjectsService } from '../projects/projects.service';
 import { TasksService } from '../tasks/tasks.service';
 import { ChatIntentService } from './chat-intent.service';
@@ -43,7 +41,6 @@ export class ChatCommandService {
     @Inject(TasksService) private readonly tasks: TasksService,
     @Inject(BreakdownService) private readonly breakdown: BreakdownService,
     @Inject(ProjectsService) private readonly projects: ProjectsService,
-    @Inject(LlmService) private readonly llm: LlmService,
   ) {}
 
   /** Parse the text and describe what would happen — no write (Theme F gates confirm). */
@@ -62,14 +59,11 @@ export class ChatCommandService {
     scope?: TeamScope,
   ): Promise<{ parse: ChatIntentParse; result: ChatCommandResult }> {
     const parse = await this.intents.parse(text);
-    const path = this.inferencePath(parse.source);
-    const result = await this.run(parse.intent, scope, path);
+    // The router (Theme D) already resolved the true cost line — including which
+    // provider it actually used — so consume it rather than re-deriving from the
+    // active provider (which is wrong when a local override fired).
+    const result = await this.run(parse.intent, scope, parse.inferencePath);
     return { parse, result };
-  }
-
-  private inferencePath(source: ChatIntentSource): ChatInferencePath {
-    if (source === 'grammar') return 'deterministic';
-    return this.llm.activeProvider === 'openai-compatible' ? 'local' : 'provider';
   }
 
   private async run(

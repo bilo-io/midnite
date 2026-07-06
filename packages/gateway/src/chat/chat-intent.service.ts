@@ -3,47 +3,81 @@ import {
   ChatIntentSchema,
   STATUSES,
   TASK_KINDS,
+  type ChatInferencePath,
   type ChatIntent,
   type ChatIntentParse,
+  type LlmProvider,
+  type MidniteConfig,
 } from '@midnite/shared';
 
+import { MIDNITE_CONFIG } from '../config.token';
 import { LlmService } from '../agent/llm/llm.service';
+import { UsageService } from '../usage/usage.service';
 import { parseIntentGrammar } from './lib/intent-grammar';
 import { CHAT_INTENT_SYSTEM_PROMPT } from './chat.prompts';
 
+/** The provider whose adapter is a local, zero-API-cost model (Ollama/LM Studio/vLLM). */
+const LOCAL_PROVIDER: LlmProvider = 'openai-compatible';
+
+/** A resolved fuzzy-path route: which provider to call and how to label the cost. */
+type Route = { provider: LlmProvider | undefined; path: Extract<ChatInferencePath, 'local' | 'provider'> };
+
 /**
- * Phase 59 A — the intent spine. Turns a natural-language command into a typed
- * {@link ChatIntentParse}, **deterministic-first**: the grammar parser handles
- * unambiguous commands with zero inference; anything it can't parse falls back to
- * the LLM (`generateStructured` against the same {@link ChatIntentSchema}), so
- * the executor (Theme B) is source-agnostic.
+ * Phase 59 A + D — the intent spine + routing policy. Turns a natural-language
+ * command into a typed {@link ChatIntentParse}, **deterministic-first**: the
+ * grammar parser handles unambiguous commands with zero inference; anything it
+ * can't parse falls back to the LLM (`generateStructuredVia` against the same
+ * {@link ChatIntentSchema}), so the executor (Theme B) is source-agnostic.
  *
- * Confidence: a grammar hit is `1`; a concrete LLM intent `0.75`; an LLM
- * `unknown` (or invalid/failed/unconfigured) is low so the UI clarifies rather
- * than guessing (Theme F). The routing *policy* (local-preferred, budget caps,
- * refuse-with-guidance) is Theme D — here the fallback simply uses the active
- * provider and degrades to an `unknown` intent when unavailable.
+ * **Routing (Theme D) — near-zero cost by default, never a surprise bill:**
+ * 1. grammar (no LLM) → `deterministic`;
+ * 2. else, when `chat.preferLocal` and a local `openai-compatible` provider is
+ *    configured, route there (`local`, zero API cost) ahead of the active paid one;
+ * 3. else the active provider (`local` if it's itself openai-compatible, else `provider`);
+ * 4. else **refuse with guidance** — a low-confidence `unknown` telling the user to
+ *    configure a local model or an API key (no AI is spent, so path stays `deterministic`).
+ * A paid call is additionally gated on the Phase 50 hard budget cap: over-cap fails
+ * soft to guidance rather than spending. The resolved {@link ChatInferencePath} rides
+ * on the parse so preview + command report the true cost line.
+ *
+ * Confidence: a grammar hit is `1`; a concrete LLM intent `0.75`; an LLM `unknown`
+ * (or invalid/failed/unconfigured/refused/capped) is low so the UI clarifies rather
+ * than guessing (Theme F).
  */
 @Injectable()
 export class ChatIntentService {
   private readonly logger = new Logger(ChatIntentService.name);
 
-  constructor(@Inject(LlmService) private readonly llm: LlmService) {}
+  constructor(
+    @Inject(LlmService) private readonly llm: LlmService,
+    @Inject(UsageService) private readonly usage: UsageService,
+    @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
+  ) {}
 
   async parse(input: string, signal?: AbortSignal): Promise<ChatIntentParse> {
     const grammar = parseIntentGrammar(input);
-    if (grammar) return { intent: grammar, source: 'grammar', confidence: 1 };
+    if (grammar) return { intent: grammar, source: 'grammar', confidence: 1, inferencePath: 'deterministic' };
 
-    if (!this.llm.enabled) {
-      return {
-        intent: unknown(input, 'No AI provider configured; try a structured command like `add "title" p1 repo:api`.'),
-        source: 'grammar',
-        confidence: 0,
-      };
+    const route = await this.resolveRoute();
+    if (!route) {
+      // Step 4 — refuse with guidance. No AI was spent, so the cost line stays "no AI used".
+      return refuse(
+        input,
+        'No AI provider is configured for free-form chat. Configure a local model or an API key, or use a structured command like `add "title" p1 repo:api`.',
+      );
+    }
+
+    // A paid call must respect the Phase 50 hard budget cap; a local (free) call bypasses it.
+    if (route.path === 'provider' && this.usage.checkBudget().over) {
+      return refuse(
+        input,
+        'Chat AI is paused — the spend cap has been reached. Try a structured command like `add "title" p1 repo:api`.',
+      );
     }
 
     try {
-      const { data } = await this.llm.generateStructured(
+      const { data } = await this.llm.generateStructuredVia(
+        route.provider,
         {
           model: this.llm.getActModel(),
           maxTokens: 512,
@@ -59,23 +93,59 @@ export class ChatIntentService {
       const parsed = ChatIntentSchema.safeParse(cleanNulls(data));
       if (!parsed.success) {
         this.logger.warn(`chat intent output failed validation: ${parsed.error.message}`);
-        return { intent: unknown(input, 'Could not understand that command.'), source: 'llm', confidence: 0.2 };
+        return {
+          intent: unknown(input, 'Could not understand that command.'),
+          source: 'llm',
+          confidence: 0.2,
+          inferencePath: route.path,
+        };
       }
       const intent = parsed.data;
-      return { intent, source: 'llm', confidence: intent.type === 'unknown' ? 0.3 : 0.75 };
+      return {
+        intent,
+        source: 'llm',
+        confidence: intent.type === 'unknown' ? 0.3 : 0.75,
+        inferencePath: route.path,
+      };
     } catch (err) {
       // A model/API failure must not surface a 500 — degrade to an unknown intent
-      // the caller can turn into a clarify prompt.
+      // the caller can turn into a clarify prompt. No usable output → no cost claimed.
       this.logger.warn(
         `chat intent AI call failed (${err instanceof Error ? err.message : 'unknown'}); returning unknown intent`,
       );
-      return { intent: unknown(input, 'The AI provider is unavailable right now.'), source: 'grammar', confidence: 0 };
+      return refuse(input, 'The AI provider is unavailable right now.');
     }
+  }
+
+  /**
+   * Resolve the fuzzy-path route (local-preferred → active → none). Returns `null`
+   * when no provider is usable, which the caller turns into a refuse-with-guidance.
+   */
+  private async resolveRoute(): Promise<Route | null> {
+    const active = this.llm.activeProvider;
+    // Step 2 — prefer a configured local model over the active paid one.
+    if (
+      this.config.chat.preferLocal &&
+      active !== LOCAL_PROVIDER &&
+      (await this.llm.isProviderEnabled(LOCAL_PROVIDER))
+    ) {
+      return { provider: LOCAL_PROVIDER, path: 'local' };
+    }
+    // Step 3 — the active provider (itself local iff it's openai-compatible).
+    if (this.llm.enabled) {
+      return { provider: undefined, path: active === LOCAL_PROVIDER ? 'local' : 'provider' };
+    }
+    return null;
   }
 }
 
 function unknown(text: string, reason: string): ChatIntent {
   return { type: 'unknown', text, reason };
+}
+
+/** A refuse/degrade result: unknown intent + guidance, no AI spent (deterministic cost line). */
+function refuse(text: string, reason: string): ChatIntentParse {
+  return { intent: unknown(text, reason), source: 'grammar', confidence: 0, inferencePath: 'deterministic' };
 }
 
 /**

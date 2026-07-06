@@ -122,12 +122,40 @@ export class LlmService implements OnApplicationBootstrap {
     return built;
   }
 
+  /**
+   * Whether a provider is configured + usable right now (adapter built lazily and
+   * cached). Lets a caller route to a specific provider only when it's actually
+   * available — e.g. chat-to-board preferring a local `openai-compatible` model
+   * over the active paid one (Phase 59 D).
+   */
+  async isProviderEnabled(provider: LlmProvider): Promise<boolean> {
+    const adapter = await this.adapterFor(provider);
+    return adapter.isEnabled();
+  }
+
   async generateStructured(
     req: GenerateStructuredRequest,
     feature: LlmFeature = LLM_FEATURE_DEFAULT,
   ): Promise<LlmStructuredResult> {
     const res = await this.adapter.generateStructured(req);
     this.recordUsage(this.active, res.model, feature, res.usage);
+    return res;
+  }
+
+  /**
+   * Structured generation via a specific provider (per-call override), mirroring
+   * {@link generateTextVia}. Falls back to the active provider when `provider` is
+   * undefined or already the active one. Usage is recorded against the adapter
+   * that actually ran.
+   */
+  async generateStructuredVia(
+    provider: LlmProvider | undefined,
+    req: GenerateStructuredRequest,
+    feature: LlmFeature = LLM_FEATURE_DEFAULT,
+  ): Promise<LlmStructuredResult> {
+    const adapter = await this.adapterFor(provider);
+    const res = await adapter.generateStructured(req);
+    this.recordUsage(adapter.id, res.model, feature, res.usage);
     return res;
   }
 
