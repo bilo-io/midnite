@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  ChatCommandRequestSchema,
+  ChatCommandResponseSchema,
   ChatCommandResultSchema,
   ChatIntentParseSchema,
   ChatIntentSchema,
+  ChatPreviewResponseSchema,
   CHAT_INFERENCE_PATH_LABEL,
   CHAT_INTENT_TYPES,
 } from './chat.js';
@@ -87,5 +90,30 @@ describe('ChatCommandResultSchema', () => {
     expect(CHAT_INFERENCE_PATH_LABEL.deterministic).toMatch(/no AI/i);
     expect(CHAT_INFERENCE_PATH_LABEL.local).toMatch(/local/i);
     expect(CHAT_INFERENCE_PATH_LABEL.provider).toMatch(/provider/i);
+  });
+});
+
+describe('Chat command request/response (Phase 59 B)', () => {
+  it('requires non-empty command text within the cap', () => {
+    expect(ChatCommandRequestSchema.safeParse({ text: 'add "x"' }).success).toBe(true);
+    expect(ChatCommandRequestSchema.safeParse({ text: '' }).success).toBe(false);
+    expect(ChatCommandRequestSchema.safeParse({ text: 'a'.repeat(2001) }).success).toBe(false);
+  });
+
+  it('round-trips a command response (parse + result)', () => {
+    const res = {
+      parse: { intent: { type: 'createTask', title: 'x' }, source: 'grammar', confidence: 1 },
+      result: { summary: 'Created task “x”.', affectedIds: ['t1'], inferencePath: 'deterministic' },
+    };
+    expect(ChatCommandResponseSchema.parse(res)).toEqual(res);
+  });
+
+  it('round-trips a preview response', () => {
+    const res = {
+      parse: { intent: { type: 'query', text: 'show blocked' }, source: 'grammar', confidence: 1 },
+      description: 'Answer: show blocked',
+      willMutate: false,
+    };
+    expect(ChatPreviewResponseSchema.parse(res)).toEqual(res);
   });
 });

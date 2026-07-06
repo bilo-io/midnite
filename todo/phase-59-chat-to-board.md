@@ -73,17 +73,20 @@ Turn a sentence into a typed intent — cheaply.
 
 ---
 
-## Theme B — Execute intents by composing existing services — **M**
+## Theme B — Execute intents by composing existing services — **M** — ✅ DONE (PR #323, 2026-07-06)
 
 Do the thing — through the paths that already validate.
 
-- [ ] A `ChatCommandService` maps each `ChatIntent` → an existing service call: `createTask`→`createFromPrompt`;
-      `bulkCreate`→`createBulk`; `breakdown`→`BreakdownService.generate` + materialize; `setPriority`/`setStatus`/
-      `assign`→task update; `addDependency`→`TasksService.addDependency` (inherits the cycle-check). **No new
-      mutation path.**
-- [ ] Team scope + RBAC are inherited from those services; the command runs as the requesting user. Bounded
-      parallelism for multi-task intents (reuse the bulk pattern).
-- [ ] Returns a `ChatCommandResult` — a human-readable summary + affected task ids + an **undo token** (Theme F).
+- [x] A `ChatCommandService` maps each `ChatIntent` → an existing service call: `createTask`→`createFromPrompt`;
+      `bulkCreate`→`createBulk`; `breakdown`→`BreakdownService.generate` + `createTasksFromBreakdown`;
+      `setPriority`/`setStatus`→task update; `assign`→`setProject`/new `setRepo` (milestone deferred to 58 D
+      integration); `addDependency`→`TasksService.addDependency` (inherits the cycle-check). **No new mutation path.**
+      Task refs resolve id-exact → unique title match; domain errors degrade to a spoken failure result, never a 500.
+- [x] Team scope + RBAC are inherited from those services; the command runs as the requesting user (`createdBy`).
+      `POST /chat/command` (`member`) + `POST /chat/preview` (read-only, `viewer`).
+- [x] Returns a `ChatCommandResult` — a human-readable summary + affected task ids + `inferencePath`
+      (grammar→deterministic, llm→local/provider). The **undo token** is wired in Theme F; `query` answering is
+      Theme C (a query intent politely defers).
 
 ---
 
