@@ -285,6 +285,30 @@ export class TasksRepository {
       .get();
   }
 
+  // Phase 58 D — assign (or unassign, with null) this task's roadmap milestone.
+  setMilestone(id: string, milestoneId: string | null, updatedAt: string): TaskRow | undefined {
+    return this.db
+      .update(tasks)
+      .set({ milestoneId, updatedAt })
+      .where(eq(tasks.id, id))
+      .returning()
+      .get();
+  }
+
+  // Phase 58 D — clear a milestone off every task it's assigned to (used when the
+  // milestone is deleted). Returns the affected task ids so the service can
+  // re-broadcast them. A cross-table cleanup UPDATE kept in the repository layer,
+  // mirroring how ProjectsRepository reads `tasks` for its task counts.
+  clearMilestone(milestoneId: string, updatedAt: string): string[] {
+    const rows = this.db
+      .update(tasks)
+      .set({ milestoneId: null, updatedAt })
+      .where(eq(tasks.milestoneId, milestoneId))
+      .returning({ id: tasks.id })
+      .all();
+    return rows.map((r) => r.id);
+  }
+
   setTags(id: string, tags: string[], updatedAt: string): TaskRow | undefined {
     return this.db
       .update(tasks)
@@ -697,6 +721,7 @@ export class TasksRepository {
         retryCount: row.retryCount,
         repo: row.repo ?? undefined,
         projectId: row.projectId ?? undefined,
+        milestoneId: row.milestoneId ?? undefined,
         tags: parseTags(row.tags),
         prUrl: row.prUrl ?? undefined,
         prStatus: this.toPrStatus(prByTask.get(row.id)),
@@ -760,6 +785,7 @@ export class TasksRepository {
       agentId: row.agentId ?? undefined,
       sessionId: row.sessionId ?? undefined,
       projectId: row.projectId ?? undefined,
+      milestoneId: row.milestoneId ?? undefined,
       prUrl: row.prUrl ?? undefined,
       prStatus: this.toPrStatus(rel.prStatus),
       tags: parseTags(row.tags),

@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-06 — feat: roadmap milestone data model — Phase 58 Theme D (PR #322)
+
+The minimal, project-scoped plan structure the roadmap (Theme E) will render. Milestones group a project's tasks into an ordered lane; progress is computed (done/total), never stored. Named "milestone", not "phase".
+
+- [x] **shared:** `MilestoneSchema` + create/update/reorder/assign requests + `RoadmapView` (per-milestone computed progress + unassigned backlog); `milestoneId` on `Task`/`TaskSummary`; a `milestone` global-search type; `milestone.*` audit taxonomy.
+- [x] **gateway:** `roadmap_milestones` table + `task.milestone_id` column (forward-only migration `0071`); `MilestonesController → Service → Repository` — team-scoped CRUD, full-order reorder, `GET /projects/:id/roadmap`. Assignment via `PATCH /tasks/:id/milestone` with strict same-project validation; deleting a milestone unassigns its tasks (not deletes). `milestoneId` surfaced on the task DTO + dependency-graph nodes; write-path FTS indexing. Writes gated to `member+`. One-directional milestones→tasks/projects deps (no module cycle).
+- [x] **web:** typed client methods (`listMilestones`, `getRoadmap`, create/update/delete/reorder, `assignTaskMilestone`).
+- [x] Tests: shared schema units + gateway repository (real SQLite) / service (fakes) / controller specs. `:typecheck`/`:lint` green.
+
+---
+
 ## 2026-07-06 — feat: chat-to-board intent contract + parser + LLM fallback — Phase 59 Theme A (PR #321)
 
 The spine of chat-to-board: a typed intent contract shared by a deterministic grammar parser (zero inference) and an LLM fallback, so downstream themes (execute / query / UI / safety) build on one source-agnostic shape.
