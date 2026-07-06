@@ -1,10 +1,9 @@
 import { AlertTriangle, Check, PauseCircle, ShieldAlert } from 'lucide-react';
 import {
-  isAnsweredQuestion,
   isNeedsAttention,
   TASK_HELD_REASON_LABEL,
   WAIT_REASON_LABEL,
-  type Task,
+  type TaskSummary,
 } from '@midnite/shared';
 import { BlockedBadge } from '@/components/blocked-badge';
 import { PrStatusChip } from '@/components/pr-status-chip';
@@ -16,7 +15,7 @@ import { cn } from '@/lib/utils';
 
 export type ProjectTagInfo = { tag: string; color: string };
 
-const KIND_LABELS: Record<NonNullable<Task['kind']>, string> = {
+const KIND_LABELS: Record<NonNullable<TaskSummary['kind']>, string> = {
   bug: 'Bug',
   feature: 'Feature',
   question: 'Question',
@@ -24,7 +23,7 @@ const KIND_LABELS: Record<NonNullable<Task['kind']>, string> = {
   unknown: 'Task',
 };
 
-const KIND_HUE_VARS: Record<NonNullable<Task['kind']>, string> = {
+const KIND_HUE_VARS: Record<NonNullable<TaskSummary['kind']>, string> = {
   bug: '--kind-bug',
   feature: '--kind-feature',
   question: '--kind-question',
@@ -65,7 +64,7 @@ export function TaskCard({
   onSelect,
   blockedBy,
 }: {
-  task: Task;
+  task: TaskSummary;
   project?: ProjectTagInfo;
   onSelect?: () => void;
   /** Count of unmet blockers (Phase 27); when > 0 shows a chip and dims the card. */
@@ -94,7 +93,7 @@ export function TaskCard({
           />
           {KIND_LABELS[kind]}
         </span>
-        {isAnsweredQuestion(task) ? (
+        {task.answered ? (
           // A question resolved inline at intake (Phase 15 Theme C) — distinguish
           // it from ordinary completed work sitting in the Done column.
           <span className="inline-flex items-center gap-1 rounded bg-success/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-success">

@@ -23,6 +23,7 @@ import {
   type ResolveTaskAction,
   type Status,
   type Task,
+  type TaskActivityEntry,
   type TaskSummary,
   type TaskCounts,
   type TaskFailure,
@@ -193,6 +194,12 @@ export class TasksService {
     const { rows, total } = this.repo.listTaskPage(status, projectId, scope, opts);
     const items = this.repo.summariseMany(rows).map((t) => this.withHeldSummary(t));
     return { items, total };
+  }
+
+  /** Recent cross-task activity (Phase 57 C) — the dashboard feed, served from a
+   *  single indexed query instead of hydrating every task's events. */
+  recentActivity(scope?: TeamScope, limit = 12): TaskActivityEntry[] {
+    return this.repo.recentActivity(scope, Math.max(1, Math.min(limit, 100)));
   }
 
   // Held-reason for the lean summary — mirrors `withHeld` (only ready `todo`

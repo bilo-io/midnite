@@ -143,6 +143,11 @@ import {
   TaskCountsSchema,
   TaskFailuresResponseSchema,
   TaskSchema,
+  TasksPageSchema,
+  TaskActivityResponseSchema,
+  type TaskActivityEntry,
+  type TaskSummary,
+  type TaskListQuery,
   TasksDoctorReportSchema,
   TerminalTokenResponseSchema,
   WebhookInfoResponseSchema,
@@ -429,8 +434,32 @@ export async function getTaskCounts(): Promise<TaskCounts> {
   return fetchJson('/tasks/counts', undefined, TaskCountsSchema);
 }
 
-export async function getTasks(): Promise<Task[]> {
-  return fetchJson('/tasks', undefined, z.array(TaskSchema));
+/**
+ * Board/list task fetch (Phase 57 C) — `GET /tasks` now returns lean
+ * `TaskSummary` **pages**. This unwraps to the item array (the board loads all
+ * columns); use {@link listTaskSummaries} when you need the `total` or a page.
+ * For the full task (events/prompt/all attachments), use {@link getTask}.
+ */
+export async function getTasks(): Promise<TaskSummary[]> {
+  return (await fetchJson('/tasks', undefined, TasksPageSchema)).items;
+}
+
+/** Recent cross-task activity feed (Phase 57 C) — served from a single indexed
+ *  query, replacing the dashboard hydrating every task's events. */
+export async function getTaskActivity(limit?: number): Promise<TaskActivityEntry[]> {
+  const suffix = limit ? `?limit=${limit}` : '';
+  return fetchJson(`/tasks/activity${suffix}`, undefined, TaskActivityResponseSchema);
+}
+
+/** A page of task summaries + the full filtered `total` (Phase 57 C). */
+export async function listTaskSummaries(query?: TaskListQuery): Promise<{ items: TaskSummary[]; total: number }> {
+  const qs = new URLSearchParams();
+  if (query?.status) qs.set('status', query.status);
+  if (query?.projectId) qs.set('projectId', query.projectId);
+  if (query?.page) qs.set('page', String(query.page));
+  if (query?.limit) qs.set('limit', String(query.limit));
+  const suffix = qs.toString() ? `?${qs}` : '';
+  return fetchJson(`/tasks${suffix}`, undefined, TasksPageSchema);
 }
 
 // ── Outbound webhooks (Phase 44) ────────────────────────────────────────────────

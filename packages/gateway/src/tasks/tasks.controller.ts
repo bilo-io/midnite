@@ -52,6 +52,7 @@ import {
   type PrDiff,
   type Status,
   type Task,
+  type TaskActivityEntry,
   type TaskCounts,
   type TasksPage,
   type TaskFailuresResponse,
@@ -122,6 +123,18 @@ export class TasksController {
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
     const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
     return { failures: this.service.listRecentFailures(parsed.data, scope) };
+  }
+
+  /** Recent cross-task activity feed (Phase 57 C). Static route before `:id`.
+   *  Replaces the dashboard hydrating every task's events client-side. */
+  @Get('activity')
+  activity(
+    @Query('limit') limitRaw?: string,
+    @CurrentUser() user?: CurrentUserPayload | null,
+  ): TaskActivityEntry[] {
+    const limit = limitRaw ? Number(limitRaw) : undefined;
+    const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
+    return this.service.recentActivity(scope, Number.isFinite(limit) ? limit : undefined);
   }
 
   @Get(':id/failures')

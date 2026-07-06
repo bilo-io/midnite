@@ -1,8 +1,8 @@
 'use client';
 
 import { Activity, RefreshCw } from 'lucide-react';
-import type { Task } from '@midnite/shared';
-import { getTasks } from '@/lib/api';
+import type { TaskActivityEntry } from '@midnite/shared';
+import { getTaskActivity } from '@/lib/api';
 import { usePolling } from '@/lib/use-polling';
 import { cn, relativeTime } from '@/lib/utils';
 import { WidgetLoader } from './spinner';
@@ -18,21 +18,21 @@ function humanizeKind(kind: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-function toEntries(tasks: Task[]): Entry[] {
+// Phase 57 C: the feed now comes from GET /tasks/activity (recent events, one
+// indexed query) instead of hydrating every task's full event thread.
+function toEntries(rows: TaskActivityEntry[]): Entry[] {
   const entries: Entry[] = [];
-  for (const task of tasks) {
-    for (let i = 0; i < task.events.length; i++) {
-      const ev = task.events[i]!;
-      const at = new Date(ev.at).getTime();
-      if (!Number.isFinite(at)) continue;
-      entries.push({ id: `${task.id}:${i}`, title: task.title, kind: ev.kind, at });
-    }
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i]!;
+    const at = new Date(r.at).getTime();
+    if (!Number.isFinite(at)) continue;
+    entries.push({ id: `${r.taskId}:${i}`, title: r.title, kind: r.kind, at });
   }
   return entries.sort((a, b) => b.at - a.at).slice(0, MAX_ROWS);
 }
 
 export function ActivityWidget() {
-  const { data, error, loading, refresh } = usePolling(() => getTasks(), REFRESH_MS);
+  const { data, error, loading, refresh } = usePolling(() => getTaskActivity(MAX_ROWS), REFRESH_MS);
 
   const entries = data ? toEntries(data) : [];
 

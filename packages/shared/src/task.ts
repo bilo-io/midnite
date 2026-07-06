@@ -198,12 +198,31 @@ export const TaskSummarySchema = z.object({
     })
     .optional(),
   /** Server-derived (Phase 57 C): a `question` task with an inline answer event —
-   *  precomputed here so the card needn't carry the whole event thread. */
-  answered: z.boolean().default(false),
+   *  precomputed here so the card needn't carry the whole event thread. Optional
+   *  so the full {@link Task} stays structurally assignable to a summary. */
+  answered: z.boolean().optional(),
+  /** Soft-archive timestamp (kept — a cheap scalar the shipped/board widgets read). */
+  archivedAt: z.string().optional(),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
 });
 export type TaskSummary = z.infer<typeof TaskSummarySchema>;
+
+/**
+ * One row of the cross-task activity feed (Phase 57 C). The dashboard's activity
+ * widget used to hydrate **every** task's full event thread client-side just to
+ * show the latest dozen events — the exact N+1 Phase 57 kills. Instead the
+ * gateway serves the recent events directly (one indexed `ORDER BY at DESC LIMIT`
+ * over `task_events`), team-scoped, as these lean rows.
+ */
+export const TaskActivityEntrySchema = z.object({
+  taskId: z.string(),
+  title: z.string(),
+  kind: z.string(),
+  at: z.string(),
+});
+export type TaskActivityEntry = z.infer<typeof TaskActivityEntrySchema>;
+export const TaskActivityResponseSchema = z.array(TaskActivityEntrySchema);
 
 /**
  * A page of list results (Phase 57 C). Generic over the item shape so every big

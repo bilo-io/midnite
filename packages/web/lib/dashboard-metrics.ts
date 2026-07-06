@@ -1,4 +1,4 @@
-import type { Task } from '@midnite/shared';
+import type { TaskSummary } from '@midnite/shared';
 
 export type DayBucket = { /** YYYY-MM-DD (local) */ key: string; /** day-of-month label */ label: string; count: number };
 
@@ -11,10 +11,11 @@ function localDayKey(ms: number): string {
   return `${y}-${m}-${day}`;
 }
 
-/** Best-effort completion instant for a done task: its last event, else `updatedAt`. */
-function completedAt(task: Task): number | null {
-  const last = task.events.at(-1);
-  const iso = last?.at ?? task.updatedAt;
+/** Completion instant for a done task — its `updatedAt` (the done-transition sets
+ *  it). Phase 57 C: the lean summary carries no event thread, and for a done task
+ *  `updatedAt` is that final transition, so the throughput chart is unchanged. */
+function completedAt(task: TaskSummary): number | null {
+  const iso = task.updatedAt;
   if (!iso) return null;
   const ms = new Date(iso).getTime();
   return Number.isFinite(ms) ? ms : null;
@@ -26,7 +27,7 @@ function completedAt(task: Task): number | null {
  * empty days included so the chart keeps a stable width. `now` is injected for
  * deterministic testing.
  */
-export function completionsByDay(tasks: Task[], days: number, now: number): DayBucket[] {
+export function completionsByDay(tasks: TaskSummary[], days: number, now: number): DayBucket[] {
   const buckets: DayBucket[] = [];
   const index = new Map<string, number>();
   const dayMs = 86_400_000;

@@ -12,6 +12,7 @@ import {
   type Task,
   type TaskAttachment,
   type TaskEvent,
+  type TaskActivityEntry,
   type TaskLink,
   type TaskSummary,
   type TeamScope,
@@ -378,6 +379,29 @@ export class TasksRepository {
         ? ordered.limit(opts.limit).offset(((opts.page ?? 1) - 1) * opts.limit).all()
         : ordered.all();
     return { rows, total };
+  }
+
+  /**
+   * The most recent task events across the (team-scoped) set (Phase 57 C) — one
+   * indexed `ORDER BY at DESC LIMIT` join instead of the dashboard hydrating
+   * every task's full event thread client-side. Returns lean `{taskId, title,
+   * kind, at}` rows for the activity feed.
+   */
+  recentActivity(scope: TeamScope | undefined, limit: number): TaskActivityEntry[] {
+    const where = scope ? teamScopeFilter(tasks.createdBy, tasks.teamId, scope) : undefined;
+    return this.db
+      .select({
+        taskId: taskEvents.taskId,
+        title: tasks.title,
+        kind: taskEvents.kind,
+        at: taskEvents.at,
+      })
+      .from(taskEvents)
+      .innerJoin(tasks, eq(taskEvents.taskId, tasks.id))
+      .where(where)
+      .orderBy(desc(taskEvents.at))
+      .limit(limit)
+      .all();
   }
 
   getTask(id: string, scope?: TeamScope): TaskRow | undefined {
