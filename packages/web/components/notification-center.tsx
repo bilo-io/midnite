@@ -128,7 +128,7 @@ export function NotificationCenter({ expanded }: { expanded?: boolean }) {
             expanded ? 'w-full' : 'w-[min(22rem,calc(100vw-2rem))]',
           )}
         >
-          <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-2">
+          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b border-border/60 px-3 py-2">
             <p className="text-sm font-semibold">Notifications</p>
             <div className="flex items-center gap-1">
               <button
@@ -136,7 +136,7 @@ export function NotificationCenter({ expanded }: { expanded?: boolean }) {
                 onClick={markAllRead}
                 disabled={unread === 0}
                 aria-label="Mark all read"
-                className="flex items-center gap-1 rounded-md px-1.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+                className="flex items-center gap-1 whitespace-nowrap rounded-md px-1.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
               >
                 <CheckCheck className="h-3.5 w-3.5" />
                 Mark all read
@@ -146,7 +146,7 @@ export function NotificationCenter({ expanded }: { expanded?: boolean }) {
                 onClick={clear}
                 disabled={feed.length === 0}
                 aria-label="Clear notifications"
-                className="flex items-center gap-1 rounded-md px-1.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+                className="flex items-center gap-1 whitespace-nowrap rounded-md px-1.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 Clear
