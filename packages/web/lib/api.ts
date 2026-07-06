@@ -144,6 +144,8 @@ import {
   TaskFailuresResponseSchema,
   TaskGraphResponseSchema,
   type TaskGraph,
+  ChatQueryResponseSchema,
+  type ChatQueryAnswer,
   MilestoneSchema,
   MilestoneResponseSchema,
   RoadmapResponseSchema,
@@ -477,6 +479,20 @@ export async function getTaskGraph(projectId?: string, signal?: AbortSignal): Pr
   const qs = projectId ? `?projectId=${encodeURIComponent(projectId)}` : '';
   const res = await fetchJson(`/tasks/graph${qs}`, { signal }, TaskGraphResponseSchema);
   return res.graph;
+}
+
+/**
+ * Phase 59 C — ask the board a read-only question. Returns a prose answer + the
+ * matching task refs (for deep-links) + the inference path used (cost line).
+ * Never mutates.
+ */
+export async function chatQuery(text: string, signal?: AbortSignal): Promise<ChatQueryAnswer> {
+  const res = await fetchJson(
+    '/chat/query',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ text }), signal },
+    ChatQueryResponseSchema,
+  );
+  return res.answer;
 }
 
 // ── Roadmap milestones (Phase 58 D) ─────────────────────────────────────────

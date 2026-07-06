@@ -3,8 +3,11 @@ import {
   ChatCommandResultSchema,
   ChatIntentParseSchema,
   ChatIntentSchema,
+  ChatQueryAnswerSchema,
+  ChatQueryRequestSchema,
   CHAT_INFERENCE_PATH_LABEL,
   CHAT_INTENT_TYPES,
+  CHAT_QUERY_TASK_CAP,
 } from './chat.js';
 
 describe('ChatIntentSchema', () => {
@@ -87,5 +90,48 @@ describe('ChatCommandResultSchema', () => {
     expect(CHAT_INFERENCE_PATH_LABEL.deterministic).toMatch(/no AI/i);
     expect(CHAT_INFERENCE_PATH_LABEL.local).toMatch(/local/i);
     expect(CHAT_INFERENCE_PATH_LABEL.provider).toMatch(/provider/i);
+  });
+});
+
+describe('ChatQueryAnswerSchema (Theme C)', () => {
+  it('round-trips a query answer with task refs', () => {
+    const answer = {
+      text: '2 blocked tasks',
+      tasks: [
+        { id: 't1', title: 'Fix auth', status: 'todo', priority: 2 },
+        { id: 't2', title: 'Ship API', status: 'wip', priority: 1 },
+      ],
+      count: 2,
+      truncated: false,
+      inferencePath: 'deterministic',
+    };
+    expect(ChatQueryAnswerSchema.parse(answer)).toEqual(answer);
+  });
+
+  it('allows an empty task list (count-only) and a truncated flag', () => {
+    const answer = { text: '73 todo tasks', tasks: [], count: 73, truncated: true, inferencePath: 'provider' };
+    expect(ChatQueryAnswerSchema.parse(answer).truncated).toBe(true);
+  });
+
+  it('rejects a task ref with an out-of-range priority', () => {
+    const bad = {
+      text: 'x',
+      tasks: [{ id: 't1', title: 'x', status: 'todo', priority: 9 }],
+      count: 1,
+      truncated: false,
+      inferencePath: 'local',
+    };
+    expect(ChatQueryAnswerSchema.safeParse(bad).success).toBe(false);
+  });
+
+  it('caps the task list at CHAT_QUERY_TASK_CAP (the answerer trims to this)', () => {
+    expect(CHAT_QUERY_TASK_CAP).toBe(50);
+  });
+});
+
+describe('ChatQueryRequestSchema (Theme C)', () => {
+  it('trims and requires non-empty text', () => {
+    expect(ChatQueryRequestSchema.parse({ text: '  what is blocked?  ' }).text).toBe('what is blocked?');
+    expect(ChatQueryRequestSchema.safeParse({ text: '   ' }).success).toBe(false);
   });
 });

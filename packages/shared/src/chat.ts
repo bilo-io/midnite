@@ -208,3 +208,45 @@ export const ChatCommandResultSchema = z.object({
   inferencePath: ChatInferencePathSchema,
 });
 export type ChatCommandResult = z.infer<typeof ChatCommandResultSchema>;
+
+/**
+ * Phase 59 C — a task as referenced in a query answer. Just enough to render a
+ * board deep-link (id) with context (title/status/priority) — deliberately not
+ * the full `TaskSummary`, so the answer stays small and uncoupled from that DTO.
+ */
+export const ChatTaskRefSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  status: StatusSchema,
+  priority: ChatPrioritySchema,
+});
+export type ChatTaskRef = z.infer<typeof ChatTaskRefSchema>;
+
+/** Max tasks returned in a query answer's `tasks` list (Phase 59 C). `count` is
+ *  the full match total; a longer match set is flagged `truncated`. */
+export const CHAT_QUERY_TASK_CAP = 50;
+
+/**
+ * Phase 59 C — the answer to a **read-only** board query. `text` is the prose
+ * answer (a deterministic phrase for a filter read, or a cheap LLM summary for a
+ * free-form question); `tasks` is the (capped) matching set for deep-links;
+ * `count` is the full match total; `truncated` signals the list or the
+ * underlying scan was bounded (never a silent cut); `inferencePath` reports what
+ * it cost (`deterministic` = no AI).
+ */
+export const ChatQueryAnswerSchema = z.object({
+  text: z.string(),
+  tasks: z.array(ChatTaskRefSchema),
+  count: z.number().int().nonnegative(),
+  truncated: z.boolean(),
+  inferencePath: ChatInferencePathSchema,
+});
+export type ChatQueryAnswer = z.infer<typeof ChatQueryAnswerSchema>;
+
+/** Phase 59 C — `POST /chat/query` request: a natural-language board question. */
+export const ChatQueryRequestSchema = z.object({ text: z.string().trim().min(1).max(2000) });
+export type ChatQueryRequest = z.infer<typeof ChatQueryRequestSchema>;
+
+/** Phase 59 C — `POST /chat/query` response. */
+export const ChatQueryResponseSchema = z.object({ answer: ChatQueryAnswerSchema });
+export type ChatQueryResponse = z.infer<typeof ChatQueryResponseSchema>;
