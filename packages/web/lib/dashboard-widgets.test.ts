@@ -43,9 +43,15 @@ describe('dashboard widget registry', () => {
     expect(DASHBOARD_WIDGETS['system-monitor'].category).toBe('system');
   });
 
-  it('includes the storage widget', () => {
+  it('includes the disk widget (real device storage)', () => {
+    expect(ALL_WIDGET_TYPES).toContain('disk');
+    expect(DASHBOARD_WIDGETS.disk.label).toBe('Disk');
+    expect(DASHBOARD_WIDGETS.disk.category).toBe('system');
+  });
+
+  it('includes the app-cache widget (browser-quota storage)', () => {
     expect(ALL_WIDGET_TYPES).toContain('storage');
-    expect(DASHBOARD_WIDGETS.storage.label).toBe('Storage');
+    expect(DASHBOARD_WIDGETS.storage.label).toBe('App cache');
     expect(DASHBOARD_WIDGETS.storage.category).toBe('system');
   });
 
