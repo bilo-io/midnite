@@ -506,6 +506,19 @@ html[data-no-glass] *::after {
   }
 }
 
+/* Breathing halo for status dots (System health): the box-shadow swells and
+   settles so a live indicator reads as "alive". `--glow-color` is set per dot so
+   the halo matches the dot's own colour. */
+@keyframes status-pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--glow-color, transparent);
+  }
+  50% {
+    box-shadow: 0 0 7px 2px var(--glow-color, transparent);
+  }
+}
+
 @keyframes card-rise {
   from {
     opacity: 0;
@@ -524,6 +537,16 @@ html[data-no-glass] *::after {
   .cascade-item {
     opacity: 0;
     animation: card-rise 0.5s ease-out forwards;
+  }
+
+  /* Pulsating glow for a status dot; set `--glow-color` to tint the halo. */
+  .status-dot-glow {
+    animation: status-pulse-glow 2.4s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html:not([data-motion='full']) .status-dot-glow {
+      animation: none;
+    }
   }
 
   /* Page-navigation reveal (see PageReveal). Cascades the content sibling(s) that

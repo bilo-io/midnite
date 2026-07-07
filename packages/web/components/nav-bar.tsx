@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
+  MessageSquare,
   PanelLeftClose,
   PanelLeftOpen,
   Power,
@@ -145,7 +146,7 @@ export function NavBar() {
           // icon-rail/expanded states stay for tablet and desktop.
           'fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border/60 py-3 backdrop-blur transition-[width] duration-200 md:flex',
           expandedView
-            ? 'w-56 items-stretch bg-background/95 px-2 shadow-xl'
+            ? 'w-64 items-stretch bg-background/95 px-2 shadow-xl'
             : 'w-14 items-center bg-background/70 supports-[backdrop-filter]:bg-background/50',
         )}
       >
@@ -212,6 +213,18 @@ export function NavBar() {
         </nav>
 
         <div className={cn('mt-auto flex flex-col gap-1', expandedView ? 'items-stretch' : 'items-center')}>
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent('midnite:open-chat'))}
+            aria-label="Chat to board"
+            className={cn(
+              'group relative flex h-9 items-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground',
+              expandedView ? 'w-full gap-3 px-2.5' : 'w-9 justify-center',
+            )}
+          >
+            <MessageSquare className="h-4 w-4 shrink-0" />
+            {expandedView ? <span className="truncate text-sm">Chat to board</span> : <Tooltip>Chat to board</Tooltip>}
+          </button>
           <ApprovalsDrawer expanded={expandedView} />
           <NotificationCenter expanded={expandedView} />
           <ThemeToggle expanded={expandedView} />

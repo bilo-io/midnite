@@ -72,28 +72,32 @@ Expose the dependency graph as data, computed from the source of truth.
 
 ---
 
-## Theme B — Dependency DAG view (React Flow + dagre) — **L**
+## Theme B — Dependency DAG view (React Flow + dagre) — **L** — ✅ DONE (PR #324, 2026-07-06)
 
 The missing shape: see what blocks what.
 
-- [ ] **web:** reuse **`@xyflow/react` read-only** (nodes non-draggable, no connect handles; keep pan/zoom + minimap
-      + controls) and add an **auto-layout pass** via **`dagre`** (`@dagrejs/dagre`) computing top-down x/y from the
-      edge set — the one net-new piece (the workflow editor persists manual positions; the DAG has none).
-- [ ] A **custom node**: status color (todo/wip/waiting/done, blocked derived), title, ready/blocked + priority
-      chips; edges styled to surface **unmet blockers / the critical path**. Click a node → deep-link to the task
-      detail / session cockpit (Phase 51).
-- [ ] A new **static-export** view (`/tasks/graph` query-string route, client-only like the cockpits); empty/loading/
-      large-graph states; responsive (pan/zoom desktop, a sensible mobile fallback).
+- [x] **web:** reuse **`@xyflow/react` read-only** (nodes non-draggable, no connect handles; keep pan/zoom + minimap
+      + controls) and add an **auto-layout pass** via **`dagre`** (`@dagrejs/dagre`) computing **left-to-right** x/y
+      from the edge set — the one net-new piece (the workflow editor persists manual positions; the DAG has none).
+      ([`task-graph-layout.ts`](../packages/web/lib/task-graph-layout.ts))
+- [x] A **custom node** ([`task-graph-node.tsx`](../packages/web/components/task-graph/task-graph-node.tsx)): status
+      color (todo/wip/waiting/done, blocked derived), title, ready/blocked + priority chips; edges styled to surface
+      **unmet blockers** (dashed + animated while the blocker isn't `done`). Click a node → opens the shared `?task=`
+      modal **in place** (stays on the graph, per Phase 42).
+- [x] A new **static-export** view (`/tasks/graph` query-string route, client-only like the cockpits) with a
+      **project-scope picker**; empty/loading/large-graph (truncated banner → narrow by project) states; live over
+      the Phase 56 reliable task channel; responsive (pan/zoom everywhere, minimap hidden on mobile).
 
 ---
 
-## Theme C — Project progress overlay — **S-M** — ◐ PARTIAL (PR #320, 2026-07-06)
+## Theme C — Project progress overlay — **S-M** — ✅ DONE (PR #320, #327, 2026-07-06)
 
 A roadmap-ish read without any new data.
 
-- [ ] ⏳ Filter/group the DAG by **project** (the `?projectId` graph) and show **per-project completion %** (done /
-      total tasks) — reuses projects + tasks, **no new model**. A project picker on the graph view. *(Deferred until
-      Theme B's DAG view exists — there's no graph view to filter yet.)*
+- [x] Filter/group the DAG by **project** (the `?projectId` graph) and show **per-project completion %** (done /
+      total tasks) — reuses projects + tasks, **no new model**. A project picker on the graph view. *(PR #324 shipped
+      the picker as part of Theme B; PR #327 added the per-project completion bar to the graph toolbar via the shared
+      `ProjectProgressBar` — server-computed `taskStatusCounts`, hidden for "All projects".)*
 - [x] Surface the same per-project progress where projects already appear (list + the Phase 55 project detail) — a
       cheap "how far along" without waiting on the milestone model. *(PR #320: server-computed `taskStatusCounts` +
       `projectCompletion` + a `ProjectProgressBar` on project cards, the detail stats panel, and dashboard widgets.)*
@@ -118,17 +122,20 @@ A real, minimal plan structure in the product.
 
 ---
 
-## Theme E — Roadmap view + milestone assignment — **L**
+## Theme E — Roadmap view + milestone assignment — **L** — ✅ DONE (PR #326, 2026-07-06)
 
 The plan, as lanes with progress.
 
-- [ ] **web:** a **roadmap lane view** — milestones as ordered lanes/columns, each with a **progress bar**
-      (done/total) + its tasks; per-milestone and per-project rollups. Reuse the board's card + dnd patterns where
-      sensible.
-- [ ] **Assign a task to a milestone** — from the task detail (a milestone picker) and by **dragging** a task into a
-      lane on the roadmap; reorder milestones (drag lanes). Unassigned tasks live in a "backlog" lane.
-- [ ] A **static-export** route (`/projects/view?id=…&tab=roadmap` or a dedicated `/roadmap?projectId=`),
-      deep-linkable; empty state ("no milestones yet — add one / generate from a breakdown").
+- [x] **web:** a **roadmap lane view** ([`roadmap-board.tsx`](../packages/web/components/roadmap/roadmap-board.tsx) +
+      [`roadmap-lane.tsx`](../packages/web/components/roadmap/roadmap-lane.tsx)) — milestones as ordered horizontal
+      columns, each with a **progress bar** (done/total, reusing Theme C's `ProjectProgressBar`) + its tasks, plus a
+      fixed **backlog** lane. Reuses the board's card + `@dnd-kit` patterns.
+- [x] **Assign a task to a milestone** — from the task detail (a milestone picker,
+      [`task-milestone-picker.tsx`](../packages/web/components/task-milestone-picker.tsx)) and by **dragging** a task
+      into a lane; reorder milestones by dragging the lane header grip. Optimistic with rollback. Inline milestone
+      CRUD (add / rename / delete). Live over the Phase 56 reliable task channel.
+- [x] Lives on the **static-export** project cockpit as a deep-linkable `?tab=roadmap` tab (Phase 55); empty state
+      ("no milestones yet — add one to group this project's tasks into a plan").
 
 ---
 
@@ -191,8 +198,11 @@ Make both views reachable, and seed roadmaps from what agents already produce.
 
 ## Decisions / open questions
 
-1. **Reuse `@xyflow/react` read-only + add `dagre` auto-layout** *(settled).* The renderer is already in the repo
-   (workflow editor); the only net-new frontend piece is auto-layout, since dependency tasks have no manual positions.
+1. **Reuse `@xyflow/react` read-only + add `dagre` auto-layout, laid out left-to-right** *(settled; Theme B built it
+   LR, not top-down).* The renderer is already in the repo (workflow editor); the only net-new frontend piece is
+   auto-layout, since dependency tasks have no manual positions. **Direction is `rankdir: 'LR'`**: a task's blockers
+   sit to its left, so reading left→right follows completion order and every dependency arrow points rightward (wide
+   graphs and long titles read better than a top-down stack).
 2. **New `GET /tasks/graph`, server-authoritative readiness** *(settled).* Compute ready/blocked from the existing
    scheduler logic so the graph can't drift; a dedicated endpoint is scale-safe under Phase 57's summary/pagination
    shift (client-side assembly from the full task list stops being reliable).

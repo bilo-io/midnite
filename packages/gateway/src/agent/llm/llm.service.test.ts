@@ -70,4 +70,17 @@ describe('LlmService usage recording', () => {
     await svc.generateText(req, 'planner');
     expect(records).toHaveLength(0);
   });
+
+  it('generateStructuredVia routes through the active adapter and records the feature', async () => {
+    const { svc, records } = makeService({ inputTokens: 5, outputTokens: 6 });
+    // undefined provider (and the active provider) both use the injected adapter.
+    await svc.generateStructuredVia(undefined, { ...req, schema: {}, schemaName: 's' }, 'chat');
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({ provider: 'openai', feature: 'chat' });
+  });
+
+  it('isProviderEnabled reflects the active adapter', async () => {
+    const { svc } = makeService({ inputTokens: 1, outputTokens: 1 });
+    expect(await svc.isProviderEnabled('openai')).toBe(true);
+  });
 });

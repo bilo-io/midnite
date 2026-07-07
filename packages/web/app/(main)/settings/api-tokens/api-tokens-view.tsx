@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import type { ServiceToken } from '@midnite/shared';
 import { createServiceToken, listServiceTokens, revokeServiceToken } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,55 @@ function relativeTime(iso: string): string {
 
 function errMsg(e: unknown): string {
   return e instanceof Error ? e.message : 'Something went wrong';
+}
+
+// ── Modal shell ────────────────────────────────────────────────────────────────
+// Matches the app-standard modal (new-task-modal / session-launch-modal): portalled
+// to <body> with a blurred backdrop and a pointer-events-split positioning layer, so
+// it can't be clipped by the settings layout's stacking/overflow context.
+
+function ModalShell({
+  label,
+  onClose,
+  busy = false,
+  children,
+}: {
+  label: string;
+  onClose: () => void;
+  busy?: boolean;
+  children: ReactNode;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !busy) onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose, busy]);
+
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
+    <>
+      <div
+        className="fixed inset-0 z-50 bg-background/40 backdrop-blur-md"
+        onClick={busy ? undefined : onClose}
+        aria-hidden
+      />
+      <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={label}
+          className="pointer-events-auto w-full max-w-md rounded-xl border border-border bg-card shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {children}
+        </div>
+      </div>
+    </>,
+    document.body,
+  );
 }
 
 // ── Create modal ─────────────────────────────────────────────────────────────
@@ -54,8 +104,8 @@ function CreateTokenModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-card border border-border rounded-lg p-6 w-full max-w-md shadow-xl">
+    <ModalShell label="Create API token" onClose={onClose} busy={loading}>
+      <div className="p-6">
         <h2 className="text-lg font-semibold mb-4">Create API token</h2>
         <div className="space-y-4">
           <div>
@@ -77,13 +127,13 @@ function CreateTokenModal({
           {error && <p className="text-sm text-destructive">{error}</p>}
         </div>
         <div className="mt-6 flex justify-end gap-2">
-          <Button variant="ghost" size="sm" onClick={onClose}>Cancel</Button>
+          <Button variant="ghost" size="sm" onClick={onClose} disabled={loading}>Cancel</Button>
           <Button size="sm" onClick={() => void handleCreate()} disabled={loading || !name.trim()}>
             {loading ? 'Creating…' : 'Create token'}
           </Button>
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 }
 
@@ -108,8 +158,8 @@ function SecretModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-card border border-border rounded-lg p-6 w-full max-w-md shadow-xl">
+    <ModalShell label={`Token created: ${tokenName}`} onClose={onClose}>
+      <div className="p-6">
         <h2 className="text-lg font-semibold mb-2">Token created: {tokenName}</h2>
         <p className="text-sm text-muted-foreground mb-4">
           Copy this token now — it will not be shown again.
@@ -130,7 +180,7 @@ function SecretModal({
           <Button size="sm" onClick={onClose}>Done</Button>
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 }
 

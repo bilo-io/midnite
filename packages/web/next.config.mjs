@@ -18,7 +18,6 @@ const nextConfig = {
     '@midnite/shared',
     '@midnite/ui',
     'yet-another-react-lightbox',
-    'reveal.js',
     'react-diff-view',
     'refractor',
   ],

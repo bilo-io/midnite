@@ -73,17 +73,20 @@ Turn a sentence into a typed intent — cheaply.
 
 ---
 
-## Theme B — Execute intents by composing existing services — **M**
+## Theme B — Execute intents by composing existing services — **M** — ✅ DONE (PR #323, 2026-07-06)
 
 Do the thing — through the paths that already validate.
 
-- [ ] A `ChatCommandService` maps each `ChatIntent` → an existing service call: `createTask`→`createFromPrompt`;
-      `bulkCreate`→`createBulk`; `breakdown`→`BreakdownService.generate` + materialize; `setPriority`/`setStatus`/
-      `assign`→task update; `addDependency`→`TasksService.addDependency` (inherits the cycle-check). **No new
-      mutation path.**
-- [ ] Team scope + RBAC are inherited from those services; the command runs as the requesting user. Bounded
-      parallelism for multi-task intents (reuse the bulk pattern).
-- [ ] Returns a `ChatCommandResult` — a human-readable summary + affected task ids + an **undo token** (Theme F).
+- [x] A `ChatCommandService` maps each `ChatIntent` → an existing service call: `createTask`→`createFromPrompt`;
+      `bulkCreate`→`createBulk`; `breakdown`→`BreakdownService.generate` + `createTasksFromBreakdown`;
+      `setPriority`/`setStatus`→task update; `assign`→`setProject`/new `setRepo` (milestone deferred to 58 D
+      integration); `addDependency`→`TasksService.addDependency` (inherits the cycle-check). **No new mutation path.**
+      Task refs resolve id-exact → unique title match; domain errors degrade to a spoken failure result, never a 500.
+- [x] Team scope + RBAC are inherited from those services; the command runs as the requesting user (`createdBy`).
+      `POST /chat/command` (`member`) + `POST /chat/preview` (read-only, `viewer`).
+- [x] Returns a `ChatCommandResult` — a human-readable summary + affected task ids + `inferencePath`
+      (grammar→deterministic, llm→local/provider). The **undo token** is wired in Theme F; `query` answering is
+      Theme C (a query intent politely defers).
 
 ---
 
@@ -100,47 +103,52 @@ Ask the board questions.
 
 ---
 
-## Theme D — Inference routing: deterministic-first, local-preferred — **S-M**
+## Theme D — Inference routing: deterministic-first, local-preferred — **S-M** — ✅ DONE (PR #332, 2026-07-06)
 
 Near-zero cost by default; never a surprise bill.
 
-- [ ] The routing policy: **(1)** try the grammar (no LLM); **(2)** if fuzzy, prefer a **configured local provider**
+- [x] The routing policy: **(1)** try the grammar (no LLM); **(2)** if fuzzy, prefer a **configured local provider**
       (`openai-compatible` / opencode); **(3)** else the active paid provider; **(4)** else **refuse with guidance**
-      ("configure a local model or an API key to use free-form chat"). Reuses `LlmService` provider selection — **no
-      new provider code**.
-- [ ] A config knob for the preference (`chat.preferLocal`, default true) + a distinct `feature` tag on the
-      `llm_usage` record so chat spend is visible; respect Phase 50 budget caps (a capped chat call fails soft with a
-      clear message).
-- [ ] Surface the path used in the result ("parsed locally — no AI used" / "via local model" / "via <provider>") so
-      cost is transparent.
+      ("configure a local model or an API key to use free-form chat"). Reuses `LlmService` provider selection (new
+      `generateStructuredVia` + `isProviderEnabled`, mirroring `generateTextVia`) — **no new provider code**.
+- [x] A config knob for the preference (`chat.preferLocal`, default true) + the distinct `chat` `feature` tag on the
+      `llm_usage` record (Theme A) so chat spend is visible; respect Phase 50 budget caps via
+      `UsageService.checkBudget()` (a capped **paid** chat call fails soft with a clear message; a free local call
+      bypasses the cap).
+- [x] Surface the path used on the **parse envelope** (`ChatIntentParse.inferencePath`, single source of truth) so
+      preview + command report "parsed locally — no AI used" / "via local model" / "via provider" consistently.
 
 ---
 
-## Theme E — Palette command-bar UI — **M-L**
+## Theme E — Palette command-bar UI — **M-L** — ✅ DONE (PR #334, 2026-07-06)
 
 Type what you want, where you already type.
 
-- [ ] Fold chat-to-board into the **command palette** via `useRegisterPaletteCommands` — a "Chat with board" mode
-      (or a leading `>`/natural-language line) using the **composer** input pattern; **no new FAB**. A small **chat
-      icon in the nav** opens the same, for discoverability.
-- [ ] **One-shot** interaction with a **light last-result context** — a follow-up like "now make those high
-      priority" resolves against the previous command's affected ids (not a full conversation history).
-- [ ] Render the parsed intent + result inline (created/updated tasks link into the board); live board refresh via
-      the existing WS (ties to Phase 56). Static-export friendly (client-only).
+- [x] Fold chat-to-board into the **command palette** — a leading `>` switches the ⌘K input into a "Chat with board"
+      mode (`useChatCommand` hook + presentational `<ChatBar>`); **no new FAB**. A **chat icon in the nav** opens it
+      pre-seeded (`midnite:open-chat`), for discoverability. Search is skipped in chat mode.
+- [x] **One-shot** interaction with a **light last-result context** — a follow-up ("make those p1") expands
+      client-side (`expandFollowup`) to one command per the previous command's affected id (not full conversation
+      history).
+- [x] Render the parsed intent + result inline (cost line + low-confidence warning); confirm gate + inline Undo
+      (Theme F); live board refresh via the existing `invalidateData()`. Static-export friendly (client-only).
 
 ---
 
-## Theme F — Safety: preview, confirm, undo, audit — **S-M**
+## Theme F — Safety: preview, confirm, undo, audit — **S-M** — ✅ DONE (PR #333, 2026-07-06)
 
 An NL bar that mutates the board needs a seatbelt.
 
-- [ ] **Preview + confirm** for mutating intents: show the parsed intent ("create 3 tasks on `api`, p1") and require
-      a confirm before writing — **never silently** bulk-create/delete. Read-only queries run immediately.
-- [ ] **Undo** the last command (reuse task delete / status-revert via the `undo token` in `ChatCommandResult`),
-      surfaced right after execution.
-- [ ] **Audit** the command + its effect via the Phase 50 `AuditService` (who ran what NL command, what it changed);
-      destructive intents (bulk delete) get an extra confirm. Ambiguous/low-confidence parses ask to clarify rather
-      than guess.
+- [x] **Preview + confirm** for mutating intents: `preview` + `command` carry a `confirmation` level, and a mutating
+      `POST /chat/command` only writes when `confirm: true` (server-enforced) — otherwise it returns
+      `confirmation: 'confirm'` and nothing changes; **never silently** mutates. Read-only queries run immediately.
+- [x] **Undo** the last command: every write logs an inverse **revert plan** to the `chat_commands` table; the
+      `undoToken` in `ChatCommandResult` reverts it via `POST /chat/undo`, replaying ops through the existing
+      `TasksService` mutators (delete / restore-prior / removeDependency) — **no new mutation path**. One-shot,
+      team-scoped, best-effort.
+- [x] **Audit** the command + its effect via the Phase 50 `AuditService` (`chat.command` + `chat.undo` — who ran what
+      NL command, what it changed). (Low-confidence parses already ask to clarify via the Theme A/D `unknown` path; a
+      dedicated destructive-intent extra-confirm is deferred until a delete-type intent exists.)
 
 ---
 

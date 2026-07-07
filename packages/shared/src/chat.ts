@@ -166,18 +166,6 @@ export const ChatIntentSourceSchema = z.enum(CHAT_INTENT_SOURCES);
 export type ChatIntentSource = z.infer<typeof ChatIntentSourceSchema>;
 
 /**
- * The parse result: the intent plus how it was produced. `source: 'grammar'`
- * means zero inference (confidence 1). `confidence` is 0–1; a low-confidence
- * parse should be confirmed / clarified rather than executed silently (Theme F).
- */
-export const ChatIntentParseSchema = z.object({
-  intent: ChatIntentSchema,
-  source: ChatIntentSourceSchema,
-  confidence: z.number().min(0).max(1),
-});
-export type ChatIntentParse = z.infer<typeof ChatIntentParseSchema>;
-
-/**
  * How the command was ultimately resolved, for the "what did this cost" line
  * (Theme D): `deterministic` = parsed by the grammar, no AI; `local` = a local
  * `openai-compatible` model (zero API cost); `provider` = the active paid provider.
@@ -194,6 +182,34 @@ export const CHAT_INFERENCE_PATH_LABEL: Record<ChatInferencePath, string> = {
 };
 
 /**
+ * The parse result: the intent plus how it was produced. `source: 'grammar'`
+ * means zero inference (confidence 1). `confidence` is 0–1; a low-confidence
+ * parse should be confirmed / clarified rather than executed silently (Theme F).
+ *
+ * `inferencePath` is the **resolved** routing outcome (Theme D) — decided at parse
+ * time, since the router knows which provider it actually used (a local override
+ * may differ from the active one). It's the single source of truth for the cost
+ * line: `deterministic` for a grammar hit, `local`/`provider` for the LLM path,
+ * and `deterministic` again for a refuse-with-guidance `unknown` (no AI was spent).
+ */
+export const ChatIntentParseSchema = z.object({
+  intent: ChatIntentSchema,
+  source: ChatIntentSourceSchema,
+  confidence: z.number().min(0).max(1),
+  inferencePath: ChatInferencePathSchema,
+});
+export type ChatIntentParse = z.infer<typeof ChatIntentParseSchema>;
+
+/**
+ * Phase 59 F — the confirmation level for a parsed intent. `none` runs immediately
+ * (read-only queries, `unknown`); `confirm` must be confirmed before it writes
+ * (every mutating intent) — the NL bar never silently mutates the board.
+ */
+export const CHAT_CONFIRMATIONS = ['none', 'confirm'] as const;
+export const ChatConfirmationSchema = z.enum(CHAT_CONFIRMATIONS);
+export type ChatConfirmation = z.infer<typeof ChatConfirmationSchema>;
+
+/**
  * The outcome of executing a command (produced by Theme B). Defined now so the
  * executor, undo (Theme F) and cost-transparency (Theme D) layers share a stable
  * contract; Theme A produces {@link ChatIntentParse}, not results.
@@ -207,6 +223,14 @@ export const ChatCommandResultSchema = z.object({
   undoToken: z.string().optional(),
   /** How the intent was resolved, for the cost line. */
   inferencePath: ChatInferencePathSchema,
+  /**
+   * Phase 59 F — the seatbelt. `none` means the command ran (read-only, or a
+   * mutating command confirmed with `confirm: true`). `confirm` means it was
+   * **not executed**: a mutating intent needs an explicit confirm — resend with
+   * `confirm: true` (`affectedIds` empty, no `undoToken`; `summary` describes what
+   * *would* happen).
+   */
+  confirmation: ChatConfirmationSchema,
 });
 export type ChatCommandResult = z.infer<typeof ChatCommandResultSchema>;
 
@@ -251,3 +275,58 @@ export type ChatQueryRequest = z.infer<typeof ChatQueryRequestSchema>;
 /** Phase 59 C — `POST /chat/query` response. */
 export const ChatQueryResponseSchema = z.object({ answer: ChatQueryAnswerSchema });
 export type ChatQueryResponse = z.infer<typeof ChatQueryResponseSchema>;
+
+/**
+ * Phase 59 B — request body for `POST /chat/command` (parse → execute) and
+ * `POST /chat/preview` (parse → describe, no write). One free-text field; the
+ * gateway parses it via the Theme A intent spine. `confirm` (Phase 59 F) is the
+ * seatbelt: a mutating command only writes when `confirm` is `true` — otherwise
+ * the response comes back `confirmation: 'confirm'` and nothing changed.
+ */
+export const ChatCommandRequestSchema = z.object({
+  text: z.string().min(1).max(2000),
+  confirm: z.boolean().optional(),
+});
+export type ChatCommandRequest = z.infer<typeof ChatCommandRequestSchema>;
+
+/**
+ * `POST /chat/command` response: the parse (source/confidence, for the cost line
+ * + a low-confidence warning) plus what executing it did.
+ */
+export const ChatCommandResponseSchema = z.object({
+  parse: ChatIntentParseSchema,
+  result: ChatCommandResultSchema,
+});
+export type ChatCommandResponse = z.infer<typeof ChatCommandResponseSchema>;
+
+/**
+ * `POST /chat/preview` response: the parse + a human description of what *would*
+ * happen, whether it mutates, and its {@link ChatConfirmation} level (Phase 59 F)
+ * so the UI knows to gate a confirm before executing. No write occurs.
+ */
+export const ChatPreviewResponseSchema = z.object({
+  parse: ChatIntentParseSchema,
+  /** Human-readable description of the parsed intent ("Create 1 task on `api`"). */
+  description: z.string(),
+  /** True when executing this intent would change board state (vs. a read-only query). */
+  willMutate: z.boolean(),
+  /** The confirm level: `confirm` for mutating intents, `none` for read-only. */
+  confirmation: ChatConfirmationSchema,
+});
+export type ChatPreviewResponse = z.infer<typeof ChatPreviewResponseSchema>;
+
+/** Phase 59 F — request body for `POST /chat/undo`: the token from a prior command result. */
+export const ChatUndoRequestSchema = z.object({
+  undoToken: z.string().min(1),
+});
+export type ChatUndoRequest = z.infer<typeof ChatUndoRequestSchema>;
+
+/**
+ * `POST /chat/undo` response: a {@link ChatCommandResult} describing the revert
+ * (`summary` "Reverted …", `affectedIds` = the tasks restored/deleted). Undo is
+ * itself not undoable, so `undoToken` is absent; `confirmation` is always `none`.
+ */
+export const ChatUndoResponseSchema = z.object({
+  result: ChatCommandResultSchema,
+});
+export type ChatUndoResponse = z.infer<typeof ChatUndoResponseSchema>;

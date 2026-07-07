@@ -13,6 +13,7 @@ import {
   FolderGit2,
   FolderKanban,
   Globe,
+  HardDrive,
   HeartPulse,
   Inbox,
   LayoutGrid,
@@ -67,6 +68,7 @@ export type WidgetType =
   | 'usage'
   | 'shipped'
   | 'system-monitor'
+  | 'storage'
   // at-a-glance extras
   | 'world-clocks'
   | 'all-projects'
@@ -234,8 +236,8 @@ export const DASHBOARD_WIDGETS: Record<WidgetType, WidgetMeta> = {
     },
   },
   projects: {
-    label: 'Recent projects',
-    description: 'Cards for your most recently updated projects',
+    label: 'Project',
+    description: 'A card for a single project (defaults to most recently updated)',
     icon: FolderKanban,
     category: 'tasks',
     sizes: {
@@ -244,7 +246,7 @@ export const DASHBOARD_WIDGETS: Record<WidgetType, WidgetMeta> = {
       sm: { w: 4, h: 5, minW: 2, minH: 3 },
     },
   },
-  notes: { label: 'Notes', description: 'Quick notes with speech-to-text', icon: StickyNote, category: 'productivity', sizes: panelSizes },
+  notes: { label: 'Action items', description: 'Quick action items with speech-to-text', icon: StickyNote, category: 'productivity', sizes: panelSizes },
   routines: { label: 'Routines', description: 'Track your daily routines', icon: CalendarCheck, category: 'productivity', sizes: panelSizes },
   news: {
     label: 'Hacker News',
@@ -325,6 +327,13 @@ export const DASHBOARD_WIDGETS: Record<WidgetType, WidgetMeta> = {
     icon: Cpu,
     category: 'system',
     sizes: { lg: { w: 4, h: 4, minW: 2, minH: 3 }, md: { w: 4, h: 4, minW: 2, minH: 3 }, sm: { w: 4, h: 4, minW: 2, minH: 3 } },
+  },
+  storage: {
+    label: 'Storage',
+    description: 'Used vs available device storage as a radial gauge',
+    icon: HardDrive,
+    category: 'system',
+    sizes: { lg: { w: 3, h: 5, minW: 2, minH: 4 }, md: { w: 3, h: 5, minW: 2, minH: 4 }, sm: { w: 2, h: 5, minW: 2, minH: 4 } },
   },
 
   // — at-a-glance extras ————————————————————————————————————————————

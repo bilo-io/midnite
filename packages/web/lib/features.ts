@@ -126,7 +126,7 @@ export const FEATURES: Feature[] = [
     key: 'slides',
     href: '/slides',
     label: 'Slides',
-    description: 'Author and present reveal.js decks in Markdown or HTML — themed to match your app.',
+    description: 'Author decks from Markdown and present them with typewriter reveals.',
     Icon: Presentation,
   },
   {

@@ -1,8 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { ChevronDown, Columns3, List, ListTree, Plus, type LucideIcon } from 'lucide-react';
+import { ChevronDown, Columns3, List, ListTree, Plus, Workflow, type LucideIcon } from 'lucide-react';
 import { type Project, type Repo, type Status, type Task, type TaskSummary } from '@midnite/shared';
 import { deleteTask, getTask, updateTaskStatus } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
@@ -16,6 +17,7 @@ import { DELIVERY_STATES, matchesDelivery } from '@/lib/pr-delivery';
 import { useBulkSelection } from '@/lib/use-bulk-selection';
 import { useGatewayErrorToast } from '@/lib/use-gateway-error-toast';
 import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@midnite/ui';
 import { BoardView } from '@/components/board-view';
 import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-action-bar';
 import { GuardrailsBanner, GuardrailsControl } from '@/components/guardrails-control';
@@ -432,12 +434,14 @@ export function TasksView({
   return (
     <div className="reveal-staged container flex min-h-0 flex-1 flex-col gap-4 pb-4 pt-2">
       <div className="reveal-controls flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+        <div className="flex flex-wrap items-center gap-2">
           {projects.length > 0 && <ProjectMultiSelect options={projectFilters} />}
-          <FilterPills options={STATUS_FILTERS} paramKey="status" />
-          {tagFilters.length > 0 && <FilterPills options={tagFilters} paramKey="tags" />}
-          <FilterPills options={ANSWERED_FILTERS} paramKey={ANSWERED_PARAM} hideAll />
-          <FilterPills options={DELIVERY_FILTERS} paramKey={DELIVERY_PARAM} hideAll />
+          <FilterPills options={STATUS_FILTERS} paramKey="status" allLabel="All statuses" />
+          {tagFilters.length > 0 && (
+            <FilterPills options={tagFilters} paramKey="tags" allLabel="All tags" />
+          )}
+          <FilterPills options={ANSWERED_FILTERS} paramKey={ANSWERED_PARAM} hideAll placeholder="Answered" />
+          <FilterPills options={DELIVERY_FILTERS} paramKey={DELIVERY_PARAM} hideAll placeholder="Delivery" />
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <GuardrailsControl guardrails={guardrails} onChange={setGuardrails} />
@@ -457,6 +461,15 @@ export function TasksView({
               </Button>
             ))}
           </div>
+          {/* Phase 58 B — the dependency DAG (read-only) for the current scope. */}
+          <Link
+            href="/tasks/graph"
+            aria-label="View dependency graph"
+            className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'h-8 gap-1.5')}
+          >
+            <Workflow className="h-3.5 w-3.5" />
+            Graph
+          </Link>
           <Button
             type="button"
             size="sm"

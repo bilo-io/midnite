@@ -285,6 +285,15 @@ export class TasksRepository {
       .get();
   }
 
+  setRepo(id: string, repo: string | null, updatedAt: string): TaskRow | undefined {
+    return this.db
+      .update(tasks)
+      .set({ repo, updatedAt })
+      .where(eq(tasks.id, id))
+      .returning()
+      .get();
+  }
+
   // Phase 58 D — assign (or unassign, with null) this task's roadmap milestone.
   setMilestone(id: string, milestoneId: string | null, updatedAt: string): TaskRow | undefined {
     return this.db

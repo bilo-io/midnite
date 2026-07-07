@@ -12,6 +12,7 @@ import { ProjectDetailsPanel } from '@/components/projects/panels/project-detail
 import { ProjectPlanPanel } from '@/components/projects/panels/project-plan-panel';
 import { ProjectTasksPanel } from '@/components/projects/panels/project-tasks-panel';
 import { ProjectPhaseDocsPanel } from '@/components/projects/panels/project-phasedocs-panel';
+import { ProjectRoadmapPanel } from '@/components/projects/panels/project-roadmap-panel';
 import { ProjectStatsPanel } from '@/components/projects/project-stats-panel';
 import { ProjectInfoPanel } from '@/components/projects/project-info-panel';
 import { getMemories, getProject, getTasks } from '@/lib/api';
@@ -22,11 +23,12 @@ import { useLocalStorage } from '@/lib/use-local-storage';
 import { useIsMobile } from '@/hooks/use-media-query';
 import { cn } from '@/lib/utils';
 
-type Tab = 'details' | 'plan' | 'tasks' | 'phasedocs';
+type Tab = 'details' | 'plan' | 'tasks' | 'roadmap' | 'phasedocs';
 const TAB_OPTIONS: TabOption<Tab>[] = [
   { value: 'details', label: 'Details' },
   { value: 'plan', label: 'Plan' },
   { value: 'tasks', label: 'Tasks' },
+  { value: 'roadmap', label: 'Roadmap' },
   { value: 'phasedocs', label: 'Phase docs' },
 ];
 const TAB_VALUES = new Set<string>(TAB_OPTIONS.map((t) => t.value));
@@ -173,6 +175,8 @@ export function ProjectDetailView({
                 <ProjectPlanPanel project={project} />
               ) : tab === 'tasks' ? (
                 <ProjectTasksPanel tasks={tasks} onSelectTask={openTask} />
+              ) : tab === 'roadmap' ? (
+                <ProjectRoadmapPanel project={project} onSelectTask={openTask} />
               ) : (
                 <ProjectPhaseDocsPanel projectId={project.id} />
               )}

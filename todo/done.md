@@ -4,6 +4,84 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-06 — feat: chat-to-board command bar in the Cmd-K palette — Phase 59 Theme E (PR #334)
+
+Closes Phase 59 Theme E. The natural-language bar surfaces where people already type — the ⌘K palette — over the A/B/D/F backend seam.
+
+- [x] **web:** a leading `>` switches the command palette into chat mode (`useChatCommand` hook + presentational `<ChatBar>`); nav chat icon opens it pre-seeded (`midnite:open-chat`). No new FAB. Preview → confirm (Theme F seatbelt) → execute → inline Undo, with cost line + low-confidence warning.
+- [x] **web:** light last-result context — a follow-up ("make those p1") expands client-side (`expandFollowup`) to one command per prior affected id. Board refresh via `invalidateData()`.
+- [x] **fix:** undo-of-create now archives-then-deletes (`deleteTask` guards against deleting live rows), caught by the new e2e.
+- [x] Tests: RTL (hook/ChatBar/follow-up/palette) + Playwright e2e (`>` add → confirm → result → undo). `:typecheck`/`:lint`/`:test` green (web 868, gateway 1609, shared 582, cli 155; `ui:test` flake passes isolated).
+
+---
+
+## 2026-07-06 — feat: chat-to-board safety (preview/confirm/undo/audit) — Phase 59 Theme F (PR #333)
+
+Closes Phase 59 Theme F. The NL command bar's seatbelt: never silently write, always reversible, always audited — backend primitives over the A/B/D spine (the UI that surfaces them is Theme E).
+
+- [x] **gateway:** server-enforced confirm gate — a mutating `POST /chat/command` only writes with `confirm: true`; otherwise `confirmation: 'confirm'` and nothing changes. Read-only queries run immediately.
+- [x] **gateway:** undo — every write logs an inverse revert plan to a new `chat_commands` table (migration `0073`); `undoToken` → `POST /chat/undo` replays it through existing `TasksService` mutators (delete / restore-prior / removeDependency), one-shot + team-scoped. No new mutation path.
+- [x] **gateway:** `chat.command` + `chat.undo` audited via the Phase 50 `AuditService`.
+- [x] **shared:** `confirmation` on preview + result; `confirm` on the request; `ChatUndoRequest/Response`; web api client (`runChatCommand(text, confirm)` + `undoChatCommand`).
+- [x] Tests: shared contracts; gateway confirm-gate + revert-capture + undo-replay + guards + audit; `chat_commands` repository integration. `:typecheck`/`:lint`/`:test` green (gateway 1609, shared 582, web 848, cli 155; `ui:test` flake passes isolated).
+
+---
+
+## 2026-07-06 — feat: chat intent routing (deterministic→local→paid→refuse) — Phase 59 Theme D (PR #332)
+
+Closes Phase 59 Theme D. Formalizes the fuzzy-path routing policy over the Theme A/B spine so the chat bar is near-zero cost by default and never a surprise bill. The resolved inference path now rides on the parse envelope as the single source of truth.
+
+- [x] **gateway:** `ChatIntentService.parse` routing — grammar (no AI) → configured local `openai-compatible` (preferred, zero cost) → active paid provider → refuse-with-guidance. Paid calls gated on the Phase 50 hard budget cap (`UsageService.checkBudget()`, fail-soft); free local calls bypass it.
+- [x] **gateway:** `LlmService.generateStructuredVia(provider, …)` + `isProviderEnabled(provider)` — mirror `generateTextVia`, no new provider code.
+- [x] **shared:** `chat.preferLocal` config (default true); `ChatInferencePath` moved onto `ChatIntentParse` as the single source of truth (`ChatCommandService` consumes it instead of re-deriving from the active provider).
+- [x] Tests: rewritten `chat-intent.service.spec` (all 4 routing branches + local-preferred + cap-fail-soft + free-local-bypass + degrade); `llm.service.test` (`generateStructuredVia`/`isProviderEnabled`); shared contract + config-default units. `:typecheck`/`:lint`/`:test` green (gateway 1594; `ui:test` flake passes isolated).
+
+---
+
+## 2026-07-06 — feat: per-project completion bar on the dependency graph — Phase 58 Theme C (PR #327)
+
+Closes Phase 58 Theme C (was ◐). The completion bar landed on project surfaces in PR #320; the graph half was deferred until Theme B's DAG existed. Now that the graph + its project picker ship (PR #324), scoping the graph to a project shows that project's completion in the toolbar.
+
+- [x] **web:** when `/tasks/graph?projectId=` is set, the toolbar shows the selected `Project`'s completion via the shared `ProjectProgressBar` (`done/total · %`) — sourced from server-computed `taskStatusCounts` (Theme C, PR #320), so it reflects the whole project and matches the project cards + detail stats panel. Hidden for "All projects". Reuse-only — no new API or component.
+- [x] Tests: extended `task-graph.e2e.ts` (unscoped → no indicator; scoped to a 1-done-of-2 project → `1/2 · 50%`). `:typecheck`/`:lint`/`web:test` (839) green.
+
+---
+
+## 2026-07-06 — feat: roadmap lane view + milestone assignment — Phase 58 Theme E (PR #326)
+
+Phase 58 D shipped the milestone model + `GET /projects/:id/roadmap`; Theme E renders it. A project's plan as lanes with progress, and two ways to put a task on it. Pure web — the contract + client methods already existed.
+
+- [x] **roadmap lanes** ([`roadmap-board.tsx`](../packages/web/components/roadmap/roadmap-board.tsx) + [`roadmap-lane.tsx`](../packages/web/components/roadmap/roadmap-lane.tsx)): milestones as ordered horizontal columns, each with a done/total `ProjectProgressBar` (reused from Theme C) + its task cards, plus a fixed **backlog** lane for unassigned tasks. Lives on the project cockpit as a `?tab=roadmap` tab (Phase 55).
+- [x] **drag-to-assign / reorder**: drag a task card between lanes → `PATCH /tasks/:id/milestone`; drag a lane's header grip → `reorderMilestones`. Both **optimistic with rollback** (a pure `moveTaskLocal` reducer recomputes lane counts). `@dnd-kit/core` + `/sortable`, reusing the board's patterns.
+- [x] **inline milestone CRUD**: "+ Add milestone" affordance, inline rename on the lane header, delete via a lane menu (confirm; tasks fall back to the backlog, not deleted).
+- [x] **task-detail milestone picker** ([`task-milestone-picker.tsx`](../packages/web/components/task-milestone-picker.tsx)): the second assignment surface. Live over the Phase 56 reliable task channel.
+- [x] Tests: `moveTaskLocal` unit (cross-lane move + recount, backlog↔milestone, no-op, unknown) + `roadmap.e2e.ts` (lanes/backlog/`1/2 · 50%` progress + create-milestone) + light/dark shots. `:typecheck`/`:lint`/`web:test` (839) green.
+## 2026-07-06 — feat: execute chat-to-board intents — Phase 59 Theme B (PR #323)
+
+The execution seam: turn a parsed `ChatIntent` (Theme A) into board changes by composing the services that already validate — no new mutation path.
+
+- [x] **gateway:** `ChatCommandService` maps each intent → an existing call (createTask→`createFromPrompt`, bulk→`createBulk`, breakdown→`BreakdownService` + `createTasksFromBreakdown`, priority/status→task update, assign→`setProject`/new `setRepo`, dependency→`addDependency`). Team scope + RBAC + cycle-check inherited.
+- [x] **gateway:** task-ref resolution (id-exact → unique title match; zero/ambiguous → spoken failure, never a guess); domain errors (unknown repo, cycle) degrade to a `ChatCommandResult` summary, not a 500. `inferencePath` set from the parse source (grammar→deterministic, llm→local/provider).
+- [x] **gateway:** `POST /chat/command` (execute, `member`) + `POST /chat/preview` (parse + describe, no write, `viewer`); `tasks.service.setRepo` (mirrors `setProject`, repo-registry validated).
+- [x] **shared/web:** `ChatCommandRequest`/`ChatCommandResponse`/`ChatPreviewResponse` contracts + `runChatCommand`/`previewChatCommand` client methods.
+- [x] Tests: gateway 17 service (every intent path, ref resolution, ambiguity, milestone-deferred, cycle degradation, inference-path) + 4 controller + 2 `setRepo`; shared request/response round-trips.
+- ⏳ Deferred by design: milestone assignment (Theme integrates with 58 D), query answering (Theme C), confirm-gate + undo (Theme F), palette UI (Theme E).
+
+---
+
+## 2026-07-06 — feat: dependency DAG view — /tasks/graph — Phase 58 Theme B (PR #324)
+
+Phase 58 A exposed the dependency graph as data (`GET /tasks/graph`); this Theme B renders it. The structure Phase 27 modelled (blocker edges, derived `dependsOn`, the scheduler ready-set) was invisible — only a "blocked by N" badge. Now there's a read-only DAG you can see.
+
+- [x] **web layout** ([`task-graph-layout.ts`](../packages/web/lib/task-graph-layout.ts)): pure `@dagrejs/dagre` auto-layout, **left-to-right** (`rankdir: 'LR'`) — blockers rank upstream (left) of dependents so reading left→right follows completion order; every arrow points rightward. Centre→top-left position conversion; dangling edges (endpoint capped out) dropped. Unit-tested (ranking, edge direction, animate-while-unmet, capped-edge drop).
+- [x] **custom node** ([`task-graph-node.tsx`](../packages/web/components/task-graph/task-graph-node.tsx)): status colour from the shared board hue vars, title, ready / blocked-by-N / priority / "other project" chips; invisible read-only Handles. Edges dashed + animated while the blocker isn't `done`.
+- [x] **view** ([`task-graph-view.tsx`](../packages/web/components/task-graph/task-graph-view.tsx)) + **route** ([`app/(main)/tasks/graph/page.tsx`](<../packages/web/app/(main)/tasks/graph/page.tsx>)): read-only `@xyflow/react` (no drag/connect, keep pan/zoom + controls + minimap), fit-view, **project-scope picker** (`?projectId=`), truncated-graph banner past the 500-node cap, empty/loading states, minimap hidden on mobile. Live over the Phase 56 reliable task channel. Node click opens the shared `?task=` modal **in place**.
+- [x] **entry point**: a **Graph** button on the board toolbar ([`tasks-view.tsx`](../packages/web/components/tasks-view.tsx)).
+- [x] Tests: layout unit + a `TaskGraphNode` Storybook story (ready/blocked/foreign chips) + a `task-graph.e2e.ts` flow (seeds a blocker edge → DAG renders, node-click opens the modal, board Graph link navigates) + light/dark preview shots. `:typecheck` · `:lint` · `web:test` (830) green.
+- Decision change: the phase doc specced **top-down**; built **left-to-right** at the user's request (doc + decision #1 updated).
+
+---
+
 ## 2026-07-06 — feat: roadmap milestone data model — Phase 58 Theme D (PR #322)
 
 The minimal, project-scoped plan structure the roadmap (Theme E) will render. Milestones group a project's tasks into an ordered lane; progress is computed (done/total), never stored. Named "milestone", not "phase".
@@ -36,6 +114,7 @@ Projects showed a bare task count; now each surface carries a **completion bar**
 - [x] **tests:** shared `projectCompletion` cases; gateway repo status-counts (single/batched/empty); web `ProjectProgressBar` stories (aria/label/no-tasks) + a `projects-progress.shots.ts` preview capture.
 - ⏳ Deferred (needs Theme B): the DAG-filter-by-project + project-picker-on-graph half — no graph view exists to filter yet.
 
+---
 ## 2026-07-06 — perf: lean TaskSummary DTO + paged /tasks + activity feed — Phase 57 Theme C ◐ (PR #319)
 
 `GET /tasks` returned the **full** hydrated `Task[]` (whole event thread + every attachment/link — ~1–2.5 MB/board). Now it returns lean `TaskSummary` pages, cutting the board payload to the card fields.

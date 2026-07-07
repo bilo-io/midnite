@@ -43,6 +43,12 @@ describe('dashboard widget registry', () => {
     expect(DASHBOARD_WIDGETS['system-monitor'].category).toBe('system');
   });
 
+  it('includes the storage widget', () => {
+    expect(ALL_WIDGET_TYPES).toContain('storage');
+    expect(DASHBOARD_WIDGETS.storage.label).toBe('Storage');
+    expect(DASHBOARD_WIDGETS.storage.category).toBe('system');
+  });
+
   it('files every widget under a known category', () => {
     const known = new Set(WIDGET_CATEGORIES.map((c) => c.key));
     for (const type of ALL_WIDGET_TYPES) {

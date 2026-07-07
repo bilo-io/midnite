@@ -51,10 +51,13 @@ export function ConnectionStatus({
     <span
       role="status"
       aria-label={`Connection: ${meta.label}`}
-      className={cn('inline-flex items-center gap-1.5 text-xs text-muted-foreground', className)}
+      className={cn('flex w-full items-start gap-1.5 text-xs text-muted-foreground', className)}
     >
-      {dot}
-      <span className="truncate">{meta.label}</span>
+      <span
+        aria-hidden
+        className={cn('mt-1 h-2 w-2 shrink-0 rounded-full', meta.dot, meta.pulse && 'animate-pulse')}
+      />
+      <span className="min-w-0 break-words leading-tight">{meta.label}</span>
     </span>
   );
 }

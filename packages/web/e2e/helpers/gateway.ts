@@ -17,10 +17,15 @@ export type SeededTask = { id: string; title: string; status: Status };
  * Create a task via `POST /tasks` (multipart, exactly as the web client does).
  * `status` places it straight into a column without a follow-up status PATCH.
  */
-export async function seedTask(prompt: string, status: Status = 'todo'): Promise<SeededTask> {
+export async function seedTask(
+  prompt: string,
+  status: Status = 'todo',
+  opts: { projectId?: string } = {},
+): Promise<SeededTask> {
   const form = new FormData();
   form.set('prompt', prompt);
   form.set('status', status);
+  if (opts.projectId) form.set('projectId', opts.projectId);
 
   const res = await fetch(`${GATEWAY_ORIGIN}/tasks`, { method: 'POST', body: form });
   if (!res.ok) {
@@ -29,6 +34,47 @@ export async function seedTask(prompt: string, status: Status = 'todo'): Promise
 
   const { task } = (await res.json()) as { task: SeededTask };
   return { id: task.id, title: task.title, status: task.status };
+}
+
+/** Assign a task to a milestone (or clear with null) via `PATCH /tasks/:id/milestone`. */
+export async function assignMilestone(taskId: string, milestoneId: string | null): Promise<void> {
+  const res = await fetch(`${GATEWAY_ORIGIN}/tasks/${taskId}/milestone`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ milestoneId }),
+  });
+  if (!res.ok) {
+    throw new Error(`assignMilestone failed (${res.status}): ${await res.text().catch(() => '')}`);
+  }
+}
+
+/** Create a milestone under a project via `POST /projects/:id/milestones`. */
+export async function seedMilestone(projectId: string, name: string): Promise<{ id: string; name: string }> {
+  const res = await fetch(`${GATEWAY_ORIGIN}/projects/${projectId}/milestones`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
+  if (!res.ok) {
+    throw new Error(`seedMilestone failed (${res.status}): ${await res.text().catch(() => '')}`);
+  }
+  const { milestone } = (await res.json()) as { milestone: { id: string; name: string } };
+  return { id: milestone.id, name: milestone.name };
+}
+
+/**
+ * Add a blocker edge via `POST /tasks/:id/dependencies` — `taskId` depends on
+ * (is blocked by) `dependsOnId`. Used to seed a dependency DAG for the graph view.
+ */
+export async function seedDependency(taskId: string, dependsOnId: string): Promise<void> {
+  const res = await fetch(`${GATEWAY_ORIGIN}/tasks/${taskId}/dependencies`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ dependsOnId }),
+  });
+  if (!res.ok) {
+    throw new Error(`seedDependency failed (${res.status}): ${await res.text().catch(() => '')}`);
+  }
 }
 
 /** A project created over the gateway REST API. */
@@ -86,21 +132,4 @@ export async function seedIdea(title: string, body?: string): Promise<SeededIdea
   }
   const { idea } = (await res.json()) as { idea: { id: string; title: string } };
   return { id: idea.id, title: idea.title };
-}
-
-/** A slide deck created over the gateway REST API. */
-export type SeededDeck = { id: string; name: string };
-
-/** Create a deck via `POST /slides` (JSON, as the web client does). */
-export async function seedDeck(name: string, content?: unknown): Promise<SeededDeck> {
-  const res = await fetch(`${GATEWAY_ORIGIN}/slides`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ name, ...(content ? { content } : {}) }),
-  });
-  if (!res.ok) {
-    throw new Error(`seedDeck failed (${res.status}): ${await res.text().catch(() => '')}`);
-  }
-  const { deck } = (await res.json()) as { deck: { id: string; name: string } };
-  return { id: deck.id, name: deck.name };
 }

@@ -145,6 +145,31 @@ describe('notificationsReducer', () => {
     expect(next.feed.every((n) => n.readAt !== null)).toBe(true);
   });
 
+  it('dismisses a single entry and recomputes unread', () => {
+    const state = notificationsReducer(initialNotificationsState, {
+      type: 'load',
+      feed: [
+        notification({ id: 'a' }),
+        notification({ id: 'b', readAt: '2026-01-01T00:00:00Z' }),
+      ],
+      unread: 1,
+    });
+    const next = notificationsReducer(state, { type: 'dismiss', id: 'a' });
+    expect(next.feed.map((n) => n.id)).toEqual(['b']);
+    expect(next.unread).toBe(0);
+  });
+
+  it('dismiss is a no-op for an unknown id', () => {
+    const state = notificationsReducer(initialNotificationsState, {
+      type: 'load',
+      feed: [notification({ id: 'a' })],
+      unread: 1,
+    });
+    const next = notificationsReducer(state, { type: 'dismiss', id: 'zzz' });
+    expect(next.feed).toHaveLength(1);
+    expect(next.unread).toBe(1);
+  });
+
   it('clears the feed', () => {
     const state = notificationsReducer(initialNotificationsState, {
       type: 'load',

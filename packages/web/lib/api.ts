@@ -293,12 +293,6 @@ import {
   type InboundSecretResponse,
   type InboundSourceCreateRequest,
   type InboundSourceUpdateRequest,
-  DeckSummarySchema,
-  DeckResponseSchema,
-  type Deck,
-  type DeckSummary,
-  type CreateDeckRequest,
-  type UpdateDeckRequest,
   BackupSummarySchema,
   type BackupSummary,
   BackupStatusSchema,
@@ -307,6 +301,12 @@ import {
   type ImportPreview,
   ImportResultSchema,
   type ImportResult,
+  ChatCommandResponseSchema,
+  type ChatCommandResponse,
+  ChatPreviewResponseSchema,
+  type ChatPreviewResponse,
+  ChatUndoResponseSchema,
+  type ChatUndoResponse,
 } from '@midnite/shared';
 import { z } from 'zod';
 
@@ -481,6 +481,8 @@ export async function getTaskGraph(projectId?: string, signal?: AbortSignal): Pr
   return res.graph;
 }
 
+// ── Chat to board (Phase 59) ────────────────────────────────────────────────────
+
 /**
  * Phase 59 C — ask the board a read-only question. Returns a prose answer + the
  * matching task refs (for deep-links) + the inference path used (cost line).
@@ -493,6 +495,41 @@ export async function chatQuery(text: string, signal?: AbortSignal): Promise<Cha
     ChatQueryResponseSchema,
   );
   return res.answer;
+}
+
+/** Parse a natural-language command and describe what it would do (no write). */
+export async function previewChatCommand(text: string, signal?: AbortSignal): Promise<ChatPreviewResponse> {
+  return fetchJson(
+    '/chat/preview',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ text }), signal },
+    ChatPreviewResponseSchema,
+  );
+}
+
+/**
+ * Parse and execute a natural-language board command. A mutating command only
+ * writes when `confirm` is true; otherwise the result comes back
+ * `confirmation: 'confirm'` and nothing changed (Phase 59 F seatbelt).
+ */
+export async function runChatCommand(
+  text: string,
+  confirm = false,
+  signal?: AbortSignal,
+): Promise<ChatCommandResponse> {
+  return fetchJson(
+    '/chat/command',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ text, confirm }), signal },
+    ChatCommandResponseSchema,
+  );
+}
+
+/** Undo a previously executed chat command by its undo token (Phase 59 F). */
+export async function undoChatCommand(undoToken: string, signal?: AbortSignal): Promise<ChatUndoResponse> {
+  return fetchJson(
+    '/chat/undo',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ undoToken }), signal },
+    ChatUndoResponseSchema,
+  );
 }
 
 // ── Roadmap milestones (Phase 58 D) ─────────────────────────────────────────
@@ -2208,6 +2245,11 @@ export async function clearNotifications(): Promise<void> {
   await fetchJson('/notifications', { method: 'DELETE' });
 }
 
+/** Dismiss a single notification (`DELETE /notifications/:id`). */
+export async function dismissNotification(id: string): Promise<void> {
+  await fetchJson(`/notifications/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
 // ---- Agent pool ----
 
 /** Live slot snapshot from `GET /pool`. */
@@ -2519,42 +2561,3 @@ export async function promoteIdeaToProject(
 }
 
 export type { Idea, IdeaMessage, IdeaResponse, IdeasResponse, IdeaChatResponse };
-
-// --- Slides (Phase 48) -------------------------------------------------------
-
-export async function listDecks(signal?: AbortSignal): Promise<DeckSummary[]> {
-  return fetchJson('/slides', { signal }, z.array(DeckSummarySchema));
-}
-
-export async function getDeck(id: string, signal?: AbortSignal): Promise<Deck> {
-  const { deck } = await fetchJson(
-    `/slides/${encodeURIComponent(id)}`,
-    { signal },
-    DeckResponseSchema,
-  );
-  return deck;
-}
-
-export async function createDeck(body: CreateDeckRequest): Promise<Deck> {
-  const { deck } = await fetchJson(
-    '/slides',
-    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) },
-    DeckResponseSchema,
-  );
-  return deck;
-}
-
-export async function updateDeck(id: string, body: UpdateDeckRequest): Promise<Deck> {
-  const { deck } = await fetchJson(
-    `/slides/${encodeURIComponent(id)}`,
-    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(body) },
-    DeckResponseSchema,
-  );
-  return deck;
-}
-
-export async function deleteDeck(id: string): Promise<void> {
-  await fetchJson(`/slides/${encodeURIComponent(id)}`, { method: 'DELETE' });
-}
-
-export type { Deck, DeckSummary, CreateDeckRequest, UpdateDeckRequest };

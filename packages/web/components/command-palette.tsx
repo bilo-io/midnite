@@ -11,8 +11,8 @@ import {
   Lightbulb,
   ListChecks,
   LoaderCircle,
+  MessageSquare,
   Milestone,
-  Presentation,
   Search,
   Settings,
   StickyNote,
@@ -37,7 +37,12 @@ import { useLocalStorage } from '@/lib/use-local-storage';
 import { usePaletteCommands, type PaletteCommand } from '@/lib/palette-commands';
 import { taskModalHref } from '@/lib/task-route';
 import { KeyboardShortcutsHelp } from '@/components/keyboard-shortcuts-help';
+import { ChatBar } from '@/components/chat-bar';
+import { useChatCommand } from '@/hooks/use-chat-command';
 import { cn } from '@/lib/utils';
+
+/** Leading char that switches the palette into chat-to-board mode (Phase 59 E). */
+const CHAT_PREFIX = '>';
 
 // ── Recent items ──────────────────────────────────────────────────────────────
 
@@ -85,7 +90,6 @@ const TYPE_META: Record<SearchType, { label: string; Icon: LucideIcon }> = {
   council: { label: 'Councils', Icon: CirclePile },
   workflow: { label: 'Workflows', Icon: Workflow },
   idea: { label: 'Ideas', Icon: Lightbulb },
-  deck: { label: 'Slides', Icon: Presentation },
   milestone: { label: 'Milestones', Icon: Milestone },
 };
 
@@ -129,8 +133,19 @@ export function CommandPalette() {
   const inputRef = useRef<HTMLInputElement>(null);
   const activeRef = useRef<HTMLButtonElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  // A one-shot query seed applied by the open effect (chat mode entry).
+  const seedRef = useRef<string | null>(null);
 
   const paletteCommands = usePaletteCommands();
+  const chat = useChatCommand();
+  // Hold the latest chat.reset so the open effect can call it without taking the
+  // whole (per-render) chat object as a dependency.
+  const chatResetRef = useRef(chat.reset);
+  chatResetRef.current = chat.reset;
+
+  // Chat-to-board mode: the query starts with `>`; the rest is the NL command.
+  const chatMode = query.startsWith(CHAT_PREFIX);
+  const chatCommand = chatMode ? query.slice(CHAT_PREFIX.length) : '';
 
   const navCommands = useMemo<NavCommand[]>(() => {
     const pages = FEATURES.filter((f) => isFeatureEnabled(settings.features, f.key)).map((f) => ({
@@ -151,22 +166,32 @@ export function CommandPalette() {
       }
     };
     const onHelp = () => setHelpOpen(true);
+    // Nav chat icon (or any surface) opens the palette pre-seeded into chat mode.
+    // The open effect resets the query, so stash the seed in a ref it reads.
+    const onChat = () => {
+      seedRef.current = CHAT_PREFIX;
+      setOpen(true);
+    };
     window.addEventListener('keydown', onKey);
     window.addEventListener('midnite:open-help', onHelp);
+    window.addEventListener('midnite:open-chat', onChat);
     return () => {
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('midnite:open-help', onHelp);
+      window.removeEventListener('midnite:open-chat', onChat);
     };
   }, []);
 
   // Reset + load recent on open; abort pending search on close.
   useEffect(() => {
     if (open) {
-      setQuery('');
+      setQuery(seedRef.current ?? '');
+      seedRef.current = null;
       setActive(0);
       setResults(EMPTY_SEARCH_RESPONSE);
       setSearching(false);
       setRecent(readRecent());
+      chatResetRef.current();
       const id = requestAnimationFrame(() => inputRef.current?.focus());
       return () => cancelAnimationFrame(id);
     }
@@ -175,9 +200,9 @@ export function CommandPalette() {
     return undefined;
   }, [open]);
 
-  // Debounced FTS5 search.
+  // Debounced FTS5 search. Skipped entirely in chat mode (`>` prefix).
   useEffect(() => {
-    if (!open) return undefined;
+    if (!open || chatMode) return undefined;
     const q = query.trim();
     if (q.length < MIN_SEARCH_QUERY_LENGTH) {
       abortRef.current?.abort();
@@ -203,7 +228,7 @@ export function CommandPalette() {
       }
     }, DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [open, query]);
+  }, [open, query, chatMode]);
 
   const filteredNav = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -314,7 +339,19 @@ export function CommandPalette() {
 
   const onInputKey = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
-      setOpen(false);
+      // In an active confirm/result step, Escape clears the chat step; else close.
+      if (chatMode && chat.phase !== 'idle') {
+        chat.reset();
+      } else {
+        setOpen(false);
+      }
+    } else if (chatMode) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (chat.phase === 'confirm') chat.confirm();
+        else if (chat.phase === 'idle' || chat.phase === 'done' || chat.phase === 'error') chat.submit(chatCommand);
+      }
+      // Arrow keys are inert in chat mode (no result list to navigate).
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
       setActive((a) => Math.min(a + 1, flat.length - 1));
@@ -348,15 +385,19 @@ export function CommandPalette() {
           aria-label="Command palette"
         >
           <div className="flex items-center gap-2 border-b border-border/60 px-3">
-            <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+            {chatMode ? (
+              <MessageSquare className="h-4 w-4 shrink-0 text-primary" />
+            ) : (
+              <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+            )}
             <input
               ref={inputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={onInputKey}
-              placeholder="Jump to, search, or run a command…"
+              placeholder={chatMode ? 'Tell the board what to do…' : 'Jump to, search, or run a command…'}
               className="w-full bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
-              aria-label="Search commands and content"
+              aria-label={chatMode ? 'Chat with the board' : 'Search commands and content'}
             />
             {searching && (
               <LoaderCircle
@@ -375,6 +416,9 @@ export function CommandPalette() {
               </kbd>
             </button>
           </div>
+          {chatMode ? (
+            <ChatBar command={chatCommand} state={chat} />
+          ) : (
           <ul className="max-h-[60vh] overflow-auto py-1">
             {showNoMatches ? (
               <li className="px-3 py-6 text-center text-sm text-muted-foreground">No matches.</li>
@@ -469,6 +513,7 @@ export function CommandPalette() {
               </li>
             )}
           </ul>
+          )}
         </div>
       </div>
       <KeyboardShortcutsHelp open={helpOpen} onClose={() => setHelpOpen(false)} />

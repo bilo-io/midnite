@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
+  ChatCommandRequestSchema,
+  ChatCommandResponseSchema,
   ChatCommandResultSchema,
   ChatIntentParseSchema,
   ChatIntentSchema,
+  ChatPreviewResponseSchema,
   ChatQueryAnswerSchema,
   ChatQueryRequestSchema,
+  ChatUndoRequestSchema,
+  ChatUndoResponseSchema,
   CHAT_INFERENCE_PATH_LABEL,
   CHAT_INTENT_TYPES,
   CHAT_QUERY_TASK_CAP,
@@ -60,12 +65,23 @@ describe('ChatIntentParseSchema', () => {
       intent: { type: 'createTask', title: 'fix login' },
       source: 'grammar',
       confidence: 1,
+      inferencePath: 'deterministic',
     };
     expect(ChatIntentParseSchema.parse(parse)).toEqual(parse);
   });
 
   it('rejects a confidence outside 0–1', () => {
-    const parse = { intent: { type: 'unknown', text: 'x' }, source: 'llm', confidence: 1.2 };
+    const parse = {
+      intent: { type: 'unknown', text: 'x' },
+      source: 'llm',
+      confidence: 1.2,
+      inferencePath: 'provider',
+    };
+    expect(ChatIntentParseSchema.safeParse(parse).success).toBe(false);
+  });
+
+  it('requires the resolved inference path (Theme D cost line)', () => {
+    const parse = { intent: { type: 'unknown', text: 'x' }, source: 'llm', confidence: 0.3 };
     expect(ChatIntentParseSchema.safeParse(parse).success).toBe(false);
   });
 });
@@ -77,13 +93,21 @@ describe('ChatCommandResultSchema', () => {
       affectedIds: ['t1', 't2'],
       undoToken: 'undo-abc',
       inferencePath: 'deterministic',
+      confirmation: 'none',
     };
     expect(ChatCommandResultSchema.parse(result)).toEqual(result);
   });
 
   it('allows a read-only result without an undo token', () => {
-    const result = { summary: '3 blocked tasks', affectedIds: [], inferencePath: 'local' };
+    const result = { summary: '3 blocked tasks', affectedIds: [], inferencePath: 'local', confirmation: 'none' };
     expect(ChatCommandResultSchema.parse(result).undoToken).toBeUndefined();
+  });
+
+  it('requires the confirmation level (Theme F seatbelt)', () => {
+    const result = { summary: 'x', affectedIds: [], inferencePath: 'local' };
+    expect(ChatCommandResultSchema.safeParse(result).success).toBe(false);
+    expect(ChatCommandResultSchema.safeParse({ ...result, confirmation: 'bogus' }).success).toBe(false);
+    expect(ChatCommandResultSchema.safeParse({ ...result, confirmation: 'confirm' }).success).toBe(true);
   });
 
   it('labels every inference path', () => {
@@ -133,5 +157,51 @@ describe('ChatQueryRequestSchema (Theme C)', () => {
   it('trims and requires non-empty text', () => {
     expect(ChatQueryRequestSchema.parse({ text: '  what is blocked?  ' }).text).toBe('what is blocked?');
     expect(ChatQueryRequestSchema.safeParse({ text: '   ' }).success).toBe(false);
+  });
+});
+
+describe('Chat command request/response (Phase 59 B + F)', () => {
+  it('requires non-empty command text within the cap; confirm is optional', () => {
+    expect(ChatCommandRequestSchema.safeParse({ text: 'add "x"' }).success).toBe(true);
+    expect(ChatCommandRequestSchema.safeParse({ text: 'add "x"', confirm: true }).success).toBe(true);
+    expect(ChatCommandRequestSchema.safeParse({ text: '' }).success).toBe(false);
+    expect(ChatCommandRequestSchema.safeParse({ text: 'a'.repeat(2001) }).success).toBe(false);
+  });
+
+  it('round-trips a command response (parse + result)', () => {
+    const res = {
+      parse: {
+        intent: { type: 'createTask', title: 'x' },
+        source: 'grammar',
+        confidence: 1,
+        inferencePath: 'deterministic',
+      },
+      result: { summary: 'Created task “x”.', affectedIds: ['t1'], inferencePath: 'deterministic', confirmation: 'none' },
+    };
+    expect(ChatCommandResponseSchema.parse(res)).toEqual(res);
+  });
+
+  it('round-trips a preview response with the confirm level', () => {
+    const res = {
+      parse: {
+        intent: { type: 'query', text: 'show blocked' },
+        source: 'grammar',
+        confidence: 1,
+        inferencePath: 'deterministic',
+      },
+      description: 'Answer: show blocked',
+      willMutate: false,
+      confirmation: 'none',
+    };
+    expect(ChatPreviewResponseSchema.parse(res)).toEqual(res);
+  });
+
+  it('round-trips an undo request + response', () => {
+    expect(ChatUndoRequestSchema.safeParse({ undoToken: 'tok1' }).success).toBe(true);
+    expect(ChatUndoRequestSchema.safeParse({ undoToken: '' }).success).toBe(false);
+    const res = {
+      result: { summary: 'Reverted 1 change.', affectedIds: ['t1'], inferencePath: 'deterministic', confirmation: 'none' },
+    };
+    expect(ChatUndoResponseSchema.parse(res)).toEqual(res);
   });
 });

@@ -505,36 +505,6 @@ export const workflowCredentials = sqliteTable('workflow_credentials', {
   updatedAt: text('updated_at').notNull(),
 });
 
-// ── Slides (reveal.js decks, Phase 48) ──────────────────────────────────────
-// Mirrors the workflows persistence split: denormalized metadata columns
-// (name, slideCount, format) for the cheap list endpoint + a single JSON
-// `content` text column for the deck body (slides array + theme override).
-// No normalized per-slide rows — editing/reordering is a whole-deck write.
-export const slides = sqliteTable(
-  'slides',
-  {
-    id: text('id').primaryKey(),
-    name: text('name').notNull(),
-    description: text('description'),
-    // Derived from content on every write: number of slides.
-    slideCount: integer('slide_count').notNull().default(0),
-    // Derived from content: 'md' | 'html' | 'mixed'.
-    format: text('format').notNull().default('md'),
-    // JSON: { slides: Slide[], theme?: DeckTheme }
-    content: text('content').notNull(),
-    createdAt: text('created_at').notNull(),
-    updatedAt: text('updated_at').notNull(),
-    createdBy: text('created_by'),
-    teamId: text('team_id'),
-  },
-  (t) => ({
-    updatedAtIdx: index('slides_updated_at_idx').on(t.updatedAt),
-  }),
-);
-
-export type SlideDeckRow = typeof slides.$inferSelect;
-export type SlideDeckInsert = typeof slides.$inferInsert;
-
 // --- Agents (single primary orchestrator + subagents + heartbeat audit) ---
 
 // Singleton: exactly one row, id = 'primary'. Heartbeat scheduling bookkeeping
@@ -1427,3 +1397,36 @@ export const prReviewComments = sqliteTable(
 );
 export type PrReviewCommentRow = typeof prReviewComments.$inferSelect;
 export type PrReviewCommentInsert = typeof prReviewComments.$inferInsert;
+
+// Chat-to-board command log (Phase 59 F): one row per *executed* NL command,
+// holding the revert plan so it can be undone. The row `id` doubles as the undo
+// token returned in ChatCommandResult. Plain intra-domain id references (no
+// cross-domain FK). Read-only queries + un-confirmed (gated) commands are never
+// logged here — only writes that actually happened.
+export const chatCommands = sqliteTable(
+  'chat_commands',
+  {
+    id: text('id').primaryKey(),
+    /** Requesting user (JWT id, or null for the static-token/single-user path). */
+    userId: text('user_id'),
+    teamId: text('team_id'),
+    /** The raw NL command text. */
+    text: text('text').notNull(),
+    /** The parsed intent's discriminant (createTask/bulkCreate/…). */
+    intentType: text('intent_type').notNull(),
+    /** How the intent was resolved (deterministic/local/provider) — for the audit trail. */
+    inferencePath: text('inference_path').notNull(),
+    /** JSON array of the task ids this command created or changed. */
+    affectedIds: text('affected_ids').notNull(),
+    /** JSON array of inverse ops (delete / restore-field) the undo path replays. */
+    revertPlan: text('revert_plan').notNull(),
+    createdAt: text('created_at').notNull(),
+    /** Set when the command has been undone; null = still reversible. */
+    undoneAt: text('undone_at'),
+  },
+  (t) => ({
+    userIdx: index('chat_commands_user_idx').on(t.userId),
+  }),
+);
+export type ChatCommandRow = typeof chatCommands.$inferSelect;
+export type ChatCommandInsert = typeof chatCommands.$inferInsert;

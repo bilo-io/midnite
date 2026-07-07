@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Delete, Get, Inject, Post, Query } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Inject, Param, Post, Query } from '@nestjs/common';
 import {
   MarkReadRequestSchema,
   NotificationListQuerySchema,
@@ -27,6 +27,12 @@ export class NotificationsController {
     const parsed = MarkReadRequestSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
     return this.service.markRead(parsed.data);
+  }
+
+  @Delete(':id')
+  dismiss(@Param('id') id: string): { ok: true } {
+    this.service.remove(id);
+    return { ok: true };
   }
 
   @Delete()

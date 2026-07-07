@@ -125,6 +125,24 @@ describe('NotificationsService', () => {
     expect(h.svc.list({}).notifications).toHaveLength(0);
   });
 
+  it('removes a single notification by id (and is idempotent)', async () => {
+    const h = makeHarness();
+    h.taskBus.emit(updated(task('t1', 'done')));
+    h.taskBus.emit(updated(task('w', 'waiting')));
+    await settle();
+    const [first, second] = h.svc.list({}).notifications;
+    expect(h.svc.list({}).notifications).toHaveLength(2);
+
+    h.svc.remove(first!.id);
+    const remaining = h.svc.list({}).notifications;
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0]!.id).toBe(second!.id);
+
+    // A repeat delete of the same id is a harmless no-op.
+    h.svc.remove(first!.id);
+    expect(h.svc.list({}).notifications).toHaveLength(1);
+  });
+
   it('notifyGuardrailHeld persists + emits a warn "agent.held" alert (Phase 50 B)', async () => {
     const h = makeHarness();
     await h.svc.notifyGuardrailHeld('over-budget', 3);

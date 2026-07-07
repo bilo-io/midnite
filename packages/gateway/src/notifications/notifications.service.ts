@@ -222,6 +222,11 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
     return { unread: this.repo.countUnread() };
   }
 
+  /** Dismiss a single notification from the feed. Idempotent. */
+  remove(id: string): void {
+    this.repo.remove(id);
+  }
+
   clear(): void {
     this.repo.clear();
   }

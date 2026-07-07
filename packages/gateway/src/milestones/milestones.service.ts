@@ -36,7 +36,7 @@ export class MilestonesService {
     @Inject(MilestonesRepository) private readonly repo: MilestonesRepository,
     @Inject(ProjectsService) private readonly projects: ProjectsService,
     @Inject(TasksService) private readonly tasks: TasksService,
-    // Optional: global search index in prod, omitted in unit specs (mirrors slides).
+    // Optional: global search index in prod, omitted in unit specs (mirrors ideas).
     @Optional() @Inject(SearchIndexService) private readonly searchIndex?: SearchIndexService,
     @Optional() @Inject(AuditService) private readonly audit?: AuditService,
   ) {}

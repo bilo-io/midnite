@@ -21,6 +21,7 @@ describe('ChatQueryController', () => {
       intent: { type: 'query', text: 'show blocked', read: { metric: 'list', blocked: true } },
       source: 'grammar',
       confidence: 1,
+      inferencePath: 'deterministic',
     };
     const { controller, answer } = make(parse);
     const res = await controller.ask({ text: 'show blocked' }, { userId: 'u1', teamId: 't1' } as never);
@@ -35,6 +36,7 @@ describe('ChatQueryController', () => {
       intent: { type: 'createTask', title: 'delete everything' },
       source: 'llm',
       confidence: 0.75,
+      inferencePath: 'provider',
     };
     const { controller, answer } = make(parse);
     await controller.ask({ text: 'delete everything' }, null);
@@ -42,7 +44,12 @@ describe('ChatQueryController', () => {
   });
 
   it('rejects an empty question', async () => {
-    const { controller } = make({ intent: { type: 'unknown', text: '' }, source: 'grammar', confidence: 0 });
+    const { controller } = make({
+      intent: { type: 'unknown', text: '' },
+      source: 'grammar',
+      confidence: 0,
+      inferencePath: 'deterministic',
+    });
     await expect(controller.ask({ text: '   ' }, null)).rejects.toBeInstanceOf(BadRequestException);
   });
 });
