@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-07 — feat: roadmap breakdown tie-in + cross-links — Phase 58 Theme F (PR #338) — CLOSES PHASE 58
+
+The last Theme of Phase 58. Entry points shipped in B (board Graph button) + E (project Roadmap tab); F adds the cross-links that stitch the graph, roadmap, and board into one plan, plus seeding a milestone from a goal. Reuse-first.
+
+- [x] **Breakdown → milestone:** a "Generate tasks…" lane action ([`milestone-breakdown-modal.tsx`](../packages/web/components/roadmap/milestone-breakdown-modal.tsx)) drafts a dependency-aware breakdown from a goal (`POST /tasks/breakdown`), curates it in the shared `BreakdownEditor`, then creates the tasks project-linked + **assigned to the milestone**. `create-from-breakdown` gains an optional `milestoneId`, validated same-project via a repo-level lookup (`projects.repository.milestoneProjectId`) — no milestones-module cycle.
+- [x] **Milestone → graph:** a "View in graph" lane action deep-links to the DAG **filtered to the milestone** (`buildGraph(…, milestoneId?)`; `GET /tasks/graph?milestoneId=`; an out-of-milestone blocker still surfaces as a foreign node). The graph toolbar shows a clearable **milestone-filter chip**.
+- [x] **Task → milestone:** `TaskSummary` carries a joined **`milestoneName`** (a repo-level `LEFT JOIN` in `summariseMany` — no cycle), so the board `TaskCard` shows a milestone chip; the task detail keeps its milestone picker.
+- [x] Tests: gateway graph milestone-filter (+ foreign blocker) / summariser name-join / `create-from-breakdown` milestoneId; web `TaskCard` chip story + deterministic roadmap e2e (renders + graph-filter chip). `:typecheck`/`:lint`/`web:test` (849)/`gateway:test` (1598)/`ui:test` (46) green. The goal→breakdown UI flow is covered at the gateway layer (its lane-menu modal is flaky against the cramped cockpit + shared e2e-gateway boot).
+- **Phase 58 complete** — A (graph API) · B (DAG view) · C (project progress) · D (milestone model) · E (roadmap view) · F (tie-in) all shipped.
+
+---
+
 ## 2026-07-07 — feat: office 2D/3D engine tabs + view preference — Phase 63 Theme F (PR #336)
 
 Ships the engine switcher the 3D office (Themes A–E) will live behind — a 2D/3D tab on `/office` with a shareable, sticky preference.
