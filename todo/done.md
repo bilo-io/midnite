@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-07 — feat: task-event workflow trigger — Phase 62 Theme B (PR #351)
+
+Workflows can now fire when tasks reach a terminal / attention-worthy state — the workflow-first enabler for the digest pipelines. Full slice: shared contract → gateway subscriber → editor UI.
+
+- [x] **shared:** `TaskEventTriggerSchema` `{ type: 'task-event', events: ('task.done'|'task.abandoned'|'task.needs-attention')[], filter?: { repo?, projectId?, priority? } }` in the `Trigger` union (non-empty events); `'task-event'` in `TRIGGER_TYPES` + `RUN_TRIGGER_SOURCES`; a `trigger.task-event` node type.
+- [x] **gateway:** `WorkflowTaskEventTriggerService` subscribes the `TaskEventBus` (search/retro pattern — `tasks.service` untouched). Matching `task.updated` → each enabled `task-event` workflow whose events + filter + team-scope match → `engine.startRun(workflow, { triggerSource: 'task-event', input })` with a compact task summary. Idempotent per `(workflow, task, event)`, fail-open, gated on `workflows.enabled`. `TaskEventBus` promoted to a `@Global` module to break the `Tasks → Workflows` cycle (same precedent as `TaskCreatorModule`).
+- [x] **web:** a **Task Event** option in the editor trigger panel (event checkboxes, keeps ≥1, + optional repo/project/priority filter); wired through the create modal, trigger badge, toolbar.
+- [x] Tests: shared schema parse/reject; gateway pure matcher + subscriber unit; web RTL for the trigger panel.
+
 ## 2026-07-07 — feat: 3D corner office + customization parity — Phase 63 Theme E (PR #350)
 
 The office door now leads into a 3D corner office, completing the door interaction Theme C deferred. Pure `packages/web`; the only store change is the additive `'corner'` scene value.

@@ -1,4 +1,4 @@
-import { Clock, MousePointerClick, Webhook, type LucideIcon } from 'lucide-react';
+import { CheckCircle2, Clock, MousePointerClick, Webhook, type LucideIcon } from 'lucide-react';
 import type { TriggerType } from '@midnite/shared';
 import { cn } from '@/lib/utils';
 
@@ -6,6 +6,7 @@ const META: Record<TriggerType, { label: string; Icon: LucideIcon; hue: string }
   manual: { label: 'Manual', Icon: MousePointerClick, hue: '--status-backlog' },
   schedule: { label: 'Schedule', Icon: Clock, hue: '--status-todo' },
   webhook: { label: 'Webhook', Icon: Webhook, hue: '--kind-feature' },
+  'task-event': { label: 'Task Event', Icon: CheckCircle2, hue: '--status-done' },
 };
 
 export function TriggerBadge({ type, className }: { type: TriggerType; className?: string }) {

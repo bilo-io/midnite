@@ -16,16 +16,24 @@ import { TaskFailuresRepository } from './task-failures.repository';
 import { TasksRepository } from './tasks.repository';
 import { TasksService } from './tasks.service';
 import { TaskEventBus } from './task-event-bus';
+import { TaskEventBusModule } from './task-event-bus.module';
 import { TasksGateway } from './tasks.gateway';
 
 @Module({
-  imports: [AgentModule, AuthModule, ChecksModule, ReposModule, WorkflowsModule, WorkflowCredentialsModule],
+  imports: [
+    AgentModule,
+    AuthModule,
+    ChecksModule,
+    ReposModule,
+    WorkflowsModule,
+    WorkflowCredentialsModule,
+    TaskEventBusModule,
+  ],
   controllers: [TasksController],
   providers: [
     TasksService,
     TasksRepository,
     TaskFailuresRepository,
-    TaskEventBus,
     TasksGateway,
     PrStatusService,
     PrDiffService,

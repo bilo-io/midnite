@@ -192,6 +192,72 @@ describe('NodeConfigPanel — schedule recurrence presets', () => {
   });
 });
 
+// A workflow whose trigger is a task-event, with the matching trigger node
+// selected, so the panel renders the TaskEventFields (Phase 62 B).
+function setupTaskEvent(trigger: Workflow['trigger'] = { type: 'task-event', events: ['task.done'] }) {
+  const workflow: Workflow = WorkflowSchema.parse({
+    id: 'wf-1',
+    name: 'Test',
+    trigger,
+    nodes: [{ id: 't1', type: 'trigger.task-event', position: { x: 0, y: 0 }, label: 'Task Event', params: {} }],
+    edges: [],
+    createdAt: '2026-06-21T00:00:00.000Z',
+    updatedAt: '2026-06-21T00:00:00.000Z',
+  });
+  const store = createWorkflowStore(workflow);
+  store.getState().select('t1');
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  render(
+    <QueryClientProvider client={queryClient}>
+      <WorkflowStoreContext.Provider value={store}>
+        <ConfirmProvider>
+          <NodeConfigPanel workflowId="wf-1" />
+        </ConfirmProvider>
+      </WorkflowStoreContext.Provider>
+    </QueryClientProvider>,
+  );
+  return store;
+}
+
+describe('NodeConfigPanel — task-event trigger', () => {
+  it('renders the event checkboxes with the subscribed events checked', () => {
+    setupTaskEvent({ type: 'task-event', events: ['task.done'] });
+    expect((screen.getByLabelText('Task done') as HTMLInputElement).checked).toBe(true);
+    expect((screen.getByLabelText('Task abandoned') as HTMLInputElement).checked).toBe(false);
+  });
+
+  it('toggling an event on adds it to the trigger', () => {
+    const store = setupTaskEvent({ type: 'task-event', events: ['task.done'] });
+    fireEvent.click(screen.getByLabelText('Task abandoned'));
+    expect(store.getState().trigger).toMatchObject({
+      type: 'task-event',
+      events: ['task.done', 'task.abandoned'],
+    });
+  });
+
+  it('keeps at least one event — unchecking the last is a no-op', () => {
+    const store = setupTaskEvent({ type: 'task-event', events: ['task.done'] });
+    fireEvent.click(screen.getByLabelText('Task done'));
+    expect(store.getState().trigger).toMatchObject({ type: 'task-event', events: ['task.done'] });
+  });
+
+  it('setting a repo filter writes it onto the trigger', () => {
+    const store = setupTaskEvent();
+    fireEvent.change(screen.getByLabelText('Repo filter'), { target: { value: 'acme/api' } });
+    expect(store.getState().trigger).toMatchObject({
+      type: 'task-event',
+      filter: { repo: 'acme/api' },
+    });
+  });
+
+  it('clearing a filter field drops it back to no filter', () => {
+    const store = setupTaskEvent({ type: 'task-event', events: ['task.done'], filter: { repo: 'acme/api' } });
+    fireEvent.change(screen.getByLabelText('Repo filter'), { target: { value: '' } });
+    expect(store.getState().trigger).toMatchObject({ type: 'task-event' });
+    expect((store.getState().trigger as { filter?: unknown }).filter).toBeUndefined();
+  });
+});
+
 describe('NodeConfigPanel — rename', () => {
   it('auto-suffixes a label that collides with another node', () => {
     const store = setup('n1'); // n1 'Fetch', n2 'Claude'

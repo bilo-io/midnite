@@ -6,7 +6,7 @@ export const RunStatusSchema = z.enum(RUN_STATUSES);
 export const NODE_RUN_STATUSES = ['pending', 'running', 'succeeded', 'failed', 'skipped'] as const;
 export const NodeRunStatusSchema = z.enum(NODE_RUN_STATUSES);
 
-export const RUN_TRIGGER_SOURCES = ['manual', 'schedule', 'webhook'] as const;
+export const RUN_TRIGGER_SOURCES = ['manual', 'schedule', 'webhook', 'task-event'] as const;
 export const RunTriggerSourceSchema = z.enum(RUN_TRIGGER_SOURCES);
 
 export const NodeRunLogSchema = z.object({
