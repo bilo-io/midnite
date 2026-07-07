@@ -51,7 +51,7 @@ describe('WorkflowTaskEventTriggerService', () => {
     const { bus, startRun } = build();
     bus.emit(updated(task({ status: 'done' })));
     expect(startRun).toHaveBeenCalledTimes(1);
-    expect(startRun.mock.calls[0][1]).toMatchObject({
+    expect(startRun.mock.calls[0]?.[1]).toMatchObject({
       triggerSource: 'task-event',
       input: { event: 'task.done', task: { id: 't1' } },
     });
