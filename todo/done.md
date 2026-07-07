@@ -4,6 +4,20 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-07 — feat: 3D office agents, interactions & the store bridge — Phase 63 Theme C (PR #347)
+
+The heart of Phase 63: the first-person 3D office becomes a **second client of the existing office store contract** — proximity + interactions flow through `office-store.ts` exactly as the 2D Phaser scene does, so `office-hud.tsx` and every existing modal work **unmodified** in 3D. Pure `packages/web`; zero gateway/`shared` work.
+
+- [x] **Proximity → store:** the rig writes the same `nearbyId`/`nearBoard`/`nearKitchen`/`nearLibrary`/`nearPlaystation` flags the 2D `update()` loop does (dedup'd by the store's no-op-if-same setters).
+- [x] **Interaction dispatch:** `E`/Enter (proximity priority) **and** a crosshair click-raycast resolve to the same action and dispatch through a pure `applyInteraction` over the store contract, mirroring 2D `tryInteract` (board → break → library → playstation → nearest agent). Opening any panel releases pointer-lock (freezing movement). Corner-office door deferred to Theme E.
+- [x] **Agent avatars:** low-poly tinted figures at the *same* status-routed seats as 2D (`statusToRoom` + `assignStableSeats`), idle bob gated by `useAnimationPrefs` (reduced-motion aware); `useOfficeAgents` now feeds the 3D view. Placement math in the three-free `lib/office3d/agents-3d.ts`; tint/variant re-derived to keep Phaser's `textures.ts` out of the 3D bundle.
+- [x] **Billboards:** drei `<Html>` name/status plates + Phase-31 live-activity tool label, distance-faded.
+- [x] **Coffee break + ☕ indicator:** free from the reused `OfficeHud`.
+- [x] **Minimap:** in-canvas r3f `<Hud>` overlay redrawing the 2D minimap (room outlines + status dots + a player arrow tracking live position/facing).
+- [x] **Tests + gate:** 28 new unit tests (room-routing parity + stable seating + tint, proximity + `tryInteract`-priority + raycast + store-contract dispatch, minimap scaling + facing). `web:typecheck` (no r3f `never` regression) · `web:lint` 0 errors · `web:test` 939 pass.
+
+---
+
 ## 2026-07-07 — fix: scrub gateway master secrets from workflow $env + secrets/signatures audit — Phase 60 Theme B (PR #346)
 
 Secrets, signatures & crypto audit — report at `todo/phase-60-findings/B-secrets-signatures.md`. Two HIGH+S quick-wins fixed inline; the rest documented for Theme-M remediation.

@@ -6,26 +6,45 @@ import { useEffect, useMemo, useRef } from 'react';
 import { Vector3 } from 'three';
 
 import { blockedGrid } from '@/lib/office/layout';
-import { EYE_HEIGHT, MOVE_SPEED, PLAYER_RADIUS } from '@/lib/office3d/constants';
+import { useOfficeStore } from '@/lib/office-store';
 import { resolveMove } from '@/lib/office3d/collision';
+import { EYE_HEIGHT, MOVE_SPEED, PLAYER_RADIUS } from '@/lib/office3d/constants';
 import { advanceBobPhase, computeHeadBob } from '@/lib/office3d/headbob';
+import {
+  applyInteraction,
+  buildTargets,
+  pickInteraction,
+  raycastPick,
+  resolveProximity,
+} from '@/lib/office3d/interactions';
+import type { AvatarPlacement } from '@/lib/office3d/agents-3d';
 import type { WorldModel } from '@/lib/office3d/world';
 import { useAnimationPrefs } from '@/lib/use-animation-prefs';
 
 /**
- * Phase 63 Theme B — the first-person rig: drei pointer-lock mouse-look + WASD/
- * arrow movement (from Theme A), now with **grid-AABB collision** (circle vs the
- * 2D office's `blockedGrid()` — walls + furniture + pool, per-axis wall-slide)
- * and a **footstep head-bob** (vertical bob + subtle roll, scaled by walk speed,
- * eased in/out). The bob is disabled under reduced motion — `useAnimationPrefs`
- * combines the OS `prefers-reduced-motion` query with the Phase-39 motion setting.
- * Movement only runs while the pointer is locked.
+ * Phase 63 Theme B/C — the first-person rig. Theme B: drei pointer-lock mouse-look
+ * + WASD/arrow movement with grid-AABB collision (per-axis wall-slide) and a
+ * reduced-motion-aware footstep head-bob. **Theme C** turns the rig into a store
+ * client: each frame it writes the same proximity flags the 2D scene does
+ * (`nearbyId`/`nearBoard`/`nearKitchen`/`nearLibrary`/`nearPlaystation`) and
+ * publishes the player's pose to `poseRef` for the minimap; `E`/Enter and a
+ * crosshair click dispatch the same panel-open transitions `tryInteract` does, so
+ * the shared HUD + modals work untouched. Opening any panel releases the pointer
+ * lock (which freezes movement — the useFrame early-returns while unlocked).
  */
 
 const UP = new Vector3(0, 1, 0);
 
 // How fast the head-bob intensity eases toward its target (per second).
 const BOB_EASE_RATE = 9;
+
+/** Player pose published each frame for the minimap (position + floor facing). */
+export interface PlayerPose {
+  x: number;
+  z: number;
+  dirX: number;
+  dirZ: number;
+}
 
 type MoveState = { forward: boolean; back: boolean; left: boolean; right: boolean };
 
@@ -40,7 +59,31 @@ const KEY_MAP: Record<string, keyof MoveState> = {
   ArrowRight: 'right',
 };
 
-export function FirstPersonRig({ spawn, onLockChange }: { spawn: WorldModel['spawn']; onLockChange?: (locked: boolean) => void }) {
+/** True when any store panel is open — movement + interaction must pause. */
+function selectPanelOpen(s: ReturnType<typeof useOfficeStore.getState>): boolean {
+  return (
+    s.active !== null ||
+    s.boardOpen ||
+    s.libraryOpen ||
+    s.playstationOpen ||
+    s.deskPickerOpen ||
+    s.characterPickerOpen
+  );
+}
+
+export function FirstPersonRig({
+  spawn,
+  placementsRef,
+  poseRef,
+  onLockChange,
+}: {
+  spawn: WorldModel['spawn'];
+  /** Live avatar placements, read each frame for proximity/interaction. */
+  placementsRef: React.RefObject<AvatarPlacement[]>;
+  /** Written each frame with the player's floor pose (for the minimap). */
+  poseRef?: React.RefObject<PlayerPose>;
+  onLockChange?: (locked: boolean) => void;
+}) {
   const controlsRef = useRef<React.ElementRef<typeof PointerLockControls>>(null);
   const move = useRef<MoveState>({ forward: false, back: false, left: false, right: false });
   const { camera } = useThree();
@@ -59,6 +102,7 @@ export function FirstPersonRig({ spawn, onLockChange }: { spawn: WorldModel['spa
   const forward = useRef(new Vector3());
   const right = useRef(new Vector3());
   const delta = useRef(new Vector3());
+  const aim = useRef(new Vector3());
   // Head-bob state: phase advances by walked distance; intensity eases in/out.
   const bobPhase = useRef(0);
   const bobIntensity = useRef(0);
@@ -68,20 +112,62 @@ export function FirstPersonRig({ spawn, onLockChange }: { spawn: WorldModel['spa
     camera.position.set(spawn.x, spawn.y, spawn.z);
   }, [camera, spawn]);
 
+  // Opening a panel releases the pointer lock so the DOM modal is usable; the
+  // useFrame loop early-returns while unlocked, so movement freezes too — matching
+  // the 2D scene's `inputEnabled` gate.
+  const panelOpen = useOfficeStore(selectPanelOpen);
+  useEffect(() => {
+    if (panelOpen) controlsRef.current?.unlock();
+  }, [panelOpen]);
+
   useEffect(() => {
     const setKey = (code: string, pressed: boolean) => {
       const key = KEY_MAP[code];
       if (key) move.current[key] = pressed;
     };
-    const onDown = (e: KeyboardEvent) => setKey(e.code, true);
+
+    // E/Enter: dispatch by proximity priority (mirrors 2D `tryInteract`).
+    const tryInteract = () => {
+      const controls = controlsRef.current;
+      if (!controls?.isLocked) return; // only while looking around
+      if (selectPanelOpen(useOfficeStore.getState())) return;
+      const placements = placementsRef.current ?? [];
+      const prox = resolveProximity(camera.position.x, camera.position.z, placements);
+      applyInteraction(pickInteraction(prox), useOfficeStore.getState());
+    };
+
+    const onDown = (e: KeyboardEvent) => {
+      setKey(e.code, true);
+      if (e.code === 'KeyE' || e.code === 'Enter') tryInteract();
+    };
     const onUp = (e: KeyboardEvent) => setKey(e.code, false);
+
+    // Click while locked: dispatch the interactable under the crosshair.
+    const onMouseDown = () => {
+      const controls = controlsRef.current;
+      if (!controls?.isLocked) return; // an unlocked click is "click-to-lock"
+      if (selectPanelOpen(useOfficeStore.getState())) return;
+      const placements = placementsRef.current ?? [];
+      camera.getWorldDirection(aim.current);
+      const action = raycastPick(
+        camera.position.x,
+        camera.position.z,
+        aim.current.x,
+        aim.current.z,
+        buildTargets(placements),
+      );
+      applyInteraction(action, useOfficeStore.getState());
+    };
+
     window.addEventListener('keydown', onDown);
     window.addEventListener('keyup', onUp);
+    window.addEventListener('mousedown', onMouseDown);
     return () => {
       window.removeEventListener('keydown', onDown);
       window.removeEventListener('keyup', onUp);
+      window.removeEventListener('mousedown', onMouseDown);
     };
-  }, []);
+  }, [camera, placementsRef]);
 
   useFrame((_, dt) => {
     const controls = controlsRef.current;
@@ -130,6 +216,24 @@ export function FirstPersonRig({ spawn, onLockChange }: { spawn: WorldModel['spa
     // (PointerLockControls only writes yaw/pitch, so z stays ours).
     camera.position.y = EYE_HEIGHT + bob.dy;
     camera.rotation.z = bob.roll;
+
+    // Proximity → store (dedup'd by the store's own no-op-if-same setters), so the
+    // shared HUD prompts + modals react exactly as they do for the 2D scene.
+    const prox = resolveProximity(camera.position.x, camera.position.z, placementsRef.current ?? []);
+    const store = useOfficeStore.getState();
+    store.setNearby(prox.nearbyId);
+    store.setNearBoard(prox.nearBoard);
+    store.setNearKitchen(prox.nearKitchen);
+    store.setNearLibrary(prox.nearLibrary);
+    store.setNearPlaystation(prox.nearPlaystation);
+
+    // Publish the player's pose for the minimap.
+    if (poseRef?.current) {
+      poseRef.current.x = camera.position.x;
+      poseRef.current.z = camera.position.z;
+      poseRef.current.dirX = forward.current.x;
+      poseRef.current.dirZ = forward.current.z;
+    }
   });
 
   return (

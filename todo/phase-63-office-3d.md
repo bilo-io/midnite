@@ -105,28 +105,36 @@ The 3D stage and the six-room world, generated from the same data the 2D office 
       height/FOV/speed constants live in `lib/office3d/constants.ts`. *(`R`-reset optional — not
       included.)* (PR #342)
 
-## Theme C — Agents, interactions & the store bridge — **M-L**
+## Theme C — Agents, interactions & the store bridge — **M-L** — ✅ DONE (PR #347, 2026-07-07)
 
 The heart of the phase: the 3D scene becomes a second client of the existing store contract.
 
-- [ ] **Proximity → store:** per-frame (dedup'd, the 2D pattern) proximity checks against desks/
-      board/library/kitchen/console/door write the **same** store fields (`nearbyId`, `nearBoard`,
-      `nearLibrary`, `nearKitchen`, `nearPlaystation`, `nearDoor`); `E`/Enter (and click-raycast on
-      the interactable) dispatches the same panel-open transitions `tryInteract` does in
-      [`office-scene.ts`](../packages/web/components/office/scenes/office-scene.ts) — so
+- [x] **Proximity → store:** per-frame (dedup'd, the 2D pattern) proximity checks against desks/
+      board/library/kitchen/console write the **same** store fields (`nearbyId`, `nearBoard`,
+      `nearLibrary`, `nearKitchen`, `nearPlaystation`); `E`/Enter (proximity priority) **and** a
+      crosshair click-raycast dispatch the same panel-open transitions `tryInteract` does in
+      [`office-scene.ts`](../packages/web/components/office/scenes/office-scene.ts), via a pure
+      `applyInteraction` over the store contract — so
       [`office-hud.tsx`](../packages/web/components/office/office-hud.tsx) prompts and **every
-      existing modal work unmodified**.
-- [ ] **Agent avatars:** low-poly procedural figures (blocky/capsule, tinted per Phase-39
-      variant/tint) seated at their hot desks, driven by the store's agents (from
-      [`use-office-agents.ts`](../packages/web/components/office/use-office-agents.ts)); idle
-      agents lounge in the pool/lounge area like the 2D office; simple seated/typing idle motion.
-- [ ] **Billboards:** name + status plates above avatars (drei `Billboard`/`Text`), plus the
-      Phase-31 **live-activity tool bubbles** (tool icon/label deltas via `patchAgent`) as
-      billboarded sprites — distance-faded so far rooms don't clutter.
-- [ ] **Coffee + break:** kitchen coffee machine toggles `onBreak` with the ☕ indicator on your
-      own state, matching 2D.
-- [ ] **Minimap overlay:** HUD minimap reusing [`minimap.ts`](../packages/web/lib/office/minimap.ts)
-      room/dot data with the player arrow showing 3D position + facing.
+      existing modal work unmodified** (opening a panel releases pointer-lock, freezing movement).
+      *`nearDoor`/the corner-office transition is deferred to Theme E (its 3D corner scene) so the
+      prompt isn't a dead affordance.* (PR #347)
+- [x] **Agent avatars:** low-poly procedural figures (tinted per the same stable identity colour as
+      2D) seated at the **same status-routed seats** the 2D office uses (`statusToRoom` +
+      `assignStableSeats`: wip→desks, waiting→boardroom, done/idle→lounge), driven by the store's
+      agents (from [`use-office-agents.ts`](../packages/web/components/office/use-office-agents.ts),
+      now wired into the 3D view); subtle idle bob for running avatars, disabled under reduced
+      motion via `useAnimationPrefs`. *Placement math lives in the three-free, unit-tested
+      `lib/office3d/agents-3d.ts`; tint/variant re-derived there to keep Phaser's `textures.ts` out
+      of the 3D bundle.* (PR #347)
+- [x] **Billboards:** name + status plates above avatars (drei `<Html>` DOM, per the design call),
+      plus the Phase-31 **live-activity tool label** — distance-faded (opacity ramps to 0 past
+      range) so far rooms don't clutter. (PR #347)
+- [x] **Coffee + break:** the kitchen coffee machine toggles `onBreak` with the ☕ indicator —
+      comes free from the reused `OfficeHud`, matching 2D. (PR #347)
+- [x] **Minimap overlay:** an in-canvas r3f `<Hud>` overlay (per the design call) reusing
+      [`minimap.ts`](../packages/web/lib/office/minimap.ts) room/dot geometry with the player arrow
+      showing live 3D position + facing (pose published from the rig each frame). (PR #347)
 
 ## Theme D — Arcade sub-scene + one playable game — **M**
 
