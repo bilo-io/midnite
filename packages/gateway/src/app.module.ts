@@ -29,6 +29,7 @@ import { ProjectsModule } from './projects/projects.module';
 import { MilestonesModule } from './milestones/milestones.module';
 import { ProvidersModule } from './providers/providers.module';
 import { ReposModule } from './repos/repos.module';
+import { RetroModule } from './retro/retro.module';
 import { RoutinesModule } from './routines/routines.module';
 import { SearchModule } from './search/search.module';
 import { SearchIndexModule } from './search/search-index.module';
@@ -77,6 +78,7 @@ import { InboundModule } from './integrations/inbound/inbound.module';
     RoutinesModule,
     SearchIndexModule,
     SearchModule,
+    RetroModule,
     TasksModule,
     TaskHealthModule,
     TaskCreatorModule,

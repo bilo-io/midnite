@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-07 — feat: task retrospective contract + deterministic skeleton + storage — Phase 62 Theme A (PR #341)
+
+The spine of Fable-Digest: every terminal task gets a free, factual retrospective assembled deterministically (zero LLM) from data already persisted.
+
+- [x] **shared:** `TaskRetroSchema` (timeline / attempts / failures / checks? / review? / prUrl? / durations / nullable narrative) + `RetroResponse` + a `DigestSchema` stub.
+- [x] **gateway `retro/` module:** `RetroBuilder` assembles the skeleton from task_events + agent_run_stats + task_failures + ai_review + check runs + PR; `task_retros` table (JSON blob + key cols, one row/task upserted) + migration `0074`; `GET /tasks/:id/retro` (scope-checked, 404 absent).
+- [x] **Auto on terminal:** a `TaskEventBus` subscriber (search-module pattern; `tasks.service` untouched) builds + stores on done/abandoned — idempotent (skips a same-outcome rebuild) + fail-open. Needs-attention trigger deferred.
+- [x] Tests: shared schema (5); gateway `buildRetro` pure unit + subscriber + builder + `task_retros` repo integration + controller (28). Gate green (gateway 1654, web 880, cli 155; `ui:test` flake passes isolated).
+
 ## 2026-07-07 — fix: media path-traversal + input-validation/injection audit — Phase 60 Theme C (PR #340)
 
 Closes Phase 60 Theme C (input-validation & injection sweep). One actionable HIGH found and fixed; the rest of the boundary verified or documented as follow-ups.

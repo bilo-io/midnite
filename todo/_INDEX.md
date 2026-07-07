@@ -30,7 +30,7 @@
 |-------|--------|------|----------|---|--------|--------|
 | [64 · Office presence](phase-64-office-presence.md) | ◻ TODO | 0/30 | `░░░░░░░░░░` | 0% | — | A B C D E F G H |
 | [63 · Office 3D](phase-63-office-3d.md) | 🔄 WIP | 8/28 | `███░░░░░░░` | 29% | B | C D E G |
-| [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 0/33 | `░░░░░░░░░░` | 0% | A | B C D E F G H |
+| [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 3/33 | `█░░░░░░░░░` | 9% | — | B C D E F G H |
 | [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 0/36 | `░░░░░░░░░░` | 0% | D | A B C E F G H I |
 | [60 · Fable-Analysis](phase-60-fable-analysis.md) | 🔄 WIP | 4/63 | `█░░░░░░░░░` | 6% | A | B D E F G H I J K L M |
 | [59 · Chat to board](phase-59-chat-to-board.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
@@ -138,7 +138,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 
 ### [Phase 62 — Fable-Digest](phase-62-fable-digest.md)
 *Retrospectives per task + fleet digests, workflow-first: a task-event trigger + retro/digest nodes + seeded pipelines; gateway stores primitives. Fable series #3.*
-- ◻ **A** — Retro contract + deterministic skeleton + task_retros storage (auto on terminal, zero LLM)
+- ✅ **A** — Retro contract + deterministic skeleton + task_retros storage (auto on terminal, zero LLM) (PR #341)
 - ◻ **B** — Task-event workflow trigger (workflows fire on task.done/abandoned/needs-attention)
 - ◻ **C** — Node executors: generate-retro / list-completed-tasks / build-digest / notify
 - ◻ **D** — Retro pipeline template (task-event → retro → notify-on-notable)
