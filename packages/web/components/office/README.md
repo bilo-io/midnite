@@ -30,7 +30,9 @@ app/(main)/office/page.tsx
                       ├─ (office) <AgentAvatars> ../office3d/agent-avatars.tsx — low-poly figures + drei <Html> billboards (Theme C)
                       ├─ (office) <FirstPersonRig> ../office3d/first-person-rig.tsx — pointer-lock + WASD + collision + head-bob + proximity/interaction (Theme B/C)
                       ├─ (office) <MinimapHud>   ../office3d/minimap-hud.tsx — in-canvas r3f <Hud> minimap (Theme C)
-                      └─ (arcade) <ArcadeScene>  ../office3d/arcade/arcade-scene.tsx — arcade room + rig; <BreakoutCabinet> plays a real Breakout on a CanvasTexture (Theme D)
+                      ├─ (arcade) <ArcadeScene>  ../office3d/arcade/arcade-scene.tsx — arcade room; <BreakoutCabinet> plays a real Breakout on a CanvasTexture (Theme D)
+                      └─ (corner) <CornerScene>  ../office3d/corner/corner-scene.tsx — corner office; desk + item props, pickers, window light (Theme E)
+                                  (arcade + corner share <SubSceneRig> ../office3d/scene-rig.tsx — pointer-lock + WASD + collision + head-bob)
 ```
 
 **3D office (Phase 63).** A first-person three.js view of the *same* office, opt-in via `?view=3d`
@@ -56,7 +58,14 @@ room, rig, and lighting, from the pure `arcade.ts` builder). The centre cabinet 
 engine-free **Breakout** (`games/breakout.ts` — paddle/ball/bricks + multi-ball/resize/laser
 power-ups, all unit-tested) on a `CanvasTexture`; walking up + `E` dollies the camera onto the screen
 and routes the keyboard to the game (`ESC` exits), best score → `localStorage`. Stub cabinets open the
-existing `RetroGamesMenu`. Corner-office parity + perf/tests land in Themes E/G.
+existing `RetroGamesMenu`.
+**Theme E** adds the 3D corner office: the office door (`nearDoor` + `E` → `enterCorner`) sets
+`currentScene = 'corner'`, so `office-3d-canvas` now branches **office / arcade / corner** on one
+`<Canvas>`. The corner (`corner.ts` builder) has a personal desk — walking up + `E` opens the existing
+`DeskItemPicker`, chosen items render as low-poly props, and the `CharacterPicker` opens from the HUD
+(the player's tint colours their minimap arrow). Warm window light + a reduced-motion-aware pool
+shimmer are the ambient touches. The arcade + corner share `<SubSceneRig>` (`scene-rig.tsx`); the
+office keeps its own `FirstPersonRig` for minimap/avatar wiring. Perf budget + tests land in Theme G.
 
 **Rooms** ([`lib/office/layout.ts`](../../lib/office/layout.ts) — Phaser-free floor plan): a 34×22 grid
 split by internal walls into **six rooms** in a 3×2 arrangement — a top band (**work** hot desks ·

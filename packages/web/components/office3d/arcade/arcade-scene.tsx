@@ -1,16 +1,13 @@
 'use client';
 
-import { Html, PointerLockControls } from '@react-three/drei';
+import { Html } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Vector3 } from 'three';
 
 import { useOfficeStore } from '@/lib/office-store';
 import { buildArcade, type ArcadeCabinet } from '@/lib/office3d/arcade';
-import { resolveMove } from '@/lib/office3d/collision';
-import { EYE_HEIGHT, MOVE_SPEED, PLAYER_RADIUS } from '@/lib/office3d/constants';
-import { advanceBobPhase, computeHeadBob } from '@/lib/office3d/headbob';
-import { useAnimationPrefs } from '@/lib/use-animation-prefs';
+import { SubSceneRig } from '../scene-rig';
 import { BreakoutCabinet } from './breakout-cabinet';
 
 /**
@@ -20,29 +17,13 @@ import { BreakoutCabinet } from './breakout-cabinet';
  * the rest are stubs that open the existing `RetroGamesMenu` (`playstationOpen`).
  * Walking to a cabinet + `E` interacts (Breakout dollies the camera onto the
  * screen and routes keys to the game; ESC steps back out); walking to the exit +
- * `E` returns to the office. Movement reuses the same pure `resolveMove` +
- * head-bob helpers as the office rig, against the arcade's own collision grid.
+ * `E` returns to the office. Movement is the shared `<SubSceneRig>`.
  */
 
-const UP = new Vector3(0, 1, 0);
-const BOB_EASE_RATE = 9;
 const REACH = 1.7;
 const REACH_SQ = REACH * REACH;
 const DOLLY_RATE = 5; // camera lerp speed toward the Breakout screen
 const BEST_KEY = 'midnite.arcade.breakout-best';
-
-type MoveState = { forward: boolean; back: boolean; left: boolean; right: boolean };
-
-const KEY_MAP: Record<string, keyof MoveState> = {
-  KeyW: 'forward',
-  ArrowUp: 'forward',
-  KeyS: 'back',
-  ArrowDown: 'back',
-  KeyA: 'left',
-  ArrowLeft: 'left',
-  KeyD: 'right',
-  ArrowRight: 'right',
-};
 
 function loadBest(): number {
   if (typeof window === 'undefined') return 0;
@@ -99,39 +80,22 @@ export function ArcadeScene({ onLockChange }: { onLockChange?: (locked: boolean)
   const model = useMemo(() => buildArcade(), []);
   const breakout = useMemo(() => model.cabinets.find((c) => c.kind === 'breakout')!, [model]);
   const stubs = useMemo(() => model.cabinets.filter((c) => c.kind === 'stub'), [model]);
-
-  const controlsRef = useRef<React.ElementRef<typeof PointerLockControls>>(null);
-  const move = useRef<MoveState>({ forward: false, back: false, left: false, right: false });
   const { camera } = useThree();
-  const { animate } = useAnimationPrefs();
-  const animateRef = useRef(animate);
-  animateRef.current = animate;
-
-  const forward = useRef(new Vector3());
-  const right = useRef(new Vector3());
-  const delta = useRef(new Vector3());
-  const bobPhase = useRef(0);
-  const bobIntensity = useRef(0);
 
   const [breakoutActive, setBreakoutActive] = useState(false);
-  const breakoutActiveRef = useRef(false);
-  breakoutActiveRef.current = breakoutActive;
   const [best, setBest] = useState(0);
   const [prompt, setPrompt] = useState<string | null>(null);
+  const panelOpen = useOfficeStore((s) => s.playstationOpen);
 
-  const dollyTarget = useMemo(
-    () => new Vector3(breakout.x, 1.18, breakout.z + 1.5),
-    [breakout],
-  );
+  const dollyTarget = useMemo(() => new Vector3(breakout.x, 1.18, breakout.z + 1.5), [breakout]);
   const dollyLook = useMemo(() => new Vector3(breakout.x, 1.12, breakout.z), [breakout]);
 
   const setScene = useOfficeStore((s) => s.setCurrentScene);
   const openPlaystation = useOfficeStore((s) => s.openPlaystation);
 
-  // Entering the arcade: spawn, load best score, and clear any stale office
-  // proximity flags so the shared HUD shows no phantom prompts.
+  // Entering the arcade: load best score + clear any stale office proximity flags
+  // so the shared HUD shows no phantom prompts.
   useEffect(() => {
-    camera.position.set(model.spawn.x, model.spawn.y, model.spawn.z);
     setBest(loadBest());
     const s = useOfficeStore.getState();
     s.setNearby(null);
@@ -140,7 +104,7 @@ export function ArcadeScene({ onLockChange }: { onLockChange?: (locked: boolean)
     s.setNearLibrary(false);
     s.setNearPlaystation(false);
     s.setNearDoor(false);
-  }, [camera, model.spawn]);
+  }, []);
 
   const persistBest = useCallback((score: number) => {
     setBest(score);
@@ -149,116 +113,57 @@ export function ArcadeScene({ onLockChange }: { onLockChange?: (locked: boolean)
 
   const exitBreakout = useCallback(() => setBreakoutActive(false), []);
 
-  // Nearest interactable to the player (exit or a cabinet) within reach.
-  const nearestTarget = useCallback((): 'exit' | 'breakout' | 'stub' | null => {
-    const px = camera.position.x;
-    const pz = camera.position.z;
-    let best2 = REACH_SQ;
-    let hit: 'exit' | 'breakout' | 'stub' | null = null;
-    const consider = (x: number, z: number, kind: 'exit' | 'breakout' | 'stub') => {
-      const d = (px - x) ** 2 + (pz - z) ** 2;
-      if (d <= best2) {
-        best2 = d;
-        hit = kind;
-      }
-    };
-    consider(model.exit.x, model.exit.z, 'exit');
-    consider(breakout.x, breakout.z, 'breakout');
-    for (const s of stubs) consider(s.x, s.z, 'stub');
-    return hit;
-  }, [camera, model.exit, breakout, stubs]);
+  const nearestTarget = useCallback(
+    (px: number, pz: number): 'exit' | 'breakout' | 'stub' | null => {
+      let best2 = REACH_SQ;
+      let hit: 'exit' | 'breakout' | 'stub' | null = null;
+      const consider = (x: number, z: number, kind: 'exit' | 'breakout' | 'stub') => {
+        const d = (px - x) ** 2 + (pz - z) ** 2;
+        if (d <= best2) {
+          best2 = d;
+          hit = kind;
+        }
+      };
+      consider(model.exit.x, model.exit.z, 'exit');
+      consider(breakout.x, breakout.z, 'breakout');
+      for (const s of stubs) consider(s.x, s.z, 'stub');
+      return hit;
+    },
+    [model.exit, breakout, stubs],
+  );
 
-  const panelOpen = useOfficeStore((s) => s.playstationOpen);
-  useEffect(() => {
-    if (panelOpen) controlsRef.current?.unlock();
-  }, [panelOpen]);
-
-  useEffect(() => {
-    const setKey = (code: string, pressed: boolean) => {
-      const key = KEY_MAP[code];
-      if (key) move.current[key] = pressed;
-    };
-    const interact = () => {
-      const controls = controlsRef.current;
-      if (!controls?.isLocked || breakoutActiveRef.current) return;
+  const onInteract = useCallback(
+    (px: number, pz: number) => {
       if (useOfficeStore.getState().playstationOpen) return;
-      const target = nearestTarget();
+      const target = nearestTarget(px, pz);
       if (target === 'exit') setScene('office');
-      else if (target === 'breakout') {
-        setBreakoutActive(true);
-        controls.unlock();
-      } else if (target === 'stub') openPlaystation();
-    };
-    const onDown = (e: KeyboardEvent) => {
-      // While playing Breakout, the cabinet owns the keyboard.
-      if (breakoutActiveRef.current) return;
-      setKey(e.code, true);
-      if (e.code === 'KeyE' || e.code === 'Enter') interact();
-    };
-    const onUp = (e: KeyboardEvent) => setKey(e.code, false);
-    const onMouseDown = () => {
-      if (!controlsRef.current?.isLocked || breakoutActiveRef.current) return;
-      interact();
-    };
-    window.addEventListener('keydown', onDown);
-    window.addEventListener('keyup', onUp);
-    window.addEventListener('mousedown', onMouseDown);
-    return () => {
-      window.removeEventListener('keydown', onDown);
-      window.removeEventListener('keyup', onUp);
-      window.removeEventListener('mousedown', onMouseDown);
-    };
-  }, [nearestTarget, setScene, openPlaystation]);
+      else if (target === 'breakout') setBreakoutActive(true);
+      else if (target === 'stub') openPlaystation();
+    },
+    [nearestTarget, setScene, openPlaystation],
+  );
 
+  const onProximity = useCallback(
+    (px: number, pz: number) => {
+      const near = nearestTarget(px, pz);
+      const label =
+        near === 'exit'
+          ? 'E — back to the office'
+          : near === 'breakout'
+            ? 'E — play Breakout'
+            : near === 'stub'
+              ? 'E — browse games'
+              : null;
+      setPrompt((prev) => (prev === label ? prev : label));
+    },
+    [nearestTarget],
+  );
+
+  // While playing, dolly the camera onto the screen and hold it there.
   useFrame((_, dt) => {
-    // Playing: dolly the camera onto the screen and hold it there.
-    if (breakoutActive) {
-      const t = Math.min(1, dt * DOLLY_RATE);
-      camera.position.lerp(dollyTarget, t);
-      camera.lookAt(dollyLook);
-      return;
-    }
-
-    const controls = controlsRef.current;
-    if (!controls || !controls.isLocked) {
-      if (prompt !== null) setPrompt(null);
-      return;
-    }
-    const m = move.current;
-
-    camera.getWorldDirection(forward.current);
-    forward.current.y = 0;
-    forward.current.normalize();
-    right.current.crossVectors(forward.current, UP).normalize();
-
-    delta.current.set(0, 0, 0);
-    if (m.forward) delta.current.add(forward.current);
-    if (m.back) delta.current.sub(forward.current);
-    if (m.right) delta.current.add(right.current);
-    if (m.left) delta.current.sub(right.current);
-
-    let distance = 0;
-    if (delta.current.lengthSq() > 0) {
-      delta.current.normalize().multiplyScalar(MOVE_SPEED * dt);
-      const resolved = resolveMove(camera.position.x, camera.position.z, delta.current.x, delta.current.z, model.blocked, PLAYER_RADIUS);
-      const dx = resolved.x - camera.position.x;
-      const dz = resolved.z - camera.position.z;
-      distance = Math.hypot(dx, dz);
-      camera.position.x = resolved.x;
-      camera.position.z = resolved.z;
-    }
-
-    const target = distance > 1e-5 && animateRef.current ? 1 : 0;
-    bobIntensity.current += (target - bobIntensity.current) * Math.min(1, dt * BOB_EASE_RATE);
-    bobPhase.current = advanceBobPhase(bobPhase.current, distance);
-    const bob = computeHeadBob(bobPhase.current, bobIntensity.current);
-    camera.position.y = EYE_HEIGHT + bob.dy;
-    camera.rotation.z = bob.roll;
-
-    // Contextual prompt for the crosshair-nearest interactable.
-    const near = nearestTarget();
-    const label = near === 'exit' ? 'E — back to the office' : near === 'breakout' ? 'E — play Breakout' : near === 'stub' ? 'E — browse games' : null;
-    if (label !== prompt) setPrompt(label);
+    if (!breakoutActive) return;
+    camera.position.lerp(dollyTarget, Math.min(1, dt * DOLLY_RATE));
+    camera.lookAt(dollyLook);
   });
 
   return (
@@ -275,10 +180,13 @@ export function ArcadeScene({ onLockChange }: { onLockChange?: (locked: boolean)
         onBest={persistBest}
         onExit={exitBreakout}
       />
-      <PointerLockControls
-        ref={controlsRef}
-        onLock={() => onLockChange?.(true)}
-        onUnlock={() => onLockChange?.(false)}
+      <SubSceneRig
+        grid={model.blocked}
+        spawn={model.spawn}
+        active={!breakoutActive && !panelOpen}
+        onInteract={onInteract}
+        onProximity={onProximity}
+        onLockChange={onLockChange}
       />
       {prompt && !breakoutActive && (
         <Html fullscreen pointerEvents="none">

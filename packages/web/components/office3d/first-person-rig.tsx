@@ -72,6 +72,7 @@ function officeInteractionStore(): InteractionStore {
     toggleBreak: s.toggleBreak,
     openLibrary: s.openLibrary,
     enterArcade: () => s.setCurrentScene('arcade'),
+    enterCorner: () => s.setCurrentScene('corner'),
     open: s.open,
   };
 }
@@ -243,6 +244,7 @@ export function FirstPersonRig({
     store.setNearKitchen(prox.nearKitchen);
     store.setNearLibrary(prox.nearLibrary);
     store.setNearPlaystation(prox.nearPlaystation);
+    store.setNearDoor(prox.nearDoor);
 
     // Publish the player's pose for the minimap.
     if (poseRef?.current) {

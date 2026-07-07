@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-07 — feat: 3D corner office + customization parity — Phase 63 Theme E (PR #350)
+
+The office door now leads into a 3D corner office, completing the door interaction Theme C deferred. Pure `packages/web`; the only store change is the additive `'corner'` scene value.
+
+- [x] **Corner room:** office door (`nearDoor` + `E`/click → `enterCorner`) → `currentScene='corner'`; `office-3d-canvas` branches office/arcade/corner on one `<Canvas>`/camera. Pure builder `lib/office3d/corner.ts` (room + desk + exit + collision grid + desk-item slots).
+- [x] **Pickers in 3D:** walking to the desk + `E` opens the existing `DeskItemPicker`; the `CharacterPicker` opens from the reused `OfficeHud`. Chosen desk items render as low-poly props; the player's Phase-39 tint colours their minimap arrow.
+- [x] **Ambient parity:** warm window light (corner), reduced-motion-aware pool-water shimmer (office), glowing door accents.
+- [x] **Shared `<SubSceneRig>`:** extracted from the arcade rig and reused by both sub-scenes; office `FirstPersonRig` stays separate (minimap/avatar wiring). `interactions.ts` re-enables the door (`nearDoor` + `'door'` action → `enterCorner`).
+- [x] **Tests + gate:** 11 new/updated unit tests (corner geometry; door proximity/priority/dispatch). `web:typecheck` (no r3f `never`) · `web:lint` 0 errors · `web:test` 967 pass.
+
+---
+
 ## 2026-07-07 — feat: 3D arcade sub-scene + playable Breakout — Phase 63 Theme D (PR #348)
 
 The lounge console in the 3D office now leads into an immersive arcade room with one genuinely playable cabinet. Pure `packages/web`; the only store change is the additive `'arcade'` scene value.

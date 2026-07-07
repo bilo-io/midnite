@@ -11,6 +11,7 @@ import { lightingForHour } from '@/lib/office3d/materials';
 import { buildWorld } from '@/lib/office3d/world';
 import { ArcadeScene } from './arcade/arcade-scene';
 import { AgentAvatars } from './agent-avatars';
+import { CornerScene } from './corner/corner-scene';
 import { FirstPersonRig, type PlayerPose } from './first-person-rig';
 import { MinimapHud } from './minimap-hud';
 import { OfficeWorld } from './world/office-world';
@@ -54,7 +55,7 @@ export function Office3DCanvas({
   placementsRef.current = placements;
   const poseRef = useRef<PlayerPose>({ x: world.spawn.x, z: world.spawn.z, dirX: 0, dirZ: 1 });
 
-  const inArcade = useOfficeStore((s) => s.currentScene === 'arcade');
+  const scene = useOfficeStore((s) => s.currentScene);
 
   return (
     <Canvas
@@ -68,8 +69,10 @@ export function Office3DCanvas({
         position: [world.spawn.x, world.spawn.y, world.spawn.z],
       }}
     >
-      {inArcade ? (
+      {scene === 'arcade' ? (
         <ArcadeScene onLockChange={onLockChange} />
+      ) : scene === 'corner' ? (
+        <CornerScene onLockChange={onLockChange} />
       ) : (
         <>
           <color attach="background" args={[palette.background]} />
