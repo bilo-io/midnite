@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-07 — fix: security headers + timing-safe terminal token + auth audit — Phase 60 Theme A (PR #345)
+
+Closes Phase 60 Theme A (auth/transport/headers audit). Three parallel sweeps (rate-limiting, headers/CORS, token lifecycle); safe quick-wins applied, rest documented.
+
+- [x] **A-3 quick-win — security headers.** Every response now carries `X-Content-Type-Options: nosniff` + `X-Frame-Options: SAMEORIGIN` + `Referrer-Policy: no-referrer` via a global `onRequest` hook + `lib/security-headers.ts` (guards the served web export + `/uploads/*`; nosniff blocks MIME-sniffing a disguised upload). CSP + HSTS documented as decisions.
+- [x] **A-7 quick-win — timing-safe terminal token.** `TerminalService.verifyToken` now uses constant-time `safeEqual` (was `!==`).
+- [x] **Documented (HIGH, follow-up):** the static bearer token bypasses all `@RequiresRole` checks (RoleGuard fails open on unset `req.user`, remotely reachable) — A-1; no per-account login lockout — A-2. Plus MED/LOW: rate-limit default-off (recommend `max:300`, deferred), service-token scopes, refresh reuse-detection, terminal TTL sweep, dead `deleteExpired`.
+- [x] **CORS verified sound** (no wildcard/credentials, unknown origins fail closed, WS origin parity across all six gateways). Report: [`todo/phase-60-findings/A-security-auth.md`](phase-60-findings/A-security-auth.md).
+- [x] Tests: `lib/security-headers.test.ts`; existing `verifyToken` specs green. `gateway:typecheck`/`:lint`/`:test` green (1639).
+
 ## 2026-07-07 — feat: first-person collision + head-bob — Phase 63 Theme B (PR #342)
 
 Makes the 3D office (Theme A) feel real: grid-AABB collision + a footstep head-bob layered onto the pointer-lock/WASD walk rig.
