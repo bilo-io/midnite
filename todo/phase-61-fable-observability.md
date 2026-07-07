@@ -174,18 +174,21 @@ The Ops page stops polling.
 
 # Section IV — Surfaces
 
-## Theme G — Ops page deepening — **M-L**
+## Theme G — Ops page deepening — **M-L** — ◐ PARTIAL (PR #360, 2026-07-07)
 
-From snapshot to instrument.
+From snapshot to instrument. Cycle-time + fleet-trend views (the Theme C/D data) landed in
+PR #360; **cost views** wait on Theme B/E (cost attribution) and the **run timeline** is still
+open — both remain TODO under this theme.
 
 - [ ] **Cost views:** spend by repo/project/provider over time (from Theme B attribution + Theme E
       rollups), measured-vs-estimated composition visible (hatched/labeled segments — honesty in the
-      chart, not just the tooltip).
-- [ ] **Cycle-time views:** p50/p90 trends, wait-vs-work split, retry overhead — per repo/project
-      filters (Theme C data).
-- [ ] **Fleet trends:** queue depth / slot utilization / tick latency over time (Theme D history) —
-      the restart no longer erases the story; annotate clean-shutdown/boot markers (P54) on the
-      timeline where cheap.
+      chart, not just the tooltip). ⏳ blocked on Theme B/E.
+- [x] **Cycle-time views:** [`CycleTimeSection`](../packages/web/components/ops-cycle-fleet.tsx) —
+      grouped p50/p90 bars for wait/work/end-to-end, a groupBy dropdown (fleet/repo/project/priority),
+      retry-overhead stat (Theme C data via `GET /metrics/cycle-time`) (PR #360).
+- [x] **Fleet trends:** queue depth / slot utilization / tick latency over time from persisted gauge
+      history (Theme D, `GET /metrics/gauges/history`) — three recharts series; restart no longer
+      erases the story (PR #360). Boot-marker annotations left as a future polish.
 - [ ] **Run timeline:** a per-task run strip (attempt bars from `agent_run_stats`: started→ended,
       outcome-colored, retries visible) on the task detail / Ops drill-down — reuse recharts, no new
       chart lib.
