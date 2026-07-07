@@ -4,6 +4,20 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-07 — feat: office emotes + roster + locate — Phase 64 Theme E (PR #363)
+
+The office social layer, shared by both engines. Pure `packages/web`.
+
+- [x] **`PresenceHud`:** emote wheel (button + number-key `1`–`6`) firing 👋👍☕🎉❓👀, and a "teammates here" roster (you + peers, avatar chip, room). Mounted by both office views.
+- [x] **Emotes:** `useOfficePresence.emote()` optimistically records `selfEmote` + sends; peer emotes render as TTL'd bubbles (2D `PeerLayer` + 3D `presence-avatars`); own emote over the 2D player.
+- [x] **Locate/walk-to:** roster click → presence-bridge locator → 2D scene A* `walkTo` (same-scene peers); 3D deferred (manual rig) — locate hidden via `canLocate()`.
+- [x] **Self-view:** connected/ghost + name in the roster.
+- [x] **Tests + gate:** bridge locate sink + PresenceHud RTL (roster, wheel, number-key). web:typecheck (no r3f `never`), web:lint 0 errors, web:test 1038 pass.
+
+Remaining Phase 64: F (nav pill + dashboard widget + ghost mode), G (proximity chat — stretch), H (tests + two-context Playwright).
+
+---
+
 ## 2026-07-07 — feat: 3D office presence renderer — Phase 64 Theme D (PR #362)
 
 Remote teammates now render in the Phase-63 3D office too, reusing the Theme B store + interpolation — both engines are views of one presence slice. Pure `packages/web`; unblocked by Phase 63.
