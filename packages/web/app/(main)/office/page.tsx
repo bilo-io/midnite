@@ -1,8 +1,10 @@
 'use client';
 
+import { Suspense } from 'react';
+
 import { PageHeader } from '@/components/page-header';
 import { DesktopOnly } from '@/components/desktop-only';
-import { OfficeView } from '@/components/office/office-view';
+import { OfficeSurface } from '@/components/office/office-surface';
 
 export default function OfficePage() {
   return (
@@ -14,7 +16,10 @@ export default function OfficePage() {
       />
       <DesktopOnly label="The office">
         <div className="reveal-staged container space-y-6 pb-8 pt-2">
-          <OfficeView />
+          {/* OfficeSurface reads `?view=` via useSearchParams — needs a Suspense boundary. */}
+          <Suspense fallback={null}>
+            <OfficeSurface />
+          </Suspense>
         </div>
       </DesktopOnly>
     </>
