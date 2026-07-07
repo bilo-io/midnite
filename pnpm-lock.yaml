@@ -261,7 +261,7 @@ importers:
         specifier: ^7.8.1
         version: 7.8.2
       ws:
-        specifier: ^8.18.0
+        specifier: ^8.21.0
         version: 8.21.0
     devDependencies:
       '@nestjs/cli':
