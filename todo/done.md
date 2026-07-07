@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-07 — feat: gauge history sampler + /metrics/gauges/history — Phase 61 Theme D (PR #343)
+
+The Ops fleet gauges (queue depth, slot utilization, tick latency) lived only in an in-memory `GaugeStore`, lost on every restart. Theme D persists periodic snapshots so fleet-trend history survives a restart. Deepens the existing `metrics/` seam; behaviour-preserving (sampling off = no change).
+
+- [x] **shared:** `GaugeSample` + `GaugeHistory` query/response contracts (`GAUGE_HISTORY_MAX_POINTS = 2000`); `metrics.{sampleIntervalMs (60000), rawRetentionDays (30)}` config.
+- [x] **gateway:** `gauge_samples` table (migration `0074`) + repo (`insertGaugeSample` / windowed oldest-first `gaugeHistory` with newest-kept cap + `truncated` / `pruneGaugeSamplesBefore`); `MetricsService.sampleGauges` (skips all-null) / `pruneGaugeSamples` / `getGaugeHistory`; `MetricsSamplerService` (one `unref`'d timer + reentrancy guard, fail-open, self-prune older than `rawRetentionDays`, `0`=disabled — mirrors P49's `BackupSchedulerService`); `GET /metrics/gauges/history?from&to`.
+- [x] Tests: shared schema (nullable fields, negative-reject, round-trip); gateway real-SQLite repo (ordering/window/cap/prune) + service (skip-empty, prune-cutoff, mapping) + sampler (sample→prune, skip, fail-open, disabled-at-0) + controller. shared 591 / gateway 1642 green; `:typecheck`/`:lint` green. Gateway/shared only — Ops charts consume this in Theme G.
+
+---
+
 ## 2026-07-07 — feat: 3D office world foundation — Phase 63 Theme A (PR #337)
 
 Closes Phase 63 Theme A. The office rebuilt in first-person three.js (r3f + drei), opt-in via a `?view=3d` escape hatch on `/office` (2D stays the untouched default; the tab strip + preference sync land in Theme F). A second client of the existing office store contract — not a fork.

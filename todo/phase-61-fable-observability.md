@@ -120,16 +120,19 @@ How long work actually takes — waiting vs. working.
       `wipStartedAt`/`doneAt` columns as a follow-up finding — **measure first** (use the P57 bench
       harness), don't pre-add columns.
 
-## Theme D — Gauge history that survives restarts — **S-M**
+## Theme D — Gauge history that survives restarts — **S-M** — ✅ DONE (PR #343, 2026-07-07)
 
 Trends, not just the current needle.
 
-- [ ] A **sampler**: every N seconds (config `metrics.sampleIntervalMs`, default ~60s) persist a
-      `gauge_samples` row (`at`, `queueDepth`, `slotsUsed`, `slotsTotal`, `tickLatencyMs`) from the
-      in-memory store — cheap, bounded by Theme E's retention; rides the existing scheduler/interval
-      discipline (one timer, `unref`'d, fail-open).
-- [ ] `GET /metrics/gauges/history?from&to` (existing controller) returning the sampled series for
-      the Ops charts; the live snapshot endpoint is unchanged.
+- [x] A **sampler** ([`metrics-sampler.service.ts`](../packages/gateway/src/metrics/metrics-sampler.service.ts)):
+      every `metrics.sampleIntervalMs` (default 60s; `0` disables) persist a `gauge_samples` row
+      (`at`, `queueDepth`, `slotsUsed`, `slotsTotal`, `tickLatencyMs`) from the in-memory store — one
+      `unref`'d timer + reentrancy guard, **fail-open**, **skips an all-null snapshot**, and
+      **self-prunes** samples older than `metrics.rawRetentionDays` (default 30) each run so the table
+      stays bounded before Theme E's rollups/retention.
+- [x] `GET /metrics/gauges/history?from&to` returning the sampled series (oldest-first) for the Ops
+      charts — bounded at `GAUGE_HISTORY_MAX_POINTS` (newest kept + `truncated` flag); the live
+      snapshot endpoint is unchanged. Contract + config in `shared`; migration `0074`.
 
 ---
 
