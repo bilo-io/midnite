@@ -36,7 +36,8 @@ import {
   type TilePos,
   WALL_ART,
 } from '@/lib/office/layout';
-import { samplePlayer, sceneFacing } from '@/lib/presence-bridge';
+import { samplePlayer, sceneFacing, setPresenceLocator } from '@/lib/presence-bridge';
+import { usePresenceStore } from '@/lib/presence-store';
 import { PeerLayer } from './peer-layer';
 import { generateDeskLayout, type DeskLayout } from '@/lib/office/desks';
 import { buildFloorTileData } from '@/lib/office/map-data';
@@ -242,6 +243,8 @@ class OfficeScene extends Phaser.Scene {
   private nearDoorFlag = false;
   /** ☕ shown over the player while on a coffee break. */
   private breakIcon!: Phaser.GameObjects.Text;
+  /** Your own emote bubble over the player (Phase 64 E), driven by the presence store. */
+  private playerEmote!: Phaser.GameObjects.Text;
   private facing: 'down' | 'up' | 'side' = 'down';
   /** Click-to-walk: pixel waypoints the player is auto-following, or null. */
   private playerPath: { x: number; y: number }[] | null = null;
@@ -338,6 +341,8 @@ class OfficeScene extends Phaser.Scene {
 
     this.alive = true;
     this.peerLayer = new PeerLayer(this, 'office');
+    // Locate/walk-to (Phase 64 E): the roster calls this with a teammate's px.
+    setPresenceLocator((x, y) => this.walkTo(x, y));
 
     // Animate the lounging agents' "z / zz / zzz" bubble. Auto-removed on shutdown.
     this.time.addEvent({ delay: 450, loop: true, callback: this.tickIdleBubbles, callbackScope: this });
@@ -380,6 +385,7 @@ class OfficeScene extends Phaser.Scene {
       this.unsub = undefined;
       this.peerLayer?.destroy();
       this.peerLayer = undefined;
+      setPresenceLocator(null);
       useOfficeStore.getState().reset();
     };
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, teardown);
@@ -481,6 +487,12 @@ class OfficeScene extends Phaser.Scene {
     // ☕ floats over the player while on a break.
     this.breakIcon.setPosition(this.player.x + 11, this.player.y - 16);
     this.breakIcon.setVisible(useOfficeStore.getState().onBreak);
+
+    // Your own emote bubble (Phase 64 E) — over the player, within its TTL.
+    const selfEmote = usePresenceStore.getState().selfEmote;
+    const emote = selfEmote && Date.now() - selfEmote.at < 3200 ? selfEmote.emoji : '';
+    if (this.playerEmote.text !== emote) this.playerEmote.setText(emote);
+    this.playerEmote.setPosition(this.player.x, this.player.y - 30);
 
     this.updateMinimap();
   }
@@ -1647,6 +1659,11 @@ class OfficeScene extends Phaser.Scene {
       .setResolution(2)
       .setVisible(false)
       .setDepth(11);
+    this.playerEmote = this.add
+      .text(sx, sy, '', { fontSize: '16px' })
+      .setOrigin(0.5)
+      .setResolution(2)
+      .setDepth(12);
   }
 
   private buildVignette(worldW: number, worldH: number) {

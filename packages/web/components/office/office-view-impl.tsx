@@ -5,6 +5,7 @@ import { useGatewayErrorToast } from '@/lib/use-gateway-error-toast';
 import { OFFICE_ASPECT } from '@/lib/office/dimensions';
 import { OfficeGame } from './office-game';
 import { OfficeHud } from './office-hud';
+import { PresenceHud } from './presence-hud';
 import { PresenceNameDialog } from './presence-name-dialog';
 import { useOfficeAgents } from './use-office-agents';
 
@@ -26,7 +27,7 @@ import { useOfficeAgents } from './use-office-agents';
 export function OfficeViewImpl() {
   const { error } = useOfficeAgents();
   useGatewayErrorToast(error);
-  const { dialog } = useOfficePresence();
+  const { dialog, emote } = useOfficePresence();
 
   return (
     <div
@@ -35,6 +36,7 @@ export function OfficeViewImpl() {
     >
       <OfficeGame />
       <OfficeHud />
+      <PresenceHud emote={emote} />
       <PresenceNameDialog {...dialog} />
     </div>
   );

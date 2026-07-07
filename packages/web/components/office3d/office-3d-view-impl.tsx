@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { useTheme } from '@/app/theme/theme-context';
 import { OfficeHud } from '@/components/office/office-hud';
+import { PresenceHud } from '@/components/office/presence-hud';
 import { PresenceNameDialog } from '@/components/office/presence-name-dialog';
 import { useOfficeAgents } from '@/components/office/use-office-agents';
 import { useOfficePresence } from '@/hooks/use-office-presence';
@@ -37,7 +38,7 @@ export function Office3DViewImpl() {
     return buildOfficePalette();
   }, [resolved]);
   const [locked, setLocked] = useState(false);
-  const { dialog } = useOfficePresence();
+  const { dialog, emote } = useOfficePresence();
 
   useEffect(() => {
     const { reset } = useOfficeStore.getState();
@@ -64,6 +65,7 @@ export function Office3DViewImpl() {
         </div>
       )}
       <OfficeHud />
+      <PresenceHud emote={emote} />
       <PresenceNameDialog {...dialog} />
     </div>
   );
