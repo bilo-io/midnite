@@ -72,31 +72,33 @@
 
 ---
 
-## Theme A — Presence contract + gateway service — **M**
+## Theme A — Presence contract + gateway service — **M** — ✅ DONE (PR #356, 2026-07-07)
 
 The channel: typed frames up, coalesced state down, nothing stored.
 
-- [ ] **shared:** `PRESENCE_WS_PATH` (`/ws/presence`) + zod unions in
-      [`shared/src/events/`](../packages/shared/src/events/) — client→server:
+- [x] **shared:** `PRESENCE_WS_PATH` (`/ws/presence`) + zod unions in
+      [`shared/src/events/presence.ts`](../packages/shared/src/events/presence.ts) — client→server:
       `presence.hello { name, variant, tint, ghost }`, `presence.move { x, y, facing, scene }`,
-      `presence.emote { emoji }`, `presence.chat { text }` (stretch); server→client:
-      `presence.snapshot { peers[] }` (on join), `presence.peer-updated`, `presence.peer-left`,
-      `presence.emote`, `presence.chat` — discriminated `type` field, per the house rule.
-- [ ] **gateway:** `presence/presence.module.ts` + `presence.gateway.ts` (thin — handshake JWT
-      resolution reusing the [`tasks.gateway.ts`](../packages/gateway/src/tasks/tasks.gateway.ts)
+      `presence.emote { emoji }`; server→client: `presence.snapshot { selfId, peers[] }` (on join,
+      `selfId` lets clients filter their own echo), `presence.peer-updated { peers[] }`,
+      `presence.peer-left { peerId }`, `presence.emote { peerId, emoji }` — discriminated `type`.
+      *`presence.chat` deferred to the stretch Theme G.* (PR #356)
+- [x] **gateway:** `presence/presence.module.ts` + `presence.gateway.ts` (thin — origin + JWT
+      handshake reusing the [`tasks.gateway.ts`](../packages/gateway/src/tasks/tasks.gateway.ts)
       pattern, frame parsing) → `PresenceService`: an in-memory **last-known-state map** keyed by
-      connection (name, identity, position, facing, scene, ghost, lastMoveAt) — **no DB, no ring**.
-- [ ] **Tick-coalesced fan-out:** a fixed server tick (~10Hz, config `presence.tickMs`) batches
-      all dirty peers into one `peer-updated` frame per team per tick via
-      `WsBroadcastService.toTeam` (`toAll` for the null-team local mode) — never per-move
-      per-client sends, so backpressure (`4014`) stays untriggered at realistic peer counts.
-- [ ] **Join/leave lifecycle:** on join → snapshot of current peers; on `handleDisconnect` or a
-      short move-silence timeout (config `presence.staleMs`, well under the 30s heartbeat) →
-      `peer-left`; ghost peers are held in the map but **excluded from snapshots/updates**.
-- [ ] **Hybrid identity:** when JWT is enabled, the verified `{ userId, teamId }` overrides the
-      hello's name (display name from the user record) and scopes broadcast to the team; when
-      off (local-only default), the client-declared guest identity is trusted as-is and scope is
-      global. Duplicate connections from one user coalesce to the newest.
+      connection — **no DB, no ring**. (PR #356)
+- [x] **Tick-coalesced fan-out:** a fixed server tick (~10Hz, config `presence.tickMs`) batches all
+      dirty renderable peers into one `peer-updated` frame per scope per tick. Fan-out uses the
+      service's **own** scoped socket set via `WsBroadcastService.toAll` (not the shared
+      `ConnectionRegistry`, which mixes task/terminal/presence sockets) — presence frames never leak
+      cross-channel, and the `4014` backpressure guard still applies. (PR #356)
+- [x] **Join/leave lifecycle:** on join → scope snapshot of current renderable peers; on
+      `handleDisconnect` **or** a stale-silence timeout (config `presence.staleMs`, under the 30s
+      heartbeat) → `peer-left`; ghost peers held in the map but **excluded from snapshots/updates/
+      emotes**. (PR #356)
+- [x] **Hybrid identity:** JWT on → verified email overrides a forged hello name + team-scopes
+      broadcast (peerId `user:<id>`); JWT off (local default) → guest hello trusted, global scope.
+      Duplicate connections from one user coalesce to the newest socket. (PR #356)
 
 ## Theme B — Client presence store + sampler — **M**
 

@@ -25,6 +25,7 @@ import { NewsModule } from './news/news.module';
 import { NotesModule } from './notes/notes.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PoolModule } from './pool/pool.module';
+import { PresenceModule } from './presence/presence.module';
 import { PortabilityModule } from './portability/portability.module';
 import { ProjectsModule } from './projects/projects.module';
 import { MilestonesModule } from './milestones/milestones.module';
@@ -86,6 +87,7 @@ import { InboundModule } from './integrations/inbound/inbound.module';
     TaskCreatorModule,
     TaskEventBusModule,
     PoolModule,
+    PresenceModule,
     PortabilityModule,
     ProjectsModule,
     MilestonesModule,

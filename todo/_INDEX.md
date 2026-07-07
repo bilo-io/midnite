@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [64 · Office presence](phase-64-office-presence.md) | 🔄 WIP | 0/30 | `░░░░░░░░░░` | 0% | A | B C D E F G H |
+| [64 · Office presence](phase-64-office-presence.md) | 🔄 WIP | 5/30 | `██░░░░░░░░` | 17% | — | B C D E F G H |
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
 | [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 6/33 | `██░░░░░░░░` | 18% | — | C D E F G H |
 | [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 5/36 | `█░░░░░░░░░` | 14% | — | A B E F G H I |
@@ -117,7 +117,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 
 ### [Phase 64 — Office multiplayer presence](phase-64-office-presence.md)
 *Teammates as live avatars in the office (2D + 3D): a /ws/presence channel (last-known-state, no ring, zero DB), hybrid guest/JWT identity, emote wheel + locate, ghost mode, nav pill + dashboard widget; proximity chat as stretch. Theme D blocked on Phase 63 A–C.*
-- ◻ **A** — Presence contract + gateway service (typed frames, tick-coalesced team fan-out, snapshot-on-join)
+- ✅ **A** — Presence contract + gateway service (typed frames, tick-coalesced team fan-out, snapshot-on-join) (PR #356)
 - ◻ **B** — Client presence store + throttled position sampler + guest identity + interpolation
 - ◻ **C** — 2D renderer: remote humans as Actors, minimap dots, scene scoping (solo-preserving)
 - ◻ **D** — 3D renderer: r3f presence avatars + billboards (⛔ blocked on Phase 63 A–C)

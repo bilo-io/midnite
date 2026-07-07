@@ -266,6 +266,19 @@ export const WsConfigSchema = z.object({
   maxMissedPongs: z.number().int().positive().default(2),
 });
 
+// Phase 64 — office multiplayer presence. The presence channel fans out live
+// teammate positions on a fixed server tick; nothing is persisted (ephemeral by
+// design). Optional (defaulted) so existing midnite.json files keep validating.
+export const PresenceConfigSchema = z.object({
+  // Server fan-out cadence: one coalesced peer-updated frame per team per tick.
+  // ~10Hz feels live without stressing backpressure at realistic peer counts.
+  tickMs: z.number().int().positive().default(100),
+  // A peer with no frame (move/hello/emote/keepalive) for this long is treated as
+  // departed — well under the 30s WS heartbeat, so avatars clear promptly. The
+  // client keepalives while idle so a stationary teammate isn't reaped.
+  staleMs: z.number().int().positive().default(15_000),
+});
+
 export const WorkflowsConfigSchema = z.object({
   // Feature flag — workflows is greenfield, so it ships off by default.
   enabled: z.boolean().default(false),
@@ -467,6 +480,9 @@ export const MidniteConfigSchema = z.object({
   // Metrics history + retention (Phase 61). Optional (defaulted) so existing
   // midnite.json files keep validating.
   metrics: MetricsConfigSchema.default({}),
+  // Office multiplayer presence (Phase 64). Ephemeral, in-memory only. Optional
+  // (defaulted) so existing midnite.json files keep validating.
+  presence: PresenceConfigSchema.default({}),
 });
 
 export type MidniteConfig = z.infer<typeof MidniteConfigSchema>;
