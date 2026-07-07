@@ -155,17 +155,23 @@ The heart of the phase: the 3D scene becomes a second client of the existing sto
       *Kept client-local rather than added to the Phase-43 wire bag, to respect the phase guardrail
       of a single new UserPreferences key (`officeView`); server-sync is a trivial future add.* (PR #348)
 
-## Theme E — Corner office & customization parity — **M**
+## Theme E — Corner office & customization parity — **M** — ✅ DONE (PR #350, 2026-07-07)
 
-- [ ] **Corner-office room:** the door transition leads to a 3D corner office (the 2D
+- [x] **Corner-office room:** the office door (`nearDoor` + `E`/click → `enterCorner`) leads to a 3D
+      corner office (`currentScene === 'corner'`; the 2D
       [`corner-office-scene.ts`](../packages/web/components/office/scenes/corner-office-scene.ts)
-      counterpart) — same `nearDoor`/`currentScene` store mechanics.
-- [ ] **Pickers work in 3D:** desk-item picker + character picker open from the corner office as
-      today (store flags, existing React components); chosen desk items render as low-poly props
-      on your desk; character variant/tint recolors your hands-free presence (avatar tint shown to
-      others/minimap).
-- [ ] **Ambient parity touches:** pool water shimmer, window light, door open/close accent —
-      small, cheap atmosphere items that make 3D feel alive rather than a gray box.
+      counterpart) — `office-3d-canvas` now branches office/arcade/corner on one `<Canvas>`/camera.
+      Pure builder `lib/office3d/corner.ts` (room + desk + exit + collision grid + item slots).
+      Re-enables the Theme-C-deferred door. (PR #350)
+- [x] **Pickers work in 3D:** walking to the desk + `E` opens the existing `DeskItemPicker`
+      (`deskPickerOpen`); the `CharacterPicker` opens from the reused `OfficeHud`. Chosen desk items
+      render as low-poly props on the desk; the player's Phase-39 character tint colours their
+      minimap arrow (the avatar identity visible in first-person). (PR #350)
+- [x] **Ambient parity touches:** warm window light in the corner office, a reduced-motion-aware
+      pool-water shimmer in the office, glowing door accents. (PR #350)
+- [x] **Shared sub-scene rig:** extracted `<SubSceneRig>` (movement + collision + head-bob) from the
+      arcade's inline rig and reused by both the arcade + corner scenes; the office `FirstPersonRig`
+      stays separate (minimap-pose + live-avatar wiring). (PR #350)
 
 ## Theme F — Tabs, routing & preference — **S** — ✅ DONE (PR #336, 2026-07-07)
 
