@@ -13,6 +13,26 @@ The spine of Fable-Digest: every terminal task gets a free, factual retrospectiv
 - [x] **Auto on terminal:** a `TaskEventBus` subscriber (search-module pattern; `tasks.service` untouched) builds + stores on done/abandoned — idempotent (skips a same-outcome rebuild) + fail-open. Needs-attention trigger deferred.
 - [x] Tests: shared schema (5); gateway `buildRetro` pure unit + subscriber + builder + `task_retros` repo integration + controller (28). Gate green (gateway 1654, web 880, cli 155; `ui:test` flake passes isolated).
 
+## 2026-07-07 — fix: media path-traversal + input-validation/injection audit — Phase 60 Theme C (PR #340)
+
+Closes Phase 60 Theme C (input-validation & injection sweep). One actionable HIGH found and fixed; the rest of the boundary verified or documented as follow-ups.
+
+- [x] **HIGH fixed — arbitrary file read via `GET /media/:id/file`.** The route served a client-supplied `filePath` verbatim (absolute paths *and* `../` traversal). Two-layer fix: a shared `isSafeMediaFilePath` `.refine()` on `Create`/`UpdateMediaBodySchema` (rejects absolute/`..`/NUL at write time) + a gateway `resolveMediaPath` containment guard at serve time (re-confines legacy/imported rows to the uploads dir). `serveFile` no longer reaches into the private repo (new `MediaService.getFileMeta`).
+- [x] **Verified safe:** FTS5 `MATCH` (tokenized → quoted → param-bound), Phase 49 import zip (known-key reads, no path-based extraction → no zip-slip), all raw `sql\`\`` (no `sql.raw`, every value bound), and per-route zod coverage (every JSON `@Body()` `safeParse`s; the `unknown` webhook/inbound bodies are token/HMAC-gated by design).
+- [x] **Documented as follow-ups:** SSRF (HIGH — DNS-blind `isSafeHttpUrl` + no redirect revalidation across 4 fetch sites; needs a dedicated hardening theme) and a global `ZodValidationPipe`/architecture test (LOW). Full report: [`todo/phase-60-findings/C-input-validation.md`](phase-60-findings/C-input-validation.md).
+- [x] Tests: shared 592 (media schema cases), gateway 1632 (`resolve-media-path` 7 cases + 3 `serveFile` controller cases); `gateway:typecheck`/`:lint` green.
+
+## 2026-07-07 — feat: 3D office world foundation — Phase 63 Theme A (PR #337)
+
+Closes Phase 63 Theme A. The office rebuilt in first-person three.js (r3f + drei), opt-in via a `?view=3d` escape hatch on `/office` (2D stays the untouched default; the tab strip + preference sync land in Theme F). A second client of the existing office store contract — not a fork.
+
+- [x] **web (`lib/office3d/`):** pure, `three`-free, unit-tested helpers — `world.ts` maps the 2D `layout.ts` grid/rooms/furniture into 3D placements (walls merge into runs, horizontal-first then vertical; every wall tile covered exactly once); `materials.ts` resolves theme-aware flat-shaded colours + day/night lighting off the SAME `office/theme.ts` + `office/daynight.ts` helpers as the 2D floor; `constants.ts` (1 tile = 1 unit, eye height, FOV, DPR cap).
+- [x] **web (`components/office3d/`):** `dynamic(ssr:false)` + lazy `Office3DView`; an r3f `<Canvas>` with a static day/night light snapshot at mount (no per-frame cost, reduced-motion-safe); flat-shaded low-poly world; a minimal pointer-lock + WASD rig (collision + head-bob are Theme B). `reset()`s the store on mount/unmount so 2D proximity/panel flags never leak across a switch.
+- [x] **web:** `office-surface.tsx` picks 2D/3D from `?view=` (Phase-52 client-read pattern under `output: 'export'`); the 2D engine is untouched + behavior-preserving.
+- [x] **Design calls (locked up front):** minimal look/move pulled into A (collision/head-bob → B); flat palette colours now (canvas textures deferred); build-all + `frustumCulled` now (per-room lazy chunk-gating → Theme G); static lighting snapshot.
+- [x] Tests: world-builder + materials + lighting units, an `office-surface` RTL routing spec (WebGL engines mocked in jsdom), a Playwright `?view=3d` smoke. Full web unit suite green. Pure `packages/web` — zero gateway/`shared` work.
+- [x] **Integration with Theme F (already merged, PR #336):** kept F's 2D/3D tab strip (`OfficeSurface`) + preference; repointed it at the real r3f engine under `components/office3d/` and removed F's placeholder `office-3d-view*.tsx`. Resolved the r3f JSX-augmentation fallout F flagged — retyped three `React.ElementType` icon slots to `LucideIcon` (the bloated `keyof JSX.IntrinsicElements` collapsed the mapped type to `never`).
+
 ---
 
 ## 2026-07-07 — feat: roadmap breakdown tie-in + cross-links — Phase 58 Theme F (PR #338) — CLOSES PHASE 58

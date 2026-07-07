@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   ImageIcon,
+  type LucideIcon,
   Music2,
   PanelLeftClose,
   PanelLeftOpen,
@@ -40,7 +41,10 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-const TYPE_ICON: Record<MediaType, React.ElementType> = {
+// `LucideIcon`, not `React.ElementType`: the latter maps over `keyof
+// JSX.IntrinsicElements`, which @react-three/fiber (Phase 63) bloats to hundreds
+// of three.js elements — collapsing the mapped type to `never`.
+const TYPE_ICON: Record<MediaType, LucideIcon> = {
   image: ImageIcon,
   video: Video,
   audio: Music2,

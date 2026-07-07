@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ImageIcon, Music2, Video } from 'lucide-react';
+import { type LucideIcon, ImageIcon, Music2, Video } from 'lucide-react';
 import type { MediaType } from '@midnite/shared';
 import { cn } from '@/lib/utils';
 
@@ -10,7 +10,10 @@ type Props = {
   onClose: () => void;
 };
 
-const OPTIONS: { type: MediaType; label: string; description: string; Icon: React.ElementType }[] = [
+// `LucideIcon`, not `React.ElementType` — the latter maps over `keyof
+// JSX.IntrinsicElements`, which @react-three/fiber (Phase 63) bloats with
+// hundreds of three.js elements, collapsing the mapped type to `never`.
+const OPTIONS: { type: MediaType; label: string; description: string; Icon: LucideIcon }[] = [
   { type: 'image', label: 'Image', description: 'Generate or upload a still image', Icon: ImageIcon },
   { type: 'video', label: 'Video', description: 'Generate or upload a video clip', Icon: Video },
   { type: 'audio', label: 'Audio', description: 'Generate or upload an audio file', Icon: Music2 },
