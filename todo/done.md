@@ -4,6 +4,21 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-07 — feat: 2D office presence renderer — Phase 64 Theme C (PR #361) · completes the A→B→C spine
+
+Teammates now appear as live avatars in the 2D Phaser office. Pure `packages/web`; consumes Themes A/B, no gateway/shared changes.
+
+- [x] **`PeerLayer`:** reusable presence-driven avatar layer (both main + corner office, scoped by sceneId) — diffs the store's peers each frame (create/update/destroy), eases via the shared `interpStep`, always-on name plate, distance-driven 2-frame step cycle (no anim-system dep).
+- [x] **Position sampler:** office + corner scenes publish player x/y/facing/scene each frame via a non-React bridge (`presence-bridge.ts`); `use-presence` registers its throttled `sendMove`. `sceneFacing` maps 2D facing+flip → wire.
+- [x] **Minimap dots** (cyan, cross-room) + **scene scoping** (peer renders only in its scene; teardown destroys the layer).
+- [x] **Wiring:** office-view-impl mounts `usePresence`, registers the sampler, prompts first-visit guests for a name (live rename re-sends hello via a `displayName` hook arg).
+- [x] **Solo-preserving:** zero peers ⇒ scenes byte-for-byte unchanged; existing office specs pass unedited.
+- [x] **Tests + gate:** pure visual helpers (`charForVariant`/`facingToDir`) + `sceneFacing` unit-tested. web:typecheck, web:lint 0 errors, web:test 1016 pass.
+
+The A→B→C spine (contract → client store → 2D renderer) is complete; two humans on `/office` now see each other. Theme D reuses the store + interp for 3D; E/F add emotes/roster/nav/ghost.
+
+---
+
 ## 2026-07-07 — feat: cycle-time + fleet-trend Ops charts — Phase 61 Theme G (partial) (PR #360)
 
 First visual Ops-deepening slice: renders the Theme C (cycle-time) + D (gauge-history) data as charts. Cost views + run timeline remain open under G (cost attribution needs Theme B/E), so G lands ◐ partial. Pure `packages/web` + a one-line gateway boot fix.

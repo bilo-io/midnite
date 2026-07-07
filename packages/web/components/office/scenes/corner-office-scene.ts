@@ -4,6 +4,8 @@ import { OFFICE_TILE } from '@/lib/office/dimensions';
 import { buildOfficePalette, type OfficePalette } from '@/lib/office/theme';
 import { charKey, ensureOfficeAnims, ensureOfficeTextures, TEX, walkAnim, type CharKind } from '@/lib/office/textures';
 import { deskItemById } from '@/lib/office/desk-items';
+import { samplePlayer, sceneFacing } from '@/lib/presence-bridge';
+import { PeerLayer } from './peer-layer';
 
 // Corner office: a small private room the player enters from the main floor
 // (Phase 9 F). Layout is self-contained — no agents, just the player + their
@@ -42,6 +44,8 @@ export class CornerOfficeScene extends Phaser.Scene {
   private inputEnabled = true;
   private alive = false;
   private unsub?: () => void;
+  /** Remote-teammate layer (Phase 64 C) — peers whose scene is 'corner'. */
+  private peerLayer?: PeerLayer;
 
   // Proximity centres (px) for the exit door and the desk.
   private exitCenter = { x: 0, y: 0 };
@@ -97,6 +101,7 @@ export class CornerOfficeScene extends Phaser.Scene {
     this.input.keyboard!.on('keydown-ENTER', this.tryInteract, this);
 
     this.alive = true;
+    this.peerLayer = new PeerLayer(this, 'corner');
 
     useOfficeStore.getState().setCurrentScene('corner');
 
@@ -128,15 +133,20 @@ export class CornerOfficeScene extends Phaser.Scene {
       this.alive = false;
       this.unsub?.();
       this.unsub = undefined;
+      this.peerLayer?.destroy();
+      this.peerLayer = undefined;
     };
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, teardown);
     this.events.once(Phaser.Scenes.Events.DESTROY, teardown);
   }
 
-  override update() {
+  override update(_time: number, delta: number) {
     if (!this.alive) return;
     this.movePlayer();
     this.playerShadow.setPosition(this.player.x, this.player.y + TILE * 0.42);
+
+    samplePlayer(this.player.x, this.player.y, sceneFacing(this.facing, this.player.flipX), 'corner');
+    this.peerLayer?.update(delta);
 
     const px = this.player.x;
     const py = this.player.y;
