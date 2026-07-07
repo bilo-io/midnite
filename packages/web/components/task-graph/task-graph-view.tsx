@@ -3,6 +3,7 @@
 import '@xyflow/react/dist/style.css';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { X } from 'lucide-react';
 import {
   Background,
   Controls,
@@ -25,6 +26,7 @@ import { TaskThreadModal } from '@/components/task-thread-modal';
 import { TaskGraphNode } from '@/components/task-graph/task-graph-node';
 
 const PROJECT_PARAM = 'projectId';
+const MILESTONE_PARAM = 'milestoneId';
 
 // One custom node type; read-only so no connect/drag handlers.
 const nodeTypes: NodeTypes = { task: TaskGraphNode };
@@ -51,9 +53,11 @@ export function TaskGraphView({ tasks, projects }: Props) {
   useTaskEvents();
 
   const projectId = searchParams.get(PROJECT_PARAM) ?? '';
+  // Phase 58 F — an optional milestone scope (deep-linked from a roadmap lane).
+  const milestoneId = searchParams.get(MILESTONE_PARAM) ?? '';
   const { data: graph, loading } = useApiData(
-    (signal) => getTaskGraph(projectId || undefined, signal),
-    [projectId],
+    (signal) => getTaskGraph(projectId || undefined, milestoneId || undefined, signal),
+    [projectId, milestoneId],
   );
 
   const projectOptions = useMemo(
@@ -76,11 +80,20 @@ export function TaskGraphView({ tasks, projects }: Props) {
       const params = new URLSearchParams(searchParams.toString());
       if (id) params.set(PROJECT_PARAM, id);
       else params.delete(PROJECT_PARAM);
+      // Switching project drops a stale milestone filter.
+      params.delete(MILESTONE_PARAM);
       const qs = params.toString();
       router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
     },
     [router, pathname, searchParams],
   );
+
+  const clearMilestone = useCallback(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete(MILESTONE_PARAM);
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }, [router, pathname, searchParams]);
 
   const { nodes, edges } = useMemo(
     () => (graph ? layoutTaskGraph(graph) : { nodes: [], edges: [] }),
@@ -137,6 +150,18 @@ export function TaskGraphView({ tasks, projects }: Props) {
             {graph.nodes.length} task{graph.nodes.length === 1 ? '' : 's'} · {edges.length} dependenc
             {edges.length === 1 ? 'y' : 'ies'}
           </span>
+        ) : null}
+        {milestoneId ? (
+          // Phase 58 F — surface + let the user clear a deep-linked milestone filter.
+          <button
+            type="button"
+            onClick={clearMilestone}
+            className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-accent/40 px-2 py-0.5 text-xs text-foreground hover:bg-accent"
+          >
+            Milestone filter
+            <X className="h-3 w-3" aria-hidden />
+            <span className="sr-only">Clear milestone filter</span>
+          </button>
         ) : null}
         {selectedProject ? (
           <ProjectProgressBar project={selectedProject} className="ml-auto w-44" />

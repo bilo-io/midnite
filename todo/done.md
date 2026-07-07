@@ -13,7 +13,19 @@ Closes Phase 63 Theme A. The office rebuilt in first-person three.js (r3f + drei
 - [x] **web:** `office-surface.tsx` picks 2D/3D from `?view=` (Phase-52 client-read pattern under `output: 'export'`); the 2D engine is untouched + behavior-preserving.
 - [x] **Design calls (locked up front):** minimal look/move pulled into A (collision/head-bob → B); flat palette colours now (canvas textures deferred); build-all + `frustumCulled` now (per-room lazy chunk-gating → Theme G); static lighting snapshot.
 - [x] Tests: world-builder + materials + lighting units, an `office-surface` RTL routing spec (WebGL engines mocked in jsdom), a Playwright `?view=3d` smoke. Full web unit suite green. Pure `packages/web` — zero gateway/`shared` work.
-- [x] **Integration with Theme F (already merged, PR #336):** kept F's 2D/3D tab strip (`OfficeSurface`) + preference; repointed it at the real r3f engine under `components/office3d/` and removed F's placeholder `office-3d-view*.tsx`. Resolved the `@types/three` global-type pollution F flagged (webgpu/webxr transitive globals collapsing unrelated JSX to `never`).
+- [x] **Integration with Theme F (already merged, PR #336):** kept F's 2D/3D tab strip (`OfficeSurface`) + preference; repointed it at the real r3f engine under `components/office3d/` and removed F's placeholder `office-3d-view*.tsx`. Resolved the r3f JSX-augmentation fallout F flagged — retyped three `React.ElementType` icon slots to `LucideIcon` (the bloated `keyof JSX.IntrinsicElements` collapsed the mapped type to `never`).
+
+---
+
+## 2026-07-07 — feat: roadmap breakdown tie-in + cross-links — Phase 58 Theme F (PR #338) — CLOSES PHASE 58
+
+The last Theme of Phase 58. Entry points shipped in B (board Graph button) + E (project Roadmap tab); F adds the cross-links that stitch the graph, roadmap, and board into one plan, plus seeding a milestone from a goal. Reuse-first.
+
+- [x] **Breakdown → milestone:** a "Generate tasks…" lane action ([`milestone-breakdown-modal.tsx`](../packages/web/components/roadmap/milestone-breakdown-modal.tsx)) drafts a dependency-aware breakdown from a goal (`POST /tasks/breakdown`), curates it in the shared `BreakdownEditor`, then creates the tasks project-linked + **assigned to the milestone**. `create-from-breakdown` gains an optional `milestoneId`, validated same-project via a repo-level lookup (`projects.repository.milestoneProjectId`) — no milestones-module cycle.
+- [x] **Milestone → graph:** a "View in graph" lane action deep-links to the DAG **filtered to the milestone** (`buildGraph(…, milestoneId?)`; `GET /tasks/graph?milestoneId=`; an out-of-milestone blocker still surfaces as a foreign node). The graph toolbar shows a clearable **milestone-filter chip**.
+- [x] **Task → milestone:** `TaskSummary` carries a joined **`milestoneName`** (a repo-level `LEFT JOIN` in `summariseMany` — no cycle), so the board `TaskCard` shows a milestone chip; the task detail keeps its milestone picker.
+- [x] Tests: gateway graph milestone-filter (+ foreign blocker) / summariser name-join / `create-from-breakdown` milestoneId; web `TaskCard` chip story + deterministic roadmap e2e (renders + graph-filter chip). `:typecheck`/`:lint`/`web:test` (849)/`gateway:test` (1598)/`ui:test` (46) green. The goal→breakdown UI flow is covered at the gateway layer (its lane-menu modal is flaky against the cramped cockpit + shared e2e-gateway boot).
+- **Phase 58 complete** — A (graph API) · B (DAG view) · C (project progress) · D (milestone model) · E (roadmap view) · F (tie-in) all shipped.
 
 ---
 

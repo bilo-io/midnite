@@ -70,10 +70,17 @@ a.link:hover{color:var(--accent);text-decoration-color:var(--accent)}
 .md-copy.copied{color:var(--accent);border-color:var(--accent)}
 .md-code{line-height:1.55;color:var(--text);padding:0.85em 1em;overflow-x:auto;white-space:pre}
 .md-code code{font-family:inherit;background:none;border:none;padding:0;white-space:pre}
-.tok-com{color:var(--muted);font-style:italic}
-.tok-str{color:var(--accent-2)}
-.tok-kw{color:var(--accent);font-weight:600}
-.tok-num{color:var(--text)}
+.md-code .hljs{background:transparent;color:var(--text)}
+.hljs-comment,.hljs-quote{color:var(--muted);font-style:italic}
+.hljs-keyword,.hljs-selector-tag,.hljs-subst,.hljs-doctag{color:hsl(280 60% 66%)}
+.hljs-name,.hljs-selector-id,.hljs-selector-class,.hljs-symbol,.hljs-bullet,.hljs-deletion{color:hsl(350 75% 66%)}
+.hljs-string,.hljs-regexp,.hljs-addition,.hljs-selector-attr,.hljs-selector-pseudo,.hljs-meta .hljs-string{color:hsl(140 50% 55%)}
+.hljs-title,.hljs-title.function_,.hljs-title.class_,.hljs-built_in,.hljs-section{color:hsl(210 75% 65%)}
+.hljs-number,.hljs-literal,.hljs-type{color:hsl(30 85% 62%)}
+.hljs-attr,.hljs-attribute,.hljs-variable,.hljs-template-variable,.hljs-property{color:hsl(190 65% 58%)}
+.hljs-meta,.hljs-operator,.hljs-punctuation{color:var(--muted)}
+.hljs-emphasis{font-style:italic}
+.hljs-strong{font-weight:600}
 .md-table-wrap{overflow-x:auto;margin:0.4em 0}
 .md-table{border-collapse:collapse;font-size:0.6em;width:max-content;max-width:100%}
 .md-table th,.md-table td{border:1px solid var(--border);padding:0.4em 0.75em;text-align:left;vertical-align:top}

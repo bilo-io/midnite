@@ -13,8 +13,11 @@
 // Inline rules (shared): `code`, [label](url), **bold**, *italic* / _italic_.
 // Plain text is HTML-escaped and link URLs are sanitized.
 //
-// Ported from the standalone slides demo; kept dependency-free so the presenter
-// and export share one source of truth for structure + escaping.
+// Ported from the standalone slides demo; the presenter and export share this
+// one source of truth for structure + escaping. Fenced code is coloured by
+// highlight.js (real per-language grammars).
+
+import hljs from 'highlight.js/lib/common';
 
 export type Slide = { title: string; steps: string[]; cover?: boolean };
 export type ParsedDeck = { title: string; slides: Slide[] };
@@ -136,132 +139,58 @@ function splitRow(row: string): string[] {
     .map((c) => c.trim());
 }
 
-// ---- Lightweight, dependency-free syntax highlighting ----
-// A single generic tokenizer (comments / strings / numbers / keywords) rather
-// than a per-language grammar or a highlighting library — enough to make the
-// decks' code fences readable while keeping the app's zero-runtime-deps promise.
-// It runs on the RAW source and escapes each token itself, so escaping stays
-// centralized here (see the security note above).
-const HASH_COMMENT_LANGS = new Set([
-  'bash', 'sh', 'shell', 'zsh', 'console', 'py', 'python', 'rb', 'ruby', 'yaml', 'yml', 'toml',
-  'ini', 'r', 'perl', 'pl', 'makefile', 'dockerfile',
-]);
-const SLASH_COMMENT_LANGS = new Set([
-  'js', 'javascript', 'ts', 'typescript', 'jsx', 'tsx', 'java', 'c', 'cpp', 'c++', 'cs', 'csharp',
-  'go', 'golang', 'rust', 'rs', 'swift', 'kotlin', 'kt', 'php', 'scss', 'less', 'dart',
-]);
-const KEYWORDS = new Set([
-  // JS / TS
-  'const', 'let', 'var', 'function', 'return', 'if', 'else', 'for', 'while', 'do', 'switch',
-  'case', 'break', 'continue', 'new', 'class', 'extends', 'super', 'import', 'export', 'from',
-  'default', 'async', 'await', 'yield', 'try', 'catch', 'finally', 'throw', 'typeof',
-  'instanceof', 'in', 'of', 'this', 'void', 'delete', 'null', 'undefined', 'true', 'false',
-  // Python
-  'def', 'elif', 'lambda', 'pass', 'None', 'True', 'False', 'and', 'or', 'not', 'with', 'as',
-  'global', 'nonlocal', 'raise', 'except', 'self', 'del', 'assert',
-  // Cross-language
-  'public', 'private', 'protected', 'static', 'final', 'abstract', 'interface', 'enum', 'struct',
-  'fn', 'func', 'package', 'type', 'impl', 'trait', 'mut', 'use', 'module', 'then', 'echo',
-  'exit', 'local', 'require', 'include',
-]);
+// ---- Syntax highlighting (highlight.js) ----
+// Real per-language grammars give language-correct token colours (keyword vs.
+// type vs. built-in vs. string, …) rather than the old generic tokenizer's
+// approximation; the `common` bundle (imported above, ~35 popular languages)
+// keeps the client payload reasonable. highlight.js escapes HTML in its output,
+// so the emitted markup is safe to drop straight into a deck step's HTML — the
+// presenter reveals code steps instantly, so those escaped `.hljs-*` spans never
+// pass through the bullet typewriter's `sliceHtml`.
 
-const isWordChar = (c: string) => /[A-Za-z0-9_$]/.test(c);
+// A few fence labels people write that highlight.js doesn't alias itself.
+const LANG_ALIASES: Record<string, string> = {
+  sh: 'bash',
+  zsh: 'bash',
+  shell: 'bash',
+  console: 'bash',
+  yml: 'yaml',
+  golang: 'go',
+  jsx: 'javascript',
+  tsx: 'typescript',
+  'c++': 'cpp',
+  py: 'python',
+  rs: 'rust',
+  kt: 'kotlin',
+};
 
+/** Highlight a fenced block's source for a given language label. Returns
+ *  highlight.js markup (`.hljs-*` spans, HTML already escaped) when the
+ *  language is recognized, otherwise the plainly-escaped source. */
 export function highlightCode(raw: string, lang: string): string {
-  const l = (lang || '').toLowerCase();
-  const hash = HASH_COMMENT_LANGS.has(l);
-  const slash = SLASH_COMMENT_LANGS.has(l);
-  const n = raw.length;
-  let out = '';
-  let i = 0;
-  const tok = (cls: string, text: string) => `<span class="tok-${cls}">${escapeHtml(text)}</span>`;
-
-  while (i < n) {
-    const ch = raw[i]!;
-
-    // Comments (only for languages we recognize, to avoid false positives).
-    if (slash && ch === '/' && raw[i + 1] === '/') {
-      let j = i;
-      while (j < n && raw[j] !== '\n') j++;
-      out += tok('com', raw.slice(i, j));
-      i = j;
-      continue;
+  const l = (lang || '').toLowerCase().trim();
+  const id = LANG_ALIASES[l] ?? l;
+  if (id && hljs.getLanguage(id)) {
+    try {
+      return hljs.highlight(raw, { language: id, ignoreIllegals: true }).value;
+    } catch {
+      // Fall through to a plain, escaped rendering on any highlighter error.
     }
-    if (slash && ch === '/' && raw[i + 1] === '*') {
-      let j = i + 2;
-      while (j < n && !(raw[j] === '*' && raw[j + 1] === '/')) j++;
-      j = Math.min(n, j + 2);
-      out += tok('com', raw.slice(i, j));
-      i = j;
-      continue;
-    }
-    if (hash && ch === '#') {
-      let j = i;
-      while (j < n && raw[j] !== '\n') j++;
-      out += tok('com', raw.slice(i, j));
-      i = j;
-      continue;
-    }
-
-    // Strings (single / double / backtick), honoring backslash escapes.
-    if (ch === '"' || ch === "'" || ch === '`') {
-      let j = i + 1;
-      while (j < n) {
-        if (raw[j] === '\\') {
-          j += 2;
-          continue;
-        }
-        if (raw[j] === ch) {
-          j++;
-          break;
-        }
-        j++;
-      }
-      out += tok('str', raw.slice(i, j));
-      i = j;
-      continue;
-    }
-
-    // Numbers (int, float, hex) — not when glued to the end of an identifier.
-    if (/[0-9]/.test(ch) && !(i > 0 && isWordChar(raw[i - 1]!))) {
-      let j;
-      if (ch === '0' && (raw[i + 1] === 'x' || raw[i + 1] === 'X')) {
-        j = i + 2;
-        while (j < n && /[0-9a-fA-F]/.test(raw[j]!)) j++;
-      } else {
-        j = i + 1;
-        while (j < n && /[0-9._]/.test(raw[j]!)) j++;
-      }
-      out += tok('num', raw.slice(i, j));
-      i = j;
-      continue;
-    }
-
-    // Identifiers -> keyword or plain text.
-    if (/[A-Za-z_$]/.test(ch)) {
-      let j = i;
-      while (j < n && isWordChar(raw[j]!)) j++;
-      const word = raw.slice(i, j);
-      out += KEYWORDS.has(word) ? tok('kw', word) : escapeHtml(word);
-      i = j;
-      continue;
-    }
-
-    out += escapeHtml(ch);
-    i++;
   }
-  return out;
+  return escapeHtml(raw);
 }
 
 /** A fenced code block with a language label + copy button. The body is
  *  syntax-highlighted when the language is known, otherwise just escaped. */
 function renderCode(code: string, lang = ''): string {
-  const body = lang ? highlightCode(code, lang) : escapeHtml(code);
+  const body = highlightCode(code, lang);
+  const l = lang.toLowerCase().trim();
+  const langClass = /^[\w+#-]+$/.test(l) ? ` language-${l}` : '';
   const label = lang ? `<span class="md-code-lang">${escapeHtml(lang)}</span>` : '';
   return (
     `<div class="md-code-wrap">` +
     `<div class="md-code-head">${label}<button type="button" class="md-copy" aria-label="Copy code to clipboard">Copy</button></div>` +
-    `<pre class="md-code"><code>${body}</code></pre>` +
+    `<pre class="md-code"><code class="hljs${langClass}">${body}</code></pre>` +
     `</div>`
   );
 }

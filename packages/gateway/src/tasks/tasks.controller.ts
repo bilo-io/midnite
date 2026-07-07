@@ -95,10 +95,13 @@ export class TasksController {
   @Get('graph')
   graph(
     @Query('projectId') projectId?: string,
+    @Query('milestoneId') milestoneId?: string,
     @CurrentUser() user?: CurrentUserPayload | null,
   ): TaskGraphResponse {
     const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
-    return { graph: this.service.buildGraph(projectId?.trim() || undefined, scope) };
+    return {
+      graph: this.service.buildGraph(projectId?.trim() || undefined, scope, milestoneId?.trim() || undefined),
+    };
   }
 
   /**

@@ -336,10 +336,47 @@
   white-space: pre;
 }
 .slides-scope .md-code code { font-family: inherit; background: none; border: none; padding: 0; white-space: pre; }
-.slides-scope .tok-com { color: var(--s-faint); font-style: italic; }
-.slides-scope .tok-str { color: var(--s-accent-2); }
-.slides-scope .tok-kw { color: var(--s-accent); font-weight: 600; }
-.slides-scope .tok-num { color: var(--s-text); }
+
+/* highlight.js token palette — the same hue set the PR diff viewer uses
+ * (diff-theme.css), chosen with fixed HSL values that read on both the light and
+ * dark app themes, so no per-theme override is needed. */
+.slides-scope .md-code .hljs { background: transparent; color: var(--s-text); }
+.slides-scope .hljs-comment,
+.slides-scope .hljs-quote { color: var(--s-faint); font-style: italic; }
+.slides-scope .hljs-keyword,
+.slides-scope .hljs-selector-tag,
+.slides-scope .hljs-subst,
+.slides-scope .hljs-doctag { color: hsl(280 60% 62%); }
+.slides-scope .hljs-name,
+.slides-scope .hljs-selector-id,
+.slides-scope .hljs-selector-class,
+.slides-scope .hljs-symbol,
+.slides-scope .hljs-bullet,
+.slides-scope .hljs-deletion { color: hsl(350 70% 60%); }
+.slides-scope .hljs-string,
+.slides-scope .hljs-regexp,
+.slides-scope .hljs-addition,
+.slides-scope .hljs-selector-attr,
+.slides-scope .hljs-selector-pseudo,
+.slides-scope .hljs-meta .hljs-string { color: hsl(140 45% 48%); }
+.slides-scope .hljs-title,
+.slides-scope .hljs-title.function_,
+.slides-scope .hljs-title.class_,
+.slides-scope .hljs-built_in,
+.slides-scope .hljs-section { color: hsl(210 70% 58%); }
+.slides-scope .hljs-number,
+.slides-scope .hljs-literal,
+.slides-scope .hljs-type { color: hsl(30 80% 55%); }
+.slides-scope .hljs-attr,
+.slides-scope .hljs-attribute,
+.slides-scope .hljs-variable,
+.slides-scope .hljs-template-variable,
+.slides-scope .hljs-property { color: hsl(190 60% 50%); }
+.slides-scope .hljs-meta,
+.slides-scope .hljs-operator,
+.slides-scope .hljs-punctuation { color: hsl(var(--foreground) / 0.7); }
+.slides-scope .hljs-emphasis { font-style: italic; }
+.slides-scope .hljs-strong { font-weight: 600; }
 .slides-scope .md-table-wrap { overflow-x: auto; margin: 0.6em 0; }
 .slides-scope .md-table { border-collapse: collapse; font-size: 0.9em; width: max-content; max-width: 100%; }
 .slides-scope .md-table th,

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ANSWER_EVENT_KIND } from '@midnite/shared';
 import { createTestDb, type TestDbHandle } from '../test/db';
 import { seedLargeDataset } from '../test/seed-large';
+import { roadmapMilestones } from '../db/schema';
 import { TasksRepository } from './tasks.repository';
 
 /**
@@ -40,6 +41,20 @@ describe('TasksRepository — summaries + pagination (Phase 57 C)', () => {
     // First image only.
     expect(summary!.attachments).toHaveLength(1);
     expect(summary!.attachments?.[0]?.mime).toBe('image/png');
+  });
+
+  it('joins the assigned milestone name onto the summary (Phase 58 F)', () => {
+    handle.db
+      .insert(roadmapMilestones)
+      .values({ id: 'ms-1', projectId: 'p1', name: 'Alpha', position: 0, createdAt: now, updatedAt: now })
+      .run();
+    repo.insertTask({ id: 'tm', title: 'assigned', status: 'todo', priority: 1, projectId: 'p1', milestoneId: 'ms-1', createdAt: now, updatedAt: now });
+    repo.insertTask({ id: 'tn', title: 'unassigned', status: 'todo', priority: 1, createdAt: now, updatedAt: now });
+
+    const byId = new Map(repo.summariseMany(repo.listTasks()).map((s) => [s.id, s]));
+    expect(byId.get('tm')?.milestoneId).toBe('ms-1');
+    expect(byId.get('tm')?.milestoneName).toBe('Alpha');
+    expect(byId.get('tn')?.milestoneName).toBeUndefined();
   });
 
   it('caps links at six and keeps blocker ids', () => {

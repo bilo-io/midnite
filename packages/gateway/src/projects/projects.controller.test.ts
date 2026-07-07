@@ -138,6 +138,15 @@ describe('ProjectsController — create-from-breakdown (Phase 28 Theme B)', () =
       'p1',
       expect.objectContaining({ tasks: [expect.objectContaining({ ref: 'a', title: 'A' })] }),
       'midnite',
+      undefined,
     );
+  });
+
+  it('passes a milestoneId through when seeding a milestone (Phase 58 F)', () => {
+    const createTasksFromBreakdown = vi.fn(() => [fakeTask]);
+    const { controller } = build({ createTasksFromBreakdown });
+    const breakdown = { tasks: [{ ref: 'a', title: 'A', dependsOn: [] }] };
+    controller.createFromBreakdown('p1', { breakdown, milestoneId: 'ms-1' });
+    expect(createTasksFromBreakdown).toHaveBeenCalledWith('p1', expect.anything(), undefined, 'ms-1');
   });
 });
