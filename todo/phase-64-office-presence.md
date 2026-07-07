@@ -124,21 +124,25 @@ Engine-agnostic state so 2D and 3D are just two renderers of one slice.
       snap on scene change or large jumps) in the pure `lib/presence-interp.ts` helper —
       unit-testable, shared by both renderers. (PR #358)
 
-## Theme C — 2D renderer (Phaser office) — **M**
+## Theme C — 2D renderer (Phaser office) — **M** — ✅ DONE (PR #361, 2026-07-07)
 
-- [ ] **Remote avatars as Actors:** a presence-driven diff in
-      [`office-scene.ts`](../packages/web/components/office/scenes/office-scene.ts) mirroring
-      `renderActors` — `createActor`-based sprites with the peer's variant/tint
-      ([`textures.ts`](../packages/web/lib/office/textures.ts) pipeline), name plates always on
-      for humans (distinct from the proximity-gated agent nameplates), walk animation driven by
-      interpolated velocity/facing.
-- [ ] **Scene scoping:** peers render only in the scene they're in (`scene` field:
-      `office`/`corner`/future `arcade`); the corner-office scene gets the same diff; teardown
-      respects the existing `alive` guard + `reset()` discipline.
-- [ ] **Minimap dots:** remote peers as distinct-colored dots via the existing per-actor
-      `worldToMinimap` path — visible across rooms even when the avatar isn't.
-- [ ] **Solo-preserving:** with zero peers connected the scene renders byte-for-byte today's
-      behavior; existing office specs pass unedited.
+- [x] **Remote avatars as Actors:** the reusable `PeerLayer`
+      ([`peer-layer.ts`](../packages/web/components/office/scenes/peer-layer.ts)) diffs the presence
+      store's peers each frame (create/update/destroy) into
+      [`office-scene.ts`](../packages/web/components/office/scenes/office-scene.ts) — sprites with
+      the peer's variant/tint ([`textures.ts`](../packages/web/lib/office/textures.ts) pipeline),
+      always-on name plates, eased toward the reported position via the shared `interpStep`, with a
+      distance-driven 2-frame step cycle (no anim-system dependency). The player's position is
+      published each frame via a non-React bridge (`presence-bridge.ts`) that the `use-presence`
+      hook's throttled `sendMove` registers with. (PR #361)
+- [x] **Scene scoping:** peers render only in the scene they're in (`office`/`corner`); the
+      corner-office scene instantiates the same `PeerLayer`; teardown respects the `alive` guard +
+      destroys the layer. (PR #361)
+- [x] **Minimap dots:** remote peers as distinct cyan dots via `worldToMinimap` — visible across
+      rooms even when the avatar isn't. (PR #361)
+- [x] **Solo-preserving:** with zero peers the scene renders byte-for-byte today's behavior; existing
+      office specs pass unedited. First-visit guests get a name prompt; `use-presence` mounts in the
+      2D office view. (PR #361)
 
 ## Theme D — 3D renderer (three.js office) — **M** · ⛔ blocked on [Phase 63](phase-63-office-3d.md) A–C
 
