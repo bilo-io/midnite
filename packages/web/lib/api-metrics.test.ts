@@ -38,7 +38,7 @@ describe('getCycleTime', () => {
   it('builds the query string and parses the response', async () => {
     const fetchMock = mockJson(CYCLE_BODY);
     const res = await getCycleTime({ groupBy: 'repo', windowDays: 7 });
-    const url = (fetchMock as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const url = (fetchMock as unknown as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     expect(url).toContain('/metrics/cycle-time?');
     expect(url).toContain('groupBy=repo');
     expect(url).toContain('windowDays=7');
@@ -48,7 +48,7 @@ describe('getCycleTime', () => {
   it('omits params when none are given', async () => {
     const fetchMock = mockJson({ ...CYCLE_BODY, groupBy: 'none' });
     await getCycleTime();
-    const url = (fetchMock as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const url = (fetchMock as unknown as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     expect(url).toMatch(/\/metrics\/cycle-time$/);
   });
 });
@@ -60,7 +60,7 @@ describe('getGaugeHistory', () => {
       truncated: false,
     });
     const res = await getGaugeHistory({ from: '2026-07-01T00:00:00.000Z' });
-    const url = (fetchMock as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    const url = (fetchMock as unknown as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     expect(url).toContain('/metrics/gauges/history?');
     expect(url).toContain('from=2026-07-01');
     expect(res.samples).toHaveLength(1);
