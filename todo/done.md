@@ -4,6 +4,20 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-07 — feat: office-presence contract + gateway service — Phase 64 Theme A (PR #356)
+
+The foundation for multiplayer presence: typed frames up, coalesced state down, nothing stored. Gateway + shared only; zero DB (ephemeral by design). Starts the A→B→C spine.
+
+- [x] **shared:** `PRESENCE_WS_PATH` + zod unions (`events/presence.ts`) — client hello/move/emote, server snapshot/peer-updated/peer-left/emote; snapshot carries `selfId` for echo-filtering. `presence.tickMs`/`presence.staleMs` config keys.
+- [x] **`PresenceService`:** in-memory last-known-state map (no DB, no ring), tick-coalesced fan-out (one `peer-updated` per team per tick), snapshot-on-join, disconnect + stale-timeout departure, ghost exclusion, hybrid identity (JWT email overrides forged hello name + team-scopes; guest trusted in local mode), duplicate-connection coalescing.
+- [x] **Cross-channel safety:** fan-out over the service's own scoped socket set via `WsBroadcastService.toAll` (not the shared `ConnectionRegistry`), so presence never leaks to task/terminal sockets; backpressure guard retained.
+- [x] **`PresenceGateway` + `PresenceModule`** (origin + JWT handshake, frame parse) registered in AppModule; reuses the `@Global` WsModule + AuthModule.
+- [x] **Tests + gate:** 11 PresenceService specs + 9 shared contract round-trips. `moon run :typecheck` (13 pkgs), shared+gateway lint 0 errors, gateway 1751 + shared tests pass.
+
+Theme B (client store + sampler) and Theme C (2D renderer) consume this next; Theme D (3D avatars) is unblocked now Phase 63 shipped.
+
+---
+
 ## 2026-07-07 — feat: cycle-time as a first-class metric — Phase 61 Theme C (PR #354)
 
 Task lifecycle time (wait vs. work vs. end-to-end) is now a queryable metric, derived from the existing `status.changed` event stream with **no schema change** (the phase doc's measure-first rule). Gateway/shared only; Ops charts consume it in Theme G.
