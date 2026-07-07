@@ -6,6 +6,16 @@ import { cleanup } from '@testing-library/react';
 
 afterEach(() => cleanup());
 
+// jsdom doesn't implement ResizeObserver; recharts' <ResponsiveContainer> calls it
+// on mount. A no-op stub lets chart components render (at 0×0) without throwing.
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof ResizeObserver;
+}
+
 // jsdom doesn't implement matchMedia; components that respect prefers-reduced-motion
 // (e.g. the widget spinner) call it on mount. Default to "no preference".
 if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {
