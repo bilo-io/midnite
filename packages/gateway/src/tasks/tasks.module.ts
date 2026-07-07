@@ -15,7 +15,6 @@ import { TasksController } from './tasks.controller';
 import { TaskFailuresRepository } from './task-failures.repository';
 import { TasksRepository } from './tasks.repository';
 import { TasksService } from './tasks.service';
-import { TaskEventBus } from './task-event-bus';
 import { TaskEventBusModule } from './task-event-bus.module';
 import { TasksGateway } from './tasks.gateway';
 
@@ -42,6 +41,10 @@ import { TasksGateway } from './tasks.gateway';
     AiReviewService,
     HeldTasksRegistry,
   ],
-  exports: [TasksService, TaskEventBus, HeldTasksRegistry],
+  // TaskEventBus is provided by the @Global TaskEventBusModule (Phase 62 B), so it
+  // can't be re-exported as a bare provider here (Nest rejects exporting a token the
+  // module doesn't itself provide — this broke full-app boot). Re-export the module
+  // instead, preserving the export surface for consumers that import TasksModule.
+  exports: [TasksService, TaskEventBusModule, HeldTasksRegistry],
 })
 export class TasksModule {}

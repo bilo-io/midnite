@@ -52,6 +52,12 @@ import {
   OpsSummarySchema,
   type OpsSummary,
   type OpsQuery,
+  CycleTimeResponseSchema,
+  type CycleTimeResponse,
+  type CycleTimeQuery,
+  GaugeHistoryResponseSchema,
+  type GaugeHistoryResponse,
+  type GaugeHistoryQuery,
   SystemStatsSchema,
   type SystemStats,
   WorkflowTemplateResponseSchema,
@@ -2294,6 +2300,24 @@ export async function getOpsMetrics(params?: OpsQuery): Promise<OpsSummary> {
   if (params?.to) qs.set('to', params.to);
   const query = qs.toString() ? `?${qs.toString()}` : '';
   return fetchJson(`/metrics/ops${query}`, undefined, OpsSummarySchema);
+}
+
+/** Lifecycle cycle-time (wait/work/end-to-end p50/p90) from `GET /metrics/cycle-time` (Phase 61 C). */
+export async function getCycleTime(params?: CycleTimeQuery): Promise<CycleTimeResponse> {
+  const qs = new URLSearchParams();
+  if (params?.groupBy) qs.set('groupBy', params.groupBy);
+  if (params?.windowDays != null) qs.set('windowDays', String(params.windowDays));
+  const query = qs.toString() ? `?${qs.toString()}` : '';
+  return fetchJson(`/metrics/cycle-time${query}`, undefined, CycleTimeResponseSchema);
+}
+
+/** Persisted gauge samples (fleet trend history) from `GET /metrics/gauges/history` (Phase 61 D). */
+export async function getGaugeHistory(params?: GaugeHistoryQuery): Promise<GaugeHistoryResponse> {
+  const qs = new URLSearchParams();
+  if (params?.from) qs.set('from', params.from);
+  if (params?.to) qs.set('to', params.to);
+  const query = qs.toString() ? `?${qs.toString()}` : '';
+  return fetchJson(`/metrics/gauges/history${query}`, undefined, GaugeHistoryResponseSchema);
 }
 
 /** Real host telemetry (CPU / memory / disk) from `GET /system/stats`. */

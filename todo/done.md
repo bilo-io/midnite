@@ -4,6 +4,13 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-07 — feat: cycle-time + fleet-trend Ops charts — Phase 61 Theme G (partial) (PR #360)
+
+First visual Ops-deepening slice: renders the Theme C (cycle-time) + D (gauge-history) data as charts. Cost views + run timeline remain open under G (cost attribution needs Theme B/E), so G lands ◐ partial. Pure `packages/web` + a one-line gateway boot fix.
+
+- [x] **web:** `CycleFleetPanel` on the Ops → Metrics tab — cycle-time grouped p50/p90 bars (wait/work/end-to-end) with a groupBy dropdown (fleet/repo/project/priority) + retry-overhead stat, and fleet-trend charts (queue depth / slots / tick latency) from persisted gauge history; shared 7/30/90d window selector; self-polling via `usePolling`. `getCycleTime` + `getGaugeHistory` in `lib/api.ts`.
+- [x] **fix(gateway):** `TasksModule` re-exported the bare `TaskEventBus` after PR #351 made it `@Global` — Nest rejects re-exporting a token a module doesn't provide, which **broke full-app boot** (only the e2e gateway caught it; unit tests don't boot `AppModule`). Re-exports the module now.
+- [x] Tests: RTL for both sections (groupBy, retry stat, empty/truncated, `formatDuration`) + api-client query-string tests; `ResizeObserver` polyfill in `vitest.setup` (recharts in jsdom); Playwright preview shot. web 1000 · gateway 1753 · shared green; `:typecheck` · `:lint` green.
 ## 2026-07-07 — fix: atomic task + council create paths — Phase 60 E follow-up (PR #359)
 
 Acts on the HIGH transaction-atomicity findings (TX-1/2/3) from the Phase 60 E audit (PR #357).
