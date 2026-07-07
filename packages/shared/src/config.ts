@@ -410,6 +410,19 @@ export const GuardrailsConfigSchema = z.object({
 // grammar always runs for free; this only tunes the *fuzzy* (LLM) fallback's
 // routing (Theme D). Optional (defaulted) so existing midnite.json files keep
 // validating.
+// Metrics history + retention (Phase 61). The gauge sampler (Theme D) persists a
+// `gauge_samples` row every `sampleIntervalMs` so fleet trends survive a restart;
+// `rawRetentionDays` bounds the raw metrics tables (the sampler self-prunes older
+// gauge samples now — Theme E generalizes pruning/rollups). `0` disables either.
+export const MetricsConfigSchema = z.object({
+  // How often the gauge sampler persists a row (ms). Default 60s. `0` disables
+  // sampling entirely (no timer, no rows) — behaviour-preserving opt-out.
+  sampleIntervalMs: z.number().int().nonnegative().default(60000),
+  // Days of raw metrics rows to keep; the sampler prunes gauge samples older than
+  // this on each run. Default 30. `0` disables pruning (keep forever).
+  rawRetentionDays: z.number().int().nonnegative().default(30),
+});
+
 export const ChatConfigSchema = z.object({
   // When a command can't be parsed deterministically, prefer a configured local
   // `openai-compatible` provider (Ollama/LM Studio/vLLM → zero API cost) over the
@@ -451,11 +464,15 @@ export const MidniteConfigSchema = z.object({
   // Chat-to-board command bar (Phase 59). Optional (defaulted) so existing
   // midnite.json files keep validating.
   chat: ChatConfigSchema.default({}),
+  // Metrics history + retention (Phase 61). Optional (defaulted) so existing
+  // midnite.json files keep validating.
+  metrics: MetricsConfigSchema.default({}),
 });
 
 export type MidniteConfig = z.infer<typeof MidniteConfigSchema>;
 export type GuardrailsConfig = z.infer<typeof GuardrailsConfigSchema>;
 export type BackupConfig = z.infer<typeof BackupConfigSchema>;
+export type MetricsConfig = z.infer<typeof MetricsConfigSchema>;
 export type BlastRadiusConfig = z.infer<typeof BlastRadiusConfigSchema>;
 export type KnowledgeConfig = z.infer<typeof KnowledgeConfigSchema>;
 export type NotificationsConfig = z.infer<typeof NotificationsConfigSchema>;
