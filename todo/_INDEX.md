@@ -128,7 +128,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 
 ### [Phase 63 — Office 3D](phase-63-office-3d.md)
 *The office rebuilt in first-person three.js (r3f + drei): same rooms/data, same Zustand store contract so every existing React panel is reused untouched; 2D/3D tabs on /office; arcade sub-scene with one playable Breakout. Pure packages/web; 2D office behavior-preserving.*
-- ◻ **A** — World foundation: r3f stage, procedural low-poly world from layout.ts, room-chunk frustum culling, day/night lighting
+- 🔄 **A** — World foundation: r3f stage, procedural low-poly world from layout.ts, room-chunk frustum culling, day/night lighting
 - ◻ **B** — First-person rig: pointer-lock + WASD, grid AABB collision, footstep head-bob (reduced-motion aware)
 - ◻ **C** — Agents & interactions: proximity → existing store fields → existing modals; low-poly avatars + billboards + P31 tool bubbles; minimap
 - ◻ **D** — Arcade sub-scene: cabinet room, playable Breakout w/ power-ups on a CanvasTexture screen, stub cabinets → existing menu
@@ -179,7 +179,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 *Natural-language command bar in the Cmd-K palette; deterministic-first, local-model-preferred; composes existing task services.*
 - ✅ **A** — Intent contract + deterministic parser + LLM fallback (PR #321)
 - ✅ **B** — Execute intents by composing existing services (PR #323)
-- ◻ **C** — Status-query answerer (read-only)
+- ✅ **C** — Status-query answerer (read-only) (PR #335)
 - ✅ **D** — Inference routing: deterministic-first, local-preferred (PR #332)
 - ✅ **E** — Palette command-bar UI (PR #334)
 - ✅ **F** — Safety: preview, confirm, undo, audit (PR #333)
