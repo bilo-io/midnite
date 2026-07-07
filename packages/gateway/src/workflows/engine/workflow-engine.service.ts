@@ -9,10 +9,13 @@ import {
   type NodeRunLog,
   type RunStatus,
   type RunTriggerSource,
+  type MidniteConfig,
   type Workflow,
   type WorkflowGraph,
   type WorkflowRun,
 } from '@midnite/shared';
+import { MIDNITE_CONFIG } from '../../config.token';
+import { gatewaySecretEnvNames } from '../../config/gateway-secret-env';
 import { WorkflowsRepository } from '../workflows.repository';
 import { WorkflowEventBus } from '../workflow-event-bus';
 import { CyclicWorkflowError, predecessors, topologicalOrder } from '../lib/graph';
@@ -41,7 +44,22 @@ export class WorkflowEngine {
     @Inject(WorkflowsRepository) private readonly repo: WorkflowsRepository,
     @Inject(ExecutorRegistry) private readonly registry: ExecutorRegistry,
     @Inject(WorkflowEventBus) private readonly bus: WorkflowEventBus,
+    @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
   ) {}
+
+  /**
+   * Phase 60 B — `$env` exposes the process env to `{{expr}}` params, but must NOT
+   * leak the gateway's own master secrets (encryption key / auth token / JWT /
+   * workflows key): a resolved value is persisted as node output + broadcast to WS
+   * subscribers + exfiltratable via an http node, so `{{$env.MIDNITE_SECRET_KEY}}`
+   * would hand any workflow author every stored secret. Strip exactly those names
+   * (shared with the spawn-env scrub) and leave every other env var usable.
+   */
+  private safeEnv(): NodeJS.ProcessEnv {
+    const copy: NodeJS.ProcessEnv = { ...process.env };
+    for (const name of gatewaySecretEnvNames(this.config)) delete copy[name];
+    return copy;
+  }
 
   private now(): string {
     return new Date().toISOString();
@@ -241,7 +259,8 @@ export class WorkflowEngine {
       const context: ExpressionContext = {
         $json: input,
         $node: nodeContext,
-        $env: process.env,
+        // Gateway master secrets scrubbed from $env (Phase 60 B) — see safeEnv().
+        $env: this.safeEnv(),
       };
       let resolvedParams: Record<string, unknown>;
       try {

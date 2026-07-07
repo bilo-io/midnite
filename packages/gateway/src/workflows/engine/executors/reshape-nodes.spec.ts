@@ -3,7 +3,7 @@ import Database from 'better-sqlite3';
 import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { describe, expect, it } from 'vitest';
-import type { Workflow, WorkflowNode } from '@midnite/shared';
+import { parseConfig, type Workflow, type WorkflowNode } from '@midnite/shared';
 import * as schema from '../../../db/schema';
 import { WorkflowsRepository } from '../../workflows.repository';
 import { WorkflowEventBus } from '../../workflow-event-bus';
@@ -126,6 +126,7 @@ describe('logic.setData — engine integration', () => {
       repo,
       new ExecutorRegistry([new SetDataExecutor()]),
       new WorkflowEventBus(),
+      parseConfig({ agent: {}, terminal: {}, knowledge: {}, gateway: {} }),
     );
 
     const run = await engine.runToCompletion(

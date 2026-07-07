@@ -559,9 +559,12 @@ export const heartbeatRuns = sqliteTable(
 // --- LLM providers (API credentials + model config for the gateway's own AI) ---
 
 // One row per provider (LlmProvider enum, validated at the app layer). The
-// api_key is stored plaintext: the gateway must read it back to build clients,
-// so it can't be hashed. It is NEVER returned raw over the API — the controller
-// maps to a masked ProviderCredential (hasKey + last-4 hint).
+// api_key must be read back to build clients (so it can't be hashed) — it is
+// stored **encrypted at rest** via CryptoService (AES-256-GCM, `v1:` prefix),
+// fail-closed when MIDNITE_SECRET_KEY is unset (the write is rejected, never
+// persisted as plaintext); a boot pass re-encrypts any legacy plaintext rows.
+// It is NEVER returned raw over the API — the controller maps to a masked
+// ProviderCredential (hasKey + last-4 hint).
 export const llmProviders = sqliteTable('llm_providers', {
   provider: text('provider').primaryKey(),
   apiKey: text('api_key'),

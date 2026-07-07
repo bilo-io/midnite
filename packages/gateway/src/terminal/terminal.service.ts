@@ -4,6 +4,8 @@ import { existsSync, mkdirSync, unlinkSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 import { AGENT_CLI_COMMAND, type MidniteConfig, type ServerTerminalMessage } from '@midnite/shared';
+
+import { gatewaySecretEnvNames, scrubGatewaySecrets } from '../config/gateway-secret-env';
 import { MIDNITE_CONFIG } from '../config.token';
 import { AgentsService } from '../agents/agents.service';
 import { expandTilde } from '../fs/path-tilde';
@@ -60,29 +62,10 @@ export function scrubSecretEnv(env: Record<string, string>): Record<string, stri
   return out;
 }
 
-// The names of the gateway's OWN secret env vars (Phase 50 C). Config-driven so
-// a non-default env-var name (`gateway.auth.tokenEnv` etc) is still covered.
-// Deliberately narrow: it strips only midnite's own secrets, NOT the agent's
-// provider auth (ANTHROPIC_API_KEY etc) — the agent still needs to run.
-export function gatewaySecretEnvNames(config: MidniteConfig): string[] {
-  return [
-    'MIDNITE_SECRET_KEY',
-    config.gateway.auth.tokenEnv,
-    config.gateway.auth.jwt.secretEnv,
-    config.workflows.encryptionKeyEnv,
-  ];
-}
-
-/** Remove the gateway's own secrets from a spawned agent's env (Phase 50 C,
- *  opt-in via `guardrails.scrubSpawnEnv`). Mutates + returns `env`. The MIDNITE_*
- *  hook wiring is injected AFTER this, so it's unaffected. */
-export function scrubGatewaySecrets(
-  env: Record<string, string>,
-  config: MidniteConfig,
-): Record<string, string> {
-  for (const name of gatewaySecretEnvNames(config)) delete env[name];
-  return env;
-}
+// The gateway's own-secret env scrub (Phase 50 C) lives in a pty-free lib so the
+// workflow expression sandbox can reuse the SAME secret-name list (`$env`) — one
+// source of truth. Re-exported here for existing importers.
+export { gatewaySecretEnvNames, scrubGatewaySecrets };
 
 /** Single-quote a path for safe interpolation into a shell command line. */
 function shellQuote(path: string): string {
