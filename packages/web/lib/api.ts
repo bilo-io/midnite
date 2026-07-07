@@ -52,6 +52,8 @@ import {
   OpsSummarySchema,
   type OpsSummary,
   type OpsQuery,
+  SystemStatsSchema,
+  type SystemStats,
   WorkflowTemplateResponseSchema,
   WorkflowTemplatesResponseSchema,
   TemplateSlotsResponseSchema,
@@ -2292,6 +2294,11 @@ export async function getOpsMetrics(params?: OpsQuery): Promise<OpsSummary> {
   if (params?.to) qs.set('to', params.to);
   const query = qs.toString() ? `?${qs.toString()}` : '';
   return fetchJson(`/metrics/ops${query}`, undefined, OpsSummarySchema);
+}
+
+/** Real host telemetry (CPU / memory / disk) from `GET /system/stats`. */
+export async function getSystemStats(signal?: AbortSignal): Promise<SystemStats> {
+  return fetchJson('/system/stats', signal ? { signal } : undefined, SystemStatsSchema);
 }
 
 // ---- Workflow credentials (Phase 14 B) ----

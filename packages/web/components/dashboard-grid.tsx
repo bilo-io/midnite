@@ -41,6 +41,7 @@ import { UsageWidget } from './usage-widget';
 import { ShippedWidget } from './shipped-widget';
 import { QuickCaptureWidget } from './quick-capture-widget';
 import { StorageWidget } from './storage-widget';
+import { DiskWidget } from './disk-widget';
 import { SystemMonitorWidget } from './system-monitor-widget';
 import { WorldClocksWidget } from './world-clocks-widget';
 import { AllProjectsWidget } from './all-projects-widget';
@@ -443,6 +444,8 @@ export function DashboardGrid({
         return { node: <QuickCaptureWidget /> };
       case 'system-monitor':
         return { node: <SystemMonitorWidget /> };
+      case 'disk':
+        return { node: <DiskWidget /> };
       case 'storage':
         return { node: <StorageWidget /> };
 

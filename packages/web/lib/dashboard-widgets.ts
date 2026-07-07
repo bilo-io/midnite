@@ -10,6 +10,7 @@ import {
   Clock,
   CloudSun,
   Cpu,
+  Database,
   FolderGit2,
   FolderKanban,
   Globe,
@@ -68,6 +69,7 @@ export type WidgetType =
   | 'usage'
   | 'shipped'
   | 'system-monitor'
+  | 'disk'
   | 'storage'
   // at-a-glance extras
   | 'world-clocks'
@@ -328,10 +330,17 @@ export const DASHBOARD_WIDGETS: Record<WidgetType, WidgetMeta> = {
     category: 'system',
     sizes: { lg: { w: 4, h: 4, minW: 2, minH: 3 }, md: { w: 4, h: 4, minW: 2, minH: 3 }, sm: { w: 4, h: 4, minW: 2, minH: 3 } },
   },
-  storage: {
-    label: 'Storage',
-    description: 'Used vs available device storage as a radial gauge',
+  disk: {
+    label: 'Disk',
+    description: 'Real device storage — used vs free on the gateway’s disk',
     icon: HardDrive,
+    category: 'system',
+    sizes: { lg: { w: 3, h: 5, minW: 2, minH: 4 }, md: { w: 3, h: 5, minW: 2, minH: 4 }, sm: { w: 2, h: 5, minW: 2, minH: 4 } },
+  },
+  storage: {
+    label: 'App cache',
+    description: 'Browser storage this app has cached (per-origin quota)',
+    icon: Database,
     category: 'system',
     sizes: { lg: { w: 3, h: 5, minW: 2, minH: 4 }, md: { w: 3, h: 5, minW: 2, minH: 4 }, sm: { w: 2, h: 5, minW: 2, minH: 4 } },
   },
