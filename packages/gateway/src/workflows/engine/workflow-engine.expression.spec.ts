@@ -2,8 +2,8 @@ import { resolve } from 'node:path';
 import Database from 'better-sqlite3';
 import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
-import { beforeEach, describe, expect, it } from 'vitest';
-import type { Workflow, WorkflowNode } from '@midnite/shared';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { parseConfig, type Workflow, type WorkflowNode } from '@midnite/shared';
 import * as schema from '../../db/schema';
 import { WorkflowsRepository } from '../workflows.repository';
 import { WorkflowEventBus } from '../workflow-event-bus';
@@ -75,7 +75,7 @@ describe('WorkflowEngine — expression resolution', () => {
 
   beforeEach(() => {
     repo = new WorkflowsRepository(makeDb());
-    engine = new WorkflowEngine(repo, new ExecutorRegistry([echo, capture]), new WorkflowEventBus());
+    engine = new WorkflowEngine(repo, new ExecutorRegistry([echo, capture]), new WorkflowEventBus(), parseConfig({ agent: {}, terminal: {}, knowledge: {}, gateway: {} }));
   });
 
   it('resolves {{$node["..."]}} against an upstream output (type preserved)', async () => {
@@ -164,7 +164,7 @@ describe('WorkflowEngine — branch params are resolved too', () => {
 
   beforeEach(() => {
     repo = new WorkflowsRepository(makeDb());
-    engine = new WorkflowEngine(repo, new ExecutorRegistry([echo, capture]), new WorkflowEventBus());
+    engine = new WorkflowEngine(repo, new ExecutorRegistry([echo, capture]), new WorkflowEventBus(), parseConfig({ agent: {}, terminal: {}, knowledge: {}, gateway: {} }));
   });
 
   it('templates the branch condition `right` from the input and takes the true path', async () => {
@@ -181,5 +181,43 @@ describe('WorkflowEngine — branch params are resolved too', () => {
       operator: 'equals',
       right: 'ok',
     });
+  });
+});
+
+// Phase 60 B — `$env` must expose ordinary env vars but never the gateway's own
+// master secrets (a resolved value is persisted + broadcast + exfiltratable).
+describe('WorkflowEngine — $env excludes gateway master secrets', () => {
+  let repo: WorkflowsRepository;
+  let engine: WorkflowEngine;
+
+  beforeEach(() => {
+    repo = new WorkflowsRepository(makeDb());
+    engine = new WorkflowEngine(repo, new ExecutorRegistry([echo, capture]), new WorkflowEventBus(), parseConfig({ agent: {}, terminal: {}, knowledge: {}, gateway: {} }));
+    process.env.MIDNITE_SECRET_KEY = 'SEKRIT-master-key';
+    process.env.PUBLIC_WF_VAR = 'public-ok';
+  });
+  afterEach(() => {
+    delete process.env.MIDNITE_SECRET_KEY;
+    delete process.env.PUBLIC_WF_VAR;
+  });
+
+  it('still resolves an ordinary (non-secret) env var', async () => {
+    const run = await engine.runToCompletion(chain({ prompt: 'v={{$env.PUBLIC_WF_VAR}}' }), {
+      triggerSource: 'manual',
+      input: {},
+    });
+    expect(run.nodeRuns.find((r) => r.nodeId === 'use')!.output).toEqual({
+      seenParams: { prompt: 'v=public-ok' },
+    });
+  });
+
+  it('never surfaces MIDNITE_SECRET_KEY through $env', async () => {
+    const run = await engine.runToCompletion(chain({ prompt: '{{$env.MIDNITE_SECRET_KEY}}' }), {
+      triggerSource: 'manual',
+      input: {},
+    });
+    // Whether the reference errors (scrubbed → undefined) or empties, the secret
+    // value must never appear anywhere in the run (outputs, resolved params, error).
+    expect(JSON.stringify(run)).not.toContain('SEKRIT-master-key');
   });
 });

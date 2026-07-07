@@ -3,7 +3,7 @@ import Database from 'better-sqlite3';
 import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { describe, expect, it } from 'vitest';
-import type { Workflow, WorkflowNode } from '@midnite/shared';
+import { parseConfig, type Workflow, type WorkflowNode } from '@midnite/shared';
 import * as schema from '../../../db/schema';
 import { WorkflowsRepository } from '../../workflows.repository';
 import { WorkflowStorageRepository } from '../../workflow-storage.repository';
@@ -106,6 +106,7 @@ function engineWith(db: BetterSQLite3Database<typeof schema>): WorkflowEngine {
     new WorkflowsRepository(db),
     new ExecutorRegistry([new StorageSetExecutor(storage), new StorageGetExecutor(storage)]),
     new WorkflowEventBus(),
+    parseConfig({ agent: {}, terminal: {}, knowledge: {}, gateway: {} }),
   );
 }
 
