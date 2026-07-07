@@ -7,23 +7,29 @@ import { cn, relativeTime } from '@/lib/utils';
 import { listApprovalLog } from '@/lib/api';
 import { usePolling } from '@/lib/use-polling';
 import { WidgetLoader } from './spinner';
+import { CycleFleetPanel } from './ops-cycle-fleet';
 
 // ── Shared primitives ────────────────────────────────────────────────────────
 
-function SectionCard({
+export function SectionCard({
   title,
+  action,
   children,
   loading,
   empty,
 }: {
   title: string;
+  action?: React.ReactNode;
   children: React.ReactNode;
   loading?: boolean;
   empty?: boolean;
 }) {
   return (
     <div className="rounded-xl border bg-card p-5 shadow-sm">
-      <h2 className="mb-4 text-sm font-semibold text-foreground">{title}</h2>
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+        {action}
+      </div>
       {loading ? (
         <div className="flex h-24 items-center justify-center">
           <WidgetLoader />
@@ -37,7 +43,7 @@ function SectionCard({
   );
 }
 
-function Stat({ label, value, sub }: { label: string; value: React.ReactNode; sub?: string }) {
+export function Stat({ label, value, sub }: { label: string; value: React.ReactNode; sub?: string }) {
   return (
     <div className="flex flex-col gap-0.5">
       <span className="text-xs text-muted-foreground">{label}</span>
@@ -441,6 +447,7 @@ export function OpsView({
           </div>
           <DurationSection summary={summary} loading={loading} />
           <SpendSection usage={usage} loading={loading} />
+          <CycleFleetPanel />
         </>
       ) : (
         <DecisionsSection />
