@@ -179,7 +179,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 *Natural-language command bar in the Cmd-K palette; deterministic-first, local-model-preferred; composes existing task services.*
 - ✅ **A** — Intent contract + deterministic parser + LLM fallback (PR #321)
 - ✅ **B** — Execute intents by composing existing services (PR #323)
-- ◻ **C** — Status-query answerer (read-only)
+- ✅ **C** — Status-query answerer (read-only) (PR #335)
 - ✅ **D** — Inference routing: deterministic-first, local-preferred (PR #332)
 - ✅ **E** — Palette command-bar UI (PR #334)
 - ✅ **F** — Safety: preview, confirm, undo, audit (PR #333)

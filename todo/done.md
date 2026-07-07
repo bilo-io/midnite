@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-07 — feat: status-query answerer (read-only) — Phase 59 Theme C (PR #335)
+
+Closes Phase 59 Theme C — **completes Phase 59 (all six themes A–F landed)**. The command bar can now *ask* the board questions, never mutating.
+
+- [x] **shared:** `ChatTaskRef`, `ChatQueryAnswer` (`text`/`tasks`/`count`/`truncated`/`inferencePath`), `ChatQueryRequest`/`Response` schemas + `QueryIntent` type; `CHAT_QUERY_TASK_CAP = 50`.
+- [x] **gateway `ChatQueryService`:** deterministic filter reads (blocked/ready/status/count) over the server-authoritative `TasksService.buildGraph` — same `ready`/`unmetBlockerCount` the scheduler computes, so answers can't drift; excludes foreign nodes, caps at 50, flags `truncated` (incl. the graph's own 500-node cap). Free-form questions get a cheap `generateStructured` summary (feature-tagged `chat`) over the ready+blocked slice, **failing soft** to a deterministic overview when no provider / on error. Never mutates.
+- [x] **gateway `POST /chat/query`:** thin controller; a non-query parse is coerced into a read-only free-form query (the endpoint can never execute a mutation). Team-scoped via `@CurrentUser()`.
+- [x] **web:** thin `chatQuery(text, signal?)` API client.
+- [x] Tests: shared schema specs, 10 service specs (deterministic reads + fail-soft LLM paths), 3 controller specs. `shared:test`/`gateway:typecheck`/`gateway` chat specs (67)/`web:typecheck` green. Gateway/contract-only — no visual UI (Theme E owns it), so no screenshots.
+
+---
+
 ## 2026-07-06 — feat: chat-to-board command bar in the Cmd-K palette — Phase 59 Theme E (PR #334)
 
 Closes Phase 59 Theme E. The natural-language bar surfaces where people already type — the ⌘K palette — over the A/B/D/F backend seam.
