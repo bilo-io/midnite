@@ -158,18 +158,18 @@ Engine-agnostic state so 2D and 3D are just two renderers of one slice.
 - [x] **Frustum-friendly:** peer meshes are `frustumCulled` (three's default) — a peer in an unseen
       room costs no draw calls; the minimap still shows them. (PR #362)
 
-## Theme E — Emotes + locate — **M**
+## Theme E — Emotes + locate — **M** — ✅ DONE (PR #363, 2026-07-07)
 
-- [ ] **Emote wheel:** a small radial/row picker in the office HUD (keyboard shortcut + button)
-      — 👋 👍 ☕ 🎉 ❓ etc.; sends `presence.emote`; renders as an ephemeral bubble (reusing the
-      `Actor.bubble` object in 2D; billboard in 3D) with a short TTL and per-peer rate limit.
-- [ ] **Roster:** the HUD gains a "teammates here" list (name, avatar chip, room) — the human
-      counterpart to the existing agent count.
-- [ ] **Locate / walk-to:** clicking a roster entry (or their minimap dot) auto-walks your player
-      to that teammate — reusing the existing A* click-to-walk (`walkTo`) in 2D; in 3D, a
-      waypoint marker + optional auto-walk via the Phase-63 rig.
-- [ ] **Self-view:** your own ghost/connected state visible in the roster; emotes you send
-      render over your own avatar too.
+- [x] **Emote wheel:** a row picker in the shared `PresenceHud` (button + number-key `1`–`6`
+      shortcuts) — 👋 👍 ☕ 🎉 ❓ 👀; sends `presence.emote`; renders as an ephemeral TTL'd bubble
+      over avatars — 2D (`PeerLayer` bubble) + 3D (billboard, Theme D). (PR #363)
+- [x] **Roster:** the `PresenceHud` "in the office" list (you + peers, avatar chip, room) — the
+      human counterpart to the agent count; shared by both engines. (PR #363)
+- [x] **Locate / walk-to:** clicking a same-scene teammate in the roster walks your player to them
+      via the presence-bridge locator (the 2D scene registers its A* `walkTo`). 3D auto-walk is
+      deferred (the rig is manual) — the roster hides locate there via `canLocate()`. (PR #363)
+- [x] **Self-view:** your own connected/ghost state + name shown in the roster; emotes you send
+      render over your own 2D avatar (optimistic `selfEmote`). (PR #363)
 
 ## Theme F — Surfaces & privacy — **S-M**
 
