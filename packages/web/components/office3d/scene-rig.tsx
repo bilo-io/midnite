@@ -2,9 +2,10 @@
 
 import { PointerLockControls } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Vector3 } from 'three';
 
+import { createHeadBobRoll } from '@/lib/office3d/camera-roll';
 import { resolveMoveInto, type Vec2 } from '@/lib/office3d/collision';
 import { EYE_HEIGHT, MOVE_SPEED, PLAYER_RADIUS } from '@/lib/office3d/constants';
 import { advanceBobPhase, computeHeadBob } from '@/lib/office3d/headbob';
@@ -74,6 +75,8 @@ export function SubSceneRig({
   const moveOut = useRef<Vec2>({ x: 0, z: 0 }); // scratch — no per-frame alloc
   const bobPhase = useRef(0);
   const bobIntensity = useRef(0);
+  // Applies the head-bob roll as a local-axis quaternion (see camera-roll.ts).
+  const headBobRoll = useMemo(createHeadBobRoll, []);
 
   useEffect(() => {
     camera.position.set(spawn.x, spawn.y, spawn.z);
@@ -142,8 +145,11 @@ export function SubSceneRig({
     bobIntensity.current += (target - bobIntensity.current) * Math.min(1, dt * BOB_EASE_RATE);
     bobPhase.current = advanceBobPhase(bobPhase.current, distance);
     const bob = computeHeadBob(bobPhase.current, bobIntensity.current);
+    // Roll via a local-axis quaternion, not `camera.rotation.z` — the latter's XYZ
+    // Euler order fights PointerLockControls' YXZ round-trip and rolls the view
+    // upside-down as you look around. See camera-roll.ts.
     camera.position.y = EYE_HEIGHT + bob.dy;
-    camera.rotation.z = bob.roll;
+    headBobRoll.apply(camera, bob.roll);
 
     onProximity?.(camera.position.x, camera.position.z);
   });
