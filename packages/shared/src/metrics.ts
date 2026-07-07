@@ -104,3 +104,72 @@ export const GaugeHistoryResponseSchema = z.object({
   truncated: z.boolean(),
 });
 export type GaugeHistoryResponse = z.infer<typeof GaugeHistoryResponseSchema>;
+
+// ── Cycle time (Phase 61 C — lifecycle time as a first-class metric) ──────────
+
+/**
+ * Cycle-time is derived from the `status.changed` task-event stream (no new
+ * columns — Phase 61 C measures first). Per completed task we take three segments:
+ *   • `wait`      = createdAt → **first** entry into `wip`  (time before pickup)
+ *   • `work`      = first `wip` → **final** `done`          (working time; folds in retry/waiting detours)
+ *   • `endToEnd`  = createdAt → final `done`                (total lead time)
+ * Aggregated as p50/p90 (nearest-rank) over the completed tasks in the window,
+ * optionally grouped by repo / project / priority.
+ */
+
+/** How work is grouped for the cycle-time aggregates. `none` = fleet-wide. */
+export const CycleTimeGroupBySchema = z.enum(['none', 'repo', 'project', 'priority']);
+export type CycleTimeGroupBy = z.infer<typeof CycleTimeGroupBySchema>;
+
+/** Default trailing window for `GET /metrics/cycle-time` when none is supplied. */
+export const CYCLE_TIME_DEFAULT_WINDOW_DAYS = 30;
+
+/** Query params for `GET /metrics/cycle-time`. */
+export const CycleTimeQuerySchema = z.object({
+  groupBy: CycleTimeGroupBySchema.default('none'),
+  /** Trailing window in days; a task counts when its final `done` falls inside it. */
+  windowDays: z.coerce.number().int().positive().max(365).default(CYCLE_TIME_DEFAULT_WINDOW_DAYS),
+});
+export type CycleTimeQuery = z.infer<typeof CycleTimeQuerySchema>;
+
+/**
+ * p50/p90 for one segment across the tasks in a group, in milliseconds
+ * (nearest-rank — no interpolation). `p50Ms`/`p90Ms` are null when no task in the
+ * group had a measurable value for the segment (e.g. a task that never entered
+ * `wip` contributes no `wait`/`work`). `count` is how many tasks contributed.
+ */
+export const CycleTimeStatSchema = z.object({
+  p50Ms: z.number().nonnegative().nullable(),
+  p90Ms: z.number().nonnegative().nullable(),
+  count: z.number().int().nonnegative(),
+});
+export type CycleTimeStat = z.infer<typeof CycleTimeStatSchema>;
+
+export const CycleTimeGroupSchema = z.object({
+  /** Group value: repo name, project id, priority (`0`–`3` as a string), or `all` for `none`. */
+  key: z.string(),
+  /** Completed tasks in this group within the window. */
+  taskCount: z.number().int().nonnegative(),
+  /** todo → first `wip`: time a task waited before pickup. */
+  wait: CycleTimeStatSchema,
+  /** first `wip` → final `done`: working time (includes retry/waiting detours). */
+  work: CycleTimeStatSchema,
+  /** createdAt → final `done`: end-to-end lead time. */
+  endToEnd: CycleTimeStatSchema,
+  /** Summed duration of retry attempts (`agent_run_stats`, `retryCount > 0`) across the group. */
+  retryOverheadMsTotal: z.number().nonnegative(),
+  /** How many tasks in the group incurred at least one retry attempt. */
+  tasksWithRetries: z.number().int().nonnegative(),
+});
+export type CycleTimeGroup = z.infer<typeof CycleTimeGroupSchema>;
+
+export const CycleTimeResponseSchema = z.object({
+  /** ISO start of the window (inclusive). */
+  from: z.string(),
+  /** ISO end of the window (inclusive). */
+  to: z.string(),
+  groupBy: CycleTimeGroupBySchema,
+  /** One entry per group, descending by `taskCount` (single `all` entry for `none`). */
+  groups: z.array(CycleTimeGroupSchema),
+});
+export type CycleTimeResponse = z.infer<typeof CycleTimeResponseSchema>;

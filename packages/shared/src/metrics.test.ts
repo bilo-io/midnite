@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  CYCLE_TIME_DEFAULT_WINDOW_DAYS,
+  CycleTimeQuerySchema,
+  CycleTimeResponseSchema,
   DurationBucketsSchema,
   GaugeHistoryResponseSchema,
   GaugeSampleSchema,
@@ -111,6 +114,44 @@ describe('sub-schemas', () => {
       });
       expect(res.truncated).toBe(true);
       expect(res.samples).toHaveLength(1);
+    });
+  });
+
+  describe('cycle time (Phase 61 C)', () => {
+    it('CycleTimeQuerySchema defaults groupBy=none and the window', () => {
+      const q = CycleTimeQuerySchema.parse({});
+      expect(q.groupBy).toBe('none');
+      expect(q.windowDays).toBe(CYCLE_TIME_DEFAULT_WINDOW_DAYS);
+    });
+
+    it('CycleTimeQuerySchema coerces a string windowDays', () => {
+      expect(CycleTimeQuerySchema.parse({ windowDays: '7' }).windowDays).toBe(7);
+    });
+
+    it('CycleTimeQuerySchema rejects a non-positive window and unknown groupBy', () => {
+      expect(() => CycleTimeQuerySchema.parse({ windowDays: 0 })).toThrow();
+      expect(() => CycleTimeQuerySchema.parse({ groupBy: 'bogus' })).toThrow();
+    });
+
+    it('CycleTimeResponseSchema round-trips a group with null segment stats', () => {
+      const res = CycleTimeResponseSchema.parse({
+        from: 'a',
+        to: 'b',
+        groupBy: 'repo',
+        groups: [
+          {
+            key: 'acme/api',
+            taskCount: 2,
+            wait: { p50Ms: 1000, p90Ms: 2000, count: 2 },
+            work: { p50Ms: null, p90Ms: null, count: 0 },
+            endToEnd: { p50Ms: 3000, p90Ms: 4000, count: 2 },
+            retryOverheadMsTotal: 50_000,
+            tasksWithRetries: 1,
+          },
+        ],
+      });
+      expect(res.groups[0]?.work.p50Ms).toBeNull();
+      expect(res.groups[0]?.retryOverheadMsTotal).toBe(50_000);
     });
   });
 });
