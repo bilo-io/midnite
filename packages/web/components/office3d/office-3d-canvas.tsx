@@ -14,6 +14,7 @@ import { AgentAvatars } from './agent-avatars';
 import { CornerScene } from './corner/corner-scene';
 import { FirstPersonRig, type PlayerPose } from './first-person-rig';
 import { MinimapHud } from './minimap-hud';
+import { PresenceAvatars } from './presence-avatars';
 import { OfficeWorld } from './world/office-world';
 
 /**
@@ -85,6 +86,7 @@ export function Office3DCanvas({
           />
           <OfficeWorld world={world} palette={palette} />
           <AgentAvatars placements={placements} />
+          <PresenceAvatars scene="office" />
           <FirstPersonRig
             spawn={world.spawn}
             placementsRef={placementsRef}

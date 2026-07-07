@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useOfficeStore } from '@/lib/office-store';
 import { buildCorner } from '@/lib/office3d/corner';
+import { PresenceAvatars } from '../presence-avatars';
 import { SubSceneRig } from '../scene-rig';
 
 /**
@@ -165,6 +166,7 @@ export function CornerScene({ onLockChange }: { onLockChange?: (locked: boolean)
         <meshStandardMaterial color={0x0ea5e9} emissive={0x0ea5e9} emissiveIntensity={0.4} />
       </mesh>
 
+      <PresenceAvatars scene="corner" />
       <SubSceneRig
         grid={model.blocked}
         spawn={model.spawn}
@@ -172,6 +174,7 @@ export function CornerScene({ onLockChange }: { onLockChange?: (locked: boolean)
         onInteract={onInteract}
         onProximity={onProximity}
         onLockChange={onLockChange}
+        presenceScene="corner"
       />
 
       {prompt && (

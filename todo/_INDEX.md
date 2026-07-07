@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [64 · Office presence](phase-64-office-presence.md) | 🔄 WIP | 13/30 | `████░░░░░░` | 43% | D | E F G H |
+| [64 · Office presence](phase-64-office-presence.md) | 🔄 WIP | 16/30 | `█████░░░░░` | 53% | — | E F G H |
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
 | [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 6/33 | `██░░░░░░░░` | 18% | — | C D E F G H |
 | [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 7/36 | `██░░░░░░░░` | 19% | — | A B E F G H I |
@@ -120,7 +120,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **A** — Presence contract + gateway service (typed frames, tick-coalesced team fan-out, snapshot-on-join) (PR #356)
 - ✅ **B** — Client presence store + throttled position sampler + guest identity + interpolation (PR #358)
 - ✅ **C** — 2D renderer: remote humans as Actors, minimap dots, scene scoping (solo-preserving) (PR #361)
-- ◻ **D** — 3D renderer: r3f presence avatars + billboards (⛔ blocked on Phase 63 A–C)
+- ✅ **D** — 3D renderer: r3f presence avatars + billboards + minimap (PR #362)
 - ◻ **E** — Emote wheel, teammates roster, locate/walk-to
 - ◻ **F** — Nav pill, dashboard widget, server-enforced ghost mode
 - ◻ **G** — Proximity chat bubbles (stretch — ephemeral, never persisted)
