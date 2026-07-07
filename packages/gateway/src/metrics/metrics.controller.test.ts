@@ -21,6 +21,9 @@ function makeController() {
   const service = {
     getOpsSummary: vi.fn().mockReturnValue(emptySummary),
     getGaugeHistory: vi.fn().mockReturnValue({ samples: [], truncated: false }),
+    getCycleTime: vi
+      .fn()
+      .mockReturnValue({ from: 'a', to: 'b', groupBy: 'none', groups: [] }),
   } as unknown as MetricsService;
   return { controller: new MetricsController(service), service };
 }
@@ -64,5 +67,25 @@ describe('MetricsController', () => {
   it('throws BadRequestException on an invalid history query', () => {
     const { controller } = makeController();
     expect(() => controller.gaugeHistory(null)).toThrow(BadRequestException);
+  });
+
+  // ── Cycle time (Phase 61 C) ──────────────────────────────────────────────────
+
+  it('GET /metrics/cycle-time applies zod defaults and delegates to the service', () => {
+    const { controller, service } = makeController();
+    const res = controller.cycleTime({});
+    expect(res).toEqual({ from: 'a', to: 'b', groupBy: 'none', groups: [] });
+    expect(service.getCycleTime).toHaveBeenCalledWith({ groupBy: 'none', windowDays: 30 });
+  });
+
+  it('coerces windowDays and passes groupBy through', () => {
+    const { controller, service } = makeController();
+    controller.cycleTime({ groupBy: 'repo', windowDays: '7' });
+    expect(service.getCycleTime).toHaveBeenCalledWith({ groupBy: 'repo', windowDays: 7 });
+  });
+
+  it('throws BadRequestException on an invalid groupBy', () => {
+    const { controller } = makeController();
+    expect(() => controller.cycleTime({ groupBy: 'nonsense' })).toThrow(BadRequestException);
   });
 });

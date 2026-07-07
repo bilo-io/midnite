@@ -2,17 +2,44 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { createTestDb } from '../test';
 import { MetricsRepository } from './metrics.repository';
-import type { AgentRunStatsInsert } from '../db/schema';
+import { tasks, taskEvents, type AgentRunStatsInsert } from '../db/schema';
 
-function makeRepo() {
-  return new MetricsRepository(createTestDb().db);
-}
+type TestDb = ReturnType<typeof createTestDb>['db'];
 
 let repo: MetricsRepository;
+let db: TestDb;
 
 beforeEach(() => {
-  repo = makeRepo();
+  db = createTestDb().db;
+  repo = new MetricsRepository(db);
 });
+
+// ── Cycle-time fixtures ─────────────────────────────────────────────────────
+function seedTask(
+  id: string,
+  overrides: Partial<{ status: string; repo: string | null; projectId: string | null; priority: number; createdAt: string }> = {},
+): void {
+  const now = overrides.createdAt ?? '2026-06-01T00:00:00.000Z';
+  db.insert(tasks)
+    .values({
+      id,
+      title: id,
+      status: overrides.status ?? 'done',
+      priority: overrides.priority ?? 1,
+      repo: overrides.repo ?? null,
+      projectId: overrides.projectId ?? null,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .run();
+}
+
+let evtSeq = 0;
+function seedStatusEvent(taskId: string, status: string, at: string): void {
+  db.insert(taskEvents)
+    .values({ id: `e${evtSeq++}`, taskId, at, kind: 'status.changed', data: JSON.stringify({ status }) })
+    .run();
+}
 
 function run(id: string, overrides: Partial<AgentRunStatsInsert> = {}): AgentRunStatsInsert {
   return {
@@ -165,6 +192,82 @@ describe('MetricsRepository', () => {
       expect(deleted).toBe(1);
       const { samples } = repo.gaugeHistory(undefined, undefined, 100);
       expect(samples.map((s) => s.id)).toEqual(['new']);
+    });
+  });
+
+  describe('cycleRows (Phase 61 C)', () => {
+    const WIN_FROM = '2026-06-01T00:00:00.000Z';
+    const WIN_TO = '2026-06-30T23:59:59.999Z';
+
+    it('extracts first-wip and final-done per completed task', () => {
+      seedTask('t1', { createdAt: '2026-06-01T00:00:00.000Z' });
+      seedStatusEvent('t1', 'wip', '2026-06-01T01:00:00.000Z');
+      // A bounce back to wip — first-wip stays the earlier one.
+      seedStatusEvent('t1', 'todo', '2026-06-01T02:00:00.000Z');
+      seedStatusEvent('t1', 'wip', '2026-06-01T03:00:00.000Z');
+      seedStatusEvent('t1', 'done', '2026-06-01T05:00:00.000Z');
+
+      const rows = repo.cycleRows(WIN_FROM, WIN_TO);
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({
+        id: 't1',
+        createdAt: '2026-06-01T00:00:00.000Z',
+        firstWipAt: '2026-06-01T01:00:00.000Z',
+        doneAt: '2026-06-01T05:00:00.000Z',
+      });
+    });
+
+    it('windows by the final-done timestamp', () => {
+      seedTask('early', { createdAt: '2026-05-01T00:00:00.000Z' });
+      seedStatusEvent('early', 'done', '2026-05-15T00:00:00.000Z'); // before window
+      seedTask('inside');
+      seedStatusEvent('inside', 'done', '2026-06-10T00:00:00.000Z');
+
+      const rows = repo.cycleRows(WIN_FROM, WIN_TO);
+      expect(rows.map((r) => r.id)).toEqual(['inside']);
+    });
+
+    it('yields a null firstWipAt when the task never entered wip', () => {
+      seedTask('t1');
+      seedStatusEvent('t1', 'done', '2026-06-10T00:00:00.000Z');
+      const rows = repo.cycleRows(WIN_FROM, WIN_TO);
+      expect(rows[0]?.firstWipAt).toBeNull();
+    });
+
+    it('ignores tasks that are not currently done', () => {
+      seedTask('wip1', { status: 'wip' });
+      seedStatusEvent('wip1', 'wip', '2026-06-10T00:00:00.000Z');
+      expect(repo.cycleRows(WIN_FROM, WIN_TO)).toEqual([]);
+    });
+
+    it('carries repo / project / priority for grouping', () => {
+      seedTask('t1', { repo: 'acme/api', projectId: 'p1', priority: 3 });
+      seedStatusEvent('t1', 'done', '2026-06-10T00:00:00.000Z');
+      expect(repo.cycleRows(WIN_FROM, WIN_TO)[0]).toMatchObject({
+        repo: 'acme/api',
+        projectId: 'p1',
+        priority: 3,
+      });
+    });
+  });
+
+  describe('retryOverheadByTask (Phase 61 C)', () => {
+    it('sums duration of retry attempts (retryCount > 0) per task, ignoring first runs', () => {
+      repo.insertStart(run('r0', { taskId: 't1', retryCount: 0 }));
+      repo.recordEnd('r0', '2026-06-01T00:01:00.000Z', 60_000, 'failed'); // first attempt, excluded
+      repo.insertStart(run('r1', { taskId: 't1', retryCount: 1 }));
+      repo.recordEnd('r1', '2026-06-01T00:02:00.000Z', 30_000, 'failed');
+      repo.insertStart(run('r2', { taskId: 't1', retryCount: 2 }));
+      repo.recordEnd('r2', '2026-06-01T00:03:00.000Z', 20_000, 'done');
+
+      const map = repo.retryOverheadByTask();
+      expect(map.get('t1')).toEqual({ retryOverheadMs: 50_000, retryAttempts: 2 });
+    });
+
+    it('omits tasks with no retries', () => {
+      repo.insertStart(run('r0', { taskId: 't1', retryCount: 0 }));
+      repo.recordEnd('r0', '2026-06-01T00:01:00.000Z', 60_000, 'done');
+      expect(repo.retryOverheadByTask().has('t1')).toBe(false);
     });
   });
 });
