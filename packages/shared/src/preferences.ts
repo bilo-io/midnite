@@ -70,6 +70,10 @@ export type Density = z.infer<typeof DensitySchema>;
 
 /** Interface font for body text (`system` default; others are system-font stacks). */
 export const UiFontSchema = z.enum(['system', 'grotesk', 'humanist', 'serif', 'mono']);
+
+/** Which office rendering engine opens by default (Phase 63 F). */
+export const OfficeViewSchema = z.enum(['2d', '3d']);
+export type OfficeView = z.infer<typeof OfficeViewSchema>;
 export type UiFont = z.infer<typeof UiFontSchema>;
 
 /** Per-effect visual toggles (page reveal, typewriter, frosted glass). All on by default. */
@@ -96,6 +100,13 @@ export const UserPreferencesSchema = z.object({
   inactivityTimeoutS: z.number().int().positive().default(30),
   /** Seconds a cycling phrase is shown before the next is typed. */
   cycleDurationS: z.number().int().positive().default(5),
+  /**
+   * Which office rendering engine to open by default (Phase 63 F). `2d` is the
+   * long-standing Phaser floor; `3d` is the first-person three.js office. A
+   * `?view=` URL param overrides this per visit. Additive — existing prefs blobs
+   * default to `2d`.
+   */
+  officeView: OfficeViewSchema.default('2d'),
   /**
    * Which optional features (and their nav items) are enabled. A generic
    * `key → enabled` map — the canonical feature-key set lives in the web app

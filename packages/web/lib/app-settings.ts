@@ -17,6 +17,7 @@ import {
   type Density,
   type Motion,
   type NavMode,
+  type OfficeView,
   type UiFont,
   type UserPreferences,
   type VisualEffects,
@@ -33,6 +34,7 @@ export type {
   Density,
   Motion,
   NavMode,
+  OfficeView,
   UiFont,
   VisualEffects,
 };
@@ -353,6 +355,7 @@ export function appSettingsToPreferences(
     effects: settings.effects,
     inactivityTimeoutS: settings.inactivityTimeoutS,
     cycleDurationS: settings.cycleDurationS,
+    officeView: settings.officeView,
     features: settings.features,
   };
 }
@@ -375,6 +378,7 @@ export function applyPreferences(
     effects: prefs.effects,
     inactivityTimeoutS: prefs.inactivityTimeoutS,
     cycleDurationS: prefs.cycleDurationS,
+    officeView: prefs.officeView,
     features: { ...prev.features, ...prefs.features } as AppSettings['features'],
   }));
   setTheme(prefs.theme);
