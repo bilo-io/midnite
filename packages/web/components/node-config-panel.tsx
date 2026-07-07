@@ -6,8 +6,11 @@ import {
   getNodeTypeDefinition,
   LLM_PROVIDERS,
   LLM_PROVIDER_LABEL,
+  TASK_EVENT_TRIGGER_EVENTS,
   type NodeField,
   type ScheduleTrigger,
+  type TaskEventTrigger,
+  type TaskEventTriggerEvent,
   type Trigger,
   type TriggerType,
   type WorkflowRun,
@@ -554,10 +557,104 @@ function WebhookFields({ workflowId, hasSecret }: { workflowId: string; hasSecre
   );
 }
 
+const TRIGGER_TAB_LABEL: Record<TriggerType, string> = {
+  manual: 'Manual',
+  schedule: 'Schedule',
+  webhook: 'Webhook',
+  'task-event': 'Task Event',
+};
+
+const TASK_EVENT_LABEL: Record<TaskEventTriggerEvent, string> = {
+  'task.done': 'Task done',
+  'task.abandoned': 'Task abandoned',
+  'task.needs-attention': 'Task needs attention',
+};
+
+function TaskEventFields({ trigger }: { trigger: TaskEventTrigger }) {
+  const setTrigger = useWorkflowStore((s) => s.setTrigger);
+  const filter = trigger.filter ?? {};
+
+  const toggleEvent = (event: TaskEventTriggerEvent) => {
+    const has = trigger.events.includes(event);
+    // Keep at least one event — the schema requires a non-empty list.
+    const events = has ? trigger.events.filter((e) => e !== event) : [...trigger.events, event];
+    if (events.length === 0) return;
+    setTrigger({ ...trigger, events });
+  };
+
+  const setFilter = (patch: Partial<NonNullable<TaskEventTrigger['filter']>>) => {
+    const next = { ...filter, ...patch };
+    // Drop empty keys so an all-empty filter serialises as "no filter".
+    for (const k of Object.keys(next) as (keyof typeof next)[]) {
+      if (next[k] === undefined || next[k] === '') delete next[k];
+    }
+    setTrigger({ ...trigger, filter: Object.keys(next).length ? next : undefined });
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="space-y-1">
+        <label className="text-xs font-medium text-muted-foreground">Fire on</label>
+        <div className="space-y-1">
+          {TASK_EVENT_TRIGGER_EVENTS.map((event) => (
+            <label key={event} className="flex items-center gap-2 text-xs">
+              <input
+                type="checkbox"
+                checked={trigger.events.includes(event)}
+                onChange={() => toggleEvent(event)}
+                aria-label={TASK_EVENT_LABEL[event]}
+              />
+              {TASK_EVENT_LABEL[event]}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-1">
+        <label className="text-xs font-medium text-muted-foreground">Repo filter (optional)</label>
+        <input
+          className={inputClass}
+          value={filter.repo ?? ''}
+          onChange={(e) => setFilter({ repo: e.target.value })}
+          placeholder="owner/repo"
+          aria-label="Repo filter"
+        />
+      </div>
+
+      <div className="space-y-1">
+        <label className="text-xs font-medium text-muted-foreground">Project filter (optional)</label>
+        <input
+          className={inputClass}
+          value={filter.projectId ?? ''}
+          onChange={(e) => setFilter({ projectId: e.target.value })}
+          placeholder="project id"
+          aria-label="Project filter"
+        />
+      </div>
+
+      <div className="space-y-1">
+        <label className="text-xs font-medium text-muted-foreground">Priority filter (optional)</label>
+        <StyledSelect
+          options={[
+            { value: '', label: 'Any priority' },
+            { value: '0', label: 'P0' },
+            { value: '1', label: 'P1' },
+            { value: '2', label: 'P2' },
+            { value: '3', label: 'P3' },
+          ]}
+          value={filter.priority === undefined ? '' : String(filter.priority)}
+          onChange={(v) => setFilter({ priority: v === '' ? undefined : Number(v) })}
+          aria-label="Priority filter"
+        />
+      </div>
+    </div>
+  );
+}
+
 function TriggerConfig({ workflowId }: { workflowId: string }) {
   const trigger = useWorkflowStore((s) => s.trigger);
   const setTrigger = useWorkflowStore((s) => s.setTrigger);
-  const types: TriggerType[] = ['manual', 'schedule', 'webhook'];
+  const types: TriggerType[] = ['manual', 'schedule', 'webhook', 'task-event'];
 
   const choose = (type: TriggerType) => {
     if (type === trigger.type) return;
@@ -566,24 +663,26 @@ function TriggerConfig({ workflowId }: { workflowId: string }) {
         ? { type: 'schedule', cron: '0 9 * * *', timezone: 'UTC' }
         : type === 'webhook'
           ? { type: 'webhook', method: 'POST', hasSecret: trigger.type === 'webhook' ? trigger.hasSecret : false }
-          : { type: 'manual' };
+          : type === 'task-event'
+            ? { type: 'task-event', events: ['task.done'] }
+            : { type: 'manual' };
     setTrigger(next);
   };
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-3 gap-1">
+      <div className="grid grid-cols-2 gap-1">
         {types.map((t) => (
           <button
             key={t}
             type="button"
             onClick={() => choose(t)}
             className={cn(
-              'rounded-md border px-2 py-2 text-xs capitalize transition-colors',
+              'rounded-md border px-2 py-2 text-xs transition-colors',
               trigger.type === t ? 'border-foreground/30 bg-accent' : 'border-border/60 hover:bg-accent/40',
             )}
           >
-            {t}
+            {TRIGGER_TAB_LABEL[t]}
           </button>
         ))}
       </div>
@@ -591,6 +690,7 @@ function TriggerConfig({ workflowId }: { workflowId: string }) {
       {trigger.type === 'webhook' ? (
         <WebhookFields workflowId={workflowId} hasSecret={trigger.hasSecret} />
       ) : null}
+      {trigger.type === 'task-event' ? <TaskEventFields trigger={trigger} /> : null}
       {trigger.type === 'manual' ? (
         <p className="text-xs text-muted-foreground">
           Runs only when you press Run. The Run button works for any trigger type, so you can always
