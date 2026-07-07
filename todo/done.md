@@ -4,6 +4,21 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-07 — feat: client presence store + sampler + guest identity — Phase 64 Theme B (PR #358)
+
+The engine-agnostic client layer for office presence — one state slice, two future renderers (2D Theme C, 3D Theme D). Pure `packages/web`; consumes the Theme A contract, no gateway/shared changes.
+
+- [x] **`presence-store.ts`:** vanilla-Zustand store (peers by peerId, world-px targets; self/connected/ghost); no Phaser/three imports. Reduction in the pure `presence-frames.ts` `reducePresence` (own peerId filtered from snapshot/peer-updated; emote preserved across a move).
+- [x] **`presence-frames.ts` `shouldSendMove`:** ~10Hz throttle + stationary dedup + idle keepalive (under the 15s server stale timeout).
+- [x] **`presence-interp.ts`:** frame-rate-independent lerp toward the latest target, snapping on scene change / big jumps — shared by both renderers.
+- [x] **`presence-identity.ts` + `presence-name-dialog.tsx`:** stable guest id + display name in localStorage (friendly default) + the controlled first-visit prompt.
+- [x] **`use-presence.ts`:** rides use-reliable-subscription as a snapshot channel (no ring), decodes → store, sends hello on connect/avatar-change, throttled sendMove + sendEmote, resets on unmount.
+- [x] **Tests + gate:** 25 unit tests (reducer, throttle/keepalive, interp, identity, store, dialog RTL). web:typecheck (no r3f `never`), web:lint 0 errors, web:test 1013 pass.
+
+Not yet wired into the office page — Theme C mounts the hook, wires the Phaser position sampler, and renders remote avatars.
+
+---
+
 ## 2026-07-07 — fix: guard illegal task state transitions + concurrency audit — Phase 60 Theme E (PR #357)
 
 Closes Phase 60 Theme E. Four parallel audits (state machine, scheduler races, WS ordering, transaction boundaries); the clear-cut fix applied, structural ones documented.
