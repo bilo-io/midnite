@@ -33,6 +33,8 @@ import {
   TASK_GRAPH_NODE_CAP,
   type TeamScope,
   type WaitReason,
+  canTransition,
+  isTerminal,
 } from '@midnite/shared';
 import { TaskClassifier, type ClassifierImage } from '../agent/classifier.service';
 import { PlannerService } from '../agent/planner.service';
@@ -319,6 +321,16 @@ export class TasksService {
   updateStatus(id: string, status: Status): Task {
     const now = new Date().toISOString();
     const before = this.repo.getTask(id);
+    if (!before) throw new NotFoundException(`task ${id} not found`);
+    // Phase 60 E — reject illegal transitions (e.g. a board drag `done`→`wip`,
+    // reviving a completed task into a zombie `wip` with no agent, or
+    // `abandoned`→`todo` re-scheduling cancelled work). Terminal states have no
+    // outgoing edges. Same-status is a no-op and allowed.
+    if (!canTransition(before.status as Status, status)) {
+      throw new BadRequestException(
+        `illegal task transition: ${before.status} → ${status}`,
+      );
+    }
     const row = this.repo.updateStatus(id, status, now);
     if (!row) throw new NotFoundException(`task ${id} not found`);
     // Leaving `waiting` clears its reason (Phase 53 D) — e.g. a manual board move
@@ -430,6 +442,10 @@ export class TasksService {
     const now = new Date().toISOString();
     const row = this.repo.getTask(id);
     if (!row) throw new NotFoundException(`task ${id} not found`);
+    // Phase 60 E — a terminal task is done with. A late/trailing Notification or
+    // Stop hook (whose per-session secret still verifies) must NOT revive a
+    // `done`/`abandoned` task into `waiting`. No-op instead.
+    if (isTerminal(row.status as Status)) return this.getTask(id);
     if (row.status === 'waiting' && row.waitReason === waitReason) return this.getTask(id);
     this.repo.updateStatus(id, 'waiting', now);
     this.repo.setWaitReason(id, waitReason, now);
@@ -454,6 +470,9 @@ export class TasksService {
     const now = new Date().toISOString();
     const row = this.repo.getTask(id);
     if (!row) throw new NotFoundException(`task ${id} not found`);
+    // Phase 60 E — never escalate a terminal task back into `waiting` (defence in
+    // depth; callers already guard on wip/waiting, but the invariant lives here).
+    if (isTerminal(row.status as Status)) return this.getTask(id);
     this.repo.updateStatus(id, 'waiting', now);
     this.repo.setWaitReason(id, waitReason, now);
     // The session is dead (the runner released the slot around this call), so
@@ -496,7 +515,10 @@ export class TasksService {
     const now = new Date().toISOString();
     const row = this.repo.getTask(id);
     if (!row) throw new NotFoundException(`task ${id} not found`);
-    if (row.status === 'done') return this.getTask(id);
+    // Phase 60 E — idempotent on `done`, and never un-abandon: a late Stop hook
+    // (PR URL in its output) arriving after a `cancel()` must not flip
+    // `abandoned`→`done` and fire notifyDependents off cancelled work.
+    if (isTerminal(row.status as Status)) return this.getTask(id);
     this.repo.updateStatus(id, 'done', now);
     if (row.waitReason) this.repo.setWaitReason(id, null, now); // Phase 53 D
     if (prUrl) this.repo.setPrUrl(id, prUrl, now);
