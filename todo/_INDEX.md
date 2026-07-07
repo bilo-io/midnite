@@ -165,7 +165,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **B** — Secrets, signatures & crypto paths audit (PR #346; workflow `$env` master-secret leak fixed, findings logged)
 - ◻ **C** — Input validation & injection sweep (zod coverage, FTS/path-traversal/SSRF/zip-slip)
 - ✅ **D** — Dependency & supply-chain audit (+ safe bumps): ws 8.18→8.21 DoS bump, rest triaged (PR #355)
-- ✅ **E** — State-machine, scheduler & concurrency correctness (PR #TBD)
+- ✅ **E** — State-machine, scheduler & concurrency correctness (PR #357)
 - ◻ **F** — Data integrity & boundary-condition bugs
 - ◻ **G** — Error handling & failure-path correctness
 - ◻ **H** — Consistency & flow sweep (loading/empty/error, dead ends)

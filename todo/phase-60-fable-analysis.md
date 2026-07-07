@@ -69,7 +69,7 @@
 
 # Section I — Security (audit + quick wins)
 
-## Theme A — Auth, transport & headers audit — **M** — ✅ DONE (PR #TBD, 2026-07-07)
+## Theme A — Auth, transport & headers audit — **M** — ✅ DONE (PR #357, 2026-07-07)
 
 The perimeter: who can reach what, and what the wire looks like.
 
@@ -108,7 +108,7 @@ Everything secret-shaped, end to end.
       error responses never echo secrets/stack traces to clients in prod mode.
 - [x] **Report:** `todo/phase-60-findings/B-secrets-signatures.md`.
 
-## Theme C — Input validation & injection sweep — **M** — ✅ DONE (PR #TBD, 2026-07-07)
+## Theme C — Input validation & injection sweep — **M** — ✅ DONE (PR #357, 2026-07-07)
 
 Every byte that crosses the boundary gets checked — verify that's actually true.
 
@@ -131,7 +131,7 @@ Every byte that crosses the boundary gets checked — verify that's actually tru
 - [x] **Report:** [`todo/phase-60-findings/C-input-validation.md`](phase-60-findings/C-input-validation.md)
       (+ the C-1 quick-win applied with full test coverage).
 
-## Theme D — Dependency & supply-chain audit — **S-M** — ✅ DONE (PR #TBD, 2026-07-07)
+## Theme D — Dependency & supply-chain audit — **S-M** — ✅ DONE (PR #357, 2026-07-07)
 
 What we ship that we didn't write.
 
@@ -154,7 +154,7 @@ What we ship that we didn't write.
 
 # Section II — Bugs & Correctness
 
-## Theme E — State-machine, scheduler & concurrency correctness — **M-L** — ✅ DONE (PR #TBD, 2026-07-07)
+## Theme E — State-machine, scheduler & concurrency correctness — **M-L** — ✅ DONE (PR #357, 2026-07-07)
 
 The autonomous core: transitions, ticks, and races.
 

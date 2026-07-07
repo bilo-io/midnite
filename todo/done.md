@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-07 — fix: guard illegal task state transitions + concurrency audit — Phase 60 Theme E (PR #357)
+
+Closes Phase 60 Theme E. Four parallel audits (state machine, scheduler races, WS ordering, transaction boundaries); the clear-cut fix applied, structural ones documented.
+
+- [x] **Applied — state-machine guard (2 HIGH + 2 MED at one seam).** The lifecycle had no transition guard, so `updateStatus` (and board drags through it) committed any edge incl. terminal→active revivals (`done`→`wip` zombie, `done`→`todo` dup PR, `abandoned`→`todo` archived-but-scheduled), and late hooks revived `done`/`abandoned`. Fix: centralized `ALLOWED_TRANSITIONS`+`canTransition`+`isTerminal` in `shared/src/task.ts`, enforced in `updateStatus` (throws) + terminal-guards on `markWaiting`/`escalate`/`markDone`, with shared+gateway regression tests.
+- [x] **Documented (follow-ups, each structural):** scheduler TOCTOU races → run-generation token (SCHED-1 HIGH); non-atomic task-create paths → service DB handle / txn repo methods (TX-1/2 HIGH); missing WS epoch id → stale resume cursor after restart (WS-2 HIGH). Verified correct: WS seq allocation atomic+per-channel, sync idempotent slot acquire, Phase 49 import/`deleteTask` transactional.
+- [x] Report: [`todo/phase-60-findings/E-state-concurrency.md`](phase-60-findings/E-state-concurrency.md). Gate: `:typecheck`/`:lint`/`:test` green (shared 604, gateway 1742, web 988).
+
 ## 2026-07-07 — feat: office-presence contract + gateway service — Phase 64 Theme A (PR #356)
 
 The foundation for multiplayer presence: typed frames up, coalesced state down, nothing stored. Gateway + shared only; zero DB (ephemeral by design). Starts the A→B→C spine.
