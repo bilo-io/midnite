@@ -20,6 +20,7 @@ const emptySummary: OpsSummary = {
 function makeController() {
   const service = {
     getOpsSummary: vi.fn().mockReturnValue(emptySummary),
+    getGaugeHistory: vi.fn().mockReturnValue({ samples: [], truncated: false }),
   } as unknown as MetricsService;
   return { controller: new MetricsController(service), service };
 }
@@ -49,5 +50,19 @@ describe('MetricsController', () => {
   it('throws BadRequestException on invalid query', () => {
     const { controller } = makeController();
     expect(() => controller.ops(null)).toThrow(BadRequestException);
+  });
+
+  // ── Gauge history (Phase 61 D) ───────────────────────────────────────────────
+
+  it('GET /metrics/gauges/history delegates the window to the service', () => {
+    const { controller, service } = makeController();
+    const res = controller.gaugeHistory({ from: '2026-07-01T00:00:00.000Z' });
+    expect(res).toEqual({ samples: [], truncated: false });
+    expect(service.getGaugeHistory).toHaveBeenCalledWith({ from: '2026-07-01T00:00:00.000Z' });
+  });
+
+  it('throws BadRequestException on an invalid history query', () => {
+    const { controller } = makeController();
+    expect(() => controller.gaugeHistory(null)).toThrow(BadRequestException);
   });
 });

@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
   DurationBucketsSchema,
+  GaugeHistoryResponseSchema,
+  GaugeSampleSchema,
   MetricsGaugesSchema,
   OpsQuerySchema,
   OpsSummarySchema,
@@ -81,5 +83,34 @@ describe('sub-schemas', () => {
     expect(() =>
       OutcomeCountsSchema.parse({ done: 1, abandoned: 0, failed: 0 }),
     ).toThrow();
+  });
+
+  describe('gauge history (Phase 61 D)', () => {
+    it('GaugeSampleSchema accepts nullable gauge fields', () => {
+      const s = GaugeSampleSchema.parse({
+        at: '2026-07-07T00:00:00.000Z',
+        queueDepth: 3,
+        slotsUsed: null,
+        slotsTotal: null,
+        tickLatencyMs: null,
+      });
+      expect(s.queueDepth).toBe(3);
+      expect(s.slotsUsed).toBeNull();
+    });
+
+    it('GaugeSampleSchema rejects a negative queue depth', () => {
+      expect(() =>
+        GaugeSampleSchema.parse({ at: 't', queueDepth: -1, slotsUsed: null, slotsTotal: null, tickLatencyMs: null }),
+      ).toThrow();
+    });
+
+    it('GaugeHistoryResponseSchema round-trips samples + truncated', () => {
+      const res = GaugeHistoryResponseSchema.parse({
+        samples: [{ at: 't', queueDepth: 1, slotsUsed: 0, slotsTotal: 4, tickLatencyMs: 5 }],
+        truncated: true,
+      });
+      expect(res.truncated).toBe(true);
+      expect(res.samples).toHaveLength(1);
+    });
   });
 });

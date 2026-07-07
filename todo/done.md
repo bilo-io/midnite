@@ -15,6 +15,40 @@ Secrets, signatures & crypto audit — report at `todo/phase-60-findings/B-secre
 
 ---
 
+## 2026-07-07 — feat: gauge history sampler + /metrics/gauges/history — Phase 61 Theme D (PR #343)
+
+The Ops fleet gauges (queue depth, slot utilization, tick latency) lived only in an in-memory `GaugeStore`, lost on every restart. Theme D persists periodic snapshots so fleet-trend history survives a restart. Deepens the existing `metrics/` seam; behaviour-preserving (sampling off = no change).
+
+- [x] **shared:** `GaugeSample` + `GaugeHistory` query/response contracts (`GAUGE_HISTORY_MAX_POINTS = 2000`); `metrics.{sampleIntervalMs (60000), rawRetentionDays (30)}` config.
+- [x] **gateway:** `gauge_samples` table (migration `0075`) + repo (`insertGaugeSample` / windowed oldest-first `gaugeHistory` with newest-kept cap + `truncated` / `pruneGaugeSamplesBefore`); `MetricsService.sampleGauges` (skips all-null) / `pruneGaugeSamples` / `getGaugeHistory`; `MetricsSamplerService` (one `unref`'d timer + reentrancy guard, fail-open, self-prune older than `rawRetentionDays`, `0`=disabled — mirrors P49's `BackupSchedulerService`); `GET /metrics/gauges/history?from&to`.
+- [x] Tests: shared schema (nullable fields, negative-reject, round-trip); gateway real-SQLite repo (ordering/window/cap/prune) + service (skip-empty, prune-cutoff, mapping) + sampler (sample→prune, skip, fail-open, disabled-at-0) + controller. shared 591 / gateway 1642 green; `:typecheck`/`:lint` green. Gateway/shared only — Ops charts consume this in Theme G.
+
+---
+
+## 2026-07-07 — fix: security headers + timing-safe terminal token + auth audit — Phase 60 Theme A (PR #345)
+
+Closes Phase 60 Theme A (auth/transport/headers audit). Three parallel sweeps (rate-limiting, headers/CORS, token lifecycle); safe quick-wins applied, rest documented.
+
+- [x] **A-3 quick-win — security headers.** Every response now carries `X-Content-Type-Options: nosniff` + `X-Frame-Options: SAMEORIGIN` + `Referrer-Policy: no-referrer` via a global `onRequest` hook + `lib/security-headers.ts` (guards the served web export + `/uploads/*`; nosniff blocks MIME-sniffing a disguised upload). CSP + HSTS documented as decisions.
+- [x] **A-7 quick-win — timing-safe terminal token.** `TerminalService.verifyToken` now uses constant-time `safeEqual` (was `!==`).
+- [x] **Documented (HIGH, follow-up):** the static bearer token bypasses all `@RequiresRole` checks (RoleGuard fails open on unset `req.user`, remotely reachable) — A-1; no per-account login lockout — A-2. Plus MED/LOW: rate-limit default-off (recommend `max:300`, deferred), service-token scopes, refresh reuse-detection, terminal TTL sweep, dead `deleteExpired`.
+- [x] **CORS verified sound** (no wildcard/credentials, unknown origins fail closed, WS origin parity across all six gateways). Report: [`todo/phase-60-findings/A-security-auth.md`](phase-60-findings/A-security-auth.md).
+- [x] Tests: `lib/security-headers.test.ts`; existing `verifyToken` specs green. `gateway:typecheck`/`:lint`/`:test` green (1639).
+
+---
+
+## 2026-07-07 — feat: first-person collision + head-bob — Phase 63 Theme B (PR #342)
+
+Makes the 3D office (Theme A) feel real: grid-AABB collision + a footstep head-bob layered onto the pointer-lock/WASD walk rig.
+
+- [x] **web (`lib/office3d/collision.ts`, pure):** circle-vs-tile-AABB collision against the 2D office's `blockedGrid()` (walls + furniture + pool), so the 3D player collides with exactly what the 2D player does. Per-axis (X then Z) resolution → smooth wall-sliding; radius 0.3 < 0.5 clears the 2-tile doorways. No physics lib.
+- [x] **web (`lib/office3d/headbob.ts`, pure):** vertical bob + a subtle roll at half frequency, amplitude scaled by walk speed + eased in/out; phase advances by walked distance (not time) so cadence tracks speed like footsteps. Zero at rest / reduced motion.
+- [x] **web (`first-person-rig.tsx`):** movement resolves through collision; bob `dy` rides eye height, `roll` on `camera.rotation.z`. Head-bob gated by `useAnimationPrefs` (OS `prefers-reduced-motion` + the Phase-39 motion setting). `PLAYER_RADIUS` + bob tuning in `constants.ts`.
+- [x] **Design calls (locked up front):** circle-vs-tile per-axis wall-slide; full `blockedGrid()` solid set (2D parity); bob + roll velocity-scaled; disabled if either OS reduced-motion or the Phase-39 setting.
+- [x] Tests: collision (open floor, wall-slide, no-clip, doorway, OOB-as-wall) + head-bob (zero at rest/reduced, amplitude-bounded, linear-in-intensity, half-frequency roll). office3d unit suite 31 green; `web:typecheck`/`web:lint` green. Pure `packages/web` — zero gateway/`shared` work. (Store keyboard-disable on panels → Theme C.)
+
+---
+
 ## 2026-07-07 — feat: task retrospective contract + deterministic skeleton + storage — Phase 62 Theme A (PR #341)
 
 The spine of Fable-Digest: every terminal task gets a free, factual retrospective assembled deterministically (zero LLM) from data already persisted.
@@ -32,6 +66,8 @@ Closes Phase 60 Theme C (input-validation & injection sweep). One actionable HIG
 - [x] **Verified safe:** FTS5 `MATCH` (tokenized → quoted → param-bound), Phase 49 import zip (known-key reads, no path-based extraction → no zip-slip), all raw `sql\`\`` (no `sql.raw`, every value bound), and per-route zod coverage (every JSON `@Body()` `safeParse`s; the `unknown` webhook/inbound bodies are token/HMAC-gated by design).
 - [x] **Documented as follow-ups:** SSRF (HIGH — DNS-blind `isSafeHttpUrl` + no redirect revalidation across 4 fetch sites; needs a dedicated hardening theme) and a global `ZodValidationPipe`/architecture test (LOW). Full report: [`todo/phase-60-findings/C-input-validation.md`](phase-60-findings/C-input-validation.md).
 - [x] Tests: shared 592 (media schema cases), gateway 1632 (`resolve-media-path` 7 cases + 3 `serveFile` controller cases); `gateway:typecheck`/`:lint` green.
+
+---
 
 ## 2026-07-07 — feat: 3D office world foundation — Phase 63 Theme A (PR #337)
 

@@ -69,24 +69,28 @@
 
 # Section I — Security (audit + quick wins)
 
-## Theme A — Auth, transport & headers audit — **M**
+## Theme A — Auth, transport & headers audit — **M** — ✅ DONE (PR #TBD, 2026-07-07)
 
 The perimeter: who can reach what, and what the wire looks like.
 
-- [ ] **Rate limiting posture:** verify [`auth/rate-limit.guard.ts`](../packages/gateway/src/auth/rate-limit.guard.ts)
-      is still default-off; enumerate which routes it covers vs. exempts (`/health`, auth paths, the WS
-      upgrade, webhook receivers); assess brute-force exposure on `POST /auth/login` + token mint +
-      inbound receivers. Recommend per-route defaults (finding), enable any zero-risk default (quick win).
-- [ ] **Headers & CORS:** probe a running gateway for security headers (CSP where applicable,
-      `X-Content-Type-Options`, `X-Frame-Options`/`frame-ancestors`, HSTS posture behind TLS) and audit
-      the CORS origin allowlist in [`bootstrap.ts`](../packages/gateway/src/bootstrap.ts) (wildcards?
-      null-origin handling? does the WS path enforce the same origin policy?). Missing cheap headers = quick win.
-- [ ] **Token & session lifecycle:** audit `refresh_tokens` rotation/revocation (logout invalidates?),
-      service-token scoping (Phase 38) + hashing, terminal-token TTL + the passive-cleanup leak
-      (grounded earlier in [`terminal.service.ts`](../packages/gateway/src/terminal/terminal.service.ts)),
-      and the static-token legacy path (`req.user` unset ⇒ role guard passes — confirm the intended
-      loopback-only story holds).
-- [ ] **Report:** `todo/phase-60-findings/A-security-auth.md` — ranked findings + quick-wins-applied list.
+- [x] **Rate limiting posture:** confirmed default-off (`config.ts:194` `max: 0`, guard short-circuits at
+      `rate-limit.guard.ts:34`). Per-IP fixed-window, `APP_GUARD` before auth; covers `/auth/*` +
+      `/service-tokens` + `POST /integrations/inbound/:id`, exempts `/health*` + `/hooks/*`, misses the WS
+      upgrade + Fastify-native `/uploads/*`. **Finding A-4:** recommend a conservative non-zero default
+      (`max: 300`/60s) — *deferred* (flipping default-off→on is behavior-changing, operator decision).
+      **Finding A-2 (HIGH):** no per-account login lockout/backoff — `POST /auth/login` brute-forceable.
+- [x] **Headers & CORS:** CORS **verified sound** (A-10 — no wildcard, no credentials, unknown origins fail
+      closed, WS origin parity across all six gateways). Security headers were **all absent** → **A-3 quick-win
+      applied**: `X-Content-Type-Options: nosniff` + `X-Frame-Options: SAMEORIGIN` + `Referrer-Policy` via a
+      global hook (`lib/security-headers.ts`); CSP + HSTS documented as decisions (tune-to-export / TLS-terminator).
+- [x] **Token & session lifecycle:** **A-1 (HIGH)** — the static bearer token leaves `req.user` unset →
+      `RoleGuard` fails open → **all `@RequiresRole` bypassed**, remotely reachable on a non-loopback bind
+      (needs a threat-model decision). **A-7 quick-win applied** — terminal token now uses a constant-time
+      `safeEqual`. Documented: service tokens carry no scopes (A-5), no refresh reuse-detection (A-6),
+      terminal-token TTL has no active sweep (A-8), `deleteExpired` is dead code (A-9). Confirmed done-right:
+      refresh tokens hashed+rotated+revoked-on-logout, JWT pins HS256, service tokens hashed/revocable.
+- [x] **Report:** [`todo/phase-60-findings/A-security-auth.md`](phase-60-findings/A-security-auth.md) — ranked
+      findings + quick-wins-applied list.
 
 ## Theme B — Secrets, signatures & crypto paths audit — **M** — ✅ DONE (PR #346, 2026-07-07)
 

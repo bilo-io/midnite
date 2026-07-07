@@ -1,8 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, count, eq, gte, isNotNull, lte, sql } from 'drizzle-orm';
+import { and, count, desc, eq, gte, isNotNull, lt, lte, sql } from 'drizzle-orm';
 
 import { DB_TOKEN, type MidniteDb } from '../db/db.module';
-import { agentRunStats, type AgentRunStatsInsert } from '../db/schema';
+import {
+  agentRunStats,
+  gaugeSamples,
+  type AgentRunStatsInsert,
+  type GaugeSampleInsert,
+  type GaugeSampleRow,
+} from '../db/schema';
 
 export type RunOutcome = 'done' | 'abandoned' | 'failed' | 'cancelled';
 
@@ -127,5 +133,46 @@ export class MetricsRepository {
       }
     }
     return result;
+  }
+
+  // ── Gauge samples (Phase 61 D) ──────────────────────────────────────────────
+
+  /** Persist one gauge sample (the sampler's write path). */
+  insertGaugeSample(row: GaugeSampleInsert): void {
+    this.db.insert(gaugeSamples).values(row).run();
+  }
+
+  /**
+   * Sampled gauge series in the optional `[from, to]` window, oldest-first for the
+   * charts. Bounded: fetches `limit + 1` newest rows to detect overflow, keeps the
+   * newest `limit` when it overflows (so a huge range still returns recent data),
+   * and reports `truncated` — no silent cut. Theme E adds rollup-backed long windows.
+   */
+  gaugeHistory(
+    from: string | undefined,
+    to: string | undefined,
+    limit: number,
+  ): { samples: GaugeSampleRow[]; truncated: boolean } {
+    const bounds = [
+      ...(from ? [gte(gaugeSamples.at, from)] : []),
+      ...(to ? [lte(gaugeSamples.at, to)] : []),
+    ];
+    const rows = this.db
+      .select()
+      .from(gaugeSamples)
+      .where(bounds.length ? and(...bounds) : undefined)
+      .orderBy(desc(gaugeSamples.at))
+      .limit(limit + 1)
+      .all();
+    const truncated = rows.length > limit;
+    // Keep the newest `limit`, then flip to oldest-first for the chart series.
+    const kept = truncated ? rows.slice(0, limit) : rows;
+    return { samples: kept.reverse(), truncated };
+  }
+
+  /** Delete gauge samples older than `before` (ISO). Returns the deleted count. */
+  pruneGaugeSamplesBefore(before: string): number {
+    const res = this.db.delete(gaugeSamples).where(lt(gaugeSamples.at, before)).run();
+    return res.changes;
   }
 }

@@ -29,10 +29,10 @@
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
 | [64 · Office presence](phase-64-office-presence.md) | ◻ TODO | 0/30 | `░░░░░░░░░░` | 0% | — | A B C D E F G H |
-| [63 · Office 3D](phase-63-office-3d.md) | 🔄 WIP | 8/28 | `███░░░░░░░` | 29% | B | C D E G |
+| [63 · Office 3D](phase-63-office-3d.md) | 🔄 WIP | 12/28 | `████░░░░░░` | 43% | — | C D E G |
 | [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 3/33 | `█░░░░░░░░░` | 9% | — | B C D E F G H |
-| [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 0/36 | `░░░░░░░░░░` | 0% | D | A B C E F G H I |
-| [60 · Fable-Analysis](phase-60-fable-analysis.md) | 🔄 WIP | 8/63 | `█░░░░░░░░░` | 12% | A | D E F G H I J K L M |
+| [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 2/36 | `█░░░░░░░░░` | 6% | — | A B C E F G H I |
+| [60 · Fable-Analysis](phase-60-fable-analysis.md) | 🔄 WIP | 12/63 | `██░░░░░░░░` | 19% | — | D E F G H I J K L M |
 | [59 · Chat to board](phase-59-chat-to-board.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
 | [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 15/26 | `██████░░░░` | 58% | — | — |
@@ -129,7 +129,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 ### [Phase 63 — Office 3D](phase-63-office-3d.md)
 *The office rebuilt in first-person three.js (r3f + drei): same rooms/data, same Zustand store contract so every existing React panel is reused untouched; 2D/3D tabs on /office; arcade sub-scene with one playable Breakout. Pure packages/web; 2D office behavior-preserving.*
 - ✅ **A** — World foundation: r3f stage, procedural low-poly world from layout.ts, frustum culling, day/night lighting (PR #337)
-- 🔄 **B** — First-person rig: pointer-lock + WASD, grid AABB collision, footstep head-bob (reduced-motion aware)
+- ✅ **B** — First-person rig: pointer-lock + WASD, grid AABB collision, footstep head-bob (reduced-motion aware) (PR #342)
 - ◻ **C** — Agents & interactions: proximity → existing store fields → existing modals; low-poly avatars + billboards + P31 tool bubbles; minimap
 - ◻ **D** — Arcade sub-scene: cabinet room, playable Breakout w/ power-ups on a CanvasTexture screen, stub cabinets → existing menu
 - ◻ **E** — Corner office + pickers in 3D, ambient parity touches
@@ -152,7 +152,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ◻ **A** — Real session-token harvesting (transcript/Stop-hook probe, replace the hash-seeded placeholder)
 - ◻ **B** — Cost attribution: session_usage table + groupBy task/repo/project + real budget numbers
 - ◻ **C** — Cycle-time as a first-class metric (todo→wip→done from task_events)
-- ◻ **D** — Gauge history that survives restarts (sampler + gauge_samples)
+- ✅ **D** — Gauge history that survives restarts: sampler + gauge_samples + GET /metrics/gauges/history (PR #343)
 - ◻ **E** — Rollups + retention (hourly/daily rollups; prune metrics raws only, never task_events)
 - ◻ **F** — Live metrics channel on the P56 reliable WS (poll fallback)
 - ◻ **G** — Ops page deepening (cost/cycle-time/fleet-trend charts, run timeline)

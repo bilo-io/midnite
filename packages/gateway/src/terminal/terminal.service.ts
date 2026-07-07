@@ -7,6 +7,7 @@ import { AGENT_CLI_COMMAND, type MidniteConfig, type ServerTerminalMessage } fro
 
 import { gatewaySecretEnvNames, scrubGatewaySecrets } from '../config/gateway-secret-env';
 import { MIDNITE_CONFIG } from '../config.token';
+import { safeEqual } from '../auth/lib/auth-policy';
 import { AgentsService } from '../agents/agents.service';
 import { expandTilde } from '../fs/path-tilde';
 import { ProjectsService } from '../projects/projects.service';
@@ -195,7 +196,10 @@ export class TerminalService implements OnModuleDestroy {
     const entry = this.tokens.get(sessionId);
     if (!entry) return false;
     this.tokens.delete(sessionId); // single-use regardless of outcome
-    if (entry.token !== token) return false;
+    // Constant-time compare (Phase 60 A) — both sides are random UUIDs and this
+    // is single-use + in-memory, so the timing risk is low, but the codebase's
+    // own token compares are all timing-safe; keep this consistent.
+    if (!safeEqual(entry.token, token)) return false;
     return Date.now() <= entry.expiresAt;
   }
 

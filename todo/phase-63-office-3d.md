@@ -89,18 +89,21 @@ The 3D stage and the six-room world, generated from the same data the 2D office 
 
 ## Theme B — First-person rig (pointer-lock, movement, head-bob) — **M**
 
-- [ ] **Controller:** pointer-lock mouse-look (drei `PointerLockControls`) + WASD/arrows movement
-      with walk speed matched to the 2D feel; click-to-lock overlay with an ESC hint; pointer
-      unlock ⇄ store keyboard-disable so open panels type into React, not the scene (the existing
-      contract).
-- [ ] **Collision:** grid AABB collision from the same walkability data the 2D office uses
-      (walls, furniture, room bounds) — pure `lib/office3d/collision.ts`, no physics library;
-      smooth wall-sliding, door-gap passage.
-- [ ] **Head-bob:** subtle footstep-cadenced camera bob + micro-roll while moving (amplitude/
-      frequency tied to actual velocity, eased in/out, **disabled under `prefers-reduced-motion`**
-      and the Phase-39 motion setting).
-- [ ] **Spawn + orientation:** spawn at the 2D player's entry point facing the office; `R`-style
-      reset optional; camera height/FOV constants in `lib/office3d/constants.ts`.
+- [x] **Controller:** pointer-lock mouse-look (drei `PointerLockControls`) + WASD/arrows movement
+      (landed in Theme A) with a click-to-lock overlay + ESC hint; movement only runs while locked.
+      *(Store keyboard-disable on open panels arrives with Theme C's interactions — no 3D panels
+      set those flags yet.)* (PR #342)
+- [x] **Collision:** grid-AABB collision from the 2D office's `blockedGrid()` (walls + furniture +
+      pool) — pure `lib/office3d/collision.ts`, no physics lib; circle-vs-tile per-axis wall-slide,
+      2-tile door-gap passage; unit-tested (slide, no-clip, doorway). (PR #342)
+- [x] **Head-bob:** footstep-cadenced vertical bob + subtle roll (half frequency) while moving,
+      amplitude scaled by actual walk speed + eased in/out — pure `lib/office3d/headbob.ts` (phase
+      advances by walked distance). **Disabled under reduced motion** via `useAnimationPrefs`
+      (OS `prefers-reduced-motion` + the Phase-39 motion setting). Unit-tested (zero at rest/reduced,
+      bounded, half-frequency roll). (PR #342)
+- [x] **Spawn + orientation:** spawn at the 2D player's entry tile at eye height (Theme A); camera
+      height/FOV/speed constants live in `lib/office3d/constants.ts`. *(`R`-reset optional — not
+      included.)* (PR #342)
 
 ## Theme C — Agents, interactions & the store bridge — **M-L**
 

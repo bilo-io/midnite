@@ -26,7 +26,7 @@ app/(main)/office/page.tsx
             └─ <Office3DViewImpl> ../office3d/office-3d-view-impl.tsx — r3f stage + click-to-lock overlay
                  └─ <Office3DCanvas>  ../office3d/office-3d-canvas.tsx — <Canvas>, day/night lights
                       ├─ <OfficeWorld>      ../office3d/world/office-world.tsx — flat-shaded rooms/walls/furniture
-                      └─ <FirstPersonRig>   ../office3d/first-person-rig.tsx — pointer-lock + WASD (collision in Theme B)
+                      └─ <FirstPersonRig>   ../office3d/first-person-rig.tsx — pointer-lock + WASD + grid-AABB collision + head-bob (Theme B)
 ```
 
 **3D office (Phase 63).** A first-person three.js view of the *same* office, opt-in via `?view=3d`
@@ -36,8 +36,10 @@ contract**: the pure world builder ([`lib/office3d/world.ts`](../../lib/office3d
 resolves theme-aware colours + day/night lighting from the *same* [`theme.ts`](../../lib/office/theme.ts) /
 [`daynight.ts`](../../lib/office/daynight.ts) helpers, and the scene calls the store's `reset()` on
 mount/unmount so proximity/panel flags never leak across a tab switch. All `lib/office3d/` helpers are
-`three`-free + unit-tested. Theme A is the world + a minimal walk rig; collision, head-bob, agents,
-interactions, arcade, and the tab UI land in Themes B–F.
+`three`-free + unit-tested. Theme A built the world + a minimal walk rig; **Theme B** added
+grid-AABB collision (`collision.ts`, circle-vs-tile per-axis wall-slide over the 2D `blockedGrid()`)
+and footstep head-bob (`headbob.ts`, disabled under reduced motion via `useAnimationPrefs`). Agents,
+interactions, arcade, and the tab UI land in Themes C–F.
 
 **Rooms** ([`lib/office/layout.ts`](../../lib/office/layout.ts) — Phaser-free floor plan): a 34×22 grid
 split by internal walls into **six rooms** in a 3×2 arrangement — a top band (**work** hot desks ·

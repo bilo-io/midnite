@@ -67,3 +67,40 @@ export const OpsSummarySchema = z.object({
   outcomeCounts: OutcomeCountsSchema,
 });
 export type OpsSummary = z.infer<typeof OpsSummarySchema>;
+
+// ── Gauge history (Phase 61 D — persisted samples) ────────────────────────────
+
+/**
+ * One persisted sample of the live gauges (Phase 61 D). The sampler writes a row
+ * every `metrics.sampleIntervalMs` so fleet-trend history survives a restart —
+ * the in-memory {@link MetricsGaugesSchema} snapshot is lost on boot, this isn't.
+ * Individual fields are nullable (a gauge may be unset when the sample is taken),
+ * but a fully-null sample is never persisted.
+ */
+export const GaugeSampleSchema = z.object({
+  at: z.string(),
+  queueDepth: z.number().int().nonnegative().nullable(),
+  slotsUsed: z.number().int().nonnegative().nullable(),
+  slotsTotal: z.number().int().nonnegative().nullable(),
+  tickLatencyMs: z.number().nonnegative().nullable(),
+});
+export type GaugeSample = z.infer<typeof GaugeSampleSchema>;
+
+/** Query params for `GET /metrics/gauges/history`. Both timestamps are ISO 8601. */
+export const GaugeHistoryQuerySchema = z.object({
+  from: z.string().optional(),
+  to: z.string().optional(),
+});
+export type GaugeHistoryQuery = z.infer<typeof GaugeHistoryQuerySchema>;
+
+/** Cap on points returned by the history endpoint; beyond it the response is
+ *  flagged `truncated` (newest kept) rather than silently cut. Long windows get
+ *  rollup-backed series in Theme E. */
+export const GAUGE_HISTORY_MAX_POINTS = 2000;
+
+export const GaugeHistoryResponseSchema = z.object({
+  samples: z.array(GaugeSampleSchema),
+  /** True when the window held more than {@link GAUGE_HISTORY_MAX_POINTS} samples. */
+  truncated: z.boolean(),
+});
+export type GaugeHistoryResponse = z.infer<typeof GaugeHistoryResponseSchema>;

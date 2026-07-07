@@ -121,4 +121,50 @@ describe('MetricsRepository', () => {
       expect(counts).toEqual({ done: 0, abandoned: 0, failed: 0, cancelled: 0 });
     });
   });
+
+  describe('gauge samples (Phase 61 D)', () => {
+    const sample = (id: string, at: string, queueDepth = 1) => ({
+      id,
+      at,
+      queueDepth,
+      slotsUsed: 0,
+      slotsTotal: 4,
+      tickLatencyMs: 5,
+    });
+
+    it('returns samples in the window oldest-first', () => {
+      repo.insertGaugeSample(sample('s2', '2026-07-07T00:02:00.000Z', 2));
+      repo.insertGaugeSample(sample('s1', '2026-07-07T00:01:00.000Z', 1));
+      repo.insertGaugeSample(sample('s3', '2026-07-07T00:03:00.000Z', 3));
+      const { samples, truncated } = repo.gaugeHistory(undefined, undefined, 100);
+      expect(truncated).toBe(false);
+      expect(samples.map((s) => s.queueDepth)).toEqual([1, 2, 3]); // oldest → newest
+    });
+
+    it('honors the [from,to] window', () => {
+      repo.insertGaugeSample(sample('s1', '2026-07-07T00:01:00.000Z'));
+      repo.insertGaugeSample(sample('s2', '2026-07-07T00:05:00.000Z'));
+      const { samples } = repo.gaugeHistory('2026-07-07T00:03:00.000Z', undefined, 100);
+      expect(samples.map((s) => s.id)).toEqual(['s2']);
+    });
+
+    it('caps at the limit keeping the newest, and flags truncated', () => {
+      for (let i = 0; i < 5; i++) {
+        repo.insertGaugeSample(sample(`s${i}`, `2026-07-07T00:0${i}:00.000Z`, i));
+      }
+      const { samples, truncated } = repo.gaugeHistory(undefined, undefined, 3);
+      expect(truncated).toBe(true);
+      // Newest 3 (queueDepth 2,3,4), returned oldest-first.
+      expect(samples.map((s) => s.queueDepth)).toEqual([2, 3, 4]);
+    });
+
+    it('prunes samples older than the cutoff, keeping newer ones', () => {
+      repo.insertGaugeSample(sample('old', '2026-06-01T00:00:00.000Z'));
+      repo.insertGaugeSample(sample('new', '2026-07-07T00:00:00.000Z'));
+      const deleted = repo.pruneGaugeSamplesBefore('2026-07-01T00:00:00.000Z');
+      expect(deleted).toBe(1);
+      const { samples } = repo.gaugeHistory(undefined, undefined, 100);
+      expect(samples.map((s) => s.id)).toEqual(['new']);
+    });
+  });
 });
