@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-07 — chore: ws DoS bump + dependency/supply-chain audit — Phase 60 Theme D (PR #355)
+
+Closes Phase 60 Theme D. `pnpm audit`: 58 advisories, almost all transitive and many against versions newer than installed.
+
+- [x] **Applied** the one safe, reachable, in-range bump: `ws` 8.18→8.21 (HIGH memory-exhaustion DoS on the gateway WS), tests green.
+- [x] **Triaged + documented** (major bumps, out of [S] scope): `drizzle-orm` 0.36→0.45 (HIGH SQLi, reachable — mitigated by Theme C's no-raw-`sql` finding), Nest 10→11 / Fastify 4→5 stack (framework migration), `electron` (desktop-only), dev/build-only tooling (esbuild/vitest-UI/webpack/tar/tmp/picomatch/js-yaml); `glob` CLI noted unreachable. A workspace-wide `pnpm update -r` was attempted but reverted (regressed `site:typecheck`).
+- [x] **Clean:** committed-secret scan (tree + git history — no `.env`, no key/token patterns, nothing ever committed), lockfile typosquat (117 direct deps), license review (no GPL/AGPL/SSPL/BUSL).
+- [x] Report: [`todo/phase-60-findings/D-supply-chain.md`](phase-60-findings/D-supply-chain.md). Gate: `:typecheck` green, `:test` green (bar the known `ui:test` leaf flake).
+
 ## 2026-07-07 — feat: 3D office perf budget + tests — Phase 63 Theme G (PR #352) · closes Phase 63 🎉
 
 The final Phase-63 slice — perf budget, store-contract parity spec, and flow smoke — closing **Phase 63 (Office 3D) at 28/28**. Pure `packages/web`.
