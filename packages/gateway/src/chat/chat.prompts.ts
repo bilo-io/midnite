@@ -17,3 +17,11 @@ export const CHAT_INTENT_SYSTEM_PROMPT = `You translate a single natural-languag
 - unknown: the command is unclear, unsupported, or not a board command. Set "text" and a short "reason".
 
 Rules: priority is 0 Low, 1 Normal, 2 High, 3 Urgent. Only set fields relevant to the chosen type; leave others unset. Never invent task ids — pass the user's wording as the task reference. If unsure, use "unknown".`;
+
+/**
+ * Phase 59 C — system prompt for the free-form query answerer (the LLM-summary
+ * path, reached only when a question doesn't map to a deterministic filter). The
+ * board state is supplied in the user message; the model must answer *only* from
+ * it. Kept terse to keep the token cost small.
+ */
+export const CHAT_QUERY_SYSTEM_PROMPT = `You answer a question about a Kanban board of tasks, using ONLY the board state provided in the user message. Be concise (1-3 sentences), concrete, and actionable. Reference tasks by their title. If the board state doesn't contain the answer, say so plainly — never invent tasks, ids, or facts. Do not suggest commands; just answer the question. Respond by calling the record_answer tool with a single "summary" string.`;

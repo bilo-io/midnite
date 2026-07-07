@@ -28,16 +28,13 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
+| [64 · Office presence](phase-64-office-presence.md) | ◻ TODO | 0/30 | `░░░░░░░░░░` | 0% | — | A B C D E F G H |
+| [63 · Office 3D](phase-63-office-3d.md) | 🔄 WIP | 3/28 | `█░░░░░░░░░` | 11% | A | B C D E G |
 | [62 · Fable-Digest](phase-62-fable-digest.md) | ◻ TODO | 0/33 | `░░░░░░░░░░` | 0% | — | A B C D E F G H |
 | [61 · Fable-Observability](phase-61-fable-observability.md) | ◻ TODO | 0/36 | `░░░░░░░░░░` | 0% | — | A B C D E F G H I |
-| [60 · Fable-Analysis](phase-60-fable-analysis.md) | ◻ TODO | 0/63 | `░░░░░░░░░░` | 0% | — | A B C D E F G H I J K L M |
-<<<<<<< Updated upstream
-| [59 · Chat to board](phase-59-chat-to-board.md) | 🔄 WIP | 9/26 | `███░░░░░░░` | 34% | C | E F |
-| [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | 🔄 WIP | 14/25 | `██████░░░░` | 56% | — | F |
-=======
-| [59 · Chat to board](phase-59-chat-to-board.md) | 🔄 WIP | 6/26 | `██░░░░░░░░` | 23% | C D | E F |
+| [60 · Fable-Analysis](phase-60-fable-analysis.md) | 🔄 WIP | 0/63 | `░░░░░░░░░░` | 0% | C | A B D E F G H I J K L M |
+| [59 · Chat to board](phase-59-chat-to-board.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | 🔄 WIP | 14/25 | `██████░░░░` | 56% | F | — |
->>>>>>> Stashed changes
 | [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 15/26 | `██████░░░░` | 58% | — | — |
 | [56 · Realtime / WS reliability](phase-56-realtime-ws-reliability.md) | ✅ DONE | 17/26 | `███████░░░` | 65% | — | — |
 | [55 · Projects detail page](phase-55-projects-detail-page.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
@@ -97,13 +94,12 @@
 | [1 · Board by hand](phase-1-board.md) | ✅ DONE | 16/16 | `██████████` | 100% | — | — |
 | [0 · Scaffold](phase-0-scaffold.md) | ✅ DONE | 10/10 | `██████████` | 100% | — | — |
 
-**Headline:** the original **0–48 roadmap is complete** — Phase 42 closed out with
-**Theme B** (task modal via a `?task=` param, the static-export-friendly replacement
-for intercepting routes — PR #272, 2026-07-02).
-The **live frontier** is **Phase 51** (session detail — Theme E in flight, F to go) plus a
-newly-planned resilience/review trio — **52** (in-app PR review), **53** (task-lifecycle
-resilience), **54** (runtime/process resilience) — and the two unstarted plans
-**49** (data portability) and **50** (autonomy guardrails). (An *earlier* Phase 42 was a
+**Headline:** phases **0–56 are complete**. The **live frontier** is **57** (performance &
+scale — C/F remainders), **58** (dependency graph & roadmap — Theme F to go), and **59**
+(chat to board — Theme C claimed WIP). Freshly planned and unstarted: the **Fable trio 60–62**
+(analysis / observability / digest) and the office pair **63** (Office 3D — first-person
+three.js office) + **64** (multiplayer office presence — Theme D blocked on 63), both planned
+2026-07-06. (An *earlier* Phase 42 was a
 parallel restatement of Phase 40, folded into Phase 40 Theme G and removed 2026-06-27; the
 current 42 & 43 are new, unrelated phases — two brainstorm sessions ran concurrently, so the
 preference-sync plan took the next free number, 43.)
@@ -118,6 +114,27 @@ shortcut). The 2 contextual-command boxes are now **un-deferred and folded into 
 Every phase's lettered themes with a status icon + one-liner, so you can gauge scope and pick
 work without opening the phase doc. Status: `✅` done · `🔄` WIP (claimed) · `◻` TODO · `◐`
 partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
+
+### [Phase 64 — Office multiplayer presence](phase-64-office-presence.md)
+*Teammates as live avatars in the office (2D + 3D): a /ws/presence channel (last-known-state, no ring, zero DB), hybrid guest/JWT identity, emote wheel + locate, ghost mode, nav pill + dashboard widget; proximity chat as stretch. Theme D blocked on Phase 63 A–C.*
+- ◻ **A** — Presence contract + gateway service (typed frames, tick-coalesced team fan-out, snapshot-on-join)
+- ◻ **B** — Client presence store + throttled position sampler + guest identity + interpolation
+- ◻ **C** — 2D renderer: remote humans as Actors, minimap dots, scene scoping (solo-preserving)
+- ◻ **D** — 3D renderer: r3f presence avatars + billboards (⛔ blocked on Phase 63 A–C)
+- ◻ **E** — Emote wheel, teammates roster, locate/walk-to
+- ◻ **F** — Nav pill, dashboard widget, server-enforced ghost mode
+- ◻ **G** — Proximity chat bubbles (stretch — ephemeral, never persisted)
+- ◻ **H** — Gateway/contract/interp tests + two-context Playwright smoke
+
+### [Phase 63 — Office 3D](phase-63-office-3d.md)
+*The office rebuilt in first-person three.js (r3f + drei): same rooms/data, same Zustand store contract so every existing React panel is reused untouched; 2D/3D tabs on /office; arcade sub-scene with one playable Breakout. Pure packages/web; 2D office behavior-preserving.*
+- 🔄 **A** — World foundation: r3f stage, procedural low-poly world from layout.ts, room-chunk frustum culling, day/night lighting
+- ◻ **B** — First-person rig: pointer-lock + WASD, grid AABB collision, footstep head-bob (reduced-motion aware)
+- ◻ **C** — Agents & interactions: proximity → existing store fields → existing modals; low-poly avatars + billboards + P31 tool bubbles; minimap
+- ◻ **D** — Arcade sub-scene: cabinet room, playable Breakout w/ power-ups on a CanvasTexture screen, stub cabinets → existing menu
+- ◻ **E** — Corner office + pickers in 3D, ambient parity touches
+- ✅ **F** — Tabs & routing: ?view=2d|3d + P43 preference sync, lazy engine isolation (PR #336; 3D view a placeholder pending Theme A's r3f world)
+- ◻ **G** — Perf budget + unit/store-contract/Playwright tests
 
 ### [Phase 62 — Fable-Digest](phase-62-fable-digest.md)
 *Retrospectives per task + fleet digests, workflow-first: a task-event trigger + retro/digest nodes + seeded pipelines; gateway stores primitives. Fable series #3.*
@@ -162,10 +179,10 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 *Natural-language command bar in the Cmd-K palette; deterministic-first, local-model-preferred; composes existing task services.*
 - ✅ **A** — Intent contract + deterministic parser + LLM fallback (PR #321)
 - ✅ **B** — Execute intents by composing existing services (PR #323)
-- ◻ **C** — Status-query answerer (read-only)
+- ✅ **C** — Status-query answerer (read-only) (PR #335)
 - ✅ **D** — Inference routing: deterministic-first, local-preferred (PR #332)
-- ◻ **E** — Palette command-bar UI
-- ◻ **F** — Safety: preview, confirm, undo, audit
+- ✅ **E** — Palette command-bar UI (PR #334)
+- ✅ **F** — Safety: preview, confirm, undo, audit (PR #333)
 
 ### [Phase 58 — Dependency graph & milestone roadmap](phase-58-dependency-graph-roadmap.md)
 *(Make the plan visible: surface Phase 27's dependency edges as a DAG + a milestone roadmap. Server-authoritative graph API; React Flow + dagre view; milestone data model + assignment. No new scheduling semantics — read/visualize what's modeled.)*

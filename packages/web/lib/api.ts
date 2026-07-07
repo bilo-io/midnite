@@ -144,6 +144,8 @@ import {
   TaskFailuresResponseSchema,
   TaskGraphResponseSchema,
   type TaskGraph,
+  ChatQueryResponseSchema,
+  type ChatQueryAnswer,
   MilestoneSchema,
   MilestoneResponseSchema,
   RoadmapResponseSchema,
@@ -303,6 +305,8 @@ import {
   type ChatCommandResponse,
   ChatPreviewResponseSchema,
   type ChatPreviewResponse,
+  ChatUndoResponseSchema,
+  type ChatUndoResponse,
 } from '@midnite/shared';
 import { z } from 'zod';
 
@@ -487,6 +491,20 @@ export async function getTaskGraph(
 
 // ── Chat to board (Phase 59) ────────────────────────────────────────────────────
 
+/**
+ * Phase 59 C — ask the board a read-only question. Returns a prose answer + the
+ * matching task refs (for deep-links) + the inference path used (cost line).
+ * Never mutates.
+ */
+export async function chatQuery(text: string, signal?: AbortSignal): Promise<ChatQueryAnswer> {
+  const res = await fetchJson(
+    '/chat/query',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ text }), signal },
+    ChatQueryResponseSchema,
+  );
+  return res.answer;
+}
+
 /** Parse a natural-language command and describe what it would do (no write). */
 export async function previewChatCommand(text: string, signal?: AbortSignal): Promise<ChatPreviewResponse> {
   return fetchJson(
@@ -496,12 +514,29 @@ export async function previewChatCommand(text: string, signal?: AbortSignal): Pr
   );
 }
 
-/** Parse and execute a natural-language board command. */
-export async function runChatCommand(text: string, signal?: AbortSignal): Promise<ChatCommandResponse> {
+/**
+ * Parse and execute a natural-language board command. A mutating command only
+ * writes when `confirm` is true; otherwise the result comes back
+ * `confirmation: 'confirm'` and nothing changed (Phase 59 F seatbelt).
+ */
+export async function runChatCommand(
+  text: string,
+  confirm = false,
+  signal?: AbortSignal,
+): Promise<ChatCommandResponse> {
   return fetchJson(
     '/chat/command',
-    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ text }), signal },
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ text, confirm }), signal },
     ChatCommandResponseSchema,
+  );
+}
+
+/** Undo a previously executed chat command by its undo token (Phase 59 F). */
+export async function undoChatCommand(undoToken: string, signal?: AbortSignal): Promise<ChatUndoResponse> {
+  return fetchJson(
+    '/chat/undo',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ undoToken }), signal },
+    ChatUndoResponseSchema,
   );
 }
 

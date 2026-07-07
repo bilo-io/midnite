@@ -4,6 +4,52 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-07 — feat: office 2D/3D engine tabs + view preference — Phase 63 Theme F (PR #336)
+
+Ships the engine switcher the 3D office (Themes A–E) will live behind — a 2D/3D tab on `/office` with a shareable, sticky preference.
+
+- [x] **web:** 2D/3D tab strip (`OfficeSurface`); `?view=2d|3d` URL param wins over the persisted `officeView` pref, else 2d. Only the active engine mounts (Phaser destroy / three dispose on switch; one bundle at a time; both `dynamic(ssr:false)`); office stays `DesktopOnly`; page is a thin `Suspense` shell.
+- [x] **shared:** new additive `officeView` enum('2d'|'3d') UserPreferences key, wired into `appSettingsToPreferences` + `applyPreferences` (Phase 43 sync).
+- [x] Tests: RTL `OfficeSurface` (default/param/pref/param-wins/switch→replace+persist/single-mount) + shared pref default+enum. Gate green (web 874, shared 583; `ui:test` flake passes isolated).
+- ⚠️ **3D tab is a dependency-free placeholder** — the `three`/`@react-three/*` type stack pulls `@types/three`'s transitive global type packages (`@webgpu/types`/`@types/webxr`) into the whole web typecheck and collapses unrelated JSX inference to `never`; the r3f + React-19 JSX setup is deferred to Theme A, which replaces `office-3d-view-impl.tsx` with the real `<Canvas>`.
+
+---
+
+## 2026-07-07 — feat: status-query answerer (read-only) — Phase 59 Theme C (PR #335)
+
+Closes Phase 59 Theme C — **completes Phase 59 (all six themes A–F landed)**. The command bar can now *ask* the board questions, never mutating.
+
+- [x] **shared:** `ChatTaskRef`, `ChatQueryAnswer` (`text`/`tasks`/`count`/`truncated`/`inferencePath`), `ChatQueryRequest`/`Response` schemas + `QueryIntent` type; `CHAT_QUERY_TASK_CAP = 50`.
+- [x] **gateway `ChatQueryService`:** deterministic filter reads (blocked/ready/status/count) over the server-authoritative `TasksService.buildGraph` — same `ready`/`unmetBlockerCount` the scheduler computes, so answers can't drift; excludes foreign nodes, caps at 50, flags `truncated` (incl. the graph's own 500-node cap). Free-form questions get a cheap `generateStructured` summary (feature-tagged `chat`) over the ready+blocked slice, **failing soft** to a deterministic overview when no provider / on error. Never mutates.
+- [x] **gateway `POST /chat/query`:** thin controller; a non-query parse is coerced into a read-only free-form query (the endpoint can never execute a mutation). Team-scoped via `@CurrentUser()`.
+- [x] **web:** thin `chatQuery(text, signal?)` API client.
+- [x] Tests: shared schema specs, 10 service specs (deterministic reads + fail-soft LLM paths), 3 controller specs. `shared:test`/`gateway:typecheck`/`gateway` chat specs (67)/`web:typecheck` green. Gateway/contract-only — no visual UI (Theme E owns it), so no screenshots.
+
+---
+
+## 2026-07-06 — feat: chat-to-board command bar in the Cmd-K palette — Phase 59 Theme E (PR #334)
+
+Closes Phase 59 Theme E. The natural-language bar surfaces where people already type — the ⌘K palette — over the A/B/D/F backend seam.
+
+- [x] **web:** a leading `>` switches the command palette into chat mode (`useChatCommand` hook + presentational `<ChatBar>`); nav chat icon opens it pre-seeded (`midnite:open-chat`). No new FAB. Preview → confirm (Theme F seatbelt) → execute → inline Undo, with cost line + low-confidence warning.
+- [x] **web:** light last-result context — a follow-up ("make those p1") expands client-side (`expandFollowup`) to one command per prior affected id. Board refresh via `invalidateData()`.
+- [x] **fix:** undo-of-create now archives-then-deletes (`deleteTask` guards against deleting live rows), caught by the new e2e.
+- [x] Tests: RTL (hook/ChatBar/follow-up/palette) + Playwright e2e (`>` add → confirm → result → undo). `:typecheck`/`:lint`/`:test` green (web 868, gateway 1609, shared 582, cli 155; `ui:test` flake passes isolated).
+
+---
+
+## 2026-07-06 — feat: chat-to-board safety (preview/confirm/undo/audit) — Phase 59 Theme F (PR #333)
+
+Closes Phase 59 Theme F. The NL command bar's seatbelt: never silently write, always reversible, always audited — backend primitives over the A/B/D spine (the UI that surfaces them is Theme E).
+
+- [x] **gateway:** server-enforced confirm gate — a mutating `POST /chat/command` only writes with `confirm: true`; otherwise `confirmation: 'confirm'` and nothing changes. Read-only queries run immediately.
+- [x] **gateway:** undo — every write logs an inverse revert plan to a new `chat_commands` table (migration `0073`); `undoToken` → `POST /chat/undo` replays it through existing `TasksService` mutators (delete / restore-prior / removeDependency), one-shot + team-scoped. No new mutation path.
+- [x] **gateway:** `chat.command` + `chat.undo` audited via the Phase 50 `AuditService`.
+- [x] **shared:** `confirmation` on preview + result; `confirm` on the request; `ChatUndoRequest/Response`; web api client (`runChatCommand(text, confirm)` + `undoChatCommand`).
+- [x] Tests: shared contracts; gateway confirm-gate + revert-capture + undo-replay + guards + audit; `chat_commands` repository integration. `:typecheck`/`:lint`/`:test` green (gateway 1609, shared 582, web 848, cli 155; `ui:test` flake passes isolated).
+
+---
+
 ## 2026-07-06 — feat: chat intent routing (deterministic→local→paid→refuse) — Phase 59 Theme D (PR #332)
 
 Closes Phase 59 Theme D. Formalizes the fuzzy-path routing policy over the Theme A/B spine so the chat bar is near-zero cost by default and never a surprise bill. The resolved inference path now rides on the parse envelope as the single source of truth.

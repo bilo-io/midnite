@@ -90,16 +90,22 @@ Do the thing — through the paths that already validate.
 
 ---
 
-## Theme C — Status-query answerer (read-only) — **M**
+## Theme C — Status-query answerer (read-only) — **M** — ✅ DONE (PR #335, 2026-07-07)
 
 Ask the board questions.
 
-- [ ] `query` intents that read board state: deterministic for simple filters ("show blocked", "todo count",
-      "what's in wip") — reuse [`listReadyTodoTasks`](../packages/gateway/src/tasks/tasks.service.ts), the deps
-      helpers, and FTS search; return a structured answer (a task list / count).
-- [ ] Open-ended questions ("what should I focus on?", "what's blocking payments?") get a **cheap LLM summary**
-      over the relevant slice (blocked set + priorities) — read-only, no mutation, small prompt.
-- [ ] Answers link into the board (task deep-links) so a query flows into action.
+- [x] `query` intents that read board state: deterministic for simple filters ("show blocked", "todo count",
+      "what's in wip") — `ChatQueryService` filters the server-authoritative `TasksService.buildGraph` (same
+      `ready`/`unmetBlockerCount` the scheduler computes, so answers can't drift), excludes foreign cross-project
+      nodes, caps the list at `CHAT_QUERY_TASK_CAP` (50) and flags `truncated`; returns a structured `ChatQueryAnswer`
+      (prose `text` + task refs / count).
+- [x] Open-ended questions ("what should I focus on?", "what's blocking payments?") get a **cheap LLM summary**
+      over the actionable slice (ready + blocked, priority-ordered) via `generateStructured` (feature-tagged `chat`),
+      read-only with a small prompt — and **fails soft** to a deterministic board overview when no provider is
+      configured or the call errors.
+- [x] Answers carry task refs (id + title/status/priority) so the UI (Theme E) can deep-link a query into action.
+- [x] `POST /chat/query` (thin `ChatQueryController`): a non-query parse is coerced into a read-only free-form query,
+      so the endpoint can never execute a mutation. Team-scoped via `@CurrentUser()`. Web `chatQuery()` client added.
 
 ---
 
@@ -120,31 +126,35 @@ Near-zero cost by default; never a surprise bill.
 
 ---
 
-## Theme E — Palette command-bar UI — **M-L**
+## Theme E — Palette command-bar UI — **M-L** — ✅ DONE (PR #334, 2026-07-06)
 
 Type what you want, where you already type.
 
-- [ ] Fold chat-to-board into the **command palette** via `useRegisterPaletteCommands` — a "Chat with board" mode
-      (or a leading `>`/natural-language line) using the **composer** input pattern; **no new FAB**. A small **chat
-      icon in the nav** opens the same, for discoverability.
-- [ ] **One-shot** interaction with a **light last-result context** — a follow-up like "now make those high
-      priority" resolves against the previous command's affected ids (not a full conversation history).
-- [ ] Render the parsed intent + result inline (created/updated tasks link into the board); live board refresh via
-      the existing WS (ties to Phase 56). Static-export friendly (client-only).
+- [x] Fold chat-to-board into the **command palette** — a leading `>` switches the ⌘K input into a "Chat with board"
+      mode (`useChatCommand` hook + presentational `<ChatBar>`); **no new FAB**. A **chat icon in the nav** opens it
+      pre-seeded (`midnite:open-chat`), for discoverability. Search is skipped in chat mode.
+- [x] **One-shot** interaction with a **light last-result context** — a follow-up ("make those p1") expands
+      client-side (`expandFollowup`) to one command per the previous command's affected id (not full conversation
+      history).
+- [x] Render the parsed intent + result inline (cost line + low-confidence warning); confirm gate + inline Undo
+      (Theme F); live board refresh via the existing `invalidateData()`. Static-export friendly (client-only).
 
 ---
 
-## Theme F — Safety: preview, confirm, undo, audit — **S-M**
+## Theme F — Safety: preview, confirm, undo, audit — **S-M** — ✅ DONE (PR #333, 2026-07-06)
 
 An NL bar that mutates the board needs a seatbelt.
 
-- [ ] **Preview + confirm** for mutating intents: show the parsed intent ("create 3 tasks on `api`, p1") and require
-      a confirm before writing — **never silently** bulk-create/delete. Read-only queries run immediately.
-- [ ] **Undo** the last command (reuse task delete / status-revert via the `undo token` in `ChatCommandResult`),
-      surfaced right after execution.
-- [ ] **Audit** the command + its effect via the Phase 50 `AuditService` (who ran what NL command, what it changed);
-      destructive intents (bulk delete) get an extra confirm. Ambiguous/low-confidence parses ask to clarify rather
-      than guess.
+- [x] **Preview + confirm** for mutating intents: `preview` + `command` carry a `confirmation` level, and a mutating
+      `POST /chat/command` only writes when `confirm: true` (server-enforced) — otherwise it returns
+      `confirmation: 'confirm'` and nothing changes; **never silently** mutates. Read-only queries run immediately.
+- [x] **Undo** the last command: every write logs an inverse **revert plan** to the `chat_commands` table; the
+      `undoToken` in `ChatCommandResult` reverts it via `POST /chat/undo`, replaying ops through the existing
+      `TasksService` mutators (delete / restore-prior / removeDependency) — **no new mutation path**. One-shot,
+      team-scoped, best-effort.
+- [x] **Audit** the command + its effect via the Phase 50 `AuditService` (`chat.command` + `chat.undo` — who ran what
+      NL command, what it changed). (Low-confidence parses already ask to clarify via the Theme A/D `unknown` path; a
+      dedicated destructive-intent extra-confirm is deferred until a delete-type intent exists.)
 
 ---
 

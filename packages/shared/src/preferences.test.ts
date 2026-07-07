@@ -24,8 +24,15 @@ describe('UserPreferencesSchema', () => {
       effects: { pageReveal: true, typewriter: true, glass: true },
       inactivityTimeoutS: 30,
       cycleDurationS: 5,
+      officeView: '2d',
       features: {},
     });
+  });
+
+  it('defaults officeView to 2d and accepts 3d (Phase 63 F)', () => {
+    expect(UserPreferencesSchema.parse({}).officeView).toBe('2d');
+    expect(UserPreferencesSchema.parse({ officeView: '3d' }).officeView).toBe('3d');
+    expect(UserPreferencesSchema.safeParse({ officeView: 'vr' }).success).toBe(false);
   });
 
   it('applies a partial blob over the defaults', () => {
@@ -61,6 +68,7 @@ describe('UserPreferencesSchema', () => {
       effects: { pageReveal: false, typewriter: false, glass: false },
       inactivityTimeoutS: 120,
       cycleDurationS: 8,
+      officeView: '3d' as const,
       features: { office: true, workflows: false },
     };
     expect(UserPreferencesSchema.parse(full)).toEqual(full);

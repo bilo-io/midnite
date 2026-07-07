@@ -103,4 +103,37 @@ test.describe('Command palette & global shortcuts', () => {
       await expect(page.getByRole('dialog', { name: 'New task' })).toBeVisible({ timeout: 1_000 });
     }).toPass({ timeout: 10_000 });
   });
+
+  // Phase 59 E — chat-to-board command bar. A deterministic `add` command runs
+  // with zero inference, so this flow needs no LLM: preview → confirm → result →
+  // undo, all through the real gateway.
+  test('chat mode: ">" runs a deterministic command through confirm → result → undo', async ({ page }) => {
+    await page.goto('/dashboard');
+
+    await page.keyboard.press('ControlOrMeta+k');
+    const palette = page.getByRole('dialog', { name: 'Command palette' });
+    await expect(palette).toBeVisible();
+
+    // A leading ">" switches to chat mode; the search box becomes the command input.
+    const input = palette.getByRole('textbox', { name: 'Chat with the board' });
+    await palette.getByRole('textbox', { name: 'Search commands and content' }).fill('>add "E2E chat bar task" p1');
+    await expect(input).toBeVisible();
+    await expect(palette.getByTestId('chat-bar')).toBeVisible();
+
+    // Enter previews → the confirm gate appears (never writes silently).
+    await input.press('Enter');
+    const confirm = palette.getByTestId('chat-confirm');
+    await expect(confirm).toBeVisible();
+    if (process.env['CHAT_SHOTS']) await palette.screenshot({ path: '/tmp/chat-confirm.png' });
+    await confirm.click();
+
+    // The result reports the created task; Undo reverts it.
+    const result = palette.getByTestId('chat-result');
+    await expect(result).toContainText('Created task', { timeout: 10_000 });
+    const undo = palette.getByTestId('chat-undo');
+    await expect(undo).toBeVisible();
+    if (process.env['CHAT_SHOTS']) await palette.screenshot({ path: '/tmp/chat-result.png' });
+    await undo.click();
+    await expect(result).toContainText(/reverted/i, { timeout: 10_000 });
+  });
 });

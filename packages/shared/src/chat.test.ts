@@ -6,8 +6,13 @@ import {
   ChatIntentParseSchema,
   ChatIntentSchema,
   ChatPreviewResponseSchema,
+  ChatQueryAnswerSchema,
+  ChatQueryRequestSchema,
+  ChatUndoRequestSchema,
+  ChatUndoResponseSchema,
   CHAT_INFERENCE_PATH_LABEL,
   CHAT_INTENT_TYPES,
+  CHAT_QUERY_TASK_CAP,
 } from './chat.js';
 
 describe('ChatIntentSchema', () => {
@@ -88,13 +93,21 @@ describe('ChatCommandResultSchema', () => {
       affectedIds: ['t1', 't2'],
       undoToken: 'undo-abc',
       inferencePath: 'deterministic',
+      confirmation: 'none',
     };
     expect(ChatCommandResultSchema.parse(result)).toEqual(result);
   });
 
   it('allows a read-only result without an undo token', () => {
-    const result = { summary: '3 blocked tasks', affectedIds: [], inferencePath: 'local' };
+    const result = { summary: '3 blocked tasks', affectedIds: [], inferencePath: 'local', confirmation: 'none' };
     expect(ChatCommandResultSchema.parse(result).undoToken).toBeUndefined();
+  });
+
+  it('requires the confirmation level (Theme F seatbelt)', () => {
+    const result = { summary: 'x', affectedIds: [], inferencePath: 'local' };
+    expect(ChatCommandResultSchema.safeParse(result).success).toBe(false);
+    expect(ChatCommandResultSchema.safeParse({ ...result, confirmation: 'bogus' }).success).toBe(false);
+    expect(ChatCommandResultSchema.safeParse({ ...result, confirmation: 'confirm' }).success).toBe(true);
   });
 
   it('labels every inference path', () => {
@@ -104,9 +117,53 @@ describe('ChatCommandResultSchema', () => {
   });
 });
 
-describe('Chat command request/response (Phase 59 B)', () => {
-  it('requires non-empty command text within the cap', () => {
+describe('ChatQueryAnswerSchema (Theme C)', () => {
+  it('round-trips a query answer with task refs', () => {
+    const answer = {
+      text: '2 blocked tasks',
+      tasks: [
+        { id: 't1', title: 'Fix auth', status: 'todo', priority: 2 },
+        { id: 't2', title: 'Ship API', status: 'wip', priority: 1 },
+      ],
+      count: 2,
+      truncated: false,
+      inferencePath: 'deterministic',
+    };
+    expect(ChatQueryAnswerSchema.parse(answer)).toEqual(answer);
+  });
+
+  it('allows an empty task list (count-only) and a truncated flag', () => {
+    const answer = { text: '73 todo tasks', tasks: [], count: 73, truncated: true, inferencePath: 'provider' };
+    expect(ChatQueryAnswerSchema.parse(answer).truncated).toBe(true);
+  });
+
+  it('rejects a task ref with an out-of-range priority', () => {
+    const bad = {
+      text: 'x',
+      tasks: [{ id: 't1', title: 'x', status: 'todo', priority: 9 }],
+      count: 1,
+      truncated: false,
+      inferencePath: 'local',
+    };
+    expect(ChatQueryAnswerSchema.safeParse(bad).success).toBe(false);
+  });
+
+  it('caps the task list at CHAT_QUERY_TASK_CAP (the answerer trims to this)', () => {
+    expect(CHAT_QUERY_TASK_CAP).toBe(50);
+  });
+});
+
+describe('ChatQueryRequestSchema (Theme C)', () => {
+  it('trims and requires non-empty text', () => {
+    expect(ChatQueryRequestSchema.parse({ text: '  what is blocked?  ' }).text).toBe('what is blocked?');
+    expect(ChatQueryRequestSchema.safeParse({ text: '   ' }).success).toBe(false);
+  });
+});
+
+describe('Chat command request/response (Phase 59 B + F)', () => {
+  it('requires non-empty command text within the cap; confirm is optional', () => {
     expect(ChatCommandRequestSchema.safeParse({ text: 'add "x"' }).success).toBe(true);
+    expect(ChatCommandRequestSchema.safeParse({ text: 'add "x"', confirm: true }).success).toBe(true);
     expect(ChatCommandRequestSchema.safeParse({ text: '' }).success).toBe(false);
     expect(ChatCommandRequestSchema.safeParse({ text: 'a'.repeat(2001) }).success).toBe(false);
   });
@@ -119,12 +176,12 @@ describe('Chat command request/response (Phase 59 B)', () => {
         confidence: 1,
         inferencePath: 'deterministic',
       },
-      result: { summary: 'Created task “x”.', affectedIds: ['t1'], inferencePath: 'deterministic' },
+      result: { summary: 'Created task “x”.', affectedIds: ['t1'], inferencePath: 'deterministic', confirmation: 'none' },
     };
     expect(ChatCommandResponseSchema.parse(res)).toEqual(res);
   });
 
-  it('round-trips a preview response', () => {
+  it('round-trips a preview response with the confirm level', () => {
     const res = {
       parse: {
         intent: { type: 'query', text: 'show blocked' },
@@ -134,7 +191,17 @@ describe('Chat command request/response (Phase 59 B)', () => {
       },
       description: 'Answer: show blocked',
       willMutate: false,
+      confirmation: 'none',
     };
     expect(ChatPreviewResponseSchema.parse(res)).toEqual(res);
+  });
+
+  it('round-trips an undo request + response', () => {
+    expect(ChatUndoRequestSchema.safeParse({ undoToken: 'tok1' }).success).toBe(true);
+    expect(ChatUndoRequestSchema.safeParse({ undoToken: '' }).success).toBe(false);
+    const res = {
+      result: { summary: 'Reverted 1 change.', affectedIds: ['t1'], inferencePath: 'deterministic', confirmation: 'none' },
+    };
+    expect(ChatUndoResponseSchema.parse(res)).toEqual(res);
   });
 });

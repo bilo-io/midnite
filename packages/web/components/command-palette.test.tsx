@@ -11,9 +11,16 @@ vi.mock('next/navigation', () => ({
 // The palette calls the real GET /search via this client — mock it so tests drive
 // the result set without a gateway.
 const searchAll = vi.fn();
+const previewChatCommand = vi.fn();
+const runChatCommand = vi.fn();
+const undoChatCommand = vi.fn();
 vi.mock('@/lib/api', () => ({
   searchAll: (...args: unknown[]) => searchAll(...args),
+  previewChatCommand: (...args: unknown[]) => previewChatCommand(...args),
+  runChatCommand: (...args: unknown[]) => runChatCommand(...args),
+  undoChatCommand: (...args: unknown[]) => undoChatCommand(...args),
 }));
+vi.mock('@/lib/data-refresh', () => ({ invalidateData: vi.fn() }));
 
 import { CommandPalette } from './command-palette';
 
@@ -75,6 +82,25 @@ describe('CommandPalette', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     pressCmdK();
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('switches to chat-to-board mode on a leading ">" and does not search', async () => {
+    render(<CommandPalette />);
+    pressCmdK();
+    fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), { target: { value: '>' } });
+    // The chat panel replaces the search list.
+    expect(screen.getByTestId('chat-bar')).toBeInTheDocument();
+    expect(screen.getByText(/type a natural-language command/i)).toBeInTheDocument();
+    // Even with query length past the search threshold, chat mode never searches.
+    fireEvent.change(screen.getByLabelText('Chat with the board'), { target: { value: '>add "x" p1' } });
+    await waitFor(() => expect(searchAll).not.toHaveBeenCalled());
+  });
+
+  it('opens straight into chat mode on the midnite:open-chat event', () => {
+    render(<CommandPalette />);
+    fireEvent(window, new CustomEvent('midnite:open-chat'));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByTestId('chat-bar')).toBeInTheDocument();
   });
 
   it('matches page jumps on the description, not just the label', async () => {
