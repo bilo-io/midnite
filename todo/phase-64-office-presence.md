@@ -144,15 +144,19 @@ Engine-agnostic state so 2D and 3D are just two renderers of one slice.
       office specs pass unedited. First-visit guests get a name prompt; `use-presence` mounts in the
       2D office view. (PR #361)
 
-## Theme D — 3D renderer (three.js office) — **M** · ⛔ blocked on [Phase 63](phase-63-office-3d.md) A–C
+## Theme D — 3D renderer (three.js office) — **M** — ✅ DONE (PR #362, 2026-07-07)
 
-- [ ] **Remote low-poly figures:** a `presence-avatars.tsx` r3f component rendering peers from
-      the same store slice — Phase-63 low-poly figures (variant/tint) + billboarded name plates,
-      walking via the shared interpolation helper.
-- [ ] **Emote bubbles + minimap parity:** emotes as billboarded sprites over 3D avatars; peers
-      on the Phase-63 minimap HUD.
-- [ ] **Frustum-friendly:** peer meshes participate in Phase 63's room-chunk visibility rules
-      (a peer in an unseen room costs no draw calls; the minimap still shows them).
+- [x] **Remote low-poly figures:** [`presence-avatars.tsx`](../packages/web/components/office3d/presence-avatars.tsx)
+      renders the store's peers (scene-scoped) as Phase-63 low-poly figures (tinted) + drei `<Html>`
+      name plates, eased via the shared `interpStep`; peer wire-px → 3D units via
+      `presencePxToUnit` ([`lib/presence-3d.ts`](../packages/web/lib/presence-3d.ts)). The sampler
+      wires into `FirstPersonRig` (office) + `SubSceneRig` (corner, `presenceScene` prop) through
+      the Theme-C bridge. Extracted `useOfficePresence` is shared by both office views (2D deduped
+      onto it), so a 2D + a 3D user see each other. (PR #362)
+- [x] **Emote bubbles + minimap parity:** emotes as billboarded `<Html>` bubbles over 3D avatars
+      (TTL'd); remote peers as cyan dots on the in-canvas minimap HUD. (PR #362)
+- [x] **Frustum-friendly:** peer meshes are `frustumCulled` (three's default) — a peer in an unseen
+      room costs no draw calls; the minimap still shows them. (PR #362)
 
 ## Theme E — Emotes + locate — **M**
 

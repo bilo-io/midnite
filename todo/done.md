@@ -4,6 +4,21 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-07 — feat: 3D office presence renderer — Phase 64 Theme D (PR #362)
+
+Remote teammates now render in the Phase-63 3D office too, reusing the Theme B store + interpolation — both engines are views of one presence slice. Pure `packages/web`; unblocked by Phase 63.
+
+- [x] **`presence-avatars.tsx`:** r3f component rendering the store's peers (scene-scoped) as low-poly figures (tinted) + drei `<Html>` name plates + TTL'd emote bubbles, eased via the shared `interpStep`. Peer wire-px → 3D units (`presencePxToUnit`); frustumCulled.
+- [x] **`lib/presence-3d.ts`** (pure): unit↔wire-px + `facingFromDir` + `facingYaw`; unit-tested.
+- [x] **Sampler:** FirstPersonRig (office) + SubSceneRig (corner, `presenceScene` prop) publish the player's pose via the Theme-C bridge.
+- [x] **Minimap:** cyan peer dots on the in-canvas 3D minimap HUD.
+- [x] **`useOfficePresence`:** extracted (usePresence + sampler registration + name-dialog state), shared by both office views (2D deduped onto it) — a 2D user and a 3D user see each other.
+- [x] **Gate:** web:typecheck (no r3f `never`), web:lint 0 errors, web:test 1032 pass.
+
+Remaining Phase 64: E (emotes/roster/locate), F (surfaces + ghost mode), G (proximity chat — stretch), H (tests + two-context Playwright).
+
+---
+
 ## 2026-07-07 — feat: 2D office presence renderer — Phase 64 Theme C (PR #361) · completes the A→B→C spine
 
 Teammates now appear as live avatars in the 2D Phaser office. Pure `packages/web`; consumes Themes A/B, no gateway/shared changes.
