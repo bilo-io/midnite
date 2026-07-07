@@ -13,6 +13,7 @@ import {
 } from '@dnd-kit/core';
 import { SortableContext, arrayMove, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { createPortal } from 'react-dom';
+import { useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
 import type { RoadmapView, TaskSummary } from '@midnite/shared';
 import {
@@ -32,6 +33,7 @@ import { TaskCard, type ProjectTagInfo } from '@/components/task-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { BACKLOG_LANE_ID, RoadmapLane } from '@/components/roadmap/roadmap-lane';
+import { MilestoneBreakdownModal } from '@/components/roadmap/milestone-breakdown-modal';
 
 type Props = {
   projectId: string;
@@ -48,6 +50,7 @@ type Props = {
 export function RoadmapBoard({ projectId, project, onSelectTask }: Props) {
   const toast = useToast();
   const confirm = useConfirm();
+  const router = useRouter();
   useTaskEvents();
 
   const { data: fetched, loading } = useApiData(
@@ -65,6 +68,22 @@ export function RoadmapBoard({ projectId, project, onSelectTask }: Props) {
   const [activeTask, setActiveTask] = useState<TaskSummary | null>(null);
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState('');
+  // Phase 58 F — the milestone whose goal→breakdown seeder is open.
+  const [seeding, setSeeding] = useState<{ id: string; name: string } | null>(null);
+
+  const onGenerate = useCallback(
+    (id: string) => {
+      const m = view?.milestones.find((x) => x.id === id);
+      if (m) setSeeding({ id, name: m.name });
+    },
+    [view],
+  );
+  const onViewInGraph = useCallback(
+    (id: string) => {
+      router.push(`/tasks/graph?projectId=${encodeURIComponent(projectId)}&milestoneId=${encodeURIComponent(id)}`);
+    },
+    [router, projectId],
+  );
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -199,6 +218,8 @@ export function RoadmapBoard({ projectId, project, onSelectTask }: Props) {
               onSelectTask={onSelectTask}
               onRename={onRename}
               onDelete={onDelete}
+              onGenerate={onGenerate}
+              onViewInGraph={onViewInGraph}
             />
           ))}
         </SortableContext>
@@ -262,6 +283,19 @@ export function RoadmapBoard({ projectId, project, onSelectTask }: Props) {
             document.body,
           )
         : null}
+
+      {seeding ? (
+        <MilestoneBreakdownModal
+          projectId={projectId}
+          milestoneId={seeding.id}
+          milestoneName={seeding.name}
+          onSeeded={(count) => {
+            if (count > 0) toast.success(`Created ${count} task${count === 1 ? '' : 's'} in ${seeding.name}`);
+            invalidateData();
+          }}
+          onClose={() => setSeeding(null)}
+        />
+      ) : null}
     </DndContext>
   );
 }

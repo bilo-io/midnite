@@ -34,7 +34,7 @@
 | [61 · Fable-Observability](phase-61-fable-observability.md) | ◻ TODO | 0/36 | `░░░░░░░░░░` | 0% | — | A B C D E F G H I |
 | [60 · Fable-Analysis](phase-60-fable-analysis.md) | 🔄 WIP | 0/63 | `░░░░░░░░░░` | 0% | C | A B D E F G H I J K L M |
 | [59 · Chat to board](phase-59-chat-to-board.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
-| [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | 🔄 WIP | 14/25 | `██████░░░░` | 56% | F | — |
+| [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
 | [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 15/26 | `██████░░░░` | 58% | — | — |
 | [56 · Realtime / WS reliability](phase-56-realtime-ws-reliability.md) | ✅ DONE | 17/26 | `███████░░░` | 65% | — | — |
 | [55 · Projects detail page](phase-55-projects-detail-page.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
@@ -191,7 +191,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **C** — Project progress overlay: per-project completion bar on project surfaces (PR #320) + on the dependency graph toolbar when project-scoped (PR #327)
 - ✅ **D** — Milestone data model (PR #322)
 - ✅ **E** — Roadmap view + milestone assignment: milestone lanes + progress + backlog, drag-to-assign/reorder, inline CRUD, task-detail picker (PR #326)
-- ◻ **F** — Entry points + breakdown tie-in
+- ✅ **F** — Entry points + breakdown tie-in: goal→breakdown seeds a milestone, milestone→graph filter, task→milestone chip on the card (PR #338)
 
 ### [Phase 57 — Performance & scale](phase-57-performance-scale.md)
 *(No new domain — perf work across existing layers: batch loads + indexes in repositories, lean summary DTOs + pagination as shared contracts, cache tuning + virtualization on the web. Evidence-driven via a seed + benchmark harness.)*

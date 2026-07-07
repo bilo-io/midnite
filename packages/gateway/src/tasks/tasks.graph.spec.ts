@@ -101,4 +101,20 @@ describe('TasksService.buildGraph (Phase 58 A)', () => {
     // Only the in-scope project task counts toward totalCount.
     expect(graph.totalCount).toBe(1);
   });
+
+  it('filters to a milestone, surfacing an out-of-milestone blocker as foreign (Phase 58 F)', async () => {
+    const blocker = await make('build the api');
+    const dependent = await make('build the client');
+    service.addDependency(dependent.id, blocker.id);
+    // Only the dependent is in the milestone.
+    service.setMilestone(dependent.id, 'ms-1');
+
+    const graph = service.buildGraph(undefined, undefined, 'ms-1');
+    expect(graph.totalCount).toBe(1);
+    expect(graph.nodes.map((n) => n.id).sort()).toEqual([blocker.id, dependent.id].sort());
+    // The blocker is out of the milestone → included only as a foreign context node.
+    expect(graph.nodes.find((n) => n.id === blocker.id)?.foreign).toBe(true);
+    expect(graph.nodes.find((n) => n.id === dependent.id)?.foreign).toBeUndefined();
+    expect(graph.edges).toEqual([{ from: dependent.id, to: blocker.id }]);
+  });
 });

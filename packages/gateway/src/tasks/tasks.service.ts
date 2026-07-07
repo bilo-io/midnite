@@ -234,10 +234,13 @@ export class TasksService {
    * task whose every blocker is `done`), so a node's state matches the board.
    * Bounded at {@link TASK_GRAPH_NODE_CAP}; beyond it, `truncated` + `totalCount`.
    */
-  buildGraph(projectId: string | undefined, scope?: TeamScope): TaskGraph {
+  buildGraph(projectId: string | undefined, scope?: TeamScope, milestoneId?: string): TaskGraph {
     // listTasks orders by priority desc, createdAt asc — so a truncated slice keeps
     // the highest-priority/oldest tasks (the ones that matter most).
-    const rows = this.repo.listTasks(undefined, projectId, scope);
+    const allRows = this.repo.listTasks(undefined, projectId, scope);
+    // Phase 58 F — a milestone filter narrows the graph to that milestone's tasks
+    // (a blocker outside it still surfaces as a foreign node via the edge pass).
+    const rows = milestoneId ? allRows.filter((r) => r.milestoneId === milestoneId) : allRows;
     const totalCount = rows.length;
     const truncated = totalCount > TASK_GRAPH_NODE_CAP;
     const inScope = truncated ? rows.slice(0, TASK_GRAPH_NODE_CAP) : rows;
@@ -799,6 +802,8 @@ export class TasksService {
     opts: {
       projectId?: string;
       repo?: string;
+      /** Phase 58 F — assign every created task to this milestone (seed a lane). */
+      milestoneId?: string;
       /** Per-task tags to stamp on each created task (Phase 42 Theme D seeding). */
       tagsFor?: (task: BreakdownTask) => string[];
     } = {},
@@ -825,6 +830,7 @@ export class TasksService {
         agentId: null,
         sessionId: null,
         projectId: opts.projectId ?? null,
+        milestoneId: opts.milestoneId ?? null,
         prUrl: null,
         createdAt: now,
         updatedAt: now,
@@ -838,6 +844,7 @@ export class TasksService {
           source: 'breakdown',
           ref: bt.ref,
           ...(opts.projectId ? { projectId: opts.projectId } : {}),
+          ...(opts.milestoneId ? { milestoneId: opts.milestoneId } : {}),
         }),
       });
       const tags = opts.tagsFor?.(bt);

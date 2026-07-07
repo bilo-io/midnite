@@ -44,6 +44,19 @@ export const Bug: Story = {
   args: { task: taskBug, project: projectTagInfo },
 };
 
+/** Phase 58 F — a task assigned to a milestone shows a milestone chip (name joined
+ *  onto the summary server-side). */
+export const WithMilestone: Story = {
+  args: {
+    task: { ...taskFeature, milestoneId: 'ms-1', milestoneName: 'Public launch' },
+    project: projectTagInfo,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText('Public launch')).toBeInTheDocument();
+  },
+};
+
 export const Question: Story = {
   args: { task: taskQuestion },
 };
