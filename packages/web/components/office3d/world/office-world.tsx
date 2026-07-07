@@ -1,8 +1,13 @@
 'use client';
 
+import { useFrame } from '@react-three/fiber';
+import { useRef } from 'react';
+import type { Mesh } from 'three';
+
 import type { OfficePalette } from '@/lib/office/theme';
 import { floorColor, furnitureColor, surfaceColor, wallColor } from '@/lib/office3d/materials';
-import type { FurniturePlacement, Placement, WorldModel } from '@/lib/office3d/world';
+import type { SurfacePlane, FurniturePlacement, Placement, WorldModel } from '@/lib/office3d/world';
+import { useAnimationPrefs } from '@/lib/use-animation-prefs';
 
 /**
  * Phase 63 Theme A — the procedural low-poly office, rendered from the pure
@@ -39,6 +44,32 @@ function Plant({ placement, color }: { placement: FurniturePlacement; color: num
   );
 }
 
+/**
+ * A flat water/turf surface. The pool gets a subtle shimmer — a gentle bob +
+ * opacity ripple — so it reads as water rather than a flat sheet; disabled under
+ * reduced motion (`useAnimationPrefs`). Turf is static.
+ */
+function Surface({ surface }: { surface: SurfacePlane }) {
+  const ref = useRef<Mesh>(null);
+  const { animate } = useAnimationPrefs();
+  const shimmer = surface.kind === 'pool' && animate;
+
+  useFrame((state) => {
+    if (!shimmer || !ref.current) return;
+    const t = state.clock.elapsedTime;
+    ref.current.position.y = 0.07 + Math.sin(t * 1.3) * 0.015;
+    const mat = ref.current.material as { opacity: number };
+    mat.opacity = 0.72 + Math.sin(t * 0.9) * 0.06;
+  });
+
+  return (
+    <mesh ref={ref} position={[surface.x, 0.07, surface.z]} rotation={[-Math.PI / 2, 0, 0]}>
+      <planeGeometry args={[surface.w, surface.d]} />
+      <meshStandardMaterial color={surfaceColor(surface.kind)} transparent opacity={surface.kind === 'pool' ? 0.72 : 0.85} />
+    </mesh>
+  );
+}
+
 export function OfficeWorld({ world, palette }: { world: WorldModel; palette: OfficePalette }) {
   return (
     <group>
@@ -47,12 +78,9 @@ export function OfficeWorld({ world, palette }: { world: WorldModel; palette: Of
         <Box key={`floor-${i}`} placement={f} color={floorColor(f.roomId, palette)} />
       ))}
 
-      {/* Water / turf surfaces laid just over the floor */}
+      {/* Water / turf surfaces laid just over the floor (pool shimmers) */}
       {world.surfaces.map((s, i) => (
-        <mesh key={`surface-${i}`} position={[s.x, 0.07, s.z]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[s.w, s.d]} />
-          <meshStandardMaterial color={surfaceColor(s.kind)} transparent opacity={s.kind === 'pool' ? 0.72 : 0.85} />
-        </mesh>
+        <Surface key={`surface-${i}`} surface={s} />
       ))}
 
       {/* Walls (merged runs) */}

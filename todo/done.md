@@ -4,6 +4,29 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-07 — feat: 3D corner office + customization parity — Phase 63 Theme E (PR #350)
+
+The office door now leads into a 3D corner office, completing the door interaction Theme C deferred. Pure `packages/web`; the only store change is the additive `'corner'` scene value.
+
+- [x] **Corner room:** office door (`nearDoor` + `E`/click → `enterCorner`) → `currentScene='corner'`; `office-3d-canvas` branches office/arcade/corner on one `<Canvas>`/camera. Pure builder `lib/office3d/corner.ts` (room + desk + exit + collision grid + desk-item slots).
+- [x] **Pickers in 3D:** walking to the desk + `E` opens the existing `DeskItemPicker`; the `CharacterPicker` opens from the reused `OfficeHud`. Chosen desk items render as low-poly props; the player's Phase-39 tint colours their minimap arrow.
+- [x] **Ambient parity:** warm window light (corner), reduced-motion-aware pool-water shimmer (office), glowing door accents.
+- [x] **Shared `<SubSceneRig>`:** extracted from the arcade rig and reused by both sub-scenes; office `FirstPersonRig` stays separate (minimap/avatar wiring). `interactions.ts` re-enables the door (`nearDoor` + `'door'` action → `enterCorner`).
+- [x] **Tests + gate:** 11 new/updated unit tests (corner geometry; door proximity/priority/dispatch). `web:typecheck` (no r3f `never`) · `web:lint` 0 errors · `web:test` 967 pass.
+
+---
+
+## 2026-07-07 — feat: 3D arcade sub-scene + playable Breakout — Phase 63 Theme D (PR #348)
+
+The lounge console in the 3D office now leads into an immersive arcade room with one genuinely playable cabinet. Pure `packages/web`; the only store change is the additive `'arcade'` scene value.
+
+- [x] **Arcade scene:** `currentScene` gains `'arcade'` (3D-only, additive; 2D untouched). A dark room with a back-wall cabinet row + exit door; `office-3d-canvas` branches office ↔ arcade on `currentScene`, sharing one `<Canvas>`/camera. Pure builder `lib/office3d/arcade.ts` (room + cabinets + exit + collision grid).
+- [x] **Playable Breakout:** a pure, engine-free game loop (`lib/office3d/games/breakout.ts`) — paddle/ball physics, 5×8 bricks, all three power-ups (multi-ball, paddle widen/shrink, laser), scoring + lives/win/lose — drawn to a `CanvasTexture` on the cabinet screen. Walking up + `E` dollies the camera onto the screen and routes keys to the game; `ESC` exits. Best score → `localStorage`.
+- [x] **Console → arcade:** the 3D console enters the arcade (`playstation` action → `enterArcade`); 2D console unchanged. Stub cabinets open the existing `RetroGamesMenu`.
+- [x] **Tests + gate:** 19 new unit tests (arcade geometry; Breakout collision/power-ups/laser/scoring/win-lose/terminal-freeze; updated store-contract dispatch). `web:typecheck` (no r3f `never`) · `web:lint` 0 errors · `web:test` 961 pass.
+
+---
+
 ## 2026-07-07 — feat: 3D office agents, interactions & the store bridge — Phase 63 Theme C (PR #347)
 
 The heart of Phase 63: the first-person 3D office becomes a **second client of the existing office store contract** — proximity + interactions flow through `office-store.ts` exactly as the 2D Phaser scene does, so `office-hud.tsx` and every existing modal work **unmodified** in 3D. Pure `packages/web`; zero gateway/`shared` work.

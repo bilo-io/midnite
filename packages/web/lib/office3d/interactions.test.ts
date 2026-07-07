@@ -55,28 +55,34 @@ describe('resolveProximity', () => {
 });
 
 describe('pickInteraction — 2D tryInteract priority', () => {
+  const prox = (over: Partial<Parameters<typeof pickInteraction>[0]> = {}) => ({
+    nearbyId: null,
+    nearBoard: false,
+    nearKitchen: false,
+    nearLibrary: false,
+    nearPlaystation: false,
+    nearDoor: false,
+    ...over,
+  });
+
   it('prioritises board over a nearby agent', () => {
-    expect(
-      pickInteraction({ nearbyId: 'a', nearBoard: true, nearKitchen: false, nearLibrary: false, nearPlaystation: false }),
-    ).toEqual({ kind: 'board' });
+    expect(pickInteraction(prox({ nearbyId: 'a', nearBoard: true }))).toEqual({ kind: 'board' });
   });
 
   it('maps kitchen proximity to a break toggle', () => {
-    expect(
-      pickInteraction({ nearbyId: null, nearBoard: false, nearKitchen: true, nearLibrary: false, nearPlaystation: false }),
-    ).toEqual({ kind: 'break' });
+    expect(pickInteraction(prox({ nearKitchen: true }))).toEqual({ kind: 'break' });
+  });
+
+  it('maps door proximity to the corner-office transition (over a nearby agent)', () => {
+    expect(pickInteraction(prox({ nearbyId: 'a', nearDoor: true }))).toEqual({ kind: 'door' });
   });
 
   it('falls through to the nearby agent when no fixture is in reach', () => {
-    expect(
-      pickInteraction({ nearbyId: 'sess-1', nearBoard: false, nearKitchen: false, nearLibrary: false, nearPlaystation: false }),
-    ).toEqual({ kind: 'agent', id: 'sess-1' });
+    expect(pickInteraction(prox({ nearbyId: 'sess-1' }))).toEqual({ kind: 'agent', id: 'sess-1' });
   });
 
   it('returns null when nothing is in reach', () => {
-    expect(
-      pickInteraction({ nearbyId: null, nearBoard: false, nearKitchen: false, nearLibrary: false, nearPlaystation: false }),
-    ).toBeNull();
+    expect(pickInteraction(prox())).toBeNull();
   });
 });
 
@@ -105,7 +111,8 @@ describe('applyInteraction — store contract parity', () => {
       openBoard: vi.fn(),
       toggleBreak: vi.fn(),
       openLibrary: vi.fn(),
-      openPlaystation: vi.fn(),
+      enterArcade: vi.fn(),
+      enterCorner: vi.fn(),
       open: vi.fn(),
     } satisfies InteractionStore;
   }
@@ -116,11 +123,15 @@ describe('applyInteraction — store contract parity', () => {
     applyInteraction({ kind: 'break' }, s);
     applyInteraction({ kind: 'library' }, s);
     applyInteraction({ kind: 'playstation' }, s);
+    applyInteraction({ kind: 'door' }, s);
     applyInteraction({ kind: 'agent', id: 'x1' }, s);
     expect(s.openBoard).toHaveBeenCalledOnce();
     expect(s.toggleBreak).toHaveBeenCalledOnce();
     expect(s.openLibrary).toHaveBeenCalledOnce();
-    expect(s.openPlaystation).toHaveBeenCalledOnce();
+    // The 3D console enters the immersive arcade room (not the RetroGamesMenu).
+    expect(s.enterArcade).toHaveBeenCalledOnce();
+    // The office door enters the 3D corner office.
+    expect(s.enterCorner).toHaveBeenCalledOnce();
     expect(s.open).toHaveBeenCalledWith('x1');
   });
 

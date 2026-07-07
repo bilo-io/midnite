@@ -16,6 +16,7 @@ import {
   pickInteraction,
   raycastPick,
   resolveProximity,
+  type InteractionStore,
 } from '@/lib/office3d/interactions';
 import type { AvatarPlacement } from '@/lib/office3d/agents-3d';
 import type { WorldModel } from '@/lib/office3d/world';
@@ -58,6 +59,23 @@ const KEY_MAP: Record<string, keyof MoveState> = {
   KeyD: 'right',
   ArrowRight: 'right',
 };
+
+/**
+ * Adapt the office store to the dispatcher's `InteractionStore`. The console
+ * (`playstation` action) enters the immersive 3D arcade room (Theme D) rather
+ * than opening the RetroGamesMenu modal like 2D does.
+ */
+function officeInteractionStore(): InteractionStore {
+  const s = useOfficeStore.getState();
+  return {
+    openBoard: s.openBoard,
+    toggleBreak: s.toggleBreak,
+    openLibrary: s.openLibrary,
+    enterArcade: () => s.setCurrentScene('arcade'),
+    enterCorner: () => s.setCurrentScene('corner'),
+    open: s.open,
+  };
+}
 
 /** True when any store panel is open — movement + interaction must pause. */
 function selectPanelOpen(s: ReturnType<typeof useOfficeStore.getState>): boolean {
@@ -133,7 +151,7 @@ export function FirstPersonRig({
       if (selectPanelOpen(useOfficeStore.getState())) return;
       const placements = placementsRef.current ?? [];
       const prox = resolveProximity(camera.position.x, camera.position.z, placements);
-      applyInteraction(pickInteraction(prox), useOfficeStore.getState());
+      applyInteraction(pickInteraction(prox), officeInteractionStore());
     };
 
     const onDown = (e: KeyboardEvent) => {
@@ -156,7 +174,7 @@ export function FirstPersonRig({
         aim.current.z,
         buildTargets(placements),
       );
-      applyInteraction(action, useOfficeStore.getState());
+      applyInteraction(action, officeInteractionStore());
     };
 
     window.addEventListener('keydown', onDown);
@@ -226,6 +244,7 @@ export function FirstPersonRig({
     store.setNearKitchen(prox.nearKitchen);
     store.setNearLibrary(prox.nearLibrary);
     store.setNearPlaystation(prox.nearPlaystation);
+    store.setNearDoor(prox.nearDoor);
 
     // Publish the player's pose for the minimap.
     if (poseRef?.current) {
