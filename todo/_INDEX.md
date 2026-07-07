@@ -29,7 +29,7 @@
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
 | [64 · Office presence](phase-64-office-presence.md) | ◻ TODO | 0/30 | `░░░░░░░░░░` | 0% | — | A B C D E F G H |
-| [63 · Office 3D](phase-63-office-3d.md) | 🔄 WIP | 24/28 | `█████████░` | 86% | — | G |
+| [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
 | [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 6/33 | `██░░░░░░░░` | 18% | — | C D E F G H |
 | [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 5/36 | `█░░░░░░░░░` | 14% | — | A B E F G H I |
 | [60 · Fable-Analysis](phase-60-fable-analysis.md) | 🔄 WIP | 12/63 | `██░░░░░░░░` | 19% | D | E F G H I J K L M |
@@ -134,7 +134,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **D** — Arcade sub-scene: cabinet room, playable Breakout w/ power-ups on a CanvasTexture screen, stub cabinets → existing menu (PR #348)
 - ✅ **E** — Corner office + pickers in 3D, ambient parity touches (PR #350)
 - ✅ **F** — Tabs & routing: ?view=2d|3d + P43 preference sync, lazy engine isolation (PR #336; 3D view a placeholder pending Theme A's r3f world)
-- ◻ **G** — Perf budget + unit/store-contract/Playwright tests
+- ✅ **G** — Perf budget + unit/store-contract/Playwright tests (PR #352)
 
 ### [Phase 62 — Fable-Digest](phase-62-fable-digest.md)
 *Retrospectives per task + fleet digests, workflow-first: a task-event trigger + retro/digest nodes + seeded pipelines; gateway stores primitives. Fable series #3.*

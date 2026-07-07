@@ -7,7 +7,8 @@ import { Vector3 } from 'three';
 
 import { blockedGrid } from '@/lib/office/layout';
 import { useOfficeStore } from '@/lib/office-store';
-import { resolveMove } from '@/lib/office3d/collision';
+import { createHeadBobRoll } from '@/lib/office3d/camera-roll';
+import { resolveMoveInto, type Vec2 } from '@/lib/office3d/collision';
 import { EYE_HEIGHT, MOVE_SPEED, PLAYER_RADIUS } from '@/lib/office3d/constants';
 import { advanceBobPhase, computeHeadBob } from '@/lib/office3d/headbob';
 import {
@@ -121,9 +122,12 @@ export function FirstPersonRig({
   const right = useRef(new Vector3());
   const delta = useRef(new Vector3());
   const aim = useRef(new Vector3());
+  const moveOut = useRef<Vec2>({ x: 0, z: 0 }); // scratch — no per-frame alloc
   // Head-bob state: phase advances by walked distance; intensity eases in/out.
   const bobPhase = useRef(0);
   const bobIntensity = useRef(0);
+  // Applies the head-bob roll as a local-axis quaternion (see camera-roll.ts).
+  const headBobRoll = useMemo(createHeadBobRoll, []);
 
   // Spawn at the 2D player's entry tile, at eye height.
   useEffect(() => {
@@ -208,7 +212,8 @@ export function FirstPersonRig({
     if (delta.current.lengthSq() > 0) {
       delta.current.normalize().multiplyScalar(MOVE_SPEED * dt);
       // Resolve against solid tiles (per-axis wall-slide) instead of moving free.
-      const resolved = resolveMove(
+      const resolved = resolveMoveInto(
+        moveOut.current,
         camera.position.x,
         camera.position.z,
         delta.current.x,
@@ -230,10 +235,13 @@ export function FirstPersonRig({
     bobPhase.current = advanceBobPhase(bobPhase.current, distance);
     const bob = computeHeadBob(bobPhase.current, bobIntensity.current);
 
-    // Vertical bob rides on eye height; the subtle roll is applied to the camera
-    // (PointerLockControls only writes yaw/pitch, so z stays ours).
+    // Vertical bob rides on eye height; the subtle roll is applied as a quaternion
+    // rotation about the camera's local view axis. (Writing `camera.rotation.z`
+    // instead uses the camera's XYZ Euler order, which disagrees with the YXZ order
+    // PointerLockControls round-trips through — so roll bleeds into yaw/pitch and
+    // rolls the view upside-down as you look around. See camera-roll.ts.)
     camera.position.y = EYE_HEIGHT + bob.dy;
-    camera.rotation.z = bob.roll;
+    headBobRoll.apply(camera, bob.roll);
 
     // Proximity → store (dedup'd by the store's own no-op-if-same setters), so the
     // shared HUD prompts + modals react exactly as they do for the 2D scene.

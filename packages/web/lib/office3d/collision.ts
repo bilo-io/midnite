@@ -50,10 +50,40 @@ export function circleHitsBlocked(
   return false;
 }
 
+/** A mutable XZ position — reused across frames to avoid per-frame allocation. */
+export interface Vec2 {
+  x: number;
+  z: number;
+}
+
+/**
+ * Allocation-free {@link resolveMove}: write the resolved position into `out` and
+ * return it. The Theme-G perf budget calls for no per-frame allocations in the
+ * movement loops, so the rigs keep one scratch `Vec2` and pass it here every frame.
+ */
+export function resolveMoveInto(
+  out: Vec2,
+  x: number,
+  z: number,
+  dx: number,
+  dz: number,
+  grid: readonly (readonly boolean[])[],
+  r: number,
+): Vec2 {
+  let nx = x;
+  let nz = z;
+  if (dx !== 0 && !circleHitsBlocked(x + dx, z, r, grid)) nx = x + dx;
+  if (dz !== 0 && !circleHitsBlocked(nx, z + dz, r, grid)) nz = z + dz;
+  out.x = nx;
+  out.z = nz;
+  return out;
+}
+
 /**
  * Resolve a desired move `(dx, dz)` from world `(x, z)` against the blocked grid,
  * axis-independently so the player slides along walls. Returns the new position;
  * an axis whose step would collide is cancelled while the other still applies.
+ * Allocates a fresh result — use {@link resolveMoveInto} in per-frame loops.
  */
 export function resolveMove(
   x: number,
@@ -63,9 +93,5 @@ export function resolveMove(
   grid: readonly (readonly boolean[])[],
   r: number,
 ): { x: number; z: number } {
-  let nx = x;
-  let nz = z;
-  if (dx !== 0 && !circleHitsBlocked(x + dx, z, r, grid)) nx = x + dx;
-  if (dz !== 0 && !circleHitsBlocked(nx, z + dz, r, grid)) nz = z + dz;
-  return { x: nx, z: nz };
+  return resolveMoveInto({ x: 0, z: 0 }, x, z, dx, dz, grid, r);
 }

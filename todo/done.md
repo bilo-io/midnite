@@ -12,6 +12,18 @@ Task lifecycle time (wait vs. work vs. end-to-end) is now a queryable metric, de
 - [x] **gateway:** `metrics.repository.cycleRows(from,to)` — one grouped query over `tasks ⋈ task_events` (`firstWipAt = MIN(at | wip)`, `doneAt = MAX(at | done)` via `json_extract`), windowed by final `done`; `retryOverheadByTask()` sums `agent_run_stats` durations for `retryCount > 0` attempts. `metrics/lib/cycle-time.ts` pure segment derivation + nearest-rank percentiles. `MetricsService.getCycleTime` groups/aggregates + memoizes per terminal task (`id@doneAt`). `GET /metrics/cycle-time`.
 - [x] **Decide-and-document:** event reconstruction is a single grouped query (backed by `task_events_task_at_idx`) — no `wipStartedAt`/`doneAt` columns added.
 - [x] Tests: shared schema (defaults/coerce/reject/round-trip); gateway real-SQLite repo (first-wip/final-done, bounce-back, window, null-wip, non-done exclusion, retry sum/exclude); service (fleet + grouped, `(none)` bucket, null segments, retry fold, memoization, empty); lib percentiles; controller delegate/coerce/400. 72 metrics tests · `:typecheck` · `:lint` green.
+## 2026-07-07 — feat: 3D office perf budget + tests — Phase 63 Theme G (PR #352) · closes Phase 63 🎉
+
+The final Phase-63 slice — perf budget, store-contract parity spec, and flow smoke — closing **Phase 63 (Office 3D) at 28/28**. Pure `packages/web`.
+
+- [x] **Perf:** allocation-free `resolveMoveInto(out, …)` used by both rigs (no per-frame allocation in the movement loop); `resolveMove` kept for tests/one-shot. Budget documented in the office README (pixel-ratio cap, shadows off, merged walls + frustum culling, one scene/engine at a time, reduced-motion gating; per-room chunking + instancing deferred).
+- [x] **Store-contract test:** `store-contract.test.ts` pins the 3D `pickInteraction`→`applyInteraction` pipeline to the 2D `tryInteract` transition per interactable (board/kitchen/library/agent identical; console→`enterArcade`, door→`enterCorner` the documented 3D variants) + exactly-one-transition + priority.
+- [x] **Flow smoke:** `e2e/office.e2e.ts` — 2D↔3D tab toggle swaps engines (3D hint appears then clears) with no uncaught page errors.
+- [x] **Gate:** `web:typecheck` (no r3f `never`) · `web:lint` 0 errors · `web:test` 981 pass.
+
+**Phase 63 complete** — the office rebuilt in first-person three.js: procedural world + day/night (A), pointer-lock rig + collision + head-bob (B), live agents/interactions/minimap as a store client (C), immersive arcade + playable Breakout (D), 3D corner office + pickers (E), 2D/3D tabs + preference (F), perf + tests (G).
+
+---
 
 ## 2026-07-07 — feat: task-event workflow trigger — Phase 62 Theme B (PR #351)
 

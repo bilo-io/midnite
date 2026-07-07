@@ -189,20 +189,26 @@ The heart of the phase: the 3D scene becomes a second client of the existing sto
       inference to `never`; the r3f + React-19 JSX setup belongs in **Theme A** with the real world.
       Theme A replaces `office-3d-view-impl.tsx` with the `<Canvas>`.
 
-## Theme G — Performance & tests — **S-M**
+## Theme G — Performance & tests — **S-M** — ✅ DONE (PR #352, 2026-07-07)
 
-- [ ] **Perf budget:** pixel-ratio cap (`min(devicePixelRatio, 2)`), draw-call budget per room
-      chunk (instanced/merged static geometry), no per-frame allocations in the movement/proximity
-      loops; degrade gracefully (shadow off first) — document the budget in
-      [`components/office/README.md`](../packages/web/components/office/README.md).
-- [ ] **Unit tests:** `lib/office3d/` pure modules — world builder placements, collision
-      resolution (wall slide, door gaps), head-bob curve (zero under reduced motion), Breakout
-      rules (bricks, power-ups, scoring) — alongside-file Vitest like `lib/office/`.
-- [ ] **Store-contract test:** a spec asserting the 3D interaction dispatcher writes the same
-      store transitions as the 2D `tryInteract` for each interactable (the panels' contract).
-- [ ] **Flow smoke:** Playwright — `/office?view=3d` renders the canvas, tab toggle swaps engines
-      without console errors, and the 2D office specs still pass unedited (behavior-preserving
-      check).
+- [x] **Perf budget:** pixel-ratio cap (`min(devicePixelRatio, 2)`) + shadows off; static geometry
+      with merged wall runs + `frustumCulled`; **no per-frame allocations** in the movement loop
+      (allocation-free `resolveMoveInto` used by both rigs; `resolveMove` kept for tests/one-shot);
+      one scene/engine mounted at a time; reduced-motion gating throughout. Documented in
+      [`components/office/README.md`](../packages/web/components/office/README.md). *Per-room lazy
+      chunk-building + furniture instancing noted as deferred (world builds all rooms up front —
+      fine at this floor-plan size).* (PR #352)
+- [x] **Unit tests:** every `lib/office3d/` module is pure + unit-tested (world placements; collision
+      + `resolveMoveInto`; head-bob curve incl. zero under reduced motion; agents/room-routing;
+      proximity/interaction; minimap; arcade; Breakout rules; corner) — landed across Themes A–E and
+      completed here. (PR #352)
+- [x] **Store-contract test:** `lib/office3d/store-contract.test.ts` pins the 3D
+      `pickInteraction`→`applyInteraction` pipeline to the 2D `tryInteract` store transition per
+      interactable (board/kitchen/library/agent identical; console→`enterArcade` + door→`enterCorner`
+      the documented 3D variants), asserting exactly one transition per interaction + priority. (PR #352)
+- [x] **Flow smoke:** Playwright ([`e2e/office.e2e.ts`](../packages/web/e2e/office.e2e.ts)) —
+      `?view=3d` mounts the WebGL canvas, and a 2D↔3D tab toggle swaps engines (3D hint appears then
+      clears) with no uncaught page errors; the 2D office specs run unedited. (PR #352)
 
 ---
 

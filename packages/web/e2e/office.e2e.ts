@@ -37,4 +37,30 @@ test.describe('Office', () => {
     await expect(page.getByText(/click to look around/i)).toBeVisible({ timeout: 15_000 });
     await expect(page.locator('canvas')).toBeVisible({ timeout: 15_000 });
   });
+
+  // Phase 63 Theme G — flipping the 2D/3D tab strip must fully swap engines
+  // (Phaser destroy ↔ three dispose) with no uncaught errors, and only one engine
+  // mounted at a time. An uncaught exception during teardown is the tell that an
+  // engine leaked or failed to dispose.
+  test('2D↔3D tab toggle swaps engines cleanly', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(String(e)));
+
+    await page.goto('/office');
+    await expect(page.getByText(/to interact/i)).toBeVisible();
+    await expect(page.locator('canvas')).toBeVisible({ timeout: 15_000 });
+
+    // → 3D
+    await page.getByRole('tab', { name: '3D' }).click();
+    await expect(page.getByText(/click to look around/i)).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('canvas')).toBeVisible();
+
+    // → back to 2D
+    await page.getByRole('tab', { name: '2D' }).click();
+    await expect(page.getByText(/to interact/i)).toBeVisible({ timeout: 15_000 });
+    // The 3D-only pointer-lock hint is gone (its engine was torn down).
+    await expect(page.getByText(/click to look around/i)).toHaveCount(0);
+
+    expect(errors).toEqual([]);
+  });
 });
