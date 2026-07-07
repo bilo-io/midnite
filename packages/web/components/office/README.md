@@ -24,9 +24,12 @@ app/(main)/office/page.tsx
        │                   └─ <ProjectModal>  project-modal.tsx — reused as-is, portalled over the office
        └─ <Office3DView>         ../office3d/office-3d-view.tsx — dynamic(ssr:false) three.js engine (Phase 63)
             └─ <Office3DViewImpl> ../office3d/office-3d-view-impl.tsx — r3f stage + click-to-lock overlay
+                 │    └─ <OfficeHud>  office-hud.tsx — REUSED untouched: proximity prompts + every panel/modal (Theme C)
                  └─ <Office3DCanvas>  ../office3d/office-3d-canvas.tsx — <Canvas>, day/night lights
                       ├─ <OfficeWorld>      ../office3d/world/office-world.tsx — flat-shaded rooms/walls/furniture
-                      └─ <FirstPersonRig>   ../office3d/first-person-rig.tsx — pointer-lock + WASD + grid-AABB collision + head-bob (Theme B)
+                      ├─ <AgentAvatars>     ../office3d/agent-avatars.tsx — low-poly figures + drei <Html> billboards (Theme C)
+                      ├─ <FirstPersonRig>   ../office3d/first-person-rig.tsx — pointer-lock + WASD + collision + head-bob + proximity/interaction (Theme B/C)
+                      └─ <MinimapHud>       ../office3d/minimap-hud.tsx — in-canvas r3f <Hud> minimap (Theme C)
 ```
 
 **3D office (Phase 63).** A first-person three.js view of the *same* office, opt-in via `?view=3d`
@@ -38,8 +41,15 @@ resolves theme-aware colours + day/night lighting from the *same* [`theme.ts`](.
 mount/unmount so proximity/panel flags never leak across a tab switch. All `lib/office3d/` helpers are
 `three`-free + unit-tested. Theme A built the world + a minimal walk rig; **Theme B** added
 grid-AABB collision (`collision.ts`, circle-vs-tile per-axis wall-slide over the 2D `blockedGrid()`)
-and footstep head-bob (`headbob.ts`, disabled under reduced motion via `useAnimationPrefs`). Agents,
-interactions, arcade, and the tab UI land in Themes C–F.
+and footstep head-bob (`headbob.ts`, disabled under reduced motion via `useAnimationPrefs`).
+**Theme C** made the scene a live store client: the rig writes the same proximity flags the 2D scene
+does and dispatches the same panel-open transitions `tryInteract` does — via a pure `interactions.ts`
+(`resolveProximity` / `pickInteraction` / `raycastPick` / `applyInteraction`) driven by `E`/Enter and
+a crosshair click — so the reused `<OfficeHud>` prompts + every modal work untouched. Live agents
+render as low-poly avatars (`agent-avatars.tsx`) at the same status-routed seats as 2D
+(`agents-3d.ts`: `statusToRoom` + `assignStableSeats`) with drei `<Html>` billboards, and an
+in-canvas r3f `<Hud>` minimap (`minimap-hud.tsx`, `minimap-3d.ts`) tracks the player. Arcade,
+corner-office parity, and perf/tests land in Themes D/E/G.
 
 **Rooms** ([`lib/office/layout.ts`](../../lib/office/layout.ts) — Phaser-free floor plan): a 34×22 grid
 split by internal walls into **six rooms** in a 3×2 arrangement — a top band (**work** hot desks ·
