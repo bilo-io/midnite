@@ -25,6 +25,7 @@ import { GithubPostReviewExecutor } from './engine/executors/github-post-review.
 import { TaskCreateExecutor } from './engine/executors/task-create.executor';
 import { WorkflowCredentialsModule } from './credentials/workflow-credentials.module';
 import { WorkflowScheduler } from './scheduler/workflow-scheduler.service';
+import { WorkflowTaskEventTriggerService } from './workflow-task-event-trigger.service';
 import { WorkflowEventBus } from './workflow-event-bus';
 import { WorkflowRecoveryService } from './workflow-recovery.service';
 import { WorkflowsGateway } from './workflows.gateway';
@@ -40,6 +41,7 @@ import { WorkflowsGateway } from './workflows.gateway';
     WorkflowEngine,
     ExecutorRegistry,
     WorkflowScheduler,
+    WorkflowTaskEventTriggerService,
     WorkflowEventBus,
     WorkflowRecoveryService,
     WorkflowsGateway,

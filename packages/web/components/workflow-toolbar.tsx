@@ -40,7 +40,9 @@ export function WorkflowToolbar({
       ? describeCron(trigger.cron)
       : trigger.type === 'webhook'
         ? 'Runs on a webhook'
-        : 'Runs on demand';
+        : trigger.type === 'task-event'
+          ? 'Runs on a task event'
+          : 'Runs on demand';
 
   return (
     <header className="flex items-center gap-3 border-b border-border/60 bg-background/70 px-4 py-2 backdrop-blur">

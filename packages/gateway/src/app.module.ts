@@ -12,6 +12,7 @@ import { HealthModule } from './health/health.module';
 import { TaskHealthModule } from './tasks/task-health.module';
 import { TasksModule } from './tasks/tasks.module';
 import { TaskCreatorModule } from './tasks/task-creator.module';
+import { TaskEventBusModule } from './tasks/task-event-bus.module';
 import { AgentModule } from './agent/agent.module';
 import { ChatModule } from './chat/chat.module';
 import { AgentsModule } from './agents/agents.module';
@@ -83,6 +84,7 @@ import { InboundModule } from './integrations/inbound/inbound.module';
     TasksModule,
     TaskHealthModule,
     TaskCreatorModule,
+    TaskEventBusModule,
     PoolModule,
     PortabilityModule,
     ProjectsModule,

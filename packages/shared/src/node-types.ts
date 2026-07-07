@@ -65,6 +65,7 @@ export interface NodeTypeDefinition {
 export const ManualTriggerParamsSchema = z.object({}).passthrough();
 export const ScheduleTriggerParamsSchema = z.object({}).passthrough();
 export const WebhookTriggerParamsSchema = z.object({}).passthrough();
+export const TaskEventTriggerParamsSchema = z.object({}).passthrough();
 
 export const HttpRequestParamsSchema = z.object({
   method: z.enum(HTTP_METHODS).default('GET'),
@@ -316,6 +317,17 @@ export const NODE_TYPE_DEFINITIONS: Record<string, NodeTypeDefinition> = {
     inputs: NO_INPUTS,
     outputs: MAIN_OUT,
     paramsSchema: WebhookTriggerParamsSchema,
+    fields: [],
+  },
+  'trigger.task-event': {
+    id: 'trigger.task-event',
+    category: 'trigger',
+    title: 'Task Event',
+    description: 'Run when a task finishes, is abandoned, or needs attention.',
+    icon: 'check-circle',
+    inputs: NO_INPUTS,
+    outputs: MAIN_OUT,
+    paramsSchema: TaskEventTriggerParamsSchema,
     fields: [],
   },
   'http.request': {

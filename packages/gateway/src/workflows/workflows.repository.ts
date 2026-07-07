@@ -56,6 +56,14 @@ export class WorkflowsRepository {
       .all();
   }
 
+  listTaskEventEnabledRows(): WorkflowRow[] {
+    return this.db
+      .select()
+      .from(workflows)
+      .where(and(eq(workflows.enabled, 1), eq(workflows.triggerType, 'task-event')))
+      .all();
+  }
+
   updateWorkflowRow(id: string, patch: Partial<WorkflowInsert>): WorkflowRow | undefined {
     return this.db.update(workflows).set(patch).where(eq(workflows.id, id)).returning().get();
   }
