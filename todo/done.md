@@ -12,6 +12,15 @@ Task lifecycle time (wait vs. work vs. end-to-end) is now a queryable metric, de
 - [x] **gateway:** `metrics.repository.cycleRows(from,to)` — one grouped query over `tasks ⋈ task_events` (`firstWipAt = MIN(at | wip)`, `doneAt = MAX(at | done)` via `json_extract`), windowed by final `done`; `retryOverheadByTask()` sums `agent_run_stats` durations for `retryCount > 0` attempts. `metrics/lib/cycle-time.ts` pure segment derivation + nearest-rank percentiles. `MetricsService.getCycleTime` groups/aggregates + memoizes per terminal task (`id@doneAt`). `GET /metrics/cycle-time`.
 - [x] **Decide-and-document:** event reconstruction is a single grouped query (backed by `task_events_task_at_idx`) — no `wipStartedAt`/`doneAt` columns added.
 - [x] Tests: shared schema (defaults/coerce/reject/round-trip); gateway real-SQLite repo (first-wip/final-done, bounce-back, window, null-wip, non-done exclusion, retry sum/exclude); service (fleet + grouped, `(none)` bucket, null segments, retry fold, memoization, empty); lib percentiles; controller delegate/coerce/400. 72 metrics tests · `:typecheck` · `:lint` green.
+## 2026-07-07 — chore: ws DoS bump + dependency/supply-chain audit — Phase 60 Theme D (PR #355)
+
+Closes Phase 60 Theme D. `pnpm audit`: 58 advisories, almost all transitive and many against versions newer than installed.
+
+- [x] **Applied** the one safe, reachable, in-range bump: `ws` 8.18→8.21 (HIGH memory-exhaustion DoS on the gateway WS), tests green.
+- [x] **Triaged + documented** (major bumps, out of [S] scope): `drizzle-orm` 0.36→0.45 (HIGH SQLi, reachable — mitigated by Theme C's no-raw-`sql` finding), Nest 10→11 / Fastify 4→5 stack (framework migration), `electron` (desktop-only), dev/build-only tooling (esbuild/vitest-UI/webpack/tar/tmp/picomatch/js-yaml); `glob` CLI noted unreachable. A workspace-wide `pnpm update -r` was attempted but reverted (regressed `site:typecheck`).
+- [x] **Clean:** committed-secret scan (tree + git history — no `.env`, no key/token patterns, nothing ever committed), lockfile typosquat (117 direct deps), license review (no GPL/AGPL/SSPL/BUSL).
+- [x] Report: [`todo/phase-60-findings/D-supply-chain.md`](phase-60-findings/D-supply-chain.md). Gate: `:typecheck` green, `:test` green (bar the known `ui:test` leaf flake).
+
 ## 2026-07-07 — feat: 3D office perf budget + tests — Phase 63 Theme G (PR #352) · closes Phase 63 🎉
 
 The final Phase-63 slice — perf budget, store-contract parity spec, and flow smoke — closing **Phase 63 (Office 3D) at 28/28**. Pure `packages/web`.

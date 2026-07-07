@@ -32,7 +32,7 @@
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
 | [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 6/33 | `██░░░░░░░░` | 18% | — | C D E F G H |
 | [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 5/36 | `█░░░░░░░░░` | 14% | — | A B E F G H I |
-| [60 · Fable-Analysis](phase-60-fable-analysis.md) | 🔄 WIP | 12/63 | `██░░░░░░░░` | 19% | D | E F G H I J K L M |
+| [60 · Fable-Analysis](phase-60-fable-analysis.md) | 🔄 WIP | 16/63 | `███░░░░░░░` | 25% | — | E F G H I J K L M |
 | [59 · Chat to board](phase-59-chat-to-board.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
 | [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 15/26 | `██████░░░░` | 58% | — | — |
@@ -164,7 +164,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ◻ **A** — Auth, transport & headers audit (rate-limit posture, CORS, token lifecycle)
 - ✅ **B** — Secrets, signatures & crypto paths audit (PR #346; workflow `$env` master-secret leak fixed, findings logged)
 - ◻ **C** — Input validation & injection sweep (zod coverage, FTS/path-traversal/SSRF/zip-slip)
-- ◻ **D** — Dependency & supply-chain audit (+ safe bumps)
+- ✅ **D** — Dependency & supply-chain audit (+ safe bumps): ws 8.18→8.21 DoS bump, rest triaged (PR #355)
 - ◻ **E** — State-machine, scheduler & concurrency correctness
 - ◻ **F** — Data integrity & boundary-condition bugs
 - ◻ **G** — Error handling & failure-path correctness

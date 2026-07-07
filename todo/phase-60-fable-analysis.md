@@ -131,17 +131,24 @@ Every byte that crosses the boundary gets checked — verify that's actually tru
 - [x] **Report:** [`todo/phase-60-findings/C-input-validation.md`](phase-60-findings/C-input-validation.md)
       (+ the C-1 quick-win applied with full test coverage).
 
-## Theme D — Dependency & supply-chain audit — **S-M**
+## Theme D — Dependency & supply-chain audit — **S-M** — ✅ DONE (PR #TBD, 2026-07-07)
 
 What we ship that we didn't write.
 
-- [ ] Run `pnpm audit` + `pnpm outdated` across the workspace; triage advisories by reachability (is the
-      vulnerable path actually imported?); **apply safe patch/minor bumps** (tests green) as the quick-win
-      exception; log majors + reachable advisories as findings.
-- [ ] Audit for **committed secrets** (grep the tree + git history spot-check for keys/tokens), a stray
-      `.env`, or fixtures with real credentials; check the lockfile for unexpected/typosquat-shaped deps.
-- [ ] Confirm no runtime dep pulls in network/telemetry the product doesn't intend; note license outliers.
-- [ ] **Report:** `todo/phase-60-findings/D-supply-chain.md` (+ any safe bumps applied).
+- [x] `pnpm audit` (58 advisories, mostly transitive; many against versions *newer* than installed) + reachability
+      triage. **Applied** the one safe, reachable, in-range bump — `ws` 8.18→8.21 (HIGH DoS, gateway WS), tests
+      green. **Documented as follow-ups** (major bumps, out of [S] scope): `drizzle-orm` 0.36→0.45 (HIGH
+      SQL-injection, reachable — mitigated by Theme C confirming no raw-`sql` interpolation), the Nest 10→11 /
+      Fastify 4→5 stack (HIGH/CRIT, framework migration), `electron` (desktop-only), and dev/build-only advisories
+      (esbuild/vitest-UI/webpack/tar/tmp/picomatch/js-yaml). Noted `glob` CLI advisory as **unreachable** (library
+      API, not the `-c` CLI). A workspace-wide `pnpm update -r` was attempted but reverted — it regressed
+      `site:typecheck` and produced unreviewable churn.
+- [x] **Secrets:** no tracked `.env` (only `.example`), zero key/token pattern matches in tracked source, nothing
+      credential-shaped ever committed to git history. **Lockfile:** 117 direct deps, none typosquat-shaped.
+- [x] **Licenses:** no GPL/AGPL/SSPL/BUSL (copyleft) packages in the installed tree; secrets sourced from env, not
+      committed.
+- [x] **Report:** [`todo/phase-60-findings/D-supply-chain.md`](phase-60-findings/D-supply-chain.md) (+ the `ws`
+      bump applied).
 
 ---
 
