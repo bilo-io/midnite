@@ -60,6 +60,33 @@ describe('MediaController — valid input delegates to the service', () => {
   });
 });
 
+describe('MediaController — serveFile path containment (Phase 60 C)', () => {
+  const reply = { header: vi.fn(() => reply), send: vi.fn() } as never;
+
+  it('rejects a stored `..` traversal path with 400 before touching disk', () => {
+    const { controller } = build({
+      getFileMeta: vi.fn(() => ({ filePath: '../../../../etc/passwd', mimeType: 'text/plain' })),
+    });
+    expect(() => controller.serveFile('md1', reply)).toThrow(BadRequestException);
+  });
+
+  it('rejects a stored absolute path outside the uploads dir with 400', () => {
+    const { controller } = build({
+      getFileMeta: vi.fn(() => ({ filePath: '/etc/passwd', mimeType: 'text/plain' })),
+    });
+    expect(() => controller.serveFile('md1', reply)).toThrow(BadRequestException);
+  });
+
+  it('accepts a contained relative path (404s only because no file is on disk)', () => {
+    const { controller } = build({
+      getFileMeta: vi.fn(() => ({ filePath: 'img/pic.png', mimeType: 'image/png' })),
+    });
+    // Path passes containment; the missing-on-disk check then throws NotFound —
+    // proving a legit path is NOT blocked by the guard.
+    expect(() => controller.serveFile('md1', reply)).toThrow(NotFoundException);
+  });
+});
+
 describe('MediaController — service errors propagate', () => {
   it('lets a NotFoundException surface from GET :id', () => {
     const { controller } = build({
