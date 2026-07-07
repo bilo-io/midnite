@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { PLAYER_SPAWN, blockedGrid } from '@/lib/office/layout';
 import { PLAYER_RADIUS } from './constants';
-import { circleHitsBlocked, resolveMove } from './collision';
+import { circleHitsBlocked, resolveMove, resolveMoveInto, type Vec2 } from './collision';
 
 const grid = blockedGrid();
 
@@ -53,5 +53,15 @@ describe('resolveMove', () => {
     // the clear centre is x=6.0. Step south (+z) from the work room across it.
     const res = resolveMove(6.0, 9.8, 0, 0.6, grid, PLAYER_RADIUS);
     expect(res.z).toBeCloseTo(10.4); // walked through the gap, not blocked
+  });
+
+  // Theme G perf budget: the movement loop resolves into a reused scratch object.
+  it('resolveMoveInto writes into the same object it returns (no allocation)', () => {
+    const out: Vec2 = { x: 0, z: 0 };
+    const ret = resolveMoveInto(out, 6.5, 5, 0.2, 0, grid, PLAYER_RADIUS);
+    expect(ret).toBe(out); // same reference — reused, not freshly allocated
+    expect(out.x).toBeCloseTo(6.7);
+    // Matches the allocating resolveMove for the same inputs.
+    expect(resolveMove(6.5, 5, 0.2, 0, grid, PLAYER_RADIUS)).toEqual({ x: out.x, z: out.z });
   });
 });

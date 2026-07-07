@@ -5,7 +5,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useRef } from 'react';
 import { Vector3 } from 'three';
 
-import { resolveMove } from '@/lib/office3d/collision';
+import { resolveMoveInto, type Vec2 } from '@/lib/office3d/collision';
 import { EYE_HEIGHT, MOVE_SPEED, PLAYER_RADIUS } from '@/lib/office3d/constants';
 import { advanceBobPhase, computeHeadBob } from '@/lib/office3d/headbob';
 import { useAnimationPrefs } from '@/lib/use-animation-prefs';
@@ -71,6 +71,7 @@ export function SubSceneRig({
   const right = useRef(new Vector3());
   const delta = useRef(new Vector3());
   const aim = useRef(new Vector3());
+  const moveOut = useRef<Vec2>({ x: 0, z: 0 }); // scratch — no per-frame alloc
   const bobPhase = useRef(0);
   const bobIntensity = useRef(0);
 
@@ -129,7 +130,7 @@ export function SubSceneRig({
     let distance = 0;
     if (delta.current.lengthSq() > 0) {
       delta.current.normalize().multiplyScalar(MOVE_SPEED * dt);
-      const resolved = resolveMove(camera.position.x, camera.position.z, delta.current.x, delta.current.z, grid, PLAYER_RADIUS);
+      const resolved = resolveMoveInto(moveOut.current, camera.position.x, camera.position.z, delta.current.x, delta.current.z, grid, PLAYER_RADIUS);
       const dx = resolved.x - camera.position.x;
       const dz = resolved.z - camera.position.z;
       distance = Math.hypot(dx, dz);

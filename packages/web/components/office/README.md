@@ -65,7 +65,28 @@ existing `RetroGamesMenu`.
 `DeskItemPicker`, chosen items render as low-poly props, and the `CharacterPicker` opens from the HUD
 (the player's tint colours their minimap arrow). Warm window light + a reduced-motion-aware pool
 shimmer are the ambient touches. The arcade + corner share `<SubSceneRig>` (`scene-rig.tsx`); the
-office keeps its own `FirstPersonRig` for minimap/avatar wiring. Perf budget + tests land in Theme G.
+office keeps its own `FirstPersonRig` for minimap/avatar wiring.
+
+**3D perf budget (Theme G).** The 3D office holds a modest budget so it stays smooth on a laptop GPU:
+- **Pixel ratio capped** at `min(devicePixelRatio, 2)` (`MAX_PIXEL_RATIO`), **shadows off** — the first
+  thing to drop if a device struggles.
+- **Static geometry, few draw calls.** The world is built once at mount from the pure `world.ts` model;
+  walls are emitted as **merged runs** (the ~120 wall tiles collapse to a few dozen boxes, `mergeWallRuns`),
+  and per-object `frustumCulled` (three's default) skips off-screen rooms. Only **one scene** is mounted at a
+  time (office *or* arcade *or* corner), and only one engine bundle loads (2D Phaser *or* 3D three).
+- **No per-frame allocations in the movement/proximity loops.** The rigs keep scratch `Vector3`s + a scratch
+  `Vec2` and call `resolveMoveInto` (allocation-free); proximity/head-bob reuse the same math the pure
+  helpers expose. `resolveMove` (allocating) stays for tests + one-shot callers.
+- **Animation is reduced-motion aware** (`useAnimationPrefs`): head-bob, the running-avatar idle bob, and the
+  pool shimmer all zero out under `prefers-reduced-motion` / the Phase-39 motion setting.
+- **Deferred:** per-room lazy chunk-building + furniture instancing (the world builds all rooms up front) —
+  a further draw-call win if a much larger floor plan ever needs it.
+
+**Tests (Theme G).** All `lib/office3d/` modules are pure + unit-tested (world placements, collision +
+`resolveMoveInto`, head-bob, agents/room-routing, proximity/interaction, minimap, arcade, Breakout rules,
+corner). `store-contract.test.ts` pins the 3D `pickInteraction`→`applyInteraction` pipeline to the 2D
+`tryInteract` store transition per interactable, and `e2e/office.e2e.ts` smoke-tests `?view=3d` + the
+2D↔3D tab toggle (engine swap, no uncaught errors).
 
 **Rooms** ([`lib/office/layout.ts`](../../lib/office/layout.ts) — Phaser-free floor plan): a 34×22 grid
 split by internal walls into **six rooms** in a 3×2 arrangement — a top band (**work** hot desks ·
