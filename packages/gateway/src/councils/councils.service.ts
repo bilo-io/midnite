@@ -64,29 +64,40 @@ export class CouncilsService {
 
   createCouncil(req: CreateCouncilRequest): Council {
     const now = new Date().toISOString();
-    const row = this.repo.insertCouncil({
-      id: randomUUID(),
-      name: req.name,
-      description: req.description ?? null,
-      synthProvider: req.synthProvider ?? COUNCIL_SYNTH_PROVIDER_DEFAULT,
-      defaultFormat: req.defaultFormat ?? COUNCIL_FORMAT_DEFAULT,
-      customPrompt: req.customPrompt ?? null,
-      createdAt: now,
-      updatedAt: now,
-    });
-    // Seed starter members so a fresh council is immediately useful — ordinary
-    // members the user can edit, reorder, or remove.
-    COUNCIL_STARTER_MEMBERS.forEach((m, i) => {
-      this.repo.insertMember({
-        id: randomUUID(),
-        councilId: row.id,
-        name: m.name,
-        provider: AGENT_CLI_DEFAULT,
-        role: m.role,
-        position: i,
-        createdAt: now,
-        updatedAt: now,
+    // Phase 60 E (TX-3) — council row + its seeded starter members are one atomic
+    // unit: a member-insert throw must not leave a half-seeded council.
+    const row = this.repo.transaction((tx) => {
+      const council = this.repo.insertCouncil(
+        {
+          id: randomUUID(),
+          name: req.name,
+          description: req.description ?? null,
+          synthProvider: req.synthProvider ?? COUNCIL_SYNTH_PROVIDER_DEFAULT,
+          defaultFormat: req.defaultFormat ?? COUNCIL_FORMAT_DEFAULT,
+          customPrompt: req.customPrompt ?? null,
+          createdAt: now,
+          updatedAt: now,
+        },
+        tx,
+      );
+      // Seed starter members so a fresh council is immediately useful — ordinary
+      // members the user can edit, reorder, or remove.
+      COUNCIL_STARTER_MEMBERS.forEach((m, i) => {
+        this.repo.insertMember(
+          {
+            id: randomUUID(),
+            councilId: council.id,
+            name: m.name,
+            provider: AGENT_CLI_DEFAULT,
+            role: m.role,
+            position: i,
+            createdAt: now,
+            updatedAt: now,
+          },
+          tx,
+        );
       });
+      return council;
     });
     const council = this.repo.hydrateCouncil(row);
     this.searchIndex?.upsert(councilToIndexDoc(council));

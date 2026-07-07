@@ -11,6 +11,28 @@ First visual Ops-deepening slice: renders the Theme C (cycle-time) + D (gauge-hi
 - [x] **web:** `CycleFleetPanel` on the Ops → Metrics tab — cycle-time grouped p50/p90 bars (wait/work/end-to-end) with a groupBy dropdown (fleet/repo/project/priority) + retry-overhead stat, and fleet-trend charts (queue depth / slots / tick latency) from persisted gauge history; shared 7/30/90d window selector; self-polling via `usePolling`. `getCycleTime` + `getGaugeHistory` in `lib/api.ts`.
 - [x] **fix(gateway):** `TasksModule` re-exported the bare `TaskEventBus` after PR #351 made it `@Global` — Nest rejects re-exporting a token a module doesn't provide, which **broke full-app boot** (only the e2e gateway caught it; unit tests don't boot `AppModule`). Re-exports the module now.
 - [x] Tests: RTL for both sections (groupBy, retry stat, empty/truncated, `formatDuration`) + api-client query-string tests; `ResizeObserver` polyfill in `vitest.setup` (recharts in jsdom); Playwright preview shot. web 1000 · gateway 1753 · shared green; `:typecheck` · `:lint` green.
+## 2026-07-07 — fix: atomic task + council create paths — Phase 60 E follow-up (PR #359)
+
+Acts on the HIGH transaction-atomicity findings (TX-1/2/3) from the Phase 60 E audit (PR #357).
+
+- [x] Domain services now own a transaction boundary via a repo `transaction()` passthrough; repo write methods (`insertTask`/`insertEvent`/`insertAttachment`/`addDependency`/`setTags`/`insertCouncil`/`insertMember`) take an optional `DbOrTx` (new `Tx`/`DbOrTx` types in `db.module`). `createFromPrompt`, `createTasksFromBreakdown`, `createCouncil` are now all-or-nothing — a mid-write throw rolls back (no orphaned edges / missing `task.created` / half-wired graph / half-seeded council).
+- [x] `createBulk` keeps Phase 16 per-line partial-success (each line now individually atomic). **TX-4 (projects+sources) intentionally left** — sources are best-effort by design (`addSourceRow` catches; async metadata fetch precludes a sync txn).
+- [x] Real-SQLite rollback regression specs (`tasks.atomicity.spec` ×4, `councils.atomicity.spec` ×2); fakes got a `transaction()` override. Gateway gate green (1759).
+
+## 2026-07-07 — feat: client presence store + sampler + guest identity — Phase 64 Theme B (PR #358)
+
+The engine-agnostic client layer for office presence — one state slice, two future renderers (2D Theme C, 3D Theme D). Pure `packages/web`; consumes the Theme A contract, no gateway/shared changes.
+
+- [x] **`presence-store.ts`:** vanilla-Zustand store (peers by peerId, world-px targets; self/connected/ghost); no Phaser/three imports. Reduction in the pure `presence-frames.ts` `reducePresence` (own peerId filtered from snapshot/peer-updated; emote preserved across a move).
+- [x] **`presence-frames.ts` `shouldSendMove`:** ~10Hz throttle + stationary dedup + idle keepalive (under the 15s server stale timeout).
+- [x] **`presence-interp.ts`:** frame-rate-independent lerp toward the latest target, snapping on scene change / big jumps — shared by both renderers.
+- [x] **`presence-identity.ts` + `presence-name-dialog.tsx`:** stable guest id + display name in localStorage (friendly default) + the controlled first-visit prompt.
+- [x] **`use-presence.ts`:** rides use-reliable-subscription as a snapshot channel (no ring), decodes → store, sends hello on connect/avatar-change, throttled sendMove + sendEmote, resets on unmount.
+- [x] **Tests + gate:** 25 unit tests (reducer, throttle/keepalive, interp, identity, store, dialog RTL). web:typecheck (no r3f `never`), web:lint 0 errors, web:test 1013 pass.
+
+Not yet wired into the office page — Theme C mounts the hook, wires the Phaser position sampler, and renders remote avatars.
+
+---
 
 ## 2026-07-07 — fix: guard illegal task state transitions + concurrency audit — Phase 60 Theme E (PR #357)
 

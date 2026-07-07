@@ -16,6 +16,20 @@ export const SQLITE_TOKEN = Symbol('MIDNITE_SQLITE');
 
 export type MidniteDb = BetterSQLite3Database<typeof schema>;
 
+/**
+ * A transaction handle — the value drizzle passes to a `db.transaction((tx) => …)`
+ * callback. Extracted from {@link MidniteDb} so it tracks the schema automatically.
+ */
+export type Tx = Parameters<Parameters<MidniteDb['transaction']>[0]>[0];
+
+/**
+ * Either the root DB handle or an open transaction. Repository write methods take
+ * this (defaulting to their own `this.db`) so a service can thread a `tx` through
+ * a multi-write sequence and own the transaction boundary (Phase 60 E follow-up) —
+ * a mid-write throw then rolls the whole sequence back instead of half-applying.
+ */
+export type DbOrTx = MidniteDb | Tx;
+
 @Injectable()
 export class DbFactory implements OnModuleDestroy {
   private readonly logger = new Logger(DbFactory.name);

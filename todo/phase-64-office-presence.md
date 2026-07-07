@@ -100,26 +100,29 @@ The channel: typed frames up, coalesced state down, nothing stored.
       broadcast (peerId `user:<id>`); JWT off (local default) → guest hello trusted, global scope.
       Duplicate connections from one user coalesce to the newest socket. (PR #356)
 
-## Theme B — Client presence store + sampler — **M**
+## Theme B — Client presence store + sampler — **M** — ✅ DONE (PR #358, 2026-07-07)
 
 Engine-agnostic state so 2D and 3D are just two renderers of one slice.
 
-- [ ] **`lib/presence-store.ts`:** a vanilla Zustand store (the
-      [`office-store.ts`](../packages/web/lib/office-store.ts) pattern) — `peers:
-      Map<peerId, { name, variant, tint, x, y, facing, scene, emote?, lastUpdate }>`, `self:
-      { ghost, connected }` — world-pixel coords, **no Phaser/three imports**; the office store
-      stays untouched.
-- [ ] **`hooks/use-presence.ts`:** rides [`use-reliable-subscription.ts`](../packages/web/hooks/use-reliable-subscription.ts)
-      (reconnect/status free); decodes server frames into the store; exposes `sendMove` /
-      `sendEmote` — `sendMove` **throttled to ~10Hz and dedup'd** (no frame when stationary);
-      mounted only while an office view is active (presence stops when you leave the page).
-- [ ] **Guest identity:** first office visit prompts for a display name (small dialog, suggested
-      default), persisted with a generated guest id in localStorage; avatar `variant`/`tint`
-      read from the existing office-store values and shipped in the hello frame (re-sent on
-      picker change).
-- [ ] **Interpolation buffer:** per-peer target-position smoothing (lerp toward the latest
-      sample; snap on scene change or large jumps) in a pure `lib/presence-interp.ts` helper —
-      unit-testable, shared by both renderers.
+- [x] **`lib/presence-store.ts`:** a vanilla Zustand store (the
+      [`office-store.ts`](../packages/web/lib/office-store.ts) pattern) — `peers` by peerId
+      (`{ name, variant, tint, x, y, facing, scene, emote?, lastUpdate }`, world-pixel coords) +
+      `self`/`connected`/`ghost`, **no Phaser/three imports**; the office store stays untouched.
+      Frame reduction lives in the pure `presence-frames.ts` `reducePresence` (filters the client's
+      own peerId out of snapshot/peer-updated, preserves a live emote across a move). (PR #358)
+- [x] **`hooks/use-presence.ts`:** rides [`use-reliable-subscription.ts`](../packages/web/hooks/use-reliable-subscription.ts)
+      as a **snapshot channel** (no ring/resume — presence is last-known-state); decodes frames into
+      the store; sends `hello` on connect (+ on avatar/ghost change); exposes `sendMove` /
+      `sendEmote` — `sendMove` **throttled ~10Hz + dedup'd + idle keepalive** (`shouldSendMove`,
+      under the 15s server stale timeout); resets on unmount. (PR #358)
+- [x] **Guest identity:** `lib/presence-identity.ts` — stable guest id + display name in
+      localStorage with a friendly generated default; the controlled
+      [`presence-name-dialog.tsx`](../packages/web/components/office/presence-name-dialog.tsx) is the
+      first-visit prompt; avatar `variant`/`tint` read from the office store, shipped in the hello
+      (re-sent on picker change). (PR #358)
+- [x] **Interpolation buffer:** per-peer target-position smoothing (frame-rate-independent lerp;
+      snap on scene change or large jumps) in the pure `lib/presence-interp.ts` helper —
+      unit-testable, shared by both renderers. (PR #358)
 
 ## Theme C — 2D renderer (Phaser office) — **M**
 
