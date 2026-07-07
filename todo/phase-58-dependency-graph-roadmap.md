@@ -139,16 +139,19 @@ The plan, as lanes with progress.
 
 ---
 
-## Theme F — Entry points + breakdown tie-in — **S-M**
+## Theme F — Entry points + breakdown tie-in — **S-M** — ✅ DONE (PR #338, 2026-07-07)
 
 Make both views reachable, and seed roadmaps from what agents already produce.
 
-- [ ] Entry points: a **Graph** affordance from the board (view the dependency DAG, optionally project-scoped) and a
-      **Roadmap** section on the **Phase 55 project detail** page (its milestones + progress).
-- [ ] **Breakdown tie-in (light):** let the existing LLM **breakdown** ([`breakdown.ts`](../packages/shared/src/breakdown.ts))
-      seed a milestone's tasks — "generate milestone tasks from a goal" reuses `POST /projects/:id/tasks/breakdown/create`
-      + assigns the created tasks to the milestone. A nice-to-have entry, not core.
-- [ ] Cross-link: a task's milestone shows on its card/detail; a milestone links into the DAG filtered to its tasks.
+- [x] Entry points: a **Graph** affordance from the board (PR #324) and a **Roadmap** section on the Phase 55 project
+      detail page — shipped as the `?tab=roadmap` tab (PR #326).
+- [x] **Breakdown tie-in:** a "Generate tasks…" lane action drafts a dependency-aware breakdown from a goal
+      (`POST /tasks/breakdown`), curates it in the shared `BreakdownEditor`, then creates the tasks project-linked +
+      **assigned to the milestone** (`create-from-breakdown` gains an optional `milestoneId`, validated same-project via
+      a repo-level lookup — no milestones-module cycle). ([`milestone-breakdown-modal.tsx`](../packages/web/components/roadmap/milestone-breakdown-modal.tsx))
+- [x] Cross-link: a task's milestone shows on its **card** (a `milestoneName` joined onto `TaskSummary`) + **detail**
+      (the picker); a milestone links into the **DAG filtered to its tasks** (`GET /tasks/graph?milestoneId=`, a
+      clearable filter chip on the graph toolbar).
 
 ---
 
@@ -175,22 +178,22 @@ Make both views reachable, and seed roadmaps from what agents already produce.
 
 ## Verification
 
-- [ ] `GET /tasks/graph` returns nodes + edges with **ready/blocked computed server-side** (a node's ready state
+- [x] `GET /tasks/graph` returns nodes + edges with **ready/blocked computed server-side** (a node's ready state
       matches `listReadyTodoTasks`); `?projectId` scopes it; a huge graph is capped + flagged, never silently truncated.
-- [ ] The **dependency DAG** renders (React Flow read-only + **dagre auto-layout**), nodes colored by status with
+- [x] The **dependency DAG** renders (React Flow read-only + **dagre auto-layout**), nodes colored by status with
       ready/blocked/priority chips, edges showing blockers; clicking a node deep-links to the task; pan/zoom + minimap
       work; the workflow editor is **unaffected** (shared lib, separate view).
-- [ ] **Project progress** shows per-project completion % on the graph view + project surfaces — no new data model.
-- [ ] **Milestones:** a milestone can be created/renamed/reordered/deleted under a project (team-scoped, RBAC where
+- [x] **Project progress** shows per-project completion % on the graph view + project surfaces — no new data model.
+- [x] **Milestones:** a milestone can be created/renamed/reordered/deleted under a project (team-scoped, RBAC where
       writes apply); a task can be assigned to exactly one milestone from the task detail and by **dragging** on the
       roadmap; **progress is computed** (done/total), correct as tasks complete.
-- [ ] The **roadmap view** shows milestones as ordered lanes with progress bars + their tasks + an unassigned backlog;
+- [x] The **roadmap view** shows milestones as ordered lanes with progress bars + their tasks + an unassigned backlog;
       it's deep-linkable; empty state offers "add milestone / generate from breakdown".
-- [ ] **Breakdown tie-in:** generating from a goal seeds a milestone's tasks (reusing the breakdown endpoint) and
+- [x] **Breakdown tie-in:** generating from a goal seeds a milestone's tasks (reusing the breakdown endpoint) and
       assigns them; the DAG for that milestone shows the seeded dependency edges.
-- [ ] Dependency **editing still happens in the task detail** (with cycle-check); the DAG is read-only (no edge
+- [x] Dependency **editing still happens in the task detail** (with cycle-check); the DAG is read-only (no edge
       dragging) and reflects edits after they're made.
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green (shared graph/milestone schema units; gateway
+- [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` green (shared graph/milestone schema units; gateway
       graph-build + milestone CRUD/assign + computed-progress tests; web RTL/story for the DAG (dagre layout, node
       click) + the roadmap (assignment, progress); **web tests from the primary checkout, not a `.git` worktree**).
 
