@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-07 — feat: first-person collision + head-bob — Phase 63 Theme B (PR #342)
+
+Makes the 3D office (Theme A) feel real: grid-AABB collision + a footstep head-bob layered onto the pointer-lock/WASD walk rig.
+
+- [x] **web (`lib/office3d/collision.ts`, pure):** circle-vs-tile-AABB collision against the 2D office's `blockedGrid()` (walls + furniture + pool), so the 3D player collides with exactly what the 2D player does. Per-axis (X then Z) resolution → smooth wall-sliding; radius 0.3 < 0.5 clears the 2-tile doorways. No physics lib.
+- [x] **web (`lib/office3d/headbob.ts`, pure):** vertical bob + a subtle roll at half frequency, amplitude scaled by walk speed + eased in/out; phase advances by walked distance (not time) so cadence tracks speed like footsteps. Zero at rest / reduced motion.
+- [x] **web (`first-person-rig.tsx`):** movement resolves through collision; bob `dy` rides eye height, `roll` on `camera.rotation.z`. Head-bob gated by `useAnimationPrefs` (OS `prefers-reduced-motion` + the Phase-39 motion setting). `PLAYER_RADIUS` + bob tuning in `constants.ts`.
+- [x] **Design calls (locked up front):** circle-vs-tile per-axis wall-slide; full `blockedGrid()` solid set (2D parity); bob + roll velocity-scaled; disabled if either OS reduced-motion or the Phase-39 setting.
+- [x] Tests: collision (open floor, wall-slide, no-clip, doorway, OOB-as-wall) + head-bob (zero at rest/reduced, amplitude-bounded, linear-in-intensity, half-frequency roll). office3d unit suite 31 green; `web:typecheck`/`web:lint` green. Pure `packages/web` — zero gateway/`shared` work. (Store keyboard-disable on panels → Theme C.)
+
+---
+
 ## 2026-07-07 — feat: task retrospective contract + deterministic skeleton + storage — Phase 62 Theme A (PR #341)
 
 The spine of Fable-Digest: every terminal task gets a free, factual retrospective assembled deterministically (zero LLM) from data already persisted.

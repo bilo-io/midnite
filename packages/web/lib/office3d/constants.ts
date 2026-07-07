@@ -38,6 +38,24 @@ export const MOVE_SPEED = 4.5;
 export const MAX_PIXEL_RATIO = 2;
 
 /**
+ * First-person collision radius (units, Phase 63 B). The player is a circle of
+ * this radius resolved against blocked tiles; < 0.5 so a 2-tile-wide doorway
+ * always clears, big enough that you can't clip a wall corner.
+ */
+export const PLAYER_RADIUS = 0.3;
+
+/**
+ * Head-bob tuning (Phase 63 B). The bob phase advances by walked distance (not
+ * time), so cadence tracks speed like real footsteps; one half-cycle per
+ * `HEADBOB_STEP_LENGTH` units. Amplitudes are deliberately subtle — a gentle
+ * vertical bob + a smaller lateral roll at half the frequency (one sway per two
+ * steps). All disabled under reduced motion (the rig zeroes the intensity).
+ */
+export const HEADBOB_STEP_LENGTH = 0.9;
+export const HEADBOB_AMPLITUDE = 0.05;
+export const HEADBOB_ROLL = 0.015;
+
+/**
  * Convert a 2D grid tile coordinate to its world-space centre on the floor
  * plane. Tiles are addressed by their top-left corner in the 2D layout, so the
  * centre is offset by half a tile. `y` (up) is supplied by the caller.
