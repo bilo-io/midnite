@@ -90,18 +90,18 @@ Every terminal task gets a free, factual retrospective — no LLM required.
       (Needs-attention escalation as a trigger deferred — the task isn't finished, so a retro there is
       premature.)
 
-## Theme B — Task-event workflow trigger — **M**
+## Theme B — Task-event workflow trigger — ✅ DONE (PR #351, 2026-07-07)
 
 The workflow-first enabler: workflows that fire when tasks finish. Useful far beyond digests.
 
-- [ ] **shared:** extend the trigger union with `{ type: 'task-event', events: ('task.done' |
+- [x] **shared:** extend the trigger union with `{ type: 'task-event', events: ('task.done' |
       'task.abandoned' | 'task.needs-attention')[], filter?: { repo?, projectId?, priority? } }` —
       same zod discipline as schedule/webhook triggers.
-- [ ] **gateway:** the workflow engine subscribes to the `TaskEventBus`; a matching terminal event
+- [x] **gateway:** the workflow engine subscribes to the `TaskEventBus`; a matching terminal event
       enqueues a run with the task (id + summary) as trigger input. Debounced/idempotent per
       task-transition (a retried task that re-completes fires once per terminal transition); respects
       enabled/team-scope like other triggers; recorded in `workflow_runs` like any run.
-- [ ] Editor + template support: the trigger is configurable in the workflow editor's trigger panel
+- [x] Editor + template support: the trigger is configurable in the workflow editor's trigger panel
       (event checkboxes + optional repo/project filter) and usable in seeds.
 
 ## Theme C — Retro & digest node executors — **M-L**
