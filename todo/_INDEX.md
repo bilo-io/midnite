@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [64 · Office presence](phase-64-office-presence.md) | 🔄 WIP | 13/30 | `████░░░░░░` | 43% | — | D E F G H |
+| [64 · Office presence](phase-64-office-presence.md) | 🔄 WIP | 13/30 | `████░░░░░░` | 43% | D | E F G H |
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
 | [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 6/33 | `██░░░░░░░░` | 18% | — | C D E F G H |
 | [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 7/36 | `██░░░░░░░░` | 19% | — | A B E F G H I |
