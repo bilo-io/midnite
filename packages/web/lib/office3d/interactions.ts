@@ -11,12 +11,12 @@
  * library anchors, and `PROXIMITY * 1.5` for the console — reproduced here as
  * unit reaches so 3D "reach" matches 2D one-for-one.
  *
- * The corner-office **door** is intentionally absent: the 3D corner scene +
- * `nearDoor`/scene transition land in Theme E, so wiring the prompt here would be
- * a dead affordance. `three`-free and unit-testable.
+ * The corner-office **door** (Theme E) enters the 3D corner-office room, mirroring
+ * the 2D scene's `nearDoor` + `setCurrentScene('corner')`. `three`-free and
+ * unit-testable.
  */
 
-import { BOARD_POS, BOOKSHELF_POS, COFFEE_POS, CONSOLE_POS } from '@/lib/office/layout';
+import { BOARD_POS, BOOKSHELF_POS, COFFEE_POS, CONSOLE_POS, DOOR_POS } from '@/lib/office/layout';
 import type { AvatarPlacement } from './agents-3d';
 import { tileToWorld } from './constants';
 
@@ -28,7 +28,7 @@ export const ANCHOR_REACH = 1.6 * 1.3;
 export const CONSOLE_REACH = 1.6 * 1.5;
 
 /** A fixed interactable spot in the world (a room fixture). */
-export type AnchorKind = 'board' | 'kitchen' | 'library' | 'playstation';
+export type AnchorKind = 'board' | 'kitchen' | 'library' | 'playstation' | 'door';
 
 export interface Anchor {
   kind: AnchorKind;
@@ -42,12 +42,13 @@ function anchor(kind: AnchorKind, tile: { x: number; y: number }, reach: number)
   return { kind, x, z, reach };
 }
 
-/** The four fixed interactables, at the same tiles as the 2D interaction anchors. */
+/** The fixed interactables, at the same tiles as the 2D interaction anchors. */
 export const ANCHORS: readonly Anchor[] = [
   anchor('board', BOARD_POS, ANCHOR_REACH),
   anchor('kitchen', COFFEE_POS, ANCHOR_REACH),
   anchor('library', BOOKSHELF_POS, ANCHOR_REACH),
   anchor('playstation', CONSOLE_POS, CONSOLE_REACH),
+  anchor('door', DOOR_POS, ANCHOR_REACH),
 ];
 
 /** The proximity flags the store mirrors — a subset of `OfficeState`. */
@@ -57,6 +58,7 @@ export interface ProximityState {
   nearKitchen: boolean;
   nearLibrary: boolean;
   nearPlaystation: boolean;
+  nearDoor: boolean;
 }
 
 function within(px: number, pz: number, a: { x: number; z: number; reach: number }): boolean {
@@ -92,6 +94,7 @@ export function resolveProximity(px: number, pz: number, avatars: readonly Avata
     nearKitchen: flag('kitchen'),
     nearLibrary: flag('library'),
     nearPlaystation: flag('playstation'),
+    nearDoor: flag('door'),
   };
 }
 
@@ -101,19 +104,21 @@ export type InteractionAction =
   | { kind: 'break' }
   | { kind: 'library' }
   | { kind: 'playstation' }
+  | { kind: 'door' }
   | { kind: 'agent'; id: string }
   | null;
 
 /**
  * The E/Enter dispatch: pick the interaction from proximity flags in the exact
  * priority order 2D `tryInteract` uses — board → kitchen(break) → library →
- * playstation → nearest desk agent.
+ * playstation → door → nearest desk agent.
  */
 export function pickInteraction(p: ProximityState): InteractionAction {
   if (p.nearBoard) return { kind: 'board' };
   if (p.nearKitchen) return { kind: 'break' };
   if (p.nearLibrary) return { kind: 'library' };
   if (p.nearPlaystation) return { kind: 'playstation' };
+  if (p.nearDoor) return { kind: 'door' };
   if (p.nearbyId) return { kind: 'agent', id: p.nearbyId };
   return null;
 }
@@ -133,6 +138,7 @@ export function buildTargets(avatars: readonly AvatarPlacement[]): Target[] {
     kitchen: { kind: 'break' },
     library: { kind: 'library' },
     playstation: { kind: 'playstation' },
+    door: { kind: 'door' },
   };
   const targets: Target[] = ANCHORS.map((a) => ({ action: anchorAction[a.kind], x: a.x, z: a.z, reach: a.reach }));
   for (const a of avatars) {
@@ -190,6 +196,8 @@ export interface InteractionStore {
    * open the menu directly (they don't go through this dispatcher).
    */
   enterArcade(): void;
+  /** The corner-office door enters the 3D corner-office room (Theme E). */
+  enterCorner(): void;
   open(id: string): void;
 }
 
@@ -213,6 +221,9 @@ export function applyInteraction(action: InteractionAction, store: InteractionSt
       return;
     case 'playstation':
       store.enterArcade();
+      return;
+    case 'door':
+      store.enterCorner();
       return;
     case 'agent':
       store.open(action.id);

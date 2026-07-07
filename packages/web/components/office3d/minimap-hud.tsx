@@ -8,6 +8,7 @@ import type { Group } from 'three';
 import { STATUS_TINT } from '@/lib/office/agents';
 import { minimapLayout, minimapRooms } from '@/lib/office/minimap';
 import { ROOM_STYLES } from '@/lib/office/theme';
+import { useOfficeStore } from '@/lib/office-store';
 import type { AvatarPlacement } from '@/lib/office3d/agents-3d';
 import { minimapFacing, worldUnitToMinimap } from '@/lib/office3d/minimap-3d';
 import type { PlayerPose } from './first-person-rig';
@@ -37,6 +38,9 @@ export function MinimapHud({
 }) {
   const size = useThree((s) => s.size);
   const player = useRef<Group>(null);
+  // The player's chosen character tint (Phase-39) colours their minimap arrow —
+  // the small bit of avatar identity that shows in first-person.
+  const playerTint = useOfficeStore((s) => s.playerTint);
 
   const { scale, panelW, panelH } = useMemo(() => {
     const l = minimapLayout(MAX_W, MAX_H);
@@ -108,7 +112,7 @@ export function MinimapHud({
         <group ref={player}>
           <mesh>
             <circleGeometry args={[3.4, 3]} />
-            <meshBasicMaterial color={0xffffff} />
+            <meshBasicMaterial color={playerTint ?? 0xffffff} />
           </mesh>
         </group>
       </group>
