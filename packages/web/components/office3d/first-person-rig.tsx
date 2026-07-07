@@ -7,7 +7,7 @@ import { Vector3 } from 'three';
 
 import { blockedGrid } from '@/lib/office/layout';
 import { useOfficeStore } from '@/lib/office-store';
-import { resolveMove } from '@/lib/office3d/collision';
+import { resolveMoveInto, type Vec2 } from '@/lib/office3d/collision';
 import { EYE_HEIGHT, MOVE_SPEED, PLAYER_RADIUS } from '@/lib/office3d/constants';
 import { advanceBobPhase, computeHeadBob } from '@/lib/office3d/headbob';
 import {
@@ -121,6 +121,7 @@ export function FirstPersonRig({
   const right = useRef(new Vector3());
   const delta = useRef(new Vector3());
   const aim = useRef(new Vector3());
+  const moveOut = useRef<Vec2>({ x: 0, z: 0 }); // scratch — no per-frame alloc
   // Head-bob state: phase advances by walked distance; intensity eases in/out.
   const bobPhase = useRef(0);
   const bobIntensity = useRef(0);
@@ -208,7 +209,8 @@ export function FirstPersonRig({
     if (delta.current.lengthSq() > 0) {
       delta.current.normalize().multiplyScalar(MOVE_SPEED * dt);
       // Resolve against solid tiles (per-axis wall-slide) instead of moving free.
-      const resolved = resolveMove(
+      const resolved = resolveMoveInto(
+        moveOut.current,
         camera.position.x,
         camera.position.z,
         delta.current.x,
