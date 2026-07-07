@@ -3,6 +3,7 @@ import {
   CreateMediaBodySchema,
   MediaSchema,
   UpdateMediaBodySchema,
+  isSafeMediaFilePath,
 } from './media.js';
 
 const baseMedia = {
@@ -45,6 +46,21 @@ describe('CreateMediaBodySchema', () => {
   it('trims and rejects a blank title', () => {
     expect(CreateMediaBodySchema.safeParse({ type: 'audio', title: '   ' }).success).toBe(false);
   });
+
+  it('rejects a traversal or absolute filePath (arbitrary-file-read guard)', () => {
+    for (const filePath of ['/etc/passwd', '../../secrets.txt', 'a/../../b', 'C:\\win.ini', '\\etc']) {
+      expect(CreateMediaBodySchema.safeParse({ type: 'image', title: 'x', filePath }).success).toBe(
+        false,
+      );
+    }
+  });
+
+  it('accepts a normal relative filePath', () => {
+    expect(
+      CreateMediaBodySchema.safeParse({ type: 'image', title: 'x', filePath: 'img/pic.png' })
+        .success,
+    ).toBe(true);
+  });
 });
 
 describe('UpdateMediaBodySchema', () => {
@@ -54,5 +70,26 @@ describe('UpdateMediaBodySchema', () => {
 
   it('accepts an empty patch', () => {
     expect(UpdateMediaBodySchema.parse({})).toEqual({});
+  });
+
+  it('rejects a traversal filePath in a patch', () => {
+    expect(UpdateMediaBodySchema.safeParse({ filePath: '../../etc/passwd' }).success).toBe(false);
+  });
+});
+
+describe('isSafeMediaFilePath', () => {
+  it('allows empty and normal relative paths', () => {
+    expect(isSafeMediaFilePath('')).toBe(true);
+    expect(isSafeMediaFilePath('img/pic.png')).toBe(true);
+    expect(isSafeMediaFilePath('a/b/c.mp4')).toBe(true);
+  });
+
+  it('rejects absolute, traversal, and NUL-byte paths', () => {
+    expect(isSafeMediaFilePath('/etc/passwd')).toBe(false);
+    expect(isSafeMediaFilePath('\\\\server\\share')).toBe(false);
+    expect(isSafeMediaFilePath('C:\\Windows\\win.ini')).toBe(false);
+    expect(isSafeMediaFilePath('../secret')).toBe(false);
+    expect(isSafeMediaFilePath('a/../../b')).toBe(false);
+    expect(isSafeMediaFilePath('a\0b')).toBe(false);
   });
 });

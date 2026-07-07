@@ -104,21 +104,28 @@ Everything secret-shaped, end to end.
       error responses never echo secrets/stack traces to clients in prod mode.
 - [ ] **Report:** `todo/phase-60-findings/B-secrets-signatures.md`.
 
-## Theme C — Input validation & injection sweep — **M**
+## Theme C — Input validation & injection sweep — **M** — ✅ DONE (PR #TBD, 2026-07-07)
 
 Every byte that crosses the boundary gets checked — verify that's actually true.
 
-- [ ] **Route-by-route zod coverage:** enumerate every controller route (gateway-wide) and confirm
-      body/query/params are zod-parsed against `shared` schemas ("untyped JSON over the wire" is an
-      anti-pattern per CLAUDE.md) — list any route accepting `unknown`/raw without a `safeParse` gate.
-- [ ] **Injection probes:** FTS5 search-query escaping ([`search/`](../packages/gateway/src/search/) — can a
-      crafted query break the MATCH syntax or reach `bm25()` oddly?); **path traversal** in attachment/media
-      upload+serve paths and the Phase 49 **import archive** (zip-slip: entry names with `../`); SQL is
-      Drizzle-parameterized — verify no raw `sql` template interpolates user input.
-- [ ] **SSRF surface:** [`url-context.service.ts`](../packages/gateway/src/agent/url-context.service.ts) and
-      outbound webhook/workflow HTTP nodes fetch user-supplied URLs — check for private-range/localhost/
-      metadata-endpoint blocking (or the absence thereof), redirect handling, and response-size caps.
-- [ ] **Report:** `todo/phase-60-findings/C-input-validation.md` (+ any S-effort quick wins applied).
+- [x] **Route-by-route zod coverage:** enumerated every gateway controller. No global `ZodValidationPipe` —
+      validation is opt-in per route, but coverage is essentially complete (every JSON `@Body()` route
+      `safeParse`s a `shared` schema). The two `unknown` bodies (workflow webhook trigger, inbound receiver)
+      are arbitrary-by-design external payloads gated by path-token / provider-HMAC, not gaps. Logged a LOW
+      systemic recommendation (add a global pipe or an architecture test) — finding C-3.
+- [x] **Injection probes:** **FOUND + FIXED** a HIGH arbitrary-file-read via the media file-serve route
+      (`GET /media/:id/file` served client-supplied absolute/`..` paths verbatim) — fix is a shared
+      `isSafeMediaFilePath` schema refinement + a serve-time `resolveMediaPath` containment guard (finding C-1).
+      FTS5 `MATCH` escaping (tokenized/quoted/param-bound), the Phase 49 import zip (known-key reads, no
+      path-based extraction → no zip-slip), and all raw `sql\`\`` usage (no `sql.raw`, all values bound) —
+      **verified safe** (findings C-4/C-5/C-6).
+- [x] **SSRF surface:** documented (finding C-2, HIGH) — one best-effort `isSafeHttpUrl` guard fronts 4
+      fetch sites (url-context, workflow http node, outbound webhooks, link-metadata proxy) but is DNS-blind,
+      misses alternate IP encodings/IPv6, and never re-validates redirects. Remediation (resolve-then-check +
+      IP-pin, redirect revalidation, encoding normalization) is a feature in its own right → **logged as a
+      follow-up theme**, not fixed here (per the iteration's scoping decision).
+- [x] **Report:** [`todo/phase-60-findings/C-input-validation.md`](phase-60-findings/C-input-validation.md)
+      (+ the C-1 quick-win applied with full test coverage).
 
 ## Theme D — Dependency & supply-chain audit — **S-M**
 
