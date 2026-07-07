@@ -144,6 +144,8 @@ import {
   TaskFailuresResponseSchema,
   TaskGraphResponseSchema,
   type TaskGraph,
+  ChatQueryResponseSchema,
+  type ChatQueryAnswer,
   MilestoneSchema,
   MilestoneResponseSchema,
   RoadmapResponseSchema,
@@ -480,6 +482,20 @@ export async function getTaskGraph(projectId?: string, signal?: AbortSignal): Pr
 }
 
 // ── Chat to board (Phase 59) ────────────────────────────────────────────────────
+
+/**
+ * Phase 59 C — ask the board a read-only question. Returns a prose answer + the
+ * matching task refs (for deep-links) + the inference path used (cost line).
+ * Never mutates.
+ */
+export async function chatQuery(text: string, signal?: AbortSignal): Promise<ChatQueryAnswer> {
+  const res = await fetchJson(
+    '/chat/query',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ text }), signal },
+    ChatQueryResponseSchema,
+  );
+  return res.answer;
+}
 
 /** Parse a natural-language command and describe what it would do (no write). */
 export async function previewChatCommand(text: string, signal?: AbortSignal): Promise<ChatPreviewResponse> {
