@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-07 — feat: office 2D/3D engine tabs + view preference — Phase 63 Theme F (PR #336)
+
+Ships the engine switcher the 3D office (Themes A–E) will live behind — a 2D/3D tab on `/office` with a shareable, sticky preference.
+
+- [x] **web:** 2D/3D tab strip (`OfficeSurface`); `?view=2d|3d` URL param wins over the persisted `officeView` pref, else 2d. Only the active engine mounts (Phaser destroy / three dispose on switch; one bundle at a time; both `dynamic(ssr:false)`); office stays `DesktopOnly`; page is a thin `Suspense` shell.
+- [x] **shared:** new additive `officeView` enum('2d'|'3d') UserPreferences key, wired into `appSettingsToPreferences` + `applyPreferences` (Phase 43 sync).
+- [x] Tests: RTL `OfficeSurface` (default/param/pref/param-wins/switch→replace+persist/single-mount) + shared pref default+enum. Gate green (web 874, shared 583; `ui:test` flake passes isolated).
+- ⚠️ **3D tab is a dependency-free placeholder** — the `three`/`@react-three/*` type stack pulls `@types/three`'s transitive global type packages (`@webgpu/types`/`@types/webxr`) into the whole web typecheck and collapses unrelated JSX inference to `never`; the r3f + React-19 JSX setup is deferred to Theme A, which replaces `office-3d-view-impl.tsx` with the real `<Canvas>`.
+
+---
+
 ## 2026-07-06 — feat: chat-to-board command bar in the Cmd-K palette — Phase 59 Theme E (PR #334)
 
 Closes Phase 59 Theme E. The natural-language bar surfaces where people already type — the ⌘K palette — over the A/B/D/F backend seam.

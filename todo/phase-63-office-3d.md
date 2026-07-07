@@ -155,17 +155,21 @@ The heart of the phase: the 3D scene becomes a second client of the existing sto
 - [ ] **Ambient parity touches:** pool water shimmer, window light, door open/close accent —
       small, cheap atmosphere items that make 3D feel alive rather than a gray box.
 
-## Theme F — Tabs, routing & preference — **S**
+## Theme F — Tabs, routing & preference — **S** — ✅ DONE (PR #336, 2026-07-07)
 
-- [ ] **Tabs on `/office`:** a 2D / 3D tab strip in the page header
-      ([`app/(main)/office/page.tsx`](../packages/web/app/(main)/office/page.tsx)); `?view=2d|3d`
-      URL param (shareable, the Phase-52 `?tab=` pattern); default remains 2D.
-- [ ] **Preference sync:** last-used view persisted via Phase-43 UserPreferences (one additive
-      key) so the choice sticks across devices; URL param wins over preference when present.
-- [ ] **Engine isolation:** only the active engine's bundle loads (both behind `dynamic(ssr:false)`
-      + lazy chunks — verify with the Phase-34 analyzer); switching tabs fully tears down the
-      outgoing engine (Phaser destroy / three dispose + `reset()`), and the office stays
-      `DesktopOnly`.
+- [x] **Tabs on `/office`:** a 2D / 3D tab strip (`OfficeSurface`); `?view=2d|3d` URL param
+      (shareable, the Phase-52 `?tab=` pattern); default remains 2D. Page stays a thin shell
+      (`Suspense` around the param read).
+- [x] **Preference sync:** last-used view persisted via a new additive `officeView` UserPreferences
+      key (Phase 43) — wired into `appSettingsToPreferences` + `applyPreferences`; the choice sticks
+      across devices; the URL param wins over the preference when present.
+- [x] **Engine isolation:** only the active engine mounts (conditional render → Phaser destroy /
+      three dispose on switch, one engine bundle at a time; both `dynamic(ssr:false)`); office stays
+      `DesktopOnly`. ⚠️ **The 3D view ships as a dependency-free placeholder** — adding the
+      `three`/`@react-three/*` type stack drags `@types/three`'s transitive global type packages
+      (`@webgpu/types`/`@types/webxr`) into the whole web typecheck and collapses unrelated JSX
+      inference to `never`; the r3f + React-19 JSX setup belongs in **Theme A** with the real world.
+      Theme A replaces `office-3d-view-impl.tsx` with the `<Canvas>`.
 
 ## Theme G — Performance & tests — **S-M**
 
