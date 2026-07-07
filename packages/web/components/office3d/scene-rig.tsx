@@ -5,10 +5,13 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import { Vector3 } from 'three';
 
+import type { PresenceScene } from '@midnite/shared';
 import { createHeadBobRoll } from '@/lib/office3d/camera-roll';
 import { resolveMoveInto, type Vec2 } from '@/lib/office3d/collision';
 import { EYE_HEIGHT, MOVE_SPEED, PLAYER_RADIUS } from '@/lib/office3d/constants';
 import { advanceBobPhase, computeHeadBob } from '@/lib/office3d/headbob';
+import { samplePlayer } from '@/lib/presence-bridge';
+import { facingFromDir, unitToPresencePx } from '@/lib/presence-3d';
 import { useAnimationPrefs } from '@/lib/use-animation-prefs';
 
 /**
@@ -48,6 +51,7 @@ export function SubSceneRig({
   onInteract,
   onProximity,
   onLockChange,
+  presenceScene,
 }: {
   grid: boolean[][];
   spawn: { x: number; y: number; z: number };
@@ -58,6 +62,8 @@ export function SubSceneRig({
   /** Called each frame with the player position (for contextual prompts). */
   onProximity?: (px: number, pz: number) => void;
   onLockChange?: (locked: boolean) => void;
+  /** When set, publish the player's pose to presence under this scene (Phase 64 D). */
+  presenceScene?: PresenceScene;
 }) {
   const controlsRef = useRef<React.ElementRef<typeof PointerLockControls>>(null);
   const move = useRef<MoveState>({ forward: false, back: false, left: false, right: false });
@@ -152,6 +158,11 @@ export function SubSceneRig({
     headBobRoll.apply(camera, bob.roll);
 
     onProximity?.(camera.position.x, camera.position.z);
+
+    if (presenceScene) {
+      const px = unitToPresencePx(camera.position.x, camera.position.z);
+      samplePlayer(px.x, px.y, facingFromDir(forward.current.x, forward.current.z), presenceScene);
+    }
   });
 
   return (

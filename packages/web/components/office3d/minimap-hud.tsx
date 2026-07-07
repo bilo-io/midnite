@@ -9,8 +9,10 @@ import { STATUS_TINT } from '@/lib/office/agents';
 import { minimapLayout, minimapRooms } from '@/lib/office/minimap';
 import { ROOM_STYLES } from '@/lib/office/theme';
 import { useOfficeStore } from '@/lib/office-store';
+import { presencePeerList, usePresenceStore } from '@/lib/presence-store';
 import type { AvatarPlacement } from '@/lib/office3d/agents-3d';
 import { minimapFacing, worldUnitToMinimap } from '@/lib/office3d/minimap-3d';
+import { presencePxToUnit } from '@/lib/presence-3d';
 import type { PlayerPose } from './first-person-rig';
 
 /**
@@ -28,6 +30,8 @@ const MAX_H = 100;
 const PAD = 6;
 const MARGIN = 12;
 const ATTENTION = 0xf87171;
+/** Remote-teammate dot colour (cyan) — matches the 2D minimap (Phase 64 C/D). */
+const PEER = 0x22d3ee;
 
 export function MinimapHud({
   placements,
@@ -63,6 +67,20 @@ export function MinimapHud({
         return { id: p.agent.id, x: pt.x, y: panelH - pt.y, color };
       }),
     [placements, scale, panelH],
+  );
+
+  // Remote teammates in the office scene — live dots (peers move ~10Hz).
+  const peers = usePresenceStore((s) => s.peers);
+  const peerDots = useMemo(
+    () =>
+      presencePeerList(peers)
+        .filter((p) => p.scene === 'office')
+        .map((p) => {
+          const u = presencePxToUnit(p.x, p.y);
+          const pt = worldUnitToMinimap(u.x, u.z, scale, PAD);
+          return { id: p.peerId, x: pt.x, y: panelH - pt.y };
+        }),
+    [peers, scale, panelH],
   );
 
   useFrame(() => {
@@ -106,6 +124,13 @@ export function MinimapHud({
           <mesh key={d.id} position={[d.x, d.y, 2]}>
             <circleGeometry args={[2.2, 12]} />
             <meshBasicMaterial color={d.color} />
+          </mesh>
+        ))}
+        {/* remote teammate dots (Phase 64 D) */}
+        {peerDots.map((d) => (
+          <mesh key={d.id} position={[d.x, d.y, 2.5]}>
+            <circleGeometry args={[2, 12]} />
+            <meshBasicMaterial color={PEER} />
           </mesh>
         ))}
         {/* player arrow */}

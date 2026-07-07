@@ -21,6 +21,8 @@ import {
 } from '@/lib/office3d/interactions';
 import type { AvatarPlacement } from '@/lib/office3d/agents-3d';
 import type { WorldModel } from '@/lib/office3d/world';
+import { samplePlayer } from '@/lib/presence-bridge';
+import { facingFromDir, unitToPresencePx } from '@/lib/presence-3d';
 import { useAnimationPrefs } from '@/lib/use-animation-prefs';
 
 /**
@@ -253,6 +255,10 @@ export function FirstPersonRig({
     store.setNearLibrary(prox.nearLibrary);
     store.setNearPlaystation(prox.nearPlaystation);
     store.setNearDoor(prox.nearDoor);
+
+    // Publish our position to presence (throttled in the hook) — 3D units → wire px.
+    const px = unitToPresencePx(camera.position.x, camera.position.z);
+    samplePlayer(px.x, px.y, facingFromDir(forward.current.x, forward.current.z), 'office');
 
     // Publish the player's pose for the minimap.
     if (poseRef?.current) {
