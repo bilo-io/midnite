@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-07 — fix: scrub gateway master secrets from workflow $env + secrets/signatures audit — Phase 60 Theme B (PR #346)
+
+Secrets, signatures & crypto audit — report at `todo/phase-60-findings/B-secrets-signatures.md`. Two HIGH+S quick-wins fixed inline; the rest documented for Theme-M remediation.
+
+- [x] **B-1 (P1, fixed):** workflow `$env` bound the whole `process.env` → a workflow author could resolve `{{$env.MIDNITE_SECRET_KEY}}` (persisted + WS-broadcast + http-exfiltratable) and read the master key. Fix: `$env` resolves through `WorkflowEngine.safeEnv()`, stripping the gateway's own secret env vars via the same list the Phase-50 spawn-env scrub uses (extracted to a pty-free `config/gateway-secret-env.ts` so the two can't drift). Test added.
+- [x] **B-7 (P3, fixed):** corrected the stale `llm_providers.api_key` "plaintext" schema comment (it's AES-256-GCM encrypted + fail-closed).
+- [x] **Verified safe:** CryptoService (fail-closed), inbound/outbound HMAC (raw-body + `timingSafeEqual`), Claude-hook auth, bearer/service tokens, error responses, health/config endpoints; the prior `llm_providers.apiKey` plaintext concern does not reproduce.
+- [x] **Documented (behavior-change → Theme M):** B-2 spawn-env scrub default-off (P1), B-3 webhook/inbound secret plaintext fail-open (P2), B-4/5/6 (P3). Gate green (gateway 1666, web 897, cli 155).
+
+---
+
 ## 2026-07-07 — feat: task retrospective contract + deterministic skeleton + storage — Phase 62 Theme A (PR #341)
 
 The spine of Fable-Digest: every terminal task gets a free, factual retrospective assembled deterministically (zero LLM) from data already persisted.
