@@ -14,6 +14,7 @@ import { PreflightService } from './health/preflight.service';
 import { isLoopbackHost, isValidBearer, resolveAuthToken } from './auth/lib/auth-policy';
 import { isAllowedOrigin } from './lib/allowed-origin';
 import { loadConfigFromDisk } from './lib/load-config';
+import { applySecurityHeaders } from './lib/security-headers';
 import { registerWebStatic } from './lib/serve-web';
 
 function resolveDir(p: string): string {
@@ -52,6 +53,14 @@ export async function startGateway(): Promise<NestFastifyApplication> {
   // Fail-closed before binding: never expose an unauthenticated API off-box.
   assertAuthForHost(config);
   const adapter = new FastifyAdapter();
+
+  // Baseline security headers on every response (Phase 60 A). Registered before
+  // the static/API routes so it covers the served web export and `/uploads/*`
+  // too — `nosniff` in particular guards against MIME-sniffing a user upload.
+  adapter.getInstance().addHook('onRequest', (_req, reply, done) => {
+    applySecurityHeaders(reply);
+    done();
+  });
 
   const uploadsDir = resolveDir(config.gateway.uploadsDir);
   mkdirSync(uploadsDir, { recursive: true });
