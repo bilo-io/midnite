@@ -25,7 +25,7 @@ export function percentileNearestRank(sortedAsc: number[], p: number): number | 
   if (sortedAsc.length === 0) return null;
   const rank = Math.ceil((p / 100) * sortedAsc.length);
   const idx = Math.min(Math.max(rank, 1), sortedAsc.length) - 1;
-  return sortedAsc[idx];
+  return sortedAsc[idx] ?? null;
 }
 
 /**
