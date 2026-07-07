@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-07 — fix: media path-traversal + input-validation/injection audit — Phase 60 Theme C (PR #340)
+
+Closes Phase 60 Theme C (input-validation & injection sweep). One actionable HIGH found and fixed; the rest of the boundary verified or documented as follow-ups.
+
+- [x] **HIGH fixed — arbitrary file read via `GET /media/:id/file`.** The route served a client-supplied `filePath` verbatim (absolute paths *and* `../` traversal). Two-layer fix: a shared `isSafeMediaFilePath` `.refine()` on `Create`/`UpdateMediaBodySchema` (rejects absolute/`..`/NUL at write time) + a gateway `resolveMediaPath` containment guard at serve time (re-confines legacy/imported rows to the uploads dir). `serveFile` no longer reaches into the private repo (new `MediaService.getFileMeta`).
+- [x] **Verified safe:** FTS5 `MATCH` (tokenized → quoted → param-bound), Phase 49 import zip (known-key reads, no path-based extraction → no zip-slip), all raw `sql\`\`` (no `sql.raw`, every value bound), and per-route zod coverage (every JSON `@Body()` `safeParse`s; the `unknown` webhook/inbound bodies are token/HMAC-gated by design).
+- [x] **Documented as follow-ups:** SSRF (HIGH — DNS-blind `isSafeHttpUrl` + no redirect revalidation across 4 fetch sites; needs a dedicated hardening theme) and a global `ZodValidationPipe`/architecture test (LOW). Full report: [`todo/phase-60-findings/C-input-validation.md`](phase-60-findings/C-input-validation.md).
+- [x] Tests: shared 592 (media schema cases), gateway 1632 (`resolve-media-path` 7 cases + 3 `serveFile` controller cases); `gateway:typecheck`/`:lint` green.
+
 ## 2026-07-07 — feat: 3D office world foundation — Phase 63 Theme A (PR #337)
 
 Closes Phase 63 Theme A. The office rebuilt in first-person three.js (r3f + drei), opt-in via a `?view=3d` escape hatch on `/office` (2D stays the untouched default; the tab strip + preference sync land in Theme F). A second client of the existing office store contract — not a fork.
