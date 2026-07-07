@@ -4,6 +4,18 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-07 — feat: 3D office world foundation — Phase 63 Theme A (PR #337)
+
+Closes Phase 63 Theme A. The office rebuilt in first-person three.js (r3f + drei), opt-in via a `?view=3d` escape hatch on `/office` (2D stays the untouched default; the tab strip + preference sync land in Theme F). A second client of the existing office store contract — not a fork.
+
+- [x] **web (`lib/office3d/`):** pure, `three`-free, unit-tested helpers — `world.ts` maps the 2D `layout.ts` grid/rooms/furniture into 3D placements (walls merge into runs, horizontal-first then vertical; every wall tile covered exactly once); `materials.ts` resolves theme-aware flat-shaded colours + day/night lighting off the SAME `office/theme.ts` + `office/daynight.ts` helpers as the 2D floor; `constants.ts` (1 tile = 1 unit, eye height, FOV, DPR cap).
+- [x] **web (`components/office3d/`):** `dynamic(ssr:false)` + lazy `Office3DView`; an r3f `<Canvas>` with a static day/night light snapshot at mount (no per-frame cost, reduced-motion-safe); flat-shaded low-poly world; a minimal pointer-lock + WASD rig (collision + head-bob are Theme B). `reset()`s the store on mount/unmount so 2D proximity/panel flags never leak across a switch.
+- [x] **web:** `office-surface.tsx` picks 2D/3D from `?view=` (Phase-52 client-read pattern under `output: 'export'`); the 2D engine is untouched + behavior-preserving.
+- [x] **Design calls (locked up front):** minimal look/move pulled into A (collision/head-bob → B); flat palette colours now (canvas textures deferred); build-all + `frustumCulled` now (per-room lazy chunk-gating → Theme G); static lighting snapshot.
+- [x] Tests: world-builder + materials + lighting units, an `office-surface` RTL routing spec (WebGL engines mocked in jsdom), a Playwright `?view=3d` smoke. Full web unit suite green (714). Pure `packages/web` — zero gateway/`shared` work.
+
+---
+
 ## 2026-07-06 — feat: chat-to-board command bar in the Cmd-K palette — Phase 59 Theme E (PR #334)
 
 Closes Phase 59 Theme E. The natural-language bar surfaces where people already type — the ⌘K palette — over the A/B/D/F backend seam.
