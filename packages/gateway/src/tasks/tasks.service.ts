@@ -625,66 +625,84 @@ export class TasksService {
     const id = randomUUID();
     const now = new Date().toISOString();
 
-    this.repo.insertTask({
-      id,
-      title: classified.title,
-      kind: classified.kind,
-      // A generated inline answer resolves the task to `done`; otherwise an
-      // explicit caller status wins, falling back to the planner's triage column.
-      status: answer ? 'done' : (input.status ?? (triage.ready ? 'todo' : 'backlog')),
-      priority: clampPriority(input.priority),
-      prompt: input.prompt,
-      repo,
-      projectId: input.projectId ?? null,
-      agentId: null,
-      sessionId: null,
-      prUrl: null,
-      createdAt: now,
-      updatedAt: now,
-      createdBy: input.createdBy ?? null,
+    // Phase 60 E (TX-1) — task row + edges + attachments + the task.created event
+    // are one atomic unit: a mid-write throw must not leave orphaned edges/
+    // attachments or a task with no created event. The AI calls already completed
+    // above, so the transaction body is pure synchronous DB work.
+    this.repo.transaction((tx) => {
+      this.repo.insertTask(
+        {
+          id,
+          title: classified.title,
+          kind: classified.kind,
+          // A generated inline answer resolves the task to `done`; otherwise an
+          // explicit caller status wins, falling back to the planner's triage column.
+          status: answer ? 'done' : (input.status ?? (triage.ready ? 'todo' : 'backlog')),
+          priority: clampPriority(input.priority),
+          prompt: input.prompt,
+          repo,
+          projectId: input.projectId ?? null,
+          agentId: null,
+          sessionId: null,
+          prUrl: null,
+          createdAt: now,
+          updatedAt: now,
+          createdBy: input.createdBy ?? null,
+        },
+        tx,
+      );
+
+      for (const dep of dependsOn) {
+        this.repo.addDependency(id, dep, now, tx);
+      }
+
+      for (const image of input.images) {
+        this.repo.insertAttachment(
+          {
+            id: randomUUID(),
+            taskId: id,
+            path: image.path,
+            mime: image.mime,
+            size: image.size,
+            originalName: image.originalName ?? null,
+            createdAt: now,
+          },
+          tx,
+        );
+      }
+
+      this.repo.insertEvent(
+        {
+          id: randomUUID(),
+          taskId: id,
+          at: now,
+          kind: 'task.created',
+          data: JSON.stringify({
+            promptLength: input.prompt.length,
+            attachments: input.images.length,
+            // Audit trail: note when the repo was inferred by the planner rather
+            // than set by the caller, so an unexpected assignment is explainable.
+            ...(repoInferred ? { repo, repoInferred: true } : {}),
+          }),
+        },
+        tx,
+      );
+
+      // Record the inline answer on the task thread (surfaced in the web thread
+      // view) so the resolved question carries its answer with it.
+      if (answer) {
+        this.repo.insertEvent(
+          {
+            id: randomUUID(),
+            taskId: id,
+            at: now,
+            kind: ANSWER_EVENT_KIND,
+            data: JSON.stringify({ text: answer }),
+          },
+          tx,
+        );
+      }
     });
-
-    for (const dep of dependsOn) {
-      this.repo.addDependency(id, dep, now);
-    }
-
-    for (const image of input.images) {
-      this.repo.insertAttachment({
-        id: randomUUID(),
-        taskId: id,
-        path: image.path,
-        mime: image.mime,
-        size: image.size,
-        originalName: image.originalName ?? null,
-        createdAt: now,
-      });
-    }
-
-    this.repo.insertEvent({
-      id: randomUUID(),
-      taskId: id,
-      at: now,
-      kind: 'task.created',
-      data: JSON.stringify({
-        promptLength: input.prompt.length,
-        attachments: input.images.length,
-        // Audit trail: note when the repo was inferred by the planner rather
-        // than set by the caller, so an unexpected assignment is explainable.
-        ...(repoInferred ? { repo, repoInferred: true } : {}),
-      }),
-    });
-
-    // Record the inline answer on the task thread (surfaced in the web thread
-    // view) so the resolved question carries its answer with it.
-    if (answer) {
-      this.repo.insertEvent({
-        id: randomUUID(),
-        taskId: id,
-        at: now,
-        kind: ANSWER_EVENT_KIND,
-        data: JSON.stringify({ text: answer }),
-      });
-    }
 
     const task = this.getTask(id);
     this.audit?.record({ entityType: 'task', entityId: id, userId: input.createdBy, action: 'task.created' });
@@ -838,57 +856,70 @@ export class TasksService {
     // ref is dropped (first wins) so later edge resolution stays unambiguous.
     const idByRef = new Map<string, string>();
     const order: Array<{ ref: string; dependsOn: string[]; id: string }> = [];
-    for (const bt of breakdown.tasks) {
-      if (idByRef.has(bt.ref)) continue;
-      const id = randomUUID();
-      this.repo.insertTask({
-        id,
-        title: bt.title,
-        kind: bt.kind ?? 'unknown',
-        status: 'todo',
-        priority: clampPriority(bt.priority),
-        prompt: null,
-        repo,
-        agentId: null,
-        sessionId: null,
-        projectId: opts.projectId ?? null,
-        milestoneId: opts.milestoneId ?? null,
-        prUrl: null,
-        createdAt: now,
-        updatedAt: now,
-      });
-      this.repo.insertEvent({
-        id: randomUUID(),
-        taskId: id,
-        at: now,
-        kind: 'task.created',
-        data: JSON.stringify({
-          source: 'breakdown',
-          ref: bt.ref,
-          ...(opts.projectId ? { projectId: opts.projectId } : {}),
-          ...(opts.milestoneId ? { milestoneId: opts.milestoneId } : {}),
-        }),
-      });
-      const tags = opts.tagsFor?.(bt);
-      if (tags && tags.length > 0) {
-        this.repo.setTags(id, normalizeTags(tags), now);
+    // Phase 60 E (TX-2) — the whole graph (every task row + its created event +
+    // tags, then all the dependency edges) is one atomic unit: a throw partway
+    // must not leave a pile of disconnected tasks or a partially-wired graph the
+    // scheduler mis-orders. Deterministic + LLM-free, so the body is pure DB work.
+    this.repo.transaction((tx) => {
+      for (const bt of breakdown.tasks) {
+        if (idByRef.has(bt.ref)) continue;
+        const id = randomUUID();
+        this.repo.insertTask(
+          {
+            id,
+            title: bt.title,
+            kind: bt.kind ?? 'unknown',
+            status: 'todo',
+            priority: clampPriority(bt.priority),
+            prompt: null,
+            repo,
+            agentId: null,
+            sessionId: null,
+            projectId: opts.projectId ?? null,
+            milestoneId: opts.milestoneId ?? null,
+            prUrl: null,
+            createdAt: now,
+            updatedAt: now,
+          },
+          tx,
+        );
+        this.repo.insertEvent(
+          {
+            id: randomUUID(),
+            taskId: id,
+            at: now,
+            kind: 'task.created',
+            data: JSON.stringify({
+              source: 'breakdown',
+              ref: bt.ref,
+              ...(opts.projectId ? { projectId: opts.projectId } : {}),
+              ...(opts.milestoneId ? { milestoneId: opts.milestoneId } : {}),
+            }),
+          },
+          tx,
+        );
+        const tags = opts.tagsFor?.(bt);
+        if (tags && tags.length > 0) {
+          this.repo.setTags(id, normalizeTags(tags), now, tx);
+        }
+        idByRef.set(bt.ref, id);
+        order.push({ ref: bt.ref, dependsOn: bt.dependsOn, id });
       }
-      idByRef.set(bt.ref, id);
-      order.push({ ref: bt.ref, dependsOn: bt.dependsOn, id });
-    }
 
-    // 2) Wire the dependency edges. All tasks exist now, so a ref resolves to a
-    // real id; prune a self-edge, an unknown ref, or one that would close a cycle
-    // (the check sees edges added earlier in this loop). `addDependency` is a
-    // no-op on a duplicate pair.
-    for (const { dependsOn, id } of order) {
-      for (const depRef of dependsOn) {
-        const blockerId = idByRef.get(depRef);
-        if (!blockerId || blockerId === id) continue;
-        if (this.wouldCreateCycle(id, blockerId)) continue;
-        this.repo.addDependency(id, blockerId, now);
+      // 2) Wire the dependency edges. All tasks exist now, so a ref resolves to a
+      // real id; prune a self-edge, an unknown ref, or one that would close a cycle
+      // (the check sees edges added earlier in this loop; better-sqlite3 runs the
+      // txn on one connection, so the cycle read sees the uncommitted edges).
+      // `addDependency` is a no-op on a duplicate pair.
+      for (const { dependsOn, id } of order) {
+        for (const depRef of dependsOn) {
+          const blockerId = idByRef.get(depRef);
+          if (!blockerId || blockerId === id) continue;
+          if (this.wouldCreateCycle(id, blockerId)) continue;
+          this.repo.addDependency(id, blockerId, now, tx);
+        }
       }
-    }
+    });
 
     // 3) One coalesced board signal for the batch (no per-task broadcast).
     const ids = order.map((o) => o.id);
