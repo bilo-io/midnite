@@ -13,15 +13,31 @@ their status flips.
 
 ```
 app/(main)/office/page.tsx
-  └─ <OfficeView>                office-view.tsx — dynamic(ssr:false) wrapper (keeps Phaser client-only)
-       └─ <OfficeViewImpl>       office-view-impl.tsx — relative stage box; runs useOfficeAgents()
-            ├─ <OfficeGame>      office-game.tsx — mounts/destroys the Phaser game (StrictMode-safe)
-            │    └─ OfficeScene  scenes/office-scene.ts — tiles/sprites, zones, movement, collision, actors
-            └─ <OfficeHud>       office-hud.tsx — controls hint, online count, proximity prompts, panels
-                 ├─ InteractionPanel   call/message a desk agent (mock)
-                 └─ <BoardroomPanel>   boardroom-panel.tsx — live project list (the projects hub)
-                      └─ <ProjectModal>  project-modal.tsx — reused as-is, portalled over the office
+  └─ <OfficeSurface>             office-surface.tsx — reads ?view=2d|3d; 2D is the default
+       ├─ <OfficeView>           office-view.tsx — dynamic(ssr:false) wrapper (keeps Phaser client-only)
+       │    └─ <OfficeViewImpl>  office-view-impl.tsx — relative stage box; runs useOfficeAgents()
+       │         ├─ <OfficeGame> office-game.tsx — mounts/destroys the Phaser game (StrictMode-safe)
+       │         │    └─ OfficeScene  scenes/office-scene.ts — tiles/sprites, zones, movement, collision, actors
+       │         └─ <OfficeHud>  office-hud.tsx — controls hint, online count, proximity prompts, panels
+       │              ├─ InteractionPanel   call/message a desk agent (mock)
+       │              └─ <BoardroomPanel>   boardroom-panel.tsx — live project list (the projects hub)
+       │                   └─ <ProjectModal>  project-modal.tsx — reused as-is, portalled over the office
+       └─ <Office3DView>         ../office3d/office-3d-view.tsx — dynamic(ssr:false) three.js engine (Phase 63)
+            └─ <Office3DViewImpl> ../office3d/office-3d-view-impl.tsx — r3f stage + click-to-lock overlay
+                 └─ <Office3DCanvas>  ../office3d/office-3d-canvas.tsx — <Canvas>, day/night lights
+                      ├─ <OfficeWorld>      ../office3d/world/office-world.tsx — flat-shaded rooms/walls/furniture
+                      └─ <FirstPersonRig>   ../office3d/first-person-rig.tsx — pointer-lock + WASD (collision in Theme B)
 ```
+
+**3D office (Phase 63).** A first-person three.js view of the *same* office, opt-in via `?view=3d`
+(2D stays the default; Theme F adds the tab strip + preference). It's a **client of the same
+contract**: the pure world builder ([`lib/office3d/world.ts`](../../lib/office3d/world.ts)) maps the
+2D [`layout.ts`](../../lib/office/layout.ts) into 3D placements, [`materials.ts`](../../lib/office3d/materials.ts)
+resolves theme-aware colours + day/night lighting from the *same* [`theme.ts`](../../lib/office/theme.ts) /
+[`daynight.ts`](../../lib/office/daynight.ts) helpers, and the scene calls the store's `reset()` on
+mount/unmount so proximity/panel flags never leak across a tab switch. All `lib/office3d/` helpers are
+`three`-free + unit-tested. Theme A is the world + a minimal walk rig; collision, head-bob, agents,
+interactions, arcade, and the tab UI land in Themes B–F.
 
 **Rooms** ([`lib/office/layout.ts`](../../lib/office/layout.ts) — Phaser-free floor plan): a 34×22 grid
 split by internal walls into **six rooms** in a 3×2 arrangement — a top band (**work** hot desks ·

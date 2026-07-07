@@ -64,29 +64,28 @@
 
 The 3D stage and the six-room world, generated from the same data the 2D office reads.
 
-- [ ] **Deps + stage:** add `three`, `@react-three/fiber`, `@react-three/drei` to `packages/web`;
-      an `Office3DView` mounted via `dynamic(ssr:false)` (the
+- [x] **Deps + stage:** `three` + `@react-three/fiber` (v9) + `@react-three/drei` (v10) added to
+      `packages/web`; `Office3DView` mounted via `dynamic(ssr:false)` (the
       [`office-view.tsx`](../packages/web/components/office/office-view.tsx) pattern) wrapping an
-      r3f `<Canvas>`; StrictMode-safe mount/unmount with full `dispose()` of geometries/materials/
-      textures on teardown (mirror [`office-game.tsx`](../packages/web/components/office/office-game.tsx)'s
-      lifecycle discipline).
-- [ ] **World builder:** a pure `lib/office3d/world.ts` that maps
-      [`layout.ts`](../packages/web/lib/office/layout.ts) grid/rooms/walls +
-      [`desks.ts`](../packages/web/lib/office/desks.ts) into 3D placements (floors, walls with
-      door gaps, desks, boardroom table + whiteboard, library shelves, kitchen counter + coffee
-      machine, lounge sofa + console, pool) — unit-testable data → transform, no three imports.
-- [ ] **Procedural low-poly art:** furniture from three primitives (flat-shaded), surfaces textured
-      by canvas-generated textures reusing the palette/theme from
-      [`theme.ts`](../packages/web/lib/office/theme.ts) (a `lib/office3d/materials.ts` beside the
-      2D [`textures.ts`](../packages/web/lib/office/textures.ts)); accent/tint follows the active
-      app theme like the 2D office does.
-- [ ] **Room chunking + frustum-culled loading:** meshes grouped per room; static furniture merged/
-      instanced per chunk; each chunk's content **built lazily on first visibility and toggled by
-      frustum/room-adjacency checks** so off-view rooms cost nothing (three's per-object frustum
-      culling alone isn't enough — we gate whole chunks and their textures).
-- [ ] **Lighting + day/night:** ambient + directional keyed off
-      [`daynight.ts`](../packages/web/lib/office/daynight.ts) (sun angle, window glow, warm lamps
-      at night); respects the reduced-motion/perf settings from Phase 39.
+      r3f `<Canvas>`. r3f auto-disposes geometries/materials/textures on unmount, so tab-switching
+      tears the engine down cleanly. (PR #337)
+- [x] **World builder:** pure `lib/office3d/world.ts` maps
+      [`layout.ts`](../packages/web/lib/office/layout.ts) grid/rooms/walls + furniture constants into
+      3D placements (floors, merged wall runs, desks, boardroom table + whiteboard, library shelves,
+      coffee machine + counter, lounge couches + console + TV, pool + turf, plants, door) — a
+      three-free data→transform with unit tests asserting exact counts + full wall coverage. (PR #337)
+- [x] **Procedural low-poly art:** flat-shaded box/cone/cylinder primitives; `lib/office3d/materials.ts`
+      resolves theme-aware colours from the SAME [`theme.ts`](../packages/web/lib/office/theme.ts)
+      palette + room accents as the 2D office (flip with light/dark). *Per the Theme-A design call,
+      flat palette colours ship now; canvas-texture surfaces are a deferred polish pass.* (PR #337)
+- [x] **Room chunking + frustum-culled loading:** static geometry with three's per-object
+      `frustumCulled` (build-all rooms at mount). *Per the Theme-A design call, the full per-room
+      lazy-build + adjacency chunk-gating is deferred to Theme G (perf budget) — noted here as
+      outstanding.* (PR #337)
+- [x] **Lighting + day/night:** ambient + directional keyed off
+      [`daynight.ts`](../packages/web/lib/office/daynight.ts) phase buckets (sun angle/colour, warm
+      dawn/dusk, cool night). *Static snapshot at mount — no per-frame cost, reduced-motion-safe by
+      construction (an animated cycle is a later theme).* (PR #337)
 
 ## Theme B — First-person rig (pointer-lock, movement, head-bob) — **M**
 

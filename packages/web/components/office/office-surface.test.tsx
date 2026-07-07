@@ -16,7 +16,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/components/office/office-view', () => ({
   OfficeView: () => <div data-testid="office-2d" />,
 }));
-vi.mock('@/components/office/office-3d-view', () => ({
+vi.mock('@/components/office3d/office-3d-view', () => ({
   Office3DView: () => <div data-testid="office-3d" />,
 }));
 

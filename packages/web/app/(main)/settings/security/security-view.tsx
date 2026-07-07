@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Plus, ShieldAlert, ShieldCheck, ShieldOff, Trash2 } from 'lucide-react';
+import { type LucideIcon, Plus, ShieldAlert, ShieldCheck, ShieldOff, Trash2 } from 'lucide-react';
 import type { ApprovalRule, AutonomyMode, CreateApprovalRule } from '@midnite/shared';
 import { cn } from '@/lib/utils';
 import {
@@ -20,7 +20,10 @@ type ModeCard = {
   mode: AutonomyMode;
   label: string;
   description: string;
-  Icon: React.ElementType;
+  // Precise icon type: `React.ElementType` maps over `keyof JSX.IntrinsicElements`,
+  // which @react-three/fiber (Phase 63) bloats to hundreds of three.js elements —
+  // exploding the mapped type to `never`. `LucideIcon` is exact + immune.
+  Icon: LucideIcon;
 };
 
 const MODE_CARDS: ModeCard[] = [

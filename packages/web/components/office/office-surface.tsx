@@ -4,7 +4,7 @@ import { Box, Building2, type LucideIcon } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback } from 'react';
 
-import { Office3DView } from '@/components/office/office-3d-view';
+import { Office3DView } from '@/components/office3d/office-3d-view';
 import { OfficeView } from '@/components/office/office-view';
 import {
   DEFAULT_SETTINGS,
