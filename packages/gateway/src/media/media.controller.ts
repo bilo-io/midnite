@@ -13,7 +13,6 @@ import {
   Res,
 } from '@nestjs/common';
 import { createReadStream, existsSync } from 'node:fs';
-import { isAbsolute, join, resolve } from 'node:path';
 import type { FastifyReply } from 'fastify';
 import {
   CreateMediaBodySchema,
@@ -24,6 +23,7 @@ import {
 } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
 import type { MidniteConfig } from '@midnite/shared';
+import { resolveMediaPath } from './lib/resolve-media-path';
 import { MediaService } from './media.service';
 
 @Controller('media')
@@ -52,16 +52,16 @@ export class MediaController {
 
   @Get(':id/file')
   serveFile(@Param('id') id: string, @Res({ passthrough: false }) reply: FastifyReply): void {
-    const filePath = this.service.getFilePath(id);
-    const row = this.service['repo'].get(id)!;
+    const { filePath, mimeType } = this.service.getFileMeta(id);
 
-    let absolutePath: string;
-    if (isAbsolute(filePath)) {
-      absolutePath = filePath;
-    } else {
-      const uploadsDir = (this.config as unknown as { gateway?: { uploadsDir?: string } }).gateway?.uploadsDir;
-      const base = uploadsDir ? resolve(uploadsDir) : resolve(process.cwd(), 'uploads');
-      absolutePath = join(base, filePath);
+    // Re-confine the stored (untrusted) path to the uploads dir — the write-time
+    // schema guard rejects traversal, but a legacy/imported row must not be able
+    // to read arbitrary files off disk (Phase 60 C).
+    const uploadsDir = (this.config as unknown as { gateway?: { uploadsDir?: string } }).gateway
+      ?.uploadsDir;
+    const absolutePath = resolveMediaPath(filePath, uploadsDir);
+    if (!absolutePath) {
+      throw new BadRequestException('invalid media path');
     }
 
     if (!existsSync(absolutePath)) {
@@ -69,7 +69,7 @@ export class MediaController {
     }
 
     const stream = createReadStream(absolutePath);
-    void reply.header('content-type', row.mimeType || 'application/octet-stream').send(stream);
+    void reply.header('content-type', mimeType || 'application/octet-stream').send(stream);
   }
 
   @Get(':id')

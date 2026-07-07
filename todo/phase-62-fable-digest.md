@@ -71,22 +71,24 @@
 
 # Section I — Primitives (contracts, storage, trigger, nodes)
 
-## Theme A — Retro contract + deterministic skeleton + storage — **M**
+## Theme A — Retro contract + deterministic skeleton + storage — **M** — ✅ DONE (PR #341, 2026-07-07)
 
 Every terminal task gets a free, factual retrospective — no LLM required.
 
-- [ ] **shared:** `TaskRetroSchema` — `{ taskId, outcome, timeline: RetroEvent[], attempts: [{ startedAt,
+- [x] **shared:** `TaskRetroSchema` — `{ taskId, outcome, timeline: RetroEvent[], attempts: [{ startedAt,
       endedAt, durationMs, outcome, retryIndex }], failures: TaskFailure[], checks?, review?: { verdict,
-      summary }, prUrl?, durations: { waitMs, workMs, totalMs }, narrative?: { whatHappened, whatTrippedIt,
-      notable[] , generatedBy: 'llm' | null }, createdAt }` + a `DigestSchema` stub (Theme D fills it).
-      Re-export from [`index.ts`](../packages/shared/src/index.ts).
-- [ ] **gateway:** a `RetroBuilder` service (in `tasks/` or a new `retro/` module) assembling the
-      **skeleton deterministically** from `task_events` + `agent_run_stats` + `task_failures` +
-      `ai_review` + check runs + PR — **zero LLM**; a `task_retros` table (one row per terminal
-      transition, `narrative` nullable) + forward-only migration; `GET /tasks/:id/retro`.
-- [ ] **Auto on terminal:** subscribe to the `TaskEventBus` (the search-module pattern —
-      `tasks.service` untouched): on `done`/`abandoned`/needs-attention escalation, build + store the
-      skeleton. Idempotent (re-terminal ⇒ upsert), fail-open (a retro failure never touches the task).
+      summary }, prUrl?, durations: { waitMs, workMs, totalMs }, narrative: { … , generatedBy: 'llm' } | null,
+      createdAt }` + `RetroResponse` + a `DigestSchema` stub (Theme D fills it). Re-exported from `index.ts`.
+- [x] **gateway:** a `RetroBuilder` service in a new `retro/` module assembling the **skeleton
+      deterministically** from `task_events` + `agent_run_stats` + `task_failures` + `ai_review` + check
+      runs + PR — **zero LLM**; a `task_retros` table (JSON blob + queryable key cols, one row per task
+      upserted, `narrative` null) + forward-only migration `0074`; `GET /tasks/:id/retro` (scope-checked,
+      404 when none built).
+- [x] **Auto on terminal:** subscribe to the `TaskEventBus` (the search-module pattern — `tasks.service`
+      untouched): on `done`/`abandoned`, build + store the skeleton. Idempotent (skips a same-outcome
+      rebuild; a genuine re-terminal upserts), fail-open (a retro failure never touches the task).
+      (Needs-attention escalation as a trigger deferred — the task isn't finished, so a retro there is
+      premature.)
 
 ## Theme B — Task-event workflow trigger — **M**
 

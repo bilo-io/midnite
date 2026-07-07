@@ -9,8 +9,40 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 The Ops fleet gauges (queue depth, slot utilization, tick latency) lived only in an in-memory `GaugeStore`, lost on every restart. Theme D persists periodic snapshots so fleet-trend history survives a restart. Deepens the existing `metrics/` seam; behaviour-preserving (sampling off = no change).
 
 - [x] **shared:** `GaugeSample` + `GaugeHistory` query/response contracts (`GAUGE_HISTORY_MAX_POINTS = 2000`); `metrics.{sampleIntervalMs (60000), rawRetentionDays (30)}` config.
-- [x] **gateway:** `gauge_samples` table (migration `0074`) + repo (`insertGaugeSample` / windowed oldest-first `gaugeHistory` with newest-kept cap + `truncated` / `pruneGaugeSamplesBefore`); `MetricsService.sampleGauges` (skips all-null) / `pruneGaugeSamples` / `getGaugeHistory`; `MetricsSamplerService` (one `unref`'d timer + reentrancy guard, fail-open, self-prune older than `rawRetentionDays`, `0`=disabled — mirrors P49's `BackupSchedulerService`); `GET /metrics/gauges/history?from&to`.
+- [x] **gateway:** `gauge_samples` table (migration `0075`) + repo (`insertGaugeSample` / windowed oldest-first `gaugeHistory` with newest-kept cap + `truncated` / `pruneGaugeSamplesBefore`); `MetricsService.sampleGauges` (skips all-null) / `pruneGaugeSamples` / `getGaugeHistory`; `MetricsSamplerService` (one `unref`'d timer + reentrancy guard, fail-open, self-prune older than `rawRetentionDays`, `0`=disabled — mirrors P49's `BackupSchedulerService`); `GET /metrics/gauges/history?from&to`.
 - [x] Tests: shared schema (nullable fields, negative-reject, round-trip); gateway real-SQLite repo (ordering/window/cap/prune) + service (skip-empty, prune-cutoff, mapping) + sampler (sample→prune, skip, fail-open, disabled-at-0) + controller. shared 591 / gateway 1642 green; `:typecheck`/`:lint` green. Gateway/shared only — Ops charts consume this in Theme G.
+
+---
+
+## 2026-07-07 — feat: first-person collision + head-bob — Phase 63 Theme B (PR #342)
+
+Makes the 3D office (Theme A) feel real: grid-AABB collision + a footstep head-bob layered onto the pointer-lock/WASD walk rig.
+
+- [x] **web (`lib/office3d/collision.ts`, pure):** circle-vs-tile-AABB collision against the 2D office's `blockedGrid()` (walls + furniture + pool), so the 3D player collides with exactly what the 2D player does. Per-axis (X then Z) resolution → smooth wall-sliding; radius 0.3 < 0.5 clears the 2-tile doorways. No physics lib.
+- [x] **web (`lib/office3d/headbob.ts`, pure):** vertical bob + a subtle roll at half frequency, amplitude scaled by walk speed + eased in/out; phase advances by walked distance (not time) so cadence tracks speed like footsteps. Zero at rest / reduced motion.
+- [x] **web (`first-person-rig.tsx`):** movement resolves through collision; bob `dy` rides eye height, `roll` on `camera.rotation.z`. Head-bob gated by `useAnimationPrefs` (OS `prefers-reduced-motion` + the Phase-39 motion setting). `PLAYER_RADIUS` + bob tuning in `constants.ts`.
+- [x] **Design calls (locked up front):** circle-vs-tile per-axis wall-slide; full `blockedGrid()` solid set (2D parity); bob + roll velocity-scaled; disabled if either OS reduced-motion or the Phase-39 setting.
+- [x] Tests: collision (open floor, wall-slide, no-clip, doorway, OOB-as-wall) + head-bob (zero at rest/reduced, amplitude-bounded, linear-in-intensity, half-frequency roll). office3d unit suite 31 green; `web:typecheck`/`web:lint` green. Pure `packages/web` — zero gateway/`shared` work. (Store keyboard-disable on panels → Theme C.)
+
+---
+
+## 2026-07-07 — feat: task retrospective contract + deterministic skeleton + storage — Phase 62 Theme A (PR #341)
+
+The spine of Fable-Digest: every terminal task gets a free, factual retrospective assembled deterministically (zero LLM) from data already persisted.
+
+- [x] **shared:** `TaskRetroSchema` (timeline / attempts / failures / checks? / review? / prUrl? / durations / nullable narrative) + `RetroResponse` + a `DigestSchema` stub.
+- [x] **gateway `retro/` module:** `RetroBuilder` assembles the skeleton from task_events + agent_run_stats + task_failures + ai_review + check runs + PR; `task_retros` table (JSON blob + key cols, one row/task upserted) + migration `0074`; `GET /tasks/:id/retro` (scope-checked, 404 absent).
+- [x] **Auto on terminal:** a `TaskEventBus` subscriber (search-module pattern; `tasks.service` untouched) builds + stores on done/abandoned — idempotent (skips a same-outcome rebuild) + fail-open. Needs-attention trigger deferred.
+- [x] Tests: shared schema (5); gateway `buildRetro` pure unit + subscriber + builder + `task_retros` repo integration + controller (28). Gate green (gateway 1654, web 880, cli 155; `ui:test` flake passes isolated).
+
+## 2026-07-07 — fix: media path-traversal + input-validation/injection audit — Phase 60 Theme C (PR #340)
+
+Closes Phase 60 Theme C (input-validation & injection sweep). One actionable HIGH found and fixed; the rest of the boundary verified or documented as follow-ups.
+
+- [x] **HIGH fixed — arbitrary file read via `GET /media/:id/file`.** The route served a client-supplied `filePath` verbatim (absolute paths *and* `../` traversal). Two-layer fix: a shared `isSafeMediaFilePath` `.refine()` on `Create`/`UpdateMediaBodySchema` (rejects absolute/`..`/NUL at write time) + a gateway `resolveMediaPath` containment guard at serve time (re-confines legacy/imported rows to the uploads dir). `serveFile` no longer reaches into the private repo (new `MediaService.getFileMeta`).
+- [x] **Verified safe:** FTS5 `MATCH` (tokenized → quoted → param-bound), Phase 49 import zip (known-key reads, no path-based extraction → no zip-slip), all raw `sql\`\`` (no `sql.raw`, every value bound), and per-route zod coverage (every JSON `@Body()` `safeParse`s; the `unknown` webhook/inbound bodies are token/HMAC-gated by design).
+- [x] **Documented as follow-ups:** SSRF (HIGH — DNS-blind `isSafeHttpUrl` + no redirect revalidation across 4 fetch sites; needs a dedicated hardening theme) and a global `ZodValidationPipe`/architecture test (LOW). Full report: [`todo/phase-60-findings/C-input-validation.md`](phase-60-findings/C-input-validation.md).
+- [x] Tests: shared 592 (media schema cases), gateway 1632 (`resolve-media-path` 7 cases + 3 `serveFile` controller cases); `gateway:typecheck`/`:lint` green.
 
 ---
 

@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "6a7c1cac-6d16-4c2a-92bc-c5f0ed1ac441",
-  "prevId": "a874cbea-042f-47f8-b07b-710e58f31744",
+  "id": "35110f0c-0196-47af-a367-e589ad5e412f",
+  "prevId": "6a7c1cac-6d16-4c2a-92bc-c5f0ed1ac441",
   "tables": {
     "agent_run_stats": {
       "name": "agent_run_stats",
@@ -866,6 +866,66 @@
         }
       },
       "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "gauge_samples": {
+      "name": "gauge_samples",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "at": {
+          "name": "at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "queue_depth": {
+          "name": "queue_depth",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "slots_used": {
+          "name": "slots_used",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "slots_total": {
+          "name": "slots_total",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "tick_latency_ms": {
+          "name": "tick_latency_ms",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "gauge_samples_at_idx": {
+          "name": "gauge_samples_at_idx",
+          "columns": [
+            "at"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},

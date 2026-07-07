@@ -1455,3 +1455,29 @@ export const chatCommands = sqliteTable(
 );
 export type ChatCommandRow = typeof chatCommands.$inferSelect;
 export type ChatCommandInsert = typeof chatCommands.$inferInsert;
+
+// Task retrospectives (Phase 62 A): one row per task, upserted on its terminal
+// transition. The full deterministic TaskRetro skeleton serializes to `retro`
+// (JSON); a few columns stay queryable for lists/filters (Themes F/G). Product
+// data — never pruned by P61 retention. Plain intra-domain task id (no FK).
+export const taskRetros = sqliteTable(
+  'task_retros',
+  {
+    id: text('id').primaryKey(),
+    /** One retro per task — the upsert key. */
+    taskId: text('task_id').notNull().unique(),
+    /** Terminal outcome the retro was built for: 'done' | 'abandoned'. */
+    outcome: text('outcome').notNull(),
+    /** 1 once an LLM narrative has been attached (Theme C/H); 0 for the skeleton. */
+    hasNarrative: integer('has_narrative').notNull().default(0),
+    /** The full serialized TaskRetro (JSON). */
+    retro: text('retro').notNull(),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => ({
+    outcomeIdx: index('task_retros_outcome_idx').on(t.outcome),
+  }),
+);
+export type TaskRetroRow = typeof taskRetros.$inferSelect;
+export type TaskRetroInsert = typeof taskRetros.$inferInsert;

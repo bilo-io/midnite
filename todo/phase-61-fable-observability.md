@@ -132,7 +132,7 @@ Trends, not just the current needle.
       stays bounded before Theme E's rollups/retention.
 - [x] `GET /metrics/gauges/history?from&to` returning the sampled series (oldest-first) for the Ops
       charts — bounded at `GAUGE_HISTORY_MAX_POINTS` (newest kept + `truncated` flag); the live
-      snapshot endpoint is unchanged. Contract + config in `shared`; migration `0074`.
+      snapshot endpoint is unchanged. Contract + config in `shared`; migration `0075`.
 
 ---
 

@@ -70,10 +70,13 @@ export class MediaService {
     throw new HttpException('generate not yet implemented', 501);
   }
 
-  getFilePath(id: string): string {
+  /** The on-disk file metadata for serving `GET /media/:id/file` — the stored
+   *  (untrusted) relative path plus its declared mime type. The controller
+   *  re-confines the path to the uploads dir before reading it. */
+  getFileMeta(id: string): { filePath: string; mimeType: string } {
     const row = this.repo.get(id);
     if (!row) throw new NotFoundException(`media ${id} not found`);
     if (!row.filePath) throw new NotFoundException(`media ${id} has no file`);
-    return row.filePath;
+    return { filePath: row.filePath, mimeType: row.mimeType };
   }
 }
