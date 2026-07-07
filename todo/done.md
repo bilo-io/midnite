@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-07 — fix: atomic task + council create paths — Phase 60 E follow-up (PR #359)
+
+Acts on the HIGH transaction-atomicity findings (TX-1/2/3) from the Phase 60 E audit (PR #357).
+
+- [x] Domain services now own a transaction boundary via a repo `transaction()` passthrough; repo write methods (`insertTask`/`insertEvent`/`insertAttachment`/`addDependency`/`setTags`/`insertCouncil`/`insertMember`) take an optional `DbOrTx` (new `Tx`/`DbOrTx` types in `db.module`). `createFromPrompt`, `createTasksFromBreakdown`, `createCouncil` are now all-or-nothing — a mid-write throw rolls back (no orphaned edges / missing `task.created` / half-wired graph / half-seeded council).
+- [x] `createBulk` keeps Phase 16 per-line partial-success (each line now individually atomic). **TX-4 (projects+sources) intentionally left** — sources are best-effort by design (`addSourceRow` catches; async metadata fetch precludes a sync txn).
+- [x] Real-SQLite rollback regression specs (`tasks.atomicity.spec` ×4, `councils.atomicity.spec` ×2); fakes got a `transaction()` override. Gateway gate green (1759).
+
 ## 2026-07-07 — feat: client presence store + sampler + guest identity — Phase 64 Theme B (PR #358)
 
 The engine-agnostic client layer for office presence — one state slice, two future renderers (2D Theme C, 3D Theme D). Pure `packages/web`; consumes the Theme A contract, no gateway/shared changes.
