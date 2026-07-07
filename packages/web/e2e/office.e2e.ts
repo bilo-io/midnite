@@ -25,4 +25,16 @@ test.describe('Office', () => {
     // tick to dodge StrictMode double-mount, hence the generous timeout).
     await expect(page.locator('canvas')).toBeVisible({ timeout: 15_000 });
   });
+
+  // Phase 63 Theme A — the 3D office behind the ?view=3d escape hatch. The r3f
+  // scene mounts its own WebGL <canvas> + a click-to-lock overlay; the 2D office
+  // stays the untouched default (no param, asserted above).
+  test('?view=3d mounts the three.js world', async ({ page }) => {
+    await page.goto('/office?view=3d');
+
+    await expect(page.getByRole('heading', { name: 'Office', exact: true })).toBeVisible();
+    // The pointer-lock hint is the 3D view's tell (the 2D HUD says "to interact").
+    await expect(page.getByText(/click to look around/i)).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('canvas')).toBeVisible({ timeout: 15_000 });
+  });
 });
