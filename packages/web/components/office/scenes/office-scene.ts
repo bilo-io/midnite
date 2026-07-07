@@ -36,6 +36,8 @@ import {
   type TilePos,
   WALL_ART,
 } from '@/lib/office/layout';
+import { samplePlayer, sceneFacing } from '@/lib/presence-bridge';
+import { PeerLayer } from './peer-layer';
 import { generateDeskLayout, type DeskLayout } from '@/lib/office/desks';
 import { buildFloorTileData } from '@/lib/office/map-data';
 import {
@@ -98,6 +100,8 @@ const MINIMAP_PAD = 6;
 const MINIMAP_MARGIN = 12;
 /** Attention dot colour on the minimap (red) — overrides the status tint. */
 const MINIMAP_ATTENTION = 0xf87171;
+/** Remote-teammate dot colour on the minimap (cyan) — Phase 64 C. */
+const MINIMAP_PEER = 0x22d3ee;
 /** Hot-desk count before the live pool capacity arrives (config default; A3). */
 const DEFAULT_DESK_CAPACITY = 16;
 /** How close (px) the player must be to a desk/board to "reach" it. */
@@ -249,6 +253,8 @@ class OfficeScene extends Phaser.Scene {
   /** True between create() and teardown; guards late store/theme callbacks. */
   private alive = false;
   private unsub?: () => void;
+  /** Remote-teammate layer (Phase 64 C) — empty/no-op when nobody's connected. */
+  private peerLayer?: PeerLayer;
 
   constructor() {
     super('office');
@@ -331,6 +337,7 @@ class OfficeScene extends Phaser.Scene {
     this.input.on('pointermove', this.onPointerMove, this);
 
     this.alive = true;
+    this.peerLayer = new PeerLayer(this, 'office');
 
     // Animate the lounging agents' "z / zz / zzz" bubble. Auto-removed on shutdown.
     this.time.addEvent({ delay: 450, loop: true, callback: this.tickIdleBubbles, callbackScope: this });
@@ -371,16 +378,22 @@ class OfficeScene extends Phaser.Scene {
       this.alive = false;
       this.unsub?.();
       this.unsub = undefined;
+      this.peerLayer?.destroy();
+      this.peerLayer = undefined;
       useOfficeStore.getState().reset();
     };
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, teardown);
     this.events.once(Phaser.Scenes.Events.DESTROY, teardown);
   }
 
-  override update() {
+  override update(_time: number, delta: number) {
     if (!this.alive) return;
     this.movePlayer();
     this.playerShadow.setPosition(this.player.x, this.player.y + TILE * 0.42);
+
+    // Publish our position to presence (throttled in the hook) + render peers.
+    samplePlayer(this.player.x, this.player.y, sceneFacing(this.facing, this.player.flipX), 'office');
+    this.peerLayer?.update(delta);
 
     // Gentle pool shimmer (G2) + keep each actor's chrome glued to its sprite; a
     // swimmer's wake ripple trails just below it.
@@ -564,6 +577,12 @@ class OfficeScene extends Phaser.Scene {
           ? STATUS_TINT[ag.status]
           : 0x94a3b8;
       g.fillStyle(color, 1);
+      g.fillCircle(p.x, p.y, 2);
+    }
+    // Remote teammates (Phase 64 C) — a distinct cyan dot, visible across rooms.
+    for (const peer of this.peerLayer?.renderedPeers() ?? []) {
+      const p = worldToMinimap(peer.x, peer.y, s, MINIMAP_PAD);
+      g.fillStyle(MINIMAP_PEER, 1);
       g.fillCircle(p.x, p.y, 2);
     }
     // Player dot on top — brighter + ringed so it stands out.

@@ -31,7 +31,12 @@ const MOVE_KEEPALIVE_MS = 7_000;
  * The move source is the scene (Theme C wires the Phaser sampler); this hook owns
  * the transport, throttle, and identity.
  */
-export function usePresence(enabled = true): {
+export function usePresence(
+  enabled = true,
+  /** Live display name; defaults to the persisted guest identity. Changing it
+   *  re-sends the hello so a rename propagates without a reconnect. */
+  displayName?: string,
+): {
   sendMove: (x: number, y: number, facing: PresenceFacing, scene: PresenceScene) => void;
   sendEmote: (emoji: string) => void;
 } {
@@ -39,14 +44,15 @@ export function usePresence(enabled = true): {
   const tint = useOfficeStore((s) => s.playerTint);
   const ghost = usePresenceStore((s) => s.ghost);
 
-  const identity = useMemo(() => loadGuestIdentity(), []);
+  const fallbackName = useMemo(() => loadGuestIdentity().name, []);
+  const name = displayName ?? fallbackName;
   const sendRef = useRef<((msg: unknown) => void) | null>(null);
   const lastMove = useRef<MoveSample | null>(null);
   const lastSentAt = useRef(0);
 
   const helloPayload = useCallback(
-    () => ({ type: 'presence.hello' as const, name: identity.name, variant, tint, ghost }),
-    [identity.name, variant, tint, ghost],
+    () => ({ type: 'presence.hello' as const, name, variant, tint, ghost }),
+    [name, variant, tint, ghost],
   );
 
   const channel = useMemo<ReliableChannel<ServerPresenceMessage>>(
