@@ -1,7 +1,9 @@
 import { BadRequestException, Controller, Get, Inject, Query } from '@nestjs/common';
 import {
+  CycleTimeQuerySchema,
   GaugeHistoryQuerySchema,
   OpsQuerySchema,
+  type CycleTimeResponse,
   type GaugeHistoryResponse,
   type OpsSummary,
 } from '@midnite/shared';
@@ -27,5 +29,14 @@ export class MetricsController {
     const parsed = GaugeHistoryQuerySchema.safeParse(query);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
     return this.service.getGaugeHistory(parsed.data);
+  }
+
+  // GET /metrics/cycle-time?groupBy=none|repo|project|priority&windowDays=<n>
+  // Lifecycle cycle-time (wait/work/end-to-end p50/p90) from the task-event stream (Phase 61 C).
+  @Get('cycle-time')
+  cycleTime(@Query() query: unknown): CycleTimeResponse {
+    const parsed = CycleTimeQuerySchema.safeParse(query);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    return this.service.getCycleTime(parsed.data);
   }
 }

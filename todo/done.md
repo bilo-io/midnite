@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-07 — feat: cycle-time as a first-class metric — Phase 61 Theme C (PR #354)
+
+Task lifecycle time (wait vs. work vs. end-to-end) is now a queryable metric, derived from the existing `status.changed` event stream with **no schema change** (the phase doc's measure-first rule). Gateway/shared only; Ops charts consume it in Theme G.
+
+- [x] **shared:** `CycleTimeQuery` (`groupBy` none|repo|project|priority · `windowDays` default 30) + `CycleTimeResponse` — per-group `wait`/`work`/`endToEnd` stats (`p50Ms`/`p90Ms`/`count`, nulls when a task never entered `wip`) + `retryOverheadMsTotal` + `tasksWithRetries`.
+- [x] **gateway:** `metrics.repository.cycleRows(from,to)` — one grouped query over `tasks ⋈ task_events` (`firstWipAt = MIN(at | wip)`, `doneAt = MAX(at | done)` via `json_extract`), windowed by final `done`; `retryOverheadByTask()` sums `agent_run_stats` durations for `retryCount > 0` attempts. `metrics/lib/cycle-time.ts` pure segment derivation + nearest-rank percentiles. `MetricsService.getCycleTime` groups/aggregates + memoizes per terminal task (`id@doneAt`). `GET /metrics/cycle-time`.
+- [x] **Decide-and-document:** event reconstruction is a single grouped query (backed by `task_events_task_at_idx`) — no `wipStartedAt`/`doneAt` columns added.
+- [x] Tests: shared schema (defaults/coerce/reject/round-trip); gateway real-SQLite repo (first-wip/final-done, bounce-back, window, null-wip, non-done exclusion, retry sum/exclude); service (fleet + grouped, `(none)` bucket, null segments, retry fold, memoization, empty); lib percentiles; controller delegate/coerce/400. 72 metrics tests · `:typecheck` · `:lint` green.
 ## 2026-07-07 — chore: ws DoS bump + dependency/supply-chain audit — Phase 60 Theme D (PR #355)
 
 Closes Phase 60 Theme D. `pnpm audit`: 58 advisories, almost all transitive and many against versions newer than installed.

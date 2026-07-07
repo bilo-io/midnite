@@ -106,19 +106,20 @@ Which work cost what.
 
 # Section II — Lifecycle & fleet metrics
 
-## Theme C — Cycle-time as a first-class metric — **M**
+## Theme C — Cycle-time as a first-class metric — **M** — ✅ DONE (PR #354, 2026-07-07)
 
 How long work actually takes — waiting vs. working.
 
-- [ ] **Derive from `task_events`** (no schema change first): a `CycleTimeService` computing per-task
-      `todo→wip` (wait), `wip→done` (work, incl. retries/waiting detours), and end-to-end
-      `created→done`, using the existing `status.changed` events; memoize per terminal task.
-- [ ] **Aggregates:** p50/p90 cycle-time by repo/project/priority over a window; retry overhead
-      (time spent in retry loops, from `agent_run_stats` attempts per task); expose via
-      `GET /metrics/cycle-time` on the existing metrics controller.
-- [ ] **Decide-and-document:** if event-reconstruction proves too slow at P57 scale, add
-      `wipStartedAt`/`doneAt` columns as a follow-up finding — **measure first** (use the P57 bench
-      harness), don't pre-add columns.
+- [x] **Derive from `task_events`** (no schema change): [`CycleTimeService.getCycleTime`](../packages/gateway/src/metrics/metrics.service.ts)
+      computes per-task `wait` (created→**first** `wip`), `work` (first `wip`→**final** `done`, folding
+      in retry/waiting detours), and end-to-end `created→done` from the `status.changed` events;
+      derivation is memoized per terminal task (`id@doneAt` key, self-invalidating on re-completion).
+- [x] **Aggregates:** nearest-rank p50/p90 by repo/project/priority over a window; retry overhead
+      (summed `agent_run_stats` durations for `retryCount > 0` attempts, + `tasksWithRetries`);
+      exposed via `GET /metrics/cycle-time` on the existing metrics controller.
+- [x] **Decide-and-document:** event-reconstruction is a **single grouped query** (`cycleRows`,
+      `MIN`/`MAX` over the event stream, backed by `task_events_task_at_idx`) — fast enough;
+      **no `wipStartedAt`/`doneAt` columns added** (measured-first, as required).
 
 ## Theme D — Gauge history that survives restarts — **S-M** — ✅ DONE (PR #343, 2026-07-07)
 

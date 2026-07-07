@@ -1,10 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, count, desc, eq, gte, isNotNull, lt, lte, sql } from 'drizzle-orm';
+import { and, count, desc, eq, gt, gte, isNotNull, lt, lte, sql } from 'drizzle-orm';
 
 import { DB_TOKEN, type MidniteDb } from '../db/db.module';
 import {
   agentRunStats,
   gaugeSamples,
+  taskEvents,
+  tasks,
   type AgentRunStatsInsert,
   type GaugeSampleInsert,
   type GaugeSampleRow,
@@ -175,4 +177,96 @@ export class MetricsRepository {
     const res = this.db.delete(gaugeSamples).where(lt(gaugeSamples.at, before)).run();
     return res.changes;
   }
+
+  // ── Cycle time (Phase 61 C) ──────────────────────────────────────────────────
+
+  /**
+   * Per completed task, the timestamps needed to reconstruct its lifecycle
+   * segments, for tasks whose **final `done`** falls in `[from, to]`. Reads the
+   * raw `status.changed` event stream (no new columns — Phase 61 C measures
+   * first): `firstWipAt = MIN(at)` over `wip` events, `doneAt = MAX(at)` over
+   * `done` events, both extracted from the event `data` JSON. A currently-`done`
+   * task with no `done` event (e.g. seeded done) yields a null `doneAt` and is
+   * dropped by the window predicate — it has no measurable cycle.
+   */
+  cycleRows(from: string, to: string): DoneTaskCycleRow[] {
+    const statusExpr = sql`json_extract(${taskEvents.data}, '$.status')`;
+    const firstWipAt = sql<string | null>`MIN(CASE WHEN ${statusExpr} = 'wip' THEN ${taskEvents.at} END)`;
+    const doneAt = sql`MAX(CASE WHEN ${statusExpr} = 'done' THEN ${taskEvents.at} END)`;
+
+    const rows = this.db
+      .select({
+        id: tasks.id,
+        repo: tasks.repo,
+        projectId: tasks.projectId,
+        priority: tasks.priority,
+        createdAt: tasks.createdAt,
+        firstWipAt,
+        doneAt: doneAt.as('done_at'),
+      })
+      .from(tasks)
+      .innerJoin(
+        taskEvents,
+        and(eq(taskEvents.taskId, tasks.id), eq(taskEvents.kind, 'status.changed')),
+      )
+      .where(eq(tasks.status, 'done'))
+      .groupBy(tasks.id)
+      .having(sql`${doneAt} >= ${from} AND ${doneAt} <= ${to}`)
+      .all();
+
+    return rows.map((r) => ({
+      id: r.id,
+      repo: r.repo,
+      projectId: r.projectId,
+      priority: r.priority,
+      createdAt: r.createdAt,
+      firstWipAt: r.firstWipAt,
+      // Non-null by the HAVING predicate; assert for the type.
+      doneAt: r.doneAt as string,
+    }));
+  }
+
+  /**
+   * Retry overhead per task: summed `duration_ms` and attempt count over
+   * `agent_run_stats` rows with `retry_count > 0` (i.e. re-spawned attempts, not
+   * the first run) and a recorded duration. Not windowed — a task's retries may
+   * predate its `done`; the service picks the tasks it cares about.
+   */
+  retryOverheadByTask(): Map<string, RetryOverhead> {
+    const rows = this.db
+      .select({
+        taskId: agentRunStats.taskId,
+        totalMs: sql<number>`COALESCE(SUM(${agentRunStats.durationMs}), 0)`,
+        attempts: count(),
+      })
+      .from(agentRunStats)
+      .where(and(gt(agentRunStats.retryCount, 0), isNotNull(agentRunStats.durationMs)))
+      .groupBy(agentRunStats.taskId)
+      .all();
+
+    const map = new Map<string, RetryOverhead>();
+    for (const r of rows) {
+      map.set(r.taskId, { retryOverheadMs: r.totalMs, retryAttempts: r.attempts });
+    }
+    return map;
+  }
+}
+
+/** Raw per-task timestamps for cycle-time reconstruction (Phase 61 C). */
+export interface DoneTaskCycleRow {
+  id: string;
+  repo: string | null;
+  projectId: string | null;
+  priority: number;
+  createdAt: string;
+  /** First entry into `wip`; null when the task went straight to `done`. */
+  firstWipAt: string | null;
+  /** Final `done` timestamp (guaranteed non-null within the window). */
+  doneAt: string;
+}
+
+/** Retry cost for one task, from `agent_run_stats` (Phase 61 C). */
+export interface RetryOverhead {
+  retryOverheadMs: number;
+  retryAttempts: number;
 }

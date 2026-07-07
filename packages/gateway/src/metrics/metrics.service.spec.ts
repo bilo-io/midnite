@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { MetricsService } from './metrics.service';
-import type { MetricsRepository } from './metrics.repository';
+import type { DoneTaskCycleRow, MetricsRepository, RetryOverhead } from './metrics.repository';
 
 function fakeRepo(): MetricsRepository {
   return {
@@ -12,7 +12,23 @@ function fakeRepo(): MetricsRepository {
     insertGaugeSample: vi.fn(),
     gaugeHistory: vi.fn(() => ({ samples: [], truncated: false })),
     pruneGaugeSamplesBefore: vi.fn(() => 0),
+    cycleRows: vi.fn((): DoneTaskCycleRow[] => []),
+    retryOverheadByTask: vi.fn((): Map<string, RetryOverhead> => new Map()),
   } as unknown as MetricsRepository;
+}
+
+/** A completed task, one hour wait + two hours work by default. */
+function cycleRow(id: string, overrides: Partial<DoneTaskCycleRow> = {}): DoneTaskCycleRow {
+  return {
+    id,
+    repo: null,
+    projectId: null,
+    priority: 1,
+    createdAt: '2026-06-10T00:00:00.000Z',
+    firstWipAt: '2026-06-10T01:00:00.000Z',
+    doneAt: '2026-06-10T03:00:00.000Z',
+    ...overrides,
+  };
 }
 
 function makeService(repo?: MetricsRepository): MetricsService {
@@ -127,5 +143,91 @@ describe('MetricsService', () => {
     const res = svc.getGaugeHistory({});
     expect(res.truncated).toBe(true);
     expect(res.samples[0]).toEqual({ at: 't', queueDepth: 1, slotsUsed: 0, slotsTotal: 4, tickLatencyMs: 5 });
+  });
+
+  describe('getCycleTime (Phase 61 C)', () => {
+    it('computes wait/work/end-to-end segments for the fleet (groupBy none)', () => {
+      const repo = {
+        ...fakeRepo(),
+        cycleRows: vi.fn(() => [cycleRow('t1')]), // 1h wait, 2h work, 3h e2e
+      } as unknown as MetricsRepository;
+      const svc = makeService(repo);
+      const res = svc.getCycleTime({ groupBy: 'none', windowDays: 30 });
+      expect(res.groupBy).toBe('none');
+      expect(res.groups).toHaveLength(1);
+      const g = res.groups[0]!;
+      expect(g.key).toBe('all');
+      expect(g.taskCount).toBe(1);
+      expect(g.wait).toEqual({ p50Ms: 3_600_000, p90Ms: 3_600_000, count: 1 });
+      expect(g.work).toEqual({ p50Ms: 7_200_000, p90Ms: 7_200_000, count: 1 });
+      expect(g.endToEnd.p50Ms).toBe(10_800_000);
+    });
+
+    it('splits into groups and sorts by taskCount desc', () => {
+      const repo = {
+        ...fakeRepo(),
+        cycleRows: vi.fn(() => [
+          cycleRow('a1', { repo: 'acme/api' }),
+          cycleRow('a2', { repo: 'acme/api' }),
+          cycleRow('w1', { repo: 'acme/web' }),
+        ]),
+      } as unknown as MetricsRepository;
+      const svc = makeService(repo);
+      const res = svc.getCycleTime({ groupBy: 'repo', windowDays: 30 });
+      expect(res.groups.map((g) => [g.key, g.taskCount])).toEqual([
+        ['acme/api', 2],
+        ['acme/web', 1],
+      ]);
+    });
+
+    it('buckets a null repo/project under (none)', () => {
+      const repo = {
+        ...fakeRepo(),
+        cycleRows: vi.fn(() => [cycleRow('t1', { repo: null })]),
+      } as unknown as MetricsRepository;
+      const svc = makeService(repo);
+      expect(svc.getCycleTime({ groupBy: 'repo', windowDays: 30 }).groups[0]!.key).toBe('(none)');
+    });
+
+    it('reports nulls for wait/work when a task never entered wip, but still an end-to-end', () => {
+      const repo = {
+        ...fakeRepo(),
+        cycleRows: vi.fn(() => [cycleRow('t1', { firstWipAt: null })]),
+      } as unknown as MetricsRepository;
+      const svc = makeService(repo);
+      const g = svc.getCycleTime({ groupBy: 'none', windowDays: 30 }).groups[0]!;
+      expect(g.wait).toEqual({ p50Ms: null, p90Ms: null, count: 0 });
+      expect(g.work).toEqual({ p50Ms: null, p90Ms: null, count: 0 });
+      expect(g.endToEnd.count).toBe(1);
+    });
+
+    it('folds retry overhead in from agent_run_stats', () => {
+      const repo = {
+        ...fakeRepo(),
+        cycleRows: vi.fn(() => [cycleRow('t1'), cycleRow('t2')]),
+        retryOverheadByTask: vi.fn(
+          () => new Map([['t1', { retryOverheadMs: 50_000, retryAttempts: 2 }]]),
+        ),
+      } as unknown as MetricsRepository;
+      const svc = makeService(repo);
+      const g = svc.getCycleTime({ groupBy: 'none', windowDays: 30 }).groups[0]!;
+      expect(g.retryOverheadMsTotal).toBe(50_000);
+      expect(g.tasksWithRetries).toBe(1);
+    });
+
+    it('memoizes per-terminal-task derivation across calls (repo hit, cache serves the math)', () => {
+      const cycleRows = vi.fn(() => [cycleRow('t1')]);
+      const repo = { ...fakeRepo(), cycleRows } as unknown as MetricsRepository;
+      const svc = makeService(repo);
+      const first = svc.getCycleTime({ groupBy: 'none', windowDays: 30 }).groups[0]!.endToEnd.p50Ms;
+      const second = svc.getCycleTime({ groupBy: 'none', windowDays: 30 }).groups[0]!.endToEnd.p50Ms;
+      expect(first).toBe(second);
+      expect(cycleRows).toHaveBeenCalledTimes(2); // still queries; derivation is what's cached
+    });
+
+    it('returns no groups when the window is empty', () => {
+      const svc = makeService();
+      expect(svc.getCycleTime({ groupBy: 'none', windowDays: 30 }).groups).toEqual([]);
+    });
   });
 });

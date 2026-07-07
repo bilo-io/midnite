@@ -2,6 +2,10 @@ import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import {
   GAUGE_HISTORY_MAX_POINTS,
+  type CycleTimeGroup,
+  type CycleTimeGroupBy,
+  type CycleTimeQuery,
+  type CycleTimeResponse,
   type GaugeHistoryQuery,
   type GaugeHistoryResponse,
   type MetricsGauges,
@@ -9,8 +13,22 @@ import {
   type OpsQuery,
 } from '@midnite/shared';
 
-import { MetricsRepository } from './metrics.repository';
+import { MetricsRepository, type DoneTaskCycleRow } from './metrics.repository';
 import { GaugeStore } from './gauge-store';
+import { deriveCycle, statOf, type TaskCycle } from './lib/cycle-time';
+
+const DAY_MS = 24 * 60 * 60 * 1_000;
+
+/** Mutable per-group accumulator while aggregating cycle-time rows. */
+interface CycleAcc {
+  key: string;
+  taskCount: number;
+  wait: number[];
+  work: number[];
+  endToEnd: number[];
+  retryOverheadMsTotal: number;
+  tasksWithRetries: number;
+}
 
 /** Default window: last 7 days when no from/to is supplied. */
 const DEFAULT_WINDOW_DAYS = 7;
@@ -24,6 +42,14 @@ function defaultWindow(): { from: string; to: string } {
 @Injectable()
 export class MetricsService {
   private readonly gauges = new GaugeStore();
+
+  /**
+   * Memoized per-terminal-task segments (Phase 61 C). A completed task's segments
+   * are immutable, so we cache them keyed by `id@doneAt` — the `doneAt` suffix
+   * self-invalidates if a task is re-opened and completed again (a fresh `done`
+   * timestamp ⇒ a fresh entry) rather than serving stale segments.
+   */
+  private readonly cycleCache = new Map<string, TaskCycle>();
 
   constructor(private readonly repo: MetricsRepository) {}
 
@@ -131,5 +157,90 @@ export class MetricsService {
       })),
       truncated,
     };
+  }
+
+  // ── Cycle time (Phase 61 C) ──────────────────────────────────────────────────
+
+  /**
+   * Lifecycle cycle-time (wait / work / end-to-end) over the trailing window,
+   * derived from the `status.changed` event stream and optionally grouped by
+   * repo / project / priority. p50/p90 are nearest-rank. Per-task segments are
+   * memoized (terminal tasks are immutable), and retry overhead is folded in from
+   * `agent_run_stats`.
+   */
+  getCycleTime(query: CycleTimeQuery): CycleTimeResponse {
+    const to = new Date().toISOString();
+    const from = new Date(Date.now() - query.windowDays * DAY_MS).toISOString();
+
+    const rows = this.repo.cycleRows(from, to);
+    const retry = this.repo.retryOverheadByTask();
+
+    const accs = new Map<string, CycleAcc>();
+    for (const row of rows) {
+      const cycle = this.cycleFor(row);
+      const key = groupKey(row, query.groupBy);
+      let acc = accs.get(key);
+      if (!acc) {
+        acc = {
+          key,
+          taskCount: 0,
+          wait: [],
+          work: [],
+          endToEnd: [],
+          retryOverheadMsTotal: 0,
+          tasksWithRetries: 0,
+        };
+        accs.set(key, acc);
+      }
+      acc.taskCount++;
+      if (cycle.waitMs !== null) acc.wait.push(cycle.waitMs);
+      if (cycle.workMs !== null) acc.work.push(cycle.workMs);
+      acc.endToEnd.push(cycle.endToEndMs);
+      const r = retry.get(row.id);
+      if (r && r.retryAttempts > 0) {
+        acc.retryOverheadMsTotal += r.retryOverheadMs;
+        acc.tasksWithRetries++;
+      }
+    }
+
+    const groups: CycleTimeGroup[] = [...accs.values()]
+      .map((a) => ({
+        key: a.key,
+        taskCount: a.taskCount,
+        wait: statOf(a.wait),
+        work: statOf(a.work),
+        endToEnd: statOf(a.endToEnd),
+        retryOverheadMsTotal: a.retryOverheadMsTotal,
+        tasksWithRetries: a.tasksWithRetries,
+      }))
+      .sort((x, y) => y.taskCount - x.taskCount || x.key.localeCompare(y.key));
+
+    return { from, to, groupBy: query.groupBy, groups };
+  }
+
+  /** Cached segment derivation for one completed task (see `cycleCache`). */
+  private cycleFor(row: DoneTaskCycleRow): TaskCycle {
+    const cacheKey = `${row.id}@${row.doneAt}`;
+    let cycle = this.cycleCache.get(cacheKey);
+    if (!cycle) {
+      cycle = deriveCycle(row.createdAt, row.firstWipAt, row.doneAt);
+      this.cycleCache.set(cacheKey, cycle);
+    }
+    return cycle;
+  }
+}
+
+/** Bucket a task into its group. `none` collapses everything into `all`. */
+function groupKey(row: DoneTaskCycleRow, groupBy: CycleTimeGroupBy): string {
+  switch (groupBy) {
+    case 'repo':
+      return row.repo ?? '(none)';
+    case 'project':
+      return row.projectId ?? '(none)';
+    case 'priority':
+      return String(row.priority);
+    case 'none':
+    default:
+      return 'all';
   }
 }

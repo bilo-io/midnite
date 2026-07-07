@@ -31,7 +31,7 @@
 | [64 · Office presence](phase-64-office-presence.md) | ◻ TODO | 0/30 | `░░░░░░░░░░` | 0% | — | A B C D E F G H |
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
 | [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 6/33 | `██░░░░░░░░` | 18% | — | C D E F G H |
-| [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 2/36 | `█░░░░░░░░░` | 6% | C | A B E F G H I |
+| [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 5/36 | `█░░░░░░░░░` | 14% | — | A B E F G H I |
 | [60 · Fable-Analysis](phase-60-fable-analysis.md) | 🔄 WIP | 16/63 | `███░░░░░░░` | 25% | — | E F G H I J K L M |
 | [59 · Chat to board](phase-59-chat-to-board.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
@@ -151,7 +151,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 *Deepen the existing metrics/usage seam: real session tokens (honestly labeled), cost attribution, cycle time, rollups + retention, live Ops. Fable series #2.*
 - ◻ **A** — Real session-token harvesting (transcript/Stop-hook probe, replace the hash-seeded placeholder)
 - ◻ **B** — Cost attribution: session_usage table + groupBy task/repo/project + real budget numbers
-- ◻ **C** — Cycle-time as a first-class metric (todo→wip→done from task_events)
+- ✅ **C** — Cycle-time as a first-class metric (todo→wip→done from task_events; GET /metrics/cycle-time) (PR #354)
 - ✅ **D** — Gauge history that survives restarts: sampler + gauge_samples + GET /metrics/gauges/history (PR #343)
 - ◻ **E** — Rollups + retention (hourly/daily rollups; prune metrics raws only, never task_events)
 - ◻ **F** — Live metrics channel on the P56 reliable WS (poll fallback)
@@ -164,7 +164,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ◻ **A** — Auth, transport & headers audit (rate-limit posture, CORS, token lifecycle)
 - ✅ **B** — Secrets, signatures & crypto paths audit (PR #346; workflow `$env` master-secret leak fixed, findings logged)
 - ◻ **C** — Input validation & injection sweep (zod coverage, FTS/path-traversal/SSRF/zip-slip)
-- ◻ **D** — Dependency & supply-chain audit (+ safe bumps)
+- ✅ **D** — Dependency & supply-chain audit (+ safe bumps): ws 8.18→8.21 DoS bump, rest triaged (PR #355)
 - ◻ **E** — State-machine, scheduler & concurrency correctness
 - ◻ **F** — Data integrity & boundary-condition bugs
 - ◻ **G** — Error handling & failure-path correctness
