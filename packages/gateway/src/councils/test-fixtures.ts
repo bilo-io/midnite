@@ -25,6 +25,12 @@ export class InMemoryCouncilsRepo extends CouncilsRepository {
     super({} as never);
   }
 
+  // The service owns the txn boundary via repo.transaction(); the fake just runs
+  // the callback (its write methods mutate the in-memory arrays, ignoring tx).
+  override transaction<T>(fn: (tx: never) => T): T {
+    return fn(undefined as never);
+  }
+
   override listCouncils(): CouncilRow[] {
     return [...this.councils].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }

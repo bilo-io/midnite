@@ -19,7 +19,7 @@ import {
   type WaitReason,
 } from '@midnite/shared';
 import { teamScopeFilter } from '../db/team-scope';
-import { DB_TOKEN, type MidniteDb } from '../db/db.module';
+import { DB_TOKEN, type DbOrTx, type MidniteDb, type Tx } from '../db/db.module';
 import {
   prStatus,
   roadmapMilestones,
@@ -168,16 +168,23 @@ function parseAiReview(
 export class TasksRepository {
   constructor(@Inject(DB_TOKEN) private readonly db: MidniteDb) {}
 
-  insertTask(row: TaskInsert): TaskRow {
-    return this.db.insert(tasks).values(row).returning().get();
+  /** Run `fn` inside a DB transaction — the service's seam for owning an atomic
+   *  multi-write boundary (Phase 60 E). Repo write methods take the `tx` so a
+   *  mid-write throw rolls the whole sequence back. */
+  transaction<T>(fn: (tx: Tx) => T): T {
+    return this.db.transaction(fn);
   }
 
-  insertEvent(row: TaskEventInsert): void {
-    this.db.insert(taskEvents).values(row).run();
+  insertTask(row: TaskInsert, db: DbOrTx = this.db): TaskRow {
+    return db.insert(tasks).values(row).returning().get();
   }
 
-  insertAttachment(row: TaskAttachmentInsert): void {
-    this.db.insert(taskAttachments).values(row).run();
+  insertEvent(row: TaskEventInsert, db: DbOrTx = this.db): void {
+    db.insert(taskEvents).values(row).run();
+  }
+
+  insertAttachment(row: TaskAttachmentInsert, db: DbOrTx = this.db): void {
+    db.insert(taskAttachments).values(row).run();
   }
 
   updateStatus(id: string, status: Status, updatedAt: string): TaskRow | undefined {
@@ -319,8 +326,8 @@ export class TasksRepository {
     return rows.map((r) => r.id);
   }
 
-  setTags(id: string, tags: string[], updatedAt: string): TaskRow | undefined {
-    return this.db
+  setTags(id: string, tags: string[], updatedAt: string, db: DbOrTx = this.db): TaskRow | undefined {
+    return db
       .update(tasks)
       .set({ tags: JSON.stringify(tags), updatedAt })
       .where(eq(tasks.id, id))
@@ -528,8 +535,8 @@ export class TasksRepository {
   // ---- dependency edges (Phase 27) ----
 
   /** Add a blocker edge `taskId → dependsOnTaskId`; a duplicate pair is a no-op. */
-  addDependency(taskId: string, dependsOnTaskId: string, createdAt: string): void {
-    this.db
+  addDependency(taskId: string, dependsOnTaskId: string, createdAt: string, db: DbOrTx = this.db): void {
+    db
       .insert(taskDependencies)
       .values({ taskId, dependsOnTaskId, createdAt })
       .onConflictDoNothing()

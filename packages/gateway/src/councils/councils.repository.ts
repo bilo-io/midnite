@@ -11,7 +11,7 @@ import type {
   CouncilRunStatus,
   CouncilSynthesisEntry,
 } from '@midnite/shared';
-import { DB_TOKEN, type MidniteDb } from '../db/db.module';
+import { DB_TOKEN, type DbOrTx, type MidniteDb, type Tx } from '../db/db.module';
 import {
   councilMembers,
   councilRunMembers,
@@ -31,6 +31,12 @@ import {
 export class CouncilsRepository {
   constructor(@Inject(DB_TOKEN) private readonly db: MidniteDb) {}
 
+  /** Run `fn` inside a DB transaction (Phase 60 E) — the service owns the boundary
+   *  for atomic council+members creation. */
+  transaction<T>(fn: (tx: Tx) => T): T {
+    return this.db.transaction(fn);
+  }
+
   // ---- councils ----
 
   listCouncils(): CouncilRow[] {
@@ -41,8 +47,8 @@ export class CouncilsRepository {
     return this.db.select().from(councils).where(eq(councils.id, id)).get();
   }
 
-  insertCouncil(row: CouncilInsert): CouncilRow {
-    return this.db.insert(councils).values(row).returning().get();
+  insertCouncil(row: CouncilInsert, db: DbOrTx = this.db): CouncilRow {
+    return db.insert(councils).values(row).returning().get();
   }
 
   updateCouncil(id: string, patch: Partial<CouncilInsert>): CouncilRow | undefined {
@@ -100,8 +106,8 @@ export class CouncilsRepository {
     return this.db.select().from(councilMembers).where(eq(councilMembers.id, id)).get();
   }
 
-  insertMember(row: CouncilMemberInsert): CouncilMemberRow {
-    return this.db.insert(councilMembers).values(row).returning().get();
+  insertMember(row: CouncilMemberInsert, db: DbOrTx = this.db): CouncilMemberRow {
+    return db.insert(councilMembers).values(row).returning().get();
   }
 
   updateMember(id: string, patch: Partial<CouncilMemberInsert>): CouncilMemberRow | undefined {
