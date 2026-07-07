@@ -13,8 +13,11 @@
 // Inline rules (shared): `code`, [label](url), **bold**, *italic* / _italic_.
 // Plain text is HTML-escaped and link URLs are sanitized.
 //
-// Ported from the standalone slides demo; kept dependency-free so the presenter
-// and export share one source of truth for structure + escaping.
+// Ported from the standalone slides demo; the presenter and export share this
+// one source of truth for structure + escaping. Fenced code is coloured by
+// highlight.js (real per-language grammars).
+
+import hljs from 'highlight.js/lib/common';
 
 export type Slide = { title: string; steps: string[]; cover?: boolean };
 export type ParsedDeck = { title: string; slides: Slide[] };
@@ -137,14 +140,13 @@ function splitRow(row: string): string[] {
 }
 
 // ---- Syntax highlighting (highlight.js) ----
-// Real per-language grammars from highlight.js give language-correct token
-// colours (keyword vs. type vs. built-in vs. string, …) rather than the old
-// generic tokenizer's approximation. We pull the `common` bundle (~35 popular
-// languages) to keep the client payload reasonable. highlight.js escapes HTML
-// in its output, so the emitted markup is safe to drop straight into a deck
-// step's HTML — the presenter reveals code steps instantly, so those escaped
-// `.hljs-*` spans never pass through the bullet typewriter's `sliceHtml`.
-import hljs from 'highlight.js/lib/common';
+// Real per-language grammars give language-correct token colours (keyword vs.
+// type vs. built-in vs. string, …) rather than the old generic tokenizer's
+// approximation; the `common` bundle (imported above, ~35 popular languages)
+// keeps the client payload reasonable. highlight.js escapes HTML in its output,
+// so the emitted markup is safe to drop straight into a deck step's HTML — the
+// presenter reveals code steps instantly, so those escaped `.hljs-*` spans never
+// pass through the bullet typewriter's `sliceHtml`.
 
 // A few fence labels people write that highlight.js doesn't alias itself.
 const LANG_ALIASES: Record<string, string> = {
