@@ -268,8 +268,8 @@ export function Screensaver({
   // screensaver stays clean rather than nagging with an always-visible pad.
   const [unlocking, setUnlocking] = useState(false);
 
-  // Corner widgets: live clock plus simulated system telemetry.
-  const { cpu, ram, cpuNow, ramNow } = useSystemTelemetry();
+  // Corner widgets: live clock plus real host telemetry (gateway /system/stats).
+  const { cpu, ram, cpuNow, ramNow, available: telemetryAvailable } = useSystemTelemetry();
   const [now, setNow] = useState(() => new Date());
   const [quota, setQuota] = useState(() => clamp(58 + (Math.random() - 0.5) * 20, 35, 90));
 
@@ -393,14 +393,16 @@ export function Screensaver({
         </div>
       </div>
 
-      {/* ── Bottom-left: CPU & RAM ── */}
-      <div className="absolute bottom-8 left-8 z-10 text-left">
-        <div className="mb-2 flex items-center gap-4 text-xs">
-          <LegendDot hueVar="--status-wip" label="CPU" value={cpuNow} />
-          <LegendDot hueVar="--status-todo" label="RAM" value={ramNow} />
+      {/* ── Bottom-left: CPU & RAM (only when the gateway reports host metrics) ── */}
+      {telemetryAvailable && (
+        <div className="absolute bottom-8 left-8 z-10 text-left">
+          <div className="mb-2 flex items-center gap-4 text-xs">
+            <LegendDot hueVar="--status-wip" label="CPU" value={cpuNow} />
+            <LegendDot hueVar="--status-todo" label="RAM" value={ramNow} />
+          </div>
+          <AreaChart cpu={cpu} ram={ram} />
         </div>
-        <AreaChart cpu={cpu} ram={ram} />
-      </div>
+      )}
 
       {/* ── Bottom-right: usage quotas ── */}
       <div className="absolute bottom-8 right-8 z-10 flex items-end gap-6">

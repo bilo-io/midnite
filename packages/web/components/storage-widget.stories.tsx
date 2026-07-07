@@ -29,12 +29,12 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** A partly-full device: ~42 GB of 128 GB used → 33%. */
+/** A partly-full quota: ~42 GB of 128 GB used → 33%. */
 export const Default: Story = {
   beforeEach: () => stubEstimate({ usage: 42 * GB, quota: 128 * GB }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(await canvas.findByText('Storage')).toBeInTheDocument();
+    await expect(await canvas.findByText('App cache')).toBeInTheDocument();
     await expect(await canvas.findByText(/33% used/)).toBeInTheDocument();
     // The gauge renders as an inline SVG with a track + progress ring.
     expect(canvasElement.querySelectorAll('circle')).toHaveLength(2);

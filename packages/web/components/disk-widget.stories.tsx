@@ -4,50 +4,49 @@ import { expect, within } from 'storybook/test';
 
 import { installMockFetch } from '@/stories/mock-fetch';
 
-import { SystemMonitorWidget } from './system-monitor-widget';
+import { DiskWidget } from './disk-widget';
 
-// The widget polls real host telemetry from `GET /system/stats`; we stub that
-// endpoint so the CPU/RAM legend + area chart render deterministically offline.
+// The widget reads real disk capacity from `GET /system/stats` (gateway
+// fs.statfs); we stub the endpoint so the radial gauge is deterministic offline.
 const GB = 1024 ** 3;
 const STATS: SystemStats = {
-  cpu: { usagePct: 37, cores: 8, loadAvg1: 1.24, model: 'Test CPU' },
-  memory: { totalBytes: 16 * GB, usedBytes: 9 * GB, freeBytes: 7 * GB, usagePct: 56 },
+  cpu: { usagePct: 12, cores: 8, loadAvg1: 0.5 },
+  memory: { totalBytes: 16 * GB, usedBytes: 8 * GB, freeBytes: 8 * GB, usagePct: 50 },
   disks: [{ path: '/', totalBytes: 500 * GB, usedBytes: 300 * GB, freeBytes: 200 * GB, usagePct: 60 }],
   platform: 'darwin',
-  hostname: 'test-host',
-  uptimeSec: 123_456,
+  uptimeSec: 42_000,
   sampledAt: '2026-06-23T12:00:00.000Z',
 };
 
 const meta = {
-  title: 'Widgets/SystemMonitorWidget',
-  component: SystemMonitorWidget,
+  title: 'Widgets/DiskWidget',
+  component: DiskWidget,
   decorators: [
     (Story) => (
-      <div className="h-64 w-80">
+      <div className="h-80 w-72">
         <Story />
       </div>
     ),
   ],
-} satisfies Meta<typeof SystemMonitorWidget>;
+} satisfies Meta<typeof DiskWidget>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Renders the real CPU/RAM monitor with its legend and area chart. */
+/** 300 GB of 500 GB used → 60%, with the mount path shown below. */
 export const Default: Story = {
   beforeEach: () => installMockFetch([{ match: '/system/stats', json: STATS }]),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(await canvas.findByText('System monitor')).toBeInTheDocument();
-    expect(await canvas.findAllByText(/CPU/)).not.toHaveLength(0);
-    expect(canvas.getAllByText(/RAM/)).not.toHaveLength(0);
-    // The area chart renders as an inline SVG.
-    expect(canvasElement.querySelector('svg')).toBeTruthy();
+    await expect(await canvas.findByText('Disk')).toBeInTheDocument();
+    await expect(await canvas.findByText(/60% used/)).toBeInTheDocument();
+    await expect(canvas.getByText('/')).toBeInTheDocument();
+    // The gauge renders as an inline SVG with a track + progress ring.
+    expect(canvasElement.querySelectorAll('circle')).toHaveLength(2);
   },
 };
 
-/** Gateway unreachable → the "unavailable" message rather than a fake chart. */
+/** Gateway unreachable → the "unavailable" message. */
 export const Unavailable: Story = {
   beforeEach: () => installMockFetch([{ match: '/system/stats', status: 503 }]),
   play: async ({ canvasElement }) => {

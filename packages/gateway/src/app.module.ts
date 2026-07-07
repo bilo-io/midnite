@@ -36,6 +36,7 @@ import { SearchIndexModule } from './search/search-index.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { SetupModule } from './setup/setup.module';
 import { MetricsModule } from './metrics/metrics.module';
+import { SystemModule } from './system/system.module';
 import { UsageModule } from './usage/usage.module';
 import { WeatherModule } from './weather/weather.module';
 import { WorkflowsModule } from './workflows/workflows.module';
@@ -89,6 +90,7 @@ import { InboundModule } from './integrations/inbound/inbound.module';
     ProvidersModule,
     ReposModule,
     MetricsModule,
+    SystemModule,
     SessionsModule,
     SetupModule,
     UsageModule,
