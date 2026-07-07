@@ -12,7 +12,31 @@ Closes Phase 63 Theme A. The office rebuilt in first-person three.js (r3f + drei
 - [x] **web (`components/office3d/`):** `dynamic(ssr:false)` + lazy `Office3DView`; an r3f `<Canvas>` with a static day/night light snapshot at mount (no per-frame cost, reduced-motion-safe); flat-shaded low-poly world; a minimal pointer-lock + WASD rig (collision + head-bob are Theme B). `reset()`s the store on mount/unmount so 2D proximity/panel flags never leak across a switch.
 - [x] **web:** `office-surface.tsx` picks 2D/3D from `?view=` (Phase-52 client-read pattern under `output: 'export'`); the 2D engine is untouched + behavior-preserving.
 - [x] **Design calls (locked up front):** minimal look/move pulled into A (collision/head-bob → B); flat palette colours now (canvas textures deferred); build-all + `frustumCulled` now (per-room lazy chunk-gating → Theme G); static lighting snapshot.
-- [x] Tests: world-builder + materials + lighting units, an `office-surface` RTL routing spec (WebGL engines mocked in jsdom), a Playwright `?view=3d` smoke. Full web unit suite green (714). Pure `packages/web` — zero gateway/`shared` work.
+- [x] Tests: world-builder + materials + lighting units, an `office-surface` RTL routing spec (WebGL engines mocked in jsdom), a Playwright `?view=3d` smoke. Full web unit suite green. Pure `packages/web` — zero gateway/`shared` work.
+- [x] **Integration with Theme F (already merged, PR #336):** kept F's 2D/3D tab strip (`OfficeSurface`) + preference; repointed it at the real r3f engine under `components/office3d/` and removed F's placeholder `office-3d-view*.tsx`. Resolved the `@types/three` global-type pollution F flagged (webgpu/webxr transitive globals collapsing unrelated JSX to `never`).
+
+---
+
+## 2026-07-07 — feat: office 2D/3D engine tabs + view preference — Phase 63 Theme F (PR #336)
+
+Ships the engine switcher the 3D office (Themes A–E) will live behind — a 2D/3D tab on `/office` with a shareable, sticky preference.
+
+- [x] **web:** 2D/3D tab strip (`OfficeSurface`); `?view=2d|3d` URL param wins over the persisted `officeView` pref, else 2d. Only the active engine mounts (Phaser destroy / three dispose on switch; one bundle at a time; both `dynamic(ssr:false)`); office stays `DesktopOnly`; page is a thin `Suspense` shell.
+- [x] **shared:** new additive `officeView` enum('2d'|'3d') UserPreferences key, wired into `appSettingsToPreferences` + `applyPreferences` (Phase 43 sync).
+- [x] Tests: RTL `OfficeSurface` (default/param/pref/param-wins/switch→replace+persist/single-mount) + shared pref default+enum. Gate green (web 874, shared 583; `ui:test` flake passes isolated).
+- ⚠️ **3D tab is a dependency-free placeholder** — the `three`/`@react-three/*` type stack pulls `@types/three`'s transitive global type packages (`@webgpu/types`/`@types/webxr`) into the whole web typecheck and collapses unrelated JSX inference to `never`; the r3f + React-19 JSX setup is deferred to Theme A, which replaces `office-3d-view-impl.tsx` with the real `<Canvas>`.
+
+---
+
+## 2026-07-07 — feat: status-query answerer (read-only) — Phase 59 Theme C (PR #335)
+
+Closes Phase 59 Theme C — **completes Phase 59 (all six themes A–F landed)**. The command bar can now *ask* the board questions, never mutating.
+
+- [x] **shared:** `ChatTaskRef`, `ChatQueryAnswer` (`text`/`tasks`/`count`/`truncated`/`inferencePath`), `ChatQueryRequest`/`Response` schemas + `QueryIntent` type; `CHAT_QUERY_TASK_CAP = 50`.
+- [x] **gateway `ChatQueryService`:** deterministic filter reads (blocked/ready/status/count) over the server-authoritative `TasksService.buildGraph` — same `ready`/`unmetBlockerCount` the scheduler computes, so answers can't drift; excludes foreign nodes, caps at 50, flags `truncated` (incl. the graph's own 500-node cap). Free-form questions get a cheap `generateStructured` summary (feature-tagged `chat`) over the ready+blocked slice, **failing soft** to a deterministic overview when no provider / on error. Never mutates.
+- [x] **gateway `POST /chat/query`:** thin controller; a non-query parse is coerced into a read-only free-form query (the endpoint can never execute a mutation). Team-scoped via `@CurrentUser()`.
+- [x] **web:** thin `chatQuery(text, signal?)` API client.
+- [x] Tests: shared schema specs, 10 service specs (deterministic reads + fail-soft LLM paths), 3 controller specs. `shared:test`/`gateway:typecheck`/`gateway` chat specs (67)/`web:typecheck` green. Gateway/contract-only — no visual UI (Theme E owns it), so no screenshots.
 
 ---
 

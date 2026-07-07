@@ -29,11 +29,11 @@
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
 | [64 · Office presence](phase-64-office-presence.md) | ◻ TODO | 0/30 | `░░░░░░░░░░` | 0% | — | A B C D E F G H |
-| [63 · Office 3D](phase-63-office-3d.md) | 🔄 WIP | 5/28 | `██░░░░░░░░` | 18% | F | B C D E G |
+| [63 · Office 3D](phase-63-office-3d.md) | 🔄 WIP | 8/28 | `███░░░░░░░` | 29% | — | B C D E G |
 | [62 · Fable-Digest](phase-62-fable-digest.md) | ◻ TODO | 0/33 | `░░░░░░░░░░` | 0% | — | A B C D E F G H |
 | [61 · Fable-Observability](phase-61-fable-observability.md) | ◻ TODO | 0/36 | `░░░░░░░░░░` | 0% | — | A B C D E F G H I |
-| [60 · Fable-Analysis](phase-60-fable-analysis.md) | ◻ TODO | 0/63 | `░░░░░░░░░░` | 0% | — | A B C D E F G H I J K L M |
-| [59 · Chat to board](phase-59-chat-to-board.md) | 🔄 WIP | 15/26 | `██████░░░░` | 57% | C | — |
+| [60 · Fable-Analysis](phase-60-fable-analysis.md) | 🔄 WIP | 0/63 | `░░░░░░░░░░` | 0% | C | A B D E F G H I J K L M |
+| [59 · Chat to board](phase-59-chat-to-board.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | 🔄 WIP | 14/25 | `██████░░░░` | 56% | F | — |
 | [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 15/26 | `██████░░░░` | 58% | — | — |
 | [56 · Realtime / WS reliability](phase-56-realtime-ws-reliability.md) | ✅ DONE | 17/26 | `███████░░░` | 65% | — | — |
@@ -133,7 +133,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ◻ **C** — Agents & interactions: proximity → existing store fields → existing modals; low-poly avatars + billboards + P31 tool bubbles; minimap
 - ◻ **D** — Arcade sub-scene: cabinet room, playable Breakout w/ power-ups on a CanvasTexture screen, stub cabinets → existing menu
 - ◻ **E** — Corner office + pickers in 3D, ambient parity touches
-- ◻ **F** — Tabs & routing: ?view=2d|3d + P43 preference sync, lazy engine isolation
+- ✅ **F** — Tabs & routing: ?view=2d|3d + P43 preference sync, lazy engine isolation (PR #336; 3D view a placeholder pending Theme A's r3f world)
 - ◻ **G** — Perf budget + unit/store-contract/Playwright tests
 
 ### [Phase 62 — Fable-Digest](phase-62-fable-digest.md)
@@ -179,7 +179,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 *Natural-language command bar in the Cmd-K palette; deterministic-first, local-model-preferred; composes existing task services.*
 - ✅ **A** — Intent contract + deterministic parser + LLM fallback (PR #321)
 - ✅ **B** — Execute intents by composing existing services (PR #323)
-- ◻ **C** — Status-query answerer (read-only)
+- ✅ **C** — Status-query answerer (read-only) (PR #335)
 - ✅ **D** — Inference routing: deterministic-first, local-preferred (PR #332)
 - ✅ **E** — Palette command-bar UI (PR #334)
 - ✅ **F** — Safety: preview, confirm, undo, audit (PR #333)

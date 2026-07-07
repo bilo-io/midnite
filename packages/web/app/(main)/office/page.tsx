@@ -16,7 +16,7 @@ export default function OfficePage() {
       />
       <DesktopOnly label="The office">
         <div className="reveal-staged container space-y-6 pb-8 pt-2">
-          {/* useSearchParams (in OfficeSurface, for ?view=2d|3d) needs a Suspense boundary. */}
+          {/* OfficeSurface reads `?view=` via useSearchParams — needs a Suspense boundary. */}
           <Suspense fallback={null}>
             <OfficeSurface />
           </Suspense>

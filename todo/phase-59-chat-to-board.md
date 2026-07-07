@@ -90,16 +90,22 @@ Do the thing — through the paths that already validate.
 
 ---
 
-## Theme C — Status-query answerer (read-only) — **M**
+## Theme C — Status-query answerer (read-only) — **M** — ✅ DONE (PR #335, 2026-07-07)
 
 Ask the board questions.
 
-- [ ] `query` intents that read board state: deterministic for simple filters ("show blocked", "todo count",
-      "what's in wip") — reuse [`listReadyTodoTasks`](../packages/gateway/src/tasks/tasks.service.ts), the deps
-      helpers, and FTS search; return a structured answer (a task list / count).
-- [ ] Open-ended questions ("what should I focus on?", "what's blocking payments?") get a **cheap LLM summary**
-      over the relevant slice (blocked set + priorities) — read-only, no mutation, small prompt.
-- [ ] Answers link into the board (task deep-links) so a query flows into action.
+- [x] `query` intents that read board state: deterministic for simple filters ("show blocked", "todo count",
+      "what's in wip") — `ChatQueryService` filters the server-authoritative `TasksService.buildGraph` (same
+      `ready`/`unmetBlockerCount` the scheduler computes, so answers can't drift), excludes foreign cross-project
+      nodes, caps the list at `CHAT_QUERY_TASK_CAP` (50) and flags `truncated`; returns a structured `ChatQueryAnswer`
+      (prose `text` + task refs / count).
+- [x] Open-ended questions ("what should I focus on?", "what's blocking payments?") get a **cheap LLM summary**
+      over the actionable slice (ready + blocked, priority-ordered) via `generateStructured` (feature-tagged `chat`),
+      read-only with a small prompt — and **fails soft** to a deterministic board overview when no provider is
+      configured or the call errors.
+- [x] Answers carry task refs (id + title/status/priority) so the UI (Theme E) can deep-link a query into action.
+- [x] `POST /chat/query` (thin `ChatQueryController`): a non-query parse is coerced into a read-only free-form query,
+      so the endpoint can never execute a mutation. Team-scoped via `@CurrentUser()`. Web `chatQuery()` client added.
 
 ---
 
