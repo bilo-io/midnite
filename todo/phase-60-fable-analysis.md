@@ -154,26 +154,33 @@ What we ship that we didn't write.
 
 # Section II — Bugs & Correctness
 
-## Theme E — State-machine, scheduler & concurrency correctness — **M-L**
+## Theme E — State-machine, scheduler & concurrency correctness — **M-L** — ✅ DONE (PR #TBD, 2026-07-07)
 
 The autonomous core: transitions, ticks, and races.
 
-- [ ] **Task state machine:** map every transition site (the ad-hoc machine across
-      [`shared/src/task.ts`](../packages/shared/src/task.ts),
-      [`web/lib/task-transitions.ts`](../packages/web/lib/task-transitions.ts),
-      [`tasks.service.ts`](../packages/gateway/src/tasks/tasks.service.ts),
-      [`agent-runner.service.ts`](../packages/gateway/src/pool/agent-runner.service.ts)) and look for
-      **illegal or unguarded transitions** (e.g. `done`→`wip`, double-`complete`, a `waiting` task that can
-      never leave). Cross-check the Phase 53 `waitReason`/escalation paths for holes.
-- [ ] **Scheduler races:** re-read the tick ([`agent-pool-scheduler.service.ts`](../packages/gateway/src/pool/agent-pool-scheduler.service.ts))
-      + the Phase 54 watchdog + slot acquire/release for **TOCTOU** windows (a slot freed mid-tick, a task
-      picked twice, a watchdog reclaiming a slot the runner is still using) now that both run on one tick.
-- [ ] **WS ordering (post-56):** with seq+resume landed, probe for **apply-out-of-order** on the client and
-      **seq allocation under concurrency** on the gateway (two mutations in one tick — do seqs stay monotonic
-      per channel?).
-- [ ] **Transaction boundaries:** verify multi-table writes (dependency edits, Phase 49 import, bulk create)
-      are inside one `db.transaction` and can't half-apply on a mid-write throw.
-- [ ] **Report:** `todo/phase-60-findings/E-state-concurrency.md`.
+- [x] **Task state machine: FOUND + FIXED (2 HIGH + 2 MED).** The machine had no transition table/guard —
+      `updateStatus` (and a board drag through it) committed any edge, incl. terminal→active revivals
+      (`done`→`wip` zombie, `done`→`todo` dup PR, `abandoned`→`todo` archived-but-scheduled), and late
+      Notification/Stop hooks revived `done`/`abandoned`→`waiting`/`done`. **Fix:** centralized
+      `ALLOWED_TRANSITIONS` + `canTransition` + `isTerminal` in `shared/src/task.ts` (terminals have no
+      outgoing edges), enforced in `updateStatus` (throws) + terminal-guards on `markWaiting`/`escalate`/
+      `markDone`, with shared + gateway regression tests (findings SM-1..4).
+- [x] **Scheduler races: DOCUMENTED (1 HIGH + 2 MED).** Slots/runs are keyed by `taskId` with no run
+      generation, so `completeWithChecks`' slow `await checks.run` races a reclaimer → double-spawn + slot
+      theft, and a stale async `onExit` frees the next run's slot. Fix = a per-run generation token (touches
+      the autonomous core → follow-up, per scoping). Verified correct: synchronous idempotent `acquire`, the
+      tick `running` guard, sync boot-recovery before the delayed first tick (findings SCHED-1..3).
+- [x] **WS ordering (post-56): DOCUMENTED.** Seq allocation is verified synchronous/atomic + per-channel (no
+      dup/backwards seq). Real gaps: no **epoch id**, so a stale resume cursor is silently accepted after a
+      gateway restart (WS-2 HIGH), and the REST-seed vs. subscribe-watermark window (WS-3 MED). Fixes are
+      protocol changes → follow-up.
+- [x] **Transaction boundaries: DOCUMENTED (2 HIGH + 2 MED).** `createFromPrompt`/`createTasksFromBreakdown`
+      (+ `createCouncil`/`createProject`) write across tables non-atomically (domain services lack a DB handle);
+      a mid-write throw half-applies. Verified correct: Phase 49 import, `deleteTask`, workflow/council deletes
+      are transactional; `createBulk` is intentionally partial-success. Fix = service DB handle / transactional
+      repo methods → follow-up (findings TX-1..4).
+- [x] **Report:** [`todo/phase-60-findings/E-state-concurrency.md`](phase-60-findings/E-state-concurrency.md)
+      (+ the state-machine guard applied with regression tests).
 
 ## Theme F — Data integrity & boundary-condition bugs — **M**
 

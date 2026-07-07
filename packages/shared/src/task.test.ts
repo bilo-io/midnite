@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  ALLOWED_TRANSITIONS,
+  canTransition,
+  isTerminal,
+  STATUSES,
   AddTaskDependencyRequestSchema,
   ANSWER_EVENT_KIND,
   CreateTaskRequestSchema,
@@ -158,5 +162,41 @@ describe('isAnsweredQuestion', () => {
   it('is false for a non-question even if it somehow carries an answer event', () => {
     expect(isAnsweredQuestion({ kind: 'bug', events: [answerEvent] })).toBe(false);
     expect(isAnsweredQuestion({ kind: undefined, events: [answerEvent] })).toBe(false);
+  });
+});
+
+describe('task state machine (Phase 60 E)', () => {
+  it('marks done and abandoned as the only terminal states', () => {
+    expect(isTerminal('done')).toBe(true);
+    expect(isTerminal('abandoned')).toBe(true);
+    for (const s of ['backlog', 'todo', 'wip', 'waiting'] as const) {
+      expect(isTerminal(s)).toBe(false);
+    }
+  });
+
+  it('terminal states have no outgoing transitions except the same-status no-op', () => {
+    for (const to of STATUSES) {
+      expect(canTransition('done', to)).toBe(to === 'done');
+      expect(canTransition('abandoned', to)).toBe(to === 'abandoned');
+    }
+    expect(ALLOWED_TRANSITIONS.done).toEqual([]);
+    expect(ALLOWED_TRANSITIONS.abandoned).toEqual([]);
+  });
+
+  it('rejects the audited revival edges (done→wip, done→todo, abandoned→todo)', () => {
+    expect(canTransition('done', 'wip')).toBe(false);
+    expect(canTransition('done', 'todo')).toBe(false);
+    expect(canTransition('abandoned', 'todo')).toBe(false);
+    expect(canTransition('abandoned', 'wip')).toBe(false);
+  });
+
+  it('allows the normal lifecycle edges + every same-status no-op', () => {
+    expect(canTransition('todo', 'wip')).toBe(true);
+    expect(canTransition('wip', 'waiting')).toBe(true);
+    expect(canTransition('wip', 'done')).toBe(true);
+    expect(canTransition('waiting', 'todo')).toBe(true);
+    expect(canTransition('waiting', 'abandoned')).toBe(true);
+    expect(canTransition('backlog', 'todo')).toBe(true);
+    for (const s of STATUSES) expect(canTransition(s, s)).toBe(true);
   });
 });

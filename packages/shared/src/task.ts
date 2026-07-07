@@ -24,6 +24,51 @@ export const StatusSchema = z.enum(STATUSES);
 export const TaskKindSchema = z.enum(TASK_KINDS);
 
 /**
+ * Terminal statuses — a completed or abandoned task is *done with*: it holds no
+ * slot, the scheduler never re-picks it, and (Phase 60 E) nothing may transition
+ * it back to an active state. Reviving a terminal task is always a bug (a zombie
+ * `wip` with no agent, a duplicate PR, an un-abandoned task whose dependents
+ * unblock off cancelled work) — see {@link canTransition}.
+ */
+export const TERMINAL_STATUSES = ['done', 'abandoned'] as const;
+
+/** True when `status` is a terminal state (`done`/`abandoned`) — no outgoing transitions. */
+export function isTerminal(status: Status): boolean {
+  return status === 'done' || status === 'abandoned';
+}
+
+/**
+ * The task state machine's allowed transitions (Phase 60 E). Before this the
+ * machine was guard-by-convention — every writer set its target with at most an
+ * idempotency check on the *target*, never a validated *from* — so `updateStatus`
+ * (and a board drag routing through it) could commit any edge, including
+ * terminal→active revivals. This is the single source of truth both the gateway
+ * (authoritative, throws on an illegal move) and the web (disable illegal drags)
+ * share. Terminal states have **no** outgoing edges; a deliberate "reopen" would
+ * be its own explicit action that also clears `archivedAt`/`sessionId`.
+ */
+export const ALLOWED_TRANSITIONS: Record<Status, readonly Status[]> = {
+  backlog: ['todo', 'wip', 'abandoned'],
+  todo: ['backlog', 'wip', 'waiting', 'done', 'abandoned'],
+  wip: ['todo', 'backlog', 'waiting', 'done', 'abandoned'],
+  waiting: ['todo', 'backlog', 'wip', 'done', 'abandoned'],
+  done: [],
+  abandoned: [],
+};
+
+/**
+ * Whether a task may move from `from` to `to`. A same-status move is always
+ * allowed (idempotent no-op); otherwise the edge must be in
+ * {@link ALLOWED_TRANSITIONS}. Notably every terminal→* move (except the no-op)
+ * is rejected. The gateway enforces this in `TasksService.updateStatus`; the web
+ * uses it to disable illegal board drags so both agree on one table.
+ */
+export function canTransition(from: Status, to: Status): boolean {
+  if (from === to) return true;
+  return ALLOWED_TRANSITIONS[from].includes(to);
+}
+
+/**
  * Why the scheduler is *holding* a ready `todo` task instead of spawning it
  * (Phase 50 Theme B). `over-budget` = a hard spend cap is exceeded;
  * `rate-limited` = the spawns-per-hour window is full. Purely **derived** from

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { BadRequestException } from '@nestjs/common';
 import { MAX_BULK_LINES, parseConfig } from '@midnite/shared';
 
 const stubConfig = parseConfig({ agent: {}, terminal: {}, gateway: {} });
@@ -538,14 +539,40 @@ describe('TasksService', () => {
     expect(() => service.deleteTask('nope')).toThrow();
   });
 
-  it('moving out of abandoned does not auto-unarchive', () => {
+  it('rejects reviving a terminal task via updateStatus (Phase 60 E)', () => {
     const repo = new InMemoryRepo();
     seed(repo, ['wip']);
     const service = new TasksService(repo, stubFailures, new StubClassifier(), stubPlanner, new TaskEventBus(), stubRepos, stubConfig);
     service.updateStatus('t0', 'abandoned');
-    const back = service.updateStatus('t0', 'todo');
-    expect(back.status).toBe('todo');
-    expect(back.archivedAt).toBeDefined();
+    // abandoned→todo (and done→wip etc.) are illegal — no zombie revival of a
+    // terminal task, and no archived-but-scheduled row.
+    expect(() => service.updateStatus('t0', 'todo')).toThrow(BadRequestException);
+    expect(() => service.updateStatus('t0', 'wip')).toThrow(BadRequestException);
+    expect(repo.tasks[0]!.status).toBe('abandoned');
+  });
+
+  it('rejects a done→wip board drag but allows legal moves + same-status no-op (Phase 60 E)', () => {
+    const repo = new InMemoryRepo();
+    seed(repo, ['wip']);
+    const service = new TasksService(repo, stubFailures, new StubClassifier(), stubPlanner, new TaskEventBus(), stubRepos, stubConfig);
+    service.updateStatus('t0', 'done');
+    expect(() => service.updateStatus('t0', 'wip')).toThrow(BadRequestException);
+    expect(() => service.updateStatus('t0', 'todo')).toThrow(BadRequestException);
+    // idempotent same-status move stays a no-op
+    expect(service.updateStatus('t0', 'done').status).toBe('done');
+  });
+
+  it('late Notification/Stop hook cannot revive a terminal task (markWaiting/markDone are terminal-guarded)', () => {
+    const repo = new InMemoryRepo();
+    seed(repo, ['wip', 'wip']); // t0, t1
+    const service = new TasksService(repo, stubFailures, new StubClassifier(), stubPlanner, new TaskEventBus(), stubRepos, stubConfig);
+    service.markDone('t0');
+    expect(repo.tasks[0]!.status).toBe('done');
+    // a trailing Notification hook must not flip done→waiting
+    expect(service.markWaiting('t0').status).toBe('done');
+    // a cancelled task must not be un-abandoned by a late Stop-with-PR
+    service.updateStatus('t1', 'abandoned');
+    expect(service.markDone('t1', 'https://example.test/pr/1').status).toBe('abandoned');
   });
 
   it('createFromPrompt stores the given priority (clamped), defaulting to Normal', async () => {
