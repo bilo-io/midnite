@@ -105,7 +105,7 @@ describe('applyInteraction — store contract parity', () => {
       openBoard: vi.fn(),
       toggleBreak: vi.fn(),
       openLibrary: vi.fn(),
-      openPlaystation: vi.fn(),
+      enterArcade: vi.fn(),
       open: vi.fn(),
     } satisfies InteractionStore;
   }
@@ -120,7 +120,8 @@ describe('applyInteraction — store contract parity', () => {
     expect(s.openBoard).toHaveBeenCalledOnce();
     expect(s.toggleBreak).toHaveBeenCalledOnce();
     expect(s.openLibrary).toHaveBeenCalledOnce();
-    expect(s.openPlaystation).toHaveBeenCalledOnce();
+    // The 3D console enters the immersive arcade room (not the RetroGamesMenu).
+    expect(s.enterArcade).toHaveBeenCalledOnce();
     expect(s.open).toHaveBeenCalledWith('x1');
   });
 

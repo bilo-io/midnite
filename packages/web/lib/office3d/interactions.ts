@@ -183,14 +183,21 @@ export interface InteractionStore {
   openBoard(): void;
   toggleBreak(): void;
   openLibrary(): void;
-  openPlaystation(): void;
+  /**
+   * In the 3D office the console leads into the immersive arcade room (Theme D),
+   * rather than opening the RetroGamesMenu modal like 2D does — so the
+   * `playstation` action enters the arcade. The stub cabinets *inside* the arcade
+   * open the menu directly (they don't go through this dispatcher).
+   */
+  enterArcade(): void;
   open(id: string): void;
 }
 
 /**
  * Apply a resolved interaction to the store — the same transitions 2D
- * `tryInteract` performs. Kept pure over an `InteractionStore` so the
- * store-contract test can assert parity without a real scene.
+ * `tryInteract` performs (except the console, which enters the 3D arcade room).
+ * Kept pure over an `InteractionStore` so the store-contract test can assert
+ * parity without a real scene.
  */
 export function applyInteraction(action: InteractionAction, store: InteractionStore): void {
   if (!action) return;
@@ -205,7 +212,7 @@ export function applyInteraction(action: InteractionAction, store: InteractionSt
       store.openLibrary();
       return;
     case 'playstation':
-      store.openPlaystation();
+      store.enterArcade();
       return;
     case 'agent':
       store.open(action.id);

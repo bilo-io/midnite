@@ -55,8 +55,12 @@ interface OfficeState {
   playerTint: number | null;
   /** Personal "on a coffee break" presence flag (mock — local to this session). */
   onBreak: boolean;
-  /** Which Phaser scene is active — drives the HUD (back button vs. normal). */
-  currentScene: 'office' | 'corner';
+  /**
+   * Which scene is active — drives the HUD (back button vs. normal). `'arcade'`
+   * (Phase 63 Theme D) is 3D-only: the immersive arcade room reached from the
+   * lounge console. The 2D Phaser office only ever uses `'office'`/`'corner'`.
+   */
+  currentScene: 'office' | 'corner' | 'arcade';
   /** Item ids currently placed on the corner-office desk (persisted to localStorage). */
   deskItems: string[];
   setAgents(agents: OfficeAgent[]): void;
@@ -89,7 +93,7 @@ interface OfficeState {
   setPlayerVariant(variant: number): void;
   setPlayerTint(tint: number | null): void;
   toggleBreak(): void;
-  setCurrentScene(scene: 'office' | 'corner'): void;
+  setCurrentScene(scene: 'office' | 'corner' | 'arcade'): void;
   setDeskItems(items: string[]): void;
   /** Clear transient UI state — called when the scene tears down. */
   reset(): void;
