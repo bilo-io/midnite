@@ -1014,6 +1014,31 @@ export const agentRunStats = sqliteTable(
 export type AgentRunStatsRow = typeof agentRunStats.$inferSelect;
 export type AgentRunStatsInsert = typeof agentRunStats.$inferInsert;
 
+/**
+ * Phase 61 D — persisted samples of the live gauges (queue depth, slot usage,
+ * tick latency) so fleet-trend history survives a gateway restart (the in-memory
+ * GaugeStore is lost on boot by design). Written every `metrics.sampleIntervalMs`
+ * by MetricsSamplerService; a raw metrics table (bounded by `metrics.rawRetentionDays`,
+ * self-pruned by the sampler; Theme E generalizes rollups/retention).
+ */
+export const gaugeSamples = sqliteTable(
+  'gauge_samples',
+  {
+    id: text('id').primaryKey(),
+    at: text('at').notNull(),
+    queueDepth: integer('queue_depth'),
+    slotsUsed: integer('slots_used'),
+    slotsTotal: integer('slots_total'),
+    tickLatencyMs: integer('tick_latency_ms'),
+  },
+  (t) => ({
+    atIdx: index('gauge_samples_at_idx').on(t.at),
+  }),
+);
+
+export type GaugeSampleRow = typeof gaugeSamples.$inferSelect;
+export type GaugeSampleInsert = typeof gaugeSamples.$inferInsert;
+
 
 export type WorkflowTemplateRow = typeof workflowTemplates.$inferSelect;
 export type WorkflowTemplateInsert = typeof workflowTemplates.$inferInsert;

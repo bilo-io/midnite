@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-07 — feat: gauge history sampler + /metrics/gauges/history — Phase 61 Theme D (PR #343)
+
+The Ops fleet gauges (queue depth, slot utilization, tick latency) lived only in an in-memory `GaugeStore`, lost on every restart. Theme D persists periodic snapshots so fleet-trend history survives a restart. Deepens the existing `metrics/` seam; behaviour-preserving (sampling off = no change).
+
+- [x] **shared:** `GaugeSample` + `GaugeHistory` query/response contracts (`GAUGE_HISTORY_MAX_POINTS = 2000`); `metrics.{sampleIntervalMs (60000), rawRetentionDays (30)}` config.
+- [x] **gateway:** `gauge_samples` table (migration `0075`) + repo (`insertGaugeSample` / windowed oldest-first `gaugeHistory` with newest-kept cap + `truncated` / `pruneGaugeSamplesBefore`); `MetricsService.sampleGauges` (skips all-null) / `pruneGaugeSamples` / `getGaugeHistory`; `MetricsSamplerService` (one `unref`'d timer + reentrancy guard, fail-open, self-prune older than `rawRetentionDays`, `0`=disabled — mirrors P49's `BackupSchedulerService`); `GET /metrics/gauges/history?from&to`.
+- [x] Tests: shared schema (nullable fields, negative-reject, round-trip); gateway real-SQLite repo (ordering/window/cap/prune) + service (skip-empty, prune-cutoff, mapping) + sampler (sample→prune, skip, fail-open, disabled-at-0) + controller. shared 591 / gateway 1642 green; `:typecheck`/`:lint` green. Gateway/shared only — Ops charts consume this in Theme G.
+
+---
+
 ## 2026-07-07 — fix: security headers + timing-safe terminal token + auth audit — Phase 60 Theme A (PR #345)
 
 Closes Phase 60 Theme A (auth/transport/headers audit). Three parallel sweeps (rate-limiting, headers/CORS, token lifecycle); safe quick-wins applied, rest documented.
@@ -13,6 +23,8 @@ Closes Phase 60 Theme A (auth/transport/headers audit). Three parallel sweeps (r
 - [x] **Documented (HIGH, follow-up):** the static bearer token bypasses all `@RequiresRole` checks (RoleGuard fails open on unset `req.user`, remotely reachable) — A-1; no per-account login lockout — A-2. Plus MED/LOW: rate-limit default-off (recommend `max:300`, deferred), service-token scopes, refresh reuse-detection, terminal TTL sweep, dead `deleteExpired`.
 - [x] **CORS verified sound** (no wildcard/credentials, unknown origins fail closed, WS origin parity across all six gateways). Report: [`todo/phase-60-findings/A-security-auth.md`](phase-60-findings/A-security-auth.md).
 - [x] Tests: `lib/security-headers.test.ts`; existing `verifyToken` specs green. `gateway:typecheck`/`:lint`/`:test` green (1639).
+
+---
 
 ## 2026-07-07 — feat: first-person collision + head-bob — Phase 63 Theme B (PR #342)
 
@@ -43,6 +55,8 @@ Closes Phase 60 Theme C (input-validation & injection sweep). One actionable HIG
 - [x] **Verified safe:** FTS5 `MATCH` (tokenized → quoted → param-bound), Phase 49 import zip (known-key reads, no path-based extraction → no zip-slip), all raw `sql\`\`` (no `sql.raw`, every value bound), and per-route zod coverage (every JSON `@Body()` `safeParse`s; the `unknown` webhook/inbound bodies are token/HMAC-gated by design).
 - [x] **Documented as follow-ups:** SSRF (HIGH — DNS-blind `isSafeHttpUrl` + no redirect revalidation across 4 fetch sites; needs a dedicated hardening theme) and a global `ZodValidationPipe`/architecture test (LOW). Full report: [`todo/phase-60-findings/C-input-validation.md`](phase-60-findings/C-input-validation.md).
 - [x] Tests: shared 592 (media schema cases), gateway 1632 (`resolve-media-path` 7 cases + 3 `serveFile` controller cases); `gateway:typecheck`/`:lint` green.
+
+---
 
 ## 2026-07-07 — feat: 3D office world foundation — Phase 63 Theme A (PR #337)
 
