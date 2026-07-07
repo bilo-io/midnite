@@ -32,7 +32,7 @@
 | [63 · Office 3D](phase-63-office-3d.md) | 🔄 WIP | 12/28 | `████░░░░░░` | 43% | C | D E G |
 | [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 3/33 | `█░░░░░░░░░` | 9% | — | B C D E F G H |
 | [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 2/36 | `█░░░░░░░░░` | 6% | — | A B C E F G H I |
-| [60 · Fable-Analysis](phase-60-fable-analysis.md) | 🔄 WIP | 8/63 | `█░░░░░░░░░` | 13% | B | D E F G H I J K L M |
+| [60 · Fable-Analysis](phase-60-fable-analysis.md) | 🔄 WIP | 12/63 | `██░░░░░░░░` | 19% | — | D E F G H I J K L M |
 | [59 · Chat to board](phase-59-chat-to-board.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
 | [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 15/26 | `██████░░░░` | 58% | — | — |
@@ -162,7 +162,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 ### [Phase 60 — Fable-Analysis](phase-60-fable-analysis.md)
 *Repo-wide audit → ranked findings reports (analysis-only, bar security quick-wins + safe dep bumps). Direction-preserving. M runs last.*
 - ◻ **A** — Auth, transport & headers audit (rate-limit posture, CORS, token lifecycle)
-- ◻ **B** — Secrets, signatures & crypto paths audit
+- ✅ **B** — Secrets, signatures & crypto paths audit (PR #346; workflow `$env` master-secret leak fixed, findings logged)
 - ◻ **C** — Input validation & injection sweep (zod coverage, FTS/path-traversal/SSRF/zip-slip)
 - ◻ **D** — Dependency & supply-chain audit (+ safe bumps)
 - ◻ **E** — State-machine, scheduler & concurrency correctness

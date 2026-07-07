@@ -92,21 +92,21 @@ The perimeter: who can reach what, and what the wire looks like.
 - [x] **Report:** [`todo/phase-60-findings/A-security-auth.md`](phase-60-findings/A-security-auth.md) — ranked
       findings + quick-wins-applied list.
 
-## Theme B — Secrets, signatures & crypto paths audit — **M**
+## Theme B — Secrets, signatures & crypto paths audit — **M** — ✅ DONE (PR #346, 2026-07-07)
 
 Everything secret-shaped, end to end.
 
-- [ ] **Inventory encrypted-at-rest columns** (`workflow_credentials.data`, `webhooks.secret`,
+- [x] **Inventory encrypted-at-rest columns** (`workflow_credentials.data`, `webhooks.secret`,
       `llm_providers.apiKey`, …) against [`crypto.service.ts`](../packages/gateway/src/crypto/crypto.service.ts)
       usage — flag any secret-bearing column **not** going through `CryptoService` (the earlier grounding
       flagged `llm_providers.apiKey` plaintext-fallback when `MIDNITE_SECRET_KEY` is unset; verify current state).
-- [ ] **Signature paths:** verify inbound HMAC (Phase 46 — raw-body verification, `timingSafeEqual`,
+- [x] **Signature paths:** verify inbound HMAC (Phase 46 — raw-body verification, `timingSafeEqual`,
       per-source secrets) and outbound signing (Phase 44) haven't regressed; audit the Claude-hook path
       (`x-midnite-hook-secret` per session) for timing-safe compare + secret rotation on reattach.
-- [ ] **Leak surface:** grep for secrets in logs (`logger.*` calls that might serialize config/env/credential
+- [x] **Leak surface:** grep for secrets in logs (`logger.*` calls that might serialize config/env/credential
       objects), verify the Phase 50 **env scrub** is on by default now or still opt-out, and check
       error responses never echo secrets/stack traces to clients in prod mode.
-- [ ] **Report:** `todo/phase-60-findings/B-secrets-signatures.md`.
+- [x] **Report:** `todo/phase-60-findings/B-secrets-signatures.md`.
 
 ## Theme C — Input validation & injection sweep — **M** — ✅ DONE (PR #TBD, 2026-07-07)
 

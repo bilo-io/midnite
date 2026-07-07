@@ -92,7 +92,7 @@ describe('WorkflowEngine', () => {
     const bus = new WorkflowEventBus();
     events = [];
     bus.subscribe((e) => events.push(e));
-    engine = new WorkflowEngine(repo, new ExecutorRegistry([echo, boom]), bus);
+    engine = new WorkflowEngine(repo, new ExecutorRegistry([echo, boom]), bus, CONFIG);
   });
 
   it('runs a linear graph, passing the trigger payload downstream', async () => {
@@ -185,7 +185,7 @@ describe('WorkflowsService', () => {
 
   beforeEach(() => {
     repo = new WorkflowsRepository(makeDb());
-    const engine = new WorkflowEngine(repo, new ExecutorRegistry([echo, boom]), new WorkflowEventBus());
+    const engine = new WorkflowEngine(repo, new ExecutorRegistry([echo, boom]), new WorkflowEventBus(), CONFIG);
     service = new WorkflowsService(repo, engine, CONFIG);
   });
 
