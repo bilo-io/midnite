@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { markdownToDeck, markdownToHtml, formatInline, slugify } from './markdown';
+import { markdownToDeck, markdownToHtml, formatInline, slugify, highlightCode } from './markdown';
 
 describe('markdownToDeck', () => {
   it('turns the first # into a cover slide and the deck title', () => {
@@ -78,6 +78,38 @@ describe('markdownToHtml', () => {
     expect(html).toContain('<h1>Title</h1>');
     expect(html).toContain('<li>item</li>');
     expect(html).toContain('<p>text</p>');
+  });
+});
+
+describe('highlightCode (highlight.js)', () => {
+  it('emits language-aware .hljs-* spans for a recognized language', () => {
+    const out = highlightCode('const x = 1;', 'ts');
+    expect(out).toContain('hljs-keyword');
+    expect(out).toContain('hljs-number');
+  });
+
+  it('resolves fence aliases (sh -> bash, py -> python)', () => {
+    expect(highlightCode('echo "hi"', 'sh')).toContain('hljs-');
+    expect(highlightCode('def f():\n    pass', 'py')).toContain('hljs-keyword');
+  });
+
+  it('escapes HTML in the source so markup can never break out', () => {
+    const out = highlightCode('<script>alert(1)</script>', 'html');
+    expect(out).not.toContain('<script>');
+    expect(out).toContain('&lt;');
+  });
+
+  it('falls back to plainly-escaped text for an unknown language', () => {
+    const out = highlightCode('<b> & "x"', 'no-such-lang');
+    expect(out).not.toContain('hljs-');
+    expect(out).toBe('&lt;b&gt; &amp; &quot;x&quot;');
+  });
+
+  it('tags a rendered code fence with the hljs + language class', () => {
+    const deck = markdownToDeck('## S\n\n```ts\nconst x = 1;\n```');
+    const step = deck.slides[0]!.steps[0]!;
+    expect(step).toContain('class="hljs language-ts"');
+    expect(step).toContain('hljs-keyword');
   });
 });
 
