@@ -171,17 +171,20 @@ Engine-agnostic state so 2D and 3D are just two renderers of one slice.
 - [x] **Self-view:** your own connected/ghost state + name shown in the roster; emotes you send
       render over your own 2D avatar (optimistic `selfEmote`). (PR #363)
 
-## Theme F — Surfaces & privacy — **S-M**
+## Theme F — Surfaces & privacy — **S-M** — ✅ DONE (PR #367, 2026-07-08)
 
-- [ ] **Nav/topbar pill:** a compact "N in the office" indicator (avatar chips, hidden at zero)
-      in the app chrome linking to `/office` — driven by a lightweight subscription (or the
-      roster store when the office is already mounted).
-- [ ] **Dashboard widget:** a "Who's in the office" widget registered in
-      [`dashboard-widgets.ts`](../packages/web/lib/dashboard-widgets.ts) (existing picker/sizing
-      conventions) — online teammates + their room, live.
-- [ ] **Ghost mode:** a HUD toggle — you still see everyone, nobody sees you (`hello.ghost`,
-      server-side exclusion so it's not client-cosmetic); persisted via a Phase-43 preference
-      key; clearly indicated on your own HUD while active.
+- [x] **Nav/topbar pill:** an "N in the office" chrome indicator (green badge collapsed / label
+      expanded), hidden at zero, linking to `/office`. Powered app-wide by a **team-scoped REST
+      `GET /presence/summary`** + a `usePresenceSummary` poll (12s) — no socket held, no false
+      presence. (PR #367)
+- [x] **Dashboard widget:** a "Who's in the office" widget registered in
+      [`dashboard-widgets.ts`](../packages/web/lib/dashboard-widgets.ts) — live roster + rooms from
+      the same poll. (PR #367)
+- [x] **Ghost mode:** a `PresenceHud` toggle (👻) — you still see everyone, nobody sees you
+      (`hello.ghost`, server-side exclusion from snapshots/updates/emotes **and** the summary);
+      persisted to localStorage + restored on entry; clearly indicated (roster "(ghost)" + active
+      toggle). *Kept in localStorage rather than the Phase-43 wire bag to keep the presence wire
+      surface minimal — the phase's avatar/high-score precedent.* (PR #367)
 
 ## Theme G — Proximity chat bubbles — **M** · *stretch (may slip without hurting the phase)*
 

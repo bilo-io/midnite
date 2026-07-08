@@ -4,6 +4,20 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-08 — feat: office presence surfaces + ghost mode — Phase 64 Theme F (PR #367)
+
+Presence beyond the office + the privacy control.
+
+- [x] **`GET /presence/summary`:** team-scoped REST roll-up (`@CurrentUser` teamId; null = global) over `PresenceService.summary()` (renderable, non-ghost). shared `PresenceSummary` + web api client + `usePresenceSummary` poll (12s) — no socket held, no false presence.
+- [x] **Nav pill:** "N in the office" chrome indicator (badge/label), hidden at zero, links `/office`.
+- [x] **Dashboard widget:** "Who's in the office" registered in the widget registry — live roster + rooms.
+- [x] **Ghost mode:** `PresenceHud` 👻 toggle → presence-store `ghost` + localStorage (restored on entry), re-sent in the hello; server excludes ghosts from snapshots/updates/emotes + the summary. localStorage (not the Phase-43 wire bag) to keep the wire surface minimal.
+- [x] **Tests + gate:** summary specs (count, ghost-exclusion, team scoping) + `PresenceSummary` round-trip + ghost-toggle HUD. :typecheck (13 pkgs), lint 0 errors, gateway 1762 + web 1039 + shared pass.
+
+Remaining Phase 64: G (proximity chat — stretch), H (tests + two-context Playwright).
+
+---
+
 ## 2026-07-07 — feat: office emotes + roster + locate — Phase 64 Theme E (PR #363)
 
 The office social layer, shared by both engines. Pure `packages/web`.
