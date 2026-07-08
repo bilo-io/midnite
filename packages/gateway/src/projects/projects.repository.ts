@@ -4,6 +4,7 @@ import type { Project, ProjectSource, SourceKind, Status, TaskStatusCounts, Team
 import { DB_TOKEN, type MidniteDb } from '../db/db.module';
 import { teamScopeFilter } from '../db/team-scope';
 import {
+  media,
   projectSources,
   projects,
   roadmapMilestones,
@@ -56,11 +57,20 @@ export class ProjectsRepository {
       .get();
   }
 
-  // Deleting a project unlinks its tasks (they survive, untagged) and removes its
-  // sources. Wrapped in a transaction so the three writes are atomic.
+  // Deleting a project cascade-cleans every cross-domain ref that pointed at it
+  // (no schema FKs, so this is the app-layer invariant — Phase 60 F). Tasks and
+  // media survive but unlinked; the project's milestones are removed and their
+  // tasks' `milestoneId` cleared (so no task keeps a phantom milestone chip for a
+  // gone project). All atomic in one transaction.
   deleteProject(id: string): void {
     this.db.transaction((tx) => {
-      tx.update(tasks).set({ projectId: null }).where(eq(tasks.projectId, id)).run();
+      // Unlink tasks: drop both the project tag AND any (same-project) milestone.
+      tx.update(tasks).set({ projectId: null, milestoneId: null }).where(eq(tasks.projectId, id)).run();
+      // Unlink media that lived under the project (else it's stranded — unreachable
+      // via the project gallery, never GC'd).
+      tx.update(media).set({ projectId: null }).where(eq(media.projectId, id)).run();
+      // Remove the project's milestones (their tasks were just un-assigned above).
+      tx.delete(roadmapMilestones).where(eq(roadmapMilestones.projectId, id)).run();
       tx.delete(projectSources).where(eq(projectSources.projectId, id)).run();
       tx.delete(projects).where(eq(projects.id, id)).run();
     });

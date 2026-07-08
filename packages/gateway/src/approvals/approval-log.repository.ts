@@ -43,7 +43,7 @@ export class ApprovalLogRepository {
       .select()
       .from(approvalLog)
       .where(where)
-      .orderBy(desc(approvalLog.createdAt))
+      .orderBy(desc(approvalLog.createdAt), desc(approvalLog.id))
       .limit(limit)
       .offset(offset)
       .all();

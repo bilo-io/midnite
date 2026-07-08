@@ -48,6 +48,20 @@ describe('TasksRepository', () => {
     expect(order).toEqual(['urgent', 'high', 'normal-old', 'normal-new', 'low']);
   });
 
+  it('breaks priority+createdAt ties deterministically by id (Phase 60 F)', () => {
+    // Same priority AND same createdAt (a same-ms bulk insert) — without an id
+    // tiebreaker the order is undefined, so a page edge could duplicate/skip a
+    // row and the scheduler could pick a different task each tick.
+    const at = '2026-06-01T00:00:00.000Z';
+    for (const id of ['t3', 't1', 't2']) insert(id, { priority: 1, createdAt: at });
+    const a = repo.listTasks('todo').map((t) => t.id);
+    const b = repo.listTasks('todo').map((t) => t.id);
+    expect(a).toEqual(['t1', 't2', 't3']); // stable, id-ascending within the tie
+    expect(a).toEqual(b); // identical across fetches (deterministic)
+    // The scheduler's ready-set shares the ordering, so it's equally stable.
+    expect(repo.listReadyTodoTasks(at).map((t) => t.id)).toEqual(['t1', 't2', 't3']);
+  });
+
   it('incrementRetry bumps the counter by one', () => {
     insert('t1', {});
     repo.incrementRetry('t1', '2026-06-02T00:00:00.000Z', null);
