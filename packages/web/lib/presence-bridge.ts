@@ -28,3 +28,27 @@ export function sceneFacing(facing: 'up' | 'down' | 'side', flipX: boolean): Pre
   if (facing === 'down') return 'down';
   return flipX ? 'left' : 'right';
 }
+
+/**
+ * Locate / walk-to sink (Theme E). The active 2D scene registers its A* `walkTo`;
+ * the roster / minimap "locate" action calls it with a teammate's world pixels.
+ * No-op in the 3D office (its rig is manual WASD) and when nothing is registered.
+ */
+export type PresenceLocator = (x: number, y: number) => void;
+
+let locator: PresenceLocator | null = null;
+
+/** The 2D scene registers (or clears with `null`) its walk-to handler. */
+export function setPresenceLocator(fn: PresenceLocator | null): void {
+  locator = fn;
+}
+
+/** Whether locate/walk-to is currently available (a 2D scene is mounted). */
+export function canLocate(): boolean {
+  return locator !== null;
+}
+
+/** Walk the player toward a teammate's world position, if locate is available. */
+export function locatePlayer(x: number, y: number): void {
+  locator?.(x, y);
+}

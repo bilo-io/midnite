@@ -21,11 +21,15 @@ const SHADOW_DEPTH = 4;
 const LABEL_DEPTH = 12;
 /** Minimum per-frame move (px²) to read as "walking" and animate the step frame. */
 const WALK_EPS_SQ = 0.04;
+/** Emote bubble lifetime (ms) — matches the 3D + self-emote TTL (Theme E). */
+const EMOTE_TTL = 3200;
 
 interface PeerActor {
   sprite: Phaser.GameObjects.Sprite;
   shadow: Phaser.GameObjects.Ellipse;
   label: Phaser.GameObjects.Text;
+  /** Ephemeral emote bubble above the head (Theme E). */
+  bubble: Phaser.GameObjects.Text;
   /** Rendered (interpolated) position — eases toward the peer's reported x/y. */
   rx: number;
   ry: number;
@@ -94,7 +98,12 @@ export class PeerLayer {
       .setOrigin(0.5)
       .setResolution(2)
       .setDepth(LABEL_DEPTH);
-    return { sprite, shadow, label, rx: peer.x, ry: peer.y, step: 0 };
+    const bubble = this.scene.add
+      .text(peer.x, peer.y - 34, '', { fontSize: '16px' })
+      .setOrigin(0.5)
+      .setResolution(2)
+      .setDepth(LABEL_DEPTH + 1);
+    return { sprite, shadow, label, bubble, rx: peer.x, ry: peer.y, step: 0 };
   }
 
   private updateActor(actor: PeerActor, peer: PeerView, dtMs: number): void {
@@ -122,11 +131,17 @@ export class PeerLayer {
     actor.shadow.setPosition(actor.rx, actor.ry + 13);
     if (actor.label.text !== peer.name) actor.label.setText(peer.name);
     actor.label.setPosition(actor.rx, actor.ry - 19);
+
+    // Ephemeral emote bubble above the head, within its TTL.
+    const emote = peer.emote && Date.now() - peer.emote.at < EMOTE_TTL ? peer.emote.emoji : '';
+    if (actor.bubble.text !== emote) actor.bubble.setText(emote);
+    actor.bubble.setPosition(actor.rx, actor.ry - 34);
   }
 
   private destroyActor(actor: PeerActor): void {
     actor.sprite.destroy();
     actor.shadow.destroy();
     actor.label.destroy();
+    actor.bubble.destroy();
   }
 }

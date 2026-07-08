@@ -28,10 +28,10 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [64 · Office presence](phase-64-office-presence.md) | 🔄 WIP | 13/30 | `████░░░░░░` | 43% | — | D E F G H |
+| [64 · Office presence](phase-64-office-presence.md) | 🔄 WIP | 20/30 | `███████░░░` | 67% | F | G H |
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
 | [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 6/33 | `██░░░░░░░░` | 18% | — | C D E F G H |
-| [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 7/36 | `██░░░░░░░░` | 19% | — | A B E F G H I |
+| [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 7/36 | `██░░░░░░░░` | 19% | A | B E F G H I |
 | [60 · Fable-Analysis](phase-60-fable-analysis.md) | 🔄 WIP | 26/63 | `████░░░░░░` | 41% | — | G H I J K L M |
 | [59 · Chat to board](phase-59-chat-to-board.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
@@ -120,8 +120,8 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **A** — Presence contract + gateway service (typed frames, tick-coalesced team fan-out, snapshot-on-join) (PR #356)
 - ✅ **B** — Client presence store + throttled position sampler + guest identity + interpolation (PR #358)
 - ✅ **C** — 2D renderer: remote humans as Actors, minimap dots, scene scoping (solo-preserving) (PR #361)
-- ◻ **D** — 3D renderer: r3f presence avatars + billboards (⛔ blocked on Phase 63 A–C)
-- ◻ **E** — Emote wheel, teammates roster, locate/walk-to
+- ✅ **D** — 3D renderer: r3f presence avatars + billboards + minimap (PR #362)
+- ✅ **E** — Emote wheel, teammates roster, locate/walk-to (PR #363)
 - ◻ **F** — Nav pill, dashboard widget, server-enforced ghost mode
 - ◻ **G** — Proximity chat bubbles (stretch — ephemeral, never persisted)
 - ◻ **H** — Gateway/contract/interp tests + two-context Playwright smoke

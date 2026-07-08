@@ -144,28 +144,32 @@ Engine-agnostic state so 2D and 3D are just two renderers of one slice.
       office specs pass unedited. First-visit guests get a name prompt; `use-presence` mounts in the
       2D office view. (PR #361)
 
-## Theme D — 3D renderer (three.js office) — **M** · ⛔ blocked on [Phase 63](phase-63-office-3d.md) A–C
+## Theme D — 3D renderer (three.js office) — **M** — ✅ DONE (PR #362, 2026-07-07)
 
-- [ ] **Remote low-poly figures:** a `presence-avatars.tsx` r3f component rendering peers from
-      the same store slice — Phase-63 low-poly figures (variant/tint) + billboarded name plates,
-      walking via the shared interpolation helper.
-- [ ] **Emote bubbles + minimap parity:** emotes as billboarded sprites over 3D avatars; peers
-      on the Phase-63 minimap HUD.
-- [ ] **Frustum-friendly:** peer meshes participate in Phase 63's room-chunk visibility rules
-      (a peer in an unseen room costs no draw calls; the minimap still shows them).
+- [x] **Remote low-poly figures:** [`presence-avatars.tsx`](../packages/web/components/office3d/presence-avatars.tsx)
+      renders the store's peers (scene-scoped) as Phase-63 low-poly figures (tinted) + drei `<Html>`
+      name plates, eased via the shared `interpStep`; peer wire-px → 3D units via
+      `presencePxToUnit` ([`lib/presence-3d.ts`](../packages/web/lib/presence-3d.ts)). The sampler
+      wires into `FirstPersonRig` (office) + `SubSceneRig` (corner, `presenceScene` prop) through
+      the Theme-C bridge. Extracted `useOfficePresence` is shared by both office views (2D deduped
+      onto it), so a 2D + a 3D user see each other. (PR #362)
+- [x] **Emote bubbles + minimap parity:** emotes as billboarded `<Html>` bubbles over 3D avatars
+      (TTL'd); remote peers as cyan dots on the in-canvas minimap HUD. (PR #362)
+- [x] **Frustum-friendly:** peer meshes are `frustumCulled` (three's default) — a peer in an unseen
+      room costs no draw calls; the minimap still shows them. (PR #362)
 
-## Theme E — Emotes + locate — **M**
+## Theme E — Emotes + locate — **M** — ✅ DONE (PR #363, 2026-07-07)
 
-- [ ] **Emote wheel:** a small radial/row picker in the office HUD (keyboard shortcut + button)
-      — 👋 👍 ☕ 🎉 ❓ etc.; sends `presence.emote`; renders as an ephemeral bubble (reusing the
-      `Actor.bubble` object in 2D; billboard in 3D) with a short TTL and per-peer rate limit.
-- [ ] **Roster:** the HUD gains a "teammates here" list (name, avatar chip, room) — the human
-      counterpart to the existing agent count.
-- [ ] **Locate / walk-to:** clicking a roster entry (or their minimap dot) auto-walks your player
-      to that teammate — reusing the existing A* click-to-walk (`walkTo`) in 2D; in 3D, a
-      waypoint marker + optional auto-walk via the Phase-63 rig.
-- [ ] **Self-view:** your own ghost/connected state visible in the roster; emotes you send
-      render over your own avatar too.
+- [x] **Emote wheel:** a row picker in the shared `PresenceHud` (button + number-key `1`–`6`
+      shortcuts) — 👋 👍 ☕ 🎉 ❓ 👀; sends `presence.emote`; renders as an ephemeral TTL'd bubble
+      over avatars — 2D (`PeerLayer` bubble) + 3D (billboard, Theme D). (PR #363)
+- [x] **Roster:** the `PresenceHud` "in the office" list (you + peers, avatar chip, room) — the
+      human counterpart to the agent count; shared by both engines. (PR #363)
+- [x] **Locate / walk-to:** clicking a same-scene teammate in the roster walks your player to them
+      via the presence-bridge locator (the 2D scene registers its A* `walkTo`). 3D auto-walk is
+      deferred (the rig is manual) — the roster hides locate there via `canLocate()`. (PR #363)
+- [x] **Self-view:** your own connected/ghost state + name shown in the roster; emotes you send
+      render over your own 2D avatar (optimistic `selfEmote`). (PR #363)
 
 ## Theme F — Surfaces & privacy — **S-M**
 

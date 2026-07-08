@@ -23,10 +23,14 @@ interface PresenceState {
   connected: boolean;
   /** Ghost mode: you see everyone, nobody sees you (server-enforced; Theme F UI). */
   ghost: boolean;
+  /** Your own most recent emote (optimistic) — rendered over your avatar (Theme E). */
+  selfEmote: { emoji: string; at: number } | null;
   /** Apply one decoded server frame. */
   applyFrame(frame: ServerPresenceMessage, now: number): void;
   setConnected(connected: boolean): void;
   setGhost(ghost: boolean): void;
+  /** Record an emote you just fired (also sent to the server via the hook). */
+  setSelfEmote(emoji: string, at: number): void;
   /** Clear all presence state (on office teardown / disconnect). */
   reset(): void;
 }
@@ -35,11 +39,13 @@ export const usePresenceStore = create<PresenceState>((set) => ({
   ...emptyPresence(),
   connected: false,
   ghost: false,
+  selfEmote: null,
   applyFrame: (frame, now) =>
     set((s) => reducePresence({ self: s.self, peers: s.peers }, frame, now)),
   setConnected: (connected) => set((s) => (s.connected === connected ? s : { connected })),
   setGhost: (ghost) => set((s) => (s.ghost === ghost ? s : { ghost })),
-  reset: () => set({ ...emptyPresence(), connected: false }),
+  setSelfEmote: (emoji, at) => set({ selfEmote: { emoji, at } }),
+  reset: () => set({ ...emptyPresence(), connected: false, selfEmote: null }),
 }));
 
 /** Peer list as an array (renderers iterate); stable-ish for a given peers map. */
