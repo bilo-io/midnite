@@ -18,6 +18,15 @@ Remaining Phase 64: G (proximity chat — stretch), H (tests + two-context Playw
 
 ---
 
+## 2026-07-08 — fix: project-delete cascade + pagination/scheduler tiebreakers — Phase 60 Theme F (PR #365)
+
+Closes Phase 60 Theme F (data-integrity & boundary bugs). Referential-integrity + pagination audits completed; null/empty + time-ordering partially (agents interrupted; key items self-checked/confirmed).
+
+- [x] **Referential integrity (HIGH):** `deleteProject` now cascade-cleans `media.projectId` + the project's `roadmapMilestones` + tasks' `milestoneId` (no stranded media, no phantom milestone chip — RI-1/2); `deleteWorkflow` deletes `workflow_storage` (RI-7).
+- [x] **Pagination + scheduler (MED):** added a unique `id` tiebreaker to all 5 offset-paginated `ORDER BY`s (tasks/ideas/audit/approval-log/notifications) — no dup/skip at a page edge on `createdAt` ties; the scheduler ready-set shares the ordering, fixing its nondeterministic pick/starvation (PG-2..5, TO-1). Real-SQLite regression tests (cascade + tie-determinism).
+- [x] **Documented follow-ups:** repo delete/rename orphans `task.repo` → wrong cwd (RI-3/4/8, HIGH); `setProject` existence guard (RI-5); promoted-idea back-ref (RI-6); notifications keyset+`total` (PG-1); `workflows.latestRunRow` LIMIT-1 tiebreaker + dead `approvals-log.repository.ts` + remaining `.all()` orderings (time-audit Findings 2/3); null/empty + timezone sweep. Report: [`todo/phase-60-findings/F-data-integrity.md`](phase-60-findings/F-data-integrity.md).
+- [x] Gateway gate green (1761).
+
 ## 2026-07-07 — feat: office emotes + roster + locate — Phase 64 Theme E (PR #363)
 
 The office social layer, shared by both engines. Pure `packages/web`.
