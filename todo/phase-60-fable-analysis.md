@@ -182,22 +182,26 @@ The autonomous core: transitions, ticks, and races.
 - [x] **Report:** [`todo/phase-60-findings/E-state-concurrency.md`](phase-60-findings/E-state-concurrency.md)
       (+ the state-machine guard applied with regression tests).
 
-## Theme F — Data integrity & boundary-condition bugs — **M**
+## Theme F — Data integrity & boundary-condition bugs — **M** — ✅ DONE (PR #TBD, 2026-07-08)
 
 The edges: nulls, empties, orphans, off-by-ones.
 
-- [ ] **Referential integrity without FKs:** the schema avoids cross-domain FKs (by design) — enumerate the
-      app-layer invariants (task→project, task→milestone (P58), dependency edges, session→task) and find
-      **orphan-producing paths** (delete a project with tasks? a blocker task? a repo in use?) that leave
-      dangling refs.
-- [ ] **Pagination boundaries (post-57):** with cursor/keyset pagination landing, probe boundary bugs —
-      duplicate/skipped rows at page edges under concurrent inserts, empty-page handling, unstable sort ties.
-- [ ] **Null/empty/limits:** empty board, a task with no repo, a deck with zero slides, a workflow with no
-      nodes, extremely long titles/prompts, unicode/emoji, huge diffs (P52) — find the render/serialize paths
-      that assume non-empty.
-- [ ] **Time & ordering:** timestamps are ISO strings — check any string-vs-Date comparison, timezone
-      assumptions, and `desc(priority), asc(createdAt)` tie-breaking under identical timestamps.
-- [ ] **Report:** `todo/phase-60-findings/F-data-integrity.md`.
+- [x] **Referential integrity: FOUND + FIXED 2 HIGH + 1 LOW.** `deleteProject` left `media.projectId` dangling
+      (stranded media) and orphaned its milestones + tasks' `milestoneId` (phantom chip) — now cascade-cleaned
+      in the delete tx (RI-1/2). `deleteWorkflow` leaked `workflow_storage` — now deleted (RI-7). Documented:
+      repo delete/rename orphans `task.repo` by-name → wrong cwd/skipped checks (RI-3/4/8, HIGH, needs a
+      cross-domain cascade + cascade-vs-409 call); `setProject` no existence check (RI-5); promoted-idea
+      back-ref (RI-6).
+- [x] **Pagination: FIXED.** All 5 offset-paginated `ORDER BY`s (tasks/ideas/audit/approval-log/notifications)
+      lacked a unique `id` tiebreaker → dup/skip at a page edge on `createdAt` ties. Added the tiebreaker
+      everywhere (PG-2..5). notifications' mutable `readAt` sort key + missing `total` documented as a keyset
+      follow-up (PG-1). Verified: all endpoints cap `limit`, `total` matches the `where`.
+- [x] **Time & ordering: FIXED the scheduler tie (TO-1).** `listReadyTodoTasks` shared the tiebreaker-less
+      ordering → nondeterministic pick / starvation on `priority`+`createdAt` ties; the `id` tiebreaker fixes it.
+      Verified safe: `nextRetryAt <= now` (UTC-ISO both sides), `projectCompletion` div-by-zero guard. Timezone/
+      monotonicity sweep + null/empty sweep partially done (agents interrupted) — logged as a follow-up.
+- [x] **Report:** [`todo/phase-60-findings/F-data-integrity.md`](phase-60-findings/F-data-integrity.md) (+ the
+      RI-1/2/7 + PG/TO fixes applied with real-SQLite regression tests).
 
 ## Theme G — Error handling & failure-path correctness — **M**
 

@@ -21,7 +21,7 @@ export class NotificationsRepository {
       .select()
       .from(notifications)
       .where(where)
-      .orderBy(sql`${notifications.readAt} is null desc`, desc(notifications.createdAt))
+      .orderBy(sql`${notifications.readAt} is null desc`, desc(notifications.createdAt), desc(notifications.id))
       .limit(limit)
       .offset(offset)
       .all();
