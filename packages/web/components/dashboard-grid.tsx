@@ -44,6 +44,7 @@ import { StorageWidget } from './storage-widget';
 import { DiskWidget } from './disk-widget';
 import { SystemMonitorWidget } from './system-monitor-widget';
 import { WorldClocksWidget } from './world-clocks-widget';
+import { PresenceOfficeWidget } from './presence-office-widget';
 import { AllProjectsWidget } from './all-projects-widget';
 import { QuoteWidget } from './quote-widget';
 import { TimerWidget } from './timer-widget';
@@ -440,6 +441,8 @@ export function DashboardGrid({
         return { node: <UsageWidget /> };
       case 'shipped':
         return { node: <ShippedWidget /> };
+      case 'who-in-office':
+        return { node: <PresenceOfficeWidget /> };
       case 'quick-capture':
         return { node: <QuickCaptureWidget /> };
       case 'system-monitor':

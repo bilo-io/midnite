@@ -28,6 +28,7 @@ import {
 } from '@/lib/app-settings';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { NotificationCenter } from '@/components/notification-center';
+import { PresenceNavPill } from '@/components/office/presence-nav-pill';
 import { ApprovalsDrawer } from '@/components/approvals-drawer';
 import { Screensaver } from '@/components/screensaver';
 import { PasscodeSetupDialog } from '@/components/passcode-pad';
@@ -225,6 +226,7 @@ export function NavBar() {
             <MessageSquare className="h-4 w-4 shrink-0" />
             {expandedView ? <span className="truncate text-sm">Chat to board</span> : <Tooltip>Chat to board</Tooltip>}
           </button>
+          <PresenceNavPill expanded={expandedView} />
           <ApprovalsDrawer expanded={expandedView} />
           <NotificationCenter expanded={expandedView} />
           <ThemeToggle expanded={expandedView} />

@@ -216,4 +216,33 @@ describe('PresenceService', () => {
       expect(broadcast.sent).toHaveLength(0);
     });
   });
+
+  describe('summary (Theme F)', () => {
+    it('counts renderable non-ghost peers in the caller scope', () => {
+      const a = sock();
+      const b = sock();
+      svc.join(a, guest(), hello({ name: 'Ada' }));
+      svc.handleMessage(a, move(5, 6));
+      svc.join(b, guest(), hello({ name: 'Bo', ghost: true }));
+      svc.handleMessage(b, move(1, 1));
+      const summary = svc.summary(null);
+      expect(summary.count).toBe(1); // Bo is a ghost → excluded
+      expect(summary.peers[0]).toMatchObject({ name: 'Ada', scene: 'office' });
+    });
+
+    it('omits peers who have not moved yet (not renderable)', () => {
+      const a = sock();
+      svc.join(a, guest(), hello());
+      expect(svc.summary(null).count).toBe(0);
+    });
+
+    it('is team-scoped — team A is invisible to a team-B caller', () => {
+      const a = sock();
+      svc.join(a, { userId: 'u1', teamId: 'A', verifiedName: 'a@x' }, hello());
+      svc.handleMessage(a, move(2, 2));
+      expect(svc.summary('A').count).toBe(1);
+      expect(svc.summary('B').count).toBe(0);
+      expect(svc.summary(null).count).toBe(0);
+    });
+  });
 });

@@ -68,6 +68,7 @@ export type WidgetType =
   | 'health'
   | 'usage'
   | 'shipped'
+  | 'who-in-office'
   | 'system-monitor'
   | 'disk'
   | 'storage'
@@ -295,6 +296,13 @@ export const DASHBOARD_WIDGETS: Record<WidgetType, WidgetMeta> = {
 
   // — live activity —————————————————————————————————————————————————
   activity: { label: 'Activity feed', description: 'Recent task status changes', icon: Activity, category: 'activity', sizes: panelSizes },
+  'who-in-office': {
+    label: "Who's in the office",
+    description: 'Teammates currently in the multiplayer office',
+    icon: Users,
+    category: 'activity',
+    sizes: panelSizes,
+  },
   throughput: {
     label: 'Throughput',
     description: 'Tasks completed over the last two weeks',

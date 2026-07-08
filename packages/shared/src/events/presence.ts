@@ -131,3 +131,24 @@ export type PresenceServerEmoteMessage = z.infer<typeof PresenceServerEmoteMessa
 export type ServerPresenceMessage = z.infer<typeof ServerPresenceMessageSchema>;
 
 export const PRESENCE_WS_PATH = '/ws/presence';
+
+// ---- REST summary (Theme F: app-wide surfaces) ----
+
+/**
+ * A lightweight, team-scoped roll-up of who's in the office, served by
+ * `GET /presence/summary`. Powers the nav pill + dashboard widget from anywhere
+ * in the app without holding a presence socket. Ghosts are excluded server-side;
+ * ephemeral (in-memory), so it reflects live state at request time.
+ */
+export const PresenceSummaryEntrySchema = z.object({
+  name: nameSchema,
+  scene: PresenceSceneSchema,
+  tint: tintSchema,
+});
+export type PresenceSummaryEntry = z.infer<typeof PresenceSummaryEntrySchema>;
+
+export const PresenceSummarySchema = z.object({
+  count: z.number().int().nonnegative(),
+  peers: z.array(PresenceSummaryEntrySchema),
+});
+export type PresenceSummary = z.infer<typeof PresenceSummarySchema>;

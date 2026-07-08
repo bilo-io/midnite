@@ -91,6 +91,8 @@ import {
   PreflightReportSchema,
   type Readiness,
   type PreflightReport,
+  PresenceSummarySchema,
+  type PresenceSummary,
 } from '@midnite/shared';
 import {
   AgentCliResponseSchema,
@@ -1067,6 +1069,11 @@ export async function getCheckRuns(taskId: string): Promise<CheckRunListResponse
 
 export async function getSessions(): Promise<SessionSummary[]> {
   return fetchJson('/sessions', undefined, z.array(SessionSummarySchema));
+}
+
+/** Who's currently in the office (team-scoped roll-up; Phase 64 F). */
+export async function getPresenceSummary(signal?: AbortSignal): Promise<PresenceSummary> {
+  return fetchJson('/presence/summary', signal ? { signal } : undefined, PresenceSummarySchema);
 }
 
 /** One session's detail (`GET /sessions/:id`); throws on a 404 for an unknown id. */

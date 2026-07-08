@@ -45,4 +45,11 @@ describe('PresenceHud', () => {
     fireEvent.keyDown(window, { key: '1' });
     expect(emote).toHaveBeenCalledWith('👋');
   });
+
+  it('toggles ghost mode in the store', () => {
+    render(<PresenceHud emote={() => {}} />);
+    expect(usePresenceStore.getState().ghost).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Ghost mode' }));
+    expect(usePresenceStore.getState().ghost).toBe(true);
+  });
 });

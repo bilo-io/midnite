@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { usePresence } from '@/hooks/use-presence';
 import { setPresenceSampler } from '@/lib/presence-bridge';
-import { loadGuestIdentity, saveGuestName } from '@/lib/presence-identity';
+import { loadGhost, loadGuestIdentity, saveGuestName } from '@/lib/presence-identity';
 import { usePresenceStore } from '@/lib/presence-store';
 
 /**
@@ -28,6 +28,12 @@ export function useOfficePresence(): {
     setPresenceSampler(sendMove);
     return () => setPresenceSampler(null);
   }, [sendMove]);
+
+  // Restore the persisted ghost-mode choice on entry (the hello re-sends when it
+  // changes, and the server enforces exclusion).
+  useEffect(() => {
+    usePresenceStore.getState().setGhost(loadGhost());
+  }, []);
 
   const emote = useCallback(
     (emoji: string) => {
