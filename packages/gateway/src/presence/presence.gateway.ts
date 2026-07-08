@@ -28,6 +28,9 @@ import { PresenceService, type PresenceIdentity } from './presence.service';
 export class PresenceGateway implements OnGatewayConnection, OnGatewayDisconnect, OnModuleInit {
   private readonly logger = new Logger(PresenceGateway.name);
   private readonly identities = new WeakMap<WebSocket, PresenceIdentity>();
+  /** Sockets whose first hello has joined — a later hello is a re-hello (rename /
+   *  avatar / ghost toggle), routed to the update path, not a fresh join. */
+  private readonly joined = new WeakSet<WebSocket>();
 
   constructor(
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
@@ -57,6 +60,7 @@ export class PresenceGateway implements OnGatewayConnection, OnGatewayDisconnect
   }
 
   handleDisconnect(client: WebSocket): void {
+    this.joined.delete(client);
     this.presence.leave(client);
     this.registry.deregister(client);
   }
@@ -90,7 +94,16 @@ export class PresenceGateway implements OnGatewayConnection, OnGatewayDisconnect
     const frame = result.data;
     if (frame.type === 'presence.hello') {
       const identity = this.identities.get(client);
-      if (identity) this.presence.join(client, identity, frame);
+      if (!identity) return;
+      if (this.joined.has(client)) {
+        // Re-hello (rename / avatar / ghost toggle) — update in place so the
+        // peerId is stable and a ghost-on retracts the live avatar; a fresh
+        // join() would mint a new guest peerId and orphan the old one.
+        this.presence.handleMessage(client, frame);
+      } else {
+        this.joined.add(client);
+        this.presence.join(client, identity, frame);
+      }
       return;
     }
     this.presence.handleMessage(client, frame);

@@ -197,19 +197,39 @@ Engine-agnostic state so 2D and 3D are just two renderers of one slice.
 - [ ] **2D first:** bubbles ride `Actor.bubble` in Phaser; the 3D billboard variant lands with
       Theme D if both are in flight, else follows.
 
-## Theme H — Tests & hardening — **S-M**
+## Theme H — Tests & hardening — **S-M** — ✅ (PR #368)
 
-- [ ] **Gateway specs:** `PresenceService` unit tests — hello/identity resolution in both auth
+- [x] **Gateway specs:** `PresenceService` unit tests — hello/identity resolution in both auth
       modes, snapshot-on-join, tick coalescing (N moves → 1 frame per tick), stale-timeout
-      departure, ghost exclusion, duplicate-connection coalescing, chat rate limit (fakes, no
-      `@nestjs/testing`).
-- [ ] **Contract tests:** shared zod unions round-trip (snapshot the WS event shapes, the house
-      convention); the client hook decodes every server frame type.
-- [ ] **Pure-helper units:** interpolation buffer (lerp/snap rules), throttle/dedup sampler —
-      alongside-file Vitest.
-- [ ] **Flow smoke:** Playwright with **two browser contexts** on `/office` — both see each
-      other's avatar, an emote propagates, ghost mode hides one from the other; plus a
-      solo-regression check (no peers ⇒ existing office specs unedited and green).
+      departure, ghost exclusion, duplicate-connection coalescing (fakes, no `@nestjs/testing`).
+      *16 cases; +2 for the mid-session ghost-toggle retraction below. Chat rate limit stays with
+      the (deferred) Theme G chat.*
+- [x] **Contract tests:** shared zod unions round-trip (the WS event shapes) + the reducer decodes
+      every server frame type (snapshot / peer-updated / peer-left / emote). *Pre-existing in
+      `presence.test.ts` + `presence-frames.test.ts`; audited as complete.*
+- [x] **Pure-helper units:** interpolation buffer (lerp/snap rules), throttle/dedup sampler —
+      alongside-file Vitest. *Pre-existing in `presence-interp.test.ts` + `presence-frames.test.ts`.*
+- [x] **Flow smoke:** Playwright, **two browser contexts** on `/office` — mutual visibility, an
+      emote propagates, ghost mode retracts one from the other, plus a solo-regression (the HUD
+      mounts, roster shows just "You"; the existing `office.e2e.ts` canvas smoke stays unedited).
+      The contract is driven over the **real presence WS** rather than through the Phaser canvas:
+      headless Chromium throttles a backgrounded tab's rAF (the scene's move source) and dev
+      StrictMode double-mounts the socket, so canvas-driven publishing is too flaky to assert —
+      the direct wire is deterministic *and* a truer cross-context check. (`office-presence.e2e.ts`.)
+
+**Hardening — two real production bugs the two-context smoke surfaced (both invisible to unit
+tests, which pass a fake broadcast and call the service directly):**
+
+- [x] **Presence WS crashed on every connection.** `WsBroadcastService` was injected into
+      `PresenceService` by type only; combined with the trailing non-injectable `clock` param,
+      Nest resolved it to `undefined`, so the first `hello` → `sendSnapshot` → `this.broadcast.toAll`
+      threw and the socket closed (1006). Presence never worked end-to-end. Fixed with an explicit
+      `@Inject(WsBroadcastService)` (matching the other gateways) + an `@Optional()` clock.
+- [x] **Ghost toggle / rename / avatar change did nothing for existing viewers.** The gateway
+      routed *every* `presence.hello` to `join()`, so the service's re-hello update path was dead
+      code — a guest re-hello minted a fresh peerId and orphaned the old avatar (no `peer-left`).
+      Gateway now routes the first hello to `join()` and later hellos to `handleMessage()`; the
+      service emits `peer-left` when an already-visible peer toggles ghost on mid-session.
 
 ---
 
