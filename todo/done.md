@@ -12,6 +12,14 @@ Replaces the hash-seeded context-token placeholder with **measured** counts from
 - [x] **shared:** `SessionUsage` contract; **gateway:** `session_usage` table + migration 0076; pure `transcript-usage.ts` parser (sum across turns + last-turn context occupancy, streaming + byte-cap); `SessionUsageService` collector (fail-open, cache-aware `estimateSessionCostUsd` — cache-read 0.1×/cache-write 1.25×, `null` for unpriced); wired into the Stop hook; own module so pool (write) + sessions (read) share it without a cycle.
 - [x] **sessions.service:** measured `contextTokens` (`contextEstimate:false`) when harvested, labeled hash estimate otherwise (P51 honesty). `getMany` avoids an N+1 on the list.
 - [x] Tests: parser (sums/last-turn/garbage/on-disk/byte-cap), pricing (cache math + null-unpriced), collector (no-path/unreadable/parse-price-upsert/unpriced/get), repo real-SQLite, sessions fallback, Stop-hook delegation + fail-open, shared schema. shared 631 · gateway 1780 (only the pre-existing tmux flake) · `:typecheck`/`:lint` green.
+## 2026-07-08 — fix: project-delete cascade + pagination/scheduler tiebreakers — Phase 60 Theme F (PR #365)
+
+Closes Phase 60 Theme F (data-integrity & boundary bugs). Referential-integrity + pagination audits completed; null/empty + time-ordering partially (agents interrupted; key items self-checked/confirmed).
+
+- [x] **Referential integrity (HIGH):** `deleteProject` now cascade-cleans `media.projectId` + the project's `roadmapMilestones` + tasks' `milestoneId` (no stranded media, no phantom milestone chip — RI-1/2); `deleteWorkflow` deletes `workflow_storage` (RI-7).
+- [x] **Pagination + scheduler (MED):** added a unique `id` tiebreaker to all 5 offset-paginated `ORDER BY`s (tasks/ideas/audit/approval-log/notifications) — no dup/skip at a page edge on `createdAt` ties; the scheduler ready-set shares the ordering, fixing its nondeterministic pick/starvation (PG-2..5, TO-1). Real-SQLite regression tests (cascade + tie-determinism).
+- [x] **Documented follow-ups:** repo delete/rename orphans `task.repo` → wrong cwd (RI-3/4/8, HIGH); `setProject` existence guard (RI-5); promoted-idea back-ref (RI-6); notifications keyset+`total` (PG-1); `workflows.latestRunRow` LIMIT-1 tiebreaker + dead `approvals-log.repository.ts` + remaining `.all()` orderings (time-audit Findings 2/3); null/empty + timezone sweep. Report: [`todo/phase-60-findings/F-data-integrity.md`](phase-60-findings/F-data-integrity.md).
+- [x] Gateway gate green (1761).
 
 ## 2026-07-07 — feat: office emotes + roster + locate — Phase 64 Theme E (PR #363)
 

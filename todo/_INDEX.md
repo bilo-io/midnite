@@ -166,7 +166,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ◻ **C** — Input validation & injection sweep (zod coverage, FTS/path-traversal/SSRF/zip-slip)
 - ✅ **D** — Dependency & supply-chain audit (+ safe bumps): ws 8.18→8.21 DoS bump, rest triaged (PR #355)
 - ✅ **E** — State-machine, scheduler & concurrency correctness (PR #357)
-- ✅ **F** — Data integrity & boundary-condition bugs (PR #TBD)
+- ✅ **F** — Data integrity & boundary-condition bugs (PR #365)
 - ◻ **G** — Error handling & failure-path correctness
 - ◻ **H** — Consistency & flow sweep (loading/empty/error, dead ends)
 - ◻ **I** — Accessibility & keyboard navigation

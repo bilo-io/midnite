@@ -182,7 +182,7 @@ The autonomous core: transitions, ticks, and races.
 - [x] **Report:** [`todo/phase-60-findings/E-state-concurrency.md`](phase-60-findings/E-state-concurrency.md)
       (+ the state-machine guard applied with regression tests).
 
-## Theme F — Data integrity & boundary-condition bugs — **M** — ✅ DONE (PR #TBD, 2026-07-08)
+## Theme F — Data integrity & boundary-condition bugs — **M** — ✅ DONE (PR #365, 2026-07-08)
 
 The edges: nulls, empties, orphans, off-by-ones.
 
