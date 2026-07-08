@@ -7,6 +7,7 @@
 
 const ID_KEY = 'midnite.presence.guest-id';
 const NAME_KEY = 'midnite.presence.guest-name';
+const GHOST_KEY = 'midnite.presence.ghost';
 
 /** A short, human-ish default name so the roster isn't full of "Guest". */
 const DEFAULT_NAMES = [
@@ -59,6 +60,16 @@ export function saveGuestName(name: string): string {
   const clean = name.trim().slice(0, 40);
   if (typeof window !== 'undefined' && clean) window.localStorage.setItem(NAME_KEY, clean);
   return clean;
+}
+
+/** Ghost-mode preference (Theme F) — persisted locally; sent in the hello frame. */
+export function loadGhost(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.localStorage.getItem(GHOST_KEY) === '1';
+}
+
+export function saveGhost(ghost: boolean): void {
+  if (typeof window !== 'undefined') window.localStorage.setItem(GHOST_KEY, ghost ? '1' : '0');
 }
 
 export interface GuestIdentity {
