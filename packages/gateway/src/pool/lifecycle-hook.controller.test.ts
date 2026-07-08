@@ -4,6 +4,7 @@ import type { ApprovalService } from '../terminal/approval.service';
 import type { TerminalService } from '../terminal/terminal.service';
 import type { TasksService } from '../tasks/tasks.service';
 import type { AgentRunnerService } from './agent-runner.service';
+import type { SessionUsageService } from '../sessions/session-usage.service';
 import { LifecycleHookController } from './lifecycle-hook.controller';
 
 function setup(output: string) {
@@ -17,8 +18,17 @@ function setup(output: string) {
   const tasks = { markWaiting, emitActivity, emitAttention } as unknown as TasksService;
   const terminal = { readOutput: () => output } as unknown as TerminalService;
   const runner = { completeWithChecks } as unknown as AgentRunnerService;
-  const controller = new LifecycleHookController(approvals, tasks, terminal, runner);
-  return { controller, markWaiting, emitActivity, emitAttention, completeWithChecks };
+  const harvestFromTranscript = vi.fn().mockResolvedValue(null);
+  const usage = { harvestFromTranscript } as unknown as SessionUsageService;
+  const controller = new LifecycleHookController(approvals, tasks, terminal, runner, usage);
+  return {
+    controller,
+    markWaiting,
+    emitActivity,
+    emitAttention,
+    completeWithChecks,
+    harvestFromTranscript,
+  };
 }
 
 describe('LifecycleHookController', () => {
@@ -54,6 +64,18 @@ describe('LifecycleHookController', () => {
     const { controller, emitActivity } = setup('');
     controller.stop('t1', 'good', {});
     expect(emitActivity).toHaveBeenCalledWith('t1', 'idle');
+  });
+
+  it('harvests token usage from the Stop payload transcript_path (Phase 61 A)', () => {
+    const { controller, harvestFromTranscript } = setup('');
+    controller.stop('t1', 'good', { transcript_path: '/tmp/session.jsonl' });
+    expect(harvestFromTranscript).toHaveBeenCalledWith('t1', '/tmp/session.jsonl');
+  });
+
+  it('does not throw when the transcript harvest rejects (fail-open)', () => {
+    const { controller, harvestFromTranscript } = setup('');
+    harvestFromTranscript.mockRejectedValueOnce(new Error('unreadable'));
+    expect(() => controller.stop('t1', 'good', { transcript_path: '/bad' })).not.toThrow();
   });
 
   it('emits agent.attention(waiting) on Notification', () => {

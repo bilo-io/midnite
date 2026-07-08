@@ -1042,6 +1042,26 @@ export const gaugeSamples = sqliteTable(
 export type GaugeSampleRow = typeof gaugeSamples.$inferSelect;
 export type GaugeSampleInsert = typeof gaugeSamples.$inferInsert;
 
+// Harvested real token usage per agent session (Phase 61 A). One row per session
+// (pk = session id = task id), upserted from the Claude Code transcript at Stop.
+// `est_cost_usd` is nullable — null means the model is unpriced (tokens still
+// stored). Theme B adds cost-attribution reads over this table.
+export const sessionUsage = sqliteTable('session_usage', {
+  sessionId: text('session_id').primaryKey(),
+  agentCli: text('agent_cli'),
+  model: text('model'),
+  inputTokens: integer('input_tokens').notNull().default(0),
+  outputTokens: integer('output_tokens').notNull().default(0),
+  cachedReadTokens: integer('cached_read_tokens').notNull().default(0),
+  cachedWriteTokens: integer('cached_write_tokens').notNull().default(0),
+  contextTokens: integer('context_tokens').notNull().default(0),
+  estCostUsd: real('est_cost_usd'),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export type SessionUsageRow = typeof sessionUsage.$inferSelect;
+export type SessionUsageInsert = typeof sessionUsage.$inferInsert;
+
 
 export type WorkflowTemplateRow = typeof workflowTemplates.$inferSelect;
 export type WorkflowTemplateInsert = typeof workflowTemplates.$inferInsert;

@@ -14,6 +14,7 @@ export * from './milestone.js';
 export * from './bulk.js';
 export * from './agent-pool.js';
 export * from './session.js';
+export * from './session-usage.js';
 export * from './color.js';
 export * from './fs.js';
 export * from './source.js';

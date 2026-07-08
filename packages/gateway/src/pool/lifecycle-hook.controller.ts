@@ -18,6 +18,7 @@ import { ApprovalService } from '../terminal/approval.service';
 import { extractPrUrl } from '../terminal/lib/extract-pr-url';
 import { TerminalService } from '../terminal/terminal.service';
 import { TasksService } from '../tasks/tasks.service';
+import { SessionUsageService } from '../sessions/session-usage.service';
 import { AgentRunnerService } from './agent-runner.service';
 
 /**
@@ -34,6 +35,7 @@ export class LifecycleHookController {
     @Inject(TasksService) private readonly tasks: TasksService,
     @Inject(TerminalService) private readonly terminal: TerminalService,
     @Inject(AgentRunnerService) private readonly runner: AgentRunnerService,
+    @Inject(SessionUsageService) private readonly usage: SessionUsageService,
   ) {}
 
   @Post(':sessionId/stop')
@@ -44,9 +46,15 @@ export class LifecycleHookController {
     @Body() body: unknown,
   ): HookAck {
     this.verify(sessionId, secret);
-    if (!StopHookRequestSchema.safeParse(body).success) {
+    const parsed = StopHookRequestSchema.safeParse(body);
+    if (!parsed.success) {
       throw new BadRequestException('invalid Stop payload');
     }
+    // Phase 61 A — harvest real token usage from the transcript the hook points at.
+    // Fire-and-forget + fail-open: never let a bad transcript read block the hook.
+    void this.usage
+      .harvestFromTranscript(sessionId, parsed.data.transcript_path)
+      .catch(() => undefined);
     // Idle signal first so the office clears any running/blocked state immediately.
     this.tasks.emitActivity(sessionId, 'idle');
     // Claude fires Stop at the end of *every* turn, so a Stop alone isn't "done".

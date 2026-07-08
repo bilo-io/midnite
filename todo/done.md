@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-08 — feat: real session-token harvesting — Phase 61 Theme A (PR #366)
+
+Replaces the hash-seeded context-token placeholder with **measured** counts from the Claude Code transcript (the Stop hook already carries `transcript_path`), honestly labeled. The load-bearing observability slice; unblocks Theme B (cost attribution) + G's cost views. Gateway/shared only.
+
+- [x] **Probe:** confirmed CC transcripts carry per-turn `message.usage` (input/output/cache tokens) + `message.model`, and the Stop payload carries `transcript_path`. Per-CLI reality: only `claude` today; other CLIs fall back to the labeled estimate.
+- [x] **shared:** `SessionUsage` contract; **gateway:** `session_usage` table + migration 0076; pure `transcript-usage.ts` parser (sum across turns + last-turn context occupancy, streaming + byte-cap); `SessionUsageService` collector (fail-open, cache-aware `estimateSessionCostUsd` — cache-read 0.1×/cache-write 1.25×, `null` for unpriced); wired into the Stop hook; own module so pool (write) + sessions (read) share it without a cycle.
+- [x] **sessions.service:** measured `contextTokens` (`contextEstimate:false`) when harvested, labeled hash estimate otherwise (P51 honesty). `getMany` avoids an N+1 on the list.
+- [x] Tests: parser (sums/last-turn/garbage/on-disk/byte-cap), pricing (cache math + null-unpriced), collector (no-path/unreadable/parse-price-upsert/unpriced/get), repo real-SQLite, sessions fallback, Stop-hook delegation + fail-open, shared schema. shared 631 · gateway 1780 (only the pre-existing tmux flake) · `:typecheck`/`:lint` green.
 ## 2026-07-08 — feat: office presence surfaces + ghost mode — Phase 64 Theme F (PR #367)
 
 Presence beyond the office + the privacy control.
