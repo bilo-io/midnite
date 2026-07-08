@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-08 — test+fix: presence tests & hardening — Phase 64 Theme H (PR #TBD)
+## 2026-07-08 — test+fix: presence tests & hardening — Phase 64 Theme H (PR #368)
 
 Closes Theme H (Phase 64 → 27/30; G proximity-chat stretch remains deferred). The two-context Playwright smoke — the phase's first *real-wire* presence check — surfaced two production bugs that every unit test missed (they pass a fake broadcast and call the service directly). Presence had never actually worked end-to-end.
 

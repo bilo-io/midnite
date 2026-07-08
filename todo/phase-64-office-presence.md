@@ -197,7 +197,7 @@ Engine-agnostic state so 2D and 3D are just two renderers of one slice.
 - [ ] **2D first:** bubbles ride `Actor.bubble` in Phaser; the 3D billboard variant lands with
       Theme D if both are in flight, else follows.
 
-## Theme H — Tests & hardening — **S-M** — ✅ (PR #TBD)
+## Theme H — Tests & hardening — **S-M** — ✅ (PR #368)
 
 - [x] **Gateway specs:** `PresenceService` unit tests — hello/identity resolution in both auth
       modes, snapshot-on-join, tick coalescing (N moves → 1 frame per tick), stale-timeout

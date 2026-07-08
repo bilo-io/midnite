@@ -124,7 +124,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **E** — Emote wheel, teammates roster, locate/walk-to (PR #363)
 - ✅ **F** — Nav pill, dashboard widget, server-enforced ghost mode (PR #367)
 - ◻ **G** — Proximity chat bubbles (stretch — ephemeral, never persisted)
-- ✅ **H** — Gateway/contract/interp tests + two-context Playwright smoke; fixed 2 real bugs it caught (broadcast DI undefined → presence crashed on connect; re-hello bypassed the update path → ghost toggle no-op) (PR #TBD)
+- ✅ **H** — Gateway/contract/interp tests + two-context Playwright smoke; fixed 2 real bugs it caught (broadcast DI undefined → presence crashed on connect; re-hello bypassed the update path → ghost toggle no-op) (PR #368)
 
 ### [Phase 63 — Office 3D](phase-63-office-3d.md)
 *The office rebuilt in first-person three.js (r3f + drei): same rooms/data, same Zustand store contract so every existing React panel is reused untouched; 2D/3D tabs on /office; arcade sub-scene with one playable Breakout. Pure packages/web; 2D office behavior-preserving.*
