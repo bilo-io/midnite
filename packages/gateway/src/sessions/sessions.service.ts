@@ -13,9 +13,11 @@ import {
   type TerminalTokenResponse,
   type TranscriptMessage,
 } from '@midnite/shared';
+import type { SessionUsage } from '@midnite/shared';
 import { AgentsService } from '../agents/agents.service';
 import { TasksService } from '../tasks/tasks.service';
 import { TerminalService } from '../terminal/terminal.service';
+import { SessionUsageService } from './session-usage.service';
 import { loadTranscript } from './sessions.reader';
 
 const SUBTITLE_LIMIT = 140;
@@ -37,6 +39,7 @@ export class SessionsService {
     @Inject(TasksService) private readonly tasks: TasksService,
     @Inject(TerminalService) private readonly terminal: TerminalService,
     @Inject(AgentsService) private readonly agents: AgentsService,
+    @Inject(SessionUsageService) private readonly usage: SessionUsageService,
   ) {}
 
   // Mint a short-lived, single-use token the web client presents on the WS
@@ -55,26 +58,31 @@ export class SessionsService {
   // One session per task (most-recently-touched first), rather than every raw
   // ~/.claude transcript on disk.
   async list(scope?: TeamScope): Promise<SessionSummary[]> {
-    return this.tasks
-      .listTasks(undefined, undefined, scope)
-      .map((t) => this.toSummary(t))
+    const tasks = this.tasks.listTasks(undefined, undefined, scope);
+    const usage = this.usage.getManyMap(tasks.map((t) => t.id));
+    return tasks
+      .map((t) => this.toSummary(t, usage.get(t.id) ?? null))
       .sort((a, b) => b.lastActivity - a.lastActivity);
   }
 
   /**
    * One session's detail (Phase 51 A) — the summary plus the cockpit's extra
    * fields threaded from the linked task. 404s an unknown id. `cwd` is best-effort
-   * (task-backed sessions have none until a transcript is loaded); `contextEstimate`
-   * is always true — the token figures are hash-seeded, not measured (Decision §4).
+   * (task-backed sessions have none until a transcript is loaded). `contextEstimate`
+   * is false once real tokens have been harvested from the transcript (Phase 61 A),
+   * true otherwise — the honest hash-seeded fallback.
    */
   getDetail(id: string, scope?: TeamScope): SessionDetail {
     const task = this.tasks.listTasks(undefined, undefined, scope).find((t) => t.id === id);
     if (!task) throw new NotFoundException(`session ${id} not found`);
+    // Phase 61 A — measured token counts when the session has been harvested;
+    // otherwise the honest labeled estimate (contextEstimate: true).
+    const measured = this.usage.get(id);
     return {
-      ...this.toSummary(task),
+      ...this.toSummary(task, measured),
       createdAt: task.createdAt,
       retryCount: task.retryCount,
-      contextEstimate: true,
+      contextEstimate: !measured,
     };
   }
 
@@ -91,7 +99,11 @@ export class SessionsService {
     }
   }
 
-  private toSummary(task: Task): SessionSummary {
+  // `measured` is passed by callers that already looked it up (list/getDetail);
+  // when omitted (archive/unarchive) we fetch it so the gauge stays honest there
+  // too. undefined = not-yet-looked-up; null = looked up, none harvested.
+  private toSummary(task: Task, measured?: SessionUsage | null): SessionSummary {
+    const usage = measured === undefined ? this.usage.get(task.id) : measured;
     return {
       id: task.id,
       projectSlug: 'task',
@@ -101,7 +113,7 @@ export class SessionsService {
       status: STATUS_MAP[task.status],
       lastActivity: toMs(task.updatedAt ?? task.createdAt),
       linkedTaskId: task.id,
-      contextTokens: deriveContextTokens(task),
+      contextTokens: usage?.contextTokens ?? deriveContextTokens(task),
       contextLimit: CONTEXT_LIMIT,
       archivedAt: task.archivedAt,
       agentCli: this.agents.getAgentCli(),

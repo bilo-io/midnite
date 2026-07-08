@@ -5,6 +5,7 @@ import { ChecksModule } from '../checks/checks.module';
 import { HealthModule } from '../health/health.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { ReposModule } from '../repos/repos.module';
+import { SessionUsageModule } from '../sessions/session-usage.module';
 import { TasksModule } from '../tasks/tasks.module';
 import { TerminalModule } from '../terminal/terminal.module';
 import { UsageModule } from '../usage/usage.module';
@@ -23,6 +24,8 @@ import { WaitingNudgeService } from './waiting-nudge.service';
     ReposModule,
     TasksModule,
     TerminalModule,
+    // Phase 61 A — Stop hook harvests real session tokens from the transcript.
+    SessionUsageModule,
     // Phase 50 B — hard spend/rate caps: UsageService.checkBudget() gates spawns,
     // NotificationsService surfaces a held alert. Both consumed @Optional.
     UsageModule,

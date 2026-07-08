@@ -4,6 +4,8 @@ import type { Task } from '@midnite/shared';
 import type { AgentsService } from '../agents/agents.service';
 import type { TasksService } from '../tasks/tasks.service';
 import type { TerminalService } from '../terminal/terminal.service';
+import type { SessionUsageService } from './session-usage.service';
+import type { SessionUsage } from '@midnite/shared';
 import { SessionsService } from './sessions.service';
 
 function makeService(opts: {
@@ -11,6 +13,7 @@ function makeService(opts: {
   adHocIds?: string[];
   liveIds?: string[];
   agentCli?: string;
+  usage?: Record<string, SessionUsage>;
 }): SessionsService {
   const tasks = {
     listTasks: () => opts.tasks ?? [],
@@ -27,7 +30,13 @@ function makeService(opts: {
   const agents = {
     getAgentCli: () => opts.agentCli ?? 'claude',
   } as unknown as AgentsService;
-  return new SessionsService(tasks, terminal, agents);
+  const usageMap = opts.usage ?? {};
+  const usage = {
+    get: (id: string) => usageMap[id] ?? null,
+    getManyMap: (ids: string[]) =>
+      new Map(ids.filter((id) => usageMap[id]).map((id) => [id, usageMap[id]!])),
+  } as unknown as SessionUsageService;
+  return new SessionsService(tasks, terminal, agents, usage);
 }
 
 describe('SessionsService.mintTerminalToken', () => {
@@ -77,6 +86,24 @@ describe('SessionsService.getDetail', () => {
   it('throws NotFound for an unknown id', () => {
     const svc = makeService({ tasks: [task] });
     expect(() => svc.getDetail('nope')).toThrow(NotFoundException);
+  });
+
+  it('returns measured contextTokens (contextEstimate false) when harvested (Phase 61 A)', () => {
+    const usage: SessionUsage = {
+      sessionId: 't1',
+      inputTokens: 100,
+      outputTokens: 50,
+      cachedReadTokens: 0,
+      cachedWriteTokens: 0,
+      contextTokens: 42_000,
+      estCostUsd: 0.01,
+      measured: true,
+      updatedAt: '2026-07-08T00:00:00.000Z',
+    };
+    const svc = makeService({ tasks: [task], usage: { t1: usage } });
+    const detail = svc.getDetail('t1');
+    expect(detail.contextEstimate).toBe(false);
+    expect(detail.contextTokens).toBe(42_000);
   });
 });
 

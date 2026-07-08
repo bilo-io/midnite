@@ -77,3 +77,36 @@ export function estimateCostUsd(
   const cost = (inputTokens * inputPerM + outputTokens * outputPerM) / 1_000_000;
   return Math.round(cost * 1_000_000) / 1_000_000;
 }
+
+// Anthropic prompt-caching multipliers on the base input rate: a cache **read**
+// bills at ~10% of input, a cache **write** (creation) at ~125%. Applied to the
+// model's `inputPerM` so cache-heavy agent sessions cost honestly (Phase 61 A).
+const CACHE_READ_MULTIPLIER = 0.1;
+const CACHE_WRITE_MULTIPLIER = 1.25;
+
+/**
+ * Cache-aware cost for a whole harvested session (Phase 61 A). Prices input,
+ * output, cache-read, and cache-write tokens separately. Returns `null` — not 0 —
+ * for an unpriced model, so the caller can honestly render "tokens shown, cost
+ * unknown" rather than a fake $0 (the P51 honesty contract).
+ */
+export function estimateSessionCostUsd(
+  model: string,
+  tokens: {
+    inputTokens: number;
+    outputTokens: number;
+    cachedReadTokens: number;
+    cachedWriteTokens: number;
+  },
+  provider?: LlmProvider,
+): number | null {
+  if (!hasKnownPrice(model, provider)) return null;
+  const { inputPerM, outputPerM } = priceForModel(model, provider);
+  const cost =
+    (tokens.inputTokens * inputPerM +
+      tokens.outputTokens * outputPerM +
+      tokens.cachedReadTokens * inputPerM * CACHE_READ_MULTIPLIER +
+      tokens.cachedWriteTokens * inputPerM * CACHE_WRITE_MULTIPLIER) /
+    1_000_000;
+  return Math.round(cost * 1_000_000) / 1_000_000;
+}

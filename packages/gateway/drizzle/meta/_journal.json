@@ -533,6 +533,13 @@
       "when": 1783408457590,
       "tag": "0075_phase61d_gauge_samples",
       "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "6",
+      "when": 1783497060991,
+      "tag": "0076_phase61a_session_usage",
+      "breakpoints": true
     }
   ]
 }

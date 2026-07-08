@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { estimateCostUsd, hasKnownPrice, priceForModel } from './pricing';
+import { estimateCostUsd, estimateSessionCostUsd, hasKnownPrice, priceForModel } from './pricing';
 
 describe('pricing', () => {
   it('matches Anthropic aliases and concrete ids', () => {
@@ -35,5 +35,30 @@ describe('pricing', () => {
 
   it('returns 0 cost for an unknown model but still computes', () => {
     expect(estimateCostUsd('mystery-model', 9999, 9999)).toBe(0);
+  });
+});
+
+describe('estimateSessionCostUsd (Phase 61 A — cache-aware)', () => {
+  it('prices input, output, cache-read (0.1×) and cache-write (1.25×) of input', () => {
+    // sonnet: $3/M in, $15/M out. 1M in + 1M out + 1M cache-read + 1M cache-write:
+    //   3 + 15 + (3 × 0.1) + (3 × 1.25) = 3 + 15 + 0.3 + 3.75 = $22.05
+    const cost = estimateSessionCostUsd('claude-sonnet-4-6', {
+      inputTokens: 1_000_000,
+      outputTokens: 1_000_000,
+      cachedReadTokens: 1_000_000,
+      cachedWriteTokens: 1_000_000,
+    });
+    expect(cost).toBeCloseTo(22.05, 6);
+  });
+
+  it('returns null (not 0) for an unpriced model — honesty contract', () => {
+    expect(
+      estimateSessionCostUsd('mystery-model', {
+        inputTokens: 100,
+        outputTokens: 100,
+        cachedReadTokens: 0,
+        cachedWriteTokens: 0,
+      }),
+    ).toBeNull();
   });
 });
