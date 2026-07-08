@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-08 — test+fix: presence tests & hardening — Phase 64 Theme H (PR #TBD)
+
+Closes Theme H (Phase 64 → 27/30; G proximity-chat stretch remains deferred). The two-context Playwright smoke — the phase's first *real-wire* presence check — surfaced two production bugs that every unit test missed (they pass a fake broadcast and call the service directly). Presence had never actually worked end-to-end.
+
+- [x] **Gateway specs:** `PresenceService` — hello/identity (both auth modes), snapshot-on-join, tick coalescing, stale-timeout, ghost exclusion, dup-connection coalescing, **+2 for mid-session ghost-toggle retraction** (16 cases; no `@nestjs/testing`).
+- [x] **Contract + pure-helper coverage:** audited as complete — shared zod round-trips (`presence.test.ts`), reducer decodes every server frame type, interp lerp/snap + throttle/dedup units (`presence-frames`/`presence-interp`).
+- [x] **Flow smoke:** `office-presence.e2e.ts` — two browser contexts on `/office`: mutual visibility, emote fan-out, ghost retraction, + solo regression. Driven over the **real presence WS** (headless rAF throttling + dev StrictMode make canvas-driven publishing too flaky); `office.e2e.ts` stays unedited.
+- [x] **Bug fix — presence WS crashed on connect (1006):** `WsBroadcastService` was injected by type only; with the trailing non-injectable `clock` param Nest resolved it to `undefined`, so the first `hello` threw in `this.broadcast.toAll`. Explicit `@Inject(WsBroadcastService)` + `@Optional()` clock.
+- [x] **Bug fix — ghost/rename/avatar re-hello was a no-op for existing viewers:** the gateway routed *every* hello to `join()`, orphaning the old peer (no `peer-left`, new guest peerId). Gateway now routes first hello → `join`, later hellos → `handleMessage`; service emits `peer-left` on a visible peer going ghost.
+
 ## 2026-07-08 — feat: real session-token harvesting — Phase 61 Theme A (PR #366)
 
 Replaces the hash-seeded context-token placeholder with **measured** counts from the Claude Code transcript (the Stop hook already carries `transcript_path`), honestly labeled. The load-bearing observability slice; unblocks Theme B (cost attribution) + G's cost views. Gateway/shared only.

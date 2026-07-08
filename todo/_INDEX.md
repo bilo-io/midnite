@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [64 · Office presence](phase-64-office-presence.md) | 🔄 WIP | 23/30 | `████████░░` | 77% | H | G |
+| [64 · Office presence](phase-64-office-presence.md) | 🔄 WIP | 27/30 | `█████████░` | 90% | — | G |
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
 | [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 6/33 | `██░░░░░░░░` | 18% | — | C D E F G H |
 | [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 11/36 | `███░░░░░░░` | 31% | — | B E F G H I |
@@ -124,7 +124,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **E** — Emote wheel, teammates roster, locate/walk-to (PR #363)
 - ✅ **F** — Nav pill, dashboard widget, server-enforced ghost mode (PR #367)
 - ◻ **G** — Proximity chat bubbles (stretch — ephemeral, never persisted)
-- ◻ **H** — Gateway/contract/interp tests + two-context Playwright smoke
+- ✅ **H** — Gateway/contract/interp tests + two-context Playwright smoke; fixed 2 real bugs it caught (broadcast DI undefined → presence crashed on connect; re-hello bypassed the update path → ghost toggle no-op) (PR #TBD)
 
 ### [Phase 63 — Office 3D](phase-63-office-3d.md)
 *The office rebuilt in first-person three.js (r3f + drei): same rooms/data, same Zustand store contract so every existing React panel is reused untouched; 2D/3D tabs on /office; arcade sub-scene with one playable Breakout. Pure packages/web; 2D office behavior-preserving.*
