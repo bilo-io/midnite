@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Smile, Users } from 'lucide-react';
+import { Ghost, Smile, Users } from 'lucide-react';
 import type { PresenceScene } from '@midnite/shared';
 import { cn } from '@/lib/utils';
 import { canLocate, locatePlayer } from '@/lib/presence-bridge';
+import { saveGhost } from '@/lib/presence-identity';
 import { presencePeerList, usePresenceStore } from '@/lib/presence-store';
 import { useOfficeStore } from '@/lib/office-store';
 
@@ -54,6 +55,12 @@ export function PresenceHud({ emote }: { emote: (emoji: string) => void }) {
     setWheelOpen(false);
   };
 
+  const toggleGhost = () => {
+    const next = !usePresenceStore.getState().ghost;
+    usePresenceStore.getState().setGhost(next);
+    saveGhost(next);
+  };
+
   return (
     <div className="pointer-events-none absolute bottom-3 left-3 z-30 flex flex-col gap-2">
       {/* Teammates roster */}
@@ -91,7 +98,7 @@ export function PresenceHud({ emote }: { emote: (emoji: string) => void }) {
         </ul>
       </div>
 
-      {/* Emote wheel */}
+      {/* Emote wheel + ghost toggle */}
       <div className="pointer-events-auto flex items-center gap-1.5">
         <button
           type="button"
@@ -100,6 +107,21 @@ export function PresenceHud({ emote }: { emote: (emoji: string) => void }) {
           className="flex h-8 w-8 items-center justify-center rounded-full border border-border/60 bg-background/80 text-muted-foreground backdrop-blur transition-colors hover:bg-muted/60 hover:text-foreground"
         >
           <Smile className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          aria-label="Ghost mode"
+          aria-pressed={ghost}
+          title={ghost ? 'Ghost mode on — nobody sees you' : 'Ghost mode off'}
+          onClick={toggleGhost}
+          className={cn(
+            'flex h-8 w-8 items-center justify-center rounded-full border backdrop-blur transition-colors',
+            ghost
+              ? 'border-violet-500/60 bg-violet-500/20 text-violet-600 dark:text-violet-300'
+              : 'border-border/60 bg-background/80 text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+          )}
+        >
+          <Ghost className="h-4 w-4" />
         </button>
         {wheelOpen && (
           <div className="flex items-center gap-1 rounded-full border border-border/60 bg-background/90 px-2 py-1 shadow-lg backdrop-blur">

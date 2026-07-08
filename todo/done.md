@@ -12,6 +12,20 @@ Replaces the hash-seeded context-token placeholder with **measured** counts from
 - [x] **shared:** `SessionUsage` contract; **gateway:** `session_usage` table + migration 0076; pure `transcript-usage.ts` parser (sum across turns + last-turn context occupancy, streaming + byte-cap); `SessionUsageService` collector (fail-open, cache-aware `estimateSessionCostUsd` — cache-read 0.1×/cache-write 1.25×, `null` for unpriced); wired into the Stop hook; own module so pool (write) + sessions (read) share it without a cycle.
 - [x] **sessions.service:** measured `contextTokens` (`contextEstimate:false`) when harvested, labeled hash estimate otherwise (P51 honesty). `getMany` avoids an N+1 on the list.
 - [x] Tests: parser (sums/last-turn/garbage/on-disk/byte-cap), pricing (cache math + null-unpriced), collector (no-path/unreadable/parse-price-upsert/unpriced/get), repo real-SQLite, sessions fallback, Stop-hook delegation + fail-open, shared schema. shared 631 · gateway 1780 (only the pre-existing tmux flake) · `:typecheck`/`:lint` green.
+## 2026-07-08 — feat: office presence surfaces + ghost mode — Phase 64 Theme F (PR #367)
+
+Presence beyond the office + the privacy control.
+
+- [x] **`GET /presence/summary`:** team-scoped REST roll-up (`@CurrentUser` teamId; null = global) over `PresenceService.summary()` (renderable, non-ghost). shared `PresenceSummary` + web api client + `usePresenceSummary` poll (12s) — no socket held, no false presence.
+- [x] **Nav pill:** "N in the office" chrome indicator (badge/label), hidden at zero, links `/office`.
+- [x] **Dashboard widget:** "Who's in the office" registered in the widget registry — live roster + rooms.
+- [x] **Ghost mode:** `PresenceHud` 👻 toggle → presence-store `ghost` + localStorage (restored on entry), re-sent in the hello; server excludes ghosts from snapshots/updates/emotes + the summary. localStorage (not the Phase-43 wire bag) to keep the wire surface minimal.
+- [x] **Tests + gate:** summary specs (count, ghost-exclusion, team scoping) + `PresenceSummary` round-trip + ghost-toggle HUD. :typecheck (13 pkgs), lint 0 errors, gateway 1762 + web 1039 + shared pass.
+
+Remaining Phase 64: G (proximity chat — stretch), H (tests + two-context Playwright).
+
+---
+
 ## 2026-07-08 — fix: project-delete cascade + pagination/scheduler tiebreakers — Phase 60 Theme F (PR #365)
 
 Closes Phase 60 Theme F (data-integrity & boundary bugs). Referential-integrity + pagination audits completed; null/empty + time-ordering partially (agents interrupted; key items self-checked/confirmed).

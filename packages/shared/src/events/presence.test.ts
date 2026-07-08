@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ClientPresenceMessageSchema,
   PRESENCE_WS_PATH,
+  PresenceSummarySchema,
   ServerPresenceMessageSchema,
 } from './presence.js';
 
@@ -82,5 +83,16 @@ describe('ServerPresenceMessageSchema', () => {
 describe('PRESENCE_WS_PATH', () => {
   it('is the presence endpoint', () => {
     expect(PRESENCE_WS_PATH).toBe('/ws/presence');
+  });
+});
+
+describe('PresenceSummarySchema', () => {
+  it('round-trips a summary', () => {
+    const summary = { count: 1, peers: [{ name: 'Ada', scene: 'office' as const, tint: 0xff8800 }] };
+    expect(PresenceSummarySchema.parse(summary)).toEqual(summary);
+  });
+
+  it('rejects a negative count', () => {
+    expect(PresenceSummarySchema.safeParse({ count: -1, peers: [] }).success).toBe(false);
   });
 });
