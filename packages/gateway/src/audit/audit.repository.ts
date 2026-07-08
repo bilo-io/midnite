@@ -39,7 +39,7 @@ export class AuditRepository {
       .select()
       .from(auditLog)
       .where(where)
-      .orderBy(desc(auditLog.createdAt))
+      .orderBy(desc(auditLog.createdAt), desc(auditLog.id))
       .limit(limit)
       .offset(offset)
       .all();

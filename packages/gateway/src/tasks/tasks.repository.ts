@@ -384,7 +384,7 @@ export class TasksRepository {
       .select()
       .from(tasks)
       .where(where)
-      .orderBy(desc(tasks.priority), asc(tasks.createdAt))
+      .orderBy(desc(tasks.priority), asc(tasks.createdAt), asc(tasks.id))
       .all();
   }
 
@@ -414,7 +414,7 @@ export class TasksRepository {
       .select()
       .from(tasks)
       .where(where)
-      .orderBy(desc(tasks.priority), asc(tasks.createdAt));
+      .orderBy(desc(tasks.priority), asc(tasks.createdAt), asc(tasks.id));
     const rows =
       opts?.limit != null
         ? ordered.limit(opts.limit).offset(((opts.page ?? 1) - 1) * opts.limit).all()
@@ -598,7 +598,7 @@ export class TasksRepository {
           )`,
         ),
       )
-      .orderBy(desc(tasks.priority), asc(tasks.createdAt))
+      .orderBy(desc(tasks.priority), asc(tasks.createdAt), asc(tasks.id))
       .all();
   }
 
@@ -642,7 +642,7 @@ export class TasksRepository {
       .select()
       .from(tasks)
       .where(and(isNotNull(tasks.prUrl), notInArray(tasks.id, terminal)))
-      .orderBy(desc(tasks.priority), asc(tasks.createdAt))
+      .orderBy(desc(tasks.priority), asc(tasks.createdAt), asc(tasks.id))
       .all();
   }
 

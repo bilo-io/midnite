@@ -92,7 +92,7 @@ export class IdeaRepository {
       .select()
       .from(ideas)
       .where(where)
-      .orderBy(desc(ideas.createdAt))
+      .orderBy(desc(ideas.createdAt), desc(ideas.id))
       .limit(limit)
       .offset(offset)
       .all();
