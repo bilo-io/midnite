@@ -69,24 +69,28 @@
 
 # Section I — Accounting (the truth about tokens & cost)
 
-## Theme A — Real session-token harvesting (best-effort, honestly labeled) — **M-L**
+## Theme A — Real session-token harvesting (best-effort, honestly labeled) — **M-L** — ✅ DONE (PR #366, 2026-07-08)
 
 Replace the placeholder with measured numbers where a source exists — and say so where it doesn't.
 
-- [ ] **Probe the sources:** (1) inspect a real Claude Code **session transcript/JSONL** for
-      per-message or cumulative `usage` records (the CLI writes session files; verify what token
-      data they actually contain per `agentCli`); (2) check whether the **Stop hook** payload can
-      carry usage (and whether other CLIs — gemini/codex/opencode — expose anything comparable).
-      Document the per-CLI reality in the theme's notes — this is the load-bearing investigation.
-- [ ] **Harvest what's real:** a `SessionUsageCollector` in the gateway that, on session end (the
-      Stop-hook / `onExit` path) and opportunistically during transcript reads, extracts real
-      input/output/cached token counts when present; store per session (Theme B's table).
-- [ ] **Replace `deriveContextTokens`:** [`sessions.service.ts`](../packages/gateway/src/sessions/sessions.service.ts)
+- [x] **Probe the sources:** Claude Code transcript JSONL records carry a full per-turn
+      `message.usage` (`input_tokens`, `output_tokens`, `cache_read_input_tokens`,
+      `cache_creation_input_tokens`) + `message.model` — real and complete. The **Stop hook payload
+      already carries `transcript_path`** (`StopHookRequestSchema`), so the gateway gets the exact
+      file per turn. **Per-CLI reality:** only `claude` exposes this today; gemini/codex/opencode
+      session files don't carry a comparable per-turn usage record, so those sessions fall back to
+      the labeled estimate (honest, not fabricated).
+- [x] **Harvest what's real:** [`SessionUsageService`](../packages/gateway/src/sessions/session-usage.service.ts)
+      + pure [`transcript-usage.ts`](../packages/gateway/src/sessions/lib/transcript-usage.ts):
+      on the Stop hook, stream `transcript_path`, sum input/output/cache tokens across turns, take
+      the **last** turn's `input + cache_read + cache_creation` as context occupancy, and upsert
+      `session_usage` (pk = session id). Fail-open; byte-cap guard on the read.
+- [x] **Replace `deriveContextTokens`:** [`sessions.service.ts`](../packages/gateway/src/sessions/sessions.service.ts)
       returns **measured** figures when harvested (`contextEstimate: false`) and falls back to the
-      labeled estimate otherwise — the P51 honesty contract holds; no fake precision, ever.
-- [ ] **Pricing:** extend the static [`pricing`](../packages/gateway/src/usage/) table with the
-      agent-session models (per-CLI defaults) so harvested tokens convert to `estCostUsd` the same
-      way gateway calls do; unknown model ⇒ tokens shown, cost marked unpriced.
+      labeled hash estimate otherwise — the P51 honesty contract holds; no fake precision.
+- [x] **Pricing:** the existing [`pricing`](../packages/gateway/src/usage/lib/pricing.ts) table
+      already covers the agent models; added cache-aware `estimateSessionCostUsd` (cache-read 0.1×,
+      cache-write 1.25× of input) — unknown model ⇒ tokens shown, `estCostUsd` **null** (unpriced).
 
 ## Theme B — Cost attribution: per task, session, repo, project — **M**
 
