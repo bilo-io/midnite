@@ -15,7 +15,6 @@ import { TasksController } from './tasks.controller';
 import { TaskFailuresRepository } from './task-failures.repository';
 import { TasksRepository } from './tasks.repository';
 import { TasksService } from './tasks.service';
-import { TaskEventBus } from './task-event-bus';
 import { TaskEventBusModule } from './task-event-bus.module';
 import { TasksGateway } from './tasks.gateway';
 
@@ -42,6 +41,6 @@ import { TasksGateway } from './tasks.gateway';
     AiReviewService,
     HeldTasksRegistry,
   ],
-  exports: [TasksService, TaskEventBus, HeldTasksRegistry],
+  exports: [TasksService, HeldTasksRegistry],
 })
 export class TasksModule {}
