@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { tasks } from '../db/schema';
+import { media, roadmapMilestones, tasks } from '../db/schema';
 import { createTestDb } from '../test';
 import { ProjectsRepository } from './projects.repository';
 
@@ -149,5 +149,51 @@ describe('ProjectsRepository', () => {
     const project = repo.hydrate(repo.getProject('p1')!);
     expect(project.name).toBe('New');
     expect(project.tag).toBe('new');
+  });
+
+  it('deleteProject cascade-cleans every cross-domain ref (Phase 60 F)', () => {
+    const { db, repo } = ctx;
+    repo.insertProject({
+      id: 'p1',
+      name: 'Atlas',
+      tag: 'atlas',
+      color: '#7c3aed',
+      plan: null,
+      planUpdatedAt: null,
+      createdAt: now,
+      updatedAt: now,
+    });
+    // A milestone under the project + a task tagged to both project and milestone.
+    db.insert(roadmapMilestones)
+      .values({ id: 'm1', projectId: 'p1', name: 'v1', position: 0, createdAt: now, updatedAt: now })
+      .run();
+    db.insert(tasks)
+      .values({
+        id: 't1',
+        title: 'Task',
+        kind: 'feature',
+        status: 'todo',
+        projectId: 'p1',
+        milestoneId: 'm1',
+        createdAt: now,
+        updatedAt: now,
+      })
+      .run();
+    // Media under the project.
+    db.insert(media)
+      .values({ id: 'md1', projectId: 'p1', type: 'image', title: 'Pic', createdAt: now, updatedAt: now })
+      .run();
+
+    repo.deleteProject('p1');
+
+    // Project + its milestone + its sources gone; the task + media survive but
+    // fully unlinked — no dangling projectId/milestoneId (no phantom chips).
+    expect(repo.getProject('p1')).toBeUndefined();
+    expect(db.select().from(roadmapMilestones).where(eq(roadmapMilestones.id, 'm1')).all()).toHaveLength(0);
+    const task = db.select().from(tasks).where(eq(tasks.id, 't1')).get()!;
+    expect(task.projectId).toBeNull();
+    expect(task.milestoneId).toBeNull();
+    const md = db.select().from(media).where(eq(media.id, 'md1')).get()!;
+    expect(md.projectId).toBeNull();
   });
 });

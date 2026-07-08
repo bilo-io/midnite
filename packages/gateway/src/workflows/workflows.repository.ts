@@ -14,6 +14,7 @@ import { teamScopeFilter } from '../db/team-scope';
 import {
   nodeRuns,
   workflowRuns,
+  workflowStorage,
   workflows,
   type NodeRunInsert,
   type NodeRunRow,
@@ -83,6 +84,8 @@ export class WorkflowsRepository {
         tx.delete(nodeRuns).where(eq(nodeRuns.runId, r.id)).run();
       }
       tx.delete(workflowRuns).where(eq(workflowRuns.workflowId, id)).run();
+      // Phase 60 F — per-workflow KV state must go too, else it leaks on delete.
+      tx.delete(workflowStorage).where(eq(workflowStorage.workflowId, id)).run();
       tx.delete(workflows).where(eq(workflows.id, id)).run();
     });
   }
