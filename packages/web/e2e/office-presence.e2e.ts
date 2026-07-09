@@ -121,6 +121,19 @@ test.describe('Office presence (two contexts)', () => {
         )
         .toBe(true);
 
+      // --- chat fan-out (Theme G): Alice's message reaches Bob tagged with her
+      // peerId, sanitized (whitespace collapsed) server-side.
+      await sendPresence(pageA, { type: 'presence.chat', text: '  hello   Bob  ' });
+      await expect
+        .poll(
+          async () =>
+            (await frames(pageB)).some(
+              (f) => f['type'] === 'presence.chat' && f['peerId'] === aliceId && f['text'] === 'hello Bob',
+            ),
+          { timeout: 10_000 },
+        )
+        .toBe(true);
+
       // --- ghost retraction (Theme H fix): Alice re-hellos as a ghost while
       // already visible → Bob is told she left, mid-session.
       await sendPresence(pageA, { type: 'presence.hello', name: 'AliceE2E', variant: 0, tint: null, ghost: true });
