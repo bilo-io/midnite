@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-09 — fix+docs: accessibility & keyboard audit — Phase 60 Theme I (PR #374)
+
+Audited every surface the theme names + **applied the trivial ARIA quick-wins** (approved deviation from analysis-only). 12 findings — 7 fixed inline, 5 documented for a remediation phase. No P0. Report: [`I-accessibility.md`](phase-60-findings/I-accessibility.md).
+
+- [x] **`@midnite/ui` primitives:** `Tabs` WAI-ARIA roving-tabindex + arrow/Home/End keyboard model; `Accordion` `aria-controls`→labelled region + `aria-hidden` glyphs; `Collapse` `inert` collapsed content (out of tab order + a11y tree). Keyboard/disclosure play-fns added.
+- [x] **axe gate promoted:** `@storybook/addon-a11y` flipped `todo`→`error` (a real structural CI gate) — surfaced + fixed unlabelled input/textarea stories; `color-contrast` delegated to the token audit.
+- [x] **Command palette → combobox+listbox:** `role=combobox`/`aria-activedescendant` + `role=option`/`aria-selected`, axe-clean grouping; Playwright probe ([`a11y-keyboard.e2e.ts`](../packages/web/e2e/a11y-keyboard.e2e.ts)). `ConfirmDialog` focus-trap + return-focus; `media-type-picker`/`approvals-drawer` `aria-modal`.
+- [x] **Contrast:** [`contrast-audit.mjs`](../packages/ui/scripts/contrast-audit.mjs) computes WCAG ratios per theme — `destructive` (3.60:1) + `success` (3.37:1) fail AA normal-text (documented); all else passes.
+- [x] **Documented for remediation:** token-contrast pass, a shared modal focus-trap (`useFocusTrap`/`<Modal>` across ~36 dialogs), and a board `KeyboardSensor` (keyboard drag; mitigated today by the ⌘K Move-to commands + arrow-nav).
+
 ## 2026-07-09 — docs: consistency & flow sweep — Phase 60 Theme H (PR #373)
 
 Findings report ([`todo/phase-60-findings/H-consistency-flow.md`](phase-60-findings/H-consistency-flow.md)) from a **live 18-screenshot state capture** (each doc-listed surface driven into empty/error/loading against the real e2e gateway) + two static sweeps. **15 findings, one P1, no P0.** *(Capturing states first required fixing a #370 gateway-boot cycle — landed as PR #371.)*
