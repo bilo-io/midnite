@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-09 — test(web): reconnect-resume e2e — Phase 56 verification sweep
+
+Closed out Phase 56 (all themes A–F already merged) by driving its 9 acceptance criteria end-to-end and ticking each against its proof. The headline no-drift guarantee had gateway units + web hook tests but no browser-level proof — now it does.
+
+- [x] **Verified all 9 acceptance criteria** against existing gateway/web tests (seq/ring/replay, resume gap→resync, dedup/watermark, backpressure drop, heartbeat reap, connection-status, terminal alignment, restart-forces-resync, full gate green). No gaps surfaced — nothing to fix.
+- [x] **New durable e2e** [`reconnect-resume.e2e.ts`](phase-56-realtime-ws-reliability.md): against the real gateway + WS, a wrapped `WebSocket` forces a genuine `/ws/tasks` drop while a **keeper** client keeps the ring warm; a small gap → `resume`-replay convergence, a gap > ring → `resync-required` + full refetch. Fixture pins `ws.ringSize:16`.
+- [x] **Phase 56 → 26/26 (100%)** in `_INDEX.md`; verification note added to its theme key.
+
 ## 2026-07-09 — test(cli)+feat: CLI robustness & coverage — Phase 60 Theme K (PR #376)
 
 The 35-command CLI made trustworthy. Tracker drift: the grounding's "untested clusters" were mostly already covered — the real hole was **export/import**. Report: [`todo/phase-60-findings/K-cli.md`](phase-60-findings/K-cli.md).

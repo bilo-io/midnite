@@ -190,27 +190,41 @@ Fold the one channel that already works onto the shared vocabulary.
 
 ## Verification
 
-- [ ] **No missed-event drift:** with a client briefly disconnected while `task.updated`/`task.created` are
+> **Verification sweep signed off 2026-07-09.** Themes A–F all merged across
+> PRs #305/#313/#315/#316/#317/#311; this pass drives each acceptance criterion end-to-end and
+> ticks it against its proof. The headline no-drift guarantee gained a durable browser-level
+> Playwright spec ([`reconnect-resume.e2e.ts`](../packages/web/e2e/reconnect-resume.e2e.ts)) —
+> both the resume-replay and gap→resync paths — on top of the existing gateway units + web hook
+> tests. No gaps surfaced; nothing to fix.
+
+- [x] **No missed-event drift:** with a client briefly disconnected while `task.updated`/`task.created` are
       published, on reconnect it **replays the missed events** (via `resume`+ring) and the board matches gateway
-      truth — no manual refresh needed.
-- [ ] **Gap → resync:** when the disconnect outlasts the ring (more than N events missed), the client receives
-      **`resync-required`** and full-refetches — never applies a partial/stale stream.
-- [ ] **Ordering + dedup:** replayed + live events apply **in seq order** with **no duplicates** (client dedups on
-      `lastSeq`); a fresh subscriber anchors on the current watermark.
-- [ ] **Backpressure:** a deliberately slow client is **dropped to resync** (closed with the resync code) without
-      stalling the broadcast to other clients or reordering their events.
-- [ ] **Heartbeat:** a half-open/dead connection is detected within ~1 min (missed pongs) and the client
-      **proactively reconnects** and resumes.
-- [ ] **All surfaces:** the board, office, and cockpits (session 51 / project 55 / diff review 52) all recover via
-      the shared hook; a **connection-status indicator** shows live/reconnecting/stale accurately.
-- [ ] **Terminal unchanged/aligned:** terminal scrollback replay still works; a ring-overflow now yields a
-      transcript resync rather than a silent partial (Theme F).
-- [ ] **Defaults preserve behavior:** with the ring/backpressure config at defaults, existing single-connected
-      clients behave as before (plus the new recovery); a gateway restart cleanly forces a resync (no corruption).
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green (shared envelope + protocol units; gateway
+      truth — no manual refresh needed. → `reconnect-resume.e2e.ts` "brief disconnect replays missed events"
+      (real browser + gateway) + `ws/reliable-broadcast.integration.spec.ts` (in-order replay over a live socket).
+- [x] **Gap → resync:** when the disconnect outlasts the ring (more than N events missed), the client receives
+      **`resync-required`** and full-refetches — never applies a partial/stale stream. → `reconnect-resume.e2e.ts`
+      "a gap larger than the ring forces a full resync" (asserts the `resync-required` frame + board convergence) +
+      `ws/reliable-broadcast.service.spec.ts` `resume()` gap arms.
+- [x] **Ordering + dedup:** replayed + live events apply **in seq order** with **no duplicates** (client dedups on
+      `lastSeq`); a fresh subscriber anchors on the current watermark. → `ws/reliable-broadcast.integration.spec.ts`
+      (monotonic seq over the wire) + `lib/resume-cursor.test.ts` (per-`ch` dedup + watermark anchoring).
+- [x] **Backpressure:** a deliberately slow client is **dropped to resync** (closed with the resync code) without
+      stalling the broadcast to other clients or reordering their events. → `ws/ws-broadcast.backpressure.test.ts`.
+- [x] **Heartbeat:** a half-open/dead connection is detected within ~1 min (missed pongs) and the client
+      **proactively reconnects** and resumes. → `ws/heartbeat.service.test.ts` + `ws/heartbeat.integration.spec.ts`.
+- [x] **All surfaces:** the board, office, and cockpits (session 51 / project 55 / diff review 52) all recover via
+      the shared hook; a **connection-status indicator** shows live/reconnecting/stale accurately. → PR #317 +
+      `hooks/use-reliable-subscription.test.tsx` (transport state → `connection-store`).
+- [x] **Terminal unchanged/aligned:** terminal scrollback replay still works; a ring-overflow now yields a
+      transcript resync rather than a silent partial (Theme F). → PR #311 + the terminal service/gateway specs.
+- [x] **Defaults preserve behavior:** with the ring/backpressure config at defaults, existing single-connected
+      clients behave as before (plus the new recovery); a gateway restart cleanly forces a resync (no corruption). →
+      `ws/reliable-broadcast.service.spec.ts` (`lastSeq > watermark` → resync on a restart-reset seq) + config defaults.
+- [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` green (shared envelope + protocol units; gateway
       reliable-broadcast tests — seq monotonicity, ring replay, gap→resync, backpressure drop, heartbeat; web hook
-      tests — resume/dedup/resync-required + per-type cache; **web tests from the primary checkout, not a `.git`
-      worktree**).
+      tests — resume/dedup/resync-required + per-type cache). Verified 2026-07-09: typecheck + lint clean; shared /
+      gateway / web (1049) / ui (54) suites green (`web:e2e` incl. the new spec run separately). **`web:test` runs
+      fine in a `.worktrees/` worktree (outside `.git/`).**
 
 ---
 
