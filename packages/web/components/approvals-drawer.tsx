@@ -204,6 +204,7 @@ export function ApprovalsDrawer({ expanded }: { expanded?: boolean }) {
           <div className="fixed inset-0 z-40 bg-background/60 backdrop-blur-sm" aria-hidden="true" />
           <div
             role="dialog"
+            aria-modal="true"
             aria-label="Approvals inbox"
             className="fixed inset-y-0 right-0 z-50 flex w-full max-w-sm flex-col border-l bg-background shadow-xl"
           >

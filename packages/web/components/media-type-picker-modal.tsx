@@ -42,6 +42,7 @@ export function MediaTypePickerModal({ onClose }: Props) {
         className="w-full max-w-sm rounded-xl border border-border bg-card p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
+        aria-modal="true"
         aria-label="Choose media type"
       >
         <h2 className="mb-4 text-base font-semibold">What type of media?</h2>
