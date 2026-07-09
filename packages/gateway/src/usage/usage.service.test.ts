@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { MidniteConfig, UsageConfig } from '@midnite/shared';
 import type { LlmUsageRow, LlmUsageInsert } from '../db/schema';
+import type { SessionUsageAttributionRow } from '../sessions/session-usage.repository';
+import type { SessionUsageService } from '../sessions/session-usage.service';
 import { UsageRepository } from './usage.repository';
 import { UsageService } from './usage.service';
 
@@ -18,7 +20,37 @@ class FakeRepo extends UsageRepository {
   }
 }
 
-function makeService(usage: UsageConfig, seed: Partial<LlmUsageRow>[] = []) {
+// Minimal fake of the sessions module's SessionUsageService — only the one
+// method UsageService calls for cost attribution (Phase 61 B).
+function fakeSessionUsage(rows: SessionUsageAttributionRow[] = []): SessionUsageService {
+  return {
+    listAttributionInRange: (from?: string, to?: string) =>
+      rows.filter((r) => (!from || r.updatedAt >= from) && (!to || r.updatedAt <= to)),
+  } as unknown as SessionUsageService;
+}
+
+function sessionRow(over: Partial<SessionUsageAttributionRow> = {}): SessionUsageAttributionRow {
+  return {
+    sessionId: 't1',
+    taskTitle: 'Task one',
+    repo: 'midnite',
+    projectId: 'proj-1',
+    model: 'claude-opus-4-8',
+    inputTokens: 100,
+    outputTokens: 40,
+    cachedReadTokens: 10,
+    cachedWriteTokens: 5,
+    estCostUsd: 1,
+    updatedAt: '2026-06-19T12:00:00.000Z',
+    ...over,
+  };
+}
+
+function makeService(
+  usage: UsageConfig,
+  seed: Partial<LlmUsageRow>[] = [],
+  sessionSeed: SessionUsageAttributionRow[] = [],
+) {
   const repo = new FakeRepo();
   const config = { usage } as MidniteConfig;
   for (const s of seed) {
@@ -35,7 +67,7 @@ function makeService(usage: UsageConfig, seed: Partial<LlmUsageRow>[] = []) {
       ...s,
     } as LlmUsageRow);
   }
-  return { repo, service: new UsageService(config, repo) };
+  return { repo, service: new UsageService(config, repo, fakeSessionUsage(sessionSeed)) };
 }
 
 const today = new Date().toISOString().slice(0, 10);
@@ -148,5 +180,87 @@ describe('UsageService.checkBudget (Phase 50 B — hard caps)', () => {
     const status = service.checkBudget();
     expect(status.over).toBe(true);
     expect(status.monthly?.spentUsd).toBe(110);
+  });
+
+  it('leaves hard caps LLM-only — harvested session cost never blocks (Phase 61 B)', () => {
+    const { service } = makeService(
+      { warnAtRatio: 0.8, hardDailyCapUsd: 10 },
+      [{ estCostUsd: 4, at: `${today}T08:00:00.000Z` }],
+      [sessionRow({ estCostUsd: 100, updatedAt: `${today}T09:00:00.000Z` })],
+    );
+    const status = service.checkBudget();
+    expect(status.over).toBe(false); // $4 LLM only; the $100 session is ignored by hard caps
+    expect(status.daily?.spentUsd).toBe(4);
+  });
+});
+
+describe('UsageService cost attribution (Phase 61 B)', () => {
+  it('reports the window spend composition (LLM vs. measured session cost)', () => {
+    const { service } = makeService(
+      { warnAtRatio: 0.8 },
+      [{ estCostUsd: 2, at: '2026-06-19T09:00:00.000Z' }],
+      [
+        sessionRow({ sessionId: 't1', estCostUsd: 1.5 }),
+        sessionRow({ sessionId: 't2', estCostUsd: null }), // unpriced model
+      ],
+    );
+    const { composition } = service.summary({ groupBy: 'day' });
+    expect(composition.llmUsd).toBeCloseTo(2, 6);
+    expect(composition.sessionMeasuredUsd).toBeCloseTo(1.5, 6);
+    expect(composition.sessionEstimatedUsd).toBe(0);
+    expect(composition.unpricedSessions).toBe(1);
+  });
+
+  it('folds harvested session cost into soft budget warnings', () => {
+    const { service } = makeService(
+      { dailyBudgetUsd: 10, warnAtRatio: 0.8 },
+      [{ estCostUsd: 3, at: `${today}T09:00:00.000Z` }],
+      [sessionRow({ estCostUsd: 6, updatedAt: `${today}T10:00:00.000Z` })],
+    );
+    const { warnings } = service.summary({ groupBy: 'day' });
+    // $3 LLM + $6 session = $9 of $10 ⇒ over the 80% warn threshold, not exceeded.
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]?.exceeded).toBe(false);
+    expect(warnings[0]?.message).toMatch(/9\.00 of \$10/);
+  });
+
+  it('groups attribution by repo with a measured/estimated split and cost-desc order', () => {
+    const { service } = makeService({ warnAtRatio: 0.8 }, [], [
+      sessionRow({ sessionId: 't1', repo: 'midnite', estCostUsd: 1 }),
+      sessionRow({ sessionId: 't2', repo: 'midnite', estCostUsd: 2 }),
+      sessionRow({ sessionId: 't3', repo: 'other', estCostUsd: 5 }),
+      sessionRow({ sessionId: 't4', repo: null, estCostUsd: null }), // no repo, unpriced
+    ]);
+    const res = service.attribution({ groupBy: 'repo' });
+    expect(res.buckets.map((b) => b.key)).toEqual(['other', 'midnite', '(unassigned)']);
+    const midnite = res.buckets.find((b) => b.key === 'midnite');
+    expect(midnite?.sessions).toBe(2);
+    expect(midnite?.estCostUsd).toBeCloseTo(3, 6);
+    expect(midnite?.measuredCostUsd).toBeCloseTo(3, 6);
+    expect(midnite?.cachedTokens).toBe(30); // (10+5) × 2
+    const unassigned = res.buckets.find((b) => b.key === '(unassigned)');
+    expect(unassigned?.unpricedSessions).toBe(1);
+    expect(res.totals.sessions).toBe(4);
+    expect(res.totals.estCostUsd).toBeCloseTo(8, 6);
+    expect(res.totals.unpricedSessions).toBe(1);
+  });
+
+  it('groups by task/session using the session id as key and task title as label', () => {
+    const { service } = makeService({ warnAtRatio: 0.8 }, [], [
+      sessionRow({ sessionId: 't1', taskTitle: 'Build the thing', estCostUsd: 2 }),
+    ]);
+    const res = service.attribution({ groupBy: 'task' });
+    expect(res.buckets[0]?.key).toBe('t1');
+    expect(res.buckets[0]?.label).toBe('Build the thing');
+  });
+
+  it('windows attribution by harvest time (updatedAt)', () => {
+    const { service } = makeService({ warnAtRatio: 0.8 }, [], [
+      sessionRow({ sessionId: 'old', estCostUsd: 1, updatedAt: '2026-05-01T00:00:00.000Z' }),
+      sessionRow({ sessionId: 'new', estCostUsd: 3, updatedAt: '2026-06-20T00:00:00.000Z' }),
+    ]);
+    const res = service.attribution({ groupBy: 'session', from: '2026-06-01T00:00:00.000Z' });
+    expect(res.totals.sessions).toBe(1);
+    expect(res.buckets[0]?.key).toBe('new');
   });
 });

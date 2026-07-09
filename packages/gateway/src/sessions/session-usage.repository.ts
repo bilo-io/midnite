@@ -1,8 +1,28 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, gte, inArray, lte } from 'drizzle-orm';
 
 import { DB_TOKEN, type MidniteDb } from '../db/db.module';
-import { sessionUsage, type SessionUsageInsert, type SessionUsageRow } from '../db/schema';
+import { sessionUsage, tasks, type SessionUsageInsert, type SessionUsageRow } from '../db/schema';
+
+/**
+ * One harvested session's usage joined to its task's repo/project (Phase 61 B).
+ * `session_usage.sessionId === tasks.id`; a LEFT join so a session whose task
+ * was since deleted still contributes (repo/project null). No FK — this
+ * cross-domain join is read-only, per the schema's no-cross-domain-FK rule.
+ */
+export interface SessionUsageAttributionRow {
+  sessionId: string;
+  taskTitle: string | null;
+  repo: string | null;
+  projectId: string | null;
+  model: string | null;
+  inputTokens: number;
+  outputTokens: number;
+  cachedReadTokens: number;
+  cachedWriteTokens: number;
+  estCostUsd: number | null;
+  updatedAt: string;
+}
 
 /** Drizzle access for the harvested `session_usage` table (Phase 61 A). */
 @Injectable()
@@ -35,5 +55,34 @@ export class SessionUsageRepository {
       .from(sessionUsage)
       .where(inArray(sessionUsage.sessionId, sessionIds))
       .all();
+  }
+
+  /**
+   * All harvested rows whose `updatedAt` falls in the inclusive [from, to]
+   * window, each joined to its task's title/repo/project for cost attribution
+   * (Phase 61 B). Both bounds optional. Aggregation is done in the service.
+   */
+  listAttributionInRange(from?: string, to?: string): SessionUsageAttributionRow[] {
+    const conditions = [
+      ...(from ? [gte(sessionUsage.updatedAt, from)] : []),
+      ...(to ? [lte(sessionUsage.updatedAt, to)] : []),
+    ];
+    const query = this.db
+      .select({
+        sessionId: sessionUsage.sessionId,
+        taskTitle: tasks.title,
+        repo: tasks.repo,
+        projectId: tasks.projectId,
+        model: sessionUsage.model,
+        inputTokens: sessionUsage.inputTokens,
+        outputTokens: sessionUsage.outputTokens,
+        cachedReadTokens: sessionUsage.cachedReadTokens,
+        cachedWriteTokens: sessionUsage.cachedWriteTokens,
+        estCostUsd: sessionUsage.estCostUsd,
+        updatedAt: sessionUsage.updatedAt,
+      })
+      .from(sessionUsage)
+      .leftJoin(tasks, eq(tasks.id, sessionUsage.sessionId));
+    return conditions.length ? query.where(and(...conditions)).all() : query.all();
   }
 }

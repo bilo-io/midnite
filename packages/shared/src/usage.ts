@@ -99,6 +99,27 @@ export const UsageSummaryQuerySchema = z.object({
 });
 export type UsageSummaryQuery = z.infer<typeof UsageSummaryQuerySchema>;
 
+/**
+ * How the window's spend splits between the gateway's own LLM calls and the
+ * harvested agent-session cost (Phase 61 B). Lets a client render an honest
+ * measured-vs-estimated composition without a second query. All figures are USD
+ * over the summary window.
+ */
+export const UsageSpendCompositionSchema = z.object({
+  /** Cost from the gateway's own LLM calls (`llm_usage`) in the window. */
+  llmUsd: z.number().nonnegative(),
+  /** Agent-session cost derived from **measured** (harvested) token counts. */
+  sessionMeasuredUsd: z.number().nonnegative(),
+  /** Agent-session cost derived from **estimated** (un-harvested) tokens. 0 today
+   *  — attribution reads only harvested rows — but reserved so the split stays
+   *  honest if an estimate fallback is ever attributed. */
+  sessionEstimatedUsd: z.number().nonnegative(),
+  /** Harvested sessions in the window whose model was unpriced (tokens known,
+   *  cost unknown ⇒ contributes 0 USD). */
+  unpricedSessions: z.number().int().nonnegative(),
+});
+export type UsageSpendComposition = z.infer<typeof UsageSpendCompositionSchema>;
+
 export const UsageSummaryResponseSchema = z.object({
   /** Echoes the resolved window (defaults applied) for client display. */
   from: z.string().nullable(),
@@ -110,12 +131,81 @@ export const UsageSummaryResponseSchema = z.object({
   byProvider: z.array(UsageBucketSchema),
   byFeature: z.array(UsageBucketSchema),
   byDay: z.array(UsageBucketSchema),
-  /** Soft-warn entries (today/this-month over budget). Empty when within budget. */
+  /** Soft-warn entries (today/this-month over budget). Empty when within budget.
+   *  Since Phase 61 B these fold in harvested agent-session cost, not just the
+   *  gateway's own LLM calls. */
   warnings: z.array(UsageBudgetWarningSchema),
   /** True when costs are estimates (always, today) — for an "est." UI hint. */
   costIsEstimate: z.boolean(),
+  /** Window spend split (gateway LLM vs. measured/estimated session cost). */
+  composition: UsageSpendCompositionSchema,
 });
 export type UsageSummaryResponse = z.infer<typeof UsageSummaryResponseSchema>;
+
+// ── Cost attribution (Phase 61 B) ────────────────────────────
+// "Which task / repo / project / session spent what?" Reads the harvested
+// `session_usage` rows (real agent-session token counts) joined to their task
+// for repo/project, windowed by the harvest time (`updatedAt`). Distinct from
+// the LLM-call `summary` above (different source): agent-session cost, not the
+// gateway's own calls.
+
+export const USAGE_ATTRIBUTION_GROUP_BY = ['task', 'repo', 'project', 'session'] as const;
+export const UsageAttributionGroupBySchema = z.enum(USAGE_ATTRIBUTION_GROUP_BY);
+export type UsageAttributionGroupBy = z.infer<typeof UsageAttributionGroupBySchema>;
+
+/** A single attribution bucket, with an honest measured-vs-estimated cost split. */
+export const UsageAttributionBucketSchema = z.object({
+  /** Group key: task id, repo name, project id, or session id. */
+  key: z.string(),
+  /** Human label when cheaply available (task title; repo name); else null. */
+  label: z.string().nullable(),
+  /** Harvested sessions folded into this bucket. */
+  sessions: z.number().int().nonnegative(),
+  inputTokens: z.number().int().nonnegative(),
+  outputTokens: z.number().int().nonnegative(),
+  /** Summed cache-read + cache-creation input tokens. */
+  cachedTokens: z.number().int().nonnegative(),
+  /** Total priced cost (measured + estimated). */
+  estCostUsd: z.number().nonnegative(),
+  /** Cost from measured (harvested) rows. */
+  measuredCostUsd: z.number().nonnegative(),
+  /** Cost from estimated rows (0 today — see composition note). */
+  estimatedCostUsd: z.number().nonnegative(),
+  /** Sessions in this bucket with an unpriced model (cost unknown). */
+  unpricedSessions: z.number().int().nonnegative(),
+});
+export type UsageAttributionBucket = z.infer<typeof UsageAttributionBucketSchema>;
+
+export const UsageAttributionTotalsSchema = z.object({
+  sessions: z.number().int().nonnegative(),
+  inputTokens: z.number().int().nonnegative(),
+  outputTokens: z.number().int().nonnegative(),
+  cachedTokens: z.number().int().nonnegative(),
+  estCostUsd: z.number().nonnegative(),
+  measuredCostUsd: z.number().nonnegative(),
+  estimatedCostUsd: z.number().nonnegative(),
+  unpricedSessions: z.number().int().nonnegative(),
+});
+export type UsageAttributionTotals = z.infer<typeof UsageAttributionTotalsSchema>;
+
+/** Query for the attribution endpoint. `from`/`to` are inclusive ISO timestamps
+ *  matched against each session's harvest time (`updatedAt`). */
+export const UsageAttributionQuerySchema = z.object({
+  from: z.string().optional(),
+  to: z.string().optional(),
+  groupBy: UsageAttributionGroupBySchema.default('repo'),
+});
+export type UsageAttributionQuery = z.infer<typeof UsageAttributionQuerySchema>;
+
+export const UsageAttributionResponseSchema = z.object({
+  from: z.string().nullable(),
+  to: z.string().nullable(),
+  groupBy: UsageAttributionGroupBySchema,
+  totals: UsageAttributionTotalsSchema,
+  /** Buckets sorted by cost desc. */
+  buckets: z.array(UsageAttributionBucketSchema),
+});
+export type UsageAttributionResponse = z.infer<typeof UsageAttributionResponseSchema>;
 
 // ── Config ───────────────────────────────────────────────────
 // Optional soft budgets. When set, the summary endpoint flags spend near/over

@@ -1,14 +1,32 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { createTestDb } from '../test';
+import type { MidniteDb } from '../db/db.module';
 import { SessionUsageRepository } from './session-usage.repository';
-import type { SessionUsageInsert } from '../db/schema';
+import { tasks, type SessionUsageInsert } from '../db/schema';
 
 let repo: SessionUsageRepository;
+let db: MidniteDb;
 
 beforeEach(() => {
-  repo = new SessionUsageRepository(createTestDb().db);
+  db = createTestDb().db;
+  repo = new SessionUsageRepository(db);
 });
+
+function insertTask(id: string, over: { title?: string; repo?: string; projectId?: string } = {}) {
+  db.insert(tasks)
+    .values({
+      id,
+      title: over.title ?? `Task ${id}`,
+      kind: 'unknown',
+      status: 'done',
+      repo: over.repo ?? null,
+      projectId: over.projectId ?? null,
+      createdAt: '2026-07-08T00:00:00.000Z',
+      updatedAt: '2026-07-08T00:00:00.000Z',
+    })
+    .run();
+}
 
 function row(sessionId: string, overrides: Partial<SessionUsageInsert> = {}): SessionUsageInsert {
   return {
@@ -59,5 +77,38 @@ describe('SessionUsageRepository', () => {
     const rows = repo.getMany(['t1', 't3', 'missing']);
     expect(rows.map((r) => r.sessionId).sort()).toEqual(['t1', 't3']);
     expect(repo.getMany([])).toEqual([]);
+  });
+
+  describe('listAttributionInRange (Phase 61 B)', () => {
+    it('joins each session to its task title/repo/project', () => {
+      insertTask('t1', { title: 'Ship it', repo: 'midnite', projectId: 'proj-1' });
+      repo.upsert(row('t1'));
+      const [got] = repo.listAttributionInRange();
+      expect(got).toMatchObject({
+        sessionId: 't1',
+        taskTitle: 'Ship it',
+        repo: 'midnite',
+        projectId: 'proj-1',
+        inputTokens: 100,
+        estCostUsd: 0.01,
+      });
+    });
+
+    it('left-joins — a session whose task was deleted still returns (null repo)', () => {
+      repo.upsert(row('orphan'));
+      const [got] = repo.listAttributionInRange();
+      expect(got?.sessionId).toBe('orphan');
+      expect(got?.repo).toBeNull();
+      expect(got?.taskTitle).toBeNull();
+    });
+
+    it('filters by the harvest window (updatedAt)', () => {
+      insertTask('old');
+      insertTask('new');
+      repo.upsert(row('old', { updatedAt: '2026-05-01T00:00:00.000Z' }));
+      repo.upsert(row('new', { updatedAt: '2026-07-08T00:00:00.000Z' }));
+      const rows = repo.listAttributionInRange('2026-06-01T00:00:00.000Z');
+      expect(rows.map((r) => r.sessionId)).toEqual(['new']);
+    });
   });
 });
