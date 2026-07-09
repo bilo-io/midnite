@@ -25,12 +25,16 @@ interface PresenceState {
   ghost: boolean;
   /** Your own most recent emote (optimistic) — rendered over your avatar (Theme E). */
   selfEmote: { emoji: string; at: number } | null;
+  /** Your own most recent chat bubble (optimistic) — rendered over your avatar (Theme G). */
+  selfChat: { text: string; at: number } | null;
   /** Apply one decoded server frame. */
   applyFrame(frame: ServerPresenceMessage, now: number): void;
   setConnected(connected: boolean): void;
   setGhost(ghost: boolean): void;
   /** Record an emote you just fired (also sent to the server via the hook). */
   setSelfEmote(emoji: string, at: number): void;
+  /** Record a chat message you just sent (also sent to the server via the hook). */
+  setSelfChat(text: string, at: number): void;
   /** Clear all presence state (on office teardown / disconnect). */
   reset(): void;
 }
@@ -40,12 +44,14 @@ export const usePresenceStore = create<PresenceState>((set) => ({
   connected: false,
   ghost: false,
   selfEmote: null,
+  selfChat: null,
   applyFrame: (frame, now) =>
     set((s) => reducePresence({ self: s.self, peers: s.peers }, frame, now)),
   setConnected: (connected) => set((s) => (s.connected === connected ? s : { connected })),
   setGhost: (ghost) => set((s) => (s.ghost === ghost ? s : { ghost })),
   setSelfEmote: (emoji, at) => set({ selfEmote: { emoji, at } }),
-  reset: () => set({ ...emptyPresence(), connected: false, selfEmote: null }),
+  setSelfChat: (text, at) => set({ selfChat: { text, at } }),
+  reset: () => set({ ...emptyPresence(), connected: false, selfEmote: null, selfChat: null }),
 }));
 
 /** Peer list as an array (renderers iterate); stable-ish for a given peers map. */

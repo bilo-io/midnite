@@ -39,6 +39,7 @@ export function usePresence(
 ): {
   sendMove: (x: number, y: number, facing: PresenceFacing, scene: PresenceScene) => void;
   sendEmote: (emoji: string) => void;
+  sendChat: (text: string) => void;
 } {
   const variant = useOfficeStore((s) => s.playerVariant);
   const tint = useOfficeStore((s) => s.playerTint);
@@ -112,6 +113,7 @@ export function usePresence(
   );
 
   const sendEmote = useCallback((emoji: string) => send({ type: 'presence.emote', emoji }), [send]);
+  const sendChat = useCallback((text: string) => send({ type: 'presence.chat', text }), [send]);
 
-  return { sendMove, sendEmote };
+  return { sendMove, sendEmote, sendChat };
 }
