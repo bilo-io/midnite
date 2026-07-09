@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { expect, userEvent, within } from 'storybook/test';
 
 import { Accordion } from './accordion';
 
@@ -24,6 +25,30 @@ export const Open: Story = {
     defaultOpen: true,
     count: 3,
     children: <div className="p-3 text-sm text-muted-foreground">Section body content.</div>,
+  },
+};
+
+/**
+ * a11y (Phase 60 I): the trigger exposes `aria-expanded` and `aria-controls`
+ * pointing at a labelled `region`, and toggling flips the state for assistive tech.
+ */
+export const DisclosureSemantics: Story = {
+  args: {
+    title: 'General',
+    children: <div className="p-3 text-sm text-muted-foreground">Section body content.</div>,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const trigger = canvas.getByRole('button', { name: /General/i });
+    // Collapsed by default: expanded=false + controls a region by id.
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    const controls = trigger.getAttribute('aria-controls');
+    await expect(controls).toBeTruthy();
+    const region = canvasElement.querySelector(`#${controls}`);
+    await expect(region).toHaveAttribute('role', 'region');
+
+    await userEvent.click(trigger);
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
   },
 };
 

@@ -69,9 +69,12 @@ describe('CommandPalette', () => {
     pressCmdK();
 
     expect(screen.getByRole('dialog', { name: 'Command palette' })).toBeInTheDocument();
-    // 12 toggleable features (ideas off by default) + 3 always-on destinations
-    // (Agents, Profile, Settings) + 1 keyboard-shortcuts (?) button in the header.
-    expect(screen.getAllByRole('button')).toHaveLength(16);
+    // Each result row is a listbox `option` (Phase 60 I combobox pattern): 12
+    // toggleable features (ideas off by default) + 3 always-on destinations
+    // (Agents, Profile, Settings). The header `?` keyboard-shortcuts control
+    // stays a plain button.
+    expect(screen.getAllByRole('option')).toHaveLength(15);
+    expect(screen.getAllByRole('button')).toHaveLength(1);
     // Empty query never hits the network.
     expect(searchAll).not.toHaveBeenCalled();
   });
@@ -108,11 +111,10 @@ describe('CommandPalette', () => {
     pressCmdK();
     // "kanban" appears only in the Tasks feature description.
     fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), { target: { value: 'kanban' } });
-    // 1 keyboard-shortcuts (?) header button + 1 matching nav button.
-    const results = screen.getAllByRole('button');
-    expect(results).toHaveLength(2);
-    // The nav match is the second button (first is the ? header button).
-    expect(results[1]).toHaveTextContent('Tasks');
+    // The single matching result is a listbox `option` (Phase 60 I).
+    const results = screen.getAllByRole('option');
+    expect(results).toHaveLength(1);
+    expect(results[0]).toHaveTextContent('Tasks');
     await waitFor(() => expect(searchAll).toHaveBeenCalled());
   });
 

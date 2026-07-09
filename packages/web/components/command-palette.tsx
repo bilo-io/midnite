@@ -398,6 +398,16 @@ export function CommandPalette() {
               placeholder={chatMode ? 'Tell the board what to do…' : 'Jump to, search, or run a command…'}
               className="w-full bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
               aria-label={chatMode ? 'Chat with the board' : 'Search commands and content'}
+              // Combobox pattern (Phase 60 I): focus stays in the input while the
+              // arrow keys move the active option; SR announces it via
+              // aria-activedescendant instead of moving DOM focus into the list.
+              role={chatMode ? undefined : 'combobox'}
+              aria-controls={chatMode ? undefined : 'command-palette-listbox'}
+              aria-expanded={chatMode ? undefined : !showNoMatches}
+              aria-autocomplete={chatMode ? undefined : 'list'}
+              aria-activedescendant={
+                chatMode || showNoMatches ? undefined : `command-palette-option-${active}`
+              }
             />
             {searching && (
               <LoaderCircle
@@ -419,16 +429,30 @@ export function CommandPalette() {
           {chatMode ? (
             <ChatBar command={chatCommand} state={chat} />
           ) : (
-          <ul className="max-h-[60vh] overflow-auto py-1">
+          <ul
+            id="command-palette-listbox"
+            // Only a populated list is a `listbox` (its children are options); the
+            // empty state is a plain <ul> so a bare "No matches." <li> isn't an
+            // invalid non-option child. The id stays either way so the input's
+            // aria-controls always resolves (Phase 60 I).
+            role={showNoMatches ? undefined : 'listbox'}
+            aria-label={showNoMatches ? undefined : 'Results'}
+            className="max-h-[60vh] overflow-auto py-1"
+          >
             {showNoMatches ? (
               <li className="px-3 py-6 text-center text-sm text-muted-foreground">No matches.</li>
             ) : (
               sections.map((section) => (
-                <li key={section.key}>
-                  <p className="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                <li key={section.key} role="presentation">
+                  <p
+                    aria-hidden
+                    className="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+                  >
                     {section.label}
                   </p>
-                  <ul>
+                  {/* group on the <ul> (not the <li>) — axe disallows role=group
+                      on a listitem; the label names the option group for AT. */}
+                  <ul role="group" aria-label={section.label}>
                     {section.items.map((item) => {
                       rowIndex += 1;
                       const i = rowIndex;
@@ -450,10 +474,13 @@ export function CommandPalette() {
                           ? `cmd:${item.cmd.id}`
                           : `${item.result.type}:${item.result.id}`;
                       return (
-                        <li key={key}>
+                        <li key={key} role="presentation">
                           <button
                             ref={selected ? activeRef : undefined}
                             type="button"
+                            id={`command-palette-option-${i}`}
+                            role="option"
+                            aria-selected={selected}
                             onClick={() => activate(item)}
                             onMouseMove={() => setActive(i)}
                             className={cn(

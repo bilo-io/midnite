@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useId, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { Collapse } from './collapse';
 import { cn } from '../lib/cn';
@@ -27,6 +27,9 @@ export function Accordion({
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  // Wire the trigger to its region so assistive tech knows which content the
+  // button expands, and can jump to it (Phase 60 I).
+  const bodyId = useId();
 
   return (
     <section className="overflow-hidden rounded-lg border bg-card/60">
@@ -37,15 +40,21 @@ export function Accordion({
           type="button"
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
+          aria-controls={bodyId}
           className="flex flex-1 items-center gap-2 text-left"
         >
           <ChevronDown
+            aria-hidden
             className={cn(
               'h-4 w-4 shrink-0 text-muted-foreground transition-transform',
               !open && '-rotate-90',
             )}
           />
-          {icon ? <span className="shrink-0 text-muted-foreground">{icon}</span> : null}
+          {icon ? (
+            <span aria-hidden className="shrink-0 text-muted-foreground">
+              {icon}
+            </span>
+          ) : null}
           <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             {title}
           </h2>
@@ -57,7 +66,7 @@ export function Accordion({
         </button>
         {action ? <div className="shrink-0">{action}</div> : null}
       </div>
-      <Collapse open={open}>
+      <Collapse open={open} id={bodyId} role="region" aria-label={title}>
         <div className="border-t border-border/60">{children}</div>
       </Collapse>
     </section>

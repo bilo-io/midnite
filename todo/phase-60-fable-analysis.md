@@ -267,19 +267,27 @@ loading/empty/error into one "empty" render (+toast). *(Capturing states first r
       — matrix + 15 ranked findings + a Theme-M backlog (three shared components — `<QueryState>`,
       `<NotFoundState>`, `runMutation` — close most of the theme). Cross-refs G ES-4/ES-5.
 
-## Theme I — Accessibility & keyboard navigation — **M-L**
+## Theme I — Accessibility & keyboard navigation — **M-L** — ✅ DONE (PR #374, 2026-07-09)
 
-Usable without a mouse, legible to assistive tech — no visual change required.
+Usable without a mouse, legible to assistive tech. *(This slice deviated from analysis-only, approved
+upfront: it applied the trivial ARIA quick-wins + promoted the design-system axe gate + added the
+missing axe/keyboard story coverage; visual/systemic items — token contrast, a shared modal
+focus-trap, a board `KeyboardSensor` — are documented for a remediation phase.)*
 
-- [ ] **`@midnite/ui` primitives:** audit the **hand-rolled** accordion/collapse/tabs for ARIA roles + keyboard
-      (arrow keys, Home/End, Enter/Space, focus management); confirm `@storybook/addon-a11y` axe checks actually
-      run and add the missing story coverage as findings.
-- [ ] **Complex web interactions:** the **dnd-kit board** (keyboard drag/reorder?), hand-rolled **dialogs/modals**
-      (focus trap, `Esc`, `aria-modal`, return focus), the **command palette** (P41), the **cockpits** (51/55) —
-      tab order, focus rings, screen-reader labels.
-- [ ] **Global:** contrast on the token palette (WCAG AA — the dark theme raised `--destructive` for this, verify
-      the rest), image `alt`, form label associations, live-region announcements for async board updates.
-- [ ] **Report:** `todo/phase-60-findings/I-accessibility.md` (rank P1 for keyboard-trap/unreachable-control).
+- [x] **`@midnite/ui` primitives:** audited + **fixed** the hand-rolled primitives — `Tabs` gained the
+      WAI-ARIA roving-tabindex + arrow/Home/End keyboard model, `Accordion` wires `aria-controls`→a
+      labelled region, `Collapse` marks collapsed content `inert`; the `@storybook/addon-a11y` axe gate
+      was `test:'todo'` (never failed CI) → **promoted to `error`** (surfacing + fixing unlabelled
+      input/textarea stories), with new keyboard/disclosure play-fns. (PR #374)
+- [x] **Complex web interactions:** command palette rebuilt as a proper **combobox+listbox**
+      (`aria-activedescendant`, `role=option`/`aria-selected`) with a Playwright probe; `ConfirmDialog`
+      got a focus-trap + return-focus (exemplar); `media-type-picker`/`approvals-drawer` gained
+      `aria-modal`. dnd-kit board keyboard-drag gap + the systemic per-dialog focus-trap documented. (PR #374)
+- [x] **Global:** a WCAG **token contrast script** ([`packages/ui/scripts/contrast-audit.mjs`](../packages/ui/scripts/contrast-audit.mjs))
+      computes every pair in both themes — found `destructive` (3.60:1) + `success` (3.37:1) fail AA
+      normal-text (documented for a token pass); everything else passes. (PR #374)
+- [x] **Report:** [`todo/phase-60-findings/I-accessibility.md`](phase-60-findings/I-accessibility.md)
+      — 12 findings (7 fixed inline, 5 documented), ranked, each with evidence + a remediation backlog. (PR #374)
 
 ## Theme J — Mobile & responsive polish — **M**
 

@@ -63,13 +63,18 @@ function ConfirmDialog({
   onClose: (ok: boolean) => void;
 }) {
   const confirmRef = React.useRef<HTMLButtonElement>(null);
+  const dialogRef = React.useRef<HTMLDivElement>(null);
   const destructive = state.destructive ?? true;
 
   React.useEffect(() => {
+    // Remember what had focus so we can restore it when the dialog closes
+    // (Phase 60 I — return focus to the trigger, not <body>).
+    const previouslyFocused = document.activeElement as HTMLElement | null;
     confirmRef.current?.focus();
     // Capture phase + stopImmediatePropagation so the dialog owns Escape/Enter
     // and the underlying modal's own Escape handler doesn't also fire (which
-    // would close it out from under the confirmation).
+    // would close it out from under the confirmation). Tab is trapped inside the
+    // dialog so focus can't wander to the (inert) content behind it.
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
@@ -79,10 +84,28 @@ function ConfirmDialog({
         e.preventDefault();
         e.stopImmediatePropagation();
         onClose(true);
+      } else if (e.key === 'Tab') {
+        const focusables = dialogRef.current?.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        );
+        if (!focusables || focusables.length === 0) return;
+        const first = focusables[0]!;
+        const last = focusables[focusables.length - 1]!;
+        const activeEl = document.activeElement;
+        if (e.shiftKey && activeEl === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && activeEl === last) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     };
     document.addEventListener('keydown', onKey, true);
-    return () => document.removeEventListener('keydown', onKey, true);
+    return () => {
+      document.removeEventListener('keydown', onKey, true);
+      previouslyFocused?.focus?.();
+    };
   }, [onClose]);
 
   return (
@@ -93,6 +116,7 @@ function ConfirmDialog({
         aria-hidden
       />
       <div
+        ref={dialogRef}
         role="alertdialog"
         aria-modal="true"
         aria-label={state.title}
