@@ -30,6 +30,12 @@ const SUMMARY: UsageSummaryResponse = {
   ],
   warnings: [],
   costIsEstimate: true,
+  composition: {
+    llmUsd: 12.34,
+    sessionMeasuredUsd: 0,
+    sessionEstimatedUsd: 0,
+    unpricedSessions: 0,
+  },
 };
 
 const meta = {

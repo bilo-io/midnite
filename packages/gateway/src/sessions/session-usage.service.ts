@@ -1,9 +1,11 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { SessionUsage } from '@midnite/shared';
 
-import { AgentsService } from '../agents/agents.service';
 import { estimateSessionCostUsd } from '../usage/lib/pricing';
-import { SessionUsageRepository } from './session-usage.repository';
+import {
+  SessionUsageRepository,
+  type SessionUsageAttributionRow,
+} from './session-usage.repository';
 import { harvestTranscriptUsage } from './lib/transcript-usage';
 import type { SessionUsageRow } from '../db/schema';
 
@@ -20,7 +22,6 @@ export class SessionUsageService {
 
   constructor(
     @Inject(SessionUsageRepository) private readonly repo: SessionUsageRepository,
-    @Inject(AgentsService) private readonly agents: AgentsService,
   ) {}
 
   /**
@@ -96,9 +97,18 @@ export class SessionUsageService {
     return map;
   }
 
+  /**
+   * Harvested rows in the [from, to] window (by harvest time), each joined to
+   * its task's title/repo/project — the raw input for cost attribution
+   * (Phase 61 B). Aggregation into buckets lives in `UsageService`.
+   */
+  listAttributionInRange(from?: string, to?: string): SessionUsageAttributionRow[] {
+    return this.repo.listAttributionInRange(from, to);
+  }
+
   private safeAgentCli(): string | null {
     try {
-      return this.agents.getAgentCli();
+      return this.repo.getAgentCli();
     } catch {
       return null;
     }

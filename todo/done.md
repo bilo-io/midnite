@@ -13,6 +13,13 @@ Closes Phase 64 (→ 30/30, ✅ DONE) — the stretch theme lands. Ephemeral pro
 - [x] **Client:** `PeerView.chat` + reducer (preserved across position updates), optimistic `selfChat`, pure `presence-chat` helper (radius ~200px/same-scene, length-scaled ~4–7s TTL) — all unit-tested.
 - [x] **2D + 3D:** wrapped speech bubble over peers (radius-filtered client-side) in both engines; optimistic self bubble over the 2D player + a bottom-HUD self confirmation in 3D first-person.
 - [x] **Composer:** `T` key / 💬 button opens an input; a new office-store `chatOpen` flag joins the freeze contract (2D + 3D rigs) so scene keys are suppressed while typing; Enter sends, Esc/blur closes. HUD RTL tests + a two-context Playwright chat-propagation assertion over the real wire.
+## 2026-07-09 — feat: cost attribution by task/repo/project/session — Phase 61 Theme B (PR #370)
+
+Turns the harvested `session_usage` rows (Phase 61 A) into first-class cost attribution: which task / repo / project / session actually spent what, with an honest measured-vs-estimated split. Gateway + contract only (surfaces land in Themes G/H/I).
+
+- [x] **Contracts (shared):** `UsageAttribution{GroupBy,Bucket,Totals,Query,Response}` + a summary `composition` field (gateway-LLM vs. measured/estimated session cost + unpriced-session count) in [`usage.ts`](../packages/shared/src/usage.ts). Schema round-trip tests.
+- [x] **Attribution read path:** dedicated `GET /usage/attribution?groupBy=task|repo|project|session` (kept separate from `summary()`, which is gateway `llm_usage` — one honest source per read); `SessionUsageRepository` left-joins `session_usage` → `tasks` for repo/project, windowed by harvest time (`updatedAt`); buckets cost-desc with a measured/estimated split + unpriced count; `UsageService` injects `SessionUsageService` via `SessionUsageModule` (no DI cycle).
+- [x] **Budgets:** harvested session cost folds into the **soft** budget warnings + the summary composition; **hard caps (`checkBudget`) stay LLM-only** by decision (no new spawn-blocking). Gateway service/controller/repo tests; full suite green (gateway 1798, web 1039, shared).
 
 ## 2026-07-09 — docs: error-handling & failure-path audit — Phase 60 Theme G (PR #369)
 
