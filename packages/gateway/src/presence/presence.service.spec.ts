@@ -191,6 +191,54 @@ describe('PresenceService', () => {
     );
   });
 
+  describe('chat (Theme G)', () => {
+    it('fans out a chat immediately with the peerId, sanitizing the text', () => {
+      const a = sock();
+      svc.join(a, guest(), hello());
+      svc.handleMessage(a, move(1, 1));
+      broadcast.sent.length = 0;
+      svc.handleMessage(a, { type: 'presence.chat', text: '  hi   there  ' });
+      expect(broadcast.sent.map((s) => s.frame)).toContainEqual(
+        expect.objectContaining({ type: 'presence.chat', text: 'hi there' }),
+      );
+    });
+
+    it('drops a chat that sanitizes to empty', () => {
+      const a = sock();
+      svc.join(a, guest(), hello());
+      svc.handleMessage(a, move(1, 1));
+      broadcast.sent.length = 0;
+      svc.handleMessage(a, { type: 'presence.chat', text: '   ' });
+      expect(broadcast.sent).toHaveLength(0);
+    });
+
+    it('suppresses chat from a ghost peer', () => {
+      const a = sock();
+      svc.join(a, guest(), hello({ ghost: true }));
+      svc.handleMessage(a, move(1, 1));
+      broadcast.sent.length = 0;
+      svc.handleMessage(a, { type: 'presence.chat', text: 'boo' });
+      expect(broadcast.sent).toHaveLength(0);
+    });
+
+    it('rate-limits with a token bucket: bursts up to chatBurst, then drops until refill', () => {
+      const a = sock();
+      svc.join(a, guest(), hello());
+      svc.handleMessage(a, move(1, 1));
+      broadcast.sent.length = 0;
+      // Default chatBurst is 5 — send 7 back-to-back (same tick, no refill).
+      for (let i = 0; i < 7; i++) svc.handleMessage(a, { type: 'presence.chat', text: `m${i}` });
+      const chats = broadcast.sent.filter((s) => s.frame.type === 'presence.chat');
+      expect(chats).toHaveLength(5);
+      // Advance one refill interval → one more token → one more message allowed.
+      now += 1_000;
+      broadcast.sent.length = 0;
+      svc.handleMessage(a, { type: 'presence.chat', text: 'again' });
+      svc.handleMessage(a, { type: 'presence.chat', text: 'blocked' });
+      expect(broadcast.sent.filter((s) => s.frame.type === 'presence.chat')).toHaveLength(1);
+    });
+  });
+
   describe('identity', () => {
     it('guest mode trusts the hello name', () => {
       const a = sock();
