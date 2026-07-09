@@ -1,8 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, eq, gte, inArray, lte } from 'drizzle-orm';
+import { AGENT_CLI_DEFAULT, AgentCliSchema, type AgentCli } from '@midnite/shared';
 
 import { DB_TOKEN, type MidniteDb } from '../db/db.module';
-import { sessionUsage, tasks, type SessionUsageInsert, type SessionUsageRow } from '../db/schema';
+import { primaryAgent, sessionUsage, tasks, type SessionUsageInsert, type SessionUsageRow } from '../db/schema';
+
+/** The orchestrator singleton lives under this fixed id (mirrors AgentsRepository). */
+const PRIMARY_AGENT_ID = 'primary';
 
 /**
  * One harvested session's usage joined to its task's repo/project (Phase 61 B).
@@ -28,6 +32,17 @@ export interface SessionUsageAttributionRow {
 @Injectable()
 export class SessionUsageRepository {
   constructor(@Inject(DB_TOKEN) private readonly db: MidniteDb) {}
+
+  /**
+   * The global agent-CLI preference off the singleton `primary_agent` row,
+   * coalesced to the default. Read here (rather than via AgentsRepository) so
+   * this module needs no dependency on the agents module — importing it created
+   * an agents↔agent load-order cycle that TDZ'd on boot.
+   */
+  getAgentCli(): AgentCli {
+    const row = this.db.select().from(primaryAgent).where(eq(primaryAgent.id, PRIMARY_AGENT_ID)).get();
+    return AgentCliSchema.catch(AGENT_CLI_DEFAULT).parse(row?.agentCli);
+  }
 
   /** Upsert one session's harvested usage (pk = sessionId). */
   upsert(row: SessionUsageInsert): void {
