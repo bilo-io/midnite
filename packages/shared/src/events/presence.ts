@@ -58,10 +58,23 @@ export const PresenceEmoteMessageSchema = z.object({
   emoji: z.string().min(1).max(8),
 });
 
+/** Max length of a proximity-chat message (Theme G) — bounded on the wire. */
+export const PRESENCE_CHAT_MAX_LENGTH = 160;
+
+/**
+ * Say something (Theme G — proximity chat). Ephemeral: the server fans it to the
+ * scope (rate-limited); clients radius-filter it for display and never persist it.
+ */
+export const PresenceChatMessageSchema = z.object({
+  type: z.literal('presence.chat'),
+  text: z.string().min(1).max(PRESENCE_CHAT_MAX_LENGTH),
+});
+
 export const ClientPresenceMessageSchema = z.discriminatedUnion('type', [
   PresenceHelloMessageSchema,
   PresenceMoveMessageSchema,
   PresenceEmoteMessageSchema,
+  PresenceChatMessageSchema,
 ]);
 
 // ---- server -> client ----
@@ -110,11 +123,23 @@ export const PresenceServerEmoteMessageSchema = z.object({
   emoji: z.string().min(1).max(8),
 });
 
+/**
+ * A peer's chat message, fanned out to the scope (Theme G). Ephemeral; the client
+ * radius-filters it (only renders it when the sender is nearby in the same scene)
+ * and gives it a short TTL. Never persisted anywhere.
+ */
+export const PresenceServerChatMessageSchema = z.object({
+  type: z.literal('presence.chat'),
+  peerId: z.string().min(1),
+  text: z.string().min(1).max(PRESENCE_CHAT_MAX_LENGTH),
+});
+
 export const ServerPresenceMessageSchema = z.discriminatedUnion('type', [
   PresenceSnapshotMessageSchema,
   PresencePeerUpdatedMessageSchema,
   PresencePeerLeftMessageSchema,
   PresenceServerEmoteMessageSchema,
+  PresenceServerChatMessageSchema,
 ]);
 
 // ---- inferred types ----
@@ -122,15 +147,34 @@ export const ServerPresenceMessageSchema = z.discriminatedUnion('type', [
 export type PresenceHelloMessage = z.infer<typeof PresenceHelloMessageSchema>;
 export type PresenceMoveMessage = z.infer<typeof PresenceMoveMessageSchema>;
 export type PresenceEmoteMessage = z.infer<typeof PresenceEmoteMessageSchema>;
+export type PresenceChatMessage = z.infer<typeof PresenceChatMessageSchema>;
 export type ClientPresenceMessage = z.infer<typeof ClientPresenceMessageSchema>;
 
 export type PresenceSnapshotMessage = z.infer<typeof PresenceSnapshotMessageSchema>;
 export type PresencePeerUpdatedMessage = z.infer<typeof PresencePeerUpdatedMessageSchema>;
 export type PresencePeerLeftMessage = z.infer<typeof PresencePeerLeftMessageSchema>;
 export type PresenceServerEmoteMessage = z.infer<typeof PresenceServerEmoteMessageSchema>;
+export type PresenceServerChatMessage = z.infer<typeof PresenceServerChatMessageSchema>;
 export type ServerPresenceMessage = z.infer<typeof ServerPresenceMessageSchema>;
 
 export const PRESENCE_WS_PATH = '/ws/presence';
+
+/**
+ * Strip control characters and collapse whitespace in a chat message to plain
+ * text (Theme G) — the server's last line of defense (the wire schema caps
+ * length; this removes anything non-printable). Returns `''` when nothing
+ * renderable remains, which the server treats as a dropped message. Shared so
+ * client + server sanitize identically.
+ */
+export function sanitizeChatText(text: string): string {
+  let out = '';
+  for (const ch of text) {
+    const code = ch.codePointAt(0)!;
+    // Drop C0/C1 control chars (keep emoji + all printable unicode).
+    out += code < 0x20 || (code >= 0x7f && code <= 0x9f) ? ' ' : ch;
+  }
+  return out.replace(/\s+/g, ' ').trim();
+}
 
 // ---- REST summary (Theme F: app-wide surfaces) ----
 
