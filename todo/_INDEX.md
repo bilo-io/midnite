@@ -28,11 +28,11 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [64 · Office presence](phase-64-office-presence.md) | 🔄 WIP | 23/30 | `████████░░` | 77% | H | G |
+| [64 · Office presence](phase-64-office-presence.md) | 🔄 WIP | 27/30 | `█████████░` | 90% | — | G |
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
 | [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 6/33 | `██░░░░░░░░` | 18% | — | C D E F G H |
 | [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 11/36 | `███░░░░░░░` | 31% | B | E F G H I |
-| [60 · Fable-Analysis](phase-60-fable-analysis.md) | 🔄 WIP | 26/63 | `████░░░░░░` | 41% | G | H I J K L M |
+| [60 · Fable-Analysis](phase-60-fable-analysis.md) | 🔄 WIP | 30/63 | `█████░░░░░` | 48% | — | H I J K L M |
 | [59 · Chat to board](phase-59-chat-to-board.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
 | [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 15/26 | `██████░░░░` | 58% | — | — |
@@ -124,7 +124,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **E** — Emote wheel, teammates roster, locate/walk-to (PR #363)
 - ✅ **F** — Nav pill, dashboard widget, server-enforced ghost mode (PR #367)
 - ◻ **G** — Proximity chat bubbles (stretch — ephemeral, never persisted)
-- ◻ **H** — Gateway/contract/interp tests + two-context Playwright smoke
+- ✅ **H** — Gateway/contract/interp tests + two-context Playwright smoke; fixed 2 real bugs it caught (broadcast DI undefined → presence crashed on connect; re-hello bypassed the update path → ghost toggle no-op) (PR #368)
 
 ### [Phase 63 — Office 3D](phase-63-office-3d.md)
 *The office rebuilt in first-person three.js (r3f + drei): same rooms/data, same Zustand store contract so every existing React panel is reused untouched; 2D/3D tabs on /office; arcade sub-scene with one playable Breakout. Pure packages/web; 2D office behavior-preserving.*
@@ -167,7 +167,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **D** — Dependency & supply-chain audit (+ safe bumps): ws 8.18→8.21 DoS bump, rest triaged (PR #355)
 - ✅ **E** — State-machine, scheduler & concurrency correctness (PR #357)
 - ✅ **F** — Data integrity & boundary-condition bugs (PR #365)
-- ◻ **G** — Error handling & failure-path correctness
+- ✅ **G** — Error handling & failure-path correctness (13 findings, no P0; SW-1/2 + FO-2 + ES-1 the standouts) (PR #369)
 - ◻ **H** — Consistency & flow sweep (loading/empty/error, dead ends)
 - ◻ **I** — Accessibility & keyboard navigation
 - ◻ **J** — Mobile & responsive polish

@@ -145,6 +145,41 @@ describe('PresenceService', () => {
     expect(broadcast.sent).toHaveLength(0);
   });
 
+  it('retracts a visible peer when it toggles ghost on mid-session', () => {
+    const observer = sock();
+    const a = sock();
+    svc.join(observer, guest(), hello());
+    svc.handleMessage(observer, move(0, 0));
+    svc.join(a, guest(), hello({ name: 'Ada' }));
+    svc.handleMessage(a, move(1, 1));
+    svc.runTick(now); // Ada is now visible to the observer
+    broadcast.sent.length = 0;
+    // Ada goes ghost via a re-hello — the observer must be told she left now,
+    // not silently keep her stale avatar until the next tick (which omits ghosts).
+    svc.handleMessage(a, { ...hello({ name: 'Ada' }), ghost: true });
+    expect(framesTo(broadcast.sent, observer)).toContainEqual(
+      expect.objectContaining({ type: 'presence.peer-left' }),
+    );
+    // ...and the following tick emits no update for the now-ghost Ada.
+    broadcast.sent.length = 0;
+    svc.runTick(now);
+    expect(broadcast.sent.some((s) => s.frame.type === 'presence.peer-updated')).toBe(false);
+  });
+
+  it('does not retract on a ghost→ghost or visible→visible re-hello', () => {
+    const observer = sock();
+    const a = sock();
+    svc.join(observer, guest(), hello());
+    svc.handleMessage(observer, move(0, 0));
+    svc.join(a, guest(), hello({ name: 'Ada' }));
+    svc.handleMessage(a, move(1, 1));
+    svc.runTick(now);
+    broadcast.sent.length = 0;
+    // A plain re-hello (avatar change, still visible) never departs the peer.
+    svc.handleMessage(a, hello({ name: 'Ada', variant: 3 }));
+    expect(broadcast.sent.some((s) => s.frame.type === 'presence.peer-left')).toBe(false);
+  });
+
   it('fans out an emote immediately with the peerId, suppressing ghosts', () => {
     const a = sock();
     svc.join(a, guest(), hello());
