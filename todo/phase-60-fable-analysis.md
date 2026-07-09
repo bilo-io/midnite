@@ -239,20 +239,33 @@ CLI/web API-error surfacing solid); the real gaps are two robustness bugs + one 
 > The product's look + direction are **liked as-is** — these themes hunt for the *overlooked*, never a
 > redesign. Every UX finding is "this is missing/inconsistent/inaccessible," not "change the approach."
 
-## Theme H — Consistency & flow sweep — **M**
+## Theme H — Consistency & flow sweep — **M** — ✅ DONE (PR #373, 2026-07-09)
 
-The overlooked few things, made systematic.
+The overlooked few things, made systematic. **15 findings, one P1, no P0** — from a **live
+18-screenshot state capture** (each surface driven into empty/error/loading against the real e2e
+gateway) + two static sweeps. Systemic: the shared `useApiData` list path collapses
+loading/empty/error into one "empty" render (+toast). *(Capturing states first required fixing a
+#370 gateway-boot cycle — landed as PR #371.)*
 
-- [ ] **State coverage matrix:** for each major surface (board, sessions 51, project 55, workflows, diff review
-      52, slides 48, ideas, search, settings) confirm it has a **loading**, **empty**, and **error** state —
-      list the ones that show a blank/spinner-forever/dead end instead.
-- [ ] **Interaction consistency:** destructive actions all confirm the same way? success/failure **toasts**
-      consistent? optimistic vs. await behavior uniform? back-links/breadcrumbs present on every detail/deep-link
-      (a bookmarked `?id=` that 404s to nowhere is a dead end)?
-- [ ] **Copy & affordance:** button labels/tooltips/placeholders consistent in voice; disabled controls explain
-      *why*; irreversible ops signposted. Report a **consistency findings list** + a proposed shared pattern where
-      one is missing (no redesign — just the gap).
-- [ ] **Report:** `todo/phase-60-findings/H-consistency-flow.md`.
+- [x] **State coverage matrix:** **SM-1 (P2, systemic)** — `error≈empty`: board/sessions/projects/
+      workflows render their empty state + a transient toast on a 500 (dup-creation risk). **SM-2
+      (P2)** — `loading≈empty`: no surface reads `useApiData`'s `loading` flag; **zero skeleton
+      components** exist. **SM-3 (P2)** — toast-only errors, no inline retry. **SM-4** — slides/settings
+      are local so a backend outage shows no signal (informational). Search is the reference (proper
+      loading/empty/error machine).
+- [x] **Interaction consistency:** **IC-1 (P1)** — Ideas detail dead-ends (no back-link on error;
+      **infinite "Loading…"** on a deleted id). **IC-2 (P2)** — councils/workflows-edit/team-detail
+      not-found without a back-link (team-detail renders blank). **IC-3 (P2)** — Ideas delete uses
+      `window.confirm` (lone bypass of the shared `useConfirm()`). **IC-4 (P2)** — bulk-delete family
+      (projects/workflows/councils/memory) silent — no toast/rollback. **IC-5 (P2)** — Ideas create/
+      save mutate silently. **IC-6 (P3)** — optimistic-vs-await drift.
+- [x] **Copy & affordance:** **CA-1 (P2)** — "New {noun}" (10 surfaces) vs "Add {noun}" (3 settings).
+      **CA-2 (P2)** — disabled primary actions don't say why (`disabledHint` exists only in councils).
+      **CA-3/CA-4/CA-5 (P3)** — search-placeholder ellipsis, delete-irreversibility copy, empty-state
+      tier. No P1 affordance gap (icon-only buttons all labelled).
+- [x] **Report:** [`todo/phase-60-findings/H-consistency-flow.md`](phase-60-findings/H-consistency-flow.md)
+      — matrix + 15 ranked findings + a Theme-M backlog (three shared components — `<QueryState>`,
+      `<NotFoundState>`, `runMutation` — close most of the theme). Cross-refs G ES-4/ES-5.
 
 ## Theme I — Accessibility & keyboard navigation — **M-L**
 
