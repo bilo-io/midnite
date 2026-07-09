@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-09 — test+docs: docs/site staleness + ui test-gap audit — Phase 60 Theme L (PR #375)
+
+Audited all three areas + **closed the `@midnite/ui` test hole inline** (approved deviation). 7 findings — 2 fixed, 5 documented. Report: [`L-docs-site-ui.md`](phase-60-findings/L-docs-site-ui.md).
+
+- [x] **ui test gap FIXED (UI-1):** the 10 primitives had 0 behavioral tests — added `play`-fn browser tests for button/switch/select/styled-select/input/textarea (click/toggle/open-pick/typing/disabled); `ui:test` 46→54. Verified `web/components/ui/*` are pure re-export shims, no drift (BND-1).
+- [x] **Docs (DOCS-1..4):** public site "Docs" link 404s (DOCS-1); `@midnite/docs` surfaces dev markdown but has **no user-facing product docs** (DOCS-2); 5/10 primitives lack an MDX page (DOCS-3); getting-started is UI-only (DOCS-4).
+- [x] **Docs IA (Decision §3, settled w/ user):** extend `@midnite/docs` with a product section, made the **primary public-facing** focus; design-system docs secondary. Authoring is a follow-up.
+- [x] **Public site (SITE-1):** links HTTP-probed (GitHub/releases/web-app + anchors/legal live; only Docs dead); feature copy accurate but undersells the shipped surface (workflows/office/slides/ideas/guardrails/cockpits/search/teams).
+
 ## 2026-07-09 — fix+docs: accessibility & keyboard audit — Phase 60 Theme I (PR #374)
 
 Audited every surface the theme names + **applied the trivial ARIA quick-wins** (approved deviation from analysis-only). 12 findings — 7 fixed inline, 5 documented for a remediation phase. No P0. Report: [`I-accessibility.md`](phase-60-findings/I-accessibility.md).

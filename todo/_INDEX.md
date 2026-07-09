@@ -32,7 +32,7 @@
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
 | [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 6/33 | `██░░░░░░░░` | 18% | — | C D E F G H |
 | [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 14/36 | `████░░░░░░` | 39% | — | E F G H I |
-| [60 · Fable-Analysis](phase-60-fable-analysis.md) | 🔄 WIP | 38/63 | `██████░░░░` | 60% | K L | J M |
+| [60 · Fable-Analysis](phase-60-fable-analysis.md) | 🔄 WIP | 42/63 | `███████░░░` | 67% | K | J M |
 | [59 · Chat to board](phase-59-chat-to-board.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
 | [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 15/26 | `██████░░░░` | 58% | — | — |
@@ -172,7 +172,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **I** — Accessibility & keyboard navigation: audited all surfaces; fixed 7 ARIA quick-wins (tabs kbd nav, palette combobox, collapse inert, dialog focus-trap) + axe gate→error + contrast script; 5 documented (PR #374)
 - ◻ **J** — Mobile & responsive polish
 - ◻ **K** — CLI robustness & coverage (+ tests for untested clusters)
-- ◻ **L** — Docs site, public site & @midnite/ui test gap
+- ✅ **L** — Docs site, public site & @midnite/ui test gap: fixed the ui test hole (46→54 play-fns) + verified re-export shims; found dead Docs link + no product docs; proposed a product-led docs IA (PR #375)
 - ◻ **M** — Cross-cutting synthesis & remediation backlog (runs last)
 
 ### [Phase 59 — Chat to board](phase-59-chat-to-board.md)
