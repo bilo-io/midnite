@@ -92,19 +92,22 @@ Replace the placeholder with measured numbers where a source exists — and say 
       already covers the agent models; added cache-aware `estimateSessionCostUsd` (cache-read 0.1×,
       cache-write 1.25× of input) — unknown model ⇒ tokens shown, `estCostUsd` **null** (unpriced).
 
-## Theme B — Cost attribution: per task, session, repo, project — **M**
+## Theme B — Cost attribution: per task, session, repo, project — **M** — ✅ DONE (PR #370, 2026-07-09)
 
 Which work cost what.
 
-- [ ] **shared + gateway:** a `session_usage` table (`sessionId`/`taskId`, `agentCli`, `model?`,
-      `inputTokens`, `outputTokens`, `cachedTokens?`, `estCostUsd?`, `measured: boolean`,
-      timestamps) + zod contract; written by Theme A's collector; forward-only migration.
-- [ ] **Attribution rollups in the read path:** extend [`usage.service.ts`](../packages/gateway/src/usage/usage.service.ts)
-      `summary()` with `groupBy=task|repo|project|session` (joining `session_usage` +
-      `agent_run_stats` + tasks) so "what did repo X / project Y spend this month?" is one query.
-- [ ] **Budgets get real:** `checkBudget()` includes harvested session cost in the daily/monthly
-      totals (P50 hard caps + soft warns now reflect agent work, not just gateway calls) — flagged
-      in the response so the UI can show measured-vs-estimated composition.
+- [x] **shared + gateway:** the `session_usage` table + `SessionUsageSchema` landed in Theme A
+      (PR #366); Theme B adds the attribution contracts (`UsageAttribution*`) + a summary
+      `composition` field in [`usage.ts`](../packages/shared/src/usage.ts). No new migration needed.
+- [x] **Attribution in the read path:** a dedicated **`GET /usage/attribution?groupBy=task|repo|project|session`**
+      (rather than overloading `summary()`, whose source is the gateway's own `llm_usage` — kept
+      separate for an honest single-source read) joins `session_usage` → `tasks` for repo/project,
+      windowed by harvest time, with a measured-vs-estimated split + unpriced-session count. The
+      join lives in `SessionUsageRepository`; `UsageService` injects `SessionUsageService`.
+      (`agent_run_stats` run-counts deferred — cost, not counts, is the Theme's core.)
+- [x] **Budgets get real:** harvested session cost now folds into the **soft** budget warnings +
+      the summary `composition` (measured-vs-estimated visible). Per decision the **hard caps
+      (`checkBudget`) stay LLM-only** — no new spawn-blocking behaviour from session cost.
 
 ---
 

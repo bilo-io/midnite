@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   LLM_FEATURES,
   LlmFeatureSchema,
+  UsageAttributionQuerySchema,
+  UsageAttributionResponseSchema,
   UsageConfigSchema,
   UsageRecordSchema,
   UsageSummaryQuerySchema,
@@ -71,7 +73,60 @@ describe('UsageSummaryResponseSchema', () => {
       byDay: [],
       warnings: [],
       costIsEstimate: true,
+      composition: {
+        llmUsd: 0.001,
+        sessionMeasuredUsd: 0,
+        sessionEstimatedUsd: 0,
+        unpricedSessions: 0,
+      },
     };
     expect(UsageSummaryResponseSchema.parse(res)).toEqual(res);
+  });
+});
+
+describe('UsageAttributionQuerySchema', () => {
+  it('defaults groupBy to repo', () => {
+    expect(UsageAttributionQuerySchema.parse({}).groupBy).toBe('repo');
+  });
+
+  it('accepts the four attribution dimensions and rejects others', () => {
+    for (const g of ['task', 'repo', 'project', 'session']) {
+      expect(UsageAttributionQuerySchema.parse({ groupBy: g }).groupBy).toBe(g);
+    }
+    expect(UsageAttributionQuerySchema.safeParse({ groupBy: 'day' }).success).toBe(false);
+  });
+});
+
+describe('UsageAttributionResponseSchema', () => {
+  it('round-trips an attribution response with a measured/estimated split', () => {
+    const bucket = {
+      key: 'midnite',
+      label: 'midnite',
+      sessions: 2,
+      inputTokens: 100,
+      outputTokens: 40,
+      cachedTokens: 10,
+      estCostUsd: 0.05,
+      measuredCostUsd: 0.05,
+      estimatedCostUsd: 0,
+      unpricedSessions: 1,
+    };
+    const res = {
+      from: null,
+      to: null,
+      groupBy: 'repo' as const,
+      totals: {
+        sessions: 2,
+        inputTokens: 100,
+        outputTokens: 40,
+        cachedTokens: 10,
+        estCostUsd: 0.05,
+        measuredCostUsd: 0.05,
+        estimatedCostUsd: 0,
+        unpricedSessions: 1,
+      },
+      buckets: [bucket],
+    };
+    expect(UsageAttributionResponseSchema.parse(res)).toEqual(res);
   });
 });

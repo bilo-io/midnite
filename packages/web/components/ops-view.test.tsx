@@ -149,6 +149,7 @@ const ZERO_USAGE_RESPONSE = {
   byFeature: [],
   warnings: [],
   costIsEstimate: true,
+  composition: { llmUsd: 0, sessionMeasuredUsd: 0, sessionEstimatedUsd: 0, unpricedSessions: 0 },
 };
 
 function usageBucket(key: string, estCostUsd: number) {

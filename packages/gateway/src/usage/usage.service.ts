@@ -9,16 +9,26 @@ import {
   type LlmFeature,
   type LlmProvider,
   type MidniteConfig,
+  type UsageAttributionBucket,
+  type UsageAttributionGroupBy,
+  type UsageAttributionQuery,
+  type UsageAttributionResponse,
+  type UsageAttributionTotals,
   type UsageBucket,
   type UsageBudgetWarning,
+  type UsageSpendComposition,
   type UsageSummaryQuery,
   type UsageSummaryResponse,
   type UsageTotals,
 } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
 import type { LlmUsageRow } from '../db/schema';
+import type { SessionUsageAttributionRow } from '../sessions/session-usage.repository';
+import { SessionUsageService } from '../sessions/session-usage.service';
 import { estimateCostUsd } from './lib/pricing';
 import { UsageRepository } from './usage.repository';
+
+const UNASSIGNED_KEY = '(unassigned)';
 
 /** What a caller hands to {@link UsageService.record} after an LLM call. */
 export interface RecordUsageInput {
@@ -37,6 +47,7 @@ export class UsageService {
   constructor(
     @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
     @Inject(UsageRepository) private readonly repo: UsageRepository,
+    @Inject(SessionUsageService) private readonly sessionUsage: SessionUsageService,
   ) {}
 
   /**
@@ -71,6 +82,10 @@ export class UsageService {
   /** Aggregate usage in a window into totals + grouped buckets + soft-warnings. */
   summary(query: UsageSummaryQuery): UsageSummaryResponse {
     const rows = this.repo.listInRange(query.from, query.to);
+    // Harvested agent-session cost for the same window (Phase 61 B), for the
+    // spend composition + budget-warning augmentation. Fail-open: a session-usage
+    // read must never break the LLM-usage summary.
+    const sessionRows = this.safeSessionRows(query.from, query.to);
     const totals = sumTotals(rows);
     const byDay = bucketBy(rows, (r) => dayOf(r.at));
     const byProvider = bucketBy(rows, (r) =>
@@ -91,9 +106,44 @@ export class UsageService {
       byProvider,
       byFeature,
       byDay,
-      warnings: this.budgetWarnings(rows),
+      warnings: this.budgetWarnings(rows, sessionRows),
       costIsEstimate: true,
+      composition: spendComposition(rows, sessionRows),
     };
+  }
+
+  /**
+   * Phase 61 B — cost attribution. "Which task / repo / project / session spent
+   * what?" over the harvested `session_usage` rows (real agent-session token
+   * counts) joined to their task for repo/project, windowed by harvest time.
+   * Distinct from {@link summary} (which covers the gateway's *own* LLM calls):
+   * this is agent-session cost. Buckets carry an honest measured-vs-estimated
+   * split + an unpriced-session count.
+   */
+  attribution(query: UsageAttributionQuery): UsageAttributionResponse {
+    const rows = this.safeSessionRows(query.from, query.to);
+    const buckets = attributionBuckets(rows, query.groupBy);
+    return {
+      from: query.from ?? null,
+      to: query.to ?? null,
+      groupBy: query.groupBy,
+      totals: attributionTotals(rows),
+      buckets,
+    };
+  }
+
+  /** Session-usage rows for [from,to], swallowing any read error (fail-open). */
+  private safeSessionRows(from?: string, to?: string): SessionUsageAttributionRow[] {
+    try {
+      return this.sessionUsage.listAttributionInRange(from, to);
+    } catch (err) {
+      this.logger.warn(
+        `failed to read session usage for attribution: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+      return [];
+    }
   }
 
   /**
@@ -127,9 +177,15 @@ export class UsageService {
   /**
    * Soft-warn (never block) when today's or this-month's spend nears/exceeds a
    * configured budget. Uses the *current* wall clock for the day/month window so
-   * warnings reflect live spend regardless of the query range.
+   * warnings reflect live spend regardless of the query range. Since Phase 61 B
+   * the spend folds in harvested agent-session cost (windowed by harvest time),
+   * not just the gateway's own LLM calls. Note: the *hard* caps in
+   * {@link checkBudget} remain LLM-usage-only by design — this is the soft path.
    */
-  private budgetWarnings(rows: LlmUsageRow[]): UsageBudgetWarning[] {
+  private budgetWarnings(
+    rows: LlmUsageRow[],
+    sessionRows: SessionUsageAttributionRow[],
+  ): UsageBudgetWarning[] {
     const { dailyBudgetUsd, monthlyBudgetUsd, warnAtRatio } = this.config.usage;
     const warnings: UsageBudgetWarning[] = [];
     const now = new Date();
@@ -137,12 +193,16 @@ export class UsageService {
     const month = today.slice(0, 7); // YYYY-MM
 
     if (dailyBudgetUsd) {
-      const spent = sumCost(rows.filter((r) => dayOf(r.at) === today));
+      const spent =
+        sumCost(rows.filter((r) => dayOf(r.at) === today)) +
+        sumSessionCost(sessionRows.filter((r) => dayOf(r.updatedAt) === today));
       const w = warning('day', dailyBudgetUsd, spent, warnAtRatio);
       if (w) warnings.push(w);
     }
     if (monthlyBudgetUsd) {
-      const spent = sumCost(rows.filter((r) => dayOf(r.at).startsWith(month)));
+      const spent =
+        sumCost(rows.filter((r) => dayOf(r.at).startsWith(month))) +
+        sumSessionCost(sessionRows.filter((r) => dayOf(r.updatedAt).startsWith(month)));
       const w = warning('month', monthlyBudgetUsd, spent, warnAtRatio);
       if (w) warnings.push(w);
     }
@@ -209,4 +269,111 @@ function bucketBy(rows: LlmUsageRow[], keyOf: (r: LlmUsageRow) => string): Usage
 
 function round6(n: number): number {
   return Math.round(n * 1_000_000) / 1_000_000;
+}
+
+// ── Cost attribution helpers (Phase 61 B) ────────────────────
+
+function sumSessionCost(rows: SessionUsageAttributionRow[]): number {
+  return rows.reduce((acc, r) => acc + (r.estCostUsd ?? 0), 0);
+}
+
+/** Window spend split: gateway LLM calls vs. measured/estimated session cost. */
+function spendComposition(
+  llmRows: LlmUsageRow[],
+  sessionRows: SessionUsageAttributionRow[],
+): UsageSpendComposition {
+  // Every harvested row is measured; estimated session cost is 0 today (we only
+  // attribute harvested rows) — the field is reserved for a future fallback.
+  const sessionMeasuredUsd = round6(sumSessionCost(sessionRows));
+  const unpricedSessions = sessionRows.filter((r) => r.estCostUsd == null).length;
+  return {
+    llmUsd: round6(sumCost(llmRows)),
+    sessionMeasuredUsd,
+    sessionEstimatedUsd: 0,
+    unpricedSessions,
+  };
+}
+
+/** Which bucket a session row falls into for the requested dimension. */
+function attributionKey(
+  row: SessionUsageAttributionRow,
+  groupBy: UsageAttributionGroupBy,
+): { key: string; label: string | null } {
+  switch (groupBy) {
+    case 'repo':
+      return { key: row.repo ?? UNASSIGNED_KEY, label: row.repo ?? null };
+    case 'project':
+      return { key: row.projectId ?? UNASSIGNED_KEY, label: null };
+    case 'task':
+    case 'session':
+      // The session id === the task id; label with the task title when present.
+      return { key: row.sessionId, label: row.taskTitle };
+  }
+}
+
+function attributionBuckets(
+  rows: SessionUsageAttributionRow[],
+  groupBy: UsageAttributionGroupBy,
+): UsageAttributionBucket[] {
+  const map = new Map<string, UsageAttributionBucket>();
+  for (const r of rows) {
+    const { key, label } = attributionKey(r, groupBy);
+    const cur =
+      map.get(key) ??
+      ({
+        key,
+        label,
+        sessions: 0,
+        inputTokens: 0,
+        outputTokens: 0,
+        cachedTokens: 0,
+        estCostUsd: 0,
+        measuredCostUsd: 0,
+        estimatedCostUsd: 0,
+        unpricedSessions: 0,
+      } satisfies UsageAttributionBucket);
+    // Prefer a non-null label if a later row carries one.
+    if (cur.label == null && label != null) cur.label = label;
+    cur.sessions += 1;
+    cur.inputTokens += r.inputTokens;
+    cur.outputTokens += r.outputTokens;
+    cur.cachedTokens += r.cachedReadTokens + r.cachedWriteTokens;
+    const cost = r.estCostUsd ?? 0;
+    cur.estCostUsd = round6(cur.estCostUsd + cost);
+    cur.measuredCostUsd = round6(cur.measuredCostUsd + cost);
+    if (r.estCostUsd == null) cur.unpricedSessions += 1;
+    map.set(key, cur);
+  }
+  // Highest spend first; ties broken by key for a stable order.
+  return [...map.values()].sort(
+    (a, b) => b.estCostUsd - a.estCostUsd || a.key.localeCompare(b.key),
+  );
+}
+
+function attributionTotals(rows: SessionUsageAttributionRow[]): UsageAttributionTotals {
+  return rows.reduce<UsageAttributionTotals>(
+    (acc, r) => {
+      const cost = r.estCostUsd ?? 0;
+      return {
+        sessions: acc.sessions + 1,
+        inputTokens: acc.inputTokens + r.inputTokens,
+        outputTokens: acc.outputTokens + r.outputTokens,
+        cachedTokens: acc.cachedTokens + r.cachedReadTokens + r.cachedWriteTokens,
+        estCostUsd: round6(acc.estCostUsd + cost),
+        measuredCostUsd: round6(acc.measuredCostUsd + cost),
+        estimatedCostUsd: 0,
+        unpricedSessions: acc.unpricedSessions + (r.estCostUsd == null ? 1 : 0),
+      };
+    },
+    {
+      sessions: 0,
+      inputTokens: 0,
+      outputTokens: 0,
+      cachedTokens: 0,
+      estCostUsd: 0,
+      measuredCostUsd: 0,
+      estimatedCostUsd: 0,
+      unpricedSessions: 0,
+    },
+  );
 }
