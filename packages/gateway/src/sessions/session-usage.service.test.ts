@@ -3,7 +3,6 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { AgentsService } from '../agents/agents.service';
 import { SessionUsageService } from './session-usage.service';
 import type { SessionUsageRepository } from './session-usage.repository';
 import type { SessionUsageRow } from '../db/schema';
@@ -23,9 +22,9 @@ function makeService(agentCli = 'claude') {
     upsert: vi.fn((row: SessionUsageRow) => store.set(row.sessionId, row)),
     get: vi.fn((id: string) => store.get(id)),
     getMany: vi.fn((ids: string[]) => ids.map((id) => store.get(id)).filter(Boolean)),
+    getAgentCli: () => agentCli,
   } as unknown as SessionUsageRepository;
-  const agents = { getAgentCli: () => agentCli } as unknown as AgentsService;
-  const svc = new SessionUsageService(repo, agents);
+  const svc = new SessionUsageService(repo);
   return { svc, repo, store };
 }
 

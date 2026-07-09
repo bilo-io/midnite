@@ -1,7 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { SessionUsage } from '@midnite/shared';
 
-import { AgentsService } from '../agents/agents.service';
 import { estimateSessionCostUsd } from '../usage/lib/pricing';
 import {
   SessionUsageRepository,
@@ -23,7 +22,6 @@ export class SessionUsageService {
 
   constructor(
     @Inject(SessionUsageRepository) private readonly repo: SessionUsageRepository,
-    @Inject(AgentsService) private readonly agents: AgentsService,
   ) {}
 
   /**
@@ -110,7 +108,7 @@ export class SessionUsageService {
 
   private safeAgentCli(): string | null {
     try {
-      return this.agents.getAgentCli();
+      return this.repo.getAgentCli();
     } catch {
       return null;
     }
