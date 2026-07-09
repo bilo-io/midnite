@@ -307,21 +307,26 @@ The small-screen + PWA paths.
 
 # Section IV — Monorepo Hygiene (CLI · docs · site · ui · shared)
 
-## Theme K — CLI robustness & coverage — **M**
+## Theme K — CLI robustness & coverage — **M** — ✅ DONE (PR #376, 2026-07-09)
 
-The 35-command client, made trustworthy.
+The 35-command client, made trustworthy. Tracker drift: the grounding's "untested clusters" were
+mostly already covered — the one real hole was **export/import**, now closed. Deliverable = the
+tests + two small fixes; report in [`K-cli.md`](phase-60-findings/K-cli.md).
 
-- [ ] **Test the untested clusters** (findings + the tests themselves count as the deliverable here): bulk ops,
-      guardrails pause/resume, import/export, search — assert exit codes (0/1), `--json` shape, and
-      gateway-down/401 messaging per command.
-- [ ] **Consistency:** every mutating command sets an explicit `process.exitCode` on failure; `--json` output is
-      valid JSON for *table* commands too (not just single-object); help text has examples for the fuzzy ones.
-- [ ] **CI ergonomics:** add/verify an **env-var token fallback** (`MIDNITE_TOKEN`) so CI needn't write
-      `~/.midnite/auth` to disk.
-- [ ] **Boundary smell:** audit the `@midnite/gateway` import in [`cli/src/`](../packages/cli/src/) — confirm it's
-      types-only / a REST wrapper, not reaching gateway internals (CLAUDE.md: clients are pure API consumers);
-      report if it crosses the line.
-- [ ] **Report:** `todo/phase-60-findings/K-cli.md`.
+- [x] **Test the untested clusters (K-1):** bulk/guardrails/search/workflow/template/doctor/completions/
+      ws/client already had specs; **export/import** did not. Extracted the pure logic into
+      [`cli/src/portability.ts`](../packages/cli/src/portability.ts) (the `bulk.ts`/`search.ts` pure-helper
+      pattern) + **15 tests** — `--mode` validation throws (no silent default), domain parse, preview/result
+      render. Byte-identical command output.
+- [x] **Consistency (K-6):** exit codes verified sound (top-level `.catch` → `exit(1)`; bulk/doctor/check set
+      granular codes); `--json` threaded through ~59 sites incl. table commands. Deeper per-command `--json`-shape
+      audit + help examples documented as a copy-only follow-up — no concrete gap found in the commands read.
+- [x] **CI ergonomics (K-2):** added **`MIDNITE_TOKEN`** (the documented name) via `envToken()`, keeping
+      `MIDNITE_AUTH_TOKEN` as a back-compat alias; precedence **stored JWT > env > `--token`** documented + tested.
+- [x] **Boundary smell (K-4):** the lone `@midnite/gateway/bootstrap` import is the **sanctioned `serve`
+      in-process boot** (public package entry, `serve`-only) — **confirmed OK**, not a violation.
+- [x] **Report:** [`todo/phase-60-findings/K-cli.md`](phase-60-findings/K-cli.md) — coverage map, the applied
+      fixes (incl. Theme G **SW-4** corrupt-auth warn), and the inline-command coverage follow-up (K-5).
 
 ## Theme L — Docs site, public site & `@midnite/ui` test gap — **M-L** — ✅ DONE (PR #375, 2026-07-09)
 
