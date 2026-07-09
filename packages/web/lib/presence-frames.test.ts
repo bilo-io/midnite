@@ -47,6 +47,19 @@ describe('reducePresence', () => {
     const slice = reducePresence(emptyPresence(), { type: 'presence.emote', peerId: 'ghost', emoji: '👋' }, 1);
     expect(slice.peers).toEqual({});
   });
+
+  it('applies a chat frame and preserves it across a position update', () => {
+    let slice = reducePresence(emptyPresence(), { type: 'presence.snapshot', selfId: 'me', peers: [peer({ peerId: 'a' })] }, 1);
+    slice = reducePresence(slice, { type: 'presence.chat', peerId: 'a', text: 'hi there' }, 2);
+    expect(slice.peers.a).toMatchObject({ chat: { text: 'hi there', at: 2 } });
+    slice = reducePresence(slice, { type: 'presence.peer-updated', peers: [peer({ peerId: 'a', x: 77 })] }, 3);
+    expect(slice.peers.a).toMatchObject({ x: 77, chat: { text: 'hi there', at: 2 }, lastUpdate: 3 });
+  });
+
+  it('ignores a chat for an unknown peer', () => {
+    const slice = reducePresence(emptyPresence(), { type: 'presence.chat', peerId: 'ghost', text: 'boo' }, 1);
+    expect(slice.peers).toEqual({});
+  });
 });
 
 describe('shouldSendMove', () => {

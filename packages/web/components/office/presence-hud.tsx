@@ -8,13 +8,15 @@ import { canLocate, locatePlayer } from '@/lib/presence-bridge';
 import { saveGhost } from '@/lib/presence-identity';
 import { presencePeerList, usePresenceStore } from '@/lib/presence-store';
 import { useOfficeStore } from '@/lib/office-store';
+import { PresenceChatInput } from './presence-chat-input';
 
 /**
- * Phase 64 Theme E — the office social HUD: an emote wheel + a "teammates here"
- * roster, shared by both engines (mounted by each office view). Reads the presence
- * store; fires emotes via the `emote` action (from `useOfficePresence`) and
- * locate/walk-to via the scene bridge (2D only — the 3D rig is manual). Renders
- * nothing distracting when you're alone: the roster shows just you.
+ * Phase 64 Themes E + G — the office social HUD: an emote wheel, a proximity-chat
+ * composer, and a "teammates here" roster, shared by both engines (mounted by each
+ * office view). Reads the presence store; fires emotes via the `emote` action and
+ * chat via the `chat` action (both from `useOfficePresence`), and locate/walk-to
+ * via the scene bridge (2D only — the 3D rig is manual). Renders nothing
+ * distracting when you're alone: the roster shows just you.
  */
 
 const EMOTES = ['👋', '👍', '☕', '🎉', '❓', '👀'] as const;
@@ -29,7 +31,7 @@ function tintCss(tint: number | null): string {
   return tint == null ? 'hsl(var(--muted-foreground))' : `#${tint.toString(16).padStart(6, '0')}`;
 }
 
-export function PresenceHud({ emote }: { emote: (emoji: string) => void }) {
+export function PresenceHud({ emote, chat }: { emote: (emoji: string) => void; chat: (text: string) => void }) {
   const peers = usePresenceStore((s) => s.peers);
   const connected = usePresenceStore((s) => s.connected);
   const ghost = usePresenceStore((s) => s.ghost);
@@ -96,6 +98,11 @@ export function PresenceHud({ emote }: { emote: (emoji: string) => void }) {
             );
           })}
         </ul>
+      </div>
+
+      {/* Chat composer (Theme G) */}
+      <div className="pointer-events-auto">
+        <PresenceChatInput chat={chat} />
       </div>
 
       {/* Emote wheel + ghost toggle */}

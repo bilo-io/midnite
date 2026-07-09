@@ -12,6 +12,7 @@ import type {
   PresenceSummary,
   ServerPresenceMessage,
 } from '@midnite/shared';
+import { sanitizeChatText } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../config.token';
 import { WsBroadcastService } from '../ws/ws-broadcast.service';
 import { WsMetricsService } from '../ws/ws-metrics.service';
@@ -43,6 +44,9 @@ interface PeerState {
   dirty: boolean;
   /** Last time any frame arrived — drives the stale-departure sweep. */
   lastSeenAt: number;
+  /** Chat rate-limit token bucket (Theme G): tokens left + last refill time. */
+  chatTokens: number;
+  chatRefilledAt: number;
 }
 
 /**
@@ -65,6 +69,8 @@ export class PresenceService implements OnModuleDestroy {
   private readonly peers = new Map<WebSocket, PeerState>();
   private readonly tickMs: number;
   private readonly staleMs: number;
+  private readonly chatBurst: number;
+  private readonly chatRefillMs: number;
   /** Injectable clock — tests pass a fake so the stale sweep is deterministic. */
   private readonly clock: () => number;
   private timer?: ReturnType<typeof setInterval>;
@@ -83,6 +89,8 @@ export class PresenceService implements OnModuleDestroy {
     this.clock = clock ?? (() => Date.now());
     this.tickMs = config?.presence.tickMs ?? 100;
     this.staleMs = config?.presence.staleMs ?? 15_000;
+    this.chatBurst = config?.presence.chatBurst ?? 5;
+    this.chatRefillMs = config?.presence.chatRefillMs ?? 1_000;
   }
 
   /** Begin the coalescing/sweep tick (gateway calls this on module init). */
@@ -135,6 +143,8 @@ export class PresenceService implements OnModuleDestroy {
       hasPosition: false,
       dirty: false,
       lastSeenAt: now,
+      chatTokens: this.chatBurst,
+      chatRefilledAt: now,
     });
     this.reportCount();
     this.sendSnapshot(client, peerId, identity.teamId);
@@ -169,6 +179,9 @@ export class PresenceService implements OnModuleDestroy {
         break;
       case 'presence.emote':
         this.fanoutEmote(state, msg.emoji);
+        break;
+      case 'presence.chat':
+        this.fanoutChat(state, msg.text);
         break;
     }
   }
@@ -244,6 +257,37 @@ export class PresenceService implements OnModuleDestroy {
   private fanoutEmote(state: PeerState, emoji: string): void {
     if (state.ghost || !state.hasPosition) return;
     this.fanout(state.teamId, { type: 'presence.emote', peerId: state.peerId, emoji });
+  }
+
+  /**
+   * Proximity chat (Theme G). A ghost never chats (it would reveal them). The
+   * text is sanitized to plain text (dropped if empty), then rate-limited by a
+   * per-peer token bucket before fan-out to the scope. Clients radius-filter it
+   * for display — the server sends to the whole scope (coalescing-free, like
+   * emotes) and never persists anything.
+   */
+  private fanoutChat(state: PeerState, rawText: string): void {
+    if (state.ghost || !state.hasPosition) return;
+    const text = sanitizeChatText(rawText);
+    if (!text) return;
+    if (!this.takeChatToken(state)) return; // over rate limit — drop silently
+    this.fanout(state.teamId, { type: 'presence.chat', peerId: state.peerId, text });
+  }
+
+  /**
+   * Token-bucket check for chat: refill `chatBurst` tokens at one per
+   * `chatRefillMs`, then spend one. Returns false (drop the message) when empty.
+   */
+  private takeChatToken(state: PeerState): boolean {
+    const now = this.clock();
+    const refill = Math.floor((now - state.chatRefilledAt) / this.chatRefillMs);
+    if (refill > 0) {
+      state.chatTokens = Math.min(this.chatBurst, state.chatTokens + refill);
+      state.chatRefilledAt += refill * this.chatRefillMs;
+    }
+    if (state.chatTokens < 1) return false;
+    state.chatTokens -= 1;
+    return true;
   }
 
   private sendSnapshot(client: WebSocket, selfId: string, teamId: string | null): void {

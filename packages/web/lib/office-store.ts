@@ -49,6 +49,8 @@ interface OfficeState {
   deskPickerOpen: boolean;
   /** Whether the corner-office character (avatar) picker is open. */
   characterPickerOpen: boolean;
+  /** Whether the proximity-chat input is focused (Phase 64 G) — freezes scene keys. */
+  chatOpen: boolean;
   /** Player avatar: -1 = human, 0–5 = robot variant index (persisted). */
   playerVariant: number;
   /** Sprite tint for the player character (null = natural; persisted). */
@@ -90,6 +92,7 @@ interface OfficeState {
   closeDeskPicker(): void;
   openCharacterPicker(): void;
   closeCharacterPicker(): void;
+  setChatOpen(open: boolean): void;
   setPlayerVariant(variant: number): void;
   setPlayerTint(tint: number | null): void;
   toggleBreak(): void;
@@ -135,6 +138,7 @@ export const useOfficeStore = create<OfficeState>((set) => ({
   playstationOpen: false,
   deskPickerOpen: false,
   characterPickerOpen: false,
+  chatOpen: false,
   onBreak: false,
   currentScene: 'office',
   deskItems: loadDeskItems(),
@@ -175,6 +179,7 @@ export const useOfficeStore = create<OfficeState>((set) => ({
   openCharacterPicker: () =>
     set({ characterPickerOpen: true, deskPickerOpen: false, active: null, boardOpen: false, libraryOpen: false, playstationOpen: false }),
   closeCharacterPicker: () => set({ characterPickerOpen: false }),
+  setChatOpen: (chatOpen) => set((s) => (s.chatOpen === chatOpen ? s : { chatOpen })),
   setPlayerVariant: (playerVariant) => {
     if (typeof window !== 'undefined') {
       window.localStorage.setItem(LS_PLAYER_VARIANT_KEY, String(playerVariant));
@@ -210,6 +215,7 @@ export const useOfficeStore = create<OfficeState>((set) => ({
       playstationOpen: false,
       deskPickerOpen: false,
       characterPickerOpen: false,
+      chatOpen: false,
       currentScene: 'office',
     }),
 }));

@@ -186,16 +186,20 @@ Engine-agnostic state so 2D and 3D are just two renderers of one slice.
       toggle). *Kept in localStorage rather than the Phase-43 wire bag to keep the presence wire
       surface minimal — the phase's avatar/high-score precedent.* (PR #367)
 
-## Theme G — Proximity chat bubbles — **M** · *stretch (may slip without hurting the phase)*
+## Theme G — Proximity chat bubbles — **M** — ✅ DONE (PR #372, 2026-07-09)
 
-- [ ] **Ephemeral bubbles:** a short text input (opened via the HUD/keyboard, using the existing
-      panel keyboard-disable contract) sending `presence.chat`; rendered as speech bubbles over
-      the sender **only for peers within a proximity radius** (server sends to the team; clients
-      radius-filter for display) with a short TTL; **never persisted anywhere**.
-- [ ] **Input hygiene:** length cap + simple rate limit server-side; bubble text sanitized
-      (plain text only); chat input focus fully suppresses scene keys (existing store mechanism).
-- [ ] **2D first:** bubbles ride `Actor.bubble` in Phaser; the 3D billboard variant lands with
-      Theme D if both are in flight, else follows.
+- [x] **Ephemeral bubbles:** a short text input (opened via `T` / a 💬 HUD button, using the office
+      store's `chatOpen` flag → the existing panel keyboard-disable contract) sends `presence.chat`;
+      rendered as a **separate wrapped speech bubble** over the sender, shown **only for peers within
+      a proximity radius** (~200px, same-scene — server fans to the scope, clients radius-filter for
+      display) with a length-scaled ~4–7s TTL; **never persisted anywhere**. (PR #372)
+- [x] **Input hygiene:** 160-char cap (shared zod) + a per-peer **token-bucket** rate limit
+      server-side (`presence.chatBurst`/`chatRefillMs`); text sanitized via shared `sanitizeChatText`
+      (control-char strip + whitespace collapse, plain text only); ghost peers are chat-suppressed;
+      the chat input focus fully suppresses scene keys (2D + 3D rigs read `chatOpen`). (PR #372)
+- [x] **Both engines:** a wrapped bubble over 2D peers (+ optimistic self bubble over your player)
+      and a drei `<Html>` billboard over 3D peers (+ a bottom-HUD self confirmation in first-person),
+      both radius-filtered client-side; shared pure `presence-chat` helper (radius/TTL). (PR #372)
 
 ## Theme H — Tests & hardening — **S-M** — ✅ (PR #368)
 

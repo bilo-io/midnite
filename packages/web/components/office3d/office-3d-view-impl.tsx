@@ -10,6 +10,7 @@ import { useOfficeAgents } from '@/components/office/use-office-agents';
 import { useOfficePresence } from '@/hooks/use-office-presence';
 import { OFFICE_ASPECT } from '@/lib/office/dimensions';
 import { buildOfficePalette } from '@/lib/office/theme';
+import { SelfChatHud } from './self-chat-hud';
 import { useOfficeStore } from '@/lib/office-store';
 import { useGatewayErrorToast } from '@/lib/use-gateway-error-toast';
 import { Office3DCanvas } from './office-3d-canvas';
@@ -38,7 +39,7 @@ export function Office3DViewImpl() {
     return buildOfficePalette();
   }, [resolved]);
   const [locked, setLocked] = useState(false);
-  const { dialog, emote } = useOfficePresence();
+  const { dialog, emote, chat } = useOfficePresence();
 
   useEffect(() => {
     const { reset } = useOfficeStore.getState();
@@ -65,7 +66,8 @@ export function Office3DViewImpl() {
         </div>
       )}
       <OfficeHud />
-      <PresenceHud emote={emote} />
+      <SelfChatHud />
+      <PresenceHud emote={emote} chat={chat} />
       <PresenceNameDialog {...dialog} />
     </div>
   );

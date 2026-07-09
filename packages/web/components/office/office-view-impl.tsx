@@ -27,7 +27,7 @@ import { useOfficeAgents } from './use-office-agents';
 export function OfficeViewImpl() {
   const { error } = useOfficeAgents();
   useGatewayErrorToast(error);
-  const { dialog, emote } = useOfficePresence();
+  const { dialog, emote, chat } = useOfficePresence();
 
   return (
     <div
@@ -36,7 +36,7 @@ export function OfficeViewImpl() {
     >
       <OfficeGame />
       <OfficeHud />
-      <PresenceHud emote={emote} />
+      <PresenceHud emote={emote} chat={chat} />
       <PresenceNameDialog {...dialog} />
     </div>
   );

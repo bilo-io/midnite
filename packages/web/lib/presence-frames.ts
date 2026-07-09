@@ -23,6 +23,8 @@ export interface PeerView {
   scene: PresenceScene;
   /** Ephemeral emote with the epoch-ms it arrived (renderers TTL it). */
   emote?: { emoji: string; at: number };
+  /** Ephemeral chat bubble with the epoch-ms it arrived (renderers TTL + radius-filter it). */
+  chat?: { text: string; at: number };
   /** Epoch ms of the last frame touching this peer. */
   lastUpdate: number;
 }
@@ -59,8 +61,9 @@ export function reducePresence(
       const peers = { ...slice.peers };
       for (const p of frame.peers) {
         if (p.peerId === slice.self) continue;
-        // Preserve any live emote across a position update.
-        peers[p.peerId] = { ...p, emote: peers[p.peerId]?.emote, lastUpdate: now };
+        // Preserve any live emote + chat bubble across a position update.
+        const prev = peers[p.peerId];
+        peers[p.peerId] = { ...p, emote: prev?.emote, chat: prev?.chat, lastUpdate: now };
       }
       return { ...slice, peers };
     }
@@ -76,6 +79,14 @@ export function reducePresence(
       return {
         ...slice,
         peers: { ...slice.peers, [frame.peerId]: { ...existing, emote: { emoji: frame.emoji, at: now } } },
+      };
+    }
+    case 'presence.chat': {
+      const existing = slice.peers[frame.peerId];
+      if (!existing) return slice; // chat for an unknown/own peer — ignore
+      return {
+        ...slice,
+        peers: { ...slice.peers, [frame.peerId]: { ...existing, chat: { text: frame.text, at: now } } },
       };
     }
   }

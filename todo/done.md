@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-09 — feat: office proximity chat bubbles — Phase 64 Theme G (PR #372)
+
+Closes Phase 64 (→ 30/30, ✅ DONE) — the stretch theme lands. Ephemeral proximity chat over the existing presence WS: a message renders as a speech bubble over the sender, visible only to nearby teammates, short TTL, **zero persistence**. Builds on Theme A–F infra; no new channel, no DB.
+
+- [x] **Contract (`shared`):** `presence.chat` client→server + server→client frames (160-char cap), shared `sanitizeChatText` (control-char strip + whitespace collapse), `presence.chatBurst`/`chatRefillMs` config; contract + sanitize units.
+- [x] **Gateway:** `PresenceService` fans a sanitized chat to the scope, gated by a **per-peer token-bucket rate limit** + ghost-suppressed, never persisted; specs for fan-out/sanitize/ghost/rate-limit.
+- [x] **Client:** `PeerView.chat` + reducer (preserved across position updates), optimistic `selfChat`, pure `presence-chat` helper (radius ~200px/same-scene, length-scaled ~4–7s TTL) — all unit-tested.
+- [x] **2D + 3D:** wrapped speech bubble over peers (radius-filtered client-side) in both engines; optimistic self bubble over the 2D player + a bottom-HUD self confirmation in 3D first-person.
+- [x] **Composer:** `T` key / 💬 button opens an input; a new office-store `chatOpen` flag joins the freeze contract (2D + 3D rigs) so scene keys are suppressed while typing; Enter sends, Esc/blur closes. HUD RTL tests + a two-context Playwright chat-propagation assertion over the real wire.
 ## 2026-07-09 — feat: cost attribution by task/repo/project/session — Phase 61 Theme B (PR #370)
 
 Turns the harvested `session_usage` rows (Phase 61 A) into first-class cost attribution: which task / repo / project / session actually spent what, with an honest measured-vs-estimated split. Gateway + contract only (surfaces land in Themes G/H/I).

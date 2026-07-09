@@ -22,6 +22,13 @@ describe('usePresenceStore', () => {
     expect(usePresenceStore.getState().ghost).toBe(true);
   });
 
+  it('records an optimistic self chat, cleared by reset', () => {
+    usePresenceStore.getState().setSelfChat('hi team', 42);
+    expect(usePresenceStore.getState().selfChat).toEqual({ text: 'hi team', at: 42 });
+    usePresenceStore.getState().reset();
+    expect(usePresenceStore.getState().selfChat).toBeNull();
+  });
+
   it('reset clears peers + connection but the store stays usable', () => {
     const s = usePresenceStore.getState();
     s.applyFrame({ type: 'presence.snapshot', selfId: 'me', peers: [] }, 1);
