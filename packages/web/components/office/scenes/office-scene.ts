@@ -38,6 +38,7 @@ import {
 } from '@/lib/office/layout';
 import { samplePlayer, sceneFacing, setPresenceLocator } from '@/lib/presence-bridge';
 import { usePresenceStore } from '@/lib/presence-store';
+import { isChatLive } from '@/lib/presence-chat';
 import { PeerLayer } from './peer-layer';
 import { generateDeskLayout, type DeskLayout } from '@/lib/office/desks';
 import { buildFloorTileData } from '@/lib/office/map-data';
@@ -245,6 +246,8 @@ class OfficeScene extends Phaser.Scene {
   private breakIcon!: Phaser.GameObjects.Text;
   /** Your own emote bubble over the player (Phase 64 E), driven by the presence store. */
   private playerEmote!: Phaser.GameObjects.Text;
+  /** Your own chat bubble over the player (Phase 64 G), driven by the presence store. */
+  private playerChat!: Phaser.GameObjects.Text;
   private facing: 'down' | 'up' | 'side' = 'down';
   /** Click-to-walk: pixel waypoints the player is auto-following, or null. */
   private playerPath: { x: number; y: number }[] | null = null;
@@ -361,8 +364,8 @@ class OfficeScene extends Phaser.Scene {
         this.rebuildDesks(state.deskCapacity);
       }
       if (state.agents !== prev.agents) this.renderActors(state.agents);
-      const frozen = state.active !== null || state.boardOpen || state.libraryOpen || state.playstationOpen;
-      const wasFrozen = prev.active !== null || prev.boardOpen || prev.libraryOpen || prev.playstationOpen;
+      const frozen = state.active !== null || state.boardOpen || state.libraryOpen || state.playstationOpen || state.chatOpen;
+      const wasFrozen = prev.active !== null || prev.boardOpen || prev.libraryOpen || prev.playstationOpen || prev.chatOpen;
       if (frozen !== wasFrozen) {
         this.inputEnabled = !frozen;
         const kb = this.input.keyboard;
@@ -399,7 +402,7 @@ class OfficeScene extends Phaser.Scene {
 
     // Publish our position to presence (throttled in the hook) + render peers.
     samplePlayer(this.player.x, this.player.y, sceneFacing(this.facing, this.player.flipX), 'office');
-    this.peerLayer?.update(delta);
+    this.peerLayer?.update(delta, this.player.x, this.player.y);
 
     // Gentle pool shimmer (G2) + keep each actor's chrome glued to its sprite; a
     // swimmer's wake ripple trails just below it.
@@ -489,10 +492,23 @@ class OfficeScene extends Phaser.Scene {
     this.breakIcon.setVisible(useOfficeStore.getState().onBreak);
 
     // Your own emote bubble (Phase 64 E) — over the player, within its TTL.
+    const now = Date.now();
     const selfEmote = usePresenceStore.getState().selfEmote;
-    const emote = selfEmote && Date.now() - selfEmote.at < 3200 ? selfEmote.emoji : '';
+    const emote = selfEmote && now - selfEmote.at < 3200 ? selfEmote.emoji : '';
     if (this.playerEmote.text !== emote) this.playerEmote.setText(emote);
     this.playerEmote.setPosition(this.player.x, this.player.y - 30);
+
+    // Your own chat bubble (Phase 64 G) — optimistic, always shown to yourself
+    // (no radius filter on self), within its length-scaled TTL.
+    const selfChat = usePresenceStore.getState().selfChat;
+    const showSelfChat = !!selfChat && isChatLive(selfChat.at, selfChat.text, now);
+    if (showSelfChat) {
+      if (this.playerChat.text !== selfChat!.text) this.playerChat.setText(selfChat!.text);
+      this.playerChat.setPosition(this.player.x, this.player.y - (emote ? 48 : 36));
+      this.playerChat.setVisible(true);
+    } else if (this.playerChat.visible) {
+      this.playerChat.setVisible(false);
+    }
 
     this.updateMinimap();
   }
@@ -1664,6 +1680,20 @@ class OfficeScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setResolution(2)
       .setDepth(12);
+    this.playerChat = this.add
+      .text(sx, sy, '', {
+        fontFamily: 'sans-serif',
+        fontSize: '10px',
+        color: '#0b0b12',
+        backgroundColor: '#e5e7ebee',
+        padding: { x: 6, y: 3 },
+        align: 'center',
+        wordWrap: { width: 130 },
+      })
+      .setOrigin(0.5, 1)
+      .setResolution(2)
+      .setVisible(false)
+      .setDepth(13);
   }
 
   private buildVignette(worldW: number, worldH: number) {

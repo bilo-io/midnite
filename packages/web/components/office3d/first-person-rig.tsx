@@ -88,7 +88,8 @@ function selectPanelOpen(s: ReturnType<typeof useOfficeStore.getState>): boolean
     s.libraryOpen ||
     s.playstationOpen ||
     s.deskPickerOpen ||
-    s.characterPickerOpen
+    s.characterPickerOpen ||
+    s.chatOpen
   );
 }
 
