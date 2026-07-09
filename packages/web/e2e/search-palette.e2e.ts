@@ -23,7 +23,7 @@ test.describe('Command palette search', () => {
     const palette = page.getByRole('dialog', { name: 'Command palette' });
     await expect(palette).toBeVisible();
 
-    await palette.getByRole('textbox', { name: 'Search commands and content' }).fill(token);
+    await palette.getByRole('combobox', { name: 'Search commands and content' }).fill(token);
 
     // The hit lands in the "Tasks" group (no page jump matches the numeric token).
     await expect(palette.getByText('Tasks')).toBeVisible();
@@ -42,7 +42,7 @@ test.describe('Command palette search', () => {
     const palette = page.getByRole('dialog', { name: 'Command palette' });
     await expect(palette).toBeVisible();
 
-    await palette.getByRole('textbox', { name: 'Search commands and content' }).fill('a');
+    await palette.getByRole('combobox', { name: 'Search commands and content' }).fill('a');
     await expect(palette.getByText(/Type at least 2 characters/)).toBeVisible();
   });
 });

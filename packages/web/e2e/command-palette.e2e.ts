@@ -53,7 +53,7 @@ test.describe('Command palette & global shortcuts', () => {
     await expect(palette).toBeVisible();
 
     // Filter to the static global command and run it.
-    await palette.getByRole('textbox', { name: 'Search commands and content' }).fill('theme');
+    await palette.getByRole('combobox', { name: 'Search commands and content' }).fill('theme');
     await palette.getByText('Toggle light / dark theme').click();
 
     await expect(palette).toBeHidden();
@@ -116,7 +116,7 @@ test.describe('Command palette & global shortcuts', () => {
 
     // A leading ">" switches to chat mode; the search box becomes the command input.
     const input = palette.getByRole('textbox', { name: 'Chat with the board' });
-    await palette.getByRole('textbox', { name: 'Search commands and content' }).fill('>add "E2E chat bar task" p1');
+    await palette.getByRole('combobox', { name: 'Search commands and content' }).fill('>add "E2E chat bar task" p1');
     await expect(input).toBeVisible();
     await expect(palette.getByTestId('chat-bar')).toBeVisible();
 

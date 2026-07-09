@@ -29,7 +29,8 @@ export const Filters: Story = {
     const canvas = within(canvasElement);
     await userEvent.keyboard('{Control>}k{/Control}');
     const dialog = await canvas.findByRole('dialog', { name: 'Command palette' });
-    const input = within(dialog).getByRole('textbox', { name: 'Search commands and content' });
+    // The search input is a combobox (Phase 60 I), not a plain textbox.
+    const input = within(dialog).getByRole('combobox', { name: 'Search commands and content' });
 
     await userEvent.type(input, 'profile');
     await expect(within(dialog).getByText('Profile')).toBeInTheDocument();
