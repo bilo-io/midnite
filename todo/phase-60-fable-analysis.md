@@ -323,21 +323,22 @@ The 35-command client, made trustworthy.
       report if it crosses the line.
 - [ ] **Report:** `todo/phase-60-findings/K-cli.md`.
 
-## Theme L — Docs site, public site & `@midnite/ui` test gap — **M-L**
+## Theme L — Docs site, public site & `@midnite/ui` test gap — **M-L** — ✅ DONE (PR #375, 2026-07-09)
 
-Truth-in-documentation + the design-system test hole.
+Truth-in-documentation + the design-system test hole. *(Deviated from analysis-only, approved: **fixed** the ui
+test gap inline; docs authoring + site refresh stay follow-ups.)*
 
-- [ ] **Docs staleness ([`packages/docs/`](../packages/docs/)):** it's **design-system-only** — inventory what
-      the *product* has shipped (sessions, slides, workflows, guardrails, cockpits, CLI) with **no doc coverage**,
-      and decide the structural question (Decision §3): extend `docs` with a product section, or a separate
-      product-docs surface. `getting-started.mdx` covers only the UI on-ramp — flag it. Report the gap list +
-      a proposed IA; **writing the docs is a follow-up phase**, not this one.
-- [ ] **Public site accuracy:** audit the Phase 11 public site copy/screenshots/feature claims against what's
-      actually shipped — stale promises, dead links, missing recent surfaces, broken live examples.
-- [ ] **`@midnite/ui` test gap:** the 10 primitives have **0 unit tests** (only stories) — enumerate the
-      behavioral coverage needed (keyboard, controlled/uncontrolled, edge props) as findings; verify the
-      `web/components/ui/` re-export wrappers don't drift or override lib styles (boundary clarity).
-- [ ] **Report:** `todo/phase-60-findings/L-docs-site-ui.md`.
+- [x] **Docs staleness:** inventoried — `@midnite/docs` isn't design-system-*only* (Phase 26 D surfaces repo
+      developer markdown via `product-docs.tsx`), but there are **no user-facing product docs** (DOCS-2), 5 of 10
+      primitives lack an MDX page (DOCS-3), and getting-started is UI-only (DOCS-4). **IA proposed + settled with
+      the user (Decision §3): extend `@midnite/docs` with a product section, made the primary public-facing focus.** (PR #375)
+- [x] **Public site accuracy:** links HTTP-probed — the **"Docs" nav link 404s** (DOCS-1); GitHub/releases/web-app
+      + all anchors/legal verified live; feature copy is accurate but undersells the shipped surface (SITE-1). (PR #375)
+- [x] **`@midnite/ui` test gap:** **FIXED** — added behavioral `play`-fn tests for the untested primitives
+      (button/switch/select/styled-select/input/textarea; `ui:test` 46→54), and **verified `web/components/ui/`
+      are pure re-export shims (no drift)** (UI-1, BND-1). (PR #375)
+- [x] **Report:** [`todo/phase-60-findings/L-docs-site-ui.md`](phase-60-findings/L-docs-site-ui.md) — 7 findings
+      (2 fixed, 5 documented), ranked, + the product-led docs IA + a remediation backlog. (PR #375)
 
 ---
 

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { expect, fn, userEvent, within } from 'storybook/test';
 
 import { Textarea } from './textarea';
 
@@ -27,6 +28,17 @@ export const Placeholder: Story = {
 };
 export const Disabled: Story = {
   args: { disabled: true, value: 'Read only', readOnly: true, 'aria-label': 'Read-only field' },
+};
+
+/** Behavioral coverage (Phase 60 L): typing fires onChange + updates the value. */
+export const Typing: Story = {
+  args: { 'aria-label': 'Description', onChange: fn() },
+  play: async ({ args, canvasElement }) => {
+    const area = within(canvasElement).getByRole('textbox', { name: 'Description' });
+    await userEvent.type(area, 'hello');
+    await expect(area).toHaveValue('hello');
+    await expect(args.onChange).toHaveBeenCalled();
+  },
 };
 
 /** All three states stacked. */

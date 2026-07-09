@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { expect, fn, userEvent, within } from 'storybook/test';
 
 import { Input } from './input';
 
@@ -23,6 +24,18 @@ export const Default: Story = { args: { defaultValue: 'midnite', 'aria-label': '
 export const Placeholder: Story = { args: { placeholder: 'Search tasks…', 'aria-label': 'Search tasks' } };
 export const Disabled: Story = {
   args: { disabled: true, value: 'Read only', readOnly: true, 'aria-label': 'Read-only field' },
+};
+
+/** Behavioral coverage (Phase 60 L): typing fires onChange + updates the value;
+ *  a disabled input is not editable. */
+export const Typing: Story = {
+  args: { 'aria-label': 'Name', onChange: fn() },
+  play: async ({ args, canvasElement }) => {
+    const input = within(canvasElement).getByRole('textbox', { name: 'Name' });
+    await userEvent.type(input, 'abc');
+    await expect(input).toHaveValue('abc');
+    await expect(args.onChange).toHaveBeenCalled();
+  },
 };
 
 /** All three states stacked. */
