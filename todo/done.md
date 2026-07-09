@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-09 — docs: consistency & flow sweep — Phase 60 Theme H (PR #372)
+
+Findings report ([`todo/phase-60-findings/H-consistency-flow.md`](phase-60-findings/H-consistency-flow.md)) from a **live 18-screenshot state capture** (each doc-listed surface driven into empty/error/loading against the real e2e gateway) + two static sweeps. **15 findings, one P1, no P0.** *(Capturing states first required fixing a #370 gateway-boot cycle — landed as PR #371.)*
+
+- [x] **State coverage (SM-1..4):** systemic `error≈empty` (board/sessions/projects/workflows show the empty state + a transient toast on a 500) and `loading≈empty` (no skeletons; the `loading` flag is never read); toast-only errors with no inline retry. Search is the reference three-state machine.
+- [x] **Interaction (IC-1..6):** **P1** — Ideas detail dead-ends (no back-link; infinite "Loading…" on a deleted id); not-found w/o back-link (councils/workflows-edit/team-detail); `window.confirm` bypass in Ideas; silent bulk-delete (projects/workflows/councils/memory) + silent idea save; optimistic-vs-await drift.
+- [x] **Copy (CA-1..5):** "New" vs "Add" verb split, disabled-controls-don't-say-why, search-placeholder + delete-irreversibility + empty-state-tier inconsistencies. No P1 affordance gap.
+- [x] **Report + Theme-M backlog + capture spec:** three shared components (`<QueryState>`, `<NotFoundState>`, `runMutation`) would close most of the theme; committed `consistency-flow.shots.ts` for reproducibility. Cross-refs G ES-4/ES-5. Analysis-only — no product code changed.
+
 ## 2026-07-09 — feat: cost attribution by task/repo/project/session — Phase 61 Theme B (PR #370)
 
 Turns the harvested `session_usage` rows (Phase 61 A) into first-class cost attribution: which task / repo / project / session actually spent what, with an honest measured-vs-estimated split. Gateway + contract only (surfaces land in Themes G/H/I).
