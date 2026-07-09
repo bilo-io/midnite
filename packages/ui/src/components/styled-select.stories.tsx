@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { expect, userEvent, within } from 'storybook/test';
 
 import { StyledSelect } from './styled-select';
 import { type SelectOption } from './select';
@@ -34,6 +35,28 @@ export const Default: Story = {
   render: () => {
     const [value, setValue] = useState('todo');
     return <StyledSelect aria-label="Status" options={options} value={value} onChange={setValue} />;
+  },
+};
+
+/**
+ * Behavioral coverage (Phase 60 L): opening the react-select control reveals an
+ * option per value; picking one updates the displayed value.
+ */
+export const OpenPick: Story = {
+  args: { options, value: 'todo', onChange: () => {} },
+  render: () => {
+    const [value, setValue] = useState('todo');
+    return <StyledSelect aria-label="Status" options={options} value={value} onChange={setValue} />;
+  },
+  play: async ({ canvasElement }) => {
+    const combobox = within(canvasElement).getByRole('combobox');
+    await expect(canvasElement).toHaveTextContent('To do');
+    await userEvent.click(combobox);
+    // react-select portals its menu to <body>.
+    const body = within(document.body);
+    await expect(body.getAllByRole('option')).toHaveLength(3);
+    await userEvent.click(body.getByText('In progress'));
+    await expect(canvasElement).toHaveTextContent('In progress');
   },
 };
 

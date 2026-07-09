@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { expect, userEvent, within } from 'storybook/test';
 
 import { Switch } from './switch';
 
@@ -21,6 +22,17 @@ export const Interactive: Story = {
   render: () => {
     const [on, setOn] = useState(false);
     return <Switch checked={on} onCheckedChange={setOn} aria-label="Toggle setting" />;
+  },
+  // Behavioral coverage (Phase 60 L): clicking flips aria-checked (Space too,
+  // since it's a native button); keyboard-reachable + role=switch.
+  play: async ({ canvasElement }) => {
+    const sw = within(canvasElement).getByRole('switch', { name: 'Toggle setting' });
+    await expect(sw).toHaveAttribute('aria-checked', 'false');
+    await userEvent.click(sw);
+    await expect(sw).toHaveAttribute('aria-checked', 'true');
+    sw.focus();
+    await userEvent.keyboard(' ');
+    await expect(sw).toHaveAttribute('aria-checked', 'false');
   },
 };
 
