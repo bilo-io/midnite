@@ -38,11 +38,20 @@ const preview: Preview = {
     backgrounds: { disable: true },
     controls: { matchers: { color: /color$/i } },
     // @storybook/addon-a11y runs axe-core against every story during the Vitest
-    // browser run (`moon run ui:test`) and in the Storybook a11y panel. 'todo'
-    // surfaces violations as warnings without failing the run; 'error' fails a
-    // story on any violation. Start at 'todo' (same safe default as web) and
-    // promote to 'error' once the primitives are audited clean.
-    a11y: { test: 'todo' },
+    // browser run (`moon run ui:test`) and in the Storybook a11y panel. 'error'
+    // fails a story on any violation — promoted from 'todo' in Phase 60 I once the
+    // primitives were audited + fixed clean, so axe is now a real CI gate for the
+    // design system's *structure* (roles, names, labels, ARIA).
+    //
+    // `color-contrast` is disabled here on purpose: it's audited separately +
+    // more precisely by the token contrast script (scripts/contrast-audit.mjs,
+    // Phase 60 I), which computes exact WCAG ratios for every token pair in both
+    // themes. Leaving it on would fail on the known destructive-button ratio
+    // (logged as a finding) and couple the structural gate to a token decision.
+    a11y: {
+      test: 'error',
+      config: { rules: [{ id: 'color-contrast', enabled: false }] },
+    },
   },
 };
 
