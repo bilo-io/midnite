@@ -110,9 +110,9 @@ export class CornerOfficeScene extends Phaser.Scene {
     this.unsub = useOfficeStore.subscribe((state, prev) => {
       if (!this.alive) return;
       if (state.deskItems !== prev.deskItems) this.renderDeskItems(state.deskItems);
-      // Keyboard freeze while the desk or character picker is open.
-      const frozen = state.deskPickerOpen || state.characterPickerOpen;
-      const wasFrozen = prev.deskPickerOpen || prev.characterPickerOpen;
+      // Keyboard freeze while the desk/character picker or chat input is open.
+      const frozen = state.deskPickerOpen || state.characterPickerOpen || state.chatOpen;
+      const wasFrozen = prev.deskPickerOpen || prev.characterPickerOpen || prev.chatOpen;
       if (frozen !== wasFrozen) {
         this.inputEnabled = !frozen;
         const kb = this.input.keyboard;
@@ -146,7 +146,7 @@ export class CornerOfficeScene extends Phaser.Scene {
     this.playerShadow.setPosition(this.player.x, this.player.y + TILE * 0.42);
 
     samplePlayer(this.player.x, this.player.y, sceneFacing(this.facing, this.player.flipX), 'corner');
-    this.peerLayer?.update(delta);
+    this.peerLayer?.update(delta, this.player.x, this.player.y);
 
     const px = this.player.x;
     const py = this.player.y;

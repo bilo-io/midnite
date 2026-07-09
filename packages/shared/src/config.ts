@@ -277,6 +277,12 @@ export const PresenceConfigSchema = z.object({
   // departed — well under the 30s WS heartbeat, so avatars clear promptly. The
   // client keepalives while idle so a stationary teammate isn't reaped.
   staleMs: z.number().int().positive().default(15_000),
+  // Proximity chat (Theme G) — ephemeral bubbles, never persisted. A per-peer
+  // token bucket rate-limits sends server-side: `chatBurst` tokens, refilling one
+  // every `chatRefillMs`, so a peer may burst a few messages then must slow to
+  // ~1 per refill interval. Over-limit messages are dropped (no error).
+  chatBurst: z.number().int().positive().default(5),
+  chatRefillMs: z.number().int().positive().default(1_000),
 });
 
 export const WorkflowsConfigSchema = z.object({
