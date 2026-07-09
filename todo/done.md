@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-09 — docs: error-handling & failure-path audit — Phase 60 Theme G (PR #369)
+
+Analysis-only findings report ([`todo/phase-60-findings/G-error-handling.md`](phase-60-findings/G-error-handling.md)) from three parallel static audits, every top finding re-verified by hand against the branch tip. **13 findings, no P0.** The codebase is broadly disciplined — the gaps are two robustness bugs (which compound) + one new fail-open.
+
+- [x] **Swallowed errors:** SW-1 (P1) unguarded `void completeWithChecks` → unhandled rejection + mitigated slot leak; SW-2 (P1) no process-boundary `unhandledRejection`/`uncaughtException` handler; SW-3 (P2) `HeartbeatScheduler.tick()` reads DB before its guard; SW-4 (P3) CLI `readAuth` swallows a corrupt auth file. Dispatch/WS-send/JSON-fallback catches verified intentional + logged.
+- [x] **Fail-open vs fail-closed:** FO-1 (P1, =A-1) static bearer token fails RBAC open — confirmed live; FO-2 (P2, new) approval decision throws (unguarded `evaluate()` + `JSON.parse(rule.match)`) → 500 → PreToolUse hook fails open to `ask`, bypassing the blast-radius floor; FO-3/FO-4 (P3) `onNoSubscriber` default `ask` + owner-less-resources. Crypto/HMAC/token + scheduler gates verified fail-closed/fail-safe.
+- [x] **Boundary error surfacing:** ES-1 (P2) no global exception filter → latent 500-where-4xx class; ES-2/3/4/5 (P3) 500-not-502 on upstream outage, 400-vs-409 conflict inconsistency, no web App Router error boundary, board swallows a failed task-detail fetch. Zod→400, no-stack-leak, domain mapping, bulk partial-success, CLI/web surfacing verified correct.
+- [x] **Report + Theme-M backlog:** SW-2 (process rejection handler) + ES-1 (convention-based `DomainExceptionFilter`) flagged as the high-leverage convention-at-the-boundary fixes. Analysis-only — no code changed; gate green.
+
 ## 2026-07-08 — test+fix: presence tests & hardening — Phase 64 Theme H (PR #368)
 
 Closes Theme H (Phase 64 → 27/30; G proximity-chat stretch remains deferred). The two-context Playwright smoke — the phase's first *real-wire* presence check — surfaced two production bugs that every unit test missed (they pass a fake broadcast and call the service directly). Presence had never actually worked end-to-end.
