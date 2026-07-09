@@ -15,13 +15,19 @@ import {
   isImportable,
   isRunTerminal,
   type FailureClass,
-  type ImportPreview,
   type ResolveTaskAction,
   type SearchQuery,
   type WorkflowEvent,
   type WorkflowRun,
 } from '@midnite/shared';
 import { bulkExitCode, bulkResultRows, bulkSummaryLine } from './bulk.js';
+import {
+  exportSummaryLines,
+  importPreviewLines,
+  importResultLines,
+  parseExportDomains,
+  parseImportMode,
+} from './portability.js';
 import {
   bulkOpExitCode,
   bulkOpResultRows,
@@ -429,9 +435,7 @@ program
   .option('-o, --output <file>', 'write the archive here (default: the server-named file in cwd)')
   .option('--domains <list>', 'comma-separated domain allowlist (default: all portable domains)')
   .action(async (opts: { output?: string; domains?: string }) => {
-    const domains = opts.domains
-      ? opts.domains.split(',').map((d) => d.trim()).filter(Boolean)
-      : undefined;
+    const domains = parseExportDomains(opts.domains);
     const { filename, summary, body } = await withSpinner('Exporting…', () =>
       client().exportArchive({ domains }),
     );
@@ -443,30 +447,10 @@ program
       return;
     }
     console.log(`wrote ${outPath}`);
-    if (summary) {
-      const total = Object.values(summary.counts).reduce((n, c) => n + c, 0);
-      console.log(`${summary.domains.length} domains, ${total} records (schema v${summary.schemaVersion}, secrets: ${summary.secretsMode})`);
-      for (const d of summary.domains) console.log(`  ${d}: ${summary.counts[d] ?? 0}`);
-    }
+    if (summary) for (const line of exportSummaryLines(summary)) console.log(line);
   });
 
 // ── Phase 49 D — data portability: restore a backup archive ──────────────────
-/** Print a dry-run summary: schema verdict, per-domain counts, id conflicts. */
-function renderImportPreview(preview: ImportPreview, mode: string): void {
-  const total = Object.values(preview.domainCounts).reduce((n, c) => n + c, 0);
-  const conflictTotal = Object.values(preview.conflicts).reduce((n, ids) => n + ids.length, 0);
-  console.log(
-    `archive: schema v${preview.manifest.schemaVersion} (${preview.compat}), secrets: ${preview.manifest.secretsMode}`,
-  );
-  console.log(
-    `${Object.keys(preview.domainCounts).length} domains, ${total} records, ${conflictTotal} id conflict(s) — mode: ${mode}`,
-  );
-  for (const d of Object.keys(preview.domainCounts).sort()) {
-    const conf = preview.conflicts[d]?.length ?? 0;
-    console.log(`  ${d}: ${preview.domainCounts[d] ?? 0}${conf ? ` (${conf} conflict${conf === 1 ? '' : 's'})` : ''}`);
-  }
-}
-
 program
   .command('import <file>')
   .description('Restore a full-store backup archive (admin) — Phase 49')
@@ -479,10 +463,7 @@ program
       file: string,
       opts: { mode: string; dryRun?: boolean; passphrase?: string; yes?: boolean },
     ) => {
-      if (opts.mode !== 'merge' && opts.mode !== 'replace') {
-        throw new Error(`--mode must be "merge" or "replace" (got "${opts.mode}")`);
-      }
-      const mode = opts.mode;
+      const mode = parseImportMode(opts.mode);
       const c = client();
 
       // Preview first — always for --dry-run, and as the pre-flight for a real import.
@@ -497,12 +478,12 @@ program
 
       if (opts.dryRun) {
         if (isJsonMode()) printJson(preview);
-        else renderImportPreview(preview, mode);
+        else for (const line of importPreviewLines(preview, mode)) console.log(line);
         return;
       }
 
       // Show the impact, then confirm a destructive replace unless --yes.
-      if (!isJsonMode()) renderImportPreview(preview, mode);
+      if (!isJsonMode()) for (const line of importPreviewLines(preview, mode)) console.log(line);
       if (mode === 'replace' && !opts.yes) {
         const total = Object.values(preview.domainCounts).reduce((n, x) => n + x, 0);
         const ok = await confirmPrompt(
@@ -521,16 +502,7 @@ program
         printJson(result);
         return;
       }
-      const inserted = Object.values(result.inserted).reduce((n, x) => n + x, 0);
-      const skipped = Object.values(result.skipped).reduce((n, x) => n + x, 0);
-      console.log(`restored (${result.mode}): ${inserted} inserted, ${skipped} skipped`);
-      for (const d of Object.keys(result.inserted).sort()) {
-        const sk = result.skipped[d] ?? 0;
-        console.log(`  ${d}: +${result.inserted[d] ?? 0}${sk ? ` (${sk} skipped)` : ''}`);
-      }
-      if (!result.reindexed) {
-        console.log('note: search reindex warned — run "search reindex" if search looks stale');
-      }
+      for (const line of importResultLines(result)) console.log(line);
     },
   );
 

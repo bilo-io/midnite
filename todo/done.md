@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-09 — test(cli)+feat: CLI robustness & coverage — Phase 60 Theme K (PR #376)
+
+The 35-command CLI made trustworthy. Tracker drift: the grounding's "untested clusters" were mostly already covered — the real hole was **export/import**. Report: [`todo/phase-60-findings/K-cli.md`](phase-60-findings/K-cli.md).
+
+- [x] **export/import coverage (K-1):** extracted the pure logic to `cli/src/portability.ts` (house pure-helper pattern) + **15 tests**; `--mode` now throws on a bad value (no silent default on a destructive restore). Byte-identical output.
+- [x] **`MIDNITE_TOKEN` env fallback (K-2):** the documented name, via `envToken()`, with `MIDNITE_AUTH_TOKEN` kept as a back-compat alias; precedence stored JWT > env > `--token`, documented + tested (`auth-store.test.ts`).
+- [x] **corrupt-auth fix (K-3, = Theme G SW-4):** `readAuth` warns on stderr for a corrupt `auth.json` instead of silently reading as logged-out; `--json` stdout stays clean.
+- [x] **boundary audit (K-4):** the `@midnite/gateway/bootstrap` import is the sanctioned `serve` in-process boot — confirmed OK. Inline-command test coverage (K-5) + `--json`/help polish (K-6) documented as follow-ups.
+
 ## 2026-07-09 — test+docs: docs/site staleness + ui test-gap audit — Phase 60 Theme L (PR #375)
 
 Audited all three areas + **closed the `@midnite/ui` test hole inline** (approved deviation). 7 findings — 2 fixed, 5 documented. Report: [`L-docs-site-ui.md`](phase-60-findings/L-docs-site-ui.md).
