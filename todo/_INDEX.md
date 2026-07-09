@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [64 · Office presence](phase-64-office-presence.md) | 🔄 WIP | 27/30 | `█████████░` | 90% | G | — |
+| [64 · Office presence](phase-64-office-presence.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
 | [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 6/33 | `██░░░░░░░░` | 18% | — | C D E F G H |
 | [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 11/36 | `███░░░░░░░` | 31% | B | E F G H I |
@@ -123,7 +123,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **D** — 3D renderer: r3f presence avatars + billboards + minimap (PR #362)
 - ✅ **E** — Emote wheel, teammates roster, locate/walk-to (PR #363)
 - ✅ **F** — Nav pill, dashboard widget, server-enforced ghost mode (PR #367)
-- ◻ **G** — Proximity chat bubbles (stretch — ephemeral, never persisted)
+- ✅ **G** — Proximity chat bubbles: ephemeral, radius-filtered, rate-limited; 2D + 3D; never persisted (PR #372)
 - ✅ **H** — Gateway/contract/interp tests + two-context Playwright smoke; fixed 2 real bugs it caught (broadcast DI undefined → presence crashed on connect; re-hello bypassed the update path → ghost toggle no-op) (PR #368)
 
 ### [Phase 63 — Office 3D](phase-63-office-3d.md)
