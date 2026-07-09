@@ -203,20 +203,34 @@ The edges: nulls, empties, orphans, off-by-ones.
 - [x] **Report:** [`todo/phase-60-findings/F-data-integrity.md`](phase-60-findings/F-data-integrity.md) (+ the
       RI-1/2/7 + PG/TO fixes applied with real-SQLite regression tests).
 
-## Theme G — Error handling & failure-path correctness — **M**
+## Theme G — Error handling & failure-path correctness — **M** — ✅ DONE (PR #369, 2026-07-09)
 
-What happens when things go wrong — on purpose and by accident.
+What happens when things go wrong — on purpose and by accident. **13 findings, no P0** — the
+codebase is broadly disciplined (crypto/HMAC/tokens fail-closed, scheduler gates fail-safe,
+CLI/web API-error surfacing solid); the real gaps are two robustness bugs + one new fail-open.
 
-- [ ] **Swallowed errors:** grep for `catch` blocks that log-and-continue or `catch {}` (CLAUDE.md forbids
-      silent swallow) and unhandled promise rejections in fire-and-forget paths (event emits, usage record,
-      audit, notifications) — a broken subscriber shouldn't corrupt a mutation, but a swallowed *data* error is a bug.
-- [ ] **Fail-open vs fail-closed:** confirm each is intentional — approvals fail-safe (P23/50), preflight
-      fail-fast (P54), PR-status fail-open (P52), watchdog fail-open (P53/54). Flag any path that fails the
-      *wrong* way (e.g. a security check that fails open).
-- [ ] **Boundary error surfacing:** services throw, handlers map to HTTP (CLAUDE.md) — find routes that leak a
-      500 where a 4xx belongs, or return 200 on a partial failure; verify the CLI + web render these errors
-      legibly (not a raw stack).
-- [ ] **Report:** `todo/phase-60-findings/G-error-handling.md`.
+- [x] **Swallowed errors:** **SW-1 (P1)** — `void completeWithChecks(...)` fired with no `.catch`
+      and no internal try/catch (`pool/lifecycle-hook.controller.ts:65`, `agent-runner.service.ts:291`)
+      → unhandled rejection + mitigated slot leak. **SW-2 (P1)** — no process-level
+      `unhandledRejection`/`uncaughtException` handler at the gateway boundary. **SW-3 (P2)** —
+      `HeartbeatScheduler.tick()` reads the DB before its guard. **SW-4 (P3)** — CLI `readAuth`
+      swallows a corrupt auth file as "logged out". Everything else (dispatch/subscriber/WS-send/
+      JSON-fallback catches) verified as intentional + logged.
+- [x] **Fail-open vs fail-closed:** **FO-1 (P1, = A-1)** — static bearer token fails RBAC **open**
+      (unset `req.user` → `RoleGuard` returns true); confirmed still live. **FO-2 (P2, new)** —
+      approval decision path throws (unguarded `evaluate()` + `JSON.parse(rule.match)`) → gateway 500
+      → PreToolUse hook fails open to `ask`, bypassing the blast-radius floor. **FO-3/FO-4 (P3)** —
+      `onNoSubscriber` default `ask`; owner-less resources owned-by-everyone. Crypto/HMAC/token +
+      scheduler gates verified fail-closed/fail-safe.
+- [x] **Boundary error surfacing:** **ES-1 (P2)** — no global exception filter → latent
+      500-where-4xx regression class. **ES-2 (P3)** — upstream outages surface as 500 not 502/503.
+      **ES-3 (P3)** — inconsistent 400-vs-409 for uniqueness conflicts. **ES-4 (P3)** — web has no
+      App Router error boundary. **ES-5 (P3)** — board silently swallows a failed task-detail fetch.
+      Zod→400, Nest default no-stack-leak, domain-error mapping, bulk partial-success, CLI/web
+      surfacing all verified correct.
+- [x] **Report:** [`todo/phase-60-findings/G-error-handling.md`](phase-60-findings/G-error-handling.md)
+      — ranked P1→P3 with evidence + a Theme-M backlog (SW-2 + ES-1 are the high-leverage
+      convention-at-the-boundary fixes).
 
 ---
 
