@@ -31,7 +31,7 @@
 | [64 · Office presence](phase-64-office-presence.md) | 🔄 WIP | 27/30 | `█████████░` | 90% | — | G |
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
 | [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 6/33 | `██░░░░░░░░` | 18% | — | C D E F G H |
-| [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 11/36 | `███░░░░░░░` | 31% | B | E F G H I |
+| [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 14/36 | `████░░░░░░` | 39% | — | E F G H I |
 | [60 · Fable-Analysis](phase-60-fable-analysis.md) | 🔄 WIP | 30/63 | `█████░░░░░` | 48% | — | H I J K L M |
 | [59 · Chat to board](phase-59-chat-to-board.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
@@ -150,7 +150,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 ### [Phase 61 — Fable-Observability](phase-61-fable-observability.md)
 *Deepen the existing metrics/usage seam: real session tokens (honestly labeled), cost attribution, cycle time, rollups + retention, live Ops. Fable series #2.*
 - ✅ **A** — Real session-token harvesting: Stop-hook transcript parse → session_usage; measured vs labeled estimate (PR #366)
-- ◻ **B** — Cost attribution: session_usage table + groupBy task/repo/project + real budget numbers
+- ✅ **B** — Cost attribution: GET /usage/attribution (groupBy task/repo/project/session) + measured-vs-estimated composition; soft budgets fold in session cost (PR #370)
 - ✅ **C** — Cycle-time as a first-class metric (todo→wip→done from task_events; GET /metrics/cycle-time) (PR #354)
 - ✅ **D** — Gauge history that survives restarts: sampler + gauge_samples + GET /metrics/gauges/history (PR #343)
 - ◻ **E** — Rollups + retention (hourly/daily rollups; prune metrics raws only, never task_events)
