@@ -239,7 +239,7 @@ CLI/web API-error surfacing solid); the real gaps are two robustness bugs + one 
 > The product's look + direction are **liked as-is** — these themes hunt for the *overlooked*, never a
 > redesign. Every UX finding is "this is missing/inconsistent/inaccessible," not "change the approach."
 
-## Theme H — Consistency & flow sweep — **M** — ✅ DONE (PR #372, 2026-07-09)
+## Theme H — Consistency & flow sweep — **M** — ✅ DONE (PR #373, 2026-07-09)
 
 The overlooked few things, made systematic. **15 findings, one P1, no P0** — from a **live
 18-screenshot state capture** (each surface driven into empty/error/loading against the real e2e

@@ -168,7 +168,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **E** — State-machine, scheduler & concurrency correctness (PR #357)
 - ✅ **F** — Data integrity & boundary-condition bugs (PR #365)
 - ✅ **G** — Error handling & failure-path correctness (13 findings, no P0; SW-1/2 + FO-2 + ES-1 the standouts) (PR #369)
-- ✅ **H** — Consistency & flow sweep (15 findings; systemic loading≈empty≈error; P1 Ideas dead-end) (PR #372)
+- ✅ **H** — Consistency & flow sweep (15 findings; systemic loading≈empty≈error; P1 Ideas dead-end) (PR #373)
 - ◻ **I** — Accessibility & keyboard navigation
 - ◻ **J** — Mobile & responsive polish
 - ◻ **K** — CLI robustness & coverage (+ tests for untested clusters)

@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-09 — docs: consistency & flow sweep — Phase 60 Theme H (PR #372)
+## 2026-07-09 — docs: consistency & flow sweep — Phase 60 Theme H (PR #373)
 
 Findings report ([`todo/phase-60-findings/H-consistency-flow.md`](phase-60-findings/H-consistency-flow.md)) from a **live 18-screenshot state capture** (each doc-listed surface driven into empty/error/loading against the real e2e gateway) + two static sweeps. **15 findings, one P1, no P0.** *(Capturing states first required fixing a #370 gateway-boot cycle — landed as PR #371.)*
 
