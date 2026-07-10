@@ -25,6 +25,11 @@ import { MemoryIngestionService } from './memory-ingestion.service';
 /** A file part accepted by the upload endpoint. */
 export type MemoryFileUpload = { buffer: Buffer; fileName: string; mimeType: string };
 
+/** One grounding source: a stable id (for citations), a human label, its text. */
+export type MemoryCorpusSource = { id: string; label: string; text: string };
+/** The grounding corpus for a memory: its own doc + its ready sources' text. */
+export type MemoryCorpus = { id: string; title: string; content: string; sources: MemoryCorpusSource[] };
+
 @Injectable()
 export class MemoriesService {
   private readonly logger = new Logger(MemoriesService.name);
@@ -50,6 +55,26 @@ export class MemoriesService {
     const row = this.repo.getMemory(id);
     if (!row) throw new NotFoundException(`memory ${id} not found`);
     return this.repo.hydrate(row);
+  }
+
+  /**
+   * The server-side grounding corpus for a memory (Phase 65 C chat + later Studio):
+   * its own title/content plus each **ready** source's extracted text (server-only,
+   * never in the client `Memory` shape). Sources still pending/failed/un-ingested
+   * contribute no text. Throws NotFound if the memory is gone.
+   */
+  getGroundingCorpus(id: string): MemoryCorpus {
+    const memory = this.repo.getMemory(id);
+    if (!memory) throw new NotFoundException(`memory ${id} not found`);
+    const sources = this.repo
+      .listSources(id)
+      .filter((s) => s.ingestState === 'ready' && (s.extractedText ?? '').trim().length > 0)
+      .map((s) => ({
+        id: s.id,
+        label: s.title?.trim() || s.fileName?.trim() || s.url || s.id,
+        text: s.extractedText ?? '',
+      }));
+    return { id: memory.id, title: memory.title, content: memory.content, sources };
   }
 
   async createMemory(req: CreateMemoryRequest): Promise<Memory> {

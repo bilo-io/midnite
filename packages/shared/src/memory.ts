@@ -87,6 +87,43 @@ export const UpdateMemoryRequestSchema = z.object({
 export const MemoryResponseSchema = z.object({ memory: MemorySchema });
 export const MemoriesResponseSchema = z.object({ memories: z.array(MemorySchema) });
 
+// --- Phase 65 C: chat to the knowledge base ---
+
+/** Longest question a single chat turn may carry. */
+export const MAX_MEMORY_CHAT_MESSAGE = 4_000;
+
+export const MemoryChatRoleSchema = z.enum(['user', 'assistant']);
+export type MemoryChatRole = z.infer<typeof MemoryChatRoleSchema>;
+
+// One turn in a memory's single running chat thread (Decision §8 — one thread per
+// memory). Assistant turns carry `citations` (the ids of the memory sources the
+// answer drew on) so the UI can chip-link them; `error` marks a graceful failure
+// turn (LLM unavailable / call failed) rather than a real answer.
+export const MemoryChatMessageSchema = z.object({
+  id: z.string(),
+  memoryId: z.string(),
+  role: MemoryChatRoleSchema,
+  content: z.string(),
+  citations: z.array(z.string()).default([]),
+  error: z.boolean().optional(),
+  createdAt: z.string(),
+});
+
+export const PostMemoryChatRequestSchema = z.object({
+  message: z.string().trim().min(1, 'message is required').max(MAX_MEMORY_CHAT_MESSAGE),
+});
+
+/** Full ordered thread for a memory (oldest first). */
+export const MemoryChatHistoryResponseSchema = z.object({
+  messages: z.array(MemoryChatMessageSchema),
+});
+
+/** The two turns a POST appends: the user's question + the assistant's reply. */
+export const PostMemoryChatResponseSchema = z.object({
+  userMessage: MemoryChatMessageSchema,
+  assistantMessage: MemoryChatMessageSchema,
+});
+
 export type MemorySource = z.infer<typeof MemorySourceSchema>;
 export type SourceUploadMimeType = (typeof SOURCE_UPLOAD_MIME_TYPES)[number];
 export type Memory = z.infer<typeof MemorySchema>;
@@ -95,3 +132,7 @@ export type UpdateMemoryRequest = z.infer<typeof UpdateMemoryRequestSchema>;
 export type AddMemorySourceRequest = z.infer<typeof AddMemorySourceRequestSchema>;
 export type MemoryResponse = z.infer<typeof MemoryResponseSchema>;
 export type MemoriesResponse = z.infer<typeof MemoriesResponseSchema>;
+export type MemoryChatMessage = z.infer<typeof MemoryChatMessageSchema>;
+export type PostMemoryChatRequest = z.infer<typeof PostMemoryChatRequestSchema>;
+export type MemoryChatHistoryResponse = z.infer<typeof MemoryChatHistoryResponseSchema>;
+export type PostMemoryChatResponse = z.infer<typeof PostMemoryChatResponseSchema>;
