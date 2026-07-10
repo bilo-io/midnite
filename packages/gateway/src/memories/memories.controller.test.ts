@@ -10,10 +10,13 @@ function build(overrides: Partial<Record<keyof MemoriesService, unknown>> = {}) 
   const service = {
     listMemories: vi.fn(() => [fakeMemory]),
     getMemory: vi.fn(() => fakeMemory),
+    backfillIngestion: vi.fn(),
     createMemory: vi.fn(async () => fakeMemory),
     updateMemory: vi.fn(() => fakeMemory),
     removeMemory: vi.fn(),
     addSource: vi.fn(async () => fakeMemory),
+    addFileSource: vi.fn(async () => fakeMemory),
+    reingestSource: vi.fn(() => fakeMemory),
     reorderSources: vi.fn(() => fakeMemory),
     removeSource: vi.fn(() => fakeMemory),
     ...overrides,
@@ -47,10 +50,17 @@ describe('MemoriesController — valid input delegates to the service', () => {
     expect(service.createMemory).toHaveBeenCalledWith(expect.objectContaining({ title: 'Note' }));
   });
 
-  it('fetches a single memory by id', () => {
+  it('fetches a single memory by id and kicks lazy ingestion backfill', () => {
     const { controller, service } = build();
     expect(controller.getMemory('mem1')).toEqual({ memory: fakeMemory });
     expect(service.getMemory).toHaveBeenCalledWith('mem1');
+    expect(service.backfillIngestion).toHaveBeenCalledWith('mem1');
+  });
+
+  it('reingests a source by id', () => {
+    const { controller, service } = build();
+    expect(controller.reingestSource('mem1', 's1')).toEqual({ memory: fakeMemory });
+    expect(service.reingestSource).toHaveBeenCalledWith('mem1', 's1');
   });
 
   it('adds a source by url', async () => {

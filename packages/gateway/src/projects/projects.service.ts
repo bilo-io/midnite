@@ -268,7 +268,9 @@ export class ProjectsService {
     // project sources retired), deduped by URL.
     const byUrl = new Map<string, { kind: string; title?: string; url: string }>();
     const scopedMemories = this.memories.listScoped(project.id);
-    for (const m of scopedMemories) for (const s of m.sources) byUrl.set(s.url, s);
+    // Skip file sources (no URL, Phase 65 B) — only link sources merge in.
+    for (const m of scopedMemories)
+      for (const s of m.sources) if (s.url) byUrl.set(s.url, { kind: s.kind, title: s.title, url: s.url });
     const merged = [...byUrl.values()];
     const sourceLines = merged.length
       ? merged.map((s) => `- [${s.kind}] ${s.title ?? '(untitled)'} — ${s.url}`).join('\n')

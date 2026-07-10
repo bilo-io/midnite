@@ -11,17 +11,45 @@ export const MAX_MEMORY_TITLE = 120;
 export const MAX_MEMORY_CONTENT = 50_000;
 export const MAX_SOURCES_PER_MEMORY = 10;
 
-// A reference link attached to a memory. Mirrors ProjectSource, scoped to a
-// memory instead of a project.
+// Phase 65 B — source-content ingestion caps.
+/** Max extracted text kept per source (the chat/generation grounding corpus). */
+export const MAX_SOURCE_TEXT_BYTES = 200_000;
+/** Max size of an uploaded source file. Kept just under the gateway's 8 MB
+ *  multipart limit (bootstrap.ts) so an oversize upload gets a clean 400, not a
+ *  framework-level 413. */
+export const MAX_SOURCE_UPLOAD_BYTES = 8_000_000;
+/** Upload types we can extract text from. */
+export const SOURCE_UPLOAD_MIME_TYPES = [
+  'application/pdf',
+  'text/markdown',
+  'text/plain',
+] as const;
+
+// Ingestion lifecycle for a source's extracted text. `null` = not yet ingested
+// (e.g. a link added before Phase 65 B, or an upload still landing).
+export const SourceIngestStateSchema = z.enum(['pending', 'ready', 'failed']);
+export type SourceIngestState = z.infer<typeof SourceIngestStateSchema>;
+
+// A source attached to a memory — either a reference **link** (`url`) or an
+// uploaded **file** (`kind: 'file'`, `fileName`/`mimeType`). Its readable text is
+// ingested best-effort (Phase 65 B) for chat + Studio to ground on; the full text
+// lives server-side, not in this client shape (only its ingest status surfaces).
 export const MemorySourceSchema = z.object({
   id: z.string(),
   memoryId: z.string(),
-  url: z.string().url(),
+  // Optional: a file source has no URL (it's an upload).
+  url: z.string().url().optional(),
   kind: z.enum(SOURCE_KINDS),
   title: z.string().optional(),
   faviconUrl: z.string().optional(),
   fetchedAt: z.string().optional(),
   createdAt: z.string(),
+  // Uploaded-file metadata (present only when kind === 'file').
+  fileName: z.string().optional(),
+  mimeType: z.string().optional(),
+  // Ingestion status (not the text itself). null/undefined = not ingested.
+  ingestState: SourceIngestStateSchema.nullable().optional(),
+  ingestError: z.string().nullable().optional(),
 });
 
 export const MemorySchema = z.object({
@@ -60,6 +88,7 @@ export const MemoryResponseSchema = z.object({ memory: MemorySchema });
 export const MemoriesResponseSchema = z.object({ memories: z.array(MemorySchema) });
 
 export type MemorySource = z.infer<typeof MemorySourceSchema>;
+export type SourceUploadMimeType = (typeof SOURCE_UPLOAD_MIME_TYPES)[number];
 export type Memory = z.infer<typeof MemorySchema>;
 export type CreateMemoryRequest = z.infer<typeof CreateMemoryRequestSchema>;
 export type UpdateMemoryRequest = z.infer<typeof UpdateMemoryRequestSchema>;

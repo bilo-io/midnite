@@ -83,4 +83,35 @@ describe('MemoriesRepository', () => {
     const ids = repo.listScoped('proj-1').map((m) => m.id).sort();
     expect(ids).toEqual(['g', 'p1']);
   });
+
+  it('stores a file source (null url) and patches ingestion state (Phase 65 B)', () => {
+    seedMemory('m1');
+    repo.insertSource({
+      id: 'f1',
+      memoryId: 'm1',
+      url: null,
+      kind: 'file',
+      fileName: 'notes.pdf',
+      mimeType: 'application/pdf',
+      storagePath: 'memory-sources/abc.pdf',
+      byteSize: 1234,
+      ingestState: 'pending',
+      createdAt: now,
+      position: 0,
+    });
+
+    const before = repo.hydrate(repo.getMemory('m1')!).sources[0]!;
+    expect(before.url).toBeUndefined();
+    expect(before.kind).toBe('file');
+    expect(before.fileName).toBe('notes.pdf');
+    expect(before.ingestState).toBe('pending');
+
+    repo.updateSource('m1', 'f1', { extractedText: 'hello world', ingestState: 'ready' });
+    const after = repo.hydrate(repo.getMemory('m1')!).sources[0]!;
+    expect(after.ingestState).toBe('ready');
+    // extractedText stays server-side, not in the client shape.
+    expect('extractedText' in after).toBe(false);
+    // The row still holds the text (for FTS/chat grounding).
+    expect(repo.getSource('m1', 'f1')!.extractedText).toBe('hello world');
+  });
 });

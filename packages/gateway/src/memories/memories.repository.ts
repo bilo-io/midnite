@@ -73,6 +73,20 @@ export class MemoriesRepository {
       .get();
   }
 
+  /** Patch a source row (Phase 65 B: ingestion state / extracted text / metadata). */
+  updateSource(
+    memoryId: string,
+    sourceId: string,
+    patch: Partial<MemorySourceInsert>,
+  ): MemorySourceRow | undefined {
+    return this.db
+      .update(memorySources)
+      .set(patch)
+      .where(and(eq(memorySources.id, sourceId), eq(memorySources.memoryId, memoryId)))
+      .returning()
+      .get();
+  }
+
   deleteSource(memoryId: string, sourceId: string): void {
     this.db
       .delete(memorySources)
@@ -128,12 +142,17 @@ export class MemoriesRepository {
     return {
       id: row.id,
       memoryId: row.memoryId,
-      url: row.url,
+      url: row.url ?? undefined,
       kind: row.kind as SourceKind,
       title: row.title ?? undefined,
       faviconUrl: row.faviconUrl ?? undefined,
       fetchedAt: row.fetchedAt ?? undefined,
       createdAt: row.createdAt,
+      fileName: row.fileName ?? undefined,
+      mimeType: row.mimeType ?? undefined,
+      // extractedText / storagePath / byteSize stay server-side (not in the wire shape).
+      ingestState: (row.ingestState as MemorySource['ingestState']) ?? null,
+      ingestError: row.ingestError ?? null,
     };
   }
 }
