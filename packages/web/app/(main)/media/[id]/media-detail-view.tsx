@@ -9,19 +9,17 @@ import {
   ImageIcon,
   type LucideIcon,
   Music2,
-  PanelLeftClose,
-  PanelLeftOpen,
-  PanelRightClose,
-  PanelRightOpen,
   Trash2,
   Video,
 } from 'lucide-react';
 import type { Media, MediaType, Project } from '@midnite/shared';
 import { createMedia, deleteMedia, mediaFileUrl, updateMedia } from '@/lib/api';
 import { useLocalStorage } from '@/lib/use-local-storage';
+import { useIsMobile } from '@/hooks/use-media-query';
 import { MEDIA_PROVIDER_CATALOG, useMediaModels } from '@/lib/use-media-models';
 import { ProviderSelect } from '@/components/provider-select';
 import { PageHeader } from '@/components/page-header';
+import { RailFloatingToggle, RailHeaderToggle } from '@/components/rail-shell';
 import { cn } from '@/lib/utils';
 import Lightbox from 'yet-another-react-lightbox';
 import 'yet-another-react-lightbox/styles.css';
@@ -55,6 +53,7 @@ export function MediaDetailView({ mode, initialType, initial, projects }: Props)
   const mediaType = mode === 'edit' ? initial.type : initialType;
   const TypeIcon = TYPE_ICON[mediaType];
 
+  const isMobile = useIsMobile();
   const [propertiesOpen, setPropertiesOpen] = useLocalStorage('midnite.media.properties', true);
   const [promptOpen, setPromptOpen] = useLocalStorage('midnite.media.prompt', true);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -134,43 +133,48 @@ export function MediaDetailView({ mode, initialType, initial, projects }: Props)
         title={title || (mode === 'create' ? `New ${mediaType}` : 'Media')}
         icon="Images"
         actions={
-          <Link
-            href="/media"
-            className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            All media
-          </Link>
+          <div className="flex items-center gap-2">
+            {isMobile ? (
+              <>
+                <RailHeaderToggle side="left" open={propertiesOpen} onClick={() => setPropertiesOpen(!propertiesOpen)} />
+                <RailHeaderToggle side="right" open={promptOpen} onClick={() => setPromptOpen(!promptOpen)} />
+              </>
+            ) : null}
+            <Link
+              href="/media"
+              className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              All media
+            </Link>
+          </div>
         }
       />
 
       <div className="container flex flex-col gap-5 pb-24 pt-4 lg:flex-row lg:items-start">
         {/* ── Left: Properties panel ── */}
-        <aside className={cn('shrink-0 lg:sticky lg:top-16', propertiesOpen ? 'w-full lg:w-[260px]' : 'w-full lg:w-9')}>
-          {!propertiesOpen ? (
-            <button
-              type="button"
-              onClick={() => setPropertiesOpen(true)}
-              aria-label="Show properties"
-              className="hidden h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent lg:flex"
+        {/* Desktop: animates its width (260px ↔ 0), the fixed-width inner panel
+            clipped by overflow-hidden so it slides. Mobile: a drawer, only in the
+            layout when open. The toggle lives in the content layer (see center). */}
+        {(!isMobile || propertiesOpen) && (
+          <aside
+            aria-hidden={!propertiesOpen}
+            className={cn(
+              'w-full shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out motion-reduce:transition-none lg:sticky lg:top-16',
+              propertiesOpen ? 'lg:w-[260px]' : 'lg:w-0',
+            )}
+          >
+            <div
+              className={cn(
+                'rounded-xl border border-border/60 bg-card p-4 transition-opacity duration-200 motion-reduce:transition-none lg:w-[260px]',
+                propertiesOpen ? 'opacity-100' : 'pointer-events-none opacity-0',
+              )}
             >
-              <PanelLeftOpen className="h-4 w-4" />
-            </button>
-          ) : (
-            <div className="rounded-xl border border-border/60 bg-card p-4">
-              <div className="mb-3 flex items-center justify-between">
+              <div className="mb-3 flex items-center gap-1.5">
                 <h2 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   <TypeIcon className="h-3.5 w-3.5" aria-hidden />
                   Properties
                 </h2>
-                <button
-                  type="button"
-                  onClick={() => setPropertiesOpen(false)}
-                  aria-label="Hide properties"
-                  className="hidden h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent lg:flex"
-                >
-                  <PanelLeftClose className="h-4 w-4" />
-                </button>
               </div>
 
               <div className="space-y-3">
@@ -271,57 +275,71 @@ export function MediaDetailView({ mode, initialType, initial, projects }: Props)
                 )}
               </div>
             </div>
-          )}
-        </aside>
+          </aside>
+        )}
 
         {/* ── Center: Media viewer ── */}
-        <div className="min-w-0 flex-1">
-          {mode === 'create' && !saved ? (
-            <div className="flex flex-col items-center gap-6 rounded-xl border border-dashed border-border/60 p-10 text-center">
-              <TypeIcon className="h-12 w-12 text-muted-foreground" aria-hidden />
-              <div>
-                <p className="text-sm text-muted-foreground">Fill in the details and add a prompt,</p>
-                <p className="text-sm text-muted-foreground">then click Generate — or save a placeholder.</p>
+        <div className="relative min-w-0 flex-1">
+          {/* Content-layer toggles: float over the viewer's top corners and glide
+              with each rail as it animates. Desktop-only — mobile uses the header. */}
+          {!isMobile && (
+            <>
+              <RailFloatingToggle
+                side="left"
+                open={propertiesOpen}
+                title="Properties"
+                onToggle={() => setPropertiesOpen(!propertiesOpen)}
+              />
+              <RailFloatingToggle
+                side="right"
+                open={promptOpen}
+                title="Prompt / Generate"
+                onToggle={() => setPromptOpen(!promptOpen)}
+              />
+            </>
+          )}
+          <div className="lg:pt-11">
+            {mode === 'create' && !saved ? (
+              <div className="flex flex-col items-center gap-6 rounded-xl border border-dashed border-border/60 p-10 text-center">
+                <TypeIcon className="h-12 w-12 text-muted-foreground" aria-hidden />
+                <div>
+                  <p className="text-sm text-muted-foreground">Fill in the details and add a prompt,</p>
+                  <p className="text-sm text-muted-foreground">then click Generate — or save a placeholder.</p>
+                </div>
+                <button
+                  type="button"
+                  disabled={!title.trim() || saving}
+                  onClick={handleCreate}
+                  className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
+                >
+                  {saving ? 'Saving…' : 'Save placeholder'}
+                </button>
               </div>
-              <button
-                type="button"
-                disabled={!title.trim() || saving}
-                onClick={handleCreate}
-                className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
-              >
-                {saving ? 'Saving…' : 'Save placeholder'}
-              </button>
-            </div>
-          ) : saved ? (
-            <MediaViewer media={saved} onLightbox={() => setLightboxOpen(true)} />
-          ) : null}
+            ) : saved ? (
+              <MediaViewer media={saved} onLightbox={() => setLightboxOpen(true)} />
+            ) : null}
+          </div>
         </div>
 
         {/* ── Right: Prompt / Generate panel ── */}
-        <aside className={cn('shrink-0 lg:sticky lg:top-16', promptOpen ? 'w-full lg:w-[280px]' : 'w-full lg:w-9')}>
-          {!promptOpen ? (
-            <button
-              type="button"
-              onClick={() => setPromptOpen(true)}
-              aria-label="Show prompt panel"
-              className="hidden h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent lg:flex"
+        {(!isMobile || promptOpen) && (
+          <aside
+            aria-hidden={!promptOpen}
+            className={cn(
+              'w-full shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out motion-reduce:transition-none lg:sticky lg:top-16',
+              promptOpen ? 'lg:w-[280px]' : 'lg:w-0',
+            )}
+          >
+            <div
+              className={cn(
+                'rounded-xl border border-border/60 bg-card p-4 transition-opacity duration-200 motion-reduce:transition-none lg:w-[280px]',
+                promptOpen ? 'opacity-100' : 'pointer-events-none opacity-0',
+              )}
             >
-              <PanelRightOpen className="h-4 w-4" />
-            </button>
-          ) : (
-            <div className="rounded-xl border border-border/60 bg-card p-4">
-              <div className="mb-3 flex items-center justify-between">
+              <div className="mb-3 flex items-center gap-1.5">
                 <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Prompt / Generate
                 </h2>
-                <button
-                  type="button"
-                  onClick={() => setPromptOpen(false)}
-                  aria-label="Hide prompt panel"
-                  className="hidden h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent lg:flex"
-                >
-                  <PanelRightClose className="h-4 w-4" />
-                </button>
               </div>
 
               <div className="space-y-3">
@@ -390,8 +408,8 @@ export function MediaDetailView({ mode, initialType, initial, projects }: Props)
                 <p className="text-xs text-muted-foreground">No generation history.</p>
               </div>
             </div>
-          )}
-        </aside>
+          </aside>
+        )}
       </div>
 
       {lightboxOpen && saved?.type === 'image' && (

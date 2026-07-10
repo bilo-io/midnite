@@ -84,12 +84,15 @@ describe('ProjectDetailView — shell', () => {
     expect(replace).toHaveBeenCalledWith(expect.stringContaining('tab=plan'));
   });
 
-  it('collapses a rail to a slim toggle and re-expands it (persisted)', () => {
+  it('collapses and re-expands a rail via the content-layer toggle (persisted)', () => {
     render(<ProjectDetailView project={project} tasks={tasks} memories={memories} onChanged={vi.fn()} />);
+    // The toggle lives in the content layer, not the rail; collapsing flips its
+    // label and persists the state (the rail animates its width to 0).
     fireEvent.click(screen.getByRole('button', { name: 'Collapse Stats & actions' }));
-    expect(screen.queryByText('Stats & actions')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Expand Stats & actions' })).toBeInTheDocument();
+    expect(localStorage.getItem('midnite.project.leftOpen')).toContain('false');
     fireEvent.click(screen.getByRole('button', { name: 'Expand Stats & actions' }));
-    expect(screen.getByText('Stats & actions')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Collapse Stats & actions' })).toBeInTheDocument();
   });
 });
 

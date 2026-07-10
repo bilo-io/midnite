@@ -10,6 +10,7 @@ import { CouncilRunThread } from '@/components/council-run-thread';
 import { CouncilComposer } from '@/components/council-topic-composer';
 import { CouncilCustomFormatModal } from '@/components/council-custom-format-modal';
 import { PageHeader } from '@/components/page-header';
+import { RailFloatingToggle, RailHeaderToggle } from '@/components/rail-shell';
 import {
   listCouncilRuns,
   retryCouncilRunMember,
@@ -18,6 +19,7 @@ import {
 } from '@/lib/api';
 import { useCouncilRun } from '@/lib/use-council-run';
 import { useLocalStorage } from '@/lib/use-local-storage';
+import { useIsMobile } from '@/hooks/use-media-query';
 
 type Props = {
   initial: Council;
@@ -33,6 +35,7 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
   const [runs, setRuns] = useState<CouncilRun[]>(initialRuns);
   const [threadOpen, setThreadOpen] = useLocalStorage<boolean>('midnite.councils.thread', true);
   const [panelOpen, setPanelOpen] = useLocalStorage<boolean>('midnite.councils.panel', true);
+  const isMobile = useIsMobile();
 
   const refreshRuns = useCallback(() => {
     listCouncilRuns(initial.id)
@@ -143,13 +146,21 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
         title={initial.name}
         description={initial.description}
         actions={
-          <Link
-            href="/councils"
-            className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            All councils
-          </Link>
+          <div className="flex items-center gap-2">
+            {isMobile ? (
+              <>
+                <RailHeaderToggle side="left" open={threadOpen} onClick={() => setThreadOpen(!threadOpen)} />
+                <RailHeaderToggle side="right" open={panelOpen} onClick={() => setPanelOpen(!panelOpen)} />
+              </>
+            ) : null}
+            <Link
+              href="/councils"
+              className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              All councils
+            </Link>
+          </div>
         }
       />
       <div className="container space-y-5 pb-48 pt-2">
@@ -162,33 +173,53 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
             selectedId={run?.id ?? null}
             onSelect={select}
             open={threadOpen}
-            onToggle={() => setThreadOpen(!threadOpen)}
           />
 
-          <div className="min-w-0 flex-1 space-y-4">
-            {error ? (
-              <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-                {error}
-              </div>
+          <div className="relative min-w-0 flex-1">
+            {/* Content-layer toggles float over the run output's top corners and
+                glide with each rail as it animates (matches the workflow editor). */}
+            {!isMobile ? (
+              <>
+                <RailFloatingToggle
+                  side="left"
+                  open={threadOpen}
+                  title="Thread"
+                  onToggle={() => setThreadOpen(!threadOpen)}
+                />
+                <RailFloatingToggle
+                  side="right"
+                  open={panelOpen}
+                  title="Members"
+                  onToggle={() => setPanelOpen(!panelOpen)}
+                />
+              </>
             ) : null}
 
-            {run ? (
-              <CouncilRunTabs
-                key={run.id}
-                councilId={initial.id}
-                councilName={initial.name}
-                run={run}
-                onSkip={live ? skipMember : undefined}
-                onRetryMember={!live ? retryMember : undefined}
-                onReSynthesize={!live ? reSynthesize : undefined}
-              />
-            ) : (
-              <div className="rounded-lg border border-dashed border-border/60 p-10 text-center text-sm text-muted-foreground">
-                Submit a prompt below and each member will respond from its role in its own
-                terminal. The responses are then handed to the synthesizer and distilled in your
-                chosen format.
-              </div>
-            )}
+            <div className="space-y-4 lg:pt-11">
+              {error ? (
+                <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+                  {error}
+                </div>
+              ) : null}
+
+              {run ? (
+                <CouncilRunTabs
+                  key={run.id}
+                  councilId={initial.id}
+                  councilName={initial.name}
+                  run={run}
+                  onSkip={live ? skipMember : undefined}
+                  onRetryMember={!live ? retryMember : undefined}
+                  onReSynthesize={!live ? reSynthesize : undefined}
+                />
+              ) : (
+                <div className="rounded-lg border border-dashed border-border/60 p-10 text-center text-sm text-muted-foreground">
+                  Submit a prompt below and each member will respond from its role in its own
+                  terminal. The responses are then handed to the synthesizer and distilled in your
+                  chosen format.
+                </div>
+              )}
+            </div>
           </div>
 
           <CouncilMembersPanel
@@ -202,7 +233,6 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
             onDefaultFormatChange={changeDefaultFormat}
             onEditCustom={() => setCustomOpen(true)}
             open={panelOpen}
-            onToggle={() => setPanelOpen(!panelOpen)}
           />
         </div>
       </div>
@@ -221,7 +251,7 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
               <div
                 aria-hidden
                 className="hidden shrink-0 transition-[width] duration-300 ease-in-out motion-reduce:transition-none lg:block"
-                style={{ width: threadOpen ? 240 : 36 }}
+                style={{ width: threadOpen ? 240 : 0 }}
               />
               <div className="pointer-events-auto min-w-0 flex-1">
                 <CouncilComposer
@@ -241,7 +271,7 @@ export function CouncilDetailView({ initial, initialRuns }: Props) {
               <div
                 aria-hidden
                 className="hidden shrink-0 transition-[width] duration-300 ease-in-out motion-reduce:transition-none lg:block"
-                style={{ width: panelOpen ? 320 : 36 }}
+                style={{ width: panelOpen ? 320 : 0 }}
               />
             </div>
           </div>

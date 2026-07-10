@@ -1,8 +1,7 @@
 'use client';
 
-import { Clock, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import type { CouncilRun, CouncilRunStatus } from '@midnite/shared';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const STATUS_PILL: Record<CouncilRunStatus, { label: string; className: string }> = {
@@ -27,50 +26,30 @@ type Props = {
   selectedId: string | null;
   onSelect: (run: CouncilRun) => void;
   open: boolean;
-  onToggle: () => void;
 };
 
 /**
  * The council's thread of past runs as a collapsible left sidebar, newest first.
  * Selecting one loads it into the tabs (persisted outputs + synthesis).
- * Collapsed, it shrinks to a slim rail holding only the expand control.
  *
- * The aside is always mounted and animates its width (240px ↔ a 36px rail) so
- * the open/close transition is smooth — the same pattern the workflow editor
- * panels use. The expanded content keeps a fixed width and is clipped by the
- * wrapper's `overflow-hidden`, so it slides rather than reflowing.
+ * The aside is always mounted and animates its width (240px ↔ 0) so the
+ * open/close transition is smooth — the same pattern the workflow editor panels
+ * use. The toggle itself lives in the content layer (a floating button over the
+ * center), not in the rail. The expanded content keeps a fixed width and is
+ * clipped by the wrapper's `overflow-hidden`, so it slides rather than reflowing.
  */
-export function CouncilRunThread({ runs, selectedId, onSelect, open, onToggle }: Props) {
+export function CouncilRunThread({ runs, selectedId, onSelect, open }: Props) {
   return (
     <aside
+      aria-hidden={!open}
       className={cn(
         'relative shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out motion-reduce:transition-none lg:sticky lg:top-16',
-        // On mobile the panel only takes part when open; on lg it's always a
-        // sidebar (full width) or a slim rail.
+        // On mobile the panel only takes part when open; on lg it always animates
+        // between a full-width sidebar and 0.
         open ? 'block w-full' : 'hidden lg:block',
-        open ? 'lg:w-[240px]' : 'lg:w-9',
+        open ? 'lg:w-[240px]' : 'lg:w-0',
       )}
     >
-      {/* Collapsed rail: the expand control, faded in only while closed. */}
-      <div
-        className={cn(
-          'absolute left-0 top-0 hidden transition-opacity duration-200 lg:block',
-          open ? 'pointer-events-none opacity-0' : 'opacity-100',
-        )}
-      >
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          aria-label="Expand thread"
-          title={`Thread (${runs.length})`}
-          onClick={onToggle}
-          className="h-9 w-9 text-muted-foreground"
-        >
-          <PanelLeftOpen className="h-4 w-4" />
-        </Button>
-      </div>
-
       {/* Fixed-width content so it doesn't reflow while the wrapper width animates. */}
       <div
         className={cn(
@@ -78,21 +57,11 @@ export function CouncilRunThread({ runs, selectedId, onSelect, open, onToggle }:
           open ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
       >
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
           <h2 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             <Clock className="h-3.5 w-3.5" />
             Thread
           </h2>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label="Collapse thread"
-            onClick={onToggle}
-            className="h-7 w-7 text-muted-foreground"
-          >
-            <PanelLeftClose className="h-4 w-4" />
-          </Button>
         </div>
         {runs.length === 0 ? (
           <p className="mt-2 text-xs text-muted-foreground">
