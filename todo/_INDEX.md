@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [65 · Memory workspace](phase-65-memory-workspace.md) | 🔄 WIP | 0/33 | `░░░░░░░░░░` | 0% | A | B C D E F G |
+| [65 · Memory workspace](phase-65-memory-workspace.md) | 🔄 WIP | 0/33 | `░░░░░░░░░░` | 0% | A F | B C D E G |
 | [64 · Office presence](phase-64-office-presence.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
 | [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 6/33 | `██░░░░░░░░` | 18% | — | C D E F G H |
@@ -123,7 +123,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ◻ **C** — Chat to the knowledge base: persisted threads, FTS-retrieve→stuff→LlmService answer with source citations
 - ◻ **D** — Studio: un-stub media `generate`; text artifacts (brief/FAQ/study-guide/timeline) + infographic (LLM→SVG)
 - ◻ **E** — Studio: audio overview (LLM script→TTS) + video (slides+narration→ffmpeg compose); degrade w/o provider
-- ◻ **F** — Retire project sources → memories: forward migration to a project-scoped memory, drop `project_sources`, remove UI/API
+- 🔄 **F** — Retire project sources → memories: forward migration to a project-scoped memory, drop `project_sources`, remove UI/API
 - ◻ **G** — Tests (gateway/shared/web + Playwright), docs + `memory.studio` config, a11y, light/dark baselines
 
 ### [Phase 64 — Office multiplayer presence](phase-64-office-presence.md)
