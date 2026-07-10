@@ -60,6 +60,7 @@ export function importPreviewLines(preview: ImportPreview, mode: string): string
     const conf = preview.conflicts[d]?.length ?? 0;
     lines.push(`  ${d}: ${preview.domainCounts[d] ?? 0}${conf ? ` (${conf} conflict${conf === 1 ? '' : 's'})` : ''}`);
   }
+  for (const w of preview.warnings) lines.push(`  ! ${w}`);
   return lines;
 }
 
@@ -71,6 +72,9 @@ export function importResultLines(result: ImportResult): string[] {
   for (const d of Object.keys(result.inserted).sort()) {
     const sk = result.skipped[d] ?? 0;
     lines.push(`  ${d}: +${result.inserted[d] ?? 0}${sk ? ` (${sk} skipped)` : ''}`);
+  }
+  if (result.secretsRestored || result.secretsSkipped) {
+    lines.push(`  secrets: ${result.secretsRestored} restored${result.secretsSkipped ? `, ${result.secretsSkipped} skipped` : ''}`);
   }
   if (!result.reindexed) {
     lines.push('note: search reindex warned — run "search reindex" if search looks stale');

@@ -434,10 +434,15 @@ program
   .description('Download a full-store backup archive (admin) — Phase 49')
   .option('-o, --output <file>', 'write the archive here (default: the server-named file in cwd)')
   .option('--domains <list>', 'comma-separated domain allowlist (default: all portable domains)')
-  .action(async (opts: { output?: string; domains?: string }) => {
+  .option('--include-secrets', 'include secrets (API keys, webhook secrets), re-wrapped under --passphrase')
+  .option('--passphrase <phrase>', 'passphrase to re-wrap secrets (required with --include-secrets)')
+  .action(async (opts: { output?: string; domains?: string; includeSecrets?: boolean; passphrase?: string }) => {
     const domains = parseExportDomains(opts.domains);
+    if (opts.includeSecrets && !opts.passphrase) {
+      throw new Error('--include-secrets requires --passphrase');
+    }
     const { filename, summary, body } = await withSpinner('Exporting…', () =>
-      client().exportArchive({ domains }),
+      client().exportArchive({ domains, includeSecrets: opts.includeSecrets, passphrase: opts.passphrase }),
     );
     const outPath = opts.output ?? filename;
     // Stream the response body straight to disk (no full in-memory copy).
