@@ -173,3 +173,70 @@ export const CycleTimeResponseSchema = z.object({
   groups: z.array(CycleTimeGroupSchema),
 });
 export type CycleTimeResponse = z.infer<typeof CycleTimeResponseSchema>;
+
+// ── Phase 61 E — metrics rollups + retention ────────────────────────────────
+
+/** Rollup bucket granularity. */
+export const RollupPeriodSchema = z.enum(['hourly', 'daily']);
+export type RollupPeriod = z.infer<typeof RollupPeriodSchema>;
+
+/**
+ * Which raw stream a rollup row aggregates. The dimensions that apply differ by
+ * source (runs carry `repo`; llm/session carry `provider`/`model`; gauge carries
+ * none), so a row's irrelevant metric columns are null — read by `source`.
+ */
+export const MetricsRollupSourceSchema = z.enum(['runs', 'llm', 'session', 'gauge']);
+export type MetricsRollupSource = z.infer<typeof MetricsRollupSourceSchema>;
+
+/**
+ * One aggregated bucket. `key` is a deterministic
+ * `${period}|${bucketStart}|${source}|${repo}|${provider}|${model}` (empty
+ * segment for a null dim) so re-running the rollup upserts in place (idempotent).
+ * Metric columns are nullable and populated per `source`.
+ */
+export const MetricsRollupSchema = z.object({
+  key: z.string(),
+  period: RollupPeriodSchema,
+  /** ISO start of the bucket (hour or day, UTC). */
+  bucketStart: z.string(),
+  source: MetricsRollupSourceSchema,
+  repo: z.string().nullable(),
+  provider: z.string().nullable(),
+  model: z.string().nullable(),
+  // source='runs'
+  runCount: z.number().int().nonnegative().nullable(),
+  doneCount: z.number().int().nonnegative().nullable(),
+  abandonedCount: z.number().int().nonnegative().nullable(),
+  failedCount: z.number().int().nonnegative().nullable(),
+  cancelledCount: z.number().int().nonnegative().nullable(),
+  totalDurationMs: z.number().int().nonnegative().nullable(),
+  retriedRuns: z.number().int().nonnegative().nullable(),
+  // source='llm' | 'session' (token/cost)
+  calls: z.number().int().nonnegative().nullable(),
+  inputTokens: z.number().int().nonnegative().nullable(),
+  outputTokens: z.number().int().nonnegative().nullable(),
+  estCostUsd: z.number().nullable(),
+  // source='gauge' (averaged over the bucket)
+  avgQueueDepth: z.number().nullable(),
+  avgSlotsUsed: z.number().nullable(),
+  avgTickLatencyMs: z.number().nullable(),
+  sampleCount: z.number().int().nonnegative().nullable(),
+});
+export type MetricsRollup = z.infer<typeof MetricsRollupSchema>;
+
+/** Query the stored rollups over a window. */
+export const MetricsRollupQuerySchema = z.object({
+  period: RollupPeriodSchema.default('daily'),
+  from: z.string().optional(),
+  to: z.string().optional(),
+  source: MetricsRollupSourceSchema.optional(),
+});
+export type MetricsRollupQuery = z.infer<typeof MetricsRollupQuerySchema>;
+
+export const MetricsRollupResponseSchema = z.object({
+  period: RollupPeriodSchema,
+  from: z.string(),
+  to: z.string(),
+  rows: z.array(MetricsRollupSchema),
+});
+export type MetricsRollupResponse = z.infer<typeof MetricsRollupResponseSchema>;

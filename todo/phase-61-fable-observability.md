@@ -146,24 +146,26 @@ Trends, not just the current needle.
 
 # Section III — Store & pipeline
 
-## Theme E — Rollups + retention (bounded forever) — **M-L**
+## Theme E — Rollups + retention (bounded forever) — **M-L** — ✅ DONE (PR #381, 2026-07-10)
 
 Keep the truth without keeping every row.
 
-- [ ] **Rollup tables:** `metrics_rollup_hourly` + `metrics_rollup_daily` — per bucket ×
-      repo × provider/model: run counts by outcome, total duration, tokens (measured vs estimated),
-      `estCostUsd`, avg cycle-time, gauge averages. Zod contracts in `shared`; forward-only migration.
-- [ ] **Scheduled aggregation:** a rollup job on the existing scheduler seam (mirroring the P49
-      auto-backup pattern): aggregate closed buckets from `llm_usage` + `session_usage` +
-      `agent_run_stats` + `gauge_samples`, idempotent (re-run safe), fail-open (a failed rollup
-      logs `warn`, never blocks ticks).
-- [ ] **Retention:** prune **raw metrics rows** past a config window (`metrics.rawRetentionDays`,
-      default 30) *after* their buckets are rolled up; rollups keep forever. **`task_events` and
-      `task_failures` are never pruned** (product history — Decision §3). `0` disables pruning
-      (today's behavior).
-- [ ] **Query switch:** `GET /metrics/ops` + `usage/summary` read **rollups for long windows** and
-      raw for the recent window, transparently — charts stay fast at P57 scale (verify with the
-      bench harness).
+- [x] **Rollup tables:** a single `metrics_rollup` table (one table + a `period` hourly/daily
+      discriminator — simpler than two, functionally identical) keyed by a deterministic
+      `key` (`period|bucket|source|repo|provider|model`) for idempotent upsert, with a `source`
+      discriminator (`runs`/`llm`/`session`/`gauge`) since the four raw streams carry different dims.
+      Per bucket: run counts by outcome + duration + retries (runs), tokens + cost (llm/session,
+      session joined to `tasks` for repo), gauge averages. Zod contract in `shared`; migration 0077.
+- [x] **Scheduled aggregation:** `MetricsRollupService` — a dedicated gateway timer mirroring the
+      Theme-D sampler / P49 backup scheduler (unref'd `setInterval` + reentrancy guard, **fail-open**,
+      runs once at boot). Aggregates **closed** buckets (`< current hour/day`) from `llm_usage` +
+      `session_usage` + `agent_run_stats` + `gauge_samples`; idempotent (upsert by `key`).
+- [x] **Retention:** prunes raw rows past `metrics.rawRetentionDays` (default 30) once rolled up; the
+      aggregation window covers the prune cutoff so every pruned row is rolled first. Rollups kept
+      forever. **`task_events` / `task_failures` never pruned.** `0` disables pruning + rollup.
+- [◐] **Query switch:** landed a **`GET /metrics/rollups`** read (+ shared contract); the *transparent*
+      rollup-vs-raw switch inside `/metrics/ops` + `usage/summary` is a **documented follow-up** — a
+      perf-tuning change on the live read paths that wants the P57 bench harness (decided at pickup).
 
 ## Theme F — Live metrics channel (ride Phase 56) — **S-M**
 

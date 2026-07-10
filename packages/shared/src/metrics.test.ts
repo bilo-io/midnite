@@ -8,6 +8,9 @@ import {
   GaugeHistoryResponseSchema,
   GaugeSampleSchema,
   MetricsGaugesSchema,
+  MetricsRollupQuerySchema,
+  MetricsRollupResponseSchema,
+  MetricsRollupSchema,
   OpsQuerySchema,
   OpsSummarySchema,
   OutcomeCountsSchema,
@@ -152,6 +155,51 @@ describe('sub-schemas', () => {
       });
       expect(res.groups[0]?.work.p50Ms).toBeNull();
       expect(res.groups[0]?.retryOverheadMsTotal).toBe(50_000);
+    });
+  });
+
+  describe('MetricsRollup (Phase 61 E)', () => {
+    const row = {
+      key: 'daily|2026-06-01T00:00:00.000Z|runs|web||',
+      period: 'daily' as const,
+      bucketStart: '2026-06-01T00:00:00.000Z',
+      source: 'runs' as const,
+      repo: 'web',
+      provider: null,
+      model: null,
+      runCount: 3,
+      doneCount: 2,
+      abandonedCount: 1,
+      failedCount: 0,
+      cancelledCount: 0,
+      totalDurationMs: 90000,
+      retriedRuns: 1,
+      calls: null,
+      inputTokens: null,
+      outputTokens: null,
+      estCostUsd: null,
+      avgQueueDepth: null,
+      avgSlotsUsed: null,
+      avgTickLatencyMs: null,
+      sampleCount: null,
+    };
+
+    it('round-trips a rollup row', () => {
+      expect(MetricsRollupSchema.parse(row)).toEqual(row);
+    });
+
+    it('query defaults period to daily', () => {
+      expect(MetricsRollupQuerySchema.parse({})).toMatchObject({ period: 'daily' });
+    });
+
+    it('rejects an unknown source + period', () => {
+      expect(MetricsRollupQuerySchema.safeParse({ period: 'weekly' }).success).toBe(false);
+      expect(MetricsRollupSchema.safeParse({ ...row, source: 'bogus' }).success).toBe(false);
+    });
+
+    it('round-trips a response envelope', () => {
+      const res = MetricsRollupResponseSchema.parse({ period: 'daily', from: 'a', to: 'b', rows: [row] });
+      expect(res.rows).toHaveLength(1);
     });
   });
 });

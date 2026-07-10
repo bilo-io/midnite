@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-10 — feat: metrics rollups + retention — Phase 61 Theme E (PR #381)
+
+Bounds observability history without losing the truth: pre-aggregated rollups + raw-row retention.
+
+- [x] **`metrics_rollup` table** (migration 0077): one table + `period` (hourly/daily) + `source` (runs/llm/session/gauge) discriminators, deterministic `key` pk for idempotent upsert. Aggregates run outcomes/duration/retries, llm+session tokens/cost (session joined to `tasks` for repo), gauge averages. Zod contract in `shared`.
+- [x] **`MetricsRollupService`**: dedicated gateway timer (Theme-D sampler / P49 backup pattern — unref'd interval, reentrancy guard, fail-open, runs at boot). Aggregates closed buckets only; idempotent upsert by `key`.
+- [x] **Retention**: prunes raw rows past `metrics.rawRetentionDays` (default 30) once rolled up (aggregation window covers the prune cutoff); rollups kept forever; `task_events`/`task_failures` never pruned; `0` disables.
+- [◐] **Query surface**: `GET /metrics/rollups` + contract landed; the transparent rollup-vs-raw switch inside `/metrics/ops`+`usage/summary` deferred to a follow-up (perf-tuning on live reads, wants the P57 bench).
+- Gateway 1822 tests green (repo aggregation/idempotency/prune/list ×9, service ×5, pure bucketing ×6) + shared contract round-trip.
 ## 2026-07-10 — feat(web,gateway): retire project sources → memory — Phase 65 Theme F (PR #380)
 
 Projects stop carrying a parallel "sources" concept; memory becomes the single knowledge notion. Existing project sources migrate into a project-scoped memory, and the whole parallel surface (API, schema, table, UI) is removed. Forward-only, full removal (Decision §4).

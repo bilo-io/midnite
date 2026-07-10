@@ -32,7 +32,7 @@
 | [64 · Office presence](phase-64-office-presence.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
 | [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 6/33 | `██░░░░░░░░` | 18% | — | C D E F G H |
-| [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 14/36 | `████░░░░░░` | 39% | E | F G H I |
+| [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 18/36 | `█████░░░░░` | 50% | — | F G H I |
 | [60 · Fable-Analysis](phase-60-fable-analysis.md) | 🔄 WIP | 47/63 | `███████░░░` | 75% | — | J M |
 | [59 · Chat to board](phase-59-chat-to-board.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
@@ -164,7 +164,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **B** — Cost attribution: GET /usage/attribution (groupBy task/repo/project/session) + measured-vs-estimated composition; soft budgets fold in session cost (PR #370)
 - ✅ **C** — Cycle-time as a first-class metric (todo→wip→done from task_events; GET /metrics/cycle-time) (PR #354)
 - ✅ **D** — Gauge history that survives restarts: sampler + gauge_samples + GET /metrics/gauges/history (PR #343)
-- ◻ **E** — Rollups + retention (hourly/daily rollups; prune metrics raws only, never task_events)
+- ✅ **E** — Rollups + retention (metrics_rollup table + timer job + raw pruning; GET /metrics/rollups; transparent read-switch deferred) (PR #381)
 - ◻ **F** — Live metrics channel on the P56 reliable WS (poll fallback)
 - ◐ **G** — Ops page deepening: cycle-time + fleet-trend charts landed; cost views + run timeline open (PR #360)
 - ◻ **H** — Widgets + session/project cockpit integration
