@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Delete,
   Get,
@@ -7,7 +8,6 @@ import {
   Param,
   Post,
 } from '@nestjs/common';
-import { Body } from '@nestjs/common';
 import {
   GenerateMemoryArtifactRequestSchema,
   type MemoryArtifactResponse,
