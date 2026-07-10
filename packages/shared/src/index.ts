@@ -30,6 +30,7 @@ export * from './system.js';
 export * from './project.js';
 export * from './repo.js';
 export * from './memory.js';
+export * from './memory-artifact.js';
 export * from './plan.js';
 export * from './node.js';
 export * from './node-types.js';

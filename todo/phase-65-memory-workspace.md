@@ -166,25 +166,27 @@ The center composer becomes a grounded Q&A over the memory + its ingested source
 
 ---
 
-## Theme D — Studio: text artifacts + infographic — **M**
+## Theme D — Studio: text artifacts + infographic — **M** — ✅ DONE (PR #384, 2026-07-10)
 
 Wire the media `generate` stub for the artifacts that need only `LlmService` — the reliable core of Studio.
+Landed — items moved to [`done.md`](done.md). **Decision §6 resolved: a lightweight
+`memory_artifacts` table**, not `Media` (whose file-centric shape has no column for inline
+markdown/SVG); `Media` stays untouched for Theme E's audio/video files. Text kinds render as
+markdown, the infographic as a self-contained SVG in a scripts-disabled sandboxed iframe.
+Generation is async on the artifact row (`pending`→`ready`/`failed`), polled by the client;
+grounded on the corpus (memory content + Theme B's ingested source text), metered via `LlmService`
+under a new `memory` usage feature.
 
-- [ ] **Un-stub generation, memory-scoped** — replace the 501 in [`media.service.ts`](../packages/gateway/src/media/media.service.ts)
-      with a real generate path; add a `memoryId` link to `Media` ([`shared/src/media.ts`](../packages/shared/src/media.ts) +
-      schema/migration) so an artifact belongs to a memory. Generation is **async** (state on the media row:
-      `pending`/`ready`/`failed`), status via poll (and WS if cheap) — **no new queue infra** (Decision §3).
-- [ ] **Text artifacts** — `brief` (executive summary), `faq`, `study-guide`, `timeline` — each an
-      `LlmService.generateStructured`/`generateText` call over the stuffed corpus (Theme C's retrieval),
-      rendered as markdown, persisted as a `Media` row (or a lightweight `memory_artifacts` row if `Media`'s
-      file-centric shape fights text — Decision §6). Prompts live in one place (`memories/lib/studio-prompts.ts`).
-- [ ] **Infographic** — LLM emits a **single self-contained SVG/HTML** visual summary; rendered in the Studio
-      panel and snapshot to the media store (reuse the existing screenshot/export path if one exists, else
-      store the markup). Add `infographic` to `MEDIA_TYPES` (or represent as `image` with an `infographic`
-      subtype — Decision §6). No external provider needed.
-- [ ] **Web: Studio rail** — a list of artifact types with **Generate** buttons, per-artifact status
-      (generating / ready / failed + regenerate), and a viewer (markdown for text, rendered SVG/iframe for
-      infographic) with download. Client methods for generate + fetch in [`web/lib/api.ts`](../packages/web/lib/api.ts).
+- [x] **Un-stub generation, memory-scoped** — `MemoryStudioService` generates over the corpus; artifacts
+      persist in a new `memory_artifacts` table (migration `0079`), async status (`pending`/`ready`/`failed`)
+      polled by the client. `Media` left untouched (Decision §6).
+- [x] **Text artifacts** — `brief` / `faq` / `study-guide` / `timeline` via `LlmService.generateText` over the
+      stuffed corpus; prompts in `memories/lib/studio-prompts.ts`, corpus builder in `memories/lib/corpus.ts`.
+- [x] **Infographic** — LLM emits a single self-contained SVG (`extractSvg` unwraps fenced output); rendered
+      in a sandboxed iframe. Represented as a `memory_artifacts` row with `format: 'svg'` (Decision §6).
+- [x] **Web: Studio rail** — artifact kinds with Generate/Regenerate + per-artifact status (generating / ready
+      / failed + retry + inline error), a viewer modal (markdown / sandboxed SVG) with download; client methods
+      in [`web/lib/api.ts`](../packages/web/lib/api.ts). Audio/video stay "Soon" (Theme E).
 
 ---
 

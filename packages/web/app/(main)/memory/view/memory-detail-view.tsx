@@ -146,7 +146,7 @@ export function MemoryDetailView({
             title: 'Studio',
             open: rightOpen,
             onToggle: () => setRightOpen(!rightOpen),
-            content: <MemoryStudioRail />,
+            content: <MemoryStudioRail memoryId={memory.id} />,
           }}
         >
           {/* Center — the doc + chat composer. */}

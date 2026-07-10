@@ -355,6 +355,30 @@ export const memorySources = sqliteTable(
   }),
 );
 
+// Studio artifacts generated from a memory's corpus (Phase 65 D): brief / FAQ /
+// study-guide / timeline (markdown) + infographic (SVG). Text/markup lives inline
+// in `content` — kept out of `media` (which is file-centric). Generation is async:
+// a row is inserted `pending`, then flips to `ready`/`failed`. One row per
+// (memory, kind); regenerate reuses the row.
+export const memoryArtifacts = sqliteTable(
+  'memory_artifacts',
+  {
+    id: text('id').primaryKey(),
+    memoryId: text('memory_id').notNull(),
+    kind: text('kind').notNull(),
+    format: text('format').notNull(),
+    title: text('title').notNull(),
+    content: text('content').notNull().default(''),
+    status: text('status').notNull(),
+    error: text('error'),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => ({
+    memoryIdx: index('memory_artifacts_memory_idx').on(t.memoryId),
+  }),
+);
+
 // --- Workflows (node-based automation builder) ---
 
 export const workflows = sqliteTable(
@@ -717,6 +741,8 @@ export type MemoryRow = typeof memories.$inferSelect;
 export type MemoryInsert = typeof memories.$inferInsert;
 export type MemorySourceRow = typeof memorySources.$inferSelect;
 export type MemorySourceInsert = typeof memorySources.$inferInsert;
+export type MemoryArtifactRow = typeof memoryArtifacts.$inferSelect;
+export type MemoryArtifactInsert = typeof memoryArtifacts.$inferInsert;
 export type PrimaryAgentRow = typeof primaryAgent.$inferSelect;
 export type PrimaryAgentInsert = typeof primaryAgent.$inferInsert;
 export type SubagentRow = typeof subagents.$inferSelect;

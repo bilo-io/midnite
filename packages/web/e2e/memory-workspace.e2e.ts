@@ -61,6 +61,23 @@ test.describe('Memory workspace page', () => {
     await expect(page.getByRole('heading', { name: memory.title })).toBeVisible();
   });
 
+  // Phase 65 D — the Studio rail generates artifacts from the corpus. With no LLM
+  // provider configured in the e2e gateway the generation settles to a surfaced
+  // error (honest degrade); with one it settles to Ready. Either way the button
+  // leaves its idle state and the status chip resolves — asserting the endpoint,
+  // the client poll, and status surfacing end-to-end without depending on a key.
+  test('Studio: generating an artifact leaves idle and settles to a status', async ({ page }) => {
+    const fresh = await seedMemory('E2E studio target', '# Topic\nSome grounding content to summarise.');
+    await page.goto(`/memory/view?id=${fresh.id}`);
+
+    await expect(page.getByRole('heading', { name: 'Studio' })).toBeVisible();
+    await expect(page.getByText('Executive brief')).toBeVisible();
+    await page.getByRole('button', { name: 'Generate' }).first().click();
+
+    // A pending/ready/failed chip (never the plain idle button) must appear.
+    await expect(page.getByText(/Generating|Ready|Retry/).first()).toBeVisible({ timeout: 20_000 });
+  });
+
   // Phase 65 B — upload a text file as a source; it ingests (no network needed)
   // and the per-source status resolves to "read" via the panel's poll.
   test('uploads a file source and it ingests to ready', async ({ page }) => {

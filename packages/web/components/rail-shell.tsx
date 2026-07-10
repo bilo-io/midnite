@@ -96,7 +96,7 @@ function Rail({
   if (isMobile) {
     if (!open) return null;
     return (
-      <aside className="w-full rounded-lg border border-border/60 bg-card/40 p-4">
+      <aside aria-label={title} className="w-full rounded-lg border border-border/60 bg-card/40 p-4">
         {header}
         {content}
       </aside>
@@ -108,6 +108,7 @@ function Rail({
   // overflow-hidden, so it slides rather than reflowing as the width animates.
   return (
     <aside
+      aria-label={title}
       aria-hidden={!open}
       className={cn(
         'hidden shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out motion-reduce:transition-none lg:block',
