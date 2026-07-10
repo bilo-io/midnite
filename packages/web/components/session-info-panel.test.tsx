@@ -1,6 +1,14 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { SessionDetail } from '@midnite/shared';
+import { withQueryClient } from '@/lib/test-query-wrapper';
+
+// The panel now embeds a self-fetching cost line; stub its endpoint so these
+// synchronous field assertions run without a live gateway (the cost line renders
+// nothing until its query resolves).
+vi.mock('@/lib/api', () => ({
+  getUsageAttribution: vi.fn(() => new Promise(() => {})),
+}));
 
 import { SessionInfoPanel } from './session-info-panel';
 
@@ -29,7 +37,7 @@ const base: SessionDetail = {
 
 describe('SessionInfoPanel', () => {
   it('renders the real fields for a live session', () => {
-    render(<SessionInfoPanel session={base} />);
+    render(withQueryClient(<SessionInfoPanel session={base} />));
     expect(screen.getByText('running')).toBeInTheDocument();
     expect(screen.getByText('Anthropic')).toBeInTheDocument(); // provider label, not raw enum
     expect(screen.getByText('claude')).toBeInTheDocument();
@@ -39,7 +47,7 @@ describe('SessionInfoPanel', () => {
   });
 
   it('shows the context window as an estimate, never fabricated precision', () => {
-    render(<SessionInfoPanel session={base} />);
+    render(withQueryClient(<SessionInfoPanel session={base} />));
     expect(screen.getByText('Context')).toBeInTheDocument();
     expect(screen.getByText('est')).toBeInTheDocument();
     expect(screen.getByText(/42\.0k \/ 200\.0k \(est\.\)/)).toBeInTheDocument();
@@ -55,7 +63,7 @@ describe('SessionInfoPanel', () => {
       status: 'idle',
       lastActivity: Date.now(),
     };
-    render(<SessionInfoPanel session={sparse} />);
+    render(withQueryClient(<SessionInfoPanel session={sparse} />));
     expect(screen.queryByText('Provider')).toBeNull();
     expect(screen.queryByText('Agent CLI')).toBeNull();
     expect(screen.queryByText('Working dir')).toBeNull();
@@ -68,9 +76,9 @@ describe('SessionInfoPanel', () => {
   });
 
   it('shows retries only when greater than zero', () => {
-    const { rerender } = render(<SessionInfoPanel session={base} />);
+    const { rerender } = render(withQueryClient(<SessionInfoPanel session={base} />));
     expect(screen.queryByText('Retries')).toBeNull(); // retryCount 0
-    rerender(<SessionInfoPanel session={{ ...base, retryCount: 3 }} />);
+    rerender(withQueryClient(<SessionInfoPanel session={{ ...base, retryCount: 3 }} />));
     expect(screen.getByText('Retries')).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument();
   });
@@ -79,14 +87,16 @@ describe('SessionInfoPanel', () => {
     const created = new Date('2026-07-01T00:00:00Z');
     const archived = new Date('2026-07-01T04:30:00Z');
     render(
-      <SessionInfoPanel
-        session={{
-          ...base,
-          status: 'completed',
-          createdAt: created.toISOString(),
-          archivedAt: archived.toISOString(),
-        }}
-      />,
+      withQueryClient(
+        <SessionInfoPanel
+          session={{
+            ...base,
+            status: 'completed',
+            createdAt: created.toISOString(),
+            archivedAt: archived.toISOString(),
+          }}
+        />,
+      ),
     );
     expect(screen.getByText('ended')).toBeInTheDocument();
     expect(screen.getByText('Ran for')).toBeInTheDocument();

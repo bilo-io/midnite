@@ -5,6 +5,7 @@ import { Brain, ChevronRight } from 'lucide-react';
 import type { Project, TaskSummary } from '@midnite/shared';
 import { statusLabel, statusHueVar } from '@/components/task-columns';
 import { relativeTime } from '@/lib/utils';
+import { ProjectCostCard } from './panels/project-cost-card';
 
 type Props = {
   project: Project;
@@ -30,7 +31,9 @@ export function ProjectInfoPanel({ project, tasks, onSelectTask }: Props) {
 
   return (
     <div className="space-y-5">
-      <div className="space-y-1.5">
+      <ProjectCostCard projectId={project.id} />
+
+      <div className="space-y-1.5 border-t border-border/60 pt-4">
         <span className="text-xs font-medium text-muted-foreground">Knowledge</span>
         <button
           type="button"
