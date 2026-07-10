@@ -123,6 +123,7 @@ function RestorePanel() {
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [mode, setMode] = useState<'merge' | 'replace'>('merge');
   const [confirmText, setConfirmText] = useState('');
+  const [passphrase, setPassphrase] = useState('');
   const [phase, setPhase] = useState<RestorePhase>('idle');
   const [result, setResult] = useState<ImportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -144,6 +145,7 @@ function RestorePanel() {
     setResult(null);
     setError(null);
     setConfirmText('');
+    setPassphrase('');
     setPhase('idle');
   };
 
@@ -171,7 +173,7 @@ function RestorePanel() {
     timers.current.push(setTimeout(() => setPhase((p) => (p === 'uploading' ? 'restoring' : p)), 400));
     timers.current.push(setTimeout(() => setPhase((p) => (p === 'restoring' ? 'reindexing' : p)), 1200));
     try {
-      const r = await importArchive(file, mode);
+      const r = await importArchive(file, mode, passphrase || undefined);
       clearTimers();
       setResult(r);
       setPhase('done');
@@ -237,6 +239,36 @@ function RestorePanel() {
               );
             })}
           </ul>
+
+          {/* Theme G — advisory warnings (users signed out on replace, secrets present). */}
+          {preview.warnings.length > 0 ? (
+            <ul className="space-y-1">
+              {preview.warnings.map((w) => (
+                <li key={w} className="flex items-start gap-1.5 text-[11px] text-amber-600">
+                  <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+                  <span>{w}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          {/* Theme G — passphrase to unwrap a secrets-bearing archive. */}
+          {preview.manifest.secretsMode === 'passphrase' ? (
+            <div className="space-y-1">
+              <label htmlFor="restore-passphrase" className="block text-[11px] text-muted-foreground">
+                Passphrase (to restore this archive’s secrets — leave blank to skip them)
+              </label>
+              <input
+                id="restore-passphrase"
+                type="password"
+                autoComplete="off"
+                value={passphrase}
+                onChange={(e) => setPassphrase(e.target.value)}
+                placeholder="Export passphrase"
+                className="w-64 rounded border border-input bg-background px-2 py-1 text-xs"
+              />
+            </div>
+          ) : null}
 
           {/* Mode — merge is the safe default; replace is guarded below. */}
           <fieldset className="space-y-1.5">
@@ -311,6 +343,9 @@ function RestorePanel() {
             <p className="font-medium">
               Restored ({result.mode}): {Object.values(result.inserted).reduce((a, b) => a + b, 0)} inserted,{' '}
               {Object.values(result.skipped).reduce((a, b) => a + b, 0)} skipped
+              {result.secretsRestored || result.secretsSkipped
+                ? ` · secrets: ${result.secretsRestored} restored${result.secretsSkipped ? `, ${result.secretsSkipped} skipped` : ''}`
+                : ''}
               {result.reindexed ? '' : ' · search reindex warned'}
             </p>
           </div>
@@ -334,11 +369,18 @@ export function DataView() {
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [summary, setSummary] = useState<BackupSummary | null>(null);
+  const [includeSecrets, setIncludeSecrets] = useState(false);
+  const [passphrase, setPassphrase] = useState('');
+
+  const secretsNeedPassphrase = includeSecrets && passphrase.trim().length === 0;
 
   const onDownload = async (): Promise<void> => {
+    if (secretsNeedPassphrase) return;
     setBusy(true);
     try {
-      const { blob, filename, summary: s } = await downloadBackup();
+      const { blob, filename, summary: s } = await downloadBackup(
+        includeSecrets ? { includeSecrets: true, passphrase } : undefined,
+      );
       saveBlob(blob, filename);
       setSummary(s);
       toast.success(`Backup downloaded — ${filename}`);
@@ -367,7 +409,44 @@ export function DataView() {
             or a fresh instance.
           </p>
         </div>
-        <Button type="button" onClick={() => void onDownload()} disabled={busy} className="gap-1.5">
+        {/* Theme G — opt into including secrets, re-wrapped under a passphrase. */}
+        <div className="space-y-2 rounded-md border border-border bg-muted/20 p-3">
+          <label className="flex items-start gap-2 text-xs">
+            <input
+              type="checkbox"
+              checked={includeSecrets}
+              onChange={(e) => setIncludeSecrets(e.target.checked)}
+              className="mt-0.5"
+            />
+            <span>
+              <span className="font-medium">Include secrets</span>{' '}
+              <span className="text-muted-foreground">
+                — API keys, webhook signing secrets & workflow credentials, re-encrypted under a passphrase.
+              </span>
+            </span>
+          </label>
+          {includeSecrets ? (
+            <div className="space-y-1 pl-6">
+              <label htmlFor="export-passphrase" className="block text-[11px] text-muted-foreground">
+                Passphrase (you’ll need it to restore — it’s never stored)
+              </label>
+              <input
+                id="export-passphrase"
+                type="password"
+                autoComplete="new-password"
+                value={passphrase}
+                onChange={(e) => setPassphrase(e.target.value)}
+                placeholder="A strong passphrase"
+                className="w-64 rounded border border-input bg-background px-2 py-1 text-xs"
+              />
+              {secretsNeedPassphrase ? (
+                <p className="text-[11px] text-destructive">A passphrase is required to include secrets.</p>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+
+        <Button type="button" onClick={() => void onDownload()} disabled={busy || secretsNeedPassphrase} className="gap-1.5">
           <Download className="h-4 w-4" />
           {busy ? 'Preparing…' : 'Download backup'}
         </Button>
@@ -384,7 +463,9 @@ export function DataView() {
           </div>
           <p className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
             <Lock className="h-3 w-3" />
-            Secrets (API keys, tokens) are excluded — reconfigure integrations after a restore.
+            {includeSecrets
+              ? 'Secrets are re-encrypted under your passphrase — the raw instance key never leaves this box.'
+              : 'Secrets (API keys, tokens) are excluded — enable “Include secrets” to carry them, or reconfigure integrations after a restore.'}
           </p>
         </div>
 
