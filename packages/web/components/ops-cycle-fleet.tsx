@@ -128,7 +128,7 @@ export function CycleTimeSection({
       loading={loading && !data}
       empty={empty}
     >
-      <div className="h-56 w-full" aria-label="Cycle-time chart">
+      <div className="h-56 w-full min-w-0" aria-label="Cycle-time chart">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={rows} margin={{ top: 8, right: 8, bottom: 4, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
@@ -186,9 +186,11 @@ function MiniChart({
   children: React.ReactElement;
 }) {
   return (
-    <div>
+    <div className="min-w-0">
       <p className="mb-1 text-xs text-muted-foreground">{title}</p>
-      <div className="h-32 w-full">
+      {/* min-w-0 lets ResponsiveContainer shrink inside a grid/flex track —
+          without it the chart keeps its measured width and overflows on mobile. */}
+      <div className="h-32 w-full min-w-0">
         <ResponsiveContainer width="100%" height="100%">
           {children}
         </ResponsiveContainer>

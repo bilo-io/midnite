@@ -132,6 +132,8 @@ import {
   MemoryResponseSchema,
   MemoryArtifactResponseSchema,
   MemoryArtifactsResponseSchema,
+  MemoryChatHistoryResponseSchema,
+  PostMemoryChatResponseSchema,
   PrimaryAgentResponseSchema,
   ProjectResponseSchema,
   PhaseDocResponseSchema,
@@ -205,6 +207,8 @@ import {
   type Memory,
   type MemoryArtifact,
   type MemoryArtifactKind,
+  type MemoryChatMessage,
+  type PostMemoryChatResponse,
   type PrDiff,
   type PrReviewSubmission,
   type PrReviewDraft,
@@ -1381,9 +1385,27 @@ export async function generateMemoryArtifact(
 }
 
 export async function deleteMemoryArtifact(id: string, artifactId: string): Promise<void> {
-  await fetchJson(
-    `/memories/${encodeURIComponent(id)}/artifacts/${encodeURIComponent(artifactId)}`,
-    { method: 'DELETE' },
+  await fetchJson(`/memories/${encodeURIComponent(id)}/artifacts/${encodeURIComponent(artifactId)}`, {
+    method: 'DELETE',
+  });
+}
+
+/** The memory's chat thread (Phase 65 C), oldest first. */
+export async function getMemoryChat(id: string): Promise<MemoryChatMessage[]> {
+  const { messages } = await fetchJson(
+    `/memories/${encodeURIComponent(id)}/chat`,
+    undefined,
+    MemoryChatHistoryResponseSchema,
+  );
+  return messages;
+}
+
+/** Ask a question of the memory; returns the appended user + assistant turns. */
+export async function postMemoryChat(id: string, message: string): Promise<PostMemoryChatResponse> {
+  return fetchJson(
+    `/memories/${encodeURIComponent(id)}/chat`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ message }) },
+    PostMemoryChatResponseSchema,
   );
 }
 

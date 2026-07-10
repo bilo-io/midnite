@@ -28,6 +28,9 @@ vi.mock('@/components/memory/memory-doc-panel', () => ({
 vi.mock('@/components/memory/memory-sources-panel', () => ({
   MemorySourcesPanel: () => <div data-testid="sources-panel" />,
 }));
+vi.mock('@/components/memory/memory-chat-composer', () => ({
+  MemoryChatComposer: () => <div data-testid="chat-composer" />,
+}));
 
 const useApiData = vi.fn();
 vi.mock('@/lib/use-api-data', () => ({ useApiData: (...a: unknown[]) => useApiData(...a) }));
@@ -61,8 +64,8 @@ describe('MemoryDetailView — shell', () => {
     // Left rail title + right Studio rail.
     expect(screen.getByRole('heading', { name: 'Sources' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Studio' })).toBeInTheDocument();
-    // Chat composer scaffold present but disabled.
-    expect(screen.getByLabelText('Ask this memory a question')).toBeDisabled();
+    // Chat composer mounted in the center panel (its behavior is unit-tested separately).
+    expect(screen.getByTestId('chat-composer')).toBeInTheDocument();
   });
 
   it('shows the scope label for a global memory', async () => {

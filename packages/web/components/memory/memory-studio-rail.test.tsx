@@ -48,7 +48,7 @@ describe('MemoryStudioRail', () => {
     expect(screen.getByText('Audio overview')).toBeInTheDocument();
     expect(screen.getByText('Video')).toBeInTheDocument();
     // Every kind is now generatable (no "Soon" placeholders).
-    expect(screen.getAllByLabelText('Generate')).toHaveLength(7);
+    expect(screen.getAllByLabelText(/^Generate /)).toHaveLength(7);
     expect(screen.queryByText('Soon')).not.toBeInTheDocument();
   });
 
@@ -58,7 +58,7 @@ describe('MemoryStudioRail', () => {
     render(<MemoryStudioRail memoryId="m1" />);
     await waitFor(() => expect(api.getMemoryArtifacts).toHaveBeenCalled());
 
-    fireEvent.click(screen.getAllByLabelText('Generate')[0]!);
+    fireEvent.click(screen.getByLabelText('Generate Executive brief'));
     await waitFor(() => expect(api.generateMemoryArtifact).toHaveBeenCalledWith('m1', 'brief'));
     expect(await screen.findByText('Generating')).toBeInTheDocument();
   });

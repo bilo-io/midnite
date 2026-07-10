@@ -20,6 +20,7 @@ import { CouncilsModule } from './councils/councils.module';
 import { MediaModule } from './media/media.module';
 import { MarketModule } from './market/market.module';
 import { MemoriesModule } from './memories/memories.module';
+import { MemoryChatModule } from './memory-chat/memory-chat.module';
 import { MetadataModule } from './metadata/metadata.module';
 import { NewsModule } from './news/news.module';
 import { NotesModule } from './notes/notes.module';
@@ -74,6 +75,7 @@ import { InboundModule } from './integrations/inbound/inbound.module';
     MarketModule,
     MediaModule,
     MemoriesModule,
+    MemoryChatModule,
     MetadataModule,
     NewsModule,
     NotesModule,

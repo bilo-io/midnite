@@ -159,7 +159,7 @@ export function MemoryDetailView({
                 onDeleted={() => router.push('/memory')}
               />
             </div>
-            <MemoryChatComposer />
+            <MemoryChatComposer memory={memory} />
           </div>
         </RailShell>
       </div>

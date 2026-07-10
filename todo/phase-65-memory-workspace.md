@@ -141,28 +141,18 @@ Turn bare links into an actual corpus — the substrate chat + generation stand 
 
 ---
 
-## Theme C — Chat to the knowledge base (persisted threads, cited answers) — **L**
+## Theme C — Chat to the knowledge base (persisted threads, cited answers) — **L** — ✅ DONE (PR #385, 2026-07-10)
 
 The center composer becomes a grounded Q&A over the memory + its ingested sources.
-
-- [ ] **Persisted chat storage** — a `memory_chat_messages` table (`id`, `memoryId`, `role`
-      (`user`/`assistant`), `content`, `citations` (JSON: which source/section ids), `createdAt`) + a
-      forward-only migration; `MemoryChatMessageSchema` + request/response schemas in
-      [`shared/src/memory.ts`](../packages/shared/src/memory.ts) (or a sibling `memory-chat.ts`).
-- [ ] **Chat endpoints (thin controller → service)** — `GET /memories/:id/chat` (history),
-      `POST /memories/:id/chat` (append user turn → answer). Service: **retrieve** (FTS5 rank the memory +
-      ingested source text; at notebook scale — one memory + ≤10 sources — **stuff the full corpus** into
-      context, trimming by FTS rank only when over a token budget, Decision §2) → **answer** via
-      [`LlmService.generateText`](../packages/gateway/src/agent/llm/llm.service.ts) with a
-      grounded prompt → persist both turns. Answers **cite the sources used**; the model is instructed to say
-      when the corpus doesn't cover a question (no hallucinated coverage).
-- [ ] **Streaming or fast round-trip** — stream tokens if the client path supports it; otherwise a plain
-      request/response with an optimistic pending bubble. Metered through `UsageService` like every other LLM
-      call. Graceful failure → an inline error turn, never a silent drop.
-- [ ] **Web: chat panel** — the center composer renders the thread (user/assistant bubbles, markdown, **source
-      citation chips** linking to the left-rail source), an input with send/stop, and history that survives
-      reload (`GET …/chat`). Client methods `getMemoryChat(id)` / `postMemoryChat(id, message)` in
-      [`web/lib/api.ts`](../packages/web/lib/api.ts).
+Landed — items moved to [`done.md`](done.md). A separate `memory-chat` module
+persists one thread per memory (`memory_chat_messages` + migration `0079`),
+retrieves by stuffing the corpus (memory doc + ready sources' `extractedText`) and
+trimming by **FTS5 bm25** only past a budget (§2), then answers with one structured
+plan-model call (`{answer, citedSourceIds}`, tagged `memory-chat`) — citations
+filtered to real sources, fail-soft on empty-corpus / LLM-off / call failure. The
+web composer went live: send → pending bubble → cited answer with source chips,
+persisted history, disabled-with-hint when no provider is configured. Plain
+request/response (no streaming this theme).
 
 ---
 
@@ -195,7 +185,7 @@ under a new `memory` usage feature.
 The signature NotebookLM artifacts — real output via additive provider seams, degrading when unconfigured.
 Landed — items moved to [`done.md`](done.md). Audio/video persist on the existing
 `memory_artifacts` store (new `file_path`/`mime_type`/`file_size`/`degraded` columns
-+ migration `0080`), not `Media` — Theme D's Studio store already owns the async
++ migration `0081`), not `Media` — Theme D's Studio store already owns the async
 `pending→ready/failed` lifecycle + poll + memory scoping, and `Media` has no
 `memoryId`/status seam; the UX is identical. Audio = two-host `generateStructured`
 script → `StudioTtsService` (OpenAI `/v1/audio/speech`, reuses the OpenAI provider
@@ -221,7 +211,12 @@ replaced by a **"Manage knowledge in Memory"** link (`/memory?scope=<projectId>`
 
 ---
 
-## Theme G — Tests, docs & polish — **M**
+## Theme G — Tests, docs & polish — **M** — ◐ PARTIAL (PR #386, 2026-07-10)
+
+Product docs + an a11y pass landed for the shipped surfaces (A/B/D). The
+remaining items **trail Themes C (chat) & E (audio/video)** — their specs, the
+`memory.studio` config docs, and committed visual baselines wait until those land.
+Gateway/shared/web unit coverage for A/B/D already shipped with each theme.
 
 - [ ] **Gateway** — service specs with repository fakes (`getMemory` 404, ingestion state transitions, chat
       retrieve→answer with a fake `LlmService`, generate async status, project-source migration); repository
@@ -234,9 +229,12 @@ replaced by a **"Manage knowledge in Memory"** link (`/memory?scope=<projectId>`
       primary checkout or a `Dev/midnite-wt/` worktree** (Vite denies `.git/**`).
 - [ ] **e2e** — a Playwright flow against a seeded gateway: open `/memory/view?id=`, add a source, ask a
       question, generate a text artifact; assert the page renders and each panel works.
-- [ ] **Docs + baselines** — README/docs for the workspace, ingestion, chat, and Studio config; `midnite.json`
-      schema docs for `memory.studio`; light/dark screenshots of the new page for the visual baselines; a11y
-      pass (roles/labels, portal menus) on the new surfaces.
+- [x] **Docs + a11y (partial)** — a dedicated **Memory Workspace** product doc
+      ([`docs/MEMORY_WORKSPACE.md`](../docs/MEMORY_WORKSPACE.md), surfaced in `@midnite/docs` under Guides +
+      the search index) covering the page, ingestion, and Studio (text + infographic); an a11y pass on the new
+      surfaces (Studio-rail buttons carry unique per-artifact accessible names). **Deferred to C/E:**
+      `midnite.json` schema docs for `memory.studio` (Theme E owns the config), chat docs (Theme C), and
+      committed light/dark visual baselines.
 
 ---
 

@@ -6,15 +6,42 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ## 2026-07-11 — feat: Memory Studio audio overview + video — Phase 65 Theme E (PR #388)
 
-The signature NotebookLM artifacts, **real but degrading gracefully**. Both live on the existing `memory_artifacts` store (Theme D already owns the async lifecycle + poll + memory scoping; `Media` has no `memoryId`/status seam) — a deliberate divergence from the doc's "Media row" phrasing, identical UX. Additive provider seams mirror the Phase 17 spawner split; a real video-model provider can slot into `VideoGenerator` later. Phase 65 → 24/33 (73%).
+The signature NotebookLM artifacts, **real but degrading gracefully**. Both live on the existing `memory_artifacts` store (Theme D already owns the async lifecycle + poll + memory scoping; `Media` has no `memoryId`/status seam) — a deliberate divergence from the doc's "Media row" phrasing, identical UX. Additive provider seams mirror the Phase 17 spawner split; a real video-model provider can slot into `VideoGenerator` later. Phase 65 → 29/33 (88%).
 
 - [x] **Audio overview (podcast)** — `generateStructured` writes a two-host script → `StudioTtsService` (a `TtsProvider` seam; OpenAI `/v1/audio/speech` adapter reusing the stored `openai` credential or `OPENAI_API_KEY`) renders per-turn mp3 (two voices, concatenated) → persisted under the uploads dir. No TTS key → ships the **transcript** only (`degraded`), never a hard failure.
 - [x] **Video (slideshow compose)** — `generateStructured` writes a narrated deck → `StudioVideoService`/`VideoGenerator` seam composes an MP4 with `ffmpeg` (`drawtext` slides over solid frames, timed to the narration via ffprobe, `-shortest`). No usable ffmpeg / font / `drawtext` → ships the **slide outline** only (`degraded`). Requires a freetype-enabled ffmpeg.
 - [x] **Config + docs** — `memory.studio` config (`tts.provider`/model/voices, `video.mode`/`ffmpegPath`), all defaulted + off-degraded; README documents it. Cost metered via the existing `memory` `LlmFeature`.
 - [x] **Web: audio/video in Studio** — the rail offers both kinds (no more "Soon"); the viewer streams an `<audio>`/`<video>` player from `GET …/artifacts/:id/file` (uploads-confined) with the script/outline below, and an honest degraded hint when a provider is missing. File-URL client helper `memoryArtifactFileUrl`.
 - [x] **shared** — `memory-artifact.ts`: `audio-overview`/`video-overview` kinds, `audio`/`video` formats, `filePath`/`mimeType`/`fileSize`/`degraded` fields, `isFileBackedFormat`; new `memory-studio.ts` (`AudioScript`/`VideoDeck` zod + JSON-Schema mirrors); `memory.studio` config schema.
-- [x] **gateway** — file columns on `memory_artifacts` + migration `0080` (hand-written; drizzle-kit generate stays blocked on the pre-existing snapshot drift); `MemoryStudioService` branches audio/video → seams → uploads write; `…/artifacts/:id/file` serve endpoint (re-confined like media file-serve).
+- [x] **gateway** — file columns on `memory_artifacts` + migration `0081` (hand-written; drizzle-kit generate stays blocked on the pre-existing snapshot drift); `MemoryStudioService` branches audio/video → seams → uploads write; `…/artifacts/:id/file` serve endpoint (re-confined like media file-serve).
 - [x] **tests** — shared schema round-trips (audio/video + file fields, script/deck); gateway service (audio/video degrade + file-persist with fake seams), TTS/video seam enable/degrade, `wrapText`, renderers, controller; web RTL (audio player + degraded hint) + e2e (rows offered) + light/dark preview shots (rail, playable audio viewer, degraded video viewer).
+
+## 2026-07-11 — audit+fix: mobile & responsive polish — Phase 60 Theme J (PR #387)
+
+Audited every top-level surface across the full breakpoint matrix (320/375/390/768/landscape) for the CLAUDE.md no-horizontal-body-scroll invariant + touch/PWA/safe-area, and fixed the ≥P2 quick-wins inline under the phase's quick-win rule. Findings in [`phase-60-findings/J-mobile-responsive.md`](phase-60-findings/J-mobile-responsive.md). Phase 60 → 50/62 (80%); only Theme M (synthesis) remains.
+
+- [x] **Reflow audit** — Playwright sweep of ~18 surfaces × 5 widths asserting `body.scrollWidth ≤ clientWidth`; found 4 overflowing surfaces + 2 column-clipping tables.
+- [x] **Touch & PWA** — safe-area insets verified (shell + mobile nav); primary bottom-nav targets ≥44px; sub-44px secondary icon buttons logged as follow-up J6.
+- [x] **JS vs CSS cutoffs** — confirmed no hand-written width branches; all `matchMedia` use is reduced-motion / standalone; layout branches go through `useIsMobile`/etc.
+- [x] **Fixes (J1–J5):** `flex-wrap` on projects/schedules/workflows/ops control rows; `min-w-0` on ops Recharts `ResponsiveContainer` wrappers; `overflow-hidden`→`overflow-x-auto` on the api-tokens + webhooks tables. Locked by [`mobile-audit.shots.ts`](../packages/web/e2e/mobile-audit.shots.ts).
+
+## 2026-07-10 — feat: chat to the knowledge base — Phase 65 Theme C (PR #385)
+
+The memory workspace's center composer becomes a grounded, cited Q&A over a memory's own doc **plus its ingested sources** (Phase 65 B corpus). A separate `memory-chat` module; one running thread per memory.
+
+- [x] **Persisted chat storage** — `memory_chat_messages` (one thread per memory; `citations` JSON + `error` flag) + migration `0080`; `MemoryChatMessage` + request/history/response schemas + a `memory-chat` LLM feature in `shared`.
+- [x] **Chat endpoints (thin controller → service)** — `GET`/`POST /memories/:id/chat` in a dedicated `memory-chat` module. Retrieval **stuffs the full corpus** (memory content + each **ready** source's `extractedText` via `MemoriesService.getGroundingCorpus`) and trims by **FTS5 bm25** relevance (transient temp table) only when over a char budget (Decision §2); one structured plan-model call → `{answer, citedSourceIds}`, citations filtered to real sources. **Fail-soft:** empty corpus → honest reply (no LLM call), LLM-off / call failure → a clean error turn — never a fabricated answer.
+- [x] **Fast round-trip** — plain request/response with an optimistic pending bubble (no streaming this theme); metered via `UsageService` (`memory-chat`); graceful failure → an inline error turn.
+- [x] **Web: chat panel** — live `MemoryChatComposer`: thread bubbles (assistant markdown), **source citation chips** linking to the source, send + persisted history, disabled-with-hint when no AI provider is configured. Client methods `getMemoryChat` / `postMemoryChat`.
+- [x] **Tests** — gateway retrieval unit + service (cited/hallucination-filter/empty/LLM-off/fail-soft/over-budget) + repository integration (thread + real FTS5 rank) + controller; web composer RTL. typecheck/lint green; gateway 1867, web 1064. Phase 65 → 25/33 (76%).
+
+## 2026-07-10 — docs: Memory Workspace guide + a11y pass — Phase 65 Theme G (partial) (PR #386)
+
+The collision-safe slice of Theme G, landed while C (chat, PR #385) and E (audio/video) are in flight: a product-facing guide for the shipped workspace + an a11y pass on the new surfaces. Per-theme unit coverage already shipped inline with A/B/D. Phase 65 → 21/33 (64%); G stays ◐ partial — its remaining specs, `memory.studio` config docs, and committed visual baselines trail C & E.
+
+- [x] **Docs** — [`docs/MEMORY_WORKSPACE.md`](MEMORY_WORKSPACE.md): the 3-panel page, source ingestion (URL fetch + file upload, caps, states), the Studio (text + infographic, async status, sandboxed SVG, honest degrade), the API surface. Surfaced in `@midnite/docs` under **Guides** via the `?raw` import pattern (auto-indexed for docs search).
+- [x] **a11y** — Studio-rail Generate/Retry buttons now carry unique per-artifact accessible names (`Generate Executive brief`, …) instead of a repeated bare "Generate"; RTL test updated. (RailShell dual-`<aside>` landmark labelling was fixed in PR #384.)
+- [ ] **Deferred to C/E** — chat docs + specs (Theme C), `midnite.json` schema docs for `memory.studio` (Theme E owns the config), committed light/dark visual baselines.
 
 ## 2026-07-10 — feat: Memory Studio text + infographic artifacts — Phase 65 Theme D (PR #384)
 
