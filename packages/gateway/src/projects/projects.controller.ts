@@ -14,13 +14,11 @@ import {
 import { CurrentUser, type CurrentUserPayload } from '../auth/decorators/current-user.decorator';
 import type { FastifyReply } from 'fastify';
 import {
-  AddSourceRequestSchema,
   CreateFromBreakdownRequestSchema,
   CreatePlanTasksRequestSchema,
   CreateProjectRequestSchema,
   EnhanceDescriptionRequestSchema,
   REPORT_CONTENT_TYPE,
-  ReorderSourcesRequestSchema,
   ReportFormatSchema,
   UpdatePlanRequestSchema,
   UpdateProjectRequestSchema,
@@ -84,29 +82,6 @@ export class ProjectsController {
   remove(@Param('id') id: string, @CurrentUser() user?: CurrentUserPayload | null): { ok: true } {
     this.service.deleteProject(id, user?.userId ?? null);
     return { ok: true };
-  }
-
-  @Post(':id/sources')
-  async addSource(@Param('id') id: string, @Body() body: unknown): Promise<ProjectResponse> {
-    const parsed = AddSourceRequestSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.message);
-    return { project: await this.service.addSource(id, parsed.data.url) };
-  }
-
-  // Static segment, so it never collides with `:sourceId` below.
-  @Post(':id/sources/reorder')
-  reorderSources(@Param('id') id: string, @Body() body: unknown): ProjectResponse {
-    const parsed = ReorderSourcesRequestSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.message);
-    return { project: this.service.reorderSources(id, parsed.data.sourceIds) };
-  }
-
-  @Delete(':id/sources/:sourceId')
-  removeSource(
-    @Param('id') id: string,
-    @Param('sourceId') sourceId: string,
-  ): ProjectResponse {
-    return { project: this.service.removeSource(id, sourceId) };
   }
 
   @Post(':id/draft-plan')

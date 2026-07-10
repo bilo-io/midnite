@@ -81,7 +81,6 @@ export const projectFixture: Project = {
   workDir: '~/Dev/midnite',
   createdAt: TS,
   updatedAt: TS,
-  sources: [],
 };
 
 export const memoryFixture: Memory = {

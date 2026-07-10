@@ -17,7 +17,7 @@ beforeEach(() => {
 });
 
 describe('ProjectsRepository', () => {
-  it('inserts and hydrates a project with sources and a task count', () => {
+  it('inserts and hydrates a project with a task count', () => {
     const { db, repo } = ctx;
     repo.insertProject({
       id: 'p1',
@@ -29,16 +29,6 @@ describe('ProjectsRepository', () => {
       planUpdatedAt: null,
       createdAt: now,
       updatedAt: now,
-    });
-    repo.insertSource({
-      id: 's1',
-      projectId: 'p1',
-      url: 'https://youtu.be/x',
-      kind: 'youtube',
-      title: 'A video',
-      faviconUrl: 'https://www.youtube.com/favicon.ico',
-      fetchedAt: now,
-      createdAt: now,
     });
     db.insert(tasks)
       .values({
@@ -55,8 +45,6 @@ describe('ProjectsRepository', () => {
     const row = repo.getProject('p1')!;
     const project = repo.hydrate(row);
     expect(project.name).toBe('Atlas');
-    expect(project.sources).toHaveLength(1);
-    expect(project.sources[0]!.kind).toBe('youtube');
     expect(project.taskCount).toBe(1);
     expect(project.taskStatusCounts).toEqual({ todo: 1 });
   });
@@ -97,7 +85,7 @@ describe('ProjectsRepository', () => {
     expect(ctx.repo.statusCountsForProjects([]).size).toBe(0);
   });
 
-  it('deleting a project removes sources and unlinks its tasks', () => {
+  it('deleting a project unlinks its tasks', () => {
     const { db, repo } = ctx;
     repo.insertProject({
       id: 'p1',
@@ -106,13 +94,6 @@ describe('ProjectsRepository', () => {
       color: '#000000',
       createdAt: now,
       updatedAt: now,
-    });
-    repo.insertSource({
-      id: 's1',
-      projectId: 'p1',
-      url: 'https://example.com',
-      kind: 'link',
-      createdAt: now,
     });
     db.insert(tasks)
       .values({
@@ -129,7 +110,6 @@ describe('ProjectsRepository', () => {
     repo.deleteProject('p1');
 
     expect(repo.getProject('p1')).toBeUndefined();
-    expect(repo.listSources('p1')).toHaveLength(0);
     const task = db.select().from(tasks).where(eq(tasks.id, 't1')).get();
     expect(task).toBeDefined();
     expect(task!.projectId).toBeNull();
@@ -186,8 +166,8 @@ describe('ProjectsRepository', () => {
 
     repo.deleteProject('p1');
 
-    // Project + its milestone + its sources gone; the task + media survive but
-    // fully unlinked — no dangling projectId/milestoneId (no phantom chips).
+    // Project + its milestone gone; the task + media survive but fully unlinked —
+    // no dangling projectId/milestoneId (no phantom chips).
     expect(repo.getProject('p1')).toBeUndefined();
     expect(db.select().from(roadmapMilestones).where(eq(roadmapMilestones.id, 'm1')).all()).toHaveLength(0);
     const task = db.select().from(tasks).where(eq(tasks.id, 't1')).get()!;
