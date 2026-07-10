@@ -440,6 +440,10 @@ export const MetricsConfigSchema = z.object({
   // Days of raw metrics rows to keep; the sampler prunes gauge samples older than
   // this on each run. Default 30. `0` disables pruning (keep forever).
   rawRetentionDays: z.number().int().nonnegative().default(30),
+  // How often the rollup job aggregates closed buckets + prunes rolled-up raw
+  // rows (ms). Default 1h. `0` disables the rollup loop entirely (no aggregation,
+  // no retention pruning) — behaviour-preserving opt-out.
+  rollupIntervalMs: z.number().int().nonnegative().default(3600000),
 });
 
 export const ChatConfigSchema = z.object({

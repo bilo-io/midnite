@@ -9,6 +9,9 @@ import {
   type GaugeHistoryQuery,
   type GaugeHistoryResponse,
   type MetricsGauges,
+  type MetricsRollup,
+  type MetricsRollupQuery,
+  type MetricsRollupResponse,
   type OpsSummary,
   type OpsQuery,
 } from '@midnite/shared';
@@ -156,6 +159,52 @@ export class MetricsService {
         tickLatencyMs: s.tickLatencyMs,
       })),
       truncated,
+    };
+  }
+
+  // ── Rollups (Phase 61 E) ─────────────────────────────────────────────────────
+
+  /**
+   * Read the stored metric rollups for a period over a window (defaults: the
+   * trailing 30 buckets up to now). The rollup *job* (MetricsRollupService)
+   * writes these on an interval; this read is pure. The transparent
+   * rollup-vs-raw switch inside `/metrics/ops` is a documented follow-up.
+   */
+  getRollups(query: MetricsRollupQuery): MetricsRollupResponse {
+    const to = query.to ?? new Date().toISOString();
+    const spanMs = (query.period === 'hourly' ? 30 : 90) * DAY_MS;
+    const from = query.from ?? new Date(Date.parse(to) - spanMs).toISOString();
+    const rows = this.repo.listRollups(query.period, from, to, query.source);
+    return {
+      period: query.period,
+      from,
+      to,
+      rows: rows.map(
+        (r): MetricsRollup => ({
+          key: r.key,
+          period: r.period as MetricsRollup['period'],
+          bucketStart: r.bucketStart,
+          source: r.source as MetricsRollup['source'],
+          repo: r.repo,
+          provider: r.provider,
+          model: r.model,
+          runCount: r.runCount,
+          doneCount: r.doneCount,
+          abandonedCount: r.abandonedCount,
+          failedCount: r.failedCount,
+          cancelledCount: r.cancelledCount,
+          totalDurationMs: r.totalDurationMs,
+          retriedRuns: r.retriedRuns,
+          calls: r.calls,
+          inputTokens: r.inputTokens,
+          outputTokens: r.outputTokens,
+          estCostUsd: r.estCostUsd,
+          avgQueueDepth: r.avgQueueDepth,
+          avgSlotsUsed: r.avgSlotsUsed,
+          avgTickLatencyMs: r.avgTickLatencyMs,
+          sampleCount: r.sampleCount,
+        }),
+      ),
     };
   }
 
