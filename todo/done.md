@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-10 — feat: chat to the knowledge base — Phase 65 Theme C (PR #385)
+
+The memory workspace's center composer becomes a grounded, cited Q&A over a memory's own doc **plus its ingested sources** (Phase 65 B corpus). A separate `memory-chat` module; one running thread per memory.
+
+- [x] **Persisted chat storage** — `memory_chat_messages` (one thread per memory; `citations` JSON + `error` flag) + migration `0080`; `MemoryChatMessage` + request/history/response schemas + a `memory-chat` LLM feature in `shared`.
+- [x] **Chat endpoints (thin controller → service)** — `GET`/`POST /memories/:id/chat` in a dedicated `memory-chat` module. Retrieval **stuffs the full corpus** (memory content + each **ready** source's `extractedText` via `MemoriesService.getGroundingCorpus`) and trims by **FTS5 bm25** relevance (transient temp table) only when over a char budget (Decision §2); one structured plan-model call → `{answer, citedSourceIds}`, citations filtered to real sources. **Fail-soft:** empty corpus → honest reply (no LLM call), LLM-off / call failure → a clean error turn — never a fabricated answer.
+- [x] **Fast round-trip** — plain request/response with an optimistic pending bubble (no streaming this theme); metered via `UsageService` (`memory-chat`); graceful failure → an inline error turn.
+- [x] **Web: chat panel** — live `MemoryChatComposer`: thread bubbles (assistant markdown), **source citation chips** linking to the source, send + persisted history, disabled-with-hint when no AI provider is configured. Client methods `getMemoryChat` / `postMemoryChat`.
+- [x] **Tests** — gateway retrieval unit + service (cited/hallucination-filter/empty/LLM-off/fail-soft/over-budget) + repository integration (thread + real FTS5 rank) + controller; web composer RTL. typecheck/lint green; gateway 1867, web 1064. Phase 65 → 25/33 (76%).
+
 ## 2026-07-10 — docs: Memory Workspace guide + a11y pass — Phase 65 Theme G (partial) (PR #386)
 
 The collision-safe slice of Theme G, landed while C (chat, PR #385) and E (audio/video) are in flight: a product-facing guide for the shipped workspace + an a11y pass on the new surfaces. Per-theme unit coverage already shipped inline with A/B/D. Phase 65 → 21/33 (64%); G stays ◐ partial — its remaining specs, `memory.studio` config docs, and committed visual baselines trail C & E.

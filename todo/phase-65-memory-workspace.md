@@ -141,28 +141,18 @@ Turn bare links into an actual corpus — the substrate chat + generation stand 
 
 ---
 
-## Theme C — Chat to the knowledge base (persisted threads, cited answers) — **L**
+## Theme C — Chat to the knowledge base (persisted threads, cited answers) — **L** — ✅ DONE (PR #385, 2026-07-10)
 
 The center composer becomes a grounded Q&A over the memory + its ingested sources.
-
-- [ ] **Persisted chat storage** — a `memory_chat_messages` table (`id`, `memoryId`, `role`
-      (`user`/`assistant`), `content`, `citations` (JSON: which source/section ids), `createdAt`) + a
-      forward-only migration; `MemoryChatMessageSchema` + request/response schemas in
-      [`shared/src/memory.ts`](../packages/shared/src/memory.ts) (or a sibling `memory-chat.ts`).
-- [ ] **Chat endpoints (thin controller → service)** — `GET /memories/:id/chat` (history),
-      `POST /memories/:id/chat` (append user turn → answer). Service: **retrieve** (FTS5 rank the memory +
-      ingested source text; at notebook scale — one memory + ≤10 sources — **stuff the full corpus** into
-      context, trimming by FTS rank only when over a token budget, Decision §2) → **answer** via
-      [`LlmService.generateText`](../packages/gateway/src/agent/llm/llm.service.ts) with a
-      grounded prompt → persist both turns. Answers **cite the sources used**; the model is instructed to say
-      when the corpus doesn't cover a question (no hallucinated coverage).
-- [ ] **Streaming or fast round-trip** — stream tokens if the client path supports it; otherwise a plain
-      request/response with an optimistic pending bubble. Metered through `UsageService` like every other LLM
-      call. Graceful failure → an inline error turn, never a silent drop.
-- [ ] **Web: chat panel** — the center composer renders the thread (user/assistant bubbles, markdown, **source
-      citation chips** linking to the left-rail source), an input with send/stop, and history that survives
-      reload (`GET …/chat`). Client methods `getMemoryChat(id)` / `postMemoryChat(id, message)` in
-      [`web/lib/api.ts`](../packages/web/lib/api.ts).
+Landed — items moved to [`done.md`](done.md). A separate `memory-chat` module
+persists one thread per memory (`memory_chat_messages` + migration `0079`),
+retrieves by stuffing the corpus (memory doc + ready sources' `extractedText`) and
+trimming by **FTS5 bm25** only past a budget (§2), then answers with one structured
+plan-model call (`{answer, citedSourceIds}`, tagged `memory-chat`) — citations
+filtered to real sources, fail-soft on empty-corpus / LLM-off / call failure. The
+web composer went live: send → pending bubble → cited answer with source chips,
+persisted history, disabled-with-hint when no provider is configured. Plain
+request/response (no streaming this theme).
 
 ---
 
