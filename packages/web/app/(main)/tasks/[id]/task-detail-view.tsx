@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { TaskDetail } from '@/components/task-detail';
+import { ResourceNotFound } from '@/components/resource-not-found';
 import { getProjects, getTask, getTasks } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
 
@@ -62,9 +63,7 @@ export function TaskDetailView() {
     return (
       <div className="container max-w-3xl py-6 pb-12">
         {back}
-        <div className="rounded-xl border border-border bg-card px-5 py-12 text-center text-sm text-muted-foreground">
-          Task not found.
-        </div>
+        <ResourceNotFound feature="tasks" singular="task" />
       </div>
     );
   }

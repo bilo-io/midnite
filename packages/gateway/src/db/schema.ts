@@ -301,25 +301,6 @@ export const repos = sqliteTable(
   }),
 );
 
-export const projectSources = sqliteTable(
-  'project_sources',
-  {
-    id: text('id').primaryKey(),
-    projectId: text('project_id').notNull(),
-    url: text('url').notNull(),
-    kind: text('kind').notNull(),
-    title: text('title'),
-    faviconUrl: text('favicon_url'),
-    fetchedAt: text('fetched_at'),
-    createdAt: text('created_at').notNull(),
-    // Ascending display order within the project; drives the list/drag order.
-    position: integer('position').notNull().default(0),
-  },
-  (t) => ({
-    projectIdx: index('project_sources_project_idx').on(t.projectId),
-  }),
-);
-
 // Memories: markdown knowledge entries injected into agent prompts. project_id
 // null = global (applies to every project); otherwise scoped to that project.
 export const memories = sqliteTable(
@@ -718,8 +699,6 @@ export type ProjectRow = typeof projects.$inferSelect;
 export type ProjectInsert = typeof projects.$inferInsert;
 export type RepoRow = typeof repos.$inferSelect;
 export type RepoInsert = typeof repos.$inferInsert;
-export type ProjectSourceRow = typeof projectSources.$inferSelect;
-export type ProjectSourceInsert = typeof projectSources.$inferInsert;
 export type MemoryRow = typeof memories.$inferSelect;
 export type MemoryInsert = typeof memories.$inferInsert;
 export type MemorySourceRow = typeof memorySources.$inferSelect;

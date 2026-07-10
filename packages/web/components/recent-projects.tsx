@@ -8,7 +8,6 @@ import { ProjectModal } from '@/components/project-modal';
 import { ProjectProgressBar } from '@/components/project-progress';
 import { invalidateData } from '@/lib/data-refresh';
 import { ProjectTag } from '@/components/project-tag';
-import { SourceIcon } from '@/components/source-icon';
 import { StatusDonut, statusCounts } from '@/components/status-donut';
 import { cn } from '@/lib/utils';
 import { taskModalHref } from '@/lib/task-route';
@@ -177,18 +176,7 @@ export function ProjectCard({ project, tasks, projects, onSelectProject }: Proje
 
         <ProjectProgressBar done={doneCount} total={total} hideLabel />
 
-        <div className="mt-auto flex items-center justify-between gap-2 border-t border-border/40 pt-2">
-          {project.sources.length > 0 ? (
-            <div className="flex items-center -space-x-1">
-              {project.sources.slice(0, 5).map((s) => (
-                <span key={s.id} className="flex h-5 w-5 items-center justify-center rounded-full border border-border/60 bg-background">
-                  <SourceIcon kind={s.kind} faviconUrl={s.faviconUrl} className="h-3 w-3" />
-                </span>
-              ))}
-            </div>
-          ) : (
-            <span className="text-[11px] text-muted-foreground">No sources</span>
-          )}
+        <div className="mt-auto flex items-center justify-end gap-2 border-t border-border/40 pt-2">
           <span className="text-[11px] tabular-nums text-muted-foreground">
             Updated {relativeTime(project.updatedAt)}
           </span>
@@ -268,12 +256,7 @@ export function RecentProjects({ projects, tasks }: { projects: Project[]; tasks
                 </div>
               ) : <p className="text-[11px] text-muted-foreground">No tasks yet</p>}
               <ProjectProgressBar done={doneCount} total={total} hideLabel />
-              <div className="mt-auto flex items-center justify-between gap-2 border-t border-border/40 pt-3">
-                {project.sources.length > 0 ? (
-                  <div className="flex items-center -space-x-1">
-                    {project.sources.slice(0, 5).map((s) => <span key={s.id} className="flex h-5 w-5 items-center justify-center rounded-full border border-border/60 bg-background"><SourceIcon kind={s.kind} faviconUrl={s.faviconUrl} className="h-3 w-3" /></span>)}
-                  </div>
-                ) : <span className="text-[11px] text-muted-foreground">No sources</span>}
+              <div className="mt-auto flex items-center justify-end gap-2 border-t border-border/40 pt-3">
                 <span className="text-[11px] tabular-nums text-muted-foreground">Updated {relativeTime(project.updatedAt)}</span>
               </div>
             </button>

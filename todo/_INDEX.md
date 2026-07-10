@@ -28,6 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
+| [65 · Memory workspace](phase-65-memory-workspace.md) | 🔄 WIP | 11/33 | `███░░░░░░░` | 33% | B | C D E G |
 | [64 · Office presence](phase-64-office-presence.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
 | [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 6/33 | `██░░░░░░░░` | 18% | — | C D E F G H |
@@ -36,14 +37,14 @@
 | [59 · Chat to board](phase-59-chat-to-board.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
 | [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 15/26 | `██████░░░░` | 58% | — | — |
-| [56 · Realtime / WS reliability](phase-56-realtime-ws-reliability.md) | ✅ DONE | 17/26 | `███████░░░` | 65% | — | — |
+| [56 · Realtime / WS reliability](phase-56-realtime-ws-reliability.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [55 · Projects detail page](phase-55-projects-detail-page.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
 | [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [53 · Task lifecycle resilience](phase-53-task-lifecycle-resilience.md) | ✅ DONE | 22/22 | `██████████` | 100% | — | — |
 | [52 · In-app diff & PR review](phase-52-in-app-diff-review.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
 | [51 · Session detail page](phase-51-session-detail-page.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [50 · Autonomy guardrails](phase-50-autonomy-guardrails.md) | ✅ DONE | 29/29 | `██████████` | 100% | — | — |
-| [49 · Data portability](phase-49-data-portability.md) | ✅ DONE | 23/27 | `█████████░` | 85% | — | — |
+| [49 · Data portability](phase-49-data-portability.md) | 🔄 WIP | 23/27 | `█████████░` | 85% | G | — |
 | [48 · Slides](phase-48-slides.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [46 · Inbound integrations](phase-46-inbound-integrations.md) | ✅ DONE | 20/20 | `██████████` | 100% | — | — |
@@ -114,6 +115,16 @@ shortcut). The 2 contextual-command boxes are now **un-deferred and folded into 
 Every phase's lettered themes with a status icon + one-liner, so you can gauge scope and pick
 work without opening the phase doc. Status: `✅` done · `🔄` WIP (claimed) · `◻` TODO · `◐`
 partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
+
+### [Phase 65 — Memory workspace](phase-65-memory-workspace.md)
+*Turn the memory modal into a 3-panel `/memory/view?id=` workspace (NotebookLM-style): left sources rail, center doc + chat-to-the-knowledge-base, right Studio that generates artifacts. Sources graduate to an ingested corpus (URL bodies + file uploads); memory becomes THE knowledge notion — project sources retired. Naming stays `memory`; FTS + LlmService reuse, no embeddings.*
+- ✅ **A** — `/memory/view?id=` page: 3-panel shell + `GET /memories/:id` + routing/nav (modal reserved for create) (PR #379)
+- ◻ **B** — Source ingestion: fetch+extract URL bodies + PDF/md/txt uploads; new content storage; re-index into FTS
+- ◻ **C** — Chat to the knowledge base: persisted threads, FTS-retrieve→stuff→LlmService answer with source citations
+- ◻ **D** — Studio: un-stub media `generate`; text artifacts (brief/FAQ/study-guide/timeline) + infographic (LLM→SVG)
+- ◻ **E** — Studio: audio overview (LLM script→TTS) + video (slides+narration→ffmpeg compose); degrade w/o provider
+- ✅ **F** — Retire project sources → memories: forward migration to a project-scoped memory, drop `project_sources`, remove UI/API (PR #380)
+- ◻ **G** — Tests (gateway/shared/web + Playwright), docs + `memory.studio` config, a11y, light/dark baselines
 
 ### [Phase 64 — Office multiplayer presence](phase-64-office-presence.md)
 *Teammates as live avatars in the office (2D + 3D): a /ws/presence channel (last-known-state, no ring, zero DB), hybrid guest/JWT identity, emote wheel + locate, ghost mode, nav pill + dashboard widget; proximity chat as stretch. Theme D blocked on Phase 63 A–C.*
@@ -210,6 +221,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **D** — Shared reliable client subscription hook (tasks/ideas/approvals; resume via #313; workflow-run bespoke) (PR #316)
 - ✅ **E** — Apply across cockpits + connection-status UI (worst-of indicator + recovery toast; resync via #313) (PR #317)
 - ✅ **F** — Terminal WS alignment: seq+ts envelope on output, `resume`/`resync-required` on ring overflow (PR #311)
+- ✅ **Verification** — all 9 acceptance criteria driven end-to-end + ticked; added a browser-level reconnect-resume Playwright spec (replay + gap→resync); no gaps found (2026-07-09)
 
 ### [Phase 55 — Projects detail page](phase-55-projects-detail-page.md)
 *(Entirely web — no gateway/API changes; every project endpoint already exists. A `/projects/view?id=` cockpit cloning the session-detail layout; the modal stays for in-context use + creating.)*
@@ -266,6 +278,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **D** — CLI export/import commands (export PR #294; import PR #304)
 - ✅ **E** — Web Settings → Data page (download PR #296; restore preview→confirm PR #303; also fixed a DI bug that 500'd export)
 - ✅ **F** — Scheduled auto-backup (PR #299)
+- 🔄 **G** — Secrets round-trip (`--include-secrets` + scrypt passphrase re-wrap) + users/teams export/import (closes the deferred B/C tails)
 
 ### [Phase 48 — Slides (reveal.js decks)](phase-48-slides.md)
 *(Net-new domain; persistence mirrors workflows; web static-export `?id=`; reveal.js client-only.)*

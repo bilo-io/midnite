@@ -29,7 +29,6 @@ const PROJECT: Project = {
   description: 'Rework billing',
   tag: 'billing',
   color: '#6366f1',
-  sources: [],
   createdAt: '2026-07-01T00:00:00.000Z',
   updatedAt: '2026-07-01T00:00:00.000Z',
 };

@@ -52,7 +52,6 @@ const project: Project = {
   name: 'Acme app',
   tag: 'acme',
   color: '#6366f1',
-  sources: [],
   createdAt: '2026-07-01T00:00:00Z',
   updatedAt: '2026-07-01T00:00:00Z',
 };
@@ -67,7 +66,7 @@ describe('ProjectDetailView — shell', () => {
       expect(screen.getByRole('tab', { name: label })).toBeInTheDocument();
     }
     expect(screen.getByText('Stats & actions')).toBeInTheDocument();
-    expect(screen.getByText('Sources & activity')).toBeInTheDocument();
+    expect(screen.getByText('Knowledge & activity')).toBeInTheDocument();
     // Defaults to the Details tab.
     expect(screen.getByTestId('details-panel')).toBeInTheDocument();
   });

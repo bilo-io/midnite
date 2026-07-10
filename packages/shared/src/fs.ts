@@ -21,3 +21,14 @@ export const BrowseDirResponseSchema = z.object({
 
 export type DirEntry = z.infer<typeof DirEntrySchema>;
 export type BrowseDirResponse = z.infer<typeof BrowseDirResponseSchema>;
+
+// Contract for creating a directory from the folder picker: when the user types
+// a path that doesn't exist yet, they can create it (recursively). The response
+// is the fresh listing of the created directory, so the picker can drop straight
+// into it.
+export const CreateDirRequestSchema = z.object({
+  /** Directory to create, in `~`-form. Created recursively (like `mkdir -p`). */
+  path: z.string().min(1),
+});
+
+export type CreateDirRequest = z.infer<typeof CreateDirRequestSchema>;

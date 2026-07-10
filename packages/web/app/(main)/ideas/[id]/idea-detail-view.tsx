@@ -7,6 +7,7 @@ import { IdeaStatusChip } from '@/components/ideas/IdeaStatusChip';
 import { IdeaChatDrawer } from '@/components/ideas/IdeaChatDrawer';
 import { PromoteModal } from '@/components/ideas/PromoteModal';
 import { ProjectChip } from '@/components/ideas/ProjectChip';
+import { ResourceNotFound } from '@/components/resource-not-found';
 import { getIdea, updateIdea, deleteIdea } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
 import { cn } from '@/lib/utils';
@@ -17,7 +18,7 @@ export default function IdeaDetailView() {
   const searchParams = useSearchParams();
   const id = searchParams.get('id') ?? '';
 
-  const { data, error, refresh } = useApiData(() => getIdea(id), [id]);
+  const { data, loading, error, refresh } = useApiData(() => getIdea(id), [id]);
   const idea = data?.idea ?? null;
 
   // Drawer open-state lives in the URL (?chat=open) so "+ New idea" can deep-link
@@ -68,12 +69,8 @@ export default function IdeaDetailView() {
     router.push('/ideas');
   }, [idea, router]);
 
-  if (error) {
-    return (
-      <div className="container py-8">
-        <p className="text-sm text-destructive">{error}</p>
-      </div>
-    );
+  if (!id || error || (!loading && !idea)) {
+    return <ResourceNotFound feature="ideas" singular="idea" />;
   }
 
   if (!idea) {

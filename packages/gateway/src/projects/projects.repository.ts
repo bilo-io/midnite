@@ -1,18 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
-import type { Project, ProjectSource, SourceKind, Status, TaskStatusCounts, TeamScope } from '@midnite/shared';
+import type { Project, Status, TaskStatusCounts, TeamScope } from '@midnite/shared';
 import { DB_TOKEN, type MidniteDb } from '../db/db.module';
 import { teamScopeFilter } from '../db/team-scope';
 import {
   media,
-  projectSources,
   projects,
   roadmapMilestones,
   tasks,
   type ProjectInsert,
   type ProjectRow,
-  type ProjectSourceInsert,
-  type ProjectSourceRow,
 } from '../db/schema';
 
 @Injectable()
@@ -71,69 +68,8 @@ export class ProjectsRepository {
       tx.update(media).set({ projectId: null }).where(eq(media.projectId, id)).run();
       // Remove the project's milestones (their tasks were just un-assigned above).
       tx.delete(roadmapMilestones).where(eq(roadmapMilestones.projectId, id)).run();
-      tx.delete(projectSources).where(eq(projectSources.projectId, id)).run();
       tx.delete(projects).where(eq(projects.id, id)).run();
     });
-  }
-
-  insertSource(row: ProjectSourceInsert): ProjectSourceRow {
-    return this.db.insert(projectSources).values(row).returning().get();
-  }
-
-  listSources(projectId: string): ProjectSourceRow[] {
-    return this.db
-      .select()
-      .from(projectSources)
-      .where(eq(projectSources.projectId, projectId))
-      // Explicit order first; createdAt breaks ties (e.g. legacy rows at 0).
-      .orderBy(asc(projectSources.position), asc(projectSources.createdAt))
-      .all();
-  }
-
-  /** Next append position for a project (max existing + 1, or 0 when empty). */
-  nextSourcePosition(projectId: string): number {
-    const rows = this.db
-      .select({ position: projectSources.position })
-      .from(projectSources)
-      .where(eq(projectSources.projectId, projectId))
-      .all();
-    return rows.reduce((max, r) => Math.max(max, r.position), -1) + 1;
-  }
-
-  /** Persist a new order: each id's position becomes its index in the list. */
-  reorderSources(projectId: string, orderedIds: string[]): void {
-    this.db.transaction((tx) => {
-      orderedIds.forEach((id, position) => {
-        tx.update(projectSources)
-          .set({ position })
-          .where(and(eq(projectSources.id, id), eq(projectSources.projectId, projectId)))
-          .run();
-      });
-    });
-  }
-
-  getSource(projectId: string, sourceId: string): ProjectSourceRow | undefined {
-    return this.db
-      .select()
-      .from(projectSources)
-      .where(and(eq(projectSources.id, sourceId), eq(projectSources.projectId, projectId)))
-      .get();
-  }
-
-  deleteSource(projectId: string, sourceId: string): void {
-    this.db
-      .delete(projectSources)
-      .where(and(eq(projectSources.id, sourceId), eq(projectSources.projectId, projectId)))
-      .run();
-  }
-
-  countSources(projectId: string): number {
-    const row = this.db
-      .select({ c: sql<number>`COUNT(*)` })
-      .from(projectSources)
-      .where(eq(projectSources.projectId, projectId))
-      .get();
-    return Number(row?.c ?? 0);
   }
 
   /** Per-status task counts for one project (Phase 58 C). */
@@ -187,26 +123,12 @@ export class ProjectsRepository {
       archived: row.archivedAt != null,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
-      sources: this.listSources(row.id).map((s) => this.toSource(s)),
       taskCount,
       taskStatusCounts: counts,
       ideaId: row.ideaId ?? undefined,
       // null = unset (defaults on); 0 = off, 1 = on.
       phaseDocSync: row.phaseDocSync == null ? undefined : row.phaseDocSync === 1,
       phaseDocSyncRepoId: row.phaseDocSyncRepoId ?? undefined,
-    };
-  }
-
-  private toSource(row: ProjectSourceRow): ProjectSource {
-    return {
-      id: row.id,
-      projectId: row.projectId,
-      url: row.url,
-      kind: row.kind as SourceKind,
-      title: row.title ?? undefined,
-      faviconUrl: row.faviconUrl ?? undefined,
-      fetchedAt: row.fetchedAt ?? undefined,
-      createdAt: row.createdAt,
     };
   }
 }

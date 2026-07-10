@@ -15,6 +15,7 @@ import { ProjectPhaseDocsPanel } from '@/components/projects/panels/project-phas
 import { ProjectRoadmapPanel } from '@/components/projects/panels/project-roadmap-panel';
 import { ProjectStatsPanel } from '@/components/projects/project-stats-panel';
 import { ProjectInfoPanel } from '@/components/projects/project-info-panel';
+import { ResourceNotFound } from '@/components/resource-not-found';
 import { getMemories, getProject, getTasks } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
 import { taskPageHref } from '@/lib/task-route';
@@ -69,9 +70,7 @@ export function ProjectDetailContainer() {
     return (
       <div className="container max-w-3xl py-6 pb-12">
         {back}
-        <div className="rounded-xl border border-border bg-card px-5 py-12 text-center text-sm text-muted-foreground">
-          Project not found.
-        </div>
+        <ResourceNotFound feature="projects" singular="project" />
       </div>
     );
   }
@@ -183,9 +182,9 @@ export function ProjectDetailView({
             </div>
           </div>
 
-          {/* Right rail — sources + activity. */}
-          <Rail side="right" open={rightOpen} isMobile={isMobile} onToggle={() => setRightOpen(!rightOpen)} title="Sources & activity">
-            <ProjectInfoPanel project={project} tasks={tasks} onChange={reload} onSelectTask={openTask} />
+          {/* Right rail — knowledge + activity. */}
+          <Rail side="right" open={rightOpen} isMobile={isMobile} onToggle={() => setRightOpen(!rightOpen)} title="Knowledge & activity">
+            <ProjectInfoPanel project={project} tasks={tasks} onSelectTask={openTask} />
           </Rail>
         </div>
       </div>

@@ -22,7 +22,6 @@ function sampleDomains(): DomainPayload[] {
           createdAt: NOW,
           updatedAt: NOW,
           archived: false,
-          sources: [{ id: 'ps1', projectId: 'p1', url: 'https://x', kind: 'link', position: 0, createdAt: NOW }],
         },
       ],
     },
@@ -144,9 +143,6 @@ describe('PortabilityImportService', () => {
       expect(rows("SELECT * FROM task_links WHERE task_id='t1'")).toHaveLength(1);
       const dep = one('SELECT * FROM task_dependencies');
       expect(dep).toMatchObject({ task_id: 't1', depends_on_task_id: 't2' });
-
-      // Project + nested source.
-      expect(rows("SELECT * FROM project_sources WHERE project_id='p1'")).toHaveLength(1);
 
       // Notes boolean → 0/1.
       expect(one("SELECT completed FROM notes WHERE id='n1'")['completed']).toBe(1);

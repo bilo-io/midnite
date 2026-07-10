@@ -172,8 +172,7 @@ export function PlanPanel({ project, onClose, onChanged }: Props) {
             <div className="min-w-0 flex-1">
               <h2 className="truncate text-sm font-semibold">{project.name} — plan</h2>
               <p className="text-xs text-muted-foreground">
-                Drafted from the description and {project.sources.length} source
-                {project.sources.length === 1 ? '' : 's'}.
+                Drafted from the project description and its knowledge.
               </p>
             </div>
             <Button type="button" variant="ghost" size="icon" aria-label="Close" onClick={onClose}>

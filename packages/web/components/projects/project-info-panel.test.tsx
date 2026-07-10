@@ -2,10 +2,9 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Project, Task } from '@midnite/shared';
 
-// The Sources editor is its own unit (project-sources-panel.test.tsx) — stub it
-// so this stays about the Activity list.
-vi.mock('@/components/projects/panels/project-sources-panel', () => ({
-  ProjectSourcesPanel: () => <div data-testid="sources-panel" />,
+const push = vi.fn();
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push }),
 }));
 
 import { ProjectInfoPanel } from './project-info-panel';
@@ -18,7 +17,6 @@ const project: Project = {
   name: 'Acme app',
   tag: 'acme',
   color: '#6366f1',
-  sources: [],
   createdAt: '2026-07-01T00:00:00Z',
   updatedAt: '2026-07-01T00:00:00Z',
 };
@@ -30,17 +28,19 @@ it('lists recent tasks newest-first and fires onSelectTask on click', () => {
   const onSelectTask = vi.fn();
   const older = mk('t1', 'Older task', '2026-07-01T00:00:00Z');
   const newer = mk('t2', 'Newer task', '2026-07-04T00:00:00Z');
-  render(<ProjectInfoPanel project={project} tasks={[older, newer]} onChange={vi.fn()} onSelectTask={onSelectTask} />);
+  render(<ProjectInfoPanel project={project} tasks={[older, newer]} onSelectTask={onSelectTask} />);
 
-  const items = screen.getAllByRole('button');
-  // Newest first.
-  expect(items[0]).toHaveTextContent('Newer task');
-  fireEvent.click(screen.getByText('Older task'));
+  // Newest-first: the newer task's node precedes the older one in the DOM.
+  const newerBtn = screen.getByText('Newer task');
+  const olderBtn = screen.getByText('Older task');
+  expect(newerBtn.compareDocumentPosition(olderBtn) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  fireEvent.click(olderBtn);
   expect(onSelectTask).toHaveBeenCalledWith(older);
 });
 
-it('shows an empty activity state and still renders sources', () => {
-  render(<ProjectInfoPanel project={project} tasks={[]} onChange={vi.fn()} />);
-  expect(screen.getByTestId('sources-panel')).toBeInTheDocument();
+it('links to the project-scoped memory and shows an empty activity state', () => {
+  render(<ProjectInfoPanel project={project} tasks={[]} />);
+  fireEvent.click(screen.getByText('Manage knowledge in Memory'));
+  expect(push).toHaveBeenCalledWith('/memory?scope=p1');
   expect(screen.getByText('No task activity yet.')).toBeInTheDocument();
 });

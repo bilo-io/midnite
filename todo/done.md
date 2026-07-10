@@ -13,6 +13,33 @@ Bounds observability history without losing the truth: pre-aggregated rollups + 
 - [x] **Retention**: prunes raw rows past `metrics.rawRetentionDays` (default 30) once rolled up (aggregation window covers the prune cutoff); rollups kept forever; `task_events`/`task_failures` never pruned; `0` disables.
 - [◐] **Query surface**: `GET /metrics/rollups` + contract landed; the transparent rollup-vs-raw switch inside `/metrics/ops`+`usage/summary` deferred to a follow-up (perf-tuning on live reads, wants the P57 bench).
 - Gateway 1822 tests green (repo aggregation/idempotency/prune/list ×9, service ×5, pure bucketing ×6) + shared contract round-trip.
+## 2026-07-10 — feat(web,gateway): retire project sources → memory — Phase 65 Theme F (PR #380)
+
+Projects stop carrying a parallel "sources" concept; memory becomes the single knowledge notion. Existing project sources migrate into a project-scoped memory, and the whole parallel surface (API, schema, table, UI) is removed. Forward-only, full removal (Decision §4).
+
+- [x] **Forward-only data migration** — `ProjectSourcesMigrationService` (boot `onModuleInit`, idempotent, fail-open): for each project with `project_sources`, create **one** project-scoped memory `"{Project} — knowledge"` (order + `kind`/`title`/`favicon`/`fetchedAt` preserved), then `DROP TABLE project_sources`. Skips empty projects, orphan sources, and projects already migrated (matched by derived title). Copies via the raw SQLite handle because the table no longer has a Drizzle schema entry; the drop lives in the service (Drizzle migrations run before `onModuleInit`, so a SQL-file drop would precede the copy).
+- [x] **Remove the gateway surface** — deleted `addProjectSource`/`removeProjectSource`/`reorderProjectSources` endpoints + service/repo methods + the `project_sources` schema entry; dropped `ProjectSource`, `Project.sources`, `CreateProjectRequest.sources`, `AddSourceRequestSchema`, `MAX_SOURCES_PER_PROJECT` from `shared`; removed the report `## Sources` section + the portability `sources` child mapping.
+- [x] **Remove the web surface** — dropped the modal **Sources tab**, the detail-page right-rail sources editor (now **"Manage knowledge in Memory"** → `/memory?scope=<id>`, rail retitled "Knowledge & activity"), and source favicon chips on cards / recent-projects / tree; deleted `project-sources-panel.tsx` + the project-source client methods.
+- [x] **Kept `SourceListEditor` + `ReorderSourcesRequestSchema` shared** — still used by memory sources; only the project usage was removed.
+- [x] **Tests** — new `ProjectSourcesMigrationService` spec (migrate/order/metadata, idempotent, skip-existing, empty, orphan) on `:memory:` SQLite; web `project-info-panel` link+nav RTL; updated modal story + detail-view rail; typecheck/lint/test green (gateway 1802, web 1047, ui 54). Phase 65 → 11/33 (33%).
+
+## 2026-07-10 — feat(web): memory workspace page — Phase 65 Theme A (PR #379)
+
+The memory modal graduates to a full-page, 3-panel workspace at `/memory/view?id=` — the frame the rest of Phase 65 (chat, ingestion, Studio) hangs on. Naming stays `memory` (no rebrand).
+
+- [x] **`GET /memories/:id`** ([`memories.controller.ts`](phase-65-memory-workspace.md); service `getMemory` already 404s) + client `getMemory`; `routeFor('memory')` → `/memory/view?id=` so search hits open the page.
+- [x] **3-panel workspace** ([`memory-detail-view.tsx`](phase-65-memory-workspace.md)) cloning the Phase 55 two-rail cockpit: sources rail (left) · doc editor + chat composer (center) · Studio artifact rail (right). Both rails open by default, per-rail persisted; mobile → drawers.
+- [x] **Chat + Studio scaffolded disabled** ("coming soon") — Themes C–E wire them live.
+- [x] **Shared panels** extracted into `components/memory/` (scope select, doc editor, live sources) so modal + page never drift; the **modal is now create-only**; list cards navigate to the page.
+- [x] **Tests:** detail-view shell + not-found RTL, doc-panel save/dirty + delete, an e2e flow (`memory-workspace.e2e.ts`), and a light/dark shots spec. Phase 65 → 7/33 (21%) in `_INDEX.md`.
+
+## 2026-07-09 — test(web): reconnect-resume e2e — Phase 56 verification sweep
+
+Closed out Phase 56 (all themes A–F already merged) by driving its 9 acceptance criteria end-to-end and ticking each against its proof. The headline no-drift guarantee had gateway units + web hook tests but no browser-level proof — now it does.
+
+- [x] **Verified all 9 acceptance criteria** against existing gateway/web tests (seq/ring/replay, resume gap→resync, dedup/watermark, backpressure drop, heartbeat reap, connection-status, terminal alignment, restart-forces-resync, full gate green). No gaps surfaced — nothing to fix.
+- [x] **New durable e2e** [`reconnect-resume.e2e.ts`](phase-56-realtime-ws-reliability.md): against the real gateway + WS, a wrapped `WebSocket` forces a genuine `/ws/tasks` drop while a **keeper** client keeps the ring warm; a small gap → `resume`-replay convergence, a gap > ring → `resync-required` + full refetch. Fixture pins `ws.ringSize:16`.
+- [x] **Phase 56 → 26/26 (100%)** in `_INDEX.md`; verification note added to its theme key.
 
 ## 2026-07-09 — test(cli)+feat: CLI robustness & coverage — Phase 60 Theme K (PR #376)
 

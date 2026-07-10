@@ -1,11 +1,15 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { ChevronUp, Folder, FolderOpen, Home, Loader2 } from 'lucide-react';
+import { ChevronUp, Folder, FolderOpen, FolderPlus, Home, Loader2 } from 'lucide-react';
 import type { BrowseDirResponse } from '@midnite/shared';
-import { browseDirectory } from '@/lib/api';
+import { browseDirectory, createDirectory } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+
+// A path that failed to open only because it doesn't exist yet (vs. a
+// permission error or a non-directory) can be offered up for creation.
+const MISSING_DIR = /ENOENT|no such file or directory/i;
 
 type Props = {
   /** Where to open the browser (`~`-form); defaults to the home directory. */
@@ -22,10 +26,15 @@ export function FolderPicker({ initialPath, onSelect, onClose }: Props) {
   const [data, setData] = useState<BrowseDirResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // The path we last tried to open — so a "create folder" offer knows what to
+  // create when that path turns out not to exist.
+  const [attempted, setAttempted] = useState<string | undefined>(initialPath);
+  const [creating, setCreating] = useState(false);
 
   const navigate = useCallback(async (path?: string) => {
     setLoading(true);
     setError(null);
+    setAttempted(path);
     try {
       setData(await browseDirectory(path));
     } catch (e) {
@@ -34,6 +43,19 @@ export function FolderPicker({ initialPath, onSelect, onClose }: Props) {
       setLoading(false);
     }
   }, []);
+
+  const create = useCallback(async () => {
+    if (!attempted) return;
+    setCreating(true);
+    setError(null);
+    try {
+      setData(await createDirectory(attempted));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Cannot create that folder');
+    } finally {
+      setCreating(false);
+    }
+  }, [attempted]);
 
   useEffect(() => {
     void navigate(initialPath);
@@ -87,7 +109,30 @@ export function FolderPicker({ initialPath, onSelect, onClose }: Props) {
                 <Loader2 className="h-5 w-5 animate-spin" />
               </div>
             ) : error ? (
-              <p className="px-2 py-4 text-sm text-destructive">{error}</p>
+              <div className="flex flex-col items-start gap-3 px-2 py-4">
+                <p className="text-sm text-destructive">{error}</p>
+                {attempted && MISSING_DIR.test(error) ? (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">
+                      This folder doesn’t exist yet. Create it?
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void create()}
+                      disabled={creating}
+                    >
+                      {creating ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <FolderPlus className="h-4 w-4" />
+                      )}
+                      <span className="min-w-0 truncate">Create {attempted}</span>
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
             ) : (
               <ul className="space-y-0.5">
                 {data?.parent ? (

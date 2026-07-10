@@ -9,6 +9,7 @@ import { PageHeader } from '@/components/page-header';
 import { ConnectionStatus } from '@/components/connection-status';
 import { SessionInfoPanel } from '@/components/session-info-panel';
 import { SessionTerminalRegion } from '@/components/session-terminal-region';
+import { ResourceNotFound } from '@/components/resource-not-found';
 import { getProject, getSession, getTask } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
 import { useLocalStorage } from '@/lib/use-local-storage';
@@ -54,9 +55,7 @@ export function SessionDetailContainer() {
     return (
       <div className="container max-w-3xl py-6 pb-12">
         {back}
-        <div className="rounded-xl border border-border bg-card px-5 py-12 text-center text-sm text-muted-foreground">
-          Session not found.
-        </div>
+        <ResourceNotFound feature="sessions" singular="session" />
       </div>
     );
   }

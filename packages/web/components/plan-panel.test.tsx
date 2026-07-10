@@ -30,7 +30,6 @@ function makeProject(overrides: Partial<Project> = {}): Project {
     color: '#3366ff',
     createdAt: NOW,
     updatedAt: NOW,
-    sources: [],
     ...overrides,
   };
 }

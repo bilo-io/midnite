@@ -58,7 +58,7 @@ describe('index mappers', () => {
   it('routes each type to a navigable path', () => {
     expect(routeFor('task', 't1')).toBe('/tasks');
     expect(routeFor('project', 'p1')).toBe('/projects');
-    expect(routeFor('memory', 'm1')).toBe('/memory');
+    expect(routeFor('memory', 'm1')).toBe('/memory/view?id=m1');
     expect(routeFor('note', 'n1')).toBe('/dashboard');
     expect(routeFor('council', 'c1')).toBe('/councils/c1');
     expect(routeFor('workflow', 'w 1')).toBe('/workflows/edit?id=w%201');

@@ -39,29 +39,6 @@ export const project: Project = {
   createdAt: '2026-05-01T09:00:00.000Z',
   updatedAt: '2026-06-10T09:00:00.000Z',
   taskCount: 12,
-  sources: [
-    {
-      id: 'src-1',
-      projectId: 'proj-web',
-      url: 'https://github.com/acme/midnite',
-      kind: 'github',
-      createdAt: '2026-05-01T09:00:00.000Z',
-    },
-    {
-      id: 'src-2',
-      projectId: 'proj-web',
-      url: 'https://www.figma.com/design/abc/midnite',
-      kind: 'figma',
-      createdAt: '2026-05-02T09:00:00.000Z',
-    },
-    {
-      id: 'src-3',
-      projectId: 'proj-web',
-      url: 'https://docs.google.com/document/d/xyz',
-      kind: 'google-docs',
-      createdAt: '2026-05-03T09:00:00.000Z',
-    },
-  ],
 };
 
 export const projectMinimal: Project = {
@@ -72,7 +49,6 @@ export const projectMinimal: Project = {
   createdAt: '2026-06-01T09:00:00.000Z',
   updatedAt: '2026-06-01T09:00:00.000Z',
   taskCount: 0,
-  sources: [],
 };
 
 // --- Tasks ---

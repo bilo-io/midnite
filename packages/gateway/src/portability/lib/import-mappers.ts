@@ -9,7 +9,6 @@ import {
   memories,
   memorySources,
   notes,
-  projectSources,
   projects,
   repos,
   routineGroups,
@@ -121,7 +120,7 @@ function workflowTransform(obj: Obj): Obj {
  */
 export const IMPORT_DOMAINS: DomainSpec[] = [
   { name: 'repos', parent: repos },
-  { name: 'projects', parent: projects, transform: archivedToTimestamp, children: [{ field: 'sources', table: projectSources, fk: 'projectId' }] },
+  { name: 'projects', parent: projects, transform: archivedToTimestamp },
   { name: 'memories', parent: memories, transform: archivedToTimestamp, children: [{ field: 'sources', table: memorySources, fk: 'memoryId' }] },
   {
     name: 'tasks',

@@ -10,9 +10,7 @@ import {
   exportProjectMarkdown,
 } from '@/lib/api';
 import {
-  MAX_SOURCES_PER_PROJECT,
   MAX_TAG_LENGTH,
-  detectSourceKind,
   type Memory,
   type Project,
   type TaskSummary,
@@ -21,9 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { FolderPicker } from '@/components/folder-picker';
 import { DEFAULT_COLOR, TagColorPicker } from '@/components/tag-color-picker';
-import { SourceListEditor } from '@/components/source-list-editor';
 import { ProjectDetailsPanel } from '@/components/projects/panels/project-details-panel';
-import { ProjectSourcesPanel } from '@/components/projects/panels/project-sources-panel';
 import { ProjectPlanPanel } from '@/components/projects/panels/project-plan-panel';
 import { ProjectTasksPanel } from '@/components/projects/panels/project-tasks-panel';
 import { ProjectPhaseDocsPanel } from '@/components/projects/panels/project-phasedocs-panel';
@@ -53,7 +49,7 @@ type Props = {
   onSaved: () => void;
 };
 
-type Tab = 'details' | 'sources' | 'plan' | 'tasks' | 'phasedocs';
+type Tab = 'details' | 'plan' | 'tasks' | 'phasedocs';
 
 /** Tab keys aren't all single words — map the ones that need a custom label. */
 const TAB_LABELS: Partial<Record<Tab, string>> = { phasedocs: 'Phase docs' };
@@ -84,9 +80,7 @@ export function ProjectModal({
   const [picking, setPicking] = useState(false);
   // The plan panel's nested doc editor owns Escape while open (see guard below).
   const [planDocOpen, setPlanDocOpen] = useState(false);
-  // Create mode stages URLs client-side; edit mode mutates the live project.
-  const [staged, setStaged] = useState<string[]>([]);
-  const [current, setCurrent] = useState<Project | null>(project);
+  const current = project;
 
   const [aiLoading, setAiLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -102,11 +96,10 @@ export function ProjectModal({
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose, picking, planDocOpen]);
 
-  const sourceCount = isEdit ? current?.sources.length ?? 0 : staged.length;
   const taskCount = tasks?.length ?? 0;
   // Planning and Tasks only make sense for an existing project.
-  const tabs: Tab[] = isEdit ? ['details', 'sources', 'plan', 'tasks', 'phasedocs'] : ['details', 'sources'];
-  const tabCounts: Partial<Record<Tab, number>> = { sources: sourceCount, tasks: taskCount };
+  const tabs: Tab[] = isEdit ? ['details', 'plan', 'tasks', 'phasedocs'] : ['details'];
+  const tabCounts: Partial<Record<Tab, number>> = { tasks: taskCount };
   const tagTooLong = tag.trim().length > MAX_TAG_LENGTH;
   const canSave = name.trim().length > 0 && tag.trim().length > 0 && !tagTooLong;
 
@@ -138,7 +131,6 @@ export function ProjectModal({
         tag: tag.trim(),
         color,
         workDir: workDir.trim() || undefined,
-        sources: staged,
       });
       onSaved();
       onClose();
@@ -152,7 +144,7 @@ export function ProjectModal({
     if (!current) return;
     const ok = await confirm({
       title: 'Delete this project?',
-      description: `“${current.name}” and its sources will be permanently deleted. This can’t be undone.`,
+      description: `“${current.name}” will be permanently deleted. This can’t be undone.`,
       confirmLabel: 'Delete project',
     });
     if (!ok) return;
@@ -343,35 +335,6 @@ export function ProjectModal({
                     </p>
                   </div>
                 </div>
-              )}
-            </div>
-
-            {/* Sources */}
-            <div role="tabpanel" className={cn('space-y-2', tab === 'sources' ? '' : 'hidden')}>
-              {isEdit && current ? (
-                <ProjectSourcesPanel project={current} onChange={setCurrent} />
-              ) : (
-                <>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-muted-foreground">Sources</span>
-                    <span className="text-[11px] tabular-nums text-muted-foreground">
-                      {sourceCount}/{MAX_SOURCES_PER_PROJECT}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground">
-                    Reference links for this project — drag the grip to reorder. Included when drafting a plan.
-                  </p>
-                  <SourceListEditor
-                    sources={staged.map((url) => ({ id: url, url, kind: detectSourceKind(url) }))}
-                    max={MAX_SOURCES_PER_PROJECT}
-                    placeholder="Paste a Google Docs, Notion, or YouTube link"
-                    onAdd={(url) => {
-                      if (!staged.includes(url)) setStaged((prev) => [...prev, url]);
-                    }}
-                    onRemove={(id) => setStaged((prev) => prev.filter((u) => u !== id))}
-                    onReorder={(ids) => setStaged(ids)}
-                  />
-                </>
               )}
             </div>
 
