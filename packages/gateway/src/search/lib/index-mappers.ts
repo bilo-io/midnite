@@ -85,7 +85,7 @@ export function routeFor(type: SearchType, id: string): string {
     case 'project':
       return '/projects';
     case 'memory':
-      return '/memory';
+      return `/memory/view?id=${encodeURIComponent(id)}`;
     case 'note':
       // Notes live on the dashboard (NotesPanel), not a dedicated route.
       return '/dashboard';

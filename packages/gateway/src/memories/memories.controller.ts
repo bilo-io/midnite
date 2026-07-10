@@ -28,6 +28,13 @@ export class MemoriesController {
     return { memories: this.service.listMemories() };
   }
 
+  // The detail page (Phase 65 A) fetches a single memory by id; the service
+  // throws NotFoundException → 404 for an unknown id.
+  @Get(':id')
+  getMemory(@Param('id') id: string): MemoryResponse {
+    return { memory: this.service.getMemory(id) };
+  }
+
   @Post()
   async createMemory(@Body() body: unknown): Promise<MemoryResponse> {
     const parsed = CreateMemoryRequestSchema.safeParse(body);
