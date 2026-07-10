@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { getWorkflow } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
 import { DesktopOnly } from '@/components/desktop-only';
+import { ResourceNotFound } from '@/components/resource-not-found';
 import dynamic from 'next/dynamic';
 
 const WorkflowEditor = dynamic(
@@ -24,7 +25,7 @@ function Editor() {
   // editor — and any unsaved canvas edits — over a transient blip. As long as a
   // workflow is in hand, keep rendering the editor.
   if (!id || (!workflow && (error || !loading))) {
-    return <div className="container py-12 text-sm text-muted-foreground">Workflow not found.</div>;
+    return <ResourceNotFound feature="workflows" singular="workflow" />;
   }
   if (!workflow) return null;
   return <WorkflowEditor workflow={workflow} />;

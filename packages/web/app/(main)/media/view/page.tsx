@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { getMedia, getProjects } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
+import { ResourceNotFound } from '@/components/resource-not-found';
 import { MediaDetailView } from '../[id]/media-detail-view';
 
 // Static-export-friendly replacement for /media/[id]: id from ?id=.
@@ -17,7 +18,7 @@ function Detail() {
   const projects = data?.[1] ?? [];
 
   if (!id || error || (!loading && !media)) {
-    return <div className="container py-12 text-sm text-muted-foreground">Media not found.</div>;
+    return <ResourceNotFound feature="media" singular="media item" />;
   }
   if (!media) return null;
   return <MediaDetailView mode="edit" initial={media} projects={projects} />;
