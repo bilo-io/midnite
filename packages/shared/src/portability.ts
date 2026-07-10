@@ -13,6 +13,26 @@ export const SecretsModeSchema = z.enum(SECRETS_MODES);
 export type SecretsMode = z.infer<typeof SecretsModeSchema>;
 
 /**
+ * KDF parameters for a `passphrase`-mode archive (Theme G). A **single** random
+ * salt + scrypt cost params live in the manifest; every re-wrapped secret derives
+ * one key from `(passphrase, salt, params)` on import — one KDF run, not one per
+ * secret. Present only when `secretsMode === 'passphrase'`.
+ */
+export const KdfParamsSchema = z.object({
+  /** base64-encoded random salt. */
+  salt: z.string().min(1),
+  /** scrypt cost (CPU/memory) — a power of two. */
+  N: z.number().int().positive(),
+  /** scrypt block size. */
+  r: z.number().int().positive(),
+  /** scrypt parallelization. */
+  p: z.number().int().positive(),
+  /** derived key length in bytes (32 for AES-256). */
+  keyLen: z.number().int().positive(),
+});
+export type KdfParams = z.infer<typeof KdfParamsSchema>;
+
+/**
  * Root archive manifest. `schemaVersion` is the exporting instance's applied
  * migration index (see `schema_meta`) — import compares it to its own to decide
  * compatibility. `domains` lists which per-domain payloads the archive carries.
@@ -23,8 +43,29 @@ export const ArchiveManifestSchema = z.object({
   createdAt: z.string(),
   domains: z.array(z.string()),
   secretsMode: SecretsModeSchema,
+  /** Present iff `secretsMode === 'passphrase'` — the KDF for the `secrets` payload. */
+  kdf: KdfParamsSchema.optional(),
 });
 export type ArchiveManifest = z.infer<typeof ArchiveManifestSchema>;
+
+/** Fixed archive-domain name carrying re-wrapped secrets (Theme G). Kept separate
+ *  from the work domains so secret-free payloads stay byte-identical to today. */
+export const SECRETS_DOMAIN = 'secrets';
+
+/**
+ * One re-wrapped secret in the `secrets` payload (Theme G). Locates the field by
+ * `{table, entityId, field}` and carries the passphrase-wrapped ciphertext (`blob`).
+ * On import the blob is unwrapped with the passphrase key, then **re-encrypted**
+ * under the target instance's `MIDNITE_SECRET_KEY` before it touches the column —
+ * raw per-instance blobs never travel (the export key can't decrypt them elsewhere).
+ */
+export const SecretRecordSchema = z.object({
+  table: z.string(),
+  entityId: z.string(),
+  field: z.string(),
+  blob: z.string().min(1),
+});
+export type SecretRecord = z.infer<typeof SecretRecordSchema>;
 
 /**
  * A compact export summary (Phase 49 D): the manifest plus per-domain record
@@ -38,10 +79,10 @@ export const BackupSummarySchema = ArchiveManifestSchema.extend({
 export type BackupSummary = z.infer<typeof BackupSummarySchema>;
 
 /**
- * The portable domains a backup currently carries + a human label, for a
- * display-only "what's included" summary (Phase 49 E). Mirrors the export
- * service's `sources()` — the secret-free *work* domains this slice ships;
- * `users`/`teams` + secret-bearing domains join with the import/secrets slices.
+ * The portable domains a backup carries + a human label, for a display-only
+ * "what's included" summary (Phase 49 E). The secret-free *work* domains, plus
+ * (Theme G) users/teams and the secret-bearing integration domains — their
+ * config always rides along; the secret material only under `passphrase` mode.
  */
 export const PORTABLE_DOMAINS: ReadonlyArray<{ name: string; label: string }> = [
   { name: 'tasks', label: 'Tasks' },
@@ -55,6 +96,11 @@ export const PORTABLE_DOMAINS: ReadonlyArray<{ name: string; label: string }> = 
   { name: 'ideas', label: 'Ideas' },
   { name: 'approvalRules', label: 'Approval rules' },
   { name: 'workflows', label: 'Workflows' },
+  { name: 'users', label: 'Users & profiles' },
+  { name: 'teams', label: 'Teams & memberships' },
+  { name: 'llmProviders', label: 'LLM providers' },
+  { name: 'webhooks', label: 'Webhooks' },
+  { name: 'workflowCredentials', label: 'Workflow credentials' },
 ];
 
 /** One archive file on disk (Phase 49 F auto-backup status). */
@@ -122,6 +168,10 @@ export const ImportPreviewSchema = z.object({
   compat: SchemaCompatSchema,
   /** True when import is safe to proceed without forcing. */
   importable: z.boolean(),
+  /** Human-readable heads-up before restoring (Theme G): a `replace` that carries
+   *  users signs you out; a `passphrase` archive needs the passphrase / a target
+   *  key to restore its secrets. Advisory — they don't block `importable`. */
+  warnings: z.array(z.string()).default([]),
 });
 export type ImportPreview = z.infer<typeof ImportPreviewSchema>;
 
@@ -145,6 +195,10 @@ export const ImportResultSchema = z.object({
   skipped: z.record(z.number().int().nonnegative()).default({}),
   /** True when the post-restore search reindex succeeded (fail-open: false ⇒ reindex warned). */
   reindexed: z.boolean().default(false),
+  /** Secrets re-encrypted under this instance's key + written (Theme G). */
+  secretsRestored: z.number().int().nonnegative().default(0),
+  /** Secrets skipped — no passphrase given, or no `MIDNITE_SECRET_KEY` to re-encrypt under. */
+  secretsSkipped: z.number().int().nonnegative().default(0),
 });
 export type ImportResult = z.infer<typeof ImportResultSchema>;
 
