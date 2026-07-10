@@ -164,7 +164,7 @@ export function WorkflowsView({ initial }: { initial: WorkflowSummary[] }) {
 
   return (
     <div className="space-y-4">
-      <div className="reveal-controls flex items-center justify-between gap-3">
+      <div className="reveal-controls flex flex-wrap items-center justify-between gap-3 gap-y-2">
         <p className="text-xs tabular-nums text-muted-foreground">
           {filtered.length} workflow{filtered.length === 1 ? '' : 's'}
         </p>
