@@ -289,7 +289,7 @@ focus-trap, a board `KeyboardSensor` — are documented for a remediation phase.
 - [x] **Report:** [`todo/phase-60-findings/I-accessibility.md`](phase-60-findings/I-accessibility.md)
       — 12 findings (7 fixed inline, 5 documented), ranked, each with evidence + a remediation backlog. (PR #374)
 
-## Theme J — Mobile & responsive polish — **M** — ✅ DONE (PR #TBD, 2026-07-10)
+## Theme J — Mobile & responsive polish — **M** — ✅ DONE (PR #387, 2026-07-10)
 
 The small-screen + PWA paths.
 

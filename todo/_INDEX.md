@@ -181,7 +181,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **G** — Error handling & failure-path correctness (13 findings, no P0; SW-1/2 + FO-2 + ES-1 the standouts) (PR #369)
 - ✅ **H** — Consistency & flow sweep (15 findings; systemic loading≈empty≈error; P1 Ideas dead-end) (PR #373)
 - ✅ **I** — Accessibility & keyboard navigation: audited all surfaces; fixed 7 ARIA quick-wins (tabs kbd nav, palette combobox, collapse inert, dialog focus-trap) + axe gate→error + contrast script; 5 documented (PR #374)
-- ✅ **J** — Mobile & responsive polish: fixed horizontal overflow on projects/ops/schedules/workflows + settings-table clipping; audit shots lock it (PR #TBD)
+- ✅ **J** — Mobile & responsive polish: fixed horizontal overflow on projects/ops/schedules/workflows + settings-table clipping; audit shots lock it (PR #387)
 - ✅ **K** — CLI robustness & coverage (export/import tests + MIDNITE_TOKEN + SW-4 fix; boundary OK) (PR #376)
 - ✅ **L** — Docs site, public site & @midnite/ui test gap: fixed the ui test hole (46→54 play-fns) + verified re-export shims; found dead Docs link + no product docs; proposed a product-led docs IA (PR #375)
 - ◻ **M** — Cross-cutting synthesis & remediation backlog (runs last)
