@@ -396,7 +396,7 @@ export function IntegrationsView() {
           No webhook endpoints yet. Add one to push task events to a channel or service.
         </div>
       ) : (
-        <div className="rounded-lg border border-border overflow-hidden">
+        <div className="overflow-x-auto rounded-lg border border-border">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-xs font-medium text-muted-foreground">
               <tr>

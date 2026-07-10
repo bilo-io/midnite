@@ -402,7 +402,7 @@ export function OpsView({
 
   return (
     <div className="reveal-staged container space-y-6 pb-8 pt-2">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3 gap-y-2">
         <div className="flex gap-1 rounded-lg border p-1 text-sm">
           <button
             type="button"
