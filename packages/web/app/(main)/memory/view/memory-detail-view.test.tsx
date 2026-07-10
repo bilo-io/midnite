@@ -39,7 +39,6 @@ const project: Project = {
   name: 'Acme app',
   tag: 'acme',
   color: '#6366f1',
-  sources: [],
   createdAt: '2026-07-01T00:00:00Z',
   updatedAt: '2026-07-01T00:00:00Z',
 };

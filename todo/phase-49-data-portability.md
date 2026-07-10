@@ -189,6 +189,35 @@ Backups that happen without anyone remembering to run them.
 - [x] The Data page (`/settings/data`) shows the auto-backup status (enabled, interval, last/next run, recent
       archives) via `GET /portability/backup/status` (admin-gated).
 
+## Theme G — Secrets round-trip + users/teams — **L** — ✅ DONE (PR #383, 2026-07-10)
+
+Closes the deferred B/C tails: the secret material and the auth domains now travel.
+
+- [x] **shared:** `ArchiveManifest` gains an optional `kdf` block; a fixed `secrets`
+      domain + `SecretRecordSchema` envelope (`{table, entityId, field, blob}`);
+      `ImportPreview.warnings` + `ImportResult.secretsRestored/Skipped`.
+- [x] **gateway (crypto):** `passphrase-crypto.ts` — scrypt-derived key (manifest-level
+      single salt) + AES-256-GCM `p1:` wrap/unwrap for the transit hop.
+- [x] **gateway (export):** users(+`user_preferences`)/teams(+`team_memberships`) and the
+      integration-config domains (`webhooks`, `llm_providers`(+`llm_settings`),
+      `workflow_credentials`) always ride along with secret columns stripped to a
+      placeholder; `--include-secrets` + a passphrase decrypts each secret under the
+      instance key and re-wraps it into the `secrets` payload. Passphrase rides an
+      `x-midnite-passphrase` header, never the query string.
+- [x] **gateway (import):** the new domains added to the ordered de-hydration mappers
+      (generic `idField` for `llm_providers`); a **secrets pass** re-encrypts each blob
+      under *this* instance's key in the same transaction — **wrong passphrase → whole
+      restore rolls back**; skipped (never fails) when no passphrase or no target key
+      (Decision: degrade); preview warns about users (replace signs you out) + secrets.
+- [x] **CLI:** `export --include-secrets --passphrase`; import surfaces preview warnings
+      + `secrets: N restored/skipped`.
+- [x] **web:** Settings → Data — an "Include secrets" toggle + passphrase field on
+      download; a passphrase field (shown for a passphrase-mode archive) + warnings on
+      restore.
+- [x] **Tests:** shared schema units; a gateway round-trip integration spec (re-encrypt
+      under a *different* target key, login/passwordHash restored, wrong-passphrase
+      rollback, no-key skip, preview warnings); passphrase-crypto units; CLI + web RTL.
+
 ---
 
 ## Files this phase touches (map)
@@ -220,25 +249,26 @@ Backups that happen without anyone remembering to run them.
       app version, timestamp, domains, `secretsMode`) + one JSON payload per portable domain; derived
       tables (`search_index`, `pr_status`, `market_cache`) are **absent**. *(Now proven end-to-end by the
       Phase 49 E restore e2e — which also surfaced + fixed a DI bug that had this route 500ing at runtime.)*
-- [ ] **Round-trip on a fresh instance:** export from instance A, `import --mode replace` into an empty
+- [x] **Round-trip on a fresh instance:** export from instance A, `import --mode replace` into an empty
       instance B → tasks, projects, workflows, councils, memories, notes, routines, ideas, media, teams,
-      users all match A; the board, workflow editor, and search (after reindex) work; **users can log in**
-      (bcrypt hashes restored).
-- [ ] **Secrets default-excluded:** a default export contains **no** decryptable credential/webhook/API-key
+      users all match A; **users can log in** (bcrypt hashes restored). *(Theme G — proven by the
+      `portability-secrets` round-trip spec: users/teams/memberships + passwordHash restored.)*
+- [x] **Secrets default-excluded:** a default export contains **no** decryptable credential/webhook/API-key
       material; integrations import disabled-pending-config. With `--include-secrets --passphrase`, a
       matching-passphrase import restores them re-encrypted under B's key; a **wrong passphrase** fails
-      cleanly (no partial write).
-- [ ] **Version gate:** an archive from a **newer** schema is **refused**; an **older** archive offers
-      migrate-then-restore; an **equal** archive restores directly. A malformed/truncated archive is rejected.
+      cleanly (no partial write). *(Theme G.)*
+- [◐] **Version gate:** an archive from a **newer** schema is **refused**; an **equal** archive restores
+      directly; a malformed/truncated archive is rejected. *(Theme C — all covered.)* ⏳ *An **older**
+      archive still imports as-is; migrate-then-restore stays deferred (a migration-runner feature).*
 - [x] **Atomicity:** a mid-restore failure (bad ref, constraint) rolls back the **entire** transaction —
       the instance is left untouched, never half-restored. *(Theme C — single `db.transaction()`.)*
 - [x] **Dry-run** preview (web + CLI `--dry-run`) reports per-domain counts, id conflicts, and the version
       verdict **without writing**; a `replace` restore requires explicit confirmation (`--yes` / a typed UI confirm).
 - [x] **Scheduled auto-backup** (when configured) writes timestamped archives to `destinationDir` on the
       interval and prunes to the retention count; a failure logs + notifies, never crashes the tick. *(Theme F.)*
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green (shared schema units; gateway
+- [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` green (shared schema units; gateway
       export/import service tests incl. version gate + atomic rollback + secret re-wrap on `:memory:` DBs;
-      a round-trip integration test; CLI snapshot; web RTL for the Data page).
+      a round-trip integration test; CLI snapshot; web RTL for the Data page). *(Theme G.)*
 
 ---
 

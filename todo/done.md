@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-10 — feat: secrets + users/teams round-trip — Phase 49 Theme G (PR #383)
+
+Closes the deferred tails of Phase 49: the auth domains and secret material now travel in a backup archive, so a restore onto a fresh instance is truly full-fidelity (users can log in; integrations come back live). Phase 49 → 34/34 (100%).
+
+- [x] **shared:** `ArchiveManifest.kdf` (scrypt params, manifest-level single salt); a fixed `secrets` domain + `SecretRecordSchema` (`{table, entityId, field, blob}`); `ImportPreview.warnings` + `ImportResult.secretsRestored/Skipped`.
+- [x] **gateway crypto:** `passphrase-crypto.ts` — scrypt-derived key + AES-256-GCM `p1:` wrap/unwrap for the transit hop (decrypt under the per-instance key → re-wrap under the passphrase → re-encrypt under the *target* key on import).
+- [x] **export:** users(+`user_preferences`)/teams(+`team_memberships`) + integration config (`webhooks`/`llm_providers`(+`llm_settings`)/`workflow_credentials`) always ride along with secret columns stripped; `--include-secrets` + passphrase re-wraps secrets into `secrets.json`. Passphrase rides `x-midnite-passphrase`, never the query string.
+- [x] **import:** new domains in the ordered de-hydration mappers (generic `idField`); a secrets pass re-encrypts under this instance's key in the same transaction — **wrong passphrase → whole restore rolls back**; skipped (never fails) with no passphrase / no target key; preview warns about users (replace signs you out) + secrets.
+- [x] **CLI:** `export --include-secrets --passphrase`; import surfaces warnings + `secrets: N restored/skipped`. **web:** Settings → Data "Include secrets" toggle + passphrase on download; passphrase + warnings on restore.
+- [x] **Tests:** gateway round-trip integration spec (re-encrypt under a *different* target key, passwordHash/login restored, wrong-passphrase rollback, no-key skip, preview warnings), passphrase-crypto units, shared schema units, CLI + web RTL.
+
 ## 2026-07-10 — feat: metrics rollups + retention — Phase 61 Theme E (PR #381)
 
 Bounds observability history without losing the truth: pre-aggregated rollups + raw-row retention.
@@ -13,6 +24,7 @@ Bounds observability history without losing the truth: pre-aggregated rollups + 
 - [x] **Retention**: prunes raw rows past `metrics.rawRetentionDays` (default 30) once rolled up (aggregation window covers the prune cutoff); rollups kept forever; `task_events`/`task_failures` never pruned; `0` disables.
 - [◐] **Query surface**: `GET /metrics/rollups` + contract landed; the transparent rollup-vs-raw switch inside `/metrics/ops`+`usage/summary` deferred to a follow-up (perf-tuning on live reads, wants the P57 bench).
 - Gateway 1822 tests green (repo aggregation/idempotency/prune/list ×9, service ×5, pure bucketing ×6) + shared contract round-trip.
+
 ## 2026-07-10 — feat(web,gateway): retire project sources → memory — Phase 65 Theme F (PR #380)
 
 Projects stop carrying a parallel "sources" concept; memory becomes the single knowledge notion. Existing project sources migrate into a project-scoped memory, and the whole parallel surface (API, schema, table, UI) is removed. Forward-only, full removal (Decision §4).

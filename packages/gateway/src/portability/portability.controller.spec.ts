@@ -29,21 +29,21 @@ function controller(imp: Partial<PortabilityImportService>) {
 
 describe('PortabilityController import', () => {
   it('feeds the uploaded "archive" file to preview', async () => {
-    const preview = vi.fn((): ImportPreview => ({ manifest: {} as never, domainCounts: {}, conflicts: {}, compat: 'ok', importable: true }));
+    const preview = vi.fn((): ImportPreview => ({ manifest: {} as never, domainCounts: {}, conflicts: {}, compat: 'ok', importable: true, warnings: [] }));
     const req = multipartReq([filePart('archive', Buffer.from('ZIP'))]);
     await controller({ preview }).importPreview(req);
     expect(preview).toHaveBeenCalledWith(Buffer.from('ZIP'));
   });
 
   it('parses the mode field and passes options to restore', async () => {
-    const restore = vi.fn((): ImportResult => ({ ok: true, mode: 'replace', inserted: {}, skipped: {}, reindexed: true }));
+    const restore = vi.fn((): ImportResult => ({ ok: true, mode: 'replace', inserted: {}, skipped: {}, reindexed: true, secretsRestored: 0, secretsSkipped: 0 }));
     const req = multipartReq([fieldPart('mode', 'replace'), filePart('archive', Buffer.from('ZIP'))]);
     await controller({ restore }).import(req);
     expect(restore).toHaveBeenCalledWith(Buffer.from('ZIP'), expect.objectContaining({ mode: 'replace' }));
   });
 
   it('defaults the mode to merge when the field is absent', async () => {
-    const restore = vi.fn((): ImportResult => ({ ok: true, mode: 'merge', inserted: {}, skipped: {}, reindexed: true }));
+    const restore = vi.fn((): ImportResult => ({ ok: true, mode: 'merge', inserted: {}, skipped: {}, reindexed: true, secretsRestored: 0, secretsSkipped: 0 }));
     await controller({ restore }).import(multipartReq([filePart('archive', Buffer.from('Z'))]));
     expect(restore).toHaveBeenCalledWith(expect.any(Buffer), expect.objectContaining({ mode: 'merge' }));
   });

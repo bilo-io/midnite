@@ -5,6 +5,8 @@ import {
   councilMembers,
   councils,
   ideas,
+  llmProviders,
+  llmSettings,
   media,
   memories,
   memorySources,
@@ -19,6 +21,12 @@ import {
   taskEvents,
   taskLinks,
   tasks,
+  teamMemberships,
+  teams,
+  userPreferences,
+  users,
+  webhooks,
+  workflowCredentials,
   workflows,
 } from '../../db/schema';
 
@@ -85,6 +93,9 @@ export interface EdgeSpec {
 export interface DomainSpec {
   name: string;
   parent: AnyTable;
+  /** PK column (JS key) for conflict/merge checks + child FK wiring. Default `id`;
+   *  set for tables keyed on another column (e.g. `llmProviders` on `provider`). */
+  idField?: string;
   children?: ChildSpec[];
   edges?: EdgeSpec[];
   /** Pre-map transform for shapes the generic pass can't infer. Returns a shallow
@@ -119,6 +130,11 @@ function workflowTransform(obj: Obj): Obj {
  * imported). The reverse of this order is the `replace`-mode wipe order.
  */
 export const IMPORT_DOMAINS: DomainSpec[] = [
+  // Theme G — auth first: users (+ their synced preferences), then teams (+ members).
+  // passwordHash rides along (bcrypt is instance-independent) so logins survive a move;
+  // refresh/service/hook tokens are session-scoped and never imported.
+  { name: 'users', parent: users, children: [{ field: 'preferences', table: userPreferences, fk: 'userId' }] },
+  { name: 'teams', parent: teams, children: [{ field: 'memberships', table: teamMemberships, fk: 'teamId' }] },
   { name: 'repos', parent: repos },
   { name: 'projects', parent: projects, transform: archivedToTimestamp },
   { name: 'memories', parent: memories, transform: archivedToTimestamp, children: [{ field: 'sources', table: memorySources, fk: 'memoryId' }] },
@@ -143,6 +159,12 @@ export const IMPORT_DOMAINS: DomainSpec[] = [
   { name: 'ideas', parent: ideas },
   { name: 'approvalRules', parent: approvalRules },
   { name: 'workflows', parent: workflows, transform: workflowTransform },
+  // Theme G — integration config (secret-bearing). The secret column arrives as a
+  // placeholder here (see secret-domains.ts); the apply-secrets pass fills it after.
+  { name: 'llmSettings', parent: llmSettings },
+  { name: 'llmProviders', parent: llmProviders, idField: 'provider' },
+  { name: 'webhooks', parent: webhooks },
+  { name: 'workflowCredentials', parent: workflowCredentials },
 ];
 
 /** The archive's domain names, in insert order (for iterating payloads). */

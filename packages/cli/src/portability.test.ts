@@ -62,6 +62,7 @@ const preview = (over: Partial<ImportPreview> = {}): ImportPreview => ({
   conflicts: {},
   compat: 'ok',
   importable: true,
+  warnings: [],
   ...over,
 });
 
@@ -91,6 +92,8 @@ describe('importResultLines', () => {
       inserted: { tasks: 2, projects: 0 },
       skipped: { projects: 1 },
       reindexed: true,
+      secretsRestored: 0,
+      secretsSkipped: 0,
     };
     expect(importResultLines(result)).toEqual([
       'restored (merge): 2 inserted, 1 skipped',
@@ -100,7 +103,19 @@ describe('importResultLines', () => {
   });
 
   it('appends the reindex-warned note when reindex failed', () => {
-    const result: ImportResult = { ok: true, mode: 'replace', inserted: { tasks: 1 }, skipped: {}, reindexed: false };
+    const result: ImportResult = { ok: true, mode: 'replace', inserted: { tasks: 1 }, skipped: {}, reindexed: false, secretsRestored: 0, secretsSkipped: 0 };
     expect(importResultLines(result).at(-1)).toMatch(/search reindex warned/);
+  });
+
+  it('reports secrets restored/skipped when present (Theme G)', () => {
+    const result: ImportResult = { ok: true, mode: 'replace', inserted: { webhooks: 1 }, skipped: {}, reindexed: true, secretsRestored: 1, secretsSkipped: 2 };
+    expect(importResultLines(result)).toContain('  secrets: 1 restored, 2 skipped');
+  });
+});
+
+describe('importPreviewLines warnings (Theme G)', () => {
+  it('renders each warning with a `!` prefix', () => {
+    const lines = importPreviewLines(preview({ warnings: ['Restore carries 3 user account(s).'] }), 'replace');
+    expect(lines).toContain('  ! Restore carries 3 user account(s).');
   });
 });

@@ -1,4 +1,4 @@
-import { BadRequestException, Controller, Get, Inject, Post, Query, Req, Res } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Headers, Inject, Post, Query, Req, Res } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import {
   ExportOptionsSchema,
@@ -42,11 +42,16 @@ export class PortabilityController {
   export(
     @Res({ passthrough: false }) reply: FastifyReply,
     @Query('domains') domainsRaw?: string,
+    @Query('includeSecrets') includeSecretsRaw?: string,
+    // Passphrase rides a header, never the query string (URLs get logged); required
+    // when includeSecrets is set (Theme G — secrets are re-wrapped under it).
+    @Headers('x-midnite-passphrase') passphrase?: string,
   ): void {
-    // `domains` is a comma-separated allowlist; omitted = all. (includeSecrets is
-    // out of scope this slice — the archive is always secret-free.)
+    // `domains` is a comma-separated allowlist; omitted = all.
     const parsed = ExportOptionsSchema.safeParse({
       domains: domainsRaw ? domainsRaw.split(',').map((d) => d.trim()).filter(Boolean) : undefined,
+      includeSecrets: includeSecretsRaw === 'true',
+      passphrase: passphrase || undefined,
     });
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
 

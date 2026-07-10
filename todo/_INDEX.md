@@ -44,7 +44,7 @@
 | [52 · In-app diff & PR review](phase-52-in-app-diff-review.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
 | [51 · Session detail page](phase-51-session-detail-page.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [50 · Autonomy guardrails](phase-50-autonomy-guardrails.md) | ✅ DONE | 29/29 | `██████████` | 100% | — | — |
-| [49 · Data portability](phase-49-data-portability.md) | 🔄 WIP | 23/27 | `█████████░` | 85% | G | — |
+| [49 · Data portability](phase-49-data-portability.md) | ✅ DONE | 34/34 | `██████████` | 100% | — | — |
 | [48 · Slides](phase-48-slides.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [46 · Inbound integrations](phase-46-inbound-integrations.md) | ✅ DONE | 20/20 | `██████████` | 100% | — | — |
@@ -278,7 +278,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **D** — CLI export/import commands (export PR #294; import PR #304)
 - ✅ **E** — Web Settings → Data page (download PR #296; restore preview→confirm PR #303; also fixed a DI bug that 500'd export)
 - ✅ **F** — Scheduled auto-backup (PR #299)
-- 🔄 **G** — Secrets round-trip (`--include-secrets` + scrypt passphrase re-wrap) + users/teams export/import (closes the deferred B/C tails)
+- ✅ **G** — Secrets round-trip (`--include-secrets` + scrypt passphrase re-wrap) + users/teams export/import; closes the deferred B/C tails (PR #383)
 
 ### [Phase 48 — Slides (reveal.js decks)](phase-48-slides.md)
 *(Net-new domain; persistence mirrors workflows; web static-export `?id=`; reveal.js client-only.)*

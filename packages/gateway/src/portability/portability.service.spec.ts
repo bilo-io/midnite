@@ -20,10 +20,21 @@ function fakeServices() {
   };
 }
 
-function build(db: TestDbHandle['db']) {
+// A crypto stub: `decrypt` echoes stored plaintext, `encrypt` prefixes it, and
+// `isEnabled` is togglable so tests can exercise the "no instance key" path.
+function fakeCrypto(enabled = true) {
+  return {
+    isEnabled: () => enabled,
+    decrypt: (v: string) => v,
+    encrypt: (v: string) => `v1:${v}`,
+  };
+}
+
+function build(db: TestDbHandle['db'], crypto = fakeCrypto()) {
   const s = fakeServices();
   const svc = new PortabilityService(
     db,
+    crypto as never,
     s.tasks as never, s.projects as never, s.repos as never, s.memories as never,
     s.notes as never, s.routines as never, s.media as never, s.councils as never,
     s.ideas as never, s.approvals as never, s.workflows as never,
@@ -50,6 +61,8 @@ describe('PortabilityService.export (Phase 49 B)', () => {
     expect(manifest.domains).toEqual([
       'tasks', 'projects', 'repos', 'memories', 'notes',
       'routines', 'media', 'councils', 'ideas', 'approvalRules', 'workflows',
+      // Theme G — auth + integration config always ride along (secret-free here).
+      'users', 'teams', 'llmSettings', 'webhooks', 'workflowCredentials', 'llmProviders',
     ]);
 
     const { domains } = unpackArchive(archive);

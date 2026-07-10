@@ -115,7 +115,13 @@ describe('PortabilityImportService', () => {
 
   beforeEach(() => {
     h = createTestDb();
-    svc = new PortabilityImportService(h.db);
+    // CryptoService stub: encrypt prefixes, decrypt strips it, key present.
+    const crypto = {
+      isEnabled: () => true,
+      encrypt: (v: string) => `v1:${v}`,
+      decrypt: (v: string) => (v.startsWith('v1:') ? v.slice(3) : v),
+    };
+    svc = new PortabilityImportService(h.db, crypto as never);
   });
   afterEach(() => h.close());
 

@@ -1920,11 +1920,16 @@ export async function exportCouncilRunMarkdown(
  * without unzipping. Returns the blob + resolved filename + summary.
  */
 export async function downloadBackup(
-  domains?: string[],
+  opts?: { domains?: string[]; includeSecrets?: boolean; passphrase?: string },
 ): Promise<{ blob: Blob; filename: string; summary: BackupSummary | null }> {
-  const qs = domains && domains.length > 0 ? `?domains=${encodeURIComponent(domains.join(','))}` : '';
+  const params = new URLSearchParams();
+  if (opts?.domains && opts.domains.length > 0) params.set('domains', opts.domains.join(','));
+  if (opts?.includeSecrets) params.set('includeSecrets', 'true');
+  const qs = params.toString() ? `?${params.toString()}` : '';
   const headers: Record<string, string> = {};
   if (_accessToken) headers['authorization'] = `Bearer ${_accessToken}`;
+  // Passphrase rides a header, never the query string (Theme G).
+  if (opts?.passphrase) headers['x-midnite-passphrase'] = opts.passphrase;
   const res = await fetch(`${gatewayUrl()}/portability/export${qs}`, { cache: 'no-store', headers });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
@@ -1965,10 +1970,16 @@ export async function previewImport(file: File): Promise<ImportPreview> {
  * the server (a single transaction) — the result reports rows inserted/skipped
  * per domain + whether the search reindex succeeded.
  */
-export async function importArchive(file: File, mode: 'merge' | 'replace'): Promise<ImportResult> {
+export async function importArchive(
+  file: File,
+  mode: 'merge' | 'replace',
+  passphrase?: string,
+): Promise<ImportResult> {
   const form = new FormData();
   form.set('archive', file, file.name);
   form.set('mode', mode);
+  // Theme G — unwrap a passphrase-mode archive's secrets on restore.
+  if (passphrase) form.set('passphrase', passphrase);
   return fetchJson('/portability/import', { method: 'POST', body: form }, ImportResultSchema);
 }
 

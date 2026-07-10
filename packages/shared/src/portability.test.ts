@@ -4,6 +4,9 @@ import {
   BackupSummarySchema,
   ExportOptionsSchema,
   ImportOptionsSchema,
+  ImportPreviewSchema,
+  ImportResultSchema,
+  SecretRecordSchema,
   compareSchemaVersion,
   domainPayloadSchema,
   isImportable,
@@ -24,6 +27,35 @@ describe('compareSchemaVersion', () => {
   it('a newer archive is not importable into this instance', () => {
     expect(compareSchemaVersion(70, 66)).toBe('newer-archive');
     expect(isImportable('newer-archive')).toBe(false);
+  });
+});
+
+describe('Theme G — passphrase secrets contract', () => {
+  it('a passphrase manifest carries KDF params; an excluded one omits them', () => {
+    const base = { schemaVersion: 1, appVersion: '1.0.0', createdAt: 'now', domains: ['tasks'] };
+    expect(ArchiveManifestSchema.parse({ ...base, secretsMode: 'excluded' }).kdf).toBeUndefined();
+    const withKdf = ArchiveManifestSchema.parse({
+      ...base,
+      secretsMode: 'passphrase',
+      kdf: { salt: 'c2FsdA==', N: 32768, r: 8, p: 1, keyLen: 32 },
+    });
+    expect(withKdf.kdf?.N).toBe(32768);
+  });
+
+  it('SecretRecord requires a non-empty blob + locator', () => {
+    expect(SecretRecordSchema.safeParse({ table: 'webhooks', entityId: 'w1', field: 'secret', blob: 'p1:x' }).success).toBe(true);
+    expect(SecretRecordSchema.safeParse({ table: 'webhooks', entityId: 'w1', field: 'secret', blob: '' }).success).toBe(false);
+  });
+
+  it('ImportPreview.warnings + ImportResult secret counts default to empty/0', () => {
+    const preview = ImportPreviewSchema.parse({
+      manifest: { schemaVersion: 1, appVersion: '1', createdAt: 'now', domains: [], secretsMode: 'excluded' },
+      domainCounts: {}, compat: 'ok', importable: true,
+    });
+    expect(preview.warnings).toEqual([]);
+    const res = ImportResultSchema.parse({ ok: true, mode: 'replace', inserted: {} });
+    expect(res.secretsRestored).toBe(0);
+    expect(res.secretsSkipped).toBe(0);
   });
 });
 

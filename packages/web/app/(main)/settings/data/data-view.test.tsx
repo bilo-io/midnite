@@ -7,10 +7,10 @@ const getBackupStatus = vi.fn();
 const previewImport = vi.fn();
 const importArchive = vi.fn();
 vi.mock('@/lib/api', () => ({
-  downloadBackup: () => downloadBackup(),
+  downloadBackup: (opts?: unknown) => downloadBackup(opts),
   getBackupStatus: () => getBackupStatus(),
   previewImport: (f: File) => previewImport(f),
-  importArchive: (f: File, mode: string) => importArchive(f, mode),
+  importArchive: (f: File, mode: string, passphrase?: string) => importArchive(f, mode, passphrase),
 }));
 const toast = { success: vi.fn(), error: vi.fn() };
 vi.mock('@/components/toast', () => ({ useToast: () => toast }));
@@ -56,6 +56,7 @@ const importPreview: ImportPreview = {
   conflicts: { tasks: ['t1', 't2'] },
   compat: 'ok',
   importable: true,
+  warnings: [],
 };
 
 /** Select a file on the hidden archive input, triggering the auto-preview. */
@@ -129,6 +130,8 @@ describe('DataView — restore (Phase 49 E)', () => {
       inserted: { tasks: 10, projects: 3 },
       skipped: { tasks: 2 },
       reindexed: true,
+      secretsRestored: 0,
+      secretsSkipped: 0,
     } satisfies ImportResult);
     render(<DataView />);
 
@@ -143,7 +146,7 @@ describe('DataView — restore (Phase 49 E)', () => {
     expect(restore).toBeEnabled();
     fireEvent.click(restore);
 
-    await waitFor(() => expect(importArchive).toHaveBeenCalledWith(expect.any(File), 'merge'));
+    await waitFor(() => expect(importArchive).toHaveBeenCalledWith(expect.any(File), 'merge', undefined));
     expect(await screen.findByText(/13 inserted, 2 skipped/)).toBeInTheDocument();
   });
 
@@ -181,5 +184,44 @@ describe('DataView — restore (Phase 49 E)', () => {
     render(<DataView />);
     chooseArchive();
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith('403 admin only'));
+  });
+
+  it('offers a passphrase field for a secrets-bearing archive + forwards it', async () => {
+    previewImport.mockResolvedValue({
+      ...importPreview,
+      manifest: { ...importPreview.manifest, secretsMode: 'passphrase' },
+      warnings: ['Archive holds 2 secret(s); provide the passphrase to restore them.'],
+    } satisfies ImportPreview);
+    importArchive.mockResolvedValue({
+      ok: true, mode: 'merge', inserted: { tasks: 1 }, skipped: {}, reindexed: true, secretsRestored: 2, secretsSkipped: 0,
+    } satisfies ImportResult);
+    render(<DataView />);
+    chooseArchive();
+
+    // Warning + passphrase input appear.
+    expect(await screen.findByText(/provide the passphrase/)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText(/to restore this archive’s secrets/), { target: { value: 'pw123' } });
+    fireEvent.click(screen.getByRole('button', { name: /Restore \(merge\)/ }));
+
+    await waitFor(() => expect(importArchive).toHaveBeenCalledWith(expect.any(File), 'merge', 'pw123'));
+    expect(await screen.findByText(/secrets: 2 restored/)).toBeInTheDocument();
+  });
+});
+
+describe('DataView — export secrets (Phase 49 G)', () => {
+  it('requires a passphrase before downloading with secrets, then forwards it', async () => {
+    downloadBackup.mockResolvedValue({ blob: new Blob(['x']), filename: 'b.zip', summary });
+    render(<DataView />);
+
+    fireEvent.click(screen.getByLabelText(/Include secrets/));
+    // Download is blocked until a passphrase is entered.
+    expect(screen.getByRole('button', { name: /Download backup/ })).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText(/Passphrase/), { target: { value: 'secret-pw' } });
+    fireEvent.click(screen.getByRole('button', { name: /Download backup/ }));
+
+    await waitFor(() =>
+      expect(downloadBackup).toHaveBeenCalledWith({ includeSecrets: true, passphrase: 'secret-pw' }),
+    );
   });
 });

@@ -101,7 +101,7 @@ export interface GatewayClient {
   /** Download a full-store backup archive (Phase 49 D). Returns the server-named
    *  filename, the per-domain summary (from the response header), and the archive
    *  body as a stream to pipe to disk. */
-  exportArchive(opts?: { domains?: string[] }): Promise<{
+  exportArchive(opts?: { domains?: string[]; includeSecrets?: boolean; passphrase?: string }): Promise<{
     filename: string;
     summary: BackupSummary | null;
     body: ReadableStream<Uint8Array>;
@@ -312,12 +312,15 @@ export function createClient(baseUrl: string, token?: string): GatewayClient {
       return TasksDoctorReportSchema.parse(await request('/tasks/doctor', { method: 'GET' }));
     },
 
-    /** Download a full-store backup archive (Phase 49 D). */
-    async exportArchive(opts?: { domains?: string[] }) {
-      const qs = opts?.domains?.length
-        ? `?domains=${encodeURIComponent(opts.domains.join(','))}`
-        : '';
-      const res = await fetchOk(`/portability/export${qs}`, { method: 'GET' });
+    /** Download a full-store backup archive (Phase 49 D/G). */
+    async exportArchive(opts?: { domains?: string[]; includeSecrets?: boolean; passphrase?: string }) {
+      const params = new URLSearchParams();
+      if (opts?.domains?.length) params.set('domains', opts.domains.join(','));
+      if (opts?.includeSecrets) params.set('includeSecrets', 'true');
+      const qs = params.toString() ? `?${params.toString()}` : '';
+      // Passphrase rides a header, never the query string (Theme G).
+      const headers = opts?.passphrase ? { 'x-midnite-passphrase': opts.passphrase } : undefined;
+      const res = await fetchOk(`/portability/export${qs}`, { method: 'GET', headers });
       if (!res.body) throw new Error('export response had no body');
       const filename =
         filenameFromDisposition(res.headers.get('content-disposition')) ??
