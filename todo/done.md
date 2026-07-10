@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-10 — feat: Memory Studio text + infographic artifacts — Phase 65 Theme D (PR #384)
+
+The right "Studio" rail generates artifacts from a memory's corpus — the reliable, LLM-only core of NotebookLM-style output. **Decision §6 resolved:** a lightweight `memory_artifacts` table, not `Media` (whose file-centric shape has no column for inline markdown/SVG); `Media` stays untouched for Theme E's audio/video files. Grounded on the corpus (memory content + Theme B's ingested source text), metered via `LlmService`. Phase 65 → 20/33 (61%).
+
+- [x] **shared** — `memory-artifact.ts`: `MemoryArtifact` (`kind` ∈ brief/faq/study-guide/timeline/infographic, `format` markdown|svg, `status` pending/ready/failed, `content`, `error`), generate request + response schemas, `MEMORY_ARTIFACT_META` (label+format); a `memory` `LlmFeature` for cost attribution.
+- [x] **gateway** — `memory_artifacts` table + migration `0079` (hand-written; drizzle-kit generate blocked on the pre-existing Theme-F snapshot drift); `MemoryArtifactsRepository`; `MemoryStudioService` (async `pending`→`ready`/`failed`, fire-and-forget `runGeneration`, honest failure when no provider / empty corpus); `MemoryStudioController` (`GET`/`POST`/`DELETE /memories/:id/artifacts`); corpus builder (`memories/lib/corpus.ts`, forward-compatible with B's `extractedText`) + per-kind prompts (`studio-prompts.ts`, `extractSvg`/`stripMarkdownFence`). `MemoriesModule` imports `AgentModule` for `LlmService`.
+- [x] **web** — the Studio rail is wired: Generate/Regenerate per kind, live status chips (generating / ready / failed + retry + inline error), poll while pending; a viewer modal renders markdown via `MarkdownPreview` and the untrusted infographic SVG in a scripts-disabled sandboxed iframe, with download. Audio/video stay "Soon" (Theme E). Client methods in `web/lib/api.ts`.
+- [x] **tests** — shared schema round-trip; gateway service (success / svg-extract / no-provider / empty-corpus / LLM-throws / regenerate-reuses-row), repository integration (validates migration `0079`), controller (400s), corpus + prompt units; web RTL (states + viewer); an e2e generate-settles flow + light/dark preview shots of the rail + rendered infographic.
+
 ## 2026-07-10 — feat: secrets + users/teams round-trip — Phase 49 Theme G (PR #383)
 
 Closes the deferred tails of Phase 49: the auth domains and secret material now travel in a backup archive, so a restore onto a fresh instance is truly full-fidelity (users can log in; integrations come back live). Phase 49 → 34/34 (100%).
