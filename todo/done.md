@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-10 — feat(web): memory workspace page — Phase 65 Theme A (PR #379)
+
+The memory modal graduates to a full-page, 3-panel workspace at `/memory/view?id=` — the frame the rest of Phase 65 (chat, ingestion, Studio) hangs on. Naming stays `memory` (no rebrand).
+
+- [x] **`GET /memories/:id`** ([`memories.controller.ts`](phase-65-memory-workspace.md); service `getMemory` already 404s) + client `getMemory`; `routeFor('memory')` → `/memory/view?id=` so search hits open the page.
+- [x] **3-panel workspace** ([`memory-detail-view.tsx`](phase-65-memory-workspace.md)) cloning the Phase 55 two-rail cockpit: sources rail (left) · doc editor + chat composer (center) · Studio artifact rail (right). Both rails open by default, per-rail persisted; mobile → drawers.
+- [x] **Chat + Studio scaffolded disabled** ("coming soon") — Themes C–E wire them live.
+- [x] **Shared panels** extracted into `components/memory/` (scope select, doc editor, live sources) so modal + page never drift; the **modal is now create-only**; list cards navigate to the page.
+- [x] **Tests:** detail-view shell + not-found RTL, doc-panel save/dirty + delete, an e2e flow (`memory-workspace.e2e.ts`), and a light/dark shots spec. Phase 65 → 7/33 (21%) in `_INDEX.md`.
+
 ## 2026-07-09 — test(web): reconnect-resume e2e — Phase 56 verification sweep
 
 Closed out Phase 56 (all themes A–F already merged) by driving its 9 acceptance criteria end-to-end and ticking each against its proof. The headline no-drift guarantee had gateway units + web hook tests but no browser-level proof — now it does.

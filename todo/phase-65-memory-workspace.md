@@ -81,34 +81,34 @@
 
 ---
 
-## Theme A — `/memory/view?id=` page: 3-panel shell, routing & `GET /memories/:id` — **M**
+## Theme A — `/memory/view?id=` page: 3-panel shell, routing & `GET /memories/:id` — **M** — ✅ DONE (PR #379, 2026-07-10)
 
 The frame everything hangs on: a real deep-linkable page that replaces the modal as the primary target.
 
-- [ ] **Expose a single-memory fetch** — add `GET /memories/:id` to [`memories.controller.ts`](../packages/gateway/src/memories/memories.controller.ts)
+- [x] **Expose a single-memory fetch** — add `GET /memories/:id` to [`memories.controller.ts`](../packages/gateway/src/memories/memories.controller.ts)
       (thin; delegates to the existing `MemoriesService.getMemory`, 404 → `MemoryDoesNotExistError`), a
       `getMemory(id)` method in [`web/lib/api.ts`](../packages/web/lib/api.ts), and repoint
       `routeFor('memory', id)` → `/memory/view?id=` in [`search/lib`](../packages/gateway/src/search/) (and any
       web mirror). Existing list/CRUD endpoints unchanged.
-- [ ] **Static-export route** — `app/(main)/memory/view/page.tsx` reads `?id=` via `useSearchParams`, fetches
+- [x] **Static-export route** — `app/(main)/memory/view/page.tsx` reads `?id=` via `useSearchParams`, fetches
       through `useApiData(getMemory)`, inline **loading** + **not-found** states. **No `[id]` segment**
       (`output: 'export'`), matching `projects/view`, `sessions/view`.
-- [ ] **`memory-detail-view.tsx` — the 3-region shell** cloning the Phase 55 cockpit: sticky `PageHeader`
+- [x] **`memory-detail-view.tsx` — the 3-region shell** cloning the Phase 55 cockpit: sticky `PageHeader`
       (title + scope chip [Global / project name] + `archived` badge + back-to-`/memory` + rail toggles),
       `flex flex-col lg:flex-row`, `min-w-0 flex-1` **center**, a **left sources rail** and a **right Studio
       rail** that each collapse to a slim rail. Rail open/closed persisted via `useLocalStorage`
       (`midnite.memory.leftOpen` / `midnite.memory.rightOpen`).
-- [ ] **Center panel = doc + composer** — the memory's title/scope/markdown editing (reuse
+- [x] **Center panel = doc + composer** — the memory's title/scope/markdown editing (reuse
       [`MarkdownEditor`](../packages/web/components/markdown-editor.tsx)) **at parity with the modal**, with the
       chat composer docked below (Theme C fills it; ships as a disabled "ask this memory…" affordance until C).
-- [ ] **Left rail = sources** — the source list + **add** (URL) inline (reuse
+- [x] **Left rail = sources** — the source list + **add** (URL) inline (reuse
       [`SourceListEditor`](../packages/web/components/source-list-editor.tsx)); ingestion status per source lands
       in Theme B. **Right rail = Studio** — scaffolded artifact list (Theme D/E fill it).
-- [ ] **Navigation & modal-vs-page rule** — memory cards/tree in [`memory-view.tsx`](../packages/web/app/(main)/memory/memory-view.tsx)
+- [x] **Navigation & modal-vs-page rule** — memory cards/tree in [`memory-view.tsx`](../packages/web/app/(main)/memory/memory-view.tsx)
       become `<Link>`s to `/memory/view?id=` (cmd/middle-click → new tab); the **modal is reserved for
       *create*** (and any in-context office use), mirroring Phase 55's `?open=` → page redirect. The
       `?create=<projectId|global>` deep-link keeps opening the create modal.
-- [ ] **Responsive** — on `useIsMobile` both rails become drawers toggled from the header; center goes
+- [x] **Responsive** — on `useIsMobile` both rails become drawers toggled from the header; center goes
       full-width. Cutoffs from the media-query hooks only; overflow menus portal to body.
 
 ---
