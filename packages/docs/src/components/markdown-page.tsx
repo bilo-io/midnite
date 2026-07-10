@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
+import rehypeHighlight from 'rehype-highlight';
 import rehypeSlug from 'rehype-slug';
 import remarkGfm from 'remark-gfm';
 
@@ -29,7 +30,11 @@ const markdownComponents = Object.fromEntries(
 
 export function MarkdownPage({ source }: { source: string }) {
   return (
-    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]} components={markdownComponents}>
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      rehypePlugins={[rehypeSlug, rehypeHighlight]}
+      components={markdownComponents}
+    >
       {source}
     </ReactMarkdown>
   );

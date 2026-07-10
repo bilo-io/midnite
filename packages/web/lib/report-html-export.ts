@@ -43,6 +43,17 @@ export const REPORT_PROSE_CSS = `
   .prose code { background: #f1f5f9; border-radius: 4px; padding: 1px 5px; font: 12.5px ui-monospace, SFMono-Regular, Menlo, monospace; }
   .prose pre { background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 14px; overflow: auto; }
   .prose pre code { background: none; padding: 0; color: inherit; }
+  .prose .hljs { background: transparent; color: inherit; }
+  .prose .hljs-comment, .prose .hljs-quote { color: #94a3b8; font-style: italic; }
+  .prose .hljs-keyword, .prose .hljs-selector-tag, .prose .hljs-subst, .prose .hljs-doctag { color: hsl(280 60% 72%); }
+  .prose .hljs-name, .prose .hljs-selector-id, .prose .hljs-selector-class, .prose .hljs-symbol, .prose .hljs-bullet, .prose .hljs-deletion { color: hsl(350 75% 70%); }
+  .prose .hljs-string, .prose .hljs-regexp, .prose .hljs-addition, .prose .hljs-selector-attr, .prose .hljs-selector-pseudo, .prose .hljs-meta .hljs-string { color: hsl(140 50% 62%); }
+  .prose .hljs-title, .prose .hljs-title.function_, .prose .hljs-title.class_, .prose .hljs-built_in, .prose .hljs-section { color: hsl(210 80% 70%); }
+  .prose .hljs-number, .prose .hljs-literal, .prose .hljs-type { color: hsl(30 85% 66%); }
+  .prose .hljs-attr, .prose .hljs-attribute, .prose .hljs-variable, .prose .hljs-template-variable, .prose .hljs-property { color: hsl(190 70% 64%); }
+  .prose .hljs-meta, .prose .hljs-operator, .prose .hljs-punctuation { color: #94a3b8; }
+  .prose .hljs-emphasis { font-style: italic; }
+  .prose .hljs-strong { font-weight: 600; }
   .prose table { border-collapse: collapse; width: 100%; }
   .prose th, .prose td { border: 1px solid #e2e8f0; padding: 7px 10px; text-align: left; }
   .prose th { background: #f8fafc; }

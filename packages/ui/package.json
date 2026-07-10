@@ -14,7 +14,8 @@
       "types": "./dist/theme.d.ts",
       "default": "./dist/theme.js"
     },
-    "./styles": "./dist/tokens.css"
+    "./styles": "./dist/tokens.css",
+    "./code-highlight.css": "./dist/code-highlight.css"
   },
   "sideEffects": ["**/*.css"],
   "files": ["dist"],

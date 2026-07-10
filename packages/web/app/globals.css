@@ -2,6 +2,8 @@
 /* Design tokens (HSL custom properties + the .dark block) live in @midnite/ui
    (Phase 25 Theme B) — the design-system source of truth. */
 @import '@midnite/ui/styles';
+/* Shared highlight.js token palette for code blocks (MarkdownPreview + slides). */
+@import '@midnite/ui/code-highlight.css';
 
 @tailwind base;
 @tailwind components;

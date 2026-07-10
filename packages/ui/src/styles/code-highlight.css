@@ -1,0 +1,82 @@
+/*
+ * Shared highlight.js token palette — the design-system source of truth for
+ * syntax-highlighted code blocks across every consumer (web MarkdownPreview,
+ * slides, docs). Exposed as `@midnite/ui/code-highlight.css`.
+ *
+ * The selectors are intentionally UNSCOPED: the `.hljs` / `.hljs-*` classes are
+ * only ever emitted onto highlighted code (by highlight.js or rehype-highlight),
+ * so a global rule can't bleed into anything else. Consumers own the code block's
+ * container chrome (background, padding, border); this file only colours tokens.
+ *
+ * Colours are fixed HSL hues chosen to read on both the light and dark app
+ * themes (the same hue set the PR diff viewer uses), so no per-theme override is
+ * needed. The two theme-following tokens (`--foreground`, `--muted-foreground`)
+ * come from `@midnite/ui/styles` (tokens.css) — import that first.
+ *
+ * Offline HTML exports can't reference these runtime tokens, so they inline their
+ * own copy of this palette with fixed values — keep those in sync when the hues
+ * change here (packages/web/lib/report-html-export.ts REPORT_PROSE_CSS and
+ * packages/web/lib/slides/standalone-deck.ts).
+ */
+
+.hljs {
+  background: transparent;
+  color: hsl(var(--foreground));
+}
+.hljs-comment,
+.hljs-quote {
+  color: hsl(var(--muted-foreground));
+  font-style: italic;
+}
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-subst,
+.hljs-doctag {
+  color: hsl(280 60% 62%);
+}
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-deletion {
+  color: hsl(350 70% 60%);
+}
+.hljs-string,
+.hljs-regexp,
+.hljs-addition,
+.hljs-selector-attr,
+.hljs-selector-pseudo,
+.hljs-meta .hljs-string {
+  color: hsl(140 45% 48%);
+}
+.hljs-title,
+.hljs-title.function_,
+.hljs-title.class_,
+.hljs-built_in,
+.hljs-section {
+  color: hsl(210 70% 58%);
+}
+.hljs-number,
+.hljs-literal,
+.hljs-type {
+  color: hsl(30 80% 55%);
+}
+.hljs-attr,
+.hljs-attribute,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-property {
+  color: hsl(190 60% 50%);
+}
+.hljs-meta,
+.hljs-operator,
+.hljs-punctuation {
+  color: hsl(var(--foreground) / 0.7);
+}
+.hljs-emphasis {
+  font-style: italic;
+}
+.hljs-strong {
+  font-weight: 600;
+}
