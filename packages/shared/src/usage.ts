@@ -20,7 +20,8 @@ export const LLM_FEATURES = [
   'council', // council member/synthesis runs
   'workflow', // workflow `ai.*` nodes
   'chat', // chat-to-board NL command parsing (Phase 59)
-  'memory', // memory Studio artifact generation + chat (Phase 65)
+  'memory', // memory Studio artifact generation (Phase 65 D/E)
+  'memory-chat', // chat to the knowledge base (Phase 65 C)
   'unknown', // untagged / default
 ] as const;
 export const LlmFeatureSchema = z.enum(LLM_FEATURES);
@@ -36,6 +37,7 @@ export const LLM_FEATURE_LABEL: Record<LlmFeature, string> = {
   workflow: 'Workflows',
   chat: 'Chat to board',
   memory: 'Memory Studio',
+  'memory-chat': 'Memory chat',
   unknown: 'Other',
 };
 

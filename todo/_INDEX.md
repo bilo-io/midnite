@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [65 · Memory workspace](phase-65-memory-workspace.md) | 🔄 WIP | 21/33 | `██████░░░░` | 64% | E | C G |
+| [65 · Memory workspace](phase-65-memory-workspace.md) | 🔄 WIP | 25/33 | `████████░░` | 76% | E | G |
 | [64 · Office presence](phase-64-office-presence.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
 | [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 6/33 | `██░░░░░░░░` | 18% | — | C D E F G H |
@@ -120,7 +120,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 *Turn the memory modal into a 3-panel `/memory/view?id=` workspace (NotebookLM-style): left sources rail, center doc + chat-to-the-knowledge-base, right Studio that generates artifacts. Sources graduate to an ingested corpus (URL bodies + file uploads); memory becomes THE knowledge notion — project sources retired. Naming stays `memory`; FTS + LlmService reuse, no embeddings.*
 - ✅ **A** — `/memory/view?id=` page: 3-panel shell + `GET /memories/:id` + routing/nav (modal reserved for create) (PR #379)
 - ✅ **B** — Source ingestion: fetch+extract URL bodies + PDF/md/txt uploads; new content storage; re-index into FTS (PR #382)
-- ◻ **C** — Chat to the knowledge base: persisted threads, FTS-retrieve→stuff→LlmService answer with source citations
+- ✅ **C** — Chat to the knowledge base: persisted threads, FTS-retrieve→stuff→LlmService answer with source citations (PR #385)
 - ✅ **D** — Studio: text artifacts (brief/FAQ/study-guide/timeline, markdown) + infographic (LLM→SVG) via a `memory_artifacts` table; async generate, sandboxed SVG viewer (PR #384)
 - ◻ **E** — Studio: audio overview (LLM script→TTS) + video (slides+narration→ffmpeg compose); degrade w/o provider
 - ✅ **F** — Retire project sources → memories: forward migration to a project-scoped memory, drop `project_sources`, remove UI/API (PR #380)

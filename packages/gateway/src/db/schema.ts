@@ -379,6 +379,27 @@ export const memoryArtifacts = sqliteTable(
   }),
 );
 
+// Chat to the knowledge base (Phase 65 C). A single running thread per memory —
+// user/assistant turns in order. Assistant turns carry `citations` (JSON array of
+// the memory-source ids the answer drew on); `error` marks a graceful-failure turn.
+export const memoryChatMessages = sqliteTable(
+  'memory_chat_messages',
+  {
+    id: text('id').primaryKey(),
+    memoryId: text('memory_id').notNull(),
+    role: text('role').notNull(),
+    content: text('content').notNull(),
+    // JSON string[] of source ids; null for user turns / uncited answers.
+    citations: text('citations'),
+    // 1 when this assistant turn is a graceful-failure notice, else null.
+    error: integer('error'),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    memoryIdx: index('memory_chat_messages_memory_idx').on(t.memoryId),
+  }),
+);
+
 // --- Workflows (node-based automation builder) ---
 
 export const workflows = sqliteTable(
@@ -743,6 +764,8 @@ export type MemorySourceRow = typeof memorySources.$inferSelect;
 export type MemorySourceInsert = typeof memorySources.$inferInsert;
 export type MemoryArtifactRow = typeof memoryArtifacts.$inferSelect;
 export type MemoryArtifactInsert = typeof memoryArtifacts.$inferInsert;
+export type MemoryChatMessageRow = typeof memoryChatMessages.$inferSelect;
+export type MemoryChatMessageInsert = typeof memoryChatMessages.$inferInsert;
 export type PrimaryAgentRow = typeof primaryAgent.$inferSelect;
 export type PrimaryAgentInsert = typeof primaryAgent.$inferInsert;
 export type SubagentRow = typeof subagents.$inferSelect;
