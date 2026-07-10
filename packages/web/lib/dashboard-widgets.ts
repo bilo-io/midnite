@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Clock,
   CloudSun,
+  Coins,
   Cpu,
   Database,
   FolderGit2,
@@ -31,12 +32,13 @@ import {
   StickyNote,
   TerminalSquare,
   Timer,
+  TrendingUp,
   Users,
   Wallet,
   Workflow,
   type LucideIcon,
 } from 'lucide-react';
-import { NEWS_MAX_COUNT, type AssetKind } from '@midnite/shared';
+import { NEWS_MAX_COUNT, type AssetKind, type CycleTimeGroupBy } from '@midnite/shared';
 import type { WordmarkFontKey } from './wordmark-fonts';
 
 // A widget's stable type doubles as its react-grid-layout item key `i`. The
@@ -67,6 +69,9 @@ export type WidgetType =
   | 'throughput'
   | 'health'
   | 'usage'
+  | 'cost-by-repo'
+  | 'cycle-time'
+  | 'fleet-trend'
   | 'shipped'
   | 'who-in-office'
   | 'system-monitor'
@@ -146,6 +151,10 @@ export type WidgetConfig = {
   finances: FinanceConfig;
   'market-asset': MarketAssetConfig;
   'market-watchlist': MarketWatchlistConfig;
+  // Metrics widgets (Phase 61 H) — minimal per-widget config.
+  'cost-by-repo': { windowDays: number };
+  'cycle-time': { windowDays: number; groupBy: CycleTimeGroupBy };
+  'fleet-trend': { series: 'queueDepth' | 'slotsUsed' | 'tickLatencyMs' };
 };
 
 /** Widget types that carry settings (have a `WidgetConfig` entry). */
@@ -159,6 +168,9 @@ export type WidgetInstance =
   | { type: 'timer'; config: WidgetConfig['timer'] }
   | { type: 'links'; config: WidgetConfig['links'] }
   | { type: 'quote'; config: WidgetConfig['quote'] }
+  | { type: 'cost-by-repo'; config: WidgetConfig['cost-by-repo'] }
+  | { type: 'cycle-time'; config: WidgetConfig['cycle-time'] }
+  | { type: 'fleet-trend'; config: WidgetConfig['fleet-trend'] }
   // Multi-instance: each card carries a stable `id` (others are keyed by type alone).
   | { type: 'projects'; id: string; config: WidgetConfig['projects'] }
   | { type: 'scratchpad'; id: string; config: WidgetConfig['scratchpad'] }
@@ -323,6 +335,27 @@ export const DASHBOARD_WIDGETS: Record<WidgetType, WidgetMeta> = {
     icon: Wallet,
     category: 'activity',
     sizes: panelSizes,
+  },
+  'cost-by-repo': {
+    label: 'Cost by repo',
+    description: 'Agent-session spend per repo, measured vs. estimated',
+    icon: Coins,
+    category: 'activity',
+    sizes: panelSizes,
+  },
+  'cycle-time': {
+    label: 'Cycle time',
+    description: 'Wait vs. work p50/p90 across completed tasks',
+    icon: Timer,
+    category: 'activity',
+    sizes: panelSizes,
+  },
+  'fleet-trend': {
+    label: 'Fleet trend',
+    description: 'A gauge series (queue depth, slots, tick latency) over time',
+    icon: TrendingUp,
+    category: 'activity',
+    sizes: mediumSizes,
   },
   shipped: {
     label: 'Shipped',
@@ -489,6 +522,14 @@ export const QUOTE_DEFAULTS: WidgetConfig['quote'] = {
   font: 'signpainter',
 };
 
+/** Metrics-widget defaults (Phase 61 H). */
+export const COST_BY_REPO_DEFAULTS: WidgetConfig['cost-by-repo'] = { windowDays: 30 };
+export const CYCLE_TIME_WIDGET_DEFAULTS: WidgetConfig['cycle-time'] = {
+  windowDays: 30,
+  groupBy: 'none' as CycleTimeGroupBy,
+};
+export const FLEET_TREND_DEFAULTS: WidgetConfig['fleet-trend'] = { series: 'queueDepth' as const };
+
 /** A fresh instance (with default config) for a type just added from the catalogue. */
 export function newInstance(type: WidgetType): WidgetInstance {
   switch (type) {
@@ -520,6 +561,12 @@ export function newInstance(type: WidgetType): WidgetInstance {
       return { type, config: { links: [] } };
     case 'quote':
       return { type, config: { ...QUOTE_DEFAULTS } };
+    case 'cost-by-repo':
+      return { type, config: { ...COST_BY_REPO_DEFAULTS } };
+    case 'cycle-time':
+      return { type, config: { ...CYCLE_TIME_WIDGET_DEFAULTS } };
+    case 'fleet-trend':
+      return { type, config: { ...FLEET_TREND_DEFAULTS } };
     case 'finances':
       return {
         type,

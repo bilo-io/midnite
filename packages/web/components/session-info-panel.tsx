@@ -2,6 +2,7 @@
 
 import { LLM_PROVIDER_LABEL, type SessionDetail } from '@midnite/shared';
 import { cn, relativeTime } from '@/lib/utils';
+import { SessionCostLine } from './session-cost-line';
 
 /**
  * The session cockpit's right-rail readout (Phase 51 E) — an instrument panel of
@@ -51,6 +52,7 @@ export function SessionInfoPanel({ session }: { session: SessionDetail }) {
           estimate={Boolean(session.contextEstimate)}
         />
       ) : null}
+      <SessionCostLine sessionId={session.id} />
     </dl>
   );
 }
