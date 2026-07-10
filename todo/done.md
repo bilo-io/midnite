@@ -14,6 +14,16 @@ Closes the deferred tails of Phase 49: the auth domains and secret material now 
 - [x] **import:** new domains in the ordered de-hydration mappers (generic `idField`); a secrets pass re-encrypts under this instance's key in the same transaction — **wrong passphrase → whole restore rolls back**; skipped (never fails) with no passphrase / no target key; preview warns about users (replace signs you out) + secrets.
 - [x] **CLI:** `export --include-secrets --passphrase`; import surfaces warnings + `secrets: N restored/skipped`. **web:** Settings → Data "Include secrets" toggle + passphrase on download; passphrase + warnings on restore.
 - [x] **Tests:** gateway round-trip integration spec (re-encrypt under a *different* target key, passwordHash/login restored, wrong-passphrase rollback, no-key skip, preview warnings), passphrase-crypto units, shared schema units, CLI + web RTL.
+## 2026-07-10 — feat: memory source ingestion — Phase 65 Theme B (PR #382)
+
+Memory sources graduate from bare links to an **ingested corpus** — the foundation chat (C) + Studio (D/E) ground on. URL bodies are fetched + readability-extracted; PDF/Markdown/text files can be uploaded.
+
+- [x] **Ingested-content storage** — `memory_sources` gains `extracted_text` + `ingest_state`/`ingest_error` + file metadata; `url` nullable (file sources). Forward migration `0078` (hand-fixed the drizzle table-recreate INSERT to copy only pre-existing columns).
+- [x] **URL fetch + extraction** — `MemoryIngestionService` (async, best-effort): `html-to-text` for HTML (reusing the opengraph SSRF guard + `readCapped`), 200 KB text cap, `pending → ready/failed`.
+- [x] **File uploads** — `POST /memories/:id/sources/file` (multipart → reused media uploads store, 8 MB cap); `unpdf` for PDF, UTF-8 for md/txt; `SOURCE_KINDS` gains `file`.
+- [x] **Reingest + lazy backfill** — a reingest endpoint + `GET /:id` kicks ingestion for pre-existing (null-state) link rows.
+- [x] **FTS** — `memoryToIndexDoc` folds ingested source text into the indexed body.
+- [x] **Web** — the sources rail is ingestion-aware: link **or** file upload, per-source status (reading / read / retry), polls while pending. Tests: shared schema, gateway service/repo/controller, `ingest` lib, RTL panel, an upload→ready e2e. Phase 65 → 16/33 (48%).
 
 ## 2026-07-10 — feat: metrics rollups + retention — Phase 61 Theme E (PR #381)
 

@@ -113,29 +113,29 @@ The frame everything hangs on: a real deep-linkable page that replaces the modal
 
 ---
 
-## Theme B — Source ingestion: fetch URL bodies + file uploads — **L**
+## Theme B — Source ingestion: fetch URL bodies + file uploads — **L** — ✅ DONE (PR #382, 2026-07-10)
 
 Turn bare links into an actual corpus — the substrate chat + generation stand on.
 
-- [ ] **Ingested-content storage** — extend `memory_sources` with `extractedText` (nullable), `contentBytes`,
+- [x] **Ingested-content storage** — extend `memory_sources` with `extractedText` (nullable), `contentBytes`,
       `ingestState` (`pending`/`ready`/`failed`/`skipped`), `ingestError?`, `mimeType?`; a forward-only
       migration under [`gateway/src/db/migrations/`](../packages/gateway/src/db/). A per-source body cap
       (**≤ 200 KB extracted text**, Decision §5) trims oversize content. Reflect the new fields in
       [`shared/src/memory.ts`](../packages/shared/src/memory.ts) `MemorySourceSchema`.
-- [ ] **URL fetch + readability extraction** — a `MemoryIngestionService` (or `memories/lib/ingest.ts`) that
+- [x] **URL fetch + readability extraction** — a `MemoryIngestionService` (or `memories/lib/ingest.ts`) that
       fetches a source URL and extracts readable text (extend the existing
       [`opengraph.ts`](../packages/gateway/src/projects/lib/opengraph.ts) fetch pattern; add a readability step).
       Runs **async on source add** (state `pending` → `ready`/`failed`), re-fetchable via
       `POST /memories/:id/sources/:sourceId/reingest`. Best-effort, never blocks the add.
-- [ ] **File uploads as sources** — `POST /memories/:id/sources/file` (multipart) accepting **PDF / `.md` /
+- [x] **File uploads as sources** — `POST /memories/:id/sources/file` (multipart) accepting **PDF / `.md` /
       `.txt`** (size cap in [`shared`](../packages/shared/src/), Decision §5). PDF → text extraction; md/txt
       stored directly. Files persist under the media/upload store (path-traversal-guarded like
       [`media` file-serve](../packages/gateway/src/media/media.service.ts)); `MemorySource` gains a `file` kind.
-- [ ] **Re-index the corpus** — `memoryToIndexDoc` folds ingested source text into the FTS body (kept clipped;
+- [x] **Re-index the corpus** — `memoryToIndexDoc` folds ingested source text into the FTS body (kept clipped;
       the 4 000-char limit still governs the *indexed* excerpt — full text lives in `extractedText` for
       stuffing). Update [`index-mappers.ts`](../packages/gateway/src/search/lib/index-mappers.ts) + the
       service write-path.
-- [ ] **Web: ingestion status UI** — the left rail shows per-source state (spinner / ✓ ready / ⚠ failed +
+- [x] **Web: ingestion status UI** — the left rail shows per-source state (spinner / ✓ ready / ⚠ failed +
       retry), a file **upload** affordance beside the URL add, and honest empty/failed copy. Reuses the source
       list; no new design system.
 
