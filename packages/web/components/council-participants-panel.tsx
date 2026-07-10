@@ -22,8 +22,6 @@ import {
   Check,
   ChevronDown,
   GripVertical,
-  PanelRightClose,
-  PanelRightOpen,
   Pencil,
   Plus,
   Sparkles,
@@ -78,7 +76,6 @@ type Props = {
   /** Open the custom-prompt editor (rendered by the detail view). */
   onEditCustom: () => void;
   open: boolean;
-  onToggle: () => void;
 };
 
 /**
@@ -98,7 +95,6 @@ export function CouncilMembersPanel({
   onDefaultFormatChange,
   onEditCustom,
   open,
-  onToggle,
 }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -210,34 +206,15 @@ export function CouncilMembersPanel({
 
   return (
     <aside
+      aria-hidden={!open}
       className={cn(
         'relative shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out motion-reduce:transition-none lg:sticky lg:top-16',
-        // On mobile the panel only takes part when open; on lg it's always a
-        // sidebar (full width) or a slim rail.
+        // On mobile the panel only takes part when open; on lg it always animates
+        // between a full-width sidebar and 0. The toggle lives in the content layer.
         open ? 'block w-full' : 'hidden lg:block',
-        open ? 'lg:w-[320px]' : 'lg:w-9',
+        open ? 'lg:w-[320px]' : 'lg:w-0',
       )}
     >
-      {/* Collapsed rail: the expand control, faded in only while closed. */}
-      <div
-        className={cn(
-          'absolute right-0 top-0 hidden transition-opacity duration-200 lg:block',
-          open ? 'pointer-events-none opacity-0' : 'opacity-100',
-        )}
-      >
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          aria-label="Expand members"
-          title={`Members (${members.length})`}
-          onClick={onToggle}
-          className="h-9 w-9 text-muted-foreground"
-        >
-          <PanelRightOpen className="h-4 w-4" />
-        </Button>
-      </div>
-
       {/* Fixed-width content so it doesn't reflow while the wrapper width animates. */}
       <div
         className={cn(
@@ -265,16 +242,6 @@ export function CouncilMembersPanel({
           >
             <Plus className="h-4 w-4" />
             Add
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label="Collapse members"
-            onClick={onToggle}
-            className="h-7 w-7 text-muted-foreground"
-          >
-            <PanelRightClose className="h-4 w-4" />
           </Button>
         </div>
       </div>

@@ -69,13 +69,14 @@ describe('SessionDetailView', () => {
     expect(screen.getByRole('link', { name: 'Fix login flow' })).toHaveAttribute('href', '/tasks/view?id=t1');
   });
 
-  it('collapses a rail to a slim toggle and re-expands it (persisted state)', () => {
+  it('collapses and re-expands a rail via the content-layer toggle (persisted state)', () => {
     render(<SessionDetailView session={session} task={task} project={project} />);
-    expect(screen.getByText('Approvals & context')).toBeInTheDocument();
+    // The toggle is a content-layer control (not inside the rail); collapsing
+    // flips its label and persists, while the rail animates its width to 0.
     fireEvent.click(screen.getByRole('button', { name: 'Collapse Approvals & context' }));
-    expect(screen.queryByText('Approvals & context')).toBeNull();
-    // The collapsed rail leaves an expand affordance.
+    expect(screen.getByRole('button', { name: 'Expand Approvals & context' })).toBeInTheDocument();
+    expect(localStorage.getItem('midnite.session.leftOpen')).toContain('false');
     fireEvent.click(screen.getByRole('button', { name: 'Expand Approvals & context' }));
-    expect(screen.getByText('Approvals & context')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Collapse Approvals & context' })).toBeInTheDocument();
   });
 });
