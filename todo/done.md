@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-11 — feat: live metrics WS channel — Phase 61 Theme F (PR #387)
+
+The Ops page stops polling for fleet gauges: a live `metrics` channel on the Phase 56 reliable broadcast (seq + ring + resume) pushes a gauge snapshot on every change. Publish trigger is **on-change** (each gauge write, coalesced per tick), not the 60s sampler — so the live channel is faster than the 10s poll it replaces; the poll stays as the fallback. Phase 61 → 20/36 (56%).
+
+- [x] **shared** — `events/metrics.ts`: `METRICS_WS_PATH`, `MetricsEvent` (`metrics.gauges` reusing `MetricsGaugesSchema`), `SequencedMetricsEventSchema` (via `sequencedEnvelope`), `MetricsSubscribeMessageSchema`; barrel export + round-trip specs.
+- [x] **gateway** — `MetricsEventBus` (mirrors `IdeaEventBus`); `MetricsService` emits a coalesced gauge snapshot to the bus on every `record*` (microtask-batched; `@Optional` bus so unit specs are untouched) + a shared `currentGauges()` (DRYs `getOpsSummary`); `MetricsGateway` (`/ws/metrics`, single `metrics:all` ring key, no team scoping) fans out via `ReliableBroadcastService.toAll`. `MetricsModule` imports `AuthModule` + provides the bus/gateway. Event-bus, gateway (broadcast/subscribe/origin/disconnect), and live-emit coalescing specs.
+- [x] **web** — `useLiveGauges` over `useReliableSubscription` (`/ws/metrics`); the Ops page patches live gauges over the polled `OpsSummary` (poll kept as fallback; resync gap clears back to poll). Hook test drives events via a mocked subscription.
+
 ## 2026-07-10 — feat: chat to the knowledge base — Phase 65 Theme C (PR #385)
 
 The memory workspace's center composer becomes a grounded, cited Q&A over a memory's own doc **plus its ingested sources** (Phase 65 B corpus). A separate `memory-chat` module; one running thread per memory.
