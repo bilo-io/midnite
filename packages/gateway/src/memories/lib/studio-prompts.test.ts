@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { MEMORY_ARTIFACT_KINDS } from '@midnite/shared';
-import { extractSvg, stripMarkdownFence, studioPromptFor } from './studio-prompts';
+import { STUDIO_TEXT_KINDS, extractSvg, stripMarkdownFence, studioPromptFor } from './studio-prompts';
 
 describe('studioPromptFor', () => {
-  it('has a prompt for every kind and embeds the corpus', () => {
-    for (const kind of MEMORY_ARTIFACT_KINDS) {
+  it('has a prompt for every text kind and embeds the corpus', () => {
+    for (const kind of STUDIO_TEXT_KINDS) {
       const p = studioPromptFor(kind, 'MY_CORPUS');
       expect(p.system.length).toBeGreaterThan(0);
       expect(p.userText).toContain('MY_CORPUS');

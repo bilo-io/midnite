@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
-import type { MemoryArtifact } from '@midnite/shared';
+import type { MemoryArtifact, MidniteConfig } from '@midnite/shared';
 import type { MemoryStudioService } from './memory-studio.service';
 import { MemoryStudioController } from './memory-studio.controller';
 
@@ -13,18 +13,25 @@ const artifact = {
   content: '',
   status: 'pending',
   error: null,
+  filePath: null,
+  mimeType: null,
+  fileSize: null,
+  degraded: false,
   createdAt: 'now',
   updatedAt: 'now',
 } satisfies MemoryArtifact;
+
+const config = { gateway: { uploadsDir: '/tmp/midnite-test-uploads' } } as unknown as MidniteConfig;
 
 function build(overrides: Partial<Record<keyof MemoryStudioService, unknown>> = {}) {
   const service = {
     listArtifacts: vi.fn(() => [artifact]),
     generate: vi.fn(() => artifact),
     deleteArtifact: vi.fn(),
+    getArtifactFile: vi.fn(() => ({ filePath: 'memory-studio/a1.mp3', mimeType: 'audio/mpeg' })),
     ...overrides,
   } as unknown as MemoryStudioService;
-  return { controller: new MemoryStudioController(service), service };
+  return { controller: new MemoryStudioController(service, config), service };
 }
 
 describe('MemoryStudioController', () => {

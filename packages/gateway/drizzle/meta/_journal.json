@@ -561,6 +561,13 @@
       "when": 1783875600000,
       "tag": "0079_phase65d_memory_artifacts",
       "breakpoints": true
+    },
+    {
+      "idx": 80,
+      "version": "6",
+      "when": 1783962000000,
+      "tag": "0080_phase65e_studio_media",
+      "breakpoints": true
     }
   ]
 }
