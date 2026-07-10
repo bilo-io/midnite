@@ -327,7 +327,8 @@ export const memorySources = sqliteTable(
   {
     id: text('id').primaryKey(),
     memoryId: text('memory_id').notNull(),
-    url: text('url').notNull(),
+    // Null for a file source (Phase 65 B): an upload has no URL.
+    url: text('url'),
     kind: text('kind').notNull(),
     title: text('title'),
     faviconUrl: text('favicon_url'),
@@ -335,6 +336,19 @@ export const memorySources = sqliteTable(
     createdAt: text('created_at').notNull(),
     // Ascending display order within the memory; drives the list/drag order.
     position: integer('position').notNull().default(0),
+    // --- Phase 65 B: source-content ingestion ---
+    // Readable text extracted from the URL body / uploaded file. Server-side
+    // grounding corpus for chat + Studio; not sent in the client shape.
+    extractedText: text('extracted_text'),
+    // Ingestion lifecycle: null = not ingested, else 'pending'|'ready'|'failed'.
+    ingestState: text('ingest_state'),
+    ingestError: text('ingest_error'),
+    // Uploaded-file metadata (null for link sources).
+    fileName: text('file_name'),
+    mimeType: text('mime_type'),
+    // Relative path of the stored upload under the media/upload store.
+    storagePath: text('storage_path'),
+    byteSize: integer('byte_size'),
   },
   (t) => ({
     memoryIdx: index('memory_sources_memory_idx').on(t.memoryId),

@@ -111,7 +111,8 @@ export class SearchService implements OnApplicationBootstrap, OnModuleDestroy {
     const docs: IndexDoc[] = [
       ...this.tasks.listTasks().map(taskToIndexDoc),
       ...this.projects.listProjects().map(projectToIndexDoc),
-      ...this.memories.listMemories().map(memoryToIndexDoc),
+      // Content-only on backfill; the memory write-path folds in source text.
+      ...this.memories.listMemories().map((m) => memoryToIndexDoc(m)),
       ...this.notes.listNotes().map(noteToIndexDoc),
       ...this.councils.listCouncils().map(councilToIndexDoc),
       ...this.workflows.listSummaries().map(workflowToIndexDoc),

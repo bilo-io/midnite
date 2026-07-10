@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type ComponentType } from 'react';
-import { Globe, MonitorPlay, StickyNote, type LucideIcon } from 'lucide-react';
+import { FileText, Globe, MonitorPlay, StickyNote, type LucideIcon } from 'lucide-react';
 import type { SourceKind } from '@midnite/shared';
 import { cn } from '@/lib/utils';
 
@@ -13,6 +13,7 @@ const LUCIDE_ICON: Partial<Record<SourceKind, LucideIcon>> = {
   notion: StickyNote,
   youtube: MonitorPlay,
   link: Globe,
+  file: FileText,
 };
 
 function GithubMark({ className }: MarkProps) {

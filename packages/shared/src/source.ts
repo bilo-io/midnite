@@ -19,6 +19,9 @@ export const SOURCE_KINDS = [
   'medium',
   'substack',
   'link',
+  // An uploaded file (PDF / markdown / text) attached to a memory (Phase 65 B).
+  // Never produced by detectSourceKind (files have no URL) — set explicitly on upload.
+  'file',
 ] as const;
 
 export type SourceKind = (typeof SOURCE_KINDS)[number];
@@ -39,6 +42,7 @@ export const SOURCE_KIND_LABEL: Record<SourceKind, string> = {
   medium: 'Medium',
   substack: 'Substack',
   link: 'Link',
+  file: 'File',
 };
 
 /**

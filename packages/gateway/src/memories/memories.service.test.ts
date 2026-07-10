@@ -66,16 +66,34 @@ class InMemoryMemoriesRepo extends MemoriesRepository {
     const full: MemorySourceRow = {
       id: row.id,
       memoryId: row.memoryId,
-      url: row.url,
+      url: row.url ?? null,
       kind: row.kind,
       title: row.title ?? null,
       faviconUrl: row.faviconUrl ?? null,
       fetchedAt: row.fetchedAt ?? null,
       createdAt: row.createdAt,
       position: row.position ?? 0,
+      extractedText: row.extractedText ?? null,
+      ingestState: row.ingestState ?? null,
+      ingestError: row.ingestError ?? null,
+      fileName: row.fileName ?? null,
+      mimeType: row.mimeType ?? null,
+      storagePath: row.storagePath ?? null,
+      byteSize: row.byteSize ?? null,
     };
     this.srcs.push(full);
     return full;
+  }
+
+  override updateSource(
+    memoryId: string,
+    sourceId: string,
+    patch: Partial<MemorySourceInsert>,
+  ): MemorySourceRow | undefined {
+    const row = this.srcs.find((s) => s.memoryId === memoryId && s.id === sourceId);
+    if (!row) return undefined;
+    Object.assign(row, patch);
+    return row;
   }
 
   override listSources(memoryId: string): MemorySourceRow[] {
@@ -106,6 +124,21 @@ class InMemoryMemoriesRepo extends MemoriesRepository {
       if (row) row.position = position;
     });
   }
+}
+
+// A fake ingestion service — records calls; never touches the network/disk.
+function fakeIngestion() {
+  return {
+    storeUpload: vi.fn(async (_name: string, _buf: Buffer) => 'memory-sources/x.md'),
+    ingestUrl: vi.fn(async () => undefined),
+    ingestUpload: vi.fn(async () => undefined),
+    reingestFile: vi.fn(async () => undefined),
+  } as unknown as import('./memory-ingestion.service').MemoryIngestionService & {
+    storeUpload: ReturnType<typeof vi.fn>;
+    ingestUrl: ReturnType<typeof vi.fn>;
+    ingestUpload: ReturnType<typeof vi.fn>;
+    reingestFile: ReturnType<typeof vi.fn>;
+  };
 }
 
 describe('MemoriesService', () => {
@@ -204,6 +237,65 @@ describe('MemoriesService', () => {
     expect(reordered.sources.map((s) => s.id)).toEqual([ids[2], ids[0], ids[1]]);
 
     expect(() => service.reorderSources(memory.id, [ids[0]!])).toThrow(BadRequestException);
+  });
+
+  it('attaches an uploaded file as a source (kind file, pending ingest)', async () => {
+    const repo = new InMemoryMemoriesRepo();
+    const ingestion = fakeIngestion();
+    const service = new MemoriesService(repo, undefined, ingestion);
+    const memory = await service.createMemory({ title: 'm', content: '' });
+
+    const after = await service.addFileSource(memory.id, {
+      buffer: Buffer.from('# notes'),
+      fileName: 'notes.md',
+      mimeType: 'text/markdown',
+    });
+    const src = after.sources[0]!;
+    expect(src.kind).toBe('file');
+    expect(src.fileName).toBe('notes.md');
+    expect(src.url).toBeUndefined();
+    expect(ingestion.storeUpload).toHaveBeenCalledOnce();
+    expect(ingestion.ingestUpload).toHaveBeenCalledOnce();
+  });
+
+  it('rejects an oversize upload and an unsupported mime type', async () => {
+    const service = new MemoriesService(new InMemoryMemoriesRepo(), undefined, fakeIngestion());
+    const memory = await service.createMemory({ title: 'm', content: '' });
+
+    await expect(
+      service.addFileSource(memory.id, {
+        buffer: Buffer.alloc(9_000_000),
+        fileName: 'big.pdf',
+        mimeType: 'application/pdf',
+      }),
+    ).rejects.toThrow(/upload limit/);
+
+    await expect(
+      service.addFileSource(memory.id, {
+        buffer: Buffer.from('x'),
+        fileName: 'evil.exe',
+        mimeType: 'application/x-msdownload',
+      }),
+    ).rejects.toThrow(/unsupported file type/);
+  });
+
+  it('reingest re-runs ingestion for an existing source', async () => {
+    const repo = new InMemoryMemoriesRepo();
+    const ingestion = fakeIngestion();
+    const service = new MemoriesService(repo, undefined, ingestion);
+    const memory = await service.createMemory({
+      title: 'm',
+      content: '',
+      sources: ['https://a.example/1'],
+    });
+    ingestion.ingestUrl.mockClear();
+
+    service.reingestSource(memory.id, memory.sources[0]!.id);
+    expect(ingestion.ingestUrl).toHaveBeenCalledWith(
+      memory.id,
+      memory.sources[0]!.id,
+      'https://a.example/1',
+    );
   });
 
   it('listScoped returns global plus the project memories', async () => {

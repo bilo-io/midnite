@@ -25,6 +25,34 @@ const baseMemory = {
   updatedAt: '2026-06-20T00:00:00.000Z',
 };
 
+describe('MemorySchema — Phase 65 B sources', () => {
+  it('accepts a file source (no url) with ingest metadata', () => {
+    const fileMemory = {
+      ...baseMemory,
+      sources: [
+        {
+          id: 'f1',
+          memoryId: 'mem1',
+          kind: 'file' as const,
+          fileName: 'notes.pdf',
+          mimeType: 'application/pdf',
+          ingestState: 'ready' as const,
+          createdAt: '2026-06-20T00:00:00.000Z',
+        },
+      ],
+    };
+    const parsed = MemorySchema.parse(fileMemory);
+    expect(parsed.sources[0]!.url).toBeUndefined();
+    expect(parsed.sources[0]!.kind).toBe('file');
+    expect(parsed.sources[0]!.ingestState).toBe('ready');
+  });
+
+  it('accepts a null ingestState (not-yet-ingested link)', () => {
+    const m = { ...baseMemory, sources: [{ ...baseMemory.sources[0], ingestState: null }] };
+    expect(MemorySchema.parse(m).sources[0]!.ingestState).toBeNull();
+  });
+});
+
 describe('MemorySchema', () => {
   it('round-trips a global memory with a source', () => {
     expect(MemorySchema.parse(baseMemory)).toEqual(baseMemory);

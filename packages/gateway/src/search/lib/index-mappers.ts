@@ -43,8 +43,16 @@ export function projectToIndexDoc(p: Project): IndexDoc {
 // Memories, notes, and councils have no team_id — they are personal entities
 // visible to all authenticated users (teamId = null in the index).
 
-export function memoryToIndexDoc(m: Memory): IndexDoc {
-  return { type: 'memory', entityId: m.id, teamId: null, title: m.title, body: clip(m.content) };
+export function memoryToIndexDoc(m: Memory, sourceTexts: string[] = []): IndexDoc {
+  // Phase 65 B: fold ingested source text into the body so a memory is findable
+  // by its sources' content too (bounded by MAX_BODY like every other domain).
+  return {
+    type: 'memory',
+    entityId: m.id,
+    teamId: null,
+    title: m.title,
+    body: joinBody([m.content, ...sourceTexts]),
+  };
 }
 
 export function noteToIndexDoc(n: Note): IndexDoc {

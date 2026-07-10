@@ -1,15 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { MAX_SOURCES_PER_MEMORY, type Memory } from '@midnite/shared';
 import { SourceListEditor, orderByIds } from '@/components/source-list-editor';
 import { useConfirm } from '@/components/confirm-dialog';
-import { addMemorySource, removeMemorySource, reorderMemorySources } from '@/lib/api';
+import {
+  addMemorySource,
+  getMemory,
+  removeMemorySource,
+  reingestMemorySource,
+  reorderMemorySources,
+  uploadMemorySourceFile,
+} from '@/lib/api';
+
+/** Upload types the input accepts (mirrors SOURCE_UPLOAD_MIME_TYPES). */
+const UPLOAD_ACCEPT = '.pdf,.md,.markdown,.txt,application/pdf,text/markdown,text/plain';
 
 /**
- * Live sources editor for an existing memory (Phase 65 A). Add/remove/reorder
- * persist immediately and reflect optimistically. Shared by the workspace's
- * left rail; the create modal stages source URLs client-side instead (no id yet).
+ * Live sources editor for an existing memory (Phase 65 A/B). Add a link, upload a
+ * file (PDF/md/txt), remove, reorder — all persist immediately. Each source shows
+ * its ingestion status; while any source is still ingesting, the panel polls the
+ * memory so the status resolves without a manual refresh.
  */
 export function MemorySourcesPanel({
   memory,
@@ -22,12 +33,49 @@ export function MemorySourcesPanel({
   const confirm = useConfirm();
   const [error, setError] = useState<string | null>(null);
 
+  // Poll while any source is mid-ingest so pending → ready/failed resolves live.
+  const pending = memory.sources.some((s) => s.ingestState === 'pending');
+  useEffect(() => {
+    if (!pending) return;
+    let cancelled = false;
+    const timer = setInterval(async () => {
+      try {
+        const fresh = await getMemory(memory.id);
+        if (!cancelled) onChange(fresh);
+      } catch {
+        // transient — the next tick retries
+      }
+    }, 2500);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [pending, memory.id, onChange]);
+
   const add = async (url: string) => {
     setError(null);
     try {
       onChange(await addMemorySource(memory.id, url));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not add that source');
+    }
+  };
+
+  const uploadFile = async (file: File) => {
+    setError(null);
+    try {
+      onChange(await uploadMemorySourceFile(memory.id, file));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not upload that file');
+    }
+  };
+
+  const reingest = async (id: string) => {
+    setError(null);
+    try {
+      onChange(await reingestMemorySource(memory.id, id));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not re-read that source');
     }
   };
 
@@ -72,6 +120,9 @@ export function MemorySourcesPanel({
         onAdd={add}
         onRemove={remove}
         onReorder={reorder}
+        onReingest={reingest}
+        onUploadFile={uploadFile}
+        uploadAccept={UPLOAD_ACCEPT}
       />
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>

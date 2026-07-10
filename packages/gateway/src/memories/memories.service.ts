@@ -9,6 +9,8 @@ import {
 import { randomUUID } from 'node:crypto';
 import {
   MAX_SOURCES_PER_MEMORY,
+  MAX_SOURCE_UPLOAD_BYTES,
+  SOURCE_UPLOAD_MIME_TYPES,
   detectSourceKind,
   type CreateMemoryRequest,
   type Memory,
@@ -18,6 +20,10 @@ import { fetchSourceMetadata } from '../projects/lib/opengraph';
 import { memoryToIndexDoc } from '../search/lib/index-mappers';
 import { SearchIndexService } from '../search/search-index.service';
 import { MemoriesRepository } from './memories.repository';
+import { MemoryIngestionService } from './memory-ingestion.service';
+
+/** A file part accepted by the upload endpoint. */
+export type MemoryFileUpload = { buffer: Buffer; fileName: string; mimeType: string };
 
 @Injectable()
 export class MemoriesService {
@@ -27,6 +33,8 @@ export class MemoriesService {
     @Inject(MemoriesRepository) private readonly repo: MemoriesRepository,
     // Optional: see NotesService — global index in prod, omitted in unit specs.
     @Optional() @Inject(SearchIndexService) private readonly searchIndex?: SearchIndexService,
+    // Optional: omitted in unit specs (ingestion is best-effort, async side-effect).
+    @Optional() @Inject(MemoryIngestionService) private readonly ingestion?: MemoryIngestionService,
   ) {}
 
   listMemories(): Memory[] {
@@ -59,11 +67,13 @@ export class MemoriesService {
     // Positions are assigned by staged order up front, so the parallel inserts
     // below preserve it (computing positions inside each would race to 0).
     const urls = dedupe(req.sources ?? []).slice(0, MAX_SOURCES_PER_MEMORY);
-    await Promise.all(urls.map((url, i) => this.addSourceRow(id, url, i)));
+    const ids = await Promise.all(urls.map((url, i) => this.addSourceRow(id, url, i)));
+    ids.forEach((sourceId, i) => {
+      if (sourceId) this.kickIngestUrl(id, sourceId, urls[i]!);
+    });
 
-    const memory = this.getMemory(id);
-    this.searchIndex?.upsert(memoryToIndexDoc(memory));
-    return memory;
+    this.reindex(id);
+    return this.getMemory(id);
   }
 
   updateMemory(id: string, req: UpdateMemoryRequest): Memory {
@@ -77,9 +87,8 @@ export class MemoriesService {
         : {}),
       updatedAt: new Date().toISOString(),
     });
-    const memory = this.getMemory(id);
-    this.searchIndex?.upsert(memoryToIndexDoc(memory));
-    return memory;
+    this.reindex(id);
+    return this.getMemory(id);
   }
 
   removeMemory(id: string): void {
@@ -90,13 +99,82 @@ export class MemoriesService {
 
   async addSource(memoryId: string, url: string): Promise<Memory> {
     this.assertExists(memoryId);
-    if (this.repo.countSources(memoryId) >= MAX_SOURCES_PER_MEMORY) {
+    this.assertHasRoom(memoryId);
+    const sourceId = await this.addSourceRow(memoryId, url, this.repo.nextSourcePosition(memoryId));
+    if (sourceId) this.kickIngestUrl(memoryId, sourceId, url);
+    return this.getMemory(memoryId);
+  }
+
+  /** Attach an uploaded file (PDF / markdown / text) as a source and ingest it. */
+  async addFileSource(memoryId: string, file: MemoryFileUpload): Promise<Memory> {
+    this.assertExists(memoryId);
+    this.assertHasRoom(memoryId);
+    if (file.buffer.length > MAX_SOURCE_UPLOAD_BYTES) {
       throw new BadRequestException(
-        `a memory can have at most ${MAX_SOURCES_PER_MEMORY} sources`,
+        `file exceeds the ${Math.round(MAX_SOURCE_UPLOAD_BYTES / 1_000_000)}MB upload limit`,
       );
     }
-    await this.addSourceRow(memoryId, url, this.repo.nextSourcePosition(memoryId));
+    if (!(SOURCE_UPLOAD_MIME_TYPES as readonly string[]).includes(file.mimeType)) {
+      throw new BadRequestException(`unsupported file type: ${file.mimeType || 'unknown'}`);
+    }
+    if (!this.ingestion) {
+      throw new BadRequestException('file uploads are unavailable');
+    }
+    const storagePath = await this.ingestion.storeUpload(file.fileName, file.buffer);
+    const now = new Date().toISOString();
+    const sourceId = randomUUID();
+    this.repo.insertSource({
+      id: sourceId,
+      memoryId,
+      url: null,
+      kind: 'file',
+      title: file.fileName,
+      fileName: file.fileName,
+      mimeType: file.mimeType,
+      storagePath,
+      byteSize: file.buffer.length,
+      ingestState: 'pending',
+      createdAt: now,
+      position: this.repo.nextSourcePosition(memoryId),
+    });
+    this.kickIngestUpload(memoryId, sourceId, file.buffer, file.mimeType);
     return this.getMemory(memoryId);
+  }
+
+  /** Re-run ingestion for a source (a link re-fetch or a stored file re-extract). */
+  reingestSource(memoryId: string, sourceId: string): Memory {
+    this.assertExists(memoryId);
+    const row = this.repo.getSource(memoryId, sourceId);
+    if (!row) throw new NotFoundException(`source ${sourceId} not found`);
+    if (row.url) {
+      this.kickIngestUrl(memoryId, sourceId, row.url);
+    } else if (row.storagePath && row.mimeType && this.ingestion) {
+      const { storagePath, mimeType } = row;
+      void this.ingestion
+        .reingestFile(memoryId, sourceId, storagePath, mimeType)
+        .then(() => this.reindex(memoryId))
+        .catch(() => undefined);
+    }
+    return this.getMemory(memoryId);
+  }
+
+  /**
+   * Lazily kick ingestion for any not-yet-ingested sources of a memory (Phase 65 B
+   * rollout: existing link rows have no extracted text). Fire-and-forget.
+   */
+  backfillIngestion(memoryId: string): void {
+    if (!this.ingestion) return;
+    for (const row of this.repo.listSources(memoryId)) {
+      if (row.ingestState != null) continue; // already pending/ready/failed
+      if (row.url) this.kickIngestUrl(memoryId, row.id, row.url);
+      else if (row.storagePath && row.mimeType) {
+        const { storagePath, mimeType } = row;
+        void this.ingestion
+          .reingestFile(memoryId, row.id, storagePath, mimeType)
+          .then(() => this.reindex(memoryId))
+          .catch(() => undefined);
+      }
+    }
   }
 
   removeSource(memoryId: string, sourceId: string): Memory {
@@ -105,6 +183,7 @@ export class MemoriesService {
       throw new NotFoundException(`source ${sourceId} not found`);
     }
     this.repo.deleteSource(memoryId, sourceId);
+    this.reindex(memoryId);
     return this.getMemory(memoryId);
   }
 
@@ -126,12 +205,56 @@ export class MemoriesService {
     if (!this.repo.getMemory(id)) throw new NotFoundException(`memory ${id} not found`);
   }
 
-  private async addSourceRow(memoryId: string, url: string, position: number): Promise<void> {
+  private assertHasRoom(memoryId: string): void {
+    if (this.repo.countSources(memoryId) >= MAX_SOURCES_PER_MEMORY) {
+      throw new BadRequestException(`a memory can have at most ${MAX_SOURCES_PER_MEMORY} sources`);
+    }
+  }
+
+  /** Fire-and-forget URL ingest, re-indexing once the text lands (or fails). */
+  private kickIngestUrl(memoryId: string, sourceId: string, url: string): void {
+    void this.ingestion
+      ?.ingestUrl(memoryId, sourceId, url)
+      .then(() => this.reindex(memoryId))
+      .catch(() => undefined);
+  }
+
+  private kickIngestUpload(
+    memoryId: string,
+    sourceId: string,
+    buffer: Buffer,
+    mimeType: string,
+  ): void {
+    void this.ingestion
+      ?.ingestUpload(memoryId, sourceId, buffer, mimeType)
+      .then(() => this.reindex(memoryId))
+      .catch(() => undefined);
+  }
+
+  /** Rebuild the memory's FTS row, folding in its sources' extracted text. */
+  private reindex(memoryId: string): void {
+    if (!this.searchIndex) return;
+    const row = this.repo.getMemory(memoryId);
+    if (!row) return;
+    const memory = this.repo.hydrate(row);
+    const sourceTexts = this.repo
+      .listSources(memoryId)
+      .map((s) => s.extractedText)
+      .filter((t): t is string => Boolean(t && t.trim()));
+    this.searchIndex.upsert(memoryToIndexDoc(memory, sourceTexts));
+  }
+
+  private async addSourceRow(
+    memoryId: string,
+    url: string,
+    position: number,
+  ): Promise<string | null> {
     try {
       const now = new Date().toISOString();
       const meta = await fetchSourceMetadata(url);
+      const id = randomUUID();
       this.repo.insertSource({
-        id: randomUUID(),
+        id,
         memoryId,
         url,
         kind: detectSourceKind(url),
@@ -141,9 +264,11 @@ export class MemoriesService {
         createdAt: now,
         position,
       });
+      return id;
     } catch (err) {
       // Best-effort: a bad fetch or insert must not fail memory creation.
       this.logger.warn(`failed to add source ${url}: ${String(err)}`);
+      return null;
     }
   }
 }

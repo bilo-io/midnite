@@ -77,14 +77,14 @@ describe('TaskDetailView', () => {
     getTask.mockRejectedValue(new Error('404'));
     render(withQueryClient(<TaskDetailView />));
 
-    expect(await screen.findByText('Task not found.')).toBeInTheDocument();
+    expect(await screen.findByText('Task not found')).toBeInTheDocument();
   });
 
   it('shows not-found when no id is supplied', async () => {
     searchId = '';
     render(withQueryClient(<TaskDetailView />));
 
-    expect(await screen.findByText('Task not found.')).toBeInTheDocument();
+    expect(await screen.findByText('Task not found')).toBeInTheDocument();
     expect(getTask).not.toHaveBeenCalled();
   });
 

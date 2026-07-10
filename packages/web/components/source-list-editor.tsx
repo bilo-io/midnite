@@ -18,8 +18,18 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { ExternalLink, GripVertical, Loader2, Plus, X } from 'lucide-react';
-import type { SourceKind } from '@midnite/shared';
+import {
+  AlertTriangle,
+  Check,
+  ExternalLink,
+  GripVertical,
+  Loader2,
+  Plus,
+  RotateCw,
+  Upload,
+  X,
+} from 'lucide-react';
+import type { SourceIngestState, SourceKind } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { SourceIcon } from '@/components/source-icon';
 import { cn } from '@/lib/utils';
@@ -34,10 +44,16 @@ function errMsg(e: unknown): string {
 /** The minimal shape this editor needs from a source row. */
 export type EditableSource = {
   id: string;
-  url: string;
+  /** Absent for an uploaded file source. */
+  url?: string;
   kind: SourceKind;
   title?: string;
   faviconUrl?: string;
+  /** Uploaded-file name (Phase 65 B). */
+  fileName?: string;
+  /** Ingestion status (Phase 65 B): null/undefined = not ingested. */
+  ingestState?: SourceIngestState | null;
+  ingestError?: string | null;
 };
 
 /** Reorder a list of items to match an explicit id order (drops unknown ids). */
@@ -58,6 +74,12 @@ type Props = {
   onRemove: (id: string) => void | Promise<void>;
   /** Persist a new order. The parent should apply it optimistically. */
   onReorder: (orderedIds: string[]) => void | Promise<void>;
+  /** Re-run ingestion for a source (Phase 65 B). Enables status + retry UI. */
+  onReingest?: (id: string) => void | Promise<void>;
+  /** Upload a file as a source (Phase 65 B). Enables the upload affordance. */
+  onUploadFile?: (file: File) => void | Promise<void>;
+  /** `accept` for the upload input (e.g. ".pdf,.md,.txt"). */
+  uploadAccept?: string;
 };
 
 /**
@@ -73,11 +95,41 @@ export function SourceListEditor({
   onAdd,
   onRemove,
   onReorder,
+  onReingest,
+  onUploadFile,
+  uploadAccept,
 }: Props) {
   const [url, setUrl] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const atLimit = sources.length >= max;
+
+  const upload = async (file: File | undefined) => {
+    if (!file || !onUploadFile) return;
+    if (atLimit) {
+      setError(`Up to ${max} sources`);
+      return;
+    }
+    setError(null);
+    setBusy(true);
+    try {
+      await onUploadFile(file);
+    } catch (e) {
+      setError(errMsg(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const reingest = async (id: string) => {
+    if (!onReingest) return;
+    setError(null);
+    try {
+      await onReingest(id);
+    } catch (e) {
+      setError(errMsg(e));
+    }
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -158,6 +210,28 @@ export function SourceListEditor({
         >
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
         </Button>
+        {onUploadFile ? (
+          <label
+            className={cn(
+              'inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md border border-input bg-background text-muted-foreground hover:text-foreground',
+              (atLimit || busy || disabled) && 'cursor-not-allowed opacity-50',
+            )}
+            title="Upload a file (PDF, Markdown, text)"
+            aria-label="Upload a file source"
+          >
+            <Upload className="h-4 w-4" />
+            <input
+              type="file"
+              accept={uploadAccept}
+              className="sr-only"
+              disabled={atLimit || busy || disabled}
+              onChange={(e) => {
+                void upload(e.target.files?.[0]);
+                e.target.value = '';
+              }}
+            />
+          </label>
+        ) : null}
       </div>
 
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
@@ -171,6 +245,7 @@ export function SourceListEditor({
                 source={s}
                 disabled={disabled || busy}
                 onRemove={() => void remove(s.id)}
+                onReingest={onReingest ? () => void reingest(s.id) : undefined}
               />
             ))}
           </ul>
@@ -180,18 +255,22 @@ export function SourceListEditor({
   );
 }
 
-/** One draggable source row: grip reorders, icon + title, open, remove. */
+/** One draggable source row: grip reorders, icon + title, ingest status, open, remove. */
 function SortableSourceRow({
   source: s,
   disabled,
   onRemove,
+  onReingest,
 }: {
   source: EditableSource;
   disabled?: boolean;
   onRemove: () => void;
+  onReingest?: () => void;
 }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
     useSortable({ id: s.id, disabled });
+
+  const label = s.title ?? s.fileName ?? s.url ?? 'Source';
 
   return (
     <li
@@ -213,17 +292,22 @@ function SortableSourceRow({
       >
         <GripVertical className="h-4 w-4" />
       </button>
-      <SourceIcon kind={s.kind} faviconUrl={s.faviconUrl} />
-      <span className="min-w-0 flex-1 truncate text-sm">{s.title ?? s.url}</span>
-      <a
-        href={s.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Open source in new tab"
-        className="text-muted-foreground hover:text-foreground"
-      >
-        <ExternalLink className="h-3.5 w-3.5" />
-      </a>
+      <SourceIcon kind={s.kind} faviconUrl={s.faviconUrl} url={s.url} />
+      <span className="min-w-0 flex-1 truncate text-sm">{label}</span>
+
+      <IngestStatus source={s} onReingest={onReingest} disabled={disabled} />
+
+      {s.url ? (
+        <a
+          href={s.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Open source in new tab"
+          className="text-muted-foreground hover:text-foreground"
+        >
+          <ExternalLink className="h-3.5 w-3.5" />
+        </a>
+      ) : null}
       <button
         type="button"
         onClick={onRemove}
@@ -234,5 +318,42 @@ function SortableSourceRow({
         <X className="h-3.5 w-3.5" />
       </button>
     </li>
+  );
+}
+
+/** The per-source ingestion indicator (Phase 65 B). Hidden when ingestion isn't
+ *  wired for this list (no `onReingest`). */
+function IngestStatus({
+  source: s,
+  onReingest,
+  disabled,
+}: {
+  source: EditableSource;
+  onReingest?: () => void;
+  disabled?: boolean;
+}) {
+  if (!onReingest) return null;
+  if (s.ingestState === 'pending') {
+    return <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-muted-foreground" aria-label="Reading source" />;
+  }
+  if (s.ingestState === 'ready') {
+    return <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" aria-label="Source read" />;
+  }
+  // failed or not-yet-ingested → offer a (re)read action.
+  const failed = s.ingestState === 'failed';
+  return (
+    <button
+      type="button"
+      onClick={onReingest}
+      disabled={disabled}
+      aria-label={failed ? 'Retry reading source' : 'Read source'}
+      title={failed ? `Failed to read${s.ingestError ? `: ${s.ingestError}` : ''} — retry` : 'Read source'}
+      className={cn(
+        'shrink-0 disabled:opacity-40',
+        failed ? 'text-amber-500 hover:text-amber-400' : 'text-muted-foreground hover:text-foreground',
+      )}
+    >
+      {failed ? <AlertTriangle className="h-3.5 w-3.5" /> : <RotateCw className="h-3.5 w-3.5" />}
+    </button>
   );
 }

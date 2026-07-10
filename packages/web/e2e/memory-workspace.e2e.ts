@@ -29,9 +29,9 @@ test.describe('Memory workspace page', () => {
     await page.goto(`/memory/view?id=${memory.id}`);
 
     await expect(page.getByRole('heading', { name: memory.title })).toBeVisible();
-    // Center doc editor.
+    // Center doc editor (Save/Delete controls; content opens in preview mode).
     await expect(page.getByLabel('Memory title')).toHaveValue(memory.title);
-    await expect(page.getByLabel('Memory content')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save' })).toBeVisible();
     // Left sources rail + right Studio rail.
     await expect(page.getByRole('heading', { name: 'Sources' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Studio' })).toBeVisible();
@@ -57,7 +57,23 @@ test.describe('Memory workspace page', () => {
   test('a list card navigates to the workspace page', async ({ page }) => {
     await page.goto('/memory');
     await page.getByText(memory.title).first().click();
-    await expect(page).toHaveURL(new RegExp(`/memory/view\\?id=${memory.id}`));
+    await expect(page).toHaveURL(new RegExp(`/memory/view/?\\?id=${memory.id}`));
     await expect(page.getByRole('heading', { name: memory.title })).toBeVisible();
+  });
+
+  // Phase 65 B — upload a text file as a source; it ingests (no network needed)
+  // and the per-source status resolves to "read" via the panel's poll.
+  test('uploads a file source and it ingests to ready', async ({ page }) => {
+    const fresh = await seedMemory('E2E upload target', '');
+    await page.goto(`/memory/view?id=${fresh.id}`);
+
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'conventions.md',
+      mimeType: 'text/markdown',
+      buffer: Buffer.from('# Conventions\nUse tabs, not spaces.'),
+    });
+
+    await expect(page.getByText('conventions.md')).toBeVisible();
+    await expect(page.getByLabel('Source read')).toBeVisible({ timeout: 15_000 });
   });
 });
