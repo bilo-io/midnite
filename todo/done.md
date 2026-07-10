@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-11 — feat(web): metrics widgets + cost cockpit cards — Phase 61 Theme H (PR #390)
+
+Surface the Phase 61 metrics where users already look — the dashboard + the session/project cockpits — reading the endpoints Themes B/C/D ship. Web-only.
+
+- [x] **3 dashboard widgets** (compact recharts, Activity category, minimal per-widget config, honest empty states): **cost-by-repo** (stacked measured-vs-estimated bars from `/usage/attribution?groupBy=repo`, window select, unpriced note), **cycle-time** (wait/work/end-to-end p50/p90 from `/metrics/cycle-time`, groupBy+window selects, retry-overhead stat), **fleet-trend** (queue/slots/tick-latency series from `/metrics/gauges/history`). Registered in the `WidgetType`/`WidgetConfig`/`WidgetInstance`/`DASHBOARD_WIDGETS`/`newInstance` surface + default-merged render-map cases (mirrors `quote`). Added the `getUsageAttribution` client method.
+- [x] **Session cockpit (P51):** a `SessionCostLine` — this session's spend from `groupBy=session` with a measured/estimated honesty label — next to the existing (measured) token/context stat.
+- [x] **Project cockpit (P55):** a `ProjectCostCard` in the right rail — spend split + sessions + p50 end-to-end from `groupBy=project` attribution + cycle-time.
+- [x] **Tests:** RTL per widget + both cockpit cards (data / honest-empty / config-callback); Storybook Default + Empty stories per widget. typecheck/lint green; web **1090** pass. Phase 61 → 23/36 (64%).
+
 ## 2026-07-11 — feat: live metrics WS channel — Phase 61 Theme F (PR #389)
 
 The Ops page stops polling for fleet gauges: a live `metrics` channel on the Phase 56 reliable broadcast (seq + ring + resume) pushes a gauge snapshot on every change. Publish trigger is **on-change** (each gauge write, coalesced per tick), not the 60s sampler — so the live channel is faster than the 10s poll it replaces; the poll stays as the fallback. Phase 61 → 20/36 (56%).
