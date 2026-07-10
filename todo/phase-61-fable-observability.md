@@ -167,7 +167,7 @@ Keep the truth without keeping every row.
       rollup-vs-raw switch inside `/metrics/ops` + `usage/summary` is a **documented follow-up** — a
       perf-tuning change on the live read paths that wants the P57 bench harness (decided at pickup).
 
-## Theme F — Live metrics channel (ride Phase 56) — **S-M** — ✅ DONE (PR #388, 2026-07-11)
+## Theme F — Live metrics channel (ride Phase 56) — **S-M** — ✅ DONE (PR #389, 2026-07-11)
 
 The Ops page stops polling. Landed — items moved to [`done.md`](done.md). The publish
 trigger is **on-change** (each fleet-gauge write, coalesced per tick via a microtask) rather

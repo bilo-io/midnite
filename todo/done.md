@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-11 — feat: live metrics WS channel — Phase 61 Theme F (PR #388)
+## 2026-07-11 — feat: live metrics WS channel — Phase 61 Theme F (PR #389)
 
 The Ops page stops polling for fleet gauges: a live `metrics` channel on the Phase 56 reliable broadcast (seq + ring + resume) pushes a gauge snapshot on every change. Publish trigger is **on-change** (each gauge write, coalesced per tick), not the 60s sampler — so the live channel is faster than the 10s poll it replaces; the poll stays as the fallback. Phase 61 → 20/36 (56%).
 
