@@ -86,6 +86,10 @@ export const WORDMARK_FONTS: readonly WordmarkFont[] = [
 export const WORDMARK_FONT_STORAGE_KEY = 'midnite.wordmark-font';
 export const DEFAULT_WORDMARK_FONT: WordmarkFontKey = 'signpainter';
 
+// The font the "midnite" wordmark logo is hard-coded to app-wide. Cassandra reads
+// best, so it's fixed here rather than user-configurable.
+export const WORDMARK_LOGO_FONT: WordmarkFontKey = 'cassandra';
+
 // CSS var for a key, falling back to the default font when an unknown/stale value
 // is read from storage.
 export function wordmarkFontVar(key: string): string {
