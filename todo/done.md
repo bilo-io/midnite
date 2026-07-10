@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-10 — docs: Memory Workspace guide + a11y pass — Phase 65 Theme G (partial) (PR #386)
+
+The collision-safe slice of Theme G, landed while C (chat, PR #385) and E (audio/video) are in flight: a product-facing guide for the shipped workspace + an a11y pass on the new surfaces. Per-theme unit coverage already shipped inline with A/B/D. Phase 65 → 21/33 (64%); G stays ◐ partial — its remaining specs, `memory.studio` config docs, and committed visual baselines trail C & E.
+
+- [x] **Docs** — [`docs/MEMORY_WORKSPACE.md`](MEMORY_WORKSPACE.md): the 3-panel page, source ingestion (URL fetch + file upload, caps, states), the Studio (text + infographic, async status, sandboxed SVG, honest degrade), the API surface. Surfaced in `@midnite/docs` under **Guides** via the `?raw` import pattern (auto-indexed for docs search).
+- [x] **a11y** — Studio-rail Generate/Retry buttons now carry unique per-artifact accessible names (`Generate Executive brief`, …) instead of a repeated bare "Generate"; RTL test updated. (RailShell dual-`<aside>` landmark labelling was fixed in PR #384.)
+- [ ] **Deferred to C/E** — chat docs + specs (Theme C), `midnite.json` schema docs for `memory.studio` (Theme E owns the config), committed light/dark visual baselines.
+
 ## 2026-07-10 — feat: Memory Studio text + infographic artifacts — Phase 65 Theme D (PR #384)
 
 The right "Studio" rail generates artifacts from a memory's corpus — the reliable, LLM-only core of NotebookLM-style output. **Decision §6 resolved:** a lightweight `memory_artifacts` table, not `Media` (whose file-centric shape has no column for inline markdown/SVG); `Media` stays untouched for Theme E's audio/video files. Grounded on the corpus (memory content + Theme B's ingested source text), metered via `LlmService`. Phase 65 → 20/33 (61%).

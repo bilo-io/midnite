@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [65 · Memory workspace](phase-65-memory-workspace.md) | 🔄 WIP | 20/33 | `██████░░░░` | 61% | E G | C |
+| [65 · Memory workspace](phase-65-memory-workspace.md) | 🔄 WIP | 21/33 | `██████░░░░` | 64% | E | C G |
 | [64 · Office presence](phase-64-office-presence.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
 | [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 6/33 | `██░░░░░░░░` | 18% | — | C D E F G H |
@@ -124,7 +124,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **D** — Studio: text artifacts (brief/FAQ/study-guide/timeline, markdown) + infographic (LLM→SVG) via a `memory_artifacts` table; async generate, sandboxed SVG viewer (PR #384)
 - ◻ **E** — Studio: audio overview (LLM script→TTS) + video (slides+narration→ffmpeg compose); degrade w/o provider
 - ✅ **F** — Retire project sources → memories: forward migration to a project-scoped memory, drop `project_sources`, remove UI/API (PR #380)
-- ◻ **G** — Tests (gateway/shared/web + Playwright), docs + `memory.studio` config, a11y, light/dark baselines
+- ◐ **G** — Product docs (Memory Workspace guide) + a11y pass landed (PR #386); remaining tests/`memory.studio` config docs/baselines trail Themes C & E
 
 ### [Phase 64 — Office multiplayer presence](phase-64-office-presence.md)
 *Teammates as live avatars in the office (2D + 3D): a /ws/presence channel (last-known-state, no ring, zero DB), hybrid guest/JWT identity, emote wheel + locate, ghost mode, nav pill + dashboard widget; proximity chat as stretch. Theme D blocked on Phase 63 A–C.*

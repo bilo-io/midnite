@@ -227,7 +227,12 @@ replaced by a **"Manage knowledge in Memory"** link (`/memory?scope=<projectId>`
 
 ---
 
-## Theme G — Tests, docs & polish — **M**
+## Theme G — Tests, docs & polish — **M** — ◐ PARTIAL (PR #386, 2026-07-10)
+
+Product docs + an a11y pass landed for the shipped surfaces (A/B/D). The
+remaining items **trail Themes C (chat) & E (audio/video)** — their specs, the
+`memory.studio` config docs, and committed visual baselines wait until those land.
+Gateway/shared/web unit coverage for A/B/D already shipped with each theme.
 
 - [ ] **Gateway** — service specs with repository fakes (`getMemory` 404, ingestion state transitions, chat
       retrieve→answer with a fake `LlmService`, generate async status, project-source migration); repository
@@ -240,9 +245,12 @@ replaced by a **"Manage knowledge in Memory"** link (`/memory?scope=<projectId>`
       primary checkout or a `Dev/midnite-wt/` worktree** (Vite denies `.git/**`).
 - [ ] **e2e** — a Playwright flow against a seeded gateway: open `/memory/view?id=`, add a source, ask a
       question, generate a text artifact; assert the page renders and each panel works.
-- [ ] **Docs + baselines** — README/docs for the workspace, ingestion, chat, and Studio config; `midnite.json`
-      schema docs for `memory.studio`; light/dark screenshots of the new page for the visual baselines; a11y
-      pass (roles/labels, portal menus) on the new surfaces.
+- [x] **Docs + a11y (partial)** — a dedicated **Memory Workspace** product doc
+      ([`docs/MEMORY_WORKSPACE.md`](../docs/MEMORY_WORKSPACE.md), surfaced in `@midnite/docs` under Guides +
+      the search index) covering the page, ingestion, and Studio (text + infographic); an a11y pass on the new
+      surfaces (Studio-rail buttons carry unique per-artifact accessible names). **Deferred to C/E:**
+      `midnite.json` schema docs for `memory.studio` (Theme E owns the config), chat docs (Theme C), and
+      committed light/dark visual baselines.
 
 ---
 

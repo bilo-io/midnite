@@ -12,6 +12,7 @@ import type { ResolvedRoute } from './registry';
 // the repo root.
 import architecture from '../../../../docs/ARCHITECTURE.md?raw';
 import initialPlan from '../../../../docs/INITIAL_PLAN.md?raw';
+import memoryWorkspace from '../../../../docs/MEMORY_WORKSPACE.md?raw';
 import releasing from '../../../../docs/RELEASING.md?raw';
 import testingPlan from '../../../../docs/TESTING_PLAN.md?raw';
 import readme from '../../../../README.md?raw';
@@ -31,6 +32,7 @@ export type ProductDoc = {
 export const productDocs: ProductDoc[] = [
   { path: '/guides/readme', title: 'README', section: 'Guides', order: 0, source: readme },
   { path: '/guides/initial-plan', title: 'Initial plan', section: 'Guides', order: 1, source: initialPlan },
+  { path: '/guides/memory-workspace', title: 'Memory workspace', section: 'Guides', order: 2, source: memoryWorkspace },
   { path: '/architecture', title: 'Architecture', section: 'Architecture', order: 0, source: architecture },
   { path: '/reference/testing', title: 'Testing plan', section: 'Reference', order: 0, source: testingPlan },
   { path: '/reference/releasing', title: 'Releasing', section: 'Reference', order: 1, source: releasing },
