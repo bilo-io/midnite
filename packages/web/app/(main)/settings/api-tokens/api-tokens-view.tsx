@@ -245,7 +245,7 @@ export function ApiTokensView() {
           No API tokens yet. Create one to authenticate scripts and CI/CD pipelines.
         </div>
       ) : (
-        <div className="rounded-lg border border-border overflow-hidden">
+        <div className="overflow-x-auto rounded-lg border border-border">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-xs font-medium text-muted-foreground">
               <tr>

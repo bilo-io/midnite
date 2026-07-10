@@ -289,19 +289,22 @@ focus-trap, a board `KeyboardSensor` — are documented for a remediation phase.
 - [x] **Report:** [`todo/phase-60-findings/I-accessibility.md`](phase-60-findings/I-accessibility.md)
       — 12 findings (7 fixed inline, 5 documented), ranked, each with evidence + a remediation backlog. (PR #374)
 
-## Theme J — Mobile & responsive polish — **M**
+## Theme J — Mobile & responsive polish — **M** — ✅ DONE (PR #387, 2026-07-10)
 
 The small-screen + PWA paths.
 
-- [ ] **Reflow audit** at the [`lib/breakpoints.ts`](../packages/web/lib/breakpoints.ts) cutoffs: the board on
+- [x] **Reflow audit** at the [`lib/breakpoints.ts`](../packages/web/lib/breakpoints.ts) cutoffs: the board on
       mobile (horizontal snap-scroll — does it work one-handed?), the cockpit panels (51/55 drawer vs. rail),
       the diff viewer (52) + slides (48) on a phone, tables that overflow (do they scroll in their own container
       per CLAUDE.md, or break the page?).
-- [ ] **Touch & PWA:** touch-target sizes (≥44px), the installed-PWA chrome (P24), safe-area insets vs. the mobile
+- [x] **Touch & PWA:** touch-target sizes (≥44px), the installed-PWA chrome (P24), safe-area insets vs. the mobile
       tab bar, no horizontal body scroll anywhere; xterm terminal read-only-on-touch behaves.
-- [ ] **JS vs CSS cutoffs:** confirm branch-on-viewport code uses the `useMediaQuery`/`useIsMobile` hooks (not
+- [x] **JS vs CSS cutoffs:** confirm branch-on-viewport code uses the `useMediaQuery`/`useIsMobile` hooks (not
       hand-written widths) so CSS + JS agree (CLAUDE.md).
-- [ ] **Report:** `todo/phase-60-findings/J-mobile-responsive.md`.
+- [x] **Report:** [`todo/phase-60-findings/J-mobile-responsive.md`](phase-60-findings/J-mobile-responsive.md) —
+      6 findings; J1–J5 (horizontal overflow ×4 + settings tables clip) fixed inline under the quick-win rule,
+      locked by [`mobile-audit.shots.ts`](../packages/web/e2e/mobile-audit.shots.ts); J6 (sub-44px secondary
+      touch targets) left as a follow-up.
 
 ---
 

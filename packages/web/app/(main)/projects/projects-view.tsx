@@ -243,7 +243,7 @@ export function ProjectsView({
 
   return (
     <div className="space-y-4">
-      <div className="reveal-controls flex items-center justify-between gap-3">
+      <div className="reveal-controls flex flex-wrap items-center justify-between gap-3 gap-y-2">
         <div className="flex items-center gap-3">
           <p className="text-xs tabular-nums text-muted-foreground">
             {count} {tab === 'projects' ? 'project' : 'template'}

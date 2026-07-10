@@ -33,7 +33,7 @@
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
 | [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 6/33 | `██░░░░░░░░` | 18% | — | C D E F G H |
 | [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 20/36 | `██████░░░░` | 56% | H | G I |
-| [60 · Fable-Analysis](phase-60-fable-analysis.md) | 🔄 WIP | 47/63 | `███████░░░` | 75% | J | M |
+| [60 · Fable-Analysis](phase-60-fable-analysis.md) | 🔄 WIP | 50/62 | `████████░░` | 80% | — | M |
 | [59 · Chat to board](phase-59-chat-to-board.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
 | [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 15/26 | `██████░░░░` | 58% | — | — |
@@ -165,9 +165,9 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **C** — Cycle-time as a first-class metric (todo→wip→done from task_events; GET /metrics/cycle-time) (PR #354)
 - ✅ **D** — Gauge history that survives restarts: sampler + gauge_samples + GET /metrics/gauges/history (PR #343)
 - ✅ **E** — Rollups + retention (metrics_rollup table + timer job + raw pruning; GET /metrics/rollups; transparent read-switch deferred) (PR #381)
-- ✅ **F** — Live metrics channel on the P56 reliable WS: on-change gauge push via MetricsEventBus + MetricsGateway (`/ws/metrics`), Ops page consumes it (poll fallback) (PR #387)
+- ✅ **F** — Live metrics channel on the P56 reliable WS: on-change gauge push via MetricsEventBus + MetricsGateway (`/ws/metrics`), Ops page consumes it (poll fallback) (PR #388)
 - ◐ **G** — Ops page deepening: cycle-time + fleet-trend charts landed; cost views + run timeline open (PR #360)
-- ◻ **H** — Widgets + session/project cockpit integration
+- 🔄 **H** — Widgets + session/project cockpit integration
 - ◻ **I** — CLI (`usage --by`, `ops`) + metrics-model docs
 
 ### [Phase 60 — Fable-Analysis](phase-60-fable-analysis.md)
@@ -181,7 +181,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **G** — Error handling & failure-path correctness (13 findings, no P0; SW-1/2 + FO-2 + ES-1 the standouts) (PR #369)
 - ✅ **H** — Consistency & flow sweep (15 findings; systemic loading≈empty≈error; P1 Ideas dead-end) (PR #373)
 - ✅ **I** — Accessibility & keyboard navigation: audited all surfaces; fixed 7 ARIA quick-wins (tabs kbd nav, palette combobox, collapse inert, dialog focus-trap) + axe gate→error + contrast script; 5 documented (PR #374)
-- ◻ **J** — Mobile & responsive polish
+- ✅ **J** — Mobile & responsive polish: fixed horizontal overflow on projects/ops/schedules/workflows + settings-table clipping; audit shots lock it (PR #388)
 - ✅ **K** — CLI robustness & coverage (export/import tests + MIDNITE_TOKEN + SW-4 fix; boundary OK) (PR #376)
 - ✅ **L** — Docs site, public site & @midnite/ui test gap: fixed the ui test hole (46→54 play-fns) + verified re-export shims; found dead Docs link + no product docs; proposed a product-led docs IA (PR #375)
 - ◻ **M** — Cross-cutting synthesis & remediation backlog (runs last)
