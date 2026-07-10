@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { FsService } from './fs.service';
@@ -39,5 +39,26 @@ describe('FsService.browseDir', () => {
 
   it('rejects a path that is not a directory', async () => {
     await expect(service.browseDir(join(root, 'a-file.txt'))).rejects.toThrow();
+  });
+
+  it('rejects a path that does not exist', async () => {
+    await expect(service.browseDir(join(root, 'nope'))).rejects.toThrow(/ENOENT/);
+  });
+});
+
+describe('FsService.createDir', () => {
+  const service = new FsService();
+
+  it('creates a nested path recursively and returns its listing', async () => {
+    const target = join(root, 'made', 'deeply', 'arcade');
+    const res = await service.createDir(target);
+    expect(statSync(target).isDirectory()).toBe(true);
+    expect(res.path).toBe(target);
+    expect(res.entries).toEqual([]);
+  });
+
+  it('is idempotent — creating an existing directory just lists it', async () => {
+    const target = join(root, 'alpha');
+    await expect(service.createDir(target)).resolves.toMatchObject({ path: target });
   });
 });

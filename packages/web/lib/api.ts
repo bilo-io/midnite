@@ -1133,6 +1133,16 @@ export async function browseDirectory(path?: string): Promise<BrowseDirResponse>
   return fetchJson(`/fs/dirs${query}`, undefined, BrowseDirResponseSchema);
 }
 
+// Creates `path` on the gateway host (recursively) and returns its listing.
+// Backs the folder picker's "create folder" option; paths are in `~`-form.
+export async function createDirectory(path: string): Promise<BrowseDirResponse> {
+  return fetchJson(
+    '/fs/dirs',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ path }) },
+    BrowseDirResponseSchema,
+  );
+}
+
 export async function createProject(body: CreateProjectRequest): Promise<Project> {
   const { project } = await fetchJson(
     '/projects',

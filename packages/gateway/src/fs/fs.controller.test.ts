@@ -7,7 +7,11 @@ import { FsController } from './fs.controller';
 const fakeDirs = { path: '/home', parent: '/', entries: [] } as unknown as BrowseDirResponse;
 
 function build(overrides: Partial<Record<keyof FsService, unknown>> = {}) {
-  const service = { browseDir: vi.fn(async () => fakeDirs), ...overrides } as unknown as FsService;
+  const service = {
+    browseDir: vi.fn(async () => fakeDirs),
+    createDir: vi.fn(async () => fakeDirs),
+    ...overrides,
+  } as unknown as FsService;
   return { controller: new FsController(service), service };
 }
 
@@ -25,5 +29,25 @@ describe('FsController', () => {
       }),
     });
     await expect(controller.dirs('/missing')).rejects.toThrow(BadRequestException);
+  });
+
+  it('creates a directory and returns its listing', async () => {
+    const { controller, service } = build();
+    expect(await controller.create({ path: '~/Dev/arcade' })).toEqual(fakeDirs);
+    expect(service.createDir).toHaveBeenCalledWith('~/Dev/arcade');
+  });
+
+  it('rejects a malformed create body with 400', async () => {
+    const { controller } = build();
+    await expect(controller.create({ path: '' })).rejects.toThrow(BadRequestException);
+  });
+
+  it('maps a create failure (e.g. permission denied) to 400', async () => {
+    const { controller } = build({
+      createDir: vi.fn(async () => {
+        throw new Error('EACCES: permission denied');
+      }),
+    });
+    await expect(controller.create({ path: '/root/nope' })).rejects.toThrow(BadRequestException);
   });
 });
