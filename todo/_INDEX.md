@@ -278,7 +278,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **D** — CLI export/import commands (export PR #294; import PR #304)
 - ✅ **E** — Web Settings → Data page (download PR #296; restore preview→confirm PR #303; also fixed a DI bug that 500'd export)
 - ✅ **F** — Scheduled auto-backup (PR #299)
-- ✅ **G** — Secrets round-trip (`--include-secrets` + scrypt passphrase re-wrap) + users/teams export/import; closes the deferred B/C tails (PR #TBD)
+- ✅ **G** — Secrets round-trip (`--include-secrets` + scrypt passphrase re-wrap) + users/teams export/import; closes the deferred B/C tails (PR #383)
 
 ### [Phase 48 — Slides (reveal.js decks)](phase-48-slides.md)
 *(Net-new domain; persistence mirrors workflows; web static-export `?id=`; reveal.js client-only.)*

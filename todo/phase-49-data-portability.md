@@ -189,7 +189,7 @@ Backups that happen without anyone remembering to run them.
 - [x] The Data page (`/settings/data`) shows the auto-backup status (enabled, interval, last/next run, recent
       archives) via `GET /portability/backup/status` (admin-gated).
 
-## Theme G — Secrets round-trip + users/teams — **L** — ✅ DONE (PR #TBD, 2026-07-10)
+## Theme G — Secrets round-trip + users/teams — **L** — ✅ DONE (PR #383, 2026-07-10)
 
 Closes the deferred B/C tails: the secret material and the auth domains now travel.
 

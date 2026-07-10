@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-10 — feat: secrets + users/teams round-trip — Phase 49 Theme G (PR #TBD)
+## 2026-07-10 — feat: secrets + users/teams round-trip — Phase 49 Theme G (PR #383)
 
 Closes the deferred tails of Phase 49: the auth domains and secret material now travel in a backup archive, so a restore onto a fresh instance is truly full-fidelity (users can log in; integrations come back live). Phase 49 → 34/34 (100%).
 
