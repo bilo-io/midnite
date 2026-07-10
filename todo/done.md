@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-10 — feat: secrets + users/teams round-trip — Phase 49 Theme G (PR #TBD)
+
+Closes the deferred tails of Phase 49: the auth domains and secret material now travel in a backup archive, so a restore onto a fresh instance is truly full-fidelity (users can log in; integrations come back live). Phase 49 → 34/34 (100%).
+
+- [x] **shared:** `ArchiveManifest.kdf` (scrypt params, manifest-level single salt); a fixed `secrets` domain + `SecretRecordSchema` (`{table, entityId, field, blob}`); `ImportPreview.warnings` + `ImportResult.secretsRestored/Skipped`.
+- [x] **gateway crypto:** `passphrase-crypto.ts` — scrypt-derived key + AES-256-GCM `p1:` wrap/unwrap for the transit hop (decrypt under the per-instance key → re-wrap under the passphrase → re-encrypt under the *target* key on import).
+- [x] **export:** users(+`user_preferences`)/teams(+`team_memberships`) + integration config (`webhooks`/`llm_providers`(+`llm_settings`)/`workflow_credentials`) always ride along with secret columns stripped; `--include-secrets` + passphrase re-wraps secrets into `secrets.json`. Passphrase rides `x-midnite-passphrase`, never the query string.
+- [x] **import:** new domains in the ordered de-hydration mappers (generic `idField`); a secrets pass re-encrypts under this instance's key in the same transaction — **wrong passphrase → whole restore rolls back**; skipped (never fails) with no passphrase / no target key; preview warns about users (replace signs you out) + secrets.
+- [x] **CLI:** `export --include-secrets --passphrase`; import surfaces warnings + `secrets: N restored/skipped`. **web:** Settings → Data "Include secrets" toggle + passphrase on download; passphrase + warnings on restore.
+- [x] **Tests:** gateway round-trip integration spec (re-encrypt under a *different* target key, passwordHash/login restored, wrong-passphrase rollback, no-key skip, preview warnings), passphrase-crypto units, shared schema units, CLI + web RTL.
+
 ## 2026-07-10 — feat(web): memory workspace page — Phase 65 Theme A (PR #379)
 
 The memory modal graduates to a full-page, 3-panel workspace at `/memory/view?id=` — the frame the rest of Phase 65 (chat, ingestion, Studio) hangs on. Naming stays `memory` (no rebrand).
