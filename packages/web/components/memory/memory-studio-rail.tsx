@@ -164,7 +164,7 @@ function ArtifactRow({
         >
           {label}
         </button>
-        <StatusChip status={status} onGenerate={onGenerate} pending={pending} />
+        <StatusChip status={status} onGenerate={onGenerate} pending={pending} label={label} />
       </div>
       {status === 'failed' && artifact?.error ? (
         <p className="mt-1 px-3 text-[11px] leading-snug text-destructive">{artifact.error}</p>
@@ -177,10 +177,12 @@ function StatusChip({
   status,
   pending,
   onGenerate,
+  label,
 }: {
   status: MemoryArtifact['status'] | undefined;
   pending: boolean;
   onGenerate: () => void;
+  label: string;
 }) {
   if (pending) {
     return (
@@ -203,7 +205,7 @@ function StatusChip({
       <button
         type="button"
         onClick={onGenerate}
-        aria-label="Retry generation"
+        aria-label={`Retry ${label}`}
         className="flex items-center gap-1 text-[11px] text-destructive transition-colors hover:text-foreground"
       >
         <AlertTriangle className="h-3.5 w-3.5" />
@@ -215,7 +217,7 @@ function StatusChip({
     <button
       type="button"
       onClick={onGenerate}
-      aria-label="Generate"
+      aria-label={`Generate ${label}`}
       className="flex items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
     >
       <Play className="h-3 w-3" />

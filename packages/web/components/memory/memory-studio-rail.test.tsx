@@ -51,7 +51,7 @@ describe('MemoryStudioRail', () => {
     render(<MemoryStudioRail memoryId="m1" />);
     await waitFor(() => expect(api.getMemoryArtifacts).toHaveBeenCalled());
 
-    fireEvent.click(screen.getAllByLabelText('Generate')[0]!);
+    fireEvent.click(screen.getByLabelText('Generate Executive brief'));
     await waitFor(() =>
       expect(api.generateMemoryArtifact).toHaveBeenCalledWith('m1', 'brief'),
     );
