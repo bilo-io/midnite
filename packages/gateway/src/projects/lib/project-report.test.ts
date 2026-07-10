@@ -12,7 +12,6 @@ function makeProject(overrides: Partial<Project> = {}): Project {
     tag: 'app',
     color: '#000',
     workDir: '~/code/app',
-    sources: [],
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
     ...overrides,
@@ -93,24 +92,6 @@ describe('projectToMarkdown', () => {
     expect(md).toContain('`api`');
   });
 
-  it('renders sources section with links', () => {
-    const project = makeProject({
-      sources: [
-        { id: 's1', projectId: 'p1', url: 'https://example.com', title: 'Example', kind: 'link', createdAt: '' },
-        { id: 's2', projectId: 'p1', url: 'https://github.com/org/repo', kind: 'github', createdAt: '' },
-      ],
-    });
-    const md = projectToMarkdown(project, [], [], { now: NOW });
-    expect(md).toContain('## Sources');
-    expect(md).toContain('[Example](https://example.com)');
-    expect(md).toContain('[https://github.com/org/repo](https://github.com/org/repo)');
-  });
-
-  it('omits sources section when no sources', () => {
-    const md = projectToMarkdown(makeProject({ sources: [] }), [], [], { now: NOW });
-    expect(md).not.toContain('## Sources');
-  });
-
   it('renders memories section with titles and content', () => {
     const memories = [
       makeMemory({ title: 'Design notes', content: 'Use modular design.' }),
@@ -133,22 +114,17 @@ describe('projectToMarkdown', () => {
     expect(md).not.toContain('## Knowledge');
   });
 
-  it('renders a full bundle with tasks + sources + memories', () => {
-    const project = makeProject({
-      sources: [{ id: 's1', projectId: 'p1', url: 'https://docs.example.com', title: 'Docs', kind: 'link', createdAt: '' }],
-    });
+  it('renders a full bundle with tasks + memories', () => {
+    const project = makeProject();
     const tasks = [makeTask({ status: 'done', title: 'Deploy', kind: 'feature' })];
     const memories = [makeMemory({ title: 'Notes', content: 'Deploy nightly.' })];
     const md = projectToMarkdown(project, tasks, memories, { now: NOW });
     expect(md).toContain('## Tasks');
-    expect(md).toContain('## Sources');
     expect(md).toContain('## Knowledge');
-    // Sections appear in order: tasks, sources, memories
+    // Sections appear in order: tasks then memories
     const tasksIdx = md.indexOf('## Tasks');
-    const sourcesIdx = md.indexOf('## Sources');
     const memoriesIdx = md.indexOf('## Knowledge');
-    expect(tasksIdx).toBeLessThan(sourcesIdx);
-    expect(sourcesIdx).toBeLessThan(memoriesIdx);
+    expect(tasksIdx).toBeLessThan(memoriesIdx);
   });
 
   it('ends with a single trailing newline', () => {

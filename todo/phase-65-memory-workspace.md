@@ -211,26 +211,17 @@ The signature NotebookLM artifacts — real output via additive provider seams, 
 
 ---
 
-## Theme F — Retire project sources → memories (full removal + migration) — **M**
+## Theme F — Retire project sources → memories (full removal + migration) — **M** — ✅ DONE (PR #380, 2026-07-10)
 
 Make memory **the** knowledge notion; projects stop carrying a parallel sources concept.
-
-- [ ] **Forward-only data migration** — for each project with `project_sources`, create **one project-scoped
-      memory** (auto-titled e.g. `"{Project} — sources"`, `projectId` set) whose sources are the migrated rows;
-      idempotent (skip projects already migrated). Then **drop** the `project_sources` table (Decision §4).
-- [ ] **Remove the gateway surface** — delete `addProjectSource`/`removeProjectSource`/`reorderProjectSources`
-      endpoints + their service/repository code + the `project_sources` schema entry; remove `ProjectSource`
-      from the `Project` type and `sources` from project schemas in [`shared/src/project.ts`](../packages/shared/src/project.ts).
-      Update `projectToIndexDoc` if it referenced sources.
-- [ ] **Remove the web surface** — drop the **`sources` tab** from [`project-modal.tsx`](../packages/web/components/project-modal.tsx)
-      (`Tab` union + tabs array + panel) and the **right-rail sources** from
-      [`project-info-panel.tsx`](../packages/web/components/projects/project-info-panel.tsx) /
-      [`project-detail-view.tsx`](../packages/web/app/(main)/projects/view/project-detail-view.tsx); delete
-      [`project-sources-panel.tsx`](../packages/web/components/projects/panels/project-sources-panel.tsx) and the
-      project-source client methods. Where sources lived, link to **"Manage knowledge in Memory"**
-      (`/memory?scope=<projectId>`).
-- [ ] **Keep `SourceListEditor` shared** — it's still used by memory sources; only the *project* usage is
-      removed. Prune the now-unused `ReorderSourcesRequestSchema` project variant if nothing else consumes it.
+Landed — items moved to [`done.md`](done.md). A boot-time idempotent
+`ProjectSourcesMigrationService` copies each project's `project_sources` into one
+project-scoped memory (`"{Project} — knowledge"`, order + metadata preserved) then
+drops the table; the gateway source endpoints/service/repo/schema, the report
+Sources section, and the portability mapping are gone; the web modal tab, detail-page
+right-rail editor, card/recent/tree source chips, and client methods are removed and
+replaced by a **"Manage knowledge in Memory"** link (`/memory?scope=<projectId>`).
+`SourceListEditor` + `ReorderSourcesRequestSchema` stay (still used by memory sources).
 
 ---
 

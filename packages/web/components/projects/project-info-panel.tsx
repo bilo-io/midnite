@@ -1,15 +1,14 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
+import { Brain, ChevronRight } from 'lucide-react';
 import type { Project, TaskSummary } from '@midnite/shared';
-import { ProjectSourcesPanel } from '@/components/projects/panels/project-sources-panel';
 import { statusLabel, statusHueVar } from '@/components/task-columns';
 import { relativeTime } from '@/lib/utils';
 
 type Props = {
   project: Project;
   tasks: TaskSummary[];
-  /** Re-hydrate the project after a source add/remove/reorder. */
-  onChange: (project: Project) => void;
   /** Open a task from the activity list (navigates to the task page on the page shell). */
   onSelectTask?: (task: TaskSummary) => void;
 };
@@ -18,18 +17,34 @@ type Props = {
 const ACTIVITY_LIMIT = 6;
 
 /**
- * Right rail (Phase 55 C): the project's Sources (reused editor) + a short
- * Activity list of its most recently-updated tasks. Both derive from data
- * already fetched — no per-project event stream is fabricated.
+ * Right rail (Phase 55 C): a link to the project's knowledge (Memory) + a short
+ * Activity list of its most recently-updated tasks. Phase 65 F retired the
+ * per-project "sources" concept — knowledge now lives in project-scoped memories,
+ * so this points there instead of embedding a sources editor.
  */
-export function ProjectInfoPanel({ project, tasks, onChange, onSelectTask }: Props) {
+export function ProjectInfoPanel({ project, tasks, onSelectTask }: Props) {
+  const router = useRouter();
   const recent = [...tasks]
     .sort((a, b) => tsOf(b).localeCompare(tsOf(a)))
     .slice(0, ACTIVITY_LIMIT);
 
   return (
     <div className="space-y-5">
-      <ProjectSourcesPanel project={project} onChange={onChange} />
+      <div className="space-y-1.5">
+        <span className="text-xs font-medium text-muted-foreground">Knowledge</span>
+        <button
+          type="button"
+          onClick={() => router.push(`/memory?scope=${encodeURIComponent(project.id)}`)}
+          className="flex w-full items-center gap-2 rounded-md border border-border/60 bg-background/60 px-2.5 py-2 text-left text-sm transition-colors hover:border-foreground/20 hover:bg-accent/40"
+        >
+          <Brain className="h-4 w-4 shrink-0 text-[hsl(262_83%_66%)]" />
+          <span className="min-w-0 flex-1 truncate">Manage knowledge in Memory</span>
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+        </button>
+        <p className="text-[11px] text-muted-foreground">
+          Sources and notes for this project live in its scoped memories, injected into agent prompts.
+        </p>
+      </div>
 
       <div className="space-y-2 border-t border-border/60 pt-4">
         <span className="text-xs font-medium text-muted-foreground">Activity</span>

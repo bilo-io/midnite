@@ -20,7 +20,6 @@ function makeFakeProjects(): ProjectsService {
         color: req.color,
         createdAt: '2026-01-01T00:00:00.000Z',
         updatedAt: '2026-01-01T00:00:00.000Z',
-        sources: [],
         teamId: teamId ?? undefined,
         ideaId: req.ideaId ?? null,
       }),

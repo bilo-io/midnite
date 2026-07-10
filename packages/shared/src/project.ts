@@ -1,12 +1,8 @@
 import { z } from 'zod';
 import { isHexColor } from './color.js';
-import { SOURCE_KINDS } from './source.js';
 import { StatusSchema, TaskSchema } from './task.js';
 
-export const MAX_SOURCES_PER_PROJECT = 10;
 export const MAX_TAG_LENGTH = 12;
-
-export const SourceKindSchema = z.enum(SOURCE_KINDS);
 
 const HexColorSchema = z
   .string()
@@ -25,17 +21,6 @@ const TagSchema = z
  */
 export const TaskStatusCountsSchema = z.record(StatusSchema, z.number().int().nonnegative());
 
-export const ProjectSourceSchema = z.object({
-  id: z.string(),
-  projectId: z.string(),
-  url: z.string().url(),
-  kind: SourceKindSchema,
-  title: z.string().optional(),
-  faviconUrl: z.string().optional(),
-  fetchedAt: z.string().optional(),
-  createdAt: z.string(),
-});
-
 // The folder Claude Code sessions for this project spawn in. Stored in `~`-form
 // (the gateway collapses the home prefix); empty/omitted means "no fixed dir".
 const WorkDirSchema = z.string().trim().max(1024);
@@ -52,7 +37,6 @@ export const ProjectSchema = z.object({
   archived: z.boolean().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
-  sources: z.array(ProjectSourceSchema),
   taskCount: z.number().int().nonnegative().optional(),
   /**
    * Phase 58 Theme C: per-status task counts (computed, not stored). Drives the
@@ -78,7 +62,6 @@ export const CreateProjectRequestSchema = z.object({
   tag: TagSchema,
   color: HexColorSchema,
   workDir: WorkDirSchema.optional(),
-  sources: z.array(z.string().url()).max(MAX_SOURCES_PER_PROJECT).optional(),
   /** Phase 40: set when the project is created by promoting an idea. */
   ideaId: z.string().optional(),
 });
@@ -95,10 +78,6 @@ export const UpdateProjectRequestSchema = z.object({
   phaseDocSync: z.boolean().optional(),
   // Empty string clears the sync repo.
   phaseDocSyncRepoId: z.string().optional(),
-});
-
-export const AddSourceRequestSchema = z.object({
-  url: z.string().url(),
 });
 
 export const EnhanceDescriptionRequestSchema = z.object({
@@ -166,11 +145,9 @@ export function projectCompletion(
 }
 
 export type TaskStatusCounts = z.infer<typeof TaskStatusCountsSchema>;
-export type ProjectSource = z.infer<typeof ProjectSourceSchema>;
 export type Project = z.infer<typeof ProjectSchema>;
 export type CreateProjectRequest = z.infer<typeof CreateProjectRequestSchema>;
 export type UpdateProjectRequest = z.infer<typeof UpdateProjectRequestSchema>;
-export type AddSourceRequest = z.infer<typeof AddSourceRequestSchema>;
 export type EnhanceDescriptionRequest = z.infer<typeof EnhanceDescriptionRequestSchema>;
 export type EnhanceDescriptionResponse = z.infer<typeof EnhanceDescriptionResponseSchema>;
 export type DraftPlanResponse = z.infer<typeof DraftPlanResponseSchema>;

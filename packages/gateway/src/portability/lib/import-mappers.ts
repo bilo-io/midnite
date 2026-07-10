@@ -11,7 +11,6 @@ import {
   memories,
   memorySources,
   notes,
-  projectSources,
   projects,
   repos,
   routineGroups,
@@ -137,7 +136,7 @@ export const IMPORT_DOMAINS: DomainSpec[] = [
   { name: 'users', parent: users, children: [{ field: 'preferences', table: userPreferences, fk: 'userId' }] },
   { name: 'teams', parent: teams, children: [{ field: 'memberships', table: teamMemberships, fk: 'teamId' }] },
   { name: 'repos', parent: repos },
-  { name: 'projects', parent: projects, transform: archivedToTimestamp, children: [{ field: 'sources', table: projectSources, fk: 'projectId' }] },
+  { name: 'projects', parent: projects, transform: archivedToTimestamp },
   { name: 'memories', parent: memories, transform: archivedToTimestamp, children: [{ field: 'sources', table: memorySources, fk: 'memoryId' }] },
   {
     name: 'tasks',

@@ -1,15 +1,22 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, count, desc, eq, gt, gte, isNotNull, lt, lte, sql } from 'drizzle-orm';
 
+import type { RollupPeriod } from '@midnite/shared';
+
 import { DB_TOKEN, type MidniteDb } from '../db/db.module';
 import {
   agentRunStats,
   gaugeSamples,
+  llmUsage,
+  metricsRollup,
+  sessionUsage,
   taskEvents,
   tasks,
   type AgentRunStatsInsert,
   type GaugeSampleInsert,
   type GaugeSampleRow,
+  type MetricsRollupInsert,
+  type MetricsRollupRow,
 } from '../db/schema';
 
 export type RunOutcome = 'done' | 'abandoned' | 'failed' | 'cancelled';
@@ -250,6 +257,164 @@ export class MetricsRepository {
     }
     return map;
   }
+
+  // ── Phase 61 E — rollups + retention ──────────────────────────────────────
+
+  /**
+   * Aggregate closed buckets in `[since, before)` across all four raw sources
+   * into rollup rows (without `key`/`createdAt` — the service finalizes those).
+   * `before` is the start of the current period, so only fully-closed buckets
+   * are summed; re-running over the same window yields identical rows (the
+   * service upserts by a deterministic key → idempotent).
+   */
+  aggregateForRollup(period: RollupPeriod, since: string, before: string): RollupAggregateRow[] {
+    // Bucket-start expression over an ISO-8601 UTC column. A fixed literal per
+    // period (not user input); values are bound.
+    const bucket = (col: string) =>
+      period === 'hourly'
+        ? sql.raw(`substr(${col}, 1, 13) || ':00:00.000Z'`)
+        : sql.raw(`substr(${col}, 1, 10) || 'T00:00:00.000Z'`);
+
+    const runs = this.db.all(sql`
+      SELECT ${bucket('started_at')} AS bucketStart, repo,
+        COUNT(*) AS runCount,
+        SUM(outcome = 'done') AS doneCount,
+        SUM(outcome = 'abandoned') AS abandonedCount,
+        SUM(outcome = 'failed') AS failedCount,
+        SUM(outcome = 'cancelled') AS cancelledCount,
+        COALESCE(SUM(duration_ms), 0) AS totalDurationMs,
+        SUM(retry_count > 0) AS retriedRuns
+      FROM agent_run_stats
+      WHERE started_at >= ${since} AND started_at < ${before}
+      GROUP BY bucketStart, repo
+    `) as RunAgg[];
+
+    const llm = this.db.all(sql`
+      SELECT ${bucket('at')} AS bucketStart, provider, model,
+        COUNT(*) AS calls,
+        COALESCE(SUM(input_tokens), 0) AS inputTokens,
+        COALESCE(SUM(output_tokens), 0) AS outputTokens,
+        COALESCE(SUM(est_cost_usd), 0) AS estCostUsd
+      FROM llm_usage
+      WHERE at >= ${since} AND at < ${before}
+      GROUP BY bucketStart, provider, model
+    `) as LlmAgg[];
+
+    const session = this.db.all(sql`
+      SELECT ${bucket('su.updated_at')} AS bucketStart, t.repo AS repo, su.model AS model,
+        COUNT(*) AS calls,
+        COALESCE(SUM(su.input_tokens), 0) AS inputTokens,
+        COALESCE(SUM(su.output_tokens), 0) AS outputTokens,
+        SUM(su.est_cost_usd) AS estCostUsd
+      FROM session_usage su
+      LEFT JOIN tasks t ON t.id = su.session_id
+      WHERE su.updated_at >= ${since} AND su.updated_at < ${before}
+      GROUP BY bucketStart, t.repo, su.model
+    `) as SessionAgg[];
+
+    const gauge = this.db.all(sql`
+      SELECT ${bucket('at')} AS bucketStart,
+        AVG(queue_depth) AS avgQueueDepth,
+        AVG(slots_used) AS avgSlotsUsed,
+        AVG(tick_latency_ms) AS avgTickLatencyMs,
+        COUNT(*) AS sampleCount
+      FROM gauge_samples
+      WHERE at >= ${since} AND at < ${before}
+      GROUP BY bucketStart
+    `) as GaugeAgg[];
+
+    const out: RollupAggregateRow[] = [];
+    for (const r of runs) {
+      out.push({
+        period, bucketStart: r.bucketStart, source: 'runs', repo: r.repo, provider: null, model: null,
+        runCount: r.runCount, doneCount: r.doneCount, abandonedCount: r.abandonedCount,
+        failedCount: r.failedCount, cancelledCount: r.cancelledCount,
+        totalDurationMs: r.totalDurationMs, retriedRuns: r.retriedRuns,
+      });
+    }
+    for (const r of llm) {
+      out.push({
+        period, bucketStart: r.bucketStart, source: 'llm', repo: null, provider: r.provider, model: r.model,
+        calls: r.calls, inputTokens: r.inputTokens, outputTokens: r.outputTokens, estCostUsd: r.estCostUsd,
+      });
+    }
+    for (const r of session) {
+      out.push({
+        period, bucketStart: r.bucketStart, source: 'session', repo: r.repo, provider: null, model: r.model,
+        calls: r.calls, inputTokens: r.inputTokens, outputTokens: r.outputTokens, estCostUsd: r.estCostUsd,
+      });
+    }
+    for (const r of gauge) {
+      out.push({
+        period, bucketStart: r.bucketStart, source: 'gauge', repo: null, provider: null, model: null,
+        avgQueueDepth: r.avgQueueDepth, avgSlotsUsed: r.avgSlotsUsed,
+        avgTickLatencyMs: r.avgTickLatencyMs, sampleCount: r.sampleCount,
+      });
+    }
+    return out;
+  }
+
+  /** Idempotent batch upsert of rollup rows, keyed by the deterministic `key`. */
+  upsertRollups(rows: MetricsRollupInsert[]): void {
+    if (rows.length === 0) return;
+    for (const row of rows) {
+      this.db
+        .insert(metricsRollup)
+        .values(row)
+        .onConflictDoUpdate({ target: metricsRollup.key, set: row })
+        .run();
+    }
+  }
+
+  /**
+   * Prune raw metrics rows older than `before` (already rolled up) from the four
+   * raw tables. Returns rows deleted per table. Never touches task_events /
+   * task_failures (product history).
+   */
+  pruneRawBefore(before: string): { llmUsage: number; sessionUsage: number; agentRunStats: number; gaugeSamples: number } {
+    const llm = this.db.delete(llmUsage).where(lt(llmUsage.at, before)).run().changes;
+    const session = this.db.delete(sessionUsage).where(lt(sessionUsage.updatedAt, before)).run().changes;
+    const runs = this.db.delete(agentRunStats).where(lt(agentRunStats.startedAt, before)).run().changes;
+    const gauges = this.db.delete(gaugeSamples).where(lt(gaugeSamples.at, before)).run().changes;
+    return { llmUsage: llm, sessionUsage: session, agentRunStats: runs, gaugeSamples: gauges };
+  }
+
+  /** Read stored rollups for a period over `[from, to]`, oldest-first. */
+  listRollups(period: RollupPeriod, from: string, to: string, source?: string): MetricsRollupRow[] {
+    const conds = [
+      eq(metricsRollup.period, period),
+      gte(metricsRollup.bucketStart, from),
+      lte(metricsRollup.bucketStart, to),
+    ];
+    if (source) conds.push(eq(metricsRollup.source, source));
+    return this.db
+      .select()
+      .from(metricsRollup)
+      .where(and(...conds))
+      .orderBy(metricsRollup.bucketStart)
+      .all();
+  }
+}
+
+/** A rollup row as aggregated (before the service adds `key` + `createdAt`). */
+export type RollupAggregateRow = Omit<MetricsRollupInsert, 'key' | 'createdAt'>;
+
+interface RunAgg {
+  bucketStart: string; repo: string | null;
+  runCount: number; doneCount: number; abandonedCount: number; failedCount: number;
+  cancelledCount: number; totalDurationMs: number; retriedRuns: number;
+}
+interface LlmAgg {
+  bucketStart: string; provider: string; model: string;
+  calls: number; inputTokens: number; outputTokens: number; estCostUsd: number;
+}
+interface SessionAgg {
+  bucketStart: string; repo: string | null; model: string | null;
+  calls: number; inputTokens: number; outputTokens: number; estCostUsd: number | null;
+}
+interface GaugeAgg {
+  bucketStart: string; avgQueueDepth: number | null; avgSlotsUsed: number | null;
+  avgTickLatencyMs: number | null; sampleCount: number;
 }
 
 /** Raw per-task timestamps for cycle-time reconstruction (Phase 61 C). */

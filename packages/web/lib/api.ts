@@ -1168,33 +1168,6 @@ export async function deleteProject(id: string): Promise<void> {
   await fetchJson(`/projects/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
 
-export async function addProjectSource(id: string, url: string): Promise<Project> {
-  const { project } = await fetchJson(
-    `/projects/${encodeURIComponent(id)}/sources`,
-    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ url }) },
-    ProjectResponseSchema,
-  );
-  return project;
-}
-
-export async function removeProjectSource(id: string, sourceId: string): Promise<Project> {
-  const { project } = await fetchJson(
-    `/projects/${encodeURIComponent(id)}/sources/${encodeURIComponent(sourceId)}`,
-    { method: 'DELETE' },
-    ProjectResponseSchema,
-  );
-  return project;
-}
-
-export async function reorderProjectSources(id: string, sourceIds: string[]): Promise<Project> {
-  const { project } = await fetchJson(
-    `/projects/${encodeURIComponent(id)}/sources/reorder`,
-    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ sourceIds }) },
-    ProjectResponseSchema,
-  );
-  return project;
-}
-
 // --- Repos (the DB-backed repo registry) ---
 
 export async function getRepos(): Promise<Repo[]> {

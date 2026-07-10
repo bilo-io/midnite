@@ -182,9 +182,9 @@ export function ProjectDetailView({
             </div>
           </div>
 
-          {/* Right rail — sources + activity. */}
-          <Rail side="right" open={rightOpen} isMobile={isMobile} onToggle={() => setRightOpen(!rightOpen)} title="Sources & activity">
-            <ProjectInfoPanel project={project} tasks={tasks} onChange={reload} onSelectTask={openTask} />
+          {/* Right rail — knowledge + activity. */}
+          <Rail side="right" open={rightOpen} isMobile={isMobile} onToggle={() => setRightOpen(!rightOpen)} title="Knowledge & activity">
+            <ProjectInfoPanel project={project} tasks={tasks} onSelectTask={openTask} />
           </Rail>
         </div>
       </div>

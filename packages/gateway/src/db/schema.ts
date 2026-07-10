@@ -301,25 +301,6 @@ export const repos = sqliteTable(
   }),
 );
 
-export const projectSources = sqliteTable(
-  'project_sources',
-  {
-    id: text('id').primaryKey(),
-    projectId: text('project_id').notNull(),
-    url: text('url').notNull(),
-    kind: text('kind').notNull(),
-    title: text('title'),
-    faviconUrl: text('favicon_url'),
-    fetchedAt: text('fetched_at'),
-    createdAt: text('created_at').notNull(),
-    // Ascending display order within the project; drives the list/drag order.
-    position: integer('position').notNull().default(0),
-  },
-  (t) => ({
-    projectIdx: index('project_sources_project_idx').on(t.projectId),
-  }),
-);
-
 // Memories: markdown knowledge entries injected into agent prompts. project_id
 // null = global (applies to every project); otherwise scoped to that project.
 export const memories = sqliteTable(
@@ -718,8 +699,6 @@ export type ProjectRow = typeof projects.$inferSelect;
 export type ProjectInsert = typeof projects.$inferInsert;
 export type RepoRow = typeof repos.$inferSelect;
 export type RepoInsert = typeof repos.$inferInsert;
-export type ProjectSourceRow = typeof projectSources.$inferSelect;
-export type ProjectSourceInsert = typeof projectSources.$inferInsert;
 export type MemoryRow = typeof memories.$inferSelect;
 export type MemoryInsert = typeof memories.$inferInsert;
 export type MemorySourceRow = typeof memorySources.$inferSelect;
@@ -1061,6 +1040,53 @@ export const sessionUsage = sqliteTable('session_usage', {
 
 export type SessionUsageRow = typeof sessionUsage.$inferSelect;
 export type SessionUsageInsert = typeof sessionUsage.$inferInsert;
+
+/**
+ * Phase 61 E — aggregated metrics rollups. One row per
+ * (period, bucketStart, source, repo, provider, model), identified by a
+ * deterministic `key` (the pk) so re-running the rollup upserts in place
+ * (idempotent). Metric columns are nullable + populated per `source`
+ * ('runs' | 'llm' | 'session' | 'gauge'). Kept forever; the raw tables they
+ * summarise (llm_usage/session_usage/agent_run_stats/gauge_samples) are pruned
+ * past `metrics.rawRetentionDays` once rolled up. Never summarises task_events.
+ */
+export const metricsRollup = sqliteTable(
+  'metrics_rollup',
+  {
+    key: text('key').primaryKey(),
+    period: text('period').notNull(), // 'hourly' | 'daily'
+    bucketStart: text('bucket_start').notNull(), // ISO, UTC
+    source: text('source').notNull(), // 'runs' | 'llm' | 'session' | 'gauge'
+    repo: text('repo'),
+    provider: text('provider'),
+    model: text('model'),
+    // source='runs'
+    runCount: integer('run_count'),
+    doneCount: integer('done_count'),
+    abandonedCount: integer('abandoned_count'),
+    failedCount: integer('failed_count'),
+    cancelledCount: integer('cancelled_count'),
+    totalDurationMs: integer('total_duration_ms'),
+    retriedRuns: integer('retried_runs'),
+    // source='llm' | 'session'
+    calls: integer('calls'),
+    inputTokens: integer('input_tokens'),
+    outputTokens: integer('output_tokens'),
+    estCostUsd: real('est_cost_usd'),
+    // source='gauge'
+    avgQueueDepth: real('avg_queue_depth'),
+    avgSlotsUsed: real('avg_slots_used'),
+    avgTickLatencyMs: real('avg_tick_latency_ms'),
+    sampleCount: integer('sample_count'),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    periodBucketIdx: index('metrics_rollup_period_bucket_idx').on(t.period, t.bucketStart),
+  }),
+);
+
+export type MetricsRollupRow = typeof metricsRollup.$inferSelect;
+export type MetricsRollupInsert = typeof metricsRollup.$inferInsert;
 
 
 export type WorkflowTemplateRow = typeof workflowTemplates.$inferSelect;

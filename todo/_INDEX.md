@@ -28,11 +28,11 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [65 · Memory workspace](phase-65-memory-workspace.md) | 🔄 WIP | 7/33 | `██░░░░░░░░` | 21% | B F | C D E G |
+| [65 · Memory workspace](phase-65-memory-workspace.md) | 🔄 WIP | 11/33 | `███░░░░░░░` | 33% | B | C D E G |
 | [64 · Office presence](phase-64-office-presence.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
 | [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 6/33 | `██░░░░░░░░` | 18% | — | C D E F G H |
-| [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 14/36 | `████░░░░░░` | 39% | E | F G H I |
+| [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 18/36 | `█████░░░░░` | 50% | — | F G H I |
 | [60 · Fable-Analysis](phase-60-fable-analysis.md) | 🔄 WIP | 47/63 | `███████░░░` | 75% | — | J M |
 | [59 · Chat to board](phase-59-chat-to-board.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
@@ -123,7 +123,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ◻ **C** — Chat to the knowledge base: persisted threads, FTS-retrieve→stuff→LlmService answer with source citations
 - ◻ **D** — Studio: un-stub media `generate`; text artifacts (brief/FAQ/study-guide/timeline) + infographic (LLM→SVG)
 - ◻ **E** — Studio: audio overview (LLM script→TTS) + video (slides+narration→ffmpeg compose); degrade w/o provider
-- 🔄 **F** — Retire project sources → memories: forward migration to a project-scoped memory, drop `project_sources`, remove UI/API
+- ✅ **F** — Retire project sources → memories: forward migration to a project-scoped memory, drop `project_sources`, remove UI/API (PR #380)
 - ◻ **G** — Tests (gateway/shared/web + Playwright), docs + `memory.studio` config, a11y, light/dark baselines
 
 ### [Phase 64 — Office multiplayer presence](phase-64-office-presence.md)
@@ -164,7 +164,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **B** — Cost attribution: GET /usage/attribution (groupBy task/repo/project/session) + measured-vs-estimated composition; soft budgets fold in session cost (PR #370)
 - ✅ **C** — Cycle-time as a first-class metric (todo→wip→done from task_events; GET /metrics/cycle-time) (PR #354)
 - ✅ **D** — Gauge history that survives restarts: sampler + gauge_samples + GET /metrics/gauges/history (PR #343)
-- ◻ **E** — Rollups + retention (hourly/daily rollups; prune metrics raws only, never task_events)
+- ✅ **E** — Rollups + retention (metrics_rollup table + timer job + raw pruning; GET /metrics/rollups; transparent read-switch deferred) (PR #381)
 - ◻ **F** — Live metrics channel on the P56 reliable WS (poll fallback)
 - ◐ **G** — Ops page deepening: cycle-time + fleet-trend charts landed; cost views + run timeline open (PR #360)
 - ◻ **H** — Widgets + session/project cockpit integration

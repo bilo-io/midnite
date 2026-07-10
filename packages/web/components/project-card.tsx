@@ -8,7 +8,6 @@ import { ProjectProgressBar } from '@/components/project-progress';
 import { ProjectStatusBadge } from '@/components/project-status-badge';
 import { ProjectTag } from '@/components/project-tag';
 import { SelectableIcon } from '@/components/selectable-icon';
-import { SourceIcon } from '@/components/source-icon';
 import { exportProjectMarkdown } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -27,7 +26,6 @@ function plural(n: number, word: string): string {
 
 export function ProjectCard({ project, layout, onOpen, onPlan, selected = false, onToggleSelect }: Props) {
   const tasks = project.taskCount ?? 0;
-  const sourceCount = project.sources.length;
   const exportFilename = (project.name || 'project').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40);
 
   const selectIcon = (
@@ -65,20 +63,6 @@ export function ProjectCard({ project, layout, onOpen, onPlan, selected = false,
     </div>
   );
 
-  const favicons =
-    sourceCount > 0 ? (
-      <div className="flex items-center -space-x-1">
-        {project.sources.slice(0, 5).map((s) => (
-          <span
-            key={s.id}
-            className="flex h-5 w-5 items-center justify-center rounded-full border border-border/60 bg-background"
-          >
-            <SourceIcon kind={s.kind} faviconUrl={s.faviconUrl} className="h-3 w-3" />
-          </span>
-        ))}
-      </div>
-    ) : null;
-
   if (layout === 'list') {
     return (
       <div
@@ -100,7 +84,6 @@ export function ProjectCard({ project, layout, onOpen, onPlan, selected = false,
             <p className="mt-0.5 truncate text-xs text-muted-foreground">{project.description}</p>
           ) : null}
         </button>
-        {favicons}
         <ProjectProgressBar project={project} hideLabel className="hidden w-24 shrink-0 md:flex" />
         <span className="hidden shrink-0 text-xs tabular-nums text-muted-foreground sm:block">
           {plural(tasks, 'task')}
@@ -139,10 +122,7 @@ export function ProjectCard({ project, layout, onOpen, onPlan, selected = false,
         )}
       </button>
       <ProjectProgressBar project={project} />
-      <div className="mt-auto flex items-center justify-between gap-2">
-        {favicons ?? (
-          <span className="text-xs text-muted-foreground">{plural(0, 'source')}</span>
-        )}
+      <div className="mt-auto flex items-center justify-end gap-2">
         <div className="flex items-center gap-1">
           {exportMenu}
           {planButton}

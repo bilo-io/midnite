@@ -2,15 +2,12 @@ import {
   BadRequestException,
   Inject,
   Injectable,
-  Logger,
   NotFoundException,
   Optional,
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import {
-  MAX_SOURCES_PER_PROJECT,
-  detectSourceKind,
   type Breakdown,
   type BreakdownPreviewResponse,
   type CreateProjectRequest,
@@ -28,7 +25,6 @@ import { MemoriesService } from '../memories/memories.service';
 import { projectToIndexDoc } from '../search/lib/index-mappers';
 import { SearchIndexService } from '../search/search-index.service';
 import { TasksService } from '../tasks/tasks.service';
-import { fetchSourceMetadata } from './lib/opengraph';
 import { projectReportFilename, projectToMarkdown } from './lib/project-report';
 import { ProjectsRepository } from './projects.repository';
 import {
@@ -61,8 +57,6 @@ const RECORD_PLAN_SCHEMA = {
 
 @Injectable()
 export class ProjectsService {
-  private readonly logger = new Logger(ProjectsService.name);
-
   constructor(
     @Inject(ProjectsRepository) private readonly repo: ProjectsRepository,
     @Inject(LlmService) private readonly llm: LlmService,
@@ -114,11 +108,6 @@ export class ProjectsService {
       createdAt: now,
       updatedAt: now,
     });
-
-    // Positions are assigned by staged order up front, so the parallel inserts
-    // below preserve it (computing positions inside each would race to 0).
-    const urls = dedupe(req.sources ?? []).slice(0, MAX_SOURCES_PER_PROJECT);
-    await Promise.all(urls.map((url, i) => this.addSourceRow(id, url, i)));
 
     const project = this.getProject(id);
     this.searchIndex?.upsert(projectToIndexDoc(project));
@@ -185,36 +174,6 @@ export class ProjectsService {
       action: 'project.deleted',
       payload: { name: before.name },
     });
-  }
-
-  async addSource(projectId: string, url: string): Promise<Project> {
-    this.assertExists(projectId);
-    if (this.repo.countSources(projectId) >= MAX_SOURCES_PER_PROJECT) {
-      throw new BadRequestException(
-        `a project can have at most ${MAX_SOURCES_PER_PROJECT} sources`,
-      );
-    }
-    await this.addSourceRow(projectId, url, this.repo.nextSourcePosition(projectId));
-    return this.getProject(projectId);
-  }
-
-  removeSource(projectId: string, sourceId: string): Project {
-    this.assertExists(projectId);
-    if (!this.repo.getSource(projectId, sourceId)) {
-      throw new NotFoundException(`source ${sourceId} not found`);
-    }
-    this.repo.deleteSource(projectId, sourceId);
-    return this.getProject(projectId);
-  }
-
-  reorderSources(projectId: string, sourceIds: string[]): Project {
-    this.assertExists(projectId);
-    const current = this.repo.listSources(projectId).map((s) => s.id);
-    if (!sameIdSet(current, sourceIds)) {
-      throw new BadRequestException('reorder must list every current source exactly once');
-    }
-    this.repo.reorderSources(projectId, sourceIds);
-    return this.getProject(projectId);
   }
 
   async enhanceDescription(req: EnhanceDescriptionRequest): Promise<string> {
@@ -305,12 +264,11 @@ export class ProjectsService {
   }
 
   private async generatePlan(project: Project): Promise<string> {
-    // Sources are merged by URL in increasing precedence: the project's scoped
-    // memories' sources, then the project's own sources (which win on a collision).
+    // Reference sources now live on the project's scoped memories (Phase 65 F —
+    // project sources retired), deduped by URL.
     const byUrl = new Map<string, { kind: string; title?: string; url: string }>();
     const scopedMemories = this.memories.listScoped(project.id);
     for (const m of scopedMemories) for (const s of m.sources) byUrl.set(s.url, s);
-    for (const s of project.sources) byUrl.set(s.url, s);
     const merged = [...byUrl.values()];
     const sourceLines = merged.length
       ? merged.map((s) => `- [${s.kind}] ${s.title ?? '(untitled)'} — ${s.url}`).join('\n')
@@ -363,10 +321,6 @@ export class ProjectsService {
       '- [ ] Decide how to verify the work',
       '- [ ] Plan the rollout',
     ];
-    if (project.sources.length) {
-      lines.push('', '## Sources to review');
-      for (const s of project.sources) lines.push(`- [ ] Review ${s.title ?? s.url}`);
-    }
     return lines.join('\n');
   }
 
@@ -385,40 +339,6 @@ export class ProjectsService {
       throw new NotFoundException(`project ${id} not found`);
     }
   }
-
-  private async addSourceRow(projectId: string, url: string, position: number): Promise<void> {
-    try {
-      const now = new Date().toISOString();
-      const meta = await fetchSourceMetadata(url);
-      this.repo.insertSource({
-        id: randomUUID(),
-        projectId,
-        url,
-        kind: detectSourceKind(url),
-        title: meta.title ?? null,
-        faviconUrl: meta.faviconUrl ?? null,
-        fetchedAt: now,
-        createdAt: now,
-        position,
-      });
-    } catch (err) {
-      // Best-effort: a bad fetch or insert must not fail project creation.
-      this.logger.warn(`failed to add source ${url}: ${String(err)}`);
-    }
-  }
-}
-
-function dedupe(urls: string[]): string[] {
-  return [...new Set(urls.map((u) => u.trim()).filter(Boolean))];
-}
-
-/** True when both arrays hold the same ids, each exactly once. */
-function sameIdSet(current: string[], next: string[]): boolean {
-  return (
-    current.length === next.length &&
-    new Set(next).size === next.length &&
-    next.every((id) => current.includes(id))
-  );
 }
 
 // Store the work directory in `~`-form: resolve to absolute (expanding any ~ and
