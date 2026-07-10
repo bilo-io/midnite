@@ -16,6 +16,14 @@ The signature NotebookLM artifacts, **real but degrading gracefully**. Both live
 - [x] **gateway** — file columns on `memory_artifacts` + migration `0081` (hand-written; drizzle-kit generate stays blocked on the pre-existing snapshot drift); `MemoryStudioService` branches audio/video → seams → uploads write; `…/artifacts/:id/file` serve endpoint (re-confined like media file-serve).
 - [x] **tests** — shared schema round-trips (audio/video + file fields, script/deck); gateway service (audio/video degrade + file-persist with fake seams), TTS/video seam enable/degrade, `wrapText`, renderers, controller; web RTL (audio player + degraded hint) + e2e (rows offered) + light/dark preview shots (rail, playable audio viewer, degraded video viewer).
 
+## 2026-07-11 — feat: live metrics WS channel — Phase 61 Theme F (PR #389)
+
+The Ops page stops polling for fleet gauges: a live `metrics` channel on the Phase 56 reliable broadcast (seq + ring + resume) pushes a gauge snapshot on every change. Publish trigger is **on-change** (each gauge write, coalesced per tick), not the 60s sampler — so the live channel is faster than the 10s poll it replaces; the poll stays as the fallback. Phase 61 → 20/36 (56%).
+
+- [x] **shared** — `events/metrics.ts`: `METRICS_WS_PATH`, `MetricsEvent` (`metrics.gauges` reusing `MetricsGaugesSchema`), `SequencedMetricsEventSchema` (via `sequencedEnvelope`), `MetricsSubscribeMessageSchema`; barrel export + round-trip specs.
+- [x] **gateway** — `MetricsEventBus` (mirrors `IdeaEventBus`); `MetricsService` emits a coalesced gauge snapshot to the bus on every `record*` (microtask-batched; `@Optional` bus so unit specs are untouched) + a shared `currentGauges()` (DRYs `getOpsSummary`); `MetricsGateway` (`/ws/metrics`, single `metrics:all` ring key, no team scoping) fans out via `ReliableBroadcastService.toAll`. `MetricsModule` imports `AuthModule` + provides the bus/gateway. Event-bus, gateway (broadcast/subscribe/origin/disconnect), and live-emit coalescing specs.
+- [x] **web** — `useLiveGauges` over `useReliableSubscription` (`/ws/metrics`); the Ops page patches live gauges over the polled `OpsSummary` (poll kept as fallback; resync gap clears back to poll). Hook test drives events via a mocked subscription.
+
 ## 2026-07-11 — audit+fix: mobile & responsive polish — Phase 60 Theme J (PR #387)
 
 Audited every top-level surface across the full breakpoint matrix (320/375/390/768/landscape) for the CLAUDE.md no-horizontal-body-scroll invariant + touch/PWA/safe-area, and fixed the ≥P2 quick-wins inline under the phase's quick-win rule. Findings in [`phase-60-findings/J-mobile-responsive.md`](phase-60-findings/J-mobile-responsive.md). Phase 60 → 50/62 (80%); only Theme M (synthesis) remains.

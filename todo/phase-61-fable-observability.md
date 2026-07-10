@@ -167,17 +167,20 @@ Keep the truth without keeping every row.
       rollup-vs-raw switch inside `/metrics/ops` + `usage/summary` is a **documented follow-up** — a
       perf-tuning change on the live read paths that wants the P57 bench harness (decided at pickup).
 
-## Theme F — Live metrics channel (ride Phase 56) — **S-M**
+## Theme F — Live metrics channel (ride Phase 56) — **S-M** — ✅ DONE (PR #389, 2026-07-11)
 
-The Ops page stops polling.
+The Ops page stops polling. Landed — items moved to [`done.md`](done.md). The publish
+trigger is **on-change** (each fleet-gauge write, coalesced per tick via a microtask) rather
+than the 60s sampler, so the live channel is faster than the poll it replaces; the poll stays
+as the fallback when the socket is down or nothing has changed.
 
-- [ ] A **`metrics` scoped channel** on the P56 `ReliableBroadcastService` (seq + ring + resume like
-      the board channels): the gateway publishes gauge snapshots on change/sample and rollup-bucket
-      closes; **depends on 56-B (resume protocol) being merged** — if not yet, land the publish side
-      behind the existing broadcast and let the client keep a fast-poll fallback.
-- [ ] **web:** the Ops page consumes the channel via the P56 reliable-subscription hook (patch the
-      gauge/series state; no full refetch storm — P57 cache discipline); widgets keep their poll as
-      the fallback path.
+- [x] A **`metrics` channel** on the P56 `ReliableBroadcastService` (seq + ring + resume, single
+      `metrics:all` line — fleet gauges aren't team-scoped): `MetricsService` emits a gauge snapshot to
+      a `MetricsEventBus` on every gauge change (coalesced); a new `MetricsGateway` (`/ws/metrics`,
+      cloned from `IdeasGateway`) fans out to subscribers. 56-B resume is merged, so full resume works.
+- [x] **web:** the Ops page consumes the channel via the P56 `useReliableSubscription` hook
+      (`useLiveGauges`), patching the live gauges over the polled `OpsSummary` (no refetch storm); the
+      10s poll stays as the fallback path, and a resync gap clears the live value back to the poll.
 
 ---
 

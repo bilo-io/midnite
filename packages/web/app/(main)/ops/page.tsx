@@ -2,6 +2,7 @@
 
 import { fetchTasksDoctor, getOpsMetrics, getPoolSnapshot, getUsageSummary } from '@/lib/api';
 import { usePolling } from '@/lib/use-polling';
+import { useLiveGauges } from '@/hooks/use-metrics-events';
 import { useGatewayErrorToast } from '@/lib/use-gateway-error-toast';
 import { PageHeader } from '@/components/page-header';
 import { OpsView } from '@/components/ops-view';
@@ -37,6 +38,12 @@ export default function OpsPage() {
     POLL_MS,
   );
 
+  // Phase 61 F — live fleet gauges over the reliable WS. When a push is present
+  // it patches the polled summary's gauges (the poll stays as the fallback path).
+  const liveGauges = useLiveGauges();
+  const liveSummary =
+    summary && liveGauges ? { ...summary, gauges: liveGauges } : summary;
+
   useGatewayErrorToast(poolErr ?? summaryErr ?? usageErr ?? doctorErr);
 
   const loading = poolLoading || summaryLoading || usageLoading;
@@ -57,7 +64,7 @@ export default function OpsPage() {
       />
       <OpsView
         pool={pool}
-        summary={summary}
+        summary={liveSummary}
         usage={usage}
         loading={loading}
         onRefresh={refresh}
