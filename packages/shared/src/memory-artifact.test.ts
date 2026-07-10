@@ -17,12 +17,29 @@ describe('memory-artifact schemas', () => {
     content: '# Summary',
     status: 'ready' as const,
     error: null,
+    filePath: null,
+    mimeType: null,
+    fileSize: null,
+    degraded: false,
     createdAt: '2026-07-10T00:00:00.000Z',
     updatedAt: '2026-07-10T00:00:00.000Z',
   };
 
   it('round-trips a valid artifact', () => {
     expect(MemoryArtifactSchema.parse(base)).toEqual(base);
+  });
+
+  it('round-trips a file-backed audio artifact', () => {
+    const audio = {
+      ...base,
+      kind: 'audio-overview' as const,
+      format: 'audio' as const,
+      filePath: 'memory-studio/a1.mp3',
+      mimeType: 'audio/mpeg',
+      fileSize: 12345,
+      degraded: false,
+    };
+    expect(MemoryArtifactSchema.parse(audio)).toEqual(audio);
   });
 
   it('accepts every kind with an svg infographic', () => {
