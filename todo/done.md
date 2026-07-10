@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-11 — feat: live metrics WS channel — Phase 61 Theme F (PR #389)
+
+The Ops page stops polling for fleet gauges: a live `metrics` channel on the Phase 56 reliable broadcast (seq + ring + resume) pushes a gauge snapshot on every change. Publish trigger is **on-change** (each gauge write, coalesced per tick), not the 60s sampler — so the live channel is faster than the 10s poll it replaces; the poll stays as the fallback. Phase 61 → 20/36 (56%).
+
+- [x] **shared** — `events/metrics.ts`: `METRICS_WS_PATH`, `MetricsEvent` (`metrics.gauges` reusing `MetricsGaugesSchema`), `SequencedMetricsEventSchema` (via `sequencedEnvelope`), `MetricsSubscribeMessageSchema`; barrel export + round-trip specs.
+- [x] **gateway** — `MetricsEventBus` (mirrors `IdeaEventBus`); `MetricsService` emits a coalesced gauge snapshot to the bus on every `record*` (microtask-batched; `@Optional` bus so unit specs are untouched) + a shared `currentGauges()` (DRYs `getOpsSummary`); `MetricsGateway` (`/ws/metrics`, single `metrics:all` ring key, no team scoping) fans out via `ReliableBroadcastService.toAll`. `MetricsModule` imports `AuthModule` + provides the bus/gateway. Event-bus, gateway (broadcast/subscribe/origin/disconnect), and live-emit coalescing specs.
+- [x] **web** — `useLiveGauges` over `useReliableSubscription` (`/ws/metrics`); the Ops page patches live gauges over the polled `OpsSummary` (poll kept as fallback; resync gap clears back to poll). Hook test drives events via a mocked subscription.
+
 ## 2026-07-11 — audit+fix: mobile & responsive polish — Phase 60 Theme J (PR #387)
 
 Audited every top-level surface across the full breakpoint matrix (320/375/390/768/landscape) for the CLAUDE.md no-horizontal-body-scroll invariant + touch/PWA/safe-area, and fixed the ≥P2 quick-wins inline under the phase's quick-win rule. Findings in [`phase-60-findings/J-mobile-responsive.md`](phase-60-findings/J-mobile-responsive.md). Phase 60 → 50/62 (80%); only Theme M (synthesis) remains.

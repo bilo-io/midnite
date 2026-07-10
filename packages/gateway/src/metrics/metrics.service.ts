@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import {
   GAUGE_HISTORY_MAX_POINTS,
   type CycleTimeGroup,
@@ -17,6 +17,7 @@ import {
 } from '@midnite/shared';
 
 import { MetricsRepository, type DoneTaskCycleRow } from './metrics.repository';
+import { MetricsEventBus } from './metrics-event-bus';
 import { GaugeStore } from './gauge-store';
 import { deriveCycle, statOf, type TaskCycle } from './lib/cycle-time';
 
@@ -54,20 +55,56 @@ export class MetricsService {
    */
   private readonly cycleCache = new Map<string, TaskCycle>();
 
-  constructor(private readonly repo: MetricsRepository) {}
+  // Phase 61 F: coalesce a burst of gauge writes (the scheduler records queue
+  // depth + tick latency back-to-back each tick) into a single live push.
+  private gaugeEmitScheduled = false;
+
+  // `@Optional()` so unit specs can `new MetricsService(repo)` without a bus;
+  // in the app it's provided by MetricsModule and drives the live WS channel.
+  constructor(
+    private readonly repo: MetricsRepository,
+    @Optional() private readonly bus?: MetricsEventBus,
+  ) {}
 
   // ── Gauge setters (called by scheduler / pool / runner) ─────────────────────
 
   recordQueueDepth(depth: number): void {
     this.gauges.recordQueueDepth(depth, new Date().toISOString());
+    this.scheduleGaugeEmit();
   }
 
   recordSlotChange(used: number, total: number): void {
     this.gauges.recordSlotChange(used, total, new Date().toISOString());
+    this.scheduleGaugeEmit();
   }
 
   recordTickLatency(ms: number): void {
     this.gauges.recordTickLatency(ms, new Date().toISOString());
+    this.scheduleGaugeEmit();
+  }
+
+  /** The current live gauges, mapped to the wire shape (shared by the Ops
+   *  summary and the live WS push). */
+  currentGauges(): MetricsGauges {
+    const snap = this.gauges.snapshot();
+    return {
+      queueDepth: snap.queueDepth,
+      slotsUsed: snap.slots?.used ?? null,
+      slotsTotal: snap.slots?.total ?? null,
+      lastTickLatencyMs: snap.lastTickLatencyMs,
+      updatedAt: snap.updatedAt,
+    };
+  }
+
+  /** Publish a live gauge snapshot on the next microtask, coalescing a burst of
+   *  writes in the same tick into one push. No-op when no bus is wired. */
+  private scheduleGaugeEmit(): void {
+    if (!this.bus || this.gaugeEmitScheduled) return;
+    this.gaugeEmitScheduled = true;
+    queueMicrotask(() => {
+      this.gaugeEmitScheduled = false;
+      this.bus?.emit({ type: 'metrics.gauges', gauges: this.currentGauges() });
+    });
   }
 
   // ── Run lifecycle (called by agent runner) ───────────────────────────────────
@@ -95,17 +132,8 @@ export class MetricsService {
   getOpsSummary(query: OpsQuery): OpsSummary {
     const { from, to } = query.from && query.to ? { from: query.from, to: query.to } : defaultWindow();
 
-    const snap = this.gauges.snapshot();
-    const gauges: MetricsGauges = {
-      queueDepth: snap.queueDepth,
-      slotsUsed: snap.slots?.used ?? null,
-      slotsTotal: snap.slots?.total ?? null,
-      lastTickLatencyMs: snap.lastTickLatencyMs,
-      updatedAt: snap.updatedAt,
-    };
-
     return {
-      gauges,
+      gauges: this.currentGauges(),
       throughputByDay: this.repo.countByDay(from, to),
       durationBuckets: this.repo.durationBuckets(from, to),
       outcomeCounts: this.repo.outcomeCounts(from, to),
