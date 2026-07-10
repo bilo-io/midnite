@@ -1330,6 +1330,28 @@ export async function reorderMemorySources(id: string, sourceIds: string[]): Pro
   return memory;
 }
 
+/** Upload a file (PDF / Markdown / text) as a memory source (Phase 65 B). */
+export async function uploadMemorySourceFile(id: string, file: File): Promise<Memory> {
+  const form = new FormData();
+  form.append('file', file);
+  const { memory } = await fetchJson(
+    `/memories/${encodeURIComponent(id)}/sources/file`,
+    { method: 'POST', body: form },
+    MemoryResponseSchema,
+  );
+  return memory;
+}
+
+/** Re-run ingestion (URL re-fetch / file re-extract) for a memory source. */
+export async function reingestMemorySource(id: string, sourceId: string): Promise<Memory> {
+  const { memory } = await fetchJson(
+    `/memories/${encodeURIComponent(id)}/sources/${encodeURIComponent(sourceId)}/reingest`,
+    { method: 'POST' },
+    MemoryResponseSchema,
+  );
+  return memory;
+}
+
 export async function enhanceProjectDescription(input: {
   name?: string;
   description: string;

@@ -42,6 +42,16 @@ for (const scheme of ['dark', 'light'] as const) {
     await expect(page.getByRole('heading', { name: memory.title })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Sources' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Studio' })).toBeVisible();
+
+    // Phase 65 B — upload a file source so the shot shows the ingestion UI
+    // (upload affordance + a "read" file source in the left rail).
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'conventions.md',
+      mimeType: 'text/markdown',
+      buffer: Buffer.from('# Conventions\nUse tabs, not spaces.'),
+    });
+    await expect(page.getByLabel('Source read')).toBeVisible({ timeout: 15_000 });
+
     // The header title + description type out via a typewriter — let them settle
     // so the preview shot shows the full title, not a mid-animation frame.
     await expect(page.getByRole('heading', { name: memory.title })).toHaveText(memory.title);
