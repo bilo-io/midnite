@@ -9,6 +9,7 @@ const fakeMemory = { id: 'mem1', title: 'Note', content: '', sources: [] } as un
 function build(overrides: Partial<Record<keyof MemoriesService, unknown>> = {}) {
   const service = {
     listMemories: vi.fn(() => [fakeMemory]),
+    getMemory: vi.fn(() => fakeMemory),
     createMemory: vi.fn(async () => fakeMemory),
     updateMemory: vi.fn(() => fakeMemory),
     removeMemory: vi.fn(),
@@ -46,6 +47,12 @@ describe('MemoriesController — valid input delegates to the service', () => {
     expect(service.createMemory).toHaveBeenCalledWith(expect.objectContaining({ title: 'Note' }));
   });
 
+  it('fetches a single memory by id', () => {
+    const { controller, service } = build();
+    expect(controller.getMemory('mem1')).toEqual({ memory: fakeMemory });
+    expect(service.getMemory).toHaveBeenCalledWith('mem1');
+  });
+
   it('adds a source by url', async () => {
     const { controller, service } = build();
     await controller.addSource('mem1', { url: 'https://example.com' });
@@ -67,5 +74,14 @@ describe('MemoriesController — service errors propagate', () => {
       }),
     });
     expect(() => controller.updateMemory('mem9', { title: 'x' })).toThrow(NotFoundException);
+  });
+
+  it('lets a NotFoundException surface from GET :id', () => {
+    const { controller } = build({
+      getMemory: vi.fn(() => {
+        throw new NotFoundException('memory mem9 not found');
+      }),
+    });
+    expect(() => controller.getMemory('mem9')).toThrow(NotFoundException);
   });
 });

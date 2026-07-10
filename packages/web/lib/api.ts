@@ -1289,6 +1289,15 @@ export async function getMemories(): Promise<Memory[]> {
   return memories;
 }
 
+export async function getMemory(id: string): Promise<Memory> {
+  const { memory } = await fetchJson(
+    `/memories/${encodeURIComponent(id)}`,
+    undefined,
+    MemoryResponseSchema,
+  );
+  return memory;
+}
+
 export async function createMemory(body: CreateMemoryRequest): Promise<Memory> {
   const { memory } = await fetchJson(
     '/memories',

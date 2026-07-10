@@ -99,6 +99,23 @@ export async function seedProject(name: string, description: string): Promise<Se
   return { id: project.id, name: project.name };
 }
 
+/** A memory created over the gateway REST API. */
+export type SeededMemory = { id: string; title: string };
+
+/** Create a global memory via `POST /memories` (JSON, as the web client does). */
+export async function seedMemory(title: string, content = ''): Promise<SeededMemory> {
+  const res = await fetch(`${GATEWAY_ORIGIN}/memories`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ title, content }),
+  });
+  if (!res.ok) {
+    throw new Error(`seedMemory failed (${res.status}): ${await res.text().catch(() => '')}`);
+  }
+  const { memory } = (await res.json()) as { memory: { id: string; title: string } };
+  return { id: memory.id, title: memory.title };
+}
+
 /** Register a repo with a GitHub `owner/repo` slug (so it qualifies as a phase-doc sync target). */
 export async function seedRepo(name: string, ownerRepo: string): Promise<{ id: string; name: string }> {
   const res = await fetch(`${GATEWAY_ORIGIN}/repos`, {

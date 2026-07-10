@@ -14,6 +14,7 @@ import { MemoriesTree } from '@/components/memories-tree';
 import { MemoryModal } from '@/components/memory-modal';
 import { deleteMemory, updateMemory } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
+import { memoryPageHref } from '@/lib/memory-route';
 import { useBulkSelection } from '@/lib/use-bulk-selection';
 
 type View = 'list' | 'grid' | 'table';
@@ -31,7 +32,9 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
   // Scope to preselect when creating from a `?create=<id>` deep link (e.g. the
   // project modal's "create a memory" link). null = global.
   const [createScope, setCreateScope] = useState<string | null>(null);
-  const [editId, setEditId] = useState<string | null>(null);
+  // Opening an existing memory navigates to its workspace page (Phase 65 A);
+  // the modal is reserved for creating a new one.
+  const openMemory = useCallback((id: string) => router.push(memoryPageHref(id)), [router]);
 
   useEffect(() => {
     const stored = localStorage.getItem(VIEW_STORAGE_KEY);
@@ -163,13 +166,9 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
     return [m.title, m.content, projectName].some((f) => f.toLowerCase().includes(q));
   });
 
-  const editMemory = initial.find((m) => m.id === editId) ?? null;
-  const modalOpen = creating || editMemory !== null;
-
   const closeModal = useCallback(() => {
     setCreating(false);
     setCreateScope(null);
-    setEditId(null);
   }, []);
 
   return (
@@ -244,7 +243,7 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
           <MemoriesTree
             memories={filtered}
             projects={projects}
-            onOpen={(id) => setEditId(id)}
+            onOpen={(id) => openMemory(id)}
             isSelected={isSelected}
             onToggleSelect={(id, sk) => toggleSelect(id, sk, filtered.map((x) => x.id))}
           />
@@ -256,7 +255,7 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
                 memory={m}
                 project={m.projectId ? projectById.get(m.projectId) : undefined}
                 layout="grid"
-                onOpen={() => setEditId(m.id)}
+                onOpen={() => openMemory(m.id)}
                 selected={isSelected(m.id)}
                 onToggleSelect={(sk) => toggleSelect(m.id, sk, filtered.map((x) => x.id))}
               />
@@ -270,7 +269,7 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
                 memory={m}
                 project={m.projectId ? projectById.get(m.projectId) : undefined}
                 layout="list"
-                onOpen={() => setEditId(m.id)}
+                onOpen={() => openMemory(m.id)}
                 selected={isSelected(m.id)}
                 onToggleSelect={(sk) => toggleSelect(m.id, sk, filtered.map((x) => x.id))}
               />
@@ -279,11 +278,10 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
         )}
       </div>
 
-      {modalOpen ? (
+      {creating ? (
         <MemoryModal
-          memory={creating ? null : editMemory}
           projects={projects}
-          initialProjectId={creating ? createScope : undefined}
+          initialProjectId={createScope}
           onClose={closeModal}
           onSaved={refresh}
         />
