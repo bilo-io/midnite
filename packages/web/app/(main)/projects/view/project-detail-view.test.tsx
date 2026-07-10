@@ -98,7 +98,7 @@ describe('ProjectDetailContainer — not found', () => {
     useApiData.mockReturnValue({ data: null, loading: false, error: null, refresh: vi.fn() });
     params = new URLSearchParams(); // no id
     render(<ProjectDetailContainer />);
-    expect(screen.getByText('Project not found.')).toBeInTheDocument();
+    expect(screen.getByText('Project not found')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /All projects/i })).toHaveAttribute('href', '/projects');
   });
 });
