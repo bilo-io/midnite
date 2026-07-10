@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-11 — audit+fix: mobile & responsive polish — Phase 60 Theme J (PR #387)
+
+Audited every top-level surface across the full breakpoint matrix (320/375/390/768/landscape) for the CLAUDE.md no-horizontal-body-scroll invariant + touch/PWA/safe-area, and fixed the ≥P2 quick-wins inline under the phase's quick-win rule. Findings in [`phase-60-findings/J-mobile-responsive.md`](phase-60-findings/J-mobile-responsive.md). Phase 60 → 50/62 (80%); only Theme M (synthesis) remains.
+
+- [x] **Reflow audit** — Playwright sweep of ~18 surfaces × 5 widths asserting `body.scrollWidth ≤ clientWidth`; found 4 overflowing surfaces + 2 column-clipping tables.
+- [x] **Touch & PWA** — safe-area insets verified (shell + mobile nav); primary bottom-nav targets ≥44px; sub-44px secondary icon buttons logged as follow-up J6.
+- [x] **JS vs CSS cutoffs** — confirmed no hand-written width branches; all `matchMedia` use is reduced-motion / standalone; layout branches go through `useIsMobile`/etc.
+- [x] **Fixes (J1–J5):** `flex-wrap` on projects/schedules/workflows/ops control rows; `min-w-0` on ops Recharts `ResponsiveContainer` wrappers; `overflow-hidden`→`overflow-x-auto` on the api-tokens + webhooks tables. Locked by [`mobile-audit.shots.ts`](../packages/web/e2e/mobile-audit.shots.ts).
+
 ## 2026-07-10 — feat: chat to the knowledge base — Phase 65 Theme C (PR #385)
 
 The memory workspace's center composer becomes a grounded, cited Q&A over a memory's own doc **plus its ingested sources** (Phase 65 B corpus). A separate `memory-chat` module; one running thread per memory.
