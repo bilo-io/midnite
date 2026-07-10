@@ -22,26 +22,32 @@ import {
 import { generateMemoryArtifact, getMemoryArtifacts } from '@/lib/api';
 import { MemoryArtifactViewer } from './memory-artifact-viewer';
 
-// The text + infographic artifacts Theme D wires; audio/video (Theme E) are shown
-// disabled below. Icons are a view concern, so they live here (not in shared).
+// Icons are a view concern, so they live here (not in shared). Audio & video are
+// the file-backed Theme E kinds; they degrade to a script/outline with no provider.
 const KIND_ICONS: Record<MemoryArtifactKind, LucideIcon> = {
   brief: FileText,
   faq: HelpCircle,
   'study-guide': ListOrdered,
   timeline: ListOrdered,
   infographic: Image,
+  'audio-overview': AudioLines,
+  'video-overview': Video,
 };
-const WIRED_KINDS: MemoryArtifactKind[] = ['brief', 'faq', 'study-guide', 'timeline', 'infographic'];
-const SOON: { key: string; label: string; Icon: LucideIcon }[] = [
-  { key: 'audio', label: 'Audio overview', Icon: AudioLines },
-  { key: 'video', label: 'Video', Icon: Video },
+const WIRED_KINDS: MemoryArtifactKind[] = [
+  'brief',
+  'faq',
+  'study-guide',
+  'timeline',
+  'infographic',
+  'audio-overview',
+  'video-overview',
 ];
 
 /**
- * The right "Studio" rail (Phase 65 D): generate artifacts from the memory's
- * corpus. Each kind gets a Generate/Regenerate button and a live status; a
- * `pending` artifact is polled until it resolves. Audio & video stay disabled
- * until Theme E.
+ * The right "Studio" rail: generate artifacts from the memory's corpus. Each kind
+ * gets a Generate/Regenerate button and a live status; a `pending` artifact is
+ * polled until it resolves. Text/infographic render inline (Theme D); audio/video
+ * (Theme E) render a media player, or the script/outline when a provider is off.
  */
 export function MemoryStudioRail({ memoryId }: { memoryId: string }) {
   const [byKind, setByKind] = useState<Partial<Record<MemoryArtifactKind, MemoryArtifact>>>({});
@@ -103,20 +109,6 @@ export function MemoryStudioRail({ memoryId }: { memoryId: string }) {
             onView={() => setViewing(kind)}
           />
         ))}
-        {SOON.map(({ key, label, Icon }) => (
-          <li key={key}>
-            <div
-              className="flex w-full items-center gap-2.5 rounded-md border border-border/60 bg-muted/20 px-3 py-2 text-left text-sm text-muted-foreground"
-              title="Coming in a later update"
-            >
-              <Icon className="h-4 w-4 shrink-0 text-[hsl(262_83%_66%)]" />
-              <span className="flex-1">{label}</span>
-              <span className="rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] uppercase tracking-wider">
-                Soon
-              </span>
-            </div>
-          </li>
-        ))}
       </ul>
 
       {viewingArtifact && viewingArtifact.status === 'ready' ? (
@@ -168,6 +160,11 @@ function ArtifactRow({
       </div>
       {status === 'failed' && artifact?.error ? (
         <p className="mt-1 px-3 text-[11px] leading-snug text-destructive">{artifact.error}</p>
+      ) : null}
+      {status === 'ready' && artifact?.degraded ? (
+        <p className="mt-1 px-3 text-[11px] leading-snug text-muted-foreground">
+          {artifact.format === 'audio' ? 'Script only — no TTS provider' : 'Outline only — no video provider'}
+        </p>
       ) : null}
     </li>
   );

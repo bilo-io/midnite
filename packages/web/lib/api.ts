@@ -1387,6 +1387,11 @@ export async function deleteMemoryArtifact(id: string, artifactId: string): Prom
   );
 }
 
+/** Direct URL to a file-backed artifact's media (audio/video), for an `<audio>`/`<video>` src. */
+export function memoryArtifactFileUrl(id: string, artifactId: string): string {
+  return `${gatewayUrl()}/memories/${encodeURIComponent(id)}/artifacts/${encodeURIComponent(artifactId)}/file`;
+}
+
 export async function enhanceProjectDescription(input: {
   name?: string;
   description: string;
