@@ -130,6 +130,8 @@ import {
   HeartbeatRunsResponseSchema,
   MemoriesResponseSchema,
   MemoryResponseSchema,
+  MemoryArtifactResponseSchema,
+  MemoryArtifactsResponseSchema,
   PrimaryAgentResponseSchema,
   ProjectResponseSchema,
   PhaseDocResponseSchema,
@@ -201,6 +203,8 @@ import {
   type HeartbeatRun,
   type LlmProvider,
   type Memory,
+  type MemoryArtifact,
+  type MemoryArtifactKind,
   type PrDiff,
   type PrReviewSubmission,
   type PrReviewDraft,
@@ -1350,6 +1354,37 @@ export async function reingestMemorySource(id: string, sourceId: string): Promis
     MemoryResponseSchema,
   );
   return memory;
+}
+
+// ── Memory Studio artifacts (Phase 65 D) ──────────────────────────
+/** List a memory's Studio artifacts (poll this for generation status). */
+export async function getMemoryArtifacts(id: string): Promise<MemoryArtifact[]> {
+  const { artifacts } = await fetchJson(
+    `/memories/${encodeURIComponent(id)}/artifacts`,
+    undefined,
+    MemoryArtifactsResponseSchema,
+  );
+  return artifacts;
+}
+
+/** Kick generation of an artifact kind; returns the pending row to poll on. */
+export async function generateMemoryArtifact(
+  id: string,
+  kind: MemoryArtifactKind,
+): Promise<MemoryArtifact> {
+  const { artifact } = await fetchJson(
+    `/memories/${encodeURIComponent(id)}/artifacts`,
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ kind }) },
+    MemoryArtifactResponseSchema,
+  );
+  return artifact;
+}
+
+export async function deleteMemoryArtifact(id: string, artifactId: string): Promise<void> {
+  await fetchJson(
+    `/memories/${encodeURIComponent(id)}/artifacts/${encodeURIComponent(artifactId)}`,
+    { method: 'DELETE' },
+  );
 }
 
 export async function enhanceProjectDescription(input: {

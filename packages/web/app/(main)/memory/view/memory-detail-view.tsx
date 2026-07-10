@@ -173,7 +173,7 @@ export function MemoryDetailView({
             onToggle={() => setRightOpen(!rightOpen)}
             title="Studio"
           >
-            <MemoryStudioRail />
+            <MemoryStudioRail memoryId={memory.id} />
           </Rail>
         </div>
       </div>
