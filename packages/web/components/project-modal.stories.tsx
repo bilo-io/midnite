@@ -53,14 +53,14 @@ export const Edit: Story = {
   },
 };
 
-/** The tablist switches sections; selecting Sources marks that tab selected. */
+/** The tablist switches sections; selecting Plan marks that tab selected. */
 export const SwitchTab: Story = {
   args: { project, tasks: [taskFeature, taskBug] },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const dialog = await canvas.findByRole('dialog', { name: 'Edit project' });
-    const sourcesTab = within(dialog).getByRole('tab', { name: /sources/i });
-    await userEvent.click(sourcesTab);
-    await expect(sourcesTab).toHaveAttribute('aria-selected', 'true');
+    const planTab = within(dialog).getByRole('tab', { name: /plan/i });
+    await userEvent.click(planTab);
+    await expect(planTab).toHaveAttribute('aria-selected', 'true');
   },
 };

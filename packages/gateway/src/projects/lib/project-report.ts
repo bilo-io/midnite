@@ -16,7 +16,7 @@
  * it stays trivially unit-testable.
  */
 
-import type { Memory, Project, ProjectSource, Task } from '@midnite/shared';
+import type { Memory, Project, Task } from '@midnite/shared';
 
 const STATUS_LABELS: Record<string, string> = {
   backlog: 'Backlog',
@@ -54,15 +54,6 @@ function renderTasksSection(tasks: Task[]): string {
     );
   }
   return sections.join('\n\n');
-}
-
-function renderSourcesSection(sources: ProjectSource[]): string {
-  if (sources.length === 0) return '';
-  const lines = sources.map((s) => {
-    const label = (s.title ?? s.url).trim();
-    return `- [${label}](${s.url})`;
-  });
-  return ['## Sources', lines.join('\n')].join('\n\n');
 }
 
 function renderPlanSection(plan: string | null | undefined): string {
@@ -153,9 +144,6 @@ export function projectToMarkdown(
 
   const agentSection = renderAgentActivitySection(tasks);
   if (agentSection) sections.push(agentSection);
-
-  const sourcesSection = renderSourcesSection(project.sources);
-  if (sourcesSection) sections.push(sourcesSection);
 
   const memoriesSection = renderMemoriesSection(memories);
   if (memoriesSection) sections.push(memoriesSection);

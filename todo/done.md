@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-10 — feat(web,gateway): retire project sources → memory — Phase 65 Theme F (PR #380)
+
+Projects stop carrying a parallel "sources" concept; memory becomes the single knowledge notion. Existing project sources migrate into a project-scoped memory, and the whole parallel surface (API, schema, table, UI) is removed. Forward-only, full removal (Decision §4).
+
+- [x] **Forward-only data migration** — `ProjectSourcesMigrationService` (boot `onModuleInit`, idempotent, fail-open): for each project with `project_sources`, create **one** project-scoped memory `"{Project} — knowledge"` (order + `kind`/`title`/`favicon`/`fetchedAt` preserved), then `DROP TABLE project_sources`. Skips empty projects, orphan sources, and projects already migrated (matched by derived title). Copies via the raw SQLite handle because the table no longer has a Drizzle schema entry; the drop lives in the service (Drizzle migrations run before `onModuleInit`, so a SQL-file drop would precede the copy).
+- [x] **Remove the gateway surface** — deleted `addProjectSource`/`removeProjectSource`/`reorderProjectSources` endpoints + service/repo methods + the `project_sources` schema entry; dropped `ProjectSource`, `Project.sources`, `CreateProjectRequest.sources`, `AddSourceRequestSchema`, `MAX_SOURCES_PER_PROJECT` from `shared`; removed the report `## Sources` section + the portability `sources` child mapping.
+- [x] **Remove the web surface** — dropped the modal **Sources tab**, the detail-page right-rail sources editor (now **"Manage knowledge in Memory"** → `/memory?scope=<id>`, rail retitled "Knowledge & activity"), and source favicon chips on cards / recent-projects / tree; deleted `project-sources-panel.tsx` + the project-source client methods.
+- [x] **Kept `SourceListEditor` + `ReorderSourcesRequestSchema` shared** — still used by memory sources; only the project usage was removed.
+- [x] **Tests** — new `ProjectSourcesMigrationService` spec (migrate/order/metadata, idempotent, skip-existing, empty, orphan) on `:memory:` SQLite; web `project-info-panel` link+nav RTL; updated modal story + detail-view rail; typecheck/lint/test green (gateway 1802, web 1047, ui 54). Phase 65 → 11/33 (33%).
+
 ## 2026-07-10 — feat(web): memory workspace page — Phase 65 Theme A (PR #379)
 
 The memory modal graduates to a full-page, 3-panel workspace at `/memory/view?id=` — the frame the rest of Phase 65 (chat, ingestion, Studio) hangs on. Naming stays `memory` (no rebrand).

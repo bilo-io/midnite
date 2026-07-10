@@ -79,7 +79,7 @@ export function ProjectsTree({
         </span>
       ),
       count: items.length,
-      summary: `${plural(items.length, 'task')} · ${plural(p.sources.length, 'source')}`,
+      summary: plural(items.length, 'task'),
       actions: (
         <>
           {onPlan ? (

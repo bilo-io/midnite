@@ -35,7 +35,6 @@ const RESPONSE: PromoteIdeaResponse = {
     name: 'Cool idea',
     tag: 'growth',
     color: '#6366f1',
-    sources: [],
     ideaId: 'idea-1',
     createdAt: '2026-06-27T00:00:00.000Z',
     updatedAt: '2026-06-27T00:00:00.000Z',
