@@ -28,6 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
+| [65 · Memory workspace](phase-65-memory-workspace.md) | ◻ TODO | 0/33 | `░░░░░░░░░░` | 0% | — | A B C D E F G |
 | [64 · Office presence](phase-64-office-presence.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
 | [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 6/33 | `██░░░░░░░░` | 18% | — | C D E F G H |
@@ -114,6 +115,16 @@ shortcut). The 2 contextual-command boxes are now **un-deferred and folded into 
 Every phase's lettered themes with a status icon + one-liner, so you can gauge scope and pick
 work without opening the phase doc. Status: `✅` done · `🔄` WIP (claimed) · `◻` TODO · `◐`
 partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
+
+### [Phase 65 — Memory workspace](phase-65-memory-workspace.md)
+*Turn the memory modal into a 3-panel `/memory/view?id=` workspace (NotebookLM-style): left sources rail, center doc + chat-to-the-knowledge-base, right Studio that generates artifacts. Sources graduate to an ingested corpus (URL bodies + file uploads); memory becomes THE knowledge notion — project sources retired. Naming stays `memory`; FTS + LlmService reuse, no embeddings.*
+- ◻ **A** — `/memory/view?id=` page: 3-panel shell + `GET /memories/:id` + routing/nav (modal reserved for create)
+- ◻ **B** — Source ingestion: fetch+extract URL bodies + PDF/md/txt uploads; new content storage; re-index into FTS
+- ◻ **C** — Chat to the knowledge base: persisted threads, FTS-retrieve→stuff→LlmService answer with source citations
+- ◻ **D** — Studio: un-stub media `generate`; text artifacts (brief/FAQ/study-guide/timeline) + infographic (LLM→SVG)
+- ◻ **E** — Studio: audio overview (LLM script→TTS) + video (slides+narration→ffmpeg compose); degrade w/o provider
+- ◻ **F** — Retire project sources → memories: forward migration to a project-scoped memory, drop `project_sources`, remove UI/API
+- ◻ **G** — Tests (gateway/shared/web + Playwright), docs + `memory.studio` config, a11y, light/dark baselines
 
 ### [Phase 64 — Office multiplayer presence](phase-64-office-presence.md)
 *Teammates as live avatars in the office (2D + 3D): a /ws/presence channel (last-known-state, no ring, zero DB), hybrid guest/JWT identity, emote wheel + locate, ghost mode, nav pill + dashboard widget; proximity chat as stretch. Theme D blocked on Phase 63 A–C.*
