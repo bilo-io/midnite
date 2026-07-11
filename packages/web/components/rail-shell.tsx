@@ -42,6 +42,7 @@ export function RailShell({
   right,
   isMobile,
   children,
+  centerActions,
   className,
 }: {
   left?: RailConfig;
@@ -49,6 +50,12 @@ export function RailShell({
   isMobile: boolean;
   /** The center content. */
   children: ReactNode;
+  /**
+   * Extra content-layer controls floated in the center's top-right corner, just
+   * left of the right rail toggle (desktop only — pair with a header control for
+   * mobile, where the floating toggles live in the page header).
+   */
+  centerActions?: ReactNode;
   className?: string;
 }) {
   const hasRail = Boolean(left || right);
@@ -64,6 +71,16 @@ export function RailShell({
         ) : null}
         {!isMobile && right ? (
           <RailFloatingToggle side="right" open={right.open} title={right.title} onToggle={right.onToggle} />
+        ) : null}
+        {!isMobile && centerActions ? (
+          <div
+            className={cn(
+              'absolute top-2 z-20 hidden items-center gap-1 lg:flex',
+              right ? 'right-12' : 'right-2',
+            )}
+          >
+            {centerActions}
+          </div>
         ) : null}
 
         {/* Reserve headroom on desktop so the floating toggles never overlap the

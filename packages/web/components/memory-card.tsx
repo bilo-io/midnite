@@ -1,8 +1,8 @@
 'use client';
 
-import { Brain, BrainCircuit } from 'lucide-react';
+import { BrainCircuit } from 'lucide-react';
 import type { Memory, Project } from '@midnite/shared';
-import { ProjectTag } from '@/components/project-tag';
+import { MemoryScopeChip } from '@/components/memory/memory-scope';
 import { SelectableIcon } from '@/components/selectable-icon';
 import { cn } from '@/lib/utils';
 
@@ -15,17 +15,6 @@ type Props = {
   selected?: boolean;
   onToggleSelect?: (shiftKey: boolean) => void;
 };
-
-/** The scope chip: the project's tag, or a violet "Global" chip for shared memories. */
-function ScopeChip({ project }: { project?: Project }) {
-  if (project) return <ProjectTag tag={project.tag} color={project.color} />;
-  return (
-    <span className="inline-flex items-center gap-1 rounded bg-[hsl(262_83%_66%/0.15)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[hsl(262_83%_72%)]">
-      <Brain className="h-3 w-3" />
-      Global
-    </span>
-  );
-}
 
 function updatedLabel(iso: string): string {
   const d = new Date(iso);
@@ -69,7 +58,7 @@ export function MemoryCard({
         {selectIcon}
         <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">
           <div className="flex items-center gap-2">
-            <ScopeChip project={project} />
+            <MemoryScopeChip project={project} />
             {archivedBadge}
             <span className="truncate text-sm font-medium">{memory.title}</span>
           </div>
@@ -95,7 +84,7 @@ export function MemoryCard({
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           {selectIcon}
-          <ScopeChip project={project} />
+          <MemoryScopeChip project={project} />
           {archivedBadge}
         </div>
         <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">

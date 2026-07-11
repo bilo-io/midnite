@@ -2,7 +2,23 @@
 
 import { Brain } from 'lucide-react';
 import type { Project } from '@midnite/shared';
+import { ProjectTag } from '@/components/project-tag';
 import { Select, type SelectOption } from '@/components/ui/select';
+
+/**
+ * The memory scope chip: a project's coloured tag, or a violet "Global" pill for
+ * project-less (shared) memories. Shared by the memory list cards and the
+ * workspace header so the two never drift.
+ */
+export function MemoryScopeChip({ project }: { project?: Project }) {
+  if (project) return <ProjectTag tag={project.tag} color={project.color} />;
+  return (
+    <span className="inline-flex items-center gap-1 rounded bg-[hsl(262_83%_66%/0.15)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[hsl(262_83%_72%)]">
+      <Brain className="h-3 w-3" />
+      Global
+    </span>
+  );
+}
 
 // The scope select needs a string value; 'global' stands in for projectId null.
 // Shared by the create modal and the workspace doc panel so the two never drift.

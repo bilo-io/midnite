@@ -71,6 +71,12 @@ function Caret({ className }: { className?: string }) {
 
 type PageHeaderProps = {
   title: string;
+  /**
+   * Custom title content rendered in place of the animated text (e.g. an
+   * inline-editable breadcrumb). `title` is still required — it names the heading
+   * for assistive tech and the document title.
+   */
+  titleNode?: ReactNode;
   description?: ReactNode;
   /** Icon name — resolved client-side so it can be passed from a Server Component. */
   icon?: PageHeaderIcon;
@@ -81,6 +87,7 @@ type PageHeaderProps = {
 
 export function PageHeader({
   title,
+  titleNode,
   description,
   icon,
   size = 'default',
@@ -148,10 +155,12 @@ export function PageHeader({
               {Icon && (
                 <Icon className="h-[1em] w-[1em] shrink-0 text-muted-foreground" />
               )}
-              <span aria-hidden>
-                {typedTitle}
-                {!titleDone && <Caret />}
-              </span>
+              {titleNode ?? (
+                <span aria-hidden>
+                  {typedTitle}
+                  {!titleDone && <Caret />}
+                </span>
+              )}
             </h1>
 
             {description && (

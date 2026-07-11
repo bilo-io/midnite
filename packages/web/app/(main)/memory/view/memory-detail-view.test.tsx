@@ -21,7 +21,8 @@ vi.mock('next/navigation', () => ({
 }));
 
 // The doc + sources panels are their own units — stub them so this stays a
-// deterministic shell test (header, rails, chat composer, Studio).
+// deterministic shell test (header, rails, chat composer, Studio). The doc panel
+// now lives inside the metadata modal, opened from the header's ellipsis.
 vi.mock('@/components/memory/memory-doc-panel', () => ({
   MemoryDocPanel: () => <div data-testid="doc-panel" />,
 }));
@@ -56,29 +57,39 @@ const memory: Memory = {
 };
 
 describe('MemoryDetailView — shell', () => {
-  it('renders the header, doc panel, chat composer, and both rails', () => {
+  it('renders the header, chat composer, and both rails', () => {
     render(<MemoryDetailView memory={memory} projects={[project]} onChanged={vi.fn()} />);
     expect(screen.getByRole('heading', { name: 'Coding conventions' })).toBeInTheDocument();
-    expect(screen.getByTestId('doc-panel')).toBeInTheDocument();
+    // The title is editable inline in the header breadcrumb.
+    expect(screen.getByRole('textbox', { name: 'Memory title' })).toHaveValue('Coding conventions');
     expect(screen.getByTestId('sources-panel')).toBeInTheDocument();
     // Left rail title + right Studio rail.
     expect(screen.getByRole('heading', { name: 'Sources' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Studio' })).toBeInTheDocument();
     // Chat composer mounted in the center panel (its behavior is unit-tested separately).
     expect(screen.getByTestId('chat-composer')).toBeInTheDocument();
+    // The doc panel is not in the center anymore — it opens in a modal.
+    expect(screen.queryByTestId('doc-panel')).toBeNull();
   });
 
-  it('shows the scope label for a global memory', async () => {
+  it('opens the metadata modal (with the doc panel) from the header ellipsis', () => {
     render(<MemoryDetailView memory={memory} projects={[project]} onChanged={vi.fn()} />);
-    // The header description types out via a typewriter effect — await it.
-    expect(await screen.findByText('Global')).toBeInTheDocument();
+    expect(screen.queryByTestId('doc-panel')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit memory metadata' }));
+    expect(screen.getByRole('dialog', { name: 'Edit memory' })).toBeInTheDocument();
+    expect(screen.getByTestId('doc-panel')).toBeInTheDocument();
   });
 
-  it('shows the project name for a project-scoped memory', async () => {
+  it('shows a Global scope pill for a global memory', () => {
+    render(<MemoryDetailView memory={memory} projects={[project]} onChanged={vi.fn()} />);
+    expect(screen.getByText('Global')).toBeInTheDocument();
+  });
+
+  it('shows the project tag pill for a project-scoped memory', () => {
     render(
       <MemoryDetailView memory={{ ...memory, projectId: 'p1' }} projects={[project]} onChanged={vi.fn()} />,
     );
-    expect(await screen.findByText('Acme app')).toBeInTheDocument();
+    expect(screen.getByText('acme')).toBeInTheDocument();
   });
 
   it('collapses a rail to a slim toggle and re-expands it', () => {
