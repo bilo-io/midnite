@@ -15,6 +15,9 @@ import {
   OpsSummarySchema,
   OutcomeCountsSchema,
   RunCountByDaySchema,
+  RunTimelineEntrySchema,
+  RunTimelineQuerySchema,
+  RunTimelineResponseSchema,
 } from './metrics.js';
 
 describe('MetricsGaugesSchema', () => {
@@ -200,6 +203,50 @@ describe('sub-schemas', () => {
     it('round-trips a response envelope', () => {
       const res = MetricsRollupResponseSchema.parse({ period: 'daily', from: 'a', to: 'b', rows: [row] });
       expect(res.rows).toHaveLength(1);
+    });
+  });
+
+  describe('run timeline (Phase 61 G)', () => {
+    const completed = {
+      id: 'r1',
+      taskId: 't1',
+      startedAt: '2026-06-01T00:00:00.000Z',
+      endedAt: '2026-06-01T00:01:30.000Z',
+      durationMs: 90_000,
+      outcome: 'done' as const,
+      retryCount: 0,
+      repo: 'web',
+    };
+    const live = {
+      id: 'r2',
+      taskId: 't1',
+      startedAt: '2026-06-01T00:02:00.000Z',
+      endedAt: null,
+      durationMs: null,
+      outcome: null,
+      retryCount: 1,
+      repo: null,
+    };
+
+    it('round-trips a completed and a live run', () => {
+      expect(RunTimelineEntrySchema.parse(completed)).toEqual(completed);
+      expect(RunTimelineEntrySchema.parse(live)).toEqual(live);
+    });
+
+    it('rejects an unknown outcome', () => {
+      expect(RunTimelineEntrySchema.safeParse({ ...completed, outcome: 'bogus' }).success).toBe(false);
+    });
+
+    it('RunTimelineQuerySchema requires a non-empty taskId', () => {
+      expect(RunTimelineQuerySchema.parse({ taskId: 't1' })).toEqual({ taskId: 't1' });
+      expect(RunTimelineQuerySchema.safeParse({}).success).toBe(false);
+      expect(RunTimelineQuerySchema.safeParse({ taskId: '' }).success).toBe(false);
+    });
+
+    it('RunTimelineResponseSchema round-trips a task with runs', () => {
+      const res = RunTimelineResponseSchema.parse({ taskId: 't1', runs: [completed, live] });
+      expect(res.runs).toHaveLength(2);
+      expect(res.runs[1]?.endedAt).toBeNull();
     });
   });
 });

@@ -174,6 +174,45 @@ export const CycleTimeResponseSchema = z.object({
 });
 export type CycleTimeResponse = z.infer<typeof CycleTimeResponseSchema>;
 
+// ── Run timeline (Phase 61 G — per-task attempt strip) ───────────────────────
+
+/**
+ * Terminal outcome of an agent run. Mirrors the `agent_run_stats.outcome` domain
+ * (null on that column means the run is still live — see {@link RunTimelineEntrySchema}).
+ */
+export const RunOutcomeSchema = z.enum(['done', 'abandoned', 'failed', 'cancelled']);
+export type RunOutcome = z.infer<typeof RunOutcomeSchema>;
+
+/**
+ * One agent run for a task, read straight from `agent_run_stats`. A live run has
+ * `endedAt`/`durationMs`/`outcome` all null; the client renders it extending to
+ * "now". `retryCount` is the 0-based attempt index (0 = first run).
+ */
+export const RunTimelineEntrySchema = z.object({
+  id: z.string(),
+  taskId: z.string(),
+  startedAt: z.string(),
+  endedAt: z.string().nullable(),
+  durationMs: z.number().int().nonnegative().nullable(),
+  outcome: RunOutcomeSchema.nullable(),
+  retryCount: z.number().int().nonnegative(),
+  repo: z.string().nullable(),
+});
+export type RunTimelineEntry = z.infer<typeof RunTimelineEntrySchema>;
+
+/** Query params for `GET /metrics/runs` — the task whose runs to return. */
+export const RunTimelineQuerySchema = z.object({
+  taskId: z.string().min(1),
+});
+export type RunTimelineQuery = z.infer<typeof RunTimelineQuerySchema>;
+
+/** Response for `GET /metrics/runs?taskId=` — all runs for one task, oldest-first. */
+export const RunTimelineResponseSchema = z.object({
+  taskId: z.string(),
+  runs: z.array(RunTimelineEntrySchema),
+});
+export type RunTimelineResponse = z.infer<typeof RunTimelineResponseSchema>;
+
 // ── Phase 61 E — metrics rollups + retention ────────────────────────────────
 
 /** Rollup bucket granularity. */
