@@ -490,6 +490,22 @@ export const MemoryConfigSchema = z.object({
 });
 export type MemoryConfig = z.infer<typeof MemoryConfigSchema>;
 
+// Task retrospectives (Phase 62). The deterministic skeleton is built on every
+// terminal transition and costs nothing; the LLM narrative is layered on by the
+// retro workflow (one small plan-model call, bounded here and by the P50 spend
+// caps, fail-soft to the skeleton). Everything defaults on so a fresh install
+// still gets factual retros with zero extra setup.
+export const RetroConfigSchema = z.object({
+  // When true (default) the gateway auto-builds a deterministic retro skeleton on
+  // each task's `done`/`abandoned` transition. Set false to disable auto-building
+  // (retros can still be produced by an explicit workflow run).
+  autoSkeleton: z.boolean().default(true),
+  // Token cap for the retro narrative's single plan-model call (the workflow's
+  // `generate-retro` node). Bounds one summary; the P50 budget caps still apply.
+  narrativeMaxTokens: z.number().int().positive().default(700),
+});
+export type RetroConfig = z.infer<typeof RetroConfigSchema>;
+
 export const MidniteConfigSchema = z.object({
   agent: AgentConfigSchema,
   terminal: TerminalConfigSchema,
@@ -531,6 +547,9 @@ export const MidniteConfigSchema = z.object({
   // Memory Studio media generation (Phase 65 E). Optional (defaulted) so existing
   // midnite.json files keep validating; degrades gracefully with no TTS/ffmpeg.
   memory: MemoryConfigSchema.default({}),
+  // Task retrospectives (Phase 62). Optional (defaulted) so existing midnite.json
+  // files keep validating; auto-skeleton on by default.
+  retro: RetroConfigSchema.default({}),
 });
 
 export type MidniteConfig = z.infer<typeof MidniteConfigSchema>;
