@@ -3,18 +3,12 @@
 import { Bell, Blocks } from 'lucide-react';
 import { Accordion } from '@/components/ui/accordion';
 import { Switch } from '@/components/ui/switch';
-import { FEATURES, isFeatureEnabled, type FeatureKey } from '@/lib/features';
+import { FEATURES, groupNavSections, isFeatureEnabled, type Feature, type FeatureKey } from '@/lib/features';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY, type AppSettings } from '@/lib/app-settings';
-import { cn } from '@/lib/utils';
 import { EnvironmentAccordion } from './environment-accordion';
 import { RealtimeAccordion } from './realtime-accordion';
 import { SetupStatusPanel } from './setup-status-panel';
-
-// Feature rows that begin a new group — their top divider is drawn a touch more
-// opaque than the regular row separators, echoing the grouping dividers in the
-// side nav (dashboard | projects, tasks | sessions).
-const GROUP_START: ReadonlySet<FeatureKey> = new Set(['projects', 'sessions']);
 
 export function SystemSection() {
   const [settings, setSettings] = useLocalStorage<AppSettings>(
@@ -24,6 +18,35 @@ export function SystemSection() {
 
   const setFeatureEnabled = (key: FeatureKey, on: boolean) =>
     setSettings((prev) => ({ ...prev, features: { ...prev.features, [key]: on } }));
+
+  // Grouped exactly like the side nav: dashboard pinned, then the App / Agents /
+  // Insights sections — so what you toggle here maps 1:1 to what you see there.
+  const { pinned, sections } = groupNavSections(FEATURES);
+
+  const renderFeatureRow = (f: Feature, withDivider: boolean) => {
+    const Icon = f.Icon;
+    return (
+      <div
+        key={f.key}
+        className={`flex items-start justify-between gap-6 py-3${withDivider ? ' border-t border-border/50' : ''}`}
+      >
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border/60 bg-card/60 text-muted-foreground">
+            <Icon className="h-4 w-4" />
+          </span>
+          <div className="space-y-0.5">
+            <p className="text-sm font-medium">{f.label}</p>
+            <p className="text-xs text-muted-foreground">{f.description}</p>
+          </div>
+        </div>
+        <Switch
+          checked={isFeatureEnabled(settings.features, f.key)}
+          onCheckedChange={(on) => setFeatureEnabled(f.key, on)}
+          aria-label={`Enable ${f.label}`}
+        />
+      </div>
+    );
+  };
 
   // Enabling notifications prompts for the browser's Notification permission;
   // if the user denies it, we flip the toggle back off so it reflects reality.
@@ -63,43 +86,19 @@ export function SystemSection() {
         <div className="p-5">
           <p className="pb-2 text-xs text-muted-foreground">
             Turn sections of the app on or off. Disabled features are hidden from the sidebar; if
-            you open one directly you&apos;ll be prompted to re-enable it here.
+            you open one directly you&apos;ll be prompted to re-enable it here. These groups mirror
+            the sidebar&apos;s sections.
           </p>
           <div>
-            {FEATURES.map((f, i) => {
-              const Icon = f.Icon;
-              return (
-                <div
-                  key={f.key}
-                  className={cn(
-                    'flex items-start justify-between gap-6 py-3',
-                    // Top border acts as the inter-row divider (skip the first row).
-                    // Group starts get a higher-contrast line to mimic the side nav.
-                    i > 0 && 'border-t',
-                    // The `border` token is nearly the card colour in dark mode, so a
-                    // group divider needs a lighter base (muted-foreground) to actually
-                    // read — opacity alone on `border` is invisible.
-                    i > 0 &&
-                      (GROUP_START.has(f.key) ? 'border-muted-foreground/30' : 'border-border/50'),
-                  )}
-                >
-                  <div className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border/60 bg-card/60 text-muted-foreground">
-                      <Icon className="h-4 w-4" />
-                    </span>
-                    <div className="space-y-0.5">
-                      <p className="text-sm font-medium">{f.label}</p>
-                      <p className="text-xs text-muted-foreground">{f.description}</p>
-                    </div>
-                  </div>
-                  <Switch
-                    checked={isFeatureEnabled(settings.features, f.key)}
-                    onCheckedChange={(on) => setFeatureEnabled(f.key, on)}
-                    aria-label={`Enable ${f.label}`}
-                  />
-                </div>
-              );
-            })}
+            {pinned.map((f, i) => renderFeatureRow(f, i > 0))}
+            {sections.map((section) => (
+              <div key={section.key}>
+                <h3 className="border-t border-muted-foreground/30 pb-1 pt-4 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
+                  {section.label}
+                </h3>
+                {section.features.map((f, i) => renderFeatureRow(f, i > 0))}
+              </div>
+            ))}
           </div>
         </div>
       </Accordion>

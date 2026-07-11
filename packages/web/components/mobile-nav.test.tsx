@@ -24,7 +24,7 @@ describe('MobileNav', () => {
     render(<MobileNav pathname="/dashboard" features={FEATURES} onLock={vi.fn()} />);
 
     const tabs = within(bar()).getAllByRole('link');
-    expect(tabs.map((t) => t.getAttribute('aria-label'))).toEqual(['Dashboard', 'Projects', 'Memory', 'Tasks']);
+    expect(tabs.map((t) => t.getAttribute('aria-label'))).toEqual(['Dashboard', 'Projects', 'Tasks', 'Memory']);
     expect(within(bar()).getByRole('button', { name: 'Menu' })).toBeInTheDocument();
     // The sheet is closed until tapped.
     expect(screen.queryByRole('dialog')).toBeNull();

@@ -43,6 +43,20 @@ export type FeatureKey =
   | 'digests'
   | 'ops';
 
+/**
+ * Nav sections group the features into collapsible categories in the sidebar
+ * (and mirror as headings in the settings feature chooser). `dashboard` has no
+ * category — it stays pinned above every section as the home surface.
+ */
+export type NavCategory = 'app' | 'agents' | 'insights';
+
+/** The category order + display labels the nav and settings both render from. */
+export const NAV_CATEGORIES: { key: NavCategory; label: string }[] = [
+  { key: 'app', label: 'App' },
+  { key: 'agents', label: 'Agents' },
+  { key: 'insights', label: 'Insights' },
+];
+
 export type Feature = {
   key: FeatureKey;
   /** The route this feature owns; also its nav link target. */
@@ -50,9 +64,16 @@ export type Feature = {
   label: string;
   description: string;
   Icon: LucideIcon;
+  /** The nav section this feature lives under. Omitted for the pinned home (`dashboard`). */
+  category?: NavCategory;
 };
 
-/** Order here is the order the nav renders them. `dashboard` stays first. */
+/**
+ * Order here is the order the nav renders them: `dashboard` first (pinned), then
+ * each category's features contiguously in category order. Keeping the array
+ * grouped means the mobile bottom-tabs (first N enabled) and the sectioned
+ * desktop nav read from one linear source.
+ */
 export const FEATURES: Feature[] = [
   {
     key: 'dashboard',
@@ -61,19 +82,14 @@ export const FEATURES: Feature[] = [
     description: 'Your at-a-glance home — widgets, clocks, and live status.',
     Icon: LayoutDashboard,
   },
+  // ── App ──────────────────────────────────────────────────────────────────
   {
     key: 'projects',
     href: '/projects',
     label: 'Projects',
     description: 'Organise work into projects and browse the project tree.',
     Icon: Folder,
-  },
-  {
-    key: 'memory',
-    href: '/memory',
-    label: 'Memory',
-    description: 'Long-term memories injected into your agents’ prompts.',
-    Icon: BrainCircuit,
+    category: 'app',
   },
   {
     key: 'tasks',
@@ -81,48 +97,15 @@ export const FEATURES: Feature[] = [
     label: 'Tasks',
     description: 'The kanban board for orchestrating agent work.',
     Icon: ListChecks,
+    category: 'app',
   },
   {
-    key: 'sessions',
-    href: '/sessions',
-    label: 'Sessions',
-    description: 'Live and past agent sessions with embedded terminals.',
-    Icon: BotMessageSquare,
-  },
-  {
-    key: 'office',
-    href: '/office',
-    label: 'Office',
-    description: 'A pixel-art floor of your agents — walk up to a desk to call or message.',
-    Icon: Building2,
-  },
-  {
-    key: 'workflows',
-    href: '/workflows',
-    label: 'Workflows',
-    description: 'Build and run multi-step agent workflows.',
-    Icon: Workflow,
-  },
-  {
-    key: 'schedules',
-    href: '/schedules',
-    label: 'Schedules',
-    description: 'Recurring tasks that open on a cadence — daily standups, weekly chores, and more.',
-    Icon: CalendarClock,
-  },
-  {
-    key: 'ideas',
-    href: '/ideas',
-    label: 'Ideas',
-    description: 'Capture, refine with AI, and promote ideas into projects.',
-    Icon: Lightbulb,
-  },
-  {
-    key: 'councils',
-    href: '/councils',
-    label: 'Councils',
-    description: 'Convene multiple agents, then synthesize in any format — brainstorm, debate, analyse, and more.',
-    Icon: CirclePile,
+    key: 'memory',
+    href: '/memory',
+    label: 'Memory',
+    description: 'Long-term memories injected into your agents’ prompts.',
+    Icon: BrainCircuit,
+    category: 'app',
   },
   {
     key: 'slides',
@@ -130,6 +113,56 @@ export const FEATURES: Feature[] = [
     label: 'Slides',
     description: 'Author decks from Markdown and present them with typewriter reveals.',
     Icon: Presentation,
+    category: 'app',
+  },
+  {
+    key: 'workflows',
+    href: '/workflows',
+    label: 'Workflows',
+    description: 'Build and run multi-step agent workflows.',
+    Icon: Workflow,
+    category: 'app',
+  },
+  {
+    key: 'schedules',
+    href: '/schedules',
+    label: 'Schedules',
+    description: 'Recurring tasks that open on a cadence — daily standups, weekly chores, and more.',
+    Icon: CalendarClock,
+    category: 'app',
+  },
+  // ── Agents ───────────────────────────────────────────────────────────────
+  {
+    key: 'sessions',
+    href: '/sessions',
+    label: 'Sessions',
+    description: 'Live and past agent sessions with embedded terminals.',
+    Icon: BotMessageSquare,
+    category: 'agents',
+  },
+  {
+    key: 'office',
+    href: '/office',
+    label: 'Office',
+    description: 'A pixel-art floor of your agents — walk up to a desk to call or message.',
+    Icon: Building2,
+    category: 'agents',
+  },
+  {
+    key: 'councils',
+    href: '/councils',
+    label: 'Councils',
+    description: 'Convene multiple agents, then synthesize in any format — brainstorm, debate, analyse, and more.',
+    Icon: CirclePile,
+    category: 'agents',
+  },
+  {
+    key: 'ideas',
+    href: '/ideas',
+    label: 'Ideas',
+    description: 'Capture, refine with AI, and promote ideas into projects.',
+    Icon: Lightbulb,
+    category: 'agents',
   },
   {
     key: 'media',
@@ -137,13 +170,16 @@ export const FEATURES: Feature[] = [
     label: 'Media',
     description: 'Your generated images and media library.',
     Icon: Images,
+    category: 'agents',
   },
+  // ── Insights ─────────────────────────────────────────────────────────────
   {
     key: 'digests',
     href: '/digests',
     label: 'Digests',
     description: 'Fleet digests — the periodic roll-up of what shipped, failed, and needs attention.',
     Icon: Newspaper,
+    category: 'insights',
   },
   {
     key: 'ops',
@@ -151,8 +187,28 @@ export const FEATURES: Feature[] = [
     label: 'Ops',
     description: 'Fleet health — live slot utilization, run throughput, duration distribution, and LLM spend.',
     Icon: ActivitySquare,
+    category: 'insights',
   },
 ];
+
+/** A category with its (already-filtered) features, in nav order. */
+export type NavSection = { key: NavCategory; label: string; features: Feature[] };
+
+/**
+ * Split a feature list into the pinned home surface (`dashboard`) plus the
+ * ordered category sections, dropping empty sections. The input is expected to
+ * be pre-filtered to enabled features, so a section with everything disabled
+ * simply doesn't appear.
+ */
+export function groupNavSections(features: Feature[]): { pinned: Feature[]; sections: NavSection[] } {
+  const pinned = features.filter((f) => !f.category);
+  const sections = NAV_CATEGORIES.map(({ key, label }) => ({
+    key,
+    label,
+    features: features.filter((f) => f.category === key),
+  })).filter((s) => s.features.length > 0);
+  return { pinned, sections };
+}
 
 /** All features start enabled. `ideas` is off by default (opt-in, Phase 40). */
 export const DEFAULT_FEATURE_FLAGS: Record<FeatureKey, boolean> = {

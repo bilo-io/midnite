@@ -1,10 +1,11 @@
 'use client';
 
-import { Fragment, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
+  ChevronDown,
   MessageSquare,
   PanelLeftClose,
   PanelLeftOpen,
@@ -13,7 +14,8 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { FEATURES, isFeatureEnabled } from '@/lib/features';
+import { FEATURES, groupNavSections, isFeatureEnabled, type NavCategory } from '@/lib/features';
+import { Collapse } from '@/components/ui/collapse';
 import { useIdleTimer } from '@/lib/use-idle-timer';
 import { useLocalStorage } from '@/lib/use-local-storage';
 import {
@@ -57,13 +59,22 @@ export function NavBar() {
   // content reflow); `expanded`/`collapsed` are the locked states.
   const navMode = settings.navMode ?? DEFAULT_SETTINGS.navMode;
 
-  // The top nav is the enabled feature set; `dashboard` keeps its lead position
-  // with a divider before the rest.
-  const dashboardEnabled = isFeatureEnabled(settings.features, 'dashboard');
-  const otherFeatures = FEATURES.slice(1).filter((f) => isFeatureEnabled(settings.features, f.key));
   // Enabled surfaces in nav order — the mobile bottom-tab bar renders from the
   // same list the sidebar does (dashboard first when enabled).
-  const navFeatures = [...(dashboardEnabled ? [FEATURES[0]!] : []), ...otherFeatures];
+  const navFeatures = FEATURES.filter((f) => isFeatureEnabled(settings.features, f.key));
+  // The desktop rail splits into the pinned home (`dashboard`) + collapsible
+  // category sections (App / Agents / Insights).
+  const { pinned, sections } = groupNavSections(navFeatures);
+
+  // Which category sections are collapsed (persisted + synced via AppSettings).
+  const collapsedSections = new Set(settings.collapsedNavSections ?? []);
+  const toggleSection = (key: NavCategory) =>
+    setSettings((prev) => {
+      const next = new Set(prev.collapsedNavSections ?? []);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return { ...prev, collapsedNavSections: [...next] };
+    });
 
   const [hoverOpen, setHoverOpen] = useState(false);
   const expandedView = navMode === 'expanded' || (navMode === 'auto' && hoverOpen);
@@ -198,19 +209,58 @@ export function NavBar() {
         </div>
 
         <nav className={cn('flex flex-col gap-1', expandedView ? 'items-stretch' : 'items-center')}>
-          {dashboardEnabled ? renderLink(FEATURES[0]!) : null}
-          {dashboardEnabled && otherFeatures.length ? (
+          {pinned.map(renderLink)}
+          {pinned.length > 0 && sections.length > 0 ? (
             <div className={cn('my-1 h-px bg-border/60', expandedView ? 'w-full' : 'w-6')} />
           ) : null}
-          {otherFeatures.map((f) => (
-            <Fragment key={f.key}>
-              {renderLink(f)}
-              {/* Group the work surfaces (Sessions onward) apart from Tasks. */}
-              {f.key === 'tasks' && isFeatureEnabled(settings.features, 'sessions') ? (
-                <div className={cn('my-1 h-px bg-border/60', expandedView ? 'w-full' : 'w-6')} />
-              ) : null}
-            </Fragment>
-          ))}
+          {sections.map((section) => {
+            const collapsed = collapsedSections.has(section.key);
+            const bodyId = `nav-section-${section.key}`;
+            return (
+              <div key={section.key} className={cn('flex flex-col', expandedView ? 'items-stretch' : 'items-center')}>
+                {expandedView ? (
+                  <button
+                    type="button"
+                    onClick={() => toggleSection(section.key)}
+                    aria-expanded={!collapsed}
+                    aria-controls={bodyId}
+                    className="mt-2 flex w-full items-center gap-1.5 rounded-md px-2.5 py-1 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70 transition-colors hover:text-foreground"
+                  >
+                    <ChevronDown
+                      aria-hidden
+                      className={cn('h-3 w-3 shrink-0 transition-transform', collapsed && '-rotate-90')}
+                    />
+                    <span className="truncate">{section.label}</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => toggleSection(section.key)}
+                    aria-expanded={!collapsed}
+                    aria-controls={bodyId}
+                    aria-label={`${section.label} section`}
+                    className="group relative mt-1 flex h-5 w-9 items-center justify-center rounded-md text-muted-foreground/60 transition-colors hover:bg-accent/60 hover:text-foreground"
+                  >
+                    <ChevronDown
+                      aria-hidden
+                      className={cn('h-3.5 w-3.5 transition-transform', collapsed && '-rotate-90')}
+                    />
+                    <Tooltip>{section.label}</Tooltip>
+                  </button>
+                )}
+                <Collapse open={!collapsed} id={bodyId} role="group" aria-label={section.label}>
+                  <div
+                    className={cn(
+                      'flex flex-col gap-1 pt-1',
+                      expandedView ? 'items-stretch' : 'items-center',
+                    )}
+                  >
+                    {section.features.map(renderLink)}
+                  </div>
+                </Collapse>
+              </div>
+            );
+          })}
         </nav>
 
         <div className={cn('mt-auto flex flex-col gap-1', expandedView ? 'items-stretch' : 'items-center')}>
