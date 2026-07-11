@@ -7,6 +7,7 @@ import { ProjectTag } from '@/components/project-tag';
 import { SelectableIcon } from '@/components/selectable-icon';
 import { SortableAccordions, type AccordionSection } from '@/components/sortable-accordions';
 import { TaskRow } from '@/components/task-row';
+import { WindowVirtualList } from '@/components/ui/window-virtual-list';
 
 function plural(n: number, word: string): string {
   return `${n} ${word}${n === 1 ? '' : 's'}`;
@@ -50,14 +51,13 @@ export function ProjectsTree({
     items.length === 0 ? (
       <div className="px-4 py-3 text-xs text-muted-foreground">No tasks yet</div>
     ) : (
-      items.map((t) => (
-        <TaskRow
-          key={t.id}
-          task={t}
-          showStatus
-          onSelect={onSelectTask ? () => onSelectTask(t) : undefined}
-        />
-      ))
+      <WindowVirtualList
+        items={items}
+        rowKey={(t) => t.id}
+        renderRow={(t) => (
+          <TaskRow task={t} showStatus onSelect={onSelectTask ? () => onSelectTask(t) : undefined} />
+        )}
+      />
     );
 
   const sections: AccordionSection[] = projects.map((p) => {

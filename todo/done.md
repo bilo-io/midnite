@@ -4,6 +4,14 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-11 — feat: virtualize status-grouped accordions — Phase 57 Theme F remainder (PR #405)
+
+Closes Theme F's deferred remainder. The board + run-history + approval-log lists were virtualized in PR #310, but the sessions/workflows/projects **status-grouped accordions** were deferred because a bounded-container virtualizer adds a per-section inner scrollbar (a UX regression). Phase 57 → 18/27 (67%).
+
+- [x] **`WindowVirtualList`** — a headless list over `@tanstack/react-virtual`'s `useWindowVirtualizer` that windows rows against the **document scroll** (not a bounded container), so a huge section keeps the DOM bounded **without** an inner scrollbar. Below a 50-row threshold it renders plainly (no overhead); row heights are measured, and the list's document offset (`scrollMargin`) is measured — plus a `ResizeObserver` so an accordion expand re-measures — so multiple per-section virtualizers on one page each window correctly.
+- [x] Wrapped the section bodies of **sessions** (table rows), **workflows** (list cards), and **projects-tree** (task rows). Small sections are byte-for-byte unchanged; multi-column **grid** layouts are intentionally left plain (grid virtualization is a separate concern).
+- [x] **Tests** — RTL for the threshold no-op path + a real-browser e2e (`accordion-virtualization.e2e.ts`) seeding 60 tasks in one project that asserts mounted rows stay bounded (< 60) AND no ancestor of a row is an inner scroll container (page scroll only).
+
 ## 2026-07-11 — feat: digest surfaces — Phase 62 Theme G (PR #404)
 
 Gives a generated fleet digest somewhere to be seen: `DigestBuilder` (Theme C) wrote rows to the `digests` table with no controller, no web surface, no searchability. Theme G is the feed, the detail render, the widget, and FTS. With H already landed, this completes every lettered theme of Phase 62. Phase 62 → 23/32 (72%; verification checklist remains).

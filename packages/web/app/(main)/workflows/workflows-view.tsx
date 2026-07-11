@@ -9,6 +9,7 @@ import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-a
 import { EmptyState } from '@/components/empty-state';
 import { useConfirm } from '@/components/confirm-dialog';
 import { CollapsibleStatusGroups, type StatusGroup } from '@/components/collapsible-status-groups';
+import { WindowVirtualList } from '@/components/ui/window-virtual-list';
 import { WorkflowCard } from '@/components/workflow-card';
 import { WorkflowsTable, TRIGGER_SECTIONS } from '@/components/workflows-table';
 import { WorkflowCreateModal } from '@/components/workflow-create-modal';
@@ -133,18 +134,20 @@ export function WorkflowsView({ initial }: { initial: WorkflowSummary[] }) {
           items.length === 0 ? (
             <p className="text-xs text-muted-foreground">No {label.toLowerCase()} workflows</p>
           ) : layout === 'list' ? (
-            <div className="flex flex-col gap-2">
-              {items.map((w) => (
+            <WindowVirtualList
+              items={items}
+              gap={8}
+              rowKey={(w) => w.id}
+              renderRow={(w) => (
                 <WorkflowCard
-                  key={w.id}
                   workflow={w}
                   layout="list"
                   selected={isSelected(w.id)}
                   onToggleSelect={() => toggleSelect(w.id)}
                   onDuplicate={() => void duplicateOne(w.id)}
                 />
-              ))}
-            </div>
+              )}
+            />
           ) : (
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
               {items.map((w) => (
