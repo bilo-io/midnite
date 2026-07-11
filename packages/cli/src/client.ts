@@ -12,6 +12,8 @@ import {
   BulkCreateTaskResponseSchema,
   CheckRunListResponseSchema,
   CreateFromBreakdownResponseSchema,
+  DigestListResponseSchema,
+  DigestResponseSchema,
   GuardrailsResponseSchema,
   InstallTemplateRequestSchema,
   PreflightReportSchema,
@@ -42,6 +44,8 @@ import {
   type BulkCreateTaskResponse,
   type CheckRun,
   type CreateFromBreakdownResponse,
+  type Digest,
+  type DigestListItem,
   type GuardrailsResponse,
   type ImportOptions,
   type ImportPreview,
@@ -141,6 +145,12 @@ export interface GatewayClient {
   getTaskRetro(taskId: string): Promise<TaskRetro>;
   /** A task's retrospective serialized as markdown (Phase 62 F). */
   exportTaskRetro(taskId: string): Promise<string>;
+  /** Recent fleet digests (Phase 62 G/H) — lightweight feed rows, most-recent-first. */
+  listDigests(limit?: number): Promise<DigestListItem[]>;
+  /** A single full digest by id (Phase 62); rejects on 404. */
+  getDigest(id: string): Promise<Digest>;
+  /** A digest serialized as markdown (Phase 62 G export route). */
+  exportDigest(id: string): Promise<string>;
   getTerminalToken(sessionId: string): Promise<TerminalTokenResponse>;
   draftBreakdown(goal: string): Promise<BreakdownPreviewResponse>;
   createFromBreakdown(breakdown: Breakdown, repo?: string): Promise<CreateFromBreakdownResponse>;
@@ -480,6 +490,26 @@ export function createClient(baseUrl: string, token?: string): GatewayClient {
     async exportTaskRetro(taskId: string): Promise<string> {
       // The retro export route serves `text/markdown`, not JSON — read it as text.
       const res = await fetchOk(`/tasks/${encodeURIComponent(taskId)}/retro/export?format=md`, {
+        method: 'GET',
+      });
+      return res.text();
+    },
+    async listDigests(limit?: number): Promise<DigestListItem[]> {
+      const query = limit === undefined ? '' : `?limit=${limit}`;
+      const { digests } = DigestListResponseSchema.parse(
+        await request(`/digests${query}`, { method: 'GET' }),
+      );
+      return digests;
+    },
+    async getDigest(id: string): Promise<Digest> {
+      const { digest } = DigestResponseSchema.parse(
+        await request(`/digests/${encodeURIComponent(id)}`, { method: 'GET' }),
+      );
+      return digest;
+    },
+    async exportDigest(id: string): Promise<string> {
+      // The digest export route serves `text/markdown`, not JSON — read it as text.
+      const res = await fetchOk(`/digests/${encodeURIComponent(id)}/export?format=md`, {
         method: 'GET',
       });
       return res.text();

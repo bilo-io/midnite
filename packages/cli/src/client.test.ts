@@ -402,4 +402,74 @@ describe('createClient — usage + ops (Phase 61 I)', () => {
     expect(seenUrl).toBe('http://gw/metrics/ops');
     expect(res.outcomeCounts.done).toBe(0);
   });
+
+  const DIGEST = {
+    id: 'd1',
+    createdAt: '2026-07-08T00:00:00.000Z',
+    from: '2026-07-07T00:00:00.000Z',
+    to: '2026-07-08T00:00:00.000Z',
+    counts: { shipped: 3, failed: 1, needsAttention: 1 },
+    sections: [{ name: 'midnite', shipped: 3, failed: 1 }],
+    highlights: [{ taskId: 't9', title: 'Fix flake', outcome: 'abandoned', note: 'still flaky' }],
+    spend: { totalUsd: 4.2, measuredUsd: 4.2, sessions: 5 },
+    cycle: { tasks: 4, p50Ms: 120_000, p90Ms: 480_000 },
+    headline: '3 shipped, 1 failed.',
+    markdown: '# Fleet digest',
+  };
+  const DIGEST_LIST_ITEM = {
+    id: 'd1',
+    createdAt: '2026-07-08T00:00:00.000Z',
+    from: '2026-07-07T00:00:00.000Z',
+    to: '2026-07-08T00:00:00.000Z',
+    headline: '3 shipped, 1 failed.',
+    counts: { shipped: 3, failed: 1, needsAttention: 1 },
+  };
+
+  it('listDigests unwraps the feed and threads the limit query', async () => {
+    let seenUrl = '';
+    stubFetch((url) => {
+      seenUrl = url;
+      return new Response(JSON.stringify({ digests: [DIGEST_LIST_ITEM] }), { status: 200 });
+    });
+    const digests = await createClient('http://gw').listDigests(5);
+    expect(seenUrl).toBe('http://gw/digests?limit=5');
+    expect(digests).toHaveLength(1);
+    expect(digests[0]!.id).toBe('d1');
+  });
+
+  it('listDigests omits the limit query when unset', async () => {
+    let seenUrl = '';
+    stubFetch((url) => {
+      seenUrl = url;
+      return new Response(JSON.stringify({ digests: [] }), { status: 200 });
+    });
+    await createClient('http://gw').listDigests();
+    expect(seenUrl).toBe('http://gw/digests');
+  });
+
+  it('getDigest unwraps a single full digest', async () => {
+    let seenUrl = '';
+    stubFetch((url) => {
+      seenUrl = url;
+      return new Response(JSON.stringify({ digest: DIGEST }), { status: 200 });
+    });
+    const d = await createClient('http://gw').getDigest('d1');
+    expect(seenUrl).toBe('http://gw/digests/d1');
+    expect(d.headline).toBe('3 shipped, 1 failed.');
+    expect(d.spend?.sessions).toBe(5);
+  });
+
+  it('exportDigest requests markdown and returns the raw body', async () => {
+    let seenUrl = '';
+    stubFetch((url) => {
+      seenUrl = url;
+      return new Response('# Fleet digest', {
+        status: 200,
+        headers: { 'content-type': 'text/markdown' },
+      });
+    });
+    const md = await createClient('http://gw').exportDigest('d1');
+    expect(seenUrl).toBe('http://gw/digests/d1/export?format=md');
+    expect(md).toBe('# Fleet digest');
+  });
 });

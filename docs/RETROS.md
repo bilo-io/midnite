@@ -74,7 +74,19 @@ midnite retro <taskId>              # rendered summary (outcome, timing, failure
 midnite retro <taskId> --json       # the raw TaskRetro
 midnite retro <taskId> --export     # the retro as markdown, to stdout
 midnite retro <taskId> --export r.md # …or to a file
+
+midnite digest list                 # recent fleet digests, most-recent-first
+midnite digest list -n 5            # cap the feed length
+midnite digest show <id>            # a full digest (counts, sections, highlights,
+                                    # best-effort spend + cycle time)
+midnite digest show --latest        # …or the most recent one
+midnite digest show <id> --json     # the raw Digest
+midnite digest show <id> --export   # the digest as markdown, to stdout
+midnite digest show <id> --export d.md # …or to a file
 ```
 
-The markdown is the same document the web Retro tab exports (`GET
-/tasks/:id/retro/export`), so it round-trips into any report.
+The retro markdown is the same document the web Retro tab exports (`GET
+/tasks/:id/retro/export`); the digest markdown matches the `/digests` feed's
+export (`GET /digests/:id/export`) — both round-trip into any report. `midnite
+digest` reads the same global digests the web feed shows; there's no `digest.enabled`
+switch — digests are produced by the daily-digest workflow (Theme E).

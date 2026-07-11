@@ -69,6 +69,7 @@ import { parseCredFlag, templateListRows } from './template.js';
 import { doctorExitCode, doctorRows } from './doctor.js';
 import { USAGE_TABLE_HEAD, usageAttributionRows, usageWindowLine } from './usage.js';
 import { retroLines } from './retro.js';
+import { DIGEST_TABLE_HEAD, digestLines, digestListRows, digestWindow } from './digest.js';
 import { opsDurationRows, opsGaugeRows, opsOutcomeRows, opsThroughputRows } from './ops.js';
 import { resolveWindow } from './lib/window.js';
 import type { PreflightStatus } from '@midnite/shared';
@@ -804,6 +805,74 @@ program
     }
     console.log(heading(`Retrospective — ${taskId}`));
     for (const line of retroLines(retro)) console.log(line ? `  ${line}` : '');
+  });
+
+const digest = program
+  .command('digest')
+  .description('Fleet digests — periodic roll-ups of what shipped, failed & needs attention (Phase 62)');
+
+digest
+  .command('list')
+  .description('Recent digests (most-recent-first)')
+  .option('-n, --limit <n>', 'max digests to show', (v) => Number.parseInt(v, 10))
+  .action(async (opts: { limit?: number }) => {
+    const digests = await withSpinner('Loading digests…', () => client().listDigests(opts.limit));
+    if (isJsonMode()) {
+      printJson(digests);
+      return;
+    }
+    if (digests.length === 0) {
+      console.log('no digests');
+      return;
+    }
+    const table = new Table({ head: DIGEST_TABLE_HEAD, wordWrap: true });
+    for (const row of digestListRows(digests)) table.push(row);
+    console.log(table.toString());
+  });
+
+digest
+  .command('show [id]')
+  .description('A full digest by id, or the most recent with --latest')
+  .option('--latest', 'show the most recent digest (ignored when an id is given)')
+  .option('--export [file]', 'write the digest as markdown (to <file>, or stdout when no path)')
+  .action(async (id: string | undefined, opts: { latest?: boolean; export?: string | boolean }) => {
+    const c = client();
+
+    // Resolve the target digest: an explicit id, else the most recent via --latest.
+    let digestId = id;
+    if (!digestId) {
+      if (!opts.latest) {
+        console.error('specify a digest id or use --latest');
+        process.exitCode = 1;
+        return;
+      }
+      const recent = await withSpinner('Finding latest digest…', () => c.listDigests(1));
+      const latest = recent[0];
+      if (!latest) {
+        console.log('no digests yet');
+        return;
+      }
+      digestId = latest.id;
+    }
+
+    if (opts.export !== undefined) {
+      const markdown = await withSpinner('Exporting digest…', () => c.exportDigest(digestId));
+      if (typeof opts.export === 'string') {
+        await writeFile(opts.export, markdown, 'utf8');
+        console.log(success(`exported digest ${digestId} → ${opts.export}`));
+      } else {
+        process.stdout.write(markdown);
+      }
+      return;
+    }
+
+    const d = await withSpinner('Fetching digest…', () => c.getDigest(digestId));
+    if (isJsonMode()) {
+      printJson(d);
+      return;
+    }
+    console.log(heading(`Digest — ${digestWindow(d.from, d.to)}`));
+    for (const line of digestLines(d)) console.log(line ? `  ${line}` : '');
   });
 
 // Task-scoped operations that don't fit the flat verbs (add/list/move/…).

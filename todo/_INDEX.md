@@ -31,7 +31,7 @@
 | [65 · Memory workspace](phase-65-memory-workspace.md) | ✅ DONE | 33/33 | `██████████` | 100% | — | — |
 | [64 · Office presence](phase-64-office-presence.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
-| [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 23/32 | `███████░░░` | 72% | H V | — |
+| [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 24/32 | `████████░░` | 75% | V | — |
 | [61 · Fable-Observability](phase-61-fable-observability.md) | ✅ DONE | 36/36 | `██████████` | 100% | — | — |
 | [60 · Fable-Analysis](phase-60-fable-analysis.md) | ✅ DONE | 62/62 | `██████████` | 100% | — | — |
 | [59 · Chat to board](phase-59-chat-to-board.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
@@ -154,7 +154,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **E** — Digest pipeline template: daily-digest seed → list-completed→build-digest→parallel {slack (rich blocks, optional/skip-if-unbound), notify}; slack.message gains Block Kit `blocks` (P44 webhook fan-out ⏳ deferred) (PR #401)
 - ✅ **F** — Retro surfaces: task-detail Retro tab (full retro + AI-summary honesty badge) + P18 markdown export + session cockpit deep-link (PR #402)
 - ✅ **G** — Digest surfaces: `/digests` two-pane master-detail feed + structured detail w/ task deep-links + md export, Latest-digest widget, digests indexed in global search (PR #404)
-- ◐ **H** — Transcript slicer (done in C) + `midnite retro` CLI + `retro.autoSkeleton`/`narrativeMaxTokens` config + `docs/RETROS.md` (PR #403); **`midnite digest` deferred** pending Theme G's `GET /digests` (now landed)
+- ✅ **H** — Transcript slicer (done in C) + `midnite retro` CLI + `retro.autoSkeleton`/`narrativeMaxTokens` config + `docs/RETROS.md` (PR #403); **`midnite digest list`/`show` CLI** now landed over Theme G's `GET /digests` (PR #DIGESTPR)
 
 ### [Phase 61 — Fable-Observability](phase-61-fable-observability.md)
 *Deepen the existing metrics/usage seam: real session tokens (honestly labeled), cost attribution, cycle time, rollups + retention, live Ops. Fable series #2.*
