@@ -187,16 +187,21 @@ The morning "what did the fleet do?" — assembled by the product itself.
 - [ ] Digest + retro entities are **searchable** (FTS index: headline/narrative → the P20 pattern)
       so "that thing the digest mentioned" is findable.
 
-## Theme H — Transcript slicing, CLI, config & docs — **S-M**
+## Theme H — Transcript slicing, CLI, config & docs — **S-M** — ◐ PARTIAL (PR #403, 2026-07-11)
 
-- [ ] A **bounded transcript-excerpt helper** in [`sessions.reader.ts`](../packages/gateway/src/sessions/sessions.reader.ts)
-      (tail-N messages + tool-call summary + failure-adjacent context; hard char cap) — the only way
-      retro generation touches a transcript; reusable by a future memory phase.
-- [ ] **CLI:** `midnite retro <taskId>` (render/export) + `midnite digest [--latest | --list]` —
-      typed client, tables + global `--json`, house exit codes.
-- [ ] **Config + docs:** `digest.enabled`/cadence lives on the workflow (it *is* a workflow);
-      gateway config only for `retro.autoSkeleton` (default on) + narrative budget knobs; document
-      the cost model (skeleton free · narrative/headline one small call · fail-soft) in the README.
+- [x] A **bounded transcript-excerpt helper** (`sliceTranscript` in
+      [`sessions/lib/transcript-slice.ts`](../packages/gateway/src/sessions/lib/transcript-slice.ts))
+      — built in Theme C (tail-N messages + char cap), the only way retro generation touches a
+      transcript.
+- [◐] **CLI:** `midnite retro <taskId>` (render + `--json` + `--export [file]`) landed over the
+      existing retro routes. **`midnite digest [--latest | --list]` deferred** — it needs a
+      `GET /digests` read API that Theme G (digest surfaces, in flight) is building; a tiny follow-up
+      adds the command once G lands the endpoint (avoids two loops building the same controller).
+- [x] **Config + docs:** `retro.autoSkeleton` (default on, gates the auto-skeleton subscriber) +
+      `retro.narrativeMaxTokens` (default 700, bounds the narrative call) in the shared schema; the
+      cost model (skeleton free · narrative one small call · fail-soft) documented in
+      [`docs/RETROS.md`](../docs/RETROS.md) + a README pointer. `digest.enabled`/cadence stays on the
+      workflow, as designed.
 
 ---
 

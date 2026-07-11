@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger, type OnApplicationBootstrap, type OnModuleDestroy } from '@nestjs/common';
-import type { TaskBoardEvent } from '@midnite/shared';
+import type { MidniteConfig, TaskBoardEvent } from '@midnite/shared';
 
+import { MIDNITE_CONFIG } from '../config.token';
 import { TaskEventBus } from '../tasks/task-event-bus';
 import { RetroBuilderService } from './retro-builder.service';
 
@@ -19,9 +20,16 @@ export class RetroSubscriberService implements OnApplicationBootstrap, OnModuleD
   constructor(
     @Inject(TaskEventBus) private readonly taskBus: TaskEventBus,
     @Inject(RetroBuilderService) private readonly builder: RetroBuilderService,
+    @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
   ) {}
 
   onApplicationBootstrap(): void {
+    // `retro.autoSkeleton` (default on) gates auto-building; when off, retros are
+    // only produced by an explicit workflow run, so we don't subscribe at all.
+    if (!this.config.retro.autoSkeleton) {
+      this.logger.log('retro.autoSkeleton is off — not auto-building retros on terminal tasks');
+      return;
+    }
     this.unsubscribe = this.taskBus.subscribe((event) => this.onTaskEvent(event));
   }
 

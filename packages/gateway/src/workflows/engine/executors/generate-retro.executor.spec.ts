@@ -1,9 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { TaskRetro } from '@midnite/shared';
+import type { MidniteConfig, TaskRetro } from '@midnite/shared';
 import type { NodeRunContext } from '../node-executor';
 import type { RetroAccessor, RetroForNarrative } from '../../../retro/retro-accessor';
 import type { LlmService } from '../../../agent/llm/llm.service';
 import { GenerateRetroExecutor } from './generate-retro.executor';
+
+const CONFIG = { retro: { autoSkeleton: true, narrativeMaxTokens: 700 } } as unknown as MidniteConfig;
 
 function ctx(params: Record<string, unknown>, input: unknown = {}): NodeRunContext {
   return {
@@ -46,7 +48,7 @@ function make(over: {
       over.generateStructured ??
       vi.fn().mockResolvedValue({ data: { whatHappened: 'did work', whatTrippedIt: null, notable: ['x'] }, model: 'plan' }),
   } as unknown as LlmService;
-  return { exec: new GenerateRetroExecutor(retro, llm), loadForNarrative, storeNarrative, llm };
+  return { exec: new GenerateRetroExecutor(retro, llm, CONFIG), loadForNarrative, storeNarrative, llm };
 }
 
 describe('GenerateRetroExecutor', () => {

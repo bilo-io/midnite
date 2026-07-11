@@ -1,6 +1,25 @@
 import { describe, expect, it } from 'vitest';
 import { parseConfig } from './config.js';
 
+describe('retro config (Phase 62)', () => {
+  it('defaults auto-skeleton ON with a 700-token narrative cap', () => {
+    const { retro } = parseConfig({ agent: {}, terminal: {}, gateway: {} });
+    expect(retro.autoSkeleton).toBe(true);
+    expect(retro.narrativeMaxTokens).toBe(700);
+  });
+
+  it('accepts overrides', () => {
+    const { retro } = parseConfig({
+      agent: {},
+      terminal: {},
+      gateway: {},
+      retro: { autoSkeleton: false, narrativeMaxTokens: 1200 },
+    });
+    expect(retro.autoSkeleton).toBe(false);
+    expect(retro.narrativeMaxTokens).toBe(1200);
+  });
+});
+
 describe('backup config (Phase 49 F)', () => {
   it('ships auto-backup OFF by default with sane knobs', () => {
     const { backup } = parseConfig({ agent: {}, terminal: {}, gateway: {} });

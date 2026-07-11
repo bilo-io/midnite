@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { Task, TaskBoardEvent, TaskRetro } from '@midnite/shared';
+import type { MidniteConfig, Task, TaskBoardEvent, TaskRetro } from '@midnite/shared';
 
 import { TaskEventBus } from '../tasks/task-event-bus';
 import { RetroSubscriberService } from './retro-subscriber.service';
@@ -9,14 +9,18 @@ function task(over: Partial<Task> = {}): Task {
   return { id: 't1', title: 'x', status: 'done', createdAt: '2026-07-07T09:00:00.000Z', ...over } as unknown as Task;
 }
 
-function build(builderOver: Partial<RetroBuilderService> = {}) {
+function cfg(autoSkeleton = true): MidniteConfig {
+  return { retro: { autoSkeleton, narrativeMaxTokens: 700 } } as unknown as MidniteConfig;
+}
+
+function build(builderOver: Partial<RetroBuilderService> = {}, autoSkeleton = true) {
   const bus = new TaskEventBus();
   const builder = {
     buildAndStore: vi.fn(),
     getByTaskId: vi.fn().mockReturnValue(undefined),
     ...builderOver,
   } as unknown as RetroBuilderService;
-  const svc = new RetroSubscriberService(bus, builder);
+  const svc = new RetroSubscriberService(bus, builder, cfg(autoSkeleton));
   svc.onApplicationBootstrap();
   return { bus, builder, svc };
 }
@@ -76,6 +80,12 @@ describe('RetroSubscriberService', () => {
   it('unsubscribes on destroy', () => {
     const { bus, builder, svc } = build();
     svc.onModuleDestroy();
+    bus.emit(updated(task({ status: 'done' })));
+    expect(builder.buildAndStore).not.toHaveBeenCalled();
+  });
+
+  it('does not subscribe when retro.autoSkeleton is off', () => {
+    const { bus, builder } = build({}, false);
     bus.emit(updated(task({ status: 'done' })));
     expect(builder.buildAndStore).not.toHaveBeenCalled();
   });
