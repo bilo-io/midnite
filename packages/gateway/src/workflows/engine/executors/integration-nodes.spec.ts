@@ -72,6 +72,34 @@ describe('SlackMessageExecutor', () => {
     expect(body).toEqual({ channel: '#general', text: 'hello' });
   });
 
+  it('includes Block Kit blocks in the payload when provided (text is the fallback)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, ts: '1', channel: 'C1' }) }),
+    );
+    const exec = new SlackMessageExecutor(fakeCredentials({ type: 'slack', token: 'tok' }));
+    const blocks = [{ type: 'section', text: { type: 'mrkdwn', text: '*Digest*' } }];
+    await exec.execute(makeCtx({ credentialId: 'c1', channel: '#d', text: 'fallback', blocks }));
+
+    const [, opts] = (vi.mocked(fetch) as ReturnType<typeof vi.fn>).mock.calls[0] as [string, RequestInit];
+    const body = JSON.parse(opts.body as string) as { channel: string; text: string; blocks?: unknown };
+    expect(body).toEqual({ channel: '#d', text: 'fallback', blocks });
+  });
+
+  it('skips cleanly (never resolves the credential or posts) when the slot is unbound', async () => {
+    const resolve = vi.fn();
+    const fetchSpy = vi.fn();
+    vi.stubGlobal('fetch', fetchSpy);
+    const exec = new SlackMessageExecutor({ resolve } as unknown as WorkflowCredentialsService);
+
+    const result = await exec.execute(
+      makeCtx({ credentialId: 'slot:slack-workspace', channel: '#d', text: 'hi' }),
+    );
+    expect(result).toMatchObject({ skipped: true, reason: 'unbound-credential-slot' });
+    expect(resolve).not.toHaveBeenCalled();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
   it('throws when Slack API returns ok: false', async () => {
     vi.stubGlobal(
       'fetch',

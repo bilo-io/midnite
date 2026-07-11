@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   NODE_TYPE_DEFINITIONS,
+  SlackMessageParamsSchema,
   evaluateBranchCondition,
   getNodeTypeDefinition,
   listNodeTypes,
@@ -170,6 +171,33 @@ describe('branch node', () => {
   it('returns false for a missing path rather than throwing', () => {
     expect(evaluateBranchCondition({}, { left: 'a.b.c', operator: 'isTruthy' })).toBe(false);
     expect(evaluateBranchCondition({}, { left: 'a.b.c', operator: 'equals', right: 'x' })).toBe(false);
+  });
+});
+
+describe('slack.message params', () => {
+  it('accepts a resolved Block Kit array for blocks', () => {
+    const parsed = SlackMessageParamsSchema.parse({
+      credentialId: 'c1',
+      channel: '#d',
+      text: 'hi',
+      blocks: [{ type: 'section' }],
+    });
+    expect(parsed.blocks).toEqual([{ type: 'section' }]);
+  });
+
+  it('accepts an unresolved {{expr}} string for blocks (survives raw graph validation)', () => {
+    const parsed = SlackMessageParamsSchema.parse({
+      credentialId: 'c1',
+      channel: '#d',
+      text: 'hi',
+      blocks: '{{ $json.blocks }}',
+    });
+    expect(parsed.blocks).toBe('{{ $json.blocks }}');
+  });
+
+  it('leaves blocks optional', () => {
+    const parsed = SlackMessageParamsSchema.parse({ credentialId: 'c1', channel: '#d', text: 'hi' });
+    expect(parsed.blocks).toBeUndefined();
   });
 });
 

@@ -120,10 +120,15 @@ export const BranchParamsSchema = z.object({
 // --- Integration node params (Phase 14 Theme C) ---
 
 // slack.message — post a message to a Slack channel via a `slack` credential.
+// `blocks` is optional Slack Block Kit: when present it renders the rich message
+// and `text` is the notification fallback. It's expressionable, so before the
+// engine resolves it the value is a `{{ … }}` string — hence the union (a bare
+// span resolves to the typed array at run time; see build-digest's `blocks`).
 export const SlackMessageParamsSchema = z.object({
   credentialId: z.string().min(1),
   channel: z.string().min(1),
   text: z.string().min(1),
+  blocks: z.union([z.array(z.unknown()), z.string()]).optional(),
 });
 export type SlackMessageParams = z.infer<typeof SlackMessageParamsSchema>;
 
@@ -702,6 +707,7 @@ export const NODE_TYPE_DEFINITIONS: Record<string, NodeTypeDefinition> = {
       { key: 'credentialId', label: 'Slack credential', kind: 'credential', required: true, credentialType: 'slack' },
       { key: 'channel', label: 'Channel', kind: 'string', required: true, placeholder: '#general or channel ID', expressionable: true },
       { key: 'text', label: 'Message text', kind: 'text', required: true, expressionable: true },
+      { key: 'blocks', label: 'Blocks (Block Kit)', kind: 'text', expressionable: true, help: 'Optional Slack Block Kit array (usually an expression, e.g. {{ $json.blocks }}). Text is the fallback.' },
     ],
   },
   'email.send': {
