@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-11 — feat: per-task run timeline — Phase 61 Theme G (run timeline) (PR #396)
+
+The last open item of Theme G's Ops deepening (cycle-time + fleet-trend landed in #360): a per-task strip of agent-run attempts. Read-only over `agent_run_stats`, no migration. **Cost views remain ⏳ blocked on Theme E rollups — G stays ◐ partial.**
+
+- [x] **`GET /metrics/runs?taskId=`** — thin metrics route → `MetricsService.getRunTimeline` → `MetricsRepository.runsForTask` (ordered by startedAt); `RunTimelineEntry`/`Response`/`Query` zod contracts in shared.
+- [x] **`RunTimeline` component (recharts):** attempt bars started→ended, outcome-colored (done/abandoned/failed/cancelled), retry index visible, the **in-progress run** extended to now with a "running" style; duration tooltip; honest empty state.
+- [x] **Mounted twice:** an "Agent runs" section on the task detail page + a "Run timeline" Ops drill-down (task-id lookup).
+- [x] **Tests:** gateway repo/service/controller (order, live-run nulls, 400 on missing taskId); web RTL (bars, colors, empty, live) + Storybook story (Default/Empty/WithLiveRun); a Playwright drill-down spec (authored). shared 683 · gateway 1968 · web 1099 · typecheck/lint green. Phase 61 → 24/36 (67%).
+
 ## 2026-07-11 — docs: synthesis & remediation backlog → Phase 60 to 100% — Phase 60 Theme M (PR #394)
 
 The audit closer. Twelve bounded audit themes (A–L) each produced a findings report; **Theme M runs last** and turns them into one executive read so the findings become a schedulable backlog. **Phase 60 → 62/62 (100%).** Docs-only (touches `todo/` markdown exclusively). Also corrected stale `_INDEX.md` theme-key entries (A & C shipped in PR #357 but still read `◻`).

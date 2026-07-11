@@ -188,9 +188,9 @@ as the fallback when the socket is down or nothing has changed.
 
 ## Theme G — Ops page deepening — **M-L** — ◐ PARTIAL (PR #360, 2026-07-07)
 
-From snapshot to instrument. Cycle-time + fleet-trend views (the Theme C/D data) landed in
-PR #360; **cost views** wait on Theme B/E (cost attribution) and the **run timeline** is still
-open — both remain TODO under this theme.
+From snapshot to instrument. Cycle-time + fleet-trend views landed in PR #360; the **run timeline**
+landed in PR #396. **Cost views** remain the sole open item — ⏳ blocked on Theme E rollups — so this
+theme stays ◐ PARTIAL until E lands.
 
 - [ ] **Cost views:** spend by repo/project/provider over time (from Theme B attribution + Theme E
       rollups), measured-vs-estimated composition visible (hatched/labeled segments — honesty in the
@@ -201,9 +201,9 @@ open — both remain TODO under this theme.
 - [x] **Fleet trends:** queue depth / slot utilization / tick latency over time from persisted gauge
       history (Theme D, `GET /metrics/gauges/history`) — three recharts series; restart no longer
       erases the story (PR #360). Boot-marker annotations left as a future polish.
-- [ ] **Run timeline:** a per-task run strip (attempt bars from `agent_run_stats`: started→ended,
-      outcome-colored, retries visible) on the task detail / Ops drill-down — reuse recharts, no new
-      chart lib.
+- [x] **Run timeline:** a per-task run strip (attempt bars from `agent_run_stats`: started→ended,
+      outcome-colored, retries visible, live run extended to now) on the task detail + an Ops
+      drill-down — recharts, `GET /metrics/runs?taskId=` (PR #396).
 
 ## Theme H — Widgets + cockpit integration — **M** — ✅ DONE (PR #390, 2026-07-11)
 
