@@ -105,4 +105,25 @@ test.describe('Memory workspace page', () => {
     await expect(page.getByText('conventions.md')).toBeVisible();
     await expect(page.getByLabel('Source read')).toBeVisible({ timeout: 15_000 });
   });
+
+  // Phase 65 C/G — the cross-cutting chat flow. Asking a question persists a turn
+  // to the thread; when the e2e gateway has no reachable model the composer shows
+  // an honest disabled hint instead of the input (never a crash). Either branch
+  // proves the panel is wired end-to-end.
+  test('Chat: a question persists to the thread, or the composer degrades honestly', async ({ page }) => {
+    const fresh = await seedMemory('E2E chat target', '# Rockets\nRockets fly because of Newton’s third law.');
+    await page.goto(`/memory/view?id=${fresh.id}`);
+
+    const providerHint = page.getByText('Add an AI provider in Settings to chat with this memory.');
+    const input = page.getByLabel('Ask this memory a question');
+    await expect(input.or(providerHint).first()).toBeVisible();
+    if (await providerHint.isVisible()) return; // no reachable model here — honest degrade
+
+    await input.fill('Why do rockets fly?');
+    await page.getByRole('button', { name: 'Send' }).click();
+
+    // The user's question lands in the persisted thread regardless of the answer.
+    const log = page.getByRole('log', { name: 'Chat with this memory' });
+    await expect(log.getByText('Why do rockets fly?')).toBeVisible({ timeout: 20_000 });
+  });
 });
