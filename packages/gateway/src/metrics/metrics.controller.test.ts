@@ -24,6 +24,7 @@ function makeController() {
     getCycleTime: vi
       .fn()
       .mockReturnValue({ from: 'a', to: 'b', groupBy: 'none', groups: [] }),
+    getRunTimeline: vi.fn().mockReturnValue({ taskId: 't1', runs: [] }),
   } as unknown as MetricsService;
   return { controller: new MetricsController(service), service };
 }
@@ -87,5 +88,24 @@ describe('MetricsController', () => {
   it('throws BadRequestException on an invalid groupBy', () => {
     const { controller } = makeController();
     expect(() => controller.cycleTime({ groupBy: 'nonsense' })).toThrow(BadRequestException);
+  });
+
+  // ── Run timeline (Phase 61 G) ────────────────────────────────────────────────
+
+  it('GET /metrics/runs delegates the taskId to the service', () => {
+    const { controller, service } = makeController();
+    const res = controller.runs({ taskId: 't1' });
+    expect(res).toEqual({ taskId: 't1', runs: [] });
+    expect(service.getRunTimeline).toHaveBeenCalledWith('t1');
+  });
+
+  it('throws BadRequestException when taskId is missing', () => {
+    const { controller } = makeController();
+    expect(() => controller.runs({})).toThrow(BadRequestException);
+  });
+
+  it('throws BadRequestException when taskId is empty', () => {
+    const { controller } = makeController();
+    expect(() => controller.runs({ taskId: '' })).toThrow(BadRequestException);
   });
 });

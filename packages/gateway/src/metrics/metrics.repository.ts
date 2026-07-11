@@ -13,6 +13,7 @@ import {
   taskEvents,
   tasks,
   type AgentRunStatsInsert,
+  type AgentRunStatsRow,
   type GaugeSampleInsert,
   type GaugeSampleRow,
   type MetricsRollupInsert,
@@ -142,6 +143,20 @@ export class MetricsRepository {
       }
     }
     return result;
+  }
+
+  /**
+   * All runs recorded for one task, oldest-first (`started_at ASC`). Includes the
+   * live run (null `ended_at`/`outcome`) if one is in flight. Read-only — feeds
+   * the per-task run timeline (Phase 61 G).
+   */
+  runsForTask(taskId: string): AgentRunStatsRow[] {
+    return this.db
+      .select()
+      .from(agentRunStats)
+      .where(eq(agentRunStats.taskId, taskId))
+      .orderBy(agentRunStats.startedAt)
+      .all();
   }
 
   // ── Gauge samples (Phase 61 D) ──────────────────────────────────────────────

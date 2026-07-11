@@ -14,6 +14,8 @@ import {
   type MetricsRollupResponse,
   type OpsSummary,
   type OpsQuery,
+  type RunOutcome,
+  type RunTimelineResponse,
 } from '@midnite/shared';
 
 import { MetricsRepository, type DoneTaskCycleRow } from './metrics.repository';
@@ -236,6 +238,30 @@ export class MetricsService {
           sampleCount: r.sampleCount,
         }),
       ),
+    };
+  }
+
+  // ── Run timeline (Phase 61 G) ────────────────────────────────────────────────
+
+  /**
+   * All agent runs for one task (oldest-first), mapped to the wire shape. A live
+   * run keeps its null `endedAt`/`durationMs`/`outcome` — the client renders it
+   * extending to "now". Read-only over `agent_run_stats`; no aggregation.
+   */
+  getRunTimeline(taskId: string): RunTimelineResponse {
+    const rows = this.repo.runsForTask(taskId);
+    return {
+      taskId,
+      runs: rows.map((r) => ({
+        id: r.id,
+        taskId: r.taskId,
+        startedAt: r.startedAt,
+        endedAt: r.endedAt,
+        durationMs: r.durationMs,
+        outcome: r.outcome as RunOutcome | null,
+        retryCount: r.retryCount,
+        repo: r.repo,
+      })),
     };
   }
 

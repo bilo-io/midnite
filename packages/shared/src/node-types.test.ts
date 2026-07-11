@@ -100,6 +100,51 @@ describe('reshape nodes (Phase 12 Theme C)', () => {
   });
 });
 
+describe('reporting nodes (Phase 62 Theme C)', () => {
+  it('registers the four reporting nodes as actions', () => {
+    for (const id of [
+      'midnite.generate-retro',
+      'midnite.list-completed-tasks',
+      'midnite.build-digest',
+      'midnite.notify',
+    ]) {
+      expect(getNodeTypeDefinition(id)!.category).toBe('action');
+    }
+  });
+
+  it('generate-retro accepts an optional taskId', () => {
+    const def = getNodeTypeDefinition('midnite.generate-retro')!;
+    expect(def.paramsSchema.safeParse({}).success).toBe(true);
+    expect(def.paramsSchema.safeParse({ taskId: 't1' }).success).toBe(true);
+  });
+
+  it('list-completed-tasks defaults sinceHours to 24', () => {
+    const ok = getNodeTypeDefinition('midnite.list-completed-tasks')!.paramsSchema.safeParse({});
+    expect(ok.success).toBe(true);
+    if (ok.success) expect((ok.data as { sinceHours: number }).sinceHours).toBe(24);
+  });
+
+  it('build-digest defaults sinceHours and takes optional from/to/repo', () => {
+    const def = getNodeTypeDefinition('midnite.build-digest')!;
+    const ok = def.paramsSchema.safeParse({ from: '2026-07-01T00:00:00.000Z', repo: 'midnite' });
+    expect(ok.success).toBe(true);
+    if (ok.success) expect((ok.data as { sinceHours: number }).sinceHours).toBe(24);
+  });
+
+  it('notify requires title + body and defaults kind/severity', () => {
+    const def = getNodeTypeDefinition('midnite.notify')!;
+    expect(def.paramsSchema.safeParse({ title: 't' }).success).toBe(false);
+    const ok = def.paramsSchema.safeParse({ title: 't', body: 'b' });
+    expect(ok.success).toBe(true);
+    if (ok.success) {
+      const data = ok.data as { kind: string; severity: string };
+      expect(data.kind).toBe('digest.generated');
+      expect(data.severity).toBe('info');
+    }
+    expect(def.paramsSchema.safeParse({ title: 't', body: 'b', kind: 'bogus' }).success).toBe(false);
+  });
+});
+
 describe('branch node', () => {
   it('is registered as a logic node with true/false ports', () => {
     const def = getNodeTypeDefinition('logic.branch')!;

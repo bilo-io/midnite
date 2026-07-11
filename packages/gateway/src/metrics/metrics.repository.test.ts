@@ -97,6 +97,35 @@ describe('MetricsRepository', () => {
     });
   });
 
+  describe('runsForTask (Phase 61 G)', () => {
+    it('returns a task’s runs oldest-first, including a live run', () => {
+      repo.insertStart(run('r2', { taskId: 'tA', startedAt: '2026-06-01T00:02:00.000Z' }));
+      repo.recordEnd('r2', '2026-06-01T00:03:00.000Z', 60_000, 'done');
+      // A live (never-ended) run started earlier.
+      repo.insertStart(run('r1', { taskId: 'tA', startedAt: '2026-06-01T00:01:00.000Z', retryCount: 1, repo: 'web' }));
+      // A run for a different task must not leak in.
+      repo.insertStart(run('r3', { taskId: 'tB', startedAt: '2026-06-01T00:00:30.000Z' }));
+
+      const rows = repo.runsForTask('tA');
+      expect(rows.map((r) => r.id)).toEqual(['r1', 'r2']);
+
+      const [live, done] = rows;
+      expect(live?.endedAt).toBeNull();
+      expect(live?.outcome).toBeNull();
+      expect(live?.durationMs).toBeNull();
+      expect(live?.retryCount).toBe(1);
+      expect(live?.repo).toBe('web');
+
+      expect(done?.endedAt).toBe('2026-06-01T00:03:00.000Z');
+      expect(done?.outcome).toBe('done');
+      expect(done?.durationMs).toBe(60_000);
+    });
+
+    it('returns an empty array for a task with no runs', () => {
+      expect(repo.runsForTask('nope')).toEqual([]);
+    });
+  });
+
   describe('durationBuckets', () => {
     it('buckets completed runs by duration', () => {
       repo.insertStart(run('r1'));

@@ -15,6 +15,7 @@ const fakeRepo: Repo = {
 function build(overrides: Partial<Record<keyof ReposService, unknown>> = {}) {
   const service = {
     list: vi.fn(() => [fakeRepo]),
+    listPage: vi.fn(() => ({ items: [fakeRepo], total: 1 })),
     get: vi.fn(() => fakeRepo),
     create: vi.fn(() => fakeRepo),
     update: vi.fn(() => fakeRepo),
@@ -48,9 +49,14 @@ describe('ReposController — valid input delegates to the service', () => {
     expect(service.create).toHaveBeenCalledWith({ name: 'api', path: '~/Dev/api' }, undefined);
   });
 
-  it('lists repos', () => {
+  it('lists repos as a page', () => {
     const { controller } = build();
-    expect(controller.list()).toEqual([fakeRepo]);
+    expect(controller.list({})).toEqual({ items: [fakeRepo], total: 1 });
+  });
+
+  it('rejects a bad limit query', () => {
+    const { controller } = build();
+    expect(() => controller.list({ limit: '-3' })).toThrow(BadRequestException);
   });
 
   it('returns { ok: true } after delete', () => {

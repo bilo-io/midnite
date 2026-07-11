@@ -31,12 +31,12 @@
 | [65 · Memory workspace](phase-65-memory-workspace.md) | ✅ DONE | 33/33 | `██████████` | 100% | — | — |
 | [64 · Office presence](phase-64-office-presence.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
-| [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 6/33 | `██░░░░░░░░` | 18% | C | D E F G H |
-| [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 25/36 | `███████░░░` | 69% | — | G |
-| [60 · Fable-Analysis](phase-60-fable-analysis.md) | 🔄 WIP | 50/62 | `████████░░` | 80% | — | M |
+| [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 10/33 | `███░░░░░░░` | 30% | D | E F G H |
+| [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 26/36 | `███████░░░` | 72% | — | G |
+| [60 · Fable-Analysis](phase-60-fable-analysis.md) | ✅ DONE | 62/62 | `██████████` | 100% | — | — |
 | [59 · Chat to board](phase-59-chat-to-board.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
-| [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 15/26 | `██████░░░░` | 58% | — | — |
+| [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 17/27 | `██████░░░░` | 63% | — | — |
 | [56 · Realtime / WS reliability](phase-56-realtime-ws-reliability.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [55 · Projects detail page](phase-55-projects-detail-page.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
 | [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
@@ -151,8 +151,8 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 *Retrospectives per task + fleet digests, workflow-first: a task-event trigger + retro/digest nodes + seeded pipelines; gateway stores primitives. Fable series #3.*
 - ✅ **A** — Retro contract + deterministic skeleton + task_retros storage (auto on terminal, zero LLM) (PR #341)
 - ✅ **B** — Task-event workflow trigger (workflows fire on task.done/abandoned/needs-attention) (PR #351)
-- 🔄 **C** — Node executors: generate-retro / list-completed-tasks / build-digest / notify
-- ◻ **D** — Retro pipeline template (task-event → retro → notify-on-notable)
+- ✅ **C** — Node executors: generate-retro / list-completed-tasks / build-digest / notify (PR #393)
+- 🔄 **D** — Retro pipeline template (task-event → retro → notify-on-notable)
 - ◻ **E** — Digest pipeline template (upgrade daily-digest.seed → real structured digest → Slack + in-app)
 - ◻ **F** — Retro surfaces (task detail section, P18 markdown export)
 - ◻ **G** — Digest surfaces (feed/page, dashboard widget, searchable)
@@ -166,15 +166,15 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **D** — Gauge history that survives restarts: sampler + gauge_samples + GET /metrics/gauges/history (PR #343)
 - ✅ **E** — Rollups + retention (metrics_rollup table + timer job + raw pruning; GET /metrics/rollups; transparent read-switch deferred) (PR #381)
 - ✅ **F** — Live metrics channel on the P56 reliable WS: on-change gauge push via MetricsEventBus + MetricsGateway (`/ws/metrics`), Ops page consumes it (poll fallback) (PR #389)
-- ◐ **G** — Ops page deepening: cycle-time + fleet-trend charts landed; cost views + run timeline open (PR #360)
+- ◐ **G** — Ops page deepening: cycle-time + fleet-trend (PR #360) + run timeline (PR #396) landed; **cost views** still open (⏳ blocked on Theme E rollups)
 - ✅ **H** — Widgets + session/project cockpit integration (PR #391)
 - ✅ **I** — CLI (`usage --by`, `ops [--watch]`) + `docs/METRICS.md`; also fixed a Theme-F DI regression that 500'd `/metrics/ops` (PR #392)
 
 ### [Phase 60 — Fable-Analysis](phase-60-fable-analysis.md)
 *Repo-wide audit → ranked findings reports (analysis-only, bar security quick-wins + safe dep bumps). Direction-preserving. M runs last.*
-- ◻ **A** — Auth, transport & headers audit (rate-limit posture, CORS, token lifecycle)
+- ✅ **A** — Auth, transport & headers audit (rate-limit posture, CORS, token lifecycle) (PR #357)
 - ✅ **B** — Secrets, signatures & crypto paths audit (PR #346; workflow `$env` master-secret leak fixed, findings logged)
-- ◻ **C** — Input validation & injection sweep (zod coverage, FTS/path-traversal/SSRF/zip-slip)
+- ✅ **C** — Input validation & injection sweep: FOUND+FIXED a HIGH arbitrary-file-read on `GET /media/:id/file`; FTS/zip-slip/raw-sql verified safe; SSRF logged as follow-up (PR #357)
 - ✅ **D** — Dependency & supply-chain audit (+ safe bumps): ws 8.18→8.21 DoS bump, rest triaged (PR #355)
 - ✅ **E** — State-machine, scheduler & concurrency correctness (PR #357)
 - ✅ **F** — Data integrity & boundary-condition bugs (PR #365)
@@ -184,7 +184,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **J** — Mobile & responsive polish: fixed horizontal overflow on projects/ops/schedules/workflows + settings-table clipping; audit shots lock it (PR #389)
 - ✅ **K** — CLI robustness & coverage (export/import tests + MIDNITE_TOKEN + SW-4 fix; boundary OK) (PR #376)
 - ✅ **L** — Docs site, public site & @midnite/ui test gap: fixed the ui test hole (46→54 play-fns) + verified re-export shims; found dead Docs link + no product docs; proposed a product-led docs IA (PR #375)
-- ◻ **M** — Cross-cutting synthesis & remediation backlog (runs last)
+- ✅ **M** — Cross-cutting synthesis & remediation backlog: 91 findings ranked+deduped (no P0; 26 fixed inline, 65 open), 7 systemic patterns, 5 remediation phases + 2 maintenance tracks proposed (PR #394)
 
 ### [Phase 59 — Chat to board](phase-59-chat-to-board.md)
 *Natural-language command bar in the Cmd-K palette; deterministic-first, local-model-preferred; composes existing task services.*
@@ -208,7 +208,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 *(No new domain — perf work across existing layers: batch loads + indexes in repositories, lean summary DTOs + pagination as shared contracts, cache tuning + virtualization on the web. Evidence-driven via a seed + benchmark harness.)*
 - ✅ **A** — Seed + benchmark harness (evidence first) (PR #308)
 - ✅ **B** — Kill the task-hydration N+1 (batched `hydrateMany`: 400-task list 2401→7 queries; workflow summaries 401→2 — PR #312)
-- ◐ **C** — Lean list DTOs + pagination: TaskSummary DTO + paged GET /tasks + /tasks/activity (PR #319; keyset + other-endpoint pagination deferred)
+- ✅ **C** — Lean list DTOs + pagination: TaskSummary DTO + paged GET /tasks (PR #319) + workflows/projects/repos pages (PR #397); keyset ⏳ deferred
 - ✅ **D** — DB indexes on hot paths: projects(createdBy,teamId) + workflows(teamId) close the teamScopeFilter full-scans (PR #314)
 - ✅ **E** — Refetch / cache tuning (coalesce refetches + staleTime; granular deferred to P56 — PR #307)
 - ◐ **F** — List virtualization (board + run-history + approval-log done; grouped accordions deferred) (PR #310)

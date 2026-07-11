@@ -8,6 +8,7 @@ import { listApprovalLog } from '@/lib/api';
 import { usePolling } from '@/lib/use-polling';
 import { WidgetLoader } from './spinner';
 import { CycleFleetPanel } from './ops-cycle-fleet';
+import { RunTimeline } from './run-timeline';
 
 // ── Shared primitives ────────────────────────────────────────────────────────
 
@@ -275,6 +276,59 @@ export function SpendSection({
   );
 }
 
+// ── Run-timeline drill-down (Phase 61 G) ──────────────────────────────────────
+
+/**
+ * Ops drill-down into a single task's run strip: paste/enter a task id and the
+ * per-task attempt timeline renders below (the same <RunTimeline> mounted on the
+ * task detail page). Lightweight by design — no picker, just a direct id entry.
+ */
+export function RunTimelineDrilldown() {
+  const [input, setInput] = useState('');
+  const [taskId, setTaskId] = useState<string | null>(null);
+
+  const submit = () => {
+    const id = input.trim();
+    setTaskId(id.length > 0 ? id : null);
+  };
+
+  return (
+    <SectionCard title="Run timeline">
+      <form
+        className="flex items-center gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          submit();
+        }}
+      >
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Enter a task id to inspect its agent runs"
+          aria-label="Task id"
+          className="flex h-8 w-full rounded-md border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        />
+        <button
+          type="submit"
+          disabled={!input.trim()}
+          className="h-8 shrink-0 rounded-md bg-accent px-3 text-xs font-medium text-accent-foreground transition-colors hover:bg-accent/80 disabled:opacity-40"
+        >
+          Show
+        </button>
+      </form>
+      <div className="mt-4">
+        {taskId ? (
+          <RunTimeline taskId={taskId} />
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Enter a task id above to see its agent run strip.
+          </p>
+        )}
+      </div>
+    </SectionCard>
+  );
+}
+
 // ── Root ops view ─────────────────────────────────────────────────────────────
 
 // ── Decisions section (Phase 23 audit log) ───────────────────────────────────
@@ -448,6 +502,7 @@ export function OpsView({
           <DurationSection summary={summary} loading={loading} />
           <SpendSection usage={usage} loading={loading} />
           <CycleFleetPanel />
+          <RunTimelineDrilldown />
         </>
       ) : (
         <DecisionsSection />

@@ -12,6 +12,18 @@ class FakeRepo extends WorkflowsRepository {
   override listWorkflowRows(): WorkflowRow[] {
     return this.workflows.map((w) => ({ id: w.id }) as WorkflowRow);
   }
+  // The service pages via listWorkflowPage now (Phase 57 C follow-up).
+  override listWorkflowPage(
+    _scope?: unknown,
+    opts?: { page?: number; limit?: number },
+  ): { rows: WorkflowRow[]; total: number } {
+    const all = this.workflows.map((w) => ({ id: w.id }) as WorkflowRow);
+    const rows =
+      opts?.limit != null
+        ? all.slice(((opts.page ?? 1) - 1) * opts.limit, ((opts.page ?? 1) - 1) * opts.limit + opts.limit)
+        : all;
+    return { rows, total: all.length };
+  }
   override hydrateWorkflow(row: WorkflowRow): Workflow {
     return this.workflows.find((w) => w.id === row.id)!;
   }
@@ -52,5 +64,16 @@ describe('WorkflowsService.listSummaries', () => {
       { type: 'http.request', label: undefined },
       { type: 'ai.claude', label: 'Summarise' },
     ]);
+  });
+
+  it('listSummaryPage returns { items, total }; listSummaries stays the full array (Phase 57 C)', () => {
+    const two: Workflow[] = [workflow, { ...workflow, id: 'w2', name: 'Build' }];
+    const svc = makeService(two);
+    // Array method unchanged for internal callers.
+    expect(svc.listSummaries()).toHaveLength(2);
+    // Page method: total is the full set; a window returns just that slice.
+    const page = svc.listSummaryPage(undefined, { page: 1, limit: 1 });
+    expect(page.total).toBe(2);
+    expect(page.items).toHaveLength(1);
   });
 });

@@ -30,6 +30,18 @@ describe('ReposService — CRUD', () => {
     expect(() => service.create({ name: 'api', path: '~/Dev/other' })).toThrow(RepoNameTakenError);
   });
 
+  it('listPage returns { items, total }; list stays the full array (Phase 57 C)', () => {
+    service.create({ name: 'aaa', path: '~/a' });
+    service.create({ name: 'bbb', path: '~/b' });
+    service.create({ name: 'ccc', path: '~/c' });
+    expect(service.list()).toHaveLength(3);
+    const page = service.listPage(undefined, { page: 1, limit: 2 });
+    expect(page.total).toBe(3);
+    expect(page.items).toHaveLength(2);
+    // ordered by name asc
+    expect(page.items.map((r) => r.name)).toEqual(['aaa', 'bbb']);
+  });
+
   it('audits create / update / delete with the actor (Phase 50 D)', () => {
     const audit = { record: vi.fn() } as unknown as AuditService;
     const svc = build([], audit);

@@ -6,6 +6,7 @@ import { Ban, Check, ExternalLink, GitCompare, Play, Plus, RefreshCw, SquareTerm
 import { ChecksPanel } from '@/components/checks-panel';
 import { TaskMilestonePicker } from '@/components/task-milestone-picker';
 import { TaskFailureHistory } from '@/components/task-failure-history';
+import { RunTimeline } from '@/components/run-timeline';
 import { PrDiffModal } from '@/components/pr-review/pr-diff-modal';
 import { PrReviewPanel } from '@/components/pr-review/pr-review-panel';
 import {
@@ -838,6 +839,21 @@ export function TaskDetail({ task, projects, tasks, onClose, variant = 'modal', 
           // Phase 53 E — structured failure history for a task that has failed.
           <TaskFailureHistory taskId={task.id} />
         ) : null}
+
+        {/* Phase 61 G — per-task run strip (attempts / retries / live run). */}
+        <section>
+          <details className="group">
+            <summary className="flex cursor-pointer list-none items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground marker:content-none">
+              <span className="transition-transform group-open:rotate-90" aria-hidden>
+                ›
+              </span>
+              Agent runs
+            </summary>
+            <div className="mt-2">
+              <RunTimeline taskId={task.id} />
+            </div>
+          </details>
+        </section>
 
         <section>
           <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">

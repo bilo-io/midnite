@@ -10,11 +10,14 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import {
   CreateRepoRequestSchema,
   UpdateRepoRequestSchema,
+  PageQuerySchema,
   type Repo,
+  type ReposPage,
   type RepoResponse,
 } from '@midnite/shared';
 import { CurrentUser, type CurrentUserPayload } from '../auth/decorators/current-user.decorator';
@@ -25,10 +28,19 @@ import { RepoDoesNotExistError, RepoNameTakenError, ReposService } from './repos
 export class ReposController {
   constructor(@Inject(ReposService) private readonly service: ReposService) {}
 
+  // Repo **page** (Phase 57 C follow-up): `{ items, total }`. `page`/`limit`
+  // optional — omitted returns every repo.
   @Get()
-  list(@CurrentUser() user?: CurrentUserPayload | null): Repo[] {
+  list(
+    @Query() rawQuery: Record<string, string>,
+    @CurrentUser() user?: CurrentUserPayload | null,
+  ): ReposPage {
+    const parsed = PageQuerySchema.safeParse(rawQuery);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.issues[0]?.message ?? 'invalid repo query');
+    }
     const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
-    return this.service.list(scope);
+    return this.service.listPage(scope, parsed.data);
   }
 
   @Get(':id')

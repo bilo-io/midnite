@@ -99,7 +99,7 @@ The single biggest win: stop firing 6 queries per task.
 
 ---
 
-## Theme C — Lean list DTOs + pagination — **L** — ◐ PARTIAL (DTO + /tasks pagination: PR #319, 2026-07-06)
+## Theme C — Lean list DTOs + pagination — **L** — ✅ DONE (PR #319 + #397; keyset ⏳ deferred)
 
 Send less, in pages.
 
@@ -112,10 +112,15 @@ Send less, in pages.
       returns the full `Task`. Board cards + all list/dashboard/office consumers migrated to the summary (web + CLI
       in lockstep); the dashboard activity feed moved to a new lean `GET /tasks/activity` (one indexed query,
       replacing the hydrate-every-task's-events anti-pattern).
-- [◐] **Offset** pagination on `GET /tasks` (`page`/`limit`, omitted = all — the board loads its now-lean set) +
-      a generic shared `Paged<T>` = `{ items, total }`. **Deferred:** keyset/cursor pagination (offset chosen for
-      parity with the existing ideas template + the column-grouped board) and pagination of the other list
-      endpoints (`sessions`/`workflows`/`projects`/`repos`) — a follow-up slice.
+- [x] **Offset** pagination on `GET /tasks` (`page`/`limit`, omitted = all — the board loads its now-lean set) +
+      a generic shared `Paged<T>` = `{ items, total }` (PR #319).
+- [x] **Extend offset pagination to the other list endpoints** — `workflows`/`projects`/`repos` now serve
+      `{ items, total }` pages via a reusable `PageQuerySchema` + `pagedSchema` (PR #397, 2026-07-11). Each repo
+      `list*Page` does a scoped `COUNT` + `limit`/`offset` (omitted = all); services keep array methods for
+      internal callers; clients unwrap `.items`. **`sessions` deferred** (derived from tasks in-service — no table
+      to page, ~no perf gain).
+- [◐] **Keyset/cursor pagination** ⏳ **deferred** — offset was chosen for parity with the ideas template + the
+      column-grouped board; a stable composite cursor (Decision §4) is a separate future slice.
 
 ---
 

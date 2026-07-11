@@ -13,6 +13,7 @@ import {
   type CreateProjectRequest,
   type EnhanceDescriptionRequest,
   type Project,
+  type ProjectsPage,
   type Task,
   type TeamScope,
   type UpdateProjectRequest,
@@ -69,11 +70,21 @@ export class ProjectsService {
     @Optional() @Inject(AuditService) private readonly audit?: AuditService,
   ) {}
 
+  /** Backward-compatible array list (search/portability/chat callers). */
   listProjects(scope?: TeamScope): Project[] {
-    const rows = this.repo.listProjects(scope);
-    // One batched grouped query for the whole list (Phase 58 C) — no per-project N+1.
+    return this.listProjectPage(scope).items;
+  }
+
+  /**
+   * A page of projects (Phase 57 C follow-up): `{ items, total }`. `page`/`limit`
+   * optional — omitted returns all. Keeps the full `Project` shape.
+   */
+  listProjectPage(scope?: TeamScope, opts?: { page?: number; limit?: number }): ProjectsPage {
+    const { rows, total } = this.repo.listProjectPage(scope, opts);
+    // One batched grouped query for the whole page (Phase 58 C) — no per-project N+1.
     const counts = this.repo.statusCountsForProjects(rows.map((r) => r.id));
-    return rows.map((r) => this.repo.hydrate(r, counts.get(r.id) ?? {}));
+    const items = rows.map((r) => this.repo.hydrate(r, counts.get(r.id) ?? {}));
+    return { items, total };
   }
 
   getProject(id: string, scope?: TeamScope): Project {

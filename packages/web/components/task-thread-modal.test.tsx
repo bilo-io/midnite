@@ -28,6 +28,8 @@ vi.mock('@/lib/api', () => ({
   // ChecksPanel mounts and calls this; return empty so tests are unaffected.
   getCheckRuns: vi.fn().mockResolvedValue({ runs: [] }),
   triggerCheck: vi.fn(),
+  // RunTimeline (Agent runs section) self-fetches; empty keeps tests unaffected.
+  getRunTimeline: vi.fn().mockResolvedValue({ taskId: 't', runs: [] }),
 }));
 
 import { ConfirmProvider } from './confirm-dialog';

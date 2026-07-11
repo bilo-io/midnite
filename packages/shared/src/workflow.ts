@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { WorkflowNodeSchema, WorkflowEdgeSchema } from './node.js';
 import { TriggerSchema, TriggerTypeSchema } from './trigger.js';
 import { RunStatusSchema } from './run.js';
+import { pagedSchema } from './task.js';
 
 export const WorkflowSchema = z.object({
   id: z.string(),
@@ -70,6 +71,10 @@ export const WebhookInfoResponseSchema = z.object({
 
 export type Workflow = z.infer<typeof WorkflowSchema>;
 export type WorkflowSummary = z.infer<typeof WorkflowSummarySchema>;
+
+/** A page of workflow summaries (Phase 57 C follow-up): `{ items, total }`. */
+export const WorkflowsPageSchema = pagedSchema(WorkflowSummarySchema);
+export type WorkflowsPage = z.infer<typeof WorkflowsPageSchema>;
 export type CreateWorkflowRequest = z.infer<typeof CreateWorkflowRequestSchema>;
 export type UpdateWorkflowRequest = z.infer<typeof UpdateWorkflowRequestSchema>;
 export type WorkflowResponse = z.infer<typeof WorkflowResponseSchema>;

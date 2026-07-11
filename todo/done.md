@@ -13,6 +13,43 @@ Observability from a shell + the model written down. Also fixed a fresh DI regre
 - [x] **Client + helpers** — typed `usageAttribution`/`opsMetrics` on the CLI `GatewayClient`; pure render helpers (`usage.ts`, `ops.ts`) + `lib/window.ts` (`--since` duration parsing) with unit tests; two client tests (query build + validation).
 - [x] **`docs/METRICS.md`** — the metrics model (two sources: gateway LLM calls vs. harvested agent-session tokens; measured vs. estimated vs. unpriced; live gauges vs. persisted history; rollups + retention knobs) + CLI usage; README pointer.
 - [x] **fix(gateway):** `@Inject(MetricsRepository)` on `MetricsService` — Theme F's `@Optional() bus` ctor param erased reflect-metadata, leaving `repo` undefined so `GET /metrics/ops` (and cycle-time/rollups) 500'd. Caught verifying `midnite ops` end-to-end.
+## 2026-07-11 — feat: per-task run timeline — Phase 61 Theme G (run timeline) (PR #396)
+
+The last open item of Theme G's Ops deepening (cycle-time + fleet-trend landed in #360): a per-task strip of agent-run attempts. Read-only over `agent_run_stats`, no migration. **Cost views remain ⏳ blocked on Theme E rollups — G stays ◐ partial.**
+
+- [x] **`GET /metrics/runs?taskId=`** — thin metrics route → `MetricsService.getRunTimeline` → `MetricsRepository.runsForTask` (ordered by startedAt); `RunTimelineEntry`/`Response`/`Query` zod contracts in shared.
+- [x] **`RunTimeline` component (recharts):** attempt bars started→ended, outcome-colored (done/abandoned/failed/cancelled), retry index visible, the **in-progress run** extended to now with a "running" style; duration tooltip; honest empty state.
+- [x] **Mounted twice:** an "Agent runs" section on the task detail page + a "Run timeline" Ops drill-down (task-id lookup).
+- [x] **Tests:** gateway repo/service/controller (order, live-run nulls, 400 on missing taskId); web RTL (bars, colors, empty, live) + Storybook story (Default/Empty/WithLiveRun); a Playwright drill-down spec (authored). shared 683 · gateway 1968 · web 1099 · typecheck/lint green. Phase 61 → 24/36 (67%).
+## 2026-07-11 — feat: paginate workflows/projects/repos lists — Phase 57 Theme C follow-up (PR #397)
+
+Extended the offset + `{ items, total }` pattern (shipped on `GET /tasks`) to the remaining SQL-backed list endpoints, closing Theme C's deferred pagination (keyset stays ⏳ deferred).
+
+- [x] **shared** — reusable `PageQuerySchema` (page/limit) + `WorkflowsPage`/`ProjectsPage`/`ReposPage` = `pagedSchema(...)`. Projects keep the full `Project` shape (lean summary = separate slice).
+- [x] **gateway** — each repo gains `list*Page(scope, {page,limit})`: a scoped `COUNT` over the same `teamScopeFilter`'d `where` + `limit`/`offset` when set (omitted = all), mirroring `listTaskPage`. Services expose `list*Page → { items, total }`; existing array methods (search/portability/chat/tasks) delegate to `.items`. Controllers parse `PageQuerySchema`.
+- [x] **web/cli** — `getProjects`/`getRepos`/`listWorkflows` unwrap `.items` (signatures + consumers unchanged); `getProjectsPage`/`getReposPage`/`listWorkflowsPage` added for total-aware callers; story mocks + CLI updated.
+- [x] **sessions deferred** (derived from tasks in-service — no table to page). **keyset ⏳ deferred** (Decision §4).
+- Gateway 1965 · shared 682 · web 1093 · cli 178 green. Phase 57 → 17/27 (63%).
+
+## 2026-07-11 — docs: synthesis & remediation backlog → Phase 60 to 100% — Phase 60 Theme M (PR #394)
+
+The audit closer. Twelve bounded audit themes (A–L) each produced a findings report; **Theme M runs last** and turns them into one executive read so the findings become a schedulable backlog. **Phase 60 → 62/62 (100%).** Docs-only (touches `todo/` markdown exclusively). Also corrected stale `_INDEX.md` theme-key entries (A & C shipped in PR #357 but still read `◻`).
+
+- [x] **Master ranked list** — merged all 12 reports into `todo/phase-60-findings/M-summary.md`: **91 findings** (26 fixed inline during the audit, 65 documented, **no P0**), deduped (cross-refs collapsed to one canonical entry — A-1=FO-1, A-7=B-6, SW-4=K-3, TO-1×2), each row carrying severity/area/status/effort/source, **grouped by proposed remediation phase** (severity-sorted within) + a P0→P3 severity roll-up.
+- [x] **7 cross-cutting systemic patterns** — fail-open-where-should-fail-closed; no convention at the gateway boundary; missing run/epoch identity; non-atomic multi-table writes; unenforced cross-domain RI; the web three-state (loading/empty/error) collapse; per-component (vs shared) a11y — each worth one shared fix.
+- [x] **5 recommended remediation phases + 2 maintenance tracks** — security enforcement · core correctness (state/scheduler/tx) · error-boundary hardening · web state/flow consistency · a11y & responsive; plus dependency/framework upgrades and product-docs authoring. Rough-sized. **Recommended, not created.**
+- [x] **Verification checklist** — all Phase 60 acceptance criteria driven to done (every A–L report exists with evidence; stale-claim discipline held; each section covered; quick-wins limited to sev≥High+S with tests green).
+
+## 2026-07-11 — feat: retro & digest workflow node executors — Phase 62 Theme C (PR #393)
+
+The reusable workflow vocabulary for reporting — thin node executors over real services (Themes D/E wire them into seeded pipelines). Workflow-first: `WorkflowsModule` gains no imports; collaborators are reached via lazy `ModuleRef` ports.
+
+- [x] **`midnite.generate-retro`** — RetroBuilder skeleton + a **bounded transcript slice** → **one** plan-model `generateStructured` narrative (`whatHappened`/`whatTrippedIt`/`notable[]`), persisted via `RETRO_ACCESSOR`. **Fail-soft:** LLM off / error / no transcript / no terminal retro → skeleton kept, narrative null, node succeeds. Usage tag `retro`.
+- [x] **`midnite.list-completed-tasks`** — terminal tasks in a window (`sinceHours`/`from`/`to`) + optional repo/project filter via `TASK_LISTER`, using the **P57 summary DTO** (no full hydration).
+- [x] **`midnite.build-digest`** — `DigestBuilder`: deterministic aggregation (shipped/failed/needs-attention counts, per-repo/project sections, retro highlights) + **best-effort** spend + cycle-time (p50/p90) stats + **one** LLM headline (fail-soft) → stored `digests` row (structured JSON + markdown) → `{ digestId, markdown, blocks }`.
+- [x] **`midnite.notify`** — in-app P21 notification (`digest.generated` / `retro.notable`) via a `NOTIFIER` port.
+- [x] **Storage + contracts** — new `digests/` module (table + migration `0082` + repository); bounded transcript slicer in `sessions/lib`; full structured `DigestSchema` (fleshed from the Theme-A stub); `retro`/`digest` LLM features + notification kinds.
+- [x] **Tests** — per-executor specs (success + fail-soft paths), DigestBuilder unit, `DigestRepository` `:memory:` integration, transcript-slicer unit, shared schema round-trips. shared 679 · gateway 1961 · typecheck/lint green. Phase 62 → 10/33 (30%).
 
 ## 2026-07-11 — test+docs: finish Theme G → Phase 65 to 100% — Phase 65 Theme G (PR #391)
 

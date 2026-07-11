@@ -52,6 +52,15 @@ describe('MemoryStudioRail', () => {
     expect(screen.queryByText('Soon')).not.toBeInTheDocument();
   });
 
+  it('groups the kinds under section headings', async () => {
+    api.getMemoryArtifacts.mockResolvedValue([]);
+    render(<MemoryStudioRail memoryId="m1" />);
+    await waitFor(() => expect(api.getMemoryArtifacts).toHaveBeenCalled());
+    for (const heading of ['Documents', 'Visual', 'Audio & video']) {
+      expect(screen.getByRole('heading', { name: heading })).toBeInTheDocument();
+    }
+  });
+
   it('kicks generation and shows the pending state', async () => {
     api.getMemoryArtifacts.mockResolvedValue([]);
     api.generateMemoryArtifact.mockResolvedValue(artifact({ status: 'pending', content: '' }));
