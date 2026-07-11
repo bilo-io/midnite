@@ -186,15 +186,18 @@ as the fallback when the socket is down or nothing has changed.
 
 # Section IV — Surfaces
 
-## Theme G — Ops page deepening — **M-L** — ◐ PARTIAL (PR #360, 2026-07-07)
+## Theme G — Ops page deepening — **M-L** — ✅ DONE (PR #360 + #396 + #400, 2026-07-11)
 
 From snapshot to instrument. Cycle-time + fleet-trend views landed in PR #360; the **run timeline**
-landed in PR #396. **Cost views** remain the sole open item — ⏳ blocked on Theme E rollups — so this
-theme stays ◐ PARTIAL until E lands.
+landed in PR #396; the **cost views** land here — closing the theme.
 
-- [ ] **Cost views:** spend by repo/project/provider over time (from Theme B attribution + Theme E
-      rollups), measured-vs-estimated composition visible (hatched/labeled segments — honesty in the
-      chart, not just the tooltip). ⏳ blocked on Theme B/E.
+- [x] **Cost views:** two new Ops SectionCards below the LLM-spend section — a **cost-over-time**
+      stacked area (`/metrics/rollups`: gateway-LLM vs. measured vs. estimated session cost per day,
+      the honest composition over time) + a **cost-by-dimension** stacked bar (repo/project from
+      `/usage/attribution` with the measured/estimated split + unpriced-session count, provider derived
+      from rollup cost; group-by toggle). Self-fetching `CostPanel` owns a 7/30/90d window (daily
+      buckets). Estimated session cost is 0 today (all harvested rows measured) — kept in the stack so
+      the honesty split stays truthful if an estimate is ever rolled.
 - [x] **Cycle-time views:** [`CycleTimeSection`](../packages/web/components/ops-cycle-fleet.tsx) —
       grouped p50/p90 bars for wait/work/end-to-end, a groupBy dropdown (fleet/repo/project/priority),
       retry-overhead stat (Theme C data via `GET /metrics/cycle-time`) (PR #360).
