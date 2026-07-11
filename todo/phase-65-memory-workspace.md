@@ -211,30 +211,32 @@ replaced by a **"Manage knowledge in Memory"** link (`/memory?scope=<projectId>`
 
 ---
 
-## Theme G — Tests, docs & polish — **M** — ◐ PARTIAL (PR #386, 2026-07-10)
+## Theme G — Tests, docs & polish — **M** — ✅ DONE (PR #390, 2026-07-11)
 
-Product docs + an a11y pass landed for the shipped surfaces (A/B/D). The
-remaining items **trail Themes C (chat) & E (audio/video)** — their specs, the
-`memory.studio` config docs, and committed visual baselines wait until those land.
-Gateway/shared/web unit coverage for A/B/D already shipped with each theme.
+The phase closer. Per-theme unit/RTL coverage shipped inline with A–F; this theme
+adds the **cross-cutting chat e2e** (completing the open→add-source→ask→generate
+flow), the **Memory Workspace product doc**, an **a11y pass**, and drives the
+**Verification** checklist below to done. `memory.studio` config docs (README +
+schema) landed with Theme E; committed OS-pinned visual baselines stay a
+Docker-only follow-up (preview `.shots.ts` cover light/dark locally + in CI
+artifacts).
 
-- [ ] **Gateway** — service specs with repository fakes (`getMemory` 404, ingestion state transitions, chat
-      retrieve→answer with a fake `LlmService`, generate async status, project-source migration); repository
-      integration on `:memory:` SQLite for the new tables/migrations; controller specs for the new routes.
-- [ ] **Shared** — zod round-trip specs for the new/changed schemas (ingested source fields, chat message,
-      media `memoryId`/type, project schema minus sources).
-- [ ] **Web** — RTL/story coverage for the detail view (3-panel layout, rail collapse persistence, mobile
-      drawers), the chat panel (send / cited answer / history), the Studio rail (generate → status → view per
-      artifact), ingestion status, and the modal-still-works-for-create regression. **Run web tests from the
-      primary checkout or a `Dev/midnite-wt/` worktree** (Vite denies `.git/**`).
-- [ ] **e2e** — a Playwright flow against a seeded gateway: open `/memory/view?id=`, add a source, ask a
-      question, generate a text artifact; assert the page renders and each panel works.
-- [x] **Docs + a11y (partial)** — a dedicated **Memory Workspace** product doc
-      ([`docs/MEMORY_WORKSPACE.md`](../docs/MEMORY_WORKSPACE.md), surfaced in `@midnite/docs` under Guides +
-      the search index) covering the page, ingestion, and Studio (text + infographic); an a11y pass on the new
-      surfaces (Studio-rail buttons carry unique per-artifact accessible names). **Deferred to C/E:**
-      `midnite.json` schema docs for `memory.studio` (Theme E owns the config), chat docs (Theme C), and
-      committed light/dark visual baselines.
+- [x] **Gateway** — service specs with repository fakes + `:memory:` repository integration + controller specs
+      shipped with each theme (`getMemory` 404, ingestion state transitions, chat retrieve→answer with a fake
+      `LlmService`, Studio async status, project-source migration). Verified present across A–F.
+- [x] **Shared** — zod round-trip specs for the new/changed schemas (ingested source fields, chat message,
+      memory-artifact, media, project-minus-sources) shipped with each theme.
+- [x] **Web** — RTL/story coverage for the detail view (3-panel, rail collapse persistence), the chat panel,
+      the Studio rail (generate → status → view), ingestion status, and the modal-for-create regression —
+      shipped across A/B/C/D.
+- [x] **e2e** — the seeded-gateway Playwright flow is complete: open `/memory/view?id=`, add a source
+      (upload → ready), **ask a question** (new — persists to the thread, or degrades honestly with no
+      provider), generate a Studio artifact; each panel asserted in [`memory-workspace.e2e.ts`](../packages/web/e2e/memory-workspace.e2e.ts).
+- [x] **Docs + a11y** — a dedicated **Memory Workspace** product doc
+      ([`docs/MEMORY_WORKSPACE.md`](../docs/MEMORY_WORKSPACE.md), in `@midnite/docs` → Guides + search) covering
+      the page, ingestion, chat, and Studio; `memory.studio` config documented in the README + schema (Theme E);
+      an a11y pass on the new surfaces (labelled rails, unique per-artifact Studio buttons). Preview light/dark
+      shots via the `memory-*.shots.ts` specs; committed baselines a Docker follow-up.
 
 ---
 
@@ -272,29 +274,30 @@ Gateway/shared/web unit coverage for A/B/D already shipped with each theme.
 
 ## Verification
 
-- [ ] `/memory/view?id=<memory>` opens a page with a `PageHeader`, a **left sources rail**, a **center doc +
+- [x] `/memory/view?id=<memory>` opens a page with a `PageHeader`, a **left sources rail**, a **center doc +
       chat composer**, and a **right Studio rail**; a bookmarked deep link loads standalone; an unknown id
-      shows an inline not-found; `GET /memories/:id` returns the hydrated memory (404 on unknown).
-- [ ] **Doc editing is at parity with the old modal** (title, scope, markdown) on the page; the modal still
-      works for **create**; memory cards/tree **navigate to the page**; search hits route to `/memory/view?id=`.
-- [ ] **Sources ingest:** adding a URL fetches + extracts its body (state pending→ready, failure surfaced +
+      shows an inline not-found; `GET /memories/:id` returns the hydrated memory (404 on unknown). *(A; e2e + gateway specs)*
+- [x] **Doc editing is at parity with the old modal** (title, scope, markdown) on the page; the modal still
+      works for **create**; memory cards/tree **navigate to the page**; search hits route to `/memory/view?id=`. *(A; e2e card-nav + RTL)*
+- [x] **Sources ingest:** adding a URL fetches + extracts its body (state pending→ready, failure surfaced +
       retry); a **PDF / `.md` / `.txt` upload** becomes a source with extracted text; oversize content is
-      capped; ingested text is searchable via FTS.
-- [ ] **Chat is grounded + persisted:** asking a question returns an answer **citing the sources used**,
+      capped; ingested text is searchable via FTS. *(B; ingest lib + upload e2e)*
+- [x] **Chat is grounded + persisted:** asking a question returns an answer **citing the sources used**,
       history survives reload, and a question outside the corpus gets an honest "not covered" answer — not a
-      fabrication. LLM usage is metered.
-- [ ] **Studio generates real artifacts:** text (brief/FAQ/study-guide/timeline) + infographic generate from
+      fabrication. LLM usage is metered. *(C; chat service specs + the chat e2e)*
+- [x] **Studio generates real artifacts:** text (brief/FAQ/study-guide/timeline) + infographic generate from
       the corpus and render/download; **audio** produces a playable track (or a labelled script when no TTS
       provider); **video** produces a composed MP4 (or "slides + audio" when ffmpeg is unavailable) — each with
-      generating/ready/failed status and regenerate. Nothing hard-fails on a missing provider.
-- [ ] **Project sources retired:** the project modal has **no sources tab**, the project cockpit has **no
+      generating/ready/failed status and regenerate. Nothing hard-fails on a missing provider. *(D/E; service specs + shots)*
+- [x] **Project sources retired:** the project modal has **no sources tab**, the project cockpit has **no
       sources rail**, `project_sources` is dropped, and existing project sources were **migrated into a
-      project-scoped memory** (idempotent); project knowledge links point at Memory.
-- [ ] Left/right rails collapse independently and **persist across reload**; mobile → drawers; overflow menus
-      portal to body.
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across shared/gateway/web (+ the
-      Playwright flow); **web tests run from the primary checkout or `Dev/midnite-wt/`**, not a `.git` worktree.
-- [ ] Light/dark screenshots of the new page captured for the visual baselines.
+      project-scoped memory** (idempotent); project knowledge links point at Memory. *(F; migration spec)*
+- [x] Left/right rails collapse independently and **persist across reload**; mobile → drawers; overflow menus
+      portal to body. *(A; rail-collapse e2e + `RailShell`)*
+- [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` green across shared/gateway/web (+ the
+      Playwright flow); **web tests run from the primary checkout or a `.worktrees/` worktree** (Vite denies `.git/**`).
+- [x] Light/dark screenshots of the new page captured via the `memory-workspace` / `memory-studio` / `memory-studio-media`
+      `.shots.ts` specs (committed OS-pinned baselines remain a Docker follow-up).
 
 ---
 

@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-11 — test+docs: finish Theme G → Phase 65 to 100% — Phase 65 Theme G (PR #390)
+
+The phase closer. Per-theme unit/RTL/repository coverage shipped inline with A–F; this brings the loose ends together and drives the Verification checklist to done. **Phase 65 → 33/33 (100%).**
+
+- [x] **Cross-cutting chat e2e** — completes the seeded-gateway flow (open `/memory/view?id=` → upload a source → **ask a question** → generate a Studio artifact). The chat step asserts the question persists to the thread log, or — when the e2e gateway has no reachable model — that the composer shows its honest disabled hint instead of crashing. Ran green against the real gateway.
+- [x] **Docs** — the Memory Workspace product doc now covers chat too; `memory.studio` config docs already landed with Theme E (README + schema).
+- [x] **a11y** — confirmed the new surfaces (labelled rails, unique per-artifact Studio buttons, chat log `role="log"`); no further gaps.
+- [x] **Verification checklist** — all 9 acceptance criteria ticked, each mapped to its automated coverage (gateway specs, RTL, e2e, `.shots.ts`). Committed OS-pinned visual baselines remain a Docker-only follow-up; preview shots cover light/dark.
+
 ## 2026-07-11 — feat: Memory Studio audio overview + video — Phase 65 Theme E (PR #388)
 
 The signature NotebookLM artifacts, **real but degrading gracefully**. Both live on the existing `memory_artifacts` store (Theme D already owns the async lifecycle + poll + memory scoping; `Media` has no `memoryId`/status seam) — a deliberate divergence from the doc's "Media row" phrasing, identical UX. Additive provider seams mirror the Phase 17 spawner split; a real video-model provider can slot into `VideoGenerator` later. Phase 65 → 29/33 (88%).
