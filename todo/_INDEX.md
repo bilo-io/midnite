@@ -172,9 +172,9 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 
 ### [Phase 60 — Fable-Analysis](phase-60-fable-analysis.md)
 *Repo-wide audit → ranked findings reports (analysis-only, bar security quick-wins + safe dep bumps). Direction-preserving. M runs last.*
-- ◻ **A** — Auth, transport & headers audit (rate-limit posture, CORS, token lifecycle)
+- ✅ **A** — Auth, transport & headers audit (rate-limit posture, CORS, token lifecycle) (PR #357)
 - ✅ **B** — Secrets, signatures & crypto paths audit (PR #346; workflow `$env` master-secret leak fixed, findings logged)
-- ◻ **C** — Input validation & injection sweep (zod coverage, FTS/path-traversal/SSRF/zip-slip)
+- ✅ **C** — Input validation & injection sweep: FOUND+FIXED a HIGH arbitrary-file-read on `GET /media/:id/file`; FTS/zip-slip/raw-sql verified safe; SSRF logged as follow-up (PR #357)
 - ✅ **D** — Dependency & supply-chain audit (+ safe bumps): ws 8.18→8.21 DoS bump, rest triaged (PR #355)
 - ✅ **E** — State-machine, scheduler & concurrency correctness (PR #357)
 - ✅ **F** — Data integrity & boundary-condition bugs (PR #365)
