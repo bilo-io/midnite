@@ -278,6 +278,38 @@ export async function loadTranscript(
   };
 }
 
+/**
+ * Best-effort transcript load by session id alone (Phase 62 C — the
+ * `generate-retro` node knows a task's `sessionId` but not its project slug).
+ * Scans the project dirs for `<sessionId>.jsonl`; returns the loaded transcript
+ * or `null` when it can't be found/read. Fail-open — never throws — so narrative
+ * generation degrades to events-only input when a transcript is missing.
+ */
+export async function findTranscriptBySessionId(sessionId: string): Promise<SessionTranscript | null> {
+  if (!sessionId || sessionId.includes(sep) || sessionId.includes('/')) return null;
+  let projectDirs: string[];
+  try {
+    const entries = await readdir(SESSIONS_ROOT, { withFileTypes: true });
+    projectDirs = entries.filter((e) => e.isDirectory()).map((e) => e.name);
+  } catch {
+    return null;
+  }
+  const fileName = `${sessionId}.jsonl`;
+  for (const dir of projectDirs) {
+    try {
+      await stat(join(SESSIONS_ROOT, dir, fileName));
+    } catch {
+      continue; // not in this project dir
+    }
+    try {
+      return await loadTranscript(dir, sessionId);
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
 function renderContent(content: unknown): { text: string; toolCalls: { name: string; summary: string }[] } {
   if (typeof content === 'string') return { text: content, toolCalls: [] };
   if (!Array.isArray(content)) return { text: '', toolCalls: [] };
