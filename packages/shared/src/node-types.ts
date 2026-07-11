@@ -63,7 +63,6 @@ export interface NodeTypeDefinition {
 // --- Per-type param schemas ---
 
 export const ManualTriggerParamsSchema = z.object({}).passthrough();
-export const ScheduleTriggerParamsSchema = z.object({}).passthrough();
 export const WebhookTriggerParamsSchema = z.object({}).passthrough();
 export const TaskEventTriggerParamsSchema = z.object({}).passthrough();
 
@@ -354,17 +353,6 @@ export const NODE_TYPE_DEFINITIONS: Record<string, NodeTypeDefinition> = {
     paramsSchema: ManualTriggerParamsSchema,
     fields: [],
   },
-  'trigger.schedule': {
-    id: 'trigger.schedule',
-    category: 'trigger',
-    title: 'Schedule',
-    description: 'Run automatically on a cron schedule.',
-    icon: 'clock',
-    inputs: NO_INPUTS,
-    outputs: MAIN_OUT,
-    paramsSchema: ScheduleTriggerParamsSchema,
-    fields: [],
-  },
   'trigger.webhook': {
     id: 'trigger.webhook',
     category: 'trigger',
@@ -404,7 +392,7 @@ export const NODE_TYPE_DEFINITIONS: Record<string, NodeTypeDefinition> = {
         required: true,
         options: HTTP_METHODS.map((m) => ({ value: m, label: m })),
       },
-      { key: 'url', label: 'URL', kind: 'string', required: true, placeholder: 'https://api.example.com/…', expressionable: true },
+      { key: 'url', label: 'URL', kind: 'string', required: true, placeholder: 'https://api.github.com/repos/owner/repo', expressionable: true },
       { key: 'headers', label: 'Headers', kind: 'json', help: 'JSON object of header name → value.', expressionable: true },
       { key: 'body', label: 'Body', kind: 'text', placeholder: 'Raw request body', expressionable: true },
       { key: 'credentialId', label: 'Credential', kind: 'credential', help: 'Optional: inject auth from a saved credential (bearer / basic / header).', credentialType: 'http-bearer' },

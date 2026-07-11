@@ -70,14 +70,6 @@ export class WorkflowsRepository {
     return { rows, total };
   }
 
-  listScheduledEnabledRows(): WorkflowRow[] {
-    return this.db
-      .select()
-      .from(workflows)
-      .where(and(eq(workflows.enabled, 1), eq(workflows.triggerType, 'schedule')))
-      .all();
-  }
-
   listTaskEventEnabledRows(): WorkflowRow[] {
     return this.db
       .select()

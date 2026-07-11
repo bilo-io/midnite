@@ -1,13 +1,12 @@
 import type { WorkflowTemplateSeed } from './seed-type';
 
 /**
- * Phase 62 Theme E — the morning "what did the fleet do?", assembled by the product
- * itself. Upgrades the old freeform list-tasks → ai.claude draft into the real,
- * structured digest pipeline built in Theme C:
+ * Phase 62 Theme E — the "what did the fleet do?" digest, assembled by the product
+ * itself. A run-on-demand structured digest pipeline:
  *
- *   schedule (weekdays 08:00) → list-completed-tasks (24h) → build-digest
- *                                                              ├─▶ slack.message (rich blocks)
- *                                                              └─▶ midnite.notify (in-app)
+ *   manual → list-completed-tasks (24h) → build-digest
+ *                                           ├─▶ slack.message (rich blocks)
+ *                                           └─▶ midnite.notify (in-app)
  *
  * Delivery fans out in parallel and is failure-isolated: the in-app notification is
  * guaranteed, while Slack is best-effort — the Slack credential slot is optional, and
@@ -16,11 +15,11 @@ import type { WorkflowTemplateSeed } from './seed-type';
  */
 const seed: WorkflowTemplateSeed = {
   slug: 'daily-digest',
-  name: 'Daily Fleet Digest',
+  name: 'Fleet Digest',
   description:
-    'Every weekday morning, rolls the last 24h of completed & abandoned tasks into a structured fleet digest — shipped / failed / needs-attention with per-repo sections, spend & cycle-time, and an LLM headline — delivered in-app and (when a Slack credential is bound) to a Slack channel. Runs at 08:00 UTC, Mon–Fri.',
-  category: 'scheduling',
-  tags: ['slack', 'digest', 'daily', 'tasks', 'fleet'],
+    'Rolls the last 24h of completed & abandoned tasks into a structured fleet digest — shipped / failed / needs-attention with per-repo sections, spend & cycle-time, and an LLM headline — delivered in-app and (when a Slack credential is bound) to a Slack channel. Run it on demand.',
+  category: 'notifications',
+  tags: ['slack', 'digest', 'tasks', 'fleet'],
   credentialSlots: [
     {
       key: 'slack-workspace',
@@ -30,9 +29,9 @@ const seed: WorkflowTemplateSeed = {
     },
   ],
   definition: {
-    trigger: { type: 'schedule', cron: '0 8 * * 1-5' },
+    trigger: { type: 'manual' },
     nodes: [
-      { id: 'n1', type: 'trigger.schedule', label: 'Weekdays 08:00', params: {} },
+      { id: 'n1', type: 'trigger.manual', label: 'Run', params: {} },
       {
         id: 'n2',
         type: 'midnite.list-completed-tasks',

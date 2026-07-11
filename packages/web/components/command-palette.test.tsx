@@ -73,7 +73,7 @@ describe('CommandPalette', () => {
     // toggleable features (ideas off by default) + 3 always-on destinations
     // (Agents, Profile, Settings). The header `?` keyboard-shortcuts control
     // stays a plain button.
-    expect(screen.getAllByRole('option')).toHaveLength(16);
+    expect(screen.getAllByRole('option')).toHaveLength(15);
     expect(screen.getAllByRole('button')).toHaveLength(1);
     // Empty query never hits the network.
     expect(searchAll).not.toHaveBeenCalled();

@@ -19,7 +19,6 @@ import type { SessionSummary, SessionTranscript } from '../session.js';
 import type { Task } from '../task.js';
 import type {
   ManualTrigger,
-  ScheduleTrigger,
   WebhookTrigger,
 } from '../trigger.js';
 import type { UsageRecord } from '../usage.js';
@@ -158,11 +157,6 @@ export const workflowEdgeFixture: WorkflowEdge = {
 };
 
 export const manualTriggerFixture: ManualTrigger = { type: 'manual' };
-export const scheduleTriggerFixture: ScheduleTrigger = {
-  type: 'schedule',
-  cron: '0 0 * * *',
-  timezone: 'UTC',
-};
 export const webhookTriggerFixture: WebhookTrigger = {
   type: 'webhook',
   method: 'POST',

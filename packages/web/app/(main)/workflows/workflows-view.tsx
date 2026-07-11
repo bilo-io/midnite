@@ -221,7 +221,7 @@ export function WorkflowsView({ initial }: { initial: WorkflowSummary[] }) {
           <EmptyState
             Icon={Workflow}
             title="No workflows yet"
-            description="Build an automation that runs on a schedule, a webhook, or on demand."
+            description="Build an automation that runs on a webhook, a task event, or on demand."
             actionLabel="New workflow"
             onAction={() => setCreating(true)}
           />

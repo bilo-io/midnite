@@ -3,7 +3,7 @@ import type { WorkflowTemplateSeed } from './seed-type';
 const seed: WorkflowTemplateSeed = {
   slug: 'webhook-relay',
   name: 'Webhook Relay',
-  description: 'Receives any incoming webhook and forwards the payload to a configurable URL. Good "hello world" template — no credentials required.',
+  description: 'Receives any incoming webhook and forwards the payload on with an HTTP POST. Ships pointed at the built-in /playground/echo endpoint so it works out of the box — swap the Forward node\'s URL for your own. Good "hello world" template — no credentials required.',
   category: 'monitoring',
   tags: ['webhook', 'relay', 'http'],
   credentialSlots: [],
@@ -17,7 +17,7 @@ const seed: WorkflowTemplateSeed = {
         label: 'Forward payload',
         params: {
           method: 'POST',
-          url: 'https://example.com/your-endpoint',
+          url: 'http://localhost:7777/playground/echo',
           body: '{{ $trigger }}',
           headers: { 'content-type': 'application/json' },
         },

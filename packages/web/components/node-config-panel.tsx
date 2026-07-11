@@ -8,7 +8,6 @@ import {
   LLM_PROVIDER_LABEL,
   TASK_EVENT_TRIGGER_EVENTS,
   type NodeField,
-  type ScheduleTrigger,
   type TaskEventTrigger,
   type TaskEventTriggerEvent,
   type Trigger,
@@ -25,16 +24,6 @@ import { listWorkflowCredentials, rotateWorkflowWebhook } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
 import { aiModelOptions, LLM_PROVIDER_ICON_KEY } from '@/lib/ai-node';
 import { buildExpressionContext } from '@/lib/expression-editor';
-import {
-  describeCron,
-  cronToPreset,
-  presetToCron,
-  nextRuns,
-  formatRun,
-  DAY_LABELS,
-  type RecurrenceKind,
-  type RecurrencePreset,
-} from '@/lib/cron';
 import { useWorkflowStore, type AppNode } from '@/lib/workflow-store';
 import { useConfirm } from '@/components/confirm-dialog';
 import { cn } from '@/lib/utils';
@@ -375,137 +364,6 @@ function NodeFields({ node, run }: { node: AppNode; run: WorkflowRun | null }) {
   );
 }
 
-const RECURRENCE_OPTIONS: SelectOption<string>[] = [
-  { value: 'daily', label: 'Every day' },
-  { value: 'weekdays', label: 'Weekdays (Mon–Fri)' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'monthly', label: 'Monthly' },
-  { value: 'custom', label: 'Custom (cron)' },
-];
-
-const DAY_OPTIONS: SelectOption<string>[] = DAY_LABELS.map((label, i) => ({ value: String(i), label }));
-
-
-function ScheduleFields({ trigger }: { trigger: ScheduleTrigger }) {
-  const setTrigger = useWorkflowStore((s) => s.setTrigger);
-  const preset = cronToPreset(trigger.cron);
-  const mode: RecurrenceKind | 'custom' = preset?.kind ?? 'custom';
-  const time = preset && 'time' in preset ? preset.time : '09:00';
-  const weeklyDay = preset?.kind === 'weekly' ? preset.day : 1;
-  const monthlyDom = preset?.kind === 'monthly' ? preset.dom : 1;
-  const runs = nextRuns(trigger.cron, trigger.timezone, 3);
-
-  const setCron = (cron: string) => setTrigger({ ...trigger, cron });
-  const apply = (p: RecurrencePreset) => setCron(presetToCron(p));
-
-  const onMode = (next: string) => {
-    switch (next) {
-      case 'daily':
-        return apply({ kind: 'daily', time });
-      case 'weekdays':
-        return apply({ kind: 'weekdays', time });
-      case 'weekly':
-        return apply({ kind: 'weekly', day: weeklyDay, time });
-      case 'monthly':
-        return apply({ kind: 'monthly', dom: monthlyDom, time });
-      // 'custom' — keep the current expression; the raw field below is the editor.
-    }
-  };
-
-  const onTime = (t: string) => {
-    const next = t || '09:00';
-    if (mode === 'daily') apply({ kind: 'daily', time: next });
-    else if (mode === 'weekdays') apply({ kind: 'weekdays', time: next });
-    else if (mode === 'weekly') apply({ kind: 'weekly', day: weeklyDay, time: next });
-    else if (mode === 'monthly') apply({ kind: 'monthly', dom: monthlyDom, time: next });
-  };
-
-  return (
-    <div className="space-y-3">
-      <div className="space-y-1">
-        <label className="text-xs font-medium text-muted-foreground">Repeats</label>
-        <StyledSelect options={RECURRENCE_OPTIONS} value={mode} onChange={onMode} aria-label="Recurrence" />
-      </div>
-
-      {mode !== 'custom' ? (
-        <div className="flex gap-2">
-          {mode === 'weekly' ? (
-            <div className="flex-1 space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">Day</label>
-              <StyledSelect
-                options={DAY_OPTIONS}
-                value={String(weeklyDay)}
-                onChange={(v) => apply({ kind: 'weekly', day: Number(v), time })}
-                aria-label="Day of week"
-              />
-            </div>
-          ) : null}
-          {mode === 'monthly' ? (
-            <div className="flex-1 space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">Day of month</label>
-              <input
-                type="number"
-                min={1}
-                max={31}
-                className={inputClass}
-                value={monthlyDom}
-                onChange={(e) => apply({ kind: 'monthly', dom: Math.min(31, Math.max(1, Number(e.target.value) || 1)), time })}
-                aria-label="Day of month"
-              />
-            </div>
-          ) : null}
-          <div className="flex-1 space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Time</label>
-            <input
-              type="time"
-              className={inputClass}
-              value={time}
-              onChange={(e) => onTime(e.target.value)}
-              aria-label="Time"
-            />
-          </div>
-        </div>
-      ) : null}
-
-      <div className="space-y-1">
-        <label className="text-xs font-medium text-muted-foreground">Cron expression</label>
-        <input
-          className={cn(inputClass, 'font-mono')}
-          value={trigger.cron}
-          onChange={(e) => setCron(e.target.value)}
-          placeholder="0 9 * * *"
-        />
-        <p className="text-[11px] text-muted-foreground">{describeCron(trigger.cron)}</p>
-      </div>
-
-      <div className="space-y-1">
-        <label className="text-xs font-medium text-muted-foreground">Timezone</label>
-        <input
-          className={inputClass}
-          value={trigger.timezone}
-          onChange={(e) => setTrigger({ ...trigger, timezone: e.target.value || 'UTC' })}
-          placeholder="UTC"
-        />
-      </div>
-
-      {runs.length > 0 ? (
-        <div className="space-y-1">
-          <p className="text-[11px] font-medium text-muted-foreground">Next runs</p>
-          <ul className="space-y-0.5">
-            {runs.map((d, i) => (
-              <li key={i} className="font-mono text-[11px] text-muted-foreground">
-                {formatRun(d, trigger.timezone)}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : (
-        <p className="text-[11px] text-destructive">Invalid cron — no upcoming runs.</p>
-      )}
-    </div>
-  );
-}
-
 function WebhookFields({ workflowId, hasSecret }: { workflowId: string; hasSecret: boolean }) {
   const [info, setInfo] = useState<{ url: string; token: string } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -559,7 +417,6 @@ function WebhookFields({ workflowId, hasSecret }: { workflowId: string; hasSecre
 
 const TRIGGER_TAB_LABEL: Record<TriggerType, string> = {
   manual: 'Manual',
-  schedule: 'Schedule',
   webhook: 'Webhook',
   'task-event': 'Task Event',
 };
@@ -654,18 +511,16 @@ function TaskEventFields({ trigger }: { trigger: TaskEventTrigger }) {
 function TriggerConfig({ workflowId }: { workflowId: string }) {
   const trigger = useWorkflowStore((s) => s.trigger);
   const setTrigger = useWorkflowStore((s) => s.setTrigger);
-  const types: TriggerType[] = ['manual', 'schedule', 'webhook', 'task-event'];
+  const types: TriggerType[] = ['manual', 'webhook', 'task-event'];
 
   const choose = (type: TriggerType) => {
     if (type === trigger.type) return;
     const next: Trigger =
-      type === 'schedule'
-        ? { type: 'schedule', cron: '0 9 * * *', timezone: 'UTC' }
-        : type === 'webhook'
-          ? { type: 'webhook', method: 'POST', hasSecret: trigger.type === 'webhook' ? trigger.hasSecret : false }
-          : type === 'task-event'
-            ? { type: 'task-event', events: ['task.done'] }
-            : { type: 'manual' };
+      type === 'webhook'
+        ? { type: 'webhook', method: 'POST', hasSecret: trigger.type === 'webhook' ? trigger.hasSecret : false }
+        : type === 'task-event'
+          ? { type: 'task-event', events: ['task.done'] }
+          : { type: 'manual' };
     setTrigger(next);
   };
 
@@ -686,7 +541,6 @@ function TriggerConfig({ workflowId }: { workflowId: string }) {
           </button>
         ))}
       </div>
-      {trigger.type === 'schedule' ? <ScheduleFields trigger={trigger} /> : null}
       {trigger.type === 'webhook' ? (
         <WebhookFields workflowId={workflowId} hasSecret={trigger.hasSecret} />
       ) : null}

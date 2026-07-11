@@ -48,7 +48,7 @@
 | [48 · Slides](phase-48-slides.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [47 · CLI power-user pass](phase-47-cli-power-user-pass.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [46 · Inbound integrations](phase-46-inbound-integrations.md) | ✅ DONE | 20/20 | `██████████` | 100% | — | — |
-| [45 · Recurring/scheduled tasks](phase-45-recurring-scheduled-tasks.md) | ✅ DONE | 15/15 | `██████████` | 100% | — | — |
+| [45 · Recurring/scheduled tasks](phase-45-recurring-scheduled-tasks.md) | 🗑️ RETIRED | 15/15 | `██████████` | 100% | — | Removed: the Schedules facade + cron trigger were retired as redundant with workflows/routines |
 | [44 · Outbound webhooks](phase-44-outbound-webhooks.md) | ✅ DONE | 20/20 | `██████████` | 100% | — | — |
 | [43 · Preference sync](phase-43-server-side-preference-sync.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
 | [42 · Task detail routing](phase-42-task-detail-routing.md) | ✅ DONE | 11/11 | `██████████` | 100% | — | — |

@@ -143,55 +143,6 @@ describe('NodeConfigPanel — expression editor', () => {
   });
 });
 
-// A workflow whose trigger is a schedule, with the matching trigger node selected,
-// so the panel renders the recurrence/cron ScheduleFields (Phase 45 B).
-function setupSchedule(cron = '0 9 * * *') {
-  const workflow: Workflow = WorkflowSchema.parse({
-    id: 'wf-1',
-    name: 'Test',
-    trigger: { type: 'schedule', cron, timezone: 'UTC' },
-    nodes: [{ id: 't1', type: 'trigger.schedule', position: { x: 0, y: 0 }, label: 'Schedule', params: {} }],
-    edges: [],
-    createdAt: '2026-06-21T00:00:00.000Z',
-    updatedAt: '2026-06-21T00:00:00.000Z',
-  });
-  const store = createWorkflowStore(workflow);
-  store.getState().select('t1');
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  render(
-    <QueryClientProvider client={queryClient}>
-      <WorkflowStoreContext.Provider value={store}>
-        <ConfirmProvider>
-          <NodeConfigPanel workflowId="wf-1" />
-        </ConfirmProvider>
-      </WorkflowStoreContext.Provider>
-    </QueryClientProvider>,
-  );
-  return store;
-}
-
-describe('NodeConfigPanel — schedule recurrence presets', () => {
-  it('reflects the cron as a preset + shows the human summary and next runs', () => {
-    setupSchedule('0 9 * * *');
-    expect(screen.getByDisplayValue('0 9 * * *')).toBeInTheDocument();
-    expect(screen.getByText('Every day at 09:00')).toBeInTheDocument();
-    expect(screen.getByText('Next runs')).toBeInTheDocument();
-  });
-
-  it('editing the time recompiles the cron for the active preset', () => {
-    const store = setupSchedule('0 9 * * *'); // daily 09:00
-    fireEvent.change(screen.getByLabelText('Time'), { target: { value: '14:30' } });
-    expect(store.getState().trigger).toMatchObject({ type: 'schedule', cron: '30 14 * * *' });
-  });
-
-  it('keeps a non-preset cron as Custom and editable raw', () => {
-    const store = setupSchedule('*/15 * * * *'); // every 15 min — not a preset
-    const raw = screen.getByDisplayValue('*/15 * * * *');
-    fireEvent.change(raw, { target: { value: '*/30 * * * *' } });
-    expect(store.getState().trigger).toMatchObject({ cron: '*/30 * * * *' });
-  });
-});
-
 // A workflow whose trigger is a task-event, with the matching trigger node
 // selected, so the panel renders the TaskEventFields (Phase 62 B).
 function setupTaskEvent(trigger: Workflow['trigger'] = { type: 'task-event', events: ['task.done'] }) {

@@ -42,7 +42,7 @@ describe('resolveAuthToken', () => {
 });
 
 describe('isAuthExemptPath', () => {
-  it('exempts health probes and hook callbacks (incl. query strings / trailing slashes)', () => {
+  it('exempts health probes, hook callbacks and the playground demo API (incl. query strings / trailing slashes)', () => {
     for (const p of [
       '/health',
       '/health?x=1',
@@ -52,13 +52,17 @@ describe('isAuthExemptPath', () => {
       '/hooks/sessions/abc/stop',
       '/hooks/workflows/x',
       '/hooks/',
+      '/playground',
+      '/playground/echo',
+      '/playground/echo?debug=1',
+      '/playground/items',
     ]) {
       expect(isAuthExemptPath(p)).toBe(true);
     }
   });
 
   it('protects everything else', () => {
-    for (const p of ['/tasks', '/healthy', '/hooksy', '/projects?type=x', '/']) {
+    for (const p of ['/tasks', '/healthy', '/hooksy', '/playgrounds', '/projects?type=x', '/']) {
       expect(isAuthExemptPath(p)).toBe(false);
     }
   });

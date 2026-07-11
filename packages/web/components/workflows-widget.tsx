@@ -65,7 +65,7 @@ function WorkflowRow({ workflow: w }: { workflow: WorkflowSummary }) {
   const steps = w.steps ?? [];
   const shown = steps.slice(0, MAX_STEPS);
   const overflow = steps.length - shown.length;
-  const meta = [w.cron, w.lastRunAt ? relativeTime(w.lastRunAt) : null].filter(Boolean).join(' · ');
+  const meta = [w.lastRunAt ? relativeTime(w.lastRunAt) : null].filter(Boolean).join(' · ');
 
   return (
     <li>

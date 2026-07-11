@@ -160,12 +160,12 @@ Inspect the resulting task's `kind`, `status`, and generated prompt in the web t
 
 ## Phase 6 — Workflows (node-based automation builder) ✅
 
-**Shipped.** A visual n8n/Make-style builder. `shared` node-type registry drives both gateway executors and the web palette. Tables `workflows`/`workflow_runs`/`node_runs`; `WorkflowEngine` (topological run, cycle rejection, per-node persistence, short-circuit on failure, `AbortSignal` cancel); executors `http.request` (SSRF-guarded) and `ai.claude`; a single `WorkflowScheduler` (croner); signed webhook receiver. Web: React Flow canvas, palette, config panel, Play/Save toolbar, run-output panel, run polling.
+**Shipped.** A visual n8n/Make-style builder. `shared` node-type registry drives both gateway executors and the web palette. Tables `workflows`/`workflow_runs`/`node_runs`; `WorkflowEngine` (topological run, cycle rejection, per-node persistence, short-circuit on failure, `AbortSignal` cancel); executors `http.request` (SSRF-guarded, with a self-origin allowance for the gateway's own API) and `ai.claude`; manual / signed-webhook / task-event triggers (no cron). Web: React Flow canvas, palette, config panel, Play/Save toolbar, run-output panel, run polling.
 
 **Walk through it.**
 - `http://localhost:3000/workflows` → new workflow → drag `manual → http.request` → **Run** → see a persisted run with per-node status + output.
 - Add an `ai.claude` node → Run → a completion comes back (verified with `haiku4.5`).
-- **Schedule** trigger: set a cron, enable, wait for the tick to fire a run.
+- **Demo API**: install the **HTTP methods showcase** template → **Run** → each of GET/POST/PUT/PATCH/DELETE echoes back in the run-output panel (hits the built-in `/playground/echo`).
 - **Webhook** trigger: `POST /hooks/workflows/:id/:token` with a JSON body → fires a run with the body as trigger output; a bad token → 404. Rotate via `POST /workflows/:id/webhook/rotate`.
 - Invalid node params → 400.
 

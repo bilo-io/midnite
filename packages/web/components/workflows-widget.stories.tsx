@@ -12,8 +12,7 @@ const WORKFLOWS: WorkflowSummary[] = [
     id: 'wf1',
     name: 'Nightly repo digest',
     enabled: true,
-    triggerType: 'schedule',
-    cron: '0 9 * * *',
+    triggerType: 'manual',
     nodeCount: 2,
     steps: [
       { type: 'http.request', label: 'Fetch issues' },

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 
-import { workflowManual, workflowScheduled, workflowWebhook } from '@/stories/fixtures';
+import { workflowManual, workflowTaskEvent, workflowWebhook } from '@/stories/fixtures';
 
 import { WorkflowCard } from './workflow-card';
 
@@ -14,9 +14,9 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Scheduled, enabled, last run succeeded. */
-export const Scheduled: Story = {
-  args: { workflow: workflowScheduled, layout: 'grid' },
+/** Task-event triggered, enabled, last run succeeded. */
+export const TaskEvent: Story = {
+  args: { workflow: workflowTaskEvent, layout: 'grid' },
   decorators: [
     (Story) => (
       <div className="max-w-sm">
@@ -51,7 +51,7 @@ export const NeverRun: Story = {
 };
 
 export const ListLayout: Story = {
-  args: { workflow: workflowScheduled, layout: 'list' },
+  args: { workflow: workflowTaskEvent, layout: 'list' },
   render: (args) => (
     <div className="flex max-w-2xl flex-col gap-2">
       <WorkflowCard {...args} />

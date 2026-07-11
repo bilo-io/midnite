@@ -66,7 +66,10 @@ describe('buildTemplateGraph', () => {
     expect(graph.edges[1]?.target).toBe(graph.nodes[2]?.id);
 
     // params carried through verbatim
-    expect(graph.nodes[1]?.params).toMatchObject({ method: 'GET', url: 'https://example.com' });
+    expect(graph.nodes[1]?.params).toMatchObject({
+      method: 'GET',
+      url: 'http://localhost:7777/playground/items',
+    });
   });
 
   it('produces a valid graph for every template (one edge per step)', () => {
@@ -96,14 +99,14 @@ describe('triggerNodeOf', () => {
     const workflow = WorkflowSchema.parse({
       id: 'w2',
       name: 'X',
-      trigger: { type: 'schedule', cron: '0 9 * * *', timezone: 'UTC' },
+      trigger: { type: 'manual' },
       nodes: [],
       edges: [],
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-01-01T00:00:00.000Z',
     });
-    const node = triggerNodeOf(workflow, getWorkflowTemplate('scheduled-api-digest')!, seqIds());
-    expect(node.type).toBe('trigger.schedule');
+    const node = triggerNodeOf(workflow, getWorkflowTemplate('api-digest')!, seqIds());
+    expect(node.type).toBe('trigger.manual');
     expect(node.id).toBe('id-0');
   });
 });

@@ -24,7 +24,7 @@ import seed from './daily-digest.seed';
 const NOW = '2026-07-11T00:00:00.000Z';
 
 interface SeedDefinition {
-  trigger: { type: string; cron: string };
+  trigger: { type: string };
   nodes: { id: string; type: string; label?: string; params?: Record<string, unknown> }[];
   edges: { id: string; source: string; target: string }[];
 }
@@ -68,16 +68,16 @@ function makeDb(): BetterSQLite3Database<typeof schema> {
 }
 
 describe('daily-digest seed — shape', () => {
-  it('is a weekday-morning scheduling digest', () => {
+  it('is a run-on-demand notifications digest', () => {
     expect(seed.slug).toBe('daily-digest');
-    expect(seed.category).toBe('scheduling');
+    expect(seed.category).toBe('notifications');
     expect(seed.tags).toContain('digest');
   });
 
   it('upgrades to the structured Theme C pipeline (no freeform ai.claude draft)', () => {
-    expect(definition.trigger).toEqual({ type: 'schedule', cron: '0 8 * * 1-5' });
+    expect(definition.trigger).toEqual({ type: 'manual' });
     expect(definition.nodes.map((n) => n.type)).toEqual([
-      'trigger.schedule',
+      'trigger.manual',
       'midnite.list-completed-tasks',
       'midnite.build-digest',
       'slack.message',
@@ -165,7 +165,7 @@ describe('daily-digest seed — pipeline run', () => {
   });
 
   it('builds a digest, notifies in-app, and skips the unbound Slack step without failing', async () => {
-    const run = await engine.runToCompletion(toWorkflow(), { triggerSource: 'schedule', input: {} });
+    const run = await engine.runToCompletion(toWorkflow(), { triggerSource: 'manual', input: {} });
 
     expect(run.status).toBe('succeeded');
 

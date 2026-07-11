@@ -59,12 +59,6 @@ describe('runToMarkdown', () => {
     expect(md).toContain('manual');
   });
 
-  it('includes schedule cron in trigger label', () => {
-    const wf = makeWorkflow({ trigger: { type: 'schedule', cron: '0 * * * *', timezone: 'UTC' } });
-    const md = runToMarkdown(wf, makeRun(), { now: NOW });
-    expect(md).toContain('0 * * * *');
-  });
-
   it('shows a run-level error when present', () => {
     const run = makeRun({ status: 'failed', error: 'engine crashed' });
     const md = runToMarkdown(makeWorkflow(), run, { now: NOW });
