@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { isHexColor } from './color.js';
-import { StatusSchema, TaskSchema } from './task.js';
+import { StatusSchema, TaskSchema, pagedSchema } from './task.js';
 
 export const MAX_TAG_LENGTH = 12;
 
@@ -146,6 +146,11 @@ export function projectCompletion(
 
 export type TaskStatusCounts = z.infer<typeof TaskStatusCountsSchema>;
 export type Project = z.infer<typeof ProjectSchema>;
+
+/** A page of projects (Phase 57 C follow-up): `{ items, total }`. Keeps the full
+ *  `Project` shape (a lean `ProjectSummary` is a separate future slice). */
+export const ProjectsPageSchema = pagedSchema(ProjectSchema);
+export type ProjectsPage = z.infer<typeof ProjectsPageSchema>;
 export type CreateProjectRequest = z.infer<typeof CreateProjectRequestSchema>;
 export type UpdateProjectRequest = z.infer<typeof UpdateProjectRequestSchema>;
 export type EnhanceDescriptionRequest = z.infer<typeof EnhanceDescriptionRequestSchema>;

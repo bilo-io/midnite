@@ -45,6 +45,27 @@ export class ProjectsRepository {
     return this.db.select().from(projects).where(where).orderBy(asc(projects.createdAt)).all();
   }
 
+  /**
+   * A page of project rows (Phase 57 C follow-up). `total` is a `COUNT(*)` over
+   * the same scoped filter; `limit`/`offset` apply only when `limit` is set
+   * (omitted = every row). Mirrors `TasksRepository.listTaskPage`.
+   */
+  listProjectPage(
+    scope?: TeamScope,
+    opts?: { page?: number; limit?: number },
+  ): { rows: ProjectRow[]; total: number } {
+    const where = scope ? teamScopeFilter(projects.createdBy, projects.teamId, scope) : undefined;
+    const total = Number(
+      this.db.select({ count: sql<number>`COUNT(*)` }).from(projects).where(where).get()?.count ?? 0,
+    );
+    const ordered = this.db.select().from(projects).where(where).orderBy(asc(projects.createdAt));
+    const rows =
+      opts?.limit != null
+        ? ordered.limit(opts.limit).offset(((opts.page ?? 1) - 1) * opts.limit).all()
+        : ordered.all();
+    return { rows, total };
+  }
+
   updateProject(id: string, patch: Partial<ProjectInsert>): ProjectRow | undefined {
     return this.db
       .update(projects)

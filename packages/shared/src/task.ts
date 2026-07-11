@@ -293,6 +293,18 @@ export function pagedSchema<T extends z.ZodTypeAny>(item: T) {
 }
 export type Paged<T> = { items: T[]; total: number };
 
+/**
+ * Reusable offset-pagination query params (Phase 57 C follow-up) shared by the
+ * list endpoints (`workflows`/`projects`/`repos`). Both optional — omitting them
+ * returns the full set. `TaskListQuerySchema` predates this and inlines the same
+ * two fields alongside its own filters.
+ */
+export const PageQuerySchema = z.object({
+  page: z.coerce.number().int().positive().optional(),
+  limit: z.coerce.number().int().positive().max(200).optional(),
+});
+export type PageQuery = z.infer<typeof PageQuerySchema>;
+
 export const TasksPageSchema = pagedSchema(TaskSummarySchema);
 export type TasksPage = z.infer<typeof TasksPageSchema>;
 
