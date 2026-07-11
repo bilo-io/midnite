@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-11 — docs: synthesis & remediation backlog → Phase 60 to 100% — Phase 60 Theme M (PR #394)
+
+The audit closer. Twelve bounded audit themes (A–L) each produced a findings report; **Theme M runs last** and turns them into one executive read so the findings become a schedulable backlog. **Phase 60 → 62/62 (100%).** Docs-only (touches `todo/` markdown exclusively). Also corrected stale `_INDEX.md` theme-key entries (A & C shipped in PR #357 but still read `◻`).
+
+- [x] **Master ranked list** — merged all 12 reports into `todo/phase-60-findings/M-summary.md`: **91 findings** (26 fixed inline during the audit, 65 documented, **no P0**), deduped (cross-refs collapsed to one canonical entry — A-1=FO-1, A-7=B-6, SW-4=K-3, TO-1×2), each row carrying severity/area/status/effort/source, **grouped by proposed remediation phase** (severity-sorted within) + a P0→P3 severity roll-up.
+- [x] **7 cross-cutting systemic patterns** — fail-open-where-should-fail-closed; no convention at the gateway boundary; missing run/epoch identity; non-atomic multi-table writes; unenforced cross-domain RI; the web three-state (loading/empty/error) collapse; per-component (vs shared) a11y — each worth one shared fix.
+- [x] **5 recommended remediation phases + 2 maintenance tracks** — security enforcement · core correctness (state/scheduler/tx) · error-boundary hardening · web state/flow consistency · a11y & responsive; plus dependency/framework upgrades and product-docs authoring. Rough-sized. **Recommended, not created.**
+- [x] **Verification checklist** — all Phase 60 acceptance criteria driven to done (every A–L report exists with evidence; stale-claim discipline held; each section covered; quick-wins limited to sev≥High+S with tests green).
+
 ## 2026-07-11 — test+docs: finish Theme G → Phase 65 to 100% — Phase 65 Theme G (PR #391)
 
 The phase closer. Per-theme unit/RTL/repository coverage shipped inline with A–F; this brings the loose ends together and drives the Verification checklist to done. **Phase 65 → 33/33 (100%).**
