@@ -52,7 +52,7 @@ type Story = StoryObj<typeof meta>;
 
 /** Active workflows loaded from the gateway, newest first. */
 export const Default: Story = {
-  beforeEach: () => installMockFetch([{ match: '/workflows', json: WORKFLOWS }]),
+  beforeEach: () => installMockFetch([{ match: '/workflows', json: { items: WORKFLOWS, total: WORKFLOWS.length } }]),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText(WORKFLOWS[0]!.name)).toBeInTheDocument();
@@ -64,7 +64,7 @@ export const Default: Story = {
 
 /** No workflows yet → the empty-state message. */
 export const Empty: Story = {
-  beforeEach: () => installMockFetch([{ match: '/workflows', json: [] }]),
+  beforeEach: () => installMockFetch([{ match: '/workflows', json: { items: [], total: 0 } }]),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('No workflows yet.')).toBeInTheDocument();

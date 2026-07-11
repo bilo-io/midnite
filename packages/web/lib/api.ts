@@ -144,8 +144,9 @@ import {
   PhaseDocResponseSchema,
   PhaseDocsResponseSchema,
   ProjectSchema,
+  ProjectsPageSchema,
   RepoResponseSchema,
-  RepoSchema,
+  ReposPageSchema,
   RunResponseSchema,
   SessionSummarySchema,
   SessionDetailSchema,
@@ -183,7 +184,7 @@ import {
   WebhookInfoResponseSchema,
   WorkflowResponseSchema,
   WorkflowRunSchema,
-  WorkflowSummarySchema,
+  WorkflowsPageSchema,
   type AgentCli,
   type AgentCliStatus,
   type AgentsConfig,
@@ -227,10 +228,12 @@ import {
   type ProviderResponse,
   type UpdateProviderCredentialRequest,
   type Project,
+  type ProjectsPage,
   type PhaseDoc,
   type CreatePhaseDocRequest,
   type UpdatePhaseDocRequest,
   type Repo,
+  type ReposPage,
   type CreateRepoRequest,
   type UpdateRepoRequest,
   type SessionSummary,
@@ -255,6 +258,7 @@ import {
   type Workflow,
   type WorkflowRun,
   type WorkflowSummary,
+  type WorkflowsPage,
   WorkflowCredentialsResponseSchema,
   WorkflowCredentialResponseSchema,
   type WorkflowCredential,
@@ -483,6 +487,14 @@ export async function getTasks(): Promise<TaskSummary[]> {
 export async function getTaskActivity(limit?: number): Promise<TaskActivityEntry[]> {
   const suffix = limit ? `?limit=${limit}` : '';
   return fetchJson(`/tasks/activity${suffix}`, undefined, TaskActivityResponseSchema);
+}
+
+/** Build a `?page=&limit=` suffix for the paged list endpoints (Phase 57 C follow-up). */
+function pageSuffix(opts?: { page?: number; limit?: number }): string {
+  const qs = new URLSearchParams();
+  if (opts?.page) qs.set('page', String(opts.page));
+  if (opts?.limit) qs.set('limit', String(opts.limit));
+  return qs.toString() ? `?${qs}` : '';
 }
 
 /** A page of task summaries + the full filtered `total` (Phase 57 C). */
@@ -1132,7 +1144,12 @@ export async function deleteSession(id: string): Promise<void> {
 }
 
 export async function getProjects(): Promise<Project[]> {
-  return fetchJson('/projects', undefined, z.array(ProjectSchema));
+  return (await fetchJson('/projects', undefined, ProjectsPageSchema)).items;
+}
+
+/** A page of projects + the full scoped `total` (Phase 57 C follow-up). */
+export async function getProjectsPage(opts?: { page?: number; limit?: number }): Promise<ProjectsPage> {
+  return fetchJson(`/projects${pageSuffix(opts)}`, undefined, ProjectsPageSchema);
 }
 
 export async function getProject(id: string): Promise<Project> {
@@ -1184,7 +1201,12 @@ export async function deleteProject(id: string): Promise<void> {
 // --- Repos (the DB-backed repo registry) ---
 
 export async function getRepos(): Promise<Repo[]> {
-  return fetchJson('/repos', undefined, z.array(RepoSchema));
+  return (await fetchJson('/repos', undefined, ReposPageSchema)).items;
+}
+
+/** A page of repos + the full scoped `total` (Phase 57 C follow-up). */
+export async function getReposPage(opts?: { page?: number; limit?: number }): Promise<ReposPage> {
+  return fetchJson(`/repos${pageSuffix(opts)}`, undefined, ReposPageSchema);
 }
 
 export async function createRepo(body: CreateRepoRequest): Promise<Repo> {
@@ -1543,7 +1565,12 @@ export async function exportProjectMarkdown(id: string): Promise<string> {
 // --- Workflows ---
 
 export async function listWorkflows(): Promise<WorkflowSummary[]> {
-  return fetchJson('/workflows', undefined, z.array(WorkflowSummarySchema));
+  return (await fetchJson('/workflows', undefined, WorkflowsPageSchema)).items;
+}
+
+/** A page of workflow summaries + the full scoped `total` (Phase 57 C follow-up). */
+export async function listWorkflowsPage(opts?: { page?: number; limit?: number }): Promise<WorkflowsPage> {
+  return fetchJson(`/workflows${pageSuffix(opts)}`, undefined, WorkflowsPageSchema);
 }
 
 export async function getWorkflow(id: string): Promise<Workflow> {
