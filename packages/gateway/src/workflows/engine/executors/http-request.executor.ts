@@ -2,6 +2,7 @@ import { Inject, Injectable, Optional } from '@nestjs/common';
 import { HttpRequestParamsSchema, type HttpRequestParams, type MidniteConfig } from '@midnite/shared';
 import { MIDNITE_CONFIG } from '../../../config.token';
 import { isSafeHttpUrl } from '../../../projects/lib/opengraph';
+import { isGatewaySelfOrigin } from '../../lib/self-origin';
 import { WorkflowCredentialsService } from '../../credentials/workflow-credentials.service';
 import type { NodeExecutor, NodeRunContext } from '../node-executor';
 
@@ -39,7 +40,12 @@ export class HttpRequestExecutor implements NodeExecutor {
 
   async execute(ctx: NodeRunContext): Promise<unknown> {
     const params = HttpRequestParamsSchema.parse(ctx.params) as HttpRequestParams;
-    if (!isSafeHttpUrl(params.url, { allowLoopback: this.config.workflows.allowLoopbackHttp })) {
+    // Loopback is blocked by default, but a workflow calling its own gateway (the demo
+    // `/playground/*` routes, or a real route like `/tasks`) is legitimate — allow that
+    // one origin through even when it's loopback. Other loopback targets need the flag.
+    const allowLoopback =
+      this.config.workflows.allowLoopbackHttp || isGatewaySelfOrigin(params.url, this.config);
+    if (!isSafeHttpUrl(params.url, { allowLoopback })) {
       throw new Error(`refusing to call unsafe or private URL: ${params.url}`);
     }
 

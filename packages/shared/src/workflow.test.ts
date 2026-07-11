@@ -28,26 +28,25 @@ describe('WorkflowSchema', () => {
 
   it('rejects an invalid embedded trigger', () => {
     expect(
-      WorkflowSchema.safeParse({ ...baseWorkflow, trigger: { type: 'schedule', cron: '' } }).success,
+      WorkflowSchema.safeParse({ ...baseWorkflow, trigger: { type: 'schedule', cron: '0 0 * * *' } })
+        .success,
     ).toBe(false);
   });
 });
 
 describe('WorkflowSummarySchema', () => {
-  it('defaults steps to an empty array and round-trips a schedule summary', () => {
+  it('defaults steps to an empty array', () => {
     const summary = {
       id: 'w1',
       name: 'Nightly sync',
       enabled: true,
-      triggerType: 'schedule' as const,
-      cron: '0 0 * * *',
+      triggerType: 'webhook' as const,
       nodeCount: 2,
       createdAt: '2026-06-20T00:00:00.000Z',
       updatedAt: '2026-06-20T00:00:00.000Z',
     };
     const parsed = WorkflowSummarySchema.parse(summary);
     expect(parsed.steps).toEqual([]);
-    expect(parsed.cron).toBe('0 0 * * *');
   });
 });
 

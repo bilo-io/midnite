@@ -36,10 +36,12 @@ export function resolveAuthToken(
 /**
  * Routes exempt from bearer auth: health probes (`/health` liveness alias plus
  * the Phase 54 `/health/live` + `/health/ready`, all hit by orchestrators/monitors
- * that don't carry the bearer) and the hook callbacks (`/hooks/*`), which
- * authenticate with their own per-session secret and are called by parties
- * (in-PTY scripts, external webhooks) that don't carry the bearer token.
- * Everything else is protected when auth is on.
+ * that don't carry the bearer), the hook callbacks (`/hooks/*`), which authenticate
+ * with their own per-session secret and are called by parties (in-PTY scripts,
+ * external webhooks) that don't carry the bearer token, and the `/playground/*`
+ * demo API — an echo/canned-data surface used by the example workflows so an HTTP
+ * node has a live target without any credential setup. Everything else is protected
+ * when auth is on.
  *
  * Case-sensitive on purpose: Fastify route matching is case-sensitive too, so
  * `/HEALTH` neither matches the liveness route nor this exemption — it just gets
@@ -51,7 +53,9 @@ export function isAuthExemptPath(url: string): boolean {
     path === '/health' ||
     path.startsWith('/health/') ||
     path === '/hooks' ||
-    path.startsWith('/hooks/')
+    path.startsWith('/hooks/') ||
+    path === '/playground' ||
+    path.startsWith('/playground/')
   );
 }
 

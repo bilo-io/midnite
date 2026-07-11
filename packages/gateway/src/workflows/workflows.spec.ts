@@ -196,23 +196,24 @@ describe('WorkflowsService', () => {
     expect(wf.nodes[0]!.type).toBe('trigger.manual');
   });
 
-  it('includes the cron in the summary for schedule triggers and omits it otherwise', () => {
-    service.create({ name: 'fast', trigger: { type: 'schedule', cron: '*/5 * * * *', timezone: 'UTC' } });
+  it('reports the trigger type in the summary', () => {
+    service.create({ name: 'hooked', trigger: { type: 'webhook', method: 'POST', hasSecret: false } });
     service.create({ name: 'manual one' });
     const summaries = service.listSummaries();
-    const sched = summaries.find((s) => s.name === 'fast')!;
+    const hooked = summaries.find((s) => s.name === 'hooked')!;
     const manual = summaries.find((s) => s.name === 'manual one')!;
-    expect(sched.triggerType).toBe('schedule');
-    expect(sched.cron).toBe('*/5 * * * *');
-    expect(manual.cron).toBeUndefined();
+    expect(hooked.triggerType).toBe('webhook');
+    expect(manual.triggerType).toBe('manual');
   });
 
   it('keeps the trigger node type in sync with workflow.trigger on update', () => {
     const wf = service.create({ name: 'demo' });
-    const updated = service.update(wf.id, { trigger: { type: 'schedule', cron: '0 9 * * *', timezone: 'UTC' } });
-    expect(updated.trigger.type).toBe('schedule');
+    const updated = service.update(wf.id, {
+      trigger: { type: 'webhook', method: 'POST', hasSecret: false },
+    });
+    expect(updated.trigger.type).toBe('webhook');
     const trig = updated.nodes.find((n) => n.type.startsWith('trigger.'))!;
-    expect(trig.type).toBe('trigger.schedule');
+    expect(trig.type).toBe('trigger.webhook');
   });
 
   it('rotates a webhook secret and rejects a bad token', () => {

@@ -6,15 +6,14 @@ import type { TriggerType, WorkflowSummary } from '@midnite/shared';
 import { SelectableIcon } from '@/components/selectable-icon';
 import { SortableAccordions, type AccordionSection } from '@/components/sortable-accordions';
 import { LastRunStatus, WorkflowEnabledSwitch } from '@/components/workflow-controls';
-import { cronIntervalSeconds, describeCron, describeFrequency } from '@/lib/cron';
 import { cn } from '@/lib/utils';
 
 // One accordion per trigger type. Sections are collapsible + reorderable (persisted),
 // matching the Tasks/Projects tables. Shared with the grid/list views.
 export const TRIGGER_SECTIONS: Array<{ type: TriggerType; label: string; hue: string }> = [
   { type: 'manual', label: 'Manual', hue: 'var(--status-backlog)' },
-  { type: 'schedule', label: 'Schedule', hue: 'var(--status-todo)' },
   { type: 'webhook', label: 'Webhook', hue: 'var(--kind-feature)' },
+  { type: 'task-event', label: 'Task Event', hue: 'var(--status-done)' },
 ];
 
 function nodeLabel(count: number): string {
@@ -52,14 +51,6 @@ function WorkflowRow({
           <span className="block truncate text-xs text-muted-foreground">{w.description}</span>
         ) : null}
       </Link>
-      {w.triggerType === 'schedule' && w.cron ? (
-        <span
-          className="hidden shrink-0 cursor-help font-mono text-[11px] text-muted-foreground sm:inline"
-          title={`${describeFrequency(w.cron)} — ${describeCron(w.cron)}`}
-        >
-          {w.cron}
-        </span>
-      ) : null}
       <span className="hidden shrink-0 text-xs tabular-nums text-muted-foreground md:block">
         {nodeLabel(w.nodeCount)}
       </span>
@@ -79,16 +70,9 @@ export function WorkflowsTable({
   onToggleSelect?: (id: string, shiftKey: boolean) => void;
 }) {
   const sections: AccordionSection[] = TRIGGER_SECTIONS.map(({ type, label, hue }) => {
-    let items = workflows.filter((w) => w.triggerType === type);
-    let summary = items.length === 0 ? 'Empty' : `${items.length} workflow${items.length === 1 ? '' : 's'}`;
-
-    if (type === 'schedule') {
-      // Most frequent (smallest interval) first.
-      items = [...items].sort(
-        (a, b) => cronIntervalSeconds(a.cron ?? '') - cronIntervalSeconds(b.cron ?? ''),
-      );
-      if (items.length > 0) summary = `${items.length} · most frequent first`;
-    }
+    const items = workflows.filter((w) => w.triggerType === type);
+    const summary =
+      items.length === 0 ? 'Empty' : `${items.length} workflow${items.length === 1 ? '' : 's'}`;
 
     return {
       id: `trigger-${type}`,

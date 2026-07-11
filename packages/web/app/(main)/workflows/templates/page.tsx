@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react';
 import {
   BookOpen,
   Bot,
-  Calendar,
   CheckCircle,
   Database,
   ExternalLink,
@@ -39,7 +38,6 @@ const CATEGORY_META: Record<
   monitoring: { label: 'Monitoring', Icon: Zap },
   notifications: { label: 'Notifications', Icon: Webhook },
   github: { label: 'GitHub', Icon: GitBranch },
-  scheduling: { label: 'Scheduling', Icon: Calendar },
   ai: { label: 'AI', Icon: Bot },
   data: { label: 'Data', Icon: Database },
 };

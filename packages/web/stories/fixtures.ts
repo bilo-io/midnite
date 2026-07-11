@@ -247,16 +247,15 @@ export const sessions: SessionSummary[] = [
 
 // --- Workflows ---
 
-export const workflowScheduled: WorkflowSummary = {
-  id: 'wf-nightly',
-  name: 'Nightly triage',
-  description: 'Labels stale tasks and pings the board channel with a digest.',
+export const workflowTaskEvent: WorkflowSummary = {
+  id: 'wf-triage',
+  name: 'On-done triage',
+  description: 'When a task finishes, labels stale tasks and pings the board channel with a digest.',
   enabled: true,
-  triggerType: 'schedule',
-  cron: '0 2 * * *',
+  triggerType: 'task-event',
   nodeCount: 4,
   steps: [
-    { type: 'trigger.schedule', label: 'Nightly' },
+    { type: 'trigger.task-event', label: 'Task done' },
     { type: 'ai.claude', label: 'Triage' },
     { type: 'logic.branch' },
     { type: 'http.request', label: 'Notify' },

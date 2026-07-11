@@ -13,7 +13,7 @@ describe('groupNavSections', () => {
     expect(sections.map((s) => s.label)).toEqual(['App', 'Agents', 'Overview']);
 
     const byKey = Object.fromEntries(sections.map((s) => [s.key, keysOf(s.features)]));
-    expect(byKey['app']).toEqual(['projects', 'tasks', 'slides', 'workflows', 'schedules']);
+    expect(byKey['app']).toEqual(['projects', 'tasks', 'slides', 'workflows']);
     expect(byKey['agents']).toEqual(['memory', 'sessions', 'councils', 'media']);
     expect(byKey['overview']).toEqual(['office', 'digests', 'ops']);
   });

@@ -8,6 +8,14 @@ import type { WorkflowGraphPayload } from './workflow-store';
 // steps built only from shipped node types (http.request / ai.claude /
 // data.filter / storage.*); the AI prompts reference upstream nodes by label
 // via {{ }} expressions (Phase 12), exactly as a hand-built graph would.
+//
+// The http.request steps target the gateway's own demo API (`/playground/*`) so
+// they run out of the box against a local gateway — the SSRF guard permits the
+// gateway's own origin (see the gateway's http-request executor). `GATEWAY_BASE`
+// is the default local address; edit the URL on any node to point elsewhere.
+
+const GATEWAY_BASE = 'http://localhost:7777';
+const JSON_HEADERS = { 'content-type': 'application/json' };
 
 export interface TemplateStep {
   /** A node type id from `NODE_TYPE_DEFINITIONS` (e.g. `http.request`). */
@@ -29,52 +37,52 @@ export interface WorkflowTemplate {
 export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
   {
     id: 'ai-webpage-summary',
-    name: 'Summarise a web page with AI',
-    description: 'Fetch a URL on demand, then have the AI node summarise the response.',
+    name: 'Fetch data and summarise with AI',
+    description: 'Fetch a JSON endpoint on demand, then have the AI node summarise the response.',
     trigger: { type: 'manual' },
     steps: [
       {
         type: 'http.request',
-        label: 'Fetch page',
-        params: { method: 'GET', url: 'https://example.com' },
+        label: 'Fetch data',
+        params: { method: 'GET', url: `${GATEWAY_BASE}/playground/items` },
       },
       {
         type: 'ai.claude',
         label: 'Summarise',
         params: {
-          prompt: 'Summarise the following page in 3 concise bullet points:\n\n{{$node["Fetch page"].json.body}}',
+          prompt: 'Summarise the following data in 3 concise bullet points:\n\n{{$node["Fetch data"].json.body}}',
         },
       },
     ],
   },
   {
-    id: 'scheduled-api-digest',
-    name: 'Daily API digest',
-    description: 'Every morning, fetch an endpoint, trim it to the fields you care about, and write a digest.',
-    trigger: { type: 'schedule', cron: '0 9 * * *', timezone: 'UTC' },
+    id: 'api-digest',
+    name: 'API digest',
+    description: 'Fetch an endpoint, trim it to the fields you care about, and write a short digest.',
+    trigger: { type: 'manual' },
     steps: [
       {
         type: 'http.request',
         label: 'Fetch items',
-        params: { method: 'GET', url: 'https://api.example.com/items' },
+        params: { method: 'GET', url: `${GATEWAY_BASE}/playground/items` },
       },
       {
         type: 'data.filter',
         label: 'Keep fields',
-        params: { mode: 'pick', fields: ['title', 'url'] },
+        params: { mode: 'pick', fields: ['status', 'body'] },
       },
       {
         type: 'ai.claude',
         label: 'Write digest',
-        params: { prompt: 'Write a short digest of these items:\n\n{{$node["Keep fields"].json}}' },
+        params: { prompt: 'Write a short digest of these items:\n\n{{$node["Keep fields"].json.body}}' },
       },
     ],
   },
   {
     id: 'track-latest-value',
     name: 'Track the latest value across runs',
-    description: 'On an hourly schedule, read the previous run’s value from storage, fetch the current one, and stash it.',
-    trigger: { type: 'schedule', cron: '0 * * * *', timezone: 'UTC' },
+    description: 'Read the previous run’s value from storage, fetch the current one, and stash it back.',
+    trigger: { type: 'manual' },
     steps: [
       {
         type: 'storage.get',
@@ -84,12 +92,61 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       {
         type: 'http.request',
         label: 'Fetch latest',
-        params: { method: 'GET', url: 'https://api.example.com/latest' },
+        params: { method: 'GET', url: `${GATEWAY_BASE}/playground/latest` },
       },
       {
         type: 'storage.set',
         label: 'Save latest',
         params: { key: 'lastSeen', value: '{{$node["Fetch latest"].json.body}}' },
+      },
+    ],
+  },
+  {
+    id: 'http-method-showcase',
+    name: 'HTTP methods showcase',
+    description:
+      'Exercises GET, POST, PUT, PATCH and DELETE against the demo echo endpoint so you can see each request and its response in the run panel.',
+    trigger: { type: 'manual' },
+    steps: [
+      {
+        type: 'http.request',
+        label: 'GET echo',
+        params: { method: 'GET', url: `${GATEWAY_BASE}/playground/echo?step=get` },
+      },
+      {
+        type: 'http.request',
+        label: 'POST echo',
+        params: {
+          method: 'POST',
+          url: `${GATEWAY_BASE}/playground/echo`,
+          headers: JSON_HEADERS,
+          body: '{"step":"post"}',
+        },
+      },
+      {
+        type: 'http.request',
+        label: 'PUT echo',
+        params: {
+          method: 'PUT',
+          url: `${GATEWAY_BASE}/playground/echo`,
+          headers: JSON_HEADERS,
+          body: '{"step":"put"}',
+        },
+      },
+      {
+        type: 'http.request',
+        label: 'PATCH echo',
+        params: {
+          method: 'PATCH',
+          url: `${GATEWAY_BASE}/playground/echo`,
+          headers: JSON_HEADERS,
+          body: '{"step":"patch"}',
+        },
+      },
+      {
+        type: 'http.request',
+        label: 'DELETE echo',
+        params: { method: 'DELETE', url: `${GATEWAY_BASE}/playground/echo?step=delete` },
       },
     ],
   },

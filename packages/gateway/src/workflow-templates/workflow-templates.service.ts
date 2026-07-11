@@ -20,12 +20,12 @@ const SEED_MODULES: (() => Promise<{ default: WorkflowTemplateSeed }>)[] = [
   () => import('./seeds/notify-on-task-done.seed'),
   () => import('./seeds/webhook-relay.seed'),
   () => import('./seeds/ai-code-review.seed'),
-  () => import('./seeds/github-pr-ready-check.seed'),
   () => import('./seeds/daily-digest.seed'),
   () => import('./seeds/ai-task-summariser.seed'),
-  () => import('./seeds/scheduled-task-cleanup.seed'),
   () => import('./seeds/daily-standup.seed'),
   () => import('./seeds/task-retrospectives.seed'),
+  () => import('./seeds/branch-on-status.seed'),
+  () => import('./seeds/task-digest.seed'),
 ];
 
 export class TemplateNotFoundError extends Error {}

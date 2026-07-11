@@ -14,7 +14,6 @@ import {
   BotMessageSquare,
   BrainCircuit,
   Building2,
-  CalendarClock,
   CirclePile,
   Folder,
   Images,
@@ -34,7 +33,6 @@ export type FeatureKey =
   | 'sessions'
   | 'office'
   | 'workflows'
-  | 'schedules'
   | 'councils'
   | 'slides'
   | 'media'
@@ -111,14 +109,6 @@ export const FEATURES: Feature[] = [
     label: 'Workflows',
     description: 'Build and run multi-step agent workflows.',
     Icon: Workflow,
-    category: 'app',
-  },
-  {
-    key: 'schedules',
-    href: '/schedules',
-    label: 'Schedules',
-    description: 'Recurring tasks that open on a cadence — daily standups, weekly chores, and more.',
-    Icon: CalendarClock,
     category: 'app',
   },
   // ── Agents ───────────────────────────────────────────────────────────────
@@ -209,7 +199,6 @@ export const DEFAULT_FEATURE_FLAGS: Record<FeatureKey, boolean> = {
   sessions: true,
   office: true,
   workflows: true,
-  schedules: true,
   councils: true,
   slides: true,
   media: true,

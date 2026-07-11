@@ -298,7 +298,7 @@ loopback by default**:
 
 Every consumer (gateway, CLI) takes a parsed `MidniteConfig` — never `JSON.parse` the file yourself.
 
-The optional `workflows` block configures the [workflow builder](todo/phase-6-workflows-mvp.md). It ships **off** (`enabled: false`); set `enabled: true` to start the cron scheduler. `webhookBaseUrl` is the public URL used to build copyable webhook trigger URLs. Secrets are referenced by env-var name (e.g. `encryptionKeyEnv`, OAuth `clientSecretEnv`), never inlined.
+The optional `workflows` block configures the [workflow builder](todo/phase-6-workflows-mvp.md). It ships **off** (`enabled: false`); set `enabled: true` to enable the engine. Workflows run manually, on a signed webhook, or on a task event (no cron trigger — recurring cloud agents live in `routines`). `webhookBaseUrl` is the public URL used to build copyable webhook trigger URLs; `http.request` nodes may call the gateway's own origin (the demo `/playground/*` API) even on loopback. Secrets are referenced by env-var name (e.g. `encryptionKeyEnv`, OAuth `clientSecretEnv`), never inlined.
 
 ### AI providers & authentication
 

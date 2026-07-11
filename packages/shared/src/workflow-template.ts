@@ -18,7 +18,6 @@ export const WORKFLOW_TEMPLATE_CATEGORIES = [
   'monitoring',
   'notifications',
   'github',
-  'scheduling',
   'ai',
   'data',
 ] as const;
