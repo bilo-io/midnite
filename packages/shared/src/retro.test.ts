@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { DigestSchema, RetroResponseSchema, TaskRetroSchema } from './retro.js';
+import { DigestSchema, RetroResponseSchema, TaskRetroSchema, isRetroNotable } from './retro.js';
+import type { TaskRetro } from './retro.js';
 
 const skeleton = {
   taskId: 't1',
@@ -40,6 +41,37 @@ describe('TaskRetroSchema', () => {
 
   it('RetroResponse wraps a retro', () => {
     expect(RetroResponseSchema.parse({ retro: skeleton }).retro.taskId).toBe('t1');
+  });
+});
+
+describe('isRetroNotable', () => {
+  const base = { outcome: 'done' as const, failures: [], checks: undefined } as Pick<
+    TaskRetro,
+    'outcome' | 'failures' | 'checks'
+  >;
+  const failure = (cls: string) =>
+    ({ id: 'f', taskId: 't1', class: cls, detail: '', retryIndex: 0, at: 'now' }) as TaskRetro['failures'][number];
+
+  it('is false for a clean done task', () => {
+    expect(isRetroNotable(base)).toBe(false);
+  });
+
+  it('is true when abandoned', () => {
+    expect(isRetroNotable({ ...base, outcome: 'abandoned' })).toBe(true);
+  });
+
+  it('is true on a retries-exhausted or gate-failed failure', () => {
+    expect(isRetroNotable({ ...base, failures: [failure('retries-exhausted')] })).toBe(true);
+    expect(isRetroNotable({ ...base, failures: [failure('gate-failed')] })).toBe(true);
+  });
+
+  it('is false for a transient failure that recovered (e.g. a retried crash)', () => {
+    expect(isRetroNotable({ ...base, failures: [failure('crash')] })).toBe(false);
+  });
+
+  it('is true when a check run failed', () => {
+    expect(isRetroNotable({ ...base, checks: { status: 'failing', passed: 1, failed: 2 } })).toBe(true);
+    expect(isRetroNotable({ ...base, checks: { status: 'passed', passed: 3, failed: 0 } })).toBe(false);
   });
 });
 

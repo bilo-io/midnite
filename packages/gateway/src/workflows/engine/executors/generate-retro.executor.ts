@@ -3,6 +3,7 @@ import {
   GenerateRetroParamsSchema,
   RetroNarrativeDraftSchema,
   RetroNarrativeSchema,
+  isRetroNotable,
   type RetroNarrative,
 } from '@midnite/shared';
 import { LlmService } from '../../../agent/llm/llm.service';
@@ -37,6 +38,10 @@ function taskIdFromInput(input: unknown): string | undefined {
  * ONE plan-model `generateStructured` call (usage tag `'retro'`), and persists the
  * narrative. Fail-soft: LLM off / error / no transcript / no terminal retro → the
  * skeleton stays, narrative null, the node still succeeds.
+ *
+ * Output always carries `outcome` (`'done'`/`'abandoned'`/`null`) and a deterministic
+ * `notable` boolean (`isRetroNotable`), so the retro pipeline (Phase 62 D) can branch
+ * its notify step on `notable` regardless of whether the LLM narrative was produced.
  */
 @Injectable()
 export class GenerateRetroExecutor implements NodeExecutor {
@@ -57,12 +62,19 @@ export class GenerateRetroExecutor implements NodeExecutor {
     const loaded = await this.retro.loadForNarrative(taskId);
     if (!loaded) {
       ctx.log('warn', `no terminal retro for task ${taskId} — skipping narrative`);
-      return { taskId, narrative: null, generated: false };
+      return { taskId, narrative: null, generated: false, outcome: null, notable: false };
     }
 
     if (!this.llm.enabled) {
       ctx.log('info', 'AI unavailable — retro left as deterministic skeleton');
-      return { taskId, retro: loaded.retro, narrative: null, generated: false };
+      return {
+        taskId,
+        retro: loaded.retro,
+        narrative: null,
+        generated: false,
+        outcome: loaded.retro.outcome,
+        notable: isRetroNotable(loaded.retro),
+      };
     }
 
     try {
@@ -100,10 +112,23 @@ export class GenerateRetroExecutor implements NodeExecutor {
       });
       this.retro.storeNarrative(taskId, narrative);
       ctx.log('info', `retro narrative generated for task ${taskId}`);
-      return { taskId, narrative, generated: true };
+      return {
+        taskId,
+        narrative,
+        generated: true,
+        outcome: loaded.retro.outcome,
+        notable: isRetroNotable(loaded.retro),
+      };
     } catch (err) {
       ctx.log('warn', `retro narrative failed (${err instanceof Error ? err.message : 'unknown'}) — skeleton kept`);
-      return { taskId, retro: loaded.retro, narrative: null, generated: false };
+      return {
+        taskId,
+        retro: loaded.retro,
+        narrative: null,
+        generated: false,
+        outcome: loaded.retro.outcome,
+        notable: isRetroNotable(loaded.retro),
+      };
     }
   }
 }

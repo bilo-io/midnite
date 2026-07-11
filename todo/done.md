@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-11 — feat: Task Retrospectives pipeline template — Phase 62 Theme D (PR #399)
+
+Wires Themes A–C into a seeded, one-click-installable workflow: `[trigger.task-event: done+abandoned] → [generate-retro] → [logic.branch: notable?] →(true) [notify: retro.notable]`. A routine `done` hits the branch's dead `false` handle and stays quiet.
+
+- [x] **`task-retrospectives` seed** (category `notifications`, no credential slots) registered in the P36 marketplace seed list; installable + one-click enable.
+- [x] **Deterministic notability** — new shared `isRetroNotable(retro)` (abandoned / `retries-exhausted` / `gate-failed` / failed check-run). `generate-retro` executor now surfaces `outcome` + `notable` on **every** return path, so the branch fires even when the LLM narrative was skipped (AI off / no transcript / budget exhausted). `long-overrun` deferred (no baseline without a config knob).
+- [x] **Docs** — cost (one small plan-model call, tag `retro`), budget-cap behaviour (P50 caps / P61 attribution → skeleton fallback), and how to add a Slack step, in the seed header.
+- [x] **Tests** — shared `isRetroNotable` (5) + gateway executor (outcome/notable on loaded + fail-soft) + seed structural test (trigger events, node chain, branch condition, true-handle notify). shared/gateway typecheck·lint·test green. Phase 62 → 13/33 (39%).
+
 ## 2026-07-11 — feat: CLI usage/ops + metrics-model docs — Phase 61 Theme I (PR #392)
 
 Observability from a shell + the model written down. Also fixed a fresh DI regression from Theme F (#389). Phase 61 → 25/36 (69%).

@@ -92,8 +92,35 @@ describe('GenerateRetroExecutor', () => {
 
   it('succeeds with narrative null when no terminal retro exists', async () => {
     const { exec } = make({ loaded: undefined });
-    const out = (await exec.execute(ctx({ taskId: 't1' }))) as { generated: boolean; narrative: null };
+    const out = (await exec.execute(ctx({ taskId: 't1' }))) as {
+      generated: boolean;
+      narrative: null;
+      outcome: null;
+      notable: boolean;
+    };
     expect(out.generated).toBe(false);
     expect(out.narrative).toBeNull();
+    expect(out.outcome).toBeNull();
+    expect(out.notable).toBe(false);
+  });
+
+  it('surfaces outcome + a deterministic notable flag for the pipeline branch', async () => {
+    // A clean done skeleton → not notable, even with a narrative.
+    const clean = (await make().exec.execute(ctx({ taskId: 't1' }))) as {
+      outcome: string;
+      notable: boolean;
+    };
+    expect(clean.outcome).toBe('done');
+    expect(clean.notable).toBe(false);
+
+    // An abandoned skeleton → notable, and it holds when the LLM is off.
+    const abandoned = { ...skeleton, outcome: 'abandoned' } as unknown as TaskRetro;
+    const out = (await make({
+      loaded: { retro: abandoned, transcriptExcerpt: '' },
+      enabled: false,
+    }).exec.execute(ctx({ taskId: 't1' }))) as { outcome: string; notable: boolean; generated: boolean };
+    expect(out.generated).toBe(false);
+    expect(out.outcome).toBe('abandoned');
+    expect(out.notable).toBe(true);
   });
 });

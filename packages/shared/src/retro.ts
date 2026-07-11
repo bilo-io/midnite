@@ -109,6 +109,26 @@ export const RetroResponseSchema = z.object({ retro: TaskRetroSchema });
 export type RetroResponse = z.infer<typeof RetroResponseSchema>;
 
 /**
+ * Whether a task retro is **notable** — worth surfacing to a human rather than
+ * filing silently. Deterministic (no LLM), so the retro pipeline (Phase 62 D)
+ * can branch its notify step on it. True when the task was **abandoned**, a
+ * **retry budget or quality gate gave out** (`retries-exhausted` / `gate-failed`
+ * failure), or a **check run failed** — i.e. the outcome someone should look at
+ * even though the task ended cleanly. A `done` task with none of these is routine
+ * and stays quiet.
+ */
+export function isRetroNotable(
+  retro: Pick<TaskRetro, 'outcome' | 'failures' | 'checks'>,
+): boolean {
+  if (retro.outcome === 'abandoned') return true;
+  if (retro.failures.some((f) => f.class === 'retries-exhausted' || f.class === 'gate-failed')) {
+    return true;
+  }
+  if (retro.checks && retro.checks.failed > 0) return true;
+  return false;
+}
+
+/**
  * Phase 62 Theme C — a periodic fleet **digest**: the reporting roll-up of what
  * shipped / failed / needs attention over a window. Assembled deterministically
  * by the gateway's `DigestBuilder` from terminal tasks + their retros, with
