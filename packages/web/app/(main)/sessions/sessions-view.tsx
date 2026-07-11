@@ -24,6 +24,7 @@ import { CollapsibleStatusGroups } from '@/components/collapsible-status-groups'
 import { SessionTranscriptModal } from '@/components/session-transcript-modal';
 import { SessionTerminalModal } from '@/components/session-terminal-modal';
 import { SortableAccordions, type AccordionSection } from '@/components/sortable-accordions';
+import { WindowVirtualList } from '@/components/ui/window-virtual-list';
 import type { ProjectTagInfo } from '@/components/task-card';
 import { archiveSession, deleteSession, getSessionTranscript, unarchiveSession } from '@/lib/api';
 import { invalidateData } from '@/lib/data-refresh';
@@ -306,16 +307,19 @@ export function SessionsView({
         items.length === 0 ? (
           <div className="px-4 py-3 text-xs text-muted-foreground">Nothing here</div>
         ) : (
-          items.map((s) => (
-            <SessionRow
-              key={`${s.projectSlug}/${s.id}`}
-              session={s}
-              project={projectIdOf(s) ? projectsById.get(projectIdOf(s)!) : undefined}
-              onClick={() => onSelect(s)}
-              selected={isSelected(s.id)}
-              onToggleSelect={(sk) => toggleSelect(s.id, sk, sessions.map((x) => x.id))}
-            />
-          ))
+          <WindowVirtualList
+            items={items}
+            rowKey={(s) => `${s.projectSlug}/${s.id}`}
+            renderRow={(s) => (
+              <SessionRow
+                session={s}
+                project={projectIdOf(s) ? projectsById.get(projectIdOf(s)!) : undefined}
+                onClick={() => onSelect(s)}
+                selected={isSelected(s.id)}
+                onToggleSelect={(sk) => toggleSelect(s.id, sk, sessions.map((x) => x.id))}
+              />
+            )}
+          />
         ),
     };
   });
