@@ -9,6 +9,7 @@ import Table from 'cli-table3';
 import {
   FAILURE_CLASS_LABEL,
   RESOLVE_TASK_ACTIONS,
+  USAGE_ATTRIBUTION_GROUP_BY,
   WAIT_REASON_LABEL,
   WORKFLOW_WS_PATH,
   applyWorkflowEvent,
@@ -17,6 +18,7 @@ import {
   type FailureClass,
   type ResolveTaskAction,
   type SearchQuery,
+  type UsageAttributionGroupBy,
   type WorkflowEvent,
   type WorkflowRun,
 } from '@midnite/shared';
@@ -65,6 +67,9 @@ import {
 } from './workflow.js';
 import { parseCredFlag, templateListRows } from './template.js';
 import { doctorExitCode, doctorRows } from './doctor.js';
+import { USAGE_TABLE_HEAD, usageAttributionRows, usageWindowLine } from './usage.js';
+import { opsDurationRows, opsGaugeRows, opsOutcomeRows, opsThroughputRows } from './ops.js';
+import { resolveWindow } from './lib/window.js';
 import type { PreflightStatus } from '@midnite/shared';
 import { banner, getVersion } from './lib/brand.js';
 import {
@@ -673,6 +678,107 @@ program
     );
     process.exit(code);
   });
+
+program
+  .command('usage')
+  .description('Agent-session cost attribution by repo / project / task / session (Phase 61)')
+  .option('--by <group>', `group by one of: ${USAGE_ATTRIBUTION_GROUP_BY.join(' | ')}`, 'repo')
+  .option('--since <dur>', 'window relative to now, e.g. 24h, 7d, 90m')
+  .option('--from <iso>', 'window start (ISO 8601)')
+  .option('--to <iso>', 'window end (ISO 8601)')
+  .action(async (opts: { by: string; since?: string; from?: string; to?: string }) => {
+    if (!(USAGE_ATTRIBUTION_GROUP_BY as readonly string[]).includes(opts.by)) {
+      throw new Error(`invalid --by "${opts.by}" — expected one of: ${USAGE_ATTRIBUTION_GROUP_BY.join(', ')}`);
+    }
+    const groupBy = opts.by as UsageAttributionGroupBy;
+    const window = resolveWindow(opts);
+    const c = client();
+    const res = await withSpinner('Fetching usage attribution…', () =>
+      c.usageAttribution({ groupBy, ...window }),
+    );
+
+    if (isJsonMode()) {
+      printJson(res);
+      return;
+    }
+
+    console.log(heading(`Usage — ${usageWindowLine(res)}`));
+    if (res.buckets.length === 0) {
+      console.log(dim('  no harvested agent-session usage in this window.'));
+      return;
+    }
+    const table = new Table({ head: USAGE_TABLE_HEAD, wordWrap: true });
+    for (const row of usageAttributionRows(res)) table.push(row);
+    console.log(table.toString());
+    if (res.totals.unpricedSessions > 0) {
+      console.log(
+        dim(
+          `\n  ${res.totals.unpricedSessions} session(s) ran on an unpriced model — their tokens count, their cost can't (no price table entry).`,
+        ),
+      );
+    }
+  });
+
+program
+  .command('ops')
+  .description('Fleet ops summary — live gauges, throughput, durations, outcomes (Phase 61)')
+  .option('-w, --watch', 'refresh on an interval until interrupted (Ctrl-C to stop)')
+  .option('--interval <sec>', 'refresh interval in seconds when --watch is set', '5')
+  .option('--since <dur>', 'window relative to now, e.g. 24h, 7d')
+  .option('--from <iso>', 'window start (ISO 8601)')
+  .option('--to <iso>', 'window end (ISO 8601)')
+  .action(
+    async (opts: { watch?: boolean; interval: string; since?: string; from?: string; to?: string }) => {
+      const window = resolveWindow(opts);
+      const c = client();
+
+      const renderOnce = async (): Promise<void> => {
+        const s = await c.opsMetrics(window);
+        if (isJsonMode()) {
+          printJson(s);
+          return;
+        }
+        const section = (title: string, head: [string, string], rows: string[][]): void => {
+          console.log(heading(title));
+          const t = new Table({ head });
+          for (const r of rows) t.push(r);
+          console.log(t.toString());
+        };
+        section('Gauges (live)', ['Signal', 'Value'], opsGaugeRows(s));
+        section('Outcomes (window)', ['Outcome', 'Count'], opsOutcomeRows(s));
+        section('Run durations', ['Bucket', 'Count'], opsDurationRows(s));
+        const throughput = opsThroughputRows(s);
+        if (throughput.length > 0) section('Throughput / day', ['Day', 'Runs'], throughput);
+      };
+
+      // --watch (non-JSON only): clear + reprint on an interval; JSON stays one-shot
+      // so a piped consumer gets a single value, not a stream.
+      if (opts.watch && !isJsonMode()) {
+        const intervalMs = Math.max(1, Number(opts.interval) || 5) * 1000;
+        const tick = async (): Promise<void> => {
+          process.stdout.write('\x1b[2J\x1b[H');
+          console.log(dim(`ops — refreshing every ${intervalMs / 1000}s (Ctrl-C to stop)\n`));
+          try {
+            await renderOnce();
+          } catch (err) {
+            console.log(paintError(`  ${err instanceof Error ? err.message : String(err)}`));
+          }
+        };
+        await tick();
+        await new Promise<void>((resolve) => {
+          const timer = setInterval(() => void tick(), intervalMs);
+          const stop = (): void => {
+            clearInterval(timer);
+            resolve();
+          };
+          process.once('SIGINT', stop);
+        });
+        return;
+      }
+
+      await withSpinner('Fetching ops summary…', renderOnce);
+    },
+  );
 
 // Task-scoped operations that don't fit the flat verbs (add/list/move/…).
 const task = program.command('task').description('Task operations');
