@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-11 — feat: structured daily-digest pipeline template — Phase 62 Theme E (PR #401)
+
+Upgrades the `daily-digest` seed from the old freeform `list-tasks → ai.claude draft` into the Theme C structured pipeline: `[schedule 08:00 wkdys] → [list-completed-tasks 24h] → [build-digest] → parallel {[slack.message rich blocks], [notify in-app → /digests]}`. midnite dogfooding its own automation for its morning report.
+
+- [x] **Seed rewrite** — `daily-digest.seed.ts` now the structured pipeline; `build-digest` fans out to Slack **and** in-app as **independent, failure-isolated** branches (a Slack failure can't block the in-app notify).
+- [x] **Slack optional / in-app guaranteed** — the Slack credential slot is optional; an unbound `slot:` sentinel makes `slack.message` **skip cleanly** (returns `{ skipped, reason:'unbound-credential-slot' }`, never fails the run), so the template one-click-enables with in-app-only delivery. A real-but-missing credential id still throws.
+- [x] **Rich Slack blocks** — `slack.message` gained an optional, expressionable Block Kit `blocks` param (shared `SlackMessageParamsSchema`, `union([array,string])` so the raw `{{ $json.blocks }}` survives save-time `validateGraph`, then resolves to the typed array before the executor runs); text stays as the notification fallback.
+- ⏳ **Deferred:** P44 outbound-webhook fan-out — the delivery engine subscribes only to the `TaskEventBus`, so digests need a new `digest.generated` event + per-provider formatter + emit; kept out to hold the slice at M.
+- [x] **Tests** — seed shape + a builder-backed engine run (digest built from the upstream task list, in-app notify gets headline/markdown/id + `/digests`, unbound Slack skips without resolving credentials); slack executor blocks/skip units; shared schema (array / expr-string / optional). `:typecheck·:lint·:test` green across the graph. Phase 62 → 15/32 (47%).
+
 ## 2026-07-11 — feat: Task Retrospectives pipeline template — Phase 62 Theme D (PR #399)
 
 Wires Themes A–C into a seeded, one-click-installable workflow: `[trigger.task-event: done+abandoned] → [generate-retro] → [logic.branch: notable?] →(true) [notify: retro.notable]`. A routine `done` hits the branch's dead `false` handle and stays quiet.
