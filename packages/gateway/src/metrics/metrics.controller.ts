@@ -4,10 +4,12 @@ import {
   GaugeHistoryQuerySchema,
   MetricsRollupQuerySchema,
   OpsQuerySchema,
+  RunTimelineQuerySchema,
   type CycleTimeResponse,
   type GaugeHistoryResponse,
   type MetricsRollupResponse,
   type OpsSummary,
+  type RunTimelineResponse,
 } from '@midnite/shared';
 
 import { MetricsService } from './metrics.service';
@@ -40,6 +42,15 @@ export class MetricsController {
     const parsed = CycleTimeQuerySchema.safeParse(query);
     if (!parsed.success) throw new BadRequestException(parsed.error.message);
     return this.service.getCycleTime(parsed.data);
+  }
+
+  // GET /metrics/runs?taskId=<id> — the per-task attempt strip (Phase 61 G).
+  // All runs for one task oldest-first, including a live (unfinished) run.
+  @Get('runs')
+  runs(@Query() query: unknown): RunTimelineResponse {
+    const parsed = RunTimelineQuerySchema.safeParse(query);
+    if (!parsed.success) throw new BadRequestException(parsed.error.message);
+    return this.service.getRunTimeline(parsed.data.taskId);
   }
 
   // GET /metrics/rollups?period=hourly|daily&from=<iso>&to=<iso>&source=runs|llm|session|gauge

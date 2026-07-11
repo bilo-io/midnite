@@ -14,6 +14,7 @@ function fakeRepo(): MetricsRepository {
     pruneGaugeSamplesBefore: vi.fn(() => 0),
     cycleRows: vi.fn((): DoneTaskCycleRow[] => []),
     retryOverheadByTask: vi.fn((): Map<string, RetryOverhead> => new Map()),
+    runsForTask: vi.fn(() => []),
   } as unknown as MetricsRepository;
 }
 
@@ -228,6 +229,47 @@ describe('MetricsService', () => {
     it('returns no groups when the window is empty', () => {
       const svc = makeService();
       expect(svc.getCycleTime({ groupBy: 'none', windowDays: 30 }).groups).toEqual([]);
+    });
+  });
+
+  describe('getRunTimeline (Phase 61 G)', () => {
+    it('maps repository rows to the wire shape, preserving live-run nulls', () => {
+      const runsForTask = vi.fn(() => [
+        {
+          id: 'r1',
+          taskId: 't1',
+          startedAt: '2026-06-01T00:00:00.000Z',
+          endedAt: '2026-06-01T00:01:00.000Z',
+          durationMs: 60_000,
+          outcome: 'done',
+          retryCount: 0,
+          repo: 'web',
+        },
+        {
+          id: 'r2',
+          taskId: 't1',
+          startedAt: '2026-06-01T00:02:00.000Z',
+          endedAt: null,
+          durationMs: null,
+          outcome: null,
+          retryCount: 1,
+          repo: null,
+        },
+      ]);
+      const repo = { ...fakeRepo(), runsForTask } as unknown as MetricsRepository;
+      const svc = makeService(repo);
+
+      const res = svc.getRunTimeline('t1');
+      expect(runsForTask).toHaveBeenCalledWith('t1');
+      expect(res.taskId).toBe('t1');
+      expect(res.runs).toHaveLength(2);
+      expect(res.runs[0]?.outcome).toBe('done');
+      expect(res.runs[1]).toMatchObject({ endedAt: null, durationMs: null, outcome: null, retryCount: 1 });
+    });
+
+    it('returns an empty runs array for a task with no runs', () => {
+      const svc = makeService();
+      expect(svc.getRunTimeline('none')).toEqual({ taskId: 'none', runs: [] });
     });
   });
 });
