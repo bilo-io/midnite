@@ -23,6 +23,11 @@ import { GithubGetPrExecutor } from './engine/executors/github-get-pr.executor';
 import { GithubGetDiffExecutor } from './engine/executors/github-get-diff.executor';
 import { GithubPostReviewExecutor } from './engine/executors/github-post-review.executor';
 import { TaskCreateExecutor } from './engine/executors/task-create.executor';
+import { GenerateRetroExecutor } from './engine/executors/generate-retro.executor';
+import { ListCompletedTasksExecutor } from './engine/executors/list-completed-tasks.executor';
+import { BuildDigestExecutor } from './engine/executors/build-digest.executor';
+import { NotifyExecutor } from './engine/executors/notify.executor';
+import { DigestModule } from '../digest/digest.module';
 import { WorkflowCredentialsModule } from './credentials/workflow-credentials.module';
 import { WorkflowScheduler } from './scheduler/workflow-scheduler.service';
 import { WorkflowTaskEventTriggerService } from './workflow-task-event-trigger.service';
@@ -31,7 +36,7 @@ import { WorkflowRecoveryService } from './workflow-recovery.service';
 import { WorkflowsGateway } from './workflows.gateway';
 
 @Module({
-  imports: [AgentModule, AuthModule, WorkflowCredentialsModule],
+  imports: [AgentModule, AuthModule, WorkflowCredentialsModule, DigestModule],
   controllers: [WorkflowsController, WebhookController],
   providers: [
     WorkflowsService,
@@ -60,6 +65,10 @@ import { WorkflowsGateway } from './workflows.gateway';
     GithubGetDiffExecutor,
     GithubPostReviewExecutor,
     TaskCreateExecutor,
+    GenerateRetroExecutor,
+    ListCompletedTasksExecutor,
+    BuildDigestExecutor,
+    NotifyExecutor,
     {
       provide: NODE_EXECUTORS,
       useFactory: (...executors: NodeExecutor[]) => executors,
@@ -77,6 +86,10 @@ import { WorkflowsGateway } from './workflows.gateway';
         GithubGetDiffExecutor,
         GithubPostReviewExecutor,
         TaskCreateExecutor,
+        GenerateRetroExecutor,
+        ListCompletedTasksExecutor,
+        BuildDigestExecutor,
+        NotifyExecutor,
       ],
     },
   ],
