@@ -214,16 +214,18 @@ per-widget config + honest empty states; a **SessionCostLine** on the P51 cockpi
 **ProjectCostCard** on the P55 rail, all reading the existing attribution/cycle-time/gauge
 endpoints (+ a `getUsageAttribution` client method).
 
-## Theme I — CLI + docs — **S-M**
+## Theme I — CLI + docs — **S-M** — ✅ DONE (PR #392, 2026-07-11)
 
-Observability from a shell; the model written down.
+Observability from a shell; the model written down. Landed — items moved to
+[`done.md`](done.md). Also fixed a DI regression from Theme F (#389) that 500'd
+`GET /metrics/ops` (the `@Optional() bus` ctor param erased `design:paramtypes`,
+leaving `repo` unresolved) — caught verifying `midnite ops` live.
 
-- [ ] `midnite usage --by repo|project|task` + `midnite ops [--watch]` (or extend the existing
-      dashboard/usage commands) via the typed client — tables + global `--json`; exit codes per the
-      house pattern.
-- [ ] Document the **metrics model** (what's measured vs. estimated, where session tokens come from
-      per CLI, rollup grain, retention knobs) in the README/config docs — the honesty contract is
-      only real if it's written down.
+- [x] `midnite usage --by task|repo|project|session` + `midnite ops [--watch]` via the typed client —
+      cli-table3 tables + global `--json`; `--since`/`--from`/`--to` windows; measured-vs-estimated cost
+      split + unpriced-session flag (honesty contract).
+- [x] Documented the **metrics model** in [`docs/METRICS.md`](../docs/METRICS.md) (measured vs. estimated
+      vs. unpriced, session-token source, rollup grain, retention knobs) + a README pointer.
 
 ---
 

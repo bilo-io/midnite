@@ -351,3 +351,55 @@ describe('import (Phase 49 D)', () => {
     expect(form?.get('mode')).toBe('merge');
   });
 });
+
+describe('createClient — usage + ops (Phase 61 I)', () => {
+  const ATTR = {
+    from: null,
+    to: null,
+    groupBy: 'repo',
+    totals: {
+      sessions: 0,
+      inputTokens: 0,
+      outputTokens: 0,
+      cachedTokens: 0,
+      estCostUsd: 0,
+      measuredCostUsd: 0,
+      estimatedCostUsd: 0,
+      unpricedSessions: 0,
+    },
+    buckets: [],
+  };
+  const OPS = {
+    gauges: { queueDepth: null, slotsUsed: null, slotsTotal: null, lastTickLatencyMs: null, updatedAt: null },
+    throughputByDay: [],
+    durationBuckets: { lt1s: 0, lt5s: 0, lt30s: 0, lt2m: 0, gte2m: 0 },
+    outcomeCounts: { done: 0, abandoned: 0, failed: 0, cancelled: 0 },
+  };
+
+  it('usageAttribution builds the groupBy + window query and validates the response', async () => {
+    let seenUrl = '';
+    stubFetch((url) => {
+      seenUrl = url;
+      return new Response(JSON.stringify(ATTR), { status: 200 });
+    });
+    const res = await createClient('http://gw').usageAttribution({
+      groupBy: 'project',
+      from: '2026-07-01T00:00:00.000Z',
+    });
+    expect(seenUrl).toContain('/usage/attribution?');
+    expect(seenUrl).toContain('groupBy=project');
+    expect(seenUrl).toContain('from=2026-07-01');
+    expect(res.groupBy).toBe('repo');
+  });
+
+  it('opsMetrics hits /metrics/ops and validates the summary', async () => {
+    let seenUrl = '';
+    stubFetch((url) => {
+      seenUrl = url;
+      return new Response(JSON.stringify(OPS), { status: 200 });
+    });
+    const res = await createClient('http://gw').opsMetrics();
+    expect(seenUrl).toBe('http://gw/metrics/ops');
+    expect(res.outcomeCounts.done).toBe(0);
+  });
+});

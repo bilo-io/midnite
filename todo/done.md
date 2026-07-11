@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-11 — feat: CLI usage/ops + metrics-model docs — Phase 61 Theme I (PR #392)
+
+Observability from a shell + the model written down. Also fixed a fresh DI regression from Theme F (#389). Phase 61 → 25/36 (69%).
+
+- [x] **`midnite usage --by task|repo|project|session`** — agent-session cost attribution over `GET /usage/attribution`, cost-sorted, with the **measured / estimated / unpriced** split (honesty contract) + a TOTAL row; `--since <dur>` / `--from`/`--to` windows; global `--json`.
+- [x] **`midnite ops [--watch]`** — fleet ops summary over `GET /metrics/ops` (live gauges, outcome counts, run-duration buckets, per-day throughput); `--watch` clears + reprints every `--interval` seconds (Ctrl-C to stop); JSON stays one-shot.
+- [x] **Client + helpers** — typed `usageAttribution`/`opsMetrics` on the CLI `GatewayClient`; pure render helpers (`usage.ts`, `ops.ts`) + `lib/window.ts` (`--since` duration parsing) with unit tests; two client tests (query build + validation).
+- [x] **`docs/METRICS.md`** — the metrics model (two sources: gateway LLM calls vs. harvested agent-session tokens; measured vs. estimated vs. unpriced; live gauges vs. persisted history; rollups + retention knobs) + CLI usage; README pointer.
+- [x] **fix(gateway):** `@Inject(MetricsRepository)` on `MetricsService` — Theme F's `@Optional() bus` ctor param erased reflect-metadata, leaving `repo` undefined so `GET /metrics/ops` (and cycle-time/rollups) 500'd. Caught verifying `midnite ops` end-to-end.
 ## 2026-07-11 — feat: per-task run timeline — Phase 61 Theme G (run timeline) (PR #396)
 
 The last open item of Theme G's Ops deepening (cycle-time + fleet-trend landed in #360): a per-task strip of agent-run attempts. Read-only over `agent_run_stats`, no migration. **Cost views remain ⏳ blocked on Theme E rollups — G stays ◐ partial.**
