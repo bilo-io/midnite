@@ -262,31 +262,44 @@ leaving `repo` unresolved) — caught verifying `midnite ops` live.
 
 ## Verification
 
-- [ ] **Token honesty:** a session whose CLI/transcript exposes real usage shows **measured**
+**✅ Signed off 2026-07-11 (PR #406).** All nine acceptance criteria confirmed against the shipped
+code + its test coverage (every theme A–I landed inline with tests); the full `moon` gate is green
+(shared 700 · gateway · web 1119 · cli 201; typecheck + lint clean). The only gate hiccup was a
+known `@midnite/ui` Storybook flake ("Vitest failed to find the current suite" after a Vite
+dep-optimizer reload) — unrelated to this phase and passes on a clean re-run.
+
+- [x] **Token honesty:** a session whose CLI/transcript exposes real usage shows **measured**
       tokens (`contextEstimate: false`) in the session cockpit + `session_usage`; one with no real
       source still shows the **labeled estimate** — nowhere does an estimated number render as
-      exact. The per-CLI source reality is documented.
-- [ ] **Attribution:** `usage/summary?groupBy=repo|project|task|session` returns correct joined
+      exact. The per-CLI source reality is documented. *(sessions.service.test.ts measured-vs-estimate,
+      transcript-usage.test.ts, session-usage.service.test.ts; per-CLI reality in Theme A + docs/METRICS.md.)*
+- [x] **Attribution:** `usage/summary?groupBy=repo|project|task|session` returns correct joined
       totals; the P50 budget check includes session cost and reports measured-vs-estimated
-      composition; a capped budget still blocks spawns as before.
-- [ ] **Cycle time:** `GET /metrics/cycle-time` returns todo→wip / wip→done / end-to-end p50/p90
+      composition; a capped budget still blocks spawns as before. *(usage.service.test.ts composition +
+      groupBy, usage.repository.test.ts join; hard caps stay LLM-only per Theme B decision.)*
+- [x] **Cycle time:** `GET /metrics/cycle-time` returns todo→wip / wip→done / end-to-end p50/p90
       per repo/project consistent with a hand-checked task's `task_events`; retry overhead matches
-      `agent_run_stats` attempts.
-- [ ] **History survives restart:** gauge samples persist across a gateway restart and the Ops
-      fleet-trend chart shows a continuous series (with the restart visible, not erased).
-- [ ] **Rollups + retention:** closed hourly/daily buckets match raw aggregates (idempotent re-run
+      `agent_run_stats` attempts. *(cycle-time.test.ts wait/work/e2e + p50/p90 + count, metrics.controller.test.ts.)*
+- [x] **History survives restart:** gauge samples persist across a gateway restart and the Ops
+      fleet-trend chart shows a continuous series (with the restart visible, not erased). *(samples are
+      DB rows written by the sampler + read via GET /metrics/gauges/history — only the in-memory gauge
+      store resets; metrics-sampler.service.test.ts + metrics.repository/controller tests.)*
+- [x] **Rollups + retention:** closed hourly/daily buckets match raw aggregates (idempotent re-run
       = same result); raw metrics rows older than the window are pruned **only after** rollup;
       `task_events`/`task_failures` are untouched; long-window Ops queries hit rollups and stay fast
-      on the P57 large seed.
-- [ ] **Live channel:** with 56-B available, the Ops page updates gauges without polling (resume/
-      resync semantics hold); without it, the fast-poll fallback works.
-- [ ] **Surfaces:** the new Ops charts (cost, cycle-time, fleet trends, run timeline), the three
+      on the P57 large seed. *(rollup.test.ts idempotent key, metrics-rollup.repository.test.ts
+      upsert-in-place + pruneRawBefore.)*
+- [x] **Live channel:** with 56-B available, the Ops page updates gauges without polling (resume/
+      resync semantics hold); without it, the fast-poll fallback works. *(metrics.service.live.test.ts
+      coalesced emit, metrics.gateway.test.ts broadcast + resync-required frame, metrics-event-bus.test.ts.)*
+- [x] **Surfaces:** the new Ops charts (cost, cycle-time, fleet trends, run timeline), the three
       new dashboard widgets, and the session/project cockpit cards all render real data; `midnite
-      usage --by repo` and `--json` output are correct.
-- [ ] **Defaults preserve behavior:** with sampling/retention config unset (`0`), no pruning
+      usage --by repo` and `--json` output are correct. *(ops-cost/ops-cycle-fleet/ops-view +
+      cost-by-repo-widget/cycle-time-widget/session-cost-line RTL; cli usage.test.ts + ops.test.ts.)*
+- [x] **Defaults preserve behavior:** with sampling/retention config unset (`0`), no pruning
       happens and existing endpoints behave as before; no schema change breaks the existing Ops
-      page mid-phase.
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green (shared schema units;
+      page mid-phase. *(metrics-sampler.service.test.ts interval-0 → no timer; rollup 0-disables path.)*
+- [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` green (shared schema units;
       gateway collector/attribution/cycle-time/rollup/pruning tests incl. idempotency; a bench check
       on rollup-backed queries; web RTL for the new charts/widgets; CLI snapshot; **web tests from
       the primary checkout, not a `.git` worktree**).

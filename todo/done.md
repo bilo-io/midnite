@@ -4,6 +4,20 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-11 — docs: Phase 61 Verification pass signed off — Phase 61 (PR #406)
+
+Closes the last 9 boxes of Phase 61 (Fable-Observability). Every theme A–I had already landed inline with tests; the phase sat at 27/36 (75%) only because the Verification checklist was unticked. This pass confirmed all nine acceptance criteria against the shipped code + its test coverage and drove the full `moon` gate green — no product-code change, docs-only. Phase 61 → 36/36 (100%), Status ✅ DONE.
+
+- [x] **Token honesty** — measured `contextEstimate:false` when harvested vs. labeled estimate otherwise (`sessions.service.test.ts`, `transcript-usage.test.ts`, `session-usage.service.test.ts`; per-CLI reality in `docs/METRICS.md`).
+- [x] **Attribution** — `GET /usage/attribution` joined totals + measured-vs-estimated composition; hard caps stay LLM-only per Theme B (`usage.service.test.ts`, `usage.repository.test.ts`).
+- [x] **Cycle time** — wait/work/end-to-end p50/p90 + retry overhead from `task_events` (`cycle-time.test.ts`, `metrics.controller.test.ts`).
+- [x] **History survives restart** — gauge samples are DB rows read via `GET /metrics/gauges/history`; only the in-memory store resets (`metrics-sampler.service.test.ts` + repository/controller specs).
+- [x] **Rollups + retention** — idempotent upsert-in-place + `pruneRawBefore` after rollup; `task_events`/`task_failures` untouched (`rollup.test.ts`, `metrics-rollup.repository.test.ts`).
+- [x] **Live channel** — coalesced on-change emit + `/ws/metrics` broadcast with resync-required frame + poll fallback (`metrics.service.live.test.ts`, `metrics.gateway.test.ts`, `metrics-event-bus.test.ts`).
+- [x] **Surfaces** — Ops cost/cycle-fleet/run-timeline charts + three widgets + session/project cockpit cards + `midnite usage`/`ops` (`ops-cost`/`ops-cycle-fleet`/`ops-view` + widget RTL; cli `usage.test.ts`/`ops.test.ts`).
+- [x] **Defaults preserve behavior** — `sampleIntervalMs: 0` starts no timer; `rawRetentionDays: 0` disables pruning/rollup (`metrics-sampler.service.test.ts`, rollup path).
+- [x] **Gate green** — shared 700 · gateway · web 1119 · cli 201; typecheck + lint clean. (`ui:test` hit a known `@midnite/ui` Storybook vite-reload flake — unrelated, passes on clean re-run.)
+
 ## 2026-07-11 — feat: virtualize status-grouped accordions — Phase 57 Theme F remainder (PR #405)
 
 Closes Theme F's deferred remainder. The board + run-history + approval-log lists were virtualized in PR #310, but the sessions/workflows/projects **status-grouped accordions** were deferred because a bounded-container virtualizer adds a per-section inner scrollbar (a UX regression). Phase 57 → 18/27 (67%).

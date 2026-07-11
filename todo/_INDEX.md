@@ -32,7 +32,7 @@
 | [64 · Office presence](phase-64-office-presence.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
 | [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 23/32 | `███████░░░` | 72% | — | — |
-| [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 27/36 | `████████░░` | 75% | V | — |
+| [61 · Fable-Observability](phase-61-fable-observability.md) | ✅ DONE | 36/36 | `██████████` | 100% | — | — |
 | [60 · Fable-Analysis](phase-60-fable-analysis.md) | ✅ DONE | 62/62 | `██████████` | 100% | — | — |
 | [59 · Chat to board](phase-59-chat-to-board.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
@@ -95,9 +95,9 @@
 | [1 · Board by hand](phase-1-board.md) | ✅ DONE | 16/16 | `██████████` | 100% | — | — |
 | [0 · Scaffold](phase-0-scaffold.md) | ✅ DONE | 10/10 | `██████████` | 100% | — | — |
 
-**Headline:** phases **0–56 are complete**. The **live frontier** is **57** (performance &
-scale — C/F remainders), **58** (dependency graph & roadmap — Theme F to go), and **59**
-(chat to board — Theme C claimed WIP). Freshly planned and unstarted: the **Fable trio 60–62**
+**Headline:** phases **0–56 are complete**, plus **60** and **61** (Fable analysis + observability;
+61's Verification pass signed off 2026-07-11). The **live frontier** is **57** (performance &
+scale — F remainder) and **62** (Fable-Digest — Themes G/H). Freshly planned and unstarted: the **Fable trio 60–62**
 (analysis / observability / digest) and the office pair **63** (Office 3D — first-person
 three.js office) + **64** (multiplayer office presence — Theme D blocked on 63), both planned
 2026-07-06. (An *earlier* Phase 42 was a
@@ -166,7 +166,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **D** — Gauge history that survives restarts: sampler + gauge_samples + GET /metrics/gauges/history (PR #343)
 - ✅ **E** — Rollups + retention (metrics_rollup table + timer job + raw pruning; GET /metrics/rollups; transparent read-switch deferred) (PR #381)
 - ✅ **F** — Live metrics channel on the P56 reliable WS: on-change gauge push via MetricsEventBus + MetricsGateway (`/ws/metrics`), Ops page consumes it (poll fallback) (PR #389)
-- ✅ **G** — Ops page deepening: cycle-time + fleet-trend (PR #360) + run timeline (PR #396) + **cost views** (spend trend + by-dimension breakdown, PR #400) — all themes now landed; phase Verification pass outstanding
+- ✅ **G** — Ops page deepening: cycle-time + fleet-trend (PR #360) + run timeline (PR #396) + **cost views** (spend trend + by-dimension breakdown, PR #400) — all themes landed; Verification pass signed off 2026-07-11
 - ✅ **H** — Widgets + session/project cockpit integration (PR #391)
 - ✅ **I** — CLI (`usage --by`, `ops [--watch]`) + `docs/METRICS.md`; also fixed a Theme-F DI regression that 500'd `/metrics/ops` (PR #392)
 
