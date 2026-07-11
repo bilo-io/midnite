@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-11 — feat(cli): midnite digest command — Phase 62 Theme H (PR #409)
+
+Closes the last ◐ of Phase 62 Theme H: the deferred `midnite digest` CLI, now unblocked by Theme G's `GET /digests` read API (PR #404). Thin client over the existing routes — no gateway/shared change. Phase 62 Theme H → ✅ DONE; phase 24/32 (75%), remaining boxes are the Verification pass (Theme V, parallel loop).
+
+- [x] **Client:** `listDigests(limit?)` / `getDigest(id)` / `exportDigest(id)` on the typed CLI `GatewayClient`, validating `DigestListResponseSchema` / `DigestResponseSchema` and reading the export route as `text/markdown` (mirrors the retro client methods).
+- [x] **Command:** `midnite digest list [-n <limit>]` paints a cli-table3 feed (id · created · window · shipped/failed/attention · headline); `midnite digest show [id] [--latest] [--export [file]]` renders the full digest (counts, per-repo sections, highlights, best-effort spend + cycle — degraded lines omitted, never invented) or writes its markdown. Both honour the global `--json`. `--latest` resolves via `listDigests(1)` — no new endpoint.
+- [x] **Render helpers:** pure, unit-tested `digest.ts` (`digestWindow`, `digestListRows`, `digestLines`, `DIGEST_TABLE_HEAD`) — the shaping layer, gateway-free (mirrors `retro.ts`).
+- [x] **Tests:** `digest.test.ts` (6 render specs, incl. null spend/cycle + note-less highlight) + 4 client specs (limit query, unwrap, markdown export) — cli suite 211 passed, typecheck clean.
+- [x] **Docs:** `docs/RETROS.md` CLI section + README pointer extended with the digest commands.
+
 ## 2026-07-11 — docs: Phase 57 Verification pass signed off — Phase 57 (PR #408)
 
 Closes the last 9 boxes of Phase 57 (Performance & scale). Every non-deferred theme A–F had landed with the seed+bench harness; the phase sat at 18/27 (67%) only because the Verification checklist was unticked. This pass **re-ran the bench at the full 10k profile** to confirm the wins are still measured, ran the three e2e perf specs against a real gateway, and drove the full gate green — no product-code change, docs-only. Phase 57 → 27/27 (100%), Status ✅ DONE.

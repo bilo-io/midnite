@@ -186,16 +186,18 @@ digest** dashboard widget, a **Digests** nav feature, and digests indexed into g
 (no team column). Retro searchability wasn't taken here (retros are per-task, surfaced via the
 task detail — Theme F); the FTS scope this slice added is digests.
 
-## Theme H — Transcript slicing, CLI, config & docs — **S-M** — ◐ PARTIAL (PR #403, 2026-07-11)
+## Theme H — Transcript slicing, CLI, config & docs — **S-M** — ✅ DONE (PR #403 partial, PR #409 finish 2026-07-11)
 
 - [x] A **bounded transcript-excerpt helper** (`sliceTranscript` in
       [`sessions/lib/transcript-slice.ts`](../packages/gateway/src/sessions/lib/transcript-slice.ts))
       — built in Theme C (tail-N messages + char cap), the only way retro generation touches a
       transcript.
-- [◐] **CLI:** `midnite retro <taskId>` (render + `--json` + `--export [file]`) landed over the
-      existing retro routes. **`midnite digest [--latest | --list]` deferred** — it needs a
-      `GET /digests` read API that Theme G (digest surfaces, in flight) is building; a tiny follow-up
-      adds the command once G lands the endpoint (avoids two loops building the same controller).
+- [x] **CLI:** `midnite retro <taskId>` (render + `--json` + `--export [file]`) landed over the
+      existing retro routes (PR #403). **`midnite digest list` + `midnite digest show [id] [--latest]
+      [--export [file]]`** now land over Theme G's `GET /digests` read API — `list` paints a
+      cli-table3 feed (date · window · shipped/failed/attention · headline), `show` renders the full
+      digest (counts, per-repo sections, highlights, best-effort spend + cycle) or exports its
+      markdown; both honour `--json`. `--latest` resolves via `listDigests(1)` (no new endpoint).
 - [x] **Config + docs:** `retro.autoSkeleton` (default on, gates the auto-skeleton subscriber) +
       `retro.narrativeMaxTokens` (default 700, bounds the narrative call) in the shared schema; the
       cost model (skeleton free · narrative one small call · fail-soft) documented in

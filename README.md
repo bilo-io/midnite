@@ -400,9 +400,10 @@ layered on by the retro workflow. The cost model is honest and cheap — skeleto
 free, narrative one small plan-model call (bounded by `retro.narrativeMaxTokens`
 and the P50 spend caps), **fail-soft to the skeleton** when AI is off / capped /
 unavailable. Read one with **`midnite retro <taskId>`** (`--json`, or `--export
-[file]` for markdown); the config knobs (`retro.autoSkeleton`,
-`retro.narrativeMaxTokens`) and the full model live in
-**[`docs/RETROS.md`](docs/RETROS.md)**.
+[file]` for markdown), and browse fleet digests with **`midnite digest list`** /
+**`midnite digest show [id] [--latest]`** (same `--json` / `--export` options); the
+config knobs (`retro.autoSkeleton`, `retro.narrativeMaxTokens`) and the full model
+live in **[`docs/RETROS.md`](docs/RETROS.md)**.
 
 ## Common commands
 
