@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { TaskRetroSchema, type RetroNarrative, type Task, type TaskRetro } from '@midnite/shared';
 
 import { RetroRepository } from './retro.repository';
 import { buildRetro } from './lib/build-retro';
+import { buildTaskRetroReport, retroReportFilename } from './lib/retro-report';
 
 /**
  * Phase 62 A — assembles + stores the deterministic retro skeleton for a task.
@@ -85,5 +86,20 @@ export class RetroBuilderService {
       return undefined;
     }
     return parsed.data;
+  }
+
+  /**
+   * Serialize a task's retrospective as a downloadable markdown report (Phase 62
+   * F). The caller passes the already-scoped `task` (so scope-checking stays in
+   * the controller, like tasks' export); throws {@link NotFoundException} when no
+   * retro has been built for it.
+   */
+  exportMarkdown(task: Task): { filename: string; markdown: string } {
+    const retro = this.getByTaskId(task.id);
+    if (!retro) throw new NotFoundException(`no retrospective for task ${task.id}`);
+    return {
+      filename: retroReportFilename(task),
+      markdown: buildTaskRetroReport(task, retro),
+    };
   }
 }
