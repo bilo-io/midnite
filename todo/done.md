@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-11 — feat: task retrospective surfaces — Phase 62 Theme F (PR #402)
+
+Surfaces the deterministic retro (built by Theme A on every terminal transition) where the story belongs — on the task, and linked from the session that produced it. Phase 62 → 18/32 (56%).
+
+- [x] **Retro tab** on the task detail page (page variant, gated on the task being terminal — a skeleton always exists then). Renders the full `TaskRetro`: outcome badge, wait/work/total timing chips, failure story, AI review, checks, PR link, attempts (attempt/retry rows), and event timeline. Self-fetches `GET /tasks/:id/retro` (404 → graceful empty).
+- [x] **Honesty label** — the LLM narrative renders under an **"AI summary"** badge (`generatedBy: 'llm'`); a `narrative: null` skeleton omits the block silently (no fake narrative, no apology).
+- [x] **Markdown export** — new `GET /tasks/:id/retro/export` via the P18 report framework (pure `buildTaskRetroReport` mirroring `task-report.ts`; `RetroBuilderService.exportMarkdown`; thin controller route). md server-side, pdf client-side, wired into the existing `ExportMenu`.
+- [x] **Session cockpit link** — the P51 session detail gains a **"View retrospective"** deep-link (`?tab=retro`) when its task is terminal.
+- [x] **Client + tests** — `getTaskRetro`/`exportTaskRetro` typed methods; gateway `retro-report.test.ts` (skeleton/narrative/failure-review-checks/filename); web `retro-tab.test.tsx` RTL; route-mocked Playwright `retro-surfaces.shots.ts`.
+
 ## 2026-07-11 — feat: structured daily-digest pipeline template — Phase 62 Theme E (PR #401)
 
 Upgrades the `daily-digest` seed from the old freeform `list-tasks → ai.claude draft` into the Theme C structured pipeline: `[schedule 08:00 wkdys] → [list-completed-tasks 24h] → [build-digest] → parallel {[slack.message rich blocks], [notify in-app → /digests]}`. midnite dogfooding its own automation for its morning report.

@@ -164,14 +164,17 @@ The morning "what did the fleet do?" — assembled by the product itself.
 
 # Section III — Surfaces & plumbing
 
-## Theme F — Retro surfaces — **M**
+## Theme F — Retro surfaces — **M** — ✅ DONE (PR #402, 2026-07-11)
 
-- [ ] **Task detail:** a **Retrospective** section (timeline, attempts, failure story, narrative
-      when present — with its `generatedBy` honesty label); renders skeleton-only gracefully.
-- [ ] **Markdown export:** `GET /tasks/:id/retro/export` via the P18 framework
-      (`buildTaskRetroReport`, extending the [`task-report.ts`](../packages/gateway/src/tasks/lib/task-report.ts)
-      pattern) — `md` server-side, `pdf` client-side like the rest.
-- [ ] The P51 session cockpit links to the task's retro once terminal.
+- [x] **Task detail:** a **Retrospective** tab (page variant, gated on the task being terminal —
+      a skeleton is always built then) rendering the full retro (timing, failure story, AI review,
+      checks, PR, attempts, timeline) + the narrative under an **"AI summary"** honesty badge when
+      present (`generatedBy`); a `narrative: null` skeleton omits the block silently.
+- [x] **Markdown export:** `GET /tasks/:id/retro/export` via the P18 framework
+      (`buildTaskRetroReport`, mirroring [`task-report.ts`](../packages/gateway/src/tasks/lib/task-report.ts))
+      — `md` server-side, `pdf` client-side, wired into the existing `ExportMenu`.
+- [x] The P51 session cockpit links to the task's retro once terminal (a **"View retrospective"**
+      deep-link to `?tab=retro`).
 
 ## Theme G — Digest surfaces — **M**
 
