@@ -7,8 +7,8 @@ function ctx(params: Record<string, unknown>): NodeRunContext {
   return { workflowId: 'w1', workflowCreatedBy: 'u1', input: {}, params, signal: new AbortController().signal, log: () => {} };
 }
 
-function make() {
-  const notify = vi.fn(async (_i: NotifyInput) => {});
+function make(delivered = true) {
+  const notify = vi.fn(async (_i: NotifyInput) => delivered);
   const notifier: Notifier = { notify };
   return { exec: new NotifyExecutor(notifier), notify };
 }
@@ -28,6 +28,12 @@ describe('NotifyExecutor', () => {
     expect(notify).toHaveBeenCalledWith(
       expect.objectContaining({ kind: 'retro.notable', entityType: 'task', route: '/tasks', severity: 'warn' }),
     );
+  });
+
+  it('reports delivered:false when the notifier does not dispatch', async () => {
+    const { exec } = make(false);
+    const out = (await exec.execute(ctx({ kind: 'digest.generated', title: 'x' }))) as { delivered: boolean };
+    expect(out.delivered).toBe(false);
   });
 
   it('rejects an empty title (schema-validated)', async () => {

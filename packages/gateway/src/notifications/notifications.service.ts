@@ -16,7 +16,6 @@ import {
   type MidniteConfig,
   type Notification,
   type NotificationKind,
-  type NotificationSeverity,
   type NotificationListQuery,
   type NotificationListResponse,
   type NotifyDecision,
@@ -29,6 +28,7 @@ import { MIDNITE_CONFIG } from '../config.token';
 import { TaskEventBus } from '../tasks/task-event-bus';
 import { NotificationDispatcher } from './notification-dispatcher.service';
 import { NotificationsRepository } from './notifications.repository';
+import type { NotifyInput } from './notifier';
 
 /**
  * Window over which same-kind transitions coalesce into one notification, so a
@@ -134,19 +134,11 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
    * workflow node, via the `NOTIFIER` port). Not coalesced: a pipeline decides
    * when to notify, so it fires exactly once per call. Best-effort — a dispatch
    * failure is logged, never thrown, so it can't wedge a workflow run. Respects
-   * `notifications.enabled`.
+   * `notifications.enabled`. Returns whether the notification was persisted +
+   * dispatched, so a caller can report honestly (`false` when disabled/failed).
    */
-  async notifyDirect(input: {
-    kind: NotificationKind;
-    severity: NotificationSeverity;
-    title: string;
-    body: string;
-    entityType: string;
-    entityId: string;
-    route: string;
-    teamId?: string | null;
-  }): Promise<void> {
-    if (!this.config.notifications.enabled) return;
+  async notifyDirect(input: NotifyInput): Promise<boolean> {
+    if (!this.config.notifications.enabled) return false;
     try {
       const row = this.repo.insert({
         id: randomUUID(),
@@ -162,8 +154,10 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
         teamId: input.teamId ?? null,
       });
       await this.dispatcher.dispatch(this.repo.hydrate(row));
+      return true;
     } catch (err) {
       this.logger.warn(`failed to dispatch ${input.kind} notification: ${String(err)}`);
+      return false;
     }
   }
 

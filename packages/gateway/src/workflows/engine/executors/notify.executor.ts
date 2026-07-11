@@ -20,7 +20,7 @@ export class NotifyExecutor implements NodeExecutor {
     const isDigest = params.kind === 'digest.generated';
     const route = params.route ?? (isDigest ? '/ops' : '/tasks');
 
-    await this.notifier.notify({
+    const delivered = await this.notifier.notify({
       kind: params.kind,
       severity: params.severity,
       title: params.title,
@@ -31,7 +31,7 @@ export class NotifyExecutor implements NodeExecutor {
       teamId: null,
     });
 
-    ctx.log('info', `posted ${params.kind} notification`);
-    return { delivered: true, kind: params.kind };
+    ctx.log(delivered ? 'info' : 'warn', delivered ? `posted ${params.kind} notification` : `${params.kind} notification not delivered (disabled or failed)`);
+    return { delivered, kind: params.kind };
   }
 }

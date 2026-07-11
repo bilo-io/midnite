@@ -19,7 +19,11 @@ export class ListCompletedTasksExecutor implements NodeExecutor {
   async execute(ctx: NodeRunContext): Promise<unknown> {
     const params = ListCompletedTasksParamsSchema.parse(ctx.params);
 
-    const to = params.to ?? new Date().toISOString();
+    // `from`/`to` are expression-enabled free strings — guard against a
+    // non-parseable value (an expression that resolved to junk) rather than
+    // throwing RangeError from `new Date(NaN).toISOString()`.
+    const toMs = params.to ? Date.parse(params.to) : Number.NaN;
+    const to = Number.isNaN(toMs) ? new Date().toISOString() : new Date(toMs).toISOString();
     const from =
       params.from ?? new Date(Date.parse(to) - params.sinceHours * 3600_000).toISOString();
 

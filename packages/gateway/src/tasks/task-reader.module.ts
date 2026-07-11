@@ -1,4 +1,4 @@
-import { Global, Module } from '@nestjs/common';
+import { Global, Module, NotFoundException } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import type { Status, TaskSummary } from '@midnite/shared';
 
@@ -22,10 +22,12 @@ const TERMINAL: Status[] = ['done', 'abandoned'];
         getTask: (id) => {
           try {
             return moduleRef.get(TasksService, { strict: false }).getTask(id);
-          } catch {
+          } catch (err) {
             // getTask throws NotFoundException for an unknown id — the port
-            // reports "no such task" as undefined rather than an exception.
-            return undefined;
+            // reports "no such task" as undefined. A real fault (DB error) must
+            // still surface, so only NotFound is swallowed.
+            if (err instanceof NotFoundException) return undefined;
+            throw err;
           }
         },
         listCompleted: (query: CompletedTasksQuery): TaskSummary[] => {

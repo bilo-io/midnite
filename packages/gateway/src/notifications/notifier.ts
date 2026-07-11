@@ -19,7 +19,9 @@ export interface NotifyInput {
 }
 
 export interface Notifier {
-  notify(input: NotifyInput): Promise<void>;
+  /** Resolves `true` when the notification was persisted + dispatched, `false`
+   *  when notifications are disabled or dispatch failed (best-effort, never throws). */
+  notify(input: NotifyInput): Promise<boolean>;
 }
 
 export const NOTIFIER = Symbol('NOTIFIER');
