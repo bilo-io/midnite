@@ -4,6 +4,15 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-11 — feat: retro CLI + config knobs + docs — Phase 62 Theme H (◐ partial) (PR #403)
+
+The CLI + config + docs plumbing for retrospectives. **◐ PARTIAL** — `midnite digest` is deferred because there's no `GET /digests` read API yet and Theme G (digest surfaces, in flight) is building one; adding it here would collide. The bounded transcript slicer (H's third bullet) already landed in Theme C. Phase 62 → 20/32 (63%).
+
+- [x] **`midnite retro <taskId>`** — thin client over the existing `GET /tasks/:id/retro` + `/retro/export` routes: a rendered summary (outcome, wait/work/total timing, failures, review, checks, attempts), `--json` for the raw `TaskRetro`, and `--export [file]` for the server markdown. Narrative shown only when present (`skeleton only` vs `AI narrative`). Pure render helpers (`cli/src/retro.ts`) unit-tested; `getTaskRetro`/`exportTaskRetro` client methods.
+- [x] **Config** — `retro.autoSkeleton` (default on) now **gates** the auto-skeleton subscriber (`RetroSubscriberService` injects config, skips subscribing when off); `retro.narrativeMaxTokens` (default 700) **replaces the hardcoded** `maxTokens` in the generate-retro executor. Both defaulted; shared `config.test.ts` covers defaults + overrides + a subscriber gate test.
+- [x] **Docs** — `docs/RETROS.md` (cost model: skeleton free · narrative one small call · fail-soft; config; CLI) + a README pointer.
+- [◐] **`midnite digest [--latest | --list]`** — deferred pending Theme G's `GET /digests` endpoint (avoids two loops building the same controller/contract).
+
 ## 2026-07-11 — feat: task retrospective surfaces — Phase 62 Theme F (PR #402)
 
 Surfaces the deterministic retro (built by Theme A on every terminal transition) where the story belongs — on the task, and linked from the session that produced it. Phase 62 → 18/32 (56%).
