@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { HTTP_METHODS } from './trigger.js';
 import { LLM_PROVIDERS, LLM_PROVIDER_LABEL, LlmProviderSchema } from './llm.js';
+import { NotificationSeveritySchema } from './notification.js';
 
 // Node categories drive palette grouping and graph-validation rules
 // (a trigger must be the graph root, etc.).
@@ -221,6 +222,51 @@ export const TaskCreateParamsSchema = z.object({
   priority: z.number().int().min(0).max(3).optional(),
 });
 export type TaskCreateParams = z.infer<typeof TaskCreateParamsSchema>;
+
+// --- Phase 62 C: retro & digest nodes (Fable-Digest) ---
+
+// midnite.generate-retro — build + narrate a task retrospective. `taskId` is the
+// task to retrospect (defaults to the trigger's task via {{expr}}); the narrative
+// is a single fail-soft LLM call over the deterministic skeleton + a bounded
+// transcript slice. Node succeeds with the skeleton when the LLM is off/capped.
+export const GenerateRetroParamsSchema = z.object({
+  taskId: z.string().min(1),
+});
+export type GenerateRetroParams = z.infer<typeof GenerateRetroParamsSchema>;
+
+// midnite.list-completed-tasks — terminal (done/abandoned) tasks in a window.
+// `sinceHours` is the primary knob (default 24 for a daily digest); explicit
+// `from`/`to` ISO timestamps override it when both are set. Optional repo/project
+// narrows the set. Emits P57 summary DTOs (no full hydration).
+export const ListCompletedTasksParamsSchema = z.object({
+  sinceHours: z.number().positive().max(24 * 90).default(24),
+  from: z.string().optional(),
+  to: z.string().optional(),
+  repo: z.string().optional(),
+  projectId: z.string().optional(),
+});
+export type ListCompletedTasksParams = z.infer<typeof ListCompletedTasksParamsSchema>;
+
+// midnite.build-digest — aggregate the window's tasks + retros into a stored
+// digest (deterministic counts/sections/highlights + one fail-soft LLM headline).
+// `groupBy` picks the section axis. Reads the upstream list-completed-tasks output.
+export const BuildDigestParamsSchema = z.object({
+  groupBy: z.enum(['repo', 'project']).default('repo'),
+});
+export type BuildDigestParams = z.infer<typeof BuildDigestParamsSchema>;
+
+// midnite.notify — post an in-app notification (Phase 21). `kind` picks the
+// notification kind; title/body are expression-enabled so a pipeline composes them
+// from upstream output.
+export const NotifyParamsSchema = z.object({
+  kind: z.enum(['digest.generated', 'retro.notable']).default('digest.generated'),
+  severity: NotificationSeveritySchema.default('info'),
+  title: z.string().min(1),
+  body: z.string().default(''),
+  route: z.string().optional(),
+  entityId: z.string().optional(),
+});
+export type NotifyParams = z.infer<typeof NotifyParamsSchema>;
 
 export type HttpRequestParams = z.infer<typeof HttpRequestParamsSchema>;
 export type AiClaudeParams = z.infer<typeof AiClaudeParamsSchema>;
@@ -651,6 +697,67 @@ export const NODE_TYPE_DEFINITIONS: Record<string, NodeTypeDefinition> = {
       { key: 'prUrl', label: 'PR URL', kind: 'string', required: true, placeholder: 'https://github.com/owner/repo/pull/42', expressionable: true },
       { key: 'body', label: 'Review body', kind: 'text', required: true, expressionable: true },
       { key: 'event', label: 'Event', kind: 'select', options: [{ value: 'COMMENT', label: 'Comment' }, { value: 'APPROVE', label: 'Approve' }, { value: 'REQUEST_CHANGES', label: 'Request changes' }] },
+    ],
+  },
+  'midnite.generate-retro': {
+    id: 'midnite.generate-retro',
+    category: 'action',
+    title: 'Generate retrospective',
+    description: 'Build a task retrospective and add a one-call AI narrative (fail-soft to the deterministic skeleton).',
+    icon: 'notebook-pen',
+    inputs: MAIN_IN,
+    outputs: MAIN_OUT,
+    paramsSchema: GenerateRetroParamsSchema,
+    fields: [
+      { key: 'taskId', label: 'Task id', kind: 'string', required: true, expressionable: true, placeholder: '{{ $trigger.task.id }}', help: 'The terminal task to retrospect. Defaults to the task-event trigger’s task.' },
+    ],
+  },
+  'midnite.list-completed-tasks': {
+    id: 'midnite.list-completed-tasks',
+    category: 'data',
+    title: 'List completed tasks',
+    description: 'List tasks that finished (done/abandoned) in a time window, for a digest.',
+    icon: 'list-checks',
+    inputs: MAIN_IN,
+    outputs: MAIN_OUT,
+    paramsSchema: ListCompletedTasksParamsSchema,
+    fields: [
+      { key: 'sinceHours', label: 'Since (hours)', kind: 'number', help: 'Window length ending now; default 24. Ignored when From/To are both set.' },
+      { key: 'from', label: 'From (ISO)', kind: 'string', expressionable: true, help: 'Optional explicit window start.' },
+      { key: 'to', label: 'To (ISO)', kind: 'string', expressionable: true, help: 'Optional explicit window end.' },
+      { key: 'repo', label: 'Repo', kind: 'string', expressionable: true, help: 'Optional: only this repo.' },
+      { key: 'projectId', label: 'Project', kind: 'string', expressionable: true, help: 'Optional: only this project.' },
+    ],
+  },
+  'midnite.build-digest': {
+    id: 'midnite.build-digest',
+    category: 'action',
+    title: 'Build digest',
+    description: 'Aggregate the window’s tasks + retros into a stored fleet digest with an AI headline.',
+    icon: 'newspaper',
+    inputs: MAIN_IN,
+    outputs: MAIN_OUT,
+    paramsSchema: BuildDigestParamsSchema,
+    fields: [
+      { key: 'groupBy', label: 'Group sections by', kind: 'select', options: [{ value: 'repo', label: 'Repo' }, { value: 'project', label: 'Project' }] },
+    ],
+  },
+  'midnite.notify': {
+    id: 'midnite.notify',
+    category: 'action',
+    title: 'Notify (in-app)',
+    description: 'Post an in-app notification — deliver a digest or a notable retro without bespoke code.',
+    icon: 'bell',
+    inputs: MAIN_IN,
+    outputs: MAIN_OUT,
+    paramsSchema: NotifyParamsSchema,
+    fields: [
+      { key: 'kind', label: 'Kind', kind: 'select', options: [{ value: 'digest.generated', label: 'Digest generated' }, { value: 'retro.notable', label: 'Notable retro' }] },
+      { key: 'severity', label: 'Severity', kind: 'select', options: [{ value: 'info', label: 'Info' }, { value: 'warn', label: 'Warn' }, { value: 'urgent', label: 'Urgent' }] },
+      { key: 'title', label: 'Title', kind: 'string', required: true, expressionable: true },
+      { key: 'body', label: 'Body', kind: 'text', expressionable: true },
+      { key: 'route', label: 'Route', kind: 'string', expressionable: true, help: 'Where clicking the notification navigates (e.g. /ops).' },
+      { key: 'entityId', label: 'Entity id', kind: 'string', expressionable: true, help: 'Optional id of the digest/task the notification points at.' },
     ],
   },
 };
