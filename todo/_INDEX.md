@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [65 · Memory workspace](phase-65-memory-workspace.md) | 🔄 WIP | 25/33 | `████████░░` | 76% | E | G |
+| [65 · Memory workspace](phase-65-memory-workspace.md) | 🔄 WIP | 29/33 | `█████████░` | 88% | — | G |
 | [64 · Office presence](phase-64-office-presence.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
 | [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 6/33 | `██░░░░░░░░` | 18% | — | C D E F G H |
@@ -122,7 +122,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **B** — Source ingestion: fetch+extract URL bodies + PDF/md/txt uploads; new content storage; re-index into FTS (PR #382)
 - ✅ **C** — Chat to the knowledge base: persisted threads, FTS-retrieve→stuff→LlmService answer with source citations (PR #385)
 - ✅ **D** — Studio: text artifacts (brief/FAQ/study-guide/timeline, markdown) + infographic (LLM→SVG) via a `memory_artifacts` table; async generate, sandboxed SVG viewer (PR #384)
-- ◻ **E** — Studio: audio overview (LLM script→TTS) + video (slides+narration→ffmpeg compose); degrade w/o provider
+- ✅ **E** — Studio: audio overview (two-host script→TTS mp3) + video (deck→ffmpeg slideshow); file-backed on `memory_artifacts`, degrade w/o provider (PR #388)
 - ✅ **F** — Retire project sources → memories: forward migration to a project-scoped memory, drop `project_sources`, remove UI/API (PR #380)
 - ◐ **G** — Product docs (Memory Workspace guide) + a11y pass landed (PR #386); remaining tests/`memory.studio` config docs/baselines trail Themes C & E
 

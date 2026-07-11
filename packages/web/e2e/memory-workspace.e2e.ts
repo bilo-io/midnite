@@ -78,6 +78,18 @@ test.describe('Memory workspace page', () => {
     await expect(page.getByText(/Generating|Ready|Retry/).first()).toBeVisible({ timeout: 20_000 });
   });
 
+  // Phase 65 E — the file-backed audio + video overviews are offered in the Studio
+  // rail (no "Soon" placeholders). With no TTS/ffmpeg provider they degrade rather
+  // than hard-fail; here we assert both rows are present and generatable.
+  test('Studio: audio + video overviews are offered', async ({ page }) => {
+    const fresh = await seedMemory('E2E studio media', '# Topic\nGrounding content for media.');
+    await page.goto(`/memory/view?id=${fresh.id}`);
+    await expect(page.getByRole('heading', { name: 'Studio' })).toBeVisible();
+    await expect(page.getByText('Audio overview')).toBeVisible();
+    await expect(page.getByText('Video', { exact: true })).toBeVisible();
+    await expect(page.getByText('Soon')).toHaveCount(0);
+  });
+
   // Phase 65 B — upload a text file as a source; it ingests (no network needed)
   // and the per-source status resolves to "read" via the panel's poll.
   test('uploads a file source and it ingests to ready', async ({ page }) => {

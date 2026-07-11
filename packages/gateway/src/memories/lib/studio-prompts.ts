@@ -1,5 +1,21 @@
 import type { MemoryArtifactKind } from '@midnite/shared';
 
+/**
+ * The kinds this module prompts for — the Phase 65 D text + infographic artifacts.
+ * The file-backed audio/video kinds (Theme E) use their own structured prompts in
+ * `studio-media.ts`, so they're intentionally excluded here.
+ */
+export type StudioTextKind = Exclude<MemoryArtifactKind, 'audio-overview' | 'video-overview'>;
+
+/** The text/SVG artifact kinds this module prompts for (D). */
+export const STUDIO_TEXT_KINDS: StudioTextKind[] = [
+  'brief',
+  'faq',
+  'study-guide',
+  'timeline',
+  'infographic',
+];
+
 /** The per-kind generation prompt (system + a short instruction) in one place. */
 type StudioPrompt = { system: string; instruction: string; maxTokens: number };
 
@@ -13,7 +29,7 @@ const MARKDOWN_RULES =
   'Output GitHub-flavored Markdown only — no preamble, no code fence around the ' +
   'whole document, no "Here is…" wrapper. Start directly with the content.';
 
-const STUDIO_PROMPTS: Record<MemoryArtifactKind, StudioPrompt> = {
+const STUDIO_PROMPTS: Record<StudioTextKind, StudioPrompt> = {
   brief: {
     system: `${GROUNDING} ${MARKDOWN_RULES}`,
     instruction:
@@ -63,7 +79,7 @@ const STUDIO_PROMPTS: Record<MemoryArtifactKind, StudioPrompt> = {
 
 /** Build the LLM request pieces for a Studio artifact kind over a stuffed corpus. */
 export function studioPromptFor(
-  kind: MemoryArtifactKind,
+  kind: StudioTextKind,
   corpus: string,
 ): { system: string; userText: string; maxTokens: number } {
   const p = STUDIO_PROMPTS[kind];

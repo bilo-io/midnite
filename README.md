@@ -156,6 +156,36 @@ client-side), so the API routes keep priority over the file mount.
 completion seam, persistence, and the surfaces follow. The command runner never
 infers a command — you opt in per install/repo.
 
+`config.memory.studio` (Phase 65 — Memory Studio media artifacts) controls the
+**audio** and **video** overviews the workspace generates from a memory's corpus.
+Both are **additive provider seams that degrade gracefully** — a fresh install
+still produces text + infographic artifacts and *offers* audio/video with honest
+"no provider" messaging rather than failing:
+
+```json
+{
+  "memory": {
+    "studio": {
+      "tts":   { "provider": "auto", "model": "gpt-4o-mini-tts", "voiceA": "alloy", "voiceB": "nova" },
+      "video": { "mode": "auto" }
+    }
+  }
+}
+```
+
+- **`tts.provider`** — `auto` (default) synthesises the two-host audio overview
+  when an OpenAI credential is resolvable (the stored `openai` provider key or
+  `OPENAI_API_KEY`), reusing the LLM layer's credential; `openai` forces it; `off`
+  never synthesises. With no key the artifact ships the **transcript only**.
+  `voiceA`/`voiceB` are the two host voices; `model` is the OpenAI TTS model.
+- **`video.mode`** — `auto` (default) composes a narrated slideshow into an MP4
+  with `ffmpeg` when a usable binary + system font are found; `off` never composes.
+  Set **`video.ffmpegPath`** to point at a specific binary (otherwise `ffmpeg` on
+  `PATH` is used). With no ffmpeg the artifact ships the **slide outline + audio**.
+
+Nothing here is required: the whole block defaults on, degrades silently, and
+never blocks the text/infographic artifacts.
+
 `config.prStatus` (Phase 22 — live GitHub PR status) is **on by default**. A
 single gateway-owned poller wakes every `pollIntervalMs` (default `60000`) and
 refreshes the state/CI/review of tasks whose PR isn't yet merged or closed,

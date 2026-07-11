@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-11 — feat: Memory Studio audio overview + video — Phase 65 Theme E (PR #388)
+
+The signature NotebookLM artifacts, **real but degrading gracefully**. Both live on the existing `memory_artifacts` store (Theme D already owns the async lifecycle + poll + memory scoping; `Media` has no `memoryId`/status seam) — a deliberate divergence from the doc's "Media row" phrasing, identical UX. Additive provider seams mirror the Phase 17 spawner split; a real video-model provider can slot into `VideoGenerator` later. Phase 65 → 29/33 (88%).
+
+- [x] **Audio overview (podcast)** — `generateStructured` writes a two-host script → `StudioTtsService` (a `TtsProvider` seam; OpenAI `/v1/audio/speech` adapter reusing the stored `openai` credential or `OPENAI_API_KEY`) renders per-turn mp3 (two voices, concatenated) → persisted under the uploads dir. No TTS key → ships the **transcript** only (`degraded`), never a hard failure.
+- [x] **Video (slideshow compose)** — `generateStructured` writes a narrated deck → `StudioVideoService`/`VideoGenerator` seam composes an MP4 with `ffmpeg` (`drawtext` slides over solid frames, timed to the narration via ffprobe, `-shortest`). No usable ffmpeg / font / `drawtext` → ships the **slide outline** only (`degraded`). Requires a freetype-enabled ffmpeg.
+- [x] **Config + docs** — `memory.studio` config (`tts.provider`/model/voices, `video.mode`/`ffmpegPath`), all defaulted + off-degraded; README documents it. Cost metered via the existing `memory` `LlmFeature`.
+- [x] **Web: audio/video in Studio** — the rail offers both kinds (no more "Soon"); the viewer streams an `<audio>`/`<video>` player from `GET …/artifacts/:id/file` (uploads-confined) with the script/outline below, and an honest degraded hint when a provider is missing. File-URL client helper `memoryArtifactFileUrl`.
+- [x] **shared** — `memory-artifact.ts`: `audio-overview`/`video-overview` kinds, `audio`/`video` formats, `filePath`/`mimeType`/`fileSize`/`degraded` fields, `isFileBackedFormat`; new `memory-studio.ts` (`AudioScript`/`VideoDeck` zod + JSON-Schema mirrors); `memory.studio` config schema.
+- [x] **gateway** — file columns on `memory_artifacts` + migration `0081` (hand-written; drizzle-kit generate stays blocked on the pre-existing snapshot drift); `MemoryStudioService` branches audio/video → seams → uploads write; `…/artifacts/:id/file` serve endpoint (re-confined like media file-serve).
+- [x] **tests** — shared schema round-trips (audio/video + file fields, script/deck); gateway service (audio/video degrade + file-persist with fake seams), TTS/video seam enable/degrade, `wrapText`, renderers, controller; web RTL (audio player + degraded hint) + e2e (rows offered) + light/dark preview shots (rail, playable audio viewer, degraded video viewer).
 ## 2026-07-11 — feat(web): metrics widgets + cost cockpit cards — Phase 61 Theme H (PR #390)
 
 Surface the Phase 61 metrics where users already look — the dashboard + the session/project cockpits — reading the endpoints Themes B/C/D ship. Web-only.

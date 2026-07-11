@@ -455,6 +455,41 @@ export const ChatConfigSchema = z.object({
   preferLocal: z.boolean().default(true),
 });
 
+// Memory Studio media generation (Phase 65 E). Audio (LLM script → TTS) and video
+// (narrated slideshow → ffmpeg compose) are additive provider seams that DEGRADE
+// gracefully: with no TTS credential the audio artifact ships the script only; with
+// no usable ffmpeg the video ships the slide outline only. Everything is `auto` by
+// default — a fresh install with no extra setup still generates text + infographic
+// and *offers* audio/video with honest capability messaging (Decision §1).
+export const MemoryStudioConfigSchema = z.object({
+  tts: z
+    .object({
+      // `auto` synthesises when an OpenAI credential is resolvable (else degrades to
+      // script-only); `openai` forces the OpenAI seam; `off` never synthesises.
+      provider: z.enum(['auto', 'openai', 'off']).default('auto'),
+      // OpenAI TTS model + the two host voices (alternated across the two-host script).
+      model: z.string().default('gpt-4o-mini-tts'),
+      voiceA: z.string().default('alloy'),
+      voiceB: z.string().default('nova'),
+    })
+    .default({}),
+  video: z
+    .object({
+      // `auto` composes with ffmpeg when a usable binary is found (else degrades to
+      // slides-only); `off` never composes.
+      mode: z.enum(['auto', 'off']).default('auto'),
+      // Explicit ffmpeg path; when unset the gateway looks up `ffmpeg` on PATH.
+      ffmpegPath: z.string().optional(),
+    })
+    .default({}),
+});
+export type MemoryStudioConfig = z.infer<typeof MemoryStudioConfigSchema>;
+
+export const MemoryConfigSchema = z.object({
+  studio: MemoryStudioConfigSchema.default({}),
+});
+export type MemoryConfig = z.infer<typeof MemoryConfigSchema>;
+
 export const MidniteConfigSchema = z.object({
   agent: AgentConfigSchema,
   terminal: TerminalConfigSchema,
@@ -493,6 +528,9 @@ export const MidniteConfigSchema = z.object({
   // Office multiplayer presence (Phase 64). Ephemeral, in-memory only. Optional
   // (defaulted) so existing midnite.json files keep validating.
   presence: PresenceConfigSchema.default({}),
+  // Memory Studio media generation (Phase 65 E). Optional (defaulted) so existing
+  // midnite.json files keep validating; degrades gracefully with no TTS/ffmpeg.
+  memory: MemoryConfigSchema.default({}),
 });
 
 export type MidniteConfig = z.infer<typeof MidniteConfigSchema>;

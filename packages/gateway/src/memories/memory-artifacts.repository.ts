@@ -68,6 +68,10 @@ export class MemoryArtifactsRepository {
       content: row.content,
       status: row.status as MemoryArtifact['status'],
       error: row.error ?? null,
+      filePath: row.filePath ?? null,
+      mimeType: row.mimeType ?? null,
+      fileSize: row.fileSize ?? null,
+      degraded: row.degraded === 1,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };

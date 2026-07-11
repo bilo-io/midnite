@@ -180,26 +180,20 @@ under a new `memory` usage feature.
 
 ---
 
-## Theme E — Studio: audio overview & video — **L** *(riskiest)*
+## Theme E — Studio: audio overview & video — **L** *(riskiest)* — ✅ DONE (PR #388, 2026-07-11)
 
 The signature NotebookLM artifacts — real output via additive provider seams, degrading when unconfigured.
-
-- [ ] **Audio overview (podcast)** — `LlmService.generateStructured` writes a **two-host script** from the
-      corpus, then a **TTS provider** renders it to audio persisted as a `Media` `audio` row. TTS is an
-      **additive seam** reusing the existing OpenAI/Google provider **credentials** (they expose TTS; the LLM
-      layer doesn't call it today). A `memory.studio` config block ([`shared/src/config/`](../packages/shared/src/config/))
-      selects provider/voice. **Degrade gracefully:** with no TTS key, ship the **script only** (labelled) and
-      surface a clear "add a TTS provider for audio" hint — never a hard failure (Decision §1).
-- [ ] **Video (slideshow compose)** — real video **without a generative-video model** (Decision §1): the LLM
-      produces **slides** (reuse the infographic/HTML→image path), the audio-overview track narrates, and an
-      **`ffmpeg` compose step** stitches slides + narration into an MP4 persisted as a `Media` `video` row.
-      Behind a **pluggable `VideoGenerator` seam** (like the Phase 17 spawner) so a true video provider can slot
-      in later. Degrades to "slides + audio, no composed video" when `ffmpeg` is unavailable.
-- [ ] **Config + docs** — document the new `memory.studio` config (TTS provider/voice, ffmpeg path/toggle) in
-      the README + `midnite.json` schema docs; everything **off/degraded by default** so a fresh install with no
-      extra providers still shows text + infographic and *offers* audio/video with honest capability messaging.
-- [ ] **Web: audio/video in Studio** — an inline `<audio>`/`<video>` player, generation progress, download, and
-      the degraded-state messaging when a provider is missing.
+Landed — items moved to [`done.md`](done.md). Audio/video persist on the existing
+`memory_artifacts` store (new `file_path`/`mime_type`/`file_size`/`degraded` columns
++ migration `0081`), not `Media` — Theme D's Studio store already owns the async
+`pending→ready/failed` lifecycle + poll + memory scoping, and `Media` has no
+`memoryId`/status seam; the UX is identical. Audio = two-host `generateStructured`
+script → `StudioTtsService` (OpenAI `/v1/audio/speech`, reuses the OpenAI provider
+credential) → mp3, degrading to the transcript. Video = narrated deck →
+`StudioVideoService`/`VideoGenerator` seam → ffmpeg (`drawtext` slides + narration)
+→ mp4, degrading to the slide outline. New `memory.studio` config (TTS + video/
+ffmpeg), off-degraded by default, documented in the README; file-backed artifacts
+stream from `GET …/artifacts/:id/file` (uploads-confined).
 
 ---
 

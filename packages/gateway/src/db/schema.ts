@@ -371,6 +371,14 @@ export const memoryArtifacts = sqliteTable(
     content: text('content').notNull().default(''),
     status: text('status').notNull(),
     error: text('error'),
+    // File-backed artifacts (Phase 65 E — audio/video): uploads-relative path +
+    // mime + size of the rendered media. Null for inline text/svg kinds and for
+    // degraded file kinds (script/outline only). `degraded` marks a `ready` row
+    // that shipped without its media file (no TTS/ffmpeg provider).
+    filePath: text('file_path'),
+    mimeType: text('mime_type'),
+    fileSize: integer('file_size'),
+    degraded: integer('degraded').notNull().default(0),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
   },
