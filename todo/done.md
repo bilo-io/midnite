@@ -4,6 +4,20 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-11 — docs: Phase 57 Verification pass signed off — Phase 57 (PR #408)
+
+Closes the last 9 boxes of Phase 57 (Performance & scale). Every non-deferred theme A–F had landed with the seed+bench harness; the phase sat at 18/27 (67%) only because the Verification checklist was unticked. This pass **re-ran the bench at the full 10k profile** to confirm the wins are still measured, ran the three e2e perf specs against a real gateway, and drove the full gate green — no product-code change, docs-only. Phase 57 → 27/27 (100%), Status ✅ DONE.
+
+- [x] **Harness @ 10k (measured live)** — `listTasks+hydrateMany`: 10 000 tasks → **121 queries** (was ~6N ≈ 60 001; 6 relations × 20 id-chunks + 1, sub-linear); workflow summaries: 10 000 → **21 queries** (was N+1 ≈ 10 001). `bench/hot-paths.spec.ts` budget-asserts `< N`.
+- [x] **N+1 gone** — batched `hydrateMany` + `getCounts()` COUNT(*) + `latestRunRowsByWorkflowIds`; sessions list no longer full-hydrates (gateway suite 2007 passed).
+- [x] **Pagination (offset, shipped form)** — `GET /tasks`/`workflows`/`projects`/`repos` serve `{ items, total }` via `PageQuerySchema`; CLI/web consume it. Keyset/cursor ⏳ deferred (Theme C §4).
+- [x] **Lean payload** — `TaskSummary` structural-supertype DTO on `GET /tasks`; detail keeps full `Task`.
+- [x] **Indexes** — `scope-index-plans.spec.ts` pins `listProjects`/`listWorkflows` to MULTI-INDEX OR SEARCH (`EXPLAIN QUERY PLAN`), no full scan.
+- [x] **No refetch storm (coalesced form)** — `refetch-coalescing.e2e.ts` (real gateway+WS): a burst yields far fewer than N `GET /tasks` refetches. Per-key granular invalidation ⏳ deferred to P56 (Theme E).
+- [x] **Virtualized** — `board-render.bench.spec.tsx` `cards < SIZE`; `board-virtualization.e2e.ts` + `accordion-virtualization.e2e.ts` assert mounted `[data-index]` nodes ≪ seeded (real browser).
+- [x] **Behavior-preserving** — `TaskSummary` is a structural supertype of `Task`; all consumer suites pass unedited.
+- [x] **Gate green** — shared 700 · gateway 2007 · web 1119 · cli · site 19 · docs 31; `ui:test` vite-reload flake passes on re-run.
+
 ## 2026-07-11 — docs: Phase 61 Verification pass signed off — Phase 61 (PR #406)
 
 Closes the last 9 boxes of Phase 61 (Fable-Observability). Every theme A–I had already landed inline with tests; the phase sat at 27/36 (75%) only because the Verification checklist was unticked. This pass confirmed all nine acceptance criteria against the shipped code + its test coverage and drove the full `moon` gate green — no product-code change, docs-only. Phase 61 → 36/36 (100%), Status ✅ DONE.
