@@ -1,5 +1,6 @@
 import type {
   Council,
+  Digest,
   Idea,
   Memory,
   Milestone,
@@ -85,6 +86,24 @@ export function milestoneToIndexDoc(
   return { type: 'milestone', entityId: m.id, teamId: m.teamId ?? null, title: m.name, body: clip(m.description ?? '') };
 }
 
+// Digests are a global reporting artifact (no team column) — visible to all
+// authenticated users, so teamId = null like memories/notes/councils.
+export function digestToIndexDoc(
+  d: Pick<Digest, 'id' | 'headline' | 'sections' | 'highlights' | 'markdown'>,
+): IndexDoc {
+  // Body: the per-repo/project section names + the highlight notes make the
+  // "that thing the digest mentioned" query land, without the whole markdown.
+  const sectionText = d.sections.map((s) => s.name).join(' ');
+  const highlightText = d.highlights.map((h) => `${h.title} ${h.note}`).join('\n');
+  return {
+    type: 'digest',
+    entityId: d.id,
+    teamId: null,
+    title: d.headline,
+    body: joinBody([sectionText, highlightText, d.markdown]),
+  };
+}
+
 /** Where the client should navigate to open a result of the given type. */
 export function routeFor(type: SearchType, id: string): string {
   switch (type) {
@@ -107,5 +126,8 @@ export function routeFor(type: SearchType, id: string): string {
       // Milestones live under a project roadmap (Theme E). Until that route
       // lands, route to the projects surface (parity with task/project).
       return '/projects';
+    case 'digest':
+      // The feed selects a digest via ?id= (Phase 62 G master-detail).
+      return `/digests?id=${encodeURIComponent(id)}`;
   }
 }

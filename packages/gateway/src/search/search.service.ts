@@ -14,6 +14,7 @@ import {
   type TaskBoardEvent,
 } from '@midnite/shared';
 import { CouncilsService } from '../councils/councils.service';
+import { DigestsService } from '../digests/digests.service';
 import { IdeaService } from '../ideas/ideas.service';
 import { MemoriesService } from '../memories/memories.service';
 import { NotesService } from '../notes/notes.service';
@@ -24,6 +25,7 @@ import { WorkflowsService } from '../workflows/workflows.service';
 import { toFtsMatchQuery } from './lib/fts-query';
 import {
   councilToIndexDoc,
+  digestToIndexDoc,
   ideaToIndexDoc,
   memoryToIndexDoc,
   noteToIndexDoc,
@@ -56,6 +58,7 @@ export class SearchService implements OnApplicationBootstrap, OnModuleDestroy {
     @Inject(WorkflowsService) private readonly workflows: WorkflowsService,
     @Inject(TaskEventBus) private readonly taskBus: TaskEventBus,
     @Inject(IdeaService) private readonly ideaService: IdeaService,
+    @Inject(DigestsService) private readonly digests: DigestsService,
   ) {}
 
   onApplicationBootstrap(): void {
@@ -117,6 +120,7 @@ export class SearchService implements OnApplicationBootstrap, OnModuleDestroy {
       ...this.councils.listCouncils().map(councilToIndexDoc),
       ...this.workflows.listSummaries().map(workflowToIndexDoc),
       ...ideas.map(ideaToIndexDoc),
+      ...this.digests.listAll().map(digestToIndexDoc),
     ];
     this.index.clear();
     this.index.upsertMany(docs);
