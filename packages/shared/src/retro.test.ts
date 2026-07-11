@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RetroResponseSchema, TaskRetroSchema } from './retro.js';
+import { DigestSchema, RetroResponseSchema, TaskRetroSchema } from './retro.js';
 
 const skeleton = {
   taskId: 't1',
@@ -40,5 +40,43 @@ describe('TaskRetroSchema', () => {
 
   it('RetroResponse wraps a retro', () => {
     expect(RetroResponseSchema.parse({ retro: skeleton }).retro.taskId).toBe('t1');
+  });
+});
+
+const digest = {
+  id: 'd1',
+  createdAt: '2026-07-08T00:00:00.000Z',
+  from: '2026-07-07T00:00:00.000Z',
+  to: '2026-07-08T00:00:00.000Z',
+  counts: { shipped: 3, failed: 1, needsAttention: 1 },
+  sections: [{ name: 'midnite', shipped: 3, failed: 1 }],
+  highlights: [{ taskId: 't9', title: 'Fix flake', outcome: 'abandoned' as const, note: 'still flaky' }],
+  spend: { totalUsd: 4.2, measuredUsd: 4.2, sessions: 5 },
+  cycle: { tasks: 4, p50Ms: 120000, p90Ms: 480000 },
+  headline: '3 shipped, 1 failed.',
+  markdown: '# Fleet digest',
+};
+
+describe('DigestSchema', () => {
+  it('round-trips a full digest', () => {
+    expect(DigestSchema.parse(digest)).toEqual(digest);
+  });
+
+  it('accepts null spend + cycle (best-effort degraded)', () => {
+    const parsed = DigestSchema.parse({ ...digest, spend: null, cycle: null });
+    expect(parsed.spend).toBeNull();
+    expect(parsed.cycle).toBeNull();
+  });
+
+  it('allows omitting spend + cycle entirely', () => {
+    const { spend, cycle, ...rest } = digest;
+    void spend;
+    void cycle;
+    expect(DigestSchema.safeParse(rest).success).toBe(true);
+  });
+
+  it('rejects a bad highlight outcome', () => {
+    const bad = { ...digest, highlights: [{ ...digest.highlights[0], outcome: 'wip' }] };
+    expect(DigestSchema.safeParse(bad).success).toBe(false);
   });
 });

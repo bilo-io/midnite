@@ -27,6 +27,11 @@ export const NOTIFICATION_KINDS = [
   // Phase 49 F — a scheduled auto-backup run failed (fail-open: logged + this
   // alert, never crashes the tick).
   'backup.failed',
+  // Phase 62 Theme C — reporting nodes: a fleet digest was generated, or a task
+  // retrospective surfaced something notable. Emitted directly by the workflow
+  // `midnite.notify` node (not the coalescing task-event path).
+  'digest.generated',
+  'retro.notable',
 ] as const;
 export const NotificationKindSchema = z.enum(NOTIFICATION_KINDS);
 export type NotificationKind = z.infer<typeof NotificationKindSchema>;

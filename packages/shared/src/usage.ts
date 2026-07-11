@@ -22,6 +22,8 @@ export const LLM_FEATURES = [
   'chat', // chat-to-board NL command parsing (Phase 59)
   'memory', // memory Studio artifact generation (Phase 65 D/E)
   'memory-chat', // chat to the knowledge base (Phase 65 C)
+  'retro', // task retrospective narrative (Phase 62 C)
+  'digest', // fleet digest headline (Phase 62 C)
   'unknown', // untagged / default
 ] as const;
 export const LlmFeatureSchema = z.enum(LLM_FEATURES);
@@ -38,6 +40,8 @@ export const LLM_FEATURE_LABEL: Record<LlmFeature, string> = {
   chat: 'Chat to board',
   memory: 'Memory Studio',
   'memory-chat': 'Memory chat',
+  retro: 'Retrospectives',
+  digest: 'Digests',
   unknown: 'Other',
 };
 
