@@ -119,19 +119,23 @@ rather than waiting for Theme H, which will formalize/reuse it.)
 
 # Section II — Pipelines (seeded workflow templates)
 
-## Theme D — Retro pipeline template — **S-M**
+## Theme D — Retro pipeline template — **S-M** — ✅ DONE (PR #399, 2026-07-11)
 
 The narrative writes itself when work ends.
 
-- [ ] A seeded **"Task retrospectives"** template: `task-event` trigger (`done` + `abandoned`) →
-      `midnite.generate-retro` → (conditional) `midnite.notify` when the retro is **notable**
-      (abandoned / `retries-exhausted` / `gate-failed` / long-overrun) — so failures surface with
-      their story attached, not just a status flip.
-- [ ] Seeded via the template marketplace (P36) as **installable + one-click enable** (Decision §4);
-      the deterministic skeleton (Theme A) exists regardless, so a disabled pipeline just means "no
-      LLM narrative."
-- [ ] Template docs: what it costs per run (one small call), the budget-cap behavior, how to add a
-      Slack step.
+- [x] A seeded **"Task retrospectives"** template: `task-event` trigger (`done` + `abandoned`) →
+      `midnite.generate-retro` → `logic.branch` (notable?) →(true) `midnite.notify` (`retro.notable`).
+      Notability is a **deterministic** signal (`isRetroNotable` in `shared`) surfaced by the
+      `generate-retro` executor as `outcome` + `notable` — true on abandoned / `retries-exhausted` /
+      `gate-failed` / a failed check-run, so the branch fires notify regardless of whether the LLM
+      narrative was produced; a clean `done` stays quiet (the `false` handle has no target).
+      (`long-overrun` deferred — no baseline to measure "overrun" against without a config knob.)
+- [x] Seeded via the template marketplace (P36) as **installable + one-click enable** (Decision §4);
+      the deterministic skeleton (Theme A) exists regardless, so AI-off just means "no LLM narrative"
+      while the `notable` branch still works (it's computed from the skeleton, not the LLM).
+- [x] Template docs: cost per run (one small plan-model call, tag `retro`), budget-cap behaviour
+      (routes through `LlmService` → P50 caps / P61 attribution; degrades to the skeleton when
+      exhausted), and how to add a Slack step — all in the seed header.
 
 ## Theme E — Digest pipeline template (upgrade the existing seed) — **M**
 

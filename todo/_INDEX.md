@@ -31,7 +31,7 @@
 | [65 · Memory workspace](phase-65-memory-workspace.md) | ✅ DONE | 33/33 | `██████████` | 100% | — | — |
 | [64 · Office presence](phase-64-office-presence.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
-| [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 10/33 | `███░░░░░░░` | 30% | D | E F G H |
+| [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 13/33 | `████░░░░░░` | 39% | — | E F G H |
 | [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 26/36 | `███████░░░` | 72% | — | G |
 | [60 · Fable-Analysis](phase-60-fable-analysis.md) | ✅ DONE | 62/62 | `██████████` | 100% | — | — |
 | [59 · Chat to board](phase-59-chat-to-board.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
@@ -152,7 +152,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **A** — Retro contract + deterministic skeleton + task_retros storage (auto on terminal, zero LLM) (PR #341)
 - ✅ **B** — Task-event workflow trigger (workflows fire on task.done/abandoned/needs-attention) (PR #351)
 - ✅ **C** — Node executors: generate-retro / list-completed-tasks / build-digest / notify (PR #393)
-- 🔄 **D** — Retro pipeline template (task-event → retro → notify-on-notable)
+- ✅ **D** — Retro pipeline template: seeded task-event→generate-retro→branch(notable)→notify; deterministic `isRetroNotable` surfaced by the executor (PR #399)
 - ◻ **E** — Digest pipeline template (upgrade daily-digest.seed → real structured digest → Slack + in-app)
 - ◻ **F** — Retro surfaces (task detail section, P18 markdown export)
 - ◻ **G** — Digest surfaces (feed/page, dashboard widget, searchable)
