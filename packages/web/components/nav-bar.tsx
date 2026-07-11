@@ -63,7 +63,7 @@ export function NavBar() {
   // same list the sidebar does (dashboard first when enabled).
   const navFeatures = FEATURES.filter((f) => isFeatureEnabled(settings.features, f.key));
   // The desktop rail splits into the pinned home (`dashboard`) + collapsible
-  // category sections (App / Agents / Insights).
+  // category sections (App / Agents / Overview).
   const { pinned, sections } = groupNavSections(navFeatures);
 
   // Which category sections are collapsed (persisted + synced via AppSettings).
@@ -210,9 +210,6 @@ export function NavBar() {
 
         <nav className={cn('flex flex-col gap-1', expandedView ? 'items-stretch' : 'items-center')}>
           {pinned.map(renderLink)}
-          {pinned.length > 0 && sections.length > 0 ? (
-            <div className={cn('my-1 h-px bg-border/60', expandedView ? 'w-full' : 'w-6')} />
-          ) : null}
           {sections.map((section) => {
             const collapsed = collapsedSections.has(section.key);
             const bodyId = `nav-section-${section.key}`;
@@ -224,13 +221,15 @@ export function NavBar() {
                     onClick={() => toggleSection(section.key)}
                     aria-expanded={!collapsed}
                     aria-controls={bodyId}
-                    className="mt-2 flex w-full items-center gap-1.5 rounded-md px-2.5 py-1 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70 transition-colors hover:text-foreground"
+                    className="mt-2 flex w-full items-center gap-2 rounded-md px-2.5 py-1 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70 transition-colors hover:text-foreground"
                   >
                     <ChevronDown
                       aria-hidden
                       className={cn('h-3 w-3 shrink-0 transition-transform', collapsed && '-rotate-90')}
                     />
-                    <span className="truncate">{section.label}</span>
+                    <span className="shrink-0">{section.label}</span>
+                    {/* Rule fills the remaining width to the right of the label. */}
+                    <span aria-hidden className="h-px flex-1 bg-border/60" />
                   </button>
                 ) : (
                   <button

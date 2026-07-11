@@ -945,6 +945,55 @@ html[data-no-glass] *::after {
   }
 }
 
+/* Orbiting border segment for the connection indicator while reconnecting. A
+   masked conic-gradient ring (a single bright arc) that travels around the
+   container's perimeter — border-radius: inherit + inset: 0 means it hugs the
+   pill at any width, so it keeps orbiting the whole shape even when expanded.
+   `--orbit-color` is set per status (amber = reconnecting, red = stale). */
+@property --orbit-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes status-orbit-spin {
+  to {
+    --orbit-angle: 360deg;
+  }
+}
+
+.status-orbit::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px; /* ring thickness */
+  background: conic-gradient(
+    from var(--orbit-angle),
+    transparent 0deg,
+    transparent 250deg,
+    var(--orbit-color, hsl(var(--status-waiting))) 320deg,
+    var(--orbit-color, hsl(var(--status-waiting))) 350deg,
+    transparent 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: status-orbit-spin 1.5s linear infinite;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion='full']) .status-orbit::before {
+    animation: none;
+  }
+}
+
 /* Workflow node run-state borders. The actively-executing node gets a thick,
    rotating conic-gradient ring (the same treatment as the dashboard prompt
    input); once it settles, the node keeps the thickness but switches to a solid

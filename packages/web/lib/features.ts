@@ -46,13 +46,13 @@ export type FeatureKey =
  * (and mirror as headings in the settings feature chooser). `dashboard` has no
  * category — it stays pinned above every section as the home surface.
  */
-export type NavCategory = 'app' | 'agents' | 'insights';
+export type NavCategory = 'app' | 'agents' | 'overview';
 
 /** The category order + display labels the nav and settings both render from. */
 export const NAV_CATEGORIES: { key: NavCategory; label: string }[] = [
   { key: 'app', label: 'App' },
   { key: 'agents', label: 'Agents' },
-  { key: 'insights', label: 'Insights' },
+  { key: 'overview', label: 'Overview' },
 ];
 
 export type Feature = {
@@ -98,14 +98,6 @@ export const FEATURES: Feature[] = [
     category: 'app',
   },
   {
-    key: 'memory',
-    href: '/memory',
-    label: 'Memory',
-    description: 'Long-term memories injected into your agents’ prompts.',
-    Icon: BrainCircuit,
-    category: 'app',
-  },
-  {
     key: 'slides',
     href: '/slides',
     label: 'Slides',
@@ -131,19 +123,19 @@ export const FEATURES: Feature[] = [
   },
   // ── Agents ───────────────────────────────────────────────────────────────
   {
+    key: 'memory',
+    href: '/memory',
+    label: 'Memory',
+    description: 'Long-term memories injected into your agents’ prompts.',
+    Icon: BrainCircuit,
+    category: 'agents',
+  },
+  {
     key: 'sessions',
     href: '/sessions',
     label: 'Sessions',
     description: 'Live and past agent sessions with embedded terminals.',
     Icon: BotMessageSquare,
-    category: 'agents',
-  },
-  {
-    key: 'office',
-    href: '/office',
-    label: 'Office',
-    description: 'A pixel-art floor of your agents — walk up to a desk to call or message.',
-    Icon: Building2,
     category: 'agents',
   },
   {
@@ -162,14 +154,22 @@ export const FEATURES: Feature[] = [
     Icon: Images,
     category: 'agents',
   },
-  // ── Insights ─────────────────────────────────────────────────────────────
+  // ── Overview ─────────────────────────────────────────────────────────────
+  {
+    key: 'office',
+    href: '/office',
+    label: 'Office',
+    description: 'A pixel-art floor of your agents — walk up to a desk to call or message.',
+    Icon: Building2,
+    category: 'overview',
+  },
   {
     key: 'digests',
     href: '/digests',
     label: 'Digests',
     description: 'Fleet digests — the periodic roll-up of what shipped, failed, and needs attention.',
     Icon: Newspaper,
-    category: 'insights',
+    category: 'overview',
   },
   {
     key: 'ops',
@@ -177,7 +177,7 @@ export const FEATURES: Feature[] = [
     label: 'Ops',
     description: 'Fleet health — live slot utilization, run throughput, duration distribution, and LLM spend.',
     Icon: ActivitySquare,
-    category: 'insights',
+    category: 'overview',
   },
 ];
 

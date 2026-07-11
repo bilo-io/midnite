@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useConnectionStore, worstStatus, type ChannelStatus } from '@/lib/connection-store';
 import { useToast } from '@/components/toast';
 import { cn } from '@/lib/utils';
@@ -94,13 +94,27 @@ export function ConnectionStatus({
 /**
  * The floating live-connection indicator: a pip pinned to the top-right corner
  * over a semi-transparent tint of the status colour. Collapsed it shows only the
- * dot; on hover the pill grows to the LEFT to reveal the label — the dot itself
- * never moves (the pill is right-anchored). The width reveal eases in/out.
+ * dot; on hover (or briefly whenever the status changes) the pill grows to the
+ * LEFT to reveal the label — the dot itself never moves (the pill is
+ * right-anchored). While reconnecting/stale, a bright border segment orbits the
+ * pill's perimeter (see `.status-orbit` in globals.css).
  */
 export function ConnectionStatusFloat({ className }: { className?: string }) {
   const status = useConnectionStore((s) => worstStatus(s.statuses));
   const meta = META[status];
   const tint = `hsl(var(${meta.token}) / 0.1)`;
+  const orbiting = status !== 'live';
+
+  // Briefly reveal the label whenever the status changes (not on first mount).
+  const [revealed, setRevealed] = useState(false);
+  const prev = useRef(status);
+  useEffect(() => {
+    if (prev.current === status) return;
+    prev.current = status;
+    setRevealed(true);
+    const t = setTimeout(() => setRevealed(false), 2400);
+    return () => clearTimeout(t);
+  }, [status]);
 
   return (
     <div
@@ -111,11 +125,23 @@ export function ConnectionStatusFloat({ className }: { className?: string }) {
       {/* h-7 + symmetric px keeps the collapsed state a perfect circle (28×28):
           the zero-width label mustn't be allowed to stretch the height. */}
       <div
-        className="flex h-7 items-center rounded-full px-2.5 shadow-sm backdrop-blur-md transition-[background-color] duration-300 ease-in-out"
-        style={{ backgroundColor: tint }}
+        className={cn(
+          'relative flex h-7 items-center rounded-full px-2.5 shadow-sm backdrop-blur-md transition-[background-color] duration-300 ease-in-out',
+          orbiting && 'status-orbit',
+        )}
+        style={{
+          backgroundColor: tint,
+          ...(orbiting ? { ['--orbit-color' as string]: `hsl(var(${meta.token}))` } : {}),
+        }}
       >
-        {/* Reveals leftward on hover; the dot after it stays anchored to the right. */}
-        <span className="max-w-0 overflow-hidden whitespace-nowrap text-xs font-medium leading-none text-foreground opacity-0 transition-all duration-300 ease-in-out group-hover:mr-2 group-hover:max-w-[16rem] group-hover:pl-1 group-hover:opacity-100">
+        {/* Reveals leftward on hover or on a status change; the dot after it stays
+            anchored to the right. */}
+        <span
+          className={cn(
+            'max-w-0 overflow-hidden whitespace-nowrap text-xs font-medium leading-none text-foreground opacity-0 transition-all duration-300 ease-in-out group-hover:mr-2 group-hover:max-w-[16rem] group-hover:pl-1 group-hover:opacity-100',
+            revealed && 'mr-2 max-w-[16rem] pl-1 opacity-100',
+          )}
+        >
           {meta.label}
         </span>
         <StatusDot dot={meta.dot} token={meta.token} />

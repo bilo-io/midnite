@@ -20,7 +20,7 @@ export function SystemSection() {
     setSettings((prev) => ({ ...prev, features: { ...prev.features, [key]: on } }));
 
   // Grouped exactly like the side nav: dashboard pinned, then the App / Agents /
-  // Insights sections — so what you toggle here maps 1:1 to what you see there.
+  // Overview sections — so what you toggle here maps 1:1 to what you see there.
   const { pinned, sections } = groupNavSections(FEATURES);
 
   const renderFeatureRow = (f: Feature, withDivider: boolean) => {
