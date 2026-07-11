@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-11 — feat: retro & digest node executors — Phase 62 Theme C (PR #TBD)
+## 2026-07-11 — feat: retro & digest node executors — Phase 62 Theme C (PR #395)
 
 The workflow vocabulary for reporting — four thin nodes over gateway services, the enabler for the retro (D) and digest (E) pipelines. Node executors stay thin (CLAUDE.md layering); `RetroBuilderService`/`DigestBuilderService` own the logic. Cross-module reach uses `@Global` ports (mirroring `TASK_CREATOR`) so retro/tasks/notifications don't create a cycle with `WorkflowsModule`. Phase 62 → 10/33 (30%).
 

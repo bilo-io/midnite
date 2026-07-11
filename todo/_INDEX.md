@@ -151,7 +151,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 *Retrospectives per task + fleet digests, workflow-first: a task-event trigger + retro/digest nodes + seeded pipelines; gateway stores primitives. Fable series #3.*
 - ✅ **A** — Retro contract + deterministic skeleton + task_retros storage (auto on terminal, zero LLM) (PR #341)
 - ✅ **B** — Task-event workflow trigger (workflows fire on task.done/abandoned/needs-attention) (PR #351)
-- ✅ **C** — Node executors: generate-retro / list-completed-tasks / build-digest / notify (+ real Digest schema/table + bounded transcript slice) (PR #TBD)
+- ✅ **C** — Node executors: generate-retro / list-completed-tasks / build-digest / notify (+ real Digest schema/table + bounded transcript slice) (PR #395)
 - ◻ **D** — Retro pipeline template (task-event → retro → notify-on-notable)
 - ◻ **E** — Digest pipeline template (upgrade daily-digest.seed → real structured digest → Slack + in-app)
 - ◻ **F** — Retro surfaces (task detail section, P18 markdown export)

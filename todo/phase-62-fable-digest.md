@@ -104,7 +104,7 @@ The workflow-first enabler: workflows that fire when tasks finish. Useful far be
 - [x] Editor + template support: the trigger is configurable in the workflow editor's trigger panel
       (event checkboxes + optional repo/project filter) and usable in seeds.
 
-## Theme C — Retro & digest node executors — **M-L** — ✅ DONE (PR #TBD, 2026-07-11)
+## Theme C — Retro & digest node executors — **M-L** — ✅ DONE (PR #395, 2026-07-11)
 
 Thin nodes over real services — the workflow vocabulary for reporting. Node executors stay thin
 (inject `@Global` ports — `RETRO_PORT` / `TASK_READER` / `NOTIFIER` / `DigestBuilderService` — so
