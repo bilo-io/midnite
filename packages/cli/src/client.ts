@@ -29,7 +29,7 @@ import {
   UserSchema,
   WorkflowRunSchema,
   WorkflowSchema,
-  WorkflowSummarySchema,
+  WorkflowsPageSchema,
   WorkflowTemplatesResponseSchema,
   type ApprovalLogResponse,
   type AuthResponse,
@@ -395,7 +395,9 @@ export function createClient(baseUrl: string, token?: string): GatewayClient {
     },
 
     async listWorkflows(): Promise<WorkflowSummary[]> {
-      return WorkflowSummarySchema.array().parse(await request('/workflows', { method: 'GET' }));
+      // The wire is a `{ items, total }` page (Phase 57 C follow-up); the CLI
+      // renders the full set, so unwrap `.items`.
+      return WorkflowsPageSchema.parse(await request('/workflows', { method: 'GET' })).items;
     },
 
     async getWorkflow(id: string): Promise<Workflow> {

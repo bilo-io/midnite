@@ -25,7 +25,8 @@ import {
   type WebhookInfoResponse,
   type WorkflowResponse,
   type WorkflowRun,
-  type WorkflowSummary,
+  type WorkflowsPage,
+  PageQuerySchema,
 } from '@midnite/shared';
 import { WorkflowsService } from './workflows.service';
 
@@ -33,10 +34,19 @@ import { WorkflowsService } from './workflows.service';
 export class WorkflowsController {
   constructor(@Inject(WorkflowsService) private readonly service: WorkflowsService) {}
 
+  // Lean summary **page** (Phase 57 C follow-up): `{ items, total }`. `page`/`limit`
+  // optional — omitted returns every workflow.
   @Get()
-  list(@CurrentUser() user?: CurrentUserPayload | null): WorkflowSummary[] {
+  list(
+    @Query() rawQuery: Record<string, string>,
+    @CurrentUser() user?: CurrentUserPayload | null,
+  ): WorkflowsPage {
+    const parsed = PageQuerySchema.safeParse(rawQuery);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.issues[0]?.message ?? 'invalid workflow query');
+    }
     const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
-    return this.service.listSummaries(scope);
+    return this.service.listSummaryPage(scope, parsed.data);
   }
 
   @Post()

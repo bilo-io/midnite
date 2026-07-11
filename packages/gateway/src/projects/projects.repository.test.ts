@@ -176,4 +176,32 @@ describe('ProjectsRepository', () => {
     const md = db.select().from(media).where(eq(media.id, 'md1')).get()!;
     expect(md.projectId).toBeNull();
   });
+
+  it('listProjectPage returns the full total but only the requested window (Phase 57 C)', () => {
+    const { repo } = ctx;
+    for (let i = 0; i < 5; i++) {
+      repo.insertProject({
+        id: `p${i}`,
+        name: `P${i}`,
+        description: null,
+        tag: `t${i}`,
+        color: '#7c3aed',
+        plan: null,
+        planUpdatedAt: null,
+        // Ascending createdAt so the order is deterministic (p0 … p4).
+        createdAt: `2026-06-04T00:00:0${i}.000Z`,
+        updatedAt: now,
+      });
+    }
+
+    // Omitted page/limit → every row, total = full set.
+    const all = repo.listProjectPage();
+    expect(all.total).toBe(5);
+    expect(all.rows).toHaveLength(5);
+
+    // A window: total stays the full count, rows are just the page.
+    const page2 = repo.listProjectPage(undefined, { page: 2, limit: 2 });
+    expect(page2.total).toBe(5);
+    expect(page2.rows.map((r) => r.id)).toEqual(['p2', 'p3']);
+  });
 });

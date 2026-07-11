@@ -25,7 +25,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   beforeEach: () =>
     installMockFetch([
-      { match: '/projects', json: [project, projectMinimal] },
+      { match: '/projects', json: { items: [project, projectMinimal], total: 2 } },
       { match: '/tasks', json: tasks },
     ]),
   play: async ({ canvasElement }) => {
@@ -39,7 +39,7 @@ export const Default: Story = {
 export const Empty: Story = {
   beforeEach: () =>
     installMockFetch([
-      { match: '/projects', json: [] },
+      { match: '/projects', json: { items: [], total: 0 } },
       { match: '/tasks', json: [] },
     ]),
   play: async ({ canvasElement }) => {

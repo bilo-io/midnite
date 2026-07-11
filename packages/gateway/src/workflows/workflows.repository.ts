@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, desc, eq, inArray } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import {
   TriggerSchema,
   WorkflowGraphSchema,
@@ -47,6 +47,27 @@ export class WorkflowsRepository {
   listWorkflowRows(scope?: TeamScope): WorkflowRow[] {
     const where = scope ? teamScopeFilter(workflows.createdBy, workflows.teamId, scope) : undefined;
     return this.db.select().from(workflows).where(where).orderBy(desc(workflows.updatedAt)).all();
+  }
+
+  /**
+   * A page of workflow rows (Phase 57 C follow-up). `total` is a `COUNT(*)` over
+   * the same scoped filter; `limit`/`offset` apply only when `limit` is set
+   * (omitted = every row). Mirrors `TasksRepository.listTaskPage`.
+   */
+  listWorkflowPage(
+    scope?: TeamScope,
+    opts?: { page?: number; limit?: number },
+  ): { rows: WorkflowRow[]; total: number } {
+    const where = scope ? teamScopeFilter(workflows.createdBy, workflows.teamId, scope) : undefined;
+    const total = Number(
+      this.db.select({ count: sql<number>`COUNT(*)` }).from(workflows).where(where).get()?.count ?? 0,
+    );
+    const ordered = this.db.select().from(workflows).where(where).orderBy(desc(workflows.updatedAt));
+    const rows =
+      opts?.limit != null
+        ? ordered.limit(opts.limit).offset(((opts.page ?? 1) - 1) * opts.limit).all()
+        : ordered.all();
+    return { rows, total };
   }
 
   listScheduledEnabledRows(): WorkflowRow[] {

@@ -19,6 +19,7 @@ import {
   type WorkflowGraph,
   type WorkflowRun,
   type WorkflowSummary,
+  type WorkflowsPage,
 } from '@midnite/shared';
 import { runReportFilename, runToMarkdown } from './lib/run-report';
 import { MIDNITE_CONFIG } from '../config.token';
@@ -47,12 +48,22 @@ export class WorkflowsService {
 
   // --- reads ---
 
+  /** Backward-compatible array list (search/portability callers). */
   listSummaries(scope?: TeamScope): WorkflowSummary[] {
-    const rows = this.repo.listWorkflowRows(scope);
+    return this.listSummaryPage(scope).items;
+  }
+
+  /**
+   * A page of workflow summaries (Phase 57 C follow-up): `{ items, total }`.
+   * `page`/`limit` optional — omitted returns all. `total` reflects the full
+   * scoped set, not the page length.
+   */
+  listSummaryPage(scope?: TeamScope, opts?: { page?: number; limit?: number }): WorkflowsPage {
+    const { rows, total } = this.repo.listWorkflowPage(scope, opts);
     // Batch the latest-run lookup (Phase 57 B) — one query for the whole page
     // instead of a `latestRunRow` per workflow (the N+1 the harness tracks).
     const latestByWorkflow = this.repo.latestRunRowsByWorkflowIds(rows.map((r) => r.id));
-    return rows.map((row) => {
+    const items = rows.map((row) => {
       const workflow = this.repo.hydrateWorkflow(row);
       const latest = latestByWorkflow.get(row.id);
       return {
@@ -72,6 +83,7 @@ export class WorkflowsService {
         updatedAt: workflow.updatedAt,
       };
     });
+    return { items, total };
   }
 
   getWorkflow(id: string, scope?: TeamScope): Workflow {

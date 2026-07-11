@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { pagedSchema } from './task.js';
 
 // A repo is a named checkout the orchestrator runs agents against. The registry
 // (DB-backed) is the runtime source of truth; `config.repos` seeds it on first
@@ -104,6 +105,10 @@ export const UpdateRepoRequestSchema = z
 export const RepoResponseSchema = z.object({ repo: RepoSchema });
 
 export type Repo = z.infer<typeof RepoSchema>;
+
+/** A page of repos (Phase 57 C follow-up): `{ items, total }`. */
+export const ReposPageSchema = pagedSchema(RepoSchema);
+export type ReposPage = z.infer<typeof ReposPageSchema>;
 export type CreateRepoRequest = z.infer<typeof CreateRepoRequestSchema>;
 export type UpdateRepoRequest = z.infer<typeof UpdateRepoRequestSchema>;
 export type RepoResponse = z.infer<typeof RepoResponseSchema>;

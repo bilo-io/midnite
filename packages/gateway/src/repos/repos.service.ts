@@ -1,7 +1,14 @@
 import { Inject, Injectable, Logger, Optional, type OnModuleInit } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
-import type { CreateRepoRequest, MidniteConfig, Repo, TeamScope, UpdateRepoRequest } from '@midnite/shared';
+import type {
+  CreateRepoRequest,
+  MidniteConfig,
+  Repo,
+  ReposPage,
+  TeamScope,
+  UpdateRepoRequest,
+} from '@midnite/shared';
 import { AuditService } from '../audit/audit.service';
 import { MIDNITE_CONFIG } from '../config.token';
 import type { RepoInsert, RepoRow } from '../db/schema';
@@ -45,8 +52,18 @@ export class ReposService implements OnModuleInit {
     }
   }
 
+  /** Backward-compatible array list (tasks/portability callers). */
   list(scope?: TeamScope): Repo[] {
-    return this.repo.list(scope).map(toRepo);
+    return this.listPage(scope).items;
+  }
+
+  /**
+   * A page of repos (Phase 57 C follow-up): `{ items, total }`. `page`/`limit`
+   * optional — omitted returns all.
+   */
+  listPage(scope?: TeamScope, opts?: { page?: number; limit?: number }): ReposPage {
+    const { rows, total } = this.repo.listPage(scope, opts);
+    return { items: rows.map(toRepo), total };
   }
 
   get(id: string, scope?: TeamScope): Repo {

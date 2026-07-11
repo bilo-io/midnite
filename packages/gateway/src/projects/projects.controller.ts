@@ -22,6 +22,7 @@ import {
   ReportFormatSchema,
   UpdatePlanRequestSchema,
   UpdateProjectRequestSchema,
+  PageQuerySchema,
   isServerRenderedReportFormat,
   type BreakdownPreviewResponse,
   type CreateFromBreakdownResponse,
@@ -30,6 +31,7 @@ import {
   type EnhanceDescriptionResponse,
   type Project,
   type ProjectResponse,
+  type ProjectsPage,
 } from '@midnite/shared';
 import { ProjectsService } from './projects.service';
 
@@ -37,10 +39,19 @@ import { ProjectsService } from './projects.service';
 export class ProjectsController {
   constructor(@Inject(ProjectsService) private readonly service: ProjectsService) {}
 
+  // Project **page** (Phase 57 C follow-up): `{ items, total }`. `page`/`limit`
+  // optional — omitted returns every project (the full `Project` shape).
   @Get()
-  list(@CurrentUser() user?: CurrentUserPayload | null): Project[] {
+  list(
+    @Query() rawQuery: Record<string, string>,
+    @CurrentUser() user?: CurrentUserPayload | null,
+  ): ProjectsPage {
+    const parsed = PageQuerySchema.safeParse(rawQuery);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.issues[0]?.message ?? 'invalid project query');
+    }
     const scope = user ? { userId: user.userId, teamId: user.teamId } : undefined;
-    return this.service.listProjects(scope);
+    return this.service.listProjectPage(scope, parsed.data);
   }
 
   @Post()
