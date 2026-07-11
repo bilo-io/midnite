@@ -186,7 +186,7 @@ digest** dashboard widget, a **Digests** nav feature, and digests indexed into g
 (no team column). Retro searchability wasn't taken here (retros are per-task, surfaced via the
 task detail — Theme F); the FTS scope this slice added is digests.
 
-## Theme H — Transcript slicing, CLI, config & docs — **S-M** — ✅ DONE (PR #403 partial, PR #DIGESTPR finish 2026-07-11)
+## Theme H — Transcript slicing, CLI, config & docs — **S-M** — ✅ DONE (PR #403 partial, PR #409 finish 2026-07-11)
 
 - [x] A **bounded transcript-excerpt helper** (`sliceTranscript` in
       [`sessions/lib/transcript-slice.ts`](../packages/gateway/src/sessions/lib/transcript-slice.ts))

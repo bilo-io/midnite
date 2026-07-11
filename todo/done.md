@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-11 — feat(cli): midnite digest command — Phase 62 Theme H (PR #DIGESTPR)
+## 2026-07-11 — feat(cli): midnite digest command — Phase 62 Theme H (PR #409)
 
 Closes the last ◐ of Phase 62 Theme H: the deferred `midnite digest` CLI, now unblocked by Theme G's `GET /digests` read API (PR #404). Thin client over the existing routes — no gateway/shared change. Phase 62 Theme H → ✅ DONE; phase 24/32 (75%), remaining boxes are the Verification pass (Theme V, parallel loop).
 

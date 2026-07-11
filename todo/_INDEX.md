@@ -154,7 +154,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **E** — Digest pipeline template: daily-digest seed → list-completed→build-digest→parallel {slack (rich blocks, optional/skip-if-unbound), notify}; slack.message gains Block Kit `blocks` (P44 webhook fan-out ⏳ deferred) (PR #401)
 - ✅ **F** — Retro surfaces: task-detail Retro tab (full retro + AI-summary honesty badge) + P18 markdown export + session cockpit deep-link (PR #402)
 - ✅ **G** — Digest surfaces: `/digests` two-pane master-detail feed + structured detail w/ task deep-links + md export, Latest-digest widget, digests indexed in global search (PR #404)
-- ✅ **H** — Transcript slicer (done in C) + `midnite retro` CLI + `retro.autoSkeleton`/`narrativeMaxTokens` config + `docs/RETROS.md` (PR #403); **`midnite digest list`/`show` CLI** now landed over Theme G's `GET /digests` (PR #DIGESTPR)
+- ✅ **H** — Transcript slicer (done in C) + `midnite retro` CLI + `retro.autoSkeleton`/`narrativeMaxTokens` config + `docs/RETROS.md` (PR #403); **`midnite digest list`/`show` CLI** now landed over Theme G's `GET /digests` (PR #409)
 
 ### [Phase 61 — Fable-Observability](phase-61-fable-observability.md)
 *Deepen the existing metrics/usage seam: real session tokens (honestly labeled), cost attribution, cycle time, rollups + retention, live Ops. Fable series #2.*
