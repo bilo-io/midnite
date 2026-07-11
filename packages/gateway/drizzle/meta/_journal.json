@@ -575,6 +575,13 @@
       "when": 1783990000000,
       "tag": "0081_phase65e_studio_media",
       "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "6",
+      "when": 1784080000000,
+      "tag": "0082_phase62c_digests",
+      "breakpoints": true
     }
   ]
 }

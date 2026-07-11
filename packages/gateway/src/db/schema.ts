@@ -1601,3 +1601,30 @@ export const taskRetros = sqliteTable(
 );
 export type TaskRetroRow = typeof taskRetros.$inferSelect;
 export type TaskRetroInsert = typeof taskRetros.$inferInsert;
+
+/**
+ * Phase 62 C — a stored fleet digest (Fable-Digest). One row per generated
+ * digest: the full serialized `Digest` JSON plus queryable window/count columns
+ * for listing + ordering. Product data — never pruned by P61 retention.
+ */
+export const digests = sqliteTable(
+  'digests',
+  {
+    id: text('id').primaryKey(),
+    /** Window start / end (ISO) the digest covers. */
+    windowFrom: text('window_from').notNull(),
+    windowTo: text('window_to').notNull(),
+    /** Total terminal tasks in the window (denormalized for list rendering). */
+    taskCount: integer('task_count').notNull().default(0),
+    /** 1 once an LLM headline is attached; 0 for the deterministic-only digest. */
+    hasHeadline: integer('has_headline').notNull().default(0),
+    /** The full serialized Digest (JSON). */
+    digest: text('digest').notNull(),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => ({
+    createdAtIdx: index('digests_created_at_idx').on(t.createdAt),
+  }),
+);
+export type DigestRow = typeof digests.$inferSelect;
+export type DigestInsert = typeof digests.$inferInsert;
