@@ -391,6 +391,19 @@ fleet ops summary (live gauges, throughput, run durations, outcomes) is
 estimated vs. unpriced, where session tokens come from, rollup grain, and retention
 knobs — is documented in **[`docs/METRICS.md`](docs/METRICS.md)**.
 
+### Retrospectives
+
+Every task that reaches `done`/`abandoned` gets a **retrospective**: a factual,
+deterministic skeleton (timeline, attempts, failure story, durations, review, PR)
+assembled with **zero LLM calls**, plus an optional one-paragraph **AI narrative**
+layered on by the retro workflow. The cost model is honest and cheap — skeleton
+free, narrative one small plan-model call (bounded by `retro.narrativeMaxTokens`
+and the P50 spend caps), **fail-soft to the skeleton** when AI is off / capped /
+unavailable. Read one with **`midnite retro <taskId>`** (`--json`, or `--export
+[file]` for markdown); the config knobs (`retro.autoSkeleton`,
+`retro.narrativeMaxTokens`) and the full model live in
+**[`docs/RETROS.md`](docs/RETROS.md)**.
+
 ## Common commands
 
 ```sh
