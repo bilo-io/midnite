@@ -61,6 +61,9 @@ import {
   GaugeHistoryResponseSchema,
   type GaugeHistoryResponse,
   type GaugeHistoryQuery,
+  MetricsRollupResponseSchema,
+  type MetricsRollupResponse,
+  type MetricsRollupQuery,
   RunTimelineResponseSchema,
   type RunTimelineResponse,
   SystemStatsSchema,
@@ -2457,6 +2460,19 @@ export async function getGaugeHistory(params?: GaugeHistoryQuery): Promise<Gauge
   if (params?.to) qs.set('to', params.to);
   const query = qs.toString() ? `?${qs.toString()}` : '';
   return fetchJson(`/metrics/gauges/history${query}`, undefined, GaugeHistoryResponseSchema);
+}
+
+/** Stored metrics rollups over a window from `GET /metrics/rollups` (Phase 61 E) —
+ *  hourly/daily aggregates by source (runs/llm/session/gauge) for cost-over-time
+ *  charts (Phase 61 G). */
+export async function getMetricsRollups(params?: MetricsRollupQuery): Promise<MetricsRollupResponse> {
+  const qs = new URLSearchParams();
+  if (params?.period) qs.set('period', params.period);
+  if (params?.from) qs.set('from', params.from);
+  if (params?.to) qs.set('to', params.to);
+  if (params?.source) qs.set('source', params.source);
+  const query = qs.toString() ? `?${qs.toString()}` : '';
+  return fetchJson(`/metrics/rollups${query}`, undefined, MetricsRollupResponseSchema);
 }
 
 /** Per-task agent run timeline from `GET /metrics/runs?taskId=` (Phase 61 G) —
