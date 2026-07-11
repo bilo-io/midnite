@@ -201,6 +201,21 @@ export class TasksService {
     return { items, total };
   }
 
+  /**
+   * Terminal-task summaries in a window (Phase 62 C) — the digest / reporting
+   * ready-set. `done`/`abandoned` tasks whose last transition falls in `[from,
+   * to]` (ISO), optionally scoped to a repo/project, as lean `TaskSummary`s.
+   */
+  listTerminalSummaries(query: {
+    from: string;
+    to: string;
+    repo?: string;
+    projectId?: string;
+  }): TaskSummary[] {
+    const rows = this.repo.listTerminalTasksInWindow(query.from, query.to, query.repo, query.projectId);
+    return this.repo.summariseMany(rows).map((t) => this.withHeldSummary(t));
+  }
+
   /** Recent cross-task activity (Phase 57 C) — the dashboard feed, served from a
    *  single indexed query instead of hydrating every task's events. */
   recentActivity(scope?: TeamScope, limit = 12): TaskActivityEntry[] {
