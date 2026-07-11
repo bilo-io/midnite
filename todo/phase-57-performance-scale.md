@@ -204,7 +204,7 @@ Keep the DOM bounded no matter the count.
 
 ## Verification
 
-**✅ Signed off 2026-07-11 (PR #407).** All eight acceptance criteria confirmed against the shipped code + its
+**✅ Signed off 2026-07-11 (PR #408).** All eight acceptance criteria confirmed against the shipped code + its
 harness/tests. The gateway hot-path bench was **re-run at the full `BENCH_SIZE=10000` profile** — measured live this
 pass: `listTasks+hydrateMany` = **10 000 tasks → 121 queries** (was ~6N ≈ 60 001; = 6 relations × 20 id-chunks + 1,
 sub-linear) and workflow summaries = **10 000 → 21 queries** (was N+1 ≈ 10 001). Full `moon` gate green (shared 700 ·
