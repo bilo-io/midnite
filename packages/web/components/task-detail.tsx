@@ -7,12 +7,14 @@ import { ChecksPanel } from '@/components/checks-panel';
 import { TaskMilestonePicker } from '@/components/task-milestone-picker';
 import { TaskFailureHistory } from '@/components/task-failure-history';
 import { RunTimeline } from '@/components/run-timeline';
+import { RetroTab } from '@/components/retro-tab';
 import { PrDiffModal } from '@/components/pr-review/pr-diff-modal';
 import { PrReviewPanel } from '@/components/pr-review/pr-review-panel';
 import {
   ANSWER_EVENT_KIND,
   SOURCE_KIND_LABEL,
   isAnsweredQuestion,
+  isTerminal,
   parseGithubPr,
   parseGithubRepo,
   type Project,
@@ -104,9 +106,9 @@ type Props = {
    * for a task with a `prUrl`, where a Details|Review tab strip appears; `review`
    * mounts the diff viewer inline. Defaults to `details`.
    */
-  tab?: 'details' | 'review';
+  tab?: 'details' | 'review' | 'retro';
   /** Called when the user switches tabs — the page syncs it to `?tab=`. */
-  onTabChange?: (tab: 'details' | 'review') => void;
+  onTabChange?: (tab: 'details' | 'review' | 'retro') => void;
 };
 
 function TabButton({
@@ -144,9 +146,17 @@ function TabButton({
 export function TaskDetail({ task, projects, tasks, onClose, variant = 'modal', tab, onTabChange }: Props) {
   // Phase 52 E: a Details|Review tab strip on the full page for a task with a PR.
   // The board modal keeps its "View diff" full-screen modal instead (narrow overlay).
-  const showTabs = variant === 'page' && !!task.prUrl;
-  const activeTab: 'details' | 'review' = showTabs && tab === 'review' ? 'review' : 'details';
-  const selectTab = (next: 'details' | 'review') => onTabChange?.(next);
+  // Phase 62 F: a Retro tab joins the strip once the task is terminal (a retro
+  // skeleton is always built on the terminal transition).
+  const showRetroTab = variant === 'page' && isTerminal(task.status);
+  const showTabs = variant === 'page' && (!!task.prUrl || showRetroTab);
+  const activeTab: 'details' | 'review' | 'retro' =
+    showTabs && tab === 'review' && task.prUrl
+      ? 'review'
+      : showTabs && tab === 'retro' && showRetroTab
+        ? 'retro'
+        : 'details';
+  const selectTab = (next: 'details' | 'review' | 'retro') => onTabChange?.(next);
 
   const kind = task.kind ?? 'unknown';
   const statusHue = STATUS_HUE_VAR[task.status];
@@ -476,15 +486,26 @@ export function TaskDetail({ task, projects, tasks, onClose, variant = 'modal', 
           <TabButton active={activeTab === 'details'} onClick={() => selectTab('details')}>
             Details
           </TabButton>
-          <TabButton active={activeTab === 'review'} onClick={() => selectTab('review')}>
-            Review
-          </TabButton>
+          {task.prUrl && (
+            <TabButton active={activeTab === 'review'} onClick={() => selectTab('review')}>
+              Review
+            </TabButton>
+          )}
+          {showRetroTab && (
+            <TabButton active={activeTab === 'retro'} onClick={() => selectTab('retro')}>
+              Retro
+            </TabButton>
+          )}
         </div>
       ) : null}
 
       {activeTab === 'review' && task.prUrl ? (
         <div className="flex min-h-[60vh] flex-col">
           <PrReviewPanel taskId={task.id} prUrl={task.prUrl} />
+        </div>
+      ) : activeTab === 'retro' ? (
+        <div className={variant === 'modal' ? 'flex-1 overflow-y-auto px-5 py-4' : 'px-5 py-4'}>
+          <RetroTab task={task} />
         </div>
       ) : (
       <div

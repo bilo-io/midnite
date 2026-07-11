@@ -337,6 +337,8 @@ import {
   type ChatPreviewResponse,
   ChatUndoResponseSchema,
   type ChatUndoResponse,
+  RetroResponseSchema,
+  type TaskRetro,
 } from '@midnite/shared';
 import { z } from 'zod';
 
@@ -2106,6 +2108,40 @@ export async function importArchive(
  *  task thread modal's ExportMenu (download .md / print-to-PDF / copy). */
 export async function exportTask(taskId: string): Promise<string> {
   const path = `/tasks/${encodeURIComponent(taskId)}/export?format=md`;
+  const res = await fetch(`${gatewayUrl()}${path}`, { cache: 'no-store' });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new ApiError(errorMessage(res, text), res.status);
+  }
+  return res.text();
+}
+
+// ---- Retrospectives (Phase 62 — task retros) ----
+
+/** A task's retrospective from `GET /tasks/:id/retro` (Phase 62 A/F). Returns
+ *  `null` when no retro has been built (non-terminal task, or 404) so callers can
+ *  simply hide the surface rather than treat it as an error. */
+export async function getTaskRetro(
+  taskId: string,
+  signal?: AbortSignal,
+): Promise<TaskRetro | null> {
+  try {
+    const { retro } = await fetchJson(
+      `/tasks/${encodeURIComponent(taskId)}/retro`,
+      { signal },
+      RetroResponseSchema,
+    );
+    return retro;
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) return null;
+    throw err;
+  }
+}
+
+/** Fetch a task's retrospective as markdown (`GET /tasks/:id/retro/export`).
+ *  Backs the Retro tab's ExportMenu (download .md / print-to-PDF / copy). */
+export async function exportTaskRetro(taskId: string): Promise<string> {
+  const path = `/tasks/${encodeURIComponent(taskId)}/retro/export?format=md`;
   const res = await fetch(`${gatewayUrl()}${path}`, { cache: 'no-store' });
   if (!res.ok) {
     const text = await res.text().catch(() => '');

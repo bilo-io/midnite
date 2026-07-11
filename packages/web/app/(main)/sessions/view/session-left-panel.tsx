@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Check, ShieldCheck, X } from 'lucide-react';
-import type { ApprovalLogEntry, Project, SessionDetail, Task } from '@midnite/shared';
+import { ArrowRight, Check, ShieldCheck, X } from 'lucide-react';
+import { isTerminal, type ApprovalLogEntry, type Project, type SessionDetail, type Task } from '@midnite/shared';
 import { listApprovalLog } from '@/lib/api';
 import { useApiData } from '@/lib/use-api-data';
 import { useApprovalsSocket } from '@/hooks/use-approvals-socket';
@@ -150,6 +150,16 @@ export function SessionLeftPanel({
               </div>
             ) : null}
           </dl>
+          {/* Phase 62 F — a terminal task always has a retro skeleton; link to it. */}
+          {isTerminal(task.status) ? (
+            <Link
+              href={`/tasks/view?id=${task.id}&tab=retro`}
+              className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+            >
+              View retrospective
+              <ArrowRight className="h-3 w-3" />
+            </Link>
+          ) : null}
         </section>
       ) : null}
 
