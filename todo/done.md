@@ -13,6 +13,16 @@ Wires Themes A–C into a seeded, one-click-installable workflow: `[trigger.task
 - [x] **Docs** — cost (one small plan-model call, tag `retro`), budget-cap behaviour (P50 caps / P61 attribution → skeleton fallback), and how to add a Slack step, in the seed header.
 - [x] **Tests** — shared `isRetroNotable` (5) + gateway executor (outcome/notable on loaded + fail-soft) + seed structural test (trigger events, node chain, branch condition, true-handle notify). shared/gateway typecheck·lint·test green. Phase 62 → 13/33 (39%).
 
+## 2026-07-11 — feat: Ops cost views — Phase 61 Theme G (cost views) (PR #400)
+
+Theme G's last open item — ⏳ blocked on Theme B attribution (#370) + Theme E rollups (#381), both landed. Turns the Ops page from a spend snapshot into a cost instrument. **With cost views in, all of Phase 61's themes A–I have landed; the phase-level Verification checklist pass is the only outstanding work.** Phase 61 → 27/36 (75%). Web-only, additive — no gateway change.
+
+- [x] **Cost over time** — a stacked-area `SectionCard` from `GET /metrics/rollups` (daily buckets): gateway-LLM (`source=llm`) vs. measured agent-session (`source=session`) vs. estimated-session cost per day. Estimated is 0 today (all harvested rows are measured) but kept in the stack so the honesty split stays truthful if an estimate is ever rolled.
+- [x] **Cost by dimension** — a stacked-bar `SectionCard` with a repo/project/provider group-by toggle: repo/project from `GET /usage/attribution` (measured/estimated split + unpriced-session count surfaced), provider aggregated from rollup cost (attribution has no provider dim); top-8 by cost.
+- [x] **`CostPanel`** — self-fetching, owns a 7/30/90d window (daily buckets), mirroring `CycleFleetPanel`; mounted on the Ops page below the existing LLM-spend section. Data-source split is deliberate: rollups answer over-time, attribution answers the measured/estimated split — each chart uses the endpoint that already answers its question, no new gateway endpoint.
+- [x] **`getMetricsRollups`** typed client method wrapping `GET /metrics/rollups`.
+- [x] **Tests** — RTL units for both sections (cost sums, empty states, group-by toggle, unpriced surfacing, provider-from-rollups derivation) + a route-mocked Playwright `ops-cost.shots.ts` capturing both charts and exercising the toggle.
+
 ## 2026-07-11 — feat: CLI usage/ops + metrics-model docs — Phase 61 Theme I (PR #392)
 
 Observability from a shell + the model written down. Also fixed a fresh DI regression from Theme F (#389). Phase 61 → 25/36 (69%).

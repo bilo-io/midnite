@@ -8,6 +8,7 @@ import { listApprovalLog } from '@/lib/api';
 import { usePolling } from '@/lib/use-polling';
 import { WidgetLoader } from './spinner';
 import { CycleFleetPanel } from './ops-cycle-fleet';
+import { CostPanel } from './ops-cost';
 import { RunTimeline } from './run-timeline';
 
 // ── Shared primitives ────────────────────────────────────────────────────────
@@ -501,6 +502,7 @@ export function OpsView({
           </div>
           <DurationSection summary={summary} loading={loading} />
           <SpendSection usage={usage} loading={loading} />
+          <CostPanel />
           <CycleFleetPanel />
           <RunTimelineDrilldown />
         </>
