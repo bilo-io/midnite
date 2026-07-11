@@ -16,6 +16,7 @@ import {
   type MidniteConfig,
   type Notification,
   type NotificationKind,
+  type NotificationSeverity,
   type NotificationListQuery,
   type NotificationListResponse,
   type NotifyDecision,
@@ -49,6 +50,11 @@ const PLURAL_TITLE: Record<NotificationKind, string> = {
   // `backup.failed` is emitted directly by the backup scheduler (Phase 49 F), not
   // via the coalescing task-event path — plural label unused.
   'backup.failed': 'backups failed',
+  // `digest.generated` / `retro.notable` are emitted directly by the `midnite.notify`
+  // workflow node (Phase 62 C) via `notifyDirect`, not the coalescing path — plural
+  // labels unused, present only to keep the map exhaustive.
+  'digest.generated': 'digests generated',
+  'retro.notable': 'notable retrospectives',
 };
 
 type Pending = { decision: NotifyDecision; task: Task; count: number; timer: NodeJS.Timeout };
@@ -120,6 +126,44 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
       await this.dispatcher.dispatch(this.repo.hydrate(row));
     } catch (err) {
       this.logger.warn(`failed to dispatch agent.held notification: ${String(err)}`);
+    }
+  }
+
+  /**
+   * Phase 62 C — post a caller-composed notification (the `midnite.notify`
+   * workflow node, via the `NOTIFIER` port). Not coalesced: a pipeline decides
+   * when to notify, so it fires exactly once per call. Best-effort — a dispatch
+   * failure is logged, never thrown, so it can't wedge a workflow run. Respects
+   * `notifications.enabled`.
+   */
+  async notifyDirect(input: {
+    kind: NotificationKind;
+    severity: NotificationSeverity;
+    title: string;
+    body: string;
+    entityType: string;
+    entityId: string;
+    route: string;
+    teamId?: string | null;
+  }): Promise<void> {
+    if (!this.config.notifications.enabled) return;
+    try {
+      const row = this.repo.insert({
+        id: randomUUID(),
+        kind: input.kind,
+        severity: input.severity,
+        title: input.title,
+        body: input.body,
+        entityType: input.entityType,
+        entityId: input.entityId,
+        route: input.route,
+        readAt: null,
+        createdAt: new Date().toISOString(),
+        teamId: input.teamId ?? null,
+      });
+      await this.dispatcher.dispatch(this.repo.hydrate(row));
+    } catch (err) {
+      this.logger.warn(`failed to dispatch ${input.kind} notification: ${String(err)}`);
     }
   }
 

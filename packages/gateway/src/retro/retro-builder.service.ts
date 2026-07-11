@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { TaskRetroSchema, type Task, type TaskRetro } from '@midnite/shared';
+import { TaskRetroSchema, type RetroNarrative, type Task, type TaskRetro } from '@midnite/shared';
 
 import { RetroRepository } from './retro.repository';
 import { buildRetro } from './lib/build-retro';
@@ -44,6 +44,28 @@ export class RetroBuilderService {
       updatedAt: now,
     });
     return retro;
+  }
+
+  /**
+   * Attach an LLM narrative to a task's stored retro (Phase 62 C — the
+   * `generate-retro` node). Reads the current row, overlays the narrative, and
+   * re-upserts (preserving `createdAt`). Returns the updated retro, or `undefined`
+   * when no skeleton has been built yet (the caller decides how to proceed).
+   */
+  storeNarrative(taskId: string, narrative: RetroNarrative): TaskRetro | undefined {
+    const current = this.getByTaskId(taskId);
+    if (!current) return undefined;
+    const updated: TaskRetro = { ...current, narrative };
+    this.repo.upsert({
+      id: randomUUID(),
+      taskId,
+      outcome: updated.outcome,
+      hasNarrative: 1,
+      retro: JSON.stringify(updated),
+      createdAt: current.createdAt,
+      updatedAt: new Date().toISOString(),
+    });
+    return updated;
   }
 
   /** The stored retro for a task, or undefined if none has been built. */

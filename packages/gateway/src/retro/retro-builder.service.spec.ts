@@ -49,4 +49,22 @@ describe('RetroBuilderService', () => {
     const { svc } = build({ getByTaskId: vi.fn().mockReturnValue({ retro: '{not valid' }) as never });
     expect(svc.getByTaskId('t1')).toBeUndefined();
   });
+
+  it('storeNarrative overlays a narrative + re-upserts (hasNarrative 1, createdAt preserved)', () => {
+    const stored = { retro: JSON.stringify({ taskId: 't1', outcome: 'done', timeline: [], attempts: [], failures: [], durations: { waitMs: null, workMs: null, totalMs: null }, narrative: null, createdAt: 'orig' }) };
+    const { svc, repo } = build({ getByTaskId: vi.fn().mockReturnValue(stored) as never });
+    const narrative = { whatHappened: 'shipped', whatTrippedIt: null, notable: ['fast'], generatedBy: 'llm' as const };
+    const out = svc.storeNarrative('t1', narrative);
+    expect(out?.narrative).toEqual(narrative);
+    expect(repo.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ taskId: 't1', hasNarrative: 1, createdAt: 'orig' }),
+    );
+  });
+
+  it('storeNarrative is a no-op (undefined) when no skeleton exists', () => {
+    const { svc, repo } = build({ getByTaskId: vi.fn().mockReturnValue(undefined) as never });
+    const out = svc.storeNarrative('t1', { whatHappened: 'x', whatTrippedIt: null, notable: [], generatedBy: 'llm' });
+    expect(out).toBeUndefined();
+    expect(repo.upsert).not.toHaveBeenCalled();
+  });
 });
