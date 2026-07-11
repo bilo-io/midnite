@@ -339,6 +339,10 @@ import {
   type ChatUndoResponse,
   RetroResponseSchema,
   type TaskRetro,
+  DigestListResponseSchema,
+  DigestResponseSchema,
+  type Digest,
+  type DigestListItem,
 } from '@midnite/shared';
 import { z } from 'zod';
 
@@ -2142,6 +2146,47 @@ export async function getTaskRetro(
  *  Backs the Retro tab's ExportMenu (download .md / print-to-PDF / copy). */
 export async function exportTaskRetro(taskId: string): Promise<string> {
   const path = `/tasks/${encodeURIComponent(taskId)}/retro/export?format=md`;
+  const res = await fetch(`${gatewayUrl()}${path}`, { cache: 'no-store' });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new ApiError(errorMessage(res, text), res.status);
+  }
+  return res.text();
+}
+
+// ---- Digests (Phase 62 — fleet digests) ----
+
+/** Recent fleet digests from `GET /digests` (Phase 62 G) — lightweight feed rows
+ *  (date, window, headline, counts); the full digest is fetched on selection. */
+export async function getDigests(limit?: number, signal?: AbortSignal): Promise<DigestListItem[]> {
+  const { digests } = await fetchJson(
+    `/digests${limit ? `?limit=${limit}` : ''}`,
+    { signal },
+    DigestListResponseSchema,
+  );
+  return digests;
+}
+
+/** A single full digest from `GET /digests/:id` (Phase 62 G). Returns `null` on a
+ *  404 so callers can render an empty state rather than treat it as an error. */
+export async function getDigest(id: string, signal?: AbortSignal): Promise<Digest | null> {
+  try {
+    const { digest } = await fetchJson(
+      `/digests/${encodeURIComponent(id)}`,
+      { signal },
+      DigestResponseSchema,
+    );
+    return digest;
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) return null;
+    throw err;
+  }
+}
+
+/** Fetch a digest's markdown (`GET /digests/:id/export`). Backs the detail
+ *  pane's ExportMenu (download .md / print-to-PDF / copy). */
+export async function exportDigest(id: string): Promise<string> {
+  const path = `/digests/${encodeURIComponent(id)}/export?format=md`;
   const res = await fetch(`${gatewayUrl()}${path}`, { cache: 'no-store' });
   if (!res.ok) {
     const text = await res.text().catch(() => '');

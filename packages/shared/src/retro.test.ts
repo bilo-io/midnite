@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { DigestSchema, RetroResponseSchema, TaskRetroSchema, isRetroNotable } from './retro.js';
+import {
+  DigestListItemSchema,
+  DigestListResponseSchema,
+  DigestResponseSchema,
+  DigestSchema,
+  RetroResponseSchema,
+  TaskRetroSchema,
+  isRetroNotable,
+} from './retro.js';
 import type { TaskRetro } from './retro.js';
 
 const skeleton = {
@@ -110,5 +118,34 @@ describe('DigestSchema', () => {
   it('rejects a bad highlight outcome', () => {
     const bad = { ...digest, highlights: [{ ...digest.highlights[0], outcome: 'wip' }] };
     expect(DigestSchema.safeParse(bad).success).toBe(false);
+  });
+});
+
+describe('Digest read contracts (Phase 62 G)', () => {
+  const item = {
+    id: 'd1',
+    createdAt: digest.createdAt,
+    from: digest.from,
+    to: digest.to,
+    headline: digest.headline,
+    counts: digest.counts,
+  };
+
+  it('round-trips a lightweight list item', () => {
+    expect(DigestListItemSchema.parse(item)).toEqual(item);
+  });
+
+  it('a list item omits the heavy fields', () => {
+    // The feed row must not require sections/highlights/markdown.
+    expect(DigestListItemSchema.safeParse(item).success).toBe(true);
+    expect(item).not.toHaveProperty('markdown');
+  });
+
+  it('wraps items in a list response', () => {
+    expect(DigestListResponseSchema.parse({ digests: [item] }).digests).toHaveLength(1);
+  });
+
+  it('wraps a full digest in a single response', () => {
+    expect(DigestResponseSchema.parse({ digest }).digest.id).toBe('d1');
   });
 });

@@ -1,7 +1,8 @@
-import type { Council, Memory, Note, Project, Task, Workflow } from '@midnite/shared';
+import type { Council, Digest, Memory, Note, Project, Task, Workflow } from '@midnite/shared';
 import { describe, expect, it } from 'vitest';
 import {
   councilToIndexDoc,
+  digestToIndexDoc,
   memoryToIndexDoc,
   noteToIndexDoc,
   projectToIndexDoc,
@@ -55,6 +56,21 @@ describe('index mappers', () => {
     });
   });
 
+  it('maps a digest to its headline + section/highlight/markdown body', () => {
+    const digest = {
+      id: 'd1',
+      headline: 'A productive day',
+      sections: [{ name: 'acme/api', shipped: 2, failed: 0 }],
+      highlights: [{ taskId: 't1', title: 'Ship it', outcome: 'done', note: 'landed clean' }],
+      markdown: '# Digest body',
+    } as Digest;
+    const doc = digestToIndexDoc(digest);
+    expect(doc).toMatchObject({ type: 'digest', entityId: 'd1', teamId: null, title: 'A productive day' });
+    expect(doc.body).toContain('acme/api');
+    expect(doc.body).toContain('Ship it');
+    expect(doc.body).toContain('# Digest body');
+  });
+
   it('routes each type to a navigable path', () => {
     expect(routeFor('task', 't1')).toBe('/tasks');
     expect(routeFor('project', 'p1')).toBe('/projects');
@@ -62,5 +78,6 @@ describe('index mappers', () => {
     expect(routeFor('note', 'n1')).toBe('/dashboard');
     expect(routeFor('council', 'c1')).toBe('/councils/c1');
     expect(routeFor('workflow', 'w 1')).toBe('/workflows/edit?id=w%201');
+    expect(routeFor('digest', 'd 1')).toBe('/digests?id=d%201');
   });
 });

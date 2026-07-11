@@ -176,16 +176,15 @@ The morning "what did the fleet do?" — assembled by the product itself.
 - [x] The P51 session cockpit links to the task's retro once terminal (a **"View retrospective"**
       deep-link to `?tab=retro`).
 
-## Theme G — Digest surfaces — **M**
+## Theme G — Digest surfaces — **M** — ✅ DONE (PR #404, 2026-07-11)
 
-- [ ] A **Digests feed** (a page or a section under Ops/dashboard): list of generated digests
-      (date, headline, counts) → a detail render of the structured digest (sections, highlights,
-      deep-links into tasks/retros); markdown export per digest.
-- [ ] A **digest dashboard widget** (latest headline + counts) registered in
-      [`dashboard-widgets.ts`](../packages/web/lib/dashboard-widgets.ts) with the existing picker/
-      sizing conventions.
-- [ ] Digest + retro entities are **searchable** (FTS index: headline/narrative → the P20 pattern)
-      so "that thing the digest mentioned" is findable.
+Landed — items moved to [`done.md`](done.md). A `/digests` **two-pane master-detail** feed
+(recent list → structured detail render with task deep-links + markdown export), a **Latest
+digest** dashboard widget, a **Digests** nav feature, and digests indexed into global search
+(a `digestToIndexDoc` mapper + a fail-soft `DigestBuilder` write-path + boot backfill + a
+`/digests?id=` route). Thin `DigestsController`/`DigestsService` read layer; digests stay global
+(no team column). Retro searchability wasn't taken here (retros are per-task, surfaced via the
+task detail — Theme F); the FTS scope this slice added is digests.
 
 ## Theme H — Transcript slicing, CLI, config & docs — **S-M** — ◐ PARTIAL (PR #403, 2026-07-11)
 

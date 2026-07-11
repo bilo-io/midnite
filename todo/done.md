@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-11 — feat: digest surfaces — Phase 62 Theme G (PR #404)
+
+Gives a generated fleet digest somewhere to be seen: `DigestBuilder` (Theme C) wrote rows to the `digests` table with no controller, no web surface, no searchability. Theme G is the feed, the detail render, the widget, and FTS. With H already landed, this completes every lettered theme of Phase 62. Phase 62 → 23/32 (72%; verification checklist remains).
+
+- [x] **Digests feed** — a `/digests` two-pane master-detail page: left rail lists recent digests (date, headline, shipped/failed/attention counts); right pane renders the selected digest's **structured** detail (outcome tallies, best-effort spend + cycle-time, per-repo/project sections, highlights **deep-linked** to `?task=`) — not the stored markdown, so the deep-links work. Selection lives in `?id=` (deep-linkable; global search routes straight to a digest). A **Digests** nav feature (Newspaper icon).
+- [x] **Markdown export** — `GET /digests/:id/export` serves the pre-rendered `digest.markdown` verbatim (md server-side, pdf client-side via the shared `ExportMenu`), matching the task/council/retro export routes.
+- [x] **Dashboard widget** — a **Latest digest** widget (headline + shipped/failed/attention counts, links to the feed) registered in `dashboard-widgets.ts`; honest empty state when no digest exists yet.
+- [x] **Searchable** — digests indexed into global search: a `digestToIndexDoc` mapper (headline→title, sections/highlights/markdown→body, `teamId` null), a fail-soft `DigestBuilder` write-path upsert, boot backfill, and a `/digests?id=` route in `routeFor`. `digest` registered as a `SearchType`.
+- [x] **Read layer + tests** — thin `DigestsController` + `DigestsService` (parse stored rows → shared contract; global scope, no team column, Decision §5); `DigestListItem`/`DigestListResponse`/`DigestResponse` contracts + `getDigests`/`getDigest`/`exportDigest` web client. Shared schema units, gateway service/controller/FTS-mapper specs, web RTL (`DigestDetail`, `DigestWidget`), Playwright `digest-surfaces.shots.ts`.
+
 ## 2026-07-11 — feat: retro CLI + config knobs + docs — Phase 62 Theme H (◐ partial) (PR #403)
 
 The CLI + config + docs plumbing for retrospectives. **◐ PARTIAL** — `midnite digest` is deferred because there's no `GET /digests` read API yet and Theme G (digest surfaces, in flight) is building one; adding it here would collide. The bounded transcript slicer (H's third bullet) already landed in Theme C. Phase 62 → 20/32 (63%).
