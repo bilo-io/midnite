@@ -4,8 +4,10 @@ import {
   RetroNarrativeDraftSchema,
   RetroNarrativeSchema,
   isRetroNotable,
+  type MidniteConfig,
   type RetroNarrative,
 } from '@midnite/shared';
+import { MIDNITE_CONFIG } from '../../../config.token';
 import { LlmService } from '../../../agent/llm/llm.service';
 import { RETRO_ACCESSOR, type RetroAccessor } from '../../../retro/retro-accessor';
 import type { NodeExecutor, NodeRunContext } from '../node-executor';
@@ -50,6 +52,7 @@ export class GenerateRetroExecutor implements NodeExecutor {
   constructor(
     @Inject(RETRO_ACCESSOR) private readonly retro: RetroAccessor,
     @Inject(LlmService) private readonly llm: LlmService,
+    @Inject(MIDNITE_CONFIG) private readonly config: MidniteConfig,
   ) {}
 
   async execute(ctx: NodeRunContext): Promise<unknown> {
@@ -88,7 +91,7 @@ export class GenerateRetroExecutor implements NodeExecutor {
       const res = await this.llm.generateStructured(
         {
           model: this.llm.getPlanModel(),
-          maxTokens: 700,
+          maxTokens: this.config.retro.narrativeMaxTokens,
           system:
             'You summarise a software task retrospective for an engineering team. Be concise and factual. `whatHappened`: 1-3 sentences. `whatTrippedIt`: the main blocker, or null. `notable`: 0-4 short bullet strings a human should note.',
           messages: [
