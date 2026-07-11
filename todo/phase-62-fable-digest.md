@@ -104,25 +104,31 @@ The workflow-first enabler: workflows that fire when tasks finish. Useful far be
 - [x] Editor + template support: the trigger is configurable in the workflow editor's trigger panel
       (event checkboxes + optional repo/project filter) and usable in seeds.
 
-## Theme C — Retro & digest node executors — **M-L**
+## Theme C — Retro & digest node executors — **M-L** — ✅ DONE (PR #TBD, 2026-07-11)
 
-Thin nodes over real services — the workflow vocabulary for reporting.
+Thin nodes over real services — the workflow vocabulary for reporting. Node executors stay thin
+(inject `@Global` ports — `RETRO_PORT` / `TASK_READER` / `NOTIFIER` / `DigestBuilderService` — so
+retro/tasks/notifications don't cycle with `WorkflowsModule`, mirroring `TASK_CREATOR`).
 
-- [ ] **`midnite.generate-retro`** — input: `taskId` (or the trigger's task); calls `RetroBuilder`
+- [x] **`midnite.generate-retro`** — input: `taskId` (or the trigger's task); calls `RetroBuilder`
       for the skeleton, then **one** plan-model `generateStructured` call for the narrative
       (`whatHappened` / `whatTrippedIt` / `notable[]`) over the skeleton + a **bounded transcript
-      slice** (Theme H); upserts `task_retros.narrative`; **fail-soft** — on LLM-off/budget-cap/error
-      the node succeeds with the skeleton (narrative `generatedBy: null`). Usage-tagged `retro`.
-- [ ] **`midnite.list-completed-tasks`** — input: window (`sinceHours`/`from`/`to`) + optional
-      repo/project filter; output: terminal tasks in the window with retro pointers (reuses the P57
-      summary DTO — no full hydration).
-- [ ] **`midnite.build-digest`** — input: the window's tasks/retros; calls a `DigestBuilder` service:
-      deterministic aggregation (shipped/failed/needs-attention counts, per-repo/project sections,
-      retro highlights, spend + cycle stats from the P61 endpoints when present) + **one** LLM
-      headline paragraph (same fail-soft rule); stores a `digests` row (structured JSON + rendered
-      markdown); outputs `{ digestId, markdown, blocks }` for downstream delivery nodes.
-- [ ] **`midnite.notify`** — a small node posting an in-app P21 notification (kind
-      `digest.generated` / `retro.notable`) so pipelines can deliver in-app without bespoke code.
+      slice** (Theme H, pulled forward); upserts `task_retros.narrative` via `storeNarrative`;
+      **fail-soft** — on LLM-off/error the node succeeds with the skeleton (`narrativeGenerated:
+      false`, narrative left null). Usage-tagged `retro`.
+- [x] **`midnite.list-completed-tasks`** — input: window (`sinceHours` default 24 / explicit
+      `from`/`to`) + optional repo/project filter; output: terminal tasks in the window as lean P57
+      summaries (no full hydration) via the `TASK_READER` port.
+- [x] **`midnite.build-digest`** — input: the window's tasks/retros; calls the `DigestBuilder`
+      service: deterministic aggregation (shipped/failed/needs-attention counts, per-repo/project
+      sections, retro highlights; spend + cycle fields present, populated best-effort — null until a
+      later theme wires the P61 endpoints) + **one** LLM headline paragraph (same fail-soft rule);
+      stores a `digests` row (structured JSON + rendered markdown); outputs `{ digestId, markdown,
+      headline, counts }` for downstream delivery. Real `Digest` schema + `digests` table +
+      migration `0082` landed here (the Theme A stub is filled).
+- [x] **`midnite.notify`** — a small node posting an in-app P21 notification (kind
+      `digest.generated` / `retro.notable`) via the `NOTIFIER` port → `NotificationsService
+      .notifyDirect`, so pipelines can deliver in-app without bespoke code.
 
 ---
 

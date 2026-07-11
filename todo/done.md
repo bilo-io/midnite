@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-11 — feat: retro & digest node executors — Phase 62 Theme C (PR #TBD)
+
+The workflow vocabulary for reporting — four thin nodes over gateway services, the enabler for the retro (D) and digest (E) pipelines. Node executors stay thin (CLAUDE.md layering); `RetroBuilderService`/`DigestBuilderService` own the logic. Cross-module reach uses `@Global` ports (mirroring `TASK_CREATOR`) so retro/tasks/notifications don't create a cycle with `WorkflowsModule`. Phase 62 → 10/33 (30%).
+
+- [x] **`midnite.generate-retro`** — builds the deterministic skeleton (Phase 62 A) if absent, then **one** fail-soft plan-model `generateStructured` call for the narrative (`whatHappened`/`whatTrippedIt`/`notable[]`) over the skeleton + a **bounded transcript slice**; upserts `narrative` via `RetroBuilderService.storeNarrative`. LLM off / capped / error ⇒ node succeeds with the skeleton (`narrativeGenerated: false`). Usage-tagged `retro`.
+- [x] **`midnite.list-completed-tasks`** — terminal (done/abandoned) tasks in a window (`sinceHours` default 24, explicit `from`/`to` override) + repo/project filters; emits lean P57 summaries via a `TASK_READER` port (no full hydration).
+- [x] **`midnite.build-digest`** — `DigestBuilderService`: deterministic aggregation (shipped/failed counts, per-repo/project sections, retro-driven highlights) + **one** fail-soft LLM headline; stores a `digests` row (JSON + rendered markdown); outputs `{ digestId, markdown, headline, counts }`. Usage-tagged `digest`. Real `Digest` schema + `digests` table + migration `0082` landed here (the Theme A stub is now filled).
+- [x] **`midnite.notify`** — posts an in-app P21 notification (kinds `digest.generated` / `retro.notable`) via a `NOTIFIER` port → `NotificationsService.notifyDirect`, so pipelines deliver in-app without bespoke code.
+- [x] **Bounded transcript slice (Theme H core, pulled forward)** — pure `transcriptExcerpt()` in `sessions/lib/transcript-slice.ts` (tail-N + failure-adjacent context + tool-call summary, hard char cap trimmed from the front) + a best-effort `findTranscriptBySessionId` loader; the only way retro generation touches a transcript. Full unit coverage incl. the oversized-JSONL cap.
+- [x] **tests** — shared `Digest` round-trips; gateway `DigestBuilder` (aggregation + highlights + fail-soft headline + persist), per-executor specs (fail-soft + idempotency + schema validation), `storeNarrative`, transcript-slice helper, `digests` repository integration.
+
 ## 2026-07-11 — test+docs: finish Theme G → Phase 65 to 100% — Phase 65 Theme G (PR #391)
 
 The phase closer. Per-theme unit/RTL/repository coverage shipped inline with A–F; this brings the loose ends together and drives the Verification checklist to done. **Phase 65 → 33/33 (100%).**
