@@ -262,7 +262,7 @@ leaving `repo` unresolved) — caught verifying `midnite ops` live.
 
 ## Verification
 
-**✅ Signed off 2026-07-11 (PR #TBD).** All nine acceptance criteria confirmed against the shipped
+**✅ Signed off 2026-07-11 (PR #406).** All nine acceptance criteria confirmed against the shipped
 code + its test coverage (every theme A–I landed inline with tests); the full `moon` gate is green
 (shared 700 · gateway · web 1119 · cli 201; typecheck + lint clean). The only gate hiccup was a
 known `@midnite/ui` Storybook flake ("Vitest failed to find the current suite" after a Vite

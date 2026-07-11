@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-11 — docs: Phase 61 Verification pass signed off — Phase 61 (PR #TBD)
+## 2026-07-11 — docs: Phase 61 Verification pass signed off — Phase 61 (PR #406)
 
 Closes the last 9 boxes of Phase 61 (Fable-Observability). Every theme A–I had already landed inline with tests; the phase sat at 27/36 (75%) only because the Verification checklist was unticked. This pass confirmed all nine acceptance criteria against the shipped code + its test coverage and drove the full `moon` gate green — no product-code change, docs-only. Phase 61 → 36/36 (100%), Status ✅ DONE.
 
