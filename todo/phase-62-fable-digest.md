@@ -137,19 +137,28 @@ The narrative writes itself when work ends.
       (routes through `LlmService` → P50 caps / P61 attribution; degrades to the skeleton when
       exhausted), and how to add a Slack step — all in the seed header.
 
-## Theme E — Digest pipeline template (upgrade the existing seed) — **M**
+## Theme E — Digest pipeline template (upgrade the existing seed) — **M** — ✅ DONE (PR #401, 2026-07-11)
 
 The morning "what did the fleet do?" — assembled by the product itself.
 
-- [ ] **Upgrade [`daily-digest.seed.ts`](../packages/gateway/src/workflow-templates/seeds/daily-digest.seed.ts):**
-      schedule trigger (cron, default 08:00 weekdays) → `midnite.list-completed-tasks` (24h window)
-      → `midnite.build-digest` → delivery fan-out: `slack.message` (formatted blocks) **and**
-      `midnite.notify` (in-app) — replacing the old freeform list-tasks→ai.claude draft with the
-      real, structured digest.
-- [ ] **Global scope with per-repo/project sections** in one digest (settled) — the template's
-      window/filter params are editable per install for anyone wanting a per-project variant.
-- [ ] P44 delivery: the digest also flows to registered outbound webhooks (Slack/Discord formatted
-      per provider; generic JSON for the rest) via the existing delivery+retry log.
+- [x] **Upgrade [`daily-digest.seed.ts`](../packages/gateway/src/workflow-templates/seeds/daily-digest.seed.ts):**
+      schedule trigger (08:00 weekdays) → `midnite.list-completed-tasks` (24h window) →
+      `midnite.build-digest` → **parallel, failure-isolated** delivery fan-out: `slack.message`
+      (rich Block Kit blocks, headline as fallback text) **and** `midnite.notify` (in-app,
+      `digest.generated` → `/digests`) — replacing the old freeform list-tasks→ai.claude draft
+      with the real, structured digest. Slack is **optional / best-effort**: the credential slot is
+      optional and an unbound `slot:` sentinel makes `slack.message` **skip cleanly** (never fails
+      the run), so the template one-click-enables with in-app-only delivery. `slack.message` gained
+      an optional, expressionable Block Kit `blocks` param (`union([array, string])` so the raw
+      `{{ $json.blocks }}` survives graph validation, then resolves to the typed array at run time).
+- [x] **Global scope with per-repo/project sections** in one digest (settled) — `build-digest`
+      already emits per-repo sections; the seed runs the global 24h window, and its
+      `sinceHours`/`repo`/`projectId` node params stay editable per install for a per-project variant.
+- ⏳ **Deferred (follow-up):** P44 delivery to registered outbound webhooks. The webhook delivery
+      engine subscribes **only** to the `TaskEventBus` (task-scoped events) — digests have no seam.
+      Fanning them out needs a new `digest.generated` webhook event + per-provider formatter + an
+      emit from `DigestBuilder.build`; deferred to keep this slice at **M** (Slack + in-app cover
+      the delivery targets today).
 
 ---
 
