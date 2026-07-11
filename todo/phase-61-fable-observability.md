@@ -205,17 +205,14 @@ open — both remain TODO under this theme.
       outcome-colored, retries visible) on the task detail / Ops drill-down — reuse recharts, no new
       chart lib.
 
-## Theme H — Widgets + cockpit integration — **M**
+## Theme H — Widgets + cockpit integration — **M** — ✅ DONE (PR #390, 2026-07-11)
 
-Meet users where they already look.
-
-- [ ] New widget types in [`dashboard-widgets.ts`](../packages/web/lib/dashboard-widgets.ts):
-      **cost-by-repo**, **cycle-time**, **fleet-trend** — registered in the existing picker/registry
-      (category, sizes, config), rendered with recharts, reading the same endpoints as Ops.
-- [ ] **Session cockpit (P51):** the right-panel context/token stat shows **measured** numbers when
-      harvested (estimate label only when falling back) + the session's cost line.
-- [ ] **Project cockpit (P55):** a cost/throughput card (this project's spend, cycle-time, run
-      counts) from the `groupBy=project` attribution.
+Meet users where they already look. Landed — items moved to [`done.md`](done.md).
+Three compact recharts dashboard widgets (**cost-by-repo** stacked measured-vs-estimated,
+**cycle-time** p50/p90, **fleet-trend** gauge series) registered in the picker with minimal
+per-widget config + honest empty states; a **SessionCostLine** on the P51 cockpit and a
+**ProjectCostCard** on the P55 rail, all reading the existing attribution/cycle-time/gauge
+endpoints (+ a `getUsageAttribution` client method).
 
 ## Theme I — CLI + docs — **S-M**
 

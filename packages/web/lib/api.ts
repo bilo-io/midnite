@@ -43,6 +43,9 @@ import {
   UsageSummaryResponseSchema,
   type UsageSummaryResponse,
   type UsageGroupBy,
+  UsageAttributionResponseSchema,
+  type UsageAttributionResponse,
+  type UsageAttributionQuery,
   NotificationListResponseSchema,
   type NotificationListResponse,
   type NotificationListQuery,
@@ -2344,6 +2347,19 @@ export async function getUsageSummary(params?: {
   if (params?.groupBy) qs.set('groupBy', params.groupBy);
   const query = qs.toString() ? `?${qs.toString()}` : '';
   return fetchJson(`/usage/summary${query}`, undefined, UsageSummaryResponseSchema);
+}
+
+/** Cost attribution by task/repo/project/session from `GET /usage/attribution`
+ *  (Phase 61 B) — harvested agent-session cost with a measured-vs-estimated split. */
+export async function getUsageAttribution(
+  params?: UsageAttributionQuery,
+): Promise<UsageAttributionResponse> {
+  const qs = new URLSearchParams();
+  if (params?.groupBy) qs.set('groupBy', params.groupBy);
+  if (params?.from) qs.set('from', params.from);
+  if (params?.to) qs.set('to', params.to);
+  const query = qs.toString() ? `?${qs.toString()}` : '';
+  return fetchJson(`/usage/attribution${query}`, undefined, UsageAttributionResponseSchema);
 }
 
 // ---- Notifications (Phase 21 — notification center + live feed) ----

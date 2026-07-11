@@ -6,8 +6,11 @@ import { ResponsiveGridLayout, useContainerWidth } from 'react-grid-layout';
 import type { Layout, LayoutItem, ResponsiveLayouts } from 'react-grid-layout';
 import type { Note, Project, Routine, RoutineProgress, TaskSummary, TaskCounts } from '@midnite/shared';
 import {
+  COST_BY_REPO_DEFAULTS,
+  CYCLE_TIME_WIDGET_DEFAULTS,
   DASHBOARD_WIDGETS,
   DEFAULT_WIDGETS,
+  FLEET_TREND_DEFAULTS,
   QUOTE_DEFAULTS,
   sizeForKey,
   type Breakpoint,
@@ -38,6 +41,9 @@ import { ActivityWidget } from './activity-widget';
 import { ThroughputWidget } from './throughput-widget';
 import { HealthWidget } from './health-widget';
 import { UsageWidget } from './usage-widget';
+import { CostByRepoWidget } from './cost-by-repo-widget';
+import { CycleTimeWidget } from './cycle-time-widget';
+import { FleetTrendWidget } from './fleet-trend-widget';
 import { ShippedWidget } from './shipped-widget';
 import { QuickCaptureWidget } from './quick-capture-widget';
 import { StorageWidget } from './storage-widget';
@@ -439,6 +445,39 @@ export function DashboardGrid({
         return { node: <HealthWidget /> };
       case 'usage':
         return { node: <UsageWidget /> };
+      case 'cost-by-repo': {
+        const w = widgets.find((x) => x.type === 'cost-by-repo');
+        return {
+          node: (
+            <CostByRepoWidget
+              config={{ ...COST_BY_REPO_DEFAULTS, ...(w?.type === 'cost-by-repo' ? w.config : {}) }}
+              onConfigChange={(c) => updateConfig('cost-by-repo', c)}
+            />
+          ),
+        };
+      }
+      case 'cycle-time': {
+        const w = widgets.find((x) => x.type === 'cycle-time');
+        return {
+          node: (
+            <CycleTimeWidget
+              config={{ ...CYCLE_TIME_WIDGET_DEFAULTS, ...(w?.type === 'cycle-time' ? w.config : {}) }}
+              onConfigChange={(c) => updateConfig('cycle-time', c)}
+            />
+          ),
+        };
+      }
+      case 'fleet-trend': {
+        const w = widgets.find((x) => x.type === 'fleet-trend');
+        return {
+          node: (
+            <FleetTrendWidget
+              config={{ ...FLEET_TREND_DEFAULTS, ...(w?.type === 'fleet-trend' ? w.config : {}) }}
+              onConfigChange={(c) => updateConfig('fleet-trend', c)}
+            />
+          ),
+        };
+      }
       case 'shipped':
         return { node: <ShippedWidget /> };
       case 'who-in-office':

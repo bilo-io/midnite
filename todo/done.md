@@ -15,6 +15,14 @@ The signature NotebookLM artifacts, **real but degrading gracefully**. Both live
 - [x] **shared** — `memory-artifact.ts`: `audio-overview`/`video-overview` kinds, `audio`/`video` formats, `filePath`/`mimeType`/`fileSize`/`degraded` fields, `isFileBackedFormat`; new `memory-studio.ts` (`AudioScript`/`VideoDeck` zod + JSON-Schema mirrors); `memory.studio` config schema.
 - [x] **gateway** — file columns on `memory_artifacts` + migration `0081` (hand-written; drizzle-kit generate stays blocked on the pre-existing snapshot drift); `MemoryStudioService` branches audio/video → seams → uploads write; `…/artifacts/:id/file` serve endpoint (re-confined like media file-serve).
 - [x] **tests** — shared schema round-trips (audio/video + file fields, script/deck); gateway service (audio/video degrade + file-persist with fake seams), TTS/video seam enable/degrade, `wrapText`, renderers, controller; web RTL (audio player + degraded hint) + e2e (rows offered) + light/dark preview shots (rail, playable audio viewer, degraded video viewer).
+## 2026-07-11 — feat(web): metrics widgets + cost cockpit cards — Phase 61 Theme H (PR #390)
+
+Surface the Phase 61 metrics where users already look — the dashboard + the session/project cockpits — reading the endpoints Themes B/C/D ship. Web-only.
+
+- [x] **3 dashboard widgets** (compact recharts, Activity category, minimal per-widget config, honest empty states): **cost-by-repo** (stacked measured-vs-estimated bars from `/usage/attribution?groupBy=repo`, window select, unpriced note), **cycle-time** (wait/work/end-to-end p50/p90 from `/metrics/cycle-time`, groupBy+window selects, retry-overhead stat), **fleet-trend** (queue/slots/tick-latency series from `/metrics/gauges/history`). Registered in the `WidgetType`/`WidgetConfig`/`WidgetInstance`/`DASHBOARD_WIDGETS`/`newInstance` surface + default-merged render-map cases (mirrors `quote`). Added the `getUsageAttribution` client method.
+- [x] **Session cockpit (P51):** a `SessionCostLine` — this session's spend from `groupBy=session` with a measured/estimated honesty label — next to the existing (measured) token/context stat.
+- [x] **Project cockpit (P55):** a `ProjectCostCard` in the right rail — spend split + sessions + p50 end-to-end from `groupBy=project` attribution + cycle-time.
+- [x] **Tests:** RTL per widget + both cockpit cards (data / honest-empty / config-callback); Storybook Default + Empty stories per widget. typecheck/lint green; web **1090** pass. Phase 61 → 23/36 (64%).
 
 ## 2026-07-11 — feat: live metrics WS channel — Phase 61 Theme F (PR #389)
 
