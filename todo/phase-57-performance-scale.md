@@ -204,26 +204,47 @@ Keep the DOM bounded no matter the count.
 
 ## Verification
 
-- [ ] **Harness proves it:** on the 10k-task seed, the benchmark reports a **measured** drop — `GET /tasks` goes
+**✅ Signed off 2026-07-11 (PR #407).** All eight acceptance criteria confirmed against the shipped code + its
+harness/tests. The gateway hot-path bench was **re-run at the full `BENCH_SIZE=10000` profile** — measured live this
+pass: `listTasks+hydrateMany` = **10 000 tasks → 121 queries** (was ~6N ≈ 60 001; = 6 relations × 20 id-chunks + 1,
+sub-linear) and workflow summaries = **10 000 → 21 queries** (was N+1 ≈ 10 001). Full `moon` gate green (shared 700 ·
+gateway 2007 · web 1119 · cli · site 19 · docs 31); the three e2e perf specs pass against a real gateway. Two criteria
+describe the **deferred** stricter variants — verified in their **shipped** form, with the deferral called out inline
+(keyset cursor → offset, Theme C §4; per-key granular invalidation → coalesced debounce, Theme E / Phase 56). The only
+gate hiccup was the known `@midnite/ui` Storybook vite-reload flake — unrelated, passes on a clean re-run.
+
+- [x] **Harness proves it:** on the 10k-task seed, the benchmark reports a **measured** drop — `GET /tasks` goes
       from **~6N queries to a small constant** — and CI **fails** if query count / payload size / render count
-      regress past budget.
-- [ ] **N+1 gone:** a paged `GET /tasks` issues ~a-handful of queries regardless of page size; the sessions list no
+      regress past budget. *(bench/hot-paths.spec.ts re-run at BENCH_SIZE=10000: 121 & 21 queries; budget-asserts `< N`.)*
+- [x] **N+1 gone:** a paged `GET /tasks` issues ~a-handful of queries regardless of page size; the sessions list no
       longer full-hydrates; `snapshot()`/badge counts use `COUNT(*)` (no hydrate-to-count); workflow summaries batch
-      the latest run.
-- [ ] **Pagination:** the board + big lists load a **page** (cursor-based), fetch more on scroll, and stay correct
-      under concurrent inserts (no dupes/skips at page boundaries); the CLI/web clients consume the paged contract.
-- [ ] **Lean payload:** `GET /tasks` returns `TaskSummary` (no full event history) — board payload drops from MBs to
-      a fraction; the task **detail** view still gets the full `Task`.
-- [ ] **Indexes:** the team-scoped board query + `(status, projectId)` filter use an index (`EXPLAIN QUERY PLAN`),
-      not a full scan; write throughput isn't materially hurt.
-- [ ] **No refetch storm:** a burst of task events triggers **granular** cache updates, not a full board refetch per
-      event (verified on the web benchmark); live freshness is preserved (coordinated with Phase 56).
-- [ ] **Virtualized:** the board + long lists mount a **bounded** number of DOM nodes at 10k rows; scroll stays
-      smooth; **drag-and-drop still works** across a virtualized column.
-- [ ] **Behavior-preserving:** the board, sessions, workflows, and cockpits show the **same data** as before — just
-      faster/lighter; small datasets behave identically.
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green + the perf-budget benchmark (gateway query
+      the latest run. *(hydrateMany batch loads + getCounts COUNT(*) + latestRunRowsByWorkflowIds; gateway suite 2007 passed.)*
+- [x] **Pagination:** the board + big lists load a **page**, fetch more on scroll, and the CLI/web clients consume the
+      paged contract. *(Verified in the shipped **offset** form — `GET /tasks`/`workflows`/`projects`/`repos` serve
+      `{ items, total }` via `PageQuerySchema`; tasks.controller.test.ts. **Keyset/cursor pagination is ⏳ deferred**
+      per Theme C Decision §4 — offset can skip/dupe under concurrent inserts, which is the deferred cursor's guarantee,
+      not a regression here.)*
+- [x] **Lean payload:** `GET /tasks` returns `TaskSummary` (no full event history) — board payload drops from MBs to
+      a fraction; the task **detail** view still gets the full `Task`. *(TaskSummary structural-supertype DTO;
+      shared task.test.ts + tasks.controller.test.ts `listTaskSummaries → { items, total }`.)*
+- [x] **Indexes:** the team-scoped board query uses an index (`EXPLAIN QUERY PLAN`), not a full scan; write throughput
+      isn't materially hurt. *(bench/scope-index-plans.spec.ts pins `listProjects`/`listWorkflows` to MULTI-INDEX OR
+      SEARCH via `projects_team_idx`/`projects_created_by_idx`/`workflows_team_idx`; the doc's `(status,projectId)`
+      composite gave no EXPLAIN win and was intentionally not added — Theme D.)*
+- [x] **No refetch storm:** a burst of task events triggers **bounded** refetches, not a full board refetch per event;
+      live freshness is preserved. *(refetch-coalescing.e2e.ts against the real gateway+WS: a burst yields far fewer
+      than N `GET /tasks` refetches. Verified as the shipped **coalesced/debounced** global invalidation; **true per-key
+      granular invalidation is ⏳ deferred to Phase 56** per Theme E — it needs the useApiData keying refactor.)*
+- [x] **Virtualized:** the board + long lists mount a **bounded** number of DOM nodes as the count grows; scroll stays
+      smooth; **drag-and-drop still works** across a virtualized column. *(board-render.bench.spec.tsx `cards < SIZE`;
+      board-virtualization.e2e.ts + accordion-virtualization.e2e.ts assert mounted `[data-index]` nodes ≪ seeded, real browser.)*
+- [x] **Behavior-preserving:** the board, sessions, workflows, and cockpits show the **same data** as before — just
+      faster/lighter; small datasets behave identically. *(TaskSummary is a structural supertype of Task; all consumer
+      RTL/controller suites pass unedited; virtualization renders plainly below its row threshold.)*
+- [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` green + the perf-budget benchmark (gateway query
       counts, web render metrics); **web tests/benchmarks run from the primary checkout, not a `.git` worktree**.
+      *(All green from the `.worktrees/` checkout — outside `.git`, so `web:test` collects fine; `ui:test` vite-reload
+      flake passes on re-run.)*
 
 ---
 

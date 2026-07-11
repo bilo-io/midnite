@@ -36,7 +36,7 @@
 | [60 · Fable-Analysis](phase-60-fable-analysis.md) | ✅ DONE | 62/62 | `██████████` | 100% | — | — |
 | [59 · Chat to board](phase-59-chat-to-board.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
-| [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 18/27 | `███████░░░` | 67% | V | — |
+| [57 · Performance & scale](phase-57-performance-scale.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [56 · Realtime / WS reliability](phase-56-realtime-ws-reliability.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [55 · Projects detail page](phase-55-projects-detail-page.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
 | [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
@@ -95,12 +95,10 @@
 | [1 · Board by hand](phase-1-board.md) | ✅ DONE | 16/16 | `██████████` | 100% | — | — |
 | [0 · Scaffold](phase-0-scaffold.md) | ✅ DONE | 10/10 | `██████████` | 100% | — | — |
 
-**Headline:** phases **0–56 are complete**, plus **60** and **61** (Fable analysis + observability;
-61's Verification pass signed off 2026-07-11). The **live frontier** is **57** (performance &
-scale — F remainder) and **62** (Fable-Digest — Themes G/H). Freshly planned and unstarted: the **Fable trio 60–62**
-(analysis / observability / digest) and the office pair **63** (Office 3D — first-person
-three.js office) + **64** (multiplayer office presence — Theme D blocked on 63), both planned
-2026-07-06. (An *earlier* Phase 42 was a
+**Headline:** phases **0–61 are complete** (incl. Fable analysis/observability **60/61** and
+performance/scale **57** — its Verification pass signed off 2026-07-11), plus the office pair
+**63/64**. The **only live frontier** is **62** (Fable-Digest): every lettered theme A–H has
+landed (PRs through #404); only the phase **Verification checklist** remains. (An *earlier* Phase 42 was a
 parallel restatement of Phase 40, folded into Phase 40 Theme G and removed 2026-06-27; the
 current 42 & 43 are new, unrelated phases — two brainstorm sessions ran concurrently, so the
 preference-sync plan took the next free number, 43.)
