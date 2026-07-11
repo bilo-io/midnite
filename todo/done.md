@@ -13,6 +13,17 @@ The audit closer. Twelve bounded audit themes (A–L) each produced a findings r
 - [x] **5 recommended remediation phases + 2 maintenance tracks** — security enforcement · core correctness (state/scheduler/tx) · error-boundary hardening · web state/flow consistency · a11y & responsive; plus dependency/framework upgrades and product-docs authoring. Rough-sized. **Recommended, not created.**
 - [x] **Verification checklist** — all Phase 60 acceptance criteria driven to done (every A–L report exists with evidence; stale-claim discipline held; each section covered; quick-wins limited to sev≥High+S with tests green).
 
+## 2026-07-11 — feat: retro & digest workflow node executors — Phase 62 Theme C (PR #393)
+
+The reusable workflow vocabulary for reporting — thin node executors over real services (Themes D/E wire them into seeded pipelines). Workflow-first: `WorkflowsModule` gains no imports; collaborators are reached via lazy `ModuleRef` ports.
+
+- [x] **`midnite.generate-retro`** — RetroBuilder skeleton + a **bounded transcript slice** → **one** plan-model `generateStructured` narrative (`whatHappened`/`whatTrippedIt`/`notable[]`), persisted via `RETRO_ACCESSOR`. **Fail-soft:** LLM off / error / no transcript / no terminal retro → skeleton kept, narrative null, node succeeds. Usage tag `retro`.
+- [x] **`midnite.list-completed-tasks`** — terminal tasks in a window (`sinceHours`/`from`/`to`) + optional repo/project filter via `TASK_LISTER`, using the **P57 summary DTO** (no full hydration).
+- [x] **`midnite.build-digest`** — `DigestBuilder`: deterministic aggregation (shipped/failed/needs-attention counts, per-repo/project sections, retro highlights) + **best-effort** spend + cycle-time (p50/p90) stats + **one** LLM headline (fail-soft) → stored `digests` row (structured JSON + markdown) → `{ digestId, markdown, blocks }`.
+- [x] **`midnite.notify`** — in-app P21 notification (`digest.generated` / `retro.notable`) via a `NOTIFIER` port.
+- [x] **Storage + contracts** — new `digests/` module (table + migration `0082` + repository); bounded transcript slicer in `sessions/lib`; full structured `DigestSchema` (fleshed from the Theme-A stub); `retro`/`digest` LLM features + notification kinds.
+- [x] **Tests** — per-executor specs (success + fail-soft paths), DigestBuilder unit, `DigestRepository` `:memory:` integration, transcript-slicer unit, shared schema round-trips. shared 679 · gateway 1961 · typecheck/lint green. Phase 62 → 10/33 (30%).
+
 ## 2026-07-11 — test+docs: finish Theme G → Phase 65 to 100% — Phase 65 Theme G (PR #391)
 
 The phase closer. Per-theme unit/RTL/repository coverage shipped inline with A–F; this brings the loose ends together and drives the Verification checklist to done. **Phase 65 → 33/33 (100%).**

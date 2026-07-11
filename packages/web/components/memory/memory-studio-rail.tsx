@@ -20,6 +20,7 @@ import {
   type MemoryArtifactKind,
 } from '@midnite/shared';
 import { generateMemoryArtifact, getMemoryArtifacts } from '@/lib/api';
+import { cn } from '@/lib/utils';
 import { MemoryArtifactViewer } from './memory-artifact-viewer';
 
 // Icons are a view concern, so they live here (not in shared). Audio & video are
@@ -33,14 +34,11 @@ const KIND_ICONS: Record<MemoryArtifactKind, LucideIcon> = {
   'audio-overview': AudioLines,
   'video-overview': Video,
 };
-const WIRED_KINDS: MemoryArtifactKind[] = [
-  'brief',
-  'faq',
-  'study-guide',
-  'timeline',
-  'infographic',
-  'audio-overview',
-  'video-overview',
+// Grouped so the seven kinds read as an organised menu rather than a flat list.
+const GROUPS: { label: string; kinds: MemoryArtifactKind[] }[] = [
+  { label: 'Documents', kinds: ['brief', 'faq', 'study-guide', 'timeline'] },
+  { label: 'Visual', kinds: ['infographic'] },
+  { label: 'Audio & video', kinds: ['audio-overview', 'video-overview'] },
 ];
 
 /**
@@ -98,18 +96,27 @@ export function MemoryStudioRail({ memoryId }: { memoryId: string }) {
       <p className="text-xs text-muted-foreground">
         Generate artifacts from this memory and its sources.
       </p>
-      <ul className="space-y-1.5">
-        {WIRED_KINDS.map((kind) => (
-          <ArtifactRow
-            key={kind}
-            kind={kind}
-            Icon={KIND_ICONS[kind]}
-            artifact={byKind[kind]}
-            onGenerate={() => void generate(kind)}
-            onView={() => setViewing(kind)}
-          />
+      <div className="space-y-3">
+        {GROUPS.map((group) => (
+          <section key={group.label} className="space-y-1.5">
+            <h3 className="px-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+              {group.label}
+            </h3>
+            <ul className="space-y-1.5">
+              {group.kinds.map((kind) => (
+                <ArtifactRow
+                  key={kind}
+                  kind={kind}
+                  Icon={KIND_ICONS[kind]}
+                  artifact={byKind[kind]}
+                  onGenerate={() => void generate(kind)}
+                  onView={() => setViewing(kind)}
+                />
+              ))}
+            </ul>
+          </section>
         ))}
-      </ul>
+      </div>
 
       {viewingArtifact && viewingArtifact.status === 'ready' ? (
         <MemoryArtifactViewer
@@ -145,7 +152,16 @@ function ArtifactRow({
 
   return (
     <li>
-      <div className="flex items-center gap-2.5 rounded-md border border-border/60 bg-muted/10 px-3 py-2 text-sm">
+      <div
+        className={cn(
+          'flex items-center gap-2.5 rounded-md border px-3 py-2 text-sm transition-colors',
+          // A generated artifact gets a subtle accent so it stands out from the
+          // not-yet-generated rows at a glance.
+          status === 'ready'
+            ? 'border-[hsl(262_83%_66%/0.35)] bg-[hsl(262_83%_66%/0.08)]'
+            : 'border-border/60 bg-muted/10',
+        )}
+      >
         <Icon className="h-4 w-4 shrink-0 text-[hsl(262_83%_66%)]" />
         <button
           type="button"

@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, desc, eq, inArray, isNotNull, notInArray, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, isNotNull, lte, notInArray, or, sql } from 'drizzle-orm';
 import {
   ANSWER_EVENT_KIND,
   detectSourceKind,
@@ -420,6 +420,28 @@ export class TasksRepository {
         ? ordered.limit(opts.limit).offset(((opts.page ?? 1) - 1) * opts.limit).all()
         : ordered.all();
     return { rows, total };
+  }
+
+  /**
+   * Terminal (`done`/`abandoned`) tasks whose last transition (`updatedAt`) falls
+   * in `[from, to]`, optionally scoped to a repo/project (Phase 62 C — the digest
+   * window). There is no dedicated `completedAt`, so `updatedAt` stands in for the
+   * terminal-transition time. Most-recently-finished first.
+   */
+  listTerminalTasksInWindow(
+    from: string,
+    to: string,
+    repo?: string,
+    projectId?: string,
+  ): TaskRow[] {
+    const where = and(
+      inArray(tasks.status, ['done', 'abandoned']),
+      gte(tasks.updatedAt, from),
+      lte(tasks.updatedAt, to),
+      repo ? eq(tasks.repo, repo) : undefined,
+      projectId ? eq(tasks.projectId, projectId) : undefined,
+    );
+    return this.db.select().from(tasks).where(where).orderBy(desc(tasks.updatedAt)).all();
   }
 
   /**

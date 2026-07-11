@@ -75,6 +75,18 @@ export const RetroNarrativeSchema = z.object({
 });
 export type RetroNarrative = z.infer<typeof RetroNarrativeSchema>;
 
+/**
+ * The raw LLM output for a retro narrative (Phase 62 C) — before `generatedBy` is
+ * stamped on. Kept separate from {@link RetroNarrativeSchema} so the gateway can
+ * validate a structured completion without importing zod directly.
+ */
+export const RetroNarrativeDraftSchema = z.object({
+  whatHappened: z.string(),
+  whatTrippedIt: z.string().nullish(),
+  notable: z.array(z.string()).default([]),
+});
+export type RetroNarrativeDraft = z.infer<typeof RetroNarrativeDraftSchema>;
+
 /** A task's retrospective — the full stored shape. */
 export const TaskRetroSchema = z.object({
   taskId: z.string(),
@@ -97,13 +109,85 @@ export const RetroResponseSchema = z.object({ retro: TaskRetroSchema });
 export type RetroResponse = z.infer<typeof RetroResponseSchema>;
 
 /**
- * Phase 62 Theme D — a periodic fleet **digest**. Stub only in Theme A so the
- * storage + surfaces can reference the type; Theme D fills the real shape.
+ * Phase 62 Theme C — a periodic fleet **digest**: the reporting roll-up of what
+ * shipped / failed / needs attention over a window. Assembled deterministically
+ * by the gateway's `DigestBuilder` from terminal tasks + their retros, with
+ * best-effort spend + cycle-time folded in (each degrades to null when its
+ * source is unreachable) and ONE LLM-generated `headline` (fail-soft to a
+ * deterministic string). Persisted as a `digests` row (structured JSON + the
+ * rendered markdown).
  */
-export const DigestSchema = z
-  .object({
-    id: z.string(),
-    createdAt: z.string(),
-  })
-  .passthrough();
+
+/** Terminal-outcome tallies over the window. */
+export const DigestCountsSchema = z.object({
+  /** Tasks that reached `done`. */
+  shipped: z.number().int().nonnegative(),
+  /** Tasks that reached `abandoned`. */
+  failed: z.number().int().nonnegative(),
+  /** Failed tasks whose retro flagged something notable (a human should look). */
+  needsAttention: z.number().int().nonnegative(),
+});
+export type DigestCounts = z.infer<typeof DigestCountsSchema>;
+
+/** One section of the digest — a per-repo (or per-project) breakdown. */
+export const DigestSectionSchema = z.object({
+  /** The repo name or project id this section rolls up. */
+  name: z.string(),
+  shipped: z.number().int().nonnegative(),
+  failed: z.number().int().nonnegative(),
+});
+export type DigestSection = z.infer<typeof DigestSectionSchema>;
+
+/** A called-out task in the digest, sourced from a notable retro. */
+export const DigestHighlightSchema = z.object({
+  taskId: z.string(),
+  title: z.string(),
+  outcome: RetroOutcomeSchema,
+  /** A short human note (from the retro's narrative/notable, or deterministic). */
+  note: z.string(),
+});
+export type DigestHighlight = z.infer<typeof DigestHighlightSchema>;
+
+/** Best-effort spend over the window (agent-session attribution). Null when the
+ *  usage source was unreachable — the digest degrades silently. */
+export const DigestSpendSchema = z.object({
+  totalUsd: z.number().nonnegative(),
+  measuredUsd: z.number().nonnegative(),
+  sessions: z.number().int().nonnegative(),
+});
+export type DigestSpend = z.infer<typeof DigestSpendSchema>;
+
+/** Best-effort cycle-time over the window (end-to-end, ms). Null when the metrics
+ *  source was unreachable. Percentiles, not a mean — mirrors the metrics service. */
+export const DigestCycleSchema = z.object({
+  tasks: z.number().int().nonnegative(),
+  p50Ms: z.number().int().nonnegative().nullable(),
+  p90Ms: z.number().int().nonnegative().nullable(),
+});
+export type DigestCycle = z.infer<typeof DigestCycleSchema>;
+
+export const DigestSchema = z.object({
+  id: z.string(),
+  createdAt: z.string(),
+  /** Window start (inclusive ISO). */
+  from: z.string(),
+  /** Window end (inclusive ISO). */
+  to: z.string(),
+  counts: DigestCountsSchema,
+  sections: z.array(DigestSectionSchema),
+  highlights: z.array(DigestHighlightSchema),
+  /** Best-effort spend; null when unreachable. */
+  spend: DigestSpendSchema.nullable().optional(),
+  /** Best-effort cycle-time; null when unreachable. */
+  cycle: DigestCycleSchema.nullable().optional(),
+  /** One-line summary — LLM-generated, or a deterministic fallback. */
+  headline: z.string(),
+  /** Fully-rendered markdown body. */
+  markdown: z.string(),
+});
 export type Digest = z.infer<typeof DigestSchema>;
+
+/** The raw LLM output for a digest headline (Phase 62 C) — lets the gateway
+ *  validate a structured completion without importing zod directly. */
+export const DigestHeadlineDraftSchema = z.object({ headline: z.string() });
+export type DigestHeadlineDraft = z.infer<typeof DigestHeadlineDraftSchema>;
