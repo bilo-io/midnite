@@ -27,6 +27,38 @@ import {
 /** Max workflow ids per `IN (…)` batch — under SQLite's bound-parameter ceiling. */
 const RUN_ID_CHUNK = 500;
 
+// --- legacy-data coercion ---
+// The cron `schedule` trigger was retired. Rows written before then may carry a
+// `schedule` trigger, a `trigger.schedule` node, or a `schedule` run source —
+// none of which parse against the current schemas. Coerce them to their manual
+// equivalents on read so existing workflows/runs still load; a workflow
+// self-heals to a real manual trigger on its next save.
+
+function normalizeLegacyTrigger(raw: unknown): unknown {
+  if (raw && typeof raw === 'object' && (raw as { type?: unknown }).type === 'schedule') {
+    return { type: 'manual' };
+  }
+  return raw;
+}
+
+function normalizeLegacyGraph(raw: unknown): unknown {
+  if (!raw || typeof raw !== 'object') return raw;
+  const graph = raw as { nodes?: unknown };
+  if (!Array.isArray(graph.nodes)) return raw;
+  return {
+    ...graph,
+    nodes: graph.nodes.map((node) =>
+      node && typeof node === 'object' && (node as { type?: unknown }).type === 'trigger.schedule'
+        ? { ...(node as object), type: 'trigger.manual' }
+        : node,
+    ),
+  };
+}
+
+function normalizeLegacyTriggerSource(raw: string): WorkflowRun['triggerSource'] {
+  return (raw === 'schedule' ? 'manual' : raw) as WorkflowRun['triggerSource'];
+}
+
 @Injectable()
 export class WorkflowsRepository {
   constructor(@Inject(DB_TOKEN) private readonly db: MidniteDb) {}
@@ -208,8 +240,8 @@ export class WorkflowsRepository {
   // --- hydration ---
 
   hydrateWorkflow(row: WorkflowRow): Workflow {
-    const graph = WorkflowGraphSchema.parse(JSON.parse(row.graph));
-    const trigger: Trigger = TriggerSchema.parse(JSON.parse(row.trigger));
+    const graph = WorkflowGraphSchema.parse(normalizeLegacyGraph(JSON.parse(row.graph)));
+    const trigger: Trigger = TriggerSchema.parse(normalizeLegacyTrigger(JSON.parse(row.trigger)));
     return {
       id: row.id,
       name: row.name,
@@ -248,7 +280,7 @@ export class WorkflowsRepository {
       id: row.id,
       workflowId: row.workflowId,
       status: row.status as WorkflowRun['status'],
-      triggerSource: row.triggerSource as WorkflowRun['triggerSource'],
+      triggerSource: normalizeLegacyTriggerSource(row.triggerSource),
       input: row.input ? (JSON.parse(row.input) as unknown) : undefined,
       error: row.error ?? undefined,
       startedAt: row.startedAt,

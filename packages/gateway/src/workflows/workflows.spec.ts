@@ -226,3 +226,37 @@ describe('WorkflowsService', () => {
     expect(() => service.handleWebhook(wf.id, 'wrong-token', {})).toThrow();
   });
 });
+
+describe('WorkflowsRepository — legacy schedule coercion', () => {
+  // The cron `schedule` trigger was retired. A workflow written before then
+  // still parses on read: the trigger + the `trigger.schedule` node coerce to
+  // their manual equivalents instead of throwing invalid_union_discriminator.
+  it('hydrates a pre-removal schedule workflow as a manual trigger', () => {
+    const db = makeDb();
+    const repo = new WorkflowsRepository(db);
+    db.insert(schema.workflows)
+      .values({
+        id: 'legacy-1',
+        name: 'Old cron workflow',
+        enabled: 1,
+        triggerType: 'schedule',
+        trigger: JSON.stringify({ type: 'schedule', cron: '0 9 * * *', timezone: 'UTC' }),
+        graph: JSON.stringify({
+          nodes: [
+            { id: 'n1', type: 'trigger.schedule', label: 'Nightly', position: { x: 0, y: 0 }, params: {} },
+            { id: 'n2', type: 'http.request', label: 'Fetch', position: { x: 200, y: 0 }, params: { url: 'https://example.com' } },
+          ],
+          edges: [{ id: 'e1', source: 'n1', sourcePort: 'main', target: 'n2', targetPort: 'main' }],
+        }),
+        createdAt: NOW,
+        updatedAt: NOW,
+      })
+      .run();
+
+    const row = repo.getWorkflowRow('legacy-1')!;
+    const wf = repo.hydrateWorkflow(row);
+    expect(wf.trigger.type).toBe('manual');
+    expect(wf.nodes.find((n) => n.id === 'n1')!.type).toBe('trigger.manual');
+    expect(wf.nodes.find((n) => n.id === 'n2')!.type).toBe('http.request');
+  });
+});
