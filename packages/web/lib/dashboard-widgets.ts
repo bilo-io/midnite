@@ -72,6 +72,7 @@ export type WidgetType =
   | 'cost-by-repo'
   | 'cycle-time'
   | 'fleet-trend'
+  | 'digest'
   | 'shipped'
   | 'who-in-office'
   | 'system-monitor'
@@ -354,6 +355,13 @@ export const DASHBOARD_WIDGETS: Record<WidgetType, WidgetMeta> = {
     label: 'Fleet trend',
     description: 'A gauge series (queue depth, slots, tick latency) over time',
     icon: TrendingUp,
+    category: 'activity',
+    sizes: mediumSizes,
+  },
+  digest: {
+    label: 'Latest digest',
+    description: 'The most recent fleet digest — headline + shipped/failed/attention counts',
+    icon: Newspaper,
     category: 'activity',
     sizes: mediumSizes,
   },

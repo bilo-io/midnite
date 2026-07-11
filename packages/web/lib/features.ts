@@ -21,6 +21,7 @@ import {
   LayoutDashboard,
   Lightbulb,
   ListChecks,
+  Newspaper,
   Presentation,
   Workflow,
   type LucideIcon,
@@ -39,6 +40,7 @@ export type FeatureKey =
   | 'councils'
   | 'slides'
   | 'media'
+  | 'digests'
   | 'ops';
 
 export type Feature = {
@@ -137,6 +139,13 @@ export const FEATURES: Feature[] = [
     Icon: Images,
   },
   {
+    key: 'digests',
+    href: '/digests',
+    label: 'Digests',
+    description: 'Fleet digests — the periodic roll-up of what shipped, failed, and needs attention.',
+    Icon: Newspaper,
+  },
+  {
     key: 'ops',
     href: '/ops',
     label: 'Ops',
@@ -159,6 +168,7 @@ export const DEFAULT_FEATURE_FLAGS: Record<FeatureKey, boolean> = {
   councils: true,
   slides: true,
   media: true,
+  digests: true,
   ops: true,
 };
 

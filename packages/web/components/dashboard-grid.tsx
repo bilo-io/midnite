@@ -44,6 +44,7 @@ import { UsageWidget } from './usage-widget';
 import { CostByRepoWidget } from './cost-by-repo-widget';
 import { CycleTimeWidget } from './cycle-time-widget';
 import { FleetTrendWidget } from './fleet-trend-widget';
+import { DigestWidget } from './digest-widget';
 import { ShippedWidget } from './shipped-widget';
 import { QuickCaptureWidget } from './quick-capture-widget';
 import { StorageWidget } from './storage-widget';
@@ -478,6 +479,8 @@ export function DashboardGrid({
           ),
         };
       }
+      case 'digest':
+        return { node: <DigestWidget /> };
       case 'shipped':
         return { node: <ShippedWidget /> };
       case 'who-in-office':

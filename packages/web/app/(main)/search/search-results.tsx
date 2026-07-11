@@ -11,6 +11,7 @@ import {
   ListChecks,
   LoaderCircle,
   Milestone,
+  Newspaper,
   StickyNote,
   Workflow,
   type LucideIcon,
@@ -37,6 +38,7 @@ const TYPE_META: Record<SearchType, { label: string; Icon: LucideIcon }> = {
   workflow: { label: 'Workflows', Icon: Workflow },
   idea: { label: 'Ideas', Icon: Lightbulb },
   milestone: { label: 'Milestones', Icon: Milestone },
+  digest: { label: 'Digests', Icon: Newspaper },
 };
 
 type FetchStatus = 'idle' | 'loading' | 'done' | 'error';
