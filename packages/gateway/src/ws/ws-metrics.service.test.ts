@@ -14,14 +14,14 @@ describe('WsMetricsService (Phase 56 C)', () => {
     registry.register(sock(), { userId: null, teamId: null });
     registry.register(sock(), { userId: 'u1', teamId: 't1' });
     metrics.setSubscribers('tasks', 3);
-    metrics.setSubscribers('ideas', 1);
+    metrics.setSubscribers('workflows', 1);
     metrics.recordDroppedToResync();
     metrics.recordDroppedToResync();
     metrics.recordDeadClientReaped();
 
     const snap = metrics.snapshot();
     expect(snap.connections).toBe(2);
-    expect(snap.subscribersByChannel).toEqual({ tasks: 3, ideas: 1 });
+    expect(snap.subscribersByChannel).toEqual({ tasks: 3, workflows: 1 });
     expect(snap.droppedToResync).toBe(2);
     expect(snap.deadClientsReaped).toBe(1);
     expect(snap.ringHits).toBe(0);

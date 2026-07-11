@@ -43,7 +43,6 @@ const SURFACES: readonly (readonly [string, string])[] = [
   ['slides', '/slides'],
   ['workflows', '/workflows'],
   ['ops', '/ops'],
-  ['ideas', '/ideas'],
   ['search', '/search?q=e2e'],
   ['settings', '/settings'],
   ['settings-appearance', '/settings/appearance'],

@@ -15,7 +15,6 @@ import {
 } from '@midnite/shared';
 import { CouncilsService } from '../councils/councils.service';
 import { DigestsService } from '../digests/digests.service';
-import { IdeaService } from '../ideas/ideas.service';
 import { MemoriesService } from '../memories/memories.service';
 import { NotesService } from '../notes/notes.service';
 import { ProjectsService } from '../projects/projects.service';
@@ -26,7 +25,6 @@ import { toFtsMatchQuery } from './lib/fts-query';
 import {
   councilToIndexDoc,
   digestToIndexDoc,
-  ideaToIndexDoc,
   memoryToIndexDoc,
   noteToIndexDoc,
   projectToIndexDoc,
@@ -57,7 +55,6 @@ export class SearchService implements OnApplicationBootstrap, OnModuleDestroy {
     @Inject(CouncilsService) private readonly councils: CouncilsService,
     @Inject(WorkflowsService) private readonly workflows: WorkflowsService,
     @Inject(TaskEventBus) private readonly taskBus: TaskEventBus,
-    @Inject(IdeaService) private readonly ideaService: IdeaService,
     @Inject(DigestsService) private readonly digests: DigestsService,
   ) {}
 
@@ -110,7 +107,6 @@ export class SearchService implements OnApplicationBootstrap, OnModuleDestroy {
 
   /** Rebuild the entire index from the domain services. Idempotent; returns count. */
   reindex(): number {
-    const { ideas } = this.ideaService.listIdeas(undefined, { limit: 10_000 });
     const docs: IndexDoc[] = [
       ...this.tasks.listTasks().map(taskToIndexDoc),
       ...this.projects.listProjects().map(projectToIndexDoc),
@@ -119,7 +115,6 @@ export class SearchService implements OnApplicationBootstrap, OnModuleDestroy {
       ...this.notes.listNotes().map(noteToIndexDoc),
       ...this.councils.listCouncils().map(councilToIndexDoc),
       ...this.workflows.listSummaries().map(workflowToIndexDoc),
-      ...ideas.map(ideaToIndexDoc),
       ...this.digests.listAll().map(digestToIndexDoc),
     ];
     this.index.clear();

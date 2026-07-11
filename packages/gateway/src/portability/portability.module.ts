@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ApprovalsModule } from '../approvals/approvals.module';
 import { CouncilsModule } from '../councils/councils.module';
-import { IdeasModule } from '../ideas/ideas.module';
 import { MediaModule } from '../media/media.module';
 import { MemoriesModule } from '../memories/memories.module';
 import { NotesModule } from '../notes/notes.module';
@@ -32,7 +31,6 @@ import { PortabilityService } from './portability.service';
     RoutinesModule,
     MediaModule,
     CouncilsModule,
-    IdeasModule,
     ApprovalsModule,
     WorkflowsModule,
     SearchModule,

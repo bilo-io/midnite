@@ -14,7 +14,7 @@ it('renders the live label when all channels are healthy', () => {
 });
 
 it('reflects the worst-of status (reconnecting)', () => {
-  useConnectionStore.setState({ statuses: { tasks: 'reconnecting', ideas: 'live' } });
+  useConnectionStore.setState({ statuses: { tasks: 'reconnecting', workflows: 'live' } });
   render(<ConnectionStatus />);
   expect(screen.getByRole('status')).toHaveAccessibleName('Connection: Reconnecting…');
 });

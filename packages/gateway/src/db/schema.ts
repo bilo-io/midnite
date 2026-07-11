@@ -228,8 +228,6 @@ export const projects = sqliteTable('projects', {
   archivedAt: text('archived_at'),
   createdBy: text('created_by'),
   teamId: text('team_id'),
-  /** Phase 40: nullable back-link to the idea this project was promoted from. */
-  ideaId: text('idea_id'),
   /** Phase 40 Theme G: phase-doc sync-back toggle (0=off, 1/null=on). */
   phaseDocSync: integer('phase_doc_sync'),
   /** Phase 40 Theme G: repo (registry id) whose phase docs receive sync-back ticks. */
@@ -1439,48 +1437,6 @@ export const serviceTokens = sqliteTable(
 
 export type ServiceTokenRow = typeof serviceTokens.$inferSelect;
 export type ServiceTokenInsert = typeof serviceTokens.$inferInsert;
-
-// Phase 40 Theme A: idea entity + AI chat messages.
-export const ideas = sqliteTable(
-  'ideas',
-  {
-    id: text('id').primaryKey(),
-    teamId: text('team_id'),
-    createdBy: text('created_by'),
-    title: text('title').notNull(),
-    body: text('body').notNull().default(''),
-    status: text('status').notNull().default('draft'),
-    projectId: text('project_id'),
-    // JSON-serialised string[]. SQLite has no array type.
-    tags: text('tags').notNull().default('[]'),
-    createdAt: text('created_at').notNull(),
-    updatedAt: text('updated_at').notNull(),
-  },
-  (t) => ({
-    teamIdx: index('ideas_team_idx').on(t.teamId),
-    statusIdx: index('ideas_status_idx').on(t.status),
-  }),
-);
-
-export type IdeaRow = typeof ideas.$inferSelect;
-export type IdeaInsert = typeof ideas.$inferInsert;
-
-export const ideaMessages = sqliteTable(
-  'idea_messages',
-  {
-    id: text('id').primaryKey(),
-    ideaId: text('idea_id').notNull(),
-    role: text('role').notNull(),
-    content: text('content').notNull(),
-    createdAt: text('created_at').notNull(),
-  },
-  (t) => ({
-    ideaIdx: index('idea_messages_idea_idx').on(t.ideaId, t.createdAt),
-  }),
-);
-
-export type IdeaMessageRow = typeof ideaMessages.$inferSelect;
-export type IdeaMessageInsert = typeof ideaMessages.$inferInsert;
 
 // --- Schema version stamp (Phase 49 A) ---
 

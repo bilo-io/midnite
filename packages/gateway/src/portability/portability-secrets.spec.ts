@@ -25,7 +25,6 @@ function emptyServices() {
     routines: { listRoutines: () => [] },
     media: { listMedia: () => [] },
     councils: { listCouncils: () => [] },
-    ideas: { listIdeas: () => ({ ideas: [], total: 0 }) },
     approvals: { list: () => [] },
     workflows: { listSummaries: () => [], getWorkflow: () => ({}) },
   };
@@ -37,7 +36,7 @@ function exportSvc(handle: TestDbHandle, crypto: CryptoService) {
     handle.db, crypto as never,
     s.tasks as never, s.projects as never, s.repos as never, s.memories as never,
     s.notes as never, s.routines as never, s.media as never, s.councils as never,
-    s.ideas as never, s.approvals as never, s.workflows as never,
+    s.approvals as never, s.workflows as never,
   );
 }
 

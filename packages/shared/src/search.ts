@@ -17,7 +17,6 @@ export const SEARCH_TYPES = [
   'note',
   'council',
   'workflow',
-  'idea',
   'milestone',
   'digest',
 ] as const;

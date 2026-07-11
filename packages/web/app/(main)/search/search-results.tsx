@@ -7,7 +7,6 @@ import {
   BrainCircuit,
   CirclePile,
   Folder,
-  Lightbulb,
   ListChecks,
   LoaderCircle,
   Milestone,
@@ -36,7 +35,6 @@ const TYPE_META: Record<SearchType, { label: string; Icon: LucideIcon }> = {
   note: { label: 'Notes', Icon: StickyNote },
   council: { label: 'Councils', Icon: CirclePile },
   workflow: { label: 'Workflows', Icon: Workflow },
-  idea: { label: 'Ideas', Icon: Lightbulb },
   milestone: { label: 'Milestones', Icon: Milestone },
   digest: { label: 'Digests', Icon: Newspaper },
 };

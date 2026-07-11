@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { FolderPicker } from '@/components/folder-picker';
 import { DEFAULT_COLOR, TagColorPicker } from '@/components/tag-color-picker';
-import { IdeaSourceBadge } from '@/components/projects/IdeaSourceBadge';
 import { enhanceProjectDescription, getRepos, updateProject } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -112,12 +111,6 @@ export function ProjectDetailsPanel({ project, memories = [], onSaved, onAfterNa
 
   return (
     <div className="space-y-5">
-      {project.ideaId && (
-        <div>
-          <IdeaSourceBadge ideaId={project.ideaId} />
-        </div>
-      )}
-
       {/* Name */}
       <div className="space-y-1.5">
         <label htmlFor="project-name" className="text-xs font-medium text-muted-foreground">

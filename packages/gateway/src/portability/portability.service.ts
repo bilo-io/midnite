@@ -15,7 +15,6 @@ import { CryptoService } from '../crypto/crypto.service';
 import { DB_TOKEN, type MidniteDb } from '../db/db.module';
 import { getSchemaVersion } from '../db/schema-version';
 import { llmSettings, teamMemberships, teams, userPreferences, users } from '../db/schema';
-import { IdeaService } from '../ideas/ideas.service';
 import { MediaService } from '../media/media.service';
 import { MemoriesService } from '../memories/memories.service';
 import { NotesService } from '../notes/notes.service';
@@ -38,7 +37,7 @@ type DomainSource = { name: string; read: () => unknown[] };
  * **service** (never another module's repository — CLAUDE.md) with an *unscoped*
  * read (admin export = the whole store), assembles a versioned archive, and stamps
  * the manifest. Hydrated domain objects carry their children (a Task embeds
- * events/links/deps, a Project its sources, an Idea its messages), so those ride
+ * events/links/deps, a Project its sources), so those ride
  * along for free.
  *
  * **This slice** exports the secret-free *work* domains. `users`/`teams` are
@@ -63,7 +62,6 @@ export class PortabilityService {
     @Inject(RoutinesService) private readonly routines: RoutinesService,
     @Inject(MediaService) private readonly media: MediaService,
     @Inject(CouncilsService) private readonly councils: CouncilsService,
-    @Inject(IdeaService) private readonly ideas: IdeaService,
     @Inject(ApprovalsService) private readonly approvals: ApprovalsService,
     @Inject(WorkflowsService) private readonly workflows: WorkflowsService,
   ) {}
@@ -86,7 +84,6 @@ export class PortabilityService {
       { name: 'routines', read: () => this.routines.listRoutines() },
       { name: 'media', read: () => this.media.listMedia() },
       { name: 'councils', read: () => this.councils.listCouncils() },
-      { name: 'ideas', read: () => this.ideas.listIdeas(undefined).ideas },
       { name: 'approvalRules', read: () => this.approvals.list() },
       // Full workflow definitions (listSummaries is thin — hydrate each by id).
       { name: 'workflows', read: () => this.workflows.listSummaries().map((s) => this.workflows.getWorkflow(s.id)) },

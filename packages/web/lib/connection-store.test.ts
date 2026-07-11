@@ -8,13 +8,13 @@ describe('worstStatus', () => {
     expect(worstStatus({})).toBe('live');
   });
   it('is live when every channel is live', () => {
-    expect(worstStatus({ tasks: 'live', ideas: 'live' })).toBe('live');
+    expect(worstStatus({ tasks: 'live', workflows: 'live' })).toBe('live');
   });
   it('reports reconnecting when any channel is reconnecting', () => {
-    expect(worstStatus({ tasks: 'live', ideas: 'reconnecting' })).toBe('reconnecting');
+    expect(worstStatus({ tasks: 'live', workflows: 'reconnecting' })).toBe('reconnecting');
   });
   it('stale dominates reconnecting', () => {
-    expect(worstStatus({ tasks: 'reconnecting', ideas: 'stale' })).toBe('stale');
+    expect(worstStatus({ tasks: 'reconnecting', workflows: 'stale' })).toBe('stale');
   });
 });
 

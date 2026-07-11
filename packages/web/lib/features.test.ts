@@ -5,22 +5,22 @@ import { FEATURES, NAV_CATEGORIES, groupNavSections, type FeatureKey } from './f
 const keysOf = (fs: { key: FeatureKey }[]) => fs.map((f) => f.key);
 
 describe('groupNavSections', () => {
-  it('pins dashboard and splits the rest into ordered App / Agents / Insights sections', () => {
+  it('pins dashboard and splits the rest into ordered App / Agents / Overview sections', () => {
     const { pinned, sections } = groupNavSections(FEATURES);
 
     expect(keysOf(pinned)).toEqual(['dashboard']);
-    expect(sections.map((s) => s.key)).toEqual(['app', 'agents', 'insights']);
-    expect(sections.map((s) => s.label)).toEqual(['App', 'Agents', 'Insights']);
+    expect(sections.map((s) => s.key)).toEqual(['app', 'agents', 'overview']);
+    expect(sections.map((s) => s.label)).toEqual(['App', 'Agents', 'Overview']);
 
     const byKey = Object.fromEntries(sections.map((s) => [s.key, keysOf(s.features)]));
-    expect(byKey['app']).toEqual(['projects', 'tasks', 'memory', 'slides', 'workflows']);
-    expect(byKey['agents']).toEqual(['sessions', 'office', 'councils', 'ideas', 'media']);
-    expect(byKey['insights']).toEqual(['digests', 'ops']);
+    expect(byKey['app']).toEqual(['projects', 'tasks', 'slides', 'workflows']);
+    expect(byKey['agents']).toEqual(['memory', 'sessions', 'councils', 'media']);
+    expect(byKey['overview']).toEqual(['office', 'digests', 'ops']);
   });
 
   it('drops sections whose features are all filtered out', () => {
-    // Simulate an enabled set with no Insights surfaces left.
-    const enabled = FEATURES.filter((f) => f.category !== 'insights');
+    // Simulate an enabled set with no Overview surfaces left.
+    const enabled = FEATURES.filter((f) => f.category !== 'overview');
     const { sections } = groupNavSections(enabled);
     expect(sections.map((s) => s.key)).toEqual(['app', 'agents']);
   });
