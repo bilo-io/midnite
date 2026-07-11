@@ -104,25 +104,16 @@ The workflow-first enabler: workflows that fire when tasks finish. Useful far be
 - [x] Editor + template support: the trigger is configurable in the workflow editor's trigger panel
       (event checkboxes + optional repo/project filter) and usable in seeds.
 
-## Theme C — Retro & digest node executors — **M-L**
+## Theme C — Retro & digest node executors — **M-L** — ✅ DONE (PR #393, 2026-07-11)
 
 Thin nodes over real services — the workflow vocabulary for reporting.
-
-- [ ] **`midnite.generate-retro`** — input: `taskId` (or the trigger's task); calls `RetroBuilder`
-      for the skeleton, then **one** plan-model `generateStructured` call for the narrative
-      (`whatHappened` / `whatTrippedIt` / `notable[]`) over the skeleton + a **bounded transcript
-      slice** (Theme H); upserts `task_retros.narrative`; **fail-soft** — on LLM-off/budget-cap/error
-      the node succeeds with the skeleton (narrative `generatedBy: null`). Usage-tagged `retro`.
-- [ ] **`midnite.list-completed-tasks`** — input: window (`sinceHours`/`from`/`to`) + optional
-      repo/project filter; output: terminal tasks in the window with retro pointers (reuses the P57
-      summary DTO — no full hydration).
-- [ ] **`midnite.build-digest`** — input: the window's tasks/retros; calls a `DigestBuilder` service:
-      deterministic aggregation (shipped/failed/needs-attention counts, per-repo/project sections,
-      retro highlights, spend + cycle stats from the P61 endpoints when present) + **one** LLM
-      headline paragraph (same fail-soft rule); stores a `digests` row (structured JSON + rendered
-      markdown); outputs `{ digestId, markdown, blocks }` for downstream delivery nodes.
-- [ ] **`midnite.notify`** — a small node posting an in-app P21 notification (kind
-      `digest.generated` / `retro.notable`) so pipelines can deliver in-app without bespoke code.
+Landed — items moved to [`done.md`](done.md). Four executors reach their
+services via lazy ports (RETRO_ACCESSOR / TASK_LISTER / NOTIFIER / DIGEST_BUILDER)
+so `WorkflowsModule` gains no imports; a new `digests/` module (table + migration
+`0082` + repository + `DigestBuilder`) + a bounded transcript slicer in
+`sessions/lib`; full structured `DigestSchema`; `retro`/`digest` LLM features. All
+LLM calls fail-soft to deterministic output. (The transcript slicer was built here
+rather than waiting for Theme H, which will formalize/reuse it.)
 
 ---
 
