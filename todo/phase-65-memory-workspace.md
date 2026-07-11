@@ -211,7 +211,7 @@ replaced by a **"Manage knowledge in Memory"** link (`/memory?scope=<projectId>`
 
 ---
 
-## Theme G — Tests, docs & polish — **M** — ✅ DONE (PR #390, 2026-07-11)
+## Theme G — Tests, docs & polish — **M** — ✅ DONE (PR #391, 2026-07-11)
 
 The phase closer. Per-theme unit/RTL coverage shipped inline with A–F; this theme
 adds the **cross-cutting chat e2e** (completing the open→add-source→ask→generate

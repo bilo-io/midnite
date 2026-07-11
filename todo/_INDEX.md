@@ -124,7 +124,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **D** — Studio: text artifacts (brief/FAQ/study-guide/timeline, markdown) + infographic (LLM→SVG) via a `memory_artifacts` table; async generate, sandboxed SVG viewer (PR #384)
 - ✅ **E** — Studio: audio overview (two-host script→TTS mp3) + video (deck→ffmpeg slideshow); file-backed on `memory_artifacts`, degrade w/o provider (PR #388)
 - ✅ **F** — Retire project sources → memories: forward migration to a project-scoped memory, drop `project_sources`, remove UI/API (PR #380)
-- ✅ **G** — Tests (inline across A–F) + Memory Workspace product doc + a11y pass + the cross-cutting chat e2e; Verification checklist driven to done (PR #386 partial, PR #390 finish)
+- ✅ **G** — Tests (inline across A–F) + Memory Workspace product doc + a11y pass + the cross-cutting chat e2e; Verification checklist driven to done (PR #386 partial, PR #391 finish)
 
 ### [Phase 64 — Office multiplayer presence](phase-64-office-presence.md)
 *Teammates as live avatars in the office (2D + 3D): a /ws/presence channel (last-known-state, no ring, zero DB), hybrid guest/JWT identity, emote wheel + locate, ghost mode, nav pill + dashboard widget; proximity chat as stretch. Theme D blocked on Phase 63 A–C.*
@@ -167,7 +167,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **E** — Rollups + retention (metrics_rollup table + timer job + raw pruning; GET /metrics/rollups; transparent read-switch deferred) (PR #381)
 - ✅ **F** — Live metrics channel on the P56 reliable WS: on-change gauge push via MetricsEventBus + MetricsGateway (`/ws/metrics`), Ops page consumes it (poll fallback) (PR #389)
 - ◐ **G** — Ops page deepening: cycle-time + fleet-trend charts landed; cost views + run timeline open (PR #360)
-- ✅ **H** — Widgets + session/project cockpit integration (PR #390)
+- ✅ **H** — Widgets + session/project cockpit integration (PR #391)
 - ◻ **I** — CLI (`usage --by`, `ops`) + metrics-model docs
 
 ### [Phase 60 — Fable-Analysis](phase-60-fable-analysis.md)

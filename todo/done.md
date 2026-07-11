@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-11 — test+docs: finish Theme G → Phase 65 to 100% — Phase 65 Theme G (PR #390)
+## 2026-07-11 — test+docs: finish Theme G → Phase 65 to 100% — Phase 65 Theme G (PR #391)
 
 The phase closer. Per-theme unit/RTL/repository coverage shipped inline with A–F; this brings the loose ends together and drives the Verification checklist to done. **Phase 65 → 33/33 (100%).**
 
@@ -24,7 +24,7 @@ The signature NotebookLM artifacts, **real but degrading gracefully**. Both live
 - [x] **shared** — `memory-artifact.ts`: `audio-overview`/`video-overview` kinds, `audio`/`video` formats, `filePath`/`mimeType`/`fileSize`/`degraded` fields, `isFileBackedFormat`; new `memory-studio.ts` (`AudioScript`/`VideoDeck` zod + JSON-Schema mirrors); `memory.studio` config schema.
 - [x] **gateway** — file columns on `memory_artifacts` + migration `0081` (hand-written; drizzle-kit generate stays blocked on the pre-existing snapshot drift); `MemoryStudioService` branches audio/video → seams → uploads write; `…/artifacts/:id/file` serve endpoint (re-confined like media file-serve).
 - [x] **tests** — shared schema round-trips (audio/video + file fields, script/deck); gateway service (audio/video degrade + file-persist with fake seams), TTS/video seam enable/degrade, `wrapText`, renderers, controller; web RTL (audio player + degraded hint) + e2e (rows offered) + light/dark preview shots (rail, playable audio viewer, degraded video viewer).
-## 2026-07-11 — feat(web): metrics widgets + cost cockpit cards — Phase 61 Theme H (PR #390)
+## 2026-07-11 — feat(web): metrics widgets + cost cockpit cards — Phase 61 Theme H (PR #391)
 
 Surface the Phase 61 metrics where users already look — the dashboard + the session/project cockpits — reading the endpoints Themes B/C/D ship. Web-only.
 
