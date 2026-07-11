@@ -357,6 +357,7 @@ export function appSettingsToPreferences(
     cycleDurationS: settings.cycleDurationS,
     officeView: settings.officeView,
     features: settings.features,
+    collapsedNavSections: settings.collapsedNavSections,
   };
 }
 
@@ -380,6 +381,7 @@ export function applyPreferences(
     cycleDurationS: prefs.cycleDurationS,
     officeView: prefs.officeView,
     features: { ...prev.features, ...prefs.features } as AppSettings['features'],
+    collapsedNavSections: prefs.collapsedNavSections,
   }));
   setTheme(prefs.theme);
 }

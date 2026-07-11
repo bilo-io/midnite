@@ -113,6 +113,13 @@ export const UserPreferencesSchema = z.object({
    * (`@/lib/features`); the contract stays loose so the gateway never needs it.
    */
   features: z.record(z.string(), z.boolean()).default({}),
+  /**
+   * Which side-nav category sections the user has collapsed. A loose list of
+   * category keys (`app`/`agents`/`insights`) — like `features`, the canonical
+   * key set lives in the web app (`@/lib/features`), so the gateway stays
+   * agnostic. Absent/empty = every section expanded.
+   */
+  collapsedNavSections: z.array(z.string()).default([]),
 });
 
 export type UserPreferences = z.infer<typeof UserPreferencesSchema>;

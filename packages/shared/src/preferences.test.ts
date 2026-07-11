@@ -26,6 +26,7 @@ describe('UserPreferencesSchema', () => {
       cycleDurationS: 5,
       officeView: '2d',
       features: {},
+      collapsedNavSections: [],
     });
   });
 
@@ -70,6 +71,7 @@ describe('UserPreferencesSchema', () => {
       cycleDurationS: 8,
       officeView: '3d' as const,
       features: { office: true, workflows: false },
+      collapsedNavSections: ['agents'],
     };
     expect(UserPreferencesSchema.parse(full)).toEqual(full);
   });
