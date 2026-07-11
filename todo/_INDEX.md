@@ -33,7 +33,7 @@
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
 | [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 10/33 | `███░░░░░░░` | 30% | — | D E F G H |
 | [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 23/36 | `██████░░░░` | 64% | I | G |
-| [60 · Fable-Analysis](phase-60-fable-analysis.md) | 🔄 WIP | 50/62 | `████████░░` | 80% | M | — |
+| [60 · Fable-Analysis](phase-60-fable-analysis.md) | ✅ DONE | 62/62 | `██████████` | 100% | — | — |
 | [59 · Chat to board](phase-59-chat-to-board.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
 | [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 15/26 | `██████░░░░` | 58% | — | — |
@@ -184,7 +184,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **J** — Mobile & responsive polish: fixed horizontal overflow on projects/ops/schedules/workflows + settings-table clipping; audit shots lock it (PR #389)
 - ✅ **K** — CLI robustness & coverage (export/import tests + MIDNITE_TOKEN + SW-4 fix; boundary OK) (PR #376)
 - ✅ **L** — Docs site, public site & @midnite/ui test gap: fixed the ui test hole (46→54 play-fns) + verified re-export shims; found dead Docs link + no product docs; proposed a product-led docs IA (PR #375)
-- 🔄 **M** — Cross-cutting synthesis & remediation backlog (runs last)
+- ✅ **M** — Cross-cutting synthesis & remediation backlog: 91 findings ranked+deduped (no P0; 26 fixed inline, 65 open), 7 systemic patterns, 5 remediation phases + 2 maintenance tracks proposed (PR #394)
 
 ### [Phase 59 — Chat to board](phase-59-chat-to-board.md)
 *Natural-language command bar in the Cmd-K palette; deterministic-first, local-model-preferred; composes existing task services.*

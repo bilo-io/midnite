@@ -352,18 +352,21 @@ test gap inline; docs authoring + site refresh stay follow-ups.)*
 
 # Section V — Synthesis
 
-## Theme M — Cross-cutting synthesis & remediation backlog — **M**
+## Theme M — Cross-cutting synthesis & remediation backlog — **M** — ✅ DONE (PR #394, 2026-07-11)
 
 Turn twelve reports into one plan. **Runs last.**
 
-- [ ] Merge all `todo/phase-60-findings/*.md` into a single **ranked master list** (P0→P3, deduped, with the
-      owning package/theme) — `todo/phase-60-findings/M-summary.md`.
-- [ ] Identify **cross-cutting patterns** (a class of bug appearing in N places > a one-off) and call them out as
-      systemic findings worth a dedicated fix.
-- [ ] Propose the **follow-up remediation phases** the findings imply (e.g. "Phase 61 — Security enforcement (rate
-      limits + headers)", "Phase 62 — a11y remediation", "Docs authoring") with rough sizing, so `/exec` has a
-      clear next-step queue. **Recommend, don't create** the phases.
-- [ ] **Report:** `todo/phase-60-findings/M-summary.md` — the executive read for the whole audit.
+- [x] Merged all `todo/phase-60-findings/*.md` into a single **ranked master list** (91 findings — 26 fixed inline,
+      65 open, **no P0** — deduped with cross-refs collapsed to one canonical entry, each row carrying
+      severity/area/status/effort/source) — `todo/phase-60-findings/M-summary.md`.
+- [x] Identified **7 cross-cutting systemic patterns** (fail-open-where-should-fail-closed, no convention at the
+      gateway boundary, missing run/epoch identity, non-atomic multi-table writes, unenforced cross-domain RI, the
+      web three-state collapse, per-component a11y) — each worth one shared fix.
+- [x] Proposed **5 follow-up remediation phases** (security enforcement · core correctness · error-boundary
+      hardening · web state/flow consistency · a11y & responsive) **+ 2 maintenance tracks** (dependency/framework
+      upgrades · product-docs authoring), each rough-sized. **Recommended, not created.**
+- [x] **Report:** [`todo/phase-60-findings/M-summary.md`](phase-60-findings/M-summary.md) — the executive read for
+      the whole audit.
 
 ---
 
@@ -386,23 +389,24 @@ Turn twelve reports into one plan. **Runs last.**
 
 ## Verification
 
-- [ ] Every theme A–L produced a `todo/phase-60-findings/<letter>-*.md` using the shared template; **no finding
+- [x] Every theme A–L produced a `todo/phase-60-findings/<letter>-*.md` using the shared template; **no finding
       lacks evidence** (`file:line`, a repro, or a failing probe) — vibes-only findings are rejected.
-- [ ] Stale-claim discipline held: any suspected gap already closed by Phases 50–57 was **re-verified against
-      `main`** and dropped (not reported as if still broken).
-- [ ] **Security section:** the perimeter (rate-limit posture, headers/CORS, token lifecycle), secrets/signatures,
+- [x] Stale-claim discipline held: any suspected gap already closed by Phases 50–57 was **re-verified against
+      `main`** and dropped (e.g. B-13 `llm_providers.apiKey` plaintext concern did not reproduce; K's "untested
+      clusters" were mostly already covered — tracker drift).
+- [x] **Security section:** the perimeter (rate-limit posture, headers/CORS, token lifecycle), secrets/signatures,
       input-validation/zod coverage, injection/SSRF/zip-slip, and supply-chain are each covered; **quick wins**
-      applied are limited to severity ≥ High **and** effort S, each with tests green.
-- [ ] **Bugs section:** state-machine/scheduler/concurrency, data-integrity/boundaries, and error-handling each
-      have a report with at least the high-severity items backed by a concrete repro or probe.
-- [ ] **UX section:** the state-coverage matrix, an a11y/keyboard pass (incl. the hand-rolled `@midnite/ui`
-      primitives + dnd-kit board), and a mobile/responsive pass are complete — **direction-preserving** (no
+      applied are limited to severity ≥ High **and** effort S, each with tests green (A-3/A-7/B-1/C-1 + the `ws` bump).
+- [x] **Bugs section:** state-machine/scheduler/concurrency (E), data-integrity/boundaries (F), and error-handling
+      (G) each have a report with the high-severity items backed by a concrete repro or probe.
+- [x] **UX section:** the state-coverage matrix (H), an a11y/keyboard pass incl. the hand-rolled `@midnite/ui`
+      primitives + dnd-kit board (I), and a mobile/responsive pass (J) are complete — **direction-preserving** (no
       finding proposes a redesign; each is a gap/inconsistency/omission).
-- [ ] **Monorepo section:** CLI untested clusters have findings **and** the tests to cover them; docs/public-site
-      staleness is inventoried with a proposed IA; the `@midnite/ui` unit-test gap + web re-export boundary are reported.
-- [ ] **Theme M** merged everything into a ranked `M-summary.md` + proposed follow-up remediation phases.
-- [ ] Any quick-win/test edits keep `moon run :typecheck` · `:lint` · `:test` green; **no schema changes, no new
-      runtime deps** (analysis only); web tests run from the primary checkout, not a `.git` worktree.
+- [x] **Monorepo section:** CLI untested clusters have findings **and** the tests to cover them (K); docs/public-site
+      staleness is inventoried with a proposed IA (L); the `@midnite/ui` unit-test gap + web re-export boundary are reported.
+- [x] **Theme M** merged everything into a ranked `M-summary.md` + proposed follow-up remediation phases.
+- [x] Any quick-win/test edits keep `moon run :typecheck` · `:lint` · `:test` green; **no schema changes, no new
+      runtime deps** (analysis only); web tests run from a `.worktrees/` checkout (outside `.git/`), not a `.git` worktree.
 
 ---
 
