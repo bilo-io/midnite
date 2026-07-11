@@ -61,6 +61,8 @@ import {
   GaugeHistoryResponseSchema,
   type GaugeHistoryResponse,
   type GaugeHistoryQuery,
+  RunTimelineResponseSchema,
+  type RunTimelineResponse,
   SystemStatsSchema,
   type SystemStats,
   WorkflowTemplateResponseSchema,
@@ -2428,6 +2430,13 @@ export async function getGaugeHistory(params?: GaugeHistoryQuery): Promise<Gauge
   if (params?.to) qs.set('to', params.to);
   const query = qs.toString() ? `?${qs.toString()}` : '';
   return fetchJson(`/metrics/gauges/history${query}`, undefined, GaugeHistoryResponseSchema);
+}
+
+/** Per-task agent run timeline from `GET /metrics/runs?taskId=` (Phase 61 G) —
+ *  all attempts oldest-first, including a live (unfinished) run. */
+export async function getRunTimeline(taskId: string): Promise<RunTimelineResponse> {
+  const query = `?taskId=${encodeURIComponent(taskId)}`;
+  return fetchJson(`/metrics/runs${query}`, undefined, RunTimelineResponseSchema);
 }
 
 /** Real host telemetry (CPU / memory / disk) from `GET /system/stats`. */
