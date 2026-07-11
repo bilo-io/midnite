@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { asc, eq } from 'drizzle-orm';
+import { asc, desc, eq } from 'drizzle-orm';
 
 import { DB_TOKEN, type MidniteDb } from '../db/db.module';
 import {
@@ -54,6 +54,11 @@ export class RetroRepository {
 
   getByTaskId(taskId: string): TaskRetroRow | undefined {
     return this.db.select().from(taskRetros).where(eq(taskRetros.taskId, taskId)).get();
+  }
+
+  /** Every stored retro row (newest-first) — for the search backfill (Phase 62 G). */
+  listAll(): TaskRetroRow[] {
+    return this.db.select().from(taskRetros).orderBy(desc(taskRetros.createdAt)).all();
   }
 
   /** Insert or (on re-terminal) update the single retro row for a task. */

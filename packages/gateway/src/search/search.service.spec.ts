@@ -1,9 +1,11 @@
 import type {
   Council,
+  Digest,
   Memory,
   Note,
   Project,
   Task,
+  TaskRetro,
   WorkflowSummary,
 } from '@midnite/shared';
 import Database from 'better-sqlite3';
@@ -13,6 +15,8 @@ import { resolve } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { MidniteDb } from '../db/db.module';
 import type { CouncilsService } from '../councils/councils.service';
+import type { DigestsService } from '../digests/digests.service';
+import type { RetroBuilderService } from '../retro/retro-builder.service';
 import type { IdeaService } from '../ideas/ideas.service';
 import type { MemoriesService } from '../memories/memories.service';
 import type { NotesService } from '../notes/notes.service';
@@ -30,6 +34,8 @@ type Fixtures = {
   notes: Note[];
   councils: Council[];
   workflows: WorkflowSummary[];
+  digests?: Digest[];
+  retros?: TaskRetro[];
 };
 
 type Harness = { svc: SearchService; bus: TaskEventBus; fx: Fixtures };
@@ -59,9 +65,11 @@ function makeHarness(seed: Partial<Fixtures> = {}): Harness {
   const councils = { listCouncils: () => fx.councils } as unknown as CouncilsService;
   const workflows = { listSummaries: () => fx.workflows } as unknown as WorkflowsService;
   const ideas = { listIdeas: () => ({ ideas: [], total: 0 }) } as unknown as IdeaService;
+  const digests = { listRecentFull: () => seed.digests ?? [] } as unknown as DigestsService;
+  const retros = { listAll: () => seed.retros ?? [] } as unknown as RetroBuilderService;
 
   const bus = new TaskEventBus();
-  const svc = new SearchService(index, tasks, projects, memories, notes, councils, workflows, bus, ideas);
+  const svc = new SearchService(index, tasks, projects, memories, notes, councils, workflows, bus, ideas, digests, retros);
   return { svc, bus, fx };
 }
 
@@ -92,6 +100,44 @@ describe('SearchService', () => {
       const res = h.svc.search({ q: 'oauth', type: 'note' });
       expect(res.total).toBe(1);
       expect(res.results[0]).toMatchObject({ type: 'note', route: '/dashboard' });
+    });
+
+    it('indexes digests + retros and routes them (Phase 62 G)', () => {
+      const h2 = makeHarness({
+        digests: [
+          {
+            id: 'dg1',
+            createdAt: 'now',
+            from: 'a',
+            to: 'b',
+            counts: { shipped: 2, failed: 0, needsAttention: 0 },
+            sections: [],
+            highlights: [],
+            headline: 'quokka release shipped',
+            markdown: '# quokka',
+          } as Digest,
+        ],
+        retros: [
+          {
+            taskId: 'tk9',
+            outcome: 'abandoned',
+            timeline: [],
+            attempts: [],
+            failures: [],
+            durations: { waitMs: null, workMs: null, totalMs: null },
+            narrative: { whatHappened: 'quokka migration stalled', whatTrippedIt: null, notable: [], generatedBy: 'llm' },
+            createdAt: 'now',
+          } as TaskRetro,
+        ],
+      });
+      h2.svc.onApplicationBootstrap();
+      const res = h2.svc.search({ q: 'quokka' });
+      expect(res.byType).toEqual({ digest: 1, retro: 1 });
+      expect(res.results.find((r) => r.type === 'digest')).toMatchObject({ id: 'dg1', route: '/digests?id=dg1' });
+      expect(res.results.find((r) => r.type === 'retro')).toMatchObject({
+        id: 'tk9',
+        route: '/tasks/view?id=tk9',
+      });
     });
 
     it('short-circuits a one-character query without scanning', () => {

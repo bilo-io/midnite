@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
 import { CouncilsModule } from '../councils/councils.module';
+import { DigestsModule } from '../digests/digests.module';
 import { IdeasModule } from '../ideas/ideas.module';
 import { MemoriesModule } from '../memories/memories.module';
 import { NotesModule } from '../notes/notes.module';
 import { ProjectsModule } from '../projects/projects.module';
+import { RetroModule } from '../retro/retro.module';
 import { TasksModule } from '../tasks/tasks.module';
 import { WorkflowsModule } from '../workflows/workflows.module';
 import { SearchController } from './search.controller';
@@ -23,6 +25,8 @@ import { SearchService } from './search.service';
     CouncilsModule,
     WorkflowsModule,
     IdeasModule,
+    DigestsModule,
+    RetroModule,
   ],
   controllers: [SearchController],
   providers: [SearchService],

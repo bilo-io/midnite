@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import {
   DigestHeadlineDraftSchema,
   type Digest,
@@ -13,6 +13,8 @@ import {
 import { LlmService } from '../agent/llm/llm.service';
 import { MetricsService } from '../metrics/metrics.service';
 import { RetroBuilderService } from '../retro/retro-builder.service';
+import { digestToIndexDoc } from '../search/lib/index-mappers';
+import { SearchIndexService } from '../search/search-index.service';
 import { TasksService } from '../tasks/tasks.service';
 import { UsageService } from '../usage/usage.service';
 import { DigestRepository } from './digest.repository';
@@ -47,6 +49,9 @@ export class DigestBuilderService {
     @Inject(UsageService) private readonly usage: UsageService,
     @Inject(MetricsService) private readonly metrics: MetricsService,
     @Inject(LlmService) private readonly llm: LlmService,
+    // Optional so unit specs constructing the service directly keep working; the
+    // global index (Phase 62 G) makes a stored digest searchable on write.
+    @Optional() @Inject(SearchIndexService) private readonly searchIndex?: SearchIndexService,
   ) {}
 
   async build(req: DigestBuildRequest): Promise<DigestBuildResult> {
@@ -93,6 +98,7 @@ export class DigestBuilderService {
       digest: JSON.stringify(digest),
       markdown: digest.markdown,
     });
+    this.searchIndex?.upsert(digestToIndexDoc(digest));
 
     return { digestId: id, headline, markdown: digest.markdown, blocks: toBlocks(digest) };
   }

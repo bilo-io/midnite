@@ -1,5 +1,6 @@
 import type {
   Council,
+  Digest,
   Idea,
   Memory,
   Milestone,
@@ -7,6 +8,7 @@ import type {
   Project,
   SearchType,
   Task,
+  TaskRetro,
   Workflow,
 } from '@midnite/shared';
 
@@ -85,6 +87,28 @@ export function milestoneToIndexDoc(
   return { type: 'milestone', entityId: m.id, teamId: m.teamId ?? null, title: m.name, body: clip(m.description ?? '') };
 }
 
+/** A fleet digest (Phase 62 G) — headline as title, the rendered markdown as body. */
+export function digestToIndexDoc(d: Digest): IndexDoc {
+  return { type: 'digest', entityId: d.id, teamId: null, title: d.headline, body: clip(d.markdown) };
+}
+
+/**
+ * A task retrospective (Phase 62 G). Keyed by `taskId` (routes to the task's
+ * detail, where the retro renders). The searchable text is the LLM narrative +
+ * failure detail; a skeleton-only retro (no narrative) still indexes its outcome
+ * + failures so "that abandoned task" stays findable.
+ */
+export function retroToIndexDoc(r: TaskRetro): IndexDoc {
+  const title = r.narrative?.whatHappened?.slice(0, 80) || `${r.outcome} retrospective`;
+  const body = joinBody([
+    r.narrative?.whatHappened,
+    r.narrative?.whatTrippedIt,
+    ...(r.narrative?.notable ?? []),
+    ...r.failures.map((f) => `${f.class}: ${f.detail}`),
+  ]);
+  return { type: 'retro', entityId: r.taskId, teamId: null, title, body };
+}
+
 /** Where the client should navigate to open a result of the given type. */
 export function routeFor(type: SearchType, id: string): string {
   switch (type) {
@@ -107,5 +131,11 @@ export function routeFor(type: SearchType, id: string): string {
       // Milestones live under a project roadmap (Theme E). Until that route
       // lands, route to the projects surface (parity with task/project).
       return '/projects';
+    case 'digest':
+      // The digest feed opens the matched digest inline via its id.
+      return `/digests?id=${encodeURIComponent(id)}`;
+    case 'retro':
+      // A retro's entity id is its taskId; the task detail renders the retro.
+      return `/tasks/view?id=${encodeURIComponent(id)}`;
   }
 }

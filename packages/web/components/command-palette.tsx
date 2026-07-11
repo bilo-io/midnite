@@ -13,6 +13,8 @@ import {
   LoaderCircle,
   MessageSquare,
   Milestone,
+  Newspaper,
+  Sparkles,
   Search,
   Settings,
   StickyNote,
@@ -91,6 +93,8 @@ const TYPE_META: Record<SearchType, { label: string; Icon: LucideIcon }> = {
   workflow: { label: 'Workflows', Icon: Workflow },
   idea: { label: 'Ideas', Icon: Lightbulb },
   milestone: { label: 'Milestones', Icon: Milestone },
+  digest: { label: 'Digests', Icon: Newspaper },
+  retro: { label: 'Retros', Icon: Sparkles },
 };
 
 const GROUP_CAP = 5;

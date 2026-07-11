@@ -186,6 +186,26 @@ export const DigestCycleSchema = z.object({
 });
 export type DigestCycle = z.infer<typeof DigestCycleSchema>;
 
+/**
+ * A lean digest row for the feed + dashboard widget (Phase 62 G) — enough to
+ * render a list entry (date, window, headline, tallies) without shipping the full
+ * markdown / sections / highlights. The detail expand fetches the full
+ * {@link DigestSchema} by id.
+ */
+export const DigestSummarySchema = z.object({
+  id: z.string(),
+  createdAt: z.string(),
+  from: z.string(),
+  to: z.string(),
+  counts: DigestCountsSchema,
+  headline: z.string(),
+});
+export type DigestSummary = z.infer<typeof DigestSummarySchema>;
+
+/** `GET /digests` — recent digests, newest-first. */
+export const DigestListResponseSchema = z.object({ digests: z.array(DigestSummarySchema) });
+export type DigestListResponse = z.infer<typeof DigestListResponseSchema>;
+
 export const DigestSchema = z.object({
   id: z.string(),
   createdAt: z.string(),
@@ -206,6 +226,10 @@ export const DigestSchema = z.object({
   markdown: z.string(),
 });
 export type Digest = z.infer<typeof DigestSchema>;
+
+/** `GET /digests/:id` — the full digest (structured + rendered markdown). */
+export const DigestResponseSchema = z.object({ digest: DigestSchema });
+export type DigestResponse = z.infer<typeof DigestResponseSchema>;
 
 /** The raw LLM output for a digest headline (Phase 62 C) — lets the gateway
  *  validate a structured completion without importing zod directly. */

@@ -1,7 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
 import { TaskRetroSchema, type RetroNarrative, type Task, type TaskRetro } from '@midnite/shared';
 
+import { retroToIndexDoc } from '../search/lib/index-mappers';
+import { SearchIndexService } from '../search/search-index.service';
 import { RetroRepository } from './retro.repository';
 import { buildRetro } from './lib/build-retro';
 import { buildTaskRetroReport, retroReportFilename } from './lib/retro-report';
@@ -15,7 +17,12 @@ import { buildTaskRetroReport, retroReportFilename } from './lib/retro-report';
 export class RetroBuilderService {
   private readonly logger = new Logger(RetroBuilderService.name);
 
-  constructor(@Inject(RetroRepository) private readonly repo: RetroRepository) {}
+  constructor(
+    @Inject(RetroRepository) private readonly repo: RetroRepository,
+    // Optional so unit specs constructing the service directly keep working; the
+    // global index (Phase 62 G) makes a stored retro searchable on write.
+    @Optional() @Inject(SearchIndexService) private readonly searchIndex?: SearchIndexService,
+  ) {}
 
   /** Assemble the skeleton for a terminal task (no persistence). */
   build(task: Task): TaskRetro {
@@ -44,6 +51,7 @@ export class RetroBuilderService {
       createdAt: now,
       updatedAt: now,
     });
+    this.searchIndex?.upsert(retroToIndexDoc(retro));
     return retro;
   }
 
@@ -66,6 +74,7 @@ export class RetroBuilderService {
       createdAt: existing.createdAt,
       updatedAt: now,
     });
+    this.searchIndex?.upsert(retroToIndexDoc(updated));
     return updated;
   }
 
@@ -86,6 +95,24 @@ export class RetroBuilderService {
       return undefined;
     }
     return parsed.data;
+  }
+
+  /** Every stored retro (skipping any corrupt rows) — for the search backfill (Phase 62 G). */
+  listAll(): TaskRetro[] {
+    const out: TaskRetro[] = [];
+    for (const row of this.repo.listAll()) {
+      const parsed = TaskRetroSchema.safeParse(this.tryParse(row.retro));
+      if (parsed.success) out.push(parsed.data);
+    }
+    return out;
+  }
+
+  private tryParse(json: string): unknown {
+    try {
+      return JSON.parse(json);
+    } catch {
+      return null;
+    }
   }
 
   /**

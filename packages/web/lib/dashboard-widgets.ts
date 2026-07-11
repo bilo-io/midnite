@@ -72,6 +72,7 @@ export type WidgetType =
   | 'cost-by-repo'
   | 'cycle-time'
   | 'fleet-trend'
+  | 'digest-latest'
   | 'shipped'
   | 'who-in-office'
   | 'system-monitor'
@@ -356,6 +357,13 @@ export const DASHBOARD_WIDGETS: Record<WidgetType, WidgetMeta> = {
     icon: TrendingUp,
     category: 'activity',
     sizes: mediumSizes,
+  },
+  'digest-latest': {
+    label: 'Latest digest',
+    description: 'The most recent fleet digest — headline + shipped/failed/attention tallies',
+    icon: Newspaper,
+    category: 'activity',
+    sizes: panelSizes,
   },
   shipped: {
     label: 'Shipped',

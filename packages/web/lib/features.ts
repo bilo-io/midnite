@@ -21,6 +21,7 @@ import {
   LayoutDashboard,
   Lightbulb,
   ListChecks,
+  Newspaper,
   Presentation,
   Workflow,
   type LucideIcon,
@@ -39,7 +40,8 @@ export type FeatureKey =
   | 'councils'
   | 'slides'
   | 'media'
-  | 'ops';
+  | 'ops'
+  | 'digests';
 
 export type Feature = {
   key: FeatureKey;
@@ -143,6 +145,13 @@ export const FEATURES: Feature[] = [
     description: 'Fleet health — live slot utilization, run throughput, duration distribution, and LLM spend.',
     Icon: ActivitySquare,
   },
+  {
+    key: 'digests',
+    href: '/digests',
+    label: 'Digests',
+    description: 'Fleet digests — what shipped, what failed, and what needs attention over each window.',
+    Icon: Newspaper,
+  },
 ];
 
 /** All features start enabled. `ideas` is off by default (opt-in, Phase 40). */
@@ -160,6 +169,7 @@ export const DEFAULT_FEATURE_FLAGS: Record<FeatureKey, boolean> = {
   slides: true,
   media: true,
   ops: true,
+  digests: true,
 };
 
 /**

@@ -339,6 +339,10 @@ import {
   type ChatUndoResponse,
   RetroResponseSchema,
   type TaskRetro,
+  DigestListResponseSchema,
+  DigestResponseSchema,
+  type Digest,
+  type DigestSummary,
 } from '@midnite/shared';
 import { z } from 'zod';
 
@@ -2142,6 +2146,30 @@ export async function getTaskRetro(
  *  Backs the Retro tab's ExportMenu (download .md / print-to-PDF / copy). */
 export async function exportTaskRetro(taskId: string): Promise<string> {
   const path = `/tasks/${encodeURIComponent(taskId)}/retro/export?format=md`;
+  const res = await fetch(`${gatewayUrl()}${path}`, { cache: 'no-store' });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new ApiError(errorMessage(res, text), res.status);
+  }
+  return res.text();
+}
+
+// ---- Digests (Phase 62 G — fleet digest feed) ----
+
+/** Recent fleet digests as lean summaries (`GET /digests`), newest-first. */
+export async function getDigests(limit?: number, signal?: AbortSignal): Promise<DigestSummary[]> {
+  const suffix = limit ? `?limit=${limit}` : '';
+  return (await fetchJson(`/digests${suffix}`, { signal }, DigestListResponseSchema)).digests;
+}
+
+/** One digest in full (`GET /digests/:id`) — structured sections + rendered markdown. */
+export async function getDigest(id: string, signal?: AbortSignal): Promise<Digest> {
+  return (await fetchJson(`/digests/${encodeURIComponent(id)}`, { signal }, DigestResponseSchema)).digest;
+}
+
+/** Fetch a digest's markdown (`GET /digests/:id/export`) for the download/print menu. */
+export async function exportDigest(id: string): Promise<string> {
+  const path = `/digests/${encodeURIComponent(id)}/export`;
   const res = await fetch(`${gatewayUrl()}${path}`, { cache: 'no-store' });
   if (!res.ok) {
     const text = await res.text().catch(() => '');

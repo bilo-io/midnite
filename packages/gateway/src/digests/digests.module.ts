@@ -7,6 +7,8 @@ import { TasksModule } from '../tasks/tasks.module';
 import { UsageModule } from '../usage/usage.module';
 import { DigestRepository } from './digest.repository';
 import { DigestBuilderService } from './digest-builder.service';
+import { DigestsController } from './digests.controller';
+import { DigestsService } from './digests.service';
 
 /**
  * Phase 62 Theme C — fleet digests. {@link DigestBuilderService} rolls a window of
@@ -18,7 +20,10 @@ import { DigestBuilderService } from './digest-builder.service';
  */
 @Module({
   imports: [TasksModule, RetroModule, UsageModule, MetricsModule, AgentModule],
-  providers: [DigestRepository, DigestBuilderService],
-  exports: [DigestBuilderService],
+  controllers: [DigestsController],
+  providers: [DigestRepository, DigestBuilderService, DigestsService],
+  // DigestBuilderService for the workflow port; DigestRepository so SearchModule
+  // can list stored digests for the boot backfill (Theme G).
+  exports: [DigestBuilderService, DigestRepository, DigestsService],
 })
 export class DigestsModule {}

@@ -43,6 +43,7 @@ import { HealthWidget } from './health-widget';
 import { UsageWidget } from './usage-widget';
 import { CostByRepoWidget } from './cost-by-repo-widget';
 import { CycleTimeWidget } from './cycle-time-widget';
+import { DigestWidget } from './digest-widget';
 import { FleetTrendWidget } from './fleet-trend-widget';
 import { ShippedWidget } from './shipped-widget';
 import { QuickCaptureWidget } from './quick-capture-widget';
@@ -478,6 +479,8 @@ export function DashboardGrid({
           ),
         };
       }
+      case 'digest-latest':
+        return { node: <DigestWidget /> };
       case 'shipped':
         return { node: <ShippedWidget /> };
       case 'who-in-office':
