@@ -16,6 +16,7 @@ import {
   InstallTemplateRequestSchema,
   PreflightReportSchema,
   ReadinessSchema,
+  RetroResponseSchema,
   RunResponseSchema,
   OpsSummarySchema,
   SearchResponseSchema,
@@ -59,6 +60,7 @@ import {
   type TaskSummary,
   type TaskFailure,
   type TasksDoctorReport,
+  type TaskRetro,
   type TemplateSlotsResponse,
   type TerminalTokenResponse,
   type User,
@@ -135,6 +137,10 @@ export interface GatewayClient {
   getCheckRuns(taskId: string): Promise<CheckRun[]>;
   /** A task thread serialized as markdown (the gateway's `taskToMarkdown`). */
   exportTask(taskId: string): Promise<string>;
+  /** A task's retrospective (Phase 62); rejects when none has been built. */
+  getTaskRetro(taskId: string): Promise<TaskRetro>;
+  /** A task's retrospective serialized as markdown (Phase 62 F). */
+  exportTaskRetro(taskId: string): Promise<string>;
   getTerminalToken(sessionId: string): Promise<TerminalTokenResponse>;
   draftBreakdown(goal: string): Promise<BreakdownPreviewResponse>;
   createFromBreakdown(breakdown: Breakdown, repo?: string): Promise<CreateFromBreakdownResponse>;
@@ -461,6 +467,19 @@ export function createClient(baseUrl: string, token?: string): GatewayClient {
     async exportTask(taskId: string): Promise<string> {
       // The export route serves `text/markdown`, not JSON — read it as text.
       const res = await fetchOk(`/tasks/${encodeURIComponent(taskId)}/export?format=md`, {
+        method: 'GET',
+      });
+      return res.text();
+    },
+    async getTaskRetro(taskId: string): Promise<TaskRetro> {
+      const { retro } = RetroResponseSchema.parse(
+        await request(`/tasks/${encodeURIComponent(taskId)}/retro`, { method: 'GET' }),
+      );
+      return retro;
+    },
+    async exportTaskRetro(taskId: string): Promise<string> {
+      // The retro export route serves `text/markdown`, not JSON — read it as text.
+      const res = await fetchOk(`/tasks/${encodeURIComponent(taskId)}/retro/export?format=md`, {
         method: 'GET',
       });
       return res.text();

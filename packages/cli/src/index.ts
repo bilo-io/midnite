@@ -68,6 +68,7 @@ import {
 import { parseCredFlag, templateListRows } from './template.js';
 import { doctorExitCode, doctorRows } from './doctor.js';
 import { USAGE_TABLE_HEAD, usageAttributionRows, usageWindowLine } from './usage.js';
+import { retroLines } from './retro.js';
 import { opsDurationRows, opsGaugeRows, opsOutcomeRows, opsThroughputRows } from './ops.js';
 import { resolveWindow } from './lib/window.js';
 import type { PreflightStatus } from '@midnite/shared';
@@ -779,6 +780,31 @@ program
       await withSpinner('Fetching ops summary…', renderOnce);
     },
   );
+
+program
+  .command('retro <taskId>')
+  .description("A task's retrospective — outcome, timing, failures, review, attempts (Phase 62)")
+  .option('--export [file]', 'write the retro as markdown (to <file>, or stdout when no path)')
+  .action(async (taskId: string, opts: { export?: string | boolean }) => {
+    if (opts.export !== undefined) {
+      const markdown = await withSpinner('Exporting retro…', () => client().exportTaskRetro(taskId));
+      if (typeof opts.export === 'string') {
+        await writeFile(opts.export, markdown, 'utf8');
+        console.log(success(`exported retro for ${taskId} → ${opts.export}`));
+      } else {
+        process.stdout.write(markdown);
+      }
+      return;
+    }
+
+    const retro = await withSpinner('Fetching retro…', () => client().getTaskRetro(taskId));
+    if (isJsonMode()) {
+      printJson(retro);
+      return;
+    }
+    console.log(heading(`Retrospective — ${taskId}`));
+    for (const line of retroLines(retro)) console.log(line ? `  ${line}` : '');
+  });
 
 // Task-scoped operations that don't fit the flat verbs (add/list/move/…).
 const task = program.command('task').description('Task operations');
