@@ -31,7 +31,7 @@
 | [65 · Memory workspace](phase-65-memory-workspace.md) | ✅ DONE | 33/33 | `██████████` | 100% | — | — |
 | [64 · Office presence](phase-64-office-presence.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
-| [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 15/32 | `█████░░░░░` | 47% | — | F G H |
+| [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 15/32 | `█████░░░░░` | 47% | F | G H |
 | [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 27/36 | `████████░░` | 75% | — | — |
 | [60 · Fable-Analysis](phase-60-fable-analysis.md) | ✅ DONE | 62/62 | `██████████` | 100% | — | — |
 | [59 · Chat to board](phase-59-chat-to-board.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
