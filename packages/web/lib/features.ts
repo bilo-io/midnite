@@ -19,7 +19,6 @@ import {
   Folder,
   Images,
   LayoutDashboard,
-  Lightbulb,
   ListChecks,
   Newspaper,
   Presentation,
@@ -30,7 +29,6 @@ import {
 export type FeatureKey =
   | 'dashboard'
   | 'projects'
-  | 'ideas'
   | 'memory'
   | 'tasks'
   | 'sessions'
@@ -157,14 +155,6 @@ export const FEATURES: Feature[] = [
     category: 'agents',
   },
   {
-    key: 'ideas',
-    href: '/ideas',
-    label: 'Ideas',
-    description: 'Capture, refine with AI, and promote ideas into projects.',
-    Icon: Lightbulb,
-    category: 'agents',
-  },
-  {
     key: 'media',
     href: '/media',
     label: 'Media',
@@ -210,11 +200,10 @@ export function groupNavSections(features: Feature[]): { pinned: Feature[]; sect
   return { pinned, sections };
 }
 
-/** All features start enabled. `ideas` is off by default (opt-in, Phase 40). */
+/** All features start enabled. */
 export const DEFAULT_FEATURE_FLAGS: Record<FeatureKey, boolean> = {
   dashboard: true,
   projects: true,
-  ideas: false,
   memory: true,
   tasks: true,
   sessions: true,

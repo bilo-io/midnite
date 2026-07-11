@@ -45,8 +45,6 @@ export const ProjectSchema = z.object({
   taskStatusCounts: TaskStatusCountsSchema.optional(),
   /** Phase 38: team this project belongs to; null for personal projects. */
   teamId: z.string().optional(),
-  /** Phase 40: idea this project was promoted from; null if not idea-originated. */
-  ideaId: z.string().nullable().optional(),
   /**
    * Phase 40 Theme G: phase-doc ↔ board sync-back. When enabled (default on) and a
    * sync repo is set, completing a seeded task ticks its checkbox in the repo `.md`.
@@ -62,8 +60,6 @@ export const CreateProjectRequestSchema = z.object({
   tag: TagSchema,
   color: HexColorSchema,
   workDir: WorkDirSchema.optional(),
-  /** Phase 40: set when the project is created by promoting an idea. */
-  ideaId: z.string().optional(),
 });
 
 export const UpdateProjectRequestSchema = z.object({

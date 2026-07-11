@@ -93,7 +93,6 @@ export const PORTABLE_DOMAINS: ReadonlyArray<{ name: string; label: string }> = 
   { name: 'routines', label: 'Routines' },
   { name: 'media', label: 'Media' },
   { name: 'councils', label: 'Councils' },
-  { name: 'ideas', label: 'Ideas' },
   { name: 'approvalRules', label: 'Approval rules' },
   { name: 'workflows', label: 'Workflows' },
   { name: 'users', label: 'Users & profiles' },

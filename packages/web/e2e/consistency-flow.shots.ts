@@ -53,7 +53,6 @@ const SURFACES: { name: string; path: string; api: string }[] = [
   { name: 'projects', path: '/projects', api: `${GATEWAY_ORIGIN}/projects**` },
   { name: 'workflows', path: '/workflows', api: `${GATEWAY_ORIGIN}/workflows**` },
   { name: 'slides', path: '/slides', api: `${GATEWAY_ORIGIN}/slides**` },
-  { name: 'ideas', path: '/ideas', api: `${GATEWAY_ORIGIN}/ideas**` },
   { name: 'search', path: '/search?q=zzz', api: `${GATEWAY_ORIGIN}/search**` },
   { name: 'settings', path: '/settings', api: `${GATEWAY_ORIGIN}/config**` },
 ];

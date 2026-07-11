@@ -14,7 +14,7 @@ describe('groupNavSections', () => {
 
     const byKey = Object.fromEntries(sections.map((s) => [s.key, keysOf(s.features)]));
     expect(byKey['app']).toEqual(['projects', 'tasks', 'memory', 'slides', 'workflows', 'schedules']);
-    expect(byKey['agents']).toEqual(['sessions', 'office', 'councils', 'ideas', 'media']);
+    expect(byKey['agents']).toEqual(['sessions', 'office', 'councils', 'media']);
     expect(byKey['insights']).toEqual(['digests', 'ops']);
   });
 

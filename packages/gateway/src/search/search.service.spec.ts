@@ -14,7 +14,6 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { MidniteDb } from '../db/db.module';
 import type { CouncilsService } from '../councils/councils.service';
 import type { DigestsService } from '../digests/digests.service';
-import type { IdeaService } from '../ideas/ideas.service';
 import type { MemoriesService } from '../memories/memories.service';
 import type { NotesService } from '../notes/notes.service';
 import type { ProjectsService } from '../projects/projects.service';
@@ -59,11 +58,10 @@ function makeHarness(seed: Partial<Fixtures> = {}): Harness {
   const notes = { listNotes: () => fx.notes } as unknown as NotesService;
   const councils = { listCouncils: () => fx.councils } as unknown as CouncilsService;
   const workflows = { listSummaries: () => fx.workflows } as unknown as WorkflowsService;
-  const ideas = { listIdeas: () => ({ ideas: [], total: 0 }) } as unknown as IdeaService;
   const digests = { listAll: () => [] } as unknown as DigestsService;
 
   const bus = new TaskEventBus();
-  const svc = new SearchService(index, tasks, projects, memories, notes, councils, workflows, bus, ideas, digests);
+  const svc = new SearchService(index, tasks, projects, memories, notes, councils, workflows, bus, digests);
   return { svc, bus, fx };
 }
 

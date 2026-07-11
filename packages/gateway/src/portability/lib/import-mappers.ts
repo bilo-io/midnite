@@ -4,7 +4,6 @@ import {
   approvalRules,
   councilMembers,
   councils,
-  ideas,
   llmProviders,
   llmSettings,
   media,
@@ -156,7 +155,6 @@ export const IMPORT_DOMAINS: DomainSpec[] = [
   },
   { name: 'media', parent: media },
   { name: 'councils', parent: councils, transform: archivedToTimestamp, children: [{ field: 'members', table: councilMembers, fk: 'councilId' }] },
-  { name: 'ideas', parent: ideas },
   { name: 'approvalRules', parent: approvalRules },
   { name: 'workflows', parent: workflows, transform: workflowTransform },
   // Theme G — integration config (secret-bearing). The secret column arrives as a

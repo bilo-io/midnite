@@ -130,23 +130,3 @@ export async function seedRepo(name: string, ownerRepo: string): Promise<{ id: s
   return { id: repo.id, name: repo.name };
 }
 
-/** An idea created over the gateway REST API. */
-export type SeededIdea = { id: string; title: string };
-
-/**
- * Create an idea via `POST /ideas` (JSON, as the web client does). The e2e
- * gateway has no LLM credential, so the chat composer's assistant reply is the
- * deterministic "AI is not configured" fallback — perfect for a flow assertion.
- */
-export async function seedIdea(title: string, body?: string): Promise<SeededIdea> {
-  const res = await fetch(`${GATEWAY_ORIGIN}/ideas`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ title, ...(body ? { body } : {}) }),
-  });
-  if (!res.ok) {
-    throw new Error(`seedIdea failed (${res.status}): ${await res.text().catch(() => '')}`);
-  }
-  const { idea } = (await res.json()) as { idea: { id: string; title: string } };
-  return { id: idea.id, title: idea.title };
-}

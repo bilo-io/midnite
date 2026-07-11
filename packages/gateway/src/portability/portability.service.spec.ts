@@ -14,7 +14,6 @@ function fakeServices() {
     routines: { listRoutines: () => [] },
     media: { listMedia: () => [] },
     councils: { listCouncils: () => [{ id: 'c1' }] },
-    ideas: { listIdeas: () => ({ ideas: [{ id: 'i1' }], total: 1 }) },
     approvals: { list: () => [{ id: 'r1' }] },
     workflows: { listSummaries: () => [{ id: 'w1' }], getWorkflow: (id: string) => ({ id, nodes: [] }) },
   };
@@ -37,7 +36,7 @@ function build(db: TestDbHandle['db'], crypto = fakeCrypto()) {
     crypto as never,
     s.tasks as never, s.projects as never, s.repos as never, s.memories as never,
     s.notes as never, s.routines as never, s.media as never, s.councils as never,
-    s.ideas as never, s.approvals as never, s.workflows as never,
+    s.approvals as never, s.workflows as never,
   );
   return { svc, s };
 }
@@ -60,7 +59,7 @@ describe('PortabilityService.export (Phase 49 B)', () => {
     expect(manifest.counts.memories).toBe(0);
     expect(manifest.domains).toEqual([
       'tasks', 'projects', 'repos', 'memories', 'notes',
-      'routines', 'media', 'councils', 'ideas', 'approvalRules', 'workflows',
+      'routines', 'media', 'councils', 'approvalRules', 'workflows',
       // Theme G — auth + integration config always ride along (secret-free here).
       'users', 'teams', 'llmSettings', 'webhooks', 'workflowCredentials', 'llmProviders',
     ]);
@@ -71,8 +70,6 @@ describe('PortabilityService.export (Phase 49 B)', () => {
     expect(tasks.records).toEqual([{ id: 't1' }, { id: 't2' }]);
     // workflows are hydrated by id (listSummaries is thin).
     expect(domains.find((d) => d.domain === 'workflows')!.records).toEqual([{ id: 'w1', nodes: [] }]);
-    // ideas comes from the paginated shape's .ideas.
-    expect(domains.find((d) => d.domain === 'ideas')!.records).toEqual([{ id: 'i1' }]);
   });
 
   it('honours a domains allowlist', () => {

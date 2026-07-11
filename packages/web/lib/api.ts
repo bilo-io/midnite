@@ -78,23 +78,6 @@ import {
   type InstallTemplateRequest,
   type TemplateSlotsResponse,
   type CreateFromWorkflowRequest,
-  IdeaResponseSchema,
-  IdeasResponseSchema,
-  IdeaMessagesResponseSchema,
-  IdeaChatResponseSchema,
-  PromoteIdeaResponseSchema,
-  type Idea,
-  type IdeaMessage,
-  type IdeaResponse,
-  type IdeasResponse,
-  type IdeaMessagesResponse,
-  type IdeaChatResponse,
-  type CreateIdeaRequest,
-  type UpdateIdeaRequest,
-  type IdeaChatRequest,
-  type IdeaQuery,
-  type PromoteIdeaRequest,
-  type PromoteIdeaResponse,
   ReadinessSchema,
   PreflightReportSchema,
   type Readiness,
@@ -2794,70 +2777,3 @@ export async function revokeServiceToken(id: string): Promise<void> {
   await fetchJson(`/service-tokens/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
 
-// ── Ideas (Phase 40 Theme A+B) ────────────────────────────────────────────────
-
-export async function listIdeas(query?: IdeaQuery): Promise<IdeasResponse> {
-  const qs = new URLSearchParams();
-  if (query?.status) qs.set('status', query.status);
-  if (query?.q) qs.set('q', query.q);
-  if (query?.page) qs.set('page', String(query.page));
-  if (query?.limit) qs.set('limit', String(query.limit));
-  const q = qs.toString();
-  return fetchJson(`/ideas${q ? `?${q}` : ''}`, undefined, IdeasResponseSchema);
-}
-
-export async function createIdea(req: CreateIdeaRequest): Promise<IdeaResponse> {
-  return fetchJson(
-    '/ideas',
-    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(req) },
-    IdeaResponseSchema,
-  );
-}
-
-export async function getIdea(id: string): Promise<IdeaResponse> {
-  return fetchJson(`/ideas/${encodeURIComponent(id)}`, undefined, IdeaResponseSchema);
-}
-
-export async function updateIdea(id: string, req: UpdateIdeaRequest): Promise<IdeaResponse> {
-  return fetchJson(
-    `/ideas/${encodeURIComponent(id)}`,
-    { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(req) },
-    IdeaResponseSchema,
-  );
-}
-
-export async function deleteIdea(id: string): Promise<void> {
-  await fetchJson(`/ideas/${encodeURIComponent(id)}`, { method: 'DELETE' });
-}
-
-export async function listIdeaMessages(ideaId: string): Promise<IdeaMessagesResponse> {
-  return fetchJson(
-    `/ideas/${encodeURIComponent(ideaId)}/messages`,
-    undefined,
-    IdeaMessagesResponseSchema,
-  );
-}
-
-export async function sendIdeaMessage(
-  ideaId: string,
-  req: IdeaChatRequest,
-): Promise<IdeaChatResponse> {
-  return fetchJson(
-    `/ideas/${encodeURIComponent(ideaId)}/messages`,
-    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(req) },
-    IdeaChatResponseSchema,
-  );
-}
-
-export async function promoteIdeaToProject(
-  ideaId: string,
-  req: PromoteIdeaRequest,
-): Promise<PromoteIdeaResponse> {
-  return fetchJson(
-    `/ideas/${encodeURIComponent(ideaId)}/promote`,
-    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(req) },
-    PromoteIdeaResponseSchema,
-  );
-}
-
-export type { Idea, IdeaMessage, IdeaResponse, IdeasResponse, IdeaChatResponse };
