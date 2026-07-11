@@ -21,13 +21,16 @@ export function TaskDetailView() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = searchParams.get('id') ?? '';
-  const tab: 'details' | 'review' = searchParams.get('tab') === 'review' ? 'review' : 'details';
-  // Keep the URL in step with the active tab so a review is bookmarkable/shareable
-  // at the tab it was left on (Phase 52 E). `replace` avoids stacking history.
-  const setTab = (next: 'details' | 'review') => {
+  const tabParam = searchParams.get('tab');
+  const tab: 'details' | 'review' | 'retro' =
+    tabParam === 'review' ? 'review' : tabParam === 'retro' ? 'retro' : 'details';
+  // Keep the URL in step with the active tab so a review/retro is bookmarkable/
+  // shareable at the tab it was left on (Phase 52 E, Phase 62 F). `replace` avoids
+  // stacking history.
+  const setTab = (next: 'details' | 'review' | 'retro') => {
     const qs = new URLSearchParams(searchParams.toString());
-    if (next === 'review') qs.set('tab', 'review');
-    else qs.delete('tab');
+    if (next === 'details') qs.delete('tab');
+    else qs.set('tab', next);
     router.replace(`/tasks/view?${qs.toString()}`);
   };
   const { data, loading, error } = useApiData(
