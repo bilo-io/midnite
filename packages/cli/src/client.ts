@@ -17,8 +17,10 @@ import {
   PreflightReportSchema,
   ReadinessSchema,
   RunResponseSchema,
+  OpsSummarySchema,
   SearchResponseSchema,
   StatusSchema,
+  UsageAttributionResponseSchema,
   TaskFailuresResponseSchema,
   TaskSchema,
   TasksPageSchema,
@@ -60,6 +62,10 @@ import {
   type TemplateSlotsResponse,
   type TerminalTokenResponse,
   type User,
+  type OpsQuery,
+  type OpsSummary,
+  type UsageAttributionGroupBy,
+  type UsageAttributionResponse,
   type Workflow,
   type WorkflowRun,
   type WorkflowSummary,
@@ -148,6 +154,14 @@ export interface GatewayClient {
   getReadiness(): Promise<Readiness>;
   /** Boot preflight re-run live (`GET /health/preflight`, Phase 54 F) — 200 pass / 503 fail, both parsed. */
   getPreflight(): Promise<PreflightReport>;
+  /** Agent-session cost attribution grouped by task/repo/project/session (Phase 61 B/I). */
+  usageAttribution(query: {
+    groupBy: UsageAttributionGroupBy;
+    from?: string;
+    to?: string;
+  }): Promise<UsageAttributionResponse>;
+  /** Fleet ops summary — gauges, throughput, durations, outcomes (Phase 61 I). */
+  opsMetrics(query?: OpsQuery): Promise<OpsSummary>;
 }
 
 /** A thin typed client over the gateway REST API. Responses are validated with
@@ -547,6 +561,29 @@ export function createClient(baseUrl: string, token?: string): GatewayClient {
 
     async getPreflight(): Promise<PreflightReport> {
       return PreflightReportSchema.parse(await requestHealth('/health/preflight'));
+    },
+
+    /** Cost attribution by task/repo/project/session (Phase 61 B/I). */
+    async usageAttribution(query: {
+      groupBy: UsageAttributionGroupBy;
+      from?: string;
+      to?: string;
+    }): Promise<UsageAttributionResponse> {
+      const qs = new URLSearchParams({ groupBy: query.groupBy });
+      if (query.from) qs.set('from', query.from);
+      if (query.to) qs.set('to', query.to);
+      return UsageAttributionResponseSchema.parse(
+        await request(`/usage/attribution?${qs.toString()}`, { method: 'GET' }),
+      );
+    },
+
+    /** Server-recorded ops summary — gauges, throughput, durations, outcomes (Phase 61 I). */
+    async opsMetrics(query?: OpsQuery): Promise<OpsSummary> {
+      const qs = new URLSearchParams();
+      if (query?.from) qs.set('from', query.from);
+      if (query?.to) qs.set('to', query.to);
+      const suffix = qs.toString() ? `?${qs.toString()}` : '';
+      return OpsSummarySchema.parse(await request(`/metrics/ops${suffix}`, { method: 'GET' }));
     },
   };
 }

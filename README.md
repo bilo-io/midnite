@@ -383,6 +383,14 @@ surface near a budget, but calls are **never blocked**. Optional soft budgets in
 
 Costs are estimates only (the price table omits caching/batch/tier discounts).
 
+Separately, **agent-session** cost — the token counts harvested from each Claude
+Code session's transcript, attributed by task/repo/project/session — is served by
+`GET /usage/attribution` and surfaced by **`midnite usage --by <group>`**, while the
+fleet ops summary (live gauges, throughput, run durations, outcomes) is
+`GET /metrics/ops` / **`midnite ops [--watch]`**. The full model — measured vs.
+estimated vs. unpriced, where session tokens come from, rollup grain, and retention
+knobs — is documented in **[`docs/METRICS.md`](docs/METRICS.md)**.
+
 ## Common commands
 
 ```sh
