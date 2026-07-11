@@ -5,18 +5,52 @@ import { useConnectionStore, worstStatus, type ChannelStatus } from '@/lib/conne
 import { useToast } from '@/components/toast';
 import { cn } from '@/lib/utils';
 
-const META: Record<ChannelStatus, { label: string; dot: string; pulse: boolean }> = {
-  live: { label: 'Live', dot: 'bg-[hsl(var(--status-done))]', pulse: false },
-  reconnecting: { label: 'Reconnecting…', dot: 'bg-[hsl(var(--status-waiting))]', pulse: true },
-  stale: { label: 'Reconnecting — data may be behind', dot: 'bg-[hsl(var(--status-abandoned))]', pulse: true },
+// `token` is the CSS custom-property name for the status colour; the dot class is
+// a literal so Tailwind can see it, while the token drives inline glow/tint/ring
+// colours (which Tailwind can't build from an interpolated name).
+const META: Record<ChannelStatus, { label: string; dot: string; token: string }> = {
+  live: { label: 'Live', dot: 'bg-[hsl(var(--status-done))]', token: '--status-done' },
+  reconnecting: {
+    label: 'Reconnecting…',
+    dot: 'bg-[hsl(var(--status-waiting))]',
+    token: '--status-waiting',
+  },
+  stale: {
+    label: 'Reconnecting — data may be behind',
+    dot: 'bg-[hsl(var(--status-abandoned))]',
+    token: '--status-abandoned',
+  },
 };
 
 /**
+ * The status pip: a solid core wrapped in a pulsing halo ring and a soft coloured
+ * glow. The halo pulse is always on (motion-safe) so a healthy "Live" state still
+ * reads as a breathing indicator, not a static dot.
+ */
+function StatusDot({ dot, token }: { dot: string; token: string }) {
+  const glow = `hsl(var(${token}))`;
+  return (
+    <span aria-hidden className="relative flex h-2 w-2 shrink-0 items-center justify-center">
+      <span
+        className={cn(
+          'absolute inline-flex h-full w-full rounded-full opacity-60 motion-safe:animate-ping',
+          dot,
+        )}
+      />
+      <span
+        className={cn('relative inline-flex h-2 w-2 rounded-full', dot)}
+        style={{ boxShadow: `0 0 7px 1.5px ${glow}, 0 0 3px 0 ${glow}` }}
+      />
+    </span>
+  );
+}
+
+/**
  * Phase 56 E — the live-connection indicator, driven by the worst-of channel
- * status in the connection store. `full` shows a dot + label (sidebar footer);
- * `compact` is a dot-only pip with an accessible title (cockpit panel headers).
- * Pure/read-only — the recovery toast lives in {@link ConnectionToaster} so this
- * can render anywhere without a ToastProvider.
+ * status in the connection store. `full` shows a dot + label styled as a sidebar
+ * nav row; `compact` is a dot-only pip with an accessible title (cockpit panel
+ * headers). Pure/read-only — the recovery toast lives in {@link ConnectionToaster}
+ * so this can render anywhere without a ToastProvider.
  */
 export function ConnectionStatus({
   variant = 'full',
@@ -27,12 +61,6 @@ export function ConnectionStatus({
 }) {
   const status = useConnectionStore((s) => worstStatus(s.statuses));
   const meta = META[status];
-  const dot = (
-    <span
-      aria-hidden
-      className={cn('h-2 w-2 shrink-0 rounded-full', meta.dot, meta.pulse && 'animate-pulse')}
-    />
-  );
 
   if (variant === 'compact') {
     return (
@@ -40,25 +68,59 @@ export function ConnectionStatus({
         role="status"
         aria-label={`Connection: ${meta.label}`}
         title={meta.label}
-        className={cn('inline-flex items-center', className)}
+        className={cn('inline-flex items-center justify-center', className)}
       >
-        {dot}
+        <StatusDot dot={meta.dot} token={meta.token} />
       </span>
     );
   }
 
+  // Matches a nav row: h-9, gap-3, px-2.5, text-sm; the dot sits in the same 1rem
+  // icon slot the nav links use, so it lines up with the icons above.
   return (
     <span
       role="status"
       aria-label={`Connection: ${meta.label}`}
-      className={cn('flex w-full items-start gap-1.5 text-xs text-muted-foreground', className)}
+      className={cn('flex h-9 w-full items-center gap-3 px-2.5 text-sm text-muted-foreground', className)}
     >
-      <span
-        aria-hidden
-        className={cn('mt-1 h-2 w-2 shrink-0 rounded-full', meta.dot, meta.pulse && 'animate-pulse')}
-      />
-      <span className="min-w-0 break-words leading-tight">{meta.label}</span>
+      <span className="flex h-4 w-4 shrink-0 items-center justify-center">
+        <StatusDot dot={meta.dot} token={meta.token} />
+      </span>
+      <span className="min-w-0 truncate leading-tight">{meta.label}</span>
     </span>
+  );
+}
+
+/**
+ * The floating live-connection indicator: a pip pinned to the top-right corner
+ * over a semi-transparent tint of the status colour. Collapsed it shows only the
+ * dot; on hover the pill grows to the LEFT to reveal the label — the dot itself
+ * never moves (the pill is right-anchored). The width reveal eases in/out.
+ */
+export function ConnectionStatusFloat({ className }: { className?: string }) {
+  const status = useConnectionStore((s) => worstStatus(s.statuses));
+  const meta = META[status];
+  const tint = `hsl(var(${meta.token}) / 0.1)`;
+
+  return (
+    <div
+      role="status"
+      aria-label={`Connection: ${meta.label}`}
+      className={cn('group fixed right-4 top-7 z-50', className)}
+    >
+      {/* h-7 + symmetric px keeps the collapsed state a perfect circle (28×28):
+          the zero-width label mustn't be allowed to stretch the height. */}
+      <div
+        className="flex h-7 items-center rounded-full px-2.5 shadow-sm backdrop-blur-md transition-[background-color] duration-300 ease-in-out"
+        style={{ backgroundColor: tint }}
+      >
+        {/* Reveals leftward on hover; the dot after it stays anchored to the right. */}
+        <span className="max-w-0 overflow-hidden whitespace-nowrap text-xs font-medium leading-none text-foreground opacity-0 transition-all duration-300 ease-in-out group-hover:mr-2 group-hover:max-w-[16rem] group-hover:pl-1 group-hover:opacity-100">
+          {meta.label}
+        </span>
+        <StatusDot dot={meta.dot} token={meta.token} />
+      </div>
+    </div>
   );
 }
 
