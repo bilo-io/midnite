@@ -211,3 +211,28 @@ export type Digest = z.infer<typeof DigestSchema>;
  *  validate a structured completion without importing zod directly. */
 export const DigestHeadlineDraftSchema = z.object({ headline: z.string() });
 export type DigestHeadlineDraft = z.infer<typeof DigestHeadlineDraftSchema>;
+
+/**
+ * Phase 62 G — a lightweight digest feed row. The list surface renders date,
+ * window, headline + counts without shipping the heavy `sections`/`highlights`/
+ * `markdown` of every digest; the full {@link Digest} is fetched on selection.
+ */
+export const DigestListItemSchema = z.object({
+  id: z.string(),
+  createdAt: z.string(),
+  from: z.string(),
+  to: z.string(),
+  headline: z.string(),
+  counts: DigestCountsSchema,
+});
+export type DigestListItem = z.infer<typeof DigestListItemSchema>;
+
+/** Response for `GET /digests` — recent digests, most-recent-first. */
+export const DigestListResponseSchema = z.object({
+  digests: z.array(DigestListItemSchema),
+});
+export type DigestListResponse = z.infer<typeof DigestListResponseSchema>;
+
+/** Response for `GET /digests/:id` — a single full digest. */
+export const DigestResponseSchema = z.object({ digest: DigestSchema });
+export type DigestResponse = z.infer<typeof DigestResponseSchema>;

@@ -27,7 +27,7 @@ describe('SearchResultSchema', () => {
     expect(SearchResultSchema.safeParse({ ...valid, type: 'widget' }).success).toBe(false);
   });
 
-  it('covers exactly the eight searchable domains', () => {
+  it('covers exactly the nine searchable domains', () => {
     expect([...SEARCH_TYPES]).toEqual([
       'task',
       'project',
@@ -37,6 +37,7 @@ describe('SearchResultSchema', () => {
       'workflow',
       'idea',
       'milestone',
+      'digest',
     ]);
   });
 });
