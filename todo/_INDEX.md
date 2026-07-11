@@ -36,7 +36,7 @@
 | [60 · Fable-Analysis](phase-60-fable-analysis.md) | ✅ DONE | 62/62 | `██████████` | 100% | — | — |
 | [59 · Chat to board](phase-59-chat-to-board.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
-| [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 15/26 | `██████░░░░` | 58% | C | — |
+| [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 17/27 | `██████░░░░` | 63% | — | — |
 | [56 · Realtime / WS reliability](phase-56-realtime-ws-reliability.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [55 · Projects detail page](phase-55-projects-detail-page.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
 | [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
@@ -208,7 +208,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 *(No new domain — perf work across existing layers: batch loads + indexes in repositories, lean summary DTOs + pagination as shared contracts, cache tuning + virtualization on the web. Evidence-driven via a seed + benchmark harness.)*
 - ✅ **A** — Seed + benchmark harness (evidence first) (PR #308)
 - ✅ **B** — Kill the task-hydration N+1 (batched `hydrateMany`: 400-task list 2401→7 queries; workflow summaries 401→2 — PR #312)
-- ◐ **C** — Lean list DTOs + pagination: TaskSummary DTO + paged GET /tasks + /tasks/activity (PR #319; keyset + other-endpoint pagination deferred)
+- ✅ **C** — Lean list DTOs + pagination: TaskSummary DTO + paged GET /tasks (PR #319) + workflows/projects/repos pages (PR #397); keyset ⏳ deferred
 - ✅ **D** — DB indexes on hot paths: projects(createdBy,teamId) + workflows(teamId) close the teamScopeFilter full-scans (PR #314)
 - ✅ **E** — Refetch / cache tuning (coalesce refetches + staleTime; granular deferred to P56 — PR #307)
 - ◐ **F** — List virtualization (board + run-history + approval-log done; grouped accordions deferred) (PR #310)

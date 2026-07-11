@@ -12,6 +12,15 @@ The last open item of Theme G's Ops deepening (cycle-time + fleet-trend landed i
 - [x] **`RunTimeline` component (recharts):** attempt bars started→ended, outcome-colored (done/abandoned/failed/cancelled), retry index visible, the **in-progress run** extended to now with a "running" style; duration tooltip; honest empty state.
 - [x] **Mounted twice:** an "Agent runs" section on the task detail page + a "Run timeline" Ops drill-down (task-id lookup).
 - [x] **Tests:** gateway repo/service/controller (order, live-run nulls, 400 on missing taskId); web RTL (bars, colors, empty, live) + Storybook story (Default/Empty/WithLiveRun); a Playwright drill-down spec (authored). shared 683 · gateway 1968 · web 1099 · typecheck/lint green. Phase 61 → 24/36 (67%).
+## 2026-07-11 — feat: paginate workflows/projects/repos lists — Phase 57 Theme C follow-up (PR #397)
+
+Extended the offset + `{ items, total }` pattern (shipped on `GET /tasks`) to the remaining SQL-backed list endpoints, closing Theme C's deferred pagination (keyset stays ⏳ deferred).
+
+- [x] **shared** — reusable `PageQuerySchema` (page/limit) + `WorkflowsPage`/`ProjectsPage`/`ReposPage` = `pagedSchema(...)`. Projects keep the full `Project` shape (lean summary = separate slice).
+- [x] **gateway** — each repo gains `list*Page(scope, {page,limit})`: a scoped `COUNT` over the same `teamScopeFilter`'d `where` + `limit`/`offset` when set (omitted = all), mirroring `listTaskPage`. Services expose `list*Page → { items, total }`; existing array methods (search/portability/chat/tasks) delegate to `.items`. Controllers parse `PageQuerySchema`.
+- [x] **web/cli** — `getProjects`/`getRepos`/`listWorkflows` unwrap `.items` (signatures + consumers unchanged); `getProjectsPage`/`getReposPage`/`listWorkflowsPage` added for total-aware callers; story mocks + CLI updated.
+- [x] **sessions deferred** (derived from tasks in-service — no table to page). **keyset ⏳ deferred** (Decision §4).
+- Gateway 1965 · shared 682 · web 1093 · cli 178 green. Phase 57 → 17/27 (63%).
 
 ## 2026-07-11 — docs: synthesis & remediation backlog → Phase 60 to 100% — Phase 60 Theme M (PR #394)
 
