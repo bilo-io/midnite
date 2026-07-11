@@ -32,7 +32,7 @@
 | [64 · Office presence](phase-64-office-presence.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
 | [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 6/33 | `██░░░░░░░░` | 18% | C | D E F G H |
-| [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 23/36 | `██████░░░░` | 64% | I | G |
+| [61 · Fable-Observability](phase-61-fable-observability.md) | 🔄 WIP | 25/36 | `███████░░░` | 69% | — | G |
 | [60 · Fable-Analysis](phase-60-fable-analysis.md) | 🔄 WIP | 50/62 | `████████░░` | 80% | — | M |
 | [59 · Chat to board](phase-59-chat-to-board.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
@@ -168,7 +168,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **F** — Live metrics channel on the P56 reliable WS: on-change gauge push via MetricsEventBus + MetricsGateway (`/ws/metrics`), Ops page consumes it (poll fallback) (PR #389)
 - ◐ **G** — Ops page deepening: cycle-time + fleet-trend charts landed; cost views + run timeline open (PR #360)
 - ✅ **H** — Widgets + session/project cockpit integration (PR #391)
-- ◻ **I** — CLI (`usage --by`, `ops`) + metrics-model docs
+- ✅ **I** — CLI (`usage --by`, `ops [--watch]`) + `docs/METRICS.md`; also fixed a Theme-F DI regression that 500'd `/metrics/ops` (PR #392)
 
 ### [Phase 60 — Fable-Analysis](phase-60-fable-analysis.md)
 *Repo-wide audit → ranked findings reports (analysis-only, bar security quick-wins + safe dep bumps). Direction-preserving. M runs last.*
