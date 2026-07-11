@@ -36,7 +36,7 @@
 | [60 · Fable-Analysis](phase-60-fable-analysis.md) | ✅ DONE | 62/62 | `██████████` | 100% | — | — |
 | [59 · Chat to board](phase-59-chat-to-board.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [58 · Dependency graph & roadmap](phase-58-dependency-graph-roadmap.md) | ✅ DONE | 25/25 | `██████████` | 100% | — | — |
-| [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 17/27 | `██████░░░░` | 63% | F | — |
+| [57 · Performance & scale](phase-57-performance-scale.md) | 🔄 WIP | 18/27 | `███████░░░` | 67% | — | — |
 | [56 · Realtime / WS reliability](phase-56-realtime-ws-reliability.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
 | [55 · Projects detail page](phase-55-projects-detail-page.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
 | [54 · Runtime & process resilience](phase-54-runtime-process-resilience.md) | ✅ DONE | 26/26 | `██████████` | 100% | — | — |
@@ -211,7 +211,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **C** — Lean list DTOs + pagination: TaskSummary DTO + paged GET /tasks (PR #319) + workflows/projects/repos pages (PR #397); keyset ⏳ deferred
 - ✅ **D** — DB indexes on hot paths: projects(createdBy,teamId) + workflows(teamId) close the teamScopeFilter full-scans (PR #314)
 - ✅ **E** — Refetch / cache tuning (coalesce refetches + staleTime; granular deferred to P56 — PR #307)
-- ◐ **F** — List virtualization (board + run-history + approval-log done; grouped accordions deferred) (PR #310)
+- ✅ **F** — List virtualization: board + run-history + approval-log (PR #310) + status-grouped accordions (sessions/workflows/projects) via a document-scroll `WindowVirtualList` — no inner scrollbar (PR #405)
 
 ### [Phase 56 — Realtime / WS reliability](phase-56-realtime-ws-reliability.md)
 *(No new domain — a shared reliability layer under the existing WS gateways, lifting the terminal WS's proven seq+ring+resume onto every board channel so clients never silently drift. In-memory ring; restart forces resync.)*

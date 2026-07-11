@@ -159,7 +159,7 @@ Stop reloading the whole board on every event.
 
 ---
 
-## Theme F — List virtualization — **M** — ✅ DONE (PR #310 + #<PR>, 2026-07-11)
+## Theme F — List virtualization — **M** — ✅ DONE (PR #310 + #405, 2026-07-11)
 
 Keep the DOM bounded no matter the count.
 
@@ -169,7 +169,7 @@ Keep the DOM bounded no matter the count.
       `useDroppable`, so the drop target is the always-mounted column and only card rendering is windowed). Reusable
       headless [`<VirtualList>`](../packages/web/components/ui/virtual-list.tsx) (threshold + `measureElement`).
 - [x] Virtualize the other long lists: **workflow run history** ✅ + **approval log** ✅ (PR #310). The
-      status-grouped accordions (**sessions / workflows / projects**) now virtualize too (PR #<PR>) via a new
+      status-grouped accordions (**sessions / workflows / projects**) now virtualize too (PR #405) via a new
       [`WindowVirtualList`](../packages/web/components/ui/window-virtual-list.tsx) that windows rows against the
       **document scroll** (`useWindowVirtualizer`) — bounding the DOM **without** the per-section inner scrollbar
       that caused the original defer. Below the 50-row threshold each section renders plainly (unchanged); multi-
