@@ -12,6 +12,7 @@ import { HealthModule } from './health/health.module';
 import { TaskHealthModule } from './tasks/task-health.module';
 import { TasksModule } from './tasks/tasks.module';
 import { TaskCreatorModule } from './tasks/task-creator.module';
+import { TaskListerModule } from './tasks/task-lister.module';
 import { TaskEventBusModule } from './tasks/task-event-bus.module';
 import { AgentModule } from './agent/agent.module';
 import { ChatModule } from './chat/chat.module';
@@ -33,6 +34,10 @@ import { MilestonesModule } from './milestones/milestones.module';
 import { ProvidersModule } from './providers/providers.module';
 import { ReposModule } from './repos/repos.module';
 import { RetroModule } from './retro/retro.module';
+import { RetroAccessorModule } from './retro/retro-accessor.module';
+import { DigestsModule } from './digests/digests.module';
+import { DigestBuilderModule } from './digests/digest-builder.module';
+import { NotifierModule } from './notifications/notifier.module';
 import { RoutinesModule } from './routines/routines.module';
 import { SearchModule } from './search/search.module';
 import { SearchIndexModule } from './search/search-index.module';
@@ -84,9 +89,14 @@ import { InboundModule } from './integrations/inbound/inbound.module';
     SearchIndexModule,
     SearchModule,
     RetroModule,
+    RetroAccessorModule,
+    DigestsModule,
+    DigestBuilderModule,
+    NotifierModule,
     TasksModule,
     TaskHealthModule,
     TaskCreatorModule,
+    TaskListerModule,
     TaskEventBusModule,
     PoolModule,
     PresenceModule,

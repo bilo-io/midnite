@@ -1601,3 +1601,27 @@ export const taskRetros = sqliteTable(
 );
 export type TaskRetroRow = typeof taskRetros.$inferSelect;
 export type TaskRetroInsert = typeof taskRetros.$inferInsert;
+
+/**
+ * Phase 62 Theme C — a persisted fleet **digest**: a periodic reporting roll-up
+ * built by `DigestBuilder` (counts / per-repo sections / highlights + best-effort
+ * spend + cycle-time + an LLM headline). `digest` is the full serialized `Digest`
+ * (JSON); `markdown` is the rendered body. `window_from`/`window_to` bound the
+ * window the roll-up covered (columns avoid the `from`/`to` SQL keywords).
+ */
+export const digests = sqliteTable(
+  'digests',
+  {
+    id: text('id').primaryKey(),
+    createdAt: text('created_at').notNull(),
+    windowFrom: text('window_from').notNull(),
+    windowTo: text('window_to').notNull(),
+    digest: text('digest').notNull(),
+    markdown: text('markdown').notNull(),
+  },
+  (t) => ({
+    createdAtIdx: index('digests_created_at_idx').on(t.createdAt),
+  }),
+);
+export type DigestRow = typeof digests.$inferSelect;
+export type DigestInsert = typeof digests.$inferInsert;
