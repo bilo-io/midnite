@@ -7,7 +7,6 @@ import { usePathname } from 'next/navigation';
 import {
   BookOpen,
   ChevronDown,
-  MessageSquare,
   PanelLeftClose,
   PanelLeftOpen,
   Power,
@@ -265,18 +264,8 @@ export function NavBar() {
         </nav>
 
         <div className={cn('mt-auto flex flex-col gap-1', expandedView ? 'items-stretch' : 'items-center')}>
-          <button
-            type="button"
-            onClick={() => window.dispatchEvent(new CustomEvent('midnite:open-chat'))}
-            aria-label="Chat to board"
-            className={cn(
-              'group relative flex h-9 items-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground',
-              expandedView ? 'w-full gap-3 px-2.5' : 'w-9 justify-center',
-            )}
-          >
-            <MessageSquare className="h-4 w-4 shrink-0" />
-            {expandedView ? <span className="truncate text-sm">Chat to board</span> : <Tooltip>Chat to board</Tooltip>}
-          </button>
+          {/* "Chat to board" moved into the assistant FAB (Phase 66 Theme D); the
+              palette keeps its own `>` chat mode for keyboard users. */}
           <PresenceNavPill expanded={expandedView} />
           <ApprovalsDrawer expanded={expandedView} />
           <NotificationCenter expanded={expandedView} />

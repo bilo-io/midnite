@@ -98,11 +98,12 @@ describe('CommandPalette', () => {
     await waitFor(() => expect(searchAll).not.toHaveBeenCalled());
   });
 
-  it('opens straight into chat mode on the midnite:open-chat event', () => {
+  it('no longer opens on midnite:open-chat — that now drives the assistant FAB (Phase 66 D)', () => {
     render(<CommandPalette />);
     fireEvent(window, new CustomEvent('midnite:open-chat'));
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByTestId('chat-bar')).toBeInTheDocument();
+    // The palette stays closed; chat-to-board lives in the FAB. Keyboard users
+    // still reach chat via the `>` prefix after ⌘K.
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('matches page jumps on the description, not just the label', async () => {

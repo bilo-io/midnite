@@ -133,8 +133,6 @@ export function CommandPalette() {
   const inputRef = useRef<HTMLInputElement>(null);
   const activeRef = useRef<HTMLButtonElement>(null);
   const abortRef = useRef<AbortController | null>(null);
-  // A one-shot query seed applied by the open effect (chat mode entry).
-  const seedRef = useRef<string | null>(null);
 
   const paletteCommands = usePaletteCommands();
   const chat = useChatCommand();
@@ -166,27 +164,21 @@ export function CommandPalette() {
       }
     };
     const onHelp = () => setHelpOpen(true);
-    // Nav chat icon (or any surface) opens the palette pre-seeded into chat mode.
-    // The open effect resets the query, so stash the seed in a ref it reads.
-    const onChat = () => {
-      seedRef.current = CHAT_PREFIX;
-      setOpen(true);
-    };
+    // `midnite:open-chat` now opens the assistant FAB's chat view (Phase 66
+    // Theme D) — the palette keeps chat only via its own `>` prefix, typed by
+    // keyboard users. So the palette no longer listens for that event.
     window.addEventListener('keydown', onKey);
     window.addEventListener('midnite:open-help', onHelp);
-    window.addEventListener('midnite:open-chat', onChat);
     return () => {
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('midnite:open-help', onHelp);
-      window.removeEventListener('midnite:open-chat', onChat);
     };
   }, []);
 
   // Reset + load recent on open; abort pending search on close.
   useEffect(() => {
     if (open) {
-      setQuery(seedRef.current ?? '');
-      seedRef.current = null;
+      setQuery('');
       setActive(0);
       setResults(EMPTY_SEARCH_RESPONSE);
       setSearching(false);
