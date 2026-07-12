@@ -70,7 +70,7 @@ const STATUS_LABEL: Record<Status, string> = {
 };
 
 const KIND_LABEL: Record<NonNullable<Task['kind']>, string> = {
-  bug: 'Bug',
+  bug: 'Bugfix',
   feature: 'Feature',
   question: 'Question',
   chore: 'Chore',
