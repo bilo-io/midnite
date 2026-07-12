@@ -50,29 +50,29 @@ export function TaskRow({
   const interactive = Boolean(onSelect);
   const selectable = Boolean(onToggleSelect);
 
-  // The leading badge sits at the far left of the row (after the checkbox) on sm+,
-  // in a fixed-width cell so it forms an aligned column across rows and accordion
-  // groups. It's the STATUS where rows aren't grouped by it (Projects tree), else
-  // the task KIND (Tasks list/table). `sm:order-first` pulls it ahead of the title
-  // without reordering the DOM, so the mobile two-line card layout is untouched.
-  // `sm:w-24` = wide enough for the longest label ("Question" / "In progress").
+  // Kind badge: a fit-content coloured pill inside a fixed-width leading cell.
+  // The cell (`sm:w-24`) reserves a uniform column so the title after it aligns
+  // across every row and accordion group, while the pill hugs its own label — the
+  // coloured block never stretches past the word. It leads the row (far left,
+  // after any checkbox) via `sm:order-first`, in both the Tasks list/table and the
+  // Projects tree. On mobile the cell is intrinsic and stays in the meta line, so
+  // the two-line card layout is untouched.
   const kindBadge = (
-    <span
-      className={cn(
-        'inline-flex shrink-0 items-center gap-1.5 rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider',
-        // Tasks list/table: kind is the leading, fixed-width column. Projects tree
-        // (showStatus) leads with status instead, so kind stays an intrinsic chip.
-        !showStatus && 'sm:order-first sm:w-24',
-      )}
-      style={{ background: 'hsl(var(--kind-hue) / 0.12)', color: 'hsl(var(--kind-hue))' }}
-    >
-      <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: 'hsl(var(--kind-hue))' }} />
-      {KIND_LABELS[kind]}
+    <span className="inline-flex shrink-0 items-center sm:order-first sm:w-24">
+      <span
+        className="inline-flex items-center gap-1.5 rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider"
+        style={{ background: 'hsl(var(--kind-hue) / 0.12)', color: 'hsl(var(--kind-hue))' }}
+      >
+        <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: 'hsl(var(--kind-hue))' }} />
+        {KIND_LABELS[kind]}
+      </span>
     </span>
   );
+  // Status trails at the far right (only where rows aren't grouped by status — the
+  // Projects tree). Intrinsic width; the flex-1 title pushes it to the edge.
   const statusBadge = showStatus ? (
     <span
-      className="inline-flex shrink-0 items-center gap-1.5 text-[11px] text-muted-foreground sm:order-first sm:w-24"
+      className="inline-flex shrink-0 items-center gap-1.5 text-[11px] text-muted-foreground"
       style={{ ['--st-hue' as string]: `var(${statusHueVar(task.status)})` }}
     >
       <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: 'hsl(var(--st-hue))' }} />
