@@ -1,20 +1,22 @@
 import type { WorkflowTemplateSeed } from './seed-type';
 
-// A `[manual] → [task.create]` starter: press Run to open a standup task with a
-// ready-made prompt. Edit it in the full builder, or wire a webhook/task-event
-// trigger onto it if you want it to fire automatically.
+// Phase 45 D — the headline "recurring task" starter. A `[schedule] → [task.create]`
+// workflow that opens a standup task every weekday at 09:00. The `recurring-task`
+// tag marks it as a task-creating schedule so the Schedules facade's "New from
+// preset" menu can surface it (and skip cleanup-style scheduled workflows that
+// never create a task and so wouldn't show up in the Schedules list).
 const seed: WorkflowTemplateSeed = {
   slug: 'daily-standup',
-  name: 'Open standup task',
+  name: 'Daily standup',
   description:
-    'Opens a standup task with a ready-made prompt when you press Run — a starting point you can extend in the full builder.',
-  category: 'notifications',
-  tags: ['standup', 'tasks'],
+    'Opens a standup task every weekday at 09:00 — a ready-made recurring task you can edit in the Schedules view or the full builder.',
+  category: 'scheduling',
+  tags: ['standup', 'recurring-task', 'daily', 'tasks'],
   credentialSlots: [],
   definition: {
-    trigger: { type: 'manual' },
+    trigger: { type: 'schedule', cron: '0 9 * * 1-5', timezone: 'UTC' },
     nodes: [
-      { id: 'n1', type: 'trigger.manual', label: 'Run', position: { x: 80, y: 120 }, params: {} },
+      { id: 'n1', type: 'trigger.schedule', label: 'Weekdays 09:00', position: { x: 80, y: 120 }, params: {} },
       {
         id: 'n2',
         type: 'task.create',

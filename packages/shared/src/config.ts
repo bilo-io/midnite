@@ -288,6 +288,10 @@ export const PresenceConfigSchema = z.object({
 export const WorkflowsConfigSchema = z.object({
   // Feature flag — workflows is greenfield, so it ships off by default.
   enabled: z.boolean().default(false),
+  // Default timezone applied to schedule (cron) triggers that don't specify one.
+  defaultTimezone: z.string().default('UTC'),
+  // How often the single scheduler tick loop wakes to evaluate cron triggers.
+  schedulerTickMs: z.number().int().positive().default(30000),
   // Base URL the gateway is reachable at, used to build copyable webhook URLs.
   webhookBaseUrl: z.string().default('http://localhost:7777'),
   // Allow http.request nodes to call loopback hosts (localhost / 127.0.0.1 / ::1).

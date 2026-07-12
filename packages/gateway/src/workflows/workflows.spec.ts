@@ -196,24 +196,23 @@ describe('WorkflowsService', () => {
     expect(wf.nodes[0]!.type).toBe('trigger.manual');
   });
 
-  it('reports the trigger type in the summary', () => {
-    service.create({ name: 'hooked', trigger: { type: 'webhook', method: 'POST', hasSecret: false } });
+  it('includes the cron in the summary for schedule triggers and omits it otherwise', () => {
+    service.create({ name: 'fast', trigger: { type: 'schedule', cron: '*/5 * * * *', timezone: 'UTC' } });
     service.create({ name: 'manual one' });
     const summaries = service.listSummaries();
-    const hooked = summaries.find((s) => s.name === 'hooked')!;
+    const sched = summaries.find((s) => s.name === 'fast')!;
     const manual = summaries.find((s) => s.name === 'manual one')!;
-    expect(hooked.triggerType).toBe('webhook');
-    expect(manual.triggerType).toBe('manual');
+    expect(sched.triggerType).toBe('schedule');
+    expect(sched.cron).toBe('*/5 * * * *');
+    expect(manual.cron).toBeUndefined();
   });
 
   it('keeps the trigger node type in sync with workflow.trigger on update', () => {
     const wf = service.create({ name: 'demo' });
-    const updated = service.update(wf.id, {
-      trigger: { type: 'webhook', method: 'POST', hasSecret: false },
-    });
-    expect(updated.trigger.type).toBe('webhook');
+    const updated = service.update(wf.id, { trigger: { type: 'schedule', cron: '0 9 * * *', timezone: 'UTC' } });
+    expect(updated.trigger.type).toBe('schedule');
     const trig = updated.nodes.find((n) => n.type.startsWith('trigger.'))!;
-    expect(trig.type).toBe('trigger.webhook');
+    expect(trig.type).toBe('trigger.schedule');
   });
 
   it('rotates a webhook secret and rejects a bad token', () => {
@@ -227,17 +226,17 @@ describe('WorkflowsService', () => {
   });
 });
 
-describe('WorkflowsRepository — legacy schedule coercion', () => {
-  // The cron `schedule` trigger was retired. A workflow written before then
-  // still parses on read: the trigger + the `trigger.schedule` node coerce to
-  // their manual equivalents instead of throwing invalid_union_discriminator.
-  it('hydrates a pre-removal schedule workflow as a manual trigger', () => {
+describe('WorkflowsRepository — schedule hydration', () => {
+  // The cron `schedule` trigger is a first-class trigger: a stored schedule
+  // workflow (its trigger + `trigger.schedule` node) hydrates natively, cron
+  // and timezone intact — the ready-set query surfaces it to the scheduler.
+  it('hydrates a schedule workflow with its cron and node type intact', () => {
     const db = makeDb();
     const repo = new WorkflowsRepository(db);
     db.insert(schema.workflows)
       .values({
-        id: 'legacy-1',
-        name: 'Old cron workflow',
+        id: 'sched-1',
+        name: 'Nightly cron workflow',
         enabled: 1,
         triggerType: 'schedule',
         trigger: JSON.stringify({ type: 'schedule', cron: '0 9 * * *', timezone: 'UTC' }),
@@ -253,10 +252,13 @@ describe('WorkflowsRepository — legacy schedule coercion', () => {
       })
       .run();
 
-    const row = repo.getWorkflowRow('legacy-1')!;
+    const row = repo.getWorkflowRow('sched-1')!;
     const wf = repo.hydrateWorkflow(row);
-    expect(wf.trigger.type).toBe('manual');
-    expect(wf.nodes.find((n) => n.id === 'n1')!.type).toBe('trigger.manual');
+    expect(wf.trigger.type).toBe('schedule');
+    if (wf.trigger.type === 'schedule') expect(wf.trigger.cron).toBe('0 9 * * *');
+    expect(wf.nodes.find((n) => n.id === 'n1')!.type).toBe('trigger.schedule');
     expect(wf.nodes.find((n) => n.id === 'n2')!.type).toBe('http.request');
+
+    expect(repo.listScheduledEnabledRows().map((r) => r.id)).toContain('sched-1');
   });
 });

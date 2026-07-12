@@ -16,6 +16,7 @@ describe('node-type registry', () => {
     expect(ids).toEqual(
       expect.arrayContaining([
         'trigger.manual',
+        'trigger.schedule',
         'trigger.webhook',
         'http.request',
         'ai.claude',
@@ -202,6 +203,10 @@ describe('slack.message params', () => {
 
 describe('trigger contract', () => {
   it('discriminates and applies defaults', () => {
+    const schedule = TriggerSchema.parse({ type: 'schedule', cron: '0 9 * * *' });
+    expect(schedule.type).toBe('schedule');
+    if (schedule.type === 'schedule') expect(schedule.timezone).toBe('UTC');
+
     const webhook = TriggerSchema.parse({ type: 'webhook' });
     if (webhook.type === 'webhook') {
       expect(webhook.method).toBe('POST');

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   CheckCircle2,
+  Clock,
   Loader2,
   MousePointerClick,
   Sparkles,
@@ -22,17 +23,20 @@ const inputClass =
 
 const TRIGGERS: Array<{ type: TriggerType; label: string; Icon: LucideIcon; hint: string }> = [
   { type: 'manual', label: 'Manual', Icon: MousePointerClick, hint: 'Run on demand' },
+  { type: 'schedule', label: 'Schedule', Icon: Clock, hint: 'Run on a cron' },
   { type: 'webhook', label: 'Webhook', Icon: Webhook, hint: 'Run on a request' },
   { type: 'task-event', label: 'Task Event', Icon: CheckCircle2, hint: 'Run when a task finishes' },
 ];
 
 const TRIGGER_LABEL: Record<TriggerType, string> = {
   manual: 'Manual',
+  schedule: 'Schedule',
   webhook: 'Webhook',
   'task-event': 'Task Event',
 };
 
 function triggerFor(type: TriggerType): Trigger {
+  if (type === 'schedule') return { type: 'schedule', cron: '0 9 * * *', timezone: 'UTC' };
   if (type === 'webhook') return { type: 'webhook', method: 'POST', hasSecret: false };
   if (type === 'task-event') return { type: 'task-event', events: ['task.done'] };
   return { type: 'manual' };

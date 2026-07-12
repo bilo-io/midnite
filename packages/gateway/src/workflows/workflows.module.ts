@@ -28,6 +28,7 @@ import { ListCompletedTasksExecutor } from './engine/executors/list-completed-ta
 import { BuildDigestExecutor } from './engine/executors/build-digest.executor';
 import { NotifyExecutor } from './engine/executors/notify.executor';
 import { WorkflowCredentialsModule } from './credentials/workflow-credentials.module';
+import { WorkflowScheduler } from './scheduler/workflow-scheduler.service';
 import { WorkflowTaskEventTriggerService } from './workflow-task-event-trigger.service';
 import { WorkflowEventBus } from './workflow-event-bus';
 import { WorkflowRecoveryService } from './workflow-recovery.service';
@@ -43,6 +44,7 @@ import { WorkflowsGateway } from './workflows.gateway';
     WorkflowStorageService,
     WorkflowEngine,
     ExecutorRegistry,
+    WorkflowScheduler,
     WorkflowTaskEventTriggerService,
     WorkflowEventBus,
     WorkflowRecoveryService,

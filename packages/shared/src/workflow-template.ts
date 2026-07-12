@@ -17,6 +17,7 @@ export type WorkflowTemplateCredentialSlot = z.infer<typeof WorkflowTemplateCred
 export const WORKFLOW_TEMPLATE_CATEGORIES = [
   'monitoring',
   'notifications',
+  'scheduling',
   'github',
   'ai',
   'data',

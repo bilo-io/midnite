@@ -80,7 +80,7 @@ live PTY in which a coding-agent CLI runs. You watch and steer that session live
 through an embedded terminal in the browser. Alongside this, midnite has several
 satellite features that share the same infrastructure (PTYs, the agent-CLI
 abstraction, the typed wire contract): **councils** (multi-model debate),
-**workflows** (node-based automation with webhook/task-event triggers), **routines**,
+**workflows** (node-based automation with schedule/webhook/task-event triggers), **routines**,
 **notes**, **media**, **memory/knowledge**, and a dashboard.
 
 ### The packages
@@ -194,16 +194,16 @@ Key tables:
 
 ### Schedulers
 
-Each is a **single, gateway-owned, never-parallel tick loop** (Nest
+Both are **single, gateway-owned, never-parallel tick loops** (Nest
 `OnModuleInit`/`OnModuleDestroy`), matching the design rule "never spawn parallel
 schedulers":
 
+- **WorkflowScheduler** (`workflows/scheduler/workflow-scheduler.service.ts`):
+  tick (default 30s) → evaluate each enabled cron workflow with `croner` →
+  enqueue a run if a slot elapsed since `lastFiredAt`.
 - **HeartbeatScheduler** (`agents/heartbeat-scheduler.service.ts`): coarse tick →
   if the primary agent's `heartbeatIntervalH` has elapsed since `lastHeartbeatAt`,
   fire the heartbeat prompt (via the Anthropic **API**, §4).
-
-Workflows have **no** time-based (cron) trigger — they run manually, on a signed
-webhook, or on a task event. Recurring cloud agents live in **routines**.
 
 ### Config
 

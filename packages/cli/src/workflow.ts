@@ -25,6 +25,12 @@ function formatTime(iso: string): string {
   return iso.replace('T', ' ').slice(0, 16);
 }
 
+/** Human label for a workflow's trigger, including the cron for schedules. */
+export function triggerLabel(s: Pick<WorkflowSummary, 'triggerType' | 'cron'>): string {
+  if (s.triggerType === 'schedule' && s.cron) return `schedule (${s.cron})`;
+  return s.triggerType;
+}
+
 /** `<status> · <time>` for the last run, or an em-dash when never run. */
 export function lastRunLabel(s: Pick<WorkflowSummary, 'lastRunStatus' | 'lastRunAt'>): string {
   if (!s.lastRunStatus && !s.lastRunAt) return DASH;
@@ -39,7 +45,7 @@ export function workflowListRows(summaries: WorkflowSummary[]): string[][] {
     s.id,
     s.name,
     colourBool(s.enabled),
-    s.triggerType,
+    triggerLabel(s),
     String(s.nodeCount),
     lastRunLabel(s),
   ]);
