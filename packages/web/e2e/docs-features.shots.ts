@@ -118,4 +118,27 @@ test.describe('docs feature screenshots', () => {
       });
     }
   }
+
+  // The docs Overview hero: the dashboard with the sidebar LOCKED OPEN (navMode
+  // 'expanded' shifts the content instead of overlaying), so the shot shows the
+  // full labelled navigation rather than the collapsed icon rail.
+  for (const theme of ['light', 'dark'] as const) {
+    test(`capture home (${theme})`, async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await freezeForCapture(page, theme);
+      await page.addInitScript(() => {
+        try {
+          localStorage.setItem('midnite.setup-wizard.dismissed', 'true');
+          localStorage.setItem('midnite.settings', JSON.stringify({ navMode: 'expanded' }));
+        } catch {
+          /* best effort */
+        }
+      });
+      await page.goto('/dashboard');
+      await expect(page.getByRole('heading', { name: 'Dashboard', exact: true })).toBeVisible();
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(1000);
+      await page.screenshot({ path: join(OUT, `home-${theme}.png`) });
+    });
+  }
 });

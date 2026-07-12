@@ -1,0 +1,32 @@
+  midnite  v0.1.0
+  multitask orchestrator for Claude Code
+
+Usage: midnite [options] [command]
+
+Multitask coding agents — CLI client for the midnite gateway
+
+Options:
+  -V, --version              output the version number
+  --gateway <url>            gateway base URL (else $MIDNITE_GATEWAY_URL, else http://localhost:7777)
+  --token <token>            bearer token (overrides stored JWT and $MIDNITE_AUTH_TOKEN)
+  --json                     machine-readable JSON output
+  -h, --help                 display help for command
+
+Commands:
+  add [prompt]               Add a task — or many with --bulk (one per line)
+  list                       List tasks (lean summaries; --page/--limit to paginate)
+  move [id] [status]         Move a task to a new status
+  prioritise [id] [level]    Set a task's priority 0–3
+  block / unblock [id]       Add or remove a blocker (dependency) edge
+  plan <goal>                Break a goal into dependency-aware tasks, and optionally create them
+  search <query>             Full-text search across tasks, projects, memory, notes, councils & workflows
+  watch                      Open a live full-screen dashboard (board, pool, and logs)
+  ops                        Fleet ops summary — live gauges, throughput, durations, outcomes
+  usage                      Agent-session cost attribution by repo / project / task / session
+  triage                     Task-health report — what's wedged and needs attention
+  workflow                   Inspect and run workflows
+  template                   Browse and install workflow templates
+  guardrails                 Inspect & control the safety guardrails
+  kill                       EMERGENCY STOP: pause everything and abort in-flight agents
+  serve                      Start the midnite gateway daemon in-process
+  login / logout / whoami    Authenticate with the gateway

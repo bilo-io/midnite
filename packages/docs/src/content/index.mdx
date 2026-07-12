@@ -4,41 +4,58 @@ section: Introduction
 order: 0
 ---
 
-import { Button, Card, CardHeader, CardTitle, CardContent } from '@midnite/ui';
-import { Demo } from '../components/demo';
+import { Screenshot } from '../components/screenshot';
+import { ArchitectureDiagram } from '../components/architecture-diagram';
+import { Terminal } from '../components/terminal';
+import homeDark from './assets/home-dark.png';
+import homeLight from './assets/home-light.png';
+import cliHelp from './assets/cli-help.txt?raw';
 
-# midnite design system & docs
+# midnite
 
-This is **`@midnite/ui`** — the reusable component library and design system behind
-midnite's web UI — documented in an app that is itself built entirely from it. The
-shell you're looking at (header, sidebar, theme switcher, this content frame) renders
-from the library's primitives and design tokens, so the site is its own proof that
-the library is consumable outside the web app.
+**midnite is a desktop app for running many coding agents at once.** You describe
+the work as tasks; midnite schedules them across a pool of Claude Code agents,
+runs each in its own session, and shows the whole fleet on a live kanban board —
+so you can supervise a dozen agents the way you'd supervise a team, instead of
+babysitting one terminal.
 
-<Demo>
-  <Button>Primary</Button>
-  <Button variant="secondary">Secondary</Button>
-  <Button variant="outline">Outline</Button>
-  <Button variant="destructive">Destructive</Button>
-</Demo>
+It's a single download that runs entirely on your machine. Nothing to host, no
+server to stand up — install it and open the app.
 
-## What's here
+<Screenshot
+  dark={homeDark}
+  light={homeLight}
+  alt="The midnite desktop app dashboard with the sidebar expanded"
+  caption="The midnite desktop app — the dashboard, with the sidebar expanded."
+/>
 
-- **Foundations** — the design tokens (colour, typography, radius) rendered live.
-- **Components** — a page per primitive with usage guidance and live examples.
+Ready to try it? Head to **[Getting started](/getting-started)** to download and
+install, then explore each feature from the sidebar.
 
-For the full interactive prop matrix and accessibility checks, each component page
-links out to **Storybook** — the playground stays the source of interactive truth;
-these docs are the narrative and canonical examples.
+## How it fits together
 
-<Card className="my-6 max-w-md">
-  <CardHeader>
-    <CardTitle>Try the theme switcher</CardTitle>
-  </CardHeader>
-  <CardContent>
-    <p className="text-sm text-muted-foreground">
-      Use the control in the header — light, dark, system, and time-of-day all resolve
-      through the library's own <code>ThemeProvider</code>, the same runtime the web app ships.
-    </p>
-  </CardContent>
-</Card>
+Under the hood, midnite is a small local **gateway** with thin clients in front of
+it. The gateway is the brain — it holds your tasks in a local SQLite database,
+runs the scheduler, and manages a pool of agent processes. The **desktop app** (the
+web UI you see) and the optional **CLI** both talk to that gateway over HTTP and
+WebSocket on `localhost`; the gateway spawns each coding agent in its own pseudo-
+terminal.
+
+<ArchitectureDiagram />
+
+Because everything runs locally, your code, prompts, and task history stay on your
+machine — the only things that leave are the agents' own calls to their model
+provider.
+
+## The command line
+
+The desktop app is the main way in, but midnite also ships a terminal client,
+`midnite`, for people who live in the shell or want to script their fleet. It
+talks to the same local gateway, so the board, the CLI, and any agent all see one
+source of truth.
+
+<Terminal title="midnite --help" content={cliHelp} />
+
+`midnite watch` opens a full-screen live dashboard right in your terminal — the
+board, the agent pool, and streaming logs — and `midnite serve` runs the gateway
+on its own if you'd rather not keep the desktop app open.

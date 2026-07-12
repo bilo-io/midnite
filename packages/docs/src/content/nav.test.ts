@@ -4,34 +4,34 @@ import { buildNav, pathFromModuleId, toDocRoute, type DocRoute } from './nav';
 
 describe('pathFromModuleId', () => {
   it('maps a nested content key to a route path', () => {
-    expect(pathFromModuleId('./components/button.mdx')).toBe('/components/button');
-    expect(pathFromModuleId('./foundations/colors.mdx')).toBe('/foundations/colors');
+    expect(pathFromModuleId('./app/tasks.mdx')).toBe('/app/tasks');
+    expect(pathFromModuleId('./agents/memory.mdx')).toBe('/agents/memory');
   });
 
   it('collapses an index file to its parent (root index → /)', () => {
     expect(pathFromModuleId('./index.mdx')).toBe('/');
-    expect(pathFromModuleId('./components/index.mdx')).toBe('/components');
+    expect(pathFromModuleId('./app/index.mdx')).toBe('/app');
   });
 
   it('tolerates an absolute-style key with a content/ segment', () => {
-    expect(pathFromModuleId('/abs/src/content/components/card.mdx')).toBe('/components/card');
+    expect(pathFromModuleId('/abs/src/content/agents/media.mdx')).toBe('/agents/media');
   });
 });
 
 describe('toDocRoute', () => {
   it('reads title / section / order from frontmatter', () => {
-    expect(toDocRoute('./components/button.mdx', { title: 'Button', section: 'Components', order: 0 })).toEqual({
-      path: '/components/button',
-      title: 'Button',
-      section: 'Components',
-      order: 0,
+    expect(toDocRoute('./app/tasks.mdx', { title: 'Tasks', section: 'App', order: 1 })).toEqual({
+      path: '/app/tasks',
+      title: 'Tasks',
+      section: 'App',
+      order: 1,
     });
   });
 
   it('falls back to the path as title and sensible defaults when frontmatter is missing', () => {
-    expect(toDocRoute('./components/card.mdx', {})).toEqual({
-      path: '/components/card',
-      title: '/components/card',
+    expect(toDocRoute('./app/tasks.mdx', {})).toEqual({
+      path: '/app/tasks',
+      title: '/app/tasks',
       section: 'Introduction',
       order: 100,
     });
@@ -40,42 +40,31 @@ describe('toDocRoute', () => {
 
 describe('buildNav', () => {
   const routes: DocRoute[] = [
-    { path: '/components/card', title: 'Card', section: 'Components', order: 1 },
-    { path: '/components/button', title: 'Button', section: 'Components', order: 0 },
-    { path: '/foundations/colors', title: 'Colours', section: 'Foundations', order: 0 },
+    { path: '/app/tasks', title: 'Tasks', section: 'App', order: 1 },
+    { path: '/app/projects', title: 'Projects', section: 'App', order: 0 },
+    { path: '/agents/memory', title: 'Memory', section: 'Agents', order: 0 },
     { path: '/', title: 'Overview', section: 'Introduction', order: 0 },
   ];
 
   it('orders sections by the canonical SECTION_ORDER', () => {
-    expect(buildNav(routes).map((group) => group.section)).toEqual(['Introduction', 'Foundations', 'Components']);
+    expect(buildNav(routes).map((group) => group.section)).toEqual(['Introduction', 'App', 'Agents']);
   });
 
-  it('orders the product-feature and developer-doc sections after the design-system ones', () => {
+  it('orders every canonical section in the sidebar sequence', () => {
     const sections = buildNav([
-      { path: '/reference/testing', title: 'Testing plan', section: 'Reference', order: 0 },
-      { path: '/architecture', title: 'Architecture', section: 'Architecture', order: 0 },
-      { path: '/guides/readme', title: 'README', section: 'Guides', order: 0 },
+      { path: '/guides/memory-workspace', title: 'Memory workspace', section: 'Guides', order: 0 },
       { path: '/app/tasks', title: 'Tasks', section: 'App', order: 1 },
       { path: '/agents/memory', title: 'Memory', section: 'Agents', order: 0 },
       { path: '/overview/ops', title: 'Ops', section: 'Overview', order: 2 },
       { path: '/settings/settings', title: 'Settings', section: 'Settings', order: 0 },
       { path: '/', title: 'Overview', section: 'Introduction', order: 0 },
     ]).map((group) => group.section);
-    expect(sections).toEqual([
-      'Introduction',
-      'App',
-      'Agents',
-      'Overview',
-      'Settings',
-      'Guides',
-      'Architecture',
-      'Reference',
-    ]);
+    expect(sections).toEqual(['Introduction', 'App', 'Agents', 'Overview', 'Settings', 'Guides']);
   });
 
   it('orders items within a section by `order` then title', () => {
-    const components = buildNav(routes).find((group) => group.section === 'Components');
-    expect(components?.items.map((item) => item.title)).toEqual(['Button', 'Card']);
+    const app = buildNav(routes).find((group) => group.section === 'App');
+    expect(app?.items.map((item) => item.title)).toEqual(['Projects', 'Tasks']);
   });
 
   it('puts an unknown section after the known ones', () => {
