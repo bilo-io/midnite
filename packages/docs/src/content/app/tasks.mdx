@@ -1,0 +1,96 @@
+---
+title: Tasks
+section: App
+order: 1
+---
+
+import { Screenshot } from '../../components/screenshot';
+import tasksDark from '../assets/tasks-dark.png';
+import tasksLight from '../assets/tasks-light.png';
+
+# Tasks
+
+## What it is
+
+The **kanban board** for orchestrating agent work. Each card is a task with a
+status, a priority, an optional repo and project, and its own agent session once
+it starts running. Tasks flow left-to-right through statuses; the scheduler picks
+up ready `todo` tasks and hands them to an agent.
+
+## Purpose
+
+Tasks are the unit of execution in midnite. You describe what you want done, and
+the board schedules it to an agent, tracks it through review, and — when it opens
+a pull request — lets you review and merge without leaving the app. Dependencies,
+priority, and readiness all feed the scheduler so the right work runs first.
+
+<Screenshot dark={tasksDark} light={tasksLight} alt="Kanban board" caption="The Tasks board — cards grouped by status." />
+
+## Creating one
+
+Click **New task**, describe the work, and pick a repo, priority, and project.
+You can create many at once — paste one prompt per line to **bulk-create**.
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Create a task | **New task** → describe → **Create** | `createTask` |
+| Bulk-create tasks | **New task** → bulk mode (one per line) | `createBulk` |
+
+## Listing & viewing
+
+Switch between the **board** and a **table** view, and filter by status or
+project. Open a card for its detail view, or view the whole graph of
+dependencies.
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| List tasks | The board / table view | `getTasks` |
+| Open a task | Click a card | `getTask` → `/tasks/view` |
+| Dependency graph | **Graph** view | `/tasks/graph` |
+| Filter | Status / project filters in the header | — |
+
+## Managing
+
+Moving a task across statuses is the core interaction — drag a card, or use the
+tap-to-move menu on touch. From a card you can also start, stop, or resolve the
+agent working it.
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Move across statuses | Drag, or the tap-to-move menu | `updateTaskStatus` |
+| Start / stop the agent | Card actions | `startTask` / `stopTask` |
+| Resolve a needs-attention task | **Resolve** on the card | `resolveTask` |
+| Change priority | Card menu (0–3) | `setTaskPriority` |
+| Reassign to a project | Card menu → project | `updateTaskProject` |
+| Set tags | Card menu → tags | `setTaskTags` |
+| Delete | Card menu → **Delete** | `deleteTask` |
+| Bulk actions | Select cards → bulk-action bar | bulk endpoints |
+
+## Dependencies & links
+
+A task can **block** on others; the scheduler skips a blocked task until every
+blocker is `done`. The board shows a derived "blocked by N" chip.
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Add / remove a blocker | Dependencies panel | `addTaskDependency` / `removeTaskDependency` |
+| Add / remove a link | Links panel | `addTaskLink` / `removeTaskLink` |
+
+## Quality gate & pull requests
+
+When an agent opens a PR, the task tracks it. You can run CI checks, review the
+diff inline, leave draft comments, and merge — all from the task.
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Run quality-gate checks | **Check** on the task | `triggerCheck` / `getCheckRuns` |
+| View the PR diff | PR panel | `getPrDiff` |
+| Review & comment | PR review panel (draft comments) | `submitPrReview` + comment CRUD |
+| Merge the PR | **Merge** | `mergePr` |
+
+## Export & retro
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Export the task thread | **Export** → Markdown | `exportTask` |
+| View the retrospective | **Retro** on a finished task | `getTaskRetro` |

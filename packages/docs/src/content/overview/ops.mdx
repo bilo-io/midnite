@@ -1,0 +1,37 @@
+---
+title: Ops
+section: Overview
+order: 3
+---
+
+import { Screenshot } from '../../components/screenshot';
+import opsDark from '../assets/ops-dark.png';
+import opsLight from '../assets/ops-light.png';
+
+# Ops
+
+## What it is
+
+The **fleet-health** dashboard: live agent-slot utilisation, run throughput,
+duration distribution, and LLM spend. It's an analytics surface — read-only —
+parameterised by a query and a timeframe.
+
+## Purpose
+
+Ops is where you watch the fleet as a system: are slots saturated, is throughput
+healthy, how long are runs taking, and what are they costing? Use it to spot
+bottlenecks and track spend rather than to act on any single task.
+
+<Screenshot dark={opsDark} light={opsLight} alt="Ops dashboard" caption="The Ops screen — fleet-health analytics." />
+
+## Using it
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| View live metrics | Ops screen | `getOpsMetrics` |
+| Adjust timeframe / query | Header controls | `getOpsMetrics` |
+| View rollups | Rollup panels | `getMetricsRollups` |
+
+> Ops is read-only analytics — there's nothing to create or edit here. For
+> per-run cost attribution by repo/project/task, the CLI's `usage` command reads
+> the same data.

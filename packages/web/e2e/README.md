@@ -69,6 +69,21 @@ pixel assertion, so the task never fails on a rendering delta and never commits
 OS-specific images. The committed visual baseline + diff (Theme E2) and the CI
 artifact upload + gallery (Theme E3) build on top of this capture.
 
+## Docs feature screenshots
+
+[`docs-features.shots.ts`](docs-features.shots.ts) (re)generates the screenshots
+embedded by the docs app's product-feature pages
+(`packages/docs/src/content/{app,agents,overview,settings}`). Because the docs app
+never talks to the gateway, those screens are committed static PNGs; this spec
+captures each feature route in **light and dark** (`<name>-light.png` /
+`<name>-dark.png`) and writes the PNGs into `packages/docs/src/content/assets/`,
+so a docs page can show whichever matches the reader's theme. It's gated behind
+`CAPTURE_DOCS` so a routine `web:screenshots` run skips it:
+
+```bash
+CAPTURE_DOCS=1 pnpm exec playwright test --project=screenshots docs-features.shots.ts
+```
+
 ## Not in `moon ci`
 
 `web:e2e` and `web:screenshots` are heavier and spawn servers, so they're kept

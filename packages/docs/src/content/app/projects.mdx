@@ -1,0 +1,90 @@
+---
+title: Projects
+section: App
+order: 0
+---
+
+import { Screenshot } from '../../components/screenshot';
+import projectsDark from '../assets/projects-dark.png';
+import projectsLight from '../assets/projects-light.png';
+
+# Projects
+
+## What it is
+
+A **project** groups related work under one roof: a name, a description, an
+optional repo, and everything that hangs off it — tasks, milestones, phase docs,
+and attached sources. The Projects screen is a browsable tree of every project in
+your workspace.
+
+## Purpose
+
+Use projects to give a body of work structure before you break it into agent
+tasks. A project is where you draft a plan, let the AI expand a rough description
+into a milestone-shaped roadmap, and then turn that plan into a batch of tasks
+that the board schedules. Everything a task needs to know about *what larger goal
+it serves* lives on its project.
+
+<Screenshot dark={projectsDark} light={projectsLight} alt="Projects tree" caption="The Projects screen — the workspace project tree." />
+
+## Creating one
+
+Click **New project** to open the project modal, give it a name and description,
+and optionally attach a repo. AI can help you here: **Enhance description** rewrites
+a terse blurb into a fuller brief before you save.
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Create a project | **New project** → fill the modal → **Save** | `createProject` |
+| Enhance the description with AI | **Enhance description** in the modal | `enhanceProjectDescription` |
+
+## Listing & viewing
+
+The main screen renders the **project tree**. Selecting a project opens its detail
+view (`/projects/view`), where its plan, milestones, phase docs, and tasks live.
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| List projects | Projects screen (the tree) | `getProjects` |
+| Open a project | Click it in the tree | `getProject` → `/projects/view` |
+
+## Managing
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Edit a project | Open it → **Edit** → save the modal | `updateProject` |
+| Delete a project | Open it → **Delete** | `deleteProject` |
+| Export as Markdown | **Export** on the detail view | `exportProjectMarkdown` |
+
+## Planning: turn a project into tasks
+
+This is what makes a project more than a folder. From a project you can draft a
+plan and materialise it as scheduled tasks.
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Draft a plan | **Draft plan** in the plan panel | `draftProjectPlan` |
+| Create tasks from the plan | **Create tasks** in the plan panel | `createTasksFromPlan` |
+| AI breakdown → tasks | **Breakdown** editor → review → create | `draftProjectBreakdown` / `createTasksFromBreakdown` |
+
+## Milestones & roadmap
+
+Projects carry a **roadmap** of ordered milestones; tasks can be assigned to a
+milestone so the roadmap shows progress.
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Add a milestone | **Add milestone** on the roadmap | `createMilestone` |
+| Edit / delete a milestone | Milestone menu | `updateMilestone` / `deleteMilestone` |
+| Reorder milestones | Drag on the roadmap | `reorderMilestones` |
+| Assign a task to a milestone | From the task, pick a milestone | `assignTaskMilestone` |
+
+## Phase docs
+
+A project can hold **phase docs** — Markdown checklists for a slice of work — and
+seed tasks directly from them.
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Create / edit / delete a phase doc | Phase-docs panel | `createPhaseDoc` / `updatePhaseDoc` / `deletePhaseDoc` |
+| Seed tasks from a phase doc | **Seed tasks** on the doc | phase-doc seed endpoint |

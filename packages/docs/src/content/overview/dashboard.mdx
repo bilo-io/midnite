@@ -1,0 +1,46 @@
+---
+title: Dashboard
+section: Overview
+order: 0
+---
+
+import { Screenshot } from '../../components/screenshot';
+import dashboardDark from '../assets/dashboard-dark.png';
+import dashboardLight from '../assets/dashboard-light.png';
+
+# Dashboard
+
+## What it is
+
+Your at-a-glance **home surface** — a grid of widgets showing live status, clocks,
+and fleet activity. The dashboard supports multiple **tabs**, each with its own
+widget layout, so you can keep separate views (e.g. one per team or timeframe).
+
+## Purpose
+
+The dashboard is where you land to see the state of everything at once without
+drilling into any single feature. Compose the widgets that matter to you, pin the
+tab you use most, and switch timeframe to zoom the activity in or out.
+
+<Screenshot dark={dashboardDark} light={dashboardLight} alt="Dashboard" caption="The Dashboard — widgets across tabs." />
+
+## Tabs
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Add a tab | **+** on the tab bar | dashboard tabs |
+| Rename a tab | Double-click the tab | dashboard tabs |
+| Pin / unpin a tab | Tab menu | dashboard tabs |
+| Reorder tabs | Drag on the tab bar | dashboard tabs |
+| Close a tab | Tab menu → **Close** | dashboard tabs |
+
+## Widgets
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Add a widget | **Add widget** | dashboard grid |
+| Remove a widget | Widget menu → **Remove** | dashboard grid |
+| Change timeframe | Timeframe control | dashboard timeframe |
+
+> The root route (`/`) is a separate animated greeting screen — the Dashboard
+> (`/dashboard`) is the widget home described here.
