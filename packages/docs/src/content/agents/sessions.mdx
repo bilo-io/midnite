@@ -5,7 +5,8 @@ order: 1
 ---
 
 import { Screenshot } from '../../components/screenshot';
-import sessionsShot from '../assets/sessions.png';
+import sessionsDark from '../assets/sessions-dark.png';
+import sessionsLight from '../assets/sessions-light.png';
 
 # Sessions
 
@@ -21,7 +22,7 @@ Sessions are your window into what an agent is actually doing. Open the live
 terminal to watch a run in real time, read the transcript afterwards to see every
 step, and archive the ones worth keeping. It's the detail layer beneath the board.
 
-<Screenshot src={sessionsShot} alt="Sessions list" caption="The Sessions screen — live and past agent runs." />
+<Screenshot dark={sessionsDark} light={sessionsLight} alt="Sessions list" caption="The Sessions screen — live and past agent runs." />
 
 ## Creating one
 

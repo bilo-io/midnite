@@ -5,7 +5,8 @@ order: 1
 ---
 
 import { Screenshot } from '../../components/screenshot';
-import tasksShot from '../assets/tasks.png';
+import tasksDark from '../assets/tasks-dark.png';
+import tasksLight from '../assets/tasks-light.png';
 
 # Tasks
 
@@ -23,7 +24,7 @@ the board schedules it to an agent, tracks it through review, and — when it op
 a pull request — lets you review and merge without leaving the app. Dependencies,
 priority, and readiness all feed the scheduler so the right work runs first.
 
-<Screenshot src={tasksShot} alt="Kanban board" caption="The Tasks board — cards grouped by status." />
+<Screenshot dark={tasksDark} light={tasksLight} alt="Kanban board" caption="The Tasks board — cards grouped by status." />
 
 ## Creating one
 

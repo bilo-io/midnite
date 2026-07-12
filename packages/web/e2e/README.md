@@ -75,9 +75,10 @@ artifact upload + gallery (Theme E3) build on top of this capture.
 embedded by the docs app's product-feature pages
 (`packages/docs/src/content/{app,agents,overview,settings}`). Because the docs app
 never talks to the gateway, those screens are committed static PNGs; this spec
-captures each feature route (dark theme) and writes the PNGs into
-`packages/docs/src/content/assets/`. It's gated behind `CAPTURE_DOCS` so a routine
-`web:screenshots` run skips it:
+captures each feature route in **light and dark** (`<name>-light.png` /
+`<name>-dark.png`) and writes the PNGs into `packages/docs/src/content/assets/`,
+so a docs page can show whichever matches the reader's theme. It's gated behind
+`CAPTURE_DOCS` so a routine `web:screenshots` run skips it:
 
 ```bash
 CAPTURE_DOCS=1 pnpm exec playwright test --project=screenshots docs-features.shots.ts

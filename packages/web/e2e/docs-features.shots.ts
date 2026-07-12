@@ -18,7 +18,8 @@ import { seedMemory, seedProject, seedTask } from './helpers/gateway';
 //
 //   CAPTURE_DOCS=1 pnpm exec playwright test --project=screenshots docs-features.shots.ts
 //
-// Shots are taken in dark theme (the app default) for a consistent set.
+// Each feature is captured in BOTH themes (`<name>-light.png` / `<name>-dark.png`)
+// so the docs page can show whichever matches the reader's active theme.
 const OUT = resolve(process.cwd(), '..', 'docs', 'src', 'content', 'assets');
 
 /** One feature page: its stem (`<name>.png`), route, and a readiness wait. */
@@ -97,22 +98,24 @@ test.describe('docs feature screenshots', () => {
   });
 
   for (const shot of FEATURE_SHOTS) {
-    test(`capture ${shot.name}`, async ({ page }) => {
-      // Reduced motion so the typewriter page-title header renders its final
-      // string instantly (it honours prefers-reduced-motion) — otherwise a
-      // capture can land mid-type (e.g. "Tas" for "Tasks").
-      await page.emulateMedia({ reducedMotion: 'reduce' });
-      await freezeForCapture(page, 'dark');
-      await page.addInitScript(() => {
-        try {
-          localStorage.setItem('midnite.setup-wizard.dismissed', 'true');
-        } catch {
-          /* best effort */
-        }
+    for (const theme of ['light', 'dark'] as const) {
+      test(`capture ${shot.name} (${theme})`, async ({ page }) => {
+        // Reduced motion so the typewriter page-title header renders its final
+        // string instantly (it honours prefers-reduced-motion) — otherwise a
+        // capture can land mid-type (e.g. "Tas" for "Tasks").
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await freezeForCapture(page, theme);
+        await page.addInitScript(() => {
+          try {
+            localStorage.setItem('midnite.setup-wizard.dismissed', 'true');
+          } catch {
+            /* best effort */
+          }
+        });
+        await page.goto(shot.path);
+        await shot.ready(page);
+        await page.screenshot({ path: join(OUT, `${shot.name}-${theme}.png`) });
       });
-      await page.goto(shot.path);
-      await shot.ready(page);
-      await page.screenshot({ path: join(OUT, `${shot.name}.png`) });
-    });
+    }
   }
 });

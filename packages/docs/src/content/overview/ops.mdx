@@ -5,7 +5,8 @@ order: 3
 ---
 
 import { Screenshot } from '../../components/screenshot';
-import opsShot from '../assets/ops.png';
+import opsDark from '../assets/ops-dark.png';
+import opsLight from '../assets/ops-light.png';
 
 # Ops
 
@@ -21,7 +22,7 @@ Ops is where you watch the fleet as a system: are slots saturated, is throughput
 healthy, how long are runs taking, and what are they costing? Use it to spot
 bottlenecks and track spend rather than to act on any single task.
 
-<Screenshot src={opsShot} alt="Ops dashboard" caption="The Ops screen — fleet-health analytics." />
+<Screenshot dark={opsDark} light={opsLight} alt="Ops dashboard" caption="The Ops screen — fleet-health analytics." />
 
 ## Using it
 
