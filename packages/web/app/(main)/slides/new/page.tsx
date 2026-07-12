@@ -2,8 +2,12 @@
 
 import { PageHeader } from '@/components/page-header';
 import { DeckEditor } from '@/components/slides/deck-editor';
+import { getProjects } from '@/lib/api';
+import { useApiData } from '@/lib/use-api-data';
 
 export default function NewDeckPage() {
+  const { data: projects } = useApiData(() => getProjects());
+
   return (
     <>
       <PageHeader
@@ -12,7 +16,7 @@ export default function NewDeckPage() {
         description="Paste Markdown — the first # is a cover, every ## starts a slide, and each point becomes a reveal."
       />
       <div className="container space-y-6 pb-8 pt-2">
-        <DeckEditor />
+        <DeckEditor projects={projects ?? []} />
       </div>
     </>
   );
