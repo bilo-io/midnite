@@ -230,6 +230,9 @@ importers:
       chokidar:
         specifier: ^3.6.0
         version: 3.6.0
+      croner:
+        specifier: ^9.0.0
+        version: 9.1.0
       drizzle-orm:
         specifier: ^0.36.4
         version: 0.36.4(@types/better-sqlite3@7.6.13)(@types/react@19.2.15)(better-sqlite3@11.10.0)(react@19.2.6)

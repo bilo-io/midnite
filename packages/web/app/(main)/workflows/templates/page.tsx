@@ -6,6 +6,7 @@ import {
   BookOpen,
   Bot,
   CheckCircle,
+  Clock,
   Database,
   ExternalLink,
   GitBranch,
@@ -37,6 +38,7 @@ const CATEGORY_META: Record<
 > = {
   monitoring: { label: 'Monitoring', Icon: Zap },
   notifications: { label: 'Notifications', Icon: Webhook },
+  scheduling: { label: 'Scheduling', Icon: Clock },
   github: { label: 'GitHub', Icon: GitBranch },
   ai: { label: 'AI', Icon: Bot },
   data: { label: 'Data', Icon: Database },

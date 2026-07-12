@@ -25,6 +25,11 @@ const STATUS_EMOJI: Record<string, string> = {
   skipped: '⏭️',
 };
 
+function triggerLabel(trigger: Workflow['trigger']): string {
+  if (trigger.type === 'schedule') return `schedule (${trigger.cron})`;
+  return trigger.type;
+}
+
 function jsonBlock(value: unknown): string {
   if (value === undefined || value === null) return '_none_';
   const str =
@@ -87,7 +92,7 @@ export function runToMarkdown(
   const exportedAt = `*Exported ${now.toISOString().slice(0, 10)}*`;
 
   const meta: string[] = [
-    `**Trigger:** ${workflow.trigger.type}`,
+    `**Trigger:** ${triggerLabel(workflow.trigger)}`,
     `**Status:** ${emoji} ${run.status}`,
   ];
   if (run.startedAt) meta.push(`**Started:** ${run.startedAt.slice(0, 19).replace('T', ' ')}`);

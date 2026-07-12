@@ -7,6 +7,7 @@ import {
   nodeLabelOf,
   runListRows,
   runSummaryLines,
+  triggerLabel,
   watchEventLine,
   workflowListRows,
 } from './workflow.js';
@@ -47,6 +48,18 @@ describe('gatewayWsUrl', () => {
   });
 });
 
+describe('triggerLabel', () => {
+  it('shows the cron for schedule triggers', () => {
+    expect(triggerLabel({ triggerType: 'schedule', cron: '*/5 * * * *' })).toBe(
+      'schedule (*/5 * * * *)',
+    );
+  });
+  it('falls back to the bare type otherwise', () => {
+    expect(triggerLabel({ triggerType: 'manual' })).toBe('manual');
+    expect(triggerLabel({ triggerType: 'webhook' })).toBe('webhook');
+    expect(triggerLabel({ triggerType: 'schedule' })).toBe('schedule'); // no cron
+  });
+});
 
 describe('lastRunLabel', () => {
   it('em-dashes a workflow that never ran', () => {
@@ -67,7 +80,8 @@ describe('workflowListRows', () => {
         id: 'wf-2',
         name: 'Deploy check',
         enabled: false,
-        triggerType: 'webhook',
+        triggerType: 'schedule',
+        cron: '0 * * * *',
         nodeCount: 5,
         lastRunStatus: 'failed',
         lastRunAt: '2026-06-21T23:00:00.000Z',
@@ -78,7 +92,7 @@ describe('workflowListRows', () => {
       'wf-2',
       'Deploy check',
       'no',
-      'webhook',
+      'schedule (0 * * * *)',
       '5',
       'failed · 2026-06-21 23:00',
     ]);

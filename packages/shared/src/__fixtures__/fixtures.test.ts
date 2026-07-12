@@ -36,6 +36,7 @@ const cases: ReadonlyArray<[string, ZodTypeAny, unknown]> = [
   ['workflowRun', WorkflowRunSchema, fixtures.workflowRunFixture],
   ['usageRecord', UsageRecordSchema, fixtures.usageRecordFixture],
   ['manualTrigger', TriggerSchema, fixtures.manualTriggerFixture],
+  ['scheduleTrigger', TriggerSchema, fixtures.scheduleTriggerFixture],
   ['webhookTrigger', TriggerSchema, fixtures.webhookTriggerFixture],
 ];
 

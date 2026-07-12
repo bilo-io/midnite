@@ -7,8 +7,14 @@ describe('TriggerSchema (discriminated union)', () => {
     expect(t.type).toBe('manual');
   });
 
-  it('rejects a removed schedule trigger', () => {
-    expect(TriggerSchema.safeParse({ type: 'schedule', cron: '0 * * * *' }).success).toBe(false);
+  it('defaults a schedule trigger timezone to UTC', () => {
+    const t = TriggerSchema.parse({ type: 'schedule', cron: '0 * * * *' });
+    if (t.type !== 'schedule') throw new Error('expected schedule');
+    expect(t.timezone).toBe('UTC');
+  });
+
+  it('rejects a schedule trigger with an empty cron', () => {
+    expect(TriggerSchema.safeParse({ type: 'schedule', cron: '' }).success).toBe(false);
   });
 
   it('defaults a webhook trigger method to POST and hasSecret to false', () => {

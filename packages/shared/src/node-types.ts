@@ -63,6 +63,7 @@ export interface NodeTypeDefinition {
 // --- Per-type param schemas ---
 
 export const ManualTriggerParamsSchema = z.object({}).passthrough();
+export const ScheduleTriggerParamsSchema = z.object({}).passthrough();
 export const WebhookTriggerParamsSchema = z.object({}).passthrough();
 export const TaskEventTriggerParamsSchema = z.object({}).passthrough();
 
@@ -351,6 +352,17 @@ export const NODE_TYPE_DEFINITIONS: Record<string, NodeTypeDefinition> = {
     inputs: NO_INPUTS,
     outputs: MAIN_OUT,
     paramsSchema: ManualTriggerParamsSchema,
+    fields: [],
+  },
+  'trigger.schedule': {
+    id: 'trigger.schedule',
+    category: 'trigger',
+    title: 'Schedule',
+    description: 'Run automatically on a cron schedule.',
+    icon: 'clock',
+    inputs: NO_INPUTS,
+    outputs: MAIN_OUT,
+    paramsSchema: ScheduleTriggerParamsSchema,
     fields: [],
   },
   'trigger.webhook': {

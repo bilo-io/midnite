@@ -5,6 +5,7 @@ import { ArrowLeft, BookmarkPlus, History, Loader2, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { TriggerBadge } from '@/components/trigger-badge';
+import { describeCron } from '@/lib/cron';
 import { useWorkflowStore } from '@/lib/workflow-store';
 import { cn } from '@/lib/utils';
 
@@ -35,11 +36,13 @@ export function WorkflowToolbar({
   const dirty = useWorkflowStore((s) => s.dirty);
 
   const triggerLabel =
-    trigger.type === 'webhook'
-      ? 'Runs on a webhook'
-      : trigger.type === 'task-event'
-        ? 'Runs on a task event'
-        : 'Runs on demand';
+    trigger.type === 'schedule'
+      ? describeCron(trigger.cron)
+      : trigger.type === 'webhook'
+        ? 'Runs on a webhook'
+        : trigger.type === 'task-event'
+          ? 'Runs on a task event'
+          : 'Runs on demand';
 
   return (
     <header className="flex items-center gap-3 border-b border-border/60 bg-background/70 px-4 py-2 backdrop-blur">
