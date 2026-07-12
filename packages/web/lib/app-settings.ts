@@ -18,6 +18,7 @@ import {
   type Motion,
   type NavMode,
   type OfficeView,
+  type ShimmerDirection,
   type UiFont,
   type UserPreferences,
   type VisualEffects,
@@ -35,6 +36,7 @@ export type {
   Motion,
   NavMode,
   OfficeView,
+  ShimmerDirection,
   UiFont,
   VisualEffects,
 };
@@ -200,6 +202,17 @@ export const EFFECT_OPTIONS: { key: keyof VisualEffects; label: string; hint: st
 ];
 
 /**
+ * Direction the live status-pill shimmer cascades across the row. `ltr` (default)
+ * leads with the left pill and sweeps right; `rtl` leads with the right pill.
+ */
+export const SHIMMER_DIRECTION_DEFAULT: ShimmerDirection = 'ltr';
+
+export const SHIMMER_DIRECTION_OPTIONS: { value: ShimmerDirection; label: string; hint: string }[] = [
+  { value: 'ltr', label: 'Left first', hint: 'Cascade sweeps left → right' },
+  { value: 'rtl', label: 'Right first', hint: 'Cascade sweeps right → left' },
+];
+
+/**
  * UI density: drives a `data-density` attribute on `<html>` that shrinks the
  * root font-size (from 16px → 14px), causing all rem-based Tailwind utilities
  * to scale proportionally. `comfortable` (default) leaves the root unchanged.
@@ -353,6 +366,7 @@ export function appSettingsToPreferences(
     density: settings.density,
     uiFont: settings.uiFont,
     effects: settings.effects,
+    shimmerDirection: settings.shimmerDirection,
     inactivityTimeoutS: settings.inactivityTimeoutS,
     cycleDurationS: settings.cycleDurationS,
     officeView: settings.officeView,
@@ -377,6 +391,7 @@ export function applyPreferences(
     density: prefs.density,
     uiFont: prefs.uiFont,
     effects: prefs.effects,
+    shimmerDirection: prefs.shimmerDirection,
     inactivityTimeoutS: prefs.inactivityTimeoutS,
     cycleDurationS: prefs.cycleDurationS,
     officeView: prefs.officeView,

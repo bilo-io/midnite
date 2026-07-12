@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import type { SessionStatus } from '@midnite/shared';
 import { getSessions } from '@/lib/api';
 import { SESSION_STATUS_HUE } from '@/components/session-card';
@@ -435,27 +435,29 @@ export function Screensaver({
         </p>
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-2.5">
-          {PILLS.map(({ key, status, label }) => {
+          {PILLS.map(({ key, status, label }, i) => {
             const n = counts ? counts[key] : 0;
             const triple = SESSION_STATUS_HUE[status];
             const hue = `hsl(${triple})`;
-            // Shimmer the live states (actioning, awaiting) but not "complete",
-            // and only when that state actually has sessions.
-            const shimmer = key !== 'complete' && n > 0;
             return (
               <span
                 key={key}
                 className="relative inline-flex items-center gap-2 overflow-hidden rounded-full border border-border/60 bg-card/60 px-3.5 py-1.5 text-xs font-medium text-foreground/80 backdrop-blur"
               >
-                {shimmer && (
-                  <span
-                    aria-hidden
-                    className="pill-shimmer pointer-events-none absolute inset-0"
-                    style={{
+                {/* Same shimmer as the landing-page StatusPills: every pill
+                    shimmers, cascade direction driven by the settings. */}
+                <span
+                  aria-hidden
+                  className="pill-shimmer pointer-events-none absolute inset-0"
+                  // `--pill-i` drives the cascade stagger + direction in
+                  // globals.css (see `.pill-shimmer` / `[data-shimmer-dir]`).
+                  style={
+                    {
                       background: `linear-gradient(100deg, transparent 38%, hsl(${triple} / 0.42) 50%, transparent 62%)`,
-                    }}
-                  />
-                )}
+                      '--pill-i': i,
+                    } as CSSProperties
+                  }
+                />
                 <span
                   aria-hidden
                   className="relative h-2 w-2 rounded-full"

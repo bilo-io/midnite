@@ -10,6 +10,7 @@ import {
   type BgIntensity,
   type Density,
   type Motion,
+  type ShimmerDirection,
   type UiFont,
   type VisualEffects,
 } from './app-settings';
@@ -106,6 +107,20 @@ export function applyEffects(effects: VisualEffects): void {
   html.toggleAttribute('data-no-glass', !e.glass);
 }
 
+/**
+ * Apply the status-pill shimmer cascade direction as `data-shimmer-dir` on <html>.
+ * The default `ltr` (left pill leads) clears the attribute; `rtl` (right pill
+ * leads) sets it — globals.css flips the per-pill `animation-delay` off it.
+ */
+export function applyShimmerDirection(dir: ShimmerDirection): void {
+  const html = document.documentElement;
+  if (dir === 'rtl') {
+    html.setAttribute('data-shimmer-dir', 'rtl');
+  } else {
+    html.removeAttribute('data-shimmer-dir');
+  }
+}
+
 // hue/sat lookup for the non-default accents, embedded into the pre-paint script
 // below so it stays in sync with ACCENT_OPTIONS (single source of truth).
 const ACCENT_MAP = Object.fromEntries(
@@ -123,4 +138,4 @@ export const appearanceInitScript = `(function(){try{var s=JSON.parse(localStora
   ACCENT_MAP,
 )};var v=M[s.accent];if(v){h.style.setProperty('--accent-h',v[0]);h.style.setProperty('--accent-s',v[1]);h.setAttribute('data-accent',s.accent);}h.setAttribute('data-motion',s.motion||'system');if(s.density==='compact')h.setAttribute('data-density','compact');var F=${JSON.stringify(
   UI_FONT_STACK,
-)};var f=F[s.uiFont];if(f){h.style.setProperty('--font-ui',f);h.setAttribute('data-ui-font',s.uiFont);}var bg=s.backgroundPattern||'${BACKGROUND_PATTERN_DEFAULT}';h.setAttribute('data-bg',bg);if(bg==='gradient')h.setAttribute('data-bg-intensity',s.bgIntensity||'${BG_INTENSITY_DEFAULT}');var e=s.effects||{};if(e.pageReveal===false)h.setAttribute('data-no-page-reveal','');if(e.typewriter===false)h.setAttribute('data-no-typewriter','');if(e.glass===false)h.setAttribute('data-no-glass','');}catch(e){}})();`;
+)};var f=F[s.uiFont];if(f){h.style.setProperty('--font-ui',f);h.setAttribute('data-ui-font',s.uiFont);}var bg=s.backgroundPattern||'${BACKGROUND_PATTERN_DEFAULT}';h.setAttribute('data-bg',bg);if(bg==='gradient')h.setAttribute('data-bg-intensity',s.bgIntensity||'${BG_INTENSITY_DEFAULT}');var e=s.effects||{};if(e.pageReveal===false)h.setAttribute('data-no-page-reveal','');if(e.typewriter===false)h.setAttribute('data-no-typewriter','');if(e.glass===false)h.setAttribute('data-no-glass','');if(s.shimmerDirection==='rtl')h.setAttribute('data-shimmer-dir','rtl');}catch(e){}})();`;

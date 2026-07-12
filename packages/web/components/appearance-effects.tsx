@@ -11,6 +11,7 @@ import {
   DENSITY_DEFAULT,
   MOTION_DEFAULT,
   SETTINGS_STORAGE_KEY,
+  SHIMMER_DIRECTION_DEFAULT,
   UI_FONT_DEFAULT,
   type AppSettings,
 } from '@/lib/app-settings';
@@ -20,6 +21,7 @@ import {
   applyDensity,
   applyEffects,
   applyMotion,
+  applyShimmerDirection,
   applyUiFont,
 } from '@/lib/apply-appearance';
 
@@ -38,6 +40,7 @@ export function AppearanceEffects() {
   const effects = settings.effects ?? DEFAULT_EFFECTS;
   const backgroundPattern = settings.backgroundPattern ?? BACKGROUND_PATTERN_DEFAULT;
   const bgIntensity = settings.bgIntensity ?? BG_INTENSITY_DEFAULT;
+  const shimmerDirection = settings.shimmerDirection ?? SHIMMER_DIRECTION_DEFAULT;
 
   useEffect(() => {
     applyAccent(accent);
@@ -62,6 +65,10 @@ export function AppearanceEffects() {
   useEffect(() => {
     applyEffects(effects);
   }, [effects]);
+
+  useEffect(() => {
+    applyShimmerDirection(shimmerDirection);
+  }, [shimmerDirection]);
 
   return null;
 }
