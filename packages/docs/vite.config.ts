@@ -20,6 +20,12 @@ export default defineConfig({
   // (e.g. GitHub Pages at /midnite/docs/). Hash router handles all navigation;
   // only the asset URLs need to be subpath-aware.
   base: './',
+  // Deterministic dev/preview ports. `strictPort` makes Vite fail loudly if the
+  // port is taken rather than silently drifting to 5174+ — so cross-links from
+  // the web app (which hardcodes :5173, see web/lib/site-links.ts) never break.
+  // Keep in sync with those constants and with the docs moon.yml tasks.
+  server: { port: 5173, strictPort: true },
+  preview: { port: 4173, strictPort: true },
   plugins: [
     {
       enforce: 'pre',

@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 import type { NavGroup } from '../content/nav';
+import { APP_URL } from '../lib/app-links';
 import { DocSearch } from './doc-search';
 import { Sidebar } from './sidebar';
 import { TableOfContents } from './table-of-contents';
@@ -54,9 +55,13 @@ export function Layout({ nav, children }: { nav: NavGroup[]; children: ReactNode
               Download
             </Link>
             <a
-              href="https://github.com/bilo-io/midnite-app"
-              target="_blank"
-              rel="noreferrer"
+              href={APP_URL}
+              className="hidden text-sm text-muted-foreground hover:text-foreground sm:block"
+            >
+              Open app
+            </a>
+            <a
+              href="https://github.com/bilo-io/midnite"
               className="hidden text-sm text-muted-foreground hover:text-foreground sm:block"
             >
               GitHub

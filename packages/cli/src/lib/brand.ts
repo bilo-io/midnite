@@ -16,6 +16,31 @@ const TAGLINE = 'multitask orchestrator for Claude Code';
 const SOLID = '█'; // the two solid (dark) quadrants
 const LIGHT = '▒'; // the two light quadrants
 
+// The full midnite mark as pre-rendered ASCII art — a crescent-lit disc. Used for
+// the entry banner (help + bare invoke). Kept as a literal so it needs no asset
+// file at runtime; backticks/backslashes in the art are escaped for the template.
+const LOGO_ART = `             $$$$$$$$$$$$$$
+         $$$$#/!,'    '"l\\o$$$$
+      $$$%j"                ^t%$$$
+    $$$k<                      >k$$$
+   $$&-           ;ii"           ~W$$
+  $$p\`       ^vM@$$$$$$@b(.       'q$$
+ $$o\`      "YJf|rQ#@$$$$$$@u       'k$$
+$$*                 uB$$$$$$8I       *$$
+@@/                  \`M$$$$$@&\`      /$$
+@$;                   +$$$$$$$0      ;$$
+@B                     *$$$$$$a\`      B$
+ .@@@@@@@@@@@@@@@@@@@@@"      l8@@@@@@.
+  o$$$$$$$$$$$$$$$$$$$m       ]@$$$$$o
+  z$$$$$$$$$$$$$$$$$@M"      ^&@$$$$$z
+  ;@$$$$$$@@$$$$$$@8|       'a@$$$$$@;
+   l8$$$$$@b1tXUn}^        j@@$$$$$%>
+    <8$$$$$$@#|^        <CB@$$$$$$8+
+     ^q$$$$$$$$$@%apb&@@$$$$$$$$$d"
+       ik@$$$$$$$$$$$$$$$$$$$$@hi
+         .c&$$$$$$$$$$$$$$$$&X.
+             ;Y#&B@@@@B&#JI`.split('\n');
+
 /**
  * Whether decorative colour/chrome should be emitted. Gates on a real TTY and the
  * `NO_COLOR` convention so piped/redirected output stays clean. (Theme E will fold
@@ -74,7 +99,7 @@ export function getVersion(): string {
  * is applied only when {@link isInteractive}; piped output is plain ASCII-art text.
  */
 export function banner(): string {
-  const mark = logoLines().map((l) => accent(l)).join('\n');
+  const mark = LOGO_ART.map((l) => accent(l)).join('\n');
   const wordmark = `${accent('midnite')}  v${getVersion()}`;
   return `${mark}\n\n  ${wordmark}\n  ${TAGLINE}\n`;
 }
