@@ -3,12 +3,16 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Check, Copy, Download, Link2, Pencil, Trash2 } from 'lucide-react';
+import type { Project } from '@midnite/shared';
 import type { DeckSummary } from '@/lib/slides/store';
 import { getDeckBySlug, deleteDeck, duplicateDeck } from '@/lib/slides/store';
 import { renderStandaloneDeck } from '@/lib/slides/standalone-deck';
 import { useConfirm } from '@/components/confirm-dialog';
+import { ProjectTag } from '@/components/project-tag';
 import { useToast } from '@/components/toast';
 import { cn, relativeTime } from '@/lib/utils';
+
+type DeckProject = Pick<Project, 'tag' | 'color'>;
 
 const DOT_CAP = 14;
 
@@ -128,7 +132,15 @@ function CardActions({ deck, onChanged }: { deck: DeckSummary; onChanged: () => 
   );
 }
 
-export function DeckCard({ deck, onChanged }: { deck: DeckSummary; onChanged: () => void }) {
+export function DeckCard({
+  deck,
+  project,
+  onChanged,
+}: {
+  deck: DeckSummary;
+  project?: DeckProject;
+  onChanged: () => void;
+}) {
   const href = `/slides/present?slug=${encodeURIComponent(deck.slug)}`;
   return (
     <div className="group relative flex flex-col gap-3 rounded-xl border border-border/60 bg-card/40 p-4 transition-colors hover:border-foreground/20 hover:bg-accent/40">
@@ -141,20 +153,36 @@ export function DeckCard({ deck, onChanged }: { deck: DeckSummary; onChanged: ()
       </div>
       <h3 className="text-lg font-semibold leading-tight tracking-tight text-foreground">{deck.title}</h3>
       <Dots count={deck.count} />
-      <p className="text-xs tabular-nums text-muted-foreground">
-        {deck.count} {plural(deck.count)} · {relativeTime(deck.updated)}
-      </p>
+      <div className="flex items-center gap-2">
+        <p className="text-xs tabular-nums text-muted-foreground">
+          {deck.count} {plural(deck.count)} · {relativeTime(deck.updated)}
+        </p>
+        {project ? <ProjectTag tag={project.tag} color={project.color} /> : null}
+      </div>
     </div>
   );
 }
 
-export function DeckRow({ deck, onChanged }: { deck: DeckSummary; onChanged: () => void }) {
+export function DeckRow({
+  deck,
+  project,
+  onChanged,
+}: {
+  deck: DeckSummary;
+  project?: DeckProject;
+  onChanged: () => void;
+}) {
   const href = `/slides/present?slug=${encodeURIComponent(deck.slug)}`;
   return (
     <div className="group relative flex items-center gap-4 rounded-lg border border-border/60 bg-card/40 px-4 py-2.5 transition-colors hover:border-foreground/20 hover:bg-accent/40">
       <Link href={href} className="absolute inset-0 z-[1] rounded-lg" aria-label={`Present ${deck.title}`} />
       <span className="w-8 shrink-0 font-mono text-xs font-semibold tracking-wider text-primary">{badge(deck.id)}</span>
       <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{deck.title}</span>
+      {project ? (
+        <span className="relative z-[2] hidden shrink-0 sm:block">
+          <ProjectTag tag={project.tag} color={project.color} />
+        </span>
+      ) : null}
       <span className="hidden shrink-0 sm:block">
         <Dots count={deck.count} />
       </span>

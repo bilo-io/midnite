@@ -5,12 +5,15 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { PageHeader } from '@/components/page-header';
 import { DeckEditor } from '@/components/slides/deck-editor';
+import { getProjects } from '@/lib/api';
+import { useApiData } from '@/lib/use-api-data';
 import { getDeckBySlug, type DeckDetail } from '@/lib/slides/store';
 
 function EditDeck() {
   const slug = useSearchParams().get('slug') ?? '';
   const [state, setState] = useState<'loading' | 'ready' | 'missing'>('loading');
   const [deck, setDeck] = useState<DeckDetail | null>(null);
+  const { data: projects } = useApiData(() => getProjects());
 
   // Decks live in localStorage — only readable after mount (client-only).
   useEffect(() => {
@@ -41,7 +44,15 @@ function EditDeck() {
             </Link>
           </div>
         ) : (
-          <DeckEditor initial={{ slug: deck.slug, markdown: deck.markdown, title: deck.title }} />
+          <DeckEditor
+            initial={{
+              slug: deck.slug,
+              markdown: deck.markdown,
+              title: deck.title,
+              projectId: deck.projectId,
+            }}
+            projects={projects ?? []}
+          />
         )}
       </div>
     </>
