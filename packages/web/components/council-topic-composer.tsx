@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Loader2, Mic, MicOff, Pencil, Send } from 'lucide-react';
 import type { CouncilFormat } from '@midnite/shared';
+import { GradientGlow } from '@midnite/ui';
 import { Button } from '@/components/ui/button';
 import { StyledSelect } from '@/components/ui/styled-select';
 import {
@@ -80,7 +81,7 @@ export function CouncilComposer({
 
   return (
     <ComposerFullscreen full={full} onClose={close}>
-      <div className="gradient-border relative z-10 rounded-xl shadow-sm transition-shadow duration-700 ease-out focus-within:shadow-lg motion-reduce:transition-none">
+      <GradientGlow className="relative z-10 rounded-xl shadow-sm transition-shadow duration-700 ease-out focus-within:shadow-lg motion-reduce:transition-none">
         {/* Opaque surface so the conic gradient reads as border + glow only. */}
         <div className="relative rounded-xl bg-card p-3">
           <ComposerFullscreenToggle full={full} onToggle={toggle} />
@@ -150,7 +151,7 @@ export function CouncilComposer({
             </Button>
           </div>
         </div>
-      </div>
+      </GradientGlow>
     </ComposerFullscreen>
   );
 }

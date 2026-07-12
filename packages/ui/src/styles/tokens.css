@@ -99,3 +99,125 @@
   --node-data: 173 70% 50%;
   --node-storage: 333 75% 62%;
 }
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Gradient glow — the app's signature animated border + blurred halo
+   (Phase 66 Theme B). Promoted from web's globals.css so `web` and `docs` share
+   one source; the `<GradientGlow>` primitive applies these classes and the raw
+   classes stay usable directly. `--gradient-angle` + the `gradient-border-spin`
+   keyframe also back web's workflow-node backgrounds + the reconnect orbit, so
+   they live here (imported first) for every consumer to resolve.
+
+   Triggers: base `.gradient-border` lights on `:focus-within`; add
+   `--hover` to light on `:hover`, or `--always` to light unconditionally.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+@property --gradient-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes gradient-border-spin {
+  to {
+    --gradient-angle: 360deg;
+  }
+}
+
+/* Breathing glow — pairs with the spin so the halo slowly swells and settles
+   rather than sitting at a flat intensity. */
+@keyframes gradient-border-glow-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+.gradient-border {
+  position: relative;
+  isolation: isolate;
+  /* A real, pixel-snapped border rather than a masked halo straddling the box
+     edge: the conic gradient fills the border-box while the card colour fills
+     the padding-box, so the frame is exactly even on every side. Dim + thin at
+     rest; brightens, thickens, and spins when triggered. */
+  border: 1px solid transparent;
+  background:
+    linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
+    conic-gradient(
+        from var(--gradient-angle),
+        rgba(244, 63, 94, 0.4),
+        rgba(245, 158, 11, 0.4),
+        rgba(16, 185, 129, 0.4),
+        rgba(59, 130, 246, 0.4),
+        rgba(139, 92, 246, 0.4),
+        rgba(236, 72, 153, 0.4),
+        rgba(244, 63, 94, 0.4)
+      )
+      border-box;
+  transition: border-width 0.25s ease-out;
+}
+
+.gradient-border:focus-within,
+.gradient-border--hover:hover,
+.gradient-border--always {
+  border-width: 2px;
+  background:
+    linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
+    conic-gradient(
+        from var(--gradient-angle),
+        #f43f5e,
+        #f59e0b,
+        #10b981,
+        #3b82f6,
+        #8b5cf6,
+        #ec4899,
+        #f43f5e
+      )
+      border-box;
+  animation: gradient-border-spin 4s linear infinite;
+}
+
+.gradient-border::after {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--gradient-angle),
+    #f43f5e,
+    #f59e0b,
+    #10b981,
+    #3b82f6,
+    #8b5cf6,
+    #ec4899,
+    #f43f5e
+  );
+  filter: blur(26px);
+  opacity: 0;
+  transition: opacity 0.4s ease-out;
+  pointer-events: none;
+  z-index: -2;
+}
+
+.gradient-border:focus-within::after,
+.gradient-border--hover:hover::after,
+.gradient-border--always::after {
+  opacity: 0.7;
+  animation:
+    gradient-border-spin 4s linear infinite,
+    gradient-border-glow-pulse 2.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion='full']) .gradient-border:focus-within,
+  html:not([data-motion='full']) .gradient-border:focus-within::after,
+  html:not([data-motion='full']) .gradient-border--hover:hover,
+  html:not([data-motion='full']) .gradient-border--hover:hover::after,
+  html:not([data-motion='full']) .gradient-border--always,
+  html:not([data-motion='full']) .gradient-border--always::after {
+    animation: none;
+  }
+}

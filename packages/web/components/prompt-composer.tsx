@@ -14,6 +14,7 @@ import {
   X,
 } from 'lucide-react';
 import type { Project } from '@midnite/shared';
+import { GradientGlow } from '@midnite/ui';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ProjectSelect } from '@/components/project-select';
@@ -174,8 +175,8 @@ export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
       />
     )}
     <ComposerFullscreen full={full} onClose={close}>
-    <div
-      className="gradient-border relative z-10 rounded-xl shadow-sm transition-[transform,box-shadow] duration-700 ease-out focus-within:shadow-lg motion-reduce:transition-none"
+    <GradientGlow
+      className="relative z-10 rounded-xl shadow-sm transition-[transform,box-shadow] duration-700 ease-out focus-within:shadow-lg motion-reduce:transition-none"
       style={{ transform: intro ? 'translateY(-42dvh)' : 'translateY(0)' }}
     >
       <div className="relative rounded-xl bg-card p-4">
@@ -302,7 +303,7 @@ export function PromptComposer({ projects = [] }: { projects?: Project[] }) {
 
       </div>
       </div>
-    </div>
+    </GradientGlow>
     </ComposerFullscreen>
 
     {openDraft && (
