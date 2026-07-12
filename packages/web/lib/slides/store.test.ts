@@ -58,6 +58,27 @@ describe('slides store', () => {
     expect(getDeckBySlug(slug)).toBeNull();
   });
 
+  it('stores and reads back an assigned projectId', () => {
+    const slug = createDeck({ markdown: '# P', title: 'P', projectId: 'proj-1' });
+    expect(getDeckBySlug(slug)?.projectId).toBe('proj-1');
+    expect(getAllDecks().find((d) => d.slug === slug)?.projectId).toBe('proj-1');
+  });
+
+  it('defaults projectId to null when unassigned', () => {
+    const slug = createDeck({ markdown: '# NP', title: 'NP' });
+    expect(getDeckBySlug(slug)?.projectId).toBeNull();
+  });
+
+  it('updates a deck project without touching it when projectId is omitted', () => {
+    const slug = createDeck({ markdown: '# U', title: 'U', projectId: 'proj-a' });
+    // Omitting projectId keeps the existing assignment.
+    updateDeck(slug, { markdown: '# U\n\n## S\n\n- x', title: 'U' });
+    expect(getDeckBySlug(slug)?.projectId).toBe('proj-a');
+    // Passing null clears it.
+    updateDeck(slug, { markdown: '# U', title: 'U', projectId: null });
+    expect(getDeckBySlug(slug)?.projectId).toBeNull();
+  });
+
   it('never re-seeds after everything is deleted', () => {
     // Trigger the initial seed, then delete every deck.
     for (const d of getAllDecks()) deleteDeck(d.slug);

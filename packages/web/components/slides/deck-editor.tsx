@@ -3,9 +3,11 @@
 import { useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Upload } from 'lucide-react';
+import type { Project } from '@midnite/shared';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MarkdownEditor } from '@/components/markdown-editor';
+import { ProjectSelect } from '@/components/project-select';
 import { useToast } from '@/components/toast';
 import { createDeck, updateDeck } from '@/lib/slides/store';
 import { markdownToDeck } from '@/lib/slides/markdown';
@@ -24,15 +26,18 @@ Write a paragraph and it becomes a step too.
 
 type Props = {
   /** Present when editing an existing deck; absent when creating a new one. */
-  initial?: { slug: string; markdown: string; title: string };
+  initial?: { slug: string; markdown: string; title: string; projectId: string | null };
+  /** Projects available to assign the deck to (fetched from the gateway). */
+  projects?: Project[];
 };
 
-export function DeckEditor({ initial }: Props) {
+export function DeckEditor({ initial, projects = [] }: Props) {
   const router = useRouter();
   const toast = useToast();
   const editing = !!initial;
   const [md, setMd] = useState(initial?.markdown ?? STARTER);
   const [title, setTitle] = useState(initial?.title ?? '');
+  const [projectId, setProjectId] = useState<string | null>(initial?.projectId ?? null);
   const [pending, setPending] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -54,8 +59,9 @@ export function DeckEditor({ initial }: Props) {
     setPending(true);
     try {
       const slug = initial
-        ? (updateDeck(initial.slug, { markdown: md, title: title || undefined }), initial.slug)
-        : createDeck({ markdown: md, title: title || undefined });
+        ? (updateDeck(initial.slug, { markdown: md, title: title || undefined, projectId }),
+          initial.slug)
+        : createDeck({ markdown: md, title: title || undefined, projectId });
       router.push(`/slides/present?slug=${encodeURIComponent(slug)}`);
     } catch (err) {
       setPending(false);
@@ -65,12 +71,24 @@ export function DeckEditor({ initial }: Props) {
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <Input
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Deck title (optional — defaults to the first # heading)"
-        aria-label="Deck title"
-      />
+      <div className="flex flex-wrap items-center gap-2">
+        <Input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Deck title (optional — defaults to the first # heading)"
+          aria-label="Deck title"
+          className="min-w-[200px] flex-1"
+        />
+        {projects.length > 0 && (
+          <ProjectSelect
+            projects={projects}
+            value={projectId}
+            onChange={setProjectId}
+            align="right"
+            placeholder="No project"
+          />
+        )}
+      </div>
 
       <input
         ref={fileRef}

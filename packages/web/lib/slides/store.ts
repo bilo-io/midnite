@@ -15,6 +15,8 @@ export type StoredDeck = {
   title: string;
   markdown: string;
   content: string; // JSON blob: Slide[] (derived from markdown)
+  /** Optional project this deck belongs to. Absent on decks saved before Phase 60. */
+  project_id?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -24,6 +26,7 @@ export type DeckSummary = {
   slug: string;
   title: string;
   count: number;
+  projectId: string | null;
   created: string;
   updated: string;
 };
@@ -33,6 +36,7 @@ export type DeckDetail = {
   slug: string;
   title: string;
   markdown: string;
+  projectId: string | null;
   slides: Slide[];
 };
 
@@ -111,6 +115,8 @@ export function getAllDecks(): DeckSummary[] {
       slug: r.slug,
       title: r.title,
       count,
+      // Legacy decks (saved before Phase 60) have no project_id — coerce to null.
+      projectId: r.project_id ?? null,
       created: r.created_at,
       updated: r.updated_at,
     };
@@ -126,10 +132,25 @@ export function getDeckBySlug(slug: string): DeckDetail | null {
   } catch {
     slides = markdownToDeck(row.markdown).slides;
   }
-  return { id: row.id, slug: row.slug, title: row.title, markdown: row.markdown, slides };
+  return {
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    markdown: row.markdown,
+    projectId: row.project_id ?? null,
+    slides,
+  };
 }
 
-export function createDeck({ markdown, title }: { markdown: string; title?: string }): string {
+export function createDeck({
+  markdown,
+  title,
+  projectId = null,
+}: {
+  markdown: string;
+  title?: string;
+  projectId?: string | null;
+}): string {
   const parsed = markdownToDeck(markdown);
   const finalTitle = (title && title.trim()) || parsed.title || 'Untitled';
   const decks = readAll();
@@ -141,6 +162,7 @@ export function createDeck({ markdown, title }: { markdown: string; title?: stri
     title: finalTitle,
     markdown,
     content: JSON.stringify(parsed.slides),
+    project_id: projectId,
     created_at: now,
     updated_at: now,
   });
@@ -150,7 +172,7 @@ export function createDeck({ markdown, title }: { markdown: string; title?: stri
 
 export function updateDeck(
   slug: string,
-  { markdown, title }: { markdown: string; title?: string },
+  { markdown, title, projectId }: { markdown: string; title?: string; projectId?: string | null },
 ): boolean {
   const decks = readAll();
   const idx = decks.findIndex((d) => d.slug === slug);
@@ -164,6 +186,8 @@ export function updateDeck(
     title: finalTitle,
     markdown,
     content: JSON.stringify(parsed.slides),
+    // Only overwrite the project when the caller passes one (undefined = leave as-is).
+    project_id: projectId === undefined ? existing.project_id ?? null : projectId,
     updated_at: new Date().toISOString(),
   };
   writeAll(decks);
