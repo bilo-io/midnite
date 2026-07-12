@@ -22,20 +22,24 @@ describe('TaskRow', () => {
     expect(screen.getByText('Bugfix')).toBeInTheDocument();
   });
 
-  it('leads with the fixed-width kind badge in the tasks views (no showStatus)', () => {
+  it('leads with the kind badge in a fixed-width cell, pill hugging its label', () => {
     render(<TaskRow task={baseTask} />);
-    const kind = screen.getByText('Bugfix');
-    // far-left, fixed-width leading column on sm+
-    expect(kind.className).toContain('sm:order-first');
-    expect(kind.className).toContain('sm:w-24');
+    const pill = screen.getByText('Bugfix');
+    const cell = pill.parentElement!;
+    // The reserved-space cell is the fixed-width leading column…
+    expect(cell.className).toContain('sm:order-first');
+    expect(cell.className).toContain('sm:w-24');
+    // …while the coloured pill itself stays fit-content (no fixed width).
+    expect(pill.className).not.toContain('sm:w-24');
   });
 
-  it('leads with the fixed-width status badge in the projects tree (showStatus)', () => {
+  it('keeps the kind badge leading and trails status at the far right (projects tree)', () => {
     render(<TaskRow task={baseTask} showStatus />);
+    // kind still leads
+    expect(screen.getByText('Bugfix').parentElement!.className).toContain('sm:order-first');
+    // status trails: no leading order, intrinsic width
     const status = screen.getByText('Todo');
-    expect(status.className).toContain('sm:order-first');
-    expect(status.className).toContain('sm:w-24');
-    // kind is no longer the leader when status leads
-    expect(screen.getByText('Bugfix').className).not.toContain('sm:order-first');
+    expect(status.className).not.toContain('sm:order-first');
+    expect(status.className).not.toContain('sm:w-24');
   });
 });
