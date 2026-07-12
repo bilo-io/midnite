@@ -288,6 +288,77 @@
   }
 }
 
+/*
+ * highlight.js token palette for fenced code blocks in markdown (see
+ * components/markdown.tsx, which runs rehype-highlight). This is a deliberate
+ * duplicate of the shared `@midnite/ui/code-highlight.css` — the site does NOT
+ * depend on @midnite/ui (the package boundary keeps it standalone, the same
+ * reason markdown.tsx is copied from web), so the palette is inlined here against
+ * the site's own tokens. Keep the hue set in sync with the shared file. The
+ * `.hljs-*` classes are only emitted onto highlighted code, so unscoped is safe.
+ */
+.hljs {
+  background: transparent;
+  color: hsl(var(--foreground));
+}
+.hljs-comment,
+.hljs-quote {
+  color: hsl(var(--muted-foreground));
+  font-style: italic;
+}
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-subst,
+.hljs-doctag {
+  color: hsl(280 60% 62%);
+}
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-deletion {
+  color: hsl(350 70% 60%);
+}
+.hljs-string,
+.hljs-regexp,
+.hljs-addition,
+.hljs-selector-attr,
+.hljs-selector-pseudo,
+.hljs-meta .hljs-string {
+  color: hsl(140 45% 48%);
+}
+.hljs-title,
+.hljs-title.function_,
+.hljs-title.class_,
+.hljs-built_in,
+.hljs-section {
+  color: hsl(210 70% 58%);
+}
+.hljs-number,
+.hljs-literal,
+.hljs-type {
+  color: hsl(30 80% 55%);
+}
+.hljs-attr,
+.hljs-attribute,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-property {
+  color: hsl(190 60% 50%);
+}
+.hljs-meta,
+.hljs-operator,
+.hljs-punctuation {
+  color: hsl(var(--foreground) / 0.7);
+}
+.hljs-emphasis {
+  font-style: italic;
+}
+.hljs-strong {
+  font-weight: 600;
+}
+
 /* Terminal caret blink for the CLI showcase. */
 .caret {
   display: inline-block;

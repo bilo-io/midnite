@@ -20,15 +20,17 @@ const external = [
   ...Object.keys(pkg.dependencies ?? {}),
 ].map((name) => new RegExp(`^${name}(?:/.*)?$`));
 
-// The design tokens are plain CSS custom properties — there is nothing to bundle,
-// so ship them verbatim at dist/tokens.css (exposed as `@midnite/ui/styles`).
-// Vite's lib build only emits the JS entries; this copies the stylesheet alongside.
-function copyTokensCss() {
+// The design tokens + the highlight.js token palette are plain CSS — there is
+// nothing to bundle, so ship them verbatim at dist/*.css (exposed as
+// `@midnite/ui/styles` and `@midnite/ui/code-highlight.css`). Vite's lib build
+// only emits the JS entries; this copies the stylesheets alongside.
+function copyStylesheets() {
   return {
-    name: 'midnite-ui-copy-tokens',
+    name: 'midnite-ui-copy-styles',
     closeBundle() {
       mkdirSync(r('dist'), { recursive: true });
       copyFileSync(r('src/styles/tokens.css'), r('dist/tokens.css'));
+      copyFileSync(r('src/styles/code-highlight.css'), r('dist/code-highlight.css'));
     },
   };
 }
@@ -77,7 +79,7 @@ export default defineConfig({
         'src/**/*.mdx',
       ],
     }),
-    copyTokensCss(),
+    copyStylesheets(),
     preserveUseClient(),
   ],
   build: {

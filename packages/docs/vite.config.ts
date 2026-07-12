@@ -1,5 +1,6 @@
 import mdx from '@mdx-js/rollup';
 import react from '@vitejs/plugin-react';
+import rehypeHighlight from 'rehype-highlight';
 import rehypeSlug from 'rehype-slug';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm';
@@ -35,10 +36,11 @@ export default defineConfig({
           [remarkMdxFrontmatter, { name: 'frontmatter' }],
         ],
         // Stable, text-derived ids on every heading so the on-page TOC (and any
-        // deep link) can anchor to a section. Same plugin runs on the product-doc
-        // (react-markdown) path — see markdown-page.tsx — so both render paths
-        // produce identical slugs.
-        rehypePlugins: [rehypeSlug],
+        // deep link) can anchor to a section. `rehype-highlight` colours fenced
+        // code with highlight.js (`.hljs-*` classes) against the shared palette in
+        // styles.css. Both plugins also run on the product-doc (react-markdown)
+        // path — see markdown-page.tsx — so both render paths match.
+        rehypePlugins: [rehypeSlug, rehypeHighlight],
       }),
     },
     react({ include: /\.(jsx|tsx|mdx?)$/ }),

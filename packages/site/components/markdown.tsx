@@ -1,6 +1,7 @@
 'use client';
 
 import ReactMarkdown from 'react-markdown';
+import rehypeHighlight from 'rehype-highlight';
 import remarkGfm from 'remark-gfm';
 
 import { cn } from '@/lib/utils';
@@ -9,14 +10,17 @@ import { cn } from '@/lib/utils';
  * Renders a markdown string as styled, read-only content. Adapted from
  * packages/web/components/markdown-preview.tsx (the boundary forbids importing it);
  * tuned a little more generously here for full-page legal docs. GFM enabled for
- * tables / task lists / strikethrough. Elements are styled individually (no
- * typography plugin) so everything reads from theme tokens.
+ * tables / task lists / strikethrough. Fenced code with a language label is
+ * highlighted by `rehype-highlight` (highlight.js), coloured by the `.hljs-*`
+ * palette in app/globals.css. Elements are styled individually (no typography
+ * plugin) so everything reads from theme tokens.
  */
 export function Markdown({ content, className }: { content: string; className?: string }) {
   return (
     <div className={cn('text-[15px] leading-relaxed text-foreground', className)}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeHighlight]}
         components={{
           h1: ({ children }) => (
             <h1 className="mb-3 mt-8 text-2xl font-semibold tracking-tight first:mt-0">
@@ -69,8 +73,10 @@ export function Markdown({ content, className }: { content: string; className?: 
             </pre>
           ),
           code: ({ className: cls, children }) => {
-            const isBlock = /language-/.test(cls ?? '') || /\n/.test(String(children));
-            if (isBlock) return <code className="font-mono">{children}</code>;
+            const isBlock = /language-|hljs/.test(cls ?? '') || /\n/.test(String(children));
+            // Block code keeps highlight.js's `hljs language-*` classes so the
+            // token palette applies; the <pre> owns the background/scroll.
+            if (isBlock) return <code className={cn('font-mono', cls)}>{children}</code>;
             return (
               <code className="rounded bg-muted px-1 py-0.5 font-mono text-[0.85em]">{children}</code>
             );

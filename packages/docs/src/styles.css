@@ -1,6 +1,8 @@
 /* The design tokens (HSL custom properties + the .dark block) are the library's,
  * imported once here; the .dark class is toggled on <html> by @midnite/ui/theme. */
 @import '@midnite/ui/styles';
+/* Shared highlight.js token palette for fenced code blocks (MDX + product docs). */
+@import '@midnite/ui/code-highlight.css';
 
 @tailwind base;
 @tailwind components;

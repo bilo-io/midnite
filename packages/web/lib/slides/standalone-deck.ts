@@ -70,6 +70,8 @@ a.link:hover{color:var(--accent);text-decoration-color:var(--accent)}
 .md-copy.copied{color:var(--accent);border-color:var(--accent)}
 .md-code{line-height:1.55;color:var(--text);padding:0.85em 1em;overflow-x:auto;white-space:pre}
 .md-code code{font-family:inherit;background:none;border:none;padding:0;white-space:pre}
+/* highlight.js palette — an inlined copy of the shared @midnite/ui/code-highlight.css
+   (the exported file has no app tokens); keep the hue set in sync. */
 .md-code .hljs{background:transparent;color:var(--text)}
 .hljs-comment,.hljs-quote{color:var(--muted);font-style:italic}
 .hljs-keyword,.hljs-selector-tag,.hljs-subst,.hljs-doctag{color:hsl(280 60% 66%)}
