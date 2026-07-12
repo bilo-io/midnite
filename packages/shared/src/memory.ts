@@ -87,6 +87,24 @@ export const UpdateMemoryRequestSchema = z.object({
 export const MemoryResponseSchema = z.object({ memory: MemorySchema });
 export const MemoriesResponseSchema = z.object({ memories: z.array(MemorySchema) });
 
+// A single source's extracted/scraped text (Phase 65 B stores it server-side; the
+// `MemorySource` wire shape deliberately omits it). Fetched on demand when the UI
+// opens a source's detail view. `text` is null when the source was never ingested
+// or no readable text could be extracted.
+export const MemorySourceContentSchema = z.object({
+  id: z.string(),
+  ingestState: SourceIngestStateSchema.nullable(),
+  ingestError: z.string().nullable(),
+  mimeType: z.string().optional(),
+  fileName: z.string().optional(),
+  byteSize: z.number().optional(),
+  text: z.string().nullable(),
+});
+
+export const MemorySourceContentResponseSchema = z.object({
+  content: MemorySourceContentSchema,
+});
+
 // --- Phase 65 C: chat to the knowledge base ---
 
 /** Longest question a single chat turn may carry. */
@@ -132,6 +150,8 @@ export type UpdateMemoryRequest = z.infer<typeof UpdateMemoryRequestSchema>;
 export type AddMemorySourceRequest = z.infer<typeof AddMemorySourceRequestSchema>;
 export type MemoryResponse = z.infer<typeof MemoryResponseSchema>;
 export type MemoriesResponse = z.infer<typeof MemoriesResponseSchema>;
+export type MemorySourceContent = z.infer<typeof MemorySourceContentSchema>;
+export type MemorySourceContentResponse = z.infer<typeof MemorySourceContentResponseSchema>;
 export type MemoryChatMessage = z.infer<typeof MemoryChatMessageSchema>;
 export type PostMemoryChatRequest = z.infer<typeof PostMemoryChatRequestSchema>;
 export type MemoryChatHistoryResponse = z.infer<typeof MemoryChatHistoryResponseSchema>;
