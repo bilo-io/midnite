@@ -1,5 +1,6 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
+import { MAX_SOURCES_PER_MEMORY } from '@midnite/shared';
 import type {
   MemoryInsert,
   MemoryRow,
@@ -204,7 +205,7 @@ describe('MemoriesService', () => {
     const memory = await service.createMemory({ title: 'm', content: '' });
 
     // Seed at the limit directly so addSource rejects before any fetch.
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < MAX_SOURCES_PER_MEMORY; i++) {
       repo.insertSource({
         id: `s${i}`,
         memoryId: memory.id,
@@ -215,12 +216,12 @@ describe('MemoriesService', () => {
       });
     }
     await expect(service.addSource(memory.id, 'https://example.com/extra')).rejects.toThrow(
-      /at most 10 sources/,
+      new RegExp(`at most ${MAX_SOURCES_PER_MEMORY} sources`),
     );
 
     const afterRemove = service.removeSource(memory.id, 's3');
     expect(afterRemove.sources.find((s) => s.id === 's3')).toBeUndefined();
-    expect(afterRemove.sources).toHaveLength(9);
+    expect(afterRemove.sources).toHaveLength(MAX_SOURCES_PER_MEMORY - 1);
   });
 
   it('reorders sources and rejects an incomplete id set', async () => {

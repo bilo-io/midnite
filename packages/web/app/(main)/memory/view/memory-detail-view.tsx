@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Brain, MoreHorizontal } from 'lucide-react';
 import type { Memory, Project } from '@midnite/shared';
 import { PageHeader } from '@/components/page-header';
-import { ConnectionStatus } from '@/components/connection-status';
 import { MemorySourcesPanel } from '@/components/memory/memory-sources-panel';
 import { MemoryChatComposer } from '@/components/memory/memory-chat-composer';
 import { MemoryMetadataModal } from '@/components/memory/memory-metadata-modal';
@@ -153,7 +152,6 @@ export function MemoryDetailView({
         description={<MemoryScopeChip project={project} />}
         actions={
           <div className="flex items-center gap-2">
-            <ConnectionStatus variant="compact" />
             {isMobile ? (
               <>
                 <RailHeaderToggle side="left" open={leftOpen} onClick={() => setLeftOpen(!leftOpen)} />

@@ -9,7 +9,7 @@ import { SOURCE_KINDS } from './source.js';
 
 export const MAX_MEMORY_TITLE = 120;
 export const MAX_MEMORY_CONTENT = 50_000;
-export const MAX_SOURCES_PER_MEMORY = 10;
+export const MAX_SOURCES_PER_MEMORY = 25;
 
 // Phase 65 B — source-content ingestion caps.
 /** Max extracted text kept per source (the chat/generation grounding corpus). */
