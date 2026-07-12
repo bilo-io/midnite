@@ -11,6 +11,7 @@ import {
   type SessionTranscript,
   type TaskSummary,
 } from '@midnite/shared';
+import { CountPill } from '@/components/count-pill';
 import { Button } from '@/components/ui/button';
 import { FilterPills, type FilterOption } from '@/components/filter-pills';
 import { ProjectMultiSelect } from '@/components/project-multi-select';
@@ -334,7 +335,7 @@ export function SessionsView({
     <div className="space-y-4">
       <div className="reveal-controls flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="mr-1 shrink-0 text-xs tabular-nums text-muted-foreground">{plural(sessions.length, 'session')}</p>
+          <CountPill count={sessions.length} noun="session" className="mr-1" />
           {projects.length > 0 ? <ProjectMultiSelect options={projectFilters} /> : null}
           <FilterPills options={SESSION_FILTERS} allLabel="All statuses" />
           <FilterPills

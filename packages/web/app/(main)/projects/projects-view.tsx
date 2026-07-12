@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FileText, Folder, LayoutGrid, List, ListTree, Plus } from 'lucide-react';
 import type { Memory, Project, Task, TaskSummary } from '@midnite/shared';
+import { CountPill } from '@/components/count-pill';
 import { Button } from '@/components/ui/button';
 import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-action-bar';
 import { EmptyState } from '@/components/empty-state';
@@ -245,10 +246,7 @@ export function ProjectsView({
     <div className="space-y-4">
       <div className="reveal-controls flex flex-wrap items-center justify-between gap-3 gap-y-2">
         <div className="flex items-center gap-3">
-          <p className="text-xs tabular-nums text-muted-foreground">
-            {count} {tab === 'projects' ? 'project' : 'template'}
-            {count === 1 ? '' : 's'}
-          </p>
+          <CountPill count={count} noun={tab === 'projects' ? 'project' : 'template'} />
           <div className="flex items-center gap-1.5">
             {TABS.map((t) => (
               <button
