@@ -37,6 +37,11 @@ describe('Layout', () => {
     expect(screen.getByText('page body')).toBeInTheDocument();
   });
 
+  it('renders a Download call-to-action linking to getting-started', () => {
+    renderLayout();
+    expect(screen.getByRole('link', { name: 'Download' })).toHaveAttribute('href', '/getting-started');
+  });
+
   it('renders the theme switcher (a @midnite/ui Tabs primitive)', () => {
     renderLayout();
     expect(screen.getByRole('tablist', { name: 'Theme' })).toBeInTheDocument();
