@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { LayoutGrid, List, ListTree, Plus, Workflow } from 'lucide-react';
 import type { WorkflowSummary } from '@midnite/shared';
+import { CountPill } from '@/components/count-pill';
 import { Button } from '@/components/ui/button';
 import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-action-bar';
 import { EmptyState } from '@/components/empty-state';
@@ -168,9 +169,7 @@ export function WorkflowsView({ initial }: { initial: WorkflowSummary[] }) {
   return (
     <div className="space-y-4">
       <div className="reveal-controls flex flex-wrap items-center justify-between gap-3 gap-y-2">
-        <p className="text-xs tabular-nums text-muted-foreground">
-          {filtered.length} workflow{filtered.length === 1 ? '' : 's'}
-        </p>
+        <CountPill count={filtered.length} noun="workflow" />
         <div className="flex items-center gap-2">
           <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
             <Button

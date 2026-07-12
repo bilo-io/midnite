@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { CirclePile, LayoutGrid, List, ListTree, Plus, type LucideIcon } from 'lucide-react';
 import type { Council } from '@midnite/shared';
+import { CountPill } from '@/components/count-pill';
 import { Button } from '@/components/ui/button';
 import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-action-bar';
 import { EmptyState } from '@/components/empty-state';
@@ -125,9 +126,7 @@ export function CouncilsView({ initial }: { initial: Council[] }) {
   return (
     <div className="space-y-4">
       <div className="reveal-controls flex items-center justify-between gap-3">
-        <p className="text-xs tabular-nums text-muted-foreground">
-          {filtered.length} council{filtered.length === 1 ? '' : 's'}
-        </p>
+        <CountPill count={filtered.length} noun="council" />
         <div className="flex items-center gap-2">
           <div className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/40 p-0.5">
             {VIEW_OPTIONS.map(({ value, label, Icon }) => (

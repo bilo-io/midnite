@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 export type ProjectTagInfo = { tag: string; color: string };
 
 const KIND_LABELS: Record<NonNullable<TaskSummary['kind']>, string> = {
-  bug: 'Bug',
+  bug: 'Bugfix',
   feature: 'Feature',
   question: 'Question',
   chore: 'Chore',

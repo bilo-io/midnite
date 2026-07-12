@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { BrainCircuit, LayoutGrid, List, ListTree, Plus } from 'lucide-react';
 import type { Memory, Project } from '@midnite/shared';
+import { CountPill } from '@/components/count-pill';
 import { Button } from '@/components/ui/button';
 import { BulkActionBar, BULK_COLORS, type BulkAction } from '@/components/bulk-action-bar';
 import { EmptyState } from '@/components/empty-state';
@@ -175,9 +176,7 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
     <div className="space-y-4">
       <div className="reveal-controls flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <p className="shrink-0 text-xs tabular-nums text-muted-foreground">
-            {filtered.length} memor{filtered.length === 1 ? 'y' : 'ies'}
-          </p>
+          <CountPill count={filtered.length} noun="memory" />
           <FilterPills options={scopeOptions} paramKey="scope" allLabel="All scopes" />
         </div>
         <div className="flex shrink-0 items-center gap-2">

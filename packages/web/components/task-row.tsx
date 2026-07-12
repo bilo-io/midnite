@@ -8,7 +8,7 @@ import { statusLabel, statusHueVar } from '@/components/task-columns';
 import { cn } from '@/lib/utils';
 
 const KIND_LABELS: Record<NonNullable<TaskSummary['kind']>, string> = {
-  bug: 'Bug',
+  bug: 'Bugfix',
   feature: 'Feature',
   question: 'Question',
   chore: 'Chore',
@@ -50,35 +50,51 @@ export function TaskRow({
   const interactive = Boolean(onSelect);
   const selectable = Boolean(onToggleSelect);
 
+  // The leading badge sits at the far left of the row (after the checkbox) on sm+,
+  // in a fixed-width cell so it forms an aligned column across rows and accordion
+  // groups. It's the STATUS where rows aren't grouped by it (Projects tree), else
+  // the task KIND (Tasks list/table). `sm:order-first` pulls it ahead of the title
+  // without reordering the DOM, so the mobile two-line card layout is untouched.
+  // `sm:w-24` = wide enough for the longest label ("Question" / "In progress").
+  const kindBadge = (
+    <span
+      className={cn(
+        'inline-flex shrink-0 items-center gap-1.5 rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider',
+        // Tasks list/table: kind is the leading, fixed-width column. Projects tree
+        // (showStatus) leads with status instead, so kind stays an intrinsic chip.
+        !showStatus && 'sm:order-first sm:w-24',
+      )}
+      style={{ background: 'hsl(var(--kind-hue) / 0.12)', color: 'hsl(var(--kind-hue))' }}
+    >
+      <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: 'hsl(var(--kind-hue))' }} />
+      {KIND_LABELS[kind]}
+    </span>
+  );
+  const statusBadge = showStatus ? (
+    <span
+      className="inline-flex shrink-0 items-center gap-1.5 text-[11px] text-muted-foreground sm:order-first sm:w-24"
+      style={{ ['--st-hue' as string]: `var(${statusHueVar(task.status)})` }}
+    >
+      <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: 'hsl(var(--st-hue))' }} />
+      {statusLabel(task.status)}
+    </span>
+  ) : null;
+
   // On mobile (< sm): two-line card layout — title on line 1, kind + meta on line 2.
-  // On sm+: single-line row layout as before.
+  // On sm+: single-line row layout, with the leading badge pulled far-left.
   const body = (
     <>
       {/* Line 1: title (always full-width on mobile) */}
       <span className="min-w-0 truncate text-sm font-medium sm:flex-1">{task.title}</span>
       {/* Line 2 on mobile / inline chips on sm+: kind + project + status + blocked */}
       <span className="flex shrink-0 flex-wrap items-center gap-1.5 sm:contents">
-        <span
-          className="inline-flex shrink-0 items-center gap-1.5 rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider"
-          style={{ background: 'hsl(var(--kind-hue) / 0.12)', color: 'hsl(var(--kind-hue))' }}
-        >
-          <span aria-hidden className="h-1.5 w-1.5 rounded-full" style={{ background: 'hsl(var(--kind-hue))' }} />
-          {KIND_LABELS[kind]}
-        </span>
+        {kindBadge}
         {task.repo && (
           <span className="hidden shrink-0 truncate text-xs text-muted-foreground sm:inline">{task.repo}</span>
         )}
         {project && <ProjectTag tag={project.tag} color={project.color} className="shrink-0" />}
         {(blockedBy ?? 0) > 0 ? <BlockedBadge count={blockedBy ?? 0} /> : null}
-        {showStatus && (
-          <span
-            className="inline-flex shrink-0 items-center gap-1.5 text-[11px] text-muted-foreground"
-            style={{ ['--st-hue' as string]: `var(${statusHueVar(task.status)})` }}
-          >
-            <span aria-hidden className="h-1.5 w-1.5 rounded-full" style={{ background: 'hsl(var(--st-hue))' }} />
-            {statusLabel(task.status)}
-          </span>
-        )}
+        {statusBadge}
       </span>
     </>
   );

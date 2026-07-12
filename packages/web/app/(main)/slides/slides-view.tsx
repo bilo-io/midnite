@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { LayoutGrid, List, Plus, Presentation, Search, type LucideIcon } from 'lucide-react';
+import { CountPill } from '@/components/count-pill';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { StyledSelect } from '@/components/ui/styled-select';
@@ -129,10 +130,10 @@ export function SlidesView() {
         </Link>
       </div>
 
-      <p className="text-xs tabular-nums text-muted-foreground">
-        {decks.length} deck{decks.length === 1 ? '' : 's'}
-        {query && filtered.length !== decks.length ? ` · ${filtered.length} matching` : ''}
-      </p>
+      <div className="flex items-center gap-2 text-xs tabular-nums text-muted-foreground">
+        <CountPill count={decks.length} noun="deck" />
+        {query && filtered.length !== decks.length ? <span>· {filtered.length} matching</span> : null}
+      </div>
 
       {filtered.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border/60 bg-card/20 px-6 py-12 text-center text-sm text-muted-foreground">
