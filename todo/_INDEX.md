@@ -28,6 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
+| [66 · Floating assistant menu](phase-66-floating-assistant-menu.md) | ◻ TODO | 0/27 | `░░░░░░░░░░` | 0% | — | A B C D E F |
 | [65 · Memory workspace](phase-65-memory-workspace.md) | ✅ DONE | 33/33 | `██████████` | 100% | — | — |
 | [64 · Office presence](phase-64-office-presence.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
@@ -97,8 +98,10 @@
 
 **Headline:** phases **0–61 are complete** (incl. Fable analysis/observability **60/61** and
 performance/scale **57** — its Verification pass signed off 2026-07-11), plus the office pair
-**63/64**. The **only live frontier** is **62** (Fable-Digest): every lettered theme A–H has
-landed (PRs through #404); only the phase **Verification checklist** remains. (An *earlier* Phase 42 was a
+**63/64**. The live frontier is **62** (Fable-Digest): every lettered theme A–H has
+landed (PRs through #404); only the phase **Verification checklist** remains. Newly planned:
+**66** (Floating assistant menu) — a logo-anchored FAB assistant (docs/guide/chat/agent) that
+overturns Phase 59's "no FAB", not yet started. (An *earlier* Phase 42 was a
 parallel restatement of Phase 40, folded into Phase 40 Theme G and removed 2026-06-27; the
 current 42 & 43 are new, unrelated phases — two brainstorm sessions ran concurrently, so the
 preference-sync plan took the next free number, 43.)
@@ -113,6 +116,15 @@ shortcut). The 2 contextual-command boxes are now **un-deferred and folded into 
 Every phase's lettered themes with a status icon + one-liner, so you can gauge scope and pick
 work without opening the phase doc. Status: `✅` done · `🔄` WIP (claimed) · `◻` TODO · `◐`
 partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
+
+### [Phase 66 — Floating assistant menu](phase-66-floating-assistant-menu.md)
+*A logo-anchored floating action button (hover → gradient border + glow) that expands into a glowing gradient-bordered panel: Docs (current page's docs), Guide (replayable per-route tour), Chat to board (relocated from the sidenav), Agent (fleet Q&A with markdown + inline midnite components). Overturns Phase 59's "no FAB"; overwhelmingly `packages/web` + one `@midnite/ui` extraction + one read-only gateway answerer.*
+- ◻ **A** — Assistant shell + logo FAB: hover glow, click-expand glowing panel, coexists w/ ⌘K, mobile variant
+- ◻ **B** — Extract `.gradient-border` glow into a `@midnite/ui` primitive + token; migrate the 3 composers; docs shares it
+- ◻ **C** — Docs deep-link: `pathname → docs-slug` map → current page's docs; retire the path-less nav Docs button
+- ◻ **D** — Relocate Chat to board: lift `useChatCommand`/`ChatBar` into the panel; drop the sidenav + mobile-nav entry (no engine change)
+- ◻ **E** — Agent chat: compose fleet context → `LlmService` → `AssistantBlock[]` (markdown + zod-validated inline component registry); read-only, fail-soft
+- ◻ **F** — Replayable Guide: lightweight in-house spotlight overlay + per-route step registry (board/session/workflow/memory first)
 
 ### [Phase 65 — Memory workspace](phase-65-memory-workspace.md)
 *Turn the memory modal into a 3-panel `/memory/view?id=` workspace (NotebookLM-style): left sources rail, center doc + chat-to-the-knowledge-base, right Studio that generates artifacts. Sources graduate to an ingested corpus (URL bodies + file uploads); memory becomes THE knowledge notion — project sources retired. Naming stays `memory`; FTS + LlmService reuse, no embeddings.*
