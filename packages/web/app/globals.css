@@ -742,8 +742,18 @@ html[data-no-glass] *::after {
   }
 }
 
+/* Per-pill cascade stagger. `--pill-i` is the pill's index in the row (set inline
+   by the component). The default sweeps left → right: the leftmost pill leads with
+   the largest negative delay (starts furthest into the cycle), so the highlight
+   ripples rightward. `data-shimmer-dir='rtl'` on <html> flips it so the right pill
+   leads instead. 0.4s stagger; the row is 3 pills wide (indices 0–2). */
 .pill-shimmer {
   animation: pill-shimmer 2.4s ease-in-out infinite;
+  animation-delay: calc((var(--pill-i, 0) - 2) * 0.4s);
+}
+
+html[data-shimmer-dir='rtl'] .pill-shimmer {
+  animation-delay: calc(var(--pill-i, 0) * -0.4s);
 }
 
 @media (prefers-reduced-motion: reduce) {

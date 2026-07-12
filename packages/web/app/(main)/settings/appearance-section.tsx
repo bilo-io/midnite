@@ -40,6 +40,8 @@ import {
   MOTION_DEFAULT,
   MOTION_OPTIONS,
   SETTINGS_STORAGE_KEY,
+  SHIMMER_DIRECTION_DEFAULT,
+  SHIMMER_DIRECTION_OPTIONS,
   UI_FONT_DEFAULT,
   UI_FONT_OPTIONS,
   type AccentId,
@@ -49,6 +51,7 @@ import {
   type Density,
   type Motion,
   type NavMode,
+  type ShimmerDirection,
   type UiFont,
   type VisualEffects,
 } from '@/lib/app-settings';
@@ -57,6 +60,7 @@ import {
   applyDensity,
   applyEffects,
   applyMotion,
+  applyShimmerDirection,
   applyUiFont,
 } from '@/lib/apply-appearance';
 import { cn } from '@/lib/utils';
@@ -109,6 +113,10 @@ export function AppearanceSection() {
   const setEffect = (key: keyof VisualEffects, value: boolean) =>
     setSettings((prev) => ({ ...prev, effects: { ...DEFAULT_EFFECTS, ...prev.effects, [key]: value } }));
 
+  const shimmerDirection = settings.shimmerDirection ?? SHIMMER_DIRECTION_DEFAULT;
+  const setShimmerDirection = (next: ShimmerDirection) =>
+    setSettings((prev) => ({ ...prev, shimmerDirection: next }));
+
   const handleReset = () => {
     setSettings(DEFAULT_SETTINGS);
     setPreference('system');
@@ -117,6 +125,7 @@ export function AppearanceSection() {
     applyDensity(DEFAULT_SETTINGS.density);
     applyUiFont(DEFAULT_SETTINGS.uiFont);
     applyEffects(DEFAULT_SETTINGS.effects);
+    applyShimmerDirection(DEFAULT_SETTINGS.shimmerDirection);
   };
 
   return (
@@ -382,6 +391,27 @@ export function AppearanceSection() {
                 />
               </label>
             ))}
+          </div>
+          <div className="border-t border-border/60 pt-4">
+            <SettingRow
+              title="Shimmer cascade"
+              description="Which way the live status-pill shimmer sweeps across the home screen and screensaver."
+            >
+              <Segmented
+                ariaLabel="Shimmer cascade direction"
+                value={shimmerDirection}
+                onChange={setShimmerDirection}
+                options={SHIMMER_DIRECTION_OPTIONS.map((o) => ({
+                  value: o.value,
+                  label: o.label,
+                  title: o.hint,
+                }))}
+                hydrated={hydrated}
+              />
+            </SettingRow>
+            <p className="mt-4 text-xs text-muted-foreground">
+              {SHIMMER_DIRECTION_OPTIONS.find((o) => o.value === shimmerDirection)?.hint}.
+            </p>
           </div>
         </div>
       </Accordion>

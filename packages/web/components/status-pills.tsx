@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import type { SessionStatus } from '@midnite/shared';
 import { getSessions } from '@/lib/api';
@@ -15,10 +15,6 @@ const PILLS: Array<{ status: SessionStatus; label: string }> = [
   { status: 'waiting', label: 'awaiting' },
   { status: 'completed', label: 'complete' },
 ];
-
-// Per-pill offset (negative, so each starts mid-cycle with no startup flash) that
-// staggers the shimmer into a left-to-right cascade across the row.
-const SHIMMER_STAGGER_S = 0.4;
 
 type Counts = Record<SessionStatus, number>;
 
@@ -67,10 +63,14 @@ export function StatusPills({ className }: { className?: string }) {
             <span
               aria-hidden
               className="pill-shimmer pointer-events-none absolute inset-0"
-              style={{
-                background: `linear-gradient(100deg, transparent 38%, hsl(${triple} / 0.42) 50%, transparent 62%)`,
-                animationDelay: `${-(i * SHIMMER_STAGGER_S)}s`,
-              }}
+              // `--pill-i` drives the per-pill cascade stagger + direction in
+              // globals.css (see `.pill-shimmer` / `[data-shimmer-dir]`).
+              style={
+                {
+                  background: `linear-gradient(100deg, transparent 38%, hsl(${triple} / 0.42) 50%, transparent 62%)`,
+                  '--pill-i': i,
+                } as CSSProperties
+              }
             />
             <span
               aria-hidden

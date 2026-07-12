@@ -84,6 +84,13 @@ export const VisualEffectsSchema = z.object({
 });
 export type VisualEffects = z.infer<typeof VisualEffectsSchema>;
 
+/**
+ * Direction the status-pill shimmer cascades across the row: `ltr` (default) leads
+ * with the left pill and sweeps rightward; `rtl` leads with the right pill.
+ */
+export const ShimmerDirectionSchema = z.enum(['ltr', 'rtl']);
+export type ShimmerDirection = z.infer<typeof ShimmerDirectionSchema>;
+
 // ── The synced preferences object ───────────────────────────────────────────────
 
 export const UserPreferencesSchema = z.object({
@@ -96,6 +103,12 @@ export const UserPreferencesSchema = z.object({
   density: DensitySchema.default('comfortable'),
   uiFont: UiFontSchema.default('system'),
   effects: VisualEffectsSchema.default(() => VisualEffectsSchema.parse({})),
+  /**
+   * Which way the live status-pill shimmer cascades. `ltr` (default) leads with
+   * the left pill; `rtl` leads with the right. Additive — existing blobs default
+   * to `ltr`.
+   */
+  shimmerDirection: ShimmerDirectionSchema.default('ltr'),
   /** Seconds of inactivity before the screensaver opens. */
   inactivityTimeoutS: z.number().int().positive().default(30),
   /** Seconds a cycling phrase is shown before the next is typed. */
