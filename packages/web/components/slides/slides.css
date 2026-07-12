@@ -197,7 +197,11 @@
 .slides-scope .dtrack.v { flex-direction: column; }
 .slides-scope .dtrack.h { flex-direction: row; }
 .slides-scope .dclip { position: relative; flex: 0 0 auto; overflow: visible; }
-.slides-scope .dtrack.windowed.v .dclip { clip-path: inset(0 -100vw 0 0); }
+/* Vertical windowing clips only top/bottom (to hide out-of-window dots); left and
+ * right stay open so the centered active dot's scale + glow and the attached
+ * sub-rail are never culled. (Clipping the left — as a one-sided inset did —
+ * sliced the active dot in half.) */
+.slides-scope .dtrack.windowed.v .dclip { clip-path: inset(0 -100vw 0 -100vw); }
 .slides-scope .dtrack.windowed.h .dclip { clip-path: inset(-40px 0 -40px 0); }
 .slides-scope .dinner {
   display: flex;
@@ -241,11 +245,17 @@
   line-height: 1;
   transition: color 0.25s var(--s-ease), opacity 0.25s var(--s-ease);
 }
-.slides-scope .dtrack.v .dchev { margin: 1px 0; }
+.slides-scope .dtrack.v .dchev { margin: 1px 0; position: relative; }
 .slides-scope .dtrack.h .dchev { margin: 0 1px; }
 .slides-scope .dchev:hover:not(:disabled) { color: var(--s-accent); }
 .slides-scope .dchev:disabled { opacity: 0.28; cursor: default; }
 .slides-scope .dchev .dcount { min-width: 0.62rem; text-align: center; letter-spacing: -0.02em; }
+/* On the vertical rail, take the hidden-count digit out of the chevron's flow and
+ * float it beside the arrow, so the arrow (the only remaining flex child) centers
+ * on the dot column instead of being pushed off-axis by the digit's width. */
+.slides-scope .dtrack.v .dchev .dcount { position: absolute; min-width: 0; }
+.slides-scope .dtrack.v > .dchev:first-child .dcount { left: 100%; margin-left: 3px; }
+.slides-scope .dtrack.v > .dchev:last-child .dcount { right: 100%; margin-right: 3px; }
 .slides-scope .dchev svg { display: block; }
 .slides-scope .subrail {
   position: absolute;
