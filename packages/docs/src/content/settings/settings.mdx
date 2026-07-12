@@ -1,0 +1,63 @@
+---
+title: Settings
+section: Settings
+order: 0
+---
+
+import { Screenshot } from '../../components/screenshot';
+import settingsShot from '../assets/settings.png';
+
+# Settings
+
+## What it is
+
+The workspace **configuration hub**. Unlike the features above it, Settings is
+*not* a toggleable feature — it must always be reachable so that a feature you've
+turned off can be turned back on. Its left-hand switcher groups settings into
+**General**, **Workspace**, **Account**, and **Security**.
+
+## Purpose
+
+Settings is where you shape how midnite behaves: which agent runs your tasks, which
+repos are available, how the app looks, who's on your team, and what safety rails
+apply. It's the one screen you can always get to, by design.
+
+<Screenshot src={settingsShot} alt="Settings" caption="The Settings hub — grouped configuration." />
+
+## General
+
+| Page | What you configure |
+| --- | --- |
+| **Appearance** | Theme (light / dark / system / time), and the PWA install affordance. |
+
+## Workspace
+
+| Page | What you configure |
+| --- | --- |
+| **Agents** | The primary agent, sub-agents (create / edit / delete), and which CLI / provider runs. |
+| **Data** | Backup, export, and import of the workspace store. |
+| **Editor** | Editor preferences. |
+| **Repos** | The git repositories tasks can run against. |
+| **Integrations** | Inbound sources and outbound webhooks. |
+| **System** | The **feature on/off toggles** that drive the sidenav — turn any of the features in this documentation on or off here. |
+
+## Account
+
+| Page | What you configure |
+| --- | --- |
+| **API Tokens** | Service tokens for programmatic / CLI access. |
+| **Profile** | Your display profile. |
+| **Team** | Team members, roles, and invites. |
+| **User** | Your user account and password. |
+
+## Security
+
+| Page | What you configure |
+| --- | --- |
+| **Safety** | Autonomy mode, approval rules, and guardrail caps. |
+| **Credentials** | Stored credentials (e.g. workflow OAuth / secrets). |
+| **Screen lock** | The local screen-lock. |
+| **Security** | Security preferences. |
+
+> Settings pages live under `/settings/*`. The **System** page is the counterpart
+> to this documentation: every feature page here corresponds to a toggle there.

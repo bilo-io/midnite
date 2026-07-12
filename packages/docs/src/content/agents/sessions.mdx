@@ -1,0 +1,53 @@
+---
+title: Sessions
+section: Agents
+order: 1
+---
+
+import { Screenshot } from '../../components/screenshot';
+import sessionsShot from '../assets/sessions.png';
+
+# Sessions
+
+## What it is
+
+A **session** is one agent run with an embedded terminal. There's one session per
+task, and its status follows the task's. Sessions list both **live** runs (with a
+live terminal you can watch) and **past** runs (with a full transcript).
+
+## Purpose
+
+Sessions are your window into what an agent is actually doing. Open the live
+terminal to watch a run in real time, read the transcript afterwards to see every
+step, and archive the ones worth keeping. It's the detail layer beneath the board.
+
+<Screenshot src={sessionsShot} alt="Sessions list" caption="The Sessions screen — live and past agent runs." />
+
+## Creating one
+
+Sessions are usually created for you when a task starts, but you can also launch
+one directly.
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Launch a session | **New session** → launch modal | session launch |
+
+## Listing & viewing
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| List sessions | Sessions screen | `getSessions` |
+| Open a session | Click it | `getSession` → `/sessions/view` |
+| Open the live terminal | **Terminal** on a live session | `mintTerminalToken` |
+| Read the transcript | **Transcript** on a session | `getSessionTranscript` |
+
+## Managing
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Archive | Session menu → **Archive** | `archiveSession` |
+| Unarchive | Session menu → **Unarchive** | `unarchiveSession` |
+| Delete | Session menu → **Delete** | `deleteSession` |
+
+> The live terminal is a real PTY stream (xterm.js). The short-lived token minted
+> by `mintTerminalToken` authorises the WebSocket connection to it.

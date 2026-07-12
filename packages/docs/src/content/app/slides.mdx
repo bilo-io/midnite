@@ -1,0 +1,58 @@
+---
+title: Slides
+section: App
+order: 2
+---
+
+import { Screenshot } from '../../components/screenshot';
+import slidesShot from '../assets/slides.png';
+
+# Slides
+
+## What it is
+
+A lightweight deck authoring tool. You write slides in **Markdown** and present
+them full-screen with typewriter-style reveals. Decks are stored **locally in your
+browser** (not on the gateway), so they travel with the device rather than the
+workspace.
+
+## Purpose
+
+Slides is for quickly turning notes or a plan into a presentable deck — a standup
+update, a design walkthrough, a demo script — without leaving midnite or reaching
+for a separate slide tool. Because storage is browser-local, it's ideal for
+personal, ephemeral decks.
+
+<Screenshot src={slidesShot} alt="Slides library" caption="The Slides screen — your local deck library." />
+
+## Creating one
+
+Click **New deck** to open the editor (`/slides/new`), then write Markdown; each
+top-level break becomes a slide.
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Create a deck | **New deck** → author Markdown | `use-decks` (browser localStorage) |
+
+## Listing & viewing
+
+The library toggles between **grid** and **list** views, supports sorting, and
+filters by project.
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Browse decks | Slides screen (grid / list toggle) | `use-decks` |
+| Sort / filter by project | Header controls | `use-decks` |
+
+## Managing
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Edit a deck | Open → **Edit** (`/slides/edit`) | `use-decks` |
+| Present | **Present** (`/slides/present`) | typewriter reveal |
+| Duplicate | Deck menu → **Duplicate** | `use-decks` |
+| Delete | Deck menu → **Delete** | `use-decks` |
+
+> Because decks live in browser storage, clearing site data removes them and they
+> don't sync across devices. Export the Markdown elsewhere if you need a durable
+> copy.

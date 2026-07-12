@@ -1,0 +1,47 @@
+---
+title: Media
+section: Agents
+order: 3
+---
+
+import { Screenshot } from '../../components/screenshot';
+import mediaShot from '../assets/media.png';
+
+# Media
+
+## What it is
+
+Your **media library** — generated images and other media, browsable in one place
+and filterable by project and type. Each item records the prompt and settings it
+was generated from.
+
+## Purpose
+
+Media is where AI-generated visuals live so they're not scattered across sessions.
+Generate an image from a prompt, keep the ones worth reusing, and pull them into
+projects or decks later.
+
+<Screenshot src={mediaShot} alt="Media library" caption="The Media screen — your generated media." />
+
+## Creating one
+
+Click **New media**, pick a type, and generate from a prompt.
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Create / generate media | **New media** → type picker → generate | `createMedia` |
+
+## Listing & viewing
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| List media | Media screen | `listMedia` |
+| Filter by project & type | Header filters | `listMedia` |
+| Open an item | Click it | `getMedia` → `/media/view` |
+
+## Managing
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Update | Open → **Edit** | `updateMedia` |
+| Delete | Item menu → **Delete** | `deleteMedia` |

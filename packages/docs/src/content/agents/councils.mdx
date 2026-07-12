@@ -1,0 +1,71 @@
+---
+title: Councils
+section: Agents
+order: 2
+---
+
+import { Screenshot } from '../../components/screenshot';
+import councilsShot from '../assets/councils.png';
+
+# Councils
+
+## What it is
+
+A **council** is a panel of AI **members**, each with a fixed role, that all answer
+the same prompt — then a **synthesizer** distils their answers into one result.
+Councils come in formats like brainstorm, debate, analyse, or a custom shape you
+define.
+
+## Purpose
+
+Some questions are better answered by several perspectives than one. A council
+runs those perspectives in parallel and then reconciles them, so you get a
+considered synthesis rather than a single agent's take — useful for design
+decisions, trade-off analysis, and structured brainstorming.
+
+<Screenshot src={councilsShot} alt="Councils" caption="The Councils screen — panels and their runs." />
+
+## Creating one
+
+Click **New council**, pick a format, and add members with their roles.
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Create a council | **New council** → create modal | `createCouncil` |
+| Custom output format | **Custom format** modal | custom-format config |
+
+## Listing & viewing
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| List councils | Councils screen | `getCouncils` |
+| Open one | Click it | `getCouncil` → `/councils/view` |
+
+## Managing
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Edit | Open → **Edit** | `updateCouncil` |
+| Delete | Council menu → **Delete** | `deleteCouncil` |
+
+## Members
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Add a member | Participants panel → **Add** | `createCouncilMember` |
+| Edit a member | Member menu → **Edit** | `updateCouncilMember` |
+| Reorder members | Drag in the panel | `reorderCouncilMembers` |
+| Remove a member | Member menu → **Remove** | `deleteCouncilMember` |
+
+## Runs
+
+Start a run with a topic and watch each member answer, then the synthesis. You can
+skip or retry an individual member, or re-run just the synthesis.
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Start a run | Topic composer → **Run** | `startCouncilRun` |
+| List / open runs | Runs panel | `listCouncilRuns` / `getCouncilRun` |
+| Skip / retry a member | Member row in the run thread | `skipCouncilRunMember` / `retryCouncilRunMember` |
+| Retry the synthesis | Synthesis → **Retry** | `retryCouncilSynthesis` |
+| Export a run as Markdown | Run menu → **Export** | `exportCouncilRunMarkdown` |

@@ -22,20 +22,30 @@ export type NavGroup = { section: string; items: NavItem[] };
 
 /**
  * Section display order in the sidebar; unknown sections trail, alphabetically.
- * The design-system sections (Overview · Foundations · Components) lead, then the
- * product / developer docs (Guides · Architecture · Reference, from the repo's
- * real markdown — see content/product-docs.tsx).
+ * The design-system sections (Introduction · Foundations · Components) lead, then
+ * the product-feature sections that mirror the web app's own sidenav grouping
+ * (App · Agents · Overview · Settings — see content/app|agents|overview|settings),
+ * then the developer docs (Guides · Architecture · Reference, from the repo's real
+ * markdown — see content/product-docs.tsx).
+ *
+ * Note: the design-system intro is `Introduction`, not `Overview`, because the web
+ * app's fleet-views category is itself named `Overview` and we mirror it verbatim;
+ * `buildNav` groups by section name, so the two must not collide.
  */
 export const SECTION_ORDER = [
-  'Overview',
+  'Introduction',
   'Foundations',
   'Components',
+  'App',
+  'Agents',
+  'Overview',
+  'Settings',
   'Guides',
   'Architecture',
   'Reference',
 ] as const;
 
-const DEFAULT_SECTION = 'Overview';
+const DEFAULT_SECTION = 'Introduction';
 const DEFAULT_ORDER = 100;
 
 /**

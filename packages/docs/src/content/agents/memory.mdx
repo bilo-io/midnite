@@ -1,0 +1,69 @@
+---
+title: Memory
+section: Agents
+order: 0
+---
+
+import { Screenshot } from '../../components/screenshot';
+import memoryShot from '../assets/memory.png';
+
+# Memory
+
+## What it is
+
+A **memory** is a body of long-term knowledge that gets injected into your agents'
+prompts. A memory holds ordered **sources** (pasted text, uploaded files, links)
+that are ingested and retrievable, plus generated **artifacts**. Memories can be
+global or scoped to a project.
+
+## Purpose
+
+Agents start each session fresh. Memory is how you give them durable context —
+conventions, domain facts, a house style — so they don't have to rediscover it
+every run. You can also **chat with a memory** to interrogate what it knows before
+wiring it into agents.
+
+<Screenshot src={memoryShot} alt="Memory bases" caption="The Memory screen — your knowledge bases." />
+
+## Creating one
+
+Click **New memory**, name it, choose its scope, then add sources.
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Create a memory | **New memory** → fill the modal | `createMemory` |
+
+## Listing & viewing
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| List memories | Memory screen | `getMemories` |
+| Open one | Click it | `getMemory` → `/memory/view` |
+
+## Managing
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Edit | Open → **Edit** | `updateMemory` |
+| Delete | Memory menu → **Delete** | `deleteMemory` |
+
+## Sources
+
+Sources are the raw material a memory ingests. Add several, reorder them, upload
+files, and re-ingest when the underlying content changes.
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Add a source | Sources panel → **Add** | `addMemorySource` |
+| Upload a file | Sources panel → **Upload** | `uploadMemorySourceFile` |
+| Reorder sources | Drag in the panel | `reorderMemorySources` |
+| Re-ingest a source | Source menu → **Re-ingest** | `reingestMemorySource` |
+| Remove a source | Source menu → **Remove** | `removeMemorySource` |
+
+## Artifacts & chat
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Generate an artifact | Artifacts panel → **Generate** | `generateMemoryArtifact` |
+| Delete an artifact | Artifact menu → **Delete** | `deleteMemoryArtifact` |
+| Chat with the memory | Chat panel | `getMemoryChat` / `postMemoryChat` |

@@ -1,0 +1,36 @@
+---
+title: Office
+section: Overview
+order: 1
+---
+
+import { Screenshot } from '../../components/screenshot';
+import officeShot from '../assets/office.png';
+
+# Office
+
+## What it is
+
+A **pixel-art floor** of your agents. Each agent has a desk; the floor is driven by
+live presence, so you can see who's active and walk up to a desk to call or
+message them. Office is **desktop-only** — it's gated behind the desktop breakpoint.
+
+## Purpose
+
+Office is the playful, spatial view of your fleet. Instead of a list, you get a
+room you can move around; stepping up to a desk is a quick way to reach a specific
+agent. It turns "which agents are running" into something you can see at a glance.
+
+<Screenshot src={officeShot} alt="Office floor" caption="The Office — a pixel-art floor of your agents." />
+
+## Using it
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Walk the floor | Move around the room | presence-driven view |
+| Switch views | View selector (`?view=`) | office views |
+| Call / message an agent | Step up to its desk | presence + session |
+| See who's active | Live presence on the floor | `getPresenceSummary` |
+
+> Office requires a desktop-width viewport; on smaller screens it's hidden behind
+> the desktop-only gate.

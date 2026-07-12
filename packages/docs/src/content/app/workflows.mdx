@@ -1,0 +1,72 @@
+---
+title: Workflows
+section: App
+order: 3
+---
+
+import { Screenshot } from '../../components/screenshot';
+import workflowsShot from '../assets/workflows.png';
+
+# Workflows
+
+## What it is
+
+A **workflow** is a multi-step automation built on a visual canvas. Nodes wire
+together into a graph that can run on a **schedule**, be triggered by an inbound
+**webhook**, or launched **on demand**. Each run is recorded with its output so you
+can inspect what happened.
+
+## Purpose
+
+Workflows let you automate recurring agent and data work — enrich a task, poll a
+data source, fan out to several steps, post a result — without hand-running it
+each time. The **Templates** gallery turns a proven workflow into something you (or
+others) can install in one click.
+
+<Screenshot src={workflowsShot} alt="Workflows canvas" caption="The Workflows editor — nodes on the canvas." />
+
+## Creating one
+
+Click **New workflow** to create one, then open the canvas editor to add and wire
+nodes.
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Create a workflow | **New workflow** → name it | `createWorkflow` |
+| Edit on the canvas | Open → editor (`/workflows/edit`) | `updateWorkflow` |
+
+## Listing & viewing
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| List workflows | Workflows screen | `listWorkflows` |
+| Open one | Click it | `getWorkflow` |
+
+## Managing
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Update | Edit on the canvas → save | `updateWorkflow` |
+| Duplicate | Workflow menu → **Duplicate** | `duplicateWorkflow` |
+| Delete | Workflow menu → **Delete** | `deleteWorkflow` |
+| Rotate the webhook secret | Trigger settings → **Rotate** | `rotateWorkflowWebhook` |
+
+## Running & run history
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Run now | **Run** on the workflow | `runWorkflow` |
+| View run history | Run-history panel | `listWorkflowRuns` |
+| Inspect a run's output | Open a run → output panel | `getWorkflowRun` |
+| Export a run as Markdown | Run menu → **Export** | `exportWorkflowRunMarkdown` |
+
+## Templates
+
+The **Templates** gallery (`/workflows/templates`) publishes reusable workflows.
+Installing one clones it into your workspace, prompting for any credential slots
+it needs.
+
+| Action | How | Behind the scenes |
+| --- | --- | --- |
+| Install a template | Gallery → **Install** | `installWorkflowTemplate` |
+| Publish a workflow as a template | **Create template from workflow** | `createWorkflowTemplateFromWorkflow` |
