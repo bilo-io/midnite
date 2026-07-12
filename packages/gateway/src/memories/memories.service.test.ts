@@ -298,6 +298,60 @@ describe('MemoriesService', () => {
     );
   });
 
+  it('returns a source\'s extracted text and ingest status', async () => {
+    const repo = new InMemoryMemoriesRepo();
+    const service = new MemoriesService(repo);
+    const memory = await service.createMemory({ title: 'm', content: '' });
+    repo.insertSource({
+      id: 's1',
+      memoryId: memory.id,
+      url: 'https://a.example/1',
+      kind: 'link',
+      createdAt: new Date().toISOString(),
+      position: 0,
+      extractedText: 'the scraped body',
+      ingestState: 'ready',
+      byteSize: 16,
+    });
+
+    const content = service.getSourceContent(memory.id, 's1');
+    expect(content).toMatchObject({
+      id: 's1',
+      ingestState: 'ready',
+      ingestError: null,
+      text: 'the scraped body',
+      byteSize: 16,
+    });
+  });
+
+  it('returns null text and the error for a failed source', async () => {
+    const repo = new InMemoryMemoriesRepo();
+    const service = new MemoriesService(repo);
+    const memory = await service.createMemory({ title: 'm', content: '' });
+    repo.insertSource({
+      id: 's1',
+      memoryId: memory.id,
+      url: 'https://a.example/1',
+      kind: 'link',
+      createdAt: new Date().toISOString(),
+      position: 0,
+      ingestState: 'failed',
+      ingestError: 'fetch timed out',
+    });
+
+    const content = service.getSourceContent(memory.id, 's1');
+    expect(content.text).toBeNull();
+    expect(content.ingestState).toBe('failed');
+    expect(content.ingestError).toBe('fetch timed out');
+  });
+
+  it('throws for an unknown memory or source when fetching content', async () => {
+    const service = new MemoriesService(new InMemoryMemoriesRepo());
+    const memory = await service.createMemory({ title: 'm', content: '' });
+    expect(() => service.getSourceContent('nope', 's1')).toThrow(NotFoundException);
+    expect(() => service.getSourceContent(memory.id, 'nope')).toThrow(NotFoundException);
+  });
+
   it('listScoped returns global plus the project memories', async () => {
     const service = new MemoriesService(new InMemoryMemoriesRepo());
     const g = await service.createMemory({ title: 'global', content: '' });

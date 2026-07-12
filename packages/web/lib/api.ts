@@ -121,6 +121,7 @@ import {
   HeartbeatRunsResponseSchema,
   MemoriesResponseSchema,
   MemoryResponseSchema,
+  MemorySourceContentResponseSchema,
   MemoryArtifactResponseSchema,
   MemoryArtifactsResponseSchema,
   MemoryChatHistoryResponseSchema,
@@ -197,6 +198,7 @@ import {
   type HeartbeatRun,
   type LlmProvider,
   type Memory,
+  type MemorySourceContent,
   type MemoryArtifact,
   type MemoryArtifactKind,
   type MemoryChatMessage,
@@ -1377,6 +1379,19 @@ export async function reingestMemorySource(id: string, sourceId: string): Promis
     MemoryResponseSchema,
   );
   return memory;
+}
+
+/** A memory source's extracted/scraped text + ingest status (for the detail view). */
+export async function getMemorySourceContent(
+  id: string,
+  sourceId: string,
+): Promise<MemorySourceContent> {
+  const { content } = await fetchJson(
+    `/memories/${encodeURIComponent(id)}/sources/${encodeURIComponent(sourceId)}/content`,
+    undefined,
+    MemorySourceContentResponseSchema,
+  );
+  return content;
 }
 
 // ── Memory Studio artifacts (Phase 65 D) ──────────────────────────

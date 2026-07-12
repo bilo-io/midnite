@@ -18,6 +18,7 @@ import {
   UpdateMemoryRequestSchema,
   type MemoriesResponse,
   type MemoryResponse,
+  type MemorySourceContentResponse,
 } from '@midnite/shared';
 import { MemoriesService, type MemoryFileUpload } from './memories.service';
 
@@ -83,6 +84,16 @@ export class MemoriesController {
   ): Promise<MemoryResponse> {
     const upload = await readFileUpload(req);
     return { memory: await this.service.addFileSource(id, upload) };
+  }
+
+  // Static suffix after `:sourceId` — a source's extracted/scraped text + ingest
+  // status for the detail view's "Text" tab (Phase 65 B text is server-side).
+  @Get(':id/sources/:sourceId/content')
+  getSourceContent(
+    @Param('id') id: string,
+    @Param('sourceId') sourceId: string,
+  ): MemorySourceContentResponse {
+    return { content: this.service.getSourceContent(id, sourceId) };
   }
 
   @Post(':id/sources/:sourceId/reingest')

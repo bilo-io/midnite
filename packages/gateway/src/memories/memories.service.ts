@@ -14,6 +14,7 @@ import {
   detectSourceKind,
   type CreateMemoryRequest,
   type Memory,
+  type MemorySourceContent,
   type UpdateMemoryRequest,
 } from '@midnite/shared';
 import { fetchSourceMetadata } from '../projects/lib/opengraph';
@@ -75,6 +76,26 @@ export class MemoriesService {
         text: s.extractedText ?? '',
       }));
     return { id: memory.id, title: memory.title, content: memory.content, sources };
+  }
+
+  /**
+   * A single source's extracted/scraped text plus its ingest status (Phase 65 B
+   * stores the text server-side; the client `MemorySource` omits it). Powers the
+   * source detail view's "Text" tab. Throws NotFound if the memory or source is gone.
+   */
+  getSourceContent(memoryId: string, sourceId: string): MemorySourceContent {
+    this.assertExists(memoryId);
+    const row = this.repo.getSource(memoryId, sourceId);
+    if (!row) throw new NotFoundException(`source ${sourceId} not found`);
+    return {
+      id: row.id,
+      ingestState: (row.ingestState as MemorySourceContent['ingestState']) ?? null,
+      ingestError: row.ingestError ?? null,
+      mimeType: row.mimeType ?? undefined,
+      fileName: row.fileName ?? undefined,
+      byteSize: row.byteSize ?? undefined,
+      text: row.extractedText ?? null,
+    };
   }
 
   async createMemory(req: CreateMemoryRequest): Promise<Memory> {

@@ -4,6 +4,7 @@ import {
   MAX_MEMORY_TITLE,
   MAX_SOURCES_PER_MEMORY,
   MemorySchema,
+  MemorySourceContentSchema,
   UpdateMemoryRequestSchema,
 } from './memory.js';
 
@@ -100,5 +101,41 @@ describe('CreateMemoryRequestSchema', () => {
 describe('UpdateMemoryRequestSchema', () => {
   it('allows explicit null projectId to re-scope to global', () => {
     expect(UpdateMemoryRequestSchema.parse({ projectId: null }).projectId).toBeNull();
+  });
+});
+
+describe('MemorySourceContentSchema', () => {
+  it('round-trips ready content with extracted text', () => {
+    const content = {
+      id: 's1',
+      ingestState: 'ready' as const,
+      ingestError: null,
+      mimeType: 'text/plain',
+      fileName: 'notes.txt',
+      byteSize: 42,
+      text: 'the scraped body',
+    };
+    expect(MemorySourceContentSchema.parse(content)).toEqual(content);
+  });
+
+  it('accepts null text (never ingested / no text extracted)', () => {
+    const parsed = MemorySourceContentSchema.parse({
+      id: 's1',
+      ingestState: null,
+      ingestError: null,
+      text: null,
+    });
+    expect(parsed.text).toBeNull();
+    expect(parsed.ingestState).toBeNull();
+  });
+
+  it('carries the ingest error on a failed source', () => {
+    const parsed = MemorySourceContentSchema.parse({
+      id: 's1',
+      ingestState: 'failed' as const,
+      ingestError: 'fetch timed out',
+      text: null,
+    });
+    expect(parsed.ingestError).toBe('fetch timed out');
   });
 });

@@ -19,6 +19,12 @@ function build(overrides: Partial<Record<keyof MemoriesService, unknown>> = {}) 
     reingestSource: vi.fn(() => fakeMemory),
     reorderSources: vi.fn(() => fakeMemory),
     removeSource: vi.fn(() => fakeMemory),
+    getSourceContent: vi.fn(() => ({
+      id: 's1',
+      ingestState: 'ready' as const,
+      ingestError: null,
+      text: 'body',
+    })),
     ...overrides,
   } as unknown as MemoriesService;
   return { controller: new MemoriesController(service), service };
@@ -67,6 +73,14 @@ describe('MemoriesController — valid input delegates to the service', () => {
     const { controller, service } = build();
     await controller.addSource('mem1', { url: 'https://example.com' });
     expect(service.addSource).toHaveBeenCalledWith('mem1', 'https://example.com');
+  });
+
+  it('returns a source\'s content wrapped in { content }', () => {
+    const { controller, service } = build();
+    expect(controller.getSourceContent('mem1', 's1')).toEqual({
+      content: { id: 's1', ingestState: 'ready', ingestError: null, text: 'body' },
+    });
+    expect(service.getSourceContent).toHaveBeenCalledWith('mem1', 's1');
   });
 
   it('returns { ok: true } after delete', () => {
