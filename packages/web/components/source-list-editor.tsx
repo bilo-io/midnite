@@ -80,6 +80,12 @@ type Props = {
   onUploadFile?: (file: File) => void | Promise<void>;
   /** `accept` for the upload input (e.g. ".pdf,.md,.txt"). */
   uploadAccept?: string;
+  /** Show the inline add row (URL input + upload). Off when adds go via a modal. */
+  showAdd?: boolean;
+  /** Allow drag-to-reorder. Off while a filter/search narrows the visible rows. */
+  reorderable?: boolean;
+  /** Open a source's detail view — makes each row's title clickable. */
+  onOpen?: (source: EditableSource) => void | Promise<void>;
 };
 
 /**
@@ -98,6 +104,9 @@ export function SourceListEditor({
   onReingest,
   onUploadFile,
   uploadAccept,
+  showAdd = true,
+  reorderable = true,
+  onOpen,
 }: Props) {
   const [url, setUrl] = useState('');
   const [busy, setBusy] = useState(false);
@@ -186,53 +195,55 @@ export function SourceListEditor({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <input
-          className={inputClass}
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              void add();
-            }
-          }}
-          placeholder={placeholder ?? 'Paste a GitHub, Notion, Google Docs or any link'}
-          disabled={atLimit || busy || disabled}
-        />
-        <Button
-          type="button"
-          variant="secondary"
-          size="icon"
-          onClick={() => void add()}
-          disabled={atLimit || busy || disabled || !url.trim()}
-          aria-label="Add source"
-        >
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-        </Button>
-        {onUploadFile ? (
-          <label
-            className={cn(
-              'inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md border border-input bg-background text-muted-foreground hover:text-foreground',
-              (atLimit || busy || disabled) && 'cursor-not-allowed opacity-50',
-            )}
-            title="Upload a file (PDF, Markdown, text)"
-            aria-label="Upload a file source"
+      {showAdd ? (
+        <div className="flex items-center gap-2">
+          <input
+            className={inputClass}
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                void add();
+              }
+            }}
+            placeholder={placeholder ?? 'Paste a GitHub, Notion, Google Docs or any link'}
+            disabled={atLimit || busy || disabled}
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            size="icon"
+            onClick={() => void add()}
+            disabled={atLimit || busy || disabled || !url.trim()}
+            aria-label="Add source"
           >
-            <Upload className="h-4 w-4" />
-            <input
-              type="file"
-              accept={uploadAccept}
-              className="sr-only"
-              disabled={atLimit || busy || disabled}
-              onChange={(e) => {
-                void upload(e.target.files?.[0]);
-                e.target.value = '';
-              }}
-            />
-          </label>
-        ) : null}
-      </div>
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+          </Button>
+          {onUploadFile ? (
+            <label
+              className={cn(
+                'inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md border border-input bg-background text-muted-foreground hover:text-foreground',
+                (atLimit || busy || disabled) && 'cursor-not-allowed opacity-50',
+              )}
+              title="Upload a file (PDF, Markdown, text)"
+              aria-label="Upload a file source"
+            >
+              <Upload className="h-4 w-4" />
+              <input
+                type="file"
+                accept={uploadAccept}
+                className="sr-only"
+                disabled={atLimit || busy || disabled}
+                onChange={(e) => {
+                  void upload(e.target.files?.[0]);
+                  e.target.value = '';
+                }}
+              />
+            </label>
+          ) : null}
+        </div>
+      ) : null}
 
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
 
@@ -244,8 +255,10 @@ export function SourceListEditor({
                 key={s.id}
                 source={s}
                 disabled={disabled || busy}
+                reorderable={reorderable}
                 onRemove={() => void remove(s.id)}
                 onReingest={onReingest ? () => void reingest(s.id) : undefined}
+                onOpen={onOpen ? () => void onOpen(s) : undefined}
               />
             ))}
           </ul>
@@ -259,16 +272,21 @@ export function SourceListEditor({
 function SortableSourceRow({
   source: s,
   disabled,
+  reorderable = true,
   onRemove,
   onReingest,
+  onOpen,
 }: {
   source: EditableSource;
   disabled?: boolean;
+  reorderable?: boolean;
   onRemove: () => void;
   onReingest?: () => void;
+  onOpen?: () => void;
 }) {
+  const dragDisabled = disabled || !reorderable;
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
-    useSortable({ id: s.id, disabled });
+    useSortable({ id: s.id, disabled: dragDisabled });
 
   const label = s.title ?? s.fileName ?? s.url ?? 'Source';
 
@@ -286,14 +304,26 @@ function SortableSourceRow({
         ref={setActivatorNodeRef}
         {...attributes}
         {...listeners}
-        disabled={disabled}
+        disabled={dragDisabled}
         aria-label="Reorder source"
         className="shrink-0 cursor-grab touch-none rounded text-muted-foreground hover:text-foreground active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-40"
       >
         <GripVertical className="h-4 w-4" />
       </button>
       <SourceIcon kind={s.kind} faviconUrl={s.faviconUrl} url={s.url} />
-      <span className="min-w-0 flex-1 truncate text-sm">{label}</span>
+      {onOpen ? (
+        <button
+          type="button"
+          onClick={onOpen}
+          disabled={disabled}
+          title={label}
+          className="min-w-0 flex-1 truncate text-left text-sm hover:text-primary hover:underline disabled:opacity-40"
+        >
+          {label}
+        </button>
+      ) : (
+        <span className="min-w-0 flex-1 truncate text-sm">{label}</span>
+      )}
 
       <IngestStatus source={s} onReingest={onReingest} disabled={disabled} />
 
@@ -303,6 +333,7 @@ function SortableSourceRow({
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Open source in new tab"
+          onClick={(e) => e.stopPropagation()}
           className="text-muted-foreground hover:text-foreground"
         >
           <ExternalLink className="h-3.5 w-3.5" />

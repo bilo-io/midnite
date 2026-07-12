@@ -1,9 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { MAX_SOURCES_PER_MEMORY, type Memory } from '@midnite/shared';
-import { SourceListEditor, orderByIds } from '@/components/source-list-editor';
+import { useEffect, useMemo, useState } from 'react';
+import { Plus, Search } from 'lucide-react';
+import { MAX_SOURCES_PER_MEMORY, type Memory, type SourceKind } from '@midnite/shared';
+import { SourceListEditor, orderByIds, type EditableSource } from '@/components/source-list-editor';
+import { SourceKindMultiSelect } from '@/components/source-kind-multi-select';
+import { AddSourceModal } from '@/components/memory/add-source-modal';
+import { SourceDetailModal } from '@/components/memory/source-detail-modal';
 import { useConfirm } from '@/components/confirm-dialog';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import {
   addMemorySource,
   getMemory,
@@ -32,6 +38,28 @@ export function MemorySourcesPanel({
 }) {
   const confirm = useConfirm();
   const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
+  const [kinds, setKinds] = useState<SourceKind[]>([]);
+  const [addOpen, setAddOpen] = useState(false);
+  const [detail, setDetail] = useState<EditableSource | null>(null);
+
+  // The kinds actually present — the filter only offers real options.
+  const availableKinds = useMemo(
+    () => [...new Set(memory.sources.map((s) => s.kind))],
+    [memory.sources],
+  );
+
+  const filterActive = query.trim() !== '' || kinds.length > 0;
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return memory.sources.filter((s) => {
+      const matchesQuery =
+        q === '' ||
+        [s.title, s.fileName, s.url].some((f) => f?.toLowerCase().includes(q));
+      const matchesKind = kinds.length === 0 || kinds.includes(s.kind);
+      return matchesQuery && matchesKind;
+    });
+  }, [memory.sources, query, kinds]);
 
   // Poll while any source is mid-ingest so pending → ready/failed resolves live.
   const pending = memory.sources.some((s) => s.ingestState === 'pending');
@@ -52,22 +80,16 @@ export function MemorySourcesPanel({
     };
   }, [pending, memory.id, onChange]);
 
+  // Adds/uploads flow through the AddSourceModal, which surfaces the error inline
+  // and stays open — so these rethrow rather than swallowing into panel state.
   const add = async (url: string) => {
     setError(null);
-    try {
-      onChange(await addMemorySource(memory.id, url));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not add that source');
-    }
+    onChange(await addMemorySource(memory.id, url));
   };
 
   const uploadFile = async (file: File) => {
     setError(null);
-    try {
-      onChange(await uploadMemorySourceFile(memory.id, file));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not upload that file');
-    }
+    onChange(await uploadMemorySourceFile(memory.id, file));
   };
 
   const reingest = async (id: string) => {
@@ -105,26 +127,81 @@ export function MemorySourcesPanel({
     }
   };
 
+  const remaining = MAX_SOURCES_PER_MEMORY - memory.sources.length;
+
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-2">
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-muted-foreground">Sources</span>
         <span className="text-[11px] tabular-nums text-muted-foreground">
           {memory.sources.length}/{MAX_SOURCES_PER_MEMORY}
         </span>
       </div>
-      <SourceListEditor
-        sources={memory.sources}
-        max={MAX_SOURCES_PER_MEMORY}
-        placeholder="Paste a doc, repo, or any reference link"
-        onAdd={add}
-        onRemove={remove}
-        onReorder={reorder}
-        onReingest={reingest}
-        onUploadFile={uploadFile}
-        uploadAccept={UPLOAD_ACCEPT}
-      />
+
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        className="w-full"
+        onClick={() => setAddOpen(true)}
+        disabled={remaining <= 0}
+      >
+        <Plus className="h-4 w-4" /> Add sources
+      </Button>
+
+      {memory.sources.length > 0 ? (
+        <div className="space-y-1.5">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search sources…"
+              aria-label="Search sources"
+              className="flex h-9 w-full rounded-md border border-input bg-background pl-8 pr-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            />
+          </div>
+          {availableKinds.length > 1 ? (
+            <SourceKindMultiSelect available={availableKinds} value={kinds} onChange={setKinds} />
+          ) : null}
+        </div>
+      ) : null}
+
+      {filtered.length === 0 && filterActive ? (
+        <p className="px-1 py-2 text-xs text-muted-foreground">No sources match your filter.</p>
+      ) : (
+        <SourceListEditor
+          sources={filtered}
+          max={MAX_SOURCES_PER_MEMORY}
+          showAdd={false}
+          reorderable={!filterActive}
+          onAdd={add}
+          onRemove={remove}
+          onReorder={reorder}
+          onReingest={reingest}
+          onUploadFile={uploadFile}
+          uploadAccept={UPLOAD_ACCEPT}
+          onOpen={setDetail}
+        />
+      )}
+      {filterActive ? (
+        <p className={cn('px-1 text-[11px] text-muted-foreground')}>
+          Reordering is paused while filtering.
+        </p>
+      ) : null}
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
+
+      {addOpen ? (
+        <AddSourceModal
+          onAddUrl={add}
+          onUploadFile={uploadFile}
+          remaining={remaining}
+          onClose={() => setAddOpen(false)}
+        />
+      ) : null}
+      {detail ? (
+        <SourceDetailModal memoryId={memory.id} source={detail} onClose={() => setDetail(null)} />
+      ) : null}
     </div>
   );
 }
