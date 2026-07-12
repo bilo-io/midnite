@@ -47,8 +47,16 @@ export function Layout({ nav, children }: { nav: NavGroup[]; children: ReactNode
 
           <div className="ml-auto flex items-center gap-2 sm:gap-3">
             <DocSearch />
+            <Link
+              to="/getting-started"
+              className="hidden rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 sm:block"
+            >
+              Download
+            </Link>
             <a
-              href="https://github.com/bilo-io/midnite"
+              href="https://github.com/bilo-io/midnite-app"
+              target="_blank"
+              rel="noreferrer"
               className="hidden text-sm text-muted-foreground hover:text-foreground sm:block"
             >
               GitHub
