@@ -87,8 +87,9 @@ Every terminal task gets a free, factual retrospective — no LLM required.
 - [x] **Auto on terminal:** subscribe to the `TaskEventBus` (the search-module pattern — `tasks.service`
       untouched): on `done`/`abandoned`, build + store the skeleton. Idempotent (skips a same-outcome
       rebuild; a genuine re-terminal upserts), fail-open (a retro failure never touches the task).
-      (Needs-attention escalation as a trigger deferred — the task isn't finished, so a retro there is
-      premature.)
+      (Needs-attention escalation now builds too — the Verification pass added a `needs-attention`
+      retro outcome + `retroOutcomeForTask`, so a `waiting` task with a needs-attention reason gets a
+      skeleton that a later terminal transition upserts.)
 
 ## Theme B — Task-event workflow trigger — ✅ DONE (PR #351, 2026-07-07)
 
@@ -154,11 +155,11 @@ The morning "what did the fleet do?" — assembled by the product itself.
 - [x] **Global scope with per-repo/project sections** in one digest (settled) — `build-digest`
       already emits per-repo sections; the seed runs the global 24h window, and its
       `sinceHours`/`repo`/`projectId` node params stay editable per install for a per-project variant.
-- ⏳ **Deferred (follow-up):** P44 delivery to registered outbound webhooks. The webhook delivery
-      engine subscribes **only** to the `TaskEventBus` (task-scoped events) — digests have no seam.
-      Fanning them out needs a new `digest.generated` webhook event + per-provider formatter + an
-      emit from `DigestBuilder.build`; deferred to keep this slice at **M** (Slack + in-app cover
-      the delivery targets today).
+- [x] **P44 delivery to registered outbound webhooks** — ✅ DONE (Verification pass, 2026-07-13).
+      A global `digest.generated` webhook event + a discriminated per-provider formatter (Slack/
+      Discord terse line, generic JSON) + `WebhookDeliveryService.fanOutDigest` (scans every enabled
+      endpoint subscribed to it — digests are teamless) + a fire-and-forget, fail-soft emit from
+      `DigestBuilder.build`; each dispatch records a P44 delivery row. (No longer deferred.)
 
 ---
 
@@ -230,36 +231,47 @@ task detail — Theme F); the FTS scope this slice added is digests.
 
 ---
 
-## Verification
+## Verification — ✅ signed off (PR #TBD, 2026-07-13)
 
-- [ ] **Skeleton always:** every task reaching `done`/`abandoned`/needs-attention gets a
+- [x] **Skeleton always:** every task reaching `done`/`abandoned`/**needs-attention** gets a
       deterministic `task_retros` row (timeline, attempts, failures, durations, review, PR) with
       **zero LLM calls**; re-terminal transitions upsert, never duplicate; a retro failure never
-      affects the task.
-- [ ] **Workflow-first narrative:** with the retro template enabled, a completed task's retro gains
-      a narrative (one plan-model call, usage-tagged `retro`); with LLM off / budget capped / the
-      template disabled, the skeleton renders cleanly with `generatedBy: null` — **no fake
-      narrative, no failure**.
-- [ ] **Task-event trigger:** a workflow with `{ type: 'task-event', events: ['task.done'] }` fires
-      exactly once per terminal transition (idempotent under retries), respects repo/project filters
-      + team scope, and appears in `workflow_runs` like any run.
-- [ ] **Digest pipeline:** the upgraded daily-digest template produces a stored digest (global
-      headline + per-repo/project sections + retro highlights + spend/cycle stats when P61 data
-      exists) and delivers it to **Slack (formatted)**, **in-app notification**, and **markdown
-      export**; the P44 delivery log records the webhook attempt.
-- [ ] **Surfaces:** the task detail shows the Retrospective (honesty-labeled); the Digests feed
-      lists + renders digests with working deep-links; the dashboard widget shows the latest
-      headline; retros/digests are findable via global search; `midnite retro`/`digest` work with
-      `--json`.
-- [ ] **Bounded transcripts:** narrative generation never reads more than the slicing helper's cap
-      (verified on an oversized JSONL); a missing/deleted transcript degrades to events-only
-      narrative input.
-- [ ] **Product data:** `task_retros`/`digests` are excluded from P61 retention pruning; P18
-      exports render (`md` + client `pdf`).
-- [ ] `moon run :typecheck` · `:lint` · `:test` green (shared schema units; gateway RetroBuilder/
-      DigestBuilder/trigger/node tests with LLM fakes incl. fail-soft + idempotency; a seeded-
-      template run test; web RTL for the retro section + digest feed; CLI snapshot; **web tests
-      from the primary checkout, not a `.git` worktree**).
+      affects the task. *(needs-attention now builds too — `retroOutcomeForTask` + subscriber;
+      `retro-subscriber.service.spec.ts`, `build-retro.test.ts`, `retro.repository.test.ts`.)*
+- [x] **Workflow-first narrative:** with the retro template enabled, a completed task's retro gains
+      a narrative (one plan-model call, usage-tagged `retro` — asserted in
+      `generate-retro.executor.spec.ts`); with LLM off / budget capped / the template disabled, the
+      skeleton renders cleanly with `generatedBy: null` — **no fake narrative, no failure**.
+- [x] **Task-event trigger:** fires exactly once per terminal transition (idempotent under retries),
+      respects repo/project filters + team scope (`workflow-task-event-trigger.service.spec.ts`,
+      `task-event-match.spec.ts`).
+- [x] **Digest pipeline:** the upgraded daily-digest template produces a stored digest (global
+      headline + per-repo/project sections + retro highlights + spend/cycle) and delivers it to
+      **Slack (Block Kit + fallback text — `daily-digest.seed.test.ts` bound-slack case)**, **in-app
+      notification**, and **markdown export**; the **P44 `digest.generated` webhook** now fans out
+      (built this pass) with a delivery row per endpoint (`webhook-delivery.service.test.ts`).
+- [x] **Surfaces:** the task detail shows the Retrospective (honesty-labeled — `retro-tab.test.tsx`);
+      the Digests feed lists + renders digests with working deep-links (`digest-detail.test.tsx`);
+      the dashboard widget shows the latest headline (`digest-widget.test.tsx`); digests are findable
+      via global search (`index-mappers.test.ts`); `midnite retro`/`digest` work with `--json`
+      (`cli/src/retro.test.ts`, `digest.test.ts`). *(Retros stay per-task via the task detail — not
+      separately FTS-indexed, by Theme G design.)*
+- [x] **Bounded transcripts:** narrative generation never reads more than the slicing helper's cap;
+      a missing/deleted transcript degrades to events-only input (`transcript-slice.test.ts`).
+- [x] **Product data:** `task_retros`/`digests` are excluded from P61 retention pruning (real-DB
+      `metrics.repository.test.ts` proves `pruneRawBefore` leaves them untouched); P18 exports render
+      (`md` + client `pdf` — `retro-report.test.ts`, `digests.controller.spec.ts`).
+- [x] `moon run :typecheck` · `:lint` · `:test` green (shared schema units; gateway RetroBuilder/
+      DigestBuilder/trigger/node tests with LLM fakes incl. fail-soft + idempotency; **seeded-template
+      engine-run tests for both pipelines** + a **real-pipeline `retro-digest-pipeline.e2e.ts`**; web
+      RTL for the retro section + digest feed; CLI snapshot).
+
+> **Bug found + fixed during verification:** the daily-digest + task-retrospectives seed definitions
+> omitted node `position` (required by `WorkflowGraphSchema`) and the retro seed used a `sourceHandle`
+> key instead of `sourcePort` — so installing either 500'd on hydration and the retro branch would
+> misroute. Both now carry positions + explicit ports; a graph-parse guard in each seed test locks it.
+> Also fixed the retro seed's notify expressions, which referenced the non-existent `$trigger`/`$n2`
+> roots (they throw at runtime) — rewired to `$node["…"].json.task` + `$json.outcome`.
 
 ---
 

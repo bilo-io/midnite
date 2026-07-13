@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-13 — feat: Phase 62 Verification signed off + deferrals built + install bug fixed — Phase 62 (PR #TBD)
+
+Closes the last 8 boxes of Phase 62 (Fable-Digest) — the Verification checklist. Every lettered theme A–H had landed (PRs through #409); this pass drove all 8 acceptance criteria end-to-end, closed the outstanding test gaps, **built the two remaining deferrals**, and **found + fixed a real "the seed templates aren't installable" bug**. Phase 62 → 32/32 (100%), Status ✅ DONE.
+
+- [x] **Needs-attention retros (deferral built):** widened `RetroOutcome` to `done|abandoned|needs-attention`; a `retroOutcomeForTask` helper + the bus subscriber now build a skeleton on a `waiting`+needs-attention escalation (upsert; a later terminal transition rebuilds). `isRetroNotable` flags it; the task-detail badge renders it.
+- [x] **P44 `digest.generated` webhook (deferral built):** a global outbound-webhook event + discriminated per-provider formatter (Slack/Discord terse line, generic JSON) + `WebhookDeliveryService.fanOutDigest` (scans every enabled endpoint — digests are teamless) + a fire-and-forget fail-soft emit from `DigestBuilder.build`; each dispatch records a P44 delivery row.
+- [x] **Install bug (found + fixed):** the daily-digest + task-retrospectives seed definitions omitted node `position` (required by `WorkflowGraphSchema`) and the retro seed used `sourceHandle` instead of `sourcePort` — so installing either 500'd on hydration and the retro branch misrouted. Both now carry positions + explicit ports; a graph-parse guard in each seed test locks it. Also fixed the retro seed's notify expressions (`$trigger`/`$n2` → `$node["…"].json.task` + `$json.outcome`; the old roots throw at runtime).
+- [x] **Test gaps closed:** retention-protection real-DB test (`pruneRawBefore` leaves `task_retros`/`digests` untouched); a real engine-run over the retro seed (was shape-only); the bound-Slack Block-Kit delivery path; usage-tag (`retro`/`digest`) + budget-cap assertions on the LLM calls; the digest webhook fan-out (incl. fail-soft).
+- [x] **Real-pipeline e2e:** `retro-digest-pipeline.e2e.ts` against the live gateway (no route mocks) — a terminal transition builds a retro rendered on the task-detail Retro tab; the installed+run daily-digest stores a digest the `/digests` feed renders.
+- [x] **Gate:** `moon run :typecheck` · `:lint` · `:test` green (gateway 2024 passed, web 1120+ passed, shared all passed); the new e2e passes (3/3).
+
 ## 2026-07-13 — feat(web,gateway): fleet assistant chat — Phase 66 Theme E (PR #423)
 
 The **Agent** entry of the floating assistant menu — a read-only fleet Q&A that renders rich answers (markdown + inline midnite components).

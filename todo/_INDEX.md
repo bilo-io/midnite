@@ -32,7 +32,7 @@
 | [65 · Memory workspace](phase-65-memory-workspace.md) | ✅ DONE | 33/33 | `██████████` | 100% | — | — |
 | [64 · Office presence](phase-64-office-presence.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
-| [62 · Fable-Digest](phase-62-fable-digest.md) | 🔄 WIP | 24/32 | `████████░░` | 75% | V | — |
+| [62 · Fable-Digest](phase-62-fable-digest.md) | ✅ DONE | 32/32 | `██████████` | 100% | — | — |
 | [61 · Fable-Observability](phase-61-fable-observability.md) | ✅ DONE | 36/36 | `██████████` | 100% | — | — |
 | [60 · Fable-Analysis](phase-60-fable-analysis.md) | ✅ DONE | 62/62 | `██████████` | 100% | — | — |
 | [59 · Chat to board](phase-59-chat-to-board.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
@@ -96,12 +96,12 @@
 | [1 · Board by hand](phase-1-board.md) | ✅ DONE | 16/16 | `██████████` | 100% | — | — |
 | [0 · Scaffold](phase-0-scaffold.md) | ✅ DONE | 10/10 | `██████████` | 100% | — | — |
 
-**Headline:** phases **0–61 are complete** (incl. Fable analysis/observability **60/61** and
-performance/scale **57** — its Verification pass signed off 2026-07-11), plus the office pair
-**63/64**. The live frontier is **62** (Fable-Digest): every lettered theme A–H has
-landed (PRs through #404); only the phase **Verification checklist** remains. Newly planned:
+**Headline:** phases **0–65 are complete** — incl. Fable analysis/observability/digest **60/61/62**
+(Phase 62's Verification pass signed off 2026-07-13, which also built the two remaining deferrals:
+needs-attention retros + the P44 `digest.generated` webhook, and fixed a real "seed templates aren't
+installable" bug), performance/scale **57**, and the office trio **63/64/65**. The live frontier is
 **66** (Floating assistant menu) — a logo-anchored FAB assistant (docs/guide/chat/agent) that
-overturns Phase 59's "no FAB", not yet started. (An *earlier* Phase 42 was a
+overturns Phase 59's "no FAB", in flight (Theme F WIP). (An *earlier* Phase 42 was a
 parallel restatement of Phase 40, folded into Phase 40 Theme G and removed 2026-06-27; the
 current 42 & 43 are new, unrelated phases — two brainstorm sessions ran concurrently, so the
 preference-sync plan took the next free number, 43.)
@@ -163,7 +163,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **B** — Task-event workflow trigger (workflows fire on task.done/abandoned/needs-attention) (PR #351)
 - ✅ **C** — Node executors: generate-retro / list-completed-tasks / build-digest / notify (PR #393)
 - ✅ **D** — Retro pipeline template: seeded task-event→generate-retro→branch(notable)→notify; deterministic `isRetroNotable` surfaced by the executor (PR #399)
-- ✅ **E** — Digest pipeline template: daily-digest seed → list-completed→build-digest→parallel {slack (rich blocks, optional/skip-if-unbound), notify}; slack.message gains Block Kit `blocks` (P44 webhook fan-out ⏳ deferred) (PR #401)
+- ✅ **E** — Digest pipeline template: daily-digest seed → list-completed→build-digest→parallel {slack (rich blocks, optional/skip-if-unbound), notify}; slack.message gains Block Kit `blocks` (PR #401); **P44 `digest.generated` webhook fan-out** landed in the Verification pass (2026-07-13)
 - ✅ **F** — Retro surfaces: task-detail Retro tab (full retro + AI-summary honesty badge) + P18 markdown export + session cockpit deep-link (PR #402)
 - ✅ **G** — Digest surfaces: `/digests` two-pane master-detail feed + structured detail w/ task deep-links + md export, Latest-digest widget, digests indexed in global search (PR #404)
 - ✅ **H** — Transcript slicer (done in C) + `midnite retro` CLI + `retro.autoSkeleton`/`narrativeMaxTokens` config + `docs/RETROS.md` (PR #403); **`midnite digest list`/`show` CLI** now landed over Theme G's `GET /digests` (PR #409)
