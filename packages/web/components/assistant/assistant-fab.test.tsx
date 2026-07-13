@@ -44,6 +44,8 @@ describe('AssistantFab', () => {
   });
 
   it('opens the current route’s docs in a new tab (Theme C)', () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('NEXT_PUBLIC_DOCS_URL', 'https://example.test/docs');
     render(<AssistantFab />);
     fireEvent.click(screen.getByRole('button', { name: 'Open assistant' }));
     fireEvent.click(screen.getByRole('button', { name: /Docs/i }));
@@ -51,6 +53,7 @@ describe('AssistantFab', () => {
     const url = (window.open as unknown as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as string;
     // /tasks/graph → /app/tasks docs page, hash-routed.
     expect(url).toMatch(/#\/app\/tasks$/);
+    vi.unstubAllEnvs();
   });
 
   it('swaps to the chat view and back (Theme D)', () => {

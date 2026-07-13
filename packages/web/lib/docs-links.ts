@@ -17,10 +17,20 @@
  * sync when pages are added/renamed under packages/docs/src/content/.
  */
 
-/** The docs site's base URL (trailing slash trimmed). Overridable per-deploy. */
-export const DOCS_BASE_URL = (
-  process.env['NEXT_PUBLIC_DOCS_URL'] ?? 'https://midnite.dev/docs'
-).replace(/\/+$/, '');
+/**
+ * The docs site's base URL (trailing slash trimmed), resolved per environment.
+ * In dev the docs SPA runs on its fixed strict port (docs/vite.config.ts →
+ * `server.port: 5173`); a deployed build reads `NEXT_PUBLIC_DOCS_URL`. Empty
+ * when docs aren't hosted, so {@link docsUrlForPathname} can degrade to '#'.
+ * Read at call time (not a module-load constant) so it stays correct + testable.
+ */
+export function docsBaseUrl(): string {
+  const origin =
+    process.env.NODE_ENV === 'development'
+      ? 'http://localhost:5173'
+      : (process.env['NEXT_PUBLIC_DOCS_URL'] ?? '');
+  return origin.replace(/\/+$/, '');
+}
 
 /**
  * Every product-doc slug the docs site currently serves (mirror of the MDX
@@ -77,8 +87,13 @@ export function resolveDocsSlug(pathname: string): DocsSlug | null {
   return match?.slug ?? null;
 }
 
-/** The full docs URL for a pathname — the mapped page, or the docs home. */
+/**
+ * The full docs URL for a pathname — the mapped page (hash-routed) or the docs
+ * home. Degrades to '#' when docs aren't hosted (no dev, no `NEXT_PUBLIC_DOCS_URL`).
+ */
 export function docsUrlForPathname(pathname: string): string {
+  const base = docsBaseUrl();
+  if (!base) return '#';
   const slug = resolveDocsSlug(pathname);
-  return slug ? `${DOCS_BASE_URL}/#${slug}` : `${DOCS_BASE_URL}/`;
+  return slug ? `${base}/#${slug}` : `${base}/`;
 }

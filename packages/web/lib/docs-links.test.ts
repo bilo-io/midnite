@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   DOCS_ROUTE_MAP,
@@ -37,9 +37,26 @@ describe('docs-links', () => {
     expect(resolveDocsSlug('/')).toBeNull();
   });
 
-  it('builds a hash-routed deep link, and the docs home for unmapped routes', () => {
-    expect(docsUrlForPathname('/tasks/graph')).toMatch(/\/#\/app\/tasks$/);
-    expect(docsUrlForPathname('/search')).toMatch(/\/$/);
-    expect(docsUrlForPathname('/search')).not.toContain('#');
+  describe('docsUrlForPathname', () => {
+    afterEach(() => vi.unstubAllEnvs());
+
+    it('builds a hash-routed deep link, and the docs home for unmapped routes', () => {
+      vi.stubEnv('NODE_ENV', 'production');
+      vi.stubEnv('NEXT_PUBLIC_DOCS_URL', 'https://example.test/docs');
+      expect(docsUrlForPathname('/tasks/graph')).toBe('https://example.test/docs/#/app/tasks');
+      expect(docsUrlForPathname('/search')).toBe('https://example.test/docs/');
+      expect(docsUrlForPathname('/search')).not.toContain('#');
+    });
+
+    it('uses the fixed docs dev server in development', () => {
+      vi.stubEnv('NODE_ENV', 'development');
+      expect(docsUrlForPathname('/memory/view')).toBe('http://localhost:5173/#/agents/memory');
+    });
+
+    it("degrades to '#' when docs aren't hosted", () => {
+      vi.stubEnv('NODE_ENV', 'production');
+      vi.stubEnv('NEXT_PUBLIC_DOCS_URL', '');
+      expect(docsUrlForPathname('/tasks')).toBe('#');
+    });
   });
 });
