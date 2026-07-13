@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [66 · Floating assistant menu](phase-66-floating-assistant-menu.md) | 🔄 WIP | 0/27 | `░░░░░░░░░░` | 0% | A B C D E | F |
+| [66 · Floating assistant menu](phase-66-floating-assistant-menu.md) | 🔄 WIP | 17/27 | `██████░░░░` | 63% | E | F |
 | [65 · Memory workspace](phase-65-memory-workspace.md) | ✅ DONE | 33/33 | `██████████` | 100% | — | — |
 | [64 · Office presence](phase-64-office-presence.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
@@ -119,10 +119,10 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 
 ### [Phase 66 — Floating assistant menu](phase-66-floating-assistant-menu.md)
 *A logo-anchored floating action button (hover → gradient border + glow) that expands into a glowing gradient-bordered panel: Docs (current page's docs), Guide (replayable per-route tour), Chat to board (relocated from the sidenav), Agent (fleet Q&A with markdown + inline midnite components). Overturns Phase 59's "no FAB"; overwhelmingly `packages/web` + one `@midnite/ui` extraction + one read-only gateway answerer.*
-- 🔄 **A** — Assistant shell + logo FAB: hover glow, click-expand glowing panel, coexists w/ ⌘K, mobile variant
-- 🔄 **B** — Extract `.gradient-border` glow into a `@midnite/ui` primitive + token; migrate the 3 composers; docs shares it
-- 🔄 **C** — Docs deep-link: `pathname → docs-slug` map → current page's docs; retire the path-less nav Docs button
-- 🔄 **D** — Relocate Chat to board: lift `useChatCommand`/`ChatBar` into the panel; drop the sidenav + mobile-nav entry (no engine change)
+- ✅ **A** — Assistant shell + logo FAB: hover glow, click-expand glowing panel, coexists w/ ⌘K, mobile variant (PR #422)
+- ✅ **B** — Extract `.gradient-border` glow into a `@midnite/ui` primitive + token; migrate the 3 composers; docs shares it (PR #422)
+- ✅ **C** — Docs deep-link: `pathname → docs-slug` map → current page's docs (created the docs-link module; no path-less nav button existed to retire) (PR #422)
+- ✅ **D** — Relocate Chat to board: lift `useChatCommand`/`ChatBar` into the panel; drop the sidenav entry; re-point `midnite:open-chat` at the FAB (PR #422)
 - ◻ **E** — Agent chat: compose fleet context → `LlmService` → `AssistantBlock[]` (markdown + zod-validated inline component registry); read-only, fail-soft
 - ◻ **F** — Replayable Guide: lightweight in-house spotlight overlay + per-route step registry (board/session/workflow/memory first)
 
