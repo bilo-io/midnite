@@ -114,7 +114,7 @@ const METRIC_LABEL: Record<AssistantSparklineMetric, string> = {
 
 /** `sparkline` — a small trend of one metric, resolved from its metrics endpoint. */
 function SparklineBlock({ metric }: { metric: AssistantSparklineMetric }) {
-  const { data, loading } = useApiData((signal) => resolveMetricSeries(metric, signal), ['assistant-metric', metric]);
+  const { data, loading } = useApiData(() => resolveMetricSeries(metric), ['assistant-metric', metric]);
   if (loading && !data) return <BlockNotice>Loading {METRIC_LABEL[metric]}…</BlockNotice>;
   const points = data ?? [];
   return (
@@ -130,7 +130,7 @@ function SparklineBlock({ metric }: { metric: AssistantSparklineMetric }) {
 }
 
 /** Resolve a numeric series for a metric from the existing metrics endpoints. */
-async function resolveMetricSeries(metric: AssistantSparklineMetric, signal: AbortSignal): Promise<number[]> {
+async function resolveMetricSeries(metric: AssistantSparklineMetric): Promise<number[]> {
   switch (metric) {
     case 'throughput': {
       const ops = await getOpsMetrics();
