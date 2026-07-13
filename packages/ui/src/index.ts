@@ -15,6 +15,11 @@ export { Accordion } from './components/accordion';
 export { Button, buttonVariants, type ButtonProps } from './components/button';
 export { Card, CardHeader, CardTitle, CardContent } from './components/card';
 export { Collapse } from './components/collapse';
+export {
+  GradientGlow,
+  type GradientGlowProps,
+  type GradientGlowTrigger,
+} from './components/gradient-glow';
 export { Input, type InputProps } from './components/input';
 export { Select, type SelectOption } from './components/select';
 export { StyledSelect, ModelComboSelect } from './components/styled-select';

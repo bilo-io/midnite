@@ -5,16 +5,13 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  BookOpen,
   ChevronDown,
-  MessageSquare,
   PanelLeftClose,
   PanelLeftOpen,
   Power,
   Settings,
   type LucideIcon,
 } from 'lucide-react';
-import { DOCS_URL } from '@/lib/site-links';
 import { cn } from '@/lib/utils';
 import { FEATURES, groupNavSections, isFeatureEnabled, type NavCategory } from '@/lib/features';
 import { Collapse } from '@/components/ui/collapse';
@@ -265,38 +262,15 @@ export function NavBar() {
         </nav>
 
         <div className={cn('mt-auto flex flex-col gap-1', expandedView ? 'items-stretch' : 'items-center')}>
-          <button
-            type="button"
-            onClick={() => window.dispatchEvent(new CustomEvent('midnite:open-chat'))}
-            aria-label="Chat to board"
-            className={cn(
-              'group relative flex h-9 items-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground',
-              expandedView ? 'w-full gap-3 px-2.5' : 'w-9 justify-center',
-            )}
-          >
-            <MessageSquare className="h-4 w-4 shrink-0" />
-            {expandedView ? <span className="truncate text-sm">Chat to board</span> : <Tooltip>Chat to board</Tooltip>}
-          </button>
+          {/* "Chat to board" moved into the assistant FAB (Phase 66 Theme D); the
+              palette keeps its own `>` chat mode for keyboard users. */}
           <PresenceNavPill expanded={expandedView} />
           <ApprovalsDrawer expanded={expandedView} />
           <NotificationCenter expanded={expandedView} />
           <ThemeToggle expanded={expandedView} />
-          {/* Docs live in a separate site (packages/docs); in dev that's the
-              fixed :5173 dev server — see lib/site-links.ts. External, so a
-              plain anchor opening in a new tab rather than a client-side Link. */}
-          <a
-            href={DOCS_URL}
-            target="_blank"
-            rel="noreferrer"
-            aria-label="Docs"
-            className={cn(
-              'group relative flex h-9 items-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground',
-              expandedView ? 'w-full gap-3 px-2.5' : 'w-9 justify-center',
-            )}
-          >
-            <BookOpen className="h-4 w-4 shrink-0" />
-            {expandedView ? <span className="truncate text-sm">Docs</span> : <Tooltip>Docs</Tooltip>}
-          </a>
+          {/* Docs moved into the assistant FAB (Phase 66 Theme C) — it opens the
+              current route's docs, so the path-less sidenav Docs link is retired
+              (one docs affordance). */}
           {renderLink(SETTINGS_LINK)}
           <div className={cn('my-1 h-px bg-border/60', expandedView ? 'w-full' : 'w-6')} />
           <button

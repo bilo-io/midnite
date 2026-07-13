@@ -468,11 +468,10 @@ html[data-no-glass] *::after {
   -webkit-backdrop-filter: none !important;
 }
 
-@property --gradient-angle {
-  syntax: '<angle>';
-  initial-value: 0deg;
-  inherits: false;
-}
+/* `@property --gradient-angle` + the gradient-border keyframes now live in
+   @midnite/ui token CSS (`@midnite/ui/styles`, imported at the top of this
+   file) — Phase 66 Theme B — so the glow primitive is the shared source and
+   this file's workflow-node backgrounds + reconnect orbit still resolve them. */
 
 @property --bg-intensity {
   syntax: '<number>';
@@ -480,23 +479,9 @@ html[data-no-glass] *::after {
   inherits: true;
 }
 
-@keyframes gradient-border-spin {
-  to {
-    --gradient-angle: 360deg;
-  }
-}
-
-/* Breathing glow for the focused prompt input — pairs with the spin so the halo
-   slowly swells and settles rather than sitting at a flat intensity. */
-@keyframes gradient-border-glow-pulse {
-  0%,
-  100% {
-    opacity: 0.5;
-  }
-  50% {
-    opacity: 0.9;
-  }
-}
+/* `gradient-border-spin` + `gradient-border-glow-pulse` keyframes moved to
+   @midnite/ui token CSS (Phase 66 Theme B); still referenced here by the
+   workflow-node backgrounds + reconnect orbit via the top-of-file import. */
 
 @keyframes blink {
   0%,
@@ -879,83 +864,10 @@ html[data-shimmer-dir='rtl'] .pill-shimmer {
   }
 }
 
-.gradient-border {
-  position: relative;
-  isolation: isolate;
-  /* A real, pixel-snapped border rather than a masked halo straddling the box
-     edge: the conic gradient fills the border-box while the card colour fills the
-     padding-box, so the frame is exactly even on every side. Dim + thin at rest;
-     brightens, thickens, and spins on focus. */
-  border: 1px solid transparent;
-  background:
-    linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
-    conic-gradient(
-        from var(--gradient-angle),
-        rgba(244, 63, 94, 0.4),
-        rgba(245, 158, 11, 0.4),
-        rgba(16, 185, 129, 0.4),
-        rgba(59, 130, 246, 0.4),
-        rgba(139, 92, 246, 0.4),
-        rgba(236, 72, 153, 0.4),
-        rgba(244, 63, 94, 0.4)
-      )
-      border-box;
-  transition: border-width 0.25s ease-out;
-}
-
-.gradient-border:focus-within {
-  border-width: 2px;
-  background:
-    linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
-    conic-gradient(
-        from var(--gradient-angle),
-        #f43f5e,
-        #f59e0b,
-        #10b981,
-        #3b82f6,
-        #8b5cf6,
-        #ec4899,
-        #f43f5e
-      )
-      border-box;
-  animation: gradient-border-spin 4s linear infinite;
-}
-
-.gradient-border::after {
-  content: '';
-  position: absolute;
-  inset: -12px;
-  border-radius: inherit;
-  background: conic-gradient(
-    from var(--gradient-angle),
-    #f43f5e,
-    #f59e0b,
-    #10b981,
-    #3b82f6,
-    #8b5cf6,
-    #ec4899,
-    #f43f5e
-  );
-  filter: blur(26px);
-  opacity: 0;
-  transition: opacity 0.4s ease-out;
-  pointer-events: none;
-  z-index: -2;
-}
-
-.gradient-border:focus-within::after {
-  opacity: 0.7;
-  animation:
-    gradient-border-spin 4s linear infinite,
-    gradient-border-glow-pulse 2.6s ease-in-out infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html:not([data-motion='full']) .gradient-border:focus-within,
-  html:not([data-motion='full']) .gradient-border:focus-within::after {
-    animation: none;
-  }
-}
+/* `.gradient-border` (the animated frame + blurred halo, reduced-motion-aware)
+   now lives in @midnite/ui token CSS (`@midnite/ui/styles`) as the shared
+   design-system source — Phase 66 Theme B. Applied via the <GradientGlow>
+   primitive; the raw class stays usable. */
 
 /* Orbiting border segment for the connection indicator while reconnecting. A
    masked conic-gradient ring (a single bright arc) that travels around the

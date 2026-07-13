@@ -73,66 +73,66 @@
 
 ---
 
-## Theme A — Assistant shell + logo FAB — **M**
+## Theme A — Assistant shell + logo FAB — **M**  ✅ DONE (PR #422, 2026-07-13)
 
 The persistent surface everything hangs off.
 
-- [ ] **A floating action button** anchored on the round midnite logo, fixed bottom-corner, present
+- [x] **A floating action button** anchored on the round midnite logo, fixed bottom-corner, present
       on **app routes only** (not the public/marketing surface). Rest state: quiet logo; **hover**:
       the gradient border + glow (Theme B primitive) lights up.
-- [ ] **Click expands** to a panel that itself carries the gradient border + glow (the composer-focus
+- [x] **Click expands** to a panel that itself carries the gradient border + glow (the composer-focus
       aesthetic) with the four entries — **Docs · Guide · Chat to board · Agent** — and a collapse
       affordance. Animated open/close; `prefers-reduced-motion` skips the motion.
-- [ ] **Coexist with ⌘K, don't duplicate it.** The palette stays the keyboard-driven command surface;
+- [x] **Coexist with ⌘K, don't duplicate it.** The palette stays the keyboard-driven command surface;
       the FAB is the discoverable, pointer-driven assistant. Portal to `body` with fixed positioning
       per the web overflow-menu convention; Escape / outside-click closes; focus-trap + ARIA
       (`dialog`/`menu`) so it's keyboard-operable.
-- [ ] **Mobile variant** — the FAB adapts under `md` (bottom-sheet-style panel rather than a floating
+- [x] **Mobile variant** — the FAB adapts under `md` (bottom-sheet-style panel rather than a floating
       card), wired through the existing `useIsMobile` cutoffs ([`use-media-query.ts`](../packages/web/hooks/use-media-query.ts)).
 
-## Theme B — Extract the gradient glow into `@midnite/ui` — **M**
+## Theme B — Extract the gradient glow into `@midnite/ui` — **M**  ✅ DONE (PR #422, 2026-07-13)
 
 Promote the app's signature treatment to the design system so `web` + `docs` share one source.
 
-- [ ] **New `@midnite/ui` primitive + token CSS** — lift `.gradient-border` (+ its keyframes and the
+- [x] **New `@midnite/ui` primitive + token CSS** — lift `.gradient-border` (+ its keyframes and the
       `::after` glow halo, reduced-motion-aware) out of [`globals.css`](../packages/web/app/globals.css)
       into a `GradientGlow`/`gradient-border` primitive in [`packages/ui`](../packages/ui/), exported
       from the package entry. Leaf rule intact — `ui` still imports nothing in-repo.
-- [ ] **Migrate the three existing composers** ([`prompt-composer.tsx`](../packages/web/components/prompt-composer.tsx),
+- [x] **Migrate the three existing composers** ([`prompt-composer.tsx`](../packages/web/components/prompt-composer.tsx),
       [`council-topic-composer.tsx`](../packages/web/components/council-topic-composer.tsx),
       [`memory-chat-composer.tsx`](../packages/web/components/memory/memory-chat-composer.tsx)) to the
       new primitive — behavior-preserving, same visual result; the raw class is removed once nothing
       references it.
-- [ ] **`docs` consumes it too** — the docs site gets the same glow available as a documented `@midnite/ui`
+- [x] **`docs` consumes it too** — the docs site gets the same glow available as a documented `@midnite/ui`
       example (Phase 26 lives on `@midnite/ui`); the boundary tests in both `ui` and `docs` stay green.
 
-## Theme C — Docs deep-link (current page's docs) — **S-M**
+## Theme C — Docs deep-link (current page's docs) — **S-M**  ✅ DONE (PR #422, 2026-07-13)
 
 "Docs" opens the docs *for where you are*, not a generic home.
 
-- [ ] **A `pathname → docs-slug` map** — a small table (web `lib/`) resolving the current App-Router
+- [x] **A `pathname → docs-slug` map** — a small table (web `lib/`) resolving the current App-Router
       pathname to the matching docs page slug, reusing the per-feature docs pages that already exist
       (Phase 26) and the `DOCS_URL` base ([`site-links.ts`](../packages/web/lib/site-links.ts)). Falls
       back to the docs home for unmapped routes.
-- [ ] **Docs entry** in the assistant panel opens `${DOCS_URL}/${slug}` for the active route (new tab).
+- [x] **Docs entry** in the assistant panel opens `${DOCS_URL}/${slug}` for the active route (new tab).
       Retire the plain path-less "Docs" nav button (~L288) in favour of this — one docs affordance.
-- [ ] Keep the map honest: a tiny test asserts every mapped slug is a real docs route (guards against
+- [x] Keep the map honest: a tiny test asserts every mapped slug is a real docs route (guards against
       the map drifting as docs pages are added/renamed).
 
-## Theme D — Relocate Chat to board into the panel — **M**
+## Theme D — Relocate Chat to board into the panel — **M**  ✅ DONE (PR #422, 2026-07-13)
 
 Chat-to-board now *lives* in the assistant, not behind a palette event.
 
-- [ ] **Render `ChatBar` in-panel** — lift the already-decoupled [`useChatCommand`](../packages/web/hooks/use-chat-command.ts)
+- [x] **Render `ChatBar` in-panel** — lift the already-decoupled [`useChatCommand`](../packages/web/hooks/use-chat-command.ts)
       + [`ChatBar`](../packages/web/components/chat-bar.tsx) so "Chat to board" opens the NL command bar
       *inside* the assistant panel (preview → confirm → undo, follow-up expansion, live board refresh —
       all inherited, **no engine changes**).
-- [ ] **Remove the sidenav + mobile-nav entry** — drop the "Chat to board" button from
+- [x] **Remove the sidenav + mobile-nav entry** — drop the "Chat to board" button from
       [`nav-bar.tsx`](../packages/web/components/nav-bar.tsx) (~L270-278) and
       [`mobile-nav.tsx`](../packages/web/components/mobile-nav.tsx). The palette keeps its own `>`
       chat mode for keyboard users (same shared hook, two hosts) — the `midnite:open-chat` event may
       re-point at the FAB or be retired; either way the sidenav no longer owns the affordance.
-- [ ] Verify the confirm/undo/audit safety path (Phase 59 Theme F) works identically from the new host.
+- [x] Verify the confirm/undo/audit safety path (Phase 59 Theme F) works identically from the new host.
 
 ## Theme E — Agent chat with inline custom components — **L**
 
@@ -202,16 +202,16 @@ An interactive walkthrough of the current feature, launchable any time.
 
 ## Verification
 
-- [ ] **Shell:** the logo FAB appears on app routes (not the public site); hover lights the gradient
+- [x] **Shell:** the logo FAB appears on app routes (not the public site); hover lights the gradient
       border + glow; click expands a glowing, gradient-bordered panel with all four entries; Escape /
       outside-click closes; keyboard-operable + focus-trapped; motion respects `prefers-reduced-motion`;
       a usable mobile variant under `md`.
-- [ ] **Glow primitive:** `.gradient-border` now lives in `@midnite/ui`; the three existing composers
+- [x] **Glow primitive:** `.gradient-border` now lives in `@midnite/ui`; the three existing composers
       render identically through the primitive; the raw CSS class is gone from `globals.css`; `ui` +
       `docs` boundary tests stay green (leaf rule intact).
-- [ ] **Docs deep-link:** "Docs" opens the docs page for the current route (falls back to home for
+- [x] **Docs deep-link:** "Docs" opens the docs page for the current route (falls back to home for
       unmapped routes); the path-less nav "Docs" button is retired; the slug-map test passes.
-- [ ] **Chat relocation:** "Chat to board" opens the NL command bar **inside** the panel with
+- [x] **Chat relocation:** "Chat to board" opens the NL command bar **inside** the panel with
       preview → confirm → undo working identically to Phase 59; the sidenav + mobile-nav entries are
       gone; the palette `>` chat mode still works (shared hook).
 - [ ] **Agent:** asking about the fleet/tasks/sessions returns markdown answers **plus** inline

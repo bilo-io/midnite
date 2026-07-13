@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Loader2, Mic, MicOff, Send, Sparkles } from 'lucide-react';
 import type { Memory, MemoryChatMessage } from '@midnite/shared';
+import { GradientGlow } from '@midnite/ui';
 import { getMemoryChat, getSetupStatus, postMemoryChat } from '@/lib/api';
 import { MarkdownPreview } from '@/components/markdown-preview';
 import { SourceIcon } from '@/components/source-icon';
@@ -118,7 +119,7 @@ export function MemoryChatComposer({ memory }: { memory: Memory }) {
               </p>
             ) : (
               <ComposerFullscreen full={full} onClose={close}>
-                <div className="gradient-border relative z-10 rounded-xl shadow-sm transition-shadow duration-700 ease-out focus-within:shadow-lg motion-reduce:transition-none">
+                <GradientGlow className="relative z-10 rounded-xl shadow-sm transition-shadow duration-700 ease-out focus-within:shadow-lg motion-reduce:transition-none">
                   {/* Opaque surface so the conic gradient reads as border + glow only. */}
                   <div className="relative rounded-xl bg-card p-3">
                     <ComposerFullscreenToggle full={full} onToggle={toggle} />
@@ -173,7 +174,7 @@ export function MemoryChatComposer({ memory }: { memory: Memory }) {
                       </Button>
                     </div>
                   </div>
-                </div>
+                </GradientGlow>
               </ComposerFullscreen>
             )}
             {error ? <p className="mt-2 text-[11px] text-destructive">{error}</p> : null}

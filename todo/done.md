@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-13 — feat(web): floating assistant menu — Phase 66 Themes A/B/C/D (PR #422)
+
+Lands the spine of Phase 66: one logo-anchored floating assistant. Slice = the glow-primitive dependency (B) → the FAB shell (A) → the two cheap wins (C docs deep-link, D chat relocation). Agent (E) and Guide (F) land later; their panel entries ship visible-but-disabled. Phase 66 → 17/27 (63%), Status 🔄 WIP (E + F remain — E claimed by a parallel loop).
+
+- [x] **Theme B — Glow → `@midnite/ui`:** promoted `.gradient-border` (animated border + blurred halo, reduced-motion-aware) into a `<GradientGlow>` wrapper primitive + token CSS shared by `web` + `docs` (leaf rule intact); added `hover`/`always` triggers beside the composers' `focus` behaviour; migrated the three composers; removed the raw class + keyframes from `web/globals.css` (kept in the shared token CSS, imported first, so the workflow-node backgrounds + reconnect orbit still resolve `--gradient-angle`/`gradient-border-spin`).
+- [x] **Theme A — Assistant shell + FAB:** logo FAB, bottom-right, app-routes-only (mounted in the `(main)` shell); hover lights the glow, click expands a glowing gradient-bordered panel (Docs · Guide · Chat · Agent); portal + Escape/outside-click + focus trap + `dialog` ARIA + CSS-only animation + mobile bottom-sheet; coexists with ⌘K.
+- [x] **Theme C — Docs deep-link:** `pathname → docs-slug` map opens the current route's docs (hash-routed) with a docs-home fallback; boundary-safe honesty test (web can't import docs, so validated against a `KNOWN_DOCS_SLUGS` mirror); `NEXT_PUBLIC_DOCS_URL` env-overridable (docs hosting is a deferred follow-on). Retired the path-less sidenav Docs button (which a concurrent main merge had added importing a not-yet-committed `site-links.ts`) — the FAB is now the one docs affordance.
+- [x] **Theme D — Chat relocation:** "Chat to board" now lives in the panel (in-panel view swap + back) reusing the shared `useChatCommand`/`ChatBar` — no engine change; sidenav button removed; `midnite:open-chat` re-pointed at the FAB (palette keeps its `>` mode). Confirm/undo safety path inherited unchanged.
+- [x] **Tests + shots:** `GradientGlow` stories (ui), `docs-links` unit, `AssistantFab` RTL (open/entries/docs/chat-swap/event/Escape), updated palette test for the re-pointed event; Playwright shot capture (light+dark). `moon run :typecheck :lint :test` green.
+
 ## 2026-07-11 — feat(cli): midnite digest command — Phase 62 Theme H (PR #409)
 
 Closes the last ◐ of Phase 62 Theme H: the deferred `midnite digest` CLI, now unblocked by Theme G's `GET /digests` read API (PR #404). Thin client over the existing routes — no gateway/shared change. Phase 62 Theme H → ✅ DONE; phase 24/32 (75%), remaining boxes are the Verification pass (Theme V, parallel loop).

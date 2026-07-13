@@ -14,6 +14,7 @@ import { PageReveal } from '@/components/page-reveal';
 import { SetupNudge } from '@/components/setup-nudge';
 import { SetupWizardController } from '@/components/SetupWizard';
 import { PullToRefresh } from '@/components/pull-to-refresh';
+import { AssistantFab } from '@/components/assistant/assistant-fab';
 import { queryClient } from '@/lib/query-client';
 
 export default function MainLayout({ children }: { children: ReactNode }) {
@@ -41,6 +42,7 @@ export default function MainLayout({ children }: { children: ReactNode }) {
           <FeatureGate />
           <SetupNudge onOpenWizard={openWizard} />
         </Suspense>
+        <AssistantFab />
         <SetupWizardController onOpenWizard={registerOpen} />
       </div>
     </PaletteCommandsProvider>
