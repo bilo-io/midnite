@@ -20,11 +20,11 @@ import { deliverWebhook } from '../lib/safe-webhook-delivery';
 import { TaskEventBus } from '../tasks/task-event-bus';
 import type { WebhookRow } from '../db/schema';
 import { WebhookDeliveriesRepository } from './webhook-deliveries.repository';
-import { formatWebhookBody, type WebhookPayload } from './formatters/format';
+import { formatWebhookBody, type DigestWebhookData, type WebhookPayload } from './formatters/format';
 import { SIGNATURE_HEADER, TIMESTAMP_HEADER, signPayload } from './lib/sign';
 import { WebhooksRepository } from './webhooks.repository';
 
-export type { WebhookPayload };
+export type { WebhookPayload, DigestWebhookData };
 
 /**
  * Decide whether an endpoint's filter fires for a given event. `statuses` only
@@ -84,13 +84,35 @@ export class WebhookDeliveryService implements OnModuleInit, OnModuleDestroy {
   }
 
   /** Resolve the team's matching enabled endpoints and dispatch one delivery each. */
-  private async fanOut(eventType: WebhookEvent, task: Task, at: string): Promise<void> {
+  private async fanOut(
+    eventType: 'task.created' | 'task.updated',
+    task: Task,
+    at: string,
+  ): Promise<void> {
     const matching = this.webhooks
       .list(task.teamId ?? null)
       .filter((w) => w.enabled && eventMatches(parseFilter(w.eventFilter), eventType, task.status));
     if (matching.length === 0) return;
     const payload: WebhookPayload = { event: eventType, at, task };
     await Promise.all(matching.map((w) => this.dispatch(w, eventType, payload)));
+  }
+
+  /**
+   * Phase 62 E — fan a freshly-built fleet digest out to every enabled endpoint
+   * subscribed to `digest.generated`. Digests are **global** (no team column), so
+   * this scans all endpoints rather than one team's. Best-effort: called
+   * fire-and-forget from `DigestBuilder`, it must never fail digest generation —
+   * callers `.catch()` it; individual dispatches record their own delivery rows.
+   */
+  async fanOutDigest(digest: DigestWebhookData, at: string): Promise<void> {
+    const matching = this.webhooks
+      .listAll()
+      .filter(
+        (w) => w.enabled && eventMatches(parseFilter(w.eventFilter), 'digest.generated', undefined),
+      );
+    if (matching.length === 0) return;
+    const payload: WebhookPayload = { event: 'digest.generated', at, digest };
+    await Promise.all(matching.map((w) => this.dispatch(w, 'digest.generated', payload)));
   }
 
   /**

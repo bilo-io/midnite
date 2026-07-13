@@ -63,13 +63,13 @@ describe('eventMatches', () => {
 
 describe('WebhookDeliveryService', () => {
   let bus: TaskEventBus;
-  let webhooks: { list: ReturnType<typeof vi.fn> };
+  let webhooks: { list: ReturnType<typeof vi.fn>; listAll: ReturnType<typeof vi.fn> };
   let deliveries: { insert: ReturnType<typeof vi.fn> };
   let service: WebhookDeliveryService;
 
   beforeEach(() => {
     bus = new TaskEventBus();
-    webhooks = { list: vi.fn().mockReturnValue([webhookRow()]) };
+    webhooks = { list: vi.fn().mockReturnValue([webhookRow()]), listAll: vi.fn().mockReturnValue([]) };
     deliveries = { insert: vi.fn((row) => ({ ...row })) };
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(okResponse);
     // crypto omitted → secret used as-is (plaintext path).
@@ -142,6 +142,48 @@ describe('WebhookDeliveryService', () => {
     await flush();
     expect(webhooks.list).not.toHaveBeenCalled();
     expect(deliveries.insert).not.toHaveBeenCalled();
+  });
+
+  const digestData = {
+    id: 'dig-1',
+    from: '2026-06-29T00:00:00.000Z',
+    to: '2026-06-30T00:00:00.000Z',
+    headline: 'Shipped 3, 1 failed',
+    counts: { shipped: 3, failed: 1, needsAttention: 1 },
+  };
+
+  it('fanOutDigest() delivers to every enabled endpoint subscribed to digest.generated, across teams', async () => {
+    webhooks.listAll.mockReturnValue([
+      webhookRow({ id: 'a', teamId: 'team-1', eventFilter: JSON.stringify(filter({ events: ['digest.generated'] })) }),
+      webhookRow({ id: 'b', teamId: 'team-2', eventFilter: JSON.stringify(filter({ events: ['digest.generated'] })) }),
+    ]);
+    await service.fanOutDigest(digestData, '2026-06-30T08:00:00.000Z');
+
+    expect(webhooks.listAll).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(globalThis.fetch)).toHaveBeenCalledTimes(2);
+    expect(deliveries.insert).toHaveBeenCalledTimes(2);
+    expect(deliveries.insert.mock.calls[0]![0]).toMatchObject({ event: 'digest.generated', status: 'success' });
+  });
+
+  it('fanOutDigest() skips endpoints not subscribed to digest.generated + disabled ones', async () => {
+    webhooks.listAll.mockReturnValue([
+      webhookRow({ id: 'tasks-only' }), // default filter = task.* only
+      webhookRow({ id: 'off', enabled: false, eventFilter: JSON.stringify(filter({ events: ['digest.generated'] })) }),
+    ]);
+    await service.fanOutDigest(digestData, 'x');
+    expect(vi.mocked(globalThis.fetch)).not.toHaveBeenCalled();
+    expect(deliveries.insert).not.toHaveBeenCalled();
+  });
+
+  it('fanOutDigest() formats the digest for a Slack endpoint', async () => {
+    webhooks.listAll.mockReturnValue([
+      webhookRow({ provider: 'slack', eventFilter: JSON.stringify(filter({ events: ['digest.generated'] })) }),
+    ]);
+    await service.fanOutDigest(digestData, 'x');
+    const init = vi.mocked(globalThis.fetch).mock.calls[0]![1]!;
+    expect(JSON.parse(init.body as string)).toEqual({
+      text: 'Digest: Shipped 3, 1 failed — 3 shipped, 1 failed, 1 need attention',
+    });
   });
 });
 

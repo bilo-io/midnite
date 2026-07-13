@@ -1,7 +1,31 @@
-import type { Status, Task, WebhookEvent, WebhookProvider } from '@midnite/shared';
+import type { DigestCounts, Status, Task, WebhookEvent, WebhookProvider } from '@midnite/shared';
 
-/** The canonical generic payload (also the body generic endpoints receive verbatim). */
-export type WebhookPayload = { event: WebhookEvent; at: string; task: Task };
+/** The compact digest shape carried by a `digest.generated` webhook — the heavy
+ *  `sections`/`highlights`/`markdown` stay out of the wire body. */
+export type DigestWebhookData = {
+  id: string;
+  from: string;
+  to: string;
+  headline: string;
+  counts: DigestCounts;
+};
+
+/**
+ * The canonical signed payload (also the body `generic` endpoints receive
+ * verbatim). A discriminated union on `event`: task-lifecycle events carry the
+ * `task`; `digest.generated` carries the compact `digest`.
+ */
+export type TaskWebhookPayload = {
+  event: 'task.created' | 'task.updated' | 'task.deleted';
+  at: string;
+  task: Task;
+};
+export type DigestWebhookPayload = {
+  event: 'digest.generated';
+  at: string;
+  digest: DigestWebhookData;
+};
+export type WebhookPayload = TaskWebhookPayload | DigestWebhookPayload;
 
 const STATUS_LABEL: Record<Status, string> = {
   backlog: 'Backlog',
@@ -17,6 +41,10 @@ const STATUS_LABEL: Record<Status, string> = {
  * formatters. Plain text (no markup) so it's safe in either provider's field.
  */
 export function summarize(payload: WebhookPayload): string {
+  if (payload.event === 'digest.generated') {
+    const { headline, counts } = payload.digest;
+    return `Digest: ${headline} — ${counts.shipped} shipped, ${counts.failed} failed, ${counts.needsAttention} need attention`;
+  }
   const { event, task } = payload;
   const kind = task.kind && task.kind !== 'unknown' ? task.kind : 'task';
   const where = task.repo ? ` (${task.repo})` : '';
