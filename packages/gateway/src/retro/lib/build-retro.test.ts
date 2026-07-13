@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { TaskRetroSchema, type Task } from '@midnite/shared';
 
-import { buildRetro, type RetroSources } from './build-retro';
+import { buildRetro, retroOutcomeForTask, type RetroSources } from './build-retro';
 import type { AgentRunStatsRow, TaskCheckRunRow, TaskEventRow, TaskFailureRow } from '../../db/schema';
 
 const NOW = '2026-07-07T10:00:00.000Z';
@@ -31,6 +31,16 @@ describe('buildRetro', () => {
 
   it('maps outcome from the terminal status', () => {
     expect(buildRetro(task({ status: 'abandoned' }), emptySources(), NOW).outcome).toBe('abandoned');
+  });
+
+  it('maps a needs-attention escalation (waiting + failure reason) to `needs-attention`', () => {
+    const retro = buildRetro(
+      task({ status: 'waiting', waitReason: 'agent-failed' } as Partial<Task>),
+      emptySources(),
+      NOW,
+    );
+    expect(retro.outcome).toBe('needs-attention');
+    expect(TaskRetroSchema.safeParse(retro).success).toBe(true);
   });
 
   it('maps run stats to attempts (retryIndex from retryCount)', () => {
@@ -103,5 +113,20 @@ describe('buildRetro', () => {
       { at: '2026-07-07T09:00:00.000Z', kind: 'task.created' },
       { at: '2026-07-07T09:45:00.000Z', kind: 'status.changed', detail: 'done' },
     ]);
+  });
+});
+
+describe('retroOutcomeForTask', () => {
+  it('derives the retro-worthy outcome, or null when not retro-worthy', () => {
+    expect(retroOutcomeForTask(task({ status: 'done' }))).toBe('done');
+    expect(retroOutcomeForTask(task({ status: 'abandoned' }))).toBe('abandoned');
+    expect(
+      retroOutcomeForTask(task({ status: 'waiting', waitReason: 'timed-out' } as Partial<Task>)),
+    ).toBe('needs-attention');
+    expect(retroOutcomeForTask(task({ status: 'wip' }))).toBeNull();
+    expect(retroOutcomeForTask(task({ status: 'waiting' }))).toBeNull(); // no reason
+    expect(
+      retroOutcomeForTask(task({ status: 'waiting', waitReason: 'needs-input' } as Partial<Task>)),
+    ).toBeNull(); // blocking on input, not escalated
   });
 });

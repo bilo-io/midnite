@@ -1542,7 +1542,7 @@ export const taskRetros = sqliteTable(
     id: text('id').primaryKey(),
     /** One retro per task — the upsert key. */
     taskId: text('task_id').notNull().unique(),
-    /** Terminal outcome the retro was built for: 'done' | 'abandoned'. */
+    /** Outcome the retro was built for: 'done' | 'abandoned' | 'needs-attention'. */
     outcome: text('outcome').notNull(),
     /** 1 once an LLM narrative has been attached (Theme C/H); 0 for the skeleton. */
     hasNarrative: integer('has_narrative').notNull().default(0),

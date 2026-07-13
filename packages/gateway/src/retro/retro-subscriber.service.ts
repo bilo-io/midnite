@@ -3,14 +3,15 @@ import type { MidniteConfig, TaskBoardEvent } from '@midnite/shared';
 
 import { MIDNITE_CONFIG } from '../config.token';
 import { TaskEventBus } from '../tasks/task-event-bus';
+import { retroOutcomeForTask } from './lib/build-retro';
 import { RetroBuilderService } from './retro-builder.service';
 
 /**
- * Phase 62 A — auto-build a retro on a task's terminal transition. Subscribes to
- * the existing `TaskEventBus` (the search-module pattern — `tasks.service` is
- * untouched): on a `task.updated` whose task is `done`/`abandoned` and has no
- * retro for that outcome yet, build + store the skeleton. Fail-open — a retro
- * failure never propagates back into the task write path.
+ * Phase 62 A — auto-build a retro when a task finishes or is escalated. Subscribes
+ * to the existing `TaskEventBus` (the search-module pattern — `tasks.service` is
+ * untouched): on a `task.updated` whose task is `done`/`abandoned`/`needs-attention`
+ * and has no retro for that outcome yet, build + store the skeleton. Fail-open — a
+ * retro failure never propagates back into the task write path.
  */
 @Injectable()
 export class RetroSubscriberService implements OnApplicationBootstrap, OnModuleDestroy {
@@ -40,13 +41,17 @@ export class RetroSubscriberService implements OnApplicationBootstrap, OnModuleD
   private onTaskEvent(event: TaskBoardEvent): void {
     if (event.type !== 'task.updated') return;
     const task = event.task;
-    if (task.status !== 'done' && task.status !== 'abandoned') return;
+    // Build on the terminal outcomes (done/abandoned) AND on a needs-attention
+    // escalation (waiting + needs-attention reason, Phase 62). Any other state is
+    // not retro-worthy.
+    const outcome = retroOutcomeForTask(task);
+    if (!outcome) return;
 
     // Idempotent: skip when a retro for this outcome already exists (a done task
     // still emits `task.updated` on PR-status polls etc — don't rebuild each time).
-    // A genuine re-terminal (outcome changed) rebuilds.
+    // A genuine outcome change (needs-attention → done, or a re-terminal) rebuilds.
     const existing = this.builder.getByTaskId(task.id);
-    if (existing && existing.outcome === task.status) return;
+    if (existing && existing.outcome === outcome) return;
 
     try {
       this.builder.buildAndStore(task);

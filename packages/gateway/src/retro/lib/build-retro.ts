@@ -1,4 +1,4 @@
-import type { Task, TaskFailure, TaskRetro } from '@midnite/shared';
+import { isNeedsAttention, type RetroOutcome, type Task, type TaskFailure, type TaskRetro } from '@midnite/shared';
 
 import type {
   AgentRunStatsRow,
@@ -6,6 +6,20 @@ import type {
   TaskEventRow,
   TaskFailureRow,
 } from '../../db/schema';
+
+/**
+ * The retro outcome a task's current state represents, or `null` when the task
+ * isn't in a retro-worthy state. `done`/`abandoned` are terminal; a task parked
+ * in `waiting` with a needs-attention `waitReason` (Phase 53) maps to
+ * `needs-attention` (Phase 62 — a skeleton is built there too). Any other state
+ * (todo/wip/plain-waiting) yields `null` — no retro.
+ */
+export function retroOutcomeForTask(task: Task): RetroOutcome | null {
+  if (task.status === 'done') return 'done';
+  if (task.status === 'abandoned') return 'abandoned';
+  if (task.status === 'waiting' && isNeedsAttention(task.waitReason)) return 'needs-attention';
+  return null;
+}
 
 /** The raw per-task material a retro is assembled from. */
 export type RetroSources = {
@@ -21,7 +35,9 @@ export type RetroSources = {
  * LLM summary. `now` is the retro's build timestamp (injected for testability).
  */
 export function buildRetro(task: Task, sources: RetroSources, now: string): TaskRetro {
-  const outcome = task.status === 'done' ? 'done' : 'abandoned';
+  // The subscriber only calls this for retro-worthy states; fall back to
+  // `abandoned` defensively so `outcome` is never null.
+  const outcome: RetroOutcome = retroOutcomeForTask(task) ?? 'abandoned';
 
   const timeline = sources.events.map((e) => ({
     at: e.at,

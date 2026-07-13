@@ -40,10 +40,24 @@ describe('RetroSubscriberService', () => {
     expect(builder.buildAndStore).toHaveBeenCalledTimes(1);
   });
 
-  it('ignores non-terminal updates', () => {
+  it('builds a retro when a task is escalated to needs-attention (waiting + failure reason)', () => {
+    const { bus, builder } = build();
+    bus.emit(updated(task({ status: 'waiting', waitReason: 'agent-failed' })));
+    expect(builder.buildAndStore).toHaveBeenCalledTimes(1);
+  });
+
+  it('rebuilds when a needs-attention task later reaches a terminal outcome', () => {
+    const existing = { outcome: 'needs-attention' } as TaskRetro;
+    const { bus, builder } = build({ getByTaskId: vi.fn().mockReturnValue(existing) });
+    bus.emit(updated(task({ status: 'done' })));
+    expect(builder.buildAndStore).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores non-terminal updates (incl. waiting on live user input)', () => {
     const { bus, builder } = build();
     bus.emit(updated(task({ status: 'wip' })));
-    bus.emit(updated(task({ status: 'waiting' })));
+    bus.emit(updated(task({ status: 'waiting' }))); // no reason
+    bus.emit(updated(task({ status: 'waiting', waitReason: 'needs-input' }))); // blocking on input, not escalated
     expect(builder.buildAndStore).not.toHaveBeenCalled();
   });
 

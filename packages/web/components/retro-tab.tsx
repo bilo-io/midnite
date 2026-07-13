@@ -46,6 +46,12 @@ function StatChip({ label, value }: { label: string; value: string }) {
   );
 }
 
+const OUTCOME_LABEL: Record<TaskRetro['outcome'], string> = {
+  done: 'Shipped',
+  abandoned: 'Abandoned',
+  'needs-attention': 'Needs attention',
+};
+
 function OutcomeBadge({ outcome }: { outcome: TaskRetro['outcome'] }) {
   return (
     <span
@@ -53,10 +59,12 @@ function OutcomeBadge({ outcome }: { outcome: TaskRetro['outcome'] }) {
         'rounded-full px-2 py-0.5 text-xs font-medium',
         outcome === 'done'
           ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-          : 'bg-rose-500/15 text-rose-600 dark:text-rose-400',
+          : outcome === 'needs-attention'
+            ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+            : 'bg-rose-500/15 text-rose-600 dark:text-rose-400',
       )}
     >
-      {outcome === 'done' ? 'Shipped' : 'Abandoned'}
+      {OUTCOME_LABEL[outcome]}
     </span>
   );
 }
