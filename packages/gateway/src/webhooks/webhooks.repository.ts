@@ -17,6 +17,14 @@ export class WebhooksRepository {
       .all();
   }
 
+  /**
+   * Every endpoint across all teams. Used to fan out **global** events (Phase 62
+   * `digest.generated`) that aren't scoped to a single team's task stream.
+   */
+  listAll(): WebhookRow[] {
+    return this.db.select().from(webhooks).orderBy(desc(webhooks.createdAt)).all();
+  }
+
   findById(id: string): WebhookRow | undefined {
     return this.db.select().from(webhooks).where(eq(webhooks.id, id)).get();
   }

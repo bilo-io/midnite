@@ -28,6 +28,7 @@ type Deps = {
   usage: { attribution: ReturnType<typeof vi.fn> };
   metrics: { getCycleTime: ReturnType<typeof vi.fn> };
   llm: { enabled: boolean; getPlanModel: ReturnType<typeof vi.fn>; generateStructured: ReturnType<typeof vi.fn> };
+  webhooks?: { fanOutDigest: ReturnType<typeof vi.fn> };
 };
 
 function make(over: Partial<Deps> = {}): { svc: DigestBuilderService; deps: Deps } {
@@ -54,8 +55,15 @@ function make(over: Partial<Deps> = {}): { svc: DigestBuilderService; deps: Deps
     deps.usage as unknown as UsageService,
     deps.metrics as unknown as MetricsService,
     deps.llm as unknown as LlmService,
+    undefined, // search — omitted
+    deps.webhooks as never,
   );
   return { svc, deps };
+}
+
+/** Let the fire-and-forget webhook fan-out microtask settle. */
+function flush(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 const WINDOW = { from: '2026-07-01T00:00:00.000Z', to: '2026-07-02T00:00:00.000Z' };
@@ -130,16 +138,36 @@ describe('DigestBuilderService', () => {
     expect(stored.cycle).toBeNull();
   });
 
-  it('uses the LLM headline when enabled', async () => {
+  it('uses the LLM headline when enabled, usage-tagged `digest`', async () => {
+    const generateStructured = vi.fn().mockResolvedValue({ data: { headline: 'Big week for midnite' }, model: 'plan' });
     const { svc } = make({
-      llm: {
-        enabled: true,
-        getPlanModel: vi.fn().mockReturnValue('plan'),
-        generateStructured: vi.fn().mockResolvedValue({ data: { headline: 'Big week for midnite' }, model: 'plan' }),
-      },
+      llm: { enabled: true, getPlanModel: vi.fn().mockReturnValue('plan'), generateStructured },
     });
     const res = await svc.build({ ...WINDOW, tasks: [summary({ id: 'a', status: 'done' })] });
     expect(res.headline).toBe('Big week for midnite');
+    // The single headline call is usage-tagged `digest` (Phase 62 attribution).
+    expect(generateStructured).toHaveBeenCalledTimes(1);
+    expect(generateStructured.mock.calls[0]![1]).toBe('digest');
+  });
+
+  it('fans the stored digest out to registered webhooks (fail-soft)', async () => {
+    const fanOutDigest = vi.fn().mockResolvedValue(undefined);
+    const { svc } = make({ webhooks: { fanOutDigest } });
+    await svc.build({ ...WINDOW, tasks: [summary({ id: 'a', status: 'done' })] });
+    await flush();
+    expect(fanOutDigest).toHaveBeenCalledTimes(1);
+    const [data] = fanOutDigest.mock.calls[0]!;
+    expect(data).toMatchObject({ from: WINDOW.from, to: WINDOW.to, counts: { shipped: 1, failed: 0 } });
+    expect(typeof data.id).toBe('string');
+  });
+
+  it('never fails digest generation when the webhook fan-out throws', async () => {
+    const fanOutDigest = vi.fn().mockRejectedValue(new Error('webhook down'));
+    const { svc, deps } = make({ webhooks: { fanOutDigest } });
+    const res = await svc.build({ ...WINDOW, tasks: [summary({ id: 'a', status: 'done' })] });
+    await flush();
+    expect(res.digestId).toBeTruthy();
+    expect(deps.repo.insert).toHaveBeenCalledTimes(1); // digest still stored
   });
 
   it('fails soft to a deterministic headline when the LLM throws', async () => {

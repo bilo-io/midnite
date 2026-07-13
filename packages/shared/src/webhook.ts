@@ -17,8 +17,19 @@ export const WEBHOOK_PROVIDERS = ['slack', 'discord', 'generic'] as const;
 export const WebhookProviderSchema = z.enum(WEBHOOK_PROVIDERS);
 export type WebhookProvider = z.infer<typeof WebhookProviderSchema>;
 
-/** The task-lifecycle events an endpoint can fire on. */
-export const WEBHOOK_EVENTS = ['task.created', 'task.updated', 'task.deleted'] as const;
+/**
+ * The events an endpoint can fire on. `task.*` are the task-lifecycle events off
+ * the {@link https | TaskEventBus}; `digest.generated` fires when a fleet digest
+ * is built (Phase 62 E) — a **global** (teamless) event, so it fans out to every
+ * enabled endpoint subscribed to it regardless of team. `statuses` only narrows
+ * `task.updated`; it's ignored for the others.
+ */
+export const WEBHOOK_EVENTS = [
+  'task.created',
+  'task.updated',
+  'task.deleted',
+  'digest.generated',
+] as const;
 export const WebhookEventSchema = z.enum(WEBHOOK_EVENTS);
 export type WebhookEvent = z.infer<typeof WebhookEventSchema>;
 

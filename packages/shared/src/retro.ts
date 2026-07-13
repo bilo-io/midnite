@@ -12,8 +12,14 @@ import { TaskFailureSchema } from './task-failure.js';
  * hence nullable here.
  */
 
-/** The terminal outcome a retro was built for. */
-export const RetroOutcomeSchema = z.enum(['done', 'abandoned']);
+/**
+ * The outcome a retro was built for. `done`/`abandoned` are the terminal
+ * outcomes; `needs-attention` is the (non-terminal) escalation a human should
+ * look at — a task parked in `waiting` with a needs-attention `waitReason`
+ * (Phase 53). A skeleton is built for all three (Phase 62); a later terminal
+ * transition upserts the row to `done`/`abandoned`.
+ */
+export const RetroOutcomeSchema = z.enum(['done', 'abandoned', 'needs-attention']);
 export type RetroOutcome = z.infer<typeof RetroOutcomeSchema>;
 
 /** One entry in the task's timeline — mirrors a `task_events` row. */
@@ -111,16 +117,16 @@ export type RetroResponse = z.infer<typeof RetroResponseSchema>;
 /**
  * Whether a task retro is **notable** — worth surfacing to a human rather than
  * filing silently. Deterministic (no LLM), so the retro pipeline (Phase 62 D)
- * can branch its notify step on it. True when the task was **abandoned**, a
- * **retry budget or quality gate gave out** (`retries-exhausted` / `gate-failed`
- * failure), or a **check run failed** — i.e. the outcome someone should look at
+ * can branch its notify step on it. True when the task was **abandoned** or
+ * **escalated to a human** (`needs-attention`), a **retry budget or quality gate
+ * gave out** (`retries-exhausted` / `gate-failed` failure), or a **check run failed** — i.e. the outcome someone should look at
  * even though the task ended cleanly. A `done` task with none of these is routine
  * and stays quiet.
  */
 export function isRetroNotable(
   retro: Pick<TaskRetro, 'outcome' | 'failures' | 'checks'>,
 ): boolean {
-  if (retro.outcome === 'abandoned') return true;
+  if (retro.outcome === 'abandoned' || retro.outcome === 'needs-attention') return true;
   if (retro.failures.some((f) => f.class === 'retries-exhausted' || f.class === 'gate-failed')) {
     return true;
   }

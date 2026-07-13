@@ -3,7 +3,7 @@ import Database from 'better-sqlite3';
 import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { parseConfig, type Workflow, type WorkflowGraph, type WorkflowNode } from '@midnite/shared';
+import { parseConfig, WorkflowGraphSchema, type Workflow, type WorkflowGraph, type WorkflowNode } from '@midnite/shared';
 
 import * as schema from '../../db/schema';
 import { WorkflowsRepository } from '../../workflows/workflows.repository';
@@ -91,6 +91,15 @@ describe('daily-digest seed — shape', () => {
     expect(fromBuild).toEqual(['n4', 'n5']);
     expect(definition.nodes.some((n) => n.type === 'ai.claude')).toBe(false);
     expect(definition.nodes.some((n) => n.type === 'midnite.list-tasks')).toBe(false);
+  });
+
+  it('is install-valid — the stored graph parses (nodes carry positions)', () => {
+    // Guards the install path: install() stores the definition verbatim and
+    // getWorkflow() re-parses it against WorkflowGraphSchema. A node missing its
+    // required `position` would 500 the install ("installable + one-click enable").
+    expect(() =>
+      WorkflowGraphSchema.parse({ nodes: definition.nodes, edges: definition.edges }),
+    ).not.toThrow();
   });
 
   it('keeps Slack as an optional, best-effort credential slot', () => {
@@ -187,5 +196,59 @@ describe('daily-digest seed — pipeline run', () => {
     expect(slackRun.status).toBe('succeeded');
     expect(slackRun.output).toMatchObject({ skipped: true, reason: 'unbound-credential-slot' });
     expect(resolveSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('daily-digest seed — bound Slack delivery (Block Kit)', () => {
+  const BLOCKS = [{ type: 'section', text: { type: 'mrkdwn', text: '*Digest*' } }];
+
+  function boundWorkflow(): Workflow {
+    const wf = toWorkflow();
+    // Bind the Slack slot to a real credential id (an install-time wiring).
+    const slack = wf.nodes.find((n) => n.type === 'slack.message')!;
+    slack.params = { ...slack.params, credentialId: 'cred-slack-1' };
+    return wf;
+  }
+
+  it('resolves the credential and posts the digest with Block Kit blocks + fallback text', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true, ts: '123.456', channel: '#daily-standup' }),
+    } as Response);
+
+    const listCompleted: NodeExecutor = {
+      typeId: 'midnite.list-completed-tasks',
+      async execute() {
+        return { from: NOW, to: NOW, count: 1, tasks: [{ id: 't1' }] };
+      },
+    };
+    const buildDigest: NodeExecutor = {
+      typeId: 'midnite.build-digest',
+      async execute() {
+        return { digestId: 'dig-1', headline: 'Shipped 1', markdown: '# Digest', blocks: BLOCKS };
+      },
+    };
+    const notify: NodeExecutor = { typeId: 'midnite.notify', async execute() { return { notified: true }; } };
+    const slack = new SlackMessageExecutor({
+      resolve: vi.fn().mockResolvedValue({ type: 'slack', token: 'xoxb-test' }),
+    } as unknown as WorkflowCredentialsService);
+
+    const engine = new WorkflowEngine(
+      new WorkflowsRepository(makeDb()),
+      new ExecutorRegistry([listCompleted, buildDigest, slack, notify]),
+      new WorkflowEventBus(),
+      parseConfig({ agent: {}, terminal: {}, knowledge: {}, gateway: {} }),
+    );
+
+    const run = await engine.runToCompletion(boundWorkflow(), { triggerSource: 'schedule', input: {} });
+    expect(run.status).toBe('succeeded');
+
+    const call = fetchMock.mock.calls.find(([url]) => String(url).includes('chat.postMessage'))!;
+    expect(call).toBeDefined();
+    const body = JSON.parse((call[1] as RequestInit).body as string);
+    expect(body).toMatchObject({ channel: '#daily-standup', blocks: BLOCKS });
+    expect(body.text).toContain('Daily Fleet Digest'); // fallback text preserved
+
+    vi.restoreAllMocks();
   });
 });

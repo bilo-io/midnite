@@ -5,6 +5,7 @@ import { MetricsModule } from '../metrics/metrics.module';
 import { RetroModule } from '../retro/retro.module';
 import { TasksModule } from '../tasks/tasks.module';
 import { UsageModule } from '../usage/usage.module';
+import { WebhooksModule } from '../webhooks/webhooks.module';
 import { DigestRepository } from './digest.repository';
 import { DigestBuilderService } from './digest-builder.service';
 import { DigestsController } from './digests.controller';
@@ -19,7 +20,7 @@ import { DigestsService } from './digests.service';
  * `Workflows → Digests` import). DB comes from the `@Global` DbModule.
  */
 @Module({
-  imports: [TasksModule, RetroModule, UsageModule, MetricsModule, AgentModule],
+  imports: [TasksModule, RetroModule, UsageModule, MetricsModule, AgentModule, WebhooksModule],
   controllers: [DigestsController],
   providers: [DigestRepository, DigestBuilderService, DigestsService],
   exports: [DigestBuilderService, DigestsService],

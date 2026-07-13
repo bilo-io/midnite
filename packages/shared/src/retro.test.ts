@@ -68,6 +68,10 @@ describe('isRetroNotable', () => {
     expect(isRetroNotable({ ...base, outcome: 'abandoned' })).toBe(true);
   });
 
+  it('is true when escalated to needs-attention', () => {
+    expect(isRetroNotable({ ...base, outcome: 'needs-attention' })).toBe(true);
+  });
+
   it('is true on a retries-exhausted or gate-failed failure', () => {
     expect(isRetroNotable({ ...base, failures: [failure('retries-exhausted')] })).toBe(true);
     expect(isRetroNotable({ ...base, failures: [failure('gate-failed')] })).toBe(true);

@@ -66,6 +66,16 @@ describe('GenerateRetroExecutor', () => {
     );
   });
 
+  it('makes ONE plan-model call, usage-tagged `retro` and capped by narrativeMaxTokens', async () => {
+    const { exec, llm } = make();
+    await exec.execute(ctx({ taskId: 't1' }));
+    const gen = vi.mocked(llm.generateStructured);
+    expect(gen).toHaveBeenCalledTimes(1);
+    // 2nd arg is the usage feature tag; the request's maxTokens honours the config cap.
+    expect(gen.mock.calls[0]![1]).toBe('retro');
+    expect((gen.mock.calls[0]![0] as { maxTokens: number }).maxTokens).toBe(700);
+  });
+
   it('resolves the taskId from upstream input when the param is blank', async () => {
     const { exec, loadForNarrative } = make();
     await exec.execute(ctx({}, { taskId: 't-from-input' }));

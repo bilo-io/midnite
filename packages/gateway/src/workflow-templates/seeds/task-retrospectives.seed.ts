@@ -29,7 +29,13 @@ import type { WorkflowTemplateSeed } from './seed-type';
  * To also post notable retros to Slack, add a `slack.message` node wired off the
  * branch's `true` handle (alongside — or instead of — `notify`), give the template
  * a `slack` credential slot, and reference the task in the text, e.g.
- * `⚠️ Notable retro: {{ $trigger.task.title }} ({{ $n2.outcome }})`.
+ * `⚠️ Notable retro: {{ $node["Task done / abandoned"].json.task.title }} ({{ $json.outcome }})`.
+ *
+ * Expression note: node params resolve against `$json` (this node's input — here
+ * the branch's pass-through of the retro output, so `$json.outcome`/`$json.notable`)
+ * and `$node["<label>"].json` (any upstream node's output by label — the trigger's
+ * task lives at `$node["Task done / abandoned"].json.task`). There is no `$trigger`
+ * root.
  */
 const seed: WorkflowTemplateSeed = {
   slug: 'task-retrospectives',
@@ -41,11 +47,12 @@ const seed: WorkflowTemplateSeed = {
   definition: {
     trigger: { type: 'task-event', events: ['task.done', 'task.abandoned'] },
     nodes: [
-      { id: 'n1', type: 'trigger.task-event', label: 'Task done / abandoned', params: {} },
+      { id: 'n1', type: 'trigger.task-event', label: 'Task done / abandoned', position: { x: 80, y: 160 }, params: {} },
       {
         id: 'n2',
         type: 'midnite.generate-retro',
         label: 'Generate retro',
+        position: { x: 320, y: 160 },
         // Blank taskId → the executor reads the task from the trigger input.
         params: { taskId: '' },
       },
@@ -53,26 +60,29 @@ const seed: WorkflowTemplateSeed = {
         id: 'n3',
         type: 'logic.branch',
         label: 'Notable?',
+        position: { x: 560, y: 160 },
         params: { left: 'notable', operator: 'isTruthy' },
       },
       {
         id: 'n4',
         type: 'midnite.notify',
         label: 'Notify (notable)',
+        position: { x: 820, y: 160 },
         params: {
           kind: 'retro.notable',
           severity: 'warn',
-          title: 'Notable retro: {{ $trigger.task.title }}',
-          body: 'Task "{{ $trigger.task.title }}" ended {{ $n2.outcome }} — open its retrospective for the full story.',
-          entityId: '{{ $trigger.task.id }}',
+          title: 'Notable retro: {{ $node["Task done / abandoned"].json.task.title }}',
+          body: 'Task "{{ $node["Task done / abandoned"].json.task.title }}" ended {{ $json.outcome }} — open its retrospective for the full story.',
+          entityId: '{{ $node["Task done / abandoned"].json.task.id }}',
           route: '/tasks',
         },
       },
     ],
     edges: [
-      { id: 'e1', source: 'n1', target: 'n2' },
-      { id: 'e2', source: 'n2', target: 'n3' },
-      { id: 'e3', source: 'n3', target: 'n4', sourceHandle: 'true' },
+      { id: 'e1', source: 'n1', sourcePort: 'main', target: 'n2', targetPort: 'main' },
+      { id: 'e2', source: 'n2', sourcePort: 'main', target: 'n3', targetPort: 'main' },
+      // The notable (true) path only — a clean `done` takes the (untargeted) false port.
+      { id: 'e3', source: 'n3', sourcePort: 'true', target: 'n4', targetPort: 'main' },
     ],
   },
 };

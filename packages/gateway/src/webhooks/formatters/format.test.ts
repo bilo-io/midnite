@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { Task } from '@midnite/shared';
 
-import { formatWebhookBody, summarize, type WebhookPayload } from './format';
+import {
+  formatWebhookBody,
+  summarize,
+  type DigestWebhookPayload,
+  type TaskWebhookPayload,
+} from './format';
 
 function task(over: Partial<Task> = {}): Task {
   return {
@@ -17,8 +22,23 @@ function task(over: Partial<Task> = {}): Task {
   };
 }
 
-function payload(over: Partial<WebhookPayload> = {}): WebhookPayload {
+function payload(over: Partial<TaskWebhookPayload> = {}): TaskWebhookPayload {
   return { event: 'task.updated', at: '2026-06-30T12:00:00.000Z', task: task(), ...over };
+}
+
+function digestPayload(over: Partial<DigestWebhookPayload['digest']> = {}): DigestWebhookPayload {
+  return {
+    event: 'digest.generated',
+    at: '2026-06-30T12:00:00.000Z',
+    digest: {
+      id: 'dig-1',
+      from: '2026-06-29T00:00:00.000Z',
+      to: '2026-06-30T00:00:00.000Z',
+      headline: 'Shipped 3, 1 failed',
+      counts: { shipped: 3, failed: 1, needsAttention: 1 },
+      ...over,
+    },
+  };
 }
 
 describe('summarize', () => {
@@ -37,6 +57,12 @@ describe('summarize', () => {
       'Ship the thing → Waiting (acme/web)',
     );
   });
+
+  it('summarises a digest.generated event with its headline + counts', () => {
+    expect(summarize(digestPayload())).toBe(
+      'Digest: Shipped 3, 1 failed — 3 shipped, 1 failed, 1 need attention',
+    );
+  });
 });
 
 describe('formatWebhookBody', () => {
@@ -52,6 +78,17 @@ describe('formatWebhookBody', () => {
 
   it('sends the canonical event verbatim for generic', () => {
     const p = payload();
+    expect(JSON.parse(formatWebhookBody('generic', p))).toEqual(JSON.parse(JSON.stringify(p)));
+  });
+
+  it('formats a digest for Slack/Discord and sends it verbatim for generic', () => {
+    const p = digestPayload();
+    expect(JSON.parse(formatWebhookBody('slack', p))).toEqual({
+      text: 'Digest: Shipped 3, 1 failed — 3 shipped, 1 failed, 1 need attention',
+    });
+    expect(JSON.parse(formatWebhookBody('discord', p))).toEqual({
+      content: 'Digest: Shipped 3, 1 failed — 3 shipped, 1 failed, 1 need attention',
+    });
     expect(JSON.parse(formatWebhookBody('generic', p))).toEqual(JSON.parse(JSON.stringify(p)));
   });
 });

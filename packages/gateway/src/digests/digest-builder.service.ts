@@ -17,6 +17,7 @@ import { digestToIndexDoc } from '../search/lib/index-mappers';
 import { SearchIndexService } from '../search/search-index.service';
 import { TasksService } from '../tasks/tasks.service';
 import { UsageService } from '../usage/usage.service';
+import { WebhookDeliveryService } from '../webhooks/webhook-delivery.service';
 import { DigestRepository } from './digest.repository';
 import { aggregateDigest, deterministicHeadline, renderMarkdown, toBlocks } from './lib/build-digest';
 import type { DigestBuildRequest, DigestBuildResult } from './digest-builder.port';
@@ -52,6 +53,11 @@ export class DigestBuilderService {
     // Optional so unit specs (and the workflow port) need no search wiring; the
     // @Global SearchIndexService is present in the running gateway.
     @Optional() @Inject(SearchIndexService) private readonly search?: SearchIndexService,
+    // Optional (Phase 62 E): fan the digest out to registered P44 outbound
+    // webhooks subscribed to `digest.generated`. Unit specs omit it.
+    @Optional()
+    @Inject(WebhookDeliveryService)
+    private readonly webhooks?: WebhookDeliveryService,
   ) {}
 
   async build(req: DigestBuildRequest): Promise<DigestBuildResult> {
@@ -105,6 +111,18 @@ export class DigestBuilderService {
       this.search?.upsert(digestToIndexDoc(digest));
     } catch (err) {
       this.logger.debug(`digest search index failed: ${String(err)}`);
+    }
+
+    // Fan out to registered outbound webhooks subscribed to `digest.generated`
+    // (Phase 62 E). Fire-and-forget + fail-soft: webhook delivery must never fail
+    // or block digest generation; each dispatch records its own P44 delivery row.
+    if (this.webhooks) {
+      void this.webhooks
+        .fanOutDigest(
+          { id, from: req.from, to: req.to, headline, counts },
+          createdAt,
+        )
+        .catch((err) => this.logger.debug(`digest webhook fan-out failed: ${String(err)}`));
     }
 
     return { digestId: id, headline, markdown: digest.markdown, blocks: toBlocks(digest) };
