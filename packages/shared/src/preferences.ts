@@ -133,6 +133,14 @@ export const UserPreferencesSchema = z.object({
    * agnostic. Absent/empty = every section expanded.
    */
   collapsedNavSections: z.array(z.string()).default([]),
+  /**
+   * Which per-route product guides (Phase 66 F) the user has already run, by
+   * guide id. Drives the assistant FAB's subtle "unseen guide" dot; the guide
+   * itself is always replayable. A loose string list — the canonical guide-id
+   * set lives in the web app (`@/lib/guide`), so the gateway stays agnostic
+   * (like `features`/`collapsedNavSections`). Absent/empty = nothing seen yet.
+   */
+  seenGuides: z.array(z.string()).default([]),
 });
 
 export type UserPreferences = z.infer<typeof UserPreferencesSchema>;

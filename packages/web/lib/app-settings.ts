@@ -372,6 +372,7 @@ export function appSettingsToPreferences(
     officeView: settings.officeView,
     features: settings.features,
     collapsedNavSections: settings.collapsedNavSections,
+    seenGuides: settings.seenGuides,
   };
 }
 
@@ -397,6 +398,7 @@ export function applyPreferences(
     officeView: prefs.officeView,
     features: { ...prev.features, ...prefs.features } as AppSettings['features'],
     collapsedNavSections: prefs.collapsedNavSections,
+    seenGuides: prefs.seenGuides,
   }));
   setTheme(prefs.theme);
 }
