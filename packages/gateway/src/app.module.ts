@@ -15,6 +15,7 @@ import { TaskCreatorModule } from './tasks/task-creator.module';
 import { TaskListerModule } from './tasks/task-lister.module';
 import { TaskEventBusModule } from './tasks/task-event-bus.module';
 import { AgentModule } from './agent/agent.module';
+import { AssistantModule } from './assistant/assistant.module';
 import { ChatModule } from './chat/chat.module';
 import { AgentsModule } from './agents/agents.module';
 import { CouncilsModule } from './councils/councils.module';
@@ -75,6 +76,7 @@ import { InboundModule } from './integrations/inbound/inbound.module';
     HealthModule,
     AgentModule,
     AgentsModule,
+    AssistantModule,
     ChatModule,
     CouncilsModule,
     MarketModule,

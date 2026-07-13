@@ -10,5 +10,6 @@ import { SessionUsageModule } from './session-usage.module';
   imports: [TasksModule, TerminalModule, AgentsModule, SessionUsageModule],
   controllers: [SessionsController],
   providers: [SessionsService],
+  exports: [SessionsService],
 })
 export class SessionsModule {}

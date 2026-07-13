@@ -24,6 +24,7 @@ export const LLM_FEATURES = [
   'memory-chat', // chat to the knowledge base (Phase 65 C)
   'retro', // task retrospective narrative (Phase 62 C)
   'digest', // fleet digest headline (Phase 62 C)
+  'assistant', // floating-menu fleet assistant answers (Phase 66 E)
   'unknown', // untagged / default
 ] as const;
 export const LlmFeatureSchema = z.enum(LLM_FEATURES);
@@ -42,6 +43,7 @@ export const LLM_FEATURE_LABEL: Record<LlmFeature, string> = {
   'memory-chat': 'Memory chat',
   retro: 'Retrospectives',
   digest: 'Digests',
+  assistant: 'Assistant',
   unknown: 'Other',
 };
 

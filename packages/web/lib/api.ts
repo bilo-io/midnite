@@ -153,6 +153,8 @@ import {
   type TaskGraph,
   ChatQueryResponseSchema,
   type ChatQueryAnswer,
+  AssistantQueryResponseSchema,
+  type AssistantQueryResponse,
   MilestoneSchema,
   MilestoneResponseSchema,
   RoadmapResponseSchema,
@@ -566,6 +568,21 @@ export async function undoChatCommand(undoToken: string, signal?: AbortSignal): 
     '/chat/undo',
     { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ undoToken }), signal },
     ChatUndoResponseSchema,
+  );
+}
+
+// ── Fleet assistant (Phase 66 E) ─────────────────────────────────────────────
+
+/**
+ * Phase 66 E — ask the read-only fleet assistant a free-form question. Returns an
+ * ordered list of blocks (markdown prose + inline component references, resolved
+ * client-side) + the inference path used. Never mutates.
+ */
+export async function assistantQuery(question: string, signal?: AbortSignal): Promise<AssistantQueryResponse> {
+  return fetchJson(
+    '/assistant/query',
+    { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ question }), signal },
+    AssistantQueryResponseSchema,
   );
 }
 

@@ -134,28 +134,29 @@ Chat-to-board now *lives* in the assistant, not behind a palette event.
       re-point at the FAB or be retired; either way the sidenav no longer owns the affordance.
 - [x] Verify the confirm/undo/audit safety path (Phase 59 Theme F) works identically from the new host.
 
-## Theme E — Agent chat with inline custom components — **L**
+## Theme E — Agent chat with inline custom components — **L** — ✅ DONE (PR #423, 2026-07-13)
 
 Ask about the fleet; get answers that render midnite's own UI where it helps.
 
-- [ ] **shared contract** — an `AssistantBlock` **discriminated union** (`{ kind: 'markdown', text }`
-      | `{ kind: 'component', name, props }`) with a **fixed, zod-validated component registry** (e.g.
-      `task-card`, `fleet-gauge`, `session-list`, `sparkline`) — typed props per `name`. Lives in
-      [`shared`](../packages/shared/src/); it's the contract the LLM output is validated against, so an
-      unknown/invalid block degrades to markdown rather than crashing.
-- [ ] **gateway (read-only)** — a thin assistant answerer that composes fleet context (task counts/
-      graph/activity, sessions, agent pool, Phase 61 metrics) into a prompt and calls
+- [x] **shared contract** — an `AssistantBlock` **discriminated union** (`{ kind: 'markdown', text }`
+      | `{ kind: 'component', name, props }`) with a **fixed, zod-validated component registry**
+      (`task-card`, `fleet-gauge`, `session-list`, `sparkline`) — typed props per `name`, **id-referenced**
+      (the LLM emits a ref like `taskId`, never fabricated data). Lives in
+      [`shared`](../packages/shared/src/assistant.ts); `coerceAssistantBlock` downgrades an
+      unknown/invalid block to markdown rather than crashing.
+- [x] **gateway (read-only)** — the `assistant/` module answerer composes fleet context (task counts/
+      graph/activity, sessions, agent pool, Phase 61 metrics) and calls
       [`LlmService`](../packages/gateway/src/agent/llm/llm.service.ts) `generateStructured` against the
-      `AssistantBlock[]` schema; feature-tagged `assistant` for usage/budget visibility; **fails soft**
-      to a deterministic overview when no provider is configured (mirrors `chat-query.service.ts`).
-      **No new mutation path** — the agent only reads.
-- [ ] **web dispatch** — a `name → component` registry renders each block: markdown via
+      `AssistantBlock[]` schema; feature-tagged `assistant`; **fails soft** to a deterministic overview
+      when no provider is configured, when the call errors, **or when a context read throws**.
+      **No new mutation path** — the agent only reads (`POST /assistant/query`).
+- [x] **web dispatch** — a `name → component` registry renders each block: markdown via
       [`MarkdownPreview`](../packages/web/components/markdown-preview.tsx), components via the mapped
-      midnite component with its validated props (reusing existing `TaskCard` / metric widgets). An
-      unrecognised `name` renders as a graceful fallback, never a blank.
-- [ ] **Agent chat UI** in the panel — a chat transcript (assistant blocks + user prompts) reusing the
-      memory-chat rendering pattern; **ephemeral per-session** (no server-side history in v1), with the
-      "no provider configured" state clearly surfaced.
+      midnite component with its validated props resolved **client-side** by id (reusing `TaskCard` +
+      counts/sessions/metrics reads). An unrecognised/stale ref renders a graceful notice, never a blank.
+- [x] **Agent chat UI** — a standalone, **ephemeral** `<AgentChat>` transcript (assistant blocks + user
+      prompts) reusing the markdown-render pattern; the "answered from fleet state — no AI used" vs "via
+      your AI provider" path is surfaced per answer. (Theme A's floating panel embeds it.)
 
 ## Theme F — Replayable Guide (per-route product tour) — **L**
 
