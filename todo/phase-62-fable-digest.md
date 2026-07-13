@@ -231,7 +231,7 @@ task detail — Theme F); the FTS scope this slice added is digests.
 
 ---
 
-## Verification — ✅ signed off (PR #TBD, 2026-07-13)
+## Verification — ✅ signed off (PR #424, 2026-07-13)
 
 - [x] **Skeleton always:** every task reaching `done`/`abandoned`/**needs-attention** gets a
       deterministic `task_retros` row (timeline, attempts, failures, durations, review, PR) with

@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-13 — feat: Phase 62 Verification signed off + deferrals built + install bug fixed — Phase 62 (PR #TBD)
+## 2026-07-13 — feat: Phase 62 Verification signed off + deferrals built + install bug fixed — Phase 62 (PR #424)
 
 Closes the last 8 boxes of Phase 62 (Fable-Digest) — the Verification checklist. Every lettered theme A–H had landed (PRs through #409); this pass drove all 8 acceptance criteria end-to-end, closed the outstanding test gaps, **built the two remaining deferrals**, and **found + fixed a real "the seed templates aren't installable" bug**. Phase 62 → 32/32 (100%), Status ✅ DONE.
 
