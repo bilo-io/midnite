@@ -126,6 +126,16 @@ describe('AssistantService', () => {
     expect(res.blocks[0]).toMatchObject({ kind: 'markdown' });
   });
 
+  it('fails soft (no 500) when a context read throws', async () => {
+    const d = makeDeps({ enabled: true, getActModel: () => 'm', generateStructured: vi.fn() } as unknown as Partial<LlmService>);
+    (d.sessions.list as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('store down'));
+    const svc = new AssistantService(d.tasks, d.sessions, d.pool, d.metrics, d.llm);
+    const res = await svc.answer('status?');
+    expect(res.inferencePath).toBe('deterministic');
+    expect(res.blocks[0]).toMatchObject({ kind: 'markdown' });
+    expect((res.blocks[0] as { text: string }).text).toMatch(/try again/i);
+  });
+
   it('never mutates — only read methods are exercised', async () => {
     const d = makeDeps({ enabled: false } as Partial<LlmService>);
     const svc = new AssistantService(d.tasks, d.sessions, d.pool, d.metrics, d.llm);

@@ -20,6 +20,9 @@ const ASSISTANT_TASK_CAP = 20;
 const ASSISTANT_SESSION_CAP = 10;
 const ASSISTANT_ACTIVITY_CAP = 8;
 
+/** Shown when even the deterministic context can't be assembled (a read failed). */
+const ASSISTANT_UNAVAILABLE = "I couldn't read the fleet state just now — please try again in a moment.";
+
 const STATUS_WORD: Record<Status, string> = {
   backlog: 'backlog',
   todo: 'todo',
@@ -82,7 +85,20 @@ export class AssistantService {
   ) {}
 
   async answer(question: string, scope?: TeamScope, signal?: AbortSignal): Promise<AssistantQueryResponse> {
-    const context = await this.buildContext(scope);
+    let context: { text: string; overview: string };
+    try {
+      context = await this.buildContext(scope);
+    } catch (err) {
+      // Context assembly reads the store/metrics — if any read fails we still owe
+      // the caller an answer (never a 500), so degrade to a generic notice.
+      this.logger.warn(
+        `assistant context assembly failed (${err instanceof Error ? err.message : 'unknown'}); returning fallback`,
+      );
+      return {
+        blocks: [{ kind: 'markdown', text: ASSISTANT_UNAVAILABLE }],
+        inferencePath: 'deterministic',
+      };
+    }
 
     if (!this.llm.enabled) {
       return { blocks: [{ kind: 'markdown', text: context.overview }], inferencePath: 'deterministic' };

@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [66 · Floating assistant menu](phase-66-floating-assistant-menu.md) | 🔄 WIP | 17/27 | `██████░░░░` | 63% | E | F |
+| [66 · Floating assistant menu](phase-66-floating-assistant-menu.md) | 🔄 WIP | 21/27 | `████████░░` | 78% | — | F |
 | [65 · Memory workspace](phase-65-memory-workspace.md) | ✅ DONE | 33/33 | `██████████` | 100% | — | — |
 | [64 · Office presence](phase-64-office-presence.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
@@ -123,7 +123,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **B** — Extract `.gradient-border` glow into a `@midnite/ui` primitive + token; migrate the 3 composers; docs shares it (PR #422)
 - ✅ **C** — Docs deep-link: `pathname → docs-slug` map → current page's docs; retired the path-less sidenav Docs button (PR #422)
 - ✅ **D** — Relocate Chat to board: lift `useChatCommand`/`ChatBar` into the panel; drop the sidenav entry; re-point `midnite:open-chat` at the FAB (PR #422)
-- ◻ **E** — Agent chat: compose fleet context → `LlmService` → `AssistantBlock[]` (markdown + zod-validated inline component registry); read-only, fail-soft
+- ✅ **E** — Agent chat: compose fleet context → `LlmService` → `AssistantBlock[]` (markdown + zod-validated, id-referenced inline component registry); read-only, fail-soft; standalone `<AgentChat>` (Theme A embeds it) (PR #423)
 - ◻ **F** — Replayable Guide: lightweight in-house spotlight overlay + per-route step registry (board/session/workflow/memory first)
 
 ### [Phase 65 — Memory workspace](phase-65-memory-workspace.md)

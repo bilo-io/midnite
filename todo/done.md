@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-13 — feat(web,gateway): fleet assistant chat — Phase 66 Theme E (PR #423)
+
+The **Agent** entry of the floating assistant menu — a read-only fleet Q&A that renders rich answers (markdown + inline midnite components).
+
+- [x] **shared** — `AssistantBlock` union + fixed, zod-validated, id-referenced component registry (`task-card`/`fleet-gauge`/`session-list`/`sparkline`); `coerceAssistantBlock` downgrades invalid blocks to markdown; new `assistant` LLM usage feature.
+- [x] **gateway** — `assistant/` module: `POST /assistant/query` composes task/session/pool/metrics reads → `LlmService` → `AssistantBlock[]`; fails soft to a deterministic overview when the provider is off, the call errors, or a context read throws. No new mutation path.
+- [x] **web** — `assistantQuery()` + standalone ephemeral `<AgentChat>`; `name → component` dispatch resolves real data client-side by id; markdown via `MarkdownPreview`. Theme A's panel embeds it.
+- [x] Tests: shared 14 · gateway 7 · web 5 RTL + 1 Storybook play.
+- [x] Also fixed `main`: added the `app-links.ts`/`site-links.ts` constants a prior claim commit referenced but never committed (had broken `docs:typecheck`).
+
 ## 2026-07-13 — feat(web): floating assistant menu — Phase 66 Themes A/B/C/D (PR #422)
 
 Lands the spine of Phase 66: one logo-anchored floating assistant. Slice = the glow-primitive dependency (B) → the FAB shell (A) → the two cheap wins (C docs deep-link, D chat relocation). Agent (E) and Guide (F) land later; their panel entries ship visible-but-disabled. Phase 66 → 17/27 (63%), Status 🔄 WIP (E + F remain — E claimed by a parallel loop).
