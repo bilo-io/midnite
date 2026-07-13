@@ -189,3 +189,57 @@ describe('daily-digest seed — pipeline run', () => {
     expect(resolveSpy).not.toHaveBeenCalled();
   });
 });
+
+describe('daily-digest seed — bound Slack delivery (Block Kit)', () => {
+  const BLOCKS = [{ type: 'section', text: { type: 'mrkdwn', text: '*Digest*' } }];
+
+  function boundWorkflow(): Workflow {
+    const wf = toWorkflow();
+    // Bind the Slack slot to a real credential id (an install-time wiring).
+    const slack = wf.nodes.find((n) => n.type === 'slack.message')!;
+    slack.params = { ...slack.params, credentialId: 'cred-slack-1' };
+    return wf;
+  }
+
+  it('resolves the credential and posts the digest with Block Kit blocks + fallback text', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true, ts: '123.456', channel: '#daily-standup' }),
+    } as Response);
+
+    const listCompleted: NodeExecutor = {
+      typeId: 'midnite.list-completed-tasks',
+      async execute() {
+        return { from: NOW, to: NOW, count: 1, tasks: [{ id: 't1' }] };
+      },
+    };
+    const buildDigest: NodeExecutor = {
+      typeId: 'midnite.build-digest',
+      async execute() {
+        return { digestId: 'dig-1', headline: 'Shipped 1', markdown: '# Digest', blocks: BLOCKS };
+      },
+    };
+    const notify: NodeExecutor = { typeId: 'midnite.notify', async execute() { return { notified: true }; } };
+    const slack = new SlackMessageExecutor({
+      resolve: vi.fn().mockResolvedValue({ type: 'slack', token: 'xoxb-test' }),
+    } as unknown as WorkflowCredentialsService);
+
+    const engine = new WorkflowEngine(
+      new WorkflowsRepository(makeDb()),
+      new ExecutorRegistry([listCompleted, buildDigest, slack, notify]),
+      new WorkflowEventBus(),
+      parseConfig({ agent: {}, terminal: {}, knowledge: {}, gateway: {} }),
+    );
+
+    const run = await engine.runToCompletion(boundWorkflow(), { triggerSource: 'schedule', input: {} });
+    expect(run.status).toBe('succeeded');
+
+    const call = fetchMock.mock.calls.find(([url]) => String(url).includes('chat.postMessage'))!;
+    expect(call).toBeDefined();
+    const body = JSON.parse((call[1] as RequestInit).body as string);
+    expect(body).toMatchObject({ channel: '#daily-standup', blocks: BLOCKS });
+    expect(body.text).toContain('Daily Fleet Digest'); // fallback text preserved
+
+    vi.restoreAllMocks();
+  });
+});

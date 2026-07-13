@@ -29,7 +29,13 @@ import type { WorkflowTemplateSeed } from './seed-type';
  * To also post notable retros to Slack, add a `slack.message` node wired off the
  * branch's `true` handle (alongside — or instead of — `notify`), give the template
  * a `slack` credential slot, and reference the task in the text, e.g.
- * `⚠️ Notable retro: {{ $trigger.task.title }} ({{ $n2.outcome }})`.
+ * `⚠️ Notable retro: {{ $node["Task done / abandoned"].json.task.title }} ({{ $json.outcome }})`.
+ *
+ * Expression note: node params resolve against `$json` (this node's input — here
+ * the branch's pass-through of the retro output, so `$json.outcome`/`$json.notable`)
+ * and `$node["<label>"].json` (any upstream node's output by label — the trigger's
+ * task lives at `$node["Task done / abandoned"].json.task`). There is no `$trigger`
+ * root.
  */
 const seed: WorkflowTemplateSeed = {
   slug: 'task-retrospectives',
@@ -62,9 +68,9 @@ const seed: WorkflowTemplateSeed = {
         params: {
           kind: 'retro.notable',
           severity: 'warn',
-          title: 'Notable retro: {{ $trigger.task.title }}',
-          body: 'Task "{{ $trigger.task.title }}" ended {{ $n2.outcome }} — open its retrospective for the full story.',
-          entityId: '{{ $trigger.task.id }}',
+          title: 'Notable retro: {{ $node["Task done / abandoned"].json.task.title }}',
+          body: 'Task "{{ $node["Task done / abandoned"].json.task.title }}" ended {{ $json.outcome }} — open its retrospective for the full story.',
+          entityId: '{{ $node["Task done / abandoned"].json.task.id }}',
           route: '/tasks',
         },
       },

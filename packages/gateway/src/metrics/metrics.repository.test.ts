@@ -2,7 +2,15 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { createTestDb } from '../test';
 import { MetricsRepository } from './metrics.repository';
-import { tasks, taskEvents, type AgentRunStatsInsert } from '../db/schema';
+import {
+  tasks,
+  taskEvents,
+  llmUsage,
+  gaugeSamples,
+  taskRetros,
+  digests,
+  type AgentRunStatsInsert,
+} from '../db/schema';
 
 type TestDb = ReturnType<typeof createTestDb>['db'];
 
@@ -298,5 +306,34 @@ describe('MetricsRepository', () => {
       repo.recordEnd('r0', '2026-06-01T00:01:00.000Z', 60_000, 'done');
       expect(repo.retryOverheadByTask().has('t1')).toBe(false);
     });
+  });
+});
+
+// Phase 62 Verification — product data (task_retros / digests) is NEVER pruned by
+// P61 retention. `pruneRawBefore` deletes only raw metric/usage rows; retros and
+// digests are first-class product data that must survive any retention pass.
+describe('pruneRawBefore leaves product data untouched (Phase 62)', () => {
+  it('deletes aged raw usage rows but keeps task_retros + digests', () => {
+    const OLD = '2020-01-01T00:00:00.000Z';
+    db.insert(llmUsage)
+      .values({ id: 'u1', at: OLD, provider: 'anthropic', model: 'plan', feature: 'retro', inputTokens: 1, outputTokens: 1, estCostUsd: 0.01 })
+      .run();
+    db.insert(gaugeSamples).values({ id: 'g1', at: OLD, queueDepth: 3, slotsUsed: 0, slotsTotal: 4, tickLatencyMs: 5 }).run();
+    db.insert(taskRetros)
+      .values({ id: 'r1', taskId: 't1', outcome: 'done', hasNarrative: 0, retro: '{}', createdAt: OLD, updatedAt: OLD })
+      .run();
+    db.insert(digests)
+      .values({ id: 'd1', createdAt: OLD, windowFrom: OLD, windowTo: OLD, digest: '{}', markdown: '# d' })
+      .run();
+
+    const deleted = repo.pruneRawBefore('2030-01-01T00:00:00.000Z');
+
+    // Raw usage rows are gone…
+    expect(deleted.llmUsage).toBe(1);
+    expect(db.select().from(llmUsage).all()).toHaveLength(0);
+    expect(db.select().from(gaugeSamples).all()).toHaveLength(0);
+    // …but the product data survives.
+    expect(db.select().from(taskRetros).all()).toHaveLength(1);
+    expect(db.select().from(digests).all()).toHaveLength(1);
   });
 });
