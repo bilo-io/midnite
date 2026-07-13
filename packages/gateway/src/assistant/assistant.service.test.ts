@@ -23,8 +23,8 @@ const GRAPH: TaskGraph = {
 const POOL: AgentPoolSnapshot = { slots: [], capacity: 4, busy: 2, queuedTodo: 3 };
 
 const SESSIONS: SessionSummary[] = [
-  { id: 's1', projectSlug: 'p', projectDisplay: 'P', title: 'Session 1', subtitle: '', status: 'active', lastActivity: 0 },
-  { id: 's2', projectSlug: 'p', projectDisplay: 'P', title: 'Archived', subtitle: '', status: 'active', lastActivity: 0, archivedAt: '2026-01-01T00:00:00Z' },
+  { id: 's1', projectSlug: 'p', projectDisplay: 'P', title: 'Session 1', subtitle: '', status: 'running', lastActivity: 0 },
+  { id: 's2', projectSlug: 'p', projectDisplay: 'P', title: 'Archived', subtitle: '', status: 'idle', lastActivity: 0, archivedAt: '2026-01-01T00:00:00Z' },
 ];
 
 const OPS: OpsSummary = {
