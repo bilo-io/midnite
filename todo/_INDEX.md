@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [66 · Floating assistant menu](phase-66-floating-assistant-menu.md) | 🔄 WIP | 21/27 | `████████░░` | 78% | — | F |
+| [66 · Floating assistant menu](phase-66-floating-assistant-menu.md) | 🔄 WIP | 21/27 | `████████░░` | 78% | F | — |
 | [65 · Memory workspace](phase-65-memory-workspace.md) | ✅ DONE | 33/33 | `██████████` | 100% | — | — |
 | [64 · Office presence](phase-64-office-presence.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
