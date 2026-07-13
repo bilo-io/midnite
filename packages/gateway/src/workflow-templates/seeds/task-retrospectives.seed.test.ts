@@ -3,7 +3,7 @@ import Database from 'better-sqlite3';
 import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { parseConfig, TriggerSchema, type Workflow, type WorkflowNode } from '@midnite/shared';
+import { parseConfig, TriggerSchema, WorkflowGraphSchema, type Workflow, type WorkflowNode } from '@midnite/shared';
 
 import * as schema from '../../db/schema';
 import { WorkflowsRepository } from '../../workflows/workflows.repository';
@@ -31,7 +31,7 @@ describe('task-retrospectives seed', () => {
   it('wires trigger → generate-retro → branch(notable) →(true) notify', () => {
     const def = seed.definition as {
       nodes: { id: string; type: string; params?: Record<string, unknown> }[];
-      edges: { source: string; target: string; sourceHandle?: string }[];
+      edges: { source: string; target: string; sourcePort?: string }[];
     };
     expect(def.nodes.map((n) => n.type)).toEqual([
       'trigger.task-event',
@@ -46,11 +46,18 @@ describe('task-retrospectives seed', () => {
 
     // Notify only runs on the notable (true) path.
     const notifyEdge = def.edges.find((e) => e.target === 'n4')!;
-    expect(notifyEdge.sourceHandle).toBe('true');
+    expect(notifyEdge.sourcePort).toBe('true');
     expect(notifyEdge.source).toBe('n3');
 
     const notify = def.nodes.find((n) => n.type === 'midnite.notify')!;
     expect(notify.params).toMatchObject({ kind: 'retro.notable' });
+  });
+
+  it('is install-valid — the stored graph parses (nodes carry positions)', () => {
+    // Guards the install path (see daily-digest); a missing `position` or a
+    // mis-keyed branch port would break "installable + one-click enable".
+    const def = seed.definition as { nodes: unknown[]; edges: unknown[] };
+    expect(() => WorkflowGraphSchema.parse({ nodes: def.nodes, edges: def.edges })).not.toThrow();
   });
 });
 
@@ -62,7 +69,7 @@ describe('task-retrospectives seed', () => {
 interface SeedDefinition {
   trigger: Record<string, unknown>;
   nodes: { id: string; type: string; label?: string; params?: Record<string, unknown> }[];
-  edges: { id: string; source: string; target: string; sourceHandle?: string }[];
+  edges: { id: string; source: string; target: string; sourcePort?: string }[];
 }
 
 const definition = seed.definition as unknown as SeedDefinition;
@@ -79,7 +86,7 @@ function toWorkflow(): Workflow {
   const edges = definition.edges.map((e) => ({
     id: e.id,
     source: e.source,
-    sourcePort: e.sourceHandle ?? 'main',
+    sourcePort: e.sourcePort ?? 'main',
     target: e.target,
     targetPort: 'main',
   }));

@@ -47,11 +47,12 @@ const seed: WorkflowTemplateSeed = {
   definition: {
     trigger: { type: 'task-event', events: ['task.done', 'task.abandoned'] },
     nodes: [
-      { id: 'n1', type: 'trigger.task-event', label: 'Task done / abandoned', params: {} },
+      { id: 'n1', type: 'trigger.task-event', label: 'Task done / abandoned', position: { x: 80, y: 160 }, params: {} },
       {
         id: 'n2',
         type: 'midnite.generate-retro',
         label: 'Generate retro',
+        position: { x: 320, y: 160 },
         // Blank taskId → the executor reads the task from the trigger input.
         params: { taskId: '' },
       },
@@ -59,12 +60,14 @@ const seed: WorkflowTemplateSeed = {
         id: 'n3',
         type: 'logic.branch',
         label: 'Notable?',
+        position: { x: 560, y: 160 },
         params: { left: 'notable', operator: 'isTruthy' },
       },
       {
         id: 'n4',
         type: 'midnite.notify',
         label: 'Notify (notable)',
+        position: { x: 820, y: 160 },
         params: {
           kind: 'retro.notable',
           severity: 'warn',
@@ -76,9 +79,10 @@ const seed: WorkflowTemplateSeed = {
       },
     ],
     edges: [
-      { id: 'e1', source: 'n1', target: 'n2' },
-      { id: 'e2', source: 'n2', target: 'n3' },
-      { id: 'e3', source: 'n3', target: 'n4', sourceHandle: 'true' },
+      { id: 'e1', source: 'n1', sourcePort: 'main', target: 'n2', targetPort: 'main' },
+      { id: 'e2', source: 'n2', sourcePort: 'main', target: 'n3', targetPort: 'main' },
+      // The notable (true) path only — a clean `done` takes the (untargeted) false port.
+      { id: 'e3', source: 'n3', sourcePort: 'true', target: 'n4', targetPort: 'main' },
     ],
   },
 };

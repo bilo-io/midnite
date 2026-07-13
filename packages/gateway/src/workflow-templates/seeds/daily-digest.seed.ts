@@ -32,23 +32,26 @@ const seed: WorkflowTemplateSeed = {
   definition: {
     trigger: { type: 'schedule', cron: '0 8 * * 1-5' },
     nodes: [
-      { id: 'n1', type: 'trigger.schedule', label: 'Weekdays 08:00', params: {} },
+      { id: 'n1', type: 'trigger.schedule', label: 'Weekdays 08:00', position: { x: 80, y: 160 }, params: {} },
       {
         id: 'n2',
         type: 'midnite.list-completed-tasks',
         label: 'Completed (24h)',
+        position: { x: 320, y: 160 },
         params: { sinceHours: 24 },
       },
       {
         id: 'n3',
         type: 'midnite.build-digest',
         label: 'Build digest',
+        position: { x: 560, y: 160 },
         params: { sinceHours: 24 },
       },
       {
         id: 'n4',
         type: 'slack.message',
         label: 'Post to Slack',
+        position: { x: 820, y: 80 },
         params: {
           credentialId: 'slot:slack-workspace',
           channel: '#daily-standup',
@@ -60,6 +63,7 @@ const seed: WorkflowTemplateSeed = {
         id: 'n5',
         type: 'midnite.notify',
         label: 'Notify in-app',
+        position: { x: 820, y: 260 },
         params: {
           kind: 'digest.generated',
           severity: 'info',

@@ -3,7 +3,7 @@ import Database from 'better-sqlite3';
 import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { parseConfig, type Workflow, type WorkflowGraph, type WorkflowNode } from '@midnite/shared';
+import { parseConfig, WorkflowGraphSchema, type Workflow, type WorkflowGraph, type WorkflowNode } from '@midnite/shared';
 
 import * as schema from '../../db/schema';
 import { WorkflowsRepository } from '../../workflows/workflows.repository';
@@ -91,6 +91,15 @@ describe('daily-digest seed — shape', () => {
     expect(fromBuild).toEqual(['n4', 'n5']);
     expect(definition.nodes.some((n) => n.type === 'ai.claude')).toBe(false);
     expect(definition.nodes.some((n) => n.type === 'midnite.list-tasks')).toBe(false);
+  });
+
+  it('is install-valid — the stored graph parses (nodes carry positions)', () => {
+    // Guards the install path: install() stores the definition verbatim and
+    // getWorkflow() re-parses it against WorkflowGraphSchema. A node missing its
+    // required `position` would 500 the install ("installable + one-click enable").
+    expect(() =>
+      WorkflowGraphSchema.parse({ nodes: definition.nodes, edges: definition.edges }),
+    ).not.toThrow();
   });
 
   it('keeps Slack as an optional, best-effort credential slot', () => {

@@ -36,6 +36,51 @@ export async function seedTask(
   return { id: task.id, title: task.title, status: task.status };
 }
 
+/**
+ * Move a task to a new status via `PATCH /tasks/:id/status` — the real transition
+ * (emits `task.updated`), so terminal moves auto-build a retro skeleton, unlike a
+ * task created straight into a column (which only emits `task.created`).
+ */
+export async function moveTaskStatus(taskId: string, status: Status): Promise<void> {
+  const res = await fetch(`${GATEWAY_ORIGIN}/tasks/${taskId}/status`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ status }),
+  });
+  if (!res.ok) {
+    throw new Error(`moveTaskStatus failed (${res.status}): ${await res.text().catch(() => '')}`);
+  }
+}
+
+/** Install a seeded workflow template by slug; returns the created workflow id. */
+export async function installTemplateBySlug(slug: string): Promise<string> {
+  const listRes = await fetch(`${GATEWAY_ORIGIN}/workflow-templates`);
+  if (!listRes.ok) throw new Error(`list templates failed (${listRes.status})`);
+  const { templates } = (await listRes.json()) as { templates: { id: string; slug: string }[] };
+  const tpl = templates.find((t) => t.slug === slug);
+  if (!tpl) throw new Error(`template ${slug} not found (seeded on boot)`);
+  const res = await fetch(`${GATEWAY_ORIGIN}/workflow-templates/${tpl.id}/install`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ credentialMap: {} }),
+  });
+  if (!res.ok) throw new Error(`install ${slug} failed (${res.status}): ${await res.text().catch(() => '')}`);
+  const { workflow } = (await res.json()) as { workflow: { id: string } };
+  return workflow.id;
+}
+
+/** Trigger a workflow run (fire-and-forget on the engine); returns the run id. */
+export async function runWorkflow(workflowId: string): Promise<string> {
+  const res = await fetch(`${GATEWAY_ORIGIN}/workflows/${workflowId}/run`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ input: {} }),
+  });
+  if (!res.ok) throw new Error(`runWorkflow failed (${res.status}): ${await res.text().catch(() => '')}`);
+  const { run } = (await res.json()) as { run: { id: string } };
+  return run.id;
+}
+
 /** Assign a task to a milestone (or clear with null) via `PATCH /tasks/:id/milestone`. */
 export async function assignMilestone(taskId: string, milestoneId: string | null): Promise<void> {
   const res = await fetch(`${GATEWAY_ORIGIN}/tasks/${taskId}/milestone`, {
