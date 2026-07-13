@@ -8,6 +8,8 @@ import { GradientGlow } from '@midnite/ui';
 
 import type { ChatCommandState } from '@/hooks/use-chat-command';
 import { docsUrlForPathname } from '@/lib/docs-links';
+import { resolveGuide } from '@/lib/guide/steps';
+import { useGuide } from '@/lib/guide/use-guide';
 import { cn } from '@/lib/utils';
 
 import { AssistantChat } from './assistant-chat';
@@ -27,7 +29,7 @@ type Entry = {
 
 const ENTRIES: readonly Entry[] = [
   { key: 'docs', label: 'Docs', description: "This page's documentation", icon: BookOpen },
-  { key: 'guide', label: 'Guide', description: 'Tour this feature', icon: Compass, soon: true },
+  { key: 'guide', label: 'Guide', description: 'Tour this feature', icon: Compass },
   { key: 'chat', label: 'Chat to board', description: 'Change the board in words', icon: MessageSquare },
   { key: 'agent', label: 'Agent', description: 'Ask about your fleet', icon: Sparkles, soon: true },
 ];
@@ -63,6 +65,11 @@ export const AssistantPanel = forwardRef<HTMLDivElement, Props>(function Assista
       onClose();
     } else if (entry.key === 'chat') {
       onView('chat');
+    } else if (entry.key === 'guide') {
+      // Start the current route's tour inline (Theme F); the overlay (mounted in
+      // the shell) draws the spotlight. `getState()` avoids subscribing the panel.
+      useGuide.getState().start(pathname ? resolveGuide(pathname) : null);
+      onClose();
     }
   };
 

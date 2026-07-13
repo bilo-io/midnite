@@ -158,20 +158,21 @@ Ask about the fleet; get answers that render midnite's own UI where it helps.
       prompts) reusing the markdown-render pattern; the "answered from fleet state — no AI used" vs "via
       your AI provider" path is surfaced per answer. (Theme A's floating panel embeds it.)
 
-## Theme F — Replayable Guide (per-route product tour) — **L**
+## Theme F — Replayable Guide (per-route product tour) — **L** — ✅ DONE (PR #425, 2026-07-13)
 
 An interactive walkthrough of the current feature, launchable any time.
 
-- [ ] **A lightweight in-house spotlight overlay** — anchor-to-element highlight (cutout + step card),
-      borrowing the portal/step-progression scaffolding from [`SetupWizard`](../packages/web/components/SetupWizard.tsx)
-      but adding the DOM-anchoring `SetupWizard` lacks. No new heavy dependency; styled to match the
-      assistant's glow aesthetic; `prefers-reduced-motion` + keyboard-navigable + focus-managed.
-- [ ] **Per-route step registry** — a `lib/guide/` table keyed by pathname → ordered steps (anchor
-      selector + copy), authored for a **few key routes first** (board, session detail, workflow
-      builder, memory workspace) as the established pattern; unmapped routes show a "no guide yet" state.
-- [ ] **Replayable + progress-aware** — "Guide" in the panel starts the current route's tour; it's
-      re-runnable anytime (not a one-shot first-run gate). Optionally remember "seen" per route (via
-      Phase 43 preference sync) to offer a subtle first-visit nudge, without ever blocking.
+- [x] **A lightweight in-house spotlight overlay** — an SVG-mask dimming layer that knocks a hole
+      around the anchored element + a floating step card ([`guide-overlay.tsx`](../packages/web/components/guide/guide-overlay.tsx)),
+      portaled to `body`. No new dependency; keyboard-navigable (←/→/Enter/Esc), focus-managed,
+      reduced-motion-safe; the card clamps fully on-screen even for tall/wide anchors.
+- [x] **Per-route step registry** — [`lib/guide/steps.ts`](../packages/web/lib/guide/steps.ts): a
+      longest-prefix pathname→guide table (mirroring the docs-link map) with `data-tour` anchors,
+      authored for the four routes (board, sessions, workflow builder, memory); unmapped routes show a
+      graceful "no guided tour for this page yet".
+- [x] **Replayable + progress-aware** — the panel's "Guide" entry starts the current route's tour
+      inline, re-runnable anytime; a `seenGuides` preference (Phase 43 sync + localStorage fallback)
+      drives a subtle unseen dot on the FAB — never blocking, never auto-opening.
 
 ---
 
@@ -215,15 +216,15 @@ An interactive walkthrough of the current feature, launchable any time.
 - [x] **Chat relocation:** "Chat to board" opens the NL command bar **inside** the panel with
       preview → confirm → undo working identically to Phase 59; the sidenav + mobile-nav entries are
       gone; the palette `>` chat mode still works (shared hook).
-- [ ] **Agent:** asking about the fleet/tasks/sessions returns markdown answers **plus** inline
+- [x] **Agent:** asking about the fleet/tasks/sessions returns markdown answers **plus** inline
       midnite components (task-card / fleet-gauge / session-list / sparkline) via the zod-validated
       `AssistantBlock` registry; an unknown/invalid block degrades to markdown; with no provider
       configured it falls soft to a deterministic overview; the agent never mutates; spend is tracked
       under a distinct `assistant` feature.
-- [ ] **Guide:** "Guide" starts a replayable, per-route spotlight tour on the covered routes (board,
+- [x] **Guide:** "Guide" starts a replayable, per-route spotlight tour on the covered routes (board,
       session, workflow, memory); it's re-runnable anytime; unmapped routes show a graceful "no guide
       yet"; keyboard-navigable + reduced-motion-aware.
-- [ ] `moon run :typecheck` · `moon run :lint` · `moon run :test` green (shared `AssistantBlock` schema
+- [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` green (shared `AssistantBlock` schema
       units; gateway assistant-answerer with `LlmService` fakes + fail-soft; web RTL for the FAB/panel,
       docs-slug map, relocated chat bar, block dispatch, and guide overlay — **web tests from a
       `.worktrees/`/`midnite-wt` worktree outside `.git`, not the primary checkout mid-edit**).

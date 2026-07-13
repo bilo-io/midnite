@@ -35,12 +35,23 @@ describe('AssistantFab', () => {
     }
   });
 
-  it('disables the not-yet-built Guide and Agent entries', () => {
+  it('disables only the not-yet-built Agent entry (Guide is live in Theme F)', () => {
     render(<AssistantFab />);
     fireEvent.click(screen.getByRole('button', { name: 'Open assistant' }));
-    expect(screen.getByRole('button', { name: /Guide/i })).toBeDisabled();
     expect(screen.getByRole('button', { name: /Agent/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Guide/i })).not.toBeDisabled();
     expect(screen.getByRole('button', { name: /Chat to board/i })).not.toBeDisabled();
+  });
+
+  it('Guide starts the current route’s tour (Theme F)', async () => {
+    const { useGuide } = await import('@/lib/guide/use-guide');
+    useGuide.getState().stop();
+    render(<AssistantFab />);
+    fireEvent.click(screen.getByRole('button', { name: 'Open assistant' }));
+    fireEvent.click(screen.getByRole('button', { name: /Guide/i }));
+    // /tasks/graph → board guide; the panel closes and the store goes active.
+    expect(useGuide.getState().active?.id).toBe('board');
+    useGuide.getState().stop();
   });
 
   it('opens the current route’s docs in a new tab (Theme C)', () => {

@@ -15,6 +15,16 @@ Closes the last 8 boxes of Phase 62 (Fable-Digest) — the Verification checklis
 - [x] **Real-pipeline e2e:** `retro-digest-pipeline.e2e.ts` against the live gateway (no route mocks) — a terminal transition builds a retro rendered on the task-detail Retro tab; the installed+run daily-digest stores a digest the `/digests` feed renders.
 - [x] **Gate:** `moon run :typecheck` · `:lint` · `:test` green (gateway 2024 passed, web 1120+ passed, shared all passed); the new e2e passes (3/3).
 
+## 2026-07-13 — feat(web): replayable product guide — Phase 66 Theme F (PR #425) — **Phase 66 complete**
+
+The **Guide** entry of the floating assistant menu — a replayable per-route spotlight tour. Completes Phase 66 (100%).
+
+- [x] **shared/web** — `seenGuides: string[]` added to `UserPreferencesSchema`; threaded through `prefsKey` + the app-settings mappers so it rides the Phase 43 server sync (localStorage fallback).
+- [x] **overlay** — `components/guide/guide-overlay.tsx`: SVG-mask dimming layer knocks a hole around the anchored element + a floating step card; portaled to body, keyboard-driven (←/→/Enter/Esc), reduced-motion-safe; the card clamps fully on-screen (fixed a real off-viewport bug for tall anchors).
+- [x] **registry** — `lib/guide/steps.ts`: longest-prefix pathname→guide map with `data-tour` anchors for board / sessions / workflow builder / memory; zustand `use-guide` store; `use-seen-guides` hook.
+- [x] **wiring** — panel "Guide" entry (dropped the `soon` stub) starts the current route's tour inline; FAB shows a subtle unseen-guide dot; `data-tour` anchors added to the four surfaces; overlay mounted in the `(main)` shell.
+- [x] Tests: shared preferences +2 · web guide (steps/store/overlay/story) 18 + assistant-fab updated; light+dark Playwright shots.
+
 ## 2026-07-13 — feat(web,gateway): fleet assistant chat — Phase 66 Theme E (PR #423)
 
 The **Agent** entry of the floating assistant menu — a read-only fleet Q&A that renders rich answers (markdown + inline midnite components).

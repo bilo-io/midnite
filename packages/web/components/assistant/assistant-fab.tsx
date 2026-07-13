@@ -3,11 +3,14 @@
 import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 
 import { GradientGlow } from '@midnite/ui';
 
 import { useChatCommand } from '@/hooks/use-chat-command';
 import { useIsMobile } from '@/hooks/use-media-query';
+import { resolveGuide } from '@/lib/guide/steps';
+import { useSeenGuides } from '@/lib/guide/use-seen-guides';
 import { cn } from '@/lib/utils';
 
 import { AssistantPanel, type AssistantView } from './assistant-panel';
@@ -29,9 +32,16 @@ export function AssistantFab() {
   const [view, setView] = useState<AssistantView>('menu');
   const chat = useChatCommand();
   const isMobile = useIsMobile();
+  const pathname = usePathname();
+  const { hasSeen } = useSeenGuides();
   const panelRef = useRef<HTMLDivElement>(null);
   const fabRef = useRef<HTMLButtonElement>(null);
   const headingId = useId();
+
+  // Subtle nudge: the current route has a guide the user hasn't run yet. Never
+  // auto-opens — just a dot until they start (or skip) that route's tour.
+  const routeGuide = pathname ? resolveGuide(pathname) : null;
+  const showGuideNudge = !open && !!routeGuide && !hasSeen(routeGuide.id);
 
   useEffect(() => setMounted(true), []);
 
@@ -108,11 +118,12 @@ export function AssistantFab() {
         <button
           ref={fabRef}
           type="button"
+          data-tour="assistant"
           onClick={() => (open ? close() : setOpen(true))}
           aria-label="Open assistant"
           aria-haspopup="dialog"
           aria-expanded={open}
-          className="flex h-12 w-12 items-center justify-center rounded-full bg-card text-foreground transition-transform hover:scale-105 motion-reduce:transition-none"
+          className="relative flex h-12 w-12 items-center justify-center rounded-full bg-card text-foreground transition-transform hover:scale-105 motion-reduce:transition-none"
         >
           <Image
             src="/logo.PNG"
@@ -121,6 +132,12 @@ export function AssistantFab() {
             height={32}
             className="h-8 w-8 rounded-full object-cover"
           />
+          {showGuideNudge && (
+            <span
+              aria-hidden
+              className="absolute right-0.5 top-0.5 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-card"
+            />
+          )}
         </button>
       </GradientGlow>
 

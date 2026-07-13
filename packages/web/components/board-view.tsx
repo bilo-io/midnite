@@ -260,6 +260,7 @@ export function BoardView({
           tabIndex={0}
           role="group"
           aria-label="Task board"
+          data-tour="board"
           className="flex min-h-0 flex-1 gap-3 overflow-x-auto pb-1 max-md:snap-x max-md:snap-mandatory max-md:scroll-smooth max-md:gap-0"
         >
           {columns.map((col) => (
@@ -346,6 +347,7 @@ function Column({
   return (
     <section
       ref={setNodeRef}
+      data-tour={`board-column-${status}`}
       className={cn(
         // Desktop: flexible columns that grow to fill available space.
         'relative flex h-full min-w-[240px] flex-1 flex-col overflow-hidden rounded-lg border bg-card/60 p-3 backdrop-blur-sm transition-colors',

@@ -28,7 +28,16 @@ describe('UserPreferencesSchema', () => {
       officeView: '2d',
       features: {},
       collapsedNavSections: [],
+      seenGuides: [],
     });
+  });
+
+  it('accepts a list of seen guide ids and strips duplicates-free (Phase 66 F)', () => {
+    expect(UserPreferencesSchema.parse({ seenGuides: ['board', 'workflow'] }).seenGuides).toEqual([
+      'board',
+      'workflow',
+    ]);
+    expect(UserPreferencesSchema.parse({}).seenGuides).toEqual([]);
   });
 
   it('defaults officeView to 2d and accepts 3d (Phase 63 F)', () => {
@@ -74,6 +83,7 @@ describe('UserPreferencesSchema', () => {
       officeView: '3d' as const,
       features: { office: true, workflows: false },
       collapsedNavSections: ['agents'],
+      seenGuides: ['board', 'memory'],
     };
     expect(UserPreferencesSchema.parse(full)).toEqual(full);
   });

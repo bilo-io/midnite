@@ -332,7 +332,7 @@ export function SessionsView({
     .filter((g) => g.items.length > 0);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-tour="sessions-list">
       <div className="reveal-controls flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <CountPill count={sessions.length} noun="session" className="mr-1" />

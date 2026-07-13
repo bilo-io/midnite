@@ -37,6 +37,7 @@ function prefsKey(p: UserPreferences): string {
     inactivityTimeoutS: p.inactivityTimeoutS,
     cycleDurationS: p.cycleDurationS,
     features: Object.fromEntries(Object.keys(p.features).sort().map((k) => [k, p.features[k]])),
+    seenGuides: [...p.seenGuides].sort(),
   });
 }
 

@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [66 · Floating assistant menu](phase-66-floating-assistant-menu.md) | 🔄 WIP | 21/27 | `████████░░` | 78% | F | — |
+| [66 · Floating assistant menu](phase-66-floating-assistant-menu.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [65 · Memory workspace](phase-65-memory-workspace.md) | ✅ DONE | 33/33 | `██████████` | 100% | — | — |
 | [64 · Office presence](phase-64-office-presence.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
 | [63 · Office 3D](phase-63-office-3d.md) | ✅ DONE | 28/28 | `██████████` | 100% | — | — |
@@ -124,7 +124,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **C** — Docs deep-link: `pathname → docs-slug` map → current page's docs; retired the path-less sidenav Docs button (PR #422)
 - ✅ **D** — Relocate Chat to board: lift `useChatCommand`/`ChatBar` into the panel; drop the sidenav entry; re-point `midnite:open-chat` at the FAB (PR #422)
 - ✅ **E** — Agent chat: compose fleet context → `LlmService` → `AssistantBlock[]` (markdown + zod-validated, id-referenced inline component registry); read-only, fail-soft; standalone `<AgentChat>` (Theme A embeds it) (PR #423)
-- ◻ **F** — Replayable Guide: lightweight in-house spotlight overlay + per-route step registry (board/session/workflow/memory first)
+- ✅ **F** — Replayable Guide: SVG-mask spotlight overlay + per-route `data-tour` step registry (board/sessions/workflow/memory); inline launch from the panel, `seenGuides` pref drives a subtle FAB dot (PR #425)
 
 ### [Phase 65 — Memory workspace](phase-65-memory-workspace.md)
 *Turn the memory modal into a 3-panel `/memory/view?id=` workspace (NotebookLM-style): left sources rail, center doc + chat-to-the-knowledge-base, right Studio that generates artifacts. Sources graduate to an ingested corpus (URL bodies + file uploads); memory becomes THE knowledge notion — project sources retired. Naming stays `memory`; FTS + LlmService reuse, no embeddings.*
