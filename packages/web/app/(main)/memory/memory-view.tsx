@@ -173,7 +173,7 @@ export function MemoryView({ initial, projects }: { initial: Memory[]; projects:
   }, []);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-tour="memory-workspace">
       <div className="reveal-controls flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <CountPill count={filtered.length} noun="memory" />

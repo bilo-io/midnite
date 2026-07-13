@@ -278,7 +278,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
             {banner}
           </div>
 
-          <div className="relative flex min-h-0 flex-1">
+          <div className="relative flex min-h-0 flex-1" data-tour="workflow-canvas">
             <div
               className={cn(
                 'flex h-full shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out motion-reduce:transition-none',
