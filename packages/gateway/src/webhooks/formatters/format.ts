@@ -1,4 +1,4 @@
-import type { DigestCounts, Status, Task, WebhookEvent, WebhookProvider } from '@midnite/shared';
+import type { DigestCounts, Status, Task, WebhookProvider } from '@midnite/shared';
 
 /** The compact digest shape carried by a `digest.generated` webhook — the heavy
  *  `sections`/`highlights`/`markdown` stay out of the wire body. */
