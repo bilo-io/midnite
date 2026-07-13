@@ -130,8 +130,7 @@ export class AssistantService {
     const activity = this.tasks.recentActivity(scope, ASSISTANT_ACTIVITY_CAP);
     const poolSnap = this.pool.snapshot();
 
-    // Sessions + metrics are independent reads — fetch concurrently.
-    const [allSessions] = await Promise.all([this.sessions.list(scope)]);
+    const allSessions = await this.sessions.list(scope);
     const activeSessions = allSessions.filter((s) => !s.archivedAt).slice(0, ASSISTANT_SESSION_CAP);
 
     const ops = this.metrics.getOpsSummary({});
