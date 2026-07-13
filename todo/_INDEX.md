@@ -121,7 +121,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 *A logo-anchored floating action button (hover → gradient border + glow) that expands into a glowing gradient-bordered panel: Docs (current page's docs), Guide (replayable per-route tour), Chat to board (relocated from the sidenav), Agent (fleet Q&A with markdown + inline midnite components). Overturns Phase 59's "no FAB"; overwhelmingly `packages/web` + one `@midnite/ui` extraction + one read-only gateway answerer.*
 - ✅ **A** — Assistant shell + logo FAB: hover glow, click-expand glowing panel, coexists w/ ⌘K, mobile variant (PR #422)
 - ✅ **B** — Extract `.gradient-border` glow into a `@midnite/ui` primitive + token; migrate the 3 composers; docs shares it (PR #422)
-- ✅ **C** — Docs deep-link: `pathname → docs-slug` map → current page's docs (created the docs-link module; no path-less nav button existed to retire) (PR #422)
+- ✅ **C** — Docs deep-link: `pathname → docs-slug` map → current page's docs; retired the path-less sidenav Docs button (PR #422)
 - ✅ **D** — Relocate Chat to board: lift `useChatCommand`/`ChatBar` into the panel; drop the sidenav entry; re-point `midnite:open-chat` at the FAB (PR #422)
 - ◻ **E** — Agent chat: compose fleet context → `LlmService` → `AssistantBlock[]` (markdown + zod-validated inline component registry); read-only, fail-soft
 - ◻ **F** — Replayable Guide: lightweight in-house spotlight overlay + per-route step registry (board/session/workflow/memory first)
