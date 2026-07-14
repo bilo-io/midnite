@@ -19,15 +19,15 @@
 
 ---
 
-## Theme A — Engine v2: versioning + auto-launch — **M**
+## Theme A — Engine v2: versioning + auto-launch — **M** — ✅ DONE (PR #426, 2026-07-14)
 
 > Fix the two Phase 66 gaps: edited guides never re-surface (flat id list), and guides only start from the menu.
 
-- [ ] **A1.** Add `version: number` to the `Guide` type in [`steps.ts`](../packages/web/lib/guide/steps.ts) (default `1`); document that bumping it re-surfaces the guide. Every existing + new guide def carries an explicit `version`.
-- [ ] **A2.** Evolve `seenGuides` from `string[]` to an **`id → version` map** (`Record<string, number>`) in [`preferences.ts`](../packages/shared/src/preferences.ts). Keep the schema loose (web owns canonical versions): `z.union([z.array(z.string()), z.record(z.string(), z.number())])` with a `.transform` that coerces a legacy array `['a','b']` → `{ a: 1, b: 1 }` on read. **This is a persisted-union change — legacy rows MUST coerce cleanly** (see Decisions §1); add a regression test for the coercion.
-- [ ] **A3.** Rework [`use-seen-guides.ts`](../packages/web/lib/guide/use-seen-guides.ts): `hasSeen(guide)` returns true only when the stored version `>=` the guide's current `version`; `markSeen(guide)` writes the guide's current version. Reading the legacy array shape still works (via A2 coercion).
-- [ ] **A4.** Auto-launch: when the user lands on a route whose `resolveGuide(pathname)` is unseen (per A3), auto-`start()` it **once**, dismissible. Wire from the `(main)` shell ([`layout.tsx`](../packages/web/app/(main)/layout.tsx)) on pathname change; mark seen on start (as today) so it stays quiet after. Replay from the menu is unaffected.
-- [ ] **A5.** Guard auto-launch (see Decisions §2): desktop-only (`useIsDesktop`), never during the Phase 19 setup wizard, and honor a new **`autoShowGuides` boolean preference** (default `true`) so a user can turn auto-launch off while keeping manual replay. Surface the toggle in Settings → Appearance near the existing PWA/guide affordances.
+- [x] **A1.** Add `version: number` to the `Guide` type in [`steps.ts`](../packages/web/lib/guide/steps.ts) (default `1`); document that bumping it re-surfaces the guide. Every existing + new guide def carries an explicit `version`.
+- [x] **A2.** Evolve `seenGuides` from `string[]` to an **`id → version` map** (`Record<string, number>`) in [`preferences.ts`](../packages/shared/src/preferences.ts). Keep the schema loose (web owns canonical versions): `z.union([z.array(z.string()), z.record(z.string(), z.number())])` with a `.transform` that coerces a legacy array `['a','b']` → `{ a: 1, b: 1 }` on read. **This is a persisted-union change — legacy rows MUST coerce cleanly** (see Decisions §1); add a regression test for the coercion.
+- [x] **A3.** Rework [`use-seen-guides.ts`](../packages/web/lib/guide/use-seen-guides.ts): `hasSeen(guide)` returns true only when the stored version `>=` the guide's current `version`; `markSeen(guide)` writes the guide's current version. Reading the legacy array shape still works (via A2 coercion + a `normalizeSeen` at the device-local read layer, since `AppSettings` localStorage bypasses zod).
+- [x] **A4.** Auto-launch: when the user lands on a route whose `resolveGuide(pathname)` is unseen (per A3), auto-`start()` it **once**, dismissible. Wired via a dedicated `<GuideAutoLaunch/>` in the `(main)` shell ([`layout.tsx`](../packages/web/app/(main)/layout.tsx)) on pathname change; the overlay marks seen on start (as today) so it stays quiet after. Replay from the menu is unaffected.
+- [x] **A5.** Guard auto-launch (see Decisions §2): desktop-only (`useIsDesktop`), suppressed until past first-run setup (`SetupStatus.ready`, which owns the wizard window), and honoring a new **`autoShowGuides` boolean preference** (default `true`, synced) so a user can turn auto-launch off while keeping manual replay. Toggle surfaced in Settings → Appearance ("Product guides").
 
 ## Theme B — Interactive steps: scroll-to + action-advance — **M**
 
