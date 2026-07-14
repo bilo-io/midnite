@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-14 — feat(web): all-guides index in the assistant panel — Phase 67 Theme C (PR #PRNUM)
+## 2026-07-14 — feat(web): all-guides index in the assistant panel — Phase 67 Theme C (PR #429)
 
 One place to browse + replay every product guide. Phase 67 → 12/30 (40%), Status 🔄 WIP (D, E remain).
 

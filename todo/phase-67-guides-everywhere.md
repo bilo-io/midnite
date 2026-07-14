@@ -38,7 +38,7 @@
 - [x] **B3.** The knockout is now **click-through** (Decision: all steps): the SVG dim is visual-only (`pointer-events:none`) and transparent **curtain catchers** frame the hole (clicking the dim dismisses; the hole passes clicks to the real element). Esc/Back still work; an `advanceOn` click both triggers the app action and advances.
 - [x] **B4.** Reduced-motion + a11y: scroll `behavior` comes from `useAnimationPrefs().animate` (folds in `data-motion` **and** OS `prefers-reduced-motion`) → `'auto'` when reduced; curtains stay out of the tab order + a11y tree (Esc/Skip cover keyboard/AT); existing focus management + keyboard nav (←/→/Enter/Esc) intact.
 
-## Theme C — Guides index in the assistant menu — **S** — ✅ DONE (PR #PRNUM, 2026-07-14)
+## Theme C — Guides index in the assistant menu — **S** — ✅ DONE (PR #429, 2026-07-14)
 
 > One place to see and replay every guide, not just the current route's.
 
