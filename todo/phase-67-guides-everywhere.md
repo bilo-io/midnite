@@ -46,22 +46,22 @@
 - [x] **C2.** Click-to-replay from anywhere: on-route starts immediately; off-route sets `useGuide.pending` + `router.push(guideLaunchPath(guide))`, and a shell watcher `<GuidePendingReplay/>` starts it once `resolveGuide(pathname)` matches (so the guide never starts before its anchors mount). `guideLaunchPath` derives the route from `GUIDE_ROUTE_MAP`.
 - [x] **C3.** The FAB "unseen" dot ([`assistant-fab.tsx`](../packages/web/components/assistant/assistant-fab.tsx)) now reflects **any** unseen guide (`useSeenGuides().hasAnyUnseen`), not only the current route's — a real "you have new guides" signal.
 
-## Theme D — Full coverage: ~12 guides + anchors — **L**
+## Theme D — Full coverage: ~12 guides + anchors — **L** — ✅ DONE (PR #PRNUM, 2026-07-14)
 
 > One guide per major top-level destination. Each = add `data-tour` anchors to the target surface + author a guide def in [`steps.ts`](../packages/web/lib/guide/steps.ts) + register it in `GUIDE_ROUTE_MAP` / `KNOWN_GUIDE_IDS`. Every guide closes on the universal `assistant` "replay anytime" step (existing convention).
 
-- [ ] **D1.** **Office / 3D** (`/office`) — orient in the scene: presence, movement/controls, the activity layer. Anchors in the office scene shell + 2D/3D toggle.
-- [ ] **D2.** **Projects** (`/projects`) and **Project detail** (`/projects/[id]`) — the projects list + the per-project cockpit (Phase 55): tasks, breakdown, roadmap tabs.
-- [ ] **D3.** **Ideas** (`/ideas`) — the ideas pipeline (Phase 40): compose an idea, the phase-plan output.
-- [ ] **D4.** **Fable digests** (`/fable` / digests route) — retrospectives & fleet digest surfaces (Phase 62).
-- [ ] **D5.** **Releases** (`/releases`) — the release tooling surface (Phase 29): version, changelog, cut flow.
-- [ ] **D6.** **Search** (`/search` or the global search surface) — scope, result types, per-type routes (Phase 20/38).
-- [ ] **D7.** **Settings** (`/settings`) — appearance/theme, PWA install, the new `autoShowGuides` toggle, key preference groups.
-- [ ] **D8.** **Command palette** — a guide that introduces ⌘K (Phase 41): open it, search, run a command. Anchor via the palette trigger + a demonstrative `advanceOn: 'click'` step (Theme B).
-- [ ] **D9.** **Session detail** (`/sessions/[id]`) — the per-session cockpit (Phase 51): transcript, controls, diff/PR review tab (Phase 52).
-- [ ] **D10.** **Dashboard / fleet home** (the default landing route) — a short orientation to the primary nav + the FAB itself (so first-run users learn where guides live).
-- [ ] **D11.** Audit remaining top-level nav destinations against `GUIDE_ROUTE_MAP`; fill any gap so **every** primary nav entry resolves to a guide (log any deliberately-skipped route in the Verification notes rather than leaving a silent hole).
-- [ ] **D12.** Copy pass: keep each guide 2–4 tight steps, markdown bodies, correct `placement`, consistent voice with the 4 existing guides.
+- [x] **D1.** **Office / 3D** (`/office`) — anchors on the scene shell + the 2D/3D view toggle; a 3-step orientation tour.
+- [x] **D2.** **Projects** (`/projects`) and **Project detail** (`/projects/view`) — list + New button anchors, plus a `project-detail` step that **auto-skips on the list** and lights the cockpit tabs on the detail route (prefix inheritance, no separate guide).
+- [x] **D3.** **Ideas** — ⏳ **skipped, no web route.** The ideas pipeline (Phase 40) has no `/ideas` page in `packages/web` (CLI/gateway surface); logged here rather than anchoring a guide to nothing. Add when/if a web route lands.
+- [x] **D4.** **Fable digests** (`/digests`) — anchors on the feed shell + the master-detail content region.
+- [x] **D5.** **Releases** — ⏳ **skipped, no web route.** The release flow (Phase 29) is the `/release-prep` → `/release-complete` skills + CLI; there is no `/releases` web surface. Logged.
+- [x] **D6.** **Search** (`/search`) — scope overview + a live **`advanceOn: 'click'`** step on the search input (the first real interactive step, Theme B).
+- [x] **D7.** **Settings** (`/settings`) — hub shell + category sidebar anchors; points at Appearance (theme, `autoShowGuides`).
+- [◐] **D8.** **Command palette** — the ⌘K palette is **keyboard-only** (no pointer trigger in the chrome), so a standalone click-to-open guide isn't possible without adding nav chrome (out of D's scope). Folded a **⌘K keyboard mention** into the dashboard guide's closing step; the live `advanceOn` demo instead rides the search guide (D6). Adding a visible palette trigger + its own guide is the follow-up.
+- [x] **D9.** **Session detail** (`/sessions/view`) — covered by the existing `/sessions` guide via prefix inheritance (Decision: detail via inheritance).
+- [x] **D10.** **Dashboard / fleet home** (`/dashboard`) — short orientation: the grid overview + the task composer, closing on the assistant/FAB step (with the ⌘K mention from D8) so first-run users learn where guides live.
+- [◐] **D11.** Audit done: **dashboard, office, projects, digests, search, settings** now resolve to guides (+ existing board/workflow/sessions/memory). Deliberately **not** covered this PR (bounded follow-up, logged): `/ops`, `/slides`, `/councils`, `/media`. Ideas/Releases have no route (D3/D5).
+- [x] **D12.** Copy pass: every new guide is 2–4 tight steps, markdown bodies, explicit `placement`, closing on the `assistant` anchor — consistent voice with the original four.
 
 ## Theme E — Tests, stories & e2e shots — **M**
 
