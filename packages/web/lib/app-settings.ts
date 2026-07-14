@@ -373,6 +373,7 @@ export function appSettingsToPreferences(
     features: settings.features,
     collapsedNavSections: settings.collapsedNavSections,
     seenGuides: settings.seenGuides,
+    autoShowGuides: settings.autoShowGuides,
   };
 }
 
@@ -399,6 +400,7 @@ export function applyPreferences(
     features: { ...prev.features, ...prefs.features } as AppSettings['features'],
     collapsedNavSections: prefs.collapsedNavSections,
     seenGuides: prefs.seenGuides,
+    autoShowGuides: prefs.autoShowGuides,
   }));
   setTheme(prefs.theme);
 }

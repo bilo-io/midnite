@@ -16,6 +16,7 @@ import { SetupWizardController } from '@/components/SetupWizard';
 import { PullToRefresh } from '@/components/pull-to-refresh';
 import { AssistantFab } from '@/components/assistant/assistant-fab';
 import { GuideOverlay } from '@/components/guide/guide-overlay';
+import { GuideAutoLaunch } from '@/components/guide/guide-auto-launch';
 import { queryClient } from '@/lib/query-client';
 
 export default function MainLayout({ children }: { children: ReactNode }) {
@@ -45,6 +46,7 @@ export default function MainLayout({ children }: { children: ReactNode }) {
         </Suspense>
         <AssistantFab />
         <GuideOverlay />
+        <GuideAutoLaunch />
         <SetupWizardController onOpenWizard={registerOpen} />
       </div>
     </PaletteCommandsProvider>

@@ -6,6 +6,7 @@ import {
   Clock,
   Cloud,
   CloudOff,
+  Compass,
   Download,
   Laptop,
   LayoutGrid,
@@ -102,6 +103,10 @@ export function AppearanceSection() {
 
   const motion = settings.motion ?? MOTION_DEFAULT;
   const setMotion = (next: Motion) => setSettings((prev) => ({ ...prev, motion: next }));
+
+  const autoShowGuides = settings.autoShowGuides ?? DEFAULT_SETTINGS.autoShowGuides;
+  const setAutoShowGuides = (value: boolean) =>
+    setSettings((prev) => ({ ...prev, autoShowGuides: value }));
 
   const density = settings.density ?? DENSITY_DEFAULT;
   const setDensity = (next: Density) => setSettings((prev) => ({ ...prev, density: next }));
@@ -413,6 +418,25 @@ export function AppearanceSection() {
               {SHIMMER_DIRECTION_OPTIONS.find((o) => o.value === shimmerDirection)?.hint}.
             </p>
           </div>
+        </div>
+      </Accordion>
+
+      <Accordion title="Product guides" icon={<Compass className="h-3.5 w-3.5" />}>
+        <div className="p-5">
+          <label className="flex items-center justify-between gap-4" title="Auto-show guides">
+            <span className="space-y-0.5">
+              <span className="block text-sm font-medium">Auto-show guides</span>
+              <span className="block text-xs text-muted-foreground">
+                Show a page&apos;s product guide once, the first time you visit it. Turn this off to keep
+                guides available only on demand from the assistant menu.
+              </span>
+            </span>
+            <Switch
+              checked={autoShowGuides}
+              onCheckedChange={setAutoShowGuides}
+              aria-label="Auto-show guides"
+            />
+          </label>
         </div>
       </Accordion>
 

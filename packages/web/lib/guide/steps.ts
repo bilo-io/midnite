@@ -26,6 +26,14 @@ export type GuideStep = {
 export type Guide = {
   /** Stable id — the key stored in the `seenGuides` preference. */
   id: string;
+  /**
+   * Content version (Phase 67 A). Bump it whenever a guide's steps change so it
+   * re-surfaces for users who already saw the previous version: `seenGuides`
+   * stores the version last seen, and `hasSeen` only returns true when that
+   * stored version is `>=` this one. Starts at `1`; a legacy `seenGuides` entry
+   * with no recorded version coerces to `1`.
+   */
+  version: number;
   /** Human label shown in the guide header ("Board tour"). */
   label: string;
   steps: GuideStep[];
@@ -39,6 +47,7 @@ export const ASSISTANT_ANCHOR = 'assistant';
 
 const BOARD_GUIDE: Guide = {
   id: 'board',
+  version: 1,
   label: 'Board tour',
   steps: [
     { anchor: 'board', title: 'Your board', body: 'Tasks flow left → right through the columns. Drag a card to move it between statuses.', placement: 'bottom' },
@@ -49,6 +58,7 @@ const BOARD_GUIDE: Guide = {
 
 const WORKFLOW_GUIDE: Guide = {
   id: 'workflow',
+  version: 1,
   label: 'Workflow builder tour',
   steps: [
     { anchor: 'workflow-canvas', title: 'The canvas', body: 'Build an automation by wiring nodes here — a trigger, then the steps it fans out into.', placement: 'bottom' },
@@ -58,6 +68,7 @@ const WORKFLOW_GUIDE: Guide = {
 
 const SESSIONS_GUIDE: Guide = {
   id: 'sessions',
+  version: 1,
   label: 'Sessions tour',
   steps: [
     { anchor: 'sessions-list', title: 'Live sessions', body: 'Every agent session shows here. Open one for its cockpit — transcript, terminal, and the task it is driving.', placement: 'bottom' },
@@ -67,6 +78,7 @@ const SESSIONS_GUIDE: Guide = {
 
 const MEMORY_GUIDE: Guide = {
   id: 'memory',
+  version: 1,
   label: 'Memory workspace tour',
   steps: [
     { anchor: 'memory-workspace', title: 'Knowledge base', body: 'Gather sources, chat to your knowledge, and generate artifacts from a single workspace.', placement: 'bottom' },
@@ -85,6 +97,13 @@ export const GUIDE_ROUTE_MAP: ReadonlyArray<{ prefix: string; guide: Guide }> = 
   { prefix: '/sessions', guide: SESSIONS_GUIDE },
   { prefix: '/memory', guide: MEMORY_GUIDE },
 ];
+
+/**
+ * Every guide the app ships, in a stable order. The single registry the route
+ * map, the "unseen" nudge, and the version-snapshot guard all read from — add a
+ * guide here (and to `GUIDE_ROUTE_MAP`) and everything downstream picks it up.
+ */
+export const ALL_GUIDES: readonly Guide[] = [BOARD_GUIDE, WORKFLOW_GUIDE, SESSIONS_GUIDE, MEMORY_GUIDE];
 
 /** Every guide id that ships today — the test asserts the map only targets these. */
 export const KNOWN_GUIDE_IDS = ['board', 'workflow', 'sessions', 'memory'] as const;
