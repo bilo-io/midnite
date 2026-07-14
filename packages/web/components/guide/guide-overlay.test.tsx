@@ -89,4 +89,65 @@ describe('GuideOverlay', () => {
     act(() => useGuide.getState().start(null));
     expect(screen.getByText(/no guided tour for this page yet/i)).toBeInTheDocument();
   });
+
+  // Phase 67 B — interactive steps.
+  const INTERACTIVE: Guide = {
+    id: 'board',
+    version: 1,
+    label: 'Board tour',
+    steps: [
+      { anchor: 'board', title: 'Click the board', body: 'Try it.', advanceOn: 'click' },
+      { anchor: 'assistant', title: 'Replay anytime', body: 'Reopen from here.' },
+    ],
+  };
+
+  it('advanceOn:"click" advances when the anchored element is clicked', () => {
+    render(
+      <>
+        {anchors()}
+        <GuideOverlay />
+      </>,
+    );
+    act(() => useGuide.getState().start(INTERACTIVE));
+    expect(screen.getByText('Click the board')).toBeInTheDocument();
+
+    // Clicking the real anchored element (through the spotlight hole) advances.
+    act(() => {
+      screen.getByText('board').click();
+    });
+    expect(screen.getByText('Replay anytime')).toBeInTheDocument();
+    expect(useGuide.getState().stepIndex).toBe(1);
+  });
+
+  it('does not auto-advance when the step has no advanceOn', () => {
+    render(
+      <>
+        {anchors()}
+        <GuideOverlay />
+      </>,
+    );
+    // GUIDE's first step is not interactive.
+    act(() => useGuide.getState().start(GUIDE));
+    act(() => {
+      screen.getByText('board').click();
+    });
+    // Still on the first step — a plain anchor click is a no-op for the tour.
+    expect(useGuide.getState().stepIndex).toBe(0);
+    expect(screen.getByText('Your board')).toBeInTheDocument();
+  });
+
+  it('clicking the dimmed area (a curtain) ends the tour', () => {
+    render(
+      <>
+        {anchors()}
+        <GuideOverlay />
+      </>,
+    );
+    act(() => useGuide.getState().start(GUIDE));
+    // The click-catcher curtains are the aria-hidden <div>s in the portal.
+    const curtain = document.body.querySelector<HTMLElement>('div[aria-hidden="true"]');
+    expect(curtain).not.toBeNull();
+    act(() => curtain!.click());
+    expect(useGuide.getState().active).toBeNull();
+  });
 });

@@ -4,6 +4,16 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-14 — feat(web): interactive guide steps — scroll-to + action-advance — Phase 67 Theme B (PR #428)
+
+Makes guide steps interactive without branching. Phase 67 → 9/30 (30%), Status 🔄 WIP (C–E remain).
+
+- [x] **B1** — one-time per-step scroll-into-view (`block:'center'`), decoupled from the continuous `measure()` so a smooth scroll's own scroll events can't re-trigger it; the scroll listener re-reads the rect as the page animates so the spotlight tracks to the element's resting position.
+- [x] **B2** — `GuideStep.advanceOn?: 'click'` (open union): the overlay listens on the anchored element and advances on that event, in addition to the Next button. Never `preventDefault` — the app's own handler still runs.
+- [x] **B3** — click-through knockout (all steps): SVG dim is visual-only (`pointer-events:none`); transparent curtain catchers frame the hole so clicking the dim dismisses while the hole passes clicks to the real element. Esc/Back unchanged.
+- [x] **B4** — scroll `behavior` from `useAnimationPrefs().animate` (folds in `data-motion` + OS `prefers-reduced-motion`) → `'auto'` when reduced; curtains kept out of the tab order + a11y tree (Esc/Skip cover keyboard/AT); focus + keyboard nav intact.
+- [x] Tests: `GuideOverlay` RTL — advanceOn click advances, plain-step anchor click is a no-op, curtain click dismisses. `:typecheck` · `:lint` · web tests green.
+
 ## 2026-07-14 — feat(web): guide engine v2 — versioning + auto-launch — Phase 67 Theme A (PR #426)
 
 Upgrades Phase 66's thin product-guide system to a versioned, auto-launching engine. Phase 67 → 5/30 (17%), Status 🔄 WIP (B–E remain).

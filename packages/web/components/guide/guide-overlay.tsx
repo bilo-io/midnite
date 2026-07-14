@@ -4,6 +4,7 @@ import { forwardRef, useCallback, useEffect, useId, useLayoutEffect, useRef, use
 import { createPortal } from 'react-dom';
 
 import { MarkdownPreview } from '@/components/markdown-preview';
+import { useAnimationPrefs } from '@/lib/use-animation-prefs';
 import { useGuide } from '@/lib/guide/use-guide';
 import { useSeenGuides } from '@/lib/guide/use-seen-guides';
 import { cn } from '@/lib/utils';
@@ -26,6 +27,7 @@ type Rect = { top: number; left: number; width: number; height: number };
 export function GuideOverlay() {
   const { active, stepIndex, unavailable, next, prev, stop } = useGuide();
   const { markSeen } = useSeenGuides();
+  const { animate } = useAnimationPrefs();
   const [mounted, setMounted] = useState(false);
   const [rect, setRect] = useState<Rect | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -43,7 +45,9 @@ export function GuideOverlay() {
   }, [active, markSeen]);
 
   // Locate the current step's anchor and track its position. A missing anchor
-  // advances the tour rather than stranding it on an invisible step.
+  // advances the tour rather than stranding it on an invisible step. Pure read —
+  // scrolling lives in its own one-time effect (below) so it can't feed back into
+  // the scroll listener that calls this.
   const measure = useCallback(() => {
     if (!step) return;
     const el = document.querySelector<HTMLElement>(`[data-tour="${step.anchor}"]`);
@@ -53,7 +57,6 @@ export function GuideOverlay() {
     }
     const r = el.getBoundingClientRect();
     setRect({ top: r.top, left: r.left, width: r.width, height: r.height });
-    el.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
   }, [step, next]);
 
   useLayoutEffect(() => {
@@ -69,6 +72,29 @@ export function GuideOverlay() {
       window.removeEventListener('scroll', measure, true);
     };
   }, [step, measure]);
+
+  // Scroll the anchored element into view **once** per step (B1). Kept out of
+  // `measure` so a smooth scroll's own scroll events don't re-trigger it; the
+  // scroll listener above re-reads the rect as the page animates, so the
+  // spotlight tracks the element to its final resting position. `behavior` honours
+  // the app's motion preference (data-motion + OS reduced-motion).
+  useEffect(() => {
+    if (!step) return;
+    const el = document.querySelector<HTMLElement>(`[data-tour="${step.anchor}"]`);
+    el?.scrollIntoView?.({ block: 'center', inline: 'nearest', behavior: animate ? 'smooth' : 'auto' });
+  }, [active, stepIndex, step, animate]);
+
+  // Interactive steps (B2/B3): when `advanceOn` is set, advance the moment the
+  // anchored element fires that event. The spotlight hole is click-through, so
+  // the element also runs its own handler — we never `preventDefault`.
+  useEffect(() => {
+    if (!step?.advanceOn) return undefined;
+    const el = document.querySelector<HTMLElement>(`[data-tour="${step.anchor}"]`);
+    if (!el) return undefined;
+    const onAdvance = () => next();
+    el.addEventListener(step.advanceOn, onAdvance);
+    return () => el.removeEventListener(step.advanceOn!, onAdvance);
+  }, [active, stepIndex, step, next]);
 
   // Focus the card on each step so the controls are immediately keyboard-reachable.
   useEffect(() => {
@@ -120,9 +146,11 @@ export function GuideOverlay() {
 
   return createPortal(
     <div className="fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-labelledby={titleId} onKeyDown={onKeyDown}>
-      {/* SVG dimming layer with a knockout hole around the anchor. Clicking the
-          dim area ends the tour (the hole passes clicks through to the page). */}
-      <svg className="h-full w-full" aria-hidden onClick={stop}>
+      {/* SVG dimming layer with a knockout hole around the anchor — purely
+          visual (pointer-events: none), so the hole is click-through to the real
+          element beneath. The click-catcher curtains below handle "click the dim
+          to dismiss" while leaving the hole open. */}
+      <svg className="pointer-events-none h-full w-full" aria-hidden>
         <defs>
           <mask id="guide-spotlight-mask">
             <rect x="0" y="0" width="100%" height="100%" fill="white" />
@@ -147,10 +175,15 @@ export function GuideOverlay() {
             fill="none"
             stroke="hsl(var(--primary))"
             strokeWidth="2"
-            className="pointer-events-none"
           />
         )}
       </svg>
+
+      {/* Transparent click-catchers. Clicking the dimmed area ends the tour; the
+          hole is deliberately left uncovered so clicks (and `advanceOn` events)
+          reach the anchored element. With no measured hole, one full-screen
+          catcher covers everything. */}
+      <SpotlightCatchers hole={hole} onStop={stop} />
 
       <StepCard
         ref={cardRef}
@@ -168,6 +201,36 @@ export function GuideOverlay() {
       />
     </div>,
     document.body,
+  );
+}
+
+/**
+ * Transparent, clickable curtains that frame the spotlight hole. Clicking any
+ * curtain dismisses the tour; the hole itself is left uncovered so pointer
+ * events (including an `advanceOn` click) pass through to the real element. When
+ * there's no measured hole yet, a single full-screen curtain stands in.
+ */
+function SpotlightCatchers({
+  hole,
+  onStop,
+}: {
+  hole: { x: number; y: number; w: number; h: number } | null;
+  onStop: () => void;
+}) {
+  // Pointer-only convenience: keyboard/AT users dismiss via Esc or the Skip
+  // button, so the curtains stay out of the tab order and the a11y tree.
+  const band = 'absolute cursor-default bg-transparent';
+  const common = { tabIndex: -1, 'aria-hidden': true, onClick: onStop } as const;
+  if (!hole) {
+    return <div {...common} className="absolute inset-0 bg-transparent" />;
+  }
+  return (
+    <>
+      <div {...common} className={band} style={{ top: 0, left: 0, width: '100%', height: hole.y }} />
+      <div {...common} className={band} style={{ top: hole.y + hole.h, left: 0, width: '100%', bottom: 0 }} />
+      <div {...common} className={band} style={{ top: hole.y, left: 0, width: hole.x, height: hole.h }} />
+      <div {...common} className={band} style={{ top: hole.y, left: hole.x + hole.w, right: 0, height: hole.h }} />
+    </>
   );
 }
 
