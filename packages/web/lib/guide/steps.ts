@@ -21,6 +21,15 @@ export type GuideStep = {
   body: string;
   /** Preferred card side; the overlay flips it if it would overflow. Default 'bottom'. */
   placement?: GuidePlacement;
+  /**
+   * Make the step *interactive* (Phase 67 B): when set, the overlay advances to
+   * the next step the moment the anchored element fires this event — in addition
+   * to the Next button. `'click'` is the only trigger today; the union is left
+   * open for future ones. The spotlight hole is always click-through, so the
+   * real element receives the event and the app's own handler runs too (the
+   * guide never calls `preventDefault`).
+   */
+  advanceOn?: 'click';
 };
 
 export type Guide = {
