@@ -29,14 +29,14 @@
 - [x] **A4.** Auto-launch: when the user lands on a route whose `resolveGuide(pathname)` is unseen (per A3), auto-`start()` it **once**, dismissible. Wired via a dedicated `<GuideAutoLaunch/>` in the `(main)` shell ([`layout.tsx`](../packages/web/app/(main)/layout.tsx)) on pathname change; the overlay marks seen on start (as today) so it stays quiet after. Replay from the menu is unaffected.
 - [x] **A5.** Guard auto-launch (see Decisions §2): desktop-only (`useIsDesktop`), suppressed until past first-run setup (`SetupStatus.ready`, which owns the wizard window), and honoring a new **`autoShowGuides` boolean preference** (default `true`, synced) so a user can turn auto-launch off while keeping manual replay. Toggle surfaced in Settings → Appearance ("Product guides").
 
-## Theme B — Interactive steps: scroll-to + action-advance — **M**
+## Theme B — Interactive steps: scroll-to + action-advance — **M** — ✅ DONE (PR #427, 2026-07-14)
 
 > Make steps feel alive without branching.
 
-- [ ] **B1.** Auto-scroll the anchored element into view (`scrollIntoView({ block: 'center', behavior: 'smooth' })`, reduced-motion → `'auto'`) **before** measuring/spotlighting, in [`guide-overlay.tsx`](../packages/web/components/guide/guide-overlay.tsx). Re-measure the knockout rect after scroll settles so the spotlight lands correctly on long pages.
-- [ ] **B2.** Extend `GuideStep` with an optional **`advanceOn?: 'click'`** (extensible union): when set, the overlay listens for the anchored element firing that event and auto-advances to the next step (in addition to the Next button). Keep it minimal — anchor-element events only, no arbitrary app-state watching.
-- [ ] **B3.** Keep the knockout **interactive** for `advanceOn` steps (let the click through the mask to the real element) vs. the current dim-mask capture; ensure Esc/Back still work and the click both triggers the app action and advances.
-- [ ] **B4.** Reduced-motion + a11y: no smooth scroll under `prefers-reduced-motion`; keep focus management and the existing keyboard nav (←/→/Enter/Esc) working with the new interactive path.
+- [x] **B1.** Auto-scroll the anchored element into view (`scrollIntoView({ block: 'center', behavior: 'smooth' })`, reduced-motion → `'auto'`) in [`guide-overlay.tsx`](../packages/web/components/guide/guide-overlay.tsx), in a **one-time per-step effect** (decoupled from the continuous `measure()` so a smooth scroll's own scroll events can't re-trigger it). The scroll listener re-reads the knockout rect as the page animates, so the spotlight tracks the element to its final position on long pages.
+- [x] **B2.** Extended `GuideStep` with an optional **`advanceOn?: 'click'`** (extensible union): when set, the overlay listens for the anchored element firing that event and auto-advances to the next step (in addition to the Next button). Minimal — anchor-element events only, no arbitrary app-state watching; never `preventDefault`, so the app's own handler runs too.
+- [x] **B3.** The knockout is now **click-through** (Decision: all steps): the SVG dim is visual-only (`pointer-events:none`) and transparent **curtain catchers** frame the hole (clicking the dim dismisses; the hole passes clicks to the real element). Esc/Back still work; an `advanceOn` click both triggers the app action and advances.
+- [x] **B4.** Reduced-motion + a11y: scroll `behavior` comes from `useAnimationPrefs().animate` (folds in `data-motion` **and** OS `prefers-reduced-motion`) → `'auto'` when reduced; curtains stay out of the tab order + a11y tree (Esc/Skip cover keyboard/AT); existing focus management + keyboard nav (←/→/Enter/Esc) intact.
 
 ## Theme C — Guides index in the assistant menu — **S**
 
