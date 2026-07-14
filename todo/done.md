@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-14 — test(web): guide tests, stories, e2e shots & verification — Phase 67 Theme E (PR #PRNUM) — **Phase 67 complete**
+
+The final theme closes Phase 67 (Product guides on every page). Phase 67 → 30/30 (100%), Status ✅ DONE.
+
+- [x] **E1–E3** — the coercion/version, auto-launch-gating, and `resolveGuide`-coverage units already shipped inside Themes A–D; confirmed + ticked here.
+- [x] **E4** — `play` stories: an `advanceOn:'click'` interactive step (`InteractiveAdvance` in `guide-overlay.stories.tsx`) + the all-guides index (`AllGuides` in the new `assistant-panel.stories.tsx`). Replay-navigation is covered by `assistant-fab.test.tsx`.
+- [x] **E5** — rebuilt `e2e/guide.shots.ts`: shoots each covered guide's first step (board/dashboard/office/projects/digests/search/settings) in light + dark, launched the real way (assistant → Guides index → guide). **Fixed the board shot** that Theme C's index flow had broken.
+- [x] **E6** — added a guide-overlay keyboard-nav case to `e2e/a11y-keyboard.e2e.ts` (focused modal dialog; ←/→/Esc drive + dismiss); reduced motion honoured via `useAnimationPrefs` (Theme B). Verification checklist driven to done.
+- [x] **Coverage note (logged):** `/ops`, `/slides`, `/councils`, `/media` remain the bounded guide-coverage follow-up; Ideas/Releases have no web route. Committed screenshot baselines regenerate in CI/Docker (host pixels differ).
+- [x] Gate: `moon run :typecheck` · `:lint` (0 errors) · `web:test` (1206) green; guide shots run 3/3 in a preview pass.
+
 ## 2026-07-14 — feat(web): product guides across 6 more surfaces — Phase 67 Theme D (PR #431)
 
 Full-surface coverage: every doc-named nav destination now resolves to a product guide. Phase 67 → 24/30 (80%), Status 🔄 WIP (E remains).
