@@ -42,4 +42,28 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.waitForTimeout(300);
     await page.screenshot({ path: `${OUT}/guide-board-step2-${scheme}.png` });
   });
+
+  // Phase 67 A — the new "Product guides" auto-show toggle in Settings →
+  // Appearance, which turns the once-per-page auto-launch on/off.
+  test(`guide auto-show setting — ${scheme}`, async ({ page }) => {
+    await page.addInitScript((s) => {
+      try {
+        localStorage.setItem('midnite.theme', s);
+        localStorage.setItem('midnite.setup-wizard.dismissed', 'true');
+        sessionStorage.setItem('midnite.setup-nudge.dismissed', 'true');
+        localStorage.setItem('midnite.settings', JSON.stringify({ inactivityTimeoutS: 86_400 }));
+      } catch {
+        // storage unavailable — colorScheme is the fallback
+      }
+    }, scheme);
+    await page.emulateMedia({ colorScheme: scheme });
+
+    await page.goto('/settings');
+    const header = page.getByRole('button', { name: /Product guides/i });
+    await header.waitFor({ state: 'visible' });
+    await header.click();
+    await page.getByRole('switch', { name: 'Auto-show guides' }).waitFor({ state: 'visible' });
+    await page.waitForTimeout(200);
+    await page.screenshot({ path: `${OUT}/guide-auto-show-setting-${scheme}.png` });
+  });
 }
