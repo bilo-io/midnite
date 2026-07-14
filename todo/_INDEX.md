@@ -29,7 +29,7 @@
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
 | [68 · Accent gradient engine](phase-68-accent-gradient-engine.md) | 🔄 WIP | 14/23 | `██████░░░░` | 61% | — | C E |
-| [67 · Guides on every page](phase-67-guides-everywhere.md) | 🔄 WIP | 5/30 | `██░░░░░░░░` | 17% | — | B C D E |
+| [67 · Guides on every page](phase-67-guides-everywhere.md) | 🔄 WIP | 5/30 | `██░░░░░░░░` | 17% | B | C D E |
 | [66 · Floating assistant menu](phase-66-floating-assistant-menu.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [65 · Memory workspace](phase-65-memory-workspace.md) | ✅ DONE | 33/33 | `██████████` | 100% | — | — |
 | [64 · Office presence](phase-64-office-presence.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
