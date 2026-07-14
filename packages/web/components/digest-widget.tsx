@@ -69,7 +69,7 @@ export function DigestWidget() {
         </p>
       ) : (
         <Link
-          href={`/digests?id=${encodeURIComponent(latest.id)}`}
+          href={`/ops?tab=digest&id=${encodeURIComponent(latest.id)}`}
           className="group flex flex-1 flex-col justify-between gap-3 rounded-lg -m-1 p-1 transition-colors hover:bg-accent/50"
         >
           <div>

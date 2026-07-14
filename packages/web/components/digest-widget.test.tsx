@@ -30,7 +30,7 @@ describe('DigestWidget', () => {
     render(withQueryClient(<DigestWidget />));
     await waitFor(() => expect(screen.getByText('A productive day')).toBeInTheDocument());
     expect(screen.getByText('5')).toBeInTheDocument();
-    expect(screen.getByRole('link')).toHaveAttribute('href', '/digests?id=d1');
+    expect(screen.getByRole('link')).toHaveAttribute('href', '/ops?tab=digest&id=d1');
   });
 
   it('shows an honest empty state when no digests exist', async () => {
