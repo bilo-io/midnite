@@ -243,7 +243,7 @@ export function ProjectsView({
   const openTemplate = templates.find((t) => t.id === openTemplateId) ?? null;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-tour="projects">
       <div className="reveal-controls flex flex-wrap items-center justify-between gap-3 gap-y-2">
         <div className="flex items-center gap-3">
           <CountPill count={count} noun={tab === 'projects' ? 'project' : 'template'} />
@@ -303,7 +303,7 @@ export function ProjectsView({
             </Button>
           </div>
           {tab === 'projects' ? (
-            <Button type="button" size="sm" onClick={() => setCreating(true)}>
+            <Button type="button" size="sm" onClick={() => setCreating(true)} data-tour="projects-new">
               <Plus className="h-4 w-4" />
               New project
             </Button>

@@ -59,6 +59,7 @@ export function OfficeSurface() {
       <div
         role="tablist"
         aria-label="Office view"
+        data-tour="office-view-toggle"
         className="inline-flex rounded-lg border border-border bg-muted/40 p-0.5"
       >
         {VIEWS.map(({ value, label, Icon }) => {

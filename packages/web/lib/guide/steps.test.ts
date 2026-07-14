@@ -20,8 +20,23 @@ describe('guide step registry', () => {
   });
 
   it('returns null for a route with no guide', () => {
-    expect(resolveGuide('/dashboard')).toBeNull();
-    expect(resolveGuide('/settings/team')).toBeNull();
+    // Phase 67 D added dashboard/settings/etc.; these remain uncovered (logged
+    // as a bounded follow-up in the phase doc).
+    expect(resolveGuide('/ops')).toBeNull();
+    expect(resolveGuide('/councils')).toBeNull();
+    expect(resolveGuide('/media')).toBeNull();
+  });
+
+  it('covers every Phase 67 D surface + inherits on detail sub-routes', () => {
+    expect(resolveGuide('/dashboard')?.id).toBe('dashboard');
+    expect(resolveGuide('/office')?.id).toBe('office');
+    expect(resolveGuide('/projects')?.id).toBe('projects');
+    expect(resolveGuide('/projects/view')?.id).toBe('projects'); // detail inherits
+    expect(resolveGuide('/digests')?.id).toBe('digests');
+    expect(resolveGuide('/search')?.id).toBe('search');
+    expect(resolveGuide('/settings')?.id).toBe('settings');
+    expect(resolveGuide('/settings/team')?.id).toBe('settings'); // sub-route inherits
+    expect(resolveGuide('/sessions/view')?.id).toBe('sessions'); // detail inherits
   });
 
   it('only targets known guide ids', () => {
@@ -77,6 +92,12 @@ describe('guide step registry', () => {
       workflow: 1,
       sessions: 1,
       memory: 1,
+      dashboard: 1,
+      office: 1,
+      projects: 1,
+      digests: 1,
+      search: 1,
+      settings: 1,
     });
   });
 });

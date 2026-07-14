@@ -15,7 +15,7 @@ export default function OfficePage() {
         description="Walk the floor and see what your agents are up to — step up to a desk to call or message."
       />
       <DesktopOnly label="The office">
-        <div className="reveal-staged container space-y-6 pb-8 pt-2">
+        <div className="reveal-staged container space-y-6 pb-8 pt-2" data-tour="office">
           {/* OfficeSurface reads `?view=` via useSearchParams — needs a Suspense boundary. */}
           <Suspense fallback={null}>
             <OfficeSurface />

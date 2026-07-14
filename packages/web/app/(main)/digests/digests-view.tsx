@@ -95,14 +95,14 @@ export function DigestsView() {
   const select = (id: string) => router.replace(`/digests?id=${encodeURIComponent(id)}`, { scroll: false });
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col" data-tour="digests">
       <PageHeader
         title="Digests"
         icon="Newspaper"
         description="The periodic roll-up of what the fleet shipped, failed, and flagged."
       />
 
-      <div className="mx-auto w-full max-w-5xl flex-1 px-4 py-6">
+      <div className="mx-auto w-full max-w-5xl flex-1 px-4 py-6" data-tour="digests-content">
         {loading && list.length === 0 ? (
           <div className="flex justify-center py-16">
             <WidgetLoader />

@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-14 — feat(web): product guides across 6 more surfaces — Phase 67 Theme D (PR #431)
+
+Full-surface coverage: every doc-named nav destination now resolves to a product guide. Phase 67 → 24/30 (80%), Status 🔄 WIP (E remains).
+
+- [x] **6 new guides + anchors** — dashboard, office (+2D/3D toggle), projects (+ New button + a detail-only `project-detail` step that auto-skips on the list), digests (feed + content), search, settings (hub + category sidebar). `data-tour` attached to existing stable elements; registered in `GUIDE_ROUTE_MAP` / `ALL_GUIDES` / `KNOWN_GUIDE_IDS`.
+- [x] **Detail via inheritance** — `/projects/view` and `/sessions/view` reuse their section guides through longest-prefix `resolveGuide`; no separate detail guides.
+- [x] **First live `advanceOn` demo (Theme B)** — the search guide's middle step is an `advanceOn:'click'` on the search input.
+- [◐] **⌘K (D8)** — the palette is keyboard-only (no pointer trigger), so a standalone click-to-open guide isn't possible without new chrome (out of scope); folded a ⌘K keyboard mention into the dashboard guide's closing step. A visible palette trigger + its own guide is the follow-up.
+- [⏳] **Skipped, no web route** — Ideas (Phase 40) and Releases (Phase 29) have no `/ideas` or `/releases` web surface (CLI/gateway). **Logged follow-up:** `/ops`, `/slides`, `/councils`, `/media` remain uncovered.
+- [x] Tests: `resolveGuide` covers every new route + detail inheritance; the id→version snapshot guard + `KNOWN_GUIDE_IDS` extended to 10 guides; the assistant-fab index tests updated (+ fixed a `/Board tour/i`-matches-`Dashboard tour` query bug and added portal cleanup). `:typecheck` · `:lint` (0 errors) · web tests green.
+
 ## 2026-07-14 — feat(web): all-guides index in the assistant panel — Phase 67 Theme C (PR #429)
 
 One place to browse + replay every product guide. Phase 67 → 12/30 (40%), Status 🔄 WIP (D, E remain).

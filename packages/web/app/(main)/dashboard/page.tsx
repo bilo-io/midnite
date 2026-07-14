@@ -46,20 +46,22 @@ export default function DashboardPage() {
         actions={<DashboardAddWidget />}
       />
 
-      <DashboardGrid
-        counts={counts}
-        projects={projects}
-        tasks={data?.tasks ?? []}
-        notes={data?.notes ?? []}
-        routines={data?.routines ?? []}
-        todayProgress={data?.todayProgress ?? []}
-        error={error}
-      />
+      <div data-tour="dashboard">
+        <DashboardGrid
+          counts={counts}
+          projects={projects}
+          tasks={data?.tasks ?? []}
+          notes={data?.notes ?? []}
+          routines={data?.routines ?? []}
+          todayProgress={data?.todayProgress ?? []}
+          error={error}
+        />
+      </div>
 
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 transition-[padding] duration-200 md:[padding-left:var(--nav-offset)]">
         <div className="bg-background/0 pb-6 pt-2">
           <div className="container">
-            <div className="pointer-events-auto mx-auto w-full max-w-3xl">
+            <div className="pointer-events-auto mx-auto w-full max-w-3xl" data-tour="dashboard-composer">
               <PromptComposer projects={projects} />
             </div>
           </div>

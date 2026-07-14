@@ -74,7 +74,8 @@ describe('GuideAutoLaunch', () => {
   });
 
   it('does not fire on a route with no guide', () => {
-    mockPathname = '/dashboard';
+    // /ops has no guide (Phase 67 D covered dashboard/office/etc. but left ops).
+    mockPathname = '/ops';
     render(<GuideAutoLaunch />);
     expect(useGuide.getState().active).toBeNull();
   });

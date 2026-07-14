@@ -152,7 +152,7 @@ export function ProjectDetailView({
         }
       />
 
-      <div className="reveal-staged container space-y-5 pb-8 pt-2">
+      <div className="reveal-staged container space-y-5 pb-8 pt-2" data-tour="project-detail">
         <RailShell
           isMobile={isMobile}
           left={{
