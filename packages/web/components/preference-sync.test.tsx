@@ -60,7 +60,7 @@ describe('PreferenceSync', () => {
     authState.jwtEnabled = true;
     authState.user = { id: 'u1' };
     getPreferences.mockResolvedValue({
-      preferences: { ...DEFAULT_USER_PREFERENCES, accent: 'rose', theme: 'dark' },
+      preferences: { ...DEFAULT_USER_PREFERENCES, accent: { kind: 'solid', swatch: 'rose' }, theme: 'dark' },
       updatedAt: '2026-06-30T10:00:00.000Z',
     });
 
@@ -70,21 +70,21 @@ describe('PreferenceSync', () => {
     // Server values applied to both stores; no write-back of what we just loaded.
     expect(setSettings).toHaveBeenCalled();
     expect(themeState.setPreference).toHaveBeenCalledWith('dark');
-    expect(settings.accent).toBe('rose');
+    expect(settings.accent).toEqual({ kind: 'solid', swatch: 'rose' });
     expect(putPreferences).not.toHaveBeenCalled();
   });
 
   it('seeds the server from local when the row is empty', async () => {
     authState.jwtEnabled = true;
     authState.user = { id: 'u1' };
-    settings = { ...DEFAULT_SETTINGS, accent: 'emerald' };
+    settings = { ...DEFAULT_SETTINGS, accent: { kind: 'solid', swatch: 'emerald' } };
     getPreferences.mockResolvedValue({ preferences: DEFAULT_USER_PREFERENCES, updatedAt: null });
     putPreferences.mockResolvedValue({ preferences: DEFAULT_USER_PREFERENCES, updatedAt: 'x' });
 
     render(<PreferenceSync />);
 
     await waitFor(() => expect(putPreferences).toHaveBeenCalledTimes(1));
-    expect(putPreferences.mock.calls[0]![0]).toMatchObject({ accent: 'emerald' });
+    expect(putPreferences.mock.calls[0]![0]).toMatchObject({ accent: { kind: 'solid', swatch: 'emerald' } });
     // Seeding doesn't clobber local state.
     expect(themeState.setPreference).not.toHaveBeenCalled();
   });

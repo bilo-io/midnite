@@ -1,8 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { ACCENT_OPTIONS, UI_FONT_STACK } from './app-settings';
+import { ACCENT_OPTIONS, ACCENT_SWATCH_HS, BRAND_ACCENT, MONO_HUE_SHIFT, UI_FONT_STACK, type AccentValue } from './app-settings';
 import {
+  accentGradientCss,
   appearanceInitScript,
   applyAccent,
+  applyAccentSecondary,
+  buildAccentCssParts,
   applyBackground,
   applyDensity,
   applyEffects,
@@ -10,47 +13,117 @@ import {
   applyUiFont,
 } from './apply-appearance';
 
+const solid = (swatch: string): AccentValue => ({ kind: 'solid', swatch: swatch as never });
+
 afterEach(() => {
   const html = document.documentElement;
-  for (const attr of ['data-accent', 'data-motion', 'data-density', 'data-ui-font', 'data-bg', 'data-bg-intensity', 'data-no-page-reveal', 'data-no-typewriter', 'data-no-glass']) {
+  for (const attr of [
+    'data-accent', 'data-accent-gradient', 'data-accent-preset', 'data-accent-animate', 'data-accent-2',
+    'data-motion', 'data-density', 'data-ui-font', 'data-bg', 'data-bg-intensity',
+    'data-no-page-reveal', 'data-no-typewriter', 'data-no-glass',
+  ]) {
     html.removeAttribute(attr);
   }
-  html.style.removeProperty('--accent-h');
-  html.style.removeProperty('--accent-s');
-  html.style.removeProperty('--font-ui');
+  html.classList.remove('dark');
+  for (const v of ['--accent-h', '--accent-s', '--accent-gradient', '--accent-2-h', '--accent-2-s', '--accent-2-gradient', '--font-ui']) {
+    html.style.removeProperty(v);
+  }
 });
 
-describe('applyAccent', () => {
-  it('sets data-accent + the hue/sat vars for a coloured accent', () => {
-    applyAccent('blue');
+describe('applyAccent — solids', () => {
+  it('sets data-accent + the hue/sat vars for a coloured solid accent', () => {
+    applyAccent(solid('blue'));
     const html = document.documentElement;
     const blue = ACCENT_OPTIONS.find((a) => a.id === 'blue')!;
     expect(html.getAttribute('data-accent')).toBe('blue');
     expect(html.style.getPropertyValue('--accent-h')).toBe(String(blue.h));
     expect(html.style.getPropertyValue('--accent-s')).toBe(String(blue.s));
+    expect(html.hasAttribute('data-accent-gradient')).toBe(false);
   });
 
-  it('clears the override for the default accent', () => {
-    applyAccent('violet');
-    applyAccent('default');
+  it('clears the override for the default solid accent', () => {
+    applyAccent(solid('violet'));
+    applyAccent(solid('default'));
     const html = document.documentElement;
     expect(html.hasAttribute('data-accent')).toBe(false);
     expect(html.style.getPropertyValue('--accent-h')).toBe('');
     expect(html.style.getPropertyValue('--accent-s')).toBe('');
   });
 
-  it('clears the override for an unknown accent id', () => {
-    applyAccent('blue');
-    applyAccent('nope' as never);
-    expect(document.documentElement.hasAttribute('data-accent')).toBe(false);
-  });
-
-  it('switches cleanly between two accents', () => {
-    applyAccent('blue');
-    applyAccent('amber');
+  it('switches cleanly between two solid accents', () => {
+    applyAccent(solid('blue'));
+    applyAccent(solid('amber'));
     const amber = ACCENT_OPTIONS.find((a) => a.id === 'amber')!;
     expect(document.documentElement.getAttribute('data-accent')).toBe('amber');
     expect(document.documentElement.style.getPropertyValue('--accent-h')).toBe(String(amber.h));
+  });
+});
+
+describe('applyAccent — gradients', () => {
+  it('sets --accent-gradient + data attributes for a linear multi-stop gradient, plus a solid fallback from the primary stop', () => {
+    applyAccent({ kind: 'gradient', preset: 'custom', type: 'linear', stops: ['blue', 'rose'], angle: 45, animate: false });
+    const html = document.documentElement;
+    expect(html.hasAttribute('data-accent-gradient')).toBe(true);
+    expect(html.getAttribute('data-accent-preset')).toBe('custom');
+    const g = html.style.getPropertyValue('--accent-gradient');
+    expect(g).toContain('linear-gradient(45deg');
+    // Contrast-safe solid fallback = primary stop (blue).
+    expect(html.style.getPropertyValue('--accent-h')).toBe(String(ACCENT_SWATCH_HS.blue.h));
+    expect(html.getAttribute('data-accent')).toBe('custom');
+  });
+
+  it('renders the brand rainbow as a node-colour conic', () => {
+    applyAccent(BRAND_ACCENT);
+    const html = document.documentElement;
+    expect(html.getAttribute('data-accent-preset')).toBe('brand');
+    const g = html.style.getPropertyValue('--accent-gradient');
+    expect(g).toContain('conic-gradient');
+    expect(g).toContain('--node-trigger');
+  });
+
+  it('expands a single-stop gradient into a mono-shade (hue-adjacent) sweep', () => {
+    const parts = buildAccentCssParts({ kind: 'gradient', preset: 'custom', type: 'linear', stops: ['cyan'], angle: 90, animate: false }, false, ACCENT_SWATCH_HS, MONO_HUE_SHIFT);
+    const base = ACCENT_SWATCH_HS.cyan.h;
+    expect(parts.gradient).toContain(`${(base - MONO_HUE_SHIFT + 360) % 360} `);
+    expect(parts.gradient).toContain(`${(base + MONO_HUE_SHIFT) % 360} `);
+  });
+
+  it('uses a darker lightness ramp in dark mode', () => {
+    const light = accentGradientCss({ kind: 'gradient', preset: 'custom', type: 'linear', stops: ['blue', 'rose'], angle: 0, animate: false }, false);
+    const dark = accentGradientCss({ kind: 'gradient', preset: 'custom', type: 'linear', stops: ['blue', 'rose'], angle: 0, animate: false }, true);
+    expect(light).not.toBe(dark);
+  });
+
+  it('toggles data-accent-animate off the animate flag', () => {
+    applyAccent({ kind: 'gradient', preset: 'custom', type: 'linear', stops: ['blue', 'rose'], angle: 0, animate: true });
+    expect(document.documentElement.hasAttribute('data-accent-animate')).toBe(true);
+    applyAccent(solid('blue'));
+    expect(document.documentElement.hasAttribute('data-accent-animate')).toBe(false);
+  });
+
+  it('clears gradient state when switching to a solid', () => {
+    applyAccent(BRAND_ACCENT);
+    applyAccent(solid('emerald'));
+    const html = document.documentElement;
+    expect(html.hasAttribute('data-accent-gradient')).toBe(false);
+    expect(html.style.getPropertyValue('--accent-gradient')).toBe('');
+  });
+});
+
+describe('applyAccentSecondary', () => {
+  it('sets --accent-2-* + data-accent-2 for a solid secondary', () => {
+    applyAccentSecondary(solid('emerald'));
+    const html = document.documentElement;
+    expect(html.hasAttribute('data-accent-2')).toBe(true);
+    expect(html.style.getPropertyValue('--accent-2-h')).toBe(String(ACCENT_SWATCH_HS.emerald.h));
+  });
+
+  it('clears the secondary channel when off (default)', () => {
+    applyAccentSecondary(solid('emerald'));
+    applyAccentSecondary(solid('default'));
+    const html = document.documentElement;
+    expect(html.hasAttribute('data-accent-2')).toBe(false);
+    expect(html.style.getPropertyValue('--accent-2-h')).toBe('');
   });
 });
 
@@ -156,14 +229,15 @@ describe('applyEffects', () => {
 });
 
 describe('appearanceInitScript', () => {
-  it('embeds every non-default accent so the pre-paint map stays in sync', () => {
+  it('embeds every swatch hue/sat so the pre-paint gradient math stays in sync', () => {
     for (const opt of ACCENT_OPTIONS) {
-      if (opt.id === 'default') continue;
-      expect(appearanceInitScript).toContain(`"${opt.id}":[${opt.h},${opt.s}]`);
+      expect(appearanceInitScript).toContain(`"${opt.id}":{"h":${opt.h},"s":${opt.s}}`);
     }
     // Reads from the shared settings key + applies before paint.
     expect(appearanceInitScript).toContain('midnite.settings');
     expect(appearanceInitScript).toContain('data-accent');
+    expect(appearanceInitScript).toContain('data-accent-gradient');
+    expect(appearanceInitScript).toContain('data-accent-2');
     expect(appearanceInitScript).toContain('data-motion');
     expect(appearanceInitScript).toContain('data-density');
     expect(appearanceInitScript).toContain('data-ui-font');
@@ -187,15 +261,27 @@ describe('appearanceInitScript', () => {
     localStorage.clear();
   });
 
-  it('runs without throwing and defaults motion to system when nothing is stored', () => {
+  it('applies the brand rainbow gradient before paint when nothing is stored', () => {
+    localStorage.clear();
     expect(() => {
       eval(appearanceInitScript);
     }).not.toThrow();
-    // No accent stored → no override applied; motion defaults to system; bg defaults to grid.
-    expect(document.documentElement.hasAttribute('data-accent')).toBe(false);
-    expect(document.documentElement.getAttribute('data-motion')).toBe('system');
-    expect(document.documentElement.getAttribute('data-bg')).toBe('grid');
-    // No uiFont stored → no override applied.
-    expect(document.documentElement.hasAttribute('data-ui-font')).toBe(false);
+    const html = document.documentElement;
+    // No accent stored → the brand rainbow default applies pre-paint (Phase 68).
+    expect(html.getAttribute('data-accent-preset')).toBe('brand');
+    expect(html.hasAttribute('data-accent-gradient')).toBe(true);
+    expect(html.style.getPropertyValue('--accent-gradient')).toContain('conic-gradient');
+    // Motion defaults to system; bg defaults to grid; no uiFont override.
+    expect(html.getAttribute('data-motion')).toBe('system');
+    expect(html.getAttribute('data-bg')).toBe('grid');
+    expect(html.hasAttribute('data-ui-font')).toBe(false);
+  });
+
+  it('coerces a legacy string accent to a solid before paint', () => {
+    localStorage.setItem('midnite.settings', JSON.stringify({ accent: 'violet' }));
+    eval(appearanceInitScript);
+    expect(document.documentElement.getAttribute('data-accent')).toBe('violet');
+    expect(document.documentElement.hasAttribute('data-accent-gradient')).toBe(false);
+    localStorage.clear();
   });
 });

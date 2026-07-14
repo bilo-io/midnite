@@ -10,11 +10,15 @@
  */
 
 import {
+  BRAND_ACCENT,
   DEFAULT_USER_PREFERENCES,
+  SECONDARY_ACCENT_OFF,
   type AccentId,
+  type AccentValue,
   type BackgroundPattern,
   type BgIntensity,
   type Density,
+  type GradientType,
   type Motion,
   type NavMode,
   type OfficeView,
@@ -30,9 +34,11 @@ import { DEFAULT_FEATURE_FLAGS, type FeatureKey } from './features';
 // keep working unchanged — `@midnite/shared` is now their source of truth.
 export type {
   AccentId,
+  AccentValue,
   BackgroundPattern,
   BgIntensity,
   Density,
+  GradientType,
   Motion,
   NavMode,
   OfficeView,
@@ -40,6 +46,8 @@ export type {
   UiFont,
   VisualEffects,
 };
+
+export { BRAND_ACCENT, SECONDARY_ACCENT_OFF };
 
 export const AGENT_POOL_MIN = 1;
 export const AGENT_POOL_DEFAULT = 4;
@@ -152,14 +160,12 @@ export const BACKGROUND_PATTERN_OPTIONS: { value: BackgroundPattern; label: stri
 ];
 
 /**
- * The accent colour that retints the primary/ring/accent design tokens at
- * runtime. Each swatch is a hue + saturation only — the lightness comes from the
- * active light/dark theme (via the `html[data-accent]` rules in globals.css), so
- * text-on-accent contrast holds in both themes. `default` applies no override,
- * reproducing today's near-monochrome primary.
+ * The accent palette swatches. Each is a hue + saturation only — the lightness
+ * comes from the active light/dark theme (via the `html[data-accent]` rules in
+ * globals.css), so text-on-accent contrast holds in both themes. `default` applies
+ * no override, reproducing today's near-monochrome primary. These swatches are the
+ * source for both solid accents and gradient stops (Phase 68).
  */
-export const ACCENT_DEFAULT: AccentId = 'default';
-
 export const ACCENT_OPTIONS: { id: AccentId; label: string; h: number; s: number }[] = [
   { id: 'default', label: 'Default', h: 240, s: 6 },
   { id: 'blue', label: 'Blue', h: 217, s: 80 },
@@ -170,6 +176,96 @@ export const ACCENT_OPTIONS: { id: AccentId; label: string; h: number; s: number
   { id: 'cyan', label: 'Cyan', h: 190, s: 72 },
   { id: 'orange', label: 'Orange', h: 24, s: 85 },
 ];
+
+/** Hue+saturation for a swatch id (single source of truth for appliers/presets). */
+export const ACCENT_SWATCH_HS: Record<AccentId, { h: number; s: number }> = Object.fromEntries(
+  ACCENT_OPTIONS.map((o) => [o.id, { h: o.h, s: o.s }]),
+) as Record<AccentId, { h: number; s: number }>;
+
+/**
+ * The default primary accent (Phase 68): the brand rainbow gradient. Re-exported
+ * from the shared contract so web and the wire agree. Existing users keep their
+ * saved solid (coerced from the legacy string); only fresh installs get brand.
+ */
+export const ACCENT_DEFAULT: AccentValue = BRAND_ACCENT;
+
+/** The solid swatches offered in the picker (the Phase 39 palette). */
+export const ACCENT_SOLID_OPTIONS: { value: AccentValue; label: string; swatch: AccentId }[] =
+  ACCENT_OPTIONS.map((o) => ({ value: { kind: 'solid', swatch: o.id }, label: o.label, swatch: o.id }));
+
+/**
+ * Curated gradient presets (Phase 68 D), brand first. `brand` renders the
+ * signature `--node-*` conic rainbow (special-cased in the applier/CSS); the rest
+ * are contrast-checked multi-colour gradients built from palette swatches. A
+ * single palette swatch rendered as a gradient is a *mono-shade* (hue-adjacent
+ * tonal sweep) — offered per-swatch in the builder, not enumerated here.
+ */
+export const ACCENT_GRADIENT_PRESETS: { id: string; label: string; value: AccentValue }[] = [
+  { id: 'brand', label: 'Brand', value: BRAND_ACCENT },
+  {
+    id: 'aurora',
+    label: 'Aurora',
+    value: { kind: 'gradient', preset: 'aurora', type: 'linear', stops: ['emerald', 'cyan', 'violet'], angle: 120, animate: false },
+  },
+  {
+    id: 'sunset',
+    label: 'Sunset',
+    value: { kind: 'gradient', preset: 'sunset', type: 'linear', stops: ['amber', 'orange', 'rose'], angle: 90, animate: false },
+  },
+  {
+    id: 'ocean',
+    label: 'Ocean',
+    value: { kind: 'gradient', preset: 'ocean', type: 'linear', stops: ['cyan', 'blue'], angle: 135, animate: false },
+  },
+  {
+    id: 'dusk',
+    label: 'Dusk',
+    value: { kind: 'gradient', preset: 'dusk', type: 'linear', stops: ['blue', 'violet', 'rose'], angle: 135, animate: false },
+  },
+  {
+    id: 'grape',
+    label: 'Grape',
+    value: { kind: 'gradient', preset: 'grape', type: 'linear', stops: ['violet', 'rose'], angle: 90, animate: false },
+  },
+  {
+    id: 'lagoon',
+    label: 'Lagoon',
+    value: { kind: 'gradient', preset: 'lagoon', type: 'linear', stops: ['emerald', 'cyan'], angle: 120, animate: false },
+  },
+  {
+    id: 'ember',
+    label: 'Ember',
+    value: { kind: 'gradient', preset: 'ember', type: 'linear', stops: ['rose', 'orange', 'amber'], angle: 60, animate: false },
+  },
+  {
+    id: 'citrus',
+    label: 'Citrus',
+    value: { kind: 'gradient', preset: 'citrus', type: 'linear', stops: ['amber', 'emerald'], angle: 90, animate: false },
+  },
+  {
+    id: 'spectrum',
+    label: 'Spectrum',
+    value: { kind: 'gradient', preset: 'spectrum', type: 'conic', stops: ['blue', 'emerald', 'amber'], angle: 0, animate: false },
+  },
+];
+
+/** Gradient geometry options for the builder. */
+export const GRADIENT_TYPE_OPTIONS: { value: GradientType; label: string }[] = [
+  { value: 'linear', label: 'Linear' },
+  { value: 'conic', label: 'Conic' },
+];
+
+/**
+ * Hue offset (degrees) applied either side of a swatch's base hue to render a
+ * mono-shade gradient — a subtle "same-family" shift rather than a flat tonal
+ * ramp (Phase 68, hue-adjacent decision).
+ */
+export const MONO_HUE_SHIFT = 14;
+
+/** True when an accent value renders as a gradient. */
+export function isGradientAccent(a: AccentValue): a is Extract<AccentValue, { kind: 'gradient' }> {
+  return a.kind === 'gradient';
+}
 
 /**
  * How much motion the app shows, applied as `data-motion` on <html>:
@@ -362,6 +458,7 @@ export function appSettingsToPreferences(
     backgroundPattern: settings.backgroundPattern,
     bgIntensity: settings.bgIntensity,
     accent: settings.accent,
+    accentSecondary: settings.accentSecondary,
     motion: settings.motion,
     density: settings.density,
     uiFont: settings.uiFont,
@@ -389,6 +486,7 @@ export function applyPreferences(
     backgroundPattern: prefs.backgroundPattern,
     bgIntensity: prefs.bgIntensity,
     accent: prefs.accent,
+    accentSecondary: prefs.accentSecondary,
     motion: prefs.motion,
     density: prefs.density,
     uiFont: prefs.uiFont,
