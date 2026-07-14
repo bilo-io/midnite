@@ -28,6 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
+| [67 · Guides on every page](phase-67-guides-everywhere.md) | ◻ TODO | 0/30 | `░░░░░░░░░░` | 0% | — | A B C D E |
 | [66 · Floating assistant menu](phase-66-floating-assistant-menu.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [65 · Memory workspace](phase-65-memory-workspace.md) | ✅ DONE | 33/33 | `██████████` | 100% | — | — |
 | [64 · Office presence](phase-64-office-presence.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
@@ -116,6 +117,14 @@ shortcut). The 2 contextual-command boxes are now **un-deferred and folded into 
 Every phase's lettered themes with a status icon + one-liner, so you can gauge scope and pick
 work without opening the phase doc. Status: `✅` done · `🔄` WIP (claimed) · `◻` TODO · `◐`
 partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
+
+### [Phase 67 — Product guides on every page (engine v2)](phase-67-guides-everywhere.md)
+*Takes Phase 66's thin 4-route product-guide system to full-surface coverage + engine v2: versioned "seen" (edited guides re-surface), once-per-page auto-launch, mildly-interactive steps, and an "all guides" index. Almost all `packages/web`; one `shared` preference change; no gateway.*
+- ◻ **A** — Engine v2: `Guide.version` + `seenGuides` array→`id→version` map (read-coerce legacy) + once-per-page auto-launch gated desktop/not-wizard/`autoShowGuides`
+- ◻ **B** — Interactive steps: scroll anchor into view + optional `advanceOn: 'click'` action-advance through the mask; reduced-motion + a11y intact
+- ◻ **C** — "All guides" index in the assistant panel: every guide + seen/unseen, click-to-replay (navigate off-route then start); FAB dot reflects any unseen
+- ◻ **D** — Coverage: ~12 new guides + `data-tour` anchors (office/3D, projects+detail, ideas, fable digests, releases, search, settings, ⌘K, session detail, dashboard)
+- ◻ **E** — Tests/stories/e2e: coercion + version + auto-launch gating units, `play` stories for interactive + index, a shot per new guide, a11y pass
 
 ### [Phase 66 — Floating assistant menu](phase-66-floating-assistant-menu.md)
 *A logo-anchored floating action button (hover → gradient border + glow) that expands into a glowing gradient-bordered panel: Docs (current page's docs), Guide (replayable per-route tour), Chat to board (relocated from the sidenav), Agent (fleet Q&A with markdown + inline midnite components). Overturns Phase 59's "no FAB"; overwhelmingly `packages/web` + one `@midnite/ui` extraction + one read-only gateway answerer.*
