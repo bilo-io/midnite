@@ -164,7 +164,28 @@ export function AccentBuilder({
             className="h-7 w-7 rounded-full ring-2 ring-offset-2 ring-offset-background"
             style={{ boxShadow: `0 0 0 2px hsl(var(--primary))` }}
           />
+          {secondary.kind === 'solid' && secondary.swatch !== 'default' ? (
+            <span
+              className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white"
+              style={{ background: accentBackground(secondary, isDark) }}
+              title="Secondary accent"
+            >
+              2nd
+            </span>
+          ) : null}
         </div>
+        {isGradient ? (
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={value.animate}
+              onChange={(e) => onChange({ ...value, animate: e.target.checked })}
+              className="h-3.5 w-3.5 accent-[hsl(var(--primary))]"
+            />
+            Animate the gradient
+            <span className="text-[10px] opacity-70">(respects your motion setting)</span>
+          </label>
+        ) : null}
       </div>
 
       {/* Gradient presets — brand first */}

@@ -69,6 +69,13 @@ describe('AccentBuilder', () => {
     expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ stops: ['blue'] }));
   });
 
+  it('toggles animation on a gradient (Theme E)', () => {
+    const onChange = vi.fn();
+    render(<Harness onChange={onChange} />);
+    fireEvent.click(screen.getByRole('checkbox', { name: /animate the gradient/i }));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ animate: true }));
+  });
+
   it('sets an independent secondary accent', () => {
     render(<Harness />);
     const secondaryGroup = screen.getByRole('radiogroup', { name: 'Secondary accent' });

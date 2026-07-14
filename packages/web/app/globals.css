@@ -167,6 +167,71 @@
     background-color: hsl(var(--primary));
     background-image: var(--accent-gradient, none);
   }
+
+  /*
+   * Phase 68 C — paint the active gradient accent on real accent surfaces. Almost
+   * every accent surface uses the `bg-primary` utility (primary buttons/CTAs,
+   * active nav, chips, selected states), so one rule paints them all — the gradient
+   * layers over the solid `background-color` so `hover:bg-primary/90` and the like
+   * still work, and foreground text stays on the solid `--primary-foreground`
+   * (never on the raw gradient). Focus rings deliberately keep the SOLID `--ring`
+   * (the gradient's primary stop) for visibility — see the retint rules above.
+   */
+  html[data-accent-gradient] .bg-primary {
+    background-image: var(--accent-gradient);
+  }
+  html[data-accent-gradient] a.bg-primary:hover,
+  html[data-accent-gradient] button.bg-primary:hover {
+    filter: brightness(1.06);
+  }
+  /* Progress fills + any surface that opts in explicitly. */
+  html[data-accent-gradient] [data-accent-surface] {
+    background-image: var(--accent-gradient);
+  }
+
+  /* Secondary accent (Phase 68 C) — token utilities for genuinely-secondary
+     surfaces (secondary badges, chart series #2, secondary button accents). Fall
+     back to the primary token when the secondary channel is off. */
+  .bg-accent-2 {
+    background-color: hsl(var(--accent-2, var(--primary)));
+  }
+  .text-accent-2 {
+    color: hsl(var(--accent-2, var(--primary)));
+  }
+  .border-accent-2 {
+    border-color: hsl(var(--accent-2, var(--primary)));
+  }
+}
+
+/*
+ * Phase 68 E — opt-in animated gradient accent. When a gradient's `animate` flag
+ * is set, the applier builds it with `var(--accent-angle)` and sets
+ * `data-accent-animate`; this spins the angle. Registered `@property` makes the
+ * custom-property animation smooth, and (inherits: true) propagates the value to
+ * every element painting `var(--accent-gradient)`. Gated exactly like
+ * `.bg-animated-gradient`: off under `data-motion='reduced'`, and off under the OS
+ * `prefers-reduced-motion` unless the user opted into `full`.
+ */
+@property --accent-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: true;
+}
+@keyframes accent-angle-spin {
+  to {
+    --accent-angle: 360deg;
+  }
+}
+html[data-accent-animate] {
+  animation: accent-angle-spin 8s linear infinite;
+}
+html[data-accent-animate][data-motion='reduced'] {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-accent-animate]:not([data-motion='full']) {
+    animation: none;
+  }
 }
 
 @layer utilities {
