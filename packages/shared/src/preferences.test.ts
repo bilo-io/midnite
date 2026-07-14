@@ -28,16 +28,31 @@ describe('UserPreferencesSchema', () => {
       officeView: '2d',
       features: {},
       collapsedNavSections: [],
-      seenGuides: [],
+      seenGuides: {},
+      autoShowGuides: true,
     });
   });
 
-  it('accepts a list of seen guide ids and strips duplicates-free (Phase 66 F)', () => {
-    expect(UserPreferencesSchema.parse({ seenGuides: ['board', 'workflow'] }).seenGuides).toEqual([
-      'board',
-      'workflow',
-    ]);
-    expect(UserPreferencesSchema.parse({}).seenGuides).toEqual([]);
+  it('accepts a versioned seenGuides map and defaults to empty (Phase 67 A)', () => {
+    expect(UserPreferencesSchema.parse({ seenGuides: { board: 1, workflow: 2 } }).seenGuides).toEqual({
+      board: 1,
+      workflow: 2,
+    });
+    expect(UserPreferencesSchema.parse({}).seenGuides).toEqual({});
+  });
+
+  it('coerces a legacy string[] seenGuides blob to a version-1 map (Phase 67 A)', () => {
+    // Pre-Phase-67 rows stored a flat id list; they must hydrate cleanly as v1.
+    expect(UserPreferencesSchema.parse({ seenGuides: ['board', 'memory'] }).seenGuides).toEqual({
+      board: 1,
+      memory: 1,
+    });
+    expect(UserPreferencesSchema.parse({ seenGuides: [] }).seenGuides).toEqual({});
+  });
+
+  it('defaults autoShowGuides to true and accepts false (Phase 67 A)', () => {
+    expect(UserPreferencesSchema.parse({}).autoShowGuides).toBe(true);
+    expect(UserPreferencesSchema.parse({ autoShowGuides: false }).autoShowGuides).toBe(false);
   });
 
   it('defaults officeView to 2d and accepts 3d (Phase 63 F)', () => {
@@ -83,7 +98,8 @@ describe('UserPreferencesSchema', () => {
       officeView: '3d' as const,
       features: { office: true, workflows: false },
       collapsedNavSections: ['agents'],
-      seenGuides: ['board', 'memory'],
+      seenGuides: { board: 1, memory: 3 },
+      autoShowGuides: false,
     };
     expect(UserPreferencesSchema.parse(full)).toEqual(full);
   });

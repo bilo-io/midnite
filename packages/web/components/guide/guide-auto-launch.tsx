@@ -31,7 +31,7 @@ import { useIsDesktop } from '@/hooks/use-media-query';
 export function GuideAutoLaunch(): null {
   const pathname = usePathname();
   const isDesktop = useIsDesktop();
-  const [settings] = useLocalStorage<AppSettings>(SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS);
+  const [settings, , hydrated] = useLocalStorage<AppSettings>(SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS);
   const { hasSeen } = useSeenGuides();
   const start = useGuide((s) => s.start);
   const active = useGuide((s) => s.active);
@@ -43,6 +43,10 @@ export function GuideAutoLaunch(): null {
 
   useEffect(() => {
     if (!pathname) return;
+    // Wait for the persisted settings (autoShowGuides + seenGuides) to hydrate,
+    // so we never launch a disabled or already-seen guide off the pre-hydration
+    // defaults on first paint.
+    if (!hydrated) return;
     if (!isDesktop || !settings.autoShowGuides || setup?.ready !== true) return;
     // Don't clobber a guide the user is already running.
     if (active) return;
@@ -53,7 +57,7 @@ export function GuideAutoLaunch(): null {
 
     handled.current.add(pathname);
     start(guide);
-  }, [pathname, isDesktop, settings.autoShowGuides, setup?.ready, active, hasSeen, start]);
+  }, [pathname, hydrated, isDesktop, settings.autoShowGuides, setup?.ready, active, hasSeen, start]);
 
   return null;
 }
