@@ -127,7 +127,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <script dangerouslySetInnerHTML={{ __html: appearanceInitScript }} />
       </head>
-      <body className="min-h-screen bg-background text-foreground">
+      {/* suppressHydrationWarning: browser extensions (e.g. ColorZilla's
+          cz-shortcut-listen) inject attributes on <body> before React hydrates */}
+      <body className="min-h-screen bg-background text-foreground" suppressHydrationWarning>
         <PwaRegister />
         <AppearanceEffects />
         <ThemeProvider>

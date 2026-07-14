@@ -6,6 +6,7 @@ import {
   applyAccent,
   applyAccentSecondary,
   buildAccentCssParts,
+  coerceAccentValue,
   applyBackground,
   applyDensity,
   applyEffects,
@@ -290,5 +291,30 @@ describe('appearanceInitScript', () => {
     expect(document.documentElement.getAttribute('data-accent')).toBe('violet');
     expect(document.documentElement.hasAttribute('data-accent-gradient')).toBe(false);
     localStorage.clear();
+  });
+});
+
+describe('coerceAccentValue — legacy persisted shapes (runtime read path)', () => {
+  it('coerces a pre-Phase-68 bare-string accent to a solid', () => {
+    expect(coerceAccentValue('violet', BRAND_ACCENT)).toEqual({ kind: 'solid', swatch: 'violet' });
+  });
+
+  it('passes a valid Phase-68 value through untouched', () => {
+    const gradient: AccentValue = { kind: 'gradient', preset: 'custom', type: 'linear', stops: ['blue', 'violet'], angle: 90, animate: false };
+    expect(coerceAccentValue(gradient, BRAND_ACCENT)).toBe(gradient);
+    expect(coerceAccentValue(solid('blue'), BRAND_ACCENT)).toEqual(solid('blue'));
+  });
+
+  it('falls back on null/undefined/shapeless garbage', () => {
+    expect(coerceAccentValue(undefined, BRAND_ACCENT)).toBe(BRAND_ACCENT);
+    expect(coerceAccentValue(null, BRAND_ACCENT)).toBe(BRAND_ACCENT);
+    expect(coerceAccentValue({ stops: ['blue'] }, BRAND_ACCENT)).toBe(BRAND_ACCENT);
+  });
+
+  it('regression: applying a coerced legacy string accent does not throw', () => {
+    // Uncoerced, a legacy string fell through both kind checks in
+    // buildAccentCssParts and crashed on `value.stops.length`.
+    expect(() => applyAccent(coerceAccentValue('violet', BRAND_ACCENT))).not.toThrow();
+    expect(document.documentElement.getAttribute('data-accent')).toBe('violet');
   });
 });

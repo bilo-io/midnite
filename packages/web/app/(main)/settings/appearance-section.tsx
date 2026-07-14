@@ -64,6 +64,7 @@ import {
   applyMotion,
   applyShimmerDirection,
   applyUiFont,
+  coerceAccentValue,
 } from '@/lib/apply-appearance';
 import { cn } from '@/lib/utils';
 
@@ -99,10 +100,11 @@ export function AppearanceSection() {
   const setBgIntensity = (intensity: BgIntensity) =>
     setSettings((prev) => ({ ...prev, bgIntensity: intensity }));
 
-  const accent = settings.accent ?? ACCENT_DEFAULT;
+  // Coerce on read: pre-Phase-68 blobs stored a bare swatch string (see apply-appearance.ts)
+  const accent = coerceAccentValue(settings.accent, ACCENT_DEFAULT);
   const setAccent = (next: AccentValue) => setSettings((prev) => ({ ...prev, accent: next }));
 
-  const accentSecondary = settings.accentSecondary ?? SECONDARY_ACCENT_OFF;
+  const accentSecondary = coerceAccentValue(settings.accentSecondary, SECONDARY_ACCENT_OFF);
   const setAccentSecondary = (next: AccentValue) =>
     setSettings((prev) => ({ ...prev, accentSecondary: next }));
 

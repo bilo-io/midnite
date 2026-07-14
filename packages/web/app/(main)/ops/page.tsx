@@ -1,13 +1,17 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { fetchTasksDoctor, getOpsMetrics, getPoolSnapshot, getUsageSummary } from '@/lib/api';
 import { usePolling } from '@/lib/use-polling';
 import { useLiveGauges } from '@/hooks/use-metrics-events';
 import { useGatewayErrorToast } from '@/lib/use-gateway-error-toast';
 import { PageHeader } from '@/components/page-header';
-import { OpsView } from '@/components/ops-view';
-import { RuntimeHealthPanel } from '@/components/runtime-health-panel';
-import { TaskHealthPanel } from '@/components/task-health-panel';
+import { OpsAddWidget } from '@/components/ops-add-widget';
+
+// react-grid-layout needs the DOM/container width, so the grid is client-only.
+const OpsGrid = dynamic(() => import('@/components/ops-grid').then((m) => m.OpsGrid), {
+  ssr: false,
+});
 
 const POLL_MS = 10_000;
 const SPEND_REFRESH_MS = 60_000;
@@ -20,23 +24,17 @@ function windowFrom(): string {
 }
 
 export default function OpsPage() {
-  const { data: pool, error: poolErr, loading: poolLoading, refresh: refreshPool } = usePolling(
-    () => getPoolSnapshot(),
-    POLL_MS,
-  );
-  const { data: summary, error: summaryErr, loading: summaryLoading, refresh: refreshSummary } = usePolling(
+  const { data: pool, error: poolErr, loading: poolLoading } = usePolling(() => getPoolSnapshot(), POLL_MS);
+  const { data: summary, error: summaryErr, loading: summaryLoading } = usePolling(
     () => getOpsMetrics(),
     POLL_MS,
   );
-  const { data: usage, error: usageErr, loading: usageLoading, refresh: refreshUsage } = usePolling(
+  const { data: usage, error: usageErr, loading: usageLoading } = usePolling(
     () => getUsageSummary({ from: windowFrom(), groupBy: 'day' }),
     SPEND_REFRESH_MS,
   );
   // Phase 53 E — task-health "what's wedged?" report.
-  const { data: doctor, error: doctorErr, refresh: refreshDoctor } = usePolling(
-    () => fetchTasksDoctor(),
-    POLL_MS,
-  );
+  const { data: doctor, error: doctorErr } = usePolling(() => fetchTasksDoctor(), POLL_MS);
 
   // Phase 61 F — live fleet gauges over the reliable WS. When a push is present
   // it patches the polled summary's gauges (the poll stays as the fallback path).
@@ -48,33 +46,16 @@ export default function OpsPage() {
 
   const loading = poolLoading || summaryLoading || usageLoading;
 
-  function refresh() {
-    refreshPool();
-    refreshSummary();
-    refreshUsage();
-    refreshDoctor();
-  }
-
   return (
     <>
       <PageHeader
         title="Ops"
         icon="ActivitySquare"
         description="Fleet health — live slot utilization, run throughput, duration distribution, retry/abandon rates, and LLM spend."
+        actions={<OpsAddWidget />}
       />
-      <OpsView
-        pool={pool}
-        summary={liveSummary}
-        usage={usage}
-        loading={loading}
-        onRefresh={refresh}
-      />
-      <div className="mt-4">
-        <TaskHealthPanel report={doctor} />
-      </div>
-      <div className="container pb-8">
-        <RuntimeHealthPanel />
-      </div>
+
+      <OpsGrid pool={pool} summary={liveSummary} usage={usage} doctor={doctor} loading={loading} />
     </>
   );
 }

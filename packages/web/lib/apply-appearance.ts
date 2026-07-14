@@ -32,6 +32,19 @@ export type AccentCssParts = {
 };
 
 /**
+ * Coerce a persisted accent value of unknown vintage to the Phase-68 shape.
+ * Pre-Phase-68 blobs stored a bare swatch string (e.g. `"violet"`) — mirrors the
+ * `AccentValueSchema` preprocess in `@midnite/shared`, which localStorage reads
+ * bypass. Self-contained (no module references) so the pre-paint init script can
+ * embed it verbatim via `.toString()` — one implementation, no drift.
+ */
+export function coerceAccentValue(v: unknown, fallback: AccentValue): AccentValue {
+  if (typeof v === 'string') return { kind: 'solid', swatch: v } as AccentValue;
+  if (v && typeof v === 'object' && 'kind' in v) return v as AccentValue;
+  return fallback;
+}
+
+/**
  * Pure, **self-contained** builder for an accent value's CSS pieces (Phase 68).
  * Deliberately free of module-level references — the swatch hue/sat map and the
  * mono-shade hue shift are passed in — so its source can be embedded verbatim in
@@ -246,9 +259,9 @@ export const appearanceInitScript = `(function(){try{var s=JSON.parse(localStora
 )};var SHIFT=${MONO_HUE_SHIFT};var BRAND=${JSON.stringify(
   BRAND_ACCENT,
 )};var build=${buildAccentCssParts.toString()};
-function coerce(v){return (typeof v==='string')?{kind:'solid',swatch:v}:((v&&v.kind)?v:BRAND);}
+var coerce=${coerceAccentValue.toString()};
 function primary(val){var p=build(val,isDark,MAP,SHIFT);if(p.solidH==null){h.removeAttribute('data-accent');h.style.removeProperty('--accent-h');h.style.removeProperty('--accent-s');}else{h.style.setProperty('--accent-h',String(p.solidH));h.style.setProperty('--accent-s',String(p.solidS));h.setAttribute('data-accent',val.kind==='solid'?val.swatch:(p.preset||'gradient'));}if(p.gradient){h.style.setProperty('--accent-gradient',p.gradient);h.setAttribute('data-accent-gradient','');h.setAttribute('data-accent-preset',p.preset||'custom');if(p.animate)h.setAttribute('data-accent-animate','');}}
 function secondary(val){var p=build(val,isDark,MAP,SHIFT);if(p.solidH==null&&!p.gradient)return;if(p.solidH!=null){h.style.setProperty('--accent-2-h',String(p.solidH));h.style.setProperty('--accent-2-s',String(p.solidS));}h.setAttribute('data-accent-2','');if(p.gradient)h.style.setProperty('--accent-2-gradient',p.gradient);}
-primary(coerce(s.accent===undefined?BRAND:s.accent));if(s.accentSecondary!==undefined)secondary(coerce(s.accentSecondary));h.setAttribute('data-motion',s.motion||'system');if(s.density==='compact')h.setAttribute('data-density','compact');var F=${JSON.stringify(
+primary(coerce(s.accent===undefined?BRAND:s.accent,BRAND));if(s.accentSecondary!==undefined)secondary(coerce(s.accentSecondary,BRAND));h.setAttribute('data-motion',s.motion||'system');if(s.density==='compact')h.setAttribute('data-density','compact');var F=${JSON.stringify(
   UI_FONT_STACK,
 )};var f=F[s.uiFont];if(f){h.style.setProperty('--font-ui',f);h.setAttribute('data-ui-font',s.uiFont);}var bg=s.backgroundPattern||'${BACKGROUND_PATTERN_DEFAULT}';h.setAttribute('data-bg',bg);if(bg==='gradient')h.setAttribute('data-bg-intensity',s.bgIntensity||'${BG_INTENSITY_DEFAULT}');var e=s.effects||{};if(e.pageReveal===false)h.setAttribute('data-no-page-reveal','');if(e.typewriter===false)h.setAttribute('data-no-typewriter','');if(e.glass===false)h.setAttribute('data-no-glass','');if(s.shimmerDirection==='rtl')h.setAttribute('data-shimmer-dir','rtl');}catch(e){}})();`;
