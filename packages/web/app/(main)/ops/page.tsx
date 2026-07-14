@@ -1,13 +1,19 @@
 'use client';
 
+import dynamic from 'next/dynamic';
+import { RefreshCw } from 'lucide-react';
 import { fetchTasksDoctor, getOpsMetrics, getPoolSnapshot, getUsageSummary } from '@/lib/api';
 import { usePolling } from '@/lib/use-polling';
 import { useLiveGauges } from '@/hooks/use-metrics-events';
 import { useGatewayErrorToast } from '@/lib/use-gateway-error-toast';
+import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/page-header';
-import { OpsView } from '@/components/ops-view';
-import { RuntimeHealthPanel } from '@/components/runtime-health-panel';
-import { TaskHealthPanel } from '@/components/task-health-panel';
+import { OpsAddWidget } from '@/components/ops-add-widget';
+
+// react-grid-layout needs the DOM/container width, so the grid is client-only.
+const OpsGrid = dynamic(() => import('@/components/ops-grid').then((m) => m.OpsGrid), {
+  ssr: false,
+});
 
 const POLL_MS = 10_000;
 const SPEND_REFRESH_MS = 60_000;
@@ -61,20 +67,23 @@ export default function OpsPage() {
         title="Ops"
         icon="ActivitySquare"
         description="Fleet health — live slot utilization, run throughput, duration distribution, retry/abandon rates, and LLM spend."
+        actions={
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={refresh}
+              aria-label="Refresh ops data"
+              className="flex h-9 items-center gap-1.5 rounded-md border border-border bg-card px-3 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            >
+              <RefreshCw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
+              Refresh
+            </button>
+            <OpsAddWidget />
+          </div>
+        }
       />
-      <OpsView
-        pool={pool}
-        summary={liveSummary}
-        usage={usage}
-        loading={loading}
-        onRefresh={refresh}
-      />
-      <div className="mt-4">
-        <TaskHealthPanel report={doctor} />
-      </div>
-      <div className="container pb-8">
-        <RuntimeHealthPanel />
-      </div>
+
+      <OpsGrid pool={pool} summary={liveSummary} usage={usage} doctor={doctor} loading={loading} />
     </>
   );
 }

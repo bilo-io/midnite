@@ -1,14 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { RefreshCw } from 'lucide-react';
 import type { AgentPoolSnapshot, ApprovalLogEntry, ApprovalLogResponse, OpsSummary, UsageSummaryResponse } from '@midnite/shared';
 import { cn, relativeTime } from '@/lib/utils';
 import { listApprovalLog } from '@/lib/api';
 import { usePolling } from '@/lib/use-polling';
 import { WidgetLoader } from './spinner';
-import { CycleFleetPanel } from './ops-cycle-fleet';
-import { CostPanel } from './ops-cost';
 import { RunTimeline } from './run-timeline';
 
 // ── Shared primitives ────────────────────────────────────────────────────────
@@ -27,20 +24,22 @@ export function SectionCard({
   empty?: boolean;
 }) {
   return (
-    <div className="rounded-xl border bg-card p-5 shadow-sm">
+    <div className="flex h-full flex-col rounded-xl border bg-card p-5 shadow-sm">
       <div className="mb-4 flex items-center justify-between gap-2">
         <h2 className="text-sm font-semibold text-foreground">{title}</h2>
         {action}
       </div>
-      {loading ? (
-        <div className="flex h-24 items-center justify-center">
-          <WidgetLoader />
-        </div>
-      ) : empty ? (
-        <p className="py-6 text-center text-sm text-muted-foreground">No data yet</p>
-      ) : (
-        children
-      )}
+      <div className="min-h-0 flex-1">
+        {loading ? (
+          <div className="flex h-24 items-center justify-center">
+            <WidgetLoader />
+          </div>
+        ) : empty ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">No data yet</p>
+        ) : (
+          children
+        )}
+      </div>
     </div>
   );
 }
@@ -378,7 +377,7 @@ function DecisionRow({ entry }: { entry: ApprovalLogEntry }) {
 
 const LOG_PAGE = 50;
 
-function DecisionsSection() {
+export function DecisionsSection() {
   const [page, setPage] = useState(1);
   const { data, loading } = usePolling<ApprovalLogResponse>(
     () => listApprovalLog({ limit: LOG_PAGE, page }),
@@ -436,79 +435,6 @@ function DecisionsSection() {
   );
 }
 
-// ── Tab switcher ─────────────────────────────────────────────────────────────
-
-type OpsTab = 'metrics' | 'decisions';
-
-export function OpsView({
-  pool,
-  summary,
-  usage,
-  loading,
-  onRefresh,
-}: {
-  pool: AgentPoolSnapshot | null;
-  summary: OpsSummary | null;
-  usage: UsageSummaryResponse | null;
-  loading: boolean;
-  onRefresh: () => void;
-}) {
-  const [tab, setTab] = useState<OpsTab>('metrics');
-
-  return (
-    <div className="reveal-staged container space-y-6 pb-8 pt-2">
-      <div className="flex flex-wrap items-center justify-between gap-3 gap-y-2">
-        <div className="flex gap-1 rounded-lg border p-1 text-sm">
-          <button
-            type="button"
-            onClick={() => setTab('metrics')}
-            className={cn(
-              'rounded-md px-3 py-1 text-xs font-medium transition-colors',
-              tab === 'metrics' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            Metrics
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab('decisions')}
-            className={cn(
-              'rounded-md px-3 py-1 text-xs font-medium transition-colors',
-              tab === 'decisions' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            Decisions
-          </button>
-        </div>
-        {tab === 'metrics' && (
-          <button
-            type="button"
-            onClick={onRefresh}
-            aria-label="Refresh ops data"
-            className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-          >
-            <RefreshCw className={cn('h-3 w-3', loading && 'animate-spin')} />
-            Refresh
-          </button>
-        )}
-      </div>
-
-      {tab === 'metrics' ? (
-        <>
-          <GaugesSection pool={pool} summary={summary} loading={loading} />
-          <div className="grid gap-6 lg:grid-cols-2">
-            <ThroughputSection summary={summary} loading={loading} />
-            <OutcomesSection summary={summary} loading={loading} />
-          </div>
-          <DurationSection summary={summary} loading={loading} />
-          <SpendSection usage={usage} loading={loading} />
-          <CostPanel />
-          <CycleFleetPanel />
-          <RunTimelineDrilldown />
-        </>
-      ) : (
-        <DecisionsSection />
-      )}
-    </div>
-  );
-}
+// The section components above are composed onto the Ops board by
+// `components/ops-grid.tsx` (react-grid-layout), which owns arrangement and the
+// add/remove affordances. This module just exports the individual sections.
