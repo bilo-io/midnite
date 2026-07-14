@@ -38,13 +38,13 @@
 - [x] **B3.** The knockout is now **click-through** (Decision: all steps): the SVG dim is visual-only (`pointer-events:none`) and transparent **curtain catchers** frame the hole (clicking the dim dismisses; the hole passes clicks to the real element). Esc/Back still work; an `advanceOn` click both triggers the app action and advances.
 - [x] **B4.** Reduced-motion + a11y: scroll `behavior` comes from `useAnimationPrefs().animate` (folds in `data-motion` **and** OS `prefers-reduced-motion`) → `'auto'` when reduced; curtains stay out of the tab order + a11y tree (Esc/Skip cover keyboard/AT); existing focus management + keyboard nav (←/→/Enter/Esc) intact.
 
-## Theme C — Guides index in the assistant menu — **S**
+## Theme C — Guides index in the assistant menu — **S** — ✅ DONE (PR #429, 2026-07-14)
 
 > One place to see and replay every guide, not just the current route's.
 
-- [ ] **C1.** Add an **"All guides"** section to [`assistant-panel.tsx`](../packages/web/components/assistant/assistant-panel.tsx): list every guide (from `KNOWN_GUIDE_IDS` / the guide registry) with its `label` and a **seen/unseen** indicator (reuse `useSeenGuides`).
-- [ ] **C2.** Click-to-replay from anywhere: if the guide's route differs from the current pathname, **navigate** there first (Next.js router), then `start()` the guide once the target surface mounts. If already on-route, start immediately.
-- [ ] **C3.** Have the FAB "unseen" dot ([`assistant-fab.tsx`](../packages/web/components/assistant/assistant-fab.tsx)) reflect **any** unseen guide reachable from the index (not only the current route's), so the dot is a real "you have new guides" signal.
+- [x] **C1.** The **"All guides"** index is a new `guides` view in [`assistant-panel.tsx`](../packages/web/components/assistant/assistant-panel.tsx) (the "Guide" entry now opens it): lists every guide from the `ALL_GUIDES` registry with its `label` and a **subtle unseen dot** (via `useSeenGuides`), the current route's guide floated to the top.
+- [x] **C2.** Click-to-replay from anywhere: on-route starts immediately; off-route sets `useGuide.pending` + `router.push(guideLaunchPath(guide))`, and a shell watcher `<GuidePendingReplay/>` starts it once `resolveGuide(pathname)` matches (so the guide never starts before its anchors mount). `guideLaunchPath` derives the route from `GUIDE_ROUTE_MAP`.
+- [x] **C3.** The FAB "unseen" dot ([`assistant-fab.tsx`](../packages/web/components/assistant/assistant-fab.tsx)) now reflects **any** unseen guide (`useSeenGuides().hasAnyUnseen`), not only the current route's — a real "you have new guides" signal.
 
 ## Theme D — Full coverage: ~12 guides + anchors — **L**
 

@@ -1,20 +1,21 @@
 'use client';
 
 import { forwardRef, type ComponentType } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { ArrowLeft, BookOpen, Compass, MessageSquare, Sparkles, X } from 'lucide-react';
 
 import { GradientGlow } from '@midnite/ui';
 
 import type { ChatCommandState } from '@/hooks/use-chat-command';
 import { docsUrlForPathname } from '@/lib/docs-links';
-import { resolveGuide } from '@/lib/guide/steps';
+import { ALL_GUIDES, guideLaunchPath, resolveGuide, type Guide } from '@/lib/guide/steps';
 import { useGuide } from '@/lib/guide/use-guide';
+import { useSeenGuides } from '@/lib/guide/use-seen-guides';
 import { cn } from '@/lib/utils';
 
 import { AssistantChat } from './assistant-chat';
 
-export type AssistantView = 'menu' | 'chat';
+export type AssistantView = 'menu' | 'chat' | 'guides';
 
 type EntryKey = 'docs' | 'guide' | 'chat' | 'agent';
 
@@ -29,7 +30,7 @@ type Entry = {
 
 const ENTRIES: readonly Entry[] = [
   { key: 'docs', label: 'Docs', description: "This page's documentation", icon: BookOpen },
-  { key: 'guide', label: 'Guide', description: 'Tour this feature', icon: Compass },
+  { key: 'guide', label: 'Guides', description: 'Tour this page — or browse them all', icon: Compass },
   { key: 'chat', label: 'Chat to board', description: 'Change the board in words', icon: MessageSquare },
   { key: 'agent', label: 'Agent', description: 'Ask about your fleet', icon: Sparkles, soon: true },
 ];
@@ -57,6 +58,8 @@ export const AssistantPanel = forwardRef<HTMLDivElement, Props>(function Assista
   ref,
 ) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { hasSeen } = useSeenGuides();
 
   const activate = (entry: Entry) => {
     if (entry.soon) return;
@@ -66,12 +69,37 @@ export const AssistantPanel = forwardRef<HTMLDivElement, Props>(function Assista
     } else if (entry.key === 'chat') {
       onView('chat');
     } else if (entry.key === 'guide') {
-      // Start the current route's tour inline (Theme F); the overlay (mounted in
-      // the shell) draws the spotlight. `getState()` avoids subscribing the panel.
-      useGuide.getState().start(pathname ? resolveGuide(pathname) : null);
-      onClose();
+      // Open the "All guides" index (Theme C): browse + replay any guide, with
+      // the current route's tour emphasised at the top.
+      onView('guides');
     }
   };
+
+  // Replay a guide from the index: start immediately if we're already on its
+  // route, else navigate there and let the shell watcher start it once its
+  // anchors mount (`useGuide.pending`). `getState()` avoids subscribing here.
+  const replay = (guide: Guide) => {
+    const onRoute = !!pathname && resolveGuide(pathname)?.id === guide.id;
+    if (onRoute) {
+      useGuide.getState().start(guide);
+    } else {
+      const path = guideLaunchPath(guide);
+      if (!path) {
+        useGuide.getState().start(guide);
+        onClose();
+        return;
+      }
+      useGuide.getState().requestReplay(guide);
+      router.push(path);
+    }
+    onClose();
+  };
+
+  // The current route's guide floats to the top of the index.
+  const currentGuide = pathname ? resolveGuide(pathname) : null;
+  const orderedGuides = [...ALL_GUIDES].sort((a, b) =>
+    a.id === currentGuide?.id ? -1 : b.id === currentGuide?.id ? 1 : 0,
+  );
 
   return (
     <GradientGlow
@@ -93,7 +121,7 @@ export const AssistantPanel = forwardRef<HTMLDivElement, Props>(function Assista
         className="overflow-hidden rounded-2xl bg-card outline-none"
       >
         <header className="flex items-center gap-2 border-b border-border/60 px-3 py-2.5">
-          {view === 'chat' ? (
+          {view !== 'menu' ? (
             <button
               type="button"
               onClick={() => onView('menu')}
@@ -106,7 +134,7 @@ export const AssistantPanel = forwardRef<HTMLDivElement, Props>(function Assista
             <Sparkles className="h-4 w-4 text-muted-foreground" aria-hidden />
           )}
           <h2 id={headingId} className="flex-1 text-sm font-semibold">
-            {view === 'chat' ? 'Chat to board' : 'Assistant'}
+            {view === 'chat' ? 'Chat to board' : view === 'guides' ? 'Guides' : 'Assistant'}
           </h2>
           <button
             type="button"
@@ -147,6 +175,39 @@ export const AssistantPanel = forwardRef<HTMLDivElement, Props>(function Assista
                 </button>
               </li>
             ))}
+          </ul>
+        ) : view === 'guides' ? (
+          <ul className="max-h-[min(24rem,60vh)] overflow-y-auto p-2">
+            {orderedGuides.map((guide) => {
+              const seen = hasSeen(guide);
+              const isCurrent = guide.id === currentGuide?.id;
+              return (
+                <li key={guide.id}>
+                  <button
+                    type="button"
+                    onClick={() => replay(guide)}
+                    className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-accent/60"
+                  >
+                    <Compass className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                    <span className="flex-1">
+                      <span className="block text-sm font-medium">{guide.label}</span>
+                      <span className="block text-xs text-muted-foreground">
+                        {isCurrent
+                          ? 'This page'
+                          : `${guide.steps.length} step${guide.steps.length === 1 ? '' : 's'}`}
+                      </span>
+                    </span>
+                    {!seen && (
+                      <span
+                        className="h-2 w-2 shrink-0 rounded-full bg-primary"
+                        aria-label="Not seen yet"
+                        title="Not seen yet"
+                      />
+                    )}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         ) : (
           <AssistantChat chat={chat} />

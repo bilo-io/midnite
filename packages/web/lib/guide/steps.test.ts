@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { ALL_GUIDES, ASSISTANT_ANCHOR, GUIDE_ROUTE_MAP, KNOWN_GUIDE_IDS, resolveGuide } from './steps';
+import { ALL_GUIDES, ASSISTANT_ANCHOR, GUIDE_ROUTE_MAP, KNOWN_GUIDE_IDS, guideLaunchPath, resolveGuide } from './steps';
 
 describe('guide step registry', () => {
   it('resolves a route to its guide', () => {
@@ -46,6 +46,15 @@ describe('guide step registry', () => {
     const registered = new Set(ALL_GUIDES.map((g) => g.id));
     for (const { guide } of GUIDE_ROUTE_MAP) {
       expect(registered.has(guide.id)).toBe(true);
+    }
+  });
+
+  it('guideLaunchPath returns each guide’s home route prefix (Phase 67 C)', () => {
+    for (const guide of ALL_GUIDES) {
+      const path = guideLaunchPath(guide);
+      expect(path).not.toBeNull();
+      // The launch path resolves back to the same guide.
+      expect(resolveGuide(path!)?.id).toBe(guide.id);
     }
   });
 

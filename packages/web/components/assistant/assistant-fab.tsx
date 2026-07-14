@@ -3,13 +3,11 @@
 import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
 
 import { GradientGlow } from '@midnite/ui';
 
 import { useChatCommand } from '@/hooks/use-chat-command';
 import { useIsMobile } from '@/hooks/use-media-query';
-import { resolveGuide } from '@/lib/guide/steps';
 import { useSeenGuides } from '@/lib/guide/use-seen-guides';
 import { cn } from '@/lib/utils';
 
@@ -32,16 +30,16 @@ export function AssistantFab() {
   const [view, setView] = useState<AssistantView>('menu');
   const chat = useChatCommand();
   const isMobile = useIsMobile();
-  const pathname = usePathname();
-  const { hasSeen } = useSeenGuides();
+  const { hasAnyUnseen } = useSeenGuides();
   const panelRef = useRef<HTMLDivElement>(null);
   const fabRef = useRef<HTMLButtonElement>(null);
   const headingId = useId();
 
-  // Subtle nudge: the current route has a guide the user hasn't run yet. Never
-  // auto-opens — just a dot until they start (or skip) that route's tour.
-  const routeGuide = pathname ? resolveGuide(pathname) : null;
-  const showGuideNudge = !open && !!routeGuide && !hasSeen(routeGuide);
+  // Subtle nudge: at least one product guide is unseen at its current version
+  // (Phase 67 C — was scoped to the current route's guide). A dot until every
+  // guide has been seen; never auto-opens. The "All guides" index is where they
+  // get replayed.
+  const showGuideNudge = !open && hasAnyUnseen;
 
   useEffect(() => setMounted(true), []);
 

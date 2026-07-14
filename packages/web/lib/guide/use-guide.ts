@@ -21,25 +21,39 @@ interface GuideState {
   stepIndex: number;
   /** True briefly after starting on a route with no guide (drives the notice). */
   unavailable: boolean;
-  /** Start a guide (or flag unavailable when `guide` is null). */
+  /**
+   * A guide queued to run once its home route mounts (Phase 67 C). Set by the
+   * "All guides" index when replaying an off-route guide: the panel navigates,
+   * and the shell's watcher (`<GuidePendingReplay/>`) starts it when the route
+   * matches — so the guide never starts before its `data-tour` anchors exist.
+   */
+  pending: Guide | null;
+  /** Start a guide (or flag unavailable when `guide` is null). Clears any pending. */
   start: (guide: Guide | null) => void;
   next: () => void;
   prev: () => void;
   /** End the guide / dismiss the notice. */
   stop: () => void;
+  /** Queue a guide to start after navigation (see `pending`). */
+  requestReplay: (guide: Guide) => void;
+  /** Clear the queued replay without starting it. */
+  clearPending: () => void;
 }
 
 export const useGuide = create<GuideState>((set, get) => ({
   active: null,
   stepIndex: 0,
   unavailable: false,
+  pending: null,
   start: (guide) => {
     if (!guide || guide.steps.length === 0) {
-      set({ active: null, stepIndex: 0, unavailable: true });
+      set({ active: null, stepIndex: 0, unavailable: true, pending: null });
       return;
     }
-    set({ active: guide, stepIndex: 0, unavailable: false });
+    set({ active: guide, stepIndex: 0, unavailable: false, pending: null });
   },
+  requestReplay: (guide) => set({ pending: guide }),
+  clearPending: () => set({ pending: null }),
   next: () => {
     const { active, stepIndex } = get();
     if (!active) return;
@@ -53,5 +67,5 @@ export const useGuide = create<GuideState>((set, get) => ({
     const { stepIndex } = get();
     set({ stepIndex: Math.max(0, stepIndex - 1) });
   },
-  stop: () => set({ active: null, stepIndex: 0, unavailable: false }),
+  stop: () => set({ active: null, stepIndex: 0, unavailable: false, pending: null }),
 }));
