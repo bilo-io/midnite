@@ -29,7 +29,7 @@
 - [x] **A4.** Auto-launch: when the user lands on a route whose `resolveGuide(pathname)` is unseen (per A3), auto-`start()` it **once**, dismissible. Wired via a dedicated `<GuideAutoLaunch/>` in the `(main)` shell ([`layout.tsx`](../packages/web/app/(main)/layout.tsx)) on pathname change; the overlay marks seen on start (as today) so it stays quiet after. Replay from the menu is unaffected.
 - [x] **A5.** Guard auto-launch (see Decisions §2): desktop-only (`useIsDesktop`), suppressed until past first-run setup (`SetupStatus.ready`, which owns the wizard window), and honoring a new **`autoShowGuides` boolean preference** (default `true`, synced) so a user can turn auto-launch off while keeping manual replay. Toggle surfaced in Settings → Appearance ("Product guides").
 
-## Theme B — Interactive steps: scroll-to + action-advance — **M** — ✅ DONE (PR #427, 2026-07-14)
+## Theme B — Interactive steps: scroll-to + action-advance — **M** — ✅ DONE (PR #428, 2026-07-14)
 
 > Make steps feel alive without branching.
 

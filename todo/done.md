@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-14 — feat(web): interactive guide steps — scroll-to + action-advance — Phase 67 Theme B (PR #427)
+## 2026-07-14 — feat(web): interactive guide steps — scroll-to + action-advance — Phase 67 Theme B (PR #428)
 
 Makes guide steps interactive without branching. Phase 67 → 9/30 (30%), Status 🔄 WIP (C–E remain).
 
