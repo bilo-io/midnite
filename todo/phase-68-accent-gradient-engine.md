@@ -45,7 +45,7 @@ Teach the appliers to emit a gradient plus a contrast-safe solid fallback, stayi
 
 ---
 
-## Theme C — Surface application across the app — **L** — ✅ DONE (PR #TBD, 2026-07-14)
+## Theme C — Surface application across the app — **L** — ✅ DONE (PR #430, 2026-07-14)
 
 Paint the gradient where it reads well; keep text/icons on the solid fallback everywhere.
 
@@ -68,7 +68,7 @@ A light builder — not a full studio — in the accent accordion.
 
 ---
 
-## Theme E — Motion & accessibility — **S–M** — ✅ DONE (PR #TBD, 2026-07-14)
+## Theme E — Motion & accessibility — **S–M** — ✅ DONE (PR #430, 2026-07-14)
 
 Animated gradients are opt-in and never fight motion/contrast rules.
 
@@ -106,12 +106,12 @@ Animated gradients are opt-in and never fight motion/contrast rules.
 ## Verification
 
 - [x] The accent picker offers the **Brand rainbow first** (the default for a fresh install), then gradient presets, then the 8 solids; selecting any applies instantly and persists across reload. (PR #427)
-- [x] A **gradient accent** paints buttons/CTAs + active/selected states (every full-opacity `bg-primary` surface), in both light and dark, while **all foreground text/icons stay on the solid `--primary-foreground`** and remain legible. *(Scope note: the FAB glow is a `@midnite/ui` primitive — left as its brand rainbow to keep `ui` untouched; progress bars + charts keep their semantic **status** colours by design, so they're not accent-driven.)* (PR #TBD)
-- [x] A **secondary accent** can be set independently (its own picker + `--accent-2` token + `bg/text/border-accent-2` utilities) and shows up both as a gradient stop source and in the live preview. (PR #427/#TBD)
+- [x] A **gradient accent** paints buttons/CTAs + active/selected states (every full-opacity `bg-primary` surface), in both light and dark, while **all foreground text/icons stay on the solid `--primary-foreground`** and remain legible. *(Scope note: the FAB glow is a `@midnite/ui` primitive — left as its brand rainbow to keep `ui` untouched; progress bars + charts keep their semantic **status** colours by design, so they're not accent-driven.)* (PR #430)
+- [x] A **secondary accent** can be set independently (its own picker + `--accent-2` token + `bg/text/border-accent-2` utilities) and shows up both as a gradient stop source and in the live preview. (PR #427/#430)
 - [x] The **light builder** works: choose 2–3 stops from the palette, set an angle, toggle mono ↔ multi, and see it in the live preview before it applies app-wide. (PR #427)
 - [x] **Legacy rows hydrate:** a pre-Phase-68 stored `accent` string (e.g. `"violet"`) loads as the equivalent solid with no error (regression test green). (PR #427)
-- [x] **Motion respected:** animated gradients are off by default; `data-motion='reduced'` and OS `prefers-reduced-motion` both freeze them; only `full`/explicit opt-in animates. (PR #TBD)
-- [x] **No flash on load:** gradient + secondary vars are seeded pre-paint by `appearanceInitScript`; `@property --accent-angle` registered. (PR #427/#TBD)
+- [x] **Motion respected:** animated gradients are off by default; `data-motion='reduced'` and OS `prefers-reduced-motion` both freeze them; only `full`/explicit opt-in animates. (PR #430)
+- [x] **No flash on load:** gradient + secondary vars are seeded pre-paint by `appearanceInitScript`; `@property --accent-angle` registered. (PR #427/#430)
 - [x] Defaults + coercion mean a user who changes nothing sees the intended default (Brand rainbow) and existing users keep their solid accent. (PR #427)
 - [x] `@midnite/ui` stays a leaf (boundary test passes); [`tokens.css`](../packages/ui/src/styles/tokens.css) unchanged — only web-side CSS + appliers touched.
 - [x] `moon run :typecheck` · `moon run :lint` · `moon run :test` green.
