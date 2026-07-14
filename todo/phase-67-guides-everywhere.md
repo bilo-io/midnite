@@ -63,7 +63,7 @@
 - [◐] **D11.** Audit done: **dashboard, office, projects, digests, search, settings** now resolve to guides (+ existing board/workflow/sessions/memory). Deliberately **not** covered this PR (bounded follow-up, logged): `/ops`, `/slides`, `/councils`, `/media`. Ideas/Releases have no route (D3/D5).
 - [x] **D12.** Copy pass: every new guide is 2–4 tight steps, markdown bodies, explicit `placement`, closing on the `assistant` anchor — consistent voice with the original four.
 
-## Theme E — Tests, stories & e2e shots — **M** — ✅ DONE (PR #PRNUM, 2026-07-14)
+## Theme E — Tests, stories & e2e shots — **M** — ✅ DONE (PR #433, 2026-07-14)
 
 - [x] **E1.** Unit: `seenGuides` array→map coercion + `hasSeen`/`markSeen` version logic with the legacy-shape regression — shipped in Theme A ([`use-seen-guides.test.ts`](../packages/web/lib/guide/use-seen-guides.test.ts), `preferences.test.ts`).
 - [x] **E2.** Unit: auto-launch gating (fires once when unseen; quiet when seen / `autoShowGuides` off / non-desktop / setup not ready) — shipped in Theme A ([`guide-auto-launch.test.tsx`](../packages/web/components/guide/guide-auto-launch.test.tsx)).

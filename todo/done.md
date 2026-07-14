@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-14 — test(web): guide tests, stories, e2e shots & verification — Phase 67 Theme E (PR #PRNUM) — **Phase 67 complete**
+## 2026-07-14 — test(web): guide tests, stories, e2e shots & verification — Phase 67 Theme E (PR #433) — **Phase 67 complete**
 
 The final theme closes Phase 67 (Product guides on every page). Phase 67 → 30/30 (100%), Status ✅ DONE.
 
