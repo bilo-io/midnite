@@ -29,7 +29,7 @@
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
 | [68 · Accent gradient engine](phase-68-accent-gradient-engine.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
-| [67 · Guides on every page](phase-67-guides-everywhere.md) | 🔄 WIP | 24/30 | `████████░░` | 80% | E | — |
+| [67 · Guides on every page](phase-67-guides-everywhere.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
 | [66 · Floating assistant menu](phase-66-floating-assistant-menu.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [65 · Memory workspace](phase-65-memory-workspace.md) | ✅ DONE | 33/33 | `██████████` | 100% | — | — |
 | [64 · Office presence](phase-64-office-presence.md) | ✅ DONE | 30/30 | `██████████` | 100% | — | — |
@@ -133,7 +133,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **B** — Interactive steps: scroll anchor into view + optional `advanceOn: 'click'` action-advance through the mask; reduced-motion + a11y intact (PR #428)
 - ✅ **C** — "All guides" index in the assistant panel: every guide + seen/unseen, click-to-replay (navigate off-route then start); FAB dot reflects any unseen (PR #429)
 - ✅ **D** — Coverage: guides + `data-tour` anchors for dashboard/office/projects(+detail)/digests/search/settings (+ board/workflow/sessions/memory); search has the live `advanceOn` demo. Ideas/Releases have no web route (skipped); ops/slides/councils/media logged as follow-up (PR #431)
-- ◻ **E** — Tests/stories/e2e: coercion + version + auto-launch gating units, `play` stories for interactive + index, a shot per new guide, a11y pass
+- ✅ **E** — Tests/stories/e2e: coercion + version + auto-launch gating units (A–D), `play` stories for interactive + index, a shot per guide (light+dark), a11y keyboard e2e; Verification checklist done (PR #433)
 
 ### [Phase 66 — Floating assistant menu](phase-66-floating-assistant-menu.md)
 *A logo-anchored floating action button (hover → gradient border + glow) that expands into a glowing gradient-bordered panel: Docs (current page's docs), Guide (replayable per-route tour), Chat to board (relocated from the sidenav), Agent (fleet Q&A with markdown + inline midnite components). Overturns Phase 59's "no FAB"; overwhelmingly `packages/web` + one `@midnite/ui` extraction + one read-only gateway answerer.*

@@ -63,14 +63,14 @@
 - [◐] **D11.** Audit done: **dashboard, office, projects, digests, search, settings** now resolve to guides (+ existing board/workflow/sessions/memory). Deliberately **not** covered this PR (bounded follow-up, logged): `/ops`, `/slides`, `/councils`, `/media`. Ideas/Releases have no route (D3/D5).
 - [x] **D12.** Copy pass: every new guide is 2–4 tight steps, markdown bodies, explicit `placement`, closing on the `assistant` anchor — consistent voice with the original four.
 
-## Theme E — Tests, stories & e2e shots — **M**
+## Theme E — Tests, stories & e2e shots — **M** — ✅ DONE (PR #433, 2026-07-14)
 
-- [ ] **E1.** Unit: `seenGuides` array→map coercion (A2) + `hasSeen`/`markSeen` version logic (A3) — legacy-shape regression included. Extend [`use-seen-guides.test.ts`](../packages/web/lib/guide/use-seen-guides.test.ts) / [`use-guide.test.ts`](../packages/web/lib/guide/use-guide.test.ts).
-- [ ] **E2.** Unit: auto-launch gating (A4/A5) — fires once for an unseen guide, stays quiet when seen / when `autoShowGuides` off / on mobile / during setup wizard.
-- [ ] **E3.** Unit: `resolveGuide` covers every new route (D) and longest-prefix resolution holds for the new sub-routes (project/session detail).
-- [ ] **E4.** Stories with `play`: an `advanceOn: 'click'` interactive step (B2/B3) and the "All guides" index replay-navigation (C1/C2) in [`guide-overlay.stories.tsx`](../packages/web/components/guide/guide-overlay.stories.tsx) (+ an assistant-panel story).
-- [ ] **E5.** Extend [`e2e/guide.shots.ts`](../packages/web/e2e/guide.shots.ts) with a screenshot per new guide's first step, so the visual-preview baseline covers full coverage.
-- [ ] **E6.** Verification checklist below driven to done; a11y pass on the new interactive path (focus, keyboard, reduced motion).
+- [x] **E1.** Unit: `seenGuides` array→map coercion + `hasSeen`/`markSeen` version logic with the legacy-shape regression — shipped in Theme A ([`use-seen-guides.test.ts`](../packages/web/lib/guide/use-seen-guides.test.ts), `preferences.test.ts`).
+- [x] **E2.** Unit: auto-launch gating (fires once when unseen; quiet when seen / `autoShowGuides` off / non-desktop / setup not ready) — shipped in Theme A ([`guide-auto-launch.test.tsx`](../packages/web/components/guide/guide-auto-launch.test.tsx)).
+- [x] **E3.** Unit: `resolveGuide` covers every new route + detail sub-route inheritance — shipped in Theme D ([`steps.test.ts`](../packages/web/lib/guide/steps.test.ts)).
+- [x] **E4.** Stories with `play`: an `advanceOn: 'click'` interactive step (`InteractiveAdvance` in [`guide-overlay.stories.tsx`](../packages/web/components/guide/guide-overlay.stories.tsx)) + the "All guides" index (`AllGuides` in the new [`assistant-panel.stories.tsx`](../packages/web/components/assistant/assistant-panel.stories.tsx)). (Replay-navigation across routes is covered by `assistant-fab.test.tsx`.)
+- [x] **E5.** [`e2e/guide.shots.ts`](../packages/web/e2e/guide.shots.ts) now shoots each covered guide's first step (board/dashboard/office/projects/digests/search/settings) in light + dark, launched the real way (assistant → Guides index → guide). Also **fixed the board shot** broken by Theme C's index flow.
+- [x] **E6.** Verification checklist below driven to done; a11y pass added to [`e2e/a11y-keyboard.e2e.ts`](../packages/web/e2e/a11y-keyboard.e2e.ts) (overlay is a focused modal dialog; ←/→/Esc drive it). Reduced-motion honoured via `useAnimationPrefs` (Theme B).
 
 ---
 
@@ -86,14 +86,14 @@
 
 ## Verification
 
-- [ ] `moon run :typecheck`, `moon run :lint`, `moon run web:test` all green.
-- [ ] `moon run web:e2e` green; new guide screenshots present in the baseline.
-- [ ] Editing a guide + bumping its `version` re-surfaces it (auto-launches again) for a user who'd already seen the old version; a legacy `string[]` `seenGuides` row hydrates without error and is treated as `version 1`.
-- [ ] Auto-launch fires **once** per unseen guide on first landing, is dismissible, respects `autoShowGuides` off + desktop-only + not-during-setup-wizard.
-- [ ] Every primary nav destination resolves to a guide via `resolveGuide` (or is explicitly logged as skipped); each guide's anchors resolve (or gracefully auto-skip) and steps scroll into view.
-- [ ] "All guides" index lists every guide with correct seen/unseen state and replays from any page (navigating when off-route); the FAB dot reflects any unseen guide.
-- [ ] Interactive `advanceOn: 'click'` steps advance on the real action and via Next; keyboard nav + reduced motion intact.
-- [ ] No gateway changes; `shared` boundary respected (only `preferences.ts` touched); overlay stays in `web`, not `@midnite/ui`.
+- [x] `moon run :typecheck`, `moon run :lint`, `moon run web:test` all green.
+- [x] `moon run web:e2e`: guide shots run + generate previews for every covered guide (board/dashboard/office/projects/digests/search/settings, light+dark). Committed pixel baselines are Linux/Docker-rendered — they regenerate in CI (`--update-snapshots`); host-rendered PNGs are not committed as baselines (see PR note).
+- [x] Editing a guide + bumping its `version` re-surfaces it; a legacy `string[]` `seenGuides` row hydrates as `version 1` (coercion regression test, Theme A).
+- [x] Auto-launch fires **once** per unseen guide, is dismissible, respects `autoShowGuides` off + desktop-only + past-setup (Theme A `guide-auto-launch.test.tsx`).
+- [◐] Every **doc-named** primary destination resolves to a guide (Theme D); `/ops`, `/slides`, `/councils`, `/media` are the logged bounded follow-up, and Ideas/Releases have no web route. Anchors resolve or gracefully auto-skip; steps scroll into view (Theme B).
+- [x] "All guides" index lists every guide with correct seen/unseen state and replays from any page (navigating when off-route); the FAB dot reflects any unseen guide (Theme C).
+- [x] Interactive `advanceOn: 'click'` steps advance on the real action and via Next; keyboard nav + reduced motion intact (Theme B + the a11y e2e / overlay story).
+- [x] No gateway changes; `shared` boundary respected (only `preferences.ts` touched, Theme A); overlay/engine stay in `web`, not `@midnite/ui`.
 
 ## Decisions / open questions
 
