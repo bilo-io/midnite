@@ -25,6 +25,7 @@ import {
   applyMotion,
   applyShimmerDirection,
   applyUiFont,
+  coerceAccentValue,
 } from '@/lib/apply-appearance';
 
 /**
@@ -35,8 +36,10 @@ import {
  */
 export function AppearanceEffects() {
   const [settings] = useLocalStorage<AppSettings>(SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS);
-  const accent = settings.accent ?? ACCENT_DEFAULT;
-  const accentSecondary = settings.accentSecondary ?? SECONDARY_ACCENT_OFF;
+  // Coerce on read: pre-Phase-68 localStorage stored a bare swatch string, which
+  // bypasses the shared zod preprocess and would crash the gradient builder.
+  const accent = coerceAccentValue(settings.accent, ACCENT_DEFAULT);
+  const accentSecondary = coerceAccentValue(settings.accentSecondary, SECONDARY_ACCENT_OFF);
   const motion = settings.motion ?? MOTION_DEFAULT;
   const density = settings.density ?? DENSITY_DEFAULT;
   const uiFont = settings.uiFont ?? UI_FONT_DEFAULT;
