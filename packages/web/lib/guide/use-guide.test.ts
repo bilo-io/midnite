@@ -54,4 +54,24 @@ describe('useGuide store', () => {
     expect(useGuide.getState().stepIndex).toBe(0);
     expect(useGuide.getState().unavailable).toBe(false);
   });
+
+  // Phase 67 C — queued replay across navigation.
+  it('requestReplay queues a guide without starting it', () => {
+    useGuide.getState().requestReplay(GUIDE);
+    expect(useGuide.getState().pending?.id).toBe('board');
+    expect(useGuide.getState().active).toBeNull();
+  });
+
+  it('start consumes any pending replay', () => {
+    useGuide.getState().requestReplay(GUIDE);
+    useGuide.getState().start(GUIDE);
+    expect(useGuide.getState().active?.id).toBe('board');
+    expect(useGuide.getState().pending).toBeNull();
+  });
+
+  it('clearPending drops the queued replay', () => {
+    useGuide.getState().requestReplay(GUIDE);
+    useGuide.getState().clearPending();
+    expect(useGuide.getState().pending).toBeNull();
+  });
 });

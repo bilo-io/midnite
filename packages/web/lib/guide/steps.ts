@@ -125,3 +125,12 @@ export function resolveGuide(pathname: string): Guide | null {
     .sort((a, b) => b.prefix.length - a.prefix.length)[0];
   return match?.guide ?? null;
 }
+
+/**
+ * The route to visit to run a guide (Phase 67 C): the first `GUIDE_ROUTE_MAP`
+ * prefix whose guide matches. Used by the "All guides" index to navigate to a
+ * guide's home surface before starting it. `null` if the guide isn't routed.
+ */
+export function guideLaunchPath(guide: Guide): string | null {
+  return GUIDE_ROUTE_MAP.find((e) => e.guide.id === guide.id)?.prefix ?? null;
+}

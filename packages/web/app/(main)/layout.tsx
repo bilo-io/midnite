@@ -17,6 +17,7 @@ import { PullToRefresh } from '@/components/pull-to-refresh';
 import { AssistantFab } from '@/components/assistant/assistant-fab';
 import { GuideOverlay } from '@/components/guide/guide-overlay';
 import { GuideAutoLaunch } from '@/components/guide/guide-auto-launch';
+import { GuidePendingReplay } from '@/components/guide/guide-pending-replay';
 import { queryClient } from '@/lib/query-client';
 
 export default function MainLayout({ children }: { children: ReactNode }) {
@@ -47,6 +48,7 @@ export default function MainLayout({ children }: { children: ReactNode }) {
         <AssistantFab />
         <GuideOverlay />
         <GuideAutoLaunch />
+        <GuidePendingReplay />
         <SetupWizardController onOpenWizard={registerOpen} />
       </div>
     </PaletteCommandsProvider>
