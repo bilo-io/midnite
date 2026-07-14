@@ -15,6 +15,16 @@ Upgrades Phase 66's thin product-guide system to a versioned, auto-launching eng
 - [x] **Version guard (Decision §5)** — a `steps.test.ts` snapshot of the guide `id → version` map, so an intentional content edit trips it and forces a conscious bump.
 - [x] Tests: shared coercion/default specs, `use-seen-guides` version + legacy-coercion units, `GuideAutoLaunch` gating (desktop/setup-ready/autoShowGuides/unseen/already-seen/no-guide), overlay+use-guide specs updated to the new shapes; light+dark Playwright shot of the settings toggle. `:typecheck` · `:lint` (0 errors) · shared/web/gateway tests green.
 
+## 2026-07-14 — feat: accent gradient engine — model + appliers + builder — Phase 68 Themes A/B/D (PR #427)
+
+The core of the accent gradient engine: gradients alongside solids, an independent secondary accent channel, and the brand rainbow promoted to the default — a web-side layer over the untouched `@midnite/ui` tokens. Phase 68 → 14/23 (61%), Status 🔄 WIP (C surfaces + E motion remain).
+
+- [x] **A — Model (`@midnite/shared`):** `accent`/`accentSecondary` become a `z.discriminatedUnion` (`solid` swatch | `gradient` of 1–3 palette stops + type/angle/animate); `BRAND_ACCENT` (the `--node-*` conic) is the default; `z.preprocess` coerces a legacy bare-string accent → `{kind:'solid',swatch}` so pre-Phase-68 synced/stored blobs hydrate cleanly. Gateway preference service/controller tests updated for the object shape.
+- [x] **B — Appliers (`web`):** `applyAccent`/`applyAccentSecondary` set `--accent-gradient` + a contrast-safe solid fallback (retint `--primary`/`--ring`/`--accent` from the primary stop) + `--accent-2-*`; a self-contained `buildAccentCssParts` is embedded verbatim in the pre-paint init script (`.toString()`) for no-flash. Brand renders the `--node-*` conic; `AppearanceEffects` re-applies both channels on `.dark`-class toggle so JS-built stop lightness tracks the theme. globals.css gains the secondary tokens + an `.accent-gradient-surface` utility.
+- [x] **D — Builder (`web`):** `accent-builder.tsx` — brand-first gallery, ~10 curated gradient presets (Aurora/Sunset/Ocean/Dusk/Grape/Lagoon/Ember/Citrus/Spectrum), solids, and a custom builder (linear/conic · mono/multi · 2–3 stops · angle slider) with a live preview (button/badge/progress/ring) + an independent secondary picker. Reset restores brand + secondary-off.
+- [x] **Tests:** shared coercion + gradient parse + defaults; web applier (solid/gradient/mono/conic/secondary/legacy) + init-script eval + builder RTL; gateway round-trip. `:typecheck` · `:lint` (0 errors) · shared/gateway/web/ui `:test` green.
+- [x] **Scope:** gradient *surface repaint* across the app (Theme C) and *animated* gradients (Theme E) deliberately deferred — this slice defines + selects gradients (shown in the live preview) and retints from the primary stop.
+
 ## 2026-07-13 — feat: Phase 62 Verification signed off + deferrals built + install bug fixed — Phase 62 (PR #424)
 
 Closes the last 8 boxes of Phase 62 (Fable-Digest) — the Verification checklist. Every lettered theme A–H had landed (PRs through #409); this pass drove all 8 acceptance criteria end-to-end, closed the outstanding test gaps, **built the two remaining deferrals**, and **found + fixed a real "the seed templates aren't installable" bug**. Phase 62 → 32/32 (100%), Status ✅ DONE.

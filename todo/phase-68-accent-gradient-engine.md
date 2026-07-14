@@ -21,27 +21,27 @@
 
 ---
 
-## Theme A — Accent model: primary + secondary, solid or gradient — **M**
+## Theme A — Accent model: primary + secondary, solid or gradient — **M** — ✅ DONE (PR #427, 2026-07-14)
 
 Reshape `accent` from a single swatch id into a two-channel, solid-or-gradient model — without breaking anyone's saved value.
 
-- [ ] Define the new accent model in [`app-settings.ts`](../packages/web/lib/app-settings.ts) as a discriminated union: `AccentValue = { kind: 'solid'; swatch: AccentSwatch } | { kind: 'gradient'; stops: AccentSwatch[]; angle: number; animate: boolean }`. `stops` holds 2–3 palette swatch ids (theme-aware lightness still resolves per stop), `angle` in degrees, `animate` default `false`.
-- [ ] Add an **independent secondary accent channel** (`accentSecondary: AccentValue`, solid by default, `default` = off) — a first-class token used both as a gradient stop source *and* for standalone secondary UI accents (Decision §4). Primary stays `accent`.
-- [ ] Promote the **brand rainbow** to a named preset (`brand`) reusing the `--node-*` hues, and make it the **default value of `accent`** and the **first option** in the palette (Decision §1). Keep all 8 existing solids.
-- [ ] **Read-coercion for legacy rows:** a `coerceAccent()` that maps an old bare string (`"violet"`, `"default"`) → `{ kind: 'solid', swatch }`, applied on load and in `applyPreferences`. Regression test hydrating a pre-Phase-68 stored value (see [`removing-persisted-union-member-needs-read-coercion`]).
-- [ ] Extend the zod `UserPreferencesSchema` synced subset + `appSettingsToPreferences`/`applyPreferences` so both channels round-trip; keep the schema backward-compatible (accept legacy string, emit new shape).
+- [x] Define the new accent model in [`app-settings.ts`](../packages/web/lib/app-settings.ts) as a discriminated union: `AccentValue = { kind: 'solid'; swatch: AccentSwatch } | { kind: 'gradient'; stops: AccentSwatch[]; angle: number; animate: boolean }`. `stops` holds 2–3 palette swatch ids (theme-aware lightness still resolves per stop), `angle` in degrees, `animate` default `false`.
+- [x] Add an **independent secondary accent channel** (`accentSecondary: AccentValue`, solid by default, `default` = off) — a first-class token used both as a gradient stop source *and* for standalone secondary UI accents (Decision §4). Primary stays `accent`.
+- [x] Promote the **brand rainbow** to a named preset (`brand`) reusing the `--node-*` hues, and make it the **default value of `accent`** and the **first option** in the palette (Decision §1). Keep all 8 existing solids.
+- [x] **Read-coercion for legacy rows:** a `coerceAccent()` that maps an old bare string (`"violet"`, `"default"`) → `{ kind: 'solid', swatch }`, applied on load and in `applyPreferences`. Regression test hydrating a pre-Phase-68 stored value (see [`removing-persisted-union-member-needs-read-coercion`]).
+- [x] Extend the zod `UserPreferencesSchema` synced subset + `appSettingsToPreferences`/`applyPreferences` so both channels round-trip; keep the schema backward-compatible (accept legacy string, emit new shape).
 
 ---
 
-## Theme B — Gradient applier & CSS-var strategy — **M**
+## Theme B — Gradient applier & CSS-var strategy — **M** — ✅ DONE (PR #427, 2026-07-14)
 
 Teach the appliers to emit a gradient plus a contrast-safe solid fallback, staying a web-side layer.
 
-- [ ] Extend `applyAccent()` (rename/overload as needed) to accept the new `AccentValue`: for `gradient`, build `--accent-gradient` (a `linear-gradient(var(--accent-angle), …stops)`), derive `--accent-solid` from the **primary stop** for contrast-critical surfaces, and keep setting `--accent-h`/`--accent-s` from that primary stop so existing solid consumers still work.
-- [ ] Add `applyAccentSecondary()` emitting `--accent-2-h`/`--accent-2-s` (+ `--accent-2` / `--accent-2-solid`) and a `data-accent-2` attribute; theme-aware lightness rules in [`globals.css`](../packages/web/app/globals.css) mirroring the primary `html[data-accent]` pattern.
-- [ ] Resolve each gradient stop through the **same theme-aware lightness** the solid path uses (so a gradient looks right in light *and* dark), rather than baking fixed HSL (Decision §2). Keep [`tokens.css`](../packages/ui/src/styles/tokens.css) untouched.
-- [ ] Extend the pre-paint `appearanceInitScript` + [`appearance-effects.tsx`](../packages/web/components/appearance-effects.tsx) to seed gradient + secondary vars before first paint (no flash), including the `@property --accent-angle` registration.
-- [ ] Unit-test the appliers: solid, gradient (2- and 3-stop), secondary channel, legacy-coerced value, and that `--accent-solid` is always a real solid.
+- [x] Extend `applyAccent()` (rename/overload as needed) to accept the new `AccentValue`: for `gradient`, build `--accent-gradient` (a `linear-gradient(var(--accent-angle), …stops)`), derive `--accent-solid` from the **primary stop** for contrast-critical surfaces, and keep setting `--accent-h`/`--accent-s` from that primary stop so existing solid consumers still work.
+- [x] Add `applyAccentSecondary()` emitting `--accent-2-h`/`--accent-2-s` (+ `--accent-2` / `--accent-2-solid`) and a `data-accent-2` attribute; theme-aware lightness rules in [`globals.css`](../packages/web/app/globals.css) mirroring the primary `html[data-accent]` pattern.
+- [x] Resolve each gradient stop through the **same theme-aware lightness** the solid path uses (so a gradient looks right in light *and* dark), rather than baking fixed HSL (Decision §2). Keep [`tokens.css`](../packages/ui/src/styles/tokens.css) untouched.
+- [x] Extend the pre-paint `appearanceInitScript` + [`appearance-effects.tsx`](../packages/web/components/appearance-effects.tsx) to seed gradient + secondary vars before first paint (no flash), including the `@property --accent-angle` registration.
+- [x] Unit-test the appliers: solid, gradient (2- and 3-stop), secondary channel, legacy-coerced value, and that `--accent-solid` is always a real solid.
 
 ---
 
@@ -57,14 +57,14 @@ Paint the gradient where it reads well; keep text/icons on the solid fallback ev
 
 ---
 
-## Theme D — Builder UX in the Appearance panel — **L**
+## Theme D — Builder UX in the Appearance panel — **L** — ✅ DONE (PR #427, 2026-07-14)
 
 A light builder — not a full studio — in the accent accordion.
 
-- [ ] Reorder the accent accordion in [`appearance-section.tsx`](../packages/web/app/(main)/settings/appearance-section.tsx): **Brand rainbow first**, then curated gradient presets (mono-shade per hue + a few multi-colour), then the 8 solids.
-- [ ] **Light builder** controls: a primary + secondary swatch picker (both from the palette), a **2–3 stop** selector, an **angle** control (segmented presets 0/45/90/135/180° or a small dial), and a **mono ↔ multi** toggle (mono = tonal shades of one hue; multi = distinct stops). No free-hex input (Decision, out of scope).
-- [ ] **Live preview** across representative sample components (a button, a badge, a progress bar, a focus ring, a mini FAB) so the choice is visible before it's applied app-wide; apply-on-select, revertable, consistent with Phase 39's live-preview approach.
-- [ ] A distinct **secondary accent** control in the same section (independent solid picker), plus wiring into **Reset to defaults** (restores `accent = brand`, `accentSecondary = default`).
+- [x] Reorder the accent accordion in [`appearance-section.tsx`](../packages/web/app/(main)/settings/appearance-section.tsx): **Brand rainbow first**, then curated gradient presets (mono-shade per hue + a few multi-colour), then the 8 solids.
+- [x] **Light builder** controls: a primary + secondary swatch picker (both from the palette), a **2–3 stop** selector, an **angle** control (segmented presets 0/45/90/135/180° or a small dial), and a **mono ↔ multi** toggle (mono = tonal shades of one hue; multi = distinct stops). No free-hex input (Decision, out of scope).
+- [x] **Live preview** across representative sample components (a button, a badge, a progress bar, a focus ring, a mini FAB) so the choice is visible before it's applied app-wide; apply-on-select, revertable, consistent with Phase 39's live-preview approach.
+- [x] A distinct **secondary accent** control in the same section (independent solid picker), plus wiring into **Reset to defaults** (restores `accent = brand`, `accentSecondary = default`).
 
 ---
 
