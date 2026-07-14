@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  AccentValueSchema,
+  BRAND_ACCENT,
   DEFAULT_USER_PREFERENCES,
   PreferencesResponseSchema,
+  SECONDARY_ACCENT_OFF,
   UserPreferencesSchema,
 } from './preferences.js';
 
@@ -17,7 +20,8 @@ describe('UserPreferencesSchema', () => {
       navMode: 'auto',
       backgroundPattern: 'grid',
       bgIntensity: 'balanced',
-      accent: 'default',
+      accent: BRAND_ACCENT,
+      accentSecondary: SECONDARY_ACCENT_OFF,
       motion: 'system',
       density: 'comfortable',
       uiFont: 'system',
@@ -55,6 +59,12 @@ describe('UserPreferencesSchema', () => {
     expect(UserPreferencesSchema.parse({ autoShowGuides: false }).autoShowGuides).toBe(false);
   });
 
+  it('defaults the primary accent to the brand rainbow gradient (Phase 68)', () => {
+    const prefs = UserPreferencesSchema.parse({});
+    expect(prefs.accent).toEqual(BRAND_ACCENT);
+    expect(prefs.accent).toMatchObject({ kind: 'gradient', preset: 'brand', type: 'conic' });
+  });
+
   it('defaults officeView to 2d and accepts 3d (Phase 63 F)', () => {
     expect(UserPreferencesSchema.parse({}).officeView).toBe('2d');
     expect(UserPreferencesSchema.parse({ officeView: '3d' }).officeView).toBe('3d');
@@ -62,8 +72,8 @@ describe('UserPreferencesSchema', () => {
   });
 
   it('applies a partial blob over the defaults', () => {
-    const prefs = UserPreferencesSchema.parse({ accent: 'blue', theme: 'dark' });
-    expect(prefs.accent).toBe('blue');
+    const prefs = UserPreferencesSchema.parse({ accent: { kind: 'solid', swatch: 'blue' }, theme: 'dark' });
+    expect(prefs.accent).toEqual({ kind: 'solid', swatch: 'blue' });
     expect(prefs.theme).toBe('dark');
     // Untouched fields fall back to defaults.
     expect(prefs.density).toBe('comfortable');
@@ -76,8 +86,8 @@ describe('UserPreferencesSchema', () => {
   });
 
   it('strips unknown keys rather than rejecting them', () => {
-    const prefs = UserPreferencesSchema.parse({ accent: 'rose', futureKey: 'whatever' });
-    expect(prefs.accent).toBe('rose');
+    const prefs = UserPreferencesSchema.parse({ accent: { kind: 'solid', swatch: 'rose' }, futureKey: 'whatever' });
+    expect(prefs.accent).toEqual({ kind: 'solid', swatch: 'rose' });
     expect(prefs).not.toHaveProperty('futureKey');
   });
 
@@ -87,7 +97,8 @@ describe('UserPreferencesSchema', () => {
       navMode: 'expanded' as const,
       backgroundPattern: 'aurora' as const,
       bgIntensity: 'bold' as const,
-      accent: 'emerald' as const,
+      accent: { kind: 'solid' as const, swatch: 'emerald' as const },
+      accentSecondary: { kind: 'solid' as const, swatch: 'cyan' as const },
       motion: 'reduced' as const,
       density: 'compact' as const,
       uiFont: 'serif' as const,
@@ -105,12 +116,50 @@ describe('UserPreferencesSchema', () => {
   });
 
   it('rejects an invalid enum value', () => {
-    expect(() => UserPreferencesSchema.parse({ accent: 'chartreuse' })).toThrow();
+    expect(() => UserPreferencesSchema.parse({ accent: { kind: 'solid', swatch: 'chartreuse' } })).toThrow();
   });
 
   it('keeps an arbitrary feature map (loose contract)', () => {
     const prefs = UserPreferencesSchema.parse({ features: { anyKey: true, another: false } });
     expect(prefs.features).toEqual({ anyKey: true, another: false });
+  });
+});
+
+describe('AccentValueSchema — Phase 68 model + legacy coercion', () => {
+  it('coerces a legacy bare-string accent to a solid swatch', () => {
+    expect(AccentValueSchema.parse('violet')).toEqual({ kind: 'solid', swatch: 'violet' });
+    expect(AccentValueSchema.parse('default')).toEqual({ kind: 'solid', swatch: 'default' });
+  });
+
+  it('hydrates a pre-Phase-68 stored preferences blob (accent as a string)', () => {
+    const legacy = { accent: 'emerald', theme: 'dark' };
+    const prefs = UserPreferencesSchema.parse(legacy);
+    expect(prefs.accent).toEqual({ kind: 'solid', swatch: 'emerald' });
+    // Secondary channel materialises as "off" for a blob that predates it.
+    expect(prefs.accentSecondary).toEqual(SECONDARY_ACCENT_OFF);
+  });
+
+  it('parses a linear multi-stop gradient with filled defaults', () => {
+    const g = AccentValueSchema.parse({ kind: 'gradient', stops: ['blue', 'rose'] });
+    expect(g).toEqual({ kind: 'gradient', preset: 'custom', type: 'linear', stops: ['blue', 'rose'], angle: 90, animate: false });
+  });
+
+  it('parses a mono-shade gradient (single stop) and a 3-stop gradient', () => {
+    expect(AccentValueSchema.parse({ kind: 'gradient', stops: ['cyan'] })).toMatchObject({ stops: ['cyan'] });
+    expect(AccentValueSchema.parse({ kind: 'gradient', stops: ['blue', 'violet', 'amber'] })).toMatchObject({
+      stops: ['blue', 'violet', 'amber'],
+    });
+  });
+
+  it('rejects an out-of-range angle and too many stops', () => {
+    expect(AccentValueSchema.safeParse({ kind: 'gradient', stops: ['blue'], angle: 400 }).success).toBe(false);
+    expect(
+      AccentValueSchema.safeParse({ kind: 'gradient', stops: ['blue', 'violet', 'amber', 'rose'] }).success,
+    ).toBe(false);
+  });
+
+  it('rejects an unknown discriminant kind', () => {
+    expect(AccentValueSchema.safeParse({ kind: 'plaid', stops: ['blue'] }).success).toBe(false);
   });
 });
 
@@ -121,12 +170,12 @@ describe('PreferencesResponseSchema', () => {
     expect(res.updatedAt).toBeNull();
   });
 
-  it('accepts an ISO updatedAt', () => {
+  it('accepts an ISO updatedAt and coerces a legacy string accent', () => {
     const res = PreferencesResponseSchema.parse({
       preferences: { accent: 'cyan' },
       updatedAt: '2026-06-30T12:00:00.000Z',
     });
-    expect(res.preferences.accent).toBe('cyan');
+    expect(res.preferences.accent).toEqual({ kind: 'solid', swatch: 'cyan' });
     expect(res.updatedAt).toBe('2026-06-30T12:00:00.000Z');
   });
 });

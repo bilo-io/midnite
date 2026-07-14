@@ -2,7 +2,6 @@
 
 import { type ReactNode } from 'react';
 import {
-  Check,
   Clock,
   Cloud,
   CloudOff,
@@ -22,6 +21,7 @@ import {
 import { Accordion } from '@/components/ui/accordion';
 import { PwaInstall } from '@/components/pwa-install';
 import { Switch } from '@/components/ui/switch';
+import { AccentBuilder } from './accent-builder';
 import { useTheme, type ThemePreference } from '@/app/theme/theme-context';
 import { useAuth } from '@/contexts/auth-context';
 import { useLocalStorage } from '@/lib/use-local-storage';
@@ -32,7 +32,7 @@ import {
   BG_INTENSITY_DEFAULT,
   BG_INTENSITY_OPTIONS,
   ACCENT_DEFAULT,
-  ACCENT_OPTIONS,
+  SECONDARY_ACCENT_OFF,
   DEFAULT_EFFECTS,
   DEFAULT_SETTINGS,
   DENSITY_DEFAULT,
@@ -45,7 +45,7 @@ import {
   SHIMMER_DIRECTION_OPTIONS,
   UI_FONT_DEFAULT,
   UI_FONT_OPTIONS,
-  type AccentId,
+  type AccentValue,
   type AppSettings,
   type BackgroundPattern,
   type BgIntensity,
@@ -58,6 +58,7 @@ import {
 } from '@/lib/app-settings';
 import {
   applyAccent,
+  applyAccentSecondary,
   applyDensity,
   applyEffects,
   applyMotion,
@@ -99,7 +100,11 @@ export function AppearanceSection() {
     setSettings((prev) => ({ ...prev, bgIntensity: intensity }));
 
   const accent = settings.accent ?? ACCENT_DEFAULT;
-  const setAccent = (next: AccentId) => setSettings((prev) => ({ ...prev, accent: next }));
+  const setAccent = (next: AccentValue) => setSettings((prev) => ({ ...prev, accent: next }));
+
+  const accentSecondary = settings.accentSecondary ?? SECONDARY_ACCENT_OFF;
+  const setAccentSecondary = (next: AccentValue) =>
+    setSettings((prev) => ({ ...prev, accentSecondary: next }));
 
   const motion = settings.motion ?? MOTION_DEFAULT;
   const setMotion = (next: Motion) => setSettings((prev) => ({ ...prev, motion: next }));
@@ -126,6 +131,7 @@ export function AppearanceSection() {
     setSettings(DEFAULT_SETTINGS);
     setPreference('system');
     applyAccent(DEFAULT_SETTINGS.accent);
+    applyAccentSecondary(DEFAULT_SETTINGS.accentSecondary);
     applyMotion(DEFAULT_SETTINGS.motion);
     applyDensity(DEFAULT_SETTINGS.density);
     applyUiFont(DEFAULT_SETTINGS.uiFont);
@@ -288,59 +294,19 @@ export function AppearanceSection() {
         </div>
       </Accordion>
 
-      <Accordion title="Accent colour" icon={<Paintbrush className="h-3.5 w-3.5" />} defaultOpen>
+      <Accordion title="Accent" icon={<Paintbrush className="h-3.5 w-3.5" />} defaultOpen>
         <div className="space-y-4 p-5">
           <p className="text-xs text-muted-foreground">
-            Retints buttons, links, and focus rings across the app. Adapts to light and dark.
+            Retints buttons, links, and focus rings across the app. Pick the brand rainbow, a
+            gradient preset, or a solid — or build your own. Adapts to light and dark.
           </p>
-          <div
-            role="radiogroup"
-            aria-label="Accent colour"
-            className={cn(
-              'grid grid-cols-4 gap-2 sm:grid-cols-8 transition-opacity',
-              hydrated ? 'opacity-100' : 'opacity-0',
-            )}
-          >
-            {ACCENT_OPTIONS.map((opt) => {
-              const active = hydrated && accent === opt.id;
-              const isDefault = opt.id === 'default';
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  onClick={() => setAccent(opt.id)}
-                  title={opt.label}
-                  className={cn(
-                    'flex flex-col items-center gap-1.5 rounded-lg border p-2 transition-colors',
-                    active
-                      ? 'border-primary ring-1 ring-primary'
-                      : 'border-border/60 hover:border-foreground/20',
-                  )}
-                >
-                  <span
-                    className={cn(
-                      'flex h-7 w-7 items-center justify-center rounded-full',
-                      isDefault && 'border border-border bg-muted',
-                    )}
-                    style={
-                      isDefault
-                        ? undefined
-                        : { background: `hsl(${opt.h} ${opt.s}% 50%)` }
-                    }
-                  >
-                    {active ? (
-                      <Check className={cn('h-4 w-4', isDefault ? 'text-foreground' : 'text-white')} />
-                    ) : null}
-                  </span>
-                  <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
-                    {opt.label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          <AccentBuilder
+            value={accent}
+            onChange={setAccent}
+            secondary={accentSecondary}
+            onSecondaryChange={setAccentSecondary}
+            hydrated={hydrated}
+          />
         </div>
       </Accordion>
 

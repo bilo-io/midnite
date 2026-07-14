@@ -43,9 +43,11 @@ describe('PreferencesController.put', () => {
   });
 
   it('saves a valid body and returns the result', () => {
-    const saved = { preferences: { ...DEFAULT_USER_PREFERENCES, accent: 'rose' }, updatedAt: '2026-06-30T10:00:00.000Z' };
+    const roseSolid = { kind: 'solid' as const, swatch: 'rose' as const };
+    const saved = { preferences: { ...DEFAULT_USER_PREFERENCES, accent: roseSolid }, updatedAt: '2026-06-30T10:00:00.000Z' };
     svc.save.mockReturnValue(saved);
+    // A legacy string accent in the body is coerced to the solid model before save (Phase 68).
     expect(controller.put(AUTHED, { ...DEFAULT_USER_PREFERENCES, accent: 'rose' })).toEqual(saved);
-    expect(svc.save).toHaveBeenCalledWith('u1', expect.objectContaining({ accent: 'rose' }));
+    expect(svc.save).toHaveBeenCalledWith('u1', expect.objectContaining({ accent: roseSolid }));
   });
 });

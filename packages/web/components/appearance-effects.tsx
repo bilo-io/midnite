@@ -10,6 +10,7 @@ import {
   DEFAULT_SETTINGS,
   DENSITY_DEFAULT,
   MOTION_DEFAULT,
+  SECONDARY_ACCENT_OFF,
   SETTINGS_STORAGE_KEY,
   SHIMMER_DIRECTION_DEFAULT,
   UI_FONT_DEFAULT,
@@ -17,6 +18,7 @@ import {
 } from '@/lib/app-settings';
 import {
   applyAccent,
+  applyAccentSecondary,
   applyBackground,
   applyDensity,
   applyEffects,
@@ -34,6 +36,7 @@ import {
 export function AppearanceEffects() {
   const [settings] = useLocalStorage<AppSettings>(SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS);
   const accent = settings.accent ?? ACCENT_DEFAULT;
+  const accentSecondary = settings.accentSecondary ?? SECONDARY_ACCENT_OFF;
   const motion = settings.motion ?? MOTION_DEFAULT;
   const density = settings.density ?? DENSITY_DEFAULT;
   const uiFont = settings.uiFont ?? UI_FONT_DEFAULT;
@@ -45,6 +48,24 @@ export function AppearanceEffects() {
   useEffect(() => {
     applyAccent(accent);
   }, [accent]);
+
+  useEffect(() => {
+    applyAccentSecondary(accentSecondary);
+  }, [accentSecondary]);
+
+  // Gradient stop lightness is theme-aware and computed in JS, so re-apply both
+  // accent channels whenever the `.dark` class on <html> toggles (theme switch /
+  // time-of-day flip). Solid accents resolve their lightness in CSS, so this is a
+  // no-op cost for them.
+  useEffect(() => {
+    const html = document.documentElement;
+    const observer = new MutationObserver(() => {
+      applyAccent(accent);
+      applyAccentSecondary(accentSecondary);
+    });
+    observer.observe(html, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, [accent, accentSecondary]);
 
   useEffect(() => {
     applyMotion(motion);

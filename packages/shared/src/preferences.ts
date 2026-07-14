@@ -47,7 +47,7 @@ export type BackgroundPattern = z.infer<typeof BackgroundPatternSchema>;
 export const BgIntensitySchema = z.enum(['subtle', 'balanced', 'bold']);
 export type BgIntensity = z.infer<typeof BgIntensitySchema>;
 
-/** Accent colour retinting primary/ring/accent (`default` = no override). */
+/** A single accent palette swatch — a hue+saturation slot (`default` = no override). */
 export const AccentIdSchema = z.enum([
   'default',
   'blue',
@@ -59,6 +59,60 @@ export const AccentIdSchema = z.enum([
   'orange',
 ]);
 export type AccentId = z.infer<typeof AccentIdSchema>;
+
+/**
+ * Geometry of a gradient accent (Phase 68). `linear` sweeps along `angle`;
+ * `conic` sweeps around the centre starting at `angle`.
+ */
+export const GradientTypeSchema = z.enum(['linear', 'conic']);
+export type GradientType = z.infer<typeof GradientTypeSchema>;
+
+/**
+ * The accent value (Phase 68). Either a **solid** swatch (the Phase 39 model) or a
+ * **gradient** built from 1–3 palette swatches (`stops.length === 1` renders as a
+ * mono-shade — a hue-adjacent tonal sweep of that one swatch). `preset` is a UI /
+ * special-render tag: `'brand'` renders the signature `--node-*` conic rainbow,
+ * `'custom'` is a user-built gradient, other ids mark a curated preset.
+ *
+ * **Backward-compatible:** a legacy bare-string `accent` (e.g. `"violet"`,
+ * `"default"`) is coerced to `{ kind: 'solid', swatch }` on read, so pre-Phase-68
+ * synced/stored blobs hydrate cleanly.
+ */
+export const AccentValueSchema = z.preprocess(
+  (v) => (typeof v === 'string' ? { kind: 'solid', swatch: v } : v),
+  z.discriminatedUnion('kind', [
+    z.object({
+      kind: z.literal('solid'),
+      swatch: AccentIdSchema.default('default'),
+    }),
+    z.object({
+      kind: z.literal('gradient'),
+      preset: z.string().default('custom'),
+      type: GradientTypeSchema.default('linear'),
+      stops: z.array(AccentIdSchema).min(1).max(3).default(['blue', 'violet']),
+      angle: z.number().min(0).max(360).default(90),
+      animate: z.boolean().default(false),
+    }),
+  ]),
+);
+export type AccentValue = z.infer<typeof AccentValueSchema>;
+
+/**
+ * The default accent: the signature brand rainbow (the `--node-*` conic sweep,
+ * promoted from the animated-gradient background). New installs get this; existing
+ * users keep whatever solid swatch they saved (coerced from the legacy string).
+ */
+export const BRAND_ACCENT: AccentValue = {
+  kind: 'gradient',
+  preset: 'brand',
+  type: 'conic',
+  stops: ['cyan', 'violet', 'amber'],
+  angle: 0,
+  animate: false,
+};
+
+/** The secondary accent starts off (a `default` solid = no `--accent-2` override). */
+export const SECONDARY_ACCENT_OFF: AccentValue = { kind: 'solid', swatch: 'default' };
 
 /** How much motion the app shows (honour OS / force off / force on). */
 export const MotionSchema = z.enum(['system', 'reduced', 'full']);
@@ -98,7 +152,18 @@ export const UserPreferencesSchema = z.object({
   navMode: NavModeSchema.default('auto'),
   backgroundPattern: BackgroundPatternSchema.default('grid'),
   bgIntensity: BgIntensitySchema.default('balanced'),
-  accent: AccentIdSchema.default('default'),
+  /**
+   * The primary accent (Phase 68): a solid swatch or a gradient. Defaults to the
+   * brand rainbow. A legacy bare-string value is coerced to a solid (see
+   * `AccentValueSchema`), so pre-Phase-68 blobs keep their chosen colour.
+   */
+  accent: AccentValueSchema.default(() => BRAND_ACCENT),
+  /**
+   * An independent secondary accent channel (Phase 68) — a first-class token used
+   * both as a gradient stop source and for standalone secondary UI accents. Off by
+   * default (a `default` solid), so existing users see no change.
+   */
+  accentSecondary: AccentValueSchema.default(() => SECONDARY_ACCENT_OFF),
   motion: MotionSchema.default('system'),
   density: DensitySchema.default('comfortable'),
   uiFont: UiFontSchema.default('system'),

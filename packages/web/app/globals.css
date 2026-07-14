@@ -132,6 +132,41 @@
     --accent: var(--accent-h) calc(var(--accent-s) * 1%) 22%;
     --accent-foreground: var(--accent-h) calc(var(--accent-s) * 1%) 88%;
   }
+
+  /*
+   * Phase 68 — accent gradients + secondary channel. For a gradient primary accent,
+   * `applyAccent()` sets `--accent-gradient` (a full linear/conic value, theme-aware
+   * — brand uses the `--node-*` tokens) + `data-accent-gradient`, while still
+   * retinting the solid tokens above from the gradient's *primary stop*, so text,
+   * icons, and focus rings always have a contrast-safe solid fallback (they never
+   * sit on a raw gradient). `applyAccentSecondary()` sets `--accent-2-h`/`-s` (+ an
+   * optional `--accent-2-gradient`); the theme-aware lightness for the secondary
+   * *solid* token is supplied here, mirroring the primary. Actual gradient surface
+   * repainting (buttons, FAB, rings, progress) lands in Theme C — this establishes
+   * the tokens + a gradient utility the live preview uses.
+   */
+  html[data-accent-2] {
+    --accent-2: var(--accent-2-h) calc(var(--accent-2-s) * 1%) 42%;
+    --accent-2-foreground: 0 0% 100%;
+  }
+  html.dark[data-accent-2] {
+    --accent-2: var(--accent-2-h) calc(var(--accent-2-s) * 1%) 62%;
+    --accent-2-foreground: 240 12% 8%;
+  }
+}
+
+@layer utilities {
+  /*
+   * Paint the active gradient accent, falling back to the solid primary token when
+   * no gradient is set. Foreground content placed on this surface must use a solid
+   * token (e.g. `text-primary-foreground`) — never rely on contrast against the
+   * gradient itself. Used by the Appearance live preview (Theme D); real surfaces
+   * adopt it in Theme C.
+   */
+  .accent-gradient-surface {
+    background-color: hsl(var(--primary));
+    background-image: var(--accent-gradient, none);
+  }
 }
 
 @layer utilities {
