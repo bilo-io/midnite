@@ -28,7 +28,7 @@
 
 | Phase | Status | Done | Progress | % | 🔄 WIP | ◻ TODO |
 |-------|--------|------|----------|---|--------|--------|
-| [68 · Accent gradient engine](phase-68-accent-gradient-engine.md) | 🔄 WIP | 14/23 | `██████░░░░` | 61% | C E | — |
+| [68 · Accent gradient engine](phase-68-accent-gradient-engine.md) | ✅ DONE | 23/23 | `██████████` | 100% | — | — |
 | [67 · Guides on every page](phase-67-guides-everywhere.md) | 🔄 WIP | 12/30 | `████░░░░░░` | 40% | — | D E |
 | [66 · Floating assistant menu](phase-66-floating-assistant-menu.md) | ✅ DONE | 27/27 | `██████████` | 100% | — | — |
 | [65 · Memory workspace](phase-65-memory-workspace.md) | ✅ DONE | 33/33 | `██████████` | 100% | — | — |
@@ -123,9 +123,9 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 *Extends Phase 39's solid-only accent into gradients (mono-shade + multi-colour) via a light in-panel builder, adds an independent secondary accent channel, and promotes the brand rainbow to the default/first option — all a web-side override layer over untouched `@midnite/ui` tokens; no gateway.*
 - ✅ **A** — Accent model: `AccentValue` union (solid | gradient) + independent `accentSecondary`; brand rainbow default; legacy string read-coercion; sync-schema round-trip (PR #427)
 - ✅ **B** — Appliers/CSS: `--accent-gradient` + contrast-safe solid fallback + `--accent-2-*`, resolved through the theme-aware lightness path; pre-paint no-flash (PR #427)
-- ◻ **C** — Surfaces: gradient on buttons/CTAs, FAB glow + active states, rings/borders (solid fallback for focus), progress/badges/charts; foreground always solid
+- ✅ **C** — Surfaces: gradient on every `bg-primary` surface (buttons/CTAs/active/selected), solid focus rings; `--accent-2` token + utilities (FAB stays brand; progress/charts stay semantic-status) (PR #TBD)
 - ✅ **D** — Builder UX: reordered accent accordion (brand first), curated presets, light builder (2–3 stops + angle + mono/multi), secondary picker, live preview (PR #427)
-- ◻ **E** — Motion & a11y: opt-in animated gradient (off by default) gated by `data-motion` + reduced-motion; contrast guardrails; tests
+- ✅ **E** — Motion & a11y: opt-in animated gradient (off by default) gated by `data-motion` + reduced-motion; contrast guardrails; tests (PR #TBD)
 
 ### [Phase 67 — Product guides on every page (engine v2)](phase-67-guides-everywhere.md)
 *Takes Phase 66's thin 4-route product-guide system to full-surface coverage + engine v2: versioned "seen" (edited guides re-surface), once-per-page auto-launch, mildly-interactive steps, and an "all guides" index. Almost all `packages/web`; one `shared` preference change; no gateway.*
