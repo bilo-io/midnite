@@ -134,13 +134,32 @@ export const UserPreferencesSchema = z.object({
    */
   collapsedNavSections: z.array(z.string()).default([]),
   /**
-   * Which per-route product guides (Phase 66 F) the user has already run, by
-   * guide id. Drives the assistant FAB's subtle "unseen guide" dot; the guide
-   * itself is always replayable. A loose string list — the canonical guide-id
-   * set lives in the web app (`@/lib/guide`), so the gateway stays agnostic
-   * (like `features`/`collapsedNavSections`). Absent/empty = nothing seen yet.
+   * Which per-route product guides the user has already run, as a
+   * `guide id → version seen` map (Phase 67 A — was a flat `string[]` in Phase
+   * 66 F). Storing the version lets an edited guide re-surface: the web app
+   * treats a guide as seen only when the stored version is `>=` the guide's
+   * current `version`. Drives the assistant FAB's subtle "unseen guide" dot; the
+   * guide itself is always replayable. Loose by design — the canonical guide-id
+   * set + versions live in the web app (`@/lib/guide`), so the gateway stays
+   * agnostic (like `features`/`collapsedNavSections`).
+   *
+   * **Persisted-union read-coercion:** a legacy `string[]` blob (`['board']`)
+   * coerces on read to `{ board: 1 }` so pre-Phase-67 rows hydrate cleanly.
+   * Absent/empty = nothing seen yet.
    */
-  seenGuides: z.array(z.string()).default([]),
+  seenGuides: z
+    .union([z.array(z.string()), z.record(z.string(), z.number())])
+    .default({})
+    .transform((value): Record<string, number> =>
+      Array.isArray(value) ? Object.fromEntries(value.map((id) => [id, 1])) : value,
+    ),
+  /**
+   * Whether unseen product guides auto-launch once when the user first lands on
+   * their route (Phase 67 A). `true` by default; turning it off keeps guides
+   * fully replayable from the assistant menu but stops the one-time auto-launch.
+   * Additive — existing blobs default to `true`.
+   */
+  autoShowGuides: z.boolean().default(true),
 });
 
 export type UserPreferences = z.infer<typeof UserPreferencesSchema>;

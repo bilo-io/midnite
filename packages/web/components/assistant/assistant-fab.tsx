@@ -41,7 +41,7 @@ export function AssistantFab() {
   // Subtle nudge: the current route has a guide the user hasn't run yet. Never
   // auto-opens — just a dot until they start (or skip) that route's tour.
   const routeGuide = pathname ? resolveGuide(pathname) : null;
-  const showGuideNudge = !open && !!routeGuide && !hasSeen(routeGuide.id);
+  const showGuideNudge = !open && !!routeGuide && !hasSeen(routeGuide);
 
   useEffect(() => setMounted(true), []);
 

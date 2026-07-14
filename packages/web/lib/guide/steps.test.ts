@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { ASSISTANT_ANCHOR, GUIDE_ROUTE_MAP, KNOWN_GUIDE_IDS, resolveGuide } from './steps';
+import { ALL_GUIDES, ASSISTANT_ANCHOR, GUIDE_ROUTE_MAP, KNOWN_GUIDE_IDS, resolveGuide } from './steps';
 
 describe('guide step registry', () => {
   it('resolves a route to its guide', () => {
@@ -40,5 +40,34 @@ describe('guide step registry', () => {
   it('no prefix is a substring-shadow of another (avoids accidental double-match order bugs)', () => {
     const prefixes = GUIDE_ROUTE_MAP.map((e) => e.prefix);
     expect(new Set(prefixes).size).toBe(prefixes.length);
+  });
+
+  it('registers every route-map guide in the ALL_GUIDES registry (Phase 67 A)', () => {
+    const registered = new Set(ALL_GUIDES.map((g) => g.id));
+    for (const { guide } of GUIDE_ROUTE_MAP) {
+      expect(registered.has(guide.id)).toBe(true);
+    }
+  });
+
+  it('every guide carries a positive integer version (Phase 67 A)', () => {
+    for (const guide of ALL_GUIDES) {
+      expect(Number.isInteger(guide.version)).toBe(true);
+      expect(guide.version).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  // Version guard (Decision §5): this snapshots each guide's id → version. When a
+  // guide's *content* is intentionally edited its version must be bumped so it
+  // re-surfaces — editing steps without bumping the version leaves this snapshot
+  // unchanged, which is the tell. Update the snapshot only alongside a conscious
+  // version bump.
+  it('matches the guide id → version snapshot (forces a conscious bump on edit)', () => {
+    const versions = Object.fromEntries(ALL_GUIDES.map((g) => [g.id, g.version]));
+    expect(versions).toEqual({
+      board: 1,
+      workflow: 1,
+      sessions: 1,
+      memory: 1,
+    });
   });
 });

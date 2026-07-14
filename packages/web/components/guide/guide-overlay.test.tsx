@@ -7,6 +7,7 @@ import type { Guide } from '@/lib/guide/steps';
 
 const GUIDE: Guide = {
   id: 'board',
+  version: 1,
   label: 'Board tour',
   steps: [
     { anchor: 'board', title: 'Your board', body: 'Tasks flow left to right.' },
@@ -67,7 +68,8 @@ describe('GuideOverlay', () => {
     );
     act(() => useGuide.getState().start(GUIDE));
     const settings = JSON.parse(window.localStorage.getItem('midnite.settings') ?? '{}');
-    expect(settings.seenGuides).toContain('board');
+    // Phase 67 A: seenGuides is a version map, marked at the guide's current version.
+    expect(settings.seenGuides).toMatchObject({ board: 1 });
   });
 
   it('Skip ends the guide', () => {

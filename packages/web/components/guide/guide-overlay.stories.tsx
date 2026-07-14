@@ -15,6 +15,7 @@ function Harness() {
   useEffect(() => {
     useGuide.getState().start({
       id: 'demo',
+      version: 1,
       label: 'Demo tour',
       steps: [
         { anchor: 'demo-board', title: 'Your board', body: 'Tasks flow **left → right** through the columns.' },

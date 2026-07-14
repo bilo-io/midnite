@@ -39,7 +39,7 @@ export function GuideOverlay() {
 
   // Mark the guide seen as soon as it starts, so the FAB's "unseen" dot clears.
   useEffect(() => {
-    if (active) markSeen(active.id);
+    if (active) markSeen(active);
   }, [active, markSeen]);
 
   // Locate the current step's anchor and track its position. A missing anchor

@@ -4,6 +4,17 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
+## 2026-07-14 — feat(web): guide engine v2 — versioning + auto-launch — Phase 67 Theme A (PR #426)
+
+Upgrades Phase 66's thin product-guide system to a versioned, auto-launching engine. Phase 67 → 5/30 (17%), Status 🔄 WIP (B–E remain).
+
+- [x] **A1** — `Guide.version: number` on every guide def + an `ALL_GUIDES` registry; bumping a guide's version re-surfaces it.
+- [x] **A2** — `seenGuides` evolved from `string[]` to a `Record<string, number>` (`id → version seen`) in the shared `UserPreferencesSchema`, via `z.union([...]).transform(...)` that read-coerces a legacy array `['board'] → { board: 1 }`; `autoShowGuides: boolean` (default true) added; both threaded through the app-settings sync bridge + `prefsKey`. Regression test on the coercion.
+- [x] **A3** — `use-seen-guides` reworked: `hasSeen(guide)`/`markSeen(guide)` take a `Guide` and compare against `guide.version` (seen ⇔ stored ≥ current). A `normalizeSeen` handles the device-local path where `AppSettings` localStorage bypasses zod. New `hasAnyUnseen` for the FAB dot.
+- [x] **A4/A5** — new `<GuideAutoLaunch/>` in the `(main)` shell auto-starts an unseen route guide **once** per landing, gated: desktop-only, past first-run setup (`SetupStatus.ready`), `autoShowGuides` on, and hydration-safe (waits for persisted prefs so it can't flash a disabled/seen guide). The overlay marks-seen on start. New "Product guides → Auto-show guides" toggle in Settings → Appearance.
+- [x] **Version guard (Decision §5)** — a `steps.test.ts` snapshot of the guide `id → version` map, so an intentional content edit trips it and forces a conscious bump.
+- [x] Tests: shared coercion/default specs, `use-seen-guides` version + legacy-coercion units, `GuideAutoLaunch` gating (desktop/setup-ready/autoShowGuides/unseen/already-seen/no-guide), overlay+use-guide specs updated to the new shapes; light+dark Playwright shot of the settings toggle. `:typecheck` · `:lint` (0 errors) · shared/web/gateway tests green.
+
 ## 2026-07-13 — feat: Phase 62 Verification signed off + deferrals built + install bug fixed — Phase 62 (PR #424)
 
 Closes the last 8 boxes of Phase 62 (Fable-Digest) — the Verification checklist. Every lettered theme A–H had landed (PRs through #409); this pass drove all 8 acceptance criteria end-to-end, closed the outstanding test gaps, **built the two remaining deferrals**, and **found + fixed a real "the seed templates aren't installable" bug**. Phase 62 → 32/32 (100%), Status ✅ DONE.
