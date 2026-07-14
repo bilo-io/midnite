@@ -132,7 +132,7 @@ partial · `⏳` deferred · `❌` out-of-scope. Newest-first.
 - ✅ **A** — Engine v2: `Guide.version` + `seenGuides` array→`id→version` map (read-coerce legacy) + once-per-page auto-launch gated desktop/not-wizard/`autoShowGuides` (PR #426)
 - ✅ **B** — Interactive steps: scroll anchor into view + optional `advanceOn: 'click'` action-advance through the mask; reduced-motion + a11y intact (PR #428)
 - ✅ **C** — "All guides" index in the assistant panel: every guide + seen/unseen, click-to-replay (navigate off-route then start); FAB dot reflects any unseen (PR #429)
-- ✅ **D** — Coverage: guides + `data-tour` anchors for dashboard/office/projects(+detail)/digests/search/settings (+ board/workflow/sessions/memory); search has the live `advanceOn` demo. Ideas/Releases have no web route (skipped); ops/slides/councils/media logged as follow-up (PR #PRNUM)
+- ✅ **D** — Coverage: guides + `data-tour` anchors for dashboard/office/projects(+detail)/digests/search/settings (+ board/workflow/sessions/memory); search has the live `advanceOn` demo. Ideas/Releases have no web route (skipped); ops/slides/councils/media logged as follow-up (PR #431)
 - ◻ **E** — Tests/stories/e2e: coercion + version + auto-launch gating units, `play` stories for interactive + index, a shot per new guide, a11y pass
 
 ### [Phase 66 — Floating assistant menu](phase-66-floating-assistant-menu.md)

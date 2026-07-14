@@ -46,7 +46,7 @@
 - [x] **C2.** Click-to-replay from anywhere: on-route starts immediately; off-route sets `useGuide.pending` + `router.push(guideLaunchPath(guide))`, and a shell watcher `<GuidePendingReplay/>` starts it once `resolveGuide(pathname)` matches (so the guide never starts before its anchors mount). `guideLaunchPath` derives the route from `GUIDE_ROUTE_MAP`.
 - [x] **C3.** The FAB "unseen" dot ([`assistant-fab.tsx`](../packages/web/components/assistant/assistant-fab.tsx)) now reflects **any** unseen guide (`useSeenGuides().hasAnyUnseen`), not only the current route's — a real "you have new guides" signal.
 
-## Theme D — Full coverage: ~12 guides + anchors — **L** — ✅ DONE (PR #PRNUM, 2026-07-14)
+## Theme D — Full coverage: ~12 guides + anchors — **L** — ✅ DONE (PR #431, 2026-07-14)
 
 > One guide per major top-level destination. Each = add `data-tour` anchors to the target surface + author a guide def in [`steps.ts`](../packages/web/lib/guide/steps.ts) + register it in `GUIDE_ROUTE_MAP` / `KNOWN_GUIDE_IDS`. Every guide closes on the universal `assistant` "replay anytime" step (existing convention).
 

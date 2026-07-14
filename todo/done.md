@@ -4,7 +4,7 @@ Append new entries at the **top**. Each entry: one heading with the date, a shor
 
 ---
 
-## 2026-07-14 — feat(web): product guides across 6 more surfaces — Phase 67 Theme D (PR #PRNUM)
+## 2026-07-14 — feat(web): product guides across 6 more surfaces — Phase 67 Theme D (PR #431)
 
 Full-surface coverage: every doc-named nav destination now resolves to a product guide. Phase 67 → 24/30 (80%), Status 🔄 WIP (E remains).
 
