@@ -46,6 +46,7 @@ export function SearchBar({ placeholder = 'Search…' }: { placeholder?: string 
         onChange={(e) => setValue(e.target.value)}
         placeholder={placeholder}
         aria-label={placeholder}
+        data-tour="search-input"
         className="h-8 w-44 rounded-md border border-input bg-background pl-8 pr-7 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring sm:w-56"
       />
       {value ? (

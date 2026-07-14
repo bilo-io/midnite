@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const routerPush = vi.fn();
@@ -18,7 +18,13 @@ describe('AssistantFab', () => {
   beforeEach(() => {
     vi.stubGlobal('open', vi.fn());
   });
-  afterEach(() => {
+  afterEach(async () => {
+    // The panel portals into document.body; without an explicit unmount its DOM
+    // (and the guide list) accumulates across tests. Close any open panel, then
+    // clean up so each test sees a single panel.
+    const { useGuide } = await import('@/lib/guide/use-guide');
+    useGuide.getState().stop();
+    cleanup();
     vi.unstubAllGlobals();
   });
 
@@ -55,7 +61,7 @@ describe('AssistantFab', () => {
     expect(screen.getByRole('dialog', { name: 'Guides' })).toBeInTheDocument();
     // /tasks/graph → the board guide is the current one; replaying it starts
     // immediately (on-route) with no navigation.
-    fireEvent.click(screen.getByRole('button', { name: /Board tour/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Board tour/i }));
     expect(useGuide.getState().active?.id).toBe('board');
     expect(routerPush).not.toHaveBeenCalled();
     useGuide.getState().stop();
@@ -84,7 +90,7 @@ describe('AssistantFab', () => {
     fireEvent.click(screen.getByRole('button', { name: /Guides/i }));
     // Memory guide is off-route (we're on /tasks/graph): navigate + set pending,
     // don't start yet.
-    fireEvent.click(screen.getByRole('button', { name: /Memory workspace tour/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Memory workspace tour/i }));
     expect(routerPush).toHaveBeenCalledWith('/memory');
     expect(useGuide.getState().pending?.id).toBe('memory');
     expect(useGuide.getState().active).toBeNull();

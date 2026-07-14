@@ -102,6 +102,7 @@ export function SettingsSidebar() {
       {/* Desktop: grouped vertical sidebar */}
       <nav
         aria-label="Settings categories"
+        data-tour="settings-nav"
         className="hidden md:sticky md:top-24 md:flex md:w-48 md:shrink-0 md:flex-col md:gap-5"
       >
         {NAV_GROUPS.map((group) => (
